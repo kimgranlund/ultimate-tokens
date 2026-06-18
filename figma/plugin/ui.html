@@ -4810,10 +4810,7 @@ class HctApp extends HTMLElement {
           "div",
           { class: "drawer-foot" },
           h("span", { class: "meta" }, `${(bytes / 1024).toFixed(1)} KB · ${isFigma ? figCur[2] : isConfig ? "re-importable config" : tokenCount(this.doc) + " tokens"}`),
-          // ONE download action — every format in its own folder + the config, as a single .zip. Always present, primary.
-          h("button", { class: "primary", title: "Download every format (css-hex, css-oklch, json, dtcg, figma, ui3) in its own folder + the config, as one .zip", onclick: () => this.downloadAllZip(view) }, "⬇ Download all (.zip)"),
-          // (Config save/load lives in the config sub-bar above the code; not a footer action.)
-          // Inside Figma, applying variables directly is the point — so it's the primary action.
+          // Inside Figma, applying variables directly is the point — primary action, to the LEFT of Download all.
           this.inFigma
             ? h(
                 "button",
@@ -4825,6 +4822,9 @@ class HctApp extends HTMLElement {
                 "⚑ Add Variables → Figma",
               )
             : false,
+          // ONE download action — every format in its own folder + the config, as a single .zip. Always present, primary.
+          h("button", { class: "primary", title: "Download every format (css-hex, css-oklch, json, dtcg, figma, ui3) in its own folder + the config, as one .zip", onclick: () => this.downloadAllZip(view) }, "⬇ Download all (.zip)"),
+          // (Config save/load lives in the config sub-bar above the code.)
         ),
       ),
     );
