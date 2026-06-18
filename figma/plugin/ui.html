@@ -3989,11 +3989,15 @@ class HctApp extends HTMLElement {
     return "#" + g + g + g;
   }
 
-  // containerBg — a palette ROW container is tinted with that palette's OWN 150 stop (a light,
-  // faintly-hued near-edge tone), so each card carries a wash of its palette. Per-palette (unlike
-  // the single canvasBg backdrop). Returns "" when the 150 stop is absent, so the CSS default holds.
+  // containerBg — a palette ROW container is tinted with that palette's OWN faintly-hued near-edge
+  // tone, so each card carries a wash of its palette. It tracks the CANVAS preview scheme (150 in
+  // light, 850 in dark — symmetric, mirroring canvasBg's 100/900): the row's name text is var(--ink),
+  // which resolves per the canvas-area's color-scheme (= canvasTheme), so a fixed light 150 in dark
+  // preview would land light text on a light card. Per-palette (unlike the single canvasBg backdrop).
+  // Returns "" when the stop is absent, so the CSS default (a theme-aware panel wash) holds.
   containerBg(vp) {
-    const s = vp && vp.ramp && vp.ramp.find((x) => x.stop === 150);
+    if (!vp || !vp.ramp) return "";
+    const s = vp.ramp.find((x) => x.stop === (this.canvasTheme === "dark" ? 850 : 150));
     return s ? s.hex : "";
   }
 
