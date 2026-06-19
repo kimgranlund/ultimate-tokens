@@ -106,7 +106,10 @@ const entries = md.split(/^### /m).slice(1).map(parseEntry);
 // Spread the full DEFAULT_CONTROLS into every preset. A config that OMITS them hydrates to the
 // domain MINIMUMS (lmin 0, lmax 60, damp 0) — not the sensible defaults (5/100/80) — which caps the
 // whole ramp dark and was a big part of why every preset rendered muddy. Carry them explicitly.
-const presets = entries.map((e) => ({ name: e.name, ...DEFAULT_CONTROLS, palettes: mapColors(e) }));
+// Travel presets default to the "Vivid mids" damping (boosts mid-tone chroma toward the gamut) — more
+// vibrant than the flat "Default" damping. Mirrors the DAMP_PRESETS "Vivid mids" entry in app.js.
+const VIVID_MIDS = { damp: 70, dampCurve: 1.5, dampAmp: 55, dampBias: 0 };
+const presets = entries.map((e) => ({ name: e.name, ...DEFAULT_CONTROLS, ...VIVID_MIDS, palettes: mapColors(e) }));
 
 // One preset per line (compact JSON) — keeps the bundle small AND keeps git diffs readable
 // (a change to one palette shows as a single changed line).

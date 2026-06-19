@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 1.19 — 2026-06-18 — distribution-mode UX: hide N/A controls · Vivid-mids presets · key-color tiles
+
+Follow-ups to the distribution modes (1.18):
+
+- **Hide irrelevant controls.** The CIELAB-only Global controls (**Curve**, **Tension**, **Chroma basis**)
+  are now HIDDEN entirely in the perceptual/peak modes instead of shown disabled — they only apply to
+  `even`. (lmin/lmax, Damp + differential curve, and Hue space stay; they affect all modes.)
+- **Presets default to "Vivid mids" damping.** `gen-travel-presets` now applies the `Vivid mids` damping
+  (`damp 70 · dampAmp 55`) to the 48 presets, boosting mid-tone chroma toward the gamut for more vibrant
+  out-of-box presets (mirrors the DAMP_PRESETS entry).
+- **Gallery tiles show each palette's KEY color.** A `keyStop(ramp)` helper picks a ramp's most-chromatic
+  stop (the cusp) — falling back to the mid stop only for near-neutral ramps — and `buildTiles`/`buildPresetTiles`
+  use it for the preview swatches. Under the perceptual default `550` is mid-lightness for every palette, so
+  a strip of 550s read as near-identical mid-tones; the cusp surfaces each palette's distinct, vivid color.
+
+UI/preset-generation only. headless-boot `(g)` runs in `even` (the Tension control it drags is even-only),
+new `(gc)` asserts the controls are hidden (not disabled) in OKHSL modes; `(hh)` checks the Vivid-mids damping.
+
 ## 1.18 — 2026-06-18 — ramp distribution modes (even / perceptual / peak); default → perceptual
 
 A new global control **`toneMode`** picks how stops map to lightness, fixing the near-white "dead zone"

@@ -122,6 +122,16 @@ const h = (tag, attrs = {}, ...kids) => {
   return el;
 };
 const fmt = (x, d = 0) => Number(x).toFixed(d);
+// keyStop — a ramp's "key color": its most CHROMATIC stop (the cusp), i.e. the palette's most
+// saturated, characteristic color. Used for gallery preview swatches — far more distinctive than a
+// fixed mid stop, especially in perceptual mode where stop 550 is mid-lightness for every palette,
+// so a row of 550s reads as near-identical mid-tones. Mode-agnostic (reads measured chroma). A
+// (near-)neutral ramp has no chromatic peak, so it falls back to its mid stop (a representative gray).
+const keyStop = (ramp) => {
+  const best = ramp.reduce((a, s) => (s.chroma > a.chroma ? s : a), ramp[0]);
+  if (best.chroma >= 8) return best;
+  return ramp.find((s) => s.stop === 550) || ramp[Math.floor(ramp.length / 2)];
+};
 const ago = (ts) => {
   const s = (Date.now() - ts) / 1000;
   if (s < 60) return "just now";
@@ -583,8 +593,8 @@ class HctApp extends HTMLElement {
         "div",
         { class: "strip" },
         ...enabled.slice(0, 8).map((p) => {
-          const mid = p.ramp.find((s) => s.stop === 550) || p.ramp[Math.floor(p.ramp.length / 2)];
-          return h("i", { style: `background:${mid.hex}` });
+          const key = keyStop(p.ramp); // each palette's most chromatic ("key") color, not a flat 550
+          return h("i", { style: `background:${key.hex}` });
         }),
       );
       const tile = h(
@@ -646,15 +656,16 @@ class HctApp extends HTMLElement {
       const enabled = v.palettes.filter((p) => p.on);
       // Preview the 6 CURATED colors only (the trailing danger/warning/success are near-identical
       // across presets and made every tile look the same). Widths emphasize the primary tier
-      // (~55/35/10, primary-base biggest), so a tile reads as "this palette's main color". The 550
-      // stop is now the lift-anchored prime ≈ the source color, so the strip is representative.
+      // (~55/35/10, primary-base biggest), so a tile reads as "this palette's main color". Each
+      // swatch is the palette's KEY (most-chromatic) color so the strip shows distinct hues, not a
+      // row of mid-lightness 550s.
       const SAMPLED_W = [36, 19, 19, 16, 6, 4];
       const strip = h(
         "div",
         { class: "strip" },
         ...enabled.slice(0, 6).map((p, i) => {
-          const mid = p.ramp.find((s) => s.stop === 550) || p.ramp[Math.floor(p.ramp.length / 2)];
-          return h("i", { style: `background:${mid.hex};flex:${SAMPLED_W[i] || 1}` });
+          const key = keyStop(p.ramp);
+          return h("i", { style: `background:${key.hex};flex:${SAMPLED_W[i] || 1}` });
         }),
       );
       return h(
@@ -2380,18 +2391,22 @@ class HctApp extends HTMLElement {
           ...["perceptual", "even", "peak"].map((m) => h("option", { value: m, selected: d.toneMode === m }, m)),
         ),
       ),
-      // Curve/Tension/relChroma shape the CIELAB "even" path only; greyed-out hint when not in "even".
-      h(
-        "div",
-        { class: "field" + (d.toneMode === "even" ? "" : " is-muted"), title: d.toneMode === "even" ? "" : "Curve applies only to the 'even' distribution" },
-        h("label", {}, "Curve"),
-        h(
-          "select",
-          { onchange: (e) => this.commit((doc) => (doc.curve = e.target.value)) },
-          ...CURVES.map((c) => h("option", { value: c, selected: d.curve === c }, c)),
-        ),
-      ),
-      this.slider("Tension", d.tension, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.tension = v))),
+      // Curve · Tension · Chroma-basis shape the CIELAB "even" path ONLY — hide them in the OKHSL modes.
+      d.toneMode === "even"
+        ? h(
+            "div",
+            { class: "field" },
+            h("label", {}, "Curve"),
+            h(
+              "select",
+              { onchange: (e) => this.commit((doc) => (doc.curve = e.target.value)) },
+              ...CURVES.map((c) => h("option", { value: c, selected: d.curve === c }, c)),
+            ),
+          )
+        : false,
+      d.toneMode === "even"
+        ? this.slider("Tension", d.tension, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.tension = v)))
+        : false,
       this.slider("L* min", d.lmin, 0, 40, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.lmin = v))),
       this.slider("L* max", d.lmax, 60, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.lmax = v))),
       this.slider("Damp", d.damp, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.damp = v))),
@@ -2424,20 +2439,22 @@ class HctApp extends HTMLElement {
           h("span", {}, d.hueSpace),
         ),
       ),
-      h(
-        "div",
-        { class: "field" },
-        h("label", { title: "peak: chroma is % of each hue's own peak. gamut: % of every stop's gamut ceiling — palettes harmonize across hue." }, "Chroma basis"),
-        h(
-          "div",
-          {
-            class: "toggle" + (d.relChroma ? " on" : ""),
-            onclick: () => this.commit((doc) => (doc.relChroma = !doc.relChroma)),
-          },
-          h("span", { class: "track" }),
-          h("span", {}, d.relChroma ? "gamut" : "peak"),
-        ),
-      ),
+      d.toneMode === "even"
+        ? h(
+            "div",
+            { class: "field" },
+            h("label", { title: "peak: chroma is % of each hue's own peak. gamut: % of every stop's gamut ceiling — palettes harmonize across hue." }, "Chroma basis"),
+            h(
+              "div",
+              {
+                class: "toggle" + (d.relChroma ? " on" : ""),
+                onclick: () => this.commit((doc) => (doc.relChroma = !doc.relChroma)),
+              },
+              h("span", { class: "track" }),
+              h("span", {}, d.relChroma ? "gamut" : "peak"),
+            ),
+          )
+        : false,
     );
   }
 

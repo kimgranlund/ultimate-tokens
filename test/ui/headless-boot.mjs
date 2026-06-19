@@ -345,12 +345,13 @@ app.undo();
 ok(app.doc.palettes[sel].hue === hueStart, "(d) that one undo reverts the WHOLE hue drag");
 
 // ── (g) same for a GLOBAL slider (Tension) ───────────────────────────────────────────
+app.doc.toneMode = "even"; // Tension is an even-mode control — make it visible (direct set: no undo step)
 app.setSegment("global");
 app.render();
 flushRaf();
 const sceneG0 = app.querySelector(".canvas-scene");
 const gPane = app.querySelector(".right-pane");
-const tensionInput = findIn(gPane, isRange); // first global slider = Tension
+const tensionInput = findIn(gPane, isRange); // first global slider in "even" = Tension
 ok(!!tensionInput, "found a global slider <input type=range>");
 const tStart = app.doc.tension;
 const tHistPre = app.history.length;
@@ -363,6 +364,7 @@ for (let v = tStart + 1; v <= tStart + 6 && v <= 100; v++) {
 ok(gSame, "(g) the global slider <input> is the SAME node throughout the drag");
 ok(app.doc.tension !== tStart, `(g) doc.tension updated during the drag (${app.doc.tension})`);
 ok(app.querySelector(".canvas-scene") === sceneG0, "(g) .canvas-scene element preserved during the global drag");
+app.doc.toneMode = "perceptual"; // restore the default after the even-mode Tension drag (no undo step)
 tensionInput.dispatch("change", {});
 ok(app.history.length - tHistPre === 1, `(g) the global drag is ONE undo step (got ${app.history.length - tHistPre})`);
 
@@ -805,9 +807,9 @@ const SLOTS = ["primary-base","primary-muted","secondary-base","secondary-muted"
 ok(TP.every((p) => JSON.stringify(p.palettes.map((x) => x.name)) === JSON.stringify(SLOTS)), "(hh) every preset uses the {tier}-{rank} + status naming model, identically");
 // names are the PLACE only (no "IV·01 ·" vol-index prefix)
 ok(!TP.some((p) => /^[IVXLC]+·\d/.test(p.name)), "(hh) preset names drop the vol·index prefix (just the place)");
-// presets carry the full default controls — a config that OMITS them hydrates to the DARK domain-min
-// (lmax 60), which made every preset render muddy. Regression guard for that fix.
-ok(TP.every((p) => p.lmax === 100 && p.lmin === 5 && p.damp === 80), "(hh) presets carry default controls (lmax 100), so they don't hydrate to the dark domain-min");
+// presets carry the full controls (a config that OMITS them hydrates to the DARK domain-min, lmax 60,
+// which made every preset render muddy) AND use the "Vivid mids" damping by default (damp 70 / amp 55).
+ok(TP.every((p) => p.lmax === 100 && p.lmin === 5 && p.damp === 70 && p.dampAmp === 55), "(hh) presets carry controls + the 'Vivid mids' damping (damp 70, amp 55)");
 // lift-anchoring: a LIGHT dominant (St John's fog cream, src L*≈85) must open LIGHT, not the old mid-dark
 // L*≈46 grey. This is the "colors look really wrong" fix (lift + controls together).
 const { projectView: _pvHH } = await import("../../src/ui/model.mjs");
@@ -932,6 +934,15 @@ const app2 = new (customElements.get("nonoun-color-tokens"))();
 app2.connectedCallback();                                            // runs migrateStorageKeys() before loadSets()
 ok(localStorage.getItem("nonoun-color-tokens-sets") != null, "(mig) a pre-rename '-sets' key is copied into the new namespace on boot");
 ok(Array.isArray(app2.sets) && app2.sets.some((s) => s.id === "legacy1"), "(mig) the migrated set is loaded by the new app (no data loss across the rename)");
+
+// ── (gc) Global inspector HIDES the CIELAB-only controls (Curve / Chroma basis) outside "even" mode ──
+app.openSet(app.sets[0].id); app.setSegment("global"); flushRaf();
+const gcText = () => { const r = app.querySelector(".right-pane"); const w = (n) => (n._text || "") + (n.children || []).map(w).join(""); return r ? w(r) : ""; };
+app.commit((doc) => (doc.toneMode = "even")); flushRaf();
+ok(/Curve/.test(gcText()) && /Distribution/.test(gcText()), "(gc) 'even' mode shows the Curve control (+ Distribution)");
+app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
+const _gct = gcText();
+ok(/Distribution/.test(_gct) && !/Curve/.test(_gct) && !/Chroma basis/.test(_gct), "(gc) the OKHSL modes HIDE Curve + Chroma basis entirely (not shown disabled)");
 
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
