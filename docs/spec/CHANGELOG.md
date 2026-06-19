@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.21 — 2026-06-18 — gallery tiles show each palette's VIVID identity color (fix muted tiles)
+
+The gallery preview swatches read muted under the perceptual default: a ramp stop (550 or the cusp-scanning
+`keyStop`) is gamut-proportional + mid-damped, so it lost the palettes' original vibrancy. `projectView` now
+exposes a per-palette **`key`** — the cusp (peak-chroma) hue rendered at the palette's INTENDED chroma,
+computed straight from hue+chroma (not scanned from the ramp) so it stays vivid in any `toneMode`.
+`buildTiles`/`buildPresetTiles` use `p.key`; the `keyStop` helper is removed. Saturated palettes regain
+their punch (Warning `#A06504`→`#FDA200`, Secondary →`#00FBB0`, Success →`#9CF193`); genuinely muted ones
+(Info/Neutral) stay soft — each tile shows the palette's true character. `src/ui/model.mjs` + `app.js`.
+
 ## 1.20 — 2026-06-18 — hide the per-palette Skew + Lift outside "even" mode
 
 Completes 1.19's "hide N/A controls": `skew` and `lift` shape the CIELAB tone curve (`toneAt`) and have
