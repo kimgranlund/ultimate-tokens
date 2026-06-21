@@ -18,6 +18,8 @@ import {
   figmaBundle,
   configFromVariables,
   seedFromKeyColor,
+  keyCss,
+  hexToOklch,
 } from "./model.mjs";
 import { STORAGE_KEY, serialize, hydrate } from "./persist.js";
 import { FIGMA_PLUGIN } from "./figma-plugin-assets.js";
@@ -1838,10 +1840,10 @@ class HctApp extends HTMLElement {
                     "div",
                     {
                       class: "key-cell",
-                      title: (kc.name ? kc.name + " · " : "") + kc.hex + ` · ≈ stop ${kc.nearStop} · drift ${kc.drift}`,
+                      title: `${kc.role}${kc.name ? " · " + kc.name : ""} · ${kc.css} · ≈ stop ${kc.nearStop} · drift ${kc.drift}`,
                     },
-                    h("span", { class: "key-fill", style: `background:${kc.hex}` }),
-                    h("small", {}, "≈" + kc.nearStop),
+                    h("span", { class: "key-fill", style: `background:${kc.css}` }),
+                    h("small", {}, kc.role + " ≈" + kc.nearStop),
                   ),
                 ),
               )
@@ -2442,55 +2444,61 @@ class HctApp extends HTMLElement {
     );
   }
 
-  // keyColorsEditor — add / remove / name / paste-hex the palette's retained brand colors,
-  // each captioned with where it lands on the ramp (≈ stop + drift). "Seed" aligns the
-  // generated family (hue/chroma) to that color. The exact values are kept + exported as-is.
+  // keyColorsEditor — the palette's retained brand colors as two EXPRESSIONS: `dominant`
+  // (the main color) and `supportive` (optional). Each is a big swatch (≈ half width) with
+  // its ramp placement (≈ stop + drift), a "seed" (align the family to it), and remove. An
+  // empty slot captures the palette's current identity color in one click. Values are OKLCH.
   keyColorsEditor(i, vp) {
-    const raw = this.doc.palettes[i].keyColors || [];
-    const placed = vp.keyColors || [];
+    const placed = vp.keyColors || []; // [{role, css, nearStop, drift, ...}]
+    const slot = (role) => {
+      const pl = placed.find((p) => p.role === role);
+      if (pl) {
+        return h(
+          "div",
+          { class: "key-slot filled" },
+          h("span", { class: "key-fill", style: `background:${pl.css}` }),
+          h(
+            "div",
+            { class: "key-meta" },
+            h("span", { class: "key-role" }, role),
+            h("span", { class: "key-place", title: `drift ${pl.drift} — perceptual distance to that stop` }, "≈ " + pl.nearStop),
+          ),
+          h(
+            "div",
+            { class: "key-acts" },
+            btn(icon("arrows-clockwise"), { variant: "bare", cls: "key-act", title: "Seed the palette's hue + chroma from this color", ariaLabel: `Seed palette from ${role} key color`, onclick: () => this.seedFromKey(i, role) }),
+            btn(icon("trash"), { variant: "bare", cls: "key-act", title: "Remove", ariaLabel: `Remove ${role} key color`, onclick: () => this.commit((d) => { d.palettes[i].keyColors = (d.palettes[i].keyColors || []).filter((k) => k.role !== role); }) }),
+          ),
+        );
+      }
+      return h(
+        "button",
+        { type: "button", class: "key-slot empty", title: `Add a ${role} key color (captures this palette's current color; edit by seeding)`, "aria-label": `Add ${role} key color`, onclick: () => this.addKeyColor(i, role) },
+        icon("plus"), h("span", {}, "Add " + role),
+      );
+    };
     return h(
       "div",
       { class: "field key-colors" },
-      h("label", {}, "Key colors", h("b", {}, String(raw.length))),
-      ...raw.map((kc, ki) => {
-        const pl = placed[ki] || {};
-        return h(
-          "div",
-          { class: "key-edit" },
-          swatch(kc.hex, { size: 20 }),
-          h("input", {
-            type: "text", class: "key-hex", value: kc.hex,
-            "aria-label": `Key color ${ki + 1} hex`, "data-fk": `key:${i}:${ki}`,
-            onchange: (e) => {
-              const v = e.target.value.trim();
-              if (!/^#?[0-9a-f]{6}$/i.test(v)) return this.render(); // invalid → revert to stored value
-              this.commit((d) => (d.palettes[i].keyColors[ki].hex = "#" + v.replace(/^#/, "").toUpperCase()));
-            },
-          }),
-          h("input", {
-            type: "text", class: "key-name", value: kc.name || "", placeholder: "name",
-            "aria-label": `Key color ${ki + 1} name`,
-            onchange: (e) => this.commit((d) => {
-              const nm = e.target.value.trim();
-              if (nm) d.palettes[i].keyColors[ki].name = nm; else delete d.palettes[i].keyColors[ki].name;
-            }),
-          }),
-          pl.nearStop != null ? h("span", { class: "key-place", title: `drift ${pl.drift} (perceptual distance to that stop)` }, "≈" + pl.nearStop) : false,
-          btn(icon("arrows-clockwise"), { variant: "bare", cls: "key-act", title: "Seed the palette's hue + chroma from this color", ariaLabel: `Seed palette from key color ${ki + 1}`, onclick: () => this.seedFromKey(i, ki) }),
-          btn(icon("trash"), { variant: "bare", cls: "key-act", title: "Remove key color", ariaLabel: `Remove key color ${ki + 1}`, onclick: () => this.commit((d) => d.palettes[i].keyColors.splice(ki, 1)) }),
-        );
-      }),
-      raw.length < 6
-        ? btn([icon("plus"), "Add key color"], { cls: "key-add", onclick: () => this.commit((d) => { (d.palettes[i].keyColors = d.palettes[i].keyColors || []).push({ hex: vp.key }); }) })
-        : false,
+      h("label", {}, "Key colors", h("small", {}, "dominant · supportive")),
+      h("div", { class: "key-slots" }, slot("dominant"), slot("supportive")),
     );
+  }
+
+  // addKeyColor — capture the palette's current identity color (its vivid `key`) as a key
+  // color in OKLCH, tagged with the role. One undo step.
+  addKeyColor(i, role) {
+    const vp = (this._view || projectView(this.doc)).palettes[i];
+    if (!vp) return;
+    const oklch = hexToOklch(vp.key);
+    this.commit((d) => { (d.palettes[i].keyColors = (d.palettes[i].keyColors || []).filter((k) => k.role !== role)).push({ role, oklch }); });
   }
 
   // seedFromKey — set the palette's hue + chroma from a key color (CAM16 recovery), so the
   // generated ramp's family matches the brand color. One undo step.
-  seedFromKey(i, ki) {
-    const kc = (this.doc.palettes[i].keyColors || [])[ki];
-    const s = kc && seedFromKeyColor(kc.hex);
+  seedFromKey(i, role) {
+    const kc = (this.doc.palettes[i].keyColors || []).find((k) => k.role === role);
+    const s = kc && seedFromKeyColor(kc.oklch);
     if (!s) return;
     this.commit((d) => { d.palettes[i].hue = s.hue; d.palettes[i].chroma = s.chroma; });
   }

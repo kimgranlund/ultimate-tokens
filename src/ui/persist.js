@@ -90,18 +90,29 @@ function clampEnum(v, values, dflt) {
 // Per-palette clamp. Builds a fresh object so the result is a clean State, but copies
 // each field through its own rule so an out-of-domain field is clamped ALONE and every
 // in-domain sibling is preserved byte-for-byte (defeats the reset-whole-palette exploit).
-// keyColors — a small set of RETAINED brand colors per palette (exact hex, may sit
-// off the generated ramp). Round-tripped here so they survive serialize/hydrate.
-// Validated: a well-formed 6-digit hex + an optional name; capped at 6.
+// keyColors — RETAINED brand colors per palette, as EXPRESSIONS: `dominant` (the main
+// brand color) and optional `supportive`. Stored as OKLCH [L 0..1, C ≥0, H 0..360] —
+// less lossy than an 8-bit hex source. One entry per role, dominant first; round-tripped
+// so they survive serialize/hydrate.
 function clampKeyColors(arr) {
   if (!Array.isArray(arr)) return [];
-  return arr
-    .filter((k) => k && typeof k === "object" && /^#?[0-9a-f]{6}$/i.test(String(k.hex || "")))
-    .slice(0, 6)
-    .map((k) => ({
-      hex: ("#" + String(k.hex).replace(/^#/, "")).toUpperCase(),
+  const seen = new Set();
+  const out = [];
+  for (const k of arr) {
+    if (!k || typeof k !== "object") continue;
+    const role = k.role === "dominant" || k.role === "supportive" ? k.role : null;
+    const o = k.oklch;
+    if (!role || seen.has(role)) continue; // exactly one per role
+    if (!Array.isArray(o) || o.length !== 3 || o.some((x) => typeof x !== "number" || !Number.isFinite(x))) continue;
+    seen.add(role);
+    out.push({
+      role,
+      oklch: [Math.min(1, Math.max(0, o[0])), Math.max(0, o[1]), ((o[2] % 360) + 360) % 360],
       ...(typeof k.name === "string" && k.name.trim() ? { name: k.name.trim() } : {}),
-    }));
+    });
+  }
+  out.sort((a, b) => (a.role === "dominant" ? 0 : 1) - (b.role === "dominant" ? 0 : 1)); // dominant first
+  return out;
 }
 
 function clampPalette(p) {
