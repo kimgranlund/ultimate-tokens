@@ -197,7 +197,10 @@ function derivePalette(palette, controls, overrides) {
     };
   });
 
-  return { name: palette.name, n, hue: palette.hue, stops, byStop, scrims, roles };
+  // keyColors — retained brand colors, passed through verbatim (exact hex). They may sit
+  // off the generated ramp; the UI places them perceptually, exports keep them exact.
+  const keyColors = Array.isArray(palette.keyColors) ? palette.keyColors : [];
+  return { name: palette.name, n, hue: palette.hue, stops, byStop, scrims, roles, keyColors };
 }
 
 // derivedAll — every enabled palette derived, in State order.
@@ -272,6 +275,13 @@ function cssFrom(palettes, oklch) {
       const dv = `var(--c_${p.n}-${refKey(r.darkRef)})`;
       lines.push(`  --c-${p.n}${r.suffix}: light-dark(${lv}, ${dv});`);
     }
+    // KEY COLORS — retained brand values, exact (NOT mode-flipped; they are source colors).
+    if (p.keyColors.length) {
+      lines.push(`  /* ${p.name} — retained key colors (exact) */`);
+      p.keyColors.forEach((kc, idx) => {
+        lines.push(`  --c-${p.n}-key-${kc.name ? slug(kc.name) : idx + 1}: ${kc.hex};`);
+      });
+    }
   }
   lines.push("}");
   return lines.join("\n") + "\n";
@@ -306,7 +316,10 @@ export function exportJSON(state) {
       dark: r.dark.hex,
     }));
 
-    out[p.name] = { stops, scrims, semantic };
+    const palette = { stops, scrims, semantic };
+    // keyColors: [{ hex, name? }] — retained exact brand colors (present only when set).
+    if (p.keyColors.length) palette.keyColors = p.keyColors.map((kc) => ({ hex: kc.hex, ...(kc.name ? { name: kc.name } : {}) }));
+    out[p.name] = palette;
   }
   return out;
 }

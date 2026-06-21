@@ -682,6 +682,21 @@ input[type="range"]::-moz-range-thumb {
 .insp-actions { display: flex; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
 .insp-actions .danger:hover { color: var(--danger); }
 
+/* ── key colors — retained brand colors (canvas row + inspector editor) ──────────── */
+/* canvas: a row of brand swatches above the ramp, each captioned with its nearest stop. */
+.key-strip { display: flex; gap: 6px; margin-bottom: 6px; }
+.key-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.key-cell .key-fill { width: 54px; height: 26px; border-radius: 6px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+.key-cell small { font-size: 9px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+/* inspector: one editable row per key color (swatch · hex · name · ≈stop · seed · remove). */
+.key-colors .key-edit { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.key-colors .key-hex { width: 82px; flex: none; font-family: var(--mono); font-size: 11px; }
+.key-colors .key-name { flex: 1; min-width: 0; font-size: 11px; }
+.key-colors .key-place { flex: none; font-size: 10.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.key-colors .key-act { flex: none; padding: 2px 4px; color: var(--ink-dim); }
+.key-colors .key-act:hover { color: var(--ink); background: var(--line-2); }
+.key-colors .key-add { margin-top: 8px; }
+
 .roles-table { font-size: 11px; }
 .roles-table .rrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
 .roles-table .rrow.rhead { color: var(--ink-faint); font-weight: 600; border-bottom: 1px solid var(--line); padding-bottom: 5px; margin-bottom: 3px; }
@@ -1754,10 +1769,24 @@ function clampEnum(v, values, dflt) {
 // Per-palette clamp. Builds a fresh object so the result is a clean State, but copies
 // each field through its own rule so an out-of-domain field is clamped ALONE and every
 // in-domain sibling is preserved byte-for-byte (defeats the reset-whole-palette exploit).
+// keyColors — a small set of RETAINED brand colors per palette (exact hex, may sit
+// off the generated ramp). Round-tripped here so they survive serialize/hydrate.
+// Validated: a well-formed 6-digit hex + an optional name; capped at 6.
+function clampKeyColors(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter((k) => k && typeof k === "object" && /^#?[0-9a-f]{6}$/i.test(String(k.hex || "")))
+    .slice(0, 6)
+    .map((k) => ({
+      hex: ("#" + String(k.hex).replace(/^#/, "")).toUpperCase(),
+      ...(typeof k.name === "string" && k.name.trim() ? { name: k.name.trim() } : {}),
+    }));
+}
+
 function clampPalette(p) {
   const src = (p && typeof p === "object") ? p : {};
   const D = DOMAINS.palette;
-  return {
+  const out = {
     name: typeof src.name === "string" ? src.name : "",         // free string, kept as-is
     hue: clampNumber(src.hue, D.hue.min, D.hue.max),            // 0..360  (410 -> 360)
     chroma: clampNumber(src.chroma, D.chroma.min, D.chroma.max), // 0..100
@@ -1767,6 +1796,11 @@ function clampPalette(p) {
     hueSameDir: src.hueSameDir === true,                        // both-ends-same-direction flag (boolean)
     on: src.on === true,                                        // coerce to boolean
   };
+  // keyColors is OPTIONAL — only attach when present so hydrate stays identity-preserving
+  // (a palette without key colors must round-trip unchanged, not gain an empty array).
+  const kc = clampKeyColors(src.keyColors);
+  if (kc.length) out.keyColors = kc;
+  return out;
 }
 
 // Per-doc semantic-mapping overrides: { [roleKey]: { light?, dark? } } — a role re-pointed to a
@@ -2041,7 +2075,10 @@ function derivePalette(palette, controls, overrides) {
     };
   });
 
-  return { name: palette.name, n, hue: palette.hue, stops, byStop, scrims, roles };
+  // keyColors — retained brand colors, passed through verbatim (exact hex). They may sit
+  // off the generated ramp; the UI places them perceptually, exports keep them exact.
+  const keyColors = Array.isArray(palette.keyColors) ? palette.keyColors : [];
+  return { name: palette.name, n, hue: palette.hue, stops, byStop, scrims, roles, keyColors };
 }
 
 // derivedAll — every enabled palette derived, in State order.
@@ -2116,6 +2153,13 @@ function cssFrom(palettes, oklch) {
       const dv = `var(--c_${p.n}-${refKey(r.darkRef)})`;
       lines.push(`  --c-${p.n}${r.suffix}: light-dark(${lv}, ${dv});`);
     }
+    // KEY COLORS — retained brand values, exact (NOT mode-flipped; they are source colors).
+    if (p.keyColors.length) {
+      lines.push(`  /* ${p.name} — retained key colors (exact) */`);
+      p.keyColors.forEach((kc, idx) => {
+        lines.push(`  --c-${p.n}-key-${kc.name ? slug(kc.name) : idx + 1}: ${kc.hex};`);
+      });
+    }
   }
   lines.push("}");
   return lines.join("\n") + "\n";
@@ -2150,7 +2194,10 @@ function exportJSON(state) {
       dark: r.dark.hex,
     }));
 
-    out[p.name] = { stops, scrims, semantic };
+    const palette = { stops, scrims, semantic };
+    // keyColors: [{ hex, name? }] — retained exact brand colors (present only when set).
+    if (p.keyColors.length) palette.keyColors = p.keyColors.map((kc) => ({ hex: kc.hex, ...(kc.name ? { name: kc.name } : {}) }));
+    out[p.name] = palette;
   }
   return out;
 }
@@ -2814,6 +2861,36 @@ function rampByStop(ramp) {
   return m;
 }
 
+// placeKeyColors — locate each retained key color on the generated ramp through the
+// PERCEPTUAL LENS: its L* picks the nearest stop, and `drift` is the CAM16 distance to
+// that stop (≈0 = lands on it; larger = genuinely off-ramp, kept as an exact reference).
+// Pure: uses lstarFromRgb (tone) + cam16FromRgb (hue/chroma); no new color lib.
+function placeKeyColors(keyColors, fullStops) {
+  if (!Array.isArray(keyColors) || !keyColors.length) return [];
+  const RAD = Math.PI / 180;
+  const ab = (rgb) => { const c = cam16FromRgb(rgb); return [c.chroma * Math.cos(c.hue * RAD), c.chroma * Math.sin(c.hue * RAD)]; };
+  return keyColors.map((kc) => {
+    const rgb = hexToRgb(kc.hex);
+    const tone = lstarFromRgb(rgb);
+    let near = fullStops[0], best = Infinity;
+    for (const s of fullStops) { const d = Math.abs(s.tone - tone); if (d < best) { best = d; near = s; } }
+    const [ka, kb] = ab(rgb), [sa, sb] = ab(near.rgb);
+    const dL = tone - near.tone;
+    const drift = Math.sqrt(dL * dL + (ka - sa) ** 2 + (kb - sb) ** 2);
+    return { hex: kc.hex, name: kc.name || null, nearStop: near.stop, drift: Math.round(drift * 10) / 10 };
+  });
+}
+
+// seedFromKeyColor — recover a parametric palette seed from a brand color: its CAM16
+// hue + chroma (the same inversion configFromVariables uses on a 500 base) plus its tone,
+// so the inspector's "Seed from key color" can align the generated family to the brand.
+function seedFromKeyColor(hex) {
+  if (!/^#?[0-9a-f]{6}$/i.test(String(hex || ""))) return null;
+  const rgb = hexToRgb(hex);
+  const { hue, chroma } = cam16FromRgb(rgb);
+  return { hue: Math.round(hue), chroma: Math.round(Math.min(100, chroma)), tone: Math.round(lstarFromRgb(rgb)) };
+}
+
 // resolveRoleHex — a role ref ("550" solid | "500-200" scrim) -> a display hex
 // for the given mode side, resolved against this palette's own ramp.
 function resolveRoleHex(ref, byStop) {
@@ -2890,8 +2967,11 @@ function projectView(doc) {
     const keyHex = "#" + hctToRgb(baseHue, ((p.chroma ?? 0) / 100) * pk.c, pk.tone).rgb
       .map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
 
+    // keyColors = retained brand colors placed on the ramp through the perceptual lens.
+    const keyColors = placeKeyColors(p.keyColors, fullStops);
+
     // ramp = 19 core display stops; fullRamp = all 25 EXPORT_STOPS (the extended view).
-    palettes.push({ name: p.name, on: p.on !== false, key: keyHex, ramp, fullRamp: fullStops, roles });
+    palettes.push({ name: p.name, on: p.on !== false, key: keyHex, ramp, fullRamp: fullStops, roles, keyColors });
 
     plot.push({
       palette: p.name,
@@ -2980,7 +3060,7 @@ function tokenCount(doc) {
 
 // Re-exports the app needs from the core (so app.js imports one module).
 
-return { configFromVariables, slug, defaultDocument, figmaBundle, contrastRatio, projectView, appThemeCSS, tokenCount, hctToRgb, lstarFromRgb, hexToRgb, STOPS, EXPORT_STOPS, DEFAULT_CONTROLS };
+return { configFromVariables, slug, defaultDocument, figmaBundle, contrastRatio, seedFromKeyColor, projectView, appThemeCSS, tokenCount, hctToRgb, lstarFromRgb, hexToRgb, STOPS, EXPORT_STOPS, DEFAULT_CONTROLS };
 })();
 (function(){
 // app.js — the DOM app for the HCT Palette Generator.
@@ -2991,7 +3071,7 @@ return { configFromVariables, slug, defaultDocument, figmaBundle, contrastRatio,
 // lists them. The six validated capability modules do all the color/token work
 // (imported through model.mjs); this file only owns DOM + interaction.
 
-const { defaultDocument, projectView, tokenCount, slug, contrastRatio, appThemeCSS, hctToRgb, STOPS, figmaBundle, configFromVariables } = __M.model;
+const { defaultDocument, projectView, tokenCount, slug, contrastRatio, appThemeCSS, hctToRgb, STOPS, figmaBundle, configFromVariables, seedFromKeyColor } = __M.model;
 const { STORAGE_KEY, serialize, hydrate } = __M.persist;
 const { FIGMA_PLUGIN } = __M.figmaPlugin;
 const { TRAVEL_PRESETS } = __M.travelPresets;
@@ -4800,6 +4880,25 @@ class HctApp extends HTMLElement {
             ),
             h("span", { class: "ramp-name" }, vp.name, h("small", {}, `${stops.length} stops`)),
           ),
+          // retained key colors (when set): the brand colors, shown above the generated ramp,
+          // each captioned with its nearest stop (the perceptual placement). Off-ramp by design.
+          vp.keyColors && vp.keyColors.length
+            ? h(
+                "div",
+                { class: "key-strip" },
+                ...vp.keyColors.map((kc) =>
+                  h(
+                    "div",
+                    {
+                      class: "key-cell",
+                      title: (kc.name ? kc.name + " · " : "") + kc.hex + ` · ≈ stop ${kc.nearStop} · drift ${kc.drift}`,
+                    },
+                    h("span", { class: "key-fill", style: `background:${kc.hex}` }),
+                    h("small", {}, "≈" + kc.nearStop),
+                  ),
+                ),
+              )
+            : false,
           strip,
         );
       });
@@ -5386,6 +5485,7 @@ class HctApp extends HTMLElement {
         }),
         "ends bend same way",
       ),
+      this.keyColorsEditor(i, vp),
       h(
         "div",
         { class: "insp-actions" },
@@ -5393,6 +5493,59 @@ class HctApp extends HTMLElement {
         btn([icon("trash"), "Delete"], { variant: "danger", onclick: () => this.deletePalette(i) }),
       ),
     );
+  }
+
+  // keyColorsEditor — add / remove / name / paste-hex the palette's retained brand colors,
+  // each captioned with where it lands on the ramp (≈ stop + drift). "Seed" aligns the
+  // generated family (hue/chroma) to that color. The exact values are kept + exported as-is.
+  keyColorsEditor(i, vp) {
+    const raw = this.doc.palettes[i].keyColors || [];
+    const placed = vp.keyColors || [];
+    return h(
+      "div",
+      { class: "field key-colors" },
+      h("label", {}, "Key colors", h("b", {}, String(raw.length))),
+      ...raw.map((kc, ki) => {
+        const pl = placed[ki] || {};
+        return h(
+          "div",
+          { class: "key-edit" },
+          swatch(kc.hex, { size: 20 }),
+          h("input", {
+            type: "text", class: "key-hex", value: kc.hex,
+            "aria-label": `Key color ${ki + 1} hex`, "data-fk": `key:${i}:${ki}`,
+            onchange: (e) => {
+              const v = e.target.value.trim();
+              if (!/^#?[0-9a-f]{6}$/i.test(v)) return this.render(); // invalid → revert to stored value
+              this.commit((d) => (d.palettes[i].keyColors[ki].hex = "#" + v.replace(/^#/, "").toUpperCase()));
+            },
+          }),
+          h("input", {
+            type: "text", class: "key-name", value: kc.name || "", placeholder: "name",
+            "aria-label": `Key color ${ki + 1} name`,
+            onchange: (e) => this.commit((d) => {
+              const nm = e.target.value.trim();
+              if (nm) d.palettes[i].keyColors[ki].name = nm; else delete d.palettes[i].keyColors[ki].name;
+            }),
+          }),
+          pl.nearStop != null ? h("span", { class: "key-place", title: `drift ${pl.drift} (perceptual distance to that stop)` }, "≈" + pl.nearStop) : false,
+          btn(icon("arrows-clockwise"), { variant: "bare", cls: "key-act", title: "Seed the palette's hue + chroma from this color", ariaLabel: `Seed palette from key color ${ki + 1}`, onclick: () => this.seedFromKey(i, ki) }),
+          btn(icon("trash"), { variant: "bare", cls: "key-act", title: "Remove key color", ariaLabel: `Remove key color ${ki + 1}`, onclick: () => this.commit((d) => d.palettes[i].keyColors.splice(ki, 1)) }),
+        );
+      }),
+      raw.length < 6
+        ? btn([icon("plus"), "Add key color"], { cls: "key-add", onclick: () => this.commit((d) => { (d.palettes[i].keyColors = d.palettes[i].keyColors || []).push({ hex: vp.key }); }) })
+        : false,
+    );
+  }
+
+  // seedFromKey — set the palette's hue + chroma from a key color (CAM16 recovery), so the
+  // generated ramp's family matches the brand color. One undo step.
+  seedFromKey(i, ki) {
+    const kc = (this.doc.palettes[i].keyColors || [])[ki];
+    const s = kc && seedFromKeyColor(kc.hex);
+    if (!s) return;
+    this.commit((d) => { d.palettes[i].hue = s.hue; d.palettes[i].chroma = s.chroma; });
   }
 
   duplicatePalette(i) {

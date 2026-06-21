@@ -90,10 +90,24 @@ function clampEnum(v, values, dflt) {
 // Per-palette clamp. Builds a fresh object so the result is a clean State, but copies
 // each field through its own rule so an out-of-domain field is clamped ALONE and every
 // in-domain sibling is preserved byte-for-byte (defeats the reset-whole-palette exploit).
+// keyColors — a small set of RETAINED brand colors per palette (exact hex, may sit
+// off the generated ramp). Round-tripped here so they survive serialize/hydrate.
+// Validated: a well-formed 6-digit hex + an optional name; capped at 6.
+function clampKeyColors(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter((k) => k && typeof k === "object" && /^#?[0-9a-f]{6}$/i.test(String(k.hex || "")))
+    .slice(0, 6)
+    .map((k) => ({
+      hex: ("#" + String(k.hex).replace(/^#/, "")).toUpperCase(),
+      ...(typeof k.name === "string" && k.name.trim() ? { name: k.name.trim() } : {}),
+    }));
+}
+
 function clampPalette(p) {
   const src = (p && typeof p === "object") ? p : {};
   const D = DOMAINS.palette;
-  return {
+  const out = {
     name: typeof src.name === "string" ? src.name : "",         // free string, kept as-is
     hue: clampNumber(src.hue, D.hue.min, D.hue.max),            // 0..360  (410 -> 360)
     chroma: clampNumber(src.chroma, D.chroma.min, D.chroma.max), // 0..100
@@ -103,6 +117,11 @@ function clampPalette(p) {
     hueSameDir: src.hueSameDir === true,                        // both-ends-same-direction flag (boolean)
     on: src.on === true,                                        // coerce to boolean
   };
+  // keyColors is OPTIONAL — only attach when present so hydrate stays identity-preserving
+  // (a palette without key colors must round-trip unchanged, not gain an empty array).
+  const kc = clampKeyColors(src.keyColors);
+  if (kc.length) out.keyColors = kc;
+  return out;
 }
 
 // Per-doc semantic-mapping overrides: { [roleKey]: { light?, dark? } } — a role re-pointed to a
