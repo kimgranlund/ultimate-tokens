@@ -17,6 +17,7 @@ import {
   STOPS,
   figmaBundle,
   configFromVariables,
+  seedFromKeyColor,
 } from "./model.mjs";
 import { STORAGE_KEY, serialize, hydrate } from "./persist.js";
 import { FIGMA_PLUGIN } from "./figma-plugin-assets.js";
@@ -1826,6 +1827,25 @@ class HctApp extends HTMLElement {
             ),
             h("span", { class: "ramp-name" }, vp.name, h("small", {}, `${stops.length} stops`)),
           ),
+          // retained key colors (when set): the brand colors, shown above the generated ramp,
+          // each captioned with its nearest stop (the perceptual placement). Off-ramp by design.
+          vp.keyColors && vp.keyColors.length
+            ? h(
+                "div",
+                { class: "key-strip" },
+                ...vp.keyColors.map((kc) =>
+                  h(
+                    "div",
+                    {
+                      class: "key-cell",
+                      title: (kc.name ? kc.name + " · " : "") + kc.hex + ` · ≈ stop ${kc.nearStop} · drift ${kc.drift}`,
+                    },
+                    h("span", { class: "key-fill", style: `background:${kc.hex}` }),
+                    h("small", {}, "≈" + kc.nearStop),
+                  ),
+                ),
+              )
+            : false,
           strip,
         );
       });
@@ -2412,6 +2432,7 @@ class HctApp extends HTMLElement {
         }),
         "ends bend same way",
       ),
+      this.keyColorsEditor(i, vp),
       h(
         "div",
         { class: "insp-actions" },
@@ -2419,6 +2440,59 @@ class HctApp extends HTMLElement {
         btn([icon("trash"), "Delete"], { variant: "danger", onclick: () => this.deletePalette(i) }),
       ),
     );
+  }
+
+  // keyColorsEditor — add / remove / name / paste-hex the palette's retained brand colors,
+  // each captioned with where it lands on the ramp (≈ stop + drift). "Seed" aligns the
+  // generated family (hue/chroma) to that color. The exact values are kept + exported as-is.
+  keyColorsEditor(i, vp) {
+    const raw = this.doc.palettes[i].keyColors || [];
+    const placed = vp.keyColors || [];
+    return h(
+      "div",
+      { class: "field key-colors" },
+      h("label", {}, "Key colors", h("b", {}, String(raw.length))),
+      ...raw.map((kc, ki) => {
+        const pl = placed[ki] || {};
+        return h(
+          "div",
+          { class: "key-edit" },
+          swatch(kc.hex, { size: 20 }),
+          h("input", {
+            type: "text", class: "key-hex", value: kc.hex,
+            "aria-label": `Key color ${ki + 1} hex`, "data-fk": `key:${i}:${ki}`,
+            onchange: (e) => {
+              const v = e.target.value.trim();
+              if (!/^#?[0-9a-f]{6}$/i.test(v)) return this.render(); // invalid → revert to stored value
+              this.commit((d) => (d.palettes[i].keyColors[ki].hex = "#" + v.replace(/^#/, "").toUpperCase()));
+            },
+          }),
+          h("input", {
+            type: "text", class: "key-name", value: kc.name || "", placeholder: "name",
+            "aria-label": `Key color ${ki + 1} name`,
+            onchange: (e) => this.commit((d) => {
+              const nm = e.target.value.trim();
+              if (nm) d.palettes[i].keyColors[ki].name = nm; else delete d.palettes[i].keyColors[ki].name;
+            }),
+          }),
+          pl.nearStop != null ? h("span", { class: "key-place", title: `drift ${pl.drift} (perceptual distance to that stop)` }, "≈" + pl.nearStop) : false,
+          btn(icon("arrows-clockwise"), { variant: "bare", cls: "key-act", title: "Seed the palette's hue + chroma from this color", ariaLabel: `Seed palette from key color ${ki + 1}`, onclick: () => this.seedFromKey(i, ki) }),
+          btn(icon("trash"), { variant: "bare", cls: "key-act", title: "Remove key color", ariaLabel: `Remove key color ${ki + 1}`, onclick: () => this.commit((d) => d.palettes[i].keyColors.splice(ki, 1)) }),
+        );
+      }),
+      raw.length < 6
+        ? btn([icon("plus"), "Add key color"], { cls: "key-add", onclick: () => this.commit((d) => { (d.palettes[i].keyColors = d.palettes[i].keyColors || []).push({ hex: vp.key }); }) })
+        : false,
+    );
+  }
+
+  // seedFromKey — set the palette's hue + chroma from a key color (CAM16 recovery), so the
+  // generated ramp's family matches the brand color. One undo step.
+  seedFromKey(i, ki) {
+    const kc = (this.doc.palettes[i].keyColors || [])[ki];
+    const s = kc && seedFromKeyColor(kc.hex);
+    if (!s) return;
+    this.commit((d) => { d.palettes[i].hue = s.hue; d.palettes[i].chroma = s.chroma; });
   }
 
   duplicatePalette(i) {

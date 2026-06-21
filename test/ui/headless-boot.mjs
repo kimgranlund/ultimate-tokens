@@ -985,6 +985,27 @@ ok(realTile && realTile.tagName === "DIV" && realTile.getAttribute("role") === "
 const del = app.querySelectorAll(".del").find(Boolean);
 ok(del && del.tagName === "BUTTON", "(px8) the tile delete affordance is a real, focusable <button>");
 
+// ── (kc) key colors: a retained brand color renders the canvas row, gets placed, and seeds ──
+const { seedFromKeyColor: seedKC } = await import("../../src/ui/model.mjs");
+app.openSet(app.sets[0].id); app.setCanvasView("palettes"); flushRaf();
+app.commit((d) => { d.palettes[0].on = true; d.palettes[0].keyColors = [{ hex: "#1E3A2F", name: "brand dark" }]; }); flushRaf();
+ok(app.querySelectorAll(".key-cell").length >= 1, `(kc1) the canvas renders a key-color cell for the enabled palette (got ${app.querySelectorAll(".key-cell").length})`);
+const vpKC = (app._view || {}).palettes ? app._view.palettes[0] : null;
+ok(vpKC && vpKC.keyColors && vpKC.keyColors.length === 1 && typeof vpKC.keyColors[0].nearStop === "number" && typeof vpKC.keyColors[0].drift === "number",
+   "(kc2) the key color is placed on the ramp (nearStop + drift)");
+const driftBefore = vpKC.keyColors[0].drift;
+// seed the palette from the key color → hue/chroma match the recovered seed
+const seed = seedKC("#1E3A2F");
+app.seedFromKey(0, 0); flushRaf();
+ok(app.doc.palettes[0].hue === seed.hue && app.doc.palettes[0].chroma === seed.chroma,
+   `(kc3) 'seed from key' sets the palette hue/chroma from the color (got ${app.doc.palettes[0].hue}/${app.doc.palettes[0].chroma}, want ${seed.hue}/${seed.chroma})`);
+ok(app._view.palettes[0].keyColors[0].drift <= driftBefore,
+   `(kc4) seeding pulls the ramp toward the key color (drift ${app._view.palettes[0].keyColors[0].drift} <= ${driftBefore})`);
+// key colors round-trip through serialize/hydrate
+const { serialize: serKC, hydrate: hydKC } = await import("../../src/ui/persist.js");
+const rtKC = hydKC(serKC(app.doc)).palettes[0].keyColors;
+ok(rtKC && rtKC.length === 1 && rtKC[0].hex === "#1E3A2F" && rtKC[0].name === "brand dark", "(kc5) key colors round-trip through persist");
+
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
   console.error("HEADLESS BOOT FAIL:");

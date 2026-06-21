@@ -118,8 +118,19 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   FAIL("shadcn", `:root (${rootToks.size}) and .dark (${darkToks.size}) token sets differ`);
 }
 
+// ── hpg-export-keycolors (retained brand colors -> exact named tokens + JSON block) ──────
+const withKey = C(ALL.map((p, i) => (i === 0 ? { ...p, keyColors: [{ hex: "#1E3A2F", name: "brand dark" }, { hex: "#8FAA9C" }] } : p)));
+const kn = ALL[0].name.toLowerCase();
+const kcss = X.exportCSS(withKey);
+if (!kcss.includes(`--c-${kn}-key-brand-dark: #1E3A2F`)) FAIL("keycolors", "named key token missing");
+if (!kcss.includes(`--c-${kn}-key-2: #8FAA9C`)) FAIL("keycolors", "unnamed key token (index) missing");
+const kp = X.exportJSON(withKey)[ALL[0].name];
+if (!kp.keyColors || kp.keyColors.length !== 2 || kp.keyColors[0].hex !== "#1E3A2F" || kp.keyColors[0].name !== "brand dark") FAIL("keycolors", "JSON keyColors block missing/wrong");
+// a palette with no key colors emits no key tokens (opt-in only)
+if (X.exportCSS(C(ALL)).includes("-key-")) FAIL("keycolors", "key tokens present when none set");
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "tailwind", "shadcn"]) {
+for (const g of ["dtcg-shape", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "tailwind", "shadcn", "keycolors"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

@@ -195,6 +195,36 @@ function rampByStop(ramp) {
   return m;
 }
 
+// placeKeyColors — locate each retained key color on the generated ramp through the
+// PERCEPTUAL LENS: its L* picks the nearest stop, and `drift` is the CAM16 distance to
+// that stop (≈0 = lands on it; larger = genuinely off-ramp, kept as an exact reference).
+// Pure: uses lstarFromRgb (tone) + cam16FromRgb (hue/chroma); no new color lib.
+function placeKeyColors(keyColors, fullStops) {
+  if (!Array.isArray(keyColors) || !keyColors.length) return [];
+  const RAD = Math.PI / 180;
+  const ab = (rgb) => { const c = cam16FromRgb(rgb); return [c.chroma * Math.cos(c.hue * RAD), c.chroma * Math.sin(c.hue * RAD)]; };
+  return keyColors.map((kc) => {
+    const rgb = hexToRgb(kc.hex);
+    const tone = lstarFromRgb(rgb);
+    let near = fullStops[0], best = Infinity;
+    for (const s of fullStops) { const d = Math.abs(s.tone - tone); if (d < best) { best = d; near = s; } }
+    const [ka, kb] = ab(rgb), [sa, sb] = ab(near.rgb);
+    const dL = tone - near.tone;
+    const drift = Math.sqrt(dL * dL + (ka - sa) ** 2 + (kb - sb) ** 2);
+    return { hex: kc.hex, name: kc.name || null, nearStop: near.stop, drift: Math.round(drift * 10) / 10 };
+  });
+}
+
+// seedFromKeyColor — recover a parametric palette seed from a brand color: its CAM16
+// hue + chroma (the same inversion configFromVariables uses on a 500 base) plus its tone,
+// so the inspector's "Seed from key color" can align the generated family to the brand.
+export function seedFromKeyColor(hex) {
+  if (!/^#?[0-9a-f]{6}$/i.test(String(hex || ""))) return null;
+  const rgb = hexToRgb(hex);
+  const { hue, chroma } = cam16FromRgb(rgb);
+  return { hue: Math.round(hue), chroma: Math.round(Math.min(100, chroma)), tone: Math.round(lstarFromRgb(rgb)) };
+}
+
 // resolveRoleHex — a role ref ("550" solid | "500-200" scrim) -> a display hex
 // for the given mode side, resolved against this palette's own ramp.
 function resolveRoleHex(ref, byStop) {
@@ -271,8 +301,11 @@ export function projectView(doc) {
     const keyHex = "#" + hctToRgb(baseHue, ((p.chroma ?? 0) / 100) * pk.c, pk.tone).rgb
       .map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
 
+    // keyColors = retained brand colors placed on the ramp through the perceptual lens.
+    const keyColors = placeKeyColors(p.keyColors, fullStops);
+
     // ramp = 19 core display stops; fullRamp = all 25 EXPORT_STOPS (the extended view).
-    palettes.push({ name: p.name, on: p.on !== false, key: keyHex, ramp, fullRamp: fullStops, roles });
+    palettes.push({ name: p.name, on: p.on !== false, key: keyHex, ramp, fullRamp: fullStops, roles, keyColors });
 
     plot.push({
       palette: p.name,

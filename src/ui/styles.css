@@ -678,6 +678,21 @@ input[type="range"]::-moz-range-thumb {
 .insp-actions { display: flex; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
 .insp-actions .danger:hover { color: var(--danger); }
 
+/* ── key colors — retained brand colors (canvas row + inspector editor) ──────────── */
+/* canvas: a row of brand swatches above the ramp, each captioned with its nearest stop. */
+.key-strip { display: flex; gap: 6px; margin-bottom: 6px; }
+.key-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.key-cell .key-fill { width: 54px; height: 26px; border-radius: 6px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+.key-cell small { font-size: 9px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+/* inspector: one editable row per key color (swatch · hex · name · ≈stop · seed · remove). */
+.key-colors .key-edit { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.key-colors .key-hex { width: 82px; flex: none; font-family: var(--mono); font-size: 11px; }
+.key-colors .key-name { flex: 1; min-width: 0; font-size: 11px; }
+.key-colors .key-place { flex: none; font-size: 10.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.key-colors .key-act { flex: none; padding: 2px 4px; color: var(--ink-dim); }
+.key-colors .key-act:hover { color: var(--ink); background: var(--line-2); }
+.key-colors .key-add { margin-top: 8px; }
+
 .roles-table { font-size: 11px; }
 .roles-table .rrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
 .roles-table .rrow.rhead { color: var(--ink-faint); font-weight: 600; border-bottom: 1px solid var(--line); padding-bottom: 5px; margin-bottom: 3px; }
