@@ -23,7 +23,7 @@ import {
 } from "./model.mjs";
 import { STORAGE_KEY, serialize, hydrate } from "./persist.js";
 import { FIGMA_PLUGIN } from "./figma-plugin-assets.js";
-import { TRAVEL_PRESETS, TRAVEL_VOLUMES } from "./travel-presets.js";
+import { SURVEY_INDEX, loadSurvey } from "./surveys/index.js";
 import { zipStore } from "./zip.mjs";
 import { icon, brandMark } from "./icons.js";
 
@@ -246,6 +246,8 @@ class HctApp extends HTMLElement {
     this.sets = loadSets();
     // session (UI-only, not persisted with the doc)
     this.view = "gallery"; // gallery | editor
+    this.survey = null; // open Survey category slug within the gallery hub (null = hub). UI-session only.
+    this._surveyData = {}; // slug → { VOLUMES, PRESETS } cache for lazily-loaded category modules
     this.inFigma = false; // set true by the Figma bridge (gen-ui.mjs) on figma-init → reveals "Add Variables → Figma"
     this.liveVars = null; // { "{n}/{key}": hex } read from the file (read-only drift reference); null = not read
     this.liveVarsFound = false; // whether the file has a raw-colors collection (gates the gallery import row)
@@ -743,17 +745,21 @@ class HctApp extends HTMLElement {
     return [newTile, ...tiles];
   }
 
-  // buildPresetTiles — the read-only "Presets" shelf. Presets ship in code (TRAVEL_PRESETS,
-  // generated from docs/spec/colors/), never in localStorage; clicking one OPENS AN EDITABLE COPY into
-  // the user's sets (openConfigAsSet hydrates + appends + opens). Filtered by the same search box.
-  buildPresetTiles() {
+  // buildPresetTiles — the read-only palette shelf for ONE survey category (its lazily-loaded
+  // { VOLUMES, PRESETS }). Presets ship in code (generated from docs/spec/colors/surveys/), never in
+  // localStorage; clicking one OPENS AN EDITABLE COPY into the user's sets (openConfigAsSet hydrates +
+  // appends + opens). Grouped by volume; filtered by the search box.
+  buildPresetTiles(data) {
+    if (!data) return [];
+    const { VOLUMES, PRESETS } = data;
     const q = this.search.trim().toLowerCase();
-    const visible = TRAVEL_PRESETS.filter((p) => !q || p.name.toLowerCase().includes(q));
-    // group by VOLUME (the curated sets ship as 12 volumes of 4 territories), in order.
+    const visible = PRESETS.filter((p) => !q || p.name.toLowerCase().includes(q));
+    // group by VOLUME (each category ships as 12 volumes of 4 palettes), in order.
     const byVol = new Map();
     for (const p of visible) { const v = p.vol || "—"; if (!byVol.has(v)) byVol.set(v, []); byVol.get(v).push(p); }
+    if (byVol.size === 0) return [h("div", { class: "empty-note" }, `No palettes match “${this.search.trim()}”`)];
     return [...byVol.entries()].map(([vol, ps]) => {
-      const vi = TRAVEL_VOLUMES[vol];
+      const vi = VOLUMES[vol];
       return h(
         "div",
         { class: "preset-vol" },
@@ -793,26 +799,55 @@ class HctApp extends HTMLElement {
     );
   }
 
-  // refreshTiles — re-render ONLY the grid hosts' children. Used on search input
-  // so the <input> element is never replaced and keeps focus + caret. Refreshes BOTH
-  // the presets shelf and your sets (one search filters both).
+  // refreshTiles — re-render ONLY the grid hosts' children. Used on search input so the <input>
+  // element is never replaced and keeps focus + caret. On the hub, search filters Your Palettes; inside
+  // a survey category it filters that category's palette shelf (only one host exists per view).
   refreshTiles() {
     if (this._gridHost) this._gridHost.replaceChildren(...this.buildTiles());
-    if (this._presetGridHost) this._presetGridHost.replaceChildren(...this.buildPresetTiles());
+    if (this._presetGridHost && this.survey)
+      this._presetGridHost.replaceChildren(...this.buildPresetTiles(this._surveyData[this.survey]));
   }
 
-  renderGallery() {
-    // In Figma, probe the file ONCE on open: the embedded config (lossless) if present, else the
-    // variable structure (lossy fallback). Both reads return async and re-render the gallery here.
-    if (this.inFigma && !this._figmaProbed) this.probeFigmaProject();
+  // openSurvey / closeSurvey — navigate the gallery hub. Opening a category lazily loads its module
+  // (one code-split chunk; cached after first open) and re-renders into the category page; while the
+  // chunk is in flight the page shows a "Loading…" note. closeSurvey returns to the hub.
+  openSurvey(slug) {
+    this.survey = slug;
+    this.search = "";
+    if (this._surveyData[slug]) { this.render(); return Promise.resolve(this._surveyData[slug]); }
+    this.render(); // loading state
+    return loadSurvey(slug)
+      .then((m) => { if (m) this._surveyData[slug] = m; if (this.survey === slug) this.render(); return m; })
+      .catch(() => { if (this.survey === slug) this.render(); return null; });
+  }
+  closeSurvey() { this.survey = null; this.search = ""; this.render(); }
 
-    // The search <input> is created ONCE and reused across renders so typing never
-    // loses focus (the BUG: re-render replaced it). On input we only refresh tiles.
+  // surveyCard — one category tile on the hub: a color strip sampled from the category + its name,
+  // eyebrow, tagline, and palette count. Clicking opens the category page.
+  surveyCard(c) {
+    return h(
+      "button",
+      { class: "survey-card", title: `Open ${c.category}`, onclick: () => this.openSurvey(c.slug) },
+      h("div", { class: "survey-strip" }, ...c.strip.map((hex) => h("i", { style: `background:${hex}` }))),
+      h(
+        "div",
+        { class: "survey-card-body" },
+        c.eyebrow ? h("div", { class: "survey-card-eyebrow" }, c.eyebrow) : false,
+        h("div", { class: "survey-card-title" }, c.category),
+        c.tagline ? h("p", { class: "survey-card-tagline" }, c.tagline) : false,
+        h("span", { class: "survey-card-count" }, `${c.count} palettes`),
+      ),
+    );
+  }
+
+  // ensureSearchInput — the search <input> is created ONCE and reused across renders so typing never
+  // loses focus (the BUG: re-render replaced it). On input we only refresh tiles.
+  ensureSearchInput(label) {
     if (!this._searchInput) {
       this._searchInput = h("input", {
         type: "search",
         "data-fk": "search",
-        "aria-label": "Search palette sets",
+        "aria-label": label,
         placeholder: "Search…",
         value: this.search,
         oninput: (e) => {
@@ -820,14 +855,17 @@ class HctApp extends HTMLElement {
           this.refreshTiles(); // tiles only — input stays put, focus + caret preserved
         },
       });
-    } else {
-      // reuse: keep its current value in sync without touching the DOM node identity.
-      if (this._searchInput.value !== this.search) this._searchInput.value = this.search;
+    } else if (this._searchInput.value !== this.search) {
+      this._searchInput.value = this.search; // reuse: sync value without touching node identity
     }
+    this._searchInput.setAttribute("aria-label", label);
+    return this._searchInput;
+  }
 
-    this._gridHost = h("div", { class: "set-grid" }, ...this.buildTiles());
-    // Read-only curated "Presets" — ship in code (TRAVEL_PRESETS), open as an editable copy.
-    this._presetGridHost = h("div", { class: "preset-shelf" }, ...this.buildPresetTiles());
+  renderGallery() {
+    // In Figma, probe the file ONCE on open: the embedded config (lossless) if present, else the
+    // variable structure (lossy fallback). Both reads return async and re-render the gallery here.
+    if (this.inFigma && !this._figmaProbed) this.probeFigmaProject();
 
     return h(
       "div",
@@ -843,27 +881,68 @@ class HctApp extends HTMLElement {
         btn("+ New", { onclick: () => this.createSet() }),
         this.themeBtn(),
       ),
+      this.survey ? this.renderSurveyBody() : this.renderHubBody(),
+    );
+  }
+
+  // renderHubBody — the gallery home: Your Palettes (your saved sets) above a grid of survey category
+  // cards. Opening a card descends into that category's palette page (renderSurveyBody).
+  renderHubBody() {
+    this._presetGridHost = null;
+    this._gridHost = h("div", { class: "set-grid" }, ...this.buildTiles());
+    return h(
+      "div",
+      { class: "gallery-body" },
+      this.renderFigmaImportRow(), // a separate row ABOVE the sets when this Figma file already has palette variables
       h(
         "div",
-        { class: "gallery-body" },
-        this.renderFigmaImportRow(), // a separate row ABOVE the sets when this Figma file already has palette variables
-        h(
-          "div",
-          { class: "gallery-title" },
-          h("h2", {}, "Your Palettes"),
-          h("div", { class: "spacer" }),
-          this._searchInput,
-        ),
-        this._gridHost,
-        // Curated presets shelf (read-only), below your own palettes. Opening one copies it into Your Palettes.
-        h(
-          "div",
-          { class: "gallery-title" },
-          h("h2", {}, "Presets"),
-          h("span", { class: "title-count" }, String(TRAVEL_PRESETS.length)),
-        ),
-        this._presetGridHost,
+        { class: "gallery-title" },
+        h("h2", {}, "Your Palettes"),
+        h("div", { class: "spacer" }),
+        this.ensureSearchInput("Search your palette sets"),
       ),
+      this._gridHost,
+      // Palette Surveys — read-only curated categories. Opening a palette copies it into Your Palettes.
+      h(
+        "div",
+        { class: "gallery-title surveys-head" },
+        h("h2", {}, "Surveys"),
+        h("span", { class: "title-count" }, String(SURVEY_INDEX.length)),
+      ),
+      h("p", { class: "surveys-lede" }, "Palettes sourced from real places, dishes, films, books, scenes, biomes — read for their colour, not their cliché. Open any palette as an editable copy."),
+      h("div", { class: "survey-grid" }, ...SURVEY_INDEX.map((c) => this.surveyCard(c))),
+    );
+  }
+
+  // renderSurveyBody — one survey category page: a back affordance + masthead (eyebrow / name / tagline)
+  // and the category's 12 volumes × 4 palettes (lazily loaded), each opening as an editable copy.
+  renderSurveyBody() {
+    this._gridHost = null;
+    const card = SURVEY_INDEX.find((c) => c.slug === this.survey) || { category: this.survey, count: 0 };
+    const data = this._surveyData[this.survey];
+    this._presetGridHost = data
+      ? h("div", { class: "preset-shelf" }, ...this.buildPresetTiles(data))
+      : h("div", { class: "preset-shelf" }, h("div", { class: "empty-note" }, "Loading…"));
+    return h(
+      "div",
+      { class: "gallery-body" },
+      btn("← All surveys", { cls: "survey-back", onclick: () => this.closeSurvey() }),
+      h(
+        "div",
+        { class: "survey-masthead" },
+        card.eyebrow ? h("div", { class: "survey-eyebrow" }, card.eyebrow) : false,
+        h("h2", { class: "survey-h1" }, card.category),
+        card.tagline ? h("p", { class: "survey-tagline" }, card.tagline) : false,
+      ),
+      h(
+        "div",
+        { class: "gallery-title" },
+        h("h2", {}, "Palettes"),
+        h("span", { class: "title-count" }, String(card.count)),
+        h("div", { class: "spacer" }),
+        this.ensureSearchInput(`Search ${card.category} palettes`),
+      ),
+      this._presetGridHost,
     );
   }
 

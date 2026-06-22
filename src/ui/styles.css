@@ -234,6 +234,48 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .new-tile .plus { font-size: 26px; line-height: 1; }
 .empty-note { color: var(--ink-dim); padding: 40px 0; text-align: center; }
 
+/* ─────────────────── PALETTE SURVEYS — hub category grid ─────────────────── */
+.surveys-head { margin-top: 32px; }
+.surveys-lede { margin: -10px 0 18px; max-width: 76ch; color: var(--ink-dim); font-size: 13px; line-height: 1.55; }
+.survey-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px; align-items: start;
+}
+.survey-card {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  overflow: hidden; cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform .08s ease, box-shadow .12s ease;
+  text-align: left; padding: 0; display: block; width: 100%;
+}
+.survey-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.survey-strip { display: flex; height: 64px; }
+.survey-strip i { flex: 1; }
+.survey-card-body { padding: 13px 15px 15px; }
+.survey-card-eyebrow {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-faint); margin-bottom: 5px;
+}
+.survey-card-title { font-family: Georgia, "Times New Roman", serif; font-size: 17px; font-weight: 600; color: var(--ink); }
+.survey-card-tagline { margin: 6px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); }
+.survey-card-count {
+  display: inline-block; margin-top: 11px; font-size: 11px; font-weight: 600;
+  color: var(--ink-faint); font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────── PALETTE SURVEYS — one category page ─────────────────── */
+.survey-back { margin-bottom: 16px; }
+.survey-masthead { margin-bottom: 24px; }
+.survey-eyebrow {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink-faint); margin-bottom: 7px;
+}
+.survey-h1 { font-family: Georgia, "Times New Roman", serif; margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -.005em; }
+.survey-tagline { margin: 9px 0 0; max-width: 70ch; font-size: 14px; line-height: 1.55; color: var(--ink-dim); }
+
 /* ───────────────────────── EDITOR SHELL ───────────────────────── */
 .editor {
   display: grid;
