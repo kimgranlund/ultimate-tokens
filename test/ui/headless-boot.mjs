@@ -799,9 +799,13 @@ globalThis.parent = realParentGG;
 app.inFigma = false; app._figmaProbed = false; app.fileConfig = null;
 app.toGallery();
 
-// ── (hh) Travel-presets shelf: read-only curated presets; opening one copies it into your sets ──
-const { TRAVEL_PRESETS: TP } = await import("../../src/ui/travel-presets.js");
-ok(Array.isArray(TP) && TP.length === 48, `(hh) 48 travel presets ship in code (got ${TP && TP.length})`);
+// ── (hh) Palette Surveys: hub category grid → a category's read-only presets → open an editable copy ──
+const { SURVEY_INDEX: SI, loadSurvey: LS } = await import("../../src/ui/surveys/index.js");
+ok(Array.isArray(SI) && SI.length === 7, `(hh) 7 survey categories ship in the bundled index (got ${SI && SI.length})`);
+ok(SI.every((c) => c.slug && c.category && c.count === 48 && Array.isArray(c.strip) && c.strip.length), "(hh) each category card has slug/name/count + a color strip");
+const TPm = await LS("travel"); // one category lazily loaded
+const TP = TPm.PRESETS;
+ok(Array.isArray(TP) && TP.length === 48, `(hh) travel survey lazily loads 48 presets (got ${TP && TP.length})`);
 ok(TP.every((p) => p.palettes.length === 9), "(hh) each preset has 9 palettes (6 sampled + danger/warning/success)");
 const SLOTS = ["primary-base","primary-muted","secondary-base","secondary-muted","accent-base","accent-muted","danger","warning","success"];
 ok(TP.every((p) => JSON.stringify(p.palettes.map((x) => x.name)) === JSON.stringify(SLOTS)), "(hh) every preset uses the {tier}-{rank} + status naming model, identically");
@@ -812,32 +816,45 @@ ok(!TP.some((p) => /^[IVXLC]+·\d/.test(p.name)), "(hh) preset names drop the vo
 ok(TP.every((p) => p.lmax === 100 && p.lmin === 5 && p.damp === 70 && p.dampAmp === 55 && p.chromaFloor === 40), "(hh) presets carry controls + 'Vivid mids' damping (damp 70, amp 55) + the chroma floor (40)");
 // re-import captures each curated source color as a `dominant` key color (OKLCH), so the preset
 // retains the original palette exactly while the ramp re-derives an even scale from it.
-ok(TP.every((p) => p.palettes.every((q) => q.keyColors && q.keyColors.length === 1 && q.keyColors[0].role === "dominant" && Array.isArray(q.keyColors[0].oklch) && q.keyColors[0].oklch.length === 3)),
-  "(hh) every preset palette retains its source color as a dominant key color (OKLCH)");
-// lift-anchoring: a LIGHT dominant (St John's fog cream, src L*≈85) must open LIGHT, not the old mid-dark
-// L*≈46 grey. This is the "colors look really wrong" fix (lift + controls together).
+ok(TP.every((p) => p.palettes.slice(0, 6).every((q) => q.keyColors && q.keyColors.length === 1 && q.keyColors[0].role === "dominant" && Array.isArray(q.keyColors[0].oklch) && q.keyColors[0].oklch.length === 3)),
+  "(hh) every sampled preset palette retains its source color as a dominant key color (OKLCH)");
+// every category lazily loads + holds 48 fully-formed presets (9 palettes each)
+for (const c of SI) {
+  const m = await LS(c.slug);
+  ok(m && Array.isArray(m.PRESETS) && m.PRESETS.length === 48 && m.PRESETS.every((p) => p.palettes.length === 9),
+    `(hh) survey "${c.slug}" loads 48 presets × 9 palettes`);
+}
+// lift-anchoring (EVEN mode): a LIGHT dominant must open LIGHT, not the old mid-dark L*≈46 grey.
+// This is the "colors look really wrong" fix. Keyed on any preset whose primary-base source is light.
 const { projectView: _pvHH } = await import("../../src/ui/model.mjs");
 const { hydrate: _hydHH } = await import("../../src/ui/persist.js");
-const _sj = TP.find((p) => /St\. John/.test(p.name));
-// lift-anchoring is an EVEN-mode (CIELAB) feature; the default is now "perceptual" (even-lightness,
-// ignores per-palette lift), so verify the anchoring by rendering the preset in "even".
-const _sjPrime = _pvHH(_hydHH({ ..._sj, toneMode: "even" })).palettes[0].ramp.find((s) => s.stop === 550);
-ok(_sjPrime.tone > 72, `(hh) [even] lift anchors the prime to source lightness — St John's fog-cream opens LIGHT (550 L*=${_sjPrime.tone.toFixed(0)})`);
+const _light = TP.find((p) => p.palettes[0].keyColors[0].oklch[0] > 0.85);
+const _lightPrime = _pvHH(_hydHH({ ..._light, toneMode: "even" })).palettes[0].ramp.find((s) => s.stop === 550);
+ok(_lightPrime.tone > 72, `(hh) [even] lift anchors the prime to source lightness — a light dominant opens LIGHT (550 L*=${_lightPrime.tone.toFixed(0)})`);
 app.toGallery(); flushRaf();
-ok(app.querySelectorAll(".preset").length === 48, `(hh) the gallery renders a read-only preset tile per preset (got ${app.querySelectorAll(".preset").length})`);
+// the HUB shows a category card per survey (not the presets directly)
+ok(app.querySelectorAll(".survey-card").length === 7, `(hh) the gallery hub renders a category card per survey (got ${app.querySelectorAll(".survey-card").length})`);
+ok(app.querySelectorAll(".preset").length === 0, "(hh) preset tiles are NOT on the hub — they live inside a category");
+// descend into a category → its 48 read-only preset tiles render
+await app.openSurvey("travel"); flushRaf();
+ok(app.survey === "travel" && app.querySelectorAll(".preset").length === 48, `(hh) opening a category renders a read-only preset tile per preset (got ${app.querySelectorAll(".preset").length})`);
 const presetNames = new Set(TP.map((p) => p.name));
 ok(!app.sets.some((s) => presetNames.has(s.name)), "(hh) presets are NOT seeded into your sets (they ship in code, read-only)");
 const setsBeforeHH = app.sets.length;
-const keaPreset = TP.find((p) => /Kea/.test(p.name));
-app.openConfigAsSet(keaPreset, "Opened");
+const openPreset = TP[0];
+app.openConfigAsSet(openPreset, "Opened");
 ok(app.view === "editor" && app.sets.length === setsBeforeHH + 1, "(hh) opening a preset adds an EDITABLE copy to your sets + enters the editor");
 ok(app.doc.palettes.length === 9 && app.doc.palettes[0].name === "primary-base", "(hh) the opened copy carries the 9 named palettes (primary-base first)");
 ok(app.doc.palettes.some((p) => p.name === "danger") && app.doc.palettes.some((p) => p.name === "success"), "(hh) the status palettes (danger/warning/success) are present in the copy");
 app.toGallery(); flushRaf();
-app.search = "Kea"; app.refreshTiles();
+ok(app.survey === "travel", "(hh) returning from the editor lands back on the open category page");
+// search filters the category's shelf — use a distinctive long word from the opened preset's name
+const tokenHH = openPreset.name.split(/\s+/).filter((w) => w.length > 6)[0] || openPreset.name.slice(0, 7);
+app.search = tokenHH; app.refreshTiles();
 const filteredHH = app.querySelectorAll(".preset").length;
-ok(filteredHH >= 1 && filteredHH < 48, `(hh) the search box filters the preset shelf too (got ${filteredHH} for "Kea")`);
-app.search = ""; app.refreshTiles(); app.toGallery();
+ok(filteredHH >= 1 && filteredHH < 48, `(hh) the search box filters the category's shelf too (got ${filteredHH} for "${tokenHH}")`);
+app.search = ""; app.closeSurvey(); flushRaf();
+ok(app.survey === null && app.querySelectorAll(".survey-card").length === 7, "(hh) closing a category returns to the hub");
 
 // ── (ee) "Download all (.zip)": one foldered archive of every format + the re-importable config ──
 const setName0 = app.doc.name;
@@ -1011,6 +1028,28 @@ ok(app._view.palettes[0].keyColors[0].drift <= driftBefore,
 const { serialize: serKC, hydrate: hydKC } = await import("../../src/ui/persist.js");
 const rtKC = hydKC(serKC(app.doc)).palettes[0].keyColors;
 ok(rtKC && rtKC.length === 1 && rtKC[0].role === "dominant" && Array.isArray(rtKC[0].oklch) && rtKC[0].oklch.length === 3, "(kc5) key colors round-trip through persist (oklch by role)");
+
+// ── (st) story + volumes: capture, round-trip, the Story tab, and the category volume groups ──
+const TPs = TPm.PRESETS, TVs = TPm.VOLUMES; // the lazily-loaded travel survey
+ok(TPs.every((p) => typeof p.vol === "string" && p.vol), "(st1) every preset carries a volume (vol)");
+const withStory = TPs.filter((p) => p.story);
+ok(withStory.length === TPs.length && Object.keys(TVs).length === 12, `(st2) ALL ${TPs.length} presets carry a story + 12 volume headers (got ${withStory.length} / ${Object.keys(TVs).length})`);
+const storyPreset = withStory[0];
+ok(storyPreset.story.title && storyPreset.story.narrative && Array.isArray(storyPreset.story.groups), "(st3) a story has title + narrative + groups");
+ok(storyPreset.palettes.some((q) => q.colorName && q.colorRole && q.description), "(st4) the curated colors carry name + role + description");
+// open a story preset → its story round-trips through hydrate, and the Story tab renders
+app.openConfigAsSet(storyPreset, "story"); flushRaf();
+ok(app.doc.story && app.doc.story.title === storyPreset.story.title, "(st5) opening a story preset keeps doc.story (round-trips through hydrate)");
+app.setSegment("story"); flushRaf();
+ok(!!app.querySelector(".story-pane"), "(st6) the Story tab renders for a set with a story");
+ok(app.querySelectorAll(".story-color").length >= 1, "(st7) the Story tab lists the curated colors");
+// the Palette tab shows the per-color story line
+app.setSegment("palette"); flushRaf();
+ok(!!app.querySelector(".color-story"), "(st8) the Palette tab shows the curated color's story line");
+// a category page groups its presets by volume
+app.toGallery(); app.search = ""; await app.openSurvey("travel"); flushRaf();
+ok(app.querySelectorAll(".preset-vol").length >= 1, `(st9) a category page groups presets into volume sub-groups (got ${app.querySelectorAll(".preset-vol").length})`);
+app.closeSurvey();
 
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {

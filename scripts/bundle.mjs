@@ -1,20 +1,32 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 // ROOT = the repo root (this script lives in scripts/), derived from its own location.
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-// dependency order; entry last
+
+// The Palette Surveys ship as a small bundled index + one LAZY module per category (surveys/<slug>.js),
+// loaded in the web build via dynamic import() (vite code-splits each into its own chunk). The single-file
+// offline plugin can't lazy-load, so we INLINE every survey module here and rewrite import("./<slug>.js")
+// → a synchronous registry resolve (see transform()). Discover them so adding a category needs no edit here.
+const SURVEY_DIR = "src/ui/surveys";
+const SURVEY_FILES = readdirSync(`${ROOT}/${SURVEY_DIR}`).filter((f) => f.endsWith(".js"));
+const surveyKey = (file) => (file === "index.js" ? "surveyIndex" : "survey_" + file.replace(/\.js$/, ""));
+
+// dependency order; entry last. Survey modules are pure data (no imports) — placed before the app,
+// which imports the index; the index's lazy thunks reference the category modules only at call time.
 const MODS = [
   ["hct", "src/engine/hct.js"], ["okhsl", "src/engine/okhsl.js"], ["semantic", "src/engine/semantic.js"],
   ["tonal", "src/engine/tonal.js"], ["persist", "src/ui/persist.js"],
   ["exports", "src/engine/exports.js"], ["figmaPlugin", "src/ui/figma-plugin-assets.js"],
-  ["travelPresets", "src/ui/travel-presets.js"],
+  ...SURVEY_FILES.filter((f) => f !== "index.js").map((f) => [surveyKey(f), `${SURVEY_DIR}/${f}`]),
+  ["surveyIndex", `${SURVEY_DIR}/index.js`],
   ["zip", "src/ui/zip.mjs"],
   ["icons", "src/ui/icons.js"],
   ["model", "src/ui/model.mjs"], ["app", "src/ui/app.js"],
 ];
 const KEY = { "hct.js": "hct", "okhsl.js": "okhsl", "semantic.js": "semantic", "tonal.js": "tonal", "persist.js": "persist",
-  "exports.js": "exports", "figma-plugin-assets.js": "figmaPlugin", "travel-presets.js": "travelPresets", "zip.mjs": "zip", "icons.js": "icons", "model.mjs": "model" };
+  "exports.js": "exports", "figma-plugin-assets.js": "figmaPlugin", "zip.mjs": "zip", "icons.js": "icons", "model.mjs": "model",
+  ...Object.fromEntries(SURVEY_FILES.map((f) => [f, surveyKey(f)])) };
 
 function transform(src) {
   const names = new Set();
@@ -26,6 +38,13 @@ function transform(src) {
     const inner = what.replace(/[{}]/g, "").split(",").map((s) => s.trim()).filter(Boolean)
       .map((s) => s.includes(" as ") ? s.replace(/\s+as\s+/, ": ") : s).join(", ");
     return `const { ${inner} } = __M.${key};`;
+  });
+  // rewrite DYNAMIC import("./surveys/<slug>.js") -> a synchronous registry resolve. The single-file
+  // offline bundle has no module server, so each lazy survey chunk is inlined into __M and resolved here.
+  src = src.replace(/\bimport\(\s*["']([^"']+)["']\s*\)/g, (_, path) => {
+    const key = KEY[path.split("/").pop()];
+    if (!key) throw new Error("unknown dynamic import path " + path);
+    return `Promise.resolve(__M.${key})`;
   });
   // collect + strip declaration exports
   src = src.replace(/^export\s+(async\s+function|function|const|let|var|class)\s+([A-Za-z0-9_$]+)/gm, (_, kind, name) => { names.add(name); return `${kind} ${name}`; });

@@ -3,3 +3,8 @@ dist/
 _site/
 .DS_Store
 *.local
+
+# Reference drop for the Palette Surveys: the survey data was distilled into
+# docs/spec/colors/surveys/*.json (the gen's source of truth). The full reference
+# project is bulky + redundant, so it stays local-only.
+docs/spec/colors/travel-palettes-project/
