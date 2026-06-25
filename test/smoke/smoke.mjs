@@ -100,6 +100,8 @@ try {
   ok(swAnchor[1] && swAnchor[1] === swContrast[1], "Primary reference swatch is stable across relationships (the priority anchor)");
   ok(swAnchor[0] && swAnchor[0] !== swContrast[0], "Dominant swatch changes with the relationship (anchor ≠ contrast)");
   await evalJS(`(()=>{${el}.newPalRel="extend";${el}.render();})()`); await sleep(150);
+  // the Cancel/Create CTA is justified to the trailing edge (right) of the dialog.
+  ok(await evalJS(`(()=>{const d=${el}.querySelector("dialog.newpal").getBoundingClientRect();const c=${el}.querySelector(".newpal-create").getBoundingClientRect();return (d.right - c.right) < 24 && (c.left - d.left) > d.width*0.5})()`), "footer CTA is right/end-justified");
   const npShot = await send("Page.captureScreenshot", { format: "png" });
   writeFileSync(resolve(OUT, "new-palette.png"), Buffer.from(npShot.data, "base64"));
   console.log("  · screenshot → smoke-out/new-palette.png");
