@@ -87,4 +87,4 @@ This is the same law the `design-skills:component-decomposer` skill mechanizes (
 edge-pad `== (height − glyph)/2`, block-size off the ramp with `padding-block == 0`, `0 < glyph ≤ box`,
 the slot/slotless pad, affordance `== font`. The engine is verified by `test/engine/geometry.mjs`.
 
-> Status: **shipped** — `src/engine/geometry.mjs` + the 📐 Geometry modal generate these tokens.
+> Status: **shipped** — `src/engine/geometry.mjs` + the Geometry editor section generate these tokens.

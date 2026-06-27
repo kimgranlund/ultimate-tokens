@@ -1,6 +1,6 @@
 # Knowledge 04 — Export Formats
 
-> Topic: the five export formats, their exact output shapes, naming/padding rules, and the
+> Topic: the eight color export formats (CSS hex, CSS OKLCH, JSON, Figma DTCG, UI3, Tailwind, ShadCN, plus `exportAll`), their exact output shapes, naming/padding rules, and the
 > Figma-import constraints that drove the resolved-vs-aliased decision.
 
 ## Table of Contents
@@ -9,8 +9,9 @@
 3. JSON
 4. Figma DTCG (3-file zip)
 5. Collections (UI3)
-6. Shared rules: padding, slug, scrims
-7. Figma import constraints (why resolved, not aliased)
+6. Tailwind v4 + ShadCN (framework formats)
+7. Shared rules: padding, slug, scrims
+8. Figma import constraints (why resolved, not aliased)
 
 ---
 
@@ -25,6 +26,11 @@
 | Collections | `ui3` | `figma-ui3-variables.json` | two-collection schema, in-file aliases |
 
 All formats operate over **enabled** palettes (`palette.on`) and **export stops** (25).
+
+Two more **framework** formats ship alongside these (see `src/engine/exports.js`, not detailed below):
+**Tailwind v4** (`tailwind` · `exportTailwind`) and **ShadCN** (`shadcn` · `exportShadcn`). ShadCN is a
+**curated subset** — a fixed `SHADCN_ORDER` over a hand-kept suffix `MAP`, NOT all roles — so a new
+semantic role does not surface in it unless explicitly wired into `MAP`.
 
 ## 2. CSS (hex) and CSS (OKLCH)
 
@@ -57,7 +63,7 @@ All formats operate over **enabled** palettes (`palette.on`) and **export stops*
   "palettes": [
     { "name", "hue", "chromaPct", "skew",
       "stops":   { "050": {hex, lstar, chroma}, ... },
-      "scrims":  { "250": {0:{alpha,hex}, ...}, "500":{...}, "750":{...} },
+      "scrims":  { "500-50": {hex,alpha}, "500-100":{...}, ... "500-950":{...} },
       "semantic":{ "<roleKey>": {css, light, dark, lightHex, darkHex}, ... }
     }
   ]
@@ -116,7 +122,7 @@ Semantic values are **in-file key-path aliases** the importer resolves.
 - `pad3(stop)` → 3 digits (`"50"→"050"`); applied to all stop keys and var refs.
 - `slug(name)` → lowercase, non-alphanumeric → `-`, trimmed. Palette name → token namespace.
 - `hex8(rgb, frac)` → `#RRGGBBAA` for scrims.
-- `SCRIM_BASES=[500]`, `SCRIM_STEPS=[100,175,250,300,400,450,550]`; a scrim `500-{step}` is the 500 color at alpha% = step/10.
+- `SCRIM_BASES=[500]`, `SCRIM_STEPS=[50,100,200,300,400,500,600,700,800,900,950]`; a scrim `500-{step}` is the 500 color at alpha% = step/10.
 
 ## 7. Figma import constraints (why resolved, not aliased)
 

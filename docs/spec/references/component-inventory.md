@@ -4,6 +4,10 @@
 > card** on the COMPOSE axis (layer → anatomy → API → composition). Produced with the
 > `design-skills:component-decomposer` method. This is a **DECOMPOSE of the as-built UI** — it
 > records reality (including the gaps against the skill's family policy), it does not redesign.
+>
+> ⚠️ **Line numbers drift.** The exact `file:line` citations below are a past snapshot (`src/ui/app.js`
+> has since grown to ~5330 lines); treat them as **structural pointers**, not addresses — `grep` the named
+> symbol/class to locate it. The anatomy, layering, and API observations remain valid.
 
 ## How to read this
 
@@ -18,10 +22,10 @@
 ## The architecture finding (read first)
 
 There is **no component library**. The entire UI is one monolithic autonomous web component —
-`nonoun-color-tokens` (`src/ui/app.js`, ~2,933 lines, `customElements.define` at `app.js:2930`) —
+`nonoun-color-tokens` (`src/ui/app.js`, ~5,330 lines, `customElements.define` at `app.js:5327`) —
 that builds every control inline with a single hyperscript helper `h(tag, attrs, ...kids)`
-(`app.js:108`), across ~20 `render*()` methods. Styling is ~185 CSS classes in
-`src/ui/styles.css` (740 lines). Consequences that recur in every card below:
+(`app.js:172`), across ~25 `render*()` methods. Styling is ~570 CSS class selectors in
+`src/ui/styles.css` (~1,282 lines). Consequences that recur in every card below:
 
 - **S2 is not a second surface.** `scripts/gen-figma-ui.mjs` bundles the *same* compiled app
   (`dist/nonoun-color-tokens.html`) and injects a postMessage bridge that flips `inFigma`

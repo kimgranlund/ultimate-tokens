@@ -117,7 +117,8 @@ palette and would look subtly *wrong* if swapped onto a cool, glacier-sourced on
 
 ---
 
-*Implemented in `palette-neutral.js` (`deriveNeutralRamp`), rendered as the
-horizontal neutral strip above each palette's "Refuses" line. The lightness-step
-targets and chroma taper live in that file; this doc is the rule for the two
-numbers everything else derives from.*
+*Implemented in `src/engine/derive.mjs` (`deriveNeutral`), which returns the neutral's
+identity OKLCH `[0.66, clamp(0.30·meanC, 0.004, 0.018), weightedMeanHue]`. The neutral is
+seeded as an ordinary palette (the first/`neutral` palette of each set; `gen-categories.mjs`
+leads every category preset with it), so the standard ramp pipeline supplies the lightness
+steps and chroma taper. This doc is the rule for the two numbers everything else derives from.*

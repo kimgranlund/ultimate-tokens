@@ -26,7 +26,7 @@
 
 ## AC-S · Semantic system
 - **AC-S1** `semanticRoles(n)` returns exactly **53** roles for every palette.
-- **AC-S2** Exactly **7** roles are scrims, all on base 500 (`scrimWeakest…scrimStrongest`).
+- **AC-S2** Exactly **7** roles are scrim STRENGTHS (`scrimWeakest…scrimStrongest`), all on base 500. Many other roles (e.g. `{n}Disabled`, `outline*`, `outlineVariant*`, `container*`) also resolve onto the 500 scrim ramp.
 - **AC-S3** `on{N}` light===dark===`050` and `on{N}Variant` light===dark===`200` for every
   palette.
 - **AC-S4** Every role's `light`/`dark` ref resolves to an existing primitive
@@ -34,7 +34,7 @@
 - **AC-S5** Surface Low/High refs mirror (light+dark sum toward 1000); Dim/Bright do not.
 
 ## AC-X · Exports
-- **AC-X1** Each of the five formats produces output (non-empty) for the default state.
+- **AC-X1** Each of the eight color formats (CSS, OKLCH, JSON, DTCG, UI3, Tailwind, ShadCN, exportAll) produces output (non-empty) for the default state.
 - **AC-X2** CSS: every `--c-*` semantic var references two existing raw vars via `var()`.
 - **AC-X3** JSON: parses; each palette has `stops`, `scrims`, `semantic`; stop keys are
   3-digit padded.
@@ -50,8 +50,8 @@
 - **AC-X7** All token names (CSS, JSON keys, DTCG names, UI3 keys) use 3-digit stop padding.
 
 ## AC-P · Plugin
-- **AC-P1** Plugin `semanticRoles(n)` is byte-identical in structure to the generator's
-  (same 37 keys, same refs).
+- **AC-P1** Plugin `roleTable(n)` is byte-identical in structure to the generator's
+  (same 53 keys, same refs).
 - **AC-P2** Every `{n}/{refKey}` binding target exists among real `Color Primitives` variable
   names (including `{n}/500-{step}` scrims).
 - **AC-P3** `code.js` and `manifest.json` parse; `networkAccess` is `none`.

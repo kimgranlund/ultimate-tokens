@@ -108,7 +108,7 @@ every role is aliased to its primitive, **idempotently** on re-apply).
     { "id": "hpg-export-css-resolves", "check": "CSS var naming: RAW vars are --c-{family}-{stop|500-step} (suffix ends in digits), SEMANTIC vars are --c-{family}-{role} (suffix ends in a word) — both share the --c- prefix with no collision; every --c-* semantic var is emitted as light-dark(var(--c-rawA), var(--c-rawB)) over two raw vars that both exist in the emitted :root (AC-X2, the two-layer model ADR-005)" },
     { "id": "hpg-export-padding", "check": "every token name (CSS vars, JSON keys, DTCG names, UI3 keys) uses 3-digit stop padding; scrims use padded base + '-{step}' (e.g. the raw CSS var --c-{family}-500-200 = the 500 color at 20%) (AC-X7, ADR-006)" },
     { "id": "hpg-export-disabled-palette", "check": "a palette with on:false is absent from all five exports; with all palettes disabled the exporters emit a valid empty-but-well-formed artifact, not an error (AC-U2)" },
-    { "id": "hpg-export-nonempty", "check": "each of the five formats produces non-empty output for the default state, and the JSON format gives each palette stops/scrims/semantic with 3-digit-padded stop keys (AC-X1, AC-X3)" },
+    { "id": "hpg-export-nonempty", "check": "each of the eight color formats produces non-empty output for the default state, and the JSON format gives each palette stops/scrims/semantic with 3-digit-padded stop keys (AC-X1, AC-X3)" },
     { "id": "hpg-plugin-bindings", "check": "every {n}/{refKey} binding target the plugin emits exists among real Color Primitives variable names, including the {n}/500-{step} scrims (AC-P2)" },
     { "id": "hpg-plugin-offline", "check": "the plugin's code.js and manifest.json both parse, and manifest networkAccess is 'none' (AC-P3, the offline/dependency-free decision ADR-010)" },
     { "id": "hpg-persistence-roundtrip", "check": "for any in-domain State S, hydrate(serialize(S)) deep-equals S exactly; an out-of-domain field is clamped to its nearest valid bound (domains per knowledge-02 §2) while every in-domain field is preserved (AC-U1); AND an ABSENT field hydrates to that field's DEFAULT, NOT its domain floor: a doc predating the differential-damping fields (lacking dampCurve/dampAmp/dampBias) gets 1.5/0/0 (the legacy-equivalent), and a partial config lacking lmin/lmax/damp gets 5/100/80 (not the dark 0/60/0 floors); the result is byte-identical to hydrating the same doc with the field explicit at its default (the backward-compatible-reload guarantee)" },
@@ -231,7 +231,7 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 | `references/knowledge-01-color-engine.md` | engine math: CAM16, gamut, VC, anchors |
 | `references/knowledge-02-tonal-scale.md` | curves, `toneAt`, chroma, damping, clamp domains |
 | `references/knowledge-03-semantic-system.md` | role table, on-colors, scrims, surfaces, modes |
-| `references/knowledge-04-export-formats.md` | the five formats and Figma import constraints |
+| `references/knowledge-04-export-formats.md` | the eight color formats (+ type/geom) and Figma import constraints |
 | `references/knowledge-05-figma-plugin.md` | the cascade binder |
 | `references/knowledge-06-palette-derivation.md` | the "New Palette" engine (`derive.mjs`): Relative / Environmental / Custom |
 | `references/decision-records.md` | the fenced choices (ADRs) — read before changing anything |

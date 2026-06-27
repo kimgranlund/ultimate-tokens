@@ -56,7 +56,7 @@ Full table with exact `light`/`dark` refs: `data/role-table.json` → `roleTable
 | Accent | `{n}` (prime), `{n}Dim`, `{n}Bright`, `{n}Low`, `{n}High` | prime = 550 light / 450 dark |
 | On-accent | `on{N}`, `on{N}Variant` | fixed light; see §4 |
 | On-surface | `onSurface`, `onSurfaceVariant` | 950/50 and 750/250 |
-| Outline | `outline`, `outlineVariant` | on the 500 scrim ramp (500-600, 500-400) |
+| Outline | `outline`, `outlineVariant` | on the 500 scrim ramp (500-600, 500-300) |
 | Container | `container`, `containerLow`, `containerHigh` | on the 500 scrim ramp (500-200/100/300) |
 | Scrim | `scrimWeakest` … `scrimStrongest` (7) | on the 500 ramp; see §5 |
 | Inverse | `inverseSurface`, `inverseOnSurface` | 900/100, 50/950 |
@@ -90,9 +90,11 @@ Both are fixed to the light end in *both* modes, for *all* palettes.
   = the palette's 500 color at **alpha% = step/10** (so `500-200` = 500 @ 20%). `SCRIM_BASES = [500]`,
   `SCRIM_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]` — the 11 **emitted** steps
   (alpha 5–95%). The 7 strength roles bind to a 7-step subset; steps 700–950 carry no role.
-- **All 12 scrim-using roles** resolve onto this ramp, mode-independent (light === dark): the 7
+- **Many roles** resolve onto this ramp, mode-independent (light === dark): the 7
   `scrim*` strengths (weakest→strongest = steps 50/100/200/300/400/500/600, a sequential 5–60% ladder),
-  plus `outline` (600), `outlineVariant` (400), and `container/Low/High` (200/100/300).
+  plus `outline` (600), `outlineVariant` (300), `container/Low/High` (200/100/300), and all the
+  interaction-state families — `outline`/`outlineVariant`/`container` Hover·Active·Disabled, plus
+  `{n}Disabled` (200) and `on{N}Disabled` (400).
 
 > **A scrim is a sub-variant of the palette** — based on the 500 stop, it tracks the palette as
 > hue/chroma/skew/lift change. This 500-ramp revision **supersedes** the former 3-base model

@@ -9,7 +9,7 @@
 //   src/ui/categories/<slug>.js    one LAZY module per category: VOLUMES (per-volume headers) + PRESETS
 //                               (the 48 sets as read-only gallery presets the generator opens as copies).
 //
-// NAMING — per docs/spec/colors/color-model-funciton.md:
+// NAMING — per docs/spec/colors/color-model-function.md:
 //   sampled 6 colors → {tier}-{rank}: primary-base/muted, secondary-base/muted, accent-base/muted
 //   status 3 colors  → danger/warning/success  (NOT in the category JSON — a sensible default set is appended)
 //

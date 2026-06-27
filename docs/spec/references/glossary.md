@@ -36,4 +36,4 @@
 | **VC (viewing conditions)** | Fixed CAM16 parameters derived once at load (`makeVC`); not user-controllable. |
 | **Prime fill** | The `{n}` (prime) role's color: stop 550 in light, 450 in dark. On-colors are evaluated against it. |
 | **Cascade** | Raw edit propagating to semantic. Provided by the plugin (alias-by-reference), not by JSON import. |
-| **Parity** | The requirement that the artifact, `gen.js`, and the plugin share an identical 53-role table and engine behavior. |
+| **Parity** | A property of multi-impl *distribution*, not of the domain. The reference build is single-source — one `src/engine/` module set (`hct.js`, `semantic.js`, …) imported everywhere — so drift is structurally impossible and parity is automatic. The 3-implementation framing (artifact / `gen.js` / plugin) is legacy packaging; `gen.js` is not part of the current build. Parity becomes a real gate only IF ≥2 independent implementations are shipped (`hpg-engine-parity` / `hpg-parity-roletable`, conditional). |
