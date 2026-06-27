@@ -1,9 +1,10 @@
 # Typography tokens — reference shape
 
-`typography.tokens.json` is the **target output shape** for a planned typography feature: the type
+`typography.tokens.json` is the **target output shape** for the typography feature: the type
 analog of the color engine — a few parameters → a systematic, harmonious type scale → exported as
 [DTCG](https://tr.designtokens.org/) tokens (and, in the plugin, Figma text styles). It's a real
-Figma-exported token set, kept here as the canonical example to generate *toward*. Font-role names are
+Figma-exported token set, kept here as the canonical example. The engine that generates it ships in
+`src/engine/type.mjs`. Font-role names are
 generic (no brand/foundry specifics).
 
 ## Structure
@@ -22,7 +23,7 @@ each step carrying `Size · Line Height · Letter Spacing · Weight · Case · P
 
 | Group | Steps | Font role | Case | Letter-spacing character |
 |---|---|---|---|---|
-| **Display** | `XS … XL` (5) | display | **UPPERCASE** | negative, tightens with size |
+| **Display** | `XS … XL` (5) | display | sentence/title (UPPERCASE only in Brutalist) | negative, tightens with size |
 | **Heading · Editorial** | `XS … XL` (5) | heading | sentence | ~0 |
 | **Heading · Context** | `XS … XL` (5) | heading | **UPPERCASE** | wide positive (caps open up) |
 | **Heading · Eyebrow** | `XS … XL` (5) | **mono** | **UPPERCASE** | very wide positive |
@@ -32,7 +33,7 @@ each step carrying `Size · Line Height · Letter Spacing · Weight · Case · P
 
 41 steps in all. Each treatment supplies the font palette + a few character knobs (a shared `make7()`
 factory); the engine generates every step's size (modular scale), leading, optical tracking, weight, and
-case. Heading-Eyebrow + Code use the mono role; Display / Context / Eyebrow are the uppercase caps voices.
+case. Heading-Eyebrow + Code use the mono role; Heading-Context + Heading-Eyebrow are the uppercase caps voices (Display is uppercase only in the Brutalist treatment).
 
 ## The system relationships (what the generator derives)
 
@@ -48,4 +49,4 @@ coefficient, font roles }`:
 A set of **treatments** (Product/Lifestyle, Luxury, Editorial, Technical/Data, Brutalist) seed these
 params, exactly as the color "Color Categories" presets seed palette params.
 
-> Status: **reference only** — the generator + UI that produce these tokens are not built yet.
+> Status: **shipped** — `src/engine/type.mjs` (`typeScale` + `typeTokensCSS`/`typeTokensDTCG`) and the Typography editor section generate these tokens.

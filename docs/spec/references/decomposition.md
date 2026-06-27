@@ -74,8 +74,7 @@ The carving has been seeded into the dev-factory instance and is **partly earned
 ## Next handoff (the build, not the spec)
 
 The spec → lattice decomposition is **done** (`rubric-architect` → `lattice-architect` /
-`roadmap-planner` ran). What remains is the **tool build**, blocked on the engine implementation
-(`hct.js` / `gen.js` / the artifact) not living in this repo:
+`roadmap-planner` ran). What remains is the **tool build**. (Status note: the engine source now lives in this repo at `src/engine/` — `hct.js`, `tonal.js`, `semantic.js`, `exports.js`, etc. — so the original blocker below is resolved; `gen.js` was never created, the single-source `src/engine/` module set supersedes it.)
 
 1. Point the instance at (or import) the tool source so `capability.system.color-engine` can be
    advanced `defined→instantiated` and then validated against `rubric.system.color-engine`.

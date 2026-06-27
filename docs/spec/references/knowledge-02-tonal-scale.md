@@ -21,14 +21,15 @@
   the grid.
 - **Export stops** (`EXPORT_STOPS`): union of the above, sorted → 25 stops. All exports use
   this set.
-- **Landmarks**: `PEAK=500` (chroma peak / "prime" tone), `LITE=450` (light prime),
-  `DARK=550` (dark prime).
+- **Landmarks** (conceptual, not exported constants): stop 500 is the prime / chroma-peak tone, 450 the light prime, 550 the dark prime. The resolution layer maps the prime accent to 550 (light) / 450 (dark) per `accentRef:"mode"`, or 500 for `"single"`.
 
 > 💡 The grid intentionally shows fewer stops than exports carry. The extra half-steps
 > (075/125/175/825/875/925) exist so the semantic layer can reference fine surface
 > elevations (e.g. `surface = 125`) without cluttering the editing grid.
 
 ## 2. Global controls and defaults
+
+> ⚠️ **`toneMode` selects the whole ramp algorithm and defaults to `perceptual`, not the curve-driven path below.** `toneMode ∈ {perceptual (default), even, peak}`. The `curve`/`skew`/`lift`/`relChroma`/`chromaFloor` controls in this table and the `toneAt` math in §3–§4 apply to **`even` mode only**; `perceptual`/`peak` go through the OKHSL path (`okhslStops`), shaped by `lmin`/`lmax`/`damp`/`vibrancy`. The additional defaults not yet tabled here — `relChroma` (false), `chromaFloor` (40), `toneMode` (perceptual), `vibrancy` (0), `onColorMode` (fixed), `accentRef` (mode) — live in `DEFAULT_CONTROLS` in `tonal.js`.
 
 | Control | Range | Default | Purpose |
 |---------|-------|---------|---------|
@@ -132,7 +133,7 @@ applied curve.
 
 ## 7. Worked example
 
-Primary default `{hue:267, chroma:95, skew:-20, lift:0}`, curve logistic, tension 0,
+Primary default `{hue:267, chroma:95, skew:-20, lift:0}` in **`toneMode:"even"`** (the CIELAB-L* path this section describes; the live default is `perceptual`/OKHSL), curve logistic, tension 0,
 lmin 5, lmax 100, damp 80:
 
 - `peakC(267).c` ≈ the hue's sRGB chroma peak; `target = 0.95 * peak`.

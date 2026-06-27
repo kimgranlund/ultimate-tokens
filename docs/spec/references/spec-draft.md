@@ -45,7 +45,7 @@ picker and not a build-time pipeline — it is an interactive generator whose ou
 of portable token artifacts.
 
 Core operations: (1) compute in-gamut tonal ramps per palette; (2) map ramps to a 53-role
-semantic layer with light/dark modes; (3) export to five formats; (4) optionally bind a live
+semantic layer with light/dark modes; (3) export to eight color formats; (4) optionally bind a live
 raw→semantic cascade in Figma via a companion plugin.
 
 ## 2. Why It Exists
@@ -150,9 +150,9 @@ OD-001); 7 scrim roles on base 500 (ADR-004, OD-002); surface Dim/Bright (non-mi
 Low/High (mirror).
 
 ## 9. Export Formats 📐
-See `references/knowledge-04-export-formats.md`. Five formats: CSS hex, CSS OKLCH, JSON,
+See `references/knowledge-04-export-formats.md`. Eight color formats: CSS hex, CSS OKLCH, JSON,
 Figma DTCG 3-file zip (resolved colors, ADR-002), UI3 Collections (interchange-only,
-ADR-007/OD-003). Padding via `pad3`/`refKey` (ADR-006).
+ADR-007/OD-003), Tailwind v4, and ShadCN (a curated subset, not all roles). Padding via `pad3`/`refKey` (ADR-006).
 
 ## 10. Figma Plugin 📐
 See `references/knowledge-05-figma-plugin.md`. Binds the `Color Modes` collection to `Color Primitives`

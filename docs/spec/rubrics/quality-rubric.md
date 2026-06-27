@@ -48,7 +48,7 @@ Mark each. **Any FAIL blocks delivery.**
 - [ ] Surface Dim/Bright (non-mirror) vs Low/High (mirror) distinction is explicit.
 
 ### B4 — Exports
-- [ ] All five formats have an exact output shape (a mini example each).
+- [ ] All eight color formats have an exact output shape (a mini example each).
 - [ ] Resolved-vs-aliased decision stated with the Figma-import rationale (ADR-002).
 - [ ] Padding rule (`pad3`/`refKey`) stated.
 - [ ] UI3 schema flagged as non-native (ADR-007).
