@@ -4522,6 +4522,40 @@ function ensureAppTheme() {
   document.head.appendChild(style);
 }
 
+// ── typography web fonts (lazy) ─────────────────────────────────────────────────
+// The Typography treatments name four highly-rated, free Google Fonts — Inter, Inter
+// Tight (geometric sans), Source Serif 4 (high-contrast serif), and JetBrains Mono.
+// Loaded LAZILY (only when the Typography modal first opens, not on every boot) as a
+// single css2 stylesheet so the specimen renders in the REAL faces instead of falling
+// back to the system stack. The weight range 400..900 covers every weight the engine
+// emits (400 / 450 / 500 / 600 / 700 / 800 / 900 across the treatments); `display=swap`
+// keeps the specimen visible (fallback) while the fonts stream in. Offline (the Figma
+// single-file bundle has no network) the link simply fails and the generic fallbacks in
+// _typeSample hold — so this never blocks, it only upgrades fidelity where there's a net.
+const TYPE_FONTS_LINK_ID = "nonoun-type-fonts";
+const TYPE_FONTS_HREF =
+  "https://fonts.googleapis.com/css2?family=Inter:wght@400..900" +
+  "&family=Inter+Tight:wght@400..900" +
+  "&family=Source+Serif+4:wght@400..900" +
+  "&family=JetBrains+Mono:wght@400..800&display=swap";
+function ensureTypeFonts() {
+  if (typeof document === "undefined" || !document.head) return;
+  if (document.getElementById(TYPE_FONTS_LINK_ID)) return; // inject exactly once
+  // preconnect to the Google Fonts hosts so the stylesheet + the font binaries start sooner.
+  for (const [href, crossorigin] of [["https://fonts.googleapis.com", false], ["https://fonts.gstatic.com", true]]) {
+    const pre = document.createElement("link");
+    pre.rel = "preconnect";
+    pre.href = href;
+    if (crossorigin) pre.crossOrigin = "anonymous";
+    document.head.appendChild(pre);
+  }
+  const link = document.createElement("link");
+  link.id = TYPE_FONTS_LINK_ID;
+  link.rel = "stylesheet";
+  link.href = TYPE_FONTS_HREF;
+  document.head.appendChild(link);
+}
+
 // setColorScheme — flip the document's color-scheme so EVERY light-dark() token —
 // the generated --c-* chrome tokens included — resolves to the chosen mode. "system" maps to
 // "light dark" so the browser follows the OS prefers-color-scheme.
@@ -8449,7 +8483,7 @@ class HctApp extends HTMLElement {
   }
 
   // ── Typography modal (type-scale treatment + live specimen + export) ──────────────────
-  openTypography() { this.typeOpen = true; this.render(); }
+  openTypography() { ensureTypeFonts(); this.typeOpen = true; this.render(); }
   closeTypography() { this.typeOpen = false; this.render(); }
   _syncTypography() {
     const d = this.querySelector(".typo");

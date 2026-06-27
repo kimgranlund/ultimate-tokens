@@ -160,6 +160,12 @@ try {
   // Typography modal: treatment + live specimen (Display / Heading / Body / UI).
   await evalJS(`${el}.openTypography()`); await sleep(300);
   ok(await evalJS(`(()=>{const d=${el}.querySelector("dialog.typo");return !!d && d.open && ${el}.querySelectorAll(".typo-cat").length===4 && ${el}.querySelectorAll(".typo-sample").length>=6})()`), "Typography modal opens with the 4-voice specimen");
+  // opening Typography lazily injects the Google Fonts <link> so the specimen renders in the real faces.
+  ok(await evalJS(`(()=>{const l=document.getElementById("nonoun-type-fonts");return !!l && l.rel==="stylesheet" && /fonts\\.googleapis\\.com\\/css2/.test(l.href)})()`), "Typography injects the Google Fonts stylesheet (Inter / Inter Tight / Source Serif 4 / JetBrains Mono)");
+  // opportunistic: if the smoke env has network, confirm a referenced face actually loaded (non-fatal offline).
+  await sleep(600);
+  const fontLoaded = await evalJS(`(async()=>{try{await document.fonts.ready;return document.fonts.check('16px "Inter Tight"')||document.fonts.check('700 24px "Inter Tight"')}catch(e){return "noapi"}})()`, true);
+  console.log(`  · Inter Tight loaded in-browser: ${fontLoaded} ${fontLoaded === true ? "✓" : "(offline/no-network — generic fallback holds, as designed)"}`);
   const tyShot = await send("Page.captureScreenshot", { format: "png" });
   writeFileSync(resolve(OUT, "typography.png"), Buffer.from(tyShot.data, "base64"));
   console.log("  · screenshot → smoke-out/typography.png");
