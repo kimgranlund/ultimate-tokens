@@ -250,6 +250,22 @@ export function hydrate(snapshot) {
 // { minWidth } when a positive width is set. Keeps the hydrate identity gate (absent stays absent).
 const clampMinWidth = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? { minWidth: Math.max(1, Math.min(3840, Math.round(n))) } : {}; };
 
+// clampTokenOverrides — the per-cell SIZE/HEIGHT override map (Phase 3 of the Tokens matrix), flat
+// `{ "<voice>|<step>|<modeKey>": <number> }` for type / `{ "<size>|<modeKey>": <number> }` for geom. Each
+// value is a positive number clamped into [min, max]; non-numeric / non-finite / ≤0 entries are DROPPED
+// (an invalid cell is simply not overridden). Returns {} when nothing valid is present so the consumer only
+// attaches when non-empty — keeping the hydrate identity gate (absent stays absent, like roleOverrides).
+function clampTokenOverrides(o, min, max) {
+  if (!o || typeof o !== "object") return {};
+  const out = {};
+  for (const k of Object.keys(o)) {
+    const n = Number(o[k]);
+    if (!Number.isFinite(n) || n <= 0) continue;          // drop invalid (NaN / non-number / non-positive)
+    out[k] = Math.round(Math.min(max, Math.max(min, n))); // clamp into range; integer px
+  }
+  return out;
+}
+
 // clampType — the typography config (treatment + body base). Treatment to a known id, base size to a
 // sane integer range. Identity-preserving for an in-domain value (so the roundtrip gate holds).
 const TYPE_TREATMENTS = ["product", "luxury", "editorial", "technical", "statement"];
@@ -259,6 +275,10 @@ function clampType(t) {
   const clampBody = (v) => { const n = Number(v); return Math.max(10, Math.min(32, Number.isFinite(n) ? Math.round(n) : 16)); };
   const bodyBase = clampBody(t.bodyBase);
   const out = { treatment, bodyBase };
+  // tokenOverrides (Phase 3) — per-cell size overrides. OPTIONAL: only attach when non-empty so a config
+  // without overrides round-trips identically. Type sizes clamp into [1, 512] px.
+  const tov = clampTokenOverrides(t.tokenOverrides, 1, 512);
+  if (Object.keys(tov).length) out.tokenOverrides = tov;
   // breakpoint MODES (Phase 5) — each a named bodyBase override. OPTIONAL: only attach when present, so a
   // config without modes round-trips identically (the hydrate identity gate). Each mode = { id, name, bodyBase }.
   if (Array.isArray(t.modes) && t.modes.length) {
@@ -279,6 +299,10 @@ function clampGeometry(g) {
   const clampH = (v) => { const n = Number(v); return Math.max(20, Math.min(48, Number.isFinite(n) ? Math.round(n) : 28)); };
   const baseHeight = clampH(g.baseHeight);
   const out = { treatment, baseHeight };
+  // tokenOverrides (Phase 3) — per-cell control-HEIGHT overrides. OPTIONAL, like type.tokenOverrides (the
+  // identity gate holds when absent). Geom heights clamp into [8, 256] px.
+  const gov = clampTokenOverrides(g.tokenOverrides, 8, 256);
+  if (Object.keys(gov).length) out.tokenOverrides = gov;
   // breakpoint MODES (Phase 5) — each a named baseHeight override. OPTIONAL, like type.modes (the identity
   // gate holds when absent). Each mode = { id, name, baseHeight }.
   if (Array.isArray(g.modes) && g.modes.length) {

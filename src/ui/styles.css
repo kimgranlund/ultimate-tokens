@@ -653,9 +653,19 @@ nonoun-color-tokens.reordering, nonoun-color-tokens.reordering * { cursor: grabb
 .tok-grouphead b { color: var(--ink); margin-right: 8px; }
 .tok-grouphead small { color: var(--ink-dim); }
 .tok-group-count { float: right; color: var(--ink-faint); font-weight: 400; }
-/* value cell — size/line (or height) over a compact sub-line */
+/* value cell — an EDITABLE size/height input (the lever) over a compact re-derived sub-line (Phase 3) */
 .tok-cell { white-space: nowrap; }
 .tok-val { display: block; color: var(--ink); }
+.tok-edit { display: flex; align-items: center; gap: 2px; }
+.tok-input {
+  inline-size: 4.5ch; min-inline-size: 0; padding: 1px 3px; font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
+  color: var(--ink); background: var(--panel); border: 1px solid var(--border); border-radius: 4px; text-align: right;
+}
+.tok-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tok-input.ov { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.tok-cell-ov { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.tok-reset { border: none; background: none; cursor: pointer; color: var(--ink-dim); padding: 0 1px; line-height: 1; }
+.tok-reset:hover { color: var(--accent); }
 .tok-sub { display: block; color: var(--ink-dim); font-size: 11px; margin-top: 1px; }
 .tok-na { color: var(--ink-faint); }
 
