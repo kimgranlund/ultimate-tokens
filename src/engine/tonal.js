@@ -37,7 +37,11 @@ export const DEFAULT_CONTROLS = {
   dampCurve: 1.5,
   dampAmp: 0,
   dampBias: 0,
-  hueSpace: "cam16",
+  // Hue space the per-palette `hue` is expressed in. "oklch" (default): the slider value IS the OKLCH
+  // hue — resolved to a CAM16 hue once per palette via effHue→oklchToCam16Hue. "cam16": the hue is a
+  // CAM16 hue, passed straight through. (Legacy docs that predate the OKLCH-native flip carry "cam16"
+  // explicitly and keep rendering in cam16 — see persist.js / app.js openSet.)
+  hueSpace: "oklch",
   // Chroma basis. false (default): the chroma control is % of the BASE-hue PEAK — per-hue, but the
   // ABSOLUTE chroma still varies with each hue's gamut, so hues come out unequally saturated. true:
   // it's % of EACH STOP's own gamut ceiling, so every hue fills the same fraction of its gamut →

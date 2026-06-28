@@ -111,6 +111,16 @@ function newSet(name) {
   return { id: "set-" + Math.random().toString(36).slice(2, 9), name, doc, updated: Date.now() };
 }
 
+// hydrateStoredDoc — hydrate a doc read from PERSISTENT storage (a saved set record). The OKLCH-native
+// default flip means an ABSENT hueSpace now hydrates to "oklch" — correct for a brand-new doc, but a
+// STORED set that predates the hueSpace field was authored under cam16 and must KEEP rendering in cam16.
+// So we stamp "cam16" on a stored doc that lacks the field BEFORE hydrate (legacy preservation). A doc
+// saved with hueSpace already set (every doc since the field landed) round-trips through untouched.
+function hydrateStoredDoc(stored) {
+  const d = stored && typeof stored === "object" && stored.hueSpace == null ? { ...stored, hueSpace: "cam16" } : stored;
+  return hydrate(d);
+}
+
 // ── app-theme injection (dogfooding) ────────────────────────────────────────────
 // The chrome themes itself with the tokens the tool generates. On boot we run the
 // tool's own `exportCSS` over the FIXED 8 default palettes (appThemeCSS) and inject
@@ -461,7 +471,7 @@ class HctApp extends HTMLElement {
     const rec = this.sets.find((s) => s.id === id);
     if (!rec) return;
     this.activeId = id;
-    this.doc = hydrate(rec.doc);
+    this.doc = hydrateStoredDoc(rec.doc); // legacy stamp: a pre-hueSpace STORED set stays cam16
     this.doc.name = rec.name;
     this.savedSnapshot = JSON.stringify(serialize(this.doc));
     this.sel = { kind: "palette", id: Math.min(this.doc.selected || 0, this.doc.palettes.length - 1) };
@@ -856,7 +866,7 @@ class HctApp extends HTMLElement {
     const visible = this.sets.filter((s) => !q || s.name.toLowerCase().includes(q));
 
     const tiles = visible.map((rec) => {
-      const v = projectView(hydrate(rec.doc));
+      const v = projectView(hydrateStoredDoc(rec.doc)); // legacy stamp: a pre-hueSpace STORED set renders as cam16
       const enabled = v.palettes.filter((p) => p.on);
       const strip = h(
         "div",

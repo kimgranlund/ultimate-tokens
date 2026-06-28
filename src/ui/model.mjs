@@ -103,13 +103,27 @@ export function slug(name) {
     .replace(/^-+|-+$/g, "");
 }
 
+// camHueToOklch — convert a CAM16 hue to its OKLCH-hue EQUIVALENT by sampling the hue's vivid
+// identity (its cusp: peakC's chroma at its tone) and reading the OKLCH hue back off it. The OKLCH
+// hue that, fed to effHue→oklchToCam16Hue under hueSpace:"oklch", recovers the same color family —
+// so a starter authored as a CAM16 hue renders IDENTICALLY once the doc is OKLCH-native.
+function camHueToOklch(camHue) {
+  const pk = peakC(camHue);
+  return Math.round(((hctToOklch(camHue, pk.c, pk.tone)[2] % 360) + 360) % 360);
+}
+
 // defaultDocument — a fresh State: deep-cloned default palettes + the tonal
 // control defaults + a UI selection cursor. Theme is UI-only; carried so a
 // hydrated doc round-trips, but never read by the exporters (AC-U3).
+//
+// OKLCH-native: the starter palettes carry CAM16 hues (from role-table.json, parity-gated — NOT
+// editable here), so we CONVERT each starter's hue to its OKLCH equivalent on the fly and set
+// hueSpace:"oklch". The new doc renders the SAME intended starter colors, but is OKLCH-native (the
+// slider value IS the OKLCH hue). role-table.json stays the cam16 answer key untouched.
 export function defaultDocument() {
   return {
     name: "Default",
-    palettes: DEFAULT_PALETTES.map((p) => ({ ...p })),
+    palettes: DEFAULT_PALETTES.map((p) => ({ ...p, hue: camHueToOklch(p.hue) })),
     curve: DEFAULT_CONTROLS.curve,
     tension: DEFAULT_CONTROLS.tension,
     lmin: DEFAULT_CONTROLS.lmin,
@@ -276,14 +290,15 @@ function placeKeyColors(keyColors, fullStops) {
   });
 }
 
-// seedFromKeyColor — recover a parametric palette seed from a key color (OKLCH): its CAM16
-// hue + chroma (the same inversion configFromVariables uses on a 500 base) plus its tone,
-// so the inspector's "Seed from key color" can align the generated family to the brand.
+// seedFromKeyColor — recover a parametric palette seed from a key color (OKLCH). The OKLCH-native model:
+// `hue` is the input's OWN OKLCH hue (oklch[2]) — so a seed pairs with the default hueSpace:"oklch" and
+// the slider reads the source hue directly; `chroma` is still the %-of-peak recovered from CAM16, and
+// `tone` is the input's L*. So the inspector's "Seed from key color" aligns the family to the brand.
 export function seedFromKeyColor(oklch) {
   if (!Array.isArray(oklch) || oklch.length !== 3) return null;
   const rgb = oklchToRgb(oklch[0], oklch[1], oklch[2]);
-  const { hue, chroma } = cam16FromRgb(rgb);
-  return { hue: Math.round(hue), chroma: Math.round(Math.min(100, chroma)), tone: Math.round(lstarFromRgb(rgb)) };
+  const { chroma } = cam16FromRgb(rgb);
+  return { hue: Math.round(((oklch[2] % 360) + 360) % 360), chroma: Math.round(Math.min(100, chroma)), tone: Math.round(lstarFromRgb(rgb)) };
 }
 
 // rgbToOklchArr — [r,g,b] → [L,C,H] (for capturing a manual hex/identity color as OKLCH).
