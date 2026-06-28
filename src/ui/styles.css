@@ -614,6 +614,49 @@ nonoun-color-tokens.reordering, nonoun-color-tokens.reordering * { cursor: grabb
 .map-drift-match { color: #2e9e5b; }
 .map-drift-drift { color: #d9534f; }
 .map-drift-absent, .map-drift-none { color: var(--ink-faint); font-weight: 400; }
+
+/* ── Tokens MATRIX (Type / Geom) — a READ-ONLY token table in the .is-table canvas slot.
+   Rows = steps grouped by voice/size; columns = Base + one per breakpoint mode. Extends .map-table
+   (sticky head, monospace code cells); the first column (token name) is sticky-left too. */
+.tok-wrap { max-width: min(100%, 1040px); margin: 0 auto; }
+.tok-head { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 10px; }
+.tok-head small { color: var(--ink-dim); }
+.tok-table { table-layout: auto; }
+.tok-table td, .tok-table th { vertical-align: top; }
+/* the token-name FIRST column. The sticky setup is authored correctly for a tbody-<th> matrix:
+   sticky-LEFT only (top:auto — .map-table sets top:0 for THEAD headers, but these <th> live in the
+   tbody), group headers scroll (static), and only the corner pins on both axes. NOTE: the shared
+   .map-table carries overflow:hidden (to clip its radius), which currently makes the TABLE itself the
+   sticky scrollport — so, exactly like the Color Mapping view, the headers scroll WITH the table
+   rather than pinning. Making the canvas data-tables TRULY sticky (overflow:visible + closing the
+   .canvas-scene top-padding gap + a Safari pass, for BOTH Mapping and this matrix) is a tracked
+   follow-up; these rules make this table correct the moment that lands. */
+.tok-table th.tok-name {
+  text-align: left; position: sticky; left: 0; top: auto; z-index: 1;
+  background: var(--panel); border-right: 1px solid var(--line); white-space: nowrap;
+}
+.tok-table th.tok-name-head { top: 0; z-index: 2; background: var(--panel-2); } /* the corner — sticky on BOTH axes */
+.tok-table th.tok-grouphead { position: static; } /* group-header rows scroll with the body, never pin to the top */
+.tok-table th.tok-name code { color: var(--ink); font-weight: 600; }
+/* breakpoint column heads — name above, ≥{minWidth}px beneath */
+.tok-col { white-space: nowrap; }
+.tok-col-name { display: block; }
+.tok-col-bp { display: block; color: var(--ink-faint); font-weight: 400; font-size: 11px; }
+.tok-col-base .tok-col-name { color: var(--ink); }
+/* group header row — spans every column */
+.tok-grouphead {
+  text-align: left; background: var(--panel-2); border-top: 2px solid var(--line);
+  padding: 6px 10px; color: var(--ink-dim);
+}
+.tok-grouphead b { color: var(--ink); margin-right: 8px; }
+.tok-grouphead small { color: var(--ink-dim); }
+.tok-group-count { float: right; color: var(--ink-faint); font-weight: 400; }
+/* value cell — size/line (or height) over a compact sub-line */
+.tok-cell { white-space: nowrap; }
+.tok-val { display: block; color: var(--ink); }
+.tok-sub { display: block; color: var(--ink-dim); font-size: 11px; margin-top: 1px; }
+.tok-na { color: var(--ink-faint); }
+
 /* ── primitive: chip (one in-flow pill) ───────────────────────────────────────────
    Status badge (<span>, optional tone) or interactive toggle (<button>, .on). Replaces
    the old .map-drift-sum and .damp-presets .preset pill stylings. */
@@ -1120,13 +1163,11 @@ dialog.settings::backdrop { background: rgba(10,14,22,.34); }
 .type-spec-count { margin-left: auto; color: var(--ink-faint); font-size: 11px; font-variant-numeric: tabular-nums; }
 .type-spec-line { display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: var(--r); border: 1px solid transparent; background: color-mix(in srgb, var(--panel) 70%, transparent); }
 .type-spec-line:hover { border-color: var(--line); }
-.type-spec-line.tokens { padding: 6px 8px; }
 .type-spec-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 10.5px; font-variant-numeric: tabular-nums; color: var(--ink-faint); }
 .type-spec-token { font-family: var(--mono, ui-monospace, monospace); font-size: 10.5px; color: var(--ink-dim); background: color-mix(in srgb, var(--line) 60%, transparent); padding: 1px 5px; border-radius: 4px; }
 .type-spec-dims { color: var(--ink-faint); }
 .type-spec-render { color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .type-spec-render.para { white-space: normal; overflow: visible; max-width: 640px; }
-.type-spec.is-tokens .type-spec-line { background: transparent; }
 
 /* typography analysis — the seven-group series (display · 3 headings · body · ui · code), shared palette */
 /* the .ty-sN series classes ride BOTH the line <path> and the dot <circle>; the dots need their `fill`,
@@ -1192,8 +1233,6 @@ dialog.settings::backdrop { background: rgba(10,14,22,.34); }
 .geom-spec-count { margin-left: auto; color: var(--ink-faint); font-size: 11px; font-variant-numeric: tabular-nums; }
 .geom-spec-line { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: var(--r); border: 1px solid transparent; background: color-mix(in srgb, var(--panel) 70%, transparent); }
 .geom-spec-line:hover { border-color: var(--line); }
-.geom-spec-line.tokens { padding: 6px 8px; }
-.geom-spec.is-tokens .geom-spec-line { background: transparent; }
 .geom-spec-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 10.5px; font-variant-numeric: tabular-nums; color: var(--ink-faint); }
 .geom-spec-token { font-family: var(--mono, ui-monospace, monospace); font-size: 10.5px; color: var(--ink-dim); background: color-mix(in srgb, var(--line) 60%, transparent); padding: 1px 5px; border-radius: 4px; }
 .geom-spec-dims { color: var(--ink-faint); }

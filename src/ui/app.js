@@ -391,7 +391,7 @@ class HctApp extends HTMLElement {
     this.colorMode = "light"; // Color section value-mode control: light | dark | both (both = the side-by-side Compare view) — ui-session
     this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table)
     this.section = "color"; // editor section: color | typography | geometry — ui-session, routes the whole editor (never persisted)
-    this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (metrics only) — type-section sub-state
+    this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (read-only token matrix: Base + breakpoints) — type-section sub-state
     this.typeMode = "base"; // active Typography breakpoint mode: "base" | a doc.type.modes[].id (Phase 5) — ui-session
     this.stopsMode = "core"; // palette ramp density: core (19 display stops) | extended (25 EXPORT_STOPS)
     this.mapTextMode = false; // Mapping table raw-token editor: false = select menu, true = free text input
@@ -417,7 +417,7 @@ class HctApp extends HTMLElement {
     this.applyGateDontShow = false; // the "don't show again" checkbox (transient, reset on open)
     this.settingsOpen = false; // the Settings page (token-mapping + app prefs)
     this.settingsSection = "mapping"; // which Settings nav item is active (left-nav page layout)
-    this.geomSpecMode = "controls"; // geometry canvas: controls (live mock controls on the ramp) | tokens (metrics only) — geom-section sub-state
+    this.geomSpecMode = "controls"; // geometry canvas: controls (live mock controls on the ramp) | tokens (read-only token matrix: Base + breakpoints) — geom-section sub-state
     this.geomMode = "base"; // active Geometry breakpoint mode: "base" | a doc.geometry.modes[].id (Phase 5) — ui-session
     this.geomSegment = "ramp"; // right-pane Geometry inspector tab: ramp | radius | space (ui-session)
     this.typeSegment = "scale"; // right-pane Typography inspector tab: scale | fonts | specimen (ui-session)
@@ -2756,7 +2756,7 @@ class HctApp extends HTMLElement {
       this.segmented(
         [
           { id: "specimen", label: "Specimen", title: "Live faces — render each step in the real font" },
-          { id: "tokens", label: "Tokens", title: "Metrics only — token name · size/line · weight · tracking" },
+          { id: "tokens", label: "Tokens", title: "Read-only token matrix — every step × Base + each breakpoint" },
         ],
         this.typeSpecMode,
         (id) => this.setTypeSpecMode(id),
@@ -2777,10 +2777,12 @@ class HctApp extends HTMLElement {
     );
   }
 
-  // renderTypeCanvas — the Typography center: the full specimen scene in the same pannable/zoomable
-  // .canvas-area + .canvas-scene shell the color ramps use (wirePanZoom + applyTransform), painted in
-  // the canvas preview scheme.
+  // renderTypeCanvas — the Typography center. Specimen mode renders the full live specimen in the same
+  // pannable/zoomable .canvas-area + .canvas-scene shell the color ramps use (wirePanZoom + applyTransform).
+  // Tokens mode renders a READ-ONLY token MATRIX (rows = steps, cols = Base + each breakpoint) in the
+  // scrolling .is-table shell instead — exactly how Color's Mapping view flips (see renderCanvasArea).
   renderTypeCanvas(view) {
+    if (this.typeSpecMode === "tokens") return this._tokensTableArea("Typography tokens — Base + breakpoints", this.renderTypeTokensTable());
     const area = h(
       "div",
       {
@@ -2793,6 +2795,150 @@ class HctApp extends HTMLElement {
     this.wirePanZoom(area);
     requestAnimationFrame(() => this.applyTransform());
     return area;
+  }
+
+  // _tokensTableArea — the scrolling .is-table canvas shell (no pan/zoom) that hosts a tokens MATRIX,
+  // mirroring how renderCanvasArea wraps the Mapping table. One place for both Type + Geom tables.
+  _tokensTableArea(label, table) {
+    return h(
+      "div",
+      {
+        class: "canvas-area canvas-scheme-" + this.resolvedCanvasScheme() + " is-table",
+        role: "group",
+        "aria-label": label,
+        style: "--canvas-bg:" + this.canvasBg(), // match the Mapping table ground (renderCanvasArea sets the same)
+      },
+      h("div", { class: "canvas-scene" }, table),
+    );
+  }
+
+  // _typeTokenColumns — the ordered column set for the Typography token matrix: Base first, then one
+  // column per breakpoint MODE sorted ascending by minWidth (the responsive cascade). Each entry carries
+  // the resolved typeScale so a cell reads the value at that step × that mode. Mirrors _typeModeScales()
+  // (same scale resolution) but prepends Base = the active doc.type scale and sorts by width.
+  _typeTokenColumns() {
+    const base = this.doc.type || DEFAULT_TYPE; // the DOCUMENT base — mode-independent (NOT _activeType, which tracks the header Mode selector)
+    const cols = [{ id: "base", name: "Base", minWidth: null, scale: typeScale(base) }];
+    const modes = this._typeModeScales()
+      .map((m) => ({ id: "tm", name: m.name || "Mode", minWidth: Number(m.minWidth) || 0, scale: m.scale }))
+      .sort((a, b) => a.minWidth - b.minWidth);
+    return cols.concat(modes);
+  }
+
+  // renderTypeTokensTable — the READ-ONLY Typography token MATRIX (Phase 1). Rows = type steps GROUPED by
+  // voice (Display · the Headings · Body · UI · Code) with a group-header row; the first (sticky) column is
+  // the token NAME (--type-{voice}-{step}). Columns = Base + each breakpoint mode (≥{minWidth}px). Each cell
+  // shows size/line + a compact w{weight} · {tracking} so the responsive cascade is scannable. Extends the
+  // .map-table chrome — no editing, no reset, no width presets (those are later phases).
+  renderTypeTokensTable() {
+    const cols = this._typeTokenColumns();
+    const base = cols[0].scale;
+    const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const cats = Object.keys(base.categories); // the seven named groups, engine order
+    const total = cats.reduce((a, c) => a + Object.keys(base.categories[c]).length, 0);
+    // a single value cell: size/line on top, w{weight} · {tracking} beneath (or "—" if the mode lacks it).
+    const cell = (scale, cat, step) => {
+      const s = scale.categories[cat] && scale.categories[cat][step];
+      if (!s) return h("td", { class: "tok-cell" }, h("span", { class: "tok-na" }, "—"));
+      const tr = `${s.letterSpacing >= 0 ? "+" : ""}${s.letterSpacing}`;
+      return h(
+        "td",
+        { class: "tok-cell" },
+        h("code", { class: "tok-val" }, `${s.size}/${s.lineHeight}`),
+        h("span", { class: "tok-sub" }, `w${s.weight} · ${tr}`),
+      );
+    };
+    const headCells = cols.map((c) =>
+      h("th", { class: "tok-col" + (c.id === "base" ? " tok-col-base" : ""), scope: "col" },
+        h("span", { class: "tok-col-name" }, c.name),
+        c.minWidth ? h("small", { class: "tok-col-bp" }, `≥${Math.round(c.minWidth)}px`) : false));
+    const rows = [];
+    for (const cat of cats) {
+      const role = base.roleOf[cat] || "body";
+      const steps = Object.keys(base.categories[cat]);
+      // largest → smallest within a group (mirror the specimen order)
+      const ordered = [...steps].sort((a, b) => (base.categories[cat][b]?.size || 0) - (base.categories[cat][a]?.size || 0));
+      rows.push(h("tr", { class: "tok-group" },
+        h("th", { class: "tok-grouphead", colspan: String(cols.length + 1), scope: "colgroup" },
+          h("b", {}, cat), h("small", {}, base.fonts[role]), h("span", { class: "tok-group-count" }, `${steps.length} steps`))));
+      for (const step of ordered) {
+        rows.push(h("tr", { class: "tok-row" },
+          h("th", { class: "tok-name", scope: "row" }, h("code", {}, `--type-${kebab(cat)}-${kebab(step)}`)),
+          ...cols.map((c) => cell(c.scale, cat, step))));
+      }
+    }
+    return h(
+      "div",
+      { class: "tok-wrap" },
+      h("div", { class: "tok-head" },
+        h("b", {}, "Type tokens"),
+        h("small", {}, `${cats.length} groups · ${total} steps · ${cols.length} column${cols.length === 1 ? "" : "s"} (Base${cols.length > 1 ? " + " + (cols.length - 1) + " breakpoint" + (cols.length === 2 ? "" : "s") : ""})`)),
+      h(
+        "table",
+        { class: "map-table tok-table" },
+        h("thead", {}, h("tr", {}, h("th", { class: "tok-name tok-name-head", scope: "col" }, "Token"), ...headCells)),
+        h("tbody", {}, ...rows),
+      ),
+    );
+  }
+
+  // _geomTokenColumns — the ordered column set for the Geometry token matrix: Base first, then one column
+  // per breakpoint MODE sorted ascending by minWidth. Mirrors _typeTokenColumns / _geomModeScales but
+  // prepends Base = the DOCUMENT base composed geometry scale (mode-independent — NOT _activeGeomScale).
+  _geomTokenColumns() {
+    const cols = [{ id: "base", name: "Base", minWidth: null, scale: geometryScale({ ...this.doc, geometry: this.doc.geometry || DEFAULT_GEOMETRY }) }];
+    const modes = this._geomModeScales()
+      .map((m) => ({ id: "gm", name: m.name || "Mode", minWidth: Number(m.minWidth) || 0, scale: m.scale }))
+      .sort((a, b) => a.minWidth - b.minWidth);
+    return cols.concat(modes);
+  }
+
+  // renderGeomTokensTable — the READ-ONLY Geometry token MATRIX (Phase 1). Rows = the six control sizes
+  // (XS..2XL, largest→smallest) with a group-header row; the first (sticky) column is the token NAME
+  // (--size-{step}). Columns = Base + each breakpoint mode (≥{minWidth}px). Each cell shows the key dims —
+  // height, then icon/font/pad/radius compactly. Extends the .map-table chrome — read-only.
+  renderGeomTokensTable() {
+    const cols = this._geomTokenColumns();
+    const base = cols[0].scale;
+    const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const SIZE_NAMES = ["2XL", "XL", "LG", "MD", "SM", "XS"]; // largest → smallest
+    const present = SIZE_NAMES.filter((n) => base.sizes[n]);
+    const cell = (scale, name) => {
+      const s = scale.sizes[name];
+      if (!s) return h("td", { class: "tok-cell" }, h("span", { class: "tok-na" }, "—"));
+      return h(
+        "td",
+        { class: "tok-cell" },
+        h("code", { class: "tok-val" }, `${s.height}h`),
+        h("span", { class: "tok-sub" }, `i${s.icon} · f${s.font} · p${s.padding} · r${s.radiusPill}`),
+      );
+    };
+    const headCells = cols.map((c) =>
+      h("th", { class: "tok-col" + (c.id === "base" ? " tok-col-base" : ""), scope: "col" },
+        h("span", { class: "tok-col-name" }, c.name),
+        c.minWidth ? h("small", { class: "tok-col-bp" }, `≥${Math.round(c.minWidth)}px`) : false));
+    const rows = [];
+    rows.push(h("tr", { class: "tok-group" },
+      h("th", { class: "tok-grouphead", colspan: String(cols.length + 1), scope: "colgroup" },
+        h("b", {}, "Controls"), h("small", {}, "height · icon · font · pad · radius"), h("span", { class: "tok-group-count" }, `${present.length} sizes`))));
+    for (const name of present) {
+      rows.push(h("tr", { class: "tok-row" },
+        h("th", { class: "tok-name", scope: "row" }, h("code", {}, `--size-${kebab(name)}`)),
+        ...cols.map((c) => cell(c.scale, name))));
+    }
+    return h(
+      "div",
+      { class: "tok-wrap" },
+      h("div", { class: "tok-head" },
+        h("b", {}, "Geometry tokens"),
+        h("small", {}, `${base.baseHeight}px base · ${present.length} sizes · ${cols.length} column${cols.length === 1 ? "" : "s"} (Base${cols.length > 1 ? " + " + (cols.length - 1) + " breakpoint" + (cols.length === 2 ? "" : "s") : ""})`)),
+      h(
+        "table",
+        { class: "map-table tok-table" },
+        h("thead", {}, h("tr", {}, h("th", { class: "tok-name tok-name-head", scope: "col" }, "Token"), ...headCells)),
+        h("tbody", {}, ...rows),
+      ),
+    );
   }
 
 
@@ -3029,7 +3175,6 @@ class HctApp extends HTMLElement {
     const cfg = this._activeType();
     const scale = typeScale(cfg);
     const t = TYPE_TREATMENTS.find((x) => x.id === cfg.treatment) || TYPE_TREATMENTS[0];
-    const tokensOnly = this.typeSpecMode === "tokens";
     const PARA = TYPE_PARA(scale.treatment);
     const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const line = (cat, step) => {
@@ -3046,7 +3191,7 @@ class HctApp extends HTMLElement {
       const isPara = cat === "Body" && step === "XL";
       return h(
         "div",
-        { class: "type-spec-line" + (tokensOnly ? " tokens" : "") },
+        { class: "type-spec-line" },
         h(
           "div",
           { class: "type-spec-meta" },
@@ -3055,7 +3200,7 @@ class HctApp extends HTMLElement {
           h("span", { class: "type-spec-dims" }, `w${s.weight}`),
           h("span", { class: "type-spec-dims" }, `${s.letterSpacing >= 0 ? "+" : ""}${s.letterSpacing} tr`),
         ),
-        tokensOnly ? false : h("div", { class: "type-spec-render" + (isPara ? " para" : ""), style: faceStyle }, isPara ? PARA : TYPE_SAMPLE(cat, scale.treatment)),
+        h("div", { class: "type-spec-render" + (isPara ? " para" : ""), style: faceStyle }, isPara ? PARA : TYPE_SAMPLE(cat, scale.treatment)),
       );
     };
     const cats = Object.keys(scale.categories); // the seven named groups, in engine order
@@ -3075,7 +3220,7 @@ class HctApp extends HTMLElement {
     });
     return h(
       "div",
-      { class: "type-spec" + (tokensOnly ? " is-tokens" : "") },
+      { class: "type-spec" },
       h("div", { class: "type-spec-head" }, h("b", {}, t.label), h("small", {}, `${cfg.bodyBase}px base · ${cats.length} groups · ${total} steps`)),
       h("p", { class: "type-spec-note" }, t.note + " — fonts are swappable; the size scale, optical tracking, weight, leading, and case are the system."),
       ...groups,
@@ -5000,7 +5145,7 @@ class HctApp extends HTMLElement {
       this.segmented(
         [
           { id: "controls", label: "Controls", title: "Live mock controls — render each ramp step as a real box" },
-          { id: "tokens", label: "Tokens", title: "Metrics only — token name · height · icon · font · pad · radius" },
+          { id: "tokens", label: "Tokens", title: "Read-only token matrix — every size × Base + each breakpoint" },
         ],
         this.geomSpecMode,
         (id) => this.setGeomSpecMode(id),
@@ -5021,10 +5166,12 @@ class HctApp extends HTMLElement {
     );
   }
 
-  // renderGeomCanvas — the Geometry center: the full dimensional dataset (the 6-size control ramp + the
-  // radius ladder + the space scale) in the same pannable/zoomable .canvas-area + .canvas-scene shell the
-  // color ramps + type specimen use (wirePanZoom + applyTransform), painted in the canvas preview scheme.
+  // renderGeomCanvas — the Geometry center. Controls mode renders the full dimensional dataset (the 6-size
+  // control ramp + radius + space) in the pannable/zoomable .canvas-area + .canvas-scene shell. Tokens mode
+  // renders a READ-ONLY token MATRIX (rows = sizes, cols = Base + each breakpoint) in the scrolling
+  // .is-table shell instead — mirrors renderTypeCanvas / Color's Mapping flip.
   renderGeomCanvas(view) {
+    if (this.geomSpecMode === "tokens") return this._tokensTableArea("Geometry tokens — Base + breakpoints", this.renderGeomTokensTable());
     const area = h(
       "div",
       {
@@ -5049,7 +5196,6 @@ class HctApp extends HTMLElement {
     const cfg = this.doc.geometry || DEFAULT_GEOMETRY;
     const scale = this._activeGeomScale(); // composed with the type scale — per-step `font` is the brand UI size
     const t = GEOMETRY_TREATMENTS.find((x) => x.id === cfg.treatment) || GEOMETRY_TREATMENTS[0];
-    const tokensOnly = this.geomSpecMode === "tokens";
     const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     // the control ramp renders LARGEST → smallest (biggest example first); heights are monotonic by step.
     const SIZE_NAMES = ["2XL", "XL", "LG", "MD", "SM", "XS"];
@@ -5069,7 +5215,7 @@ class HctApp extends HTMLElement {
       );
       return h(
         "div",
-        { class: "geom-spec-line" + (tokensOnly ? " tokens" : "") },
+        { class: "geom-spec-line" },
         h(
           "div",
           { class: "geom-spec-meta" },
@@ -5080,14 +5226,14 @@ class HctApp extends HTMLElement {
           h("span", { class: "geom-spec-dims" }, `pad ${s.padding}`),
           h("span", { class: "geom-spec-dims" }, `r ${s.radiusPill}`),
         ),
-        tokensOnly ? false : h("div", { class: "geom-spec-render" }, box),
+        h("div", { class: "geom-spec-render" }, box),
       );
     };
     const ladderRow = (entries, swatch) =>
       h("div", { class: "geom-scale-row" }, ...entries.map(swatch));
     return h(
       "div",
-      { class: "geom-spec" + (tokensOnly ? " is-tokens" : "") },
+      { class: "geom-spec" },
       h("div", { class: "geom-spec-head" }, h("b", {}, t.label), h("small", {}, `${scale.baseHeight}px base · 6 sizes · ${scale.density}× density`)),
       h("p", { class: "geom-spec-note" }, t.note + " — every glyph centers in a square cell of side = the control height, so edge padding = (height − glyph)/2. The ramp + paddings are computed, not authored."),
       scale.typed
