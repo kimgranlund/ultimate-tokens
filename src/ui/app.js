@@ -2707,7 +2707,9 @@ class HctApp extends HTMLElement {
     });
   }
   deleteTypeMode(id) {
-    if (this.typeMode === id) this.typeMode = "base";
+    // fall back to Base if we're deleting the active mode, OR if Compare would be left with no modes.
+    const remaining = (this.doc.type && this.doc.type.modes || []).filter((m) => m.id !== id).length;
+    if (this.typeMode === id || (this.typeMode === "compare" && remaining === 0)) this.typeMode = "base";
     this.commit((d) => {
       if (!d.type || !Array.isArray(d.type.modes)) return;
       d.type = { ...d.type, modes: d.type.modes.filter((m) => m.id !== id) };
@@ -2732,7 +2734,8 @@ class HctApp extends HTMLElement {
     const bb = Math.round(v);
     this.editDrag((d) => {
       d.type = { ...(d.type || DEFAULT_TYPE) };
-      if (this.typeMode === "base") d.type.bodyBase = bb;
+      // Compare shows the Base scale in the inspector, so its slider edits Base (not a per-mode no-op).
+      if (this.typeMode === "base" || this.typeMode === "compare") d.type.bodyBase = bb;
       else d.type.modes = (d.type.modes || []).map((m) => (m.id === this.typeMode ? { ...m, bodyBase: bb } : m));
     });
   }
@@ -2805,10 +2808,10 @@ class HctApp extends HTMLElement {
       "div",
       { class: "canvas-header" },
       !this.panesLeft ? this.paneToggle("left") : false,
-      this.segmented(
+      this.typeMode === "compare" ? false : this.segmented(
         [
           { id: "specimen", label: "Specimen", title: "Live faces — render each step in the real font" },
-          { id: "tokens", label: "Tokens", title: "Read-only token matrix — every step × Base + each breakpoint" },
+          { id: "tokens", label: "Tokens", title: "Editable token matrix — every step × Base + each breakpoint" },
         ],
         this.typeSpecMode,
         (id) => this.setTypeSpecMode(id),
@@ -2876,7 +2879,7 @@ class HctApp extends HTMLElement {
     this._typeModeOverride = null;
     return h(
       "div",
-      { class: "compare-col canvas-scheme-" + this.resolvedCanvasScheme() },
+      { class: "compare-col canvas-scheme-" + this.resolvedCanvasScheme(), style: "--canvas-bg:" + this.canvasBg() },
       h("div", { class: "compare-col-label" }, label),
       scene,
     );
@@ -5274,7 +5277,8 @@ class HctApp extends HTMLElement {
     });
   }
   deleteGeomMode(id) {
-    if (this.geomMode === id) this.geomMode = "base";
+    const remaining = (this.doc.geometry && this.doc.geometry.modes || []).filter((m) => m.id !== id).length;
+    if (this.geomMode === id || (this.geomMode === "compare" && remaining === 0)) this.geomMode = "base";
     this.commit((d) => {
       if (!d.geometry || !Array.isArray(d.geometry.modes)) return;
       d.geometry = { ...d.geometry, modes: d.geometry.modes.filter((m) => m.id !== id) };
@@ -5298,7 +5302,8 @@ class HctApp extends HTMLElement {
     const bh = Math.round(v);
     this.editDrag((d) => {
       d.geometry = { ...(d.geometry || DEFAULT_GEOMETRY) };
-      if (this.geomMode === "base") d.geometry.baseHeight = bh;
+      // Compare shows the Base scale in the inspector, so its slider edits Base (not a per-mode no-op).
+      if (this.geomMode === "base" || this.geomMode === "compare") d.geometry.baseHeight = bh;
       else d.geometry.modes = (d.geometry.modes || []).map((m) => (m.id === this.geomMode ? { ...m, baseHeight: bh } : m));
     });
   }
@@ -5370,10 +5375,10 @@ class HctApp extends HTMLElement {
       "div",
       { class: "canvas-header" },
       !this.panesLeft ? this.paneToggle("left") : false,
-      this.segmented(
+      this.geomMode === "compare" ? false : this.segmented(
         [
           { id: "controls", label: "Controls", title: "Live mock controls — render each ramp step as a real box" },
-          { id: "tokens", label: "Tokens", title: "Read-only token matrix — every size × Base + each breakpoint" },
+          { id: "tokens", label: "Tokens", title: "Editable token matrix — every size × Base + each breakpoint" },
         ],
         this.geomSpecMode,
         (id) => this.setGeomSpecMode(id),
@@ -5440,7 +5445,7 @@ class HctApp extends HTMLElement {
     this._geomModeOverride = null;
     return h(
       "div",
-      { class: "compare-col canvas-scheme-" + this.resolvedCanvasScheme() },
+      { class: "compare-col canvas-scheme-" + this.resolvedCanvasScheme(), style: "--canvas-bg:" + this.canvasBg() },
       h("div", { class: "compare-col-label" }, label),
       scene,
     );

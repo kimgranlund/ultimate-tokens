@@ -1428,6 +1428,9 @@ app.typeMode = "compare"; app.render(); flushRaf();
   // each column carries a full 41-line specimen (the override forced its mode while the scene built).
   ok(app.querySelectorAll(".type-spec-line").length === 41 * cols.length, `(ty-cmp) every column renders the full 41-step specimen (got ${app.querySelectorAll(".type-spec-line").length} lines across ${cols.length} cols)`);
   ok(app._typeModeOverride === null, "(ty-cmp) the transient _typeModeOverride is cleared after each column builds (never leaks)");
+  // MAJOR: the inspector body-size slider edits the BASE scale in Compare (it shows Base) — not a no-op.
+  app._setActiveTypeBodyBase(19); app.commitDrag?.(); flushRaf();
+  ok(app.doc.type.bodyBase === 19, `(ty-cmp) the body-size slider edits doc.type.bodyBase while in Compare (got ${app.doc.type.bodyBase})`);
 }
 app.typeMode = "base"; app.render(); flushRaf();
 ok(!app.querySelector(".compare-col") && !!app.querySelector(".type-spec") && app.querySelectorAll(".type-spec-line").length === 41, "(ty-cmp) leaving Compare restores the single specimen scene");
@@ -1436,8 +1439,9 @@ ok(!app.querySelector(".compare-col") && !!app.querySelector(".type-spec") && ap
 // survive serialize→hydrate forever). Set a per-mode override, delete the mode, assert the key is gone.
 app.setTypeTokenOverride("Body", "MD", _bpId, 21); flushRaf();
 ok(app.doc.type.tokenOverrides && app.doc.type.tokenOverrides["Body|MD|" + _bpId] === 21, "(ty-tok-orphan) a per-mode override is set before deletion");
+app.typeMode = "compare"; app.render(); flushRaf(); // delete the LAST mode WHILE in Compare → must fall back to Base
 app.deleteTypeMode(_bpId); flushRaf();
-ok(!app.doc.type.modes && app.typeMode === "base", "(ty-bp) deleting the active mode drops it + falls back to Base");
+ok(!app.doc.type.modes && app.typeMode === "base", "(ty-cmp) deleting the last mode while in Compare drops it + falls back to Base (no orphaned compare-of-one)");
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "tmode:compare").length === 0, "(ty-cmp-omit) the Compare item is omitted when only Base exists (no breakpoint modes)");
 ok(!app.doc.type.tokenOverrides, "(ty-tok-orphan) deleting the mode strips its per-cell override AND drops the now-empty tokenOverrides map");
 app.commit((d) => { d.type = { treatment: "product", bodyBase: 16 }; }); // restore default
@@ -1561,6 +1565,9 @@ app.geomMode = "compare"; app.render(); flushRaf();
   ok(txtOf(app.querySelectorAll(".compare-col-label")[0] || {}) === "Base", "(geo-cmp) the first column is labelled Base");
   ok(app.querySelectorAll(".geom-spec-line").length === 6 * cols.length, `(geo-cmp) every column renders the full 6-step control ramp (got ${app.querySelectorAll(".geom-spec-line").length} lines across ${cols.length} cols)`);
   ok(app._geomModeOverride === null, "(geo-cmp) the transient _geomModeOverride is cleared after each column builds (never leaks)");
+  // MAJOR: the inspector base-height slider edits the BASE scale in Compare (it shows Base) — not a no-op.
+  app._setActiveGeomBaseHeight(40); app.commitDrag?.(); flushRaf();
+  ok(app.doc.geometry.baseHeight === 40, `(geo-cmp) the base-height slider edits doc.geometry.baseHeight while in Compare (got ${app.doc.geometry.baseHeight})`);
 }
 app.geomMode = "base"; app.render(); flushRaf();
 ok(!app.querySelector(".compare-col") && !!app.querySelector(".geom-spec") && app.querySelectorAll(".geom-spec-line").length === 6, "(geo-cmp) leaving Compare restores the single controls scene");
@@ -1568,8 +1575,9 @@ ok(!app.querySelector(".compare-col") && !!app.querySelector(".geom-spec") && ap
 // keys survive serialize→hydrate forever). Set a per-mode override, delete the mode, assert the key is gone.
 app.setGeomTokenOverride("MD", _gbpId, 40); flushRaf();
 ok(app.doc.geometry.tokenOverrides && app.doc.geometry.tokenOverrides["MD|" + _gbpId] === 40, "(geo-tok-orphan) a per-mode override is set before deletion");
+app.geomMode = "compare"; app.render(); flushRaf(); // delete the LAST mode WHILE in Compare → must fall back to Base
 app.deleteGeomMode(_gbpId); flushRaf();
-ok(!app.doc.geometry.modes && app.geomMode === "base", "(geo-bp) deleting the active mode drops it + falls back to Base");
+ok(!app.doc.geometry.modes && app.geomMode === "base", "(geo-cmp) deleting the last mode while in Compare drops it + falls back to Base (no orphaned compare-of-one)");
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "gmode:compare").length === 0, "(geo-cmp-omit) the Compare item is omitted when only Base exists (no breakpoint modes)");
 ok(!app.doc.geometry.tokenOverrides, "(geo-tok-orphan) deleting the mode strips its per-cell override AND drops the now-empty tokenOverrides map");
 app.commit((d) => { d.geometry = { treatment: "comfortable", baseHeight: 28 }; }); // restore default
