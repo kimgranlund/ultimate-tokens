@@ -53,6 +53,37 @@ ok(F.clampProfile({ tier: "garbage" }).tier === "free", "clampProfile drops an i
   ok(JSON.stringify(F.clampProfile(JSON.parse(JSON.stringify(c)))) === JSON.stringify(c), "a clamped profile round-trips through JSON unchanged");
 }
 
+// ── Layer 2: entitlementActive — active + unexpired only; clockless (nowMs is a param) ──
+const T0 = 1_700_000_000_000; // a fixed "now"
+ok(F.entitlementActive({ status: "active" }, T0) === true, "entitlementActive: active + no expiry → true (perpetual)");
+ok(F.entitlementActive({ status: "active", expiresAt: T0 + 1000 }, T0) === true, "entitlementActive: active + future expiry → true");
+ok(F.entitlementActive({ status: "active", expiresAt: T0 - 1000 }, T0) === false, "entitlementActive: active but past expiry → false (expired)");
+ok(F.entitlementActive({ status: "disabled" }, T0) === false, "entitlementActive: a non-active status → false");
+ok(F.entitlementActive(null, T0) === false && F.entitlementActive(undefined, T0) === false, "entitlementActive: missing/garbage entitlement → false");
+
+// ── Layer 2: resolveTier — the entitlement (not the raw stored tier) drives pro ──
+ok(F.resolveTier({ tier: "pro", entitlement: { status: "active" } }, T0) === "pro", "resolveTier: tier:pro + active entitlement → pro");
+ok(F.resolveTier({ tier: "pro", entitlement: { status: "active", expiresAt: T0 - 1 } }, T0) === "free", "resolveTier: tier:pro + expired entitlement → free");
+ok(F.resolveTier({ tier: "pro" }, T0) === "free", "resolveTier: tier:pro with NO entitlement → free (a stored tier can't fake pro)");
+ok(F.resolveTier({ tier: "free", entitlement: { status: "active" } }, T0) === "free", "resolveTier: tier:free → free even with an active entitlement");
+ok(F.resolveTier(null, T0) === "free", "resolveTier: garbage profile → free");
+
+// ── Layer 2: clampProfile round-trips the optional payment fields + drops invalid ones ──
+{
+  const c = F.clampProfile({ tier: "pro", licenseKey: "PRO-ABCD-1234", entitlement: { status: "active", expiresAt: T0, extra: "drop-me" }, checkedAt: T0 });
+  ok(c.tier === "pro" && c.licenseKey === "PRO-ABCD-1234" && c.checkedAt === T0, "clampProfile keeps a valid licenseKey + checkedAt");
+  ok(c.entitlement && c.entitlement.status === "active" && c.entitlement.expiresAt === T0 && !("extra" in c.entitlement), "clampProfile clamps entitlement to a sane {status, expiresAt} shape (drops extra fields)");
+  ok(JSON.stringify(F.clampProfile(JSON.parse(JSON.stringify(c)))) === JSON.stringify(c), "a Layer-2 clamped profile round-trips through JSON unchanged");
+}
+{
+  const c = F.clampProfile({ tier: "pro", licenseKey: 42, entitlement: { status: 7 }, checkedAt: "soon" });
+  ok(!("licenseKey" in c), "clampProfile drops a non-string licenseKey");
+  ok(!("entitlement" in c), "clampProfile drops an entitlement whose status isn't a string");
+  ok(!("checkedAt" in c), "clampProfile drops a non-numeric checkedAt");
+  ok(c.tier === "pro" && Object.keys(c).join() === "tier", "an all-invalid Layer-2 profile clamps to just { tier }");
+}
+ok(!("expiresAt" in F.clampProfile({ entitlement: { status: "active", expiresAt: "whenever" } }).entitlement), "clampProfile drops a non-finite entitlement.expiresAt but keeps the entitlement");
+
 if (fails.length) { console.error(`flags FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("flags PASS — tier tables · resolveFlags (enforced/unenforced) · flagOf (bool+valued+default) · clampProfile");
+console.log("flags PASS — tier tables · resolveFlags · flagOf · clampProfile · entitlementActive · resolveTier (Layer 2)");
 process.exit(0);
