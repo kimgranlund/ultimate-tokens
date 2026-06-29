@@ -197,3 +197,36 @@ export function geomTokensFigma(scale) {
   for (const [k, v] of Object.entries(scale.space)) space[k] = num(v);
   return { Geometry: { size, radius, space } };
 }
+
+// geomTokensFigmaModes — the geometry as a single Figma-variable COLLECTION ("Geometry") with one MODE per
+// breakpoint (a "Base" mode + one per supplied breakpoint mode), mirroring the UI3 color shape
+// (`exportUI3`): `{ collections: { "Geometry": { modes:[…], variables: { "size/<NAME>/<field>": {
+// type:"FLOAT", values:{ Base:…, <modeName>:… } }, "radius/<k>", "space/<k>" } } } }`. So a Figma user
+// imports ONE breakpoint-moded collection instead of N separate per-width files. The size fields mirror
+// `geomTokensFigma` (height/icon/caret/font/gap/padding/edgePadding/radius/minWidth). `modes` = the SAME
+// shape `_geomModeScales()` returns: [{ name, scale }] (minWidth, if present, is ignored — Figma modes are
+// named, not media-queried). IDENTITY: `modes = []` ⇒ a single "Base" mode whose values equal the base.
+const GEOM_SIZE_FIELDS = [["height", "height"], ["icon", "icon"], ["caret", "caret"], ["font", "font"], ["gap", "gap"], ["padding", "padding"], ["edgePadding", "edgePadding"], ["radius", "radiusPill"], ["minWidth", "minWidth"]];
+export function geomTokensFigmaModes(baseScale, modes = []) {
+  const list = (Array.isArray(modes) ? modes : []).filter((m) => m && m.name && m.scale && m.scale.sizes);
+  const modeNames = ["Base", ...list.map((m) => m.name)];
+  const variables = {};
+  const set = (key, mode, value) => {
+    if (!variables[key]) variables[key] = { type: "FLOAT", values: {} };
+    variables[key].values[mode] = value;
+  };
+  // for each mode (Base first), write size/<NAME>/<field>, radius/<k>, space/<k>. Only `sizes` scale with
+  // baseHeight; radii/space are treatment-derived (mode-independent), but we emit per-mode for completeness.
+  const layer = (scale, mode) => {
+    for (const [name, s] of Object.entries(scale.sizes))
+      for (const [field, src] of GEOM_SIZE_FIELDS) set(`size/${name}/${field}`, mode, s[src]);
+    for (const [k, v] of Object.entries(scale.radii)) set(`radius/${k}`, mode, v);
+    for (const [k, v] of Object.entries(scale.space)) set(`space/${k}`, mode, v);
+  };
+  layer(baseScale, "Base");
+  for (const m of list) layer(m.scale, m.name);
+  return {
+    $schema: "figma-ui3-variables.float.schema.v1",
+    collections: { "Geometry": { modes: modeNames, variables } },
+  };
+}

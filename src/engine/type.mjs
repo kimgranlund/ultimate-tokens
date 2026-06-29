@@ -186,3 +186,36 @@ export function typeTokensDTCG(scale) {
   }
   return { fontFamily, typography };
 }
+
+// typeTokensFigmaModes — the type scale as a single Figma-variable COLLECTION ("Typography") with one MODE
+// per breakpoint (a "Base" mode + one per supplied breakpoint mode), mirroring the UI3 color shape
+// (`exportUI3`): `{ collections: { "Typography": { modes:[…], variables: { "<voice>/<step>/<prop>": {
+// type:"FLOAT", values:{ Base:…, <modeName>:… } } } } }`. So a Figma user imports ONE breakpoint-moded
+// collection instead of N separate per-width files. Every voice×step emits four FLOAT variables — size,
+// lineHeight, letterSpacing, weight (weight too, since Figma variables are numbers). `modes` = the SAME
+// shape `_typeModeScales()` returns: [{ name, scale }] (minWidth, if present, is ignored — Figma modes are
+// named, not media-queried). IDENTITY: `modes = []` ⇒ a single "Base" mode whose values equal the base.
+const TYPE_FIGMA_PROPS = ["size", "lineHeight", "letterSpacing", "weight"];
+export function typeTokensFigmaModes(baseScale, modes = []) {
+  const list = (Array.isArray(modes) ? modes : []).filter((m) => m && m.name && m.scale && m.scale.categories);
+  const modeNames = ["Base", ...list.map((m) => m.name)];
+  const variables = {};
+  // for each mode (Base first, then each breakpoint), write every voice×step×prop value under that mode key.
+  const layer = (scale, mode) => {
+    for (const [cName, steps] of Object.entries(scale.categories)) {
+      for (const [sName, s] of Object.entries(steps)) {
+        for (const prop of TYPE_FIGMA_PROPS) {
+          const key = `${cName}/${sName}/${prop}`;
+          if (!variables[key]) variables[key] = { type: "FLOAT", values: {} };
+          variables[key].values[mode] = s[prop];
+        }
+      }
+    }
+  };
+  layer(baseScale, "Base");
+  for (const m of list) layer(m.scale, m.name);
+  return {
+    $schema: "figma-ui3-variables.float.schema.v1",
+    collections: { "Typography": { modes: modeNames, variables } },
+  };
+}
