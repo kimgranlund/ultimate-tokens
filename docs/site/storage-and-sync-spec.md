@@ -55,11 +55,18 @@ Each: **statement** (MUST/SHOULD) · **Trace** · **AC** (Given/When/Then or mea
   store **before** any network attempt and survive reload/crash. *Trace: PRD-G1, PRD-G2.*
   **AC:** Given a doc edit, When the tab is killed immediately after the edit returns, Then on reload the
   edit is present in the local store (no network involved).
-- **SPEC-R2 — Server replication for all users.** Every doc MUST replicate to server storage keyed by its
-  owner reference, for **anonymous and free** users as well as Pro/Studio, and be retrievable by that owner.
-  *Trace: PRD-G1.* **AC:** Given an anonymous user (no account) creates a doc and is online, When sync
-  completes, Then `POST /sync/pull` for that device returns the doc; a different owner reference returns it
-  not.
+- **SPEC-R2 — Server replication (lazy for anonymous).** Account-owned docs MUST replicate to server storage
+  continuously. Anonymous docs MUST stay **local-only until a first sync trigger** — the first **export**,
+  **hosted-MCP use**, or **sign-in** — after which that device's docs replicate and stay replicated.
+  Replicated docs MUST be retrievable by their owner reference. *Trace: PRD-G1, PRD-G6 (bounds free-user
+  cost).* **AC:** Given an anonymous user who has never exported, used the MCP, or signed in, When they
+  create/edit docs, Then **no** server storage is written for them (local only); And Given they then export
+  (a trigger), When sync completes, Then `POST /sync/pull` for that device returns those docs and a different
+  owner reference does not.
+- **SPEC-R2a — Trigger is sticky.** Once any sync trigger has fired for a device, replication MUST remain on
+  for that device's docs (it does not revert to local-only). *Trace: PRD-G1.* **AC:** Given a device whose
+  trigger fired, When the user later edits offline and reconnects without re-triggering, Then the edits still
+  replicate.
 - **SPEC-R3 — Cross-device retrieval.** A user MUST be able to list and fetch all docs for their owner
   reference on any device that presents it (same anonymous device id, or any device signed into the account).
   *Trace: PRD-G1, PRD-G4.* **AC:** Given account A has docs from device 1, When device 2 signs into A and
@@ -139,9 +146,9 @@ Each: **statement** (MUST/SHOULD) · **Trace** · **AC** (Given/When/Then or mea
   a delete on one device MUST propagate to all the owner's devices. *Trace: PRD-G1, PRD-G6.* **AC:** Given
   doc X deleted on device 1, When device 2 pulls, Then X is marked deleted (absent from the active list) on
   device 2.
-- **SPEC-R18 — Anonymous retention bound.** Unclaimed anonymous server data MUST have a bounded retention
-  (hard-deleted after a defined idle period **or** an anonymous storage cap, see SPEC-N5), disclosed to the
-  user; claimed/account data is retained while the account exists. *Trace: PRD-G1, PRD-G6.* **AC:** Given an
+- **SPEC-R18 — Anonymous retention bound.** Unclaimed anonymous server data MUST be hard-deleted after
+  **90 days** from last activity (or on hitting the per-device cap, SPEC-N5), disclosed to the user;
+  claimed/account data is retained while the account exists. *Trace: PRD-G1, PRD-G6.* **AC:** Given an
   anonymous device idle past the retention window, When the retention job runs, Then its server data is
   hard-deleted and a subsequent pull returns empty; the local copy is unaffected.
 - **SPEC-R19 — User-initiated permanent deletion.** A user MUST be able to permanently delete a doc or their
@@ -240,7 +247,7 @@ pull(on open / focus / periodic): pulling ──merge(non-clobbering, SPEC-R16)�
 | **SPEC-N2** | **Local action latency** | A create/edit returns from the local store in **< 50 ms** p95; never gated on network. |
 | **SPEC-N3** | **Sync convergence** | When online, a change reaches the server within **≤ 5 s** (debounced); on reconnect, a queued outbox drains within **≤ 10 s** for ≤ 100 mutations. |
 | **SPEC-N4** | **Payload caps** | Doc body **≤ 256 KB** (a brand kit is tens of KB); **SPEC-N4b** push batch **≤ 100** mutations / **≤ 1 MB**; over-cap → `413`. |
-| **SPEC-N5** | **Anonymous retention** | Unclaimed anonymous data retained **≤ 90 days idle** (exact value in Open Items) **and** capped per device; disclosed in-app. |
+| **SPEC-N5** | **Anonymous retention** | Unclaimed anonymous server data retained **90 days from last activity**, then hard-deleted, **and** capped per device; disclosed in-app. (Server data only exists after a sync trigger, SPEC-R2.) |
 | **SPEC-N6** | **Deletion SLA** | User-initiated permanent deletion completes server-side within **≤ 24 h**. |
 | **SPEC-N7** | **Background safety** | Sync produces no main-thread long task **> 50 ms**; bounded concurrency; circuit-breaks after repeated failure and resumes on reconnect. |
 | **SPEC-N8** | **Security/transport** | HTTPS only; owner isolation (SPEC-R20) has zero cross-owner reads in tests; no token/id logged. |
@@ -261,10 +268,13 @@ pull(on open / focus / periodic): pulling ──merge(non-clobbering, SPEC-R16)�
 
 1. **Local engine:** IndexedDB vs OPFS for the local store + outbox (capacity, durability, worker access).
 2. **Blob store:** KV vs R2 vs D1-blob for doc bodies (size, read cost, consistency).
-3. **Exact anonymous retention** (SPEC-N5): 30 / 60 / 90 days + the per-device cap value.
+3. **Per-device anonymous cap** (SPEC-N5): the byte/doc count that caps a single anonymous device's server
+   data (the 90-day window itself is decided).
 4. **Background mechanism:** Service Worker Background Sync vs Periodic Background Sync vs a foreground
    reconciler-only baseline (browser support coverage).
 5. **Conflict model beyond LWW:** if real-time co-editing is ever in scope, revisit CRDT/OT (explicit
    non-goal in v1).
-6. **Anonymous server storage default:** store-all-anonymous (max retrieval, higher cost) vs local-only until
-   first sync trigger (e.g. first export/MCP/sign-in) — affects SPEC-R2's "for all users" cost envelope.
+
+**Decided (folded into the normative spec):** anonymous storage is **local-only until a first sync trigger**
+(export / hosted-MCP use / sign-in), then replicated and sticky — SPEC-R2/R2a. Unclaimed anonymous server
+data is retained **90 days** from last activity — SPEC-N5/R18.
