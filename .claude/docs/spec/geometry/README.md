@@ -51,6 +51,16 @@ These reproduce the hand-tuned reference ramp to ±1px — so the table is not s
 | `size` | one composite per ramp step (XS–2XL): `height · icon · caret · font · gap · padding · edgePadding · radius · minWidth`, each a `dimension` token |
 | `radius` | the flat radius ladder — `none · sm · md · lg · full` (full = the CSS-pill `9999px`) |
 | `space` | the `--space-*` layout scale (page/section/card rhythm — the space **between** components, a separate concern from control padding) |
+| `inset` | the CONTAINER tier's padding — `control-group · card · panel · dialog · page`, each a named `space` rung (derived, never hand-picked) so consumers stop guessing raw `--space-N` |
+| `gap` | the container tier's sibling spacing — `cluster · stack-tight · stack · stack-loose · grid · section`, same named-rung derivation |
+| `border` | stroke constants — `thin (1) · thick (2)`; borders don't scale with rhythm |
+| `focus` | the focus-ring pair — `ring-width (2) · ring-offset (2)`; the offset keeps the ring clear of the control edge at any radius |
+
+**The two-tier doctrine:** control-INTERNAL geometry (pad, pad-edge, the icon↔label gap) derives from the
+centering law and scales per size with `baseHeight` (+ `rampContrast` — the responsive knob: 1 = the full
+×4/3 expressive gear, 0 = the band continues the compact +4 linear step, so small screens get the
+compressed ramp). Container geometry (`inset`/`gap`) derives from the space ladder — treatment-scaled,
+mode-independent.
 
 ## Composition with typography (one number, two engines)
 

@@ -50,8 +50,11 @@ glyph** — so density (and the type scale) must never touch it. Depth: `referen
 linear below: 20·24·28, expressive `×4/3` geometric above: 36·48·64). The glyphs scale **sublinearly** (the
 optical correction): two tuned power laws of height — `icon` (roundEven) and `font ≈ √h` (round), `caret =
 font` — that reproduce the hand-tuned reference table to **±1px**: one rule sampled six times. `CANON_MD =
-28`; `baseHeight` scales the whole ramp by `baseHeight/28`. The constants + the reference table:
-`references/foundations.md` §4.
+28`; `baseHeight` scales the whole ramp by `baseHeight/28`. **`rampContrast` (0…1, default 1 = identity)
+is the responsive knob**: at 0 the expressive band loses its gear and continues the compact +4 linear step
+(bh 24 · c 0 = 18·20·24·28·32·36 — the compressed ≤476 ramp; the geometry Standard-set button seeds Base
+compressed and steps contrast +0.25 per rung to the full ramp at 1540). The constants + the reference
+table: `references/foundations.md` §4.
 
 ## THE COMPOSITION — one number, two engines (the JOIN)
 
@@ -72,7 +75,7 @@ walkthrough: `references/foundations.md` §5 + `references/best-practices.md`.
 
 | Export (`geometry.mjs`) | Owns |
 |---|---|
-| `geomScale(config={treatment,baseHeight}, opts={typeScale})` | the resolved scale `{treatment, label, density, radiusStyle, baseHeight, typed, sizes, radii, space}` |
+| `geomScale(config={treatment,baseHeight,rampContrast}, opts={typeScale,overrides})` | the resolved scale `{treatment, label, density, radiusStyle, baseHeight, rampContrast, typed, sizes, radii, space, insets, gaps, borders, focus}` |
 | `buildSize(rawHeight, density, fontOverride)` | one ramp row — the LAW + the power law live here; `fontOverride` is the composition hook |
 | `GEOMETRY_TREATMENTS` / `DEFAULT_GEOMETRY` | the 5 presets (`comfortable/compact/spacious/touch/pill`) = density + radiusStyle + baseHeight + spaceBase; default `{comfortable, 28}` |
 | `geomTokensCSS` | `:root` custom props + the `.control-{size}` utility that embodies the law |
@@ -82,6 +85,12 @@ walkthrough: `references/foundations.md` §5 + `references/best-practices.md`.
 `RADIUS_LADDERS` (per style, `none·sm·md·lg`; `full 9999` added) and `SPACE_STEPS × spaceBase` (the `--space-*`
 ladder — the gap **BETWEEN** components, a **separate concern** from control padding). Depth: `foundations.md`
 §6–7.
+
+**The CONTAINER tier** (semantic names over the space ladder — never hand-picked rungs): `insets`
+(`control-group·card·panel·dialog·page`) + `gaps` (`cluster·stack-tight·stack·stack-loose·grid·section`),
+each a named `space[k]` so the tier follows the treatment's rhythm; plus stroke constants `borders`
+(thin 1 / thick 2) and the `focus` ring pair (width 2 / offset 2). Emitted as `--inset-* / --gap-* /
+--border-* / --focus-*` in CSS and `inset/gap/border/focus` groups in DTCG + both Figma shapes.
 
 ## Procedure — change → check → fix → re-check
 
