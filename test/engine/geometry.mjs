@@ -196,6 +196,23 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(c0.every((v, i) => i === 0 || v > c0[i - 1]), `zero-contrast ramp stays strictly increasing (got ${c0})`);
 }
 
+// ── the CONTAINER tier — semantic insets/gaps over the space ladder + strokes ──
+{
+  const s = G.geomScale({ baseHeight: 28 }); // comfortable, spaceBase 4
+  ok(JSON.stringify(s.insets) === JSON.stringify({ controlGroup: 8, card: 16, panel: 24, dialog: 32, page: 48 }), `insets are named space-ladder rungs (got ${JSON.stringify(s.insets)})`);
+  ok(JSON.stringify(s.gaps) === JSON.stringify({ cluster: 8, stackTight: 12, stack: 16, stackLoose: 24, grid: 16, section: 48 }), `gaps are named space-ladder rungs (got ${JSON.stringify(s.gaps)})`);
+  ok(s.insets.card === s.space[4] && s.gaps.section === s.space[7], "the tier is DERIVED from the space ladder (card = space[4], section = space[7]) — no hand-picked values");
+  const sp = G.geomScale({ treatment: "spacious", baseHeight: 32 }); // spaceBase 8 — the tier follows the treatment rhythm
+  ok(sp.insets.card === 32 && sp.gaps.stack === 32, `the tier scales with the treatment's spaceBase (spacious card ${sp.insets.card}, stack ${sp.gaps.stack})`);
+  ok(s.borders.thin === 1 && s.borders.thick === 2 && s.focus.ringWidth === 2 && s.focus.ringOffset === 2, "strokes are constants (borders 1/2; focus ring 2+2)");
+  const css = G.geomTokensCSS(s);
+  ok(["--inset-control-group: 8px", "--gap-stack-loose: 24px", "--border-thin: 1px", "--focus-ring-offset: 2px"].every((t) => css.includes(t)), "CSS emits the tier as kebab-case custom properties");
+  const d = G.geomTokensDTCG(s);
+  ok(d.inset && d.inset["control-group"] && d.gap["stack-tight"].$type === "dimension" && d.border.thin.$value === "1px", "DTCG carries inset/gap/border/focus groups as dimension tokens");
+  const fm = G.geomTokensFigmaModes(s, []).collections.Geometry.variables;
+  ok(fm["inset/card"] && fm["gap/section"].values.Base === 48 && fm["focus/ring-width"], "the Figma-modes collection carries inset/gap/border/focus variables");
+}
+
 if (fails.length) { console.error(`geometry FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("geometry PASS — the ramp, the centering law, the two families, treatments, CSS + DTCG + Figma-modes emit");
 process.exit(0);

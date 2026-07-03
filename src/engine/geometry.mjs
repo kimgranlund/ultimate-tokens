@@ -129,7 +129,19 @@ export function geomScale(config = {}, opts = {}) {
   const radii = { none: ladder[0], sm: ladder[1], md: ladder[2], lg: ladder[3], full: 9999 };
   const space = {};
   SPACE_STEPS.forEach((m, i) => { space[i] = m * t.spaceBase; });
-  return { treatment: t.id, label: t.label, density: t.density, radiusStyle: t.radiusStyle, baseHeight, rampContrast, typed: !!uiSteps, sizes, radii, space };
+  // The CONTAINER tier — semantic names over the space ladder, so a consumer never guesses a raw
+  // `--space-N` rung. Insets pad INSIDE a container; gaps separate SIBLINGS within one. Each is a
+  // named SPACE_STEPS rung × spaceBase (derived, not hand-picked), so the whole tier follows the
+  // treatment's rhythm and stays mode-independent like `space`. Control-INTERNAL geometry (pad,
+  // pad-edge, the icon↔label gap) lives on the size rows above — a different law (centering).
+  const insets = { controlGroup: space[2], card: space[4], panel: space[5], dialog: space[6], page: space[7] };
+  const gaps = { cluster: space[2], stackTight: space[3], stack: space[4], stackLoose: space[5], grid: space[4], section: space[7] };
+  // Strokes — constants, not rhythm: borders don't scale with spacing (a hairline is a hairline at
+  // every density), and the focus ring pair is an accessibility contract (offset keeps the ring
+  // clear of the control edge so it survives any radius).
+  const borders = { thin: 1, thick: 2 };
+  const focus = { ringWidth: 2, ringOffset: 2 };
+  return { treatment: t.id, label: t.label, density: t.density, radiusStyle: t.radiusStyle, baseHeight, rampContrast, typed: !!uiSteps, sizes, radii, space, insets, gaps, borders, focus };
 }
 
 // ── emitters ───────────────────────────────────────────────────────────────────────────────────
@@ -151,10 +163,18 @@ function geomSizeVarLines(scale, indent = "  ", unit = "px") {
   }).join("\n");
 }
 
+// camelCase → kebab-case for the container-tier token names (controlGroup → control-group).
+const camelKebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+
 export function geomTokensCSS(scale, { unit = "px" } = {}) {
   const lines = [":root {", `  --density: ${scale.density};`, geomSizeVarLines(scale, "  ", unit)];
   for (const [k, v] of Object.entries(scale.radii)) lines.push(`  --radius-${k}: ${dimUnit(v, unit)};`);
   for (const [k, v] of Object.entries(scale.space)) lines.push(`  --space-${k}: ${dimUnit(v, unit)};`);
+  // the container tier + strokes (semantic names — see geomScale). Absent on a pre-tier scale.
+  for (const [k, v] of Object.entries(scale.insets || {})) lines.push(`  --inset-${camelKebab(k)}: ${dimUnit(v, unit)};`);
+  for (const [k, v] of Object.entries(scale.gaps || {})) lines.push(`  --gap-${camelKebab(k)}: ${dimUnit(v, unit)};`);
+  for (const [k, v] of Object.entries(scale.borders || {})) lines.push(`  --border-${camelKebab(k)}: ${dimUnit(v, unit)};`);
+  for (const [k, v] of Object.entries(scale.focus || {})) lines.push(`  --focus-${camelKebab(k)}: ${dimUnit(v, unit)};`);
   lines.push("}");
   for (const name of Object.keys(scale.sizes)) {
     const s = kebab(name);
@@ -191,7 +211,8 @@ export function geomTokensDTCG(scale, { unit = "px" } = {}) {
   for (const [k, v] of Object.entries(scale.radii)) radius[k] = dim(v);
   const space = {};
   for (const [k, v] of Object.entries(scale.space)) space[k] = dim(v);
-  return { size, radius, space };
+  const group = (src) => { const g = {}; for (const [k, v] of Object.entries(src || {})) g[camelKebab(k)] = dim(v); return g; };
+  return { size, radius, space, inset: group(scale.insets), gap: group(scale.gaps), border: group(scale.borders), focus: group(scale.focus) };
 }
 
 // geomTokensFigma — the geometry as DTCG `number` tokens (UNITLESS values), the shape a Figma variable
@@ -213,7 +234,8 @@ export function geomTokensFigma(scale) {
   for (const [k, v] of Object.entries(scale.radii)) radius[k] = num(v);
   const space = {};
   for (const [k, v] of Object.entries(scale.space)) space[k] = num(v);
-  return { Geometry: { size, radius, space } };
+  const group = (src) => { const g = {}; for (const [k, v] of Object.entries(src || {})) g[camelKebab(k)] = num(v); return g; };
+  return { Geometry: { size, radius, space, inset: group(scale.insets), gap: group(scale.gaps), border: group(scale.borders), focus: group(scale.focus) } };
 }
 
 // geomTokensFigmaModes — the geometry as a single Figma-variable COLLECTION ("Geometry") with one MODE per
@@ -253,6 +275,10 @@ export function geomTokensFigmaModes(baseScale, modes = []) {
       for (const [field, src] of GEOM_SIZE_FIELDS) set(`size/${name}/${field}`, mode, s[src]);
     for (const [k, v] of Object.entries(scale.radii)) set(`radius/${k}`, mode, v);
     for (const [k, v] of Object.entries(scale.space)) set(`space/${k}`, mode, v);
+    for (const [k, v] of Object.entries(scale.insets || {})) set(`inset/${camelKebab(k)}`, mode, v);
+    for (const [k, v] of Object.entries(scale.gaps || {})) set(`gap/${camelKebab(k)}`, mode, v);
+    for (const [k, v] of Object.entries(scale.borders || {})) set(`border/${camelKebab(k)}`, mode, v);
+    for (const [k, v] of Object.entries(scale.focus || {})) set(`focus/${camelKebab(k)}`, mode, v);
   };
   layer(baseScale, "Base");
   list.forEach((m, i) => layer(m.scale, names[i]));
