@@ -2886,6 +2886,18 @@ function dimUnit(px, unit) {
   return unit === "rem" || unit === "em" ? `${parseFloat((px / 16).toFixed(4))}${unit}` : `${px}px`;
 }
 
+// Leading (line-height) + tracking (letter-spacing) are ALWAYS relative in EVERY export — never px. A px
+// leading breaks the moment the root size changes; a px tracking breaks the moment the font size changes.
+// So they ride as ratios of the step's own font size, in each platform's native relative unit:
+//   relLine   — line ÷ size, a UNITLESS factor (the CSS `line-height`/DTCG `lineHeight` idiom)
+//   relTrackEm— tracking ÷ size as `em` (CSS `letter-spacing` / DTCG — relative to font size)
+//   relPct    — the same ratio as a Figma % (Figma line-height/letter-spacing are %-native, not unitless)
+// size, paragraphSpacing, paragraphIndent stay ABSOLUTE dims (dimUnit) — they are box metrics, not leading.
+// size 0 ⇒ 0 (defensive; a real scale never yields it).
+const relLine = (px, size) => (size > 0 ? round(px / size, 3) : 0);
+const relTrackEm = (px, size) => `${size > 0 ? round(px / size, 4) : 0}em`;
+const relPct = (px, size) => (size > 0 ? round((px / size) * 100, 2) : 0);
+
 // `pfx` — the type-scale custom-property prefix (the `type` in `--type-*` and the `.type-*` class).
 // Default "type" (historical); a Material scheme sets "md-sys-typescale". Font families stay `--font-*`
 // (the typeface-primitive layer — the M3-ref analog — shared regardless of the scale prefix).
@@ -2894,8 +2906,8 @@ function typeVarLines(scale, indent = "  ", unit = "px", pfx = "type") {
   for (const [cName, steps] of Object.entries(scale.categories)) {
     for (const [sName, s] of Object.entries(steps)) {
       const p = `--${pfx}-${kebab(cName)}-${kebab(sName)}`;
-      const single = s.singleLineHeight != null ? ` ${p}-line-single: ${dimUnit(s.singleLineHeight, unit)};` : "";
-      out.push(`${indent}${p}-size: ${dimUnit(s.size, unit)}; ${p}-line: ${dimUnit(s.lineHeight, unit)}; ${p}-tracking: ${dimUnit(s.letterSpacing, unit)}; ${p}-weight: ${s.weight}; ${p}-para: ${dimUnit(s.paragraphSpacing, unit)};${single}`);
+      const single = s.singleLineHeight != null ? ` ${p}-line-single: ${relLine(s.singleLineHeight, s.size)};` : "";
+      out.push(`${indent}${p}-size: ${dimUnit(s.size, unit)}; ${p}-line: ${relLine(s.lineHeight, s.size)}; ${p}-tracking: ${relTrackEm(s.letterSpacing, s.size)}; ${p}-weight: ${s.weight}; ${p}-para: ${dimUnit(s.paragraphSpacing, unit)};${single}`);
     }
   }
   return out.join("\n");
@@ -2941,7 +2953,7 @@ function typeTokensDTCG(scale, { unit = "px" } = {}) {
     for (const [sName, s] of Object.entries(steps)) {
       typography[cName][sName] = {
         $type: "typography",
-        $value: { fontFamily: scale.fonts[role], fontSize: dimUnit(s.size, unit), lineHeight: dimUnit(s.lineHeight, unit), letterSpacing: dimUnit(s.letterSpacing, unit), fontWeight: s.weight, textCase: s.textTransform || "none", paragraphSpacing: dimUnit(s.paragraphSpacing, unit), paragraphIndent: dimUnit(s.paragraphIndent, unit), ...(s.singleLineHeight != null ? { singleLineHeight: dimUnit(s.singleLineHeight, unit) } : {}) },
+        $value: { fontFamily: scale.fonts[role], fontSize: dimUnit(s.size, unit), lineHeight: relLine(s.lineHeight, s.size), letterSpacing: relTrackEm(s.letterSpacing, s.size), fontWeight: s.weight, textCase: s.textTransform || "none", paragraphSpacing: dimUnit(s.paragraphSpacing, unit), paragraphIndent: dimUnit(s.paragraphIndent, unit), ...(s.singleLineHeight != null ? { singleLineHeight: relLine(s.singleLineHeight, s.size) } : {}) },
       };
     }
   }
@@ -2953,7 +2965,9 @@ function typeTokensDTCG(scale, { unit = "px" } = {}) {
 // (`exportUI3`): `{ collections: { "Typography": { modes:[…], variables: { "<voice>/<step>/<prop>": {
 // type:"FLOAT", values:{ Base:…, <modeName>:… } } } } }`. So a Figma user imports ONE breakpoint-moded
 // collection instead of N separate per-width files. Every voice×step emits four FLOAT variables — size,
-// lineHeight, letterSpacing, weight (weight too, since Figma variables are numbers). `modes` = the SAME
+// lineHeight, letterSpacing, weight (weight too, since Figma variables are numbers). size/weight are raw;
+// lineHeight + letterSpacing ride as a % of font size (relPct) — leading/tracking are ALWAYS relative,
+// never px, and % is Figma's native relative unit. `modes` = the SAME
 // shape `_typeModeScales()` returns: [{ name, scale }] (minWidth, if present, is ignored — Figma modes are
 // named, not media-queried). IDENTITY: `modes = []` ⇒ a single "Base" mode whose values equal the base.
 const TYPE_FIGMA_PROPS = ["size", "lineHeight", "letterSpacing", "weight", "paragraphSpacing"];
@@ -2982,13 +2996,14 @@ function typeTokensFigmaModes(baseScale, modes = []) {
         for (const prop of TYPE_FIGMA_PROPS) {
           const key = `${cName}/${sName}/${prop}`;
           if (!variables[key]) variables[key] = { type: "FLOAT", values: {} };
-          variables[key].values[mode] = s[prop];
+          // leading + tracking ride as a % of font size (Figma's native relative unit); size/weight/para stay raw.
+          variables[key].values[mode] = prop === "lineHeight" || prop === "letterSpacing" ? relPct(s[prop], s.size) : s[prop];
         }
-        // singleLineHeight exists only on the BOX voices (UI · Code · Kicker) — emit where present.
+        // singleLineHeight exists only on the BOX voices (UI · Code · Kicker) — emit as a % of size too.
         if (s.singleLineHeight != null) {
           const key = `${cName}/${sName}/singleLineHeight`;
           if (!variables[key]) variables[key] = { type: "FLOAT", values: {} };
-          variables[key].values[mode] = s.singleLineHeight;
+          variables[key].values[mode] = relPct(s.singleLineHeight, s.size);
         }
       }
     }
