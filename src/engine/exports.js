@@ -1138,6 +1138,406 @@ export function exportDesignSystemTokens(state, typeSc, geomSc) {
   }, null, 2);
 }
 
+// The consumption typography selection (§9.2: the 9–15 band a single screen draws on). Theme-independent
+// voice·step keys; each resolves against the full scale. kickers carry em tracking, the rest leading only.
+const DS_TYPE_LEVELS = ["display-sm", "heading-lg", "heading-md", "heading-sm", "kicker-md", "lead-md", "body-md", "body-sm", "ui-md", "ui-sm", "caption-md", "code-md"];
+const DS_SPACE_NAMES = ["none", "xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl"];
+
+// dsSpine — the universal-dialect DESIGN.md (§5): YAML frontmatter (OKLCH colors + `-dark` siblings +
+// curated type + named spacing/rounded + components) then the 8 Stitch-canonical sections + Responsive
+// Behavior + Agent Prompt Guide. Frontmatter colors ≡ tokens.json hex (carrier equality, one source).
+export function exportDesignSystemSpine(state, typeSc, geomSc) {
+  const ds = dsColorRoles(state);
+  if (!ds) return "# Design System\n\n_Needs at least one enabled palette._\n";
+  const pfx = cssPrefixOf(state);
+  const story = (state && state.story) || {};
+  const name = (state && state.name) || "Design System";
+  const desc = story.title || story.narrative || `The ${name} design system.`;
+  const cn = ds.chrome.n;
+
+  // ── frontmatter: colors (light + -dark siblings), alias last ──
+  const colorLines = [];
+  for (const t of ds.tokens) { colorLines.push(`  ${t.name}: "${t.light.oklch}"`); colorLines.push(`  ${t.name}-dark: "${t.dark.oklch}"`); }
+  const brandName = ds.families.find((f) => /primary|brand/.test(f)) || cn;
+  colorLines.push(`  # Stitch-compat alias of ${brandName} (its required \`primary\`); agents use ${brandName}`);
+  colorLines.push(`  ${ds.alias.name}: "${ds.alias.light.oklch}"`);
+  colorLines.push(`  ${ds.alias.name}-dark: "${ds.alias.dark.oklch}"`);
+
+  // ── frontmatter: typography (curated levels) ──
+  const flat = {};
+  if (typeSc && typeSc.categories) for (const [cName, steps] of Object.entries(typeSc.categories))
+    for (const [sName, s] of Object.entries(steps)) flat[`${cName.toLowerCase()}-${sName.toLowerCase()}`] = { voice: cName, s };
+  const roleOf = (typeSc && typeSc.roleOf) || {};
+  const fonts = (typeSc && typeSc.fonts) || {};
+  const typeLines = [];
+  const usedLevels = [];
+  for (const key of DS_TYPE_LEVELS) {
+    const hit = flat[key];
+    if (!hit) continue;
+    usedLevels.push(key);
+    const s = hit.s;
+    typeLines.push(`  ${key}:`);
+    typeLines.push(`    fontFamily: ${fonts[roleOf[hit.voice] || "body"] || "sans-serif"}`);
+    typeLines.push(`    fontSize: ${s.size}px`);
+    typeLines.push(`    fontWeight: ${s.weight}`);
+    typeLines.push(`    lineHeight: ${dsFactor(s.lineHeight, s.size)}`);
+    if (s.letterSpacing && Math.abs(s.letterSpacing) >= 0.01) typeLines.push(`    letterSpacing: ${Number((s.letterSpacing / s.size).toFixed(4))}em`);
+  }
+
+  // ── frontmatter: spacing + rounded (named ladders) ──
+  const space = dsSpacing(geomSc);
+  const spaceLines = space.map((v, i) => `  ${DS_SPACE_NAMES[i] || `s${i}`}: ${v}px`);
+  const radii = dsRadii(geomSc);
+  const roundLines = Object.entries(radii).map(([k, v]) => `  ${k}: ${v}px`);
+
+  // ── frontmatter: components (grammar-named; refs resolve to the roles above) ──
+  const has = (n) => ds.tokens.some((t) => t.name === n);
+  const uiLvl = usedLevels.includes("ui-md") ? "ui-md" : usedLevels[0];
+  const uiSm = usedLevels.includes("ui-sm") ? "ui-sm" : uiLvl;
+  const bodyLvl = usedLevels.includes("body-md") ? "body-md" : uiLvl;
+  const rMd = radii.md != null ? "md" : Object.keys(radii)[0];
+  const rSm = radii.sm != null ? "sm" : rMd;
+  const rLg = radii.lg != null ? "lg" : rMd;
+  const rFull = radii.full != null ? "full" : rLg;
+  const rXs = radii.xs != null ? "xs" : rSm;
+  const comp = [];
+  const addComp = (nm, o) => { comp.push(`  ${nm}:`); for (const [k, v] of Object.entries(o)) comp.push(`    ${k}: ${v}`); };
+  const brand = ds.families.find((f) => /primary|brand/.test(f)) || cn;
+  addComp("button-primary", { backgroundColor: `"{colors.${brand}}"`, textColor: `"{colors.${brand}-on-${brand}}"`, typography: `"{typography.${uiLvl}}"`, rounded: `"{rounded.${rMd}}"`, padding: "12px" });
+  if (has(`${brand}-hover`)) addComp("button-primary-hover", { backgroundColor: `"{colors.${brand}-hover}"` });
+  if (has(`${brand}-active`)) addComp("button-primary-active", { backgroundColor: `"{colors.${brand}-active}"` });
+  const secondary = ds.families.find((f) => /secondary/.test(f) && !/muted/.test(f));
+  if (secondary) addComp("button-secondary", { backgroundColor: `"{colors.${secondary}}"`, textColor: `"{colors.${secondary}-on-${secondary}}"`, typography: `"{typography.${uiLvl}}"`, rounded: `"{rounded.${rMd}}"`, padding: "12px" });
+  addComp("input", { backgroundColor: `"{colors.${cn}-surface}"`, textColor: `"{colors.${cn}-on-surface}"`, typography: `"{typography.${bodyLvl}}"`, rounded: `"{rounded.${rSm}}"`, padding: "12px" });
+  addComp("card", { backgroundColor: `"{colors.${cn}-surface}"`, textColor: `"{colors.${cn}-on-surface}"`, rounded: `"{rounded.${rLg}}"`, padding: "24px" });
+  const metal = ds.families.find((f) => /muted/.test(f) && /secondary|neutral/.test(f)) || ds.families.find((f) => /muted/.test(f));
+  if (metal) addComp("chip", { backgroundColor: `"{colors.${metal}}"`, textColor: `"{colors.${metal}-on-${metal}}"`, typography: `"{typography.${uiSm}}"`, rounded: `"{rounded.${rFull}}"`, padding: "4px" });
+  const accent = ds.families.find((f) => /accent/.test(f) && !/muted/.test(f));
+  if (accent) addComp("tag-accent", { backgroundColor: `"{colors.${accent}}"`, textColor: `"{colors.${accent}-on-${accent}}"`, typography: `"{typography.${uiSm}}"`, rounded: `"{rounded.${rXs}}"`, padding: "4px" });
+  for (const f of ds.families) {
+    if (/muted/.test(f) && f !== metal) addComp(`badge-${f}`, { backgroundColor: `"{colors.${f}}"`, textColor: `"{colors.${f}-on-${f}}"`, typography: `"{typography.${uiSm}}"`, rounded: `"{rounded.${rFull}}"`, padding: "4px" });
+  }
+  for (const f of ds.families) {
+    if (/danger|success|warn|info/.test(f)) addComp(`badge-${f}`, { backgroundColor: `"{colors.${f}}"`, textColor: `"{colors.${f}-on-${f}}"`, typography: `"{typography.${uiSm}}"`, rounded: `"{rounded.${rFull}}"`, padding: "4px" });
+  }
+  addComp("popover", { backgroundColor: `"{colors.${cn}-surface-high}"`, textColor: `"{colors.${cn}-on-surface}"`, rounded: `"{rounded.${rLg}}"`, padding: "16px" });
+
+  const frontmatter = [
+    "---", "version: alpha", `name: ${name}`, `description: ${desc}`,
+    "colors:", ...colorLines,
+    "typography:", ...typeLines,
+    "spacing:", ...spaceLines,
+    "rounded:", ...roundLines,
+    "components:", ...comp,
+    "---",
+  ].join("\n");
+
+  const body = dsSpineBody(ds, state, { pfx, name, story, cn, brand, secondary, accent, metal, usedLevels, radii });
+  return `${frontmatter}\n\n${body}\n`;
+}
+
+// dsRootCSS — the single :root block every preview shares (§9.5): `color-scheme: light dark` + one
+// `light-dark(oklch, oklch)` custom property per grammar role (the alias is omitted — it duplicates the
+// brand base). This is the SAME runtime idiom the Agent Prompt Guide teaches; no @media fork.
+function dsRootCSS(ds, pfx) {
+  const props = ds.tokens.map((t) => `--${pfx}-${t.name}:light-dark(${t.light.oklch},${t.dark.oklch});`).join("");
+  return `:root{color-scheme:light dark;${props}}`;
+}
+
+// exportDesignSystemComponents — the self-contained @dsCard previews (§9.5). Returns [{name, data}] with
+// names under components/. Each card: first-line @dsCard marker, inline <style> (the shared :root + card
+// classes), light-dark() both schemes, no external fetch — demonstrating the states, pairing law, and scale.
+export function exportDesignSystemComponents(state, typeSc, geomSc) {
+  const ds = dsColorRoles(state);
+  if (!ds) return [];
+  const pfx = cssPrefixOf(state);
+  const root = dsRootCSS(ds, pfx);
+  const has = (n) => ds.tokens.some((t) => t.name === n);
+  const V = (n) => `var(--${pfx}-${n})`;
+  const cn = ds.chrome.n;
+  const fonts = (typeSc && typeSc.fonts) || {};
+  const sans = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+  const bodyStack = cdFontStack(fonts.body, sans);
+  const headStack = cdFontStack(fonts.heading || fonts.display, sans);
+  const monoStack = cdFontStack(fonts.mono, "ui-monospace, SFMono-Regular, monospace");
+  const radii = dsRadii(geomSc);
+  const rMd = radii.md != null ? radii.md : 12;
+  const rLg = radii.lg != null ? radii.lg : 16;
+  const cap = (s) => s.split(/[-\s]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  const baseCss = `*{box-sizing:border-box}.cd{font-family:${bodyStack};background:${V(cn + "-background")};color:${V(cn + "-on-surface")};padding:24px;line-height:1.5}.cd h3{font-family:${headStack};margin:0 0 12px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:${V(cn + "-on-surface-variant")}}.cd code{font-family:${monoStack};font-size:12px}.cap{font-size:12px;color:${V(cn + "-on-surface-variant")}}`;
+  const card = (name, group, title, subtitle, css, body) =>
+    ({ name: `components/${name}`, data: `<!-- @dsCard group="${group}" title="${title}" subtitle="${subtitle}" -->\n<style>${root}${baseCss}${css}</style>\n<div class="cd"><h3>${title}</h3>${body}</div>\n` });
+
+  const out = [];
+  // families for the fills demo: brand base, secondary, accent, muted signatures, intents
+  const fillFams = ds.families.filter((f) => has(`${f}-on-${f}`));
+
+  // 1. Colors — every role swatch
+  {
+    const sw = (n) => `<div style="display:flex;flex-direction:column;gap:4px"><div style="height:44px;border-radius:8px;background:${V(n)};border:1px solid ${V(cn + "-outline-variant")}"></div><code>${n}</code></div>`;
+    const surfaces = [`${cn}-background`, `${cn}-surface`, `${cn}-surface-high`].map(sw).join("");
+    const fills = fillFams.map((f) => `<div style="display:flex;flex-direction:column;gap:4px"><div style="height:44px;border-radius:8px;background:${V(f)};color:${V(f + "-on-" + f)};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">Aa</div><code>${f}</code></div>`).join("");
+    out.push(card("colors.html", "Foundations", "Colors", "roles · pairing", "",
+      `<p class="cap">Surfaces</p><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">${surfaces}</div><p class="cap">Family fills (label = its <code>on-{family}</code>)</p><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">${fills}</div>`));
+  }
+  // 2. Buttons — fills × base/hover/disabled
+  {
+    const btnCss = `.brow{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}.blabel{width:96px;font-size:12px;color:${V(cn + "-on-surface-variant")};text-transform:capitalize}.btn{border:0;border-radius:${rMd}px;padding:12px;font:inherit;font-weight:600;cursor:pointer}.btn--hover{filter:brightness(1.1)}.btn--dis{opacity:.45;cursor:not-allowed}`;
+    const rows = fillFams.map((f) => {
+      const st = `background:${V(f)};color:${V(f + "-on-" + f)}`;
+      return `<div class="brow"><span class="blabel">${cap(f)}</span><button class="btn" style="${st}">Button</button><button class="btn btn--hover" style="${st}">Hover</button><button class="btn btn--dis" style="${st}">Disabled</button></div>`;
+    }).join("");
+    out.push(card("buttons.html", "Components", "Buttons", "fills · hover · disabled", btnCss,
+      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>. Hover brightens; disabled drops opacity.</p>`));
+  }
+  // 3. Inputs
+  {
+    const inCss = `.field{display:block;width:100%;padding:12px;border-radius:${radii.sm != null ? radii.sm : 8}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};font:inherit;margin-bottom:12px}.field::placeholder{color:${V(cn + "-on-surface-variant")}}.field--focus{outline:2px solid ${V(ds.families[0])};outline-offset:2px;border-color:${V(ds.families.find((f) => /primary|brand/.test(f)) || cn)}}`;
+    out.push(card("inputs.html", "Components", "Inputs", "field · placeholder · focus", inCss,
+      `<label class="cap">Label</label><input class="field" value="Typed value"><input class="field" placeholder="Placeholder text"><input class="field field--focus" value="Focused"><p class="cap">Field on <code>${cn}-surface</code>; focus ring is the brand family.</p>`));
+  }
+  // 4. Card
+  {
+    const cCss = `.panel{background:${V(cn + "-surface")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:24px}.panel h4{font-family:${headStack};margin:0 0 8px}.pbtn{border:0;border-radius:${rMd}px;padding:12px;font:inherit;font-weight:600;cursor:pointer;background:${V(ds.families.find((f) => /primary|brand/.test(f)) || cn)};color:${V((ds.families.find((f) => /primary|brand/.test(f)) || cn) + "-on-" + (ds.families.find((f) => /primary|brand/.test(f)) || cn))};margin-top:12px}`;
+    out.push(card("card.html", "Components", "Card", "surface · elevation", cCss,
+      `<div class="panel"><h4>Card title</h4><p style="margin:0">Body copy on a raised surface over the background — elevation is a surface step, not a shadow.</p><button class="pbtn">Primary action</button></div>`));
+  }
+  // 5. Feedback — intent + signature badges/chips
+  {
+    const fCss = `.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;margin:0 8px 8px 0}`;
+    const intents = ds.families.filter((f) => /danger|success|warn|info/.test(f));
+    const sig = ds.families.filter((f) => /muted/.test(f));
+    const chip = (f) => `<span class="badge" style="background:${V(f)};color:${V(f + "-on-" + f)}">${cap(f)}</span>`;
+    out.push(card("feedback.html", "Components", "Feedback", "status · signature", fCss,
+      `<p class="cap">Status (intent only)</p><div>${intents.map(chip).join("")}</div><p class="cap" style="margin-top:12px">Signature (brand light — small reads)</p><div>${sig.map(chip).join("")}</div>`));
+  }
+  // 6. Typography — specimens
+  {
+    const spec = [];
+    const pick = (voice, sizePx, label) => { spec.push(`<div style="font-family:${voice};font-size:${sizePx}px;line-height:1.2;margin-bottom:10px">${label} <span class="cap" style="font-size:11px">${sizePx}px</span></div>`); };
+    pick(headStack, 40, "Heading");
+    pick(headStack, 28, "Sub-heading");
+    pick(bodyStack, 16, "Body — the quick brown fox jumps");
+    pick(bodyStack, 14, "UI label");
+    spec.push(`<div style="font-family:${monoStack};font-size:13px" class="">const token = <code>--${pfx}-${cn}</code>;</div>`);
+    out.push(card("typography.html", "Foundations", "Typography", "voices · scale", "", spec.join("")));
+  }
+  // 7. Spacing & radii
+  {
+    const space = dsSpacing(geomSc);
+    const bars = space.map((v, i) => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><code style="width:56px">${DS_SPACE_NAMES[i] || i}</code><div style="height:12px;width:${Math.max(2, v)}px;background:${V(ds.families[0])};border-radius:2px"></div><span class="cap">${v}px</span></div>`).join("");
+    const chips = Object.entries(radii).map(([k, v]) => `<div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:48px;height:48px;background:${V(cn + "-surface-high")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${v > 100 ? 999 : v}px"></div><code>${k}</code></div>`).join("");
+    out.push(card("spacing.html", "Foundations", "Spacing & Radii", "scale · ladder", "",
+      `<p class="cap">Spacing scale</p>${bars}<p class="cap" style="margin-top:12px">Radius ladder</p><div style="display:flex;gap:12px;flex-wrap:wrap">${chips}</div>`));
+  }
+  return out;
+}
+
+// dsSpineBody — the 10-section prose body (§5.1 order). Every role token is named in prose (accord),
+// the Colors section teaches the naming grammar, and the Agent Prompt Guide carries the runtime
+// `color-scheme` + `light-dark()` idiom (light-dark ONLY here, never in a carrier — §6.4).
+function dsSpineBody(ds, state, ctx) {
+  const { pfx, name, story, cn, brand, secondary, accent, metal, usedLevels, radii } = ctx;
+  const has = (n) => ds.tokens.some((t) => t.name === n) || n === ds.alias.name;
+  const ref = (n) => `{colors.${n}}`;
+  const cap = (s) => s.split(/[-\s]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  const fams = ds.families;
+  const intents = fams.filter((f) => /danger|success|warn|info/.test(f));
+  const mutedSig = fams.filter((f) => /muted/.test(f));
+  const nonChromeBrand = fams.filter((f) => f !== cn && !/muted|danger|success|warn|info/.test(f));
+
+  const narrative = story.narrative || `The ${name} system: calm, even surfaces carry the layout and color arrives as accent.`;
+  const refuses = story.refuses || "Generic, low-contrast, decorative color. Restraint over decoration.";
+
+  // Colors — enumerate every family + chrome slot so the prose–token accord holds.
+  const famBullet = (f, note) => has(f) ? `- **${cap(f)} \`${ref(f)}\`** — ${note} Its label is \`${ref(f + "-on-" + f)}\`.` : "";
+  const brandBullets = [
+    famBullet(brand, "the one decisive action per view: CTAs, links, selection. `-hover`/`-active` carry its states."),
+    secondary ? famBullet(secondary, "supporting actions and quieter emphasis.") : "",
+    accent ? famBullet(accent, "highlights, tags, and accents.") : "",
+    ...mutedSig.filter((f) => f !== metal).map((f) => famBullet(f, "a signature brand light — small, loud reads (featured/live markers), never a field of color.")),
+    metal ? famBullet(metal, "a light metallic fill in both schemes with a near-black label: chips, tags, meta badges.") : "",
+    ...intents.map((f) => famBullet(f, "status only — intent colors carry meaning, never decoration.")),
+  ].filter(Boolean).join("\n");
+
+  const colors = [
+    "## Colors", "",
+    "Reason over **roles**, never raw hexes. Each role names its light value; the frontmatter carries the",
+    "`-dark` sibling. All fill/on-pairs are contrast-verified ≥ 4.5:1 in both schemes.", "",
+    "### Token naming", "",
+    `Every color token follows the **Ultimate Tokens grammar**: \`--{prefix}-{family}-{slot}\`. This`,
+    `project's prefix is \`${pfx}\`; its families are ${fams.map((f) => `\`${f}\``).join(", ")}. Construct names, do not invent them:`, "",
+    `- The family name alone is the fill: \`--${pfx}-${brand}\`, \`--${pfx}-${intents[0] || fams[fams.length - 1]}\`.`,
+    `- Text/icons ON a family fill: \`--${pfx}-{family}-on-{family}\`.`,
+    "- States suffix the fill: `-hover`, `-active`, `-disabled`.",
+    `- App surfaces live in the neutral family: \`--${pfx}-${cn}-background\`, \`-surface\`, \`-surface-high\`; text on`,
+    "  them: `-on-surface`, `-on-surface-variant`; hairlines: `-outline-variant`.",
+    `- **Prefix-adaptive**: under another prefix (\`--md-sys-*\`, \`--color-*\`), keep \`{family}-{slot}\` intact and swap only the prefix.`, "",
+    `- **Surfaces** — the room, lowest to top: Background \`${ref(cn + "-background")}\` / Surface \`${ref(cn + "-surface")}\` /`,
+    `  Surface-raised \`${ref(cn + "-surface-high")}\`. **Foreground \`${ref(cn + "-on-surface")}\`** — primary text; **Muted`,
+    `  \`${ref(cn + "-on-surface-variant")}\`** — secondary text; **Border \`${ref(cn + "-outline-variant")}\`** — a translucent hairline (same value both schemes).`,
+    brandBullets, "",
+    "**Pairing law.** Text on a family fill uses that family's `on-{family}` token — which differs by",
+    "scheme (light fills pair with white; the brighter dark-scheme fills pair with near-black). Text on",
+    "background/surface uses `on-surface` or `on-surface-variant`. A crossed pair fails contrast in one scheme.",
+  ].join("\n");
+
+  const fontsObj = (ctx && ctx) && ds && (state.type ? null : null);
+  const typography = [
+    "## Typography", "",
+    "Set size **and** line-height **and** weight together from one level, never free-type; leading is a",
+    "unitless factor and any tracking is em — never px. The frontmatter carries the working scale",
+    `(${usedLevels.length} levels). Weight is voice — never interchange the weights across roles.`,
+  ].join("\n");
+
+  const layout = [
+    "## Layout", "",
+    "Compose every gap and padding from the spacing scale (`{spacing.xs}` … `{spacing.5xl}`); an off-scale",
+    "gap does not exist. Keep a comfortable reading measure (~60–75ch), align to a consistent grid, and let",
+    "whitespace do the separating — borders are a last resort. Group related content in cards with generous",
+    "internal padding (`{spacing.xl}`).",
+  ].join("\n");
+
+  const elevation = [
+    "## Elevation & Depth", "",
+    "Elevation is a **surface step, not a drop shadow**: `background` → `surface` → `surface-high`. A shadow",
+    "is optional garnish on the top-most surfaces (popovers, menus) — one soft low-alpha layer at most.",
+  ].join("\n");
+
+  const shapes = [
+    "## Shapes", "",
+    "Soft-but-engineered: chips and tags `{rounded.xs}`, inputs `{rounded.sm}`, buttons `{rounded.md}`, cards",
+    "and panels `{rounded.lg}`, modals `{rounded.xl}`, pills and avatars `{rounded.full}`. One radius language",
+    "per view — rounded and sharp corners do not mix.",
+  ].join("\n");
+
+  const components = [
+    "## Components", "",
+    "State the interactive states explicitly — generic output betrays itself in hover/focus/disabled.", "",
+    `- **Buttons.** \`button-primary\` per the frontmatter; **hover** \`${ref(brand + "-hover")}\`, **active**`,
+    `  \`${ref(brand + "-active")}\` (each ships both scheme ends); **focus** a 2px \`${ref(brand)}\` outline at 2px`,
+    "  offset; **disabled** drops to ~45% opacity. Other fills state-shift the same way: one ramp step deeper on hover in light, one brighter in dark.",
+    `- **Inputs.** \`${ref(cn + "-surface")}\` field, 1px \`${ref(cn + "-outline-variant")}\`, \`${ref(cn + "-on-surface")}\` text,`,
+    `  \`${ref(cn + "-on-surface-variant")}\` placeholder; **focus** swaps the border to \`${ref(brand)}\` plus a 2px ring.`,
+    `- **Cards.** \`${ref(cn + "-surface")}\` on \`${ref(cn + "-background")}\`, 1px \`${ref(cn + "-outline-variant")}\`, \`{rounded.lg}\`.`,
+    metal ? `- **Badges / chips.** Intent or signature fill with its own \`on-{family}\`, pill radius. \`${metal}\` is the default metadata chip.` : "- **Badges / chips.** Intent or signature fill with its own `on-{family}`, pill radius.",
+  ].join("\n");
+
+  const donts = [
+    "## Do's and Don'ts", "",
+    "**Three hard rules:**", "",
+    "- ❌ **Never hardcode a color.** Every color is a role — bind to the role so a re-theme flows everywhere.",
+    "- ❌ **Never cross an on-pair.** Use the fill's own `on-{family}` token (per scheme), or contrast fails in one scheme.",
+    `- ❌ **Never stack competing primaries.** One \`${brand}\` action per view.`, "",
+    "**Prefer:**", "",
+    `- Reach for ${intents.map((f) => `\`${f}\``).join("/")} only for status; ${mutedSig.map((f) => `\`${f}\``).join(", ") || "signature families"} are brand light, not status — small reads, never fields of color.`,
+    "- Elevate by stepping the surface ladder, not by heavy shadows.",
+    "- Compose spacing, radii, and type from the scales; express states with the `-hover`/`-active` tokens, not raw opacity guesses.",
+    `- ${refuses}`,
+  ].join("\n");
+
+  const responsive = [
+    "## Responsive Behavior", "",
+    "Design mobile-first; columns stack below ~640px. Reduce display sizes on small screens but keep primary",
+    "reading text at `body-md` or larger; the smaller steps are for dense, secondary UI. Touch targets ≥ 44px.",
+    "Both schemes must hold at every width.",
+  ].join("\n");
+
+  const bt = ds.tokens.find((t) => t.name === brand) || ds.tokens[0];
+  const onName = `${brand}-on-${brand}`;
+  const ot = ds.tokens.find((t) => t.name === onName);
+  const agent = [
+    "## Agent Prompt Guide", "",
+    `You are generating UI for **${name}**. Work in this order:`, "",
+    "1. **Tokens first** — colors, type, spacing, radii from the frontmatter (Claude Design also receives",
+    "   `tokens.json` with the same values as `colors`/`colorsDark` maps); never invent a value.",
+    "2. **Roles, then scheme** — pick the semantic role; both ends are provided, so never hand-roll a dark",
+    "   variant. Define the roles once as custom properties with native scheme switching — `color-scheme`",
+    "   on `:root` is required or the dark end never fires:", "",
+    "   ```css",
+    "   :root {",
+    "     color-scheme: light dark;",
+    `     --${pfx}-${brand}: light-dark(${bt.light.oklch}, ${bt.dark.oklch});`,
+    ot ? `     --${pfx}-${onName}: light-dark(${ot.light.oklch}, ${ot.dark.oklch});` : "",
+    "     /* …every role, from its light + -dark pair… */",
+    "   }",
+    "   ```",
+    "3. **Scale, then states** — size and space from the scales, then add hover/focus/active/disabled from",
+    "   the Components section — states are where generic output shows.",
+    `4. **One focus per view** — a single \`${brand}\` action; signature families are small reads; intent colors speak only for status.`,
+    `5. **Name by grammar** — construct every token as \`--${pfx}-{family}-{slot}\`; if the host carries a different prefix, adapt the prefix and keep \`{family}-{slot}\` intact.`, "",
+    "When rules conflict, the three hard rules win. Mirror the structure and pairing of the `components/` previews.",
+  ].filter((l) => l !== "").join("\n");
+
+  const overview = [
+    `# ${name} — Design System`, "",
+    "_Read this file as your instructions — it is the prompt. Token values are normative; the prose explains",
+    "how to apply them. Every color role ships a light value and a `-dark` sibling: pick the pair, not one",
+    "end. (Generated by Ultimate Tokens · NONOUN.)_", "",
+    "## Overview", "",
+    narrative, "",
+    "Restraint over decoration: whitespace, hierarchy, one decisive action per view.",
+  ].join("\n");
+
+  return [overview, colors, typography, layout, elevation, shapes, components, donts, responsive, agent].join("\n\n");
+}
+
+// exportDesignSystemReceipt — the README.md profile receipt (§4). Every 🟢 cites a check; DIVERGENCE
+// lines (constant cross-scheme on-colors) are called out per the standing rule. opts.date stamps the run
+// (the caller passes it; the engine is pure). opts.profile names the platform profile ("Claude").
+export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
+  const ds = dsColorRoles(state);
+  if (!ds) return "# design-system-for-claude-code\n\n_Needs at least one enabled palette._\n";
+  const pfx = cssPrefixOf(state);
+  const name = (state && state.name) || "Design System";
+  const date = opts.date || "on every build";
+  const nGrammar = ds.tokens.length, nTotal = nGrammar + 1; // + the primary alias
+  const previews = exportDesignSystemComponents(state, typeSc, geomSc);
+  const mutedSig = ds.families.filter((f) => /muted/.test(f));
+  // DIVERGENCE: on-colors equal across schemes (authorial, called out — never silently overridden).
+  const div = ds.tokens.filter((t) => /-on-/.test(t.name) && t.light.hex.toUpperCase() === t.dark.hex.toUpperCase());
+  const divLines = div.map((t) => `- ℹ️ DIVERGENCE (authorial, called out per the standing rule): \`${t.name}\` = \`${t.light.hex}\` in both schemes — a light fill that takes a near-black label in both schemes (rationale in DESIGN.md Colors); reported by \`bundle_gates.py\` on every run.`);
+  const scaleSteps = typeSc && typeSc.categories ? Object.values(typeSc.categories).reduce((a, s) => a + Object.keys(s).length, 0) : 0;
+
+  return [
+    "# design-system-for-claude-code — Claude profile export", "",
+    `Claude Design / Claude Code consumption bundle for **${name}**, per the Claude profile`,
+    "(`design-system-files-for-llms.md` §10.2). Generated by Ultimate Tokens · NONOUN.", "",
+    "**Contents:** `DESIGN.md` (the universal-dialect core — byte-identical with",
+    "`../design-system-for-google-stitch/DESIGN.md`), `tokens.json` (structured role maps,",
+    `\`colors\`/\`colorsDark\`), \`components/*.html\` (${previews.length} self-contained \`@dsCard\` previews).`, "",
+    `## Profile receipt (checks run ${date})`, "",
+    `Naming standard: **Ultimate Tokens grammar** — \`--{prefix}-{family}-{slot}\`, prefix \`${pfx}\`, families`,
+    `${ds.families.map((f) => `\`${f}\``).join("/")}; token names match the \`css-oklch\`/\`css-hex\` semantic layer`,
+    "verbatim; the spine's \"Token naming\" section teaches the grammar and prefix adaptivity.", "",
+    "Encoding standard: **OKLCH payload** in DESIGN.md frontmatter (Stitch-linter-verified notation);",
+    "`tokens.json` stays **hex** (parser-unverified carrier); previews and emitted UI use the",
+    "**`color-scheme` + `light-dark()`** runtime idiom.", "",
+    "- 🟢 Contrast: all declared fill/on-pairs ≥ 4.5:1, both schemes, all-pairs policy (F1 fixed — dark-scheme",
+    "  foregrounds are near-black, not white; a light fill in the dead zone is stepped one ramp step)",
+    mutedSig.length ? `- 🟢 Signature roles present: ${mutedSig.map((f) => `\`${f}\``).join(", ")} — F2 fixed; prose–token accord holds` : "- 🟢 Prose–token accord holds (every role appears in prose, a component, or a preview)",
+    `- 🟢 Scheme parity: identical ${nTotal}-key inventory in \`colors\` and \`colorsDark\` (${nGrammar} grammar tokens + the \`primary\` Stitch-compat alias)`,
+    "- 🟢 Carrier equality, notation-aware: OKLCH frontmatter ≡ hex `tokens.json` within ±1/255 per channel",
+    `- 🟢 Previews: \`@dsCard\` first line, single \`:root\` block — \`color-scheme: light dark\` + ${nGrammar} \`light-dark(oklch, oklch)\` custom properties, no media-query fork`,
+    ...divLines,
+    `- ℹ️ \`tokens.json\` ships the full ${scaleSteps}-step type scale (generator schema); the DESIGN.md frontmatter carries the ${DS_TYPE_LEVELS.length}-level consumption selection`, "",
+    "Supersedes `../_superseded-claude-design/` (pre-fix bundle, retained for reference).", "",
+  ].join("\n");
+}
+
+// exportDesignSystemBundle — the design-system-for-claude-code/ folder: DESIGN.md (the universal core) +
+// tokens.json + components/*.html + README.md (the profile receipt). The Stitch (byte-identical DESIGN.md)
+// and Figma Make (routed projection) folders are added by their own profile emitters.
+export function exportDesignSystemBundle(state, typeSc, geomSc, opts = {}) {
+  if (!dsColorRoles(state)) return [{ name: "tokens.json", data: exportDesignSystemTokens(state, typeSc, geomSc) }];
+  return [
+    { name: "DESIGN.md", data: exportDesignSystemSpine(state, typeSc, geomSc) },
+    { name: "tokens.json", data: exportDesignSystemTokens(state, typeSc, geomSc) },
+    ...exportDesignSystemComponents(state, typeSc, geomSc),
+    { name: "README.md", data: exportDesignSystemReceipt(state, typeSc, geomSc, opts) },
+  ];
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // exportAll — every format in one object (theme-independent).
 // ──────────────────────────────────────────────────────────────────────────────
