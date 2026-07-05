@@ -229,7 +229,8 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   const idCol = idn.collections.Typography;
   ok(JSON.stringify(idCol.modes) === JSON.stringify(["Base"]), "no modes ⇒ a single \"Base\" mode");
   ok(Object.values(idCol.variables).every((x) => x.type === "FLOAT" && Object.keys(x.values).join() === "Base"), "no modes ⇒ every variable has exactly one Base value");
-  ok(idCol.variables["Body/MD/size"].values.Base === base.categories.Body.MD.size && idCol.variables["Display/XL/letterSpacing"].values.Base === base.categories.Display.XL.letterSpacing, "no-modes Base values equal the base scale");
+  const dxl = base.categories.Display.XL;
+  ok(idCol.variables["Body/MD/size"].values.Base === base.categories.Body.MD.size && idCol.variables["Display/XL/letterSpacing"].values.Base === Math.round((dxl.letterSpacing / dxl.size) * 10000) / 100, "no-modes Base values equal the base scale (size raw px; letterSpacing as % of size — the relative-units rule)");
   // DISTINCT mode names: a breakpoint named "Base" (reserved) and duplicate names are disambiguated, so
   // Figma never sees modes:["Base","Base"] (which it rejects on import) or a silently-shadowed mode.
   const dup = T.typeTokensFigmaModes(base, [{ name: "Base", scale: mobile }, { name: "Wide", scale: base }, { name: "Wide", scale: mobile }]).collections.Typography;
@@ -256,6 +257,34 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   ok(dt.UI.MD.$value.singleLineHeight && !dt.Display.MD.$value.singleLineHeight && /px$/.test(dt.Display.MD.$value.paragraphSpacing), "DTCG composite carries paragraphSpacing (px) + singleLineHeight on ui/mono");
   const fv = T.typeTokensFigmaModes(T.typeScale({ treatment: "product" }), []).collections.Typography.variables;
   ok(fv["Display/MD/paragraphSpacing"] && fv["UI/MD/singleLineHeight"] && !fv["Display/MD/singleLineHeight"], "Figma modes carry paragraphSpacing (all) + singleLineHeight (ui/mono only)");
+}
+
+// ── leading + tracking are ALWAYS relative — never px — in every emitter (the units rule; overhaul P1) ──
+{
+  const s = T.typeScale({ treatment: "product", bodyBase: 16 });
+  const b = s.categories.Body.MD;
+  const relLine = (px, sz) => Math.round((px / sz) * 1000) / 1000; // unitless factor, 3dp (mirrors engine round(,3))
+  const relPct = (px, sz) => Math.round((px / sz) * 10000) / 100; // % of size, 2dp (mirrors engine round(,2))
+  // CSS: -line is a UNITLESS factor (= line ÷ size), -tracking is `em`, -line-single unitless — and NO px on either.
+  const css = T.typeTokensCSS(s);
+  ok(css.includes(`--type-body-md-line: ${relLine(b.lineHeight, b.size)};`), `CSS -line is a unitless factor line÷size (= ${relLine(b.lineHeight, b.size)})`);
+  ok(/--type-body-md-tracking: -?\d+(?:\.\d+)?em;/.test(css), "CSS -tracking is em (relative to font size)");
+  ok(/--type-ui-md-line-single: \d+(?:\.\d+)?;/.test(css), "CSS -line-single is a unitless factor");
+  ok(!/-line: -?\d+(?:\.\d+)?px/.test(css) && !/-tracking: -?\d+(?:\.\d+)?px/.test(css) && !/-line-single: -?\d+(?:\.\d+)?px/.test(css), "NO px leading or tracking anywhere in the CSS export");
+  // the SIZE / paragraph dims are still absolute px (only leading/tracking go relative).
+  ok(/--type-body-md-size: \d+px;/.test(css) && /--type-body-md-para: \d+px;/.test(css), "size + paragraph spacing stay absolute px (box metrics, not leading)");
+  // DTCG: lineHeight a unitless NUMBER (multiplier), letterSpacing an `em` string, size/para still px.
+  const dt = T.typeTokensDTCG(s).typography.Body.MD.$value;
+  ok(typeof dt.lineHeight === "number" && dt.lineHeight === relLine(b.lineHeight, b.size), "DTCG lineHeight is a unitless number (= line ÷ size)");
+  ok(typeof dt.letterSpacing === "string" && /em$/.test(dt.letterSpacing), "DTCG letterSpacing is an em string (relative)");
+  ok(/px$/.test(dt.fontSize) && /px$/.test(dt.paragraphSpacing), "DTCG fontSize + paragraphSpacing stay px (absolute dims)");
+  ok(typeof T.typeTokensDTCG(s).typography.UI.MD.$value.singleLineHeight === "number", "DTCG singleLineHeight is a unitless number too");
+  // Figma: leading + tracking ride as a % of font size (Figma's native relative unit); size/weight raw.
+  const gv = T.typeTokensFigmaModes(s, []).collections.Typography.variables;
+  ok(gv["Body/MD/lineHeight"].values.Base === relPct(b.lineHeight, b.size), "Figma lineHeight is % of size");
+  ok(gv["Body/MD/letterSpacing"].values.Base === relPct(b.letterSpacing, b.size), "Figma letterSpacing is % of size");
+  ok(gv["UI/MD/singleLineHeight"].values.Base === relPct(s.categories.UI.MD.singleLineHeight, s.categories.UI.MD.size), "Figma singleLineHeight is % of size");
+  ok(gv["Body/MD/size"].values.Base === b.size && gv["Body/MD/weight"].values.Base === b.weight, "Figma size + weight stay raw (absolute)");
 }
 
 // ── Figma "Font Primitives" companion collection: deduped family primitives + per-voice aliases (5.4c) ──
