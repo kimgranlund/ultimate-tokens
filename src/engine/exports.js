@@ -704,12 +704,14 @@ export function dsColorRoles(state) {
   push(`${cn}`, rgbEnd(chL.fillRgb), rgbEnd(chD.fillRgb));
   slot(chrome, "-hover", `${cn}-hover`);
   slot(chrome, "-active", `${cn}-active`);
+  slot(chrome, "-disabled", `${cn}-disabled`); // the 500-600 inert wash — a real token, not a preview opacity
   push(`${cn}-on-${cn}`, rgbEnd(chL.onRgb), rgbEnd(chD.onRgb));
 
-  // ── every other family: base fill + measured on-color (§7 R2 — signature families included) ──
-  // The brand family (the primary-action button) also carries `-hover`/`-active` state slots (R3) — the
-  // chrome already has them; when the brand IS the chrome (as in the reference theme) it is not in this
-  // loop, so no duplication. When brand ≠ chrome, its states are emitted here so `button-primary-*` resolves.
+  // ── every other family: base fill + its button states + measured on-color (§7 R2) ──
+  // EVERY fill family carries `-hover` and `-disabled` (so any intent can be a real button — the preview
+  // renders them from these tokens, never a brightness()/opacity() fake). Only the brand family also
+  // carries `-active` (the primary action the DESIGN.md prose names with its active step); the chrome
+  // already emitted its full trio above. When the brand IS the chrome it is not in this loop, so no dup.
   const brandPal = palettes.find((p) => /primary|brand/.test(p.name.toLowerCase())) || chrome;
   const isIntent = (p) => /danger|destruct|error|critical|success|positive|warn|caution|info/.test(p.name.toLowerCase());
   const others = palettes.filter((p) => p !== chrome && !isIntent(p));
@@ -719,7 +721,9 @@ export function dsColorRoles(state) {
   for (const p of [...others, ...intents]) {
     const fl = dsFillOn(p, poles, "light", true), fd = dsFillOn(p, poles, "dark", true);
     push(`${p.n}`, rgbEnd(fl.fillRgb), rgbEnd(fd.fillRgb));
-    if (p === brandPal) { slot(p, "-hover", `${p.n}-hover`); slot(p, "-active", `${p.n}-active`); }
+    slot(p, "-hover", `${p.n}-hover`);
+    if (p === brandPal) slot(p, "-active", `${p.n}-active`);
+    slot(p, "-disabled", `${p.n}-disabled`);
     push(`${p.n}-on-${p.n}`, rgbEnd(fl.onRgb), rgbEnd(fd.onRgb));
   }
 
@@ -899,6 +903,13 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const bodyStack = dsFontStack(fonts.body, sans);
   const headStack = dsFontStack(fonts.heading || fonts.display, sans);
   const monoStack = dsFontStack(fonts.mono, "ui-monospace, SFMono-Regular, monospace");
+  // Control text (buttons/inputs/labels) is the UI voice — its own font, weight, and optical tracking —
+  // NOT the body voice at a hardcoded 600. Read the ui-md step so the previews render what the tokens say.
+  const uiStack = dsFontStack(fonts.ui, sans);
+  const uiStep = (typeSc && typeSc.categories && typeSc.categories.UI && typeSc.categories.UI.MD) || null;
+  const uiWeight = uiStep && uiStep.weight ? uiStep.weight : 500;
+  const uiTrackEm = uiStep && uiStep.size ? Number((uiStep.letterSpacing / uiStep.size).toFixed(4)) : 0;
+  const uiFont = `font-family:${uiStack};font-weight:${uiWeight};letter-spacing:${uiTrackEm}em`;
   const radii = dsRadii(geomSc);
   const rMd = radii.md != null ? radii.md : 12;
   const rLg = radii.lg != null ? radii.lg : 16;
@@ -921,23 +932,28 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   }
   // 2. Buttons — fills × base/hover/disabled
   {
-    const btnCss = `.brow{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}.blabel{width:96px;font-size:12px;color:${V(cn + "-on-surface-variant")};text-transform:capitalize}.btn{border:0;border-radius:${rMd}px;padding:12px;font:inherit;font-weight:600;cursor:pointer}.btn--hover{filter:brightness(1.1)}.btn--dis{opacity:.45;cursor:not-allowed}`;
+    const btnCss = `.brow{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}.blabel{width:96px;font-size:12px;color:${V(cn + "-on-surface-variant")};text-transform:capitalize}.btn{border:0;border-radius:${rMd}px;padding:12px;${uiFont};cursor:pointer}.btn--dis{cursor:not-allowed}`;
     const rows = fillFams.map((f) => {
-      const st = `background:${V(f)};color:${V(f + "-on-" + f)}`;
-      return `<div class="brow"><span class="blabel">${cap(f)}</span><button class="btn" style="${st}">Button</button><button class="btn btn--hover" style="${st}">Hover</button><button class="btn btn--dis" style="${st}">Disabled</button></div>`;
+      const on = V(f + "-on-" + f);
+      const base = `background:${V(f)};color:${on}`;
+      const hover = `background:${has(f + "-hover") ? V(f + "-hover") : V(f)};color:${on}`;
+      // disabled = the family's own `-disabled` scrim (a real token) with the muted on-surface-variant
+      // label; NOT an opacity wash over the backdrop.
+      const dis = `background:${has(f + "-disabled") ? V(f + "-disabled") : V(f)};color:${V(cn + "-on-surface-variant")}`;
+      return `<div class="brow"><span class="blabel">${cap(f)}</span><button class="btn" style="${base}">Button</button><button class="btn" style="${hover}">Hover</button><button class="btn btn--dis" style="${dis}">Disabled</button></div>`;
     }).join("");
     out.push(card("buttons.html", "Components", "Buttons", "fills · hover · disabled", btnCss,
-      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>. Hover brightens; disabled drops opacity.</p>`));
+      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>`));
   }
   // 3. Inputs
   {
-    const inCss = `.field{display:block;width:100%;padding:12px;border-radius:${radii.sm != null ? radii.sm : 8}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};font:inherit;margin-bottom:12px}.field::placeholder{color:${V(cn + "-on-surface-variant")}}.field--focus{outline:2px solid ${V(ds.families[0])};outline-offset:2px;border-color:${V(ds.families.find((f) => /primary|brand/.test(f)) || cn)}}`;
+    const inCss = `.field{display:block;width:100%;padding:12px;border-radius:${radii.sm != null ? radii.sm : 8}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};${uiFont};margin-bottom:12px}.field::placeholder{color:${V(cn + "-on-surface-variant")}}.field--focus{outline:2px solid ${V(ds.families[0])};outline-offset:2px;border-color:${V(ds.families.find((f) => /primary|brand/.test(f)) || cn)}}`;
     out.push(card("inputs.html", "Components", "Inputs", "field · placeholder · focus", inCss,
       `<label class="cap">Label</label><input class="field" value="Typed value"><input class="field" placeholder="Placeholder text"><input class="field field--focus" value="Focused"><p class="cap">Field on <code>${cn}-surface</code>; focus ring is the brand family.</p>`));
   }
   // 4. Card
   {
-    const cCss = `.panel{background:${V(cn + "-surface")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:24px}.panel h4{font-family:${headStack};margin:0 0 8px}.pbtn{border:0;border-radius:${rMd}px;padding:12px;font:inherit;font-weight:600;cursor:pointer;background:${V(ds.families.find((f) => /primary|brand/.test(f)) || cn)};color:${V((ds.families.find((f) => /primary|brand/.test(f)) || cn) + "-on-" + (ds.families.find((f) => /primary|brand/.test(f)) || cn))};margin-top:12px}`;
+    const cCss = `.panel{background:${V(cn + "-surface")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:24px}.panel h4{font-family:${headStack};margin:0 0 8px}.pbtn{border:0;border-radius:${rMd}px;padding:12px;${uiFont};cursor:pointer;background:${V(ds.families.find((f) => /primary|brand/.test(f)) || cn)};color:${V((ds.families.find((f) => /primary|brand/.test(f)) || cn) + "-on-" + (ds.families.find((f) => /primary|brand/.test(f)) || cn))};margin-top:12px}`;
     out.push(card("card.html", "Components", "Card", "surface · elevation", cCss,
       `<div class="panel"><h4>Card title</h4><p style="margin:0">Body copy on a raised surface over the background — elevation is a surface step, not a shadow.</p><button class="pbtn">Primary action</button></div>`));
   }
@@ -1072,7 +1088,8 @@ function dsSpineBody(ds, state, ctx) {
     "State the interactive states explicitly — generic output betrays itself in hover/focus/disabled.", "",
     `- **Buttons.** \`button-primary\` per the frontmatter; **hover** \`${ref(brand + "-hover")}\`, **active**`,
     `  \`${ref(brand + "-active")}\` (each ships both scheme ends); **focus** a 2px \`${ref(brand)}\` outline at 2px`,
-    "  offset; **disabled** drops to ~45% opacity. Other fills state-shift the same way: one ramp step deeper on hover in light, one brighter in dark.",
+    `  offset; **disabled** \`${ref(brand + "-disabled")}\` (the inert 60% wash, mode-independent). EVERY fill family`,
+    "  carries its own `-hover` and `-disabled` — any intent is a real button; hover is one ramp step deeper in light, one brighter in dark.",
     `- **Inputs.** \`${ref(cn + "-surface")}\` field, 1px \`${ref(cn + "-outline-variant")}\`, \`${ref(cn + "-on-surface")}\` text,`,
     `  \`${ref(cn + "-on-surface-variant")}\` placeholder; **focus** swaps the border to \`${ref(brand)}\` plus a 2px ring.`,
     `- **Cards.** \`${ref(cn + "-surface")}\` on \`${ref(cn + "-background")}\`, 1px \`${ref(cn + "-outline-variant")}\`, \`{rounded.lg}\`.`,
@@ -1088,7 +1105,7 @@ function dsSpineBody(ds, state, ctx) {
     "**Prefer:**", "",
     `- Reach for ${intents.map((f) => `\`${f}\``).join("/")} only for status; ${mutedSig.map((f) => `\`${f}\``).join(", ") || "signature families"} are brand light, not status — small reads, never fields of color.`,
     "- Elevate by stepping the surface ladder, not by heavy shadows.",
-    "- Compose spacing, radii, and type from the scales; express states with the `-hover`/`-active` tokens, not raw opacity guesses.",
+    "- Compose spacing, radii, and type from the scales; express states with the `-hover`/`-active`/`-disabled` tokens, not raw opacity guesses.",
     // The signature/metal families carry quiet emphasis, not action — a POSITIVE bullet (the theme's
     // negative-space `refuses` clause belongs in the Overview, never under "Prefer:", where it inverts).
     metal
