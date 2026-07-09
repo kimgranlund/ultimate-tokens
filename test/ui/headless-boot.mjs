@@ -1461,6 +1461,27 @@ ok(app.doc.type.voices && app.doc.type.voices.Body.weight === 600 && app._active
 ok(hydSet(serSet(app.doc)).type.voices.Body.weight === 600, "(tyv) the per-voice override round-trips through persist");
 app._resetTypeVoice("Body"); flushRaf();
 ok(!app.doc.type.voices, "(tyv) reset clears the only voice override (back to the treatment)");
+// (tyw) SIBLING WEIGHTS — Suggest seeds the ratified defaults from the CORE weight; rows render;
+// add appends a free ladder weight; remove drops one; the list flows into the scale + persists.
+app.typeVoice = "Display"; app.render(); flushRaf();
+ok(!!app.querySelector(".tyi-weights") && !app.querySelector(".tyi-weight-row") && !!app.querySelector(".tyi-weights-suggest"), "(tyw) an untouched voice shows the empty weights block with Suggest");
+{
+  const core = app._activeTypeScale().categories.Display.MD.weight;
+  app._setVoiceWeights("Display", (await import("../../src/engine/type.mjs")).siblingWeightDefaults(core)); flushRaf();
+}
+ok(app.doc.type.voices && Array.isArray(app.doc.type.voices.Display.weights) && app.doc.type.voices.Display.weights.length >= 2, "(tyw) Suggest writes the sibling defaults to doc.type.voices");
+ok(!!app._activeTypeScale().weights && app._activeTypeScale().weights.Display.length === app.doc.type.voices.Display.weights.length, "(tyw) the siblings flow into the resolved scale.weights");
+app.render(); flushRaf();
+ok(app.querySelectorAll(".tyi-weight-row").length === app.doc.type.voices.Display.weights.length && !app.querySelector(".tyi-weights-suggest"), "(tyw) a row renders per sibling; Suggest hides once the list exists");
+{
+  const before = app.doc.type.voices.Display.weights.length;
+  const used = new Set(app.doc.type.voices.Display.weights.map((x) => x.weight));
+  app._setVoiceWeights("Display", app.doc.type.voices.Display.weights.concat([{ name: "Extra", weight: [200, 300, 400, 500, 600, 800, 900].find((w) => !used.has(w)) }])); flushRaf();
+  ok(app.doc.type.voices.Display.weights.length === before + 1, "(tyw) adding a weight appends to the list");
+  ok(hydSet(serSet(app.doc)).type.voices.Display.weights.length === before + 1, "(tyw) sibling weights round-trip through persist");
+  app._setVoiceWeights("Display", []); flushRaf();
+  ok(!app.doc.type.voices || !app.doc.type.voices.Display || !app.doc.type.voices.Display.weights, "(tyw) clearing the list removes the weights key (identity)");
+}
 app.typeVoice = null; app.render(); flushRaf();
 // the canvas Specimen·Tokens toggle flips the canvas to the READ-ONLY token MATRIX (a real <table>) in the
 // scrolling .is-table shell — rows = the 53 steps, columns = Base (+ each breakpoint), sticky token names.
