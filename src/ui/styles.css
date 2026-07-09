@@ -1293,6 +1293,14 @@ a.account-manage:hover { text-decoration: underline; }
 .tyi-voice-dot { color: var(--accent, #5b9dff); }
 .tyi-voice-edit { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
 .tyi-voice-reset { align-self: flex-start; }
+
+/* sibling weights — the per-voice named weight variants (chips row in the voice editor) */
+.tyi-weights { display: flex; flex-direction: column; gap: 4px; margin: 2px 0 6px; }
+.tyi-weight-row { display: flex; gap: 4px; align-items: center; }
+.tyi-weight-name { flex: 1; min-width: 0; }
+.tyi-weight-num { width: 64px; }
+.tyi-weights-actions { display: flex; gap: 6px; }
+.tyi-weights-core { color: var(--c-on-surface-variant); font-weight: 400; }
 .tyi-voice-font { color: var(--ink-dim); font-weight: 400; font-size: 11px; }
 .tyi-voice-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 16px; margin: 8px 0 0; }
 .tyi-voice-stats > div { display: flex; align-items: baseline; justify-content: space-between; }

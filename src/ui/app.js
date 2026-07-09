@@ -35,7 +35,7 @@ import { MCP_BRAND_KIT } from "./mcp-assets.js";
 import { TYPE_FONTS_CSS } from "./type-fonts.js";
 import { CATEGORY_INDEX, loadCategory } from "./categories/index.js";
 import { deriveNeutral, deriveRelative, RELATIONSHIPS } from "../engine/derive.mjs";
-import { typeScale, typeTokensCSS, typeTokensResponsiveCSS, typeTokensDTCG, typeTokensFigmaModes, typeTokensFigmaPrimitives, TYPE_TREATMENTS, DEFAULT_TYPE, BUNDLED_FONTS, genericFor } from "../engine/type.mjs";
+import { typeScale, typeTokensCSS, typeTokensResponsiveCSS, typeTokensDTCG, typeTokensFigmaModes, typeTokensFigmaPrimitives, TYPE_TREATMENTS, DEFAULT_TYPE, BUNDLED_FONTS, genericFor, siblingWeightDefaults, WEIGHT_NAMES } from "../engine/type.mjs";
 import { geomScale, geomTokensCSS, geomTokensResponsiveCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes, GEOMETRY_TREATMENTS, DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
 import { zipStore } from "./zip.mjs";
 import { modeApplyPlan, validateModeInterchange } from "../../figma/binder/mode-apply-plan.mjs";
@@ -4380,6 +4380,44 @@ class HctApp extends HTMLElement {
                   h("label", { class: "mode-editor-label", for: "fld-voice-style-" + cName.toLowerCase().replace(/[^a-z0-9]+/g, "-") }, "Figma style name"),
                   h("input", { id: "fld-voice-style-" + cName.toLowerCase().replace(/[^a-z0-9]+/g, "-"), type: "text", value: vp.styleName || "", placeholder: "e.g. Condensed Bold (non-variable fonts)", "data-fk": "tyvoice-style:" + cName,
                     "aria-label": "Figma weight style name for " + cName, onchange: (e) => this._setTypeVoiceStyleName(cName, e.target.value) }),
+                  // SIBLING WEIGHTS — named weight variants around the core. Each becomes a Figma text
+                  // style (`Voice/step/Name`), a Font Primitives pair, a CSS custom prop, and a DTCG
+                  // fontWeight token. Suggest seeds the ratified defaults from the CORE weight; the
+                  // list is user-owned after (add/remove/rename — never silently regenerated).
+                  h("label", { class: "mode-editor-label" }, "Weight siblings", h("small", { class: "tyi-weights-core" }, ` core ${val("weight", p.weight)}`)),
+                  h(
+                    "div",
+                    { class: "tyi-weights" },
+                    ...(vp.weights || []).map((wv, i) =>
+                      h(
+                        "div",
+                        { class: "tyi-weight-row" },
+                        h("input", { type: "text", class: "tyi-weight-name", value: wv.name, "aria-label": `Sibling ${i + 1} name for ${cName}`, "data-fk": `tyweight-name:${cName}:${i}`,
+                          onchange: (e) => { const list = (vp.weights || []).slice(); list[i] = { ...list[i], name: e.target.value }; this._setVoiceWeights(cName, list); } }),
+                        h("input", { type: "number", class: "tyi-weight-num", value: String(wv.weight), min: "100", max: "1000", step: "100", "aria-label": `Sibling ${i + 1} weight for ${cName}`, "data-fk": `tyweight-num:${cName}:${i}`,
+                          onchange: (e) => { const list = (vp.weights || []).slice(); list[i] = { ...list[i], weight: Number(e.target.value) }; this._setVoiceWeights(cName, list); } }),
+                        btn(icon("x"), { variant: "bare", cls: "tyi-weight-del", ariaLabel: `Remove sibling ${wv.name}`, title: "Remove this weight",
+                          onclick: () => { const list = (vp.weights || []).slice(); list.splice(i, 1); this._setVoiceWeights(cName, list); } }),
+                      ),
+                    ),
+                    h(
+                      "div",
+                      { class: "tyi-weights-actions" },
+                      !(vp.weights || []).length
+                        ? btn("Suggest", { variant: "ghost", cls: "tyi-weights-suggest", title: "Seed the standard siblings around the core weight", "data-fk": "tyweights-suggest:" + cName,
+                            onclick: () => this._setVoiceWeights(cName, siblingWeightDefaults(val("weight", p.weight))) })
+                        : false,
+                      btn("+ Weight", { variant: "ghost", cls: "tyi-weights-add", title: "Add a named weight variant", "data-fk": "tyweights-add:" + cName,
+                        onclick: () => {
+                          const list = (vp.weights || []).slice();
+                          const used = new Set(list.map((x) => x.weight).concat([val("weight", p.weight)]));
+                          const free = [500, 700, 300, 600, 400, 800, 200, 900, 100].find((w) => !used.has(w));
+                          if (free == null) { this.toast("All ladder weights are in use"); return; }
+                          list.push({ name: WEIGHT_NAMES[free] || String(free), weight: free });
+                          this._setVoiceWeights(cName, list);
+                        } }),
+                    ),
+                  ),
                   tuned ? btn("Reset voice", { variant: "ghost", cls: "tyi-voice-reset", onclick: () => this._resetTypeVoice(cName) }) : false,
                 )
               : h(
@@ -4486,6 +4524,25 @@ class HctApp extends HTMLElement {
       const voices = { ...(t.voices || {}) };
       const v = { ...(voices[voice] || {}) };
       if (sn) v.styleName = sn; else delete v.styleName;
+      if (Object.keys(v).length) voices[voice] = v; else delete voices[voice];
+      if (Object.keys(voices).length) t.voices = voices; else delete t.voices;
+      doc.type = t;
+    });
+  }
+
+  // _setVoiceWeights(voice, list) — write a voice's SIBLING weight variants ([{name, weight}]) onto
+  // doc.type.voices, normalized (name trimmed/capped, weight clamped 100..1000, invalid dropped); an
+  // empty list clears the key so a sibling-free voice round-trips identically. One undo step.
+  _setVoiceWeights(voice, list) {
+    const norm = (Array.isArray(list) ? list : [])
+      .map((e) => ({ name: String((e && e.name) || "").trim().slice(0, 40), weight: Math.round(Number(e && e.weight)) }))
+      .filter((e) => e.name && Number.isFinite(e.weight) && e.weight >= 100 && e.weight <= 1000)
+      .slice(0, 8);
+    this.commit((doc) => {
+      const t = { ...(doc.type || DEFAULT_TYPE) };
+      const voices = { ...(t.voices || {}) };
+      const v = { ...(voices[voice] || {}) };
+      if (norm.length) v.weights = norm; else delete v.weights;
       if (Object.keys(v).length) voices[voice] = v; else delete voices[voice];
       if (Object.keys(voices).length) t.voices = voices; else delete t.voices;
       doc.type = t;
