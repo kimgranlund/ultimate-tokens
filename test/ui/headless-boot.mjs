@@ -1605,7 +1605,7 @@ app.exportSystems = { color: true, type: true, geometry: true }; // restore
   await new Promise((resolve) => setTimeout(resolve, 250));
   app.download = realDl2;
   ok(!!capturedCode, "(t-bake) downloadFigmaPlugin emits a code.js (after its deferred setTimeout)");
-  ok(!!capturedCode && !capturedCode.includes("__NONOUN_FLOAT_PLANS__"), "(t-bake) the emitted code.js has the FLOAT_PLANS anchor comment replaced (no longer present)");
+  ok(!!capturedCode && !capturedCode.includes("__ULTIMATE_TOKENS_FLOAT_PLANS__"), "(t-bake) the emitted code.js has the FLOAT_PLANS anchor comment replaced (no longer present)");
   ok(!!capturedCode && /JSON\.parse\("\[\{/.test(capturedCode), "(t-bake) the emitted code.js's FLOAT_PLANS is a JSON.parse'd non-empty array literal");
   ok(app._figmaFloatPlans().length > 0, "(t-bake) with type+geometry ON + a breakpoint configured, _figmaFloatPlans() (what gets baked) is non-empty");
 }

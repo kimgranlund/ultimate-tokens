@@ -1,4 +1,4 @@
-# Marketing corpus — Ultimate Tokens by NONOUN
+# Marketing corpus — Ultimate Tokens
 
 Everything a customer reads, in one place, under one voice. Authored and maintained by the
 **marketing-manager** agent through the **ultimate-tokens-brand-voice** skill — every piece gated by the
@@ -21,7 +21,7 @@ voice-check script and the platform rubric before it ships.
 | [`product/brand-kit-mcp.md`](product/brand-kit-mcp.md) | The MCP story — download copy, directory listing, agent pitch, setup block |
 | [`product/claude-plugin.md`](product/claude-plugin.md) | The consumption-plugin story — install copy, marketplace listing, agent pitch, the distribution-layer angle |
 | [`launch/launch-kit.md`](launch/launch-kit.md) | Announcements, social variants, the demonstration thread |
-| [`web/landing.md`](web/landing.md) | Landing-page copy blocks for `app.nonoun.io` |
+| [`web/landing.md`](web/landing.md) | Landing-page copy blocks (no domain yet — see the TBD note in the file) |
 
 ## Working agreements
 

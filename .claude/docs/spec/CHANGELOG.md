@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 1.51 — 2026-07-09 — the debrand: the product is unattributed (ADR-015)
+
+"Ultimate Tokens by NONOUN" becomes **Ultimate Tokens**. No maker brand, no "by" line, no monogram.
+
+- **The nonoun.io surface** → support is **GitHub Issues**, docs are the **repo README**, billing is
+  **Lemon Squeezy's customer portal**. Every replacement resolves today. The unbuilt hosted-MCP / magic-link
+  URLs became `<APP_DOMAIN>` / `<MCP_DOMAIN>` placeholders — Phase B must acquire a domain, not inherit one.
+- **The mark** could not be renamed away; it WAS the "N" letterform. `brandMark()` + the eight
+  `ico-nonoun-*` assets deleted; favicon/og regenerated from a neutral four-swatch mark.
+- **The voice platform** kept "no nouns, just verbs" (load-bearing on its own) and dropped the etymology it
+  was derived from. `voice-check.mjs` now raises any spelling of the retired brand to **ERROR**.
+- **Internal ids** followed: `ultimate-tokens-figma-styles.plan.v1`, `ultimate-tokens-type-fonts`,
+  `ultimate-tokens-wf-*`, and the shared build anchor `__ULTIMATE_TOKENS_FLOAT_PLANS__` (lockstep: app,
+  binder, two tests).
+- **`test/repo/branding.mjs`** makes the absence a GATE (26th test file). Records — both CHANGELOGs and
+  `decision-records.md` — are exempt: a record must be able to name what it retired.
+
+Supersedes 1.50's closing claim that "the company brand is unchanged". It is not; it is gone.
+
+Landed as #250.
+
 ## 1.50 — 2026-07-09 — the deeper identity rename → `ultimate-tokens`
 
 The product identity moves in four namespaces, each with its own compatibility story.

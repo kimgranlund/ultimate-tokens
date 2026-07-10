@@ -1,7 +1,7 @@
 ---
 name: ultimate-tokens-brand-voice
 description: >
-  Use BEFORE writing any customer-facing words for Ultimate Tokens / NONOUN — store or landing copy,
+  Use BEFORE writing any customer-facing words for Ultimate Tokens — store or landing copy,
   README marketing, social posts, launch announcements, product descriptions, in-app microcopy,
   upgrade/limit/error strings, lifecycle emails, release notes — or when judging them ("write the
   launch post", "update the store page", "add an upsell string", "does this sound like us?"). The
@@ -11,7 +11,7 @@ description: >
   brand/marketing writing.
 ---
 
-# Writing in the NONOUN voice
+# Writing in the Ultimate Tokens voice
 
 Two documents are canonical — read both before drafting (each is one page):
 

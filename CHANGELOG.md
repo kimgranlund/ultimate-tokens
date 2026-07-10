@@ -10,7 +10,33 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ### 2026-07-09
 
+#### Removed
+- **The maker brand.** "Ultimate Tokens by NONOUN" is now simply **Ultimate Tokens** — no attribution, no
+  "by" line, no monogram. The `nonoun.io` surface is gone: **support is GitHub Issues**, **docs are the
+  README**, **billing is Lemon Squeezy's own customer portal**. Every replacement link resolves today; the
+  alternative was a domain nobody owns, shipping 404s behind a nicer name.
+- **The "N" monogram**, which could not be renamed away because it *was* the letterform. `brandMark()` and
+  the eight `ico-nonoun-*` assets are deleted; the favicon set is regenerated from a brand-neutral mark —
+  four tonal swatches, saying what the product is rather than who made it. The header shows the wordmark
+  alone. (ADR-015, #250)
+
+#### Added
+- **`test/repo/branding.mjs`** — the debrand is a **gate**, not a sweep. A find-and-replace decays: the next
+  toast, og: tag, or lifecycle email reintroduces the maker by muscle memory, and re-attribution is a
+  factual claim about who makes this. The gate fails `npm test` on `NONOUN`, on any `nonoun.io` URL, and on
+  the pre-rename identifier outside a named back-compat allowlist. `voice-check.mjs` raises the same word to
+  **ERROR** in copy. Changelogs and the decision records are exempt — a record must be able to name what it
+  retired. (#250)
+
 #### Changed
+- Internal identifiers took the product's name: the export schema `nonoun-figma-styles.plan.v1` →
+  `ultimate-tokens-figma-styles.plan.v1`, the DOM ids `nonoun-type-fonts` / `nonoun-wf-*`, and the shared
+  build anchor `__NONOUN_FLOAT_PLANS__` (lockstep across the app, the binder, and two tests). (#250)
+- The voice platform's §1 kept the house grammar rule ("no nouns, just verbs") and dropped the etymology it
+  used to be derived from. The unbuilt hosted-MCP and magic-link URLs became explicit `<APP_DOMAIN>` /
+  `<MCP_DOMAIN>` placeholders, so Phase B must acquire a domain as step zero rather than inherit one. (#250)
+- Fixed a stale install command in the pinned fact sheet that #248 missed
+  (`/plugin marketplace add kimgranlund/nonoun-color-tokens`). (#250)
 - **The deeper identity rename — `nonoun-color-tokens` → `ultimate-tokens`.** Following the folder and
   GitHub-repo move, the product's identity moved everywhere it is *addressable*, in four namespaces:
   the **custom element** (`<nonoun-color-tokens>` → **`<ultimate-tokens>`**, with the old tag kept as a

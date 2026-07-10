@@ -320,8 +320,6 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   background: var(--panel);
 }
 .app-header .brand { font-weight: 650; letter-spacing: -.01em; white-space: nowrap; gap: 7px; }
-/* the NONOUN brand mark (icons.js#brandMark) — inherits the wordmark's text color (--ink) */
-.brand-mark { color: inherit; }
 /* the brand doubles as the "back to gallery" affordance (replaced the ◀ Gallery button). */
 .brand-link { cursor: pointer; display: inline-flex; align-items: center; padding: 4px 6px; margin-left: -6px; border-radius: var(--r-sm); }
 .brand-link:hover { background: var(--line-2); }
