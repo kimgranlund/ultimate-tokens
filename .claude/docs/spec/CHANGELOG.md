@@ -20,7 +20,12 @@ The product identity moves in four namespaces, each with its own compatibility s
 - The **company** brand is unchanged: `nonoun.io`, `support@nonoun.io`, the NONOUN mark, and the
   vendor-prefixed `nonoun-figma-styles.plan.v1` schema all stay.
 
-Landed as #247 (code + gates) and #248 (docs, marketing, skills, and the user-facing name drift).
+- **Agent + skill names** follow the domain: `color-tokens-reviewer` → `ultimate-tokens-reviewer`;
+  `/color-tokens-brand-voice` → `/ultimate-tokens-brand-voice`. The plugin's `color-tokens` consumption
+  skill keeps its name (there it denotes the token SYSTEM, peer to `typography-tokens`/`geometry-tokens`).
+
+Landed as #247 (code + gates), #248 (docs, marketing, skills, and the user-facing name drift), and
+#249 (the agent + skill rename).
 
 ## 1.49 — 2026-07-04 — Editorial type voices: the taxonomy grows 7 → 11 (ADR-013)
 

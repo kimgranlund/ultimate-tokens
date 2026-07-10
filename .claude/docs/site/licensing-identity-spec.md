@@ -58,7 +58,7 @@ microcopy via the marketing corpus).
   activation; `enterLicense`→activate, `clearLicense`→deactivate.
 - **Customer copy** keeps describing shipped behavior (store-copy §3 context notes point here).
   When Phase 1 ships, the variant descriptions + FAQ move to "tied to your email, works on all your
-  devices" — through the `color-tokens-brand-voice` loop.
+  devices" — through the `ultimate-tokens-brand-voice` loop.
 - **Go-live (#158) does not wait for this.** The flip is orthogonal; only the runbook's
   activation-limit guidance changes (high ceiling, not 3–5).
 

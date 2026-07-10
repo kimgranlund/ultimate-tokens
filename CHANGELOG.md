@@ -23,6 +23,11 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 - **The public install command changed** — the Claude plugin is now
   `/plugin marketplace add kimgranlund/ultimate-tokens`. GitHub redirects the old path, but new copy
   uses the new one. (#248)
+- **The repo's own agent + skill renamed to the new domain**: `color-tokens-reviewer` →
+  **`ultimate-tokens-reviewer`**, and the `/color-tokens-brand-voice` skill →
+  **`/ultimate-tokens-brand-voice`** (the directory name IS the command). The plugin's `color-tokens`
+  consumption skill KEEPS its name — there `color-tokens` names the token *system* (peer to
+  `typography-tokens` / `geometry-tokens`), not the product. (#249)
 - **User-facing product-name drift repaired.** The flagship Figma plugin's error toast and console prefix
   still said "Color Tokens" while its manifest said "Ultimate Tokens by NONOUN"; the app's masthead `<h1>`
   and brand link said the same. All now read **Ultimate Tokens**. The separately-published **Color Tokens

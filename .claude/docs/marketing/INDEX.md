@@ -1,7 +1,7 @@
 # Marketing corpus — Ultimate Tokens by NONOUN
 
 Everything a customer reads, in one place, under one voice. Authored and maintained by the
-**marketing-manager** agent through the **color-tokens-brand-voice** skill — every piece gated by the
+**marketing-manager** agent through the **ultimate-tokens-brand-voice** skill — every piece gated by the
 voice-check script and the platform rubric before it ships.
 
 ## The foundation (read first)
@@ -26,7 +26,7 @@ voice-check script and the platform rubric before it ships.
 ## Working agreements
 
 - **Edit through the loop.** Surface → posture → stance → fact-pinned draft →
-  `node .claude/skills/color-tokens-brand-voice/scripts/voice-check.mjs <file>` → §6 rubric ≥ 4 on
+  `node .claude/skills/ultimate-tokens-brand-voice/scripts/voice-check.mjs <file>` → §6 rubric ≥ 4 on
   every axis. A pinned-fact error fails the piece outright.
 - **Drift is a defect.** A product change that alters a stated fact updates `fact-sheet.md` in the
   same change, then sweeps this corpus (`grep -rn "<old>" .claude/docs/marketing/`) — plus the README

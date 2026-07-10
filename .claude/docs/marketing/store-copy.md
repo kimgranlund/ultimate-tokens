@@ -9,7 +9,7 @@ it pastes into — e.g. `products[1182548].attributes.description` — following
 storefront field (SEO, tagline, policy, email) is a dashboard setting rather than a JSON:API attribute,
 the block says so and names the dashboard location. Facts are pinned by [`fact-sheet.md`](fact-sheet.md);
 voice by [`voice/voice-platform.md`](voice/voice-platform.md) — gate every edit with the
-`color-tokens-brand-voice` voice-check script before shipping.
+`ultimate-tokens-brand-voice` voice-check script before shipping.
 
 **The objects this corpus keys to:**
 

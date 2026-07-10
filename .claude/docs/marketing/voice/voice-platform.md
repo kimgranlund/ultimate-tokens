@@ -3,7 +3,7 @@
 
 The canonical voice record for **Ultimate Tokens by NONOUN** and the NONOUN brand. Every piece of
 brand, product, or marketing writing is authored against this platform and gated by §6. Operational
-application lives in the `color-tokens-brand-voice` skill; pinned product facts live in
+application lives in the `ultimate-tokens-brand-voice` skill; pinned product facts live in
 [`../fact-sheet.md`](../fact-sheet.md) — this document owns *who is speaking and how*, not the numbers.
 
 ---
