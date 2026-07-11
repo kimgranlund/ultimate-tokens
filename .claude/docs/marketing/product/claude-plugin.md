@@ -46,7 +46,7 @@ Teach your coding agent to build with your exact tokens — which role goes wher
 
 ```
 # In Claude Code, add the marketplace, then the plugin:
-/plugin marketplace add kimgranlund/ultimate-tokens
+/plugin marketplace add https://unpkg.com/@ultimate-tokens/claude/marketplace.json
 /plugin install ultimate-tokens
 
 # Then, in any project that contains an Ultimate Tokens export, ask the agent to

@@ -29,15 +29,18 @@ names the semantic token for the job rather than inventing a value — or stops 
 
 ## Install
 
-Add the marketplace, then the plugin:
+Add the marketplace, then the plugin — one time, from any project:
 
 ```
-/plugin marketplace add kimgranlund/ultimate-tokens
+/plugin marketplace add https://unpkg.com/@ultimate-tokens/claude/marketplace.json
 /plugin install ultimate-tokens
 ```
 
 Then, in any project that contains an Ultimate Tokens export, ask the agent to style a component and
 the right skill activates on the task.
+
+Updates ship as new versions of the `@ultimate-tokens/claude` npm package — `/plugin marketplace
+update ultimate-tokens` then `/plugin update ultimate-tokens` pulls the latest.
 
 ## Provenance
 
