@@ -52,7 +52,8 @@ export function buildSurface(kit) {
       `- **Surfaces / backgrounds** → the \`*/surface*\` and \`*/background\` roles (resolve per light/dark).\n` +
       `- **Accents** → a palette's prime role (e.g. \`primary/primary\`) and its \`*Dim/Bright/Low/High\` variants.\n` +
       `- **Text on accents** → the \`*/on*\` roles (already contrast-aware).\n` +
-      `- **Borders/dividers** → \`*/outline*\`; **overlays** → \`*/scrim*\`.\n` +
+      `- **Borders/dividers** → \`*/outline*\`; **overlays** → \`*/scrim*\` (brand-tinted, per palette).\n` +
+      `- **Dialog/modal backdrop** (neutral, never brand-tinted) → \`constants.dialogBackdrop\` in \`brand://kit\` — a fixed black-at-80%-alpha overlay.\n` +
       `- Pass a \`scheme\` of \`light\` or \`dark\`; resolve_token gives the exact hex.\n` +
       `- Match an existing colour with \`nearest_token\` before introducing a new one.\n\n`;
     if (kit.type) g +=

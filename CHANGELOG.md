@@ -10,6 +10,22 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ### 2026-07-11
 
+#### Added
+- **A `dialog-backdrop` system constant** — a fixed, non-palette color token (opaque black at 80%
+  alpha, the canonical modal/dialog scrim) now ships across every color export: CSS/OKLCH
+  (`--{prefix}-dialog-backdrop`), the raw JSON (`constants.dialogBackdrop`), the DTCG raw tree
+  (`palette.tokens.json`'s `constants` group), the Figma UI3 Primitives collection, Tailwind's
+  `@theme` (`--color-dialog-backdrop`), and ShadCN (`--overlay`, aliasable in the design-system
+  Make bundle). Also served by the downloadable Brand-Kit MCP (`kit.constants.dialogBackdrop`,
+  unconditionally like `motion`) and named in the DESIGN.md Elevation & Depth prose.
+  **Deliberately absent from the DTCG/UI3 *semantic* tree** (Light/Dark · `Color / Semantic`) — a
+  real invariant, caught live while wiring this in: every top-level key there is treated elsewhere
+  (the app's style-plan family derivation, `figma/binder/style-plan.mjs`'s paint/text-style
+  generation) as a REAL PALETTE with a full 53-role set, positionally zipped against
+  `doc.palettes`; a synthetic non-palette key silently breaks both. Constants live in the raw tree
+  only, where every consumer already walks by name generically — documented as its own load-bearing
+  rule in `knowledge-04-export-formats.md` §8 so it isn't rediscovered the hard way twice. (#262)
+
 #### Fixed
 - **The Download-All zip's root README stays honest under a renamed Figma collection.** The
   `figma-aliased/` row now names the actual collections its aliasData targets when Settings ›
