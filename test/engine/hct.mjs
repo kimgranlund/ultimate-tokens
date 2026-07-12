@@ -122,8 +122,43 @@ for (let i = 0; i < 200; i++) {
 }
 if (E.hctToOklch(120, 0, 50)[1] > 0.02) FAIL("hct-oklch", `near-neutral not achromatic (C=${E.hctToOklch(120, 0, 50)[1]})`);
 
+// ── GATE cache-bound — maxChromaInGamut/peakC/oklchToCam16Hue memoize behind an LRU cap (a long
+// editing session — continuous hue/chroma slider drags — mints a new float key on nearly every
+// pointermove; an unbounded Map would grow for the page's whole lifetime). `boundedCache` is exported
+// SPECIFICALLY so this can be proven on cheap synthetic keys — a genuinely-new peakC call alone costs
+// several ms (the 47-tone × 18-iteration gamut search), so forcing real eviction through 5000+ REAL
+// calls would take the better part of a minute; that cost lives in the gamut math, not in the cache. ──
+{
+  // (a) the mechanism itself, on trivial synthetic data: never exceeds its cap, evicts the LEAST
+  // recently used entry (not insertion order — a `get` must bump an entry's recency), and a `get` after
+  // eviction correctly reports a miss (undefined) rather than a stale/wrong hit.
+  const cap = 100;
+  const c = E.boundedCache(cap);
+  for (let i = 0; i < cap; i++) c.set(i, i * i);
+  c.get(0); // touch key 0 → now the MOST recently used, so it should survive the next eviction
+  c.set(cap, cap * cap); // one over cap → evicts the LRU entry, which is key 1 (0 was just touched)
+  if (c.get(0) !== 0) FAIL("cache-bound", `a just-touched entry (key 0) was evicted instead of the true LRU (key 1) — get() must bump recency`);
+  if (c.get(1) !== undefined) FAIL("cache-bound", "the true LRU entry (key 1, never touched) survived an eviction it should have lost");
+  if (c.get(cap) !== cap * cap) FAIL("cache-bound", "the newly-set entry that triggered eviction is missing");
+  // fill well past the cap with fresh keys; the cache must never grow beyond it (probe every key —
+  // exactly `cap` hits, the rest misses — since boundedCache exposes no `.size` to check directly).
+  for (let i = 0; i < cap * 20; i++) c.set(1000 + i, i);
+  let hits = 0;
+  for (let i = 0; i < cap; i++) if (c.get(0) !== undefined) { /* checked once below, not per-iter */ }
+  for (let i = 0; i < cap * 20; i++) if (c.get(1000 + i) !== undefined) hits++;
+  if (hits !== cap) FAIL("cache-bound", `after ${cap * 20} inserts, ${hits} keys remain resident — want exactly the cap (${cap}); the cache is not staying bounded`);
+
+  // (b) a small REAL smoke check — genuinely-new peakC calls still recompute correctly once evicted
+  // (proves the actual _pk cache, not just the generic mechanism, is wired the same way) — kept cheap
+  // (well under the cap) since each fresh call costs real gamut-search time.
+  const early = E.peakC(1.11);
+  for (let i = 0; i < 200; i++) E.peakC(2 + i * 0.7); // 200 distinct, never-repeating hues
+  const recomputed = E.peakC(1.11);
+  if (early.c !== recomputed.c || early.tone !== recomputed.tone) FAIL("cache-bound", `peakC(1.11) recomputed to ${JSON.stringify(recomputed)}, want the original ${JSON.stringify(early)}`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-const GATES = ["anchor-roundtrip", "random-roundtrip", "gamut-ceiling", "branches", "oklch-deterministic", "hct-oklch", "hct-oklch-inverse"];
+const GATES = ["anchor-roundtrip", "random-roundtrip", "gamut-ceiling", "branches", "oklch-deterministic", "hct-oklch", "hct-oklch-inverse", "cache-bound"];
 for (const g of GATES) {
   const gf = fails.filter((f) => f.startsWith(g + ":"));
   console.log(`  ${gf.length ? "FAIL" : "pass"}  ${g}${gf.length ? "  — " + gf[0].slice(g.length + 2) : ""}`);

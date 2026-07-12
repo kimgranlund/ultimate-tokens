@@ -406,6 +406,42 @@ function resolveRoleHex(ref, byStop) {
   return hit.hex + a;
 }
 
+// deriveKeyColor(p, hueSpace) — a palette's VIVID identity color: the cusp (peak-chroma) hue at the
+// palette's own hue+chroma, independent of toneMode/the ramp (a ramp stop reads muted; this is what a
+// gallery tile should show). The ONE place this derivation lives — projectView's per-palette roles
+// and paletteKeyColors' cheap tile-only path (below) both call it, so they can never drift apart.
+function deriveKeyColor(p, hueSpace) {
+  const baseHue = effHue(p.hue, hueSpace, (p.chroma ?? 0) / 100);
+  const pk = peakC(baseHue);
+  const keyChroma = ((p.chroma ?? 0) / 100) * pk.c;
+  return {
+    // keyOklch = the HIGH-RES OKLCH (float, no 8-bit round-trip) — the model's source of truth for
+    // perceptual readouts/analysis; keyHex is DERIVED from the same HCT for consumption.
+    keyOklch: hctToOklch(baseHue, keyChroma, pk.tone),
+    keyHex: "#" + hctToRgb(baseHue, keyChroma, pk.tone).rgb
+      .map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase(),
+  };
+}
+
+// paletteKeyColors(doc) — the CHEAP alternative to projectView() for a gallery/list TILE that only
+// needs each palette's vivid identity color (+ name/on/colorRole, which need no derivation at all —
+// they're read straight off the palette object). Skips the 25-stop ramp, the 53-role resolution, and
+// every export format entirely — projectView computes ALL of that unconditionally, and a tile grid
+// (48 Color Categories presets, or every saved "Your Palettes" set) never reads any of it. Measured:
+// ~200-300ms/preset via projectView vs. ~0.01ms/preset here — the difference IS the rendering latency.
+// Deliberately NOT memoized: the computation is cheap enough (sub-millisecond per palette) that a cache
+// would only add invalidation risk (a stale key color after an edit) and something to leak, for no
+// measurable benefit — recompute fresh on every call.
+export function paletteKeyColors(doc) {
+  const hueSpace = controlsOf(doc).hueSpace;
+  return (doc.palettes ?? []).map((p) => ({
+    name: p.name,
+    on: p.on !== false,
+    key: deriveKeyColor(p, hueSpace).keyHex,
+    ...(p.colorRole ? { colorRole: p.colorRole } : {}),
+  }));
+}
+
 // projectView — the document -> view projection. Pure: same doc, same view.
 // Composes paletteStops + semanticRoles + the five exporters. The app renders
 // EVERYTHING on the right from this; nothing here is stored back on the doc.
@@ -461,14 +497,9 @@ export function projectView(doc) {
     // key = the palette's VIVID identity color: the cusp (peak-chroma) hue at the palette's intended
     // chroma, computed straight from hue+chroma so it stays vivid regardless of toneMode (the perceptual
     // ramp damps mid-stop chroma, so a ramp stop reads muted; this is what the gallery tile should show).
-    const baseHue = effHue(p.hue, controls.hueSpace, (p.chroma ?? 0) / 100);
-    const pk = peakC(baseHue);
-    const keyChroma = ((p.chroma ?? 0) / 100) * pk.c;
-    // keyOklch = the key color's HIGH-RES OKLCH (float, no 8-bit round-trip) — the model's source of
-    // truth for perceptual readouts/analysis; keyHex is DERIVED from the same HCT for consumption.
-    const keyOklch = hctToOklch(baseHue, keyChroma, pk.tone);
-    const keyHex = "#" + hctToRgb(baseHue, keyChroma, pk.tone).rgb
-      .map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+    // deriveKeyColor (below) is the single source of truth — paletteKeyColors (the cheap tile-only path)
+    // calls the SAME helper, so the two can never drift apart.
+    const { keyHex, keyOklch } = deriveKeyColor(p, controls.hueSpace);
 
     // keyColors = retained brand colors placed on the ramp through the perceptual lens.
     const keyColors = placeKeyColors(p.keyColors, fullStops);

@@ -43,6 +43,33 @@ const edited = JSON.parse(JSON.stringify(doc)); edited.palettes[1].hue = (edited
 const v2 = M.projectView(edited);
 if (v2.palettes[1].ramp[12] && v.palettes[1].ramp[12] && v2.palettes[1].ramp[12].hex === v.palettes[1].ramp[12].hex) FAIL("model", "editing hue did not change the projected ramp (stale/stored derived state?)");
 
+// ── paletteKeyColors: the cheap tile-only alternative to projectView (gallery/list rendering —
+// presetTile, buildTiles). Must stay identity-matched to projectView's own .key/.name/.on/.colorRole,
+// never cache/retain anything of its own (each call is a fresh, independent computation — nothing here
+// should outlive the call, so there is nothing for a long-lived session to leak), and re-project live
+// edits exactly like projectView does. ──
+{
+  const kc = M.paletteKeyColors(doc);
+  if (!Array.isArray(kc) || kc.length !== v.palettes.length) FAIL("model", `paletteKeyColors returned ${kc && kc.length} entries, want ${v.palettes.length}`);
+  else for (let i = 0; i < kc.length; i++) {
+    const a = kc[i], b = v.palettes[i];
+    if (a.name !== b.name || a.on !== b.on || a.key !== b.key) { FAIL("model", `paletteKeyColors[${i}] (${a.name}) diverges from projectView: key ${a.key} vs ${b.key}`); break; }
+    if (!!a.colorRole !== !!b.colorRole || (a.colorRole && a.colorRole !== b.colorRole)) { FAIL("model", `paletteKeyColors[${i}] colorRole ${a.colorRole} != projectView's ${b.colorRole}`); break; }
+  }
+  // a curated preset's colorRole (dominant/supporting/accent) passes through verbatim — no derivation.
+  const curated = NATURE_PRESETS[0];
+  const kcCurated = M.paletteKeyColors(curated);
+  const withRole = kcCurated.find((p) => p.colorRole);
+  if (!withRole) FAIL("model", "paletteKeyColors dropped colorRole on a curated preset (none of its palettes carry one)");
+  // live edit re-projects here too — no stale/cached derived state.
+  const kc2 = M.paletteKeyColors(edited);
+  if (kc2[1].key === kc[1].key) FAIL("model", "paletteKeyColors did not change after editing hue (stale/cached state?)");
+  // NOT memoized: two independent calls over the SAME doc return distinct array/object instances —
+  // nothing is retained or shared across calls (the "extremely careful with memory leakage" bar).
+  const kcAgain = M.paletteKeyColors(doc);
+  if (kcAgain === kc || kcAgain[0] === kc[0]) FAIL("model", "paletteKeyColors returned a cached/shared reference across calls — should recompute fresh every time");
+}
+
 // ── shell files exist + app.js is syntactically valid ────────────────────────────────────
 for (const f of ["index.html", "styles.css", "app.js", "model.mjs"]) if (!existsSync(join(UI, f))) FAIL("shell", `missing ${f}`);
 try { execSync(`node --check "${join(UI, "app.js")}"`, { stdio: "pipe" }); } catch (e) { FAIL("shell", `app.js failed node --check`); }
