@@ -123,6 +123,52 @@ for (const k of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn"]) {
 const j = X.exportJSON(C(ALL)); const p0 = j[ALL[0].name.toLowerCase()] || Object.values(j)[0];
 if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palette missing stops/scrims/semantic");
 
+// ── hpg-export-dialog-backdrop (a fixed, non-palette color CONSTANT — opaque black at 80% alpha,
+//    emitted ONCE per document, never per-palette, never mode-flipped) across every color format ──
+{
+  const WANT_HEX = "#000000CC"; // black, alpha 0.8 * 255 = 204 = 0xCC
+  const WANT_OKLCH = "oklch(0 0 0 / 80%)";
+  // CSS (hex) / CSS (OKLCH) — one line in :root, before any palette (cssFrom's shared body).
+  if (!X.exportCSS(C(ALL)).includes(`--c-dialog-backdrop: ${WANT_HEX};`)) FAIL("dialog-backdrop", "exportCSS missing --c-dialog-backdrop (hex)");
+  if (!X.exportOKLCH(C(ALL)).includes(`--c-dialog-backdrop: ${WANT_OKLCH};`)) FAIL("dialog-backdrop", "exportOKLCH missing --c-dialog-backdrop (oklch)");
+  // the configurable prefix covers it too (same {pfx} as every other token).
+  const mdCss = X.exportCSS({ ...C(ALL), export: { colorPrefix: "md-sys-color" } });
+  if (!mdCss.includes(`--md-sys-color-dialog-backdrop: ${WANT_HEX};`)) FAIL("dialog-backdrop", "a custom prefix must cover --{prefix}-dialog-backdrop too");
+  // JSON — a top-level `constants` sibling to the palette-name keys (never itself a palette).
+  const jc = X.exportJSON(C(ALL));
+  if (!jc.constants || jc.constants.dialogBackdrop?.hex !== WANT_HEX) FAIL("dialog-backdrop", `JSON constants.dialogBackdrop.hex = ${jc.constants && jc.constants.dialogBackdrop && jc.constants.dialogBackdrop.hex}, want ${WANT_HEX}`);
+  // DTCG — RAW tree only (palette.tokens.json), under a "constants" group. Deliberately ABSENT from
+  // the SEMANTIC tree (Light/Dark): every top-level key there is treated elsewhere (style-plan family
+  // derivation, regroup ordering) as a real, fully-roled palette positionally zipped against
+  // doc.palettes — a synthetic non-palette key breaks that invariant (caught live during this change).
+  const dtcgC = X.exportDTCG(C(ALL), {});
+  const rawLeaf = dtcgC["palette.tokens.json"] && dtcgC["palette.tokens.json"].constants && dtcgC["palette.tokens.json"].constants["dialog-backdrop"];
+  if (!rawLeaf || rawLeaf.$type !== "color" || rawLeaf.$value.alpha !== 0.8 || (rawLeaf.$value.hex || "").toUpperCase() !== WANT_HEX)
+    FAIL("dialog-backdrop", `DTCG raw constants/dialog-backdrop leaf malformed: ${JSON.stringify(rawLeaf)}`);
+  if (dtcgC["Light_tokens.json"].constants || dtcgC["Dark_tokens.json"].constants)
+    FAIL("dialog-backdrop", "DTCG semantic tree (Light/Dark) must NOT carry a 'constants' key (breaks the real-palette invariant)");
+  // even with rawColl set, the raw constants leaf carries NO aliasData — there is no semantic entry to
+  // point FROM, and the raw leaf is the thing consumers bind to directly.
+  const dtcgAliased = X.exportDTCG(C(ALL), { rawColl: "Color Primitives" });
+  const rawLeafAliased = dtcgAliased["palette.tokens.json"].constants["dialog-backdrop"];
+  if (rawLeafAliased.$extensions && rawLeafAliased.$extensions["com.figma.aliasData"]) FAIL("dialog-backdrop", "the raw constants leaf must never carry aliasData");
+  // UI3 (Figma interchange) — Primitives collection ONLY, same reasoning as DTCG above.
+  const ui3 = X.exportUI3(C(ALL));
+  const ui3Prim = ui3.collections["Color / Primitives"].variables["raw/constants/dialog-backdrop"];
+  if (!ui3Prim || ui3Prim.type !== "COLOR" || ui3Prim.values.Base !== WANT_HEX) FAIL("dialog-backdrop", `UI3 Primitives raw/constants/dialog-backdrop malformed: ${JSON.stringify(ui3Prim)}`);
+  if (ui3.collections["Color / Semantic"].variables["constants/dialog-backdrop"]) FAIL("dialog-backdrop", "UI3 Semantic collection must NOT carry constants/dialog-backdrop");
+  // Tailwind @theme — one line, outside any palette's scale/role blocks.
+  if (!X.exportTailwind(C(ALL)).includes(`--color-dialog-backdrop: ${WANT_OKLCH};`)) FAIL("dialog-backdrop", "exportTailwind missing --color-dialog-backdrop");
+  // ShadCN — the one fixed, non-role token (--overlay), outside SHADCN_ORDER/MAP: present in BOTH
+  // :root/.dark (mode-independent — token-set parity is proven generically by the shadcn gate above),
+  // mapped in @theme inline, literal in the default (non-alias) call, var()-linked when aliased.
+  const scDefault = X.exportShadcn(C(ALL));
+  if (!scDefault.includes(`--overlay: ${WANT_OKLCH};`)) FAIL("dialog-backdrop", "exportShadcn (default) missing a literal --overlay value");
+  if (!scDefault.includes("--color-overlay: var(--overlay);")) FAIL("dialog-backdrop", "exportShadcn @theme inline missing --color-overlay -> var(--overlay)");
+  const scAliased = X.exportShadcn(C(ALL), { aliasPrefix: "c" });
+  if (!scAliased.includes("--overlay: var(--c-dialog-backdrop);")) FAIL("dialog-backdrop", "exportShadcn (aliased) --overlay must link var(--{aliasPrefix}-dialog-backdrop)");
+}
+
 // ── hpg-export-tailwind (v4 @theme: oklch ramps + light-dark() semantic roles) ────────────
 const tw = X.exportTailwind(C(ALL));
 if (!/@theme\s*\{/.test(tw)) FAIL("tailwind", "no @theme block");
@@ -419,6 +465,13 @@ if (X.exportCSS(C(ALL)).includes("-key-")) FAIL("keycolors", "key tokens present
   for (const tok of ["--background", "--primary", "--primary-foreground", "--destructive", "--border"]) {
     const e = rmap[tok];
     if (!e || !/^(oklch\(|#)/.test(e.light) || !/^(oklch\(|#)/.test(e.dark)) FAIL("design-system-make", `${tok} does not resolve to concrete values through the link layer`);
+  }
+  // the fixed --overlay constant resolves too, through the SAME link mechanism, to the SAME value in
+  // both schemes (an overlay doesn't flip) — proves dsFullLayersCss actually defines the alias target
+  // the aliased shadcn projection points at (D10 for a non-palette token, not just palette roles).
+  {
+    const e = rmap["--overlay"];
+    if (!e || e.light !== "oklch(0 0 0 / 80%)" || e.dark !== "oklch(0 0 0 / 80%)") FAIL("design-system-make", `--overlay does not resolve to the fixed backdrop value in both schemes (got ${JSON.stringify(e)})`);
   }
   // KIT-FIDELITY guard — the resolved shadcn foregrounds must equal the kit's own on-role values
   // (tokens.json semantic layer, same state): the projection may never re-measure or re-point a label.

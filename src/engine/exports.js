@@ -113,6 +113,17 @@ function oklchStrA({ L, C, H }, alphaPct) {
   return `oklch(${num(L, 4)} ${num(C, 4)} ${num(H, 2)} / ${alphaPct}%)`;
 }
 
+// DIALOG_BACKDROP — a fixed SYSTEM CONSTANT, not a palette-derived color: opaque black at 80% alpha,
+// the canonical dialog/modal scrim. Unlike every other color token in this file it is NOT palette-scoped
+// (no [n] name segment) and does NOT flip between light/dark (an overlay reads the same in both schemes)
+// — the one deliberate exception to "every color comes from derivePalette/derivedAll". It still rides
+// the SAME configurable {pfx} as every other token (cssPrefixOf/aliasPrefix), so a renamed namespace
+// covers it too. Emitted once per document in every color-token format (never per palette).
+const DIALOG_BACKDROP_RGB = [0, 0, 0];
+const DIALOG_BACKDROP_ALPHA_PCT = 80;
+export function dialogBackdropHex() { return hex8(DIALOG_BACKDROP_RGB, DIALOG_BACKDROP_ALPHA_PCT / 100); }
+export function dialogBackdropOklch() { return oklchStrA(rgbToOklch(DIALOG_BACKDROP_RGB), DIALOG_BACKDROP_ALPHA_PCT); }
+
 // ── Core: per-palette derivation (shared by every emitter) ────────────────────
 
 // controlsOf — pull the tonal controls out of State, defaulting any missing.
@@ -287,6 +298,8 @@ function cssFrom(palettes, oklch, pfx = "c") {
   const lines = [];
   lines.push(":root {");
   lines.push("  color-scheme: light dark;");
+  // fixed system constants — NOT palette-derived, emitted ONCE (never per palette, never mode-flipped).
+  lines.push(`  --${pfx}-dialog-backdrop: ${oklch ? dialogBackdropOklch() : dialogBackdropHex()};`);
   for (const p of palettes) {
     lines.push("");
     lines.push(`  /* ${p.name} — flat mode-independent primitives */`);
@@ -359,6 +372,9 @@ export function exportJSON(state) {
     if (p.keyColors.length) palette.keyColors = p.keyColors.map((kc) => ({ role: kc.role, oklch: kc.oklch, ...(kc.name ? { name: kc.name } : {}) }));
     out[p.name] = palette;
   }
+  // constants — fixed, non-palette tokens (currently just dialogBackdrop). A sibling key to the
+  // palette names, never itself a palette.
+  out.constants = { dialogBackdrop: { hex: dialogBackdropHex() } };
   return out;
 }
 
@@ -394,6 +410,9 @@ export function exportDTCG(state, opts) {
     }
     rawTree[p.n] = grp;
   }
+  // constants — fixed, non-palette raw primitives (currently just dialog-backdrop), a sibling GROUP
+  // to the palette names (never itself resolved from a palette). Single value, no per-mode variance.
+  rawTree.constants = { "dialog-backdrop": colorLeaf(DIALOG_BACKDROP_RGB, DIALOG_BACKDROP_ALPHA_PCT / 100, null) };
 
   // SEMANTIC tree for one mode ("light" | "dark"): each role -> resolved leaf,
   // with aliasData attached iff rawColl is set, targeting that mode's ref.
@@ -411,6 +430,13 @@ export function exportDTCG(state, opts) {
       }
       tree[p.n] = grp;
     }
+    // NOTE: constants (dialog-backdrop) deliberately do NOT get a semantic-tree entry here — every
+    // top-level key of this tree is treated elsewhere (style-plan family derivation, regroup
+    // ordering) as a REAL PALETTE with a full 53-role set, positionally zipped against
+    // doc.palettes. A synthetic non-palette key breaks that invariant. Constants live ONLY in the
+    // raw tree (palette.tokens.json, above) — a flat, name-generic collection with no such
+    // assumption — so they land in Color Primitives, bound to directly (no semantic alias, since
+    // the value never flips between modes and has no palette to alias FROM).
     return tree;
   };
 
@@ -459,6 +485,11 @@ export function exportUI3(state) {
       };
     }
   }
+  // constants — a fixed, non-palette raw primitive, Primitives-collection ONLY (mirrors the DTCG
+  // raw-tree-only placement: the Semantic collection's top-level keys are treated elsewhere as real
+  // palettes with a full role set, positionally zipped against doc.palettes — a synthetic key there
+  // breaks that invariant). Bind to this directly; nothing to alias FROM a palette that isn't one.
+  primVars["raw/constants/dialog-backdrop"] = { type: "COLOR", values: { Base: dialogBackdropHex() } };
 
   return {
     $schema: "figma-ui3-variables.color.schema.v1",
@@ -489,6 +520,9 @@ export function exportTailwind(state) {
   lines.push("   Paste after `@import \"tailwindcss\";`. Ramps -> bg-{name}-{stop};");
   lines.push("   semantic roles flip via light-dark() (set `color-scheme: light dark`). */");
   lines.push("@theme {");
+  lines.push("");
+  lines.push("  /* fixed system constants — not palette-derived */");
+  lines.push(`  --color-dialog-backdrop: ${dialogBackdropOklch()};`);
   for (const p of palettes) {
     lines.push("");
     lines.push(`  /* ${p.name} — scale */`);
@@ -574,7 +608,13 @@ export function exportShadcn(state, opts = {}) {
     }).filter(Boolean).join("\n");
 
   const themeInline = SHADCN_ORDER.filter((tok) => MAP[tok])
-    .map((tok) => `  --color-${tok}: var(--${tok});`).join("\n");
+    .map((tok) => `  --color-${tok}: var(--${tok});`).join("\n") + "\n  --color-overlay: var(--overlay);";
+
+  // --overlay — the one fixed, non-role token in this contract: a dialog/modal backdrop, identical
+  // in :root and .dark (an overlay doesn't flip). Outside SHADCN_ORDER/MAP on purpose (nothing to
+  // look up by role); in alias mode it links into the SAME full-token-layer constant every other
+  // aliased var here points at, so D10 carrier equality holds for it too.
+  const overlayLine = aliasPfx ? `  --overlay: var(--${aliasPfx}-dialog-backdrop);` : `  --overlay: ${dialogBackdropOklch()};`;
 
   // GEOMETRY → --radius: seed shadcn's base radius from the brand geometry's `md` corner — a medium
   // corner on the M3-aligned scale (12px → 0.75rem); shadcn's own sm/md/lg/xl ladder derives from it by
@@ -595,10 +635,12 @@ export function exportShadcn(state, opts = {}) {
     `   your globals.css. Mapped from: neutral=${neutral.name}, primary=${primary.name}, destructive=${danger.name}.${aliasPfx ? `\n   Values are LINKS (var()) into the --${aliasPfx}-* design-token layer below — one source of truth.` : ""} */`,
     ":root {",
     radiusLine,
+    overlayLine,
     block("light"),
     "}",
     "",
     ".dark {",
+    overlayLine,
     block("dark"),
     "}",
     "",
@@ -1122,6 +1164,8 @@ function dsSpineBody(ds, state, ctx) {
     "## Elevation & Depth", "",
     "Elevation is a **surface step, not a drop shadow**: `background` → `surface` → `surface-high`. A shadow",
     "is optional garnish on the top-most surfaces (popovers, menus) — one soft low-alpha layer at most.",
+    "A modal/dialog's own backdrop is a separate, fixed system constant — `" + `--${pfx}-dialog-backdrop` + "`",
+    "(opaque black at 80% alpha) — neutral chrome, never a brand-tinted scrim.",
   ].join("\n");
 
   const shapes = [
@@ -1806,6 +1850,10 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
   const pfx = cssPrefixOf(state);
   const basePfx = pfx.replace(/-color$/, "");
   const L = [], D = [];
+  // the fixed system constant — same value both modes (an overlay doesn't flip). This is what the
+  // shadcn projection's aliased `--overlay: var(--{pfx}-dialog-backdrop)` resolves against (D10).
+  L.push(`  --${pfx}-dialog-backdrop: ${dialogBackdropOklch()};`);
+  D.push(`  --${pfx}-dialog-backdrop: ${dialogBackdropOklch()};`);
   for (const p of derivedAll(state)) for (const r of p.roles) {
     L.push(`  --${pfx}-${p.n}${r.suffix}: ${roleOklch(r.light)};`);
     D.push(`  --${pfx}-${p.n}${r.suffix}: ${roleOklch(r.dark)};`);

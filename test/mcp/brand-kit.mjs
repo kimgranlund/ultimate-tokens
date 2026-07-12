@@ -26,6 +26,14 @@ ok(kit.icons && kit.icons.family === "Phosphor" && kit.icons.variant === "regula
 // MOTION — system constants, always served (an agent binds curves, never types a raw ms).
 ok(kit.motion && kit.motion.easing && kit.motion.easing.standard && kit.motion.duration.short2 === 100 && kit.motion.animatable.join() === "transform,opacity",
   `brandKit serves the motion facet: ${JSON.stringify(kit.motion && kit.motion.animatable)}`);
+// CONSTANTS — fixed, non-palette tokens (dialog-backdrop), always served like motion (no sys.color
+// gate: a modal backdrop is neutral chrome, not a brand color).
+ok(kit.constants && kit.constants.dialogBackdrop && kit.constants.dialogBackdrop.hex === "#000000CC" && kit.constants.dialogBackdrop.oklch === "oklch(0 0 0 / 80%)",
+  `brandKit serves the constants facet: ${JSON.stringify(kit.constants)}`);
+{
+  const k3 = brandKit(defaultDocument(), { type: true }); // even with color OFF, constants still ride
+  ok(k3.constants && k3.constants.dialogBackdrop, "constants survive with sys.color off (not gated by any system toggle)");
+}
 ok(kit.roles.primary && typeof kit.roles.primary.primary.light === "string" && typeof kit.roles.primary.primary.dark === "string", "brandKit resolves the prime accent for light + dark");
 ok(kit.type && kit.geometry, "brandKit() (no arg) includes all three systems (color + type + geometry)");
 

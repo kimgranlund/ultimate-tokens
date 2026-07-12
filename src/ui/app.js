@@ -5724,7 +5724,7 @@ class HctApp extends HTMLElement {
     const rows = [];
     if (sys.color) {
       rows.push(
-        "| `css-hex/` · `css-oklch/` | The palette + 53 semantic roles per palette as CSS custom properties (two co-equal color formats) |",
+        "| `css-hex/` · `css-oklch/` | The palette + 53 semantic roles per palette, plus fixed system constants (e.g. `--dialog-backdrop`), as CSS custom properties (two co-equal color formats) |",
         "| `json/` | The raw palette data as JSON |",
       );
       // the Pro-gated folders appear in the map only when they are actually IN the archive.

@@ -9,9 +9,14 @@
 3. JSON
 4. Figma DTCG (3-file zip)
 5. Collections (UI3)
-6. Tailwind v4 + ShadCN (framework formats)
-7. Shared rules: padding, slug, scrims
-8. Figma import constraints (why resolved, not aliased)
+6. Shared rules: padding, slug, scrims
+7. Figma import constraints (why resolved, not aliased)
+8. System constants (fixed, non-palette tokens)
+
+Tailwind v4 (`exportTailwind`) and ShadCN (`exportShadcn`) are introduced in §1 but do not yet have
+their own dedicated section here — their shapes are documented at the point of use in
+`adding-export-formats`'s references instead. (A pre-existing gap noted, not fixed, in this pass —
+scope was the §8 addition only.)
 
 ---
 
@@ -139,3 +144,32 @@ Researched and verified against Figma's "Modes for variables" documentation:
 import. The live cascade (edit raw → semantic follows) cannot be done by JSON import; it is
 provided by the companion plugin (`knowledge-05-figma-plugin.md`). The `rawColl` field is the
 opt-in escape hatch for users who want aliasData emitted anyway. See ADR-002.
+
+## 8. System constants (fixed, non-palette tokens)
+
+A **system constant** is a color token that is NOT derived from any palette — a fixed value,
+emitted once per document, never mode-flipped. The only one today: `dialog-backdrop` (opaque
+black at 80% alpha — the canonical modal/dialog scrim, distinct from the per-palette,
+brand-tinted `*/scrim*` roles). Still rides the same configurable `{pfx}`/`{aliasPrefix}` as
+every other token, so a renamed namespace covers it too.
+
+**Where it appears, and where it deliberately does NOT:**
+
+| Format | Placement |
+|---|---|
+| CSS (hex/oklch) | One `--{pfx}-dialog-backdrop` line in `:root`, before any palette (`cssFrom`) |
+| JSON | A top-level `constants` object, sibling to the palette-name keys |
+| DTCG | A `constants` group in `palette.tokens.json` (RAW) **only** |
+| UI3 (Figma) | `raw/constants/dialog-backdrop` in `Color / Primitives` **only** |
+| Tailwind `@theme` | One `--color-dialog-backdrop` line, outside any palette's scale/role blocks |
+| ShadCN | `--overlay` in both `:root`/`.dark` (literal, or `var(--{aliasPrefix}-dialog-backdrop)` when aliased), mapped in `@theme inline` |
+
+**Why it is absent from the DTCG/UI3 *semantic* tree (Light/Dark · Color / Semantic) — load-bearing,
+don't "fix" this:** every top-level key of that tree is treated elsewhere as a REAL PALETTE with a
+full 53-role set, positionally zipped against `doc.palettes` (the app's style-plan family
+derivation; `figma/binder/style-plan.mjs`'s paint/text-style generation). A synthetic non-palette
+key there is silently miscounted as a palette with no real roles, breaking both. This was caught
+live when first wiring `dialog-backdrop` (2026-07-11) — the raw tree has no such assumption (its
+consumers, e.g. `figma/plugin/code.js`'s variable-creation loop, walk it generically by name), so
+constants live there and there only; a Figma user binds directly to the raw primitive (nothing to
+alias FROM — the value has no palette).

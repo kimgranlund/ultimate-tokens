@@ -75,6 +75,8 @@ import {
   exportDesignSystemMakeBundle,
   SCRIM_BASES,
   SCRIM_STEPS,
+  dialogBackdropHex,
+  dialogBackdropOklch,
 } from "../engine/exports.js";
 
 // Re-export the scrim model so the UI (app.js) can build the Mapping tab's re-point targets from the
@@ -262,6 +264,9 @@ export function brandKit(doc, systems) {
   // the MOTION facet — system constants (no user parameters), always served: an agent binds these
   // curves + the ms ladder instead of typing a raw `300ms ease`.
   kit.motion = motionTokens();
+  // fixed, non-palette CONSTANTS — always served like motion (no user parameters, no sys.color
+  // gate: a dialog backdrop isn't a brand color, it's neutral chrome every consumer needs).
+  kit.constants = { dialogBackdrop: { hex: dialogBackdropHex(), oklch: dialogBackdropOklch() } };
   if (sys.color) {
     const view = projectView(doc);
     const on = view.palettes.filter((p) => p.on);
