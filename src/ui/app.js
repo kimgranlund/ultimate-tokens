@@ -9,6 +9,7 @@
 import {
   defaultDocument,
   projectView,
+  paletteKeyColors,
   tokenCount,
   slug,
   contrastRatio,
@@ -1045,8 +1046,11 @@ class HctApp extends HTMLElement {
     const visible = this.sets.filter((s) => !q || s.name.toLowerCase().includes(q));
 
     const tiles = visible.map((rec) => {
-      const v = projectView(hydrateStoredDoc(rec.doc)); // legacy stamp: a pre-hueSpace STORED set renders as cam16
-      const enabled = v.palettes.filter((p) => p.on);
+      // paletteKeyColors, NOT projectView — the tile only ever reads .key/.on below; projectView would
+      // additionally compute the 25-stop ramp, the 53-role table, and all 7 export formats per palette,
+      // for every saved set, on every render (this list re-renders on each search keystroke).
+      const keyColors = paletteKeyColors(hydrateStoredDoc(rec.doc)); // legacy stamp: a pre-hueSpace STORED set renders as cam16
+      const enabled = keyColors.filter((p) => p.on);
       const strip = h(
         "div",
         { class: "strip" },
@@ -1157,8 +1161,11 @@ class HctApp extends HTMLElement {
   // never the old fixed template. Sets with no `story` (a user's own "Your Palettes" set) fall back to
   // the fixed SAMPLED_W template exactly as before — no regression there.
   presetTile(preset) {
-    const v = projectView(hydrate(preset));
-    const enabled = v.palettes.filter((p) => p.on);
+    // paletteKeyColors, NOT projectView — this only ever reads .key/.name/.colorRole/.on below;
+    // projectView would additionally compute the 25-stop ramp, the 53-role table, and all 7 export
+    // formats per palette, for every one of a category's 48 presets, on every category open. Measured
+    // ~200-300ms/preset via projectView vs. ~0.01ms/preset here.
+    const enabled = paletteKeyColors(hydrate(preset)).filter((p) => p.on);
     const shown = enabled.slice(0, 6); // same 6 bands as before — neutral + primary/-muted + secondary/-muted + accent
     const SAMPLED_W = [36, 19, 19, 16, 6, 4];
     const groups = preset.story?.groups;

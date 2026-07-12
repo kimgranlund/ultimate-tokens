@@ -12,6 +12,12 @@
 //   maxChromaInGamut(hue, tone) -> number
 //   peakC(hue)                  -> { c, tone }
 //   oklchToCam16Hue(h)          -> CAM16 hue (degrees)
+//   boundedCache(cap)           -> { get(key), set(key,value) } — an LRU memo, exported ONLY so its
+//                                  eviction mechanics are testable on cheap synthetic data, without
+//                                  driving thousands of genuinely-expensive real gamut searches to
+//                                  force real eviction (maxChromaInGamut/peakC/oklchToCam16Hue's own
+//                                  memoization uses it internally; that wiring, not this cache's own
+//                                  correctness, is what the rest of this file's contract is about).
 
 // ── Constants (literal — material-color-utilities) ───────────────────────────
 const SRGB_TO_XYZ = [
@@ -233,8 +239,33 @@ export function lstarFromRgb(rgb) {
   return lFromY(y);
 }
 
+// ── boundedCache(cap) — an LRU-evicting memo cache, so a long editing session (continuous hue/chroma
+// slider drags each mint a new float key) has BOUNDED memory instead of growing for the page's whole
+// lifetime. Map preserves insertion order in JS; re-`set`ting an existing key (on a hit, in the caller)
+// bumps it to the "most recently used" end, and the LEAST recently used entry — the Map's first key —
+// is evicted once size exceeds `cap`. Pure capacity management: never changes a computed VALUE, only
+// how many of them stay resident — an evicted entry is simply recomputed on its next request. ────────
+export function boundedCache(cap) {
+  const map = new Map();
+  return {
+    get(key) {
+      if (!map.has(key)) return undefined;
+      const v = map.get(key);
+      map.delete(key); map.set(key, v); // touch → most-recently-used
+      return v;
+    },
+    set(key, value) {
+      map.delete(key); // re-insert to reset recency even on an overwrite
+      if (map.size >= cap) map.delete(map.keys().next().value); // evict the LRU entry
+      map.set(key, value);
+    },
+  };
+}
+const CACHE_CAP = 5000; // generous for a single session (curated-library browsing + active editing);
+// bounded regardless of session length — the actual point.
+
 // ── maxChromaInGamut — tight gamut ceiling at (hue, tone), memoized ───────────
-const _mc = new Map();
+const _mc = boundedCache(CACHE_CAP);
 export function maxChromaInGamut(hue, tone) {
   if (tone <= 0 || tone >= 100) return 0;
   const key = hue.toFixed(2) + "|" + tone.toFixed(2);
@@ -252,7 +283,7 @@ export function maxChromaInGamut(hue, tone) {
 }
 
 // ── peakC — the hue's maximum achievable chroma and the tone where it peaks ───
-const _pk = new Map();
+const _pk = boundedCache(CACHE_CAP);
 export function peakC(hue) {
   const key = hue.toFixed(2);
   const hit = _pk.get(key);
@@ -272,7 +303,7 @@ export function peakC(hue) {
 }
 
 // ── oklchToCam16Hue — sample a fixed mid OKLCH color, read its CAM16 hue ──────
-const _oh = new Map();
+const _oh = boundedCache(CACHE_CAP);
 export function oklchToCam16Hue(h, chromaFrac = 1) {
   const target = ((h % 360) + 360) % 360;
   const cf = Math.min(1, Math.max(0, chromaFrac));
