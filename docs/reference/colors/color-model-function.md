@@ -24,11 +24,13 @@ Every color in a palette is located by answering three independent questions. Tw
 
 How much visual responsibility the color carries. Maps directly to the old single-axis hierarchy, but is now only *one* of the things a label says.
 
+> **2026-07-13 — tiers now name DESIGN-SYSTEM role, not source-photo area.** The tier that occupies the *most* of a sourced scene (the ground/material — often a muted grey, wood, or stone tone) is no longer called Primary; the tier that's *rare but characterful* (the vivid, saturated punctuation color) is. This matches how "primary" is actually consumed downstream — a design system's Primary family drives buttons/CTAs/interactive fills, which should be the vivid signature color, not whatever covers the most square footage in the source photo — and it matches every real, currently-shipped brand kit in this product (Primary is always the highest-chroma family, never the muted ground). Previously: Primary = ground (~55%), Secondary = working surfaces (~30–35%), Accent = punctuation (~10%). The field-share TARGETS below are unchanged — only which tier NAME owns which share moved.
+
 | Tier | Carries | Target share of the field |
 |---|---|---|
-| **Primary** | The ground. The color you'd name if asked "what color is this place?" | ~55–60% |
-| **Secondary** | The working surfaces — the materials around the ground. | ~30–35% |
-| **Accent** | Punctuation. The saturated reads that appear rarely and mean something. | ~10% |
+| **Primary** | Punctuation. The saturated reads that appear rarely and mean something — the color you'd point to as the palette's signature. | ~10% |
+| **Secondary** | The ground. The color you'd name if asked "what color is this place?" | ~55–60% |
+| **Tertiary** | The working surfaces — the materials around the ground. | ~30–35% |
 
 ### Axis B — Rank within tier
 
@@ -77,7 +79,7 @@ A full palette therefore reads:
 ```
 primary            primary-muted
 secondary          secondary-muted
-accent             accent-muted
+tertiary           tertiary-muted
 
 functional-error   functional-warning   functional-success
 
@@ -101,7 +103,7 @@ on-primary         on-secondary         …   (as needed)
 These are the heuristics that keep a palette coherent. Treat each as a default with a stated reason, not a law.
 
 **Proportion (the 60 / 30 / 10 instinct).**
-Primary should dominate the field, secondary should furnish it, accent should never exceed roughly a tenth. If accent creeps past that, it stops being punctuation and starts being a second primary — the palette goes loud and loses its source.
+Secondary (the ground) should dominate the field, tertiary (the working surfaces) should furnish it, primary (the punctuation) should never exceed roughly a tenth. If primary creeps past that, it stops being punctuation and starts being a second ground — the palette goes loud and loses its source.
 
 **base ↔ muted (within a tier).**
 The muted member is the tier's base color with chroma pulled down and/or hue nudged a few degrees —
@@ -110,8 +112,8 @@ token name is just the tier, e.g. `primary`; only `-muted` is a real suffix). It
 *range* without introducing a new color identity. If base and muted read as two unrelated colors, one
 of them belongs in a different tier.
 
-**Primary ↔ Accent (across the spread).**
-Accent earns its loudness by contrast with the primary ground — usually a large lightness gap, a chroma jump, or a hue on the far side of the wheel. The Trans-Siberian palette works because maroon and dusk-ultramarine are the *only* saturated reads against a silver ground; drown them in more saturation and the contrast that makes them mean something evaporates.
+**Primary ↔ Secondary (across the spread).**
+Primary earns its loudness by contrast with the secondary ground — usually a large lightness gap, a chroma jump, or a hue on the far side of the wheel. The Trans-Siberian palette works because maroon and dusk-ultramarine are the *only* saturated reads against a silver ground; drown them in more saturation and the contrast that makes them mean something evaporates.
 
 **Functional colors are tuned, not imported.**
 Status colors are computed in OKLCH so they *belong* to the palette rather than arriving off-the-shelf:
@@ -130,14 +132,14 @@ A palette passes if someone who has stood in the territory recognizes it without
 
 Use this to evaluate or repair any palette. A healthy palette answers "yes" to all six.
 
-1. **Tiered?** Exactly one primary ground identified; can you say the place's color in one word?
-2. **Proportioned?** Does the field land near 55–60 / 30–35 / 10, or is there a stated reason it doesn't?
+1. **Tiered?** Exactly one secondary (ground) identified; can you say the place's color in one word?
+2. **Proportioned?** Does the field land near 55–60 / 30–35 / 10 (secondary / tertiary / primary), or is there a stated reason it doesn't?
 3. **Paired?** Does every tier have a base and a legible muted partner that relate, not clash?
-4. **Punctuated?** Are accents few, saturated, and contrasting — not a second ground?
+4. **Punctuated?** Is primary (the punctuation) rare, saturated, and contrasting — not a second ground?
 5. **Functional fit?** Do the derived status colors read as error/warning/success *and* feel sampled from this palette?
 6. **Refusal named?** Is the category cliché this palette rejects explicitly stated?
 
-> Note on the existing library: most palettes today sample as **1 dominant / 3 supporting / 2 accent**. Mapping them onto this 2-2-2 model is a *judgment call per palette*, not a pure rename — you promote one supporter to `secondary`, pair another as its `-muted`, and fold or demote the rest. Do it with the scorecard in hand.
+> Note on the existing library: most palettes today sample as **1 dominant / 3 supporting / 2 accent** (source-photo hierarchy). Mapping them onto this 2-2-2 model is a *judgment call per palette*, not a pure rename — dominant becomes `secondary`, one supporting pairs as its `-muted`, the remaining two supporting become `tertiary`/`tertiary-muted`, and the two accent swatches become `primary`/`primary-muted` (2026-07-13 — see the Axis A note above for why primary now names the accent tier, not the dominant one). Do it with the scorecard in hand.
 
 ---
 
@@ -147,18 +149,18 @@ Use this to evaluate or repair any palette. A healthy palette answers "yes" to a
 
 | Token | Color | OKLCH | HEX | Reasoning |
 |---|---|---|---|---|
-| **primary** | Frozen birch forest, silver | `0.918 0.005 215` | `#E3E6E7` | The ground — the whole trip read from the window. |
-| **primary-muted** | Window condensation | `0.857 0.011 80` | `#DAD3C4` | Same near-neutral lightness, faint warm shift — the base's quiet partner. |
-| **secondary** | Samovar brass | `0.620 0.068 78` | `#A08361` | The most distinct working surface; furnishes the field with warmth. |
-| **secondary-muted** | Birch bark | `0.778 0.012 75` | `#C5BCB1` | Brass's lower-chroma relative — same family, recedes. |
-| **accent** | Kupé maroon velour | `0.322 0.045 28` | `#4B2F2C` | Dark, saturated, rare — punctuation against the silver. |
-| **accent-muted** | 3 p.m. dusk, ultramarine | `0.303 0.048 268` | `#343C54` | The second loud read, hue thrown to the cool side. |
+| **secondary** | Frozen birch forest, silver | `0.918 0.005 215` | `#E3E6E7` | The ground — the whole trip read from the window. |
+| **secondary-muted** | Window condensation | `0.857 0.011 80` | `#DAD3C4` | Same near-neutral lightness, faint warm shift — the base's quiet partner. |
+| **tertiary** | Samovar brass | `0.620 0.068 78` | `#A08361` | The most distinct working surface; furnishes the field with warmth. |
+| **tertiary-muted** | Birch bark | `0.778 0.012 75` | `#C5BCB1` | Brass's lower-chroma relative — same family, recedes. |
+| **primary** | Kupé maroon velour | `0.322 0.045 28` | `#4B2F2C` | Dark, saturated, rare — punctuation against the silver. |
+| **primary-muted** | 3 p.m. dusk, ultramarine | `0.303 0.048 268` | `#343C54` | The second loud read, hue thrown to the cool side. |
 | **functional-error** | *derived* | `0.535 0.110 28` | `#A35248` | Hue 28°, chroma pulled to this palette's quiet accent register. |
 | **functional-warning** | *derived* | `0.760 0.100 88` | `#CCAE63` | Reads as caution without breaking the muted mood. |
 | **functional-success** | *derived* | `0.560 0.090 150` | `#4B8358` | Green that belongs to a silver-and-brass world. |
-| **on-primary** | → accent | — | `#4B2F2C` | Dark type on the light silver ground. |
+| **on-secondary** | → primary | — | `#4B2F2C` | Dark type on the light silver ground. |
 
-Field share: primary ~55%, secondary ~35%, accent ~10% — and the palette still **refuses** the Soviet-flag red it would otherwise default to.
+Field share: secondary ~55%, tertiary ~35%, primary ~10% — and the palette still **refuses** the Soviet-flag red it would otherwise default to.
 
 ---
 

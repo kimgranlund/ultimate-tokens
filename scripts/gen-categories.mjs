@@ -12,14 +12,22 @@
 //                               (the read-only gallery presets the generator opens as copies).
 //
 // NAMING — per docs/reference/colors/color-model-function.md:
-//   sampled 6 colors → {tier}[-muted]: primary/primary-muted, secondary/secondary-muted, accent/accent-muted
+//   sampled 6 colors → {tier}[-muted]: primary/primary-muted, secondary/secondary-muted, tertiary/tertiary-muted
 //   (the base tier of each family carries NO "-base" suffix — only the muted sibling is suffixed;
-//   the "-base"/"-muted" symmetric split was retired in favor of bare-name/"-muted", 2026-07-12)
+//   the "-base"/"-muted" symmetric split was retired in favor of bare-name/"-muted", 2026-07-12.
+//   "accent" was retired 2026-07-13 — it never matched the app's own canonical 8-family default
+//   (role-table.json's `defaults[]`, and every "Brands" own-product preset, use Primary/Secondary/
+//   Tertiary — no Accent), so the gallery's naming now matches instead of inventing a 4th family.)
 //   status 4 colors  → info/success/warning/danger  (NOT in the category JSON — the canonical semantic
 //                      status set is appended, matching the product's Info/Success/Warning/Danger families)
 //
-// 1/3/2 → 2-2-2 MAPPING: dominant → primary; supporting nearest the ground → primary-muted;
-//   the other two supporting (by chroma) → secondary/secondary-muted; the two accents → accent/accent-muted.
+// 1/3/2 → 2-2-2 MAPPING: the two accent swatches (rarest in the source, but the most CHARACTERFUL —
+//   often the vivid signature color, e.g. a brick-red tile against a grey concrete estate) → primary/
+//   primary-muted; dominant (the largest visual share of the source — often a muted material/ground
+//   tone) → secondary/secondary-muted; the other two supporting (by chroma) → tertiary/tertiary-muted.
+//   `colorRole` metadata (dominant/supporting/accent — the source's own visual-weight tier) is
+//   UNCHANGED by this — it still describes the swatch's role in the PHOTO, not which design-system
+//   family name it becomes.
 //
 // Run via `npm run gen:categories`.
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
@@ -108,16 +116,16 @@ function mapColors(swatches) {
   const oklab = (s) => { const [L, c, H] = s.ok; const h = (H * Math.PI) / 180; return [L, c * Math.cos(h), c * Math.sin(h)]; };
   const dE = (a, b) => { const A = oklab(a), B = oklab(b); return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]); };
   const byNearGround = [...sup].sort((a, b) => dE(a, dom) - dE(b, dom));
-  const primaryMuted = byNearGround[0];
-  const secondary = byNearGround.slice(1).sort((a, b) => C(b) - C(a));
+  const domMuted = byNearGround[0];
+  const domSupport = byNearGround.slice(1).sort((a, b) => C(b) - C(a));
   const p = (name, s) => palette(name, s.hex, s.ok, s);
   return [
-    p("primary", dom),
-    p("primary-muted", primaryMuted),
-    p("secondary", secondary[0]),
-    p("secondary-muted", secondary[1]),
-    p("accent", acc[0]),
-    p("accent-muted", acc[1]),
+    p("primary", acc[0]),
+    p("primary-muted", acc[1]),
+    p("secondary", dom),
+    p("secondary-muted", domMuted),
+    p("tertiary", domSupport[0]),
+    p("tertiary-muted", domSupport[1]),
     palette("info", STATUS.info.hex, STATUS.info.oklch),
     palette("success", STATUS.success.hex, STATUS.success.oklch),
     palette("warning", STATUS.warning.hex, STATUS.warning.oklch),
