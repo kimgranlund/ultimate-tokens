@@ -343,19 +343,25 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   // every voice gets a font/<voice> ALIAS to its family primitive + a weight/<voice> FLOAT primitive.
   const voices = Object.keys(base.categories);
   ok(voices.every((v) => col.variables[`font/${v}`] && col.variables[`font/${v}`].type === "ALIAS"), "every voice emits a font/<voice> ALIAS");
-  ok(voices.every((v) => col.variables[`weight/${v}`] && col.variables[`weight/${v}`].type === "FLOAT" && Number.isFinite(col.variables[`weight/${v}`].values.Value)), "every voice emits a weight/<voice> FLOAT primitive");
+  // the core's weight/weight-style primitive key NESTS under the voice's own weight-name slug
+  // (coreWeightKey) — the SAME per-voice group its siblings live in, so it's never bare (2026-07-13:
+  // a bare core sat OUTSIDE the "Display" folder its siblings created in Figma's own "/" grouping).
+  const coreKeyOf = (v) => T.coreWeightKey(v, T.weightNameFor(base.categories[v].MD.weight), base.weights && base.weights[v]);
+  ok(voices.every((v) => col.variables[`weight/${coreKeyOf(v)}`] && col.variables[`weight/${coreKeyOf(v)}`].type === "FLOAT" && Number.isFinite(col.variables[`weight/${coreKeyOf(v)}`].values.Value)), "every voice emits a weight/<voice>/<slug> FLOAT primitive, nested under its own weight-name slug");
   ok(voices.every((v) => col.variables[col.variables[`font/${v}`].target]), "every alias target resolves to a primitive in the same collection");
   ok(col.variables["font/Headline"].target === "family/display", "Headline aliases the deduped Inter Tight primitive (family/display)");
   ok(col.variables["font/Kicker"].target === col.variables["font/Body-mono"].target, "Kicker and Body-mono alias the SAME mono primitive (roleOf → mono)");
-  ok(col.variables["weight/Display"].values.Value === base.categories.Display.MD.weight, "weight/Display carries the voice's uniform weight");
+  ok(col.variables[`weight/${coreKeyOf("Display")}`].values.Value === base.categories.Display.MD.weight, "weight/Display/<slug> carries the voice's uniform weight");
   // weight STYLE NAMES (slice 4): config.voices[v].styleName → scale.styleNames → weight-style/<voice>
   // STRING primitives; absent names ⇒ no styleNames key and no weight-style vars (the identity gate).
   ok(!("styleNames" in base) && !Object.keys(col.variables).some((k) => /^weight-style\/[^/]+$/.test(k)), "no styleName config ⇒ no styleNames on the scale, no BARE weight-style/<voice> var (sibling weight-style/<voice>/<slug> vars still exist — every voice auto-populates siblings, 2026-07-13)");
   const named = T.typeScale({ treatment: "product", voices: { Display: { styleName: "Condensed Black Italic" }, Kicker: { styleName: "  Medium  " }, Body: { styleName: "" } } });
   ok(named.styleNames && named.styleNames.Display === "Condensed Black Italic" && named.styleNames.Kicker === "Medium" && !("Body" in named.styleNames), "styleNames collect trimmed non-empty names only");
   const nCol = T.typeTokensFigmaPrimitives(named).collections["Font Primitives"];
-  ok(nCol.variables["weight-style/Display"] && nCol.variables["weight-style/Display"].type === "STRING" && nCol.variables["weight-style/Display"].values.Value === "Condensed Black Italic", "the primitives collection emits weight-style/<voice> STRING vars");
-  ok(!nCol.variables["weight-style/Body"] && nCol.variables["weight/Body"], "an unnamed voice keeps its numeric weight primitive but gets no style var");
+  const displayKey = coreKeyOf("Display"); // reuses the SAME base scale's Display weight (700, unaffected by `named`'s styleName-only override)
+  ok(nCol.variables[`weight-style/${displayKey}`] && nCol.variables[`weight-style/${displayKey}`].type === "STRING" && nCol.variables[`weight-style/${displayKey}`].values.Value === "Condensed Black Italic", "the primitives collection emits weight-style/<voice>/<slug> STRING vars, nested like the numeric weight");
+  const bodyKey = coreKeyOf("Body");
+  ok(!nCol.variables[`weight-style/${bodyKey}`] && nCol.variables[`weight/${bodyKey}`], "an unnamed voice keeps its numeric weight primitive but gets no style var");
 }
 
 // ── SIBLING WEIGHTS: siblingWeightDefaults + the voices[].weights channel + emitter coverage ──
@@ -419,7 +425,7 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   // Italic"), because the two had their own separate, independently-drifting implementations.
   const bzzrDisplay = T.typeScale({ treatment: "statement", voices: { Display: { weight: 900, styleName: "Condensed Black Italic", weights: [{ name: "Extra-bold", weight: 800 }, { name: "Bold", weight: 700 }] } } });
   const bzzrCol = T.typeTokensFigmaPrimitives(bzzrDisplay).collections["Font Primitives"];
-  ok(bzzrCol.variables["weight-style/Display"].values.Value === "Condensed Black Italic", "core weight-style keeps the full custom name");
+  ok(bzzrCol.variables["weight-style/Display/black"].values.Value === "Condensed Black Italic", "core weight-style keeps the full custom name, nested under its own weight-name slug");
   ok(bzzrCol.variables["weight-style/Display/extra-bold"].values.Value === "Condensed Extra-bold Italic", `sibling weight-style primitive templates the custom name, not a bare "Extra-bold" (got ${bzzrCol.variables["weight-style/Display/extra-bold"].values.Value})`);
   ok(bzzrCol.variables["weight-style/Display/bold"].values.Value === "Condensed Bold Italic", `sibling weight-style primitive templates the custom name, not a bare "Bold" (got ${bzzrCol.variables["weight-style/Display/bold"].values.Value})`);
 }

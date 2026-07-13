@@ -14,15 +14,18 @@
 //   paints: [{ name: "Primary/onPrimary" | "Primary/scrims/scrim" | "Primary/surfaces/surface",
 //              varName: "primary/onPrimary" }]                   // → Color Modes variable, ratified grouping:
 //                                                                //   scrim* → scrims/ · surface*|container* → surfaces/
-//   texts:  [{ name: "Display/xl" (no siblings configured — bare) |
-//                     "Display/xl/black" (core, WITH siblings — its own weight, kebab) |
-//                     "Display/xl/extra-bold" (sibling, kebab via wv.slug) (TKT-0001 — symmetric,
-//                     explicit, lowercase-kebab naming across core + every sibling),
+//   texts:  [{ name: "Display/lg" (voice explicitly opted OUT of siblings via weights:[] — bare) |
+//                     "Display/lg/• condensed black italic" (core, siblings exist — dot-prefixed,
+//                     lowercase; prefers a custom Figma style name over the generic weight name) |
+//                     "Display/lg/condensed extra-bold italic" (sibling, lowercase — the SAME
+//                     templated name as the core when one's configured, else a bare weight slug)
+//                     (TKT-0001 — symmetric core+sibling naming, 2026-07-13's dot-prefix + templating),
 //              voice, step,
 //              bind:    { fontSize, lineHeight, letterSpacing,   // → Typography collection keys
 //                         paragraphSpacing?,                     //   (prose voices only)
 //                         fontFamily,                            // → Font Primitives font/<voice> (STRING alias)
-//                         fontStyle? },                          // → weight-style/<voice>[/<slug>] when named
+//                         fontStyle? },                          // → weight-style/<voice>/<slug> — ALWAYS
+//                                                                //   nested (coreWeightKey), core included
 //              literal: { family, styleName?, weight, size, lineHeight, letterSpacing,
 //                         paragraphSpacing?, textCase } }]       // resolved values: loadFontAsync + per-field
 //                                                                // fallback when a binding target is absent
@@ -30,7 +33,7 @@
 // their core in list order. Same inputs ⇒ byte-identical plan (the executor's idempotency rides on it).
 
 import { semanticRoles } from "../../src/engine/semantic.js";
-import { weightNameFor, resolvedFontFor, siblingStyleName } from "../../src/engine/type.mjs";
+import { weightNameFor, resolvedFontFor, siblingStyleName, coreWeightKey } from "../../src/engine/type.mjs";
 
 // SINGLE_LINE_VOICES — voices that additionally get a `/single` text-style sibling (1.0 leading —
 // line-height = size) alongside their normal multi-line style, per step and per configured weight.
@@ -103,13 +106,17 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
         // the siblings' own lowercase-kebab convention, e.g. `bold`) — the label itself prefers the
         // voice's own custom Figma style name (`coreStyleName` — e.g. BZZR's "Condensed Black Italic")
         // over the generic ladder-snap name ("Black"): a non-variable face's real cut is strictly more
-        // specific and must never be flattened down to the ladder's generic vocabulary.
-        const coreWeightName = sibs.length ? weightNameFor(s.weight) : null;
-        const coreLabel = coreWeightName ? (coreStyleName || coreWeightName.name).toLowerCase() : null;
+        // specific and must never be flattened down to the ladder's generic vocabulary. Computed
+        // UNCONDITIONALLY (not gated by sibs.length like coreLabel below) because the BIND TARGET
+        // (coreWeightKey) always nests the same way, even for a voice with zero siblings — one lone
+        // primitive in its own "Voice" folder, not confusing the way a split group would be.
+        const coreWeightName = weightNameFor(s.weight);
+        const coreLabel = sibs.length ? (coreStyleName || coreWeightName.name).toLowerCase() : null;
+        const coreKey = coreWeightKey(voice, coreWeightName, sibs);
         texts.push({
           name: coreLabel ? `${voice}/${stepSlug}/• ${coreLabel}` : `${voice}/${stepSlug}`,
           voice, step,
-          bind: { ...bindBase, fontWeight: `weight/${voice}`, ...(coreStyleName ? { fontStyle: `weight-style/${voice}` } : {}) },
+          bind: { ...bindBase, fontWeight: `weight/${coreKey}`, ...(coreStyleName ? { fontStyle: `weight-style/${coreKey}` } : {}) },
           literal: { ...litBase, ...(coreStyleName ? { styleName: coreStyleName } : {}) },
         });
         // the SIBLING weight variants. The DISPLAY name mirrors whatever the core shows: a plain
@@ -143,7 +150,7 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
           texts.push({
             name: (coreLabel ? `${voice}/${stepSlug}/• ${coreLabel}` : `${voice}/${stepSlug}`) + "/single",
             voice, step,
-            bind: { ...singleBindBase, fontWeight: `weight/${voice}`, ...(coreStyleName ? { fontStyle: `weight-style/${voice}` } : {}) },
+            bind: { ...singleBindBase, fontWeight: `weight/${coreKey}`, ...(coreStyleName ? { fontStyle: `weight-style/${coreKey}` } : {}) },
             literal: { ...singleLitBase, ...(coreStyleName ? { styleName: coreStyleName } : {}) },
           });
           for (const wv of sibs) {

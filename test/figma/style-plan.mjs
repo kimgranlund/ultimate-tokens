@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { stylePlans, styleGroupOf, primitivesApplyPlan } from "../../figma/binder/style-plan.mjs";
 import { exportUI3 } from "../../src/engine/exports.js";
-import { typeScale, typeTokensFigmaModes, typeTokensFigmaPrimitives, siblingWeightDefaults, weightNameFor } from "../../src/engine/type.mjs";
+import { typeScale, typeTokensFigmaModes, typeTokensFigmaPrimitives, siblingWeightDefaults, weightNameFor, coreWeightKey } from "../../src/engine/type.mjs";
 
 const fails = [];
 const ok = (c, m) => { if (!c) fails.push(m); };
@@ -76,7 +76,7 @@ const plans = stylePlans({ families, scale });
   // be a strictly less specific name than the actual configured face cut), lowercased for the
   // DISPLAY name (the literal.styleName used for real font loading keeps its real casing).
   const coreNamed = plans.texts.find((t) => t.name === "Display/md/• bold condensed");
-  ok(!!coreNamed && coreNamed.literal.styleName === "Bold Condensed" && coreNamed.bind.fontStyle === "weight-style/Display" && coreNamed.bind.fontWeight === "weight/Display", "core style (WITH siblings + a custom style name): Voice/step/• {lowercase custom style name}, literal.styleName keeps real casing, weight-style/weight binding still on the UN-suffixed primitive");
+  ok(!!coreNamed && coreNamed.literal.styleName === "Bold Condensed" && coreNamed.bind.fontStyle === "weight-style/Display/bold" && coreNamed.bind.fontWeight === "weight/Display/bold", "core style (WITH siblings + a custom style name): Voice/step/• {lowercase custom style name}, literal.styleName keeps real casing, weight-style/weight binding NESTED under the core's own weight-name slug (same group as its siblings)");
   // a sibling's DISPLAY name follows the SAME custom-face naming convention as the core (lowercase,
   // full templated name) — not a bare generic slug — so the Styles panel never drops the
   // "condensed" adjective that only lived in the literal before this fix.
@@ -140,10 +140,11 @@ const plans = stylePlans({ families, scale });
   ok(stylePlans({ families, scale, include: { color: false } }).paints.length === 0, "include.color:false ⇒ no paints");
   ok(stylePlans({ families, scale, include: { type: false } }).texts.length === 0, "include.type:false ⇒ no texts");
   ok(JSON.stringify(stylePlans({ families, scale })) === JSON.stringify(stylePlans({ families, scale })), "same inputs ⇒ byte-identical plan (determinism)");
-  const bare = stylePlans({ families, scale: typeScale({ treatment: "product" }) });
+  const bareScale = typeScale({ treatment: "product" });
+  const bare = stylePlans({ families, scale: bareScale });
   const bareCores = bare.texts.filter((t) => t.name.includes("• "));
   ok(bareCores.length > 0 && bareCores.every((t) => !t.bind.fontStyle && !t.literal.styleName), "no styleName config ⇒ CORE styles carry no fontStyle binding (siblings still carry their own weight NAME regardless — that's the weight-style channel, not styleName)");
-  ok(bareCores.every((t) => t.bind.fontWeight === `weight/${t.voice}`), "every CORE style binds fontWeight to the voice's core weight primitive (always emitted)");
+  ok(bareCores.every((t) => t.bind.fontWeight === `weight/${coreWeightKey(t.voice, weightNameFor(bareScale.categories[t.voice].MD.weight), bareScale.weights && bareScale.weights[t.voice])}`), "every CORE style binds fontWeight to the voice's core weight primitive, nested under its own weight-name slug (same group as its siblings)");
   ok(stylePlans({}).paints.length === 0 && stylePlans({}).texts.length === 0, "empty inputs ⇒ empty plan, no throw");
 }
 
