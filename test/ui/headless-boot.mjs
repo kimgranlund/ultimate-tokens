@@ -1598,9 +1598,9 @@ ok(app.doc.type.voices && app.doc.type.voices.Body.font === "Custom Sans" && app
 ok(hydSet(serSet(app.doc)).type.voices.Body.font === "Custom Sans", "(tyf) the custom font round-trips through persist");
 app._setTypeVoiceFont("Body", ""); flushRaf();
 ok(!app.doc.type.voices, "(tyf) clearing the only override removes doc.type.voices (reverts to the treatment)");
-// (tyfa) font AVAILABILITY badges — two different truths, never conflated.
+// (tyfa) font AVAILABILITY dots — two different truths, never conflated.
 app.render(); flushRaf();
-ok(app.querySelectorAll(".tyi-font-badge").length === 11, `(tyfa) one availability badge per voice (got ${app.querySelectorAll(".tyi-font-badge").length})`);
+ok(app.querySelectorAll(".tyi-font-dot").length === 11, `(tyfa) one availability dot per voice (got ${app.querySelectorAll(".tyi-font-dot").length})`);
 // web: the 4 self-hosted faces are "bundled"; an unmeasurable env never cries wolf (assumes it renders)
 ok(!app.inFigma && app._fontStatus("Inter").label === "bundled" && app._fontStatus("Inter").state === "ok", "(tyfa) a self-hosted face reads 'bundled' in the web app");
 ok(app._fontStatus("Bodoni Moda").state === "ok", "(tyfa) with no DOM measurement available the probe assumes the face renders (never a false 'falls back')");
