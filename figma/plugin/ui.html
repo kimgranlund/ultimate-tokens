@@ -7775,30 +7775,37 @@ function stylePlans({ families = [], scale = null, include = {} } = {}) {
           textCase: s.textTransform || "none",
         };
         // the CORE style — `Voice/step` when the voice/step has NO configured siblings (nothing to
-        // disambiguate — a voice explicitly opted out via `weights:[]`); `Voice/step/• Name` when it
+        // disambiguate — a voice explicitly opted out via `weights:[]`); `Voice/step/• name` when it
         // DOES (TKT-0001 — every voice by default, since 2026-07-13's auto-populated siblings). The
-        // `• ` (dot) prefix + Title-Case name visually marks the default pick among its named siblings
-        // (which stay lowercase-kebab, e.g. `bold`) — not a plain weight-slug segment, so it can never
-        // collide with a sibling's own name. The label itself prefers the voice's own custom Figma
-        // style name (`coreStyleName` — e.g. BZZR's "Condensed Black Italic") over the generic
-        // ladder-snap name ("Black") — a non-variable face's real cut is strictly more specific and
-        // must never be flattened down to the ladder's generic vocabulary.
+        // `• ` (dot) prefix marks the default pick among its named siblings — not a plain weight-slug
+        // segment, so it can never collide with a sibling's own name. Lowercase throughout (matching
+        // the siblings' own lowercase-kebab convention, e.g. `bold`) — the label itself prefers the
+        // voice's own custom Figma style name (`coreStyleName` — e.g. BZZR's "Condensed Black Italic")
+        // over the generic ladder-snap name ("Black"): a non-variable face's real cut is strictly more
+        // specific and must never be flattened down to the ladder's generic vocabulary.
         const coreWeightName = sibs.length ? weightNameFor(s.weight) : null;
-        const coreLabel = coreWeightName ? (coreStyleName || coreWeightName.name) : null;
+        const coreLabel = coreWeightName ? (coreStyleName || coreWeightName.name).toLowerCase() : null;
         texts.push({
           name: coreLabel ? `${voice}/${stepSlug}/• ${coreLabel}` : `${voice}/${stepSlug}`,
           voice, step,
           bind: { ...bindBase, fontWeight: `weight/${voice}`, ...(coreStyleName ? { fontStyle: `weight-style/${voice}` } : {}) },
           literal: { ...litBase, ...(coreStyleName ? { styleName: coreStyleName } : {}) },
         });
-        // the SIBLING weight variants — `Voice/step/{weight-slug}` (kebab, via wv.slug — the SAME slug
-        // already used for the binding target names below, so the display path and the bind target agree).
+        // the SIBLING weight variants. The DISPLAY name mirrors whatever the core shows: a plain
+        // lowercase-kebab weight slug (`bold`) for the common no-custom-name case, or — when the voice
+        // has a custom style name — the SAME full templated name the literal uses (lowercase, space-
+        // separated, e.g. `condensed bold italic`), so the visible Styles panel never drops the
+        // "condensed"/"italic" adjectives that only lived in the literal before. The BINDING target
+        // keys (`weight-style/<voice>/<slug>`, `weight/<voice>/<slug>`) stay on the plain kebab slug
+        // regardless — internal primitive naming, not the user-facing style name.
         for (const wv of sibs) {
+          const wvStyleName = siblingStyleName(coreStyleName, coreWeightName, wv.name);
+          const wvLabel = coreStyleName ? wvStyleName.toLowerCase() : wv.slug;
           texts.push({
-            name: `${voice}/${stepSlug}/${wv.slug}`,
+            name: `${voice}/${stepSlug}/${wvLabel}`,
             voice, step,
             bind: { ...bindBase, fontStyle: `weight-style/${voice}/${wv.slug}`, fontWeight: `weight/${voice}/${wv.slug}` },
-            literal: { ...litBase, styleName: siblingStyleName(coreStyleName, coreWeightName, wv.name), weight: wv.weight },
+            literal: { ...litBase, styleName: wvStyleName, weight: wv.weight },
           });
         }
         // SINGLE-LINE variants (Body/Label only) — a `/single` sibling of every style above (core + each
@@ -7819,11 +7826,13 @@ function stylePlans({ families = [], scale = null, include = {} } = {}) {
             literal: { ...singleLitBase, ...(coreStyleName ? { styleName: coreStyleName } : {}) },
           });
           for (const wv of sibs) {
+            const wvStyleName = siblingStyleName(coreStyleName, coreWeightName, wv.name);
+            const wvLabel = coreStyleName ? wvStyleName.toLowerCase() : wv.slug;
             texts.push({
-              name: `${voice}/${stepSlug}/${wv.slug}/single`,
+              name: `${voice}/${stepSlug}/${wvLabel}/single`,
               voice, step,
               bind: { ...singleBindBase, fontStyle: `weight-style/${voice}/${wv.slug}`, fontWeight: `weight/${voice}/${wv.slug}` },
-              literal: { ...singleLitBase, styleName: siblingStyleName(coreStyleName, coreWeightName, wv.name), weight: wv.weight },
+              literal: { ...singleLitBase, styleName: wvStyleName, weight: wv.weight },
             });
           }
         }
