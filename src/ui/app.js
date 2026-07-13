@@ -3094,7 +3094,7 @@ class HctApp extends HTMLElement {
     const { baseName: bn, baseLast } = this._typeBaseOpts();
     // reset an unknown/deleted mode to base — but "compare" (Phase 5.3) is a valid pseudo-mode, allow it.
     if (this.typeMode !== "base" && this.typeMode !== "compare" && !modes.some((m) => m.id === this.typeMode)) this.typeMode = "base";
-    const baseItem = { id: "base", label: bn, title: `${bn} type scale · ${t.bodyBase ?? 16}px` };
+    const baseItem = { id: "base", label: bn, title: `${bn} type scale · ${t.bodyBase ?? 15}px` };
     const modeItems = modes.map((m) => ({ id: m.id, label: m.name || "Mode", title: m.factor ? `${m.name || "Mode"} · display ×${Math.round(m.factor * 100)}% (body frozen)` : `${m.name || "Mode"} · ${m.bodyBase}px body` }));
     const items = [
       ...(baseLast ? [...modeItems, baseItem] : [baseItem, ...modeItems]),
@@ -3135,7 +3135,7 @@ class HctApp extends HTMLElement {
     this.commit((d) => {
       d.type = { ...(d.type || DEFAULT_TYPE) };
       const modes = d.type.modes ? [...d.type.modes] : [];
-      modes.push({ id, name: "Mode " + (modes.length + 1), bodyBase: d.type.bodyBase ?? 16 });
+      modes.push({ id, name: "Mode " + (modes.length + 1), bodyBase: d.type.bodyBase ?? 15 });
       d.type.modes = modes;
     });
   }

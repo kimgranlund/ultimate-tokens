@@ -56,10 +56,10 @@ now a fixed literal table (`SIZES` in `src/engine/type.mjs`); the rest still der
 `{ leading per category, weight ramp, optical tracking coefficient, font roles }`:
 
 - **Size** = a **fixed literal per voice+step** (e.g. Display SM/MD/LG = 72/96/120), identical across
-  every treatment. `bodyBase` (default 16) still scales the WHOLE table proportionally
-  (`factor = bodyBase/16`) — a larger/smaller `bodyBase` grows/shrinks every voice together, snapping
-  back onto a nice-number ladder when the factor isn't 1. Ratio (`base × ratio^step`) is **retired** —
-  it no longer means anything to override per voice.
+  every treatment. `bodyBase` (default 15 — Body/Label's own fixed MD literal) still scales the WHOLE
+  table proportionally (`factor = bodyBase/15`) — a larger/smaller `bodyBase` grows/shrinks every voice
+  together, snapping back onto a nice-number ladder when the factor isn't 1. Ratio (`base × ratio^step`)
+  is **retired** — it no longer means anything to override per voice.
 - **Letter Spacing** = `f(size)` — negative to *tighten* large display, positive to *loosen* small label text (optical).
 - **Multi-line Height** = `size × leading`, where **leading is a per-role constant** (the
   `font.modes.json` design intent). The reading/display voices are held *uniform across all treatments* —

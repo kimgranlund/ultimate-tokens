@@ -1607,10 +1607,10 @@ ok(txtOf(app.querySelectorAll(".type-spec-token")[0] || {}) === "type-display-lg
 ok(!!app.querySelector(".tyi-voices") || !!app.querySelector(".insp-title"), "(ty) the right pane shows the Typography inspector");
 const { typeScale: tScale } = await import("../../src/engine/type.mjs");
 const { brandKit: bkTy } = await import("../../src/ui/model.mjs");
-app.commit((d) => { d.type = { treatment: "luxury", bodyBase: 18 }; }); flushRaf();
+app.commit((d) => { d.type = { treatment: "luxury", bodyBase: 16 }; }); flushRaf();
 const tysc = tScale(app.doc.type);
-ok(tysc.treatment === "luxury" && tysc.categories.Body.MD.size === 18, `(ty) treatment + base apply (treatment ${tysc.treatment}, body MD ${tysc.categories.Body.MD.size})`);
-ok(hydSet(serSet(app.doc)).type.treatment === "luxury" && hydSet(serSet(app.doc)).type.bodyBase === 18, "(ty) the type config round-trips through persist");
+ok(tysc.treatment === "luxury" && tysc.categories.Body.MD.size === 16, `(ty) treatment + base apply (treatment ${tysc.treatment}, body MD ${tysc.categories.Body.MD.size})`);
+ok(hydSet(serSet(app.doc)).type.treatment === "luxury" && hydSet(serSet(app.doc)).type.bodyBase === 16, "(ty) the type config round-trips through persist");
 ok(bkTy(app.doc).type && bkTy(app.doc).type.categories.Body && bkTy(app.doc).type.treatment === "luxury", "(ty) brandKit carries the type scale (the MCP serves it)");
 // (tyf) Fonts tab — an editable combobox per VOICE (all 11, matching 1:1 what's exported); a custom
 // family overrides that voice directly — there is no shared-role row — and flows to the scale + persist.
@@ -1710,9 +1710,9 @@ app.addTypeMode(); flushRaf();
 ok(Array.isArray(app.doc.type.modes) && app.doc.type.modes.length === 1 && app.typeMode === app.doc.type.modes[0].id, "(ty-bp) addTypeMode adds a mode + switches to it");
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && /^tmode:/.test(e.getAttribute("data-fk") || "")).length >= 2, "(ty-bp) the canvas header Mode control shows Base + the new breakpoint");
 const _bpId = app.doc.type.modes[0].id;
-app._setActiveTypeBodyBase(20); app.commitDrag?.(); flushRaf();
-ok(app.doc.type.modes[0].bodyBase === 20 && app.doc.type.bodyBase === 16, "(ty-bp) the body-size slider edits the ACTIVE mode, not Base");
-ok(app._activeType().bodyBase === 20 && tScale(app._activeType()).categories.Body.MD.size === 20, "(ty-bp) the active mode drives the resolved scale (Body MD = the mode's body size)");
+app._setActiveTypeBodyBase(24); app.commitDrag?.(); flushRaf();
+ok(app.doc.type.modes[0].bodyBase === 24 && app.doc.type.bodyBase === 16, "(ty-bp) the body-size slider edits the ACTIVE mode, not Base");
+ok(app._activeType().bodyBase === 24 && tScale(app._activeType()).categories.Body.MD.size === 24, "(ty-bp) the active mode drives the resolved scale (Body MD = the mode's body size)");
 app.setTypeModeMinWidth(_bpId, 768); flushRaf();
 ok(app.doc.type.modes[0].minWidth === 768 && app._typeModeScales()[0].minWidth === 768, "(ty-bp) setTypeModeMinWidth persists + flows to the responsive-export mode scales (→ @media min-width)");
 ok(app._typeModeDTCGFiles().length === 1 && app._typeModeDTCGFiles()[0].name === "type.768.tokens.json" && JSON.parse(app._typeModeDTCGFiles()[0].data).typography, "(ty-bp) the breakpoint emits a per-mode DTCG file keyed by width");
@@ -1762,9 +1762,9 @@ app.setTypeModeMinWidth(_bpId, 768); flushRaf(); // restore for the matrix-colum
 app.setTypeSpecMode("tokens"); flushRaf();
 ok(app._typeTokenColumns().length === 2 && app._typeTokenColumns()[0].id === "base" && app._typeTokenColumns()[1].minWidth === 768, "(ty-tok) the matrix has a column per breakpoint — Base + the ≥768px mode (sorted by minWidth)");
 ok(walk(app, (e) => e.classList && e.classList.contains("tok-col-bp") && txtOf(e).includes("768")).length === 1, "(ty-tok) the breakpoint column header shows its ≥768px min-width");
-// CRITICAL: typeMode is STILL the breakpoint (bodyBase 20) here. The Base column must show the DOCUMENT
-// base (Body MD 16), NOT the active mode — and the breakpoint column carries the mode's 20.
-ok(app._typeTokenColumns()[0].scale.categories.Body.MD.size === 16 && app._typeTokenColumns()[1].scale.categories.Body.MD.size === 20, `(ty-tok) the Base column is pinned to the document base (Body MD 16), not the active mode (20) (got Base=${app._typeTokenColumns()[0].scale.categories.Body.MD.size}, bp=${app._typeTokenColumns()[1].scale.categories.Body.MD.size})`);
+// CRITICAL: typeMode is STILL the breakpoint (bodyBase 24) here. The Base column must show the DOCUMENT
+// base (Body MD 16), NOT the active mode — and the breakpoint column carries the mode's 24.
+ok(app._typeTokenColumns()[0].scale.categories.Body.MD.size === 16 && app._typeTokenColumns()[1].scale.categories.Body.MD.size === 24, `(ty-tok) the Base column is pinned to the document base (Body MD 16), not the active mode (24) (got Base=${app._typeTokenColumns()[0].scale.categories.Body.MD.size}, bp=${app._typeTokenColumns()[1].scale.categories.Body.MD.size})`);
 // ── (ty-tok-ov) Phase 3 — the value cell is an EDITABLE SIZE input; editing writes a per-cell override that
 // re-derives the line, persists, reflects in the column + every export, and a ↺ resets it. ──
 const tCellInput = (fk) => walk(app, (e) => e.tagName === "INPUT" && e.getAttribute && e.getAttribute("data-fk") === fk)[0];
