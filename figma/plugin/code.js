@@ -310,7 +310,15 @@ const STYLE_NAME_WEIGHTS = [
 function styleNameWeight(style) {
   const s = String(style).toLowerCase();
   for (const pair of STYLE_NAME_WEIGHTS) if (s.indexOf(pair[0]) >= 0) return pair[1];
-  return 400; // an unnamed cut reads as the family's regular
+  // variable fonts often name their named instances by the raw wght value ("350", "Text 550",
+  // "Weight 800") instead of a word — Figma exposes NO axis/variable-font metadata at all
+  // (listAvailableFontsAsync returns only {family, style} strings), so a numeric instance name is
+  // the only other signal available. Parse an embedded 1–1000 integer (the valid CSS wght range)
+  // before falling back to Regular — without this every numerically-named style in a family
+  // resolved as "equally close to 400" and picked the first one arbitrarily, silently wrong.
+  const m = s.match(/\b([1-9]\d{0,2}|1000)\b/);
+  if (m) return Number(m[1]);
+  return 400; // an unnamed, unnumbered cut reads as the family's regular
 }
 // pickFallbackFamily — when the kit's family is absent from this Figma, the style still gets BUILT:
 // a loadable placeholder face carries the metrics while `fontFamily`/`fontStyle` stay BOUND to the
@@ -323,12 +331,15 @@ function pickFallbackFamily(fontsByFamily) {
   return null;
 }
 
-// normalizeStyleName — lowercase + collapse hyphens/whitespace to a single space, so "Extra-bold"
-// and "Extra Bold" (or "ExtraBold") compare equal. Real type foundries don't agree on a separator
-// convention for compound weight names (Extra-bold/Semi-bold in this kit's own WEIGHT_NAMES vs. a
-// real font's "Extra Bold"/"Semi Bold" style catalog) — an exact-string match alone silently missed
-// the real face and fell back to the nearest-weight guess, which doesn't even preserve italic.
-function normalizeStyleName(s) { return String(s).toLowerCase().replace(/[-\s]+/g, " ").trim(); }
+// normalizeStyleName — lowercase + strip EVERY hyphen/space entirely (not just collapse to one), so
+// "Extra-bold", "Extra Bold", AND "ExtraBold" all compare equal. Real type foundries don't agree on a
+// separator convention for compound weight names — this kit's own WEIGHT_NAMES uses a hyphen
+// ("Extra-bold"), but real font catalogs use a space (GT America's "Extra Bold") OR run the words
+// together with no separator at all (New Caledonia's "SemiBold") — a real, live gap: collapsing to a
+// single space (the previous fix) matched the space convention but NOT the concatenated one, so
+// "Semi-bold" never matched a real "SemiBold" cut. An exact-string match alone silently missed the
+// real face and fell back to the nearest-weight guess, which doesn't even preserve italic.
+function normalizeStyleName(s) { return String(s).toLowerCase().replace(/[-\s]+/g, ""); }
 
 function resolveFace(stylesOfFamily, literal) {
   if (!stylesOfFamily || !stylesOfFamily.length) return null;
@@ -342,10 +353,15 @@ function resolveFace(stylesOfFamily, literal) {
   const w = literal && Number.isFinite(literal.weight) ? literal.weight : 400;
   const upright = stylesOfFamily.filter(function (st) { return !/italic|oblique/i.test(st); });
   const pool = upright.length ? upright : stylesOfFamily;
-  let best = pool[0], bestD = Infinity;
+  // a real font's own weight ladder often has GAPS this kit's 9-step ladder doesn't (GT America has no
+  // Extra-bold cut at all; its Bold/Black sit exactly ±100 either side of a wanted 800) — a tie is a
+  // REAL, expected outcome, not an edge case. Break it towards the HEAVIER real weight, deterministically
+  // (never Figma's own listAvailableFontsAsync array order, which a plugin can't rely on or predict).
+  let best = pool[0], bestD = Infinity, bestW = styleNameWeight(pool[0]);
   for (const st of pool) {
-    const d = Math.abs(styleNameWeight(st) - w);
-    if (d < bestD) { best = st; bestD = d; }
+    const w2 = styleNameWeight(st);
+    const d = Math.abs(w2 - w);
+    if (d < bestD || (d === bestD && w2 > bestW)) { best = st; bestD = d; bestW = w2; }
   }
   return best;
 }

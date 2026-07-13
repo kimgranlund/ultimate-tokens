@@ -128,15 +128,15 @@ function mockFigma() {
 }
 
 // ── END-TO-END contract: figmaBundle() -> applyBundle() on the mock ──────────────
-let applyBundle, applyFloatPlans, applyFontPrimitives, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates;
+let applyBundle, applyFloatPlans, applyFontPrimitives, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight;
 const F = mockFigma();
 try {
-  const load = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyFloatPlans, applyFontPrimitives, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates };");
+  const load = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyFloatPlans, applyFontPrimitives, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight };");
   const loaded = load(F.figma, "<html>", undefined); // closes over the MOCK figma
   applyBundle = loaded.applyBundle; applyFloatPlans = loaded.applyFloatPlans;
   applyFontPrimitives = loaded.applyFontPrimitives; applyStylePlans = loaded.applyStylePlans;
   setCollectionNames = loaded.setCollectionNames; resolveFace = loaded.resolveFace;
-  sweepCandidates = loaded.sweepCandidates;
+  sweepCandidates = loaded.sweepCandidates; styleNameWeight = loaded.styleNameWeight;
 } catch (e) { FAIL("parse", "code.js failed to load: " + e.message); }
 
 if (applyBundle) {
@@ -414,6 +414,42 @@ if (resolveFace) {
   const noMatch = resolveFace(styles, { styleName: "Totally Unrelated Name", weight: 800 });
   if (noMatch === "Totally Unrelated Name") FAIL("resolveface", "a genuinely absent style name must still fall back to the nearest-weight guess, not itself");
   if (!styles.includes(noMatch)) FAIL("resolveface", `the nearest-weight fallback must return a REAL style from the list (got ${noMatch})`);
+  // CONCATENATED compound names — found live researching New Caledonia's real catalog ("SemiBold", no
+  // separator at all) while auditing preset font/weight configs: collapsing hyphen/space to ONE space
+  // (the previous fix) matched "Extra Bold" but not a foundry that runs the words together entirely.
+  const concatStyles = ["Regular", "SemiBold", "Bold", "Black"];
+  const concatFuzzy = resolveFace(concatStyles, { styleName: "Semi-bold", weight: 600 });
+  if (concatFuzzy !== "SemiBold") FAIL("resolveface", `a hyphenated name must fuzzy-match a real font's fully-concatenated style ("SemiBold", no separator) (got ${concatFuzzy})`);
+  const concatFuzzySpace = resolveFace(concatStyles, { styleName: "Semi Bold", weight: 600 });
+  if (concatFuzzySpace !== "SemiBold") FAIL("resolveface", `a space-separated name must ALSO fuzzy-match a fully-concatenated real style (got ${concatFuzzySpace})`);
+  // DETERMINISTIC tie-break — found live via GT America's real ladder (Ultra Light/Thin/Light/Regular/
+  // Medium/Bold/Black — no Extra-bold cut at all), where a wanted 800 sits EXACTLY between the real
+  // Bold (700) and Black (900): must always prefer the heavier one, never whichever style happened to
+  // come first in Figma's own listAvailableFontsAsync() array order (unpredictable, install-dependent).
+  const tieStyles = ["Regular", "Bold", "Black"];
+  const tieHeavy = resolveFace(tieStyles, { weight: 800 });
+  if (tieHeavy !== "Black") FAIL("resolveface", `an exact tie between two real weights must prefer the HEAVIER one, deterministically (got ${tieHeavy})`);
+  const tieHeavyReversed = resolveFace(["Black", "Bold", "Regular"], { weight: 800 });
+  if (tieHeavyReversed !== "Black") FAIL("resolveface", `the tie-break must NOT depend on array order (reversed list, got ${tieHeavyReversed})`);
+}
+
+// ── styleNameWeight / resolveFace: NUMERIC instance names — Figma exposes NO variable-font axis
+// metadata at all (listAvailableFontsAsync returns only {family, style} strings), so a variable font
+// whose named instances are numeric ("350", "Text 550") can only be read from the style STRING itself.
+// Before parsing numbers, every numerically-named style fell back to the SAME default (400) and the
+// nearest-weight pick silently returned whichever one happened to be first in the array. ──
+if (styleNameWeight) {
+  if (styleNameWeight("350") !== 350) FAIL("resolveface", `a bare numeric style name is its own weight (got ${styleNameWeight("350")})`);
+  if (styleNameWeight("Text 550") !== 550) FAIL("resolveface", `an embedded number in a style name is parsed as weight (got ${styleNameWeight("Text 550")})`);
+  if (styleNameWeight("Display 800 Italic") !== 800) FAIL("resolveface", `a numeric weight survives a trailing style modifier (got ${styleNameWeight("Display 800 Italic")})`);
+  if (styleNameWeight("Bold") !== 700) FAIL("resolveface", "a real word match still wins over any numeric fallback path");
+}
+if (resolveFace) {
+  const numericStyles = ["100", "350", "550", "800 Italic"];
+  const midWeight = resolveFace(numericStyles, { weight: 500 });
+  if (midWeight !== "550") FAIL("resolveface", `a numerically-instanced variable font resolves to its NEAREST real weight, not the first style in the list (got ${midWeight}, want "550")`);
+  const lowWeight = resolveFace(numericStyles, { weight: 120 });
+  if (lowWeight !== "100") FAIL("resolveface", `nearest-weight still works at the low end of a numeric instance set (got ${lowWeight})`);
 }
 
 // ── sweepCandidates: find real styles that LOOK like ours (top "/" segment matches a namespace the
