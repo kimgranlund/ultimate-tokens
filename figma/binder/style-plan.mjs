@@ -20,11 +20,12 @@
 //                     "Display/lg/condensed extra-bold italic" (sibling, lowercase — the SAME
 //                     templated name as the core when one's configured, else a bare weight slug)
 //                     (TKT-0001 — symmetric core+sibling naming, 2026-07-13's dot-prefix + templating) |
-//                     "Label/lg-single/• medium" (Body/Label only — a SIBLING STEP folder, "{step}-single",
-//                     never a "/single" suffix on the plain name: a suffix made the plain leaf a PREFIX of
-//                     its own single variant's path, and Figma's Styles panel folder-izes any name that is
-//                     a prefix of another — the plain leaf and the implied folder rendered as two rows
-//                     sharing the same visible label),
+//                     "Label/lg/• medium-single" (Body/Body-mono/Label/Label-mono only — a "-single"
+//                     SUFFIX on the leaf itself, flat inside the SAME step folder as the multi-line
+//                     styles, never a NEW "/"-segment: a trailing "/single" segment made the plain leaf a
+//                     PATH PREFIX of its own single variant, and Figma's Styles panel folder-izes any name
+//                     that is a prefix of another — the plain leaf and the implied folder rendered as two
+//                     rows sharing the same visible label),
 //              voice, step,
 //              bind:    { fontSize, lineHeight, letterSpacing,   // → Typography collection keys
 //                         paragraphSpacing?,                     //   (prose voices only)
@@ -50,10 +51,11 @@
 import { semanticRoles } from "../../src/engine/semantic.js";
 import { weightNameFor, resolvedFontFor, siblingStyleName, coreWeightKey } from "../../src/engine/type.mjs";
 
-// SINGLE_LINE_VOICES — voices that additionally get a "{step}-single" text-style sibling FOLDER
-// (1.0 leading — line-height = size) alongside their normal "{step}" multi-line group, per step and
-// per configured weight. Body-mono/Label-mono join their non-mono siblings here (both already carry
-// singleLineHeight as engine DATA — they're BOX voices too, see buildCategory's `box` default).
+// SINGLE_LINE_VOICES — voices that additionally get a "-single"-suffixed text-style sibling (1.0
+// leading — line-height = size), flat alongside their normal multi-line style in the SAME step folder,
+// per step and per configured weight. Body-mono/Label-mono join their non-mono siblings here (both
+// already carry singleLineHeight as engine DATA — they're BOX voices too, see buildCategory's `box`
+// default).
 const SINGLE_LINE_VOICES = new Set(["Body", "Body-mono", "Label", "Label-mono"]);
 
 // siblingStyleName lives in the engine (src/engine/type.mjs) — it's the ONE source of truth shared
@@ -161,25 +163,28 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
             literal: { ...litBase, styleName: wvStyleName, weight: wv.weight },
           });
         }
-        // SINGLE-LINE variants (Body/Label only) — a sibling of every style above (core + each
-        // configured weight), same font/size/tracking, but 1.0 leading (line-height = size, no multi-line
-        // reading rhythm). Grouped under its OWN "{step}-single" folder (a sibling of "{step}", never a
-        // "/single" SUFFIX on the plain style's own name) — a trailing "/single" made "Voice/step/• label"
-        // a PREFIX of "Voice/step/• label/single", and Figma's "/"-grouped Styles panel folder-izes any
-        // name that is a prefix of another: the plain leaf and the single-variant's implied parent folder
-        // then rendered as two separate rows sharing the same visible label (found live: Body/Label's own
-        // weight names duplicated between a flat row and an identically-named folder). `singleLineHeight`
-        // only exists as engine DATA on the BOX voices (Label/Body-mono/Label-mono/Kicker) — Label binds
-        // live to that Figma variable; Body has no such variable (it's prose), so its single-line
-        // lineHeight is a LITERAL (size, unbound) — the plan's own bind-or-literal-fallback pattern.
+        // SINGLE-LINE variants (Body/Body-mono/Label/Label-mono only) — a sibling of every style above
+        // (core + each configured weight), same font/size/tracking, but 1.0 leading (line-height = size,
+        // no multi-line reading rhythm). Named with a "-single" SUFFIX on the leaf itself, flat inside the
+        // SAME "{step}" folder as the multi-line styles (e.g. "Voice/step/• label-single",
+        // "Voice/step/medium-single") — never a NEW "/"-segment. Two earlier shapes both broke: a
+        // trailing "/single" segment ("Voice/step/• label/single") made "Voice/step/• label" a PATH
+        // PREFIX of it, and Figma's "/"-grouped Styles panel folder-izes any name that is a prefix of
+        // another (the plain leaf and the single-variant's implied parent folder rendered as two rows
+        // sharing one visible label); a separate "{step}-single" FOLDER avoided that but hid the
+        // single-line siblings in their own group instead of sitting next to their multi-line counterpart.
+        // A hyphen suffix on the leaf is neither: it's a distinct LEAF NAME with no extra path segment, so
+        // it can never become — or collide with — a folder. `singleLineHeight` only exists as engine DATA
+        // on the BOX voices (Label/Body-mono/Label-mono/Kicker) — Label/Body-mono/Label-mono bind live to
+        // that Figma variable; Body has no such variable (it's prose), so its single-line lineHeight is a
+        // LITERAL (size, unbound) — the plan's own bind-or-literal-fallback pattern.
         if (SINGLE_LINE_VOICES.has(voice)) {
           const singleLineHeight = s.singleLineHeight ?? s.size;
           const singleBindBase = { ...bindBase, ...(s.singleLineHeight != null ? { lineHeight: `${voice}/${step}/singleLineHeight` } : {}) };
           if (s.singleLineHeight == null) delete singleBindBase.lineHeight; // no live variable for Body — literal only
           const singleLitBase = { ...litBase, lineHeight: singleLineHeight };
-          const singleStepSlug = `${stepSlug}-single`;
           texts.push({
-            name: coreLabel ? `${voice}/${singleStepSlug}/• ${coreLabel}` : `${voice}/${singleStepSlug}`,
+            name: coreLabel ? `${voice}/${stepSlug}/• ${coreLabel}-single` : `${voice}/${stepSlug}-single`,
             voice, step,
             bind: { ...singleBindBase, ...(coreStyleName ? { fontStyle: `weight-style/${coreKey}` } : { fontWeight: `weight/${coreKey}` }) },
             literal: { ...singleLitBase, ...(coreStyleName ? { styleName: coreStyleName } : {}) },
@@ -188,7 +193,7 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
             const wvStyleName = siblingStyleName(coreStyleName, coreWeightName, wv.name);
             const wvLabel = coreStyleName ? wvStyleName.toLowerCase() : wv.slug;
             texts.push({
-              name: `${voice}/${singleStepSlug}/${wvLabel}`,
+              name: `${voice}/${stepSlug}/${wvLabel}-single`,
               voice, step,
               bind: { ...singleBindBase, ...(coreStyleName ? { fontStyle: `weight-style/${voice}/${wv.slug}` } : { fontWeight: `weight/${voice}/${wv.slug}` }) },
               literal: { ...singleLitBase, styleName: wvStyleName, weight: wv.weight },
