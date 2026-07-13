@@ -1021,7 +1021,7 @@ const TPm = await LS("travel"); // one category lazily loaded
 const TP = TPm.PRESETS;
 ok(Array.isArray(TP) && TP.length === 48, `(hh) travel category lazily loads 48 presets (got ${TP && TP.length})`);
 ok(TP.every((p) => p.palettes.length === 11), "(hh) each preset has 11 palettes (a derived neutral + 6 sampled + info/success/warning/danger)");
-const SLOTS = ["neutral","primary","primary-muted","secondary","secondary-muted","accent","accent-muted","info","success","warning","danger"];
+const SLOTS = ["neutral","primary","primary-muted","secondary","secondary-muted","tertiary","tertiary-muted","info","success","warning","danger"];
 ok(TP.every((p) => JSON.stringify(p.palettes.map((x) => x.name)) === JSON.stringify(SLOTS)), "(hh) every preset leads with the derived neutral, then the {tier}-{rank} + status model, identically");
 // the leading neutral is DERIVED from the character palettes' key colors (environment tone): a
 // low-chroma tinted grey retaining the derived target as its dominant key color.
@@ -1089,25 +1089,37 @@ ok(app.category === null && app.querySelectorAll(".category-card").length === 8,
 // different authored hierarchies visibly differ in PROPORTION, not just hue.
 const flexOf = (i) => { const m = /flex:\s*([\d.]+)/.exec(i.getAttribute("style") || ""); return m ? Number(m[1]) : NaN; };
 const stripWidths = (preset) => [...app.presetTile(preset).querySelector(".strip").children].map(flexOf);
+// band ORDER tracks the family-name rename (accent/primary/secondary → primary/secondary/tertiary,
+// 2026-07-13): primary/primary-muted now carry the ACCENT tier (shown first, both fit in the 6-slice),
+// secondary carries DOMINANT, secondary-muted + tertiary carry 2 of the 3 SUPPORTING members (tertiary-
+// muted is what falls off the 6-slice now, not accent-muted as before) — so this test looks up each
+// band's colorRole from the preset's own palettes at test time instead of hardcoding positions, and
+// stays correct regardless of which cohort the slice happens to truncate.
+const bandRoles = (preset) => preset.palettes.filter((p) => p.on !== false).slice(0, 6).map((p) => p.colorRole || (p.name === "neutral" ? "neutral" : null));
 const jjPreset0 = TP[0]; // d:60,s:30,a:10
 const jj0 = stripWidths(jjPreset0);
+const jjRoles0 = bandRoles(jjPreset0);
 ok(jj0.length === 6, `(jj) the strip still shows 6 bands (same count as the old fixed template, got ${jj0.length})`);
-// band order is [neutral, primary(dominant), primary-muted(supporting), secondary(supporting), secondary-muted(supporting), accent]
-const [jjNeutral, jjDominant, ...jjRest] = jj0;
+const jjNeutral = jj0[jjRoles0.indexOf("neutral")];
+const jjDominant = jj0[jjRoles0.indexOf("dominant")];
+const jjRest = jj0.filter((_, i) => jjRoles0[i] !== "neutral" && jjRoles0[i] !== "dominant");
 ok(jjDominant > jjNeutral && jjRest.every((w) => jjDominant > w), `(jj) the widest band is the preset's DOMINANT-tier color, not neutral (got neutral=${jjNeutral}, dominant=${jjDominant}, rest=${jjRest.join(",")})`);
 ok(Math.abs(jjNeutral - 8) < 0.01, `(jj) neutral keeps its small fixed 8% backdrop share (got ${jjNeutral})`);
 // independent re-derivation of the exact expected widths from story.groups, to catch drift in the
 // weighting formula itself (not just the ordering property above).
 const jjExpectDominant = jjPreset0.story.groups.find((g) => g.hier === "d").pct * 0.92;
 ok(Math.abs(jjDominant - jjExpectDominant) < 0.01, `(jj) dominant band = groups.d.pct scaled to fill the 92% non-neutral pool (want ${jjExpectDominant.toFixed(2)}, got ${jjDominant.toFixed(2)})`);
+const jjSupportingWidths = jj0.filter((_, i) => jjRoles0[i] === "supporting");
 const jjExpectSupportingEach = (jjPreset0.story.groups.find((g) => g.hier === "s").pct * 0.92) / 3;
-ok(jjRest.slice(0, 3).every((w) => Math.abs(w - jjExpectSupportingEach) < 0.01), `(jj) supporting's scaled pct splits equally across its 3 palettes (want ${jjExpectSupportingEach.toFixed(2)} each, got ${jjRest.slice(0, 3).join(",")})`);
-const jjExpectAccentEach = (jjPreset0.story.groups.find((g) => g.hier === "a").pct * 0.92) / 2; // accent-muted is sliced off the shown strip; still divides by its full 2-palette cohort
-ok(Math.abs(jjRest[3] - jjExpectAccentEach) < 0.01, `(jj) accent's scaled pct is split across its full 2-palette cohort even though only 1 accent swatch is shown (want ${jjExpectAccentEach.toFixed(2)}, got ${jjRest[3]})`);
+ok(jjSupportingWidths.length === 2 && jjSupportingWidths.every((w) => Math.abs(w - jjExpectSupportingEach) < 0.01), `(jj) supporting's scaled pct splits equally across its 3-palette cohort even though only 2 of 3 are shown (want ${jjExpectSupportingEach.toFixed(2)} each, got ${jjSupportingWidths.join(",")})`);
+const jjAccentWidths = jj0.filter((_, i) => jjRoles0[i] === "accent");
+const jjExpectAccentEach = (jjPreset0.story.groups.find((g) => g.hier === "a").pct * 0.92) / 2;
+ok(jjAccentWidths.length === 2 && jjAccentWidths.every((w) => Math.abs(w - jjExpectAccentEach) < 0.01), `(jj) accent's scaled pct splits equally across its full 2-palette cohort — both fit in the shown strip now (want ${jjExpectAccentEach.toFixed(2)} each, got ${jjAccentWidths.join(",")})`);
 // two presets with DIFFERENT authored hierarchies (d:60 vs d:50) visibly differ in PROPORTION
 const jjPreset5 = TP[5]; // d:50,s:40,a:10
 const jj5 = stripWidths(jjPreset5);
-ok(Math.abs(jj0[1] - jj5[1]) > 3, `(jj) two presets with different authored dominant shares (60 vs 50) render visibly different dominant-band widths (got ${jj0[1].toFixed(2)} vs ${jj5[1].toFixed(2)})`);
+const jjDominant5 = jj5[bandRoles(jjPreset5).indexOf("dominant")];
+ok(Math.abs(jjDominant - jjDominant5) > 3, `(jj) two presets with different authored dominant shares (60 vs 50) render visibly different dominant-band widths (got ${jjDominant.toFixed(2)} vs ${jjDominant5.toFixed(2)})`);
 // a set with NO story.groups (a user's own "Your Palettes" set) falls back EXACTLY to the original
 // fixed SAMPLED_W template — no regression there.
 const jjNoStory = { ...jjPreset0, story: undefined };
