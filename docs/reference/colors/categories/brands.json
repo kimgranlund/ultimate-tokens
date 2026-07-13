@@ -265,7 +265,7 @@
                 "styleName": "Condensed Black Italic",
                 "weights": [{ "name": "Extra-bold", "weight": 800 }, { "name": "Bold", "weight": 700 }]
               },
-              "Heading": {
+              "Headline": {
                 "weight": 900,
                 "tracking": 0.0179,
                 "leading": 1.125,
@@ -279,7 +279,7 @@
                 "styleName": "Medium",
                 "weights": [{ "name": "Semi-bold", "weight": 600 }, { "name": "Bold", "weight": 700 }]
               },
-              "UI": {
+              "Label": {
                 "weight": 700,
                 "tracking": 0.286,
                 "leading": 1.125,
@@ -444,7 +444,7 @@
                   }
                 ]
               },
-              "Heading": {
+              "Headline": {
                 "weight": 600,
                 "tracking": 0.04,
                 "leading": 1.15,
@@ -489,7 +489,7 @@
                   }
                 ]
               },
-              "UI": {
+              "Label": {
                 "weight": 460,
                 "tracking": 0.01,
                 "leading": 1.55,

@@ -1597,13 +1597,13 @@ app.commit((d) => { d.accentRef = "mode"; }); // restore default
 app.closeSettings(); flushRaf();
 ok(app.settingsOpen === false, "(set) closeSettings dismisses the modal");
 
-// ── (ty) Typography SECTION: the switcher flips this.section → full 21-step canvas specimen + inspector ──
+// ── (ty) Typography SECTION: the switcher flips this.section → full 33-step canvas specimen + inspector ──
 app.setSection("typography"); flushRaf();
 ok(app.section === "typography" && !!app.querySelector(".type-spec"), "(ty) the section switcher enters Typography (the canvas specimen renders)");
-ok(app.querySelectorAll(".type-spec-line").length === 53 && app.querySelectorAll(".type-spec-group").length === 11, `(ty) the canvas shows the FULL specimen — 53 steps across the 11 named voices (Display·Heading·Sub-heading·Kicker·Lead·Body·Quote·Caption·UI·Code·Legal) (got ${app.querySelectorAll(".type-spec-line").length} lines / ${app.querySelectorAll(".type-spec-group").length} groups)`);
+ok(app.querySelectorAll(".type-spec-line").length === 33 && app.querySelectorAll(".type-spec-group").length === 11, `(ty) the canvas shows the FULL specimen — 33 steps (11 voices × 3, since the 2026-07-13 fixed-size rewrite) across the 11 named voices (Display·Headline·Sub-heading·Title·Sub-title·Lead·Body·Code·Label·Kicker·Tiny) (got ${app.querySelectorAll(".type-spec-line").length} lines / ${app.querySelectorAll(".type-spec-group").length} groups)`);
 ok(app.querySelectorAll(".an-card").length >= 4, `(ty) the left rail shows the type analysis cards (got ${app.querySelectorAll(".an-card").length})`);
-// specimen order: each group lists LARGEST → smallest (the first token in the document is Display's XL step)
-ok(txtOf(app.querySelectorAll(".type-spec-token")[0] || {}) === "type-display-xl", `(ty) the specimen lists each group largest→smallest (first token is type-display-xl, got ${txtOf(app.querySelectorAll(".type-spec-token")[0] || {})})`);
+// specimen order: each group lists LARGEST → smallest (the first token in the document is Display's LG step)
+ok(txtOf(app.querySelectorAll(".type-spec-token")[0] || {}) === "type-display-lg", `(ty) the specimen lists each group largest→smallest (first token is type-display-lg, got ${txtOf(app.querySelectorAll(".type-spec-token")[0] || {})})`);
 ok(!!app.querySelector(".tyi-voices") || !!app.querySelector(".insp-title"), "(ty) the right pane shows the Typography inspector");
 const { typeScale: tScale } = await import("../../src/engine/type.mjs");
 const { brandKit: bkTy } = await import("../../src/ui/model.mjs");
@@ -1693,15 +1693,15 @@ ok(app.querySelectorAll(".tyi-weight-row").length === app.doc.type.voices.Displa
 }
 app.typeVoice = null; app.render(); flushRaf();
 // the canvas Specimen·Tokens toggle flips the canvas to the READ-ONLY token MATRIX (a real <table>) in the
-// scrolling .is-table shell — rows = the 53 steps, columns = Base (+ each breakpoint), sticky token names.
+// scrolling .is-table shell — rows = the 33 steps (11 voices × 3), columns = Base (+ each breakpoint), sticky token names.
 app.setTypeSpecMode("tokens"); flushRaf();
 ok(!!app.querySelector(".tok-table") && !app.querySelector(".type-spec"), "(ty-tok) the Specimen·Tokens toggle renders the token matrix table (no specimen scene)");
 ok(!!app.querySelector(".is-table") && !!app.querySelector(".is-table").querySelector(".tok-table"), "(ty-tok) the token table lives in the scrolling .is-table canvas shell (no pan/zoom)");
 ok(walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Desktop")).length === 1 && walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Base")).length === 0, "(ty-tok) the base column header reads Desktop (the designed scale, the intrinsic anchor — no 'Base' column)");
 ok(app._typeTokenColumns().length === 1, "(ty-tok) base-only — exactly one column (Base) with no breakpoints");
-ok(app.querySelectorAll(".tok-row").length === 53, `(ty-tok) one row per type step (53) (got ${app.querySelectorAll(".tok-row").length})`);
+ok(app.querySelectorAll(".tok-row").length === 33, `(ty-tok) one row per type step (33) (got ${app.querySelectorAll(".tok-row").length})`);
 ok(app.querySelectorAll(".tok-group").length === 11, `(ty-tok) the rows are grouped by voice — 11 group headers (got ${app.querySelectorAll(".tok-group").length})`);
-ok(txtOf(app.querySelectorAll(".tok-name")[1] || {}).startsWith("--type-display-xl"), `(ty-tok) the first (sticky) token name is the --type-display-xl step (got ${txtOf(app.querySelectorAll(".tok-name")[1] || {})})`);
+ok(txtOf(app.querySelectorAll(".tok-name")[1] || {}).startsWith("--type-display-lg"), `(ty-tok) the first (sticky) token name is the --type-display-lg step (got ${txtOf(app.querySelectorAll(".tok-name")[1] || {})})`);
 app.setTypeSpecMode("specimen"); flushRaf();
 ok(!!app.querySelector(".type-spec") && !app.querySelector(".tok-table"), "(ty-tok) toggling back to Specimen restores the live specimen (token table gone)");
 // ── (ty-bp) Typography breakpoint MODES (Phase 5) — add/switch/edit/delete a named bodyBase variant ──
@@ -1808,15 +1808,15 @@ app.typeMode = "compare"; app.render(); flushRaf();
   ok(cols.length === 1 + app.doc.type.modes.length, `(ty-cmp) Compare renders one column per mode — Base + ${app.doc.type.modes.length} breakpoint(s) = ${1 + app.doc.type.modes.length} (got ${cols.length})`);
   ok(!!app.querySelector(".canvas-compare") && !!app.querySelector(".compare"), "(ty-cmp) Compare uses the shared .canvas-compare / .canvas-scene.compare shell");
   ok(txtOf(app.querySelectorAll(".compare-col-label")[0] || {}) === "Base", "(ty-cmp) the first column is labelled Base");
-  // each column carries a full 53-line specimen (the override forced its mode while the scene built).
-  ok(app.querySelectorAll(".type-spec-line").length === 53 * cols.length, `(ty-cmp) every column renders the full 53-step specimen (got ${app.querySelectorAll(".type-spec-line").length} lines across ${cols.length} cols)`);
+  // each column carries a full 33-line specimen (the override forced its mode while the scene built).
+  ok(app.querySelectorAll(".type-spec-line").length === 33 * cols.length, `(ty-cmp) every column renders the full 33-step specimen (got ${app.querySelectorAll(".type-spec-line").length} lines across ${cols.length} cols)`);
   ok(app._typeModeOverride === null, "(ty-cmp) the transient _typeModeOverride is cleared after each column builds (never leaks)");
   // MAJOR: the inspector body-size slider edits the BASE scale in Compare (it shows Base) — not a no-op.
   app._setActiveTypeBodyBase(19); app.commitDrag?.(); flushRaf();
   ok(app.doc.type.bodyBase === 19, `(ty-cmp) the body-size slider edits doc.type.bodyBase while in Compare (got ${app.doc.type.bodyBase})`);
 }
 app.typeMode = "base"; app.render(); flushRaf();
-ok(!app.querySelector(".compare-col") && !!app.querySelector(".type-spec") && app.querySelectorAll(".type-spec-line").length === 53, "(ty-cmp) leaving Compare restores the single specimen scene");
+ok(!app.querySelector(".compare-col") && !!app.querySelector(".type-spec") && app.querySelectorAll(".type-spec-line").length === 33, "(ty-cmp) leaving Compare restores the single specimen scene");
 // Compare is omitted when only Base exists (after the mode is deleted below) — asserted in (ty-cmp-omit).
 // (ty-tok-orphan) MAJOR 5 — deleting a mode STRIPS that mode's per-cell overrides (no "...|<id>" orphans
 // survive serialize→hydrate forever). Set a per-mode override, delete the mode, assert the key is gone.
@@ -1849,13 +1849,14 @@ ok(gsc.treatment === "spacious" && gsc.baseHeight === 40, `(geo) treatment + bas
 ok(gsc.sizes.MD.padding === (gsc.sizes.MD.height - gsc.sizes.MD.icon) / 2, "(geo) the centering law holds on the resolved scale (pad = (h−icon)/2)");
 ok(hydSet(serSet(app.doc)).geometry.treatment === "spacious" && hydSet(serSet(app.doc)).geometry.baseHeight === 40, "(geo) the geometry config round-trips through persist");
 ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).geometry.treatment === "spacious", "(geo) brandKit carries the geometry scale (the MCP serves it)");
-// COMPOSITION: the geometry the app/brandKit resolves shares its per-step `font` with the type UI scale
+// COMPOSITION: the geometry the app/brandKit resolves shares its per-step `font` with the type Label
+// scale (renamed from "UI" 2026-07-13)
 {
   app.commit((d) => { d.type = { treatment: "luxury", bodyBase: 20 }; }); flushRaf();
   const composed = geoScaleOf(app.doc);
-  const ui = tScaleGeo(app.doc.type).categories.UI;
-  ok(composed.typed === true && composed.sizes.MD.font === ui.MD.size, `(geo) the composed geometry font = type UI MD size (${composed.sizes.MD.font} = ${ui.MD.size})`);
-  ok(bkGeo(app.doc).geometry.sizes.MD.font === ui.MD.size, "(geo) brandKit's geometry shares the type UI font (one source of truth)");
+  const ui = tScaleGeo(app.doc.type).categories.Label;
+  ok(composed.typed === true && composed.sizes.MD.font === ui.MD.size, `(geo) the composed geometry font = type Label MD size (${composed.sizes.MD.font} = ${ui.MD.size})`);
+  ok(bkGeo(app.doc).geometry.sizes.MD.font === ui.MD.size, "(geo) brandKit's geometry shares the type Label font (one source of truth)");
   app.commit((d) => { d.type = { treatment: "product", bodyBase: 16 }; }); // restore
 }
 // (gsz) ramp-tab per-size HEIGHT tuning — the geometry analog of (tyv): select a size → its Height slider
