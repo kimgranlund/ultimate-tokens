@@ -437,9 +437,9 @@ if (applyStylePlans && applyFontPrimitives) {
     // Display's core weight (the product treatment's 700) snaps to "Bold"; WITH a sibling configured,
     // the core carries a dot-prefixed `• Bold` segment too (symmetric naming, TKT-0001) — the sibling
     // itself stays lowercase-kebab, "Medium" → "medium".
-    const core = textStyles.find((x) => x.name === "Display/md/• Bold");
+    const core = textStyles.find((x) => x.name === "Display/md/• bold");
     const sib = textStyles.find((x) => x.name === "Display/md/medium");
-    if (!core || !sib) FAIL("styles", "Display/md/• Bold core or Display/md/medium sibling text style missing");
+    if (!core || !sib) FAIL("styles", "Display/md/• bold core or Display/md/medium sibling text style missing");
     if (core && (!core.fontName || core.fontName.style !== "Bold")) FAIL("styles", `Display core face = ${core && core.fontName && core.fontName.style}, want Bold (700 candidates)`);
     if (sib && (!sib.fontName || sib.fontName.style !== "Medium")) FAIL("styles", `Display sibling face = ${sib && sib.fontName && sib.fontName.style}, want Medium`);
     if (core && (!core.lineHeight || core.lineHeight.unit !== "PERCENT")) FAIL("styles", "text style lineHeight is not PERCENT-united");
@@ -492,9 +492,9 @@ if (applyStylePlans && applyFontPrimitives) {
     const reduced = stylePlans({ families, scale: TYPE.typeScale({ treatment: "product", bodyBase: 16, voices: { Display: { weights: [] } } }) });
     const sr2 = await applyStylePlans(reduced);
     if (F.figma._styles.some((x) => x.name === "Display/md/medium")) FAIL("styles", "prune did not remove the dropped sibling style");
-    // the core RENAMES too when its siblings disappear (Display/md/• Bold → bare Display/md, nothing
+    // the core RENAMES too when its siblings disappear (Display/md/• bold → bare Display/md, nothing
     // left to disambiguate) — the old suffixed name must prune, and the bare name must exist fresh.
-    if (F.figma._styles.some((x) => x.name === "Display/md/• Bold")) FAIL("styles", "prune did not remove the core's old suffixed name after its siblings were dropped");
+    if (F.figma._styles.some((x) => x.name === "Display/md/• bold")) FAIL("styles", "prune did not remove the core's old suffixed name after its siblings were dropped");
     if (!F.figma._styles.some((x) => x.name === "Display/md")) FAIL("styles", "the core did not revert to its bare name once siblings were dropped");
     if (!F.figma._styles.some((x) => x.name === "My Own/keep-me")) FAIL("styles", "prune touched a USER style (provenance violated)");
     if (!sr2.pruned) FAIL("styles", "prune count not reported");

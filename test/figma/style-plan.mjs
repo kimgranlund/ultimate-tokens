@@ -73,11 +73,15 @@ const plans = stylePlans({ families, scale });
   // Display's core weight (the product treatment's dWeight, 700) snaps to "Bold", but this fixture
   // ALSO configures a custom Figma style name ("Bold Condensed") — the core's dot-prefixed label
   // prefers that specific name over the generic ladder snap (never lose resolution — "Bold" would
-  // be a strictly less specific name than the actual configured face cut).
-  const coreNamed = plans.texts.find((t) => t.name === "Display/md/• Bold Condensed");
-  ok(!!coreNamed && coreNamed.literal.styleName === "Bold Condensed" && coreNamed.bind.fontStyle === "weight-style/Display" && coreNamed.bind.fontWeight === "weight/Display", "core style (WITH siblings + a custom style name): Voice/step/• {custom style name}, styleName + weight-style/weight binding still on the UN-suffixed primitive");
-  const sib = plans.texts.find((t) => t.name === "Display/md/medium");
-  ok(!!sib && sib.literal.weight === 500 && sib.bind.fontStyle === "weight-style/Display/medium" && sib.bind.fontWeight === "weight/Display/medium", "sibling style: Voice/step/{slug} (lowercase-kebab via wv.slug) with per-sibling bindings — no dot prefix, only the core gets one");
+  // be a strictly less specific name than the actual configured face cut), lowercased for the
+  // DISPLAY name (the literal.styleName used for real font loading keeps its real casing).
+  const coreNamed = plans.texts.find((t) => t.name === "Display/md/• bold condensed");
+  ok(!!coreNamed && coreNamed.literal.styleName === "Bold Condensed" && coreNamed.bind.fontStyle === "weight-style/Display" && coreNamed.bind.fontWeight === "weight/Display", "core style (WITH siblings + a custom style name): Voice/step/• {lowercase custom style name}, literal.styleName keeps real casing, weight-style/weight binding still on the UN-suffixed primitive");
+  // a sibling's DISPLAY name follows the SAME custom-face naming convention as the core (lowercase,
+  // full templated name) — not a bare generic slug — so the Styles panel never drops the
+  // "condensed" adjective that only lived in the literal before this fix.
+  const sib = plans.texts.find((t) => t.name === "Display/md/medium condensed");
+  ok(!!sib && sib.literal.weight === 500 && sib.bind.fontStyle === "weight-style/Display/medium" && sib.bind.fontWeight === "weight/Display/medium", "sibling style: Voice/step/{templated lowercase name} with per-sibling bindings still keyed on the plain slug — no dot prefix, only the core gets one");
   // a sibling's literal.styleName must follow the SAME custom-face naming convention as the core, not
   // a bare generic name — resolveFace (figma/plugin/code.js) exact-matches styleName against the
   // family's real installed style list, so "Medium" alone would miss "Medium Condensed" entirely and
@@ -85,9 +89,10 @@ const plans = stylePlans({ families, scale });
   // the sibling (Medium, 500) must read "Medium Condensed", substituting just the weight word.
   ok(sib && sib.literal.styleName === "Medium Condensed", `sibling styleName follows the core's custom naming convention, not a bare generic name (got ${sib && sib.literal.styleName})`);
   // Body's core weight (440, unstyled — makeVoices's default) snaps to "Regular"; Body also has 1
-  // EXPLICITLY configured sibling, so its core is dot-prefixed too.
-  const bodyCore = plans.texts.find((t) => t.name === "Body/md/• Regular");
-  ok(!!bodyCore, "Body core (WITH a sibling) also carries its own dot-prefixed weight-name segment");
+  // EXPLICITLY configured sibling, so its core is dot-prefixed too (no custom styleName on Body ⇒
+  // lowercased generic ladder name, "regular").
+  const bodyCore = plans.texts.find((t) => t.name === "Body/md/• regular");
+  ok(!!bodyCore, "Body core (WITH a sibling) also carries its own dot-prefixed weight-name segment, lowercase");
   const bodySib = plans.texts.find((t) => t.name === "Body/md/semi-bold");
   ok(!!bodySib && bodySib.literal.weight === 600, "Body sibling present with its weight, kebab-named");
   // AUTO-POPULATE (2026-07-13): a voice with NO explicit weights config (Headline, here) still gets 3
@@ -107,7 +112,7 @@ const plans = stylePlans({ families, scale });
     const fallbackSib = noTemplatePlans.texts.find((t) => t.voice === "Headline" && t.step === "MD" && t.name.endsWith("/medium"));
     ok(!!fallbackSib && fallbackSib.literal.styleName === "Medium", `no matchable weight word in the custom name ⇒ sibling falls back to its own bare name (got ${fallbackSib && fallbackSib.literal.styleName})`);
   }
-  ok(plans.texts.every((t) => /^[A-Za-z-]+\/[a-z0-9]+(\/(?:[a-z0-9-]+|• [^/]+))?(\/single)?$/.test(t.name)), "every text style name is Voice/lowerstep[/lower-kebab-slug OR /• custom-or-Title-Case name][/single]");
+  ok(plans.texts.every((t) => /^[A-Za-z-]+\/[a-z0-9]+(\/(?:[a-z0-9 -]+|• [^/]+))?(\/single)?$/.test(t.name)), "every text style name is Voice/lowerstep[/lower-kebab-slug OR templated-lowercase-name OR /• lowercase name][/single]");
   // volume: every voice×step gets 1 core + its siblings.length (auto-populated by default, 0 only for
   // an explicit opt-out) — plus a `/single` mirror of every Body/Label style. Derived from the
   // resolved scale itself (not hand-counted) so this doesn't rot as voice defaults change.
@@ -122,10 +127,10 @@ const plans = stylePlans({ families, scale });
   // every Body/Label style gets exactly one /single sibling; no other voice does.
   const singles = plans.texts.filter((t) => t.name.endsWith("/single"));
   ok(singles.every((t) => t.voice === "Body" || t.voice === "Label"), `only Body/Label carry a /single variant (voices: ${[...new Set(singles.map((t) => t.voice))].join(",")})`);
-  const bodySingle = plans.texts.find((t) => t.name === "Body/md/• Regular/single");
+  const bodySingle = plans.texts.find((t) => t.name === "Body/md/• regular/single");
   ok(!!bodySingle && bodySingle.literal.lineHeight === bodySingle.literal.size && !bodySingle.bind.lineHeight, "Body's /single style: literal lineHeight = size, UNBOUND (Body has no singleLineHeight variable — it's prose)");
   const labelScale = typeScale({ treatment: "product" });
-  const labelCoreName = weightNameFor(labelScale.categories.Label.MD.weight).name;
+  const labelCoreName = weightNameFor(labelScale.categories.Label.MD.weight).name.toLowerCase();
   const labelSingle = stylePlans({ families, scale: labelScale }).texts.find((t) => t.name === `Label/md/• ${labelCoreName}/single`);
   ok(!!labelSingle && labelSingle.bind.lineHeight === "Label/MD/singleLineHeight", "Label's /single style BINDS live to its real singleLineHeight variable (Label is a box voice)");
 }
