@@ -376,6 +376,21 @@ export function siblingStyleName(coreStyleName, coreWeightName, siblingName) {
   return coreStyleName.slice(0, idx) + siblingName + coreStyleName.slice(idx + coreWeightName.name.length);
 }
 
+// coreWeightKey(voice, coreWeightName, sibs) — the core's own weight/weight-style PRIMITIVE key,
+// nested inside the SAME per-voice group as its siblings (`Display/black`, matching a sibling's own
+// `Display/bold`) rather than a bare `Display` — Figma groups variable names by "/", so a bare core
+// key sat OUTSIDE the "Display" folder its siblings created, splitting one voice's weights across two
+// UI locations. Falls back to the bare voice name only in the vanishingly rare case a sibling shares
+// the core's own weight-name slug (a real key collision, not a naming preference). THE ONE SOURCE OF
+// TRUTH for this key, shared by typeTokensFigmaPrimitives (which creates the primitive) and the Figma
+// text-style planner (figma/binder/style-plan.mjs, which binds the CORE style to it) — they must
+// never independently recompute this, the same drift class siblingStyleName above already fixed once.
+export function coreWeightKey(voice, coreWeightName, sibs) {
+  if (!coreWeightName) return voice;
+  const taken = Array.isArray(sibs) && sibs.some((wv) => wv.slug === coreWeightName.slug);
+  return taken ? voice : `${voice}/${coreWeightName.slug}`;
+}
+
 // ── emitters ───────────────────────────────────────────────────────────────────────────────────
 const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
@@ -603,24 +618,23 @@ export function typeTokensFigmaPrimitives(scale) {
       variables[`font/${voice}`] = { type: "ALIAS", target: famKey[fam] };
     }
     const first = Object.values(steps)[0];
-    if (first && Number.isFinite(first.weight)) variables[`weight/${voice}`] = { type: "FLOAT", values: { Value: first.weight } };
+    const coreWeightName = first && Number.isFinite(first.weight) ? weightNameFor(first.weight) : null;
     // the weight STYLE NAME (non-variable families) — a STRING primitive beside the numeric weight,
     // present only when the kit names one (scale.styleNames via config.voices[v].styleName).
     const sn = scale.styleNames && scale.styleNames[voice];
-    if (sn) variables[`weight-style/${voice}`] = { type: "STRING", values: { Value: sn } };
-    // SIBLING WEIGHTS — one FLOAT + one STRING primitive per named variant (`weight/Display/bold`,
-    // `weight-style/Display/bold`); the core keeps the un-suffixed names above (backward compatible).
-    // These are the binding targets for the sibling text styles (`Display/xl/Bold`). The STRING
-    // value goes through the SAME siblingStyleName templating the text-style planner uses — a bare
-    // "Bold" here (instead of "Condensed Bold Italic") is a REAL font-loading bug, not cosmetic: this
-    // primitive is what a non-variable face's sibling text style binds `fontStyle` to.
     const sibs = scale.weights && scale.weights[voice];
-    if (sibs) {
-      const coreWeightName = first && Number.isFinite(first.weight) ? weightNameFor(first.weight) : null;
-      for (const wv of sibs) {
-        variables[`weight/${voice}/${wv.slug}`] = { type: "FLOAT", values: { Value: wv.weight } };
-        variables[`weight-style/${voice}/${wv.slug}`] = { type: "STRING", values: { Value: siblingStyleName(sn, coreWeightName, wv.name) } };
-      }
+    const coreKey = coreWeightKey(voice, coreWeightName, sibs);
+    if (coreWeightName) variables[`weight/${coreKey}`] = { type: "FLOAT", values: { Value: first.weight } };
+    if (sn) variables[`weight-style/${coreKey}`] = { type: "STRING", values: { Value: sn } };
+    // SIBLING WEIGHTS — one FLOAT + one STRING primitive per named variant (`weight/Display/bold`,
+    // `weight-style/Display/bold`), nested the same way as the core above. These are the binding
+    // targets for the sibling text styles (`Display/xl/Bold`). The STRING value goes through the
+    // SAME siblingStyleName templating the text-style planner uses — a bare "Bold" here (instead of
+    // "Condensed Bold Italic") is a REAL font-loading bug, not cosmetic: this primitive is what a
+    // non-variable face's sibling text style binds `fontStyle` to.
+    if (sibs) for (const wv of sibs) {
+      variables[`weight/${voice}/${wv.slug}`] = { type: "FLOAT", values: { Value: wv.weight } };
+      variables[`weight-style/${voice}/${wv.slug}`] = { type: "STRING", values: { Value: siblingStyleName(sn, coreWeightName, wv.name) } };
     }
   }
   return {

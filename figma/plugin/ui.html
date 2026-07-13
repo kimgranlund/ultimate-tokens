@@ -3118,6 +3118,21 @@ function siblingStyleName(coreStyleName, coreWeightName, siblingName) {
   return coreStyleName.slice(0, idx) + siblingName + coreStyleName.slice(idx + coreWeightName.name.length);
 }
 
+// coreWeightKey(voice, coreWeightName, sibs) — the core's own weight/weight-style PRIMITIVE key,
+// nested inside the SAME per-voice group as its siblings (`Display/black`, matching a sibling's own
+// `Display/bold`) rather than a bare `Display` — Figma groups variable names by "/", so a bare core
+// key sat OUTSIDE the "Display" folder its siblings created, splitting one voice's weights across two
+// UI locations. Falls back to the bare voice name only in the vanishingly rare case a sibling shares
+// the core's own weight-name slug (a real key collision, not a naming preference). THE ONE SOURCE OF
+// TRUTH for this key, shared by typeTokensFigmaPrimitives (which creates the primitive) and the Figma
+// text-style planner (figma/binder/style-plan.mjs, which binds the CORE style to it) — they must
+// never independently recompute this, the same drift class siblingStyleName above already fixed once.
+function coreWeightKey(voice, coreWeightName, sibs) {
+  if (!coreWeightName) return voice;
+  const taken = Array.isArray(sibs) && sibs.some((wv) => wv.slug === coreWeightName.slug);
+  return taken ? voice : `${voice}/${coreWeightName.slug}`;
+}
+
 // ── emitters ───────────────────────────────────────────────────────────────────────────────────
 const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
@@ -3345,24 +3360,23 @@ function typeTokensFigmaPrimitives(scale) {
       variables[`font/${voice}`] = { type: "ALIAS", target: famKey[fam] };
     }
     const first = Object.values(steps)[0];
-    if (first && Number.isFinite(first.weight)) variables[`weight/${voice}`] = { type: "FLOAT", values: { Value: first.weight } };
+    const coreWeightName = first && Number.isFinite(first.weight) ? weightNameFor(first.weight) : null;
     // the weight STYLE NAME (non-variable families) — a STRING primitive beside the numeric weight,
     // present only when the kit names one (scale.styleNames via config.voices[v].styleName).
     const sn = scale.styleNames && scale.styleNames[voice];
-    if (sn) variables[`weight-style/${voice}`] = { type: "STRING", values: { Value: sn } };
-    // SIBLING WEIGHTS — one FLOAT + one STRING primitive per named variant (`weight/Display/bold`,
-    // `weight-style/Display/bold`); the core keeps the un-suffixed names above (backward compatible).
-    // These are the binding targets for the sibling text styles (`Display/xl/Bold`). The STRING
-    // value goes through the SAME siblingStyleName templating the text-style planner uses — a bare
-    // "Bold" here (instead of "Condensed Bold Italic") is a REAL font-loading bug, not cosmetic: this
-    // primitive is what a non-variable face's sibling text style binds `fontStyle` to.
     const sibs = scale.weights && scale.weights[voice];
-    if (sibs) {
-      const coreWeightName = first && Number.isFinite(first.weight) ? weightNameFor(first.weight) : null;
-      for (const wv of sibs) {
-        variables[`weight/${voice}/${wv.slug}`] = { type: "FLOAT", values: { Value: wv.weight } };
-        variables[`weight-style/${voice}/${wv.slug}`] = { type: "STRING", values: { Value: siblingStyleName(sn, coreWeightName, wv.name) } };
-      }
+    const coreKey = coreWeightKey(voice, coreWeightName, sibs);
+    if (coreWeightName) variables[`weight/${coreKey}`] = { type: "FLOAT", values: { Value: first.weight } };
+    if (sn) variables[`weight-style/${coreKey}`] = { type: "STRING", values: { Value: sn } };
+    // SIBLING WEIGHTS — one FLOAT + one STRING primitive per named variant (`weight/Display/bold`,
+    // `weight-style/Display/bold`), nested the same way as the core above. These are the binding
+    // targets for the sibling text styles (`Display/xl/Bold`). The STRING value goes through the
+    // SAME siblingStyleName templating the text-style planner uses — a bare "Bold" here (instead of
+    // "Condensed Bold Italic") is a REAL font-loading bug, not cosmetic: this primitive is what a
+    // non-variable face's sibling text style binds `fontStyle` to.
+    if (sibs) for (const wv of sibs) {
+      variables[`weight/${voice}/${wv.slug}`] = { type: "FLOAT", values: { Value: wv.weight } };
+      variables[`weight-style/${voice}/${wv.slug}`] = { type: "STRING", values: { Value: siblingStyleName(sn, coreWeightName, wv.name) } };
     }
   }
   return {
@@ -3371,7 +3385,7 @@ function typeTokensFigmaPrimitives(scale) {
   };
 }
 
-return { TYPE_TREATMENTS, DEFAULT_TYPE, BUNDLED_FONTS, genericFor, typeScale, resolvedFontFor, WEIGHT_LADDER, WEIGHT_NAMES, siblingWeightDefaults, weightNameFor, siblingStyleName, dimUnit, typeTokensCSS, typeTokensBreakpointCSS, typeTokensDTCG, disambiguateModeNames, typeTokensFigmaModes, typeTokensFigmaPrimitives };
+return { TYPE_TREATMENTS, DEFAULT_TYPE, BUNDLED_FONTS, genericFor, typeScale, resolvedFontFor, WEIGHT_LADDER, WEIGHT_NAMES, siblingWeightDefaults, weightNameFor, siblingStyleName, coreWeightKey, dimUnit, typeTokensCSS, typeTokensBreakpointCSS, typeTokensDTCG, disambiguateModeNames, typeTokensFigmaModes, typeTokensFigmaPrimitives };
 })();
 __M.geometry = (function(){
 // geometry.mjs — the GEOMETRY / dimensional engine: the spatial analog of the color & type engines.
@@ -7708,15 +7722,18 @@ __M.stylePlan = (function(){
 //   paints: [{ name: "Primary/onPrimary" | "Primary/scrims/scrim" | "Primary/surfaces/surface",
 //              varName: "primary/onPrimary" }]                   // → Color Modes variable, ratified grouping:
 //                                                                //   scrim* → scrims/ · surface*|container* → surfaces/
-//   texts:  [{ name: "Display/xl" (no siblings configured — bare) |
-//                     "Display/xl/black" (core, WITH siblings — its own weight, kebab) |
-//                     "Display/xl/extra-bold" (sibling, kebab via wv.slug) (TKT-0001 — symmetric,
-//                     explicit, lowercase-kebab naming across core + every sibling),
+//   texts:  [{ name: "Display/lg" (voice explicitly opted OUT of siblings via weights:[] — bare) |
+//                     "Display/lg/• condensed black italic" (core, siblings exist — dot-prefixed,
+//                     lowercase; prefers a custom Figma style name over the generic weight name) |
+//                     "Display/lg/condensed extra-bold italic" (sibling, lowercase — the SAME
+//                     templated name as the core when one's configured, else a bare weight slug)
+//                     (TKT-0001 — symmetric core+sibling naming, 2026-07-13's dot-prefix + templating),
 //              voice, step,
 //              bind:    { fontSize, lineHeight, letterSpacing,   // → Typography collection keys
 //                         paragraphSpacing?,                     //   (prose voices only)
 //                         fontFamily,                            // → Font Primitives font/<voice> (STRING alias)
-//                         fontStyle? },                          // → weight-style/<voice>[/<slug>] when named
+//                         fontStyle? },                          // → weight-style/<voice>/<slug> — ALWAYS
+//                                                                //   nested (coreWeightKey), core included
 //              literal: { family, styleName?, weight, size, lineHeight, letterSpacing,
 //                         paragraphSpacing?, textCase } }]       // resolved values: loadFontAsync + per-field
 //                                                                // fallback when a binding target is absent
@@ -7724,7 +7741,7 @@ __M.stylePlan = (function(){
 // their core in list order. Same inputs ⇒ byte-identical plan (the executor's idempotency rides on it).
 
 const { semanticRoles } = __M.semantic;
-const { weightNameFor, resolvedFontFor, siblingStyleName } = __M.type;
+const { weightNameFor, resolvedFontFor, siblingStyleName, coreWeightKey } = __M.type;
 
 // SINGLE_LINE_VOICES — voices that additionally get a `/single` text-style sibling (1.0 leading —
 // line-height = size) alongside their normal multi-line style, per step and per configured weight.
@@ -7797,13 +7814,17 @@ function stylePlans({ families = [], scale = null, include = {} } = {}) {
         // the siblings' own lowercase-kebab convention, e.g. `bold`) — the label itself prefers the
         // voice's own custom Figma style name (`coreStyleName` — e.g. BZZR's "Condensed Black Italic")
         // over the generic ladder-snap name ("Black"): a non-variable face's real cut is strictly more
-        // specific and must never be flattened down to the ladder's generic vocabulary.
-        const coreWeightName = sibs.length ? weightNameFor(s.weight) : null;
-        const coreLabel = coreWeightName ? (coreStyleName || coreWeightName.name).toLowerCase() : null;
+        // specific and must never be flattened down to the ladder's generic vocabulary. Computed
+        // UNCONDITIONALLY (not gated by sibs.length like coreLabel below) because the BIND TARGET
+        // (coreWeightKey) always nests the same way, even for a voice with zero siblings — one lone
+        // primitive in its own "Voice" folder, not confusing the way a split group would be.
+        const coreWeightName = weightNameFor(s.weight);
+        const coreLabel = sibs.length ? (coreStyleName || coreWeightName.name).toLowerCase() : null;
+        const coreKey = coreWeightKey(voice, coreWeightName, sibs);
         texts.push({
           name: coreLabel ? `${voice}/${stepSlug}/• ${coreLabel}` : `${voice}/${stepSlug}`,
           voice, step,
-          bind: { ...bindBase, fontWeight: `weight/${voice}`, ...(coreStyleName ? { fontStyle: `weight-style/${voice}` } : {}) },
+          bind: { ...bindBase, fontWeight: `weight/${coreKey}`, ...(coreStyleName ? { fontStyle: `weight-style/${coreKey}` } : {}) },
           literal: { ...litBase, ...(coreStyleName ? { styleName: coreStyleName } : {}) },
         });
         // the SIBLING weight variants. The DISPLAY name mirrors whatever the core shows: a plain
@@ -7837,7 +7858,7 @@ function stylePlans({ families = [], scale = null, include = {} } = {}) {
           texts.push({
             name: (coreLabel ? `${voice}/${stepSlug}/• ${coreLabel}` : `${voice}/${stepSlug}`) + "/single",
             voice, step,
-            bind: { ...singleBindBase, fontWeight: `weight/${voice}`, ...(coreStyleName ? { fontStyle: `weight-style/${voice}` } : {}) },
+            bind: { ...singleBindBase, fontWeight: `weight/${coreKey}`, ...(coreStyleName ? { fontStyle: `weight-style/${coreKey}` } : {}) },
             literal: { ...singleLitBase, ...(coreStyleName ? { styleName: coreStyleName } : {}) },
           });
           for (const wv of sibs) {
