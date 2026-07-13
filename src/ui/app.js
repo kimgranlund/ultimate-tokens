@@ -4526,43 +4526,53 @@ class HctApp extends HTMLElement {
     const scale = this._activeTypeScale();
     const treatment = TYPE_TREATMENTS.find((t) => t.id === cfg.treatment) || TYPE_TREATMENTS[0];
     const opts = [...BUNDLED_FONTS, "system-ui", "Georgia", "Arial"]; // bundled families + a few common system ones
+    // seenStates feeds the legend below — a dot's title tooltip carries the full explanation per row, so
+    // the legend only needs to spell out the states actually present this render (an all-"ok" scale, the
+    // common case for a bundled treatment, shows no legend at all).
+    const seenStates = new Map();
+    const rows = Object.keys(scale.categories).map((cName) => {
+      const role = scale.roleOf[cName];
+      const family = resolvedFontFor(scale, cName);
+      const generic = genericFor(family, role);
+      const custom = !!(cfg.voices && cfg.voices[cName] && cfg.voices[cName].font);
+      const id = "tyfont-" + cName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const st = this._fontStatus(family);
+      if (st.state !== "ok" && !seenStates.has(st.state)) seenStates.set(st.state, st);
+      return h(
+        "div",
+        { class: "tyi-font-row" },
+        h("label", { class: "tyi-font-role", for: id }, cName),
+        h("input", {
+          id,
+          class: "tyi-font-input",
+          type: "text",
+          list: id + "-list",
+          value: family,
+          placeholder: treatment.fonts[role],
+          "aria-label": cName + " font family",
+          "data-fk": "tyfont:" + cName,
+          title: custom ? "Custom family — exports as-is; the web-app specimen loads it from Google Fonts (falls back if it isn't a Google font)" : "From the " + treatment.label + " treatment",
+          style: `font-family:'${family}', ${generic}`,
+          onchange: (e) => this._setTypeVoiceFont(cName, e.target.value),
+        }),
+        h("datalist", { id: id + "-list" }, ...opts.map((f) => h("option", { value: f }))),
+        h("i", { class: "tyi-font-dot is-" + st.state, title: st.title, "aria-label": st.label, "data-fk": "tyfontbadge:" + cName }),
+      );
+    });
     return h(
       "div",
       { class: "insp-body" },
       h("h3", { class: "insp-title" }, icon("type"), "Fonts"),
       h("div", { class: "insp-sub" }, "Pick a bundled font or type any family for each voice."),
       this._fontsPanelSideEffects(),
-      h(
-        "div",
-        { class: "tyi-fonts" },
-        ...Object.keys(scale.categories).map((cName) => {
-          const role = scale.roleOf[cName];
-          const family = resolvedFontFor(scale, cName);
-          const generic = genericFor(family, role);
-          const custom = !!(cfg.voices && cfg.voices[cName] && cfg.voices[cName].font);
-          const id = "tyfont-" + cName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-          return h(
+      h("div", { class: "tyi-fonts" }, ...rows),
+      seenStates.size
+        ? h(
             "div",
-            { class: "tyi-font-row" },
-            h("label", { class: "tyi-font-role", for: id }, cName),
-            h("input", {
-              id,
-              class: "tyi-font-input",
-              type: "text",
-              list: id + "-list",
-              value: family,
-              placeholder: treatment.fonts[role],
-              "aria-label": cName + " font family",
-              "data-fk": "tyfont:" + cName,
-              title: custom ? "Custom family — exports as-is; the web-app specimen loads it from Google Fonts (falls back if it isn't a Google font)" : "From the " + treatment.label + " treatment",
-              style: `font-family:'${family}', ${generic}`,
-              onchange: (e) => this._setTypeVoiceFont(cName, e.target.value),
-            }),
-            h("datalist", { id: id + "-list" }, ...opts.map((f) => h("option", { value: f }))),
-            (() => { const st = this._fontStatus(family); return h("span", { class: "tyi-font-badge is-" + st.state, title: st.title, "data-fk": "tyfontbadge:" + cName }, st.label); })(),
-          );
-        }),
-      ),
+            { class: "tyi-font-legend" },
+            ...[...seenStates.values()].map((st) => h("span", { class: "tyi-font-legend-item", title: st.title }, h("i", { class: "tyi-font-dot is-" + st.state }), st.label)),
+          )
+        : false,
       h("p", { class: "insp-sub tyi-future" }, "Custom families export in the CSS / DTCG / Figma tokens. In the web app the specimen loads each face from Google Fonts on demand; a face that isn't a Google font (or the Figma plugin, which stays offline) falls back to the closest generic."),
     );
   }
