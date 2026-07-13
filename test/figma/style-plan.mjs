@@ -83,12 +83,21 @@ const plans = stylePlans({ families, scale });
   // a voice with NO configured siblings (only Display + Body have `weights` in this fixture) stays bare.
   const bareCore = plans.texts.find((t) => t.voice === "Headline" && t.step === "MD");
   ok(!!bareCore && bareCore.name === "Headline/md", "a voice with no siblings keeps the bare Voice/step name");
-  ok(plans.texts.every((t) => /^[A-Za-z-]+\/[a-z0-9]+(\/[a-z0-9-]+)?$/.test(t.name)), "every text style name is Voice/lowerstep[/lower-kebab-slug]");
+  ok(plans.texts.every((t) => /^[A-Za-z-]+\/[a-z0-9]+(\/[a-z0-9-]+)?(\/single)?$/.test(t.name)), "every text style name is Voice/lowerstep[/lower-kebab-slug][/single]");
   // volume: 33 steps (11 voices × 3, since the 2026-07-13 fixed-size rewrite) × (1 core + siblings on 2
-  // voices) — renaming the core doesn't change the COUNT.
+  // voices) — renaming the core doesn't change the COUNT — plus a `/single` sibling of every Body/Label
+  // style (core + configured weights), the single-line-variant text styles.
   const stepCount = Object.values(scale.categories).reduce((a, s) => a + Object.keys(s).length, 0);
-  const expected = stepCount + (scale.weights.Display.length * Object.keys(scale.categories.Display).length) + (scale.weights.Body.length * Object.keys(scale.categories.Body).length);
+  const singleLineExtra = ["Body", "Label"].reduce((a, v) => a + Object.keys(scale.categories[v]).length * (1 + ((scale.weights && scale.weights[v]) || []).length), 0);
+  const expected = stepCount + (scale.weights.Display.length * Object.keys(scale.categories.Display).length) + (scale.weights.Body.length * Object.keys(scale.categories.Body).length) + singleLineExtra;
   ok(plans.texts.length === expected, `text style count ${plans.texts.length} != expected ${expected}`);
+  // every Body/Label style gets exactly one /single sibling; no other voice does.
+  const singles = plans.texts.filter((t) => t.name.endsWith("/single"));
+  ok(singles.length === singleLineExtra && singles.every((t) => t.voice === "Body" || t.voice === "Label"), `only Body/Label carry a /single variant (got ${singles.length} singles, voices: ${[...new Set(singles.map((t) => t.voice))].join(",")})`);
+  const bodySingle = plans.texts.find((t) => t.name === "Body/md/regular/single");
+  ok(!!bodySingle && bodySingle.literal.lineHeight === bodySingle.literal.size && !bodySingle.bind.lineHeight, "Body's /single style: literal lineHeight = size, UNBOUND (Body has no singleLineHeight variable — it's prose)");
+  const labelBare = stylePlans({ families, scale: typeScale({ treatment: "product" }) }).texts.find((t) => t.name === "Label/md/single");
+  ok(!!labelBare && labelBare.bind.lineHeight === "Label/MD/singleLineHeight", "Label's /single style BINDS live to its real singleLineHeight variable (Label is a box voice)");
 }
 
 // ── include gates + determinism + identity ──

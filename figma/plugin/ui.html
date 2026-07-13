@@ -7679,6 +7679,10 @@ __M.stylePlan = (function(){
 const { semanticRoles } = __M.semantic;
 const { weightNameFor, resolvedFontFor } = __M.type;
 
+// SINGLE_LINE_VOICES — voices that additionally get a `/single` text-style sibling (1.0 leading —
+// line-height = size) alongside their normal multi-line style, per step and per configured weight.
+const SINGLE_LINE_VOICES = new Set(["Body", "Label"]);
+
 // styleGroupOf — the ratified paint-style sub-folder for a role key: the 7 scrim roles under scrims/,
 // the surface + container ladders under surfaces/, everything else flat under the family.
 function styleGroupOf(key) {
@@ -7754,6 +7758,32 @@ function stylePlans({ families = [], scale = null, include = {} } = {}) {
             bind: { ...bindBase, fontStyle: `weight-style/${voice}/${wv.slug}`, fontWeight: `weight/${voice}/${wv.slug}` },
             literal: { ...litBase, styleName: wv.name, weight: wv.weight },
           });
+        }
+        // SINGLE-LINE variants (Body/Label only) — a `/single` sibling of every style above (core + each
+        // configured weight), same font/size/tracking, but 1.0 leading (line-height = size, no multi-line
+        // reading rhythm). `singleLineHeight` only exists as engine DATA on the BOX voices (Label/Code/
+        // Kicker) — Label binds live to that Figma variable; Body has no such variable (it's prose), so
+        // its single-line lineHeight is a LITERAL (size, unbound) — the plan's own bind-or-literal-
+        // fallback pattern, not a special case.
+        if (SINGLE_LINE_VOICES.has(voice)) {
+          const singleLineHeight = s.singleLineHeight ?? s.size;
+          const singleBindBase = { ...bindBase, ...(s.singleLineHeight != null ? { lineHeight: `${voice}/${step}/singleLineHeight` } : {}) };
+          if (s.singleLineHeight == null) delete singleBindBase.lineHeight; // no live variable for Body — literal only
+          const singleLitBase = { ...litBase, lineHeight: singleLineHeight };
+          texts.push({
+            name: (coreWeightName ? `${voice}/${stepSlug}/${coreWeightName.slug}` : `${voice}/${stepSlug}`) + "/single",
+            voice, step,
+            bind: { ...singleBindBase, fontWeight: `weight/${voice}`, ...(coreStyleName ? { fontStyle: `weight-style/${voice}` } : {}) },
+            literal: { ...singleLitBase, ...(coreStyleName ? { styleName: coreStyleName } : {}) },
+          });
+          for (const wv of sibs) {
+            texts.push({
+              name: `${voice}/${stepSlug}/${wv.slug}/single`,
+              voice, step,
+              bind: { ...singleBindBase, fontStyle: `weight-style/${voice}/${wv.slug}`, fontWeight: `weight/${voice}/${wv.slug}` },
+              literal: { ...singleLitBase, styleName: wv.name, weight: wv.weight },
+            });
+          }
         }
       }
     }
