@@ -3282,7 +3282,7 @@ function typeTokensCSS(scale, { unit = "px", prefix = "type" } = {}) {
   lines.push(typeVarLines(scale, "  ", unit, prefix));
   lines.push("}");
   for (const [cName, steps] of Object.entries(scale.categories)) {
-    // every voice's utility classes bind to its own --font-voice-* prop (now emitted for all 11,
+    // every voice's utility classes bind to its own --font-voice-* prop (now emitted for all 13,
     // not just overridden ones — TKT-0006) — one point of truth per voice, same resolved value
     // either way.
     const fontVar = `--font-voice-${kebab(cName)}`;
@@ -3572,11 +3572,12 @@ function buildSize(rawHeight, density, fontOverride) {
 //
 // COMPOSITION with typography: pass `opts.typeScale` (a resolved `typeScale(...)`) and each size's text
 // `font` comes from the type scale's Label voice (renamed from "UI" 2026-07-13) at the MATCHING step —
-// SM/MD/LG only, since every type voice is now a fixed 3-step ramp (was XS..2XL, 6 of geometry's 8 steps
+// SM/MD/LG only, since every type voice is now a fixed 3-step ramp (was XS..2XL, 3 of geometry's 6 steps
 // matched) — instead of the standalone power law, so the box (geometry) and the text in it (typography)
-// share one source of truth where a step exists. Geometry's XS and the expressive band (LG·XL·2XL) have
-// no Label counterpart anymore, so THOSE fall back to the standalone power law (buildSize's null-check —
-// an intentional, pre-existing fallback, not new). `caret = font` and `gap = font/2` follow; the FRAME
+// share one source of truth where a step exists. Geometry's XS, XL, and 2XL (the compact floor plus the
+// expressive band's top two — LG itself still matches, being the third of SM/MD/LG) have no Label
+// counterpart anymore, so THOSE THREE fall back to the standalone power law (buildSize's null-check — an
+// intentional, pre-existing fallback, not new). `caret = font` and `gap = font/2` follow; the FRAME
 // (height/icon/pad/radius) is untouched, so the centering law still holds. `typed` reports whether the
 // fonts came from the type scale.
 // `opts.overrides` (optional) — a flat per-size HEIGHT override map keyed "<sizeName>", already mode-selected

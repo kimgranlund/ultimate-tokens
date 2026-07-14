@@ -530,7 +530,7 @@ export function typeTokensCSS(scale, { unit = "px", prefix = "type" } = {}) {
   lines.push(typeVarLines(scale, "  ", unit, prefix));
   lines.push("}");
   for (const [cName, steps] of Object.entries(scale.categories)) {
-    // every voice's utility classes bind to its own --font-voice-* prop (now emitted for all 11,
+    // every voice's utility classes bind to its own --font-voice-* prop (now emitted for all 13,
     // not just overridden ones — TKT-0006) — one point of truth per voice, same resolved value
     // either way.
     const fontVar = `--font-voice-${kebab(cName)}`;
