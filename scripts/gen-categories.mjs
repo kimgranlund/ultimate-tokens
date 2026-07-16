@@ -236,7 +236,13 @@ function buildCategory(doc) {
       const direct = Array.isArray(p.palettes) && p.palettes.length ? p.palettes : null;
       const dom = (p.swatches || []).find((s) => s.hier === "d");
       const stripHex = dom ? String(dom.hex).toUpperCase() : direct ? String(p.dominantHex || "").toUpperCase() : null;
-      if (pi === 0 && stripHex) strip.push(stripHex); // one dominant per volume → the card strip
+      // one dominant swatch per VOLUME → the hub-tile card strip — for the usual 12-volume categories
+      // that's `pi === 0` (the volume's first palette). A single-volume category (Brands: 1 volume ×
+      // 7 curated palettes) has no "one per volume" to sample, which collapsed its strip to ONE swatch
+      // (a solid color block instead of a multi-hue preview) — so a lone volume samples every palette
+      // in it instead, giving a representative strip across its actual items.
+      const takeForStrip = (doc.volumes || []).length > 1 ? pi === 0 : true;
+      if (takeForStrip && stripHex) strip.push(stripHex);
       presets.push({
         // the tile/set name is the KICKER (a clean structured label, e.g. "59° N · January · Lake
         // Baikal corridor"); the long evocative `title` lives in story.title (Story tab + per-color line).
