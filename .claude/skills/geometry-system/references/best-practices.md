@@ -48,9 +48,11 @@ composition history.
   `composed.height === standalone.height && composed.padding === standalone.padding` for every step, **and** the
   law still holds on the composed scale. If you let the type scale influence `height`/`icon`/`padding`, the box
   would jump when the brand's type treatment changed, and the law could break. Keep the override surgical.
-- **The join is `opts.typeScale.categories.UI`, matched by step name.** Geometry reads the UI voice
-  (`uiSteps[name].size`) for XS…2XL. The UI category's `STEPS_UI` is a superset (it also has 3XS/2XS) — geometry
-  matches by name and ignores the extras. Don't assume index alignment; key on the name.
+- **The join is `opts.typeScale.categories["UI-control"]`, matched by step name.** Geometry reads the
+  UI-control voice (`uiSteps[name].size`) for XS…2XL — since TKT-0008 the voice rides the full 6-step ramp,
+  so every geometry step composes; a step the voice lacks falls back to `round(CONTROL_FONT[name] × factor)`
+  (`{XS:12, SM:13, MD:15, LG:16, XL:18, 2XL:20}`), and `opts.fontOverrides` wins over both. Don't assume
+  index alignment; key on the name.
 - **The production caller is `model.mjs`'s `geometryScale(doc)`** — that is the ONE place the two engines are
   joined for the app/brandKit/exports, and `npm test`'s UI headless-boot suite gates it directly (it asserts
   the composed/brandKit `font` tracks the type UI voice). `geomScale(config)` with no opts is the pure
@@ -81,20 +83,22 @@ guards):
 
 1. **Started from the standalone ramp.** `buildSize` derived `font = round(3.16·height^0.45)` — a self-contained
    power law. Good for a geometry-only export, but the control text then ignored the brand's actual typography.
-2. **Added a surgical override, not a rewrite.** `buildSize` grew an optional `fontOverride` param; when present
-   it replaces *only* `font`. `caret = font` and `gap = font/2` follow for free. Nothing else in `buildSize`
-   touched — the frame derivations (`icon`, `padding`, `edgePadding`, `radiusPill`, `minWidth`) are computed the
-   same way regardless, so the centering law is preserved by construction.
-3. **Wired the source in `geomScale`.** `opts.typeScale.categories.UI` → `uiSteps[name].size` fed as the override
-   per step (XS→UI XS … 2XL→UI 2XL). Added the `typed` flag so the scale self-reports whether it's composed.
+2. **Added a surgical override, not a rewrite.** `buildSize` grew an optional font param; when present
+   it replaces *only* `font`. `gap = font/2` follows for free (`caret` keeps its OWN power law, `3.5·h^0.39` —
+   never composed). Nothing else in `buildSize` touched — the frame derivations (`icon`, `padding`,
+   `edgePadding`, `radiusPill`, `minWidth`) are computed the same way regardless, so the centering law is
+   preserved by construction.
+3. **Wired the source in `geomScale`.** `opts.typeScale.categories["UI-control"]` → `uiSteps[name].size` fed
+   as the composed size per step (XS→UI-control XS … 2XL→2XL; TKT-0008 rerouted the join off the retired
+   UI/Label voice, and the interim `typed` self-report flag was removed with it).
 4. **Joined the two engines in ONE place.** `model.mjs` `geometryScale(doc) = geomScale(doc.geometry,
    { typeScale: typeScale(doc.type) })`. Every caller (brandKit, the Geometry section, exports) goes through it,
    so a brand's type-treatment or `bodyBase` change moves the control text everywhere it's used.
 5. **Pinned the invariant with TWO gates, not vibes.** The engine's `composition` test block asserts, per step:
-   composed `font === ts.categories.UI[name].size`; `caret` follows; **height + padding (the frame) are
+   composed `font === ts.categories["UI-control"][name].size`; **height + padding (the frame) are
    identical to the standalone scale**; the centering law `padding === (height − icon)/2` still holds on the
-   composed scale; and a larger type `bodyBase` scales the geometry `font` (proving the shared source of truth);
-   `typed` is `true` composed / `false` standalone. The UI headless-boot suite then re-asserts it through the
+   composed scale; a larger type `bodyBase` scales the geometry `font` (proving the shared source of truth);
+   and `fontOverrides` wins over composition. The UI headless-boot suite then re-asserts it through the
    PRODUCTION caller (`geometryScale(doc)` + `brandKit(doc)`), so the join is gated end to end.
 6. **Validated** — `node test/engine/geometry.mjs` (all blocks green), then `npm test` (all 14 files). The
    reference-ramp, centering-law, and two-families gates stayed green because the frame was never touched.

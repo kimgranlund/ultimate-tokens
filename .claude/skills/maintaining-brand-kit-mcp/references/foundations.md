@@ -120,9 +120,10 @@ Display/Heading/Body/UI — that is documentation, not the data shape.)
 LG, XL, 2XL; each `buildSize` row is `{ height, icon, caret, font, gap, padding, edgePadding, radiusPill,
 minWidth }`. `radii` is the ladder `{ none, sm, md, lg, full:9999 }`; `space` is the spacing scale.
 
-The key composition facts the test pins: a size step's **`font` equals the type UI scale's size** at the same
-step (`geo.sizes.MD.font === ty.categories.UI.MD.size`) and the **centering law** holds (`geo.sizes.MD.padding
-=== (geo.sizes.MD.height − geo.sizes.MD.icon) / 2`), with `geo.typed === true`. The server doesn't compute
+The key composition facts the test pins: a size step's **`font` equals the UI-control voice's size** at the
+same step (`geo.sizes.MD.font === ty.categories["UI-control"].MD.size`) and the **centering law** holds
+(`geo.sizes.MD.padding === (geo.sizes.MD.height − geo.sizes.MD.icon) / 2`). (The interim `typed` self-report
+flag was removed with the TKT-0008 UI-control reroute.) The server doesn't compute
 these — `geometryScale(doc)` (`model.mjs:39`) shares the `typeScale` into `geomScale` — but a tool/resource
 change must not break the round-trip. The taxonomy of voices + sizes is owned by `src/engine/type.mjs` /
 `src/engine/geometry.mjs` and the `geometry-system` skill — cite, don't re-derive.

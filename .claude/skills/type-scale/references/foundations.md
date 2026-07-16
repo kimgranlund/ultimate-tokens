@@ -1,7 +1,7 @@
 ## Foundations — the model a type-engine change leans on
 
 The load-bearing ideas. If a change feels like it needs a hand-authored size or a new branch, you are
-probably fighting one of these. The full *why* (the thirteen voices, the fixed-size-table rewrite, the
+probably fighting one of these. The full *why* (the fifteen voices, the fixed-size-table rewrite, the
 target token shape) is owned by `docs/reference/typography/README.md` — this file is only the mental
 model the *procedure* assumes. Sibling-weight ladders, the Figma Styles label vocabulary, and the
 `•`/`-single` naming convention are a SEPARATE axis, owned by `references/weight-ladders-and-labels.md`
@@ -43,26 +43,31 @@ skips a layer.
   `typeTokensFigmaPrimitives`) operate on the resolved `scale` — they never re-run the math, they read
   `scale.categories` / `scale.fonts` / `scale.roleOf` / `scale.weights` / `scale.voiceFonts`.
 
-### 2. The thirteen named voices + the single 3-step ramp
+### 2. The fifteen named voices + the two ramps
 
 The canonical taxonomy (`docs/reference/typography/README.md`, `type.mjs`'s own header comment): **Display
 · Headline · Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label · Label-mono · Kicker ·
-Tiny · Tiny-mono**. Every voice is a UNIFORM 3-step ramp — **SM · MD · LG** — there is no longer a
-per-voice step count (the old `STEPS_3`/`STEPS_5`/`STEPS_UI` split, 3/5/8 steps by voice, is retired along
-with the modular scale, 2026-07-13). `RANKS = ["SM","MD","LG"]` is the one ramp every voice rides.
+Tiny · Tiny-mono · UI-control · UI-widget** (the two INTERACTIVE voices joined 2026-07-16, TKT-0008).
+Thirteen voices ride the uniform 3-step ramp — **SM · MD · LG** (`RANKS`); UI-control and UI-widget ride
+the full **XS..2XL** 6-step ramp (`RANKS6`) — `ranksFor(sizeKey)` picks by the voice's `SIZES` entry
+length, and `cat()` anchors each voice's base on its MD step. There is no other per-voice step count (the
+old `STEPS_3`/`STEPS_5`/`STEPS_UI` split, 3/5/8 steps by voice, stays retired along with the modular
+scale, 2026-07-13).
 
 **`roleOf`** comes from each `cat`'s first arg: Display→`display`; Headline, Sub-heading, Title→`heading`;
-Lead, Body→`body`; Label, Tiny→`ui`; Body-mono, Label-mono, Kicker, Tiny-mono, **and Sub-title**→`mono`
-(five voices share the mono role — Sub-title rides the mono FONT as a small alternate-face heading, not a
-control label). The emitters use `roleOf` to point each voice's CSS/DTCG at the right `--font-{role}`.
+Lead, Body→`body`; Label, Tiny, UI-control, UI-widget→`ui`; Body-mono, Label-mono, Kicker, Tiny-mono,
+**and Sub-title**→`mono` (five voices share the mono role — Sub-title rides the mono FONT as a small
+alternate-face heading, not a control label). The emitters use `roleOf` to point each voice's CSS/DTCG at
+the right `--font-{role}`.
 
 **The `box` flag (flow ≠ font).** A per-voice `box` field decouples the presentation FLOW from the font
-role. It DEFAULTS from the role (`ui`/`mono` ⇒ `box:true`), overridden `false` for **Sub-title, Tiny, and
-Tiny-mono** — they ride a box-default role but are PROSE (a small heading, and a former-Caption prose
-voice, respectively). The actual BOX voices (control/label text — emit `singleLineHeight`, flat
-1.0×size paragraph rhythm) are exactly **Label · Body-mono · Label-mono · Kicker**; every other voice
-(the other nine) is PROSE (wraps, no single-line height, reading paragraph factor). `singleLineHeight`
-and the paragraph factor key on `box`, not on `role === "ui"||"mono"` (see §3).
+role. It DEFAULTS from the role (`ui`/`mono` ⇒ `box:true`), overridden `false` for **Sub-title, Tiny,
+Tiny-mono, Label, Body-mono, and Label-mono** — they ride a box-default role but are PROSE. Since
+2026-07-16 (TKT-0008 single-line-ownership follow-up) the BOX voices (single-line text — emit
+`singleLineHeight`, flat 1.0×size paragraph rhythm) are exactly **Kicker · UI-control · UI-widget**;
+every other voice (the other twelve) is PROSE (wraps, no single-line height, reading paragraph factor).
+Label is the STATIC label voice (may wrap); interactive single-line text belongs to the UI voices.
+`singleLineHeight` and the paragraph factor key on `box`, not on `role === "ui"||"mono"` (see §3).
 
 **The mono-alias groups** — Body-mono aliases Body's own SM/MD/LG triplet, Label-mono and Kicker both
 alias Label's, Tiny-mono aliases Tiny's: every `-mono` voice (and Kicker) is the SAME size register as its
@@ -139,7 +144,7 @@ singleLineHeight = size                                # BOX voices ONLY
   Regular/Medium/Semi-bold face mapping for body-class voices, the `•`/`-single` naming convention). Don't
   duplicate that model here.
 - **Per-voice FONT override (`config.voices[v].font`, TKT-0002)** — the escape hatch off the five shared
-  roles: any of the 13 voices may carry its own family instead of riding its role's default (e.g.
+  roles: any of the 15 voices may carry its own family instead of riding its role's default (e.g.
   Sub-heading no longer forced to share Headline's font). `resolvedFontFor(scale, voice)` is the ONE
   resolution point — every emitter and the Figma style planner call it, never `scale.fonts[role]` directly,
   so an override can never be silently bypassed by a new call site. Identity-gated like the other channels:

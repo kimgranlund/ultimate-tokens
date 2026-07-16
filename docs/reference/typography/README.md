@@ -47,9 +47,10 @@ treatments (previously each voice derived from its own `base × ratio^step`, wit
 | **UI-control** | ui | sentence | small positive (optical) |
 | **UI-widget** | ui | sentence | small positive (optical) |
 
-45 steps in all (15 voices × 3). UI-control (buttons/inputs/selects) and UI-widget (tags/badges/
+51 steps in all (13 voices × 3 + the 2 interactive voices × 6 — UI-control and UI-widget ride the
+full XS..2XL ramp, 2026-07-16). UI-control (buttons/inputs/selects) and UI-widget (tags/badges/
 switches — compact widgets) are the interactive-text voices (TKT-0008): Label-like character, box
-voices, and UI-control composes into geometry's control ramp (`font` at SM/MD/LG). Each treatment supplies the font palette + a few character knobs (a
+voices, and UI-control composes into geometry's control ramp (`font` at every step, XS..2XL). Each treatment supplies the font palette + a few character knobs (a
 shared `makeVoices()` factory); the FIXED SIZES table gives every step's size; the engine still
 derives leading, optical tracking, weight, and case per treatment. Body-mono, Label-mono, Tiny-mono,
 and Kicker all use the mono role, aliasing their non-mono sibling's own size triplet (same numbers,
@@ -82,10 +83,10 @@ now a fixed literal table (`SIZES` in `src/engine/type.mjs`); the rest still der
   - **body — 1.5** · **lead — 1.4** · **sub-title — 1.3** · **tiny · tiny-mono — 1.5**
   - **kicker — 1.4** · **body-mono — ~1.5** · **label-mono — 1.4**
   - **label — ~1.4** (the one voice that keeps a small per-treatment lever, `1.35–1.45`)
-- **Single-line Height** = `size × 1.0` — the control-text height, emitted on the **box** voices only
-  (**Label · Body-mono · Label-mono · Kicker**). Keyed on a per-voice `box` flag, not the role — so
-  Tiny/Tiny-mono/Sub-title, which ride the ui/mono FONT but are prose (`box:false`), do NOT get a
-  single-line height.
+- **Single-line Height** = `size × 1.0` — the single-line text height, emitted on the **box** voices only
+  (**Kicker · UI-control · UI-widget** — since 2026-07-16; Label/Body-mono/Label-mono are prose). Keyed
+  on a per-voice `box` flag, not the role — so Tiny/Tiny-mono/Sub-title/Label/Body-mono/Label-mono,
+  which ride the ui/mono FONT but are prose (`box:false`), do NOT get a single-line height.
 - **Weight** ramps by role — Display `700` (`900` Brutalist), Headline `620–800`, Sub-heading · Kicker
   `~500–700`, Title `650`, Sub-title `500`, Lead `400` (`300` Luxury), Body `440`, Body-mono `460`,
   Label `480`, Label-mono `480`, Tiny `440`, Tiny-mono `440`.

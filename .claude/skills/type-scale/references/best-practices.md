@@ -61,7 +61,7 @@ The non-obvious do/don'ts (each a real trap in this engine), then a worked walkt
 ### Treatments + voices come as complete sets
 
 - **A new treatment must pass the full `fonts` palette** (`display/heading/body/ui/mono` — five roles) and
-  call `makeVoices` so all thirteen voices resolve — the test pins every treatment has them + `fonts`, and
+  call `makeVoices` so all fifteen voices resolve — the test pins every treatment has them + `fonts`, and
   `roleOf` needs every role's family present (note `technical` + `editorial` point `fonts.ui` at JetBrains
   Mono — `ui` and `mono` can share a family). Supply `note` too; the UI specimen reads it. A treatment
   differs in CHARACTER only — never add a per-treatment size/ratio knob back in; that's the exact thing
@@ -73,8 +73,8 @@ The non-obvious do/don'ts (each a real trap in this engine), then a worked walkt
   - the **`persist.js` VOICES allowlist** — the one FUNCTIONAL landmine: a voice absent here has its
     per-voice overrides **silently dropped on hydrate** (the allowlist must track `makeVoices`'s voices);
   - the **`styles.css` `.ty-s0…N` series colours** — one per voice, in order (the analysis-chart strokes);
-  - the **count literals** in `test/engine/type.mjs` (`GROUPS`, the "13 voices" / "39 steps" asserts) and
-    `test/ui/headless-boot.mjs` (**39 steps / 13 groups** — 13 voices × the uniform 3-step ramp);
+  - the **count literals** in `test/engine/type.mjs` (`GROUPS`, the per-voice ramp asserts) and
+    `test/ui/headless-boot.mjs` (**51 steps / 15 groups** — 13 voices × 3 + the 2 interactive voices × 6);
   - the **`test/smoke/smoke.mjs`** Typography-section count — **Chrome-only, so `npm test` won't catch
     it; only CI's smoke leg does** (the classic Safari-blind-spot trap in reverse — a green local gate can
     still red the smoke leg on a stale count);
@@ -117,7 +117,7 @@ The pattern behind moving from a modular scale to a hand-authored fixed table:
 4. **Retired per-voice `ratio`/`steps` entirely** — every voice now rides the uniform SM/MD/LG ramp; the
    old 3/5/8-step split (`STEPS_3`/`STEPS_5`/`STEPS_UI`) had no meaning once size stopped deriving from an
    exponent.
-5. **Validated** — `node test/engine/type.mjs` (green: 13 voices × the uniform 3-step ramp, `roleOf`, the
+5. **Validated** — `node test/engine/type.mjs` (green: 15 voices on their per-voice ramps, `roleOf`, the
    box/prose split, the fixed-size-table exact-passthrough assert, the nice-ladder-only-when-scaled assert,
    the quoting guard, DTCG composite, sibling weights, per-voice font overrides — prints `type PASS`), then
    `npm test`. For a font change, also ran `npm run gen:type-fonts`, committed `src/ui/type-fonts.js`, and

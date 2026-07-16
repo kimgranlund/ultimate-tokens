@@ -24,7 +24,7 @@ config {treatment, baseHeight}
       radiusPill  = round(height/2)        # the one size-linked radius
       minWidth    = height                 # the 1:1 square floor
   → radii (ladder per radiusStyle) · space (SPACE_STEPS × spaceBase)
-  → { treatment, label, density, radiusStyle, baseHeight, typed, sizes, radii, space }
+  → { treatment, label, density, radiusStyle, baseHeight, sizes, radii, space }
 ```
 
 `buildSize` is where the law lives. `geomScale(config, opts)` resolves the treatment, applies `factor`, and
@@ -54,7 +54,7 @@ var(--size-{s}-radius)` (the pill). The test's `centering-law` block asserts `pa
 | Family | Scales with | Members | Density |
 |---|---|---|---|
 | **Frame** | the box **height** | `icon`, slot `padding`, `edgePadding`, `minWidth`, `radiusPill` | **density-invariant** |
-| **Rhythm** | the **font** | `gap = font/2`, `caret = font` | density **multiplies the rhythm only** |
+| **Rhythm** | the **font** | `gap = font/2` (caret rides its own height law) | density **multiplies the rhythm only** |
 
 `density` (a treatment property: comfortable 1 · compact 0.75 · spacious 1.25 · touch 1.1 · pill 1) multiplies
 **`gap` and only `gap`** — `gap = max(1, round((font/2)·density))`. It is deliberately kept out of the frame:
@@ -76,24 +76,27 @@ occupies a *shrinking fraction* of the box as the box grows, so big controls don
 icons):
 
 ```
-icon = 2.49 · height^0.58   (round to nearest EVEN — roundEven)
-font = 3.16 · height^0.45   ≈ √height   (round to nearest int)
-caret = font
+icon  = 2.49 · height^0.58   (round to nearest EVEN — roundEven)
+caret = 3.5  · height^0.39   (round to nearest int — its OWN law since 2026-07-15; the old
+                              "caret = font" rule is retired, and caret is NEVER composed)
+font  = the CONTROL_FONT row {XS:12, SM:13, MD:15, LG:16, XL:18, 2XL:20} × factor standalone
+        (the ratified 2026-07-16 table — no font power law anymore); composed, the UI-control
+        voice's size at the matching step wins, and opts.fontOverrides wins over both
 ```
 
-These reproduce the hand-tuned reference ramp to **±1px**, so the table is not six hand-picked points — it is
-**one rule sampled six times**, and it generalizes to any scaled `baseHeight`. The `reference-ramp` test block
-checks the engine output against the hand table `REF` (icon ±1, font ±1, height exact) and that heights
-strictly increase XS→2XL. The reference ramp (comfortable @ baseHeight 28):
+The glyph rules reproduce the hand-tuned reference ramp to **±1px**, so the table is not six hand-picked
+points — it is **one rule sampled six times**, and it generalizes to any scaled `baseHeight`. The
+`reference-ramp` test block checks the engine output against the hand table `REF` (icon ±1, height exact)
+and that heights strictly increase XS→2XL. The reference ramp (comfortable @ baseHeight 28, standalone):
 
 | size | height | icon | caret | font | pad (slot) | edge (slotless) | radius (pill) |
 |---|---|---|---|---|---|---|---|
-| **XS** | 20 | 14 | 12 | 12 | 3 | 10 | 10 |
-| **SM** | 24 | 16 | 13 | 13 | 4 | 12 | 12 |
-| **MD** | 28 | 18 | 14 | 14 | 5 | 14 | 14 |
-| **LG** | 36 | 20 | 16 | 16 | 8 | 18 | 18 |
-| **XL** | 48 | 24 | 18 | 18 | 12 | 24 | 24 |
-| **2XL** | 64 | 28 | 21 | 21 | 18 | 32 | 32 |
+| **XS** | 20 | 14 | 11 | 12 | 3 | 10 | 10 |
+| **SM** | 24 | 16 | 12 | 13 | 4 | 12 | 12 |
+| **MD** | 28 | 18 | 13 | 15 | 5 | 14 | 14 |
+| **LG** | 36 | 20 | 14 | 16 | 8 | 18 | 18 |
+| **XL** | 48 | 24 | 16 | 18 | 12 | 24 | 24 |
+| **2XL** | 64 | 28 | 18 | 20 | 18 | 32 | 32 |
 
 `roundEven` (`2·round(v/2)`) is used for **height and icon** — even pixel sizes keep glyphs crisp and slot pads
 integral. `font`/`caret` use plain `round`.
@@ -109,29 +112,30 @@ export function geometryScale(doc) {
 }
 ```
 
-Inside `geomScale`, when `opts.typeScale` is supplied, it reads `opts.typeScale.categories.UI` and passes
-`uiSteps[name].size` as the `fontOverride` to `buildSize` for each step — geometry `XS → UI XS … 2XL → UI 2XL`.
-So each size's `font` becomes the brand's **Typography UI voice** at the matching step instead of the standalone
-power law. Then `caret = font` and `gap = font/2` follow automatically.
+Inside `geomScale`, when `opts.typeScale` is supplied, it reads `opts.typeScale.categories["UI-control"]` and
+passes `uiSteps[name].size` as the composed font to `buildSize` for each step — geometry `XS → UI-control XS …
+2XL → 2XL` (the voice rides the full 6-step ramp since TKT-0008, so every step composes; a missing step falls
+back to `round(CONTROL_FONT[name] × factor)`, and `opts.fontOverrides` wins over both). So each size's `font`
+becomes the brand's **UI-control voice** at the matching step. `gap = font/2` follows automatically; `caret`
+keeps its own height law (never composed).
 
 Critically: **the FRAME is untouched** by composition. `fontOverride` only replaces `font` (a rhythm member);
 `height`/`icon`/`padding`/`edgePadding`/`radiusPill`/`minWidth` are all computed before/around it, so the
 centering law `padding === (height − icon)/2` **still holds on the composed scale**. The `composition` test
-block proves all of this: composed `font === ts.categories.UI[name].size`, `caret` follows, height + padding
-are **identical** to the standalone scale, the law still holds, and a bigger type `bodyBase` scales the control
-`font` (shared source of truth). The `typed` flag on the returned scale reports whether the fonts came from the
-type scale (`true` composed, `false` standalone).
+block proves all of this: composed `font === ts.categories["UI-control"][name].size`, height + padding
+are **identical** to the standalone scale, the law still holds, a bigger type `bodyBase` scales the control
+`font` (shared source of truth), and `fontOverrides` wins over composition. (The interim `typed` self-report
+flag was removed with the TKT-0008 reroute.)
 
-> The UI category uses `STEPS_UI` (3XS·2XS·XS·SM·MD·LG·XL·2XL) — a **superset** of geometry's six steps. The
-> join matches by name (`uiSteps && uiSteps[name]`), so geometry picks XS…2XL out of it and ignores 3XS/2XS.
-> The pure `geomScale(config)` with no `opts` keeps the standalone power-law `font` (the spec sample is that
-> pure output). `model.mjs`'s `geometryScale(doc)` is the **production caller** — and it IS exercised by
-> `npm test`: the UI headless-boot suite (`test/ui/headless-boot.mjs` — grep the `// COMPOSITION:` comment
-> block and its `(geo)` composed-font asserts) imports `geometryScale`,
-> resolves it for the live doc, and asserts the composed `font === typeScale(...).categories.UI.MD.size`, the
-> centering law on the resolved scale, AND that `brandKit(doc).geometry` shares that same UI font (one source
-> of truth, all the way to the MCP). So both layers are gated — the engine's own `composition` block in
-> `test/engine/geometry.mjs` and the production join in the UI suite.
+> The UI-control voice rides `RANKS6` (XS·SM·MD·LG·XL·2XL) — exactly geometry's six steps. The join matches
+> by name (`uiSteps && uiSteps[name]`), never by index. The pure `geomScale(config)` with no `opts` rides the
+> CONTROL_FONT row standalone (the spec sample is that pure output). `model.mjs`'s `geometryScale(doc)` is
+> the **production caller** — and it IS exercised by `npm test`: the UI headless-boot suite
+> (`test/ui/headless-boot.mjs` — grep the `(geo)` composed-font asserts) imports `geometryScale`,
+> resolves it for the live doc, and asserts the composed `font === typeScale(...).categories["UI-control"].MD.size`,
+> the centering law on the resolved scale, AND that `brandKit(doc).geometry` shares that same UI-control font
+> (one source of truth, all the way to the MCP). So both layers are gated — the engine's own `composition`
+> block in `test/engine/geometry.mjs` and the production join in the UI suite.
 
 ### 6. TREATMENTS, RADIUS LADDERS, SPACE — three separate concerns
 
