@@ -30,10 +30,10 @@ The `mono`/`ui`-role BOX voices — **Label, Body-mono, Label-mono, and Kicker**
   locked in a box (buttons, inputs, cells, a kicker overline) so the box height is exact and
   doesn't grow.
 
-The reading voices (display, headline, sub-heading, title, sub-title, lead, body, tiny, tiny-mono)
-have only `-line` (they're read as multi-line runs) — this includes `sub-title`, `tiny`, and
-`tiny-mono`, which ride the `mono`/`ui` FONT roles like the box voices do, but are prose flow
-(box:false), not control text. Reach for `-line-single` on a Label/Body-mono/Label-mono/Kicker
+The reading voices (display, headline, sub-heading, title, sub-title, lead, body, body-mono, label,
+label-mono, tiny, tiny-mono) have only `-line` (they're read as multi-line runs) — this includes
+`label` and the monos, which ride the `mono`/`ui` FONT roles like the box voices do, but are prose
+flow (box:false), not single-line text. Reach for `-line-single` on a Kicker/UI-control/UI-widget
 element whose text must not wrap.
 
 ## Paragraph spacing

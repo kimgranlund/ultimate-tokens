@@ -39,8 +39,9 @@ is a derivation, not a fit. The `.control-{size}` CSS utility **embodies** it (b
 ## THE TWO FAMILIES — density rides the rhythm, never the frame
 
 **Frame** (`icon`, slot `padding`, `edgePadding`, `minWidth`, `radiusPill`) scales with the box **height** and
-is **density-invariant**; **Rhythm** (`gap = font/2`, `caret = font`) scales with the **font** and is all
-density may touch. The full table: `references/foundations.md` §3.
+is **density-invariant**; **Rhythm** (`gap = font/2`) scales with the **font** and is all density may
+touch (`caret` rides its OWN height law, `3.5·h^0.39` — 2026-07-15, never `= font` and never composed).
+The full table: `references/foundations.md` §3.
 
 `density` (treatment knob: comfortable 1 · compact 0.75 · spacious 1.25 · touch 1.1 · pill 1) multiplies
 **`gap` and only `gap`** (`gap = max(1, round((font/2)·density))`). **Scaling the frame would un-center the
@@ -72,17 +73,22 @@ A control's **box** (geometry) and the **text in it** (typography) share one sou
 geometryScale(doc) = geomScale(doc.geometry, { typeScale: typeScale(doc.type) })
 ```
 
-When `opts.typeScale` is supplied, `geomScale` reads `opts.typeScale.categories.UI` and each step's `font`
-becomes the brand's **UI voice** at the matching step (XS→UI XS … 2XL→UI 2XL) instead of the power law; `caret
-= font` and `gap = font/2` follow. **The FRAME is untouched**, so the centering law still holds; `typed`
-reports it. The pure `geomScale(config)` (no opts) keeps the standalone power-law font. Depth + the worked
-walkthrough: `references/foundations.md` §5 + `references/best-practices.md`.
+When `opts.typeScale` is supplied, `geomScale` reads `opts.typeScale.categories["UI-control"]` and each
+step's `font` becomes the brand's **UI-control voice** at the matching step (XS→UI-control XS … 2XL→2XL —
+all six steps compose since the voice rides the full XS..2XL ramp; TKT-0008 rerouted the join off the old
+UI/Label voice); `caret` keeps its OWN power law (`3.5·h^0.39`, never composed) and `gap = font/2` follows.
+Precedence per step: `opts.fontOverrides` > the composed UI-control size > `round(CONTROL_FONT[name] ×
+factor)` (the ratified fallback row `{XS:12, SM:13, MD:15, LG:16, XL:18, 2XL:20}`). **The FRAME is
+untouched**, so the centering law still holds. The pure `geomScale(config)` (no opts) rides the
+CONTROL_FONT row standalone. Geometry's Figma emitters carry NO font rows — control text lives in the
+type/ UI-voice variables (TKT-0009). Depth + the worked walkthrough: `references/foundations.md` §5 +
+`references/best-practices.md`.
 
 ## Map — what each export owns
 
 | Export (`geometry.mjs`) | Owns |
 |---|---|
-| `geomScale(config={treatment,baseHeight,rampContrast}, opts={typeScale,overrides})` | the resolved scale `{treatment, label, density, radiusStyle, radiusDefault, baseHeight, rampContrast, typed, sizes, radii, space, insets, gaps, borders, focus}` |
+| `geomScale(config={treatment,baseHeight,rampContrast}, opts={typeScale,fontOverrides,overrides})` | the resolved scale `{treatment, label, density, radiusStyle, radiusDefault, baseHeight, rampContrast, sizes, radii, space, insets, gaps, borders, focus}` |
 | `buildSize(rawHeight, density, fontOverride)` | one ramp row — the LAW + the power law live here; `fontOverride` is the composition hook |
 | `GEOMETRY_TREATMENTS` / `DEFAULT_GEOMETRY` | the 5 presets (`comfortable/compact/spacious/touch/pill`) = density + radiusStyle + baseHeight + spaceBase; default `{comfortable, 28}` |
 | `geomTokensCSS` | `:root` custom props + the `.control-{size}` utility that embodies the law |
@@ -133,8 +139,8 @@ npm test                        # the above + ui/figma/exports + smoke gen (node
 
 The verifier asserts the law `padding === (height − icon)/2` **exactly**, the power-law ramp (±1px vs the
 hand table), the two families (density tightens `gap`, NOT `padding`), `baseHeight` scaling, the radius/space
-ladders, all three emitters, and the **composition** (composed `font === typeScale.categories.UI[name].size`,
-the frame untouched, the law still holding, a `bodyBase` change scaling the font). **Don't call it done until
+ladders, all three emitters, and the **composition** (composed `font === typeScale.categories["UI-control"][name].size`,
+the frame untouched, the law still holding, `fontOverrides` winning over composition). **Don't call it done until
 `node test/engine/geometry.mjs` AND `npm test` are green.** Read the test before editing — its comment blocks
 state what each group proves.
 

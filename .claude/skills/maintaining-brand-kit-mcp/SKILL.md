@@ -120,8 +120,8 @@ npm test                      # the above + engine/ui/figma + regenerates mcp-as
 The test exercises the **opt-in contract directly** on the kit projection (not the spawned server):
 `brandKit({color:true})` omits type+geometry, `brandKit({type:true})` omits colour+geometry,
 `brandKit({geometry:true})` omits colour+type. If you add a system-gated surface, add the matching opt-in
-assertion. The composition check (`geo.sizes.MD.font === ty.categories.UI.MD.size`, `geo.typed === true`)
-proves geometry's per-step `font` is the type UI size — **one source of truth**; don't break it. Don't call it
+assertion. The composition check (`geo.sizes.MD.font === ty.categories["UI-control"].MD.size`)
+proves geometry's per-step `font` is the UI-control voice's size — **one source of truth**; don't break it. Don't call it
 done until `node test/mcp/brand-kit.mjs` AND `npm test` are green, and a manual
 `node mcp/brand-kit-server.mjs <kit.json>` prints its banner to **stderr** with nothing on stdout until a
 request arrives.

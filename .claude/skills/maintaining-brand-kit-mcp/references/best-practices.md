@@ -54,9 +54,9 @@ addition history.
   Kicker, Body, UI, Code); `kit.geometry.sizes` rows are `{height, icon, caret, font, gap, padding,
   edgePadding, radiusPill, minWidth}` with the top-level `radii` ladder + `space` scale. Don't pluck or rename
   fields in the server; an agent and the test rely on the full shape (the test reads `ty.categories.Body`,
-  `ty.categories.UI.MD.size`, `geo.sizes.MD.padding/height/icon/font`, `geo.typed`).
-- **The geometry `font` is composed from the type UI scale.** The test pins `geo.sizes.MD.font ===
-  ty.categories.UI.MD.size` and `geo.typed === true` — one source of truth across the two systems. That
+  `ty.categories["UI-control"].MD.size`, `geo.sizes.MD.padding/height/icon/font`).
+- **The geometry `font` is composed from the type UI-control voice.** The test pins `geo.sizes.MD.font`
+  tracks `ty.categories["UI-control"].MD.size` — one source of truth across the two systems. That
   composition is `geometryScale(doc)`'s job (`model.mjs:39`, which passes `{ typeScale }` into `geomScale`); a
   server change must not break the round-trip the test asserts.
 - **The centering law is `padding === (height − icon) / 2`.** The field is `icon` (the server's guide prose
@@ -100,7 +100,7 @@ The change that grew the kit from color-only to three opt-in systems:
    resource entries, plus the "three token systems … Include toggles" framing.
 5. **Extended the test (`test/mcp/brand-kit.mjs`).** Added the opt-in asserts (`brandKit({type:true})` omits
    colour+geometry, etc.), `get_type` (Body voice present), `get_geometry` (the centering law holds on the
-   served MD size), the composition check (`geo.sizes.MD.font === ty.categories.UI.MD.size`, `geo.typed`), and
+   served MD size), the composition check (`geo.sizes.MD.font` tracks the UI voice's MD size), and
    the `resources/list` includes `brand://type` + `brand://geometry`.
 6. **Validated** — `node test/mcp/brand-kit.mjs` green, then `npm test` (regenerating `mcp-assets.js`), then a
    manual `node mcp/brand-kit-server.mjs <geometry-only-kit>.json` to confirm only the geometry surface appears
