@@ -53,7 +53,7 @@ export function kebabWaveVarRenames(currentNames) {
 // kebabWaveColorRenames(paletteSlugs) → the color-collection maps: semantic roles moved from camel
 // keys ("{n}/onSurface") to kebab leaves ("{n}/on-surface"); raw scrims nested ("{n}/500-200" →
 // "{n}/scrim/200"). semanticRoles still carries BOTH forms (key = the frozen camel, suffix = kebab).
-const SCRIM_STEPS_FROZEN = ["050", "100", "200", "300", "400", "500", "600"];
+const SCRIM_STEPS_FROZEN = ["050", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"];
 export function kebabWaveColorRenames(paletteSlugs) {
   const semantic = {}, raw = {};
   for (const n of paletteSlugs || []) {
