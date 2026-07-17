@@ -8,6 +8,7 @@ import * as P from "../../figma/binder/bind-plan.mjs";
 import * as MAP from "../../figma/binder/mode-apply-plan.mjs";
 import * as TYPE from "../../src/engine/type.mjs";
 import * as GEOM from "../../src/engine/geometry.mjs";
+import { semanticRoles } from "../../src/engine/semantic.js";
 import { extractFunctionSource } from "../../figma/binder/splice-utils.mjs";
 
 const HERE = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "figma", "binder"); // the binder lives in figma/binder/
@@ -68,7 +69,7 @@ const FLOAT_ANCHOR = 'JSON.parse("[]"); /* __ULTIMATE_TOKENS_FLOAT_PLANS__ */';
 // auto-invoke is stripped first: left in place it fires the moment the source loads (this file's `main`
 // is not message-driven like the flagship plugin — it just runs), which would EITHER race an explicit
 // call made afterward on the same mock figma (double-creating collections) OR — when no figma is passed
-// at all (the roleTable/refKey-only PARITY GUARD below) — throw an orphaned, unhandled rejection that
+// at all (the roleTable-only PARITY GUARD below) — throw an orphaned, unhandled rejection that
 // prints console noise once a later `await` in this script gives the microtask queue a chance to flush it.
 function loadBinder(src, figma) {
   const controlled = src.replace(/\nmain\(\)\.catch\([\s\S]*$/, "");
@@ -77,18 +78,43 @@ function loadBinder(src, figma) {
   return fn(figma, "<html>", undefined);
 }
 
-// ── PARITY GUARD: the runtime code.js HARDCODES roleTable() (the Figma sandbox can't import the
-//    .mjs), so it's a second copy of the validated role table that node --check can't catch drifting.
-//    Load it (without running main()) and assert its derived targets EQUAL bind-plan's canonical set,
-//    so a ref can't go stale silently. (Real incident 2026-06-18: the scrim refs drifted here.) ──
+// ── PARITY GUARD: the checked-in code.js's roleTable() is GENERATED (TKT-0019) — spliced verbatim
+//    from src/engine/semantic.js's semanticRoles() function body by scripts/gen-figma-binder-code.mjs
+//    — so this gate is now a TRIPWIRE proving the splice actually landed correctly (a stale build, a
+//    hand-edit inside the `// === GENERATED:ROLE_TABLE ===` markers, or a splice-script bug), not the
+//    mechanism preventing drift the way it was before TKT-0019 (mirrors the `floatparity` gate below,
+//    which plays the same tripwire role for the spliced float-executor functions).
+//    Load the runtime code.js (without running main()) and deep-equal-compare its FULL role objects —
+//    {key, suffix, light, dark}, in ORDER, per default palette — against semantic.js's semanticRoles(n)
+//    directly. This is the engine <-> Figma-binder leg of the role table's 3-impl identity;
+//    role-table.json's own identity with semantic.js (also full-object, key+suffix+light+dark) is a
+//    SEPARATE gate, `refs-canonical` in test/engine/semantic.mjs — the two gates together give
+//    transitive identity across all three implementations.
+//    A derived-ref-name-set diff (the previous shape of this gate, pre-TKT-0027) only proves every ref
+//    resolves to a real raw-colors target — it CANNOT catch a `key` or `suffix` corruption that keeps
+//    pointing at the same ref, nor a role missing from one side whose refs are already produced by
+//    another role. Full-object, in-order comparison catches both: a length mismatch flags a
+//    missing/extra row, and a per-field mismatch flags a `key`/`suffix` drift even when `light`/`dark`
+//    still match. (Real incident 2026-06-18, pre-splice: the scrim refs drifted here.) ──
 try {
   const src = readFileSync(BINDER_PATH, "utf8");
-  const { roleTable, refKey: rk } = loadBinder(src, undefined);
-  const runtime = new Set();
-  for (const n of NAMES) for (const r of roleTable(n)) { runtime.add(`${n}/${rk(r.light)}`); runtime.add(`${n}/${rk(r.dark)}`); }
-  const canon = new Set(P.bindingTargets(NAMES));
-  const drift = [...runtime].filter((t) => !canon.has(t)).concat([...canon].filter((t) => !runtime.has(t)));
-  if (drift.length) FAIL("parity", `runtime code.js roleTable drifted from canonical (e.g. ${drift.slice(0, 3).join(", ")})`);
+  const { roleTable } = loadBinder(src, undefined);
+  const drift = [];
+  for (const n of NAMES) {
+    const runtimeRoles = roleTable(n);
+    const engineRoles = semanticRoles(n);
+    if (!Array.isArray(runtimeRoles) || runtimeRoles.length !== engineRoles.length) {
+      drift.push(`${n}: code.js roleTable has ${runtimeRoles && runtimeRoles.length} rows, semantic.js has ${engineRoles.length}`);
+      continue;
+    }
+    for (let i = 0; i < engineRoles.length; i++) {
+      const a = runtimeRoles[i], b = engineRoles[i];
+      if (!a || a.key !== b.key || a.suffix !== b.suffix || a.light !== b.light || a.dark !== b.dark) {
+        drift.push(`${n}[${i}] code.js ${JSON.stringify(a)} != semantic.js ${JSON.stringify(b)}`);
+      }
+    }
+  }
+  if (drift.length) FAIL("parity", `runtime code.js roleTable drifted from src/engine/semantic.js (e.g. ${drift.slice(0, 3).join("; ")})`);
 } catch (e) { FAIL("parity", `could not load/compare runtime roleTable: ${e.message}`); }
 
 // ── a mock figma: in-memory collections + variables (a trimmed copy of test/figma/plugin.mjs's mock —
@@ -239,7 +265,7 @@ for (const g of ["bindings", "offline", "parity", "floatanchor", "floatcreate", 
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
 console.log(`  (checked ${targets ? targets.length : 0} binding targets vs ${CANON.size} canonical raw-colors names)`);
-console.log("  defer  hpg-parity-roletable — role-table parity is verified by semantic-mapping");
+console.log("  defer  hpg-parity-roletable — this file's `parity` gate above verifies the engine<->Figma-binder leg (full role objects, in order, per default palette); the canonical role-table.json<->semantic.js leg is verified by semantic-mapping's own refs-canonical gate");
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: figma-plugin clears its checkable [gate] predicates");
 process.exit(0);
