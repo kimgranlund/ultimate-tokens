@@ -37,6 +37,14 @@ Two more **framework** formats ship alongside these (see `src/engine/exports.js`
 **curated subset** — a fixed `SHADCN_ORDER` over a hand-kept suffix `MAP`, NOT all roles — so a new
 semantic role does not surface in it unless explicitly wired into `MAP`.
 
+**Scope note (TKT-0015):** `src/engine/exports.js` holds ONLY these 8 formats (the 7 emitters above plus
+the `exportAll` aggregator) plus their shared helpers (`derivePalette`/`derivedAll`, `pad3`/`slug`/`hexOf`/
+`hex8`/`colorLeaf`/`roleOklch`, the `dialogBackdrop*` system constant). The Claude Design / Google Stitch /
+Figma Make "DS bundle" DESIGN.md-authoring subsystem that used to share the file now lives in the sibling
+`src/engine/ds-export.js` — a different kind of artifact (a consumption-bundle spec + prose, not a token
+serializer) with no rubric of record in this directory yet. It is out of scope for this document and for
+`adding-export-formats`; don't conflate a `ds-export.js` change with an export-format change covered here.
+
 ## 2. CSS (hex) and CSS (OKLCH)
 
 ```

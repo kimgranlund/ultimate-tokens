@@ -70,16 +70,20 @@ import {
   exportUI3,
   exportTailwind,
   exportShadcn,
-  exportDesignSystemTokens,
-  exportDesignSystemSpine,
-  exportDesignSystemBundle,
-  exportDesignSystemStitchBundle,
-  exportDesignSystemMakeBundle,
   SCRIM_BASES,
   SCRIM_STEPS,
   dialogBackdropHex,
   dialogBackdropOklch,
 } from "../engine/exports.js";
+// The Claude Design / Google Stitch / Figma Make "DS bundle" authoring subsystem — split into its
+// own module (TKT-0015); see src/engine/ds-export.js's header for why it's a different file.
+import {
+  exportDesignSystemTokens,
+  exportDesignSystemSpine,
+  exportDesignSystemBundle,
+  exportDesignSystemStitchBundle,
+  exportDesignSystemMakeBundle,
+} from "../engine/ds-export.js";
 
 // Re-export the scrim model so the UI (app.js) can build the Mapping tab's re-point targets from the
 // SAME source of truth as the exporters — no second, drift-prone hardcoded scrim-step list.

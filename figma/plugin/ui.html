@@ -5326,13 +5326,24 @@ function dsBundleGates({ designMd, tokensJson, previews } = {}) {
 return { pyRound, oklchToSrgb8, hexToSrgb8, parseColor, dsBundleGates };
 })();
 __M.exports = (function(){
-// exports.js — the five export serializers (vanilla ESM, no deps).
+// exports.js — the 8 documented COLOR export formats (vanilla ESM, no deps).
 //
 // Turns a generator State into the HCT Palette Generator's portable token
-// artifacts in five formats: CSS (hex), CSS (OKLCH), JSON, Figma DTCG (the
-// 3-file set), and the UI3 interchange shape. Every emitter operates over the
-// ENABLED palettes only and the 25 EXPORT_STOPS, and every stop reference is
-// 3-digit zero-padded (ADR-006).
+// artifacts in eight formats: CSS (hex), CSS (OKLCH), JSON, Figma DTCG (the
+// 3-file set), the UI3 interchange shape, Tailwind v4, ShadCN, plus the
+// exportAll aggregator. Every emitter operates over the ENABLED palettes only
+// and the 25 EXPORT_STOPS, and every stop reference is 3-digit zero-padded
+// (ADR-006).
+//
+// The Claude Design / Google Stitch / Figma Make "DS bundle" DESIGN.md-authoring
+// subsystem lives in the sibling ds-export.js (TKT-0015) — a different KIND of
+// code (content/prose authoring for a consumption bundle, not token
+// serialization) that was split out so this file's own documented 8-format
+// pattern (adding-export-formats) stays an accurate map of what's here.
+// ds-export.js imports several of this file's helpers (derivedAll, roleOklch,
+// hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, exportShadcn) —
+// keep them exported for that reason even though nothing else outside this
+// file's own emitters needs them.
 //
 // Fenced decisions honored (do NOT "fix" these):
 //   ADR-002  Light/Dark semantic ships RESOLVED colors with NO aliasData by
@@ -5348,12 +5359,9 @@ __M.exports = (function(){
 const { paletteStops, EXPORT_STOPS, DEFAULT_CONTROLS } = __M.tonal;
 const { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef } = __M.semantic;
 const { COLLECTIONS } = __M.collections;
-const { iconSystem, iconSystemLabel } = __M.iconSystems;
-const { motionTokens, MOTION_EASING, MOTION_DURATION, MOTION_NEVER } = __M.motion;
-const { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } = __M.dsGates; // §8 carrier primitives + the gate itself — the receipt cites the SAME run the gate measures
-const { resolvedFontFor } = __M.type; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
 
 // WCAG relative luminance of an [r,g,b] (0..255) triple — for the opt-in contrast on-color pick.
+// Exported: ds-export.js's dsContrast also needs it (kept as one source, not a duplicate).
 const relLumExp = (rgb) => {
   const c = rgb.map((v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -5393,12 +5401,14 @@ function hex2(v) {
   return Math.round(v).toString(16).padStart(2, "0").toUpperCase();
 }
 
-// hexOf — "#RRGGBB" from an [r,g,b] int triple (uppercase).
+// hexOf — "#RRGGBB" from an [r,g,b] int triple (uppercase). Exported: ds-export.js's
+// dsColorRoles needs it too.
 function hexOf(rgb) {
   return "#" + rgb.map(hex2).join("");
 }
 
-// hex8 — "#RRGGBBAA" scrim color: solid rgb + an alpha byte from a 0..1 fraction.
+// hex8 — "#RRGGBBAA" scrim color: solid rgb + an alpha byte from a 0..1 fraction. Exported:
+// ds-export.js's dsColorRoles needs it too.
 function hex8(rgb, frac) {
   return hexOf(rgb) + hex2(frac * 255);
 }
@@ -5569,7 +5579,8 @@ function derivePalette(palette, controls, overrides) {
   return { name: palette.name, n, hue: palette.hue, stops, byStop, scrims, roles, keyColors };
 }
 
-// derivedAll — every enabled palette derived, in State order.
+// derivedAll — every enabled palette derived, in State order. Exported: ds-export.js's DS-bundle
+// layer derives from the SAME resolved roles (dsColorRoles/dsSemanticLayer/dsFullLayersCss).
 function derivedAll(state) {
   const controls = controlsOf(state);
   return enabledPalettes(state).map((p) => derivePalette(p, controls, state.roleOverrides));
@@ -5837,7 +5848,8 @@ function exportUI3(state) {
 }
 
 // roleOklch — a resolved role end ({rgb, frac}) -> an oklch() string, with alpha for
-// scrim-backed roles (frac < 1, e.g. outline/container on the 500 ramp).
+// scrim-backed roles (frac < 1, e.g. outline/container on the 500 ramp). Exported: ds-export.js's
+// DS-bundle layer renders every color through this same string form.
 function roleOklch(end) {
   return end.frac === 1 ? oklchStr(rgbToOklch(end.rgb)) : oklchStrA(rgbToOklch(end.rgb), end.frac * 100);
 }
@@ -5991,6 +6003,48 @@ function exportShadcn(state, opts = {}) {
     "",
   ].join("\n");
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// exportAll — every format in one object (theme-independent).
+// ──────────────────────────────────────────────────────────────────────────────
+function exportAll(state, opts) {
+  return {
+    css: exportCSS(state),
+    oklch: exportOKLCH(state),
+    json: exportJSON(state),
+    dtcg: exportDTCG(state, opts),
+    ui3: exportUI3(state),
+    tailwind: exportTailwind(state),
+    shadcn: exportShadcn(state),
+  };
+}
+
+return { relLumExp, SCRIM_BASES, SCRIM_STEPS, hexOf, hex8, dialogBackdropHex, dialogBackdropOklch, derivedAll, exportCSS, cssPrefixOf, exportOKLCH, exportJSON, exportDTCG, exportUI3, roleOklch, exportTailwind, exportShadcn, exportAll };
+})();
+__M.dsExport = (function(){
+// ds-export.js — the DS-bundle subsystem (vanilla ESM, no deps).
+//
+// Split out of exports.js (TKT-0015 / architecture review MAJOR-1): the Claude Design / Google
+// Stitch / Figma Make "design-system export" authoring layer — DESIGN.md, tokens.json, the
+// @dsCard component previews, and the per-platform profile receipts. This is a DIFFERENT kind of
+// code than exports.js's 8 documented color formats (content/prose authoring for a consumption
+// bundle, not token serialization) and is specced nowhere in docs/reference/ — it earned its own
+// file so a contributor reading exports.js's own documented 8-format pattern (adding-export-formats)
+// no longer wades through ~1,200 unrelated lines to find them.
+//
+// Everything below is a VERBATIM move — no logic changes, only the import/export surface needed to
+// live in a sibling module: derivedAll/roleOklch/hexOf/hex8/relLumExp/cssPrefixOf/
+// dialogBackdropOklch/exportShadcn are re-imported from ./exports.js (the first four newly
+// exported there for this reason); everything else is unchanged.
+//
+// state is UI-only-aware: theme is NEVER read here, so output is identical for theme
+// light/dark/auto (same invariant as exports.js).
+
+const { iconSystem, iconSystemLabel } = __M.iconSystems;
+const { motionTokens, MOTION_EASING, MOTION_DURATION, MOTION_NEVER } = __M.motion;
+const { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } = __M.dsGates; // §8 carrier primitives + the gate itself — the receipt cites the SAME run the gate measures
+const { resolvedFontFor } = __M.type; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
+const { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, exportShadcn } = __M.exports;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // DESIGN SYSTEM export — design-system-for-{claude-code,google-stitch,figma-make}
@@ -7262,22 +7316,7 @@ function exportDesignSystemMakeBundle(state, typeSc, geomSc, opts = {}) {
   ];
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// exportAll — every format in one object (theme-independent).
-// ──────────────────────────────────────────────────────────────────────────────
-function exportAll(state, opts) {
-  return {
-    css: exportCSS(state),
-    oklch: exportOKLCH(state),
-    json: exportJSON(state),
-    dtcg: exportDTCG(state, opts),
-    ui3: exportUI3(state),
-    tailwind: exportTailwind(state),
-    shadcn: exportShadcn(state),
-  };
-}
-
-return { SCRIM_BASES, SCRIM_STEPS, dialogBackdropHex, dialogBackdropOklch, exportCSS, cssPrefixOf, exportOKLCH, exportJSON, exportDTCG, exportUI3, exportTailwind, exportShadcn, dsColorRoles, exportDesignSystemTokens, exportDesignSystemSpine, exportDesignSystemComponents, exportDesignSystemReceipt, exportDesignSystemBundle, exportDesignSystemStitchBundle, dsShadcnRuntimeMap, dsFullLayersCss, exportDesignSystemMakeBundle, exportAll };
+return { dsColorRoles, exportDesignSystemTokens, exportDesignSystemSpine, exportDesignSystemComponents, exportDesignSystemReceipt, exportDesignSystemBundle, exportDesignSystemStitchBundle, dsShadcnRuntimeMap, dsFullLayersCss, exportDesignSystemMakeBundle };
 })();
 __M.figmaPlugin = (function(){
 // GENERATED by gen-figma-assets.mjs from figma/binder/figma-semantic-binder/ — DO NOT EDIT.
@@ -8498,7 +8537,10 @@ function baseOverrideSlice(store) {
   }
   return Object.keys(out).length ? out : undefined;
 }
-const { exportCSS, exportOKLCH, exportJSON, exportDTCG, exportUI3, exportTailwind, exportShadcn, exportDesignSystemTokens, exportDesignSystemSpine, exportDesignSystemBundle, exportDesignSystemStitchBundle, exportDesignSystemMakeBundle, SCRIM_BASES, SCRIM_STEPS, dialogBackdropHex, dialogBackdropOklch } = __M.exports;
+const { exportCSS, exportOKLCH, exportJSON, exportDTCG, exportUI3, exportTailwind, exportShadcn, SCRIM_BASES, SCRIM_STEPS, dialogBackdropHex, dialogBackdropOklch } = __M.exports;
+// The Claude Design / Google Stitch / Figma Make "DS bundle" authoring subsystem — split into its
+// own module (TKT-0015); see src/engine/ds-export.js's header for why it's a different file.
+const { exportDesignSystemTokens, exportDesignSystemSpine, exportDesignSystemBundle, exportDesignSystemStitchBundle, exportDesignSystemMakeBundle } = __M.dsExport;
 
 // Re-export the scrim model so the UI (app.js) can build the Mapping tab's re-point targets from the
 // SAME source of truth as the exporters — no second, drift-prone hardcoded scrim-step list.
