@@ -253,7 +253,11 @@ export class ApplyGateMixinImpl {
         n += countChangedValues(flattenModePlanValues(p), bpLive);
       }
     }
-    if (sys.type !== false) {
+    // Font Primitives is only ever WRITTEN alongside text styles (applyToFigma sets msg.fontPrimitives
+    // only inside the styles-on branch; code.js only calls applyFontPrimitives when msg.fontPrimitives
+    // is present) — so counting it while Styles is toggled off would over-report values this apply
+    // never touches.
+    if (sys.type !== false && sys.styles !== false) {
       try {
         const plan = primitivesApplyPlan(typeTokensFigmaPrimitives(this._typeScaleFor("base")));
         if (plan) n += countChangedValues(flattenPrimitivesPlanValues(plan), (this._liveFloatVars.fontPrimitives || {}).values || {});
@@ -309,8 +313,11 @@ export class ApplyGateMixinImpl {
         ),
         // TKT-0020: the Geometry/Type changed-value count (collections-arch review C2) — a hand-tweaked
         // dimension is invisible today; this surfaces it BEFORE the overwrite, not just after. Figma-only
-        // (the read-back is a plugin message); null while the read-back is still in flight.
-        this.inFigma ? (() => {
+        // (the read-back is a plugin message); null while the read-back is still in flight. Suppressed
+        // entirely on a color-only apply (Type AND Geometry both off) — there is nothing Geometry/Type
+        // -shaped for the count to ever mean there. Regroup still carries floatPlans (it only affects
+        // the Color Semantic rebuild flag), so the count is just as relevant there — no rebuild guard.
+        (this.inFigma && ((this.exportSystems || {}).type !== false || (this.exportSystems || {}).geometry !== false)) ? (() => {
           const n = this._figmaChangedCount();
           return h("p", { class: "apply-gate-drift" + (n ? " has-changes" : "") },
             n === null ? "Checking for hand-edited values in this file…"
