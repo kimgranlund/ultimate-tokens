@@ -7,12 +7,18 @@
 // into two Figma variable COLLECTIONS:
 //
 //   Color Primitives  (mode "Value")        — one COLOR var per stop/scrim, the concrete colors
-//   Color Semantic      (modes "Light","Dark")— one COLOR var per role, each mode ALIASED to the
+//   Color Semantic      (one mode per THEME) — one COLOR var per role, each mode ALIASED to the
 //                                        raw var named by the leaf's com.figma.aliasData
 //                                        (the live raw→semantic cascade native import can't do)
 //
 // The bundle comes from the UI's figmaBundle() = exportDTCG(state, { rawColl:"Color Primitives" }),
-// so this file is palette-agnostic: it walks the tree, it does NOT hard-code the role table.
+// so this file is palette-agnostic: it walks the tree, it does NOT hard-code the role table — and
+// (TKT-0021) it does NOT hard-code the theme axis either. exportDTCG emits one "{name}_tokens.json"
+// per theme (default: Light + Dark, from semantic.js's DEFAULT_THEMES), each tagged with its Figma
+// mode name via $extensions["com.figma.modeName"]; applyBundle below walks WHATEVER theme files the
+// bundle carries — 2 today, N once a doc's theme axis is configurable — and creates exactly that
+// many Color Semantic modes, in the bundle's own order. A 2-theme bundle still produces byte-
+// identical Light/Dark output; nothing here assumes there are exactly two.
 
 const RAW_COLLECTION = "Color Primitives";   // the raw color primitives (one "Value" mode) — the DEFAULT name
 const SEMANTIC_COLLECTION = "Color Semantic"; // the semantic Light/Dark tokens — the DEFAULT name (ADR-016; was "Color Modes")
@@ -102,6 +108,7 @@ const ACTIONS = {
   "save-config": "save the palette set",
   "load-config": "load the palette set",
   "read-variables": "read this file's variables",
+  "read-float-variables": "read this file's geometry/type variables",
   "list-fonts": "read Figma's font list",
   "load-sets": "load your palettes",
   "save-sets": "save your palettes",
@@ -139,7 +146,7 @@ figma.ui.onmessage = async (msg) => {
         } catch (e) { console.error("[Ultimate Tokens] styles apply failed:", e); }
       }
       const parts = [];
-      if (r) parts.push(`${r.raw} primitives + ${r.semantic} semantic variables (Light / Dark)` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : ""));
+      if (r) parts.push(`${r.raw} primitives + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : ""));
       if (fr && fr.collections) parts.push(`${fr.variables} type/geometry variable${fr.variables === 1 ? "" : "s"} across ${fr.collections} collection${fr.collections === 1 ? "" : "s"}`);
       if (sr && (sr.paints || sr.texts)) parts.push(`${sr.paints + sr.texts} style${sr.paints + sr.texts === 1 ? "" : "s"} (${sr.paints} color · ${sr.texts} text)` + (sr.pruned ? `, ${sr.pruned} stale pruned` : ""));
       if (sr && sr.substitutedFonts && sr.substitutedFonts.length) figma.notify(`${sr.substituted} text style(s) use a placeholder face — install to see them as designed: ${sr.substitutedFonts.slice(0, 3).join(", ")}${sr.substitutedFonts.length > 3 ? "…" : ""}`, { timeout: 6000 });
@@ -166,6 +173,9 @@ figma.ui.onmessage = async (msg) => {
       const live = await readRawColors(); // read-only reference for the drift diff
       figma.ui.postMessage({ type: "variables-read", found: live.found, raw: live.raw });
       if (!live.found) figma.notify('No "Color Primitives" collection in this file yet');
+    } else if (msg.type === "read-float-variables") {
+      const live = await readFloatVariables(); // read-only reference for the pre-apply changed-value count
+      figma.ui.postMessage({ type: "float-variables-read", breakpoints: live.breakpoints, fontPrimitives: live.fontPrimitives });
     } else if (msg.type === "load-sets") {
       // the gallery's saved sets, from this user's clientStorage (null on first run).
       const sets = await figma.clientStorage.getAsync(SETS_KEY);
@@ -297,6 +307,46 @@ async function readRawColors() {
     if (val && typeof val.r === "number") out[v.name] = rgbaToHex(val); // skip aliases (no .r)
   }
   return { found: true, raw: out };
+}
+
+// readFloatCollection — the live values of a REGISTRY-TRACKED float collection (Breakpoints/Font
+// Primitives), read-only, in a shape directly comparable to a modeApplyPlan/primitivesApplyPlan entry:
+// { found, modes: [<mode name>, …], values: { "<var name>": { "<mode name>": <value> } } }. Resolved by
+// PROVENANCE (FLOAT_REGISTRY_KEY), exactly like ensureFloatCollection — a user's own same-named
+// collection this plugin never created is invisible here too (found:false), never adopted for a read.
+// An ALIAS value (Font Primitives' font/<voice> vars) has no independently-set value to diff against —
+// skipped, matching primitivesApplyPlan's own "aliases aren't literals" treatment.
+async function readFloatCollection(name, reg) {
+  const id = reg[name];
+  if (!id) return { found: false, modes: [], values: {} };
+  const cols = await figma.variables.getLocalVariableCollectionsAsync();
+  const coll = cols.find((c) => c.id === id);
+  if (!coll) return { found: false, modes: [], values: {} };
+  const modeName = {};
+  for (const m of coll.modes) modeName[m.modeId] = m.name;
+  const all = await figma.variables.getLocalVariablesAsync();
+  const values = {};
+  for (const v of all) {
+    if (v.variableCollectionId !== coll.id) continue;
+    const byMode = {};
+    const vbm = v.valuesByMode || {};
+    for (const mid of Object.keys(vbm)) {
+      const mn = modeName[mid];
+      const val = vbm[mid];
+      if (mn === undefined || (val && typeof val === "object" && val.type === "VARIABLE_ALIAS")) continue;
+      byMode[mn] = val;
+    }
+    if (Object.keys(byMode).length) values[v.name] = byMode; // an all-ALIAS variable (e.g. font/<voice>) carries no literal to diff — omit it entirely, not just its modes
+  }
+  return { found: true, modes: coll.modes.map((m) => m.name), values };
+}
+
+// readFloatVariables — the live Breakpoints + Font Primitives collections together, for the apply
+// gate's pre-overwrite diff (collections-arch review C2 / TKT-0020) — the Geometry/Type counterpart to
+// readRawColors' color drift reference. Read-only; never reconstructs a scale from the raw numbers.
+async function readFloatVariables() {
+  const reg = readFloatRegistry();
+  return { breakpoints: await readFloatCollection("Breakpoints", reg), fontPrimitives: await readFloatCollection("Font Primitives", reg) };
 }
 
 async function varsByName(collectionId) {
@@ -657,9 +707,19 @@ async function applyBundle(dtcg, opts) {
   const renames = opts.renames || {};
   const collectionRenames = renames.collections || {};
   const rawTree = dtcg && dtcg["palette.tokens.json"];
-  const semLight = dtcg && dtcg["Light_tokens.json"];
-  const semDark = dtcg && dtcg["Dark_tokens.json"];
-  if (!rawTree || !semLight || !semDark) throw new Error("bundle missing palette/Light/Dark files");
+  if (!rawTree) throw new Error("bundle missing palette.tokens.json");
+  // theme files — every OTHER top-level entry in the bundle, each carrying its Figma mode NAME via
+  // $extensions["com.figma.modeName"] (exportDTCG's figmaMode()). TKT-0021: this used to hardcode
+  // exactly "Light_tokens.json"/"Dark_tokens.json"; now it walks WHATEVER theme files the bundle
+  // carries, in the bundle's own order (object key order === exportDTCG's `themes` order), so a
+  // 2-theme (Light/Dark) doc still produces exactly today's two modes, in the same order, and a
+  // longer theme axis needs no change here.
+  const themeEntries = Object.keys(dtcg)
+    .filter((k) => k !== "palette.tokens.json")
+    .map((k) => dtcg[k])
+    .filter((f) => f && f.$extensions && typeof f.$extensions["com.figma.modeName"] === "string");
+  if (!themeEntries.length) throw new Error("bundle has no theme files (e.g. Light_tokens.json/Dark_tokens.json)");
+  const themeNames = themeEntries.map((f) => f.$extensions["com.figma.modeName"]);
 
   const reg = readColorRegistry(); // provenance: only ever touch a collection this plugin created (see ensureCollection)
 
@@ -679,9 +739,10 @@ async function applyBundle(dtcg, opts) {
     rawCount++;
   }
 
-  // 2) SEMANTIC collection — "Light" + "Dark" modes, each role ALIASED to its raw var.
-  // Regroup: drop the existing Color Semantic collection first so the rebuild creates every variable
-  // fresh, in the bundle's canonical order (regular · containers · surfaces · scrims).
+  // 2) SEMANTIC collection — one mode per THEME (TKT-0021: N-way, not a hardcoded Light+Dark pair),
+  // each role ALIASED to its raw var. Regroup: drop the existing Color Semantic collection first so
+  // the rebuild creates every variable fresh, in the bundle's canonical order (regular · containers ·
+  // surfaces · scrims).
   let rebuilt = false;
   if (opts.rebuildSemantic) {
     // PROVENANCE, not name: only OUR registry-tracked Color Semantic (under its current name or a
@@ -695,29 +756,54 @@ async function applyBundle(dtcg, opts) {
     for (const k of oldKeys) delete reg[k];
   }
   const sem = await ensureCollection(COLL.semantic, reg, collectionRenames[COLL.semantic]);
-  const lightMode = sem.modes[0].modeId;
-  sem.renameMode(lightMode, "Light");
-  const darkMode = (sem.modes[1] && sem.modes[1].modeId) || sem.addMode("Dark");
-  if (sem.modes[1]) sem.renameMode(darkMode, "Dark");
+  // the collection's DEFAULT mode (Figma rejects removing it) is renamed to the FIRST theme; the rest
+  // are added-or-reused BY NAME (mirrors applyFloatPlans' generic mode reconciliation, below) — never
+  // assumes exactly two.
+  const firstModeId = sem.modes[0].modeId;
+  sem.renameMode(firstModeId, themeNames[0]);
+  // Object.create(null)/Map/Set, not {}/plain-object membership — a data-driven theme NAME (unlike
+  // the engine's own controlled palette/role names elsewhere in this file) could collide with an
+  // inherited Object.prototype key ("constructor", "toString", …) and read back truthy/defined.
+  const modeIdByName = Object.create(null);
+  modeIdByName[themeNames[0]] = firstModeId;
+  const findSemMode = (nm) => sem.modes.find((m) => m.name === nm);
+  for (let i = 1; i < themeNames.length; i++) {
+    const nm = themeNames[i];
+    const ex = findSemMode(nm);
+    modeIdByName[nm] = ex ? ex.modeId : sem.addMode(nm);
+  }
+  // prune stale theme modes (a theme the doc no longer carries) — never the collection's default
+  // mode (just renamed above, always in wantedModes), never the last remaining mode.
+  const wantedModes = new Set(themeNames);
+  for (const m of sem.modes.slice()) {
+    if (m.modeId === firstModeId) continue;
+    if (!wantedModes.has(m.name) && sem.modes.length > 1) sem.removeMode(m.modeId);
+  }
+
   const semByName = await varsByName(sem.id);
   renameInPool(semByName, renames.semantic);
   const currentSem = new Set(); // names this bundle WANTS in Color Semantic — everything else is stale
   let semCount = 0;
-  const darkLeaves = {};
-  for (const [name, leaf] of leafEntries(semDark, "")) darkLeaves[name] = leaf;
-  for (const [name, leaf] of leafEntries(semLight, "")) {
-    {
-      const v = semByName[name] || figma.variables.createVariable(name, sem, "COLOR");
-      const lt = rawByName[aliasTarget(leaf)];
-      const dt = rawByName[aliasTarget(darkLeaves[name])];
+  // leaves per theme, indexed by variable name — every theme file shares one name set (exportDTCG
+  // derives them all off the identical palette/role walk), so the FIRST theme's key order is the
+  // bundle's canonical creation order for every theme.
+  const leavesByTheme = themeEntries.map((f) => {
+    const m = {};
+    for (const [name, leaf] of leafEntries(f, "")) m[name] = leaf;
+    return m;
+  });
+  for (const name of Object.keys(leavesByTheme[0])) {
+    const v = semByName[name] || figma.variables.createVariable(name, sem, "COLOR");
+    for (let i = 0; i < themeNames.length; i++) {
+      const leaf = leavesByTheme[i][name];
+      const rv = leaf && rawByName[aliasTarget(leaf)];
       // Alias to the raw var (the cascade). Fall back to the resolved color if the raw
       // target is somehow absent, so a role is never left unset.
-      v.setValueForMode(lightMode, lt ? figma.variables.createVariableAlias(lt) : rgbaOf(leaf));
-      v.setValueForMode(darkMode, dt ? figma.variables.createVariableAlias(dt) : rgbaOf(darkLeaves[name]));
-      semByName[name] = v;
-      currentSem.add(name);
-      semCount++;
+      v.setValueForMode(modeIdByName[themeNames[i]], rv ? figma.variables.createVariableAlias(rv) : rgbaOf(leaf));
     }
+    semByName[name] = v;
+    currentSem.add(name);
+    semCount++;
   }
 
   // 3) PRUNE orphans — make each GENERATED collection mirror the current bundle exactly, so a
@@ -736,7 +822,7 @@ async function applyBundle(dtcg, opts) {
   }
 
   writeColorRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { raw: rawCount, semantic: semCount, pruned: pruned, rebuilt: rebuilt };
+  return { raw: rawCount, semantic: semCount, pruned: pruned, rebuilt: rebuilt, themeNames: themeNames };
 }
 
 // ── the breakpoint-moded FLOAT apply (Type / Geometry) ────────────────────────────

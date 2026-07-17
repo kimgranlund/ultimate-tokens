@@ -36,9 +36,13 @@ The conceptual model — *why* aliasing is the only thing giving a live raw→se
    AC-P3). No `fetch` / `XMLHttpRequest` / `WebSocket` / dynamic `import()`. This is *why* the app's fonts are
    base64-embedded in `ui.html` — there is no CDN. A network call is a hard gate failure, not a style choice.
 2. **The sandbox can't import `.mjs`.** Figma plugin code runs in a non-module VM, so the standalone binder's
-   `code.js` **HARDCODES** `roleTable(n)` — a verbatim copy of `semanticRoles(n)`. `figma/binder/bind-plan.mjs`
-   is the pure, importable planner the verifier tests; `code.js` mirrors it. They MUST stay in lockstep
-   (`adding-semantic-roles` step 4 owns the edit; the parity gate is in `references/foundations.md` §3/§4).
+   `code.js` carries `roleTable(n)` baked in — since TKT-0019, GENERATED (spliced verbatim from
+   `semanticRoles(n)`'s own function body by `scripts/gen-figma-binder-code.mjs`, between the
+   `// === GENERATED:ROLE_TABLE ===` markers) rather than hand-typed — a verbatim copy either way.
+   `figma/binder/bind-plan.mjs` is the pure, importable planner the verifier tests; `code.js` mirrors it.
+   Never hand-edit inside the GENERATED markers; regenerate instead (`npm test`/`npm run build` do this
+   for you). They MUST stay in lockstep (`adding-semantic-roles` step 4 owns the edit; the parity gate is
+   in `references/foundations.md` §3/§4).
 3. **The VM is jsvm-cpp, not modern V8.** Optional catch binding (`catch {` with no param, ES2019) PARSE-fails
    in Figma yet loads fine in Node — so a `node --check` (and the verifier's own `new Function` load) won't
    catch it. **Always write `catch (e) {`.** Both plugins follow this as a PRACTICE; the static guard is a
@@ -93,8 +97,11 @@ Sibling weights: `doc.type.voices[v].weights`, edited in the per-voice panel (Su
    bug is the binder's `missing` list (a raw target absent — check pad3 + scrim grammar). An "apply did
    nothing / duplicated" bug is the app's `applyBundle`.
 2. **If the role set changed**, this is an `adding-semantic-roles` task — the binder's `roleTable(n)` is one
-   of its parity sites. Do NOT hand-edit the role rows here in isolation; follow that skill's lockstep so the
-   answer key, the `.mjs` planner, the count literals, and this copy all move together.
+   of its parity sites, but since TKT-0019 it is GENERATED — never hand-edit the rows inside the
+   `// === GENERATED:ROLE_TABLE ===` markers (a regenerate overwrites them, and a hand-edit there is
+   invisible to the source of truth). Edit `semantic.js` per that skill's lockstep, then run
+   `scripts/gen-figma-binder-code.mjs` (or `npm test`/`npm run build`, which run it for you) so the answer
+   key, the `.mjs` planner, the count literals, and this copy all move together.
 3. **Keep it offline + VM-safe.** No network API; `catch (e) {` not `catch {`; no raw error in `figma.notify`;
    no remote `import()`. (The app verifier also requires the `ui.html` bridge — `figma-init` / `pluginMessage`
    / `figmaBundle` / `config-loaded`→`applyLoadedConfig` / `variables-read`→`receiveLiveVariables`.)
@@ -111,16 +118,18 @@ Run the two pure Figma verifiers first, then the full suite. Each prints `pass`/
 per-verifier gate-group list is owned by `references/rubric.md` (read it there):
 
 ```
-node test/figma/binder.mjs   # the standalone binder — owns the `parity` gate (roleTable ↔ bind-plan ref-set)
+node test/figma/binder.mjs   # the standalone binder — owns the `parity` gate (roleTable ↔ semantic.js, full role objects)
 node test/figma/plugin.mjs   # the app-as-plugin — owns the `vmsyntax` gate (NO `catch {`)
 npm test                     # test/run.mjs runs both plus the engine/ui suite
 ```
 
-The two SILENT KILLERS a green Node run hides: **`parity`** in `binder.mjs` (it loads `roleTable`/`refKey`
-out of `code.js` via `new Function`, strips the top-level `main();`, and diffs the derived ref-target SET both
-directions against `bindingTargets(NAMES)` — the real 2026-06-18 scrim drift), and **`vmsyntax`** in
-`plugin.mjs` (a `catch {` that parses in Node but not in Figma's VM). Don't call it done until both pure
-verifiers and `npm test` are green.
+The two SILENT KILLERS a green Node run hides: **`parity`** in `binder.mjs` (it loads `roleTable` out of
+`code.js` via `new Function`, strips the top-level `main();`, and deep-equal-compares its FULL role objects
+— `{key, suffix, light, dark}`, in order, per default palette — against `src/engine/semantic.js`'s
+`semanticRoles(n)`, not just the derived ref-name set (TKT-0027 widened this from a set-diff, which could
+miss a `key`/`suffix` typo pointing at an unchanged ref — the real 2026-06-18 scrim drift was a ref change,
+which both shapes catch)), and **`vmsyntax`** in `plugin.mjs` (a `catch {` that parses in Node but not in
+Figma's VM). Don't call it done until both pure verifiers and `npm test` are green.
 
 ## References
 
@@ -129,7 +138,7 @@ verifiers and `npm test` are green.
 | `references/foundations.md` | the two-plugin split, the alias-cascade mechanism, the binder bind loop, the app apply/prune/rebuild contract, the parity model, the four constraints |
 | `references/best-practices.md` | the non-obvious do/don't (offline, `catch (e)`, friendly errors, idempotent find-or-create, the binder `missing` list) + a worked debug walkthrough |
 | `references/rubric.md` | score a Figma-plugin change before calling it done (offline + parity + VM-safe are the gates) |
-| `references/figma-styles-hard-constraints.md` | before changing the styles executor/planner — the five live-file API constraints (fontStyle/fontWeight XOR, NUMBER-only metric fields, path-prefix folder-ization, no variable-font axis metadata, real-font name/weight matching) |
+| `references/figma-styles-hard-constraints.md` | before changing the styles executor/planner — the seven live-file API constraints (fontStyle/fontWeight XOR, NUMBER-only metric fields, path-prefix folder-ization, no variable-font axis metadata, real-font name/weight matching, per-segment text bindings, full-payload mode adds) |
 | `docs/reference/references/knowledge-05-figma-plugin.md` | the conceptual model — why aliasing gives the cascade, files/manifest, run instructions, failure modes (owned there — cite, don't copy) |
 | `.claude/skills/adding-semantic-roles/` | the `code.js#roleTable(n)` role-row edit + every parity site (owned there — a role change is THAT skill, not this one) |
 

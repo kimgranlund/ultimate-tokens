@@ -2,6 +2,8 @@
 // verify.mjs — ui-persistence validation adapter (CRITIC side; deny-on-write to the advancer).
 import * as U from "../../src/ui/persist.js";
 import * as X from "../../src/engine/exports.js";   // theme-invariance tests the exporters against state.theme
+import * as Ty from "../../src/engine/type.mjs";     // allowlist-parity: canonical TYPE_TREATMENTS ids + voice set
+import * as Ge from "../../src/engine/geometry.mjs"; // allowlist-parity: canonical GEOMETRY_TREATMENTS ids
 
 let _s = 0x1234abcd >>> 0;
 const rnd = () => { _s = (Math.imul(_s, 1103515245) + 12345) >>> 0; return _s / 0x100000000; };
@@ -221,14 +223,113 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if (none.hueSpace !== "oklch") FAIL("huespace-default", `a doc without hueSpace hydrated to ${none.hueSpace}, want oklch (new default)`);
 }
 
+// ── schema-rename (TKT-0016): serialize() stamps schemaVersion; hydrate() runs versioned rename maps
+//    BEFORE the allowlist clamp, so a PRE-2026-07-13 doc's OLD voice names (Heading/UI/Quote/Caption/
+//    Legal) survive translated onto their current names (Headline/Label/Lead/Tiny/Body) instead of
+//    being silently dropped. ─────────────────────────────────────────────────────────────────────────
+{
+  // serialize() always stamps the current schemaVersion.
+  const stamped = U.serialize(inDomainState());
+  if (stamped.schemaVersion !== U.CURRENT_SCHEMA_VERSION) FAIL("schema-rename", `serialize() must stamp schemaVersion ${U.CURRENT_SCHEMA_VERSION}, got ${JSON.stringify(stamped.schemaVersion)}`);
+  // schemaVersion is a bookkeeping field for hydrate's rename maps, NOT part of the runtime State — it
+  // must never leak into hydrate()'s return value (would break the roundtrip-identity gate elsewhere).
+  if ("schemaVersion" in U.hydrate(stamped)) FAIL("schema-rename", "hydrate() must not carry schemaVersion into the returned State");
+
+  // A pre-2026-07-13 fixture: no schemaVersion field at all (predates the ticket that introduced it),
+  // OLD voice names carrying real per-voice overrides a user tuned.
+  const legacyDoc = {
+    ...U.serialize(inDomainState()),
+    type: { treatment: "product", bodyBase: 16, voices: {
+      Heading: { weight: 750, tracking: 0.02 },   // -> Headline
+      UI: { weight: 500, leading: 1.3 },          // -> Label
+      Quote: { weight: 300 },                     // -> Lead
+      Caption: { weight: 480 },                   // -> Tiny
+      Legal: { weight: 420 },                     // -> Body
+    } },
+  };
+  delete legacyDoc.schemaVersion; // a doc saved before schemaVersion existed has no such field
+
+  const hydrated = U.hydrate(legacyDoc);
+  const v = hydrated.type.voices;
+  if (!v || !deepEq(v.Headline, { weight: 750, tracking: 0.02 })) FAIL("schema-rename", `Heading's overrides must survive renamed onto Headline (got ${JSON.stringify(v && v.Headline)})`);
+  if (!v || !deepEq(v.Label, { weight: 500, leading: 1.3 })) FAIL("schema-rename", `UI's overrides must survive renamed onto Label (got ${JSON.stringify(v && v.Label)})`);
+  if (!v || !deepEq(v.Lead, { weight: 300 })) FAIL("schema-rename", `Quote's overrides must survive renamed onto Lead (got ${JSON.stringify(v && v.Lead)})`);
+  if (!v || !deepEq(v.Tiny, { weight: 480 })) FAIL("schema-rename", `Caption's overrides must survive renamed onto Tiny (got ${JSON.stringify(v && v.Tiny)})`);
+  if (!v || !deepEq(v.Body, { weight: 420 })) FAIL("schema-rename", `Legal's overrides must survive renamed onto Body (got ${JSON.stringify(v && v.Body)})`);
+  // the OLD keys must not survive alongside the new ones (a real rename, not a copy).
+  for (const old of ["Heading", "UI", "Quote", "Caption", "Legal"]) if (v && old in v) FAIL("schema-rename", `the OLD voice key '${old}' must not survive the rename (found in ${JSON.stringify(Object.keys(v))})`);
+
+  // re-serializing the hydrated (now-current) doc stamps the current schemaVersion, so a round-trip
+  // through the app doesn't keep re-applying the rename on every subsequent save/load.
+  const resaved = U.serialize(hydrated);
+  if (resaved.schemaVersion !== U.CURRENT_SCHEMA_VERSION) FAIL("schema-rename", "re-serializing a hydrated legacy doc must stamp the CURRENT schemaVersion");
+  if (!deepEq(U.hydrate(resaved).type.voices, v)) FAIL("schema-rename", "a doc already on the current schemaVersion must hydrate identically on a second pass (no double-rename)");
+
+  // COLLISION: a legacy doc that (implausibly, but possibly, e.g. hand-edited) carries BOTH the old
+  // AND the new key — the already-current new-name override must NOT be clobbered by the stale old one.
+  const collideDoc = { ...U.serialize(inDomainState()), type: { treatment: "product", bodyBase: 16, voices: { Heading: { weight: 300 }, Headline: { weight: 900 } } } };
+  delete collideDoc.schemaVersion;
+  const cv = U.hydrate(collideDoc).type.voices;
+  if (!cv || cv.Headline.weight !== 900) FAIL("schema-rename", `an already-current Headline override must win over the stale Heading one (got ${JSON.stringify(cv && cv.Headline)})`);
+  if (cv && "Heading" in cv) FAIL("schema-rename", "the stale old key must still drop even when the new key already existed");
+
+  // a doc with only the NEW voice names (any doc saved since 2026-07-13, before schemaVersion existed)
+  // is completely unaffected by the rename — nothing to translate, nothing spuriously created.
+  const modernDoc = { ...U.serialize(inDomainState()), type: { treatment: "product", bodyBase: 16, voices: { Headline: { weight: 800 } } } };
+  delete modernDoc.schemaVersion;
+  const mv = U.hydrate(modernDoc).type.voices;
+  if (!deepEq(mv, { Headline: { weight: 800 } })) FAIL("schema-rename", `a modern-only doc's voices must be untouched by the rename (got ${JSON.stringify(mv)})`);
+
+  // tokenOverrides (Tokens-matrix Phase 3): a per-cell SIZE override keyed "<voice>|<step>|<modeKey>"
+  // under an OLD voice name must migrate its leading segment too — clampTokenOverrides only checks key
+  // ARITY, not voice membership, so an un-migrated stale key would otherwise survive as an inert orphan
+  // (never dropped, never applied) instead of visibly carrying the user's override forward. Also covers
+  // the collision case: a stale key AND its already-current renamed sibling both present.
+  const tokDoc = { ...U.serialize(inDomainState()), type: { treatment: "product", bodyBase: 16,
+    tokenOverrides: { "Heading|MD|base": 40, "UI|SM|tm-x": 13, "Heading|LG|base": 111, "Headline|LG|base": 200 } } };
+  delete tokDoc.schemaVersion;
+  const tov = U.hydrate(tokDoc).type.tokenOverrides;
+  if (!tov || "Heading|MD|base" in tov) FAIL("schema-rename", `the stale 'Heading|MD|base' key must not survive (got ${JSON.stringify(tov)})`);
+  if (!tov || tov["Headline|MD|base"] !== 40) FAIL("schema-rename", `'Heading|MD|base' must migrate to 'Headline|MD|base' (got ${JSON.stringify(tov)})`);
+  if (!tov || tov["Label|SM|tm-x"] !== 13) FAIL("schema-rename", `'UI|SM|tm-x' must migrate to 'Label|SM|tm-x' (got ${JSON.stringify(tov)})`);
+  if (!tov || tov["Headline|LG|base"] !== 200) FAIL("schema-rename", `an already-current 'Headline|LG|base' key must win over the colliding stale 'Heading|LG|base' (got ${JSON.stringify(tov && tov["Headline|LG|base"])})`);
+  if (tov && "Heading|LG|base" in tov) FAIL("schema-rename", "the stale colliding key must still drop even when the renamed key already existed");
+}
+
 // ── hpg-export-theme-invariant: exporters ignore state.theme ──────────────────────────────
 const st = { palettes: [{ name: "Primary", hue: 267, chroma: 95, skew: -20, lift: 0, on: true }], curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, hueSpace: "cam16", theme: "auto" };
 const out = (theme) => JSON.stringify({ css: X.exportCSS({ ...st, theme }), json: X.exportJSON({ ...st, theme }), dtcg: X.exportDTCG({ ...st, theme }, {}) });
 const oL = out("light"), oD = out("dark"), oA = out("auto");
 if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs across theme light/dark/auto");
 
+// ── allowlist-parity (TKT-0017): persist.js hand-tracks TYPE_TREATMENTS / VOICES / GEOMETRY_TREATMENTS
+// as copies of what type.mjs / geometry.mjs already define canonically — nothing enforced they stay in
+// sync until now. A voice/treatment renamed in the engine and not mirrored here has its hydrate-time
+// clamp silently reject every doc using it (VOICES) or fall the whole facet back to its default
+// (TYPE_TREATMENTS/GEOMETRY_TREATMENTS) — the same failure class the role-table↔semanticRoles parity gate
+// guards elsewhere, generalized to this file. Compared as SETS (sorted), not literal array order, since
+// persist.js only ever consults these via `.includes()`. ────────────────────────────────────────────────
+{
+  const sorted = (a) => [...a].sort();
+  const eqSet = (a, b) => JSON.stringify(sorted(a)) === JSON.stringify(sorted(b));
+
+  const engineTypeIds = Ty.TYPE_TREATMENTS.map((t) => t.id);
+  if (!eqSet(U.TYPE_TREATMENTS, engineTypeIds))
+    FAIL("allowlist-parity", `persist.js TYPE_TREATMENTS ${JSON.stringify(sorted(U.TYPE_TREATMENTS))} != type.mjs TYPE_TREATMENTS ids ${JSON.stringify(sorted(engineTypeIds))}`);
+
+  const engineGeomIds = Ge.GEOMETRY_TREATMENTS.map((t) => t.id);
+  if (!eqSet(U.GEOMETRY_TREATMENTS, engineGeomIds))
+    FAIL("allowlist-parity", `persist.js GEOMETRY_TREATMENTS ${JSON.stringify(sorted(U.GEOMETRY_TREATMENTS))} != geometry.mjs GEOMETRY_TREATMENTS ids ${JSON.stringify(sorted(engineGeomIds))}`);
+
+  // the voice set: every treatment's `categories` carries the same 15 keys (asserted in test/engine/
+  // type.mjs), so any one treatment's categories is the canonical voice list.
+  const engineVoices = Object.keys(Ty.TYPE_TREATMENTS[0].categories);
+  if (!eqSet(U.VOICES, engineVoices))
+    FAIL("allowlist-parity", `persist.js VOICES ${JSON.stringify(sorted(U.VOICES))} != type.mjs voice set ${JSON.stringify(sorted(engineVoices))}`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "theme-invariant"]) {
+for (const g of ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

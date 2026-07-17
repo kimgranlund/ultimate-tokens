@@ -416,6 +416,98 @@ Format: Context → Decision → Rationale → Consequences → Status.
   mechanically.
 - **Status.** DECIDED (ratified 2026-07-17; migration execution `TKT-0031`).
 
+## ADR-018 — `role-table.json` stays a hand-kept answer key; only the Figma-sandbox copy generates
+- **Context.** TKT-0019 (#331) proved a splice-at-build-time generator (`scripts/gen-figma-binder-code.mjs`)
+  for the Figma-sandbox binder's (`figma/binder/figma-semantic-binder/code.js`) hand-duplicated
+  executable bodies: the five float-executor functions AND its 53-row role table, both previously
+  hand-copied because Figma's standalone-plugin sandbox cannot `import` a `.mjs` at runtime — the same
+  constraint the `FLOAT_PLANS` download-time anchor already worked around. TKT-0030 (#342) asked whether
+  the same generate-don't-duplicate technique should extend to the *other* two role-table copies:
+  `docs/reference/data/role-table.json` (the hand-edited answer key) and `src/engine/semantic.js`'s
+  `semanticRoles()` (the actual implementation) — "three role-table copies… hand-kept in lockstep behind
+  test gates," per the issue.
+- **Decision.** Partial: TKT-0019's build already collapsed the count from three copies to two — the
+  binder's `roleTable(paletteName)` is now `semanticRoles()`'s function body, spliced verbatim (plus its
+  3 supporting `SCRIM_*` consts), not hand-copied. The remaining pair — `role-table.json` ↔
+  `semantic.js` — is ruled **WONTFIX** for further generation. `role-table.json` continues to be
+  hand-edited exactly as `adding-semantic-roles` already documents (no `gen:role-table` script), and
+  `test/engine/semantic.mjs`'s `refs-canonical` gate keeps deep-equaling `semanticRoles("primary")`
+  against it.
+- **Rationale.** The binder's role table and `role-table.json` are NOT the same shape of problem, even
+  though both are called "duplication" in the issue. The binder's copy existed for a purely TECHNICAL
+  reason (the sandbox import constraint) and carried ZERO independent verification value — it was pure
+  waste, the ideal generation target, and TKT-0019 eliminated it with no loss of any guarantee.
+  `role-table.json` is the opposite: it is a deliberately hand-authored, INDEPENDENT answer key (the
+  test's own comment calls it exactly that — "the canonical primary-palette table (answer key)"), whose
+  entire job is to catch an ACCIDENTAL behavioral change landing directly inside `semanticRoles()` (a
+  mistyped ref, a reordered role, a dropped state). If `role-table.json` were generated FROM
+  `semanticRoles()`, the `refs-canonical` gate becomes tautological — "X deep-equals a copy of
+  itself" — and would pass unconditionally even if `semanticRoles()`'s logic silently regressed, because
+  there would no longer be an INDEPENDENT reference to diff against. This is the same tension ADR-011
+  already ruled on for this exact file (the cam16-hue encoding "looks wrong" but is the deliberate
+  answer-key snapshot) — a second, load-bearing precedent for treating `role-table.json` as a golden
+  master, not a duplicate implementation. The reverse direction (generating `semanticRoles()` FROM
+  `role-table.json`) is not even coherent to attempt: `role-table.json` carries rows for exactly ONE
+  palette name (`"primary"`), while `semanticRoles(paletteName)` is a general, name-parametric function
+  — there is no data in the JSON sufficient to derive the function for any other palette.
+- **Consequences.** `role-table.json` and `semantic.js` continue to move together BY HAND on every
+  role/count change, per `adding-semantic-roles`' existing lockstep procedure — an accepted, ongoing
+  maintenance cost (not a defect), because the human-authored second copy is the feature, not the bug.
+  No test, script, or skill changes; the `refs-canonical` gate is unchanged and remains the drift-catcher
+  it was designed to be. Revisit only if a genuinely NEW, unrelated reason to keep two independently
+  generated copies ever surfaces — no such reason exists today.
+- **Status.** DECIDED (2026-07-17; TKT-0030/#342, informed by TKT-0019/#331's completed build-out).
+
+## ADR-019 — The theme axis is a data-driven `{name, side}[]` list, not a hardcoded Light/Dark pair; a role stays 2-ended
+- **Context.** The 2026-07-17 collections-architecture review
+  (`docs/reference/reviews/2026-07-17-collections-arch.md`, CRITICAL-3) found the breakpoint axis
+  fully generic (N modes, any names — `typeTokensFigmaModes`/`geomTokensFigmaModes`'s `modes[]`
+  parameter) while the THEME axis was hardcoded to exactly two: `exportDTCG` only ever built
+  `"Light_tokens.json"`/`"Dark_tokens.json"`, `figma/binder/bind-plan.mjs`'s `bindingPlan` only ever
+  emitted `{lightTarget, darkTarget}`, and `figma/plugin/code.js`'s `applyBundle` hardcoded exactly
+  two Figma modes named `"Light"`/`"Dark"`. Adding a third theme (a dim mode, high-contrast, a
+  second brand) required an engine change, not a config change (TKT-0021).
+- **Decision.** Genericize the AXIS, not the per-role DATA MODEL: a role keeps its existing
+  2-ended shape (a `light` ref and a `dark` ref — semantic.js's header note, unchanged). A
+  **theme** is a named Figma mode bound to ONE of those two already-resolved ends via a `side`
+  field (`"light"` or `"dark"`). `semantic.js` exports `DEFAULT_THEMES = [{name:"Light",
+  side:"light"}, {name:"Dark", side:"dark"}]` — the single source every surface falls back to.
+  `exportDTCG(state, opts)` takes an optional `opts.themes` and emits one `"{name}_tokens.json"`
+  per theme (in order); `bindingTargets(paletteNames, themes)` / `bindingPlan(paletteNames,
+  themes)` take the same optional list (`bindingPlan`'s per-role shape changed from the fixed
+  `{lightTarget, darkTarget}` fields to a generic `targets: [{mode, target}, ...]` array — no
+  consumer read the old field names directly); `applyBundle` walks every `"{name}_tokens.json"`
+  file the bundle actually carries (identified by its `$extensions["com.figma.modeName"]` tag, not
+  by parsing the filename) and creates exactly that many Color Semantic modes, in that order,
+  pruning any mode the current bundle no longer wants. An absent/default `opts.themes` reproduces
+  the pre-ADR-019 two-file, two-mode output **byte-identically** — proven by an explicit
+  before/after diff, not just "tests still pass" (TKT-0021's own gate).
+- **Rationale.** A THIRD resolved end per role (so "Dim" could carry its OWN color, distinct from
+  both Light and Dark) would require a new field in the role table itself
+  (`data/role-table.json`'s `roleTable`, `semantic.js`'s `semanticRoles()`, every consumer of
+  `r.light`/`r.dark`) — a far larger, separate change with its own role-count-style lockstep
+  concerns (`adding-semantic-roles`). The axis genericization this ticket needed — "N named modes,
+  not exactly 2" — does NOT require that: a theme can already reuse either existing end under a
+  new name (e.g. a "Dim" companion mode bound to the same `"dark"` side as "Dark"), which is
+  sufficient to prove and use the generic plumbing today. A genuine third COLOR (not just a third
+  NAME) is future work, scoped separately if the product asks for it.
+- **Consequences.** `figma/binder/figma-semantic-binder/code.js` (the standalone binder, which
+  reads a LIVE file's raw variables directly rather than an `exportDTCG` bundle) still hardcodes
+  its own Light+Dark mode creation — out of scope for TKT-0021 (the issue and the review cite only
+  `exportDTCG`/`bind-plan.mjs`/`applyBundle`); its `bindingPlan`-mirrored role table still emits the
+  same canonical raw-color target SET either way (a 3-theme axis reusing an existing `side`
+  contributes no new raw names — proven in `test/figma/binder.mjs`'s `themes` gate), so the two
+  binders stay compatible, but the standalone binder does not yet let a user create a 3rd Color
+  Semantic mode on its own. `exportUI3`'s `Color Semantic` collection (`values:{Light, Dark}`) was
+  NOT touched — also out of the ticket's named scope; it carries the identical hardcoded-pair
+  pattern and should genericize the same way in a follow-up (a documented gap, not a fixed one).
+  No UI control was added for authoring extra themes per doc — this ADR ratifies that the
+  ENGINE/BIND/APPLY path no longer blocks it structurally; wiring a user-facing control is a
+  separate, later decision.
+- **Status.** DECIDED (ratified 2026-07-17; TKT-0021). Follow-up: genericize `exportUI3`'s theme
+  axis and the standalone binder's live-mode creation the same way, if/when a real 3rd-theme ask
+  lands (tracked informally here, not yet a filed ticket).
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -423,6 +515,8 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-004 | scrims unified onto one 500 ramp (SUPERSEDED) | scrims now a single 500 ramp; the former base-750-only decision is superseded |
 | ADR-002 | semantic could alias raw to cascade | native import errors on name-only aliasData; plugin does cascade |
 | ADR-011 | `role-table.json` still encodes cam16 hues though hueSpace is now OKLCH | role-table is the cam16 answer key for the parity gate; the OKLCH flip is at the doc/seed layer, not the role table |
+| ADR-019 | `exportUI3` and the standalone binder still hardcode Light/Dark | deliberately out of TKT-0021's scope — a documented follow-up, not an oversight |
 | ADR-007 | a real-looking Figma schema isn't imported | the schema is unverified/non-native |
 | ADR-014 | a pre-rename `.fig` loses its embedded config, and no migration was written | `setPluginData` is namespaced per plugin id — the old keys are unreadable from the new id; a migration cannot exist |
 | ADR-015 | the product has no maker, no logo, and support points at an issue tracker | deliberate: the maker brand was retired; `test/repo/branding.mjs` fails the build if it returns |
+| ADR-018 | `role-table.json` isn't generated from `semantic.js` like the Figma binder's role table now is (TKT-0019) | it's a deliberate independent answer key; generating it would make the `refs-canonical` gate tautological |

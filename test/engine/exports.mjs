@@ -32,6 +32,37 @@ const want3 = ["palette.tokens.json", "Light_tokens.json", "Dark_tokens.json"];
 if (want3.some((k) => !(k in dtcg)) || Object.keys(dtcg).length !== 3) FAIL("dtcg-shape", `keys = ${Object.keys(dtcg)}`);
 for (const k of want3) try { JSON.parse(JSON.stringify(dtcg[k])); } catch { FAIL("dtcg-shape", `${k} not JSON-serializable`); }
 
+// ── hpg-export-themes (TKT-0021 — the theme axis is data-driven, not a hardcoded Light/Dark pair) ──
+// IDENTITY: an absent opts.themes must reproduce EXACTLY the same output as passing the default pair
+// explicitly — proves the fallback isn't a separate code path that could quietly drift from the axis.
+const dtcgDefault = X.exportDTCG(C(ALL), {});
+const dtcgExplicit2 = X.exportDTCG(C(ALL), { themes: [{ name: "Light", side: "light" }, { name: "Dark", side: "dark" }] });
+if (JSON.stringify(dtcgDefault) !== JSON.stringify(dtcgExplicit2)) FAIL("themes", "default (no opts.themes) output differs from the explicit 2-theme (Light/Dark) equivalent");
+// GENERALIZATION: a 3-theme axis (Light/Dark/Dim) produces a THIRD semantic file, correctly tagged and
+// resolved — proves the axis is genuinely N-way, not just "2 still works". Dim reuses the dark side
+// (a real, named companion mode — not a new per-role color derivation, which is out of this ticket's
+// scope; see semantic.js's DEFAULT_THEMES note), so its tree must equal Dark's tree exactly.
+const THEMES_3 = [{ name: "Light", side: "light" }, { name: "Dark", side: "dark" }, { name: "Dim", side: "dark" }];
+const dtcg3 = X.exportDTCG(C(ALL), { themes: THEMES_3 });
+const want4 = ["palette.tokens.json", "Light_tokens.json", "Dark_tokens.json", "Dim_tokens.json"];
+if (want4.some((k) => !(k in dtcg3)) || Object.keys(dtcg3).length !== 4) FAIL("themes", `3-theme keys = ${Object.keys(dtcg3)}, want ${want4}`);
+else {
+  if ((dtcg3["Dim_tokens.json"].$extensions || {})["com.figma.modeName"] !== "Dim") FAIL("themes", "Dim_tokens.json is not tagged com.figma.modeName='Dim'");
+  const dimNoTag = { ...dtcg3["Dim_tokens.json"] }; delete dimNoTag.$extensions;
+  const darkNoTag = { ...dtcg3["Dark_tokens.json"] }; delete darkNoTag.$extensions;
+  if (JSON.stringify(dimNoTag) !== JSON.stringify(darkNoTag)) FAIL("themes", "Dim (side:'dark') tree does not match Dark's tree (same side, should resolve identically)");
+  // Light/Dark themselves are untouched by adding a 3rd theme (order + content stable).
+  if (JSON.stringify(dtcg3["Light_tokens.json"]) !== JSON.stringify(dtcgDefault["Light_tokens.json"])) FAIL("themes", "adding a 3rd theme changed the Light tree");
+  if (JSON.stringify(dtcg3["Dark_tokens.json"]) !== JSON.stringify(dtcgDefault["Dark_tokens.json"])) FAIL("themes", "adding a 3rd theme changed the Dark tree");
+}
+// aliasData also flows per-theme (rawColl on): Dim's alias targets equal Dark's (same side -> same ref).
+const dtcg3Alias = X.exportDTCG(C(ALL), { themes: THEMES_3, rawColl: "Color Primitives" });
+const firstPaletteKey = Object.keys(dtcg3Alias["Dim_tokens.json"]).find((k) => k[0] !== "$");
+const dimRoleLeaf = leaves(dtcg3Alias["Dim_tokens.json"][firstPaletteKey])[0];
+const darkRoleLeaf = leaves(dtcg3Alias["Dark_tokens.json"][firstPaletteKey])[0];
+const aliasOfLeaf = (l) => l && l.$extensions && l.$extensions["com.figma.aliasData"];
+if (!aliasOfLeaf(dimRoleLeaf) || JSON.stringify(aliasOfLeaf(dimRoleLeaf)) !== JSON.stringify(aliasOfLeaf(darkRoleLeaf))) FAIL("themes", "Dim's aliasData does not match Dark's (same side should target the same raw ref)");
+
 // ── hpg-export-leaf-valid (>= 53 x enabled resolved leaves per mode; each well-formed) ────
 for (const file of ["Light_tokens.json", "Dark_tokens.json"]) {
   const ls = leaves(dtcg[file]);
@@ -216,8 +247,34 @@ if (!/--c-[a-z0-9-]+-key-dominant:\s*oklch\(/.test(kcss)) FAIL("keycolors", "dom
 if (!/--c-[a-z0-9-]+-key-supportive:\s*oklch\(/.test(kcss)) FAIL("keycolors", "supportive key token (oklch) missing");
 const kp = X.exportJSON(withKey)[ALL[0].name.toLowerCase()]; // ADR-016: JSON keys by slug
 if (!kp.keyColors || kp.keyColors.length !== 2 || kp.keyColors[0].role !== "dominant" || !Array.isArray(kp.keyColors[0].oklch) || kp.keyColors[0].oklch.length !== 3) FAIL("keycolors", "JSON keyColors block missing/wrong");
+// derivePalette's internal `rgb` (added for DTCG/UI3, TKT-0022) must not leak into JSON's own {role,oklch,name?} shape
+if ("rgb" in kp.keyColors[0]) FAIL("keycolors", "JSON keyColors leaf leaked the internal rgb field");
 // a palette with no key colors emits no key tokens (opt-in only)
 if (X.exportCSS(C(ALL)).includes("-key-")) FAIL("keycolors", "key tokens present when none set");
+
+// TKT-0022 — key colors must ALSO surface in DTCG (raw tree's key/ group, mirroring scrim/) and UI3
+// (raw/{n}/key/{role} primitives): they exported fine via CSS/JSON but were silently absent from the
+// two "standards path" formats, with no ADR fencing the omission (checked decision-records.md — none
+// exists). Treated as a bug, not a documented exception.
+const slug0 = ALL[0].name.toLowerCase();
+const kdtcg = X.exportDTCG(withKey)["palette.tokens.json"][slug0];
+if (!kdtcg || !kdtcg.key || !kdtcg.key.dominant || !kdtcg.key.supportive) FAIL("keycolors-dtcg", "DTCG raw tree missing key/ group for a keyColors palette");
+else {
+  for (const role of ["dominant", "supportive"]) {
+    const leaf = kdtcg.key[role];
+    if (!leaf || leaf.$type !== "color" || !leaf.$value || leaf.$value.colorSpace !== "srgb" || leaf.$value.alpha !== 1) FAIL("keycolors-dtcg", `key/${role} not a well-formed, opaque (frac=1) color leaf`);
+  }
+}
+// absent when the palette sets no key colors (opt-in only, same rule as CSS)
+const noKeyDtcg = X.exportDTCG(C(ALL))["palette.tokens.json"][slug0];
+if (noKeyDtcg && noKeyDtcg.key) FAIL("keycolors-dtcg", "DTCG key/ group present when no keyColors set");
+
+const kui3 = X.exportUI3(withKey);
+const primVars = kui3.collections["Color Primitives"].variables;
+if (!primVars[`raw/${slug0}/key/dominant`] || primVars[`raw/${slug0}/key/dominant`].type !== "COLOR" || !primVars[`raw/${slug0}/key/dominant`].values.Base) FAIL("keycolors-ui3", "UI3 raw/{n}/key/dominant missing or malformed");
+if (!primVars[`raw/${slug0}/key/supportive`]) FAIL("keycolors-ui3", "UI3 raw/{n}/key/supportive missing");
+const noKeyUi3 = X.exportUI3(C(ALL)).collections["Color Primitives"].variables;
+if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("keycolors-ui3", "UI3 key/ variables present when no keyColors set");
 
 // ── hpg-export-design-system (the LLM design-system bundle: DESIGN.md universal-dialect core + tokens.json
 // + @dsCard previews + README receipt). The engine gate runs the ported §8 verifier (ds-gates.js) on the
@@ -551,7 +608,7 @@ if (X.exportCSS(C(ALL)).includes("-key-")) FAIL("keycolors", "key tokens present
 
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "tailwind", "shadcn", "keycolors", "design-system", "design-system-stitch", "design-system-make"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "tailwind", "shadcn", "keycolors", "keycolors-dtcg", "keycolors-ui3", "design-system", "design-system-stitch", "design-system-make"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

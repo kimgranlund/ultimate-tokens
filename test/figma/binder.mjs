@@ -8,6 +8,8 @@ import * as P from "../../figma/binder/bind-plan.mjs";
 import * as MAP from "../../figma/binder/mode-apply-plan.mjs";
 import * as TYPE from "../../src/engine/type.mjs";
 import * as GEOM from "../../src/engine/geometry.mjs";
+import { semanticRoles } from "../../src/engine/semantic.js";
+import { extractFunctionSource } from "../../figma/binder/splice-utils.mjs";
 
 const HERE = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "figma", "binder"); // the binder lives in figma/binder/
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
@@ -33,6 +35,27 @@ if (dangling.length) FAIL("bindings", `${dangling.length} dangling target(s), e.
 // non-vacuity: a full plan covers every role's light+dark across all palettes
 const plan = P.bindingPlan(NAMES);
 if (!Array.isArray(plan) || plan.length !== 53 * NAMES.length) FAIL("bindings", `bindingPlan length ${plan && plan.length}, want ${53 * NAMES.length}`);
+// every entry carries exactly 2 targets (Light, Dark) by DEFAULT — the default theme axis.
+if (plan.length && (!Array.isArray(plan[0].targets) || plan[0].targets.length !== 2 || plan[0].targets.map((t) => t.mode).join() !== "Light,Dark")) {
+  FAIL("bindings", `bindingPlan()'s default targets = ${plan[0] && JSON.stringify(plan[0].targets)}, want [{mode:"Light",...},{mode:"Dark",...}]`);
+}
+
+// ── hpg-plugin-themes (TKT-0021 — the theme axis flows generically through bind-plan.mjs, not a
+//    hardcoded Light/Dark pair): a 3-theme axis (Light/Dark/Dim) produces a THIRD target per role,
+//    and bindingTargets contributes NO new raw names (Dim reuses the "dark" side's ref) ──
+const THEMES_3 = [{ name: "Light", side: "light" }, { name: "Dark", side: "dark" }, { name: "Dim", side: "dark" }];
+const targets3 = P.bindingTargets(NAMES, THEMES_3);
+if (JSON.stringify(targets3) !== JSON.stringify(targets)) FAIL("themes", "a 3rd theme reusing the 'dark' side changed the raw target SET (should be identical — no new raw refs)");
+const plan3 = P.bindingPlan(NAMES, THEMES_3);
+if (!Array.isArray(plan3) || plan3.length !== plan.length) FAIL("themes", `3-theme bindingPlan length ${plan3 && plan3.length}, want ${plan.length} (same role count)`);
+else {
+  const row = plan3[0];
+  if (!Array.isArray(row.targets) || row.targets.length !== 3 || row.targets.map((t) => t.mode).join() !== "Light,Dark,Dim") {
+    FAIL("themes", `3-theme bindingPlan row targets = ${row && JSON.stringify(row.targets)}, want modes Light,Dark,Dim`);
+  } else if (row.targets[1].target !== row.targets[2].target) {
+    FAIL("themes", "Dim (side:'dark') target does not match Dark's target (same side should resolve to the same raw ref)");
+  }
+}
 
 // ── hpg-plugin-offline: manifest parses + declares NO network access (current Figma manifest format:
 //    networkAccess.allowedDomains = ["none"]); code.js syntactically valid ─
@@ -67,7 +90,7 @@ const FLOAT_ANCHOR = 'JSON.parse("[]"); /* __ULTIMATE_TOKENS_FLOAT_PLANS__ */';
 // auto-invoke is stripped first: left in place it fires the moment the source loads (this file's `main`
 // is not message-driven like the flagship plugin — it just runs), which would EITHER race an explicit
 // call made afterward on the same mock figma (double-creating collections) OR — when no figma is passed
-// at all (the roleTable/refKey-only PARITY GUARD below) — throw an orphaned, unhandled rejection that
+// at all (the roleTable-only PARITY GUARD below) — throw an orphaned, unhandled rejection that
 // prints console noise once a later `await` in this script gives the microtask queue a chance to flush it.
 function loadBinder(src, figma) {
   const controlled = src.replace(/\nmain\(\)\.catch\([\s\S]*$/, "");
@@ -76,18 +99,43 @@ function loadBinder(src, figma) {
   return fn(figma, "<html>", undefined);
 }
 
-// ── PARITY GUARD: the runtime code.js HARDCODES roleTable() (the Figma sandbox can't import the
-//    .mjs), so it's a second copy of the validated role table that node --check can't catch drifting.
-//    Load it (without running main()) and assert its derived targets EQUAL bind-plan's canonical set,
-//    so a ref can't go stale silently. (Real incident 2026-06-18: the scrim refs drifted here.) ──
+// ── PARITY GUARD: the checked-in code.js's roleTable() is GENERATED (TKT-0019) — spliced verbatim
+//    from src/engine/semantic.js's semanticRoles() function body by scripts/gen-figma-binder-code.mjs
+//    — so this gate is now a TRIPWIRE proving the splice actually landed correctly (a stale build, a
+//    hand-edit inside the `// === GENERATED:ROLE_TABLE ===` markers, or a splice-script bug), not the
+//    mechanism preventing drift the way it was before TKT-0019 (mirrors the `floatparity` gate below,
+//    which plays the same tripwire role for the spliced float-executor functions).
+//    Load the runtime code.js (without running main()) and deep-equal-compare its FULL role objects —
+//    {key, suffix, light, dark}, in ORDER, per default palette — against semantic.js's semanticRoles(n)
+//    directly. This is the engine <-> Figma-binder leg of the role table's 3-impl identity;
+//    role-table.json's own identity with semantic.js (also full-object, key+suffix+light+dark) is a
+//    SEPARATE gate, `refs-canonical` in test/engine/semantic.mjs — the two gates together give
+//    transitive identity across all three implementations.
+//    A derived-ref-name-set diff (the previous shape of this gate, pre-TKT-0027) only proves every ref
+//    resolves to a real raw-colors target — it CANNOT catch a `key` or `suffix` corruption that keeps
+//    pointing at the same ref, nor a role missing from one side whose refs are already produced by
+//    another role. Full-object, in-order comparison catches both: a length mismatch flags a
+//    missing/extra row, and a per-field mismatch flags a `key`/`suffix` drift even when `light`/`dark`
+//    still match. (Real incident 2026-06-18, pre-splice: the scrim refs drifted here.) ──
 try {
   const src = readFileSync(BINDER_PATH, "utf8");
-  const { roleTable, refKey: rk } = loadBinder(src, undefined);
-  const runtime = new Set();
-  for (const n of NAMES) for (const r of roleTable(n)) { runtime.add(`${n}/${rk(r.light)}`); runtime.add(`${n}/${rk(r.dark)}`); }
-  const canon = new Set(P.bindingTargets(NAMES));
-  const drift = [...runtime].filter((t) => !canon.has(t)).concat([...canon].filter((t) => !runtime.has(t)));
-  if (drift.length) FAIL("parity", `runtime code.js roleTable drifted from canonical (e.g. ${drift.slice(0, 3).join(", ")})`);
+  const { roleTable } = loadBinder(src, undefined);
+  const drift = [];
+  for (const n of NAMES) {
+    const runtimeRoles = roleTable(n);
+    const engineRoles = semanticRoles(n);
+    if (!Array.isArray(runtimeRoles) || runtimeRoles.length !== engineRoles.length) {
+      drift.push(`${n}: code.js roleTable has ${runtimeRoles && runtimeRoles.length} rows, semantic.js has ${engineRoles.length}`);
+      continue;
+    }
+    for (let i = 0; i < engineRoles.length; i++) {
+      const a = runtimeRoles[i], b = engineRoles[i];
+      if (!a || a.key !== b.key || a.suffix !== b.suffix || a.light !== b.light || a.dark !== b.dark) {
+        drift.push(`${n}[${i}] code.js ${JSON.stringify(a)} != semantic.js ${JSON.stringify(b)}`);
+      }
+    }
+  }
+  if (drift.length) FAIL("parity", `runtime code.js roleTable drifted from src/engine/semantic.js (e.g. ${drift.slice(0, 3).join("; ")})`);
 } catch (e) { FAIL("parity", `could not load/compare runtime roleTable: ${e.message}`); }
 
 // ── a mock figma: in-memory collections + variables (a trimmed copy of test/figma/plugin.mjs's mock —
@@ -228,28 +276,23 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("colorprov", "main() threw with a foreign pre-existing Color Semantic collection: " + e.message); }
 }
 
-// ── colorparity: the binder ports 3 color-collection-provenance functions VERBATIM from the flagship
-//    (figma/plugin/code.js), same discipline as floatparity below — a pure DATA/provenance executor with no
-//    planner to spec-gate against, so the two copies are gated against silent drift. ──
+// ── colorparity: the binder's checked-in code.js's readColorRegistry/writeColorRegistry/ensureCollection
+//    are GENERATED (TKT-0024, splicing the FLOAT_EXECUTOR technique from TKT-0019) — spliced verbatim from
+//    the flagship figma/plugin/code.js by scripts/gen-figma-binder-code.mjs into the
+//    `// === GENERATED:COLOR_EXECUTOR ===` markers, same discipline as floatparity below. This gate is now
+//    a TRIPWIRE proving the splice landed correctly, not the mechanism keeping the two copies in lockstep. ──
 {
   const FLAGSHIP_PATH = join(HERE, "..", "plugin", "code.js");
   const COLOR_FNS = ["readColorRegistry", "writeColorRegistry", "ensureCollection"];
-  const extractFn = (src, name) => {
-    const m = new RegExp("(?:async\\s+)?function\\s+" + name + "\\s*\\([^)]*\\)\\s*\\{").exec(src);
-    if (!m) return null;
-    let depth = 0, i = src.indexOf("{", m.index);
-    for (; i < src.length; i++) { if (src[i] === "{") depth++; else if (src[i] === "}" && --depth === 0) { i++; break; } }
-    return src.slice(m.index, i);
-  };
   const norm = (code) => code.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").trim();
   const keyLit = (src) => (/COLOR_REGISTRY_KEY\s*=\s*("[^"]*")/.exec(src) || [])[1];
   try {
     const flagSrc = readFileSync(FLAGSHIP_PATH, "utf8");
     for (const fn of COLOR_FNS) {
-      const a = extractFn(binderSrc, fn), b = extractFn(flagSrc, fn);
+      const a = extractFunctionSource(binderSrc, fn), b = extractFunctionSource(flagSrc, fn);
       if (!a) { FAIL("colorparity", `binder is missing ${fn}()`); continue; }
       if (!b) { FAIL("colorparity", `flagship is missing ${fn}()`); continue; }
-      if (norm(a) !== norm(b)) FAIL("colorparity", `${fn}() body drifted between the binder and the flagship (executor copies must stay byte-identical)`);
+      if (norm(a) !== norm(b)) FAIL("colorparity", `${fn}() body drifted between the binder and the flagship (executor copies must stay byte-identical — regenerate with scripts/gen-figma-binder-code.mjs)`);
     }
     if (!keyLit(binderSrc) || keyLit(binderSrc) !== keyLit(flagSrc)) FAIL("colorparity", `COLOR_REGISTRY_KEY literal differs (binder ${keyLit(binderSrc)} vs flagship ${keyLit(flagSrc)}) — the two would not converge on one collection`);
   } catch (e) { FAIL("colorparity", "could not load/compare the flagship color-provenance functions: " + e.message); }
@@ -265,34 +308,30 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 {
   const FLAGSHIP_PATH = join(HERE, "..", "plugin", "code.js");
   const FLOAT_FNS = ["readFloatRegistry", "writeFloatRegistry", "ensureFloatCollection", "varsByName", "applyFloatPlans"];
-  const extractFn = (src, name) => {
-    const m = new RegExp("(?:async\\s+)?function\\s+" + name + "\\s*\\([^)]*\\)\\s*\\{").exec(src);
-    if (!m) return null;
-    let depth = 0, i = src.indexOf("{", m.index);
-    for (; i < src.length; i++) { if (src[i] === "{") depth++; else if (src[i] === "}" && --depth === 0) { i++; break; } }
-    return src.slice(m.index, i);
-  };
+  // extractFunctionSource is the SAME brace-matched extraction scripts/gen-figma-binder-code.mjs uses
+  // to splice these functions into the binder (TKT-0019) — shared from splice-utils.mjs so the
+  // generator and this tripwire can never quietly disagree on what "the same function" means.
   const norm = (code) => code.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").trim();
   const keyLit = (src) => (/FLOAT_REGISTRY_KEY\s*=\s*("[^"]*")/.exec(src) || [])[1];
   try {
     const flagSrc = readFileSync(FLAGSHIP_PATH, "utf8");
     for (const fn of FLOAT_FNS) {
-      const a = extractFn(binderSrc, fn), b = extractFn(flagSrc, fn);
+      const a = extractFunctionSource(binderSrc, fn), b = extractFunctionSource(flagSrc, fn);
       if (!a) { FAIL("floatparity", `binder is missing ${fn}()`); continue; }
       if (!b) { FAIL("floatparity", `flagship is missing ${fn}()`); continue; }
-      if (norm(a) !== norm(b)) FAIL("floatparity", `${fn}() body drifted between the binder and the flagship (executor copies must stay byte-identical)`);
+      if (norm(a) !== norm(b)) FAIL("floatparity", `${fn}() body drifted between the binder and the flagship (executor copies must stay byte-identical — regenerate with scripts/gen-figma-binder-code.mjs)`);
     }
     if (!keyLit(binderSrc) || keyLit(binderSrc) !== keyLit(flagSrc)) FAIL("floatparity", `FLOAT_REGISTRY_KEY literal differs (binder ${keyLit(binderSrc)} vs flagship ${keyLit(flagSrc)}) — the two would not converge on one collection set`);
   } catch (e) { FAIL("floatparity", "could not load/compare the flagship executor: " + e.message); }
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["bindings", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "colorparity", "floatparity"]) {
+for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "colorparity", "floatparity"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
 console.log(`  (checked ${targets ? targets.length : 0} binding targets vs ${CANON.size} canonical raw-colors names)`);
-console.log("  defer  hpg-parity-roletable — role-table parity is verified by semantic-mapping");
+console.log("  defer  hpg-parity-roletable — this file's `parity` gate above verifies the engine<->Figma-binder leg (full role objects, in order, per default palette); the canonical role-table.json<->semantic.js leg is verified by semantic-mapping's own refs-canonical gate");
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: figma-plugin clears its checkable [gate] predicates");
 process.exit(0);

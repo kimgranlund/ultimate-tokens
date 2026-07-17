@@ -12,6 +12,7 @@
 6. Shared rules: padding, slug, scrims
 7. Figma import constraints (why resolved, not aliased)
 8. System constants (fixed, non-palette tokens)
+9. Key colors (retained brand colors)
 
 Tailwind v4 (`exportTailwind`) and ShadCN (`exportShadcn`) are introduced in §1 but do not yet have
 their own dedicated section here — their shapes are documented at the point of use in
@@ -85,14 +86,21 @@ serializer) with no rubric of record in this directory yet. It is out of scope f
 Stop keys padded to 3 digits. The `semantic` block lists every role with its CSS var name
 and both resolved hexes.
 
-## 4. Figma DTCG (3-file zip)
+## 4. Figma DTCG (the raw file plus one semantic file per theme)
 
 `download()` emits `figma-tokens.zip` containing:
 
-- `palette.tokens.json` — **raw** collection, mode `Value`. Solid stops + 11 scrims per
-  palette as resolved `colorLeaf`s.
-- `Light_tokens.json` — **semantic**, mode `Light`. Every role resolved to a `colorLeaf`.
-- `Dark_tokens.json` — **semantic**, mode `Dark`.
+- `palette.tokens.json` — **raw** collection, mode `Value`. Solid stops + 11 scrims (+ any key
+  colors, §9) per palette as resolved `colorLeaf`s.
+- One `"{theme.name}_tokens.json"` per entry in the **theme axis** — **semantic**, mode
+  `theme.name`. Every role resolved to a `colorLeaf` using that theme's `side` end (`"light"` or
+  `"dark"`). By default (no `opts.themes`), the axis is `semantic.js`'s `DEFAULT_THEMES` —
+  `[{name:"Light",side:"light"}, {name:"Dark",side:"dark"}]` — producing the historical
+  `Light_tokens.json`/`Dark_tokens.json` pair, byte-identically (ADR-019, TKT-0021). A doc/caller
+  can pass a longer `opts.themes` (e.g. `+ {name:"Dim", side:"dark"}`) to add a named companion
+  mode with no engine change — this does NOT give a theme its own independent resolved color per
+  role (that needs a third ref in the role table itself, a separate change); every theme's value is
+  one of the role's two existing ends.
 
 `colorLeaf(rgb, alpha)`:
 ```
@@ -100,8 +108,14 @@ and both resolved hexes.
   "$value":{ "colorSpace":"srgb", "components":[r/255,g/255,b/255], "alpha":a, "hex":"#RRGGBB[AA]" },
   "$extensions":{ "com.figma.hiddenFromPublishing":true, "com.figma.scopes":["ALL_SCOPES"] } }
 ```
-`figmaMode(tree, mode)` adds top-level `$extensions.com.figma.modeName`. Export preview shows
-the Light semantic tree; the download adds raw + Dark.
+`figmaMode(tree, mode)` adds top-level `$extensions.com.figma.modeName` — `figma/plugin/code.js`'s
+`applyBundle` reads this tag (not the filename) to discover which theme files a bundle carries and
+how many Color Semantic modes to create. Export preview shows the first theme's semantic tree; the
+download adds raw + every other theme.
+
+**`exportUI3`'s `Color Semantic` collection still hardcodes the Light/Dark pair** (`values:{Light,
+Dark}`) — deliberately out of TKT-0021/ADR-019's scope (a documented follow-up, not an oversight;
+see ADR-019's Consequences). Don't assume UI3 already generalizes the same way DTCG now does.
 
 The zip is built by a dependency-free **store/deflate writer** (`makeZip`, with `crc32`); it
 works fully offline.
@@ -181,3 +195,31 @@ live when first wiring `dialog-backdrop` (2026-07-11) — the raw tree has no su
 consumers, e.g. `figma/plugin/code.js`'s variable-creation loop, walk it generically by name), so
 constants live there and there only; a Figma user binds directly to the raw primitive (nothing to
 alias FROM — the value has no palette).
+
+## 9. Key colors (retained brand colors)
+
+A palette may carry `keyColors: [{ role, oklch:[L,C,H], name? }]` — exact brand colors the
+generator retains verbatim rather than deriving from the ramp (they may sit off it entirely; the
+UI places them perceptually, exports keep them lossless). `role` is a free-form string
+(`"dominant"`/`"supportive"` are the two the UI currently offers); `oklch` is the source of truth
+(`oklchToRgb` derives `rgb`/`hex` for formats that need a raster leaf). Emitted **only** when a
+palette actually sets `keyColors` — absent otherwise (opt-in, not a per-palette default).
+
+**Where it appears:**
+
+| Format | Placement |
+|---|---|
+| CSS (hex/oklch) | `--{pfx}-{n}-key-{role}` lines, per palette, after that palette's semantic roles |
+| JSON | `palettes[n].keyColors: [{role, oklch, name?}]` — verbatim passthrough |
+| DTCG | `palette.tokens.json` (RAW): a `key` group nested under the palette, keyed by `role` — mirrors `scrim`'s two-segment shape (`{n}.key.{role}`), a resolved `colorLeaf` (frac 1, no alpha) |
+| UI3 (Figma) | `raw/{n}/key/{role}` in `Color Primitives` — mirrors the `raw/{n}/scrim/{step}` shape |
+| Tailwind / ShadCN | not emitted (frameworks; out of scope, same as scrims for Tailwind) |
+
+**Why DTCG/UI3 carry them in the RAW tree only, not the semantic tree:** key colors are extra raw
+values scoped to one palette, not new top-level tree keys — nesting them under the palette's own
+raw group (`{n}.key.{role}` / `raw/{n}/key/{role}`) never touches the positional-palette-zip
+invariant §8 describes for system constants (that invariant is about a tree's TOP-LEVEL keys, and
+`key` here is a second-level group inside an existing, real palette). No ADR previously fenced
+their DTCG/UI3 absence — checked `decision-records.md` and found none; TKT-0022 confirmed it was
+an oversight (they exported fine via CSS/JSON, the two formats an emitter happened to route
+through `p.keyColors` directly) and closed the gap rather than fencing it.
