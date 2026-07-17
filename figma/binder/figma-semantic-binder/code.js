@@ -59,8 +59,44 @@ function readFloatRegistry() {
 }
 function writeFloatRegistry(reg) { figma.root.setPluginData(FLOAT_REGISTRY_KEY, JSON.stringify(reg)); }
 
+// COLOR_REGISTRY_KEY — TKT-0024: the SAME provenance discipline, back-ported to the Color Semantic
+// collection this binder creates/finds (the raw "Color Primitives" collection is only ever READ here, never
+// created — see main() below — so it needs no registry entry of its own). Kept as the SAME key string as
+// figma/plugin/code.js so the flagship plugin and this binder converge on the SAME collection if a user
+// runs both against one file. Before this, main() adopted ANY same-named "Color Semantic" collection by
+// NAME alone — a user's own collection with that exact name got silently adopted and populated with
+// aliases on the next bind.
+const COLOR_REGISTRY_KEY = "ultimate-tokens-color-collections";
+
+// MIRRORS figma/plugin/code.js's color executor: readColorRegistry/writeColorRegistry/ensureCollection are
+// ported VERBATIM (same parity discipline as the float functions above) — the `colorparity` gate in
+// test/figma/binder.mjs enforces it.
+function readColorRegistry() {
+  const raw = figma.root.getPluginData(COLOR_REGISTRY_KEY);
+  if (!raw) return {};
+  try { const r = JSON.parse(raw); return r && typeof r === "object" ? r : {}; } catch (e) { return {}; }
+}
+function writeColorRegistry(reg) { figma.root.setPluginData(COLOR_REGISTRY_KEY, JSON.stringify(reg)); }
+async function ensureCollection(name, reg, renameFrom) {
+  const cols = await figma.variables.getLocalVariableCollectionsAsync();
+  const known = reg[name] && cols.find((c) => c.id === reg[name]);
+  if (known) return known;
+  for (const old of (Array.isArray(renameFrom) ? renameFrom : [])) {
+    const prev = reg[old] && cols.find((c) => c.id === reg[old]);
+    if (prev) {
+      prev.name = name;
+      reg[name] = prev.id;
+      delete reg[old];
+      return prev;
+    }
+  }
+  const made = figma.variables.createVariableCollection(name);
+  reg[name] = made.id;
+  return made;
+}
+
 // ensureFloatCollection — OUR managed Type/Geometry collection for `name`, by PROVENANCE (the registry's
-// stored id), creating + registering it if absent. Unlike ensureCollection (color, below), it NEVER
+// stored id), creating + registering it if absent. Unlike ensureCollection (color, above), it NEVER
 // adopts a same-named collection it didn't create — so applyFloatPlans' rename/prune can't ever hit a
 // user's own "Typography"/"Geometry". A user manual-rename survives (we track id, not name); a
 // user-deleted one is re-created. `reg` is mutated in place; the caller persists it once via writeFloatRegistry.
@@ -287,9 +323,11 @@ async function main() {
       if (v.variableCollectionId === rawColl.id) rawVars[v.name] = v;
     }
 
-    // 2. Create/find the Color Semantic collection with Light + Dark modes.
-    let sem = collections.find((c) => c.name === SEMANTIC_COLLECTION);
-    if (!sem) sem = figma.variables.createVariableCollection(SEMANTIC_COLLECTION);
+    // 2. Create/find the Color Semantic collection with Light + Dark modes — by PROVENANCE (registry id),
+    //    never by name, so a user's own "Color Semantic" collection is never adopted (TKT-0024).
+    const colorReg = readColorRegistry();
+    const sem = await ensureCollection(SEMANTIC_COLLECTION, colorReg);
+    writeColorRegistry(colorReg);
     const lightMode = sem.modes[0].modeId;
     const darkMode = (sem.modes[1] && sem.modes[1].modeId) || sem.addMode("Dark");
 
