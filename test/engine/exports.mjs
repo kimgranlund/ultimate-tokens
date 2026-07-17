@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 // verify.mjs — export-formats validation adapter (CRITIC side; deny-on-write to the advancer).
 import { readFileSync } from "node:fs";
-import * as X from "../../src/engine/exports.js";
+import * as Xcolor from "../../src/engine/exports.js";
+// The DS-bundle (Claude Design / Stitch / Make) subsystem moved to its own module (TKT-0015);
+// merge into the same `X` namespace so every existing X.foo call below is untouched.
+import * as Xds from "../../src/engine/ds-export.js";
+const X = { ...Xcolor, ...Xds };
 import { dsBundleGates } from "../../src/engine/ds-gates.js";
 import { typeScale } from "../../src/engine/type.mjs";
 import { geomScale } from "../../src/engine/geometry.mjs";
