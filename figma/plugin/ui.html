@@ -860,6 +860,8 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow);
 }
 .segmented button:not(.on):hover { background: var(--line-2); color: var(--ink); }
+/* colorCompareBtn's active state (Compare/Both is on) — same treatment as a selected segment. */
+.scheme-btn.on { background: var(--accent); color: var(--accent-ink); }
 /* canvas-header variant of .segmented — inline + compact (no right-pane margins, auto-width). */
 .canvas-seg { margin: 0; }
 /* two labeled segmented controls side-by-side in the inspector (Hue space · On-colors) */
@@ -9818,6 +9820,11 @@ const btn = (children, { variant = "ghost", cls = "", title, ariaLabel, ariaPres
 const SCHEME_ICON = { system: "theme", light: "sun", dark: "moon" };
 const SCHEME_NEXT = { system: "light", light: "dark", dark: "system" };
 
+// CANVAS_INSET — the fixed px offset fit() positions the canvas-scene's top-left corner at from
+// canvas-area's top-left, on reset/section-switch/dblclick (Color · Typography · Geometry alike).
+// Replaces the old dead-center default so the content's own top-left is what's visible first.
+const CANVAS_INSET = 32;
+
 // Per-treatment specimen copy — each treatment carries BESPOKE placeholder text aligned to its concept
 // (lifestyle app · luxury maison · long-form journalism · ops dashboard · gig poster), so the type
 // previews read like the world they're for instead of one shared sports demo. `para` is the Body-LG
@@ -9952,13 +9959,13 @@ const field = (labelText, control, { labelTitle } = {}) => {
   return h("div", { class: "field" }, h("label", { for: id, title: labelTitle }, labelText), control);
 };
 
-return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, field };
+return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, field };
 })();
 __M.colorSection = (function(){
 const { SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, projectView, seedFromKeyColor, slug } = __M.model;
 const { RELATIONSHIPS, deriveNeutral, deriveRelative } = __M.derive;
 const { icon } = __M.icons;
-const { CURVES, DAMP_PRESETS, btn, chip, field, fmt, h, swatch, switchControl } = __M.appHelpers;
+const { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } = __M.appHelpers;
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -10797,10 +10804,10 @@ class ColorSectionImpl {
           this.render();
         },
       }),
-      // unified Mode control — the Color section's value modes: Light · Dark · Both (Both = the side-by-side
-      // Compare view). Generalizes the old sun/moon/auto scheme toggle (Type/Geom keep canvasThemeBtn until
-      // breakpoints land).
-      this.colorModeControl(),
+      // scheme cycle (system/light/dark, icon-only — matches Type/Geom's canvasThemeBtn) + a
+      // separate Compare toggle for the side-by-side Light+Dark view.
+      this.colorSchemeBtn(),
+      this.colorCompareBtn(),
       btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
       h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
       btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
@@ -10839,23 +10846,44 @@ class ColorSectionImpl {
   }
 
 
-  // colorModeControl — the unified Mode control in the Color canvas header (Light · Dark · Both). It
-  // replaces the old sun/moon/auto scheme toggle: Light/Dark preview a single value mode, Both opens the
-  // side-by-side Compare. (Type/Geom keep canvasThemeBtn until breakpoints add their modes — Phase 5.)
-  colorModeControl() {
-    return this.segmented(
-      [
-        { id: "light", label: "Light", title: "Preview the Light value mode" },
-        { id: "dark", label: "Dark", title: "Preview the Dark value mode" },
-        { id: "both", label: "Both", title: "Compare — Light & Dark side by side" },
-      ],
-      this.colorMode,
-      (id) => this.setColorMode(id),
-      { cls: "canvas-seg", ariaLabel: "Color value mode", role: "group", idPrefix: "cmode" },
-    );
+  // colorSchemeBtn — icon-only scheme cycle (system → light → dark), the Color-section analog of
+  // app.js's canvasThemeBtn, so all three sections use the same compact control for the same axis
+  // (space saved vs. the old Light/Dark/Both segmented pill). While Both/Compare is active it shows
+  // the currently-resolved concrete scheme (never blank); clicking always lands on a real scheme,
+  // exiting Compare if it was on — Compare itself lives in the separate colorCompareBtn.
+  colorSchemeBtn() {
+    const shown = this.colorMode === "both" ? this.resolvedCanvasScheme() : this.colorMode;
+    return btn(icon(SCHEME_ICON[shown] || "theme"), {
+      cls: "scheme-btn",
+      title: "Color value mode: " + shown + " — click to cycle system / light / dark",
+      ariaLabel: "Color value mode: " + shown + " — cycle system / light / dark",
+      onclick: () => this.setColorMode(SCHEME_NEXT[shown] || "system"),
+    });
   }
 
-  setColorMode(v) { this.colorMode = v; this.render(); }
+  // colorCompareBtn — toggles the side-by-side Light+Dark Compare view. Remembers the scheme it
+  // was on so turning Compare back off restores it, rather than always landing on "system".
+  colorCompareBtn() {
+    const on = this.colorMode === "both";
+    return btn(icon("sidebar"), {
+      cls: "scheme-btn" + (on ? " on" : ""),
+      title: on ? "Compare is on — click to return to a single scheme" : "Compare — Light & Dark side by side",
+      ariaLabel: on ? "Compare is on — click to return to a single scheme" : "Compare Light & Dark side by side",
+      ariaPressed: on ? "true" : "false",
+      onclick: () => this.toggleColorCompare(),
+    });
+  }
+
+  // an explicit pick (system/light/dark/both) overrides the default and PERSISTS (app prefs) —
+  // matches canvasThemeBtn's contract; only Settings › Reset returns this to "system".
+  setColorMode(v) { this.colorMode = v; this._saveAppPrefs(); this.render(); }
+
+  toggleColorCompare() {
+    if (this.colorMode === "both") this.colorMode = this._colorModeBeforeCompare || "system";
+    else { this._colorModeBeforeCompare = this.colorMode; this.colorMode = "both"; }
+    this._saveAppPrefs();
+    this.render();
+  }
 
 
   // renderCompareArea — the Color "Both" mode: the canvas scene rendered in Light AND Dark, side by side,
@@ -15304,7 +15332,7 @@ const { COLLECTIONS } = __M.collections;
 const { stylePlans, primitivesApplyPlan } = __M.stylePlan;
 const { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } = __M.iconSystems;
 const { icon } = __M.icons;
-const { MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, saveProfile, saveSets, setColorScheme, swatch } = __M.appHelpers;
+const { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, saveProfile, saveSets, setColorScheme, swatch } = __M.appHelpers;
 const { ColorSection } = __M.colorSection;
 const { TypeSection } = __M.typeSection;
 const { GeomSection } = __M.geomSection;
@@ -15348,7 +15376,7 @@ class HctApp extends HTMLElement {
     this.panesLeft = true; // left analysis rail shown (ui-session state, like segment — never persisted)
     this.panesRight = true; // right inspector shown
     this.canvasTheme = "system"; // canvas preview color-scheme: system (follow OS) | light | dark — INDEPENDENT of app chrome ◐
-    this.colorMode = "light"; // Color section value-mode control: light | dark | both (both = the side-by-side Compare view) — ui-session
+    this.colorMode = "system"; // Color section value-mode control: system (follow OS, until an explicit pick) | light | dark | both (Compare) — persisted (app prefs)
     this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table)
     this.section = "color"; // editor section: color | typography | geometry — ui-session, routes the whole editor (never persisted)
     this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (editable token matrix: Base + breakpoints) — type-section sub-state
@@ -15413,7 +15441,7 @@ class HctApp extends HTMLElement {
     // computed light/dark hex tracks it live (the chrome's light-dark() tokens update on their own).
     if (typeof matchMedia !== "undefined") {
       this._mqlScheme = matchMedia("(prefers-color-scheme: dark)");
-      this._onSchemeChange = () => { if (this.theme === "system" || this.canvasTheme === "system") this.render(); };
+      this._onSchemeChange = () => { if (this.theme === "system" || this.canvasTheme === "system" || this.colorMode === "system") this.render(); };
       this._mqlScheme.addEventListener("change", this._onSchemeChange);
     }
     this.render();
@@ -15753,8 +15781,29 @@ class HctApp extends HTMLElement {
 
 
   fit() {
-    // Recenter to origin (0,0) at the default zoom (no pan, 100%).
+    // Reset to 100% with the content's TOP-LEFT corner inset (not dead-centered) — see
+    // _fitTopLeftInset for the real computation, which needs the just-rendered scene's actual
+    // size and so runs a frame later regardless of whether fit() lands before or after this
+    // tick's render(). This placeholder keeps synchronous readers (e.g. the zoom readout) sane
+    // in the interim.
     this.viewport = { panX: 0, panY: 0, zoom: 1 };
+    requestAnimationFrame(() => this._fitTopLeftInset());
+  }
+
+  // _fitTopLeftInset — positions .canvas-scene's own top-left corner at a fixed CANVAS_INSET
+  // offset from .canvas-area's top-left, replacing the naive dead-center default fit() used to
+  // set. Derived from applyTransform's chain (translate(-50%,-50%) translate(pan) scale(zoom),
+  // scene CSS-anchored at the area's own center via top/left:50%): at zoom 1 (fit's only zoom),
+  // scale doesn't move anything, so panX = INSET - areaWidth/2 + sceneWidth/2 (same for Y) puts
+  // the scene's local (0,0) at area's top-left + INSET. A no-op on the Tokens-table canvas
+  // (.is-table forces transform:none — nothing to position) and harmless if the DOM isn't ready.
+  _fitTopLeftInset() {
+    const area = this.querySelector(".canvas-area");
+    const scene = this.querySelector(".canvas-scene");
+    if (!area || !scene) return;
+    this.viewport.panX = CANVAS_INSET - area.clientWidth / 2 + scene.offsetWidth / 2;
+    this.viewport.panY = CANVAS_INSET - area.clientHeight / 2 + scene.offsetHeight / 2;
+    this.applyTransform();
   }
 
 
@@ -16729,13 +16778,13 @@ class HctApp extends HTMLElement {
   // preference (prefers-color-scheme), everything else is itself.
   resolvedCanvasScheme() {
     if (this._schemeOverride) return this._schemeOverride; // a Compare column forces its own scheme while it builds
-    // the Color section's scheme is driven by its Mode control (light/dark); "both" renders Compare, and any
-    // non-column use (e.g. the right-pane example) falls back to the last concrete scheme below.
+    const osScheme = () => (typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    // the Color section's scheme is driven by its Mode control (system/light/dark); "both" renders Compare, and
+    // any non-column use (e.g. the right-pane example) falls back to a concrete scheme below.
     if (this.section === "color" && (this.colorMode === "light" || this.colorMode === "dark")) return this.colorMode;
+    if (this.section === "color" && this.colorMode === "system") return osScheme();
     if (this.section === "color" && this.colorMode === "both") return "light"; // a sensible single-scheme fallback off-canvas
-    if (this.canvasTheme === "system") {
-      return typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    }
+    if (this.canvasTheme === "system") return osScheme();
     return this.canvasTheme;
   }
 
@@ -17492,17 +17541,19 @@ class HctApp extends HTMLElement {
       const scheme = (v) => (v === "light" || v === "dark" || v === "system" ? v : null);
       if (scheme(p.theme)) this.theme = p.theme;
       if (scheme(p.canvasTheme)) this.canvasTheme = p.canvasTheme;
+      if (scheme(p.colorMode) || p.colorMode === "both") this.colorMode = p.colorMode;
       if (p.motion === "reduced" || p.motion === "system") this.motion = p.motion;
     } catch { /* storage unavailable / corrupt record → defaults */ }
   }
 
   _saveAppPrefs() {
-    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify({ theme: this.theme, canvasTheme: this.canvasTheme, motion: this.motion })); } catch { /* storage unavailable */ }
+    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify({ theme: this.theme, canvasTheme: this.canvasTheme, colorMode: this.colorMode, motion: this.motion })); } catch { /* storage unavailable */ }
   }
 
   _resetAppPrefs() {
     this.theme = "system";
     this.canvasTheme = "system";
+    this.colorMode = "system";
     this.motion = "system";
     try { localStorage.removeItem(this._appPrefsKey()); } catch { /* storage unavailable */ }
     this.dataset.theme = this.theme;

@@ -1,7 +1,7 @@
 import { SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, projectView, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
-import { CURVES, DAMP_PRESETS, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
+import { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -840,10 +840,10 @@ export class ColorSectionImpl {
           this.render();
         },
       }),
-      // unified Mode control — the Color section's value modes: Light · Dark · Both (Both = the side-by-side
-      // Compare view). Generalizes the old sun/moon/auto scheme toggle (Type/Geom keep canvasThemeBtn until
-      // breakpoints land).
-      this.colorModeControl(),
+      // scheme cycle (system/light/dark, icon-only — matches Type/Geom's canvasThemeBtn) + a
+      // separate Compare toggle for the side-by-side Light+Dark view.
+      this.colorSchemeBtn(),
+      this.colorCompareBtn(),
       btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
       h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
       btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
@@ -882,23 +882,44 @@ export class ColorSectionImpl {
   }
 
 
-  // colorModeControl — the unified Mode control in the Color canvas header (Light · Dark · Both). It
-  // replaces the old sun/moon/auto scheme toggle: Light/Dark preview a single value mode, Both opens the
-  // side-by-side Compare. (Type/Geom keep canvasThemeBtn until breakpoints add their modes — Phase 5.)
-  colorModeControl() {
-    return this.segmented(
-      [
-        { id: "light", label: "Light", title: "Preview the Light value mode" },
-        { id: "dark", label: "Dark", title: "Preview the Dark value mode" },
-        { id: "both", label: "Both", title: "Compare — Light & Dark side by side" },
-      ],
-      this.colorMode,
-      (id) => this.setColorMode(id),
-      { cls: "canvas-seg", ariaLabel: "Color value mode", role: "group", idPrefix: "cmode" },
-    );
+  // colorSchemeBtn — icon-only scheme cycle (system → light → dark), the Color-section analog of
+  // app.js's canvasThemeBtn, so all three sections use the same compact control for the same axis
+  // (space saved vs. the old Light/Dark/Both segmented pill). While Both/Compare is active it shows
+  // the currently-resolved concrete scheme (never blank); clicking always lands on a real scheme,
+  // exiting Compare if it was on — Compare itself lives in the separate colorCompareBtn.
+  colorSchemeBtn() {
+    const shown = this.colorMode === "both" ? this.resolvedCanvasScheme() : this.colorMode;
+    return btn(icon(SCHEME_ICON[shown] || "theme"), {
+      cls: "scheme-btn",
+      title: "Color value mode: " + shown + " — click to cycle system / light / dark",
+      ariaLabel: "Color value mode: " + shown + " — cycle system / light / dark",
+      onclick: () => this.setColorMode(SCHEME_NEXT[shown] || "system"),
+    });
   }
 
-  setColorMode(v) { this.colorMode = v; this.render(); }
+  // colorCompareBtn — toggles the side-by-side Light+Dark Compare view. Remembers the scheme it
+  // was on so turning Compare back off restores it, rather than always landing on "system".
+  colorCompareBtn() {
+    const on = this.colorMode === "both";
+    return btn(icon("sidebar"), {
+      cls: "scheme-btn" + (on ? " on" : ""),
+      title: on ? "Compare is on — click to return to a single scheme" : "Compare — Light & Dark side by side",
+      ariaLabel: on ? "Compare is on — click to return to a single scheme" : "Compare Light & Dark side by side",
+      ariaPressed: on ? "true" : "false",
+      onclick: () => this.toggleColorCompare(),
+    });
+  }
+
+  // an explicit pick (system/light/dark/both) overrides the default and PERSISTS (app prefs) —
+  // matches canvasThemeBtn's contract; only Settings › Reset returns this to "system".
+  setColorMode(v) { this.colorMode = v; this._saveAppPrefs(); this.render(); }
+
+  toggleColorCompare() {
+    if (this.colorMode === "both") this.colorMode = this._colorModeBeforeCompare || "system";
+    else { this._colorModeBeforeCompare = this.colorMode; this.colorMode = "both"; }
+    this._saveAppPrefs();
+    this.render();
+  }
 
 
   // renderCompareArea — the Color "Both" mode: the canvas scene rendered in Light AND Dark, side by side,

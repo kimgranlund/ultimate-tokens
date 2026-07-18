@@ -507,9 +507,11 @@ app.doc.palettes[app.selectedIndex()].chroma = 8; app.liveRefresh(); flushRaf();
 const kSurface3 = surfaceOf(_pv(app.doc).palettes[app.selectedIndex()], false);
 ok(styleOf(app.querySelector(".example-card")).includes(kSurface3), `(k5) liveRefresh repaints the card from new role colors (${kSurface3})`);
 
-// ── (cm) unified Mode control — Light · Dark · Both; Both renders the side-by-side Compare ──
+// ── (cm) scheme cycle (system/light/dark) + a separate Compare toggle; Both renders the
+// side-by-side Compare — replaces the old Light·Dark·Both segmented control (icon-only, saves space).
 app.colorMode = "light"; app.canvasView = "palettes"; app.render(); flushRaf();
-ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "cmode:both").length === 1, "(cm) the Color canvas header shows the Light·Dark·Both Mode control");
+ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && (e.getAttribute("aria-label") || "").startsWith("Color value mode:")).length === 1, "(cm) the Color canvas header shows the scheme-cycle button (system/light/dark)");
+ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && (e.getAttribute("aria-label") || "").includes("Compare")).length === 1, "(cm) the Color canvas header shows a separate Compare toggle");
 app.setColorMode("both"); flushRaf();
 {
   const cols = (app.querySelectorAll ? app.querySelectorAll(".compare-col") : []);
@@ -521,6 +523,26 @@ app.setColorMode("both"); flushRaf();
 }
 app.setColorMode("light"); flushRaf();
 ok(!app.querySelector(".compare-col") && !!app.querySelector(".canvas-scene"), "(cm) leaving Both restores the single canvas scene");
+// (cm-toggle) toggleColorCompare (the new Compare button's handler) remembers the scheme it was on
+// and restores it on toggle-off, rather than always landing back on "system".
+app.colorMode = "dark"; app.toggleColorCompare(); flushRaf();
+ok(app.colorMode === "both", "(cm-toggle) toggling Compare on sets colorMode to \"both\"");
+app.toggleColorCompare(); flushRaf();
+ok(app.colorMode === "dark", "(cm-toggle) toggling Compare back off restores the scheme it was on (dark), not a fresh \"system\"");
+
+// ── (fit) fit() insets the scene's TOP-LEFT corner by CANVAS_INSET, not dead-center ──
+{
+  const area = app.querySelector(".canvas-area");
+  const scene0 = app.querySelector(".canvas-scene");
+  area.clientWidth = 1000; area.clientHeight = 600;
+  scene0.offsetWidth = 400; scene0.offsetHeight = 300;
+  app.fit(); flushRaf();
+  ok(app.viewport.zoom === 1, "(fit) fit() resets zoom to 100%");
+  ok(Math.abs(app.viewport.panX - (32 - 500 + 200)) < 1e-6, `(fit) panX insets the scene's top-left by 32px (area 1000w, scene 400w) — got ${app.viewport.panX}`);
+  ok(Math.abs(app.viewport.panY - (32 - 300 + 150)) < 1e-6, `(fit) panY insets the scene's top-left by 32px (area 600h, scene 300h) — got ${app.viewport.panY}`);
+  // sanity: this is NOT the old dead-center default (panX=panY=0) for a scene smaller than its area.
+  ok(app.viewport.panX !== 0 && app.viewport.panY !== 0, "(fit) no longer dead-centers the scene (the bug this replaces)");
+}
 
 // ── (l) wheel/zoom keeps the content point UNDER THE CURSOR fixed ──────────────────────
 const sceneEl = app.querySelector(".canvas-scene");
@@ -1631,9 +1653,17 @@ ok((txtOfSet(app.querySelector(".settings-pagehead")) || "").includes("Appearanc
   try { localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: "neon", motion: "off" })); } catch {}
   app.theme = "system"; app.motion = "system"; app._loadAppPrefs();
   ok(app.theme === "system" && app.motion === "system", "(pref) invalid pref values are rejected (defaults kept)");
+  // (pref-cm) colorMode: defaults to "system", persists an explicit pick, round-trips through
+  // _saveAppPrefs/_loadAppPrefs exactly like theme/canvasTheme, and Reset returns it to "system" too.
+  app.colorMode = "dark"; app._saveAppPrefs();
+  ok(JSON.parse(localStorage.getItem(PREFS_KEY)).colorMode === "dark", "(pref-cm) the colorMode pref persists");
+  app.colorMode = "system"; app._loadAppPrefs();
+  ok(app.colorMode === "dark", "(pref-cm) _loadAppPrefs restores the saved colorMode");
+  app.colorMode = "both"; app._saveAppPrefs(); app.colorMode = "system"; app._loadAppPrefs();
+  ok(app.colorMode === "both", "(pref-cm) colorMode=\"both\" (Compare) round-trips too — persisting whatever was explicitly picked");
   app._resetAppPrefs(); flushRaf();
-  ok(app.theme === "system" && app.canvasTheme === "system" && app.motion === "system" && localStorage.getItem(PREFS_KEY) === null,
-    "(pref) Reset returns every pref to System and clears the record");
+  ok(app.theme === "system" && app.canvasTheme === "system" && app.colorMode === "system" && app.motion === "system" && localStorage.getItem(PREFS_KEY) === null,
+    "(pref) Reset returns every pref, including colorMode, to System and clears the record");
 }
 // (ico) Settings › Icons — the library grid (9 tiles), default Phosphor·regular, variant control,
 // the Custom escape hatch, and the geometry fence (sizes are NOT redefined here).
