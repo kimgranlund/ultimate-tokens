@@ -146,6 +146,21 @@ ok(generateKit(undefined).kit.palettes.length === 8, "an undefined brief still g
   ok(hydrate(rawDoc).vibrancy === DOMAINS.vibrancy.max, "an out-of-domain global.vibrancy clamps to the domain max");
   ok(lint.some((l) => l.message.includes("vibrancy")), "an out-of-domain global.vibrancy emits a clamped-lint entry");
 }
+{
+  // NaN passes `typeof === "number"` and PROPAGATES through Math.min/max — it must be dropped (the persist
+  // default stands), never planted in the doc. Unreachable over JSON-RPC, but the pure core is importable.
+  const { doc: rawDoc } = generateKit({ families: { Primary: { hue: 40, chroma: 80 } }, global: { vibrancy: NaN } });
+  const v = hydrate(rawDoc).vibrancy;
+  ok(Number.isFinite(v) && v === DOMAINS.vibrancy.default, `a NaN global.vibrancy is dropped, not propagated (got ${v}, want the persist default ${DOMAINS.vibrancy.default})`);
+}
+{
+  // meta.brief is a SNAPSHOT, not the caller's live reference — mutating the brief after the call must not
+  // corrupt the replay handle (§6.4).
+  const brief = { families: { Primary: { hue: 40, chroma: 80 } } };
+  const { meta } = generateKit(brief);
+  brief.families.Primary.hue = 999;
+  ok(meta.brief.families.Primary.hue === 40, `meta.brief is immune to post-call mutation of the caller's brief (got ${meta.brief.families.Primary.hue}, want 40)`);
+}
 
 // ── name / story (§3.4) ──
 {
