@@ -845,6 +845,8 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow);
 }
 .segmented button:not(.on):hover { background: var(--line-2); color: var(--ink); }
+/* colorCompareBtn's active state (Compare/Both is on) — same treatment as a selected segment. */
+.scheme-btn.on { background: var(--accent); color: var(--accent-ink); }
 /* canvas-header variant of .segmented — inline + compact (no right-pane margins, auto-width). */
 .canvas-seg { margin: 0; }
 /* two labeled segmented controls side-by-side in the inspector (Hue space · On-colors) */

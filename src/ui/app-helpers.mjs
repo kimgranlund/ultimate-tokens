@@ -395,6 +395,11 @@ export const btn = (children, { variant = "ghost", cls = "", title, ariaLabel, a
 export const SCHEME_ICON = { system: "theme", light: "sun", dark: "moon" };
 export const SCHEME_NEXT = { system: "light", light: "dark", dark: "system" };
 
+// CANVAS_INSET — the fixed px offset fit() positions the canvas-scene's top-left corner at from
+// canvas-area's top-left, on reset/section-switch/dblclick (Color · Typography · Geometry alike).
+// Replaces the old dead-center default so the content's own top-left is what's visible first.
+export const CANVAS_INSET = 32;
+
 // Per-treatment specimen copy — each treatment carries BESPOKE placeholder text aligned to its concept
 // (lifestyle app · luxury maison · long-form journalism · ops dashboard · gig poster), so the type
 // previews read like the world they're for instead of one shared sports demo. `para` is the Body-LG

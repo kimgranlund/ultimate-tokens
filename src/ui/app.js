@@ -46,7 +46,7 @@ import { COLLECTIONS } from "../engine/collections.js";
 import { stylePlans, primitivesApplyPlan } from "../../figma/binder/style-plan.mjs";
 import { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } from "../engine/icon-systems.mjs";
 import { icon } from "./icons.js";
-import { MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, saveProfile, saveSets, setColorScheme, swatch } from "./app-helpers.mjs";
+import { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, saveProfile, saveSets, setColorScheme, swatch } from "./app-helpers.mjs";
 import { ColorSection } from "./sections/color.js";
 import { TypeSection } from "./sections/typography.js";
 import { GeomSection } from "./sections/geometry.js";
@@ -90,7 +90,7 @@ class HctApp extends HTMLElement {
     this.panesLeft = true; // left analysis rail shown (ui-session state, like segment — never persisted)
     this.panesRight = true; // right inspector shown
     this.canvasTheme = "system"; // canvas preview color-scheme: system (follow OS) | light | dark — INDEPENDENT of app chrome ◐
-    this.colorMode = "light"; // Color section value-mode control: light | dark | both (both = the side-by-side Compare view) — ui-session
+    this.colorMode = "system"; // Color section value-mode control: system (follow OS, until an explicit pick) | light | dark | both (Compare) — persisted (app prefs)
     this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table)
     this.section = "color"; // editor section: color | typography | geometry — ui-session, routes the whole editor (never persisted)
     this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (editable token matrix: Base + breakpoints) — type-section sub-state
@@ -155,7 +155,7 @@ class HctApp extends HTMLElement {
     // computed light/dark hex tracks it live (the chrome's light-dark() tokens update on their own).
     if (typeof matchMedia !== "undefined") {
       this._mqlScheme = matchMedia("(prefers-color-scheme: dark)");
-      this._onSchemeChange = () => { if (this.theme === "system" || this.canvasTheme === "system") this.render(); };
+      this._onSchemeChange = () => { if (this.theme === "system" || this.canvasTheme === "system" || this.colorMode === "system") this.render(); };
       this._mqlScheme.addEventListener("change", this._onSchemeChange);
     }
     this.render();
@@ -495,8 +495,29 @@ class HctApp extends HTMLElement {
 
 
   fit() {
-    // Recenter to origin (0,0) at the default zoom (no pan, 100%).
+    // Reset to 100% with the content's TOP-LEFT corner inset (not dead-centered) — see
+    // _fitTopLeftInset for the real computation, which needs the just-rendered scene's actual
+    // size and so runs a frame later regardless of whether fit() lands before or after this
+    // tick's render(). This placeholder keeps synchronous readers (e.g. the zoom readout) sane
+    // in the interim.
     this.viewport = { panX: 0, panY: 0, zoom: 1 };
+    requestAnimationFrame(() => this._fitTopLeftInset());
+  }
+
+  // _fitTopLeftInset — positions .canvas-scene's own top-left corner at a fixed CANVAS_INSET
+  // offset from .canvas-area's top-left, replacing the naive dead-center default fit() used to
+  // set. Derived from applyTransform's chain (translate(-50%,-50%) translate(pan) scale(zoom),
+  // scene CSS-anchored at the area's own center via top/left:50%): at zoom 1 (fit's only zoom),
+  // scale doesn't move anything, so panX = INSET - areaWidth/2 + sceneWidth/2 (same for Y) puts
+  // the scene's local (0,0) at area's top-left + INSET. A no-op on the Tokens-table canvas
+  // (.is-table forces transform:none — nothing to position) and harmless if the DOM isn't ready.
+  _fitTopLeftInset() {
+    const area = this.querySelector(".canvas-area");
+    const scene = this.querySelector(".canvas-scene");
+    if (!area || !scene) return;
+    this.viewport.panX = CANVAS_INSET - area.clientWidth / 2 + scene.offsetWidth / 2;
+    this.viewport.panY = CANVAS_INSET - area.clientHeight / 2 + scene.offsetHeight / 2;
+    this.applyTransform();
   }
 
 
@@ -1471,13 +1492,13 @@ class HctApp extends HTMLElement {
   // preference (prefers-color-scheme), everything else is itself.
   resolvedCanvasScheme() {
     if (this._schemeOverride) return this._schemeOverride; // a Compare column forces its own scheme while it builds
-    // the Color section's scheme is driven by its Mode control (light/dark); "both" renders Compare, and any
-    // non-column use (e.g. the right-pane example) falls back to the last concrete scheme below.
+    const osScheme = () => (typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    // the Color section's scheme is driven by its Mode control (system/light/dark); "both" renders Compare, and
+    // any non-column use (e.g. the right-pane example) falls back to a concrete scheme below.
     if (this.section === "color" && (this.colorMode === "light" || this.colorMode === "dark")) return this.colorMode;
+    if (this.section === "color" && this.colorMode === "system") return osScheme();
     if (this.section === "color" && this.colorMode === "both") return "light"; // a sensible single-scheme fallback off-canvas
-    if (this.canvasTheme === "system") {
-      return typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    }
+    if (this.canvasTheme === "system") return osScheme();
     return this.canvasTheme;
   }
 
@@ -2234,17 +2255,19 @@ class HctApp extends HTMLElement {
       const scheme = (v) => (v === "light" || v === "dark" || v === "system" ? v : null);
       if (scheme(p.theme)) this.theme = p.theme;
       if (scheme(p.canvasTheme)) this.canvasTheme = p.canvasTheme;
+      if (scheme(p.colorMode) || p.colorMode === "both") this.colorMode = p.colorMode;
       if (p.motion === "reduced" || p.motion === "system") this.motion = p.motion;
     } catch { /* storage unavailable / corrupt record → defaults */ }
   }
 
   _saveAppPrefs() {
-    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify({ theme: this.theme, canvasTheme: this.canvasTheme, motion: this.motion })); } catch { /* storage unavailable */ }
+    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify({ theme: this.theme, canvasTheme: this.canvasTheme, colorMode: this.colorMode, motion: this.motion })); } catch { /* storage unavailable */ }
   }
 
   _resetAppPrefs() {
     this.theme = "system";
     this.canvasTheme = "system";
+    this.colorMode = "system";
     this.motion = "system";
     try { localStorage.removeItem(this._appPrefsKey()); } catch { /* storage unavailable */ }
     this.dataset.theme = this.theme;
