@@ -143,7 +143,11 @@ function buildDoc(brief) {
   const story = clampStory(brief.story);
   if (story) doc.story = story;
   const global = (brief && typeof brief.global === "object" && brief.global) || {};
-  if (typeof global.vibrancy === "number") {
+  // Number.isFinite, not typeof: typeof NaN === "number" and Math.min/max PROPAGATE NaN — the one numeric
+  // path here that doesn't ride clampPalette's NaN-safe clampNumber. Unreachable over JSON-RPC (JSON has
+  // no NaN) but an in-process importer must not be able to plant NaN in the doc. A non-finite vibrancy is
+  // dropped (the persist default stands), not clamped.
+  if (Number.isFinite(global.vibrancy)) {
     doc.vibrancy = Math.min(DOMAINS.vibrancy.max, Math.max(DOMAINS.vibrancy.min, global.vibrancy));
     if (doc.vibrancy !== global.vibrancy) lint.push({ level: "warn", code: "clamped", family: null, message: `global.vibrancy ${global.vibrancy} clamped to ${doc.vibrancy} (domain ${DOMAINS.vibrancy.min}..${DOMAINS.vibrancy.max}).` });
   }
@@ -220,7 +224,10 @@ export function generateKit(brief) {
     engineVersion: PACKAGE.version,
     kitSchema: "ultimate-tokens-brand-kit/1",
     briefSchema: PALETTE_BRIEF_SCHEMA.$id,
-    brief: b,
+    // a JSON snapshot, not the caller's live reference — an in-process importer mutating its brief after
+    // the call must not be able to corrupt the replay handle (§6.4). Identity for anything that arrived
+    // over JSON-RPC (JSON round-trips itself), so "verbatim as received" still holds on the product path.
+    brief: JSON.parse(JSON.stringify(b)),
   };
   return { kit, doc: serialize(doc), lint, meta };
 }
