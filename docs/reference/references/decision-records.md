@@ -558,6 +558,75 @@ Format: Context → Decision → Rationale → Consequences → Status.
   `bundle.mjs`'s concatenation shape (no module-runtime prelude) at comparable size, this ADR is
   the record to revisit, not to silently override.
 
+## ADR-021 — The hosted describe-palette MCP breaches "the generator stays client-side"; the server-side interpreter is demoted to a non-agent-only path
+
+- **Context.** `docs/site/mcp-hosting-spec.md` §1 lists a load-bearing constraint, unchanged since
+  the hosted-MCP spec was first drafted: **"the generator stays client-side"** — the Vite SPA is
+  static (Cloudflare Pages) and the Figma plugin stays offline (`networkAccess:"none"`), so no
+  token-generation math runs server-side anywhere in the product. The describe-a-palette program
+  (#379; local flavor #369–#374 shipped) introduces exactly that: a hosted `generate_kit` (#377,
+  blocked on domains/accounts) running `describe-kit-core.mjs`'s deterministic engine inside a
+  Cloudflare Worker, plus a NEW server-side LLM call (`describe_palette`) interpreting a
+  plain-language description into a `PaletteBrief` — something no part of this product has ever
+  done. Both are exactly the entitlement-gated, recurring-value capability the Pro tier anchor
+  wants (`describePalette`, ruled Pro-gated 2026-07-18, issue #379), not an accidental drift past a
+  constraint nobody re-examined. Two decisions needed ratifying together: whether the breach is
+  acceptable, and — since a server-side LLM call is itself a new, distinct capability, not just "the
+  same engine, hosted" — who is allowed to reach it.
+- **Decision.** The constraint is **amended, narrowly**: server-side generation is permitted **only**
+  for the describe-palette surface (`generate_kit` + `describe_palette` on the Phase B Worker,
+  #377), gated the same way every other Pro capability is (`flagOf("describePalette")`,
+  server-side entitlement — never a client-side check). Every OTHER surface keeps the original
+  constraint verbatim: the app SPA stays static, the Figma plugin stays offline, no generation math
+  runs server-side for the downloadable/local flavor or for any read-only hosted-kit-sync path
+  (`docs/site/mcp-hosting-spec.md`'s own kit-storage/OAuth scope). Within the describe-palette
+  surface, the server-side LLM (`describe_palette`) is further demoted: it exists **only** for
+  LLM-less clients — the web's own "describe a palette" input box, a plain HTTP/curl caller, anything
+  with no LLM of its own to interpret the words. An **agent** caller (Claude Code, any MCP client
+  with its own model) is steered away from it entirely, by the tool descriptions alone (spec §8,
+  item 2) — toward the self-teaching `generate_kit{description}` → `generate_kit{brief}` two-step
+  (#371) instead, where THAT caller's own model does the interpreting. `describe_palette`, when it
+  does run, calls its provider with **forced tool-use against the `PaletteBrief` schema** (§3) —
+  output is guaranteed schema-valid, never free text to re-parse — and echoes the brief back in
+  `meta.brief` (§6.4), the same reproducibility handle the local flavor already carries. Local and
+  hosted `generate_kit` tool surfaces stay **parity-gated identical** (G1–G3, spec §8); the ONLY
+  permitted asymmetry between the two flavors is `describe_palette`'s hosted-only existence, plus
+  the account-scoped `list_kits`/`kit` additions the hosting spec already carries — anything else
+  differing is a parity failure, not a judgment call.
+- **Rationale.** The alternative to amending the constraint is not "keep the app static" — it's
+  "never ship the described-value Pro feature," since #379's own natural-language entry point
+  (a web box with no LLM behind it, or a bare `curl`) has no other way to interpret a description
+  into a brief; only an LLM can do that step, and an LLM-less client has none. Demoting the
+  interpreter rather than exposing it to every caller equally is the cheaper, better-quality choice
+  on its own terms, independent of the constraint question: routing an agent caller — which already
+  carries an Opus-class (or better) model as the one interpreting the words in the LOCAL flavor,
+  per #371's own design — through a cheaper, Haiku-class (or whatever the hosted provider call
+  uses) server-side interpretation would CAP quality at the weaker model for every agent user, add a
+  real per-call provider cost the local flavor never incurs, and hand an unauthenticated-by-model
+  caller a standing LLM-call surface — an abuse vector (cost-drain, prompt-injection-via-description)
+  the self-teaching local design was explicitly built to avoid (spec §1: "No server-side LLM in
+  the local flavor."). Keeping `generate_kit`'s two-step path IDENTICAL on both flavors, and
+  making `describe_palette` a narrow, LLM-less-only side door rather than a second front door,
+  gets the best of both: every agent caller — local or hosted — gets the higher-quality,
+  zero-marginal-cost, self-teaching path; only a genuinely LLM-less caller pays the cost (and
+  accepts the ceiling) of a server-side interpretation, and only inside a Pro-gated, rate-limited,
+  entitlement-checked surface (#377's own stated scope), not an open one.
+- **Consequences.** `docs/site/mcp-hosting-spec.md` §1 is updated to reference this ADR at the
+  constraint line, rather than silently drifting out of date the moment #377 ships — the spec's own
+  words stay "the generator stays client-side" as the DEFAULT/GENERAL rule; this ADR is the named
+  exception. `describe-palette-spec.md` §1/§8 already anticipated this ruling (written ahead of the
+  ADR, citing it by number) and needed no further change. `mcp/describe-mcp-core.mjs`'s local
+  `generate_kit` is UNAFFECTED — it already has no server-side LLM path and never will; this ADR
+  constrains #377's hosted build, which has not started (blocked on domains/Phase B accounts, per
+  #377's own stated scope) — there is no code to retrofit today. When #377 IS built, its
+  `describe_palette` tool's OWN description (the text a client reads) must state the LLM-less-only
+  intent in-band, mirroring how `generate_kit`'s description already teaches its own two-step
+  protocol (§5) — a caller should never need to read this ADR to know which tool to reach for.
+- **Status.** DECIDED (ratified 2026-07-18; issue #376). Unblocks nothing by itself — #377 remains
+  blocked on domains + Phase B accounts regardless — but removes the one open ratification question
+  (§13's "the hosting-spec constraint amendment must land as #376's ADR before #377 builds")
+  standing between here and #377's eventual build.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -571,3 +640,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-015 | the product has no maker, no logo, and support points at an issue tracker | deliberate: the maker brand was retired; `test/repo/branding.mjs` fails the build if it returns |
 | ADR-018 | `role-table.json` isn't generated from `semantic.js` like the Figma binder's role table now is (TKT-0019) | it's a deliberate independent answer key; generating it would make the `refs-canonical` gate tautological |
 | ADR-020 | `scripts/bundle.mjs` still hand-rolls import transforms though `vite` is already a devDependency | measured: vite's single-file output is ~20% LARGER (rolldown runtime prelude + a data-heavy artifact minification barely shrinks) and can't be byte-comparable — the spike's own acceptance bar ruled it out |
+| ADR-021 | the hosted MCP runs generation server-side though "the generator stays client-side" is a load-bearing constraint | deliberate, narrow amendment for describe-palette only (#379's Pro anchor); every other surface (app SPA, Figma plugin, hosted kit-sync) keeps the original rule verbatim |
