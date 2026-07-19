@@ -1,9 +1,14 @@
 // png-swatch-board.mjs — a zero-dependency PNG encoder for the describe-palette generator's swatch-board
 // preview (#373). Hand-rolled rather than depending on a real PNG/zlib library, per the ticket's own
 // scope: flat-color shapes need no real compression, and staying this minimal keeps the encoder auditable
-// in one file. The board is the 4×2 family grid (gapped, on the kit's own surface color) plus a mock
-// CONTROL STRIP — Button · Select · Switch, flat shapes sized from the kit's own geometry LG tokens and
-// painted from its real semantic roles (the PNG sibling of the app's Geometry ramp mocks, #383). Resist
+// in one file. The board is TWO stacked scheme blocks (light on top, dark below, #395) — each the same
+// 4×2 family grid (gapped, on that scheme's own surface color) plus a mock CONTROL STRIP — Button ·
+// Select · Switch, flat shapes sized from the kit's own geometry LG tokens and painted from its real
+// semantic roles (the PNG sibling of the app's Geometry ramp mocks, #383). Two blocks because the
+// `contrast` lint (spec §6.3) checks the prime/on-prime pairing in BOTH schemes — a light-only board was
+// blind to a dark-mode-only finding it might be warning about. The swatch grid itself is scheme-agnostic
+// (a palette's ramp stop has one hex, not a light/dark pair) and paints identically in both blocks; only
+// the role-resolved control strip differs — which is exactly the thing worth seeing side by side. Resist
 // the urge to add text, gradients, anti-aliasing, or real compression — the zero-dep constraint is
 // load-bearing (spec §13). Deterministic: the same kit always encodes to byte-identical PNG bytes (no
 // timestamps, no randomness, no ancillary chunks) — spec §6.4's "byte-identical PNG" replay guarantee.
@@ -176,15 +181,16 @@ function fillCaretDown(px, W, cx, top, w, h, rgb) {
 // exact geometry the renderer used (colors stay independently resolved from the kit). The control strip's
 // mocks are sized from the kit's OWN geometry LG tokens — height, pill radius, icon (the switch thumb,
 // per the app's centering law: inset = paddingNarrow), caret — so the preview shows the kit's real
-// geometry, not an invented one. Widths derive from the remaining row space so any treatment fits.
+// geometry, not an invented one; the SAME geometry drives both scheme blocks (geometry has no light/dark
+// axis). Widths derive from the remaining row space so any treatment fits. Returns { width, height,
+// light, dark } — `light`/`dark` each carry their OWN { swatch(i), button, select, switchCtl,
+// blockTop, blockBottom } at that block's own Y origin; every rect's SHAPE is identical between the two,
+// only the Y offset differs, since only COLOR (resolved separately, per scheme) is meant to vary.
 export function boardLayout(kit) {
   const width = MARGIN * 2 + GRID_COLS * SWATCH_SIZE + (GRID_COLS - 1) * GAP;
   const gridH = GRID_ROWS * SWATCH_SIZE + (GRID_ROWS - 1) * GAP;
-  const stripY = MARGIN + gridH + MARGIN;
-  const height = stripY + CONTROL_STRIP_H + MARGIN;
   const g = (kit.geometry && kit.geometry.sizes && kit.geometry.sizes.LG) || {};
   const ctlH = Math.min(Math.round(g.height || 36), CONTROL_STRIP_H);
-  const ctlY = stripY + Math.round((CONTROL_STRIP_H - ctlH) / 2);
   const radius = Math.round(g.radiusPill != null ? Math.min(g.radiusPill, ctlH / 2) : ctlH / 2);
   const thumb = Math.min(Math.round(g.icon || 20), ctlH - 2);
   const inset = Math.max(1, Math.round(g.paddingNarrow != null ? g.paddingNarrow : (ctlH - thumb) / 2));
@@ -197,75 +203,86 @@ export function boardLayout(kit) {
   const btnW = Math.round(rest * 0.45);
   const selW = rest - btnW;
 
-  const button = { x: MARGIN, y: ctlY, w: btnW, h: ctlH, r: radius };
-  button.bar = { x: button.x + Math.round((btnW - Math.round(btnW * 0.45)) / 2), y: ctlY + Math.round(ctlH / 2) - 3, w: Math.round(btnW * 0.45), h: 6 };
+  // blockAt(originY) — one scheme block: its own top margin, the swatch grid, a margin gap, the control
+  // strip, its own bottom margin. Two blocks stack back to back (no shared/neutral divider — each side
+  // of the seam is that block's own surface color, a clean, exactly-testable boundary).
+  const blockH = MARGIN + gridH + MARGIN + CONTROL_STRIP_H + MARGIN;
+  function blockAt(originY) {
+    const stripY = originY + MARGIN + gridH + MARGIN;
+    const ctlY = stripY + Math.round((CONTROL_STRIP_H - ctlH) / 2);
 
-  const select = { x: button.x + btnW + gapX, y: ctlY, w: selW, h: ctlH, r: Math.min(radius, 10), stroke: 2 };
-  const pad = Math.round(ctlH * 0.35);
-  select.bar = { x: select.x + pad, y: ctlY + Math.round(ctlH / 2) - 3, w: Math.round(selW * 0.38), h: 6 };
-  const caretH = Math.round(caretW * 0.5);
-  select.caret = { cx: select.x + selW - pad - caretW / 2, top: ctlY + Math.round((ctlH - caretH) / 2), w: caretW, h: caretH };
+    const button = { x: MARGIN, y: ctlY, w: btnW, h: ctlH, r: radius };
+    button.bar = { x: button.x + Math.round((btnW - Math.round(btnW * 0.45)) / 2), y: ctlY + Math.round(ctlH / 2) - 3, w: Math.round(btnW * 0.45), h: 6 };
 
-  const switchCtl = { x: select.x + selW + gapX, y: ctlY, w: swW, h: ctlH, r: Math.floor(ctlH / 2) };
-  switchCtl.thumb = { cx: switchCtl.x + swW - inset - thumb / 2, cy: ctlY + ctlH / 2, d: thumb };
+    const select = { x: button.x + btnW + gapX, y: ctlY, w: selW, h: ctlH, r: Math.min(radius, 10), stroke: 2 };
+    const pad = Math.round(ctlH * 0.35);
+    select.bar = { x: select.x + pad, y: ctlY + Math.round(ctlH / 2) - 3, w: Math.round(selW * 0.38), h: 6 };
+    const caretH = Math.round(caretW * 0.5);
+    select.caret = { cx: select.x + selW - pad - caretW / 2, top: ctlY + Math.round((ctlH - caretH) / 2), w: caretW, h: caretH };
 
-  const swatch = (i) => ({
-    x: MARGIN + (i % GRID_COLS) * (SWATCH_SIZE + GAP),
-    y: MARGIN + Math.floor(i / GRID_COLS) * (SWATCH_SIZE + GAP),
-  });
-  return { width, height, swatch, button, select, switchCtl };
+    const switchCtl = { x: select.x + selW + gapX, y: ctlY, w: swW, h: ctlH, r: Math.floor(ctlH / 2) };
+    switchCtl.thumb = { cx: switchCtl.x + swW - inset - thumb / 2, cy: ctlY + ctlH / 2, d: thumb };
+
+    const swatch = (i) => ({
+      x: MARGIN + (i % GRID_COLS) * (SWATCH_SIZE + GAP),
+      y: originY + MARGIN + Math.floor(i / GRID_COLS) * (SWATCH_SIZE + GAP),
+    });
+    return { blockTop: originY, blockBottom: originY + blockH, swatch, button, select, switchCtl };
+  }
+
+  const light = blockAt(0);
+  const dark = blockAt(blockH);
+  return { width, height: blockH * 2, light, dark };
 }
 
-// _kitColors(kit, familyNames) — the semantic roles the mocks paint from, in LIGHT mode (a preview has one
-// scheme; light is the app's own canvas default). Every color is the kit's real resolved role — surface
-// grounds the board, primary/onPrimary fill the button + switch (exactly what the app's Geometry ramp
+// _kitColors(kit, familyNames, scheme) — the semantic roles the mocks paint from, for ONE scheme
+// ("light" | "dark", #395). Every color is the kit's real resolved role for that scheme — surface
+// grounds the block, primary/onPrimary fill the button + switch (exactly what the app's Geometry ramp
 // mocks use), outlineVariant borders the select (the app's own input-border mapping), placeholder colors
-// its text bar. Fallbacks only guard a kit missing its roles tree (not a shape generateKit ever emits).
-function _kitColors(kit, familyNames) {
+// its text bar. Fallbacks only guard a kit missing its roles tree (not a shape generateKit ever emits);
+// the dark fallbacks are a plain default-dark-surface guess, not derived from anything (a real kit always
+// has both schemes resolved, so this path is dead in practice).
+function _kitColors(kit, familyNames, scheme) {
   const tree = (kit.roles && kit.roles.primary) || {};
   const primaryFallback = (() => {
     const p = kit.palettes && kit.palettes.find((x) => x.name === familyNames[1]);
     const s = p && p.ramp && p.ramp.find((s) => s.stop === 500);
     return s ? s.hex : "#808080";
   })();
-  const light = (key, fb) => hexToRgb((tree[key] && tree[key].light) || fb);
+  const dark = scheme === "dark";
+  const pick = (key, fb) => hexToRgb((tree[key] && tree[key][scheme]) || fb);
   return {
-    surface: light("surface", "#ffffff"),
-    onSurface: light("onSurface", "#1f1f1f"),
-    outline: light("outlineVariant", "#9e9e9e"),
-    placeholder: light("placeholder", "#767676"),
-    prime: light("primary", primaryFallback),
-    onPrime: light("onPrimary", "#ffffff"),
+    surface: pick("surface", dark ? "#1f1f1f" : "#ffffff"),
+    onSurface: pick("onSurface", dark ? "#ffffff" : "#1f1f1f"),
+    outline: pick("outlineVariant", "#9e9e9e"),
+    placeholder: pick("placeholder", "#767676"),
+    prime: pick("primary", primaryFallback),
+    onPrime: pick("onPrimary", "#ffffff"),
   };
 }
 
-// swatchBoardPNG(kit, familyNames) → a Buffer (the PNG bytes). One flat-color swatch per family, sourced
-// from that palette's OWN ramp 500-stop hex (the identity color) — the exact value #373's acceptance
-// checks against ("swatch colors deep-match the kit") — on the kit's surface color, gapped and margined,
-// with the Button · Select · Switch mock strip underneath. A missing palette (shouldn't happen for a real
-// generated kit, which always carries all 8) falls back to a neutral grey rather than throwing.
-export function swatchBoardPNG(kit, familyNames) {
-  const L = boardLayout(kit);
-  const C = _kitColors(kit, familyNames);
-  const { width, height } = L;
-  const pixels = Buffer.alloc(width * height * 3);
-  fillRect(pixels, width, 0, 0, width, height, C.surface);
+// paintBlock(pixels, width, kit, familyNames, block, scheme) — one scheme block: its own surface fill,
+// the 8 family swatches (scheme-agnostic — a ramp stop has one hex, not a light/dark pair; see the module
+// header), then the Button · Select · Switch mock strip resolved from THIS scheme's roles.
+function paintBlock(pixels, width, kit, familyNames, block, scheme) {
+  const C = _kitColors(kit, familyNames, scheme);
+  fillRect(pixels, width, 0, block.blockTop, width, block.blockBottom - block.blockTop, C.surface);
 
   familyNames.forEach((name, i) => {
     const p = kit.palettes && kit.palettes.find((x) => x.name === name);
     const stop500 = p && p.ramp && p.ramp.find((s) => s.stop === 500);
-    const { x, y } = L.swatch(i);
+    const { x, y } = block.swatch(i);
     fillRect(pixels, width, x, y, SWATCH_SIZE, SWATCH_SIZE, hexToRgb(stop500 ? stop500.hex : "#808080"));
   });
 
   // Button — a filled pill (primary/onPrimary), its label a flat bar (shapes, never text — spec §13).
-  const b = L.button;
+  const b = block.button;
   fillRoundRect(pixels, width, b.x, b.y, b.w, b.h, b.r, C.prime);
   fillRoundRect(pixels, width, b.bar.x, b.bar.y, b.bar.w, b.bar.h, 3, C.onPrime);
 
   // Select — an outlined, unfilled field (outlineVariant border on the surface ground, matching the
   // app's own input-border mapping) + a placeholder bar + the disclosure caret.
-  const s = L.select;
+  const s = block.select;
   fillRoundRect(pixels, width, s.x, s.y, s.w, s.h, s.r, C.outline);
   fillRoundRect(pixels, width, s.x + s.stroke, s.y + s.stroke, s.w - 2 * s.stroke, s.h - 2 * s.stroke, Math.max(0, s.r - s.stroke), C.surface);
   fillRoundRect(pixels, width, s.bar.x, s.bar.y, s.bar.w, s.bar.h, 3, C.placeholder);
@@ -273,10 +290,23 @@ export function swatchBoardPNG(kit, familyNames) {
 
   // Switch (ON) — primary track, onPrimary thumb inset per the centering law (thumb = icon, inset =
   // paddingNarrow — the same literal rendering the app's Geometry ramp shows).
-  const w = L.switchCtl;
+  const w = block.switchCtl;
   fillRoundRect(pixels, width, w.x, w.y, w.w, w.h, w.r, C.prime);
   fillCircle(pixels, width, w.thumb.cx, w.thumb.cy, w.thumb.d / 2, C.onPrime);
+}
 
+// swatchBoardPNG(kit, familyNames) → a Buffer (the PNG bytes). Two stacked scheme blocks (light on top,
+// dark below, #395). One flat-color swatch per family, sourced from that palette's OWN ramp 500-stop hex
+// (the identity color) — the exact value #373's acceptance checks against ("swatch colors deep-match the
+// kit") — identical in both blocks; each block's control strip differs since it resolves that scheme's
+// own roles. A missing palette (shouldn't happen for a real generated kit, which always carries all 8)
+// falls back to a neutral grey rather than throwing.
+export function swatchBoardPNG(kit, familyNames) {
+  const L = boardLayout(kit);
+  const { width, height } = L;
+  const pixels = Buffer.alloc(width * height * 3);
+  paintBlock(pixels, width, kit, familyNames, L.light, "light");
+  paintBlock(pixels, width, kit, familyNames, L.dark, "dark");
   return encodePNG(pixels, width, height);
 }
 
