@@ -45,9 +45,9 @@ shape (§7) — scoped to #374, but load-bearing for §8's G2/G3 parity gates.
   ~100 lines), retrieval.
 - **Pro-gated, both flavors** — settled by the #379 ruling (2026-07-18), not relitigated here (§9).
 - **`docs/site/mcp-hosting-spec.md` §1 states "the generator stays client-side."** The hosted flavor
-  (#377) deliberately breaches that constraint; **ratifying the amendment is #376's ADR**, which the
-  hosting spec must then reference. This spec *depends on* that ADR for §8's hosted column and does
-  not amend the constraint itself.
+  (#377) deliberately breaches that constraint; **RATIFIED as ADR-021** (`docs/reference/references/
+  decision-records.md`, #376), which the hosting spec now references at the constraint line. This
+  spec's own §8 hosted column cites that ADR rather than re-deriving the ruling.
 
 ---
 
@@ -60,7 +60,7 @@ shape (§7) — scoped to #374, but load-bearing for §8's G2/G3 parity gates.
 | Engine path | `toneMode:"perceptual"`, `hueSpace:"oklch"` (all brief hues are OKLCH hues) | the perceptual OKHSL distribution the rubric's hue/chroma vocabulary is calibrated to |
 | Server | **merged into the brand-kit read server** (#374) | a generated kit immediately serves `list_palettes` / `resolve_token` / … / `export_tokens` |
 | Preview | PNG swatch board as an MCP **image content block** + a **lint array** (#373) | vision-capable callers self-critique; text-only callers still get an actionable signal |
-| Hosted flavor | the Phase B Worker (#377), + a demoted `describe_palette` for LLM-less clients (#376) | one deliberate asymmetry; everything else parity-gated (§8) |
+| Hosted flavor | the Phase B Worker (#377, still blocked), + a demoted `describe_palette` for LLM-less clients (ADR-021, #376, RATIFIED) | one deliberate asymmetry; everything else parity-gated (§8) |
 
 ```
  agent ── generate_kit{description} ──▶ briefing payload (rubric · schema · exemplars · research) ──┐
@@ -450,13 +450,13 @@ full feature parity**, asserted at three gates:
 
 **The enumerated hosted-only set** (the *only* permitted asymmetries, excluded from G2 by name):
 1. `list_kits` + the `kit` arg — the hosting spec's existing account-scoped additions (§7 there).
-2. **`describe_palette`** — the demoted server-LLM path (#376): exists **only hosted**, **only for
+2. **`describe_palette`** — the demoted server-LLM path: exists **only hosted**, **only for
    LLM-less clients** (the web describe box, plain HTTP/curl). One provider call with **forced
    tool-use against the PaletteBrief schema** (output guaranteed schema-valid), the brief echoed
    back as the replay handle, then the same deterministic core. Agent callers are steered to
    `generate_kit` by tool descriptions — routing an Opus-class caller through a Haiku-class server
-   interpretation caps quality at the weaker model and adds cost + an abuse surface. Ratified by
-   #376's ADR, not by this spec.
+   interpretation caps quality at the weaker model and adds cost + an abuse surface. **Ratified as
+   ADR-021** (#376) — `docs/reference/references/decision-records.md`, not this spec.
 
 Anything else differing between flavors is a parity failure, not a judgment call. Interpretation
 quality (the words→brief step) is explicitly **outside** the parity contract — it varies by calling
@@ -550,11 +550,13 @@ not bundled with the free downloadable kit. Concretely:
 
 ## 13. Risks & open questions
 
-- **The hosted flavor is blocked** on domains (hosting-spec step zero), Phase B accounts/OAuth, and
-  #376's ADR — nothing in §8's hosted column ships before those. The local flavor (#369–#374) has no
-  such dependency and lands first.
-- **The hosting-spec constraint amendment** (§1) must land as #376's ADR *before* #377 builds;
-  shipping the hosted generator without it is silent drift on a load-bearing constraint.
+- **The hosted flavor is blocked** on domains (hosting-spec step zero) and Phase B accounts/OAuth —
+  nothing in §8's hosted column ships before those. The local flavor (#369–#374) has no such
+  dependency and already shipped. The ADR gate (#376) is CLEARED — see below.
+- ~~**The hosting-spec constraint amendment** must land as #376's ADR before #377 builds~~ —
+  **RESOLVED**: ratified as ADR-021 (`docs/reference/references/decision-records.md`),
+  `docs/site/mcp-hosting-spec.md` §1 now references it. #377 remains blocked on domains/accounts
+  only, not on this.
 - **Engines in a Worker:** the engines are pure DOM-free ESM and *expected* to run in a Worker —
   verify early in #377 (the hosting spec's Phase A lesson: lock the surface first).
 - **Interpretation variance:** the deterministic core caps the blast radius of a weak interpreter at
