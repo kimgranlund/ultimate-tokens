@@ -348,18 +348,24 @@ hand-rolled PNG writer (CRC-32, Adler-32, DEFLATE's "stored" uncompressed block 
 framing) rather than a real compression library, since flat-color shapes need no real compression —
 returned as an MCP image content block (`{type:"image", data: base64, mimeType:"image/png"}`). A
 **4×2 grid, 80px swatches** with 16px margins and 8px gaps on the kit's own `surface` color
-(376×264 total), FAMILY_NAMES order (brand families top row, status families bottom row), each
-swatch sourced from that family's own ramp **500-stop hex** — the exact value the #373 acceptance
-checks against ("swatch colors deep-match the kit") — plus a **mock control strip** under the grid
-(the PNG sibling of the app's Geometry-ramp mocks, #383): a Button (primary/onPrimary pill), a
-Select (outlineVariant border, placeholder bar, onSurface caret), and a Switch ON (primary track,
-onPrimary thumb), each a flat shape (bars, never text) **sized from the kit's own geometry LG
+(376×264 per scheme block), FAMILY_NAMES order (brand families top row, status families bottom
+row), each swatch sourced from that family's own ramp **500-stop hex** — the exact value the #373
+acceptance checks against ("swatch colors deep-match the kit") — plus a **mock control strip** under
+the grid (the PNG sibling of the app's Geometry-ramp mocks, #383): a Button (primary/onPrimary
+pill), a Select (outlineVariant border, placeholder bar, onSurface caret), and a Switch ON (primary
+track, onPrimary thumb), each a flat shape (bars, never text) **sized from the kit's own geometry LG
 tokens** (height · pill radius · icon-as-thumb with paddingNarrow inset per the centering law ·
-caret) and painted from its real semantic roles, light mode. Shared `boardLayout(kit)` geometry
-keeps the verifier sampling the exact rects the renderer painted while colors resolve independently
-from the kit. Verified against a REAL independent decoder (Node's own `zlib.inflateSync`, in tests
-only — the shipped encoder stays dependency-free) and deterministic (the same kit always encodes to
-byte-identical bytes, spec §6.4).
+caret) and painted from its real semantic roles. **Both schemes render (#395):** the board is two
+stacked blocks — light on top, dark directly below, each block owning its own margins so the two
+surfaces meet at a clean seam (no shared neutral divider) — giving a **376×528 total** image.
+Swatches are scheme-agnostic (a ramp stop has one hex, painted identically in both blocks); only the
+control strip differs, since it resolves `kit.roles` per scheme — this is what makes the board able
+to expose a dark-mode-only `contrast` finding (§6.3) that a light-only render would hide. Shared
+`boardLayout(kit)` geometry (`{width, height, light, dark}`, each of `light`/`dark` exposing its own
+`blockTop`/`blockBottom`/`swatch(i)`/`button`/`select`/`switchCtl`) keeps the verifier sampling the
+exact rects the renderer painted while colors resolve independently from the kit. Verified against a
+REAL independent decoder (Node's own `zlib.inflateSync`, in tests only — the shipped encoder stays
+dependency-free) and deterministic (the same kit always encodes to byte-identical bytes, spec §6.4).
 Computed **lazily at dispatch time**, not baked into `generateKit`'s own return shape — the pure core
 and the MCP-tool wrapper (`generateKitTool`) stay unaware of images; only the transport layer
 (`attachImageBlock`, appended to `describe-mcp-core.mjs`) builds one, for any dispatcher whose reply
