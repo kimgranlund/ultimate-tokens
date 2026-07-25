@@ -74,6 +74,10 @@ import {
   SCRIM_STEPS,
   dialogBackdropHex,
   dialogBackdropOklch,
+  whiteHex,
+  whiteOklch,
+  blackHex,
+  blackOklch,
 } from "../engine/exports.js";
 // The Claude Design / Google Stitch / Figma Make "DS bundle" authoring subsystem — split into its
 // own module (TKT-0015); see src/engine/ds-export.js's header for why it's a different file.
@@ -271,8 +275,12 @@ export function brandKit(doc, systems) {
   // curves + the ms ladder instead of typing a raw `300ms ease`.
   kit.motion = motionTokens();
   // fixed, non-palette CONSTANTS — always served like motion (no user parameters, no sys.color
-  // gate: a dialog backdrop isn't a brand color, it's neutral chrome every consumer needs).
-  kit.constants = { dialogBackdrop: { hex: dialogBackdropHex(), oklch: dialogBackdropOklch() } };
+  // gate: none of these are a brand color, they're neutral chrome every consumer needs).
+  kit.constants = {
+    dialogBackdrop: { hex: dialogBackdropHex(), oklch: dialogBackdropOklch() },
+    white: { hex: whiteHex(), oklch: whiteOklch() },
+    black: { hex: blackHex(), oklch: blackOklch() },
+  };
   if (sys.color) {
     const view = projectView(doc);
     const on = view.palettes.filter((p) => p.on);
