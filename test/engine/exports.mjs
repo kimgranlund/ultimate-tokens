@@ -205,6 +205,52 @@ if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palet
   if (!scAliased.includes("--overlay: var(--c-dialog-backdrop);")) FAIL("dialog-backdrop", "exportShadcn (aliased) --overlay must link var(--{aliasPrefix}-dialog-backdrop)");
 }
 
+// ── hpg-export-white-black (two more fixed, non-palette color CONSTANTS — solid, opaque, emitted
+//    ONCE per document, never per-palette, never mode-flipped) across every color format except
+//    ShadCN (its fixed contract has no white/black slot, same reasoning as the dialog-backdrop block
+//    above for why --overlay is dialog-backdrop-only) ──
+{
+  const WHITE_HEX = "#FFFFFF";
+  const BLACK_HEX = "#000000";
+  const WHITE_OKLCH = "oklch(1 0 0)";
+  const BLACK_OKLCH = "oklch(0 0 0)";
+  // CSS (hex) / CSS (OKLCH) — two lines in :root, alongside dialog-backdrop, before any palette.
+  if (!X.exportCSS(C(ALL)).includes(`--c-white: ${WHITE_HEX};`)) FAIL("white-black", "exportCSS missing --c-white (hex)");
+  if (!X.exportCSS(C(ALL)).includes(`--c-black: ${BLACK_HEX};`)) FAIL("white-black", "exportCSS missing --c-black (hex)");
+  if (!X.exportOKLCH(C(ALL)).includes(`--c-white: ${WHITE_OKLCH};`)) FAIL("white-black", "exportOKLCH missing --c-white (oklch)");
+  if (!X.exportOKLCH(C(ALL)).includes(`--c-black: ${BLACK_OKLCH};`)) FAIL("white-black", "exportOKLCH missing --c-black (oklch)");
+  // the configurable prefix covers both too (same {pfx} as every other token).
+  const mdCss = X.exportCSS({ ...C(ALL), export: { colorPrefix: "md-sys-color" } });
+  if (!mdCss.includes(`--md-sys-color-white: ${WHITE_HEX};`) || !mdCss.includes(`--md-sys-color-black: ${BLACK_HEX};`))
+    FAIL("white-black", "a custom prefix must cover --{prefix}-white/--{prefix}-black too");
+  // JSON — top-level `constants` siblings to dialog-backdrop (never themselves a palette).
+  const jc = X.exportJSON(C(ALL));
+  if (!jc.constants || jc.constants.white?.hex !== WHITE_HEX) FAIL("white-black", `JSON constants.white.hex = ${jc.constants && jc.constants.white && jc.constants.white.hex}, want ${WHITE_HEX}`);
+  if (!jc.constants || jc.constants.black?.hex !== BLACK_HEX) FAIL("white-black", `JSON constants.black.hex = ${jc.constants && jc.constants.black && jc.constants.black.hex}, want ${BLACK_HEX}`);
+  // DTCG — RAW tree only (palette.tokens.json), under the same "constants" group as dialog-backdrop,
+  // absent from the SEMANTIC tree for the same real-palette-invariant reason.
+  const dtcgC = X.exportDTCG(C(ALL), {});
+  const whiteLeaf = dtcgC["palette.tokens.json"].constants.white;
+  const blackLeaf = dtcgC["palette.tokens.json"].constants.black;
+  if (!whiteLeaf || whiteLeaf.$type !== "color" || whiteLeaf.$value.alpha !== 1 || (whiteLeaf.$value.hex || "").toUpperCase() !== WHITE_HEX)
+    FAIL("white-black", `DTCG raw constants/white leaf malformed: ${JSON.stringify(whiteLeaf)}`);
+  if (!blackLeaf || blackLeaf.$type !== "color" || blackLeaf.$value.alpha !== 1 || (blackLeaf.$value.hex || "").toUpperCase() !== BLACK_HEX)
+    FAIL("white-black", `DTCG raw constants/black leaf malformed: ${JSON.stringify(blackLeaf)}`);
+  if (dtcgC["Light_tokens.json"].constants || dtcgC["Dark_tokens.json"].constants)
+    FAIL("white-black", "DTCG semantic tree (Light/Dark) must NOT carry a 'constants' key (breaks the real-palette invariant)");
+  // UI3 (Figma interchange) — Primitives collection ONLY, same reasoning as DTCG above.
+  const ui3 = X.exportUI3(C(ALL));
+  const ui3White = ui3.collections["Color Primitives"].variables["raw/constants/white"];
+  const ui3Black = ui3.collections["Color Primitives"].variables["raw/constants/black"];
+  if (!ui3White || ui3White.type !== "COLOR" || ui3White.values.Base !== WHITE_HEX) FAIL("white-black", `UI3 Primitives raw/constants/white malformed: ${JSON.stringify(ui3White)}`);
+  if (!ui3Black || ui3Black.type !== "COLOR" || ui3Black.values.Base !== BLACK_HEX) FAIL("white-black", `UI3 Primitives raw/constants/black malformed: ${JSON.stringify(ui3Black)}`);
+  if (ui3.collections["Color Semantic"].variables["constants/white"] || ui3.collections["Color Semantic"].variables["constants/black"])
+    FAIL("white-black", "UI3 Semantic collection must NOT carry constants/white or constants/black");
+  // Tailwind @theme — two lines, outside any palette's scale/role blocks.
+  if (!X.exportTailwind(C(ALL)).includes(`--color-white: ${WHITE_OKLCH};`)) FAIL("white-black", "exportTailwind missing --color-white");
+  if (!X.exportTailwind(C(ALL)).includes(`--color-black: ${BLACK_OKLCH};`)) FAIL("white-black", "exportTailwind missing --color-black");
+}
+
 // ── hpg-export-tailwind (v4 @theme: oklch ramps + light-dark() semantic roles) ────────────
 const tw = X.exportTailwind(C(ALL));
 if (!/@theme\s*\{/.test(tw)) FAIL("tailwind", "no @theme block");
@@ -608,7 +654,7 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
 
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "tailwind", "shadcn", "keycolors", "keycolors-dtcg", "keycolors-ui3", "design-system", "design-system-stitch", "design-system-make"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "keycolors", "keycolors-dtcg", "keycolors-ui3", "design-system", "design-system-stitch", "design-system-make"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

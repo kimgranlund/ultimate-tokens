@@ -112,7 +112,11 @@ function rgbToOklch(rgb) {
   const a = 1.9779984951 * l_ - 2.428592205 * m_ + 0.4505937099 * s_;
   const bb = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.808675766 * s_;
   const C = Math.sqrt(a * a + bb * bb);
-  let H = (Math.atan2(bb, a) * 180) / Math.PI;
+  // hue is undefined at zero chroma — atan2 of the float-noise-sized a/bb residuals an exactly
+  // achromatic RGB (e.g. pure white/black) produces is an essentially-random angle, not a real hue.
+  // Guard at the same granularity oklchStr rounds C to (4 decimals) so a displayed "0" chroma never
+  // pairs with a nonzero displayed hue.
+  let H = C < 0.00005 ? 0 : (Math.atan2(bb, a) * 180) / Math.PI;
   if (H < 0) H += 360;
   return { L, C, H };
 }
@@ -136,6 +140,17 @@ const DIALOG_BACKDROP_RGB = [0, 0, 0];
 const DIALOG_BACKDROP_ALPHA_PCT = 80;
 export function dialogBackdropHex() { return hex8(DIALOG_BACKDROP_RGB, DIALOG_BACKDROP_ALPHA_PCT / 100); }
 export function dialogBackdropOklch() { return oklchStrA(rgbToOklch(DIALOG_BACKDROP_RGB), DIALOG_BACKDROP_ALPHA_PCT); }
+
+// WHITE / BLACK — two more fixed SYSTEM CONSTANTS, the same "not palette-derived, not mode-flipped"
+// exception as DIALOG_BACKDROP above, minus the alpha channel (solid, frac 1). Emitted once per
+// document, in every color-token format DIALOG_BACKDROP appears in EXCEPT ShadCN — its --overlay
+// slot is specifically the backdrop; shadcn's fixed token contract has no white/black slot to fill.
+const WHITE_RGB = [255, 255, 255];
+const BLACK_RGB = [0, 0, 0];
+export function whiteHex() { return hexOf(WHITE_RGB); }
+export function blackHex() { return hexOf(BLACK_RGB); }
+export function whiteOklch() { return oklchStr(rgbToOklch(WHITE_RGB)); }
+export function blackOklch() { return oklchStr(rgbToOklch(BLACK_RGB)); }
 
 // ── Core: per-palette derivation (shared by every emitter) ────────────────────
 
@@ -317,6 +332,8 @@ function cssFrom(palettes, oklch, pfx = "c") {
   lines.push("  color-scheme: light dark;");
   // fixed system constants — NOT palette-derived, emitted ONCE (never per palette, never mode-flipped).
   lines.push(`  --${pfx}-dialog-backdrop: ${oklch ? dialogBackdropOklch() : dialogBackdropHex()};`);
+  lines.push(`  --${pfx}-white: ${oklch ? whiteOklch() : whiteHex()};`);
+  lines.push(`  --${pfx}-black: ${oklch ? blackOklch() : blackHex()};`);
   for (const p of palettes) {
     lines.push("");
     lines.push(`  /* ${p.name} — flat mode-independent primitives */`);
@@ -392,9 +409,12 @@ export function exportJSON(state) {
     if (p.keyColors.length) palette.keyColors = p.keyColors.map((kc) => ({ role: kc.role, oklch: kc.oklch, ...(kc.name ? { name: kc.name } : {}) }));
     out[p.n] = palette;
   }
-  // constants — fixed, non-palette tokens (currently just dialog-backdrop). A sibling key to the
-  // palette slugs, never itself a palette.
-  out.constants = { "dialog-backdrop": { hex: dialogBackdropHex() } };
+  // constants — fixed, non-palette tokens. A sibling key to the palette slugs, never itself a palette.
+  out.constants = {
+    "dialog-backdrop": { hex: dialogBackdropHex() },
+    white: { hex: whiteHex() },
+    black: { hex: blackHex() },
+  };
   return out;
 }
 
@@ -455,9 +475,13 @@ export function exportDTCG(state, opts) {
     }
     rawTree[p.n] = grp;
   }
-  // constants — fixed, non-palette raw primitives (currently just dialog-backdrop), a sibling GROUP
-  // to the palette names (never itself resolved from a palette). Single value, no per-mode variance.
-  rawTree.constants = { "dialog-backdrop": colorLeaf(DIALOG_BACKDROP_RGB, DIALOG_BACKDROP_ALPHA_PCT / 100, null) };
+  // constants — fixed, non-palette raw primitives, a sibling GROUP to the palette names (never
+  // itself resolved from a palette). Single value each, no per-mode variance.
+  rawTree.constants = {
+    "dialog-backdrop": colorLeaf(DIALOG_BACKDROP_RGB, DIALOG_BACKDROP_ALPHA_PCT / 100, null),
+    white: colorLeaf(WHITE_RGB, 1, null),
+    black: colorLeaf(BLACK_RGB, 1, null),
+  };
 
   // SEMANTIC tree for one theme's `side` ("light" | "dark"): each role -> resolved leaf,
   // with aliasData attached iff rawColl is set, targeting that side's ref.
@@ -535,11 +559,13 @@ export function exportUI3(state) {
       };
     }
   }
-  // constants — a fixed, non-palette raw primitive, Primitives-collection ONLY (mirrors the DTCG
+  // constants — fixed, non-palette raw primitives, Primitives-collection ONLY (mirrors the DTCG
   // raw-tree-only placement: the Semantic collection's top-level keys are treated elsewhere as real
   // palettes with a full role set, positionally zipped against doc.palettes — a synthetic key there
-  // breaks that invariant). Bind to this directly; nothing to alias FROM a palette that isn't one.
+  // breaks that invariant). Bind to these directly; nothing to alias FROM a palette that isn't one.
   primVars["raw/constants/dialog-backdrop"] = { type: "COLOR", values: { Base: dialogBackdropHex() } };
+  primVars["raw/constants/white"] = { type: "COLOR", values: { Base: whiteHex() } };
+  primVars["raw/constants/black"] = { type: "COLOR", values: { Base: blackHex() } };
 
   return {
     $schema: "figma-ui3-variables.color.schema.v1",
@@ -574,6 +600,8 @@ export function exportTailwind(state) {
   lines.push("");
   lines.push("  /* fixed system constants — not palette-derived */");
   lines.push(`  --color-dialog-backdrop: ${dialogBackdropOklch()};`);
+  lines.push(`  --color-white: ${whiteOklch()};`);
+  lines.push(`  --color-black: ${blackOklch()};`);
   for (const p of palettes) {
     lines.push("");
     lines.push(`  /* ${p.name} — scale */`);

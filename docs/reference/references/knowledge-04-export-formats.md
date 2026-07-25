@@ -170,21 +170,22 @@ opt-in escape hatch for users who want aliasData emitted anyway. See ADR-002.
 ## 8. System constants (fixed, non-palette tokens)
 
 A **system constant** is a color token that is NOT derived from any palette — a fixed value,
-emitted once per document, never mode-flipped. The only one today: `dialog-backdrop` (opaque
-black at 80% alpha — the canonical modal/dialog scrim, distinct from the per-palette,
-brand-tinted `*/scrim*` roles). Still rides the same configurable `{pfx}`/`{aliasPrefix}` as
-every other token, so a renamed namespace covers it too.
+emitted once per document, never mode-flipped. Three today: `dialog-backdrop` (opaque black at
+80% alpha — the canonical modal/dialog scrim, distinct from the per-palette, brand-tinted
+`*/scrim*` roles), `white`, and `black` (solid, opaque chrome — never a palette color). All three
+still ride the same configurable `{pfx}`/`{aliasPrefix}` as every other token, so a renamed
+namespace covers them too.
 
-**Where it appears, and where it deliberately does NOT:**
+**Where they appear, and where they deliberately do NOT:**
 
 | Format | Placement |
 |---|---|
-| CSS (hex/oklch) | One `--{pfx}-dialog-backdrop` line in `:root`, before any palette (`cssFrom`) |
+| CSS (hex/oklch) | `--{pfx}-dialog-backdrop` / `-white` / `-black` lines in `:root`, before any palette (`cssFrom`) |
 | JSON | A top-level `constants` object, sibling to the palette-name keys |
 | DTCG | A `constants` group in `palette.tokens.json` (RAW) **only** |
-| UI3 (Figma) | `raw/constants/dialog-backdrop` in `Color Primitives` **only** |
-| Tailwind `@theme` | One `--color-dialog-backdrop` line, outside any palette's scale/role blocks |
-| ShadCN | `--overlay` in both `:root`/`.dark` (literal, or `var(--{aliasPrefix}-dialog-backdrop)` when aliased), mapped in `@theme inline` |
+| UI3 (Figma) | `raw/constants/{dialog-backdrop,white,black}` in `Color Primitives` **only** |
+| Tailwind `@theme` | `--color-dialog-backdrop` / `-white` / `-black` lines, outside any palette's scale/role blocks |
+| ShadCN | `--overlay` in both `:root`/`.dark` (literal, or `var(--{aliasPrefix}-dialog-backdrop)` when aliased), mapped in `@theme inline` — **`dialog-backdrop` only**; `white`/`black` have no slot in shadcn's fixed token contract, so they don't appear there |
 
 **Why it is absent from the DTCG/UI3 *semantic* tree (Light/Dark · Color Semantic) — load-bearing,
 don't "fix" this:** every top-level key of that tree is treated elsewhere as a REAL PALETTE with a

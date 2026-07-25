@@ -20,7 +20,7 @@ import { iconSystem, iconSystemLabel } from "./icon-systems.mjs";
 import { motionTokens, MOTION_EASING, MOTION_DURATION, MOTION_NEVER } from "./motion.mjs";
 import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"; // §8 carrier primitives + the gate itself — the receipt cites the SAME run the gate measures
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
-import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, exportShadcn } from "./exports.js";
+import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn } from "./exports.js";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // DESIGN SYSTEM export — design-system-for-{claude-code,google-stitch,figma-make}
@@ -1214,10 +1214,15 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
   const pfx = cssPrefixOf(state);
   const basePfx = pfx.replace(/-color$/, "");
   const L = [], D = [];
-  // the fixed system constant — same value both modes (an overlay doesn't flip). This is what the
-  // shadcn projection's aliased `--overlay: var(--{pfx}-dialog-backdrop)` resolves against (D10).
+  // the fixed system constants — same value both modes (none of these flip). dialog-backdrop is what
+  // the shadcn projection's aliased `--overlay: var(--{pfx}-dialog-backdrop)` resolves against (D10);
+  // white/black have no shadcn slot to fill (its fixed contract has none), so they ride only here.
   L.push(`  --${pfx}-dialog-backdrop: ${dialogBackdropOklch()};`);
   D.push(`  --${pfx}-dialog-backdrop: ${dialogBackdropOklch()};`);
+  L.push(`  --${pfx}-white: ${whiteOklch()};`);
+  D.push(`  --${pfx}-white: ${whiteOklch()};`);
+  L.push(`  --${pfx}-black: ${blackOklch()};`);
+  D.push(`  --${pfx}-black: ${blackOklch()};`);
   for (const p of derivedAll(state)) for (const r of p.roles) {
     L.push(`  --${pfx}-${p.n}${r.suffix}: ${roleOklch(r.light)};`);
     D.push(`  --${pfx}-${p.n}${r.suffix}: ${roleOklch(r.dark)};`);
