@@ -1,0 +1,28 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "enabledPlugins": {
+    "llm@nonoun-plugins": true,
+    "harness@nonoun-plugins": true,
+    "docs@nonoun-plugins": true,
+    "teamwork@nonoun-plugins": true,
+    "screens@nonoun-plugins": true,
+    "agent-protocols@nonoun-plugins": true,
+    "design@nonoun-plugins": true,
+
+    "figma@claude-plugins-official": true,
+    "cloudflare@claude-plugins-official": true,
+
+    "adia-ai@adia-ui-factory": false,
+    "adia-ai@adia-ui-forge": false
+  },
+  "extraKnownMarketplaces": {
+    "nonoun-plugins": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/kimgranlund/claude-plugins.git"
+      }
+    }
+  }
+}
