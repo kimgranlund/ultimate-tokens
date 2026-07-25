@@ -7,11 +7,17 @@
     "bootstrap": {
       "seeded_at": "2026-07-25T19:02:38Z",
       "seed_basis": "evidence-only (REQ-011 first-firing bootstrap): repo owner/admin per `gh repo view` and sole collaborator per `gh api repos/kimgranlund/ultimate-tokens/collaborators`; sole author across all 34 issues and 366 PRs (all-time) per `gh issue list --state all` / `gh pr list --state all`. No second author guessed.",
-      "roster_confirmed": false,
+      "roster_confirmed": true,
       "roster_candidates_surfaced": [
         "kimgranlund (repo owner, admin, sole collaborator, sole historical issue/PR author — public repo, so both the private-repo 'approved collaborators' lens and the public-repo 'historical authors + owners' lens agree on this single candidate)"
-      ]
+      ],
+      "roster_confirmed_at": "2026-07-25T00:00:00Z",
+      "roster_confirmed_via": "interactive AskUserQuestion round dispatched by Kim (repo owner) confirming trusted_authors: [kimgranlund] as the full roster"
     },
-    "github_mcp_offer": null
+    "new_collaborator_rule": "hold-first-filing",
+    "new_collaborator_rule_note": "A future new collaborator's first issue/PR is held (step 5: needs-triage-approval label + held-items.md entry) for one-time human approval; once approved, that author is added to trusted_authors and auto-trusted thereafter. Not auto-friendly-on-access — no author is trusted purely by having repo access.",
+    "github_mcp_offer": "declined",
+    "github_mcp_offer_recorded_at": "2026-07-25T00:00:00Z",
+    "github_mcp_offer_note": "REQ-013 offer (project-scoped read-only GitHub MCP server) declined by Kim in the same interactive dispatch as the roster confirmation. No .mcp.json entry written. This offer must not be re-surfaced on any future firing."
   }
 }
