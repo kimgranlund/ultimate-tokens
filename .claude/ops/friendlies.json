@@ -1,0 +1,17 @@
+{
+  "repo": "kimgranlund/ultimate-tokens",
+  "trusted_authors": [
+    "kimgranlund"
+  ],
+  "policy": {
+    "bootstrap": {
+      "seeded_at": "2026-07-25T19:02:38Z",
+      "seed_basis": "evidence-only (REQ-011 first-firing bootstrap): repo owner/admin per `gh repo view` and sole collaborator per `gh api repos/kimgranlund/ultimate-tokens/collaborators`; sole author across all 34 issues and 366 PRs (all-time) per `gh issue list --state all` / `gh pr list --state all`. No second author guessed.",
+      "roster_confirmed": false,
+      "roster_candidates_surfaced": [
+        "kimgranlund (repo owner, admin, sole collaborator, sole historical issue/PR author — public repo, so both the private-repo 'approved collaborators' lens and the public-repo 'historical authors + owners' lens agree on this single candidate)"
+      ]
+    },
+    "github_mcp_offer": null
+  }
+}
