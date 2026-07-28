@@ -14,8 +14,8 @@
     "figma@claude-plugins-official": true,
     "cloudflare@claude-plugins-official": true,
 
-    "adia-ai@adia-ui-factory": false,
-    "adia-ai@adia-ui-forge": false
+    "adia-factory@adia": false,
+    "adia-forge@adia": false
   },
   "extraKnownMarketplaces": {
     "nonoun-plugins": {
