@@ -1,6 +1,6 @@
-# Figma text-style hard constraints — found live, 2026-07-13/14
+# Figma text-style hard constraints — found live, 2026-07-13/14 (+ 2026-07-28)
 
-Seven constraints of Figma's real Plugin API surface, each discovered against a REAL applied file
+Eight constraints of Figma's real Plugin API surface, each discovered against a REAL applied file
 (BZZR) after the static parity gates were already green — none is documented crisply by Figma, and
 each shipped here as a fix to a live defect. Cite these before "improving" the styles layer; every
 one of them looks like a bug you'd want to fix until you know why it's load-bearing.
@@ -83,3 +83,34 @@ hand (the BZZR TV mode: 350 variables), build the payload from the collection's 
 and assert `unset === 0` (payload keys ∖ collection names and vice versa) before calling it done.
 Mode-independent constants (space/radius ladders, borders, focus) still need their value written —
 "same as every other mode" is a value, not an omission. — TKT-0009 follow-up, 2026-07-16.
+
+## 8. Clearing the OTHER half of the fontStyle/fontWeight XOR must run BEFORE setting the new half, never after
+
+Constraint #1 established WHICH field to null when a plan omits it. It doesn't say the ORDER
+matters — it does, and reversing it silently discards the write. `setBoundVariable('fontStyle',
+newVar)` followed by `setBoundVariable('fontWeight', null)` on the SAME style/node object, in the
+SAME script, leaves NEITHER field bound: the null-clear call strips `fontStyle` too, even when
+`fontWeight` was already absent (nothing to "clear"). No error either call. A same-call readback
+of `boundVariables` after only the `fontStyle` set looks correct; the readback after the
+`fontWeight` null-clear shows the `fontStyle` key gone entirely. Doing it in the opposite order —
+`setBoundVariable('fontWeight', null)` FIRST, `setBoundVariable('fontStyle', newVar)` SECOND — is
+unconditionally safe and was verified so, isolated and re-fetched fresh, against BZZR. A bulk
+rebind that writes `fontStyle` in one pass and `fontWeight: null` in a second pass over the same
+objects hits this even though each pass's own immediate readback looks clean — the corruption is
+invisible until a FULL post-migration readback, not the per-step one. — BZZR weight-ramp
+migration, 2026-07-28 (`migrating-figma-files` scenario 7).
+
+## 9. `getVariableByIdAsync` returns a stale phantom for a just-deleted variable id — never trust it as a deletion readback
+
+`Variable.remove()` genuinely removes the variable — `collection.variableIds` stops listing it and
+`figma.variables.getLocalVariablesAsync()` stops returning it — immediately, same call, no async
+gap. But `figma.variables.getVariableByIdAsync(id)` keeps returning a fully-populated, correctly-
+named object for that id anyway, both in the SAME script right after the `remove()` call and in a
+completely FRESH `use_figma` invocation afterward — contradicting its own documented contract
+("If not found... returns a promise containing `null`"). A migration that verifies a batch delete
+by re-`getVariableByIdAsync`-ing each id and checking truthiness will report every real, successful
+deletion as a failure. The correct deletion readback: check the id against
+`(await figma.variables.getLocalVariablesAsync()).map(v => v.id)` or a re-fetched
+`collection.variableIds`, never against `getVariableByIdAsync`'s return value. — BZZR weight-ramp
+migration, 2026-07-28 (84/84 deletions falsely read as failed before switching verification
+methods; `migrating-figma-files` scenario 7).

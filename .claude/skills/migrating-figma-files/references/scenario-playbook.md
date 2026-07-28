@@ -1,4 +1,4 @@
-## Scenario playbook — the six procedures, worked
+## Scenario playbook — the seven procedures, worked
 
 Each scenario below was run for real, through the Figma MCP, against the live BZZR Tokens file.
 The BZZR numbers cited are real outcomes, not illustrations — read them as evidence a procedure
@@ -173,6 +173,50 @@ re-bound 464 style bindings across 136 styles, re-pointed 183+60+6 node-level co
 deleted the Typography collection after a fresh sweep. Final tally: 141 styles, 0 unbound, 0
 dangling; Geometry grew to 350 variables (80 pre-existing + 270 type/) across 5 modes.
 
+### 7. NUMBER-to-STRING weight rebind (fontWeight → fontStyle)
+
+**Rule.** Converting a voice family from numeric `fontWeight` bindings to named `fontStyle`
+bindings (hard-constraints §1's "a custom styleName is strictly more specific") is scenarios 1–5
+composed, plus two order-dependent traps neither one calls out on its own.
+
+**Procedure.**
+1. For every style/node currently bound via `fontWeight`, read its OWN already-rendering
+   `fontName.style` as ground truth — don't theorize a nearest-real-cut mapping (tie-breaks,
+   "does this family even have a Semi-bold") when the object already shows you the real answer.
+2. Ensure a `weight-style/<group>/<kebab-style>` STRING variable exists with that exact value;
+   create it if missing (a plain `weight-style/<group>/<realStyle>` naming derivation, not a
+   guess) — a programmatic "is one still missing" pass catches what a manual tally misses (this
+   migration's manual list missed 3 of 13 real gaps on the first pass).
+3. **Clear `fontWeight` to `null` BEFORE setting `fontStyle` to the new variable — never the
+   reverse order, and never in one call each without checking which ran last.** Calling
+   `setBoundVariable('fontWeight', null)` AFTER `setBoundVariable('fontStyle', newVar)` on the
+   SAME style/node **silently strips the fontStyle binding that was just set**, even though
+   `fontWeight` was already absent — no error, `fontWeightCleared` reads `true`, but a same-call
+   readback shows `fontStyle` never landed. Reversing the order (null the weight, THEN set the
+   style) is unconditionally safe. This is a NEW trap beyond hard-constraints §1's "clear the
+   stale half explicitly" — that rule is correct about WHICH field to null, not the order to null
+   it in relative to the field being set.
+4. Run scenario 4's zero-consumer sweep (styles AND node/segment level — this migration's sweep
+   caught 2 direct segment-level `fontWeight` bindings on a Scratch page that no shared style ever
+   touched) before deleting the numeric `weight/*` ramp.
+5. Delete the confirmed-orphaned numeric variables (scenario 5's discipline) — **but verify the
+   deletion via `figma.variables.getLocalVariablesAsync()` or `collection.variableIds.includes(id)`,
+   never via `getVariableByIdAsync(id)` truthiness.** `getVariableByIdAsync` returns a stale,
+   fully-populated phantom object for a just-deleted id — in this migration it did so both
+   same-call AND in a fresh follow-up `use_figma` call — even though `.remove()` had already
+   correctly removed the variable from its collection and the authoritative local-variables list.
+   Trusting `getVariableByIdAsync`'s truthiness as the deletion readback would have reported all
+   84 real, successful deletions as failures.
+
+**Worked scale:** BZZR's weight ramp — 87 fontWeight-bound text styles (across 13 voice groups +
+UI-control/UI-widget) rebound to fontStyle, 13 missing `weight-style/*` STRING variables created
+(3 found only by the programmatic re-check, not the manual tally), 2 segment-level node bindings
+recovered on a page no style touched, 84 numeric/invalid variables deleted (60 `weight/*` +
+12 `type/ui-control|widget/*/weight` + 12 orphaned `*/semi-bold` and `*/extra-bold` STRING
+variables — GT America and GT America Mono have no real Semi-bold(600) or Extra-bold(800) cut).
+Final tally: 141/141 styles clean (0 fontWeight bound, every fontStyle value matches its
+rendered face), 0 remaining consumers of any deleted variable across all 10 pages.
+
 ## Cross-scenario failure-mode summary
 
 | Symptom | Which scenario it belongs to | What actually happened |
@@ -184,3 +228,5 @@ dangling; Geometry grew to 350 variables (80 pre-existing + 270 type/) across 5 
 | A deleted collection/style orphaned a binding nobody expected | 4 | The zero-consumer sweep was stale — run before a later rename/rebind step, not immediately before the delete |
 | A migration script's own report says success but a later full readback disagrees | 5 | The report trusted setter return values instead of re-reading the written state in the same call |
 | A merged collection's variables read correctly on the default mode but wrong on the others | 6 | A mode mismatch between the source and destination collections wasn't back-filled explicitly |
+| A `fontStyle` bind reads as set, but a readback shows the field never landed | 7 | `setBoundVariable('fontWeight', null)` ran AFTER `setBoundVariable('fontStyle', var)` on the same object — reverse the order |
+| A batch delete reports success, but the deleted variables still show up on every later check | 7 | The check used `getVariableByIdAsync(id)` truthiness — it returns a stale phantom for a deleted id; check `getLocalVariablesAsync()` instead |

@@ -37,10 +37,11 @@ hard-to-debug tool failures, independent of anything below.
 before touching styles or metric fields. This skill CITES that catalog rather than restating it —
 scenarios below name the constraint number they ride, they don't re-derive it.
 
-## The six scenarios
+## The seven scenarios
 
 Each is a real, load-bearing procedure proven live against BZZR Tokens (findings in
-`docs/tickets/tkt-0009.md`, `tkt-0010.md`, `tkt-0012.md`, `tkt-0013.md`). Full steps + traps in
+`docs/tickets/tkt-0009.md`, `tkt-0010.md`, `tkt-0012.md`, `tkt-0013.md`, and the 2026-07-28
+weight-ramp session). Full steps + traps in
 [`references/scenario-playbook.md`](references/scenario-playbook.md); this table is the index.
 
 | # | Scenario | One-line rule | Trap if skipped |
@@ -51,6 +52,7 @@ Each is a real, load-bearing procedure proven live against BZZR Tokens (findings
 | 4 | Zero-consumer sweep before deletion | Re-enumerate every node/style for a live reference to the target, in the SAME session, immediately before delete | A sweep run before an intervening rename/rebind step is stale — it can green-light a delete that orphans a binding created since |
 | 5 | Same-call readback verification | Re-read what you just wrote, in the same script, before reporting done | A setter's success return proves nothing — Figma's API can no-op without erroring (constraints §6, §7) |
 | 6 | Collection merge with alias/style re-pointing | Copy values cell-for-cell into the destination, re-point every consumer, THEN retire the source | Deleting the source before every style/node consumer is re-pointed orphans whatever wasn't re-scanned |
+| 7 | NUMBER-to-STRING weight rebind | Clear `fontWeight` to `null` BEFORE setting `fontStyle` — the reverse order silently strips the just-set binding; verify a delete via `getLocalVariablesAsync()`, never `getVariableByIdAsync` truthiness | A "successful" rebind that never actually set `fontStyle`, or a "successful" delete where `getVariableByIdAsync` keeps returning a stale phantom for the deleted id |
 
 ## The migration loop (order matters)
 
@@ -107,9 +109,9 @@ Each is a real, load-bearing procedure proven live against BZZR Tokens (findings
 
 | Path | Use when |
 |---|---|
-| `references/scenario-playbook.md` | executing any of the six scenarios — the full steps + trap detail this file only indexes |
+| `references/scenario-playbook.md` | executing any of the seven scenarios — the full steps + trap detail this file only indexes |
 | `references/rubric.md` | scoring a migration before calling it done |
-| `../maintaining-figma-plugins/references/figma-styles-hard-constraints.md` | before touching styles or metric-field bindings — the underlying API constraints this playbook cites (fontStyle/fontWeight XOR, NUMBER-only metric fields, path-prefix folder-ization, no variable-font axis metadata, name/weight matching, segment-level bindings, full-payload mode adds) |
+| `../maintaining-figma-plugins/references/figma-styles-hard-constraints.md` | before touching styles or metric-field bindings — the underlying API constraints this playbook cites (fontStyle/fontWeight XOR, NUMBER-only metric fields, path-prefix folder-ization, no variable-font axis metadata, name/weight matching, segment-level bindings, full-payload mode adds, clear-before-set ordering, deletion-readback via getLocalVariablesAsync not getVariableByIdAsync) |
 | `../maintaining-figma-plugins/SKILL.md` | changing the PLUGIN CODE (code.js/manifest) that performs an apply for every user, as opposed to a one-off live-file migration |
 | `docs/tickets/tkt-0009.md`, `tkt-0010.md`, `tkt-0012.md`, `tkt-0013.md` | the worked narratives these scenarios were extracted from — read for the full BZZR numbers (270/362/1,197 variables, 141 styles, 464 bindings) |
 
