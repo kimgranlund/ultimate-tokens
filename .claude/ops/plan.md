@@ -1,5 +1,15 @@
 # Ops plan — ultimate-tokens
 
+## Status 2026-07-29 (host session update)
+
+- ✅ 1 branch sweep — done; remotes down to 3
+- ✅ 2 push `aa2f58c` — done; main in sync
+- ✅ 3 ADR coverage — Kim ruled option (a) per-ADR split; migration filed as #401
+- ✅ 4 OD-004 — re-statused DEFERRED (087063b)
+- 🟡 5 PR #158 go-live — still held; LS dashboard activation-limit check remains (Kim)
+- ✅ 6 bootstrap answers — recorded (0c8cb2c)
+- ✅ 7 gitignore rules — CLOSED NO-CHANGE: both rules are live, not dead (`test/plugin/hosted-pack.mjs:21` creates `.hosted-pack-scratch/`; `.github/workflows/pages.yml:41` builds `_site/`); repo-cleaner's "match nothing" check misses runtime/CI-only paths
+
 - **Written:** 2026-07-25, by chore-planner (sweep dispatch from chore-lead)
 - **Mode:** sweep — judged exactly the three attached seat reports (decision-watcher 🟡, issue-sorter 🟢, repo-cleaner 🟡); nothing refetched
 - **Prior plan:** none existed — this is the first plan for this repo; no carry-forward entries
