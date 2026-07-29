@@ -207,6 +207,13 @@ composed, plus two order-dependent traps neither one calls out on its own.
    correctly removed the variable from its collection and the authoritative local-variables list.
    Trusting `getVariableByIdAsync`'s truthiness as the deletion readback would have reported all
    84 real, successful deletions as failures.
+6. **Warn the human, in the same report, that Figma's own desktop UI (the Local Variables panel)
+   can keep showing deleted rows after a plugin/MCP session removes them — it does not always
+   live-refresh.** A migration that's clean by every API readback (steps 3–5) can still look
+   broken to a human checking the panel by eye, prompting a confused "these are still here" report
+   that re-litigates a delete that already succeeded. Name the fix directly: close/reopen the
+   Local Variables panel, or reload the file — never re-run the delete against ids the API already
+   confirms are gone.
 
 **Worked scale:** BZZR's weight ramp — 87 fontWeight-bound text styles (across 13 voice groups +
 UI-control/UI-widget) rebound to fontStyle, 13 missing `weight-style/*` STRING variables created
@@ -230,3 +237,4 @@ rendered face), 0 remaining consumers of any deleted variable across all 10 page
 | A merged collection's variables read correctly on the default mode but wrong on the others | 6 | A mode mismatch between the source and destination collections wasn't back-filled explicitly |
 | A `fontStyle` bind reads as set, but a readback shows the field never landed | 7 | `setBoundVariable('fontWeight', null)` ran AFTER `setBoundVariable('fontStyle', var)` on the same object — reverse the order |
 | A batch delete reports success, but the deleted variables still show up on every later check | 7 | The check used `getVariableByIdAsync(id)` truthiness — it returns a stale phantom for a deleted id; check `getLocalVariablesAsync()` instead |
+| A human reviewing Figma right after a verified-clean delete says the deleted rows are still there | 7 | The desktop Local Variables panel didn't live-refresh — the file is actually correct; close/reopen the panel or reload the file |
