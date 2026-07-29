@@ -4,7 +4,7 @@
 
 - ✅ 1 branch sweep — done; remotes down to 3
 - ✅ 2 push `aa2f58c` — done; main in sync
-- ✅ 3 ADR coverage — Kim ruled option (a) per-ADR split; migration filed as #401
+- ✅ 3 ADR coverage — RESOLVED NO-MIGRATION: harness 2.4.5's `adr_checkpoint.py` gained single-file mode; classify verified green against the monolith 2026-07-29 (21 ADRs, supersessions adr-004/adr-008 detected). This repo's `<adr-source>` is `docs/reference/references/decision-records.md`. #401 (the split, filed on the stale halt evidence) closed obsolete; the 2026-07-25 halt was an older cached tool version.
 - ✅ 4 OD-004 — re-statused DEFERRED (087063b)
 - 🟡 5 PR #158 go-live — still held; LS dashboard activation-limit check remains (Kim)
 - ✅ 6 bootstrap answers — recorded (0c8cb2c)
