@@ -12,16 +12,13 @@
     "design@nonoun-plugins": true,
 
     "figma@claude-plugins-official": true,
-    "cloudflare@claude-plugins-official": true,
-
-    "adia-factory@adia": false,
-    "adia-forge@adia": false
+    "cloudflare@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "nonoun-plugins": {
       "source": {
-        "source": "git",
-        "url": "https://github.com/kimgranlund/claude-plugins.git"
+        "source": "github",
+        "repo": "kimgranlund/claude-plugins"
       }
     }
   }
