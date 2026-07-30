@@ -1,7 +1,7 @@
 // categories.mjs — per-palette TYPOGRAPHY pipeline: the generated gallery PRESETS carry a `type` config
-// (scripts/gen-categories.mjs design5ToTypeConfig, from each spec palette's `type`), and it survives the
-// APPLY path (openConfigAsSet → hydrate → clampType → typeScale) so opening a palette dresses the doc in
-// its designed fonts. Guards the seam the "every palette still shows Inter" bug lived in.
+// (scripts/gen-categories.mjs registersToTypeConfig, from each spec palette's `type.registers` — ADR-022),
+// and it survives the APPLY path (openConfigAsSet → hydrate → clampType → typeScale) so opening a palette
+// dresses the doc in its designed fonts. Guards the seam the "every palette still shows Inter" bug lived in.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -15,10 +15,20 @@ const SPECDIR = join(HERE, "..", "..", "docs", "reference", "colors", "categorie
 // to hit that same count — one volume of exactly the researched brands, not padded to 48.
 const CAT_COUNTS = { architecture: 48, cuisine: 48, film: 48, literature: 48, music: 48, nature: 48, travel: 48, brands: 7 };
 const CATS = Object.keys(CAT_COUNTS);
-const ROLES = ["display", "heading", "body", "ui", "mono"];
-// slot ROLE → the primary voice the mapper (gen-categories.design5ToTypeConfig) shapes with the slot's
-// tracking/leading/weight. Kept in lockstep with TYPE_VOICE_OF there — the fidelity gate below leans on it.
-const VOICE_OF = { display: "Display", heading: "Headline", body: "Body", ui: "Label", mono: "Kicker" };
+// register → font role + primary voice + the secondaries its `voices` sub-map may opt in. Kept in
+// lockstep with REGISTERS in scripts/gen-categories.mjs — the fidelity + schema gates lean on it.
+const REGISTERS = {
+  anthemic:   { role: "display", voice: "Display",  own: [] },
+  contextual: { role: "heading", voice: "Headline", own: ["Sub-heading"] },
+  functional: { role: "body",    voice: "Body",     own: ["Lead", "Title", "Sub-title"] },
+  actionable: { role: "ui",      voice: "Label",    own: ["UI-control", "UI-widget"] },
+  data:       { role: "mono",    voice: "Kicker",   own: ["Body-mono", "Label-mono", "Tiny-mono"] },
+};
+// styleName may only target an EXPRESSIVE-tier voice (intended-use.md Layer 2 — body-class voices
+// take the fixed Regular/Medium/Semi-bold faces, never a named cut).
+const EXPRESSIVE = new Set(["Display", "Headline", "Sub-heading", "Title", "Sub-title", "Kicker"]);
+const REG_FIELDS = new Set(["font", "weight", "tracking", "leading", "styleName", "weights", "voices"]);
+const ENTRY_FIELDS = new Set(["font", "weight", "tracking", "leading", "styleName", "weights"]);
 // the makeVoices / clampType voice allowlist — a voice NOT here is SILENTLY DROPPED by clampType on
 // hydrate, so the mapper emitting an off-list name (e.g. "Mono") would lose that voice with no error. Keep in lockstep.
 const VOICES = ["Display", "Headline", "Sub-heading", "Title", "Sub-title", "Lead", "Body", "Body-mono", "Label", "Label-mono", "Kicker", "Tiny", "Tiny-mono", "UI-control", "UI-widget"];
@@ -72,74 +82,118 @@ for (const slug of CATS) {
   totalPresets += PRESETS.length;
 
   PRESETS.forEach((p, i) => {
-    const sd = specPals[i]?.type?.slots;
+    const st = specPals[i]?.type;
+    const sd = st?.registers;
+    // (s) SCHEMA — the register declaration itself is well-formed. Runs on the SPEC side, before the
+    //     sd-guarded value checks; the retired-shape check is defense in depth (the mapper also
+    //     throws on it at generation, but this file must catch a spec edited after a stale regen).
+    if (st && (st.slots || st.faces)) FAIL("schema", `${slug}[${i}] carries the RETIRED type.slots/type.faces shape — run scripts/migrate-type-registers.mjs`);
+    const isPct = (x) => typeof x === "string" && /^\s*-?\d+(?:\.\d+)?\s*%\s*$/.test(x);
+    const badUnit = (o, where) => {
+      if (typeof o?.tracking === "number" || typeof o?.leading === "number" || typeof o?.trackingEm === "number") FAIL("schema", `${slug}[${i}] ${where} carries the RETIRED numeric leading/tracking — use %-strings (tracking: "-2%", leading: "96%")`);
+      if (o?.tracking != null && !isPct(o.tracking)) FAIL("schema", `${slug}[${i}] ${where} tracking "${o.tracking}" is not a %-string`);
+      if (o?.leading != null && !isPct(o.leading)) FAIL("schema", `${slug}[${i}] ${where} leading "${o.leading}" is not a %-string`);
+    };
+    const badWeights = (o, where) => {
+      if (o?.weights != null && (!Array.isArray(o.weights) || o.weights.some((w) => typeof w?.name !== "string" || !Number.isFinite(w?.weight))))
+        FAIL("schema", `${slug}[${i}] ${where} weights must be an array of {name, weight} entries`);
+    };
+    if (sd) for (const [reg, r] of Object.entries(sd)) {
+      const def = REGISTERS[reg];
+      if (!def) { FAIL("schema", `${slug}[${i}] unknown register "${reg}"`); continue; }
+      for (const k of Object.keys(r || {})) if (!REG_FIELDS.has(k)) FAIL("schema", `${slug}[${i}] ${reg}: unknown field "${k}"`);
+      badUnit(r, reg); badWeights(r, reg);
+      if (r?.styleName && !EXPRESSIVE.has(def.voice)) FAIL("schema", `${slug}[${i}] ${reg}: styleName targets body-class ${def.voice} — named cuts are expressive-tier only`);
+      for (const [v, e] of Object.entries(r?.voices || {})) {
+        if (!def.own.includes(v)) FAIL("schema", `${slug}[${i}] ${reg}.voices["${v}"]: not this register's secondary (own: ${def.own.join(", ") || "none"})`);
+        const uiOnly = v === "UI-control" || v === "UI-widget";
+        for (const k of Object.keys(e || {})) {
+          if (!ENTRY_FIELDS.has(k)) FAIL("schema", `${slug}[${i}] ${reg}.voices["${v}"]: unknown field "${k}"`);
+          else if (uiOnly && k !== "font") FAIL("schema", `${slug}[${i}] ${reg}.voices["${v}"]: may set font only (the ladders-only law)`);
+        }
+        badUnit(e, `${reg}.voices["${v}"]`); badWeights(e, `${reg}.voices["${v}"]`);
+        if (e?.styleName && !EXPRESSIVE.has(v)) FAIL("schema", `${slug}[${i}] ${reg}.voices["${v}"]: styleName targets a body-class voice`);
+      }
+    }
     // a spec palette is "designed" iff its type carries ≥1 font — exactly when the mapper yields a config
     // (gen-categories returns null otherwise). Gate on the IFF, not on "100% seeded", so a future
     // un-designed palette doesn't redden this suite for a non-bug. A spec can ALSO carry an already-
     // resolved `type.fonts` directly (the "brands" category's real-doc pass-through, e.g. a config
-    // exported from the app itself, not the 5-slot design shape) — designed either way; the per-field
-    // "faithful" checks below are `.slots`-shaped and simply skip (guarded on `sd`) for this case.
-    const specDesigned = !!(sd && ROLES.some((r) => typeof sd[r]?.font === "string" && sd[r].font.trim())) || !!specPals[i]?.type?.fonts;
+    // exported from the app itself, not the register design shape) — designed either way; the per-field
+    // "faithful" checks below are registers-shaped and simply skip (guarded on `sd`) for this case.
+    const specDesigned = !!(sd && Object.values(sd).some((r) => typeof r?.font === "string" && r.font.trim())) || !!st?.fonts;
     const t = p.type;
     if (specDesigned && !t) { FAIL("hastype", `${slug}[${i}] spec is designed but preset dropped its type`); return; }
     if (!specDesigned && t) { FAIL("hastype", `${slug}[${i}] preset has type but the spec palette isn't designed`); return; }
     if (!t) return; // legitimately un-designed → falls back to the global default (covered by the negative control)
     totalTyped++;
     // (a) 5 non-empty font roles
-    for (const r of ROLES) if (typeof t.fonts?.[r] !== "string" || !t.fonts[r].trim()) FAIL("fonts", `${slug}[${i}] missing font role ${r}`);
+    for (const r of ["display", "heading", "body", "ui", "mono"]) if (typeof t.fonts?.[r] !== "string" || !t.fonts[r].trim()) FAIL("fonts", `${slug}[${i}] missing font role ${r}`);
     // (b) treatment is a known base
     if (!["product", "luxury", "editorial", "technical", "statement"].includes(t.treatment)) FAIL("base", `${slug}[${i}] bad base ${t.treatment}`);
     // (c) voices present, every name on the allowlist, mono routed to Kicker (NOT Code)
     const vk = Object.keys(t.voices || {});
     if (!vk.length) FAIL("voices", `${slug}[${i}] no voices`);
     for (const v of vk) if (!VOICES.includes(v)) FAIL("voices", `${slug}[${i}] off-allowlist voice "${v}" (clampType would drop it)`);
-    if (!vk.includes("Kicker")) FAIL("kicker", `${slug}[${i}] mono did not map to Kicker`);
-    // (d) generator FAITHFUL to the spec: preset fonts AND the mapped primary-voice tracking/leading/weight
-    //     match the spec palette's design VALUES (not just fonts) — so an in-range-but-wrong param, or a
-    //     dropped non-Kicker voice at generation, can't ship green (the guard PR2's mass param change needs).
-    if (sd) for (const r of ROLES) {
-      const s = sd[r]; if (!s) continue;
-      if (s.font && s.font !== t.fonts[r]) FAIL("faithful", `${slug}[${i}] ${r} font: preset ${t.fonts[r]} != spec ${s.font}`);
-      const vv = t.voices?.[VOICE_OF[r]] || {};
-      // the spec schema carries leading/tracking as STRICT %-strings ("96%", "-2%" — the 2026-07-10 unit
-      // transition); the gate parses them the mapper's way AND rejects the retired numeric shape outright.
-      const pct = (x) => { if (typeof x !== "string") return NaN; const m = /^\s*(-?\d+(?:\.\d+)?)\s*%\s*$/.exec(x); return m ? Number(m[1]) / 100 : NaN; };
-      if (typeof s.trackingEm === "number" || typeof s.leading === "number") FAIL("schema", `${slug}[${i}] ${r} carries the RETIRED numeric leading/trackingEm — presets must use %-strings (tracking: "-2%", leading: "96%")`);
-      if (s.tracking != null && !Number.isFinite(pct(s.tracking))) FAIL("schema", `${slug}[${i}] ${r} tracking "${s.tracking}" is not a %-string`);
-      if (s.leading != null && !Number.isFinite(pct(s.leading))) FAIL("schema", `${slug}[${i}] ${r} leading "${s.leading}" is not a %-string`);
-      if (Number.isFinite(pct(s.tracking)) && vv.tracking !== pct(s.tracking)) FAIL("faithful", `${slug}[${i}] ${r} tracking: preset ${vv.tracking} != spec ${s.tracking}`);
-      if (Number.isFinite(pct(s.leading)) && vv.leading !== pct(s.leading)) FAIL("faithful", `${slug}[${i}] ${r} leading: preset ${vv.leading} != spec ${s.leading}`);
-      // body-class cores clamp to ≤450 at generation (intended-use.md Layer 2 law #1 — the
-      // Regular-face snap); the faithful expectation is the CLAMPED value, mirroring the mapper.
-      const expWeight = BODY_CLASS_VOICES.has(VOICE_OF[r]) ? Math.min(s.weight, 450) : s.weight;
-      if (Number.isFinite(s.weight) && vv.weight !== expWeight) FAIL("faithful", `${slug}[${i}] ${r} weight: preset ${vv.weight} != expected ${expWeight} (spec ${s.weight})`);
-      // ADJACENT WEIGHT SIBLINGS — every designed slot's voice carries the ladder variants around
-      // ITS OWN weight (not a stale/copied set), so exported text styles get emphasis options. The
-      // ladder FUNCTION follows the voice's class, mirroring the mapper + typeScale's auto-populate
-      // split (2026-07-14): body-class voices (body→Body, ui→Label) derive bodyClassSiblingDefaults.
-      if (Number.isFinite(s.weight)) {
-        const want = (BODY_CLASS_VOICES.has(VOICE_OF[r]) ? bodyClassSiblingDefaults : siblingWeightDefaults)(expWeight);
-        if (!eq(vv.weights || [], want)) FAIL("faithful", `${slug}[${i}] ${r} weights: preset ${JSON.stringify(vv.weights)} != derived ${JSON.stringify(want)}`);
+    if (!vk.includes("Kicker")) FAIL("kicker", `${slug}[${i}] data register did not map to Kicker`);
+    // (d) generator FAITHFUL to the spec: preset fonts AND each register core's tracking/leading/
+    //     weight/styleName land on its PRIMARY voice at the spec's VALUES (not just fonts) — so an
+    //     in-range-but-wrong param, or a dropped voice at generation, can't ship green.
+    // %-strings parsed the mapper's way ("96%" → 0.96; the 2026-07-10 unit transition — shape
+    // violations are the schema group's job above).
+    const pct = (x) => { if (typeof x !== "string") return NaN; const m = /^\s*(-?\d+(?:\.\d+)?)\s*%\s*$/.exec(x); return m ? Number(m[1]) / 100 : NaN; };
+    // body-class cores clamp to ≤450 at generation (intended-use.md Layer 2 law #1 — the
+    // Regular-face snap); the faithful expectation is the CLAMPED value, mirroring the mapper.
+    const clampCore = (voice, w) => (BODY_CLASS_VOICES.has(voice) ? Math.min(w, 450) : w);
+    // one voice-shaped fidelity check, shared by register cores and `voices` opt-in entries:
+    // explicit `weights` expected verbatim ([] = the opt-out), else the class ladder derived from
+    // the clamped core (mirroring the mapper + typeScale's auto-populate split, 2026-07-14).
+    const checkVoice = (s, voice, where) => {
+      const vv = t.voices?.[voice] || {};
+      if (Number.isFinite(pct(s.tracking)) && vv.tracking !== pct(s.tracking)) FAIL("faithful", `${slug}[${i}] ${where} tracking: preset ${vv.tracking} != spec ${s.tracking}`);
+      if (Number.isFinite(pct(s.leading)) && vv.leading !== pct(s.leading)) FAIL("faithful", `${slug}[${i}] ${where} leading: preset ${vv.leading} != spec ${s.leading}`);
+      const expWeight = clampCore(voice, s.weight);
+      if (Number.isFinite(s.weight) && vv.weight !== expWeight) FAIL("faithful", `${slug}[${i}] ${where} weight: preset ${vv.weight} != expected ${expWeight} (spec ${s.weight})`);
+      if (typeof s.styleName === "string" && s.styleName.trim() && vv.styleName !== s.styleName.trim()) FAIL("faithful", `${slug}[${i}] ${where} styleName: preset ${vv.styleName} != spec ${s.styleName}`);
+      if (Array.isArray(s.weights)) {
+        if (!eq(vv.weights ?? null, s.weights)) FAIL("faithful", `${slug}[${i}] ${where} explicit weights: preset ${JSON.stringify(vv.weights)} != spec ${JSON.stringify(s.weights)}`);
+      } else if (Number.isFinite(s.weight)) {
+        const want = (BODY_CLASS_VOICES.has(voice) ? bodyClassSiblingDefaults : siblingWeightDefaults)(expWeight);
+        if (!eq(vv.weights || [], want)) FAIL("faithful", `${slug}[${i}] ${where} weights: preset ${JSON.stringify(vv.weights)} != derived ${JSON.stringify(want)}`);
+      }
+    };
+    if (sd) for (const [reg, def] of Object.entries(REGISTERS)) {
+      const s = sd[reg]; if (!s) continue;
+      if (s.font && s.font !== t.fonts[def.role]) FAIL("faithful", `${slug}[${i}] ${reg} font: preset ${t.fonts[def.role]} != spec ${s.font}`);
+      checkVoice(s, def.voice, reg);
+      // pass-2 fidelity: every `voices` opt-in entry landed on its voice (font here; the
+      // resolvedFontFor assertion stays the faces group's job below).
+      for (const [v, e] of Object.entries(s.voices || {})) {
+        if (!e || typeof e !== "object") continue;
+        if (v === "UI-control" || v === "UI-widget") continue; // font-only entries — faces group covers the font
+        checkVoice(e, v, `${reg}.voices["${v}"]`);
       }
     }
-    // (d2) INTERACTIVE-VOICE LADDERS (TKT-0005 sibling change, the BZZR shape): a designed ui slot keys
-    //      UI-control + UI-widget weight ladders off ITS weight — ladders ONLY, never character overrides
-    //      (the interactive voices keep the engine's control-text character).
-    if (sd && Number.isFinite(sd.ui?.weight)) {
-      const want = bodyClassSiblingDefaults(Math.min(sd.ui.weight, 450)); // ui core clamps like its Label voice
+    // (d2) INTERACTIVE-VOICE LADDERS (TKT-0005 sibling change, the BZZR shape): a designed
+    //      actionable register keys UI-control + UI-widget weight ladders off ITS core weight —
+    //      ladders ONLY, never character overrides (the interactive voices keep the engine's
+    //      control-text character).
+    if (sd && Number.isFinite(sd.actionable?.weight)) {
+      const want = bodyClassSiblingDefaults(Math.min(sd.actionable.weight, 450)); // actionable core clamps like its Label voice
       for (const uv of ["UI-control", "UI-widget"]) {
         const e = t.voices?.[uv];
-        if (!e) { FAIL("uiladder", `${slug}[${i}] designed ui slot but no ${uv} ladder`); continue; }
-        if (!eq(e.weights || [], want)) FAIL("uiladder", `${slug}[${i}] ${uv} ladder ${JSON.stringify(e.weights)} != bodyClassSiblingDefaults(${sd.ui.weight})`);
+        if (!e) { FAIL("uiladder", `${slug}[${i}] designed actionable register but no ${uv} ladder`); continue; }
+        if (!eq(e.weights || [], want)) FAIL("uiladder", `${slug}[${i}] ${uv} ladder ${JSON.stringify(e.weights)} != bodyClassSiblingDefaults(${sd.actionable.weight})`);
         const extra = Object.keys(e).filter((k) => k !== "weights" && k !== "font");
         if (extra.length) FAIL("uiladder", `${slug}[${i}] ${uv} carries character overrides ${JSON.stringify(extra)} (ladders only)`);
       }
     }
-    // (d3) AUTHORED FACES (TKT-0005): the spec's faces map flows to voices[voice].font and resolves via
-    //      the TKT-0002 voiceFonts escape hatch (resolvedFontFor) — the differentiated face is REAL in
-    //      the resolved scale, not just carried config.
-    const faces = specPals[i]?.type?.faces;
-    if (faces && typeof faces === "object") for (const [fv, fam] of Object.entries(faces)) {
+    // (d3) AUTHORED FACES (TKT-0005): a register `voices` entry's font flows to voices[voice].font
+    //      and resolves via the TKT-0002 voiceFonts escape hatch (resolvedFontFor) — the
+    //      differentiated face is REAL in the resolved scale, not just carried config.
+    if (sd) for (const r of Object.values(sd)) for (const [fv, e] of Object.entries(r?.voices || {})) {
+      const fam = typeof e?.font === "string" && e.font.trim();
+      if (!fam) continue;
       if (t.voices?.[fv]?.font !== fam) FAIL("faces", `${slug}[${i}] ${fv} face: preset ${t.voices?.[fv]?.font} != spec ${fam}`);
       else if (resolvedFontFor(typeScale(t), fv) !== fam) FAIL("faces", `${slug}[${i}] ${fv} face does not resolve via voiceFonts`);
     }
@@ -170,7 +224,7 @@ for (const slug of CATS) {
     // (f) APPLY path: hydrate(preset) == openConfigAsSet → clampType keeps fonts AND voices (no silent drop),
     //     and in-range params are IDENTITY-preserved (not clamped/mutated)
     const doc = hydrate(p);
-    if (!sameKeys(doc.type.fonts, t.fonts) || !ROLES.every((r) => doc.type.fonts[r] === t.fonts[r])) FAIL("apply", `${slug}[${i}] hydrate dropped/changed fonts`);
+    if (!sameKeys(doc.type.fonts, t.fonts) || !["display", "heading", "body", "ui", "mono"].every((r) => doc.type.fonts[r] === t.fonts[r])) FAIL("apply", `${slug}[${i}] hydrate dropped/changed fonts`);
     if (Object.keys(doc.type.voices || {}).length !== vk.length) FAIL("apply", `${slug}[${i}] hydrate dropped a voice`);
     if (!sameVoices(doc.type.voices, t.voices)) FAIL("apply", `${slug}[${i}] hydrate mutated in-range voice params`);
   });
@@ -181,7 +235,7 @@ const noType = hydrate({ palettes: [{ name: "x", hue: 200, chroma: 60, on: true 
 if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL("fallback", "un-typed palette lost the product default");
 
 // ── REPORT ──
-for (const g of ["count", "hastype", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "fallback"]) {
+for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "fallback"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

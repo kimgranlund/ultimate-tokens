@@ -85,40 +85,42 @@
           "refuses": "Soviet propaganda red. Tolstoy's Russia is candlelit gold and snow, an imperial world before the flag.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Kazimir",
                 "weight": 780,
                 "leading": "102%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Kazimir",
                 "weight": 640,
                 "leading": "114%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller Text",
                 "weight": 440,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Walbaum"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Walbaum"
             }
           }
         },
@@ -190,40 +192,42 @@
           "refuses": "Romantic golden Petersburg. Dostoevsky's city is a sickly yellow fever-dream of poverty, not an imperial postcard.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Kazimir",
                 "weight": 860,
                 "leading": "94%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Kazimir",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "-0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller Text",
                 "weight": 450,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Walbaum"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Walbaum"
             }
           }
         },
@@ -296,40 +300,42 @@
           "refuses": "Warm romance grade. Pasternak's idyll is cold and ice-glazed; warmth is only a candle against the freezing white.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Kazimir",
                 "weight": 720,
                 "leading": "106%",
                 "tracking": "0.8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Kazimir",
                 "weight": 580,
                 "leading": "116%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller Text",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Kabel"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 430,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Kabel"
             }
           }
         },
@@ -402,40 +408,42 @@
           "refuses": "Warm romance gold. Anna's world is snow-white and black velvet — elegance against cold, not a soft glow.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Kazimir",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "-0.8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Kazimir",
                 "weight": 620,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller Text",
                 "weight": 435,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Walbaum"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "145%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Walbaum"
             }
           }
         }
@@ -521,40 +529,42 @@
           "refuses": "Lurid lab-green cliché. Shelley's horror is cold, sublime, and Arctic-white, not a comic mad-scientist set.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fette Fraktur",
                 "weight": 720,
                 "leading": "105%",
                 "tracking": "0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mrs Eaves",
                 "weight": 460,
                 "leading": "118%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Williams Caslon Text",
                 "weight": 430,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 430,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "145%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic"
             }
           }
         },
@@ -626,40 +636,42 @@
           "refuses": "Orange-and-black Halloween. Stoker's gothic is moon-silver and oxblood on black stone, not novelty décor.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fette Fraktur",
                 "weight": 860,
                 "leading": "100%",
                 "tracking": "-0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mrs Eaves",
                 "weight": 720,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Williams Caslon Text",
                 "weight": 445,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan Pro"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 520,
                 "leading": "140%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan Pro"
             }
           }
         },
@@ -731,40 +743,42 @@
           "refuses": "Pretty lavender moorland. Brontë's moor is bleak, bruised, and storm-dark — heather gone over, not in bloom.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fette Fraktur",
                 "weight": 800,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mrs Eaves",
                 "weight": 640,
                 "leading": "116%",
                 "tracking": "1.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Williams Caslon Text",
                 "weight": 440,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Rockwell"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "145%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Rockwell"
             }
           }
         },
@@ -836,40 +850,42 @@
           "refuses": "Pretty country-house pastel. Manderley is fog-grey and blood-red — menace under the gardens, not a charming manor.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fette Fraktur",
                 "weight": 760,
                 "leading": "104%",
                 "tracking": "0.8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mrs Eaves",
                 "weight": 540,
                 "leading": "118%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Williams Caslon Text",
                 "weight": 430,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bernhard Modern"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 435,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "145%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bernhard Modern"
             }
           }
         }
@@ -954,40 +970,42 @@
           "refuses": "Foggy-grey 'old London'. Woolf's day is clear, fresh, and flowering June — luminous, not murky.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Gill Sans",
                 "weight": 700,
                 "leading": "104%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Gill Sans",
                 "weight": 560,
                 "leading": "114%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Plantin",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Futura"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 435,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 480,
                 "leading": "145%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Futura"
             }
           }
         },
@@ -1059,40 +1077,42 @@
           "refuses": "Quaint emerald-Ireland green. Joyce's Dublin is grey stone, dark stout, and a snot-green sea, not a tourism shamrock.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Gill Sans",
                 "weight": 760,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Gill Sans",
                 "weight": 600,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Plantin",
                 "weight": 445,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Erbar"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "140%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Erbar"
             }
           }
         },
@@ -1165,40 +1185,42 @@
           "refuses": "Muted period drama. The Jazz Age is gold glitter and saturated symbol-colour; restraint betrays its excess.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Gill Sans",
                 "weight": 820,
                 "leading": "100%",
                 "tracking": "6%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Gill Sans",
                 "weight": 640,
                 "leading": "112%",
                 "tracking": "3%"
               },
-              "body": {
+              "functional": {
                 "font": "Plantin",
                 "weight": 435,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Broadway"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Broadway"
             }
           }
         },
@@ -1271,40 +1293,42 @@
           "refuses": "Adventure-bright greenery. Conrad's Congo is dark, oppressive, and sickly; the green is a threat, not a paradise.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Gill Sans",
                 "weight": 860,
                 "leading": "98%",
                 "tracking": "-0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Gill Sans",
                 "weight": 680,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Plantin",
                 "weight": 445,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Baskerville"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Baskerville"
             }
           }
         }
@@ -1389,40 +1413,42 @@
           "refuses": "Generic tropical neon. Macondo is dust, clay, and river-stone; the magic is one note — the yellow butterflies.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 730,
                 "leading": "102%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cormorant",
                 "weight": 560,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Garamond",
                 "weight": 430,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Perpetua"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 435,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Perpetua"
             }
           }
         },
@@ -1496,40 +1522,42 @@
           "refuses": "Bright folk-art colour. Allende's house is deep, shadowed, and candlelit; the white spirit is the one luminous note.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 760,
                 "leading": "100%",
                 "tracking": "0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cormorant",
                 "weight": 700,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Garamond",
                 "weight": 435,
                 "leading": "164%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Big Caslon"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Big Caslon"
             }
           }
         },
@@ -1602,40 +1630,42 @@
           "refuses": "Muted rustic browns. Esquivel's kitchen burns with chilli and marigold; the magic is heat and saturated spice.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cormorant",
                 "weight": 640,
                 "leading": "112%",
                 "tracking": "1.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Garamond",
                 "weight": 440,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Windsor"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 445,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Windsor"
             }
           }
         },
@@ -1708,40 +1738,42 @@
           "refuses": "Vivid folk colour. Comala is a bleached, dusty purgatory; its palette is heat-faded ochre, not festive brights.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cormorant",
                 "weight": 500,
                 "leading": "116%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Garamond",
                 "weight": 425,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bulmer"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 430,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bulmer"
             }
           }
         }
@@ -1827,40 +1859,42 @@
           "refuses": "Bright modern Japan. The Heian court is layered, muted silk and lacquer — subtle seasonal harmony, not neon.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Shippori Mincho",
                 "weight": 700,
                 "leading": "114%",
                 "tracking": "9%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Shippori Mincho",
                 "weight": 520,
                 "leading": "122%",
                 "tracking": "5%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 430,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Requiem"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans JP",
                 "weight": 435,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Requiem"
             }
           }
         },
@@ -1933,40 +1967,42 @@
           "refuses": "Cosy warm palette. Kawabata's snow country is cold, white, and spare; a single red obi carries all the warmth.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Shippori Mincho",
                 "weight": 720,
                 "leading": "116%",
                 "tracking": "11%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Shippori Mincho",
                 "weight": 700,
                 "leading": "124%",
                 "tracking": "6%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 425,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Weiss"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans JP",
                 "weight": 430,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Weiss"
             }
           }
         },
@@ -2039,40 +2075,42 @@
           "refuses": "Bright pop-sixties colour. Murakami's mood is muted, rainy, and autumnal — nostalgia in grey-green, not pop.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Shippori Mincho",
                 "weight": 740,
                 "leading": "112%",
                 "tracking": "6%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Shippori Mincho",
                 "weight": 600,
                 "leading": "120%",
                 "tracking": "4%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 435,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Avenir"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans JP",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Avenir"
             }
           }
         },
@@ -2145,40 +2183,42 @@
           "refuses": "Garish festival colour. Tanizaki's world is refined and seasonal — soft blossom and deep indigo, not loud spectacle.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Shippori Mincho",
                 "weight": 760,
                 "leading": "112%",
                 "tracking": "8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Shippori Mincho",
                 "weight": 780,
                 "leading": "120%",
                 "tracking": "4%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 430,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bernhard Modern"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans JP",
                 "weight": 435,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bernhard Modern"
             }
           }
         }
@@ -2264,40 +2304,42 @@
           "refuses": "Lush plantation green. Maycomb is dusty, faded, and Depression-poor — red clay and peeling paint, not a manicured estate.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 880,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Clarendon",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Century Schoolbook",
                 "weight": 440,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Stymie"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "News Gothic",
                 "weight": 445,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Stymie"
             }
           }
         },
@@ -2370,40 +2412,42 @@
           "refuses": "Romantic New Orleans glow. Williams's Quarter is sweaty, harsh, and green-lit; the lantern only hides the bare bulb.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 900,
                 "leading": "100%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Clarendon",
                 "weight": 720,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Century Schoolbook",
                 "weight": 445,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "News Gothic",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic"
             }
           }
         },
@@ -2476,40 +2520,42 @@
           "refuses": "Grand-mansion gloss. Faulkner's Compson place is overgrown, weathered, and declining — decay, not antebellum grandeur.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 620,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Clarendon",
                 "weight": 480,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Century Schoolbook",
                 "weight": 430,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bell MT"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "News Gothic",
                 "weight": 435,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bell MT"
             }
           }
         },
@@ -2581,40 +2627,42 @@
           "refuses": "Faded sepia South. Hurston's muck is black, green, and alive — fertile and vivid, not a brown nostalgia.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 750,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Clarendon",
                 "weight": 600,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Century Schoolbook",
                 "weight": 440,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cheltenham"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "News Gothic",
                 "weight": 445,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "145%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cheltenham"
             }
           }
         }
@@ -2698,40 +2746,42 @@
           "refuses": "Sleek sci-fi chrome. Orwell's dystopia is shabby, grimy, and grey; the only colour is propaganda and one relic.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 800,
                 "leading": "95%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Neue Haas Grotesk",
                 "weight": 560,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Sans",
                 "weight": 430,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "DIN"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Neue Haas Grotesk",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "140%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "DIN"
             }
           }
         },
@@ -2804,40 +2854,42 @@
           "refuses": "Cool clinical future. Bradbury's world is fire and ash against screen-blue; the heat is the whole point.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 880,
                 "leading": "94%",
                 "tracking": "-1.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Neue Haas Grotesk",
                 "weight": 620,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Sans",
                 "weight": 435,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Eurostile"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Neue Haas Grotesk",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 540,
                 "leading": "140%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Eurostile"
             }
           }
         },
@@ -2910,40 +2962,42 @@
           "refuses": "Random palette. Gilead is a strict colour-caste system; every hue means a role, so the scheme must be coded, not free.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 760,
                 "leading": "98%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Neue Haas Grotesk",
                 "weight": 540,
                 "leading": "112%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Sans",
                 "weight": 430,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Univers"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Neue Haas Grotesk",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Univers"
             }
           }
         },
@@ -3015,40 +3069,42 @@
           "refuses": "Any saturation. McCarthy's world is ash and char; the single ember of fire is the only colour that survives.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 700,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Neue Haas Grotesk",
                 "weight": 500,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Sans",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Interstate"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Neue Haas Grotesk",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 480,
                 "leading": "140%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Interstate"
             }
           }
         }
@@ -3134,40 +3190,42 @@
           "refuses": "Saturated cartoon Alice. The original is a hand-tinted engraving — soft blue and red on cream, with fine ink line.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cooper Old Style",
                 "weight": 600,
                 "leading": "105%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cooper Old Style",
                 "weight": 500,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bembo Book",
                 "weight": 430,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Caslon Antique"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 435,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 470,
                 "leading": "145%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Caslon Antique"
             }
           }
         },
@@ -3240,40 +3298,42 @@
           "refuses": "Bright toy-monster colour. Sendak's island is muted watercolour and ink — earthy olive and ochre, not plastic primaries.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cooper Old Style",
                 "weight": 880,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cooper Old Style",
                 "weight": 720,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bembo Book",
                 "weight": 440,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Neuland"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 445,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 490,
                 "leading": "145%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Neuland"
             }
           }
         },
@@ -3347,40 +3407,42 @@
           "refuses": "Bold graphic colour. Saint-Exupéry's own art is delicate watercolour — pale washes, with the rose as the one true red.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cooper Old Style",
                 "weight": 460,
                 "leading": "107%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cooper Old Style",
                 "weight": 420,
                 "leading": "118%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Bembo Book",
                 "weight": 425,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cochin"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 430,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cochin"
             }
           }
         },
@@ -3454,40 +3516,42 @@
           "refuses": "Bright Disney primaries. Shepard's wood is delicate pencil and pale wash — honey and soft green on cream, not bold colour.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cooper Old Style",
                 "weight": 740,
                 "leading": "104%",
                 "tracking": "0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cooper Old Style",
                 "weight": 660,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bembo Book",
                 "weight": 435,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Goudy Old Style"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 435,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "145%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Goudy Old Style"
             }
           }
         }
@@ -3572,40 +3636,42 @@
           "refuses": "Clean retro-diner pastel. Kerouac's road is dusty, warm, and worn — gold light and grain, not a mint-and-chrome ad.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Highway Gothic (FHWA Series)",
                 "weight": 720,
                 "leading": "100%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic",
                 "weight": 620,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Caledonia",
                 "weight": 435,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bank Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Franklin Gothic",
                 "weight": 445,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "American Typewriter",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bank Gothic"
             }
           }
         },
@@ -3679,40 +3745,42 @@
           "refuses": "Cheerful sixties palette. Plath's colour curdles from glossy red into clinical white — brightness turning sterile.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Highway Gothic (FHWA Series)",
                 "weight": 760,
                 "leading": "100%",
                 "tracking": "0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic",
                 "weight": 640,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Caledonia",
                 "weight": 440,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bodoni"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Franklin Gothic",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "American Typewriter",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "4%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bodoni"
             }
           }
         },
@@ -3784,40 +3852,42 @@
           "refuses": "Warm nostalgic New York. Holden's city is cold, grey, and alienating; the red cap is his one note of self.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Highway Gothic (FHWA Series)",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "1.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic",
                 "weight": 580,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Caledonia",
                 "weight": 435,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Century Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Franklin Gothic",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "American Typewriter",
                 "weight": 490,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Century Gothic"
             }
           }
         },
@@ -3889,40 +3959,42 @@
           "refuses": "Warm nostalgic Americana. Miller's home is drab and hemmed-in; brightness lives only in doomed memory.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Highway Gothic (FHWA Series)",
                 "weight": 780,
                 "leading": "98%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic",
                 "weight": 660,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Caledonia",
                 "weight": 445,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cheltenham"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Franklin Gothic",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "American Typewriter",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "4%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cheltenham"
             }
           }
         }
@@ -4006,40 +4078,42 @@
           "refuses": "Grim medieval murk. The Shire is lush, warm, and pastoral — green and gold, not the grey of a war-torn realm.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 770,
                 "leading": "106%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "IM Fell English",
                 "weight": 500,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Cardo",
                 "weight": 435,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cloister Black"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 490,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cloister Black"
             }
           }
         },
@@ -4113,40 +4187,42 @@
           "refuses": "Warm high-fantasy gold. The North is grey, white, and cold; the only saturation is the weirwood's blood-red leaf.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 820,
                 "leading": "105%",
                 "tracking": "8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "IM Fell English",
                 "weight": 560,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Cardo",
                 "weight": 440,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Herculanum"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 445,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 510,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Herculanum"
             }
           }
         },
@@ -4219,40 +4295,42 @@
           "refuses": "Bright fantasy spectacle. Earthsea is a sober sea-world of slate and ochre; magic is one cold blue-white light.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 640,
                 "leading": "107%",
                 "tracking": "9%"
               },
-              "heading": {
+              "contextual": {
                 "font": "IM Fell English",
                 "weight": 480,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Cardo",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Charlemagne"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 435,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Charlemagne"
             }
           }
         },
@@ -4324,40 +4402,42 @@
           "refuses": "Bright high-fantasy colour. The Final Empire is ash and brown mist; the noble jewel-tones are a scarce mark of rank.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 880,
                 "leading": "104%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "IM Fell English",
                 "weight": 600,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Cardo",
                 "weight": 445,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bank Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bank Gothic"
             }
           }
         }
@@ -4441,40 +4521,42 @@
           "refuses": "Lush romantic Spain. La Mancha is arid, pale, and dusty — bleached ochre and stone, not a verdant idyll.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Optima",
                 "weight": 740,
                 "leading": "106%",
                 "tracking": "6%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Optima",
                 "weight": 540,
                 "leading": "114%",
                 "tracking": "3%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 430,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Centaur"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 435,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Centaur"
             }
           }
         },
@@ -4546,40 +4628,42 @@
           "refuses": "Bright Mediterranean cliché. Lampedusa's Sicily is faded, golden, and dying — antique splendour in dust, not postcard blue.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Optima",
                 "weight": 900,
                 "leading": "105%",
                 "tracking": "6%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Optima",
                 "weight": 680,
                 "leading": "112%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 435,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bodoni"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bodoni"
             }
           }
         },
@@ -4652,40 +4736,42 @@
           "refuses": "Picturesque Amalfi colour. Ferrante's Naples is a poor grey rione of concrete and laundry, not a pastel coastline.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Optima",
                 "weight": 780,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Optima",
                 "weight": 600,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 435,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Akzidenz Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 445,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "145%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Akzidenz Grotesk"
             }
           }
         },
@@ -4758,40 +4844,42 @@
           "refuses": "Bright tropical resort colour. The port is faded, colonial, and decaying — sun-bleached pastel, not a vivid beach town.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Optima",
                 "weight": 620,
                 "leading": "107%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Optima",
                 "weight": 480,
                 "leading": "116%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 425,
                 "leading": "164%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bulmer"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 430,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bulmer"
             }
           }
         }
@@ -4875,40 +4963,42 @@
           "refuses": "Cheery Christmas-card London. Dickens's fog is a choking grey-brown; the warmth is one gaslamp blurred in murk.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Abril Fatface",
                 "weight": 760,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Playfair Display",
                 "weight": 640,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bookman Old Style",
                 "weight": 435,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Clarendon"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "145%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Clarendon"
             }
           }
         },
@@ -4980,40 +5070,42 @@
           "refuses": "Bright modern study. Holmes's rooms are dim, green, and gaslit — warm clutter in shadow, not a clean set.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Abril Fatface",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Playfair Display",
                 "weight": 800,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bookman Old Style",
                 "weight": 440,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Caslon"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Caslon"
             }
           }
         },
@@ -5085,40 +5177,42 @@
           "refuses": "Restrained period grey. Wilde's aesthete drowns in saturated peacock, gilt, and plum — decadence, not sobriety.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Abril Fatface",
                 "weight": 840,
                 "leading": "100%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Playfair Display",
                 "weight": 720,
                 "leading": "112%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Bookman Old Style",
                 "weight": 445,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Weiss"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 445,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Weiss"
             }
           }
         },
@@ -5190,40 +5284,42 @@
           "refuses": "Clean Victorian study. Stevenson's London is fog-brown and gaslit; the one unnatural colour is the chemical-green potion.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Abril Fatface",
                 "weight": 720,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Playfair Display",
                 "weight": 480,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bookman Old Style",
                 "weight": 435,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bell MT"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "145%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bell MT"
             }
           }
         }

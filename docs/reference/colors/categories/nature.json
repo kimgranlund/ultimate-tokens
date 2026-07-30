@@ -85,40 +85,42 @@
           "refuses": "Snowcap white as primary. In October the Hotaka is rock and gold, not the white pyramid of the brochure.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 780,
                 "leading": "105%",
                 "tracking": "7%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Archivo",
                 "weight": 600,
                 "leading": "115%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 450,
                 "leading": "155%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate"
             }
           }
         },
@@ -190,40 +192,42 @@
           "refuses": "Cranked postcard turquoise. The real lake is a soft mineral blue-green; the oversaturated version is a filter, not a place.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 720,
                 "leading": "102%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Archivo",
                 "weight": 640,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 410,
                 "leading": "153%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 560,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate"
             }
           }
         },
@@ -295,40 +299,42 @@
           "refuses": "Lupin-pink riverbeds. The famous lupins are an invasive import; the native braid is grey gravel and gold grass.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 840,
                 "leading": "108%",
                 "tracking": "9%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Archivo",
                 "weight": 560,
                 "leading": "116%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 450,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "155%",
                 "tracking": "0.8%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 510,
                 "leading": "152%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate"
             }
           }
         },
@@ -400,40 +406,42 @@
           "refuses": "Glacier-blue saturation. Patagonian light is flat and silver more often than not; the electric blue is a calm-day exception.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 900,
                 "leading": "100%",
                 "tracking": "8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Archivo",
                 "weight": 720,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 420,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 560,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate"
             }
           }
         }
@@ -518,40 +526,42 @@
           "refuses": "Christmas-card green. The winter taiga is blue-white and graphite; saturated evergreen belongs to a greeting card.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Oswald",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Familjen Grotesk",
                 "weight": 640,
                 "leading": "113%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 410,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Fjalla One"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 580,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Fjalla One"
             }
           }
         },
@@ -623,40 +633,42 @@
           "refuses": "Uniform evergreen. The larch taiga's defining trick is that it turns gold and bare — a conifer that behaves like a birch.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Oswald",
                 "weight": 700,
                 "leading": "104%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Familjen Grotesk",
                 "weight": 560,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 440,
                 "leading": "164%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Fjalla One"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 450,
                 "leading": "155%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Fjalla One"
             }
           }
         },
@@ -728,40 +740,42 @@
           "refuses": "Lush forest-green. The shield is sparse, boggy, and rust-toned; the dense green canopy is a more southern forest.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Oswald",
                 "weight": 700,
                 "leading": "103%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Familjen Grotesk",
                 "weight": 700,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 430,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Fjalla One"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 540,
                 "leading": "150%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Fjalla One"
             }
           }
         },
@@ -833,40 +847,42 @@
           "refuses": "Monolithic green wilderness. The interior in fall is gold and red on grey, with green reduced to the spruce.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Oswald",
                 "weight": 700,
                 "leading": "103%",
                 "tracking": "1.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Familjen Grotesk",
                 "weight": 600,
                 "leading": "115%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 435,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Fjalla One"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 460,
                 "leading": "153%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Fjalla One"
             }
           }
         }
@@ -950,40 +966,42 @@
           "refuses": "Flat jungle green. The Hoh is a layered system of distinct greens; one green flattens it into a stock photo.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fraunces",
                 "weight": 820,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 620,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Crimson Pro",
                 "weight": 440,
                 "leading": "164%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Public Sans"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 450,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Public Sans"
             }
           }
         },
@@ -1056,40 +1074,42 @@
           "refuses": "Tropical-reef colour. This is a cold green coast — the brightness is salmon and lichen, not coral.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fraunces",
                 "weight": 760,
                 "leading": "102%",
                 "tracking": "-0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 600,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Crimson Pro",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Public Sans"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 470,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 540,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Public Sans"
             }
           }
         },
@@ -1161,40 +1181,42 @@
           "refuses": "Eucalypt blue-grey. The Tarkine is rainforest, not dry sclerophyll; its base note is wet green, not silver-blue.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fraunces",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 560,
                 "leading": "122%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Crimson Pro",
                 "weight": 450,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Public Sans"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 440,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 510,
                 "leading": "152%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Public Sans"
             }
           }
         },
@@ -1266,40 +1288,42 @@
           "refuses": "Tropical saturation. Valdivian forest is a cool, dark, ancient green — the brights are a single flower, not the whole scene.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fraunces",
                 "weight": 860,
                 "leading": "100%",
                 "tracking": "-1.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 660,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Crimson Pro",
                 "weight": 425,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Public Sans"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 550,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Public Sans"
             }
           }
         }
@@ -1383,40 +1407,42 @@
           "refuses": "Snow-white Arctic. For weeks each autumn the tundra is the reddest landscape in Europe, not a white one.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bodoni Moda",
                 "weight": 860,
                 "leading": "104%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Jost",
                 "weight": 620,
                 "leading": "116%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 440,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic No2 D"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 700,
                 "leading": "155%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic No2 D"
             }
           }
         },
@@ -1489,40 +1515,42 @@
           "refuses": "Uniform white ice-cap. Most of summer Svalbard is grey rock and rust, with ice as the backdrop, not the field.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bodoni Moda",
                 "weight": 740,
                 "leading": "105%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Jost",
                 "weight": 560,
                 "leading": "118%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 410,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic No2 D"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 700,
                 "leading": "155%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic No2 D"
             }
           }
         },
@@ -1595,40 +1623,42 @@
           "refuses": "Polar-bear-on-white iconography. The summer Arctic is green, orange, and blue-black ground, not a white sheet.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bodoni Moda",
                 "weight": 800,
                 "leading": "105%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Jost",
                 "weight": 580,
                 "leading": "118%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 430,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic No2 D"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 460,
                 "leading": "153%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 400,
                 "leading": "155%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic No2 D"
             }
           }
         },
@@ -1702,40 +1732,42 @@
           "refuses": "Pure white wilderness. A working penguin colony is pink-stained and black-rocked; the pristine white is a distant view.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bodoni Moda",
                 "weight": 820,
                 "leading": "106%",
                 "tracking": "4.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Jost",
                 "weight": 520,
                 "leading": "120%",
                 "tracking": "2.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic No2 D"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 450,
                 "leading": "155%",
                 "tracking": "0.8%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 400,
                 "leading": "155%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic No2 D"
             }
           }
         }
@@ -1820,40 +1852,42 @@
           "refuses": "Golden-hour generic dune. The Namib's signature is brick-red sand against white clay and black trees — a hard tricolour, not a soft glow.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 820,
                 "leading": "104%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Alegreya Sans",
                 "weight": 660,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Alegreya",
                 "weight": 430,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bebas Neue"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bebas Neue"
             }
           }
         },
@@ -1925,40 +1959,42 @@
           "refuses": "Sepia-Western monotone. The Plateau is red rock against genuine blue-green sage and deep sky, not a single brown wash.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 740,
                 "leading": "106%",
                 "tracking": "2.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Alegreya Sans",
                 "weight": 460,
                 "leading": "122%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Alegreya",
                 "weight": 450,
                 "leading": "170%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bebas Neue"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 445,
                 "leading": "156%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 470,
                 "leading": "152%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bebas Neue"
             }
           }
         },
@@ -2031,40 +2067,42 @@
           "refuses": "Mars-red monochrome. The Atacama's drama is white salt and turquoise brine against the red — not red alone.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 720,
                 "leading": "105%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Alegreya Sans",
                 "weight": 600,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Alegreya",
                 "weight": 435,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bebas Neue"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bebas Neue"
             }
           }
         },
@@ -2136,40 +2174,42 @@
           "refuses": "Flat orange tourist sunset. The Centre is a red-and-silver pairing — burning rock over pale grass — not a uniform orange.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 780,
                 "leading": "105%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Alegreya Sans",
                 "weight": 620,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Alegreya",
                 "weight": 445,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bebas Neue"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 455,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bebas Neue"
             }
           }
         }
@@ -2253,40 +2293,42 @@
           "refuses": "Candy-bright jungle. The Amazon is brown water and dark green; the brights are a macaw or a morpho, gone in a second.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Abril Fatface",
                 "weight": 840,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mulish",
                 "weight": 640,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 440,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Saira Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 455,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Saira Condensed"
             }
           }
         },
@@ -2358,40 +2400,42 @@
           "refuses": "Overlit safari gold. The Congo is dark, wet, and green-black; its colour is a clearing and a bird, not open savanna light.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Abril Fatface",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mulish",
                 "weight": 580,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 435,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Saira Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 445,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Saira Condensed"
             }
           }
         },
@@ -2463,40 +2507,42 @@
           "refuses": "Neon eco-tourism green. Danum is dim, layered, and tannin-dark; the brights are a flower and an ape, both scarce.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Abril Fatface",
                 "weight": 780,
                 "leading": "100%",
                 "tracking": "-0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mulish",
                 "weight": 680,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 430,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Saira Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 465,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 540,
                 "leading": "150%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Saira Condensed"
             }
           }
         },
@@ -2569,40 +2615,42 @@
           "refuses": "Tropical-poster turquoise. The cloud forest is grey mist and a dozen greens; the saturation is one bird, briefly seen.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Abril Fatface",
                 "weight": 820,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mulish",
                 "weight": 420,
                 "leading": "122%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 445,
                 "leading": "164%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Saira Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 440,
                 "leading": "156%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 510,
                 "leading": "152%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Saira Condensed"
             }
           }
         }
@@ -2686,40 +2734,42 @@
           "refuses": "Dark murky swamp. The Okavango is clear, luminous water and bright reed — a mirror, not a bog.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 660,
                 "leading": "106%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 460,
                 "leading": "122%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Newsreader",
                 "weight": 445,
                 "leading": "168%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Yanone Kaffeesatz"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 445,
                 "leading": "156%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 510,
                 "leading": "152%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Yanone Kaffeesatz"
             }
           }
         },
@@ -2792,40 +2842,42 @@
           "refuses": "Saturated tartan-heather. Real Highland purple is a muted mauve over rust peat, not the gift-shop magenta.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 720,
                 "leading": "103%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 680,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Newsreader",
                 "weight": 420,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Yanone Kaffeesatz"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 475,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 545,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Yanone Kaffeesatz"
             }
           }
         },
@@ -2897,40 +2949,42 @@
           "refuses": "Tropical-lagoon teal. The Camargue is a pale, salt-bleached delta in mauve and buff, with pink as the one warm note.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 580,
                 "leading": "105%",
                 "tracking": "0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 520,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Newsreader",
                 "weight": 430,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Yanone Kaffeesatz"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Yanone Kaffeesatz"
             }
           }
         },
@@ -3002,40 +3056,42 @@
           "refuses": "Dark horror-swamp. The Everglades at dawn is luminous gold grass and pale sky, not a gloomy bayou.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 600,
                 "leading": "106%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 620,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Newsreader",
                 "weight": 440,
                 "leading": "164%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Yanone Kaffeesatz"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 450,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 510,
                 "leading": "152%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Yanone Kaffeesatz"
             }
           }
         }
@@ -3119,40 +3175,42 @@
           "refuses": "Lush green safari. The Serengeti is gold and dust most of the year; the green flush is a few weeks after rain.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "National Park",
                 "weight": 820,
                 "leading": "106%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Barlow",
                 "weight": 640,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 440,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Staatliches"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 465,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 560,
                 "leading": "150%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Staatliches"
             }
           }
         },
@@ -3224,40 +3282,42 @@
           "refuses": "Dusty-brown desert steppe. In July the steppe is genuinely green under blue; the brown is a winter, not a summer, palette.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "National Park",
                 "weight": 660,
                 "leading": "106%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Barlow",
                 "weight": 520,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 430,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Staatliches"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Staatliches"
             }
           }
         },
@@ -3329,40 +3389,42 @@
           "refuses": "Flat wheat-field gold. Native tallgrass in fall is copper-red and multi-toned, not the single gold of a crop.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "National Park",
                 "weight": 740,
                 "leading": "106%",
                 "tracking": "3.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Barlow",
                 "weight": 560,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 440,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Staatliches"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 455,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Staatliches"
             }
           }
         },
@@ -3435,40 +3497,42 @@
           "refuses": "Verdant pampa green. The southern steppe is pale, dry, and wind-bleached — green belongs to the wetter pampa far north.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "National Park",
                 "weight": 780,
                 "leading": "105%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Barlow",
                 "weight": 700,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 420,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Staatliches"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 475,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 560,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Staatliches"
             }
           }
         }
@@ -3553,40 +3617,42 @@
           "refuses": "Over-saturated pool blue. Reef water is a soft mineral turquoise; the brilliance is the coral and fish, not a cranked filter.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Playfair Display",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "IBM Plex Sans",
                 "weight": 460,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 445,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Antonio"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 445,
                 "leading": "156%",
                 "tracking": "0.8%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 510,
                 "leading": "152%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Antonio"
             }
           }
         },
@@ -3658,40 +3724,42 @@
           "refuses": "Tropical beach palette. The Gulf of Maine is cold, brown-weeded, and granite-pink — a working northern shore.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Playfair Display",
                 "weight": 760,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "IBM Plex Sans",
                 "weight": 660,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 410,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Antonio"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 560,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Antonio"
             }
           }
         },
@@ -3763,40 +3831,42 @@
           "refuses": "Bright tropical-island colour. The Sundarbans is a grey-green-brown tidal world; its colour is mud and one orange cat.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Playfair Display",
                 "weight": 820,
                 "leading": "104%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "IBM Plex Sans",
                 "weight": 620,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Antonio"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 455,
                 "leading": "153%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Antonio"
             }
           }
         },
@@ -3868,40 +3938,42 @@
           "refuses": "Warm-reef brightness. The kelp forest is a cold, dim, amber-and-blue cathedral, lit by shafts, not a sunny shallow.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Playfair Display",
                 "weight": 900,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "IBM Plex Sans",
                 "weight": 680,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Spectral",
                 "weight": 425,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Antonio"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 475,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 540,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Antonio"
             }
           }
         }
@@ -3985,40 +4057,42 @@
           "refuses": "Grey-volcanic monotone. Landmannalaugar is a full mineral spectrum — ochre, green, rust — not a field of grey ash.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Space Grotesk",
                 "weight": 660,
                 "leading": "104%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Space Grotesk",
                 "weight": 660,
                 "leading": "115%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Serif",
                 "weight": 425,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Big Shoulders Text"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 490,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 550,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Big Shoulders Text"
             }
           }
         },
@@ -4091,40 +4165,42 @@
           "refuses": "Sheet-of-orange lava. Kīlauea's land is mostly black rock and red flowers; the molten orange is a thin, rare seam.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Space Grotesk",
                 "weight": 700,
                 "leading": "104%",
                 "tracking": "3.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Space Grotesk",
                 "weight": 700,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Serif",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Big Shoulders Text"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 460,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Big Shoulders Text"
             }
           }
         },
@@ -4198,40 +4274,42 @@
           "refuses": "Single-blue hot-spring. Grand Prismatic's whole point is the temperature-banded rainbow of life, not one blue eye.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Space Grotesk",
                 "weight": 640,
                 "leading": "104%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Space Grotesk",
                 "weight": 560,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Serif",
                 "weight": 440,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Big Shoulders Text"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 465,
                 "leading": "153%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Big Shoulders Text"
             }
           }
         },
@@ -4304,40 +4382,42 @@
           "refuses": "Hot lava-glow red. Ijen's signature is cold blue fire and pale acid turquoise — a chemical palette, not a molten one.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Space Grotesk",
                 "weight": 600,
                 "leading": "103%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Space Grotesk",
                 "weight": 480,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Serif",
                 "weight": 420,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Big Shoulders Text"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 485,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 550,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Big Shoulders Text"
             }
           }
         }
@@ -4422,40 +4502,42 @@
           "refuses": "Featureless black void. A cavern is luminous honey stone against the dark — the colour is the formation, lit.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Prata",
                 "weight": 760,
                 "leading": "106%",
                 "tracking": "3.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Inter",
                 "weight": 420,
                 "leading": "122%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 445,
                 "leading": "170%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Rajdhani"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 445,
                 "leading": "156%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 510,
                 "leading": "152%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Rajdhani"
             }
           }
         },
@@ -4528,40 +4610,42 @@
           "refuses": "Tropical-water aqua. Glacier-cave blue is a deep, cold cobalt from compression — not a warm lagoon turquoise.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Prata",
                 "weight": 720,
                 "leading": "105%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Inter",
                 "weight": 640,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 410,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Rajdhani"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 560,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Rajdhani"
             }
           }
         },
@@ -4634,40 +4718,42 @@
           "refuses": "Uniform orange filter. The slot's drama is the violet-to-gold range between shadow and beam, not one warm tone.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Prata",
                 "weight": 780,
                 "leading": "106%",
                 "tracking": "4.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Inter",
                 "weight": 700,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 425,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Rajdhani"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 475,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 540,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Rajdhani"
             }
           }
         },
@@ -4740,40 +4826,42 @@
           "refuses": "Murky underground gloom. A cenote is luminous — clear blue water lit from a hole in the jungle roof.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Prata",
                 "weight": 740,
                 "leading": "105%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Inter",
                 "weight": 580,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 435,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Rajdhani"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 455,
                 "leading": "153%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Rajdhani"
             }
           }
         }
@@ -4858,40 +4946,42 @@
           "refuses": "Even autumn confetti. At true peak one species' red leads; the postcard's equal mix of every colour rarely happens.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Sorts Mill Goudy",
                 "weight": 780,
                 "leading": "106%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 460,
                 "leading": "122%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Newsreader",
                 "weight": 450,
                 "leading": "170%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "PT Sans Narrow"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 445,
                 "leading": "156%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 510,
                 "leading": "152%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "PT Sans Narrow"
             }
           }
         },
@@ -4965,40 +5055,42 @@
           "refuses": "Summer-green woodland. The May wood is defined by blue below and acid-green above — a fortnight that summer erases.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Sorts Mill Goudy",
                 "weight": 740,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 620,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Newsreader",
                 "weight": 435,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "PT Sans Narrow"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 455,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "PT Sans Narrow"
             }
           }
         },
@@ -5070,40 +5162,42 @@
           "refuses": "Western maple-medley. A Kyoto garden is composed — crimson on green on grey — not a wild scatter of fall colour.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Sorts Mill Goudy",
                 "weight": 760,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 520,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Newsreader",
                 "weight": 440,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "PT Sans Narrow"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 450,
                 "leading": "153%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 510,
                 "leading": "150%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "PT Sans Narrow"
             }
           }
         },
@@ -5177,40 +5271,42 @@
           "refuses": "Autumn-Appalachian cliché. In July the Smokies are deep green and pale bloom — the famous fall colour is months away.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Sorts Mill Goudy",
                 "weight": 720,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Source Sans 3",
                 "weight": 680,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Newsreader",
                 "weight": 425,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "PT Sans Narrow"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mulish",
                 "weight": 475,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 540,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "PT Sans Narrow"
             }
           }
         }

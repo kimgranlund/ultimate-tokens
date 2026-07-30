@@ -993,32 +993,32 @@
           "refuses": "A muted, faded-photograph nostalgia. The Grand Tour's heritage is loud and graphic — maglia-rosa pink, maillot-jaune yellow, and gas-station-signage jersey reds and greens, printed on pink and yellow newsprint, not sepia.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bodoni Moda",
                 "weight": 700,
                 "leading": "94%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Anton",
                 "weight": 800,
                 "leading": "108%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Inter",
                 "weight": 420,
                 "leading": "158%",
                 "tracking": "0%"
               },
-              "ui": {
+              "actionable": {
                 "font": "Söhne",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 500,
                 "leading": "140%",
@@ -1521,32 +1521,32 @@
           "refuses": "Not a rainbow of past colorway drops — Nike's brand identity is disciplined black and white, lit by a single orange-red accent, never a full spectrum.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Futura PT Bold",
                 "weight": 800,
                 "leading": "94%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic Next Condensed",
                 "weight": 700,
                 "leading": "104%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Helvetica Neue",
                 "weight": 400,
                 "leading": "156%",
                 "tracking": "0%"
               },
-              "ui": {
+              "actionable": {
                 "font": "Trade Gothic Next",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Roboto Mono",
                 "weight": 500,
                 "leading": "144%",
@@ -1623,32 +1623,32 @@
           "refuses": "Not the 1990s photoreal, blue-swooshed fast-food logo it replaced — the flame identity is warm and fully analogous, unashamedly appetite-red, with no cool blue anywhere in it.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cooper Black",
                 "weight": 900,
                 "leading": "94%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Recoleta",
                 "weight": 700,
                 "leading": "106%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Sofia Pro",
                 "weight": 400,
                 "leading": "160%",
                 "tracking": "0%"
               },
-              "ui": {
+              "actionable": {
                 "font": "Sofia Pro",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 400,
                 "leading": "148%",

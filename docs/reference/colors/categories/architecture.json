@@ -84,40 +84,42 @@
           "refuses": "Flat dead grey. The Barbican's concrete is warm, hand-textured, and planted — never the cold slab of the cliché.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Neue Haas Grotesk Display",
                 "weight": 800,
                 "leading": "96%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Söhne",
                 "weight": 620,
                 "leading": "112%",
                 "tracking": "-0.8%"
               },
-              "body": {
+              "functional": {
                 "font": "Untitled Sans",
                 "weight": 430,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Suisse Int'l Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Söhne",
                 "weight": 450,
                 "leading": "154%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Söhne Mono",
                 "weight": 500,
                 "leading": "144%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Suisse Int'l Condensed"
             }
           }
         },
@@ -189,40 +191,42 @@
           "refuses": "Uniform light grey. The building reads in deep shadow and warm brick; flat grey loses its monumental contrast.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Neue Haas Grotesk Display",
                 "weight": 900,
                 "leading": "90%",
                 "tracking": "-3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Söhne",
                 "weight": 700,
                 "leading": "106%",
                 "tracking": "-1.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Untitled Sans",
                 "weight": 440,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Suisse Int'l Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Söhne",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Söhne Mono",
                 "weight": 560,
                 "leading": "140%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Suisse Int'l Condensed"
             }
           }
         },
@@ -295,40 +299,42 @@
           "refuses": "Monotone grey block. Habitat is grey concrete softened by garden green and bright accents — a lived-in stack, not a slab.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Neue Haas Grotesk Display",
                 "weight": 720,
                 "leading": "100%",
                 "tracking": "-1.2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Söhne",
                 "weight": 560,
                 "leading": "114%",
                 "tracking": "-0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Untitled Sans",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Suisse Int'l Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Söhne",
                 "weight": 440,
                 "leading": "156%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Söhne Mono",
                 "weight": 480,
                 "leading": "146%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Suisse Int'l Condensed"
             }
           }
         },
@@ -400,40 +406,42 @@
           "refuses": "Dead grey slab. Trellick's concrete carries red and teal panels — varied and inhabited, not a monolithic grey wall.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Neue Haas Grotesk Display",
                 "weight": 780,
                 "leading": "94%",
                 "tracking": "-2.2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Söhne",
                 "weight": 660,
                 "leading": "108%",
                 "tracking": "-1.2%"
               },
-              "body": {
+              "functional": {
                 "font": "Untitled Sans",
                 "weight": 430,
                 "leading": "152%",
-                "tracking": "0.2%"
+                "tracking": "0.2%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Suisse Int'l Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Söhne",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "0.8%"
               },
-              "mono": {
+              "data": {
                 "font": "Söhne Mono",
                 "weight": 540,
                 "leading": "140%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Suisse Int'l Condensed"
             }
           }
         }
@@ -517,40 +525,42 @@
           "refuses": "Sepia vintage tower. The Chrysler is bright steel, grey brick, and red marble — gleaming, not a faded old photo.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Broadway",
                 "weight": 820,
                 "leading": "100%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Verlag",
                 "weight": 680,
                 "leading": "110%",
                 "tracking": "0.8%"
               },
-              "body": {
+              "functional": {
                 "font": "Verlag",
                 "weight": 430,
                 "leading": "154%",
-                "tracking": "0.4%"
+                "tracking": "0.4%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bernhard Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Verlag",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "1.8%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 480,
                 "leading": "140%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bernhard Gothic"
             }
           }
         },
@@ -624,40 +634,42 @@
           "refuses": "Muted heritage colour. South Beach is candy pastel by design — pink, mint, and turquoise, not a tasteful neutral.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Broadway",
                 "weight": 720,
                 "leading": "108%",
                 "tracking": "9%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Verlag",
                 "weight": 600,
                 "leading": "114%",
                 "tracking": "1.2%"
               },
-              "body": {
+              "functional": {
                 "font": "Verlag",
                 "weight": 410,
                 "leading": "156%",
-                "tracking": "0.4%"
+                "tracking": "0.4%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bernhard Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Verlag",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "2.2%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 450,
                 "leading": "144%",
                 "tracking": "17%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bernhard Gothic"
             }
           }
         },
@@ -730,40 +742,42 @@
           "refuses": "Plain whitewash. Napier is a coordinated pastel deco ensemble — ochre, jade, and rose, not a uniform white town.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Broadway",
                 "weight": 760,
                 "leading": "105%",
                 "tracking": "7%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Verlag",
                 "weight": 470,
                 "leading": "116%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Verlag",
                 "weight": 420,
                 "leading": "158%",
-                "tracking": "0.4%"
+                "tracking": "0.4%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bernhard Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Verlag",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "2%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 460,
                 "leading": "144%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bernhard Gothic"
             }
           }
         },
@@ -838,40 +852,42 @@
           "refuses": "Drab concrete grey. Marine Drive is a coordinated cream-and-pastel deco curve, weathered but still colour-confident.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Broadway",
                 "weight": 780,
                 "leading": "102%",
                 "tracking": "5.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Verlag",
                 "weight": 640,
                 "leading": "114%",
                 "tracking": "0.9%"
               },
-              "body": {
+              "functional": {
                 "font": "Verlag",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0.5%"
+                "tracking": "0.5%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bernhard Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Verlag",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "1.9%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 470,
                 "leading": "142%",
                 "tracking": "15.5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bernhard Gothic"
             }
           }
         }
@@ -955,40 +971,42 @@
           "refuses": "Flat stone grey. Chartres is grey stone drenched in cobalt and ruby light — the colour is the architecture.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Goudy Text",
                 "weight": 720,
                 "leading": "106%",
                 "tracking": "0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Adobe Jenson",
                 "weight": 440,
                 "leading": "116%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Jenson",
                 "weight": 430,
                 "leading": "166%",
-                "tracking": "0.2%"
+                "tracking": "0.2%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Cronos",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "146%",
                 "tracking": "17%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan"
             }
           }
         },
@@ -1060,40 +1078,42 @@
           "refuses": "Muted heritage palette. Sainte-Chapelle is near-total saturated glass — blue and red fire, with stone almost gone.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Goudy Text",
                 "weight": 820,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Adobe Jenson",
                 "weight": 700,
                 "leading": "115%",
                 "tracking": "0.8%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Jenson",
                 "weight": 440,
                 "leading": "164%",
-                "tracking": "0.2%"
+                "tracking": "0.2%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Cronos",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "18%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan"
             }
           }
         },
@@ -1165,40 +1185,42 @@
           "refuses": "Cold grey modern church. Gaudí floods warm stone with sunrise-blue and sunset-orange — a coloured forest, not a grey hall.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Goudy Text",
                 "weight": 860,
                 "leading": "104%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Adobe Jenson",
                 "weight": 660,
                 "leading": "114%",
                 "tracking": "0.6%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Jenson",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0.2%"
+                "tracking": "0.2%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Cronos",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "144%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan"
             }
           }
         },
@@ -1270,40 +1292,42 @@
           "refuses": "Bright clean limestone. Cologne's stone is soot-darkened to grey-brown; its colour is deep glass against shadow.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Goudy Text",
                 "weight": 780,
                 "leading": "103%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Adobe Jenson",
                 "weight": 620,
                 "leading": "112%",
                 "tracking": "1.2%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Jenson",
                 "weight": 440,
                 "leading": "152%",
-                "tracking": "0.2%"
+                "tracking": "0.2%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Cronos",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "146%",
                 "tracking": "18%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan"
             }
           }
         }
@@ -1388,40 +1412,42 @@
           "refuses": "Red-lacquer temple colour. Katsura is restrained natural wood, paper, and straw — refined understatement, not shrine red.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Optima nova",
                 "weight": 660,
                 "leading": "110%",
                 "tracking": "8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Optima nova",
                 "weight": 540,
                 "leading": "122%",
                 "tracking": "4%"
               },
-              "body": {
+              "functional": {
                 "font": "Tiempos Text",
                 "weight": 410,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Tazugane Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Zen Kaku Gothic Antique",
                 "weight": 430,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Noto Sans Mono",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Tazugane Gothic"
             }
           }
         },
@@ -1493,40 +1519,42 @@
           "refuses": "Aged dark-temple brown. Ise is rebuilt new in pale blond cypress — fresh, light wood, not weathered antiquity.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Optima nova",
                 "weight": 820,
                 "leading": "112%",
                 "tracking": "9%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Optima nova",
                 "weight": 720,
                 "leading": "122%",
                 "tracking": "4.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Tiempos Text",
                 "weight": 430,
                 "leading": "164%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Tazugane Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Zen Kaku Gothic Antique",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Noto Sans Mono",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Tazugane Gothic"
             }
           }
         },
@@ -1599,40 +1627,42 @@
           "refuses": "Bright tourist colour. The machiya is dark wood, earth ochre, and indigo — sober merchant restraint, not festival brights.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Optima nova",
                 "weight": 740,
                 "leading": "104%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Optima nova",
                 "weight": 620,
                 "leading": "116%",
                 "tracking": "3%"
               },
-              "body": {
+              "functional": {
                 "font": "Tiempos Text",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Tazugane Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Zen Kaku Gothic Antique",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Noto Sans Mono",
                 "weight": 480,
                 "leading": "146%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Tazugane Gothic"
             }
           }
         },
@@ -1705,40 +1735,42 @@
           "refuses": "Dark aged timber. Himeji is brilliant white plaster with grey roofs — the 'White Heron', not a brown wooden fortress.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Optima nova",
                 "weight": 780,
                 "leading": "108%",
                 "tracking": "10%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Optima nova",
                 "weight": 640,
                 "leading": "120%",
                 "tracking": "5%"
               },
-              "body": {
+              "functional": {
                 "font": "Tiempos Text",
                 "weight": 420,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Tazugane Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Zen Kaku Gothic Antique",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "Noto Sans Mono",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "17%"
               }
-            },
-            "faces": {
-              "Sub-title": "Tazugane Gothic"
             }
           }
         }
@@ -1823,40 +1855,42 @@
           "refuses": "Flat blue-and-white only. Santorini also has volcanic red-grey rock and magenta vine; pure blue-white is a fridge magnet.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 760,
                 "leading": "110%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Alegreya",
                 "weight": 640,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Alegreya",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Requiem"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Alegreya Sans",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "Fragment Mono",
                 "weight": 460,
                 "leading": "145%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Requiem"
             }
           }
         },
@@ -1929,40 +1963,42 @@
           "refuses": "Plain rustic neutral. The Andalusian patio is whitewash set with cobalt tile and red geranium — cool colour against heat.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 720,
                 "leading": "108%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Alegreya",
                 "weight": 600,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Alegreya",
                 "weight": 430,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Requiem"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Alegreya Sans",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Fragment Mono",
                 "weight": 460,
                 "leading": "146%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Requiem"
             }
           }
         },
@@ -2035,40 +2071,42 @@
           "refuses": "Sandy-beige monotone. The riad is rose earth set with emerald tile and saffron cloth — rich colour inside the walls.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 800,
                 "leading": "110%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Alegreya",
                 "weight": 660,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Alegreya",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Requiem"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Alegreya Sans",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "Fragment Mono",
                 "weight": 480,
                 "leading": "144%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Requiem"
             }
           }
         },
@@ -2142,40 +2180,42 @@
           "refuses": "Rustic brown-stone. The trulli are bright whitewash under grey cones against red earth — a crisp two-tone, not a muddy vernacular.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant",
                 "weight": 720,
                 "leading": "105%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Alegreya",
                 "weight": 580,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Alegreya",
                 "weight": 420,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Requiem"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Alegreya Sans",
                 "weight": 430,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Fragment Mono",
                 "weight": 450,
                 "leading": "146%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Requiem"
             }
           }
         }
@@ -2260,40 +2300,42 @@
           "refuses": "Pure clinical white. Savoye sets white against green lawn and soft interior pastels — not a single sterile field.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Architype Bayer",
                 "weight": 720,
                 "leading": "100%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Futura",
                 "weight": 600,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Neue Haas Grotesk Text",
                 "weight": 420,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Kabel"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica Now Text",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 480,
                 "leading": "142%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Kabel"
             }
           }
         },
@@ -2366,40 +2408,42 @@
           "refuses": "Flat grey minimalism. Mies's pavilion is rich stone — green marble and golden onyx — luxury in restraint, not bare grey.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Architype Bayer",
                 "weight": 760,
                 "leading": "100%",
                 "tracking": "0.6%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Futura",
                 "weight": 640,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Neue Haas Grotesk Text",
                 "weight": 430,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Kabel"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica Now Text",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Kabel"
             }
           }
         },
@@ -2473,40 +2517,42 @@
           "refuses": "Colourless functionalism. The Bauhaus uses white and glass as a ground for sharp primary-red accents and bold type.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Futura",
                 "weight": 820,
                 "leading": "102%",
                 "tracking": "0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Futura",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Neue Haas Grotesk Text",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Kabel"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica Now Text",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 520,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Kabel"
             }
           }
         },
@@ -2580,40 +2626,42 @@
           "refuses": "Cold grey box. Farnsworth's white steel frames a green meadow seen through glass — nature is part of the palette.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Architype Bayer",
                 "weight": 700,
                 "leading": "100%",
                 "tracking": "1.2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Futura",
                 "weight": 580,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Neue Haas Grotesk Text",
                 "weight": 420,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Kabel"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica Now Text",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Spline Sans Mono",
                 "weight": 470,
                 "leading": "144%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Kabel"
             }
           }
         }
@@ -2698,40 +2746,42 @@
           "refuses": "Flat sandstone beige. The Alhambra glows honey-stucco set with blue-green tile and gold — colour and light, not bare stone.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 760,
                 "leading": "112%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Amiri",
                 "weight": 700,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Amiri",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cairo"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Arabic",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cairo"
             }
           }
         },
@@ -2804,40 +2854,42 @@
           "refuses": "Monochrome stone. Isfahan is total turquoise-and-cobalt tile with gold floral — a jewelled surface, not bare masonry.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 780,
                 "leading": "110%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Amiri",
                 "weight": 660,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Amiri",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cairo"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Arabic",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "144%",
                 "tracking": "17%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cairo"
             }
           }
         },
@@ -2910,40 +2962,42 @@
           "refuses": "Flat brilliant white. The Taj blushes rose and gold with the sun and is set with red sandstone — colour, not pure white.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 720,
                 "leading": "114%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Amiri",
                 "weight": 480,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Amiri",
                 "weight": 430,
                 "leading": "172%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cairo"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Arabic",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "146%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cairo"
             }
           }
         },
@@ -3016,40 +3070,42 @@
           "refuses": "Monochrome stone. The Mezquita's signature is the red-and-white striped arch over grey columns — rhythmic colour, not bare masonry.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 740,
                 "leading": "108%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Amiri",
                 "weight": 620,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Amiri",
                 "weight": 440,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cairo"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Arabic",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "142%",
                 "tracking": "17%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cairo"
             }
           }
         }
@@ -3133,40 +3189,42 @@
           "refuses": "Cold white minimalism. Aalto's town hall is warm brick, teak, and pine — humane natural material, not bare white.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "GT Sectra Display",
                 "weight": 760,
                 "leading": "108%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "GT Sectra",
                 "weight": 640,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 430,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Sharp Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Hanken Grotesk",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 480,
                 "leading": "145%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Sharp Grotesk"
             }
           }
         },
@@ -3238,40 +3296,42 @@
           "refuses": "Warm honey-wood cabin. The stave church is tar-black against green — dark, ancient timber, not a bright log cabin.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "GT Sectra Display",
                 "weight": 840,
                 "leading": "102%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "GT Sectra",
                 "weight": 700,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 430,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Sharp Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Hanken Grotesk",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 500,
                 "leading": "144%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Sharp Grotesk"
             }
           }
         },
@@ -3345,40 +3405,42 @@
           "refuses": "Muted grey-wood. The Swedish farm is deep falu-red with crisp white trim — a confident colour pairing, not bare timber.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "GT Sectra Display",
                 "weight": 720,
                 "leading": "106%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "GT Sectra",
                 "weight": 580,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 420,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Sharp Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Hanken Grotesk",
                 "weight": 430,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 460,
                 "leading": "146%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Sharp Grotesk"
             }
           }
         },
@@ -3451,40 +3513,42 @@
           "refuses": "Brown mud-hut cliché. The turf house is vivid grass-green with crisp white-trimmed dark gables — alive, not a dirt hovel.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "GT Sectra Display",
                 "weight": 700,
                 "leading": "108%",
                 "tracking": "0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "GT Sectra",
                 "weight": 580,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Source Serif 4",
                 "weight": 420,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Sharp Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Hanken Grotesk",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 460,
                 "leading": "146%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Sharp Grotesk"
             }
           }
         }
@@ -3568,40 +3632,42 @@
           "refuses": "Flat beige stucco. Taos adobe is warm earth set with turquoise doors and red chile — the colour of place, not a builder beige.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 820,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cheltenham",
                 "weight": 680,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Georgia",
                 "weight": 430,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Public Sans",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "148%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic"
             }
           }
         },
@@ -3674,40 +3740,42 @@
           "refuses": "Bright modern paint. The saltbox is weathered grey and oxide red with white trim — aged colonial colour, not fresh suburbia.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 720,
                 "leading": "104%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cheltenham",
                 "weight": 560,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Georgia",
                 "weight": 410,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Public Sans",
                 "weight": 430,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic"
             }
           }
         },
@@ -3780,40 +3848,42 @@
           "refuses": "Single drab colour. The Painted Ladies use three-to-five coordinated heritage colours per house — polychrome by design.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 780,
                 "leading": "104%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cheltenham",
                 "weight": 640,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Georgia",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Public Sans",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic"
             }
           }
         },
@@ -3887,40 +3957,42 @@
           "refuses": "Plain white colonial. The Charleston single house is soft pastel stucco with a haint-blue porch ceiling — coastal colour, not stark white.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 720,
                 "leading": "106%",
                 "tracking": "0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cheltenham",
                 "weight": 580,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Georgia",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Public Sans",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic"
             }
           }
         }
@@ -4004,40 +4076,42 @@
           "refuses": "Drab uniform grey. Constructivism sets grey render against sharp primary-red accents — bold, not monotonous.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Druk Condensed",
                 "weight": 860,
                 "leading": "90%",
                 "tracking": "-0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Druk Text",
                 "weight": 760,
                 "leading": "104%",
                 "tracking": "-0.8%"
               },
-              "body": {
+              "functional": {
                 "font": "PT Serif",
                 "weight": 420,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Eurostile"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "PT Sans",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "PT Mono",
                 "weight": 460,
                 "leading": "144%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Eurostile"
             }
           }
         },
@@ -4110,40 +4184,42 @@
           "refuses": "Austere grey transit. The metro is a gilded palace — ochre vaults, gold, and mosaic — opulence underground, not grey utility.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Druk Condensed",
                 "weight": 800,
                 "leading": "96%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Druk Text",
                 "weight": 680,
                 "leading": "108%",
                 "tracking": "-0.4%"
               },
-              "body": {
+              "functional": {
                 "font": "PT Serif",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Eurostile"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "PT Sans",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "PT Mono",
                 "weight": 480,
                 "leading": "146%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Eurostile"
             }
           }
         },
@@ -4216,40 +4292,42 @@
           "refuses": "Heroic clean colour. The monument is now a rusting grey ruin with surviving red-and-gold mosaic — decay, not glory.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Druk Condensed",
                 "weight": 820,
                 "leading": "92%",
                 "tracking": "-0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Druk Text",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "-0.6%"
               },
-              "body": {
+              "functional": {
                 "font": "PT Serif",
                 "weight": 420,
                 "leading": "154%",
-                "tracking": "0.2%"
+                "tracking": "0.2%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Eurostile"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "PT Sans",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "PT Mono",
                 "weight": 470,
                 "leading": "142%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Eurostile"
             }
           }
         },
@@ -4322,40 +4400,42 @@
           "refuses": "Grim grey communism. VDNKh is white-and-gold plenty — gilded fountains and ruby stars, a propaganda of abundance, not austerity.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Druk Condensed",
                 "weight": 820,
                 "leading": "96%",
                 "tracking": "0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Druk Text",
                 "weight": 700,
                 "leading": "108%",
                 "tracking": "-0.4%"
               },
-              "body": {
+              "functional": {
                 "font": "PT Serif",
                 "weight": 430,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Eurostile"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "PT Sans",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "PT Mono",
                 "weight": 470,
                 "leading": "146%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Eurostile"
             }
           }
         }
@@ -4440,40 +4520,42 @@
           "refuses": "Modernist monochrome. Graves brings classical colour back — cream, terracotta, and teal in witty quotation, not grey glass.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "ITC Benguiat",
                 "weight": 820,
                 "leading": "106%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mrs Eaves",
                 "weight": 640,
                 "leading": "114%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Mrs Eaves XL",
                 "weight": 440,
                 "leading": "158%",
-                "tracking": "0.2%"
+                "tracking": "0.2%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Avant Garde Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "ITC Officina Sans",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 480,
                 "leading": "144%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Avant Garde Gothic"
             }
           }
         },
@@ -4546,40 +4628,42 @@
           "refuses": "Flat grey metal. The titanium shifts silver-to-gold with the light; a single grey misses the building's whole effect.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "ITC Benguiat",
                 "weight": 760,
                 "leading": "108%",
                 "tracking": "2.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mrs Eaves",
                 "weight": 620,
                 "leading": "116%",
                 "tracking": "0.6%"
               },
-              "body": {
+              "functional": {
                 "font": "Mrs Eaves XL",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0.2%"
+                "tracking": "0.2%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Avant Garde Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "ITC Officina Sans",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 470,
                 "leading": "145%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Avant Garde Gothic"
             }
           }
         },
@@ -4653,40 +4737,42 @@
           "refuses": "Pure flat white. The shells are subtly two-toned glossy tile over a pink-granite podium against deep harbour blue.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "ITC Benguiat",
                 "weight": 720,
                 "leading": "110%",
                 "tracking": "9.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mrs Eaves",
                 "weight": 600,
                 "leading": "118%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Mrs Eaves XL",
                 "weight": 420,
                 "leading": "170%",
-                "tracking": "0.2%"
+                "tracking": "0.2%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Avant Garde Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "ITC Officina Sans",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 460,
                 "leading": "146%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Avant Garde Gothic"
             }
           }
         },
@@ -4758,40 +4844,42 @@
           "refuses": "Sober stone classicism. Moore's piazza is pastel-and-neon parody — terracotta, ochre, and cyan, a joke on the temple, not a real one.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "ITC Benguiat",
                 "weight": 740,
                 "leading": "108%",
                 "tracking": "3.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Mrs Eaves",
                 "weight": 580,
                 "leading": "116%",
                 "tracking": "0.6%"
               },
-              "body": {
+              "functional": {
                 "font": "Mrs Eaves XL",
                 "weight": 420,
                 "leading": "158%",
-                "tracking": "0.2%"
+                "tracking": "0.2%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Avant Garde Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "ITC Officina Sans",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 460,
                 "leading": "144%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Avant Garde Gothic"
             }
           }
         }
@@ -4875,40 +4963,42 @@
           "refuses": "Clean loft brick. The mill brick is soot-darkened and grimy, framed in black iron — a working surface, not a sandblasted feature wall.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rockwell",
                 "weight": 800,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic Bold Condensed",
                 "weight": 700,
                 "leading": "106%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 425,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Archivo",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "GT Pressura Mono",
                 "weight": 480,
                 "leading": "144%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic"
             }
           }
         },
@@ -4981,40 +5071,42 @@
           "refuses": "Bright gallery white. Bankside keeps its industrial brown brick and grey steel — monumental and sober, not whitewashed.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rockwell",
                 "weight": 880,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic Bold Condensed",
                 "weight": 740,
                 "leading": "104%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 430,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Archivo",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
-              "mono": {
+              "data": {
                 "font": "GT Pressura Mono",
                 "weight": 500,
                 "leading": "144%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic"
             }
           }
         },
@@ -5086,40 +5178,42 @@
           "refuses": "Trendy matte-black loft. The cast-iron front was painted stone-imitating grey-green; the black-and-rust loft look is a later fashion.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rockwell",
                 "weight": 670,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic Bold Condensed",
                 "weight": 600,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 415,
                 "leading": "172%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Archivo",
                 "weight": 430,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "GT Pressura Mono",
                 "weight": 460,
                 "leading": "146%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic"
             }
           }
         },
@@ -5191,40 +5285,42 @@
           "refuses": "Clean restored industrial. Zollverein is red-oxide steel, soot, and rust — a working ironworks palette, not a polished museum.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rockwell",
                 "weight": 930,
                 "leading": "100%",
                 "tracking": "-0.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic Bold Condensed",
                 "weight": 720,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 420,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Archivo",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "GT Pressura Mono",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic"
             }
           }
         }

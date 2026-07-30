@@ -168,16 +168,26 @@ function deriveNeutralPalette(palettes) {
 
 const VIVID_MIDS = { damp: 70, dampCurve: 1.5, dampAmp: 55, dampBias: 0 };
 
-// ── per-palette TYPOGRAPHY: map the human 5-slot DESIGN (stored on a spec palette's optional `type`) to an
-// engine typeScale config { treatment, bodyBase?, fonts, voices }. The design is designer-friendly (one
-// entry per font ROLE); the mapping is the ONE place the vocabulary is translated (persist.clampType +
-// engine/type.mjs consume the output verbatim, so opening a preset applies it via hydrate — see the LLD).
-// Each font ROLE covers all its voices (fonts are per-role), so 5 families dress all 11 voices; the design's
-// per-slot tracking/leading/weight shape the ROLE's PRIMARY voice (secondary editorial voices keep the base
-// treatment's character). mono→Kicker (the slot's tracking IS the wide-kicker value; Code stays neutral).
-// 2026-07-13: Heading's primary voice renamed Headline; ui's primary voice renamed Label (taxonomy rename,
-// same mapping shape).
-const TYPE_VOICE_OF = { display: "Display", heading: "Headline", body: "Body", ui: "Label", mono: "Kicker" };
+// ── per-palette TYPOGRAPHY: map a spec palette's REGISTER declaration (its optional `type`) to an
+// engine typeScale config { treatment, bodyBase?, fonts, voices }. Registers are the intended-use
+// canon's Layer 3 (docs/reference/typography/intended-use.md): a story/brand's tone tiers mapped
+// onto the 15 voices. This mapper is the ONE place that vocabulary is translated — persist.clampType
+// + engine/type.mjs consume the output verbatim, so opening a preset applies it via hydrate.
+// Each register carries {font, weight, tracking "%", leading "%"} shaping its PRIMARY voice, plus
+// optional styleName (named cut), explicit `weights` ([] = opt-out), and a `voices` sub-map that
+// opts the register's OWN secondary voices in (absent = the base treatment's quiet default —
+// exactly the pre-register behavior). Replaced the 5-slot `slots` shape 2026-07-30 (#405); the
+// migration was byte-identical — slot display/heading/body/ui/mono ≙ the five registers 1:1.
+// Register → font role + primary voice + the secondaries its `voices` may opt in.
+// ITERATION ORDER IS LOAD-BEARING: this order reproduces the pre-register mapper's
+// display,heading,body,ui,mono output order, keeping generated presets byte-stable.
+const REGISTERS = {
+  anthemic:   { role: "display", voice: "Display",  own: [] },
+  contextual: { role: "heading", voice: "Headline", own: ["Sub-heading"] },
+  functional: { role: "body",    voice: "Body",     own: ["Lead", "Title", "Sub-title"] },
+  actionable: { role: "ui",      voice: "Label",    own: ["UI-control", "UI-widget"] },
+  data:       { role: "mono",    voice: "Kicker",   own: ["Body-mono", "Label-mono", "Tiny-mono"] },
+};
 const TYPE_BASES = ["product", "luxury", "editorial", "technical", "statement"];
 // pct — the STRICT %-string parser for the preset schema's leading/tracking (Kim's 2026-07-10 unit
 // transition: `leading: "96%"` = 0.96 × size; `tracking: "-2%"` = -0.02em). Strings only — a bare
@@ -188,47 +198,50 @@ const pct = (v) => {
   const m = /^\s*(-?\d+(?:\.\d+)?)\s*%\s*$/.exec(v);
   return m ? Number(m[1]) / 100 : NaN;
 };
-function design5ToTypeConfig(t) {
-  if (!t || typeof t !== "object" || !t.slots || typeof t.slots !== "object") return null;
+function registersToTypeConfig(t) {
+  if (!t || typeof t !== "object" || !t.registers || typeof t.registers !== "object") return null;
   const out = { treatment: TYPE_BASES.includes(t.base) ? t.base : "product" };
   // clamp bodyBase to persist.clampType's [10,32] range so the emitted preset matches its hydrated form
   // (an out-of-range designed bodyBase would otherwise differ preset-vs-doc after clampType).
   if (Number.isFinite(t.bodyBase)) out.bodyBase = Math.max(10, Math.min(32, Math.round(t.bodyBase)));
   const fonts = {}, voices = {};
-  for (const role of ["display", "heading", "body", "ui", "mono"]) {
-    const s = t.slots[role];
+  // body-class cores clamp ≤450 (intended-use.md Layer 2 law #1 / #303-#307): a core past 450
+  // snaps to the Medium face while the style label says "regular" — 175 spec weights shipped that
+  // mismatch before the clamp (2026-07-30).
+  const coreWeight = (voice, w) => (BODY_CLASS_VOICES.has(voice) ? Math.min(w, 450) : w);
+  // ADJACENT WEIGHT SIBLINGS — a designed voice ships weight variants around its own core unless
+  // the spec authors `weights` explicitly (verbatim, [] = the deliberate bare-core opt-out). The
+  // derived ladder FUNCTION follows the voice's class, mirroring typeScale's auto-populate split
+  // (2026-07-14): body-class voices bake bodyClassSiblingDefaults (2 stops, both heavier), every
+  // other voice bakes siblingWeightDefaults (3 bidirectional stops).
+  const ladderFor = (voice, w, explicit) => {
+    if (Array.isArray(explicit)) return explicit.map((s) => ({ ...s }));
+    const sibs = (BODY_CLASS_VOICES.has(voice) ? bodyClassSiblingDefaults : siblingWeightDefaults)(w);
+    return sibs.length ? sibs : null;
+  };
+  // PASS 1 — register cores → primary voices (identical shape to the retired 5-slot loop).
+  for (const [reg, def] of Object.entries(REGISTERS)) {
+    const s = t.registers[reg];
     if (!s || typeof s !== "object") continue;
-    if (typeof s.font === "string" && s.font.trim()) fonts[role] = s.font.trim();
+    if (typeof s.font === "string" && s.font.trim()) fonts[def.role] = s.font.trim();
     const v = {};
     const tr = pct(s.tracking); // "%-of-size" string → em ratio; clampType range [-0.5, 1]
     if (Number.isFinite(tr)) v.tracking = tr;
     const ld = pct(s.leading); //                                 clampType range [0.8, 3]
     if (Number.isFinite(ld)) v.leading = ld;
-    // clampType range [100, 1000]; BODY-CLASS cores additionally clamp to ≤450 (intended-use.md
-    // Layer 2 law #1 / #303-#307): a core past 450 snaps to the Medium face while the style label
-    // says "regular" — 175 spec weights (460–520, mostly ui→Label) shipped that mismatch before
-    // this clamp (2026-07-30).
-    if (Number.isFinite(s.weight)) v.weight = BODY_CLASS_VOICES.has(TYPE_VOICE_OF[role]) ? Math.min(s.weight, 450) : s.weight;
-    // ADJACENT WEIGHT SIBLINGS — every designed voice ships weight variants around its own core, so
-    // the preset's exported text styles (Figma `Voice/step/Name`, CSS/DTCG weight tokens) carry
-    // emphasis options out of the box, not just the single core weight. The ladder FUNCTION follows
-    // the voice's class, mirroring typeScale's own auto-populate split (2026-07-14): a BODY_CLASS
-    // voice (here: body→Body, ui→Label) bakes bodyClassSiblingDefaults (2 stops, both heavier —
-    // the Regular/Bolder/Boldest progression); every other voice bakes siblingWeightDefaults (3
-    // bidirectional stops). Rides the SAME core weight this slot already resolved above.
-    if (Number.isFinite(v.weight)) {
-      const ladderFn = BODY_CLASS_VOICES.has(TYPE_VOICE_OF[role]) ? bodyClassSiblingDefaults : siblingWeightDefaults;
-      const sibs = ladderFn(v.weight);
-      if (sibs.length) v.weights = sibs;
+    if (Number.isFinite(s.weight)) v.weight = coreWeight(def.voice, s.weight); // clampType range [100, 1000]
+    if (typeof s.styleName === "string" && s.styleName.trim()) v.styleName = s.styleName.trim();
+    if (Number.isFinite(v.weight) || Array.isArray(s.weights)) {
+      const sibs = ladderFor(def.voice, v.weight, s.weights);
+      if (sibs) v.weights = sibs;
+      else if (Array.isArray(s.weights)) v.weights = []; // explicit opt-out round-trips (#302)
     }
-    if (Object.keys(v).length) voices[TYPE_VOICE_OF[role]] = v;
-    // INTERACTIVE-VOICE LADDERS (TKT-0005 sibling change, the BZZR shape): the ui slot's designed
-    // weight also keys UI-control + UI-widget weight ladders — ladders ONLY (like BZZR's config),
-    // never the core weight/tracking/leading, so the interactive voices keep the engine's own
-    // control-text character while the preset's exported text styles carry emphasis options.
-    // Separate arrays per voice (the array-field round-trip gate compares by value, but a shared
+    if (Object.keys(v).length) voices[def.voice] = v;
+    // INTERACTIVE-VOICE LADDERS (TKT-0005, the BZZR shape): actionable's core weight also keys
+    // UI-control + UI-widget weight ladders — ladders ONLY, never character, so the interactive
+    // voices keep the engine's control-text character. Separate arrays per voice (a shared
     // reference would let one voice's future mutation alias the other).
-    if (role === "ui" && Number.isFinite(v.weight)) {
+    if (reg === "actionable" && Number.isFinite(v.weight)) {
       const uiSibs = bodyClassSiblingDefaults(v.weight);
       if (uiSibs.length) {
         voices["UI-control"] = { weights: uiSibs.map((w) => ({ ...w })) };
@@ -236,15 +249,34 @@ function design5ToTypeConfig(t) {
       }
     }
   }
-  // AUTHORED PER-VOICE FACES (TKT-0005): the spec's optional `faces` map — voice name → family —
-  // rides the TKT-0002 per-voice font escape hatch (`type.voices[voice].font` → `scale.voiceFonts`
-  // → `resolvedFontFor`). Currently curated for Sub-title (the CAPS wide-tracked alternate-face
-  // heading, which otherwise borrows the mono font). An off-allowlist voice name ships a preset
-  // clampType would trim — the categories gate rejects it at generation instead.
-  if (t.faces && typeof t.faces === "object") {
-    for (const [voice, fam] of Object.entries(t.faces)) {
-      if (typeof fam !== "string" || !fam.trim()) continue;
-      voices[voice] = { ...(voices[voice] || {}), font: fam.trim() };
+  // PASS 2 — `voices` opt-ins, after ALL cores (generalizes the retired trailing `faces` loop, so
+  // a font-only entry lands as {font} in the same tail position — byte-stable for migrated data).
+  // An entry may set font (the TKT-0002 per-voice escape hatch → resolvedFontFor), character
+  // (weight/tracking/leading, same units + body-class clamp), styleName, or explicit weights;
+  // UI-control/UI-widget entries honor `font` ONLY (the ladders-only law). Ownership (an entry
+  // must be the register's own secondary) is the gate's job — the mapper translates.
+  for (const [reg] of Object.entries(REGISTERS)) {
+    const s = t.registers[reg];
+    if (!s || typeof s !== "object" || !s.voices || typeof s.voices !== "object") continue;
+    for (const [voice, e] of Object.entries(s.voices)) {
+      if (!e || typeof e !== "object") continue;
+      const uiOnly = voice === "UI-control" || voice === "UI-widget";
+      const add = {};
+      if (!uiOnly) {
+        if (Number.isFinite(e.weight)) add.weight = coreWeight(voice, e.weight);
+        const tr = pct(e.tracking);
+        if (Number.isFinite(tr)) add.tracking = tr;
+        const ld = pct(e.leading);
+        if (Number.isFinite(ld)) add.leading = ld;
+        if (typeof e.styleName === "string" && e.styleName.trim()) add.styleName = e.styleName.trim();
+      }
+      if (typeof e.font === "string" && e.font.trim()) add.font = e.font.trim();
+      if (!uiOnly && (Number.isFinite(add.weight) || Array.isArray(e.weights))) {
+        const sibs = ladderFor(voice, add.weight, e.weights);
+        if (sibs) add.weights = sibs;
+        else if (Array.isArray(e.weights)) add.weights = [];
+      }
+      if (Object.keys(add).length) voices[voice] = { ...(voices[voice] || {}), ...add };
     }
   }
   if (Object.keys(fonts).length) out.fonts = fonts;
@@ -277,6 +309,14 @@ function buildCategory(doc) {
       // in it instead, giving a representative strip across its actual items.
       const takeForStrip = (doc.volumes || []).length > 1 ? pi === 0 : true;
       if (takeForStrip && stripHex) strip.push(stripHex);
+      // RETIRED-SHAPE TRIPWIRE: `type.slots`/`type.faces` (the pre-register 5-slot design) would
+      // silently yield a typeless preset here — fail the generation loudly instead.
+      if (p.type && (p.type.slots || p.type.faces))
+        throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" uses the retired type.slots/type.faces shape — run scripts/migrate-type-registers.mjs`);
+      // per-palette TYPOGRAPHY config: a spec may carry an already-resolved `type.fonts`/`.voices`
+      // directly (the "brands" pass-through shape — a real doc's own type config) — pass it through
+      // verbatim rather than running it through the register mapper, which wouldn't recognize it.
+      const typeCfg = p.type && p.type.fonts ? p.type : registersToTypeConfig(p.type);
       presets.push({
         // the tile/set name is the KICKER (a clean structured label, e.g. "59° N · January · Lake
         // Baikal corridor"); the long evocative `title` lives in story.title (Story tab + per-color line).
@@ -292,11 +332,8 @@ function buildCategory(doc) {
         ...DEFAULT_CONTROLS, ...VIVID_MIDS,
         // per-palette TYPOGRAPHY — opening this preset (openConfigAsSet → hydrate → clampType) sets the
         // doc's `type`, so the Fonts picker + scale + every export carry this palette's designed system.
-        // Absent when the spec palette has no `type` (falls back to the global default treatment). A
-        // spec can ALSO carry an already-resolved `type.fonts`/`.voices` directly (the "brands" pass-
-        // through shape — a real doc's own type config, not the 5-slot design shape) — pass it through
-        // verbatim rather than running it through the slot mapper, which wouldn't recognize it.
-        ...(p.type && p.type.fonts ? { type: p.type } : design5ToTypeConfig(p.type) ? { type: design5ToTypeConfig(p.type) } : {}),
+        // Absent when the spec palette has no `type` (falls back to the global default treatment).
+        ...(typeCfg ? { type: typeCfg } : {}),
         // neutral first (derived from the character palettes' key colors), then the named families —
         // unless `direct` supplies the full array itself (verbatim, in its own authored order).
         palettes: direct || (() => { const pals = mapColors(p.swatches || []); return [deriveNeutralPalette(pals), ...pals]; })(),

@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 1.55 — 2026-07-30 — preset typography declares REGISTERS (ADR-022)
+
+The 5-slot `type.slots` spec shape is retired: a spec palette now declares
+`type.registers.{anthemic,contextual,functional,actionable,data}` (intended-use.md Layer 3 —
+slot↔register 1:1), each register optionally carrying `styleName` (expressive-tier only), explicit
+`weights` (`[]` = opt-out), and a `voices` sub-map for its OWN secondary voices; `faces` folded into
+`registers.functional.voices["Sub-title"].font`. The 339-palette migration
+(`scripts/migrate-type-registers.mjs`) was **byte-identical** on the generated presets — no rendered
+change; per-category enrichment comes as its own reviewed PRs. Mapper: `registersToTypeConfig`;
+gate: a new `schema` group (retired shapes throw at generation too). The pass-through
+`type.fonts`/`type.voices` shape is unchanged. Precedes it (same day, #404): the typography
+intended-use canon + the `cuts`/`purpose` gate groups — whose first run caught 175 presets whose
+"regular •" style rendered the Medium face (body-class cores now clamp ≤450 at generation).
+
 ## 1.54 — 2026-07-11 — Settings completes: collection names · persisted app prefs · reduce-motion
 
 Backlog items 1 + 2 close. Item 2 (the backup-consent gate) was verified **already fully shipped** —
