@@ -16,7 +16,7 @@ Teach your coding agent to build with your exact tokens — which role goes wher
 
 > A free Claude Code plugin that teaches a coding agent to *consume* an exported Ultimate Tokens kit
 > inside your own project. Three skills — **color-tokens** (which of the 53 semantic roles goes on
-> every surface), **typography-tokens** (the eleven-voice scale, role × level), **geometry-tokens**
+> every surface), **typography-tokens** (the eleven-voice scale, role × level), **geometry-tokens** <!-- fix-old-names: keep -->
 > (the two-tier dimensional system) — plus a **`token-integrator`** agent that wires a component or
 > migrates a whole UI onto the kit. Every skill is parity-gated against the generator's engines, so
 > its guidance can't drift from the tokens it documents.
@@ -30,7 +30,7 @@ Teach your coding agent to build with your exact tokens — which role goes wher
 >
 > Install it into Claude Code and it adds three consumption skills and an integration agent. Ask the
 > agent to style a component and the right skill activates: **color-tokens** enforces which of the 53
-> roles belongs on each surface and the on-colour pairing law; **typography-tokens** picks the voice
+> roles belongs on each surface and the on-colour pairing law; **typography-tokens** picks the voice <!-- fix-old-names: keep -->
 > by the text's function and the level by its hierarchy, then derives the size from that level;
 > **geometry-tokens** applies the control-and-container dimensional system and the radius scale. The
 > **`token-integrator`** agent does the wiring — for a small job directly, for a migration by
@@ -57,7 +57,7 @@ Teach your coding agent to build with your exact tokens — which role goes wher
 
 ```
 • color-tokens — which of the 53 semantic roles goes where; the on-colour pairing law, per state
-• typography-tokens — the eleven-voice scale, role × level (size derived, never guessed)
+• typography-tokens — the eleven-voice scale, role × level (size derived, never guessed) <!-- fix-old-names: keep -->
 • geometry-tokens — the two-tier dimensional system + the Material-3-aligned radius scale
 • token-integrator — binds to your real exported variables; wires a component or migrates a UI
 • Parity-gated against the engines in the generator's test suite — guidance can't drift from the kit
