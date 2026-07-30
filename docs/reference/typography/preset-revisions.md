@@ -12,7 +12,7 @@ category: `palette-researcher` draft → reconcile + gates → `design:font-choi
 | brands | #409 | done | #420 | 2026-07-30 | 3/7 revised (Nike/BK/Corsa on real faces + cuts); Maison/Adia stay untyped BY RULING (color-only stories, no typographic evidence — typing them would be invention); BZZR/Modal jazz pass-throughs untouched; checker 49/60 + fixes (Nike UI-ladder fabrication caught → no-core-weight actionable shape) |
 | cuisine | #410 | done | #421 | 2026-07-30 | 44/48 revised (non-ladder cores on static CJK/Indic/Arabic/Thai/display families — the dominant class); Vol II Italian untouched; Söhne umlaut restored; checker 52/60; Forma DJR + static-core pre-check lessons → #418 |
 | film | #411 | done | #422 | 2026-07-30 | 48/48 revised (~200/240 cores fictional); 11 story-driven family refusals, all checker-upheld (Shining→Overlook Helvetica, Witch→IM Fell, Dune→Archivo Expanded, Vol VII Optima→locale-correct Noto Serifs…); axis-FLOOR fiction ruling minted; checker 52/60 |
-| literature | #412 | queued | — | — | |
+| literature | #412 | done | #423 | 2026-07-30 | 48/48 revised (~all cores fictional 5-unit values); ~20 family swaps upheld (Fette Fraktur out ×4, Alice→Caslon, Beat volume, LOTR→IM Fell); researcher patch shipped 123 malformed ladders — schema gate caught, reconciler conversion upheld by checker; data-register lesson corrected (flows to Kicker only); checker 51/60 |
 | music | #413 | queued | — | — | |
 | nature | #414 | queued | — | — | |
 | travel | #415 | queued | — | — | |
