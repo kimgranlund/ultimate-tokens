@@ -14,7 +14,7 @@ category: `palette-researcher` draft → reconcile + gates → `design:font-choi
 | film | #411 | done | #422 | 2026-07-30 | 48/48 revised (~200/240 cores fictional); 11 story-driven family refusals, all checker-upheld (Shining→Overlook Helvetica, Witch→IM Fell, Dune→Archivo Expanded, Vol VII Optima→locale-correct Noto Serifs…); axis-FLOOR fiction ruling minted; checker 52/60 |
 | literature | #412 | done | #423 | 2026-07-30 | 48/48 revised (~all cores fictional 5-unit values); ~20 family swaps upheld (Fette Fraktur out ×4, Alice→Caslon, Beat volume, LOTR→IM Fell); researcher patch shipped 123 malformed ladders — schema gate caught, reconciler conversion upheld by checker; data-register lesson corrected (flows to Kicker only); checker 51/60 |
 | music | #413 | done | #424 | 2026-07-30 | 48/48 revised; 10 genre-authenticity swaps all upheld ("genre font ≠ the genre's type" — punk's real machines, Graffonti out of hip-hop, Cinzel out of classical); single-cut-ceiling lesson applied; decorative-face -mono fills fixed via data.voices opt-ins; checker 50/60 |
-| nature | #414 | queued | — | — | |
+| nature | #414 | done | #425 | 2026-07-31 | 46/48 revised; one swap (alpine Cinzel/Copperplate → hut-sign Archivo Narrow), 4 documented-tradition keeps upheld; 27 silently-clamped actionable cores now declared ≤450 in-spec; optical-weight ceiling ruling minted into the rubric; checker 53/60 (highest yet) |
 | travel | #415 | queued | — | — | |
 
 Epic: #407.

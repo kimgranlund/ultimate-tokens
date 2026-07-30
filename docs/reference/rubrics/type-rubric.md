@@ -34,6 +34,11 @@
       program's own fixes; a VF core sits inside the axis range instead). `styleName` is the style
       WITHIN the declared family (engine contract, `src/engine/type.mjs` styleNames) — a cut sold
       as its own family is encoded as the `font`, never as a family-prefixed styleName.
+- [ ] A SINGLE-CUT display face's ceiling binds OPTICALLY, not numerically (nature ruling,
+      2026-07-31): its note states the optical weight (Abril Fatface ≈ black; Prata ≈ regular),
+      and the framing ceiling holds against that figure — a nominal 400 that is optically black
+      still out-shouts an 800 (so literature's Playfair-800-under-Abril stands); an optically
+      regular single cut caps its framing at/below itself.
 - [ ] No character override on UI-control/UI-widget (ladders-only law — the gate enforces `font`
       only; this line exists so a reviewer checks the INTENT too, not just the field name).
 - [ ] The revision touched ONLY this category's spec JSON + its regenerated module (+ ledger row)
