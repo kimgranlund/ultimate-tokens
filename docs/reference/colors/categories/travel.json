@@ -90,21 +90,51 @@
             "registers": {
               "anthemic": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 740,
+                "weight": 700,
                 "leading": "102%",
-                "tracking": "5.5%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Super",
+                    "weight": 900
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 620,
+                "weight": 500,
                 "leading": "114%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Plantin",
-                "weight": 420,
+                "weight": 400,
                 "leading": "158%",
                 "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "voices": {
                   "Sub-title": {
                     "font": "Pragmatica"
@@ -113,17 +143,23 @@
               },
               "actionable": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 440,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 450,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "6%"
+                "tracking": "6%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "A carriage interior, not the May Day square: Berthold Akzidenz-Grotesk Pro is static (Light 300 · Regular 400 · Medium 500 · Bold 700 · Super 900), so 740/620/440 were fiction — display drops to Bold with an authored Super/Medium ladder, framing to Medium under it, and Label takes the no-core shape because AG has no Semi-bold for the +100/+200 stops; Plantin (Light/Regular/Semibold/Bold, Monotype 1913) sets the body at its real Regular with a Semibold/Bold ladder, Courier Prime is a 400/700 duo so the Kicker's 450 becomes Regular, and Pragmatica is the one earned opt-in — ParaType's Cyrillic grotesque is the alphabet on the RZhD carriage plates this palette is sampled from."
           }
         },
         {
@@ -199,40 +235,71 @@
             "registers": {
               "anthemic": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 890,
+                "weight": 900,
                 "leading": "100%",
-                "tracking": "8%"
+                "tracking": "3%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 770,
+                "weight": 700,
                 "leading": "110%",
-                "tracking": "1.5%"
+                "tracking": "1.5%",
+                "weights": [
+                  {
+                    "name": "Super",
+                    "weight": 900
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "functional": {
                 "font": "Plantin",
-                "weight": 450,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Peignot"
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 480,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "The loudest palette of the volume earns AG Super 900 (a real Berthold cut) with an authored Bold/Medium ladder, since the derived 800 is fiction on AG; the Peignot Sub-title goes — 1937 Paris deco quoting \"the exotic\" is the same tourist-legibility smear the refuses line indicts — and Label takes the no-core shape (AG has no 600), body sits at Plantin Regular with its real Semibold/Bold stops, Courier Prime at its only Regular."
           }
         },
         {
@@ -310,40 +377,71 @@
             "registers": {
               "anthemic": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 720,
+                "weight": 700,
                 "leading": "108%",
-                "tracking": "10%"
+                "tracking": "3%",
+                "weights": [
+                  {
+                    "name": "Super",
+                    "weight": 900
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 560,
+                "weight": 400,
                 "leading": "116%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "functional": {
                 "font": "Plantin",
-                "weight": 410,
+                "weight": 400,
                 "leading": "163%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Copperplate Gothic"
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 430,
                 "leading": "152%",
                 "tracking": "1%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 440,
+                "weight": 400,
                 "leading": "152%",
-                "tracking": "11%"
+                "tracking": "11%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "A mineral territory where almost nothing happens gets the volume's quietest framing — AG Regular under an AG Bold display (both real Berthold cuts; 720/560/430 were not) with authored ladders because AG has no 600, and the Copperplate Gothic Sub-title drops as the engraved-certificate reflex a salt flat has no use for; Plantin Regular and Courier Prime Regular carry the reading and the field-note data at their only real text weights."
           }
         },
         {
@@ -420,21 +518,51 @@
             "registers": {
               "anthemic": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 720,
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "4.5%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Super",
+                    "weight": 900
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 600,
+                "weight": 500,
                 "leading": "112%",
-                "tracking": "0.8%"
+                "tracking": "0.8%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Plantin",
-                "weight": 430,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "voices": {
                   "Sub-title": {
                     "font": "Eurostile"
@@ -443,17 +571,23 @@
               },
               "actionable": {
                 "font": "Akzidenz-Grotesk",
-                "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 460,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "5%"
+                "tracking": "5%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "A working route at 05:40, so the type is the ship's own: AG Bold/Medium on their real Berthold stops with authored ladders, Label no-core (no AG 600), Plantin Regular for reading, Courier Prime Regular for the timetable data; Eurostile stays as the one opt-in because Novarese's square grotesque is literally the alphabet of marine builder's plates and machinery labels on a GRP hull — the fibreglass, not the postcard."
           }
         }
       ]
@@ -541,40 +675,61 @@
             "registers": {
               "anthemic": {
                 "font": "Frutiger",
-                "weight": 760,
+                "weight": 700,
                 "leading": "104%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
                 "font": "Frutiger",
-                "weight": 680,
+                "weight": 400,
                 "leading": "110%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Charter",
-                "weight": 430,
+                "weight": 400,
                 "leading": "156%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Univers"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Frutiger",
-                "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 460,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            }
+            },
+            "note": "Frutiger stays as the volume's transit-signage spine (Linotype Frutiger LT is 45 Light 300 · 55 Roman 400 · 65 Bold 700 · 75 Black 800, so 760/680/460 were all fiction): 65 Bold display, 55 Roman framing for a fluorescent last train that shouldn't shout, authored ladders because the derived 800/600/500 don't exist, Label no-core for the same reason; Charter is a Regular/Bold/Black family so the body sits at Regular with a Bold-only ladder, the Univers Sub-title drops as unearned, and IBM Plex Mono's static grid puts the Kicker on the real Medium Frutiger LT numbering pinned: 45 Light 300 - 55 Roman 400 - 65 Bold 700 - 75 Black 800 (95 Ultra Black 900 above)."
           }
         },
         {
@@ -650,30 +805,50 @@
             "registers": {
               "anthemic": {
                 "font": "Frutiger",
-                "weight": 720,
+                "weight": 700,
                 "leading": "106%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
                 "font": "Frutiger",
-                "weight": 600,
+                "weight": 400,
                 "leading": "114%",
-                "tracking": "0.5%"
+                "tracking": "0.5%",
+                "weights": [
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Charter",
-                "weight": 440,
+                "weight": 400,
                 "leading": "162%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bell Gothic"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Frutiger",
-                "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
@@ -683,7 +858,8 @@
                 "leading": "150%",
                 "tracking": "6%"
               }
-            }
+            },
+            "note": "A fifty-year-old Carris tram carries transport-signage type, not tile decoration: Frutiger 65 Bold over 55 Roman with authored ladders (no 500/600 exist in Frutiger LT) and a no-core Label; Charter Regular reads the stone-and-stucco text with its real Bold as the only sibling, the Bell Gothic Sub-title drops (a US phone-directory face has no business on the calçada), and the Kicker takes IBM Plex Mono's real Text 450 from IBM's own release Frutiger LT numbering pinned: 45 Light 300 - 55 Roman 400 - 65 Bold 700 - 75 Black 800 (95 Ultra Black 900 above)."
           }
         },
         {
@@ -759,40 +935,61 @@
             "registers": {
               "anthemic": {
                 "font": "Frutiger",
-                "weight": 880,
+                "weight": 800,
                 "leading": "100%",
-                "tracking": "3%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
                 "font": "Frutiger",
-                "weight": 780,
+                "weight": 700,
                 "leading": "108%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Charter",
-                "weight": 445,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Compacta"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Frutiger",
-                "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 480,
+                "weight": 600,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            }
+            },
+            "note": "Black sand under overcast is the volume's hardest contrast, so the display takes Frutiger 75 Black (a real LT cut; 880 was not) with an authored Bold/Roman ladder and the framing sits a full stop under it at 65 Bold; the Compacta Sub-title drops as a 1963 British display face with no Icelandic claim, Charter Regular/Bold carries the reading, and IBM Plex Mono's static SemiBold gives the data voice its weather-station edge Frutiger LT numbering pinned: 45 Light 300 - 55 Roman 400 - 65 Bold 700 - 75 Black 800 (95 Ultra Black 900 above)."
           }
         },
         {
@@ -867,40 +1064,61 @@
             "registers": {
               "anthemic": {
                 "font": "Frutiger",
-                "weight": 740,
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
                 "font": "Frutiger",
-                "weight": 760,
+                "weight": 400,
                 "leading": "114%",
-                "tracking": "0.5%"
+                "tracking": "0.5%",
+                "weights": [
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Charter",
-                "weight": 450,
+                "weight": 400,
                 "leading": "164%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Charlemagne"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Frutiger",
-                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 460,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "7%"
               }
-            }
+            },
+            "note": "Fixes a contextual-over-anthemic inversion (760 framing under a 740 display) as well as the fiction: Frutiger 65 Bold display, 55 Roman framing beneath it, authored ladders on both because Frutiger LT has no 500/600, Label no-core; the Charlemagne Sub-title drops outright — Carolingian display capitals on a Portuguese-colonial Malabar port is costume, not material culture — and the monsoon data voice takes IBM Plex Mono Text 450 Frutiger LT numbering pinned: 45 Light 300 - 55 Roman 400 - 65 Bold 700 - 75 Black 800 (95 Ultra Black 900 above)."
           }
         }
       ]
@@ -987,41 +1205,59 @@
             "base": "editorial",
             "registers": {
               "anthemic": {
-                "font": "P22 Secession",
-                "weight": 720,
+                "font": "Akkurat",
+                "weight": 700,
                 "leading": "106%",
-                "tracking": "10%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "contextual": {
                 "font": "Sabon",
-                "weight": 520,
+                "weight": 700,
                 "leading": "116%",
-                "tracking": "0.5%"
+                "tracking": "0.5%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Sabon",
-                "weight": 430,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Akkurat"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "FF Meta",
-                "weight": 440,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
-                "font": "Nitti",
-                "weight": 450,
+                "font": "PT Mono",
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "7%"
+                "tracking": "7%",
+                "weights": []
               }
-            }
+            },
+            "note": "P22 Secession leaves the volume — Vienna-1900 revival lettering on a Faroese harbour was decoration, and its 720 was fiction on a family with no such cut; the display becomes Lineto's Akkurat (Light 300 · Regular 400 · Bold 700) with an authored Regular/Light ladder, a North-Atlantic plain grotesque that matches painted-house pigment discipline, over Sabon (Roman 400 · Bold 700, Tschichold 1967) for framing and reading; FF Meta takes the no-core Label shape (Book/Medium/Bold, no Semi-bold), and PT Mono is the Google-hosted Regular-only release (ParaType retails a Bold) so the Kicker is a deliberate bare core."
           }
         },
         {
@@ -1096,41 +1332,55 @@
             "base": "luxury",
             "registers": {
               "anthemic": {
-                "font": "P22 Secession",
-                "weight": 740,
+                "font": "PT Sans",
+                "weight": 700,
                 "leading": "106%",
-                "tracking": "12%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
                 "font": "Sabon",
                 "weight": 700,
                 "leading": "118%",
-                "tracking": "0.5%"
+                "tracking": "0.5%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Sabon",
-                "weight": 440,
+                "weight": 400,
                 "leading": "156%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Kabel"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "FF Meta",
-                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
               "data": {
-                "font": "Nitti",
-                "weight": 460,
+                "font": "PT Mono",
+                "weight": 400,
                 "leading": "152%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": []
               }
-            }
+            },
+            "note": "Mongolia's working orthography is Cyrillic, so the display moves from P22 Secession to ParaType's PT Sans (Regular 400 · Bold 700 — a state-commissioned family whose Cyrillic is the point) with a Regular-only ladder, and the Kabel Sub-title drops as 1920s German geometry with no claim on a ger; Sabon frames and reads at its two real cuts, FF Meta takes the no-core Label shape, PT Mono 400 is a bare-core data voice."
           }
         },
         {
@@ -1205,41 +1455,55 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "P22 Secession",
-                "weight": 780,
+                "font": "Sabon",
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "14%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
                 "font": "Sabon",
-                "weight": 580,
+                "weight": 400,
                 "leading": "116%",
-                "tracking": "0.5%"
+                "tracking": "0.5%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Sabon",
-                "weight": 445,
+                "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Architype Renner"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "FF Meta",
-                "weight": 470,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
-                "font": "Nitti",
-                "weight": 470,
+                "font": "PT Mono",
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": []
               }
-            }
+            },
+            "note": "The palette refuses the tourist set, and P22 Secession at 780 was exactly that — the Klimt-poster Vienna, on a family with no such cut; an unrefurbished kaffeehaus has no display type at all, only a menu, so the display IS the text face at Sabon Bold (Roman 400 · Bold 700) with the framing and reading at Roman beneath it and the Architype Renner Sub-title dropped; FF Meta no-core Label, PT Mono 400 bare core."
           }
         },
         {
@@ -1313,41 +1577,50 @@
             "base": "editorial",
             "registers": {
               "anthemic": {
-                "font": "P22 Secession",
-                "weight": 730,
+                "font": "Highway Gothic",
+                "weight": 400,
                 "leading": "107%",
-                "tracking": "11%"
+                "tracking": "2%",
+                "weights": []
               },
               "contextual": {
                 "font": "Sabon",
-                "weight": 560,
+                "weight": 400,
                 "leading": "118%",
-                "tracking": "0.5%"
+                "tracking": "0.5%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Sabon",
-                "weight": 435,
+                "weight": 400,
                 "leading": "168%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Highway Gothic"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "FF Meta",
-                "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
               "data": {
-                "font": "Nitti",
-                "weight": 450,
+                "font": "PT Mono",
+                "weight": 400,
                 "leading": "152%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": []
               }
-            }
+            },
+            "note": "The territory is a road, so its display is the road's own alphabet: FHWA Highway Gothic (Series B–F are widths of ONE weight — a single cut, hence the bare core), promoted out of the Sub-title slot where it was decoration; it is optically REGULAR, so the ceiling binds optically and the Sabon framing sits at Roman 400, never bolder, with Bold reserved as its sibling — P22 Secession's 730 display is gone as both fiction and reflex; FF Meta no-core Label, PT Mono 400 bare core."
           }
         }
       ]
@@ -1434,40 +1707,53 @@
             "registers": {
               "anthemic": {
                 "font": "Clarendon",
-                "weight": 760,
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "contextual": {
                 "font": "Trade Gothic Bold Condensed No. 20",
-                "weight": 720,
+                "weight": 700,
                 "leading": "106%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": []
               },
               "functional": {
-                "font": "Miller",
-                "weight": 435,
+                "font": "Miller Text",
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Alternate Gothic"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Franklin Gothic",
-                "weight": 460,
+                "font": "ITC Franklin Gothic",
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 460,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            }
+            },
+            "note": "Victorian harbour job-printing is the outport's real print tradition, so Linotype Clarendon stays but on its actual cuts (Light 300 · Roman 400 · Bold 700 — 760 was fiction) with an authored Roman/Light ladder; Trade Gothic Bold Condensed No. 20 is a single cut sold under its own name, so it is the font at Bold with a deliberate bare core, Miller Text is Roman/Bold so the body takes a Bold-only ladder, the Alternate Gothic Sub-title drops, and ITC Franklin Gothic's real Book/Medium/Demi means the Label CAN carry a 400 core with genuine +100/+200 stops."
           }
         },
         {
@@ -1541,41 +1827,53 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
-                "weight": 880,
+                "font": "Mukta",
+                "weight": 800,
                 "leading": "100%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  }
+                ]
               },
               "contextual": {
-                "font": "Trade Gothic Bold Condensed No. 20",
-                "weight": 770,
+                "font": "Mukta",
+                "weight": 700,
                 "leading": "104%",
                 "tracking": "2.5%"
               },
               "functional": {
-                "font": "Miller",
-                "weight": 450,
+                "font": "Miller Text",
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Interstate Condensed"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Franklin Gothic",
-                "weight": 500,
+                "font": "Mukta",
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 480,
+                "weight": 600,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            }
+            },
+            "note": "A working koliwada does not speak in Victorian English slab: Linotype Clarendon and Interstate Condensed go, and the display/framing/Label move to Mukta (Ek Type, Mumbai — ExtraLight 200 · Light 300 · Regular 400 · Medium 500 · SemiBold 600 · Bold 700 · ExtraBold 800, drawn with its Devanagari companion), with an authored Bold/SemiBold ladder on the display because Mukta tops out at 800 and the derived 900 would be fiction; Miller Text Roman keeps the reading with a Bold-only sibling, and IBM Plex Mono's static SemiBold gives the dawn-count data voice its weight."
           }
         },
         {
@@ -1651,40 +1949,53 @@
             "registers": {
               "anthemic": {
                 "font": "Clarendon",
-                "weight": 800,
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "2.5%"
+                "tracking": "2.5%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "contextual": {
                 "font": "Trade Gothic Bold Condensed No. 20",
-                "weight": 740,
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "3%"
+                "tracking": "3%",
+                "weights": []
               },
               "functional": {
-                "font": "Miller",
-                "weight": 440,
+                "font": "Miller Text",
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "DIN Condensed"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Franklin Gothic",
-                "weight": 480,
+                "font": "ITC Franklin Gothic",
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 500,
+                "weight": 600,
                 "leading": "148%",
                 "tracking": "6%"
               }
-            }
+            },
+            "note": "The Channel egyptienne is the shared Anglo-Breton harbour-notice tradition, so Linotype Clarendon holds at its real Bold with an authored Roman/Light ladder (800 was fiction); Trade Gothic Bold Condensed No. 20 stays a single-cut bare core, the DIN Condensed Sub-title drops as German industrial standardisation imported onto a granite quay, Miller Roman/Bold reads the tide tables, Franklin Gothic Book anchors a Label whose Medium/Demi stops are real, and Plex Mono SemiBold carries the tide data."
           }
         },
         {
@@ -1757,31 +2068,51 @@
             "base": "editorial",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
-                "weight": 740,
+                "font": "Zen Kaku Gothic New",
+                "weight": 700,
                 "leading": "102%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
-                "font": "Trade Gothic Bold Condensed No. 20",
-                "weight": 700,
+                "font": "Zen Kaku Gothic New",
+                "weight": 500,
                 "leading": "106%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
-                "font": "Miller",
-                "weight": 445,
+                "font": "Miller Text",
+                "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Folio"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Franklin Gothic",
-                "weight": 450,
+                "font": "Zen Kaku Gothic New",
                 "leading": "152%",
                 "tracking": "0.5%"
               },
@@ -1791,7 +2122,8 @@
                 "leading": "150%",
                 "tracking": "5%"
               }
-            }
+            },
+            "note": "A fisheries-cooperative shore is lettered in Japanese gothic, not English slab: Linotype Clarendon and the Folio Sub-title go and Zen Kaku Gothic New (Yoshimichi Ohira — Light 300 · Regular 400 · Medium 500 · Bold 700 · Black 900) takes display, framing and Label, with authored ladders because its grid has no 600 or 800 and a no-core Label for the same reason; Miller Roman keeps the reading, IBM Plex Mono Text 450 the harvest data."
           }
         }
       ]
@@ -1878,30 +2210,30 @@
             "registers": {
               "anthemic": {
                 "font": "Futura",
-                "weight": 640,
+                "weight": 600,
                 "leading": "104%",
                 "tracking": "4.5%"
               },
               "contextual": {
                 "font": "Futura",
-                "weight": 560,
+                "weight": 500,
                 "leading": "114%",
                 "tracking": "2%"
               },
               "functional": {
                 "font": "Iowan Old Style",
-                "weight": 440,
+                "weight": 400,
                 "leading": "170%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bank Gothic"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Helvetica",
-                "weight": 450,
                 "leading": "154%",
                 "tracking": "0.5%"
               },
@@ -1911,7 +2243,8 @@
                 "leading": "152%",
                 "tracking": "7%"
               }
-            }
+            },
+            "note": "Futura stays as the volume's alpine-club-and-refuge-publication spine, now on real Neufville/ParaType cuts (Light 300 · Book 400 · Medium 500 · Demi 600 · Bold 700 · ExtraBold 800), so a smoke-and-snow teahouse takes Demi over Medium — both with fully real derived ladders — the Bank Gothic Sub-title drops as expedition-badge costume, Helvetica takes the no-core Label shape (it has no Semi-bold), Iowan Old Style Roman reads with its real Bold, and JetBrains Mono's 100–800 axis makes 450 a genuine instance."
           }
         },
         {
@@ -1986,40 +2319,41 @@
             "registers": {
               "anthemic": {
                 "font": "Futura",
-                "weight": 800,
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "6%"
+                "tracking": "4%"
               },
               "contextual": {
                 "font": "Futura",
-                "weight": 700,
+                "weight": 600,
                 "leading": "110%",
                 "tracking": "2%"
               },
               "functional": {
                 "font": "Iowan Old Style",
-                "weight": 445,
+                "weight": 400,
                 "leading": "158%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Univers Extended"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Helvetica",
-                "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "JetBrains Mono",
-                "weight": 480,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            }
+            },
+            "note": "Cuzco is the volume's loudest, so Futura Bold over Demi (real cuts; the old 800/700 pair was one stop of invention away) with derived ladders that all land on genuine faces, and the Univers Extended Sub-title drops — stretched-out caps are the souvenir-poncho register this palette refuses; Iowan Old Style Roman/Bold carries the colonial-press reading, Helvetica takes the no-core Label, JetBrains Mono 500 sits inside its variable axis."
           }
         },
         {
@@ -2094,30 +2428,30 @@
             "registers": {
               "anthemic": {
                 "font": "Futura",
-                "weight": 720,
+                "weight": 700,
                 "leading": "103%",
-                "tracking": "5%"
+                "tracking": "3.5%"
               },
               "contextual": {
                 "font": "Futura",
-                "weight": 620,
+                "weight": 500,
                 "leading": "114%",
                 "tracking": "2%"
               },
               "functional": {
                 "font": "Iowan Old Style",
-                "weight": 435,
+                "weight": 400,
                 "leading": "158%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Eurostile"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Helvetica",
-                "weight": 440,
                 "leading": "153%",
                 "tracking": "0.5%"
               },
@@ -2127,7 +2461,8 @@
                 "leading": "152%",
                 "tracking": "6%"
               }
-            }
+            },
+            "note": "The one palette where Futura is native — CAI refuge and Italian razionalismo print — held at real Bold and Medium instead of 720/620, ladders all genuine; the Eurostile Sub-title drops (this is a wooden rifugio, not a control panel), Iowan Old Style Roman reads with its real Bold sibling, Helvetica gives the no-core Label, JetBrains Mono 450 sits in-axis."
           }
         },
         {
@@ -2202,40 +2537,41 @@
             "registers": {
               "anthemic": {
                 "font": "Futura",
-                "weight": 980,
+                "weight": 600,
                 "leading": "100%",
-                "tracking": "5.5%"
+                "tracking": "4%"
               },
               "contextual": {
                 "font": "Futura",
-                "weight": 760,
+                "weight": 500,
                 "leading": "108%",
                 "tracking": "2%"
               },
               "functional": {
                 "font": "Iowan Old Style",
-                "weight": 450,
+                "weight": 400,
                 "leading": "156%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Copperplate Gothic"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Helvetica",
-                "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "JetBrains Mono",
-                "weight": 490,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            }
+            },
+            "note": "980 is not a weight on any Futura, and a monastery at dusk should not out-shout Cuzco's plaza anyway: the display drops to the real Demi with Medium framing under it (both with genuine derived ladders), which is also how the type refuses the saffron-poster loudness the palette names; the Copperplate Gothic Sub-title drops, Helvetica takes the no-core Label, Iowan Old Style Roman/Bold reads, JetBrains Mono 500 is in-axis."
           }
         }
       ]
@@ -2321,41 +2657,43 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "Bello",
-                "weight": 780,
+                "font": "Archivo",
+                "weight": 800,
                 "leading": "96%",
                 "tracking": "0%"
               },
               "contextual": {
-                "font": "Knockout",
-                "weight": 800,
+                "font": "Archivo Narrow",
+                "weight": 700,
                 "leading": "100%",
                 "tracking": "1%"
               },
               "functional": {
                 "font": "Freight Text",
-                "weight": 435,
+                "weight": 400,
                 "leading": "156%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Compacta"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 460,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "9%"
+                "tracking": "9%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Bello goes from all four night cities — a casual brush script IS the wanderlust reflex, and its 780 was fiction on a single-weight face; the replacement is local rather than generic: Archivo and Archivo Narrow are Omnibus-Type's (Buenos Aires) variable 100–900 signage grotesques, so every stop is real and the sodium-lit empty street gets weight, not calligraphy — the fileteado stays a painted tradition, not a font. Freight Text Pro (Light/Book/Medium/Semibold/Bold/Black) reads at Book with real derived stops, the Compacta Sub-title drops, and Space Mono is a 400/700 duo so the Kicker sits at Regular with a Bold sibling."
           }
         },
         {
@@ -2429,27 +2767,22 @@
             "base": "editorial",
             "registers": {
               "anthemic": {
-                "font": "Bello",
-                "weight": 740,
+                "font": "Archivo",
+                "weight": 700,
                 "leading": "98%",
                 "tracking": "0%"
               },
               "contextual": {
-                "font": "Knockout",
-                "weight": 720,
+                "font": "Archivo Narrow",
+                "weight": 600,
                 "leading": "102%",
                 "tracking": "1%"
               },
               "functional": {
                 "font": "Freight Text",
-                "weight": 445,
+                "weight": 400,
                 "leading": "162%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Trade Gothic Condensed No. 18"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
@@ -2459,11 +2792,18 @@
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 450,
+                "weight": 400,
                 "leading": "152%",
-                "tracking": "6%"
+                "tracking": "6%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Bello and its 740 leave; Archivo/Archivo Narrow (variable 100–900) carry a midnight waterfront the way ferry and cart lettering actually do — plain, extended-Latin, Turkish-complete — with the Trade Gothic Condensed No. 18 Sub-title dropped as a second condensed voice nothing needed; Freight Text Book reads with real derived stops, Inter is variable so 440 is genuine, Space Mono holds its Regular/Bold duo."
           }
         },
         {
@@ -2537,41 +2877,43 @@
             "base": "product",
             "registers": {
               "anthemic": {
-                "font": "Bello",
-                "weight": 720,
+                "font": "Archivo Narrow",
+                "weight": 700,
                 "leading": "98%",
                 "tracking": "0%"
               },
               "contextual": {
-                "font": "Knockout",
-                "weight": 700,
+                "font": "Archivo",
+                "weight": 600,
                 "leading": "102%",
                 "tracking": "1%"
               },
               "functional": {
                 "font": "Freight Text",
-                "weight": 430,
+                "weight": 400,
                 "leading": "155%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Univers Condensed"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 450,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "5%"
+                "tracking": "5%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Bello goes; the Old Quarter's tube-house frontage is narrow, so this palette inverts the volume pair — Archivo Narrow displays over Archivo framing (Omnibus-Type variable 100–900, with the full Vietnamese diacritic set a Hanoi palette actually needs) — and the Univers Condensed Sub-title drops as a redundant third condensed; Freight Text Book reads, Inter 450 is in-axis, Space Mono keeps its 400/700 duo."
           }
         },
         {
@@ -2644,20 +2986,20 @@
             "base": "technical",
             "registers": {
               "anthemic": {
-                "font": "Bello",
-                "weight": 740,
+                "font": "Archivo",
+                "weight": 700,
                 "leading": "98%",
                 "tracking": "0%"
               },
               "contextual": {
-                "font": "Knockout",
-                "weight": 760,
+                "font": "Archivo Narrow",
+                "weight": 700,
                 "leading": "100%",
                 "tracking": "1%"
               },
               "functional": {
                 "font": "Freight Text",
-                "weight": 430,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%",
                 "voices": {
@@ -2668,17 +3010,24 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 480,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 500,
+                "weight": 400,
                 "leading": "148%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Bello leaves and Knockout goes with it — H&Co sells Knockout as named numbered styles, so 760 was unresolvable; Archivo/Archivo Narrow give the block-grey night view its plain variable grotesques, and Pragmatica is the one opt-in kept in the volume — ParaType's Cyrillic grotesque is the lettering layer of the very Soviet panel blocks that are this palette's dominant. Freight Text Book reads, Inter 450 in-axis, Space Mono Regular/Bold."
           }
         }
       ]
@@ -2764,27 +3113,42 @@
             "base": "luxury",
             "registers": {
               "anthemic": {
-                "font": "Giza",
-                "weight": 820,
+                "font": "Sentinel",
+                "weight": 700,
                 "leading": "96%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  }
+                ]
               },
               "contextual": {
                 "font": "Sentinel",
-                "weight": 640,
+                "weight": 600,
                 "leading": "112%",
                 "tracking": "0.5%"
               },
               "functional": {
                 "font": "Chaparral",
-                "weight": 445,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bookman Old Style"
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Source Sans 3",
@@ -2794,11 +3158,12 @@
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 460,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "7%"
               }
-            }
+            },
+            "note": "Giza leaves the volume: H&Co sells it as named numbered styles (Giza Nine Five and so on), so 820 named no face at all — Sentinel is the same 19th-c. market-broadside slab with a real weight range (Light 300 · Book 400 · Medium 500 · Semibold 600 · Bold 700 · Black 900), here Bold over Semibold with an authored ladder because Sentinel has no 800; the Bookman Sub-title drops, Chaparral Pro (Light/Regular/Semibold/Bold — no Medium) takes an authored body ladder, Source Sans 3 is variable so 450 is genuine, Plex Mono Medium counts the stalls."
           }
         },
         {
@@ -2873,41 +3238,67 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "Giza",
-                "weight": 890,
+                "font": "Sentinel",
+                "weight": 900,
                 "leading": "94%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  }
+                ]
               },
               "contextual": {
                 "font": "Sentinel",
                 "weight": 700,
                 "leading": "110%",
-                "tracking": "0.5%"
+                "tracking": "0.5%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  }
+                ]
               },
               "functional": {
                 "font": "Chaparral",
-                "weight": 445,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Alternate Gothic"
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 490,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 480,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            }
+            },
+            "note": "The market hall's own 1914 iron-and-glass broadside register survives the swap from Giza to Sentinel Black over Bold — real H&Co cuts where 890/700 were guesses — with authored ladders because Sentinel has no 800; the Alternate Gothic Sub-title drops, Chaparral takes its real Semibold/Bold body stops, Source Sans 3 450 is in-axis, and the Plex Mono data voice comes down from 480 to the real static Medium."
           }
         },
         {
@@ -2982,27 +3373,32 @@
             "base": "editorial",
             "registers": {
               "anthemic": {
-                "font": "Giza",
-                "weight": 780,
+                "font": "Sentinel",
+                "weight": 600,
                 "leading": "98%",
                 "tracking": "1.5%"
               },
               "contextual": {
                 "font": "Sentinel",
-                "weight": 600,
+                "weight": 500,
                 "leading": "114%",
                 "tracking": "0.5%"
               },
               "functional": {
                 "font": "Chaparral",
-                "weight": 435,
+                "weight": 400,
                 "leading": "166%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Neuzeit Grotesk"
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Source Sans 3",
@@ -3016,7 +3412,8 @@
                 "leading": "152%",
                 "tracking": "6%"
               }
-            }
+            },
+            "note": "Indigo with small bright threads is a quiet market, so the Giza fat-slab shout goes and Sentinel sits two ranks down at Semibold over Medium — real cuts whose derived ladders are all real — matching a refusal aimed at the souvenir-rainbow version of Hmong work; the Neuzeit Grotesk Sub-title drops, Chaparral keeps the authored Semibold/Bold body ladder, and the data voice takes IBM Plex Mono Text 450."
           }
         },
         {
@@ -3091,22 +3488,42 @@
             "base": "technical",
             "registers": {
               "anthemic": {
-                "font": "Giza",
-                "weight": 840,
+                "font": "Sentinel",
+                "weight": 700,
                 "leading": "96%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  }
+                ]
               },
               "contextual": {
                 "font": "Sentinel",
-                "weight": 660,
+                "weight": 600,
                 "leading": "112%",
                 "tracking": "0.5%"
               },
               "functional": {
                 "font": "Chaparral",
-                "weight": 440,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "voices": {
                   "Sub-title": {
                     "font": "Bell Gothic"
@@ -3115,7 +3532,7 @@
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 480,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
@@ -3125,7 +3542,8 @@
                 "leading": "148%",
                 "tracking": "8%"
               }
-            }
+            },
+            "note": "Giza's 840 goes for Sentinel Bold over Semibold (real cuts, authored ladder around the missing 800), and Bell Gothic is the volume's one kept opt-in — Chauncey Griffith drew it for cramped, badly-printed directory listings, which is exactly the problem a chipped back-of-house price card solves; Chaparral keeps its real Semibold/Bold body stops, Source Sans 3 450 is in-axis, and the data voice drops from 500 to Plex Mono's real static Medium."
           }
         }
       ]
@@ -3212,40 +3630,57 @@
             "registers": {
               "anthemic": {
                 "font": "FF DIN",
-                "weight": 800,
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "4%"
+                "tracking": "3%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "FF DIN",
-                "weight": 680,
+                "weight": 500,
                 "leading": "110%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "IBM Plex Sans",
-                "weight": 435,
+                "weight": 450,
                 "leading": "152%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Rail Alphabet"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "OCR-B",
-                "weight": 470,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": []
               }
-            }
+            },
+            "note": "The best-grounded volume only needed its arithmetic fixed: FF DIN Pro is Light/Regular/Medium/Bold/Black, so 800 and 680 become Bold and Medium with authored ladders around the missing 600/800; IBM Plex Sans's real Text 450 serves both body and Label (its 500/600 stops are real), OCR-B is Frutiger's single ISO 1073-2 cut so the ticket-and-timetable data voice is a bare core, and the Rail Alphabet Sub-title drops — Kinneir and Calvert drew it for British Rail, not for VR."
           }
         },
         {
@@ -3321,19 +3756,39 @@
             "registers": {
               "anthemic": {
                 "font": "FF DIN",
-                "weight": 780,
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "4%"
+                "tracking": "3%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "FF DIN",
-                "weight": 520,
+                "weight": 500,
                 "leading": "110%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "IBM Plex Sans",
-                "weight": 435,
+                "weight": 450,
                 "leading": "154%",
                 "tracking": "0%",
                 "voices": {
@@ -3344,17 +3799,19 @@
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "OCR-B",
-                "weight": 460,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "7%"
+                "tracking": "7%",
+                "weights": []
               }
-            }
+            },
+            "note": "FF DIN's real Bold and Medium replace 780/520, with authored ladders around the family's missing 600/800; Eurostile is kept deliberately as the rhyme the source line already names — the same builder's-plate square grotesque as Vol I's ferry, the register of bulkhead labels — while Plex Sans Text 450 carries body and Label and OCR-B's single cut keeps the boarding-card data voice at a bare core."
           }
         },
         {
@@ -3431,26 +3888,41 @@
             "registers": {
               "anthemic": {
                 "font": "FF DIN",
-                "weight": 780,
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "4.5%"
+                "tracking": "3.5%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "FF DIN",
-                "weight": 640,
+                "weight": 500,
                 "leading": "112%",
-                "tracking": "1.5%"
+                "tracking": "1.5%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "IBM Plex Sans",
-                "weight": 445,
+                "weight": 450,
                 "leading": "160%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Interstate"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "IBM Plex Sans",
@@ -3460,11 +3932,13 @@
               },
               "data": {
                 "font": "OCR-B",
-                "weight": 460,
+                "weight": 400,
                 "leading": "152%",
-                "tracking": "7%"
+                "tracking": "7%",
+                "weights": []
               }
-            }
+            },
+            "note": "Same fix, same reasoning: FF DIN Bold and Medium in place of 780/640 with authored ladders for the missing 600/800, Plex Sans Text 450 for the carriage-laminate reading and the Label, OCR-B bare core for the siding-by-siding data; the Interstate Sub-title drops — a US highway alphabet is the wrong continent's road on a transcontinental train."
           }
         },
         {
@@ -3541,40 +4015,57 @@
             "registers": {
               "anthemic": {
                 "font": "FF DIN",
-                "weight": 880,
+                "weight": 900,
                 "leading": "100%",
-                "tracking": "5%"
+                "tracking": "4%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "FF DIN",
-                "weight": 720,
+                "weight": 700,
                 "leading": "108%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "functional": {
                 "font": "IBM Plex Sans",
-                "weight": 440,
+                "weight": 450,
                 "leading": "152%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Suisse Int'l"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 490,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "OCR-B",
-                "weight": 490,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "9%"
+                "tracking": "9%",
+                "weights": []
               }
-            }
+            },
+            "note": "Engineering modernism at 320 km/h earns FF DIN Black over Bold — real cuts, authored ladders around the missing 800 — and the Suisse Int'l Sub-title drops because the actual requirement is multilingual: IBM Plex Sans ships a matching Arabic (and a real Text 450), so body and Label stay in one system that can set the station's Arabic and French wayfinding; OCR-B keeps the ticket data at its single real cut."
           }
         }
       ]
@@ -3661,41 +4152,58 @@
             "base": "luxury",
             "registers": {
               "anthemic": {
-                "font": "Trajan",
+                "font": "GFS Didot",
                 "weight": 700,
                 "leading": "106%",
-                "tracking": "8%"
+                "tracking": "3%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Adobe Jenson",
-                "weight": 620,
+                "font": "GFS Didot",
+                "weight": 400,
                 "leading": "120%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Adobe Garamond",
-                "weight": 440,
+                "weight": 400,
                 "leading": "166%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Herculanum"
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Gill Sans",
-                "weight": 450,
+                "font": "GFS Neohellenic",
                 "leading": "154%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 460,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "8%"
               }
-            }
+            },
+            "note": "Trajan is Roman imperial monument caps — the Latin, Western, movie-poster reflex — on a palette whose refuses line explicitly rejects the Catholic reading of an Orthodox rite, so it goes from all four palettes in this volume; here it is replaced by the Greek Font Society's GFS Didot (Regular/Bold), the Didot-descended type Orthodox liturgical books are actually printed in, with GFS Neohellenic taking a no-core Label (it is a Regular/Bold pair, no Semi-bold); the Herculanum Sub-title drops, Adobe Garamond Pro reads at Regular with its real Semibold/Bold stops (no 500 exists), and Plex Mono Text 450 keeps the vigil data."
           }
         },
         {
@@ -3768,31 +4276,35 @@
             "base": "editorial",
             "registers": {
               "anthemic": {
-                "font": "Trajan",
-                "weight": 660,
+                "font": "Zen Old Mincho",
+                "weight": 700,
                 "leading": "108%",
-                "tracking": "6%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
-                "font": "Adobe Jenson",
+                "font": "Zen Old Mincho",
                 "weight": 500,
                 "leading": "124%",
                 "tracking": "0%"
               },
               "functional": {
-                "font": "Adobe Garamond",
-                "weight": 420,
+                "font": "Zen Old Mincho",
+                "weight": 400,
                 "leading": "154%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Copperplate Gothic"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
-                "font": "Gill Sans",
-                "weight": 440,
+                "font": "Zen Kaku Gothic New",
                 "leading": "152%",
                 "tracking": "0.5%"
               },
@@ -3802,7 +4314,8 @@
                 "leading": "152%",
                 "tracking": "7%"
               }
-            }
+            },
+            "note": "Trajan and Copperplate Gothic both go — Roman imperial and engraved-certificate capitals on a Shinto shrine are poster orientalism, and this palette's refusal is precisely about naming the right chemistry — replaced by Zen Old Mincho (Regular 400 · Medium 500 · SemiBold 600 · Bold 700 · Black 900), the Mincho tradition of the shrine's own printed notice boards, with an authored ladder because 800 is not a cut; Zen Kaku Gothic New takes a no-core Label (no 600 in its grid) and Plex Mono Text 450 the pre-dawn data."
           }
         },
         {
@@ -3877,31 +4390,44 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "Trajan",
-                "weight": 900,
+                "font": "Amiri",
+                "weight": 700,
                 "leading": "104%",
-                "tracking": "10%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Adobe Jenson",
-                "weight": 660,
+                "font": "Amiri",
+                "weight": 400,
                 "leading": "114%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
-                "font": "Adobe Garamond",
-                "weight": 450,
+                "font": "Amiri",
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Cooper Black"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Gill Sans",
-                "weight": 500,
+                "font": "IBM Plex Sans Arabic",
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
@@ -3911,7 +4437,8 @@
                 "leading": "150%",
                 "tracking": "10%"
               }
-            }
+            },
+            "note": "Trajan at 900 and a Cooper Black Sub-title were an outsider's dargah; the devotional print of a Sufi shrine is Naskh, so display, framing and reading move to Amiri (Khaled Hosny's revival of the Bulaq/Amiri Press type — Regular 400 and Bold 700 only, hence the single-sibling ladders), with IBM Plex Sans Arabic's real Text 450 on the Label and Plex Mono's static Medium on the data voice — loud in rhythm, never in costume."
           }
         },
         {
@@ -3986,41 +4513,67 @@
             "base": "luxury",
             "registers": {
               "anthemic": {
-                "font": "Trajan",
-                "weight": 880,
+                "font": "Clarendon",
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "7.5%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "contextual": {
-                "font": "Adobe Jenson",
-                "weight": 720,
+                "font": "Clarendon",
+                "weight": 400,
                 "leading": "118%",
-                "tracking": "0%"
+                "tracking": "0.5%",
+                "weights": [
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Adobe Garamond",
-                "weight": 445,
+                "weight": 400,
                 "leading": "172%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "American Typewriter"
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Gill Sans",
-                "weight": 460,
+                "font": "Source Sans 3",
+                "weight": 450,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 480,
+                "weight": 500,
                 "leading": "155%",
                 "tracking": "9%"
               }
-            }
+            },
+            "note": "Trajan's 880 leaves; the night's real printing history is Posada's calavera broadsides for Vanegas Arroyo, set in Linotype Clarendon-family wood-type Egyptians, so the display is Clarendon Bold with an authored Roman/Light ladder over Clarendon Roman framing (Light 300 · Roman 400 · Bold 700 — the derived 500/600 are fiction, hence both ladders), and Adobe Garamond Pro reads as the colonial-press book face; the American Typewriter Sub-title drops, Source Sans 3 450 is in-axis, Plex Mono Medium is real — magenta and marigold, never corner-store orange."
           }
         }
       ]
@@ -4108,41 +4661,68 @@
             "base": "technical",
             "registers": {
               "anthemic": {
-                "font": "Rockwell",
-                "weight": 780,
+                "font": "Serifa",
+                "weight": 700,
                 "leading": "102%",
-                "tracking": "3%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Interstate",
-                "weight": 660,
+                "font": "Univers",
+                "weight": 700,
                 "leading": "110%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Serifa",
-                "weight": 435,
+                "weight": 400,
                 "leading": "162%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bank Gothic"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Univers",
-                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 460,
+                "weight": 400,
                 "leading": "152%",
-                "tracking": "7%"
+                "tracking": "7%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Rockwell's 780 was fiction (Rockwell is Light/Regular/Bold/Extra Bold) and the Rockwell-plus-Interstate pairing was the expedition-poster reflex; the volume moves to Frutiger's own documented companions — Serifa (45 Light 300 · 55 Roman 400 · 65 Bold 700 · 75 Black 800) for display and reading, Univers (same 45/55/65/75 structure) for framing — the survey-report pairing a dawn dune-field deserves, with authored ladders throughout and a no-core Label because neither family has a Semi-bold; the Bank Gothic Sub-title drops and Courier Prime sits at its only Regular with its only Bold as sibling."
           }
         },
         {
@@ -4217,41 +4797,68 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "Rockwell",
-                "weight": 960,
+                "font": "Serifa",
+                "weight": 800,
                 "leading": "100%",
-                "tracking": "3%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Interstate",
-                "weight": 760,
+                "font": "Univers",
+                "weight": 700,
                 "leading": "108%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Serifa",
-                "weight": 445,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Clarendon"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Univers",
-                "weight": 490,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 480,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "9%"
+                "tracking": "9%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "960 exists on no Rockwell; cathedral-scale sandstone instead takes Serifa 75 Black over Univers 65 Bold — real Frutiger cuts, authored ladders, no-core Label since neither family carries a Semi-bold — and the Clarendon Sub-title drops so the volume stops quoting two slabs at once; Serifa Roman reads, Courier Prime's 400/700 duo keeps the field-note data."
           }
         },
         {
@@ -4326,41 +4933,68 @@
             "base": "technical",
             "registers": {
               "anthemic": {
-                "font": "Rockwell",
-                "weight": 640,
+                "font": "Serifa",
+                "weight": 400,
                 "leading": "104%",
-                "tracking": "3.5%"
+                "tracking": "2.5%",
+                "weights": [
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "contextual": {
-                "font": "Interstate",
-                "weight": 500,
+                "font": "Univers",
+                "weight": 400,
                 "leading": "112%",
-                "tracking": "1.2%"
+                "tracking": "1.2%",
+                "weights": [
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Serifa",
-                "weight": 430,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Eurostile"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Univers",
-                "weight": 450,
                 "leading": "154%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 450,
+                "weight": 400,
                 "leading": "152%",
-                "tracking": "6%"
+                "tracking": "6%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "The un-safari coast is the one palette in the volume that should not shout at all, so the display is Serifa 55 Roman — a deliberate regular-weight anthemic, the refusal of safari-poster orange made typographic — with Univers 55 Roman framing at the same optical rank and authored ladders because neither Frutiger family has a 500 or 600; the Eurostile Sub-title drops, Label takes the no-core shape, Courier Prime Regular/Bold logs the wrecks."
           }
         },
         {
@@ -4435,41 +5069,68 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "Rockwell",
+                "font": "Serifa",
                 "weight": 800,
                 "leading": "102%",
-                "tracking": "3%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Interstate",
-                "weight": 600,
+                "font": "Univers",
+                "weight": 700,
                 "leading": "110%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Serifa",
-                "weight": 440,
+                "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Highway Gothic"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Univers",
-                "weight": 470,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 480,
+                "weight": 400,
                 "leading": "152%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Rockwell 800 and the Highway Gothic Sub-title both go — a causeway is not a highway sign, and the lake's story is hypersaline biology, not road-trip Americana; Serifa 75 Black over Univers 65 Bold gives the same limnological-survey register on real Frutiger cuts, with authored ladders, a no-core Label (no Semi-bold in either family) and Courier Prime's 400/700 duo for the brine data."
           }
         }
       ]
@@ -4556,30 +5217,46 @@
             "registers": {
               "anthemic": {
                 "font": "National Park",
-                "weight": 740,
+                "weight": 700,
                 "leading": "106%",
-                "tracking": "3%"
+                "tracking": "3%",
+                "weights": []
               },
               "contextual": {
                 "font": "FF Tisa",
-                "weight": 620,
+                "weight": 700,
                 "leading": "116%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  }
+                ]
               },
               "functional": {
                 "font": "FF Tisa",
-                "weight": 435,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Rockwell"
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Fira Sans",
-                "weight": 440,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
@@ -4589,7 +5266,8 @@
                 "leading": "152%",
                 "tracking": "6%"
               }
-            }
+            },
+            "note": "National Park stays only where it is native — it is drawn from the routed lettering on US Forest Service and Park signs, which is literally the signage in the Tongass — and its ladder is opted out so the display stays the one routed Bold rather than deriving cuts the release does not guarantee; FF Tisa pinned to the classic FontFont 5-weight release (Light/Regular/Medium/Bold/Black - no 600/800)."
           }
         },
         {
@@ -4663,41 +5341,63 @@
             "base": "product",
             "registers": {
               "anthemic": {
-                "font": "National Park",
-                "weight": 760,
+                "font": "FF Tisa",
+                "weight": 900,
                 "leading": "105%",
-                "tracking": "3%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "contextual": {
                 "font": "FF Tisa",
-                "weight": 640,
+                "weight": 500,
                 "leading": "115%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "FF Tisa",
-                "weight": 435,
+                "weight": 400,
                 "leading": "156%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "DIN Condensed"
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Fira Sans",
-                "weight": 460,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Fira Code",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            }
+            },
+            "note": "A German upland forest has no claim on a US park-sign alphabet, so National Park goes and FF Tisa carries all three text registers at its real cuts (Black display, Medium framing, Regular reading — authored ladders because Tisa has no 600); the DIN Condensed Sub-title drops as a fourth voice nothing asked for, Fira Sans Regular takes a Label with real Medium/SemiBold stops, Fira Code 450 is in-axis. FF Tisa pinned to the classic FontFont 5-weight release (Light/Regular/Medium/Bold/Black - no 600/800)."
           }
         },
         {
@@ -4772,31 +5472,56 @@
             "base": "luxury",
             "registers": {
               "anthemic": {
-                "font": "National Park",
-                "weight": 730,
+                "font": "FF Tisa",
+                "weight": 700,
                 "leading": "106%",
-                "tracking": "3%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  }
+                ]
               },
               "contextual": {
                 "font": "FF Tisa",
-                "weight": 600,
+                "weight": 500,
                 "leading": "116%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "FF Tisa",
-                "weight": 435,
+                "weight": 400,
                 "leading": "166%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Windsor"
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Fira Sans",
-                "weight": 440,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
@@ -4806,7 +5531,8 @@
                 "leading": "152%",
                 "tracking": "6%"
               }
-            }
+            },
+            "note": "National Park leaves (a Louisiana slough is not a national park sign) and the Windsor Sub-title goes with it — Edwardian display is the Bourbon-Street register the refuses line indicts; FF Tisa's real Bold/Medium/Regular carry the whole palette with authored ladders around the missing 600, Fira Sans Regular takes the Label at real stops, Fira Code 450 sits in its 300–700 axis. FF Tisa pinned to the classic FontFont 5-weight release (Light/Regular/Medium/Bold/Black - no 600/800)."
           }
         },
         {
@@ -4880,22 +5606,52 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "National Park",
-                "weight": 820,
+                "font": "FF Tisa",
+                "weight": 900,
                 "leading": "105%",
-                "tracking": "3.5%"
+                "tracking": "2.5%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "FF Tisa",
                 "weight": 700,
                 "leading": "114%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  }
+                ]
               },
               "functional": {
                 "font": "FF Tisa",
-                "weight": 445,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "voices": {
                   "Sub-title": {
                     "font": "Pragmatica"
@@ -4904,17 +5660,18 @@
               },
               "actionable": {
                 "font": "Fira Sans",
-                "weight": 480,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Fira Code",
-                "weight": 470,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "7%"
               }
-            }
+            },
+            "note": "National Park goes; FF Tisa (classic 5-weight) carries the volume's loudest palette at real Black over Bold (its ladder is authored on the real Bold/Medium (800 is not a cut of the pinned release) on the display) and reads at Regular, and Pragmatica stays as the earned opt-in — the Russian Far East is set in ParaType Cyrillic, and FF Tisa (classic 5-weight)'s own Cyrillic keeps the system coherent; Fira Sans Regular Label, Fira Code 500 in-axis. FF Tisa pinned to the classic FontFont 5-weight release (Light/Regular/Medium/Bold/Black - no 600/800)."
           }
         }
       ]
@@ -5001,31 +5758,36 @@
             "base": "editorial",
             "registers": {
               "anthemic": {
-                "font": "Neutraface",
-                "weight": 720,
+                "font": "Noto Serif SC",
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "8%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
-                "font": "Neutraface",
-                "weight": 620,
+                "font": "Noto Serif SC",
+                "weight": 500,
                 "leading": "110%",
-                "tracking": "4%"
+                "tracking": "1%"
               },
               "functional": {
-                "font": "Lora",
-                "weight": 435,
+                "font": "Noto Serif SC",
+                "weight": 400,
                 "leading": "166%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Cheltenham"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 440,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
@@ -5035,7 +5797,8 @@
                 "leading": "152%",
                 "tracking": "6%"
               }
-            }
+            },
+            "note": "Neutraface is Richard Neutra's Los Angeles architecture lettering — nothing to do with a Jiangsu kiln yard, and 720 is not a Neutraface cut anyway; the plum-rain palette moves to Noto Serif SC (ExtraLight 200 … Black 900), the Song/Ming printing tradition of the region, at Bold over Medium over Regular with one authored ladder for the missing 800, and the Cheltenham Sub-title drops; Inter is variable and Plex Mono's Text 450 is real, so Label and data sit on genuine instances."
           }
         },
         {
@@ -5110,27 +5873,34 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "Neutraface",
-                "weight": 760,
+                "font": "PT Sans",
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "10%"
+                "tracking": "3%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Neutraface",
-                "weight": 640,
+                "font": "PT Sans",
+                "weight": 400,
                 "leading": "110%",
-                "tracking": "5%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Lora",
                 "weight": 435,
                 "leading": "160%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Akkurat"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
@@ -5144,7 +5914,8 @@
                 "leading": "150%",
                 "tracking": "7%"
               }
-            }
+            },
+            "note": "Neutraface's 760 leaves; the sanatorium-era boardwalk Jūrmala still has — kvass cart, dacha shutters, bilingual pier signage — is set in ParaType's PT Sans (Regular 400 · Bold 700, hence single-sibling ladders), and the Akkurat Sub-title drops as Swiss neutrality standing in for a Baltic winter; Lora is variable 400–700 so 435 is a genuine instance, Inter 450 and Plex Mono Text 450 hold Label and data."
           }
         },
         {
@@ -5218,41 +5989,56 @@
             "base": "technical",
             "registers": {
               "anthemic": {
-                "font": "Neutraface",
-                "weight": 740,
+                "font": "Zen Kaku Gothic New",
+                "weight": 900,
                 "leading": "100%",
-                "tracking": "7%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
-                "font": "Neutraface",
-                "weight": 620,
+                "font": "Zen Kaku Gothic New",
+                "weight": 700,
                 "leading": "110%",
-                "tracking": "4%"
+                "tracking": "1.5%",
+                "weights": [
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "functional": {
                 "font": "Lora",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Univers Condensed"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
-                "font": "Inter",
-                "weight": 470,
+                "font": "Zen Kaku Gothic New",
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 490,
+                "weight": 500,
                 "leading": "148%",
                 "tracking": "8%"
               }
-            }
+            },
+            "note": "Neutraface goes; an active typhoon is announced in Japanese gothic — Zen Kaku Gothic New (Light 300 · Regular 400 · Medium 500 · Bold 700 · Black 900) takes the warning at Black over Bold with authored ladders for the missing 600/800 and a no-core Label for the same reason, and the Univers Condensed Sub-title drops; Lora 430 is inside its 400–700 axis and the data voice comes off 490 onto IBM Plex Mono's real static Medium."
           }
         },
         {
@@ -5327,27 +6113,38 @@
             "base": "luxury",
             "registers": {
               "anthemic": {
-                "font": "Neutraface",
-                "weight": 720,
+                "font": "Neutraface 2 Display",
+                "weight": 500,
                 "leading": "100%",
-                "tracking": "9%"
+                "tracking": "7%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "contextual": {
-                "font": "Neutraface",
-                "weight": 600,
+                "font": "Neutraface 2 Display",
+                "weight": 300,
                 "leading": "112%",
-                "tracking": "4.5%"
+                "tracking": "4%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "functional": {
                 "font": "Lora",
                 "weight": 435,
                 "leading": "154%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Rockwell"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
@@ -5361,7 +6158,8 @@
                 "leading": "152%",
                 "tracking": "6%"
               }
-            }
+            },
+            "note": "Corrected: Neutraface 2 DISPLAY ships Thin/Light/Medium/Bold/Titling - Book and Demi are Text cuts; the fog-quiet system sits at Medium over Light, both real Display cuts."
           }
         }
       ]
