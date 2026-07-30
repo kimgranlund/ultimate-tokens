@@ -87,10 +87,20 @@
             "base": "editorial",
             "registers": {
               "anthemic": {
-                "font": "Cinzel",
-                "weight": 780,
-                "leading": "105%",
-                "tracking": "7%"
+                "font": "Archivo Narrow",
+                "weight": 700,
+                "leading": "102%",
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Archivo",
@@ -102,12 +112,7 @@
                 "font": "Source Serif 4",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Copperplate"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
@@ -117,11 +122,12 @@
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 520,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "13%"
               }
-            }
+            },
+            "note": "Kōyō above the treeline is documented in club journals, hut boards and 1:25,000 survey sheets, not on a monument — Cinzel's Trajan caps were the brochure-sublime reflex this palette refuses, so the display is Archivo Narrow Bold (axis 400–700, so the derived 800 sibling is fiction and the ladder is authored SemiBold/Medium) over its own Archivo; the engraved Copperplate Sub-title is dropped for the quiet default, and IBM Plex Mono is static (100–700 plus Text 450) so 520 becomes the real Medium. Plex Text 450 is real in IBM's own release; the Google Fonts static subset omits it and falls back to Regular 400 - harmless, still labels Regular."
           }
         },
         {
@@ -194,14 +200,24 @@
             "base": "technical",
             "registers": {
               "anthemic": {
-                "font": "Cinzel",
-                "weight": 720,
-                "leading": "102%",
-                "tracking": "5%"
+                "font": "Archivo Narrow",
+                "weight": 700,
+                "leading": "100%",
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Archivo",
-                "weight": 640,
+                "weight": 600,
                 "leading": "112%",
                 "tracking": "0%"
               },
@@ -209,26 +225,22 @@
                 "font": "Source Serif 4",
                 "weight": 410,
                 "leading": "153%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Copperplate"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 500,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 560,
+                "weight": 600,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            }
+            },
+            "note": "A palette that refuses the postcard lake should not carry monument caps: Archivo Narrow Bold (400–700 axis, authored SemiBold/Medium ladder) is the register of park trail signage and the topographic sheet, Copperplate's certificate Sub-title is dropped, IBM Plex Mono's static grid puts the survey-note data voice on the real SemiBold, and the Inter core drops to 450 so the style labelled regular is the Regular face."
           }
         },
         {
@@ -301,14 +313,14 @@
             "base": "luxury",
             "registers": {
               "anthemic": {
-                "font": "Cinzel",
-                "weight": 840,
-                "leading": "108%",
-                "tracking": "9%"
+                "font": "Archivo Narrow",
+                "weight": 600,
+                "leading": "104%",
+                "tracking": "0.5%"
               },
               "contextual": {
                 "font": "Archivo",
-                "weight": 560,
+                "weight": 500,
                 "leading": "116%",
                 "tracking": "0.5%"
               },
@@ -316,12 +328,7 @@
                 "font": "Source Serif 4",
                 "weight": 450,
                 "leading": "162%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Copperplate"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
@@ -331,11 +338,12 @@
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 510,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "14%"
               }
-            }
+            },
+            "note": "Tussock flats at 18:00 are the quietest palette in the volume, so the display sits a stop down at Archivo Narrow SemiBold (its derived 700/500/400 siblings are all real on the 400–700 axis, no authored ladder needed); Cinzel and Copperplate both go as the heroic-monument reflex, and the data voice takes IBM Plex Mono's real static Text 450."
           }
         },
         {
@@ -408,14 +416,24 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "Cinzel",
-                "weight": 900,
+                "font": "Archivo Narrow",
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "8%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Archivo",
-                "weight": 720,
+                "weight": 600,
                 "leading": "112%",
                 "tracking": "0%"
               },
@@ -423,26 +441,22 @@
                 "font": "Source Serif 4",
                 "weight": 420,
                 "leading": "155%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Copperplate"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 480,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 560,
+                "weight": 600,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            }
+            },
+            "note": "Flat silver Patagonian light gets park-sign narrow gothic, not imperial caps: Archivo Narrow Bold with an authored SemiBold/Medium ladder (no 800 on the axis), Archivo dropped to 600 so the framing no longer out-weighs the display it sits under, the Copperplate Sub-title dropped, and IBM Plex Mono's static SemiBold for the data voice."
           }
         }
       ]
@@ -531,7 +545,17 @@
                 "font": "Oswald",
                 "weight": 700,
                 "leading": "102%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Familjen Grotesk",
@@ -552,7 +576,7 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 500,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1%"
               },
@@ -562,7 +586,8 @@
                 "leading": "150%",
                 "tracking": "8%"
               }
-            }
+            },
+            "note": "The Nordic forestry-survey set holds — Oswald's axis stops at 700, so the derived 800 sibling was fiction and the ladder is authored (SemiBold/Medium); the Inter core drops to 450 because the Label voice clamps there anyway, so a declared 500 shipped a Medium the kit never labels as one."
           }
         },
         {
@@ -638,7 +663,17 @@
                 "font": "Oswald",
                 "weight": 700,
                 "leading": "104%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Familjen Grotesk",
@@ -669,7 +704,8 @@
                 "leading": "150%",
                 "tracking": "12%"
               }
-            }
+            },
+            "note": "Oswald tops out at 700 on its variable axis, so the auto ladder's 800 stop was unreachable — authored SemiBold/Medium instead — and the Inter control core states the 450 it renders; everything else in the two-week amber window stays as designed."
           }
         },
         {
@@ -745,11 +781,21 @@
                 "font": "Oswald",
                 "weight": 700,
                 "leading": "103%",
-                "tracking": "3%"
+                "tracking": "3%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Familjen Grotesk",
-                "weight": 700,
+                "weight": 600,
                 "leading": "112%",
                 "tracking": "0%"
               },
@@ -766,7 +812,7 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 470,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1%"
               },
@@ -776,7 +822,8 @@
                 "leading": "150%",
                 "tracking": "11%"
               }
-            }
+            },
+            "note": "Oswald's 800 sibling is off the axis (200–700), so the ladder is authored; Familjen Grotesk drops from 700 to 600 so the framing sits under the display instead of matching it stop for stop on a sparse, rust-toned shield, and the Inter core states its rendered 450."
           }
         },
         {
@@ -852,7 +899,17 @@
                 "font": "Oswald",
                 "weight": 700,
                 "leading": "103%",
-                "tracking": "1.5%"
+                "tracking": "1.5%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Familjen Grotesk",
@@ -873,7 +930,7 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 460,
+                "weight": 450,
                 "leading": "153%",
                 "tracking": "1%"
               },
@@ -883,7 +940,8 @@
                 "leading": "150%",
                 "tracking": "12%"
               }
-            }
+            },
+            "note": "Same axis-ceiling fix as the volume's other palettes (Oswald 200–700, authored SemiBold/Medium ladder), and the Inter core comes to 450 so the treeline kit's controls declare the Regular they actually render."
           }
         }
       ]
@@ -1100,7 +1158,7 @@
               },
               "actionable": {
                 "font": "Mulish",
-                "weight": 470,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
@@ -1110,7 +1168,8 @@
                 "leading": "150%",
                 "tracking": "9%"
               }
-            }
+            },
+            "note": "Only the actionable core moves: Mulish 470 declared a Medium the Label clamp eats at 450, so it now states the Regular it renders — the rest of the salmon-coast set (Fraunces, the agency-sans Sub-title in Public Sans, Spline Sans Mono) is all real cuts on real axes and stands."
           }
         },
         {
@@ -1314,7 +1373,7 @@
               },
               "actionable": {
                 "font": "Mulish",
-                "weight": 480,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
@@ -1324,7 +1383,8 @@
                 "leading": "150%",
                 "tracking": "9%"
               }
-            }
+            },
+            "note": "Mulish's 480 actionable core clamps to 450 at generation, so it is declared at 450 and the Regular/Bolder/Boldest ladder reads true; the ancient-forest set is otherwise unchanged — every Fraunces, Crimson Pro and Spline Sans Mono stop is inside its family's real axis."
           }
         }
       ]
@@ -1422,7 +1482,7 @@
               },
               "functional": {
                 "font": "Spectral",
-                "weight": 440,
+                "weight": 400,
                 "leading": "158%",
                 "tracking": "0%",
                 "voices": {
@@ -1433,17 +1493,24 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 460,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "1%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 700,
+                "weight": 400,
                 "leading": "155%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "The modern-face display is earned — Nordic polar-expedition volumes were set in didones — but the text was not: Spectral is static (200–800, no 440), so the reading core is its real Regular, and Courier Prime is a 400/700 duo, so the field-notebook data voice sits on Regular with Bold as its one authored sibling instead of a 700 core that would crush Tiny-mono."
           }
         },
         {
@@ -1530,7 +1597,7 @@
               },
               "functional": {
                 "font": "Spectral",
-                "weight": 410,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
                 "voices": {
@@ -1541,17 +1608,24 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 500,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 700,
+                "weight": 400,
                 "leading": "155%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Spectral ships static 200/300/400/500/600/700/800 — 410 was fiction, so the polar-desert prose takes the real Regular; Courier Prime's duo puts the data voice on Regular with an authored Bold, and Inter's core drops to the 450 the Label actually renders."
           }
         },
         {
@@ -1638,7 +1712,7 @@
               },
               "functional": {
                 "font": "Spectral",
-                "weight": 430,
+                "weight": 400,
                 "leading": "162%",
                 "tracking": "0%",
                 "voices": {
@@ -1649,7 +1723,7 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 460,
+                "weight": 450,
                 "leading": "153%",
                 "tracking": "1%"
               },
@@ -1657,9 +1731,16 @@
                 "font": "Courier Prime",
                 "weight": 400,
                 "leading": "155%",
-                "tracking": "9%"
+                "tracking": "9%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Spectral's 430 is not a cut (static 200–800), so the summer-tundra prose sits on Regular; Courier Prime's Regular core gains its real Bold sibling explicitly so the duo's ladder is stated rather than derived onto faces that do not exist."
           }
         },
         {
@@ -1747,7 +1828,7 @@
               },
               "functional": {
                 "font": "Spectral",
-                "weight": 440,
+                "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
@@ -1766,9 +1847,16 @@
                 "font": "Courier Prime",
                 "weight": 400,
                 "leading": "155%",
-                "tracking": "9%"
+                "tracking": "9%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "A working penguin colony is a logbook, not a brochure: Spectral's fictional 440 becomes the real Regular and Courier Prime keeps its duo honest (Regular core, authored Bold), leaving the station-record register intact under the expedition-report didone."
           }
         }
       ]
@@ -1855,15 +1943,35 @@
             "registers": {
               "anthemic": {
                 "font": "Clarendon",
-                "weight": 820,
+                "weight": 800,
                 "leading": "104%",
-                "tracking": "4%"
+                "tracking": "4%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Alegreya Sans",
-                "weight": 660,
+                "weight": 700,
                 "leading": "116%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "ExtraBold",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "functional": {
                 "font": "Alegreya",
@@ -1878,17 +1986,28 @@
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 480,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "DM Mono",
-                "weight": 520,
+                "weight": 500,
                 "leading": "150%",
-                "tracking": "11%"
+                "tracking": "11%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               }
-            }
+            },
+            "note": "Clarendon is the right slab (it is the routed park-sign face of desert reserves) but URW ships Light/Regular/Medium/Bold/Extra Bold — 820 was fiction, so the hard tricolour takes Extra Bold with an authored 700/500 ladder; Alegreya Sans has no 600 (100/300/400/500/700/800/900) so its framing takes the real Bold with an authored ladder, and DM Mono's 300/400/500 trio puts the data voice on Medium."
           }
         },
         {
@@ -1962,15 +2081,35 @@
             "registers": {
               "anthemic": {
                 "font": "Clarendon",
-                "weight": 740,
+                "weight": 700,
                 "leading": "106%",
-                "tracking": "2.5%"
+                "tracking": "2.5%",
+                "weights": [
+                  {
+                    "name": "Extra Bold",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Alegreya Sans",
-                "weight": 460,
+                "weight": 500,
                 "leading": "122%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Alegreya",
@@ -1991,11 +2130,22 @@
               },
               "data": {
                 "font": "DM Mono",
-                "weight": 470,
+                "weight": 400,
                 "leading": "152%",
-                "tracking": "15%"
+                "tracking": "15%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               }
-            }
+            },
+            "note": "The NPS-signage slab stays but lands on a real cut — URW Clarendon Bold, with Extra Bold/Medium authored because the family has no 600 — Alegreya Sans's 460 becomes its real Medium with a stated 400/700 ladder, and DM Mono (300/400/500 only) takes Regular so the buttes' data voice is not a weight the family never cut."
           }
         },
         {
@@ -2070,15 +2220,35 @@
             "registers": {
               "anthemic": {
                 "font": "Clarendon",
-                "weight": 720,
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Extra Bold",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Alegreya Sans",
-                "weight": 600,
+                "weight": 500,
                 "leading": "118%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Alegreya",
@@ -2093,7 +2263,7 @@
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 460,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
@@ -2101,9 +2271,20 @@
                 "font": "DM Mono",
                 "weight": 500,
                 "leading": "150%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               }
-            }
+            },
+            "note": "Every core in the salar set was a weight its family never cut: Clarendon to Bold (URW Light/Regular/Medium/Bold/Extra Bold, authored ladder for the missing 600), Alegreya Sans to Medium, DM Mono to Medium against its real 300/400/500, and the Source Sans control core to the 450 the Label voice clamps at."
           }
         },
         {
@@ -2177,15 +2358,35 @@
             "registers": {
               "anthemic": {
                 "font": "Clarendon",
-                "weight": 780,
+                "weight": 800,
                 "leading": "105%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Alegreya Sans",
-                "weight": 620,
+                "weight": 700,
                 "leading": "120%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "ExtraBold",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "functional": {
                 "font": "Alegreya",
@@ -2200,17 +2401,28 @@
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 455,
+                "weight": 450,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "DM Mono",
-                "weight": 480,
+                "weight": 500,
                 "leading": "150%",
-                "tracking": "13%"
+                "tracking": "13%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               }
-            }
+            },
+            "note": "A red-and-silver dawn earns the loudest real slab, not a made-up 780: Clarendon Extra Bold (URW's top cut) with an authored Bold/Medium ladder over Alegreya Sans Bold (no 600 exists, ladder stated), Alegreya's variable 400–900 leaves the prose core untouched, and DM Mono's Medium carries the data voice."
           }
         }
       ]
@@ -2296,13 +2508,14 @@
             "registers": {
               "anthemic": {
                 "font": "Abril Fatface",
-                "weight": 840,
+                "weight": 400,
                 "leading": "100%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": []
               },
               "contextual": {
                 "font": "Mulish",
-                "weight": 640,
+                "weight": 390,
                 "leading": "116%",
                 "tracking": "0%"
               },
@@ -2319,17 +2532,18 @@
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 455,
+                "weight": 450,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 520,
+                "weight": 600,
                 "leading": "150%",
                 "tracking": "15%"
               }
-            }
+            },
+            "note": "Abril Fatface is a single cut — 840 was fiction, so the core is 400 with the ladder opted out — and because that one cut is optically black, the Mulish framing stays under it (390) rather than re-inflating past a display face it cannot out-shout; the fat-face-titled natural-history plate is the register, and IBM Plex Mono's static grid (100–700 plus Text 450) gives the data voice its real SemiBold."
           }
         },
         {
@@ -2403,13 +2617,14 @@
             "registers": {
               "anthemic": {
                 "font": "Abril Fatface",
-                "weight": 800,
+                "weight": 400,
                 "leading": "100%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": []
               },
               "contextual": {
                 "font": "Mulish",
-                "weight": 580,
+                "weight": 380,
                 "leading": "120%",
                 "tracking": "0%"
               },
@@ -2432,11 +2647,12 @@
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 520,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            }
+            },
+            "note": "Same single-cut correction as the volume: Abril Fatface at its real 400 with weights opted out, Mulish held under that ceiling so a dark, wet forest reads as one loud title over quiet framing, and IBM Plex Mono's static Medium replacing a 520 the family never cut."
           }
         },
         {
@@ -2510,13 +2726,14 @@
             "registers": {
               "anthemic": {
                 "font": "Abril Fatface",
-                "weight": 780,
+                "weight": 400,
                 "leading": "100%",
-                "tracking": "-0.5%"
+                "tracking": "-0.5%",
+                "weights": []
               },
               "contextual": {
                 "font": "Mulish",
-                "weight": 680,
+                "weight": 390,
                 "leading": "114%",
                 "tracking": "0%"
               },
@@ -2533,17 +2750,18 @@
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 465,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 540,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "11%"
               }
-            }
+            },
+            "note": "Abril Fatface's one cut sets the ceiling (core 400, ladder opted out) and the Mulish framing sits beneath it; the 465 control core comes to the 450 it clamps to, and the reserve's data voice takes IBM Plex Mono's real static Medium."
           }
         },
         {
@@ -2618,13 +2836,14 @@
             "registers": {
               "anthemic": {
                 "font": "Abril Fatface",
-                "weight": 820,
+                "weight": 400,
                 "leading": "100%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": []
               },
               "contextual": {
                 "font": "Mulish",
-                "weight": 420,
+                "weight": 350,
                 "leading": "122%",
                 "tracking": "0%"
               },
@@ -2647,11 +2866,12 @@
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 510,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "13%"
               }
-            }
+            },
+            "note": "The quietest palette in the volume takes the lightest framing under the same single-cut ceiling: Abril Fatface 400 with weights opted out, Mulish at 350 for mist-grey section heads, and IBM Plex Mono's real Text 450 instead of a 510 that does not exist."
           }
         }
       ]
@@ -2737,9 +2957,19 @@
             "registers": {
               "anthemic": {
                 "font": "Cormorant",
-                "weight": 660,
+                "weight": 700,
                 "leading": "106%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Source Sans 3",
@@ -2770,7 +3000,8 @@
                 "leading": "152%",
                 "tracking": "14%"
               }
-            }
+            },
+            "note": "Cormorant's axis is 300–700, so a 660 core derived an 800 sibling that cannot exist — the display sits on its real Bold with an authored SemiBold/Medium ladder; the rest of the mirror-water set (Newsreader, Mulish, Spline Sans Mono) is already on real cuts and stands."
           }
         },
         {
@@ -2845,13 +3076,23 @@
             "registers": {
               "anthemic": {
                 "font": "Cormorant",
-                "weight": 720,
+                "weight": 700,
                 "leading": "103%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Source Sans 3",
-                "weight": 680,
+                "weight": 600,
                 "leading": "116%",
                 "tracking": "0%"
               },
@@ -2868,7 +3109,7 @@
               },
               "actionable": {
                 "font": "Mulish",
-                "weight": 475,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
@@ -2878,7 +3119,8 @@
                 "leading": "150%",
                 "tracking": "9%"
               }
-            }
+            },
+            "note": "Cormorant tops out at 700, so 720 was past the axis — clamped, with an authored SemiBold/Medium ladder — and Source Sans drops from 680 to 600 so a delicate high-contrast display is not optically outweighed by its own headline on a muted mauve moor."
           }
         },
         {
@@ -2975,7 +3217,7 @@
               },
               "actionable": {
                 "font": "Mulish",
-                "weight": 460,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
@@ -2985,7 +3227,8 @@
                 "leading": "150%",
                 "tracking": "10%"
               }
-            }
+            },
+            "note": "The pale delta set is already inside every family's axis (Cormorant 580 derives 700/500/400, all real) — only the Mulish control core moves to the 450 the Label voice clamps at, so nothing declares a Medium it never renders."
           }
         },
         {
@@ -3065,7 +3308,7 @@
               },
               "contextual": {
                 "font": "Source Sans 3",
-                "weight": 620,
+                "weight": 560,
                 "leading": "118%",
                 "tracking": "0%"
               },
@@ -3092,7 +3335,8 @@
                 "leading": "152%",
                 "tracking": "12%"
               }
-            }
+            },
+            "note": "The framing was heavier than the display it frames (620 over 600) — Source Sans drops to 560 so the luminous dawn keeps its hierarchy, and Cormorant's SemiBold core stays because its derived 700/500/400 siblings are all inside the 300–700 axis."
           }
         }
       ]
@@ -3178,13 +3422,23 @@
             "registers": {
               "anthemic": {
                 "font": "National Park",
-                "weight": 820,
+                "weight": 800,
                 "leading": "106%",
-                "tracking": "5%"
+                "tracking": "5%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  }
+                ]
               },
               "contextual": {
                 "font": "Barlow",
-                "weight": 640,
+                "weight": 600,
                 "leading": "116%",
                 "tracking": "0%"
               },
@@ -3201,17 +3455,24 @@
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 465,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 560,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "13%"
+                "tracking": "13%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "National Park runs 200–800 (Herstowski/Hoepner/Shellhorn; seven named weights), so 820 and its derived 900 sibling were both off the axis — core 800 with an authored Bold/SemiBold ladder; Barlow is static, so 640 becomes the real SemiBold, and Space Mono's 400/700 duo puts the data voice on Regular with Bold authored so Tiny-mono still holds at 9px."
           }
         },
         {
@@ -3291,7 +3552,7 @@
               },
               "contextual": {
                 "font": "Barlow",
-                "weight": 520,
+                "weight": 500,
                 "leading": "118%",
                 "tracking": "0%"
               },
@@ -3308,17 +3569,24 @@
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 460,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 520,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "11%"
+                "tracking": "11%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Barlow is a static nine-weight family with no 520, so the framing takes the real Medium; Space Mono is a 400/700 duo, so the data voice sits on Regular with an authored Bold, and the Source Sans control core states the 450 it renders — the display weight itself is inside National Park's 200–800 axis and stands."
           }
         },
         {
@@ -3398,7 +3666,7 @@
               },
               "contextual": {
                 "font": "Barlow",
-                "weight": 560,
+                "weight": 600,
                 "leading": "118%",
                 "tracking": "0%"
               },
@@ -3415,17 +3683,24 @@
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 455,
+                "weight": 450,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 520,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "The one palette in the volume that is literally a National Preserve keeps the routed-sign display (740 sits inside 200–800); Barlow's fictional 560 becomes the real SemiBold, Space Mono takes Regular plus an authored Bold, and the control core comes down to its rendered 450."
           }
         },
         {
@@ -3500,13 +3775,13 @@
             "registers": {
               "anthemic": {
                 "font": "National Park",
-                "weight": 780,
+                "weight": 700,
                 "leading": "105%",
                 "tracking": "2%"
               },
               "contextual": {
                 "font": "Barlow",
-                "weight": 700,
+                "weight": 600,
                 "leading": "116%",
                 "tracking": "0%"
               },
@@ -3523,17 +3798,24 @@
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 475,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 560,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "9%"
+                "tracking": "9%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "A 780 core snapped to 800 and derived a 900 the axis does not reach, so the wind-bleached display drops to National Park Bold, whose 800/600/500 siblings are all real; Barlow's Bold framing drops a stop to 600 so display and headline are no longer level, and Space Mono's duo takes Regular with an authored Bold."
           }
         }
       ]
@@ -3626,13 +3908,13 @@
               },
               "contextual": {
                 "font": "IBM Plex Sans",
-                "weight": 460,
+                "weight": 400,
                 "leading": "120%",
                 "tracking": "0%"
               },
               "functional": {
                 "font": "Spectral",
-                "weight": 445,
+                "weight": 400,
                 "leading": "166%",
                 "tracking": "0%",
                 "voices": {
@@ -3653,7 +3935,8 @@
                 "leading": "152%",
                 "tracking": "15%"
               }
-            }
+            },
+            "note": "Both static families were carrying invented cores: IBM Plex Sans ships 100–700 plus Text 450 (no 460) and Spectral 200–800 (no 445), so the reef-survey framing takes Plex Sans Regular and the prose the real Spectral Regular — a soft mineral turquoise needs no extra weight anywhere, and Playfair's variable 400–900 display is untouched."
           }
         },
         {
@@ -3733,13 +4016,13 @@
               },
               "contextual": {
                 "font": "IBM Plex Sans",
-                "weight": 660,
+                "weight": 600,
                 "leading": "116%",
                 "tracking": "0%"
               },
               "functional": {
                 "font": "Spectral",
-                "weight": 410,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
                 "voices": {
@@ -3750,7 +4033,7 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 500,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1%"
               },
@@ -3760,7 +4043,8 @@
                 "leading": "150%",
                 "tracking": "9%"
               }
-            }
+            },
+            "note": "IBM Plex Sans is static — 660 is not a cut — so the tide-table framing takes the real SemiBold, whose derived 700/500/400 siblings all exist; Spectral's 410 becomes Regular, and the Inter control core states the 450 it clamps to on a working northern shore."
           }
         },
         {
@@ -3840,13 +4124,13 @@
               },
               "contextual": {
                 "font": "IBM Plex Sans",
-                "weight": 620,
+                "weight": 600,
                 "leading": "118%",
                 "tracking": "0%"
               },
               "functional": {
                 "font": "Spectral",
-                "weight": 440,
+                "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
@@ -3857,7 +4141,7 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 455,
+                "weight": 450,
                 "leading": "153%",
                 "tracking": "1%"
               },
@@ -3867,7 +4151,8 @@
                 "leading": "150%",
                 "tracking": "12%"
               }
-            }
+            },
+            "note": "Plex Sans's 620 and Spectral's 440 are both weights their static families never cut — SemiBold and Regular respectively — leaving the mud-and-one-orange-cat story carried where it belongs, in the display and the rare accent, not in invented text weights."
           }
         },
         {
@@ -3947,13 +4232,23 @@
               },
               "contextual": {
                 "font": "IBM Plex Sans",
-                "weight": 680,
+                "weight": 700,
                 "leading": "116%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "functional": {
                 "font": "Spectral",
-                "weight": 425,
+                "weight": 400,
                 "leading": "156%",
                 "tracking": "0%",
                 "voices": {
@@ -3964,7 +4259,7 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 475,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1%"
               },
@@ -3974,7 +4269,8 @@
                 "leading": "150%",
                 "tracking": "10%"
               }
-            }
+            },
+            "note": "A cold amber-and-blue cathedral takes the family's real top cut: IBM Plex Sans Bold (680 was fiction) with an authored SemiBold/Medium ladder because the family has no 800, Spectral's 425 corrected to Regular, and the Inter control core down to its rendered 450."
           }
         }
       ]
@@ -4060,40 +4356,57 @@
             "registers": {
               "anthemic": {
                 "font": "Space Grotesk",
-                "weight": 660,
+                "weight": 700,
                 "leading": "104%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Space Grotesk",
-                "weight": 660,
+                "weight": 600,
                 "leading": "115%",
                 "tracking": "0%"
               },
               "functional": {
                 "font": "IBM Plex Serif",
-                "weight": 425,
+                "weight": 450,
                 "leading": "156%",
                 "tracking": "0%",
                 "voices": {
                   "Sub-title": {
-                    "font": "Big Shoulders Text"
+                    "font": "Big Shoulders"
                   }
                 }
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 490,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 550,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Space Grotesk's axis ends at 700, so the display's derived 800 was fiction (authored SemiBold/Medium ladder) and the framing drops to 600 so one family is not set at the same weight twice; IBM Plex Serif and Plex Sans are static, so prose and controls take the real Text 450 IBM cut for reading, Space Mono's duo takes Regular plus authored Bold, and the Sub-title uses the family's current Google Fonts name, Big Shoulders."
           }
         },
         {
@@ -4170,38 +4483,55 @@
                 "font": "Space Grotesk",
                 "weight": 700,
                 "leading": "104%",
-                "tracking": "3.5%"
+                "tracking": "3.5%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Space Grotesk",
-                "weight": 700,
+                "weight": 600,
                 "leading": "114%",
                 "tracking": "0%"
               },
               "functional": {
                 "font": "IBM Plex Serif",
-                "weight": 440,
+                "weight": 450,
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
                   "Sub-title": {
-                    "font": "Big Shoulders Text"
+                    "font": "Big Shoulders"
                   }
                 }
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 460,
+                "weight": 450,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 520,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "13%"
+                "tracking": "13%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "Observatory-bulletin type, corrected to real cuts: Space Grotesk Bold at the axis top with an authored 600/500 ladder, the framing a stop below it, IBM Plex Serif and Plex Sans on their real static Text 450, and Space Mono's Regular core with an authored Bold so the vent-log voice stays legible small."
           }
         },
         {
@@ -4289,28 +4619,35 @@
               },
               "functional": {
                 "font": "IBM Plex Serif",
-                "weight": 440,
+                "weight": 450,
                 "leading": "162%",
                 "tracking": "0%",
                 "voices": {
                   "Sub-title": {
-                    "font": "Big Shoulders Text"
+                    "font": "Big Shoulders"
                   }
                 }
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 465,
+                "weight": 450,
                 "leading": "153%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 520,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "The display weight is fine (640 snaps inside Space Grotesk's 300–700), but the static families were not: IBM Plex Serif's 440 and Plex Sans's 465 become the real Text 450 that IBM cut for continuous reading, and Space Mono's 400/700 duo takes Regular with Bold authored — a derived 300/500/600 ladder would have resolved onto faces the family does not have."
           }
         },
         {
@@ -4397,28 +4734,35 @@
               },
               "functional": {
                 "font": "IBM Plex Serif",
-                "weight": 420,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%",
                 "voices": {
                   "Sub-title": {
-                    "font": "Big Shoulders Text"
+                    "font": "Big Shoulders"
                   }
                 }
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 485,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 550,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "9%"
+                "tracking": "9%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
-            }
+            },
+            "note": "A chemical palette read by headlamp keeps the quietest weights, but they have to exist: IBM Plex Serif's 420 becomes Regular and Plex Sans's 485 the real Text 450, Space Mono's duo takes Regular with an authored Bold for the night-shift figures, and the Sub-title takes the family's current name, Big Shoulders."
           }
         }
       ]
@@ -4505,13 +4849,14 @@
             "registers": {
               "anthemic": {
                 "font": "Prata",
-                "weight": 760,
+                "weight": 400,
                 "leading": "106%",
-                "tracking": "3.5%"
+                "tracking": "3.5%",
+                "weights": []
               },
               "contextual": {
                 "font": "Inter",
-                "weight": 420,
+                "weight": 380,
                 "leading": "122%",
                 "tracking": "0%"
               },
@@ -4519,12 +4864,7 @@
                 "font": "Source Serif 4",
                 "weight": 445,
                 "leading": "170%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Rajdhani"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
@@ -4534,11 +4874,12 @@
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 510,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "15%"
               }
-            }
+            },
+            "note": "Prata is a single cut, so 760 was fiction — core 400 with the ladder opted out — and because that cut is a Regular-weight didone the Inter framing must stay under it (380) rather than out-shouting the thing it frames; the Rajdhani Sub-title is dropped (nothing in a lamp-lit cavern earns a second display face) and IBM Plex Mono's real static Text 450 carries the data voice."
           }
         },
         {
@@ -4613,13 +4954,14 @@
             "registers": {
               "anthemic": {
                 "font": "Prata",
-                "weight": 720,
+                "weight": 400,
                 "leading": "105%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": []
               },
               "contextual": {
                 "font": "Inter",
-                "weight": 640,
+                "weight": 390,
                 "leading": "118%",
                 "tracking": "0%"
               },
@@ -4627,26 +4969,22 @@
                 "font": "Source Serif 4",
                 "weight": 410,
                 "leading": "152%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Rajdhani"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 500,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 560,
+                "weight": 600,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            }
+            },
+            "note": "Same single-cut ceiling as the volume: Prata 400 with weights opted out and Inter held beneath it, the unearned Rajdhani Sub-title dropped, and the glacier-survey data voice moved from a fictional 560 to IBM Plex Mono's real static SemiBold."
           }
         },
         {
@@ -4721,13 +5059,14 @@
             "registers": {
               "anthemic": {
                 "font": "Prata",
-                "weight": 780,
+                "weight": 400,
                 "leading": "106%",
-                "tracking": "4.5%"
+                "tracking": "4.5%",
+                "weights": []
               },
               "contextual": {
                 "font": "Inter",
-                "weight": 700,
+                "weight": 390,
                 "leading": "116%",
                 "tracking": "0%"
               },
@@ -4735,26 +5074,22 @@
                 "font": "Source Serif 4",
                 "weight": 425,
                 "leading": "156%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Rajdhani"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 475,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 540,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "12%"
               }
-            }
+            },
+            "note": "The violet-to-gold range is the drama, so the type does the same trick in one face: Prata's single cut (core 400, ladder opted out) set wide and huge against Inter held under the ceiling at 390, the Rajdhani Sub-title dropped, and IBM Plex Mono's real Medium on the data voice."
           }
         },
         {
@@ -4829,13 +5164,14 @@
             "registers": {
               "anthemic": {
                 "font": "Prata",
-                "weight": 740,
+                "weight": 400,
                 "leading": "105%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": []
               },
               "contextual": {
                 "font": "Inter",
-                "weight": 580,
+                "weight": 370,
                 "leading": "120%",
                 "tracking": "0%"
               },
@@ -4843,26 +5179,22 @@
                 "font": "Source Serif 4",
                 "weight": 435,
                 "leading": "158%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Rajdhani"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 455,
+                "weight": 450,
                 "leading": "153%",
                 "tracking": "1%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 520,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "11%"
               }
-            }
+            },
+            "note": "A sinkhole lit from a hole in the jungle roof is luminous, not heavy: Prata's one real cut at 400 (ladder opted out) with the lightest framing in the volume beneath it, the Rajdhani Sub-title dropped as unearned, and the data voice on IBM Plex Mono's real Medium."
           }
         }
       ]
@@ -4949,13 +5281,14 @@
             "registers": {
               "anthemic": {
                 "font": "Sorts Mill Goudy",
-                "weight": 780,
+                "weight": 400,
                 "leading": "106%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": []
               },
               "contextual": {
                 "font": "Source Sans 3",
-                "weight": 460,
+                "weight": 390,
                 "leading": "122%",
                 "tracking": "0%"
               },
@@ -4982,7 +5315,8 @@
                 "leading": "152%",
                 "tracking": "13%"
               }
-            }
+            },
+            "note": "Sorts Mill Goudy ships Roman and Italic only, so 780 was fiction — core 400 with the ladder opted out — and the Source Sans framing sits under that ceiling, which is the right shape anyway for a hillside where one species' red does all the shouting; the rest of the New England book-type set is on real axes."
           }
         },
         {
@@ -5058,13 +5392,14 @@
             "registers": {
               "anthemic": {
                 "font": "Sorts Mill Goudy",
-                "weight": 740,
+                "weight": 400,
                 "leading": "105%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": []
               },
               "contextual": {
                 "font": "Source Sans 3",
-                "weight": 620,
+                "weight": 350,
                 "leading": "118%",
                 "tracking": "0%"
               },
@@ -5081,7 +5416,7 @@
               },
               "actionable": {
                 "font": "Mulish",
-                "weight": 455,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
@@ -5091,7 +5426,8 @@
                 "leading": "150%",
                 "tracking": "9%"
               }
-            }
+            },
+            "note": "The Goudy roman is the only cut the family has (core 400, weights opted out), so the fortnight of blue and acid-green takes the lightest framing in the category under it, and the Mulish control core states the 450 it renders."
           }
         },
         {
@@ -5165,13 +5501,14 @@
             "registers": {
               "anthemic": {
                 "font": "Sorts Mill Goudy",
-                "weight": 760,
+                "weight": 400,
                 "leading": "105%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": []
               },
               "contextual": {
                 "font": "Source Sans 3",
-                "weight": 520,
+                "weight": 370,
                 "leading": "120%",
                 "tracking": "0%"
               },
@@ -5198,7 +5535,8 @@
                 "leading": "150%",
                 "tracking": "11%"
               }
-            }
+            },
+            "note": "A composed garden earns a composed system, not a fabricated 760: Sorts Mill Goudy's single roman at 400 with the ladder opted out and Source Sans held under it, so crimson-on-green-on-grey stays the only loud thing in the palette."
           }
         },
         {
@@ -5274,13 +5612,14 @@
             "registers": {
               "anthemic": {
                 "font": "Sorts Mill Goudy",
-                "weight": 720,
+                "weight": 400,
                 "leading": "105%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": []
               },
               "contextual": {
                 "font": "Source Sans 3",
-                "weight": 680,
+                "weight": 390,
                 "leading": "116%",
                 "tracking": "0%"
               },
@@ -5297,7 +5636,7 @@
               },
               "actionable": {
                 "font": "Mulish",
-                "weight": 475,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
@@ -5307,7 +5646,8 @@
                 "leading": "150%",
                 "tracking": "8%"
               }
-            }
+            },
+            "note": "Same single-cut correction as the volume (Goudy 400, weights opted out, framing beneath the ceiling), and the Mulish control core drops from 475 to the 450 the Label voice clamps at — a deep-green July cove needs no manufactured emphasis."
           }
         }
       ]
