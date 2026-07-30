@@ -86,6 +86,7 @@
           "refuses": "Garish rainbow platter. The counter is mostly white rice and muted fish; colour is the salmon and the wasabi, used exactly.",
           "type": {
             "base": "luxury",
+            "note": "Zen Kaku Gothic New is STATIC 300/400/500/700/900 (Google Fonts / googlefonts/zen-kakugothic) — it has no 600, so the derived Semi-bold UI ladder was fiction: Body sits on the real Regular with a Medium/Bold ladder and the actionable register drops its core weight entirely (no fabricated Medium/Semi-bold control ladder); Shippori Mincho starts at 400 (static 400–800), so the derived Light sibling is replaced by its real Medium/Semi-bold.",
             "registers": {
               "anthemic": {
                 "font": "Cormorant Garamond",
@@ -96,12 +97,32 @@
               "contextual": {
                 "font": "Shippori Mincho",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Semi-bold",
+                    "weight": 600
+                  }
+                ],
                 "leading": "130%",
                 "tracking": "1%"
               },
               "functional": {
                 "font": "Zen Kaku Gothic New",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "158%",
                 "tracking": "0%",
                 "voices": {
@@ -112,7 +133,16 @@
               },
               "actionable": {
                 "font": "Zen Kaku Gothic New",
-                "weight": 430,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -195,6 +225,7 @@
           "refuses": "Muddy tea-brown. The tea service is vivid matcha-green against pastel sweets and black lacquer — a crisp contrast, not brown.",
           "type": {
             "base": "editorial",
+            "note": "Zen Kaku Gothic New is STATIC 300/400/500/700/900 (Google Fonts) — the 430/440 cores named no cut and the family has no 600, so Body takes the real Regular with a Medium/Bold ladder and actionable drops its core so no Semi-bold control ladder is minted; Shippori Mincho 600 is real and its 700/500/400 siblings all ship, left as they were.",
             "registers": {
               "anthemic": {
                 "font": "Cormorant Garamond",
@@ -210,7 +241,17 @@
               },
               "functional": {
                 "font": "Zen Kaku Gothic New",
-                "weight": 430,
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
@@ -221,7 +262,16 @@
               },
               "actionable": {
                 "font": "Zen Kaku Gothic New",
-                "weight": 440,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -303,22 +353,53 @@
           "refuses": "Uniform brown soup. Ramen is pale broth lifted by egg-gold, scallion-green, and chilli-red — composed, not a brown bowl.",
           "type": {
             "base": "product",
+            "note": "Cormorant Garamond's weight axis tops out at 700 (Google Fonts variable 300–700), so the derived 800 clamped back onto the core — replaced by its real Semi-bold/Medium siblings; Shippori Mincho has no 900, so the ExtraBold 800 core keeps Bold/Semi-bold instead; Zen Kaku Gothic New's 460/470 cores named no static cut (300/400/500/700/900) and it has no 600, so Body takes Regular + Medium/Bold and actionable drops its core.",
             "registers": {
               "anthemic": {
                 "font": "Cormorant Garamond",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Semi-bold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ],
                 "leading": "100%",
                 "tracking": "1%"
               },
               "contextual": {
                 "font": "Shippori Mincho",
                 "weight": 800,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Semi-bold",
+                    "weight": 600
+                  }
+                ],
                 "leading": "118%",
                 "tracking": "0%"
               },
               "functional": {
                 "font": "Zen Kaku Gothic New",
-                "weight": 460,
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "156%",
                 "tracking": "0%",
                 "voices": {
@@ -329,7 +410,16 @@
               },
               "actionable": {
                 "font": "Zen Kaku Gothic New",
-                "weight": 470,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "152%",
                 "tracking": "0%"
               },
@@ -412,6 +502,7 @@
           "refuses": "Cluttered bright plating. Kaiseki is spare and seasonal — green, coral, and black, composed with restraint.",
           "type": {
             "base": "luxury",
+            "note": "Zen Kaku Gothic New is STATIC 300/400/500/700/900 (Google Fonts) — the 420/430 cores named no cut and there is no 600, so Body sits on the real Regular with a Medium/Bold ladder and the actionable register drops its core rather than mint a Semi-bold control ladder; kaiseki restraint keeps everything else as designed.",
             "registers": {
               "anthemic": {
                 "font": "Cormorant Garamond",
@@ -427,7 +518,17 @@
               },
               "functional": {
                 "font": "Zen Kaku Gothic New",
-                "weight": 420,
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "172%",
                 "tracking": "0%",
                 "voices": {
@@ -438,7 +539,16 @@
               },
               "actionable": {
                 "font": "Zen Kaku Gothic New",
-                "weight": 430,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "154%",
                 "tracking": "0%"
               },
@@ -980,10 +1090,21 @@
           "refuses": "Bright orange Tex-Mex. Mole is a deep, complex mahogany on blue talavera — subtle and dark, not neon cheese-sauce.",
           "type": {
             "base": "editorial",
+            "note": "Clarendon's digital inventory is five weights — Light 300 · Regular 400 · Medium 500 · Bold 700 · Extra Bold 800 (Clarendon URW, URW++; no 600 and no 900) — so the Extra Bold core stands but its derived 900/600 siblings are replaced by the real Bold/Medium; DM Mono ships only Light 300 · Regular 400 · Medium 500 (Google Fonts), so the Kicker's derived 600/700 were fiction.",
             "registers": {
               "anthemic": {
                 "font": "Clarendon",
                 "weight": 800,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ],
                 "leading": "96%",
                 "tracking": "0%"
               },
@@ -1013,6 +1134,16 @@
               "data": {
                 "font": "DM Mono",
                 "weight": 500,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "12%"
               }
@@ -1088,10 +1219,21 @@
           "refuses": "Flat brown meat. Al pastor is bright achiote-red with pineapple gold and cilantro green — vivid and fresh, not a brown filling.",
           "type": {
             "base": "statement",
+            "note": "Clarendon has no 900 — its heaviest cut is Extra Bold 800 (Clarendon URW: Light/Regular/Medium/Bold/Extra Bold) — so the 900 core drops to the real Extra Bold with Bold/Medium siblings, still the loudest Clarendon the trompo can shout in; DM Mono is 300/400/500 only (Google Fonts), so the Kicker's derived 600/700 are replaced by its real Regular/Light.",
             "registers": {
               "anthemic": {
                 "font": "Clarendon",
-                "weight": 900,
+                "weight": 800,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ],
                 "leading": "95%",
                 "tracking": "1%"
               },
@@ -1121,6 +1263,16 @@
               "data": {
                 "font": "DM Mono",
                 "weight": 500,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "13%"
               }
@@ -1196,10 +1348,21 @@
           "refuses": "Muted somber palette. The ofrenda is joyfully vivid — marigold, magenta, and white — a celebration of colour, not a grey mourning.",
           "type": {
             "base": "statement",
+            "note": "Same Clarendon correction as the volume's other palettes — no 900 exists (Clarendon URW tops at Extra Bold 800), so the ofrenda's loudest voice is the real Extra Bold with Bold/Medium siblings; DM Mono is 300/400/500 only (Google Fonts), so the Kicker's derived 600/700 give way to Regular/Light.",
             "registers": {
               "anthemic": {
                 "font": "Clarendon",
-                "weight": 900,
+                "weight": 800,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ],
                 "leading": "96%",
                 "tracking": "8%"
               },
@@ -1229,6 +1392,16 @@
               "data": {
                 "font": "DM Mono",
                 "weight": 500,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "16%"
               }
@@ -1305,10 +1478,21 @@
           "refuses": "Pale plain corn. Elote is bright yellow with white crema, red chilli, and green lime — a vivid street snack, not plain cob.",
           "type": {
             "base": "product",
+            "note": "Clarendon has no 650 cut — its ladder is Light 300 · Regular 400 · Medium 500 · Bold 700 · Extra Bold 800 (Clarendon URW) — and the cart's refusal of a plain cob argues for the real Bold rather than the quieter Medium, with Extra Bold/Medium as its siblings; DM Mono is 300/400/500 only, so the Kicker's Regular core keeps Medium/Light instead of a fabricated Semi-bold.",
             "registers": {
               "anthemic": {
                 "font": "Clarendon",
-                "weight": 650,
+                "weight": 700,
+                "weights": [
+                  {
+                    "name": "Extra Bold",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ],
                 "leading": "99%",
                 "tracking": "0%"
               },
@@ -1338,6 +1522,16 @@
               "data": {
                 "font": "DM Mono",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "12%"
               }
@@ -1424,10 +1618,12 @@
           "refuses": "Single muddy curry-brown. The spice market is a full saturated spectrum — gold, red, green — each spice its own hue.",
           "type": {
             "base": "statement",
+            "note": "Rozha One ships ONE weight (Google Fonts, 400 only), so its derived Light/Medium/Semi-bold ladder was pure fiction — the ladder is opted out and the Devanagari-Didone letterform does the shouting; Mukta is STATIC 200–800 (Google Fonts), so the 440/460 cores named no cut and both drop to the real Regular, whose Medium/Semi-bold siblings do ship.",
             "registers": {
               "anthemic": {
                 "font": "Rozha One",
                 "weight": 400,
+                "weights": [],
                 "leading": "100%",
                 "tracking": "2%"
               },
@@ -1439,7 +1635,7 @@
               },
               "functional": {
                 "font": "Mukta",
-                "weight": 440,
+                "weight": 400,
                 "leading": "158%",
                 "tracking": "0%",
                 "voices": {
@@ -1450,7 +1646,7 @@
               },
               "actionable": {
                 "font": "Mukta",
-                "weight": 460,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -1531,10 +1727,12 @@
           "refuses": "Brown buffet sludge. A thali is a deliberate arrangement of distinct bright dishes on bright steel — composed, not a brown heap.",
           "type": {
             "base": "editorial",
+            "note": "Rozha One is a single-cut display face (Google Fonts, 400), so its 3-stop ladder is opted out; Mukta's static 200–800 inventory has no 430 or 450, so both cores sit on the real Regular and keep their genuine Medium/Semi-bold siblings — the thali's composure comes from arrangement, not from an invented half-weight.",
             "registers": {
               "anthemic": {
                 "font": "Rozha One",
                 "weight": 400,
+                "weights": [],
                 "leading": "102%",
                 "tracking": "0%"
               },
@@ -1546,7 +1744,7 @@
               },
               "functional": {
                 "font": "Mukta",
-                "weight": 430,
+                "weight": 400,
                 "leading": "158%",
                 "tracking": "0%",
                 "voices": {
@@ -1557,7 +1755,7 @@
               },
               "actionable": {
                 "font": "Mukta",
-                "weight": 450,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -1640,10 +1838,12 @@
           "refuses": "Dull beige confection. Mithai is saffron, silver, and pistachio — jewel-bright sweets, not a tray of beige fudge.",
           "type": {
             "base": "luxury",
+            "note": "Rozha One ships 400 only (Google Fonts) — ladder opted out, the high-contrast Devanagari doing the jewel-bright work; Mukta's static cuts are 200/300/400/500/600/700/800, so the 420/450 cores drop to the real Regular with their genuine Medium/Semi-bold siblings.",
             "registers": {
               "anthemic": {
                 "font": "Rozha One",
                 "weight": 400,
+                "weights": [],
                 "leading": "106%",
                 "tracking": "5%"
               },
@@ -1655,7 +1855,7 @@
               },
               "functional": {
                 "font": "Mukta",
-                "weight": 420,
+                "weight": 400,
                 "leading": "170%",
                 "tracking": "0%",
                 "voices": {
@@ -1666,7 +1866,7 @@
               },
               "actionable": {
                 "font": "Mukta",
-                "weight": 450,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%"
               },
@@ -1748,22 +1948,34 @@
           "refuses": "Flat brown grill. Tandoori is vivid red with char-black and green chutney — bright and spiced, not a brown roast.",
           "type": {
             "base": "statement",
+            "note": "Rozha One is single-cut (Google Fonts, 400) — ladder opted out; Baloo 2's variable weight axis stops at 800 (Google Fonts, 400–800), so the derived 900 clamped back onto the core and is replaced by the real Bold/Semi-bold; Mukta's static ladder has no 450/470, so both cores take the real Regular.",
             "registers": {
               "anthemic": {
                 "font": "Rozha One",
                 "weight": 400,
+                "weights": [],
                 "leading": "100%",
                 "tracking": "0%"
               },
               "contextual": {
                 "font": "Baloo 2",
                 "weight": 800,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Semi-bold",
+                    "weight": 600
+                  }
+                ],
                 "leading": "108%",
                 "tracking": "2%"
               },
               "functional": {
                 "font": "Mukta",
-                "weight": 450,
+                "weight": 400,
                 "leading": "158%",
                 "tracking": "0%",
                 "voices": {
@@ -1774,7 +1986,7 @@
               },
               "actionable": {
                 "font": "Mukta",
-                "weight": 470,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -1870,16 +2082,24 @@
           "refuses": "Fluorescent candy colour. Macarons are delicate naturalistic pastels — soft green, rose, lemon — never neon.",
           "type": {
             "base": "luxury",
+            "note": "Linotype Didot (Frutiger, 1991) is two weights — Roman 400 and Bold 700 with italics plus a Headline cut — so the Display's derived Light/Medium/Semi-bold trio becomes its one real sibling, Bold; Monotype's Fournier MT ships Regular and Italic ONLY, so the contextual ladder is opted out and the volume's loudness lives in Didot Bold; Marianne (Mathieu Réguer for the French State, 2020) is static Thin 100 · Light 300 · Regular 400 · Medium 500 · Bold 700 · Extrabold 800 — no 600, so the actionable register drops its core weight rather than mint a Semi-bold control ladder; Space Mono is 400/700 (Google Fonts).",
             "registers": {
               "anthemic": {
                 "font": "Didot",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "105%",
                 "tracking": "9%"
               },
               "contextual": {
                 "font": "Fournier",
                 "weight": 400,
+                "weights": [],
                 "leading": "126%",
                 "tracking": "0%"
               },
@@ -1896,13 +2116,28 @@
               },
               "actionable": {
                 "font": "Marianne",
-                "weight": 430,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "16%"
               }
@@ -1979,16 +2214,24 @@
           "refuses": "Pale doughy beige. Good viennoiserie is deep burnished gold and amber — richly baked, not an underdone beige.",
           "type": {
             "base": "editorial",
+            "note": "Fournier MT has NO bold — Monotype ships Regular and Italic only — so the 700 contextual core was fiction; it drops to the real Roman with the ladder opted out, and the deeply-baked emphasis the basket wants stays in Didot Bold 700, a cut that exists (Linotype Didot: Roman 400 / Bold 700 + italics + Headline); Marianne has no 600 (static 100/300/400/500/700/800), so actionable carries no core weight; Space Mono is 400/700 only.",
             "registers": {
               "anthemic": {
                 "font": "Didot",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ],
                 "leading": "100%",
                 "tracking": "2%"
               },
               "contextual": {
                 "font": "Fournier",
-                "weight": 700,
+                "weight": 400,
+                "weights": [],
                 "leading": "120%",
                 "tracking": "0%"
               },
@@ -2005,13 +2248,28 @@
               },
               "actionable": {
                 "font": "Marianne",
-                "weight": 450,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "15%"
               }
@@ -2087,16 +2345,24 @@
           "refuses": "Matte dull fruit. The tart case gleams with mirror-glaze and fresh fruit — glossy red, green, and gold, not a flat bake.",
           "type": {
             "base": "luxury",
+            "note": "Same two corrections as the volume: Fournier MT is Regular + Italic only (Monotype), so the 700 core drops to the real Roman with the ladder opted out, and the case's gloss stays in the genuine Didot Bold 700 (Linotype Didot: Roman/Bold + italics); Marianne's static set has no 600, so the actionable register declares no core weight; Space Mono ships 400/700 (Google Fonts).",
             "registers": {
               "anthemic": {
                 "font": "Didot",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ],
                 "leading": "100%",
                 "tracking": "8.5%"
               },
               "contextual": {
                 "font": "Fournier",
-                "weight": 700,
+                "weight": 400,
+                "weights": [],
                 "leading": "118%",
                 "tracking": "0%"
               },
@@ -2113,13 +2379,28 @@
               },
               "actionable": {
                 "font": "Marianne",
-                "weight": 440,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "152%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "16%"
               }
@@ -2195,16 +2476,24 @@
           "refuses": "Dull beige pastry. The éclair line is glossy coffee, chocolate, and rose glaze — a shiny coloured row, not a beige bake.",
           "type": {
             "base": "editorial",
+            "note": "Didot's real inventory is Roman 400 + Bold 700 (Linotype Didot, Frutiger 1991), so the Display keeps its Roman core with Bold as its one true sibling; Fournier MT is Regular + Italic only (Monotype) — ladder opted out; Marianne has no 600 (static 100/300/400/500/700/800), so actionable drops its core rather than fabricate a Semi-bold control ladder; Space Mono is 400/700.",
             "registers": {
               "anthemic": {
                 "font": "Didot",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "102%",
                 "tracking": "1.5%"
               },
               "contextual": {
                 "font": "Fournier",
                 "weight": 400,
+                "weights": [],
                 "leading": "120%",
                 "tracking": "0%"
               },
@@ -2221,13 +2510,28 @@
               },
               "actionable": {
                 "font": "Marianne",
-                "weight": 440,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "142%",
                 "tracking": "15%"
               }
@@ -2315,9 +2619,10 @@
           "refuses": "Bright plated colour. The Nordic plate is muted moss-and-grey with one berry or flower — restrained, not a vivid composition.",
           "type": {
             "base": "technical",
+            "note": "Klim sells the family as Söhne / Söhne Mono and ships STATICS ONLY — Extraleicht 200 · Leicht 300 · Buch 400 · Kräftig 500 · Halbfett 600 · Dreiviertelfett 700 · Fett 800 · Extrafett 900, no variable font (klim.co.nz) — so the ASCII 'Sohne' was not the family name and the 420/440 cores named no cut; both take Buch with the family's own Kräftig/Halbfett ladder, and the anthemic Kräftig 500 already sat on a real cut.",
             "registers": {
               "anthemic": {
-                "font": "Sohne",
+                "font": "Söhne",
                 "weight": 500,
                 "leading": "105%",
                 "tracking": "5%"
@@ -2329,8 +2634,18 @@
                 "tracking": "0%"
               },
               "functional": {
-                "font": "Sohne",
-                "weight": 420,
+                "font": "Söhne",
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Kräftig",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Halbfett",
+                    "weight": 600
+                  }
+                ],
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
@@ -2340,13 +2655,23 @@
                 }
               },
               "actionable": {
-                "font": "Sohne",
-                "weight": 440,
+                "font": "Söhne",
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Kräftig",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Halbfett",
+                    "weight": 600
+                  }
+                ],
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
-                "font": "Sohne Mono",
+                "font": "Söhne Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "3%"
@@ -2422,9 +2747,10 @@
           "refuses": "Bright deli colour. Smørrebrød is dark rye and muted toppings lifted by one magenta beet — earthy, not a vivid sub sandwich.",
           "type": {
             "base": "editorial",
+            "note": "Söhne is static-only (Klim: Extraleicht 200 … Extrafett 900, no variable axis), so the 440/450 cores named no cut — both sit on Buch 400 with the family's real Kräftig/Halbfett ladder — and the family name carries its umlaut; the anthemic Dreiviertelfett 700 was already a real cut and stays.",
             "registers": {
               "anthemic": {
-                "font": "Sohne",
+                "font": "Söhne",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "3%"
@@ -2436,8 +2762,18 @@
                 "tracking": "0%"
               },
               "functional": {
-                "font": "Sohne",
-                "weight": 440,
+                "font": "Söhne",
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Kräftig",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Halbfett",
+                    "weight": 600
+                  }
+                ],
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
@@ -2447,13 +2783,23 @@
                 }
               },
               "actionable": {
-                "font": "Sohne",
-                "weight": 450,
+                "font": "Söhne",
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Kräftig",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Halbfett",
+                    "weight": 600
+                  }
+                ],
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
-                "font": "Sohne Mono",
+                "font": "Söhne Mono",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "3%"
@@ -2530,9 +2876,10 @@
           "refuses": "Warm bright seafood boil. The cold-sea plate is grey, slate, and ice with one coral shell — austere, not a red crab boil.",
           "type": {
             "base": "technical",
+            "note": "Söhne ships statics only (Klim, no variable font), so the 410/430 cores named no cut and both take Buch 400 with the real Kräftig/Halbfett ladder; the austere Buch Display and Signifier Light 300 (Klim; every emitted weight lands on a real static cut value regardless of the variable release) already sat on real cuts and are exactly the restraint this plate refuses to warm up.",
             "registers": {
               "anthemic": {
-                "font": "Sohne",
+                "font": "Söhne",
                 "weight": 400,
                 "leading": "108%",
                 "tracking": "6%"
@@ -2544,8 +2891,18 @@
                 "tracking": "0%"
               },
               "functional": {
-                "font": "Sohne",
-                "weight": 410,
+                "font": "Söhne",
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Kräftig",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Halbfett",
+                    "weight": 600
+                  }
+                ],
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
@@ -2555,13 +2912,23 @@
                 }
               },
               "actionable": {
-                "font": "Sohne",
-                "weight": 430,
+                "font": "Söhne",
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Kräftig",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Halbfett",
+                    "weight": 600
+                  }
+                ],
                 "leading": "152%",
                 "tracking": "0%"
               },
               "data": {
-                "font": "Sohne Mono",
+                "font": "Söhne Mono",
                 "weight": 400,
                 "leading": "140%",
                 "tracking": "2%"
@@ -2638,9 +3005,10 @@
           "refuses": "Bright deli platter. The Nordic fish board is muted coral and silver on slate — cool and restrained, not a vivid spread.",
           "type": {
             "base": "editorial",
+            "note": "Söhne / Söhne Mono are static-only Klim families (Extraleicht 200 … Extrafett 900) — the 430/440 cores named no cut, so both take Buch 400 with the real Kräftig/Halbfett ladder, and the anthemic Halbfett 600 was already genuine.",
             "registers": {
               "anthemic": {
-                "font": "Sohne",
+                "font": "Söhne",
                 "weight": 600,
                 "leading": "105%",
                 "tracking": "4%"
@@ -2652,8 +3020,18 @@
                 "tracking": "0%"
               },
               "functional": {
-                "font": "Sohne",
-                "weight": 430,
+                "font": "Söhne",
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Kräftig",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Halbfett",
+                    "weight": 600
+                  }
+                ],
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
@@ -2663,13 +3041,23 @@
                 }
               },
               "actionable": {
-                "font": "Sohne",
-                "weight": 440,
+                "font": "Söhne",
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Kräftig",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Halbfett",
+                    "weight": 600
+                  }
+                ],
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
-                "font": "Sohne Mono",
+                "font": "Söhne Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "3%"
@@ -2758,10 +3146,17 @@
           "refuses": "Monotone beige dip. The mezze table is bright herb-green and pomegranate-ruby over beige — fresh and jewelled, not bland.",
           "type": {
             "base": "product",
+            "note": "Aref Ruqaa and Amiri each ship exactly two cuts — Regular 400 and Bold 700 (Google Fonts) — so their derived Light/Medium/Semi-bold ladders were fiction; each keeps its real Bold as its single sibling; IBM Plex Sans Arabic is STATIC 100–700, so the 450 core named no cut and drops to the real Regular, whose Medium 500 and SemiBold 600 do ship for the control ladder.",
             "registers": {
               "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "106%",
                 "tracking": "1%"
               },
@@ -2774,6 +3169,12 @@
               "functional": {
                 "font": "Amiri",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
@@ -2784,7 +3185,7 @@
               },
               "actionable": {
                 "font": "IBM Plex Sans Arabic",
-                "weight": 450,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -2865,22 +3266,45 @@
           "refuses": "Dull spice brown. The souk is saturated — sumac maroon, saffron gold, za'atar green — a heaped spectrum, not a brown bin.",
           "type": {
             "base": "statement",
+            "note": "Aref Ruqaa and Amiri are 400/700 only (Google Fonts), so the souk's Bold display and Regular body each keep their one real sibling instead of a three-stop invention; Reem Kufi's variable axis stops at 700 (Google Fonts 400–700), so the derived 800 clamped onto the core and gives way to the real SemiBold/Medium; IBM Plex Sans Arabic is static 100–700, so 460 becomes the real Regular.",
             "registers": {
               "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ],
                 "leading": "102%",
                 "tracking": "2%"
               },
               "contextual": {
                 "font": "Reem Kufi",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Semi-bold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ],
                 "leading": "112%",
                 "tracking": "4%"
               },
               "functional": {
                 "font": "Amiri",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
@@ -2891,7 +3315,7 @@
               },
               "actionable": {
                 "font": "IBM Plex Sans Arabic",
-                "weight": 460,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -2972,10 +3396,17 @@
           "refuses": "Flat pastry beige. Baklava is glossy gold filo crowned with bright pistachio-green — rich and jewelled, not a dry beige.",
           "type": {
             "base": "luxury",
+            "note": "Aref Ruqaa's Bold 700 and Amiri's Regular 400 are real, but each family ships only those two cuts (Google Fonts), so both ladders collapse to the one genuine sibling; IBM Plex Sans Arabic is static 100–700, so the 440 core takes the real Regular and its Medium/SemiBold control ladder is genuine.",
             "registers": {
               "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ],
                 "leading": "105%",
                 "tracking": "3%"
               },
@@ -2988,6 +3419,12 @@
               "functional": {
                 "font": "Amiri",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "162%",
                 "tracking": "0%",
                 "voices": {
@@ -2998,7 +3435,7 @@
               },
               "actionable": {
                 "font": "IBM Plex Sans Arabic",
-                "weight": 440,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%"
               },
@@ -3080,10 +3517,17 @@
           "refuses": "Flat brown stew. The dish is saffron-gold and apricot-orange jewelled with pomegranate — festive, not a brown pot.",
           "type": {
             "base": "editorial",
+            "note": "Aref Ruqaa and Amiri each ship Regular 400 and Bold 700 only (Google Fonts) — the derived multi-stop ladders were fiction, so each keeps its single real sibling; IBM Plex Sans Arabic's static 100–700 set has no 450, so the actionable core sits on the real Regular.",
             "registers": {
               "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ],
                 "leading": "104%",
                 "tracking": "1%"
               },
@@ -3096,6 +3540,12 @@
               "functional": {
                 "font": "Amiri",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "160%",
                 "tracking": "0%",
                 "voices": {
@@ -3106,7 +3556,7 @@
               },
               "actionable": {
                 "font": "IBM Plex Sans Arabic",
-                "weight": 450,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -3200,10 +3650,12 @@
           "refuses": "Brown gravy curry. Thai green curry is vivid herb-green with coconut white and chilli red — fresh and sharp, not a brown stew.",
           "type": {
             "base": "statement",
+            "note": "Chonburi ships ONE weight (Google Fonts, 400), so the derived Light/Medium/Semi-bold ladder was fiction — opted out, the Thai display letterform carrying the shout; Sarabun and IBM Plex Sans Thai are both STATIC (100–800 and 100–700), so the 440/460 cores named no cut and both take the real Regular, whose Medium/SemiBold siblings genuinely ship.",
             "registers": {
               "anthemic": {
                 "font": "Chonburi",
                 "weight": 400,
+                "weights": [],
                 "leading": "100%",
                 "tracking": "0%"
               },
@@ -3215,7 +3667,7 @@
               },
               "functional": {
                 "font": "Sarabun",
-                "weight": 440,
+                "weight": 400,
                 "leading": "168%",
                 "tracking": "0%",
                 "voices": {
@@ -3226,7 +3678,7 @@
               },
               "actionable": {
                 "font": "IBM Plex Sans Thai",
-                "weight": 460,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%"
               },
@@ -3307,10 +3759,12 @@
           "refuses": "Dull beige slaw. Som tam is jade-green and scarlet — crunchy, fresh, and hot, not a muted shredded salad.",
           "type": {
             "base": "statement",
+            "note": "Chonburi is single-cut (Google Fonts, 400) — ladder opted out; Sarabun (static 100–800) and IBM Plex Sans Thai (static 100–700) have no 450 or 470, so both cores drop to their real Regular; Kanit's Black 900 is a genuine static cut and stays as the pounded, loudest contextual voice.",
             "registers": {
               "anthemic": {
                 "font": "Chonburi",
                 "weight": 400,
+                "weights": [],
                 "leading": "100%",
                 "tracking": "0%"
               },
@@ -3322,7 +3776,7 @@
               },
               "functional": {
                 "font": "Sarabun",
-                "weight": 450,
+                "weight": 400,
                 "leading": "166%",
                 "tracking": "0%",
                 "voices": {
@@ -3333,7 +3787,7 @@
               },
               "actionable": {
                 "font": "IBM Plex Sans Thai",
-                "weight": 470,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%"
               },
@@ -3417,10 +3871,12 @@
           "refuses": "Pale bland pudding. Mango sticky rice is vivid gold mango against white rice — a bright contrast, not a beige dessert.",
           "type": {
             "base": "editorial",
+            "note": "Chonburi ships 400 only (Google Fonts) — ladder opted out; Sarabun and IBM Plex Sans Thai are static families with no 430 or 450, so both cores sit on the real Regular and keep their genuine Medium/SemiBold ladders.",
             "registers": {
               "anthemic": {
                 "font": "Chonburi",
                 "weight": 400,
+                "weights": [],
                 "leading": "102%",
                 "tracking": "1%"
               },
@@ -3432,7 +3888,7 @@
               },
               "functional": {
                 "font": "Sarabun",
-                "weight": 430,
+                "weight": 400,
                 "leading": "168%",
                 "tracking": "0%",
                 "voices": {
@@ -3443,7 +3899,7 @@
               },
               "actionable": {
                 "font": "IBM Plex Sans Thai",
-                "weight": 450,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%"
               },
@@ -3525,10 +3981,12 @@
           "refuses": "Murky brown soup. Pho is a clear amber broth with white noodle and fresh herb green — clean and bright, not a brown stew.",
           "type": {
             "base": "product",
+            "note": "Chonburi is single-cut (Google Fonts, 400) — ladder opted out; Sarabun and IBM Plex Sans Thai are static, so the 420/450 cores take their real Regular; IBM Plex Mono is also static 100–700 with no 460, so the Kicker moves onto the real Medium 500 — a clear-broth palette should not fake a half-step.",
             "registers": {
               "anthemic": {
                 "font": "Chonburi",
                 "weight": 400,
+                "weights": [],
                 "leading": "102%",
                 "tracking": "0%"
               },
@@ -3540,7 +3998,7 @@
               },
               "functional": {
                 "font": "Sarabun",
-                "weight": 420,
+                "weight": 400,
                 "leading": "170%",
                 "tracking": "0%",
                 "voices": {
@@ -3551,13 +4009,13 @@
               },
               "actionable": {
                 "font": "IBM Plex Sans Thai",
-                "weight": 450,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 460,
+                "weight": 500,
                 "leading": "140%",
                 "tracking": "12%"
               }
@@ -3644,10 +4102,12 @@
           "refuses": "Greasy brown blur. The burger is gold bun, orange cheese, and primary ketchup-and-mustard — bright and layered, not a brown lump.",
           "type": {
             "base": "statement",
+            "note": "Ultra ships ONE weight (Google Fonts, 400) — its derived Light/Medium/Semi-bold ladder was fiction, so it is opted out and the fat slab letterform does the shouting; Zilla Slab is STATIC 300/400/500/600/700, so the 450 core takes the real Regular (its Medium/SemiBold siblings ship); Courier Prime is 400/700 only, so the Bold Kicker keeps Regular as its one true sibling.",
             "registers": {
               "anthemic": {
                 "font": "Ultra",
                 "weight": 400,
+                "weights": [],
                 "leading": "95%",
                 "tracking": "0%"
               },
@@ -3659,7 +4119,7 @@
               },
               "functional": {
                 "font": "Zilla Slab",
-                "weight": 450,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
                 "voices": {
@@ -3677,6 +4137,12 @@
               "data": {
                 "font": "Courier Prime",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "8%"
               }
@@ -3752,10 +4218,12 @@
           "refuses": "Muted vintage sepia. The diner is candy-bright — cherry red, shake pink, mint counter, chrome — pop nostalgia, not faded brown.",
           "type": {
             "base": "product",
+            "note": "Ultra is single-cut (Google Fonts, 400) — ladder opted out; Zilla Slab's static set (300/400/500/600/700) has no 430, so the body core sits on the real Regular; Courier Prime ships 400/700 only, so the Kicker's Regular keeps Bold as its single real sibling.",
             "registers": {
               "anthemic": {
                 "font": "Ultra",
                 "weight": 400,
+                "weights": [],
                 "leading": "98%",
                 "tracking": "0%"
               },
@@ -3767,7 +4235,7 @@
               },
               "functional": {
                 "font": "Zilla Slab",
-                "weight": 430,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
                 "voices": {
@@ -3785,6 +4253,12 @@
               "data": {
                 "font": "Courier Prime",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "6%"
               }
@@ -3860,10 +4334,12 @@
           "refuses": "Flat grey meat. Real BBQ is deep mahogany bark with a pink smoke ring — rich and warm, not a grey boiled-looking cut.",
           "type": {
             "base": "editorial",
+            "note": "Ultra ships 400 only (Google Fonts) — ladder opted out; Zilla Slab is static 300–700 with no 470, so the body core drops to the real Regular; Courier Prime is 400/700, so its Kicker keeps Bold as its one real sibling — the butcher-paper voice stays a typewriter, not an invented weight.",
             "registers": {
               "anthemic": {
                 "font": "Ultra",
                 "weight": 400,
+                "weights": [],
                 "leading": "96%",
                 "tracking": "0%"
               },
@@ -3875,7 +4351,7 @@
               },
               "functional": {
                 "font": "Zilla Slab",
-                "weight": 470,
+                "weight": 400,
                 "leading": "166%",
                 "tracking": "0%",
                 "voices": {
@@ -3893,6 +4369,12 @@
               "data": {
                 "font": "Courier Prime",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "142%",
                 "tracking": "5%"
               }
@@ -3968,22 +4450,34 @@
           "refuses": "Muted artisanal beige. The donut case is candy-bright — pink, chocolate, and rainbow sprinkles, full pop colour.",
           "type": {
             "base": "statement",
+            "note": "Ultra is single-cut (Google Fonts, 400) — ladder opted out; Oswald's variable axis stops at 700 (Google Fonts 200–700), so the derived 800 clamped back onto the Bold core and is replaced by the real SemiBold/Medium; Zilla Slab's static set has no 430, so body sits on the real Regular; Courier Prime is 400/700 only.",
             "registers": {
               "anthemic": {
                 "font": "Ultra",
                 "weight": 400,
+                "weights": [],
                 "leading": "95%",
                 "tracking": "0%"
               },
               "contextual": {
                 "font": "Oswald",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Semi-bold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ],
                 "leading": "108%",
                 "tracking": "5%"
               },
               "functional": {
                 "font": "Zilla Slab",
-                "weight": 430,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
                 "voices": {
@@ -4001,6 +4495,12 @@
               "data": {
                 "font": "Courier Prime",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "10%"
               }
@@ -4088,6 +4588,7 @@
           "refuses": "Brown takeaway sludge. Dim sum is pale steamed white with pink shrimp and red char siu — delicate, not a brown box.",
           "type": {
             "base": "editorial",
+            "note": "LXGW WenKai ships three cuts — Light 300, Regular 400, Bold 700 (lxgw/LxgwWenKai) — so the Headline's derived Medium/Semi-bold siblings were fiction; the brush-calligraphic Regular keeps its real Light and Bold, the delicacy the steamer asks for.",
             "registers": {
               "anthemic": {
                 "font": "Noto Serif SC",
@@ -4098,6 +4599,16 @@
               "contextual": {
                 "font": "LXGW WenKai",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "122%",
                 "tracking": "0%"
               },
@@ -4195,6 +4706,7 @@
           "refuses": "Mild brown broth. Sichuan hot pot is a blazing chilli-oil red surface — intense and oily, not a pale brown soup.",
           "type": {
             "base": "statement",
+            "note": "LXGW WenKai has only Light 300 / Regular 400 / Bold 700 (lxgw/LxgwWenKai), so the Bold core is real but its derived 800/600/500 siblings were not — it keeps the genuine Regular and Light; Noto Serif SC's Black 900 is inside its variable 200–900 axis and stays as the málà shout.",
             "registers": {
               "anthemic": {
                 "font": "Noto Serif SC",
@@ -4205,6 +4717,16 @@
               "contextual": {
                 "font": "LXGW WenKai",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ],
                 "leading": "118%",
                 "tracking": "0%"
               },
@@ -4304,6 +4826,7 @@
           "refuses": "Flat greasy brown. Peking duck is glossy lacquer-mahogany on blue-white porcelain — elegant sheen, not a dull brown roast.",
           "type": {
             "base": "luxury",
+            "note": "LXGW WenKai has no 500 — the family is Light 300 / Regular 400 / Bold 700 (lxgw/LxgwWenKai) — so the contextual core moves to the real Regular, which is the lacquer-elegant read the banquet wants, with Light and Bold as its genuine siblings.",
             "registers": {
               "anthemic": {
                 "font": "Noto Serif SC",
@@ -4313,7 +4836,17 @@
               },
               "contextual": {
                 "font": "LXGW WenKai",
-                "weight": 500,
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "120%",
                 "tracking": "0%"
               },
@@ -4412,6 +4945,7 @@
           "refuses": "Single brown tea. Chinese tea spans amber oolong to jade green over clay and porcelain — a translucent range, not one brown.",
           "type": {
             "base": "product",
+            "note": "LXGW WenKai ships Light 300 / Regular 400 / Bold 700 only (lxgw/LxgwWenKai), so the Regular core keeps its two real siblings instead of a fabricated Medium/Semi-bold pair — a translucent tea palette earns its range from Light, not from an invented half-step.",
             "registers": {
               "anthemic": {
                 "font": "Noto Serif SC",
@@ -4422,6 +4956,16 @@
               "contextual": {
                 "font": "LXGW WenKai",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "122%",
                 "tracking": "0%"
               },
@@ -4532,10 +5076,12 @@
           "refuses": "Flat uniform brown. Chocolate work is a tonal range from near-black to cream, finished with gold — depth, not one brown.",
           "type": {
             "base": "luxury",
+            "note": "Cooper Black is a single-weight face — URW/Bitstream ship Cooper Black and Cooper Black Italic only, the other Cooper weights being separate families — so its derived 3-stop ladder was fiction and is opted out; DM Mono ships Light 300 / Regular 400 / Medium 500 only (Google Fonts), so the Kicker's Medium keeps its real Regular and Light.",
             "registers": {
               "anthemic": {
                 "font": "Cooper Black",
                 "weight": 400,
+                "weights": [],
                 "leading": "96%",
                 "tracking": "0%"
               },
@@ -4565,6 +5111,16 @@
               "data": {
                 "font": "DM Mono",
                 "weight": 500,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "10%"
               }
@@ -4640,10 +5196,12 @@
           "refuses": "Pale pastel berry. Real summer berries are saturated red, crimson, and indigo against white cream — vivid, not a washed pastel.",
           "type": {
             "base": "editorial",
+            "note": "Cooper Black ships one weight (+ Italic) in every digital release, so its ladder is opted out — the ripe letterform is the saturation this palette refuses to wash out; DM Mono is 300/400/500 only (Google Fonts), so the Kicker's Medium keeps Regular and Light instead of a fabricated 600/700.",
             "registers": {
               "anthemic": {
                 "font": "Cooper Black",
                 "weight": 400,
+                "weights": [],
                 "leading": "98%",
                 "tracking": "0%"
               },
@@ -4673,6 +5231,16 @@
               "data": {
                 "font": "DM Mono",
                 "weight": 500,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ],
                 "leading": "142%",
                 "tracking": "10%"
               }
@@ -4748,10 +5316,12 @@
           "refuses": "Muted natural tones. Candy is the one place pure artificial saturation belongs — full-strength primaries, by design.",
           "type": {
             "base": "statement",
+            "note": "Cooper Black is single-weight (+ Italic) — ladder opted out, which suits a palette whose whole argument is full-strength, undiluted colour; DM Mono ships only Light 300 / Regular 400 / Medium 500 (Google Fonts), so the Kicker's Medium keeps its real Regular and Light. Lora 460 and Nunito 500 body-class cores also snap to 450 (the Regular-face law), both in-axis for their variable families.",
             "registers": {
               "anthemic": {
                 "font": "Cooper Black",
                 "weight": 400,
+                "weights": [],
                 "leading": "95%",
                 "tracking": "1%"
               },
@@ -4763,7 +5333,7 @@
               },
               "functional": {
                 "font": "Lora",
-                "weight": 460,
+                "weight": 450,
                 "leading": "158%",
                 "tracking": "0%",
                 "voices": {
@@ -4774,13 +5344,23 @@
               },
               "actionable": {
                 "font": "Nunito",
-                "weight": 500,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "DM Mono",
                 "weight": 500,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "14%"
               }
@@ -4858,10 +5438,12 @@
           "refuses": "Flat brown sweet. Caramel work spans amber-gold to burnt-brown — a glossy graded warmth, not a single dull brown.",
           "type": {
             "base": "product",
+            "note": "Cooper Black ships one weight (+ Italic) — ladder opted out; DM Mono is 300/400/500 only (Google Fonts), so the Kicker's Regular core takes the real Medium and Light rather than a fabricated Semi-bold — the graded warmth is in the colour, not in invented weights.",
             "registers": {
               "anthemic": {
                 "font": "Cooper Black",
                 "weight": 400,
+                "weights": [],
                 "leading": "97%",
                 "tracking": "0%"
               },
@@ -4891,6 +5473,16 @@
               "data": {
                 "font": "DM Mono",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "10%"
               }
@@ -4979,6 +5571,7 @@
           "refuses": "Flat coffee brown. Espresso is hazel crema over near-black on white porcelain — a tonal study, not a single brown.",
           "type": {
             "base": "technical",
+            "note": "Prata ships ONE weight (Google Fonts, 400), so its derived Light/Medium/Semi-bold ladder was fiction — opted out; the Didone contrast of the single Roman is the tonal study the crema palette wants, and Cinzel/Crimson Pro/JetBrains Mono are variable, so their cores and ladders were already real.",
             "registers": {
               "anthemic": {
                 "font": "Cinzel",
@@ -4989,6 +5582,7 @@
               "contextual": {
                 "font": "Prata",
                 "weight": 400,
+                "weights": [],
                 "leading": "120%",
                 "tracking": "0%"
               },
@@ -5087,6 +5681,7 @@
           "refuses": "Single flat burgundy. Wine is a translucent range from pale ruby to inky purple, lit through glass — depth, not one red.",
           "type": {
             "base": "luxury",
+            "note": "Prata is a single-cut display serif (Google Fonts, 400) — the derived 3-stop ladder was fiction and is opted out; the flight's depth comes from Cinzel Bold above it, a real cut inside Cinzel's variable 400–900 axis.",
             "registers": {
               "anthemic": {
                 "font": "Cinzel",
@@ -5097,6 +5692,7 @@
               "contextual": {
                 "font": "Prata",
                 "weight": 400,
+                "weights": [],
                 "leading": "122%",
                 "tracking": "0%"
               },
@@ -5195,6 +5791,7 @@
           "refuses": "One flat amber. Whisky spans pale gold to deep mahogany by cask — a graded amber spectrum, not a single brown.",
           "type": {
             "base": "editorial",
+            "note": "Prata ships 400 only (Google Fonts), so its fabricated Light/Medium/Semi-bold ladder is opted out — the graded amber range lives in the colour and in Cinzel's real variable weights, not in invented Prata cuts.",
             "registers": {
               "anthemic": {
                 "font": "Cinzel",
@@ -5205,6 +5802,7 @@
               "contextual": {
                 "font": "Prata",
                 "weight": 400,
+                "weights": [],
                 "leading": "120%",
                 "tracking": "0%"
               },
@@ -5303,6 +5901,7 @@
           "refuses": "One brown spirit. The cocktail pass is a jewel row — negroni red, margarita gold, curaçao blue — translucent colour, not brown.",
           "type": {
             "base": "statement",
+            "note": "Prata is single-cut (Google Fonts, 400) — ladder opted out; the jewel-row loudness stays in Cinzel Extra-bold 800, a real weight inside Cinzel's variable 400–900 axis, rather than in an invented bold Prata.",
             "registers": {
               "anthemic": {
                 "font": "Cinzel",
@@ -5313,6 +5912,7 @@
               "contextual": {
                 "font": "Prata",
                 "weight": 400,
+                "weights": [],
                 "leading": "120%",
                 "tracking": "0%"
               },
