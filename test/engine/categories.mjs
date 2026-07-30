@@ -23,6 +23,32 @@ const VOICE_OF = { display: "Display", heading: "Headline", body: "Body", ui: "L
 // hydrate, so the mapper emitting an off-list name (e.g. "Mono") would lose that voice with no error. Keep in lockstep.
 const VOICES = ["Display", "Headline", "Sub-heading", "Title", "Sub-title", "Lead", "Body", "Body-mono", "Label", "Label-mono", "Kicker", "Tiny", "Tiny-mono", "UI-control", "UI-widget"];
 
+// FACE-EXISTENCE + PURPOSE gate (docs/reference/typography/intended-use.md Layer 2; extends #402):
+// every styleName must name a REAL cut of its resolved family, every configured weight must resolve
+// to a DISTINCT real face, and body-class/UI cores stay ≤450 (the Regular-face snap). Families not in
+// the inventory are unresolvable → skipped by design (the inventory is hand-curated, not parsed).
+const CUTS = JSON.parse(readFileSync(join(HERE, "..", "..", "docs", "reference", "data", "font-cuts.json"), "utf8"));
+const cutNamesFor = (fam) => {
+  const f = CUTS[fam]; if (!f || f.variable) return null;
+  const out = new Set();
+  for (const w of f.widths) for (const wt of Object.keys(f.weights)) {
+    const base = [w, wt].filter(Boolean).join(" ");
+    out.add(base);
+    if (f.italics) { out.add(base + " Italic"); if (wt === "Regular") out.add(w ? `${w} Italic` : "Italic"); }
+  }
+  return out;
+};
+// nearest available face for a numeric weight — ties resolve DOWN, mirroring weightNameFor's snap.
+const nearestFace = (fam, weight) => {
+  const f = CUTS[fam]; if (!f) return null;
+  if (f.variable) { const [lo, hi] = f.variable; return String(Math.min(hi, Math.max(lo, weight))); }
+  let best = null;
+  for (const [name, w] of Object.entries(f.weights)) {
+    if (!best || Math.abs(w - weight) < Math.abs(best[1] - weight) || (Math.abs(w - weight) === Math.abs(best[1] - weight) && w < best[1])) best = [name, w];
+  }
+  return best[0];
+};
+
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -83,13 +109,16 @@ for (const slug of CATS) {
       if (s.leading != null && !Number.isFinite(pct(s.leading))) FAIL("schema", `${slug}[${i}] ${r} leading "${s.leading}" is not a %-string`);
       if (Number.isFinite(pct(s.tracking)) && vv.tracking !== pct(s.tracking)) FAIL("faithful", `${slug}[${i}] ${r} tracking: preset ${vv.tracking} != spec ${s.tracking}`);
       if (Number.isFinite(pct(s.leading)) && vv.leading !== pct(s.leading)) FAIL("faithful", `${slug}[${i}] ${r} leading: preset ${vv.leading} != spec ${s.leading}`);
-      if (Number.isFinite(s.weight) && vv.weight !== s.weight) FAIL("faithful", `${slug}[${i}] ${r} weight: preset ${vv.weight} != spec ${s.weight}`);
+      // body-class cores clamp to ≤450 at generation (intended-use.md Layer 2 law #1 — the
+      // Regular-face snap); the faithful expectation is the CLAMPED value, mirroring the mapper.
+      const expWeight = BODY_CLASS_VOICES.has(VOICE_OF[r]) ? Math.min(s.weight, 450) : s.weight;
+      if (Number.isFinite(s.weight) && vv.weight !== expWeight) FAIL("faithful", `${slug}[${i}] ${r} weight: preset ${vv.weight} != expected ${expWeight} (spec ${s.weight})`);
       // ADJACENT WEIGHT SIBLINGS — every designed slot's voice carries the ladder variants around
       // ITS OWN weight (not a stale/copied set), so exported text styles get emphasis options. The
       // ladder FUNCTION follows the voice's class, mirroring the mapper + typeScale's auto-populate
       // split (2026-07-14): body-class voices (body→Body, ui→Label) derive bodyClassSiblingDefaults.
       if (Number.isFinite(s.weight)) {
-        const want = (BODY_CLASS_VOICES.has(VOICE_OF[r]) ? bodyClassSiblingDefaults : siblingWeightDefaults)(s.weight);
+        const want = (BODY_CLASS_VOICES.has(VOICE_OF[r]) ? bodyClassSiblingDefaults : siblingWeightDefaults)(expWeight);
         if (!eq(vv.weights || [], want)) FAIL("faithful", `${slug}[${i}] ${r} weights: preset ${JSON.stringify(vv.weights)} != derived ${JSON.stringify(want)}`);
       }
     }
@@ -97,7 +126,7 @@ for (const slug of CATS) {
     //      UI-control + UI-widget weight ladders off ITS weight — ladders ONLY, never character overrides
     //      (the interactive voices keep the engine's control-text character).
     if (sd && Number.isFinite(sd.ui?.weight)) {
-      const want = bodyClassSiblingDefaults(sd.ui.weight);
+      const want = bodyClassSiblingDefaults(Math.min(sd.ui.weight, 450)); // ui core clamps like its Label voice
       for (const uv of ["UI-control", "UI-widget"]) {
         const e = t.voices?.[uv];
         if (!e) { FAIL("uiladder", `${slug}[${i}] designed ui slot but no ${uv} ladder`); continue; }
@@ -117,6 +146,27 @@ for (const slug of CATS) {
     // (e) typeScale RESOLVES the design fonts (the picker reads scale.fonts[role])
     const sc = typeScale(t);
     if (!eq(sc.fonts, t.fonts)) FAIL("resolve", `${slug}[${i}] typeScale.fonts != type.fonts`);
+    // (e2) FACE EXISTENCE + DISTINCTNESS (intended-use.md Layer 2 law #2, #402): for inventory-known
+    //      families, a styleName must be a real cut, and the core + sibling weights must land on
+    //      DISTINCT real faces (a missing cut falls back to the nearest face, so two "different"
+    //      configured weights would render identically — the GT America no-Semi-bold defect shape).
+    // (e3) PURPOSE: body-class + interactive cores stay ≤450 (Layer 2 law #1 — the Regular-face snap).
+    for (const [v, vv] of Object.entries(t.voices || {})) {
+      if ((BODY_CLASS_VOICES.has(v) || v === "UI-control" || v === "UI-widget") && Number.isFinite(vv.weight) && vv.weight > 450)
+        FAIL("purpose", `${slug}[${i}] ${v} core ${vv.weight} > 450 — the style labeled "regular" would render the Medium face`);
+      const fam = resolvedFontFor(sc, v);
+      if (!CUTS[fam]) continue; // family not in the inventory — unresolvable, skipped by design
+      if (vv.styleName) {
+        const names = cutNamesFor(fam);
+        if (names && !names.has(vv.styleName)) FAIL("cuts", `${slug}[${i}] ${v} styleName "${vv.styleName}" is not a real ${fam} cut`);
+      }
+      const resolved = [];
+      if (vv.styleName) resolved.push(vv.styleName);
+      else if (Number.isFinite(vv.weight)) resolved.push(nearestFace(fam, vv.weight));
+      for (const s of vv.weights || []) if (Number.isFinite(s.weight)) resolved.push(nearestFace(fam, s.weight));
+      const dupe = resolved.find((x, k) => resolved.indexOf(x) !== k);
+      if (dupe) FAIL("cuts", `${slug}[${i}] ${v}: two configured weights resolve to the same ${fam} face "${dupe}"`);
+    }
     // (f) APPLY path: hydrate(preset) == openConfigAsSet → clampType keeps fonts AND voices (no silent drop),
     //     and in-range params are IDENTITY-preserved (not clamped/mutated)
     const doc = hydrate(p);
@@ -131,7 +181,7 @@ const noType = hydrate({ palettes: [{ name: "x", hue: 200, chroma: 60, on: true 
 if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL("fallback", "un-typed palette lost the product default");
 
 // ── REPORT ──
-for (const g of ["count", "hastype", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "apply", "fallback"]) {
+for (const g of ["count", "hastype", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "fallback"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

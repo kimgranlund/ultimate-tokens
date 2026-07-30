@@ -1,0 +1,17 @@
+{
+  "$comment": "Real cut inventory per font family, hand-curated — the face-existence gate (test/engine/categories.mjs, per docs/reference/typography/intended-use.md Layer 2) checks preset styleName/weights ONLY against families listed here; an unlisted family is unresolvable and skipped. Static families: cut names generate as width × weight (+ Italic). Variable families: any weight inside the range is real. Verify against the actual name tables (fontTools) before adding a family — assumed cuts are how the GT America Semi-bold defect shipped (#402).",
+  "GT America": {
+    "widths": ["", "Condensed", "Compressed", "Extended", "Expanded"],
+    "weights": { "Thin": 100, "Ultra Light": 200, "Light": 300, "Regular": 400, "Medium": 500, "Bold": 700, "Black": 900 },
+    "italics": true
+  },
+  "GT America Mono": {
+    "widths": [""],
+    "weights": { "Thin": 100, "Ultra Light": 200, "Light": 300, "Regular": 400, "Medium": 500, "Bold": 700, "Black": 900 },
+    "italics": true
+  },
+  "Inter": { "variable": [100, 900] },
+  "Inter Tight": { "variable": [100, 900] },
+  "Source Serif 4": { "variable": [200, 900] },
+  "JetBrains Mono": { "variable": [100, 800] }
+}

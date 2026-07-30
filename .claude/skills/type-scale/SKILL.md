@@ -19,7 +19,9 @@ scale → DTCG / CSS tokens. Pure, no DOM. Every step's size, line-height, lette
 **derived** from the treatment's knobs — EXCEPT size itself, which since 2026-07-13 is a hand-authored FIXED
 table shared across all treatments (see the layer table below). The conceptual *why* (the fifteen voices,
 the fixed-size-table rewrite, the target token shape) is owned by `docs/reference/typography/README.md` —
-**cite it, don't re-derive.** Color lives next door in `color-math`; this skill never touches color.
+**cite it, don't re-derive.** What each voice/rank/register is FOR — the reasoning a preset's face and
+weight choices must answer to — is `docs/reference/typography/intended-use.md`; consult it before
+authoring or judging any preset typography. Color lives next door in `color-math`; this skill never touches color.
 
 ## The shape — five layers (depth in `references/foundations.md`)
 
@@ -110,5 +112,6 @@ The guard that catches the Safari font break is the `typeTokensCSS(luxury)` quot
 | `references/rubric.md` | score the change before calling it done — the fifteen voices, the fixed-size-table math, the quoting guard, the body-class snap boundary, and the font wiring are the gates |
 | `references/weight-ladders-and-labels.md` | sibling-weight ladders, the expressive-vs-body-class label split, the Figma Styles `•`-marker + `-single` suffix, the never-re-derive-a-relative-unit law, preset weight authoring against a real font's cuts |
 | `docs/reference/typography/README.md` | the fifteen named voices, the fixed-size-table rewrite, the system relationships, the target token shape — owned there, cite |
+| `docs/reference/typography/intended-use.md` | what each voice, weight rank, and brand register is FOR — the purpose layer every preset face/weight choice must be reasoned against (incl. the worked BZZR register mapping) — owned there, cite |
 
 Peers: [[geometry-system]] (composition with type) · [[adding-export-formats]] (the type emitter) · [[building-editor-sections]] (the Typography section) · [[shipping-changes]].

@@ -6,6 +6,8 @@ voice-taxonomy and fixed-size-table rewrite below and is not kept in lockstep wi
 `src/engine/type.mjs` for the current, live source of truth. The type analog of the color engine — a
 few parameters → a systematic type scale → exported as [DTCG](https://tr.designtokens.org/) tokens
 (and, in the plugin, Figma text styles). Font-role names are generic (no brand/foundry specifics).
+What each voice, weight rank, and brand register is **for** — the reasoning surface for authoring
+or reviewing a preset — is `intended-use.md`, next to this file.
 
 ## Structure
 
@@ -99,12 +101,16 @@ seed size at all.
 
 A voice's core weight is one number; real UIs also need *nearby* weights for inline emphasis (a bold
 word in body text, a medium label next to a regular one) without inventing an unrelated weight.
-`siblingWeightDefaults(core)` (`src/engine/type.mjs`) derives exactly that: **three ladder-adjacent
-stops** (immediate neighbors on the 9-stop `WEIGHT_LADDER` — 100…900 — never a skipped step) — one
-stepping **away** from the ladder's center, two stepping **toward** it (nearer first) — `Regular 400`
-→ `Light 300` (away) `Medium 500, Semi-bold 600` (toward); `Extra-bold 800` → `Black 900` (away)
-`Bold 700, Semi-bold 600` (toward). The core itself is never included. An edge core (`Thin 100` /
-`Black 900`) has nowhere for its "away" stop to go — it drops, leaving the old 2-stop set.
+Sibling derivation is **two-tier** (#303/#307, 2026-07-14): the EXPRESSIVE voices (Display ·
+Headline · Sub-heading · Title · Sub-title · Kicker) use `siblingWeightDefaults(core)` — **three
+ladder-adjacent stops** (immediate neighbors on the 9-stop `WEIGHT_LADDER` — 100…900 — never a
+skipped step), one stepping **away** from the ladder's center, two stepping **toward** it (nearer
+first); the core itself is never included, and an edge core (`Thin 100` / `Black 900`) drops its
+"away" stop. The BODY-CLASS voices (Lead · Body · Body-mono · Label · Label-mono · Tiny ·
+Tiny-mono) use `bodyClassSiblingDefaults(core)` — **two strictly-heavier stops** with a fixed face
+mapping (`regular`=Regular 400 · `bolder`=Medium 500 · `boldest`=Semi-bold 600) and cores clamped
+≤ 450 so they snap to the Regular face. Purpose of each rank + the full ladder/label canon:
+`intended-use.md` (Layer 2) and `.claude/skills/type-scale/references/weight-ladders-and-labels.md`.
 
 **2026-07-13 — every voice's siblings are AUTO-POPULATED by default.** `typeScale()` seeds
 `weights[voice]` from `siblingWeightDefaults` on that voice's own **resolved** core weight (after any

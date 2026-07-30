@@ -204,7 +204,11 @@ function design5ToTypeConfig(t) {
     if (Number.isFinite(tr)) v.tracking = tr;
     const ld = pct(s.leading); //                                 clampType range [0.8, 3]
     if (Number.isFinite(ld)) v.leading = ld;
-    if (Number.isFinite(s.weight)) v.weight = s.weight; //        clampType range [100, 1000]
+    // clampType range [100, 1000]; BODY-CLASS cores additionally clamp to ≤450 (intended-use.md
+    // Layer 2 law #1 / #303-#307): a core past 450 snaps to the Medium face while the style label
+    // says "regular" — 175 spec weights (460–520, mostly ui→Label) shipped that mismatch before
+    // this clamp (2026-07-30).
+    if (Number.isFinite(s.weight)) v.weight = BODY_CLASS_VOICES.has(TYPE_VOICE_OF[role]) ? Math.min(s.weight, 450) : s.weight;
     // ADJACENT WEIGHT SIBLINGS — every designed voice ships weight variants around its own core, so
     // the preset's exported text styles (Figma `Voice/step/Name`, CSS/DTCG weight tokens) carry
     // emphasis options out of the box, not just the single core weight. The ladder FUNCTION follows
