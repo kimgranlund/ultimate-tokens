@@ -29,6 +29,11 @@
 - [ ] Any `styleName` or non-default weight on a family NOT in `docs/reference/data/font-cuts.json`
       names its cut source in `type.note` (the face-existence gate skips unknown families — the
       burden of proof moves to the note).
+- [ ] A STATIC family's core weight EQUALS a real cut's numeric weight — "it snaps to a real face"
+      is not acceptance (pilot ruling, 2026-07-30: the snap rationalization un-justifies the
+      program's own fixes; a VF core sits inside the axis range instead). `styleName` is the style
+      WITHIN the declared family (engine contract, `src/engine/type.mjs` styleNames) — a cut sold
+      as its own family is encoded as the `font`, never as a family-prefixed styleName.
 - [ ] No character override on UI-control/UI-widget (ladders-only law — the gate enforces `font`
       only; this line exists so a reviewer checks the INTENT too, not just the field name).
 - [ ] The revision touched ONLY this category's spec JSON + its regenerated module (+ ledger row)
