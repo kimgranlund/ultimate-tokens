@@ -9,7 +9,7 @@ category: `palette-researcher` draft → reconcile + gates → `design:font-choi
 | Category | Issue | State | PR | Date | Notes |
 |---|---|---|---|---|---|
 | architecture (pilot) | #408 | done | #417 | 2026-07-30 | 34/48 revised; checker 51/60 (2 passes); pilot ruling added to the rubric (real-cut cores, styleName-within-family); lessons → follow-up issue |
-| brands | #409 | queued | — | — | incl. typing Maison/Adia (untyped) + reconciling Corsa/Nike/Burger King against their real identities |
+| brands | #409 | done | #420 | 2026-07-30 | 3/7 revised (Nike/BK/Corsa on real faces + cuts); Maison/Adia stay untyped BY RULING (color-only stories, no typographic evidence — typing them would be invention); BZZR/Modal jazz pass-throughs untouched; checker 49/60 + fixes (Nike UI-ladder fabrication caught → no-core-weight actionable shape) |
 | cuisine | #410 | queued | — | — | |
 | film | #411 | queued | — | — | |
 | literature | #412 | queued | — | — | |

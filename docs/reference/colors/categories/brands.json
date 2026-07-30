@@ -993,36 +993,54 @@
           "refuses": "A muted, faded-photograph nostalgia. The Grand Tour's heritage is loud and graphic — maglia-rosa pink, maillot-jaune yellow, and gas-station-signage jersey reds and greens, printed on pink and yellow newsprint, not sepia.",
           "type": {
             "base": "editorial",
+            "note": "Re-reasoned from this entry's own sources — interwar-to-Moser-era race posters and the two sports papers the jerseys came from — not a generic elegant-serif reflex: the loudest voice is the poster lettering, so anthemic becomes Anton (Vernon Adams, Google Fonts/SIL OFL, a redrawn traditional advertising sans that ships a SINGLE Regular 400), core 400 with the ladder opted out so the letterform does the shouting; the newsprint masthead register moves to contextual on Bodoni Moda (indestructible type*, Google Fonts, variable 400–900 — 700 core, derived 800/600/500 all inside the axis), Italian sports-press Didone rather than Anton's fictional 800; reading text leaves Inter (a screen-UI grotesque fighting the newsprint story) for Source Serif 4 (variable 200–900, in font-cuts.json and bundled, so it actually renders) at a real 400; actionable's 460 core was not a Söhne cut — Klim ships Buch 400 · Kräftig 500 · Halbfett 600 · Dreiviertelfett 700, so the core sits on Buch 400 with its real German cut names as the ladder; Courier Prime ships only 400/700 (Quote-Unquote Apps), so the data core drops from 500 to the real Regular with Bold as its single sibling, Kicker tracked out to 12% for the typed results-sheet read.",
             "registers": {
               "anthemic": {
-                "font": "Bodoni Moda",
-                "weight": 700,
+                "font": "Anton",
+                "weight": 400,
+                "weights": [],
                 "leading": "94%",
                 "tracking": "-1%"
               },
               "contextual": {
-                "font": "Anton",
-                "weight": 800,
-                "leading": "108%",
-                "tracking": "0.5%"
+                "font": "Bodoni Moda",
+                "weight": 700,
+                "leading": "106%",
+                "tracking": "0%"
               },
               "functional": {
-                "font": "Inter",
-                "weight": 420,
+                "font": "Source Serif 4",
+                "weight": 400,
                 "leading": "158%",
                 "tracking": "0%"
               },
               "actionable": {
                 "font": "Söhne",
-                "weight": 460,
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Kräftig",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Halbfett",
+                    "weight": 600
+                  }
+                ],
                 "leading": "150%",
                 "tracking": "0.4%"
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 500,
+                "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "140%",
-                "tracking": "6%"
+                "tracking": "12%"
               }
             }
           },
@@ -1521,28 +1539,78 @@
           "refuses": "Not a rainbow of past colorway drops — Nike's brand identity is disciplined black and white, lit by a single orange-red accent, never a full spectrum.",
           "type": {
             "base": "statement",
+            "note": "Reconciled against Nike's actual codified faces: headlines are Futura Condensed Extra Bold — Nike's own cut (Futura ND Nike 365) is bespoke and unlicensable, so retail Futura PT Condensed stands in, and since Paratype/Adobe ship that width at Book 400 · Medium 500 · Bold 700 · Extra Bold 800 ONLY, the 800 core (styleName 'Extra Bold', a style within the declared family) carries a real Bold/Medium ladder instead of a fictional 900; the editorial register is the Trade Gothic Nike has moved to, at its real Bold Condensed No. 20 with Condensed No. 18 on the caps Sub-heading (Linotype's 14-style family = Light 300 · Roman 400 · Bold 700 plus the two condensed cuts — no 500 or 600 exists, which is why the previous 'Trade Gothic Next Condensed 700 / 500' pair was fiction and every ladder here is explicit); body copy is Helvetica Neue per Nike's own guidelines (55 Roman 400 · 65 Medium 500 · 75 Bold 700 — no 600, so the ladder is authored); controls take plain Trade Gothic with NO declared core (the base 440 snaps to Roman, and the mapper then fabricates no interactive ladder for a family with no 500/600); Nike has no mono brand face, so the data register keeps Roboto Mono (variable 100–700, 500 real) as a declared stand-in for stock-code fine print — near-monochrome discipline means the type stays black-and-white loud, never decorative.",
             "registers": {
               "anthemic": {
-                "font": "Futura PT Bold",
+                "font": "Futura PT Condensed",
+                "styleName": "Extra Bold",
                 "weight": 800,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ],
                 "leading": "94%",
                 "tracking": "-2%"
               },
               "contextual": {
-                "font": "Trade Gothic Next Condensed",
+                "font": "Trade Gothic",
+                "styleName": "Bold Condensed No. 20",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ],
                 "leading": "104%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "voices": {
+                  "Sub-heading": {
+                    "styleName": "Condensed No. 18",
+                    "weight": 400,
+                    "weights": [
+                      {
+                        "name": "Bold Condensed No. 20",
+                        "weight": 700
+                      }
+                    ]
+                  }
+                }
               },
               "functional": {
                 "font": "Helvetica Neue",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "156%",
                 "tracking": "0%"
               },
               "actionable": {
-                "font": "Trade Gothic Next",
-                "weight": 500,
+                "font": "Trade Gothic",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "140%",
                 "tracking": "1%"
               },
@@ -1623,36 +1691,81 @@
           "refuses": "Not the 1990s photoreal, blue-swooshed fast-food logo it replaced — the flame identity is warm and fully analogous, unashamedly appetite-red, with no cool blue anywhere in it.",
           "type": {
             "base": "statement",
+            "note": "The 2021 flame identity's REAL type, replacing the Cooper Black / Recoleta / Sofia Pro lookalikes: JKR commissioned Colophon Foundry to draw Flame in two weights (Bold + Regular) and Flame Sans in a single Regular — both proprietary to Burger King Corporation, named here because the palette is sampled from the same guidelines, and they fall back to the default face when unavailable; so anthemic and contextual sit on Flame Bold 700 with Regular as the only real sibling, and every Flame Sans voice (Body, Lead, Title, Sub-title, Label and the controls) sits on the one real Regular 400 with its ladder opted out rather than inventing a Medium/Semi-bold — the actionable register declares no core weight at all so the preset asserts no interactive ladder (the engine auto-populates at scale time, where single-cut Flame Sans renders every stop Regular); the data register keeps Space Mono, Colophon's own release for Google Fonts (400/700), core on the real Regular with Bold as its single sibling and Kicker tracked to 10% for menu-board fine print. The refusal holds: warm, chunky and fully analogous, no cool corporate grotesque anywhere in it.",
             "registers": {
               "anthemic": {
-                "font": "Cooper Black",
-                "weight": 900,
+                "font": "Flame",
+                "weight": 700,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ],
                 "leading": "94%",
                 "tracking": "-2%"
               },
               "contextual": {
-                "font": "Recoleta",
+                "font": "Flame",
                 "weight": 700,
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ],
                 "leading": "106%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "voices": {
+                  "Sub-heading": {
+                    "weight": 400,
+                    "weights": [
+                      {
+                        "name": "Bold",
+                        "weight": 700
+                      }
+                    ]
+                  }
+                }
               },
               "functional": {
-                "font": "Sofia Pro",
+                "font": "Flame Sans",
                 "weight": 400,
+                "weights": [],
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Lead": {
+                    "weight": 400,
+                    "weights": []
+                  },
+                  "Title": {
+                    "weight": 400,
+                    "weights": []
+                  },
+                  "Sub-title": {
+                    "weight": 400,
+                    "weights": []
+                  }
+                }
               },
               "actionable": {
-                "font": "Sofia Pro",
-                "weight": 500,
+                "font": "Flame Sans",
+                "weights": [],
                 "leading": "150%",
                 "tracking": "0.5%"
               },
               "data": {
                 "font": "Space Mono",
                 "weight": 400,
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "leading": "148%",
-                "tracking": "2%"
+                "tracking": "10%"
               }
             }
           }
