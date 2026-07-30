@@ -34,7 +34,7 @@ intent: >
   Let a design-system author generate perceptually-even, in-gamut palettes + a 53-role
   semantic layer, judge their quality, and export to code/Figma.
 posture: [creating, configuring, analyzing]      # a creative editor — NOT a dashboard
-role: [design-system-author]                      # single role → no role-collapse
+role: [design-system-author]                      # single role → no role-collapse  # <!-- fix-old-names: keep -->
 core_loop: tune params → see ramps vs the gamut ceiling → judge → export
 
 tasks:

@@ -245,6 +245,6 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 
 ## When NOT to use this
 
-- For generic color-theory questions unrelated to this tool — use a color skill instead.
+- For generic color-theory questions unrelated to this tool — use a color skill instead. <!-- fix-old-names: keep -->
 - To pick brand colors or build a non-HCT palette — out of scope (see non-goals).
 - For general spec writing unrelated to the HCT Palette Generator — use spec-author directly.

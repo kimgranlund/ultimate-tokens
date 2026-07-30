@@ -222,7 +222,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
   block/pull quote, a figure/media caption, and fine-print. Two constraints shaped the fix: the engine
   emitters are all generic (a new voice auto-flows from one `cat()` line), and `role` conflated three
   things — the **font**, the **paragraph flow** (single-line height + paragraph factor), and the character.
-- **Decision.** Add **four editorial voices → `make11()`** (via intent-grill, 2 rounds):
+- **Decision.** Add **four editorial voices → `make11()`** (via intent-grill, 2 rounds): <!-- fix-old-names: keep -->
   1. **Set + roles.** **Lead** (body role — a larger standfirst), **Quote** (**heading** role, so it
      inherits each treatment's display face — a serif pull-quote in the serif treatments, a grotesque in
      Brutalist), **Caption** and **Legal** (fine-print). All four ride **existing** font roles, so **no new
