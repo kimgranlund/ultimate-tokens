@@ -127,9 +127,11 @@ carries a segment now — a **dot-prefixed, Title-Case name** (`Voice/step/• {
 `Body/md/• Regular`) that visually marks it as the default pick among its named siblings without ever
 colliding with a sibling's own lowercase-kebab slug (the one exception: a voice explicitly opted OUT
 via `weights: []` keeps the bare `Voice/step` name — nothing to disambiguate). Every Color Categories
-preset (336 palettes × the 5 designed roles — Display/Headline/Body/Label/Kicker) still ships its
-siblings **explicitly** pre-populated at generation time (`scripts/gen-categories.mjs#design5ToTypeConfig`,
-computed from that slot's own designed weight) — the other 8 voices on every preset now get the SAME
-default siblings automatically, live, from the engine.
+preset (336 palettes × the five REGISTERS — anthemic/contextual/functional/actionable/data, each
+shaping its primary voice Display/Headline/Body/Label/Kicker per `intended-use.md` Layer 3) still
+ships its siblings **explicitly** pre-populated at generation time
+(`scripts/gen-categories.mjs#registersToTypeConfig`, computed from that register's own designed
+weight) — voices no register opts in get the SAME default siblings automatically, live, from the
+engine.
 
 > Status: **shipped** — `src/engine/type.mjs` (`typeScale` + `typeTokensCSS`/`typeTokensDTCG`) and the Typography editor section generate these tokens.

@@ -85,40 +85,42 @@
           "refuses": "Faded sepia nostalgia. The jazz sleeve is crisp cobalt-and-cream with bold type — modernist graphic, not a faded old photo.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 800,
                 "leading": "90%",
                 "tracking": "-3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "News Gothic",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "New Caledonia",
                 "weight": 420,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic No. 2"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica Neue",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 600,
                 "leading": "142%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic No. 2"
             }
           }
         },
@@ -190,40 +192,42 @@
           "refuses": "Bright clean stage. The jazz club is smoky shadow lit by brass-gold and one amber spot — warmth in the dark, not a lit room.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 750,
                 "leading": "95%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "News Gothic",
                 "weight": 650,
                 "leading": "112%",
                 "tracking": "3%"
               },
-              "body": {
+              "functional": {
                 "font": "New Caledonia",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic No. 2"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica Neue",
                 "weight": 480,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 560,
                 "leading": "145%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic No. 2"
             }
           }
         },
@@ -296,40 +300,42 @@
           "refuses": "Muted vintage band. The second-line is sunlit brass-gold with carnival purple, green, and gold — vivid celebration, not a faded photo.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 900,
                 "leading": "88%",
                 "tracking": "-4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "News Gothic",
                 "weight": 760,
                 "leading": "108%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "New Caledonia",
                 "weight": 450,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic No. 2"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica Neue",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 640,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic No. 2"
             }
           }
         },
@@ -401,40 +407,42 @@
           "refuses": "Faded sepia. Modal jazz is deep blue and teal warmed by brass — a cool-blue mood, not a brown nostalgia.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 700,
                 "leading": "98%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "News Gothic",
                 "weight": 600,
                 "leading": "115%",
                 "tracking": "4%"
               },
-              "body": {
+              "functional": {
                 "font": "New Caledonia",
                 "weight": 400,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic No. 2"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica Neue",
                 "weight": 460,
                 "leading": "155%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic No. 2"
             }
           }
         }
@@ -520,40 +528,42 @@
           "refuses": "Tasteful muted scheme. Punk is black and newsprint detonated by shock-pink and acid-yellow — confrontation, not good taste.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "FF Trixie",
                 "weight": 700,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Franklin Gothic Heavy",
                 "weight": 900,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Courier Prime",
                 "weight": 450,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Compacta Bold"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Arial",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Stardos Stencil",
                 "weight": 700,
                 "leading": "140%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Compacta Bold"
             }
           }
         },
@@ -626,40 +636,42 @@
           "refuses": "Colourful stage show. The punk club is black leather and chrome under one red wash — stark and hard, not a lit-up gig.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "FF Trixie",
                 "weight": 700,
                 "leading": "95%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Franklin Gothic Heavy",
                 "weight": 900,
                 "leading": "98%",
                 "tracking": "-2%"
               },
-              "body": {
+              "functional": {
                 "font": "Courier Prime",
                 "weight": 440,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Compacta Bold"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Arial",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Stardos Stencil",
                 "weight": 700,
                 "leading": "140%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Compacta Bold"
             }
           }
         },
@@ -732,40 +744,42 @@
           "refuses": "Polished design. Riot-grrrl zines are raw red, black, and marker-pink on newsprint — handmade and loud, not a clean layout.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "FF Trixie",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Franklin Gothic Heavy",
                 "weight": 800,
                 "leading": "102%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Courier Prime",
                 "weight": 450,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Compacta Bold"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Arial",
                 "weight": 460,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Stardos Stencil",
                 "weight": 600,
                 "leading": "142%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Compacta Bold"
             }
           }
         },
@@ -839,40 +853,42 @@
           "refuses": "Muted subtle palette. Pop-punk is black with hot-pink and highlighter brights — loud and youthful, not understated.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "FF Trixie",
                 "weight": 750,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Franklin Gothic Heavy",
                 "weight": 900,
                 "leading": "100%",
                 "tracking": "-2%"
               },
-              "body": {
+              "functional": {
                 "font": "Courier Prime",
                 "weight": 460,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Compacta Bold"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Arial",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Stardos Stencil",
                 "weight": 700,
                 "leading": "140%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Compacta Bold"
             }
           }
         }
@@ -956,40 +972,42 @@
           "refuses": "Muted '70s brown. Disco is silver, gold, and saturated pink-purple light on black — glittering glamour, not earth tones.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "ITC Avant Garde Gothic",
                 "weight": 800,
                 "leading": "92%",
                 "tracking": "-5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "ITC Serif Gothic",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "ITC Souvenir",
                 "weight": 420,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Antique Olive Nord"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Data 70",
                 "weight": 600,
                 "leading": "142%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Antique Olive Nord"
             }
           }
         },
@@ -1062,40 +1080,42 @@
           "refuses": "Muted vintage TV. The show is a full saturated rainbow — orange, yellow, green, blue — joyous pop colour, not a faded screen.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "ITC Avant Garde Gothic",
                 "weight": 900,
                 "leading": "90%",
                 "tracking": "-4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "ITC Serif Gothic",
                 "weight": 760,
                 "leading": "102%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "ITC Souvenir",
                 "weight": 440,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Antique Olive Nord"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Data 70",
                 "weight": 640,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Antique Olive Nord"
             }
           }
         },
@@ -1167,40 +1187,42 @@
           "refuses": "Earthy soul brown. P-Funk's art is a chrome-and-neon cosmos — purple, silver, and gold, a space fantasy, not earth tones.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "ITC Avant Garde Gothic",
                 "weight": 800,
                 "leading": "95%",
                 "tracking": "-4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "ITC Serif Gothic",
                 "weight": 720,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "ITC Souvenir",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Antique Olive Nord"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Data 70",
                 "weight": 700,
                 "leading": "145%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Antique Olive Nord"
             }
           }
         },
@@ -1272,40 +1294,42 @@
           "refuses": "Muted retro brown. The roller rink is neon brights on blond wood — saturated fun, not a faded '70s tone.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "ITC Avant Garde Gothic",
                 "weight": 750,
                 "leading": "98%",
                 "tracking": "-3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "ITC Serif Gothic",
                 "weight": 660,
                 "leading": "108%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "ITC Souvenir",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Antique Olive Nord"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica",
                 "weight": 480,
                 "leading": "155%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Data 70",
                 "weight": 560,
                 "leading": "145%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Antique Olive Nord"
             }
           }
         }
@@ -1390,40 +1414,42 @@
           "refuses": "Generic tropical neon. Roots reggae is the symbolic red-gold-green tricolour with black and earth — meaningful, not a beach palette.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cooper Black",
                 "weight": 800,
                 "leading": "105%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bank Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 600,
                 "leading": "142%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bank Gothic"
             }
           }
         },
@@ -1495,40 +1521,42 @@
           "refuses": "Bright sunny beach. The sound-system yard is dark and sodium-lit, hazed with smoke — a night scene, not a postcard.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 750,
                 "leading": "98%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cooper Black",
                 "weight": 750,
                 "leading": "102%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 440,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bank Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 640,
                 "leading": "142%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bank Gothic"
             }
           }
         },
@@ -1600,40 +1628,42 @@
           "refuses": "Bright clean studio. The dub studio is dark, lit by amber meters and green LEDs — analogue glow, not a white room.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 700,
                 "leading": "100%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cooper Black",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bank Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 700,
                 "leading": "145%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bank Gothic"
             }
           }
         },
@@ -1705,40 +1735,42 @@
           "refuses": "Bright party colour. Lovers rock is intimate red-and-blue light in the dark — mellow warmth, not a bright disco.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cooper Black",
                 "weight": 700,
                 "leading": "108%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 420,
                 "leading": "165%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bank Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 460,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bank Gothic"
             }
           }
         }
@@ -1822,40 +1854,42 @@
           "refuses": "Flat monochrome grey. Golden-age hip-hop is concrete lifted by gleaming gold and brick red — warm accents, not all grey.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Graffonti",
                 "weight": 800,
                 "leading": "95%",
                 "tracking": "-3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Aachen Bold",
                 "weight": 800,
                 "leading": "102%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Helvetica Now Text",
                 "weight": 440,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bebas Neue"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 600,
                 "leading": "142%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bebas Neue"
             }
           }
         },
@@ -1928,40 +1962,42 @@
           "refuses": "Muted street tones. Graffiti is full spray-can saturation — magenta, blue, yellow, chrome — maximal colour, by design.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Graffonti",
                 "weight": 900,
                 "leading": "90%",
                 "tracking": "-5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Aachen Bold",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "-2%"
               },
-              "body": {
+              "functional": {
                 "font": "Helvetica Now Text",
                 "weight": 450,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bebas Neue"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 640,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bebas Neue"
             }
           }
         },
@@ -2033,40 +2069,42 @@
           "refuses": "Bright daytime colour. Trap visuals are deep purple and night-black with gold and neon — a nocturnal mood, not daylight.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Graffonti",
                 "weight": 800,
                 "leading": "95%",
                 "tracking": "-3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Aachen Bold",
                 "weight": 750,
                 "leading": "105%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Helvetica Now Text",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bebas Neue"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 700,
                 "leading": "145%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bebas Neue"
             }
           }
         },
@@ -2138,40 +2176,42 @@
           "refuses": "Grey urban grit. G-funk is warm sunset gold and candy-paint purple — a sunny lowrider mood, not a grey street.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Graffonti",
                 "weight": 750,
                 "leading": "100%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Aachen Bold",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Helvetica Now Text",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bebas Neue"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 460,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 560,
                 "leading": "145%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bebas Neue"
             }
           }
         }
@@ -2256,40 +2296,42 @@
           "refuses": "Tasteful muted scheme. Acid house is full fluorescent saturation — acid yellow, day-glo orange, hot pink — maximal, not subtle.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Eurostile Bold Extended",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Akzidenz-Grotesk Bold",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Univers",
                 "weight": 440,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "DIN Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-B",
                 "weight": 600,
                 "leading": "142%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "DIN Condensed"
             }
           }
         },
@@ -2361,40 +2403,42 @@
           "refuses": "Warm organic palette. Detroit techno is cold chrome-and-black with electric-blue circuitry — machine futurism, not warmth.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Eurostile Bold Extended",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Akzidenz-Grotesk Bold",
                 "weight": 760,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Univers",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "DIN Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-B",
                 "weight": 700,
                 "leading": "145%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "DIN Condensed"
             }
           }
         },
@@ -2467,40 +2511,42 @@
           "refuses": "Lit ambient room. The rave is near-total black sliced by saturated laser green and UV — light-on-dark, not an ambient glow.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Eurostile Bold Extended",
                 "weight": 900,
                 "leading": "95%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Akzidenz-Grotesk Bold",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Univers",
                 "weight": 450,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "DIN Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-B",
                 "weight": 640,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "DIN Condensed"
             }
           }
         },
@@ -2574,40 +2620,42 @@
           "refuses": "Muted natural palette. Vaporwave is candy pastel pink-and-cyan with neon grid — a digital dream, not a natural scheme.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Eurostile Bold Extended",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Akzidenz-Grotesk Bold",
                 "weight": 600,
                 "leading": "110%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Univers",
                 "weight": 400,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "DIN Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 460,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-B",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "DIN Condensed"
             }
           }
         }
@@ -2692,40 +2740,42 @@
           "refuses": "Total featureless black. Black metal is black set against stark corpse-white and frost-blue — high contrast, not a void.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fette Fraktur",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trajan",
                 "weight": 700,
                 "leading": "112%",
                 "tracking": "5%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 420,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Neue Machina"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Optima",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-A",
                 "weight": 600,
                 "leading": "142%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Neue Machina"
             }
           }
         },
@@ -2797,40 +2847,42 @@
           "refuses": "Bright clean rock. Doom is deep purple and amp-black hazed with amber fuzz — heavy and warm-dark, not a bright stage.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fette Fraktur",
                 "weight": 750,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trajan",
                 "weight": 660,
                 "leading": "115%",
                 "tracking": "4%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Neue Machina"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Optima",
                 "weight": 480,
                 "leading": "155%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-A",
                 "weight": 560,
                 "leading": "145%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Neue Machina"
             }
           }
         },
@@ -2902,40 +2954,42 @@
           "refuses": "Grim monochrome black. Power metal art is epic colour — steel blue, gold, and dragon-fire — heroic fantasy, not all-black.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fette Fraktur",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trajan",
                 "weight": 700,
                 "leading": "115%",
                 "tracking": "6%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 420,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Neue Machina"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Optima",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "2%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-A",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Neue Machina"
             }
           }
         },
@@ -3007,40 +3061,42 @@
           "refuses": "Flat black void. Gothic metal is deep crimson and candle-gold against black and stone — theatrical, not a featureless dark.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Fette Fraktur",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trajan",
                 "weight": 720,
                 "leading": "112%",
                 "tracking": "5%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Neue Machina"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Optima",
                 "weight": 480,
                 "leading": "155%",
                 "tracking": "2%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-A",
                 "weight": 560,
                 "leading": "145%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Neue Machina"
             }
           }
         }
@@ -3124,40 +3180,42 @@
           "refuses": "Slick country-pop colour. Folk Americana is denim, wheat, and dust — weathered and warm, not a glossy stage palette.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rosewood",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sentinel",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller Text",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic Bold"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Interstate",
                 "weight": 480,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Prestige Elite",
                 "weight": 560,
                 "leading": "145%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic Bold"
             }
           }
         },
@@ -3231,40 +3289,42 @@
           "refuses": "Drab denim only. The Opry rhinestone suit is turquoise, rose, and gold against red velvet — flamboyant showbiz, not workwear.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rosewood",
                 "weight": 900,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sentinel",
                 "weight": 800,
                 "leading": "108%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller Text",
                 "weight": 440,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic Bold"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Interstate",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Prestige Elite",
                 "weight": 640,
                 "leading": "140%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic Bold"
             }
           }
         },
@@ -3337,40 +3397,42 @@
           "refuses": "Cold modern palette. The bluegrass porch is warm varnish, wood, and hill-green — homespun warmth, not a sleek stage.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rosewood",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sentinel",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller Text",
                 "weight": 420,
                 "leading": "165%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic Bold"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Interstate",
                 "weight": 460,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Prestige Elite",
                 "weight": 520,
                 "leading": "145%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic Bold"
             }
           }
         },
@@ -3442,40 +3504,42 @@
           "refuses": "Shiny Nashville pop. Outlaw country is dust, black, and worn leather with a turquoise note — rugged, not a glossy stage.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rosewood",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sentinel",
                 "weight": 750,
                 "leading": "108%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller Text",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic Bold"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Interstate",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Prestige Elite",
                 "weight": 600,
                 "leading": "142%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic Bold"
             }
           }
         }
@@ -3561,40 +3625,42 @@
           "refuses": "Austere modern hall. The opera house is red velvet and gilt under crystal — warm grandeur, not a grey concrete auditorium.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Didot",
                 "weight": 800,
                 "leading": "106%",
                 "tracking": "10%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cinzel",
                 "weight": 720,
                 "leading": "116%",
                 "tracking": "6%"
               },
-              "body": {
+              "functional": {
                 "font": "EB Garamond",
                 "weight": 430,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gill Sans",
                 "weight": 470,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Copperplate Gothic",
                 "weight": 580,
                 "leading": "145%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan"
             }
           }
         },
@@ -3668,40 +3734,42 @@
           "refuses": "Cold blue concert grade. The orchestra is black-and-white warmed by string-amber and brass — formal warmth, not a cold stage.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Didot",
                 "weight": 620,
                 "leading": "110%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cinzel",
                 "weight": 500,
                 "leading": "120%",
                 "tracking": "4%"
               },
-              "body": {
+              "functional": {
                 "font": "EB Garamond",
                 "weight": 400,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gill Sans",
                 "weight": 450,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Copperplate Gothic",
                 "weight": 510,
                 "leading": "148%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan"
             }
           }
         },
@@ -3774,40 +3842,42 @@
           "refuses": "Bright even lighting. The baroque chamber glows by candle gold against deep wood — warm shadow, not a flat-lit room.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Didot",
                 "weight": 740,
                 "leading": "105%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cinzel",
                 "weight": 880,
                 "leading": "114%",
                 "tracking": "6%"
               },
-              "body": {
+              "functional": {
                 "font": "EB Garamond",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gill Sans",
                 "weight": 480,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Copperplate Gothic",
                 "weight": 600,
                 "leading": "145%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan"
             }
           }
         },
@@ -3880,40 +3950,42 @@
           "refuses": "Cold bright stage. The Romantic recital glows by candle gold on rosewood and ivory — intimate warmth, not a lit hall.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Didot",
                 "weight": 700,
                 "leading": "108%",
                 "tracking": "12%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cinzel",
                 "weight": 620,
                 "leading": "118%",
                 "tracking": "8%"
               },
-              "body": {
+              "functional": {
                 "font": "EB Garamond",
                 "weight": 430,
                 "leading": "172%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gill Sans",
                 "weight": 460,
                 "leading": "158%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Copperplate Gothic",
                 "weight": 540,
                 "leading": "145%",
                 "tracking": "18%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan"
             }
           }
         }
@@ -3997,40 +4069,42 @@
           "refuses": "Muted vintage tones. The psychedelic poster is maximally saturated clashing colour designed to vibrate, not a faded print.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Arnold Bocklin",
                 "weight": 800,
                 "leading": "92%",
                 "tracking": "-4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Davida",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "-2%"
               },
-              "body": {
+              "functional": {
                 "font": "Century Schoolbook",
                 "weight": 440,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Windsor"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Futura",
                 "weight": 510,
                 "leading": "150%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier",
                 "weight": 580,
                 "leading": "145%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Windsor"
             }
           }
         },
@@ -4102,40 +4176,42 @@
           "refuses": "Pale washed colour. The liquid light show is saturated blooming oil colour on black — vivid and wet, not a faded wash.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Arnold Bocklin",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Davida",
                 "weight": 700,
                 "leading": "106%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Century Schoolbook",
                 "weight": 440,
                 "leading": "164%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Windsor"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Futura",
                 "weight": 500,
                 "leading": "152%",
                 "tracking": "2%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier",
                 "weight": 560,
                 "leading": "145%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Windsor"
             }
           }
         },
@@ -4208,40 +4284,42 @@
           "refuses": "Faded hippie sepia. The Summer of Love is warm saturated flower-power colour — orange, pink, blue, green — joyous, not faded.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Arnold Bocklin",
                 "weight": 800,
                 "leading": "102%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Davida",
                 "weight": 700,
                 "leading": "106%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Century Schoolbook",
                 "weight": 430,
                 "leading": "168%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Windsor"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Futura",
                 "weight": 470,
                 "leading": "156%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier",
                 "weight": 520,
                 "leading": "148%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Windsor"
             }
           }
         },
@@ -4314,40 +4392,42 @@
           "refuses": "Faded vintage wash. Mod is crisp target red-white-blue and op-art black-white — sharp graphic pop, not a faded retro tone.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Arnold Bocklin",
                 "weight": 800,
                 "leading": "98%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Davida",
                 "weight": 700,
                 "leading": "104%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Century Schoolbook",
                 "weight": 435,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Windsor"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Futura",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "2%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier",
                 "weight": 540,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Windsor"
             }
           }
         }
@@ -4436,40 +4516,42 @@
           "refuses": "Muted indie palette. The idol concept is full candy pastel — pink, mint, lilac — sweet and bright, not understated.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clash Display",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "-1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Satoshi",
                 "weight": 600,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Pretendard",
                 "weight": 400,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Familjen Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 500,
                 "leading": "145%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Familjen Grotesk"
             }
           }
         },
@@ -4542,40 +4624,42 @@
           "refuses": "Soft natural light. The neon MV is saturated magenta-and-cyan on black — electric and high-contrast, not naturally lit.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clash Display",
                 "weight": 900,
                 "leading": "95%",
                 "tracking": "-3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Satoshi",
                 "weight": 800,
                 "leading": "105%",
                 "tracking": "-1%"
               },
-              "body": {
+              "functional": {
                 "font": "Pretendard",
                 "weight": 450,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Familjen Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 640,
                 "leading": "140%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Familjen Grotesk"
             }
           }
         },
@@ -4649,40 +4733,42 @@
           "refuses": "Coordinated muted palette. Harajuku decora is a deliberate clash of bright pink, turquoise, and yellow — maximalist, not tasteful.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clash Display",
                 "weight": 850,
                 "leading": "98%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Satoshi",
                 "weight": 760,
                 "leading": "108%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Pretendard",
                 "weight": 440,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Familjen Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 600,
                 "leading": "142%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Familjen Grotesk"
             }
           }
         },
@@ -4754,40 +4840,42 @@
           "refuses": "Muted retro tone. City pop is a saturated sunset gradient with neon and chrome — glossy '80s glamour, not a faded photo.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clash Display",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "-2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Satoshi",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Pretendard",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Familjen Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 700,
                 "leading": "145%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Familjen Grotesk"
             }
           }
         }
@@ -4871,40 +4959,42 @@
           "refuses": "Cold blue grade. The juke joint is warm amber and dark wood against a blue night — intimate warmth, not a cold modern bar.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Kaufmann",
                 "weight": 700,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cheltenham Bold",
                 "weight": 700,
                 "leading": "108%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Georgia",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Bookman"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gotham",
                 "weight": 460,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "ITC American Typewriter",
                 "weight": 560,
                 "leading": "145%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Bookman"
             }
           }
         },
@@ -4977,40 +5067,42 @@
           "refuses": "Muted retro brown. Motown is glamorous gold and deep red under a warm spot — polished showbiz, not a faded photo.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Kaufmann",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cheltenham Bold",
                 "weight": 800,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Georgia",
                 "weight": 440,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Bookman"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gotham",
                 "weight": 520,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "ITC American Typewriter",
                 "weight": 640,
                 "leading": "142%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Bookman"
             }
           }
         },
@@ -5083,40 +5175,42 @@
           "refuses": "Cold graphic palette. Stax soul is warm red, mustard, and brown — earthy Southern warmth, not a cool modern scheme.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Kaufmann",
                 "weight": 750,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cheltenham Bold",
                 "weight": 750,
                 "leading": "106%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Georgia",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Bookman"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gotham",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "ITC American Typewriter",
                 "weight": 600,
                 "leading": "145%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Bookman"
             }
           }
         },
@@ -5189,40 +5283,42 @@
           "refuses": "Cold plain palette. Gospel is rich robe-purple and gold warmed by wood and stained glass — uplifting colour, not a bare room.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Kaufmann",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Cheltenham Bold",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Georgia",
                 "weight": 420,
                 "leading": "165%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "ITC Bookman"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gotham",
                 "weight": 460,
                 "leading": "155%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "ITC American Typewriter",
                 "weight": 560,
                 "leading": "145%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "ITC Bookman"
             }
           }
         }

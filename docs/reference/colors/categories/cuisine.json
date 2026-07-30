@@ -86,40 +86,42 @@
           "refuses": "Garish rainbow platter. The counter is mostly white rice and muted fish; colour is the salmon and the wasabi, used exactly.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant Garamond",
                 "weight": 500,
                 "leading": "106%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Shippori Mincho",
                 "weight": 400,
                 "leading": "130%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Zen Kaku Gothic New",
                 "weight": 400,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Tenor Sans"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Zen Kaku Gothic New",
                 "weight": 430,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "M PLUS 1 Code",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Tenor Sans"
             }
           }
         },
@@ -193,40 +195,42 @@
           "refuses": "Muddy tea-brown. The tea service is vivid matcha-green against pastel sweets and black lacquer — a crisp contrast, not brown.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant Garamond",
                 "weight": 600,
                 "leading": "103%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Shippori Mincho",
                 "weight": 600,
                 "leading": "122%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Zen Kaku Gothic New",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Optima"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Zen Kaku Gothic New",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "M PLUS 1 Code",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Optima"
             }
           }
         },
@@ -299,40 +303,42 @@
           "refuses": "Uniform brown soup. Ramen is pale broth lifted by egg-gold, scallion-green, and chilli-red — composed, not a brown bowl.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant Garamond",
                 "weight": 700,
                 "leading": "100%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Shippori Mincho",
                 "weight": 800,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Zen Kaku Gothic New",
                 "weight": 460,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bebas Neue"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Zen Kaku Gothic New",
                 "weight": 470,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "M PLUS 1 Code",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bebas Neue"
             }
           }
         },
@@ -406,40 +412,42 @@
           "refuses": "Cluttered bright plating. Kaiseki is spare and seasonal — green, coral, and black, composed with restraint.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cormorant Garamond",
                 "weight": 550,
                 "leading": "102%",
                 "tracking": "10%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Shippori Mincho",
                 "weight": 500,
                 "leading": "134%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Zen Kaku Gothic New",
                 "weight": 420,
                 "leading": "172%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan Pro"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Zen Kaku Gothic New",
                 "weight": 430,
                 "leading": "154%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "M PLUS 1 Code",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan Pro"
             }
           }
         }
@@ -524,40 +532,42 @@
           "refuses": "Heavy orange grease. The Margherita is bright tomato, white cheese, and green basil on gold crust — the Italian tricolore, not grease.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bodoni Moda",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Forma DJR",
                 "weight": 700,
                 "leading": "114%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Forma DJR Text",
                 "weight": 440,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Eurostile"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Forma DJR Micro",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Eurostile"
             }
           }
         },
@@ -632,40 +642,42 @@
           "refuses": "Beige floury monotone. Fresh pasta is rich egg-gold against white flour and marble — warm and clean, not a dull beige.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bodoni Moda",
                 "weight": 600,
                 "leading": "102%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Forma DJR",
                 "weight": 600,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Forma DJR Text",
                 "weight": 430,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Forma DJR Micro",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic"
             }
           }
         },
@@ -739,40 +751,42 @@
           "refuses": "Neon ice-cream brights. Artisan gelato is soft and natural — muted pistachio and cream, not fluorescent tubs.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bodoni Moda",
                 "weight": 500,
                 "leading": "105%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Forma DJR",
                 "weight": 500,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Forma DJR Text",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Futura"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Forma DJR Micro",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 460,
                 "leading": "142%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Futura"
             }
           }
         },
@@ -845,40 +859,42 @@
           "refuses": "Muted rustic browns. The Sicilian table is aubergine purple, blood-orange, and maiolica — saturated southern colour.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bodoni Moda",
                 "weight": 900,
                 "leading": "98%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Forma DJR",
                 "weight": 800,
                 "leading": "112%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Forma DJR Text",
                 "weight": 450,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Rockwell"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Forma DJR Micro",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Rockwell"
             }
           }
         }
@@ -964,40 +980,42 @@
           "refuses": "Bright orange Tex-Mex. Mole is a deep, complex mahogany on blue talavera — subtle and dark, not neon cheese-sauce.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 800,
                 "leading": "96%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Archivo",
                 "weight": 650,
                 "leading": "112%",
                 "tracking": "1.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 440,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alfa Slab One"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Archivo",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alfa Slab One"
             }
           }
         },
@@ -1070,40 +1088,42 @@
           "refuses": "Flat brown meat. Al pastor is bright achiote-red with pineapple gold and cilantro green — vivid and fresh, not a brown filling.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 900,
                 "leading": "95%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Archivo",
                 "weight": 800,
                 "leading": "108%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 440,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Anton"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Archivo",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Anton"
             }
           }
         },
@@ -1176,40 +1196,42 @@
           "refuses": "Muted somber palette. The ofrenda is joyfully vivid — marigold, magenta, and white — a celebration of colour, not a grey mourning.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 900,
                 "leading": "96%",
                 "tracking": "8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Archivo",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "4%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 450,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bungee"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Archivo",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bungee"
             }
           }
         },
@@ -1283,40 +1305,42 @@
           "refuses": "Pale plain corn. Elote is bright yellow with white crema, red chilli, and green lime — a vivid street snack, not plain cob.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 650,
                 "leading": "99%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Archivo",
                 "weight": 500,
                 "leading": "114%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Bitter",
                 "weight": 430,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "DIN Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Archivo",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 400,
                 "leading": "140%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "DIN Condensed"
             }
           }
         }
@@ -1400,40 +1424,42 @@
           "refuses": "Single muddy curry-brown. The spice market is a full saturated spectrum — gold, red, green — each spice its own hue.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rozha One",
                 "weight": 400,
                 "leading": "100%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Baloo 2",
                 "weight": 650,
                 "leading": "112%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Mukta",
                 "weight": 440,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Yatra One"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mukta",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Yatra One"
             }
           }
         },
@@ -1505,40 +1531,42 @@
           "refuses": "Brown buffet sludge. A thali is a deliberate arrangement of distinct bright dishes on bright steel — composed, not a brown heap.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rozha One",
                 "weight": 400,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Baloo 2",
                 "weight": 550,
                 "leading": "116%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Mukta",
                 "weight": 430,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Khand"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mukta",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Khand"
             }
           }
         },
@@ -1612,40 +1640,42 @@
           "refuses": "Dull beige confection. Mithai is saffron, silver, and pistachio — jewel-bright sweets, not a tray of beige fudge.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rozha One",
                 "weight": 400,
                 "leading": "106%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Baloo 2",
                 "weight": 600,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Mukta",
                 "weight": 420,
                 "leading": "170%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Yeseva One"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mukta",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Yeseva One"
             }
           }
         },
@@ -1718,40 +1748,42 @@
           "refuses": "Flat brown grill. Tandoori is vivid red with char-black and green chutney — bright and spiced, not a brown roast.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rozha One",
                 "weight": 400,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Baloo 2",
                 "weight": 800,
                 "leading": "108%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Mukta",
                 "weight": 450,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Rajdhani"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Mukta",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Rajdhani"
             }
           }
         }
@@ -1838,40 +1870,42 @@
           "refuses": "Fluorescent candy colour. Macarons are delicate naturalistic pastels — soft green, rose, lemon — never neon.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Didot",
                 "weight": 400,
                 "leading": "105%",
                 "tracking": "9%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Fournier",
                 "weight": 400,
                 "leading": "126%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "EB Garamond",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Marcellus"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Marianne",
                 "weight": 430,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 400,
                 "leading": "140%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Marcellus"
             }
           }
         },
@@ -1945,40 +1979,42 @@
           "refuses": "Pale doughy beige. Good viennoiserie is deep burnished gold and amber — richly baked, not an underdone beige.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Didot",
                 "weight": 700,
                 "leading": "100%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Fournier",
                 "weight": 700,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "EB Garamond",
                 "weight": 440,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Big Caslon"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Marianne",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 700,
                 "leading": "140%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Big Caslon"
             }
           }
         },
@@ -2051,40 +2087,42 @@
           "refuses": "Matte dull fruit. The tart case gleams with mirror-glaze and fresh fruit — glossy red, green, and gold, not a flat bake.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Didot",
                 "weight": 700,
                 "leading": "100%",
                 "tracking": "8.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Fournier",
                 "weight": 700,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "EB Garamond",
                 "weight": 430,
                 "leading": "157%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bernhard Modern"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Marianne",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 700,
                 "leading": "140%",
                 "tracking": "16%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bernhard Modern"
             }
           }
         },
@@ -2157,40 +2195,42 @@
           "refuses": "Dull beige pastry. The éclair line is glossy coffee, chocolate, and rose glaze — a shiny coloured row, not a beige bake.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Didot",
                 "weight": 400,
                 "leading": "102%",
                 "tracking": "1.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Fournier",
                 "weight": 400,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "EB Garamond",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cochin"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Marianne",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 400,
                 "leading": "142%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cochin"
             }
           }
         }
@@ -2275,40 +2315,42 @@
           "refuses": "Bright plated colour. The Nordic plate is muted moss-and-grey with one berry or flower — restrained, not a vivid composition.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Sohne",
                 "weight": 500,
                 "leading": "105%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Signifier",
                 "weight": 400,
                 "leading": "126%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Sohne",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Founders Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Sohne",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Sohne Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "3%"
               }
-            },
-            "faces": {
-              "Sub-title": "Founders Grotesk"
             }
           }
         },
@@ -2380,40 +2422,42 @@
           "refuses": "Bright deli colour. Smørrebrød is dark rye and muted toppings lifted by one magenta beet — earthy, not a vivid sub sandwich.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Sohne",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Signifier",
                 "weight": 500,
                 "leading": "124%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Sohne",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Suisse Int'l"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Sohne",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Sohne Mono",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "3%"
               }
-            },
-            "faces": {
-              "Sub-title": "Suisse Int'l"
             }
           }
         },
@@ -2486,40 +2530,42 @@
           "refuses": "Warm bright seafood boil. The cold-sea plate is grey, slate, and ice with one coral shell — austere, not a red crab boil.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Sohne",
                 "weight": 400,
                 "leading": "108%",
                 "tracking": "6%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Signifier",
                 "weight": 300,
                 "leading": "128%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Sohne",
                 "weight": 410,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "PP Neue Montreal"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Sohne",
                 "weight": 430,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Sohne Mono",
                 "weight": 400,
                 "leading": "140%",
                 "tracking": "2%"
               }
-            },
-            "faces": {
-              "Sub-title": "PP Neue Montreal"
             }
           }
         },
@@ -2592,40 +2638,42 @@
           "refuses": "Bright deli platter. The Nordic fish board is muted coral and silver on slate — cool and restrained, not a vivid spread.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Sohne",
                 "weight": 600,
                 "leading": "105%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Signifier",
                 "weight": 400,
                 "leading": "125%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Sohne",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Circular"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Sohne",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Sohne Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "3%"
               }
-            },
-            "faces": {
-              "Sub-title": "Circular"
             }
           }
         }
@@ -2710,40 +2758,42 @@
           "refuses": "Monotone beige dip. The mezze table is bright herb-green and pomegranate-ruby over beige — fresh and jewelled, not bland.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 400,
                 "leading": "106%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Reem Kufi",
                 "weight": 500,
                 "leading": "116%",
                 "tracking": "3%"
               },
-              "body": {
+              "functional": {
                 "font": "Amiri",
                 "weight": 400,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Harmattan"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Arabic",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Harmattan"
             }
           }
         },
@@ -2815,40 +2865,42 @@
           "refuses": "Dull spice brown. The souk is saturated — sumac maroon, saffron gold, za'atar green — a heaped spectrum, not a brown bin.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Reem Kufi",
                 "weight": 700,
                 "leading": "112%",
                 "tracking": "4%"
               },
-              "body": {
+              "functional": {
                 "font": "Amiri",
                 "weight": 400,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Katibeh"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Arabic",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Katibeh"
             }
           }
         },
@@ -2920,40 +2972,42 @@
           "refuses": "Flat pastry beige. Baklava is glossy gold filo crowned with bright pistachio-green — rich and jewelled, not a dry beige.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Reem Kufi",
                 "weight": 600,
                 "leading": "116%",
                 "tracking": "3%"
               },
-              "body": {
+              "functional": {
                 "font": "Amiri",
                 "weight": 400,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "El Messiri"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Arabic",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "El Messiri"
             }
           }
         },
@@ -3026,40 +3080,42 @@
           "refuses": "Flat brown stew. The dish is saffron-gold and apricot-orange jewelled with pomegranate — festive, not a brown pot.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Aref Ruqaa",
                 "weight": 700,
                 "leading": "104%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Reem Kufi",
                 "weight": 500,
                 "leading": "115%",
                 "tracking": "3%"
               },
-              "body": {
+              "functional": {
                 "font": "Amiri",
                 "weight": 400,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Changa"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Arabic",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Changa"
             }
           }
         }
@@ -3144,40 +3200,42 @@
           "refuses": "Brown gravy curry. Thai green curry is vivid herb-green with coconut white and chilli red — fresh and sharp, not a brown stew.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Chonburi",
                 "weight": 400,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Kanit",
                 "weight": 800,
                 "leading": "110%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Sarabun",
                 "weight": 440,
                 "leading": "168%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Taviraj"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Thai",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Taviraj"
             }
           }
         },
@@ -3249,40 +3307,42 @@
           "refuses": "Dull beige slaw. Som tam is jade-green and scarlet — crunchy, fresh, and hot, not a muted shredded salad.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Chonburi",
                 "weight": 400,
                 "leading": "100%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Kanit",
                 "weight": 900,
                 "leading": "108%",
                 "tracking": "3%"
               },
-              "body": {
+              "functional": {
                 "font": "Sarabun",
                 "weight": 450,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Fjalla One"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Thai",
                 "weight": 470,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "15%"
               }
-            },
-            "faces": {
-              "Sub-title": "Fjalla One"
             }
           }
         },
@@ -3357,40 +3417,42 @@
           "refuses": "Pale bland pudding. Mango sticky rice is vivid gold mango against white rice — a bright contrast, not a beige dessert.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Chonburi",
                 "weight": 400,
                 "leading": "102%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Kanit",
                 "weight": 600,
                 "leading": "112%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Sarabun",
                 "weight": 430,
                 "leading": "168%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Quicksand"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Thai",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Quicksand"
             }
           }
         },
@@ -3463,40 +3525,42 @@
           "refuses": "Murky brown soup. Pho is a clear amber broth with white noodle and fresh herb green — clean and bright, not a brown stew.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Chonburi",
                 "weight": 400,
                 "leading": "102%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Kanit",
                 "weight": 500,
                 "leading": "112%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Sarabun",
                 "weight": 420,
                 "leading": "170%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Be Vietnam Pro"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans Thai",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 460,
                 "leading": "140%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Be Vietnam Pro"
             }
           }
         }
@@ -3580,40 +3644,42 @@
           "refuses": "Greasy brown blur. The burger is gold bun, orange cheese, and primary ketchup-and-mustard — bright and layered, not a brown lump.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Ultra",
                 "weight": 400,
                 "leading": "95%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Oswald",
                 "weight": 500,
                 "leading": "112%",
                 "tracking": "3%"
               },
-              "body": {
+              "functional": {
                 "font": "Zilla Slab",
                 "weight": 450,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Libre Franklin",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 700,
                 "leading": "140%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic"
             }
           }
         },
@@ -3686,40 +3752,42 @@
           "refuses": "Muted vintage sepia. The diner is candy-bright — cherry red, shake pink, mint counter, chrome — pop nostalgia, not faded brown.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Ultra",
                 "weight": 400,
                 "leading": "98%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Oswald",
                 "weight": 500,
                 "leading": "114%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Zilla Slab",
                 "weight": 430,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "League Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Libre Franklin",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 400,
                 "leading": "140%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "League Gothic"
             }
           }
         },
@@ -3792,40 +3860,42 @@
           "refuses": "Flat grey meat. Real BBQ is deep mahogany bark with a pink smoke ring — rich and warm, not a grey boiled-looking cut.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Ultra",
                 "weight": 400,
                 "leading": "96%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Oswald",
                 "weight": 600,
                 "leading": "110%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Zilla Slab",
                 "weight": 470,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Knockout"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Libre Franklin",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 400,
                 "leading": "142%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Knockout"
             }
           }
         },
@@ -3898,40 +3968,42 @@
           "refuses": "Muted artisanal beige. The donut case is candy-bright — pink, chocolate, and rainbow sprinkles, full pop colour.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Ultra",
                 "weight": 400,
                 "leading": "95%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Oswald",
                 "weight": 700,
                 "leading": "108%",
                 "tracking": "5%"
               },
-              "body": {
+              "functional": {
                 "font": "Zilla Slab",
                 "weight": 430,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Fredoka One"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Libre Franklin",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 700,
                 "leading": "140%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Fredoka One"
             }
           }
         }
@@ -4016,40 +4088,42 @@
           "refuses": "Brown takeaway sludge. Dim sum is pale steamed white with pink shrimp and red char siu — delicate, not a brown box.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Noto Serif SC",
                 "weight": 600,
                 "leading": "106%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "LXGW WenKai",
                 "weight": 400,
                 "leading": "122%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Noto Sans SC",
                 "weight": 400,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cinzel"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Noto Sans SC",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Noto Sans Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cinzel"
             }
           }
         },
@@ -4121,40 +4195,42 @@
           "refuses": "Mild brown broth. Sichuan hot pot is a blazing chilli-oil red surface — intense and oily, not a pale brown soup.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Noto Serif SC",
                 "weight": 900,
                 "leading": "102%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "LXGW WenKai",
                 "weight": 700,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Noto Sans SC",
                 "weight": 450,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Staatliches"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Noto Sans SC",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Noto Sans Mono",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Staatliches"
             }
           }
         },
@@ -4228,40 +4304,42 @@
           "refuses": "Flat greasy brown. Peking duck is glossy lacquer-mahogany on blue-white porcelain — elegant sheen, not a dull brown roast.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Noto Serif SC",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "LXGW WenKai",
                 "weight": 500,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Noto Sans SC",
                 "weight": 420,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trajan Pro"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Noto Sans SC",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Noto Sans Mono",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "13%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trajan Pro"
             }
           }
         },
@@ -4334,40 +4412,42 @@
           "refuses": "Single brown tea. Chinese tea spans amber oolong to jade green over clay and porcelain — a translucent range, not one brown.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Noto Serif SC",
                 "weight": 500,
                 "leading": "105%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "LXGW WenKai",
                 "weight": 400,
                 "leading": "122%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Noto Sans SC",
                 "weight": 410,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Josefin Sans"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Noto Sans SC",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "Noto Sans Mono",
                 "weight": 460,
                 "leading": "140%",
                 "tracking": "12%"
               }
-            },
-            "faces": {
-              "Sub-title": "Josefin Sans"
             }
           }
         }
@@ -4452,40 +4532,42 @@
           "refuses": "Flat uniform brown. Chocolate work is a tonal range from near-black to cream, finished with gold — depth, not one brown.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cooper Black",
                 "weight": 400,
                 "leading": "96%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Playfair Display",
                 "weight": 600,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cinzel Decorative"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Nunito",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cinzel Decorative"
             }
           }
         },
@@ -4558,40 +4640,42 @@
           "refuses": "Pale pastel berry. Real summer berries are saturated red, crimson, and indigo against white cream — vivid, not a washed pastel.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cooper Black",
                 "weight": 400,
                 "leading": "98%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Playfair Display",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 450,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Poppins"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Nunito",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Poppins"
             }
           }
         },
@@ -4664,40 +4748,42 @@
           "refuses": "Muted natural tones. Candy is the one place pure artificial saturation belongs — full-strength primaries, by design.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cooper Black",
                 "weight": 400,
                 "leading": "95%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Playfair Display",
                 "weight": 900,
                 "leading": "108%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 460,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Lilita One"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Nunito",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Lilita One"
             }
           }
         },
@@ -4772,40 +4858,42 @@
           "refuses": "Flat brown sweet. Caramel work spans amber-gold to burnt-brown — a glossy graded warmth, not a single dull brown.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cooper Black",
                 "weight": 400,
                 "leading": "97%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Playfair Display",
                 "weight": 500,
                 "leading": "112%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bevan"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Nunito",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "DM Mono",
                 "weight": 400,
                 "leading": "140%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bevan"
             }
           }
         }
@@ -4891,40 +4979,42 @@
           "refuses": "Flat coffee brown. Espresso is hazel crema over near-black on white porcelain — a tonal study, not a single brown.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 500,
                 "leading": "110%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Prata",
                 "weight": 400,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Crimson Pro",
                 "weight": 440,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Univers"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Univers"
             }
           }
         },
@@ -4997,40 +5087,42 @@
           "refuses": "Single flat burgundy. Wine is a translucent range from pale ruby to inky purple, lit through glass — depth, not one red.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "6%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Prata",
                 "weight": 400,
                 "leading": "122%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Crimson Pro",
                 "weight": 430,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bernhard Modern"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 500,
                 "leading": "142%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bernhard Modern"
             }
           }
         },
@@ -5103,40 +5195,42 @@
           "refuses": "One flat amber. Whisky spans pale gold to deep mahogany by cask — a graded amber spectrum, not a single brown.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 600,
                 "leading": "110%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Prata",
                 "weight": 400,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Crimson Pro",
                 "weight": 440,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Sackers Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 500,
                 "leading": "140%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Sackers Gothic"
             }
           }
         },
@@ -5209,40 +5303,42 @@
           "refuses": "One brown spirit. The cocktail pass is a jewel row — negroni red, margarita gold, curaçao blue — translucent colour, not brown.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Cinzel",
                 "weight": 800,
                 "leading": "108%",
                 "tracking": "8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Prata",
                 "weight": 400,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Crimson Pro",
                 "weight": 450,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Anton"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "0%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 600,
                 "leading": "140%",
                 "tracking": "14%"
               }
-            },
-            "faces": {
-              "Sub-title": "Anton"
             }
           }
         }

@@ -87,40 +87,42 @@
           "refuses": "Saturated Soviet-flag red. The parade-square cliché flattens any Russia palette into iconography; this trip is the carriage interior, not the May Day square.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 740,
                 "leading": "102%",
                 "tracking": "5.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 620,
                 "leading": "114%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Plantin",
                 "weight": 420,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Pragmatica"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Pragmatica"
             }
           }
         },
@@ -194,40 +196,42 @@
           "refuses": "Mediterranean-postcard turquoise. That blue belongs to noon at Chefchaouen, not to dusk in the Marrakech medina; using it here would smear two distinct Moroccos together for tourist legibility.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 890,
                 "leading": "100%",
                 "tracking": "8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 770,
                 "leading": "110%",
                 "tracking": "1.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Plantin",
                 "weight": 450,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Peignot"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Peignot"
             }
           }
         },
@@ -303,40 +307,42 @@
           "refuses": "Any green. Nothing chlorophyllous grows on the salar; the smallest tuft of cactus-green would betray the territory and turn it into a generic desert.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 720,
                 "leading": "108%",
                 "tracking": "10%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 560,
                 "leading": "116%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Plantin",
                 "weight": 410,
                 "leading": "163%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 430,
                 "leading": "152%",
                 "tracking": "1%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "11%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic"
             }
           }
         },
@@ -411,40 +417,42 @@
           "refuses": "Cycladic cerulean and bleach-bone white. That palette is high summer at Oia; this is November at five a.m. on a working route — the same archipelago, an unrelated colour world.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 720,
                 "leading": "105%",
                 "tracking": "4.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 600,
                 "leading": "112%",
                 "tracking": "0.8%"
               },
-              "body": {
+              "functional": {
                 "font": "Plantin",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Eurostile"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Akzidenz-Grotesk",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Eurostile"
             }
           }
         }
@@ -530,40 +538,42 @@
           "refuses": "Cherry-blossom pink. <em>Sakura</em> belongs to a Hanami picnic in April; using it in a Tokyo palette without naming the hour collapses the city into a tourism poster.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Frutiger",
                 "weight": 760,
                 "leading": "104%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Frutiger",
                 "weight": 680,
                 "leading": "110%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Charter",
                 "weight": 430,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Univers"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Frutiger",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Univers"
             }
           }
         },
@@ -637,40 +647,42 @@
           "refuses": "Azulejo cobalt as primary. Lisbon as <em>\"the blue city\"</em> is a postcard premise; the Atlantic light here is cooler and the dominant surface is stone, not tile.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Frutiger",
                 "weight": 720,
                 "leading": "106%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Frutiger",
                 "weight": 600,
                 "leading": "114%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Charter",
                 "weight": 440,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bell Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Frutiger",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bell Gothic"
             }
           }
         },
@@ -744,40 +756,42 @@
           "refuses": "Aurora green. The northern lights are a winter image and a tourist-board cliché — this is August midday at 63° N, when the sky is overcast and the sun never sets enough to see them.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Frutiger",
                 "weight": 880,
                 "leading": "100%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Frutiger",
                 "weight": 780,
                 "leading": "108%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Charter",
                 "weight": 445,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Compacta"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Frutiger",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Compacta"
             }
           }
         },
@@ -850,40 +864,42 @@
           "refuses": "Tropical-postcard turquoise. The Arabian Sea in monsoon is the colour of slate — using lagoon-blue here misfiles Kerala as the Maldives.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Frutiger",
                 "weight": 740,
                 "leading": "105%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Frutiger",
                 "weight": 760,
                 "leading": "114%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Charter",
                 "weight": 450,
                 "leading": "164%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Charlemagne"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Frutiger",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Charlemagne"
             }
           }
         }
@@ -969,40 +985,42 @@
           "refuses": "Any clean blue. Faroese sea-fog has almost no blue in it; introducing one would lie about the visibility and about what the Atlantic actually does to colour up here.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "P22 Secession",
                 "weight": 720,
                 "leading": "106%",
                 "tracking": "10%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sabon",
                 "weight": 520,
                 "leading": "116%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 430,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Akkurat"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "FF Meta",
                 "weight": 440,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Nitti",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Akkurat"
             }
           }
         },
@@ -1076,40 +1094,42 @@
           "refuses": "Saturated grassland green. The \"endless green steppe\" image belongs to June; in October the steppe is straw, dust, and felt — using a green primary here puts you in the wrong month.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "P22 Secession",
                 "weight": 740,
                 "leading": "106%",
                 "tracking": "12%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sabon",
                 "weight": 700,
                 "leading": "118%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 440,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Kabel"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "FF Meta",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Nitti",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Kabel"
             }
           }
         },
@@ -1183,40 +1203,42 @@
           "refuses": "Imperial red. Habsburg-pageant red turns a working café into a tourist set; this kaffeehaus is the one with the regulars and the chess clock, not the one with the souvenir mug.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "P22 Secession",
                 "weight": 780,
                 "leading": "105%",
                 "tracking": "14%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sabon",
                 "weight": 580,
                 "leading": "116%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 445,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Architype Renner"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "FF Meta",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Nitti",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Architype Renner"
             }
           }
         },
@@ -1289,40 +1311,42 @@
           "refuses": "Tourist-shop \"Southwestern turquoise\" as primary. The stone is real; the palette is not. Anchoring on it makes the territory legible only via the souvenir.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "P22 Secession",
                 "weight": 730,
                 "leading": "107%",
                 "tracking": "11%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sabon",
                 "weight": 560,
                 "leading": "118%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Sabon",
                 "weight": 435,
                 "leading": "168%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Highway Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "FF Meta",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Nitti",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Highway Gothic"
             }
           }
         }
@@ -1407,40 +1431,42 @@
           "refuses": "Postcard cobalt. The North Atlantic in June fog is grey-green; the picture-book blue is a calendar shot, not the morning.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 760,
                 "leading": "100%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 720,
                 "leading": "106%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller",
                 "weight": 435,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Franklin Gothic",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic"
             }
           }
         },
@@ -1513,40 +1539,42 @@
           "refuses": "The glossy 'Incredible India' saturated yellow. This is the working koliwada, not the tourism campaign.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 880,
                 "leading": "100%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 770,
                 "leading": "104%",
                 "tracking": "2.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller",
                 "weight": 450,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Interstate Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Franklin Gothic",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Interstate Condensed"
             }
           }
         },
@@ -1620,40 +1648,42 @@
           "refuses": "Atlantic-postcard turquoise. The English Channel is grey-green almost the whole year; the turquoise is a Mediterranean lie.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "2.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 740,
                 "leading": "105%",
                 "tracking": "3%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller",
                 "weight": 440,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "DIN Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Franklin Gothic",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "148%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "DIN Condensed"
             }
           }
         },
@@ -1725,40 +1755,42 @@
           "refuses": "White-sand resort blue. The Hokkaido working coast is dark sand, cold water, and seaweed — the brochure beach is a different country, a different industry.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Clarendon",
                 "weight": 740,
                 "leading": "102%",
                 "tracking": "2%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 700,
                 "leading": "106%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Miller",
                 "weight": 445,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Folio"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Franklin Gothic",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Folio"
             }
           }
         }
@@ -1843,40 +1875,42 @@
           "refuses": "Saturated red as primary. Red is one of the five flag colours but anchoring on it produces a Tibet-by-tourist-poster palette; the teahouse is smoke and snow first.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Futura",
                 "weight": 640,
                 "leading": "104%",
                 "tracking": "4.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Futura",
                 "weight": 560,
                 "leading": "114%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Iowan Old Style",
                 "weight": 440,
                 "leading": "170%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bank Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica",
                 "weight": 450,
                 "leading": "154%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bank Gothic"
             }
           }
         },
@@ -1949,40 +1983,42 @@
           "refuses": "Tourist-rainbow Andean-textile stripe. The weaving tradition is real; using it at high frequency turns Cuzco into a souvenir poncho.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Futura",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "6%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Futura",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Iowan Old Style",
                 "weight": 445,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Univers Extended"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Univers Extended"
             }
           }
         },
@@ -2055,40 +2091,42 @@
           "refuses": "Apres-ski fluorescent. The on-piste neon belongs to the in-season weekend, not the day the lifts go off.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Futura",
                 "weight": 720,
                 "leading": "103%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Futura",
                 "weight": 620,
                 "leading": "114%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Iowan Old Style",
                 "weight": 435,
                 "leading": "158%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Eurostile"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica",
                 "weight": 440,
                 "leading": "153%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Eurostile"
             }
           }
         },
@@ -2161,40 +2199,42 @@
           "refuses": "Saffron monk-robe orange as primary. Saffron is the Western shorthand for Buddhism; the actual monastery wall is earth, not robe.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Futura",
                 "weight": 980,
                 "leading": "100%",
                 "tracking": "5.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Futura",
                 "weight": 760,
                 "leading": "108%",
                 "tracking": "2%"
               },
-              "body": {
+              "functional": {
                 "font": "Iowan Old Style",
                 "weight": 450,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Helvetica",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "JetBrains Mono",
                 "weight": 490,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic"
             }
           }
         }
@@ -2279,40 +2319,42 @@
           "refuses": "Tango black-and-red as primary. That palette is the dance hall and the brochure; this is the empty Sunday street outside it.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bello",
                 "weight": 780,
                 "leading": "96%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Knockout",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Freight Text",
                 "weight": 435,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Compacta"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Compacta"
             }
           }
         },
@@ -2385,40 +2427,42 @@
           "refuses": "Postcard turquoise of the Marmara. The Bosphorus at midnight is diesel grey-green, not the noon-tour-boat blue.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bello",
                 "weight": 740,
                 "leading": "98%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Knockout",
                 "weight": 720,
                 "leading": "102%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Freight Text",
                 "weight": 445,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Trade Gothic Condensed No. 18"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Trade Gothic Condensed No. 18"
             }
           }
         },
@@ -2491,40 +2535,42 @@
           "refuses": "Lush travel-blog jungle green. Hanoi's Old Quarter is street and shutter, not jungle.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bello",
                 "weight": 720,
                 "leading": "98%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Knockout",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Freight Text",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Univers Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "Univers Condensed"
             }
           }
         },
@@ -2596,40 +2642,42 @@
           "refuses": "Cathedral-gold saturated highlight. Tbilisi at night is brick and concrete; the gold-leaf-on-blue palette is a different country's postcard.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Bello",
                 "weight": 740,
                 "leading": "98%",
                 "tracking": "0%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Knockout",
                 "weight": 760,
                 "leading": "100%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Freight Text",
                 "weight": 430,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Pragmatica"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Space Mono",
                 "weight": 500,
                 "leading": "148%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Pragmatica"
             }
           }
         }
@@ -2714,40 +2762,42 @@
           "refuses": "Pagoda gold as primary. Gold belongs to the temple; the market is indigo and lacquer first.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Giza",
                 "weight": 820,
                 "leading": "96%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sentinel",
                 "weight": 640,
                 "leading": "112%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Chaparral",
                 "weight": 445,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bookman Old Style"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bookman Old Style"
             }
           }
         },
@@ -2821,40 +2871,42 @@
           "refuses": "Mediterranean-postcard cobalt. La Boqueria is fluorescent-lit and tiled, not a Costa Brava shot.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Giza",
                 "weight": 890,
                 "leading": "94%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sentinel",
                 "weight": 700,
                 "leading": "110%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Chaparral",
                 "weight": 445,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Alternate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 490,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Alternate Gothic"
             }
           }
         },
@@ -2928,40 +2980,42 @@
           "refuses": "Rainbow-stripe ethnic-textile collage. Hmong work is mostly indigo with small bright threads; collapsing it into rainbow is the souvenir trade, not the maker.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Giza",
                 "weight": 780,
                 "leading": "98%",
                 "tracking": "1.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sentinel",
                 "weight": 600,
                 "leading": "114%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Chaparral",
                 "weight": 435,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Neuzeit Grotesk"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Neuzeit Grotesk"
             }
           }
         },
@@ -3035,40 +3089,42 @@
           "refuses": "Pristine designer-restaurant azulejo. The market's tile is chipped and behind the counter; clean luxury-blue is the wrong register entirely.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Giza",
                 "weight": 840,
                 "leading": "96%",
                 "tracking": "1%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Sentinel",
                 "weight": 660,
                 "leading": "112%",
                 "tracking": "0.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Chaparral",
                 "weight": 440,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bell Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Source Sans 3",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "148%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bell Gothic"
             }
           }
         }
@@ -3153,40 +3209,42 @@
           "refuses": "Aurora green as carriage colour. Keep the aurora to the window; let the carriage be Finnish modernism.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "FF DIN",
                 "weight": 800,
                 "leading": "100%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "FF DIN",
                 "weight": 680,
                 "leading": "110%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Sans",
                 "weight": 435,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Rail Alphabet"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-B",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Rail Alphabet"
             }
           }
         },
@@ -3260,40 +3318,42 @@
           "refuses": "Cycladic white-and-blue. That palette is for the deck-chair brochure; this is the below-decks passage, not the daytime postcard.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "FF DIN",
                 "weight": 780,
                 "leading": "100%",
                 "tracking": "4%"
               },
-              "heading": {
+              "contextual": {
                 "font": "FF DIN",
                 "weight": 520,
                 "leading": "110%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Sans",
                 "weight": 435,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Eurostile"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-B",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Eurostile"
             }
           }
         },
@@ -3368,40 +3428,42 @@
           "refuses": "Tropical-Australia turquoise. The Nullarbor sees no sea; the only blue is the dry sky.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "FF DIN",
                 "weight": 780,
                 "leading": "100%",
                 "tracking": "4.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "FF DIN",
                 "weight": 640,
                 "leading": "112%",
                 "tracking": "1.5%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Sans",
                 "weight": 445,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Interstate"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-B",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Interstate"
             }
           }
         },
@@ -3476,40 +3538,42 @@
           "refuses": "Brochure-tourist saffron orange. Al Boraq is engineering modernism; the spice-quarter palette belongs to Vol I.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "FF DIN",
                 "weight": 880,
                 "leading": "100%",
                 "tracking": "5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "FF DIN",
                 "weight": 720,
                 "leading": "108%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "IBM Plex Sans",
                 "weight": 440,
                 "leading": "152%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Suisse Int'l"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "IBM Plex Sans",
                 "weight": 490,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "OCR-B",
                 "weight": 490,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Suisse Int'l"
             }
           }
         }
@@ -3595,40 +3659,42 @@
           "refuses": "Saturated cathedral-blue. Orthodox interiors are warm; the cool blue is Catholic, not Aegean island night.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trajan",
                 "weight": 700,
                 "leading": "106%",
                 "tracking": "8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Adobe Jenson",
                 "weight": 620,
                 "leading": "120%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Garamond",
                 "weight": 440,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Herculanum"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gill Sans",
                 "weight": 450,
                 "leading": "154%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Herculanum"
             }
           }
         },
@@ -3700,40 +3766,42 @@
           "refuses": "Candy cherry-blossom pink. The torii is a specific mineral pigment; collapsing it into sakura pink misnames the chemistry.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trajan",
                 "weight": 660,
                 "leading": "108%",
                 "tracking": "6%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Adobe Jenson",
                 "weight": 500,
                 "leading": "124%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Garamond",
                 "weight": 420,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Copperplate Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gill Sans",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Copperplate Gothic"
             }
           }
         },
@@ -3807,40 +3875,42 @@
           "refuses": "Pastel orientalist lavender. The shrine is saturated, hot, and noisy; the soft mystical palette is an outsider's project.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trajan",
                 "weight": 900,
                 "leading": "104%",
                 "tracking": "10%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Adobe Jenson",
                 "weight": 660,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Garamond",
                 "weight": 450,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cooper Black"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gill Sans",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 500,
                 "leading": "150%",
                 "tracking": "10%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cooper Black"
             }
           }
         },
@@ -3914,40 +3984,42 @@
           "refuses": "Halloween black-and-orange. Día de los Muertos and Halloween share a date and nothing else; the accent here is magenta, not corner-store orange.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Trajan",
                 "weight": 880,
                 "leading": "105%",
                 "tracking": "7.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Adobe Jenson",
                 "weight": 720,
                 "leading": "118%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "Adobe Garamond",
                 "weight": 445,
                 "leading": "172%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "American Typewriter"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Gill Sans",
                 "weight": 460,
                 "leading": "155%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 480,
                 "leading": "155%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "American Typewriter"
             }
           }
         }
@@ -4034,40 +4106,42 @@
           "refuses": "Oil-rich-Gulf gold-and-glass. The desert at dawn refuses the corporate gold of the cities behind it.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rockwell",
                 "weight": 780,
                 "leading": "102%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Interstate",
                 "weight": 660,
                 "leading": "110%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Serifa",
                 "weight": 435,
                 "leading": "162%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Bank Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Univers",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 460,
                 "leading": "152%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Bank Gothic"
             }
           }
         },
@@ -4141,40 +4215,42 @@
           "refuses": "Petra-rose monochrome. Petra is a specific sandstone two hundred kilometres north; Wadi Rum is harder, redder, and has black basalt.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rockwell",
                 "weight": 960,
                 "leading": "100%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Interstate",
                 "weight": 760,
                 "leading": "108%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Serifa",
                 "weight": 445,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Clarendon"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Univers",
                 "weight": 490,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "9%"
               }
-            },
-            "faces": {
-              "Sub-title": "Clarendon"
             }
           }
         },
@@ -4248,40 +4324,42 @@
           "refuses": "African safari-poster orange. The Skeleton Coast is the un-safari — cold, fogged, lethal, grey.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rockwell",
                 "weight": 640,
                 "leading": "104%",
                 "tracking": "3.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Interstate",
                 "weight": 500,
                 "leading": "112%",
                 "tracking": "1.2%"
               },
-              "body": {
+              "functional": {
                 "font": "Serifa",
                 "weight": 430,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Eurostile"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Univers",
                 "weight": 450,
                 "leading": "154%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Eurostile"
             }
           }
         },
@@ -4355,40 +4433,42 @@
           "refuses": "Turquoise-lagoon palette. The lake is hypersaline and pink, not Caribbean blue.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Rockwell",
                 "weight": 800,
                 "leading": "102%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Interstate",
                 "weight": 600,
                 "leading": "110%",
                 "tracking": "1%"
               },
-              "body": {
+              "functional": {
                 "font": "Serifa",
                 "weight": 440,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Highway Gothic"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Univers",
                 "weight": 470,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Courier Prime",
                 "weight": 480,
                 "leading": "152%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Highway Gothic"
             }
           }
         }
@@ -4473,40 +4553,42 @@
           "refuses": "Bright travel-magazine glacier-teal. The Tongass is a temperate rainforest, not a glacier-pool calendar shot.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "National Park",
                 "weight": 740,
                 "leading": "106%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "FF Tisa",
                 "weight": 620,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "FF Tisa",
                 "weight": 435,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Rockwell"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Fira Sans",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Fira Code",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Rockwell"
             }
           }
         },
@@ -4579,40 +4661,42 @@
           "refuses": "Grimm-fairy-tale red. The forest is not Disney; it is wet, dark, fungal, and largely without strong colour.",
           "type": {
             "base": "product",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "National Park",
                 "weight": 760,
                 "leading": "105%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "FF Tisa",
                 "weight": 640,
                 "leading": "115%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "FF Tisa",
                 "weight": 435,
                 "leading": "156%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "DIN Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Fira Sans",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Fira Code",
                 "weight": 460,
                 "leading": "150%",
                 "tracking": "5%"
               }
-            },
-            "faces": {
-              "Sub-title": "DIN Condensed"
             }
           }
         },
@@ -4686,40 +4770,42 @@
           "refuses": "Neon-bayou tourism magenta. The slough is grey, brown, and silver with bird-white; everything else is Bourbon Street, not the basin.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "National Park",
                 "weight": 730,
                 "leading": "106%",
                 "tracking": "3%"
               },
-              "heading": {
+              "contextual": {
                 "font": "FF Tisa",
                 "weight": 600,
                 "leading": "116%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "FF Tisa",
                 "weight": 435,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Windsor"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Fira Sans",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Fira Code",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Windsor"
             }
           }
         },
@@ -4792,40 +4878,42 @@
           "refuses": "Marketed Kamchatka glacier-teal. The lowland taiga in July is green and grey; the volcanic-peak teal palette belongs to the helicopter brochure.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "National Park",
                 "weight": 820,
                 "leading": "105%",
                 "tracking": "3.5%"
               },
-              "heading": {
+              "contextual": {
                 "font": "FF Tisa",
                 "weight": 700,
                 "leading": "114%",
                 "tracking": "0%"
               },
-              "body": {
+              "functional": {
                 "font": "FF Tisa",
                 "weight": 445,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Pragmatica"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Fira Sans",
                 "weight": 480,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "Fira Code",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Pragmatica"
             }
           }
         }
@@ -4911,40 +4999,42 @@
           "refuses": "Cherry-blossom pink. The plum-rain regions of southern China use deep tea-bowl reds and bamboo greens; pink is the wrong season and the wrong nation.",
           "type": {
             "base": "editorial",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Neutraface",
                 "weight": 720,
                 "leading": "100%",
                 "tracking": "8%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Neutraface",
                 "weight": 620,
                 "leading": "110%",
                 "tracking": "4%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 435,
                 "leading": "166%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Cheltenham"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Cheltenham"
             }
           }
         },
@@ -5018,40 +5108,42 @@
           "refuses": "Baltic-summer-postcard blue-and-yellow. Jūrmala in January is grey, mint, and birch; the saturated summer palette is six months away.",
           "type": {
             "base": "statement",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Neutraface",
                 "weight": 760,
                 "leading": "100%",
                 "tracking": "10%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Neutraface",
                 "weight": 640,
                 "leading": "110%",
                 "tracking": "5%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 435,
                 "leading": "160%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Akkurat"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 450,
                 "leading": "150%",
                 "tracking": "7%"
               }
-            },
-            "faces": {
-              "Sub-title": "Akkurat"
             }
           }
         },
@@ -5124,40 +5216,42 @@
           "refuses": "Tropical-resort turquoise. Okinawa in a typhoon is grey-green and dangerous; the brochure blue is on hold.",
           "type": {
             "base": "technical",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Neutraface",
                 "weight": 740,
                 "leading": "100%",
                 "tracking": "7%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Neutraface",
                 "weight": 620,
                 "leading": "110%",
                 "tracking": "4%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 430,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Univers Condensed"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 470,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 490,
                 "leading": "148%",
                 "tracking": "8%"
               }
-            },
-            "faces": {
-              "Sub-title": "Univers Condensed"
             }
           }
         },
@@ -5231,40 +5325,42 @@
           "refuses": "California-poster sunshine. Point Reyes in July is the fog that ate San Francisco; the brand-California yellow is two hundred miles south.",
           "type": {
             "base": "luxury",
-            "slots": {
-              "display": {
+            "registers": {
+              "anthemic": {
                 "font": "Neutraface",
                 "weight": 720,
                 "leading": "100%",
                 "tracking": "9%"
               },
-              "heading": {
+              "contextual": {
                 "font": "Neutraface",
                 "weight": 600,
                 "leading": "112%",
                 "tracking": "4.5%"
               },
-              "body": {
+              "functional": {
                 "font": "Lora",
                 "weight": 435,
                 "leading": "154%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "voices": {
+                  "Sub-title": {
+                    "font": "Rockwell"
+                  }
+                }
               },
-              "ui": {
+              "actionable": {
                 "font": "Inter",
                 "weight": 440,
                 "leading": "152%",
                 "tracking": "0.5%"
               },
-              "mono": {
+              "data": {
                 "font": "IBM Plex Mono",
                 "weight": 450,
                 "leading": "152%",
                 "tracking": "6%"
               }
-            },
-            "faces": {
-              "Sub-title": "Rockwell"
             }
           }
         }

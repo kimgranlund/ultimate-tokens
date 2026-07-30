@@ -627,6 +627,30 @@ Format: Context → Decision → Rationale → Consequences → Status.
   (§13's "the hosting-spec constraint amendment must land as #376's ADR before #377 builds")
   standing between here and #377's eventual build.
 
+## ADR-022 — Preset typography declares REGISTERS, not slots; the migration was byte-identical
+
+- **Context.** The intended-use canon (`docs/reference/typography/intended-use.md`, 2026-07-30)
+  made preset typography reasonable — Layer 3 defines registers (a story/brand's tone tiers mapped
+  onto the 15 voices, the worked BZZR example). But the 5-slot spec shape (`type.slots`, one entry
+  per font role) couldn't express what the canon calls for: no `styleName` path (named cuts were
+  brands-pass-through-only), `faces` voices got a family but no character, and 10 of 15 voices were
+  unreachable from a spec. The preset revision program (ratified 2026-07-30) needs each palette's
+  type re-reasoned from its story via the register-mapping method — which the schema must be able
+  to carry.
+- **Decision.** `type.slots`/`type.faces` are RETIRED. A spec palette declares
+  `type.registers.{anthemic,contextual,functional,actionable,data}` — slot↔register 1:1
+  (display→anthemic, heading→contextual, body→functional, ui→actionable, mono→data), each register
+  carrying the same 4 core fields plus optional `styleName` (expressive-tier target voices only),
+  explicit `weights` (`[]` = opt-out), and a `voices` sub-map restricted to the register's OWN
+  secondaries (UI-control/UI-widget: font only — the ladders-only law). `faces` folded into
+  `registers.functional.voices["Sub-title"].font`. The migration
+  (`scripts/migrate-type-registers.mjs`, 339 palettes) was proven **byte-identical** on the
+  generated presets — all rendered change is deferred to the per-category revision PRs, reviewed.
+  The mapper is `registersToTypeConfig`; the categories gate gained a `schema` group (retired
+  shapes, ownership, styleName tier, units) and generation throws on a retired shape.
+- **Status.** DECIDED (2026-07-30; issue #405). The pass-through shape (`type.fonts`/`type.voices`)
+  is unchanged — it remains the escape hatch for a real exported doc config (BZZR, Modal jazz).
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -641,3 +665,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-018 | `role-table.json` isn't generated from `semantic.js` like the Figma binder's role table now is (TKT-0019) | it's a deliberate independent answer key; generating it would make the `refs-canonical` gate tautological |
 | ADR-020 | `scripts/bundle.mjs` still hand-rolls import transforms though `vite` is already a devDependency | measured: vite's single-file output is ~20% LARGER (rolldown runtime prelude + a data-heavy artifact minification barely shrinks) and can't be byte-comparable — the spike's own acceptance bar ruled it out |
 | ADR-021 | the hosted MCP runs generation server-side though "the generator stays client-side" is a load-bearing constraint | deliberate, narrow amendment for describe-palette only (#379's Pro anchor); every other surface (app SPA, Figma plugin, hosted kit-sync) keeps the original rule verbatim |
+| ADR-022 | `scripts/migrate-type-registers.mjs` looks like dead one-off code to delete | kept deliberately as the executable record of the slots→registers rename — the squash-merge would erase an add-then-delete from history |
