@@ -85,24 +85,42 @@
           "refuses": "Faded sepia nostalgia. The jazz sleeve is crisp cobalt-and-cream with bold type — modernist graphic, not a faded old photo.",
           "type": {
             "base": "statement",
+            "note": "Reid Miles' Blue Note sleeves are jobbing gothic on real metal, not nostalgia — Trade Gothic Bold Condensed No. 20 is a single Linotype cut (no ladder), News Gothic ships Roman/Bold only, New Caledonia adds Semi Bold and Bold for the liner-note body (Linotype), Helvetica has no Medium so the UI ladder is authored Bold-only, and Courier Prime is Regular/Bold; Alternate Gothic No. 2 is the stacked condensed the back covers set their credits in.",
             "registers": {
               "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
-                "weight": 800,
-                "leading": "90%",
-                "tracking": "-3%"
+                "weight": 700,
+                "leading": "92%",
+                "tracking": "-2%",
+                "weights": []
               },
               "contextual": {
                 "font": "News Gothic",
                 "weight": 700,
                 "leading": "110%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "New Caledonia",
-                "weight": 420,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Semi Bold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "voices": {
                   "Sub-title": {
                     "font": "Alternate Gothic No. 2"
@@ -110,16 +128,27 @@
                 }
               },
               "actionable": {
-                "font": "Helvetica Neue",
-                "weight": 500,
+                "font": "Helvetica",
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 600,
+                "weight": 400,
                 "leading": "142%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -192,41 +221,65 @@
           "refuses": "Bright clean stage. The jazz club is smoky shadow lit by brass-gold and one amber spot — warmth in the dark, not a lit room.",
           "type": {
             "base": "luxury",
+            "note": "The club's own printing — window card and matchbook — is the same mid-century gothic set held quieter: Trade Gothic Bold Condensed No. 20 single cut, News Gothic Roman/Bold, New Caledonia Regular/Semi Bold/Bold for the set list (Linotype), Helvetica Bold-only ladder, Courier Prime Regular/Bold; the Sub-title opt-in is dropped because nothing in a matchbook earns a second display face.",
             "registers": {
               "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
-                "weight": 750,
+                "weight": 700,
                 "leading": "95%",
-                "tracking": "-2%"
+                "tracking": "-1%",
+                "weights": []
               },
               "contextual": {
                 "font": "News Gothic",
-                "weight": 650,
+                "weight": 700,
                 "leading": "112%",
-                "tracking": "3%"
+                "tracking": "3%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "New Caledonia",
-                "weight": 440,
+                "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Alternate Gothic No. 2"
+                "weights": [
+                  {
+                    "name": "Semi Bold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Helvetica Neue",
-                "weight": 480,
+                "font": "Helvetica",
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 560,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -300,41 +353,74 @@
           "refuses": "Muted vintage band. The second-line is sunlit brass-gold with carnival purple, green, and gold — vivid celebration, not a faded photo.",
           "type": {
             "base": "statement",
+            "note": "A second line is advertised on a showcard, not a Blue Note sleeve, so the loudest voice moves to Clarendon — the wood-type slab of parade and circus printing (Linotype ships Light/Roman/Bold) — over News Gothic Bold, New Caledonia for the programme body, Helvetica's authored Bold-only ladder, and Courier Prime Regular/Bold.",
             "registers": {
               "anthemic": {
-                "font": "Trade Gothic Bold Condensed No. 20",
-                "weight": 900,
-                "leading": "88%",
-                "tracking": "-4%"
+                "font": "Clarendon",
+                "weight": 700,
+                "leading": "96%",
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "contextual": {
                 "font": "News Gothic",
-                "weight": 760,
+                "weight": 700,
                 "leading": "108%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "New Caledonia",
-                "weight": 450,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Alternate Gothic No. 2"
+                "weights": [
+                  {
+                    "name": "Semi Bold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Helvetica Neue",
-                "weight": 520,
+                "font": "Helvetica",
                 "leading": "150%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 640,
+                "weight": 400,
                 "leading": "140%",
-                "tracking": "14%"
+                "tracking": "14%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -407,41 +493,65 @@
           "refuses": "Faded sepia. Modal jazz is deep blue and teal warmed by brass — a cool-blue mood, not a brown nostalgia.",
           "type": {
             "base": "editorial",
+            "note": "Modal is the quiet end of the same sleeve tradition: the condensed cut still shouts once, but News Gothic drops to its Roman with Bold as the only real sibling (Linotype ships two cuts), New Caledonia opens up for the essay-length liner note, Helvetica keeps the Bold-only ladder and Courier Prime the session log.",
             "registers": {
               "anthemic": {
                 "font": "Trade Gothic Bold Condensed No. 20",
                 "weight": 700,
                 "leading": "98%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": []
               },
               "contextual": {
                 "font": "News Gothic",
-                "weight": 600,
+                "weight": 400,
                 "leading": "115%",
-                "tracking": "4%"
+                "tracking": "4%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "New Caledonia",
                 "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Alternate Gothic No. 2"
+                "weights": [
+                  {
+                    "name": "Semi Bold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Helvetica Neue",
-                "weight": 460,
+                "font": "Helvetica",
                 "leading": "155%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "Courier Prime",
-                "weight": 520,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "16%"
+                "tracking": "16%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -528,41 +638,70 @@
           "refuses": "Tasteful muted scheme. Punk is black and newsprint detonated by shock-pink and acid-yellow — confrontation, not good taste.",
           "type": {
             "base": "statement",
+            "note": "A ransom note is made of real machines, so the novelty distressed-typewriter face goes: the letters are cut from newspaper (Times New Roman, Regular/Bold) and the sleeve notes are typed (Courier Prime, Regular/Bold), while the flyer's shout is ITC Franklin Gothic Heavy over Compacta Bold — Letraset's 1963 condensed, Light/Regular/Bold/Black — and Helvetica takes the controls with its authored Bold-only ladder.",
             "registers": {
               "anthemic": {
-                "font": "FF Trixie",
-                "weight": 700,
-                "leading": "100%",
-                "tracking": "-1%"
-              },
-              "contextual": {
-                "font": "Franklin Gothic Heavy",
+                "font": "ITC Franklin Gothic",
                 "weight": 900,
                 "leading": "100%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
+              },
+              "contextual": {
+                "font": "Compacta",
+                "weight": 700,
+                "leading": "100%",
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
-                "font": "Courier Prime",
-                "weight": 450,
+                "font": "Times New Roman",
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Compacta Bold"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Arial",
-                "weight": 500,
+                "font": "Helvetica",
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
-                "font": "Stardos Stencil",
-                "weight": 700,
+                "font": "Courier Prime",
+                "weight": 400,
                 "leading": "140%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -636,41 +775,70 @@
           "refuses": "Colourful stage show. The punk club is black leather and chrome under one red wash — stark and hard, not a lit-up gig.",
           "type": {
             "base": "technical",
+            "note": "The club flyer is the same photocopier with the contrast turned up — ITC Franklin Gothic Heavy shouting over Compacta Bold (Letraset), newspaper Times New Roman for the listings body, Helvetica's Bold-only ladder on the controls, and a hard-struck Courier Prime for the door price.",
             "registers": {
               "anthemic": {
-                "font": "FF Trixie",
-                "weight": 700,
+                "font": "ITC Franklin Gothic",
+                "weight": 900,
                 "leading": "95%",
-                "tracking": "-2%"
+                "tracking": "-2%",
+                "weights": [
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
-                "font": "Franklin Gothic Heavy",
-                "weight": 900,
+                "font": "Compacta",
+                "weight": 700,
                 "leading": "98%",
-                "tracking": "-2%"
+                "tracking": "-2%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
-                "font": "Courier Prime",
-                "weight": 440,
+                "font": "Times New Roman",
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Compacta Bold"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Arial",
-                "weight": 500,
+                "font": "Helvetica",
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
-                "font": "Stardos Stencil",
-                "weight": 700,
+                "font": "Courier Prime",
+                "weight": 400,
                 "leading": "140%",
-                "tracking": "6%"
+                "tracking": "6%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -744,41 +912,74 @@
           "refuses": "Polished design. Riot-grrrl zines are raw red, black, and marker-pink on newsprint — handmade and loud, not a clean layout.",
           "type": {
             "base": "product",
+            "note": "A riot-grrrl zine is typed, not typeset: the body is Courier Prime (Regular/Bold) and the data face is Prestige Elite Std — the IBM Selectric element these pages actually came off (Adobe ships Regular/Bold) — under Compacta Black shouting and ITC Franklin Gothic Demi framing, so the collage's loudest voice is the pasted headline, not a corporate gothic.",
             "registers": {
               "anthemic": {
-                "font": "FF Trixie",
-                "weight": 700,
+                "font": "Compacta",
+                "weight": 900,
                 "leading": "105%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Franklin Gothic Heavy",
-                "weight": 800,
+                "font": "ITC Franklin Gothic",
+                "weight": 600,
                 "leading": "102%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Book",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Courier Prime",
-                "weight": 450,
+                "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Compacta Bold"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Arial",
-                "weight": 460,
+                "font": "Helvetica",
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
-                "font": "Stardos Stencil",
-                "weight": 600,
+                "font": "Prestige Elite Std",
+                "weight": 400,
                 "leading": "142%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -853,41 +1054,74 @@
           "refuses": "Muted subtle palette. Pop-punk is black with hot-pink and highlighter brights — loud and youthful, not understated.",
           "type": {
             "base": "statement",
+            "note": "2000s pop-punk is print-shop punk done on a Mac: ITC Franklin Gothic Heavy and Compacta Bold keep the flyer lineage, but the body moves to Helvetica Now Text (Monotype ships Regular/Medium/Bold and no Semi-bold, so the ladder is authored), Helvetica takes the controls Bold-only, and Courier Prime stays the merch-list machine.",
             "registers": {
               "anthemic": {
-                "font": "FF Trixie",
-                "weight": 750,
-                "leading": "100%",
-                "tracking": "-1%"
-              },
-              "contextual": {
-                "font": "Franklin Gothic Heavy",
+                "font": "ITC Franklin Gothic",
                 "weight": 900,
                 "leading": "100%",
-                "tracking": "-2%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
+              },
+              "contextual": {
+                "font": "Compacta",
+                "weight": 700,
+                "leading": "100%",
+                "tracking": "-2%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
-                "font": "Courier Prime",
-                "weight": 460,
+                "font": "Helvetica Now Text",
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Compacta Bold"
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Arial",
-                "weight": 520,
+                "font": "Helvetica",
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
-                "font": "Stardos Stencil",
-                "weight": 700,
+                "font": "Courier Prime",
+                "weight": 400,
                 "leading": "140%",
-                "tracking": "9%"
+                "tracking": "9%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -972,24 +1206,51 @@
           "refuses": "Muted '70s brown. Disco is silver, gold, and saturated pink-purple light on black — glittering glamour, not earth tones.",
           "type": {
             "base": "statement",
+            "note": "The disco sleeve is ITC's whole catalogue: Avant Garde Gothic tops out at Bold (Extra Light/Book/Medium/Demi/Bold — ITC), Serif Gothic Bold frames, and Souvenir has NO Regular so the body sits on its Light with Medium and Demi as the real heavier stops; Helvetica's ladder is Bold-only, Data 70 (Letraset, 1970) is a single cut, and Antique Olive Nord is the club-graphics fat cut earned by the sub-title's one line. Data 70 stays the Kicker flourish only - the working -mono voices opt into Space Mono (400/700), a display face cannot hold at 9-11px.",
             "registers": {
               "anthemic": {
                 "font": "ITC Avant Garde Gothic",
-                "weight": 800,
+                "weight": 700,
                 "leading": "92%",
-                "tracking": "-5%"
+                "tracking": "-5%",
+                "weights": [
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "ITC Serif Gothic",
                 "weight": 700,
                 "leading": "105%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "ITC Souvenir",
-                "weight": 420,
+                "weight": 300,
                 "leading": "155%",
                 "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  }
+                ],
                 "voices": {
                   "Sub-title": {
                     "font": "Antique Olive Nord"
@@ -998,15 +1259,32 @@
               },
               "actionable": {
                 "font": "Helvetica",
-                "weight": 500,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "Data 70",
-                "weight": 600,
+                "weight": 400,
                 "leading": "142%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [],
+                "voices": {
+                  "Body-mono": {
+                    "font": "Space Mono"
+                  },
+                  "Label-mono": {
+                    "font": "Space Mono"
+                  },
+                  "Tiny-mono": {
+                    "font": "Space Mono"
+                  }
+                }
               }
             }
           }
@@ -1080,41 +1358,80 @@
           "refuses": "Muted vintage TV. The show is a full saturated rainbow — orange, yellow, green, blue — joyous pop colour, not a faded screen.",
           "type": {
             "base": "statement",
+            "note": "The show's titles are the same ITC set at full volume — Avant Garde Gothic Bold (its real ceiling) over Serif Gothic Bold, Souvenir Light carrying the credit roll (no Regular exists; Medium/Demi are the heavier cuts), Helvetica Bold-only on controls and Data 70's single Letraset cut for the lower third. Data 70 stays the Kicker flourish only - the working -mono voices opt into Space Mono (400/700), a display face cannot hold at 9-11px.",
             "registers": {
               "anthemic": {
                 "font": "ITC Avant Garde Gothic",
-                "weight": 900,
+                "weight": 700,
                 "leading": "90%",
-                "tracking": "-4%"
+                "tracking": "-4%",
+                "weights": [
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "ITC Serif Gothic",
-                "weight": 760,
+                "weight": 700,
                 "leading": "102%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "ITC Souvenir",
-                "weight": 440,
+                "weight": 300,
                 "leading": "152%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Antique Olive Nord"
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Demi",
+                    "weight": 600
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Helvetica",
-                "weight": 520,
                 "leading": "150%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "Data 70",
-                "weight": 640,
+                "weight": 400,
                 "leading": "140%",
-                "tracking": "14%"
+                "tracking": "14%",
+                "weights": [],
+                "voices": {
+                  "Body-mono": {
+                    "font": "Space Mono"
+                  },
+                  "Label-mono": {
+                    "font": "Space Mono"
+                  },
+                  "Tiny-mono": {
+                    "font": "Space Mono"
+                  }
+                }
               }
             }
           }
@@ -1187,41 +1504,80 @@
           "refuses": "Earthy soul brown. P-Funk's art is a chrome-and-neon cosmos — purple, silver, and gold, a space fantasy, not earth tones.",
           "type": {
             "base": "technical",
+            "note": "Pedro Bell's mothership art hand-letters its title and lets the printed type stay small: Avant Garde Gothic Bold shouts once, Serif Gothic drops to its Regular for the panel headings, Souvenir Light runs the sleeve's dense cosmology (Medium/Demi are its only heavier cuts), and Data 70 — Letraset's 1970 machine-readable single cut — is the mothership's own alphabet. Data 70 stays the Kicker flourish only - the working -mono voices opt into Space Mono (400/700), a display face cannot hold at 9-11px.",
             "registers": {
               "anthemic": {
                 "font": "ITC Avant Garde Gothic",
-                "weight": 800,
+                "weight": 700,
                 "leading": "95%",
-                "tracking": "-4%"
+                "tracking": "-4%",
+                "weights": [
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "ITC Serif Gothic",
-                "weight": 720,
+                "weight": 400,
                 "leading": "105%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "ITC Souvenir",
-                "weight": 430,
+                "weight": 300,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Antique Olive Nord"
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Demi",
+                    "weight": 600
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Helvetica",
-                "weight": 500,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "Data 70",
-                "weight": 700,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "16%"
+                "tracking": "16%",
+                "weights": [],
+                "voices": {
+                  "Body-mono": {
+                    "font": "Space Mono"
+                  },
+                  "Label-mono": {
+                    "font": "Space Mono"
+                  },
+                  "Tiny-mono": {
+                    "font": "Space Mono"
+                  }
+                }
               }
             }
           }
@@ -1294,41 +1650,80 @@
           "refuses": "Muted retro brown. The roller rink is neon brights on blond wood — saturated fun, not a faded '70s tone.",
           "type": {
             "base": "product",
+            "note": "A rink is signage, not a sleeve, so the register drops a stop: Avant Garde Gothic Demi over Serif Gothic Regular, Souvenir Light on the session times (its lightest real cut), Helvetica Bold-only for controls, and Data 70's single cut for the scoreboard. Data 70 stays the Kicker flourish only - the working -mono voices opt into Space Mono (400/700), a display face cannot hold at 9-11px.",
             "registers": {
               "anthemic": {
                 "font": "ITC Avant Garde Gothic",
-                "weight": 750,
+                "weight": 600,
                 "leading": "98%",
-                "tracking": "-3%"
+                "tracking": "-3%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "ITC Serif Gothic",
-                "weight": 660,
+                "weight": 400,
                 "leading": "108%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "ITC Souvenir",
-                "weight": 420,
+                "weight": 300,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Antique Olive Nord"
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Demi",
+                    "weight": 600
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Helvetica",
-                "weight": 480,
                 "leading": "155%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "Data 70",
-                "weight": 560,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [],
+                "voices": {
+                  "Body-mono": {
+                    "font": "Space Mono"
+                  },
+                  "Label-mono": {
+                    "font": "Space Mono"
+                  },
+                  "Tiny-mono": {
+                    "font": "Space Mono"
+                  }
+                }
               }
             }
           }
@@ -1414,41 +1809,59 @@
           "refuses": "Generic tropical neon. Roots reggae is the symbolic red-gold-green tricolour with black and earth — meaningful, not a beach palette.",
           "type": {
             "base": "statement",
+            "note": "The roots sleeve's loud voice is the fat Cooper the '70s label art actually used — Adobe's Cooper Std ships Black as its cut, so the named style carries it and there is no ladder — over Clarendon (Linotype Light/Roman/Bold) for the label band, Bitter's variable slab as the reading face, Source Sans 3 on controls, and IBM Plex Mono's statics for the matrix numbers.",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
-                "weight": 800,
+                "font": "Cooper Std",
+                "styleName": "Black",
+                "weight": 900,
                 "leading": "100%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": []
               },
               "contextual": {
-                "font": "Cooper Black",
-                "weight": 800,
+                "font": "Clarendon",
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "functional": {
                 "font": "Bitter",
-                "weight": 430,
+                "weight": 400,
                 "leading": "160%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bank Gothic"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 500,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 600,
+                "weight": 400,
                 "leading": "142%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               }
             }
           }
@@ -1521,41 +1934,59 @@
           "refuses": "Bright sunny beach. The sound-system yard is dark and sodium-lit, hazed with smoke — a night scene, not a postcard.",
           "type": {
             "base": "technical",
+            "note": "A sound-system dance is advertised on a hand-painted board and a stencilled speaker box: Cooper Std Black for the board, Clarendon Bold for the set list, Bitter for the running order, Source Sans 3 on controls, and IBM Plex Mono Medium — a real static cut — for the stencilled rig labels.",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
-                "weight": 750,
+                "font": "Cooper Std",
+                "styleName": "Black",
+                "weight": 900,
                 "leading": "98%",
-                "tracking": "-2%"
+                "tracking": "-2%",
+                "weights": []
               },
               "contextual": {
-                "font": "Cooper Black",
-                "weight": 750,
+                "font": "Clarendon",
+                "weight": 700,
                 "leading": "102%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "functional": {
                 "font": "Bitter",
-                "weight": 440,
+                "weight": 400,
                 "leading": "155%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bank Gothic"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 500,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 640,
+                "weight": 500,
                 "leading": "142%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               }
             }
           }
@@ -1628,41 +2059,59 @@
           "refuses": "Bright clean studio. The dub studio is dark, lit by amber meters and green LEDs — analogue glow, not a white room.",
           "type": {
             "base": "technical",
+            "note": "A dub session is legible in the dark: the console legend is the loudest working voice, so IBM Plex Mono sits at its Medium static with SemiBold and Regular either side, under Cooper Std Black for the dubplate label, Clarendon Bold for the track band, Bitter for the take sheet and Source Sans 3 on controls.",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
-                "weight": 700,
+                "font": "Cooper Std",
+                "styleName": "Black",
+                "weight": 900,
                 "leading": "100%",
-                "tracking": "-2%"
+                "tracking": "-2%",
+                "weights": []
               },
               "contextual": {
-                "font": "Cooper Black",
+                "font": "Clarendon",
                 "weight": 700,
                 "leading": "105%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "functional": {
                 "font": "Bitter",
-                "weight": 430,
+                "weight": 400,
                 "leading": "155%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bank Gothic"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 520,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 700,
+                "weight": 500,
                 "leading": "145%",
-                "tracking": "14%"
+                "tracking": "14%",
+                "weights": [
+                  {
+                    "name": "SemiBold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               }
             }
           }
@@ -1735,41 +2184,55 @@
           "refuses": "Bright party colour. Lovers rock is intimate red-and-blue light in the dark — mellow warmth, not a bright disco.",
           "type": {
             "base": "luxury",
+            "note": "A blues dance is intimate, so the frame quiets down: Clarendon drops to its Roman with Bold as the one heavier cut, Bitter opens to a long leading, Source Sans 3 stays plain on controls and IBM Plex Mono keeps the tape-label register — only Cooper Std Black is allowed to shout, once.",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
-                "weight": 700,
+                "font": "Cooper Std",
+                "styleName": "Black",
+                "weight": 900,
                 "leading": "102%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": []
               },
               "contextual": {
-                "font": "Cooper Black",
-                "weight": 700,
+                "font": "Clarendon",
+                "weight": 400,
                 "leading": "108%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Bitter",
-                "weight": 420,
+                "weight": 400,
                 "leading": "165%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bank Gothic"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Source Sans 3",
-                "weight": 460,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "IBM Plex Mono",
-                "weight": 520,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               }
             }
           }
@@ -1854,41 +2317,65 @@
           "refuses": "Flat monochrome grey. Golden-age hip-hop is concrete lifted by gleaming gold and brick red — warm accents, not all grey.",
           "type": {
             "base": "statement",
+            "note": "Golden-age sleeves are label type, not a graffiti-font simulation: Aachen — Letraset's slab, only ever Medium and Bold (Brignall 1969, Meeks 1977) — carries the title over Helvetica Bold, the face the city's own signage runs on; Helvetica Now Text takes the liner body (Monotype has no Semi-bold, so the ladder is authored Medium/Bold), Inter's variable range holds the controls and Space Mono is Regular/Bold.",
             "registers": {
               "anthemic": {
-                "font": "Graffonti",
-                "weight": 800,
+                "font": "Aachen",
+                "weight": 700,
                 "leading": "95%",
-                "tracking": "-3%"
+                "tracking": "-3%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
-                "font": "Aachen Bold",
-                "weight": 800,
+                "font": "Helvetica",
+                "weight": 700,
                 "leading": "102%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Helvetica Now Text",
-                "weight": 440,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bebas Neue"
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 500,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 600,
+                "weight": 400,
                 "leading": "142%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -1962,41 +2449,69 @@
           "refuses": "Muted street tones. Graffiti is full spray-can saturation — magenta, blue, yellow, chrome — maximal colour, by design.",
           "type": {
             "base": "statement",
+            "note": "The piece itself is hand-painted — a canned 'graffiti font' would be the exact cliché this palette refuses — so the type is what was printed AROUND the piece: ITC Franklin Gothic Heavy on the flyer, Aachen Bold (Letraset's two cuts) as the caption slab, Helvetica Now Text for the book text (Medium/Bold authored, no Semi-bold exists), Inter on controls, Space Mono Regular/Bold on the car numbers.",
             "registers": {
               "anthemic": {
-                "font": "Graffonti",
+                "font": "ITC Franklin Gothic",
                 "weight": 900,
                 "leading": "90%",
-                "tracking": "-5%"
+                "tracking": "-5%",
+                "weights": [
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
-                "font": "Aachen Bold",
-                "weight": 800,
+                "font": "Aachen",
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "-2%"
+                "tracking": "-2%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "functional": {
                 "font": "Helvetica Now Text",
-                "weight": 450,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bebas Neue"
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 520,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "1%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 640,
+                "weight": 400,
                 "leading": "140%",
-                "tracking": "14%"
+                "tracking": "14%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -2069,41 +2584,73 @@
           "refuses": "Bright daytime colour. Trap visuals are deep purple and night-black with gold and neon — a nocturnal mood, not daylight.",
           "type": {
             "base": "technical",
+            "note": "The modern trap cover is one enormous compressed word: Druk Super with Heavy and Bold beneath it (Commercial Type ships Medium/Bold/Heavy/Super), Helvetica Neue Bold for the credit block (its cuts are Light/Roman/Medium/Bold — no Semi-bold), Helvetica Now Text for the body with an authored Medium/Bold ladder, Inter on controls, Space Mono Regular/Bold for the tag.",
             "registers": {
               "anthemic": {
-                "font": "Graffonti",
-                "weight": 800,
+                "font": "Druk",
+                "weight": 900,
                 "leading": "95%",
-                "tracking": "-3%"
+                "tracking": "-3%",
+                "weights": [
+                  {
+                    "name": "Heavy",
+                    "weight": 800
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "contextual": {
-                "font": "Aachen Bold",
-                "weight": 750,
+                "font": "Helvetica Neue",
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "functional": {
                 "font": "Helvetica Now Text",
-                "weight": 430,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Bebas Neue"
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 500,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 700,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -2176,41 +2723,74 @@
           "refuses": "Grey urban grit. G-funk is warm sunset gold and candy-paint purple — a sunny lowrider mood, not a grey street.",
           "type": {
             "base": "luxury",
+            "note": "The lowrider's own lettering tradition is blackletter, but it belongs on one line, not the whole system — so Old English Text MT (Monotype, one cut) is opted in on Sub-heading only, under ITC Franklin Gothic Heavy and Helvetica Bold, with Helvetica Now Text (Medium/Bold authored) on the body, Inter on controls and Space Mono Regular/Bold on the plate numbers.",
             "registers": {
               "anthemic": {
-                "font": "Graffonti",
-                "weight": 750,
+                "font": "ITC Franklin Gothic",
+                "weight": 900,
                 "leading": "100%",
-                "tracking": "-2%"
+                "tracking": "-2%",
+                "weights": [
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
-                "font": "Aachen Bold",
+                "font": "Helvetica",
                 "weight": 700,
                 "leading": "105%",
-                "tracking": "0%"
-              },
-              "functional": {
-                "font": "Helvetica Now Text",
-                "weight": 420,
-                "leading": "160%",
                 "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ],
                 "voices": {
-                  "Sub-title": {
-                    "font": "Bebas Neue"
+                  "Sub-heading": {
+                    "font": "Old English Text MT"
                   }
                 }
               },
+              "functional": {
+                "font": "Helvetica Now Text",
+                "weight": 400,
+                "leading": "160%",
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
+              },
               "actionable": {
                 "font": "Inter",
-                "weight": 460,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 560,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -2296,41 +2876,55 @@
           "refuses": "Tasteful muted scheme. Acid house is full fluorescent saturation — acid yellow, day-glo orange, hot pink — maximal, not subtle.",
           "type": {
             "base": "statement",
+            "note": "The '88 flyer is Letraset futurism photocopied: Eurostile Bold Extended No. 2 is a single Linotype cut so it carries no ladder, Akzidenz-Grotesk supplies the Bold/Medium/Regular frame (Berthold), Univers runs the small print on 55 Roman with 65 Bold as its only real heavier cut, IBM Plex Sans holds the controls on real Medium/SemiBold statics, and OCR-B Std (Adobe, one weight) is the machine-read kicker.",
             "registers": {
               "anthemic": {
-                "font": "Eurostile Bold Extended",
-                "weight": 800,
+                "font": "Eurostile Bold Extended No. 2",
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": []
               },
               "contextual": {
-                "font": "Akzidenz-Grotesk Bold",
-                "weight": 800,
+                "font": "Akzidenz-Grotesk",
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Univers",
-                "weight": 440,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "DIN Condensed"
+                "weights": [
+                  {
+                    "name": "65 Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 500,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
-                "font": "OCR-B",
-                "weight": 600,
+                "font": "OCR-B Std",
+                "weight": 400,
                 "leading": "142%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": []
               }
             }
           }
@@ -2403,41 +2997,55 @@
           "refuses": "Warm organic palette. Detroit techno is cold chrome-and-black with electric-blue circuitry — machine futurism, not warmth.",
           "type": {
             "base": "technical",
+            "note": "Transmat and UR sleeves are machine documents: Eurostile Bold Extended No. 2's single cut for the title, Akzidenz-Grotesk Bold for the catalogue line, Univers 55 Roman for the sleeve note (65 Bold its one real sibling), IBM Plex Sans statics on controls, and OCR-B Std — a real Adobe font, not a spec sheet — for the matrix code.",
             "registers": {
               "anthemic": {
-                "font": "Eurostile Bold Extended",
-                "weight": 800,
+                "font": "Eurostile Bold Extended No. 2",
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": []
               },
               "contextual": {
-                "font": "Akzidenz-Grotesk Bold",
-                "weight": 760,
+                "font": "Akzidenz-Grotesk",
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Univers",
-                "weight": 430,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "DIN Condensed"
+                "weights": [
+                  {
+                    "name": "65 Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 500,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
-                "font": "OCR-B",
-                "weight": 700,
+                "font": "OCR-B Std",
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": []
               }
             }
           }
@@ -2511,41 +3119,55 @@
           "refuses": "Lit ambient room. The rave is near-total black sliced by saturated laser green and UV — light-on-dark, not an ambient glow.",
           "type": {
             "base": "statement",
+            "note": "A rave flyer is read at arm's length in the dark, so the same machine set is set tighter and wider-tracked at the bottom: Eurostile Bold Extended No. 2 (single cut), Akzidenz-Grotesk Bold, Univers 55 Roman with 65 Bold, IBM Plex Sans on controls, OCR-B Std for the ticket line.",
             "registers": {
               "anthemic": {
-                "font": "Eurostile Bold Extended",
-                "weight": 900,
+                "font": "Eurostile Bold Extended No. 2",
+                "weight": 700,
                 "leading": "95%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": []
               },
               "contextual": {
-                "font": "Akzidenz-Grotesk Bold",
-                "weight": 800,
+                "font": "Akzidenz-Grotesk",
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Univers",
-                "weight": 450,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "DIN Condensed"
+                "weights": [
+                  {
+                    "name": "65 Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 520,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
-                "font": "OCR-B",
-                "weight": 640,
+                "font": "OCR-B Std",
+                "weight": 400,
                 "leading": "140%",
-                "tracking": "14%"
+                "tracking": "14%",
+                "weights": []
               }
             }
           }
@@ -2620,41 +3242,51 @@
           "refuses": "Muted natural palette. Vaporwave is candy pastel pink-and-cyan with neon grid — a digital dream, not a natural scheme.",
           "type": {
             "base": "editorial",
+            "note": "Vaporwave is a ready-made: the body is Times New Roman because the aesthetic's native document is a 1997 desktop default (Regular/Bold only), Eurostile Bold Extended No. 2's single cut supplies the retro-future title, Akzidenz-Grotesk sits at its Regular, IBM Plex Sans holds the controls, and OCR-B Std tracks wide for the grid caption.",
             "registers": {
               "anthemic": {
-                "font": "Eurostile Bold Extended",
+                "font": "Eurostile Bold Extended No. 2",
                 "weight": 700,
                 "leading": "105%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": []
               },
               "contextual": {
-                "font": "Akzidenz-Grotesk Bold",
-                "weight": 600,
+                "font": "Akzidenz-Grotesk",
+                "weight": 400,
                 "leading": "110%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
-                "font": "Univers",
+                "font": "Times New Roman",
                 "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "DIN Condensed"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "IBM Plex Sans",
-                "weight": 460,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%"
               },
               "data": {
-                "font": "OCR-B",
-                "weight": 520,
+                "font": "OCR-B Std",
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "16%"
+                "tracking": "16%",
+                "weights": []
               }
             }
           }
@@ -2740,41 +3372,56 @@
           "refuses": "Total featureless black. Black metal is black set against stark corpse-white and frost-blue — high contrast, not a void.",
           "type": {
             "base": "statement",
+            "note": "A black-metal sleeve is one hand-drawn logo and then near-silence: Fette Fraktur is a single Linotype cut (its density, not a fictional 800, is the shout), Trajan Pro's Regular carries the engraved band line with Bold as its one real sibling, Sabon Roman/Bold the credits, Gill Sans Nova's real Medium/SemiBold the controls, and Courier Prime the demo-tape J-card.",
             "registers": {
               "anthemic": {
                 "font": "Fette Fraktur",
-                "weight": 800,
+                "weight": 400,
                 "leading": "100%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": []
               },
               "contextual": {
-                "font": "Trajan",
-                "weight": 700,
+                "font": "Trajan Pro",
+                "weight": 400,
                 "leading": "112%",
-                "tracking": "5%"
+                "tracking": "5%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Sabon",
-                "weight": 420,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Neue Machina"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Optima",
-                "weight": 500,
+                "font": "Gill Sans Nova",
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "1%"
               },
               "data": {
-                "font": "OCR-A",
-                "weight": 600,
+                "font": "Courier Prime",
+                "weight": 400,
                 "leading": "142%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -2847,41 +3494,61 @@
           "refuses": "Bright clean rock. Doom is deep purple and amp-black hazed with amber fuzz — heavy and warm-dark, not a bright stage.",
           "type": {
             "base": "editorial",
+            "note": "Doom's sleeve language is the 1970 occult paperback, not blackletter: Windsor Bold (Linotype ships Light/Bold/Ultra Heavy/Elongated — no Regular) carries the title, Sabon Bold frames and Sabon Roman reads, Gill Sans Nova takes the controls on real Medium/SemiBold cuts, and Courier Prime is the tour-poster typewriter.",
             "registers": {
               "anthemic": {
-                "font": "Fette Fraktur",
-                "weight": 750,
+                "font": "Windsor",
+                "weight": 700,
                 "leading": "102%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "contextual": {
-                "font": "Trajan",
-                "weight": 660,
+                "font": "Sabon",
+                "weight": 700,
                 "leading": "115%",
-                "tracking": "4%"
+                "tracking": "4%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Sabon",
-                "weight": 430,
+                "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Neue Machina"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Optima",
-                "weight": 480,
+                "font": "Gill Sans Nova",
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "1%"
               },
               "data": {
-                "font": "OCR-A",
-                "weight": 560,
+                "font": "Courier Prime",
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "7%"
+                "tracking": "7%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -2954,41 +3621,61 @@
           "refuses": "Grim monochrome black. Power metal art is epic colour — steel blue, gold, and dragon-fire — heroic fantasy, not all-black.",
           "type": {
             "base": "luxury",
+            "note": "Power metal's art is heraldic rather than illegible, so the loudest voice is engraved caps: Trajan Pro Bold (Adobe ships Regular/Bold) over Optima Bold (Linotype Roman/Bold), Sabon Roman for the booklet, Gill Sans Nova on controls, Courier Prime for the credits — no Fraktur, because this sleeve never used one.",
             "registers": {
               "anthemic": {
-                "font": "Fette Fraktur",
+                "font": "Trajan Pro",
                 "weight": 700,
                 "leading": "105%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Trajan",
+                "font": "Optima",
                 "weight": 700,
                 "leading": "115%",
-                "tracking": "6%"
+                "tracking": "6%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Sabon",
-                "weight": 420,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Neue Machina"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Optima",
-                "weight": 480,
+                "font": "Gill Sans Nova",
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "2%"
               },
               "data": {
-                "font": "OCR-A",
-                "weight": 520,
+                "font": "Courier Prime",
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "6%"
+                "tracking": "6%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -3061,41 +3748,56 @@
           "refuses": "Flat black void. Gothic metal is deep crimson and candle-gold against black and stone — theatrical, not a featureless dark.",
           "type": {
             "base": "luxury",
+            "note": "The gothic-metal sleeve pairs a blackletter logo with engraved Latin caps: Fette Fraktur's single cut for the logo, Trajan Pro Regular (Bold its one sibling) for the movement titles, Sabon Roman for the libretto, Gill Sans Nova on controls and Courier Prime for the credit list — theatrical, and every cut real.",
             "registers": {
               "anthemic": {
                 "font": "Fette Fraktur",
-                "weight": 800,
+                "weight": 400,
                 "leading": "100%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": []
               },
               "contextual": {
-                "font": "Trajan",
-                "weight": 720,
-                "leading": "112%",
-                "tracking": "5%"
+                "font": "Trajan Pro",
+                "weight": 400,
+                "leading": "114%",
+                "tracking": "6%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Sabon",
-                "weight": 430,
-                "leading": "160%",
+                "weight": 400,
+                "leading": "162%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Neue Machina"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Optima",
-                "weight": 480,
+                "font": "Gill Sans Nova",
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "2%"
               },
               "data": {
-                "font": "OCR-A",
-                "weight": 560,
+                "font": "Courier Prime",
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "7%"
+                "tracking": "9%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -3180,41 +3882,74 @@
           "refuses": "Slick country-pop colour. Folk Americana is denim, wheat, and dust — weathered and warm, not a glossy stage palette.",
           "type": {
             "base": "editorial",
+            "note": "Depression-era folk print is slab and letterpress: Sentinel Black over Sentinel Bold (H&Co ships Light/Book/Medium/Semibold/Bold/Black), Miller Text Roman with Bold as its only real heavier cut for the song notes, Interstate on controls with no core weight because Font Bureau ships no Medium or Semibold there, and Prestige Elite Std (Regular/Bold) for the tape box.",
             "registers": {
               "anthemic": {
-                "font": "Rosewood",
-                "weight": 700,
+                "font": "Sentinel",
+                "weight": 900,
                 "leading": "102%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  }
+                ]
               },
               "contextual": {
                 "font": "Sentinel",
                 "weight": 700,
                 "leading": "110%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Book",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Miller Text",
-                "weight": 420,
+                "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Copperplate Gothic Bold"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Interstate",
-                "weight": 480,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
-                "font": "Prestige Elite",
-                "weight": 560,
+                "font": "Prestige Elite Std",
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -3289,24 +4024,38 @@
           "refuses": "Drab denim only. The Opry rhinestone suit is turquoise, rose, and gold against red velvet — flamboyant showbiz, not workwear.",
           "type": {
             "base": "statement",
+            "note": "The Opry's own printing is Hatch Show Print wood type, so Rosewood Std (Adobe, one weight plus its Fill) sets the ceiling and everything beneath it stays under that number — Sentinel Book for the bill, Miller Text for the programme with a Copperplate Gothic Bold sub-title, the engraver's face on every country certificate; Interstate carries controls with no core (no Medium/Semibold exists) and Prestige Elite Std the set list.",
             "registers": {
               "anthemic": {
-                "font": "Rosewood",
-                "weight": 900,
+                "font": "Rosewood Std",
+                "weight": 400,
                 "leading": "100%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": []
               },
               "contextual": {
                 "font": "Sentinel",
-                "weight": 800,
+                "weight": 400,
                 "leading": "108%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Miller Text",
-                "weight": 440,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "voices": {
                   "Sub-title": {
                     "font": "Copperplate Gothic Bold"
@@ -3315,15 +4064,26 @@
               },
               "actionable": {
                 "font": "Interstate",
-                "weight": 520,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
-                "font": "Prestige Elite",
-                "weight": 640,
+                "font": "Prestige Elite Std",
+                "weight": 400,
                 "leading": "140%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -3397,41 +4157,70 @@
           "refuses": "Cold modern palette. The bluegrass porch is warm varnish, wood, and hill-green — homespun warmth, not a sleek stage.",
           "type": {
             "base": "luxury",
+            "note": "A porch session is a homespun handbill, not a marquee: Sentinel Bold over Sentinel Semibold (both real H&Co cuts), Miller Text Roman for the tune list at a long leading, Interstate on controls without a fabricated Medium, and Prestige Elite Std for the field-recording label.",
             "registers": {
               "anthemic": {
-                "font": "Rosewood",
+                "font": "Sentinel",
                 "weight": 700,
                 "leading": "105%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Book",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
                 "font": "Sentinel",
-                "weight": 700,
+                "weight": 600,
                 "leading": "110%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Book",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Miller Text",
-                "weight": 420,
+                "weight": 400,
                 "leading": "165%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Copperplate Gothic Bold"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Interstate",
-                "weight": 460,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
-                "font": "Prestige Elite",
-                "weight": 520,
+                "font": "Prestige Elite Std",
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -3504,41 +4293,74 @@
           "refuses": "Shiny Nashville pop. Outlaw country is dust, black, and worn leather with a turquoise note — rugged, not a glossy stage.",
           "type": {
             "base": "technical",
+            "note": "Outlaw sleeves refuse the rhinestone showcard and read like highway print: Sentinel Black and Bold (H&Co's real top cuts), Miller Text Roman for the sleeve note, Interstate — the US highway-signage face — on controls with no fabricated core, and Prestige Elite Std typing the credits.",
             "registers": {
               "anthemic": {
-                "font": "Rosewood",
-                "weight": 800,
+                "font": "Sentinel",
+                "weight": 900,
                 "leading": "100%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  }
+                ]
               },
               "contextual": {
                 "font": "Sentinel",
-                "weight": 750,
+                "weight": 700,
                 "leading": "108%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Book",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Miller Text",
-                "weight": 430,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Copperplate Gothic Bold"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Interstate",
-                "weight": 520,
                 "leading": "150%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
-                "font": "Prestige Elite",
-                "weight": 600,
+                "font": "Prestige Elite Std",
+                "weight": 400,
                 "leading": "142%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -3625,41 +4447,66 @@
           "refuses": "Austere modern hall. The opera house is red velvet and gilt under crystal — warm grandeur, not a grey concrete auditorium.",
           "type": {
             "base": "luxury",
+            "note": "The house's own printing is a Didot playbill and an engraved plate: Didot Bold with Roman beneath (Linotype ships Roman/Italic/Bold), Trajan Pro Bold for the title caps — the real inscriptional face, so the Cinzel stand-in and its duplicate Trajan sub-title both go — EB Garamond's variable range for the synopsis, Gill Sans Nova on controls, and Copperplate Gothic for the act flags. Copperplate stays the engraved Kicker only - the -mono voices opt into IBM Plex Mono (caps-only engraving has no lowercase for prose).",
             "registers": {
               "anthemic": {
                 "font": "Didot",
-                "weight": 800,
+                "weight": 700,
                 "leading": "106%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Cinzel",
-                "weight": 720,
+                "font": "Trajan Pro",
+                "weight": 700,
                 "leading": "116%",
-                "tracking": "6%"
+                "tracking": "6%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "EB Garamond",
-                "weight": 430,
+                "weight": 400,
                 "leading": "158%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Trajan"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
-                "font": "Gill Sans",
-                "weight": 470,
+                "font": "Gill Sans Nova",
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Copperplate Gothic",
-                "weight": 580,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "16%"
+                "tracking": "16%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
+                "voices": {
+                  "Body-mono": {
+                    "font": "IBM Plex Mono"
+                  },
+                  "Label-mono": {
+                    "font": "IBM Plex Mono"
+                  },
+                  "Tiny-mono": {
+                    "font": "IBM Plex Mono"
+                  }
+                }
               }
             }
           }
@@ -3734,41 +4581,66 @@
           "refuses": "Cold blue concert grade. The orchestra is black-and-white warmed by string-amber and brass — formal warmth, not a cold stage.",
           "type": {
             "base": "editorial",
+            "note": "A symphony programme is quiet by convention, so the Didot sits at its Roman with Bold as the single real sibling and Trajan Pro at Regular; EB Garamond carries the note at a long leading, Gill Sans Nova the controls on real Medium/SemiBold cuts, and Copperplate Gothic the movement listing. Copperplate stays the engraved Kicker only - the -mono voices opt into IBM Plex Mono (caps-only engraving has no lowercase for prose).",
             "registers": {
               "anthemic": {
                 "font": "Didot",
-                "weight": 620,
+                "weight": 400,
                 "leading": "110%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "contextual": {
-                "font": "Cinzel",
-                "weight": 500,
+                "font": "Trajan Pro",
+                "weight": 400,
                 "leading": "120%",
-                "tracking": "4%"
+                "tracking": "4%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "EB Garamond",
                 "weight": 400,
                 "leading": "166%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Trajan"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
-                "font": "Gill Sans",
-                "weight": 450,
+                "font": "Gill Sans Nova",
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Copperplate Gothic",
-                "weight": 510,
+                "weight": 400,
                 "leading": "148%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
+                "voices": {
+                  "Body-mono": {
+                    "font": "IBM Plex Mono"
+                  },
+                  "Label-mono": {
+                    "font": "IBM Plex Mono"
+                  },
+                  "Tiny-mono": {
+                    "font": "IBM Plex Mono"
+                  }
+                }
               }
             }
           }
@@ -3842,41 +4714,66 @@
           "refuses": "Bright even lighting. The baroque chamber glows by candle gold against deep wood — warm shadow, not a flat-lit room.",
           "type": {
             "base": "luxury",
+            "note": "A chamber programme is engraved rather than printed: Didot Bold for the title, Trajan Pro Bold for the dedication caps, EB Garamond for the score note, Gill Sans Nova for controls and Copperplate Gothic tracking wide on the movement flags — all real cuts, with Cinzel's free Trajan clone dropped as duplication. Copperplate stays the engraved Kicker only - the -mono voices opt into IBM Plex Mono (caps-only engraving has no lowercase for prose).",
             "registers": {
               "anthemic": {
                 "font": "Didot",
-                "weight": 740,
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "4%"
+                "tracking": "4%",
+                "weights": [
+                  {
+                    "name": "Roman",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Cinzel",
-                "weight": 880,
+                "font": "Trajan Pro",
+                "weight": 700,
                 "leading": "114%",
-                "tracking": "6%"
+                "tracking": "6%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "EB Garamond",
-                "weight": 440,
+                "weight": 400,
                 "leading": "160%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Trajan"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
-                "font": "Gill Sans",
-                "weight": 480,
+                "font": "Gill Sans Nova",
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Copperplate Gothic",
-                "weight": 600,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "15%"
+                "tracking": "15%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
+                "voices": {
+                  "Body-mono": {
+                    "font": "IBM Plex Mono"
+                  },
+                  "Label-mono": {
+                    "font": "IBM Plex Mono"
+                  },
+                  "Tiny-mono": {
+                    "font": "IBM Plex Mono"
+                  }
+                }
               }
             }
           }
@@ -3950,41 +4847,66 @@
           "refuses": "Cold bright stage. The Romantic recital glows by candle gold on rosewood and ivory — intimate warmth, not a lit hall.",
           "type": {
             "base": "luxury",
+            "note": "A recital card is small, wide-letterspaced and light: Didot Roman with Bold as its one real sibling, Trajan Pro Regular for the name, EB Garamond opened to its longest leading for the programme note, Gill Sans Nova on controls and Copperplate Gothic at the widest tracking for the encore line. Copperplate stays the engraved Kicker only - the -mono voices opt into IBM Plex Mono (caps-only engraving has no lowercase for prose).",
             "registers": {
               "anthemic": {
                 "font": "Didot",
-                "weight": 700,
+                "weight": 400,
                 "leading": "108%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "contextual": {
-                "font": "Cinzel",
-                "weight": 620,
+                "font": "Trajan Pro",
+                "weight": 400,
                 "leading": "118%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "EB Garamond",
-                "weight": 430,
+                "weight": 400,
                 "leading": "172%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Trajan"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
-                "font": "Gill Sans",
-                "weight": 460,
+                "font": "Gill Sans Nova",
+                "weight": 400,
                 "leading": "158%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Copperplate Gothic",
-                "weight": 540,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "18%"
+                "tracking": "18%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
+                "voices": {
+                  "Body-mono": {
+                    "font": "IBM Plex Mono"
+                  },
+                  "Label-mono": {
+                    "font": "IBM Plex Mono"
+                  },
+                  "Tiny-mono": {
+                    "font": "IBM Plex Mono"
+                  }
+                }
               }
             }
           }
@@ -4069,41 +4991,56 @@
           "refuses": "Muted vintage tones. The psychedelic poster is maximally saturated clashing colour designed to vibrate, not a faded print.",
           "type": {
             "base": "statement",
+            "note": "Wes Wilson's handbills are Art Nouveau revival type: Arnold Boecklin is one URW cut (its density does the shouting, not an invented 800), and Windsor — whose digital family is Light/Bold/Ultra Heavy/Elongated, with no Regular — sits at Light so the secondary line stays under the display; Century Schoolbook Roman/Bold reads, Futura's real Medium/Demi hold the controls, Courier Std types the ticket line.",
             "registers": {
               "anthemic": {
-                "font": "Arnold Bocklin",
-                "weight": 800,
+                "font": "Arnold Boecklin",
+                "weight": 400,
                 "leading": "92%",
-                "tracking": "-4%"
+                "tracking": "-4%",
+                "weights": []
               },
               "contextual": {
-                "font": "Davida",
-                "weight": 700,
+                "font": "Windsor",
+                "weight": 300,
                 "leading": "102%",
-                "tracking": "-2%"
+                "tracking": "-2%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Century Schoolbook",
-                "weight": 440,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Windsor"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Futura",
-                "weight": 510,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "1%"
               },
               "data": {
-                "font": "Courier",
-                "weight": 580,
+                "font": "Courier Std",
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -4176,41 +5113,56 @@
           "refuses": "Pale washed colour. The liquid light show is saturated blooming oil colour on black — vivid and wet, not a faded wash.",
           "type": {
             "base": "statement",
+            "note": "A light show has no printed title but the bill outside does: Arnold Boecklin's single cut spreading on positive tracking, Windsor Light for the billing (its real light cut), Century Schoolbook for the programme, Futura for controls and Courier Std for the door notice.",
             "registers": {
               "anthemic": {
-                "font": "Arnold Bocklin",
-                "weight": 800,
+                "font": "Arnold Boecklin",
+                "weight": 400,
                 "leading": "100%",
-                "tracking": "4%"
+                "tracking": "4%",
+                "weights": []
               },
               "contextual": {
-                "font": "Davida",
-                "weight": 700,
+                "font": "Windsor",
+                "weight": 300,
                 "leading": "106%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Century Schoolbook",
-                "weight": 440,
+                "weight": 400,
                 "leading": "164%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Windsor"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Futura",
-                "weight": 500,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "2%"
               },
               "data": {
-                "font": "Courier",
-                "weight": 560,
+                "font": "Courier Std",
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -4284,41 +5236,56 @@
           "refuses": "Faded hippie sepia. The Summer of Love is warm saturated flower-power colour — orange, pink, blue, green — joyous, not faded.",
           "type": {
             "base": "editorial",
+            "note": "The '67 underground press set its long copy properly and saved the Nouveau face for the masthead: Arnold Boecklin's one cut, Windsor Light beneath it, Century Schoolbook Roman at a generous leading for the article, Futura on controls and Courier Std for the classifieds.",
             "registers": {
               "anthemic": {
-                "font": "Arnold Bocklin",
-                "weight": 800,
+                "font": "Arnold Boecklin",
+                "weight": 400,
                 "leading": "102%",
-                "tracking": "1%"
+                "tracking": "1%",
+                "weights": []
               },
               "contextual": {
-                "font": "Davida",
-                "weight": 700,
+                "font": "Windsor",
+                "weight": 300,
                 "leading": "106%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Century Schoolbook",
-                "weight": 430,
+                "weight": 400,
                 "leading": "168%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Windsor"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Futura",
-                "weight": 470,
+                "weight": 400,
                 "leading": "156%",
                 "tracking": "1%"
               },
               "data": {
-                "font": "Courier",
-                "weight": 520,
+                "font": "Courier Std",
+                "weight": 400,
                 "leading": "148%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -4392,41 +5359,70 @@
           "refuses": "Faded vintage wash. Mod is crisp target red-white-blue and op-art black-white — sharp graphic pop, not a faded retro tone.",
           "type": {
             "base": "product",
+            "note": "Mod is the opposite of the Fillmore: continental geometry, not Art Nouveau — Futura Bold with Demi and Medium beneath (Neufville ships Book/Medium/Demi/Bold), Helvetica Bold for the club card, Century Schoolbook for the sleeve note, Univers on controls with no core because 55/65 leaves no Medium, and Courier Std for the flip-side credit.",
             "registers": {
               "anthemic": {
-                "font": "Arnold Bocklin",
-                "weight": 800,
+                "font": "Futura",
+                "weight": 700,
                 "leading": "98%",
-                "tracking": "-2%"
+                "tracking": "-2%",
+                "weights": [
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
-                "font": "Davida",
+                "font": "Helvetica",
                 "weight": 700,
                 "leading": "104%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Century Schoolbook",
-                "weight": 435,
+                "weight": 400,
                 "leading": "154%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Windsor"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
-                "font": "Futura",
-                "weight": 520,
+                "font": "Univers",
                 "leading": "150%",
-                "tracking": "2%"
+                "tracking": "2%",
+                "weights": [
+                  {
+                    "name": "65 Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
-                "font": "Courier",
-                "weight": 540,
+                "font": "Courier Std",
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -4516,41 +5512,63 @@
           "refuses": "Muted indie palette. The idol concept is full candy pastel — pink, mint, lilac — sweet and bright, not understated.",
           "type": {
             "base": "product",
+            "note": "A pastel debut concept is soft-spoken graphic design: Clash Display sits at Semibold — the family tops out at Bold (Fontshare ships Extralight–Bold), so the old 850/900 cores were fiction — over Satoshi Medium, Pretendard's real 100–900 statics for the Hangul-and-Latin body, Inter on controls and Space Mono (Regular/Bold) on the tracklist numbers; the extra grotesk sub-title face is dropped as decoration.",
             "registers": {
               "anthemic": {
                 "font": "Clash Display",
-                "weight": 700,
+                "weight": 600,
                 "leading": "102%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Satoshi",
-                "weight": 600,
+                "weight": 500,
                 "leading": "112%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Pretendard",
                 "weight": 400,
                 "leading": "155%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Familjen Grotesk"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 460,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 500,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -4624,41 +5642,63 @@
           "refuses": "Soft natural light. The neon MV is saturated magenta-and-cyan on black — electric and high-contrast, not naturally lit.",
           "type": {
             "base": "statement",
+            "note": "The neon set shouts at the family's real ceiling: Clash Display Bold (700 is the top cut Fontshare ships) over Satoshi Bold, Pretendard Regular for the credits, Inter Medium on controls — its variable range makes the +100/+200 ladder real — and Space Mono Regular/Bold for the timecode.",
             "registers": {
               "anthemic": {
                 "font": "Clash Display",
-                "weight": 900,
+                "weight": 700,
                 "leading": "95%",
-                "tracking": "-3%"
+                "tracking": "-3%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Satoshi",
-                "weight": 800,
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "-1%"
+                "tracking": "-1%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Pretendard",
-                "weight": 450,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Familjen Grotesk"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 520,
+                "weight": 500,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 640,
+                "weight": 400,
                 "leading": "140%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -4733,41 +5773,63 @@
           "refuses": "Coordinated muted palette. Harajuku decora is a deliberate clash of bright pink, turquoise, and yellow — maximalist, not tasteful.",
           "type": {
             "base": "statement",
+            "note": "Decora's clash is in the layering, not in an invented weight: Clash Display Bold (the family's real top cut) over Satoshi Bold, Pretendard Regular for the shop copy, Inter on controls and Space Mono tracked wide for the price tags.",
             "registers": {
               "anthemic": {
                 "font": "Clash Display",
-                "weight": 850,
+                "weight": 700,
                 "leading": "98%",
-                "tracking": "-2%"
+                "tracking": "-2%",
+                "weights": [
+                  {
+                    "name": "Semibold",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
                 "font": "Satoshi",
-                "weight": 760,
+                "weight": 700,
                 "leading": "108%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Pretendard",
-                "weight": 440,
+                "weight": 400,
                 "leading": "150%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Familjen Grotesk"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 500,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 600,
+                "weight": 400,
                 "leading": "142%",
-                "tracking": "14%"
+                "tracking": "14%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -4840,41 +5902,63 @@
           "refuses": "Muted retro tone. City pop is a saturated sunset gradient with neon and chrome — glossy '80s glamour, not a faded photo.",
           "type": {
             "base": "technical",
+            "note": "City pop sleeves are airbrush plus imported Latin type, not a 2020s display face: Futura Bold with Demi/Medium beneath (Neufville's real cuts) over Helvetica Neue Bold with Medium/Light (no Semi-bold exists), Pretendard for the Japanese-Latin body, Inter on controls and Space Mono Regular/Bold for the side-A listing.",
             "registers": {
               "anthemic": {
-                "font": "Clash Display",
-                "weight": 800,
+                "font": "Futura",
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "-2%"
+                "tracking": "-2%",
+                "weights": [
+                  {
+                    "name": "Demi",
+                    "weight": 600
+                  },
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  }
+                ]
               },
               "contextual": {
-                "font": "Satoshi",
+                "font": "Helvetica Neue",
                 "weight": 700,
                 "leading": "110%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               },
               "functional": {
                 "font": "Pretendard",
-                "weight": 430,
+                "weight": 400,
                 "leading": "155%",
-                "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "Familjen Grotesk"
-                  }
-                }
+                "tracking": "0%"
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 500,
+                "weight": 400,
                 "leading": "150%",
                 "tracking": "0%"
               },
               "data": {
                 "font": "Space Mono",
-                "weight": 700,
+                "weight": 400,
                 "leading": "145%",
-                "tracking": "12%"
+                "tracking": "12%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               }
             }
           }
@@ -4959,41 +6043,74 @@
           "refuses": "Cold blue grade. The juke joint is warm amber and dark wood against a blue night — intimate warmth, not a cold modern bar.",
           "type": {
             "base": "editorial",
+            "note": "A juke joint advertises in painted script and sets its records in book type: Kaufmann Bold — ATF issued it in exactly two weights, Script and Bold — over ITC Cheltenham Book, Georgia Regular/Bold for the sleeve note, Gotham on controls with no core because H&Co ships no Semibold, and ITC American Typewriter (Light/Medium/Bold) for the matrix stamp ITC American Typewriter has no 400 - its roman is Medium (500 here), Light 300 and Bold 700 the real neighbours.",
             "registers": {
               "anthemic": {
                 "font": "Kaufmann",
                 "weight": 700,
                 "leading": "100%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Cheltenham Bold",
-                "weight": 700,
+                "font": "ITC Cheltenham",
+                "weight": 400,
                 "leading": "108%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "functional": {
                 "font": "Georgia",
-                "weight": 420,
+                "weight": 400,
                 "leading": "160%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "ITC Bookman"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Gotham",
-                "weight": 460,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "ITC American Typewriter",
-                "weight": 560,
+                "weight": 500,
                 "leading": "145%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               }
             }
           }
@@ -5067,24 +6184,43 @@
           "refuses": "Muted retro brown. Motown is glamorous gold and deep red under a warm spot — polished showbiz, not a faded photo.",
           "type": {
             "base": "statement",
+            "note": "A Motown revue bill is script over a fat Cheltenham: Kaufmann Bold (ATF's second and only other cut) over ITC Cheltenham Bold, Georgia for the label copy with ITC Bookman opted in on the sub-title — the soul-poster face of the same shop — Gotham on controls without a fabricated Semibold, and ITC American Typewriter for the take numbers ITC American Typewriter has no 400 - its roman is Medium (500 here), Light 300 and Bold 700 the real neighbours.",
             "registers": {
               "anthemic": {
                 "font": "Kaufmann",
-                "weight": 800,
+                "weight": 700,
                 "leading": "100%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Cheltenham Bold",
-                "weight": 800,
+                "font": "ITC Cheltenham",
+                "weight": 700,
                 "leading": "105%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Book",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Georgia",
-                "weight": 440,
+                "weight": 400,
                 "leading": "152%",
                 "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ],
                 "voices": {
                   "Sub-title": {
                     "font": "ITC Bookman"
@@ -5093,15 +6229,34 @@
               },
               "actionable": {
                 "font": "Gotham",
-                "weight": 520,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "ITC American Typewriter",
-                "weight": 640,
+                "weight": 500,
                 "leading": "142%",
-                "tracking": "10%"
+                "tracking": "10%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               }
             }
           }
@@ -5175,41 +6330,78 @@
           "refuses": "Cold graphic palette. Stax soul is warm red, mustard, and brown — earthy Southern warmth, not a cool modern scheme.",
           "type": {
             "base": "product",
+            "note": "Stax is a Memphis print shop, not a revue: no script — ITC Cheltenham Ultra shouts with Bold and Book beneath (ITC's real cuts), Georgia carries the label copy, Gotham the controls with an authored Medium/Bold ladder (H&Co ships no Semibold) and ITC American Typewriter the session sheet ITC American Typewriter has no 400 - its roman is Medium (500 here), Light 300 and Bold 700 the real neighbours.",
             "registers": {
               "anthemic": {
-                "font": "Kaufmann",
-                "weight": 750,
+                "font": "ITC Cheltenham",
+                "weight": 900,
                 "leading": "100%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Book",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Cheltenham Bold",
-                "weight": 750,
+                "font": "ITC Cheltenham",
+                "weight": 700,
                 "leading": "106%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Book",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Georgia",
-                "weight": 430,
+                "weight": 400,
                 "leading": "155%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "ITC Bookman"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Gotham",
-                "weight": 500,
                 "leading": "150%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "ITC American Typewriter",
-                "weight": 600,
+                "weight": 500,
                 "leading": "145%",
-                "tracking": "9%"
+                "tracking": "9%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               }
             }
           }
@@ -5283,41 +6475,74 @@
           "refuses": "Cold plain palette. Gospel is rich robe-purple and gold warmed by wood and stained glass — uplifting colour, not a bare room.",
           "type": {
             "base": "luxury",
+            "note": "A gospel programme is script on the cover and book type inside: Kaufmann Bold (ATF's two-cut family) over ITC Cheltenham Bold, Georgia Regular at a long leading for the order of service, Gotham on controls with the honest Medium/Bold ladder, and ITC American Typewriter for the hymn numbers ITC American Typewriter has no 400 - its roman is Medium (500 here), Light 300 and Bold 700 the real neighbours.",
             "registers": {
               "anthemic": {
                 "font": "Kaufmann",
                 "weight": 700,
                 "leading": "102%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  }
+                ]
               },
               "contextual": {
-                "font": "Cheltenham Bold",
+                "font": "ITC Cheltenham",
                 "weight": 700,
                 "leading": "110%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Book",
+                    "weight": 400
+                  }
+                ]
               },
               "functional": {
                 "font": "Georgia",
-                "weight": 420,
+                "weight": 400,
                 "leading": "165%",
                 "tracking": "0%",
-                "voices": {
-                  "Sub-title": {
-                    "font": "ITC Bookman"
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
                   }
-                }
+                ]
               },
               "actionable": {
                 "font": "Gotham",
-                "weight": 460,
                 "leading": "155%",
-                "tracking": "0%"
+                "tracking": "0%",
+                "weights": [
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "data": {
                 "font": "ITC American Typewriter",
-                "weight": 560,
+                "weight": 500,
                 "leading": "145%",
-                "tracking": "8%"
+                "tracking": "8%",
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  },
+                  {
+                    "name": "Light",
+                    "weight": 300
+                  }
+                ]
               }
             }
           }

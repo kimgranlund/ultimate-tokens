@@ -13,7 +13,7 @@ category: `palette-researcher` draft → reconcile + gates → `design:font-choi
 | cuisine | #410 | done | #421 | 2026-07-30 | 44/48 revised (non-ladder cores on static CJK/Indic/Arabic/Thai/display families — the dominant class); Vol II Italian untouched; Söhne umlaut restored; checker 52/60; Forma DJR + static-core pre-check lessons → #418 |
 | film | #411 | done | #422 | 2026-07-30 | 48/48 revised (~200/240 cores fictional); 11 story-driven family refusals, all checker-upheld (Shining→Overlook Helvetica, Witch→IM Fell, Dune→Archivo Expanded, Vol VII Optima→locale-correct Noto Serifs…); axis-FLOOR fiction ruling minted; checker 52/60 |
 | literature | #412 | done | #423 | 2026-07-30 | 48/48 revised (~all cores fictional 5-unit values); ~20 family swaps upheld (Fette Fraktur out ×4, Alice→Caslon, Beat volume, LOTR→IM Fell); researcher patch shipped 123 malformed ladders — schema gate caught, reconciler conversion upheld by checker; data-register lesson corrected (flows to Kicker only); checker 51/60 |
-| music | #413 | queued | — | — | |
+| music | #413 | done | #424 | 2026-07-30 | 48/48 revised; 10 genre-authenticity swaps all upheld ("genre font ≠ the genre's type" — punk's real machines, Graffonti out of hip-hop, Cinzel out of classical); single-cut-ceiling lesson applied; decorative-face -mono fills fixed via data.voices opt-ins; checker 50/60 |
 | nature | #414 | queued | — | — | |
 | travel | #415 | queued | — | — | |
 
