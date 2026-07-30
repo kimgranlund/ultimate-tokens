@@ -17,7 +17,14 @@ category: `palette-researcher` draft → reconcile + gates → `design:font-choi
 | nature | #414 | done | #425 | 2026-07-31 | 46/48 revised; one swap (alpine Cinzel/Copperplate → hut-sign Archivo Narrow), 4 documented-tradition keeps upheld; 27 silently-clamped actionable cores now declared ≤450 in-spec; optical-weight ceiling ruling minted into the rubric; checker 53/60 (highest yet) |
 | travel | #415 | done | #426 | 2026-07-31 | 48/48 revised; reflex families out wholesale (Bello/Trajan/Giza/Knockout/P22 Secession); 41 of 48 Sub-title opt-ins dropped; checker caught a fabricated Neutraface inventory + FF Tisa release ambiguity + the 75-Black contradiction — all fixed + re-verified (51/60); named-numbered-styles disqualifier + downward optical ceiling minted |
 
-Epic: #407.
+Epic: #407 — **CLOSED 2026-07-31, all 8 categories done** (PRs #417/#420/#421/#422/#423/#424/#425/#426).
+
+Program totals: 341 typed presets re-reasoned; ~310 revised. The dominant defect everywhere was
+face-reality fiction (cores/siblings naming cuts that don't exist); ~50 story-driven family
+corrections, every one upheld under independent review; 8 program rulings minted into
+`docs/reference/rubrics/type-rubric.md` along the way. Checker scores 50–53/60 across the runs.
+Follow-up work (font-cuts.json expansion, mapper ladder-snapping, name/inventory normalization,
+new schema checks) is consolidated on issue #418.
 
 Done = the category's PR merged with gates green, checker verdict recorded here, ledger row
 updated in that same PR. Program close-out (canon amendments from lessons, epic close) is Phase 4.

@@ -6,7 +6,11 @@ authored and reviewed by *reasoning* — "does this face serve what this voice i
 pattern-matching. Mechanics (sizes, leadings, ladder math) live in `src/engine/type.mjs` and
 `README.md`; this doc holds only the purpose layer. The preset gate
 (`test/engine/categories.mjs` + the face-existence check) enforces what is mechanical here;
-everything else is review judgment against these entries.
+everything else is review judgment against these entries. The 2026-07 revision program applied
+this canon to all 341 typed presets (ledger: `preset-revisions.md`); its ratified rulings —
+real-cut cores, styleName-within-family, the no-core actionable shape, axis-bounds on derived
+ladders, the optical single-cut ceiling — live in `../rubrics/type-rubric.md` Layer B, and each
+preset's reasoning lives in its own `type.note`.
 
 ## Layer 1 — the fifteen voices
 
