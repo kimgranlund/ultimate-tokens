@@ -44,15 +44,28 @@ Proportion is the structure: a quiet ground (d), a working middle (s), a small l
 loudness by contrast and stays rare. The 7 categories are the bar; the naming doc is a rubric, not a
 rulebook.
 
-## Type mode (secondary - only when asked)
+## Type mode (first-class since ADR-022 - registers, reasoned from the story)
 
-Propose a pairing within the four self-hosted families, name the nearest of the five treatments, and
-return make7 overrides + a rationale - a reply, NOT a schema file. The voice/knob/treatment vocabulary is
-the preloaded type-scale skill's; don't re-derive it here. If a draft carries per-palette
-`type.registers` (the intended-use canon's five registers - anthemic/contextual/functional/actionable/
-data, each shaping its primary voice; `type.slots` is the RETIRED pre-2026-07-30 shape), leading and
-tracking are STRICT %-strings (`"leading": "96%"`, `"tracking": "-2%"` - % of font size; never bare
-floats - the categories gate rejects the retired numeric shape).
+A palette's typography is a REGISTER declaration: `type.registers.{anthemic, contextual, functional,
+actionable, data}` (docs/reference/typography/intended-use.md Layer 3 - each register shapes its
+primary voice Display/Headline/Body/Label/Kicker; `type.slots` is the RETIRED pre-2026-07-30 shape).
+When asked to design or REVISE a palette's type (the preset revision program), emit the registers
+IN the draft JSON, reasoned from that palette's own story (kicker/source/refuses) against the canon
+and scored against docs/reference/rubrics/type-rubric.md - self-score Layer A, state it in your
+summary. Rules that bind the schema:
+
+- Optional per register: `styleName` (a REAL named cut, expressive-tier target voices only),
+  explicit `weights` (`[]` opts the ladder out), and a `voices` sub-map covering ONLY that
+  register's own secondaries (UI-control/UI-widget: `font` only). Body-class cores stay <=450.
+- leading/tracking are STRICT %-strings (`"leading": "96%"`, `"tracking": "-2%"` - % of font size;
+  never bare floats - the categories gate rejects the retired numeric shape).
+- Every palette you CHANGE carries a one-line `type.note` (the in-spec rationale). A cut claim on
+  a family outside docs/reference/data/font-cuts.json names its source in that note.
+- Restraint is a rubric dimension: an opt-in or named cut is EARNED by the story, not decoration.
+
+For an ad-hoc "propose a type treatment" ask (no draft file wanted), a reply with the pairing, the
+nearest treatment, and the rationale still suffices. The voice/knob/treatment vocabulary is the
+preloaded type-scale skill's; don't re-derive it here.
 
 ## How you work
 

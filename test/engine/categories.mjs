@@ -87,6 +87,9 @@ for (const slug of CATS) {
     // (s) SCHEMA — the register declaration itself is well-formed. Runs on the SPEC side, before the
     //     sd-guarded value checks; the retired-shape check is defense in depth (the mapper also
     //     throws on it at generation, but this file must catch a spec edited after a stale regen).
+    //     Top-level `type` keys are deliberately NOT allowlisted here — the pass-through shape owns
+    //     several, and `type.note` (the revision program's in-spec rationale, type-rubric.md Layer B)
+    //     is valid and mapper-ignored; only the registers SHAPE is validated.
     if (st && (st.slots || st.faces)) FAIL("schema", `${slug}[${i}] carries the RETIRED type.slots/type.faces shape — run scripts/migrate-type-registers.mjs`);
     const isPct = (x) => typeof x === "string" && /^\s*-?\d+(?:\.\d+)?\s*%\s*$/.test(x);
     const badUnit = (o, where) => {
