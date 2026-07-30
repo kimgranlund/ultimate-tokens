@@ -8,7 +8,7 @@ category: `palette-researcher` draft → reconcile + gates → `design:font-choi
 
 | Category | Issue | State | PR | Date | Notes |
 |---|---|---|---|---|---|
-| architecture (pilot) | #408 | queued | — | — | pilot; loop lessons feed the rubric before the rest run |
+| architecture (pilot) | #408 | done | #417 | 2026-07-30 | 34/48 revised; checker 51/60 (2 passes); pilot ruling added to the rubric (real-cut cores, styleName-within-family); lessons → follow-up issue |
 | brands | #409 | queued | — | — | incl. typing Maison/Adia (untyped) + reconciling Corsa/Nike/Burger King against their real identities |
 | cuisine | #410 | queued | — | — | |
 | film | #411 | queued | — | — | |
