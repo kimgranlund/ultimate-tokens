@@ -159,9 +159,12 @@ export class SettingsMixinImpl {
         this._settingRow("Motion", "Editor animations and transitions. System respects your OS reduce-motion setting; Reduced keeps them minimal always.",
           [{ id: "system", label: "System" }, { id: "reduced", label: "Reduced" }], this.motion,
           (id) => { this.motion = id; this._saveAppPrefs(); this.render(); }, "setmotion"),
+        this._settingRow("Font rendering", "Premium shows every kit's fonts as designed. Google Fonts swaps any non-Google family for a close, guaranteed-renderable substitute — useful when a licensed font isn't installed.",
+          [{ id: "premium", label: "Premium" }, { id: "google", label: "Google Fonts" }], this.fontMode,
+          (id) => { this.fontMode = id; this._saveAppPrefs(); this.render(); }, "setfontmode"),
         h("div", { class: "settings-row" },
           h("div", { class: "settings-row-text" }, h("b", {}, "Reset app preferences"),
-            h("small", {}, "Theme, canvas preview, and motion return to System; the saved record is cleared. Documents are untouched.")),
+            h("small", {}, "Theme, canvas preview, motion, and font rendering return to their defaults; the saved record is cleared. Documents are untouched.")),
           btn("Reset to defaults", { cls: "settings-reset", ariaLabel: "Reset app preferences to defaults", onclick: () => this._resetAppPrefs() })),
       ])],
     };

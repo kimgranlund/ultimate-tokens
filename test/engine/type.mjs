@@ -543,6 +543,32 @@ ok(T.genericFor("Playfair Display", "mono") === "monospace", "genericFor: the mo
 ok(T.genericFor("Space Mono") === "monospace" && T.genericFor("Space Grotesk") === "sans-serif" && T.genericFor("Zilla Slab") === "serif", "genericFor: keyword rules (mono→mono, grotesk→sans, slab→serif)");
 ok(T.genericFor("Some Unknown Face") === "sans-serif" && T.genericFor("") === "sans-serif" && T.genericFor(undefined) === "sans-serif", "genericFor: unknown/empty → sans-serif default");
 
+// ── fontMode (google-fonts-safe rendering, #418 follow-on): resolvedFontFor is UNCHANGED (still
+// always the as-designed family); resolvedFontForMode is the mode-aware sibling; fontMode absent/
+// "premium" on every emitter is BYTE-IDENTICAL to before this option existed (the identity gate);
+// "google" swaps a mapped premium family for its font-fallbacks.mjs substitute ──
+{
+  const sohne = T.typeScale({ treatment: "product", fonts: { display: "Söhne" } });
+  // identity gate: default/omitted fontMode never differs from explicit "premium"
+  ok(T.typeTokensCSS(sohne) === T.typeTokensCSS(sohne, { fontMode: "premium" }), "CSS: omitted fontMode === explicit \"premium\" (identity gate)");
+  ok(JSON.stringify(T.typeTokensDTCG(sohne)) === JSON.stringify(T.typeTokensDTCG(sohne, { fontMode: "premium" })), "DTCG: omitted fontMode === explicit \"premium\" (identity gate)");
+  ok(T.resolvedFontFor(sohne, "Display") === "Söhne", "resolvedFontFor is untouched — always the as-designed family");
+  ok(T.resolvedFontForMode(sohne, "Display", "premium") === "Söhne", "resolvedFontForMode premium mode === resolvedFontFor");
+  ok(T.resolvedFontForMode(sohne, "Display") === "Söhne", "resolvedFontForMode with no mode arg defaults like premium");
+  // "google" mode: a mapped family swaps to its curated substitute, everywhere it's emitted
+  ok(T.resolvedFontForMode(sohne, "Display", "google") === "Inter Tight", `resolvedFontForMode google mode maps Söhne → Inter Tight (got ${T.resolvedFontForMode(sohne, "Display", "google")})`);
+  const cssGoogle = T.typeTokensCSS(sohne, { fontMode: "google" });
+  ok(cssGoogle.includes("--font-display: 'Inter Tight';"), "CSS google mode: the role-level --font-display prop carries the substitute");
+  ok(cssGoogle.includes("--font-voice-display: 'Inter Tight';"), "CSS google mode: the per-voice --font-voice-display prop also carries the substitute");
+  ok(!cssGoogle.includes("Söhne"), "CSS google mode never names the premium family at all");
+  const dtcgGoogle = T.typeTokensDTCG(sohne, { fontMode: "google" });
+  ok(dtcgGoogle.fontFamily.display.$value === "Inter Tight", "DTCG google mode: the top-level fontFamily group carries the substitute");
+  ok(dtcgGoogle.typography.display.md.$value.fontFamily === "Inter Tight", "DTCG google mode: the composite typography token's fontFamily carries the substitute");
+  // an unclassified family passes through unchanged in google mode too — never worse than premium
+  const unclassified = T.typeScale({ treatment: "product", fonts: { display: "Some Unlisted Foundry Face" } });
+  ok(T.typeTokensCSS(unclassified, { fontMode: "google" }) === T.typeTokensCSS(unclassified, { fontMode: "premium" }), "an unclassified family is unaffected by fontMode (falls through unchanged)");
+}
+
 if (fails.length) { console.error(`type FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("type PASS — fixed size table, optical tracking, treatments, CSS + DTCG + Figma-modes emit");
 process.exit(0);

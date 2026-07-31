@@ -17,7 +17,9 @@ const categoryKey = (file) => (file === "index.js" ? "categoryIndex" : "category
 const MODS = [
   ["collections", "src/engine/collections.js"],
   ["hct", "src/engine/hct.js"], ["okhsl", "src/engine/okhsl.js"], ["semantic", "src/engine/semantic.js"],
-  ["tonal", "src/engine/tonal.js"], ["derive", "src/engine/derive.mjs"], ["type", "src/engine/type.mjs"], ["geometry", "src/engine/geometry.mjs"], ["flags", "src/engine/flags.js"],
+  ["tonal", "src/engine/tonal.js"], ["derive", "src/engine/derive.mjs"],
+  ["fontFallbacks", "src/engine/font-fallbacks.mjs"], // pure, zero-dep; BEFORE type/ds-export (which import it)
+  ["type", "src/engine/type.mjs"], ["geometry", "src/engine/geometry.mjs"], ["flags", "src/engine/flags.js"],
   ["iconSystems", "src/engine/icon-systems.mjs"], // pure registry; BEFORE persist (which imports it)
   ["motion", "src/engine/motion.mjs"], // pure constants; BEFORE exports/model (which import it)
   ["persist", "src/ui/persist.js"],
@@ -48,7 +50,7 @@ const MODS = [
   ["settingsMixin", "src/ui/overlays/settings.js"],
   ["app", "src/ui/app.js"],
 ];
-const KEY = { "hct.js": "hct", "okhsl.js": "okhsl", "semantic.js": "semantic", "tonal.js": "tonal", "derive.mjs": "derive", "type.mjs": "type", "geometry.mjs": "geometry", "flags.js": "flags", "persist.js": "persist",
+const KEY = { "hct.js": "hct", "okhsl.js": "okhsl", "semantic.js": "semantic", "tonal.js": "tonal", "derive.mjs": "derive", "font-fallbacks.mjs": "fontFallbacks", "type.mjs": "type", "geometry.mjs": "geometry", "flags.js": "flags", "persist.js": "persist",
   "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "model.mjs": "model",
   "app-helpers.mjs": "appHelpers", "color.js": "colorSection", "typography.js": "typeSection", "geometry.js": "geomSection",
   "drawer.js": "drawerMixin", "apply-gate.js": "applyGateMixin", "settings.js": "settingsMixin",

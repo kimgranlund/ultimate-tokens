@@ -36,6 +36,7 @@ const FILES = [
   "src/engine/motion.mjs",
   "src/engine/tonal.js",
   "src/engine/semantic.js",
+  "src/engine/font-fallbacks.mjs",
   "src/engine/type.mjs",
   "src/engine/geometry.mjs",
   "src/engine/exports.js",
