@@ -93,7 +93,7 @@
                 "tracking": "0%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -206,7 +206,7 @@
                 "tracking": "0%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -422,7 +422,7 @@
                 "tracking": "-1%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -548,7 +548,7 @@
                 "tracking": "0%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -666,7 +666,7 @@
                 "tracking": "2%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -784,7 +784,7 @@
                 "tracking": "3%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -902,7 +902,7 @@
                 "tracking": "1.5%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -1964,7 +1964,7 @@
                 "tracking": "0%",
                 "weights": [
                   {
-                    "name": "ExtraBold",
+                    "name": "Extra-bold",
                     "weight": 800
                   },
                   {
@@ -2086,7 +2086,7 @@
                 "tracking": "2.5%",
                 "weights": [
                   {
-                    "name": "Extra Bold",
+                    "name": "Extra-bold",
                     "weight": 800
                   },
                   {
@@ -2225,7 +2225,7 @@
                 "tracking": "1%",
                 "weights": [
                   {
-                    "name": "Extra Bold",
+                    "name": "Extra-bold",
                     "weight": 800
                   },
                   {
@@ -2379,7 +2379,7 @@
                 "tracking": "0%",
                 "weights": [
                   {
-                    "name": "ExtraBold",
+                    "name": "Extra-bold",
                     "weight": 800
                   },
                   {
@@ -2962,7 +2962,7 @@
                 "tracking": "2%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -3081,7 +3081,7 @@
                 "tracking": "0%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -3431,7 +3431,7 @@
                     "weight": 700
                   },
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   }
                 ]
@@ -4237,7 +4237,7 @@
                 "tracking": "0%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -4361,7 +4361,7 @@
                 "tracking": "1%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -4486,7 +4486,7 @@
                 "tracking": "3.5%",
                 "weights": [
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
