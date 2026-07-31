@@ -41,5 +41,19 @@
   "Zen Kaku Gothic New": { "widths": [""], "weights": { "Light": 300, "Regular": 400, "Medium": 500, "Bold": 700, "Black": 900 } },
 
   "Clarendon URW": { "widths": [""], "weights": { "Light": 300, "Regular": 400, "Medium": 500, "Bold": 700, "Extra Bold": 800 } },
-  "Linotype Clarendon": { "widths": [""], "weights": { "Light": 300, "Roman": 400, "Bold": 700 } }
+  "Linotype Clarendon": { "widths": [""], "weights": { "Light": 300, "Roman": 400, "Bold": 700 } },
+
+  "$comment3": "Below: added 2026-07-31 — independent digital foundries (Klim, Lineto, Pangram Pangram), each ONE canonical release with no competing-lineage ambiguity (unlike the vintage-revival Clarendon/Trade-Gothic class above). Verified against each foundry's own product page; entries were DROPPED rather than guessed where the foundry didn't publish numeric weight-class values and the style names weren't unambiguous standard OpenType vocabulary (GT Sectra, GT Pressura, GT Walsheim — 'Book'/'Text' aren't a universal number; Dalton Maag's Aktiv Grotesk and Type Type's TT Norms Pro similarly withheld for the same reason). GT America/GT America Mono above are ALSO Grilli Type — already represented.",
+  "Söhne": { "widths": [""], "weights": { "Extraleicht": 200, "Leicht": 300, "Buch": 400, "Kräftig": 500, "Halbfett": 600, "Dreiviertelfett": 700, "Fett": 800, "Extrafett": 900 }, "italics": true },
+  "Söhne Mono": { "widths": [""], "weights": { "Extraleicht": 200, "Leicht": 300, "Buch": 400, "Kräftig": 500, "Halbfett": 600, "Dreiviertelfett": 700, "Fett": 800, "Extrafett": 900 }, "italics": true },
+  "Tiempos Text": { "widths": [""], "weights": { "Regular": 400, "Medium": 500, "Semibold": 600, "Bold": 700 }, "italics": true },
+  "Founders Grotesk": { "widths": [""], "weights": { "Light": 300, "Regular": 400, "Medium": 500, "Semibold": 600, "Bold": 700 }, "italics": true },
+  "National 2": { "widths": [""], "weights": { "Thin": 100, "Extralight": 200, "Light": 300, "Regular": 400, "Medium": 500, "Bold": 700, "Extrabold": 800, "Black": 900 }, "italics": true },
+  "Signifier": { "variable": [100, 900] },
+
+  "Akkurat": { "widths": [""], "weights": { "Thin": 100, "Light": 300, "Regular": 400, "Bold": 700, "Black": 900 }, "italics": true },
+
+  "PP Neue Montreal": { "variable": [100, 900] },
+  "PP Monument Extended": { "variable": [100, 900] },
+  "PP Editorial New": { "variable": [100, 900] }
 }
