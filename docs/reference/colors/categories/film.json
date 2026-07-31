@@ -1139,7 +1139,7 @@
                 "tracking": "-2.5%",
                 "weights": [
                   {
-                    "name": "Extra Bold",
+                    "name": "Extra-bold",
                     "weight": 800
                   },
                   {
@@ -1292,7 +1292,7 @@
                 "tracking": "-2%",
                 "weights": [
                   {
-                    "name": "Extra Bold",
+                    "name": "Extra-bold",
                     "weight": 800
                   },
                   {
@@ -1746,7 +1746,7 @@
                 "tracking": "4%",
                 "weights": [
                   {
-                    "name": "Semibold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -1881,7 +1881,7 @@
                 "tracking": "3%",
                 "weights": [
                   {
-                    "name": "Semibold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -2021,7 +2021,7 @@
                     "weight": 300
                   },
                   {
-                    "name": "Semibold",
+                    "name": "Semi-bold",
                     "weight": 600
                   }
                 ]
@@ -2153,7 +2153,7 @@
                 "tracking": "3.5%",
                 "weights": [
                   {
-                    "name": "Semibold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -2324,7 +2324,7 @@
                 "tracking": "0%",
                 "weights": [
                   {
-                    "name": "Semibold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -2597,7 +2597,7 @@
                 "tracking": "0%",
                 "weights": [
                   {
-                    "name": "Semibold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -2732,7 +2732,7 @@
                 "tracking": "0%",
                 "weights": [
                   {
-                    "name": "Semibold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -5306,7 +5306,7 @@
                 "tracking": "7%",
                 "weights": [
                   {
-                    "name": "Semibold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
@@ -5537,7 +5537,7 @@
                     "weight": 500
                   },
                   {
-                    "name": "SemiBold",
+                    "name": "Semi-bold",
                     "weight": 600
                   }
                 ]
@@ -5766,7 +5766,7 @@
                 "tracking": "4.5%",
                 "weights": [
                   {
-                    "name": "Semibold",
+                    "name": "Semi-bold",
                     "weight": 600
                   },
                   {
