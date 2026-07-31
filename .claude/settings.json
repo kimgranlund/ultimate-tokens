@@ -2,6 +2,19 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/git-precommit-privatedocs-guard.mjs"
+          }
+        ]
+      }
+    ]
+  },
   "enabledPlugins": {
     "llm@nonoun-plugins": true,
     "harness@nonoun-plugins": true,

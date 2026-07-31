@@ -1,7 +1,5 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 `ultimate-tokens` is a perceptual **color + design-token generator**: one Vite web app that is also a
 self-contained `<ultimate-tokens>` web component, a **Figma plugin** (a semantic-variable binder), and
 an **MCP brand-kit** server. A brand kit is **one document** with three composing systems, surfaced as
@@ -47,8 +45,9 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
 - **Git-native ticket backend (ADR-017).** Bugs/features/issues now route to **GitHub Issues**
   (`gh issue create`), not new `docs/tickets/*.md` files — labels `kind:bug`/`kind:feature` +
   `size:small`/`size:big` carry the machine-read fields the file frontmatter used to. Scribe's
-  `/bug-report`/`/feature` read this ruling and mint issues. Migrating the 18 tickets still open
-  as files into Issues is `TKT-0031`.
+  `/bug-report`/`/feature` read this ruling and mint issues. Migrating the tickets still open as
+  files into Issues is `TKT-0031` (check `docs/tickets/` for the live count — don't trust a
+  hardcoded one here).
 
 ## Conventions (non-obvious only)
 
@@ -65,15 +64,11 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
   qualify the rule (`.an-svg .x-line`) so a shared series-color class can't override it.
 - **`node_modules` is NOT tracked** (`npm install`/`npm ci` is the source of truth); never re-add it.
 
-## Testing (the shim is not a real DOM)
+## Testing
 
-- `test/ui/headless-boot.mjs` runs against a minimal shim, NOT jsdom. In it: `querySelector` takes a
-  **single class only** (no descendant/compound selectors); elements expose **no `id` property** and **no
-  `textContent`** — match by `getAttribute(...)` or the `txtOf(node)` walker. Assertions are lettered
-  groups (`(j)`/`(k)`/`(ty)`/`(geo)`/`(cm)`); keep the count literals in sync when role/step counts change.
-- **`npm run smoke` is Chrome-only.** Green smoke ≠ Safari-safe (WebKit is stricter on unquoted idents,
-  some variable-font edges, parsing). Reproduce browser-specific bugs in Safari or reason from the spec;
-  `document.fonts.check`/canvas `measureText` give false negatives for variable fonts — measure DOM width.
+The headless shim's DOM limits (it is not jsdom) are owned by the `building-editor-sections` skill;
+why green smoke isn't Safari-proof is owned by `shipping-changes`'s `references/foundations.md` —
+consult those before writing or debugging a test rather than re-deriving here.
 
 ## Shipping
 
@@ -83,8 +78,8 @@ Full release workflow (branch → gates → PR → CI → squash-merge → sync)
 ## Always
 
 - `npm test` green before treating a change as done (and `npm run build` if you touched the build chain).
-- **`git status --short | grep .claude/docs/other` must be empty before every commit** — `.claude/docs/other/` is a
-  local-only working folder (ignored via `.git/info/exclude`); it must never reach a commit.
+- `.claude/docs/other/` (local-only, ignored via `.git/info/exclude`) never reaches a commit —
+  enforced by the `git-precommit-privatedocs-guard` PreToolUse hook (`.claude/hooks/`), not just prose.
 
-<!-- Enforcement: there are NO local hooks yet. The guards above (role-table parity, .claude/docs/other, font-quoting) are conventions + CI + the test gates, not enforced pre-commit. A Stop/pre-commit hook for the .claude/docs/other + parity guards would be the place to make them reliable. -->
-<!-- This file is the always-loaded INDEX of cross-cutting, always-true facts only. Domain PROCEDURES (changing an engine, adding a role/format, the Figma binder, building a section, shipping, palette research) are owned by on-demand skills/agents in .claude/ — discovered via their frontmatter descriptions, NOT routed from here. Conceptual depth: docs/reference/ + the engine files' header comments. Keep this thin; let the frontmatter system do the routing. -->
+<!-- Enforcement: the .claude/docs/other guard is a real PreToolUse hook (.claude/hooks/git-precommit-privatedocs-guard.mjs, registered in .claude/settings.json) — added 2026-07-31 via /check-entry-file. Role-table parity + font-quoting stay conventions + CI + the test gates (test/engine/type.mjs's luxury quoting assert, categories.mjs's parity check), not pre-commit — mechanically checkable but lower-stakes than a private-dir leak, and already caught before merge by the test gate. -->
+<!-- This file is the always-loaded INDEX of cross-cutting, always-true facts only. Domain PROCEDURES (changing an engine, adding a role/format, the Figma binder, building a section, shipping, palette research) are owned by on-demand skills/agents in .claude/ — discovered via their frontmatter descriptions, NOT routed from here. Conceptual depth: docs/reference/ + the engine files' header comments. Keep this thin; let the frontmatter system do the routing. Audited via /check-entry-file 2026-07-31 (90→~70 lines: cut boilerplate + a stale ticket count, collapsed 2 skill-duplicated Testing bullets to a pointer, the docs/other guard became a real hook). -->
