@@ -1,11 +1,11 @@
 import { figmaCollectionNames, slug } from "../model.mjs";
 import { serialize } from "../persist.js";
-import { typeTokensFigmaModes, typeTokensFigmaPrimitives } from "../../engine/type.mjs";
+import { typeTokensFigmaModes, typeTokensFigmaPrimitivesModes } from "../../engine/type.mjs";
 import { geomTokensFigmaModes } from "../../engine/geometry.mjs";
 import { applyRenameMigrations, mergeModeInterchanges, modeApplyPlan, retirementsFor, validateModeInterchange } from "../../../figma/binder/mode-apply-plan.mjs";
 import { FIGMA_MIGRATIONS, kebabWaveColorRenames, kebabWaveVarRenames } from "../../../figma/binder/migrations.mjs";
-import { primitivesApplyPlan, stylePlans } from "../../../figma/binder/style-plan.mjs";
-import { countChangedValues, flattenModePlanValues, flattenPrimitivesPlanValues } from "../../../figma/binder/live-diff.mjs";
+import { primitivesModesApplyPlan, stylePlans } from "../../../figma/binder/style-plan.mjs";
+import { countChangedValues, flattenModePlanValues } from "../../../figma/binder/live-diff.mjs";
 import { COLLECTIONS } from "../../engine/collections.js";
 import { icon } from "../icons.js";
 import { REPO_URL, btn, h, swatch } from "../app-helpers.mjs";
@@ -88,7 +88,7 @@ export class ApplyGateMixinImpl {
         if (plans.paints.length || plans.texts.length) {
           plans.renames = FIGMA_MIGRATIONS.styles; // TKT-0012: id-preserving style renames (empty = no-op)
           msg.stylePlans = plans;
-          if (plans.texts.length) msg.fontPrimitives = primitivesApplyPlan(typeTokensFigmaPrimitives(scale));
+          if (plans.texts.length) msg.fontPrimitivesModes = primitivesModesApplyPlan(typeTokensFigmaPrimitivesModes(scale));
         }
       }
       parent.postMessage({ pluginMessage: msg }, "*");
@@ -268,14 +268,14 @@ export class ApplyGateMixinImpl {
         n += countChangedValues(flattenModePlanValues(p), bpLive);
       }
     }
-    // Font Primitives is only ever WRITTEN alongside text styles (applyToFigma sets msg.fontPrimitives
-    // only inside the styles-on branch; code.js only calls applyFontPrimitives when msg.fontPrimitives
+    // Font Primitives is only ever WRITTEN alongside text styles (applyToFigma sets msg.fontPrimitivesModes
+    // only inside the styles-on branch; code.js only calls applyFontPrimitivesModes when msg.fontPrimitivesModes
     // is present) — so counting it while Styles is toggled off would over-report values this apply
     // never touches.
     if (sys.type !== false && sys.styles !== false) {
       try {
-        const plan = primitivesApplyPlan(typeTokensFigmaPrimitives(this._typeScaleFor("base")));
-        if (plan) n += countChangedValues(flattenPrimitivesPlanValues(plan), (this._liveFloatVars.fontPrimitives || {}).values || {});
+        const plan = primitivesModesApplyPlan(typeTokensFigmaPrimitivesModes(this._typeScaleFor("base")));
+        if (plan) n += countChangedValues(flattenModePlanValues(plan), (this._liveFloatVars.fontPrimitives || {}).values || {});
       } catch { /* a malformed scale never blocks the rest of the count */ }
     }
     return n;

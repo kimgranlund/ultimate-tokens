@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // type.mjs — verifier for the typography engine (src/engine/type.mjs). Pure, no DOM.
 import * as T from "../../src/engine/type.mjs";
+import { googleSafeFontFor } from "../../src/engine/font-fallbacks.mjs";
 
 const fails = [];
 const ok = (c, m) => { if (!c) fails.push(m); };
@@ -351,38 +352,58 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   ok(shTracking.every((v) => v === "-0.05"), `Sub-heading's CSS -tracking is a CONSTANT -0.05em at every step (from the "-5%" percent-string override), got ${shTracking}`);
 }
 
-// ── Figma "Font Primitives" companion collection: deduped family primitives + per-voice aliases (5.4c) ──
+// ── Figma "Font Primitives" companion collection: deduped family primitives + per-voice aliases, a
+// real 2-mode Premium/Google-Fonts axis (font-mode Phase B, 5.4c) ──
 {
   const base = T.typeScale({ treatment: "product", bodyBase: 16 });
-  const out = T.typeTokensFigmaPrimitives(base);
+  const out = T.typeTokensFigmaPrimitivesModes(base);
   const col = out.collections["Font Primitives"];
-  ok(col && JSON.stringify(col.modes) === JSON.stringify(["Value"]), "one \"Value\" mode (families/weights don't vary by breakpoint)");
+  ok(col && JSON.stringify(col.modes) === JSON.stringify(["Premium", "Google Fonts"]), "the fixed 2-name Premium/Google Fonts mode axis, Premium first/default");
   // product: display+heading are BOTH Inter Tight → deduped into ONE family primitive (first role wins).
-  ok(col.variables["family/display"] && col.variables["family/display"].type === "STRING" && col.variables["family/display"].values.Value === "Inter Tight", "family/display is a STRING primitive carrying the family");
+  ok(col.variables["family/display"] && col.variables["family/display"].type === "STRING" && col.variables["family/display"].values.Premium === "Inter Tight" && col.variables["family/display"].values["Google Fonts"] === googleSafeFontFor("Inter Tight"), "family/display is a STRING primitive carrying BOTH mode values (Premium the real family, Google Fonts its safe substitute)");
   ok(!col.variables["family/heading"], "a duplicate family dedupes into one primitive (no family/heading — Inter Tight is owned by display)");
   // every voice gets a font/<voice> ALIAS to its family primitive + a weight/<voice> FLOAT primitive.
   const voices = Object.keys(base.categories);
   const kv = (v) => v.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); // ADR-016 kebab segment
   ok(voices.every((v) => col.variables[`font/${kv(v)}`] && col.variables[`font/${kv(v)}`].type === "ALIAS"), "every voice emits a font/<kebab-voice> ALIAS");
+  ok(voices.every((v) => !("values" in col.variables[`font/${kv(v)}`])), "an ALIAS carries only {type,target} — no per-mode values — since it resolves within the same collection under whichever mode is active");
   // the core's weight/weight-style primitive key NESTS under the voice's own weight-name slug
   // (coreWeightKey) — the SAME per-voice group its siblings live in, so it's never bare (2026-07-13:
   // a bare core sat OUTSIDE the "Display" folder its siblings created in Figma's own "/" grouping).
   const coreKeyOf = (v) => T.coreWeightKey(v, T.weightNameFor(base.categories[v].MD.weight), base.weights && base.weights[v]);
-  ok(voices.every((v) => col.variables[`weight/${coreKeyOf(v)}`] && col.variables[`weight/${coreKeyOf(v)}`].type === "FLOAT" && Number.isFinite(col.variables[`weight/${coreKeyOf(v)}`].values.Value)), "every voice emits a weight/<voice>/<slug> FLOAT primitive, nested under its own weight-name slug");
+  ok(voices.every((v) => col.variables[`weight/${coreKeyOf(v)}`] && col.variables[`weight/${coreKeyOf(v)}`].type === "FLOAT" && Number.isFinite(col.variables[`weight/${coreKeyOf(v)}`].values.Premium) && col.variables[`weight/${coreKeyOf(v)}`].values.Premium === col.variables[`weight/${coreKeyOf(v)}`].values["Google Fonts"]), "every voice emits a weight/<voice>/<slug> FLOAT primitive, nested under its own weight-name slug, the SAME value in both modes (weight resolution never varies by fontMode)");
   ok(voices.every((v) => col.variables[col.variables[`font/${kv(v)}`].target]), "every alias target resolves to a primitive in the same collection");
   ok(col.variables["font/headline"].target === "family/display", "Headline aliases the deduped Inter Tight primitive (family/display)");
   ok(col.variables["font/kicker"].target === col.variables["font/body-mono"].target, "Kicker and Body-mono alias the SAME mono primitive (roleOf → mono)");
-  ok(col.variables[`weight/${coreKeyOf("Display")}`].values.Value === base.categories.Display.MD.weight, "weight/display/<slug> carries the voice's uniform weight");
+  ok(col.variables[`weight/${coreKeyOf("Display")}`].values.Premium === base.categories.Display.MD.weight, "weight/display/<slug> carries the voice's uniform weight");
   // weight STYLE NAMES (slice 4): config.voices[v].styleName → scale.styleNames → weight-style/<voice>
   // STRING primitives; absent names ⇒ no styleNames key and no weight-style vars (the identity gate).
   ok(!("styleNames" in base) && !Object.keys(col.variables).some((k) => /^weight-style\/[^/]+$/.test(k)), "no styleName config ⇒ no styleNames on the scale, no BARE weight-style/<voice> var (sibling weight-style/<voice>/<slug> vars still exist — every voice auto-populates siblings, 2026-07-13)");
   const named = T.typeScale({ treatment: "product", voices: { Display: { styleName: "Condensed Black Italic" }, Kicker: { styleName: "  Medium  " }, Body: { styleName: "" } } });
   ok(named.styleNames && named.styleNames.Display === "Condensed Black Italic" && named.styleNames.Kicker === "Medium" && !("Body" in named.styleNames), "styleNames collect trimmed non-empty names only");
-  const nCol = T.typeTokensFigmaPrimitives(named).collections["Font Primitives"];
+  const nCol = T.typeTokensFigmaPrimitivesModes(named).collections["Font Primitives"];
   const displayKey = coreKeyOf("Display"); // reuses the SAME base scale's Display weight (700, unaffected by `named`'s styleName-only override)
-  ok(nCol.variables[`weight-style/${displayKey}`] && nCol.variables[`weight-style/${displayKey}`].type === "STRING" && nCol.variables[`weight-style/${displayKey}`].values.Value === "Condensed Black Italic", "the primitives collection emits weight-style/<voice>/<slug> STRING vars, nested like the numeric weight");
+  ok(nCol.variables[`weight-style/${displayKey}`] && nCol.variables[`weight-style/${displayKey}`].type === "STRING" && nCol.variables[`weight-style/${displayKey}`].values.Premium === "Condensed Black Italic" && nCol.variables[`weight-style/${displayKey}`].values["Google Fonts"] === "Condensed Black Italic", "the primitives collection emits weight-style/<voice>/<slug> STRING vars, nested like the numeric weight, the SAME name in both modes (style names never vary by fontMode)");
   const bodyKey = coreKeyOf("Body");
   ok(!nCol.variables[`weight-style/${bodyKey}`] && nCol.variables[`weight/${bodyKey}`], "an unnamed voice keeps its numeric weight primitive but gets no style var");
+}
+
+// ── font-mode Phase B: the 2-mode axis's actual divergence/identity behavior ──
+{
+  // divergence: a family with a curated Google-Fonts substitute (font-fallbacks.mjs) shows a REAL
+  // difference between the Premium and Google Fonts values on the SAME primitive.
+  const soehne = T.typeScale({ treatment: "product", voices: { Display: { font: "Söhne" } } });
+  const sCol = T.typeTokensFigmaPrimitivesModes(soehne).collections["Font Primitives"];
+  const sKey = sCol.variables["font/display"].target;
+  ok(sCol.variables[sKey].values.Premium === "Söhne" && sCol.variables[sKey].values["Google Fonts"] === googleSafeFontFor("Söhne") && sCol.variables[sKey].values["Google Fonts"] !== sCol.variables[sKey].values.Premium, `a curated family (Söhne) diverges between modes (got Premium=${sCol.variables[sKey].values.Premium}, Google Fonts=${sCol.variables[sKey].values["Google Fonts"]})`);
+
+  // identity: a scale whose families have NO curated fallback (font-fallbacks.mjs has no entry for
+  // any of product's Inter Tight/Inter/JetBrains Mono) shows every LITERAL byte-identical across both
+  // modes — the trivially-both-modes-identical gate. ALIAS entries are excluded (they carry no values).
+  const base = T.typeScale({ treatment: "product" });
+  const col = T.typeTokensFigmaPrimitivesModes(base).collections["Font Primitives"];
+  const literalsIdentical = Object.values(col.variables).filter((v) => v.type !== "ALIAS").every((v) => v.values.Premium === v.values["Google Fonts"]);
+  ok(literalsIdentical, "product treatment (no FONT_FALLBACKS hits) ⇒ every literal is byte-identical across both modes");
 }
 
 // ── SIBLING WEIGHTS: siblingWeightDefaults + the voices[].weights channel + emitter coverage ──
@@ -446,10 +467,10 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   ok("weights" in T.typeTokensDTCG(base) && Object.keys(T.typeTokensDTCG(base).weights).length === 15, "DTCG weights group covers every auto-populated voice by default (no siblings config needed)");
   ok(!("Display" in T.typeTokensDTCG(withEmpty).weights), "DTCG: a voice opted OUT (Display) carries no weights entry");
 
-  // Figma primitives — FLOAT + STRING per sibling, core un-suffixed names unchanged
-  const col = T.typeTokensFigmaPrimitives(sc).collections["Font Primitives"];
-  ok(col.variables["weight/display/bold"] && col.variables["weight/display/bold"].type === "FLOAT" && col.variables["weight/display/bold"].values.Value === 700, "primitives emit weight/<voice>/<slug> FLOAT per sibling");
-  ok(col.variables["weight-style/display/bold"] && col.variables["weight-style/display/bold"].values.Value === "Bold", "primitives emit weight-style/<voice>/<slug> STRING per sibling (no custom styleName here ⇒ bare name, unaffected by templating)");
+  // Figma primitives — FLOAT + STRING per sibling, core un-suffixed names unchanged, same value both modes
+  const col = T.typeTokensFigmaPrimitivesModes(sc).collections["Font Primitives"];
+  ok(col.variables["weight/display/bold"] && col.variables["weight/display/bold"].type === "FLOAT" && col.variables["weight/display/bold"].values.Premium === 700 && col.variables["weight/display/bold"].values["Google Fonts"] === 700, "primitives emit weight/<voice>/<slug> FLOAT per sibling, the SAME value in both modes");
+  ok(col.variables["weight-style/display/bold"] && col.variables["weight-style/display/bold"].values.Premium === "Bold" && col.variables["weight-style/display/bold"].values["Google Fonts"] === "Bold", "primitives emit weight-style/<voice>/<slug> STRING per sibling (no custom styleName here ⇒ bare name, unaffected by templating), the SAME name in both modes");
   ok(col.variables["weight/display"], "the core un-suffixed weight primitive is unchanged");
 
   // REGRESSION (found via BZZR's real Figma export): a sibling's weight-style/<voice>/<slug>
@@ -458,10 +479,10 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   // engine-level primitive still emitting the bare sibling name ("Bold" instead of "Condensed Bold
   // Italic"), because the two had their own separate, independently-drifting implementations.
   const bzzrDisplay = T.typeScale({ treatment: "statement", voices: { Display: { weight: 900, styleName: "Condensed Black Italic", weights: [{ name: "Extra-bold", weight: 800 }, { name: "Bold", weight: 700 }] } } });
-  const bzzrCol = T.typeTokensFigmaPrimitives(bzzrDisplay).collections["Font Primitives"];
-  ok(bzzrCol.variables["weight-style/display/black"].values.Value === "Condensed Black Italic", "core weight-style keeps the full custom name, nested under its own weight-name slug");
-  ok(bzzrCol.variables["weight-style/display/extra-bold"].values.Value === "Condensed Extra-bold Italic", `sibling weight-style primitive templates the custom name, not a bare "Extra-bold" (got ${bzzrCol.variables["weight-style/display/extra-bold"].values.Value})`);
-  ok(bzzrCol.variables["weight-style/display/bold"].values.Value === "Condensed Bold Italic", `sibling weight-style primitive templates the custom name, not a bare "Bold" (got ${bzzrCol.variables["weight-style/display/bold"].values.Value})`);
+  const bzzrCol = T.typeTokensFigmaPrimitivesModes(bzzrDisplay).collections["Font Primitives"];
+  ok(bzzrCol.variables["weight-style/display/black"].values.Premium === "Condensed Black Italic", "core weight-style keeps the full custom name, nested under its own weight-name slug");
+  ok(bzzrCol.variables["weight-style/display/extra-bold"].values.Premium === "Condensed Extra-bold Italic", `sibling weight-style primitive templates the custom name, not a bare "Extra-bold" (got ${bzzrCol.variables["weight-style/display/extra-bold"].values.Premium})`);
+  ok(bzzrCol.variables["weight-style/display/bold"].values.Premium === "Condensed Bold Italic", `sibling weight-style primitive templates the custom name, not a bare "Bold" (got ${bzzrCol.variables["weight-style/display/bold"].values.Premium})`);
 }
 
 // ── per-voice FONT overrides (TKT-0002): config.voices[v].font escapes a voice off its shared ROLE font
@@ -485,7 +506,7 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   ok((baseCss.match(/ {2}--font-voice-[a-z0-9-]+: '/g) || []).length === 15, `--font-voice-* is declared for all 15 voices even with no overrides (got ${(baseCss.match(/ {2}--font-voice-[a-z0-9-]+: '/g) || []).length})`);
   ok(baseCss.includes(`--font-voice-sub-heading: '${baseline.fonts[baseline.roleOf["Sub-heading"]]}';`), "an un-overridden voice's --font-voice-* repeats its role's shared default");
   ok(JSON.stringify(T.typeTokensDTCG(baseline)) === JSON.stringify(T.typeTokensDTCG(emptyV)), "DTCG byte-identical with an empty voices map");
-  ok(JSON.stringify(T.typeTokensFigmaPrimitives(baseline)) === JSON.stringify(T.typeTokensFigmaPrimitives(emptyV)), "Figma primitives byte-identical with an empty voices map");
+  ok(JSON.stringify(T.typeTokensFigmaPrimitivesModes(baseline)) === JSON.stringify(T.typeTokensFigmaPrimitivesModes(emptyV)), "Figma primitives byte-identical with an empty voices map");
   // resolvedFontFor: an un-overridden voice resolves to its role's shared default.
   ok(T.resolvedFontFor(baseline, "Sub-heading") === baseline.fonts[baseline.roleOf["Sub-heading"]], "resolvedFontFor: no override ⇒ the role's shared default");
 
@@ -517,19 +538,19 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   // aliased by font/<voice>; two voices overridden to the SAME custom family share ONE primitive (dedupe by
   // VALUE); an override that happens to equal an EXISTING primitive's family aliases that one instead of
   // minting a redundant duplicate.
-  const colOv = T.typeTokensFigmaPrimitives(ov).collections["Font Primitives"];
-  ok(colOv.variables["override/sub-heading"] && colOv.variables["override/sub-heading"].type === "STRING" && colOv.variables["override/sub-heading"].values.Value === "Fraunces", "a distinct override family mints its own override/<voice> primitive");
+  const colOv = T.typeTokensFigmaPrimitivesModes(ov).collections["Font Primitives"];
+  ok(colOv.variables["override/sub-heading"] && colOv.variables["override/sub-heading"].type === "STRING" && colOv.variables["override/sub-heading"].values.Premium === "Fraunces", "a distinct override family mints its own override/<voice> primitive");
   ok(colOv.variables["font/sub-heading"].target === "override/sub-heading", "font/Sub-heading aliases the new voice-specific primitive");
   ok(colOv.variables["font/headline"].target === "family/display", "font/Headline is UNCHANGED — still aliases the shared role primitive (Inter Tight, product treatment)");
 
   const twoSame = T.typeScale({ treatment: "product", voices: { "Sub-heading": { font: "Fraunces" }, Title: { font: "Fraunces" } } });
-  const colTwo = T.typeTokensFigmaPrimitives(twoSame).collections["Font Primitives"];
+  const colTwo = T.typeTokensFigmaPrimitivesModes(twoSame).collections["Font Primitives"];
   ok(colTwo.variables["font/sub-heading"].target === colTwo.variables["font/title"].target, "two voices overridden to the SAME custom family share ONE primitive (dedupe by value)");
   ok(!colTwo.variables["override/title"], "the second voice with the same override family does NOT mint a redundant duplicate primitive");
 
   // an override that happens to equal an EXISTING role's family aliases that primitive — no duplicate.
   const eqRole = T.typeScale({ treatment: "product", voices: { "Sub-heading": { font: baseline.fonts.body } } }); // body="Inter", distinct from heading's "Inter Tight"
-  const colEq = T.typeTokensFigmaPrimitives(eqRole).collections["Font Primitives"];
+  const colEq = T.typeTokensFigmaPrimitivesModes(eqRole).collections["Font Primitives"];
   ok(colEq.variables["font/sub-heading"].target === "family/body", "an override matching an EXISTING role's family aliases THAT primitive (dedupe by value, not just by source)");
   ok(!colEq.variables["override/sub-heading"], "no redundant primitive is minted when the override equals an existing family's value");
 }

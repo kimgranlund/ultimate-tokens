@@ -19,20 +19,23 @@ ok(flat.length === plan.variables.length * plan.modes.length, `flattenModePlanVa
 ok(flat.every((p) => typeof p.name === "string" && typeof p.mode === "string"), "flattenModePlanValues: every pair carries a name + mode");
 ok(D.flattenModePlanValues(null).length === 0 && D.flattenModePlanValues({}).length === 0, "flattenModePlanValues: malformed input ⇒ []");
 
-// ── flattenPrimitivesPlanValues: literals only, aliases dropped ──
+// ── flattenModePlanValues ALSO correctly flattens a primitivesModesApplyPlan-shaped fixture (font-mode
+// Phase B): its literals carry the SAME {name,type,values:[{mode,value}]} shape modeApplyPlan uses, so
+// no dedicated Font Primitives flattener is needed — its ALIAS entries (no .values array) are skipped
+// by the SAME !Array.isArray(v.values) guard that already handles a malformed/absent values field,
+// for free.
 const primPlan = {
-  collection: "Font Primitives", mode: "Value",
+  collection: "Font Primitives", modes: ["Premium", "Google Fonts"], defaultMode: "Premium", addModes: ["Google Fonts"],
   variables: [
-    { name: "family/inter", type: "STRING", value: "Inter" },
-    { name: "weight/display", type: "FLOAT", value: 700 },
+    { name: "family/inter", type: "STRING", values: [{ mode: "Premium", value: "Inter" }, { mode: "Google Fonts", value: "Inter" }] },
+    { name: "weight/display", type: "FLOAT", values: [{ mode: "Premium", value: 700 }, { mode: "Google Fonts", value: 700 }] },
     { name: "font/display", type: "ALIAS", target: "family/inter" },
   ],
 };
-const primFlat = D.flattenPrimitivesPlanValues(primPlan);
-ok(primFlat.length === 2, `flattenPrimitivesPlanValues: ${primFlat.length} entries, want 2 (aliases dropped)`);
-ok(!primFlat.some((p) => p.name === "font/display"), "flattenPrimitivesPlanValues: the ALIAS entry is dropped");
-ok(primFlat.every((p) => p.mode === "Value"), "flattenPrimitivesPlanValues: every entry carries the plan's mode");
-ok(D.flattenPrimitivesPlanValues(null).length === 0, "flattenPrimitivesPlanValues: malformed input ⇒ []");
+const primFlat = D.flattenModePlanValues(primPlan);
+ok(primFlat.length === 4, `flattenModePlanValues on a Font Primitives plan: ${primFlat.length} entries, want 4 (2 literals × 2 modes; the ALIAS entry has no .values array to flatten)`);
+ok(!primFlat.some((p) => p.name === "font/display"), "flattenModePlanValues: the ALIAS entry (no .values array) contributes nothing");
+ok(primFlat.every((p) => primPlan.modes.includes(p.mode)), "flattenModePlanValues: every entry carries one of the plan's own modes");
 
 // ── countChangedValues: the core diff — only a value that's THERE and DIFFERENT counts ──
 const pairs = [{ name: "a", mode: "Base", value: 10 }, { name: "b", mode: "Base", value: 20 }];
@@ -62,5 +65,5 @@ ok(D.countChangedValues(pairs, null) === 0, "countChangedValues: null live (coll
 }
 
 if (fails.length) { console.error(`live-diff FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("live-diff PASS — flattenModePlanValues/flattenPrimitivesPlanValues (alias-dropping) · countChangedValues (present+differs only, float epsilon, string-strict)");
+console.log("live-diff PASS — flattenModePlanValues (Breakpoints + Font Primitives shapes, alias-dropping) · countChangedValues (present+differs only, float epsilon, string-strict)");
 process.exit(0);

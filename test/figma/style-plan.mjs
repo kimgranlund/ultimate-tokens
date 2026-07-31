@@ -5,9 +5,9 @@
 // semantic color vars; typeTokensFigmaModes/Primitives for the type vars) — so a drift in
 // either the planner or the emitters turns the gate red, whichever moved.
 import { readFileSync } from "node:fs";
-import { stylePlans, styleGroupOf, styleNameFor, paintStyleNameFor, primitivesApplyPlan } from "../../figma/binder/style-plan.mjs";
+import { stylePlans, styleGroupOf, styleNameFor, paintStyleNameFor, primitivesModesApplyPlan } from "../../figma/binder/style-plan.mjs";
 import { exportUI3 } from "../../src/engine/exports.js";
-import { typeScale, typeTokensFigmaModes, typeTokensFigmaPrimitives, siblingWeightDefaults, weightNameFor, coreWeightKey } from "../../src/engine/type.mjs";
+import { typeScale, typeTokensFigmaModes, typeTokensFigmaPrimitivesModes, siblingWeightDefaults, weightNameFor, coreWeightKey } from "../../src/engine/type.mjs";
 
 const fails = [];
 const ok = (c, m) => { if (!c) fails.push(m); };
@@ -66,7 +66,7 @@ const plans = stylePlans({ families, scale });
 // ── text parity: every bind target exists in the merged Geometry (type/ half) or Font Primitives collections ──
 {
   const typo = new Set(Object.keys(typeTokensFigmaModes(scale).collections.Breakpoints.variables));
-  const prim = new Set(Object.keys(typeTokensFigmaPrimitives(scale).collections["Font Primitives"].variables));
+  const prim = new Set(Object.keys(typeTokensFigmaPrimitivesModes(scale).collections["Font Primitives"].variables));
   const bad = [];
   for (const t of plans.texts) for (const [field, target] of Object.entries(t.bind)) {
     const home = field === "fontFamily" || field === "fontStyle" || field === "fontWeight" ? prim : typo;
@@ -208,19 +208,36 @@ const plans = stylePlans({ families, scale });
   ok(bareSubMd.literal.family === scale.fonts[scale.roleOf["Sub-heading"]], "no override ⇒ literal.family is the role's shared family (unchanged behavior)");
 }
 
-// ── primitivesApplyPlan: ordered flatten of the Font Primitives interchange ──
+// ── primitivesModesApplyPlan: ordered flatten of the Font Primitives MODES interchange ──
 {
-  const plan = primitivesApplyPlan(typeTokensFigmaPrimitives(scale));
-  ok(!!plan && plan.collection === "Font Primitives" && plan.mode === "Value", "primitives plan targets the Font Primitives collection, single Value mode");
+  const plan = primitivesModesApplyPlan(typeTokensFigmaPrimitivesModes(scale));
+  ok(!!plan && plan.collection === "Font Primitives" && JSON.stringify(plan.modes) === JSON.stringify(["Premium", "Google Fonts"]) && plan.defaultMode === "Premium" && JSON.stringify(plan.addModes) === JSON.stringify(["Google Fonts"]), "primitives plan targets the Font Primitives collection, the fixed 2-mode Premium/Google Fonts axis");
   const names = plan.variables.map((v) => v.name);
   const idx = (n) => names.indexOf(n);
   ok(plan.variables.every((v) => v.type !== "ALIAS" || idx(v.target) > -1 && idx(v.target) < idx(v.name)), "every alias follows its target (literals first)");
   ok(names.includes("weight/display/medium") && names.includes("weight-style/display/medium"), "sibling primitives ride the plan");
   const fontAlias = plan.variables.find((v) => v.name === "font/display");
-  ok(!!fontAlias && fontAlias.type === "ALIAS" && typeof fontAlias.target === "string", "font/<voice> aliases survive the flatten");
-  const dangling = primitivesApplyPlan({ collections: { "Font Primitives": { modes: ["Value"], variables: { "font/X": { type: "ALIAS", target: "family/missing" } } } } });
+  ok(!!fontAlias && fontAlias.type === "ALIAS" && typeof fontAlias.target === "string" && !("values" in fontAlias), "font/<voice> aliases survive the flatten, carrying only {type,target} — no per-mode values");
+  const literal = plan.variables.find((v) => v.type !== "ALIAS");
+  ok(!!literal && Array.isArray(literal.values) && literal.values.length === 2 && literal.values.every((p) => plan.modes.includes(p.mode)), "a literal carries one {mode,value} pair per mode in the plan's own mode order");
+
+  const dangling = primitivesModesApplyPlan({ collections: { "Font Primitives": { modes: ["Premium", "Google Fonts"], variables: { "font/X": { type: "ALIAS", target: "family/missing" } } } } });
   ok(dangling === null, "an alias with no target is dropped planner-side (nothing left ⇒ null)");
-  ok(primitivesApplyPlan(null) === null && primitivesApplyPlan({}) === null, "empty interchange ⇒ null, no throw");
+
+  // INCOMPLETE LITERAL — a STRING/FLOAT missing a value for one of the interchange's own modes is
+  // dropped entirely (not emitted with a hole): a partial write reads as "forgot this mode" once
+  // round-tripped through Figma, worse than not writing it at all.
+  const incomplete = primitivesModesApplyPlan({ collections: { "Font Primitives": { modes: ["Premium", "Google Fonts"], variables: { "family/display": { type: "STRING", values: { Premium: "Inter" } } } } } });
+  ok(incomplete === null, "a literal missing a mode's value is dropped, not emitted with a hole (nothing left here ⇒ null)");
+  const mixedPlan = primitivesModesApplyPlan({ collections: { "Font Primitives": { modes: ["Premium", "Google Fonts"], variables: {
+    "family/display": { type: "STRING", values: { Premium: "Inter", "Google Fonts": "Inter" } },
+    "family/body": { type: "STRING", values: { Premium: "Inter" } }, // missing Google Fonts — dropped
+    "font/display": { type: "ALIAS", target: "family/display" },
+    "font/body": { type: "ALIAS", target: "family/body" }, // its target was dropped ⇒ dangling ⇒ also dropped
+  } } } });
+  ok(!!mixedPlan && mixedPlan.variables.some((v) => v.name === "family/display") && !mixedPlan.variables.some((v) => v.name === "family/body") && !mixedPlan.variables.some((v) => v.name === "font/body"), "an incomplete literal is dropped alone — its dependent alias is then dropped too (dangling); a sibling complete literal+alias pair survives");
+
+  ok(primitivesModesApplyPlan(null) === null && primitivesModesApplyPlan({}) === null, "empty interchange ⇒ null, no throw");
 }
 
 if (fails.length) { console.error(`style-plan FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }

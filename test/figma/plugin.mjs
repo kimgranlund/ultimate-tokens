@@ -13,7 +13,8 @@ import * as TYPE from "../../src/engine/type.mjs";
 import * as GEOM from "../../src/engine/geometry.mjs";
 import { exportDTCG } from "../../src/engine/exports.js";
 import { modeApplyPlan, mergeModeInterchanges } from "../../figma/binder/mode-apply-plan.mjs";
-import { stylePlans, primitivesApplyPlan } from "../../figma/binder/style-plan.mjs";
+import { stylePlans, primitivesModesApplyPlan } from "../../figma/binder/style-plan.mjs";
+import { googleSafeFontFor } from "../../src/engine/font-fallbacks.mjs";
 
 // stateOfDefault — a minimal engine State over role-table.json's default palettes, for building a
 // custom-themes DTCG bundle directly (figmaBundle() itself takes no themes option — TKT-0021
@@ -139,13 +140,13 @@ function mockFigma() {
 }
 
 // ── END-TO-END contract: figmaBundle() -> applyBundle() on the mock ──────────────
-let applyBundle, applyFloatPlans, applyFontPrimitives, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight;
+let applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight;
 const F = mockFigma();
 try {
-  const load = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyFloatPlans, applyFontPrimitives, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight };");
+  const load = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight };");
   const loaded = load(F.figma, "<html>", undefined); // closes over the MOCK figma
   applyBundle = loaded.applyBundle; applyFloatPlans = loaded.applyFloatPlans;
-  applyFontPrimitives = loaded.applyFontPrimitives; applyStylePlans = loaded.applyStylePlans;
+  applyFontPrimitivesModes = loaded.applyFontPrimitivesModes; applyStylePlans = loaded.applyStylePlans;
   setCollectionNames = loaded.setCollectionNames; resolveFace = loaded.resolveFace;
   sweepCandidates = loaded.sweepCandidates; styleNameWeight = loaded.styleNameWeight;
 } catch (e) { FAIL("parse", "code.js failed to load: " + e.message); }
@@ -707,7 +708,7 @@ for (const g of ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cas
 // Runs on the SAME mock F: applyBundle already created Color Modes, the float e2e already created the
 // merged Geometry collection with its type/ half (base "product/16" scale) — exactly the state a real
 // apply leaves behind.
-if (applyStylePlans && applyFontPrimitives) {
+if (applyStylePlans && applyFontPrimitivesModes) {
   try {
     const scale = TYPE.typeScale({ treatment: "product", bodyBase: 16, voices: { Display: { weights: [{ name: "Medium", weight: 500 }] } } });
     const bundle = figmaBundle(defaultDocument());
@@ -715,14 +716,15 @@ if (applyStylePlans && applyFontPrimitives) {
     const families = fams.map((n) => ({ n, name: n.charAt(0).toUpperCase() + n.slice(1) }));
     const plans = stylePlans({ families, scale });
 
-    const pr = await applyFontPrimitives(primitivesApplyPlan(TYPE.typeTokensFigmaPrimitives(scale)));
-    if (!pr || !pr.variables) FAIL("styles", "applyFontPrimitives created nothing");
+    const pr = await applyFontPrimitivesModes(primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scale)));
+    if (!pr || !pr.variables) FAIL("styles", "applyFontPrimitivesModes created nothing");
     const prim = F.collections.find((c) => c.name === "Font Primitives");
     if (!prim) FAIL("styles", "no Font Primitives collection created");
     else {
+      if (prim.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("styles", `Font Primitives modes = ${prim.modes.map((m) => m.name)}, want Premium,Google Fonts`);
       const fontAlias = F.variables.find((v) => v.variableCollectionId === prim.id && v.name === "font/display");
-      const target = fontAlias && Object.values(fontAlias.values)[0];
-      if (!fontAlias || !target || target.type !== "VARIABLE_ALIAS") FAIL("styles", "font/display is not aliased to its family primitive");
+      const targets = fontAlias && prim.modes.map((m) => fontAlias.values[m.modeId]);
+      if (!fontAlias || !targets || !targets.every((t) => t && t.type === "VARIABLE_ALIAS") || targets[0].id !== targets[1].id) FAIL("styles", "font/display is not aliased to the SAME family primitive under BOTH modes");
     }
 
     const sr = await applyStylePlans(plans);
@@ -770,8 +772,8 @@ if (applyStylePlans && applyFontPrimitives) {
       if (namedCore && (namedCore.bind.fontWeight || !namedCore.bind.fontStyle)) FAIL("styles", `named-style-cut core must bind fontStyle only (got fontStyle=${namedCore.bind.fontStyle}, fontWeight=${namedCore.bind.fontWeight})`);
       if (namedSib && (namedSib.bind.fontWeight || !namedSib.bind.fontStyle)) FAIL("styles", `named-style-cut sibling must bind fontStyle only (got fontStyle=${namedSib.bind.fontStyle}, fontWeight=${namedSib.bind.fontWeight})`);
 
-      const namedPr = await applyFontPrimitives(primitivesApplyPlan(TYPE.typeTokensFigmaPrimitives(namedScale)));
-      if (!namedPr || !namedPr.variables) FAIL("styles", "named-style-cut fixture: applyFontPrimitives created nothing");
+      const namedPr = await applyFontPrimitivesModes(primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(namedScale)));
+      if (!namedPr || !namedPr.variables) FAIL("styles", "named-style-cut fixture: applyFontPrimitivesModes created nothing");
       const namedSr = await applyStylePlans(namedPlans);
       const namedCoreStyle = F.figma._styles.find((x) => x._kind === "TEXT" && x.name === namedCore.name);
       if (!namedCoreStyle || namedCoreStyle._bound.fontWeight) FAIL("styles", "named-style-cut core text style must not carry a bound fontWeight field");
@@ -788,10 +790,10 @@ if (applyStylePlans && applyFontPrimitives) {
     // stale fontWeight could silently override a freshly-bound fontStyle's precise named cut.
     {
       const F7 = mockFigma();
-      const loaded7 = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitives, applyStylePlans };")(F7.figma, "<html>", undefined);
+      const loaded7 = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes, applyStylePlans };")(F7.figma, "<html>", undefined);
       const genericScale = TYPE.typeScale({ treatment: "product", voices: { Kicker: { weight: 700, weights: [{ name: "Medium", weight: 500 }] } } });
       const genericPlans = stylePlans({ families: [], scale: genericScale });
-      await loaded7.applyFontPrimitives(primitivesApplyPlan(TYPE.typeTokensFigmaPrimitives(genericScale)));
+      await loaded7.applyFontPrimitivesModes(primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(genericScale)));
       await loaded7.applyStylePlans(genericPlans);
       const reusedName = genericPlans.texts.find((t) => t.voice === "Kicker" && t.name.startsWith("Kicker/lg/") && t.name.endsWith(" •")).name;
       const afterGeneric = F7.figma._styles.find((x) => x._kind === "TEXT" && x.name === reusedName);
@@ -800,7 +802,7 @@ if (applyStylePlans && applyFontPrimitives) {
       // instead. Re-applying under the reused name must not leave the OLD fontWeight bind behind.
       const namedScale2 = TYPE.typeScale({ treatment: "product", voices: { Kicker: { weight: 700, styleName: "Custom Bold Cut", weights: [{ name: "Medium", weight: 500 }] } } });
       const namedPlans2 = stylePlans({ families: [], scale: namedScale2 });
-      await loaded7.applyFontPrimitives(primitivesApplyPlan(TYPE.typeTokensFigmaPrimitives(namedScale2)));
+      await loaded7.applyFontPrimitivesModes(primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(namedScale2)));
       await loaded7.applyStylePlans(namedPlans2);
       const afterNamed = F7.figma._styles.find((x) => x._kind === "TEXT" && x.name === reusedName);
       if (!afterNamed || afterNamed._bound.fontWeight) FAIL("styles", "a stale fontWeight bind from an earlier apply survived once the SAME-named style switched to fontStyle binding");
@@ -815,7 +817,7 @@ if (applyStylePlans && applyFontPrimitives) {
     {
       const driftScale = TYPE.typeScale({ treatment: "statement", voices: { "Sub-heading": { leading: 1.125, weights: [] } } });
       const driftPlans = stylePlans({ families, scale: driftScale });
-      await applyFontPrimitives(primitivesApplyPlan(TYPE.typeTokensFigmaPrimitives(driftScale)));
+      await applyFontPrimitivesModes(primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(driftScale)));
       await applyStylePlans(driftPlans);
       for (const step of ["LG", "MD", "SM"]) {
         const st = F.figma._styles.find((x) => x._kind === "TEXT" && x.name === `Sub-heading/${step.toLowerCase()}`);
@@ -875,8 +877,79 @@ if (applyStylePlans && applyFontPrimitives) {
   } catch (e) { FAIL("styles", "styles apply threw: " + e.message); }
 }
 
+// ── FONT-MODE PHASE B: applyFontPrimitivesModes carries the real Premium/Google-Fonts axis (Figma's
+// native addMode/setValueForMode mechanism, mirroring Breakpoints/Light-Dark). Runs on a FRESH mock —
+// the axis mechanics are orthogonal to the "styles" e2e above, which already proved the plan/executor
+// wiring on the shared F mock. ──
+if (applyFontPrimitivesModes) {
+  try {
+    const FM = mockFigma();
+    const lm = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(FM.figma, "<html>", undefined);
+    const scaleM = TYPE.typeScale({ treatment: "product", bodyBase: 16, voices: { Display: { font: "Söhne" } } });
+    const planM = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scaleM));
+    const prM = await lm.applyFontPrimitivesModes(planM);
+    if (!prM || !prM.variables) FAIL("fontmodes", "applyFontPrimitivesModes created nothing");
+    const prim = FM.collections.find((c) => c.name === "Font Primitives");
+    if (!prim) FAIL("fontmodes", "no Font Primitives collection created");
+    else {
+      if (prim.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("fontmodes", `Font Primitives modes = ${prim.modes.map((m) => m.name)}, want Premium,Google Fonts`);
+      const [premiumId, googleId] = prim.modes.map((m) => m.modeId);
+      const vars = FM.variables.filter((v) => v.variableCollectionId === prim.id);
+      // every variable — literal or alias — gets an explicit value for BOTH mode ids (constraint #7:
+      // "same as every other mode" is a value, never an omission).
+      const unset = vars.filter((v) => v.values[premiumId] === undefined || v.values[googleId] === undefined);
+      if (unset.length) FAIL("fontmodes", `${unset.length} variable(s) missing a value for one of the 2 modes (e.g. ${unset[0].name})`);
+
+      // Söhne has a curated Google-Fonts substitute (font-fallbacks.mjs) — its override primitive must
+      // actually DIVERGE between modes, not just carry two identical copies.
+      const displayFam = vars.find((v) => v.name === "override/display");
+      if (!displayFam || displayFam.values[premiumId] !== "Söhne" || displayFam.values[googleId] !== googleSafeFontFor("Söhne") || displayFam.values[googleId] === "Söhne") FAIL("fontmodes", `Söhne's override primitive should diverge to its curated substitute (Premium=${displayFam && displayFam.values[premiumId]}, Google Fonts=${displayFam && displayFam.values[googleId]})`);
+
+      // the alias resolves to the SAME target id under both modes — no per-mode retargeting (the
+      // load-bearing simplification this feature rests on, verified live against a real Figma file).
+      const fontAlias = vars.find((v) => v.name === "font/display");
+      const aP = fontAlias.values[premiumId], aG = fontAlias.values[googleId];
+      if (!aP || !aG || aP.type !== "VARIABLE_ALIAS" || aG.type !== "VARIABLE_ALIAS" || aP.id !== aG.id) FAIL("fontmodes", "font/display does not alias the SAME target id under both modes");
+    }
+
+    // IDEMPOTENT re-apply after a family change — no duplicate collection, and the new family lands.
+    const scaleM2 = TYPE.typeScale({ treatment: "product", bodyBase: 16, voices: { Display: { font: "Tiempos Text" } } });
+    const planM2 = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scaleM2));
+    await lm.applyFontPrimitivesModes(planM2);
+    if (FM.collections.filter((c) => c.name === "Font Primitives").length !== 1) FAIL("fontmodes", "re-apply after a family change duplicated the Font Primitives collection");
+    const prim2 = FM.collections.find((c) => c.name === "Font Primitives");
+    const pId2 = prim2.modes[0].modeId;
+    const overrideVar = FM.variables.find((v) => v.variableCollectionId === prim2.id && v.name === "override/display");
+    if (!overrideVar || overrideVar.values[pId2] !== "Tiempos Text") FAIL("fontmodes", "re-apply after a family change did not land the new family");
+
+    // RETURNING FILE: a collection this plugin created under the OLD Phase-A single-"Value"-mode shape
+    // (same registry key, "Font Primitives") must self-heal — rename "Value" → "Premium" in place (SAME
+    // collection id, no data loss) and add "Google Fonts" — never mint a second collection.
+    const F11 = mockFigma();
+    const l11 = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(F11.figma, "<html>", undefined);
+    const eraOnePlan = { collection: "Font Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [
+      { name: "family/display", type: "STRING", values: [{ mode: "Value", value: "Inter Tight" }] },
+      { name: "font/display", type: "ALIAS", target: "family/display" },
+    ] };
+    await l11.applyFontPrimitivesModes(eraOnePlan);
+    const eraOneColl = F11.collections.find((c) => c.name === "Font Primitives");
+    const keepCollId = eraOneColl.id;
+    const keepVarId = F11.variables.find((v) => v.variableCollectionId === eraOneColl.id && v.name === "family/display").id;
+    const eraTwoPlan = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 })));
+    await l11.applyFontPrimitivesModes(eraTwoPlan);
+    if (F11.collections.filter((c) => c.name === "Font Primitives").length !== 1) FAIL("fontmodes", "returning-file: self-healing minted a SECOND Font Primitives collection instead of renaming in place");
+    const healed = F11.collections.find((c) => c.name === "Font Primitives");
+    if (healed.id !== keepCollId) FAIL("fontmodes", "returning-file: self-healing minted a NEW collection (id changed — bindings would orphan)");
+    if (healed.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("fontmodes", `returning-file: modes after self-heal = ${healed.modes.map((m) => m.name)}, want Premium,Google Fonts`);
+    const healedFam = F11.variables.find((v) => v.variableCollectionId === healed.id && v.name === "family/display");
+    if (!healedFam || healedFam.id !== keepVarId) FAIL("fontmodes", "returning-file: family/display was pruned+recreated instead of updated in place (id changed — no data loss means SAME id)");
+  } catch (e) { FAIL("fontmodes", "applyFontPrimitivesModes e2e threw: " + e.message); }
+} else {
+  FAIL("fontmodes", "code.js exported no applyFontPrimitivesModes");
+}
+
 // ── READ-FLOAT-VARIABLES (TKT-0020, Geometry/Type drift reference): the live Breakpoints + Font
-// Primitives values come back in a shape comparable to a modeApplyPlan/primitivesApplyPlan entry — the
+// Primitives values come back in a shape comparable to a modeApplyPlan/primitivesModesApplyPlan entry — the
 // apply gate's pre-overwrite diff (collections-arch review C2). Runs on the SAME mock F: by this point
 // the float e2e + styles sections above have left a real, registry-tracked Breakpoints AND Font
 // Primitives collection in place — exactly the state a real apply leaves behind.
@@ -895,6 +968,7 @@ if (applyFloatPlans) {
       }
       if (!rf.fontPrimitives || !rf.fontPrimitives.found) FAIL("readfloat", "read-float-variables did not find the (registry-tracked) Font Primitives collection");
       else {
+        if (!Array.isArray(rf.fontPrimitives.modes) || rf.fontPrimitives.modes.join() !== "Premium,Google Fonts") FAIL("readfloat", `Font Primitives read-back modes = ${JSON.stringify(rf.fontPrimitives.modes)}, want ["Premium","Google Fonts"]`);
         const famNames = Object.keys(rf.fontPrimitives.values).filter((n) => n.startsWith("family/"));
         if (!famNames.length) FAIL("readfloat", "Font Primitives read-back has no family/ literal values");
         if (Object.keys(rf.fontPrimitives.values).some((n) => n.startsWith("font/"))) FAIL("readfloat", "Font Primitives read-back surfaced an ALIAS (font/<voice>) as a comparable value");
@@ -918,6 +992,10 @@ if (applyFloatPlans) {
 {
   const f = fails.find((x) => x.startsWith("styles:"));
   console.log(`  ${f ? "FAIL" : "pass"}  styles${f ? "  — " + f.slice(8) : ""}`);
+}
+{
+  const f = fails.find((x) => x.startsWith("fontmodes:"));
+  console.log(`  ${f ? "FAIL" : "pass"}  fontmodes${f ? "  — " + f.slice(10) : ""}`);
 }
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("\nPASS: figma-plugin-app — manifest + offline code.js + bridged ui.html + the figmaBundle→variables cascade + the Type/Geometry breakpoint-mode apply + the styles apply (bound paints/texts, registry prune)");

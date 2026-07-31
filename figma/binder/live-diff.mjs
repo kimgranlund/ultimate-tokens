@@ -5,9 +5,9 @@
 // src/ui/overlays/apply-gate.js and this module's own unit test (test/figma/live-diff.mjs).
 //
 // SHAPES:
-//   a modeApplyPlan entry (mode-apply-plan.mjs):     { collection, variables: [{ name, values: [{mode,value}] }] }
-//   a primitivesApplyPlan entry (style-plan.mjs):    { collection: "Font Primitives", mode, variables: [{ name, type, value|target }] }
-//   a live read-back collection (readFloatVariables): { found, modes, values: { "<name>": { "<mode>": <value> } } }
+//   a modeApplyPlan entry (mode-apply-plan.mjs):            { collection, variables: [{ name, values: [{mode,value}] }] }
+//   a primitivesModesApplyPlan entry (style-plan.mjs):      { collection: "Font Primitives", modes, defaultMode, addModes, variables: [{ name, type, values: [{mode,value}] }|{ name, type:"ALIAS", target }] }
+//   a live read-back collection (readFloatVariables):       { found, modes, values: { "<name>": { "<mode>": <value> } } }
 
 // flattenModePlanValues(plan) → [{name, mode, value}] — every (variable, mode) pair a modeApplyPlan
 // entry is about to write.
@@ -17,21 +17,6 @@ export function flattenModePlanValues(plan) {
   for (const v of plan.variables) {
     if (!v || typeof v.name !== "string" || !Array.isArray(v.values)) continue;
     for (const pair of v.values) if (pair && pair.mode !== undefined) out.push({ name: v.name, mode: pair.mode, value: pair.value });
-  }
-  return out;
-}
-
-// flattenPrimitivesPlanValues(plan) → [{name, mode, value}] — the LITERAL (non-ALIAS) Font Primitives
-// variables a primitivesApplyPlan entry is about to write. Aliases are skipped: an alias has no
-// independently-set value (Figma resolves it from its target), so diffing its literal target already
-// covers drift — counting the alias too would double-count the same change.
-export function flattenPrimitivesPlanValues(plan) {
-  const out = [];
-  if (!plan || !Array.isArray(plan.variables)) return out;
-  const mode = plan.mode || "Value";
-  for (const v of plan.variables) {
-    if (!v || typeof v.name !== "string" || v.type === "ALIAS") continue;
-    out.push({ name: v.name, mode, value: v.value });
   }
   return out;
 }

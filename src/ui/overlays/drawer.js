@@ -1,11 +1,11 @@
 import { exportDesignSystemBundle, exportDesignSystemMakeBundle, exportDesignSystemSpine, exportDesignSystemStitchBundle, exportDesignSystemTokens, figmaBundle, figmaCollectionNames, slug, tokenCount } from "../model.mjs";
 import { serialize } from "../persist.js";
-import { typeTokensBreakpointCSS, typeTokensCSS, typeTokensDTCG, typeTokensFigmaModes, typeTokensFigmaPrimitives } from "../../engine/type.mjs";
+import { typeTokensBreakpointCSS, typeTokensCSS, typeTokensDTCG, typeTokensFigmaModes, typeTokensFigmaPrimitivesModes } from "../../engine/type.mjs";
 import { geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes } from "../../engine/geometry.mjs";
 import { zipStore } from "../zip.mjs";
 import { mergeModeInterchanges } from "../../../figma/binder/mode-apply-plan.mjs";
 import { COLLECTIONS } from "../../engine/collections.js";
-import { primitivesApplyPlan, stylePlans } from "../../../figma/binder/style-plan.mjs";
+import { primitivesModesApplyPlan, stylePlans } from "../../../figma/binder/style-plan.mjs";
 import { icon } from "../icons.js";
 import { ALIASED_README, REPO_URL, btn, chip, h } from "../app-helpers.mjs";
 
@@ -374,7 +374,7 @@ export class DrawerMixinImpl {
         { name: "figma/type.tokens.json", data: JSON.stringify(typeTokensDTCG(tsc), null, 2) }, // ALWAYS px — Figma import (a tokens plugin)
         // the companion "Font Primitives" collection — deduped family STRING primitives + per-voice
         // font aliases + per-voice weight primitives (import artifact; never enters the apply path).
-        { name: "figma/typography.primitives.variables.json", data: JSON.stringify(typeTokensFigmaPrimitives(tsc), null, 2) },
+        { name: "figma/typography.primitives.variables.json", data: JSON.stringify(typeTokensFigmaPrimitivesModes(tsc), null, 2) },
       );
       // the type HALF of the merged breakpoint-moded collection (pushed after the geometry block below).
       modesHalves.push(typeTokensFigmaModes(tsc, this._typeModeScales(), this._typeBaseOpts()));
@@ -417,7 +417,7 @@ export class DrawerMixinImpl {
       }
       const stPlans = stylePlans({ families: stFamilies, scale: stScale, include: { color: !!sys.color, type: !!sys.type } });
       if (stPlans.paints.length || stPlans.texts.length) {
-        const artifact = { $schema: "ultimate-tokens-figma-styles.plan.v1", ...stPlans, ...(stPlans.texts.length && stScale ? { fontPrimitives: primitivesApplyPlan(typeTokensFigmaPrimitives(stScale)) } : {}) };
+        const artifact = { $schema: "ultimate-tokens-figma-styles.plan.v1", ...stPlans, ...(stPlans.texts.length && stScale ? { fontPrimitives: primitivesModesApplyPlan(typeTokensFigmaPrimitivesModes(stScale)) } : {}) };
         files.push({ name: "figma/styles.plan.json", data: JSON.stringify(artifact, null, 2) });
       }
     }
