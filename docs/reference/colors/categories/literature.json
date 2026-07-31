@@ -123,10 +123,6 @@
                 "weight": 400,
                 "weights": [
                   {
-                    "name": "Semibold",
-                    "weight": 600
-                  },
-                  {
                     "name": "Bold",
                     "weight": 700
                   }
@@ -267,10 +263,6 @@
                 "weight": 400,
                 "weights": [
                   {
-                    "name": "Semibold",
-                    "weight": 600
-                  },
-                  {
                     "name": "Bold",
                     "weight": 700
                   }
@@ -302,7 +294,7 @@
                 "tracking": "7%"
               }
             },
-            "note": "Kazimir Black 900 (a real cut, not the old 860) gives the fever its airless weight where the palette refuses the imperial postcard; Miller Text Roman for the garret prose (Semibold 600 as the only emphasis Carter drew for text), Courier Prime's 400/700 duo authored rather than derived."
+            "note": "Kazimir Black 900 (a real cut, not the old 860) gives the fever its airless weight where the palette refuses the imperial postcard; Miller Text Roman for the garret prose (Bold 700 as the only emphasis Carter drew for Text — Semibold belongs to Miller Display), Courier Prime's 400/700 duo authored rather than derived."
           }
         },
         {
@@ -411,10 +403,6 @@
                 "font": "Miller Text",
                 "weight": 400,
                 "weights": [
-                  {
-                    "name": "Semibold",
-                    "weight": 600
-                  },
                   {
                     "name": "Bold",
                     "weight": 700
@@ -556,10 +544,6 @@
                 "font": "Miller Text",
                 "weight": 400,
                 "weights": [
-                  {
-                    "name": "Semibold",
-                    "weight": 600
-                  },
                   {
                     "name": "Bold",
                     "weight": 700

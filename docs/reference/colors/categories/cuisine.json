@@ -668,7 +668,7 @@
               },
               "actionable": {
                 "font": "Forma DJR Micro",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
@@ -995,7 +995,7 @@
               },
               "actionable": {
                 "font": "Forma DJR Micro",
-                "weight": 470,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
@@ -1093,7 +1093,7 @@
             "note": "Clarendon's digital inventory is five weights — Light 300 · Regular 400 · Medium 500 · Bold 700 · Extra Bold 800 (Clarendon URW, URW++; no 600 and no 900) — so the Extra Bold core stands but its derived 900/600 siblings are replaced by the real Bold/Medium; DM Mono ships only Light 300 · Regular 400 · Medium 500 (Google Fonts), so the Kicker's derived 600/700 were fiction.",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Clarendon URW",
                 "weight": 800,
                 "weights": [
                   {
@@ -1127,7 +1127,7 @@
               },
               "actionable": {
                 "font": "Archivo",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -1222,7 +1222,7 @@
             "note": "Clarendon has no 900 — its heaviest cut is Extra Bold 800 (Clarendon URW: Light/Regular/Medium/Bold/Extra Bold) — so the 900 core drops to the real Extra Bold with Bold/Medium siblings, still the loudest Clarendon the trompo can shout in; DM Mono is 300/400/500 only (Google Fonts), so the Kicker's derived 600/700 are replaced by its real Regular/Light.",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Clarendon URW",
                 "weight": 800,
                 "weights": [
                   {
@@ -1256,7 +1256,7 @@
               },
               "actionable": {
                 "font": "Archivo",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -1351,7 +1351,7 @@
             "note": "Same Clarendon correction as the volume's other palettes — no 900 exists (Clarendon URW tops at Extra Bold 800), so the ofrenda's loudest voice is the real Extra Bold with Bold/Medium siblings; DM Mono is 300/400/500 only (Google Fonts), so the Kicker's derived 600/700 give way to Regular/Light.",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Clarendon URW",
                 "weight": 800,
                 "weights": [
                   {
@@ -1385,7 +1385,7 @@
               },
               "actionable": {
                 "font": "Archivo",
-                "weight": 470,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.5%"
               },
@@ -1481,7 +1481,7 @@
             "note": "Clarendon has no 650 cut — its ladder is Light 300 · Regular 400 · Medium 500 · Bold 700 · Extra Bold 800 (Clarendon URW) — and the cart's refusal of a plain cob argues for the real Bold rather than the quieter Medium, with Extra Bold/Medium as its siblings; DM Mono is 300/400/500 only, so the Kicker's Regular core keeps Medium/Light instead of a fabricated Semi-bold.",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Clarendon URW",
                 "weight": 700,
                 "weights": [
                   {
@@ -4130,7 +4130,7 @@
               },
               "actionable": {
                 "font": "Libre Franklin",
-                "weight": 470,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -4488,7 +4488,7 @@
               },
               "actionable": {
                 "font": "Libre Franklin",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -4743,7 +4743,7 @@
               },
               "actionable": {
                 "font": "Noto Sans SC",
-                "weight": 470,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -5224,7 +5224,7 @@
               },
               "actionable": {
                 "font": "Nunito",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -5599,7 +5599,7 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -5929,7 +5929,7 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 470,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },

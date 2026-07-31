@@ -356,7 +356,7 @@
             "note": "A second line is advertised on a showcard, not a Blue Note sleeve, so the loudest voice moves to Clarendon — the wood-type slab of parade and circus printing (Linotype ships Light/Roman/Bold) — over News Gothic Bold, New Caledonia for the programme body, Helvetica's authored Bold-only ladder, and Courier Prime Regular/Bold.",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "96%",
                 "tracking": "-1%",
@@ -1820,7 +1820,7 @@
                 "weights": []
               },
               "contextual": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "-1%",
@@ -1945,7 +1945,7 @@
                 "weights": []
               },
               "contextual": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "-1%",
@@ -2070,7 +2070,7 @@
                 "weights": []
               },
               "contextual": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "-1%",
@@ -2195,7 +2195,7 @@
                 "weights": []
               },
               "contextual": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 400,
                 "leading": "108%",
                 "tracking": "0%",
@@ -5684,7 +5684,7 @@
               },
               "actionable": {
                 "font": "Inter",
-                "weight": 500,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },

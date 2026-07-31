@@ -2866,7 +2866,7 @@
                 "weights": []
               },
               "contextual": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "108%",
                 "tracking": "0%",
@@ -2984,7 +2984,7 @@
             "note": "This is 1900s California job printing, not a spaghetti-Western poster, so Rosewood's wood type is refused and Clarendon — the 1845 slab of oil-lease and share-prospectus printing — takes both display and framing on its real Light/Roman/Bold cuts; Bitter's variable axis carries the body, News Gothic Std the coreless controls, FF Trixie the kept on its Plain cut (Trixie ships Plain/Light/Heavy/Text/Cameo as separate styles) ledger typescript.",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "1.5%",
@@ -3000,7 +3000,7 @@
                 ]
               },
               "contextual": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 400,
                 "leading": "112%",
                 "tracking": "0%",
@@ -3254,7 +3254,7 @@
                 "weights": []
               },
               "contextual": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "114%",
                 "tracking": "0%",

@@ -101,12 +101,21 @@ for (const slug of CATS) {
       if (o?.weights != null && (!Array.isArray(o.weights) || o.weights.some((w) => typeof w?.name !== "string" || !Number.isFinite(w?.weight))))
         FAIL("schema", `${slug}[${i}] ${where} weights must be an array of {name, weight} entries`);
     };
+    // declaredCeiling — a BODY-CLASS primary/secondary declaring weight > 450 in the SPEC is a
+    // mis-declaration even though the mapper silently clamps it to 450 at generation (the nature
+    // ruling, #414/#425: 27 palettes shipped a spec that lied about what actually rendered). The
+    // spec must state the number that ships, not a number the mapper will quietly correct.
+    const declaredCeiling = (o, where) => {
+      if (BODY_CLASS_VOICES.has(where.voice) && Number.isFinite(o?.weight) && o.weight > 450)
+        FAIL("schema", `${slug}[${i}] ${where.label} declares weight ${o.weight} > 450 — the mapper clamps body-class cores to 450; state what ships`);
+    };
     if (sd) for (const [reg, r] of Object.entries(sd)) {
       const def = REGISTERS[reg];
       if (!def) { FAIL("schema", `${slug}[${i}] unknown register "${reg}"`); continue; }
       for (const k of Object.keys(r || {})) if (!REG_FIELDS.has(k)) FAIL("schema", `${slug}[${i}] ${reg}: unknown field "${k}"`);
       badUnit(r, reg); badWeights(r, reg);
       if (r?.styleName && !EXPRESSIVE.has(def.voice)) FAIL("schema", `${slug}[${i}] ${reg}: styleName targets body-class ${def.voice} — named cuts are expressive-tier only`);
+      declaredCeiling(r, { voice: def.voice, label: reg });
       for (const [v, e] of Object.entries(r?.voices || {})) {
         if (!def.own.includes(v)) FAIL("schema", `${slug}[${i}] ${reg}.voices["${v}"]: not this register's secondary (own: ${def.own.join(", ") || "none"})`);
         const uiOnly = v === "UI-control" || v === "UI-widget";
@@ -116,8 +125,16 @@ for (const slug of CATS) {
         }
         badUnit(e, `${reg}.voices["${v}"]`); badWeights(e, `${reg}.voices["${v}"]`);
         if (e?.styleName && !EXPRESSIVE.has(v)) FAIL("schema", `${slug}[${i}] ${reg}.voices["${v}"]: styleName targets a body-class voice`);
+        declaredCeiling(e, { voice: v, label: `${reg}.voices["${v}"]` });
       }
     }
+    // A raw contextual-core > anthemic-core check was tried here and REVERTED (#418): it fired 51
+    // times against already-reviewed, checker-approved presets — a single-cut anthemic opted out
+    // to `weights: []` is optically loud at a low numeric core (the ceiling ruling above), and a
+    // shared-family anthemic/contextual pair legitimately lets the anthemic's LADDER (not core)
+    // outreach contextual's core (film's Tree of Life: EB Garamond 400+[500,600] vs contextual
+    // 500). "Must not out-shout" needs an optical-weight model this schema doesn't carry — it
+    // stays a reviewer judgment call (font-choice-checker), not a mechanical gate.
     // a spec palette is "designed" iff its type carries ≥1 font — exactly when the mapper yields a config
     // (gen-categories returns null otherwise). Gate on the IFF, not on "100% seeded", so a future
     // un-designed palette doesn't redden this suite for a non-bug. A spec can ALSO carry an already-
@@ -177,16 +194,20 @@ for (const slug of CATS) {
         checkVoice(e, v, `${reg}.voices["${v}"]`);
       }
     }
-    // (d2) INTERACTIVE-VOICE LADDERS (TKT-0005 sibling change, the BZZR shape): a designed
-    //      actionable register keys UI-control + UI-widget weight ladders off ITS core weight —
-    //      ladders ONLY, never character overrides (the interactive voices keep the engine's
-    //      control-text character).
-    if (sd && Number.isFinite(sd.actionable?.weight)) {
-      const want = bodyClassSiblingDefaults(Math.min(sd.actionable.weight, 450)); // actionable core clamps like its Label voice
+    // (d2) INTERACTIVE-VOICE LADDERS (TKT-0005 sibling change, the BZZR shape; explicit-array
+    //      flow-through 2026-07-31 per #418): a designed actionable register keys UI-control +
+    //      UI-widget weight ladders — ladders ONLY, never character overrides (the interactive
+    //      voices keep the engine's control-text character). An EXPLICIT `weights` array wins
+    //      outright (core or not — it's the more authoritative signal for a no-mid-weight family
+    //      like Trade Gothic/Helvetica Neue); otherwise derive from a finite, clamped core.
+    if (sd && (Number.isFinite(sd.actionable?.weight) || Array.isArray(sd.actionable?.weights))) {
+      const want = Array.isArray(sd.actionable.weights) ? sd.actionable.weights
+        : bodyClassSiblingDefaults(Math.min(sd.actionable.weight, 450)); // actionable core clamps like its Label voice
       for (const uv of ["UI-control", "UI-widget"]) {
         const e = t.voices?.[uv];
+        if (!want.length) { if (e) FAIL("uiladder", `${slug}[${i}] actionable weights:[] opts out but ${uv} carries a ladder`); continue; }
         if (!e) { FAIL("uiladder", `${slug}[${i}] designed actionable register but no ${uv} ladder`); continue; }
-        if (!eq(e.weights || [], want)) FAIL("uiladder", `${slug}[${i}] ${uv} ladder ${JSON.stringify(e.weights)} != bodyClassSiblingDefaults(${sd.actionable.weight})`);
+        if (!eq(e.weights || [], want)) FAIL("uiladder", `${slug}[${i}] ${uv} ladder ${JSON.stringify(e.weights)} != expected ${JSON.stringify(want)}`);
         const extra = Object.keys(e).filter((k) => k !== "weights" && k !== "font");
         if (extra.length) FAIL("uiladder", `${slug}[${i}] ${uv} carries character overrides ${JSON.stringify(extra)} (ladders only)`);
       }

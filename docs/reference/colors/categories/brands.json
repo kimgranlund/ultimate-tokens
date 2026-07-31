@@ -668,10 +668,6 @@
               "Sub-title": {
                 "weights": [
                   {
-                    "name": "Semi-bold",
-                    "weight": 600
-                  },
-                  {
                     "name": "Bold",
                     "weight": 700
                   }

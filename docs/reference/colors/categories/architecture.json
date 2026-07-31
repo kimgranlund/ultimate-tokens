@@ -1,30 +1,30 @@
 {
   "category": "Architecture",
   "slug": "architecture",
-  "eyebrow": "Architecture Palette \u00b7 Sourced from material &amp; light",
+  "eyebrow": "Architecture Palette · Sourced from material &amp; light",
   "tagline": "Forty-eight buildings, <em>read for their material,</em> not their blueprint.",
   "metaNote": "Color sourced from material,<br/>surface &amp; regional light",
-  "sourcing": "Every palette is sampled from a specific building or movement's actual materials, surfaces, and the regional light that falls on them \u2014 concrete, tile, brick, stone, timber, and metal as they really weather and glow. Iconic works are named; the aim is the colour you would touch, not a generic 'modern' grey.",
+  "sourcing": "Every palette is sampled from a specific building or movement's actual materials, surfaces, and the regional light that falls on them — concrete, tile, brick, stone, timber, and metal as they really weather and glow. Iconic works are named; the aim is the colour you would touch, not a generic 'modern' grey.",
   "volumes": [
     {
       "roman": "I",
       "title": "Brutalism",
-      "eyebrow": "Architecture \u00b7 Vol I \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol I · Sourced from Material & Light",
       "h1": "Four palettes from <em>raw concrete,</em> board-marked and weathered.",
       "preface": [
-        "Brutalism is a palette of b\u00e9ton brut \u2014 raw concrete \u2014 in its many weathers: fresh grey, rain-streaked, board-marked, and warmed by the timber and carpet of its interiors. The colour is monolithic, tonal, and textural.",
+        "Brutalism is a palette of béton brut — raw concrete — in its many weathers: fresh grey, rain-streaked, board-marked, and warmed by the timber and carpet of its interiors. The colour is monolithic, tonal, and textural.",
         "Each refuses the cold dead-grey caricature: real brutalist concrete is warm, varied, and full of the grain of its formwork."
       ],
       "palettes": [
         {
-          "kicker": "The Barbican Estate \u00b7 1976 \u00b7 Chamberlin, Powell & Bon \u00b7 London",
+          "kicker": "The Barbican Estate · 1976 · Chamberlin, Powell & Bon · London",
           "title": "Board-marked concrete towers over planted lakes and warm interior wood",
           "source": "Color from the estate: board-marked <em>concrete grey</em>, pick-hammered warm grey, lakeside green, interior teak, and a brick-red tile.",
           "swatches": [
             {
               "name": "Board-marked concrete, warm grey",
               "oklch": "0.652 0.012 80",
-              "note": "The estate's pick-hammered b\u00e9ton brut.",
+              "note": "The estate's pick-hammered béton brut.",
               "hier": "d",
               "hex": "#948F88"
             },
@@ -81,7 +81,7 @@
               "c": "#93533F"
             }
           },
-          "refuses": "Flat dead grey. The Barbican's concrete is warm, hand-textured, and planted \u2014 never the cold slab of the clich\u00e9.",
+          "refuses": "Flat dead grey. The Barbican's concrete is warm, hand-textured, and planted — never the cold slab of the cliché.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -92,7 +92,7 @@
                 "tracking": "-2%"
               },
               "contextual": {
-                "font": "S\u00f6hne",
+                "font": "Söhne",
                 "weight": 620,
                 "leading": "112%",
                 "tracking": "-0.8%"
@@ -109,13 +109,13 @@
                 }
               },
               "actionable": {
-                "font": "S\u00f6hne",
+                "font": "Söhne",
                 "weight": 450,
                 "leading": "154%",
                 "tracking": "0.5%"
               },
               "data": {
-                "font": "S\u00f6hne Mono",
+                "font": "Söhne Mono",
                 "weight": 500,
                 "leading": "144%",
                 "tracking": "13%"
@@ -124,7 +124,7 @@
           }
         },
         {
-          "kicker": "Boston City Hall \u00b7 1968 \u00b7 Kallmann McKinnell & Knowles",
+          "kicker": "Boston City Hall · 1968 · Kallmann McKinnell & Knowles",
           "title": "An inverted-ziggurat of heavy concrete over a vast brick plaza",
           "source": "Color from the civic monument: heavy <em>concrete grey</em>, red-brick plaza, shadow-recess black, weather-stain grey-brown, and a flag red.",
           "swatches": [
@@ -199,7 +199,7 @@
                 "tracking": "-3%"
               },
               "contextual": {
-                "font": "S\u00f6hne",
+                "font": "Söhne",
                 "weight": 700,
                 "leading": "106%",
                 "tracking": "-1.5%"
@@ -216,13 +216,13 @@
                 }
               },
               "actionable": {
-                "font": "S\u00f6hne",
-                "weight": 480,
+                "font": "Söhne",
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1%"
               },
               "data": {
-                "font": "S\u00f6hne Mono",
+                "font": "Söhne Mono",
                 "weight": 560,
                 "leading": "140%",
                 "tracking": "15%"
@@ -231,7 +231,7 @@
           }
         },
         {
-          "kicker": "Habitat 67 \u00b7 1967 \u00b7 Moshe Safdie \u00b7 Montreal",
+          "kicker": "Habitat 67 · 1967 · Moshe Safdie · Montreal",
           "title": "Stacked concrete housing modules over the St Lawrence, each with a garden terrace",
           "source": "Color from the modular block: precast <em>concrete pale grey</em>, terrace-garden green, window-reveal white, river blue, and a balcony red.",
           "swatches": [
@@ -296,7 +296,7 @@
               "c": "#B24F41"
             }
           },
-          "refuses": "Monotone grey block. Habitat is grey concrete softened by garden green and bright accents \u2014 a lived-in stack, not a slab.",
+          "refuses": "Monotone grey block. Habitat is grey concrete softened by garden green and bright accents — a lived-in stack, not a slab.",
           "type": {
             "base": "product",
             "registers": {
@@ -307,7 +307,7 @@
                 "tracking": "-1.2%"
               },
               "contextual": {
-                "font": "S\u00f6hne",
+                "font": "Söhne",
                 "weight": 560,
                 "leading": "114%",
                 "tracking": "-0.5%"
@@ -324,13 +324,13 @@
                 }
               },
               "actionable": {
-                "font": "S\u00f6hne",
+                "font": "Söhne",
                 "weight": 440,
                 "leading": "156%",
                 "tracking": "0%"
               },
               "data": {
-                "font": "S\u00f6hne Mono",
+                "font": "Söhne Mono",
                 "weight": 480,
                 "leading": "146%",
                 "tracking": "12%"
@@ -339,7 +339,7 @@
           }
         },
         {
-          "kicker": "Trellick Tower \u00b7 1972 \u00b7 Ern\u0151 Goldfinger \u00b7 London",
+          "kicker": "Trellick Tower · 1972 · Ernő Goldfinger · London",
           "title": "A slender brutalist housing tower with a detached service shaft and coloured panels",
           "source": "Color from the tower: board-marked <em>concrete grey</em>, balcony-panel red, glazed-shaft grey, sky blue, and a teal infill.",
           "swatches": [
@@ -403,7 +403,7 @@
               "c": "#AB493C"
             }
           },
-          "refuses": "Dead grey slab. Trellick's concrete carries red and teal panels \u2014 varied and inhabited, not a monolithic grey wall.",
+          "refuses": "Dead grey slab. Trellick's concrete carries red and teal panels — varied and inhabited, not a monolithic grey wall.",
           "type": {
             "base": "technical",
             "registers": {
@@ -414,7 +414,7 @@
                 "tracking": "-2.2%"
               },
               "contextual": {
-                "font": "S\u00f6hne",
+                "font": "Söhne",
                 "weight": 660,
                 "leading": "108%",
                 "tracking": "-1.2%"
@@ -431,13 +431,13 @@
                 }
               },
               "actionable": {
-                "font": "S\u00f6hne",
-                "weight": 470,
+                "font": "Söhne",
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.8%"
               },
               "data": {
-                "font": "S\u00f6hne Mono",
+                "font": "Söhne Mono",
                 "weight": 540,
                 "leading": "140%",
                 "tracking": "16%"
@@ -450,15 +450,15 @@
     {
       "roman": "II",
       "title": "Art Deco",
-      "eyebrow": "Architecture \u00b7 Vol II \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol II · Sourced from Material & Light",
       "h1": "Four palettes from <em>the Jazz-Age skyline,</em> chrome, terracotta, and pastel.",
       "preface": [
-        "Art Deco runs from Manhattan's chrome-and-stone towers to the pastel stucco of Miami Beach \u2014 geometric, luxurious, and colour-confident, with metal, glazed terracotta, and bold trim. The palettes are glamorous and varied by region.",
+        "Art Deco runs from Manhattan's chrome-and-stone towers to the pastel stucco of Miami Beach — geometric, luxurious, and colour-confident, with metal, glazed terracotta, and bold trim. The palettes are glamorous and varied by region.",
         "Each refuses the beige 'old building' assumption: Deco is chrome, jade, coral, and gold by design."
       ],
       "palettes": [
         {
-          "kicker": "The Chrysler Building \u00b7 1930 \u00b7 William Van Alen \u00b7 New York",
+          "kicker": "The Chrysler Building · 1930 · William Van Alen · New York",
           "title": "A stainless-steel crown gleaming over grey-brick setbacks against the sky",
           "source": "Color from the tower: stainless <em>steel silver</em>, grey-brick shaft, dark-stone trim, lobby red-marble, and a gilt accent.",
           "swatches": [
@@ -522,10 +522,10 @@
               "c": "#BD9D5C"
             }
           },
-          "refuses": "Sepia vintage tower. The Chrysler is bright steel, grey brick, and red marble \u2014 gleaming, not a faded old photo.",
+          "refuses": "Sepia vintage tower. The Chrysler is bright steel, grey brick, and red marble — gleaming, not a faded old photo.",
           "type": {
             "base": "statement",
-            "note": "Broadway ships ONE weight (ATF 1927), so an 820 core plus a derived 3-stop ladder was fiction \u2014 core 400 with the ladder opted out, the letterform doing the shouting; the engraved stainless crown earns Sol Hess's real inline companion, Broadway Engraved (Monotype, 1928). Engraved is its own family in retail catalogs, not a style of Broadway - encoded as the family. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
+            "note": "Broadway ships ONE weight (ATF 1927), so an 820 core plus a derived 3-stop ladder was fiction — core 400 with the ladder opted out, the letterform doing the shouting; the engraved stainless crown earns Sol Hess's real inline companion, Broadway Engraved (Monotype, 1928). Engraved is its own family in retail catalogs, not a style of Broadway - encoded as the family. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
             "registers": {
               "anthemic": {
                 "font": "Broadway Engraved",
@@ -553,7 +553,7 @@
               },
               "actionable": {
                 "font": "Verlag",
-                "weight": 480,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1.8%"
               },
@@ -568,7 +568,7 @@
           }
         },
         {
-          "kicker": "Ocean Drive \u00b7 1930s \u00b7 Miami Beach Art Deco Historic District",
+          "kicker": "Ocean Drive · 1930s · Miami Beach Art Deco Historic District",
           "title": "A strip of pastel deco hotels in flamingo pink, mint, and Caribbean turquoise",
           "source": "Color from South Beach: stucco <em>flamingo pink</em>, mint green, sky turquoise, cream trim, and a neon coral.",
           "swatches": [
@@ -634,7 +634,7 @@
               "c": "#D56757"
             }
           },
-          "refuses": "Muted heritage colour. South Beach is candy pastel by design \u2014 pink, mint, and turquoise, not a tasteful neutral.",
+          "refuses": "Muted heritage colour. South Beach is candy pastel by design — pink, mint, and turquoise, not a tasteful neutral.",
           "type": {
             "base": "product",
             "note": "Same single-cut correction as the volume's other Broadway palettes (core 400, ladder opted out); Ocean Drive's vertical blade signs earn Broadway Condensed, a real cut of the family (Monotype). Condensed is its own family in retail catalogs - encoded as the family. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
@@ -680,7 +680,7 @@
           }
         },
         {
-          "kicker": "Napier \u00b7 rebuilt 1931\u201333 \u00b7 Art Deco town, New Zealand",
+          "kicker": "Napier · rebuilt 1931–33 · Art Deco town, New Zealand",
           "title": "A small seaside town rebuilt after earthquake in soft deco ochre, jade, and rose",
           "source": "Color from rebuilt Napier: stucco <em>ochre-cream</em>, deco jade-green, soft rose, sunburst gold trim, and a Pacific blue.",
           "swatches": [
@@ -745,10 +745,10 @@
               "c": "#C7A766"
             }
           },
-          "refuses": "Plain whitewash. Napier is a coordinated pastel deco ensemble \u2014 ochre, jade, and rose, not a uniform white town.",
+          "refuses": "Plain whitewash. Napier is a coordinated pastel deco ensemble — ochre, jade, and rose, not a uniform white town.",
           "type": {
             "base": "editorial",
-            "note": "Broadway is a single-cut face (ATF 1927 / Monotype), so the 760 core was fiction \u2014 core 400, ladder opted out; a small rebuilt town earns no engraved or condensed companion, so the plain roman stands. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
+            "note": "Broadway is a single-cut face (ATF 1927 / Monotype), so the 760 core was fiction — core 400, ladder opted out; a small rebuilt town earns no engraved or condensed companion, so the plain roman stands. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
             "registers": {
               "anthemic": {
                 "font": "Broadway",
@@ -776,7 +776,7 @@
               },
               "actionable": {
                 "font": "Verlag",
-                "weight": 460,
+                "weight": 450,
                 "leading": "152%",
                 "tracking": "2%"
               },
@@ -791,7 +791,7 @@
           }
         },
         {
-          "kicker": "Marine Drive \u00b7 1930s \u00b7 Art Deco ensemble \u00b7 Mumbai",
+          "kicker": "Marine Drive · 1930s · Art Deco ensemble · Mumbai",
           "title": "A curving seafront of cream-and-pastel deco apartment blocks above the Arabian Sea",
           "source": "Color from the Queen's Necklace: cream <em>stucco</em>, deco mint and butter trim, sea-blue, palm green, and a sunset coral.",
           "swatches": [
@@ -861,7 +861,7 @@
           "refuses": "Drab concrete grey. Marine Drive is a coordinated cream-and-pastel deco curve, weathered but still colour-confident.",
           "type": {
             "base": "luxury",
-            "note": "Broadway has one cut, so the 780 core was fiction \u2014 core 400, ladder opted out; the weathered seafront curve keeps the plain roman rather than the engraved or condensed companion. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
+            "note": "Broadway has one cut, so the 780 core was fiction — core 400, ladder opted out; the weathered seafront curve keeps the plain roman rather than the engraved or condensed companion. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
             "registers": {
               "anthemic": {
                 "font": "Broadway",
@@ -889,7 +889,7 @@
               },
               "actionable": {
                 "font": "Verlag",
-                "weight": 470,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "1.9%"
               },
@@ -908,15 +908,15 @@
     {
       "roman": "III",
       "title": "Gothic Cathedral",
-      "eyebrow": "Architecture \u00b7 Vol III \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol III · Sourced from Material & Light",
       "h1": "Four palettes from <em>the great churches,</em> stone, glass, and coloured light.",
       "preface": [
-        "The Gothic cathedral is grey stone transformed by coloured light \u2014 the deep blues and reds of stained glass thrown across pale limestone, candle gold, and the dark of the vaults. The palette is cool stone lit by jewelled fire.",
+        "The Gothic cathedral is grey stone transformed by coloured light — the deep blues and reds of stained glass thrown across pale limestone, candle gold, and the dark of the vaults. The palette is cool stone lit by jewelled fire.",
         "Each refuses the flat 'grey church' assumption: the cathedral's whole purpose is stone dissolved in coloured light."
       ],
       "palettes": [
         {
-          "kicker": "Chartres Cathedral \u00b7 c.1220 \u00b7 the nave at midday",
+          "kicker": "Chartres Cathedral · c.1220 · the nave at midday",
           "title": "Pale limestone columns washed by the deep blue and red of the great windows",
           "source": "Color from Chartres: pale <em>limestone grey</em>, 'Chartres blue' glass, ruby-glass red, candle gold, and vault shadow.",
           "swatches": [
@@ -980,10 +980,10 @@
               "c": "#B89254"
             }
           },
-          "refuses": "Flat stone grey. Chartres is grey stone drenched in cobalt and ruby light \u2014 the colour is the architecture.",
+          "refuses": "Flat stone grey. Chartres is grey stone drenched in cobalt and ruby light — the colour is the architecture.",
           "type": {
             "base": "editorial",
-            "note": "Goudy Text is a one-style family (Monotype), so a 720 core and a 3-stop ladder resolved to the same single face \u2014 core 400, ladder opted out; the Lombardic versals the windows themselves carry are a real companion cut, Goudy Text MT Lombardic Capitals. Lombardic Capitals ships as its own family - encoded as the family",
+            "note": "Goudy Text is a one-style family (Monotype), so a 720 core and a 3-stop ladder resolved to the same single face — core 400, ladder opted out; the Lombardic versals the windows themselves carry are a real companion cut, Goudy Text MT Lombardic Capitals. Lombardic Capitals ships as its own family - encoded as the family",
             "registers": {
               "anthemic": {
                 "font": "Goudy Text MT Lombardic Capitals",
@@ -1025,7 +1025,7 @@
           }
         },
         {
-          "kicker": "Sainte-Chapelle \u00b7 1248 \u00b7 Paris \u00b7 the upper chapel",
+          "kicker": "Sainte-Chapelle · 1248 · Paris · the upper chapel",
           "title": "A jewel-box chapel where the walls dissolve into towering panels of stained glass",
           "source": "Color from the glass cage: saturated <em>cobalt blue</em>, ruby red, gilt-rib gold, leaf-green glass, and a violet.",
           "swatches": [
@@ -1089,7 +1089,7 @@
               "c": "#64477D"
             }
           },
-          "refuses": "Muted heritage palette. Sainte-Chapelle is near-total saturated glass \u2014 blue and red fire, with stone almost gone.",
+          "refuses": "Muted heritage palette. Sainte-Chapelle is near-total saturated glass — blue and red fire, with stone almost gone.",
           "type": {
             "base": "luxury",
             "note": "Same one-style correction (core 400, ladder opted out); a chapel that is nothing but glass, versals and heraldry earns Monotype's real Goudy Text MT Lombardic Capitals on the loudest voice. Lombardic Capitals ships as its own family - encoded as the family",
@@ -1120,7 +1120,7 @@
               },
               "actionable": {
                 "font": "Cronos",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -1134,14 +1134,14 @@
           }
         },
         {
-          "kicker": "Sagrada Fam\u00edlia \u00b7 Gaud\u00ed, begun 1882 \u00b7 Barcelona \u00b7 the nave",
+          "kicker": "Sagrada Família · Gaudí, begun 1882 · Barcelona · the nave",
           "title": "A forest of branching stone columns washed in the blue, green, and orange of modern glass",
-          "source": "Color from Gaud\u00ed's nave: warm <em>stone cream</em>, sunrise-side blue-green glass, sunset-side orange-red glass, canopy green, and gold.",
+          "source": "Color from Gaudí's nave: warm <em>stone cream</em>, sunrise-side blue-green glass, sunset-side orange-red glass, canopy green, and gold.",
           "swatches": [
             {
               "name": "Column stone, warm cream",
               "oklch": "0.792 0.020 84",
-              "note": "The tree-like Montju\u00efc stone piers.",
+              "note": "The tree-like Montjuïc stone piers.",
               "hier": "d",
               "hex": "#C1BAAD"
             },
@@ -1198,10 +1198,10 @@
               "c": "#BF9D5D"
             }
           },
-          "refuses": "Cold grey modern church. Gaud\u00ed floods warm stone with sunrise-blue and sunset-orange \u2014 a coloured forest, not a grey hall.",
+          "refuses": "Cold grey modern church. Gaudí floods warm stone with sunrise-blue and sunset-orange — a coloured forest, not a grey hall.",
           "type": {
             "base": "statement",
-            "note": "Goudy Text has a single cut, so the 860 core was fiction \u2014 core 400, ladder opted out; a still-unfinished Catalan nave earns no versal-capital companion, so the textura itself is the whole voice.",
+            "note": "Goudy Text has a single cut, so the 860 core was fiction — core 400, ladder opted out; a still-unfinished Catalan nave earns no versal-capital companion, so the textura itself is the whole voice.",
             "registers": {
               "anthemic": {
                 "font": "Goudy Text",
@@ -1243,7 +1243,7 @@
           }
         },
         {
-          "kicker": "Cologne Cathedral \u00b7 1880 (completed) \u00b7 the dark nave",
+          "kicker": "Cologne Cathedral · 1880 (completed) · the dark nave",
           "title": "Soot-darkened limestone piers soaring into shadow lit by deep medieval glass",
           "source": "Color from Cologne: soot-<em>dark stone</em>, deep-glass red and blue, candle gold, vault black, and a grey daylight.",
           "swatches": [
@@ -1310,7 +1310,7 @@
           "refuses": "Bright clean limestone. Cologne's stone is soot-darkened to grey-brown; its colour is deep glass against shadow.",
           "type": {
             "base": "editorial",
-            "note": "Goudy Text has a single cut, so the 780 core was fiction \u2014 core 400, ladder opted out; the 1880 completion's own voice is the blackletter lowercase in the gloom, not a decorative versal cut.",
+            "note": "Goudy Text has a single cut, so the 780 core was fiction — core 400, ladder opted out; the 1880 completion's own voice is the blackletter lowercase in the gloom, not a decorative versal cut.",
             "registers": {
               "anthemic": {
                 "font": "Goudy Text",
@@ -1338,7 +1338,7 @@
               },
               "actionable": {
                 "font": "Cronos",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -1356,15 +1356,15 @@
     {
       "roman": "IV",
       "title": "Japanese Traditional",
-      "eyebrow": "Architecture \u00b7 Vol IV \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol IV · Sourced from Material & Light",
       "h1": "Four palettes from <em>the Japanese house,</em> wood, paper, and tatami.",
       "preface": [
         "Traditional Japanese architecture is a palette of natural materials in restraint: cedar and cypress wood, paper screens, tatami straw, clay plaster, and the dark of lacquer and tile. The colour is warm, muted, and tuned to filtered light.",
-        "Each refuses the red-lacquer-temple clich\u00e9: most Japanese building is quiet wood, paper, and earth, with red reserved for shrines."
+        "Each refuses the red-lacquer-temple cliché: most Japanese building is quiet wood, paper, and earth, with red reserved for shrines."
       ],
       "palettes": [
         {
-          "kicker": "Katsura Imperial Villa \u00b7 17th c \u00b7 Kyoto",
+          "kicker": "Katsura Imperial Villa · 17th c · Kyoto",
           "title": "A refined garden villa of unpainted cedar posts, paper shoji, and tatami",
           "source": "Color from Katsura: unpainted <em>cedar</em> post, shoji-paper cream, tatami green-straw, clay-plaster grey, and a black-lacquer trim.",
           "swatches": [
@@ -1429,7 +1429,7 @@
               "c": "#282322"
             }
           },
-          "refuses": "Red-lacquer temple colour. Katsura is restrained natural wood, paper, and straw \u2014 refined understatement, not shrine red.",
+          "refuses": "Red-lacquer temple colour. Katsura is restrained natural wood, paper, and straw — refined understatement, not shrine red.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -1472,7 +1472,7 @@
           }
         },
         {
-          "kicker": "Ise Grand Shrine \u00b7 rebuilt every 20 years \u00b7 Mie Prefecture",
+          "kicker": "Ise Grand Shrine · rebuilt every 20 years · Mie Prefecture",
           "title": "A Shinto shrine of fresh blond hinoki cypress and gold-capped thatch",
           "source": "Color from Ise: fresh blond <em>hinoki cypress</em>, thatch gold, gilt-cap brass, gravel grey-white, and forest green.",
           "swatches": [
@@ -1536,7 +1536,7 @@
               "c": "#BF9D5D"
             }
           },
-          "refuses": "Aged dark-temple brown. Ise is rebuilt new in pale blond cypress \u2014 fresh, light wood, not weathered antiquity.",
+          "refuses": "Aged dark-temple brown. Ise is rebuilt new in pale blond cypress — fresh, light wood, not weathered antiquity.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -1579,21 +1579,21 @@
           }
         },
         {
-          "kicker": "Ky\u014d-machiya townhouse \u00b7 Edo\u2013Meiji \u00b7 Kyoto",
+          "kicker": "Kyō-machiya townhouse · Edo–Meiji · Kyoto",
           "title": "A narrow merchant townhouse of dark lattice, ochre plaster, and indigo noren",
           "source": "Color from the machiya: dark-<em>cedar lattice</em>, ochre-clay wall, indigo noren curtain, tatami straw, and a copper-green gutter.",
           "swatches": [
             {
               "name": "Cedar lattice, dark brown",
               "oklch": "0.342 0.034 52",
-              "note": "The fine k\u014dshi street lattice.",
+              "note": "The fine kōshi street lattice.",
               "hier": "d",
               "hex": "#473428"
             },
             {
               "name": "Clay wall, warm ochre",
               "oklch": "0.652 0.052 70",
-              "note": "The earthen-plaster fa\u00e7ade.",
+              "note": "The earthen-plaster façade.",
               "hier": "s",
               "hex": "#A58B6D"
             },
@@ -1644,7 +1644,7 @@
               "c": "#404347"
             }
           },
-          "refuses": "Bright tourist colour. The machiya is dark wood, earth ochre, and indigo \u2014 sober merchant restraint, not festival brights.",
+          "refuses": "Bright tourist colour. The machiya is dark wood, earth ochre, and indigo — sober merchant restraint, not festival brights.",
           "type": {
             "base": "technical",
             "registers": {
@@ -1687,7 +1687,7 @@
           }
         },
         {
-          "kicker": "Himeji Castle \u00b7 1609 \u00b7 'White Heron' keep \u00b7 Japan",
+          "kicker": "Himeji Castle · 1609 · 'White Heron' keep · Japan",
           "title": "A brilliant white-plaster castle keep with grey tile roofs and gilt crests",
           "source": "Color from the White Heron: lime-plaster <em>white</em>, grey-tile roof, dark-timber gable, gilt shachihoko, and pine green.",
           "swatches": [
@@ -1752,7 +1752,7 @@
               "c": "#BC9A5A"
             }
           },
-          "refuses": "Dark aged timber. Himeji is brilliant white plaster with grey roofs \u2014 the 'White Heron', not a brown wooden fortress.",
+          "refuses": "Dark aged timber. Himeji is brilliant white plaster with grey roofs — the 'White Heron', not a brown wooden fortress.",
           "type": {
             "base": "statement",
             "registers": {
@@ -1799,15 +1799,15 @@
     {
       "roman": "V",
       "title": "Mediterranean Vernacular",
-      "eyebrow": "Architecture \u00b7 Vol V \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol V · Sourced from Material & Light",
       "h1": "Four palettes from <em>the sun-built south,</em> lime, earth, and shade.",
       "preface": [
-        "Mediterranean vernacular building uses local lime, earth, and stone against hard sun \u2014 whitewash, terracotta, ochre, and the deep blue of shutter and dome. The palette is bright, warm, and made for heat.",
+        "Mediterranean vernacular building uses local lime, earth, and stone against hard sun — whitewash, terracotta, ochre, and the deep blue of shutter and dome. The palette is bright, warm, and made for heat.",
         "Each refuses the single 'Santorini blue-and-white' shorthand: each region has its own earth, lime, and shutter colour."
       ],
       "palettes": [
         {
-          "kicker": "Oia \u00b7 Cyclades vernacular \u00b7 Santorini, Greece",
+          "kicker": "Oia · Cyclades vernacular · Santorini, Greece",
           "title": "Whitewashed cave-houses and blue domes stepping down a volcanic caldera",
           "source": "Color from the Cyclades: lime <em>whitewash</em>, dome blue, volcanic-rock grey-red, Aegean blue, and a bougainvillea magenta.",
           "swatches": [
@@ -1875,7 +1875,7 @@
           "refuses": "Flat blue-and-white only. Santorini also has volcanic red-grey rock and magenta vine; pure blue-white is a fridge magnet.",
           "type": {
             "base": "statement",
-            "note": "Cormorant tops out at Bold 700 (Google Fonts), so 760 was fiction \u2014 core 700 with its real SemiBold/Medium/Regular ladder; Fragment Mono ships only Regular 400, so the data core drops to 400 with the ladder opted out.",
+            "note": "Cormorant tops out at Bold 700 (Google Fonts), so 760 was fiction — core 700 with its real SemiBold/Medium/Regular ladder; Fragment Mono ships only Regular 400, so the data core drops to 400 with the ladder opted out.",
             "registers": {
               "anthemic": {
                 "font": "Cormorant",
@@ -1931,7 +1931,7 @@
           }
         },
         {
-          "kicker": "Andalusian patio \u00b7 Moorish-Spanish vernacular \u00b7 C\u00f3rdoba",
+          "kicker": "Andalusian patio · Moorish-Spanish vernacular · Córdoba",
           "title": "A cool tiled courtyard of whitewash, azulejo blue, geranium red, and orange tree",
           "source": "Color from the patio: lime <em>whitewash</em>, azulejo blue-and-yellow tile, geranium red, orange-tree green, and terracotta pot.",
           "swatches": [
@@ -1996,7 +1996,7 @@
               "c": "#BE4A3F"
             }
           },
-          "refuses": "Plain rustic neutral. The Andalusian patio is whitewash set with cobalt tile and red geranium \u2014 cool colour against heat.",
+          "refuses": "Plain rustic neutral. The Andalusian patio is whitewash set with cobalt tile and red geranium — cool colour against heat.",
           "type": {
             "base": "editorial",
             "note": "Cormorant tops at Bold 700 - core set to the real cut (no snap-rationalization), real-cut ladder",
@@ -2055,12 +2055,12 @@
           }
         },
         {
-          "kicker": "Riad \u00b7 Moroccan vernacular \u00b7 Marrakech",
+          "kicker": "Riad · Moroccan vernacular · Marrakech",
           "title": "An inward courtyard house of rose-clay walls, zellige tile, and carved cedar",
           "source": "Color from the riad: Marrakech rose-<em>clay</em>, zellige green-and-blue tile, carved-cedar brown, brass lantern, and a saffron textile.",
           "swatches": [
             {
-              "name": "Pis\u00e9 wall, rose clay",
+              "name": "Pisé wall, rose clay",
               "oklch": "0.612 0.072 44",
               "note": "The pink rammed-earth of Marrakech.",
               "hier": "d",
@@ -2120,10 +2120,10 @@
               "c": "#B79354"
             }
           },
-          "refuses": "Sandy-beige monotone. The riad is rose earth set with emerald tile and saffron cloth \u2014 rich colour inside the walls.",
+          "refuses": "Sandy-beige monotone. The riad is rose earth set with emerald tile and saffron cloth — rich colour inside the walls.",
           "type": {
             "base": "luxury",
-            "note": "Cormorant's heaviest real cut is Bold 700, so 800 was fiction \u2014 core 700 with the real SemiBold/Medium/Regular ladder; Fragment Mono's single Regular 400 replaces the 480 data core.",
+            "note": "Cormorant's heaviest real cut is Bold 700, so 800 was fiction — core 700 with the real SemiBold/Medium/Regular ladder; Fragment Mono's single Regular 400 replaces the 480 data core.",
             "registers": {
               "anthemic": {
                 "font": "Cormorant",
@@ -2164,7 +2164,7 @@
               },
               "actionable": {
                 "font": "Alegreya Sans",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
@@ -2179,7 +2179,7 @@
           }
         },
         {
-          "kicker": "Trulli of Alberobello \u00b7 vernacular \u00b7 Puglia, Italy",
+          "kicker": "Trulli of Alberobello · vernacular · Puglia, Italy",
           "title": "Whitewashed conical stone houses with grey limestone roofs and painted symbols",
           "source": "Color from the trulli: lime <em>whitewash</em>, grey limestone-cone roof, painted-symbol white, olive green, and a Puglian sky blue.",
           "swatches": [
@@ -2245,7 +2245,7 @@
               "c": "#CCCBC7"
             }
           },
-          "refuses": "Rustic brown-stone. The trulli are bright whitewash under grey cones against red earth \u2014 a crisp two-tone, not a muddy vernacular.",
+          "refuses": "Rustic brown-stone. The trulli are bright whitewash under grey cones against red earth — a crisp two-tone, not a muddy vernacular.",
           "type": {
             "base": "product",
             "note": "Cormorant tops at Bold 700 - core set to the real cut (no snap-rationalization), real-cut ladder",
@@ -2308,15 +2308,15 @@
     {
       "roman": "VI",
       "title": "Modernism & Bauhaus",
-      "eyebrow": "Architecture \u00b7 Vol VI \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol VI · Sourced from Material & Light",
       "h1": "Four palettes from <em>the modern movement,</em> white walls and primary accents.",
       "preface": [
-        "Modernism stripped ornament to white render, glass, and steel \u2014 with the Bauhaus and De Stijl adding disciplined primary accents. The palette is clean, light, and precise, with colour used as deliberate punctuation.",
+        "Modernism stripped ornament to white render, glass, and steel — with the Bauhaus and De Stijl adding disciplined primary accents. The palette is clean, light, and precise, with colour used as deliberate punctuation.",
         "Each refuses the all-white sterility: modernism uses white as a ground for primary red, blue, and yellow, plus natural stone and wood."
       ],
       "palettes": [
         {
-          "kicker": "Villa Savoye \u00b7 1931 \u00b7 Le Corbusier \u00b7 Poissy",
+          "kicker": "Villa Savoye · 1931 · Le Corbusier · Poissy",
           "title": "A white box on pilotis floating over green lawn, with soft interior pastels",
           "source": "Color from the villa: render <em>white</em>, lawn green, pilotis-shadow grey, interior pale-blue and rose, and a ramp black.",
           "swatches": [
@@ -2381,10 +2381,10 @@
               "c": "#C7A19D"
             }
           },
-          "refuses": "Pure clinical white. Savoye sets white against green lawn and soft interior pastels \u2014 not a single sterile field.",
+          "refuses": "Pure clinical white. Savoye sets white against green lawn and soft interior pastels — not a single sterile field.",
           "type": {
             "base": "product",
-            "note": "Architype Bayer is a one-style revival of Bayer's 1925 universal alphabet (The Foundry), so a 720 core and a 3-stop ladder all resolved to the same face \u2014 core 400, ladder opted out; its geometric single-case letterform, not a weight, is the shout.",
+            "note": "Architype Bayer is a one-style revival of Bayer's 1925 universal alphabet (The Foundry), so a 720 core and a 3-stop ladder all resolved to the same face — core 400, ladder opted out; its geometric single-case letterform, not a weight, is the shout.",
             "registers": {
               "anthemic": {
                 "font": "Architype Bayer",
@@ -2426,7 +2426,7 @@
           }
         },
         {
-          "kicker": "Barcelona Pavilion \u00b7 1929 \u00b7 Mies van der Rohe",
+          "kicker": "Barcelona Pavilion · 1929 · Mies van der Rohe",
           "title": "A flowing plane of travertine, green marble, and onyx under a flat roof",
           "source": "Color from the pavilion: travertine <em>cream</em>, green Tinian marble, golden onyx, chrome-column silver, and a deep pool grey.",
           "swatches": [
@@ -2491,10 +2491,10 @@
               "c": "#464C51"
             }
           },
-          "refuses": "Flat grey minimalism. Mies's pavilion is rich stone \u2014 green marble and golden onyx \u2014 luxury in restraint, not bare grey.",
+          "refuses": "Flat grey minimalism. Mies's pavilion is rich stone — green marble and golden onyx — luxury in restraint, not bare grey.",
           "type": {
             "base": "luxury",
-            "note": "Architype Bayer ships a single style (The Foundry), so the 760 core and its ladder were fiction \u2014 core 400, ladder opted out; restraint in the type matches stone doing the luxury.",
+            "note": "Architype Bayer ships a single style (The Foundry), so the 760 core and its ladder were fiction — core 400, ladder opted out; restraint in the type matches stone doing the luxury.",
             "registers": {
               "anthemic": {
                 "font": "Architype Bayer",
@@ -2536,7 +2536,7 @@
           }
         },
         {
-          "kicker": "Bauhaus Dessau \u00b7 1926 \u00b7 Walter Gropius",
+          "kicker": "Bauhaus Dessau · 1926 · Walter Gropius",
           "title": "A glass-curtain-wall workshop block with white render and primary signage",
           "source": "Color from the school: white <em>render</em>, glass-curtain grey-green, primary red door, steel-grey frame, and a black-lettered sign.",
           "swatches": [
@@ -2631,7 +2631,7 @@
               },
               "actionable": {
                 "font": "Helvetica Now Text",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
@@ -2645,7 +2645,7 @@
           }
         },
         {
-          "kicker": "Farnsworth House \u00b7 1951 \u00b7 Mies van der Rohe \u00b7 Illinois",
+          "kicker": "Farnsworth House · 1951 · Mies van der Rohe · Illinois",
           "title": "A white-steel-and-glass pavilion floating above a floodplain meadow by the river",
           "source": "Color from the glass house: white-<em>steel</em> frame, glass reflection grey, meadow green, travertine deck cream, and a river-maple amber.",
           "swatches": [
@@ -2711,10 +2711,10 @@
               "c": "#B4783A"
             }
           },
-          "refuses": "Cold grey box. Farnsworth's white steel frames a green meadow seen through glass \u2014 nature is part of the palette.",
+          "refuses": "Cold grey box. Farnsworth's white steel frames a green meadow seen through glass — nature is part of the palette.",
           "type": {
             "base": "editorial",
-            "note": "Architype Bayer ships a single style (The Foundry) \u2014 core 400 with the ladder opted out, so no two configured weights render the same face.",
+            "note": "Architype Bayer ships a single style (The Foundry) — core 400 with the ladder opted out, so no two configured weights render the same face.",
             "registers": {
               "anthemic": {
                 "font": "Architype Bayer",
@@ -2760,15 +2760,15 @@
     {
       "roman": "VII",
       "title": "Islamic Architecture",
-      "eyebrow": "Architecture \u00b7 Vol VII \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol VII · Sourced from Material & Light",
       "h1": "Four palettes from <em>the Islamic world,</em> tile, light, and geometry.",
       "preface": [
-        "Islamic architecture turns surface into colour \u2014 glazed tile in turquoise and cobalt, carved stucco, honey stone, and the play of filtered light through screens. The palettes are luminous, geometric, and tile-rich.",
+        "Islamic architecture turns surface into colour — glazed tile in turquoise and cobalt, carved stucco, honey stone, and the play of filtered light through screens. The palettes are luminous, geometric, and tile-rich.",
         "Each refuses a flat 'desert sand' assumption: the great monuments are jewelled with turquoise, cobalt, and gold."
       ],
       "palettes": [
         {
-          "kicker": "The Alhambra \u00b7 14th c \u00b7 Granada \u00b7 the Court of the Lions",
+          "kicker": "The Alhambra · 14th c · Granada · the Court of the Lions",
           "title": "Carved-stucco honey walls, slender columns, and azulejo dados around a fountain",
           "source": "Color from the Nasrid palace: honey <em>stucco</em>, azulejo blue-green tile, terracotta, ceiling cedar, and a gilt muqarnas.",
           "swatches": [
@@ -2833,10 +2833,10 @@
               "c": "#BF9D5D"
             }
           },
-          "refuses": "Flat sandstone beige. The Alhambra glows honey-stucco set with blue-green tile and gold \u2014 colour and light, not bare stone.",
+          "refuses": "Flat sandstone beige. The Alhambra glows honey-stucco set with blue-green tile and gold — colour and light, not bare stone.",
           "type": {
             "base": "luxury",
-            "note": "Aref Ruqaa exists only at 400/700 (Google Fonts) so the 760 core was out of range, and Ruq'ah is a quick handwriting style \u2014 the Nasrid walls' own epigraphy is Kufic, so the anthemic voice becomes Reem Kufi (Khaled Hosny / aliftype, variable 400\u2013700, drawn from early Kufic models) at 620, whose derived ladder lands on real 700/500/400. Amiri 400/700 - explicit real-cut ladder replaces the derived fiction",
+            "note": "Aref Ruqaa exists only at 400/700 (Google Fonts) so the 760 core was out of range, and Ruq'ah is a quick handwriting style — the Nasrid walls' own epigraphy is Kufic, so the anthemic voice becomes Reem Kufi (Khaled Hosny / aliftype, variable 400–700, drawn from early Kufic models) at 620, whose derived ladder lands on real 700/500/400. Amiri 400/700 - explicit real-cut ladder replaces the derived fiction Amiri body ladder authored: it ships Regular/Bold only (no real Medium/Semi-bold), so the derived body-class stops were fiction colliding with the core face.",
             "registers": {
               "anthemic": {
                 "font": "Reem Kufi",
@@ -2865,11 +2865,17 @@
                   "Sub-title": {
                     "font": "Cairo"
                   }
-                }
+                },
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "actionable": {
                 "font": "IBM Plex Sans Arabic",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -2883,7 +2889,7 @@
           }
         },
         {
-          "kicker": "Shah Mosque \u00b7 1629 \u00b7 Isfahan, Iran \u00b7 the dome and iwan",
+          "kicker": "Shah Mosque · 1629 · Isfahan, Iran · the dome and iwan",
           "title": "A vast turquoise dome and cobalt-tiled iwan covered in floral arabesque",
           "source": "Color from Isfahan: dome <em>turquoise</em>, cobalt-tile blue, tile-yellow, white arabesque, and a brick-buff base.",
           "swatches": [
@@ -2948,10 +2954,10 @@
               "c": "#D9D4CB"
             }
           },
-          "refuses": "Monochrome stone. Isfahan is total turquoise-and-cobalt tile with gold floral \u2014 a jewelled surface, not bare masonry.",
+          "refuses": "Monochrome stone. Isfahan is total turquoise-and-cobalt tile with gold floral — a jewelled surface, not bare masonry.",
           "type": {
             "base": "statement",
-            "note": "Same correction: the dome's tile bands are Kufic and Thuluth epigraphy, not Ruq'ah handwriting, and Aref Ruqaa's 780 was outside its 400/700 inventory \u2014 anthemic becomes Reem Kufi (variable 400\u2013700) at 640, the loudest core whose derived ladder stays real. Amiri is 400/700 only - contextual core 660 snapped to the real cut, other cut as the ladder",
+            "note": "Same correction: the dome's tile bands are Kufic and Thuluth epigraphy, not Ruq'ah handwriting, and Aref Ruqaa's 780 was outside its 400/700 inventory — anthemic becomes Reem Kufi (variable 400–700) at 640, the loudest core whose derived ladder stays real. Amiri is 400/700 only - contextual core 660 snapped to the real cut, other cut as the ladder Amiri body ladder authored: it ships Regular/Bold only (no real Medium/Semi-bold), so the derived body-class stops were fiction colliding with the core face.",
             "registers": {
               "anthemic": {
                 "font": "Reem Kufi",
@@ -2980,7 +2986,13 @@
                   "Sub-title": {
                     "font": "Cairo"
                   }
-                }
+                },
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "actionable": {
                 "font": "IBM Plex Sans Arabic",
@@ -2998,7 +3010,7 @@
           }
         },
         {
-          "kicker": "The Taj Mahal \u00b7 1648 \u00b7 Agra \u00b7 at dawn",
+          "kicker": "The Taj Mahal · 1648 · Agra · at dawn",
           "title": "A white-marble mausoleum shifting from rose to gold to white over its reflecting pool",
           "source": "Color from the Taj at dawn: white <em>marble</em> blushing rose, pietra-dura inlay colour, red-sandstone gateway, pool blue, and garden green.",
           "swatches": [
@@ -3063,10 +3075,10 @@
               "c": "#953F37"
             }
           },
-          "refuses": "Flat brilliant white. The Taj blushes rose and gold with the sun and is set with red sandstone \u2014 colour, not pure white.",
+          "refuses": "Flat brilliant white. The Taj blushes rose and gold with the sun and is set with red sandstone — colour, not pure white.",
           "type": {
             "base": "editorial",
-            "note": "Same correction: the Quranic inlay is Thuluth by Amanat Khan; Reem Kufi is kept for its real 400-700 axis and monumental register, with Amiri carrying the Naskh/Thuluth tradition in contextual, so anthemic becomes Reem Kufi (variable 400\u2013700) at 580 \u2014 the quietest shout in the volume, matching a mausoleum that blushes rather than blares, and in-range unlike Aref Ruqaa's 720. Amiri is 400/700 only - contextual core 480 snapped to the real cut, other cut as the ladder",
+            "note": "Same correction: the Quranic inlay is Thuluth by Amanat Khan; Reem Kufi is kept for its real 400-700 axis and monumental register, with Amiri carrying the Naskh/Thuluth tradition in contextual, so anthemic becomes Reem Kufi (variable 400–700) at 580 — the quietest shout in the volume, matching a mausoleum that blushes rather than blares, and in-range unlike Aref Ruqaa's 720. Amiri is 400/700 only - contextual core 480 snapped to the real cut, other cut as the ladder Amiri body ladder authored: it ships Regular/Bold only (no real Medium/Semi-bold), so the derived body-class stops were fiction colliding with the core face.",
             "registers": {
               "anthemic": {
                 "font": "Reem Kufi",
@@ -3095,7 +3107,13 @@
                   "Sub-title": {
                     "font": "Cairo"
                   }
-                }
+                },
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "actionable": {
                 "font": "IBM Plex Sans Arabic",
@@ -3113,7 +3131,7 @@
           }
         },
         {
-          "kicker": "Mezquita of C\u00f3rdoba \u00b7 8th\u201310th c \u00b7 the hypostyle hall",
+          "kicker": "Mezquita of Córdoba · 8th–10th c · the hypostyle hall",
           "title": "A forest of columns under red-and-white double arches in candlelit shadow",
           "source": "Color from the Great Mosque: arch <em>red-and-white</em> voussoirs, jasper-column grey, mihrab gold-mosaic, shadow brown, and a tile green.",
           "swatches": [
@@ -3178,10 +3196,10 @@
               "c": "#BF9D5D"
             }
           },
-          "refuses": "Monochrome stone. The Mezquita's signature is the red-and-white striped arch over grey columns \u2014 rhythmic colour, not bare masonry.",
+          "refuses": "Monochrome stone. The Mezquita's signature is the red-and-white striped arch over grey columns — rhythmic colour, not bare masonry.",
           "type": {
             "base": "technical",
-            "note": "Same correction: Aref Ruqaa's 740 was outside its 400/700 inventory and the hall's rhythm is inscriptional Kufic \u2014 anthemic becomes Reem Kufi (variable 400\u2013700) at 600. Amiri is 400/700 only - contextual core 620 snapped to the real cut, other cut as the ladder",
+            "note": "Same correction: Aref Ruqaa's 740 was outside its 400/700 inventory and the hall's rhythm is inscriptional Kufic — anthemic becomes Reem Kufi (variable 400–700) at 600. Amiri is 400/700 only - contextual core 620 snapped to the real cut, other cut as the ladder Amiri body ladder authored: it ships Regular/Bold only (no real Medium/Semi-bold), so the derived body-class stops were fiction colliding with the core face.",
             "registers": {
               "anthemic": {
                 "font": "Reem Kufi",
@@ -3210,11 +3228,17 @@
                   "Sub-title": {
                     "font": "Cairo"
                   }
-                }
+                },
+                "weights": [
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
+                ]
               },
               "actionable": {
                 "font": "IBM Plex Sans Arabic",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -3232,7 +3256,7 @@
     {
       "roman": "VIII",
       "title": "Scandinavian & Nordic",
-      "eyebrow": "Architecture \u00b7 Vol VIII \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol VIII · Sourced from Material & Light",
       "h1": "Four palettes from <em>the north,</em> pale wood, falu red, and soft light.",
       "preface": [
         "Nordic architecture works with pale birch and pine, white plaster, the deep falu-red of farm timber, and turf, all under low northern light. The palette is warm-natural and quiet, tuned to long winters.",
@@ -3240,7 +3264,7 @@
       ],
       "palettes": [
         {
-          "kicker": "S\u00e4yn\u00e4tsalo Town Hall \u00b7 1952 \u00b7 Alvar Aalto \u00b7 Finland",
+          "kicker": "Säynätsalo Town Hall · 1952 · Alvar Aalto · Finland",
           "title": "A red-brick civic block around a raised grass courtyard with teak and copper",
           "source": "Color from Aalto: warm <em>red brick</em>, raised-courtyard grass green, teak interior, copper-green roof, and pine-batten ceiling.",
           "swatches": [
@@ -3304,7 +3328,7 @@
               "c": "#558774"
             }
           },
-          "refuses": "Cold white minimalism. Aalto's town hall is warm brick, teak, and pine \u2014 humane natural material, not bare white.",
+          "refuses": "Cold white minimalism. Aalto's town hall is warm brick, teak, and pine — humane natural material, not bare white.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -3347,7 +3371,7 @@
           }
         },
         {
-          "kicker": "Borgund Stave Church \u00b7 c.1180 \u00b7 Norway",
+          "kicker": "Borgund Stave Church · c.1180 · Norway",
           "title": "A black tar-pine stave church with dragon-head gables against a green fjord valley",
           "source": "Color from the stave church: tar-black <em>pine</em>, shingle grey-brown, fjord-valley green, mountain-grey, and a dragon-head silhouette.",
           "swatches": [
@@ -3411,7 +3435,7 @@
               "c": "#45342A"
             }
           },
-          "refuses": "Warm honey-wood cabin. The stave church is tar-black against green \u2014 dark, ancient timber, not a bright log cabin.",
+          "refuses": "Warm honey-wood cabin. The stave church is tar-black against green — dark, ancient timber, not a bright log cabin.",
           "type": {
             "base": "statement",
             "registers": {
@@ -3440,7 +3464,7 @@
               },
               "actionable": {
                 "font": "Hanken Grotesk",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
@@ -3454,7 +3478,7 @@
           }
         },
         {
-          "kicker": "Falu-red farmstead \u00b7 Swedish vernacular \u00b7 Dalarna",
+          "kicker": "Falu-red farmstead · Swedish vernacular · Dalarna",
           "title": "A red-painted timber farm with white trim and a turf-and-birch landscape",
           "source": "Color from the farm: falu-<em>red</em> timber, white window-trim, birch-trunk pale, meadow green, and a grey shingle roof.",
           "swatches": [
@@ -3520,7 +3544,7 @@
               "c": "#6A665F"
             }
           },
-          "refuses": "Muted grey-wood. The Swedish farm is deep falu-red with crisp white trim \u2014 a confident colour pairing, not bare timber.",
+          "refuses": "Muted grey-wood. The Swedish farm is deep falu-red with crisp white trim — a confident colour pairing, not bare timber.",
           "type": {
             "base": "product",
             "registers": {
@@ -3563,7 +3587,7 @@
           }
         },
         {
-          "kicker": "Icelandic turf house \u00b7 vernacular \u00b7 Sk\u00f3gar / Glaumb\u00e6r",
+          "kicker": "Icelandic turf house · vernacular · Skógar / Glaumbær",
           "title": "Grass-roofed turf farmhouses set into the green, with white-and-black timber gables",
           "source": "Color from the turf house: roof-<em>turf green</em>, dark-timber gable, white window-trim, basalt-stone grey, and a heath-purple.",
           "swatches": [
@@ -3628,7 +3652,7 @@
               "c": "#7B5A78"
             }
           },
-          "refuses": "Brown mud-hut clich\u00e9. The turf house is vivid grass-green with crisp white-trimmed dark gables \u2014 alive, not a dirt hovel.",
+          "refuses": "Brown mud-hut cliché. The turf house is vivid grass-green with crisp white-trimmed dark gables — alive, not a dirt hovel.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -3675,7 +3699,7 @@
     {
       "roman": "IX",
       "title": "American Vernacular",
-      "eyebrow": "Architecture \u00b7 Vol IX \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol IX · Sourced from Material & Light",
       "h1": "Four palettes from <em>the American grain,</em> adobe, clapboard, and brick.",
       "preface": [
         "American vernacular building is regional and material-led: Southwestern adobe, New England clapboard, prairie brick-and-oak, and the painted ladies of the West Coast. The palette shifts with local earth and weather.",
@@ -3683,7 +3707,7 @@
       ],
       "palettes": [
         {
-          "kicker": "Taos Pueblo \u00b7 adobe vernacular \u00b7 New Mexico",
+          "kicker": "Taos Pueblo · adobe vernacular · New Mexico",
           "title": "Stacked adobe dwellings the colour of the earth, with turquoise doors and viga beams",
           "source": "Color from the pueblo: adobe <em>earth tan</em>, turquoise door, viga-beam brown, sky blue, and a chile-ristra red.",
           "swatches": [
@@ -3723,7 +3747,7 @@
               "hex": "#A54433"
             },
             {
-              "name": "Pi\u00f1on, dusty green",
+              "name": "Piñon, dusty green",
               "oklch": "0.482 0.052 132",
               "note": "The scrub around the pueblo.",
               "hier": "a",
@@ -3743,16 +3767,16 @@
             },
             "a": {
               "pct": 10,
-              "text": "Chile red and pi\u00f1on green as small reads.",
+              "text": "Chile red and piñon green as small reads.",
               "c": "#A54433"
             }
           },
-          "refuses": "Flat beige stucco. Taos adobe is warm earth set with turquoise doors and red chile \u2014 the colour of place, not a builder beige.",
+          "refuses": "Flat beige stucco. Taos adobe is warm earth set with turquoise doors and red chile — the colour of place, not a builder beige.",
           "type": {
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "102%",
                 "tracking": "0%",
@@ -3786,7 +3810,7 @@
               },
               "actionable": {
                 "font": "Public Sans",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
@@ -3802,7 +3826,7 @@
           }
         },
         {
-          "kicker": "New England saltbox \u00b7 colonial vernacular \u00b7 coastal Massachusetts",
+          "kicker": "New England saltbox · colonial vernacular · coastal Massachusetts",
           "title": "A weathered clapboard farmhouse in barn red or grey shingle by a stone wall",
           "source": "Color from the saltbox: weathered-grey <em>shingle</em>, barn-red clapboard, white trim, autumn-maple, and a granite wall grey.",
           "swatches": [
@@ -3867,12 +3891,12 @@
               "c": "#B64D35"
             }
           },
-          "refuses": "Bright modern paint. The saltbox is weathered grey and oxide red with white trim \u2014 aged colonial colour, not fresh suburbia.",
+          "refuses": "Bright modern paint. The saltbox is weathered grey and oxide red with white trim — aged colonial colour, not fresh suburbia.",
           "type": {
             "base": "product",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "104%",
                 "tracking": "0%",
@@ -3922,7 +3946,7 @@
           }
         },
         {
-          "kicker": "Painted Ladies \u00b7 Victorian vernacular \u00b7 San Francisco",
+          "kicker": "Painted Ladies · Victorian vernacular · San Francisco",
           "title": "A row of Queen-Anne townhouses in multi-colour heritage paint against blue sky",
           "source": "Color from the row: facade <em>sage green</em>, trim cream, accent plum, sky blue, and a gilt detail.",
           "swatches": [
@@ -3987,12 +4011,12 @@
               "c": "#BD9D5C"
             }
           },
-          "refuses": "Single drab colour. The Painted Ladies use three-to-five coordinated heritage colours per house \u2014 polychrome by design.",
+          "refuses": "Single drab colour. The Painted Ladies use three-to-five coordinated heritage colours per house — polychrome by design.",
           "type": {
             "base": "luxury",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "104%",
                 "tracking": "0%",
@@ -4042,7 +4066,7 @@
           }
         },
         {
-          "kicker": "Charleston single house \u00b7 antebellum vernacular \u00b7 South Carolina",
+          "kicker": "Charleston single house · antebellum vernacular · South Carolina",
           "title": "A pastel stucco house turned side-on with deep tiered piazzas in the Lowcountry heat",
           "source": "Color from the single house: Charleston <em>stucco pastel</em> (haint-blue ceiling), piazza-shade green, shutter dark green, brick pink, and white trim.",
           "swatches": [
@@ -4108,12 +4132,12 @@
               "c": "#DDDBD7"
             }
           },
-          "refuses": "Plain white colonial. The Charleston single house is soft pastel stucco with a haint-blue porch ceiling \u2014 coastal colour, not stark white.",
+          "refuses": "Plain white colonial. The Charleston single house is soft pastel stucco with a haint-blue porch ceiling — coastal colour, not stark white.",
           "type": {
             "base": "editorial",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Linotype Clarendon",
                 "weight": 700,
                 "leading": "106%",
                 "tracking": "0.5%",
@@ -4167,7 +4191,7 @@
     {
       "roman": "X",
       "title": "Constructivist & Soviet",
-      "eyebrow": "Architecture \u00b7 Vol X \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol X · Sourced from Material & Light",
       "h1": "Four palettes from <em>the revolutionary state,</em> concrete, red, and marble.",
       "preface": [
         "Soviet and Constructivist architecture runs from the bold red-and-grey of the avant-garde to the marble-and-bronze opulence of the Moscow Metro and the raw concrete of late monuments. The palette is industrial, with propaganda red and gilt.",
@@ -4175,7 +4199,7 @@
       ],
       "palettes": [
         {
-          "kicker": "Narkomfin Building \u00b7 1930 \u00b7 Ginzburg \u00b7 Moscow",
+          "kicker": "Narkomfin Building · 1930 · Ginzburg · Moscow",
           "title": "A constructivist housing block of grey render, ribbon windows, and primary accents",
           "source": "Color from the constructivist block: grey <em>render</em>, ribbon-window grey-green, pilotis shadow, primary-red door, and a pale interior.",
           "swatches": [
@@ -4239,10 +4263,10 @@
               "c": "#AC4234"
             }
           },
-          "refuses": "Drab uniform grey. Constructivism sets grey render against sharp primary-red accents \u2014 bold, not monotonous.",
+          "refuses": "Drab uniform grey. Constructivism sets grey render against sharp primary-red accents — bold, not monotonous.",
           "type": {
             "base": "statement",
-            "note": "Druk Condensed exists ONLY in Super (Commercial Type), so an 860 core plus a derived ladder was fiction \u2014 core 900 naming the one real cut, ladder opted out; and Sub-title leaves Eurostile (1962, Italian) for ParaType's Rodchenko, a caps-and-small-caps face drawn from the constructivists' own lettering. styleName is the style WITHIN the family (engine contract): Super under Druk Condensed. PT Mono ships 400 only - data core on the real Regular, ladder opted out",
+            "note": "Druk Condensed exists ONLY in Super (Commercial Type), so an 860 core plus a derived ladder was fiction — core 900 naming the one real cut, ladder opted out; and Sub-title leaves Eurostile (1962, Italian) for ParaType's Rodchenko, a caps-and-small-caps face drawn from the constructivists' own lettering. styleName is the style WITHIN the family (engine contract): Super under Druk Condensed. PT Mono ships 400 only - data core on the real Regular, ladder opted out",
             "registers": {
               "anthemic": {
                 "font": "Druk Condensed",
@@ -4286,7 +4310,7 @@
           }
         },
         {
-          "kicker": "Komsomolskaya Station \u00b7 1952 \u00b7 Moscow Metro",
+          "kicker": "Komsomolskaya Station · 1952 · Moscow Metro",
           "title": "A baroque-Soviet metro hall of yellow vaults, gilt, and mosaic against marble",
           "source": "Color from the metro palace: vault <em>ochre-yellow</em>, gilt-stucco gold, mosaic blue, red marble, and a white-marble column.",
           "swatches": [
@@ -4351,10 +4375,10 @@
               "c": "#713831"
             }
           },
-          "refuses": "Austere grey transit. The metro is a gilded palace \u2014 ochre vaults, gold, and mosaic \u2014 opulence underground, not grey utility.",
+          "refuses": "Austere grey transit. The metro is a gilded palace — ochre vaults, gold, and mosaic — opulence underground, not grey utility.",
           "type": {
             "base": "luxury",
-            "note": "Druk Condensed is Super-only, and a gilded baroque hall is not a condensed shout \u2014 anthemic moves to the regular-width Druk (Medium through Super) at Heavy 800 with its real Super/Bold/Medium ladder. PT Mono ships 400 only - data core on the real Regular, ladder opted out",
+            "note": "Druk Condensed is Super-only, and a gilded baroque hall is not a condensed shout — anthemic moves to the regular-width Druk (Medium through Super) at Heavy 800 with its real Super/Bold/Medium ladder. PT Mono ships 400 only - data core on the real Regular, ladder opted out",
             "registers": {
               "anthemic": {
                 "font": "Druk",
@@ -4395,7 +4419,7 @@
               },
               "actionable": {
                 "font": "PT Sans",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0%"
               },
@@ -4410,7 +4434,7 @@
           }
         },
         {
-          "kicker": "Buzludzha Monument \u00b7 1981 \u00b7 Bulgaria \u00b7 the saucer hall",
+          "kicker": "Buzludzha Monument · 1981 · Bulgaria · the saucer hall",
           "title": "A derelict concrete flying-saucer monument with red-mosaic ribbons inside",
           "source": "Color from the ruin: weathered <em>concrete grey</em>, red-mosaic ribbon, gold-tessera detail, rust-stain, and a cold sky-blue through broken roof.",
           "swatches": [
@@ -4475,10 +4499,10 @@
               "c": "#A38959"
             }
           },
-          "refuses": "Heroic clean colour. The monument is now a rusting grey ruin with surviving red-and-gold mosaic \u2014 decay, not glory.",
+          "refuses": "Heroic clean colour. The monument is now a rusting grey ruin with surviving red-and-gold mosaic — decay, not glory.",
           "type": {
             "base": "technical",
-            "note": "Druk Condensed exists only in Super (Commercial Type), so the 820 core and its ladder were fiction \u2014 core 900 naming the real cut, ladder opted out. styleName is the style WITHIN the family (engine contract): Super under Druk Condensed. PT Mono ships 400 only - data core on the real Regular, ladder opted out",
+            "note": "Druk Condensed exists only in Super (Commercial Type), so the 820 core and its ladder were fiction — core 900 naming the real cut, ladder opted out. styleName is the style WITHIN the family (engine contract): Super under Druk Condensed. PT Mono ships 400 only - data core on the real Regular, ladder opted out",
             "registers": {
               "anthemic": {
                 "font": "Druk Condensed",
@@ -4522,7 +4546,7 @@
           }
         },
         {
-          "kicker": "VDNKh \u00b7 1939\u201354 \u00b7 exhibition pavilions \u00b7 Moscow",
+          "kicker": "VDNKh · 1939–54 · exhibition pavilions · Moscow",
           "title": "Gilded fountains and white-and-gold socialist-classical pavilions of plenty",
           "source": "Color from the exhibition: pavilion <em>cream-white</em>, gilt fountain gold, mosaic red-star, fountain-pool blue, and a flag red.",
           "swatches": [
@@ -4587,10 +4611,10 @@
               "c": "#C7A766"
             }
           },
-          "refuses": "Grim grey communism. VDNKh is white-and-gold plenty \u2014 gilded fountains and ruby stars, a propaganda of abundance, not austerity.",
+          "refuses": "Grim grey communism. VDNKh is white-and-gold plenty — gilded fountains and ruby stars, a propaganda of abundance, not austerity.",
           "type": {
             "base": "statement",
-            "note": "Druk Condensed exists only in Super, so the 820 core was fiction \u2014 core 900 naming the real cut, ladder opted out; the banner-caps register the pavilions actually shouted in. styleName is the style WITHIN the family (engine contract): Super under Druk Condensed. PT Mono ships 400 only - data core on the real Regular, ladder opted out",
+            "note": "Druk Condensed exists only in Super, so the 820 core was fiction — core 900 naming the real cut, ladder opted out; the banner-caps register the pavilions actually shouted in. styleName is the style WITHIN the family (engine contract): Super under Druk Condensed. PT Mono ships 400 only - data core on the real Regular, ladder opted out",
             "registers": {
               "anthemic": {
                 "font": "Druk Condensed",
@@ -4638,15 +4662,15 @@
     {
       "roman": "XI",
       "title": "Postmodern & Expressionist",
-      "eyebrow": "Architecture \u00b7 Vol XI \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol XI · Sourced from Material & Light",
       "h1": "Four palettes from <em>the playful turn,</em> colour, curve, and quotation.",
       "preface": [
-        "Postmodern and expressionist architecture brought colour and gesture back \u2014 pastel classical quotation, titanium curves, and sculptural white. The palettes are bold, witty, and material-distinctive.",
+        "Postmodern and expressionist architecture brought colour and gesture back — pastel classical quotation, titanium curves, and sculptural white. The palettes are bold, witty, and material-distinctive.",
         "Each refuses the sober modernist neutral: these buildings use colour and sheen as statement."
       ],
       "palettes": [
         {
-          "kicker": "The Portland Building \u00b7 1982 \u00b7 Michael Graves",
+          "kicker": "The Portland Building · 1982 · Michael Graves",
           "title": "A postmodern block in cream, terracotta, and teal with oversized classical motifs",
           "source": "Color from the building: cream <em>tile</em>, terracotta pier, teal-green band, maroon accent, and a keystone blue.",
           "swatches": [
@@ -4711,10 +4735,10 @@
               "c": "#4875A6"
             }
           },
-          "refuses": "Modernist monochrome. Graves brings classical colour back \u2014 cream, terracotta, and teal in witty quotation, not grey glass.",
+          "refuses": "Modernist monochrome. Graves brings classical colour back — cream, terracotta, and teal in witty quotation, not grey glass.",
           "type": {
             "base": "statement",
-            "note": "ITC Benguiat exists in Book, Medium and Bold only, so an 820 core was fiction and its derived ladder duplicated Bold \u2014 core 700 with the real Medium/Book ladder. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
+            "note": "ITC Benguiat exists in Book, Medium and Bold only, so an 820 core was fiction and its derived ladder duplicated Bold — core 700 with the real Medium/Book ladder. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
             "registers": {
               "anthemic": {
                 "font": "ITC Benguiat",
@@ -4751,7 +4775,7 @@
               },
               "actionable": {
                 "font": "ITC Officina Sans",
-                "weight": 460,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
@@ -4766,9 +4790,9 @@
           }
         },
         {
-          "kicker": "Guggenheim Bilbao \u00b7 1997 \u00b7 Frank Gehry",
+          "kicker": "Guggenheim Bilbao · 1997 · Frank Gehry",
           "title": "Titanium curves catching the light in silver, gold, and river-grey",
-          "source": "Color from the museum: titanium <em>silver</em>, gold-cast highlight, limestone cream, Nervi\u00f3n-river grey-green, and a sky blue.",
+          "source": "Color from the museum: titanium <em>silver</em>, gold-cast highlight, limestone cream, Nervión-river grey-green, and a sky blue.",
           "swatches": [
             {
               "name": "Titanium, shifting silver",
@@ -4793,7 +4817,7 @@
               "light": true
             },
             {
-              "name": "Nervi\u00f3n river, grey-green",
+              "name": "Nervión river, grey-green",
               "oklch": "0.512 0.026 178",
               "note": "The water it sits beside.",
               "hier": "s",
@@ -4834,7 +4858,7 @@
           "refuses": "Flat grey metal. The titanium shifts silver-to-gold with the light; a single grey misses the building's whole effect.",
           "type": {
             "base": "luxury",
-            "note": "ITC Benguiat's heaviest cut is Bold, so 760 was fiction \u2014 core 700 with the real Medium/Book ladder, the shifting titanium carried by contrast rather than by a weight that does not exist. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
+            "note": "ITC Benguiat's heaviest cut is Bold, so 760 was fiction — core 700 with the real Medium/Book ladder, the shifting titanium carried by contrast rather than by a weight that does not exist. Space Mono ships 400/700 - data core on the real Regular, ladder opted out",
             "registers": {
               "anthemic": {
                 "font": "ITC Benguiat",
@@ -4886,7 +4910,7 @@
           }
         },
         {
-          "kicker": "Sydney Opera House \u00b7 1973 \u00b7 J\u00f8rn Utzon",
+          "kicker": "Sydney Opera House · 1973 · Jørn Utzon",
           "title": "White sail-shells of glossy tile rising over the blue harbour",
           "source": "Color from the shells: tile <em>white-cream</em>, glossy-tile highlight, harbour blue, granite-podium pink, and a sky blue.",
           "swatches": [
@@ -5007,7 +5031,7 @@
           }
         },
         {
-          "kicker": "Piazza d'Italia \u00b7 1978 \u00b7 Charles Moore \u00b7 New Orleans",
+          "kicker": "Piazza d'Italia · 1978 · Charles Moore · New Orleans",
           "title": "A postmodern public plaza of neon-lit classical columns in terracotta, ochre, and teal",
           "source": "Color from the piazza: terracotta <em>stucco</em>, ochre column, neon-cyan accent, fountain-blue water, and a stainless-steel capital.",
           "swatches": [
@@ -5071,7 +5095,7 @@
               "c": "#2FC0D2"
             }
           },
-          "refuses": "Sober stone classicism. Moore's piazza is pastel-and-neon parody \u2014 terracotta, ochre, and cyan, a joke on the temple, not a real one.",
+          "refuses": "Sober stone classicism. Moore's piazza is pastel-and-neon parody — terracotta, ochre, and cyan, a joke on the temple, not a real one.",
           "type": {
             "base": "product",
             "registers": {
@@ -5130,15 +5154,15 @@
     {
       "roman": "XII",
       "title": "Industrial & Warehouse",
-      "eyebrow": "Architecture \u00b7 Vol XII \u00b7 Sourced from Material & Light",
+      "eyebrow": "Architecture · Vol XII · Sourced from Material & Light",
       "h1": "Four palettes from <em>the working buildings,</em> brick, iron, and glass.",
       "preface": [
-        "Industrial architecture is brick, cast iron, steel, and big glass \u2014 the colour of mills, power stations, and warehouses, weathered by work and soot. The palette is robust, warm-brick or grey-steel, with rust and patina.",
+        "Industrial architecture is brick, cast iron, steel, and big glass — the colour of mills, power stations, and warehouses, weathered by work and soot. The palette is robust, warm-brick or grey-steel, with rust and patina.",
         "Each refuses a sanitised loft-conversion gloss: real industrial colour is sooty brick, oxidised iron, and grimy glass."
       ],
       "palettes": [
         {
-          "kicker": "Lancashire cotton mill \u00b7 19th c \u00b7 northern England",
+          "kicker": "Lancashire cotton mill · 19th c · northern England",
           "title": "A red-brick spinning mill with iron-framed windows under a soot-grey sky",
           "source": "Color from the mill: soot-stained <em>red brick</em>, cast-iron black, grimy-glass grey, sandstone-sill buff, and a rust-red door.",
           "swatches": [
@@ -5202,7 +5226,7 @@
               "c": "#784835"
             }
           },
-          "refuses": "Clean loft brick. The mill brick is soot-darkened and grimy, framed in black iron \u2014 a working surface, not a sandblasted feature wall.",
+          "refuses": "Clean loft brick. The mill brick is soot-darkened and grimy, framed in black iron — a working surface, not a sandblasted feature wall.",
           "type": {
             "base": "technical",
             "registers": {
@@ -5245,7 +5269,7 @@
           }
         },
         {
-          "kicker": "Bankside / Tate Modern \u00b7 1947, conv. 2000 \u00b7 London",
+          "kicker": "Bankside / Tate Modern · 1947, conv. 2000 · London",
           "title": "A vast brick power station with a steel chimney, turbine-hall grey light",
           "source": "Color from the power station: brown-<em>brick</em> mass, steel-window grey, turbine-hall concrete, chimney grey, and a slate-Thames blue.",
           "swatches": [
@@ -5310,10 +5334,10 @@
               "c": "#50616B"
             }
           },
-          "refuses": "Bright gallery white. Bankside keeps its industrial brown brick and grey steel \u2014 monumental and sober, not whitewashed.",
+          "refuses": "Bright gallery white. Bankside keeps its industrial brown brick and grey steel — monumental and sober, not whitewashed.",
           "type": {
             "base": "statement",
-            "note": "Rockwell's heaviest cut is Extra Bold (Light/Regular/Bold/Extra Bold, Monotype), so 880 was fiction \u2014 Bold 700 for the brick's sober monumentality, with the real Extra Bold/Regular/Light ladder above and below it.",
+            "note": "Rockwell's heaviest cut is Extra Bold (Light/Regular/Bold/Extra Bold, Monotype), so 880 was fiction — Bold 700 for the brick's sober monumentality, with the real Extra Bold/Regular/Light ladder above and below it.",
             "registers": {
               "anthemic": {
                 "font": "Rockwell",
@@ -5354,7 +5378,7 @@
               },
               "actionable": {
                 "font": "Archivo",
-                "weight": 470,
+                "weight": 450,
                 "leading": "150%",
                 "tracking": "0.4%"
               },
@@ -5368,7 +5392,7 @@
           }
         },
         {
-          "kicker": "SoHo cast-iron loft \u00b7 1880s \u00b7 New York",
+          "kicker": "SoHo cast-iron loft · 1880s · New York",
           "title": "A cast-iron commercial facade painted grey-green over big shop windows",
           "source": "Color from the cast-iron front: painted <em>grey-green</em> iron, large-window glass, cornice shadow, fire-escape black, and a brick party-wall red.",
           "swatches": [
@@ -5490,7 +5514,7 @@
           }
         },
         {
-          "kicker": "Zollverein Coal Mine \u00b7 1932 \u00b7 Schupp & Kremmer \u00b7 Essen, Germany",
+          "kicker": "Zollverein Coal Mine · 1932 · Schupp & Kremmer · Essen, Germany",
           "title": "A Bauhaus-industrial winding tower and coking plant in red steel and rust",
           "source": "Color from the ironworks: steel-<em>red oxide</em>, riveted-steel grey, brick-infill red, rust-brown, and a sky grey.",
           "swatches": [
@@ -5554,10 +5578,10 @@
               "c": "#3B3834"
             }
           },
-          "refuses": "Clean restored industrial. Zollverein is red-oxide steel, soot, and rust \u2014 a working ironworks palette, not a polished museum.",
+          "refuses": "Clean restored industrial. Zollverein is red-oxide steel, soot, and rust — a working ironworks palette, not a polished museum.",
           "type": {
             "base": "technical",
-            "note": "Rockwell has no weight above Extra Bold, so 930 was fiction \u2014 core 800, the heaviest real slab cut, matching the painted structural steel that is this palette's dominant colour, with its real Bold/Regular/Light ladder.",
+            "note": "Rockwell has no weight above Extra Bold, so 930 was fiction — core 800, the heaviest real slab cut, matching the painted structural steel that is this palette's dominant colour, with its real Bold/Regular/Light ladder.",
             "registers": {
               "anthemic": {
                 "font": "Rockwell",

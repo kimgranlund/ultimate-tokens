@@ -1942,7 +1942,7 @@
             "base": "statement",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Clarendon URW",
                 "weight": 800,
                 "leading": "104%",
                 "tracking": "4%",
@@ -2080,7 +2080,7 @@
             "base": "luxury",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Clarendon URW",
                 "weight": 700,
                 "leading": "106%",
                 "tracking": "2.5%",
@@ -2219,7 +2219,7 @@
             "base": "product",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Clarendon URW",
                 "weight": 700,
                 "leading": "105%",
                 "tracking": "1%",
@@ -2357,7 +2357,7 @@
             "base": "editorial",
             "registers": {
               "anthemic": {
-                "font": "Clarendon",
+                "font": "Clarendon URW",
                 "weight": 800,
                 "leading": "105%",
                 "tracking": "2%",

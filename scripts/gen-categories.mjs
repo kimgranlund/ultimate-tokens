@@ -237,13 +237,17 @@ function registersToTypeConfig(t) {
       else if (Array.isArray(s.weights)) v.weights = []; // explicit opt-out round-trips (#302)
     }
     if (Object.keys(v).length) voices[def.voice] = v;
-    // INTERACTIVE-VOICE LADDERS (TKT-0005, the BZZR shape): actionable's core weight also keys
-    // UI-control + UI-widget weight ladders — ladders ONLY, never character, so the interactive
-    // voices keep the engine's control-text character. Separate arrays per voice (a shared
-    // reference would let one voice's future mutation alias the other).
-    if (reg === "actionable" && Number.isFinite(v.weight)) {
-      const uiSibs = bodyClassSiblingDefaults(v.weight);
-      if (uiSibs.length) {
+    // INTERACTIVE-VOICE LADDERS (TKT-0005, the BZZR shape; explicit-array flow-through 2026-07-31
+    // per #418's brands lesson): actionable keys UI-control + UI-widget weight ladders — ladders
+    // ONLY, never character, so the interactive voices keep the engine's control-text character.
+    // An EXPLICIT `weights` array is the more authoritative signal (an author writes one exactly
+    // because the family's derived stops aren't real — Trade Gothic/Helvetica Neue/Flame Sans have
+    // no 500/600) and wins outright, core or not; otherwise fall back to deriving from a finite
+    // core. Separate arrays per voice (a shared reference would let one voice's future mutation
+    // alias the other).
+    if (reg === "actionable") {
+      const uiSibs = Array.isArray(s.weights) ? s.weights : (Number.isFinite(v.weight) ? bodyClassSiblingDefaults(v.weight) : null);
+      if (uiSibs && uiSibs.length) {
         voices["UI-control"] = { weights: uiSibs.map((w) => ({ ...w })) };
         voices["UI-widget"] = { weights: uiSibs.map((w) => ({ ...w })) };
       }
