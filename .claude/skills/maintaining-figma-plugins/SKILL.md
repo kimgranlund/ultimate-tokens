@@ -73,11 +73,12 @@ defaults); `figmaCollectionNames(doc)` (model.mjs) resolves, rides the bundle's 
 `targetVariableSetName` AND `msg.collections`; code.js `setCollectionNames()` adopts it with constant
 fallbacks, and `readRawColors` resolves a renamed file from the SAVED config at boot. The standalone
 Binder still looks up the DEFAULT names only. **STYLES (2026-07-09, PRs #231–#236):** when the drawer's Styles chip is on
-(opt-OUT), `msg.stylePlans` + `msg.fontPrimitives` ride the same apply — pure plans from
+(opt-OUT), `msg.stylePlans` + `msg.fontPrimitivesModes` ride the same apply — pure plans from
 `figma/binder/style-plan.mjs` (the THIRD planner sibling: paint styles per semantic role bound to Color
 Semantic via `setBoundVariableForPaint`; text styles per voice×step×sibling-weight bound to
-Typography/Font Primitives; `primitivesApplyPlan` = the ordered Font Primitives ensure-plan) →
-`code.js#applyStylePlans` + `applyFontPrimitives` execute them verbatim, provenance-pruned via
+Typography/Font Primitives; `primitivesModesApplyPlan` = the ordered Font Primitives ensure-plan, now a
+real Premium/Google-Fonts MODE axis — font-mode Phase B) →
+`code.js#applyStylePlans` + `applyFontPrimitivesModes` execute them verbatim, provenance-pruned via
 `STYLE_REGISTRY_KEY` (user styles untouchable). Binds fontSize/fontFamily/paragraphSpacing/
 lineHeight/letterSpacing (px FLOATs since #295) + EITHER fontStyle OR fontWeight — **never both**
 (2026-07-13, #292/#301, supersedes the v1 bind-all shape: real Figma resolves a bound fontWeight to

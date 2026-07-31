@@ -472,7 +472,7 @@ export function relativeWeightLabel(rank, total, words = RELATIVE_WEIGHT_LABELS)
 // prefers non-italic faces) — a bare "Bold" would miss "Condensed Bold Italic" entirely and silently
 // resolve to the wrong cut. THE ONE SOURCE OF TRUTH for this templating — both the Figma text-style
 // planner (figma/binder/style-plan.mjs, the literal.styleName that drives font loading) and this
-// module's own typeTokensFigmaPrimitives (the standalone weight-style/<voice>/<slug> STRING
+// module's own typeTokensFigmaPrimitivesModes (the standalone weight-style/<voice>/<slug> STRING
 // primitive) must call this, never re-derive it — the two independently going stale is exactly how
 // this bug shipped once already (primitives kept the bare name after the planner was fixed). Finds
 // the core's own weight-name word (e.g. "Black") inside the custom name and swaps it for the
@@ -491,7 +491,7 @@ export function siblingStyleName(coreStyleName, coreWeightName, siblingName) {
 // key sat OUTSIDE the "Display" folder its siblings created, splitting one voice's weights across two
 // UI locations. Falls back to the bare voice name only in the vanishingly rare case a sibling shares
 // the core's own weight-name slug (a real key collision, not a naming preference). THE ONE SOURCE OF
-// TRUTH for this key, shared by typeTokensFigmaPrimitives (which creates the primitive) and the Figma
+// TRUTH for this key, shared by typeTokensFigmaPrimitivesModes (which creates the primitive) and the Figma
 // text-style planner (figma/binder/style-plan.mjs, which binds the CORE style to it) — they must
 // never independently recompute this, the same drift class siblingStyleName above already fixed once.
 export function coreWeightKey(voice, coreWeightName, sibs) {
@@ -555,7 +555,7 @@ export function typeTokensCSS(scale, { unit = "px", prefix = "type", fontMode = 
   for (const [role, family] of Object.entries(scale.fonts)) lines.push(`  --font-${role}: '${fontMode === "google" ? googleSafeFontFor(family) : family}';`); // quote — names with digits (e.g. "Source Serif 4") are invalid unquoted in strict parsers (Safari)
   // per-voice FONT — one custom prop per VOICE (`--font-voice-sub-heading: '...'`), resolved via
   // resolvedFontFor so every one of the 13 voices is directly addressable by name, not just the ones
-  // carrying an explicit override (TKT-0006: matches typeTokensFigmaPrimitives's existing density —
+  // carrying an explicit override (TKT-0006: matches typeTokensFigmaPrimitivesModes's existing density —
   // an un-overridden voice's variable simply repeats its role's family, same value the utility classes
   // below already apply). Quoted like the role fonts above (same Safari trap).
   for (const voice of Object.keys(scale.categories)) lines.push(`  --font-voice-${kebab(voice)}: '${resolvedFontForMode(scale, voice, fontMode)}';`);
@@ -633,7 +633,7 @@ export function typeTokensBreakpointCSS(modes = [], { unit = "px", prefix = "typ
 export function typeTokensDTCG(scale, { unit = "px", fontMode = "premium" } = {}) {
   // fontFamily is keyed by VOICE (11), not role (5) — TKT-0006: a consumer scanning this group for
   // "every font family this kit actually applies" should see the real per-voice picture (matching
-  // the per-step typography tokens below, and typeTokensFigmaPrimitives's existing density), not
+  // the per-step typography tokens below, and typeTokensFigmaPrimitivesModes's existing density), not
   // just the 5 shared defaults. Un-overridden voices repeat their role's family — same value the
   // composite typography tokens below already carry.
   const fontFamily = {};
@@ -722,60 +722,53 @@ export function typeTokensFigmaModes(baseScale, modes = [], { baseName = "Base",
   };
 }
 
-// typeTokensFigmaPrimitives — the "Font Primitives" COMPANION collection to typeTokensFigmaModes: the
-// distinct font families deduped into `family/<role>` STRING primitives (plus an `override/<voice>`
-// primitive for a family that's ONLY reached via a per-voice override — never shared with a role or
-// another voice), a `font/<voice>` ALIAS per voice pointing at its resolved family primitive (edit the
-// primitive; every voice sharing it follows), and a `weight/<voice>` FLOAT primitive (the voice's uniform
-// weight — one edit point per voice). Alias entries carry `{ type:"ALIAS", target:"<variable key>" }`
-// INSTEAD of `values` — a consumer resolves them within the same collection. Single "Value" mode
-// (families/weights don't vary by breakpoint; breakpoints live in the Geometry collection's type/ group,
-// TKT-0009). This file is
-// an IMPORT artifact only — the in-Figma apply path (`_figmaFloatPlans`) never consumes it, so the plugin
-// executor stays float-only.
-export function typeTokensFigmaPrimitives(scale) {
+// typeTokensFigmaPrimitivesModes — the "Font Primitives" COMPANION collection to typeTokensFigmaModes,
+// a real Figma-native mode axis ("Premium" / "Google Fonts"), mirroring the Breakpoints/Light-Dark mode
+// mechanism (font-mode feature, Phase B). Every literal (STRING family/override, FLOAT weight, STRING
+// weight-style) carries BOTH mode values explicitly — including weight/weight-style, which never
+// actually vary by fontMode (resolvedFontForMode only ever touches family strings) but are still
+// written per mode: "same as every other mode" is a value, never an omission — a skipped write here is
+// indistinguishable from "forgot this mode" once the collection round-trips through Figma. `font/<voice>`
+// ALIAS entries carry only `{type:"ALIAS", target}` — no `values` — by design: the target lives in the
+// SAME collection, so Figma resolves the alias against whichever mode is active without ever needing a
+// second target (verified live against a real Figma file: an alias set to one unchanging target under
+// both mode ids correctly re-rendered a bound consumer on a mode switch). Fixed 2-name axis, "Premium"
+// first/default (matches the app's own fontMode default and Settings' own labels verbatim) — a Figma
+// export always carries both modes regardless of what the web app happened to be set to at export time.
+export function typeTokensFigmaPrimitivesModes(scale) {
+  const MODES = ["Premium", "Google Fonts"];
   const variables = {};
-  const famKey = {}; // family string → the primitive key that owns it (dedupe by VALUE — first writer wins)
+  const famKey = {}; // premium family string → the primitive key that owns it (dedupe by PREMIUM value — first writer wins, same rule as the single-mode emitter)
   for (const [role, fam] of Object.entries(scale.fonts || {})) {
     if (!fam || famKey[fam]) continue;
     famKey[fam] = `family/${role}`;
-    variables[famKey[fam]] = { type: "STRING", values: { Value: fam } };
+    variables[famKey[fam]] = { type: "STRING", values: { Premium: fam, "Google Fonts": googleSafeFontFor(fam) } };
   }
   for (const [voice, steps] of Object.entries(scale.categories || {})) {
     const fam = resolvedFontFor(scale, voice);
     if (fam) {
-      // a family already owned by a role (or an earlier voice override) aliases that SAME primitive; a
-      // genuinely distinct override family (matching no existing primitive's value) mints its own —
-      // dedupe by VALUE, not by source, so two voices overridden to the same custom family share one.
       if (!famKey[fam]) {
         const key = `override/${kebab(voice)}`;
         famKey[fam] = key;
-        variables[key] = { type: "STRING", values: { Value: fam } };
+        variables[key] = { type: "STRING", values: { Premium: fam, "Google Fonts": googleSafeFontFor(fam) } };
       }
       variables[`font/${kebab(voice)}`] = { type: "ALIAS", target: famKey[fam] };
     }
     const first = Object.values(steps)[0];
     const coreWeightName = first && Number.isFinite(first.weight) ? weightNameFor(first.weight) : null;
-    // the weight STYLE NAME (non-variable families) — a STRING primitive beside the numeric weight,
-    // present only when the kit names one (scale.styleNames via config.voices[v].styleName).
     const sn = scale.styleNames && scale.styleNames[voice];
     const sibs = scale.weights && scale.weights[voice];
     const coreKey = coreWeightKey(voice, coreWeightName, sibs);
-    if (coreWeightName) variables[`weight/${coreKey}`] = { type: "FLOAT", values: { Value: first.weight } };
-    if (sn) variables[`weight-style/${coreKey}`] = { type: "STRING", values: { Value: sn } };
-    // SIBLING WEIGHTS — one FLOAT + one STRING primitive per named variant (`weight/Display/bold`,
-    // `weight-style/Display/bold`), nested the same way as the core above. These are the binding
-    // targets for the sibling text styles (`Display/xl/Bold`). The STRING value goes through the
-    // SAME siblingStyleName templating the text-style planner uses — a bare "Bold" here (instead of
-    // "Condensed Bold Italic") is a REAL font-loading bug, not cosmetic: this primitive is what a
-    // non-variable face's sibling text style binds `fontStyle` to.
+    if (coreWeightName) variables[`weight/${coreKey}`] = { type: "FLOAT", values: { Premium: first.weight, "Google Fonts": first.weight } };
+    if (sn) variables[`weight-style/${coreKey}`] = { type: "STRING", values: { Premium: sn, "Google Fonts": sn } };
     if (sibs) for (const wv of sibs) {
-      variables[`weight/${kebab(voice)}/${wv.slug}`] = { type: "FLOAT", values: { Value: wv.weight } };
-      variables[`weight-style/${kebab(voice)}/${wv.slug}`] = { type: "STRING", values: { Value: siblingStyleName(sn, coreWeightName, wv.name) } };
+      variables[`weight/${kebab(voice)}/${wv.slug}`] = { type: "FLOAT", values: { Premium: wv.weight, "Google Fonts": wv.weight } };
+      const styleName = siblingStyleName(sn, coreWeightName, wv.name);
+      variables[`weight-style/${kebab(voice)}/${wv.slug}`] = { type: "STRING", values: { Premium: styleName, "Google Fonts": styleName } };
     }
   }
   return {
-    $schema: "figma-ui3-variables.primitives.schema.v1",
-    collections: { "Font Primitives": { modes: ["Value"], variables } },
+    $schema: "figma-ui3-variables.primitives-modes.schema.v1",
+    collections: { "Font Primitives": { modes: MODES, variables } },
   };
 }

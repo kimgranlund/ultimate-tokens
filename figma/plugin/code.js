@@ -141,7 +141,7 @@ figma.ui.onmessage = async (msg) => {
       let sr = null;
       if (msg.stylePlans && ((msg.stylePlans.paints || []).length || (msg.stylePlans.texts || []).length)) {
         try {
-          if (msg.fontPrimitives) await applyFontPrimitives(msg.fontPrimitives);
+          if (msg.fontPrimitivesModes) await applyFontPrimitivesModes(msg.fontPrimitivesModes);
           sr = await applyStylePlans(msg.stylePlans);
         } catch (e) { console.error("[Ultimate Tokens] styles apply failed:", e); }
       }
@@ -310,12 +310,12 @@ async function readRawColors() {
 }
 
 // readFloatCollection — the live values of a REGISTRY-TRACKED float collection (Breakpoints/Font
-// Primitives), read-only, in a shape directly comparable to a modeApplyPlan/primitivesApplyPlan entry:
+// Primitives), read-only, in a shape directly comparable to a modeApplyPlan/primitivesModesApplyPlan entry:
 // { found, modes: [<mode name>, …], values: { "<var name>": { "<mode name>": <value> } } }. Resolved by
 // PROVENANCE (FLOAT_REGISTRY_KEY), exactly like ensureFloatCollection — a user's own same-named
 // collection this plugin never created is invisible here too (found:false), never adopted for a read.
 // An ALIAS value (Font Primitives' font/<voice> vars) has no independently-set value to diff against —
-// skipped, matching primitivesApplyPlan's own "aliases aren't literals" treatment.
+// skipped, matching primitivesModesApplyPlan's own "aliases aren't literals" treatment.
 async function readFloatCollection(name, reg) {
   const id = reg[name];
   if (!id) return { found: false, modes: [], values: {} };
@@ -370,15 +370,33 @@ function readStyleRegistry() {
 }
 function writeStyleRegistry(reg) { figma.root.setPluginData(STYLE_REGISTRY_KEY, JSON.stringify(reg)); }
 
-// applyFontPrimitives — ensure the single-mode "Font Primitives" collection (family STRINGs, weight
-// FLOATs, font/<voice> aliases) the text styles bind into. The plan (primitivesApplyPlan) is ordered
-// literals-first, so every alias target already exists when the alias is written.
-async function applyFontPrimitives(plan) {
-  if (!plan || !plan.collection || !Array.isArray(plan.variables) || !plan.variables.length) return null;
+// applyFontPrimitivesModes — ensures "Font Primitives"
+// carries the real Premium/Google-Fonts mode axis (figma.variables' native addMode/setValueForMode —
+// the SAME mechanism Breakpoints/Geometry already use) and executes primitivesModesApplyPlan's
+// literals-then-aliases plan. Copies (does not call) applyFloatPlans' proven addMode/rename/prune
+// scaffolding below — this collection was never threaded through modeApplyPlan (ALIAS isn't a type it
+// recognizes), so keeping the scaffolding local here is what keeps mode-apply-plan.mjs/applyFloatPlans
+// themselves at zero lines changed. Literals write every mode's own value; aliases resolve their
+// target's type for creation, then write createVariableAlias(target) for EVERY mode explicitly — never
+// skipped for an unchanged target, which would silently reintroduce the exact "new mode reads as a
+// stale copy of the default" bug this feature exists to fix.
+async function applyFontPrimitivesModes(plan) {
+  if (!plan || !plan.collection || !Array.isArray(plan.modes) || !plan.modes.length || !Array.isArray(plan.variables) || !plan.variables.length) return null;
   const reg = readFloatRegistry(); // same provenance store as Typography/Geometry (name → collection id)
   const coll = await ensureFloatCollection(plan.collection, reg);
   const defaultId = coll.defaultModeId || coll.modes[0].modeId;
-  coll.renameMode(defaultId, plan.mode || "Value");
+  coll.renameMode(defaultId, plan.defaultMode);
+  const findMode = (nm) => coll.modes.find((m) => m.name.toLowerCase() === String(nm).toLowerCase());
+  const modeId = {};
+  modeId[plan.defaultMode] = defaultId;
+  for (const nm of plan.addModes) { const ex = findMode(nm); modeId[nm] = ex ? ex.modeId : coll.addMode(nm); }
+  // prune stale modes (e.g. a returning file's old single "Value" mode, once renamed away — never the
+  // default, never the last remaining mode).
+  const wanted = new Set(plan.modes.map((m) => String(m).toLowerCase()));
+  for (const m of coll.modes.slice()) {
+    if (m.modeId === defaultId) continue;
+    if (!wanted.has(m.name.toLowerCase()) && coll.modes.length > 1) coll.removeMode(m.modeId);
+  }
   const byName = await varsByName(coll.id);
   const current = new Set();
   let count = 0;
@@ -388,11 +406,17 @@ async function applyFontPrimitives(plan) {
       const target = byName[v.target];
       if (!target) continue; // planner guarantees order; a missing target is a malformed plan — skip, never throw
       const vr = byName[v.name] || figma.variables.createVariable(v.name, coll, target.type || "STRING");
-      vr.setValueForMode(defaultId, figma.variables.createVariableAlias(target));
+      for (const mode of plan.modes) {
+        const mid = modeId[mode];
+        if (mid != null) vr.setValueForMode(mid, figma.variables.createVariableAlias(target));
+      }
       byName[v.name] = vr; current.add(v.name); count++;
     } else {
       const vr = byName[v.name] || figma.variables.createVariable(v.name, coll, v.type || "STRING");
-      vr.setValueForMode(defaultId, v.type === "FLOAT" ? Number(v.value) : String(v.value));
+      for (const pair of (v.values || [])) {
+        const mid = modeId[pair.mode];
+        if (mid != null) vr.setValueForMode(mid, v.type === "FLOAT" ? Number(pair.value) : String(pair.value));
+      }
       byName[v.name] = vr; current.add(v.name); count++;
     }
   }
@@ -893,4 +917,4 @@ async function applyFloatPlans(plans) {
 }
 
 // Exposed for the headless verifier (a no-op inside Figma's VM).
-if (typeof module !== "undefined") module.exports = { applyBundle, applyFloatPlans, applyFontPrimitives, applyStylePlans, resolveFace, pickFallbackFamily, styleNameWeight, rgbaOf, aliasTarget, childKeys, sweepCandidates };
+if (typeof module !== "undefined") module.exports = { applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, resolveFace, pickFallbackFamily, styleNameWeight, rgbaOf, aliasTarget, childKeys, sweepCandidates };

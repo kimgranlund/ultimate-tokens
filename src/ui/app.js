@@ -38,13 +38,13 @@ import { DESCRIBE_MCP_FILES, DESCRIBE_MCP_README, DESCRIBE_MCP_ENGINE_VERSION } 
 import { TYPE_FONTS_CSS } from "./type-fonts.js";
 import { CATEGORY_INDEX, loadCategory } from "./categories/index.js";
 import { deriveNeutral, deriveRelative, RELATIONSHIPS } from "../engine/derive.mjs";
-import { typeScale, typeTokensCSS, typeTokensBreakpointCSS, typeTokensDTCG, typeTokensFigmaModes, typeTokensFigmaPrimitives, TYPE_TREATMENTS, DEFAULT_TYPE, BUNDLED_FONTS, genericFor, siblingWeightDefaults, WEIGHT_NAMES, resolvedFontFor } from "../engine/type.mjs";
+import { typeScale, typeTokensCSS, typeTokensBreakpointCSS, typeTokensDTCG, typeTokensFigmaModes, TYPE_TREATMENTS, DEFAULT_TYPE, BUNDLED_FONTS, genericFor, siblingWeightDefaults, WEIGHT_NAMES, resolvedFontFor } from "../engine/type.mjs";
 import { geomScale, geomTokensCSS, geomTokensBreakpointCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes, GEOMETRY_TREATMENTS, DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
 import { zipStore } from "./zip.mjs";
 import { modeApplyPlan, validateModeInterchange, mergeModeInterchanges, applyRenameMigrations } from "../../figma/binder/mode-apply-plan.mjs";
 import { FIGMA_MIGRATIONS, kebabWaveVarRenames, kebabWaveColorRenames } from "../../figma/binder/migrations.mjs";
 import { COLLECTIONS } from "../engine/collections.js";
-import { stylePlans, primitivesApplyPlan } from "../../figma/binder/style-plan.mjs";
+import { stylePlans } from "../../figma/binder/style-plan.mjs";
 import { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } from "../engine/icon-systems.mjs";
 import { icon } from "./icons.js";
 import { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, saveProfile, saveSets, setColorScheme, swatch } from "./app-helpers.mjs";

@@ -40,7 +40,7 @@ skips a layer.
   BREAKPOINT compression (§3). Unknown `treatment` → `TYPE_TREATMENTS[0]`; unknown/`0` `bodyBase` → the
   treatment's `Body.base`.
 - **The emitters** (`typeTokensCSS`, `typeTokensBreakpointCSS`, `typeTokensDTCG`, `typeTokensFigmaModes`,
-  `typeTokensFigmaPrimitives`) operate on the resolved `scale` — they never re-run the math, they read
+  `typeTokensFigmaPrimitivesModes`) operate on the resolved `scale` — they never re-run the math, they read
   `scale.categories` / `scale.fonts` / `scale.roleOf` / `scale.weights` / `scale.voiceFonts`.
 
 ### 2. The fifteen named voices + the two ramps
@@ -209,14 +209,22 @@ Figma's type/ variables (the merged breakpoint-moded Geometry collection, TKT-00
   exception), plus `singleLineHeight` on the BOX voices where present. `disambiguateModeNames` renames a
   breakpoint that clashes with the reserved base-mode name or another breakpoint. `modes = []` ⇒ a single
   base mode equal to the base scale (identity).
-- **`typeTokensFigmaPrimitives(scale)`** → the COMPANION "Font Primitives" collection: distinct font
+- **`typeTokensFigmaPrimitivesModes(scale)`** → the COMPANION "Font Primitives" collection: distinct font
   families deduped into `family/<role>` STRING primitives (plus `family/voice/<voice>` for a family reached
   only via a per-voice override), a `font/<voice>` ALIAS per voice, a `weight/<voice or voice/slug>` FLOAT
   primitive (core + one per sibling), and — when the kit names a custom `styleName` (a non-variable face) —
   a matching `weight-style/…` STRING primitive, templated per `siblingStyleName` so a sibling's style name
-  follows the SAME naming convention as the core (weight-ladders-and-labels.md). Single `"Value"` mode
-  (families/weights don't vary by breakpoint). Import-artifact only — the in-Figma apply path never
-  consumes it.
+  follows the SAME naming convention as the core (weight-ladders-and-labels.md). **Font-mode Phase B:** a
+  real 2-mode axis (`"Premium"` / `"Google Fonts"`, mirroring Breakpoints/Light-Dark's native mode
+  mechanism) — every literal carries both mode values explicitly (family/override STRINGs actually diverge
+  via `resolvedFontForMode`+`googleSafeFontFor`; weight/weight-style literals repeat the same value in both,
+  since weight resolution never varies by fontMode); `font/<voice>` ALIAS entries carry only
+  `{type:"ALIAS", target}` — no per-mode values — because the alias's target lives in the SAME collection,
+  so Figma resolves it against whichever mode is active without retargeting. A Figma export always carries
+  both modes, independent of the web app's own `fontMode` preference. Import-artifact only — the in-Figma
+  apply path (`_figmaFloatPlans`) never consumes this file directly; `primitivesModesApplyPlan` (a bespoke
+  planner, not `modeApplyPlan`, since ALIAS isn't a type that pipeline recognizes) is what the STYLES apply
+  path actually executes.
 
 ### 7. The font-rendering path (offline + Figma plugin)
 

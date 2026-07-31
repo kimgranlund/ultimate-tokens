@@ -67,7 +67,7 @@ import { weightNameFor, resolvedFontFor, siblingStyleName, coreWeightKey, relati
 const SINGLE_LINE_VOICES = new Set(["UI-control", "UI-widget"]);
 
 // siblingStyleName lives in the engine (src/engine/type.mjs) — it's the ONE source of truth shared
-// with typeTokensFigmaPrimitives's own weight-style/<voice>/<slug> primitive, so the two can never
+// with typeTokensFigmaPrimitivesModes's own weight-style/<voice>/<slug> primitive, so the two can never
 // independently go stale again (exactly how this bug shipped once already).
 
 // styleGroupOf — the ratified paint-style sub-folder for a role key: the 7 scrim roles under scrims/,
@@ -136,7 +136,7 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
     for (const [voice, steps] of Object.entries(scale.categories)) {
       // the LITERAL fallback family (used when the binding target can't resolve) is the voice's RESOLVED
       // font — its own override if set, else its role's shared default (TKT-0002). The BINDING target
-      // (`font/${voice}` below) was already per-voice; it needs no change — typeTokensFigmaPrimitives
+      // (`font/${voice}` below) was already per-voice; it needs no change — typeTokensFigmaPrimitivesModes
       // already aliases an overridden voice's primitive to the override family.
       const family = resolvedFontFor(scale, voice) || "";
       const coreStyleName = (scale.styleNames && scale.styleNames[voice]) || null;
@@ -276,22 +276,40 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
   return { paints, texts };
 }
 
-// primitivesApplyPlan — flatten the Font Primitives interchange (typeTokensFigmaPrimitives) into the
-// ordered, single-mode apply plan the plugin executor consumes: LITERALS FIRST (STRING/FLOAT with their
-// "Value"), then aliases — each alias guaranteed to follow its target (an alias whose target is absent
-// is dropped HERE, planner-side, so the executor can never dangle). Null when there is nothing to apply.
-export function primitivesApplyPlan(interchange) {
+// primitivesModesApplyPlan — flattens the Font Primitives
+// interchange (typeTokensFigmaPrimitivesModes) into the ordered apply plan the plugin executor
+// consumes. Mirrors modeApplyPlan's plan shape ({collection, modes, defaultMode, addModes, variables})
+// so the executor can reuse the SAME addMode/rename/prune scaffolding Breakpoints/Geometry already
+// proved — but stays its own function, not a modeApplyPlan call, because Font Primitives variables can
+// be ALIAS-typed (mode-apply-plan.mjs's FIGMA_VAR_TYPES / validateModeInterchange never recognize that
+// type) and because literals must be ordered before aliases here — a flat name sort does not guarantee
+// it (e.g. "font/sub-heading" sorts before "override/sub-heading" even when aliasing it).
+//
+// Guards, both planner-side so the executor can never half-apply:
+//   - INCOMPLETE LITERAL — a STRING/FLOAT missing a value for one of the interchange's own modes is
+//     dropped entirely (not emitted with a hole): a partial write reads as "forgot this mode" once
+//     round-tripped through Figma, worse than not writing it at all.
+//   - DANGLING ALIAS — an ALIAS whose target isn't among the surviving (complete) literals is dropped.
+// Null when there is nothing to apply.
+export function primitivesModesApplyPlan(interchange) {
   const coll = interchange && interchange.collections && interchange.collections["Font Primitives"];
+  const modes = coll && Array.isArray(coll.modes) ? coll.modes : [];
   const vars = coll && coll.variables && typeof coll.variables === "object" ? coll.variables : null;
-  if (!vars) return null;
+  if (!vars || !modes.length) return null;
   const literals = [], aliases = [];
   for (const name of Object.keys(vars).sort()) {
     const v = vars[name];
     if (!v) continue;
-    if (v.type === "ALIAS" && typeof v.target === "string") aliases.push({ name, type: "ALIAS", target: v.target });
-    else if ((v.type === "STRING" || v.type === "FLOAT") && v.values && v.values.Value !== undefined) literals.push({ name, type: v.type, value: v.values.Value });
+    if (v.type === "ALIAS" && typeof v.target === "string") {
+      aliases.push({ name, type: "ALIAS", target: v.target });
+    } else if (v.type === "STRING" || v.type === "FLOAT") {
+      const values = v.values && typeof v.values === "object" ? v.values : {};
+      if (modes.every((m) => values[m] !== undefined)) {
+        literals.push({ name, type: v.type, values: modes.map((m) => ({ mode: m, value: values[m] })) });
+      }
+    }
   }
   const litNames = new Set(literals.map((l) => l.name));
   const variables = [...literals, ...aliases.filter((a) => litNames.has(a.target))];
-  return variables.length ? { collection: "Font Primitives", mode: "Value", variables } : null;
+  return variables.length ? { collection: "Font Primitives", modes, defaultMode: modes[0], addModes: modes.slice(1), variables } : null;
 }
