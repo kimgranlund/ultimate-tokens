@@ -13,5 +13,33 @@
   "Inter": { "variable": [100, 900] },
   "Inter Tight": { "variable": [100, 900] },
   "Source Serif 4": { "variable": [200, 900] },
-  "JetBrains Mono": { "variable": [100, 800] }
+  "JetBrains Mono": { "variable": [100, 800] },
+
+  "$comment2": "Below: added 2026-07-31 (#418) — well-documented Google Fonts / open-source families the preset revision program (epic #407) verified and cited repeatedly across categories. Variable ranges and static weight sets per each family's published Google Fonts metadata; none of these carry a styleName claim anywhere in the corpus, so italics coverage was left unclaimed.",
+  "Oswald": { "variable": [200, 700] },
+  "Cormorant": { "variable": [300, 700] },
+  "Cormorant Garamond": { "variable": [300, 700] },
+  "Playfair Display": { "variable": [400, 900] },
+  "EB Garamond": { "variable": [400, 800] },
+  "Lora": { "variable": [400, 700] },
+  "Bodoni Moda": { "variable": [400, 900] },
+  "Archivo": { "variable": [100, 900] },
+  "Space Grotesk": { "variable": [300, 700] },
+  "Reem Kufi": { "variable": [400, 700] },
+
+  "Space Mono": { "widths": [""], "weights": { "Regular": 400, "Bold": 700 } },
+  "Courier Prime": { "widths": [""], "weights": { "Regular": 400, "Bold": 700 } },
+  "PT Mono": { "widths": [""], "weights": { "Regular": 400 } },
+  "DM Mono": { "widths": [""], "weights": { "Light": 300, "Regular": 400, "Medium": 500 } },
+  "Amiri": { "widths": [""], "weights": { "Regular": 400, "Bold": 700 } },
+  "Aref Ruqaa": { "widths": [""], "weights": { "Regular": 400, "Bold": 700 } },
+
+  "IBM Plex Mono": { "widths": [""], "weights": { "Thin": 100, "Extra Light": 200, "Light": 300, "Regular": 400, "Medium": 500, "Semi Bold": 600, "Bold": 700 } },
+  "IBM Plex Sans": { "widths": [""], "weights": { "Thin": 100, "Extra Light": 200, "Light": 300, "Regular": 400, "Medium": 500, "Semi Bold": 600, "Bold": 700 } },
+  "Mukta": { "widths": [""], "weights": { "Extra Light": 200, "Light": 300, "Regular": 400, "Medium": 500, "Semi Bold": 600, "Bold": 700, "Extra Bold": 800 } },
+  "Spectral": { "widths": [""], "weights": { "Extra Light": 200, "Light": 300, "Regular": 400, "Medium": 500, "Semi Bold": 600, "Bold": 700, "Extra Bold": 800 } },
+  "Zen Kaku Gothic New": { "widths": [""], "weights": { "Light": 300, "Regular": 400, "Medium": 500, "Bold": 700, "Black": 900 } },
+
+  "Clarendon URW": { "widths": [""], "weights": { "Light": 300, "Regular": 400, "Medium": 500, "Bold": 700, "Extra Bold": 800 } },
+  "Linotype Clarendon": { "widths": [""], "weights": { "Light": 300, "Roman": 400, "Bold": 700 } }
 }
