@@ -20,6 +20,7 @@ import { iconSystem, iconSystemLabel } from "./icon-systems.mjs";
 import { motionTokens, MOTION_EASING, MOTION_DURATION, MOTION_NEVER } from "./motion.mjs";
 import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"; // §8 carrier primitives + the gate itself — the receipt cites the SAME run the gate measures
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
+import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn } from "./exports.js";
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -229,7 +230,11 @@ const DS_TYPE_LEVELS = ["display-sm", "heading-lg", "heading-md", "heading-sm", 
 const DS_SPACE_NAMES = ["none", "xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl"];
 // dsFontStack — a quoted CSS font stack (`'Inter Tight', system-ui, …`); quoting is required for family
 // names with digits/spaces (WebKit drops an unquoted `Inter Tight`/`Source Serif 4`).
-const dsFontStack = (name, generic) => (name ? `'${name}', ${generic}` : generic);
+// fontMode ("premium" default | "google") — omitted/default is BYTE-IDENTICAL to before this param
+// existed; "google" runs `name` through googleSafeFontFor (font-fallbacks.mjs) first. No caller
+// opts in yet (Phase A wires the app's own live preview, not this bundle-export path) — the
+// capability lives here for the next caller that needs it, per the font-mode plan.
+const dsFontStack = (name, generic, fontMode = "premium") => (name ? `'${fontMode === "google" ? googleSafeFontFor(name) : name}', ${generic}` : generic);
 
 // dsSpine — the universal-dialect DESIGN.md (§5): YAML frontmatter (OKLCH colors + `-dark` siblings +
 // curated type + named spacing/rounded + components) then the 8 Stitch-canonical sections + Responsive

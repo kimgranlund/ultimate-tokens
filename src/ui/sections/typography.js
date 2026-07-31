@@ -1,6 +1,7 @@
 import { slug } from "../model.mjs";
 import { hydrate, serialize } from "../persist.js";
-import { BUNDLED_FONTS, DEFAULT_TYPE, TYPE_TREATMENTS, WEIGHT_NAMES, genericFor, resolvedFontFor, siblingWeightDefaults, typeScale, typeTokensBreakpointCSS, typeTokensCSS, typeTokensDTCG } from "../../engine/type.mjs";
+import { BUNDLED_FONTS, DEFAULT_TYPE, TYPE_TREATMENTS, WEIGHT_NAMES, genericFor, resolvedFontForMode, siblingWeightDefaults, typeScale, typeTokensBreakpointCSS, typeTokensCSS, typeTokensDTCG } from "../../engine/type.mjs";
+import { googleSafeFontFor } from "../../engine/font-fallbacks.mjs";
 import { icon } from "../icons.js";
 import { GENERIC_FONTS, SELF_HOSTED_FONTS, TYPE_PARA, TYPE_SAMPLE, btn, ensureTypeFonts, ensureWebFonts, field, fmt, h } from "../app-helpers.mjs";
 
@@ -127,7 +128,7 @@ export class TypeSectionImpl {
       "div",
       { class: "ty-roles" },
       ...ROLES.map(([role, label]) => {
-        const fam = scale.fonts[role] || "—";
+        const fam = (this.fontMode === "google" ? googleSafeFontFor(scale.fonts[role]) : scale.fonts[role]) || "—";
         const generic = genericFor(fam, role);
         return h("div", { class: "ty-role" }, h("span", { class: "ty-role-k" }, label), h("span", { class: "ty-role-fam", style: `font-family:'${fam}', ${generic}` }, fam));
       }),
@@ -567,7 +568,7 @@ export class TypeSectionImpl {
     ensureTypeFonts();
     const cfg = this._activeType();
     const scale = this._activeTypeScale();
-    ensureWebFonts({ ...scale.fonts, ...(scale.voiceFonts || {}) }, this.inFigma); // TIER 2: lazy-load this palette's non-bundled faces, incl. per-voice overrides (web app only)
+    ensureWebFonts(this._resolvedFontMap({ ...scale.fonts, ...(scale.voiceFonts || {}) }), this.inFigma); // TIER 2: lazy-load this palette's non-bundled faces, incl. per-voice overrides (web app only) — mode-aware, so "google" loads the substitute, not the premium name
     const t = TYPE_TREATMENTS.find((x) => x.id === cfg.treatment) || TYPE_TREATMENTS[0];
     const PARA = TYPE_PARA(scale.treatment);
     const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -575,7 +576,7 @@ export class TypeSectionImpl {
       const s = scale.categories[cat] && scale.categories[cat][step];
       if (!s) return false;
       const role = scale.roleOf[cat] || "body";
-      const fam = resolvedFontFor(scale, cat) || "Inter";
+      const fam = this._resolvedFont(scale, cat) || "Inter";
       const generic = genericFor(fam, role);
       const token = `type-${kebab(cat)}-${kebab(step)}`;
       const tt = s.textTransform && s.textTransform !== "none" ? `text-transform:${s.textTransform};` : "";
@@ -607,7 +608,7 @@ export class TypeSectionImpl {
       return h(
         "div",
         { class: "type-spec-group" },
-        h("div", { class: "type-spec-grouphead" }, h("b", {}, cat), h("small", {}, resolvedFontFor(scale, cat)), h("span", { class: "type-spec-count" }, `${steps.length} steps`)),
+        h("div", { class: "type-spec-grouphead" }, h("b", {}, cat), h("small", {}, this._resolvedFont(scale, cat)), h("span", { class: "type-spec-count" }, `${steps.length} steps`)),
         ...ordered.map((step) => line(cat, step)),
       );
     });
@@ -629,7 +630,7 @@ export class TypeSectionImpl {
   // fuzz generator, so it is FLAGGED out-of-scope, not faked.
   renderTypeInspector(view) {
     ensureTypeFonts();
-    { const s = this._activeTypeScale(); ensureWebFonts({ ...s.fonts, ...(s.voiceFonts || {}) }, this.inFigma); } // TIER 2: the inspector specimen + examples render the real faces, incl. per-voice overrides
+    { const s = this._activeTypeScale(); ensureWebFonts(this._resolvedFontMap({ ...s.fonts, ...(s.voiceFonts || {}) }), this.inFigma); } // TIER 2: the inspector specimen + examples render the real faces, incl. per-voice overrides — mode-aware
     const seg = this.typeSegment === "fonts" || this.typeSegment === "specimen" ? this.typeSegment : "scale";
     const body = seg === "fonts" ? this.typeFontsTab() : seg === "specimen" ? this.typeSpecimenTab(view) : this.typeScaleTab();
     const tabs = [{ id: "scale", label: "Scale" }, { id: "fonts", label: "Fonts" }, { id: "specimen", label: "Specimen" }];
@@ -686,7 +687,7 @@ export class TypeSectionImpl {
               { type: "button", class: "tyi-voice-name", "data-fk": "tyvoice:" + cName, "aria-expanded": sel ? "true" : "false",
                 onclick: () => { this.typeVoice = sel ? null : cName; this.render(); } },
               h("span", { class: "tyi-voice-label" }, cName, tuned ? h("span", { class: "tyi-voice-dot", title: "Tuned off the treatment" }, " ●") : false),
-              h("span", { class: "tyi-voice-font" }, resolvedFontFor(scale, cName)),
+              h("span", { class: "tyi-voice-font" }, this._resolvedFont(scale, cName)),
             ),
             sel
               ? h(
@@ -778,7 +779,7 @@ export class TypeSectionImpl {
     const seenStates = new Map();
     const rows = Object.keys(scale.categories).map((cName) => {
       const role = scale.roleOf[cName];
-      const family = resolvedFontFor(scale, cName);
+      const family = this._resolvedFont(scale, cName);
       const generic = genericFor(family, role);
       const custom = !!(cfg.voices && cfg.voices[cName] && cfg.voices[cName].font);
       const id = "tyfont-" + cName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -841,6 +842,21 @@ export class TypeSectionImpl {
     this.render();
   }
 
+
+  // _resolvedFont(scale, voice) — the app's own mode-aware resolution: reads this.fontMode (the
+  // Settings → Appearance → Font rendering pref) so every specimen/label in this section shows
+  // (and renders) the SAME family — "premium" is resolvedFontFor unchanged; "google" swaps a
+  // mapped family for its font-fallbacks.mjs substitute. One call site to keep consistent instead
+  // of threading this.fontMode through every render method individually.
+  _resolvedFont(scale, voice) { return resolvedFontForMode(scale, voice, this.fontMode); }
+
+  // _resolvedFontMap(obj) — the same mode-awareness for a {role/voice: family} map, so
+  // ensureWebFonts loads the family that's ACTUALLY being rendered (the substitute, in "google"
+  // mode) rather than the as-designed premium name it would otherwise 404 on the CDN.
+  _resolvedFontMap(obj) {
+    if (this.fontMode !== "google") return obj;
+    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, googleSafeFontFor(v)]));
+  }
 
   // _faceRenders(fam) — does this family actually paint, or is the browser silently substituting a
   // generic? `document.fonts.check` FALSE-NEGATIVES on variable fonts, so measure DOM width instead:
@@ -1030,7 +1046,7 @@ export class TypeSectionImpl {
           h(
             "div",
             { class: "typo-cat" },
-            h("div", { class: "typo-cat-head" }, h("b", {}, cat), h("small", {}, resolvedFontFor(scale, cat))),
+            h("div", { class: "typo-cat-head" }, h("b", {}, cat), h("small", {}, this._resolvedFont(scale, cat))),
             this._typeSample(scale, cat, repStep(cat), TYPE_SAMPLE(cat, scale.treatment)),
           ),
         ),
@@ -1053,7 +1069,7 @@ export class TypeSectionImpl {
     const main = roles.find((r) => r.suffix === "");
     const onMain = roles.find((r) => r.suffix === "-on-" + sl);
     const hStep = scale.categories["Headline"].MD, bStep = scale.categories.Body.MD;
-    const fam = (cat) => { const role = scale.roleOf[cat]; const fm = resolvedFontFor(scale, cat) || "Inter"; return `'${fm}', ${genericFor(fm, role)}`; };
+    const fam = (cat) => { const role = scale.roleOf[cat]; const fm = this._resolvedFont(scale, cat) || "Inter"; return `'${fm}', ${genericFor(fm, role)}`; };
     return h(
       "div",
       { class: "example-card tyi-example", style: "background:" + pick(byKey.surface) },
@@ -1070,7 +1086,7 @@ export class TypeSectionImpl {
     const s = scale.categories[cat] && scale.categories[cat][step];
     if (!s) return false;
     const role = scale.roleOf[cat] || "body";
-    const fam = resolvedFontFor(scale, cat) || "Inter";
+    const fam = this._resolvedFont(scale, cat) || "Inter";
     const generic = genericFor(fam, role);
     const tt = s.textTransform && s.textTransform !== "none" ? `text-transform:${s.textTransform};` : "";
     return h(

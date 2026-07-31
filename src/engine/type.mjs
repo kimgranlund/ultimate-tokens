@@ -362,8 +362,22 @@ export function typeScale(config = {}) {
 // (scale.fonts[scale.roleOf[voice]]). Every consumer that needs a voice's real font (emitters, the Figma
 // style planner, the UI specimen) calls this instead of reading scale.fonts[role] directly, so an override
 // can never be silently bypassed by a new call site.
+import { googleSafeFontFor } from "./font-fallbacks.mjs";
+
 export function resolvedFontFor(scale, voice) {
   return (scale.voiceFonts && scale.voiceFonts[voice]) || scale.fonts[scale.roleOf[voice]];
+}
+
+// resolvedFontForMode(scale, voice, mode) — the mode-aware SIBLING of resolvedFontFor, never a
+// replacement: resolvedFontFor's contract (always the as-designed "premium" family) stays exactly
+// as it is, so every existing call site is untouched. A consumer that needs Google-Fonts-safe
+// rendering calls this instead: mode "google" runs the resolved family through
+// googleSafeFontFor (font-fallbacks.mjs); any other mode (default "premium", or omitted) returns
+// resolvedFontFor's value unchanged — the identity gate that keeps every emitter byte-identical
+// when a caller doesn't opt in.
+export function resolvedFontForMode(scale, voice, mode) {
+  const fam = resolvedFontFor(scale, voice);
+  return mode === "google" ? googleSafeFontFor(fam) : fam;
 }
 
 // ── sibling-weight defaults ────────────────────────────────────────────────────────────────────
@@ -533,15 +547,18 @@ function typeVarLines(scale, indent = "  ", unit = "px", pfx = "type") {
   return out.join("\n");
 }
 
-export function typeTokensCSS(scale, { unit = "px", prefix = "type" } = {}) {
+// fontMode ("premium" default | "google") — absent/default is BYTE-IDENTICAL to before this
+// option existed (the identity gate); "google" routes every family through googleSafeFontFor
+// (font-fallbacks.mjs) so the emitted stylesheet only ever names Google-Fonts-servable families.
+export function typeTokensCSS(scale, { unit = "px", prefix = "type", fontMode = "premium" } = {}) {
   const lines = [":root {"];
-  for (const [role, family] of Object.entries(scale.fonts)) lines.push(`  --font-${role}: '${family}';`); // quote — names with digits (e.g. "Source Serif 4") are invalid unquoted in strict parsers (Safari)
+  for (const [role, family] of Object.entries(scale.fonts)) lines.push(`  --font-${role}: '${fontMode === "google" ? googleSafeFontFor(family) : family}';`); // quote — names with digits (e.g. "Source Serif 4") are invalid unquoted in strict parsers (Safari)
   // per-voice FONT — one custom prop per VOICE (`--font-voice-sub-heading: '...'`), resolved via
   // resolvedFontFor so every one of the 13 voices is directly addressable by name, not just the ones
   // carrying an explicit override (TKT-0006: matches typeTokensFigmaPrimitives's existing density —
   // an un-overridden voice's variable simply repeats its role's family, same value the utility classes
   // below already apply). Quoted like the role fonts above (same Safari trap).
-  for (const voice of Object.keys(scale.categories)) lines.push(`  --font-voice-${kebab(voice)}: '${resolvedFontFor(scale, voice)}';`);
+  for (const voice of Object.keys(scale.categories)) lines.push(`  --font-voice-${kebab(voice)}: '${resolvedFontForMode(scale, voice, fontMode)}';`);
   // per-voice SIBLING WEIGHTS — one custom prop per named variant (`--type-display-weight-bold: 700`),
   // per VOICE (never duplicated per step). Absent when the kit defines none (identity gate).
   if (scale.weights) for (const [cName, list] of Object.entries(scale.weights)) {
@@ -613,14 +630,14 @@ export function typeTokensBreakpointCSS(modes = [], { unit = "px", prefix = "typ
 
 // typeTokensDTCG — the type scale as DTCG tokens: a fontFamily group + a typography group per
 // category/step (composite `typography` $type, the W3C-DTCG shape).
-export function typeTokensDTCG(scale, { unit = "px" } = {}) {
+export function typeTokensDTCG(scale, { unit = "px", fontMode = "premium" } = {}) {
   // fontFamily is keyed by VOICE (11), not role (5) — TKT-0006: a consumer scanning this group for
   // "every font family this kit actually applies" should see the real per-voice picture (matching
   // the per-step typography tokens below, and typeTokensFigmaPrimitives's existing density), not
   // just the 5 shared defaults. Un-overridden voices repeat their role's family — same value the
   // composite typography tokens below already carry.
   const fontFamily = {};
-  for (const voice of Object.keys(scale.categories)) fontFamily[kebab(voice)] = { $type: "fontFamily", $value: resolvedFontFor(scale, voice) };
+  for (const voice of Object.keys(scale.categories)) fontFamily[kebab(voice)] = { $type: "fontFamily", $value: resolvedFontForMode(scale, voice, fontMode) };
   const typography = {};
   for (const [cName, steps] of Object.entries(scale.categories)) {
     typography[kebab(cName)] = {};
@@ -629,7 +646,7 @@ export function typeTokensDTCG(scale, { unit = "px" } = {}) {
         $type: "typography",
         // fontFamily resolves the per-voice override (if any) — an overridden voice's DTCG carries its own
         // family; an un-overridden voice still reads its role's family (identical to before this channel).
-        $value: { fontFamily: resolvedFontFor(scale, cName), fontSize: dimUnit(s.size, unit), lineHeight: relLine(s.leadingRatio), letterSpacing: relTrackEm(s.trackingRatio), fontWeight: s.weight, textCase: s.textTransform || "none", paragraphSpacing: dimUnit(s.paragraphSpacing, unit), paragraphIndent: dimUnit(s.paragraphIndent, unit), ...(s.singleLineHeight != null ? { singleLineHeight: relLinePx(s.singleLineHeight, s.size) } : {}) },
+        $value: { fontFamily: resolvedFontForMode(scale, cName, fontMode), fontSize: dimUnit(s.size, unit), lineHeight: relLine(s.leadingRatio), letterSpacing: relTrackEm(s.trackingRatio), fontWeight: s.weight, textCase: s.textTransform || "none", paragraphSpacing: dimUnit(s.paragraphSpacing, unit), paragraphIndent: dimUnit(s.paragraphIndent, unit), ...(s.singleLineHeight != null ? { singleLineHeight: relLinePx(s.singleLineHeight, s.size) } : {}) },
       };
     }
   }

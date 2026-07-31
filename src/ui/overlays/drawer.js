@@ -45,7 +45,7 @@ export class DrawerMixinImpl {
     // view.exports). Computed from the same engines the modals + the Brand-Kit MCP use.
     const typeSc = this._typeScaleFor("base"); // override-aware base scale (Phase 3) — same as the matrix Base column
     const geomSc = this._geomScaleFor("base");
-    const u = { unit: this._exportUnit() }; // the CSS unit preference (Settings › Export); Figma stays px
+    const u = { unit: this._exportUnit(), fontMode: this.fontMode }; // the CSS unit preference (Settings › Export) + the font-rendering mode (Settings › Appearance) — Figma outputs below deliberately read NEITHER (Figma always gets the as-designed families; a native Figma-mode axis is its own future phase)
     const ut = { ...u, prefix: this._typePrefix() }; // + the naming-scheme prefix for the type CSS
     const ug = { ...u, prefix: this._geomPrefix() }; // + the naming-scheme prefix for the geometry CSS
     // splitCssPreview — a single-pane, read-only preview of the SEPARATE files Download-All actually

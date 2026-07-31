@@ -102,7 +102,8 @@ class HctApp extends HTMLElement {
     this.viewport = { panX: 0, panY: 0, zoom: 1 };
     this.theme = "system"; // app chrome color scheme: system (follows OS) | light | dark
     this.motion = "system"; // animation preference: system (respect prefers-reduced-motion) | reduced (always minimal) — app pref
-    this._loadAppPrefs(); // persisted APP prefs (theme/canvasTheme/motion) — loaded before setColorScheme below
+    this.fontMode = "premium"; // rendering-reliability pref: premium (as-designed families) | google (every family google-fonts-safe, per src/engine/font-fallbacks.mjs) — app pref, NOT doc-bound
+    this._loadAppPrefs(); // persisted APP prefs (theme/canvasTheme/motion/fontMode) — loaded before setColorScheme below
     this.exportOpen = false;
     this.exportTab = "css";
     // which token SYSTEMS the Download-All .zip + the Brand-Kit MCP bundle (export-time opt-in, all on
@@ -2243,9 +2244,10 @@ class HctApp extends HTMLElement {
     this.render();
   }
 
-  // ── persisted APP prefs (theme · canvas preview · motion) — per-USER, not doc-bound → localStorage,
-  // versioned like the apply consent. Absent/invalid keys keep the constructor defaults, so a fresh
-  // profile (or Figma's session-scoped iframe storage) boots identically to pre-prefs builds.
+  // ── persisted APP prefs (theme · canvas preview · motion · font mode) — per-USER, not doc-bound →
+  // localStorage, versioned like the apply consent. Absent/invalid keys keep the constructor
+  // defaults, so a fresh profile (or Figma's session-scoped iframe storage) boots identically to
+  // pre-prefs builds.
   _appPrefsKey() { return "ultimate-tokens-app-prefs-v1"; }
 
   _loadAppPrefs() {
@@ -2258,11 +2260,12 @@ class HctApp extends HTMLElement {
       if (scheme(p.canvasTheme)) this.canvasTheme = p.canvasTheme;
       if (scheme(p.colorMode) || p.colorMode === "both") this.colorMode = p.colorMode;
       if (p.motion === "reduced" || p.motion === "system") this.motion = p.motion;
+      if (p.fontMode === "premium" || p.fontMode === "google") this.fontMode = p.fontMode;
     } catch { /* storage unavailable / corrupt record → defaults */ }
   }
 
   _saveAppPrefs() {
-    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify({ theme: this.theme, canvasTheme: this.canvasTheme, colorMode: this.colorMode, motion: this.motion })); } catch { /* storage unavailable */ }
+    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify({ theme: this.theme, canvasTheme: this.canvasTheme, colorMode: this.colorMode, motion: this.motion, fontMode: this.fontMode })); } catch { /* storage unavailable */ }
   }
 
   _resetAppPrefs() {
@@ -2270,6 +2273,7 @@ class HctApp extends HTMLElement {
     this.canvasTheme = "system";
     this.colorMode = "system";
     this.motion = "system";
+    this.fontMode = "premium";
     try { localStorage.removeItem(this._appPrefsKey()); } catch { /* storage unavailable */ }
     this.dataset.theme = this.theme;
     setColorScheme(this.theme);
