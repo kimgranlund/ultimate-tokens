@@ -43,9 +43,19 @@ export const FONT_FALLBACKS = {
   "Trajan Pro": "Cinzel",
 };
 
-// googleSafeFontFor(family) — the pure lookup. A mapped substitute if one's been curated; the
-// family itself unchanged otherwise (already a Google Font, or not yet classified — identical to
-// current behavior in both those cases).
-export function googleSafeFontFor(family) {
-  return FONT_FALLBACKS[family] ?? family;
+// FONT_FALLBACKS_BY_ROLE — role-aware refinements over the family-keyed table (2026-08-14, at
+// request): when a family serves several roles, the fallback can differ per role — GT America's
+// display slot degrades better to Inter Tight (the tighter display cut) while body/ui/mono-adjacent
+// text reads better in plain Inter. Sparse: only list the roles that differ from FONT_FALLBACKS.
+export const FONT_FALLBACKS_BY_ROLE = {
+  "GT America": { display: "Inter Tight" },
+};
+
+// googleSafeFontFor(family, role?) — the pure lookup. The role-aware refinement wins when one is
+// curated for (family, role); else the family-keyed substitute; else the family itself unchanged
+// (already a Google Font, or not yet classified — identical to prior behavior in those cases).
+// role is optional — omitted, the lookup is family-keyed exactly as before.
+export function googleSafeFontFor(family, role) {
+  const byRole = FONT_FALLBACKS_BY_ROLE[family];
+  return (byRole && role && byRole[role]) ?? FONT_FALLBACKS[family] ?? family;
 }
