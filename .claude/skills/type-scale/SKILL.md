@@ -45,7 +45,7 @@ One-line pointers; this body does not restate them:
 
 ## The font-quoting guard — the Safari trap
 
-`typeTokensCSS` emits `--font-{role}: '{family}';` — **the single quotes are load-bearing.**
+`typeTokensCSS` emits a full stack — `--font-{role}: '{family}', '{google-safe fallback}', {generic};` (#446, 2026-08-14; fallback named only when FONT_FALLBACKS differs) — **the single quotes on every named entry are load-bearing.**
 A family name with a digit (`Source Serif 4`, `Inter Tight`) is invalid *unquoted* in a strict CSS parser:
 **Safari drops the whole declaration and falls back.** The `luxury` treatment uses `Source Serif 4`, so the
 verifier pins `typeTokensCSS(typeScale({treatment:"luxury"}))` contains `--font-display: 'Source Serif 4'`
