@@ -53,10 +53,9 @@ in/out; omitted/undefined → **all three** (the back-compat default). `buildSur
   `ultimate-tokens-brand-kit:get_semantic(scheme)`, `ultimate-tokens-brand-kit:nearest_token(hex)`; resources
   `brand://palettes`, `brand://semantic/light`, `brand://semantic/dark`.
 - **Typography** (`kit.type` present) → tool `ultimate-tokens-brand-kit:get_type`; resource `brand://type`. `kit.type.categories`
-  carries the **seven** `make7` voices — **Display**, **Heading / Sub-heading / Kicker**, **Body**,
-  **UI**, **Code** — each step with `size · lineHeight · letterSpacing · weight` (+ `textTransform`,
-  `paragraph*`). The guide prose teaches a four-voice mental model (Display/Heading/Body/UI); the *data* has
-  seven keys — don't claim four.
+  carries the **fifteen** `makeVoices` voices (the `type-scale` skill owns the taxonomy) — each step with
+  `size · lineHeight · letterSpacing · weight` (+ `textTransform`, `paragraph*`). The guide prose teaches a
+  four-voice mental model (Display/Heading/Body/UI); the *data* has fifteen keys — don't claim four.
 - **Geometry** (`kit.geometry` present) → tool `ultimate-tokens-brand-kit:get_geometry`; resource `brand://geometry`. The XS–2XL
   `sizes` ramp, the top-level `radii` ladder (`none/sm/md/lg/full`), and the `space` scale. Each size carries
   `{ height, icon, caret, font, gap, padding, edgePadding, radiusPill, minWidth }`; the centering law is
@@ -135,7 +134,7 @@ request arrives.
 | `references/rubric.md` | score the change before calling it done — stdio hygiene + opt-in gating + asset regen + test coverage are the gates |
 | `mcp/README.md` | the user-facing doc (de-staled) — what it exposes, how to add it to Claude Code / a project `.mcp.json`. Cite, keep in sync. |
 | `.claude/skills/adding-semantic-roles` | the roles that flow into `ultimate-tokens-brand-kit:get_semantic` / `ultimate-tokens-brand-kit:resolve_token` / `brand://semantic/*` — cite for the per-palette role model (53 today) |
-| `.claude/skills/geometry-system` + `.claude/skills/type-scale` + `src/engine/type.mjs` (`typeScale`) · `src/engine/geometry.mjs` (`geomScale`) | the type + geometry scales `ultimate-tokens-brand-kit:get_type` / `ultimate-tokens-brand-kit:get_geometry` serve verbatim — cite the `geometry-system` skill (the size ramp / centering law) + the `type-scale` skill (the seven voices) + the engine for the shapes; don't re-derive them |
+| `.claude/skills/geometry-system` + `.claude/skills/type-scale` + `src/engine/type.mjs` (`typeScale`) · `src/engine/geometry.mjs` (`geomScale`) | the type + geometry scales `ultimate-tokens-brand-kit:get_type` / `ultimate-tokens-brand-kit:get_geometry` serve verbatim — cite the `geometry-system` skill (the size ramp / centering law) + the `type-scale` skill (the fifteen voices) + the engine for the shapes; don't re-derive them |
 
 ## Peer skills
 

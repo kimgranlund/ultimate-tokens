@@ -98,11 +98,9 @@ Sibling weights: `doc.type.voices[v].weights`, edited in the per-voice panel (Su
    bug is the binder's `missing` list (a raw target absent — check pad3 + scrim grammar). An "apply did
    nothing / duplicated" bug is the app's `applyBundle`.
 2. **If the role set changed**, this is an `adding-semantic-roles` task — the binder's `roleTable(n)` is one
-   of its parity sites, but since TKT-0019 it is GENERATED — never hand-edit the rows inside the
-   `// === GENERATED:ROLE_TABLE ===` markers (a regenerate overwrites them, and a hand-edit there is
-   invisible to the source of truth). Edit `semantic.js` per that skill's lockstep, then run
-   `scripts/gen-figma-binder-code.mjs` (or `npm test`/`npm run build`, which run it for you) so the answer
-   key, the `.mjs` planner, the count literals, and this copy all move together.
+   of its parity sites, and it is GENERATED (constraint 2 above): edit `semantic.js` per that skill's
+   lockstep and let the generator move the answer key, the `.mjs` planner, the count literals, and this
+   copy together.
 3. **Keep it offline + VM-safe.** No network API; `catch (e) {` not `catch {`; no raw error in `figma.notify`;
    no remote `import()`. (The app verifier also requires the `ui.html` bridge — `figma-init` / `pluginMessage`
    / `figmaBundle` / `config-loaded`→`applyLoadedConfig` / `variables-read`→`receiveLiveVariables`.)

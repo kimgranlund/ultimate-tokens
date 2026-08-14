@@ -74,10 +74,9 @@ colors→containers→surfaces→scrims); and on-color roles can be **re-pointed
 
 **Auto-flows — do NOT hand-edit:** `src/engine/exports.js` and the CSS / OKLCH / DTCG / Tailwind / JSON
 emitters map over each palette's resolved `roles`, so a new role emits a leaf automatically; the app's
-Mapping canvas + the MCP brand-kit likewise. **EXCEPTION — ShadCN:** `exportShadcn` maps a FIXED
-`SHADCN_ORDER` array (in `exports.js`) over a curated suffix-lookup `MAP`, NOT all roles. A new role neither breaks ShadCN nor
-appears in it — surface it there only by deliberately wiring it into `MAP`, and that is a design choice, not
-a gate. (The per-palette count also recurs in PROSE across the emitters, `model.mjs`, `app.js`,
+Mapping canvas + the MCP brand-kit likewise. **EXCEPTION — ShadCN:** `exportShadcn` iterates a fixed,
+curated contract, NOT all roles — a new role neither breaks ShadCN nor appears in it (`adding-export-formats`
+owns the details). (The per-palette count also recurs in PROSE across the emitters, `model.mjs`, `app.js`,
 `bind-plan.mjs`, the MCP server + READMEs, and the root `README.md`. After a count change, sweep them:
 `git grep -nE "\b<oldcount>\b" -- src test mcp '*.md' | grep -iE "role|semantic"`, fix the current-state
 hits, LEAVE the historical (CHANGELOG, decision-records, the "36 vs 37" anecdote, docs/reference history,

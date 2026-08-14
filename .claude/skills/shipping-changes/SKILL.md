@@ -108,8 +108,8 @@ changed files → `npm test` + commit + push from the worktree → `git worktree
 
 ## Validate (the ship is "done" only when)
 
-`npm test` green locally → push → CI green on all three legs (poll-then-`gh run watch --exit-status`,
-not a bare `--watch`) → `gh pr view <n> --json state,mergedAt` shows `MERGED` → local `main`
+`npm test` green locally → push → CI green on all three legs (per the quirk above) →
+`gh pr view <n> --json state,mergedAt` shows `MERGED` → local `main`
 fast-forwarded to the squash commit (`git log --oneline -1`) → feature branch deleted locally and on
 the remote. Smoke is Chrome-only — green CI is not Safari proof; reason about WebKit from spec (see
 `foundations.md`).
