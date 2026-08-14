@@ -138,6 +138,121 @@
           },
           "refuses": "A warm, high-chroma palette. Adia stays cool by design — sky blue and quiet aqua, not heat.",
           "dominantHex": "#55C9F2",
+          "type": {
+            "treatment": "product",
+            "bodyBase": 16,
+            "fonts": {
+              "display": "GT America",
+              "heading": "GT America",
+              "body": "GT America",
+              "ui": "GT America",
+              "mono": "GT America Mono"
+            },
+            "voices": {
+              "Display": {
+                "weight": 700,
+                "styleName": "Bold",
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Black", "weight": 900 }
+                ]
+              },
+              "Headline": {
+                "weight": 700,
+                "styleName": "Bold",
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Black", "weight": 900 }
+                ]
+              },
+              "Sub-heading": {
+                "weight": 500,
+                "styleName": "Medium",
+                "weights": [
+                  { "name": "Regular", "weight": 400 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "Title": {
+                "weight": 500,
+                "styleName": "Medium",
+                "weights": [
+                  { "name": "Regular", "weight": 400 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "Sub-title": {
+                "weight": 500,
+                "styleName": "Medium",
+                "weights": [
+                  { "name": "Regular", "weight": 400 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "Kicker": {
+                "weight": 500,
+                "styleName": "Medium",
+                "weights": [
+                  { "name": "Regular", "weight": 400 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "Lead": {
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "Body": {
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "Body-mono": {
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "Label": {
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "Label-mono": {
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "Tiny": {
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "Tiny-mono": {
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "UI-control": {
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              },
+              "UI-widget": {
+                "weights": [
+                  { "name": "Medium", "weight": 500 },
+                  { "name": "Bold", "weight": 700 }
+                ]
+              }
+            }
+          },
           "palettes": [
             {
               "name": "Neutral",

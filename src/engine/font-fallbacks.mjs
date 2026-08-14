@@ -27,8 +27,9 @@ export const FONT_FALLBACKS = {
   "PP Monument Extended": "Archivo",
   "PP Editorial New": "Playfair Display",
 
-  // Grilli Type (GT America/GT America Mono are already Google-servable-adjacent bundled faces —
-  // no entry needed; these are the ones that aren't)
+  // Grilli Type
+  "GT America": "Inter",
+  "GT America Mono": "JetBrains Mono",
   "GT Pressura Mono": "JetBrains Mono",
   "GT Sectra": "Source Serif 4",
   "GT Sectra Display": "Playfair Display",
