@@ -23,6 +23,7 @@
     "screens@nonoun-plugins": true,
     "agent-protocols@nonoun-plugins": true,
     "design@nonoun-plugins": true,
+    "authorkit@nonoun-plugins": true,
 
     "figma@claude-plugins-official": true,
     "cloudflare@claude-plugins-official": true
