@@ -547,18 +547,33 @@ function typeVarLines(scale, indent = "  ", unit = "px", pfx = "type") {
   return out.join("\n");
 }
 
-// fontMode ("premium" default | "google") — absent/default is BYTE-IDENTICAL to before this
-// option existed (the identity gate); "google" routes every family through googleSafeFontFor
+// cssFontStack(family, role, mode) — the full font-family STACK a custom prop carries (issue #446,
+// 2026-08-14 — deliberately supersedes the old bare-family emission and the byte-identity pledge
+// that covered it): the family, then its curated google-safe fallback when one differs
+// (FONT_FALLBACKS), then genericFor's CSS generic — so an uninstalled premium face degrades to a
+// character-matched bundled face instead of the browser default. Every NAMED entry stays quoted
+// (the Safari digit-name trap); the terminal generic is a keyword, never quoted. "google" mode
+// substitutes the family itself, so the stack is just substitute + generic (no duplicate).
+function cssFontStack(family, role, mode) {
+  const fam = mode === "google" ? googleSafeFontFor(family) : family;
+  const parts = [`'${fam}'`];
+  if (mode !== "google") { const fb = googleSafeFontFor(family); if (fb !== family) parts.push(`'${fb}'`); }
+  parts.push(genericFor(fam, role));
+  return parts.join(", ");
+}
+
+// fontMode ("premium" default | "google") — "google" routes every family through googleSafeFontFor
 // (font-fallbacks.mjs) so the emitted stylesheet only ever names Google-Fonts-servable families.
+// (The pre-#446 byte-identity gate on the default mode was retired when fallback stacks landed.)
 export function typeTokensCSS(scale, { unit = "px", prefix = "type", fontMode = "premium" } = {}) {
   const lines = [":root {"];
-  for (const [role, family] of Object.entries(scale.fonts)) lines.push(`  --font-${role}: '${fontMode === "google" ? googleSafeFontFor(family) : family}';`); // quote — names with digits (e.g. "Source Serif 4") are invalid unquoted in strict parsers (Safari)
+  for (const [role, family] of Object.entries(scale.fonts)) lines.push(`  --font-${role}: ${cssFontStack(family, role, fontMode)};`);
   // per-voice FONT — one custom prop per VOICE (`--font-voice-sub-heading: '...'`), resolved via
   // resolvedFontFor so every one of the 13 voices is directly addressable by name, not just the ones
   // carrying an explicit override (TKT-0006: matches typeTokensFigmaPrimitivesModes's existing density —
   // an un-overridden voice's variable simply repeats its role's family, same value the utility classes
   // below already apply). Quoted like the role fonts above (same Safari trap).
-  for (const voice of Object.keys(scale.categories)) lines.push(`  --font-voice-${kebab(voice)}: '${resolvedFontForMode(scale, voice, fontMode)}';`);
+  for (const voice of Object.keys(scale.categories)) lines.push(`  --font-voice-${kebab(voice)}: ${cssFontStack(resolvedFontFor(scale, voice), scale.roleOf[voice], fontMode)};`);
   // per-voice SIBLING WEIGHTS — one custom prop per named variant (`--type-display-weight-bold: 700`),
   // per VOICE (never duplicated per step). Absent when the kit defines none (identity gate).
   if (scale.weights) for (const [cName, list] of Object.entries(scale.weights)) {
