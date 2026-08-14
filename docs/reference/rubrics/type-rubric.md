@@ -6,7 +6,7 @@
 > **Layer A** is judgment, scored 0–10 per dimension (target ≥ 48/60, no dimension below 6;
 > score → fix weakest → re-score). **Layer B** is the mechanical gate — any FAIL blocks the
 > revision regardless of Layer A score. Used by the preset revision program (Phase 3): the
-> drafter (`palette-researcher`) self-scores, the reconciler re-scores, `design:font-choice-checker`
+> drafter (`palette-researcher-agent`) self-scores, the reconciler re-scores, `design:font-choice-checker`
 > is the independent seat.
 
 ## Layer A — judgment dimensions

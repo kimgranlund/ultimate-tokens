@@ -7,7 +7,7 @@ description: >
   launch post", "update the store page", "add an upsell string", "does this sound like us?"). The
   operational voice instrument: the toolmaker persona and the per-surface posture table, the
   enforceable language rules, fact-pinning against the pinned fact sheet, the mechanical voice-check
-  script, and the two-layer ship gate. The marketing-manager agent loads this first for ALL
+  script, and the two-layer ship gate. The marketing-manager-agent loads this first for ALL
   brand/marketing writing.
 disable-model-invocation: false
 user-invocable: true

@@ -3,7 +3,7 @@
   "schema_scope": "grammar",
   "verb_lex": ["create", "execute", "retire", "lint", "run", "mint", "sweep", "seed"],
   "process_lex": ["audit", "planning", "authoring", "triage", "review", "migration"],
-  "role_lex": ["leader", "orchestrator", "coordinator"],
+  "role_lex": ["leader", "orchestrator", "coordinator", "manager", "researcher", "reviewer"],
   "object_vocab": [
     {"canonical": "skill", "plural": "skills", "banned_aliases": []},
     {"canonical": "harness", "plural": null, "banned_aliases": []},
@@ -20,6 +20,9 @@
     {"canonical": "doc", "plural": "docs", "banned_aliases": []},
     {"canonical": "ultimate-tokens", "plural": null, "banned_aliases": []},
     {"canonical": "figma", "plural": null, "banned_aliases": []},
+    {"canonical": "marketing", "plural": null, "banned_aliases": []},
+    {"canonical": "palette", "plural": "palettes", "banned_aliases": []},
+    {"canonical": "change", "plural": "changes", "banned_aliases": []},
     {"canonical": "file", "plural": "files", "banned_aliases": []},
     {"canonical": "brand", "plural": "brands", "banned_aliases": []},
     {"canonical": "voice", "plural": "voices", "banned_aliases": []}
@@ -28,9 +31,6 @@
   "author_registry": ["kimgranlund", "kim-granlund", "kimba"],
   "mutating_no_confirm_allowlist": [],
   "exemptions": [
-    "marketing-manager",
-    "palette-researcher",
-    "ultimate-tokens-reviewer",
     "adding-export-formats",
     "adding-semantic-roles",
     "building-editor-sections",

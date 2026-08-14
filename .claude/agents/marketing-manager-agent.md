@@ -1,5 +1,5 @@
 ---
-name: marketing-manager
+name: marketing-manager-agent
 description: >
   Owns the marketing corpus of ultimate-tokens (docs/marketing/ — the voice platform,
   the pinned fact sheet, store copy, product descriptions, the launch/social kit) and authors or
