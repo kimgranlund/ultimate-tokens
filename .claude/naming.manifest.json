@@ -1,0 +1,40 @@
+{
+  "$schema_note": "Naming manifest for the ultimate-tokens estate (.claude/ skills, agents, hooks). Seeded 2026-08-14 via authorkit:manifest-authoring. Exemptions enumerated from the first naming-audit run; the array may only shrink.",
+  "schema_scope": "grammar",
+  "verb_lex": ["create", "execute", "retire", "lint", "run", "mint", "sweep", "seed"],
+  "process_lex": ["audit", "planning", "authoring", "triage", "review", "migration"],
+  "role_lex": ["leader", "orchestrator", "coordinator"],
+  "object_vocab": [
+    {"canonical": "skill", "plural": "skills", "banned_aliases": []},
+    {"canonical": "harness", "plural": null, "banned_aliases": []},
+    {"canonical": "color", "plural": "colors", "banned_aliases": []},
+    {"canonical": "math", "plural": null, "banned_aliases": []},
+    {"canonical": "geometry", "plural": null, "banned_aliases": []},
+    {"canonical": "system", "plural": "systems", "banned_aliases": []},
+    {"canonical": "type", "plural": null, "banned_aliases": []},
+    {"canonical": "scale", "plural": "scales", "banned_aliases": []},
+    {"canonical": "lemon-squeezy", "plural": null, "banned_aliases": []},
+    {"canonical": "api", "plural": "apis", "banned_aliases": []},
+    {"canonical": "schema", "plural": "schemas", "banned_aliases": []},
+    {"canonical": "project", "plural": "projects", "banned_aliases": []},
+    {"canonical": "doc", "plural": "docs", "banned_aliases": []},
+    {"canonical": "ultimate-tokens", "plural": null, "banned_aliases": []},
+    {"canonical": "brand", "plural": "brands", "banned_aliases": []},
+    {"canonical": "voice", "plural": "voices", "banned_aliases": []}
+  ],
+  "brand_tokens": [],
+  "author_registry": ["kimgranlund", "kim-granlund", "kimba"],
+  "mutating_no_confirm_allowlist": [],
+  "exemptions": [
+    "marketing-manager",
+    "palette-researcher",
+    "ultimate-tokens-reviewer",
+    "adding-export-formats",
+    "adding-semantic-roles",
+    "building-editor-sections",
+    "maintaining-brand-kit-mcp",
+    "maintaining-figma-plugins",
+    "migrating-figma-files",
+    "shipping-changes"
+  ]
+}
