@@ -1,7 +1,7 @@
 # Marketing corpus — Ultimate Tokens
 
 Everything a customer reads, in one place, under one voice. Authored and maintained by the
-**marketing-manager** agent through the **ultimate-tokens-brand-voice** skill — every piece gated by the
+**marketing-manager-agent** through the **ultimate-tokens-brand-voice** skill — every piece gated by the
 voice-check script and the platform rubric before it ships.
 
 ## The foundation (read first)

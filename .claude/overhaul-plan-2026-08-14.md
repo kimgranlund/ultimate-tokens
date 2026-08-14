@@ -38,9 +38,9 @@ rename's only payoff is lexical conformance, which the D8 ratchet already bounds
 None — no merge/split candidate survived Phase 1.
 
 ### Wave 1 — mechanically-clean moves
-- [ ] W1-A: `marketing-manager` → `marketing-agent` (Blocked-by: none)
-- [ ] W1-B: `palette-researcher` → `palette-research-agent` (Blocked-by: none)
-- [ ] W1-C: `ultimate-tokens-reviewer` → `change-review-agent` (Blocked-by: none)
+- [x] W1-A: `marketing-manager` → `marketing-manager-agent` (Blocked-by: none) — executed 2026-08-14 (#439). Superseded target 2026-08-14: the plan's `marketing-agent` fails the agent grammar (residue must be an extant skill or objects+RoleLex); RoleLex gained `manager`/`researcher`/`reviewer`, vocab `marketing`/`palette`/`change` (invariant 1: evidence vetoed the plan).
+- [x] W1-B: `palette-researcher` → `palette-researcher-agent` (Blocked-by: none) — executed 2026-08-14 (#440; superseded from `palette-research-agent`, same note)
+- [x] W1-C: `ultimate-tokens-reviewer` → `change-reviewer-agent` (Blocked-by: none) — executed 2026-08-14 (#441; superseded from `change-review-agent`, same note)
 - [x] W1-D: `migrating-figma-files` → `figma-file-migration` (Blocked-by: none) — executed 2026-08-14 (#442; vocab `figma`+`file` registered, exemption retired)
 
 All four are serial through `naming.manifest.json` (each retires its own exemption entry) —

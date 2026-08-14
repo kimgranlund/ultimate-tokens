@@ -1,5 +1,5 @@
 ---
-name: ultimate-tokens-reviewer
+name: change-reviewer-agent
 description: >
   Reviews an ultimate-tokens change (a diff, a staged set, or a PR branch)
   against THIS repo's specific invariants — semantic-role parity, the Safari

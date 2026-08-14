@@ -37,7 +37,7 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
   teach agents to use exported kits in THEIR projects (parity-gated against the engine).
 - `docs/reference/` — canonical specs, rubrics, role-table answer key. `docs/marketing/` — the
   marketing corpus (voice platform · pinned fact sheet · store copy · launch kit); author via the
-  `marketing-manager` agent + `ultimate-tokens-brand-voice` skill. `docs/tickets/` — the
+  `marketing-manager-agent` + `ultimate-tokens-brand-voice` skill. `docs/tickets/` — the
   pre-2026-07-17 bug/feature archive (`kind: bug`/`kind: feature` TICKETs); routed by the
   `project-docs` skill. `docs/site/`, `docs/lld/`, `docs/img/` — hosting/licensing specs, one
   architecture doc, and the generated README preview SVG, respectively. `.claude/docs/other/` —

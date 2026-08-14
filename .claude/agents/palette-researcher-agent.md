@@ -1,5 +1,5 @@
 ---
-name: palette-researcher
+name: palette-researcher-agent
 description: >
   Researches a THEME (a film, a biome, a cuisine, a designer, an era, a brand
   mood) from authoritative sources and emits a CURATED PALETTE - or a whole

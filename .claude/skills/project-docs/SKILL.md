@@ -28,7 +28,7 @@ path; a question the corpus doesn't answer is reported as absent, never guessed.
 | Horizons of intent — Now / Next / Later | `docs/roadmap/` (ROADMAP-*) — not present yet |
 | One actor, one sitting, one done-when | `docs/task/` (TASK-*) — not present yet |
 | The color/type/geometry ENGINE's own canonical reference (role tables, export-format shapes, typography/geometry specs, rubrics) | `docs/reference/` — pre-existing, own conventions (not scribe TICKET/SPEC frontmatter); the role-answer-key is `docs/reference/data/role-table.json` |
-| Marketing corpus (voice platform, fact sheet, store copy, launch kit) | `docs/marketing/` — author via the `marketing-manager` agent + `ultimate-tokens-brand-voice` skill, not this skill |
+| Marketing corpus (voice platform, fact sheet, store copy, launch kit) | `docs/marketing/` — author via the `marketing-manager-agent` + `ultimate-tokens-brand-voice` skill, not this skill |
 | Hosting/licensing design docs, one architecture LLD | `docs/site/`, `docs/lld/` — pre-existing, informal headers (no `doc-type:` frontmatter), predate the scribe TICKET workflow |
 | Generated README preview asset | `docs/img/` — not a document, skip for doc-shaped asks |
 
