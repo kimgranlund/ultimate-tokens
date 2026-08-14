@@ -59,7 +59,7 @@ export function buildSurface(kit) {
       `- Match an existing colour with \`nearest_token\` before introducing a new one.\n\n`;
     if (kit.type) g +=
       `## Typography\n` +
-      `- \`get_type\` / \`brand://type\` → the type scale. Pick a voice by the text's FUNCTION: **Display** (hero), **Headline/Sub-heading/Title** (sections), **Lead** (standfirst), **Body** (reading, incl. fine-print), **Body-mono** (code, technical values), **Label** (controls/labels), **Label-mono** (monospace controls — IDs, versions), **Kicker** (overline label), **Tiny/Tiny-mono** (captions, small print).\n` +
+      `- \`get_type\` / \`brand://type\` → the type scale. Pick a voice by the text's FUNCTION: **Display** (hero), **Headline/Sub-heading/Title** (sections), **Lead** (standfirst), **Body** (reading, incl. fine-print), **Body-mono** (code, technical values), **Label** (controls/labels), **Label-mono** (monospace controls — IDs, versions), **Kicker** (overline label), **Tiny/Tiny-mono** (captions, small print), **UI-control/UI-widget** (interactive single-line text — buttons, inputs, widget chrome).\n` +
       `- Each voice's step carries \`size\`, \`lineHeight\`, \`letterSpacing\`, \`weight\` — apply them together; don't hand-pick sizes.\n\n`;
     if (kit.geometry) g +=
       `## Geometry\n` +
@@ -94,7 +94,7 @@ export function buildSurface(kit) {
       run: (a) => nearestToken(a.hex) || { error: "no palettes" } },
   );
   if (kit.type) TOOLS.push(
-    { name: "get_type", description: "The brand's typography scale — treatment, font roles, and the thirteen-voice (Display/Headline/Sub-heading/Title/Sub-title/Lead/Body/Body-mono/Label/Label-mono/Kicker/Tiny/Tiny-mono) size ramp (size · line-height · letter-spacing · weight).",
+    { name: "get_type", description: "The brand's typography scale — treatment, font roles, and the fifteen-voice (Display/Headline/Sub-heading/Title/Sub-title/Lead/Body/Body-mono/Label/Label-mono/Kicker/Tiny/Tiny-mono/UI-control/UI-widget) size ramp (size · line-height · letter-spacing · weight).",
       inputSchema: { type: "object", properties: {} }, run: () => kit.type },
   );
   if (kit.geometry) TOOLS.push(
