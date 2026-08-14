@@ -503,8 +503,8 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   const baseCss = T.typeTokensCSS(baseline);
   // count DECLARATIONS only (`  --font-voice-x: '...';`) — utility classes below also REFERENCE
   // these vars (`var(--font-voice-x)`), which would otherwise inflate the count past 11.
-  ok((baseCss.match(/ {2}--font-voice-[a-z0-9-]+: '/g) || []).length === 15, `--font-voice-* is declared for all 15 voices even with no overrides (got ${(baseCss.match(/ {2}--font-voice-[a-z0-9-]+: '/g) || []).length})`);
-  ok(baseCss.includes(`--font-voice-sub-heading: '${baseline.fonts[baseline.roleOf["Sub-heading"]]}',`), "an un-overridden voice's --font-voice-* repeats its role's shared default (stack head, #446)");
+  ok((baseCss.match(/ {2}--font-voice-[a-z0-9-]+: /g) || []).length === 15, `--font-voice-* is declared for all 15 voices even with no overrides (got ${(baseCss.match(/ {2}--font-voice-[a-z0-9-]+: /g) || []).length})`);
+  ok(baseCss.includes(`--font-voice-sub-heading: var(--font-${baseline.roleOf["Sub-heading"]});`), "an un-overridden voice's --font-voice-* REFERENCES its role prop (var(), 2026-08-14)");
   ok(JSON.stringify(T.typeTokensDTCG(baseline)) === JSON.stringify(T.typeTokensDTCG(emptyV)), "DTCG byte-identical with an empty voices map");
   ok(JSON.stringify(T.typeTokensFigmaPrimitivesModes(baseline)) === JSON.stringify(T.typeTokensFigmaPrimitivesModes(emptyV)), "Figma primitives byte-identical with an empty voices map");
   // resolvedFontFor: an un-overridden voice resolves to its role's shared default.
@@ -522,7 +522,7 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   // OWN --font-voice-* prop, overridden or not — one point of truth per voice).
   const cssOv = T.typeTokensCSS(ov);
   ok(cssOv.includes("--font-voice-sub-heading: 'Fraunces', serif;"), "CSS emits a quoted --font-voice-* prop for the overridden voice, with its generic (same Safari digit-name trap as --font-*)");
-  ok(cssOv.includes(`--font-voice-headline: '${ov.fonts.heading}',`), "an un-overridden voice sharing the same role (Headline) still gets its own --font-voice-* prop, at the role's value (stack head)");
+  ok(cssOv.includes("--font-voice-headline: var(--font-heading);"), "an un-overridden voice sharing the same role (Headline) still gets its own --font-voice-* prop, referencing the role prop");
   ok(/\.type-sub-heading-md\s*\{[^}]*font-family: var\(--font-voice-sub-heading\)/.test(cssOv), "the overridden voice's utility classes reference its OWN --font-voice-* prop");
   ok(/\.type-headline-md\s*\{[^}]*font-family: var\(--font-voice-headline\)/.test(cssOv), "an un-overridden voice's utility classes ALSO reference its own --font-voice-* prop now (TKT-0006), not --font-{role} directly");
 
@@ -580,17 +580,17 @@ ok(T.genericFor("Some Unknown Face") === "sans-serif" && T.genericFor("") === "s
   ok(T.resolvedFontForMode(sohne, "Display", "google") === "Inter Tight", `resolvedFontForMode google mode maps Söhne → Inter Tight (got ${T.resolvedFontForMode(sohne, "Display", "google")})`);
   const cssGoogle = T.typeTokensCSS(sohne, { fontMode: "google" });
   ok(cssGoogle.includes("--font-display: 'Inter Tight', sans-serif;"), "CSS google mode: the role-level --font-display prop carries the substitute + generic (no premium name in the stack)");
-  ok(cssGoogle.includes("--font-voice-display: 'Inter Tight', sans-serif;"), "CSS google mode: the per-voice --font-voice-display prop also carries the substitute + generic");
+  ok(cssGoogle.includes("--font-voice-display: var(--font-display);"), "CSS google mode: an un-overridden per-voice prop references its role prop (which carries the substitute)");
   const cssPremium = T.typeTokensCSS(sohne);
   ok(cssPremium.includes("--font-display: 'Söhne', 'Inter Tight', sans-serif;"), "CSS premium mode emits the full fallback STACK — family, google-safe fallback, generic (#446)");
-  ok(cssPremium.includes("--font-voice-display: 'Söhne', 'Inter Tight', sans-serif;"), "per-voice props carry the same stack (#446)");
+  ok(cssPremium.includes("--font-voice-display: var(--font-display);"), "un-overridden per-voice props reference the role prop, which carries the stack (#446)");
   // role-aware fallback refinement (2026-08-14): GT America degrades to Inter Tight in the display
   // slot, plain Inter everywhere else (FONT_FALLBACKS_BY_ROLE beats the family-keyed default).
   const gta = T.typeScale({ treatment: "product", fonts: { display: "GT America", heading: "GT America", body: "GT America", ui: "GT America", mono: "GT America Mono" } });
   const cssGta = T.typeTokensCSS(gta);
   ok(cssGta.includes("--font-display: 'GT America', 'Inter Tight', sans-serif;"), "role-aware fallback: display role falls back to Inter Tight");
   ok(cssGta.includes("--font-body: 'GT America', 'Inter', sans-serif;"), "role-aware fallback: non-display roles keep the family-keyed Inter");
-  ok(cssGta.includes("--font-voice-display: 'GT America', 'Inter Tight', sans-serif;"), "role-aware fallback applies at the voice level via roleOf");
+  ok(cssGta.includes("--font-voice-display: var(--font-display);"), "un-overridden voices reference the role prop that carries the role-aware fallback");
   ok(T.typeTokensCSS(gta, { fontMode: "google" }).includes("--font-display: 'Inter Tight', sans-serif;"), "google mode substitution is role-aware too");
   ok(!cssGoogle.includes("Söhne"), "CSS google mode never names the premium family at all");
   const dtcgGoogle = T.typeTokensDTCG(sohne, { fontMode: "google" });

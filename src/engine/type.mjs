@@ -568,12 +568,15 @@ function cssFontStack(family, role, mode) {
 export function typeTokensCSS(scale, { unit = "px", prefix = "type", fontMode = "premium" } = {}) {
   const lines = [":root {"];
   for (const [role, family] of Object.entries(scale.fonts)) lines.push(`  --font-${role}: ${cssFontStack(family, role, fontMode)};`);
-  // per-voice FONT — one custom prop per VOICE (`--font-voice-sub-heading: '...'`), resolved via
-  // resolvedFontFor so every one of the 13 voices is directly addressable by name, not just the ones
-  // carrying an explicit override (TKT-0006: matches typeTokensFigmaPrimitivesModes's existing density —
-  // an un-overridden voice's variable simply repeats its role's family, same value the utility classes
-  // below already apply). Quoted like the role fonts above (same Safari trap).
-  for (const voice of Object.keys(scale.categories)) lines.push(`  --font-voice-${kebab(voice)}: ${cssFontStack(resolvedFontFor(scale, voice), scale.roleOf[voice], fontMode)};`);
+  // per-voice FONT — one custom prop per VOICE, so every voice is directly addressable by name
+  // (TKT-0006). An un-overridden voice REFERENCES its role prop (`--font-voice-body:
+  // var(--font-body)` — one place to swap a family, 2026-08-14 at request); only a voice carrying
+  // an explicit per-voice font override (config.voices[v].font) emits its own literal stack,
+  // quoted like the role fonts above (same Safari trap).
+  for (const voice of Object.keys(scale.categories)) {
+    const ownFont = scale.voiceFonts && scale.voiceFonts[voice];
+    lines.push(`  --font-voice-${kebab(voice)}: ${ownFont ? cssFontStack(ownFont, scale.roleOf[voice], fontMode) : `var(--font-${scale.roleOf[voice]})`};`);
+  }
   // per-voice SIBLING WEIGHTS — one custom prop per named variant (`--type-display-weight-bold: 700`),
   // per VOICE (never duplicated per step). Absent when the kit defines none (identity gate).
   if (scale.weights) for (const [cName, list] of Object.entries(scale.weights)) {
