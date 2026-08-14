@@ -98,7 +98,7 @@ unconditionally safe and was verified so, isolated and re-fetched fresh, against
 rebind that writes `fontStyle` in one pass and `fontWeight: null` in a second pass over the same
 objects hits this even though each pass's own immediate readback looks clean — the corruption is
 invisible until a FULL post-migration readback, not the per-step one. — BZZR weight-ramp
-migration, 2026-07-28 (`migrating-figma-files` scenario 7).
+migration, 2026-07-28 (`figma-file-migration` scenario 7).
 
 ## 9. `getVariableByIdAsync` returns a stale phantom for a just-deleted variable id — never trust it as a deletion readback
 
@@ -113,4 +113,4 @@ deletion as a failure. The correct deletion readback: check the id against
 `(await figma.variables.getLocalVariablesAsync()).map(v => v.id)` or a re-fetched
 `collection.variableIds`, never against `getVariableByIdAsync`'s return value. — BZZR weight-ramp
 migration, 2026-07-28 (84/84 deletions falsely read as failed before switching verification
-methods; `migrating-figma-files` scenario 7).
+methods; `figma-file-migration` scenario 7).

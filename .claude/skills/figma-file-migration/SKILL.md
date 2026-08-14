@@ -1,5 +1,5 @@
 ---
-name: migrating-figma-files
+name: figma-file-migration
 description: >
   Migrate a LIVE Figma file's variables, styles, and bindings through the Figma MCP (`use_figma`)
   — a rename, a breakpoint/mode add, a collection merge, a bulk grammar-wide rename wave, or a

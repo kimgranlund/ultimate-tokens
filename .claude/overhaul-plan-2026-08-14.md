@@ -41,7 +41,7 @@ None — no merge/split candidate survived Phase 1.
 - [ ] W1-A: `marketing-manager` → `marketing-agent` (Blocked-by: none)
 - [ ] W1-B: `palette-researcher` → `palette-research-agent` (Blocked-by: none)
 - [ ] W1-C: `ultimate-tokens-reviewer` → `change-review-agent` (Blocked-by: none)
-- [ ] W1-D: `migrating-figma-files` → `figma-file-migration` (Blocked-by: none)
+- [x] W1-D: `migrating-figma-files` → `figma-file-migration` (Blocked-by: none) — executed 2026-08-14 (#442; vocab `figma`+`file` registered, exemption retired)
 
 All four are serial through `naming.manifest.json` (each retires its own exemption entry) —
 mint as one batch ticket or execute W1-A→D in sequence, never two in parallel against the

@@ -19,6 +19,8 @@
     {"canonical": "project", "plural": "projects", "banned_aliases": []},
     {"canonical": "doc", "plural": "docs", "banned_aliases": []},
     {"canonical": "ultimate-tokens", "plural": null, "banned_aliases": []},
+    {"canonical": "figma", "plural": null, "banned_aliases": []},
+    {"canonical": "file", "plural": "files", "banned_aliases": []},
     {"canonical": "brand", "plural": "brands", "banned_aliases": []},
     {"canonical": "voice", "plural": "voices", "banned_aliases": []}
   ],
@@ -34,7 +36,6 @@
     "building-editor-sections",
     "maintaining-brand-kit-mcp",
     "maintaining-figma-plugins",
-    "migrating-figma-files",
     "shipping-changes"
   ]
 }
