@@ -45,9 +45,8 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
 - **Git-native ticket backend (ADR-017).** Bugs/features/issues now route to **GitHub Issues**
   (`gh issue create`), not new `docs/tickets/*.md` files — labels `kind:bug`/`kind:feature` +
   `size:small`/`size:big` carry the machine-read fields the file frontmatter used to. Scribe's
-  `/bug-report`/`/feature` read this ruling and mint issues. Migrating the tickets still open as
-  files into Issues is `TKT-0031` (check `docs/tickets/` for the live count — don't trust a
-  hardcoded one here).
+  `/bug-report`/`/feature` read this ruling and mint issues. The file-ticket backlog was fully
+  migrated 2026-07-17 (`TKT-0031`, Issues #325–#342) — `docs/tickets/` is archive only.
 
 ## Conventions (non-obvious only)
 
