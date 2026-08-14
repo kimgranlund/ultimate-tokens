@@ -377,7 +377,7 @@ export function resolvedFontFor(scale, voice) {
 // when a caller doesn't opt in.
 export function resolvedFontForMode(scale, voice, mode) {
   const fam = resolvedFontFor(scale, voice);
-  return mode === "google" ? googleSafeFontFor(fam) : fam;
+  return mode === "google" ? googleSafeFontFor(fam, scale.roleOf[voice]) : fam;
 }
 
 // ── sibling-weight defaults ────────────────────────────────────────────────────────────────────
@@ -555,9 +555,9 @@ function typeVarLines(scale, indent = "  ", unit = "px", pfx = "type") {
 // (the Safari digit-name trap); the terminal generic is a keyword, never quoted. "google" mode
 // substitutes the family itself, so the stack is just substitute + generic (no duplicate).
 function cssFontStack(family, role, mode) {
-  const fam = mode === "google" ? googleSafeFontFor(family) : family;
+  const fam = mode === "google" ? googleSafeFontFor(family, role) : family;
   const parts = [`'${fam}'`];
-  if (mode !== "google") { const fb = googleSafeFontFor(family); if (fb !== family) parts.push(`'${fb}'`); }
+  if (mode !== "google") { const fb = googleSafeFontFor(family, role); if (fb !== family) parts.push(`'${fb}'`); }
   parts.push(genericFor(fam, role));
   return parts.join(", ");
 }

@@ -584,6 +584,14 @@ ok(T.genericFor("Some Unknown Face") === "sans-serif" && T.genericFor("") === "s
   const cssPremium = T.typeTokensCSS(sohne);
   ok(cssPremium.includes("--font-display: 'Söhne', 'Inter Tight', sans-serif;"), "CSS premium mode emits the full fallback STACK — family, google-safe fallback, generic (#446)");
   ok(cssPremium.includes("--font-voice-display: 'Söhne', 'Inter Tight', sans-serif;"), "per-voice props carry the same stack (#446)");
+  // role-aware fallback refinement (2026-08-14): GT America degrades to Inter Tight in the display
+  // slot, plain Inter everywhere else (FONT_FALLBACKS_BY_ROLE beats the family-keyed default).
+  const gta = T.typeScale({ treatment: "product", fonts: { display: "GT America", heading: "GT America", body: "GT America", ui: "GT America", mono: "GT America Mono" } });
+  const cssGta = T.typeTokensCSS(gta);
+  ok(cssGta.includes("--font-display: 'GT America', 'Inter Tight', sans-serif;"), "role-aware fallback: display role falls back to Inter Tight");
+  ok(cssGta.includes("--font-body: 'GT America', 'Inter', sans-serif;"), "role-aware fallback: non-display roles keep the family-keyed Inter");
+  ok(cssGta.includes("--font-voice-display: 'GT America', 'Inter Tight', sans-serif;"), "role-aware fallback applies at the voice level via roleOf");
+  ok(T.typeTokensCSS(gta, { fontMode: "google" }).includes("--font-display: 'Inter Tight', sans-serif;"), "google mode substitution is role-aware too");
   ok(!cssGoogle.includes("Söhne"), "CSS google mode never names the premium family at all");
   const dtcgGoogle = T.typeTokensDTCG(sohne, { fontMode: "google" });
   ok(dtcgGoogle.fontFamily.display.$value === "Inter Tight", "DTCG google mode: the top-level fontFamily group carries the substitute");
