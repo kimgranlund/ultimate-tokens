@@ -86,18 +86,8 @@ outside the current treatment flashes the fallback without the eager load).
 Run the pure verifier first (prints `type PASS` / `type FAIL (n)`; exit 1 fails), then the suite:
 
 ```
-node test/engine/type.mjs    # 5 treatments × 15 voices · roleOf (Body-mono/Label-mono/Kicker/Sub-title/
-                             # Tiny-mono→mono, Body/Lead→body, Label/Tiny→ui) · the caps voices ·
-                             # exactly ONE uppercase Display (Brutalist) · Body MD=bodyBase · the fixed SIZES
-                             # table (exact unscaled passthrough) · a scaled/compressed ramp on the
-                             # nice-number ladder, strictly increasing · lineHeight=size·leading · optical
-                             # tracking (Display neg / Label pos) · box/prose split (singleLineHeight on
-                             # Kicker/UI-control/UI-widget only) · per-voice ramps (UI voices XS..2XL,
-                             # everything else SM/MD/LG) · bodyBase scales uniformly · the
-                             # override channels (identity gates, incl. config.voices.font) · unknown→first ·
-                             # CSS class + px/rem/em · the QUOTING guard (luxury → --font-display: 'Source
-                             # Serif 4') · DTCG composite · per-breakpoint files (bounded, order-independent) ·
-                             # Figma modes + Font Primitives · sibling weights + relative labels
+node test/engine/type.mjs    # the full invariant set (§3 above) — the test file's own comment
+                             # blocks enumerate every assert; read them there, they are the source
 npm test                     # the above + ui/figma/exports + smoke gen (node test/run.mjs)
 ```
 
