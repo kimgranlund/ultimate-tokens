@@ -1501,17 +1501,13 @@ export class ColorSectionImpl {
 
     // Track the currently-selected palette by identity so selection follows it.
     const selPal = this.doc.palettes[this.selectedIndex()];
-    this.pushHistory(); // ONE undo step for the whole reorder
-    const [moved] = pals.splice(from, 1);
-    pals.splice(to, 0, moved);
-    // keep `selected` on the SAME palette object (now at its new index)
-    const newSel = this.doc.palettes.indexOf(selPal);
-    if (newSel >= 0) {
-      this.sel = { kind: "palette", id: newSel };
-      this.doc.selected = newSel;
-    }
-    this.save(); // persist the reordered doc + corrected selection in one shot
-    this.render();
+    this.commit((doc) => { // ONE undo step for the whole reorder; commit()'s edit() saves + renders
+      const [moved] = doc.palettes.splice(from, 1);
+      doc.palettes.splice(to, 0, moved);
+      // keep `selected` on the SAME palette object (now at its new index)
+      const newSel = doc.palettes.indexOf(selPal);
+      if (newSel >= 0) this.sel = { kind: "palette", id: newSel };
+    });
     // safety net: if no stray click consumes the guard, clear it next tick.
     setTimeout(() => { this._reordering = false; }, 0);
   }
