@@ -191,6 +191,29 @@ app.undo(); // back to chroma0
 app.commit((d) => (d.palettes[1].lift = (d.palettes[1].lift || 0) + 1));
 ok(!app.canRedo(), "editing after undo truncated the redo branch");
 
+// ── (a2) TKT-0455: persistence is throttled off the pointer-move tick — a live drag tick mutates the
+// doc synchronously but does NOT write through to the record until the drag SETTLES (the debounce
+// timeout, slider onchange, undo/redo's flush, or openSet's outgoing-doc flush) ─────────────────────
+{
+  const rec = app.sets.find((s) => s.id === app.activeId);
+  const preChroma = rec.doc.palettes[0].chroma;
+  app.editDrag((d) => (d.palettes[0].chroma = Math.min(100, preChroma + 7)));
+  ok(app.doc.palettes[0].chroma !== preChroma, "(persist-throttle) a live drag tick mutates the doc synchronously");
+  ok(rec.doc.palettes[0].chroma === preChroma, "(persist-throttle) a live drag tick does NOT persist yet — the record is still stale");
+  app.commitDrag(); // settle
+  ok(rec.doc.palettes[0].chroma === app.doc.palettes[0].chroma, "(persist-throttle) commitDrag() (the drag's settle) persists it");
+
+  // openSet's drag-clear: an in-flight drag on the OUTGOING doc must not be lost by navigating away
+  // mid-drag — openSet() flushes it (via commitDrag()) before switching, even back into the SAME set.
+  const outgoingId = app.activeId;
+  const preHue = app.doc.palettes[0].hue;
+  app.editDrag((d) => (d.palettes[0].hue = (preHue + 23) % 360)); // live tick — the settle timer has NOT fired
+  ok(rec.doc.palettes[0].hue === preHue, "(persist-throttle) mid-drag, the record is still stale");
+  app.openSet(outgoingId); // navigate away mid-drag
+  flushRaf();
+  ok(rec.doc.palettes[0].hue === (preHue + 23) % 360, "(persist-throttle) openSet flushed the outgoing doc's in-flight drag before switching (no lost edit)");
+}
+
 // ── (b) keyboard nav ───────────────────────────────────────────────────────────────
 app.selectPalette(0);
 const fireKey = (key, opt = {}) => doc.dispatch("keydown", { key, target: doc.body, ...opt });

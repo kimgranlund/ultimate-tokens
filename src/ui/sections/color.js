@@ -255,7 +255,8 @@ export class ColorSectionImpl {
   selectPalette(id) {
     const max = this.doc.palettes.length - 1;
     this.sel = { kind: "palette", id: Math.max(0, Math.min(id, max)) };
-    this.doc.selected = this.sel.id;
+    this.doc.selected = this.sel.id; // `selected` is a real serialized field (persist.js) — persist it
+    this.save(); // TKT-0455: without this, isDirty() falsely reports "unsaved" after a plain reselect
     this.render();
   }
 

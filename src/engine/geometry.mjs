@@ -43,6 +43,10 @@ const SIZES = [
   ["XS", 20], ["SM", 24], ["MD", 28], ["LG", 36], ["XL", 48], ["2XL", 64],
 ];
 const CANON_MD = 28;
+// SIZE_KEYS — the six canonical size names alone, exported so persist.js's GEOMETRY_SIZES allowlist
+// (used to validate the leading segment of a tokenOverrides key) can be parity-gated against this,
+// the actual source, the same way TYPE_TREATMENTS/GEOMETRY_TREATMENTS/VOICES already are (TKT-0017).
+export const SIZE_KEYS = SIZES.map(([name]) => name);
 
 // The FIXED control-text ramp (the ratified magnitude table's `controls` row, 2026-07-16) — per-step
 // literal px at the canonical baseHeight 28, scaled by baseHeight/28 in geomScale. Deliberately kinked
