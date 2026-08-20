@@ -48,7 +48,7 @@ import { COLLECTIONS } from "../engine/collections.js";
 import { stylePlans } from "../../figma/binder/style-plan.mjs";
 import { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } from "../engine/icon-systems.mjs";
 import { icon } from "./icons.js";
-import { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, saveProfile, saveSets, setColorScheme, swatch } from "./app-helpers.mjs";
+import { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } from "./app-helpers.mjs";
 import { ColorSection } from "./sections/color.js";
 import { TypeSection } from "./sections/typography.js";
 import { GeomSection } from "./sections/geometry.js";
@@ -1184,7 +1184,7 @@ class HctApp extends HTMLElement {
   // survives the next open. Ignored once the user has left the gallery (don't clobber a live edit).
   receiveStoredSets(sets) {
     if (this.view !== "gallery") return;
-    if (Array.isArray(sets) && sets.length) this.sets = sets;
+    if (Array.isArray(sets) && sets.length) this.sets = sanitizeSetRecords(sets);
     else this.persistSets(); // first run for this user — persist the seeded Default to clientStorage
     this.render();
   }
