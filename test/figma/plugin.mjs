@@ -697,6 +697,25 @@ if (sweepCandidates) {
   if (!doneMsg || doneMsg.removed !== 1) FAIL("sweep", `sweep-delete must report removing exactly 1 (got ${doneMsg && doneMsg.removed})`);
   if (F6.figma._styles.some((s) => s.id === legacyStyle.id)) FAIL("sweep", "sweep-delete must actually remove the confirmed style");
   if (!F6.figma._styles.some((s) => s.id === currentStyle.id) || !F6.figma._styles.some((s) => s.id === foreignStyle.id)) FAIL("sweep", "sweep-delete must touch ONLY the confirmed ids — nothing else");
+
+  // #454 — sweep-scan/sweep-delete are the only inbound pair besides `apply` gating a busy flag
+  // (sweepBusy) on the UI side; a sandbox-side throw here must still post a reply, or the Cleanup
+  // panel's Scan/Delete buttons stay disabled for the rest of the session. Mirrors the existing
+  // apply carve-out — the outer catch must answer sweep-scan/sweep-delete too.
+  const F6err = mockFigma();
+  F6err.figma.getLocalTextStylesAsync = async () => { throw new Error("sandbox boom"); };
+  new Function("figma", "__html__", "module", code)(F6err.figma, "<html>", undefined);
+  await F6err.figma.ui._h({ type: "sweep-scan", textNames: [], paintNames: [] });
+  const scanErrMsg = F6err.figma.ui._posted.find((m) => m && m.type === "sweep-scanned");
+  if (!scanErrMsg) FAIL("sweep", "a throwing sweep-scan must still post {sweep-scanned} from the catch, or sweepBusy wedges the Cleanup panel forever (#454)");
+
+  const F6err2 = mockFigma();
+  new Function("figma", "__html__", "module", code)(F6err2.figma, "<html>", undefined);
+  // a getter that throws on access forces the throw BEFORE the per-id try/catch in the handler
+  // (which only swallows a single already-gone style, never the whole sweep-delete call).
+  await F6err2.figma.ui._h({ type: "sweep-delete", get ids() { throw new Error("sandbox boom"); } });
+  const doneErrMsg = F6err2.figma.ui._posted.find((m) => m && m.type === "sweep-done");
+  if (!doneErrMsg) FAIL("sweep", "a throwing sweep-delete must still post {sweep-done} from the catch, or sweepBusy wedges the Cleanup panel forever (#454)");
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────
