@@ -9976,6 +9976,19 @@ function migrateStorageKeys() {
   } catch (e) { /* storage unavailable (sandboxed iframe) — nothing to migrate */ }
 }
 
+// sanitizeSetRecords — a per-record shape guard against a corrupt localStorage entry or a lossy Figma
+// clientStorage write. hydrateStoredDoc/hydrate already clamp a malformed .doc to a valid default, but a
+// record missing (or non-string) .name has no such downstream clamp: buildTiles's search filter calls
+// s.name.toLowerCase() on EVERY record unconditionally, so one bad name throws and takes down the whole
+// gallery render, not just that card. Coerce (not drop) so the set itself isn't lost; drop only a record
+// that isn't even an object, since there's nothing left to render.
+function sanitizeSetRecords(sets) {
+  if (!Array.isArray(sets)) return [];
+  return sets
+    .filter((s) => s && typeof s === "object")
+    .map((s) => (typeof s.name === "string" ? s : { ...s, name: "Untitled set" }));
+}
+
 function loadSets() {
   let raw = null;
   try {
@@ -9991,7 +10004,7 @@ function loadSets() {
     saveSets(sets);
     return sets;
   }
-  return raw.sets;
+  return sanitizeSetRecords(raw.sets);
 }
 
 function saveSets(sets) {
@@ -10427,7 +10440,7 @@ const field = (labelText, control, { labelTitle } = {}) => {
   return h("div", { class: "field" }, h("label", { for: id, title: labelTitle }, labelText), control);
 };
 
-return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, field };
+return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, sanitizeSetRecords, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, field };
 })();
 __M.colorSection = (function(){
 const { SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, projectView, seedFromKeyColor, slug } = __M.model;
@@ -15754,7 +15767,7 @@ const { COLLECTIONS } = __M.collections;
 const { stylePlans } = __M.stylePlan;
 const { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } = __M.iconSystems;
 const { icon } = __M.icons;
-const { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, saveProfile, saveSets, setColorScheme, swatch } = __M.appHelpers;
+const { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } = __M.appHelpers;
 const { ColorSection } = __M.colorSection;
 const { TypeSection } = __M.typeSection;
 const { GeomSection } = __M.geomSection;
@@ -16890,7 +16903,7 @@ class HctApp extends HTMLElement {
   // survives the next open. Ignored once the user has left the gallery (don't clobber a live edit).
   receiveStoredSets(sets) {
     if (this.view !== "gallery") return;
-    if (Array.isArray(sets) && sets.length) this.sets = sets;
+    if (Array.isArray(sets) && sets.length) this.sets = sanitizeSetRecords(sets);
     else this.persistSets(); // first run for this user — persist the seeded Default to clientStorage
     this.render();
   }

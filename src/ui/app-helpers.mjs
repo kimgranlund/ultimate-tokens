@@ -95,6 +95,19 @@ export function migrateStorageKeys() {
   } catch (e) { /* storage unavailable (sandboxed iframe) — nothing to migrate */ }
 }
 
+// sanitizeSetRecords — a per-record shape guard against a corrupt localStorage entry or a lossy Figma
+// clientStorage write. hydrateStoredDoc/hydrate already clamp a malformed .doc to a valid default, but a
+// record missing (or non-string) .name has no such downstream clamp: buildTiles's search filter calls
+// s.name.toLowerCase() on EVERY record unconditionally, so one bad name throws and takes down the whole
+// gallery render, not just that card. Coerce (not drop) so the set itself isn't lost; drop only a record
+// that isn't even an object, since there's nothing left to render.
+export function sanitizeSetRecords(sets) {
+  if (!Array.isArray(sets)) return [];
+  return sets
+    .filter((s) => s && typeof s === "object")
+    .map((s) => (typeof s.name === "string" ? s : { ...s, name: "Untitled set" }));
+}
+
 export function loadSets() {
   let raw = null;
   try {
@@ -110,7 +123,7 @@ export function loadSets() {
     saveSets(sets);
     return sets;
   }
-  return raw.sets;
+  return sanitizeSetRecords(raw.sets);
 }
 
 export function saveSets(sets) {

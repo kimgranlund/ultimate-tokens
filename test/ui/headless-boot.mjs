@@ -1150,6 +1150,24 @@ probedCS.length = 0;
 const keptCS = app.sets;
 app.receiveStoredSets(null);
 ok(app.sets === keptCS && probedCS.some((m) => m && m.type === "save-sets"), "(cs) first run (no stored sets) keeps the seed AND persists it to clientStorage");
+// ── (cs2) #464: a malformed record (missing/non-string .name) must not crash the gallery ──
+// buildTiles's search filter calls s.name.toLowerCase() on EVERY record unconditionally — an
+// unguarded corrupt record (bad localStorage, a lossy Figma clientStorage write) used to throw
+// and take down the whole gallery render, not just that card.
+const malformedCS = [
+  { id: "set-ok", name: "Good Set", doc: ser(app.doc), updated: 1 },
+  { id: "set-noname", doc: ser(app.doc), updated: 2 },        // .name entirely missing
+  { id: "set-badname", name: 42, doc: ser(app.doc), updated: 3 }, // .name non-string
+];
+app.receiveStoredSets(malformedCS);
+ok(app.sets.length === 3, "(cs2) receiveStoredSets keeps every record, coercing rather than dropping a malformed one");
+app.search = "";
+let tilesCS2;
+ok((() => { try { tilesCS2 = app.buildTiles(); return true; } catch { return false; } })(), "(cs2) buildTiles renders the gallery without throwing despite the malformed records");
+ok(Array.isArray(tilesCS2) && tilesCS2.length >= 3, "(cs2) all three sets (including the coerced ones) render as tiles");
+app.search = "good";
+ok((() => { try { app.buildTiles(); return true; } catch { return false; } })(), "(cs2) searching the gallery does not throw on a coerced record");
+app.search = "";
 globalThis.parent = realParentCS;
 app.inFigma = false; app._figmaProbed = false;
 app.toGallery();
