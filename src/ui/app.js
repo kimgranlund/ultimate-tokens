@@ -29,6 +29,7 @@ import {
   exportDesignSystemMakeBundle,
   SCRIM_BASES,
   SCRIM_STEPS,
+  modeTierNudge,
 } from "./model.mjs";
 import { STORAGE_KEY, serialize, hydrate } from "./persist.js";
 import { clampProfile, resolveFlags, flagOf as flagFromFlags, resolveTier, entitlementActive } from "../engine/flags.js";
@@ -1741,29 +1742,11 @@ class HctApp extends HTMLElement {
   //   doc.geometry.tokenOverrides = { "<size>|<modeKey>": <heightPx> }
   // modeKey = "base" or a breakpoint mode's id; "|" never appears in a voice/step/size name. ──
 
-  // _modeTierNudge(modeFactor) — per-cell overrides for the canonical breakpoint tiers, from the ratified
-  // magnitude table (2026-07-16, at request — supersedes 2026-07-13's Body Mobile nudge: Body is now FROZEN
-  // across Desktop/Tablet/Mobile like the rest of the body class). The general hierarchy-aware law freezes
-  // everything at-or-below bodyBase, so it can't step the LABEL family down on the small tiers (or land the
-  // Label/Tiny cells on the table's off-ladder values on the large ones) on its own; targeted per-cell
-  // overrides (the EXISTING size-override mechanism) carry the table's cells. Keyed on the FACTOR itself
-  // (not a mode's name/id), so it applies consistently whether a tier is the synthesized (no-modes) shape
-  // or the materialized Standard set (addStandardTypeModes). The SINGLE source for both call sites
-  // (_typeScaleFor / _typeModeScales), so they can never independently drift.
+  // _modeTierNudge(modeFactor) — lifted into model.mjs#modeTierNudge (A1, #456): a pure function of
+  // `modeFactor` alone, it belongs with the rest of the mode-aware resolution layer. Thin delegate kept
+  // here in case any external caller still reaches through the instance method.
   _modeTierNudge(modeFactor) {
-    const near = (x) => Math.abs((modeFactor || 1) - x) < 1e-9;
-    const fam = (voices, sizes) => Object.fromEntries(voices.flatMap((v) => ["SM", "MD", "LG"].map((s, i) => [`${v}|${s}`, sizes[i]])));
-    const fam6 = (voices, sizes) => Object.fromEntries(voices.flatMap((v) => ["XS", "SM", "MD", "LG", "XL", "2XL"].map((s, i) => [`${v}|${s}`, sizes[i]])));
-    const LABELS = ["Label", "Label-mono", "Kicker"]; // Label-mono + Kicker peg to Label's sizes by design
-    // UI-control/UI-widget (TKT-0008, extended to the full XS..2XL ramp 2026-07-16): every non-Desktop
-    // tier carries the ratified tables' full hand columns — the freeze law can't hold XL/2XL (they sit
-    // above bodyBase, so Tablet/Mobile would compress them) and the nice-ladder re-rounds the Lg/Xl
-    // scaled odd values, so hand cells are the deterministic path for all four tiers.
-    if (near(5 / 6)) return { ...fam(LABELS, [11, 12, 13]), ...fam6(["UI-control"], [12, 13, 15, 16, 18, 20]), ...fam6(["UI-widget"], [9, 10, 11, 12, 13, 14]) }; // Tablet (UI voices frozen at Desktop)
-    if (near(2 / 3)) return { ...fam(LABELS, [10, 11, 12]), ...fam6(["UI-control"], [12, 13, 15, 16, 18, 20]), ...fam6(["UI-widget"], [9, 10, 11, 12, 13, 14]) }; // Mobile (UI voices frozen at Desktop)
-    if (near(0.89)) return { ...fam(LABELS, [13, 14, 15]), ...fam6(["UI-control"], [14, 15, 17, 18, 20, 22]), ...fam6(["UI-widget"], [11, 12, 13, 14, 15, 16]) }; // Desktop Lg
-    if (near(0.80)) return { ...fam(LABELS, [16, 17, 18]), ...fam(["Tiny", "Tiny-mono"], [12, 13, 14]), ...fam6(["UI-control"], [16, 17, 18, 20, 22, 24]), ...fam6(["UI-widget"], [13, 14, 15, 16, 17, 18]) }; // Desktop Xl
-    return null;
+    return modeTierNudge(modeFactor);
   }
 
 

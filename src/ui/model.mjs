@@ -36,24 +36,97 @@ import { geomScale, DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
 // geometryScale — the resolved geometry for a doc, COMPOSED with its type scale so a control's text
 // size (the per-step `font` at SM/MD/LG) comes from the brand's UI-CONTROL voice (TKT-0008 — rerouted
 // off Label 2026-07-16; XS/XL/2XL fall back to the engine's fixed CONTROL_FONT ramp). The single place
-// the two systems are joined; brandKit + the app's Geometry section/exports all go through it.
+// the two systems are joined; brandKit + the app's Geometry section/exports all go through it (via
+// `geomScaleFor`, below — this wrapper stays for external/back-compat callers that pass ad-hoc override
+// slices rather than a modeKey; the no-opts case IS `geomScaleFor(doc, "base")`).
 // `opts.overrides` (optional) — the flat `<size>→height` BASE override slice; threaded into geomScale.
 // `opts.typeOverrides` (optional) — the flat `<voice>|<step>→size` BASE slice for the COMPOSED type
 // scale, so a UI-control override carries into the shared per-step `font` too.
 export function geometryScale(doc, opts = {}) {
+  if (!opts.overrides && !opts.typeOverrides) return geomScaleFor(doc, "base");
   const tcfg = { ...(doc.type || DEFAULT_TYPE) };
   if (opts.typeOverrides) tcfg.overrides = opts.typeOverrides;
   return geomScale(doc.geometry || DEFAULT_GEOMETRY, { typeScale: typeScale(tcfg), overrides: opts.overrides });
 }
 
-// baseOverrideSlice — the flat per-cell override map for the BASE mode, sliced from a `tokenOverrides`
-// store keyed "<...>|<modeKey>". Mirrors app.js _typeOverridesFor/_geomOverridesFor for modeKey "base":
-// keep only the "...|base"-suffixed entries, strip the suffix, drop non-positive/non-finite values. Returns
-// undefined when there is nothing applicable, so the resolved scale stays byte-identical (the identity gate).
-function baseOverrideSlice(store) {
+// ── The mode-aware resolution layer (A1, #456) ──────────────────────────────────────────────────
+// Lifted out of app.js/sections/{typography,geometry}.js: every one of these is a PURE function of
+// `doc` (+ a modeKey), so it belongs beside `projectView`/`geometryScale`, not scattered across two
+// hand-mirrored instance-method files. `brandKit()` and the section resolvers (drawer/apply-gate/the
+// tokens matrix/the specimen) all call these same exports now — a single implementation instead of
+// four independently-written joins that happened to agree.
+//
+// doc.type.tokenOverrides     = { "<voice>|<step>|<modeKey>": <sizePx> }
+// doc.geometry.tokenOverrides = { "<size>|<modeKey>": <heightPx> }
+// modeKey = "base" or a breakpoint mode's id; "|" never appears in a voice/step/size name.
+
+// STANDARD_TYPE_RUNGS / STANDARD_GEOM_RUNGS — the ratified desktop-anchored Standard sets (Kim,
+// 2026-07-10): Tablet/Mobile derive DOWN via a fixed factor/height-drop from the doc's own base.
+// STABLE ids (not seeded/random) so a token override written against a not-yet-materialized rung
+// keeps resolving once it IS materialized (see `setTypeTokenOverride`/`setGeomTokenOverride` in the
+// section mixins, which still own the materialize-on-first-edit + Standard-set UI).
+export const STANDARD_TYPE_RUNGS = [
+  { id: "std-tablet", name: "Tablet", factor: 5 / 6, w: 992 },
+  { id: "std-mobile", name: "Mobile", factor: 2 / 3, w: 476 },
+];
+export const STANDARD_GEOM_RUNGS = [
+  { id: "std-tablet", name: "Tablet", w: 992, drop: 2 },
+  { id: "std-mobile", name: "Mobile", w: 476, drop: 4 },
+];
+
+// typeEffectiveModes(doc) — doc.type.modes if any have been materialized, else the Standard set
+// rendered LIVE so Tablet/Mobile are visible/selectable/previewable without an explicit materialize
+// step. Shaped identically to a real mode entry so every consumer (the mode tabs, the tokens matrix,
+// `typeScaleFor`) treats them the same way.
+export function typeEffectiveModes(doc) {
+  const t = doc.type || DEFAULT_TYPE;
+  if ((t.modes || []).length) return t.modes;
+  return STANDARD_TYPE_RUNGS.map((r) => ({ id: r.id, name: r.name, factor: r.factor, minWidth: r.w }));
+}
+
+// geomEffectiveModes(doc) — the geometry analog: heights derived from the doc's CURRENT baseHeight.
+export function geomEffectiveModes(doc) {
+  const g = doc.geometry || DEFAULT_GEOMETRY;
+  if ((g.modes || []).length) return g.modes;
+  const bh = Number(g.baseHeight) || DEFAULT_GEOMETRY.baseHeight || 28;
+  return STANDARD_GEOM_RUNGS.map((r) => ({ id: r.id, name: r.name, baseHeight: Math.max(20, bh - r.drop), minWidth: r.w }));
+}
+
+// modeTierNudge(modeFactor) — per-cell overrides for the canonical breakpoint tiers, from the ratified
+// magnitude table (2026-07-16, at request — supersedes 2026-07-13's Body Mobile nudge: Body is now
+// FROZEN across Desktop/Tablet/Mobile like the rest of the body class). The general hierarchy-aware
+// law freezes everything at-or-below bodyBase, so it can't step the LABEL family down on the small
+// tiers (or land the Label/Tiny cells on the table's off-ladder values on the large ones) on its own;
+// targeted per-cell overrides (the EXISTING size-override mechanism) carry the table's cells. Keyed on
+// the FACTOR itself (not a mode's name/id), so it applies consistently whether a tier is the
+// synthesized (no-modes) shape or the materialized Standard set. The SINGLE source for every call
+// site (`typeScaleFor` / `typeModeScales` / `geomModeScales`), so they can never independently drift.
+export function modeTierNudge(modeFactor) {
+  const near = (x) => Math.abs((modeFactor || 1) - x) < 1e-9;
+  const fam = (voices, sizes) => Object.fromEntries(voices.flatMap((v) => ["SM", "MD", "LG"].map((s, i) => [`${v}|${s}`, sizes[i]])));
+  const fam6 = (voices, sizes) => Object.fromEntries(voices.flatMap((v) => ["XS", "SM", "MD", "LG", "XL", "2XL"].map((s, i) => [`${v}|${s}`, sizes[i]])));
+  const LABELS = ["Label", "Label-mono", "Kicker"]; // Label-mono + Kicker peg to Label's sizes by design
+  // UI-control/UI-widget (TKT-0008, extended to the full XS..2XL ramp 2026-07-16): every non-Desktop
+  // tier carries the ratified tables' full hand columns — the freeze law can't hold XL/2XL (they sit
+  // above bodyBase, so Tablet/Mobile would compress them) and the nice-ladder re-rounds the Lg/Xl
+  // scaled odd values, so hand cells are the deterministic path for all four tiers.
+  if (near(5 / 6)) return { ...fam(LABELS, [11, 12, 13]), ...fam6(["UI-control"], [12, 13, 15, 16, 18, 20]), ...fam6(["UI-widget"], [9, 10, 11, 12, 13, 14]) }; // Tablet (UI voices frozen at Desktop)
+  if (near(2 / 3)) return { ...fam(LABELS, [10, 11, 12]), ...fam6(["UI-control"], [12, 13, 15, 16, 18, 20]), ...fam6(["UI-widget"], [9, 10, 11, 12, 13, 14]) }; // Mobile (UI voices frozen at Desktop)
+  if (near(0.89)) return { ...fam(LABELS, [13, 14, 15]), ...fam6(["UI-control"], [14, 15, 17, 18, 20, 22]), ...fam6(["UI-widget"], [11, 12, 13, 14, 15, 16]) }; // Desktop Lg
+  if (near(0.80)) return { ...fam(LABELS, [16, 17, 18]), ...fam(["Tiny", "Tiny-mono"], [12, 13, 14]), ...fam6(["UI-control"], [16, 17, 18, 20, 22, 24]), ...fam6(["UI-widget"], [13, 14, 15, 16, 17, 18]) }; // Desktop Xl
+  return null;
+}
+
+// overridesFor(store, modeKey) — the flat { "<...>": value } slice for one mode, stripped of its
+// "|<modeKey>" suffix. The ONE slicer for all three former copies (baseOverrideSlice + the section
+// mixins' _typeOverridesFor/_geomOverridesFor): drops non-finite/non-positive values (dormant filter —
+// the live setters + persist's clampTokenOverrides already guarantee valid values reach here, so this
+// never changes behavior for a real doc) and returns undefined when nothing applies, so the resolved
+// scale stays byte-identical (the identity gate).
+function overridesFor(store, modeKey) {
   if (!store || typeof store !== "object") return undefined;
   const out = {};
-  const suffix = "|base";
+  const suffix = "|" + modeKey;
   for (const k of Object.keys(store)) {
     if (!k.endsWith(suffix)) continue;
     const v = store[k];
@@ -61,6 +134,87 @@ function baseOverrideSlice(store) {
     out[k.slice(0, k.length - suffix.length)] = v;
   }
   return Object.keys(out).length ? out : undefined;
+}
+export function typeOverridesFor(doc, modeKey) {
+  return overridesFor(doc.type && doc.type.tokenOverrides, modeKey);
+}
+export function geomOverridesFor(doc, modeKey) {
+  return overridesFor(doc.geometry && doc.geometry.tokenOverrides, modeKey);
+}
+
+// typeScaleFor(doc, modeKey) — the resolved typeScale for a mode WITH that mode's per-cell overrides
+// applied. "base" → doc.type; a mode id → the mode's own levers layered on doc.type: EITHER a
+// bodyBase override (legacy custom modes) or a hierarchy-aware compression `factor` (the Standard set:
+// Tablet 5/6 · Mobile 2/3 — body frozen, display compressed). The single place a type scale is built
+// so overrides reach the matrix, the specimen, and every export consistently.
+export function typeScaleFor(doc, modeKey) {
+  const t = doc.type || DEFAULT_TYPE;
+  const base = modeKey === "base" ? t : (() => { const m = typeEffectiveModes(doc).find((x) => x.id === modeKey); return m ? { ...t, bodyBase: m.bodyBase ?? t.bodyBase, modeFactor: m.factor ?? 1 } : t; })();
+  const overrides = { ...modeTierNudge(base.modeFactor), ...typeOverridesFor(doc, modeKey) };
+  return typeScale({ ...base, overrides });
+}
+
+// geomScaleFor(doc, modeKey) — the resolved geometry scale for a mode WITH that mode's per-cell
+// HEIGHT overrides applied, COMPOSED with the type scale at the SAME mode — a control's text size
+// (SM/MD/LG `font`) is the UI-CONTROL voice at that mode (TKT-0008; XS/XL/2XL fall back to the
+// engine's fixed control-text ramp / the tier columns in `geomModeScales`).
+export function geomScaleFor(doc, modeKey) {
+  const g = doc.geometry || DEFAULT_GEOMETRY;
+  // a mode's rampContrast: mode-explicit wins; otherwise it INHERITS the doc's (the desktop-anchored
+  // shape — base isn't compressed, so inheritance is natural). Legacy #251 committed sets always carry
+  // explicit per-mode values, so they resolve identically; a legacy compressed base (contrast 0) with a
+  // silent mode keeps the old full-ramp default via the ?? 1 tail.
+  const cfg = modeKey === "base" ? g : (() => { const m = geomEffectiveModes(doc).find((x) => x.id === modeKey); return m ? { ...g, baseHeight: m.baseHeight, rampContrast: m.rampContrast ?? ((g.baseName || "Base") === "Desktop" ? g.rampContrast : undefined) ?? 1 } : g; })();
+  return geomScale(cfg, { typeScale: typeScaleFor(doc, modeKey), overrides: geomOverridesFor(doc, modeKey) });
+}
+
+// typeTierScale(doc, mult, mf) — the byte-identical tier closure that used to be reimplemented
+// independently in typography.js's `_typeModeScales` AND geometry.js's `_geomModeScales` (B1, #456):
+// scale bodyBase by `mult`, compress by breakpoint factor `mf`, and layer `modeTierNudge(mf)` over any
+// doc-level overrides. Now the ONE place that formula lives; both mode-scale exports below call it.
+function typeTierScale(doc, mult, mf) {
+  const t = doc.type || DEFAULT_TYPE;
+  const bb = Number(t.bodyBase) || DEFAULT_TYPE.bodyBase;
+  return typeScale({ ...t, bodyBase: bb * mult, modeFactor: mf, overrides: { ...(t.overrides || {}), ...modeTierNudge(mf) } });
+}
+
+// typeModeScales(doc) — the breakpoint-mode scales for the Figma exports — [{ name, minWidth, scale }].
+// Size modes are INTRINSIC, the same technique as Color's Light/Dark — and DESKTOP-ANCHORED (Kim's
+// ratified law, 2026-07-10): the scale you design IS Desktop; Tablet/Mobile derive DOWN via the
+// hierarchy-aware modeFactor curve (body frozen, Display fully compressed — 5/6 at Tablet, 2/3 at
+// Mobile). When the doc carries configured modes they resolve override-aware (via `typeScaleFor`,
+// incl. factor modes); when it carries NONE the pair is synthesized — so every export/apply carries
+// the full intrinsic set with zero setup. Desktop Lg/Xl (2026-07-15/16, the TV tier) ride the INVERSE
+// curve: `bodyBase` scales UP while `modeFactor` pulls the ceiling back down toward its ORIGINAL
+// Desktop value instead of letting it scale proportionally — body grows, Display barely moves.
+export function typeModeScales(doc) {
+  const t = doc.type || DEFAULT_TYPE;
+  if ((t.modes || []).length) return t.modes.map((m) => ({ name: m.name, minWidth: m.minWidth, scale: typeScaleFor(doc, m.id) }));
+  return [
+    { name: "Desktop Lg", minWidth: 1728, scale: typeTierScale(doc, 1.125, 0.89) },
+    { name: "Desktop Xl", minWidth: 2560, scale: typeTierScale(doc, 1.375, 0.80) },
+    { name: "Tablet", minWidth: 992, scale: typeTierScale(doc, 1, 5 / 6) },
+    { name: "Mobile", minWidth: 476, scale: typeTierScale(doc, 1, 2 / 3) },
+  ];
+}
+
+// geomModeScales(doc) — the geometry analog: when the doc carries no modes, Tablet/Mobile/Desktop
+// Lg/Xl are synthesized, Desktop-anchored: the doc ramp IS Desktop; the other tiers carry the ratified
+// magnitude table's height + gap ramps (scaled by bh/28, so they hold shape at any baseHeight), and
+// control text composes from the tier's own UI-control voice at every step via `typeTierScale` (the
+// SAME closure `typeModeScales` uses — the former second, independently-written copy, B1/B2 #456).
+export function geomModeScales(doc) {
+  const g = doc.geometry || DEFAULT_GEOMETRY;
+  if ((g.modes || []).length) return g.modes.map((m) => ({ name: m.name, minWidth: m.minWidth, scale: geomScaleFor(doc, m.id) }));
+  const bh = g.baseHeight ?? 28;
+  const ramp = (arr) => { const f = bh / 28; const out = {}; ["XS", "SM", "MD", "LG", "XL", "2XL"].forEach((k, i) => { if (arr[i] != null) out[k] = arr[i] * f; }); return out; };
+  const synth = (delta, mult, mf, overrides, gaps) => geomScale({ ...g, baseHeight: Math.max(20, bh + delta) }, { typeScale: typeTierScale(doc, mult, mf), overrides, gapOverrides: gaps });
+  return [
+    { name: "Desktop Lg", minWidth: 1728, scale: synth(4, 1.125, 0.89, ramp([24, 28, 32, 40, 56, 72]), ramp([4, 4, 5, 7, 7, 9])) },
+    { name: "Desktop Xl", minWidth: 2560, scale: synth(28, 1.375, 0.80, ramp([40, 48, 56, 64, 72, 80]), ramp([4, 5, 6, 8, 8, 10])) },
+    { name: "Tablet", minWidth: 992, scale: synth(-2, 1, 5 / 6, undefined, ramp([3, 3, 4, 6, 6, 8])) },
+    { name: "Mobile", minWidth: 476, scale: synth(-4, 1, 2 / 3, ramp([16, 20, 24, 32, 40, 56]), ramp([3, 3, 4, 5, 5, 6])) },
+  ];
 }
 import {
   exportCSS,
@@ -297,11 +451,10 @@ export function brandKit(doc, systems) {
     }
   }
   // BASE-mode per-cell overrides reach the kit too (every other export carries them — the matrix Base
-  // column, CSS, DTCG). Slice the "|base"-suffixed entries of each tokenOverrides store and thread them in.
-  const typeOv = baseOverrideSlice(doc.type && doc.type.tokenOverrides);
-  const geomOv = baseOverrideSlice(doc.geometry && doc.geometry.tokenOverrides);
-  if (sys.type) kit.type = typeScale({ ...(doc.type || DEFAULT_TYPE), overrides: typeOv });
-  if (sys.geometry) kit.geometry = geometryScale(doc, { overrides: geomOv, typeOverrides: typeOv }); // composed with the (override-aware) type scale — shared `font` tracks too
+  // column, CSS, DTCG) — via the SAME `typeScaleFor`/`geomScaleFor` the section resolvers use, so this
+  // path can't drift from them (the former separate `geometryScale`+`baseOverrideSlice` join, #456).
+  if (sys.type) kit.type = typeScaleFor(doc, "base");
+  if (sys.geometry) kit.geometry = geomScaleFor(doc, "base"); // composed with the (override-aware) type scale — shared `font` tracks too
   return kit;
 }
 
@@ -561,8 +714,8 @@ export function projectView(doc) {
   // the resolved type + geometry scales — so the shadcn theme carries the brand fonts (--font-*) + a
   // geometry-derived --radius, not just colours. Fonts/radii come from the treatment (size overrides don't
   // affect them), so the base scales are correct here.
-  const shadType = typeScale(state.type || DEFAULT_TYPE);
-  const shadGeom = geometryScale(state);
+  const shadType = typeScaleFor(state, "base");
+  const shadGeom = geomScaleFor(state, "base");
   const exports = {
     css: exportCSS(state),
     oklch: exportOKLCH(state),

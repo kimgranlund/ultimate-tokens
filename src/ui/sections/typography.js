@@ -1,18 +1,9 @@
-import { slug } from "../model.mjs";
+import { STANDARD_TYPE_RUNGS, slug, typeEffectiveModes, typeModeScales, typeOverridesFor, typeScaleFor } from "../model.mjs";
 import { hydrate, serialize } from "../persist.js";
-import { BUNDLED_FONTS, DEFAULT_TYPE, TYPE_TREATMENTS, WEIGHT_NAMES, genericFor, resolvedFontForMode, siblingWeightDefaults, typeScale, typeTokensBreakpointCSS, typeTokensCSS, typeTokensDTCG } from "../../engine/type.mjs";
+import { BUNDLED_FONTS, DEFAULT_TYPE, TYPE_TREATMENTS, WEIGHT_NAMES, genericFor, resolvedFontForMode, siblingWeightDefaults, typeTokensBreakpointCSS, typeTokensCSS, typeTokensDTCG } from "../../engine/type.mjs";
 import { googleSafeFontFor } from "../../engine/font-fallbacks.mjs";
 import { icon } from "../icons.js";
 import { GENERIC_FONTS, SELF_HOSTED_FONTS, TYPE_PARA, TYPE_SAMPLE, btn, ensureTypeFonts, ensureWebFonts, field, fmt, h } from "../app-helpers.mjs";
-
-// STANDARD_TYPE_RUNGS — the ratified desktop-anchored Standard set (Kim, 2026-07-10): Tablet/Mobile
-// derive DOWN via a hierarchy-aware factor (body frozen, display compressed). STABLE ids (not
-// seeded/random) so a token override written against a not-yet-materialized rung (see
-// _typeEffectiveModes / setTypeTokenOverride) keeps resolving once it IS materialized.
-const STANDARD_TYPE_RUNGS = [
-  { id: "std-tablet", name: "Tablet", w: 992, factor: 5 / 6 },
-  { id: "std-mobile", name: "Mobile", w: 476, factor: 2 / 3 },
-];
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -393,28 +384,15 @@ export class TypeSectionImpl {
     );
   }
 
-  // _typeOverridesFor(modeKey) — the flat { "<voice>|<step>": size } slice for one mode (the suffix stripped).
+  // _typeOverridesFor / _typeEffectiveModes / _typeScaleFor / _typeModeScales / _modeTierNudge are now
+  // PURE `doc -> ...` functions lifted into model.mjs (A1, #456) — thin delegates here so the section's
+  // many call sites don't churn. See model.mjs for the implementations + rationale.
   _typeOverridesFor(modeKey) {
-    const all = (this.doc.type && this.doc.type.tokenOverrides) || null;
-    if (!all) return undefined;
-    const out = {};
-    const suffix = "|" + modeKey;
-    for (const k of Object.keys(all)) {
-      if (!k.endsWith(suffix)) continue;
-      out[k.slice(0, k.length - suffix.length)] = all[k]; // "<voice>|<step>"
-    }
-    return Object.keys(out).length ? out : undefined;
+    return typeOverridesFor(this.doc, modeKey);
   }
 
-  // _typeEffectiveModes — doc.type.modes if any have been materialized, else the Standard set rendered
-  // LIVE (STANDARD_TYPE_RUNGS) so Tablet/Mobile are visible/selectable/previewable without an explicit
-  // materialize step. Shaped identically to a real mode entry so every consumer (the mode tabs, the
-  // tokens matrix, _typeScaleFor) treats them the same way; only an actual EDIT materializes them for
-  // real (setTypeTokenOverride), using these SAME ids so the edit keeps resolving afterward.
   _typeEffectiveModes() {
-    const t = this.doc.type || DEFAULT_TYPE;
-    if ((t.modes || []).length) return t.modes;
-    return STANDARD_TYPE_RUNGS.map((r) => ({ id: r.id, name: r.name, factor: r.factor, minWidth: r.w }));
+    return typeEffectiveModes(this.doc);
   }
 
   // _ensureTypeModesMaterialized(d, modeKey) — if d.type has no real modes yet AND modeKey is one of the
@@ -428,16 +406,9 @@ export class TypeSectionImpl {
     d.type.modes = STANDARD_TYPE_RUNGS.map((r) => ({ id: r.id, name: r.name, factor: r.factor, minWidth: r.w }));
   }
 
-  // _typeScaleFor(modeKey) — the resolved typeScale for a mode WITH that mode's per-cell overrides applied.
-  // "base" → doc.type; a mode id → the mode's own levers layered on doc.type: EITHER a bodyBase override
-  // (legacy custom modes) or a hierarchy-aware compression `factor` (the Standard set: Tablet 5/6 ·
-  // Mobile 2/3 — body frozen, display compressed). The single place a type scale is built so overrides
-  // reach the matrix, the specimen, and every export consistently.
+  // _typeScaleFor(modeKey) — see model.mjs#typeScaleFor for the implementation + rationale.
   _typeScaleFor(modeKey) {
-    const t = this.doc.type || DEFAULT_TYPE;
-    const base = modeKey === "base" ? t : (() => { const m = this._typeEffectiveModes().find((x) => x.id === modeKey); return m ? { ...t, bodyBase: m.bodyBase ?? t.bodyBase, modeFactor: m.factor ?? 1 } : t; })();
-    const overrides = { ...this._modeTierNudge(base.modeFactor), ...this._typeOverridesFor(modeKey) };
-    return typeScale({ ...base, overrides });
+    return typeScaleFor(this.doc, modeKey);
   }
 
 
@@ -1097,40 +1068,11 @@ export class TypeSectionImpl {
     );
   }
 
-  // the breakpoint-mode scales for the Figma exports — [{ name, minWidth, scale }]. Size modes are
-  // INTRINSIC, the same technique as Color's Light/Dark — and DESKTOP-ANCHORED (Kim's ratified law,
-  // 2026-07-10): the scale you design IS Desktop; Tablet/Mobile derive DOWN via the hierarchy-aware
-  // modeFactor curve (body frozen, Display fully compressed — 5/6 at Tablet, 2/3 at Mobile). When the
-  // doc carries configured modes they resolve override-aware (via _typeScaleFor, incl. factor modes);
-  // when it carries NONE the pair is synthesized — so every export/apply carries the full intrinsic set
-  // with zero setup. Configuring your own modes (＋) takes full manual control.
-  //
-  // Desktop Lg/Xl (2026-07-15, retuned to the ratified magnitude table 2026-07-16 — Xl is the TV tier,
-  // at request: "Desktop XL will be used for TV") — the INVERSE curve, same `modeFactor` knob: `bodyBase`
-  // scales UP (×1.125/×1.375 of the doc's own bodyBase → body 16→18→22 at the default) while `modeFactor`
-  // (0.89/0.80) pulls the ceiling back down toward its ORIGINAL Desktop value instead of letting it scale
-  // proportionally — body grows, Display barely moves. The ratio-based recipe (not an absolute px target)
-  // means it generalizes to any doc bodyBase, not just the 16 default. Ordered BEFORE Tablet/Mobile so
-  // the Figma mode order reads Desktop · Desktop Lg · Desktop Xl · Tablet · Mobile (`_typeBaseOpts`
-  // prepends "Desktop" itself).
-  //
-  // The per-tier Label/Tiny cells that the frozen-body law can't produce ride `_modeTierNudge` (the
-  // magnitude table's ladders — Label steps DOWN on Tablet/Mobile and lands off-ladder values on Lg/Xl;
-  // 2026-07-16 removed 2026-07-13's Body Mobile nudge: Body is frozen across Desktop/Tablet/Mobile).
+  // the breakpoint-mode scales for the Figma exports — see model.mjs#typeModeScales for the
+  // implementation + the full rationale (Desktop-anchored synthesis, the Lg/Xl inverse curve, the
+  // per-tier Label/Tiny nudges).
   _typeModeScales() {
-    const t = this.doc.type || DEFAULT_TYPE;
-    if ((t.modes || []).length) return t.modes.map((m) => ({ name: m.name, minWidth: m.minWidth, scale: this._typeScaleFor(m.id) }));
-    const bb = Number(t.bodyBase) || DEFAULT_TYPE.bodyBase;
-    // each tier layers its _modeTierNudge cells (the ratified magnitude table's Label/Tiny ladders) over
-    // the doc's own per-cell overrides. Desktop Xl is ×1.375 (not ×1.25): the table's Body 20/22/24 IS
-    // bodyBase 22 at the default 16 — the ratio keeps it true at any doc bodyBase.
-    const tier = (mult, mf) => typeScale({ ...t, bodyBase: bb * mult, modeFactor: mf, overrides: { ...(t.overrides || {}), ...this._modeTierNudge(mf) } });
-    return [
-      { name: "Desktop Lg", minWidth: 1728, scale: tier(1.125, 0.89) },
-      { name: "Desktop Xl", minWidth: 2560, scale: tier(1.375, 0.80) },
-      { name: "Tablet", minWidth: 992, scale: tier(1, 5 / 6) },
-      { name: "Mobile", minWidth: 476, scale: tier(1, 2 / 3) },
-    ];
+    return typeModeScales(this.doc);
   }
 
   // _typeBaseOpts/_geomBaseOpts — the base-layer identity for the Figma emitters + the mode UI. The
