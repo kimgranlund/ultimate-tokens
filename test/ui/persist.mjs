@@ -26,7 +26,7 @@ const inDomainState = () => {
     if (rnd() > 0.5) roleOverrides[k] = v;
   // per-cell SIZE/HEIGHT token overrides (Tokens-matrix Phase 3): a random in-domain subset. Keys carry
   // the modeKey suffix; values are in-domain integers so they must round-trip byte-for-byte when present.
-  const tyTok = {}; for (const [k, v] of [["Body|MD|base", 40], ["Display|XL|base", 90], ["UI|SM|base", 13]]) if (rnd() > 0.5) tyTok[k] = v;
+  const tyTok = {}; for (const [k, v] of [["Body|MD|base", 40], ["Display|XL|base", 90], ["Label|SM|base", 13]]) if (rnd() > 0.5) tyTok[k] = v;
   const geTok = {}; for (const [k, v] of [["MD|base", 30], ["2XL|base", 72], ["XS|base", 18]]) if (rnd() > 0.5) geTok[k] = v;
   return { curve: pick(["linear", "sine", "cubic", "logistic", "exp"]), tension: rnd() * 100, lmin: rnd() * 40, lmax: 60 + rnd() * 40,
     damp: rnd() * 100, dampCurve: 0.5 + rnd() * 3.5, dampAmp: rnd() * 100, dampBias: -100 + rnd() * 200,
@@ -112,7 +112,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
 {
   // an in-domain map round-trips byte-for-byte (covered broadly by the fuzz above; spot-checked here).
   const S = inDomainState();
-  S.type = { treatment: "product", bodyBase: 16, tokenOverrides: { "Body|MD|base": 40, "UI|SM|tm-x": 13 } };
+  S.type = { treatment: "product", bodyBase: 16, tokenOverrides: { "Body|MD|base": 40, "Label|SM|tm-x": 13 } };
   S.geometry = { treatment: "comfortable", baseHeight: 28, tokenOverrides: { "MD|base": 30, "2XL|gm-y": 72 } };
   const R = U.hydrate(U.serialize(S));
   if (!deepEq(R.type.tokenOverrides, S.type.tokenOverrides)) FAIL("token-overrides", `type tokenOverrides did not round-trip: ${JSON.stringify(R.type.tokenOverrides)}`);
@@ -326,10 +326,60 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   const engineVoices = Object.keys(Ty.TYPE_TREATMENTS[0].categories);
   if (!eqSet(U.VOICES, engineVoices))
     FAIL("allowlist-parity", `persist.js VOICES ${JSON.stringify(sorted(U.VOICES))} != type.mjs voice set ${JSON.stringify(sorted(engineVoices))}`);
+
+  // GEOMETRY_SIZES (TKT-0455) — the leading segment of a geom tokenOverrides key; must track
+  // geometry.mjs's own SIZE_KEYS the same way VOICES tracks type.mjs's voice set.
+  if (!eqSet(U.GEOMETRY_SIZES, Ge.SIZE_KEYS))
+    FAIL("allowlist-parity", `persist.js GEOMETRY_SIZES ${JSON.stringify(sorted(U.GEOMETRY_SIZES))} != geometry.mjs SIZE_KEYS ${JSON.stringify(sorted(Ge.SIZE_KEYS))}`);
+}
+
+// ── dropped-keys (TKT-0455): a stored voice/treatment/tokenOverrides key unknown to the current
+// allowlist AND untranslated by RENAME_MAPS is now surfaced (console.warn + the DROPPED_KEYS report),
+// not silently filtered — guarding the "a future rename ships without its RENAME_MAPS entry" data-loss
+// class, and the §B5 "unknown tokenOverrides voice/size segment survives forever as an inert orphan" gap.
+{
+  const warns = [];
+  const origWarn = console.warn;
+  console.warn = (...a) => warns.push(a.join(" "));
+  try {
+    const seed = inDomainState();
+
+    const withBogusVoice = U.hydrate(U.serialize({ ...seed, type: { treatment: "product", bodyBase: 16, voices: { Bogus: { weight: 500 } } } }));
+    const dk = withBogusVoice[U.DROPPED_KEYS];
+    if (!Array.isArray(dk) || !dk.some((d) => d.facet === "type.voices" && d.key === "Bogus")) FAIL("dropped-keys", `an unknown voice must be reported in DROPPED_KEYS (got ${JSON.stringify(dk)})`);
+    if (!warns.length) FAIL("dropped-keys", "an unknown voice must console.warn, not silently drop");
+
+    const withBogusTreatment = U.hydrate(U.serialize({ ...seed, type: { treatment: "bogus-treatment", bodyBase: 16 } }));
+    if (withBogusTreatment.type.treatment !== "product") FAIL("dropped-keys", "an unknown type treatment must still fall back to its default");
+    if (!withBogusTreatment[U.DROPPED_KEYS].some((d) => d.facet === "type.treatment" && d.key === "bogus-treatment")) FAIL("dropped-keys", `an unknown type treatment must be reported in DROPPED_KEYS (got ${JSON.stringify(withBogusTreatment[U.DROPPED_KEYS])})`);
+
+    const withBogusGeomTreatment = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "bogus-geom", baseHeight: 28 } }));
+    if (!withBogusGeomTreatment[U.DROPPED_KEYS].some((d) => d.facet === "geometry.treatment" && d.key === "bogus-geom")) FAIL("dropped-keys", `an unknown geometry treatment must be reported in DROPPED_KEYS (got ${JSON.stringify(withBogusGeomTreatment[U.DROPPED_KEYS])})`);
+
+    // an unknown voice/size segment on a tokenOverrides key is DROPPED and reported — not silently
+    // surviving forever as an inert orphan (persist.js:425-436's documented §B5 gap, now closed).
+    const withBogusTov = U.hydrate(U.serialize({ ...seed, type: { treatment: "product", bodyBase: 16, tokenOverrides: { "Bogus|MD|base": 40, "Body|MD|base": 40 } } }));
+    if ("Bogus|MD|base" in (withBogusTov.type.tokenOverrides || {})) FAIL("dropped-keys", "a tokenOverrides key with an unknown leading voice segment must drop");
+    if (withBogusTov.type.tokenOverrides["Body|MD|base"] !== 40) FAIL("dropped-keys", "a valid sibling tokenOverrides key must survive dropping the unknown one");
+    if (!withBogusTov[U.DROPPED_KEYS].some((d) => d.facet === "type.tokenOverrides" && d.key === "Bogus|MD|base")) FAIL("dropped-keys", `an unknown tokenOverrides voice segment must be reported (got ${JSON.stringify(withBogusTov[U.DROPPED_KEYS])})`);
+
+    const withBogusGeomTov = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, tokenOverrides: { "XXL|base": 40, "MD|base": 30 } } }));
+    if ("XXL|base" in (withBogusGeomTov.geometry.tokenOverrides || {})) FAIL("dropped-keys", "a geom tokenOverrides key with an unknown leading size segment must drop");
+    if (!withBogusGeomTov[U.DROPPED_KEYS].some((d) => d.facet === "geometry.tokenOverrides" && d.key === "XXL|base")) FAIL("dropped-keys", `an unknown geom tokenOverrides size segment must be reported (got ${JSON.stringify(withBogusGeomTov[U.DROPPED_KEYS])})`);
+
+    // a fully in-domain doc reports NOTHING dropped — the accounting must not false-positive.
+    const clean = U.hydrate(U.serialize(seed));
+    if (clean[U.DROPPED_KEYS].length !== 0) FAIL("dropped-keys", `a fully in-domain doc must report an empty droppedKeys list (got ${JSON.stringify(clean[U.DROPPED_KEYS])})`);
+    // DROPPED_KEYS is non-enumerable — it must never disturb JSON.stringify / the roundtrip-identity gate.
+    if (Object.prototype.propertyIsEnumerable.call(withBogusVoice, U.DROPPED_KEYS)) FAIL("dropped-keys", "DROPPED_KEYS must not be enumerable");
+    if (JSON.stringify(withBogusVoice).includes("Bogus")) FAIL("dropped-keys", "DROPPED_KEYS must never leak into JSON.stringify of the hydrated state");
+  } finally {
+    console.warn = origWarn;
+  }
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity"]) {
+for (const g of ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "dropped-keys"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

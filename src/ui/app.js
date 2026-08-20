@@ -175,6 +175,10 @@ class HctApp extends HTMLElement {
   openSet(id) {
     const rec = this.sets.find((s) => s.id === id);
     if (!rec) return;
+    // TKT-0455: flush any in-flight drag on the OUTGOING doc (this.activeId hasn't
+    // moved yet) before switching — commitDrag() persists it via save(), so a live
+    // edit is never lost by navigating away mid-drag. A no-op when no drag is pending.
+    this.commitDrag();
     this.activeId = id;
     this.doc = hydrateStoredDoc(rec.doc); // legacy stamp: a pre-hueSpace STORED set stays cam16
     this.doc.name = rec.name;
@@ -219,10 +223,19 @@ class HctApp extends HTMLElement {
   // pointer drag / dropping focus mid-word. So a live edit updates ONLY the
   // live-preview surfaces in place (liveRefresh) and leaves the right pane (the
   // active control) untouched. The drag's settle ('change') does a full render().
+  //
+  // TKT-0455: a live edit does NOT call save() here — the pointer-move driver
+  // dispatches a native `input` on every tick (unthrottled), and save() pays a full
+  // serialize()+stringify() of the doc AND the whole gallery (saveSets) on every one
+  // of them. The doc mutation above is still synchronous (undo/redo/isDirty always
+  // read the live this.doc, never miss an edit) — only the STORAGE WRITE is deferred
+  // to the drag's settle. commitDrag() (the existing 250ms debounce / onchange /
+  // undo-redo flush / openSet's outgoing-doc flush) is the one place that now must
+  // persist — see its own comment.
   edit(fn, opts = {}) {
     fn(this.doc);
     this.doc.selected = this.sel.kind === "palette" ? this.sel.id : this.doc.selected;
-    this.save();
+    if (!opts.live) this.save();
     if (opts.live) this.liveRefresh();
     else this.render();
   }
@@ -327,8 +340,12 @@ class HctApp extends HTMLElement {
   }
 
 
-  // commitDrag — flush a settled drag's single pre-drag snapshot onto history.
-  // Called by the debounce AND eagerly on slider 'change' (pointer release).
+  // commitDrag — flush a settled drag's single pre-drag snapshot onto history, AND
+  // persist the doc (TKT-0455: edit(fn,{live:true}) no longer saves per pointer-move
+  // tick, so this is the drag's one storage write). Called by the debounce timeout,
+  // slider onchange (pointer release), undo()/redo() (flush before restoring), and
+  // openSet() (flush the OUTGOING doc before switching sets) — every settle path, so
+  // a live edit can never be lost by navigating away mid-drag.
   commitDrag() {
     if (this._dragTimer) { clearTimeout(this._dragTimer); this._dragTimer = null; }
     if (this._dragSnap == null) return;
@@ -336,6 +353,7 @@ class HctApp extends HTMLElement {
     if (this.history.length > this.HISTORY_MAX) this.history.shift();
     this.future.length = 0;
     this._dragSnap = null;
+    this.save();
   }
 
 

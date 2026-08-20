@@ -219,13 +219,20 @@ function clampOverrides(o) {
 // now on, the same way a Figma variable rename ships its FIGMA_MIGRATIONS entry (TKT-0012).
 export const CURRENT_SCHEMA_VERSION = 1;
 
+// DROPPED_KEYS (TKT-0455) — the loud-fail accounting channel. hydrate() attaches the report of every
+// unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
+// value, keyed by this symbol — non-enumerable so it never leaks into JSON.stringify/serialize and
+// never disturbs the roundtrip-identity gate, but reachable by a caller (or a test) that wants to
+// assert something was actually dropped instead of silently vanishing. See hydrate() below.
+export const DROPPED_KEYS = Symbol("persist.droppedKeys");
+
 // Each entry applies to a doc whose schemaVersion is strictly LESS than `version` (an absent
 // schemaVersion is 0, so every pre-schemaVersion doc qualifies for every entry). `renameVoices` is an
 // old-name -> new-name map applied to BOTH voice-keyed facets: `type.voices` keys directly, AND the
-// leading "<voice>|…" segment of `type.tokenOverrides` per-cell keys (clampTokenOverrides only
-// validates key ARITY, not the voice segment's membership in VOICES — so a stale-name tokenOverrides
-// key would otherwise survive hydrate unchanged as an inert orphan, silently no-op forever, rather than
-// either dropping visibly or migrating; this rewrites it instead). Either side: the OLD key moves onto
+// leading "<voice>|…" segment of `type.tokenOverrides` per-cell keys (clampTokenOverrides now ALSO
+// validates the voice segment's membership in VOICES, TKT-0455 — a stale-name tokenOverrides key that
+// survives to that check is dropped loudly rather than surviving hydrate unchanged as an inert orphan;
+// this rewrite, when it fires, is what keeps a doc within a covered rename OFF that path). Either side: the OLD key moves onto
 // the NEW key, UNLESS the doc already ALSO has the new key (a doc could plausibly have picked up a
 // fresh override under the new name after upgrading — that later, already-current value is presumed
 // intentional and is never clobbered by the stale old-name entry).
@@ -323,7 +330,17 @@ export function hydrate(snapshot) {
   // hand-built doc round-trips unchanged).
   const story = clampStory(s.story);
 
-  return {
+  // The loud-fail accounting list (TKT-0455) — every unknown voice/treatment/tokenOverrides key this
+  // hydrate() call drops, past whatever applyRenameMaps already translated. `drop()` both records the
+  // entry and warns immediately, so a future rename shipped without its RENAME_MAPS entry is loud on
+  // the very first hydrate that hits it, not a silent, permanent data-loss.
+  const dropped = [];
+  const drop = (facet, key, reason) => {
+    dropped.push({ facet, key, reason });
+    if (typeof console !== "undefined") console.warn(`[persist] dropped unknown ${facet} key ${JSON.stringify(key)} (${reason}) — stored state for it is gone`);
+  };
+
+  const result = {
     curve: clampEnum(s.curve, DOMAINS.curve.values, DOMAINS.curve.default),
     tension: clampNumber(s.tension, DOMAINS.tension.min, DOMAINS.tension.max),
     lmin: clampNumber(s.lmin ?? DOMAINS.lmin.default, DOMAINS.lmin.min, DOMAINS.lmin.max),
@@ -342,8 +359,8 @@ export function hydrate(snapshot) {
     theme: clampEnum(s.theme, DOMAINS.theme.values, DOMAINS.theme.default),
     selected,
     roleOverrides: clampOverrides(s.roleOverrides),
-    type: clampType(s.type),
-    geometry: clampGeometry(s.geometry),
+    type: clampType(s.type, drop),
+    geometry: clampGeometry(s.geometry, drop),
     palettes,
     ...clampExport(s.export),
     ...clampIcons(s.icons),
@@ -351,6 +368,9 @@ export function hydrate(snapshot) {
     ...(typeof s.vol === "string" && s.vol ? { vol: s.vol } : {}),
     ...(story ? { story } : {}),
   };
+  // Non-enumerable: never serialized, never disturbs deepEq/roundtrip — see DROPPED_KEYS above.
+  Object.defineProperty(result, DROPPED_KEYS, { value: dropped, enumerable: false });
+  return result;
 }
 
 // clampIcons — the OPTIONAL icon-system facet { id, variant?, name?, variantName? } (Settings › Icons).
@@ -422,12 +442,19 @@ const clampMinWidth = (v) => { const n = Number(v); return Number.isFinite(n) &&
 // non-empty modeKey (the last segment) — defensive, so a corrupt persisted map can't smuggle junk forward.
 // Returns {} when nothing valid is present so the consumer only attaches when non-empty — keeping the
 // hydrate identity gate (absent stays absent, like roleOverrides).
-function clampTokenOverrides(o, min, max, parts) {
+//
+// `validLead` (TKT-0455) — the leading segment (the voice for type, the size for geom) is now checked
+// against the engine's own domain, not just its arity: a key whose voice/size is retired, typo'd, or
+// simply never existed used to survive every hydrate forever as an inert orphan (persist.js's own
+// comment above documented this as a KNOWN gap — see the RENAME_MAPS block). It's dropped here instead,
+// loudly, via `drop(key, reason)` — the same accounting hydrate() surfaces for unknown voices/treatments.
+function clampTokenOverrides(o, min, max, parts, validLead, drop) {
   if (!o || typeof o !== "object") return {};
   const out = {};
   for (const k of Object.keys(o)) {
     const seg = k.split("|");
-    if (parts && (seg.length !== parts || !seg[seg.length - 1])) continue; // drop malformed (wrong arity / empty modeKey)
+    if (parts && (seg.length !== parts || !seg[seg.length - 1])) continue; // drop malformed (wrong arity / empty modeKey) — silent, pre-existing
+    if (validLead && !validLead.includes(seg[0])) { drop(k, `unknown leading segment "${seg[0]}"`); continue; }
     const n = Number(o[k]);
     if (!Number.isFinite(n) || n <= 0) continue;          // drop invalid (NaN / non-number / non-positive)
     out[k] = Math.round(Math.min(max, Math.max(min, n))); // clamp into range; integer px
@@ -449,8 +476,11 @@ export const TYPE_TREATMENTS = ["product", "luxury", "editorial", "technical", "
 // below, TKT-0016, which fixes the hydrate-drop for a RENAME; this allowlist itself still needs its own
 // hand update whenever the voice set changes, which is what the allowlist-parity test gate below guards).
 export const VOICES = ["Display", "Headline", "Sub-heading", "Title", "Sub-title", "Lead", "Body", "Body-mono", "Label", "Label-mono", "Kicker", "Tiny", "Tiny-mono", "UI-control", "UI-widget"];
-function clampType(t) {
+function clampType(t, drop) {
   t = (t && typeof t === "object") ? t : {};
+  // TKT-0455 — a NON-empty, out-of-allowlist treatment (as opposed to an absent field, the normal
+  // "doc predates this field" case) is a real unknown value: surface it instead of the silent fallback.
+  if (t.treatment != null && !TYPE_TREATMENTS.includes(t.treatment)) drop("type.treatment", t.treatment, "unknown treatment id");
   const treatment = TYPE_TREATMENTS.includes(t.treatment) ? t.treatment : "product";
   // the invalid-value fallback reads DEFAULT_TYPE.bodyBase (never a hardcoded literal here) — it must
   // track Body's own fixed MD size (SIZES.Body[1] in type.mjs), or an absent bodyBase silently SCALES
@@ -461,7 +491,7 @@ function clampType(t) {
   const out = { treatment, bodyBase };
   // tokenOverrides (Phase 3) — per-cell size overrides. OPTIONAL: only attach when non-empty so a config
   // without overrides round-trips identically. Type sizes clamp into [1, 512] px.
-  const tov = clampTokenOverrides(t.tokenOverrides, 1, 512, 3); // type keys: "<voice>|<step>|<modeKey>" (3 segments)
+  const tov = clampTokenOverrides(t.tokenOverrides, 1, 512, 3, VOICES, (k, reason) => drop("type.tokenOverrides", k, reason)); // type keys: "<voice>|<step>|<modeKey>" (3 segments)
   if (Object.keys(tov).length) out.tokenOverrides = tov;
   // per-role CUSTOM font overrides — OPTIONAL map { role: family } for known roles; non-empty strings only,
   // attached only when non-empty so a config without custom fonts round-trips identically.
@@ -478,6 +508,13 @@ function clampType(t) {
   // Sub-title/Tiny added. `ratio` no longer means anything (size is now a fixed table, not base×ratio^n —
   // see type.mjs).
   if (t.voices && typeof t.voices === "object") {
+    // TKT-0455 — any stored voice name NOT in VOICES at this point already survived applyRenameMaps
+    // (which translates every still-relevant RENAME_MAPS entry before clampType ever runs), so it is
+    // genuinely unknown: a typo, a retired name, or — the failure class this ticket hardens against —
+    // a future voice rename that shipped without its own RENAME_MAPS entry. Surface it instead of the
+    // old behavior (the `for (const name of VOICES)` loop below simply never reads it, so it silently
+    // vanished with no warning and no record).
+    for (const name of Object.keys(t.voices)) if (!VOICES.includes(name)) drop("type.voices", name, "unknown voice name");
     const num = (x, lo, hi, round) => { const n = Number(x); if (!Number.isFinite(n)) return undefined; const c = Math.max(lo, Math.min(hi, n)); return round ? Math.round(c) : c; };
     const voices = {};
     for (const name of VOICES) {
@@ -539,8 +576,14 @@ function clampType(t) {
 // Exported so test/ui/persist.mjs's allowlist-parity gate can assert this stays in lockstep with
 // geometry.mjs's GEOMETRY_TREATMENTS ids (see the TYPE_TREATMENTS/VOICES note above — TKT-0017).
 export const GEOMETRY_TREATMENTS = ["comfortable", "compact", "spacious", "touch", "pill"];
-function clampGeometry(g) {
+// The 6 canonical size names (geometry.mjs's SIZE_KEYS) — the leading segment of a geom tokenOverrides
+// key ("<size>|<modeKey>"), the geometry analog of VOICES above. MUST track geometry.mjs's SIZE_KEYS —
+// asserted by the allowlist-parity test (TKT-0017's convention, extended here per TKT-0455).
+export const GEOMETRY_SIZES = ["XS", "SM", "MD", "LG", "XL", "2XL"];
+function clampGeometry(g, drop) {
   g = (g && typeof g === "object") ? g : {};
+  // TKT-0455 — see clampType's matching check above for the absent-vs-unknown distinction.
+  if (g.treatment != null && !GEOMETRY_TREATMENTS.includes(g.treatment)) drop("geometry.treatment", g.treatment, "unknown treatment id");
   const treatment = GEOMETRY_TREATMENTS.includes(g.treatment) ? g.treatment : "comfortable";
   const clampH = (v) => { const n = Number(v); return Math.max(20, Math.min(48, Number.isFinite(n) ? Math.round(n) : 28)); };
   const baseHeight = clampH(g.baseHeight);
@@ -551,7 +594,7 @@ function clampGeometry(g) {
   Object.assign(out, clampContrast(g.rampContrast));
   // tokenOverrides (Phase 3) — per-cell control-HEIGHT overrides. OPTIONAL, like type.tokenOverrides (the
   // identity gate holds when absent). Geom heights clamp into [8, 256] px.
-  const gov = clampTokenOverrides(g.tokenOverrides, 8, 256, 2); // geom keys: "<size>|<modeKey>" (2 segments)
+  const gov = clampTokenOverrides(g.tokenOverrides, 8, 256, 2, GEOMETRY_SIZES, (k, reason) => drop("geometry.tokenOverrides", k, reason)); // geom keys: "<size>|<modeKey>" (2 segments)
   if (Object.keys(gov).length) out.tokenOverrides = gov;
   // breakpoint MODES (Phase 5) — each a named baseHeight override (+ optional per-mode rampContrast).
   // OPTIONAL, like type.modes (the identity gate holds when absent).
