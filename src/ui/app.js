@@ -150,6 +150,7 @@ class HctApp extends HTMLElement {
     this.future = []; // redo branch
     this._dragSnap = null; // pending pre-drag snapshot (a slider drag = ONE step)
     this._dragTimer = null; // debounce timer that commits a settled drag
+    this._activeDragCleanup = null; // set while a _bindRangeDrag pointer-drag is in flight — removes its window-level move/up/cancel listeners (disconnectedCallback safety net)
     this.HISTORY_MAX = 100;
     setColorScheme(this.theme); // flip the chrome's light-dark() tokens to the initial theme
     this._installKeyboard(); // editor-scoped keyboard shortcuts (guarded vs text inputs)
@@ -165,9 +166,19 @@ class HctApp extends HTMLElement {
   }
 
 
+  // #458: full teardown of everything connectedCallback registers — the keydown/matchMedia
+  // listeners were already covered; the rest (a live-refresh rAF, the drag-settle debounce, an
+  // in-flight range drag's window-level listeners, the toast timer) were never inventoried as a
+  // set. None of this is reachable in production (`<ultimate-tokens>` is a page-lifetime
+  // singleton — main.ts creates it once and disconnectedCallback never fires outside tests), but
+  // completing it is cheap and removes the risk for good rather than documenting it away.
   disconnectedCallback() {
     if (this._onKeyDown) document.removeEventListener("keydown", this._onKeyDown);
     if (this._mqlScheme && this._onSchemeChange) this._mqlScheme.removeEventListener("change", this._onSchemeChange);
+    if (this._liveRaf != null) { cancelAnimationFrame(this._liveRaf); this._liveRaf = null; }
+    if (this._dragTimer) { clearTimeout(this._dragTimer); this._dragTimer = null; }
+    if (this._toastT) { clearTimeout(this._toastT); this._toastT = null; }
+    if (this._activeDragCleanup) this._activeDragCleanup(); // an in-flight slider drag's window pointermove/up/cancel listeners
   }
 
 
@@ -2112,13 +2123,21 @@ class HctApp extends HTMLElement {
       // listener cuts the drag off on a fast/far move. Window-level move/up fire wherever the pointer goes.
       const dragTarget = typeof window !== "undefined" && window.addEventListener ? window : typeof document !== "undefined" && document.addEventListener ? document : this;
       const move = (ev) => apply(ev.clientX);
-      const end = () => {
+      // cleanup — remove the window-level listeners WITHOUT settling the drag (fire "change").
+      // Its own name so disconnectedCallback can call it mid-drag on a disconnect without also
+      // triggering commitDrag()/render() on a detached element.
+      const cleanup = () => {
         dragTarget.removeEventListener("pointermove", move);
         dragTarget.removeEventListener("pointerup", end);
         dragTarget.removeEventListener("pointercancel", end);
+        this._activeDragCleanup = null;
+      };
+      const end = () => {
+        cleanup();
         if (input.releasePointerCapture && e.pointerId != null) { try { input.releasePointerCapture(e.pointerId); } catch (err) { /* already released */ } }
         fire(input, "change"); // → the input's onchange (commitDrag + full render), the same settle a native release does
       };
+      this._activeDragCleanup = cleanup; // let disconnectedCallback tear this down if the element disconnects mid-drag
       dragTarget.addEventListener("pointermove", move);
       dragTarget.addEventListener("pointerup", end);
       dragTarget.addEventListener("pointercancel", end);
