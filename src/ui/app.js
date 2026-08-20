@@ -2521,9 +2521,20 @@ class HctApp extends HTMLElement {
 // syntax carrier for their methods and are never instantiated. Property descriptors (not bare
 // assignment) so any getter/setter method survives the copy unchanged.
 function mixinInto(Target, ...Sources) {
+  const owner = new Map();
+  for (const name of Object.getOwnPropertyNames(Target.prototype)) {
+    if (name === "constructor") continue;
+    owner.set(name, Target.name);
+  }
   for (const Source of Sources) {
     for (const name of Object.getOwnPropertyNames(Source.prototype)) {
       if (name === "constructor") continue;
+      if (owner.has(name)) {
+        throw new Error(
+          `mixinInto: "${name}" is defined on both ${owner.get(name)} and ${Source.name} — rename one before composing.`
+        );
+      }
+      owner.set(name, Source.name);
       Object.defineProperty(Target.prototype, name, Object.getOwnPropertyDescriptor(Source.prototype, name));
     }
   }
