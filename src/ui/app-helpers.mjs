@@ -70,6 +70,18 @@ To test (Figma → Local variables → Import):
 // NEWEST-FIRST (a user who already migrated once must not have older, staler data win).
 // Idempotent (only ever fills an ABSENT new key) and tolerates a throwing localStorage
 // (the Figma sandboxed iframe) exactly the way save() does.
+//
+// #458: only the sets/project/profile trio is walked here — deliberately, not an oversight.
+// The other two persisted keys, "ultimate-tokens-app-prefs-v1" (app.js's `_appPrefsKey()`) and
+// "ultimate-tokens-apply-consent-v1" (apply-gate.js's `_applyConsentKey()`), are hardcoded to the
+// CURRENT product name rather than derived from STORAGE_KEY, so a rename does NOT carry them
+// forward — they just reset to defaults (theme/motion/font-mode revert; the "back up your
+// variables first" warning re-shows once). That's safe because both are cosmetic/safety state,
+// never a brand kit a user built: losing them costs a re-click, not data. Their `-v1` suffix is a
+// cache-buster only ("bump the literal to re-prompt/reset"), not the schemaVersion+RENAME_MAPS
+// forward-migration persist.js runs for the doc itself. Do not add them to this function's walk —
+// that would need giving each its OWN SETS_KEY/PROJECT_KEY/PROFILE_KEY-style derived constant,
+// a real change to how they're keyed, not a migration-list edit.
 export const LEGACY_STORAGE_PREFIXES = ["nonoun-color-tokens", "hct-palette-state-v1"]; // newest first
 export function migrateStorageKeys() {
   try {

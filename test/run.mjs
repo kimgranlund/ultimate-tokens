@@ -15,7 +15,7 @@ const TESTS = [
   "figma/plugin.mjs", "figma/binder.mjs", "figma/mode-apply.mjs", "figma/style-plan.mjs", "figma/migrations.mjs", "figma/live-diff.mjs",
   "mcp/core.mjs", "mcp/brand-kit.mjs", "mcp/describe-kit-core.mjs", "mcp/describe-rubric.mjs", "mcp/png-swatch-board.mjs", "mcp/describe-mcp-core.mjs", "mcp/describe-mcp.mjs", "mcp/brand-kit-merged-core.mjs", "mcp/brand-kit-merged.mjs", "mcp/describe-eval.mjs", "mcp/describe-mcp-package.mjs",
   "plugin/manifest.mjs", "plugin/color-tokens.mjs", "plugin/typography-tokens.mjs", "plugin/geometry-tokens.mjs", "plugin/hosted-pack.mjs",
-  "repo/branding.mjs",
+  "repo/branding.mjs", "repo/doc-mutation-lane.mjs",
 ];
 
 let failed = 0;
