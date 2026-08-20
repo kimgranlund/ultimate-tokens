@@ -87,6 +87,7 @@ class HctApp extends HTMLElement {
     this.activeId = null;
     this.doc = null;
     this.savedSnapshot = null; // JSON string of last-saved doc -> dirty detection
+    this._dirty = false; // cheap dirty bit isDirty() reads — set true on edit(), cleared on save()/openSet()/_restore()
     this.sel = { kind: "palette", id: 0 };
     this.segment = "palette"; // right-pane segmented control: palette | global | roles
     this.panesLeft = true; // left analysis rail shown (ui-session state, like segment — never persisted)
@@ -201,6 +202,7 @@ class HctApp extends HTMLElement {
     this.doc = hydrateStoredDoc(rec.doc); // legacy stamp: a pre-hueSpace STORED set stays cam16
     this.doc.name = rec.name;
     this.savedSnapshot = JSON.stringify(serialize(this.doc));
+    this._dirty = false;
     this.sel = { kind: "palette", id: Math.min(this.doc.selected || 0, this.doc.palettes.length - 1) };
     this.segment = "palette";
     this.exportOpen = false;
@@ -215,7 +217,7 @@ class HctApp extends HTMLElement {
 
 
   isDirty() {
-    return this.savedSnapshot !== JSON.stringify(serialize(this.doc));
+    return this._dirty;
   }
 
 
@@ -226,6 +228,7 @@ class HctApp extends HTMLElement {
     rec.name = this.doc.name;
     rec.updated = Date.now();
     this.savedSnapshot = JSON.stringify(rec.doc);
+    this._dirty = false;
     this.persistSets();
   }
 
@@ -253,6 +256,7 @@ class HctApp extends HTMLElement {
   edit(fn, opts = {}) {
     fn(this.doc);
     this.doc.selected = this.sel.kind === "palette" ? this.sel.id : this.doc.selected;
+    this._dirty = true; // flips true immediately for live drags too — dirtiness tracks "differs from saved", not "has been persisted yet" (commitDrag persists live edits later)
     if (!opts.live) this.save();
     if (opts.live) this.liveRefresh();
     else this.render();
