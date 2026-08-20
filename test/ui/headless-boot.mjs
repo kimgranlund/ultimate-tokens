@@ -900,6 +900,19 @@ let _appErr = false; try { app.onApplyDone({ raw: 10, semantic: 53, floatVars: 8
 ok(!_appErr && app.applyGateOpen === false, "(xg) onApplyDone shows a done toast + closes any lingering gate");
 try { app.onApplyError(); } catch { _appErr = true; }
 ok(!_appErr, "(xg) onApplyError shows an error toast without throwing");
+// #465 — the _applyBusy timeout fallback (a lost apply-done/apply-error never arrives).
+app._applyBusy = true; app._applyTimeoutTimer = "sentinel"; // simulate an already-armed timer
+app.onApplyDone({});
+ok(app._applyTimeoutTimer === null, "(465) onApplyDone disarms the timeout fallback (real reply arrived)");
+app._applyBusy = true; app._applyTimeoutTimer = "sentinel";
+app.onApplyError();
+ok(app._applyTimeoutTimer === null, "(465) onApplyError disarms the timeout fallback too");
+app._applyBusy = true; app.applyGateOpen = true; app._applyTimeoutTimer = null;
+app._onApplyTimeout();
+ok(app._applyBusy === false && app.applyGateOpen === false && app._applyTimeoutTimer === null, "(465) the timeout fallback itself clears busy + the gate when no reply ever arrives");
+posted = null; app.applyToFigma(false); // a real apply (direct call, bypassing the gate like the (x) fixtures above)
+ok(app._applyTimeoutTimer !== null, "(465) a real apply arms the timeout fallback");
+app.onApplyDone({}); app._applyBusy = false; posted = null; // settle it so it doesn't leak into later assertions/consent state
 ok(app._applyConsented() === false, "(xg) consent NOT persisted without 'don't show again'");
 posted = null; app.requestApplyToFigma(false);
 ok(app.applyGateOpen === true, "(xg) still gated on the next apply until consented");

@@ -97,6 +97,7 @@ class HctApp extends HTMLElement {
     this.section = "color"; // editor section: color | typography | geometry — ui-session, routes the whole editor (never persisted)
     this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (editable token matrix: Base + breakpoints) — type-section sub-state
     this.typeMode = "base"; // active Typography breakpoint mode: "base" | a doc.type.modes[].id | "compare" (Phase 5/5.3) — ui-session
+    this._schemeOverride = null; // a color Compare column forces its own canvas scheme while its scene builds (color.js) — transient; declared here so a scan of this constructor finds every ui-session field, not just the two that claim to mirror it
     this._typeModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _schemeOverride) — transient
     this.stopsMode = "core"; // palette ramp density: core (19 display stops) | extended (25 EXPORT_STOPS)
     this.mapTextMode = false; // Mapping table raw-token editor: false = select menu, true = free text input
@@ -128,6 +129,11 @@ class HctApp extends HTMLElement {
     // .apply-busy host class (styles.css — an indeterminate, motion-safe indicator) AND disables the
     // Apply/Regroup trigger (drawer.js) so a slow apply can't be double-fired.
     this._applyBusy = false;
+    // #465: a fallback if apply-done/apply-error never arrives at all (the plugin frame detaching
+    // mid-apply, a UI reload) — without this, _applyBusy would stay true, wedging the Apply/Regroup
+    // trigger, for the rest of the session. Armed in applyToFigma, cleared by onApplyDone/onApplyError
+    // (the normal completion path) or by itself firing (the fallback path) — never both.
+    this._applyTimeoutTimer = null;
     this.settingsOpen = false; // the Settings page (token-mapping + app prefs)
     this.settingsSection = "mapping"; // which Settings nav item is active (left-nav page layout)
     this.geomSpecMode = "controls"; // geometry canvas: controls (live mock controls on the ramp) | tokens (editable token matrix: Base + breakpoints) — geom-section sub-state
@@ -179,6 +185,7 @@ class HctApp extends HTMLElement {
     if (this._dragTimer) { clearTimeout(this._dragTimer); this._dragTimer = null; }
     if (this._toastT) { clearTimeout(this._toastT); this._toastT = null; }
     if (this._activeDragCleanup) this._activeDragCleanup(); // an in-flight slider drag's window pointermove/up/cancel listeners
+    if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465
   }
 
 
@@ -577,7 +584,9 @@ class HctApp extends HTMLElement {
     const drawerEl = this.querySelector(".drawer");
     if (drawerEl) drawerEl.classList.toggle("apply-busy", applyBusyNow);
     // The app-footer renders an empty shell with stable hooks; paint its dynamic
-    // readouts now (the same path liveRefresh uses during a drag).
+    // readouts now (the same path liveRefresh uses during a drag). NOTE the two distinct
+    // "view"s one underscore apart: `this.view` is the ROUTE ("gallery"|"editor"), `this._view`
+    // is the projectView() RESULT paintAppFooter actually consumes — don't conflate them.
     if (this.view === "editor") this.paintAppFooter(this._view);
     this._restoreFocus(focus);
     this._syncDrawer(); // (re)open/close the native <dialog> to match exportOpen (top layer)

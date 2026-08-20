@@ -4225,6 +4225,10 @@ function clampEntitlement(raw) {
 // activation instance that holds this device's SEAT) · seats = { limit, usage } finite ints ≥ 0 (last-known
 // activation count, for display) · entitlement = a sane {status, expiresAt?} · checkedAt = a finite ms ≥ 0.
 // Emit order is stable (tier → flagOverrides → licenseKey → instanceId → seats → entitlement → checkedAt).
+// NOTE (2026-08-20 reactivity review, H5): unlike persist.js's doc store, this clamp has no
+// schemaVersion/RENAME_MAPS analog — a future FLAG_KEYS rename has no forward-translation path and
+// would silently drop existing flagOverrides for the old key on next load. If FLAG_KEYS ever renames
+// a key, add the equivalent translate-forward step here (or fold this into persist.js's mechanism).
 function clampProfile(raw) {
   const p = raw && typeof raw === "object" ? raw : {};
   const out = { tier: p.tier === "pro" ? "pro" : "free" };
@@ -13978,7 +13982,7 @@ class GeomSectionImpl {
       { class: "geom-spec" },
       h("div", { class: "geom-spec-head" }, h("b", {}, t.label), h("small", {}, `${scale.baseHeight}px base · 6 sizes · ${scale.density}× density`)),
       h("p", { class: "geom-spec-note" }, t.note + " — every glyph centers in a square cell of side = the control height, so edge padding = (height − glyph)/2. The ramp + paddings are computed, not authored."),
-      h("p", { class: "geom-shared-note" }, icon("type"), h("span", {}, "Text size (", h("b", {}, "font"), ") per step is the control-text ramp — its own fixed table (12·13·15·16·18·20 at base 28), deliberately decoupled from the Label voice; it surfaces in Figma as the Typography collection's UI-widget/UI-control size variables.")),
+      h("p", { class: "geom-shared-note" }, icon("type"), h("span", {}, "Text size (", h("b", {}, "font"), ") per step composes from Typography's UI-control voice (its own full XS..2XL ramp — decoupled from the Label voice, which the interactive text used to ride before TKT-0008); it surfaces in Figma as the Typography collection's UI-widget/UI-control size variables.")),
       h(
         "div",
         { class: "geom-spec-group" },
@@ -14107,7 +14111,7 @@ class GeomSectionImpl {
     return h(
       "div",
       { class: "geom-comp" },
-      h("p", { class: "geom-comp-note" }, "Each control's text size is the fixed control-text ramp (its own hand-ratified table, decoupled from the Label voice); gap = font/2, caret has its own power law."),
+      h("p", { class: "geom-comp-note" }, "Each control's text size composes from Typography's UI-control voice (decoupled from the Label voice, which interactive text used to ride before TKT-0008); gap = font/2, caret has its own power law."),
       h(
         "div",
         { class: "geom-comp-rows" },
@@ -14837,6 +14841,12 @@ const { COLLECTIONS } = __M.collections;
 const { icon } = __M.icons;
 const { REPO_URL, btn, h, swatch } = __M.appHelpers;
 
+// #465 — how long to wait for apply-done/apply-error before assuming the reply is never coming
+// (a detached plugin frame, a UI reload mid-apply) and self-clearing _applyBusy instead of leaving
+// the Apply/Regroup trigger wedged for the rest of the session. Generous — a real apply on a large
+// kit can legitimately take a few seconds; this only fires on an ABSENT reply, not a slow one.
+const APPLY_TIMEOUT_MS = 20000;
+
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
 class ApplyGateMixinImpl {
@@ -14924,6 +14934,8 @@ class ApplyGateMixinImpl {
       // render() reflects it as the .apply-busy host indicator (styles.css) AND disables the
       // Apply/Regroup trigger (drawer.js), closing the double-submit gap a transient toast alone left open.
       this._applyBusy = true;
+      if (this._applyTimeoutTimer) clearTimeout(this._applyTimeoutTimer); // defensive: never double-arm
+      this._applyTimeoutTimer = setTimeout(() => this._onApplyTimeout(), APPLY_TIMEOUT_MS); // #465
       this.render();
       // Optimistic "in progress" toast; the sandbox posts {apply-done} back when the write actually completes
       // (→ onApplyDone → a "done" toast), or {apply-error} on failure (→ onApplyError). See the ui.html bridge.
@@ -14937,6 +14949,7 @@ class ApplyGateMixinImpl {
   // onApplyDone / onApplyError — the sandbox's completion callbacks (relayed by the ui.html bridge). The apply
   // is async in the plugin VM, so THIS is the real "done" signal (the applyToFigma toast is only optimistic).
   onApplyDone(m) {
+    if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465: real reply arrived — disarm the fallback
     const n = (m && (Number(m.raw) || 0) + (Number(m.semantic) || 0) + (Number(m.floatVars) || 0)) || 0;
     const st = (m && (Number(m.paintStyles) || 0) + (Number(m.textStyles) || 0)) || 0;
     this.applyGateOpen = false; // defensive: never leave the gate open past completion
@@ -14956,9 +14969,21 @@ class ApplyGateMixinImpl {
   }
 
   onApplyError() {
+    if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465
     this._applyBusy = false; // TKT-0004: clear the persistent busy state on failure too (the toast still carries the error detail)
     this.render();
     this.toast("Couldn't apply to Figma — please try again.");
+  }
+
+  // _onApplyTimeout — #465's fallback: fires ONLY if neither onApplyDone nor onApplyError ever
+  // ran (both disarm this timer first). Self-clears the wedge and tells the user the truth: the
+  // write may or may not have gone through, so check the file rather than trusting either state.
+  _onApplyTimeout() {
+    this._applyTimeoutTimer = null;
+    this.applyGateOpen = false;
+    this._applyBusy = false;
+    this.render();
+    this.toast("Apply may not have completed — check the file's Variables & Styles panels.");
   }
 
 
@@ -15778,6 +15803,7 @@ class HctApp extends HTMLElement {
     this.section = "color"; // editor section: color | typography | geometry — ui-session, routes the whole editor (never persisted)
     this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (editable token matrix: Base + breakpoints) — type-section sub-state
     this.typeMode = "base"; // active Typography breakpoint mode: "base" | a doc.type.modes[].id | "compare" (Phase 5/5.3) — ui-session
+    this._schemeOverride = null; // a color Compare column forces its own canvas scheme while its scene builds (color.js) — transient; declared here so a scan of this constructor finds every ui-session field, not just the two that claim to mirror it
     this._typeModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _schemeOverride) — transient
     this.stopsMode = "core"; // palette ramp density: core (19 display stops) | extended (25 EXPORT_STOPS)
     this.mapTextMode = false; // Mapping table raw-token editor: false = select menu, true = free text input
@@ -15809,6 +15835,11 @@ class HctApp extends HTMLElement {
     // .apply-busy host class (styles.css — an indeterminate, motion-safe indicator) AND disables the
     // Apply/Regroup trigger (drawer.js) so a slow apply can't be double-fired.
     this._applyBusy = false;
+    // #465: a fallback if apply-done/apply-error never arrives at all (the plugin frame detaching
+    // mid-apply, a UI reload) — without this, _applyBusy would stay true, wedging the Apply/Regroup
+    // trigger, for the rest of the session. Armed in applyToFigma, cleared by onApplyDone/onApplyError
+    // (the normal completion path) or by itself firing (the fallback path) — never both.
+    this._applyTimeoutTimer = null;
     this.settingsOpen = false; // the Settings page (token-mapping + app prefs)
     this.settingsSection = "mapping"; // which Settings nav item is active (left-nav page layout)
     this.geomSpecMode = "controls"; // geometry canvas: controls (live mock controls on the ramp) | tokens (editable token matrix: Base + breakpoints) — geom-section sub-state
@@ -15860,6 +15891,7 @@ class HctApp extends HTMLElement {
     if (this._dragTimer) { clearTimeout(this._dragTimer); this._dragTimer = null; }
     if (this._toastT) { clearTimeout(this._toastT); this._toastT = null; }
     if (this._activeDragCleanup) this._activeDragCleanup(); // an in-flight slider drag's window pointermove/up/cancel listeners
+    if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465
   }
 
 
@@ -16258,7 +16290,9 @@ class HctApp extends HTMLElement {
     const drawerEl = this.querySelector(".drawer");
     if (drawerEl) drawerEl.classList.toggle("apply-busy", applyBusyNow);
     // The app-footer renders an empty shell with stable hooks; paint its dynamic
-    // readouts now (the same path liveRefresh uses during a drag).
+    // readouts now (the same path liveRefresh uses during a drag). NOTE the two distinct
+    // "view"s one underscore apart: `this.view` is the ROUTE ("gallery"|"editor"), `this._view`
+    // is the projectView() RESULT paintAppFooter actually consumes — don't conflate them.
     if (this.view === "editor") this.paintAppFooter(this._view);
     this._restoreFocus(focus);
     this._syncDrawer(); // (re)open/close the native <dialog> to match exportOpen (top layer)

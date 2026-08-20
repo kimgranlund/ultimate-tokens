@@ -87,6 +87,10 @@ function clampEntitlement(raw) {
 // activation instance that holds this device's SEAT) · seats = { limit, usage } finite ints ≥ 0 (last-known
 // activation count, for display) · entitlement = a sane {status, expiresAt?} · checkedAt = a finite ms ≥ 0.
 // Emit order is stable (tier → flagOverrides → licenseKey → instanceId → seats → entitlement → checkedAt).
+// NOTE (2026-08-20 reactivity review, H5): unlike persist.js's doc store, this clamp has no
+// schemaVersion/RENAME_MAPS analog — a future FLAG_KEYS rename has no forward-translation path and
+// would silently drop existing flagOverrides for the old key on next load. If FLAG_KEYS ever renames
+// a key, add the equivalent translate-forward step here (or fold this into persist.js's mechanism).
 export function clampProfile(raw) {
   const p = raw && typeof raw === "object" ? raw : {};
   const out = { tier: p.tier === "pro" ? "pro" : "free" };

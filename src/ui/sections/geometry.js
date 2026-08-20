@@ -520,7 +520,7 @@ export class GeomSectionImpl {
       { class: "geom-spec" },
       h("div", { class: "geom-spec-head" }, h("b", {}, t.label), h("small", {}, `${scale.baseHeight}px base · 6 sizes · ${scale.density}× density`)),
       h("p", { class: "geom-spec-note" }, t.note + " — every glyph centers in a square cell of side = the control height, so edge padding = (height − glyph)/2. The ramp + paddings are computed, not authored."),
-      h("p", { class: "geom-shared-note" }, icon("type"), h("span", {}, "Text size (", h("b", {}, "font"), ") per step is the control-text ramp — its own fixed table (12·13·15·16·18·20 at base 28), deliberately decoupled from the Label voice; it surfaces in Figma as the Typography collection's UI-widget/UI-control size variables.")),
+      h("p", { class: "geom-shared-note" }, icon("type"), h("span", {}, "Text size (", h("b", {}, "font"), ") per step composes from Typography's UI-control voice (its own full XS..2XL ramp — decoupled from the Label voice, which the interactive text used to ride before TKT-0008); it surfaces in Figma as the Typography collection's UI-widget/UI-control size variables.")),
       h(
         "div",
         { class: "geom-spec-group" },
@@ -649,7 +649,7 @@ export class GeomSectionImpl {
     return h(
       "div",
       { class: "geom-comp" },
-      h("p", { class: "geom-comp-note" }, "Each control's text size is the fixed control-text ramp (its own hand-ratified table, decoupled from the Label voice); gap = font/2, caret has its own power law."),
+      h("p", { class: "geom-comp-note" }, "Each control's text size composes from Typography's UI-control voice (decoupled from the Label voice, which interactive text used to ride before TKT-0008); gap = font/2, caret has its own power law."),
       h(
         "div",
         { class: "geom-comp-rows" },

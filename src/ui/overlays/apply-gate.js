@@ -10,6 +10,12 @@ import { COLLECTIONS } from "../../engine/collections.js";
 import { icon } from "../icons.js";
 import { REPO_URL, btn, h, swatch } from "../app-helpers.mjs";
 
+// #465 — how long to wait for apply-done/apply-error before assuming the reply is never coming
+// (a detached plugin frame, a UI reload mid-apply) and self-clearing _applyBusy instead of leaving
+// the Apply/Regroup trigger wedged for the rest of the session. Generous — a real apply on a large
+// kit can legitimately take a few seconds; this only fires on an ABSENT reply, not a slow one.
+const APPLY_TIMEOUT_MS = 20000;
+
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
 export class ApplyGateMixinImpl {
@@ -97,6 +103,8 @@ export class ApplyGateMixinImpl {
       // render() reflects it as the .apply-busy host indicator (styles.css) AND disables the
       // Apply/Regroup trigger (drawer.js), closing the double-submit gap a transient toast alone left open.
       this._applyBusy = true;
+      if (this._applyTimeoutTimer) clearTimeout(this._applyTimeoutTimer); // defensive: never double-arm
+      this._applyTimeoutTimer = setTimeout(() => this._onApplyTimeout(), APPLY_TIMEOUT_MS); // #465
       this.render();
       // Optimistic "in progress" toast; the sandbox posts {apply-done} back when the write actually completes
       // (→ onApplyDone → a "done" toast), or {apply-error} on failure (→ onApplyError). See the ui.html bridge.
@@ -110,6 +118,7 @@ export class ApplyGateMixinImpl {
   // onApplyDone / onApplyError — the sandbox's completion callbacks (relayed by the ui.html bridge). The apply
   // is async in the plugin VM, so THIS is the real "done" signal (the applyToFigma toast is only optimistic).
   onApplyDone(m) {
+    if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465: real reply arrived — disarm the fallback
     const n = (m && (Number(m.raw) || 0) + (Number(m.semantic) || 0) + (Number(m.floatVars) || 0)) || 0;
     const st = (m && (Number(m.paintStyles) || 0) + (Number(m.textStyles) || 0)) || 0;
     this.applyGateOpen = false; // defensive: never leave the gate open past completion
@@ -129,9 +138,21 @@ export class ApplyGateMixinImpl {
   }
 
   onApplyError() {
+    if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465
     this._applyBusy = false; // TKT-0004: clear the persistent busy state on failure too (the toast still carries the error detail)
     this.render();
     this.toast("Couldn't apply to Figma — please try again.");
+  }
+
+  // _onApplyTimeout — #465's fallback: fires ONLY if neither onApplyDone nor onApplyError ever
+  // ran (both disarm this timer first). Self-clears the wedge and tells the user the truth: the
+  // write may or may not have gone through, so check the file rather than trusting either state.
+  _onApplyTimeout() {
+    this._applyTimeoutTimer = null;
+    this.applyGateOpen = false;
+    this._applyBusy = false;
+    this.render();
+    this.toast("Apply may not have completed — check the file's Variables & Styles panels.");
   }
 
 
