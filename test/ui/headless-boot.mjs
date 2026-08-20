@@ -214,6 +214,51 @@ ok(!app.canRedo(), "editing after undo truncated the redo branch");
   ok(rec.doc.palettes[0].hue === (preHue + 23) % 360, "(persist-throttle) openSet flushed the outgoing doc's in-flight drag before switching (no lost edit)");
 }
 
+// ── (dirty) TKT-0466: isDirty() reads a cheap bit, no serialize() on every check ──────
+{
+  ok(app.isDirty() === false, "(dirty) not dirty right after openSet (boot state)");
+
+  // commit()/edit() (non-live) call save() synchronously inside the SAME call, so the
+  // doc never observably diverges from savedSnapshot — dirty flips true then immediately
+  // false again before isDirty() is ever read.
+  const preHue = app.doc.palettes[0].hue;
+  app.commit((d) => (d.palettes[0].hue = (preHue + 11) % 360));
+  ok(app.isDirty() === false, "(dirty) a commit() is saved synchronously — stays clean");
+
+  // editDrag: the bit flips dirty on the FIRST live tick and STAYS dirty until the drag
+  // settles — this is the actual gap #455 introduced (live ticks defer persistence).
+  const preChroma = app.doc.palettes[0].chroma;
+  app.editDrag((d) => (d.palettes[0].chroma = Math.min(100, preChroma + 3)));
+  ok(app.isDirty() === true, "(dirty) editDrag's first live tick flips the bit dirty immediately");
+  app.editDrag((d) => (d.palettes[0].chroma = Math.min(100, preChroma + 4))); // a later tick, still mid-drag
+  ok(app.isDirty() === true, "(dirty) still dirty on a later live tick, pre-settle");
+  app.commitDrag(); // settle -> persists
+  ok(app.isDirty() === false, "(dirty) commitDrag's settle (which calls save()) clears the bit");
+
+  // undo/redo restore via _restore(), which must also leave the bit clean (it calls save()).
+  app.commit((d) => (d.palettes[0].lift = (d.palettes[0].lift || 0) + 1));
+  app.undo();
+  ok(app.isDirty() === false, "(dirty) undo (_restore) leaves the bit clean");
+  app.redo();
+  ok(app.isDirty() === false, "(dirty) redo (_restore) leaves the bit clean");
+
+  // openSet switches sets wholesale — must reset the bit even with a live drag in flight.
+  app.editDrag((d) => (d.palettes[0].chroma = Math.min(100, d.palettes[0].chroma + 1)));
+  ok(app.isDirty() === true, "(dirty) a live drag left in flight is dirty right before navigating away");
+  const backToId = app.activeId;
+  app.openSet(app.sets[0].id);
+  flushRaf();
+  ok(app.isDirty() === false, "(dirty) openSet() resets the bit on the incoming doc (after flushing the outgoing drag)");
+  app.openSet(backToId); // return so later groups see the set they expect
+  flushRaf();
+  ok(app.isDirty() === false, "(dirty) openSet() back into the working set is clean too");
+
+  // isDirty() no longer pays a serialize() — structural check: it must be a trivial bit
+  // read, not a body that calls serialize/JSON.stringify.
+  const src = app.isDirty.toString();
+  ok(!/serialize|JSON\.stringify/.test(src), `(dirty) isDirty() body no longer calls serialize()/JSON.stringify (got: ${src.trim()})`);
+}
+
 // ── (b) keyboard nav ───────────────────────────────────────────────────────────────
 app.selectPalette(0);
 const fireKey = (key, opt = {}) => doc.dispatch("keydown", { key, target: doc.body, ...opt });
