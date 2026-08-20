@@ -1,46 +1,21 @@
-import { slug } from "../model.mjs";
+import { STANDARD_GEOM_RUNGS, geomEffectiveModes, geomModeScales, geomOverridesFor, geomScaleFor, slug } from "../model.mjs";
 import { hydrate, serialize } from "../persist.js";
-import { DEFAULT_TYPE, typeScale } from "../../engine/type.mjs";
-import { DEFAULT_GEOMETRY, GEOMETRY_TREATMENTS, geomScale, geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG } from "../../engine/geometry.mjs";
+import { DEFAULT_GEOMETRY, GEOMETRY_TREATMENTS, geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG } from "../../engine/geometry.mjs";
 import { icon } from "../icons.js";
 import { btn, chip, ensureTypeFonts, field, fmt, h, swatch } from "../app-helpers.mjs";
-
-// STANDARD_GEOM_RUNGS — the ratified desktop-anchored Standard set: Tablet/Mobile derive DOWN via a
-// fixed height DROP from the doc's current baseHeight (floor 20). STABLE ids (not seeded/random) so a
-// token override written against a not-yet-materialized rung (see _geomEffectiveModes /
-// setGeomTokenOverride) keeps resolving once it IS materialized.
-const STANDARD_GEOM_RUNGS = [
-  { id: "std-tablet", name: "Tablet", w: 992, drop: 2 },
-  { id: "std-mobile", name: "Mobile", w: 476, drop: 4 },
-];
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
 export class GeomSectionImpl {
-  // _geomOverridesFor(modeKey) — the flat { "<size>": height } slice for one mode (the suffix stripped).
+  // _geomOverridesFor / _geomEffectiveModes / _geomScaleFor / _geomModeScales are now PURE `doc -> ...`
+  // functions lifted into model.mjs (A1, #456) — thin delegates here so the section's many call sites
+  // don't churn. See model.mjs for the implementations + rationale.
   _geomOverridesFor(modeKey) {
-    const all = (this.doc.geometry && this.doc.geometry.tokenOverrides) || null;
-    if (!all) return undefined;
-    const out = {};
-    const suffix = "|" + modeKey;
-    for (const k of Object.keys(all)) {
-      if (!k.endsWith(suffix)) continue;
-      out[k.slice(0, k.length - suffix.length)] = all[k]; // "<size>"
-    }
-    return Object.keys(out).length ? out : undefined;
+    return geomOverridesFor(this.doc, modeKey);
   }
 
-  // _geomEffectiveModes — doc.geometry.modes if any have been materialized, else the Standard set
-  // rendered LIVE (STANDARD_GEOM_RUNGS, height derived from the doc's CURRENT baseHeight) so
-  // Tablet/Mobile are visible/selectable/previewable without an explicit materialize step. Shaped
-  // identically to a real mode entry so every consumer treats them the same way; only an actual EDIT
-  // materializes them for real (setGeomTokenOverride), using these SAME ids so the edit keeps resolving
-  // afterward.
   _geomEffectiveModes() {
-    const g = this.doc.geometry || DEFAULT_GEOMETRY;
-    if ((g.modes || []).length) return g.modes;
-    const bh = Number(g.baseHeight) || DEFAULT_GEOMETRY.baseHeight || 28;
-    return STANDARD_GEOM_RUNGS.map((r) => ({ id: r.id, name: r.name, baseHeight: Math.max(20, bh - r.drop), minWidth: r.w }));
+    return geomEffectiveModes(this.doc);
   }
 
   // _ensureGeomModesMaterialized(d) — if d.geometry has no real modes yet AND modeKey is one of the
@@ -55,18 +30,9 @@ export class GeomSectionImpl {
     d.geometry.modes = STANDARD_GEOM_RUNGS.map((r) => ({ id: r.id, name: r.name, baseHeight: Math.max(20, bh - r.drop), minWidth: r.w }));
   }
 
-  // _geomScaleFor(modeKey) — the resolved geometry scale for a mode WITH that mode's per-cell HEIGHT
-  // overrides applied, COMPOSED with the type scale at the SAME mode — a control's text size (SM/MD/LG
-  // `font`) is the UI-CONTROL voice at that mode (TKT-0008; XS/XL/2XL fall back to the engine's fixed
-  // control-text ramp / the tier columns below).
+  // _geomScaleFor(modeKey) — see model.mjs#geomScaleFor for the implementation + rationale.
   _geomScaleFor(modeKey) {
-    const g = this.doc.geometry || DEFAULT_GEOMETRY;
-    // a mode's rampContrast: mode-explicit wins; otherwise it INHERITS the doc's (the desktop-anchored
-    // shape — base isn't compressed, so inheritance is natural). Legacy #251 committed sets always carry
-    // explicit per-mode values, so they resolve identically; a legacy compressed base (contrast 0) with a
-    // silent mode keeps the old full-ramp default via the ?? 1 tail.
-    const cfg = modeKey === "base" ? g : (() => { const m = this._geomEffectiveModes().find((x) => x.id === modeKey); return m ? { ...g, baseHeight: m.baseHeight, rampContrast: m.rampContrast ?? ((g.baseName || "Base") === "Desktop" ? g.rampContrast : undefined) ?? 1 } : g; })();
-    return geomScale(cfg, { typeScale: this._typeScaleFor(modeKey), overrides: this._geomOverridesFor(modeKey) });
+    return geomScaleFor(this.doc, modeKey);
   }
 
   // A first edit against a not-yet-materialized Standard-set rung (std-tablet/std-mobile) materializes
@@ -221,32 +187,10 @@ export class GeomSectionImpl {
     return this._geomScaleFor(key);
   }
 
+  // see model.mjs#geomModeScales for the implementation + the full rationale (Desktop-anchored
+  // synthesis, the per-tier height/gap hand columns, the shared typeTierScale composition).
   _geomModeScales() {
-    const g = this.doc.geometry || DEFAULT_GEOMETRY;
-    if ((g.modes || []).length) return g.modes.map((m) => ({ name: m.name, minWidth: m.minWidth, scale: this._geomScaleFor(m.id) }));
-    // synthesized, Desktop-anchored: the doc ramp IS Desktop; the other tiers carry the ratified magnitude
-    // table's height ramps (2026-07-16, at request) as per-size overrides scaled by bh/28, so they hold
-    // their shape at any baseHeight. Tablet needs none — the lawful −2 derivation already lands the
-    // table's exact heights. Control text is the geometry engine's OWN ramp now (the type composition is
-    // retired); each tier passes its `controls` column as fontOverrides below.
-    const t = this.doc.type || DEFAULT_TYPE;
-    const bb = Number(t.bodyBase) || DEFAULT_TYPE.bodyBase;
-    const bh = g.baseHeight ?? 28;
-    const ramp = (arr) => { const f = bh / 28; const out = {}; ["XS", "SM", "MD", "LG", "XL", "2XL"].forEach((k, i) => { if (arr[i] != null) out[k] = arr[i] * f; }); return out; };
-    // control text composes from the tier's own UI-control voice at EVERY step (the voice rides the
-    // full XS..2XL ramp since 2026-07-16, with its _modeTierNudge hand columns) — no per-step
-    // fontOverrides needed anymore; one source of truth.
-    const tierType = (mult, mf) => typeScale({ ...t, bodyBase: bb * mult, modeFactor: mf, overrides: { ...(t.overrides || {}), ...this._modeTierNudge(mf) } });
-    // per-tier GAP hand columns (the ratified gap-unit matrix, TKT-0010) — final values at the canonical
-    // baseHeight, scaled by bh/28 like the height ramps. Tablet is FROZEN at the Desktop column (the
-    // GAP_UNIT law at Tablet's smaller baseHeight would under-shoot its 2XL); Desktop itself IS the law.
-    const synth = (delta, mult, mf, overrides, gaps) => geomScale({ ...g, baseHeight: Math.max(20, bh + delta) }, { typeScale: tierType(mult, mf), overrides, gapOverrides: gaps });
-    return [
-      { name: "Desktop Lg", minWidth: 1728, scale: synth(4, 1.125, 0.89, ramp([24, 28, 32, 40, 56, 72]), ramp([4, 4, 5, 7, 7, 9])) },
-      { name: "Desktop Xl", minWidth: 2560, scale: synth(28, 1.375, 0.80, ramp([40, 48, 56, 64, 72, 80]), ramp([4, 5, 6, 8, 8, 10])) },
-      { name: "Tablet", minWidth: 992, scale: synth(-2, 1, 5 / 6, undefined, ramp([3, 3, 4, 6, 6, 8])) },
-      { name: "Mobile", minWidth: 476, scale: synth(-4, 1, 2 / 3, ramp([16, 20, 24, 32, 40, 56]), ramp([3, 3, 4, 5, 5, 6])) },
-    ];
+    return geomModeScales(this.doc);
   }
 
   _geomBaseOpts() {
