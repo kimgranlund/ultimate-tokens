@@ -205,7 +205,13 @@ figma.ui.onmessage = async (msg) => {
     // message naming what was attempted (never the raw error / stack).
     console.error("[Ultimate Tokens] '" + (msg && msg.type) + "' failed:", e);
     // Tell the iframe an apply FAILED so it can clear its optimistic "Applying…" toast (→ onApplyError).
+    // RULE: every in-flight busy flag (`_applyBusy`, `sweepBusy`, …) needs a guaranteed reset path on
+    // EVERY branch, including a sandbox-side throw here — a request type with no reply on this path
+    // wedges its UI flag for the rest of the session (the sweep bug, #454). Add a carve-out below for
+    // any new request/reply pair that gates a busy flag.
     if (msg && msg.type === "apply") { try { figma.ui.postMessage({ type: "apply-error" }); } catch (e2) { /* UI gone */ } }
+    else if (msg && msg.type === "sweep-scan") { try { figma.ui.postMessage({ type: "sweep-scanned", texts: [], paints: [] }); } catch (e2) { /* UI gone */ } }
+    else if (msg && msg.type === "sweep-delete") { try { figma.ui.postMessage({ type: "sweep-done", removed: 0 }); } catch (e2) { /* UI gone */ } }
     const what = (msg && ACTIONS[msg.type]) || "complete that action";
     figma.notify("Ultimate Tokens couldn't " + what + ". Please try again — if it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });
   }

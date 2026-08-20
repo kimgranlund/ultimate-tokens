@@ -117,6 +117,21 @@ give transitive full-object identity across all three role-table implementations
   `LEGACY_CONFIG_KEY` fallback exists (a former `"hct-config"` fallback was removed with the id change).
   A pre-rename file therefore opens as a clean empty config, never a stale one — gated in `test/figma/plugin.mjs`.
 
+### 5b. Every busy flag needs a guaranteed reset path on every branch (#454)
+
+The bridge's outer `catch (e)` in `code.js`'s `figma.ui.onmessage` is the last line of defense for any
+request/reply pair that gates a UI-side busy flag (`_applyBusy`/`sweepBusy`, …): if the sandbox handler
+throws AFTER receipt, the catch is the only place left that can still post the reply the UI is waiting
+on to clear its flag. `apply` has always had this carve-out (`apply-error`); `sweep-scan`/`sweep-delete`
+didn't until #454 — a throwing scan/delete only `figma.notify`d, so `sweepBusy` never cleared and the
+Settings Cleanup panel's Scan/Delete buttons stayed disabled for the rest of the session. **Rule: adding
+a new request type that sets a busy flag on receipt means adding its carve-out in the SAME catch** —
+post the empty/zero shape the success reply would have sent (`sweep-scanned {texts:[],paints:[]}`,
+`sweep-done {removed:0}`), not just a notify. Verified by `test/figma/plugin.mjs`'s `sweep` gate (forces
+the throw via a mock/getter, asserts the reply still posts). Left open at #454: whether `_applyBusy` also
+wants a timeout fallback for a reply that never arrives at all (a frame detach mid-apply) — narrower,
+since `code.js` already always answers `apply` either way.
+
 ### 6. The consent gate (grep `src/ui/app.js`)
 
 `requestApplyToFigma(rebuild)` → if a normal apply is already consented (a versioned localStorage key,
