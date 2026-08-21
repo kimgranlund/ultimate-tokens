@@ -12,6 +12,14 @@ in it (typography) share one number. **Rendering a section in the brand's real c
 whole point** — it makes the composition visible, which a per-system modal hid. Home stays the **set/brand
 gallery**; do not fragment into per-system hubs (Type/Geom have ~5 treatments each vs 336 color palettes).
 
+**2026-08-20 (#456):** the mode-aware resolution layer that used to live as hand-mirrored instance
+methods across the section files was lifted into `model.mjs` as pure `doc → scale` exports —
+`typeScaleFor(doc, modeKey)` / `geomScaleFor(doc, modeKey)` are now the CANONICAL resolvers every
+consumer (sections, drawer/apply-gate exports, `brandKit()`) shares. `geometryScale(doc)` above still
+exists and still works, but it's now a **back-compat wrapper** delegating to `geomScaleFor` in the
+common no-ad-hoc-overrides case — reach for `typeScaleFor`/`geomScaleFor` in new work, not
+`geometryScale`.
+
 ## 2. The five regions (what goes where)
 
 > **App Header** = *which* system + global actions. **Canvas Header** = *how to view* the active section.

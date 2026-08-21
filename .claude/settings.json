@@ -20,11 +20,10 @@
     "harness@nonoun-plugins": true,
     "docs@nonoun-plugins": true,
     "teamwork@nonoun-plugins": true,
-    "screens@nonoun-plugins": true,
+    "frontend@nonoun-plugins": true,
     "agent-protocols@nonoun-plugins": true,
     "design@nonoun-plugins": true,
     "authorkit@nonoun-plugins": true,
-
     "figma@claude-plugins-official": true,
     "cloudflare@claude-plugins-official": true
   },
