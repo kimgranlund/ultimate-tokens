@@ -337,6 +337,36 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
   if (previews.length < 5) FAIL("design-system", `too few previews (${previews.length})`);
   const asPreviews = previews.map((p) => ({ name: p.name.replace("components/", ""), html: p.data }));
 
+  // EXTENDED COLOR LAYER (#471) — chrome-only: -placeholder/-scrim/-inverse-surface/-inverse-on-surface;
+  // per-family (chrome + every fill family, intents included): -container/-container-low/-container-high.
+  // The reduced consumption set (dsColorRoles), the tokens.json colors/colorsDark tier, and the DESIGN.md
+  // frontmatter must all agree — one source, three carriers, same as every other slot.
+  {
+    const ds = X.dsColorRoles(C(ALL));
+    const cn = ds.chrome.n;
+    const byName = Object.fromEntries(ds.tokens.map((t) => [t.name, t]));
+    for (const suffix of ["placeholder", "scrim", "inverse-surface", "inverse-on-surface"]) {
+      const name = `${cn}-${suffix}`;
+      if (!byName[name]) FAIL("design-system", `dsColorRoles missing chrome extended slot ${name}`);
+    }
+    for (const fam of ds.families) {
+      for (const suffix of ["container", "container-low", "container-high"]) {
+        const name = `${fam}-${suffix}`;
+        if (!byName[name]) FAIL("design-system", `dsColorRoles missing ${name} (every family, intents included, must carry -container/-low/-high)`);
+      }
+    }
+    const tjExt = JSON.parse(X.exportDesignSystemTokens(C(ALL), tsc, gsc));
+    const mdExt = X.exportDesignSystemSpine(C(ALL), tsc, gsc);
+    for (const [name, t] of Object.entries(byName)) {
+      if (/-(placeholder|scrim|inverse-surface|inverse-on-surface|container|container-low|container-high)$/.test(name)) {
+        if (tjExt.colors[name] !== t.light.oklch || tjExt.colorsDark[name] !== t.dark.oklch)
+          FAIL("design-system", `tokens.json colors/colorsDark diverges from dsColorRoles for extended slot ${name}`);
+        if (!mdExt.includes(`  ${name}: "${t.light.oklch}"`) || !mdExt.includes(`  ${name}-dark: "${t.dark.oklch}"`))
+          FAIL("design-system", `DESIGN.md frontmatter is missing extended slot ${name} (or its -dark sibling)`);
+      }
+    }
+  }
+
   // TEXT-RENDERING BASELINE — "always include" is a GATE, not a hope (the standing rule, 2026-07-10):
   // the DESIGN.md Typography section mandates the block (smoothing pair · optimizeLegibility · optical
   // sizing · font-synthesis none · kerning + common ligatures · the code/pre/kbd no-ligatures exception),

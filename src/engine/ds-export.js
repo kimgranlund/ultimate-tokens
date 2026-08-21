@@ -82,6 +82,12 @@ const dsRole = (p, suffix) => p && p.roles.find((r) => r.suffix === suffix);
 // alias }. Each end = { rgb, frac, hex, oklch } — the kit's role ends VERBATIM. tokens.json, the
 // DESIGN.md frontmatter, and every preview :root all read from this one source. Null when no palette
 // enabled. The reduced set is a NAME reduction of the semantic layer, never a value adjustment.
+//
+// The extended color layer (#471): `-placeholder`/`-scrim`/`-inverse-surface`/`-inverse-on-surface`
+// (chrome-only — neutral/chrome-scoped concepts) and `-container`/`-container-low`/`-container-high`
+// (every fill family, chrome included — a per-family "quiet emphasis" tint). Both are role-table-
+// verbatim, like everything else here. Still deferred: the full `-scrim-{weakest..strongest}` ladder
+// and the full `-surface-{dimmest..brightest}` ladder — add only when a kit actually needs them.
 export function dsColorRoles(state) {
   const palettes = derivedAll(state);
   if (!palettes.length) return null;
@@ -110,6 +116,17 @@ export function dsColorRoles(state) {
   slot(chrome, "-active", `${cn}-active`);
   slot(chrome, "-disabled", `${cn}-disabled`); // the 500-600 inert wash — a real token, not a preview opacity
   slot(chrome, `-on-${cn}`, `${cn}-on-${cn}`);
+  // ── extended chrome slots (#471): neutral-scoped concepts — a placeholder is always field text, a
+  // scrim is the app's own neutral overlay tint (distinct from the FIXED `dialog-backdrop` system
+  // constant named in Elevation & Depth below), and inverse-surface/-on-surface invert the app's OWN
+  // neutral surface (toasts, tooltips) — never a brand family's.
+  slot(chrome, "-placeholder", `${cn}-placeholder`);
+  slot(chrome, "-scrim", `${cn}-scrim`);
+  slot(chrome, "-inverse-surface", `${cn}-inverse-surface`);
+  slot(chrome, "-inverse-on-surface", `${cn}-inverse-on-surface`);
+  slot(chrome, "-container", `${cn}-container`);
+  slot(chrome, "-container-low", `${cn}-container-low`);
+  slot(chrome, "-container-high", `${cn}-container-high`);
 
   // ── every other family: base fill + its button states + the kit's on-color (§7 R2) ──
   // EVERY fill family carries `-hover` and `-disabled` (so any intent can be a real button — the preview
@@ -122,12 +139,18 @@ export function dsColorRoles(state) {
   const intentOrder = ["danger", "success", "warning", "info"];
   const rank = (p) => { const t = p.name.toLowerCase(); const i = intentOrder.findIndex((k) => t.includes(k)); return i < 0 ? 99 : i; };
   const intents = palettes.filter((p) => p !== chrome && isIntent(p)).sort((a, b) => rank(a) - rank(b));
+  // container/-low/-high (#471): a per-family "quiet emphasis without a full fill" tint (Material's own
+  // primaryContainer/errorContainer precedent) — emitted for EVERY fill family including intents, the
+  // same reach as -hover/-disabled just above (a status banner is as real a container as a brand one).
   for (const p of [...others, ...intents]) {
     slot(p, "", `${p.n}`);
     slot(p, "-hover", `${p.n}-hover`);
     if (p === brandPal) slot(p, "-active", `${p.n}-active`);
     slot(p, "-disabled", `${p.n}-disabled`);
     slot(p, `-on-${p.n}`, `${p.n}-on-${p.n}`);
+    slot(p, "-container", `${p.n}-container`);
+    slot(p, "-container-low", `${p.n}-container-low`);
+    slot(p, "-container-high", `${p.n}-container-high`);
   }
 
   // ── Stitch-compat alias: `primary` = the brand-base fill (satisfies the required `primary` role).
@@ -400,7 +423,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   }
   // 3. Inputs
   {
-    const inCss = `.field{display:block;width:100%;padding:12px;border-radius:${radii.sm != null ? radii.sm : 8}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};${uiFont};margin-bottom:12px}.field::placeholder{color:${V(cn + "-on-surface-variant")}}.field--focus{outline:2px solid ${V(ds.families[0])};outline-offset:2px;border-color:${V(ds.families.find((f) => /primary|brand/.test(f)) || cn)}}`;
+    const inCss = `.field{display:block;width:100%;padding:12px;border-radius:${radii.sm != null ? radii.sm : 8}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};${uiFont};margin-bottom:12px}.field::placeholder{color:${V(cn + "-placeholder")}}.field--focus{outline:2px solid ${V(ds.families[0])};outline-offset:2px;border-color:${V(ds.families.find((f) => /primary|brand/.test(f)) || cn)}}`;
     out.push(card("inputs.html", "Components", "Inputs", "field · placeholder · focus", inCss,
       `<label class="cap">Label</label><input class="field" value="Typed value"><input class="field" placeholder="Placeholder text"><input class="field field--focus" value="Focused"><p class="cap">Field on <code>${cn}-surface</code>; focus ring is the brand family.</p>`));
   }
@@ -506,6 +529,14 @@ function dsSpineBody(ds, state, ctx) {
     `- **Surfaces** — the room, lowest to top: Background \`${ref(cn + "-background")}\` / Surface \`${ref(cn + "-surface")}\` /`,
     `  Surface-raised \`${ref(cn + "-surface-high")}\`. **Foreground \`${ref(cn + "-on-surface")}\`** — primary text; **Muted`,
     `  \`${ref(cn + "-on-surface-variant")}\`** — secondary text; **Border \`${ref(cn + "-outline-variant")}\`** — a translucent hairline (same value both schemes).`,
+    `- **Extended neutral slots** — **Placeholder \`${ref(cn + "-placeholder")}\`** (field placeholder text, never`,
+    `  \`on-surface-variant\`); **Scrim \`${ref(cn + "-scrim")}\`** (a neutral overlay tint — distinct from the fixed`,
+    `  \`--${pfx}-dialog-backdrop\` a real dialog uses, see Elevation & Depth); **Inverse \`${ref(cn + "-inverse-surface")}\`** /`,
+    `  \`${ref(cn + "-inverse-on-surface")}\` (a surface that inverts the app's OWN neutral — toasts, tooltips —`,
+    "  never a brand family's).",
+    `- **\`-container\` / \`-container-low\` / \`-container-high\`** — quiet emphasis without a full fill, on any family`,
+    `  (\`${ref(brand + "-container")}\`, \`${ref((intents[0] || fams[fams.length - 1]) + "-container")}\`): a status banner or a`,
+    "  tinted panel that reads as the family without competing with its solid fill.",
     brandBullets, "",
     "**Pairing law.** Text on a family fill uses that family's `on-{family}` token — which differs by",
     "scheme (light fills pair with white; the brighter dark-scheme fills pair with near-black). Text on",
@@ -603,7 +634,7 @@ function dsSpineBody(ds, state, ctx) {
     `  offset; **disabled** \`${ref(brand + "-disabled")}\` (the inert 60% wash, mode-independent). EVERY fill family`,
     "  carries its own `-hover` and `-disabled` — any intent is a real button; state fills and labels are the kit's role values under its `onColorMode` setting.",
     `- **Inputs.** \`${ref(cn + "-surface")}\` field, 1px \`${ref(cn + "-outline-variant")}\`, \`${ref(cn + "-on-surface")}\` text,`,
-    `  \`${ref(cn + "-on-surface-variant")}\` placeholder; **focus** swaps the border to \`${ref(brand)}\` plus a 2px ring.`,
+    `  \`${ref(cn + "-placeholder")}\` placeholder; **focus** swaps the border to \`${ref(brand)}\` plus a 2px ring.`,
     `- **Cards.** \`${ref(cn + "-surface")}\` on \`${ref(cn + "-background")}\`, 1px \`${ref(cn + "-outline-variant")}\`, \`{rounded.lg}\`.`,
     metal ? `- **Badges / chips.** Intent or signature fill with its own \`on-{family}\`, pill radius. \`${metal}\` is the default metadata chip.` : "- **Badges / chips.** Intent or signature fill with its own `on-{family}`, pill radius.",
   ].join("\n");
