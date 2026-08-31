@@ -398,9 +398,12 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   // hardcoded 600. Read the UI-control MD step so the previews render what the tokens say.
   const uiStack = dsFontStack(fonts.ui, sans);
   const uiStep = (typeSc && typeSc.categories && typeSc.categories["UI-control"] && typeSc.categories["UI-control"].MD) || null;
+  const uiSize = uiStep && uiStep.size ? uiStep.size : 14;
   const uiWeight = uiStep && uiStep.weight ? uiStep.weight : 500;
   const uiTrackEm = uiStep && uiStep.size ? Number((uiStep.letterSpacing / uiStep.size).toFixed(4)) : 0;
-  const uiFont = `font-family:${uiStack};font-weight:${uiWeight};letter-spacing:${uiTrackEm}em`;
+  // #477 — font-size was missing entirely: every uiFont consumer (buttons, the card CTA, the dialog
+  // actions, tabs/menu) inherited the browser's ~13px default instead of the UI-control MD step.
+  const uiFont = `font-family:${uiStack};font-size:${uiSize}px;font-weight:${uiWeight};letter-spacing:${uiTrackEm}em`;
   const radii = dsRadii(geomSc);
   const rMd = radii.md != null ? radii.md : 12;
   const rLg = radii.lg != null ? radii.lg : 16;
@@ -475,7 +478,11 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     const errFam = ds.families.find((f) => /danger|error|destruct|critical/.test(f)) || intents[0] || null;
     const checkMark = Math.round(ctrlIcon * 0.28);
     const inCss = [
-      `.field{display:block;width:100%;padding:12px;border-radius:${rSm}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};${uiFont};margin-bottom:12px;font:inherit}`,
+      // #477 — `font:inherit` used to ride AFTER ${uiFont} here: the `font` SHORTHAND resets every
+      // sub-property it doesn't restate (family/size/weight/line-height) to `inherit`, wiping the
+      // UI-control voice ${uiFont} had just set. Dropped — ${uiFont} already states every property
+      // a form control needs; no shorthand reset belongs after it.
+      `.field{display:block;width:100%;padding:12px;border-radius:${rSm}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};${uiFont};margin-bottom:12px}`,
       `.field::placeholder{color:${V(cn + "-placeholder")}}`,
       `.field--focus{outline:2px solid ${V(brand)};outline-offset:2px;border-color:${V(brand)}}`,
       errFam ? `.field--error{border-color:${V(errFam)}}` : "",

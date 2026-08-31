@@ -594,6 +594,38 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
   if (!dialog) FAIL(G, "no components/dialog.html card");
   else if (!dialog.data.includes(`var(--${pfx}-dialog-backdrop)`)) FAIL(G, "Dialog card does not reference --{pfx}-dialog-backdrop via var()");
 
+  // uiFont font-size pin (#477) — .btn/.pbtn (Card)/.dlg-btn (Dialog) must carry a font-size read from
+  // the real UI-control MD step, not the browser default; and the Inputs .field rule must not carry a
+  // bare `font:` SHORTHAND after uiFont (it resets family/size/weight/line-height to `inherit`,
+  // wiping the UI voice uiFont just set — the exact defect this ticket fixes).
+  {
+    const uiMd = tsc && tsc.categories && tsc.categories["UI-control"] && tsc.categories["UI-control"].MD;
+    const wantSize = uiMd && uiMd.size ? uiMd.size : null;
+    const cardCard = cards.find((c) => c.name === "components/card.html");
+    const inputsCard = cards.find((c) => c.name === "components/inputs.html");
+    const fontSizeOf = (html, ruleRe) => { const m = (html || "").match(ruleRe); const fs = m && /font-size:(\d+(?:\.\d+)?)px/.exec(m[0]); return fs ? Number(fs[1]) : null; };
+    const checks = [
+      ["Buttons .btn", buttons, /\.btn\{[^}]*\}/],
+      ["Card .pbtn", cardCard, /\.pbtn\{[^}]*\}/],
+      ["Dialog .dlg-btn", dialog, /\.dlg-btn\{[^}]*\}/],
+    ];
+    for (const [label, c, re] of checks) {
+      if (!c) continue; // already reported missing above
+      const size = fontSizeOf(c.data, re);
+      if (size == null) FAIL(G, `${label} carries no font-size (renders at the browser default, not the UI-control MD step)`);
+      else if (wantSize != null && size !== wantSize) FAIL(G, `${label} font-size is ${size}px, expected the UI-control MD step's ${wantSize}px`);
+    }
+    if (!inputsCard) FAIL(G, "no components/inputs.html card");
+    else {
+      const fieldRule = (inputsCard.data.match(/\.field\{[^}]*\}/) || [])[0] || "";
+      if (!fieldRule) FAIL(G, "Inputs card carries no .field rule to check");
+      else {
+        if (/font-size:(\d+(?:\.\d+)?)px/.exec(fieldRule) == null) FAIL(G, ".field rule carries no font-size (UI voice not applied)");
+        if (/(?:^|;)font:\s*inherit\b/.test(fieldRule)) FAIL(G, ".field rule still carries a `font: inherit` shorthand after uiFont — it resets family/size/weight to inherit, wiping the UI voice");
+      }
+    }
+  }
+
   // Typography card — every voice's every step appears (not one cherry-picked key per tier). Anchored
   // to the EXACT caption-span markup exportDesignSystemComponents emits for a step specimen (the
   // ".cap" span's own class/style plus the "<voice-step> · size/lh · weight" triple it wraps) rather
