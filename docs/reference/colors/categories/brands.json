@@ -138,6 +138,9 @@
           },
           "refuses": "A warm, high-chroma palette. Adia stays cool by design — sky blue and quiet aqua, not heat.",
           "dominantHex": "#55C9F2",
+          "damp": 89,
+          "dampCurve": 1.3,
+          "dampAmp": 70,
           "type": {
             "treatment": "product",
             "bodyBase": 16,
@@ -267,7 +270,7 @@
             },
             {
               "name": "Primary",
-              "hue": 225,
+              "hue": 235,
               "chroma": 85,
               "skew": -20,
               "lift": 0,

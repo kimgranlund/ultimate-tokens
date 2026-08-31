@@ -167,6 +167,12 @@ function deriveNeutralPalette(palettes) {
 }
 
 const VIVID_MIDS = { damp: 70, dampCurve: 1.5, dampAmp: 55, dampBias: 0 };
+// per-entry curve override (#479) — opt-in, currently only exercised by "brands"' `direct` shapes: a
+// real shipped product's own generator settings can drift from every OTHER preset's shared VIVID_MIDS
+// (e.g. Adia's product export re-tuned damp/dampCurve/dampAmp). A preset that sets any of these keys
+// wins over VIVID_MIDS for THAT preset only; a preset that sets none is byte-identical to before this
+// was added — same "opt-in, no-op by default" contract as the `direct` palette pass-through above.
+const CURVE_OVERRIDE_KEYS = ["damp", "dampCurve", "dampAmp", "dampBias"];
 
 // ── per-palette TYPOGRAPHY: map a spec palette's REGISTER declaration (its optional `type`) to an
 // engine typeScale config { treatment, bodyBase?, fonts, voices }. Registers are the intended-use
@@ -321,6 +327,9 @@ function buildCategory(doc) {
       // directly (the "brands" pass-through shape — a real doc's own type config) — pass it through
       // verbatim rather than running it through the register mapper, which wouldn't recognize it.
       const typeCfg = p.type && p.type.fonts ? p.type : registersToTypeConfig(p.type);
+      // per-preset curve override (#479) — see CURVE_OVERRIDE_KEYS above.
+      const curveOverrides = {};
+      for (const k of CURVE_OVERRIDE_KEYS) if (p[k] !== undefined) curveOverrides[k] = p[k];
       presets.push({
         // the tile/set name is the KICKER (a clean structured label, e.g. "59° N · January · Lake
         // Baikal corridor"); the long evocative `title` lives in story.title (Story tab + per-color line).
@@ -333,7 +342,7 @@ function buildCategory(doc) {
           refuses: clean(p.refuses),
           groups: ["d", "s", "a"].filter((k) => hy[k]).map((k) => ({ hier: k, pct: hy[k].pct, note: clean(hy[k].text) })),
         },
-        ...DEFAULT_CONTROLS, ...VIVID_MIDS,
+        ...DEFAULT_CONTROLS, ...VIVID_MIDS, ...curveOverrides,
         // per-palette TYPOGRAPHY — opening this preset (openConfigAsSet → hydrate → clampType) sets the
         // doc's `type`, so the Fonts picker + scale + every export carry this palette's designed system.
         // Absent when the spec palette has no `type` (falls back to the global default treatment).
