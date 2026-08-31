@@ -109,6 +109,11 @@ export function dsColorRoles(state) {
   slot(chrome, "-background", `${cn}-background`);
   slot(chrome, "-surface", `${cn}-surface`);
   slot(chrome, "-surface-high", `${cn}-surface-high`);
+  // -surface-dim (#475): a DARKER stop in BOTH modes (semantic.js's surface-dim/-bright ladder is
+  // non-mirror — same direction each scheme), the correct hover-wash token; -surface-high is a
+  // MIRRORED elevation stop (raised in both modes, opposite tone direction per scheme) and must
+  // never stand in for a hover wash.
+  slot(chrome, "-surface-dim", `${cn}-surface-dim`);
   slot(chrome, "-on-surface", `${cn}-on-surface`);
   slot(chrome, "-on-surface-variant", `${cn}-on-surface-variant`);
   slot(chrome, "-outline-variant", `${cn}-outline-variant`);
@@ -507,7 +512,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
 
   // 4. Table — header, rows, hairlines, a hovered row.
   {
-    const tblCss = `.dtable{width:100%;border-collapse:collapse;font-size:13px}.dtable th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:${V(cn + "-on-surface-variant")};border-bottom:1px solid ${V(cn + "-outline-variant")}}.dtable td{padding:10px 12px;color:${V(cn + "-on-surface")};border-bottom:1px solid ${V(cn + "-outline-variant")}}.dtable tr.is-hover td{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-high")}}`;
+    const tblCss = `.dtable{width:100%;border-collapse:collapse;font-size:13px}.dtable th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:${V(cn + "-on-surface-variant")};border-bottom:1px solid ${V(cn + "-outline-variant")}}.dtable td{padding:10px 12px;color:${V(cn + "-on-surface")};border-bottom:1px solid ${V(cn + "-outline-variant")}}.dtable tr.is-hover td{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-dim")}}`;
     const body = `<table class="dtable"><thead><tr><th>Name</th><th>Status</th><th>Updated</th></tr></thead><tbody><tr><td>Marketing site</td><td>Live</td><td>2 hours ago</td></tr><tr><td>Design tokens</td><td>Draft</td><td>Yesterday</td></tr><tr class="is-hover"><td>Onboarding flow</td><td>In review</td><td>3 days ago</td></tr></tbody></table><p class="cap">Header text <code>on-surface-variant</code>; hairlines <code>outline-variant</code>; the highlighted row demonstrates <code>${cn}-hover</code>.</p>`;
     out.push(card("table.html", "Components", "Table", "header · rows · hover", tblCss, body));
   }
@@ -522,7 +527,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   // 6. Tabs & Menu — the navigation group (resolved as one combined card, per "tabs/menu").
   {
     const dangerFam = intents.find((f) => /danger/.test(f));
-    const navCss = `.tabs{display:flex;gap:24px;border-bottom:1px solid ${V(cn + "-outline-variant")};margin-bottom:20px}.tab{padding-bottom:10px;${uiFont};color:${V(cn + "-on-surface-variant")};border-bottom:2px solid transparent}.tab--active{color:${V(cn + "-on-surface")};border-bottom-color:${V(brand)}}.menu{background:${V(cn + "-surface-high")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rMd}px;padding:8px;width:220px}.menu-item{padding:8px 12px;border-radius:${rSm}px;color:${V(cn + "-on-surface")};${uiFont};}.menu-item--hover{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-high")}}.menu-divider{height:1px;background:${V(cn + "-outline-variant")};margin:6px 0}`;
+    const navCss = `.tabs{display:flex;gap:24px;border-bottom:1px solid ${V(cn + "-outline-variant")};margin-bottom:20px}.tab{padding-bottom:10px;${uiFont};color:${V(cn + "-on-surface-variant")};border-bottom:2px solid transparent}.tab--active{color:${V(cn + "-on-surface")};border-bottom-color:${V(brand)}}.menu{background:${V(cn + "-surface-high")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rMd}px;padding:8px;width:220px}.menu-item{padding:8px 12px;border-radius:${rSm}px;color:${V(cn + "-on-surface")};${uiFont};}.menu-item--hover{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-dim")}}.menu-divider{height:1px;background:${V(cn + "-outline-variant")};margin:6px 0}`;
     const deleteStyle = dangerFam ? ` style="color:${V(dangerFam)}"` : "";
     const body = `<div class="tabs"><div class="tab tab--active">Overview</div><div class="tab">Activity</div><div class="tab">Settings</div></div><div class="menu"><div class="menu-item">Edit</div><div class="menu-item menu-item--hover">Duplicate</div><div class="menu-divider"></div><div class="menu-item"${deleteStyle}>Delete</div></div><p class="cap">Active tab underline is the brand token; the highlighted menu item is <code>${cn}-hover</code>${dangerFam ? "; Delete borrows the danger family" : ""}.</p>`;
     out.push(card("navigation.html", "Components", "Tabs & Menu", "active tab · menu · hover", navCss, body));
@@ -651,7 +656,8 @@ function dsSpineBody(ds, state, ctx) {
     "  them: `-on-surface`, `-on-surface-variant`; hairlines: `-outline-variant`.",
     `- **Prefix-adaptive**: under another prefix (\`--md-sys-*\`, \`--color-*\`), keep \`{family}-{slot}\` intact and swap only the prefix.`, "",
     `- **Surfaces** — the room, lowest to top: Background \`${ref(cn + "-background")}\` / Surface \`${ref(cn + "-surface")}\` /`,
-    `  Surface-raised \`${ref(cn + "-surface-high")}\`. **Foreground \`${ref(cn + "-on-surface")}\`** — primary text; **Muted`,
+    `  Surface-raised \`${ref(cn + "-surface-high")}\`; hover wash \`${ref(cn + "-surface-dim")}\` (darker in BOTH schemes — an`,
+    `  interaction STATE, never \`-surface-high\`, which is a MIRRORED elevation stop). **Foreground \`${ref(cn + "-on-surface")}\`** — primary text; **Muted`,
     `  \`${ref(cn + "-on-surface-variant")}\`** — secondary text; **Border \`${ref(cn + "-outline-variant")}\`** — a translucent hairline (same value both schemes).`,
     `- **Extended neutral slots** — **Placeholder \`${ref(cn + "-placeholder")}\`** (field placeholder text, never`,
     `  \`on-surface-variant\`); **Scrim \`${ref(cn + "-scrim")}\`** (a neutral overlay tint — distinct from the fixed`,
