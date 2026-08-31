@@ -663,6 +663,94 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
     if (menuHoverRule.includes('"-surface-high"')) FAIL(G, "Navigation menu-item hover fallback source regressed back to -surface-high (an elevation stop, not a hover wash)");
   }
 
+  // AdiaUI-parity dimensional-default pins (#480) — the concrete dimension/state values this ticket
+  // adopted from the AdiaUI (gen-ui-kit) spec, translated onto our own token grammar.
+  {
+    const cn = dsr.chrome.n;
+    const table = cards.find((c) => c.name === "components/table.html");
+    const buttonsCard = cards.find((c) => c.name === "components/buttons.html");
+    const cardCard = cards.find((c) => c.name === "components/card.html");
+    const dialogCard = cards.find((c) => c.name === "components/dialog.html");
+    const feedbackCard = cards.find((c) => c.name === "components/feedback.html");
+    const navCard = cards.find((c) => c.name === "components/navigation.html");
+
+    // -outline (a real, stronger role than -outline-variant) exists in the reduced grammar and is
+    // what the Table header's hairline reads — row dividers keep the subtler -outline-variant.
+    if (!dsr.tokens.some((t) => t.name === `${cn}-outline`)) FAIL(G, `dsColorRoles is missing ${cn}-outline (the AdiaUI-parity strong-hairline token)`);
+    if (table) {
+      if (!table.data.includes(`var(--${pfx}-${cn}-outline)`)) FAIL(G, "Table header does not reference the stronger -outline hairline");
+      const thRule = (table.data.match(/\.dtable th\{[^}]*\}/) || [])[0] || "";
+      if (thRule.includes(`--${pfx}-${cn}-outline-variant`)) FAIL(G, "Table header uses the subtler -outline-variant instead of the stronger -outline");
+      const tdRule = (table.data.match(/\.dtable td\{[^}]*\}/) || [])[0] || "";
+      if (!tdRule.includes(`--${pfx}-${cn}-outline-variant`)) FAIL(G, "Table row dividers should keep the subtler -outline-variant");
+    }
+
+    // Buttons — Ghost is transparent even at rest (not Tonal's always-on fill); Tonal stands on a
+    // real token fill; Active pairs its color state with the scale(0.97) press transform.
+    if (buttonsCard) {
+      const ghostBtn = (buttonsCard.data.match(/<button class="btn" style="([^"]*)">Ghost<\/button>/) || [])[1] || "";
+      if (!ghostBtn.startsWith("background:transparent")) FAIL(G, `Ghost variant must be transparent even at rest — got: ${ghostBtn}`);
+      const tonalBtn = (buttonsCard.data.match(/<button class="btn" style="([^"]*)">Tonal<\/button>/) || [])[1] || "";
+      if (!/^background:var\(--/.test(tonalBtn)) FAIL(G, `Tonal variant must stand on a real token fill — got: ${tonalBtn}`);
+      if (!/transform:scale\(0\.97\)/.test(buttonsCard.data)) FAIL(G, "Buttons card active/pressed state carries no scale(0.97) press transform");
+    }
+
+    // Card — the inset is a real spacing-ladder value (AdiaUI's own default inset, 16), not the old
+    // hardcoded 24.
+    if (cardCard) {
+      const space = Object.keys(gsc.space).sort((a, b) => a - b).map((k) => gsc.space[k]);
+      const wantPad = space[4] != null ? space[4] : 16;
+      const panelRule = (cardCard.data.match(/\.panel\{[^}]*\}/) || [])[0] || "";
+      const padMatch = /padding:(\d+)px/.exec(panelRule);
+      if (!padMatch) FAIL(G, "Card .panel rule carries no padding");
+      else if (Number(padMatch[1]) !== wantPad) FAIL(G, `Card padding is ${padMatch[1]}px, expected the real spacing-ladder value ${wantPad}px`);
+    }
+
+    // Dialog + Toast — the soft shadow (top-most/overlay surfaces, per our own Elevation & Depth
+    // exception) is a real -scrim token reference, never a raw color.
+    if (dialogCard) {
+      const panelRule = (dialogCard.data.match(/\.dlg-panel\{[^}]*\}/) || [])[0] || "";
+      if (!/box-shadow:[^;{}]*var\(--/.test(panelRule)) FAIL(G, "Dialog panel carries no token-derived box-shadow");
+    }
+    if (feedbackCard) {
+      const toastRule = (feedbackCard.data.match(/\.toast\{[^}]*\}/) || [])[0] || "";
+      if (!/max-width:\d+px/.test(toastRule)) FAIL(G, "Toast rule carries no max-width constraint");
+      const toastEl = (feedbackCard.data.match(/<div class="toast" style="([^"]*)">/) || [])[1] || "";
+      if (!/box-shadow:[^;"]*var\(--/.test(toastEl)) FAIL(G, "Toast element carries no token-derived box-shadow");
+      // Badge — mono, uppercase, tracked, tabular (AdiaUI's badge typography treatment, translated
+      // into our own mono voice, not their font).
+      const badgeRule = (feedbackCard.data.match(/\.badge\{[^}]*\}/) || [])[0] || "";
+      if (!/text-transform:uppercase/.test(badgeRule)) FAIL(G, "Badge rule is not uppercase");
+      if (!/font-variant-numeric:tabular-nums/.test(badgeRule)) FAIL(G, "Badge rule does not use tabular-nums");
+      if (!/letter-spacing:\.06em/.test(badgeRule)) FAIL(G, "Badge rule tracking does not match AdiaUI's 0.06em");
+      // Alert radius (md, not the old sm) and Progress track height (6px, not 8px).
+      const alertRule = (feedbackCard.data.match(/\.alert\{[^}]*\}/) || [])[0] || "";
+      const alertRadius = /border-radius:(\d+)px/.exec(alertRule);
+      const trackRule = (feedbackCard.data.match(/\.progress-track\{[^}]*\}/) || [])[0] || "";
+      const trackHeight = /height:(\d+)px/.exec(trackRule);
+      if (!trackHeight || Number(trackHeight[1]) !== 6) FAIL(G, `Progress track height is ${trackHeight ? trackHeight[1] : "unset"}px, expected 6px`);
+      if (cardCard && alertRadius) {
+        const panelRadius = /border-radius:(\d+)px/.exec((cardCard.data.match(/\.panel\{[^}]*\}/) || [])[0] || "");
+        if (panelRadius && Number(alertRadius[1]) === Number(panelRadius[1])) FAIL(G, "Alert radius still matches Card's lg radius — expected the smaller md radius");
+      }
+    }
+
+    // Navigation — the menu popover is a card-tier (lg) radius, and its item radius is CONCENTRIC:
+    // the popover's own radius minus its own padding, never a fixed/arbitrary value.
+    if (navCard && cardCard) {
+      const menuRule = (navCard.data.match(/\.menu\{[^}]*\}/) || [])[0] || "";
+      const menuRadius = /border-radius:(\d+)px/.exec(menuRule);
+      const menuPad = /padding:(\d+)px/.exec(menuRule);
+      const panelRadius = /border-radius:(\d+)px/.exec((cardCard.data.match(/\.panel\{[^}]*\}/) || [])[0] || "");
+      const itemRule = (navCard.data.match(/\.menu-item\{[^}]*\}/) || [])[0] || "";
+      const itemRadius = /border-radius:(\d+)px/.exec(itemRule);
+      if (!menuRadius || !panelRadius || Number(menuRadius[1]) !== Number(panelRadius[1]))
+        FAIL(G, `Menu popover radius (${menuRadius ? menuRadius[1] : "unset"}) should match the card-tier lg radius (${panelRadius ? panelRadius[1] : "unset"})`);
+      if (!itemRadius || !menuRadius || !menuPad || Number(itemRadius[1]) !== Number(menuRadius[1]) - Number(menuPad[1]))
+        FAIL(G, `Menu item radius (${itemRadius ? itemRadius[1] : "unset"}) is not concentric with the popover (radius ${menuRadius ? menuRadius[1] : "?"} minus padding ${menuPad ? menuPad[1] : "?"})`);
+    }
+  }
+
   // §8 gate parity — the expanded catalog still clears every non-G1 gate through dsBundleGates, same as
   // the full-bundle check above (this is a targeted re-run scoped to the catalog change itself).
   const tj = X.exportDesignSystemTokens(state, tsc, gsc);

@@ -116,6 +116,10 @@ export function dsColorRoles(state) {
   slot(chrome, "-surface-dim", `${cn}-surface-dim`);
   slot(chrome, "-on-surface", `${cn}-on-surface`);
   slot(chrome, "-on-surface-variant", `${cn}-on-surface-variant`);
+  // -outline (#480, AdiaUI parity): a STRONGER hairline than -outline-variant (role-table 500-600 vs
+  // 500-300) — the header/strong-divider case AdiaUI's own table spec distinguishes from a row's
+  // subtler border. -outline-variant stays the default hairline everywhere else.
+  slot(chrome, "-outline", `${cn}-outline`);
   slot(chrome, "-outline-variant", `${cn}-outline-variant`);
   slot(chrome, "", `${cn}`);
   slot(chrome, "-hover", `${cn}-hover`);
@@ -452,8 +456,10 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
       const dis = `background:${has(f + "-disabled") ? V(f + "-disabled") : V(f)};color:${V(cn + "-on-surface-variant")}`;
       return `<div class="brow"><span class="blabel">${cap(f)}</span><button class="btn" style="${base}">Button</button><button class="btn" style="${hover}">Hover</button><button class="btn btn--dis" style="${dis}">Disabled</button></div>`;
     }).join("");
+    // Active/pressed (AdiaUI parity, #480): the color state AND the press feedback together — a
+    // real interaction has both, and a card that only swaps color under-teaches the affordance.
     const activeRow = has(`${brand}-active`)
-      ? `<div class="brow"><span class="blabel">Active</span><button class="btn" style="background:${V(brand + "-active")};color:${brandOn}">Pressed</button></div>`
+      ? `<div class="brow"><span class="blabel">Active</span><button class="btn" style="background:${V(brand + "-active")};color:${brandOn};transform:scale(0.97)">Pressed</button></div>`
       : "";
     const focus = (geomSc && geomSc.focus) || { ringWidth: 2, ringOffset: 2 };
     // The ring sits on a NEUTRAL fill (never the brand fill it would ring in real use) — on a
@@ -462,14 +468,18 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     // legible teaching case and the common real one (focus rings show on plain/outline controls).
     const focusRow = `<div class="brow"><span class="blabel">Focus ring</span><button class="btn btn--focus-demo" style="background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};border:1px solid ${V(cn + "-outline-variant")};outline:${focus.ringWidth}px solid ${V(brand)};outline-offset:${focus.ringOffset}px">Focused</button></div>`;
     const tint = has(`${brand}-container`) ? V(brand + "-container") : "transparent";
-    const variantRow = `<div class="brow"><span class="blabel">Variants</span><button class="btn" style="background:transparent;border:1px solid ${V(brand)};color:${V(brand)}">Outline</button><button class="btn" style="background:${tint};color:${V(brand)}">Ghost</button><button class="btn" style="background:none;padding:0;color:${V(brand)};text-decoration:underline">Link</button></div>`;
+    // Ghost is TRANSPARENT at rest (text only) — Tonal is the one with a standing tinted fill
+    // (AdiaUI parity, #480: reading the spec closely, our prior "Ghost" actually rendered Tonal's
+    // own always-on container fill; Ghost's own bg is transparent even at rest, tinting only on
+    // hover in the real component). Both variants now exist, correctly distinct.
+    const variantRow = `<div class="brow"><span class="blabel">Variants</span><button class="btn" style="background:transparent;border:1px solid ${V(brand)};color:${V(brand)}">Outline</button><button class="btn" style="background:transparent;color:${V(brand)}">Ghost</button><button class="btn" style="background:${tint};color:${V(brand)}">Tonal</button><button class="btn" style="background:none;padding:0;color:${V(brand)};text-decoration:underline">Link</button></div>`;
     const sizeRow = `<div class="size-row">${SIZE_KEYS.map((sz) => {
       const s = geomSc && geomSc.sizes && geomSc.sizes[sz];
       if (!s) return "";
       return `<button class="btn" style="background:${V(brand)};color:${brandOn};height:${s.height}px;padding:0 ${Math.round(s.paddingWide)}px;font-size:${s.font}px">${sz}</button>`;
     }).join("")}</div>`;
     out.push(card("buttons.html", "Components", "Buttons", "fills · variants · states · sizes", btnCss,
-      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>${activeRow}<p class="cap">Outline / ghost / link — text is the brand token itself; ghost's hover tint is the brand's own <code>-container</code>, never a solid fill.</p>${variantRow}<p class="cap">Focus ring — <code>geometry.focus.ringWidth</code>/<code>ringOffset</code>, the brand token ringing a neutral control so it reads clearly against a fill it doesn't share.</p>${focusRow}<p class="cap">Size ladder — height, padding, and text size read straight off the geometry size ramp.</p>${sizeRow}`));
+      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>${activeRow}<p class="cap">Outline / ghost / tonal / link — text is the brand token itself; ghost is transparent even at rest, tonal stands on the brand's own <code>-container</code> fill.</p>${variantRow}<p class="cap">Focus ring — <code>geometry.focus.ringWidth</code>/<code>ringOffset</code>, the brand token ringing a neutral control so it reads clearly against a fill it doesn't share.</p>${focusRow}<p class="cap">Size ladder — height, padding, and text size read straight off the geometry size ramp.</p>${sizeRow}`));
   }
 
   // 3. Inputs — field states (default · placeholder · focus · error · disabled), select, textarea, and
@@ -517,47 +527,80 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     out.push(card("inputs.html", "Components", "Inputs", "states · select · textarea · selection controls", inCss, body));
   }
 
-  // 4. Table — header, rows, hairlines, a hovered row.
+  // 4. Table — header, rows, hairlines, a hovered row. AdiaUI parity (#480): cell padding matches
+  //    their 12/16 py/px; the header carries the STRONGER `-outline` hairline (a real role, distinct
+  //    from `-outline-variant` — role-table 500-600 vs 500-300) where row dividers keep the subtler
+  //    `-outline-variant`, matching their own header-vs-row-border distinction. "Selected"/"striped"
+  //    row states are NOT modeled — no matching semantic roles exist anywhere in our role table
+  //    (see Findings) rather than hardcoding an arbitrary color for them.
   {
-    const tblCss = `.dtable{width:100%;border-collapse:collapse;font-size:13px}.dtable th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:${V(cn + "-on-surface-variant")};border-bottom:1px solid ${V(cn + "-outline-variant")}}.dtable td{padding:10px 12px;color:${V(cn + "-on-surface")};border-bottom:1px solid ${V(cn + "-outline-variant")}}.dtable tr.is-hover td{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-dim")}}`;
-    const body = `<table class="dtable"><thead><tr><th>Name</th><th>Status</th><th>Updated</th></tr></thead><tbody><tr><td>Marketing site</td><td>Live</td><td>2 hours ago</td></tr><tr><td>Design tokens</td><td>Draft</td><td>Yesterday</td></tr><tr class="is-hover"><td>Onboarding flow</td><td>In review</td><td>3 days ago</td></tr></tbody></table><p class="cap">Header text <code>on-surface-variant</code>; hairlines <code>outline-variant</code>; the highlighted row demonstrates <code>${cn}-hover</code>.</p>`;
+    const hdrBorder = has(`${cn}-outline`) ? V(cn + "-outline") : V(cn + "-outline-variant");
+    const tblCss = `.dtable{width:100%;border-collapse:collapse;font-size:13px}.dtable th{text-align:left;padding:12px 16px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:${V(cn + "-on-surface-variant")};border-bottom:1px solid ${hdrBorder}}.dtable td{padding:12px 16px;color:${V(cn + "-on-surface")};border-bottom:1px solid ${V(cn + "-outline-variant")}}.dtable tr.is-hover td{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-dim")}}`;
+    const body = `<table class="dtable"><thead><tr><th>Name</th><th>Status</th><th>Updated</th></tr></thead><tbody><tr><td>Marketing site</td><td>Live</td><td>2 hours ago</td></tr><tr><td>Design tokens</td><td>Draft</td><td>Yesterday</td></tr><tr class="is-hover"><td>Onboarding flow</td><td>In review</td><td>3 days ago</td></tr></tbody></table><p class="cap">Header hairline is the stronger <code>${cn}-outline</code>; row dividers stay <code>${cn}-outline-variant</code>; the highlighted row demonstrates <code>${cn}-hover</code>.</p>`;
     out.push(card("table.html", "Components", "Table", "header · rows · hover", tblCss, body));
   }
 
   // 5. Dialog — the fixed backdrop system constant (never a role token) + a raised, radiused panel.
   {
-    const dlgCss = `.dlg-wrap{position:relative;height:200px;border-radius:${rMd}px;overflow:hidden;background:${V(cn + "-background")}}.dlg-backdrop{position:absolute;inset:0;background:${V("dialog-backdrop")}}.dlg-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72%;background:${V(cn + "-surface")};border-radius:${rXl}px;padding:20px}.dlg-panel h4{font-family:${headStack};margin:0 0 8px}.dlg-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}.dlg-btn{border:0;border-radius:${rMd}px;padding:8px 16px;${uiFont};cursor:pointer}`;
+    // A soft, low-alpha shadow — the one exception our own Elevation & Depth prose already names
+    // ("optional garnish on the top-most surfaces... one soft low-alpha layer at most"). A modal
+    // panel is exactly that surface (AdiaUI parity, #480: their overlay surfaces carry shadow-lg);
+    // the color is the -scrim token, never a raw rgba — still fully token-derived.
+    const dlgShadow = has(`${cn}-scrim`) ? `box-shadow:0 8px 24px ${V(cn + "-scrim")};` : "";
+    const dlgCss = `.dlg-wrap{position:relative;height:200px;border-radius:${rMd}px;overflow:hidden;background:${V(cn + "-background")}}.dlg-backdrop{position:absolute;inset:0;background:${V("dialog-backdrop")}}.dlg-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72%;background:${V(cn + "-surface")};border-radius:${rXl}px;padding:20px;${dlgShadow}}.dlg-panel h4{font-family:${headStack};margin:0 0 8px}.dlg-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}.dlg-btn{border:0;border-radius:${rMd}px;padding:8px 16px;${uiFont};cursor:pointer}`;
     const body = `<div class="dlg-wrap"><div class="dlg-backdrop"></div><div class="dlg-panel"><h4>Delete item?</h4><p style="margin:0;color:${V(cn + "-on-surface-variant")}">This action can't be undone.</p><div class="dlg-actions"><button class="dlg-btn" style="background:transparent;color:${V(cn + "-on-surface")}">Cancel</button><button class="dlg-btn" style="background:${V(brand)};color:${brandOn}">Confirm</button></div></div></div><p class="cap">Backdrop is the fixed system constant <code>--${pfx}-dialog-backdrop</code> (opaque black · 80%, identical in both schemes); the panel radius is <code>{rounded.xl}</code>.</p>`;
     out.push(card("dialog.html", "Components", "Dialog", "backdrop · radius · actions", dlgCss, body));
   }
 
   // 6. Tabs & Menu — the navigation group (resolved as one combined card, per "tabs/menu").
+  //    AdiaUI parity (#480): the menu popover is a card-tier surface (radius lg, not md) with a
+  //    tighter 4px padding; its item radius is CONCENTRIC — the popover's own radius minus its
+  //    padding, so nested corners share a center — computed here from our own rLg, never copied
+  //    as a literal. The tabs strip gap is tightened to match. The Delete item's danger color is
+  //    the family's own BASE/fill token used as accent TEXT (never a "-bg"-suffixed role — our
+  //    grammar has no such suffix) — confirmed this does NOT reproduce the role-crossing AdiaUI's
+  //    own spec flags on its danger menu item (their fg reads their own `-bg` role).
   {
     const dangerFam = intents.find((f) => /danger/.test(f));
-    const navCss = `.tabs{display:flex;gap:24px;border-bottom:1px solid ${V(cn + "-outline-variant")};margin-bottom:20px}.tab{padding-bottom:10px;${uiFont};color:${V(cn + "-on-surface-variant")};border-bottom:2px solid transparent}.tab--active{color:${V(cn + "-on-surface")};border-bottom-color:${V(brand)}}.menu{background:${V(cn + "-surface-high")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rMd}px;padding:8px;width:220px}.menu-item{padding:8px 12px;border-radius:${rSm}px;color:${V(cn + "-on-surface")};${uiFont};}.menu-item--hover{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-dim")}}.menu-divider{height:1px;background:${V(cn + "-outline-variant")};margin:6px 0}`;
+    const menuPad = 4;
+    const menuItemRadius = Math.max(0, rLg - menuPad);
+    const navCss = `.tabs{display:flex;gap:12px;border-bottom:1px solid ${V(cn + "-outline-variant")};margin-bottom:20px}.tab{padding-bottom:10px;${uiFont};color:${V(cn + "-on-surface-variant")};border-bottom:2px solid transparent}.tab--active{color:${V(cn + "-on-surface")};border-bottom-color:${V(brand)}}.menu{background:${V(cn + "-surface-high")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:${menuPad}px;width:220px}.menu-item{padding:6px 8px;border-radius:${menuItemRadius}px;color:${V(cn + "-on-surface")};${uiFont};}.menu-item--hover{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-dim")}}.menu-divider{height:1px;background:${V(cn + "-outline-variant")};margin:4px 0}`;
     const deleteStyle = dangerFam ? ` style="color:${V(dangerFam)}"` : "";
-    const body = `<div class="tabs"><div class="tab tab--active">Overview</div><div class="tab">Activity</div><div class="tab">Settings</div></div><div class="menu"><div class="menu-item">Edit</div><div class="menu-item menu-item--hover">Duplicate</div><div class="menu-divider"></div><div class="menu-item"${deleteStyle}>Delete</div></div><p class="cap">Active tab underline is the brand token; the highlighted menu item is <code>${cn}-hover</code>${dangerFam ? "; Delete borrows the danger family" : ""}.</p>`;
+    const body = `<div class="tabs"><div class="tab tab--active">Overview</div><div class="tab">Activity</div><div class="tab">Settings</div></div><div class="menu"><div class="menu-item">Edit</div><div class="menu-item menu-item--hover">Duplicate</div><div class="menu-divider"></div><div class="menu-item"${deleteStyle}>Delete</div></div><p class="cap">Active tab underline is the brand token; the highlighted menu item is <code>${cn}-hover</code>${dangerFam ? "; Delete borrows the danger family" : ""}. Item radius is concentric with the popover's own — <code>{rounded.lg}</code> minus the popover's padding.</p>`;
     out.push(card("navigation.html", "Components", "Tabs & Menu", "active tab · menu · hover", navCss, body));
   }
 
-  // 7. Card — a raised surface (unchanged from the original 7).
+  // 7. Card — a raised surface. Inset reads the real spacing ladder (AdiaUI parity, #480: their own
+  //    card inset ladder is 14/16/18 — our space[4]=16 lands on their default exactly). No shadow: our
+  //    own Elevation & Depth section already commits to surface-stepping over shadows for a plain
+  //    card — a deliberate, standing decision this ticket does not override (see Findings).
   {
-    const cCss = `.panel{background:${V(cn + "-surface")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:24px}.panel h4{font-family:${headStack};margin:0 0 8px}.pbtn{border:0;border-radius:${rMd}px;padding:12px;${uiFont};cursor:pointer;background:${V(brand)};color:${brandOn};margin-top:12px}`;
+    const cardSpace = dsSpacing(geomSc);
+    const cardPad = cardSpace[4] != null ? cardSpace[4] : 16;
+    const cCss = `.panel{background:${V(cn + "-surface")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:${cardPad}px}.panel h4{font-family:${headStack};margin:0 0 8px}.pbtn{border:0;border-radius:${rMd}px;padding:12px;${uiFont};cursor:pointer;background:${V(brand)};color:${brandOn};margin-top:12px}`;
     out.push(card("card.html", "Components", "Card", "surface · elevation", cCss,
       `<div class="panel"><h4>Card title</h4><p style="margin:0">Body copy on a raised surface over the background — elevation is a surface step, not a shadow.</p><button class="pbtn">Primary action</button></div>`));
   }
 
-  // 8. Feedback — status + signature badges (unchanged), plus alerts (a family's own -container tint),
-  //    a toast (the #471 inverse-surface pair), and a determinate progress bar.
+  // 8. Feedback — status + signature badges, alerts (a family's own -container tint), a toast (the
+  //    #471 inverse-surface pair), and a determinate progress bar. Dimensions/typography aligned to
+  //    AdiaUI parity (#480): badge is mono/uppercase/tracked/tabular (translating their badge
+  //    typography treatment into our own mono voice, not their font); alert radius/padding, toast
+  //    padding/max-width, and the progress track height match their spec; toast gets the same
+  //    soft low-alpha shadow as Dialog (both are top-most/overlay surfaces per our own Elevation
+  //    & Depth exception).
   {
-    const fCss = `.badge{display:inline-block;padding:4px 10px;border-radius:${rFull}px;font-size:12px;font-weight:600;margin:0 8px 8px 0}.alert{display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:${rSm}px;margin-bottom:10px;font-size:13px}.toast{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:${rMd}px;font-size:13px}.progress-track{width:100%;height:8px;border-radius:${rFull}px;overflow:hidden;margin-bottom:6px}.progress-fill{height:100%;border-radius:${rFull}px}`;
+    const fCss = `.badge{display:inline-block;padding:1px 6px;border-radius:${rFull}px;font-family:${monoStack};font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;font-variant-numeric:tabular-nums;margin:0 8px 8px 0}.alert{display:flex;flex-direction:column;gap:4px;padding:8px 12px;border-radius:${rMd}px;margin-bottom:10px;font-size:13px}.toast{display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:${rMd}px;font-size:13px;max-width:384px}.progress-track{width:100%;height:6px;border-radius:${rFull}px;overflow:hidden;margin-bottom:6px}.progress-fill{height:100%;border-radius:${rFull}px}`;
     const chip = (f) => `<span class="badge" style="background:${V(f)};color:${V(f + "-on-" + f)}">${cap(f)}</span>`;
     const alertFams = (intents.length ? intents : fillFams).slice(0, 2);
-    const alerts = alertFams.map((f) => `<div class="alert" style="background:${has(f + "-container") ? V(f + "-container") : V(cn + "-surface-high")};border-left:4px solid ${V(f)};color:${V(cn + "-on-surface")}"><strong>${cap(f)}</strong><span>Quiet emphasis on its own <code>-container</code> tint, never a solid fill.</span></div>`).join("");
+    // A full 1px border (the family's own token, subtle) alongside the existing left accent bar —
+    // AdiaUI's alert carries a full border; ours keeps the accent for a stronger status cue.
+    const alerts = alertFams.map((f) => `<div class="alert" style="background:${has(f + "-container") ? V(f + "-container") : V(cn + "-surface-high")};border:1px solid ${V(f)};border-left:4px solid ${V(f)};color:${V(cn + "-on-surface")}"><strong>${cap(f)}</strong><span>Quiet emphasis on its own <code>-container</code> tint, never a solid fill.</span></div>`).join("");
     const toastOk = has(cn + "-inverse-surface") && has(cn + "-inverse-on-surface");
+    const toastShadow = has(`${cn}-scrim`) ? `box-shadow:0 8px 24px ${V(cn + "-scrim")}` : "";
     const toast = toastOk
-      ? `<div class="toast" style="background:${V(cn + "-inverse-surface")};color:${V(cn + "-inverse-on-surface")}">Changes saved</div>`
-      : `<div class="toast" style="background:${V(cn + "-on-surface")};color:${V(cn + "-surface")}">Changes saved</div>`;
+      ? `<div class="toast" style="background:${V(cn + "-inverse-surface")};color:${V(cn + "-inverse-on-surface")};${toastShadow}">Changes saved</div>`
+      : `<div class="toast" style="background:${V(cn + "-on-surface")};color:${V(cn + "-surface")};${toastShadow}">Changes saved</div>`;
     const pct = 62;
     const progress = `<div class="progress-track" style="background:${V(cn + "-surface-high")}"><div class="progress-fill" style="width:${pct}%;background:${V(brand)}"></div></div><p class="cap">${pct}% — track <code>${cn}-surface-high</code>, fill <code>${brand}</code>.</p>`;
     out.push(card("feedback.html", "Components", "Feedback", "status · alerts · toast · progress", fCss,
@@ -665,7 +708,9 @@ function dsSpineBody(ds, state, ctx) {
     `- **Surfaces** — the room, lowest to top: Background \`${ref(cn + "-background")}\` / Surface \`${ref(cn + "-surface")}\` /`,
     `  Surface-raised \`${ref(cn + "-surface-high")}\`; hover wash \`${ref(cn + "-surface-dim")}\` (darker in BOTH schemes — an`,
     `  interaction STATE, never \`-surface-high\`, which is a MIRRORED elevation stop). **Foreground \`${ref(cn + "-on-surface")}\`** — primary text; **Muted`,
-    `  \`${ref(cn + "-on-surface-variant")}\`** — secondary text; **Border \`${ref(cn + "-outline-variant")}\`** — a translucent hairline (same value both schemes).`,
+    `  \`${ref(cn + "-on-surface-variant")}\`** — secondary text; **Border \`${ref(cn + "-outline-variant")}\`** — a translucent hairline (same value`,
+    `  both schemes); **Strong border \`${ref(cn + "-outline")}\`** — a firmer hairline for a stronger divide (a table's`,
+    "  own header rule, never a row's), still never a full outline weight.",
     `- **Extended neutral slots** — **Placeholder \`${ref(cn + "-placeholder")}\`** (field placeholder text, never`,
     `  \`on-surface-variant\`); **Scrim \`${ref(cn + "-scrim")}\`** (a neutral overlay tint — distinct from the fixed`,
     `  \`--${pfx}-dialog-backdrop\` a real dialog uses, see Elevation & Depth); **Inverse \`${ref(cn + "-inverse-surface")}\`** /`,
@@ -767,9 +812,13 @@ function dsSpineBody(ds, state, ctx) {
     "## Components", "",
     "State the interactive states explicitly — generic output betrays itself in hover/focus/disabled.", "",
     `- **Buttons.** \`button-primary\` per the frontmatter; **hover** \`${ref(brand + "-hover")}\`, **active**`,
-    `  \`${ref(brand + "-active")}\` (each ships both scheme ends); **focus** a 2px \`${ref(brand)}\` outline at 2px`,
-    `  offset; **disabled** \`${ref(brand + "-disabled")}\` (the inert 60% wash, mode-independent). EVERY fill family`,
-    "  carries its own `-hover` and `-disabled` — any intent is a real button; state fills and labels are the kit's role values under its `onColorMode` setting.",
+    `  \`${ref(brand + "-active")}\` (each ships both scheme ends) paired with a \`scale(0.97)\` press transform;`,
+    `  **focus** a 2px \`${ref(brand)}\` outline at 2px offset; **disabled** \`${ref(brand + "-disabled")}\` (the inert 60%`,
+    "  wash, mode-independent). EVERY fill family carries its own `-hover` and `-disabled` — any intent is a real",
+    `  button; state fills and labels are the kit's role values under its \`onColorMode\` setting. Non-solid`,
+    `  variants: **outline** (transparent, \`${ref(brand)}\` border+text), **ghost** (transparent, \`${ref(brand)}\` text —`,
+    `  never a fill, even at rest), **tonal** (\`${ref(brand + "-container")}\` fill, \`${ref(brand)}\` text — a standing`,
+    "  tint, not just a hover state).",
     `- **Inputs.** \`${ref(cn + "-surface")}\` field, 1px \`${ref(cn + "-outline-variant")}\`, \`${ref(cn + "-on-surface")}\` text,`,
     `  \`${ref(cn + "-placeholder")}\` placeholder; **focus** swaps the border to \`${ref(brand)}\` plus a 2px ring.`,
     `- **Cards.** \`${ref(cn + "-surface")}\` on \`${ref(cn + "-background")}\`, 1px \`${ref(cn + "-outline-variant")}\`, \`{rounded.lg}\`.`,
