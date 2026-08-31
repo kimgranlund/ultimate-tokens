@@ -564,8 +564,18 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
   else {
     if (dsr.tokens.some((t) => t.name === `${brand}-active`) && !buttons.data.includes(`var(--${pfx}-${brand}-active)`))
       FAIL(G, "Buttons card does not reference the brand family's -active token");
-    if (!/outline:\d+px solid var\(--/.test(buttons.data) || !/outline-offset:\d+px/.test(buttons.data))
-      FAIL(G, "Buttons card does not render a real focus ring (outline/outline-offset from geometry.focus)");
+    // Focus ring — real outline/outline-offset from geometry.focus, AND (the reviewed defect) the
+    // ring's own color token must differ from the control's own fill token: a ring drawn in the
+    // SAME token as the fill it surrounds is illegible at a 1-2px geometry-authored offset.
+    const demo = (buttons.data.match(/<button class="btn btn--focus-demo" style="([^"]*)"/) || [])[1] || "";
+    if (!demo) FAIL(G, "Buttons card carries no btn--focus-demo control to check the focus ring against");
+    else {
+      const ringMatch = /outline:\d+px solid var\((--[a-z0-9-]+)\)/.exec(demo);
+      const fillMatch = /(?:^|;)background:var\((--[a-z0-9-]+)\)/.exec(demo);
+      if (!ringMatch || !/outline-offset:\d+px/.test(demo)) FAIL(G, "Buttons card does not render a real focus ring (outline/outline-offset from geometry.focus)");
+      else if (!fillMatch) FAIL(G, "Buttons card's focus-ring control has no token-derived fill to contrast the ring against");
+      else if (ringMatch[1] === fillMatch[1]) FAIL(G, `Buttons card's focus ring (${ringMatch[1]}) is the SAME token as its control's own fill (${fillMatch[1]}) — illegible at a 1-2px offset`);
+    }
   }
 
   // Motion card — reduced-motion is a CROSS-FADE fallback (reduce, don't remove), not a frozen preview:
@@ -584,12 +594,16 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
   if (!dialog) FAIL(G, "no components/dialog.html card");
   else if (!dialog.data.includes(`var(--${pfx}-dialog-backdrop)`)) FAIL(G, "Dialog card does not reference --{pfx}-dialog-backdrop via var()");
 
-  // Typography card — every voice's every step appears (not one cherry-picked key per tier).
+  // Typography card — every voice's every step appears (not one cherry-picked key per tier). Anchored
+  // to the EXACT caption-span markup exportDesignSystemComponents emits for a step specimen (the
+  // ".cap" span's own class/style plus the "<voice-step> · size/lh · weight" triple it wraps) rather
+  // than the bare "· N/M ·" fragment, which could in principle coincide with unrelated card text.
   const typo = cards.find((c) => c.name === "components/typography.html");
   const totalSteps = tsc && tsc.categories ? Object.values(tsc.categories).reduce((a, s) => a + Object.keys(s).length, 0) : 0;
+  const STEP_SPAN_RE = /<span class="cap" style="font-size:11px;font-weight:400">[a-z0-9]+(?:-[a-z0-9]+)* · \d+\/\d+ · \d+<\/span>/g;
   if (!typo) FAIL(G, "no components/typography.html card");
-  else if (totalSteps && (typo.data.match(/· \d+\/\d+ ·/g) || []).length !== totalSteps)
-    FAIL(G, `Typography card shows ${(typo.data.match(/· \d+\/\d+ ·/g) || []).length} step specimens, expected the full ${totalSteps}-step scale`);
+  else if (totalSteps && (typo.data.match(STEP_SPAN_RE) || []).length !== totalSteps)
+    FAIL(G, `Typography card shows ${(typo.data.match(STEP_SPAN_RE) || []).length} step specimens (anchored to the caption span structure), expected the full ${totalSteps}-step scale`);
 
   // §8 gate parity — the expanded catalog still clears every non-G1 gate through dsBundleGates, same as
   // the full-bundle check above (this is a targeted re-run scoped to the catalog change itself).

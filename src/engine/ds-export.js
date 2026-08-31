@@ -448,7 +448,11 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
       ? `<div class="brow"><span class="blabel">Active</span><button class="btn" style="background:${V(brand + "-active")};color:${brandOn}">Pressed</button></div>`
       : "";
     const focus = (geomSc && geomSc.focus) || { ringWidth: 2, ringOffset: 2 };
-    const focusRow = `<div class="brow"><span class="blabel">Focus ring</span><button class="btn" style="background:${V(brand)};color:${brandOn};outline:${focus.ringWidth}px solid ${V(brand)};outline-offset:${focus.ringOffset}px">Focused</button></div>`;
+    // The ring sits on a NEUTRAL fill (never the brand fill it would ring in real use) — on a
+    // brand-filled button the ring is the SAME token as the fill it surrounds, so the thin
+    // geometry-authored offset reads as barely-there. Neutral fill + brand ring is both the
+    // legible teaching case and the common real one (focus rings show on plain/outline controls).
+    const focusRow = `<div class="brow"><span class="blabel">Focus ring</span><button class="btn btn--focus-demo" style="background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};border:1px solid ${V(cn + "-outline-variant")};outline:${focus.ringWidth}px solid ${V(brand)};outline-offset:${focus.ringOffset}px">Focused</button></div>`;
     const tint = has(`${brand}-container`) ? V(brand + "-container") : "transparent";
     const variantRow = `<div class="brow"><span class="blabel">Variants</span><button class="btn" style="background:transparent;border:1px solid ${V(brand)};color:${V(brand)}">Outline</button><button class="btn" style="background:${tint};color:${V(brand)}">Ghost</button><button class="btn" style="background:none;padding:0;color:${V(brand)};text-decoration:underline">Link</button></div>`;
     const sizeRow = `<div class="size-row">${SIZE_KEYS.map((sz) => {
@@ -457,7 +461,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
       return `<button class="btn" style="background:${V(brand)};color:${brandOn};height:${s.height}px;padding:0 ${Math.round(s.paddingWide)}px;font-size:${s.font}px">${sz}</button>`;
     }).join("")}</div>`;
     out.push(card("buttons.html", "Components", "Buttons", "fills · variants · states · sizes", btnCss,
-      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>${activeRow}<p class="cap">Outline / ghost / link — text is the brand token itself; ghost's hover tint is the brand's own <code>-container</code>, never a solid fill.</p>${variantRow}<p class="cap">Focus ring — <code>geometry.focus.ringWidth</code>/<code>ringOffset</code> around the brand token.</p>${focusRow}<p class="cap">Size ladder — height, padding, and text size read straight off the geometry size ramp.</p>${sizeRow}`));
+      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>${activeRow}<p class="cap">Outline / ghost / link — text is the brand token itself; ghost's hover tint is the brand's own <code>-container</code>, never a solid fill.</p>${variantRow}<p class="cap">Focus ring — <code>geometry.focus.ringWidth</code>/<code>ringOffset</code>, the brand token ringing a neutral control so it reads clearly against a fill it doesn't share.</p>${focusRow}<p class="cap">Size ladder — height, padding, and text size read straight off the geometry size ramp.</p>${sizeRow}`));
   }
 
   // 3. Inputs — field states (default · placeholder · focus · error · disabled), select, textarea, and
