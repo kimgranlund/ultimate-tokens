@@ -605,9 +605,34 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
   else if (totalSteps && (typo.data.match(STEP_SPAN_RE) || []).length !== totalSteps)
     FAIL(G, `Typography card shows ${(typo.data.match(STEP_SPAN_RE) || []).length} step specimens (anchored to the caption span structure), expected the full ${totalSteps}-step scale`);
 
+  const md = X.exportDesignSystemSpine(state, tsc, gsc);
+
+  // Hover-wash grammar pin (#475/#476) — {cn}-surface-dim must exist in the reduced consumption
+  // grammar (not just the full semantic layer), be declared as a real custom property in the shared
+  // :root (so the fallback, if ever taken, resolves rather than dangles), be taught in the Surfaces
+  // prose (consumers aren't handed an untaught token), and the Table/Navigation fallback SOURCE must
+  // target -surface-dim, never regress to -surface-high (a MIRRORED elevation stop, not a hover
+  // wash) — the branch is unreachable at runtime under any real theme (every real palette carries
+  // -hover), so a source-level check is the only way to pin the literal fallback target.
+  {
+    const cn = dsr.chrome.n;
+    const table = cards.find((c) => c.name === "components/table.html");
+    if (!dsr.tokens.some((t) => t.name === `${cn}-surface-dim`)) FAIL(G, `dsColorRoles is missing ${cn}-surface-dim (the hover-wash grammar token)`);
+    if (table && !table.data.includes(`--${pfx}-${cn}-surface-dim:light-dark(`))
+      FAIL(G, `shared :root does not declare --${pfx}-${cn}-surface-dim (the hover-wash fallback would dangle if ever taken)`);
+    if (!md.includes(`hover wash \`{colors.${cn}-surface-dim}\``))
+      FAIL(G, "DESIGN.md Surfaces bullet does not teach the -surface-dim hover-wash token");
+    const dsExportSrc = readFileSync(new URL("../../src/engine/ds-export.js", import.meta.url), "utf8");
+    const isHoverRule = (dsExportSrc.match(/\.dtable tr\.is-hover td\{background:\$\{[^}]*\}\}/) || [])[0] || "";
+    if (!isHoverRule.includes('"-surface-dim"')) FAIL(G, "Table row-hover fallback source no longer targets -surface-dim");
+    if (isHoverRule.includes('"-surface-high"')) FAIL(G, "Table row-hover fallback source regressed back to -surface-high (an elevation stop, not a hover wash)");
+    const menuHoverRule = (dsExportSrc.match(/\.menu-item--hover\{background:\$\{[^}]*\}\}/) || [])[0] || "";
+    if (!menuHoverRule.includes('"-surface-dim"')) FAIL(G, "Navigation menu-item hover fallback source no longer targets -surface-dim");
+    if (menuHoverRule.includes('"-surface-high"')) FAIL(G, "Navigation menu-item hover fallback source regressed back to -surface-high (an elevation stop, not a hover wash)");
+  }
+
   // §8 gate parity — the expanded catalog still clears every non-G1 gate through dsBundleGates, same as
   // the full-bundle check above (this is a targeted re-run scoped to the catalog change itself).
-  const md = X.exportDesignSystemSpine(state, tsc, gsc);
   const tj = X.exportDesignSystemTokens(state, tsc, gsc);
   const gate = dsBundleGates({ designMd: md, tokensJson: tj, previews: cards.map((c) => ({ name: c.name.replace("components/", ""), html: c.data })) });
   const nonG1 = gate.findings.filter((f) => f.level === "ERROR" && f.gate !== "G1");
