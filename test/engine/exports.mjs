@@ -512,6 +512,108 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
   try { const j = JSON.parse(off[0].data); if (j.colors) FAIL("design-system", "all-disabled emitted colors"); if (!j.$note) FAIL("design-system", "all-disabled missing $note"); } catch { FAIL("design-system", "all-disabled not valid JSON"); }
 }
 
+// ── hpg-export-design-system-catalog (#473 — exportDesignSystemComponents expanded from 7 teaching
+// previews to a ~95%-usage component catalog: one card per component group, per the pinned resolution.
+// Verifies the returned [{name, data}] array directly: card count/roster, the @dsCard marker + single
+// shared :root structure, token-reference-only discipline (no hardcoded hex/oklch outside :root), and
+// that the active-state + focus-ring tokens (which existed but were never drawn before this ticket) are
+// actually referenced. Runs on the default palettes — the emitter must be theme-general.
+{
+  const tsc = typeScale({});
+  const gsc = geomScale({});
+  const state = C(ALL);
+  const G = "design-system-catalog";
+  const cards = X.exportDesignSystemComponents(state, tsc, gsc);
+
+  // card count — one card per named component group (~12-14 per the resolution; the resolved roster —
+  // 8 named groups + colors/spacing/card — lands at 11, so a wide-but-bounded range catches a regression
+  // (a collapse back toward 7, or an unbounded per-variant explosion) without pinning an exact number.
+  if (cards.length < 10 || cards.length > 18) FAIL(G, `card count ${cards.length} outside the expected ~11-14 catalog range`);
+  const names = cards.map((c) => c.name);
+  if (new Set(names).size !== names.length) FAIL(G, `duplicate card names: ${names.join(", ")}`);
+  for (const want of ["components/colors.html", "components/buttons.html", "components/inputs.html", "components/table.html", "components/dialog.html", "components/navigation.html", "components/card.html", "components/feedback.html", "components/motion.html", "components/typography.html", "components/spacing.html"])
+    if (!names.includes(want)) FAIL(G, `catalog missing expected card ${want}`);
+
+  // marker / :root structure — every card is a self-contained @dsCard sharing exactly one :root block,
+  // and none forks color on prefers-color-scheme (light-dark() must carry that branch, not a media query).
+  for (const c of cards) {
+    const first = c.data.trim().split("\n")[0];
+    if (!first.startsWith("<!--") || !first.includes("@dsCard") || !first.includes("group=") || !first.includes("title="))
+      FAIL(G, `${c.name}: first line is not a well-formed @dsCard marker`);
+    if (!c.data.includes(":root{color-scheme:light dark;")) FAIL(G, `${c.name}: missing the shared :root block`);
+    if ((c.data.match(/:root\{/g) || []).length !== 1) FAIL(G, `${c.name}: more than one :root block (single-block contract)`);
+    if (/@media\s*\(\s*prefers-color-scheme/.test(c.data)) FAIL(G, `${c.name}: forks on prefers-color-scheme (light-dark() must carry the branch, not a media query)`);
+  }
+
+  // token-reference-only discipline — outside the shared :root declaration (where tokens are DEFINED),
+  // no card may hardcode a raw hex or oklch() color literal; every color value must be a var(--...) ref.
+  for (const c of cards) {
+    const body = c.data.replace(/:root\{[^}]*\}/, "");
+    const hexHit = body.match(/#[0-9a-fA-F]{3,8}\b/);
+    if (hexHit) FAIL(G, `${c.name}: hardcoded hex color ${hexHit[0]} outside :root (every color must be a token reference)`);
+    if (/oklch\(/.test(body)) FAIL(G, `${c.name}: hardcoded oklch() literal outside :root (every color must be a token reference)`);
+  }
+
+  // active-state + focus-ring tokens actually referenced (the seed's own complaint: "tokens already
+  // exist but are never drawn") — both must show up as var() references on the Buttons card.
+  const dsr = X.dsColorRoles(state);
+  const brand = dsr.families.find((f) => /primary|brand/.test(f)) || dsr.chrome.n;
+  const pfx = X.cssPrefixOf(state);
+  const buttons = cards.find((c) => c.name === "components/buttons.html");
+  if (!buttons) FAIL(G, "no components/buttons.html card");
+  else {
+    if (dsr.tokens.some((t) => t.name === `${brand}-active`) && !buttons.data.includes(`var(--${pfx}-${brand}-active)`))
+      FAIL(G, "Buttons card does not reference the brand family's -active token");
+    // Focus ring — real outline/outline-offset from geometry.focus, AND (the reviewed defect) the
+    // ring's own color token must differ from the control's own fill token: a ring drawn in the
+    // SAME token as the fill it surrounds is illegible at a 1-2px geometry-authored offset.
+    const demo = (buttons.data.match(/<button class="btn btn--focus-demo" style="([^"]*)"/) || [])[1] || "";
+    if (!demo) FAIL(G, "Buttons card carries no btn--focus-demo control to check the focus ring against");
+    else {
+      const ringMatch = /outline:\d+px solid var\((--[a-z0-9-]+)\)/.exec(demo);
+      const fillMatch = /(?:^|;)background:var\((--[a-z0-9-]+)\)/.exec(demo);
+      if (!ringMatch || !/outline-offset:\d+px/.test(demo)) FAIL(G, "Buttons card does not render a real focus ring (outline/outline-offset from geometry.focus)");
+      else if (!fillMatch) FAIL(G, "Buttons card's focus-ring control has no token-derived fill to contrast the ring against");
+      else if (ringMatch[1] === fillMatch[1]) FAIL(G, `Buttons card's focus ring (${ringMatch[1]}) is the SAME token as its control's own fill (${fillMatch[1]}) — illegible at a 1-2px offset`);
+    }
+  }
+
+  // Motion card — reduced-motion is a CROSS-FADE fallback (reduce, don't remove), not a frozen preview:
+  // the full-motion keyframe moves (translateX); the media-query override swaps to an opacity-only one.
+  const motion = cards.find((c) => c.name === "components/motion.html");
+  if (!motion) FAIL(G, "no components/motion.html card");
+  else {
+    if (!motion.data.includes("translateX")) FAIL(G, "Motion card never animates transform (translateX) in its default keyframe");
+    const reduceBlock = (motion.data.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{([\s\S]*?)\}\s*\}/) || [])[1] || "";
+    if (!reduceBlock) FAIL(G, "Motion card carries no prefers-reduced-motion override");
+    else if (reduceBlock.includes("translateX")) FAIL(G, "Motion card's reduced-motion override still animates transform (must cross-fade opacity only)");
+  }
+
+  // Dialog card — the fixed dialog-backdrop system constant rides as a token reference, never a literal.
+  const dialog = cards.find((c) => c.name === "components/dialog.html");
+  if (!dialog) FAIL(G, "no components/dialog.html card");
+  else if (!dialog.data.includes(`var(--${pfx}-dialog-backdrop)`)) FAIL(G, "Dialog card does not reference --{pfx}-dialog-backdrop via var()");
+
+  // Typography card — every voice's every step appears (not one cherry-picked key per tier). Anchored
+  // to the EXACT caption-span markup exportDesignSystemComponents emits for a step specimen (the
+  // ".cap" span's own class/style plus the "<voice-step> · size/lh · weight" triple it wraps) rather
+  // than the bare "· N/M ·" fragment, which could in principle coincide with unrelated card text.
+  const typo = cards.find((c) => c.name === "components/typography.html");
+  const totalSteps = tsc && tsc.categories ? Object.values(tsc.categories).reduce((a, s) => a + Object.keys(s).length, 0) : 0;
+  const STEP_SPAN_RE = /<span class="cap" style="font-size:11px;font-weight:400">[a-z0-9]+(?:-[a-z0-9]+)* · \d+\/\d+ · \d+<\/span>/g;
+  if (!typo) FAIL(G, "no components/typography.html card");
+  else if (totalSteps && (typo.data.match(STEP_SPAN_RE) || []).length !== totalSteps)
+    FAIL(G, `Typography card shows ${(typo.data.match(STEP_SPAN_RE) || []).length} step specimens (anchored to the caption span structure), expected the full ${totalSteps}-step scale`);
+
+  // §8 gate parity — the expanded catalog still clears every non-G1 gate through dsBundleGates, same as
+  // the full-bundle check above (this is a targeted re-run scoped to the catalog change itself).
+  const md = X.exportDesignSystemSpine(state, tsc, gsc);
+  const tj = X.exportDesignSystemTokens(state, tsc, gsc);
+  const gate = dsBundleGates({ designMd: md, tokensJson: tj, previews: cards.map((c) => ({ name: c.name.replace("components/", ""), html: c.data })) });
+  const nonG1 = gate.findings.filter((f) => f.level === "ERROR" && f.gate !== "G1");
+  if (nonG1.length > 0) FAIL(G, `§8 non-G1 gates: ${nonG1.length} fail(s) — ${nonG1.map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
+}
+
 // ── hpg-export-design-system-stitch (the Google Stitch profile: DESIGN.md ONLY — the SAME canonical spine,
 // byte-identical to the Claude Code DESIGN.md — plus a Stitch-lint-framed README receipt). One core, two
 // uploads: the acceptance is byte-identity of the DESIGN.md, so P3 adds NO second spine to drift.
@@ -684,7 +786,7 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
 
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "keycolors", "keycolors-dtcg", "keycolors-ui3", "design-system", "design-system-stitch", "design-system-make"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "keycolors", "keycolors-dtcg", "keycolors-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

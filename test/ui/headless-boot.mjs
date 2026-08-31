@@ -1365,12 +1365,12 @@ const eocd = zb.length - 22; // EOCD has no trailing comment → it's the final 
 const eocdSig = zb[eocd] === 0x50 && zb[eocd + 1] === 0x4b && zb[eocd + 2] === 0x05 && zb[eocd + 3] === 0x06;
 const entries = zb[eocd + 10] | (zb[eocd + 11] << 8);
 // default opt-in = all three systems on: 29 colour files (BOTH css-hex/ + css-oklch/ folders + the full
-// design-system-for-claude-code/ bundle: DESIGN.md + tokens.json + 7 components/*.html + README.md (10),
+// design-system-for-claude-code/ bundle: DESIGN.md + tokens.json + 11 components/*.html + README.md (14, #473),
 // design-system-for-google-stitch/ bundle: DESIGN.md + README.md (2, the byte-identical spine + Stitch receipt),
 // design-system-for-figma-make/ bundle: guidelines/{Guidelines.md, setup.md, styles.css,
 // foundations/{color,typography,spacing}.md, components/{overview,button}.md} + README.md (9, a routed tree),
 // all riding systems.color) + 4 figma-aliased + 5 typography (incl. figma/ + figma/ moded + figma/ primitives) + 4 geometry + config = 45.
-ok(eocdSig && entries === 62, `(ee) the EOCD reports 62 entries — colour (31, incl. the design-system-for-claude-code/ bundle of 10 + design-system-for-google-stitch/ of 2 + design-system-for-figma-make/ of 9) + figma-aliased (4) + typography (12: type.css + type.tokens.json + 4 breakpoint CSS bolt-ons [desktop-lg/-xl 2026-07-15, tablet/mobile #264] + 4 per-mode DTCG [type.1728/2560/992/476] + 2 figma/* type-tokens+primitives files) + geometry (11: geometry.css + geometry.tokens.json + 4 breakpoint CSS bolt-ons + 4 per-mode DTCG [geometry.1728/2560/992/476] + 1 figma/* raw-variables file) + the MERGED moded-variables file figma/tokens.modes.variables.json (1, TKT-0009 — was typography.modes + dimension.modes) + figma/styles.plan.json (1) + config + the root README (got ${entries})`);
+ok(eocdSig && entries === 66, `(ee) the EOCD reports 66 entries — colour (35, incl. the design-system-for-claude-code/ bundle of 14 [#473: the @dsCard catalog grew from 7 to 11 previews] + design-system-for-google-stitch/ of 2 + design-system-for-figma-make/ of 9) + figma-aliased (4) + typography (12: type.css + type.tokens.json + 4 breakpoint CSS bolt-ons [desktop-lg/-xl 2026-07-15, tablet/mobile #264] + 4 per-mode DTCG [type.1728/2560/992/476] + 2 figma/* type-tokens+primitives files) + geometry (11: geometry.css + geometry.tokens.json + 4 breakpoint CSS bolt-ons + 4 per-mode DTCG [geometry.1728/2560/992/476] + 1 figma/* raw-variables file) + the MERGED moded-variables file figma/tokens.modes.variables.json (1, TKT-0009 — was typography.modes + dimension.modes) + figma/styles.plan.json (1) + config + the root README (got ${entries})`);
 const zipText = Buffer.from(zb).toString("latin1");
 // the root README makes the zip self-describing: the folder map, the consumption-plugin install
 // commands (the skills layer deliberately NOT bundled — it updates via the marketplace), the MCP
