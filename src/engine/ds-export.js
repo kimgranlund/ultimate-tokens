@@ -22,6 +22,7 @@ import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn } from "./exports.js";
+import { SIZE_KEYS } from "./geometry.mjs"; // the six canonical control-size names (XS..2XL) — the Buttons preview's size ladder reads this, never a hand-typed list
 
 // ══════════════════════════════════════════════════════════════════════════════
 // DESIGN SYSTEM export — design-system-for-{claude-code,google-stitch,figma-make}
@@ -357,12 +358,21 @@ export function exportDesignSystemSpine(state, typeSc, geomSc) {
 // brand base). This is the SAME runtime idiom the Agent Prompt Guide teaches; no @media fork.
 function dsRootCSS(ds, pfx) {
   const props = ds.tokens.map((t) => `--${pfx}-${t.name}:light-dark(${t.light.oklch},${t.dark.oklch});`).join("");
-  return `:root{color-scheme:light dark;${props}}`;
+  // dialog-backdrop rides the shared root too: a FIXED system constant (opaque black · 80%, identical in
+  // both schemes — the same value every other export format emits for this token), so a preview that
+  // needs it (Dialog) references it via var() like every other color, never a hardcoded literal.
+  return `:root{color-scheme:light dark;${props}--${pfx}-dialog-backdrop:${dialogBackdropOklch()};}`;
 }
 
 // exportDesignSystemComponents — the self-contained @dsCard previews (§9.5). Returns [{name, data}] with
 // names under components/. Each card: first-line @dsCard marker, inline <style> (the shared :root + card
 // classes), light-dark() both schemes, no external fetch — demonstrating the states, pairing law, and scale.
+//
+// #473 — expanded from 7 teaching previews to a ~95%-usage catalog (one card per component GROUP, per the
+// resolved scope: buttons · inputs · table · dialog · tabs/menu · feedback · motion · typography, plus the
+// existing foundations — colors/spacing unchanged, card kept). Every value below is a var(--{pfx}-...)
+// token reference, a geometry number the engine already computed (size/radius/focus/duration), or a plain
+// layout literal with no named token — never a hand-typed color.
 export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const ds = dsColorRoles(state);
   if (!ds) return [];
@@ -371,6 +381,8 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const has = (n) => ds.tokens.some((t) => t.name === n);
   const V = (n) => `var(--${pfx}-${n})`;
   const cn = ds.chrome.n;
+  const brand = ds.families.find((f) => /primary|brand/.test(f)) || cn;
+  const brandOn = V(brand + "-on-" + brand);
   const fonts = (typeSc && typeSc.fonts) || {};
   const sans = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
   const bodyStack = dsFontStack(fonts.body, sans);
@@ -387,6 +399,15 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const radii = dsRadii(geomSc);
   const rMd = radii.md != null ? radii.md : 12;
   const rLg = radii.lg != null ? radii.lg : 16;
+  const rSm = radii.sm != null ? radii.sm : 8;
+  const rXs = radii.xs != null ? radii.xs : rSm;
+  const rXl = radii.xl != null ? radii.xl : rLg;
+  const rFull = radii.full != null ? radii.full : 999;
+  // Selection controls (checkbox/radio/switch) size off the geometry ramp's own icon tokens — never a
+  // fabricated magic number: a checkbox/radio reads as an SM icon-sized control, a switch track as XS.
+  const ctrlIcon = (geomSc && geomSc.sizes && geomSc.sizes.SM && geomSc.sizes.SM.icon) || 18;
+  const switchH = (geomSc && geomSc.sizes && geomSc.sizes.XS && geomSc.sizes.XS.icon) || 16;
+  const switchW = Math.round(switchH * 1.8);
   const cap = (s) => s.split(/[-\s]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   // every preview carries the TEXT-RENDERING BASELINE (the same block the DESIGN.md's Typography section
   // mandates — DS_TEXT_RENDERING_PROPS), so the cards render type the way the shipped system will.
@@ -397,6 +418,8 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const out = [];
   // families for the fills demo: brand base, secondary, accent, muted signatures, intents
   const fillFams = ds.families.filter((f) => has(`${f}-on-${f}`));
+  const intents = ds.families.filter((f) => /danger|success|warn|info/.test(f));
+  const sigFams = ds.families.filter((f) => /muted/.test(f));
 
   // 1. Colors — every role swatch
   {
@@ -406,9 +429,12 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     out.push(card("colors.html", "Foundations", "Colors", "roles · pairing", "",
       `<p class="cap">Surfaces</p><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">${surfaces}</div><p class="cap">Family fills (label = its <code>on-{family}</code>)</p><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">${fills}</div>`));
   }
-  // 2. Buttons — fills × base/hover/disabled
+
+  // 2. Buttons — fills × base/hover/disabled, outline/ghost/link variants, the active state, a focus
+  //    ring, and the full size ladder (every one drawn from a real token — active/focus existed but were
+  //    never rendered before #473).
   {
-    const btnCss = `.brow{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}.blabel{width:96px;font-size:12px;color:${V(cn + "-on-surface-variant")};text-transform:capitalize}.btn{border:0;border-radius:${rMd}px;padding:12px;${uiFont};cursor:pointer}.btn--dis{cursor:not-allowed}`;
+    const btnCss = `.brow{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}.blabel{width:96px;font-size:12px;color:${V(cn + "-on-surface-variant")};text-transform:capitalize}.btn{border:0;border-radius:${rMd}px;padding:12px;${uiFont};cursor:pointer}.btn--dis{cursor:not-allowed}.size-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}`;
     const rows = fillFams.map((f) => {
       const on = V(f + "-on-" + f);
       const base = `background:${V(f)};color:${on}`;
@@ -418,59 +444,153 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
       const dis = `background:${has(f + "-disabled") ? V(f + "-disabled") : V(f)};color:${V(cn + "-on-surface-variant")}`;
       return `<div class="brow"><span class="blabel">${cap(f)}</span><button class="btn" style="${base}">Button</button><button class="btn" style="${hover}">Hover</button><button class="btn btn--dis" style="${dis}">Disabled</button></div>`;
     }).join("");
-    out.push(card("buttons.html", "Components", "Buttons", "fills · hover · disabled", btnCss,
-      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>`));
+    const activeRow = has(`${brand}-active`)
+      ? `<div class="brow"><span class="blabel">Active</span><button class="btn" style="background:${V(brand + "-active")};color:${brandOn}">Pressed</button></div>`
+      : "";
+    const focus = (geomSc && geomSc.focus) || { ringWidth: 2, ringOffset: 2 };
+    const focusRow = `<div class="brow"><span class="blabel">Focus ring</span><button class="btn" style="background:${V(brand)};color:${brandOn};outline:${focus.ringWidth}px solid ${V(brand)};outline-offset:${focus.ringOffset}px">Focused</button></div>`;
+    const tint = has(`${brand}-container`) ? V(brand + "-container") : "transparent";
+    const variantRow = `<div class="brow"><span class="blabel">Variants</span><button class="btn" style="background:transparent;border:1px solid ${V(brand)};color:${V(brand)}">Outline</button><button class="btn" style="background:${tint};color:${V(brand)}">Ghost</button><button class="btn" style="background:none;padding:0;color:${V(brand)};text-decoration:underline">Link</button></div>`;
+    const sizeRow = `<div class="size-row">${SIZE_KEYS.map((sz) => {
+      const s = geomSc && geomSc.sizes && geomSc.sizes[sz];
+      if (!s) return "";
+      return `<button class="btn" style="background:${V(brand)};color:${brandOn};height:${s.height}px;padding:0 ${Math.round(s.paddingWide)}px;font-size:${s.font}px">${sz}</button>`;
+    }).join("")}</div>`;
+    out.push(card("buttons.html", "Components", "Buttons", "fills · variants · states · sizes", btnCss,
+      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>${activeRow}<p class="cap">Outline / ghost / link — text is the brand token itself; ghost's hover tint is the brand's own <code>-container</code>, never a solid fill.</p>${variantRow}<p class="cap">Focus ring — <code>geometry.focus.ringWidth</code>/<code>ringOffset</code> around the brand token.</p>${focusRow}<p class="cap">Size ladder — height, padding, and text size read straight off the geometry size ramp.</p>${sizeRow}`));
   }
-  // 3. Inputs
+
+  // 3. Inputs — field states (default · placeholder · focus · error · disabled), select, textarea, and
+  //    the selection controls (checkbox/radio/switch) — one card per the resolved granularity.
   {
-    const inCss = `.field{display:block;width:100%;padding:12px;border-radius:${radii.sm != null ? radii.sm : 8}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};${uiFont};margin-bottom:12px}.field::placeholder{color:${V(cn + "-placeholder")}}.field--focus{outline:2px solid ${V(ds.families[0])};outline-offset:2px;border-color:${V(ds.families.find((f) => /primary|brand/.test(f)) || cn)}}`;
-    out.push(card("inputs.html", "Components", "Inputs", "field · placeholder · focus", inCss,
-      `<label class="cap">Label</label><input class="field" value="Typed value"><input class="field" placeholder="Placeholder text"><input class="field field--focus" value="Focused"><p class="cap">Field on <code>${cn}-surface</code>; focus ring is the brand family.</p>`));
+    const errFam = ds.families.find((f) => /danger|error|destruct|critical/.test(f)) || intents[0] || null;
+    const checkMark = Math.round(ctrlIcon * 0.28);
+    const inCss = [
+      `.field{display:block;width:100%;padding:12px;border-radius:${rSm}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};${uiFont};margin-bottom:12px;font:inherit}`,
+      `.field::placeholder{color:${V(cn + "-placeholder")}}`,
+      `.field--focus{outline:2px solid ${V(brand)};outline-offset:2px;border-color:${V(brand)}}`,
+      errFam ? `.field--error{border-color:${V(errFam)}}` : "",
+      `.field--dis{background:${V(cn + "-disabled")};color:${V(cn + "-on-surface-variant")};cursor:not-allowed}`,
+      `.helper{font-size:12px;margin:-8px 0 12px}`,
+      `.ctrl-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}`,
+      `.ds-check,.ds-radio{position:relative;display:inline-block;width:${ctrlIcon}px;height:${ctrlIcon}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};vertical-align:middle}`,
+      `.ds-check{border-radius:${rXs}px}`,
+      `.ds-radio{border-radius:${rFull}px}`,
+      `.ds-check--on,.ds-radio--on{background:${V(brand)};border-color:${V(brand)}}`,
+      `.ds-check--on::after{content:"";position:absolute;left:${Math.round(ctrlIcon * 0.32)}px;top:${Math.round(ctrlIcon * 0.08)}px;width:${checkMark}px;height:${Math.round(checkMark * 1.8)}px;border:solid ${brandOn};border-width:0 2px 2px 0;transform:rotate(45deg)}`,
+      `.ds-radio--on::after{content:"";position:absolute;inset:${Math.round(ctrlIcon * 0.25)}px;border-radius:${rFull}px;background:${brandOn}}`,
+      `.ds-switch{position:relative;display:inline-block;width:${switchW}px;height:${switchH}px;border-radius:${rFull}px;background:${V(cn + "-outline-variant")}}`,
+      `.ds-switch--on{background:${V(brand)}}`,
+      `.ds-switch::after{content:"";position:absolute;top:2px;left:2px;width:${switchH - 4}px;height:${switchH - 4}px;border-radius:${rFull}px;background:${V(cn + "-surface")}}`,
+      `.ds-switch--on::after{left:${switchW - switchH + 2}px}`,
+    ].join("");
+    const body = [
+      `<label class="cap">Label</label>`,
+      `<input class="field" value="Typed value">`,
+      `<input class="field" placeholder="Placeholder text">`,
+      `<input class="field field--focus" value="Focused">`,
+      errFam ? `<input class="field field--error" value="Invalid value"><p class="helper" style="color:${V(errFam)}">Helper text explaining the error.</p>` : "",
+      `<input class="field field--dis" value="Disabled" disabled>`,
+      `<select class="field"><option>Select an option</option><option>Option two</option></select>`,
+      `<textarea class="field" rows="3">Multi-line value</textarea>`,
+      `<p class="cap">Field on <code>${cn}-surface</code>; focus ring, error border${errFam ? "" : " (no intent family enabled)"}, and disabled fill are all token-derived.</p>`,
+      `<div class="ctrl-row"><span class="ds-check ds-check--on"></span> Checked <span class="ds-check" style="margin-left:16px"></span> Unchecked</div>`,
+      `<div class="ctrl-row"><span class="ds-radio ds-radio--on"></span> Selected <span class="ds-radio" style="margin-left:16px"></span> Unselected</div>`,
+      `<div class="ctrl-row"><span class="ds-switch ds-switch--on"></span> On <span class="ds-switch" style="margin-left:16px"></span> Off</div>`,
+    ].join("");
+    out.push(card("inputs.html", "Components", "Inputs", "states · select · textarea · selection controls", inCss, body));
   }
-  // 4. Card
+
+  // 4. Table — header, rows, hairlines, a hovered row.
   {
-    const cCss = `.panel{background:${V(cn + "-surface")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:24px}.panel h4{font-family:${headStack};margin:0 0 8px}.pbtn{border:0;border-radius:${rMd}px;padding:12px;${uiFont};cursor:pointer;background:${V(ds.families.find((f) => /primary|brand/.test(f)) || cn)};color:${V((ds.families.find((f) => /primary|brand/.test(f)) || cn) + "-on-" + (ds.families.find((f) => /primary|brand/.test(f)) || cn))};margin-top:12px}`;
+    const tblCss = `.dtable{width:100%;border-collapse:collapse;font-size:13px}.dtable th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:${V(cn + "-on-surface-variant")};border-bottom:1px solid ${V(cn + "-outline-variant")}}.dtable td{padding:10px 12px;color:${V(cn + "-on-surface")};border-bottom:1px solid ${V(cn + "-outline-variant")}}.dtable tr.is-hover td{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-high")}}`;
+    const body = `<table class="dtable"><thead><tr><th>Name</th><th>Status</th><th>Updated</th></tr></thead><tbody><tr><td>Marketing site</td><td>Live</td><td>2 hours ago</td></tr><tr><td>Design tokens</td><td>Draft</td><td>Yesterday</td></tr><tr class="is-hover"><td>Onboarding flow</td><td>In review</td><td>3 days ago</td></tr></tbody></table><p class="cap">Header text <code>on-surface-variant</code>; hairlines <code>outline-variant</code>; the highlighted row demonstrates <code>${cn}-hover</code>.</p>`;
+    out.push(card("table.html", "Components", "Table", "header · rows · hover", tblCss, body));
+  }
+
+  // 5. Dialog — the fixed backdrop system constant (never a role token) + a raised, radiused panel.
+  {
+    const dlgCss = `.dlg-wrap{position:relative;height:200px;border-radius:${rMd}px;overflow:hidden;background:${V(cn + "-background")}}.dlg-backdrop{position:absolute;inset:0;background:${V("dialog-backdrop")}}.dlg-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72%;background:${V(cn + "-surface")};border-radius:${rXl}px;padding:20px}.dlg-panel h4{font-family:${headStack};margin:0 0 8px}.dlg-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}.dlg-btn{border:0;border-radius:${rMd}px;padding:8px 16px;${uiFont};cursor:pointer}`;
+    const body = `<div class="dlg-wrap"><div class="dlg-backdrop"></div><div class="dlg-panel"><h4>Delete item?</h4><p style="margin:0;color:${V(cn + "-on-surface-variant")}">This action can't be undone.</p><div class="dlg-actions"><button class="dlg-btn" style="background:transparent;color:${V(cn + "-on-surface")}">Cancel</button><button class="dlg-btn" style="background:${V(brand)};color:${brandOn}">Confirm</button></div></div></div><p class="cap">Backdrop is the fixed system constant <code>--${pfx}-dialog-backdrop</code> (opaque black · 80%, identical in both schemes); the panel radius is <code>{rounded.xl}</code>.</p>`;
+    out.push(card("dialog.html", "Components", "Dialog", "backdrop · radius · actions", dlgCss, body));
+  }
+
+  // 6. Tabs & Menu — the navigation group (resolved as one combined card, per "tabs/menu").
+  {
+    const dangerFam = intents.find((f) => /danger/.test(f));
+    const navCss = `.tabs{display:flex;gap:24px;border-bottom:1px solid ${V(cn + "-outline-variant")};margin-bottom:20px}.tab{padding-bottom:10px;${uiFont};color:${V(cn + "-on-surface-variant")};border-bottom:2px solid transparent}.tab--active{color:${V(cn + "-on-surface")};border-bottom-color:${V(brand)}}.menu{background:${V(cn + "-surface-high")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rMd}px;padding:8px;width:220px}.menu-item{padding:8px 12px;border-radius:${rSm}px;color:${V(cn + "-on-surface")};${uiFont};}.menu-item--hover{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-high")}}.menu-divider{height:1px;background:${V(cn + "-outline-variant")};margin:6px 0}`;
+    const deleteStyle = dangerFam ? ` style="color:${V(dangerFam)}"` : "";
+    const body = `<div class="tabs"><div class="tab tab--active">Overview</div><div class="tab">Activity</div><div class="tab">Settings</div></div><div class="menu"><div class="menu-item">Edit</div><div class="menu-item menu-item--hover">Duplicate</div><div class="menu-divider"></div><div class="menu-item"${deleteStyle}>Delete</div></div><p class="cap">Active tab underline is the brand token; the highlighted menu item is <code>${cn}-hover</code>${dangerFam ? "; Delete borrows the danger family" : ""}.</p>`;
+    out.push(card("navigation.html", "Components", "Tabs & Menu", "active tab · menu · hover", navCss, body));
+  }
+
+  // 7. Card — a raised surface (unchanged from the original 7).
+  {
+    const cCss = `.panel{background:${V(cn + "-surface")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:24px}.panel h4{font-family:${headStack};margin:0 0 8px}.pbtn{border:0;border-radius:${rMd}px;padding:12px;${uiFont};cursor:pointer;background:${V(brand)};color:${brandOn};margin-top:12px}`;
     out.push(card("card.html", "Components", "Card", "surface · elevation", cCss,
       `<div class="panel"><h4>Card title</h4><p style="margin:0">Body copy on a raised surface over the background — elevation is a surface step, not a shadow.</p><button class="pbtn">Primary action</button></div>`));
   }
-  // 5. Feedback — intent + signature badges/chips
+
+  // 8. Feedback — status + signature badges (unchanged), plus alerts (a family's own -container tint),
+  //    a toast (the #471 inverse-surface pair), and a determinate progress bar.
   {
-    const fCss = `.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;margin:0 8px 8px 0}`;
-    const intents = ds.families.filter((f) => /danger|success|warn|info/.test(f));
-    const sig = ds.families.filter((f) => /muted/.test(f));
+    const fCss = `.badge{display:inline-block;padding:4px 10px;border-radius:${rFull}px;font-size:12px;font-weight:600;margin:0 8px 8px 0}.alert{display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:${rSm}px;margin-bottom:10px;font-size:13px}.toast{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:${rMd}px;font-size:13px}.progress-track{width:100%;height:8px;border-radius:${rFull}px;overflow:hidden;margin-bottom:6px}.progress-fill{height:100%;border-radius:${rFull}px}`;
     const chip = (f) => `<span class="badge" style="background:${V(f)};color:${V(f + "-on-" + f)}">${cap(f)}</span>`;
-    out.push(card("feedback.html", "Components", "Feedback", "status · signature", fCss,
-      `<p class="cap">Status (intent only)</p><div>${intents.map(chip).join("")}</div><p class="cap" style="margin-top:12px">Signature (brand light — small reads)</p><div>${sig.map(chip).join("")}</div>`));
+    const alertFams = (intents.length ? intents : fillFams).slice(0, 2);
+    const alerts = alertFams.map((f) => `<div class="alert" style="background:${has(f + "-container") ? V(f + "-container") : V(cn + "-surface-high")};border-left:4px solid ${V(f)};color:${V(cn + "-on-surface")}"><strong>${cap(f)}</strong><span>Quiet emphasis on its own <code>-container</code> tint, never a solid fill.</span></div>`).join("");
+    const toastOk = has(cn + "-inverse-surface") && has(cn + "-inverse-on-surface");
+    const toast = toastOk
+      ? `<div class="toast" style="background:${V(cn + "-inverse-surface")};color:${V(cn + "-inverse-on-surface")}">Changes saved</div>`
+      : `<div class="toast" style="background:${V(cn + "-on-surface")};color:${V(cn + "-surface")}">Changes saved</div>`;
+    const pct = 62;
+    const progress = `<div class="progress-track" style="background:${V(cn + "-surface-high")}"><div class="progress-fill" style="width:${pct}%;background:${V(brand)}"></div></div><p class="cap">${pct}% — track <code>${cn}-surface-high</code>, fill <code>${brand}</code>.</p>`;
+    out.push(card("feedback.html", "Components", "Feedback", "status · alerts · toast · progress", fCss,
+      `<p class="cap">Status (intent only)</p><div>${intents.map(chip).join("")}</div><p class="cap" style="margin-top:12px">Signature (brand light — small reads)</p><div>${sigFams.map(chip).join("")}</div><p class="cap" style="margin-top:16px">Alerts</p>${alerts}<p class="cap">Toast</p>${toast}<p class="cap" style="margin-top:12px">Progress</p>${progress}`));
   }
-  // 6. Typography — specimens rendered at their REAL scale: each level's actual size, its LEADING
-  //    FACTOR (line-height, never a flat placeholder — the card must teach the true per-level leadings),
-  //    and its weight, with a `<key> · size/leading · weight` caption. Theme-general via the live scale.
+
+  // 9. Motion — animates its own duration/easing tokens; `prefers-reduced-motion: reduce` swaps the
+  //    moving keyframe for a same-timing, opacity-only cross-fade (reduce, don't remove — DESIGN.md's
+  //    own Motion section rule) instead of freezing the preview.
   {
-    const flat = {};
-    if (typeSc && typeSc.categories) for (const [cName, steps] of Object.entries(typeSc.categories))
-      for (const [sName, s] of Object.entries(steps)) flat[`${cName.toLowerCase()}-${sName.toLowerCase()}`] = { voice: cName, s };
-    const roleOf = (typeSc && typeSc.roleOf) || {};
-    const stackFor = (voice) => { const r = roleOf[voice] || "body"; return r === "display" || r === "heading" ? headStack : (r === "mono" || r === "code") ? monoStack : bodyStack; };
-    const tiers = [
-      ["display-md", "display-sm", "display-lg", "display-xl"],
-      ["heading-md", "heading-lg", "heading-sm"],
-      ["body-md", "body-lg", "body-sm"],
-      ["ui-md", "ui-sm", "ui-lg"],
-      ["caption-md", "code-md", "caption-sm"],
-    ];
-    const spec = [];
-    for (const tier of tiers) {
-      const key = tier.find((k) => flat[k]);
-      if (!key) continue;
-      const { voice, s } = flat[key];
-      const factor = dsFactor(s.lineHeight, s.size);
-      const lhPx = Math.round(s.size * factor);
-      spec.push(`<div style="font-family:${stackFor(voice)};font-size:${s.size}px;line-height:${factor};font-weight:${s.weight};margin-bottom:14px">${cap(voice)} — the spectrum of design <span class="cap" style="font-size:11px;font-weight:400">${key} · ${s.size}/${lhPx} · ${s.weight}</span></div>`);
-    }
-    if (!spec.length) spec.push(`<div style="font-family:${monoStack};font-size:13px">const token = <code>--${pfx}-${cn}</code>;</div>`);
-    out.push(card("typography.html", "Foundations", "Typography", "voices · scale", "", spec.join("")));
+    const dur = MOTION_DURATION.medium2;
+    const durFast = MOTION_DURATION.short4;
+    const total = dur + durFast;
+    const mid = Math.round((dur / total) * 100);
+    const easeIn = MOTION_EASING["standard-decelerate"];
+    const easeOut = MOTION_EASING["standard-accelerate"];
+    const motionCss = `.motion-row{display:flex;align-items:center;gap:32px;margin-bottom:8px}.motion-dot{width:32px;height:32px;border-radius:${rFull}px;background:${V(brand)}}@keyframes dsEnterMove{0%{opacity:0;transform:translateX(-24px);animation-timing-function:${easeIn}}${mid}%{opacity:1;transform:translateX(0);animation-timing-function:${easeOut}}100%{opacity:0;transform:translateX(24px)}}@keyframes dsEnterFade{0%{opacity:0;animation-timing-function:${easeIn}}${mid}%{opacity:1;animation-timing-function:${easeOut}}100%{opacity:0}}.motion-demo{animation:dsEnterMove ${total}ms linear infinite}@media (prefers-reduced-motion: reduce){.motion-demo{animation-name:dsEnterFade}}`;
+    const body = `<div class="motion-row"><div class="motion-dot motion-demo"></div><p class="cap">Enter <code>${dur}ms</code> <code>standard-decelerate</code> · exit <code>${durFast}ms</code> <code>standard-accelerate</code> — only <code>transform</code>/<code>opacity</code> animate.</p></div><p class="cap"><code>prefers-reduced-motion: reduce</code> swaps the moving keyframe for a same-timing cross-fade (opacity only) — reduced, never removed.</p>`;
+    out.push(card("motion.html", "Foundations", "Motion", "duration · easing · reduced motion", motionCss, body));
   }
-  // 7. Spacing & radii
+
+  // 10. Typography — the FULL scale: every voice, every step (not one cherry-picked key per tier).
+  {
+    const STEP_ORDER = ["XS", "SM", "MD", "LG", "XL", "2XL"];
+    const roleOf = (typeSc && typeSc.roleOf) || {};
+    const stackFor = (voice) => {
+      const r = roleOf[voice] || "body";
+      if (r === "display" || r === "heading") return headStack;
+      if (r === "mono" || r === "code") return monoStack;
+      if (r === "ui") return uiStack;
+      return bodyStack;
+    };
+    const groups = [];
+    if (typeSc && typeSc.categories) for (const [cName, steps] of Object.entries(typeSc.categories)) {
+      const stepNames = Object.keys(steps).sort((a, b) => STEP_ORDER.indexOf(a) - STEP_ORDER.indexOf(b));
+      const rows = stepNames.map((sName) => {
+        const s = steps[sName];
+        const factor = dsFactor(s.lineHeight, s.size);
+        const lhPx = Math.round(s.size * factor);
+        const key = `${cName.toLowerCase()}-${sName.toLowerCase()}`;
+        return `<div style="font-family:${stackFor(cName)};font-size:${s.size}px;line-height:${factor};font-weight:${s.weight};margin-bottom:8px">${cap(cName)} <span class="cap" style="font-size:11px;font-weight:400">${key} · ${s.size}/${lhPx} · ${s.weight}</span></div>`;
+      }).join("");
+      groups.push(`<div style="margin-bottom:20px"><p class="cap" style="text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">${cName}</p>${rows}</div>`);
+    }
+    const body = groups.length ? groups.join("") : `<div style="font-family:${monoStack};font-size:13px">const token = <code>--${pfx}-${cn}</code>;</div>`;
+    out.push(card("typography.html", "Foundations", "Typography", "every voice · every step", "", body));
+  }
+
+  // 11. Spacing & radii — unchanged.
   {
     const space = dsSpacing(geomSc);
     const bars = space.map((v, i) => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><code style="width:56px">${DS_SPACE_NAMES[i] || i}</code><div style="height:12px;width:${Math.max(2, v)}px;background:${V(ds.families[0])};border-radius:2px"></div><span class="cap">${v}px</span></div>`).join("");
