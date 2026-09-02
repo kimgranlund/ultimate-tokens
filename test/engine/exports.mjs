@@ -626,6 +626,37 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
     }
   }
 
+  // linear-ladder "wins while active" pin (issue #483) — geomScale's own composition-skip decision
+  // (the ladder's text formula overrides the UI-control voice) must reach EVERY uiFont consumer here,
+  // not just the Size-ladder preview row (which already reads per-size `s.font` directly and needed no
+  // change). Re-derives the catalog with a ladder-active geomSc and checks .btn/.pbtn/.dlg-btn/.field
+  // all switch from the composed UI-control MD size to the ladder's own MD font — and that turning the
+  // ladder OFF again is untouched (the identity gate for this leg).
+  {
+    const gscLadder = geomScale({ ramp: "linear4" }, { typeScale: tsc });
+    const wantLadderSize = gscLadder.sizes.MD.font;
+    const cardsLadder = X.exportDesignSystemComponents(state, tsc, gscLadder);
+    const fontSizeOf = (html, ruleRe) => { const m = (html || "").match(ruleRe); const fs = m && /font-size:(\d+(?:\.\d+)?)px/.exec(m[0]); return fs ? Number(fs[1]) : null; };
+    const ladderChecks = [
+      ["Buttons .btn", "components/buttons.html", /\.btn\{[^}]*\}/],
+      ["Card .pbtn", "components/card.html", /\.pbtn\{[^}]*\}/],
+      ["Dialog .dlg-btn", "components/dialog.html", /\.dlg-btn\{[^}]*\}/],
+    ];
+    for (const [label, name, re] of ladderChecks) {
+      const c = cardsLadder.find((x) => x.name === name);
+      const size = c && fontSizeOf(c.data, re);
+      if (size !== wantLadderSize) FAIL(G, `${label} font-size while the linear ladder is active is ${size}px, expected the ladder's own MD size ${wantLadderSize}px (composition must be skipped, not just the Size-ladder row)`);
+    }
+    const inputsLadder = cardsLadder.find((c) => c.name === "components/inputs.html");
+    const fieldRuleLadder = inputsLadder && (inputsLadder.data.match(/\.field\{[^}]*\}/) || [])[0];
+    const fieldSizeLadder = fieldRuleLadder && /font-size:(\d+(?:\.\d+)?)px/.exec(fieldRuleLadder);
+    if (!fieldSizeLadder || Number(fieldSizeLadder[1]) !== wantLadderSize) FAIL(G, `Inputs .field font-size while the linear ladder is active is ${fieldSizeLadder ? fieldSizeLadder[1] : "missing"}px, expected the ladder's own MD size ${wantLadderSize}px`);
+    // this leg is only meaningful if the ladder's MD font actually differs from the composed UI-control
+    // MD size (else the two checks above couldn't distinguish "wired correctly" from "never wired at all").
+    const uiMdSize = tsc && tsc.categories && tsc.categories["UI-control"] && tsc.categories["UI-control"].MD && tsc.categories["UI-control"].MD.size;
+    if (uiMdSize != null && wantLadderSize === uiMdSize) FAIL(G, "test fixture problem: the ladder's MD font must differ from the composed UI-control MD size for this leg to be meaningful");
+  }
+
   // Typography card — every voice's every step appears (not one cherry-picked key per tier). Anchored
   // to the EXACT caption-span markup exportDesignSystemComponents emits for a step specimen (the
   // ".cap" span's own class/style plus the "<voice-step> · size/lh · weight" triple it wraps) rather

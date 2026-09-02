@@ -402,7 +402,15 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   // hardcoded 600. Read the UI-control MD step so the previews render what the tokens say.
   const uiStack = dsFontStack(fonts.ui, sans);
   const uiStep = (typeSc && typeSc.categories && typeSc.categories["UI-control"] && typeSc.categories["UI-control"].MD) || null;
-  const uiSize = uiStep && uiStep.size ? uiStep.size : 14;
+  // the linear-ladder prototype (issue #483) wins over the composed UI-control voice for control TEXT
+  // SIZE while it's active — the same "ladder wins" decision geomScale itself makes (composition is
+  // skipped there too). Every uiFont consumer below (buttons, the card CTA, the dialog actions,
+  // tabs/menu, inputs) reads uiSize, so fixing it here is enough — not just the Size-ladder preview
+  // row, which already read per-size `s.font` directly and needed no change. Weight/tracking stay the
+  // voice's own: the ladder has no weight law, and tracking is authored as an EM ratio off the voice's
+  // OWN size (uiStep.size), so it already scales proportionally with whatever font-size lands below.
+  const ladderMdFont = geomSc && geomSc.ramp === "linear4" && geomSc.sizes && geomSc.sizes.MD && geomSc.sizes.MD.font;
+  const uiSize = ladderMdFont || (uiStep && uiStep.size ? uiStep.size : 14);
   const uiWeight = uiStep && uiStep.weight ? uiStep.weight : 500;
   const uiTrackEm = uiStep && uiStep.size ? Number((uiStep.letterSpacing / uiStep.size).toFixed(4)) : 0;
   // #477 — font-size was missing entirely: every uiFont consumer (buttons, the card CTA, the dialog
