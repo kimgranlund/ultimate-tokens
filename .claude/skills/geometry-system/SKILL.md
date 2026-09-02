@@ -67,6 +67,49 @@ same modes for matrix editing. The CSS export is SEPARATE FILES, not one @media-
 `geometry-tablet.css` / `geometry-mobile.css` are bounded, self-contained bolt-ons (`geomTokensBreakpointCSS`)
 a consumer adds in any subset, any order. The constants + the reference table: `references/foundations.md` §4.
 
+**A SECOND, opt-in ramp shape exists for prototyping (issue #483, `config.ramp === RAMP_LADDER`
+["linear4"]):** a self-contained closed-form ladder (`inset = h/4−3`, `container = h/2+6`, `icon =
+container−2`, `text = h/4+6` doubling as font AND caret) evaluating AdiaUI's scale-ladder. Its ten
+steps are named NUMERICALLY — `LADDER_SIZE_KEYS = ["0".."9"]` (owner ruling 2026-09-02, final: TWO
+earlier rulings — a 7-name t-shirt mapping, then a 10-name t-shirt mapping — were both superseded; the
+CSV's ten rows map onto ten CONSECUTIVE +4 steps 20·24·28·32·36·40·44·48·52·56, exported as
+`--{pfx}-size-{0..9}-{field}`, e.g. `--md-sys-size-3-height: 32px` — gen-ui-kit binds these directly).
+Step `"3"` (32px) is the MD-equivalent — `LADDER_MD_STEP` — since there is no `.MD` key on this ramp at
+all; `SIZES`/`SIZE_KEYS` above are UNCHANGED (still exactly six t-shirt names at 20·24·28·36·48·64) and
+the two ramps' naming schemes are entirely disjoint, not overlapping strings.
+
+**Two traps this naming scheme creates, both fixed centrally:**
+1. **Never iterate `Object.keys(scale.sizes)`/`Object.entries(...)` for ORDER, and never sort by
+   resolved height either.** JS forces integer-like string keys ("0".."9") into ascending NUMERIC
+   enumeration first, regardless of insertion order — a real trap the moment a ramp's names stop
+   being non-numeric strings (the default ramp's t-shirt names rely on the OPPOSITE spec guarantee,
+   insertion order, which only looks the same because `SIZES` happens to be authored ascending).
+   A height-sort has its OWN trap: a per-step height OVERRIDE that breaks monotonicity (an authored
+   MD taller than LG) must not reorder the list. Use `orderedSizeNames(scale)` — sorts by each name's
+   position in `LADDER_SIZE_KEYS`/`SIZE_KEYS` (the CANONICAL step order, immune to both traps) —
+   instead; every consumer that needs an ordered list (ds-export's Buttons Size-ladder row, the five
+   `geomTokensX` emitters, every ordered loop in `sections/geometry.js`) routes through it.
+2. **Never assume `.sizes.MD`/`.SM`/`.LG`/etc. (any t-shirt-letter key) exists.** A bare
+   `scale.sizes.SM || Object.values(scale.sizes)[0]`-style fallback — a real, live pattern before
+   this fix, at FOUR call sites (`geomExampleCard`, `graphGeomCentering`, ds-export's `uiSize`/
+   `ctrlIcon`/`switchH` anchors, and `mcp/png-swatch-board.mjs`'s control-strip sizing) — silently
+   lands on step `"0"` (the SMALLEST control) under the ladder, not any sensible letter-equivalent,
+   because of the same integer-key reordering. Use `sizeAnchor(scale, "SM")` (`{ name, size }`,
+   resolving the literal t-shirt name on the default ramp / its `LADDER_ANCHOR`-mapped numbered step
+   on the ladder — XS→"1", SM→"2", MD→"3"/`LADDER_MD_STEP`, LG→"4", XL→"5", 2XL→"6") instead;
+   `mdAnchor(scale)` is `sizeAnchor(scale, "MD")` kept as its own export for the common case.
+
+A consumer that hand-tracks "the six sizes" (persist.js's `GEOMETRY_SIZES` allowlist — now a flat
+UNION of both naming schemes, not a subset relationship) must read `orderedSizeNames`/
+`LADDER_SIZE_KEYS` rather than assume six — `geomModeScales` in `model.mjs` skips its hand-tuned
+per-cell breakpoint tables entirely while the ladder is active for exactly this reason (they're tuned
+to the default ramp's OWN six positions, not the ladder's). COMPOSITION is skipped while the ladder is
+active (the ladder's own text wins over the UI-control voice, by design — see the code comments above
+`buildSizeLadder` in `geometry.mjs` for the full rationale + the two standing flags in issue #483's
+Findings; `caret = text` is RULED intentional, not a flag). It does NOT satisfy the centering law
+above (a different, ladder-own anatomy) and `rampContrast` is a no-op on it. Absent/unknown `ramp` is
+byte-identical to the ramp above — this is a prototype for evaluation, not a ratified second law.
+
 ## THE COMPOSITION — one number, two engines (the JOIN)
 
 A control's **box** (geometry) and the **text in it** (typography) share one source of truth. The join is

@@ -1,6 +1,6 @@
 import { STANDARD_GEOM_RUNGS, geomEffectiveModes, geomModeScales, geomOverridesFor, geomScaleFor, slug } from "../model.mjs";
 import { hydrate, serialize } from "../persist.js";
-import { DEFAULT_GEOMETRY, GEOMETRY_TREATMENTS, geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG } from "../../engine/geometry.mjs";
+import { DEFAULT_GEOMETRY, GEOMETRY_TREATMENTS, RAMP_LADDER, mdAnchor, orderedSizeNames, geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG } from "../../engine/geometry.mjs";
 import { icon } from "../icons.js";
 import { btn, chip, ensureTypeFonts, field, fmt, h, swatch } from "../app-helpers.mjs";
 
@@ -102,8 +102,12 @@ export class GeomSectionImpl {
     const base = cols[0].scale;
     const ov = (this.doc.geometry && this.doc.geometry.tokenOverrides) || {};
     const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    const SIZE_NAMES = ["2XL", "XL", "LG", "MD", "SM", "XS"]; // largest → smallest
-    const present = SIZE_NAMES.filter((n) => base.sizes[n]);
+    // largest → smallest, EXPLICITLY by height (issue #483 — the ladder's numeric "0".."9" step names
+    // are integer-like object keys, which JS forces into ascending enumeration order regardless of
+    // insertion order; orderedSizeNames sorts by height instead, so it's correct either way). Ramp is
+    // document-level, so every column shares the same set: 6 names on the default ramp, 10 on the
+    // linear-ladder prototype.
+    const present = orderedSizeNames(base).reverse();
     const cell = (col, name) => {
       const s = col.scale.sizes[name];
       if (!s) return h("td", { class: "tok-cell" }, h("span", { class: "tok-na" }, "—"));
@@ -295,6 +299,16 @@ export class GeomSectionImpl {
     });
   }
 
+  // _setGeomRamp — the opt-in linear-ladder toggle (issue #483, a prototype of AdiaUI's scale-ladder).
+  // Document-level (like `treatment`), NOT per-mode — the ladder is a wholesale alternate ramp SHAPE,
+  // not a per-breakpoint tuning knob. One commit = one undo step.
+  _setGeomRamp(on) {
+    this.commit((d) => {
+      d.geometry = { ...(d.geometry || DEFAULT_GEOMETRY) };
+      if (on) d.geometry.ramp = RAMP_LADDER; else delete d.geometry.ramp;
+    });
+  }
+
   // the Ramp-contrast slider edits the ACTIVE mode, exactly like the base-height slider above.
   _setActiveGeomRampContrast(v) {
     const c = Math.max(0, Math.min(1, Math.round(Number(v) * 20) / 20)); // 5% steps
@@ -457,8 +471,11 @@ export class GeomSectionImpl {
     // painted in the SELECTED palette's own roles — same resolution geomExampleCard uses, so
     // the canvas ramp isn't a generic-accent mock while the pinned inspector card is palette-real.
     const { pick, byKey, main, onMain } = this._geomPaletteColors(view);
-    // the control ramp renders LARGEST → smallest (biggest example first); heights are monotonic by step.
-    const SIZE_NAMES = ["2XL", "XL", "LG", "MD", "SM", "XS"];
+    // the control ramp renders LARGEST → smallest (biggest example first) — EXPLICITLY by height
+    // (issue #483: the ladder's numeric step names trap a bare Object.keys reversal, since JS forces
+    // integer-like keys into ascending order regardless of insertion order) — 6 names on the default
+    // ramp, 10 numbered steps on the linear-ladder prototype.
+    const SIZE_NAMES = orderedSizeNames(scale).reverse();
     const ctlLine = (name) => {
       const s = scale.sizes[name];
       if (!s) return false;
@@ -518,13 +535,17 @@ export class GeomSectionImpl {
     return h(
       "div",
       { class: "geom-spec" },
-      h("div", { class: "geom-spec-head" }, h("b", {}, t.label), h("small", {}, `${scale.baseHeight}px base · 6 sizes · ${scale.density}× density`)),
-      h("p", { class: "geom-spec-note" }, t.note + " — every glyph centers in a square cell of side = the control height, so edge padding = (height − glyph)/2. The ramp + paddings are computed, not authored."),
-      h("p", { class: "geom-shared-note" }, icon("type"), h("span", {}, "Text size (", h("b", {}, "font"), ") per step composes from Typography's UI-control voice (its own full XS..2XL ramp — decoupled from the Label voice, which the interactive text used to ride before TKT-0008); it surfaces in Figma as the Typography collection's UI-widget/UI-control size variables.")),
+      h("div", { class: "geom-spec-head" }, h("b", {}, t.label), h("small", {}, `${scale.baseHeight}px base · ${SIZE_NAMES.length} sizes · ${scale.density}× density`)),
+      h("p", { class: "geom-spec-note" }, scale.ramp === RAMP_LADDER
+        ? "Prototype: the 10-step linear scale-ladder (issue #483) — a SEPARATE anatomy, not the centering law below (padding ≠ (height − glyph)/2 here); every field is its own closed form of height. Toggle it off in the Ramp tab to see the default ramp."
+        : t.note + " — every glyph centers in a square cell of side = the control height, so edge padding = (height − glyph)/2. The ramp + paddings are computed, not authored."),
+      h("p", { class: "geom-shared-note" }, icon("type"), h("span", {}, scale.ramp === RAMP_LADDER
+        ? "Text size (font) here is the ladder's OWN formula, not Typography's UI-control voice — composition is skipped while the ladder is active, so you see the ladder as authored."
+        : ["Text size (", h("b", {}, "font"), ") per step composes from Typography's UI-control voice (its own full XS..2XL ramp — decoupled from the Label voice, which the interactive text used to ride before TKT-0008); it surfaces in Figma as the Typography collection's UI-widget/UI-control size variables."])),
       h(
         "div",
         { class: "geom-spec-group" },
-        h("div", { class: "geom-spec-grouphead" }, h("b", {}, "Controls"), h("small", {}, "height · icon · font · pad · radius"), h("span", { class: "geom-spec-count" }, "6 sizes")),
+        h("div", { class: "geom-spec-grouphead" }, h("b", {}, "Controls"), h("small", {}, "height · icon · font · pad · radius"), h("span", { class: "geom-spec-count" }, `${SIZE_NAMES.length} sizes`)),
         ...SIZE_NAMES.map(ctlLine),
       ),
       h(
@@ -551,21 +572,25 @@ export class GeomSectionImpl {
   // parity but unused (geometry is doc-driven, not palette-view-driven).
   geomAnalysisCards(view) {
     const scale = this._activeGeomScale();
+    const ladder = scale.ramp === RAMP_LADDER;
     const card = (label, body) => h("div", { class: "an-card" }, h("div", { class: "an-label" }, label), body);
     return [
-      card("Centering law — pad = ½(height − glyph)", this.graphGeomCentering(scale)),
+      card(ladder ? "Ladder anatomy — pad = inset (a separate law)" : "Centering law — pad = ½(height − glyph)", this.graphGeomCentering(scale)),
       card("Power-law ramp — icon & font vs height", this.graphGeomPower(scale)),
-      card("Two-band ramp — height per step", this.graphGeomBands(scale)),
-      card("Font ← Typography UI — shared text size", this.graphGeomComposition(scale)),
+      card(ladder ? "Linear ramp — height per step (no gear change)" : "Two-band ramp — height per step", this.graphGeomBands(scale)),
+      card(ladder ? "Font — the ladder's own formula" : "Font ← Typography UI — shared text size", this.graphGeomComposition(scale)),
     ];
   }
 
 
   // the centering law, drawn: a square CELL (side = control height) with the glyph centred in it; the equal
-  // gaps either side ARE the derived edge padding ½(height − glyph). Numbers are the LG size's real px.
+  // gaps either side ARE the derived edge padding ½(height − glyph). Numbers are the MD-equivalent size's
+  // real px — mdAnchor (not a bare `.sizes.LG`/`Object.values(...)[0]`), since the ladder's numeric step
+  // names carry no "LG" key and a values-first fallback would land on step "0" (issue #483).
   graphGeomCentering(scale) {
-    const s = scale.sizes.LG || Object.values(scale.sizes)[0];
+    const { name, size: s } = mdAnchor(scale);
     if (!s) return h("div", { class: "an-empty" }, "—");
+    const ladder = scale.ramp === RAMP_LADDER;
     const W = 244, H = 116, side = 80;
     const x0 = (W - side) / 2, y0 = (H - side) / 2;
     const g = side * (s.icon / s.height); // glyph drawn proportional to icon/height
@@ -577,19 +602,26 @@ export class GeomSectionImpl {
         <line class="gc-pad" x1="${x0}" y1="${gy.toFixed(1)}" x2="${gx.toFixed(1)}" y2="${gy.toFixed(1)}"/>
         <line class="gc-pad" x1="${(gx + g).toFixed(1)}" y1="${(gy + g).toFixed(1)}" x2="${(x0 + side).toFixed(1)}" y2="${(gy + g).toFixed(1)}"/>
       </svg>`;
+    // caption reads the RESOLVED paddingNarrow directly (not a recomputed ½(height−icon)) — identical
+    // to that formula on the default ramp, but accurate on the ladder too, whose own law differs.
+    const label = ladder ? `step ${name}` : name;
     return h(
       "div",
       {},
       h("div", { class: "an-svg", html: svg }),
-      h("div", { class: "geom-an-cap" }, `LG · cell ${s.height} · glyph ${s.icon} · pad ½(${s.height}−${s.icon}) = ${(s.height - s.icon) / 2}`),
+      h("div", { class: "geom-an-cap" }, ladder ? `${label} · cell ${s.height} · glyph ${s.icon} · pad ${s.paddingNarrow}` : `${label} · cell ${s.height} · glyph ${s.icon} · pad ½(${s.height}−${s.icon}) = ${s.paddingNarrow}`),
     );
   }
 
 
-  // icon & font vs control height across the six sizes — both glyphs scale SUBLINEARLY (a power law of
-  // height, exponent < 1), so the curves bend below the faint height diagonal. fill:none on the lines.
+  // icon & font vs control height across every size (6 on the default ramp, 10 numbered steps on the
+  // linear-ladder prototype) — both glyphs scale SUBLINEARLY (a power law of height, exponent < 1) on
+  // the default ramp, so the curves bend below the faint height diagonal. fill:none on the lines.
+  // orderedSizeNames (not Object.values) — the ladder's numeric keys would otherwise reorder ascending
+  // regardless of the line's drawing order, which happens to be harmless here (ascending IS wanted)
+  // but the explicit form keeps this consistent with every other size-ordered loop (issue #483).
   graphGeomPower(scale) {
-    const rows = ["XS", "SM", "MD", "LG", "XL", "2XL"].map((n) => scale.sizes[n]).filter(Boolean);
+    const rows = orderedSizeNames(scale).map((n) => scale.sizes[n]);
     if (!rows.length) return h("div", { class: "an-empty" }, "—");
     const W = 244, H = 132, pad = 26;
     const maxH = Math.max(...rows.map((s) => s.height)) * 1.05;
@@ -617,27 +649,30 @@ export class GeomSectionImpl {
   }
 
 
-  // control height per step index — the two-band ramp (compact +4 linear below MD, expressive ×4/3
-  // geometric above LG), with a marker at the MD|LG seam where the ramp changes gear.
+  // control height per step index — the default ramp's two-band shape (compact +4 linear below MD,
+  // expressive ×4/3 geometric above LG), with a marker at the MD|LG seam where the ramp changes gear.
+  // The linear-ladder prototype (issue #483) has no seam (one straight +4-per-step line, steps 0→9) —
+  // orderedSizeNames (not Object.entries) so it renders correctly at either 6 or 10 steps regardless
+  // of naming scheme, and skips the seam marker (meaningless off the default ramp's own 6-point shape).
   graphGeomBands(scale) {
-    const rows = ["XS", "SM", "MD", "LG", "XL", "2XL"].map((n) => ({ n, hh: scale.sizes[n] && scale.sizes[n].height })).filter((r) => r.hh);
+    const rows = orderedSizeNames(scale).map((n) => ({ n, hh: scale.sizes[n].height }));
     if (rows.length < 2) return h("div", { class: "an-empty" }, "—");
+    const ladder = scale.ramp === RAMP_LADDER;
     const W = 244, H = 124, pad = 26;
     const maxH = Math.max(...rows.map((r) => r.hh)) * 1.05;
     const X = (i) => pad + (i / (rows.length - 1)) * (W - pad - 8);
     const Y = (hh) => (H - pad + 8) - (hh / maxH) * (H - pad - 8);
     const d = "M" + rows.map((r, i) => `${X(i).toFixed(1)},${Y(r.hh).toFixed(1)}`).join(" L");
     const dots = rows.map((r, i) => `<circle class="gp-dot gp-dot-font" cx="${X(i).toFixed(1)}" cy="${Y(r.hh).toFixed(1)}" r="1.9"/>`).join("");
-    const seamX = ((X(2) + X(3)) / 2).toFixed(1);
+    const seamX = (!ladder && rows.length === 6) ? ((X(2) + X(3)) / 2).toFixed(1) : null;
     const svg = `
       <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
         <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
         <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <line class="dg-unity" x1="${seamX}" y1="8" x2="${seamX}" y2="${H - pad + 8}"/>
-        <text x="${(+seamX + 3).toFixed(1)}" y="15">MD|LG seam</text>
+        ${seamX != null ? `<line class="dg-unity" x1="${seamX}" y1="8" x2="${seamX}" y2="${H - pad + 8}"/><text x="${(+seamX + 3).toFixed(1)}" y="15">MD|LG seam</text>` : ""}
         <path class="gp-font" d="${d}"/>${dots}
         <text x="2" y="14">px</text>
-        <text x="${W - 48}" y="${H - pad + 18}">XS→2XL</text>
+        <text x="${W - 52}" y="${H - pad + 18}">${rows[0].n}→${rows[rows.length - 1].n}</text>
       </svg>`;
     return h("div", { class: "an-svg", html: svg });
   }
@@ -649,13 +684,15 @@ export class GeomSectionImpl {
     return h(
       "div",
       { class: "geom-comp" },
-      h("p", { class: "geom-comp-note" }, "Each control's text size composes from Typography's UI-control voice (decoupled from the Label voice, which interactive text used to ride before TKT-0008); gap = font/2, caret has its own power law."),
+      h("p", { class: "geom-comp-note" }, scale.ramp === RAMP_LADDER
+        ? "The ladder's own text formula is in effect — composition from Typography's UI-control voice is skipped while it's active (see the Ramp tab to toggle back)."
+        : "Each control's text size composes from Typography's UI-control voice (decoupled from the Label voice, which interactive text used to ride before TKT-0008); gap = font/2, caret has its own power law."),
       h(
         "div",
         { class: "geom-comp-rows" },
-        ...["XS", "SM", "MD", "LG", "XL", "2XL"].map((n) => {
+        ...orderedSizeNames(scale).map((n) => {
           const s = scale.sizes[n];
-          return s ? h("div", { class: "geom-comp-row" }, h("span", { class: "geom-comp-k" }, n), h("span", { class: "geom-comp-v" }, `font ${s.font}`), h("span", { class: "geom-comp-v dim" }, `caret ${s.caret} · gap ${s.gap}`)) : false;
+          return h("div", { class: "geom-comp-row" }, h("span", { class: "geom-comp-k" }, n), h("span", { class: "geom-comp-v" }, `font ${s.font}`), h("span", { class: "geom-comp-v dim" }, `caret ${s.caret} · gap ${s.gap}`));
         }),
       ),
     );
@@ -702,19 +739,34 @@ export class GeomSectionImpl {
           ...GEOMETRY_TREATMENTS.map((x) => h("option", { value: x.id, selected: cfg.treatment === x.id ? true : undefined }, this._treatmentLocked(x.id, "comfortable") ? x.label + " · Pro" : x.label)),
         ),
       ),
+      // opt-in ladder prototype (issue #483) — a WHOLESALE alternate ramp shape, document-level like
+      // Treatment. Off (default) is byte-identical to every export today.
+      h(
+        "label",
+        { class: "mini-check geom-ramp-check", title: "Prototype: an alternate 10-step linear ramp (evaluating AdiaUI's scale-ladder, issue #483) — every export renders it while on; off is the byte-identical default ramp." },
+        h("input", {
+          type: "checkbox",
+          checked: cfg.ramp === RAMP_LADDER,
+          "data-fk": "gi:ramp-linear4",
+          onchange: (e) => this._setGeomRamp(e.target.checked),
+        }),
+        "10-step linear ramp (prototype)",
+      ),
       this.slider(this.geomMode === "base" || this.geomMode === "compare" ? "Base height" : "Base height · this breakpoint", scale.baseHeight, 20, 48, 2, (v) => fmt(v) + "px", (v) => this._setActiveGeomBaseHeight(v)),
       // the responsive-ramp knob: 100% = the full ×4/3 expressive gear; 0% = the band goes linear
-      // (+4 past MD) — the compressed ramp small screens want. Per-mode, like the height slider.
-      this.slider(this.geomMode === "base" || this.geomMode === "compare" ? "Ramp contrast" : "Ramp contrast · this breakpoint", scale.rampContrast ?? 1, 0, 1, 0.05, (v) => Math.round(v * 100) + "%", (v) => this._setActiveGeomRampContrast(v)),
+      // (+4 past MD) — the compressed ramp small screens want. Per-mode, like the height slider. A
+      // no-op on the ladder (it has no gear change to blend), so the slider hides in favour of a note.
+      cfg.ramp === RAMP_LADDER
+        ? h("p", { class: "insp-sub tyi-future" }, "Ramp contrast has no effect on the linear ladder — it blends the default ramp's own gear change at the MD|LG seam, and the ladder is already one straight line.")
+        : this.slider(this.geomMode === "base" || this.geomMode === "compare" ? "Ramp contrast" : "Ramp contrast · this breakpoint", scale.rampContrast ?? 1, 0, 1, 0.05, (v) => Math.round(v * 100) + "%", (v) => this._setActiveGeomRampContrast(v)),
       this._geomModeEditor(),
       h("p", { class: "insp-sub tyi-note" }, t.note),
       h(
         "div",
         { class: "tyi-voices" },
         h("div", { class: "tyi-voices-head" }, h("b", {}, "Per-size"), h("small", {}, "select a size to tune its height")),
-        ...["XS", "SM", "MD", "LG", "XL", "2XL"].map((n) => {
+        ...orderedSizeNames(scale).map((n) => {
           const s = scale.sizes[n];
-          if (!s) return false;
           const sel = this.geomSize === n;
           const tuned = Number.isFinite((cfg.tokenOverrides || {})[n + "|" + this._geomActiveModeKey()]);
           const stats = h(
@@ -827,15 +879,18 @@ export class GeomSectionImpl {
 
   // geomExampleCard — the pinned live card: a few real controls (Button · Chip · Input) built from the
   // resolved geometry AND painted in the SELECTED palette's roles. Mirrors typeExampleCard's resolution.
+  // mdAnchor (not `.sizes.MD || Object.values(...)[0]`) — the ladder's numeric step names carry no
+  // "MD" key, and a values-first fallback would silently land on step "0" (the smallest control),
+  // since JS forces integer-like keys into ascending enumeration order (issue #483).
   geomExampleCard(view) {
     const scale = this._activeGeomScale();
-    const s = scale.sizes.MD || Object.values(scale.sizes)[0];
+    const { name: mdName, size: s } = mdAnchor(scale);
     if (!s) return h("div", { class: "example-card" });
     const { pick, byKey, main, onMain } = this._geomPaletteColors(view);
     return h(
       "div",
       { class: "example-card geom-example", style: "background:" + pick(byKey.surface) },
-      h("div", { class: "geom-ex-title", style: "color:" + pick(byKey.onSurface) }, `MD · ${s.height}px control`),
+      h("div", { class: "geom-ex-title", style: "color:" + pick(byKey.onSurface) }, `${scale.ramp === RAMP_LADDER ? `step ${mdName}` : mdName} · ${s.height}px control`),
       h(
         "div",
         { class: "geom-ex-row" },

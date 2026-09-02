@@ -2143,6 +2143,40 @@ ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).ge
   ok(bkGeo(app.doc).geometry.sizes.MD.font === uc.MD.size, "(geo) brandKit's geometry shares the UI-control font (one source of truth)");
   app.commit((d) => { d.type = { treatment: "product", bodyBase: 16 }; }); // restore
 }
+// (geo-ramp) the opt-in linear-ladder toggle (issue #483, prototyping AdiaUI's scale-ladder): the
+// checkbox in the Ramp tab writes doc.geometry.ramp, flows into the resolved scale + brandKit, persists,
+// and clearing it restores the byte-identical default ramp. Expected ladder values are computed via the
+// engine directly (geomScale is pinned exactly in test/engine/geometry.mjs) rather than hardcoded, since
+// the active geometry config (spacious·40 from the (geo) block above) isn't this block's concern.
+{
+  const { RAMP_LADDER: RL, LADDER_MD_STEP: MD3 } = await import("../../src/engine/geometry.mjs");
+  app.setSection("geometry"); app.geomSegment = "ramp"; app.render(); flushRaf();
+  const rampCb = app.querySelector(".geom-ramp-check");
+  ok(!!rampCb, "(geo-ramp) the Ramp tab shows the linear-ladder prototype checkbox");
+  const rampInput = rampCb.children.find((c) => c.tagName === "INPUT");
+  ok(!!rampInput && rampInput.checked !== true, "(geo-ramp) the checkbox starts unchecked (the default ramp)");
+  const beforeMD = app._activeGeomScale().sizes.MD.font;
+  rampInput.dispatch("change", { target: { checked: true } });
+  ok(app.doc.geometry.ramp === RL, "(geo-ramp) checking the box writes doc.geometry.ramp = RAMP_LADDER");
+  const afterScale = app._activeGeomScale();
+  const expectLadder = gScale(app.doc.geometry).sizes[MD3]; // the engine's own answer for THIS doc's treatment/baseHeight, step "3" (the ladder's MD-equivalent — numbered steps, issue #483)
+  ok(afterScale.ramp === RL && afterScale.sizes[MD3].font === expectLadder.font && afterScale.sizes[MD3].icon === expectLadder.icon, `(geo-ramp) the resolved scale switches to the ladder (step ${MD3} font ${afterScale.sizes[MD3].font} = ${expectLadder.font}, icon ${afterScale.sizes[MD3].icon} = ${expectLadder.icon})`);
+  ok(afterScale.sizes[MD3].font !== beforeMD, `(geo-ramp) the ladder's font differs from the composed default (ladder ${afterScale.sizes[MD3].font} vs default ${beforeMD})`);
+  // mapping ruling (2026-09-02, final: the full 10-step table, NUMBERED "0".."9") — the canvas
+  // Controls scene must render all ten numbered rows, not the default ramp's six t-shirt-named ones.
+  ok(Object.keys(afterScale.sizes).length === 10 && "0" in afterScale.sizes && "9" in afterScale.sizes && !("MD" in afterScale.sizes), `(geo-ramp) the resolved ladder scale carries the full 10 numbered steps, no t-shirt names (got ${Object.keys(afterScale.sizes)})`);
+  app.render(); flushRaf();
+  ok(app.querySelectorAll(".geom-spec-line").length === 10, `(geo-ramp) the canvas shows the 10-step ladder ramp with the checkbox on (got ${app.querySelectorAll(".geom-spec-line").length})`);
+  ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "--size-9" && txtOf(app.querySelectorAll(".geom-spec-token")[9] || {}) === "--size-0", `(geo-ramp) the ladder canvas still lists largest→smallest, --size-9 (56px) through --size-0 (20px) (first ${txtOf(app.querySelectorAll(".geom-spec-token")[0] || {})}, last ${txtOf(app.querySelectorAll(".geom-spec-token")[9] || {})})`);
+  ok(bkGeo(app.doc).geometry.ramp === RL, "(geo-ramp) brandKit carries the ladder too (the MCP serves it)");
+  ok(Object.keys(bkGeo(app.doc).geometry.sizes).length === 10, "(geo-ramp) brandKit's geometry also carries all 10 ladder steps");
+  ok(hydSet(serSet(app.doc)).geometry.ramp === RL, "(geo-ramp) the ladder choice round-trips through persist");
+  rampInput.dispatch("change", { target: { checked: false } });
+  ok(!("ramp" in app.doc.geometry), "(geo-ramp) unchecking clears doc.geometry.ramp entirely (back to the default ramp)");
+  ok(app._activeGeomScale().sizes.MD.font === beforeMD, "(geo-ramp) the resolved scale reverts to the original composed default");
+  app.render(); flushRaf();
+  ok(app.querySelectorAll(".geom-spec-line").length === GEOM_SIZES, `(geo-ramp) the canvas reverts to the default ramp's ${GEOM_SIZES}-step ramp with the checkbox off (got ${app.querySelectorAll(".geom-spec-line").length})`);
+}
 // (gsz) ramp-tab per-size HEIGHT tuning — the geometry analog of (tyv): select a size → its Height slider
 // expands; _setGeomSize writes the per-size override (the SAME store the token matrix uses) + persists; reset clears.
 app.setSection("geometry"); app.geomSegment = "ramp"; app.geomSize = null; app.render(); flushRaf();

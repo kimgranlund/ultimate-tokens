@@ -91,6 +91,112 @@ const SPACE_STEPS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 24];
 // Like CONTROL_FONT, hand-authored IS the law; per-breakpoint hand columns ride opts.gapOverrides.
 const GAP_UNIT = { XS: 3, SM: 3, MD: 4, LG: 6, XL: 6, "2XL": 8 };
 
+// ── THE LINEAR LADDER (issue #483, opt-in prototype) ─────────────────────────────────────────────
+// A SECOND, alternate ramp shape prototyping AdiaUI's scale-ladder-10step.csv (Kim's live exploration
+// upstream, not yet ratified there) — so it can be rendered across every export and evaluated before
+// anything is ratified. `config.ramp === RAMP_LADDER` opts in; absent/anything else is BYTE-IDENTICAL
+// to the hand-authored default ramp above (the identity gate) — this block changes nothing about it.
+//
+// The ladder's own formulas (verbatim off the CSV, h = the resolved control height, step 0..9 = 20+4·step):
+//   inset = h/4 − 3            → paddingNarrow (the icon/slot edge)      container = h/2 + 6  (intermediate)
+//   label_only_side = 2·inset  → paddingWide (the caret/bare edge)      icon = container − 2
+//   text = (h−20)/4 + 11 = h/4 + 6   → font (unless fontOverrides wins) AND caret ("caret = text",
+//                                       the ladder's OWN rule verbatim off the CSV — RULED
+//                                       INTENTIONAL, not a placeholder (owner ruling on issue #483,
+//                                       2026-09-02). caret never reads fontOverrides, same as the
+//                                       default ramp's caret is never composed.)
+//   icon_label_gap = 1 + inset → gap (unless gapOverrides wins)
+// NOTE: this is NOT the centering law above — 2·inset + container = h (the ladder's OWN icon-only
+// square identity) holds, but paddingNarrow ≠ (height − icon)/2 (off by a constant 1px, since icon
+// sits 1px inset from `container`, not centered directly in the full height). The two ramps' anatomies
+// are not required to share one law — only the same field VOCABULARY, so every downstream consumer
+// (the CSS/DTCG/Figma emitters, ds-export, @dsCard previews) needs no changes to render either ramp.
+// paddingNarrowCompact/paddingWideCompact have no ladder-authored formula — mechanically re-derived
+// the SAME way the default ramp derives them (the gap absorbed into the frame edge), not a CSV value.
+// COMPOSITION is intentionally NOT applied here: the type engine's UI-control voice ratifies its own
+// control-text sizes (e.g. 15px at MD/28px), which conflicts with the ladder's own text formula (13px
+// at the same height) — see Findings on issue #483 for why the ladder's own numbers win while it's
+// active (the point of the prototype is to evaluate the ladder AS AUTHORED); switch the toggle off to
+// see the composed/brand voice again. `rampContrast` is a no-op on this ramp — it blends the DEFAULT
+// ramp's own gear change at the MD|LG seam, and the ladder has no gear to lose (it's already one line).
+export const RAMP_LADDER = "linear4";
+export const GEOMETRY_RAMPS = [RAMP_LADDER];
+// LADDER_SIZES — canonical (unscaled, factor=1) heights: the FULL TEN-step ladder, steps 0..9 (heights
+// 20·24·28·32·36·40·44·48·52·56 — every CSV row). Owner ruling (issue #483, 2026-09-02, superseding
+// BOTH the interim 7-name 0..6 mapping AND the t-shirt names it used): gen-ui-kit binds its content
+// tiers to this engine's --size-* CSS export and needs the 48/52/56 rungs, so the ladder exposes the
+// WHOLE table; and the steps are named NUMERICALLY ("0".."9"), not with t-shirt letters — exported
+// tokens read `--{pfx}-size-{0..9}-{field}` (e.g. `--md-sys-size-3-height: 32px`). Step "3" (32px) is
+// the MD-equivalent anchor — see LADDER_MD_STEP below. The default ramp's six t-shirt names are
+// UNCHANGED (SIZES/SIZE_KEYS above still name exactly XS·SM·MD·LG·XL·2XL at 20·24·28·36·48·64,
+// byte-identical) — the two ramps use ENTIRELY DIFFERENT naming schemes, not overlapping strings.
+const LADDER_SIZES = [["0", 20], ["1", 24], ["2", 28], ["3", 32], ["4", 36], ["5", 40], ["6", 44], ["7", 48], ["8", 52], ["9", 56]];
+// LADDER_SIZE_KEYS — the ten ladder-only step names ("0".."9"), exported so persist.js's
+// GEOMETRY_SIZES allowlist can be parity-gated against the UNION of this and SIZE_KEYS (mirrors the
+// SIZE_KEYS rationale above — TKT-0017 generalized, TKT-0483/issue #483). NEVER iterate an object
+// keyed by these — JS forces integer-like string keys ("0".."9") into ascending numeric enumeration
+// order regardless of insertion order (a real trap once the ladder's names stopped being t-shirt
+// letters), so this ARRAY (not `Object.keys(scale.sizes)`) is the one place ordering is authored.
+// `orderedSizeNames`/`mdAnchor` below are the two helpers every ordering- or MD-anchor-sensitive
+// consumer (ds-export, the Geometry section UI) must route through instead of trusting key order.
+export const LADDER_SIZE_KEYS = LADDER_SIZES.map(([name]) => name);
+// LADDER_ANCHOR — the ladder step "equivalent" to each of the default ramp's six t-shirt names: the
+// ladder's extra step "0" (a 2XS-equivalent with no default-ramp counterpart) shifts every OTHER name
+// up by exactly one step index, so XS→"1", SM→"2", MD→"3", LG→"4", XL→"5", 2XL→"6" (steps "7"-"9" —
+// the 3XL/4XL/5XL-equivalent rungs gen-ui-kit's content tiers need — have no default-ramp counterpart
+// either). Fixed regardless of baseHeight (baseHeight scales every step uniformly via `factor`, never
+// reassigns which STEP a name anchors to).
+const LADDER_ANCHOR = { XS: "1", SM: "2", MD: "3", LG: "4", XL: "5", "2XL": "6" };
+// LADDER_MD_STEP — kept as its own export (several call sites already name it directly) — "3".
+export const LADDER_MD_STEP = LADDER_ANCHOR.MD;
+// sizeAnchor(scale, tshirtName) — the resolved { name, size } for one of the default ramp's six named
+// sizes, on EITHER ramp: the literal t-shirt name on the default ramp, its LADDER_ANCHOR-mapped
+// numbered step on the ladder. The one correct way to find "the SM row" (or MD, or LG, …) without
+// assuming a ramp's naming scheme — `.sizes.SM`/`.sizes.LG`/etc. simply don't exist on the ladder
+// (numeric names only), and a blind `Object.values(scale.sizes)[0]` fallback (a real bug this fixed at
+// three call sites, and again at a fourth beyond this module, issue #483) silently lands on step "0"
+// (the SMALLEST control) instead, because JS forces integer-like keys into ascending enumeration order.
+export function sizeAnchor(scale, tshirtName) {
+  const name = scale && scale.ramp === RAMP_LADDER ? (LADDER_ANCHOR[tshirtName] || tshirtName) : tshirtName;
+  return { name, size: scale && scale.sizes && scale.sizes[name] };
+}
+// mdAnchor(scale) — sizeAnchor's MD case, kept as its own export since it's the single most common one.
+export function mdAnchor(scale) {
+  return sizeAnchor(scale, "MD");
+}
+// orderedSizeNames(scale) — every size name in CANONICAL step order, EXPLICIT — never
+// `Object.keys(scale.sizes)` (JS forces integer-like keys like the ladder's into ascending NUMERIC
+// order regardless of insertion order — a real trap the moment a ramp's names stop being non-numeric
+// strings) and never a sort BY RESOLVED HEIGHT either (a per-step height OVERRIDE that breaks
+// monotonicity — e.g. an authored MD taller than LG — must not reorder the list; canonical step
+// POSITION, not the live height, is the ordering key, on either ramp). Sorts by each name's index in
+// LADDER_SIZE_KEYS (the ladder) or SIZE_KEYS (the default ramp) — the one array where insertion order
+// IS the authored, canonical order.
+export function orderedSizeNames(scale) {
+  const canonical = scale && scale.ramp === RAMP_LADDER ? LADDER_SIZE_KEYS : SIZE_KEYS;
+  return Object.keys((scale && scale.sizes) || {}).sort((a, b) => canonical.indexOf(a) - canonical.indexOf(b));
+}
+
+function buildSizeLadder(rawHeight, fontOverride, gapOverride) {
+  const height = roundEven(rawHeight);
+  const inset = height / 4 - 3; // EXACT, never rounded — mirrors the default ramp's pad doctrine
+  const container = height / 2 + 6; // intermediate only — never its own exported field
+  const icon = roundEven(container - 2);
+  const ladderText = round(height / 4 + 6); // = round((height−20)/4 + 11)
+  const font = (typeof fontOverride === "number" && Number.isFinite(fontOverride) && fontOverride > 0) ? round(fontOverride) : ladderText;
+  const caret = ladderText; // the ladder's own "caret = text" rule — never affected by fontOverrides
+  const gap = (typeof gapOverride === "number" && Number.isFinite(gapOverride) && gapOverride > 0) ? round(gapOverride) : Math.max(1, round(1 + inset));
+  return {
+    height, icon, caret, font, gap,
+    paddingNarrow: inset,
+    paddingWide: 2 * inset,
+    paddingNarrowCompact: (height - gap - icon) / 2,
+    paddingWideCompact: (height - gap - caret) / 2,
+    radiusPill: round(height / 2),
+    minWidth: height,
+  };
+}
+
 // buildSize — derive the full geometry of one size row from its (scaled) control height + the density.
 // Everything below the height is DERIVED — icon/caret by their power laws, the pads by the centering law.
 // `font` and `gap` arrive PRE-RESOLVED from geomScale (per-mode override → composition/calibration →
@@ -155,19 +261,27 @@ export function geomScale(config = {}, opts = {}) {
   const factor = baseHeight / CANON_MD;
   const c = Number(config.rampContrast);
   const rampContrast = Number.isFinite(c) ? Math.max(0, Math.min(1, c)) : 1;
+  // ladder — opt-in ONLY (issue #483): any value other than the exact RAMP_LADDER string (including
+  // absent) takes the default ramp below untouched, so the identity gate holds byte-for-byte.
+  const ladder = config.ramp === RAMP_LADDER;
   const overrides = opts.overrides && typeof opts.overrides === "object" ? opts.overrides : null;
   const fontOverrides = opts.fontOverrides && typeof opts.fontOverrides === "object" ? opts.fontOverrides : null;
   const gapOverrides = opts.gapOverrides && typeof opts.gapOverrides === "object" ? opts.gapOverrides : null;
   const uiSteps = opts.typeScale && opts.typeScale.categories && opts.typeScale.categories["UI-control"];
   const sizes = {};
   let expr = 0; // 0 for the compact band, then 1·2·3 across LG·XL·2XL (the expressive band)
-  for (const [name, h] of SIZES) {
+  for (const [name, h] of (ladder ? LADDER_SIZES : SIZES)) {
     const ovH = overrides && overrides[name];
     const geoRaw = h * factor;
     if (h > CANON_MD) expr += 1;
     // full contrast (the default) takes the geometric path EXACTLY — no float blend on the identity path.
-    const blended = rampContrast >= 1 || expr === 0 ? geoRaw : (baseHeight + 4 * expr) * (1 - rampContrast) + geoRaw * rampContrast;
+    // the ladder has no gear change to blend (rampContrast is a no-op on it — see the block comment above).
+    const blended = ladder || rampContrast >= 1 || expr === 0 ? geoRaw : (baseHeight + 4 * expr) * (1 - rampContrast) + geoRaw * rampContrast;
     const rawHeight = (typeof ovH === "number" && Number.isFinite(ovH) && ovH > 0) ? ovH : blended;
+    if (ladder) {
+      sizes[name] = buildSizeLadder(rawHeight, fontOverrides && fontOverrides[name], gapOverrides && gapOverrides[name]);
+      continue;
+    }
     const ovF = fontOverrides && fontOverrides[name];
     const composed = uiSteps && uiSteps[name] ? uiSteps[name].size : null;
     const font = (typeof ovF === "number" && Number.isFinite(ovF) && ovF > 0) ? round(ovF) : (composed != null ? composed : round(CONTROL_FONT[name] * factor));
@@ -191,7 +305,9 @@ export function geomScale(config = {}, opts = {}) {
   // clear of the control edge so it survives any radius).
   const borders = { thin: 1, thick: 2 };
   const focus = { ringWidth: 2, ringOffset: 2 };
-  return { treatment: t.id, label: t.label, density: t.density, radiusStyle: t.radiusStyle, radiusDefault, baseHeight, rampContrast, sizes, radii, space, insets, gaps, borders, focus };
+  // `ramp` surfaces ONLY when the ladder is active (undefined drops from JSON.stringify, so the
+  // identity gate holds byte-for-byte when it's absent — see the geometry engine test).
+  return { treatment: t.id, label: t.label, density: t.density, radiusStyle: t.radiusStyle, radiusDefault, baseHeight, rampContrast, ramp: ladder ? RAMP_LADDER : undefined, sizes, radii, space, insets, gaps, borders, focus };
 }
 
 // ── emitters ───────────────────────────────────────────────────────────────────────────────────
@@ -215,7 +331,8 @@ const ns = (pfx, name) => (pfx ? `${pfx}-${name}` : name);
 
 function geomSizeVarLines(scale, indent = "  ", unit = "px", pfx = "") {
   const size = ns(pfx, "size");
-  return Object.entries(scale.sizes).map(([name, s]) => {
+  return orderedSizeNames(scale).map((name) => {
+    const s = scale.sizes[name];
     const p = `--${size}-${kebab(name)}`;
     return `${indent}${p}-height: ${dimUnit(s.height, unit)}; ${p}-icon: ${dimUnit(s.icon, unit)}; ${p}-caret: ${dimUnit(s.caret, unit)}; ${p}-font: ${dimUnit(s.font, unit)}; ${p}-gap: ${dimUnit(s.gap, unit)}; ${p}-padding-narrow: ${dimUnit(s.paddingNarrow, unit)}; ${p}-padding-wide: ${dimUnit(s.paddingWide, unit)}; ${p}-padding-narrow-compact: ${dimUnit(s.paddingNarrowCompact, unit)}; ${p}-padding-wide-compact: ${dimUnit(s.paddingWideCompact, unit)}; ${p}-radius: ${dimUnit(s.radiusPill, unit)}; ${p}-min: ${dimUnit(s.minWidth, unit)};`;
   }).join("\n");
@@ -239,7 +356,7 @@ export function geomTokensCSS(scale, { unit = "px", prefix = "" } = {}) {
   for (const [k, v] of Object.entries(scale.focus || {})) lines.push(`  --${ns(p, "focus")}-${camelKebab(k)}: ${dimUnit(v, unit)};`);
   lines.push("}");
   const size = ns(p, "size"), control = ns(p, "control");
-  for (const name of Object.keys(scale.sizes)) {
+  for (const name of orderedSizeNames(scale)) {
     const s = kebab(name);
     lines.push(`.${control}-${s} { box-sizing: border-box; block-size: var(--${size}-${s}-height); min-inline-size: var(--${size}-${s}-min); font-size: var(--${size}-${s}-font); padding-inline: var(--${size}-${s}-padding-wide); padding-block: 0; gap: var(--${size}-${s}-gap); border-radius: var(--${size}-${s}-radius); }`);
   }
@@ -295,7 +412,8 @@ export function geomTokensBreakpointCSS(modes = [], { unit = "px", prefix = "", 
 export function geomTokensDTCG(scale, { unit = "px" } = {}) {
   const dim = (px) => ({ $type: "dimension", $value: dimUnit(px, unit) });
   const size = {};
-  for (const [name, s] of Object.entries(scale.sizes)) {
+  for (const name of orderedSizeNames(scale)) {
+    const s = scale.sizes[name];
     // ADR-016: kebab field names, lowercase step keys, the icon-gap/pill-radius homonym renames.
     size[name.toLowerCase()] = {
       height: dim(s.height), icon: dim(s.icon), caret: dim(s.caret), font: dim(s.font),
@@ -322,7 +440,8 @@ export function geomTokensDTCG(scale, { unit = "px" } = {}) {
 export function geomTokensFigma(scale) {
   const num = (v) => ({ $type: "number", $value: v });
   const size = {};
-  for (const [name, s] of Object.entries(scale.sizes)) {
+  for (const name of orderedSizeNames(scale)) {
+    const s = scale.sizes[name];
     size[name.toLowerCase()] = {
       height: num(s.height), icon: num(s.icon), caret: num(s.caret),
       "icon-gap": num(s.gap), "padding-narrow": num(s.paddingNarrow), "padding-wide": num(s.paddingWide),
@@ -377,8 +496,10 @@ export function geomTokensFigmaModes(baseScale, modes = [], { baseName = "Base",
   // for each mode (Base first), write size/<NAME>/<field>, radius/<k>, space/<k>. Only `sizes` scale with
   // baseHeight; radii/space are treatment-derived (mode-independent), but we emit per-mode for completeness.
   const layer = (scale, mode) => {
-    for (const [name, s] of Object.entries(scale.sizes))
+    for (const name of orderedSizeNames(scale)) {
+      const s = scale.sizes[name];
       for (const [field, src] of GEOM_SIZE_FIELDS) set(`size/${name.toLowerCase()}/${field}`, mode, s[src]);
+    }
     for (const [k, v] of Object.entries(scale.radii)) set(`radius/${k}`, mode, v);
     for (const [k, v] of Object.entries(scale.space)) set(`space/${k}`, mode, v);
     for (const [k, v] of Object.entries(scale.insets || {})) set(`inset/${camelKebab(k)}`, mode, v);

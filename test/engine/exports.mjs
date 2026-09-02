@@ -8,7 +8,7 @@ import * as Xds from "../../src/engine/ds-export.js";
 const X = { ...Xcolor, ...Xds };
 import { dsBundleGates } from "../../src/engine/ds-gates.js";
 import { typeScale } from "../../src/engine/type.mjs";
-import { geomScale } from "../../src/engine/geometry.mjs";
+import { geomScale, LADDER_MD_STEP, sizeAnchor } from "../../src/engine/geometry.mjs";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const C = (palettes) => ({ palettes, curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, hueSpace: "cam16", theme: "auto" });
@@ -624,6 +624,74 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
         if (/(?:^|;)font:\s*inherit\b/.test(fieldRule)) FAIL(G, ".field rule still carries a `font: inherit` shorthand after uiFont — it resets family/size/weight to inherit, wiping the UI voice");
       }
     }
+  }
+
+  // linear-ladder "wins while active" pin (issue #483) — geomScale's own composition-skip decision
+  // (the ladder's text formula overrides the UI-control voice) must reach EVERY uiFont consumer here,
+  // not just the Size-ladder preview row (which already reads per-size `s.font` directly and needed no
+  // change). Re-derives the catalog with a ladder-active geomSc and checks .btn/.pbtn/.dlg-btn/.field
+  // all switch from the composed UI-control MD size to the ladder's own MD font — and that turning the
+  // ladder OFF again is untouched (the identity gate for this leg).
+  {
+    const gscLadder = geomScale({ ramp: "linear4" }, { typeScale: tsc });
+    const wantLadderSize = gscLadder.sizes[LADDER_MD_STEP].font; // "3" — the ladder's own MD-equivalent, not ".MD" (numbered steps, issue #483)
+    const cardsLadder = X.exportDesignSystemComponents(state, tsc, gscLadder);
+    const fontSizeOf = (html, ruleRe) => { const m = (html || "").match(ruleRe); const fs = m && /font-size:(\d+(?:\.\d+)?)px/.exec(m[0]); return fs ? Number(fs[1]) : null; };
+    const ladderChecks = [
+      ["Buttons .btn", "components/buttons.html", /\.btn\{[^}]*\}/],
+      ["Card .pbtn", "components/card.html", /\.pbtn\{[^}]*\}/],
+      ["Dialog .dlg-btn", "components/dialog.html", /\.dlg-btn\{[^}]*\}/],
+    ];
+    for (const [label, name, re] of ladderChecks) {
+      const c = cardsLadder.find((x) => x.name === name);
+      const size = c && fontSizeOf(c.data, re);
+      if (size !== wantLadderSize) FAIL(G, `${label} font-size while the linear ladder is active is ${size}px, expected the ladder's own MD size ${wantLadderSize}px (composition must be skipped, not just the Size-ladder row)`);
+    }
+    const inputsLadder = cardsLadder.find((c) => c.name === "components/inputs.html");
+    const fieldRuleLadder = inputsLadder && (inputsLadder.data.match(/\.field\{[^}]*\}/) || [])[0];
+    const fieldSizeLadder = fieldRuleLadder && /font-size:(\d+(?:\.\d+)?)px/.exec(fieldRuleLadder);
+    if (!fieldSizeLadder || Number(fieldSizeLadder[1]) !== wantLadderSize) FAIL(G, `Inputs .field font-size while the linear ladder is active is ${fieldSizeLadder ? fieldSizeLadder[1] : "missing"}px, expected the ladder's own MD size ${wantLadderSize}px`);
+    // this leg is only meaningful if the ladder's MD font actually differs from the composed UI-control
+    // MD size (else the two checks above couldn't distinguish "wired correctly" from "never wired at all").
+    const uiMdSize = tsc && tsc.categories && tsc.categories["UI-control"] && tsc.categories["UI-control"].MD && tsc.categories["UI-control"].MD.size;
+    if (uiMdSize != null && wantLadderSize === uiMdSize) FAIL(G, "test fixture problem: the ladder's MD font must differ from the composed UI-control MD size for this leg to be meaningful");
+
+    // mapping ruling (2026-09-02, THIRD and final: the full 10-step table, NUMBERED "0".."9") — the
+    // Buttons card's Size-ladder row must render all ten numbered steps, not the default ramp's six
+    // t-shirt names (it reads geomSc.sizes' own keys via orderedSizeNames, never a hardcoded list).
+    const buttonsLadder = cardsLadder.find((c) => c.name === "components/buttons.html");
+    const sizeRowLadder = buttonsLadder && (buttonsLadder.data.match(/<div class="size-row">[\s\S]*?<\/div>/) || [])[0];
+    const sizeButtonCount = sizeRowLadder ? (sizeRowLadder.match(/<button/g) || []).length : 0;
+    if (sizeButtonCount !== 10) FAIL(G, `Buttons card's Size-ladder row renders ${sizeButtonCount} controls while the linear ladder is active, expected 10 (steps 0-9)`);
+    if (!sizeRowLadder || !sizeRowLadder.includes(">0<") || !sizeRowLadder.includes(">9<")) FAIL(G, "Buttons card's Size-ladder row is missing the ladder's step 0 or step 9 control");
+    // and they render in ascending numeric order (step 0 first, step 9 last) — not JS's coincidental
+    // integer-key reordering, but orderedSizeNames' explicit canonical-step-index sort (issue #483).
+    const ladderStepOrder = [...sizeRowLadder.matchAll(/>(\d)</g)].map((m) => m[1]);
+    if (ladderStepOrder.join(",") !== "0,1,2,3,4,5,6,7,8,9") FAIL(G, `Buttons card's Size-ladder row is out of order, expected steps 0-9 ascending (got ${ladderStepOrder.join(",")})`);
+    // and the DEFAULT (non-ladder) catalog computed at the top of this block still renders exactly six.
+    const sizeRowDefault = buttons && (buttons.data.match(/<div class="size-row">[\s\S]*?<\/div>/) || [])[0];
+    const sizeButtonCountDefault = sizeRowDefault ? (sizeRowDefault.match(/<button/g) || []).length : 0;
+    if (sizeButtonCountDefault !== 6) FAIL(G, `Buttons card's Size-ladder row renders ${sizeButtonCountDefault} controls on the DEFAULT ramp, expected 6 (unchanged by the ladder's existence)`);
+
+    // checkbox/radio + switch pin — Inputs' selection controls read sizeAnchor(geomSc,"SM"/"XS")'s
+    // icon, not a bare .sizes.SM/.sizes.XS (which don't exist on the ladder and used to silently fall
+    // through to the hardcoded 18/16 defaults, so the Inputs card never actually followed the ladder).
+    // baseHeight 40 (not the canonical 28 the rest of this leg uses) — at 28 the ladder's SM/XS-
+    // equivalent icons (18/16) happen to numerically COINCIDE with the hardcoded fallback constants,
+    // which would let a regressed "still reads .sizes.SM" bug pass silently.
+    const gscLadder40 = geomScale({ ramp: "linear4", baseHeight: 40 }, { typeScale: tsc });
+    const smAnchor = sizeAnchor(gscLadder40, "SM"), xsAnchor = sizeAnchor(gscLadder40, "XS");
+    const wantCtrlIcon = smAnchor.size.icon, wantSwitchH = xsAnchor.size.icon;
+    const inputsLadder40 = X.exportDesignSystemComponents(state, tsc, gscLadder40).find((c) => c.name === "components/inputs.html");
+    const checkRuleLadder = (inputsLadder40.data.match(/\.ds-check,\.ds-radio\{[^}]*\}/) || [])[0] || "";
+    const switchRuleLadder = (inputsLadder40.data.match(/\.ds-switch\{[^}]*\}/) || [])[0] || "";
+    const checkW = (checkRuleLadder.match(/width:(\d+)px/) || [])[1];
+    const switchH = (switchRuleLadder.match(/height:(\d+)px/) || [])[1];
+    if (Number(checkW) !== wantCtrlIcon) FAIL(G, `Inputs .ds-check/.ds-radio width while the ladder is active is ${checkW}px, expected SM-equivalent step ${smAnchor.name}'s icon ${wantCtrlIcon}px`);
+    if (Number(switchH) !== wantSwitchH) FAIL(G, `Inputs .ds-switch height while the ladder is active is ${switchH}px, expected XS-equivalent step ${xsAnchor.name}'s icon ${wantSwitchH}px`);
+    // and this leg is only meaningful if the ladder's values differ from the hardcoded 18/16 fallbacks
+    // (else the checks above couldn't distinguish "wired correctly" from "never wired, fell to fallback").
+    if (wantCtrlIcon === 18 || wantSwitchH === 16) FAIL(G, "test fixture problem: the ladder's SM/XS-equivalent icons must differ from the 18/16 hardcoded fallbacks for this leg to be meaningful");
   }
 
   // Typography card — every voice's every step appears (not one cherry-picked key per tier). Anchored

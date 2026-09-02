@@ -576,10 +576,20 @@ function clampType(t, drop) {
 // Exported so test/ui/persist.mjs's allowlist-parity gate can assert this stays in lockstep with
 // geometry.mjs's GEOMETRY_TREATMENTS ids (see the TYPE_TREATMENTS/VOICES note above — TKT-0017).
 export const GEOMETRY_TREATMENTS = ["comfortable", "compact", "spacious", "touch", "pill"];
-// The 6 canonical size names (geometry.mjs's SIZE_KEYS) — the leading segment of a geom tokenOverrides
-// key ("<size>|<modeKey>"), the geometry analog of VOICES above. MUST track geometry.mjs's SIZE_KEYS —
-// asserted by the allowlist-parity test (TKT-0017's convention, extended here per TKT-0455).
-export const GEOMETRY_SIZES = ["XS", "SM", "MD", "LG", "XL", "2XL"];
+// The canonical size names — the leading segment of a geom tokenOverrides key ("<size>|<modeKey>"),
+// the geometry analog of VOICES above. The default ramp's six t-shirt names (geometry.mjs's
+// SIZE_KEYS) and the linear-ladder's ten NUMBERED steps "0".."9" (geometry.mjs's LADDER_SIZE_KEYS —
+// the full 10-step CSV table, owner ruling 2026-09-02, TWO rulings: first 7 t-shirt names, then the
+// full 10 steps renamed numerically since gen-ui-kit binds --size-{0..9}-* directly) use ENTIRELY
+// DISJOINT naming schemes — clampTokenOverrides only ever does a plain string `.includes()` check
+// against this list, so a numeric-looking segment like "3" round-trips exactly like any other string;
+// no parsing change was needed, only this literal list. MUST track the UNION of geometry.mjs's
+// SIZE_KEYS + LADDER_SIZE_KEYS — asserted by the allowlist-parity test (TKT-0017's convention,
+// extended per TKT-0455 then TKT-0483).
+export const GEOMETRY_SIZES = ["XS", "SM", "MD", "LG", "XL", "2XL", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+// The opt-in ramp ids (geometry.mjs's GEOMETRY_RAMPS, issue #483) — mirrors the TYPE_TREATMENTS/
+// GEOMETRY_TREATMENTS/VOICES/GEOMETRY_SIZES convention above; parity-gated the same way.
+export const GEOMETRY_RAMPS = ["linear4"];
 function clampGeometry(g, drop) {
   g = (g && typeof g === "object") ? g : {};
   // TKT-0455 — see clampType's matching check above for the absent-vs-unknown distinction.
@@ -588,6 +598,11 @@ function clampGeometry(g, drop) {
   const clampH = (v) => { const n = Number(v); return Math.max(20, Math.min(48, Number.isFinite(n) ? Math.round(n) : 28)); };
   const baseHeight = clampH(g.baseHeight);
   const out = { treatment, baseHeight };
+  // ramp (the opt-in linear-ladder prototype, issue #483) — OPTIONAL, like rampContrast: attach only a
+  // KNOWN id; absent stays absent (the default ramp round-trips identical — the identity gate). An
+  // unknown id drops (reported), same semantics as an unknown treatment.
+  if (g.ramp != null && !GEOMETRY_RAMPS.includes(g.ramp)) drop("geometry.ramp", g.ramp, "unknown ramp id");
+  if (GEOMETRY_RAMPS.includes(g.ramp)) out.ramp = g.ramp;
   // rampContrast (the responsive-ramp knob) — OPTIONAL: attach only when a finite value < 1 is set
   // (1 is the engine default, so absent stays absent and a full-contrast kit round-trips identical).
   const clampContrast = (v) => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n < 1 ? { rampContrast: Math.round(n * 100) / 100 } : {}; };

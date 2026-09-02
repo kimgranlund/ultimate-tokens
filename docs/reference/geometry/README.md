@@ -60,7 +60,10 @@ These reproduce the hand-tuned reference ramp to ±1px — so the table is not s
 centering law and scales per size with `baseHeight` (+ `rampContrast` — the responsive knob: 1 = the full
 ×4/3 expressive gear, 0 = the band continues the compact +4 linear step, so small screens get the
 compressed ramp). Container geometry (`inset`/`gap`) derives from the space ladder — treatment-scaled,
-mode-independent.
+mode-independent. (An opt-in `ramp:"linear4"` config, issue #483, uses a SEPARATE anatomy — its
+`padding-narrow` is not `(height − icon)/2` — and NUMBERS its ten steps `0`..`9` rather than the six
+t-shirt names above, so tokens read `--size-3-height` not `--size-md-height`; see `geometry.mjs`'s
+`buildSizeLadder` + `LADDER_MD_STEP`.)
 
 ## Composition with typography (one number, two engines)
 

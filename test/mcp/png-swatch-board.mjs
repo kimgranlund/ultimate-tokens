@@ -8,7 +8,8 @@
 // (positions) comes from the shared boardLayout; COLORS are resolved here, independently, straight from
 // the kit — the deep-match cannot pass by both sides agreeing with themselves.
 import zlib from "node:zlib";
-import { swatchBoardPNG, swatchBoardImageBlock, boardLayout, SWATCH_SIZE, GRID_COLS, GRID_ROWS, GAP, MARGIN } from "../../mcp/png-swatch-board.mjs";
+import { swatchBoardPNG, swatchBoardImageBlock, boardLayout, SWATCH_SIZE, GRID_COLS, GRID_ROWS, GAP, MARGIN, CONTROL_STRIP_H } from "../../mcp/png-swatch-board.mjs";
+import { geomScale } from "../../src/engine/geometry.mjs";
 import { brandKit, defaultDocument } from "../../src/ui/model.mjs";
 import { FAMILY_NAMES } from "../../mcp/describe-kit-core.mjs";
 
@@ -166,6 +167,27 @@ ok(swatchBoardPNG(kit, FAMILY_NAMES).equals(swatchBoardPNG(kit, FAMILY_NAMES)), 
   const block = swatchBoardImageBlock(kit, FAMILY_NAMES);
   ok(block.type === "image" && block.mimeType === "image/png" && typeof block.data === "string", `swatchBoardImageBlock returns the MCP image content block shape (got ${JSON.stringify({ ...block, data: block.data.slice(0, 10) + "..." })})`);
   ok(Buffer.from(block.data, "base64").equals(png), "the block's base64 data decodes to the exact same PNG bytes swatchBoardPNG produces directly");
+}
+
+// ── the opt-in linear-ladder ramp (ultimate-tokens issue #483): boardLayout must follow the kit's
+// REAL geometry, not silently fall through to the hardcoded 36/20/14 defaults — a bare `.sizes.LG`
+// resolves to {} under the ladder (numeric step names only). Pinned against step "4" (LG's mapped
+// equivalent), computed independently via geomScale directly rather than read back off the layout. ──
+{
+  const ladderDoc = { ...defaultDocument(), geometry: { ...defaultDocument().geometry, ramp: "linear4" } };
+  const ladderKit = brandKit(ladderDoc);
+  ok(ladderKit.geometry && ladderKit.geometry.ramp === "linear4" && !ladderKit.geometry.sizes.LG, "sanity: the ladder kit really has no .sizes.LG key (numeric steps only)");
+  const wantLG = geomScale({ ramp: "linear4", baseHeight: ladderKit.geometry.baseHeight }).sizes["4"];
+  const LL = boardLayout(ladderKit);
+  ok(LL.width === L.width, "the ladder board is the same overall width (the swatch grid, not the control strip, drives it)");
+  const wantCtlH = Math.min(Math.round(wantLG.height), CONTROL_STRIP_H);
+  const wantRadius = Math.round(Math.min(wantLG.radiusPill, wantCtlH / 2));
+  const wantThumb = Math.min(Math.round(wantLG.icon), wantCtlH - 2);
+  const wantCaretW = Math.round(wantLG.caret);
+  ok(LL.light.button.h === wantCtlH && LL.light.button.r === wantRadius, `the ladder button follows step 4's real height/radius (got h=${LL.light.button.h} r=${LL.light.button.r}, want h=${wantCtlH} r=${wantRadius})`);
+  ok(LL.light.switchCtl.thumb.d === wantThumb, `the ladder switch thumb follows step 4's real icon size, not the hardcoded 20 default (got ${LL.light.switchCtl.thumb.d}, want ${wantThumb})`);
+  ok(LL.light.select.caret.w === wantCaretW, `the ladder select caret follows step 4's real caret size, not the hardcoded 14 default (got ${LL.light.select.caret.w}, want ${wantCaretW})`);
+  ok(!swatchBoardPNG(kit, FAMILY_NAMES).equals(swatchBoardPNG(ladderKit, FAMILY_NAMES)), "a ladder-active kit encodes to DIFFERENT PNG bytes than the default ramp (the control strip actually changed)");
 }
 
 if (fails.length) { console.error(`png-swatch-board FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
