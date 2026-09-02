@@ -139,6 +139,7 @@ type/ UI-voice variables (TKT-0009). Depth + the worked walkthrough: `references
 | `buildSize(rawHeight, density, fontOverride)` | one ramp row — the LAW + the power law live here; `fontOverride` is the composition hook |
 | `GEOMETRY_TREATMENTS` / `DEFAULT_GEOMETRY` | the 5 presets (`comfortable/compact/spacious/touch/pill`) = density + radiusStyle + baseHeight + spaceBase; default `{comfortable, 28}` |
 | `geomTokensCSS` | `:root` custom props + the `.control-{size}` utility that embodies the law |
+| `geomTokensSizesCSS` | a SIZE-ONLY sibling of `geomTokensCSS` (issue #487) — just the `--size-{step}-*` `:root` block, no radius/space/inset/gap/border/focus/density, no `.control-*` classes; bundled as `geometry-sizes.css` |
 | `geomTokensDTCG` | W3C `dimension` tokens (`"{px}px"`) — size/radius/space groups |
 | `geomTokensFigma` | DTCG `number` tokens (UNITLESS) under a `Geometry` collection → Figma FLOAT variables |
 
@@ -171,6 +172,8 @@ each a named `space[k]` so the tier follows the treatment's rhythm; plus stroke 
    test's `REF` table in the same change.
 5. **Three emitters, one source.** A new per-size field in `buildSize` must be added to `geomTokensCSS`,
    `geomTokensDTCG`, `geomTokensFigma`, and the test — together. DTCG carries `px`; Figma is unitless.
+   `geomTokensSizesCSS` (issue #487) shares `geomTokensCSS`'s own `geomSizeVarLines` line-builder, so a
+   new field lands in both automatically — no fourth place to remember.
 
 ## Validate (the gate — draft → check → fix → re-check)
 
