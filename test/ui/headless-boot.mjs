@@ -2143,6 +2143,31 @@ ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).ge
   ok(bkGeo(app.doc).geometry.sizes.MD.font === uc.MD.size, "(geo) brandKit's geometry shares the UI-control font (one source of truth)");
   app.commit((d) => { d.type = { treatment: "product", bodyBase: 16 }; }); // restore
 }
+// (geo-ramp) the opt-in linear-ladder toggle (issue #483, prototyping AdiaUI's scale-ladder): the
+// checkbox in the Ramp tab writes doc.geometry.ramp, flows into the resolved scale + brandKit, persists,
+// and clearing it restores the byte-identical default ramp. Expected ladder values are computed via the
+// engine directly (geomScale is pinned exactly in test/engine/geometry.mjs) rather than hardcoded, since
+// the active geometry config (spacious·40 from the (geo) block above) isn't this block's concern.
+{
+  const { RAMP_LADDER: RL } = await import("../../src/engine/geometry.mjs");
+  app.setSection("geometry"); app.geomSegment = "ramp"; app.render(); flushRaf();
+  const rampCb = app.querySelector(".geom-ramp-check");
+  ok(!!rampCb, "(geo-ramp) the Ramp tab shows the linear-ladder prototype checkbox");
+  const rampInput = rampCb.children.find((c) => c.tagName === "INPUT");
+  ok(!!rampInput && rampInput.checked !== true, "(geo-ramp) the checkbox starts unchecked (the default ramp)");
+  const beforeMD = app._activeGeomScale().sizes.MD.font;
+  rampInput.dispatch("change", { target: { checked: true } });
+  ok(app.doc.geometry.ramp === RL, "(geo-ramp) checking the box writes doc.geometry.ramp = RAMP_LADDER");
+  const afterScale = app._activeGeomScale();
+  const expectLadder = gScale(app.doc.geometry).sizes.MD; // the engine's own answer for THIS doc's treatment/baseHeight
+  ok(afterScale.ramp === RL && afterScale.sizes.MD.font === expectLadder.font && afterScale.sizes.MD.icon === expectLadder.icon, `(geo-ramp) the resolved scale switches to the ladder (MD font ${afterScale.sizes.MD.font} = ${expectLadder.font}, icon ${afterScale.sizes.MD.icon} = ${expectLadder.icon})`);
+  ok(afterScale.sizes.MD.font !== beforeMD, `(geo-ramp) the ladder's font differs from the composed default (ladder ${afterScale.sizes.MD.font} vs default ${beforeMD})`);
+  ok(bkGeo(app.doc).geometry.ramp === RL, "(geo-ramp) brandKit carries the ladder too (the MCP serves it)");
+  ok(hydSet(serSet(app.doc)).geometry.ramp === RL, "(geo-ramp) the ladder choice round-trips through persist");
+  rampInput.dispatch("change", { target: { checked: false } });
+  ok(!("ramp" in app.doc.geometry), "(geo-ramp) unchecking clears doc.geometry.ramp entirely (back to the default ramp)");
+  ok(app._activeGeomScale().sizes.MD.font === beforeMD, "(geo-ramp) the resolved scale reverts to the original composed default");
+}
 // (gsz) ramp-tab per-size HEIGHT tuning — the geometry analog of (tyv): select a size → its Height slider
 // expands; _setGeomSize writes the per-size override (the SAME store the token matrix uses) + persists; reset clears.
 app.setSection("geometry"); app.geomSegment = "ramp"; app.geomSize = null; app.render(); flushRaf();

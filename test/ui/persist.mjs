@@ -30,7 +30,7 @@ const inDomainState = () => {
   const geTok = {}; for (const [k, v] of [["MD|base", 30], ["2XL|base", 72], ["XS|base", 18]]) if (rnd() > 0.5) geTok[k] = v;
   return { curve: pick(["linear", "sine", "cubic", "logistic", "exp"]), tension: rnd() * 100, lmin: rnd() * 40, lmax: 60 + rnd() * 40,
     damp: rnd() * 100, dampCurve: 0.5 + rnd() * 3.5, dampAmp: rnd() * 100, dampBias: -100 + rnd() * 200,
-    hueSpace: pick(["cam16", "oklch"]), relChroma: rnd() > 0.5, chromaFloor: rnd() * 100, toneMode: pick(["even", "perceptual", "peak"]), vibrancy: rnd() * 100, onColorMode: pick(["fixed", "contrast"]), accentRef: pick(["mode", "single"]), type: { treatment: pick(["product", "luxury", "editorial", "technical", "statement"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { modes: [{ id: "tm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}), ...(Object.keys(tyTok).length ? { tokenOverrides: tyTok } : {}) }, geometry: { treatment: pick(["comfortable", "compact", "spacious", "touch", "pill"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}), ...(rnd() > 0.5 ? { modes: [{ id: "gm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}) }] } : {}), ...(Object.keys(geTok).length ? { tokenOverrides: geTok } : {}) }, theme: pick(["auto", "light", "dark"]), selected: Math.floor(rnd() * n), roleOverrides, palettes };
+    hueSpace: pick(["cam16", "oklch"]), relChroma: rnd() > 0.5, chromaFloor: rnd() * 100, toneMode: pick(["even", "perceptual", "peak"]), vibrancy: rnd() * 100, onColorMode: pick(["fixed", "contrast"]), accentRef: pick(["mode", "single"]), type: { treatment: pick(["product", "luxury", "editorial", "technical", "statement"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { modes: [{ id: "tm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}), ...(Object.keys(tyTok).length ? { tokenOverrides: tyTok } : {}) }, geometry: { treatment: pick(["comfortable", "compact", "spacious", "touch", "pill"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { ramp: "linear4" } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}), ...(rnd() > 0.5 ? { modes: [{ id: "gm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}) }] } : {}), ...(Object.keys(geTok).length ? { tokenOverrides: geTok } : {}) }, theme: pick(["auto", "light", "dark"]), selected: Math.floor(rnd() * n), roleOverrides, palettes };
 };
 
 // ── hpg-persistence-roundtrip: in-domain identity ─────────────────────────────────────────
@@ -331,6 +331,23 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   // geometry.mjs's own SIZE_KEYS the same way VOICES tracks type.mjs's voice set.
   if (!eqSet(U.GEOMETRY_SIZES, Ge.SIZE_KEYS))
     FAIL("allowlist-parity", `persist.js GEOMETRY_SIZES ${JSON.stringify(sorted(U.GEOMETRY_SIZES))} != geometry.mjs SIZE_KEYS ${JSON.stringify(sorted(Ge.SIZE_KEYS))}`);
+
+  // GEOMETRY_RAMPS (issue #483) — the opt-in ramp ids; must track geometry.mjs's own GEOMETRY_RAMPS.
+  if (!eqSet(U.GEOMETRY_RAMPS, Ge.GEOMETRY_RAMPS))
+    FAIL("allowlist-parity", `persist.js GEOMETRY_RAMPS ${JSON.stringify(sorted(U.GEOMETRY_RAMPS))} != geometry.mjs GEOMETRY_RAMPS ${JSON.stringify(sorted(Ge.GEOMETRY_RAMPS))}`);
+}
+
+// ── geometry ramp (the opt-in linear-ladder prototype, issue #483): a known id persists; absent stays
+// absent (the default ramp round-trips identical — the identity gate); an unknown id drops + reports ──
+{
+  const seed = inDomainState();
+  const R = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "linear4" } }));
+  if (R.geometry.ramp !== "linear4") FAIL("ramp", `geometry.ramp "linear4" must round-trip (got ${JSON.stringify(R.geometry.ramp)})`);
+  const N = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28 } }));
+  if ("ramp" in N.geometry) FAIL("ramp", "absent geometry.ramp must stay absent (the identity gate)");
+  const X = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "bogus-ramp" } }));
+  if ("ramp" in X.geometry) FAIL("ramp", "an unknown geometry.ramp id must drop");
+  if (!X[U.DROPPED_KEYS].some((d) => d.facet === "geometry.ramp" && d.key === "bogus-ramp")) FAIL("ramp", `an unknown geometry.ramp id must be reported in DROPPED_KEYS (got ${JSON.stringify(X[U.DROPPED_KEYS])})`);
 }
 
 // ── dropped-keys (TKT-0455): a stored voice/treatment/tokenOverrides key unknown to the current
@@ -379,7 +396,7 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "dropped-keys"]) {
+for (const g of ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "ramp", "dropped-keys"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

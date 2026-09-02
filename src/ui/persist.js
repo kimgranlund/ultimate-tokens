@@ -580,6 +580,9 @@ export const GEOMETRY_TREATMENTS = ["comfortable", "compact", "spacious", "touch
 // key ("<size>|<modeKey>"), the geometry analog of VOICES above. MUST track geometry.mjs's SIZE_KEYS —
 // asserted by the allowlist-parity test (TKT-0017's convention, extended here per TKT-0455).
 export const GEOMETRY_SIZES = ["XS", "SM", "MD", "LG", "XL", "2XL"];
+// The opt-in ramp ids (geometry.mjs's GEOMETRY_RAMPS, issue #483) — mirrors the TYPE_TREATMENTS/
+// GEOMETRY_TREATMENTS/VOICES/GEOMETRY_SIZES convention above; parity-gated the same way.
+export const GEOMETRY_RAMPS = ["linear4"];
 function clampGeometry(g, drop) {
   g = (g && typeof g === "object") ? g : {};
   // TKT-0455 — see clampType's matching check above for the absent-vs-unknown distinction.
@@ -588,6 +591,11 @@ function clampGeometry(g, drop) {
   const clampH = (v) => { const n = Number(v); return Math.max(20, Math.min(48, Number.isFinite(n) ? Math.round(n) : 28)); };
   const baseHeight = clampH(g.baseHeight);
   const out = { treatment, baseHeight };
+  // ramp (the opt-in linear-ladder prototype, issue #483) — OPTIONAL, like rampContrast: attach only a
+  // KNOWN id; absent stays absent (the default ramp round-trips identical — the identity gate). An
+  // unknown id drops (reported), same semantics as an unknown treatment.
+  if (g.ramp != null && !GEOMETRY_RAMPS.includes(g.ramp)) drop("geometry.ramp", g.ramp, "unknown ramp id");
+  if (GEOMETRY_RAMPS.includes(g.ramp)) out.ramp = g.ramp;
   // rampContrast (the responsive-ramp knob) — OPTIONAL: attach only when a finite value < 1 is set
   // (1 is the engine default, so absent stays absent and a full-contrast kit round-trips identical).
   const clampContrast = (v) => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n < 1 ? { rampContrast: Math.round(n * 100) / 100 } : {}; };

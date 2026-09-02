@@ -91,6 +91,65 @@ const SPACE_STEPS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 24];
 // Like CONTROL_FONT, hand-authored IS the law; per-breakpoint hand columns ride opts.gapOverrides.
 const GAP_UNIT = { XS: 3, SM: 3, MD: 4, LG: 6, XL: 6, "2XL": 8 };
 
+// ── THE LINEAR LADDER (issue #483, opt-in prototype) ─────────────────────────────────────────────
+// A SECOND, alternate ramp shape prototyping AdiaUI's scale-ladder-10step.csv (Kim's live exploration
+// upstream, not yet ratified there) — so it can be rendered across every export and evaluated before
+// anything is ratified. `config.ramp === RAMP_LADDER` opts in; absent/anything else is BYTE-IDENTICAL
+// to the hand-authored default ramp above (the identity gate) — this block changes nothing about it.
+//
+// The ladder's own formulas (verbatim off the CSV, h = the resolved control height, step 0..9 = 20+4·step):
+//   inset = h/4 − 3            → paddingNarrow (the icon/slot edge)      container = h/2 + 6  (intermediate)
+//   label_only_side = 2·inset  → paddingWide (the caret/bare edge)      icon = container − 2
+//   text = (h−20)/4 + 11 = h/4 + 6   → font (unless fontOverrides wins) AND caret ("caret = text",
+//                                       the ladder's OWN rule verbatim off the CSV — a KNOWN
+//                                       placeholder; see the geometry-system skill's Findings on
+//                                       issue #483. caret never reads fontOverrides, same as the
+//                                       default ramp's caret is never composed.)
+//   icon_label_gap = 1 + inset → gap (unless gapOverrides wins)
+// NOTE: this is NOT the centering law above — 2·inset + container = h (the ladder's OWN icon-only
+// square identity) holds, but paddingNarrow ≠ (height − icon)/2 (off by a constant 1px, since icon
+// sits 1px inset from `container`, not centered directly in the full height). The two ramps' anatomies
+// are not required to share one law — only the same field VOCABULARY, so every downstream consumer
+// (the CSS/DTCG/Figma emitters, ds-export, @dsCard previews) needs no changes to render either ramp.
+// paddingNarrowCompact/paddingWideCompact have no ladder-authored formula — mechanically re-derived
+// the SAME way the default ramp derives them (the gap absorbed into the frame edge), not a CSV value.
+// COMPOSITION is intentionally NOT applied here: the type engine's UI-control voice ratifies its own
+// control-text sizes (e.g. 15px at MD/28px), which conflicts with the ladder's own text formula (13px
+// at the same height) — see Findings on issue #483 for why the ladder's own numbers win while it's
+// active (the point of the prototype is to evaluate the ladder AS AUTHORED); switch the toggle off to
+// see the composed/brand voice again. `rampContrast` is a no-op on this ramp — it blends the DEFAULT
+// ramp's own gear change at the MD|LG seam, and the ladder has no gear to lose (it's already one line).
+export const RAMP_LADDER = "linear4";
+export const GEOMETRY_RAMPS = [RAMP_LADDER];
+// LADDER_SIZES — canonical (unscaled, factor=1) heights: the SAME six names, each mapped to a
+// CONSECUTIVE ladder step 0..5 (20·24·28·32·36·40) instead of the default ramp's two-band shape
+// (20·24·28·36·48·64). The six-name↔ladder mapping is this engine's own call (the upstream CSV's
+// tier×size scheme — ui-sm/ui-md/ui-lg/content-sm/md/lg × sm/md/lg — has no equivalent in our flat
+// 6-name model): XS·SM·MD keep the IDENTICAL heights the default ramp already gives them (both ramps
+// agree on the compact band), then LG·XL·2XL CONTINUE the same +4 step instead of the default's gear
+// change to ×4/3 geometric — "linear4" names exactly that: one +4-per-step line, XS all the way to 2XL.
+const LADDER_SIZES = [["XS", 20], ["SM", 24], ["MD", 28], ["LG", 32], ["XL", 36], ["2XL", 40]];
+
+function buildSizeLadder(rawHeight, fontOverride, gapOverride) {
+  const height = roundEven(rawHeight);
+  const inset = height / 4 - 3; // EXACT, never rounded — mirrors the default ramp's pad doctrine
+  const container = height / 2 + 6; // intermediate only — never its own exported field
+  const icon = roundEven(container - 2);
+  const ladderText = round(height / 4 + 6); // = round((height−20)/4 + 11)
+  const font = (typeof fontOverride === "number" && Number.isFinite(fontOverride) && fontOverride > 0) ? round(fontOverride) : ladderText;
+  const caret = ladderText; // the ladder's own "caret = text" rule — never affected by fontOverrides
+  const gap = (typeof gapOverride === "number" && Number.isFinite(gapOverride) && gapOverride > 0) ? round(gapOverride) : Math.max(1, round(1 + inset));
+  return {
+    height, icon, caret, font, gap,
+    paddingNarrow: inset,
+    paddingWide: 2 * inset,
+    paddingNarrowCompact: (height - gap - icon) / 2,
+    paddingWideCompact: (height - gap - caret) / 2,
+    radiusPill: round(height / 2),
+    minWidth: height,
+  };
+}
+
 // buildSize — derive the full geometry of one size row from its (scaled) control height + the density.
 // Everything below the height is DERIVED — icon/caret by their power laws, the pads by the centering law.
 // `font` and `gap` arrive PRE-RESOLVED from geomScale (per-mode override → composition/calibration →
@@ -155,19 +214,27 @@ export function geomScale(config = {}, opts = {}) {
   const factor = baseHeight / CANON_MD;
   const c = Number(config.rampContrast);
   const rampContrast = Number.isFinite(c) ? Math.max(0, Math.min(1, c)) : 1;
+  // ladder — opt-in ONLY (issue #483): any value other than the exact RAMP_LADDER string (including
+  // absent) takes the default ramp below untouched, so the identity gate holds byte-for-byte.
+  const ladder = config.ramp === RAMP_LADDER;
   const overrides = opts.overrides && typeof opts.overrides === "object" ? opts.overrides : null;
   const fontOverrides = opts.fontOverrides && typeof opts.fontOverrides === "object" ? opts.fontOverrides : null;
   const gapOverrides = opts.gapOverrides && typeof opts.gapOverrides === "object" ? opts.gapOverrides : null;
   const uiSteps = opts.typeScale && opts.typeScale.categories && opts.typeScale.categories["UI-control"];
   const sizes = {};
   let expr = 0; // 0 for the compact band, then 1·2·3 across LG·XL·2XL (the expressive band)
-  for (const [name, h] of SIZES) {
+  for (const [name, h] of (ladder ? LADDER_SIZES : SIZES)) {
     const ovH = overrides && overrides[name];
     const geoRaw = h * factor;
     if (h > CANON_MD) expr += 1;
     // full contrast (the default) takes the geometric path EXACTLY — no float blend on the identity path.
-    const blended = rampContrast >= 1 || expr === 0 ? geoRaw : (baseHeight + 4 * expr) * (1 - rampContrast) + geoRaw * rampContrast;
+    // the ladder has no gear change to blend (rampContrast is a no-op on it — see the block comment above).
+    const blended = ladder || rampContrast >= 1 || expr === 0 ? geoRaw : (baseHeight + 4 * expr) * (1 - rampContrast) + geoRaw * rampContrast;
     const rawHeight = (typeof ovH === "number" && Number.isFinite(ovH) && ovH > 0) ? ovH : blended;
+    if (ladder) {
+      sizes[name] = buildSizeLadder(rawHeight, fontOverrides && fontOverrides[name], gapOverrides && gapOverrides[name]);
+      continue;
+    }
     const ovF = fontOverrides && fontOverrides[name];
     const composed = uiSteps && uiSteps[name] ? uiSteps[name].size : null;
     const font = (typeof ovF === "number" && Number.isFinite(ovF) && ovF > 0) ? round(ovF) : (composed != null ? composed : round(CONTROL_FONT[name] * factor));
@@ -191,7 +258,9 @@ export function geomScale(config = {}, opts = {}) {
   // clear of the control edge so it survives any radius).
   const borders = { thin: 1, thick: 2 };
   const focus = { ringWidth: 2, ringOffset: 2 };
-  return { treatment: t.id, label: t.label, density: t.density, radiusStyle: t.radiusStyle, radiusDefault, baseHeight, rampContrast, sizes, radii, space, insets, gaps, borders, focus };
+  // `ramp` surfaces ONLY when the ladder is active (undefined drops from JSON.stringify, so the
+  // identity gate holds byte-for-byte when it's absent — see the geometry engine test).
+  return { treatment: t.id, label: t.label, density: t.density, radiusStyle: t.radiusStyle, radiusDefault, baseHeight, rampContrast, ramp: ladder ? RAMP_LADDER : undefined, sizes, radii, space, insets, gaps, borders, focus };
 }
 
 // ── emitters ───────────────────────────────────────────────────────────────────────────────────

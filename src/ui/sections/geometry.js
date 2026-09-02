@@ -1,6 +1,6 @@
 import { STANDARD_GEOM_RUNGS, geomEffectiveModes, geomModeScales, geomOverridesFor, geomScaleFor, slug } from "../model.mjs";
 import { hydrate, serialize } from "../persist.js";
-import { DEFAULT_GEOMETRY, GEOMETRY_TREATMENTS, geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG } from "../../engine/geometry.mjs";
+import { DEFAULT_GEOMETRY, GEOMETRY_TREATMENTS, RAMP_LADDER, geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG } from "../../engine/geometry.mjs";
 import { icon } from "../icons.js";
 import { btn, chip, ensureTypeFonts, field, fmt, h, swatch } from "../app-helpers.mjs";
 
@@ -295,6 +295,16 @@ export class GeomSectionImpl {
     });
   }
 
+  // _setGeomRamp — the opt-in linear-ladder toggle (issue #483, a prototype of AdiaUI's scale-ladder).
+  // Document-level (like `treatment`), NOT per-mode — the ladder is a wholesale alternate ramp SHAPE,
+  // not a per-breakpoint tuning knob. One commit = one undo step.
+  _setGeomRamp(on) {
+    this.commit((d) => {
+      d.geometry = { ...(d.geometry || DEFAULT_GEOMETRY) };
+      if (on) d.geometry.ramp = RAMP_LADDER; else delete d.geometry.ramp;
+    });
+  }
+
   // the Ramp-contrast slider edits the ACTIVE mode, exactly like the base-height slider above.
   _setActiveGeomRampContrast(v) {
     const c = Math.max(0, Math.min(1, Math.round(Number(v) * 20) / 20)); // 5% steps
@@ -519,8 +529,12 @@ export class GeomSectionImpl {
       "div",
       { class: "geom-spec" },
       h("div", { class: "geom-spec-head" }, h("b", {}, t.label), h("small", {}, `${scale.baseHeight}px base · 6 sizes · ${scale.density}× density`)),
-      h("p", { class: "geom-spec-note" }, t.note + " — every glyph centers in a square cell of side = the control height, so edge padding = (height − glyph)/2. The ramp + paddings are computed, not authored."),
-      h("p", { class: "geom-shared-note" }, icon("type"), h("span", {}, "Text size (", h("b", {}, "font"), ") per step composes from Typography's UI-control voice (its own full XS..2XL ramp — decoupled from the Label voice, which the interactive text used to ride before TKT-0008); it surfaces in Figma as the Typography collection's UI-widget/UI-control size variables.")),
+      h("p", { class: "geom-spec-note" }, scale.ramp === RAMP_LADDER
+        ? "Prototype: the 10-step linear scale-ladder (issue #483) — a SEPARATE anatomy, not the centering law below (padding ≠ (height − glyph)/2 here); every field is its own closed form of height. Toggle it off in the Ramp tab to see the default ramp."
+        : t.note + " — every glyph centers in a square cell of side = the control height, so edge padding = (height − glyph)/2. The ramp + paddings are computed, not authored."),
+      h("p", { class: "geom-shared-note" }, icon("type"), h("span", {}, scale.ramp === RAMP_LADDER
+        ? "Text size (font) here is the ladder's OWN formula, not Typography's UI-control voice — composition is skipped while the ladder is active, so you see the ladder as authored."
+        : ["Text size (", h("b", {}, "font"), ") per step composes from Typography's UI-control voice (its own full XS..2XL ramp — decoupled from the Label voice, which the interactive text used to ride before TKT-0008); it surfaces in Figma as the Typography collection's UI-widget/UI-control size variables."])),
       h(
         "div",
         { class: "geom-spec-group" },
@@ -551,12 +565,13 @@ export class GeomSectionImpl {
   // parity but unused (geometry is doc-driven, not palette-view-driven).
   geomAnalysisCards(view) {
     const scale = this._activeGeomScale();
+    const ladder = scale.ramp === RAMP_LADDER;
     const card = (label, body) => h("div", { class: "an-card" }, h("div", { class: "an-label" }, label), body);
     return [
-      card("Centering law — pad = ½(height − glyph)", this.graphGeomCentering(scale)),
+      card(ladder ? "Ladder anatomy — pad = inset (a separate law)" : "Centering law — pad = ½(height − glyph)", this.graphGeomCentering(scale)),
       card("Power-law ramp — icon & font vs height", this.graphGeomPower(scale)),
-      card("Two-band ramp — height per step", this.graphGeomBands(scale)),
-      card("Font ← Typography UI — shared text size", this.graphGeomComposition(scale)),
+      card(ladder ? "Linear ramp — height per step (no gear change)" : "Two-band ramp — height per step", this.graphGeomBands(scale)),
+      card(ladder ? "Font — the ladder's own formula" : "Font ← Typography UI — shared text size", this.graphGeomComposition(scale)),
     ];
   }
 
@@ -649,7 +664,9 @@ export class GeomSectionImpl {
     return h(
       "div",
       { class: "geom-comp" },
-      h("p", { class: "geom-comp-note" }, "Each control's text size composes from Typography's UI-control voice (decoupled from the Label voice, which interactive text used to ride before TKT-0008); gap = font/2, caret has its own power law."),
+      h("p", { class: "geom-comp-note" }, scale.ramp === RAMP_LADDER
+        ? "The ladder's own text formula is in effect — composition from Typography's UI-control voice is skipped while it's active (see the Ramp tab to toggle back)."
+        : "Each control's text size composes from Typography's UI-control voice (decoupled from the Label voice, which interactive text used to ride before TKT-0008); gap = font/2, caret has its own power law."),
       h(
         "div",
         { class: "geom-comp-rows" },
@@ -702,10 +719,26 @@ export class GeomSectionImpl {
           ...GEOMETRY_TREATMENTS.map((x) => h("option", { value: x.id, selected: cfg.treatment === x.id ? true : undefined }, this._treatmentLocked(x.id, "comfortable") ? x.label + " · Pro" : x.label)),
         ),
       ),
+      // opt-in ladder prototype (issue #483) — a WHOLESALE alternate ramp shape, document-level like
+      // Treatment. Off (default) is byte-identical to every export today.
+      h(
+        "label",
+        { class: "mini-check geom-ramp-check", title: "Prototype: an alternate 10-step linear ramp (evaluating AdiaUI's scale-ladder, issue #483) — every export renders it while on; off is the byte-identical default ramp." },
+        h("input", {
+          type: "checkbox",
+          checked: cfg.ramp === RAMP_LADDER,
+          "data-fk": "gi:ramp-linear4",
+          onchange: (e) => this._setGeomRamp(e.target.checked),
+        }),
+        "10-step linear ramp (prototype)",
+      ),
       this.slider(this.geomMode === "base" || this.geomMode === "compare" ? "Base height" : "Base height · this breakpoint", scale.baseHeight, 20, 48, 2, (v) => fmt(v) + "px", (v) => this._setActiveGeomBaseHeight(v)),
       // the responsive-ramp knob: 100% = the full ×4/3 expressive gear; 0% = the band goes linear
-      // (+4 past MD) — the compressed ramp small screens want. Per-mode, like the height slider.
-      this.slider(this.geomMode === "base" || this.geomMode === "compare" ? "Ramp contrast" : "Ramp contrast · this breakpoint", scale.rampContrast ?? 1, 0, 1, 0.05, (v) => Math.round(v * 100) + "%", (v) => this._setActiveGeomRampContrast(v)),
+      // (+4 past MD) — the compressed ramp small screens want. Per-mode, like the height slider. A
+      // no-op on the ladder (it has no gear change to blend), so the slider hides in favour of a note.
+      cfg.ramp === RAMP_LADDER
+        ? h("p", { class: "insp-sub tyi-future" }, "Ramp contrast has no effect on the linear ladder — it blends the default ramp's own gear change at the MD|LG seam, and the ladder is already one straight line.")
+        : this.slider(this.geomMode === "base" || this.geomMode === "compare" ? "Ramp contrast" : "Ramp contrast · this breakpoint", scale.rampContrast ?? 1, 0, 1, 0.05, (v) => Math.round(v * 100) + "%", (v) => this._setActiveGeomRampContrast(v)),
       this._geomModeEditor(),
       h("p", { class: "insp-sub tyi-note" }, t.note),
       h(
