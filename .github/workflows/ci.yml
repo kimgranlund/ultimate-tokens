@@ -49,8 +49,8 @@ jobs:
       # ── Pages site (#489 — folded in from the retired push trigger of pages.yml, which stays as a
       # workflow_dispatch-only manual fallback) — assembled from the SAME dist/ this job already built
       # + fully validated (npm test + the drift gate + real-browser smoke all passed above), not a
-      # second build. Gated to a main push so a PR run never prepares (or wastes time on) a deploy
-      # artifact nothing will consume — the `deploy` job below only runs on that same condition.
+      # second, untested build. Gated to a main push so a PR run never prepares (or wastes time on) a
+      # deploy artifact nothing will consume — the `deploy` job below only runs on that same condition.
       - name: Assemble Pages site
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
