@@ -22,7 +22,6 @@ import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn } from "./exports.js";
-import { SIZE_KEYS } from "./geometry.mjs"; // the six canonical control-size names (XS..2XL) — the Buttons preview's size ladder reads this, never a hand-typed list
 
 // ══════════════════════════════════════════════════════════════════════════════
 // DESIGN SYSTEM export — design-system-for-{claude-code,google-stitch,figma-make}
@@ -481,9 +480,12 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     // own always-on container fill; Ghost's own bg is transparent even at rest, tinting only on
     // hover in the real component). Both variants now exist, correctly distinct.
     const variantRow = `<div class="brow"><span class="blabel">Variants</span><button class="btn" style="background:transparent;border:1px solid ${V(brand)};color:${V(brand)}">Outline</button><button class="btn" style="background:transparent;color:${V(brand)}">Ghost</button><button class="btn" style="background:${tint};color:${V(brand)}">Tonal</button><button class="btn" style="background:none;padding:0;color:${V(brand)};text-decoration:underline">Link</button></div>`;
-    const sizeRow = `<div class="size-row">${SIZE_KEYS.map((sz) => {
-      const s = geomSc && geomSc.sizes && geomSc.sizes[sz];
-      if (!s) return "";
+    // iterate the RESOLVED scale's own size keys (not the hardcoded default SIZE_KEYS) — the linear-
+    // ladder prototype (issue #483) exposes a 7th step (2XS) SIZE_KEYS doesn't carry, and the ladder's
+    // XS..2XL map to different heights than the default ramp's; reading geomSc.sizes directly renders
+    // whichever ramp is actually active, at whatever step count it has.
+    const sizeRow = `<div class="size-row">${Object.keys((geomSc && geomSc.sizes) || {}).map((sz) => {
+      const s = geomSc.sizes[sz];
       return `<button class="btn" style="background:${V(brand)};color:${brandOn};height:${s.height}px;padding:0 ${Math.round(s.paddingWide)}px;font-size:${s.font}px">${sz}</button>`;
     }).join("")}</div>`;
     out.push(card("buttons.html", "Components", "Buttons", "fills · variants · states · sizes", btnCss,

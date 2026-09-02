@@ -327,10 +327,13 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   if (!eqSet(U.VOICES, engineVoices))
     FAIL("allowlist-parity", `persist.js VOICES ${JSON.stringify(sorted(U.VOICES))} != type.mjs voice set ${JSON.stringify(sorted(engineVoices))}`);
 
-  // GEOMETRY_SIZES (TKT-0455) — the leading segment of a geom tokenOverrides key; must track
-  // geometry.mjs's own SIZE_KEYS the same way VOICES tracks type.mjs's voice set.
-  if (!eqSet(U.GEOMETRY_SIZES, Ge.SIZE_KEYS))
-    FAIL("allowlist-parity", `persist.js GEOMETRY_SIZES ${JSON.stringify(sorted(U.GEOMETRY_SIZES))} != geometry.mjs SIZE_KEYS ${JSON.stringify(sorted(Ge.SIZE_KEYS))}`);
+  // GEOMETRY_SIZES (TKT-0455, extended TKT-0483/issue #483) — the leading segment of a geom
+  // tokenOverrides key; must track the UNION of geometry.mjs's SIZE_KEYS (the default ramp's six) and
+  // LADDER_SIZE_KEYS (the linear ladder's seven, "2XS" included) the same way VOICES tracks type.mjs's
+  // voice set — a size the ladder can expose but SIZE_KEYS alone doesn't carry must still round-trip.
+  const engineAllSizeKeys = [...new Set([...Ge.SIZE_KEYS, ...Ge.LADDER_SIZE_KEYS])];
+  if (!eqSet(U.GEOMETRY_SIZES, engineAllSizeKeys))
+    FAIL("allowlist-parity", `persist.js GEOMETRY_SIZES ${JSON.stringify(sorted(U.GEOMETRY_SIZES))} != geometry.mjs SIZE_KEYS ∪ LADDER_SIZE_KEYS ${JSON.stringify(sorted(engineAllSizeKeys))}`);
 
   // GEOMETRY_RAMPS (issue #483) — the opt-in ramp ids; must track geometry.mjs's own GEOMETRY_RAMPS.
   if (!eqSet(U.GEOMETRY_RAMPS, Ge.GEOMETRY_RAMPS))
@@ -348,6 +351,12 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   const X = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "bogus-ramp" } }));
   if ("ramp" in X.geometry) FAIL("ramp", "an unknown geometry.ramp id must drop");
   if (!X[U.DROPPED_KEYS].some((d) => d.facet === "geometry.ramp" && d.key === "bogus-ramp")) FAIL("ramp", `an unknown geometry.ramp id must be reported in DROPPED_KEYS (got ${JSON.stringify(X[U.DROPPED_KEYS])})`);
+
+  // the ladder's 7th size, "2XS" (issue #483 mapping ruling), is a valid tokenOverrides leading
+  // segment even though it doesn't exist on the default ramp — GEOMETRY_SIZES must accept it.
+  const S2 = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "linear4", tokenOverrides: { "2XS|base": 22, "MD|base": 34 } } }));
+  if (!S2.geometry.tokenOverrides || S2.geometry.tokenOverrides["2XS|base"] !== 22) FAIL("ramp", `a "2XS|base" tokenOverrides key must round-trip when the ladder is active (got ${JSON.stringify(S2.geometry.tokenOverrides)})`);
+  if (S2.geometry.tokenOverrides["MD|base"] !== 34) FAIL("ramp", "a sibling MD|base override must survive alongside the 2XS one");
 }
 
 // ── dropped-keys (TKT-0455): a stored voice/treatment/tokenOverrides key unknown to the current

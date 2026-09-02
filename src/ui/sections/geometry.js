@@ -102,8 +102,9 @@ export class GeomSectionImpl {
     const base = cols[0].scale;
     const ov = (this.doc.geometry && this.doc.geometry.tokenOverrides) || {};
     const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    const SIZE_NAMES = ["2XL", "XL", "LG", "MD", "SM", "XS"]; // largest → smallest
-    const present = SIZE_NAMES.filter((n) => base.sizes[n]);
+    // largest → smallest — reads base.sizes' own keys/order (ramp is document-level, so every column
+    // shares the same set: 6 names on the default ramp, 7 with 2XS on the linear-ladder prototype).
+    const present = Object.keys(base.sizes).slice().reverse();
     const cell = (col, name) => {
       const s = col.scale.sizes[name];
       if (!s) return h("td", { class: "tok-cell" }, h("span", { class: "tok-na" }, "—"));
@@ -467,8 +468,10 @@ export class GeomSectionImpl {
     // painted in the SELECTED palette's own roles — same resolution geomExampleCard uses, so
     // the canvas ramp isn't a generic-accent mock while the pinned inspector card is palette-real.
     const { pick, byKey, main, onMain } = this._geomPaletteColors(view);
-    // the control ramp renders LARGEST → smallest (biggest example first); heights are monotonic by step.
-    const SIZE_NAMES = ["2XL", "XL", "LG", "MD", "SM", "XS"];
+    // the control ramp renders LARGEST → smallest (biggest example first); heights are monotonic by
+    // step. Reads scale.sizes' own keys/order — 6 names on the default ramp, 7 with 2XS on the
+    // linear-ladder prototype (issue #483) — rather than a hardcoded list.
+    const SIZE_NAMES = Object.keys(scale.sizes).slice().reverse();
     const ctlLine = (name) => {
       const s = scale.sizes[name];
       if (!s) return false;
@@ -528,7 +531,7 @@ export class GeomSectionImpl {
     return h(
       "div",
       { class: "geom-spec" },
-      h("div", { class: "geom-spec-head" }, h("b", {}, t.label), h("small", {}, `${scale.baseHeight}px base · 6 sizes · ${scale.density}× density`)),
+      h("div", { class: "geom-spec-head" }, h("b", {}, t.label), h("small", {}, `${scale.baseHeight}px base · ${SIZE_NAMES.length} sizes · ${scale.density}× density`)),
       h("p", { class: "geom-spec-note" }, scale.ramp === RAMP_LADDER
         ? "Prototype: the 10-step linear scale-ladder (issue #483) — a SEPARATE anatomy, not the centering law below (padding ≠ (height − glyph)/2 here); every field is its own closed form of height. Toggle it off in the Ramp tab to see the default ramp."
         : t.note + " — every glyph centers in a square cell of side = the control height, so edge padding = (height − glyph)/2. The ramp + paddings are computed, not authored."),
@@ -538,7 +541,7 @@ export class GeomSectionImpl {
       h(
         "div",
         { class: "geom-spec-group" },
-        h("div", { class: "geom-spec-grouphead" }, h("b", {}, "Controls"), h("small", {}, "height · icon · font · pad · radius"), h("span", { class: "geom-spec-count" }, "6 sizes")),
+        h("div", { class: "geom-spec-grouphead" }, h("b", {}, "Controls"), h("small", {}, "height · icon · font · pad · radius"), h("span", { class: "geom-spec-count" }, `${SIZE_NAMES.length} sizes`)),
         ...SIZE_NAMES.map(ctlLine),
       ),
       h(
@@ -601,10 +604,11 @@ export class GeomSectionImpl {
   }
 
 
-  // icon & font vs control height across the six sizes — both glyphs scale SUBLINEARLY (a power law of
-  // height, exponent < 1), so the curves bend below the faint height diagonal. fill:none on the lines.
+  // icon & font vs control height across every size (6 on the default ramp, 7 with 2XS on the
+  // linear-ladder prototype) — both glyphs scale SUBLINEARLY (a power law of height, exponent < 1) on
+  // the default ramp, so the curves bend below the faint height diagonal. fill:none on the lines.
   graphGeomPower(scale) {
-    const rows = ["XS", "SM", "MD", "LG", "XL", "2XL"].map((n) => scale.sizes[n]).filter(Boolean);
+    const rows = Object.values(scale.sizes);
     if (!rows.length) return h("div", { class: "an-empty" }, "—");
     const W = 244, H = 132, pad = 26;
     const maxH = Math.max(...rows.map((s) => s.height)) * 1.05;
@@ -632,27 +636,30 @@ export class GeomSectionImpl {
   }
 
 
-  // control height per step index — the two-band ramp (compact +4 linear below MD, expressive ×4/3
-  // geometric above LG), with a marker at the MD|LG seam where the ramp changes gear.
+  // control height per step index — the default ramp's two-band shape (compact +4 linear below MD,
+  // expressive ×4/3 geometric above LG), with a marker at the MD|LG seam where the ramp changes gear.
+  // The linear-ladder prototype (issue #483) has no seam (one straight +4-per-step line, 2XS→2XL) —
+  // reads scale.sizes' own keys/order directly so it renders correctly at either 6 or 7 steps, and
+  // skips the seam marker (meaningless off the default ramp's own 6-point shape).
   graphGeomBands(scale) {
-    const rows = ["XS", "SM", "MD", "LG", "XL", "2XL"].map((n) => ({ n, hh: scale.sizes[n] && scale.sizes[n].height })).filter((r) => r.hh);
+    const rows = Object.entries(scale.sizes).map(([n, s]) => ({ n, hh: s.height }));
     if (rows.length < 2) return h("div", { class: "an-empty" }, "—");
+    const ladder = scale.ramp === RAMP_LADDER;
     const W = 244, H = 124, pad = 26;
     const maxH = Math.max(...rows.map((r) => r.hh)) * 1.05;
     const X = (i) => pad + (i / (rows.length - 1)) * (W - pad - 8);
     const Y = (hh) => (H - pad + 8) - (hh / maxH) * (H - pad - 8);
     const d = "M" + rows.map((r, i) => `${X(i).toFixed(1)},${Y(r.hh).toFixed(1)}`).join(" L");
     const dots = rows.map((r, i) => `<circle class="gp-dot gp-dot-font" cx="${X(i).toFixed(1)}" cy="${Y(r.hh).toFixed(1)}" r="1.9"/>`).join("");
-    const seamX = ((X(2) + X(3)) / 2).toFixed(1);
+    const seamX = (!ladder && rows.length === 6) ? ((X(2) + X(3)) / 2).toFixed(1) : null;
     const svg = `
       <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
         <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
         <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <line class="dg-unity" x1="${seamX}" y1="8" x2="${seamX}" y2="${H - pad + 8}"/>
-        <text x="${(+seamX + 3).toFixed(1)}" y="15">MD|LG seam</text>
+        ${seamX != null ? `<line class="dg-unity" x1="${seamX}" y1="8" x2="${seamX}" y2="${H - pad + 8}"/><text x="${(+seamX + 3).toFixed(1)}" y="15">MD|LG seam</text>` : ""}
         <path class="gp-font" d="${d}"/>${dots}
         <text x="2" y="14">px</text>
-        <text x="${W - 48}" y="${H - pad + 18}">XS→2XL</text>
+        <text x="${W - 52}" y="${H - pad + 18}">${rows[0].n}→${rows[rows.length - 1].n}</text>
       </svg>`;
     return h("div", { class: "an-svg", html: svg });
   }
@@ -670,10 +677,8 @@ export class GeomSectionImpl {
       h(
         "div",
         { class: "geom-comp-rows" },
-        ...["XS", "SM", "MD", "LG", "XL", "2XL"].map((n) => {
-          const s = scale.sizes[n];
-          return s ? h("div", { class: "geom-comp-row" }, h("span", { class: "geom-comp-k" }, n), h("span", { class: "geom-comp-v" }, `font ${s.font}`), h("span", { class: "geom-comp-v dim" }, `caret ${s.caret} · gap ${s.gap}`)) : false;
-        }),
+        ...Object.entries(scale.sizes).map(([n, s]) =>
+          h("div", { class: "geom-comp-row" }, h("span", { class: "geom-comp-k" }, n), h("span", { class: "geom-comp-v" }, `font ${s.font}`), h("span", { class: "geom-comp-v dim" }, `caret ${s.caret} · gap ${s.gap}`))),
       ),
     );
   }
@@ -745,9 +750,8 @@ export class GeomSectionImpl {
         "div",
         { class: "tyi-voices" },
         h("div", { class: "tyi-voices-head" }, h("b", {}, "Per-size"), h("small", {}, "select a size to tune its height")),
-        ...["XS", "SM", "MD", "LG", "XL", "2XL"].map((n) => {
+        ...Object.keys(scale.sizes).map((n) => {
           const s = scale.sizes[n];
-          if (!s) return false;
           const sel = this.geomSize === n;
           const tuned = Number.isFinite((cfg.tokenOverrides || {})[n + "|" + this._geomActiveModeKey()]);
           const stats = h(

@@ -31,7 +31,7 @@ import {
 } from "../engine/tonal.js";
 import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef } from "../engine/semantic.js";
 import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
-import { geomScale, DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
+import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
 
 // geometryScale — the resolved geometry for a doc, COMPOSED with its type scale so a control's text
 // size (the per-step `font` at SM/MD/LG) comes from the brand's UI-CONTROL voice (TKT-0008 — rerouted
@@ -207,7 +207,14 @@ export function geomModeScales(doc) {
   const g = doc.geometry || DEFAULT_GEOMETRY;
   if ((g.modes || []).length) return g.modes.map((m) => ({ name: m.name, minWidth: m.minWidth, scale: geomScaleFor(doc, m.id) }));
   const bh = g.baseHeight ?? 28;
-  const ramp = (arr) => { const f = bh / 28; const out = {}; ["XS", "SM", "MD", "LG", "XL", "2XL"].forEach((k, i) => { if (arr[i] != null) out[k] = arr[i] * f; }); return out; };
+  // the hand-tuned per-cell tables below (heights + gaps) are keyed to the DEFAULT ramp's six names AT
+  // THEIR DEFAULT-RAMP POSITIONS — they don't have a ladder-shaped equivalent (issue #483's 7-name
+  // mapping shifts every letter tier + adds 2XS, so applying these verbatim would silently misapply the
+  // wrong tuned value onto the wrong step). While the linear ladder is active, skip them entirely: the
+  // synthesized tiers still carry `ramp` (via the `{...g}` spread below) and still scale by baseHeight
+  // delta, just without the fine hand nudge — correct numbers over a false-precision wrong one.
+  const ladderActive = g.ramp === RAMP_LADDER;
+  const ramp = (arr) => { if (ladderActive) return undefined; const f = bh / 28; const out = {}; ["XS", "SM", "MD", "LG", "XL", "2XL"].forEach((k, i) => { if (arr[i] != null) out[k] = arr[i] * f; }); return out; };
   const synth = (delta, mult, mf, overrides, gaps) => geomScale({ ...g, baseHeight: Math.max(20, bh + delta) }, { typeScale: typeTierScale(doc, mult, mf), overrides, gapOverrides: gaps });
   return [
     { name: "Desktop Lg", minWidth: 1728, scale: synth(4, 1.125, 0.89, ramp([24, 28, 32, 40, 56, 72]), ramp([4, 4, 5, 7, 7, 9])) },

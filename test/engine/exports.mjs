@@ -655,6 +655,19 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
     // MD size (else the two checks above couldn't distinguish "wired correctly" from "never wired at all").
     const uiMdSize = tsc && tsc.categories && tsc.categories["UI-control"] && tsc.categories["UI-control"].MD && tsc.categories["UI-control"].MD.size;
     if (uiMdSize != null && wantLadderSize === uiMdSize) FAIL(G, "test fixture problem: the ladder's MD font must differ from the composed UI-control MD size for this leg to be meaningful");
+
+    // mapping ruling (2026-09-02): the ladder exposes SEVEN sizes (2XS included) — the Buttons card's
+    // Size-ladder row must render all seven, not the default ramp's six (it now reads geomSc.sizes'
+    // own keys directly, never the hardcoded 6-name SIZE_KEYS list).
+    const buttonsLadder = cardsLadder.find((c) => c.name === "components/buttons.html");
+    const sizeRowLadder = buttonsLadder && (buttonsLadder.data.match(/<div class="size-row">[\s\S]*?<\/div>/) || [])[0];
+    const sizeButtonCount = sizeRowLadder ? (sizeRowLadder.match(/<button/g) || []).length : 0;
+    if (sizeButtonCount !== 7) FAIL(G, `Buttons card's Size-ladder row renders ${sizeButtonCount} controls while the linear ladder is active, expected 7 (2XS·XS·SM·MD·LG·XL·2XL)`);
+    if (!sizeRowLadder || !sizeRowLadder.includes(">2XS<")) FAIL(G, "Buttons card's Size-ladder row is missing the ladder's 2XS control");
+    // and the DEFAULT (non-ladder) catalog computed at the top of this block still renders exactly six.
+    const sizeRowDefault = buttons && (buttons.data.match(/<div class="size-row">[\s\S]*?<\/div>/) || [])[0];
+    const sizeButtonCountDefault = sizeRowDefault ? (sizeRowDefault.match(/<button/g) || []).length : 0;
+    if (sizeButtonCountDefault !== 6) FAIL(G, `Buttons card's Size-ladder row renders ${sizeButtonCountDefault} controls on the DEFAULT ramp, expected 6 (unchanged by the ladder's existence)`);
   }
 
   // Typography card — every voice's every step appears (not one cherry-picked key per tier). Anchored

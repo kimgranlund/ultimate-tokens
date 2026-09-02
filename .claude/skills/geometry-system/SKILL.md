@@ -69,14 +69,20 @@ a consumer adds in any subset, any order. The constants + the reference table: `
 
 **A SECOND, opt-in ramp shape exists for prototyping (issue #483, `config.ramp === RAMP_LADDER`
 ["linear4"]):** a self-contained closed-form ladder (`inset = h/4−3`, `container = h/2+6`, `icon =
-container−2`, `text = h/4+6` doubling as font AND caret) evaluating AdiaUI's scale-ladder — the six size
-names map onto six CONSECUTIVE +4 steps (20·24·28·32·36·40) instead of the default's two-band shape, and
-COMPOSITION is skipped while it's active (the ladder's own text wins over the UI-control voice, by
-design — see the code comments above `buildSizeLadder` in `geometry.mjs` for the full rationale + the
-two standing flags in issue #483's Findings; `caret = text` is RULED intentional, not a flag). It does
-NOT satisfy the centering law above (a different, ladder-own
-anatomy) and `rampContrast` is a no-op on it. Absent/unknown `ramp` is byte-identical to the ramp above —
-this is a prototype for evaluation, not a ratified second law.
+container−2`, `text = h/4+6` doubling as font AND caret) evaluating AdiaUI's scale-ladder — SEVEN size
+names (`LADDER_SIZE_KEYS`: 2XS·XS·SM·MD·LG·XL·2XL, owner ruling 2026-09-02) map onto seven CONSECUTIVE
++4 steps (20·24·28·32·36·40·44, MD at step 3 = 32px) instead of the default's six-name two-band shape —
+`2XS` exists ONLY on this ramp; `SIZES`/`SIZE_KEYS` above are UNCHANGED (still exactly six names at
+20·24·28·36·48·64). A consumer that hand-tracks "the six sizes" (persist.js's `GEOMETRY_SIZES`
+allowlist, any UI loop) must read `Object.keys(scale.sizes)`/`LADDER_SIZE_KEYS` rather than assume six —
+`geomModeScales` in `model.mjs` skips its hand-tuned per-cell breakpoint tables entirely while the
+ladder is active for exactly this reason (they're tuned to the default ramp's OWN six positions, not the
+ladder's shifted ones). COMPOSITION is skipped while the ladder is active (the ladder's own text wins
+over the UI-control voice, by design — see the code comments above `buildSizeLadder` in `geometry.mjs`
+for the full rationale + the two standing flags in issue #483's Findings; `caret = text` is RULED
+intentional, not a flag). It does NOT satisfy the centering law above (a different, ladder-own anatomy)
+and `rampContrast` is a no-op on it. Absent/unknown `ramp` is byte-identical to the ramp above — this is
+a prototype for evaluation, not a ratified second law.
 
 ## THE COMPOSITION — one number, two engines (the JOIN)
 

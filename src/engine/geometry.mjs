@@ -121,14 +121,19 @@ const GAP_UNIT = { XS: 3, SM: 3, MD: 4, LG: 6, XL: 6, "2XL": 8 };
 // ramp's own gear change at the MD|LG seam, and the ladder has no gear to lose (it's already one line).
 export const RAMP_LADDER = "linear4";
 export const GEOMETRY_RAMPS = [RAMP_LADDER];
-// LADDER_SIZES — canonical (unscaled, factor=1) heights: the SAME six names, each mapped to a
-// CONSECUTIVE ladder step 0..5 (20·24·28·32·36·40) instead of the default ramp's two-band shape
-// (20·24·28·36·48·64). The six-name↔ladder mapping is this engine's own call (the upstream CSV's
-// tier×size scheme — ui-sm/ui-md/ui-lg/content-sm/md/lg × sm/md/lg — has no equivalent in our flat
-// 6-name model): XS·SM·MD keep the IDENTICAL heights the default ramp already gives them (both ramps
-// agree on the compact band), then LG·XL·2XL CONTINUE the same +4 step instead of the default's gear
-// change to ×4/3 geometric — "linear4" names exactly that: one +4-per-step line, XS all the way to 2XL.
-const LADDER_SIZES = [["XS", 20], ["SM", 24], ["MD", 28], ["LG", 32], ["XL", 36], ["2XL", 40]];
+// LADDER_SIZES — canonical (unscaled, factor=1) heights: SEVEN names — 2XS·XS·SM·MD·LG·XL·2XL — each
+// mapped to a CONSECUTIVE ladder step 0..6 (20·24·28·32·36·40·44). Owner ruling (issue #483,
+// 2026-09-02, superseding the original 6-name 0..5 mapping): the ladder gets a 7th step, `2XS`, so
+// `MD` lands at step 3 (32px) rather than step 2 (28px) — the default ramp's six names are UNCHANGED
+// (`2XS` exists ONLY here; SIZES/SIZE_KEYS above still name exactly XS·SM·MD·LG·XL·2XL at 20·24·28·
+// 36·48·64, byte-identical). One straight +4-per-step line, 2XS through 2XL — "linear4" names exactly
+// that, no gear change anywhere. See LADDER_SIZE_KEYS below for the 7-name list a consumer needs when
+// the ladder is active (SIZE_KEYS alone under-counts it by one).
+const LADDER_SIZES = [["2XS", 20], ["XS", 24], ["SM", 28], ["MD", 32], ["LG", 36], ["XL", 40], ["2XL", 44]];
+// LADDER_SIZE_KEYS — the seven ladder-only size names, exported so persist.js's GEOMETRY_SIZES
+// allowlist can be parity-gated against the UNION of this and SIZE_KEYS (mirrors the SIZE_KEYS
+// rationale above — TKT-0017 generalized to a ramp with a different step count, TKT-0483/issue #483).
+export const LADDER_SIZE_KEYS = LADDER_SIZES.map(([name]) => name);
 
 function buildSizeLadder(rawHeight, fontOverride, gapOverride) {
   const height = roundEven(rawHeight);
