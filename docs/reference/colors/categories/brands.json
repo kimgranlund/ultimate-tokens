@@ -256,6 +256,9 @@
               }
             }
           },
+          "geometry": {
+            "ramp": "linear4"
+          },
           "palettes": [
             {
               "name": "Neutral",
