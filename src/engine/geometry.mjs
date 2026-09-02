@@ -121,16 +121,17 @@ const GAP_UNIT = { XS: 3, SM: 3, MD: 4, LG: 6, XL: 6, "2XL": 8 };
 // ramp's own gear change at the MD|LG seam, and the ladder has no gear to lose (it's already one line).
 export const RAMP_LADDER = "linear4";
 export const GEOMETRY_RAMPS = [RAMP_LADDER];
-// LADDER_SIZES — canonical (unscaled, factor=1) heights: SEVEN names — 2XS·XS·SM·MD·LG·XL·2XL — each
-// mapped to a CONSECUTIVE ladder step 0..6 (20·24·28·32·36·40·44). Owner ruling (issue #483,
-// 2026-09-02, superseding the original 6-name 0..5 mapping): the ladder gets a 7th step, `2XS`, so
-// `MD` lands at step 3 (32px) rather than step 2 (28px) — the default ramp's six names are UNCHANGED
-// (`2XS` exists ONLY here; SIZES/SIZE_KEYS above still name exactly XS·SM·MD·LG·XL·2XL at 20·24·28·
-// 36·48·64, byte-identical). One straight +4-per-step line, 2XS through 2XL — "linear4" names exactly
-// that, no gear change anywhere. See LADDER_SIZE_KEYS below for the 7-name list a consumer needs when
-// the ladder is active (SIZE_KEYS alone under-counts it by one).
-const LADDER_SIZES = [["2XS", 20], ["XS", 24], ["SM", 28], ["MD", 32], ["LG", 36], ["XL", 40], ["2XL", 44]];
-// LADDER_SIZE_KEYS — the seven ladder-only size names, exported so persist.js's GEOMETRY_SIZES
+// LADDER_SIZES — canonical (unscaled, factor=1) heights: the FULL TEN-step ladder — 2XS·XS·SM·MD·LG·
+// XL·2XL·3XL·4XL·5XL — every CSV row, steps 0..9 (20·24·28·32·36·40·44·48·52·56). Owner ruling (issue
+// #483, 2026-09-02, superseding the interim 7-name 0..6 mapping): gen-ui-kit binds its content tiers
+// to this engine's --size-* CSS export and needs the 48/52/56 rungs (3XL/4XL/5XL), so the ladder now
+// exposes the WHOLE table rather than a truncated slice. `MD` stays at step 3 (32px) — unchanged from
+// the 7-name mapping. The default ramp's six names are UNCHANGED (2XS/3XL/4XL/5XL exist ONLY here;
+// SIZES/SIZE_KEYS above still name exactly XS·SM·MD·LG·XL·2XL at 20·24·28·36·48·64, byte-identical).
+// One straight +4-per-step line, 2XS through 5XL — "linear4" names exactly that, no gear change
+// anywhere. See LADDER_SIZE_KEYS below for the 10-name list a consumer needs when the ladder is active.
+const LADDER_SIZES = [["2XS", 20], ["XS", 24], ["SM", 28], ["MD", 32], ["LG", 36], ["XL", 40], ["2XL", 44], ["3XL", 48], ["4XL", 52], ["5XL", 56]];
+// LADDER_SIZE_KEYS — the ten ladder-only size names, exported so persist.js's GEOMETRY_SIZES
 // allowlist can be parity-gated against the UNION of this and SIZE_KEYS (mirrors the SIZE_KEYS
 // rationale above — TKT-0017 generalized to a ramp with a different step count, TKT-0483/issue #483).
 export const LADDER_SIZE_KEYS = LADDER_SIZES.map(([name]) => name);

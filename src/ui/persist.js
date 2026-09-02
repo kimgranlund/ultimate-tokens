@@ -577,12 +577,14 @@ function clampType(t, drop) {
 // geometry.mjs's GEOMETRY_TREATMENTS ids (see the TYPE_TREATMENTS/VOICES note above — TKT-0017).
 export const GEOMETRY_TREATMENTS = ["comfortable", "compact", "spacious", "touch", "pill"];
 // The canonical size names — the leading segment of a geom tokenOverrides key ("<size>|<modeKey>"),
-// the geometry analog of VOICES above. The default ramp's six (geometry.mjs's SIZE_KEYS) plus the
-// linear-ladder's 7th, "2XS" (geometry.mjs's LADDER_SIZE_KEYS, issue #483 — 2XS exists only on that
-// ramp, but a tokenOverrides key must still round-trip when a doc's ramp is "linear4"). MUST track
-// the UNION of geometry.mjs's SIZE_KEYS + LADDER_SIZE_KEYS — asserted by the allowlist-parity test
-// (TKT-0017's convention, extended per TKT-0455 then TKT-0483).
-export const GEOMETRY_SIZES = ["XS", "SM", "MD", "LG", "XL", "2XL", "2XS"];
+// the geometry analog of VOICES above. The default ramp's six (geometry.mjs's SIZE_KEYS) are a strict
+// SUBSET of the linear-ladder's ten (geometry.mjs's LADDER_SIZE_KEYS — the full 10-step CSV table,
+// issue #483, owner ruling 2026-09-02: gen-ui-kit needs the 48/52/56 rungs too), so this allowlist is
+// just the ladder's own 10 names — 2XS/3XL/4XL/5XL exist only on that ramp, but a tokenOverrides key
+// must still round-trip when a doc's ramp is "linear4". MUST track the UNION of geometry.mjs's
+// SIZE_KEYS + LADDER_SIZE_KEYS — asserted by the allowlist-parity test (TKT-0017's convention,
+// extended per TKT-0455 then TKT-0483).
+export const GEOMETRY_SIZES = ["XS", "SM", "MD", "LG", "XL", "2XL", "2XS", "3XL", "4XL", "5XL"];
 // The opt-in ramp ids (geometry.mjs's GEOMETRY_RAMPS, issue #483) — mirrors the TYPE_TREATMENTS/
 // GEOMETRY_TREATMENTS/VOICES/GEOMETRY_SIZES convention above; parity-gated the same way.
 export const GEOMETRY_RAMPS = ["linear4"];

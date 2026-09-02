@@ -2164,12 +2164,12 @@ ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).ge
   ok(afterScale.sizes.MD.font !== beforeMD, `(geo-ramp) the ladder's font differs from the composed default (ladder ${afterScale.sizes.MD.font} vs default ${beforeMD})`);
   // mapping ruling (2026-09-02): the ladder exposes SEVEN sizes (2XS included); the canvas Controls
   // scene must render all seven rows, not the default ramp's six.
-  ok(Object.keys(afterScale.sizes).length === 7 && "2XS" in afterScale.sizes, `(geo-ramp) the resolved ladder scale carries 7 sizes incl. 2XS (got ${Object.keys(afterScale.sizes)})`);
+  ok(Object.keys(afterScale.sizes).length === 10 && "2XS" in afterScale.sizes && "5XL" in afterScale.sizes, `(geo-ramp) the resolved ladder scale carries the full 10 sizes incl. 2XS/5XL (got ${Object.keys(afterScale.sizes)})`);
   app.render(); flushRaf();
-  ok(app.querySelectorAll(".geom-spec-line").length === 7, `(geo-ramp) the canvas shows the 7-step ladder ramp with the checkbox on (got ${app.querySelectorAll(".geom-spec-line").length})`);
-  ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "--size-2xl" && txtOf(app.querySelectorAll(".geom-spec-token")[6] || {}) === "--size-2xs", `(geo-ramp) the ladder canvas still lists largest→smallest, ending at --size-2xs (first ${txtOf(app.querySelectorAll(".geom-spec-token")[0] || {})}, last ${txtOf(app.querySelectorAll(".geom-spec-token")[6] || {})})`);
+  ok(app.querySelectorAll(".geom-spec-line").length === 10, `(geo-ramp) the canvas shows the 10-step ladder ramp with the checkbox on (got ${app.querySelectorAll(".geom-spec-line").length})`);
+  ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "--size-5xl" && txtOf(app.querySelectorAll(".geom-spec-token")[9] || {}) === "--size-2xs", `(geo-ramp) the ladder canvas still lists largest→smallest, --size-5xl through --size-2xs (first ${txtOf(app.querySelectorAll(".geom-spec-token")[0] || {})}, last ${txtOf(app.querySelectorAll(".geom-spec-token")[9] || {})})`);
   ok(bkGeo(app.doc).geometry.ramp === RL, "(geo-ramp) brandKit carries the ladder too (the MCP serves it)");
-  ok(Object.keys(bkGeo(app.doc).geometry.sizes).length === 7, "(geo-ramp) brandKit's geometry also carries all 7 ladder sizes");
+  ok(Object.keys(bkGeo(app.doc).geometry.sizes).length === 10, "(geo-ramp) brandKit's geometry also carries all 10 ladder sizes");
   ok(hydSet(serSet(app.doc)).geometry.ramp === RL, "(geo-ramp) the ladder choice round-trips through persist");
   rampInput.dispatch("change", { target: { checked: false } });
   ok(!("ramp" in app.doc.geometry), "(geo-ramp) unchecking clears doc.geometry.ramp entirely (back to the default ramp)");

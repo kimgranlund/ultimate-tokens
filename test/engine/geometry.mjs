@@ -210,26 +210,27 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
 }
 
 // ── the LINEAR LADDER (issue #483, opt-in prototype): pins the AdiaUI scale-ladder-10step.csv formulas
-// at every one of the SEVEN mapped steps (owner ruling, 2026-09-02, superseding the original 6-name
-// 0..5 mapping — MD now lands at step 3 / 32px, and a 7th step "2XS" joins at the bottom), exactly (not
-// ±1px — these are closed forms, not a power law), AND proves the identity gate (absent/unknown `ramp`
-// never touches the default ramp, which keeps exactly its original six names) ──
+// at every one of the TEN mapped steps (owner ruling, 2026-09-02, superseding the interim 7-name 0..6
+// mapping — the ladder now exposes the WHOLE CSV table, 2XS through 5XL, since gen-ui-kit binds its
+// content tiers to the 48/52/56 rungs too; MD stays at step 3 / 32px, unchanged from the 7-name
+// mapping), exactly (not ±1px — these are closed forms, not a power law), AND proves the identity gate
+// (absent/unknown `ramp` never touches the default ramp, which keeps exactly its original six names) ──
 {
   const base = G.geomScale({ treatment: "comfortable", baseHeight: 28 });
   // IDENTITY: an absent, undefined, or unknown `ramp` is byte-identical to no ramp option at all.
   ok(JSON.stringify(G.geomScale({ treatment: "comfortable", baseHeight: 28, ramp: "bogus" })) === JSON.stringify(base), "an unknown ramp id is byte-identical to the default (identity gate)");
   ok(JSON.stringify(G.geomScale({ treatment: "comfortable", baseHeight: 28, ramp: undefined })) === JSON.stringify(base), "ramp: undefined is byte-identical to the default (identity gate)");
-  ok(Object.keys(base.sizes).length === 6 && !("2XS" in base.sizes), `the default ramp keeps exactly its original six names, no 2XS (got ${Object.keys(base.sizes)})`);
+  ok(Object.keys(base.sizes).length === 6 && !("2XS" in base.sizes) && !("5XL" in base.sizes), `the default ramp keeps exactly its original six names, no 2XS/3XL/4XL/5XL (got ${Object.keys(base.sizes)})`);
   ok(JSON.stringify(Object.keys(base.sizes)) === JSON.stringify(G.SIZE_KEYS), "the default ramp's size keys are SIZE_KEYS, unchanged by the ladder's existence");
 
   const s = G.geomScale({ treatment: "comfortable", baseHeight: 28, ramp: G.RAMP_LADDER });
   ok(s.ramp === G.RAMP_LADDER, `the resolved scale surfaces ramp: "${G.RAMP_LADDER}" (got ${JSON.stringify(s.ramp)})`);
   ok(G.GEOMETRY_RAMPS.includes(G.RAMP_LADDER), "GEOMETRY_RAMPS carries RAMP_LADDER (the persist.js allowlist-parity source)");
-  ok(Object.keys(s.sizes).length === 7 && JSON.stringify(Object.keys(s.sizes)) === JSON.stringify(G.LADDER_SIZE_KEYS), `the ladder exposes SEVEN sizes, matching LADDER_SIZE_KEYS exactly (got ${Object.keys(s.sizes)})`);
-  ok("2XS" in s.sizes, "the ladder's 7th size, 2XS, exists only on this ramp");
+  ok(Object.keys(s.sizes).length === 10 && JSON.stringify(Object.keys(s.sizes)) === JSON.stringify(G.LADDER_SIZE_KEYS), `the ladder exposes the FULL TEN sizes, matching LADDER_SIZE_KEYS exactly (got ${Object.keys(s.sizes)})`);
+  ok(["2XS", "3XL", "4XL", "5XL"].every((k) => k in s.sizes), "the ladder-only sizes (2XS, 3XL, 4XL, 5XL) exist only on this ramp");
 
-  // the CSV's own seven mapped rows (steps 0..6, h = 20+4·step), pinned EXACTLY — every field a closed
-  // form of height alone, not a fit: height/icon/font(=text)/caret(=text)/gap(=icon_label_gap)/
+  // the CSV's own ten rows (steps 0..9, h = 20+4·step), pinned EXACTLY — every field a closed form of
+  // height alone, not a fit: height/icon/font(=text)/caret(=text)/gap(=icon_label_gap)/
   // paddingNarrow(=inset)/paddingWide(=label_only_side).
   const REF = {
     "2XS": { height: 20, icon: 14, font: 11, caret: 11, gap: 3, paddingNarrow: 2, paddingWide: 4 },
@@ -239,6 +240,9 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
     LG: { height: 36, icon: 22, font: 15, caret: 15, gap: 7, paddingNarrow: 6, paddingWide: 12 },
     XL: { height: 40, icon: 24, font: 16, caret: 16, gap: 8, paddingNarrow: 7, paddingWide: 14 },
     "2XL": { height: 44, icon: 26, font: 17, caret: 17, gap: 9, paddingNarrow: 8, paddingWide: 16 },
+    "3XL": { height: 48, icon: 28, font: 18, caret: 18, gap: 10, paddingNarrow: 9, paddingWide: 18 },
+    "4XL": { height: 52, icon: 30, font: 19, caret: 19, gap: 11, paddingNarrow: 10, paddingWide: 20 },
+    "5XL": { height: 56, icon: 32, font: 20, caret: 20, gap: 12, paddingNarrow: 11, paddingWide: 22 },
   };
   for (const [name, r] of Object.entries(REF)) {
     const sz = s.sizes[name];
@@ -250,8 +254,8 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
     // compact pads have no CSV formula — mechanically re-derived the same way the default ramp derives them.
     ok(sz.paddingNarrowCompact === (sz.height - sz.gap - sz.icon) / 2 && sz.paddingWideCompact === (sz.height - sz.gap - sz.caret) / 2, `ladder ${name}: compact pads mechanically re-derive from height/gap/icon/caret (no CSV value)`);
   }
-  // heights strictly increase 2XS→2XL, same as the default ramp.
-  const heights = ["2XS", "XS", "SM", "MD", "LG", "XL", "2XL"].map((k) => s.sizes[k].height);
+  // heights strictly increase 2XS→5XL, same as the default ramp.
+  const heights = Object.keys(REF).map((k) => s.sizes[k].height);
   ok(heights.every((v, i) => i === 0 || v > heights[i - 1]), `ladder heights strictly increase (${heights})`);
 
   // baseHeight scales the ladder uniformly too (the shape is preserved) — bh56 (factor 2) doubles MD's
