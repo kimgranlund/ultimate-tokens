@@ -189,7 +189,13 @@ function fillCaretDown(px, W, cx, top, w, h, rgb) {
 export function boardLayout(kit) {
   const width = MARGIN * 2 + GRID_COLS * SWATCH_SIZE + (GRID_COLS - 1) * GAP;
   const gridH = GRID_ROWS * SWATCH_SIZE + (GRID_ROWS - 1) * GAP;
-  const g = (kit.geometry && kit.geometry.sizes && kit.geometry.sizes.LG) || {};
+  // the opt-in linear-ladder ramp (ultimate-tokens issue #483) names its steps numerically ("0".."9"),
+  // no "LG" key at all — a bare `.sizes.LG` silently resolved to {} for a ladder-active kit and the
+  // control strip fell to the hardcoded defaults below instead of following the kit's real geometry.
+  // LG's ladder-equivalent is step "4" (mirrors geometry.mjs's sizeAnchor, reimplemented inline here
+  // rather than imported: this module is intentionally zero-dependency, spec §13).
+  const lgKey = kit.geometry && kit.geometry.ramp === "linear4" ? "4" : "LG";
+  const g = (kit.geometry && kit.geometry.sizes && kit.geometry.sizes[lgKey]) || {};
   const ctlH = Math.min(Math.round(g.height || 36), CONTROL_STRIP_H);
   const radius = Math.round(g.radiusPill != null ? Math.min(g.radiusPill, ctlH / 2) : ctlH / 2);
   const thumb = Math.min(Math.round(g.icon || 20), ctlH - 2);

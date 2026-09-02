@@ -8,7 +8,7 @@ import * as Xds from "../../src/engine/ds-export.js";
 const X = { ...Xcolor, ...Xds };
 import { dsBundleGates } from "../../src/engine/ds-gates.js";
 import { typeScale } from "../../src/engine/type.mjs";
-import { geomScale, LADDER_MD_STEP } from "../../src/engine/geometry.mjs";
+import { geomScale, LADDER_MD_STEP, sizeAnchor } from "../../src/engine/geometry.mjs";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const C = (palettes) => ({ palettes, curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, hueSpace: "cam16", theme: "auto" });
@@ -665,13 +665,33 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
     if (sizeButtonCount !== 10) FAIL(G, `Buttons card's Size-ladder row renders ${sizeButtonCount} controls while the linear ladder is active, expected 10 (steps 0-9)`);
     if (!sizeRowLadder || !sizeRowLadder.includes(">0<") || !sizeRowLadder.includes(">9<")) FAIL(G, "Buttons card's Size-ladder row is missing the ladder's step 0 or step 9 control");
     // and they render in ascending numeric order (step 0 first, step 9 last) — not JS's coincidental
-    // integer-key reordering, but orderedSizeNames' explicit height sort (issue #483).
+    // integer-key reordering, but orderedSizeNames' explicit canonical-step-index sort (issue #483).
     const ladderStepOrder = [...sizeRowLadder.matchAll(/>(\d)</g)].map((m) => m[1]);
     if (ladderStepOrder.join(",") !== "0,1,2,3,4,5,6,7,8,9") FAIL(G, `Buttons card's Size-ladder row is out of order, expected steps 0-9 ascending (got ${ladderStepOrder.join(",")})`);
     // and the DEFAULT (non-ladder) catalog computed at the top of this block still renders exactly six.
     const sizeRowDefault = buttons && (buttons.data.match(/<div class="size-row">[\s\S]*?<\/div>/) || [])[0];
     const sizeButtonCountDefault = sizeRowDefault ? (sizeRowDefault.match(/<button/g) || []).length : 0;
     if (sizeButtonCountDefault !== 6) FAIL(G, `Buttons card's Size-ladder row renders ${sizeButtonCountDefault} controls on the DEFAULT ramp, expected 6 (unchanged by the ladder's existence)`);
+
+    // checkbox/radio + switch pin — Inputs' selection controls read sizeAnchor(geomSc,"SM"/"XS")'s
+    // icon, not a bare .sizes.SM/.sizes.XS (which don't exist on the ladder and used to silently fall
+    // through to the hardcoded 18/16 defaults, so the Inputs card never actually followed the ladder).
+    // baseHeight 40 (not the canonical 28 the rest of this leg uses) — at 28 the ladder's SM/XS-
+    // equivalent icons (18/16) happen to numerically COINCIDE with the hardcoded fallback constants,
+    // which would let a regressed "still reads .sizes.SM" bug pass silently.
+    const gscLadder40 = geomScale({ ramp: "linear4", baseHeight: 40 }, { typeScale: tsc });
+    const smAnchor = sizeAnchor(gscLadder40, "SM"), xsAnchor = sizeAnchor(gscLadder40, "XS");
+    const wantCtrlIcon = smAnchor.size.icon, wantSwitchH = xsAnchor.size.icon;
+    const inputsLadder40 = X.exportDesignSystemComponents(state, tsc, gscLadder40).find((c) => c.name === "components/inputs.html");
+    const checkRuleLadder = (inputsLadder40.data.match(/\.ds-check,\.ds-radio\{[^}]*\}/) || [])[0] || "";
+    const switchRuleLadder = (inputsLadder40.data.match(/\.ds-switch\{[^}]*\}/) || [])[0] || "";
+    const checkW = (checkRuleLadder.match(/width:(\d+)px/) || [])[1];
+    const switchH = (switchRuleLadder.match(/height:(\d+)px/) || [])[1];
+    if (Number(checkW) !== wantCtrlIcon) FAIL(G, `Inputs .ds-check/.ds-radio width while the ladder is active is ${checkW}px, expected SM-equivalent step ${smAnchor.name}'s icon ${wantCtrlIcon}px`);
+    if (Number(switchH) !== wantSwitchH) FAIL(G, `Inputs .ds-switch height while the ladder is active is ${switchH}px, expected XS-equivalent step ${xsAnchor.name}'s icon ${wantSwitchH}px`);
+    // and this leg is only meaningful if the ladder's values differ from the hardcoded 18/16 fallbacks
+    // (else the checks above couldn't distinguish "wired correctly" from "never wired, fell to fallback").
+    if (wantCtrlIcon === 18 || wantSwitchH === 16) FAIL(G, "test fixture problem: the ladder's SM/XS-equivalent icons must differ from the 18/16 hardcoded fallbacks for this leg to be meaningful");
   }
 
   // Typography card — every voice's every step appears (not one cherry-picked key per tier). Anchored

@@ -140,28 +140,41 @@ const LADDER_SIZES = [["0", 20], ["1", 24], ["2", 28], ["3", 32], ["4", 36], ["5
 // `orderedSizeNames`/`mdAnchor` below are the two helpers every ordering- or MD-anchor-sensitive
 // consumer (ds-export, the Geometry section UI) must route through instead of trusting key order.
 export const LADDER_SIZE_KEYS = LADDER_SIZES.map(([name]) => name);
-// LADDER_MD_STEP — the ladder's MD-equivalent anchor: step "3" (32px canonical), fixed regardless of
-// baseHeight (baseHeight scales every step uniformly via `factor`, never reassigns which STEP anchors
-// MD). Consumers that read `.sizes.MD` under the default ramp must route through `mdAnchor` for a
-// scale that might be the ladder — `.sizes.MD` doesn't exist there (numeric names), and a blind
-// `Object.values(scale.sizes)[0]` fallback would silently anchor to step "0" (the SMALLEST control),
-// not the intended MD-equivalent, because of the same integer-key reordering trap.
-export const LADDER_MD_STEP = "3";
-// mdAnchor(scale) — the resolved MD-equivalent { name, size } for EITHER ramp: `{"MD", scale.sizes.MD}`
-// on the default ramp, `{LADDER_MD_STEP, scale.sizes[LADDER_MD_STEP]}` on the ladder. The one correct
-// way to find "the MD row" without assuming a ramp's naming scheme.
-export function mdAnchor(scale) {
-  const name = scale && scale.ramp === RAMP_LADDER ? LADDER_MD_STEP : "MD";
+// LADDER_ANCHOR — the ladder step "equivalent" to each of the default ramp's six t-shirt names: the
+// ladder's extra step "0" (a 2XS-equivalent with no default-ramp counterpart) shifts every OTHER name
+// up by exactly one step index, so XS→"1", SM→"2", MD→"3", LG→"4", XL→"5", 2XL→"6" (steps "7"-"9" —
+// the 3XL/4XL/5XL-equivalent rungs gen-ui-kit's content tiers need — have no default-ramp counterpart
+// either). Fixed regardless of baseHeight (baseHeight scales every step uniformly via `factor`, never
+// reassigns which STEP a name anchors to).
+const LADDER_ANCHOR = { XS: "1", SM: "2", MD: "3", LG: "4", XL: "5", "2XL": "6" };
+// LADDER_MD_STEP — kept as its own export (several call sites already name it directly) — "3".
+export const LADDER_MD_STEP = LADDER_ANCHOR.MD;
+// sizeAnchor(scale, tshirtName) — the resolved { name, size } for one of the default ramp's six named
+// sizes, on EITHER ramp: the literal t-shirt name on the default ramp, its LADDER_ANCHOR-mapped
+// numbered step on the ladder. The one correct way to find "the SM row" (or MD, or LG, …) without
+// assuming a ramp's naming scheme — `.sizes.SM`/`.sizes.LG`/etc. simply don't exist on the ladder
+// (numeric names only), and a blind `Object.values(scale.sizes)[0]` fallback (a real bug this fixed at
+// three call sites, and again at a fourth beyond this module, issue #483) silently lands on step "0"
+// (the SMALLEST control) instead, because JS forces integer-like keys into ascending enumeration order.
+export function sizeAnchor(scale, tshirtName) {
+  const name = scale && scale.ramp === RAMP_LADDER ? (LADDER_ANCHOR[tshirtName] || tshirtName) : tshirtName;
   return { name, size: scale && scale.sizes && scale.sizes[name] };
 }
-// orderedSizeNames(scale) — every size name in ascending-height order, EXPLICIT (never
-// `Object.keys(scale.sizes)`, which JS forces into ascending NUMERIC order first for integer-like
-// keys — coincidentally correct for the ladder's "0".."9" today, but not a rule to lean on; the
-// default ramp's t-shirt names rely on a DIFFERENT spec guarantee, insertion order, which also
-// happens to be ascending height only because SIZES was authored that way). Sorts by the scale's own
-// resolved height, so it is correct for either ramp regardless of naming scheme or insertion order.
+// mdAnchor(scale) — sizeAnchor's MD case, kept as its own export since it's the single most common one.
+export function mdAnchor(scale) {
+  return sizeAnchor(scale, "MD");
+}
+// orderedSizeNames(scale) — every size name in CANONICAL step order, EXPLICIT — never
+// `Object.keys(scale.sizes)` (JS forces integer-like keys like the ladder's into ascending NUMERIC
+// order regardless of insertion order — a real trap the moment a ramp's names stop being non-numeric
+// strings) and never a sort BY RESOLVED HEIGHT either (a per-step height OVERRIDE that breaks
+// monotonicity — e.g. an authored MD taller than LG — must not reorder the list; canonical step
+// POSITION, not the live height, is the ordering key, on either ramp). Sorts by each name's index in
+// LADDER_SIZE_KEYS (the ladder) or SIZE_KEYS (the default ramp) — the one array where insertion order
+// IS the authored, canonical order.
 export function orderedSizeNames(scale) {
-  return Object.keys((scale && scale.sizes) || {}).sort((a, b) => scale.sizes[a].height - scale.sizes[b].height);
+  const canonical = scale && scale.ramp === RAMP_LADDER ? LADDER_SIZE_KEYS : SIZE_KEYS;
+  return Object.keys((scale && scale.sizes) || {}).sort((a, b) => canonical.indexOf(a) - canonical.indexOf(b));
 }
 
 function buildSizeLadder(rawHeight, fontOverride, gapOverride) {
@@ -318,7 +331,8 @@ const ns = (pfx, name) => (pfx ? `${pfx}-${name}` : name);
 
 function geomSizeVarLines(scale, indent = "  ", unit = "px", pfx = "") {
   const size = ns(pfx, "size");
-  return Object.entries(scale.sizes).map(([name, s]) => {
+  return orderedSizeNames(scale).map((name) => {
+    const s = scale.sizes[name];
     const p = `--${size}-${kebab(name)}`;
     return `${indent}${p}-height: ${dimUnit(s.height, unit)}; ${p}-icon: ${dimUnit(s.icon, unit)}; ${p}-caret: ${dimUnit(s.caret, unit)}; ${p}-font: ${dimUnit(s.font, unit)}; ${p}-gap: ${dimUnit(s.gap, unit)}; ${p}-padding-narrow: ${dimUnit(s.paddingNarrow, unit)}; ${p}-padding-wide: ${dimUnit(s.paddingWide, unit)}; ${p}-padding-narrow-compact: ${dimUnit(s.paddingNarrowCompact, unit)}; ${p}-padding-wide-compact: ${dimUnit(s.paddingWideCompact, unit)}; ${p}-radius: ${dimUnit(s.radiusPill, unit)}; ${p}-min: ${dimUnit(s.minWidth, unit)};`;
   }).join("\n");
@@ -342,7 +356,7 @@ export function geomTokensCSS(scale, { unit = "px", prefix = "" } = {}) {
   for (const [k, v] of Object.entries(scale.focus || {})) lines.push(`  --${ns(p, "focus")}-${camelKebab(k)}: ${dimUnit(v, unit)};`);
   lines.push("}");
   const size = ns(p, "size"), control = ns(p, "control");
-  for (const name of Object.keys(scale.sizes)) {
+  for (const name of orderedSizeNames(scale)) {
     const s = kebab(name);
     lines.push(`.${control}-${s} { box-sizing: border-box; block-size: var(--${size}-${s}-height); min-inline-size: var(--${size}-${s}-min); font-size: var(--${size}-${s}-font); padding-inline: var(--${size}-${s}-padding-wide); padding-block: 0; gap: var(--${size}-${s}-gap); border-radius: var(--${size}-${s}-radius); }`);
   }
@@ -398,7 +412,8 @@ export function geomTokensBreakpointCSS(modes = [], { unit = "px", prefix = "", 
 export function geomTokensDTCG(scale, { unit = "px" } = {}) {
   const dim = (px) => ({ $type: "dimension", $value: dimUnit(px, unit) });
   const size = {};
-  for (const [name, s] of Object.entries(scale.sizes)) {
+  for (const name of orderedSizeNames(scale)) {
+    const s = scale.sizes[name];
     // ADR-016: kebab field names, lowercase step keys, the icon-gap/pill-radius homonym renames.
     size[name.toLowerCase()] = {
       height: dim(s.height), icon: dim(s.icon), caret: dim(s.caret), font: dim(s.font),
@@ -425,7 +440,8 @@ export function geomTokensDTCG(scale, { unit = "px" } = {}) {
 export function geomTokensFigma(scale) {
   const num = (v) => ({ $type: "number", $value: v });
   const size = {};
-  for (const [name, s] of Object.entries(scale.sizes)) {
+  for (const name of orderedSizeNames(scale)) {
+    const s = scale.sizes[name];
     size[name.toLowerCase()] = {
       height: num(s.height), icon: num(s.icon), caret: num(s.caret),
       "icon-gap": num(s.gap), "padding-narrow": num(s.paddingNarrow), "padding-wide": num(s.paddingWide),
@@ -480,8 +496,10 @@ export function geomTokensFigmaModes(baseScale, modes = [], { baseName = "Base",
   // for each mode (Base first), write size/<NAME>/<field>, radius/<k>, space/<k>. Only `sizes` scale with
   // baseHeight; radii/space are treatment-derived (mode-independent), but we emit per-mode for completeness.
   const layer = (scale, mode) => {
-    for (const [name, s] of Object.entries(scale.sizes))
+    for (const name of orderedSizeNames(scale)) {
+      const s = scale.sizes[name];
       for (const [field, src] of GEOM_SIZE_FIELDS) set(`size/${name.toLowerCase()}/${field}`, mode, s[src]);
+    }
     for (const [k, v] of Object.entries(scale.radii)) set(`radius/${k}`, mode, v);
     for (const [k, v] of Object.entries(scale.space)) set(`space/${k}`, mode, v);
     for (const [k, v] of Object.entries(scale.insets || {})) set(`inset/${camelKebab(k)}`, mode, v);

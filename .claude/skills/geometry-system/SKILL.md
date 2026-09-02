@@ -79,20 +79,25 @@ all; `SIZES`/`SIZE_KEYS` above are UNCHANGED (still exactly six t-shirt names at
 the two ramps' naming schemes are entirely disjoint, not overlapping strings.
 
 **Two traps this naming scheme creates, both fixed centrally:**
-1. **Never iterate `Object.keys(scale.sizes)`/`Object.entries(...)` for ORDER.** JS forces
-   integer-like string keys ("0".."9") into ascending NUMERIC enumeration first, regardless of
-   insertion order — a real trap the moment a ramp's names stop being non-numeric strings (the
-   default ramp's t-shirt names rely on the OPPOSITE spec guarantee, insertion order, which only
-   looks the same because `SIZES` happens to be authored ascending). Use `orderedSizeNames(scale)`
-   (sorts by the scale's own resolved height, correct for either ramp) instead — every consumer that
-   needs an ordered list (ds-export's Buttons Size-ladder row, every ordered loop in
-   `sections/geometry.js`) routes through it.
-2. **Never assume `.sizes.MD` (or any other letter key) exists.** A bare `scale.sizes.MD ||
-   Object.values(scale.sizes)[0]` fallback — a real, live pattern before this fix
-   (`geomExampleCard`, `graphGeomCentering`, ds-export's `uiSize` anchor) — silently lands on step
-   `"0"` (the SMALLEST control) under the ladder, not any sensible "MD-equivalent", because of the
-   same integer-key reordering. Use `mdAnchor(scale)` (`{ name, size }`, resolving `"MD"` on the
-   default ramp / `LADDER_MD_STEP` on the ladder) instead.
+1. **Never iterate `Object.keys(scale.sizes)`/`Object.entries(...)` for ORDER, and never sort by
+   resolved height either.** JS forces integer-like string keys ("0".."9") into ascending NUMERIC
+   enumeration first, regardless of insertion order — a real trap the moment a ramp's names stop
+   being non-numeric strings (the default ramp's t-shirt names rely on the OPPOSITE spec guarantee,
+   insertion order, which only looks the same because `SIZES` happens to be authored ascending).
+   A height-sort has its OWN trap: a per-step height OVERRIDE that breaks monotonicity (an authored
+   MD taller than LG) must not reorder the list. Use `orderedSizeNames(scale)` — sorts by each name's
+   position in `LADDER_SIZE_KEYS`/`SIZE_KEYS` (the CANONICAL step order, immune to both traps) —
+   instead; every consumer that needs an ordered list (ds-export's Buttons Size-ladder row, the five
+   `geomTokensX` emitters, every ordered loop in `sections/geometry.js`) routes through it.
+2. **Never assume `.sizes.MD`/`.SM`/`.LG`/etc. (any t-shirt-letter key) exists.** A bare
+   `scale.sizes.SM || Object.values(scale.sizes)[0]`-style fallback — a real, live pattern before
+   this fix, at FOUR call sites (`geomExampleCard`, `graphGeomCentering`, ds-export's `uiSize`/
+   `ctrlIcon`/`switchH` anchors, and `mcp/png-swatch-board.mjs`'s control-strip sizing) — silently
+   lands on step `"0"` (the SMALLEST control) under the ladder, not any sensible letter-equivalent,
+   because of the same integer-key reordering. Use `sizeAnchor(scale, "SM")` (`{ name, size }`,
+   resolving the literal t-shirt name on the default ramp / its `LADDER_ANCHOR`-mapped numbered step
+   on the ladder — XS→"1", SM→"2", MD→"3"/`LADDER_MD_STEP`, LG→"4", XL→"5", 2XL→"6") instead;
+   `mdAnchor(scale)` is `sizeAnchor(scale, "MD")` kept as its own export for the common case.
 
 A consumer that hand-tracks "the six sizes" (persist.js's `GEOMETRY_SIZES` allowlist — now a flat
 UNION of both naming schemes, not a subset relationship) must read `orderedSizeNames`/

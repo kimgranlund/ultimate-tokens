@@ -21,7 +21,7 @@ import { motionTokens, MOTION_EASING, MOTION_DURATION, MOTION_NEVER } from "./mo
 import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"; // §8 carrier primitives + the gate itself — the receipt cites the SAME run the gate measures
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
-import { RAMP_LADDER, mdAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder MD-equivalent anchor + explicit ordering (issue #483 — the ladder's numeric step names trap a bare Object.keys/`.MD` access)
+import { RAMP_LADDER, mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder size-anchor helpers + explicit ordering (issue #483 — the ladder's numeric step names trap a bare Object.keys/`.MD`/`.SM`/`.XS` access)
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn } from "./exports.js";
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -427,8 +427,12 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const rFull = radii.full != null ? radii.full : 999;
   // Selection controls (checkbox/radio/switch) size off the geometry ramp's own icon tokens — never a
   // fabricated magic number: a checkbox/radio reads as an SM icon-sized control, a switch track as XS.
-  const ctrlIcon = (geomSc && geomSc.sizes && geomSc.sizes.SM && geomSc.sizes.SM.icon) || 18;
-  const switchH = (geomSc && geomSc.sizes && geomSc.sizes.XS && geomSc.sizes.XS.icon) || 16;
+  // sizeAnchor (not a bare `.sizes.SM`/`.sizes.XS`) — the linear-ladder prototype (issue #483) has no
+  // SM/XS keys at all (numeric step names), so a bare access silently fell through to the hardcoded
+  // 18/16 fallback for every ladder-active kit, and the Inputs card never followed the ladder.
+  const smSize = sizeAnchor(geomSc, "SM").size, xsSize = sizeAnchor(geomSc, "XS").size;
+  const ctrlIcon = (smSize && smSize.icon) || 18;
+  const switchH = (xsSize && xsSize.icon) || 16;
   const switchW = Math.round(switchH * 1.8);
   const cap = (s) => s.split(/[-\s]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   // every preview carries the TEXT-RENDERING BASELINE (the same block the DESIGN.md's Typography section

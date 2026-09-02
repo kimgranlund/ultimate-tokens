@@ -256,9 +256,8 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
     // compact pads have no CSV formula — mechanically re-derived the same way the default ramp derives them.
     ok(sz.paddingNarrowCompact === (sz.height - sz.gap - sz.icon) / 2 && sz.paddingWideCompact === (sz.height - sz.gap - sz.caret) / 2, `ladder step ${name}: compact pads mechanically re-derive from height/gap/icon/caret (no CSV value)`);
   }
-  // heights strictly increase step 0→9, EXPLICITLY via orderedSizeNames (not Object.keys(s.sizes) —
-  // JS forces these integer-like keys into ascending numeric order regardless of insertion order, so
-  // this happens to coincide, but the explicit helper is what every real consumer must use — issue #483).
+  // heights strictly increase step 0→9, EXPLICITLY via orderedSizeNames (issue #483 — see its own
+  // dedicated block below for why it sorts by canonical step INDEX, not resolved height).
   const heights = G.orderedSizeNames(s).map((k) => s.sizes[k].height);
   ok(heights.every((v, i) => i === 0 || v > heights[i - 1]), `ladder heights strictly increase (${heights})`);
 
@@ -298,6 +297,35 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(dtcg.size["3"].height.$value === `${s.sizes[MD].height}px` && dtcg.size["3"]["padding-wide"].$value === `${s.sizes[MD].paddingWide}px`, "the DTCG emitter renders the ladder scale with the numbered step name, no ramp-specific code");
   const fig = G.geomTokensFigma(s);
   ok(fig.Breakpoints.size["3"].icon.$value === s.sizes[MD].icon, "the Figma emitter renders the ladder scale with the numbered step name, no ramp-specific code");
+}
+
+// ── sizeAnchor / orderedSizeNames (issue #483 review pass): the two helpers every ramp-agnostic
+// named-size or ordering lookup must route through, pinned directly ──
+{
+  const base = G.geomScale({ treatment: "comfortable", baseHeight: 28 });
+  const ladder = G.geomScale({ treatment: "comfortable", baseHeight: 28, ramp: G.RAMP_LADDER });
+  // sizeAnchor maps each of the six t-shirt names onto the ladder's OWN step-shifted equivalent
+  // (the ladder's extra step "0" has no default-ramp counterpart, so every other name shifts +1).
+  const wantAnchors = { XS: "1", SM: "2", MD: "3", LG: "4", XL: "5", "2XL": "6" };
+  for (const [tshirt, step] of Object.entries(wantAnchors)) {
+    const a = G.sizeAnchor(ladder, tshirt);
+    ok(a.name === step && a.size === ladder.sizes[step], `sizeAnchor(ladder, "${tshirt}") resolves step "${step}" (got name "${a.name}")`);
+    const d = G.sizeAnchor(base, tshirt);
+    ok(d.name === tshirt && d.size === base.sizes[tshirt], `sizeAnchor(default, "${tshirt}") resolves the literal t-shirt name unchanged`);
+  }
+  ok(G.mdAnchor(ladder).name === "3" && G.mdAnchor(base).name === "MD", "mdAnchor is sizeAnchor's MD case on either ramp");
+
+  // orderedSizeNames sorts by CANONICAL STEP INDEX (LADDER_SIZE_KEYS / SIZE_KEYS position), NOT by
+  // resolved height — a per-step HEIGHT OVERRIDE that breaks monotonicity must not reorder the list.
+  // Here MD is overridden taller than LG on the default ramp: the canonical order XS·SM·MD·LG·XL·2XL
+  // must survive even though MD's live height now exceeds LG's.
+  const skewed = G.geomScale({ treatment: "comfortable", baseHeight: 28 }, { overrides: { MD: 200 } });
+  ok(skewed.sizes.MD.height > skewed.sizes.LG.height, "test fixture: the MD override really does break height-monotonicity (MD taller than LG)");
+  ok(JSON.stringify(G.orderedSizeNames(skewed)) === JSON.stringify(G.SIZE_KEYS), `orderedSizeNames keeps the canonical XS..2XL order even when a height override breaks monotonicity (got ${G.orderedSizeNames(skewed)})`);
+  // and the same holds on the ladder, overriding step "5" (XL-equivalent) taller than step "6" (2XL-equivalent).
+  const skewedLadder = G.geomScale({ treatment: "comfortable", baseHeight: 28, ramp: G.RAMP_LADDER }, { overrides: { 5: 200 } });
+  ok(skewedLadder.sizes["5"].height > skewedLadder.sizes["6"].height, "test fixture: the ladder override really does break height-monotonicity (step 5 taller than step 6)");
+  ok(JSON.stringify(G.orderedSizeNames(skewedLadder)) === JSON.stringify(G.LADDER_SIZE_KEYS), `orderedSizeNames keeps the canonical 0..9 order on the ladder too, even when a height override breaks monotonicity (got ${G.orderedSizeNames(skewedLadder)})`);
 }
 
 // ── Figma number-variable emit: a "Geometry" collection of unitless FLOAT tokens ──
