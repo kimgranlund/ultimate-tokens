@@ -363,6 +363,22 @@ export function geomTokensCSS(scale, { unit = "px", prefix = "" } = {}) {
   return lines.join("\n") + "\n";
 }
 
+// geomTokensSizesCSS — a SIZE-ONLY sibling of geomTokensCSS (issue #487, gen-ui-kit's own request):
+// just the `:root` `--{pfx}-size-{step}-*` block — no `--density`, no radius/space/inset/gap/border/
+// focus tokens, no `.{pfx}-control-{step}` class rules — so a consumer that only binds size fields
+// (gen-ui-kit's ADR-0109: height/font/caret/icon/padding-narrow) doesn't have to vendor a slice of the
+// full file itself. A SEPARATE emitter (not a flag on geomTokensCSS) because it returns a genuinely
+// different, smaller file shape, mirroring how geomTokensBreakpointCSS is already its own function
+// rather than an option — builder's call, per the ticket. Works for EITHER ramp (default or the
+// linear-ladder prototype, #483/#484): it iterates whatever `orderedSizeNames(scale)` returns, the
+// same size rows geomTokensCSS itself emits, so a ramp change needs no changes here. `density` is
+// deliberately excluded too, even though the ticket's own list doesn't name it — it isn't a
+// `--size-*` token, and "ONLY the size block" is the operative instruction.
+export function geomTokensSizesCSS(scale, { unit = "px", prefix = "" } = {}) {
+  const p = prefix;
+  return [":root {", geomSizeVarLines(scale, "  ", unit, p), "}"].join("\n") + "\n";
+}
+
 // geomTokensBreakpointCSS — ONE self-contained override file PER breakpoint mode, the geometry mirror of
 // type.mjs's typeTokensBreakpointCSS: `geomTokensCSS(baseScale)` is a complete, valid stylesheet on its
 // own (the DESIGNED — Desktop — ramp, unconditional `:root`), and each entry this returns is an

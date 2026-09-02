@@ -1,7 +1,7 @@
 import { exportDesignSystemBundle, exportDesignSystemMakeBundle, exportDesignSystemSpine, exportDesignSystemStitchBundle, exportDesignSystemTokens, figmaBundle, figmaCollectionNames, slug, tokenCount } from "../model.mjs";
 import { serialize } from "../persist.js";
 import { typeTokensBreakpointCSS, typeTokensCSS, typeTokensDTCG, typeTokensFigmaModes, typeTokensFigmaPrimitivesModes } from "../../engine/type.mjs";
-import { geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes } from "../../engine/geometry.mjs";
+import { geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes, geomTokensSizesCSS } from "../../engine/geometry.mjs";
 import { zipStore } from "../zip.mjs";
 import { mergeModeInterchanges } from "../../../figma/binder/mode-apply-plan.mjs";
 import { COLLECTIONS } from "../../engine/collections.js";
@@ -37,7 +37,7 @@ export class DrawerMixinImpl {
     const FORMAT_GROUPS = [
       ["Colors", [["css", "Hex"], ["oklch", "OKLCH"], ["tailwind", "Tailwind v4"], ["shadcn", "shadcn/ui"], ["figma", "Figma"], ["ui3", "Figma UI3"], ["dtcg", "DTCG"], ["json", "JSON"]]],
       ["Typography", [["type-css", "Type · CSS"], ["type-dtcg", "Type · DTCG"]]],
-      ["Geometry", [["geom-css", "Geometry · CSS"], ["geom-dtcg", "Geometry · DTCG"]]],
+      ["Geometry", [["geom-css", "Geometry · CSS"], ["geom-css-sizes", "Geometry · CSS (sizes only)"], ["geom-dtcg", "Geometry · DTCG"]]],
       ["Design System", [["ds-tokens", "tokens.json"], ["ds-spine", "DESIGN.md"]]],
       ["Project", [["config", "Config"]]],
     ];
@@ -60,13 +60,16 @@ export class DrawerMixinImpl {
       "type-css": () => splitCssPreview(typeTokensCSS(typeSc, ut), typeTokensBreakpointCSS(this._typeModeScales(), ut), "type.css"),
       "type-dtcg": () => JSON.stringify(typeTokensDTCG(typeSc, u), null, 2),
       "geom-css": () => splitCssPreview(geomTokensCSS(geomSc, ug), geomTokensBreakpointCSS(this._geomModeScales(), ug), "geometry.css"),
+      // size-only sibling (issue #487) — just the file Download-All actually zips as geometry-sizes.css;
+      // no breakpoint bolt-ons for this one (out of scope for the ticket — see its Findings).
+      "geom-css-sizes": () => geomTokensSizesCSS(geomSc, ug),
       "geom-dtcg": () => JSON.stringify(geomTokensDTCG(geomSc, u), null, 2),
       // the Design System export — the universal-dialect DESIGN.md core + tokens.json (the LLM generation
       // system); the component previews ride the Download-All bundle only (a folder, not a single preview).
       "ds-tokens": () => exportDesignSystemTokens(this.doc, typeSc, geomSc),
       "ds-spine": () => exportDesignSystemSpine(this.doc, typeSc, geomSc),
     };
-    const SYSTEM_LABEL = { "type-css": "Typography · CSS", "type-dtcg": "Typography · DTCG", "geom-css": "Geometry · CSS", "geom-dtcg": "Geometry · DTCG", "ds-tokens": "Design System · tokens.json", "ds-spine": "Design System · DESIGN.md" };
+    const SYSTEM_LABEL = { "type-css": "Typography · CSS", "type-dtcg": "Typography · DTCG", "geom-css": "Geometry · CSS", "geom-css-sizes": "Geometry · CSS (sizes only)", "geom-dtcg": "Geometry · DTCG", "ds-tokens": "Design System · tokens.json", "ds-spine": "Design System · DESIGN.md" };
     // the systems currently opted into the Download-All + MCP bundle (for the footer summary).
     const SYS_LABEL = { color: "Color", type: "Typography", geometry: "Geometry" };
     const included = ["color", "type", "geometry"].filter((k) => this.exportSystems[k] !== false).map((k) => SYS_LABEL[k]).join(" · ");
@@ -385,8 +388,17 @@ export class DrawerMixinImpl {
       const gCssOpts = { ...u, prefix: this._geomPrefix() };
       files.push(
         // SEPARATE files (mirrors typography/ above): geometry.css alone is a complete, Desktop-anchored
-        // stylesheet; geometry-tablet.css / geometry-mobile.css are optional bolt-ons.
+        // stylesheet; geometry-tablet.css / geometry-mobile.css are optional bolt-ons. geometry-sizes.css
+        // (issue #487, gen-ui-kit's own request) is a SIZE-ONLY slice of the SAME base file — just the
+        // --{pfx}-size-{step}-* :root block, no radius/space/inset/gap/border/focus tokens or
+        // .{pfx}-control-{step} class rules — for a consumer that only binds size fields and doesn't want
+        // to vendor a slice of the full file itself. No breakpoint bolt-on siblings for this one (out of
+        // scope for the ticket — a consumer needing per-breakpoint sizes-only files can request it).
+        // (a user-named custom breakpoint mode literally called "Sizes" would slug-collide with this
+        // fixed filename in the zip — accepted as a rare, recoverable edge case, not worth a reserved-
+        // name check for a size-only sibling file.)
         { name: "geometry/geometry.css", data: geomTokensCSS(gsc, gCssOpts) },
+        { name: "geometry/geometry-sizes.css", data: geomTokensSizesCSS(gsc, gCssOpts) },
         ...geomTokensBreakpointCSS(this._geomModeScales(), gCssOpts).map((f) => ({ name: `geometry/geometry-${slug(f.name)}.css`, data: f.css })),
         { name: "geometry/geometry.tokens.json", data: gDtcg },
         ...this._geomModeDTCGFiles("geometry/geometry", u),
@@ -458,7 +470,7 @@ export class DrawerMixinImpl {
       );
     }
     if (sys.type) rows.push("| `typography/` | The eleven-voice type scale — `type.css` (Desktop, complete on its own) + optional `type-tablet.css` / `type-mobile.css` bolt-ons + DTCG, incl. per-breakpoint files |");
-    if (sys.geometry) rows.push("| `geometry/` | The dimensional system — control ramp, radii, spacing, container tier — `geometry.css` (Desktop) + optional `geometry-tablet.css` / `geometry-mobile.css` + DTCG |");
+    if (sys.geometry) rows.push("| `geometry/` | The dimensional system — control ramp, radii, spacing, container tier — `geometry.css` (Desktop) + `geometry-sizes.css` (the same file's `--size-*` block alone, no radius/space/container/class rules) + optional `geometry-tablet.css` / `geometry-mobile.css` + DTCG |");
     rows.push(`| \`ultimate-tokens-${s}-config.json\` | The re-importable parametric config — open it in Ultimate Tokens to edit this kit |`);
     return [
       `# ${name} — Ultimate Tokens export`, "",

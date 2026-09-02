@@ -1370,7 +1370,7 @@ const entries = zb[eocd + 10] | (zb[eocd + 11] << 8);
 // design-system-for-figma-make/ bundle: guidelines/{Guidelines.md, setup.md, styles.css,
 // foundations/{color,typography,spacing}.md, components/{overview,button}.md} + README.md (9, a routed tree),
 // all riding systems.color) + 4 figma-aliased + 5 typography (incl. figma/ + figma/ moded + figma/ primitives) + 4 geometry + config = 45.
-ok(eocdSig && entries === 66, `(ee) the EOCD reports 66 entries — colour (35, incl. the design-system-for-claude-code/ bundle of 14 [#473: the @dsCard catalog grew from 7 to 11 previews] + design-system-for-google-stitch/ of 2 + design-system-for-figma-make/ of 9) + figma-aliased (4) + typography (12: type.css + type.tokens.json + 4 breakpoint CSS bolt-ons [desktop-lg/-xl 2026-07-15, tablet/mobile #264] + 4 per-mode DTCG [type.1728/2560/992/476] + 2 figma/* type-tokens+primitives files) + geometry (11: geometry.css + geometry.tokens.json + 4 breakpoint CSS bolt-ons + 4 per-mode DTCG [geometry.1728/2560/992/476] + 1 figma/* raw-variables file) + the MERGED moded-variables file figma/tokens.modes.variables.json (1, TKT-0009 — was typography.modes + dimension.modes) + figma/styles.plan.json (1) + config + the root README (got ${entries})`);
+ok(eocdSig && entries === 67, `(ee) the EOCD reports 67 entries — colour (35, incl. the design-system-for-claude-code/ bundle of 14 [#473: the @dsCard catalog grew from 7 to 11 previews] + design-system-for-google-stitch/ of 2 + design-system-for-figma-make/ of 9) + figma-aliased (4) + typography (12: type.css + type.tokens.json + 4 breakpoint CSS bolt-ons [desktop-lg/-xl 2026-07-15, tablet/mobile #264] + 4 per-mode DTCG [type.1728/2560/992/476] + 2 figma/* type-tokens+primitives files) + geometry (12: geometry.css + geometry-sizes.css [#487, the size-only sibling] + geometry.tokens.json + 4 breakpoint CSS bolt-ons + 4 per-mode DTCG [geometry.1728/2560/992/476] + 1 figma/* raw-variables file) + the MERGED moded-variables file figma/tokens.modes.variables.json (1, TKT-0009 — was typography.modes + dimension.modes) + figma/styles.plan.json (1) + config + the root README (got ${entries})`);
 const zipText = Buffer.from(zb).toString("latin1");
 // the root README makes the zip self-describing: the folder map, the consumption-plugin install
 // commands (the skills layer deliberately NOT bundled — it updates via the marketplace), the MCP
@@ -1390,8 +1390,20 @@ ok(/renamed in Settings/.test(zipText2) && /Token mapping/.test(zipText2) && /Br
 app.commit((d) => { delete d.figmaCollections; }); flushRaf(); // restore default names for later legs
 const wantPaths = ["css-hex/", "css-oklch/", "json/", "dtcg/", "figma/Light_tokens.json", "figma/Dark_tokens.json", "figma/palette.tokens.json", "ui3/", "tailwind/", "shadcn/", "design-system-for-claude-code/DESIGN.md", "design-system-for-claude-code/tokens.json", "design-system-for-claude-code/components/colors.html", "design-system-for-claude-code/README.md", "design-system-for-google-stitch/DESIGN.md", "design-system-for-google-stitch/README.md", "design-system-for-figma-make/guidelines/Guidelines.md", "design-system-for-figma-make/guidelines/setup.md", "design-system-for-figma-make/guidelines/styles.css", "design-system-for-figma-make/guidelines/foundations/color.md", "design-system-for-figma-make/guidelines/foundations/typography.md", "design-system-for-figma-make/guidelines/foundations/spacing.md", "design-system-for-figma-make/guidelines/components/overview.md", "design-system-for-figma-make/guidelines/components/button.md", "design-system-for-figma-make/README.md", "ultimate-tokens-my-set-config.json",
   "figma-aliased/Light_tokens.json", "figma-aliased/Dark_tokens.json", "figma-aliased/palette.tokens.json", "figma-aliased/README.txt",
-  "typography/type.css", "typography/type.tokens.json", "figma/type.tokens.json", "figma/tokens.modes.variables.json", "figma/typography.primitives.variables.json", "geometry/geometry.css", "geometry/geometry.tokens.json", "figma/dimension.variables.json"];
+  "typography/type.css", "typography/type.tokens.json", "figma/type.tokens.json", "figma/tokens.modes.variables.json", "figma/typography.primitives.variables.json", "geometry/geometry.css", "geometry/geometry-sizes.css", "geometry/geometry.tokens.json", "figma/dimension.variables.json"];
 ok(wantPaths.every((p) => zipText.includes(p)), "(ee) every colour format + typography/ + geometry/ + the moded Figma-variable files + the config + the figma-aliased/ cascade variant is present in the archive");
+// geometry-sizes.css (#487) carries ONLY the --size-* :root block — no density/radius/space/inset/gap/
+// border/focus tokens, no .control-* class rules — extracted from the zip's raw text between its own
+// local-file-header filename and the next one, so this pins the ACTUAL zipped bytes, not a re-derivation.
+{
+  const sizesStart = zipText.indexOf("geometry/geometry-sizes.css");
+  const afterHeader = zipText.indexOf(":root", sizesStart);
+  const sizesEnd = zipText.indexOf("PK\x03\x04", afterHeader); // the next local-file-header signature
+  const sizesFileText = zipText.slice(afterHeader, sizesEnd);
+  ok(/--size-md-height:\s*\d+px/.test(sizesFileText), "(ee) geometry-sizes.css carries the size fields");
+  ok(!/--density/.test(sizesFileText) && !/--radius-/.test(sizesFileText) && !/--space-/.test(sizesFileText) && !/--inset-/.test(sizesFileText) && !/--gap-/.test(sizesFileText) && !/--border-/.test(sizesFileText) && !/--focus-/.test(sizesFileText), "(ee) geometry-sizes.css carries NOTHING but size tokens");
+  ok(!/\.control-/.test(sizesFileText), "(ee) geometry-sizes.css carries no .control-* class rules");
+}
 // the Figma dimension file is NUMBER-typed (FLOAT variables), not the px dimension strings — so Figma imports it as number variables
 ok(zipText.includes("dimension.variables.json") && /"\$type":\s*"number"/.test(zipText) && zipText.includes('"Breakpoints"'), "(ee) figma/dimension.variables.json is a Breakpoints collection of number ($type number) variables");
 // the moded Figma-variable files are single-collection, breakpoint-MODED (a "Base" mode + each mode), FLOAT-typed

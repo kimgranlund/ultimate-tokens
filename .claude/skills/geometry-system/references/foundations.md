@@ -177,6 +177,13 @@ gaps, section rhythm). This is the space **BETWEEN** components — a **distinct
   groups). A Figma variable importer turns these into native **FLOAT (number) variables** you bind to
   auto-layout sizing, corner radius, and gaps (px is 1:1 with Figma's unitless floats). The Figma test checks
   the `Geometry` wrapper and that values are `number` with numeric `$value`.
+- **`geomTokensSizesCSS(scale)`** (issue #487) — a SIZE-ONLY sibling of `geomTokensCSS`: just the
+  `--size-{step}-*` `:root` block, nothing else (no `--density`, no radius/space/inset/gap/border/focus,
+  no `.control-*` classes) — for a consumer (gen-ui-kit's ADR-0109) that binds only size fields and
+  doesn't want to vendor a slice of the full file. It calls the SAME `geomSizeVarLines` helper
+  `geomTokensCSS` itself uses, so a new per-size field needs no separate update here — it's not a fourth
+  independent emitter, just a smaller cut of the first one. Bundled as `geometry/geometry-sizes.css`
+  (Download-All) alongside `geometry.css`; no breakpoint bolt-on siblings (out of scope for #487).
 
 All three map over the **same** resolved `scale`, so a new field added to `buildSize` must be added to all three
 emitters (and the test) to surface everywhere.
