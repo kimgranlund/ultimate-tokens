@@ -13,10 +13,11 @@ const SKILL_DIR = join(HERE, "..");
 const ENGINE = join(HERE, "../../../../../src/engine/geometry.mjs");
 if (!existsSync(ENGINE)) { console.log("dimension-parity: geometry engine not found (outside the product repo) — skipping"); process.exit(0); }
 
-const { geomScale } = await import(ENGINE);
+const { geomScale, RAMP_LADDER } = await import(ENGINE);
 const s = geomScale({ baseHeight: 28 });
+const sLadder = geomScale({ baseHeight: 28, ramp: RAMP_LADDER }); // the opt-in linear-ladder prototype (issue #483) — numbered "0".."9", a DISJOINT naming scheme from the default ramp's t-shirt letters
 const camel = (k) => k.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-const STEPS = new Set(Object.keys(s.sizes).map((x) => x.toLowerCase())); // xs..2xl
+const STEPS = new Set([...Object.keys(s.sizes), ...Object.keys(sLadder.sizes)].map((x) => x.toLowerCase())); // xs..2xl, plus the ladder's 0..9
 const SIZE_FIELDS = new Set(["height", "icon", "caret", "font", "gap", "padding-narrow", "padding-wide", "padding-narrow-compact", "padding-wide-compact", "radius", "min"]); // the CSS field names (TKT-0010)
 const RADII = new Set(Object.keys(s.radii)); // none sm md lg full
 const SPACE = new Set(Object.keys(s.space)); // 0..9

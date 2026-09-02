@@ -8,7 +8,7 @@ import * as Xds from "../../src/engine/ds-export.js";
 const X = { ...Xcolor, ...Xds };
 import { dsBundleGates } from "../../src/engine/ds-gates.js";
 import { typeScale } from "../../src/engine/type.mjs";
-import { geomScale } from "../../src/engine/geometry.mjs";
+import { geomScale, LADDER_MD_STEP } from "../../src/engine/geometry.mjs";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const C = (palettes) => ({ palettes, curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, hueSpace: "cam16", theme: "auto" });
@@ -634,7 +634,7 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
   // ladder OFF again is untouched (the identity gate for this leg).
   {
     const gscLadder = geomScale({ ramp: "linear4" }, { typeScale: tsc });
-    const wantLadderSize = gscLadder.sizes.MD.font;
+    const wantLadderSize = gscLadder.sizes[LADDER_MD_STEP].font; // "3" — the ladder's own MD-equivalent, not ".MD" (numbered steps, issue #483)
     const cardsLadder = X.exportDesignSystemComponents(state, tsc, gscLadder);
     const fontSizeOf = (html, ruleRe) => { const m = (html || "").match(ruleRe); const fs = m && /font-size:(\d+(?:\.\d+)?)px/.exec(m[0]); return fs ? Number(fs[1]) : null; };
     const ladderChecks = [
@@ -656,15 +656,18 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
     const uiMdSize = tsc && tsc.categories && tsc.categories["UI-control"] && tsc.categories["UI-control"].MD && tsc.categories["UI-control"].MD.size;
     if (uiMdSize != null && wantLadderSize === uiMdSize) FAIL(G, "test fixture problem: the ladder's MD font must differ from the composed UI-control MD size for this leg to be meaningful");
 
-    // mapping ruling (2026-09-02, superseding the interim 7-size ruling): the ladder exposes the FULL
-    // TEN sizes (2XS/3XL/4XL/5XL included, gen-ui-kit's content-tier rungs) — the Buttons card's
-    // Size-ladder row must render all ten, not the default ramp's six (it now reads geomSc.sizes'
-    // own keys directly, never the hardcoded 6-name SIZE_KEYS list).
+    // mapping ruling (2026-09-02, THIRD and final: the full 10-step table, NUMBERED "0".."9") — the
+    // Buttons card's Size-ladder row must render all ten numbered steps, not the default ramp's six
+    // t-shirt names (it reads geomSc.sizes' own keys via orderedSizeNames, never a hardcoded list).
     const buttonsLadder = cardsLadder.find((c) => c.name === "components/buttons.html");
     const sizeRowLadder = buttonsLadder && (buttonsLadder.data.match(/<div class="size-row">[\s\S]*?<\/div>/) || [])[0];
     const sizeButtonCount = sizeRowLadder ? (sizeRowLadder.match(/<button/g) || []).length : 0;
-    if (sizeButtonCount !== 10) FAIL(G, `Buttons card's Size-ladder row renders ${sizeButtonCount} controls while the linear ladder is active, expected 10 (2XS·XS·SM·MD·LG·XL·2XL·3XL·4XL·5XL)`);
-    if (!sizeRowLadder || !sizeRowLadder.includes(">2XS<") || !sizeRowLadder.includes(">5XL<")) FAIL(G, "Buttons card's Size-ladder row is missing the ladder's 2XS or 5XL control");
+    if (sizeButtonCount !== 10) FAIL(G, `Buttons card's Size-ladder row renders ${sizeButtonCount} controls while the linear ladder is active, expected 10 (steps 0-9)`);
+    if (!sizeRowLadder || !sizeRowLadder.includes(">0<") || !sizeRowLadder.includes(">9<")) FAIL(G, "Buttons card's Size-ladder row is missing the ladder's step 0 or step 9 control");
+    // and they render in ascending numeric order (step 0 first, step 9 last) — not JS's coincidental
+    // integer-key reordering, but orderedSizeNames' explicit height sort (issue #483).
+    const ladderStepOrder = [...sizeRowLadder.matchAll(/>(\d)</g)].map((m) => m[1]);
+    if (ladderStepOrder.join(",") !== "0,1,2,3,4,5,6,7,8,9") FAIL(G, `Buttons card's Size-ladder row is out of order, expected steps 0-9 ascending (got ${ladderStepOrder.join(",")})`);
     // and the DEFAULT (non-ladder) catalog computed at the top of this block still renders exactly six.
     const sizeRowDefault = buttons && (buttons.data.match(/<div class="size-row">[\s\S]*?<\/div>/) || [])[0];
     const sizeButtonCountDefault = sizeRowDefault ? (sizeRowDefault.match(/<button/g) || []).length : 0;

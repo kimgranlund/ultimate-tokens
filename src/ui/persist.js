@@ -577,14 +577,16 @@ function clampType(t, drop) {
 // geometry.mjs's GEOMETRY_TREATMENTS ids (see the TYPE_TREATMENTS/VOICES note above — TKT-0017).
 export const GEOMETRY_TREATMENTS = ["comfortable", "compact", "spacious", "touch", "pill"];
 // The canonical size names — the leading segment of a geom tokenOverrides key ("<size>|<modeKey>"),
-// the geometry analog of VOICES above. The default ramp's six (geometry.mjs's SIZE_KEYS) are a strict
-// SUBSET of the linear-ladder's ten (geometry.mjs's LADDER_SIZE_KEYS — the full 10-step CSV table,
-// issue #483, owner ruling 2026-09-02: gen-ui-kit needs the 48/52/56 rungs too), so this allowlist is
-// just the ladder's own 10 names — 2XS/3XL/4XL/5XL exist only on that ramp, but a tokenOverrides key
-// must still round-trip when a doc's ramp is "linear4". MUST track the UNION of geometry.mjs's
+// the geometry analog of VOICES above. The default ramp's six t-shirt names (geometry.mjs's
+// SIZE_KEYS) and the linear-ladder's ten NUMBERED steps "0".."9" (geometry.mjs's LADDER_SIZE_KEYS —
+// the full 10-step CSV table, owner ruling 2026-09-02, TWO rulings: first 7 t-shirt names, then the
+// full 10 steps renamed numerically since gen-ui-kit binds --size-{0..9}-* directly) use ENTIRELY
+// DISJOINT naming schemes — clampTokenOverrides only ever does a plain string `.includes()` check
+// against this list, so a numeric-looking segment like "3" round-trips exactly like any other string;
+// no parsing change was needed, only this literal list. MUST track the UNION of geometry.mjs's
 // SIZE_KEYS + LADDER_SIZE_KEYS — asserted by the allowlist-parity test (TKT-0017's convention,
 // extended per TKT-0455 then TKT-0483).
-export const GEOMETRY_SIZES = ["XS", "SM", "MD", "LG", "XL", "2XL", "2XS", "3XL", "4XL", "5XL"];
+export const GEOMETRY_SIZES = ["XS", "SM", "MD", "LG", "XL", "2XL", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 // The opt-in ramp ids (geometry.mjs's GEOMETRY_RAMPS, issue #483) — mirrors the TYPE_TREATMENTS/
 // GEOMETRY_TREATMENTS/VOICES/GEOMETRY_SIZES convention above; parity-gated the same way.
 export const GEOMETRY_RAMPS = ["linear4"];

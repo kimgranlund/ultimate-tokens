@@ -2149,7 +2149,7 @@ ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).ge
 // engine directly (geomScale is pinned exactly in test/engine/geometry.mjs) rather than hardcoded, since
 // the active geometry config (spacious·40 from the (geo) block above) isn't this block's concern.
 {
-  const { RAMP_LADDER: RL } = await import("../../src/engine/geometry.mjs");
+  const { RAMP_LADDER: RL, LADDER_MD_STEP: MD3 } = await import("../../src/engine/geometry.mjs");
   app.setSection("geometry"); app.geomSegment = "ramp"; app.render(); flushRaf();
   const rampCb = app.querySelector(".geom-ramp-check");
   ok(!!rampCb, "(geo-ramp) the Ramp tab shows the linear-ladder prototype checkbox");
@@ -2159,17 +2159,17 @@ ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).ge
   rampInput.dispatch("change", { target: { checked: true } });
   ok(app.doc.geometry.ramp === RL, "(geo-ramp) checking the box writes doc.geometry.ramp = RAMP_LADDER");
   const afterScale = app._activeGeomScale();
-  const expectLadder = gScale(app.doc.geometry).sizes.MD; // the engine's own answer for THIS doc's treatment/baseHeight
-  ok(afterScale.ramp === RL && afterScale.sizes.MD.font === expectLadder.font && afterScale.sizes.MD.icon === expectLadder.icon, `(geo-ramp) the resolved scale switches to the ladder (MD font ${afterScale.sizes.MD.font} = ${expectLadder.font}, icon ${afterScale.sizes.MD.icon} = ${expectLadder.icon})`);
-  ok(afterScale.sizes.MD.font !== beforeMD, `(geo-ramp) the ladder's font differs from the composed default (ladder ${afterScale.sizes.MD.font} vs default ${beforeMD})`);
-  // mapping ruling (2026-09-02): the ladder exposes SEVEN sizes (2XS included); the canvas Controls
-  // scene must render all seven rows, not the default ramp's six.
-  ok(Object.keys(afterScale.sizes).length === 10 && "2XS" in afterScale.sizes && "5XL" in afterScale.sizes, `(geo-ramp) the resolved ladder scale carries the full 10 sizes incl. 2XS/5XL (got ${Object.keys(afterScale.sizes)})`);
+  const expectLadder = gScale(app.doc.geometry).sizes[MD3]; // the engine's own answer for THIS doc's treatment/baseHeight, step "3" (the ladder's MD-equivalent — numbered steps, issue #483)
+  ok(afterScale.ramp === RL && afterScale.sizes[MD3].font === expectLadder.font && afterScale.sizes[MD3].icon === expectLadder.icon, `(geo-ramp) the resolved scale switches to the ladder (step ${MD3} font ${afterScale.sizes[MD3].font} = ${expectLadder.font}, icon ${afterScale.sizes[MD3].icon} = ${expectLadder.icon})`);
+  ok(afterScale.sizes[MD3].font !== beforeMD, `(geo-ramp) the ladder's font differs from the composed default (ladder ${afterScale.sizes[MD3].font} vs default ${beforeMD})`);
+  // mapping ruling (2026-09-02, final: the full 10-step table, NUMBERED "0".."9") — the canvas
+  // Controls scene must render all ten numbered rows, not the default ramp's six t-shirt-named ones.
+  ok(Object.keys(afterScale.sizes).length === 10 && "0" in afterScale.sizes && "9" in afterScale.sizes && !("MD" in afterScale.sizes), `(geo-ramp) the resolved ladder scale carries the full 10 numbered steps, no t-shirt names (got ${Object.keys(afterScale.sizes)})`);
   app.render(); flushRaf();
   ok(app.querySelectorAll(".geom-spec-line").length === 10, `(geo-ramp) the canvas shows the 10-step ladder ramp with the checkbox on (got ${app.querySelectorAll(".geom-spec-line").length})`);
-  ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "--size-5xl" && txtOf(app.querySelectorAll(".geom-spec-token")[9] || {}) === "--size-2xs", `(geo-ramp) the ladder canvas still lists largest→smallest, --size-5xl through --size-2xs (first ${txtOf(app.querySelectorAll(".geom-spec-token")[0] || {})}, last ${txtOf(app.querySelectorAll(".geom-spec-token")[9] || {})})`);
+  ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "--size-9" && txtOf(app.querySelectorAll(".geom-spec-token")[9] || {}) === "--size-0", `(geo-ramp) the ladder canvas still lists largest→smallest, --size-9 (56px) through --size-0 (20px) (first ${txtOf(app.querySelectorAll(".geom-spec-token")[0] || {})}, last ${txtOf(app.querySelectorAll(".geom-spec-token")[9] || {})})`);
   ok(bkGeo(app.doc).geometry.ramp === RL, "(geo-ramp) brandKit carries the ladder too (the MCP serves it)");
-  ok(Object.keys(bkGeo(app.doc).geometry.sizes).length === 10, "(geo-ramp) brandKit's geometry also carries all 10 ladder sizes");
+  ok(Object.keys(bkGeo(app.doc).geometry.sizes).length === 10, "(geo-ramp) brandKit's geometry also carries all 10 ladder steps");
   ok(hydSet(serSet(app.doc)).geometry.ramp === RL, "(geo-ramp) the ladder choice round-trips through persist");
   rampInput.dispatch("change", { target: { checked: false } });
   ok(!("ramp" in app.doc.geometry), "(geo-ramp) unchecking clears doc.geometry.ramp entirely (back to the default ramp)");

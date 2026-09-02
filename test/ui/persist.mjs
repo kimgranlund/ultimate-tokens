@@ -352,11 +352,13 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   if ("ramp" in X.geometry) FAIL("ramp", "an unknown geometry.ramp id must drop");
   if (!X[U.DROPPED_KEYS].some((d) => d.facet === "geometry.ramp" && d.key === "bogus-ramp")) FAIL("ramp", `an unknown geometry.ramp id must be reported in DROPPED_KEYS (got ${JSON.stringify(X[U.DROPPED_KEYS])})`);
 
-  // the ladder's 7th size, "2XS" (issue #483 mapping ruling), is a valid tokenOverrides leading
-  // segment even though it doesn't exist on the default ramp — GEOMETRY_SIZES must accept it.
-  const S2 = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "linear4", tokenOverrides: { "2XS|base": 22, "MD|base": 34 } } }));
-  if (!S2.geometry.tokenOverrides || S2.geometry.tokenOverrides["2XS|base"] !== 22) FAIL("ramp", `a "2XS|base" tokenOverrides key must round-trip when the ladder is active (got ${JSON.stringify(S2.geometry.tokenOverrides)})`);
-  if (S2.geometry.tokenOverrides["MD|base"] !== 34) FAIL("ramp", "a sibling MD|base override must survive alongside the 2XS one");
+  // the ladder's numbered steps ("0".."9", issue #483's final mapping ruling) are valid tokenOverrides
+  // leading segments even though none of them exist on the default ramp — GEOMETRY_SIZES must accept
+  // a purely-numeric segment (clampTokenOverrides only ever does a plain string `.includes()` check,
+  // so this is really pinning the allowlist content, not new parsing logic).
+  const S2 = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "linear4", tokenOverrides: { "0|base": 22, "3|base": 34 } } }));
+  if (!S2.geometry.tokenOverrides || S2.geometry.tokenOverrides["0|base"] !== 22) FAIL("ramp", `a "0|base" tokenOverrides key must round-trip when the ladder is active (got ${JSON.stringify(S2.geometry.tokenOverrides)})`);
+  if (S2.geometry.tokenOverrides["3|base"] !== 34) FAIL("ramp", "a sibling 3|base override must survive alongside the 0 one");
 }
 
 // ── dropped-keys (TKT-0455): a stored voice/treatment/tokenOverrides key unknown to the current

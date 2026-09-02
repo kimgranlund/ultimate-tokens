@@ -21,6 +21,7 @@ import { motionTokens, MOTION_EASING, MOTION_DURATION, MOTION_NEVER } from "./mo
 import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"; // §8 carrier primitives + the gate itself — the receipt cites the SAME run the gate measures
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
+import { RAMP_LADDER, mdAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder MD-equivalent anchor + explicit ordering (issue #483 — the ladder's numeric step names trap a bare Object.keys/`.MD` access)
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn } from "./exports.js";
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -408,7 +409,9 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   // row, which already read per-size `s.font` directly and needed no change. Weight/tracking stay the
   // voice's own: the ladder has no weight law, and tracking is authored as an EM ratio off the voice's
   // OWN size (uiStep.size), so it already scales proportionally with whatever font-size lands below.
-  const ladderMdFont = geomSc && geomSc.ramp === "linear4" && geomSc.sizes && geomSc.sizes.MD && geomSc.sizes.MD.font;
+  // mdAnchor (not a bare .sizes.MD) — the ladder names its steps numerically ("0".."9"), so there is
+  // no `.MD` key there; mdAnchor resolves the ramp-appropriate MD-equivalent row either way.
+  const ladderMdFont = geomSc && geomSc.ramp === RAMP_LADDER ? (mdAnchor(geomSc).size && mdAnchor(geomSc).size.font) : null;
   const uiSize = ladderMdFont || (uiStep && uiStep.size ? uiStep.size : 14);
   const uiWeight = uiStep && uiStep.weight ? uiStep.weight : 500;
   const uiTrackEm = uiStep && uiStep.size ? Number((uiStep.letterSpacing / uiStep.size).toFixed(4)) : 0;
@@ -480,11 +483,13 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     // own always-on container fill; Ghost's own bg is transparent even at rest, tinting only on
     // hover in the real component). Both variants now exist, correctly distinct.
     const variantRow = `<div class="brow"><span class="blabel">Variants</span><button class="btn" style="background:transparent;border:1px solid ${V(brand)};color:${V(brand)}">Outline</button><button class="btn" style="background:transparent;color:${V(brand)}">Ghost</button><button class="btn" style="background:${tint};color:${V(brand)}">Tonal</button><button class="btn" style="background:none;padding:0;color:${V(brand)};text-decoration:underline">Link</button></div>`;
-    // iterate the RESOLVED scale's own size keys (not the hardcoded default SIZE_KEYS) — the linear-
-    // ladder prototype (issue #483) exposes a 7th step (2XS) SIZE_KEYS doesn't carry, and the ladder's
-    // XS..2XL map to different heights than the default ramp's; reading geomSc.sizes directly renders
-    // whichever ramp is actually active, at whatever step count it has.
-    const sizeRow = `<div class="size-row">${Object.keys((geomSc && geomSc.sizes) || {}).map((sz) => {
+    // iterate the RESOLVED scale's own size keys, EXPLICITLY ordered by height (issue #483) — never
+    // the hardcoded default SIZE_KEYS (the ladder has its own 10-step count and numeric "0".."9"
+    // names), and never Object.keys(geomSc.sizes) directly: JS forces integer-like keys like the
+    // ladder's into ascending numeric enumeration regardless of insertion order, so a bare Object.keys
+    // is a trap the MOMENT a ramp's names stop being non-numeric strings. orderedSizeNames sorts by
+    // the scale's own resolved height instead, correct for either ramp's naming scheme.
+    const sizeRow = `<div class="size-row">${orderedSizeNames(geomSc).map((sz) => {
       const s = geomSc.sizes[sz];
       return `<button class="btn" style="background:${V(brand)};color:${brandOn};height:${s.height}px;padding:0 ${Math.round(s.paddingWide)}px;font-size:${s.font}px">${sz}</button>`;
     }).join("")}</div>`;
@@ -773,7 +778,7 @@ function dsSpineBody(ds, state, ctx) {
   // with a value, and a frontmatter key would trip the Stitch schema linter's unknown-key check.
   const ic = iconSystem((state && state.icons) || {});
   const iconSizes = geomSc && geomSc.sizes
-    ? Object.entries(geomSc.sizes).filter(([, v]) => Number.isFinite(v.icon)).map(([k, v]) => `${k.toLowerCase()} ${v.icon}px`).join(" · ")
+    ? orderedSizeNames(geomSc).filter((k) => Number.isFinite(geomSc.sizes[k].icon)).map((k) => `${k.toLowerCase()} ${geomSc.sizes[k].icon}px`).join(" · ")
     : "";
   const iconography = [
     "## Iconography", "",
@@ -1462,7 +1467,8 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
   const dims = [];
   if (geomSc) {
     dims.push(`  --${basePfx}-density: ${geomSc.density};`);
-    if (geomSc.sizes) for (const [sz, s] of Object.entries(geomSc.sizes)) {
+    if (geomSc.sizes) for (const sz of orderedSizeNames(geomSc)) {
+      const s = geomSc.sizes[sz];
       const z = sz.toLowerCase();
       dims.push(`  --${basePfx}-size-${z}-height: ${s.height}px; --${basePfx}-size-${z}-icon: ${s.icon}px; --${basePfx}-size-${z}-caret: ${s.caret}px; --${basePfx}-size-${z}-font: ${s.font}px; --${basePfx}-size-${z}-gap: ${s.gap}px; --${basePfx}-size-${z}-padding-narrow: ${s.paddingNarrow}px; --${basePfx}-size-${z}-padding-wide: ${s.paddingWide}px; --${basePfx}-size-${z}-padding-narrow-compact: ${s.paddingNarrowCompact}px; --${basePfx}-size-${z}-padding-wide-compact: ${s.paddingWideCompact}px; --${basePfx}-size-${z}-radius: ${s.radiusPill}px; --${basePfx}-size-${z}-min: ${s.minWidth}px;`);
     }

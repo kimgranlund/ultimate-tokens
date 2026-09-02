@@ -56,8 +56,9 @@ and around components). Your job is never to type a px value — it's to pick th
    text button/label, or the caret side of a select); the `-compact` twins absorb the control's own gap
    into the edge for dense layouts. Use the one that
    matches the control's anatomy — mixing them mis-centers the content. (If this kit was exported with
-   the opt-in `ramp:"linear4"` prototype, `--size-{step}-padding-narrow` follows a DIFFERENT, non-centering
-   formula — don't assume `padding-narrow = (height − icon)/2` for such a kit.)
+   the opt-in `ramp:"linear4"` prototype, `--size-{step}` is NUMBERED — `--size-0` through `--size-9`,
+   not `--size-xs`/`--size-md`/etc — and `--size-{step}-padding-narrow` follows a DIFFERENT, non-centering
+   formula; don't assume `padding-narrow = (height − icon)/2` or a t-shirt step name for such a kit.)
 4. **Container spacing is the container tier, not raw `--space-N`.** Reach for a semantic
    `--inset-*` / `--gap-*` first (they ARE named `--space-*` rungs, so you get the rhythm without
    guessing a number). Drop to a raw `--space-{0…9}` only for a one-off the tier doesn't name. See

@@ -121,20 +121,48 @@ const GAP_UNIT = { XS: 3, SM: 3, MD: 4, LG: 6, XL: 6, "2XL": 8 };
 // ramp's own gear change at the MD|LG seam, and the ladder has no gear to lose (it's already one line).
 export const RAMP_LADDER = "linear4";
 export const GEOMETRY_RAMPS = [RAMP_LADDER];
-// LADDER_SIZES — canonical (unscaled, factor=1) heights: the FULL TEN-step ladder — 2XS·XS·SM·MD·LG·
-// XL·2XL·3XL·4XL·5XL — every CSV row, steps 0..9 (20·24·28·32·36·40·44·48·52·56). Owner ruling (issue
-// #483, 2026-09-02, superseding the interim 7-name 0..6 mapping): gen-ui-kit binds its content tiers
-// to this engine's --size-* CSS export and needs the 48/52/56 rungs (3XL/4XL/5XL), so the ladder now
-// exposes the WHOLE table rather than a truncated slice. `MD` stays at step 3 (32px) — unchanged from
-// the 7-name mapping. The default ramp's six names are UNCHANGED (2XS/3XL/4XL/5XL exist ONLY here;
-// SIZES/SIZE_KEYS above still name exactly XS·SM·MD·LG·XL·2XL at 20·24·28·36·48·64, byte-identical).
-// One straight +4-per-step line, 2XS through 5XL — "linear4" names exactly that, no gear change
-// anywhere. See LADDER_SIZE_KEYS below for the 10-name list a consumer needs when the ladder is active.
-const LADDER_SIZES = [["2XS", 20], ["XS", 24], ["SM", 28], ["MD", 32], ["LG", 36], ["XL", 40], ["2XL", 44], ["3XL", 48], ["4XL", 52], ["5XL", 56]];
-// LADDER_SIZE_KEYS — the ten ladder-only size names, exported so persist.js's GEOMETRY_SIZES
-// allowlist can be parity-gated against the UNION of this and SIZE_KEYS (mirrors the SIZE_KEYS
-// rationale above — TKT-0017 generalized to a ramp with a different step count, TKT-0483/issue #483).
+// LADDER_SIZES — canonical (unscaled, factor=1) heights: the FULL TEN-step ladder, steps 0..9 (heights
+// 20·24·28·32·36·40·44·48·52·56 — every CSV row). Owner ruling (issue #483, 2026-09-02, superseding
+// BOTH the interim 7-name 0..6 mapping AND the t-shirt names it used): gen-ui-kit binds its content
+// tiers to this engine's --size-* CSS export and needs the 48/52/56 rungs, so the ladder exposes the
+// WHOLE table; and the steps are named NUMERICALLY ("0".."9"), not with t-shirt letters — exported
+// tokens read `--{pfx}-size-{0..9}-{field}` (e.g. `--md-sys-size-3-height: 32px`). Step "3" (32px) is
+// the MD-equivalent anchor — see LADDER_MD_STEP below. The default ramp's six t-shirt names are
+// UNCHANGED (SIZES/SIZE_KEYS above still name exactly XS·SM·MD·LG·XL·2XL at 20·24·28·36·48·64,
+// byte-identical) — the two ramps use ENTIRELY DIFFERENT naming schemes, not overlapping strings.
+const LADDER_SIZES = [["0", 20], ["1", 24], ["2", 28], ["3", 32], ["4", 36], ["5", 40], ["6", 44], ["7", 48], ["8", 52], ["9", 56]];
+// LADDER_SIZE_KEYS — the ten ladder-only step names ("0".."9"), exported so persist.js's
+// GEOMETRY_SIZES allowlist can be parity-gated against the UNION of this and SIZE_KEYS (mirrors the
+// SIZE_KEYS rationale above — TKT-0017 generalized, TKT-0483/issue #483). NEVER iterate an object
+// keyed by these — JS forces integer-like string keys ("0".."9") into ascending numeric enumeration
+// order regardless of insertion order (a real trap once the ladder's names stopped being t-shirt
+// letters), so this ARRAY (not `Object.keys(scale.sizes)`) is the one place ordering is authored.
+// `orderedSizeNames`/`mdAnchor` below are the two helpers every ordering- or MD-anchor-sensitive
+// consumer (ds-export, the Geometry section UI) must route through instead of trusting key order.
 export const LADDER_SIZE_KEYS = LADDER_SIZES.map(([name]) => name);
+// LADDER_MD_STEP — the ladder's MD-equivalent anchor: step "3" (32px canonical), fixed regardless of
+// baseHeight (baseHeight scales every step uniformly via `factor`, never reassigns which STEP anchors
+// MD). Consumers that read `.sizes.MD` under the default ramp must route through `mdAnchor` for a
+// scale that might be the ladder — `.sizes.MD` doesn't exist there (numeric names), and a blind
+// `Object.values(scale.sizes)[0]` fallback would silently anchor to step "0" (the SMALLEST control),
+// not the intended MD-equivalent, because of the same integer-key reordering trap.
+export const LADDER_MD_STEP = "3";
+// mdAnchor(scale) — the resolved MD-equivalent { name, size } for EITHER ramp: `{"MD", scale.sizes.MD}`
+// on the default ramp, `{LADDER_MD_STEP, scale.sizes[LADDER_MD_STEP]}` on the ladder. The one correct
+// way to find "the MD row" without assuming a ramp's naming scheme.
+export function mdAnchor(scale) {
+  const name = scale && scale.ramp === RAMP_LADDER ? LADDER_MD_STEP : "MD";
+  return { name, size: scale && scale.sizes && scale.sizes[name] };
+}
+// orderedSizeNames(scale) — every size name in ascending-height order, EXPLICIT (never
+// `Object.keys(scale.sizes)`, which JS forces into ascending NUMERIC order first for integer-like
+// keys — coincidentally correct for the ladder's "0".."9" today, but not a rule to lean on; the
+// default ramp's t-shirt names rely on a DIFFERENT spec guarantee, insertion order, which also
+// happens to be ascending height only because SIZES was authored that way). Sorts by the scale's own
+// resolved height, so it is correct for either ramp regardless of naming scheme or insertion order.
+export function orderedSizeNames(scale) {
+  return Object.keys((scale && scale.sizes) || {}).sort((a, b) => scale.sizes[a].height - scale.sizes[b].height);
+}
 
 function buildSizeLadder(rawHeight, fontOverride, gapOverride) {
   const height = roundEven(rawHeight);

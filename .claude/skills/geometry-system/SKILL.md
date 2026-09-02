@@ -69,22 +69,41 @@ a consumer adds in any subset, any order. The constants + the reference table: `
 
 **A SECOND, opt-in ramp shape exists for prototyping (issue #483, `config.ramp === RAMP_LADDER`
 ["linear4"]):** a self-contained closed-form ladder (`inset = h/4−3`, `container = h/2+6`, `icon =
-container−2`, `text = h/4+6` doubling as font AND caret) evaluating AdiaUI's scale-ladder — the FULL TEN
-size names (`LADDER_SIZE_KEYS`: 2XS·XS·SM·MD·LG·XL·2XL·3XL·4XL·5XL, owner ruling 2026-09-02, superseding
-an interim 7-name mapping — gen-ui-kit binds its content tiers to the 48/52/56 rungs) map onto ten
-CONSECUTIVE +4 steps (20·24·28·32·36·40·44·48·52·56, MD at step 3 = 32px, every CSV row) instead of the
-default's six-name two-band shape — `2XS`/`3XL`/`4XL`/`5XL` exist ONLY on this ramp; `SIZES`/`SIZE_KEYS`
-above are UNCHANGED (still exactly six names at 20·24·28·36·48·64). A consumer that hand-tracks "the six
-sizes" (persist.js's `GEOMETRY_SIZES` allowlist, any UI loop) must read `Object.keys(scale.sizes)`/
-`LADDER_SIZE_KEYS` rather than assume six — `geomModeScales` in `model.mjs` skips its hand-tuned per-cell
-breakpoint tables entirely while the ladder is active for exactly this reason (they're tuned to the
-default ramp's OWN six positions, not the ladder's shifted ones). COMPOSITION is skipped while the ladder
-is active (the ladder's own text wins
-over the UI-control voice, by design — see the code comments above `buildSizeLadder` in `geometry.mjs`
-for the full rationale + the two standing flags in issue #483's Findings; `caret = text` is RULED
-intentional, not a flag). It does NOT satisfy the centering law above (a different, ladder-own anatomy)
-and `rampContrast` is a no-op on it. Absent/unknown `ramp` is byte-identical to the ramp above — this is
-a prototype for evaluation, not a ratified second law.
+container−2`, `text = h/4+6` doubling as font AND caret) evaluating AdiaUI's scale-ladder. Its ten
+steps are named NUMERICALLY — `LADDER_SIZE_KEYS = ["0".."9"]` (owner ruling 2026-09-02, final: TWO
+earlier rulings — a 7-name t-shirt mapping, then a 10-name t-shirt mapping — were both superseded; the
+CSV's ten rows map onto ten CONSECUTIVE +4 steps 20·24·28·32·36·40·44·48·52·56, exported as
+`--{pfx}-size-{0..9}-{field}`, e.g. `--md-sys-size-3-height: 32px` — gen-ui-kit binds these directly).
+Step `"3"` (32px) is the MD-equivalent — `LADDER_MD_STEP` — since there is no `.MD` key on this ramp at
+all; `SIZES`/`SIZE_KEYS` above are UNCHANGED (still exactly six t-shirt names at 20·24·28·36·48·64) and
+the two ramps' naming schemes are entirely disjoint, not overlapping strings.
+
+**Two traps this naming scheme creates, both fixed centrally:**
+1. **Never iterate `Object.keys(scale.sizes)`/`Object.entries(...)` for ORDER.** JS forces
+   integer-like string keys ("0".."9") into ascending NUMERIC enumeration first, regardless of
+   insertion order — a real trap the moment a ramp's names stop being non-numeric strings (the
+   default ramp's t-shirt names rely on the OPPOSITE spec guarantee, insertion order, which only
+   looks the same because `SIZES` happens to be authored ascending). Use `orderedSizeNames(scale)`
+   (sorts by the scale's own resolved height, correct for either ramp) instead — every consumer that
+   needs an ordered list (ds-export's Buttons Size-ladder row, every ordered loop in
+   `sections/geometry.js`) routes through it.
+2. **Never assume `.sizes.MD` (or any other letter key) exists.** A bare `scale.sizes.MD ||
+   Object.values(scale.sizes)[0]` fallback — a real, live pattern before this fix
+   (`geomExampleCard`, `graphGeomCentering`, ds-export's `uiSize` anchor) — silently lands on step
+   `"0"` (the SMALLEST control) under the ladder, not any sensible "MD-equivalent", because of the
+   same integer-key reordering. Use `mdAnchor(scale)` (`{ name, size }`, resolving `"MD"` on the
+   default ramp / `LADDER_MD_STEP` on the ladder) instead.
+
+A consumer that hand-tracks "the six sizes" (persist.js's `GEOMETRY_SIZES` allowlist — now a flat
+UNION of both naming schemes, not a subset relationship) must read `orderedSizeNames`/
+`LADDER_SIZE_KEYS` rather than assume six — `geomModeScales` in `model.mjs` skips its hand-tuned
+per-cell breakpoint tables entirely while the ladder is active for exactly this reason (they're tuned
+to the default ramp's OWN six positions, not the ladder's). COMPOSITION is skipped while the ladder is
+active (the ladder's own text wins over the UI-control voice, by design — see the code comments above
+`buildSizeLadder` in `geometry.mjs` for the full rationale + the two standing flags in issue #483's
+Findings; `caret = text` is RULED intentional, not a flag). It does NOT satisfy the centering law
+above (a different, ladder-own anatomy) and `rampContrast` is a no-op on it. Absent/unknown `ramp` is
+byte-identical to the ramp above — this is a prototype for evaluation, not a ratified second law.
 
 ## THE COMPOSITION — one number, two engines (the JOIN)
 
