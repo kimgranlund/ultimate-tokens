@@ -101,9 +101,9 @@ const GAP_UNIT = { XS: 3, SM: 3, MD: 4, LG: 6, XL: 6, "2XL": 8 };
 //   inset = h/4 − 3            → paddingNarrow (the icon/slot edge)      container = h/2 + 6  (intermediate)
 //   label_only_side = 2·inset  → paddingWide (the caret/bare edge)      icon = container − 2
 //   text = (h−20)/4 + 11 = h/4 + 6   → font (unless fontOverrides wins) AND caret ("caret = text",
-//                                       the ladder's OWN rule verbatim off the CSV — a KNOWN
-//                                       placeholder; see the geometry-system skill's Findings on
-//                                       issue #483. caret never reads fontOverrides, same as the
+//                                       the ladder's OWN rule verbatim off the CSV — RULED
+//                                       INTENTIONAL, not a placeholder (owner ruling on issue #483,
+//                                       2026-09-02). caret never reads fontOverrides, same as the
 //                                       default ramp's caret is never composed.)
 //   icon_label_gap = 1 + inset → gap (unless gapOverrides wins)
 // NOTE: this is NOT the centering law above — 2·inset + container = h (the ladder's OWN icon-only

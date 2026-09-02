@@ -73,7 +73,8 @@ container−2`, `text = h/4+6` doubling as font AND caret) evaluating AdiaUI's s
 names map onto six CONSECUTIVE +4 steps (20·24·28·32·36·40) instead of the default's two-band shape, and
 COMPOSITION is skipped while it's active (the ladder's own text wins over the UI-control voice, by
 design — see the code comments above `buildSizeLadder` in `geometry.mjs` for the full rationale + the
-three flags in issue #483's Findings). It does NOT satisfy the centering law above (a different, ladder-own
+two standing flags in issue #483's Findings; `caret = text` is RULED intentional, not a flag). It does
+NOT satisfy the centering law above (a different, ladder-own
 anatomy) and `rampContrast` is a no-op on it. Absent/unknown `ramp` is byte-identical to the ramp above —
 this is a prototype for evaluation, not a ratified second law.
 
