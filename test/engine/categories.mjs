@@ -1,7 +1,9 @@
-// categories.mjs — per-palette TYPOGRAPHY pipeline: the generated gallery PRESETS carry a `type` config
-// (scripts/gen-categories.mjs registersToTypeConfig, from each spec palette's `type.registers` — ADR-022),
-// and it survives the APPLY path (openConfigAsSet → hydrate → clampType → typeScale) so opening a palette
-// dresses the doc in its designed fonts. Guards the seam the "every palette still shows Inter" bug lived in.
+// categories.mjs — per-palette CONFIG pass-through pipelines: the generated gallery PRESETS carry a
+// `type` config (scripts/gen-categories.mjs registersToTypeConfig, from each spec palette's
+// `type.registers` — ADR-022) and it survives the APPLY path (openConfigAsSet → hydrate → clampType →
+// typeScale) so opening a palette dresses the doc in its designed fonts — guards the seam the "every
+// palette still shows Inter" bug lived in. The (geometry) block near the end of the main loop pins the
+// smaller, verbatim `geometry` pass-through (#485, currently only Adia's `{ramp:"linear4"}`) the same way.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -251,6 +253,19 @@ for (const slug of CATS) {
     if (!sameKeys(doc.type.fonts, t.fonts) || !["display", "heading", "body", "ui", "mono"].every((r) => doc.type.fonts[r] === t.fonts[r])) FAIL("apply", `${slug}[${i}] hydrate dropped/changed fonts`);
     if (Object.keys(doc.type.voices || {}).length !== vk.length) FAIL("apply", `${slug}[${i}] hydrate dropped a voice`);
     if (!sameVoices(doc.type.voices, t.voices)) FAIL("apply", `${slug}[${i}] hydrate mutated in-range voice params`);
+
+    // (geometry) per-preset GEOMETRY pass-through (#485) — the same opt-in, verbatim shape as `type`
+    // above, but with no register-mapping layer: a spec palette's `geometry` object (currently only
+    // Adia's `{ ramp: "linear4" }`) must survive generate → hydrate unmodified, and a palette with NO
+    // `geometry` key must carry no `geometry` field on its generated preset at all (the byte-identity
+    // every other preset in every other category still gets).
+    const sg = specPals[i]?.geometry;
+    if (sg) {
+      if (!eq(p.geometry, sg)) FAIL("geometry", `${slug}[${i}] the generated preset's geometry ${JSON.stringify(p.geometry)} != the spec's ${JSON.stringify(sg)}`);
+      if (!eq(doc.geometry.ramp, sg.ramp)) FAIL("geometry", `${slug}[${i}] hydrate lost/changed geometry.ramp (spec ${sg.ramp}, doc ${doc.geometry.ramp})`);
+    } else if ("geometry" in p) {
+      FAIL("geometry", `${slug}[${i}] carries a generated "geometry" field with no matching spec key — the opt-in must be byte-identical-absent by default`);
+    }
   });
 }
 
@@ -259,7 +274,7 @@ const noType = hydrate({ palettes: [{ name: "x", hue: 200, chroma: 60, on: true 
 if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL("fallback", "un-typed palette lost the product default");
 
 // ── REPORT ──
-for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "fallback"]) {
+for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "fallback"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

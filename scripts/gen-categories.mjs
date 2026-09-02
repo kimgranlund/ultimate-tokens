@@ -173,6 +173,14 @@ const VIVID_MIDS = { damp: 70, dampCurve: 1.5, dampAmp: 55, dampBias: 0 };
 // wins over VIVID_MIDS for THAT preset only; a preset that sets none is byte-identical to before this
 // was added — same "opt-in, no-op by default" contract as the `direct` palette pass-through above.
 const CURVE_OVERRIDE_KEYS = ["damp", "dampCurve", "dampAmp", "dampBias"];
+// per-entry GEOMETRY config (#485) — opt-in, currently only Adia's "brands" entry: a spec palette may
+// carry a `geometry` object (the same shape doc.geometry takes — e.g. `{ "ramp": "linear4" }` to opt
+// that ONE preset into the linear-ladder ramp, issue #483/#484) that passes straight through to the
+// generated preset verbatim, no register-mapping needed (unlike `type`, geometry has no spec-vocabulary
+// translation layer — it's already in the engine's own config shape). `hydrate()` re-validates/clamps it
+// the same as any other doc.geometry when the preset is opened, so gen-time does no sanitizing of its
+// own. A preset with no `geometry` key is byte-identical to before this was added — same "opt-in,
+// no-op by default" contract as CURVE_OVERRIDE_KEYS and the `type.fonts` pass-through below.
 
 // ── per-palette TYPOGRAPHY: map a spec palette's REGISTER declaration (its optional `type`) to an
 // engine typeScale config { treatment, bodyBase?, fonts, voices }. Registers are the intended-use
@@ -330,6 +338,8 @@ function buildCategory(doc) {
       // per-preset curve override (#479) — see CURVE_OVERRIDE_KEYS above.
       const curveOverrides = {};
       for (const k of CURVE_OVERRIDE_KEYS) if (p[k] !== undefined) curveOverrides[k] = p[k];
+      // per-preset GEOMETRY config (#485) — see the comment above CURVE_OVERRIDE_KEYS's declaration.
+      const geomCfg = p.geometry && typeof p.geometry === "object" ? p.geometry : null;
       presets.push({
         // the tile/set name is the KICKER (a clean structured label, e.g. "59° N · January · Lake
         // Baikal corridor"); the long evocative `title` lives in story.title (Story tab + per-color line).
@@ -347,6 +357,11 @@ function buildCategory(doc) {
         // doc's `type`, so the Fonts picker + scale + every export carry this palette's designed system.
         // Absent when the spec palette has no `type` (falls back to the global default treatment).
         ...(typeCfg ? { type: typeCfg } : {}),
+        // per-preset GEOMETRY (#485) — same opening path (openConfigAsSet → hydrate → clampGeometry)
+        // carries this palette's geometry config, so ramp/treatment/baseHeight choices survive into
+        // the opened doc's every export. Absent when the spec palette has no `geometry` (falls back to
+        // the global default ramp — the identity gate every other preset still gets).
+        ...(geomCfg ? { geometry: geomCfg } : {}),
         // neutral first (derived from the character palettes' key colors), then the named families —
         // unless `direct` supplies the full array itself (verbatim, in its own authored order).
         palettes: direct || (() => { const pals = mapColors(p.swatches || []); return [deriveNeutralPalette(pals), ...pals]; })(),
