@@ -5,6 +5,16 @@ on:
     branches: [main]
   pull_request:
 
+# One in-flight run per (workflow, ref) — a PR ref (refs/pull/<n>/merge) is stable across pushes to
+# that PR, so a new push cancels the PR's own prior run; cancel-in-progress is FALSE for anything
+# that isn't a pull_request (a main push), so main runs are never cancelled — they queue instead
+# (main's own ref is shared across pushes too, so a rare back-to-back push to main runs sequentially,
+# never in parallel, never cancelled — the safer default for a ref that also triggers the Pages
+# deploy below). #489.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -36,3 +46,45 @@ jobs:
           name: smoke-screenshots
           path: smoke-out/
           if-no-files-found: ignore
+      # ── Pages site (#489 — folded in from the retired push trigger of pages.yml, which stays as a
+      # workflow_dispatch-only manual fallback) — assembled from the SAME dist/ this job already built
+      # + fully validated (npm test + the drift gate + real-browser smoke all passed above), not a
+      # second build. Gated to a main push so a PR run never prepares (or wastes time on) a deploy
+      # artifact nothing will consume — the `deploy` job below only runs on that same condition.
+      - name: Assemble Pages site
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p _site
+          cp dist/ultimate-tokens.html _site/index.html
+          cp -R dist/icons _site/icons
+          cp -R dist/favicon _site/favicon
+      - uses: actions/configure-pages@v5
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          path: _site
+
+  # ── Pages deploy (#489) — push-to-main only, consumes the artifact build-test already uploaded
+  # above (no rebuild). A separate JOB-LEVEL concurrency group (not the workflow-level one above,
+  # which is keyed per-ref and would let two main pushes' deploys race) — preserves pages.yml's own
+  # "one publish at a time, let an in-flight deploy finish" contract verbatim: cancel-in-progress
+  # false, so a second deploy queues behind the first rather than cancelling or racing it. Permissions
+  # mirror pages.yml exactly (this job, not build-test, is the one actually calling the Pages API).
+  deploy:
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

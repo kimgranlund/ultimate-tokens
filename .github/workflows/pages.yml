@@ -1,11 +1,17 @@
-name: Deploy demo to GitHub Pages
+name: Deploy demo to GitHub Pages (manual)
 
 # Publishes the dependency-free single-file build (dist/ultimate-tokens.html)
 # as the site root, so the public repo has a one-click live demo.
+#
+# MANUAL FALLBACK ONLY (#489) — the push-to-main trigger retired in favor of ci.yml's own `deploy`
+# job, which reuses the SAME dist/ build ci.yml already produced and fully validated (npm test +
+# the generated-artifacts drift gate + real-browser smoke), instead of a second, untested build here.
+# Kept as workflow_dispatch for an out-of-band re-deploy (e.g. a Pages-only incident) without needing
+# a new commit. Shares the SAME `pages` concurrency group as ci.yml's deploy job (concurrency groups
+# are repo-wide, not per-workflow), so a manual run here still correctly queues behind — never races
+# — an automatic deploy in flight.
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 # Grant the GITHUB_TOKEN the scopes the Pages deploy needs (and nothing more).
