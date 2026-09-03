@@ -179,11 +179,20 @@ gaps, section rhythm). This is the space **BETWEEN** components — a **distinct
   the `Geometry` wrapper and that values are `number` with numeric `$value`.
 - **`geomTokensSizesCSS(scale)`** (issue #487) — a SIZE-ONLY sibling of `geomTokensCSS`: just the
   `--size-{step}-*` `:root` block, nothing else (no `--density`, no radius/space/inset/gap/border/focus,
-  no `.control-*` classes) — for a consumer (gen-ui-kit's ADR-0109) that binds only size fields and
-  doesn't want to vendor a slice of the full file. It calls the SAME `geomSizeVarLines` helper
-  `geomTokensCSS` itself uses, so a new per-size field needs no separate update here — it's not a fourth
-  independent emitter, just a smaller cut of the first one. Bundled as `geometry/geometry-sizes.css`
-  (Download-All) alongside `geometry.css`; no breakpoint bolt-on siblings (out of scope for #487).
+  no `.control-*` classes) — for a consumer that binds only size fields and doesn't want to vendor a
+  slice of the full file. It calls the SAME `geomSizeVarLines` helper `geomTokensCSS` itself uses, so a
+  new per-size field needs no separate update here — it's not a fourth independent emitter, just a
+  smaller cut of the first one. Bundled as `geometry/geometry-sizes.css` (Download-All) alongside
+  `geometry.css`; no breakpoint bolt-on siblings (out of scope for #487). **gen-ui-kit's ADR-0109 PR1
+  landed 2026-09-03 (f43853d)** (#500): AdiaUI now vendors this file verbatim as
+  `packages/web-components/styles/foundation/size-ladder.css` and binds `--a-size` / `--a-ui-size` /
+  `--a-caret-size` / `--a-icon-size` / `--a-ui-inset` to our `--md-sys-size-{step}-*` for every explicit
+  `[scale]×[size]` cell (their bare `:root` default is deliberately left unbound — their own REQ-L-001).
+  AdiaUI's control register is no longer an independent set of literals to track for drift — WE are the
+  source of truth, live. PR2 (Anatomy, gen-ui-kit#3041) and PR3 (icon-override sweep, gen-ui-kit#3042)
+  are filed but unstarted; the remaining component-dimension citations (table/alert/menu/badge paddings,
+  radius bindings — `src/engine/ds-export.js`'s `AdiaUI parity (#480)` comments) still describe a
+  point-in-time comparison against gen-ui-kit main @ f43853d, not a live binding, until those land.
 
 All three map over the **same** resolved `scale`, so a new field added to `buildSize` must be added to all three
 emitters (and the test) to surface everywhere.

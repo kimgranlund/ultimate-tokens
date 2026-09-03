@@ -546,8 +546,8 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     out.push(card("inputs.html", "Components", "Inputs", "states · select · textarea · selection controls", inCss, body));
   }
 
-  // 4. Table — header, rows, hairlines, a hovered row. AdiaUI parity (#480): cell padding matches
-  //    their 12/16 py/px; the header carries the STRONGER `-outline` hairline (a real role, distinct
+  // 4. Table — header, rows, hairlines, a hovered row. AdiaUI parity (#480, gen-ui-kit main @ f43853d):
+  //    cell padding matches their 12/16 py/px; the header carries the STRONGER `-outline` hairline (a real role, distinct
   //    from `-outline-variant` — role-table 500-600 vs 500-300) where row dividers keep the subtler
   //    `-outline-variant`, matching their own header-vs-row-border distinction. "Selected"/"striped"
   //    row states are NOT modeled — no matching semantic roles exist anywhere in our role table
@@ -563,7 +563,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   {
     // A soft, low-alpha shadow — the one exception our own Elevation & Depth prose already names
     // ("optional garnish on the top-most surfaces... one soft low-alpha layer at most"). A modal
-    // panel is exactly that surface (AdiaUI parity, #480: their overlay surfaces carry shadow-lg);
+    // panel is exactly that surface (AdiaUI parity, #480, gen-ui-kit main @ f43853d: their overlay surfaces carry shadow-lg);
     // the color is the -scrim token, never a raw rgba — still fully token-derived.
     const dlgShadow = has(`${cn}-scrim`) ? `box-shadow:0 8px 24px ${V(cn + "-scrim")};` : "";
     const dlgCss = `.dlg-wrap{position:relative;height:200px;border-radius:${rMd}px;overflow:hidden;background:${V(cn + "-background")}}.dlg-backdrop{position:absolute;inset:0;background:${V("dialog-backdrop")}}.dlg-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72%;background:${V(cn + "-surface")};border-radius:${rXl}px;padding:20px;${dlgShadow}}.dlg-panel h4{font-family:${headStack};margin:0 0 8px}.dlg-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}.dlg-btn{border:0;border-radius:${rMd}px;padding:8px 16px;${uiFont};cursor:pointer}`;
@@ -572,7 +572,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   }
 
   // 6. Tabs & Menu — the navigation group (resolved as one combined card, per "tabs/menu").
-  //    AdiaUI parity (#480): the menu popover is a card-tier surface (radius lg, not md) with a
+  //    AdiaUI parity (#480, gen-ui-kit main @ f43853d): the menu popover is a card-tier surface (radius lg, not md) with a
   //    tighter 4px padding; its item radius is CONCENTRIC — the popover's own radius minus its
   //    padding, so nested corners share a center — computed here from our own rLg, never copied
   //    as a literal. The tabs strip gap is tightened to match. The Delete item's danger color is
@@ -589,10 +589,10 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     out.push(card("navigation.html", "Components", "Tabs & Menu", "active tab · menu · hover", navCss, body));
   }
 
-  // 7. Card — a raised surface. Inset reads the real spacing ladder (AdiaUI parity, #480: their own
-  //    card inset ladder is 14/16/18 — our space[4]=16 lands on their default exactly). No shadow: our
-  //    own Elevation & Depth section already commits to surface-stepping over shadows for a plain
-  //    card — a deliberate, standing decision this ticket does not override (see Findings).
+  // 7. Card — a raised surface. Inset reads the real spacing ladder (AdiaUI parity, #480, gen-ui-kit
+  //    main @ f43853d: their own card inset ladder is 14/16/18 — our space[4]=16 lands on their default
+  //    exactly). No shadow: our own Elevation & Depth section already commits to surface-stepping over
+  //    shadows for a plain card — a deliberate, standing decision this ticket does not override (see Findings).
   {
     const cardSpace = dsSpacing(geomSc);
     const cardPad = cardSpace[4] != null ? cardSpace[4] : 16;
@@ -603,9 +603,9 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
 
   // 8. Feedback — status + signature badges, alerts (a family's own -container tint), a toast (the
   //    #471 inverse-surface pair), and a determinate progress bar. Dimensions/typography aligned to
-  //    AdiaUI parity (#480): badge is mono/uppercase/tracked/tabular (translating their badge
-  //    typography treatment into our own mono voice, not their font); alert radius/padding, toast
-  //    padding/max-width, and the progress track height match their spec; toast gets the same
+  //    AdiaUI parity (#480, gen-ui-kit main @ f43853d): badge is mono/uppercase/tracked/tabular
+  //    (translating their badge typography treatment into our own mono voice, not their font); alert
+  //    radius/padding, toast padding/max-width, and the progress track height match their spec; toast gets the same
   //    soft low-alpha shadow as Dialog (both are top-most/overlay surfaces per our own Elevation
   //    & Depth exception).
   {
