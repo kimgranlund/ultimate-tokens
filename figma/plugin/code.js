@@ -131,9 +131,13 @@ figma.ui.onmessage = async (msg) => {
       // Type + Geometry breakpoint-moded FLOAT collections (UI-computed, pre-validated apply plans). Isolated
       // in its OWN try so a float-apply failure can't mask the color apply that already succeeded above — the
       // user still gets the color result (+ a console error), and a re-apply (idempotent) converges the rest.
+      // #495 "published library" mode: msg.libraryMode is undefined unless a future UI explicitly sets
+      // it (no apply-gate.js toggle exists yet — out of THIS ticket's scope, documented in the #495
+      // Findings) — undefined falls through to applyFloatPlans/applyFontPrimitivesModes' OWN
+      // confirmLibraryMode() dialog, asked only if there's actually something at stake for this apply.
       let fr = null;
       if (Array.isArray(msg.floatPlans) && msg.floatPlans.length) {
-        try { fr = await applyFloatPlans(msg.floatPlans); }
+        try { fr = await applyFloatPlans(msg.floatPlans, { libraryMode: msg.libraryMode }); }
         catch (e) { console.error("[Ultimate Tokens] type/geometry apply failed:", e); }
       }
       // STYLES (opt-out): paint + text styles bound to the variables just applied. Own try — a styles
@@ -141,7 +145,7 @@ figma.ui.onmessage = async (msg) => {
       let sr = null;
       if (msg.stylePlans && ((msg.stylePlans.paints || []).length || (msg.stylePlans.texts || []).length)) {
         try {
-          if (msg.fontPrimitivesModes) await applyFontPrimitivesModes(msg.fontPrimitivesModes);
+          if (msg.fontPrimitivesModes) await applyFontPrimitivesModes(msg.fontPrimitivesModes, { libraryMode: msg.libraryMode });
           sr = await applyStylePlans(msg.stylePlans);
         } catch (e) { console.error("[Ultimate Tokens] styles apply failed:", e); }
       }
@@ -362,6 +366,224 @@ async function varsByName(collectionId) {
   return m;
 }
 
+// ── "published library" mode (#495) — never .remove() a variable from a collection consumed by OTHER
+// files (via Figma's library-publish mechanism): a consumer's binding is always by ID, so pruning
+// orphans it irrecoverably. MIRRORS figma/binder/mode-apply-plan.mjs's pure planner functions
+// (nearestStepByHeight/geometrySizeAliasMap/libraryModeReconcile/valueChanged/libraryModeReport) — hand-
+// written here, not imported, because Figma's plugin VM cannot `import` a .mjs at runtime (constraint 2,
+// maintaining-figma-plugins). Kept in behavioral lockstep by hand; the SAME inputs must produce the
+// SAME outputs as the .mjs source — see test/figma/plugin.mjs's `libraryparity` gate.
+
+// LIBRARY_TYPE_VOICE_MAP — the STATIC old->new Type-voice kebab-segment map (#495's own scope item 3;
+// mirrors migrations.mjs's LIBRARY_TYPE_VOICE_MAP, same discipline as SEMANTIC_RENAME_FROM in the
+// binder — the VM can't import it). Voices NOT listed here (Body/Display/Lead/Kicker/Sub-heading) need
+// no entry: their OLD name is ALREADY byte-identical to a CURRENT voice's kebab segment, so the
+// ordinary create-or-reuse-by-name path already covers them without any alias/deprecate involvement.
+// "quote" has no entry either — no current counterpart — so it falls straight to DEPRECATE.
+const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };
+
+// substituteSegment(name, oldSeg, newSeg) — replace an EXACT "/"-delimited path segment (never a
+// substring match — "ui" must not touch "ui-control" itself, or a segment that merely CONTAINS "ui").
+// Returns the substituted name, or null if `oldSeg` isn't a segment of `name` at all.
+function substituteSegment(name, oldSeg, newSeg) {
+  const segs = name.split("/");
+  let changed = false;
+  const out = segs.map((s) => { if (s === oldSeg) { changed = true; return newSeg; } return s; });
+  return changed ? out.join("/") : null;
+}
+
+// expandVoiceAliasMap(existingNames, voiceMap) — expands the SMALL static voice map into a FULL
+// {existingName: aliasTargetName} map, one entry per EXISTING Font/Type Primitives variable whose path
+// contains an OLD voice segment — e.g. "font/heading" -> "font/headline", "weight/heading/bold" ->
+// "weight/headline/bold". Mirrors mode-apply-plan.mjs#typeVoiceAliasMap's INTENT (not literally
+// imported — see the file header above).
+function expandVoiceAliasMap(existingNames, voiceMap) {
+  const map = {};
+  for (const name of existingNames) {
+    for (const oldV of Object.keys(voiceMap)) {
+      const substituted = substituteSegment(name, oldV, voiceMap[oldV]);
+      if (substituted) { map[name] = substituted; break; }
+    }
+  }
+  return map;
+}
+
+// nearestStepByHeightVM / expandGeometryAliasMap — mirror mode-apply-plan.mjs#nearestStepByHeight /
+// #geometrySizeAliasMap exactly (same algorithm: nearest CURRENT size/ step by height, expanded across
+// every per-size FIELD the current plan itself carries — never a hand-typed field list, so a future
+// buildSize() field is covered automatically).
+function nearestStepByHeightVM(oldHeight, currentStepHeights) {
+  let best = null, bestDist = Infinity;
+  for (const step of Object.keys(currentStepHeights)) {
+    const d = Math.abs(Number(currentStepHeights[step]) - Number(oldHeight));
+    if (d < bestDist) { bestDist = d; best = step; }
+  }
+  return best;
+}
+// geometryPlanStepHeights(planVariables) — the CURRENT plan's own {step: height} (Base mode) + the full
+// per-size FIELD list, derived from its own "size/{step}/{field}" variables — never hand-typed, so a
+// future buildSize() field/step is picked up automatically.
+function geometryPlanStepHeights(planVariables) {
+  const currentStepHeights = {};
+  const fieldSet = {};
+  for (const v of planVariables) {
+    const seg = v.name.split("/");
+    if (seg.length !== 3 || seg[0] !== "size") continue;
+    fieldSet[seg[2]] = true;
+    if (seg[2] === "height") {
+      const h = v.values.find((p) => p.mode === "Base") || v.values[0];
+      if (h) currentStepHeights[seg[1]] = h.value;
+    }
+  }
+  return { currentStepHeights: currentStepHeights, fields: Object.keys(fieldSet) };
+}
+// expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields) — mirrors
+// mode-apply-plan.mjs#geometrySizeAliasMap exactly: for each OLD step (already reduced to its OWN
+// height, read from the LIVE "size/{oldStep}/height" variable by the caller — this function itself
+// never touches figma), find the nearest CURRENT step by height, then expand across every FIELD.
+function expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields) {
+  const map = {};
+  for (const oldStep of Object.keys(oldStepHeights)) {
+    const nearest = nearestStepByHeightVM(oldStepHeights[oldStep], currentStepHeights);
+    if (!nearest) continue;
+    for (const field of fields) map["size/" + oldStep + "/" + field] = "size/" + nearest + "/" + field;
+  }
+  return map;
+}
+
+// libraryReconcile(existingNames, wantedNames, aliasMap) — mirrors mode-apply-plan.mjs#libraryModeReconcile.
+function libraryReconcile(existingNames, wantedNames, aliasMap) {
+  const wanted = {};
+  for (const n of wantedNames) wanted[n] = true;
+  const toAlias = [];
+  const toDeprecate = [];
+  for (const name of existingNames.slice().sort()) {
+    if (wanted[name]) continue;
+    const mapped = aliasMap && Object.prototype.hasOwnProperty.call(aliasMap, name) ? aliasMap[name] : undefined;
+    if (mapped && wanted[mapped]) toAlias.push({ from: name, to: mapped });
+    else if (name.indexOf("_deprecated/") !== 0) toDeprecate.push({ from: name, to: "_deprecated/" + name });
+  }
+  return { toAlias: toAlias, toDeprecate: toDeprecate };
+}
+
+// valueChangedVM(liveValuesByModeName, planVar) — mirrors mode-apply-plan.mjs#valueChanged, extended
+// (this file's own primitivesModesApplyPlan variables can be ALIAS-typed, which mode-apply-plan.mjs's
+// FLOAT_VAR_TYPES never recognizes — see style-plan.mjs's own header comment on why): an ALIAS-typed
+// plan variable has no `.values` array, only `.target` — reported as "changed" unconditionally,
+// matching the executor's own unconditional every-mode alias write (never skipped for an "unchanged"
+// target — the file-header comment on applyFontPrimitivesModes explains why).
+function valueChangedVM(liveValuesByModeName, planVar) {
+  if (planVar.type === "ALIAS") return true;
+  for (const pair of (planVar.values || [])) {
+    if (!(pair.mode in (liveValuesByModeName || {}))) return true;
+    const live = liveValuesByModeName[pair.mode];
+    if (typeof pair.value === "number" || typeof live === "number") { if (Number(live) !== Number(pair.value)) return true; }
+    else if (live !== pair.value) return true;
+  }
+  return false;
+}
+
+// readLiveValuesByName(byName, modeId) — the LIVE variables' current values, keyed by NAME then MODE
+// NAME (not mode id — the report/reconcile logic compares against the plan's own mode-name-keyed values).
+function readLiveValuesByName(byName, modeId) {
+  const modeNameOf = {};
+  for (const nm of Object.keys(modeId)) modeNameOf[modeId[nm]] = nm;
+  const out = {};
+  for (const name of Object.keys(byName)) {
+    const vr = byName[name];
+    const vals = {};
+    const vbm = vr.valuesByMode || {};
+    for (const mid of Object.keys(vbm)) { const mname = modeNameOf[mid]; if (mname) vals[mname] = vbm[mid]; }
+    out[name] = vals;
+  }
+  return out;
+}
+
+// libraryModeReportVM(plan, liveVarsByName, aliasMap) — mirrors mode-apply-plan.mjs#libraryModeReport:
+// the FULL rename/add/value-update/alias/deprecate action list for ONE collection's plan, computed ONCE
+// so the dry-run report and the real apply (below) can never disagree.
+function libraryModeReportVM(plan, liveVarsByName, aliasMap) {
+  const live = liveVarsByName || {};
+  const wantedNames = plan.variables.map((v) => v.name);
+  const renamesMap = plan.renames || {};
+  const renamed = [];
+  const consumedOld = {};
+  const effective = {};
+  for (const oldName of Object.keys(renamesMap)) {
+    const newName = renamesMap[oldName];
+    if (oldName in live && !(newName in live)) {
+      effective[newName] = live[oldName];
+      consumedOld[oldName] = true;
+      renamed.push({ from: oldName, to: newName });
+    }
+  }
+  for (const name of Object.keys(live)) {
+    if (consumedOld[name] || name in effective) continue;
+    effective[name] = live[name];
+  }
+  const adds = [];
+  const valueUpdates = [];
+  for (const v of plan.variables) {
+    if (!(v.name in effective)) { adds.push(v.name); continue; }
+    if (valueChangedVM(effective[v.name], v)) valueUpdates.push(v.name);
+  }
+  const rec = libraryReconcile(Object.keys(effective), wantedNames, aliasMap || {});
+  return { renames: renamed, adds: adds.sort(), valueUpdates: valueUpdates.sort(), aliases: rec.toAlias, deprecates: rec.toDeprecate };
+}
+
+// libraryModeReportText / confirmLibraryMode — the "published library" dry-run gate: a COPYABLE report
+// (a <textarea readonly>, per #495's own wording) plus Apply-safe / Remove-as-before buttons, shown
+// BEFORE any write. Mirrors confirmAdopt's figma.showUI() pattern (#492, TKT-... same reasons: no
+// ui.html file, no manifest change). USED BY: the standalone binder always (it has no persistent app UI
+// to disturb); the flagship app-as-plugin ONLY as a fallback when the caller doesn't pass a pre-decided
+// opts.libraryMode (see applyFloatPlans/applyFontPrimitivesModes below) — calling figma.showUI() here
+// REPLACES the running app's iframe content for the duration of this dialog (figma.showUI can only show
+// ONE ui at a time); the caller is responsible for restoring the app's own UI afterward if it cares
+// (the flagship's message handler does, immediately after this resolves — see the "apply" branch).
+function libraryModeReportText(collectionName, report) {
+  const lines = ["Collection: " + collectionName, ""];
+  lines.push("Renames (" + report.renames.length + "):");
+  for (const r of report.renames) lines.push("  " + r.from + " -> " + r.to);
+  lines.push("Adds (" + report.adds.length + "):");
+  for (const n of report.adds) lines.push("  " + n);
+  lines.push("Value updates (" + report.valueUpdates.length + "):");
+  for (const n of report.valueUpdates) lines.push("  " + n);
+  lines.push("Aliases — never removed, value redirected (" + report.aliases.length + "):");
+  for (const r of report.aliases) lines.push("  " + r.from + " -> " + r.to);
+  lines.push("Deprecates — never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");
+  for (const r of report.deprecates) lines.push("  " + r.from + " -> " + r.to);
+  return lines.join("\n");
+}
+async function confirmLibraryMode(collectionName, report) {
+  const text = libraryModeReportText(collectionName, report);
+  const atRisk = report.aliases.length + report.deprecates.length;
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (v) => { if (!settled) { settled = true; resolve(v); } };
+    figma.on("close", () => settle(false));
+    figma.showUI(
+      "<style>html,body{height:100%}body{font:12px -apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:16px;color:#1a1a1a;display:flex;flex-direction:column;box-sizing:border-box}" +
+      "p{margin:0 0 10px;line-height:1.5}textarea{flex:1;width:100%;box-sizing:border-box;font:11px ui-monospace,SFMono-Regular,monospace;margin-bottom:12px;border:1px solid #ccc;border-radius:6px;padding:8px;white-space:pre}" +
+      "button{font:inherit;padding:7px 14px;border-radius:6px;cursor:pointer;margin-right:8px}" +
+      "#library{background:#18A0FB;color:#fff;border:1px solid #18A0FB}#classic{background:#fff;border:1px solid #ccc}</style>" +
+      "<p><b>" + escapeHtmlVM(collectionName) + "</b> — this apply would remove " + atRisk + " variable(s) not in the current plan. " +
+      "If another file consumes this collection as a published library, removing them breaks those bindings. " +
+      "Preserve them (alias mapped names, deprecate the rest — never removed) or remove them as before?</p>" +
+      "<textarea readonly>" + escapeHtmlVM(text) + "</textarea>" +
+      "<div><button id=\"library\">Preserve (library-safe)</button><button id=\"classic\">Remove (today's behavior)</button></div>" +
+      "<script>document.getElementById('library').onclick=()=>parent.postMessage({pluginMessage:{type:'library-mode-confirm',library:true}},'*');" +
+      "document.getElementById('classic').onclick=()=>parent.postMessage({pluginMessage:{type:'library-mode-confirm',library:false}},'*');<\/script>",
+      { width: 480, height: 420 },
+    );
+    figma.ui.onmessage = (msg) => {
+      if (!msg || msg.type !== "library-mode-confirm") return;
+      settle(!!msg.library);
+      figma.ui.close();
+    };
+  });
+}
+function escapeHtmlVM(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
 // ── STYLES: Type Primitives + paint/text styles bound to the variables ─────────────────────────
 // The UI computes the plans (figma/binder/style-plan.mjs — pure, parity-gated); this executor runs
 // them verbatim. Provenance: STYLE_REGISTRY_KEY records the style ids WE created (name → id), so
@@ -389,7 +611,8 @@ function writeStyleRegistry(reg) { figma.root.setPluginData(STYLE_REGISTRY_KEY, 
 // apply-gate.js via applyRenameMigrations — see FIGMA_MIGRATIONS.floats.collections) is threaded into
 // ensureFloatCollection exactly like the merged Geometry plan does, so an existing file's "Font
 // Primitives" collection renames in place instead of getting a parallel "Type Primitives" one.
-async function applyFontPrimitivesModes(plan) {
+async function applyFontPrimitivesModes(plan, opts) {
+  opts = opts || {};
   if (!plan || !plan.collection || !Array.isArray(plan.modes) || !plan.modes.length || !Array.isArray(plan.variables) || !plan.variables.length) return null;
   const reg = readFloatRegistry(); // same provenance store as Typography/Geometry (name → collection id)
   const coll = await ensureFloatCollection(plan.collection, reg, plan.renameFrom);
@@ -407,6 +630,12 @@ async function applyFontPrimitivesModes(plan) {
     if (!wanted.has(m.name.toLowerCase()) && coll.modes.length > 1) coll.removeMode(m.modeId);
   }
   const byName = await varsByName(coll.id);
+  // #495 "published library" mode: snapshot LIVE values + build the Type-voice alias map BEFORE the
+  // create/update loop below overwrites anything.
+  const liveVarsByName = readLiveValuesByName(byName, modeId);
+  const aliasMap = expandVoiceAliasMap(Object.keys(byName), LIBRARY_TYPE_VOICE_MAP);
+  const report = libraryModeReportVM(plan, liveVarsByName, aliasMap);
+
   const current = new Set();
   let count = 0;
   for (const v of plan.variables) {
@@ -429,9 +658,36 @@ async function applyFontPrimitivesModes(plan) {
       byName[v.name] = vr; current.add(v.name); count++;
     }
   }
-  for (const name of Object.keys(byName)) if (!current.has(name)) byName[name].remove();
+  // #495: NEVER prune when "published library" mode is active — same decision channel as
+  // applyFloatPlans below. opts.libraryMode: explicit true/false = pre-decided by the caller. undefined
+  // + opts.askIfUndecided: true = ask HERE via confirmLibraryMode (the standalone binder's own main()
+  // passes this — it has no persistent UI a mid-apply dialog could disturb). undefined WITHOUT
+  // askIfUndecided (the flagship's message handler, today — no apply-gate.js toggle exists yet, out of
+  // #495's own scope) = default to classic prune, UNCHANGED from every existing flagship user's current
+  // behavior: figma.showUI() can only show ONE ui at a time, so an interactive dialog here would
+  // REPLACE the running app's iframe content mid-apply — a real, disruptive cost this ticket does not
+  // take on for the flagship without a proper apply-gate-integrated review UI (see confirmLibraryMode's
+  // own header comment, and the #495 Findings, for the follow-up this leaves on the table).
+  let useLibrary = opts.libraryMode;
+  if (useLibrary == null) {
+    useLibrary = (opts.askIfUndecided && (report.aliases.length || report.deprecates.length)) ? await confirmLibraryMode(plan.collection, report) : false;
+  }
+  if (useLibrary) {
+    for (const r of report.aliases) {
+      const vr = byName[r.from];
+      const target = byName[r.to];
+      if (!vr || !target) continue;
+      for (const mode of plan.modes) { const mid = modeId[mode]; if (mid != null) vr.setValueForMode(mid, figma.variables.createVariableAlias(target)); }
+    }
+    for (const r of report.deprecates) {
+      const vr = byName[r.from];
+      if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
+    }
+  } else {
+    for (const name of Object.keys(byName)) if (!current.has(name)) byName[name].remove();
+  }
   writeFloatRegistry(reg);
-  return { variables: count };
+  return { variables: count, libraryReport: { collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)) } };
 }
 
 // resolveFace — pick a REAL face for {family, weight, styleName?} from Figma's actual font list
@@ -867,8 +1123,10 @@ async function applyBundle(dtcg, opts) {
 // Idempotent: collections, modes, and variables are reconciled BY NAME and stale ones pruned, so re-applying
 // after a breakpoint/voice change converges the file to exactly the current plan (never doubling, never
 // leaving a removed breakpoint's mode behind). Value-complete plans mean no mode is ever left unset.
-async function applyFloatPlans(plans) {
+async function applyFloatPlans(plans, opts) {
+  opts = opts || {};
   let collections = 0, variables = 0;
+  const libraryReports = [];
   const reg = readFloatRegistry(); // provenance: only ever touch a collection this plugin created (see ensureFloatCollection)
   for (const plan of (Array.isArray(plans) ? plans : [])) {
     if (!plan || !plan.collection || !Array.isArray(plan.modes) || !plan.modes.length) continue;
@@ -898,6 +1156,29 @@ async function applyFloatPlans(plans) {
         delete byName[oldName];
       }
     }
+    // #495 "published library" mode: snapshot LIVE values + build the alias map BEFORE the create/
+    // update loop below overwrites anything — the dry-run report needs the value the file ACTUALLY had.
+    // The Geometry collection carries BOTH the type/ half (TKT-0009 merge — an OLD-voice-named
+    // "type/heading/md/size" needs the SAME Type-voice map Font/Type Primitives uses) and the size/
+    // half (needs its OWN nearest-by-height map) — the combined alias map is the union of both,
+    // applied only to the family (type/ or size/) each existing name actually belongs to.
+    const liveVarsByName = readLiveValuesByName(byName, modeId);
+    const existingNames = Object.keys(byName);
+    const combinedAliasMap = expandVoiceAliasMap(existingNames.filter((n) => n.indexOf("type/") === 0), LIBRARY_TYPE_VOICE_MAP);
+    const sizeGeo = geometryPlanStepHeights(plan.variables);
+    if (Object.keys(sizeGeo.currentStepHeights).length) {
+      const oldStepHeights = {};
+      for (const name of existingNames) {
+        const seg = name.split("/");
+        if (seg.length === 3 && seg[0] === "size" && seg[2] === "height" && !(seg[1] in sizeGeo.currentStepHeights)) {
+          const val = liveVarsByName[name] && liveVarsByName[name][plan.defaultMode];
+          if (typeof val === "number") oldStepHeights[seg[1]] = val;
+        }
+      }
+      Object.assign(combinedAliasMap, expandGeometryAliasMap(oldStepHeights, sizeGeo.currentStepHeights, sizeGeo.fields));
+    }
+    const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap);
+
     const current = new Set();
     for (const v of plan.variables) {
       const vr = byName[v.name] || figma.variables.createVariable(v.name, coll, v.type || "FLOAT");
@@ -907,7 +1188,31 @@ async function applyFloatPlans(plans) {
       }
       byName[v.name] = vr; current.add(v.name); variables++;
     }
-    for (const name of Object.keys(byName)) if (!current.has(name)) byName[name].remove();
+    // #495: NEVER prune when "published library" mode is active for this apply — alias mapped names
+    // (redirect the value, keep the id), deprecate the rest (id-preserving rename under "_deprecated/").
+    // See applyFontPrimitivesModes' matching block above for the FULL decision-channel rationale:
+    // opts.libraryMode explicit true/false wins; undefined + opts.askIfUndecided asks interactively
+    // (the standalone binder's main() only); undefined alone (the flagship, today) defaults to classic
+    // prune — unchanged behavior, no mid-apply UI disruption, until a proper apply-gate toggle exists.
+    let useLibrary = opts.libraryMode;
+    if (useLibrary == null) {
+      useLibrary = (opts.askIfUndecided && (report.aliases.length || report.deprecates.length)) ? await confirmLibraryMode(plan.collection, report) : false;
+    }
+    if (useLibrary) {
+      for (const r of report.aliases) {
+        const vr = byName[r.from];
+        const target = byName[r.to];
+        if (!vr || !target) continue;
+        for (const mode of plan.modes) { const mid = modeId[mode]; if (mid != null) vr.setValueForMode(mid, figma.variables.createVariableAlias(target)); }
+      }
+      for (const r of report.deprecates) {
+        const vr = byName[r.from];
+        if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
+      }
+    } else {
+      for (const name of Object.keys(byName)) if (!current.has(name)) byName[name].remove();
+    }
+    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)) });
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles
@@ -922,7 +1227,7 @@ async function applyFloatPlans(plans) {
     collections++;
   }
   writeFloatRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { collections: collections, variables: variables };
+  return { collections: collections, variables: variables, libraryReports: libraryReports };
 }
 
 // Exposed for the headless verifier (a no-op inside Figma's VM).

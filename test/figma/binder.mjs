@@ -159,14 +159,28 @@ function mockFigma() {
     // posting an adopt-confirm message, proving confirmAdopt's close-handler safety net (never hangs).
     _adoptAnswer: false,
     _showUICalls: 0,
+    // `_libraryModeAnswer` (#495) — the SAME "conservative default" precedent as `_adoptAnswer`: false
+    // (classic/remove) so an EXISTING test that doesn't care about library mode keeps seeing today's
+    // unchanged prune behavior. `_libraryShowUICalls` is tracked SEPARATELY from `_showUICalls` — one
+    // apply can show EITHER dialog (never both at once, but different tests exercise different ones),
+    // and existing adoption-only tests assert on `_showUICalls` alone.
+    _libraryModeAnswer: false,
+    _libraryShowUICalls: 0,
     _onClose: null,
     on(event, cb) { if (event === "close") this._onClose = cb; },
-    showUI() {
-      this._showUICalls++;
-      const answer = this._adoptAnswer;
+    // showUI(html) — routes by DIALOG TYPE, detected from the posted-message type string embedded in
+    // the HTML itself (both confirmAdopt and confirmLibraryMode are real figma.showUI(htmlString, …)
+    // calls — the mock reads back what was actually asked for, rather than assuming which one fired).
+    showUI(html) {
+      const isLibrary = typeof html === "string" && html.indexOf("library-mode-confirm") !== -1;
+      if (isLibrary) this._libraryShowUICalls++; else this._showUICalls++;
+      const answer = isLibrary ? this._libraryModeAnswer : this._adoptAnswer;
       Promise.resolve().then(() => {
         if (answer === "close") { if (this._onClose) this._onClose(); return; }
-        if (this.ui.onmessage) this.ui.onmessage({ type: "adopt-confirm", adopt: answer });
+        if (this.ui.onmessage) {
+          if (isLibrary) this.ui.onmessage({ type: "library-mode-confirm", library: answer });
+          else this.ui.onmessage({ type: "adopt-confirm", adopt: answer });
+        }
       });
     },
     ui: { onmessage: null, close() {} },
@@ -442,6 +456,85 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("adoptconsent", "main() threw during confirmed float adoption: " + e.message); }
 }
 
+// ── librarygeom (#495): "published library" mode for the box-geometry (size/*) half of the merged
+//    Geometry collection, mirroring the ADIA file's OLD step names (predating the current xs/sm/md/
+//    lg/xl/2xl ramp) — proven end-to-end through the STANDALONE BINDER's own INTERACTIVE path
+//    (main() -> applyFloatPlans(FLOAT_PLANS, {askIfUndecided:true}) -> confirmLibraryMode, the ONLY
+//    caller this ticket wires an interactive dialog into — see applyFloatPlans' own header comment on
+//    why the flagship never asks). Old steps map to their nearest CURRENT step BY HEIGHT (never by
+//    name) via geometryPlanStepHeights/expandGeometryAliasMap: "small"(25)->sm(24), "large"(40)->lg(36),
+//    "jumbo"(70)->2xl(64) — none collide with a current step name, so all three are "existing but not
+//    wanted" and exercise the SAME alias path a renamed step would. 0 removals; the confirm dialog
+//    actually fires (proving the wiring, not just the pure planner already proven in plugin.mjs's
+//    libraryparity/librarymode); idempotent second run. ──
+{
+  const F = mockFigma();
+  F.figma._libraryModeAnswer = true; // "Preserve (library-safe)"
+  try {
+    const FIELDS = ["height", "icon", "caret", "icon-gap", "min-width", "padding-narrow", "padding-narrow-compact", "padding-wide", "padding-wide-compact", "pill-radius"];
+    const OLD_STEPS = { small: 25, large: 40, jumbo: 70 }; // heights land unambiguously nearest sm/lg/2xl (never a tie)
+    const oldVars = [];
+    for (const [step, h] of Object.entries(OLD_STEPS)) {
+      for (const f of FIELDS) oldVars.push({ name: `size/${step}/${f}`, type: "FLOAT", values: [{ mode: "Base", value: f === "height" ? h : Math.round(h / 2) }] });
+    }
+    // Step 1: create + REGISTER the Geometry collection at its old shape, through applyFloatPlans
+    // itself (never a raw figma.variables call — ensureFloatCollection resolves by registry id/
+    // renameFrom only, same discipline as librarymode's Font Primitives fixture in plugin.mjs).
+    const { applyFloatPlans: apply1 } = loadBinder(binderSrc, F.figma);
+    await apply1([{ collection: "Geometry", modes: ["Base"], defaultMode: "Base", addModes: [], variables: oldVars }]);
+    if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("librarygeom", "step 1 (old-shape create) did not produce exactly 1 Geometry collection");
+
+    // Step 2: apply the CURRENT box-geometry plan through main()'s own interactive path (injected
+    // FLOAT_PLANS, mirroring floatindep's technique).
+    const geomIx = GEOM.geomTokensFigmaModes(GEOM.geomScale({ treatment: "comfortable", baseHeight: 28 }), []);
+    const plans2 = MAP.modeApplyPlan(geomIx);
+    const injected = binderSrc.replace(FLOAT_ANCHOR, `JSON.parse(${JSON.stringify(JSON.stringify(plans2))}); /* injected */`);
+    const { main } = loadBinder(injected, F.figma);
+    await main();
+
+    if (F.figma._libraryShowUICalls !== 1) FAIL("librarygeom", `expected exactly 1 library-mode confirm prompt, got ${F.figma._libraryShowUICalls}`);
+    if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("librarygeom", "the interactive library-mode apply duplicated the Geometry collection");
+    const geo = F.collections.find((c) => c.name === "Geometry");
+    // 0 removals: every old step/field variable must still exist BY NAME (aliasing redirects the
+    // VALUE, never renames — id-preserving, matching applyFontPrimitivesModes' own contract).
+    const stillThere = oldVars.every((v) => F.variables.some((va) => va.variableCollectionId === geo.id && va.name === v.name));
+    if (!stillThere) FAIL("librarygeom", "library mode removed an old size/* variable instead of aliasing it");
+    // "small" -> nearest CURRENT step "sm" BY HEIGHT: the old variable's live value must now be a real
+    // alias pointing at the new step's SAME field.
+    const oldSmallHeight = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/small/height");
+    const newSmHeight = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/sm/height");
+    if (!oldSmallHeight || !newSmHeight) FAIL("librarygeom", "expected both size/small/height (old, kept) and size/sm/height (current) to exist live");
+    else {
+      const baseId = geo.modes[0].modeId;
+      const val = oldSmallHeight.valuesByMode[baseId];
+      if (!val || val.type !== "VARIABLE_ALIAS" || val.id !== newSmHeight.id) FAIL("librarygeom", "size/small/height's value was not redirected to size/sm/height via a real alias (nearest-by-height)");
+    }
+    // "jumbo"(70) -> nearest CURRENT step "2xl"(64), not "xl"(48) — proves the mapping is BY HEIGHT,
+    // not by list position or name.
+    const oldJumboIcon = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/jumbo/icon");
+    const new2xlIcon = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/2xl/icon");
+    if (oldJumboIcon && new2xlIcon) {
+      const baseId = geo.modes[0].modeId;
+      const val = oldJumboIcon.valuesByMode[baseId];
+      if (!val || val.type !== "VARIABLE_ALIAS" || val.id !== new2xlIcon.id) FAIL("librarygeom", "size/jumbo/icon did not alias to the nearest-by-height current step (2xl), got a different/no target");
+    }
+
+    // IDEMPOTENT second run — same interactive answer, no doubled collection, no removals.
+    F.figma._libraryModeAnswer = true;
+    const injected2 = binderSrc.replace(FLOAT_ANCHOR, `JSON.parse(${JSON.stringify(JSON.stringify(plans2))}); /* injected */`);
+    const { main: main2 } = loadBinder(injected2, F.figma);
+    await main2();
+    if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("librarygeom", "second (idempotent) run duplicated the Geometry collection");
+    // once a variable's value has been redirected to an ALIAS (run 1), its literal height is no longer
+    // readable, so a re-run can't re-derive nearest-by-height for it and it falls to DEPRECATE instead —
+    // still id-preserving, still 0 .remove() calls, just a different classification. Same tolerant
+    // by-name-OR-_deprecated/-prefix check as plugin.mjs's librarymode fixture (Font Primitives).
+    const stillThere2 = oldVars.every((v) => F.variables.some((va) => va.variableCollectionId === geo.id && (va.name === v.name || va.name.indexOf("_deprecated/" + v.name) === 0)));
+    if (!stillThere2) FAIL("librarygeom", "second run removed a size/* variable library mode should have preserved");
+    if (F.variables.some((va) => va.variableCollectionId === geo.id && va.name.indexOf("_deprecated/_deprecated/") === 0)) FAIL("librarygeom", "second run double-prefixed an already-deprecated variable — not idempotent");
+  } catch (e) { FAIL("librarygeom", "the interactive box-geometry library-mode e2e threw: " + e.message); }
+}
+
 // ── colorparity: the binder's checked-in code.js's readColorRegistry/writeColorRegistry/ensureCollection
 //    are GENERATED (TKT-0024, splicing the FLOAT_EXECUTOR technique from TKT-0019) — spliced verbatim from
 //    the flagship figma/plugin/code.js by scripts/gen-figma-binder-code.mjs into the
@@ -519,7 +612,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "adoptconsent", "colorparity", "collparity", "floatparity"]) {
+for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "adoptconsent", "librarygeom", "colorparity", "collparity", "floatparity"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

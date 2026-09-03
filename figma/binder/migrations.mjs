@@ -86,3 +86,14 @@ export const FIGMA_MIGRATIONS = {
   color: { collections: { "Color Roles": ["Color Semantic", "Color Modes"] } },
   styles: { paints: {}, texts: {} },
 };
+
+// LIBRARY_TYPE_VOICE_MAP (#495) — the STATIC old->new Type-voice KEBAB-SEGMENT map "published library"
+// mode uses to ALIAS an old-voice-named Font/Type Primitives (or Geometry type/ half) variable to its
+// current counterpart, instead of pruning it, when the file is a published library other files depend
+// on. Voices NOT listed here (body/display/lead/kicker/sub-heading) need no entry: their OLD kebab
+// segment is ALREADY byte-identical to a CURRENT voice's, so ordinary create-or-reuse-by-name already
+// covers them — no alias/deprecate involvement at all. "quote" has no entry either — no current
+// counterpart — so it falls straight to DEPRECATE (renamed under "_deprecated/", id preserved).
+// figma/plugin/code.js carries the SAME map as a literal (LIBRARY_TYPE_VOICE_MAP) — the VM can't import
+// this file; kept in lockstep by hand, same discipline as SEMANTIC_RENAME_FROM in the standalone binder.
+export const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };

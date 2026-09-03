@@ -66,6 +66,13 @@ const FLOAT_REGISTRY_KEY = "ultimate-tokens-float-collections";
 // populated with aliases on the next bind.
 const COLOR_REGISTRY_KEY = "ultimate-tokens-color-collections";
 
+// LIBRARY_TYPE_VOICE_MAP (#495) — "published library" mode's static old->new Type-voice kebab-segment
+// map (mirrors migrations.mjs's LIBRARY_TYPE_VOICE_MAP — this sandbox can't import it; hand-kept in
+// lockstep, same discipline as SEMANTIC_RENAME_FROM above). Applies to any OLD-voice-named variable in
+// the merged "Geometry" collection's type/ half (this binder never touches Font/Type Primitives at all
+// — see applyFloatPlans below).
+const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };
+
 // MIRRORS figma/plugin/code.js's float executor: readFloatRegistry/writeFloatRegistry/
 // ensureFloatCollection/varsByName/applyFloatPlans — a pure DATA executor (no planner to spec-gate
 // against), using only figma.variables.* + figma.root.get/setPluginData, both available to any plugin
@@ -106,8 +113,10 @@ async function varsByName(collectionId) {
   return m;
 }
 
-async function applyFloatPlans(plans) {
+async function applyFloatPlans(plans, opts) {
+  opts = opts || {};
   let collections = 0, variables = 0;
+  const libraryReports = [];
   const reg = readFloatRegistry(); // provenance: only ever touch a collection this plugin created (see ensureFloatCollection)
   for (const plan of (Array.isArray(plans) ? plans : [])) {
     if (!plan || !plan.collection || !Array.isArray(plan.modes) || !plan.modes.length) continue;
@@ -137,6 +146,29 @@ async function applyFloatPlans(plans) {
         delete byName[oldName];
       }
     }
+    // #495 "published library" mode: snapshot LIVE values + build the alias map BEFORE the create/
+    // update loop below overwrites anything — the dry-run report needs the value the file ACTUALLY had.
+    // The Geometry collection carries BOTH the type/ half (TKT-0009 merge — an OLD-voice-named
+    // "type/heading/md/size" needs the SAME Type-voice map Font/Type Primitives uses) and the size/
+    // half (needs its OWN nearest-by-height map) — the combined alias map is the union of both,
+    // applied only to the family (type/ or size/) each existing name actually belongs to.
+    const liveVarsByName = readLiveValuesByName(byName, modeId);
+    const existingNames = Object.keys(byName);
+    const combinedAliasMap = expandVoiceAliasMap(existingNames.filter((n) => n.indexOf("type/") === 0), LIBRARY_TYPE_VOICE_MAP);
+    const sizeGeo = geometryPlanStepHeights(plan.variables);
+    if (Object.keys(sizeGeo.currentStepHeights).length) {
+      const oldStepHeights = {};
+      for (const name of existingNames) {
+        const seg = name.split("/");
+        if (seg.length === 3 && seg[0] === "size" && seg[2] === "height" && !(seg[1] in sizeGeo.currentStepHeights)) {
+          const val = liveVarsByName[name] && liveVarsByName[name][plan.defaultMode];
+          if (typeof val === "number") oldStepHeights[seg[1]] = val;
+        }
+      }
+      Object.assign(combinedAliasMap, expandGeometryAliasMap(oldStepHeights, sizeGeo.currentStepHeights, sizeGeo.fields));
+    }
+    const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap);
+
     const current = new Set();
     for (const v of plan.variables) {
       const vr = byName[v.name] || figma.variables.createVariable(v.name, coll, v.type || "FLOAT");
@@ -146,7 +178,31 @@ async function applyFloatPlans(plans) {
       }
       byName[v.name] = vr; current.add(v.name); variables++;
     }
-    for (const name of Object.keys(byName)) if (!current.has(name)) byName[name].remove();
+    // #495: NEVER prune when "published library" mode is active for this apply — alias mapped names
+    // (redirect the value, keep the id), deprecate the rest (id-preserving rename under "_deprecated/").
+    // See applyFontPrimitivesModes' matching block above for the FULL decision-channel rationale:
+    // opts.libraryMode explicit true/false wins; undefined + opts.askIfUndecided asks interactively
+    // (the standalone binder's main() only); undefined alone (the flagship, today) defaults to classic
+    // prune — unchanged behavior, no mid-apply UI disruption, until a proper apply-gate toggle exists.
+    let useLibrary = opts.libraryMode;
+    if (useLibrary == null) {
+      useLibrary = (opts.askIfUndecided && (report.aliases.length || report.deprecates.length)) ? await confirmLibraryMode(plan.collection, report) : false;
+    }
+    if (useLibrary) {
+      for (const r of report.aliases) {
+        const vr = byName[r.from];
+        const target = byName[r.to];
+        if (!vr || !target) continue;
+        for (const mode of plan.modes) { const mid = modeId[mode]; if (mid != null) vr.setValueForMode(mid, figma.variables.createVariableAlias(target)); }
+      }
+      for (const r of report.deprecates) {
+        const vr = byName[r.from];
+        if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
+      }
+    } else {
+      for (const name of Object.keys(byName)) if (!current.has(name)) byName[name].remove();
+    }
+    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)) });
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles
@@ -161,8 +217,174 @@ async function applyFloatPlans(plans) {
     collections++;
   }
   writeFloatRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { collections: collections, variables: variables };
+  return { collections: collections, variables: variables, libraryReports: libraryReports };
 }
+
+function substituteSegment(name, oldSeg, newSeg) {
+  const segs = name.split("/");
+  let changed = false;
+  const out = segs.map((s) => { if (s === oldSeg) { changed = true; return newSeg; } return s; });
+  return changed ? out.join("/") : null;
+}
+
+function expandVoiceAliasMap(existingNames, voiceMap) {
+  const map = {};
+  for (const name of existingNames) {
+    for (const oldV of Object.keys(voiceMap)) {
+      const substituted = substituteSegment(name, oldV, voiceMap[oldV]);
+      if (substituted) { map[name] = substituted; break; }
+    }
+  }
+  return map;
+}
+
+function nearestStepByHeightVM(oldHeight, currentStepHeights) {
+  let best = null, bestDist = Infinity;
+  for (const step of Object.keys(currentStepHeights)) {
+    const d = Math.abs(Number(currentStepHeights[step]) - Number(oldHeight));
+    if (d < bestDist) { bestDist = d; best = step; }
+  }
+  return best;
+}
+
+function geometryPlanStepHeights(planVariables) {
+  const currentStepHeights = {};
+  const fieldSet = {};
+  for (const v of planVariables) {
+    const seg = v.name.split("/");
+    if (seg.length !== 3 || seg[0] !== "size") continue;
+    fieldSet[seg[2]] = true;
+    if (seg[2] === "height") {
+      const h = v.values.find((p) => p.mode === "Base") || v.values[0];
+      if (h) currentStepHeights[seg[1]] = h.value;
+    }
+  }
+  return { currentStepHeights: currentStepHeights, fields: Object.keys(fieldSet) };
+}
+
+function expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields) {
+  const map = {};
+  for (const oldStep of Object.keys(oldStepHeights)) {
+    const nearest = nearestStepByHeightVM(oldStepHeights[oldStep], currentStepHeights);
+    if (!nearest) continue;
+    for (const field of fields) map["size/" + oldStep + "/" + field] = "size/" + nearest + "/" + field;
+  }
+  return map;
+}
+
+function libraryReconcile(existingNames, wantedNames, aliasMap) {
+  const wanted = {};
+  for (const n of wantedNames) wanted[n] = true;
+  const toAlias = [];
+  const toDeprecate = [];
+  for (const name of existingNames.slice().sort()) {
+    if (wanted[name]) continue;
+    const mapped = aliasMap && Object.prototype.hasOwnProperty.call(aliasMap, name) ? aliasMap[name] : undefined;
+    if (mapped && wanted[mapped]) toAlias.push({ from: name, to: mapped });
+    else if (name.indexOf("_deprecated/") !== 0) toDeprecate.push({ from: name, to: "_deprecated/" + name });
+  }
+  return { toAlias: toAlias, toDeprecate: toDeprecate };
+}
+
+function valueChangedVM(liveValuesByModeName, planVar) {
+  if (planVar.type === "ALIAS") return true;
+  for (const pair of (planVar.values || [])) {
+    if (!(pair.mode in (liveValuesByModeName || {}))) return true;
+    const live = liveValuesByModeName[pair.mode];
+    if (typeof pair.value === "number" || typeof live === "number") { if (Number(live) !== Number(pair.value)) return true; }
+    else if (live !== pair.value) return true;
+  }
+  return false;
+}
+
+function readLiveValuesByName(byName, modeId) {
+  const modeNameOf = {};
+  for (const nm of Object.keys(modeId)) modeNameOf[modeId[nm]] = nm;
+  const out = {};
+  for (const name of Object.keys(byName)) {
+    const vr = byName[name];
+    const vals = {};
+    const vbm = vr.valuesByMode || {};
+    for (const mid of Object.keys(vbm)) { const mname = modeNameOf[mid]; if (mname) vals[mname] = vbm[mid]; }
+    out[name] = vals;
+  }
+  return out;
+}
+
+function libraryModeReportVM(plan, liveVarsByName, aliasMap) {
+  const live = liveVarsByName || {};
+  const wantedNames = plan.variables.map((v) => v.name);
+  const renamesMap = plan.renames || {};
+  const renamed = [];
+  const consumedOld = {};
+  const effective = {};
+  for (const oldName of Object.keys(renamesMap)) {
+    const newName = renamesMap[oldName];
+    if (oldName in live && !(newName in live)) {
+      effective[newName] = live[oldName];
+      consumedOld[oldName] = true;
+      renamed.push({ from: oldName, to: newName });
+    }
+  }
+  for (const name of Object.keys(live)) {
+    if (consumedOld[name] || name in effective) continue;
+    effective[name] = live[name];
+  }
+  const adds = [];
+  const valueUpdates = [];
+  for (const v of plan.variables) {
+    if (!(v.name in effective)) { adds.push(v.name); continue; }
+    if (valueChangedVM(effective[v.name], v)) valueUpdates.push(v.name);
+  }
+  const rec = libraryReconcile(Object.keys(effective), wantedNames, aliasMap || {});
+  return { renames: renamed, adds: adds.sort(), valueUpdates: valueUpdates.sort(), aliases: rec.toAlias, deprecates: rec.toDeprecate };
+}
+
+function libraryModeReportText(collectionName, report) {
+  const lines = ["Collection: " + collectionName, ""];
+  lines.push("Renames (" + report.renames.length + "):");
+  for (const r of report.renames) lines.push("  " + r.from + " -> " + r.to);
+  lines.push("Adds (" + report.adds.length + "):");
+  for (const n of report.adds) lines.push("  " + n);
+  lines.push("Value updates (" + report.valueUpdates.length + "):");
+  for (const n of report.valueUpdates) lines.push("  " + n);
+  lines.push("Aliases — never removed, value redirected (" + report.aliases.length + "):");
+  for (const r of report.aliases) lines.push("  " + r.from + " -> " + r.to);
+  lines.push("Deprecates — never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");
+  for (const r of report.deprecates) lines.push("  " + r.from + " -> " + r.to);
+  return lines.join("\n");
+}
+
+async function confirmLibraryMode(collectionName, report) {
+  const text = libraryModeReportText(collectionName, report);
+  const atRisk = report.aliases.length + report.deprecates.length;
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (v) => { if (!settled) { settled = true; resolve(v); } };
+    figma.on("close", () => settle(false));
+    figma.showUI(
+      "<style>html,body{height:100%}body{font:12px -apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:16px;color:#1a1a1a;display:flex;flex-direction:column;box-sizing:border-box}" +
+      "p{margin:0 0 10px;line-height:1.5}textarea{flex:1;width:100%;box-sizing:border-box;font:11px ui-monospace,SFMono-Regular,monospace;margin-bottom:12px;border:1px solid #ccc;border-radius:6px;padding:8px;white-space:pre}" +
+      "button{font:inherit;padding:7px 14px;border-radius:6px;cursor:pointer;margin-right:8px}" +
+      "#library{background:#18A0FB;color:#fff;border:1px solid #18A0FB}#classic{background:#fff;border:1px solid #ccc}</style>" +
+      "<p><b>" + escapeHtmlVM(collectionName) + "</b> — this apply would remove " + atRisk + " variable(s) not in the current plan. " +
+      "If another file consumes this collection as a published library, removing them breaks those bindings. " +
+      "Preserve them (alias mapped names, deprecate the rest — never removed) or remove them as before?</p>" +
+      "<textarea readonly>" + escapeHtmlVM(text) + "</textarea>" +
+      "<div><button id=\"library\">Preserve (library-safe)</button><button id=\"classic\">Remove (today's behavior)</button></div>" +
+      "<script>document.getElementById('library').onclick=()=>parent.postMessage({pluginMessage:{type:'library-mode-confirm',library:true}},'*');" +
+      "document.getElementById('classic').onclick=()=>parent.postMessage({pluginMessage:{type:'library-mode-confirm',library:false}},'*');<\/script>",
+      { width: 480, height: 420 },
+    );
+    figma.ui.onmessage = (msg) => {
+      if (!msg || msg.type !== "library-mode-confirm") return;
+      settle(!!msg.library);
+      figma.ui.close();
+    };
+  });
+}
+
+function escapeHtmlVM(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 // === GENERATED:FLOAT_EXECUTOR END ===
 
 // MIRRORS figma/plugin/code.js's color executor: readColorRegistry/writeColorRegistry/ensureCollection —
@@ -542,7 +764,7 @@ async function main() {
       if (candidate && (await confirmAdopt(candidate.name, { prunes: true }))) { floatReg[plan.collection] = candidate.id; adopted++; }
     }
     writeFloatRegistry(floatReg);
-    fp = await applyFloatPlans(FLOAT_PLANS);
+    fp = await applyFloatPlans(FLOAT_PLANS, { askIfUndecided: true }); // #495: this binder has no persistent UI a mid-apply dialog could disturb — ask interactively when something's at stake
   }
 
   if (!rawColl && !fp) {

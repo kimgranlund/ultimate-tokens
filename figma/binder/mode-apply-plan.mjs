@@ -193,3 +193,121 @@ export function retirementsFor(plans, migrations) {
   });
   return changed ? out : plans;
 }
+
+// ── "published library" mode (#495) — a per-collection RECONCILE that never removes a variable, for a
+// file whose collections are consumed (via Figma's library-publish mechanism) by OTHER files: a
+// consumer's binding is always by ID, so a `.remove()` orphans it irrecoverably. All of the below is
+// PURE (no figma calls) — the executor (code.js) reads live state ONCE, calls these, then both REPORTS
+// the result (dry-run) and APPLIES it (the SAME computed action list drives both, so they can never
+// disagree — see applyFloatPlans'/applyFontPrimitivesModes' library-mode branch). ──
+
+// nearestStepByHeight(oldHeight, currentStepHeights) — PURE: which of the CURRENT plan's OWN size/
+// steps (a {stepName: height} map, read straight from its `size/${step}/height` variables — never a
+// hand-typed table, so a ramp change is picked up automatically) has the height CLOSEST to an old,
+// no-longer-planned step's own height? Ties break toward whichever step Object.entries() visits first
+// (insertion order — deterministic, never array-sort-dependent).
+export function nearestStepByHeight(oldHeight, currentStepHeights) {
+  let best = null, bestDist = Infinity;
+  for (const [step, h] of Object.entries(currentStepHeights || {})) {
+    const d = Math.abs(Number(h) - Number(oldHeight));
+    if (d < bestDist) { bestDist = d; best = step; }
+  }
+  return best;
+}
+
+// geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields) — PURE: expands a "nearest step by
+// height" match into a FULL per-field alias map for the Geometry `size/` family —
+// `{"size/${oldStep}/${field}": "size/${nearestStep}/${field}"}` for every old step × every field.
+// `fields` (e.g. height/icon/caret/icon-gap/…) come from the CURRENT plan's own size/ variables, never
+// hand-typed — a future field added to buildSize() is covered automatically, no map to maintain by hand.
+export function geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields) {
+  const map = {};
+  for (const [oldStep, h] of Object.entries(oldStepHeights || {})) {
+    const nearest = nearestStepByHeight(h, currentStepHeights);
+    if (!nearest) continue;
+    for (const field of fields) map[`size/${oldStep}/${field}`] = `size/${nearest}/${field}`;
+  }
+  return map;
+}
+
+// libraryModeReconcile(existingNames, wantedNames, aliasMap) — PURE: for each LIVE variable name NOT in
+// the current plan (`wantedNames`), classify what "published library" mode does instead of deleting it:
+//   - `aliasMap[name]` is set AND that target IS in `wantedNames` -> ALIAS: keep the name, redirect its
+//     VALUE to the mapped target (every mode, explicitly — hard-constraint #7's "every mode needs its
+//     own explicit value" applies to an alias write exactly as it does to a literal one).
+//   - otherwise, if not already under `"_deprecated/"` -> DEPRECATE: an id-preserving rename under that
+//     prefix (a bound-by-id consumer keeps resolving, now to a frozen, no-longer-maintained value).
+//   - otherwise (already `"_deprecated/…"`, still unmapped) -> IDEMPOTENT no-op, never re-deprecated —
+//     this is what makes a second run of the same apply produce 0 further deprecates/aliases for names
+//     already resolved on the first.
+// A name present in `wantedNames` is this function's non-concern — the caller's ordinary create/update
+// path (unchanged, prune step simply skipped) already covers it. Returns
+// `{ toAlias: [{from,to}], toDeprecate: [{from,to}] }`, both name-sorted for deterministic output.
+export function libraryModeReconcile(existingNames, wantedNames, aliasMap) {
+  const wanted = new Set(wantedNames);
+  const toAlias = [];
+  const toDeprecate = [];
+  for (const name of [...existingNames].sort()) {
+    if (wanted.has(name)) continue;
+    const mapped = aliasMap && Object.prototype.hasOwnProperty.call(aliasMap, name) ? aliasMap[name] : undefined;
+    if (mapped && wanted.has(mapped)) toAlias.push({ from: name, to: mapped });
+    else if (!name.startsWith("_deprecated/")) toDeprecate.push({ from: name, to: "_deprecated/" + name });
+  }
+  return { toAlias, toDeprecate };
+}
+
+// valueChanged(liveValuesByModeName, planVar) — PURE: does ANY of the plan variable's per-mode values
+// differ from what the LIVE variable already holds at that mode (matched by MODE NAME — dry-run runs
+// before any mode ids for a NEW mode would even exist)? `liveValuesByModeName` = {modeName: value};
+// `planVar` = a plan variable entry — either modeApplyPlan's `{name, type, values: [{mode,value},…]}`
+// (Geometry — `type` is never "ALIAS" here, style-plan.mjs's FIGMA_VAR_TYPES doesn't include it) or
+// style-plan.mjs's primitivesModesApplyPlan `{name, type:"ALIAS", target}` shape (Font/Type Primitives)
+// — an ALIAS entry has no `.values` at all and is reported "changed" unconditionally, matching the
+// executor's own unconditional every-mode alias write (never skipped for an "unchanged" target — see
+// applyFontPrimitivesModes' own header comment for why). Numeric comparison for FLOATs (tolerates a
+// live read that's already a JS number); strict-equal otherwise. A mode the live variable has no value
+// for yet (e.g. a breakpoint just added) counts as changed — there is a real value to WRITE.
+export function valueChanged(liveValuesByModeName, planVar) {
+  if (planVar.type === "ALIAS") return true;
+  for (const { mode, value } of (planVar.values || [])) {
+    if (!(mode in (liveValuesByModeName || {}))) return true;
+    const live = liveValuesByModeName[mode];
+    if (typeof value === "number" || typeof live === "number") { if (Number(live) !== Number(value)) return true; }
+    else if (live !== value) return true;
+  }
+  return false;
+}
+
+// libraryModeReport(plan, liveVarsByName, aliasMap) — PURE: the FULL "published library" action list for
+// ONE collection's plan — every rename (from `plan.renames`, TKT-0012's EXISTING mechanism)/add/
+// value-update/alias/deprecate this apply will make, computed ONCE so the dry-run report and the real
+// apply can never disagree (code.js's library-mode branch calls this, then reports it verbatim, THEN
+// executes it verbatim — never re-derives). `liveVarsByName` = `{name: {modeName: value}}`, the file's
+// OWN current values, read before any write (`{}` for a brand-new collection — everything becomes adds).
+export function libraryModeReport(plan, liveVarsByName, aliasMap) {
+  const live = liveVarsByName || {};
+  const wantedNames = plan.variables.map((v) => v.name);
+  const renamesMap = plan.renames || {};
+  const renamed = [];
+  const consumedOld = new Set();
+  const effective = {};
+  for (const [oldName, newName] of Object.entries(renamesMap)) {
+    if (oldName in live && !(newName in live)) {
+      effective[newName] = live[oldName];
+      consumedOld.add(oldName);
+      renamed.push({ from: oldName, to: newName });
+    }
+  }
+  for (const [name, vals] of Object.entries(live)) {
+    if (consumedOld.has(name) || name in effective) continue;
+    effective[name] = vals;
+  }
+  const adds = [];
+  const valueUpdates = [];
+  for (const v of plan.variables) {
+    if (!(v.name in effective)) { adds.push(v.name); continue; }
+    if (valueChanged(effective[v.name], v)) valueUpdates.push(v.name);
+  }
+  const { toAlias, toDeprecate } = libraryModeReconcile(Object.keys(effective), wantedNames, aliasMap || {});
+  return { renames: renamed, adds: adds.sort(), valueUpdates: valueUpdates.sort(), aliases: toAlias, deprecates: toDeprecate };
+}
