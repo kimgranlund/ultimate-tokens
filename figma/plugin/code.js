@@ -437,16 +437,19 @@ function geometryPlanStepHeights(planVariables) {
   }
   return { currentStepHeights: currentStepHeights, fields: Object.keys(fieldSet) };
 }
-// expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields) — mirrors
+// expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap) — mirrors
 // mode-apply-plan.mjs#geometrySizeAliasMap exactly: for each OLD step (already reduced to its OWN
 // height, read from the LIVE "size/{oldStep}/height" variable by the caller — this function itself
 // never touches figma), find the nearest CURRENT step by height, then expand across every FIELD.
-function expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields) {
+// `fieldRenameMap` (#498) additionally bridges OLD-SPELLED field names (e.g. ADIA's "edgePadding" ->
+// the current "padding-wide") under the SAME nearest-by-height step match.
+function expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap) {
   const map = {};
   for (const oldStep of Object.keys(oldStepHeights)) {
     const nearest = nearestStepByHeightVM(oldStepHeights[oldStep], currentStepHeights);
     if (!nearest) continue;
     for (const field of fields) map["size/" + oldStep + "/" + field] = "size/" + nearest + "/" + field;
+    for (const oldField of Object.keys(fieldRenameMap || {})) map["size/" + oldStep + "/" + oldField] = "size/" + nearest + "/" + fieldRenameMap[oldField];
   }
   return map;
 }
@@ -475,6 +478,56 @@ function resolveLiteralHeightVM(name, modeName, liveVarsByName, idToName, maxHop
   }
   return null;
 }
+
+// ── #498 grammar bridge (applyFontPrimitivesModes only — the standalone binder never calls that
+// function, so these mirror mode-apply-plan.mjs's pure versions but are NOT spliced into the binder).
+// See mode-apply-plan.mjs's own header comment on this bridge group for the full rationale. ──
+var TYPE_STEP_FIELD_MAP = { size: "size", lineHeight: "line-height", letterSpacing: "letter-spacing", paragraphSpacing: "paragraph-spacing" };
+var GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
+// parseOldTypeStepNameVM(name) — mirrors mode-apply-plan.mjs#parseOldTypeStepName exactly, INCLUDING
+// the uppercase-step requirement that keeps it from false-positive-matching an ordinary CURRENT
+// weight/<voice>/<slug> (or weight-style/…) 3-segment name — see the mjs version's own header comment.
+var OLD_TYPE_STEP_RE_VM = /^[0-9]*[A-Z][0-9A-Z]*$/;
+function parseOldTypeStepNameVM(name) {
+  var seg = String(name).split("/");
+  if (seg.length !== 3 || !seg[0] || !seg[1] || !seg[2] || !OLD_TYPE_STEP_RE_VM.test(seg[1])) return null;
+  return { voice: seg[0], step: seg[1], field: seg[2], voiceLower: seg[0].toLowerCase(), stepLower: seg[1].toLowerCase() };
+}
+// typeStepAliasMapVM(oldSizeRecords, voiceMap, currentVoiceStepSizes, fieldMap) — mirrors
+// mode-apply-plan.mjs#typeStepAliasMap exactly.
+function typeStepAliasMapVM(oldSizeRecords, voiceMap, currentVoiceStepSizes, fieldMap) {
+  var map = {};
+  for (var i = 0; i < (oldSizeRecords || []).length; i++) {
+    var rec = oldSizeRecords[i];
+    var newVoice = (voiceMap && voiceMap[rec.voiceLower]) || rec.voiceLower;
+    var sizes = (currentVoiceStepSizes && currentVoiceStepSizes[newVoice]) || {};
+    var nearest = nearestStepByHeightVM(rec.size, sizes);
+    if (!nearest) continue;
+    for (var oldField in (fieldMap || {})) {
+      map[rec.voice + "/" + rec.step + "/" + oldField] = "type/" + newVoice + "/" + nearest + "/" + fieldMap[oldField];
+    }
+  }
+  return map;
+}
+// typeWeightAliasMapVM(oldWeightRecords, voiceMap, weightCandidates) — mirrors
+// mode-apply-plan.mjs#typeWeightAliasMap exactly.
+function typeWeightAliasMapVM(oldWeightRecords, voiceMap, weightCandidates) {
+  var map = {};
+  for (var i = 0; i < (oldWeightRecords || []).length; i++) {
+    var rec = oldWeightRecords[i];
+    var newVoice = (voiceMap && voiceMap[rec.voiceLower]) || rec.voiceLower;
+    var cand = (weightCandidates && weightCandidates[newVoice]) || {};
+    var target = null;
+    if (cand.bare) target = "weight/" + newVoice;
+    else {
+      var nearestSlug = nearestStepByHeightVM(rec.weight, cand.bySlug || {});
+      if (nearestSlug) target = "weight/" + newVoice + "/" + nearestSlug;
+    }
+    if (target) map[rec.voice + "/" + rec.step + "/weight"] = target;
+  }
+  return map;
+}
+
 // liveAliasTargetsByNameVM(existingNames, modeName, liveVarsByName, idToName) — mirrors
 // mode-apply-plan.mjs#liveAliasTargetsByName exactly: for every EXISTING name whose live value at
 // `modeName` is CURRENTLY a resolvable VARIABLE_ALIAS, its one-hop target NAME — the "belt" half of the
@@ -551,14 +604,15 @@ function readLiveValuesByName(byName, modeId) {
   return out;
 }
 
-// libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets) — mirrors
+// libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames) — mirrors
 // mode-apply-plan.mjs#libraryModeReport: the FULL rename/add/value-update/alias/deprecate action list for
 // ONE collection's plan, computed ONCE so the dry-run report and the real apply (below) can never
 // disagree. `liveAliasTargets` (optional) is liveAliasTargetsByNameVM's output, passed straight through
-// to libraryReconcile's idempotency check.
-function libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets) {
+// to libraryReconcile's idempotency check. `extraWantedNames` (optional, #498): cross-collection bridge
+// targets the caller already validated exist live — see the mjs version's own header comment.
+function libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames) {
   const live = liveVarsByName || {};
-  const wantedNames = plan.variables.map((v) => v.name);
+  const wantedNames = plan.variables.map((v) => v.name).concat(extraWantedNames || []);
   const renamesMap = plan.renames || {};
   const renamed = [];
   const consumedOld = {};
@@ -692,8 +746,66 @@ async function applyFontPrimitivesModes(plan, opts) {
   const idToName = {};
   for (const nm of Object.keys(byName)) idToName[byName[nm].id] = nm;
   const aliasMap = expandVoiceAliasMap(Object.keys(byName), LIBRARY_TYPE_VOICE_MAP);
-  const liveAliasTargets = liveAliasTargetsByNameVM(Object.keys(byName), plan.defaultMode, liveVarsByName, idToName);
-  const report = libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets);
+
+  // #498: the ADIA file's pre-collection-split "Voice/STEP/field" Type grammar (see this file's own
+  // header comment on the bridge group, above parseOldTypeStepNameVM). Only scanned/bridged when at
+  // least one such name is actually present, to skip an extra cross-collection Figma read on every
+  // ordinary apply. combinedIdToName/combinedLiveVarsByName extend resolveLiteralHeightVM's chase (and
+  // liveAliasTargetsByNameVM's belt) across the Geometry collection boundary too, so an ALREADY
+  // cross-collection-aliased old variable is recognized as already-correct on a re-apply — same
+  // idempotency discipline as #495's own follow-up fix — instead of churning to _deprecated/ every time.
+  let combinedIdToName = idToName;
+  let combinedLiveVarsByName = liveVarsByName;
+  let geoByNameForApply = {}; // Geometry's live vars, for the cross-collection alias-WRITE step below
+  let extraWantedNames = []; // cross-collection bridge targets — see libraryModeReportVM's own header comment
+  if (Object.keys(byName).some((n) => parseOldTypeStepNameVM(n))) {
+    const geoCols = await figma.variables.getLocalVariableCollectionsAsync();
+    const geoId = reg["Geometry"];
+    const geoColl = (geoId && geoCols.find((c) => c.id === geoId)) || geoCols.find((c) => c.name === "Geometry");
+    const oldSizeRecords = [];
+    const oldWeightRecords = [];
+    const currentVoiceStepSizes = {};
+    if (geoColl) {
+      geoByNameForApply = await varsByName(geoColl.id);
+      const geoBaseModeId = geoColl.defaultModeId || geoColl.modes[0].modeId;
+      combinedIdToName = Object.assign({}, idToName);
+      combinedLiveVarsByName = Object.assign({}, liveVarsByName);
+      for (const nm of Object.keys(geoByNameForApply)) {
+        const vr = geoByNameForApply[nm];
+        combinedIdToName[vr.id] = nm;
+        const val = vr.valuesByMode ? vr.valuesByMode[geoBaseModeId] : undefined;
+        if (typeof val !== "number") continue;
+        combinedLiveVarsByName[nm] = { [plan.defaultMode]: val }; // one synthetic mode entry is enough — only a representative literal is ever needed here, never written back
+        const seg = nm.split("/");
+        if (seg.length === 4 && seg[0] === "type" && seg[3] === "size") (currentVoiceStepSizes[seg[1]] = currentVoiceStepSizes[seg[1]] || {})[seg[2]] = val;
+      }
+    }
+    // weight/<voice>[/<slug>] candidates come from THIS plan's own variables (same collection) — no
+    // cross-collection read needed for the weight bridge.
+    const weightCandidates = {};
+    for (const v of plan.variables) {
+      if (!v || typeof v.name !== "string" || v.name.indexOf("weight/") !== 0 || v.type !== "FLOAT" || !Array.isArray(v.values)) continue;
+      const seg = v.name.split("/");
+      const pair = v.values.find((p) => p.mode === plan.defaultMode) || v.values[0];
+      if (!pair || typeof pair.value !== "number") continue;
+      if (seg.length === 2) { (weightCandidates[seg[1]] = weightCandidates[seg[1]] || {}).bare = true; }
+      else if (seg.length === 3) { const c = (weightCandidates[seg[1]] = weightCandidates[seg[1]] || {}); c.bySlug = c.bySlug || {}; c.bySlug[seg[2]] = pair.value; }
+    }
+    for (const name of Object.keys(byName)) {
+      const parsed = parseOldTypeStepNameVM(name);
+      if (!parsed) continue;
+      const val = resolveLiteralHeightVM(name, plan.defaultMode, combinedLiveVarsByName, combinedIdToName);
+      if (typeof val !== "number") continue;
+      if (parsed.field === "size") oldSizeRecords.push({ voice: parsed.voice, step: parsed.step, voiceLower: parsed.voiceLower, size: val });
+      else if (parsed.field === "weight") oldWeightRecords.push({ voice: parsed.voice, step: parsed.step, voiceLower: parsed.voiceLower, weight: val });
+    }
+    const typeStepMap = typeStepAliasMapVM(oldSizeRecords, LIBRARY_TYPE_VOICE_MAP, currentVoiceStepSizes, TYPE_STEP_FIELD_MAP);
+    Object.assign(aliasMap, typeStepMap);
+    extraWantedNames = Object.values(typeStepMap); // these are GEOMETRY names — never in plan.variables
+    Object.assign(aliasMap, typeWeightAliasMapVM(oldWeightRecords, LIBRARY_TYPE_VOICE_MAP, weightCandidates));
+  }
+  const liveAliasTargets = liveAliasTargetsByNameVM(Object.keys(byName), plan.defaultMode, liveVarsByName, combinedIdToName);
+  const report = libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames);
 
   const current = new Set();
   let count = 0;
@@ -734,7 +846,10 @@ async function applyFontPrimitivesModes(plan, opts) {
   if (useLibrary) {
     for (const r of report.aliases) {
       const vr = byName[r.from];
-      const target = byName[r.to];
+      // #498: a target may live in a DIFFERENT collection (the "Voice/STEP/{size,lineHeight,
+      // letterSpacing,paragraphSpacing}" bridge's target is a Geometry type/ variable) — fall back to
+      // the cross-collection lookup built above when it isn't one of THIS collection's own names.
+      const target = byName[r.to] || geoByNameForApply[r.to];
       if (!vr || !target) continue;
       for (const mode of plan.modes) { const mid = modeId[mode]; if (mid != null) vr.setValueForMode(mid, figma.variables.createVariableAlias(target)); }
     }
@@ -1233,15 +1348,22 @@ async function applyFloatPlans(plans, opts) {
     const combinedAliasMap = expandVoiceAliasMap(existingNames.filter((n) => n.indexOf("type/") === 0), LIBRARY_TYPE_VOICE_MAP);
     const sizeGeo = geometryPlanStepHeights(plan.variables);
     if (Object.keys(sizeGeo.currentStepHeights).length) {
+      // #498: every "size/{step}/height" seeds oldStepHeights, EVEN when {step} already matches a
+      // current step name (unlike #495's original scan, which skipped those as "already fine") — an
+      // identity-matching step's own UNRENAMED fields (height/icon/caret) are already `wanted` names
+      // and get skipped by libraryReconcile before ever consulting this map (harmless no-op self-
+      // mapping), but its OLD-SPELLED fields (edgePadding/gap/… — GEOMETRY_FIELD_RENAME_MAP) are NOT
+      // wanted names, and need this SAME step entry to be bridged at all (#498's field-spelling bridge,
+      // isolated from step drift — see GEOMETRY_FIELD_RENAME_MAP's own header comment).
       const oldStepHeights = {};
       for (const name of existingNames) {
         const seg = name.split("/");
-        if (seg.length === 3 && seg[0] === "size" && seg[2] === "height" && !(seg[1] in sizeGeo.currentStepHeights)) {
+        if (seg.length === 3 && seg[0] === "size" && seg[2] === "height") {
           const val = resolveLiteralHeightVM(name, plan.defaultMode, liveVarsByName, idToName);
           if (typeof val === "number") oldStepHeights[seg[1]] = val;
         }
       }
-      Object.assign(combinedAliasMap, expandGeometryAliasMap(oldStepHeights, sizeGeo.currentStepHeights, sizeGeo.fields));
+      Object.assign(combinedAliasMap, expandGeometryAliasMap(oldStepHeights, sizeGeo.currentStepHeights, sizeGeo.fields, GEOMETRY_FIELD_RENAME_MAP));
     }
     const liveAliasTargets = liveAliasTargetsByNameVM(existingNames, plan.defaultMode, liveVarsByName, idToName);
     const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap, liveAliasTargets);

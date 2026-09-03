@@ -97,3 +97,21 @@ export const FIGMA_MIGRATIONS = {
 // figma/plugin/code.js carries the SAME map as a literal (LIBRARY_TYPE_VOICE_MAP) — the VM can't import
 // this file; kept in lockstep by hand, same discipline as SEMANTIC_RENAME_FROM in the standalone binder.
 export const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };
+
+// GEOMETRY_FIELD_RENAME_MAP (#498) — the STATIC old->new Geometry size/* FIELD-SPELLING map "published
+// library" mode uses to ALIAS an old-spelled size/* field to its current counterpart (same step, same
+// nearest-by-height match #495 already established — this bridges the FIELD segment only). A real file
+// (the ADIA Tokens library) predates the current field spelling: "edgePadding"/"gap"/"minWidth"/
+// "padding"/"radius" instead of "padding-wide"/"icon-gap"/"min-width"/"padding-narrow"/"pill-radius".
+// NOT the same grammar as this file's own ADR-016 kebab-wave OLD_FIELD table above (that one documents
+// THIS repo's own "paddingWide"/"paddingNarrow" intermediate spelling, TKT-0013 — a different, unrelated
+// naming history than the ADIA file's own external one) — kept as an independent, purpose-specific
+// const rather than derived from it. "font" (size/{step}/font, no clean size/* counterpart — its only
+// sensible target lives in a DIFFERENT collection, "Type Primitives"' font/ui-control) is deliberately
+// left OUT: applyFloatPlans (Geometry) runs BEFORE applyFontPrimitivesModes (Type Primitives) in every
+// real caller, so on a first-time apply the cross-collection target wouldn't exist yet — an
+// old size/{step}/font name is left unmapped (deprecates, id-preserving), a documented scope decision
+// rather than a cross-collection create from the wrong execution phase. figma/plugin/code.js carries
+// the SAME map as a literal — the VM can't import this file; kept in lockstep by hand, same discipline
+// as LIBRARY_TYPE_VOICE_MAP above.
+export const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
