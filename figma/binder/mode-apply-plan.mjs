@@ -215,17 +215,21 @@ export function nearestStepByHeight(oldHeight, currentStepHeights) {
   return best;
 }
 
-// geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields) — PURE: expands a "nearest step by
-// height" match into a FULL per-field alias map for the Geometry `size/` family —
+// geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap) — PURE: expands a
+// "nearest step by height" match into a FULL per-field alias map for the Geometry `size/` family —
 // `{"size/${oldStep}/${field}": "size/${nearestStep}/${field}"}` for every old step × every field.
 // `fields` (e.g. height/icon/caret/icon-gap/…) come from the CURRENT plan's own size/ variables, never
 // hand-typed — a future field added to buildSize() is covered automatically, no map to maintain by hand.
-export function geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields) {
+// `fieldRenameMap` (optional, #498) additionally bridges OLD-SPELLED field names a real file predates
+// the current spelling for (e.g. an ADIA-era "edgePadding" -> the current "padding-wide") — same old
+// step, same nearest-by-height match, just a DIFFERENT field name on each side of the arrow.
+export function geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap) {
   const map = {};
   for (const [oldStep, h] of Object.entries(oldStepHeights || {})) {
     const nearest = nearestStepByHeight(h, currentStepHeights);
     if (!nearest) continue;
     for (const field of fields) map[`size/${oldStep}/${field}`] = `size/${nearest}/${field}`;
+    for (const [oldField, newField] of Object.entries(fieldRenameMap || {})) map[`size/${oldStep}/${oldField}`] = `size/${nearest}/${newField}`;
   }
   return map;
 }
@@ -258,6 +262,99 @@ export function resolveLiteralHeight(name, modeName, liveVarsByName, idToName, m
   }
   return null; // chain deeper than maxHops — treat as unresolved rather than loop further
 }
+
+// ── #498 grammar bridge — the ADIA file's PRE-collection-split "Voice/STEP/field" Type grammar
+// (Title-Case voice, UPPERCASE step, camelCase field — e.g. "Heading/MD/size", "UI/XL/lineHeight",
+// "Code/2XS/weight") predates the #495 alias map entirely: it's a DIFFERENT segment count/case
+// convention than the shipped font/<voice>-shaped bridge (substituteSegment/expandVoiceAliasMap), so it
+// needs its own parser rather than reusing that one. Two independent bridges share this grammar: the
+// {size,lineHeight,letterSpacing,paragraphSpacing} fields target the CURRENT "type/<voice>/<step>/<leaf>"
+// step variable (Geometry collection — a DIFFERENT collection than the old variable itself, resolved by
+// the executor's own cross-collection read, mirroring applyStylePlans' established byRegistry pattern);
+// "weight" targets a Type-Primitives "weight/<voice>[/<slug>]" PRIMITIVE instead (same collection as the
+// old variable) since a voice's weight is ~constant across steps, not itself a per-step quantity in the
+// current scheme; "singleLineHeight" has no bridge at all here (deprecates, like any other unmapped
+// name) — box voices' single-line metric isn't part of this grammar's target shape. ──
+
+// TYPE_STEP_FIELD_MAP — old ADIA field spelling (camelCase) -> the current type/ leaf (kebab). "weight"
+// is deliberately excluded (its own bridge, above); "singleLineHeight" has no entry at all (deprecates).
+export const TYPE_STEP_FIELD_MAP = { size: "size", lineHeight: "line-height", letterSpacing: "letter-spacing", paragraphSpacing: "paragraph-spacing" };
+
+// parseOldTypeStepName(name) — PURE: parse an old-grammar "Voice/STEP/field" name into its three
+// segments, keeping BOTH the original case (the map this feeds builds its own KEYS from the live name
+// exactly as it appears — libraryReconcile looks up by exact string) and a lowercased voice/step (for
+// case-insensitive voiceMap lookups and current-step-table matching). Returns null for anything that
+// isn't EXACTLY this 3-segment shape — REQUIRING the STEP segment to be an old-style UPPERCASE token
+// (digits + uppercase letters, e.g. "MD", "2XS") is load-bearing, not cosmetic: every CURRENT 3-segment
+// name this grammar could otherwise collide with (weight/<voice>/<slug>, weight-style/<voice>/<slug> —
+// both all-lowercase-kebab) would otherwise ALSO parse as a false-positive "Voice/STEP/field" match,
+// defeating the executor's own "only scan when this grammar is actually present" guard on every
+// ORDINARY apply (a real defect found while testing this bridge, not a hypothetical).
+const OLD_TYPE_STEP_RE = /^[0-9]*[A-Z][0-9A-Z]*$/;
+export function parseOldTypeStepName(name) {
+  const seg = String(name).split("/");
+  if (seg.length !== 3 || !seg[0] || !seg[1] || !seg[2] || !OLD_TYPE_STEP_RE.test(seg[1])) return null;
+  return { voice: seg[0], step: seg[1], field: seg[2], voiceLower: seg[0].toLowerCase(), stepLower: seg[1].toLowerCase() };
+}
+
+// typeStepAliasMap(oldSizeRecords, voiceMap, currentVoiceStepSizes, fieldMap) — PURE: the {oldName:
+// newName} alias map for the {size,lineHeight,letterSpacing,paragraphSpacing} bridge. `oldSizeRecords` =
+// [{voice, step, voiceLower, size}, …] — one entry per OLD "Voice/STEP/size" sibling found live (the
+// executor scans for these; every OTHER bridgeable field of that same step rides the SAME match, even
+// one whose own old variable doesn't exist — libraryModeReconcile only ever acts on names actually
+// present). For each record: map through `voiceMap` (identity fallback) to the CURRENT voice, then find
+// the NEAREST current step BY SIZE within that voice's own step/size table — nearestStepByHeight, reused
+// here unchanged: the algorithm is generic (closest absolute numeric distance in a {key:number} map),
+// first proven on Geometry height, now on Type size. `currentVoiceStepSizes` = {voice: {step: size}}
+// (never hand-typed — read straight from the CURRENT plan/live state by the executor).
+export function typeStepAliasMap(oldSizeRecords, voiceMap, currentVoiceStepSizes, fieldMap) {
+  const map = {};
+  for (const rec of (oldSizeRecords || [])) {
+    const newVoice = (voiceMap && voiceMap[rec.voiceLower]) || rec.voiceLower;
+    const sizes = (currentVoiceStepSizes && currentVoiceStepSizes[newVoice]) || {};
+    const nearest = nearestStepByHeight(rec.size, sizes);
+    if (!nearest) continue;
+    for (const [oldField, newField] of Object.entries(fieldMap || {})) {
+      map[`${rec.voice}/${rec.step}/${oldField}`] = `type/${newVoice}/${nearest}/${newField}`;
+    }
+  }
+  return map;
+}
+
+// typeWeightAliasMap(oldWeightRecords, voiceMap, weightCandidates) — PURE: the {oldName: newName} alias
+// map for the "weight" bridge. `oldWeightRecords` = [{voice, step, voiceLower, weight}, …] — EVERY old
+// weight variable (any step — a voice's weight is treated as ~constant across steps, matching how the
+// old grammar itself always carried the same value there) maps INDEPENDENTLY to whichever
+// weight/<voice>[/<slug>] CURRENT candidate has the NEAREST weight VALUE — not a per-step match at all.
+// `weightCandidates` = {voice: {bare: true|undefined, bySlug: {slug: value}}}: a bare `weight/<voice>`
+// (no slug segment) wins outright when the current plan carries one — the "vanishingly rare" collision
+// case coreWeightKey's own header documents (a sibling's own slug happens to match the core's); otherwise
+// nearest-by-value (nearestStepByHeight, reused again) among the slug-suffixed candidates.
+export function typeWeightAliasMap(oldWeightRecords, voiceMap, weightCandidates) {
+  const map = {};
+  for (const rec of (oldWeightRecords || [])) {
+    const newVoice = (voiceMap && voiceMap[rec.voiceLower]) || rec.voiceLower;
+    const cand = (weightCandidates && weightCandidates[newVoice]) || {};
+    let target = null;
+    if (cand.bare) target = `weight/${newVoice}`;
+    else {
+      const nearestSlug = nearestStepByHeight(rec.weight, cand.bySlug || {});
+      if (nearestSlug) target = `weight/${newVoice}/${nearestSlug}`;
+    }
+    if (target) map[`${rec.voice}/${rec.step}/weight`] = target;
+  }
+  return map;
+}
+
+// GEOMETRY_FIELD_RENAME_MAP — old ADIA size/* field spelling -> the current spelling (#498). "font" is
+// deliberately excluded: its only sensible current target (Type Primitives' "font/ui-control") lives in
+// a DIFFERENT collection than "Geometry", and — unlike the Type-grammar bridges above, where Geometry's
+// type/ variables are ALREADY live by the time Type Primitives' plan runs — Geometry's OWN plan
+// (applyFloatPlans) runs FIRST in every real caller, BEFORE Type Primitives even exists on a first-time
+// apply; aliasing to a not-yet-created foreign variable isn't safe here the way the reverse direction is.
+// A "size/{step}/font" name is left unmapped (deprecates, id-preserving) — a deliberate scope decision,
+// documented rather than risking a cross-collection create from the wrong execution phase.
+export const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
 
 // liveAliasTargetsByName(existingNames, modeName, liveVarsByName, idToName) — PURE: for every EXISTING
 // name whose live value at `modeName` is CURRENTLY a resolvable VARIABLE_ALIAS, its one-hop target NAME
@@ -339,17 +436,24 @@ export function valueChanged(liveValuesByModeName, planVar) {
   return false;
 }
 
-// libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets) — PURE: the FULL "published
-// library" action list for ONE collection's plan — every rename (from `plan.renames`, TKT-0012's
-// EXISTING mechanism)/add/value-update/alias/deprecate this apply will make, computed ONCE so the
-// dry-run report and the real apply can never disagree (code.js's library-mode branch calls this, then
-// reports it verbatim, THEN executes it verbatim — never re-derives). `liveVarsByName` =
+// libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames) — PURE: the FULL
+// "published library" action list for ONE collection's plan — every rename (from `plan.renames`,
+// TKT-0012's EXISTING mechanism)/add/value-update/alias/deprecate this apply will make, computed ONCE so
+// the dry-run report and the real apply can never disagree (code.js's library-mode branch calls this,
+// then reports it verbatim, THEN executes it verbatim — never re-derives). `liveVarsByName` =
 // `{name: {modeName: value}}`, the file's OWN current values, read before any write (`{}` for a
 // brand-new collection — everything becomes adds). `liveAliasTargets` (optional) is
 // liveAliasTargetsByName's output — passed straight through to libraryModeReconcile's idempotency check.
-export function libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets) {
+// `extraWantedNames` (optional, #498): a bridge target can live in a DIFFERENT collection than this
+// plan's own (e.g. the "Voice/STEP/field" bridge's target is a Geometry type/ variable) — "wanted" here
+// is scoped to THIS plan's own `plan.variables` names alone, so a cross-collection target would never
+// pass libraryReconcile's `wanted.has(mapped)` check without this: the CALLER (which computed the
+// cross-collection alias map in the first place, and so already knows exactly which foreign names it
+// resolved against real, existing live variables) supplies them here to be treated as wanted too, for
+// this reconcile only — they never affect `adds`/`valueUpdates` (both scoped to `plan.variables` alone).
+export function libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames) {
   const live = liveVarsByName || {};
-  const wantedNames = plan.variables.map((v) => v.name);
+  const wantedNames = plan.variables.map((v) => v.name).concat(extraWantedNames || []);
   const renamesMap = plan.renames || {};
   const renamed = [];
   const consumedOld = new Set();

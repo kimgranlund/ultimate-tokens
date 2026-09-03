@@ -73,6 +73,12 @@ const COLOR_REGISTRY_KEY = "ultimate-tokens-color-collections";
 // — see applyFloatPlans below).
 const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };
 
+// GEOMETRY_FIELD_RENAME_MAP (#498) — "published library" mode's static old->new Geometry size/* field-
+// spelling map (mirrors migrations.mjs's GEOMETRY_FIELD_RENAME_MAP — hand-kept in lockstep, same
+// discipline as LIBRARY_TYPE_VOICE_MAP above). "font" is deliberately excluded — see migrations.mjs's
+// own header comment for the cross-collection execution-order reason.
+const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
+
 // MIRRORS figma/plugin/code.js's float executor: readFloatRegistry/writeFloatRegistry/
 // ensureFloatCollection/varsByName/applyFloatPlans — a pure DATA executor (no planner to spec-gate
 // against), using only figma.variables.* + figma.root.get/setPluginData, both available to any plugin
@@ -164,15 +170,22 @@ async function applyFloatPlans(plans, opts) {
     const combinedAliasMap = expandVoiceAliasMap(existingNames.filter((n) => n.indexOf("type/") === 0), LIBRARY_TYPE_VOICE_MAP);
     const sizeGeo = geometryPlanStepHeights(plan.variables);
     if (Object.keys(sizeGeo.currentStepHeights).length) {
+      // #498: every "size/{step}/height" seeds oldStepHeights, EVEN when {step} already matches a
+      // current step name (unlike #495's original scan, which skipped those as "already fine") — an
+      // identity-matching step's own UNRENAMED fields (height/icon/caret) are already `wanted` names
+      // and get skipped by libraryReconcile before ever consulting this map (harmless no-op self-
+      // mapping), but its OLD-SPELLED fields (edgePadding/gap/… — GEOMETRY_FIELD_RENAME_MAP) are NOT
+      // wanted names, and need this SAME step entry to be bridged at all (#498's field-spelling bridge,
+      // isolated from step drift — see GEOMETRY_FIELD_RENAME_MAP's own header comment).
       const oldStepHeights = {};
       for (const name of existingNames) {
         const seg = name.split("/");
-        if (seg.length === 3 && seg[0] === "size" && seg[2] === "height" && !(seg[1] in sizeGeo.currentStepHeights)) {
+        if (seg.length === 3 && seg[0] === "size" && seg[2] === "height") {
           const val = resolveLiteralHeightVM(name, plan.defaultMode, liveVarsByName, idToName);
           if (typeof val === "number") oldStepHeights[seg[1]] = val;
         }
       }
-      Object.assign(combinedAliasMap, expandGeometryAliasMap(oldStepHeights, sizeGeo.currentStepHeights, sizeGeo.fields));
+      Object.assign(combinedAliasMap, expandGeometryAliasMap(oldStepHeights, sizeGeo.currentStepHeights, sizeGeo.fields, GEOMETRY_FIELD_RENAME_MAP));
     }
     const liveAliasTargets = liveAliasTargetsByNameVM(existingNames, plan.defaultMode, liveVarsByName, idToName);
     const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap, liveAliasTargets);
@@ -270,12 +283,13 @@ function geometryPlanStepHeights(planVariables) {
   return { currentStepHeights: currentStepHeights, fields: Object.keys(fieldSet) };
 }
 
-function expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields) {
+function expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap) {
   const map = {};
   for (const oldStep of Object.keys(oldStepHeights)) {
     const nearest = nearestStepByHeightVM(oldStepHeights[oldStep], currentStepHeights);
     if (!nearest) continue;
     for (const field of fields) map["size/" + oldStep + "/" + field] = "size/" + nearest + "/" + field;
+    for (const oldField of Object.keys(fieldRenameMap || {})) map["size/" + oldStep + "/" + oldField] = "size/" + nearest + "/" + fieldRenameMap[oldField];
   }
   return map;
 }
@@ -358,9 +372,9 @@ function readLiveValuesByName(byName, modeId) {
   return out;
 }
 
-function libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets) {
+function libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames) {
   const live = liveVarsByName || {};
-  const wantedNames = plan.variables.map((v) => v.name);
+  const wantedNames = plan.variables.map((v) => v.name).concat(extraWantedNames || []);
   const renamesMap = plan.renames || {};
   const renamed = [];
   const consumedOld = {};
