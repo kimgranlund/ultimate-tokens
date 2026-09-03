@@ -13,7 +13,10 @@ who builds what:
   `Color Primitives` collection already exists (the user ran the app's Apply first, or imported the raw JSON)
   and ONLY creates the aliased `Color Roles` collection on top. If `Color Primitives` is absent it notifies
   *"No 'Color Primitives' collection found — apply your palette in Color Tokens first, then run the Binder."*
-  and closes. It has no UI and no `figmaBundle` — its inputs are purely the live variables in the open file.
+  and closes. It has no `ui.html`/`figmaBundle` — its inputs are purely the live variables in the open
+  file — but (#492) it CAN show a tiny inline `figma.showUI()` confirm dialog (no committed HTML file,
+  no manifest change: the markup is a string literal in `confirmAdopt()`) for the one adoption-consent
+  gate described below; that dialog is the ENTIRE UI surface this plugin has.
 - **The app-as-plugin** (`figma/plugin/`) is the whole generator running inside Figma. `ui.html` embeds
   `<ultimate-tokens>` (built by `npm run gen:figma-ui` from `dist/ultimate-tokens.html`); the UI posts
   `figmaBundle()` to `code.js#applyBundle`, which CREATES both collections from scratch, prunes orphans, and
@@ -56,6 +59,43 @@ raw-colors name set — that is why the binder can't construct a dangling target
 centralises this grammar identically to `bind-plan.mjs#targetName`. (Note: the semantic var name uses `r.key`
 — `"{n}/{r.key}"`, e.g. `"primary/primaryDim"` — distinct from `bind-plan.mjs`'s `bindingPlan` which names
 its `semanticVar` as `"{n}{r.suffix}"`, e.g. `"primary-dim"`; both forms describe the same role.)
+
+### 3b. The adoption path (#492) — the binder's only exception to "PROVENANCE, never by name"
+
+`ensureCollection`/`ensureFloatCollection` (spliced verbatim from the flagship, TKT-0024/TKT-0009-era)
+are UNCHANGED by #492 — they still resolve `reg[name]` by id ONLY, never by name, and adoption never
+touches them. Instead, `main()` calls a DISCOVERY-only helper, `findAdoptionCandidate(name, reg,
+renameFrom, cols)`, BEFORE each `ensureCollection`/`ensureFloatCollection` call: is there a LIVE
+collection named `name` (or a `renameFrom` name) that `reg` does NOT already track by id — an orphan,
+e.g. one built by hand, by an older build that predates the registry, or one the registry lost track of?
+If one exists, `confirmAdopt(name)` shows the ONE UI this plugin has (`figma.showUI()` with an inline
+HTML string — no `ui.html` file, no manifest change) and awaits a click. Confirmed ⇒ `main()` pre-seeds
+`reg[name] = candidate.id` ITSELF, then calls the (still-unchanged) `ensureCollection`/
+`ensureFloatCollection`, which now takes its normal "known" fast path and returns that exact collection
+— zero risk to the provenance functions' own parity gates, since they were never touched. Declined ⇒
+today's pre-#492 behavior: a separate collection is created, the orphan is left alone (proven live by
+`test/figma/binder.mjs`'s `colorprov` gate, still green — it now explicitly asserts the prompt WAS shown
+before asserting decline preserved the foreign collection).
+
+**Once resolved — confirmed or declined — the SAME orphan is never re-asked about.** A confirmed adopt
+registers the id (the normal path handles it forever after); a decline creates and registers a FRESH
+collection under that name (so the orphan-vs-registered check never fires for that name again either).
+No separate "have we asked" flag exists or is needed — the registry's own state transition IS the
+"once per file" gate the ticket asks for.
+
+**The load-bearing asymmetry a live adoption inherits, unchanged:** the color role-binding loop (§3
+above) never prunes — an adopted Color Roles collection's own foreign variables survive. `applyFloatPlans`
+(§ below) is a FULL-MIRROR reconciler for whatever it owns — create-or-reuse by name, PRUNE anything not
+in the current plan — and adoption changes nothing about that contract; a foreign variable inside an
+adopted Geometry/Type Primitives collection does NOT survive the same run that adopts it. The confirm
+dialog's copy ("adopt it and upsert into it") is the user's consent to exactly that, for float
+collections specifically — `test/figma/binder.mjs`'s `adoptconsent` gate proves both halves (color
+survives, float prunes) against the SAME mechanism.
+
+Binder-only: the flagship app-as-plugin's `applyBundle`/`ensureCollection` keep their unmodified TKT-0024
+"never adopt a same-named collection" guarantee — #492's root cause and the ADIA Colors scenario are both
+specific to the standalone binder; extending adoption to the flagship (which already has its own consent
+UI, the apply gate) is a separate, not-yet-scoped decision.
 
 ### 4. Role-table parity — the generated copy (owned by `adding-semantic-roles`)
 

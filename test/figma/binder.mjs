@@ -148,6 +148,20 @@ function mockFigma() {
   const figma = {
     notify() {}, closePlugin() {},
     root: { _pd: {}, setPluginData(k, v) { this._pd[k] = String(v); }, getPluginData(k) { return this._pd[k] || ""; } },
+    // ── #492 adoption-confirm UI mock ── confirmAdopt() calls showUI() then synchronously assigns
+    // figma.ui.onmessage; the queued microtask below fires AFTER that assignment (JS microtask
+    // ordering), so it always reaches the real handler. `_adoptAnswer` (default false — DECLINE, the
+    // conservative default so existing tests that don't care about adoption see today's unchanged
+    // behavior) is read fresh each call, so a test can flip it mid-run for a later prompt.
+    // `_showUICalls` counts prompts shown, for asserting "asked once" / "never asked again".
+    _adoptAnswer: false,
+    _showUICalls: 0,
+    showUI() {
+      this._showUICalls++;
+      const answer = this._adoptAnswer;
+      Promise.resolve().then(() => { if (this.ui.onmessage) this.ui.onmessage({ type: "adopt-confirm", adopt: answer }); });
+    },
+    ui: { onmessage: null, close() {} },
     variables: {
       async getLocalVariableCollectionsAsync() { return collections.slice(); },
       createVariableCollection(name) {
@@ -267,6 +281,9 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   try {
     const { main } = loadBinder(binderSrc, F.figma);
     await main();
+    // #492: the mock's default _adoptAnswer is false (DECLINE) — main() now ASKS (findAdoptionCandidate
+    // finds the orphan), but a decline preserves this test's exact original guarantee below.
+    if (F.figma._showUICalls !== 1) FAIL("colorprov", `expected exactly 1 adoption prompt for the orphan Color Roles collection, got ${F.figma._showUICalls}`);
     if (F.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("colorprov", `expected the user's Color Roles + a separate binder-created one (2), got ${F.collections.filter((c) => c.name === "Color Roles").length}`);
     if (!F.variables.some((v) => v.variableCollectionId === userSem.id && v.name === "user/keepme")) FAIL("colorprov", "bind removed/touched a variable in the user's OWN Color Roles collection");
     if (userSem.modes.length !== 1) FAIL("colorprov", "bind added a mode (e.g. Dark) to the user's OWN Color Roles collection");
@@ -275,6 +292,69 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     await main2();
     if (F.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("colorprov", "re-bind made a 3rd Color Roles (provenance registry not persisted to root pluginData)");
   } catch (e) { FAIL("colorprov", "main() threw with a foreign pre-existing Color Roles collection: " + e.message); }
+}
+
+// ── adoptconsent (#492): the ADOPTION path — a live collection matching the target name (or a
+//    renameFrom name) that ISN'T registry-tracked is now OFFERED for adoption ("in the plugin UI",
+//    the ticket's own wording — confirmAdopt's figma.showUI dialog, not a notify toast), confirmed
+//    once. Confirmed ⇒ upserts INTO the existing collection (same id — no duplicate, no data loss);
+//    declined ⇒ today's unchanged behavior (a separate collection, proven by colorprov above).
+//    Covers both the color (semantic-collection) and float (Geometry) adoption call sites. ──
+{
+  // color: an unregistered "Color Roles" ORPHAN, confirmed ⇒ adopted, its own pre-existing variable
+  // survives, and the role-binding loop upserts INTO it (same collection id) rather than creating a
+  // second one.
+  const F = mockFigma();
+  F.figma._adoptAnswer = true;
+  const rawColl = F.figma.variables.createVariableCollection("Color Primitives");
+  // populate real raw targets for "neutral" ONLY (bindingPlan's answer key) — enough for the role-binding
+  // loop to actually resolve+create semantic vars, so this test can assert on a real upserted role.
+  for (const t of P.bindingTargets(["neutral"])) F.figma.variables.createVariable(t, rawColl, "COLOR").setValueForMode(rawColl.modes[0].modeId, { r: 0.5, g: 0.5, b: 0.5, a: 1 });
+  const orphan = F.figma.variables.createVariableCollection("Color Roles"); // NOT registered — an orphan
+  orphan.addMode("Dark"); // a real Color Roles collection always carries Light+Dark
+  F.figma.variables.createVariable("keepme/own", orphan, "COLOR").setValueForMode(orphan.modes[0].modeId, 1);
+  try {
+    const { main } = loadBinder(binderSrc, F.figma);
+    await main();
+    if (F.figma._showUICalls !== 1) FAIL("adoptconsent", `expected exactly 1 adoption prompt, got ${F.figma._showUICalls}`);
+    const semColls = F.collections.filter((c) => c.name === "Color Roles");
+    if (semColls.length !== 1) FAIL("adoptconsent", `confirmed adoption must NOT create a second Color Roles collection, got ${semColls.length}`);
+    if (semColls[0] !== orphan) FAIL("adoptconsent", "confirmed adoption minted a NEW collection instead of reusing the orphan's id (bindings would orphan)");
+    if (!F.variables.some((v) => v.variableCollectionId === orphan.id && v.name === "keepme/own")) FAIL("adoptconsent", "adoption must not drop the orphan's own pre-existing variable");
+    if (!F.variables.some((v) => v.variableCollectionId === orphan.id && v.name === "neutral/on-surface")) FAIL("adoptconsent", "adoption did not upsert role variables INTO the adopted collection");
+    // SECOND run: the registry now tracks the (formerly orphan) collection by id — no re-ask, no 2nd collection.
+    F.figma._showUICalls = 0;
+    const { main: main2 } = loadBinder(binderSrc, F.figma);
+    await main2();
+    if (F.figma._showUICalls !== 0) FAIL("adoptconsent", `a SECOND run must not re-ask for an already-adopted collection, got ${F.figma._showUICalls} prompt(s)`);
+    if (F.collections.filter((c) => c.name === "Color Roles").length !== 1) FAIL("adoptconsent", "re-run after adoption duplicated the collection");
+  } catch (e) { FAIL("adoptconsent", "main() threw during confirmed color adoption: " + e.message); }
+}
+{
+  // float: an unregistered "Geometry" ORPHAN, confirmed ⇒ adopted by the SAME mechanism, proven via a
+  // baked (injected) FLOAT_PLANS — mirrors floatindep's injection technique. Once adopted+registered,
+  // applyFloatPlans' UNCHANGED full-mirror reconcile applies (create-or-reuse by name, prune anything
+  // NOT in the plan) — exactly its existing, documented behavior for any collection it owns; adoption
+  // only widens WHICH collections become "owned", never softens what "owned" already means. So a
+  // foreign var inside the orphan does NOT survive adoption (proven below) — the confirm dialog is the
+  // consent for exactly that reconciliation, matching the two-collection era's "Typography" retirement.
+  const F = mockFigma();
+  F.figma._adoptAnswer = true;
+  const orphan = F.figma.variables.createVariableCollection("Geometry"); // NOT registered — an orphan
+  F.figma.variables.createVariable("stale/own", orphan, "FLOAT").setValueForMode(orphan.modes[0].modeId, 9);
+  const typeIx = TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 }), []);
+  const plans = MAP.modeApplyPlan(typeIx);
+  const injected = binderSrc.replace(FLOAT_ANCHOR, `JSON.parse(${JSON.stringify(JSON.stringify(plans))}); /* injected */`);
+  try {
+    const { main } = loadBinder(injected, F.figma);
+    await main();
+    if (F.figma._showUICalls !== 1) FAIL("adoptconsent", `expected exactly 1 float adoption prompt, got ${F.figma._showUICalls}`);
+    const geoColls = F.collections.filter((c) => c.name === "Geometry");
+    if (geoColls.length !== 1) FAIL("adoptconsent", `confirmed float adoption must NOT create a second Geometry collection, got ${geoColls.length}`);
+    if (geoColls[0] !== orphan) FAIL("adoptconsent", "confirmed float adoption minted a NEW collection instead of reusing the orphan's id");
+    if (!F.variables.some((v) => v.variableCollectionId === orphan.id && v.name === "type/body/md/size")) FAIL("adoptconsent", "float adoption did not upsert plan variables INTO the adopted collection");
+    if (F.variables.some((v) => v.variableCollectionId === orphan.id && v.name === "stale/own")) FAIL("adoptconsent", "float adoption's full-mirror reconcile should prune a var the plan no longer wants (applyFloatPlans' existing, unchanged behavior)");
+  } catch (e) { FAIL("adoptconsent", "main() threw during confirmed float adoption: " + e.message); }
 }
 
 // ── colorparity: the binder's checked-in code.js's readColorRegistry/writeColorRegistry/ensureCollection
@@ -354,7 +434,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "colorparity", "collparity", "floatparity"]) {
+for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "adoptconsent", "colorparity", "collparity", "floatparity"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
