@@ -3,7 +3,7 @@ name: maintaining-figma-plugins
 description: >
   Work on the Figma plugins for ultimate-tokens — the standalone semantic
   Binder and the app-as-plugin apply path. Use whenever a change touches figma/,
-  a binder/plugin code.js, the offline manifest, the "Color Semantic" / "Color
+  a binder/plugin code.js, the offline manifest, the "Color Roles" / "Color
   Primitives" collections, the raw→semantic alias cascade, the apply/Regroup
   gate, the config round-trip out of variables, or someone says "apply to Figma
   isn't working", "the binder skipped roles", "fix the cascade", "Figma plugin
@@ -15,13 +15,13 @@ user-invocable: true
 # Figma variable binder — ultimate-tokens
 
 There are **TWO** Figma plugins in `figma/`, and they are NOT the same artifact. Know which one a task
-touches before you change a line — they share the Color Primitives → Color Semantic vocabulary (ADR-016) but differ in
+touches before you change a line — they share the Color Primitives → Color Roles vocabulary (#491, was "Color Semantic") but differ in
 who creates what:
 
 | | **The standalone Binder** | **The app-as-plugin** |
 |---|---|---|
 | Path | `figma/binder/figma-semantic-binder/{code.js, manifest.json}` | `figma/plugin/{code.js, manifest.json, ui.html}` |
-| Does | aliases an existing raw collection → a new aliased `Color Semantic` | the full generator UI; `applyBundle` CREATES both collections, prunes, can rebuild |
+| Does | aliases an existing raw collection → a new aliased `Color Roles` | the full generator UI; `applyBundle` CREATES both collections, prunes, can rebuild |
 | Needs | `Color Primitives` to ALREADY exist (else it notifies + closes) | nothing — it generates the raw colors too |
 | `ui.html` | none (no UI) | the generated app bundle (`npm run gen:figma-ui` → `<ultimate-tokens>` + the bridge) |
 | Verifier | `test/figma/binder.mjs` | `test/figma/plugin.mjs` |
@@ -56,7 +56,7 @@ The conceptual model — *why* aliasing is the only thing giving a live raw→se
 ## The two flows (depth in `references/foundations.md`)
 
 **Standalone binder** (`figma/binder/figma-semantic-binder/code.js`, read it): find the `Color Primitives`
-collection → index its vars by name → create/find `Color Semantic` with Light + Dark modes → for each of the 8
+collection → index its vars by name → create/find `Color Roles` with Light + Dark modes → for each of the 8
 `PALETTES`, for each role in `roleTable(n)`, resolve `rawVars["{n}/{refKey(ref)}"]` for light and dark →
 `createVariableAlias(rawVar)` into each mode via `setValueForMode`. Reports `bound` + any `missing` raw
 targets. The grammar `"{n}/{refKey(ref)}"` is load-bearing: every emitted target is GUARANTEED to be a
@@ -66,7 +66,7 @@ canonical raw-colors name (solid → pad3 `"50"→"050"`; scrim → `"500-{step}
 `renderApplyGate()` (a consent road-block: *back up your file first*; normal apply is cookieable via a
 versioned localStorage key, the destructive **Regroup** ALWAYS warns) → `applyToFigma` posts
 `{type:"apply", dtcg: this.figmaBundle(), config: serialize(this.doc), rebuildSemantic, collections}`.
-`figma/plugin/code.js#applyBundle` creates Color Primitives + Color Semantic, prunes orphans, embeds the config
+`figma/plugin/code.js#applyBundle` creates Color Primitives + Color Roles, prunes orphans, embeds the config
 in `figma.root` pluginData. **The two collection NAMES are per-doc overridable (#255)** — Settings ›
 Token mapping › "Figma collections" writes `doc.figmaCollections {raw, semantic}` (persisted, absent =
 defaults); `figmaCollectionNames(doc)` (model.mjs) resolves, rides the bundle's aliasData
@@ -75,8 +75,8 @@ fallbacks, and `readRawColors` resolves a renamed file from the SAVED config at 
 Binder still looks up the DEFAULT names only. **STYLES (2026-07-09, PRs #231–#236):** when the drawer's Styles chip is on
 (opt-OUT), `msg.stylePlans` + `msg.fontPrimitivesModes` ride the same apply — pure plans from
 `figma/binder/style-plan.mjs` (the THIRD planner sibling: paint styles per semantic role bound to Color
-Semantic via `setBoundVariableForPaint`; text styles per voice×step×sibling-weight bound to
-Typography/Font Primitives; `primitivesModesApplyPlan` = the ordered Font Primitives ensure-plan, now a
+Roles via `setBoundVariableForPaint`; text styles per voice×step×sibling-weight bound to
+Geometry (type/)/Type Primitives; `primitivesModesApplyPlan` = the ordered Type Primitives ensure-plan, now a
 real Premium/Google-Fonts MODE axis — font-mode Phase B) →
 `code.js#applyStylePlans` + `applyFontPrimitivesModes` execute them verbatim, provenance-pruned via
 `STYLE_REGISTRY_KEY` (user styles untouchable). Binds fontSize/fontFamily/paragraphSpacing/
@@ -89,8 +89,8 @@ list found live against real files: `references/figma-styles-hard-constraints.md
 Sibling weights: `doc.type.voices[v].weights`, edited in the per-voice panel (Suggest =
 `siblingWeightDefaults`, or `bodyClassSiblingDefaults` for Body*/Label*/Tiny*/Lead — #303/#307). Round-trip OUT: `configFromVariables` (`src/ui/model.mjs`) recovers each family's
 500 hue/chroma from the live raw vars (the APPROXIMATE fallback when no config is embedded); `read-variables`
-→ `receiveLiveVariables` feeds the drift diff. Geometry rides the `Breakpoints` collection (was
-`Geometry`, ADR-016) of Figma NUMBER (FLOAT) vars via `geomTokensFigma` (`src/engine/geometry.mjs`).
+→ `receiveLiveVariables` feeds the drift diff. Geometry rides the `Geometry` collection (was
+`Breakpoints`, #491; was `Geometry` pre-ADR-016 — a revert) of Figma NUMBER (FLOAT) vars via `geomTokensFigma` (`src/engine/geometry.mjs`).
 
 ## Procedure
 

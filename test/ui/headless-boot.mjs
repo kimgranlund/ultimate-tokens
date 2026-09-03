@@ -884,7 +884,7 @@ ok(!posted.pluginMessage.rebuildSemantic, "(x) a normal apply does NOT set rebui
 // applyFloatPlans creates the Typography/Geometry breakpoint collections from this, alongside dtcg.
 ok(Array.isArray(posted.pluginMessage.floatPlans), "(x) applyToFigma's posted message carries a floatPlans array (the live Type/Geometry apply path)");
 // the Settings-overridable collection names ride the apply message (defaults when no override set).
-ok(posted.pluginMessage.collections && posted.pluginMessage.collections.raw === "Color Primitives" && posted.pluginMessage.collections.semantic === "Color Semantic",
+ok(posted.pluginMessage.collections && posted.pluginMessage.collections.raw === "Color Primitives" && posted.pluginMessage.collections.semantic === "Color Roles",
   `(x) the apply message carries the default collection names (got ${JSON.stringify(posted.pluginMessage.collections)})`);
 // with a doc override, the message AND the bundle's aliasData follow the custom raw name.
 app.commit((d) => { d.figmaCollections = { raw: "Brand Primitives", semantic: "Brand Modes" }; }); flushRaf();
@@ -907,7 +907,7 @@ ok(posted.pluginMessage.collections.raw === "Brand Primitives" && posted.pluginM
   ok(!app.doc.figmaCollections, "(x) clearing both overrides drops the record entirely (identity gate)");
   ok(!("figmaCollections" in hyd(ser(app.doc))), "(x) a default-named doc hydrates with NO figmaCollections key");
 }
-// the opt-in Regroup path posts rebuildSemantic:true so code.js re-creates Color Modes in grouped order
+// the opt-in Regroup path posts rebuildSemantic:true so code.js re-creates Color Roles in grouped order
 posted = null; app._applyBusy = false; // TKT-0004: reset busy again (see note above)
 const realConfirm = globalThis.confirm;
 globalThis.confirm = () => true; // accept the destructive-rebuild warning
@@ -978,8 +978,8 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
 app.applyGateOpen = false; app._applyBusy = false; posted = null; // TKT-0004: reset busy — the Regroup confirm above never got a matching onApplyDone/onApplyError
 app.requestApplyToFigma(false);
 {
-  const bpPlan = app._figmaFloatPlans().find((p) => p.collection === "Breakpoints");
-  ok(!!(bpPlan && bpPlan.variables.length), "(xg) fixture: the default doc's next apply carries a Breakpoints plan to diff against");
+  const bpPlan = app._figmaFloatPlans().find((p) => p.collection === "Geometry");
+  ok(!!(bpPlan && bpPlan.variables.length), "(xg) fixture: the default doc's next apply carries a Geometry plan to diff against");
   if (bpPlan && bpPlan.variables.length) {
     const v0 = bpPlan.variables[0];
     const pair0 = v0.values[0];
@@ -1405,7 +1405,7 @@ ok(wantPaths.every((p) => zipText.includes(p)), "(ee) every colour format + typo
   ok(!/\.control-/.test(sizesFileText), "(ee) geometry-sizes.css carries no .control-* class rules");
 }
 // the Figma dimension file is NUMBER-typed (FLOAT variables), not the px dimension strings — so Figma imports it as number variables
-ok(zipText.includes("dimension.variables.json") && /"\$type":\s*"number"/.test(zipText) && zipText.includes('"Breakpoints"'), "(ee) figma/dimension.variables.json is a Breakpoints collection of number ($type number) variables");
+ok(zipText.includes("dimension.variables.json") && /"\$type":\s*"number"/.test(zipText) && zipText.includes('"Geometry"'), "(ee) figma/dimension.variables.json is a Geometry collection of number ($type number) variables");
 // the moded Figma-variable files are single-collection, breakpoint-MODED (a "Base" mode + each mode), FLOAT-typed
 ok(zipText.includes('"Typography"') && zipText.includes('"FLOAT"') && /"modes":\s*\[\s*"Base"/.test(zipText), "(ee) figma/*.modes.variables.json are single moded collections (modes lead with \"Base\", FLOAT-typed variables)");
 // the aliased variant carries com.figma.aliasData (the cascade); the default figma/ does not (ADR-002 resolved).
@@ -1982,7 +1982,7 @@ ok(app._typeModeDTCGFiles().length === 1 && app._typeModeDTCGFiles()[0].name ===
 // INTRINSIC standard set (no geometry modes configured ⇒ Desktop · Tablet · Mobile · Lg · Xl synthesized),
 // each half back-filled with its own base values at the modes it doesn't define.
 const _fplans = app._figmaFloatPlans();
-ok(_fplans.length === 1 && _fplans[0].collection === "Breakpoints", `(ty-fig) _figmaFloatPlans yields ONE merged Geometry apply plan (TKT-0009 — got ${_fplans.map((p) => p.collection).join()})`);
+ok(_fplans.length === 1 && _fplans[0].collection === "Geometry", `(ty-fig) _figmaFloatPlans yields ONE merged Geometry apply plan (TKT-0009 — got ${_fplans.map((p) => p.collection).join()})`);
 const _mplan = _fplans[0];
 ok(_mplan && _mplan.modes[0] === "Base" && _mplan.defaultMode === "Base", `(ty-fig) the type half's configured shape leads: Base is the default mode (got ${_mplan && _mplan.modes.join()})`);
 ok(_mplan && ["Desktop", "Desktop Lg", "Desktop Xl", "Tablet", "Mobile"].every((m) => _mplan.modes.includes(m)) && _mplan.modes.length === 7, `(ty-fig) the merged plan unions the 768 breakpoint with geometry's INTRINSIC Desktop·Desktop Lg·Desktop Xl·Tablet·Mobile set (got ${_mplan && _mplan.modes.join()})`);
@@ -1993,7 +1993,7 @@ ok(_mplan && JSON.stringify(_mplan.retire) === JSON.stringify(["Typography"]), "
 app.exportSystems = { color: true, type: false, geometry: true };
 {
   const _gOnly = app._figmaFloatPlans();
-  ok(_gOnly.length === 1 && _gOnly[0].collection === "Breakpoints" && _gOnly[0].variables.every((v) => !v.name.startsWith("type/")), "(ty-fig) Type OFF → the type/ half is omitted, the geometry half stays");
+  ok(_gOnly.length === 1 && _gOnly[0].collection === "Geometry" && _gOnly[0].variables.every((v) => !v.name.startsWith("type/")), "(ty-fig) Type OFF → the type/ half is omitted, the geometry half stays");
   ok(_gOnly[0].retire === undefined, "(ty-fig) Type OFF → NO Typography retirement rides the plan (a partial apply must never strand still-bound styles)");
 }
 app.exportSystems = { color: true, type: false, geometry: false };
@@ -2554,7 +2554,7 @@ app.addStandardGeomModes(); flushRaf();
   // the Figma float plans emit the desktop-first moded collections: Desktop (the designed scale) leads
   // as the base = Figma's default mode; Tablet · Mobile follow.
   const plans = app._figmaFloatPlans();
-  const geo = plans.find((p) => p.collection === "Breakpoints");
+  const geo = plans.find((p) => p.collection === "Geometry");
   ok(plans.length === 1 && !!geo, `(std) ONE merged Geometry float plan (TKT-0009 — got ${plans.map((p) => p.collection).join()})`);
   ok(geo && JSON.stringify(geo.modes) === JSON.stringify(["Desktop", "Tablet", "Mobile"]) && geo.defaultMode === "Desktop", `(std) the merged float plan is [Desktop, Tablet, Mobile], default Desktop — both standard sets align, no union residue (got ${geo && JSON.stringify(geo.modes)})`);
   ok(geo && geo.variables.some((v) => v.name.startsWith("type/")) && geo.variables.some((v) => v.name.startsWith("size/")), "(std) the merged plan carries both halves");

@@ -110,10 +110,10 @@ and both resolved hexes.
 ```
 `figmaMode(tree, mode)` adds top-level `$extensions.com.figma.modeName` — `figma/plugin/code.js`'s
 `applyBundle` reads this tag (not the filename) to discover which theme files a bundle carries and
-how many Color Semantic modes to create. Export preview shows the first theme's semantic tree; the
+how many Color Roles modes to create. Export preview shows the first theme's semantic tree; the
 download adds raw + every other theme.
 
-**`exportUI3`'s `Color Semantic` collection still hardcodes the Light/Dark pair** (`values:{Light,
+**`exportUI3`'s `Color Roles` collection still hardcodes the Light/Dark pair** (`values:{Light,
 Dark}`) — deliberately out of TKT-0021/ADR-019's scope (a documented follow-up, not an oversight;
 see ADR-019's Consequences). Don't assume UI3 already generalizes the same way DTCG now does.
 
@@ -132,7 +132,7 @@ Single file `figma-ui3-variables.json`:
   "collections":{
     "Color Primitives":{ "modes":["Base"],
       "variables":{ "raw/{n}/{050}":{type:"COLOR",values:{Base:"#HEX"}}, ... } },
-    "Color Semantic":{ "modes":["Light","Dark"],
+    "Color Roles":{ "modes":["Light","Dark"],
       "variables":{ "{n}/{roleKey}":{type:"COLOR",
         values:{Light:"{raw/{n}/{refPath light}}", Dark:"{raw/{n}/{refPath dark}}"}}, ... } }   (semantic keys = "{n}/{kebab leaf}", ADR-016)
   } }
@@ -187,7 +187,7 @@ namespace covers them too.
 | Tailwind `@theme` | `--color-dialog-backdrop` / `-white` / `-black` lines, outside any palette's scale/role blocks |
 | ShadCN | `--overlay` in both `:root`/`.dark` (literal, or `var(--{aliasPrefix}-dialog-backdrop)` when aliased), mapped in `@theme inline` — **`dialog-backdrop` only**; `white`/`black` have no slot in shadcn's fixed token contract, so they don't appear there |
 
-**Why it is absent from the DTCG/UI3 *semantic* tree (Light/Dark · Color Semantic) — load-bearing,
+**Why it is absent from the DTCG/UI3 *semantic* tree (Light/Dark · Color Roles) — load-bearing,
 don't "fix" this:** every top-level key of that tree is treated elsewhere as a REAL PALETTE with a
 full 53-role set, positionally zipped against `doc.palettes` (the app's style-plan family
 derivation; `figma/binder/style-plan.mjs`'s paint/text-style generation). A synthetic non-palette

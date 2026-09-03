@@ -192,7 +192,7 @@ if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palet
   const ui3 = X.exportUI3(C(ALL));
   const ui3Prim = ui3.collections["Color Primitives"].variables["raw/constants/dialog-backdrop"];
   if (!ui3Prim || ui3Prim.type !== "COLOR" || ui3Prim.values.Base !== WANT_HEX) FAIL("dialog-backdrop", `UI3 Primitives raw/constants/dialog-backdrop malformed: ${JSON.stringify(ui3Prim)}`);
-  if (ui3.collections["Color Semantic"].variables["constants/dialog-backdrop"]) FAIL("dialog-backdrop", "UI3 Semantic collection must NOT carry constants/dialog-backdrop");
+  if (ui3.collections["Color Roles"].variables["constants/dialog-backdrop"]) FAIL("dialog-backdrop", "UI3 Semantic collection must NOT carry constants/dialog-backdrop");
   // Tailwind @theme — one line, outside any palette's scale/role blocks.
   if (!X.exportTailwind(C(ALL)).includes(`--color-dialog-backdrop: ${WANT_OKLCH};`)) FAIL("dialog-backdrop", "exportTailwind missing --color-dialog-backdrop");
   // ShadCN — the one fixed, non-role token (--overlay), outside SHADCN_ORDER/MAP: present in BOTH
@@ -244,7 +244,7 @@ if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palet
   const ui3Black = ui3.collections["Color Primitives"].variables["raw/constants/black"];
   if (!ui3White || ui3White.type !== "COLOR" || ui3White.values.Base !== WHITE_HEX) FAIL("white-black", `UI3 Primitives raw/constants/white malformed: ${JSON.stringify(ui3White)}`);
   if (!ui3Black || ui3Black.type !== "COLOR" || ui3Black.values.Base !== BLACK_HEX) FAIL("white-black", `UI3 Primitives raw/constants/black malformed: ${JSON.stringify(ui3Black)}`);
-  if (ui3.collections["Color Semantic"].variables["constants/white"] || ui3.collections["Color Semantic"].variables["constants/black"])
+  if (ui3.collections["Color Roles"].variables["constants/white"] || ui3.collections["Color Roles"].variables["constants/black"])
     FAIL("white-black", "UI3 Semantic collection must NOT carry constants/white or constants/black");
   // Tailwind @theme — two lines, outside any palette's scale/role blocks.
   if (!X.exportTailwind(C(ALL)).includes(`--color-white: ${WHITE_OKLCH};`)) FAIL("white-black", "exportTailwind missing --color-white");

@@ -25,7 +25,11 @@
 // source (figma/plugin/code.js or src/engine/semantic.js) and regenerate.
 
 const RAW_COLLECTION = "Color Primitives";
-const SEMANTIC_COLLECTION = "Color Semantic"; // ADR-016 (was "Color Modes")
+const SEMANTIC_COLLECTION = "Color Roles"; // #491 (was "Color Semantic", "Color Modes")
+// SEMANTIC_RENAME_FROM — the old names ensureCollection adopts an existing registry-tracked collection
+// from, in place (renameFrom, mirrors FIGMA_MIGRATIONS.color.collections — this sandbox can't import
+// migrations.mjs, so the same list is hand-kept here; see figma/binder/migrations.mjs).
+const SEMANTIC_RENAME_FROM = ["Color Semantic", "Color Modes"];
 
 // The 8 default palettes (knowledge-05 §3; defaults[].name in data/role-table.json).
 const PALETTES = [
@@ -53,11 +57,11 @@ const FLOAT_PLANS = JSON.parse("[]"); /* __ULTIMATE_TOKENS_FLOAT_PLANS__ */
 // SAME collections idempotently if a user runs both against one file.
 const FLOAT_REGISTRY_KEY = "ultimate-tokens-float-collections";
 
-// COLOR_REGISTRY_KEY — TKT-0024: the SAME provenance discipline, back-ported to the Color Semantic
+// COLOR_REGISTRY_KEY — TKT-0024: the SAME provenance discipline, back-ported to the Color Roles
 // collection this binder creates/finds (the raw "Color Primitives" collection is only ever READ here,
 // never created — see main() below — so it needs no registry entry of its own). Kept as the SAME key
 // string as figma/plugin/code.js so the flagship plugin and this binder converge on the SAME collection
-// if a user runs both against one file. Before this, main() adopted ANY same-named "Color Semantic"
+// if a user runs both against one file. Before this, main() adopted ANY same-named "Color Roles"
 // collection by NAME alone — a user's own collection with that exact name got silently adopted and
 // populated with aliases on the next bind.
 const COLOR_REGISTRY_KEY = "ultimate-tokens-color-collections";
@@ -375,10 +379,12 @@ async function main() {
       if (v.variableCollectionId === rawColl.id) rawVars[v.name] = v;
     }
 
-    // 2. Create/find the Color Semantic collection with Light + Dark modes — by PROVENANCE (registry id),
-    //    never by name, so a user's own "Color Semantic" collection is never adopted (TKT-0024).
+    // 2. Create/find the Color Roles collection with Light + Dark modes — by PROVENANCE (registry id),
+    //    never by name, so a user's own "Color Roles" collection is never adopted (TKT-0024). renameFrom
+    //    (#491, SEMANTIC_RENAME_FROM) adopts a REGISTRY-TRACKED collection still under an old name
+    //    ("Color Semantic"/"Color Modes") in place, same as the float executor's renameFrom threading.
     const colorReg = readColorRegistry();
-    const sem = await ensureCollection(SEMANTIC_COLLECTION, colorReg);
+    const sem = await ensureCollection(SEMANTIC_COLLECTION, colorReg, SEMANTIC_RENAME_FROM);
     writeColorRegistry(colorReg);
     const lightMode = sem.modes[0].modeId;
     const darkMode = (sem.modes[1] && sem.modes[1].modeId) || sem.addMode("Dark");

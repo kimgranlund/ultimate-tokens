@@ -7,7 +7,7 @@
 // into two Figma variable COLLECTIONS:
 //
 //   Color Primitives  (mode "Value")        — one COLOR var per stop/scrim, the concrete colors
-//   Color Semantic      (one mode per THEME) — one COLOR var per role, each mode ALIASED to the
+//   Color Roles         (one mode per THEME) — one COLOR var per role, each mode ALIASED to the
 //                                        raw var named by the leaf's com.figma.aliasData
 //                                        (the live raw→semantic cascade native import can't do)
 //
@@ -17,11 +17,11 @@
 // per theme (default: Light + Dark, from semantic.js's DEFAULT_THEMES), each tagged with its Figma
 // mode name via $extensions["com.figma.modeName"]; applyBundle below walks WHATEVER theme files the
 // bundle carries — 2 today, N once a doc's theme axis is configurable — and creates exactly that
-// many Color Semantic modes, in the bundle's own order. A 2-theme bundle still produces byte-
+// many Color Roles modes, in the bundle's own order. A 2-theme bundle still produces byte-
 // identical Light/Dark output; nothing here assumes there are exactly two.
 
 const RAW_COLLECTION = "Color Primitives";   // the raw color primitives (one "Value" mode) — the DEFAULT name
-const SEMANTIC_COLLECTION = "Color Semantic"; // the semantic Light/Dark tokens — the DEFAULT name (ADR-016; was "Color Modes")
+const SEMANTIC_COLLECTION = "Color Roles"; // the semantic Light/Dark tokens — the DEFAULT name (#491; was "Color Semantic", "Color Modes")
 // COLL — the ACTIVE color-collection names. Settings › Token mapping can override the defaults
 // (doc.figmaCollections); the apply message carries the override and sets these before any write, and
 // readRawColors resolves them from the SAVED config so a renamed file still round-trips at boot. An
@@ -70,7 +70,7 @@ const SETS_KEY = "ultimate-tokens-sets";
 const FLOAT_REGISTRY_KEY = "ultimate-tokens-float-collections";
 // COLOR_REGISTRY_KEY — TKT-0024: the SAME provenance discipline, back-ported to Color Primitives / Color
 // Semantic. Before this, ensureCollection adopted ANY same-named collection by NAME alone — a user's own
-// collection literally called "Color Primitives"/"Color Semantic" got silently adopted and mutated on the
+// collection literally called "Color Primitives"/"Color Roles" got silently adopted and mutated on the
 // next Apply, the exact failure class FLOAT_REGISTRY_KEY already closed for Type/Geometry (#155). Same
 // shape: name→collectionId, travels with the .fig; applyBundle reconciles/prunes ONLY a collection it
 // created (matched by id). A collection this registry doesn't yet know about — including one this SAME
@@ -231,7 +231,7 @@ function aliasTarget(leaf) {
   const ad = leaf && leaf.$extensions && leaf.$extensions["com.figma.aliasData"];
   return ad ? ad.targetVariableName : null;
 }
-// ensureCollection — OUR managed Color Primitives / Color Semantic collection for `name`, by PROVENANCE
+// ensureCollection — OUR managed Color Primitives / Color Roles collection for `name`, by PROVENANCE
 // (the registry's stored id), creating + registering it if absent. TKT-0024: this used to adopt ANY
 // same-named collection found by getLocalVariableCollectionsAsync().find(c => c.name === name) — including
 // a user's own hand-built collection that happens to share the name — mutating it on the next Apply. Now it
@@ -315,12 +315,12 @@ async function readRawColors() {
   return { found: true, raw: out };
 }
 
-// readFloatCollection — the live values of a REGISTRY-TRACKED float collection (Breakpoints/Font
+// readFloatCollection — the live values of a REGISTRY-TRACKED float collection (Geometry/Type
 // Primitives), read-only, in a shape directly comparable to a modeApplyPlan/primitivesModesApplyPlan entry:
 // { found, modes: [<mode name>, …], values: { "<var name>": { "<mode name>": <value> } } }. Resolved by
 // PROVENANCE (FLOAT_REGISTRY_KEY), exactly like ensureFloatCollection — a user's own same-named
 // collection this plugin never created is invisible here too (found:false), never adopted for a read.
-// An ALIAS value (Font Primitives' font/<voice> vars) has no independently-set value to diff against —
+// An ALIAS value (Type Primitives' font/<voice> vars) has no independently-set value to diff against —
 // skipped, matching primitivesModesApplyPlan's own "aliases aren't literals" treatment.
 async function readFloatCollection(name, reg) {
   const id = reg[name];
@@ -347,12 +347,12 @@ async function readFloatCollection(name, reg) {
   return { found: true, modes: coll.modes.map((m) => m.name), values };
 }
 
-// readFloatVariables — the live Breakpoints + Font Primitives collections together, for the apply
+// readFloatVariables — the live Geometry + Type Primitives collections together, for the apply
 // gate's pre-overwrite diff (collections-arch review C2 / TKT-0020) — the Geometry/Type counterpart to
 // readRawColors' color drift reference. Read-only; never reconstructs a scale from the raw numbers.
 async function readFloatVariables() {
   const reg = readFloatRegistry();
-  return { breakpoints: await readFloatCollection("Breakpoints", reg), fontPrimitives: await readFloatCollection("Font Primitives", reg) };
+  return { breakpoints: await readFloatCollection("Geometry", reg), fontPrimitives: await readFloatCollection("Type Primitives", reg) };
 }
 
 async function varsByName(collectionId) {
@@ -362,7 +362,7 @@ async function varsByName(collectionId) {
   return m;
 }
 
-// ── STYLES: Font Primitives + paint/text styles bound to the variables ─────────────────────────
+// ── STYLES: Type Primitives + paint/text styles bound to the variables ─────────────────────────
 // The UI computes the plans (figma/binder/style-plan.mjs — pure, parity-gated); this executor runs
 // them verbatim. Provenance: STYLE_REGISTRY_KEY records the style ids WE created (name → id), so
 // pruning can never touch a user's own styles — the float-registry discipline, applied to styles.
@@ -376,20 +376,23 @@ function readStyleRegistry() {
 }
 function writeStyleRegistry(reg) { figma.root.setPluginData(STYLE_REGISTRY_KEY, JSON.stringify(reg)); }
 
-// applyFontPrimitivesModes — ensures "Font Primitives"
+// applyFontPrimitivesModes — ensures "Type Primitives"
 // carries the real Premium/Google-Fonts mode axis (figma.variables' native addMode/setValueForMode —
-// the SAME mechanism Breakpoints/Geometry already use) and executes primitivesModesApplyPlan's
+// the SAME mechanism Geometry already uses) and executes primitivesModesApplyPlan's
 // literals-then-aliases plan. Copies (does not call) applyFloatPlans' proven addMode/rename/prune
 // scaffolding below — this collection was never threaded through modeApplyPlan (ALIAS isn't a type it
 // recognizes), so keeping the scaffolding local here is what keeps mode-apply-plan.mjs/applyFloatPlans
 // themselves at zero lines changed. Literals write every mode's own value; aliases resolve their
 // target's type for creation, then write createVariableAlias(target) for EVERY mode explicitly — never
 // skipped for an unchanged target, which would silently reintroduce the exact "new mode reads as a
-// stale copy of the default" bug this feature exists to fix.
+// stale copy of the default" bug this feature exists to fix. `plan.renameFrom` (#491, stamped by
+// apply-gate.js via applyRenameMigrations — see FIGMA_MIGRATIONS.floats.collections) is threaded into
+// ensureFloatCollection exactly like the merged Geometry plan does, so an existing file's "Font
+// Primitives" collection renames in place instead of getting a parallel "Type Primitives" one.
 async function applyFontPrimitivesModes(plan) {
   if (!plan || !plan.collection || !Array.isArray(plan.modes) || !plan.modes.length || !Array.isArray(plan.variables) || !plan.variables.length) return null;
   const reg = readFloatRegistry(); // same provenance store as Typography/Geometry (name → collection id)
-  const coll = await ensureFloatCollection(plan.collection, reg);
+  const coll = await ensureFloatCollection(plan.collection, reg, plan.renameFrom);
   const defaultId = coll.defaultModeId || coll.modes[0].modeId;
   coll.renameMode(defaultId, plan.defaultMode);
   const findMode = (nm) => coll.modes.find((m) => m.name.toLowerCase() === String(nm).toLowerCase());
@@ -458,7 +461,7 @@ function styleNameWeight(style) {
 }
 // pickFallbackFamily — when the kit's family is absent from this Figma, the style still gets BUILT:
 // a loadable placeholder face carries the metrics while `fontFamily`/`fontStyle` stay BOUND to the
-// Font Primitives variables that carry the TRUE family. Figma resolves a text style's family from the
+// Type Primitives variables that carry the TRUE family. Figma resolves a text style's family from the
 // bound variable, so the style self-heals the moment the real font is installed. Prefer Figma's own
 // default (Inter), then Roboto, then any family — a substitution is reported, never silent.
 function pickFallbackFamily(fontsByFamily) {
@@ -521,8 +524,8 @@ function sweepCandidates(knownTextNames, knownPaintNames, localTexts, localPaint
   return { texts: texts, paints: paints };
 }
 
-// applyStylePlans — paint styles bound to the Color Semantic variables; text styles set from the plan's
-// literals then BOUND per field to the Geometry (type/) / Font Primitives variables where the target exists
+// applyStylePlans — paint styles bound to the Color Roles variables; text styles set from the plan's
+// literals then BOUND per field to the Geometry (type/) / Type Primitives variables where the target exists
 // (per-field graceful fallback: an absent variable or an unsupported binding leaves the literal value).
 // lineHeight/letterSpacing stay LITERAL PERCENT in v1 — the type/ vars carry them as % of size,
 // and a FLOAT binding on those fields reads as px, which would mis-set them.
@@ -549,11 +552,11 @@ async function applyStylePlans(sp) {
   writeStyleRegistry(regEarly);
   const reg = readStyleRegistry();
 
-  // ── paint styles → Color Semantic variables ──
+  // ── paint styles → Color Roles variables ──
   const paints = Array.isArray(sp.paints) ? sp.paints : [];
   if (paints.length) {
     const cols = await figma.variables.getLocalVariableCollectionsAsync();
-    // PROVENANCE FIRST (see ensureCollection/COLOR_REGISTRY_KEY) — resolve OUR Color Semantic by the
+    // PROVENANCE FIRST (see ensureCollection/COLOR_REGISTRY_KEY) — resolve OUR Color Roles by the
     // registry id, falling back to name: a name-only find could bind these paint styles to a foreign
     // same-named collection's variables instead of ours.
     const colorReg = readColorRegistry();
@@ -581,7 +584,7 @@ async function applyStylePlans(sp) {
     reg.paints = current;
   }
 
-  // ── text styles → Geometry (type/) + Font Primitives variables ──
+  // ── text styles → Geometry (type/) + Type Primitives variables ──
   const texts = Array.isArray(sp.texts) ? sp.texts : [];
   if (texts.length) {
     const cols = await figma.variables.getLocalVariableCollectionsAsync();
@@ -595,10 +598,10 @@ async function applyStylePlans(sp) {
       return (id && cols.find(function (c) { return c.id === id; })) || cols.find(function (c) { return c.name === name; });
     };
     // the METRIC pool (fontSize/lineHeight/letterSpacing/paragraphSpacing) lives in the merged
-    // "Breakpoints" collection's type/ group (TKT-0009 merge; ADR-016 rename) — the plan's bind
+    // "Geometry" collection's type/ group (TKT-0009 merge; ADR-016 rename) — the plan's bind
     // keys carry the type/ prefix.
-    const typoColl = byRegistry("Breakpoints");
-    const primColl = byRegistry("Font Primitives");
+    const typoColl = byRegistry("Geometry");
+    const primColl = byRegistry("Type Primitives");
     const typoVars = typoColl ? await varsByName(typoColl.id) : {};
     const primVars = primColl ? await varsByName(primColl.id) : {};
     const local = await figma.getLocalTextStylesAsync();
@@ -691,10 +694,10 @@ async function applyStylePlans(sp) {
     }
     reg.texts = current;
     // diagnostics — the console is the debugging surface (figma.notify races and truncates):
-    if (out.substitutedFonts.length) console.warn("[Ultimate Tokens]", out.substituted, "text style(s) built on a placeholder face — these families are not in this Figma:", out.substitutedFonts.join(", "), "· their fontFamily stays BOUND to the Font Primitives variable, so installing the font adopts it.");
+    if (out.substitutedFonts.length) console.warn("[Ultimate Tokens]", out.substituted, "text style(s) built on a placeholder face — these families are not in this Figma:", out.substitutedFonts.join(", "), "· their fontFamily stays BOUND to the Type Primitives variable, so installing the font adopts it.");
     if (out.missingFonts.length) console.warn("[Ultimate Tokens] text styles skipped — no usable face at all:", out.missingFonts.join(", "), "(font list size:", Object.keys(fontsByFamily).length, "families)");
-    if (!Object.keys(typoVars).length) console.warn("[Ultimate Tokens] Breakpoints collection empty/missing at styles time — fontSize/leading/tracking bindings degraded to literals");
-    if (!Object.keys(primVars).length) console.warn("[Ultimate Tokens] Font Primitives collection empty/missing at styles time — family/weight bindings degraded to literals");
+    if (!Object.keys(typoVars).length) console.warn("[Ultimate Tokens] Geometry collection empty/missing at styles time — fontSize/leading/tracking bindings degraded to literals");
+    if (!Object.keys(primVars).length) console.warn("[Ultimate Tokens] Type Primitives collection empty/missing at styles time — family/weight bindings degraded to literals");
   }
 
   writeStyleRegistry(reg);
@@ -702,10 +705,10 @@ async function applyStylePlans(sp) {
 }
 
 // ── the apply ───────────────────────────────────────────────────────────────────
-// opts.rebuildSemantic — the opt-in "Regroup": delete the existing Color Semantic collection so it is
+// opts.rebuildSemantic — the opt-in "Regroup": delete the existing Color Roles collection so it is
 // re-created fresh and adopts the bundle's (canonical, grouped) variable order. Figma keeps an
 // existing variable's position on update, so a normal apply never reorders; only a fresh collection
-// does. Color Primitives are untouched; bindings to the dropped Color Semantic variables detach.
+// does. Color Primitives are untouched; bindings to the dropped Color Roles variables detach.
 // TKT-0012 — id-preserving rename pass: `renames` = { "<old>": "<new>" } applied to a varsByName pool
 // BEFORE the reconcile loop, so a renamed variable is adopted (v.name =) instead of pruned+recreated
 // (which would orphan every consumer binding). Skipped when the new name already exists.
@@ -770,12 +773,12 @@ async function applyBundle(dtcg, opts) {
   }
 
   // 2) SEMANTIC collection — one mode per THEME (TKT-0021: N-way, not a hardcoded Light+Dark pair),
-  // each role ALIASED to its raw var. Regroup: drop the existing Color Semantic collection first so
+  // each role ALIASED to its raw var. Regroup: drop the existing Color Roles collection first so
   // the rebuild creates every variable fresh, in the bundle's canonical order (regular · containers ·
   // surfaces · scrims).
   let rebuilt = false;
   if (opts.rebuildSemantic) {
-    // PROVENANCE, not name: only OUR registry-tracked Color Semantic (under its current name or a
+    // PROVENANCE, not name: only OUR registry-tracked Color Roles (under its current name or a
     // renameFrom key still pending re-key) is ever dropped — never a foreign same-named collection.
     const cols0 = await figma.variables.getLocalVariableCollectionsAsync();
     const oldKeys = [COLL.semantic].concat(Array.isArray(collectionRenames[COLL.semantic]) ? collectionRenames[COLL.semantic] : []);
@@ -812,7 +815,7 @@ async function applyBundle(dtcg, opts) {
 
   const semByName = await varsByName(sem.id);
   renameInPool(semByName, renames.semantic);
-  const currentSem = new Set(); // names this bundle WANTS in Color Semantic — everything else is stale
+  const currentSem = new Set(); // names this bundle WANTS in Color Roles — everything else is stale
   let semCount = 0;
   // leaves per theme, indexed by variable name — every theme file shares one name set (exportDTCG
   // derives them all off the identical palette/role walk), so the FIRST theme's key order is the

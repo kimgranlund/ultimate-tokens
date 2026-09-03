@@ -14,7 +14,7 @@ const J = (x) => JSON.stringify(x);
 const typeIx = T.typeTokensFigmaModes(T.typeScale({ treatment: "product", bodyBase: 16 }), [{ name: "Mobile", scale: T.typeScale({ treatment: "product", bodyBase: 13 }) }]);
 ok(A.validateModeInterchange(typeIx).length === 0, "validate: a real Typography interchange is sound (" + A.validateModeInterchange(typeIx).join("; ") + ")");
 const tp = A.modeApplyPlan(typeIx);
-ok(tp.length === 1 && tp[0].collection === "Breakpoints", "plan: one entry, the merged Geometry collection (the type half emits there since TKT-0009)");
+ok(tp.length === 1 && tp[0].collection === "Geometry", "plan: one entry, the merged Geometry collection (the type half emits there since TKT-0009)");
 ok(J(tp[0].modes) === J(["Base", "Mobile"]) && tp[0].defaultMode === "Base" && J(tp[0].addModes) === J(["Mobile"]), "plan: modes [Base,Mobile], default Base, addModes [Mobile]");
 const names = tp[0].variables.map((v) => v.name);
 ok(J(names) === J(names.slice().sort()), "plan: variables are name-sorted (deterministic apply order)");
@@ -26,7 +26,7 @@ ok(bodySize && bodySize.values[0].value !== bodySize.values[1].value, "plan: per
 const geomIx = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 28 }), [{ name: "Desktop", scale: G.geomScale({ treatment: "comfortable", baseHeight: 40 }) }]);
 ok(A.validateModeInterchange(geomIx).length === 0, "validate: a real Geometry interchange is sound");
 const gp = A.modeApplyPlan(geomIx);
-ok(gp.length === 1 && gp[0].collection === "Breakpoints" && J(gp[0].modes) === J(["Base", "Desktop"]), "plan: the Breakpoints collection, modes [Base,Desktop]");
+ok(gp.length === 1 && gp[0].collection === "Geometry" && J(gp[0].modes) === J(["Base", "Desktop"]), "plan: the Geometry collection, modes [Base,Desktop]");
 ok(gp[0].variables.every((v) => v.values.length === 2 && v.values.every((x) => Number.isFinite(x.value))), "plan: every Geometry variable is value-complete across both modes");
 
 // ── identity: no breakpoints ⇒ a single Base mode, addModes empty ──
@@ -48,41 +48,41 @@ const dSize = dp[0].variables.find((v) => v.name === "type/body/md/size");
 ok(dSize && dSize.values[2].value < dSize.values[0].value, "plan: the Mobile (base) value is the smallest — base scale rides under the breakpoint bumps");
 // a breakpoint colliding with the named base is disambiguated, not dropped/shadowed
 const collide = T.typeTokensFigmaModes(T.typeScale({ treatment: "product" }), [{ name: "Mobile", scale: T.typeScale({ treatment: "product", bodyBase: 13 }) }], { baseName: "Mobile", baseLast: true });
-ok(J(collide.collections.Breakpoints.modes) === J(["Mobile 2", "Mobile"]), `emit: a breakpoint named like the base disambiguates ("Mobile 2") — got ${J(collide.collections.Breakpoints.modes)}`);
+ok(J(collide.collections.Geometry.modes) === J(["Mobile 2", "Mobile"]), `emit: a breakpoint named like the base disambiguates ("Mobile 2") — got ${J(collide.collections.Geometry.modes)}`);
 // geometry mirrors the same opts
 const gdtm = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 24 }), [{ name: "Desktop", scale: G.geomScale({ treatment: "comfortable", baseHeight: 28 }) }], { baseName: "Mobile", baseLast: true });
-ok(J(gdtm.collections.Breakpoints.modes) === J(["Desktop", "Mobile"]) && A.validateModeInterchange(gdtm).length === 0, "emit: Geometry honors baseName/baseLast and stays plan-sound");
+ok(J(gdtm.collections.Geometry.modes) === J(["Desktop", "Mobile"]) && A.validateModeInterchange(gdtm).length === 0, "emit: Geometry honors baseName/baseLast and stays plan-sound");
 
 // ── mergeModeInterchanges: the two halves land as ONE "Geometry" collection (TKT-0009 — the executor
 // prunes variables per collection, so two plans on one collection would delete each other's halves) ──
 const geomIx2 = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 28 }), [{ name: "Mobile", scale: G.geomScale({ treatment: "comfortable", baseHeight: 24 }) }]);
 const merged = A.mergeModeInterchanges(typeIx, geomIx2);
-ok(merged && Object.keys(merged.collections).length === 1 && !!merged.collections.Breakpoints, "merge: type + geometry halves yield ONE Breakpoints collection");
+ok(merged && Object.keys(merged.collections).length === 1 && !!merged.collections.Geometry, "merge: type + geometry halves yield ONE Geometry collection");
 ok(A.validateModeInterchange(merged).length === 0, "merge: the merged interchange is sound (" + A.validateModeInterchange(merged).join("; ") + ")");
-const mVars = Object.keys(merged.collections.Breakpoints.variables);
+const mVars = Object.keys(merged.collections.Geometry.variables);
 ok(mVars.some((k) => k.startsWith("type/")) && mVars.some((k) => k.startsWith("size/")), "merge: carries both the type/ half and the box-geometry half");
 const mp = A.modeApplyPlan(merged);
 ok(mp.length === 1 && mp[0].variables.length === mVars.length, "merge: plans as ONE entry carrying every variable of both halves");
 ok(A.mergeModeInterchanges(null, undefined) === null, "merge: zero mergeable inputs ⇒ null");
-ok(Object.keys(A.mergeModeInterchanges(typeIx).collections.Breakpoints.variables).every((k) => k.startsWith("type/")), "merge: a single half passes through (type-only export still lands in Breakpoints)");
+ok(Object.keys(A.mergeModeInterchanges(typeIx).collections.Geometry.variables).every((k) => k.startsWith("type/")), "merge: a single half passes through (type-only export still lands in Geometry)");
 // MISMATCHED mode lists (type [Base,Mobile] beside geometry [Base,Tablet]) union — and each half
 // BACK-FILLS the modes it doesn't define with its OWN default-mode value (a system that doesn't vary
 // at a breakpoint = its base values there), so the merged interchange stays plan-sound.
 const gTab = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 28 }), [{ name: "Tablet", scale: G.geomScale({ treatment: "comfortable", baseHeight: 26 }) }]);
 const mismatch = A.mergeModeInterchanges(typeIx, gTab);
-ok(J(mismatch.collections.Breakpoints.modes) === J(["Base", "Mobile", "Tablet"]), `merge: mismatched mode lists union in first-writer order (got ${J(mismatch.collections.Breakpoints.modes)})`);
+ok(J(mismatch.collections.Geometry.modes) === J(["Base", "Mobile", "Tablet"]), `merge: mismatched mode lists union in first-writer order (got ${J(mismatch.collections.Geometry.modes)})`);
 ok(A.validateModeInterchange(mismatch).length === 0, "merge: the back-filled mismatch interchange is plan-sound (never half-applied)");
-const mmType = mismatch.collections.Breakpoints.variables["type/body/md/size"];
-const mmGeom = mismatch.collections.Breakpoints.variables["size/md/height"];
+const mmType = mismatch.collections.Geometry.variables["type/body/md/size"];
+const mmGeom = mismatch.collections.Geometry.variables["size/md/height"];
 ok(mmType.values.Tablet === mmType.values.Base && mmType.values.Mobile !== mmType.values.Base, "merge: the type half back-fills Tablet (its undefined mode) from Base, keeps its own Mobile value");
 ok(mmGeom.values.Mobile === mmGeom.values.Base && mmGeom.values.Tablet !== mmGeom.values.Base, "merge: the geometry half back-fills Mobile from Base, keeps its own Tablet value");
-ok(gTab.collections.Breakpoints.variables["size/md/height"].values.Mobile === undefined, "merge: back-fill CLONES values — the emitter's own interchange is never mutated");
+ok(gTab.collections.Geometry.variables["size/md/height"].values.Mobile === undefined, "merge: back-fill CLONES values — the emitter's own interchange is never mutated");
 
 // ── applyRenameMigrations (TKT-0012): pure stamping of the id-preserving rename fields ──
 {
   const plans = A.modeApplyPlan(A.mergeModeInterchanges(typeIx, geomIx2));
-  const stamped = A.applyRenameMigrations(plans, { collections: { "Breakpoints": { renameFrom: ["Geometry"], vars: { "type/Body/MD/size": "type/body/md/size" } } } });
-  ok(JSON.stringify(stamped[0].renameFrom) === JSON.stringify(["Geometry"]) && stamped[0].renames["type/Body/MD/size"] === "type/body/md/size", "stamps renameFrom + renames onto the matching collection's plan");
+  const stamped = A.applyRenameMigrations(plans, { collections: { "Geometry": { renameFrom: ["Breakpoints"], vars: { "type/Body/MD/size": "type/body/md/size" } } } });
+  ok(JSON.stringify(stamped[0].renameFrom) === JSON.stringify(["Breakpoints"]) && stamped[0].renames["type/Body/MD/size"] === "type/body/md/size", "stamps renameFrom + renames onto the matching collection's plan");
   ok(!("renames" in plans[0]) && !("renameFrom" in plans[0]), "planner output is never mutated (shallow-copy before stamping)");
   ok(A.applyRenameMigrations(plans, { collections: { "Nope": { vars: { a: "b" } } } })[0].renames === undefined, "a migration for an absent collection is a no-op, not an error");
   ok(A.applyRenameMigrations(plans, {}) === plans && A.applyRenameMigrations(plans, null) === plans, "empty/null migrations pass the SAME array through (identity)");
@@ -90,7 +90,7 @@ ok(gTab.collections.Breakpoints.variables["size/md/height"].values.Mobile === un
 
 // ── retirementsFor (TKT-0018): pure stamping of registry-tracked collection retirements ──
 {
-  const rules = { retire: [{ collection: "Breakpoints", ifVariablePrefix: "type/", retire: ["Typography"] }] };
+  const rules = { retire: [{ collection: "Geometry", ifVariablePrefix: "type/", retire: ["Typography"] }] };
   const withType = A.modeApplyPlan(A.mergeModeInterchanges(typeIx, geomIx2)); // carries type/ vars ⇒ rule fires
   const stamped = A.retirementsFor(withType, rules);
   ok(JSON.stringify(stamped[0].retire) === JSON.stringify(["Typography"]), "retirementsFor: stamps retire when the collection carries a matching-prefix variable");
@@ -100,9 +100,9 @@ ok(gTab.collections.Breakpoints.variables["size/md/height"].values.Mobile === un
   ok(A.retirementsFor(withType, {}) === withType && A.retirementsFor(withType, null) === withType, "retirementsFor: empty/null migrations pass the SAME array through (identity)");
   ok(A.retirementsFor(withType, { retire: [{ collection: "Nope", ifVariablePrefix: "type/", retire: ["X"] }] }) === withType, "retirementsFor: a rule targeting a collection this apply doesn't carry is a no-op, not an error");
   // an existing plan.retire (a future second rule) is preserved/merged, never clobbered
-  const seeded = withType.map((p) => (p.collection === "Breakpoints" ? { ...p, retire: ["Already"] } : p));
+  const seeded = withType.map((p) => (p.collection === "Geometry" ? { ...p, retire: ["Already"] } : p));
   const restamped = A.retirementsFor(seeded, rules);
-  ok(JSON.stringify(restamped.find((p) => p.collection === "Breakpoints").retire.slice().sort()) === JSON.stringify(["Already", "Typography"].sort()), "retirementsFor: merges onto an already-seeded retire list rather than clobbering it");
+  ok(JSON.stringify(restamped.find((p) => p.collection === "Geometry").retire.slice().sort()) === JSON.stringify(["Already", "Typography"].sort()), "retirementsFor: merges onto an already-seeded retire list rather than clobbering it");
 }
 
 // ── validateModeInterchange CATCHES the malformed shapes (the half-bound-import failures) ──

@@ -16,7 +16,7 @@
 //      and re-wraps it under the name roleTable — no reimplementation, no reverse-templating.
 //   3. the three color-provenance functions (readColorRegistry/writeColorRegistry/ensureCollection,
 //      TKT-0024) — spliced VERBATIM from the flagship figma/plugin/code.js, same discipline as (1): the
-//      binder's own "Color Semantic" collection creation used to adopt a same-named collection by NAME
+//      binder's own "Color Roles" collection creation used to adopt a same-named collection by NAME
 //      alone (the exact bug the float path's registry already closed) until this splice back-ported it.
 //
 // Anchored: the checked-in code.js carries `// === GENERATED:<NAME> START/END ===` marker comments;

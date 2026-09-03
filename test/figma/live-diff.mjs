@@ -21,11 +21,11 @@ ok(D.flattenModePlanValues(null).length === 0 && D.flattenModePlanValues({}).len
 
 // ── flattenModePlanValues ALSO correctly flattens a primitivesModesApplyPlan-shaped fixture (font-mode
 // Phase B): its literals carry the SAME {name,type,values:[{mode,value}]} shape modeApplyPlan uses, so
-// no dedicated Font Primitives flattener is needed — its ALIAS entries (no .values array) are skipped
+// no dedicated Type Primitives flattener is needed — its ALIAS entries (no .values array) are skipped
 // by the SAME !Array.isArray(v.values) guard that already handles a malformed/absent values field,
 // for free.
 const primPlan = {
-  collection: "Font Primitives", modes: ["Premium", "Google Fonts"], defaultMode: "Premium", addModes: ["Google Fonts"],
+  collection: "Type Primitives", modes: ["Premium", "Google Fonts"], defaultMode: "Premium", addModes: ["Google Fonts"],
   variables: [
     { name: "family/inter", type: "STRING", values: [{ mode: "Premium", value: "Inter" }, { mode: "Google Fonts", value: "Inter" }] },
     { name: "weight/display", type: "FLOAT", values: [{ mode: "Premium", value: 700 }, { mode: "Google Fonts", value: 700 }] },
@@ -33,7 +33,7 @@ const primPlan = {
   ],
 };
 const primFlat = D.flattenModePlanValues(primPlan);
-ok(primFlat.length === 4, `flattenModePlanValues on a Font Primitives plan: ${primFlat.length} entries, want 4 (2 literals × 2 modes; the ALIAS entry has no .values array to flatten)`);
+ok(primFlat.length === 4, `flattenModePlanValues on a Type Primitives plan: ${primFlat.length} entries, want 4 (2 literals × 2 modes; the ALIAS entry has no .values array to flatten)`);
 ok(!primFlat.some((p) => p.name === "font/display"), "flattenModePlanValues: the ALIAS entry (no .values array) contributes nothing");
 ok(primFlat.every((p) => primPlan.modes.includes(p.mode)), "flattenModePlanValues: every entry carries one of the plan's own modes");
 
@@ -49,7 +49,7 @@ ok(D.countChangedValues([{ name: "a", mode: "Mobile", value: 5 }], { a: { Base: 
 // a floating-point epsilon must not false-positive
 ok(D.countChangedValues([{ name: "a", mode: "Base", value: 16.000000001 }], { a: { Base: 16 } }) === 0, "countChangedValues: sub-epsilon float drift ⇒ not counted");
 ok(D.countChangedValues([{ name: "a", mode: "Base", value: 16.01 }], { a: { Base: 16 } }) === 1, "countChangedValues: a real float drift ⇒ counted");
-// strings compare strictly (Font Primitives family literals)
+// strings compare strictly (Type Primitives family literals)
 ok(D.countChangedValues([{ name: "family/inter", mode: "Value", value: "Inter" }], { "family/inter": { Value: "Inter" } }) === 0, "countChangedValues: identical string ⇒ 0");
 ok(D.countChangedValues([{ name: "family/inter", mode: "Value", value: "Inter" }], { "family/inter": { Value: "Roboto" } }) === 1, "countChangedValues: drifted string ⇒ 1");
 ok(D.countChangedValues(null, { a: { Base: 1 } }) === 0, "countChangedValues: malformed pairs ⇒ 0, never throws");
@@ -65,5 +65,5 @@ ok(D.countChangedValues(pairs, null) === 0, "countChangedValues: null live (coll
 }
 
 if (fails.length) { console.error(`live-diff FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("live-diff PASS — flattenModePlanValues (Breakpoints + Font Primitives shapes, alias-dropping) · countChangedValues (present+differs only, float epsilon, string-strict)");
+console.log("live-diff PASS — flattenModePlanValues (Geometry + Type Primitives shapes, alias-dropping) · countChangedValues (present+differs only, float epsilon, string-strict)");
 process.exit(0);

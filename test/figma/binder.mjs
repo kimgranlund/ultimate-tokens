@@ -9,6 +9,7 @@ import * as MAP from "../../figma/binder/mode-apply-plan.mjs";
 import * as TYPE from "../../src/engine/type.mjs";
 import * as GEOM from "../../src/engine/geometry.mjs";
 import { semanticRoles } from "../../src/engine/semantic.js";
+import { COLLECTIONS } from "../../src/engine/collections.js";
 import { extractFunctionSource } from "../../figma/binder/splice-utils.mjs";
 
 const HERE = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "figma", "binder"); // the binder lives in figma/binder/
@@ -196,9 +197,9 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
       const geomIx = GEOM.geomTokensFigmaModes(GEOM.geomScale({ treatment: "comfortable", baseHeight: 28 }), [{ name: "Desktop", scale: GEOM.geomScale({ treatment: "comfortable", baseHeight: 40 }) }]);
       const plans = MAP.modeApplyPlan(MAP.mergeModeInterchanges(typeIx, geomIx));
       const fr = await applyFloatPlans(plans);
-      const geo = F.collections.find((c) => c.name === "Breakpoints");
+      const geo = F.collections.find((c) => c.name === "Geometry");
       if (F.collections.some((c) => c.name === "Typography")) FAIL("floatcreate", "the merged apply minted a Typography collection (the pre-TKT-0009 shape)");
-      if (!geo) FAIL("floatcreate", "no Breakpoints collection created");
+      if (!geo) FAIL("floatcreate", "no Geometry collection created");
       if (geo && geo.modes.map((m) => m.name).join() !== "Base,Desktop") FAIL("floatcreate", `Geometry modes = ${geo && geo.modes.map((m) => m.name)}, want Base,Desktop`);
       if (fr.collections !== 1) FAIL("floatcreate", `applyFloatPlans reported ${fr.collections} collections, want 1 (merged)`);
       if (geo) {
@@ -213,7 +214,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
       }
       // idempotency: re-apply → no doubled collection/modes/vars
       await applyFloatPlans(plans);
-      if (F.collections.filter((c) => c.name === "Breakpoints").length !== 1) FAIL("floatcreate", "re-apply duplicated the Breakpoints collection");
+      if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("floatcreate", "re-apply duplicated the Geometry collection");
       if (geo && geo.modes.length !== 2) FAIL("floatcreate", `re-apply left ${geo && geo.modes.length} Geometry modes, want 2 (no duplicate mode)`);
       // drop the breakpoint → its mode is pruned on re-apply (Base survives, is never removable)
       const baseOnly = MAP.mergeModeInterchanges(
@@ -238,7 +239,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     const { main } = loadBinder(injected, F.figma);
     await main();
     if (F.collections.some((c) => c.name === "Color Modes" || c.name === "Color Primitives")) FAIL("floatindep", "main() created a Color collection with no Color Primitives present");
-    if (!F.collections.some((c) => c.name === "Breakpoints")) FAIL("floatindep", "main() skipped the merged Breakpoints collection when Color Primitives was absent (color-abort still blocking breakpoints)");
+    if (!F.collections.some((c) => c.name === "Geometry")) FAIL("floatindep", "main() skipped the merged Geometry collection when Color Primitives was absent (color-abort still blocking breakpoints)");
   } catch (e) { FAIL("floatindep", "main() threw with no Color Primitives + a non-empty FLOAT_PLANS: " + e.message); }
 }
 
@@ -253,27 +254,27 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("floatnoop", "main() threw on the generic (FLOAT_PLANS []) binder: " + e.message); }
 }
 
-// ── colorprov (TKT-0024): main() must NEVER canonicalize a USER's own pre-existing "Color Semantic"
+// ── colorprov (TKT-0024): main() must NEVER canonicalize a USER's own pre-existing "Color Roles"
 //    collection either — the same provenance guarantee floatindep/floatnoop prove for Type/Geometry,
 //    back-ported to the color cascade's semantic-collection creation via COLOR_REGISTRY_KEY. A "Color
 //    Primitives" collection's mere PRESENCE is enough to enter the cascade branch (main() checks `if
-//    (rawColl)`, not a variable count), so an empty one is enough to exercise the Color Semantic path. ──
+//    (rawColl)`, not a variable count), so an empty one is enough to exercise the Color Roles path. ──
 {
   const F = mockFigma();
   F.figma.variables.createVariableCollection("Color Primitives"); // presence alone enters the cascade branch
-  const userSem = F.figma.variables.createVariableCollection("Color Semantic"); // the user's own, pre-existing
+  const userSem = F.figma.variables.createVariableCollection("Color Roles"); // the user's own, pre-existing
   F.figma.variables.createVariable("user/keepme", userSem, "COLOR").setValueForMode(userSem.modes[0].modeId, 1);
   try {
     const { main } = loadBinder(binderSrc, F.figma);
     await main();
-    if (F.collections.filter((c) => c.name === "Color Semantic").length !== 2) FAIL("colorprov", `expected the user's Color Semantic + a separate binder-created one (2), got ${F.collections.filter((c) => c.name === "Color Semantic").length}`);
-    if (!F.variables.some((v) => v.variableCollectionId === userSem.id && v.name === "user/keepme")) FAIL("colorprov", "bind removed/touched a variable in the user's OWN Color Semantic collection");
-    if (userSem.modes.length !== 1) FAIL("colorprov", "bind added a mode (e.g. Dark) to the user's OWN Color Semantic collection");
+    if (F.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("colorprov", `expected the user's Color Roles + a separate binder-created one (2), got ${F.collections.filter((c) => c.name === "Color Roles").length}`);
+    if (!F.variables.some((v) => v.variableCollectionId === userSem.id && v.name === "user/keepme")) FAIL("colorprov", "bind removed/touched a variable in the user's OWN Color Roles collection");
+    if (userSem.modes.length !== 1) FAIL("colorprov", "bind added a mode (e.g. Dark) to the user's OWN Color Roles collection");
     // re-bind: reconcile OURS by id (the registry persisted), never touching the user's collection again
     const { main: main2 } = loadBinder(binderSrc, F.figma);
     await main2();
-    if (F.collections.filter((c) => c.name === "Color Semantic").length !== 2) FAIL("colorprov", "re-bind made a 3rd Color Semantic (provenance registry not persisted to root pluginData)");
-  } catch (e) { FAIL("colorprov", "main() threw with a foreign pre-existing Color Semantic collection: " + e.message); }
+    if (F.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("colorprov", "re-bind made a 3rd Color Roles (provenance registry not persisted to root pluginData)");
+  } catch (e) { FAIL("colorprov", "main() threw with a foreign pre-existing Color Roles collection: " + e.message); }
 }
 
 // ── colorparity: the binder's checked-in code.js's readColorRegistry/writeColorRegistry/ensureCollection
@@ -296,6 +297,33 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     }
     if (!keyLit(binderSrc) || keyLit(binderSrc) !== keyLit(flagSrc)) FAIL("colorparity", `COLOR_REGISTRY_KEY literal differs (binder ${keyLit(binderSrc)} vs flagship ${keyLit(flagSrc)}) — the two would not converge on one collection`);
   } catch (e) { FAIL("colorparity", "could not load/compare the flagship color-provenance functions: " + e.message); }
+}
+
+// ── collparity (#491): the four Figma collection NAMES are canonical in ONE place —
+//    src/engine/collections.js's COLLECTIONS export — but neither sandbox (this binder, the flagship
+//    figma/plugin/code.js) can `import` it (non-module Figma VM), so each carries hand-typed literal
+//    copies. This is the tripwire root-caused by the 2026-07-17 librarian review (exportUI3 said
+//    "Color / Primitives" while the plugin created "Color Primitives" — a drift with no gate to catch
+//    it): RAW_COLLECTION/SEMANTIC_COLLECTION — the COLOR pair BOTH files hardcode as named constants —
+//    must equal COLLECTIONS.colorRaw/colorSemantic exactly in both. The Geometry/Type Primitives pair
+//    has no equivalent binder-side check: the standalone binder never hardcodes either name — it only
+//    ever receives them as DATA inside the baked FLOAT_PLANS (named by the app's own COLLECTIONS-derived
+//    plan at download time) — so only the flagship, which hardcodes both in readFloatVariables/
+//    byRegistry for its own read-back and styles paths, is checked for those two. ──
+{
+  const FLAGSHIP_PATH = join(HERE, "..", "plugin", "code.js");
+  const constLit = (src, name) => (new RegExp(`const ${name}\\s*=\\s*"([^"]*)"`).exec(src) || [])[1];
+  try {
+    const flagSrc = readFileSync(FLAGSHIP_PATH, "utf8");
+    for (const [label, src] of [["binder", binderSrc], ["flagship", flagSrc]]) {
+      const raw = constLit(src, "RAW_COLLECTION");
+      const sem = constLit(src, "SEMANTIC_COLLECTION");
+      if (raw !== COLLECTIONS.colorRaw) FAIL("collparity", `${label} RAW_COLLECTION = ${JSON.stringify(raw)}, want ${JSON.stringify(COLLECTIONS.colorRaw)} (src/engine/collections.js)`);
+      if (sem !== COLLECTIONS.colorSemantic) FAIL("collparity", `${label} SEMANTIC_COLLECTION = ${JSON.stringify(sem)}, want ${JSON.stringify(COLLECTIONS.colorSemantic)} (src/engine/collections.js)`);
+    }
+    if (!flagSrc.includes(`"${COLLECTIONS.breakpoints}"`)) FAIL("collparity", `flagship carries no literal "${COLLECTIONS.breakpoints}" (COLLECTIONS.breakpoints)`);
+    if (!flagSrc.includes(`"${COLLECTIONS.fontPrimitives}"`)) FAIL("collparity", `flagship carries no literal "${COLLECTIONS.fontPrimitives}" (COLLECTIONS.fontPrimitives)`);
+  } catch (e) { FAIL("collparity", "could not load/compare the collection-name literals: " + e.message); }
 }
 
 // ── floatparity: the binder ports 5 float-executor functions VERBATIM from the flagship
@@ -326,7 +354,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "colorparity", "floatparity"]) {
+for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "colorparity", "collparity", "floatparity"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

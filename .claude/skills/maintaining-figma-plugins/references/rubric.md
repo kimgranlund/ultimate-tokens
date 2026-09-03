@@ -3,8 +3,9 @@
 Scores a change to either Figma plugin in ultimate-tokens. `[gate]` = mechanically checkable (a named
 verifier / `npm test` / grep); `[review]` = judgment with cited evidence. Score each 1–5. This file OWNS the
 per-verifier gate-group list (the authoritative source is each verifier's report loop — the `for (const g of
-[...])` near its end): `binder.mjs` prints `bindings · offline · parity · floatanchor · floatcreate ·
-floatindep · floatnoop · floatparity`; `plugin.mjs` prints `manifest · offline · vmsyntax · ui · parse ·
+[...])` near its end): `binder.mjs` prints `bindings · themes · offline · parity · floatanchor ·
+floatcreate · floatindep · floatnoop · colorprov · colorparity · collparity · floatparity`; `plugin.mjs`
+prints `manifest · offline · vmsyntax · ui · parse ·
 apply · cascade · idempotent · prune · collnames · floatapply · floatidem · floatprune · floatprov ·
 applysys · applydone · config · read · fonts · resolveface · sweep`. The `compliance` AND `styles` checks
 both run in `plugin.mjs` but are run-failing rather than a printed group line (mirroring `compliance`'s
@@ -19,7 +20,7 @@ binder's `offline`.
 | F4 | Friendly errors | [gate] | No raw error in `figma.notify` (detail → `console.error` only); top-level error wrapped (`main().catch` / the handler's `catch (e)`); no stale "HCT" in a notify or manifest name; the `compliance` check (run-failing in both verifiers) passes | 1: surfaces `e.message`/`.stack`, or an unwrapped throw, or "HCT" branding · 3: friendly + wrapped · 5: friendly + a useful actionable message |
 | F5 | Apply correctness | [review] | (app path) `applyBundle` is find-or-create + full-mirror prune (semantic orphans first); idempotent (no duplicate collection/var/mode on re-run); `idempotent`+`prune`+`cascade` gates pass; every semantic mode-value aliases a CREATED raw var (the `lt ? alias : rgbaOf` fallback is a safety net, not the path) | 1: blind-create (duplicates) or an un-pruned orphan or an unaliased mode-value · 3: idempotent + pruned + cascaded · 5: + the config embedded in `figma.root` so read-back is lossless |
 | F6 | Cascade integrity | [review] | Each semantic var gets a Light AND a Dark alias to the right raw var via `setValueForMode`+`createVariableAlias`; refs go through `refKey`/`targetName`/`aliasTarget`, never hand-built | 1: a static color where an alias should be, a single-mode bind, or a hand-built target · 3: both modes aliased by ref · 5: + the light/dark flip mirrors the role's mode logic |
-| F7 | Regroup safety | [review] | (app path) `rebuildSemantic` re-creates `Color Semantic` only, leaves Color Primitives intact, doesn't duplicate the collection, and stays behind the ALWAYS-warn gate (`renderApplyGate` renders `rebuild ? false : checkbox`; `confirmApplyGate` persists consent only when `!rebuild`) | 1: Regroup cookieable, or it touches Color Primitives, or duplicates the collection · 3: gated + isolated · 5: + the canonical regroup order (scrims last 7) preserved |
+| F7 | Regroup safety | [review] | (app path) `rebuildSemantic` re-creates `Color Roles` only, leaves Color Primitives intact, doesn't duplicate the collection, and stays behind the ALWAYS-warn gate (`renderApplyGate` renders `rebuild ? false : checkbox`; `confirmApplyGate` persists consent only when `!rebuild`) | 1: Regroup cookieable, or it touches Color Primitives, or duplicates the collection · 3: gated + isolated · 5: + the canonical regroup order (scrims last 7) preserved |
 | F8 | Bundle freshness | [gate] | (app path) `figma/plugin/ui.html` regenerated via `npm run gen:figma-ui`; the `ui` gate passes (embeds `<ultimate-tokens>` + the figma-init/pluginMessage/figmaBundle/config-loaded/variables-read bridge); `ui.html` not hand-edited | 1: stale/hand-edited `ui.html`, `ui` gate red · 3: regenerated, passes · 5: passes + the round-trip bridges (config + drift) all present |
 
 **Gate to ship:** F1, F2, F3, F4 must each score ≥ 3 (and F8 for an app-path change). A plugin change that

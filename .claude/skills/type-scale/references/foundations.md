@@ -209,13 +209,13 @@ Figma's type/ variables (the merged breakpoint-moded Geometry collection, TKT-00
   exception), plus `singleLineHeight` on the BOX voices where present. `disambiguateModeNames` renames a
   breakpoint that clashes with the reserved base-mode name or another breakpoint. `modes = []` ⇒ a single
   base mode equal to the base scale (identity).
-- **`typeTokensFigmaPrimitivesModes(scale)`** → the COMPANION "Font Primitives" collection: distinct font
+- **`typeTokensFigmaPrimitivesModes(scale)`** → the COMPANION "Type Primitives" collection: distinct font
   families deduped into `family/<role>` STRING primitives (plus `family/voice/<voice>` for a family reached
   only via a per-voice override), a `font/<voice>` ALIAS per voice, a `weight/<voice or voice/slug>` FLOAT
   primitive (core + one per sibling), and — when the kit names a custom `styleName` (a non-variable face) —
   a matching `weight-style/…` STRING primitive, templated per `siblingStyleName` so a sibling's style name
   follows the SAME naming convention as the core (weight-ladders-and-labels.md). **Font-mode Phase B:** a
-  real 2-mode axis (`"Premium"` / `"Google Fonts"`, mirroring Breakpoints/Light-Dark's native mode
+  real 2-mode axis (`"Premium"` / `"Google Fonts"`, mirroring Geometry/Light-Dark's native mode
   mechanism) — every literal carries both mode values explicitly (family/override STRINGs actually diverge
   via `resolvedFontForMode`+`googleSafeFontFor`; weight/weight-style literals repeat the same value in both,
   since weight resolution never varies by fontMode); `font/<voice>` ALIAS entries carry only

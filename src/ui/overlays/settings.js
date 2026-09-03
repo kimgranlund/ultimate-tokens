@@ -1,4 +1,5 @@
 import { figmaCollectionNames } from "../model.mjs";
+import { COLLECTIONS } from "../../engine/collections.js";
 import { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } from "../../engine/icon-systems.mjs";
 import { icon } from "../icons.js";
 import { ACCOUNT_URL, DEV_FLAG_TOGGLES, DOCS_URL, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, SUPPORT_URL, btn, field, h, setColorScheme } from "../app-helpers.mjs";
@@ -297,8 +298,8 @@ export class SettingsMixinImpl {
         // creates. Empty = the defaults. An override applies from the NEXT apply; collections already
         // in the file keep their name (the apply-gate warning covers the overwrite semantics).
         this._settingsGroup("Figma collections", [
-          collInput("raw", "Primitives collection", "Color Primitives"),
-          collInput("semantic", "Semantic collection", "Color Semantic"),
+          collInput("raw", "Primitives collection", COLLECTIONS.colorRaw),
+          collInput("semantic", "Semantic collection", COLLECTIONS.colorSemantic),
           ...(collNames.raw.toLowerCase() === collNames.semantic.toLowerCase()
             ? [h("p", { class: "settings-note settings-warn" }, "The two collections need distinct names — identical names would merge the primitives and roles into one collection on apply.")]
             : []),

@@ -406,7 +406,7 @@ function stateOf(doc) {
 // figmaBundle — the DTCG export with raw-collection aliasing ON: the exact shape the Figma plugin's
 // code.js turns into a raw-primitives collection + a semantic Light/Dark collection aliased to it.
 // Each semantic leaf carries com.figma.aliasData.targetVariableName/targetVariableSetName so the
-// plugin can build the cascade. Collection names default to "Color Primitives"/"Color Semantic" (ADR-016) and are
+// plugin can build the cascade. Collection names default to "Color Primitives"/"Color Roles" (#491) and are
 // overridable per-doc (Settings › Token mapping → doc.figmaCollections; figmaCollectionNames resolves).
 export function figmaCollectionNames(doc) {
   const fc = (doc && doc.figmaCollections) || {};

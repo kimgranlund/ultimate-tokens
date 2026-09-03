@@ -120,7 +120,7 @@ voice (including `weights: []`, which opts the voice OUT of siblings altogether 
 lever, and the only way to get a bare, undisambiguated core style).
 
 Siblings emit everywhere the core does: a `--type-{voice}-weight-{slug}` CSS custom prop, a DTCG
-`weights.{voice}.{Name}` `fontWeight` token, a `weight/{voice}/{slug}` Font Primitives variable, and —
+`weights.{voice}.{Name}` `fontWeight` token, a `weight/{voice}/{slug}` Type Primitives variable, and —
 the reason this exists — a **sibling Figma text style** per variant (`Voice/step/{slug}`, lowercase-
 kebab, e.g. `Body/md/semi-bold`). Because siblings now exist by default, the **core** style also always
 carries a segment now — a **dot-prefixed, Title-Case name** (`Voice/step/• {Name}`, e.g.
