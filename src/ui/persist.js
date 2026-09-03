@@ -1,5 +1,6 @@
 import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
+import { COLLECTIONS } from "../engine/collections.js";
 
 // persist.js — UI state persistence for the HCT Palette Generator.
 //
@@ -387,8 +388,8 @@ function clampFigmaCollections(fc) {
     const s = typeof v === "string" ? v.trim().slice(0, 60) : "";
     return s && s !== dflt ? s : "";
   };
-  const raw = pick(fc.raw, "Color Primitives");
-  const semantic = pick(fc.semantic, "Color Semantic"); // ADR-016 (was "Color Modes")
+  const raw = pick(fc.raw, COLLECTIONS.colorRaw);
+  const semantic = pick(fc.semantic, COLLECTIONS.colorSemantic); // #491 (was "Color Semantic", "Color Modes")
   if (!raw && !semantic) return {};
   return { figmaCollections: { ...(raw ? { raw } : {}), ...(semantic ? { semantic } : {}) } };
 }

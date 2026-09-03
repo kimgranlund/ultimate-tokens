@@ -65,7 +65,7 @@ a value, and nothing errors or looks empty in the meantime.
 2. Build the payload from the collection's **FULL** live variable list — not from a subset you
    remember touching, not from "the variables this ticket cares about." A breakpoint mode is
    collection-wide; a constant that "doesn't vary" (space/radius ladders, borders, focus rings in
-   this engine's Geometry/Breakpoints collection) still needs its value SET for the new mode.
+   this engine's Geometry collection) still needs its value SET for the new mode.
 3. Call `setValueForMode(newModeId, value)` for every variable in that full list.
 4. Readback (scenario 5): assert `unset === 0` in BOTH directions — `(payload keys) − (collection
    variable names)` (a typo/stale-list target) and `(collection variable names) − (payload keys)`

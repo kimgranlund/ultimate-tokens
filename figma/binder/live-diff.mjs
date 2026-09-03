@@ -6,7 +6,7 @@
 //
 // SHAPES:
 //   a modeApplyPlan entry (mode-apply-plan.mjs):            { collection, variables: [{ name, values: [{mode,value}] }] }
-//   a primitivesModesApplyPlan entry (style-plan.mjs):      { collection: "Font Primitives", modes, defaultMode, addModes, variables: [{ name, type, values: [{mode,value}] }|{ name, type:"ALIAS", target }] }
+//   a primitivesModesApplyPlan entry (style-plan.mjs):      { collection: "Type Primitives", modes, defaultMode, addModes, variables: [{ name, type, values: [{mode,value}] }|{ name, type:"ALIAS", target }] }
 //   a live read-back collection (readFloatVariables):       { found, modes, values: { "<name>": { "<mode>": <value> } } }
 
 // flattenModePlanValues(plan) → [{name, mode, value}] — every (variable, mode) pair a modeApplyPlan

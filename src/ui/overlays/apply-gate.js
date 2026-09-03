@@ -35,7 +35,7 @@ export class ApplyGateMixinImpl {
     this.applyGateRebuild = !!rebuild;
     this.applyGateDontShow = false;
     this.applyGateOpen = true;
-    // TKT-0020: kick off the live Breakpoints/Font Primitives read-back so the gate can show a
+    // TKT-0020: kick off the live Geometry/Type Primitives read-back so the gate can show a
     // changed-value count before the user commits — reset to null (not stale) until the reply lands;
     // _figmaChangedCount()/renderApplyGate treat null as "still checking", 0 as a real answer.
     this._liveFloatVars = null;
@@ -65,7 +65,7 @@ export class ApplyGateMixinImpl {
 
 
   applyToFigma(rebuild = false) {
-    // rebuild = the opt-in "Regroup" path: re-create the Color Semantic collection so it adopts the
+    // rebuild = the opt-in "Regroup" path: re-create the Color Roles collection so it adopts the
     // canonical grouped order (Figma keeps existing variables' positions on a normal update). It
     // re-creates the semantic variables — bound layers detach (warned in the apply gate).
     if (this._applyBusy) return; // TKT-0004: the final backstop — never post a second concurrent apply
@@ -94,7 +94,14 @@ export class ApplyGateMixinImpl {
         if (plans.paints.length || plans.texts.length) {
           plans.renames = FIGMA_MIGRATIONS.styles; // TKT-0012: id-preserving style renames (empty = no-op)
           msg.stylePlans = plans;
-          if (plans.texts.length) msg.fontPrimitivesModes = primitivesModesApplyPlan(typeTokensFigmaPrimitivesModes(scale));
+          if (plans.texts.length) {
+            // #491: stamp the SAME rename-migration channel _figmaFloatPlans uses (FIGMA_MIGRATIONS.floats),
+            // so an existing file's "Font Primitives" collection renames in place to "Type Primitives"
+            // instead of getting a parallel one — applyRenameMigrations is pure and array-shaped, so a
+            // single plan rides through as a 1-element array and is unwrapped back out.
+            const fpPlan = primitivesModesApplyPlan(typeTokensFigmaPrimitivesModes(scale));
+            msg.fontPrimitivesModes = fpPlan ? applyRenameMigrations([fpPlan], FIGMA_MIGRATIONS.floats)[0] : null;
+          }
         }
       }
       parent.postMessage({ pluginMessage: msg }, "*");
@@ -108,7 +115,7 @@ export class ApplyGateMixinImpl {
       this.render();
       // Optimistic "in progress" toast; the sandbox posts {apply-done} back when the write actually completes
       // (→ onApplyDone → a "done" toast), or {apply-error} on failure (→ onApplyError). See the ui.html bridge.
-      this.toast(rebuild ? "Regrouping Color Semantic…" : "Applying to Figma…");
+      this.toast(rebuild ? "Regrouping Color Roles…" : "Applying to Figma…");
     } catch {
       /* not in a frame / blocked — nothing to apply to */
     }
@@ -131,7 +138,7 @@ export class ApplyGateMixinImpl {
     const subbed = m && Array.isArray(m.substitutedFonts) ? m.substitutedFonts : [];
     this.toast(what ? `Applied ${what} to Figma — check the Variables & Styles panels` : "Applied to Figma — check the Variables panel");
     // SECOND toast — the font reality. A substituted family means the style EXISTS with its family
-    // still bound to the Font Primitives variable: installing the font adopts it, no re-apply needed.
+    // still bound to the Type Primitives variable: installing the font adopts it, no re-apply needed.
     // (The sandbox's own notify races the apply-done toast and gets lost, so the UI says it too.)
     if (subbed.length) this.toast(`${m.substituted || subbed.length} text style${(m.substituted || 0) === 1 ? "" : "s"} use a placeholder face — install to see them as designed: ${subbed.slice(0, 4).join(", ")}${subbed.length > 4 ? "…" : ""}. The family stays variable-bound.`);
     if (missing.length) this.toast(`Text styles skipped — no usable font for: ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}`);
@@ -254,7 +261,7 @@ export class ApplyGateMixinImpl {
         const waveVars = kebabWaveVarRenames(p.variables.map((v) => v.name));
         if (Object.keys(waveVars).length) p.renames = { ...waveVars, ...(p.renames || {}) };
       }
-      // TKT-0018: the TKT-0009 retirement rule (the merged Breakpoints collection supersedes the old
+      // TKT-0018: the TKT-0009 retirement rule (the merged Geometry collection supersedes the old
       // two-collection era's "Typography" once it actually lands type/ variables) is pure + unit-tested
       // in mode-apply-plan.mjs — see FIGMA_MIGRATIONS.floats.retire for the declarative rule.
       return retirementsFor(plans, FIGMA_MIGRATIONS.floats);
@@ -272,9 +279,9 @@ export class ApplyGateMixinImpl {
   }
 
 
-  // _figmaChangedCount() — how many LIVE Breakpoints/Font Primitives values the apply the gate is about
+  // _figmaChangedCount() — how many LIVE Geometry/Type Primitives values the apply the gate is about
   // to confirm would actually overwrite (collections-arch review C2 / TKT-0020): the SAME plans
-  // applyToFigma is about to POST (_figmaFloatPlans + the Font Primitives plan, filtered by the SAME
+  // applyToFigma is about to POST (_figmaFloatPlans + the Type Primitives plan, filtered by the SAME
   // exportSystems toggles), diffed against the read-back via the pure figma/binder/live-diff.mjs helpers.
   // null while the read-back hasn't landed yet (nothing to show); 0 is a real, valid answer (first apply,
   // or the file is already in sync).
@@ -289,7 +296,7 @@ export class ApplyGateMixinImpl {
         n += countChangedValues(flattenModePlanValues(p), bpLive);
       }
     }
-    // Font Primitives is only ever WRITTEN alongside text styles (applyToFigma sets msg.fontPrimitivesModes
+    // Type Primitives is only ever WRITTEN alongside text styles (applyToFigma sets msg.fontPrimitivesModes
     // only inside the styles-on branch; code.js only calls applyFontPrimitivesModes when msg.fontPrimitivesModes
     // is present) — so counting it while Styles is toggled off would over-report values this apply
     // never touches.
@@ -322,14 +329,14 @@ export class ApplyGateMixinImpl {
       "dialog",
       {
         class: "apply-gate",
-        "aria-label": rebuild ? "Regroup Color Semantic" : "Apply variables to Figma",
+        "aria-label": rebuild ? "Regroup Color Roles" : "Apply variables to Figma",
         onclick: (e) => { if (e.target === e.currentTarget) this.closeApplyGate(); },
         oncancel: (e) => { e.preventDefault(); this.closeApplyGate(); },
       },
       h(
         "div",
         { class: "drawer-head" },
-        h("h3", {}, icon("warning"), rebuild ? "Regroup Color Semantic" : "Apply variables to this file"),
+        h("h3", {}, icon("warning"), rebuild ? "Regroup Color Roles" : "Apply variables to this file"),
         h("div", { class: "spacer" }),
         btn(icon("x"), { ariaLabel: "Close", onclick: () => this.closeApplyGate() }),
       ),
@@ -337,10 +344,10 @@ export class ApplyGateMixinImpl {
         "div",
         { class: "apply-gate-body" },
         h("p", { class: "apply-gate-lede" }, rebuild
-          ? "Regroup deletes and re-creates the Color Semantic variables so they adopt the grouped order. Any layers or styles bound to them will detach and need reconnecting — the Ultimate Tokens style swatches are re-bound automatically on this same apply. (Color Primitives are untouched.)"
+          ? "Regroup deletes and re-creates the Color Roles variables so they adopt the grouped order. Any layers or styles bound to them will detach and need reconnecting — the Ultimate Tokens style swatches are re-bound automatically on this same apply. (Color Primitives are untouched.)"
           : (this.exportSystems && this.exportSystems.styles === false
-              ? "This creates or updates the Color Primitives + Color Semantic variable collections in this file. Variables with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want)."
-              : "This creates or updates the Color Primitives + Color Semantic variable collections in this file, plus the STYLE swatches bound to them (paint styles per semantic role, text styles per type step — toggle \u201CStyles\u201D in the drawer to opt out). Variables and Ultimate Tokens styles with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want).")),
+              ? "This creates or updates the Color Primitives + Color Roles variable collections in this file. Variables with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want)."
+              : "This creates or updates the Color Primitives + Color Roles variable collections in this file, plus the STYLE swatches bound to them (paint styles per semantic role, text styles per type step — toggle \u201CStyles\u201D in the drawer to opt out). Variables and Ultimate Tokens styles with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want).")),
         h(
           "div",
           { class: "apply-gate-warn" },
@@ -352,7 +359,7 @@ export class ApplyGateMixinImpl {
         // (the read-back is a plugin message); null while the read-back is still in flight. Suppressed
         // entirely on a color-only apply (Type AND Geometry both off) — there is nothing Geometry/Type
         // -shaped for the count to ever mean there. Regroup still carries floatPlans (it only affects
-        // the Color Semantic rebuild flag), so the count is just as relevant there — no rebuild guard.
+        // the Color Roles rebuild flag), so the count is just as relevant there — no rebuild guard.
         (this.inFigma && ((this.exportSystems || {}).type !== false || (this.exportSystems || {}).geometry !== false)) ? (() => {
           const n = this._figmaChangedCount();
           return h("p", { class: "apply-gate-drift" + (n ? " has-changes" : "") },

@@ -57,7 +57,7 @@ native import, and import the primitives FIRST.
 
 To test (Figma → Local variables → Import):
   1. Import palette.tokens.json   → creates the "Color Primitives" collection.
-  2. Import Light_tokens.json then Dark_tokens.json → creates "Color Semantic".
+  2. Import Light_tokens.json then Dark_tokens.json → creates "Color Roles".
   3. Open a semantic variable (e.g. primary). It should show as an ALIAS to a
      Color Primitives variable (not a flat color), and editing that primitive should
      update it. If it imports as resolved colors (no alias) or errors on import, the

@@ -674,12 +674,12 @@ export class TypeSectionImpl {
                   // collapsed row's tyi-voice-font span, so it's not duplicated/editable in two places.
                   // the Figma weight-STYLE name — only meaningful for non-variable families (GT America
                   // "Condensed Black Italic"), where a numeric weight can't name the face. Exported into
-                  // the Font Primitives collection as weight-style/<voice>; empty = none.
+                  // the Type Primitives collection as weight-style/<voice>; empty = none.
                   h("label", { class: "mode-editor-label", for: "fld-voice-style-" + cName.toLowerCase().replace(/[^a-z0-9]+/g, "-") }, "Figma style name"),
                   h("input", { id: "fld-voice-style-" + cName.toLowerCase().replace(/[^a-z0-9]+/g, "-"), type: "text", value: vp.styleName || "", placeholder: "e.g. Condensed Bold (non-variable fonts)", "data-fk": "tyvoice-style:" + cName,
                     "aria-label": "Figma weight style name for " + cName, onchange: (e) => this._setTypeVoiceStyleName(cName, e.target.value) }),
                   // SIBLING WEIGHTS — named weight variants around the core. Each becomes a Figma text
-                  // style (`Voice/step/Name`), a Font Primitives pair, a CSS custom prop, and a DTCG
+                  // style (`Voice/step/Name`), a Type Primitives pair, a CSS custom prop, and a DTCG
                   // fontWeight token. Suggest seeds the ratified defaults from the CORE weight; the
                   // list is user-owned after (add/remove/rename — never silently regenerated).
                   h("label", { class: "mode-editor-label" }, "Weight siblings", h("small", { class: "tyi-weights-core" }, ` core ${val("weight", p.weight)}`)),

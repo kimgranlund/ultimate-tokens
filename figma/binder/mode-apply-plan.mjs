@@ -169,7 +169,7 @@ export function applyRenameMigrations(plans, migrations) {
 // mutation with no unit coverage of its own). `migrations.retire` is a list of declarative rules:
 //   [{ collection: "<target plan's collection>", ifVariablePrefix: "<prefix>", retire: ["<name>", …] }]
 // A rule fires only once its target collection's plan carries at least one variable whose name starts
-// with `ifVariablePrefix` — e.g. TKT-0009's rule: the merged "Breakpoints" collection supersedes the old
+// with `ifVariablePrefix` — e.g. TKT-0009's rule: the merged "Geometry" collection supersedes the old
 // two-collection era's "Typography" only once it actually lands type/ variables (retiring it before the
 // merge is stable would drop a user's Typography collection while the apply itself could still fail).
 // Retirement here is REGISTRY-TRACKED-ONLY (code.js's applyFloatPlans matches `retire` names against ITS

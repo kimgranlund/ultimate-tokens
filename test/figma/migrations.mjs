@@ -56,8 +56,9 @@ const ok = (c, m) => { if (!c) fails.push(m); };
 // ── FIGMA_MIGRATIONS: the static collection-rename maps name the right old collections ──
 {
   const f = M.FIGMA_MIGRATIONS;
-  ok(Array.isArray(f.floats.collections.Breakpoints?.renameFrom) && f.floats.collections.Breakpoints.renameFrom.includes("Geometry"), "FIGMA_MIGRATIONS.floats: Breakpoints renames from Geometry");
-  ok(Array.isArray(f.color.collections["Color Semantic"]) && f.color.collections["Color Semantic"].includes("Color Modes"), "FIGMA_MIGRATIONS.color: Color Semantic renames from Color Modes");
+  ok(Array.isArray(f.floats.collections.Geometry?.renameFrom) && f.floats.collections.Geometry.renameFrom.includes("Breakpoints"), "FIGMA_MIGRATIONS.floats: Geometry renames from Breakpoints");
+  ok(Array.isArray(f.floats.collections["Type Primitives"]?.renameFrom) && f.floats.collections["Type Primitives"].renameFrom.includes("Font Primitives"), "FIGMA_MIGRATIONS.floats: Type Primitives renames from Font Primitives");
+  ok(Array.isArray(f.color.collections["Color Roles"]) && f.color.collections["Color Roles"].includes("Color Semantic") && f.color.collections["Color Roles"].includes("Color Modes"), "FIGMA_MIGRATIONS.color: Color Roles renames from Color Semantic and Color Modes");
 }
 
 if (fails.length) { console.error(`migrations FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }

@@ -1,5 +1,5 @@
 // style-plan.mjs — the PURE, testable planner for the Figma STYLES swatches (paint styles bound to the
-// Color Semantic variables; text styles bound to the Breakpoints (type/) + Font Primitives variables). The third
+// Color Roles variables; text styles bound to the Geometry (type/) + Type Primitives variables). The third
 // planner sibling: bind-plan.mjs plans the color alias cascade, mode-apply-plan.mjs plans the moded
 // float collections, THIS plans the styles layer that sits on top of both. No `figma` calls here —
 // `figma/plugin/code.js#applyStylePlans` executes the plan verbatim (the executor is dumb by design).
@@ -12,7 +12,7 @@
 //
 // OUTPUT — stylePlans({ families, scale, include }) → { paints, texts }:
 //   paints: [{ name: "Primary/onPrimary" | "Primary/scrims/scrim" | "Primary/surfaces/surface",
-//              varName: "primary/onPrimary" }]                   // → Color Semantic variable, ratified grouping:
+//              varName: "primary/onPrimary" }]                   // → Color Roles variable, ratified grouping:
 //                                                                //   scrim* → scrims/ · surface*|container* → surfaces/
 //   texts:  [{ name: "Display/lg" (voice explicitly opted OUT of siblings via weights:[] — bare) |
 //                     "Display/lg/heavier •" (core, siblings exist — dot-SUFFIXED, lowercase; the
@@ -35,9 +35,9 @@
 //                     token, so it consistently means "the default in this list" regardless of what
 //                     precedes it),
 //              voice, step,
-//              bind:    { fontSize, lineHeight, letterSpacing,   // → Breakpoints collection type/ keys (TKT-0009)
+//              bind:    { fontSize, lineHeight, letterSpacing,   // → Geometry collection type/ keys (TKT-0009)
 //                         paragraphSpacing?,                     //   (prose voices only)
-//                         fontFamily,                            // → Font Primitives font/<voice> (STRING alias)
+//                         fontFamily,                            // → Type Primitives font/<voice> (STRING alias)
 //                         fontStyle? | fontWeight? },            // → weight-style/<voice>/<slug> OR
 //                                                                //   weight/<voice>/<slug> — MUTUALLY
 //                                                                //   EXCLUSIVE, never both: real Figma
@@ -58,6 +58,7 @@
 
 import { semanticRoles, roleLeaf } from "../../src/engine/semantic.js";
 import { weightNameFor, resolvedFontFor, siblingStyleName, coreWeightKey, relativeWeightLabel, BODY_CLASS_VOICES, BODY_WEIGHT_LABELS } from "../../src/engine/type.mjs";
+import { COLLECTIONS } from "../../src/engine/collections.js";
 
 // SINGLE_LINE_VOICES — voices that additionally get a "-single"-suffixed text-style sibling (1.0
 // leading — line-height = size), flat alongside their normal multi-line style in the SAME step folder,
@@ -276,11 +277,11 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
   return { paints, texts };
 }
 
-// primitivesModesApplyPlan — flattens the Font Primitives
+// primitivesModesApplyPlan — flattens the Type Primitives
 // interchange (typeTokensFigmaPrimitivesModes) into the ordered apply plan the plugin executor
 // consumes. Mirrors modeApplyPlan's plan shape ({collection, modes, defaultMode, addModes, variables})
-// so the executor can reuse the SAME addMode/rename/prune scaffolding Breakpoints/Geometry already
-// proved — but stays its own function, not a modeApplyPlan call, because Font Primitives variables can
+// so the executor can reuse the SAME addMode/rename/prune scaffolding Geometry already
+// proved — but stays its own function, not a modeApplyPlan call, because Type Primitives variables can
 // be ALIAS-typed (mode-apply-plan.mjs's FIGMA_VAR_TYPES / validateModeInterchange never recognize that
 // type) and because literals must be ordered before aliases here — a flat name sort does not guarantee
 // it (e.g. "font/sub-heading" sorts before "override/sub-heading" even when aliasing it).
@@ -292,7 +293,7 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
 //   - DANGLING ALIAS — an ALIAS whose target isn't among the surviving (complete) literals is dropped.
 // Null when there is nothing to apply.
 export function primitivesModesApplyPlan(interchange) {
-  const coll = interchange && interchange.collections && interchange.collections["Font Primitives"];
+  const coll = interchange && interchange.collections && interchange.collections[COLLECTIONS.fontPrimitives];
   const modes = coll && Array.isArray(coll.modes) ? coll.modes : [];
   const vars = coll && coll.variables && typeof coll.variables === "object" ? coll.variables : null;
   if (!vars || !modes.length) return null;
@@ -311,5 +312,5 @@ export function primitivesModesApplyPlan(interchange) {
   }
   const litNames = new Set(literals.map((l) => l.name));
   const variables = [...literals, ...aliases.filter((a) => litNames.has(a.target))];
-  return variables.length ? { collection: "Font Primitives", modes, defaultMode: modes[0], addModes: modes.slice(1), variables } : null;
+  return variables.length ? { collection: COLLECTIONS.fontPrimitives, modes, defaultMode: modes[0], addModes: modes.slice(1), variables } : null;
 }

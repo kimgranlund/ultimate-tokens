@@ -16,7 +16,7 @@ const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table
 const state = { palettes: RT.defaults, curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, hueSpace: "cam16", theme: "auto" };
 
 // ── ground truth: the semantic variable name set, from exportUI3 (a different code path) ──
-const semVars = exportUI3(state).collections["Color Semantic"].variables;
+const semVars = exportUI3(state).collections["Color Roles"].variables;
 const varNames = new Set(Object.keys(semVars)); // "{n}/{key}"
 const families = [...new Set(Object.keys(semVars).map((k) => k.split("/")[0]))]
   .map((n) => ({ n, name: n.charAt(0).toUpperCase() + n.slice(1) }));
@@ -63,10 +63,10 @@ const plans = stylePlans({ families, scale });
   ok(o && o.name === paintStyleNameFor("Primary", "onPrimary"), `flat style name: ${o && o.name}`);
 }
 
-// ── text parity: every bind target exists in the merged Geometry (type/ half) or Font Primitives collections ──
+// ── text parity: every bind target exists in the merged Geometry (type/ half) or Type Primitives collections ──
 {
-  const typo = new Set(Object.keys(typeTokensFigmaModes(scale).collections.Breakpoints.variables));
-  const prim = new Set(Object.keys(typeTokensFigmaPrimitivesModes(scale).collections["Font Primitives"].variables));
+  const typo = new Set(Object.keys(typeTokensFigmaModes(scale).collections.Geometry.variables));
+  const prim = new Set(Object.keys(typeTokensFigmaPrimitivesModes(scale).collections["Type Primitives"].variables));
   const bad = [];
   for (const t of plans.texts) for (const [field, target] of Object.entries(t.bind)) {
     const home = field === "fontFamily" || field === "fontStyle" || field === "fontWeight" ? prim : typo;
@@ -208,10 +208,10 @@ const plans = stylePlans({ families, scale });
   ok(bareSubMd.literal.family === scale.fonts[scale.roleOf["Sub-heading"]], "no override ⇒ literal.family is the role's shared family (unchanged behavior)");
 }
 
-// ── primitivesModesApplyPlan: ordered flatten of the Font Primitives MODES interchange ──
+// ── primitivesModesApplyPlan: ordered flatten of the Type Primitives MODES interchange ──
 {
   const plan = primitivesModesApplyPlan(typeTokensFigmaPrimitivesModes(scale));
-  ok(!!plan && plan.collection === "Font Primitives" && JSON.stringify(plan.modes) === JSON.stringify(["Premium", "Google Fonts"]) && plan.defaultMode === "Premium" && JSON.stringify(plan.addModes) === JSON.stringify(["Google Fonts"]), "primitives plan targets the Font Primitives collection, the fixed 2-mode Premium/Google Fonts axis");
+  ok(!!plan && plan.collection === "Type Primitives" && JSON.stringify(plan.modes) === JSON.stringify(["Premium", "Google Fonts"]) && plan.defaultMode === "Premium" && JSON.stringify(plan.addModes) === JSON.stringify(["Google Fonts"]), "primitives plan targets the Type Primitives collection, the fixed 2-mode Premium/Google Fonts axis");
   const names = plan.variables.map((v) => v.name);
   const idx = (n) => names.indexOf(n);
   ok(plan.variables.every((v) => v.type !== "ALIAS" || idx(v.target) > -1 && idx(v.target) < idx(v.name)), "every alias follows its target (literals first)");
@@ -221,15 +221,15 @@ const plans = stylePlans({ families, scale });
   const literal = plan.variables.find((v) => v.type !== "ALIAS");
   ok(!!literal && Array.isArray(literal.values) && literal.values.length === 2 && literal.values.every((p) => plan.modes.includes(p.mode)), "a literal carries one {mode,value} pair per mode in the plan's own mode order");
 
-  const dangling = primitivesModesApplyPlan({ collections: { "Font Primitives": { modes: ["Premium", "Google Fonts"], variables: { "font/X": { type: "ALIAS", target: "family/missing" } } } } });
+  const dangling = primitivesModesApplyPlan({ collections: { "Type Primitives": { modes: ["Premium", "Google Fonts"], variables: { "font/X": { type: "ALIAS", target: "family/missing" } } } } });
   ok(dangling === null, "an alias with no target is dropped planner-side (nothing left ⇒ null)");
 
   // INCOMPLETE LITERAL — a STRING/FLOAT missing a value for one of the interchange's own modes is
   // dropped entirely (not emitted with a hole): a partial write reads as "forgot this mode" once
   // round-tripped through Figma, worse than not writing it at all.
-  const incomplete = primitivesModesApplyPlan({ collections: { "Font Primitives": { modes: ["Premium", "Google Fonts"], variables: { "family/display": { type: "STRING", values: { Premium: "Inter" } } } } } });
+  const incomplete = primitivesModesApplyPlan({ collections: { "Type Primitives": { modes: ["Premium", "Google Fonts"], variables: { "family/display": { type: "STRING", values: { Premium: "Inter" } } } } } });
   ok(incomplete === null, "a literal missing a mode's value is dropped, not emitted with a hole (nothing left here ⇒ null)");
-  const mixedPlan = primitivesModesApplyPlan({ collections: { "Font Primitives": { modes: ["Premium", "Google Fonts"], variables: {
+  const mixedPlan = primitivesModesApplyPlan({ collections: { "Type Primitives": { modes: ["Premium", "Google Fonts"], variables: {
     "family/display": { type: "STRING", values: { Premium: "Inter", "Google Fonts": "Inter" } },
     "family/body": { type: "STRING", values: { Premium: "Inter" } }, // missing Google Fonts — dropped
     "font/display": { type: "ALIAS", target: "family/display" },

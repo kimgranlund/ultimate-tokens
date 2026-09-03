@@ -206,14 +206,14 @@ export class DrawerMixinImpl {
           title: "Download the Color Tokens Semantic Binder plugin (manifest.json + code.js). In Figma: Plugins → Development → Import plugin from manifest — it aliases each semantic role to its raw variable so editing a raw color cascades.",
           onclick: () => this.downloadFigmaPlugin(),
         }),
-        // Opt-in (inside Figma only): re-create Color Semantic so it adopts the grouped order
+        // Opt-in (inside Figma only): re-create Color Roles so it adopts the grouped order
         // (Figma won't reorder existing variables on a normal apply). Lives here, beside the
         // Binder plugin, because it's a Figma-tab action — re-creates vars, so bound layers
         // need reconnecting.
         this.inFigma
           ? btn([icon("arrows-clockwise"), "Regroup"], {
               cls: "figma-regroup",
-              title: this._applyBusy ? "Applying…" : "Rebuild the Color Semantic variables in grouped order (regular · containers · surfaces · scrims). Re-creates them, so layers bound to them will need reconnecting. Color Primitives are untouched.",
+              title: this._applyBusy ? "Applying…" : "Rebuild the Color Roles variables in grouped order (regular · containers · surfaces · scrims). Re-creates them, so layers bound to them will need reconnecting. Color Primitives are untouched.",
               disabled: !!this._applyBusy, // TKT-0004: no double-firing a second apply while one is in flight
               onclick: () => this.requestApplyToFigma(true),
             })
@@ -272,7 +272,7 @@ export class DrawerMixinImpl {
           ? btn([icon("flag"), "Apply Variables"], {
               variant: "primary",
               cls: "figma-apply",
-              title: this._applyBusy ? "Applying…" : "Create/update the Color Primitives + Color Semantic (Light/Dark) variable collections directly in this Figma file",
+              title: this._applyBusy ? "Applying…" : "Create/update the Color Primitives + Color Roles (Light/Dark) variable collections directly in this Figma file",
               disabled: !!this._applyBusy, // TKT-0004: no double-firing a second apply while one is in flight
               onclick: () => this.requestApplyToFigma(),
             })
@@ -375,7 +375,7 @@ export class DrawerMixinImpl {
         { name: "typography/type.tokens.json", data: tDtcg },
         ...this._typeModeDTCGFiles("typography/type", u),
         { name: "figma/type.tokens.json", data: JSON.stringify(typeTokensDTCG(tsc), null, 2) }, // ALWAYS px — Figma import (a tokens plugin)
-        // the companion "Font Primitives" collection — deduped family STRING primitives + per-voice
+        // the companion "Type Primitives" collection — deduped family STRING primitives + per-voice
         // font aliases + per-voice weight primitives (import artifact; never enters the apply path).
         { name: "figma/typography.primitives.variables.json", data: JSON.stringify(typeTokensFigmaPrimitivesModes(tsc), null, 2) },
       );
@@ -417,7 +417,7 @@ export class DrawerMixinImpl {
     // figma/styles.plan.json — the plugin-free STYLES import artifact (rides the Styles opt-out chip,
     // compositional with the system toggles like the apply path): the same pure plans the in-Figma
     // apply executes, so external tooling (or a later plugin-free import) can create the bound
-    // swatches without re-deriving anything. paints → Color Semantic bindings; texts → Breakpoints (type/)/Font
+    // swatches without re-deriving anything. paints → Color Roles bindings; texts → Geometry (type/)/Type
     // Primitives bindings + literal fallbacks; fontPrimitives → the ordered ensure-plan.
     if (sys.styles !== false && (sys.color || sys.type)) {
       const stScale = sys.type ? this._typeScaleFor("base") : null;

@@ -19,7 +19,7 @@ const OLD_VOICE = { "display": "Display", "headline": "Headline", "sub-heading":
 const OLD_PROP = { "size": "size", "line-height": "lineHeight", "letter-spacing": "letterSpacing", "weight": "weight", "paragraph-spacing": "paragraphSpacing", "single-line-height": "singleLineHeight" };
 const OLD_FIELD = { "height": "height", "icon": "icon", "caret": "caret", "icon-gap": "gap", "padding-narrow": "paddingNarrow", "padding-wide": "paddingWide", "padding-narrow-compact": "paddingNarrowCompact", "padding-wide-compact": "paddingWideCompact", "pill-radius": "radius", "min-width": "minWidth" };
 
-// kebabWaveOldName(newName) → the pre-wave name for a CURRENT Breakpoints-collection variable, or
+// kebabWaveOldName(newName) → the pre-wave name for a CURRENT Geometry-collection variable, or
 // null when unchanged (space/radius/inset/gap/border/focus were already kebab).
 export function kebabWaveOldName(newName) {
   const seg = String(newName).split("/");
@@ -68,13 +68,21 @@ export function kebabWaveColorRenames(paletteSlugs) {
 
 export const FIGMA_MIGRATIONS = {
   // floats: stamped by the app AFTER planning (the var map derives from the live plan's names via
-  // kebabWaveVarRenames — see _figmaFloatPlans); the collection rename is static.
-  // retire (TKT-0009, extracted to retirementsFor at TKT-0018): the merged "Breakpoints" collection
+  // kebabWaveVarRenames — see _figmaFloatPlans); the collection renames are static.
+  // "Geometry" (#491, 2026-09-02): a REVERT — the merged type/+box-geometry collection was briefly
+  // "Breakpoints" (TKT-0009/ADR-016); a file still carrying either name (incl. one that never got the
+  // Geometry->Breakpoints rename applied, e.g. an older ADIA Colors export) adopts in place.
+  // "Type Primitives" (#491): was "Font Primitives" — matches the product's own "Type" vocabulary.
+  // retire (TKT-0009, extracted to retirementsFor at TKT-0018): the merged "Geometry" collection
   // supersedes the old two-collection era's "Typography" once it actually lands type/ variables.
   floats: {
-    collections: { "Breakpoints": { renameFrom: ["Geometry"] } },
-    retire: [{ collection: "Breakpoints", ifVariablePrefix: "type/", retire: ["Typography"] }],
+    collections: {
+      "Geometry": { renameFrom: ["Breakpoints"] },
+      "Type Primitives": { renameFrom: ["Font Primitives"] },
+    },
+    retire: [{ collection: "Geometry", ifVariablePrefix: "type/", retire: ["Typography"] }],
   },
-  color: { collections: { "Color Semantic": ["Color Modes"] } },
+  // "Color Roles" (#491): was "Color Semantic", was "Color Modes" — both old names adopt in place.
+  color: { collections: { "Color Roles": ["Color Semantic", "Color Modes"] } },
   styles: { paints: {}, texts: {} },
 };

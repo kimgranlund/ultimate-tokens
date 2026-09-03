@@ -740,8 +740,8 @@ export function typeTokensFigmaModes(baseScale, modes = [], { baseName = "Base",
   };
 }
 
-// typeTokensFigmaPrimitivesModes — the "Font Primitives" COMPANION collection to typeTokensFigmaModes,
-// a real Figma-native mode axis ("Premium" / "Google Fonts"), mirroring the Breakpoints/Light-Dark mode
+// typeTokensFigmaPrimitivesModes — the "Type Primitives" COMPANION collection to typeTokensFigmaModes,
+// a real Figma-native mode axis ("Premium" / "Google Fonts"), mirroring the Geometry/Light-Dark mode
 // mechanism (font-mode feature, Phase B). Every literal (STRING family/override, FLOAT weight, STRING
 // weight-style) carries BOTH mode values explicitly — including weight/weight-style, which never
 // actually vary by fontMode (resolvedFontForMode only ever touches family strings) but are still
@@ -787,6 +787,6 @@ export function typeTokensFigmaPrimitivesModes(scale) {
   }
   return {
     $schema: "figma-ui3-variables.primitives-modes.schema.v1",
-    collections: { "Font Primitives": { modes: MODES, variables } },
+    collections: { [COLLECTIONS.fontPrimitives]: { modes: MODES, variables } },
   };
 }

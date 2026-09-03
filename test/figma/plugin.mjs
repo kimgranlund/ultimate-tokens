@@ -3,7 +3,7 @@
 // Gates the generator-as-Figma-plugin without Figma: manifest shape + offline, code.js
 // parses + uses no network APIs, ui.html carries the generator + the bridge, AND the
 // load-bearing contract — model.figmaBundle() fed to code.applyBundle() (on a MOCK figma)
-// builds a Color Primitives collection + a Color Modes (Light/Dark) collection in which EVERY
+// builds a Color Primitives collection + a Color Roles (Light/Dark) collection in which EVERY
 // semantic var, in BOTH modes, is aliased to a raw var that was actually created.
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -167,10 +167,10 @@ if (applyBundle) {
   try {
     const res = await applyBundle(bundle);
     const raw = F.collections.find((c) => c.name === "Color Primitives");
-    const sem = F.collections.find((c) => c.name === "Color Semantic");
+    const sem = F.collections.find((c) => c.name === "Color Roles");
     if (!raw) FAIL("apply", "no Color Primitives collection created");
-    if (!sem) FAIL("apply", "no Color Modes collection created");
-    if (sem && sem.modes.map((m) => m.name).join() !== "Light,Dark") FAIL("apply", `Color Modes modes = ${sem && sem.modes.map((m) => m.name)}, want Light,Dark`);
+    if (!sem) FAIL("apply", "no Color Roles collection created");
+    if (sem && sem.modes.map((m) => m.name).join() !== "Light,Dark") FAIL("apply", `Color Roles modes = ${sem && sem.modes.map((m) => m.name)}, want Light,Dark`);
     if (res.raw !== rawExpect) FAIL("apply", `created ${res.raw} raw vars, expected ${rawExpect}`);
     if (res.semantic !== semExpect) FAIL("apply", `created ${res.semantic} semantic vars, expected ${semExpect}`);
 
@@ -194,14 +194,14 @@ if (applyBundle) {
     //  modes would corrupt the variable panel). Proven, not assumed.
     const res2 = await applyBundle(bundle);
     const rawColls = F.collections.filter((c) => c.name === "Color Primitives").length;
-    const semColls = F.collections.filter((c) => c.name === "Color Semantic").length;
+    const semColls = F.collections.filter((c) => c.name === "Color Roles").length;
     if (rawColls !== 1) FAIL("idempotent", `re-apply made ${rawColls} Color Primitives collections, want 1`);
-    if (semColls !== 1) FAIL("idempotent", `re-apply made ${semColls} Color Modes collections, want 1`);
+    if (semColls !== 1) FAIL("idempotent", `re-apply made ${semColls} Color Roles collections, want 1`);
     const rawVars2 = F.variables.filter((v) => raw && v.variableCollectionId === raw.id).length;
     const semVars2 = F.variables.filter((v) => sem && v.variableCollectionId === sem.id).length;
     if (rawVars2 !== rawExpect) FAIL("idempotent", `re-apply left ${rawVars2} raw vars, want ${rawExpect} (no duplicates)`);
     if (semVars2 !== semExpect) FAIL("idempotent", `re-apply left ${semVars2} semantic vars, want ${semExpect} (no duplicates)`);
-    if (sem && sem.modes.map((m) => m.name).join() !== "Light,Dark") FAIL("idempotent", `re-apply left Color Modes modes = ${sem && sem.modes.map((m) => m.name)}, want Light,Dark (no duplicate mode)`);
+    if (sem && sem.modes.map((m) => m.name).join() !== "Light,Dark") FAIL("idempotent", `re-apply left Color Roles modes = ${sem && sem.modes.map((m) => m.name)}, want Light,Dark (no duplicate mode)`);
     if (res2.raw !== rawExpect || res2.semantic !== semExpect) FAIL("idempotent", `re-apply reported ${res2.raw}/${res2.semantic} vars, want ${rawExpect}/${semExpect}`);
 
     // ── ORPHAN PRUNE: re-apply removes any var NOT in the current bundle, in BOTH generated
@@ -217,25 +217,25 @@ if (applyBundle) {
     for (const dead of ["neutral/500-0", "neutral/750-3", "ghost/050"]) if (rawNames3.includes(dead)) FAIL("prune", `orphan raw var '${dead}' not pruned`);
     if (semNames3.includes("ghost/primary")) FAIL("prune", "orphan semantic var 'ghost/primary' not pruned");
     if (rawNames3.length !== rawExpect) FAIL("prune", `Color Primitives has ${rawNames3.length} vars after prune, want ${rawExpect}`);
-    if (semNames3.length !== semExpect) FAIL("prune", `Color Modes has ${semNames3.length} vars after prune, want ${semExpect}`);
+    if (semNames3.length !== semExpect) FAIL("prune", `Color Roles has ${semNames3.length} vars after prune, want ${semExpect}`);
     if (res3.pruned !== 4) FAIL("prune", `apply reported pruned=${res3.pruned}, expected 4`);
 
-    // ── REGROUP: apply with {rebuildSemantic} DELETES + re-creates the Color Modes collection (so it
+    // ── REGROUP: apply with {rebuildSemantic} DELETES + re-creates the Color Roles collection (so it
     //    adopts the bundle's canonical order), leaving Color Primitives + the var counts intact and
     //    NOT duplicating the collection. The fresh semantic vars created in the bundle's role order. ──
-    const semColl0 = F.collections.find((c) => c.name === "Color Semantic");
+    const semColl0 = F.collections.find((c) => c.name === "Color Roles");
     const res4 = await applyBundle(bundle, { rebuildSemantic: true });
     if (!res4.rebuilt) FAIL("regroup", "applyBundle({rebuildSemantic:true}) did not report rebuilt");
-    const semColls4 = F.collections.filter((c) => c.name === "Color Semantic");
-    if (semColls4.length !== 1) FAIL("regroup", `after regroup there are ${semColls4.length} Color Modes collections, want 1`);
-    if (semColls4[0] === semColl0) FAIL("regroup", "regroup reused the old Color Modes collection (should be a fresh one)");
+    const semColls4 = F.collections.filter((c) => c.name === "Color Roles");
+    if (semColls4.length !== 1) FAIL("regroup", `after regroup there are ${semColls4.length} Color Roles collections, want 1`);
+    if (semColls4[0] === semColl0) FAIL("regroup", "regroup reused the old Color Roles collection (should be a fresh one)");
     if (res4.semantic !== semExpect) FAIL("regroup", `regroup created ${res4.semantic} semantic vars, want ${semExpect}`);
     const semNames4 = inColl(semColls4[0].id);
-    if (semNames4.length !== semExpect) FAIL("regroup", `Color Modes has ${semNames4.length} vars after regroup, want ${semExpect}`);
+    if (semNames4.length !== semExpect) FAIL("regroup", `Color Roles has ${semNames4.length} vars after regroup, want ${semExpect}`);
     // order check: the fresh collection's variable order matches the bundle's (regular → … → scrims)
     const wantOrder = Object.keys(bundle["Light_tokens.json"]).filter((n) => n[0] !== "$")
       .flatMap((n) => Object.keys(bundle["Light_tokens.json"][n]).filter((k) => k[0] !== "$").map((k) => n + "/" + k));
-    if (semNames4.join(",") !== wantOrder.join(",")) FAIL("regroup", "regrouped Color Modes order != bundle (canonical) order");
+    if (semNames4.join(",") !== wantOrder.join(",")) FAIL("regroup", "regrouped Color Roles order != bundle (canonical) order");
     const lastSeven = semNames4.slice(-7);
     if (!lastSeven.every((nm) => /\/scrim/.test(nm))) FAIL("regroup", `last 7 regrouped vars are not scrims: ${lastSeven}`);
 
@@ -258,7 +258,7 @@ if (applyBundle) {
   } catch (e) { FAIL("apply", "applyBundle threw: " + e.message); }
 
   // ── THEMES (TKT-0021 — the theme axis flows generically all the way to the apply executor): a
-  //    3-theme bundle (Light/Dark/Dim, Dim on the "dark" side) creates a THREE-mode Color Semantic
+  //    3-theme bundle (Light/Dark/Dim, Dim on the "dark" side) creates a THREE-mode Color Roles
   //    collection, every var aliased in all three modes, and re-applying a plain 2-theme bundle prunes
   //    the now-unwanted "Dim" mode back down to two — proves N-way, not just "2 still works". Built
   //    directly off exportDTCG (the same engine call figmaBundle wraps) since figmaBundle itself takes
@@ -275,9 +275,9 @@ if (applyBundle) {
       const bundle3 = exportDTCG(stateOfDefault(), { rawColl: "Color Primitives", themes: THEMES_3 });
       try {
         const res7 = await load7.applyBundle(bundle3);
-        const sem7 = F7.collections.find((c) => c.name === "Color Semantic");
-        if (!sem7) FAIL("themes", "no Color Semantic collection created for a 3-theme bundle");
-        else if (sem7.modes.map((m) => m.name).join() !== "Light,Dark,Dim") FAIL("themes", `Color Semantic modes = ${sem7.modes.map((m) => m.name)}, want Light,Dark,Dim`);
+        const sem7 = F7.collections.find((c) => c.name === "Color Roles");
+        if (!sem7) FAIL("themes", "no Color Roles collection created for a 3-theme bundle");
+        else if (sem7.modes.map((m) => m.name).join() !== "Light,Dark,Dim") FAIL("themes", `Color Roles modes = ${sem7.modes.map((m) => m.name)}, want Light,Dark,Dim`);
         else {
           const lightId = sem7.modes[0].modeId, darkId = sem7.modes[1].modeId, dimId = sem7.modes[2].modeId;
           const semVars7 = F7.variables.filter((v) => v.variableCollectionId === sem7.id);
@@ -294,8 +294,8 @@ if (applyBundle) {
         // re-apply a PLAIN 2-theme bundle (the default axis) → Dim is no longer wanted → its mode is pruned.
         const bundle2 = exportDTCG(stateOfDefault(), { rawColl: "Color Primitives" });
         await load7.applyBundle(bundle2);
-        const sem7b = F7.collections.find((c) => c.name === "Color Semantic");
-        if (!sem7b || sem7b.modes.map((m) => m.name).join() !== "Light,Dark") FAIL("themes", `after reverting to a 2-theme bundle, Color Semantic modes = ${sem7b && sem7b.modes.map((m) => m.name)}, want Light,Dark (Dim should be pruned)`);
+        const sem7b = F7.collections.find((c) => c.name === "Color Roles");
+        if (!sem7b || sem7b.modes.map((m) => m.name).join() !== "Light,Dark") FAIL("themes", `after reverting to a 2-theme bundle, Color Roles modes = ${sem7b && sem7b.modes.map((m) => m.name)}, want Light,Dark (Dim should be pruned)`);
       } catch (e) { FAIL("themes", "applyBundle threw on a 3-theme bundle: " + e.message); }
     }
   }
@@ -361,18 +361,18 @@ if (applyFloatPlans) {
     if (mergedPlans.length !== 1) FAIL("floatapply", `merged plan count = ${mergedPlans.length}, want 1 (one collection)`);
     const fr = await applyFloatPlans(mergedPlans);
 
-    const geo = F.collections.find((c) => c.name === "Breakpoints");
+    const geo = F.collections.find((c) => c.name === "Geometry");
     if (F.collections.some((c) => c.name === "Typography")) FAIL("floatapply", "the merged apply minted a Typography collection (the pre-TKT-0009 shape)");
-    if (!geo) FAIL("floatapply", "no Breakpoints collection created");
-    if (geo && geo.modes.map((m) => m.name).join() !== "Base,Mobile") FAIL("floatapply", `Breakpoints modes = ${geo && geo.modes.map((m) => m.name)}, want Base,Mobile`);
+    if (!geo) FAIL("floatapply", "no Geometry collection created");
+    if (geo && geo.modes.map((m) => m.name).join() !== "Base,Mobile") FAIL("floatapply", `Geometry modes = ${geo && geo.modes.map((m) => m.name)}, want Base,Mobile`);
     if (fr.collections !== 1) FAIL("floatapply", `applyFloatPlans reported ${fr.collections} collections, want 1 (merged)`);
 
     // every var is FLOAT + value-complete across both modes; per-mode TYPE values DIFFER (16 vs 13); both halves present.
     if (geo) {
       const gVars = F.variables.filter((v) => v.variableCollectionId === geo.id);
       const planLen = mergedPlans[0].variables.length;
-      if (gVars.length !== planLen) FAIL("floatapply", `Breakpoints has ${gVars.length} vars, want ${planLen}`);
-      if (!gVars.every((v) => v.type === "FLOAT")) FAIL("floatapply", "a Breakpoints variable is not FLOAT");
+      if (gVars.length !== planLen) FAIL("floatapply", `Geometry has ${gVars.length} vars, want ${planLen}`);
+      if (!gVars.every((v) => v.type === "FLOAT")) FAIL("floatapply", "a Geometry variable is not FLOAT");
       if (!gVars.some((v) => v.name.startsWith("type/"))) FAIL("floatapply", "the type/ half is missing from the merged collection");
       if (!gVars.some((v) => v.name.startsWith("size/"))) FAIL("floatapply", "the box-geometry half is missing from the merged collection");
       const baseId = geo.modes[0].modeId, mobId = geo.modes[1].modeId;
@@ -384,17 +384,17 @@ if (applyFloatPlans) {
 
     // IDEMPOTENT re-apply — no duplicate collection / modes / variables.
     await applyFloatPlans(modeApplyPlan(mergeModeInterchanges(typeIx, geomIx)));
-    if (F.collections.filter((c) => c.name === "Breakpoints").length !== 1) FAIL("floatidem", "re-apply duplicated the Breakpoints collection");
-    if (geo && geo.modes.length !== 2) FAIL("floatidem", `re-apply left ${geo && geo.modes.length} Breakpoints modes, want 2`);
+    if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("floatidem", "re-apply duplicated the Geometry collection");
+    if (geo && geo.modes.length !== 2) FAIL("floatidem", `re-apply left ${geo && geo.modes.length} Geometry modes, want 2`);
     const gVars2 = geo ? F.variables.filter((v) => v.variableCollectionId === geo.id).length : 0;
-    if (gVars2 !== mergedPlans[0].variables.length) FAIL("floatidem", `re-apply left ${gVars2} Breakpoints vars (duplicates)`);
+    if (gVars2 !== mergedPlans[0].variables.length) FAIL("floatidem", `re-apply left ${gVars2} Geometry vars (duplicates)`);
 
     // BREAKPOINT REMOVED ⇒ the stale mode is pruned (re-apply the merged no-breakpoints plan ⇒ Base only).
     await applyFloatPlans(modeApplyPlan(mergeModeInterchanges(
       TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 }), []),
       GEOM.geomTokensFigmaModes(GEOM.geomScale({ treatment: "comfortable", baseHeight: 28 }), []),
     )));
-    if (geo && geo.modes.map((m) => m.name).join() !== "Base") FAIL("floatprune", `after removing the breakpoint, Breakpoints modes = ${geo && geo.modes.map((m) => m.name)}, want Base`);
+    if (geo && geo.modes.map((m) => m.name).join() !== "Base") FAIL("floatprune", `after removing the breakpoint, Geometry modes = ${geo && geo.modes.map((m) => m.name)}, want Base`);
 
     // ORPHAN VAR pruned — a synthetic collection: apply {a,b} then {a} ⇒ b removed, a updated to 9.
     const synthVar = (name, value) => ({ name, type: "FLOAT", values: [{ mode: "Base", value }] });
@@ -412,14 +412,14 @@ if (applyFloatPlans) {
     // "Geometry" is the only one until apply runs.
     const F2 = mockFigma();
     const a2 = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(F2.figma, "<html>", undefined).applyFloatPlans;
-    const userColl = F2.figma.variables.createVariableCollection("Breakpoints"); // the user's own, pre-existing
+    const userColl = F2.figma.variables.createVariableCollection("Geometry"); // the user's own, pre-existing
     F2.figma.variables.createVariable("user/keepme", userColl, "FLOAT").setValueForMode(userColl.modes[0].modeId, 123);
     await a2(modeApplyPlan(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product" }), [])));
-    if (F2.collections.filter((c) => c.name === "Breakpoints").length !== 2) FAIL("floatprov", `expected the user's Breakpoints + a separate plugin-created one (2), got ${F2.collections.filter((c) => c.name === "Breakpoints").length}`);
-    if (!F2.variables.some((v) => v.variableCollectionId === userColl.id && v.name === "user/keepme")) FAIL("floatprov", "apply pruned a variable from the user's OWN Breakpoints collection");
-    if (userColl.modes[0].name !== "Mode 1") FAIL("floatprov", "apply renamed the default mode of the user's OWN Breakpoints collection");
+    if (F2.collections.filter((c) => c.name === "Geometry").length !== 2) FAIL("floatprov", `expected the user's Geometry + a separate plugin-created one (2), got ${F2.collections.filter((c) => c.name === "Geometry").length}`);
+    if (!F2.variables.some((v) => v.variableCollectionId === userColl.id && v.name === "user/keepme")) FAIL("floatprov", "apply pruned a variable from the user's OWN Geometry collection");
+    if (userColl.modes[0].name !== "Mode 1") FAIL("floatprov", "apply renamed the default mode of the user's OWN Geometry collection");
     await a2(modeApplyPlan(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product" }), []))); // re-apply: reconcile OURS by id, not the user's
-    if (F2.collections.filter((c) => c.name === "Breakpoints").length !== 2) FAIL("floatprov", "re-apply made a 3rd Breakpoints (provenance registry not persisted to root pluginData)");
+    if (F2.collections.filter((c) => c.name === "Geometry").length !== 2) FAIL("floatprov", "re-apply made a 3rd Geometry (provenance registry not persisted to root pluginData)");
 
     // RETIREMENT (TKT-0009 migration): a registry-tracked two-collection-era "Typography" is removed by a
     // merged plan carrying retire:["Typography"] (what _figmaFloatPlans attaches) — while a user's OWN
@@ -436,7 +436,7 @@ if (applyFloatPlans) {
     const typosLeft = F8.collections.filter((c) => c.name === "Typography");
     if (typosLeft.length !== 1) FAIL("floatretire", `expected ONLY the user's own Typography to survive retirement, got ${typosLeft.length}`);
     if (!F8.variables.some((v) => v.variableCollectionId === userTypo.id && v.name === "user/keepme")) FAIL("floatretire", "retirement removed the user's OWN Typography collection (provenance violated)");
-    if (!F8.variables.some((v) => v.name === "type/body/md/size")) FAIL("floatretire", "the merged Breakpoints collection missing after retirement");
+    if (!F8.variables.some((v) => v.name === "type/body/md/size")) FAIL("floatretire", "the merged Geometry collection missing after retirement");
     await a8(retirePlans); // idempotent: a retire with no registry entry left is a no-op
     if (F8.collections.filter((c) => c.name === "Typography").length !== 1) FAIL("floatretire", "re-applying a retire-carrying plan touched the user's own Typography");
   } catch (e) { FAIL("floatapply", "applyFloatPlans threw: " + e.message); }
@@ -454,15 +454,15 @@ if (applyFloatPlans) {
     const a9 = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(F9.figma, "<html>", undefined).applyFloatPlans;
     // era 1: a synthetic OLD-shape interchange ("Geometry" collection, camel var names) — hand-built,
     // since the live emitters now speak the ADR-016 grammar.
-    const oldIx = JSON.parse(JSON.stringify(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 }), [])).replaceAll("Breakpoints", "Geometry").replaceAll("type/body/md/", "type/Body/MD/").replaceAll("line-height", "lineHeight").replaceAll("letter-spacing", "letterSpacing").replaceAll("paragraph-spacing", "paragraphSpacing").replaceAll("single-lineHeight", "singleLineHeight"));
-    await a9(modeApplyPlan(oldIx)); // era 1: the old-shape collection ("Geometry", camel var names)
-    const geoOld = F9.collections.find((c) => c.name === "Geometry");
+    const oldIx = JSON.parse(JSON.stringify(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 }), [])).replaceAll("Geometry", "Breakpoints").replaceAll("type/body/md/", "type/Body/MD/").replaceAll("line-height", "lineHeight").replaceAll("letter-spacing", "letterSpacing").replaceAll("paragraph-spacing", "paragraphSpacing").replaceAll("single-lineHeight", "singleLineHeight"));
+    await a9(modeApplyPlan(oldIx)); // era 1: the old-shape collection ("Breakpoints", camel var names)
+    const geoOld = F9.collections.find((c) => c.name === "Breakpoints");
     const oldVar = F9.variables.find((v) => v.variableCollectionId === geoOld.id && v.name === "type/Body/MD/size");
     const keepCollId = geoOld.id, keepVarId = oldVar.id, varCountBefore = F9.variables.filter((v) => v.variableCollectionId === geoOld.id).length;
     // era 2: the renamed shape — collection "Breakpoints-Test", var "type/body/md/size" — via the capability
     const renamedIx = JSON.parse(JSON.stringify(oldIx).replaceAll("type/Body/MD/", "type/body/md/"));
-    const plans9 = modeApplyPlan({ collections: { "Breakpoints-Test": renamedIx.collections.Geometry } });
-    plans9[0].renameFrom = ["Geometry"];
+    const plans9 = modeApplyPlan({ collections: { "Breakpoints-Test": renamedIx.collections.Breakpoints } });
+    plans9[0].renameFrom = ["Breakpoints"];
     plans9[0].renames = { "type/Body/MD/size": "type/body/md/size", "type/Body/MD/lineHeight": "type/body/md/lineHeight" };
     await a9(plans9);
     const bp = F9.collections.find((c) => c.name === "Breakpoints-Test");
@@ -492,8 +492,8 @@ if (applyFloatPlans) {
   else {
     const typePlan = modeApplyPlan(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product" }), []));
     await F3.figma.ui._h({ type: "apply", floatPlans: typePlan, config: { name: "x" } }); // Color OFF → no dtcg
-    if (F3.collections.some((c) => c.name === "Color Primitives" || c.name === "Color Semantic")) FAIL("applysys", "apply with no dtcg still created a Color collection (the Color toggle was ignored)");
-    if (!F3.collections.some((c) => c.name === "Breakpoints")) FAIL("applysys", "apply with no dtcg did not apply the merged Breakpoints float plan");
+    if (F3.collections.some((c) => c.name === "Color Primitives" || c.name === "Color Roles")) FAIL("applysys", "apply with no dtcg still created a Color collection (the Color toggle was ignored)");
+    if (!F3.collections.some((c) => c.name === "Geometry")) FAIL("applysys", "apply with no dtcg did not apply the merged Geometry float plan");
     // COMPLETION FEEDBACK: a finished apply posts {apply-done} back to the UI (its counts drive the "Applied N…" toast).
     const done = F3.figma.ui._posted.find((m) => m && m.type === "apply-done");
     if (!done) FAIL("applydone", "a completed apply posted no {apply-done} message to the UI (no done-feedback)");
@@ -510,7 +510,7 @@ if (applyBundle && applyStylePlans) {
     // era 1: a synthetic OLD-grammar bundle (camel role leaves) — hand-built, the live export is kebab now.
     const bundleOld = JSON.parse(JSON.stringify(bundleB).replaceAll('"on-surface"', '"onSurface"'));
     await la.applyBundle(bundleOld, {});
-    const semA = FA.collections.find((c) => c.name === "Color Semantic");
+    const semA = FA.collections.find((c) => c.name === "Color Roles");
     const oldSem = FA.variables.find((v) => v.variableCollectionId === semA.id && v.name === "neutral/onSurface");
     if (!oldSem) { FAIL("renamecap", "fixture: neutral/onSurface missing from the era-1 color apply"); }
     else {
@@ -524,30 +524,30 @@ if (applyBundle && applyStylePlans) {
 }
 
 // ── TKT-0024: PROVENANCE — apply must NEVER canonicalize a USER's own pre-existing same-named collection
-//    for Color Primitives/Color Semantic either — the exact guarantee the float path has had since #155
+//    for Color Primitives/Color Roles either — the exact guarantee the float path has had since #155
 //    (see "floatprov" above), back-ported to ensureCollection via COLOR_REGISTRY_KEY. Fresh mock so the
-//    user's "Color Primitives"/"Color Semantic" are the ONLY ones of that name until apply runs. ──
+//    user's "Color Primitives"/"Color Roles" are the ONLY ones of that name until apply runs. ──
 if (applyBundle) {
   try {
     const FC = mockFigma();
     const lc = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FC.figma, "<html>", undefined);
     const userRaw = FC.figma.variables.createVariableCollection("Color Primitives"); // the user's own, pre-existing
     FC.figma.variables.createVariable("user/keepme", userRaw, "COLOR").setValueForMode(userRaw.modes[0].modeId, { r: 1, g: 0, b: 0, a: 1 });
-    const userSem = FC.figma.variables.createVariableCollection("Color Semantic"); // the user's own, pre-existing
+    const userSem = FC.figma.variables.createVariableCollection("Color Roles"); // the user's own, pre-existing
     FC.figma.variables.createVariable("user/keepme-sem", userSem, "COLOR").setValueForMode(userSem.modes[0].modeId, { r: 0, g: 1, b: 0, a: 1 });
     const bundleC = figmaBundle(defaultDocument());
     await lc.applyBundle(bundleC, {});
     if (FC.collections.filter((c) => c.name === "Color Primitives").length !== 2) FAIL("colorprov", `expected the user's Color Primitives + a separate plugin-created one (2), got ${FC.collections.filter((c) => c.name === "Color Primitives").length}`);
-    if (FC.collections.filter((c) => c.name === "Color Semantic").length !== 2) FAIL("colorprov", `expected the user's Color Semantic + a separate plugin-created one (2), got ${FC.collections.filter((c) => c.name === "Color Semantic").length}`);
+    if (FC.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("colorprov", `expected the user's Color Roles + a separate plugin-created one (2), got ${FC.collections.filter((c) => c.name === "Color Roles").length}`);
     if (!FC.variables.some((v) => v.variableCollectionId === userRaw.id && v.name === "user/keepme")) FAIL("colorprov", "apply pruned/removed a variable from the user's OWN Color Primitives collection");
-    if (!FC.variables.some((v) => v.variableCollectionId === userSem.id && v.name === "user/keepme-sem")) FAIL("colorprov", "apply pruned/removed a variable from the user's OWN Color Semantic collection");
+    if (!FC.variables.some((v) => v.variableCollectionId === userSem.id && v.name === "user/keepme-sem")) FAIL("colorprov", "apply pruned/removed a variable from the user's OWN Color Roles collection");
     if (userRaw.modes[0].name !== "Mode 1") FAIL("colorprov", "apply renamed the default mode of the user's OWN Color Primitives collection");
-    if (userSem.modes[0].name !== "Mode 1") FAIL("colorprov", "apply renamed the default mode of the user's OWN Color Semantic collection");
-    if (userSem.modes.length !== 1) FAIL("colorprov", "apply added a mode (e.g. Dark) to the user's OWN Color Semantic collection");
+    if (userSem.modes[0].name !== "Mode 1") FAIL("colorprov", "apply renamed the default mode of the user's OWN Color Roles collection");
+    if (userSem.modes.length !== 1) FAIL("colorprov", "apply added a mode (e.g. Dark) to the user's OWN Color Roles collection");
     // re-apply: reconcile OURS by id (the registry persisted), never touching the user's collections again
     await lc.applyBundle(bundleC, {});
     if (FC.collections.filter((c) => c.name === "Color Primitives").length !== 2) FAIL("colorprov", "re-apply made a 3rd Color Primitives (provenance registry not persisted to root pluginData)");
-    if (FC.collections.filter((c) => c.name === "Color Semantic").length !== 2) FAIL("colorprov", "re-apply made a 3rd Color Semantic (provenance registry not persisted to root pluginData)");
+    if (FC.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("colorprov", "re-apply made a 3rd Color Roles (provenance registry not persisted to root pluginData)");
   } catch (e) { FAIL("colorprov", "provenance guard threw: " + e.message); }
 }
 
@@ -560,19 +560,19 @@ if (applyBundle) {
     const FD = mockFigma();
     const ld = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, setCollectionNames };")(FD.figma, "<html>", undefined);
     const bundleD = figmaBundle(defaultDocument());
-    await ld.applyBundle(bundleD, {}); // era 1: default-named collections, registered under "Color Semantic"
-    const semD0 = FD.collections.find((c) => c.name === "Color Semantic");
+    await ld.applyBundle(bundleD, {}); // era 1: default-named collections, registered under "Color Roles"
+    const semD0 = FD.collections.find((c) => c.name === "Color Roles");
     const keepId = semD0.id;
     ld.setCollectionNames({ raw: "Color Primitives", semantic: "Brand Colors" }); // era 2: renamed semantic collection
-    await ld.applyBundle(bundleD, { renames: { collections: { "Brand Colors": ["Color Semantic"] } } });
+    await ld.applyBundle(bundleD, { renames: { collections: { "Brand Colors": ["Color Roles"] } } });
     const semD1 = FD.collections.find((c) => c.name === "Brand Colors");
-    if (!semD1) FAIL("colorrenamecap", "renameFrom did not produce the renamed Color Semantic collection");
+    if (!semD1) FAIL("colorrenamecap", "renameFrom did not produce the renamed Color Roles collection");
     else {
       if (semD1.id !== keepId) FAIL("colorrenamecap", "collection rename minted a NEW collection (id changed — bindings would orphan)");
-      if (FD.collections.filter((c) => c.name === "Color Semantic").length !== 0) FAIL("colorrenamecap", "the old-name Color Semantic collection lingers after renameFrom");
+      if (FD.collections.filter((c) => c.name === "Color Roles").length !== 0) FAIL("colorrenamecap", "the old-name Color Roles collection lingers after renameFrom");
     }
     // registry re-keyed: a THIRD apply under the new name must reuse the same collection, not mint another
-    await ld.applyBundle(bundleD, { renames: { collections: { "Brand Colors": ["Color Semantic"] } } });
+    await ld.applyBundle(bundleD, { renames: { collections: { "Brand Colors": ["Color Roles"] } } });
     if (FD.collections.filter((c) => c.name === "Brand Colors").length !== 1) FAIL("colorrenamecap", "re-apply after renameFrom duplicated the collection (registry not re-keyed)");
   } catch (e) { FAIL("colorrenamecap", "color collection rename capability threw: " + e.message); }
 }
@@ -723,8 +723,8 @@ for (const g of ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cas
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
-// ── STYLES apply: paint styles bound to Color Modes vars; text styles set + bound; registry prune ──
-// Runs on the SAME mock F: applyBundle already created Color Modes, the float e2e already created the
+// ── STYLES apply: paint styles bound to Color Roles vars; text styles set + bound; registry prune ──
+// Runs on the SAME mock F: applyBundle already created Color Roles, the float e2e already created the
 // merged Geometry collection with its type/ half (base "product/16" scale) — exactly the state a real
 // apply leaves behind.
 if (applyStylePlans && applyFontPrimitivesModes) {
@@ -737,22 +737,22 @@ if (applyStylePlans && applyFontPrimitivesModes) {
 
     const pr = await applyFontPrimitivesModes(primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scale)));
     if (!pr || !pr.variables) FAIL("styles", "applyFontPrimitivesModes created nothing");
-    const prim = F.collections.find((c) => c.name === "Font Primitives");
-    if (!prim) FAIL("styles", "no Font Primitives collection created");
+    const prim = F.collections.find((c) => c.name === "Type Primitives");
+    if (!prim) FAIL("styles", "no Type Primitives collection created");
     else {
-      if (prim.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("styles", `Font Primitives modes = ${prim.modes.map((m) => m.name)}, want Premium,Google Fonts`);
+      if (prim.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("styles", `Type Primitives modes = ${prim.modes.map((m) => m.name)}, want Premium,Google Fonts`);
       const fontAlias = F.variables.find((v) => v.variableCollectionId === prim.id && v.name === "font/display");
       const targets = fontAlias && prim.modes.map((m) => fontAlias.values[m.modeId]);
       if (!fontAlias || !targets || !targets.every((t) => t && t.type === "VARIABLE_ALIAS") || targets[0].id !== targets[1].id) FAIL("styles", "font/display is not aliased to the SAME family primitive under BOTH modes");
     }
 
     const sr = await applyStylePlans(plans);
-    const sem = F.collections.find((c) => c.name === "Color Semantic");
+    const sem = F.collections.find((c) => c.name === "Color Roles");
     const semIds = new Set(F.variables.filter((v) => v.variableCollectionId === sem.id).map((v) => v.id));
     const paintStyles = F.figma._styles.filter((x) => x._kind === "PAINT");
     if (sr.paints !== plans.paints.length || paintStyles.length !== plans.paints.length) FAIL("styles", `paint styles ${paintStyles.length}/${sr.paints}, expected ${plans.paints.length}`);
     const unbound = paintStyles.filter((x) => !(x.paints[0] && x.paints[0].boundVariables && x.paints[0].boundVariables.color && semIds.has(x.paints[0].boundVariables.color.id)));
-    if (unbound.length) FAIL("styles", `${unbound.length} paint styles not bound to a Color Modes variable (e.g. ${unbound[0] && unbound[0].name})`);
+    if (unbound.length) FAIL("styles", `${unbound.length} paint styles not bound to a Color Roles variable (e.g. ${unbound[0] && unbound[0].name})`);
     if (!paintStyles.some((x) => /^[A-Z][a-z]+\/scrims\/scrim$/.test(x.name))) FAIL("styles", "no Family/scrims/scrim grouped paint style");
     if (!paintStyles.some((x) => /^[A-Z][a-z]+\/surfaces\/surface$/.test(x.name))) FAIL("styles", "no Family/surfaces/surface grouped paint style");
 
@@ -770,7 +770,7 @@ if (applyStylePlans && applyFontPrimitivesModes) {
     if (core && !core._bound.fontSize) FAIL("styles", "core fontSize not bound to the type/ variable in the Geometry collection");
     if (core && !core._bound.lineHeight) FAIL("styles", "core lineHeight not bound (percent FLOAT after unit set)");
     if (core && !core._bound.letterSpacing) FAIL("styles", "core letterSpacing not bound (percent FLOAT after unit set)");
-    if (core && !core._bound.fontFamily) FAIL("styles", "core fontFamily not bound to the Font Primitives alias");
+    if (core && !core._bound.fontFamily) FAIL("styles", "core fontFamily not bound to the Type Primitives alias");
     if (core && !core._bound.fontWeight) FAIL("styles", "core fontWeight not bound to weight/<voice>");
     if (sib && !sib._bound.fontWeight) FAIL("styles", "sibling fontWeight not bound to weight/<voice>/<slug>");
 
@@ -897,7 +897,7 @@ if (applyStylePlans && applyFontPrimitivesModes) {
 }
 
 // ── FONT-MODE PHASE B: applyFontPrimitivesModes carries the real Premium/Google-Fonts axis (Figma's
-// native addMode/setValueForMode mechanism, mirroring Breakpoints/Light-Dark). Runs on a FRESH mock —
+// native addMode/setValueForMode mechanism, mirroring Geometry/Light-Dark). Runs on a FRESH mock —
 // the axis mechanics are orthogonal to the "styles" e2e above, which already proved the plan/executor
 // wiring on the shared F mock. ──
 if (applyFontPrimitivesModes) {
@@ -908,10 +908,10 @@ if (applyFontPrimitivesModes) {
     const planM = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scaleM));
     const prM = await lm.applyFontPrimitivesModes(planM);
     if (!prM || !prM.variables) FAIL("fontmodes", "applyFontPrimitivesModes created nothing");
-    const prim = FM.collections.find((c) => c.name === "Font Primitives");
-    if (!prim) FAIL("fontmodes", "no Font Primitives collection created");
+    const prim = FM.collections.find((c) => c.name === "Type Primitives");
+    if (!prim) FAIL("fontmodes", "no Type Primitives collection created");
     else {
-      if (prim.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("fontmodes", `Font Primitives modes = ${prim.modes.map((m) => m.name)}, want Premium,Google Fonts`);
+      if (prim.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("fontmodes", `Type Primitives modes = ${prim.modes.map((m) => m.name)}, want Premium,Google Fonts`);
       const [premiumId, googleId] = prim.modes.map((m) => m.modeId);
       const vars = FM.variables.filter((v) => v.variableCollectionId === prim.id);
       // every variable — literal or alias — gets an explicit value for BOTH mode ids (constraint #7:
@@ -935,29 +935,29 @@ if (applyFontPrimitivesModes) {
     const scaleM2 = TYPE.typeScale({ treatment: "product", bodyBase: 16, voices: { Display: { font: "Tiempos Text" } } });
     const planM2 = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scaleM2));
     await lm.applyFontPrimitivesModes(planM2);
-    if (FM.collections.filter((c) => c.name === "Font Primitives").length !== 1) FAIL("fontmodes", "re-apply after a family change duplicated the Font Primitives collection");
-    const prim2 = FM.collections.find((c) => c.name === "Font Primitives");
+    if (FM.collections.filter((c) => c.name === "Type Primitives").length !== 1) FAIL("fontmodes", "re-apply after a family change duplicated the Type Primitives collection");
+    const prim2 = FM.collections.find((c) => c.name === "Type Primitives");
     const pId2 = prim2.modes[0].modeId;
     const overrideVar = FM.variables.find((v) => v.variableCollectionId === prim2.id && v.name === "override/display");
     if (!overrideVar || overrideVar.values[pId2] !== "Tiempos Text") FAIL("fontmodes", "re-apply after a family change did not land the new family");
 
     // RETURNING FILE: a collection this plugin created under the OLD Phase-A single-"Value"-mode shape
-    // (same registry key, "Font Primitives") must self-heal — rename "Value" → "Premium" in place (SAME
+    // (same registry key, "Type Primitives") must self-heal — rename "Value" → "Premium" in place (SAME
     // collection id, no data loss) and add "Google Fonts" — never mint a second collection.
     const F11 = mockFigma();
     const l11 = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(F11.figma, "<html>", undefined);
-    const eraOnePlan = { collection: "Font Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [
+    const eraOnePlan = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [
       { name: "family/display", type: "STRING", values: [{ mode: "Value", value: "Inter Tight" }] },
       { name: "font/display", type: "ALIAS", target: "family/display" },
     ] };
     await l11.applyFontPrimitivesModes(eraOnePlan);
-    const eraOneColl = F11.collections.find((c) => c.name === "Font Primitives");
+    const eraOneColl = F11.collections.find((c) => c.name === "Type Primitives");
     const keepCollId = eraOneColl.id;
     const keepVarId = F11.variables.find((v) => v.variableCollectionId === eraOneColl.id && v.name === "family/display").id;
     const eraTwoPlan = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 })));
     await l11.applyFontPrimitivesModes(eraTwoPlan);
-    if (F11.collections.filter((c) => c.name === "Font Primitives").length !== 1) FAIL("fontmodes", "returning-file: self-healing minted a SECOND Font Primitives collection instead of renaming in place");
-    const healed = F11.collections.find((c) => c.name === "Font Primitives");
+    if (F11.collections.filter((c) => c.name === "Type Primitives").length !== 1) FAIL("fontmodes", "returning-file: self-healing minted a SECOND Type Primitives collection instead of renaming in place");
+    const healed = F11.collections.find((c) => c.name === "Type Primitives");
     if (healed.id !== keepCollId) FAIL("fontmodes", "returning-file: self-healing minted a NEW collection (id changed — bindings would orphan)");
     if (healed.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("fontmodes", `returning-file: modes after self-heal = ${healed.modes.map((m) => m.name)}, want Premium,Google Fonts`);
     const healedFam = F11.variables.find((v) => v.variableCollectionId === healed.id && v.name === "family/display");
@@ -967,10 +967,10 @@ if (applyFontPrimitivesModes) {
   FAIL("fontmodes", "code.js exported no applyFontPrimitivesModes");
 }
 
-// ── READ-FLOAT-VARIABLES (TKT-0020, Geometry/Type drift reference): the live Breakpoints + Font
+// ── READ-FLOAT-VARIABLES (TKT-0020, Geometry/Type drift reference): the live Geometry + Type
 // Primitives values come back in a shape comparable to a modeApplyPlan/primitivesModesApplyPlan entry — the
 // apply gate's pre-overwrite diff (collections-arch review C2). Runs on the SAME mock F: by this point
-// the float e2e + styles sections above have left a real, registry-tracked Breakpoints AND Font
+// the float e2e + styles sections above have left a real, registry-tracked Geometry AND Type
 // Primitives collection in place — exactly the state a real apply leaves behind.
 if (applyFloatPlans) {
   try {
@@ -979,28 +979,28 @@ if (applyFloatPlans) {
     const rf = F.figma.ui._posted.find((m) => m && m.type === "float-variables-read");
     if (!rf) FAIL("readfloat", "read-float-variables posted no {type:'float-variables-read'} message");
     else {
-      if (!rf.breakpoints || !rf.breakpoints.found) FAIL("readfloat", "read-float-variables did not find the (registry-tracked) Breakpoints collection");
+      if (!rf.breakpoints || !rf.breakpoints.found) FAIL("readfloat", "read-float-variables did not find the (registry-tracked) Geometry collection");
       else {
-        if (!Array.isArray(rf.breakpoints.modes) || !rf.breakpoints.modes.includes("Base")) FAIL("readfloat", `Breakpoints read-back modes missing "Base" (got ${JSON.stringify(rf.breakpoints.modes)})`);
+        if (!Array.isArray(rf.breakpoints.modes) || !rf.breakpoints.modes.includes("Base")) FAIL("readfloat", `Geometry read-back modes missing "Base" (got ${JSON.stringify(rf.breakpoints.modes)})`);
         const bodyMd = rf.breakpoints.values["type/body/md/size"];
-        if (!bodyMd || typeof bodyMd.Base !== "number") FAIL("readfloat", "Breakpoints read-back missing a numeric type/body/md/size Base value");
+        if (!bodyMd || typeof bodyMd.Base !== "number") FAIL("readfloat", "Geometry read-back missing a numeric type/body/md/size Base value");
       }
-      if (!rf.fontPrimitives || !rf.fontPrimitives.found) FAIL("readfloat", "read-float-variables did not find the (registry-tracked) Font Primitives collection");
+      if (!rf.fontPrimitives || !rf.fontPrimitives.found) FAIL("readfloat", "read-float-variables did not find the (registry-tracked) Type Primitives collection");
       else {
-        if (!Array.isArray(rf.fontPrimitives.modes) || rf.fontPrimitives.modes.join() !== "Premium,Google Fonts") FAIL("readfloat", `Font Primitives read-back modes = ${JSON.stringify(rf.fontPrimitives.modes)}, want ["Premium","Google Fonts"]`);
+        if (!Array.isArray(rf.fontPrimitives.modes) || rf.fontPrimitives.modes.join() !== "Premium,Google Fonts") FAIL("readfloat", `Type Primitives read-back modes = ${JSON.stringify(rf.fontPrimitives.modes)}, want ["Premium","Google Fonts"]`);
         const famNames = Object.keys(rf.fontPrimitives.values).filter((n) => n.startsWith("family/"));
-        if (!famNames.length) FAIL("readfloat", "Font Primitives read-back has no family/ literal values");
-        if (Object.keys(rf.fontPrimitives.values).some((n) => n.startsWith("font/"))) FAIL("readfloat", "Font Primitives read-back surfaced an ALIAS (font/<voice>) as a comparable value");
+        if (!famNames.length) FAIL("readfloat", "Type Primitives read-back has no family/ literal values");
+        if (Object.keys(rf.fontPrimitives.values).some((n) => n.startsWith("font/"))) FAIL("readfloat", "Type Primitives read-back surfaced an ALIAS (font/<voice>) as a comparable value");
       }
     }
-    // PROVENANCE: a user's OWN pre-existing "Breakpoints" this plugin never created (no registry entry)
+    // PROVENANCE: a user's OWN pre-existing "Geometry" this plugin never created (no registry entry)
     // must be invisible to the read too — exactly as it's invisible to applyFloatPlans/ensureFloatCollection.
     const F10 = mockFigma();
     new Function("figma", "__html__", "module", code)(F10.figma, "<html>", undefined); // registers figma.ui.onmessage as a side effect
-    F10.figma.variables.createVariableCollection("Breakpoints");
+    F10.figma.variables.createVariableCollection("Geometry");
     await F10.figma.ui._h({ type: "read-float-variables" });
     const rf10 = F10.figma.ui._posted.find((m) => m && m.type === "float-variables-read");
-    if (!rf10 || (rf10.breakpoints && rf10.breakpoints.found)) FAIL("readfloat", "read-float-variables must NOT surface a user's own un-registered Breakpoints collection (provenance violated)");
+    if (!rf10 || (rf10.breakpoints && rf10.breakpoints.found)) FAIL("readfloat", "read-float-variables must NOT surface a user's own un-registered Geometry collection (provenance violated)");
   } catch (e) { FAIL("readfloat", "read-float-variables threw: " + e.message); }
 }
 

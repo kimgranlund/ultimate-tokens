@@ -478,7 +478,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
   `{lightTarget, darkTarget}` fields to a generic `targets: [{mode, target}, ...]` array — no
   consumer read the old field names directly); `applyBundle` walks every `"{name}_tokens.json"`
   file the bundle actually carries (identified by its `$extensions["com.figma.modeName"]` tag, not
-  by parsing the filename) and creates exactly that many Color Semantic modes, in that order,
+  by parsing the filename) and creates exactly that many Color Roles modes, in that order,
   pruning any mode the current bundle no longer wants. An absent/default `opts.themes` reproduces
   the pre-ADR-019 two-file, two-mode output **byte-identically** — proven by an explicit
   before/after diff, not just "tests still pass" (TKT-0021's own gate).
@@ -498,7 +498,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
   same canonical raw-color target SET either way (a 3-theme axis reusing an existing `side`
   contributes no new raw names — proven in `test/figma/binder.mjs`'s `themes` gate), so the two
   binders stay compatible, but the standalone binder does not yet let a user create a 3rd Color
-  Semantic mode on its own. `exportUI3`'s `Color Semantic` collection (`values:{Light, Dark}`) was
+  Roles mode on its own. `exportUI3`'s `Color Roles` collection (`values:{Light, Dark}`) was
   NOT touched — also out of the ticket's named scope; it carries the identical hardcoded-pair
   pattern and should genericize the same way in a follow-up (a documented gap, not a fixed one).
   No UI control was added for authoring extra themes per doc — this ADR ratifies that the

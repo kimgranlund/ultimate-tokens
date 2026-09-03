@@ -323,7 +323,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   const dtcg = G.geomTokensDTCG(s);
   ok(dtcg.size["3"].height.$value === `${s.sizes[MD].height}px` && dtcg.size["3"]["padding-wide"].$value === `${s.sizes[MD].paddingWide}px`, "the DTCG emitter renders the ladder scale with the numbered step name, no ramp-specific code");
   const fig = G.geomTokensFigma(s);
-  ok(fig.Breakpoints.size["3"].icon.$value === s.sizes[MD].icon, "the Figma emitter renders the ladder scale with the numbered step name, no ramp-specific code");
+  ok(fig.Geometry.size["3"].icon.$value === s.sizes[MD].icon, "the Figma emitter renders the ladder scale with the numbered step name, no ramp-specific code");
 }
 
 // ── sizeAnchor / orderedSizeNames (issue #483 review pass): the two helpers every ramp-agnostic
@@ -358,9 +358,9 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
 // ── Figma number-variable emit: a "Geometry" collection of unitless FLOAT tokens ──
 {
   const f = G.geomTokensFigma(G.geomScale({ treatment: "comfortable" }));
-  ok(f.Breakpoints && f.Breakpoints.size && f.Breakpoints.radius && f.Breakpoints.space, "Figma export wraps the Breakpoints collection (size/radius/space, ADR-016)");
-  ok(f.Breakpoints.size.md.height.$type === "number" && typeof f.Breakpoints.size.md.height.$value === "number", "Figma tokens are number ($type number, numeric unitless value)");
-  ok(f.Breakpoints.radius.full.$type === "number" && f.Breakpoints.space["4"].$type === "number", "radius + space are number variables too");
+  ok(f.Geometry && f.Geometry.size && f.Geometry.radius && f.Geometry.space, "Figma export wraps the Geometry collection (size/radius/space, ADR-016)");
+  ok(f.Geometry.size.md.height.$type === "number" && typeof f.Geometry.size.md.height.$value === "number", "Figma tokens are number ($type number, numeric unitless value)");
+  ok(f.Geometry.radius.full.$type === "number" && f.Geometry.space["4"].$type === "number", "radius + space are number variables too");
 }
 
 // ── Figma breakpoint-MODED variables: a single "Geometry" collection, one MODE per breakpoint (5.4b) ──
@@ -368,7 +368,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   const base = G.geomScale({ treatment: "comfortable", baseHeight: 28 });
   const wide = G.geomScale({ treatment: "comfortable", baseHeight: 40 }); // a taller mode → bigger size heights
   const out = G.geomTokensFigmaModes(base, [{ name: "Desktop", minWidth: 1024, scale: wide }]);
-  const col = out.collections.Breakpoints;
+  const col = out.collections.Geometry;
   ok(col && JSON.stringify(col.modes) === JSON.stringify(["Base", "Desktop"]), `modes = [Base, Desktop] (got ${JSON.stringify(col && col.modes)})`);
   const v = col.variables["size/md/height"];
   ok(v && v.type === "FLOAT" && typeof v.values.Base === "number" && typeof v.values.Desktop === "number", "size/md/height is a FLOAT variable with Base + Desktop values");
@@ -379,7 +379,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(v.values.Desktop !== v.values.Base, `the breakpoint's height differs from Base (Base ${v.values.Base}, Desktop ${v.values.Desktop})`);
   // IDENTITY: with no modes, a single "Base" mode whose values equal the base export.
   const idn = G.geomTokensFigmaModes(base, []);
-  const idCol = idn.collections.Breakpoints;
+  const idCol = idn.collections.Geometry;
   ok(JSON.stringify(idCol.modes) === JSON.stringify(["Base"]), "no modes ⇒ a single \"Base\" mode");
   ok(Object.values(idCol.variables).every((x) => x.type === "FLOAT" && Object.keys(x.values).join() === "Base"), "no modes ⇒ every variable has exactly one Base value");
   ok(idCol.variables["size/md/height"].values.Base === base.sizes.MD.height && idCol.variables["radius/full"].values.Base === base.radii.full, "no-modes Base values equal the base scale");
@@ -416,7 +416,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(["--inset-control-group: 8px", "--gap-stack-loose: 24px", "--border-thin: 1px", "--focus-ring-offset: 2px"].every((t) => css.includes(t)), "CSS emits the tier as kebab-case custom properties");
   const d = G.geomTokensDTCG(s);
   ok(d.inset && d.inset["control-group"] && d.gap["stack-tight"].$type === "dimension" && d.border.thin.$value === "1px", "DTCG carries inset/gap/border/focus groups as dimension tokens");
-  const fm = G.geomTokensFigmaModes(s, []).collections.Breakpoints.variables;
+  const fm = G.geomTokensFigmaModes(s, []).collections.Geometry.variables;
   ok(fm["inset/card"] && fm["gap/section"].values.Base === 48 && fm["focus/ring-width"], "the Figma-modes collection carries inset/gap/border/focus variables");
 }
 

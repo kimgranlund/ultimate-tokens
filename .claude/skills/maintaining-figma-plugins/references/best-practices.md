@@ -53,10 +53,10 @@ The non-obvious do/don'ts (each cost a real bug or a review cycle), then a worke
   prune still reaches them (the `prune` gate seeds dead vars and asserts they're gone AND reported in the
   returned `pruned` count).
 - **Regroup is destructive — keep it behind the always-warn gate.** `rebuildSemantic` deletes + re-creates
-  `Color Semantic`, detaching bound layers. `renderApplyGate` must NOT offer "don't show again" for the rebuild
+  `Color Roles`, detaching bound layers. `renderApplyGate` must NOT offer "don't show again" for the rebuild
   path (`rebuild ? false : <checkbox>`), and `confirmApplyGate` must persist consent only when `!rebuild`.
   Don't make Regroup cookieable. Regroup must leave Color Primitives untouched and not duplicate the
-  collection (the `regroup` gate asserts a fresh-but-single `Color Semantic` with scrims last).
+  collection (the `regroup` gate asserts a fresh-but-single `Color Roles` with scrims last).
 - **Apply embeds the config in `figma.root` pluginData.** A read-back must reproduce the params losslessly —
   don't drop the `config` from the `apply` message or recover state approximately from colors when the exact
   config is available. The `config` gate proves apply embeds it under `ultimate-tokens-config`, that
