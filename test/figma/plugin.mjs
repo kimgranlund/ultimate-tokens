@@ -12,8 +12,9 @@ import { figmaBundle, defaultDocument } from "../../src/ui/model.mjs";
 import * as TYPE from "../../src/engine/type.mjs";
 import * as GEOM from "../../src/engine/geometry.mjs";
 import { exportDTCG } from "../../src/engine/exports.js";
-import { modeApplyPlan, mergeModeInterchanges } from "../../figma/binder/mode-apply-plan.mjs";
+import { modeApplyPlan, mergeModeInterchanges, libraryModeReconcile, libraryModeReport, valueChanged, nearestStepByHeight, geometrySizeAliasMap, resolveLiteralHeight, liveAliasTargetsByName } from "../../figma/binder/mode-apply-plan.mjs";
 import { stylePlans, primitivesModesApplyPlan } from "../../figma/binder/style-plan.mjs";
+import { LIBRARY_TYPE_VOICE_MAP } from "../../figma/binder/migrations.mjs";
 import { googleSafeFontFor } from "../../src/engine/font-fallbacks.mjs";
 
 // stateOfDefault — a minimal engine State over role-table.json's default palettes, for building a
@@ -141,14 +142,22 @@ function mockFigma() {
 
 // ── END-TO-END contract: figmaBundle() -> applyBundle() on the mock ──────────────
 let applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight;
+// #495 "published library" mode — the hand-written VM mirrors of mode-apply-plan.mjs's pure planner
+// functions, extracted for the `libraryparity` behavioral-parity gate below (see its own header comment).
+let vmLibraryReconcile, vmValueChanged, vmLibraryModeReport, vmNearestStepByHeight, vmExpandGeometryAliasMap, vmExpandVoiceAliasMap, vmGeometryPlanStepHeights, vmLibraryTypeVoiceMap, vmResolveLiteralHeight, vmLiveAliasTargetsByName;
 const F = mockFigma();
 try {
-  const load = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight };");
+  const load = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight, libraryReconcile, valueChangedVM, libraryModeReportVM, nearestStepByHeightVM, expandGeometryAliasMap, expandVoiceAliasMap, geometryPlanStepHeights, LIBRARY_TYPE_VOICE_MAP, resolveLiteralHeightVM, liveAliasTargetsByNameVM };");
   const loaded = load(F.figma, "<html>", undefined); // closes over the MOCK figma
   applyBundle = loaded.applyBundle; applyFloatPlans = loaded.applyFloatPlans;
   applyFontPrimitivesModes = loaded.applyFontPrimitivesModes; applyStylePlans = loaded.applyStylePlans;
   setCollectionNames = loaded.setCollectionNames; resolveFace = loaded.resolveFace;
   sweepCandidates = loaded.sweepCandidates; styleNameWeight = loaded.styleNameWeight;
+  vmLibraryReconcile = loaded.libraryReconcile; vmValueChanged = loaded.valueChangedVM;
+  vmLibraryModeReport = loaded.libraryModeReportVM; vmNearestStepByHeight = loaded.nearestStepByHeightVM;
+  vmExpandGeometryAliasMap = loaded.expandGeometryAliasMap; vmExpandVoiceAliasMap = loaded.expandVoiceAliasMap;
+  vmGeometryPlanStepHeights = loaded.geometryPlanStepHeights; vmLibraryTypeVoiceMap = loaded.LIBRARY_TYPE_VOICE_MAP;
+  vmResolveLiteralHeight = loaded.resolveLiteralHeightVM; vmLiveAliasTargetsByName = loaded.liveAliasTargetsByNameVM;
 } catch (e) { FAIL("parse", "code.js failed to load: " + e.message); }
 
 if (applyBundle) {
@@ -967,6 +976,194 @@ if (applyFontPrimitivesModes) {
   FAIL("fontmodes", "code.js exported no applyFontPrimitivesModes");
 }
 
+// ── libraryparity (#495): code.js's HAND-WRITTEN VM mirrors of mode-apply-plan.mjs's pure
+//    "published library" planner functions (libraryModeReconcile/valueChanged/libraryModeReport/
+//    nearestStepByHeight/geometrySizeAliasMap) are NOT spliced (they're independent hand-written
+//    functions inside a non-module VM — see the code.js header comment above each one) — this gate
+//    proves BEHAVIORAL parity instead: the SAME inputs must produce the SAME outputs on both sides. ──
+{
+  // libraryModeReconcile / libraryReconcile
+  const existing = ["font/heading", "font/body", "font/quote", "_deprecated/font/legacy"];
+  const wanted = ["font/headline", "font/body"];
+  const aliasMap = { "font/heading": "font/headline" };
+  const mjsRec = libraryModeReconcile(existing, wanted, aliasMap);
+  const vmRec = vmLibraryReconcile ? vmLibraryReconcile(existing, wanted, aliasMap) : null;
+  if (!vmRec) FAIL("libraryparity", "code.js exported no libraryReconcile");
+  else if (JSON.stringify(mjsRec) !== JSON.stringify(vmRec)) FAIL("libraryparity", `libraryModeReconcile/libraryReconcile disagree: mjs=${JSON.stringify(mjsRec)} vm=${JSON.stringify(vmRec)}`);
+
+  // libraryModeReconcile's 4th-arg idempotency fix (#495 follow-up — a real defect found in review): a
+  // name already CORRECTLY aliased (whether re-derivable via aliasMap, or only recognizable via the
+  // liveAliasTargets belt) must be an omit-entirely no-op, never re-aliased or misclassified as unmapped
+  // -> deprecate on a re-apply. font/heading: aliasMap says font/headline, ALREADY live-aliased there ->
+  // no-op. font/code: aliasMap says font/label-mono, NOT yet live-aliased (first time) -> real write.
+  // font/legal: NO aliasMap entry at all, but the belt sees it's ALREADY live-aliased to a wanted name
+  // (font/tiny) -> no-op (the belt only ever confirms an existing correct state; it can't cause a write).
+  // font/quote: no mapping anywhere -> deprecate. _deprecated/font/legacy: already prefixed -> no-op.
+  const existing2 = ["font/heading", "font/code", "font/legal", "font/quote", "_deprecated/font/legacy"];
+  const wanted2 = ["font/headline", "font/label-mono", "font/tiny"];
+  const aliasMap2 = { "font/heading": "font/headline", "font/code": "font/label-mono" };
+  const liveAliasTargets2 = { "font/heading": "font/headline", "font/legal": "font/tiny" };
+  const mjsRec2 = libraryModeReconcile(existing2, wanted2, aliasMap2, liveAliasTargets2);
+  const vmRec2 = vmLibraryReconcile ? vmLibraryReconcile(existing2, wanted2, aliasMap2, liveAliasTargets2) : null;
+  if (!vmRec2) FAIL("libraryparity", "code.js exported no libraryReconcile (4-arg form)");
+  else if (JSON.stringify(mjsRec2) !== JSON.stringify(vmRec2)) FAIL("libraryparity", `libraryModeReconcile/libraryReconcile (4-arg) disagree: mjs=${JSON.stringify(mjsRec2)} vm=${JSON.stringify(vmRec2)}`);
+  const aliasedFroms2 = mjsRec2.toAlias.map((a) => a.from);
+  if (aliasedFroms2.includes("font/heading")) FAIL("libraryparity", "font/heading (already correctly aliased) should be an idempotent no-op, omitted from toAlias");
+  if (!aliasedFroms2.includes("font/code")) FAIL("libraryparity", `font/code (first-time, aliasMap-driven) should be a real toAlias entry, got ${JSON.stringify(mjsRec2.toAlias)}`);
+  if (aliasedFroms2.includes("font/legal")) FAIL("libraryparity", "font/legal (belt-recognized, already live-aliased) should be an idempotent no-op, omitted from toAlias");
+  if (!mjsRec2.toDeprecate.some((d) => d.from === "font/quote")) FAIL("libraryparity", `font/quote (unmapped) should be deprecated, got ${JSON.stringify(mjsRec2.toDeprecate)}`);
+  if (mjsRec2.toDeprecate.some((d) => d.from === "_deprecated/font/legacy")) FAIL("libraryparity", "an already-_deprecated/ name must never be re-deprecated");
+
+  // resolveLiteralHeight / resolveLiteralHeightVM — chase an ALIAS chain to the underlying literal
+  const liveHeights = {
+    "size/small/height": { Base: { type: "VARIABLE_ALIAS", id: "id-sm" } }, // one hop -> a literal
+    "size/sm/height": { Base: 24 },
+    "size/broken/height": { Base: { type: "VARIABLE_ALIAS", id: "id-missing" } }, // unresolved id
+    "size/cyclic/height": { Base: { type: "VARIABLE_ALIAS", id: "id-cyclic" } }, // points at itself
+  };
+  const idToNameHeights = { "id-sm": "size/sm/height", "id-cyclic": "size/cyclic/height" };
+  const heightCases = [["size/small/height", 24], ["size/sm/height", 24], ["size/broken/height", null], ["size/cyclic/height", null], ["size/missing/height", null]];
+  for (const [name, want] of heightCases) {
+    const mjsH = resolveLiteralHeight(name, "Base", liveHeights, idToNameHeights);
+    if (mjsH !== want) FAIL("libraryparity", `resolveLiteralHeight(${name}) = ${mjsH}, want ${want}`);
+    const vmH = vmResolveLiteralHeight ? vmResolveLiteralHeight(name, "Base", liveHeights, idToNameHeights) : "MISSING";
+    if (vmResolveLiteralHeight === undefined) FAIL("libraryparity", "code.js exported no resolveLiteralHeightVM");
+    else if (mjsH !== vmH) FAIL("libraryparity", `resolveLiteralHeight/resolveLiteralHeightVM disagree for ${name}: mjs=${mjsH} vm=${vmH}`);
+  }
+
+  // liveAliasTargetsByName / liveAliasTargetsByNameVM — the one-hop {name: liveTargetName} map
+  const liveTargetsInput = { ...liveHeights, "size/literal/height": { Base: 40 } }; // a literal, not an alias -> excluded
+  const existingHeightNames = ["size/small/height", "size/sm/height", "size/broken/height", "size/literal/height"];
+  const mjsTargets = liveAliasTargetsByName(existingHeightNames, "Base", liveTargetsInput, idToNameHeights);
+  const vmTargets = vmLiveAliasTargetsByName ? vmLiveAliasTargetsByName(existingHeightNames, "Base", liveTargetsInput, idToNameHeights) : null;
+  if (!vmTargets) FAIL("libraryparity", "code.js exported no liveAliasTargetsByNameVM");
+  else if (JSON.stringify(mjsTargets) !== JSON.stringify(vmTargets)) FAIL("libraryparity", `liveAliasTargetsByName/liveAliasTargetsByNameVM disagree: mjs=${JSON.stringify(mjsTargets)} vm=${JSON.stringify(vmTargets)}`);
+  if (mjsTargets["size/small/height"] !== "size/sm/height") FAIL("libraryparity", `liveAliasTargetsByName should resolve size/small/height -> size/sm/height, got ${JSON.stringify(mjsTargets)}`);
+  if ("size/broken/height" in mjsTargets) FAIL("libraryparity", "liveAliasTargetsByName should exclude an unresolved alias id");
+  if ("size/literal/height" in mjsTargets) FAIL("libraryparity", "liveAliasTargetsByName should exclude a literal (non-alias) value");
+
+  // nearestStepByHeight
+  const heights = { xs: 20, sm: 24, md: 28, lg: 36, xl: 48, "2xl": 64 };
+  for (const h of [18, 22, 30, 40, 55, 70]) {
+    const mjsN = nearestStepByHeight(h, heights);
+    const vmN = vmNearestStepByHeight ? vmNearestStepByHeight(h, heights) : null;
+    if (mjsN !== vmN) FAIL("libraryparity", `nearestStepByHeight(${h}) disagree: mjs=${mjsN} vm=${vmN}`);
+  }
+
+  // geometrySizeAliasMap / expandGeometryAliasMap (same signature shape: old heights, current heights, fields)
+  const oldHeights = { small: 22, huge: 70 };
+  const fields = ["height", "icon"];
+  const mjsGeo = geometrySizeAliasMap(oldHeights, heights, fields);
+  const vmGeo = vmExpandGeometryAliasMap ? vmExpandGeometryAliasMap(oldHeights, heights, fields) : null;
+  if (!vmGeo) FAIL("libraryparity", "code.js exported no expandGeometryAliasMap");
+  else if (JSON.stringify(mjsGeo) !== JSON.stringify(vmGeo)) FAIL("libraryparity", `geometrySizeAliasMap/expandGeometryAliasMap disagree: mjs=${JSON.stringify(mjsGeo)} vm=${JSON.stringify(vmGeo)}`);
+
+  // valueChanged / valueChangedVM — both literal and ALIAS-typed plan variables
+  const litVar = { type: "FLOAT", values: [{ mode: "Base", value: 16 }] };
+  const aliasVar = { type: "ALIAS", target: "family/x" };
+  for (const [live, planVar] of [[{ Base: 16 }, litVar], [{ Base: 18 }, litVar], [{}, aliasVar]]) {
+    const mjsV = valueChanged(live, planVar);
+    const vmV = vmValueChanged ? vmValueChanged(live, planVar) : null;
+    if (mjsV !== vmV) FAIL("libraryparity", `valueChanged disagree for ${JSON.stringify({ live, planVar })}: mjs=${mjsV} vm=${vmV}`);
+  }
+
+  // libraryModeReport / libraryModeReportVM — the FULL report, on the SAME representative inputs
+  const plan = { renames: { "weight/heading": "weight/headline" }, variables: [{ name: "weight/headline", type: "FLOAT", values: [{ mode: "Base", value: 700 }] }, { name: "font/body", type: "STRING", values: [{ mode: "Base", value: "Inter" }] }] };
+  const live = { "weight/heading": { Base: 700 }, "font/body": { Base: "Georgia" }, "font/quote": { Base: "Times" } };
+  const mjsReport = libraryModeReport(plan, live, {});
+  const vmReport = vmLibraryModeReport ? vmLibraryModeReport(plan, live, {}) : null;
+  if (!vmReport) FAIL("libraryparity", "code.js exported no libraryModeReportVM");
+  else if (JSON.stringify(mjsReport) !== JSON.stringify(vmReport)) FAIL("libraryparity", `libraryModeReport/libraryModeReportVM disagree: mjs=${JSON.stringify(mjsReport)} vm=${JSON.stringify(vmReport)}`);
+
+  // libraryModeReport's 4th-arg idempotency fix, end-to-end at the report level (#495 follow-up): a
+  // variable ALREADY correctly aliased (font/heading -> font/headline, live) must not reappear in the
+  // report's aliases on a re-apply — this is the exact bug a strict "run 2 = 0 aliases" e2e check
+  // (test/figma/plugin.mjs's librarymode, test/figma/binder.mjs's librarygeom) exists to catch.
+  const plan2 = { variables: [{ name: "font/headline", type: "STRING", values: [{ mode: "Base", value: "Inter" }] }, { name: "font/body", type: "STRING", values: [{ mode: "Base", value: "Inter" }] }] };
+  const live2 = { "font/heading": { Base: { type: "VARIABLE_ALIAS", id: "id-headline" } }, "font/body": { Base: "Inter" } };
+  const aliasMap3 = { "font/heading": "font/headline" };
+  const liveAliasTargets3 = { "font/heading": "font/headline" };
+  const mjsReport2 = libraryModeReport(plan2, live2, aliasMap3, liveAliasTargets3);
+  const vmReport2 = vmLibraryModeReport ? vmLibraryModeReport(plan2, live2, aliasMap3, liveAliasTargets3) : null;
+  if (!vmReport2) FAIL("libraryparity", "code.js exported no libraryModeReportVM (4-arg form)");
+  else if (JSON.stringify(mjsReport2) !== JSON.stringify(vmReport2)) FAIL("libraryparity", `libraryModeReport/libraryModeReportVM (4-arg) disagree: mjs=${JSON.stringify(mjsReport2)} vm=${JSON.stringify(vmReport2)}`);
+  if (mjsReport2.aliases.length) FAIL("libraryparity", `libraryModeReport must omit an already-correctly-aliased name (idempotency fix), got ${JSON.stringify(mjsReport2.aliases)}`);
+  if (mjsReport2.deprecates.length) FAIL("libraryparity", `libraryModeReport must not deprecate an already-correctly-aliased name, got ${JSON.stringify(mjsReport2.deprecates)}`);
+
+  // LIBRARY_TYPE_VOICE_MAP — the same static map, migrations.mjs vs the code.js literal copy
+  if (JSON.stringify(LIBRARY_TYPE_VOICE_MAP) !== JSON.stringify(vmLibraryTypeVoiceMap)) FAIL("libraryparity", `LIBRARY_TYPE_VOICE_MAP drifted: migrations.mjs=${JSON.stringify(LIBRARY_TYPE_VOICE_MAP)} code.js=${JSON.stringify(vmLibraryTypeVoiceMap)}`);
+}
+
+// ── librarymode (#495): "published library" mode — the ADIA-file scenario, mirrored: an 11-voice
+//    Font Primitives collection (Heading/UI/Caption/Legal/Code/Body/Display/Lead/Kicker/Sub-heading/
+//    Quote — #495's own scope item 3, verbatim) predating the current 15-voice set. Only `font/<voice>`
+//    is fixtured (not `family/<voice>`): typeTokensFigmaPrimitivesModes dedupes `family/*` by resolved
+//    font string (famKey[fam] = family/<firstRole>, first-writer-wins), so it is NOT reliably one-per-
+//    voice — e.g. the product treatment only emits family/display, family/body, family/mono. `font/*`
+//    IS emitted unconditionally per voice (an ALIAS to whichever family/* key backs it), so it's the
+//    reliable per-voice name a real old file's aliasing/deprecation would ride. A normal apply would
+//    PRUNE the 6 with no current-name match (5 renamed + Quote); library mode must NEVER remove any of
+//    them: the 5 renamed voices' font/* variables ALIAS to their mapped current counterpart (value
+//    redirected, id kept), Quote's ALIAS to "_deprecated/font/quote" (id kept, no mapping exists).
+//    0 removals; idempotent second run; dry-run report (libraryReport) matches what was applied. ──
+if (applyFontPrimitivesModes) {
+  try {
+    const FL = mockFigma();
+    const ll = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(FL.figma, "<html>", undefined);
+    const OLD_VOICES = ["heading", "ui", "caption", "legal", "code", "body", "display", "lead", "kicker", "sub-heading", "quote"]; // 11, per #495's own list
+    // Create the OLD-era collection THROUGH the executor itself (not a raw figma.variables call) so it
+    // gets registered in FLOAT_REGISTRY_KEY — ensureFloatCollection resolves its target by REGISTRY id
+    // (or renameFrom), never by a bare name match (same provenance discipline as #492's color registry),
+    // so an out-of-band collection would be invisible to the library-mode apply below and a SECOND, empty
+    // "Type Primitives" would be created instead. Mirrors the "RETURNING FILE" fontmodes fixture above.
+    const eraOnePlanFP = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: OLD_VOICES.map((v) => ({ name: "font/" + v, type: "STRING", values: [{ mode: "Value", value: "Old Font " + v }] })) };
+    await ll.applyFontPrimitivesModes(eraOnePlanFP);
+    const oldCollFP = FL.collections.find((c) => c.name === "Type Primitives");
+    const scaleFP = TYPE.typeScale({ treatment: "product", bodyBase: 16 });
+    const planFP = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scaleFP));
+    const res1 = await ll.applyFontPrimitivesModes(planFP, { libraryMode: true });
+    if (!res1 || !res1.libraryReport) FAIL("librarymode", "applyFontPrimitivesModes({libraryMode:true}) returned no libraryReport");
+    else {
+      const rpt = res1.libraryReport;
+      if (!rpt.libraryMode) FAIL("librarymode", "libraryReport.libraryMode should be true when opts.libraryMode:true was passed");
+      // 0 removals: every old font/* variable for all 11 voices must still exist by ID afterward.
+      const stillThere = OLD_VOICES.every((v) => FL.variables.some((va) => va.variableCollectionId === oldCollFP.id && (va.name === "font/" + v || va.name.indexOf("_deprecated/font/" + v) === 0)));
+      if (!stillThere) FAIL("librarymode", "library mode removed a variable that should have been aliased or deprecated instead");
+      // the 5 renamed voices -> aliased; "quote" -> deprecated.
+      const expectAliased = ["heading", "ui", "caption", "legal", "code"];
+      for (const v of expectAliased) {
+        if (!rpt.aliases.some((a) => a.from === "font/" + v)) FAIL("librarymode", `expected "font/${v}" aliased, got aliases=${JSON.stringify(rpt.aliases)}`);
+      }
+      if (!rpt.deprecates.some((d) => d.from === "font/quote" && d.to === "_deprecated/font/quote")) FAIL("librarymode", `expected "font/quote" deprecated, got deprecates=${JSON.stringify(rpt.deprecates)}`);
+      if (rpt.removed.length) FAIL("librarymode", `libraryReport.removed must be empty in library mode, got ${JSON.stringify(rpt.removed)}`);
+      // the ALIASED variable's actual live value must now resolve to the MAPPED target (every mode).
+      const aliasedHeadingFont = FL.variables.find((va) => va.variableCollectionId === oldCollFP.id && va.name === "font/heading");
+      const targetHeadlineFont = FL.variables.find((va) => va.variableCollectionId === oldCollFP.id && va.name === "font/headline");
+      if (!aliasedHeadingFont || !targetHeadlineFont) FAIL("librarymode", "expected both font/heading (kept) and font/headline (planned) to exist live");
+      else {
+        const val = aliasedHeadingFont.valuesByMode[oldCollFP.modes[0].modeId];
+        if (!val || val.type !== "VARIABLE_ALIAS" || val.id !== targetHeadlineFont.id) FAIL("librarymode", "font/heading's value was not redirected to font/headline via a real alias");
+      }
+    }
+    // IDEMPOTENT second run, STRICT: a variable already correctly aliased/deprecated from run 1 needs NO
+    // further action on an unchanged re-apply — a published library must not churn names/values on every
+    // apply (a real defect found in review: run 1's alias write leaves no LITERAL value behind, so a
+    // naive re-derive of the alias map on run 2 loses the mapping and misclassifies an already-correctly-
+    // ALIASED variable as unmapped -> deprecate, renaming it out from under itself every single apply).
+    const res2 = await ll.applyFontPrimitivesModes(planFP, { libraryMode: true });
+    const stillThere2 = OLD_VOICES.every((v) => FL.variables.some((va) => va.variableCollectionId === oldCollFP.id && (va.name === "font/" + v || va.name.indexOf("_deprecated/font/" + v) === 0)));
+    if (!stillThere2) FAIL("librarymode", "second run removed something library mode should have preserved");
+    if (res2 && res2.libraryReport && res2.libraryReport.deprecates.some((d) => d.to.indexOf("_deprecated/_deprecated/") === 0)) FAIL("librarymode", "second run double-prefixed an already-deprecated variable — not idempotent");
+    if (!res2 || !res2.libraryReport) FAIL("librarymode", "second run returned no libraryReport");
+    else {
+      const rpt2 = res2.libraryReport;
+      if (rpt2.aliases.length) FAIL("librarymode", `second run should report 0 aliases (already correctly aliased = no-op), got ${JSON.stringify(rpt2.aliases)}`);
+      if (rpt2.deprecates.length) FAIL("librarymode", `second run should report 0 deprecates (already resolved), got ${JSON.stringify(rpt2.deprecates)}`);
+      if (rpt2.renames.length) FAIL("librarymode", `second run should report 0 renames, got ${JSON.stringify(rpt2.renames)}`);
+    }
+  } catch (e) { FAIL("librarymode", "applyFontPrimitivesModes library-mode e2e threw: " + e.message); }
+}
+
 // ── READ-FLOAT-VARIABLES (TKT-0020, Geometry/Type drift reference): the live Geometry + Type
 // Primitives values come back in a shape comparable to a modeApplyPlan/primitivesModesApplyPlan entry — the
 // apply gate's pre-overwrite diff (collections-arch review C2). Runs on the SAME mock F: by this point
@@ -1015,6 +1212,14 @@ if (applyFloatPlans) {
 {
   const f = fails.find((x) => x.startsWith("fontmodes:"));
   console.log(`  ${f ? "FAIL" : "pass"}  fontmodes${f ? "  — " + f.slice(10) : ""}`);
+}
+{
+  const f = fails.find((x) => x.startsWith("libraryparity:"));
+  console.log(`  ${f ? "FAIL" : "pass"}  libraryparity${f ? "  — " + f.slice(14) : ""}`);
+}
+{
+  const f = fails.find((x) => x.startsWith("librarymode:"));
+  console.log(`  ${f ? "FAIL" : "pass"}  librarymode${f ? "  — " + f.slice(12) : ""}`);
 }
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("\nPASS: figma-plugin-app — manifest + offline code.js + bridged ui.html + the figmaBundle→variables cascade + the Type/Geometry breakpoint-mode apply + the styles apply (bound paints/texts, registry prune)");

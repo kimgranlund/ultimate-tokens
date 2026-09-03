@@ -193,3 +193,184 @@ export function retirementsFor(plans, migrations) {
   });
   return changed ? out : plans;
 }
+
+// ── "published library" mode (#495) — a per-collection RECONCILE that never removes a variable, for a
+// file whose collections are consumed (via Figma's library-publish mechanism) by OTHER files: a
+// consumer's binding is always by ID, so a `.remove()` orphans it irrecoverably. All of the below is
+// PURE (no figma calls) — the executor (code.js) reads live state ONCE, calls these, then both REPORTS
+// the result (dry-run) and APPLIES it (the SAME computed action list drives both, so they can never
+// disagree — see applyFloatPlans'/applyFontPrimitivesModes' library-mode branch). ──
+
+// nearestStepByHeight(oldHeight, currentStepHeights) — PURE: which of the CURRENT plan's OWN size/
+// steps (a {stepName: height} map, read straight from its `size/${step}/height` variables — never a
+// hand-typed table, so a ramp change is picked up automatically) has the height CLOSEST to an old,
+// no-longer-planned step's own height? Ties break toward whichever step Object.entries() visits first
+// (insertion order — deterministic, never array-sort-dependent).
+export function nearestStepByHeight(oldHeight, currentStepHeights) {
+  let best = null, bestDist = Infinity;
+  for (const [step, h] of Object.entries(currentStepHeights || {})) {
+    const d = Math.abs(Number(h) - Number(oldHeight));
+    if (d < bestDist) { bestDist = d; best = step; }
+  }
+  return best;
+}
+
+// geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields) — PURE: expands a "nearest step by
+// height" match into a FULL per-field alias map for the Geometry `size/` family —
+// `{"size/${oldStep}/${field}": "size/${nearestStep}/${field}"}` for every old step × every field.
+// `fields` (e.g. height/icon/caret/icon-gap/…) come from the CURRENT plan's own size/ variables, never
+// hand-typed — a future field added to buildSize() is covered automatically, no map to maintain by hand.
+export function geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields) {
+  const map = {};
+  for (const [oldStep, h] of Object.entries(oldStepHeights || {})) {
+    const nearest = nearestStepByHeight(h, currentStepHeights);
+    if (!nearest) continue;
+    for (const field of fields) map[`size/${oldStep}/${field}`] = `size/${nearest}/${field}`;
+  }
+  return map;
+}
+
+// resolveLiteralHeight(name, modeName, liveVarsByName, idToName, maxHops) — PURE: chase a possible ALIAS
+// chain (bounded — guards a cycle/foreign chain) from `name`'s LIVE value at `modeName` to the underlying
+// literal NUMBER a "size/{step}/height" variable ultimately carries. Needed because library mode's OWN
+// prior write redirects an old step's height to an ALIAS (see libraryModeReconcile below) — without this,
+// a SECOND apply can't read a literal off an already-aliased old variable at all, loses the ability to
+// re-derive nearest-by-height for it, and misclassifies a correctly-mapped variable as unmapped ->
+// deprecate, renaming it out from under itself on every single re-apply (a real defect found in review —
+// see this file's own git history / the #495 Findings for the incident). `idToName` = {variableId: name}
+// for every variable in the same collection, live — the reverse of the executor's own name->variable map.
+// A name whose value isn't an alias at all resolves in 0 hops. Returns null if the chain never resolves
+// to a literal (foreign/broken alias, a cycle, or a chain deeper than maxHops).
+export function resolveLiteralHeight(name, modeName, liveVarsByName, idToName, maxHops) {
+  const limit = maxHops == null ? 5 : maxHops;
+  let cur = name;
+  for (let i = 0; i <= limit; i++) {
+    const vals = liveVarsByName && liveVarsByName[cur];
+    const v = vals ? vals[modeName] : undefined;
+    if (typeof v === "number") return v;
+    if (v && typeof v === "object" && v.type === "VARIABLE_ALIAS" && v.id) {
+      const next = idToName && idToName[v.id];
+      if (!next || next === cur) return null; // unresolved id, or a direct self-alias cycle
+      cur = next;
+      continue;
+    }
+    return null; // no value at this mode, or a non-numeric/non-alias value
+  }
+  return null; // chain deeper than maxHops — treat as unresolved rather than loop further
+}
+
+// liveAliasTargetsByName(existingNames, modeName, liveVarsByName, idToName) — PURE: for every EXISTING
+// name whose live value at `modeName` is CURRENTLY a resolvable VARIABLE_ALIAS, its one-hop target NAME
+// — `{name: targetName}`. This is the "belt" half of the same idempotency fix: even when the alias-map
+// computation can't re-derive a mapping for an already-aliased name (a foreign chain, or a future case
+// neither the height nor the Type-voice map covers), libraryModeReconcile below still recognizes
+// "already correctly aliased to a wanted name" directly off LIVE state, rather than falling through to
+// deprecate. One hop only — this library's own alias writes are never chained more than one deep.
+export function liveAliasTargetsByName(existingNames, modeName, liveVarsByName, idToName) {
+  const out = {};
+  for (const name of (existingNames || [])) {
+    const vals = liveVarsByName && liveVarsByName[name];
+    const v = vals ? vals[modeName] : undefined;
+    if (v && typeof v === "object" && v.type === "VARIABLE_ALIAS" && v.id) {
+      const target = idToName && idToName[v.id];
+      if (target && target !== name) out[name] = target;
+    }
+  }
+  return out;
+}
+
+// libraryModeReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) — PURE: for each LIVE
+// variable name NOT in the current plan (`wantedNames`), classify what "published library" mode does
+// instead of deleting it:
+//   - a target resolves (from `aliasMap[name]`, or — when the map has none — from `liveAliasTargets[name]`,
+//     the "belt" fallback above) AND that target IS in `wantedNames`:
+//       - its LIVE alias target already EQUALS that resolved target -> IDEMPOTENT no-op: nothing to
+//         write, omitted entirely (like an unchanged wanted-name value is omitted from valueUpdates) —
+//         this is what makes a second run of an already-aliased variable report/write NOTHING for it.
+//       - otherwise -> ALIAS: keep the name, redirect its VALUE to the resolved target (every mode,
+//         explicitly — hard-constraint #7's "every mode needs its own explicit value" applies to an
+//         alias write exactly as it does to a literal one).
+//   - otherwise, if not already under `"_deprecated/"` -> DEPRECATE: an id-preserving rename under that
+//     prefix (a bound-by-id consumer keeps resolving, now to a frozen, no-longer-maintained value).
+//   - otherwise (already `"_deprecated/…"`, still unmapped) -> IDEMPOTENT no-op, never re-deprecated.
+// A name present in `wantedNames` is this function's non-concern — the caller's ordinary create/update
+// path (unchanged, prune step simply skipped) already covers it. Returns
+// `{ toAlias: [{from,to}], toDeprecate: [{from,to}] }`, both name-sorted for deterministic output.
+export function libraryModeReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) {
+  const wanted = new Set(wantedNames);
+  const toAlias = [];
+  const toDeprecate = [];
+  for (const name of [...existingNames].sort()) {
+    if (wanted.has(name)) continue;
+    const mapped = aliasMap && Object.prototype.hasOwnProperty.call(aliasMap, name) ? aliasMap[name] : undefined;
+    const mappedTarget = mapped && wanted.has(mapped) ? mapped : undefined;
+    const liveTarget = liveAliasTargets && Object.prototype.hasOwnProperty.call(liveAliasTargets, name) ? liveAliasTargets[name] : undefined;
+    const liveTargetWanted = liveTarget && wanted.has(liveTarget) ? liveTarget : undefined;
+    const target = mappedTarget || liveTargetWanted;
+    if (target) {
+      if (liveTarget !== target) toAlias.push({ from: name, to: target }); // a real write is needed
+      // else: already correctly aliased to `target`, live — idempotent no-op, omit entirely.
+    } else if (!name.startsWith("_deprecated/")) {
+      toDeprecate.push({ from: name, to: "_deprecated/" + name });
+    }
+  }
+  return { toAlias, toDeprecate };
+}
+
+// valueChanged(liveValuesByModeName, planVar) — PURE: does ANY of the plan variable's per-mode values
+// differ from what the LIVE variable already holds at that mode (matched by MODE NAME — dry-run runs
+// before any mode ids for a NEW mode would even exist)? `liveValuesByModeName` = {modeName: value};
+// `planVar` = a plan variable entry — either modeApplyPlan's `{name, type, values: [{mode,value},…]}`
+// (Geometry — `type` is never "ALIAS" here, style-plan.mjs's FIGMA_VAR_TYPES doesn't include it) or
+// style-plan.mjs's primitivesModesApplyPlan `{name, type:"ALIAS", target}` shape (Font/Type Primitives)
+// — an ALIAS entry has no `.values` at all and is reported "changed" unconditionally, matching the
+// executor's own unconditional every-mode alias write (never skipped for an "unchanged" target — see
+// applyFontPrimitivesModes' own header comment for why). Numeric comparison for FLOATs (tolerates a
+// live read that's already a JS number); strict-equal otherwise. A mode the live variable has no value
+// for yet (e.g. a breakpoint just added) counts as changed — there is a real value to WRITE.
+export function valueChanged(liveValuesByModeName, planVar) {
+  if (planVar.type === "ALIAS") return true;
+  for (const { mode, value } of (planVar.values || [])) {
+    if (!(mode in (liveValuesByModeName || {}))) return true;
+    const live = liveValuesByModeName[mode];
+    if (typeof value === "number" || typeof live === "number") { if (Number(live) !== Number(value)) return true; }
+    else if (live !== value) return true;
+  }
+  return false;
+}
+
+// libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets) — PURE: the FULL "published
+// library" action list for ONE collection's plan — every rename (from `plan.renames`, TKT-0012's
+// EXISTING mechanism)/add/value-update/alias/deprecate this apply will make, computed ONCE so the
+// dry-run report and the real apply can never disagree (code.js's library-mode branch calls this, then
+// reports it verbatim, THEN executes it verbatim — never re-derives). `liveVarsByName` =
+// `{name: {modeName: value}}`, the file's OWN current values, read before any write (`{}` for a
+// brand-new collection — everything becomes adds). `liveAliasTargets` (optional) is
+// liveAliasTargetsByName's output — passed straight through to libraryModeReconcile's idempotency check.
+export function libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets) {
+  const live = liveVarsByName || {};
+  const wantedNames = plan.variables.map((v) => v.name);
+  const renamesMap = plan.renames || {};
+  const renamed = [];
+  const consumedOld = new Set();
+  const effective = {};
+  for (const [oldName, newName] of Object.entries(renamesMap)) {
+    if (oldName in live && !(newName in live)) {
+      effective[newName] = live[oldName];
+      consumedOld.add(oldName);
+      renamed.push({ from: oldName, to: newName });
+    }
+  }
+  for (const [name, vals] of Object.entries(live)) {
+    if (consumedOld.has(name) || name in effective) continue;
+    effective[name] = vals;
+  }
+  const adds = [];
+  const valueUpdates = [];
+  for (const v of plan.variables) {
+    if (!(v.name in effective)) { adds.push(v.name); continue; }
+    if (valueChanged(effective[v.name], v)) valueUpdates.push(v.name);
+  }
+  const { toAlias, toDeprecate } = libraryModeReconcile(Object.keys(effective), wantedNames, aliasMap || {}, liveAliasTargets);
+  return { renames: renamed, adds: adds.sort(), valueUpdates: valueUpdates.sort(), aliases: toAlias, deprecates: toDeprecate };
+}

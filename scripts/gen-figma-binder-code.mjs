@@ -40,7 +40,17 @@ const FLAGSHIP_PATH = join(ROOT, "figma/plugin/code.js");
 const SEMANTIC_PATH = join(ROOT, "src/engine/semantic.js");
 const BINDER_PATH = join(ROOT, "figma/binder/figma-semantic-binder/code.js");
 
-const FLOAT_FNS = ["readFloatRegistry", "writeFloatRegistry", "ensureFloatCollection", "varsByName", "applyFloatPlans"];
+const FLOAT_FNS = [
+  "readFloatRegistry", "writeFloatRegistry", "ensureFloatCollection", "varsByName", "applyFloatPlans",
+  // #495 "published library" mode — the pure/mechanical helpers applyFloatPlans depends on, spliced
+  // verbatim so the binder's copy stays byte-identical (parity-gated, same discipline as the rest of
+  // this list). LIBRARY_TYPE_VOICE_MAP itself is a CONST (extractConst only handles array consts), so
+  // it's hand-duplicated in the binder instead — same precedent as SEMANTIC_RENAME_FROM (TKT-0024/#492).
+  "substituteSegment", "expandVoiceAliasMap", "nearestStepByHeightVM", "geometryPlanStepHeights",
+  "expandGeometryAliasMap", "resolveLiteralHeightVM", "liveAliasTargetsByNameVM", "libraryReconcile",
+  "valueChangedVM", "readLiveValuesByName", "libraryModeReportVM", "libraryModeReportText",
+  "confirmLibraryMode", "escapeHtmlVM",
+];
 const COLOR_FNS = ["readColorRegistry", "writeColorRegistry", "ensureCollection"];
 
 // spliceBlock — replace the text between a `// === GENERATED:<name> START ===` / `... END ===` marker
