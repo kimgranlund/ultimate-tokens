@@ -97,6 +97,21 @@ Binder-only: the flagship app-as-plugin's `applyBundle`/`ensureCollection` keep 
 specific to the standalone binder; extending adoption to the flagship (which already has its own consent
 UI, the apply gate) is a separate, not-yet-scoped decision.
 
+**Real incident, #492 (write it split, "&lt;\/script&gt;", not literal — even in a comment):** this ENTIRE
+file — code, comments, everything — is later embedded as a single JS STRING (`JSON.stringify(code)`,
+`scripts/gen-figma-assets.mjs`) inside `src/ui/figma-plugin-assets.js`, which `bundle.mjs` splices into
+the web app's own SINGLE inline `<script>` block (`dist/ultimate-tokens.html`). `confirmAdopt`'s inline
+HTML needs a real closing script tag to close its OWN embedded `<script>` at runtime inside Figma — but
+writing that tag as a LITERAL, contiguous string anywhere in this file closes the web app's OUTER
+`<script>` block early in the bundled HTML instead, silently truncating and corrupting every line of app
+JS after it — and that includes a COMMENT merely describing the fix, not just executable code (found
+live: the first hand-written comment explaining this exact incident spelled the tag out literally in
+prose and broke the build a second time). `npm test` has no
+browser and never catches this; only `npm run smoke`'s real-Chrome leg does, downstream, as a confusing
+unrelated-looking failure ("gallery boots" / "openCategory is not a function", no clue it originated
+here). `test/figma/binder.mjs`'s `bundlesafe` gate now catches it at the SOURCE, statically, in the same
+`npm test` run as every other check.
+
 ### 4. Role-table parity — the generated copy (owned by `adding-semantic-roles`)
 
 The Figma VM can't `import` the `.mjs`, so the binder's `roleTable(n)` is a **second copy** of

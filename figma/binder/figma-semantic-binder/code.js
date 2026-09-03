@@ -405,8 +405,19 @@ async function confirmAdopt(name) {
       "<p>Found an existing <b>“" + escapeHtml(name) + "”</b> collection this plugin didn’t create. " +
       "Adopt it and upsert into it — instead of creating a separate collection?</p>" +
       "<button id=\"adopt\">Adopt “" + escapeHtml(name) + "”</button><button id=\"skip\">Skip (create new)</button>" +
+      // the closing tag below is written "<\/script>" (a split, backslash-escaped form) so this SOURCE
+      // FILE never contains the LITERAL, contiguous closing-script-tag substring — careful, since even
+      // writing that substring in a COMMENT re-triggers the same bug (see the incident below). This
+      // whole binder is later embedded as a JS STRING inside the web app's own single inline script
+      // block (bundle.mjs's figma-plugin-assets.js splice); the literal substring there closes THAT
+      // enclosing tag early, truncating and corrupting the bundled app (real incident: this exact
+      // string, unescaped, broke npm run smoke's real-Chrome "gallery boots" test — the JS after the
+      // truncation point never ran, and the FIRST hand-written comment attempting to explain the fix
+      // reintroduced the substring literally, in prose, and broke it again). "<\/script>" evaluates to
+      // the identical runtime string at runtime ("\/" is a no-op JS escape — the backslash is dropped)
+      // but never appears as that dangerous contiguous substring in source, comments included.
       "<script>document.getElementById('adopt').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:true}},'*');" +
-      "document.getElementById('skip').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:false}},'*');</script>",
+      "document.getElementById('skip').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:false}},'*');<\/script>",
       { width: 360, height: 168 },
     );
     figma.ui.onmessage = (msg) => {

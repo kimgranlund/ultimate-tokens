@@ -198,6 +198,20 @@ if (!binderSrc.includes(FLOAT_ANCHOR)) FAIL("floatanchor", "code.js is missing t
 if (!/FLOAT_REGISTRY_KEY\s*=\s*"ultimate-tokens-float-collections"/.test(binderSrc)) FAIL("floatanchor", "code.js FLOAT_REGISTRY_KEY does not match the flagship plugin's key string");
 if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no applyFloatPlans executor");
 
+// ── bundlesafe (#492 real incident): this ENTIRE file — code, comments, everything — gets embedded as
+//    a single JS STRING (JSON.stringify(code), scripts/gen-figma-assets.mjs) INSIDE src/ui/figma-plugin-
+//    assets.js, which bundle.mjs then splices into the web app's own SINGLE inline <script> block
+//    (dist/ultimate-tokens.html). A literal, contiguous "</script>" ANYWHERE in this file — including
+//    inside a comment, not just executable code — closes THAT enclosing tag early in the bundled HTML,
+//    silently truncating and corrupting every line of app JS after it. `npm test` never caught this
+//    (it has no browser); only `npm run smoke`'s real-Chrome leg did, downstream, as "gallery boots" /
+//    "openCategory is not a function" — a confusing failure with no clue it originated here. This gate
+//    catches it at the SOURCE, cheaply, in the same run as every other static check. (confirmAdopt's
+//    inline showUI() HTML needs a literal closing script tag to actually close its OWN <script> block
+//    at runtime inside Figma — write it split, "<\/script>", which evaluates to the identical runtime
+//    string via JS's no-op "\/" escape but never appears as this dangerous contiguous substring.) ──
+if (binderSrc.includes("</" + "script>")) FAIL("bundlesafe", 'code.js contains a literal "</script>" — this file is embedded as a JS string inside the web app\'s own <script> block (figma-plugin-assets.js); write it split ("<\\/script>") instead, in code AND comments');
+
 // ── floatcreate: applyFloatPlans creates the MERGED "Geometry" collection (type/ + box-geometry halves,
 //    TKT-0009; Base + a breakpoint mode), the sized vars carry a DIFFERENT value per mode, re-apply is
 //    idempotent (no doubling), and removing a breakpoint prunes its mode (mirrors test/figma/plugin.mjs) ──
@@ -434,7 +448,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "adoptconsent", "colorparity", "collparity", "floatparity"]) {
+for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "bundlesafe", "floatcreate", "floatindep", "floatnoop", "colorprov", "adoptconsent", "colorparity", "collparity", "floatparity"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
