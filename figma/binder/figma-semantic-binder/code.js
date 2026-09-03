@@ -362,9 +362,115 @@ function targetName(paletteName, ref) {
   return paletteName + "/" + refKey(ref);
 }
 
+// findAdoptionCandidate — #492: is there a LIVE collection named `name` (or one of `renameFrom`) that
+// isn't already tracked by `reg`? PURE / read-only — never mutates `cols` or `reg`. This is the
+// DISCOVERY half of the adoption path; ensureCollection/ensureFloatCollection themselves are UNCHANGED
+// (registry-by-id only, TKT-0024) — the caller checks for a candidate FIRST, and on confirmed consent
+// (confirmAdopt below) pre-seeds `reg[name] = candidate.id` BEFORE calling ensureCollection/
+// ensureFloatCollection, which then takes its normal "known" fast path and returns that exact
+// collection: no change to the provenance functions, no risk to their parity gates. Binder-only (#492)
+// — the flagship app-as-plugin keeps its TKT-0024 "never adopt a same-named collection" guarantee
+// unchanged; this ticket's root cause (figma-semantic-binder/code.js) and its ADIA Colors scenario are
+// both specific to the standalone binder.
+//
+// REVIEW FIX (#492, MAJOR 1): checking ONLY "is this candidate's id untracked anywhere in reg" is not
+// enough — it ignores whether `name` (or a `renameFrom` name) ALREADY resolves to a DIFFERENT live
+// collection via reg[n], exactly mirroring ensureCollection/ensureFloatCollection's own "known" fast
+// path (reg[name] && cols.find(c => c.id === reg[name]), then the renameFrom loop). Without this check
+// first: a DECLINED orphan leaves the orphan itself forever unregistered while main() still creates and
+// registers a FRESH collection under the same name — so `reg[name]` now resolves live, but the orphan
+// (still a `name`-or-`renameFrom` match, still untracked) is offered again on every later run; and a
+// LATER confirm on that stale re-prompt would silently overwrite reg[name] to point at the ORPHAN,
+// abandoning the fresh collection actually in use — on the ADIA file specifically, that could re-target
+// the registry onto the GROUPED "Color Semantic"/"Color Modes" collection, the exact inverse of the
+// ruling that the flat scheme is canonical. So: if `name` or ANY `renameFrom` entry already resolves to
+// a live collection, there is NOTHING to adopt — ensureCollection/ensureFloatCollection's own fast path
+// already has it, and this function returns null before ever searching for an orphan.
+function findAdoptionCandidate(name, reg, renameFrom, cols) {
+  const names = [name].concat(Array.isArray(renameFrom) ? renameFrom : []);
+  for (const n of names) {
+    if (reg[n] && cols.some((c) => c.id === reg[n])) return null; // `n` already resolves live — nothing to adopt
+  }
+  const registered = new Set(Object.keys(reg).map((k) => reg[k]));
+  for (const n of names) {
+    const hit = cols.find((c) => c.name === n && !registered.has(c.id));
+    if (hit) return hit;
+  }
+  return null;
+}
+
+// confirmAdopt — #492: the ONE-TIME "adopt this existing collection?" gate, "in the plugin UI" per the
+// ticket's own wording (not a figma.notify toast — a real modal, matching how the flagship app's own
+// apply-gate frames a consequential choice as a deliberate dialog, not a dismissible toast). The
+// standalone binder has never shown a UI before this; this is the smallest surface that does — an
+// inline HTML string (no external assets, AC-P3 offline), two buttons, one round-trip message. Escapes
+// `name` (it's a live Figma collection name, not literal user text, but HTML-escaping any interpolated
+// string is free insurance). Resolves `true` (adopt) or `false` (skip — today's create-a-separate-one
+// behavior, unchanged) exactly once; findAdoptionCandidate's own guard (above, #492 review fix) is what
+// makes this genuinely "once per file": EITHER outcome leaves `reg[name]` resolving to a LIVE collection
+// afterward — a confirmed adopt registers the orphan's own id; a decline lets ensureCollection/
+// ensureFloatCollection create-and-register a fresh one right after — so on every later run,
+// findAdoptionCandidate's first check (does `name`/`renameFrom` already resolve live?) is true and it
+// never even looks for an orphan again. Never silently downgrades to "always adopt" or "never adopt"
+// without asking — it just never re-asks once the name is resolved, confirmed or declined.
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+// `opts.prunes` (#492 review, MINOR): true for the float call site (Geometry/Type Primitives) — the
+// dialog copy must disclose that applyFloatPlans' UNCHANGED full-mirror reconcile applies on adoption
+// (create-or-reuse by name, PRUNE anything not in the current plan), so a foreign variable inside the
+// adopted collection does NOT survive. False (the default) for color: the role-binding loop never
+// prunes, so a foreign variable there survives untouched — see §3b in foundations.md for the full
+// asymmetry. The user must see this BEFORE confirming, not discover it after the fact.
+async function confirmAdopt(name, opts) {
+  const prunes = !!(opts && opts.prunes);
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (v) => { if (!settled) { settled = true; resolve(v); } };
+    // #492 review, MINOR: closing the plugin window (the X, not either button) never fired
+    // figma.ui.onmessage — main() hung forever awaiting a promise that would never settle. figma.on
+    // "close" fires for EVERY dismissal path (a button click that already called figma.ui.close(), OR
+    // the user closing the window directly), so it's registered unconditionally; settle() is a no-op
+    // once already settled, so a button click still wins the race normally — this is purely the
+    // otherwise-unhandled path's safety net, treated as a decline (never touch anything without explicit consent).
+    figma.on("close", () => settle(false));
+    figma.showUI(
+      "<style>body{font:12px -apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:16px;color:#1a1a1a}" +
+      "p{margin:0 0 14px;line-height:1.5}button{font:inherit;padding:7px 14px;border-radius:6px;cursor:pointer;margin-right:8px}" +
+      "#adopt{background:#18A0FB;color:#fff;border:1px solid #18A0FB}#skip{background:#fff;border:1px solid #ccc}</style>" +
+      "<p>Found an existing <b>“" + escapeHtml(name) + "”</b> collection this plugin didn’t create. " +
+      "Adopt it and upsert into it — instead of creating a separate collection?" +
+      (prunes ? " Any variable in it NOT part of this apply will be removed (adoption still fully reconciles the collection it owns)." : "") +
+      "</p>" +
+      "<button id=\"adopt\">Adopt “" + escapeHtml(name) + "”</button><button id=\"skip\">Skip (create new)</button>" +
+      // the closing tag below is written "<\/script>" (a split, backslash-escaped form) so this SOURCE
+      // FILE never contains the LITERAL, contiguous closing-script-tag substring — careful, since even
+      // writing that substring in a COMMENT re-triggers the same bug (see the incident below). This
+      // whole binder is later embedded as a JS STRING inside the web app's own single inline script
+      // block (bundle.mjs's figma-plugin-assets.js splice); the literal substring there closes THAT
+      // enclosing tag early, truncating and corrupting the bundled app (real incident: this exact
+      // string, unescaped, broke npm run smoke's real-Chrome "gallery boots" test — the JS after the
+      // truncation point never ran, and the FIRST hand-written comment attempting to explain the fix
+      // reintroduced the substring literally, in prose, and broke it again). "<\/script>" evaluates to
+      // the identical runtime string at runtime ("\/" is a no-op JS escape — the backslash is dropped)
+      // but never appears as that dangerous contiguous substring in source, comments included.
+      "<script>document.getElementById('adopt').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:true}},'*');" +
+      "document.getElementById('skip').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:false}},'*');<\/script>",
+      { width: 360, height: prunes ? 192 : 168 },
+    );
+    figma.ui.onmessage = (msg) => {
+      if (!msg || msg.type !== "adopt-confirm") return;
+      // settle() BEFORE figma.ui.close() — if close() synchronously fires the "close" handler above,
+      // settle is already idempotent-true by then, so the real answer always wins the race regardless
+      // of whether "close" fires sync or async.
+      settle(!!msg.adopt);
+      figma.ui.close();
+    };
+  });
+}
+
 async function main() {
   const collections = await figma.variables.getLocalVariableCollectionsAsync();
   const rawColl = collections.find((c) => c.name === RAW_COLLECTION);
+  let adopted = 0;
 
   // Color and Type/Geometry breakpoints are INDEPENDENT — neither aborts the other. Color needs a live
   // "Color Primitives" collection to alias against (skipped, not fatal, when absent); the breakpoint
@@ -380,10 +486,14 @@ async function main() {
     }
 
     // 2. Create/find the Color Roles collection with Light + Dark modes — by PROVENANCE (registry id),
-    //    never by name, so a user's own "Color Roles" collection is never adopted (TKT-0024). renameFrom
-    //    (#491, SEMANTIC_RENAME_FROM) adopts a REGISTRY-TRACKED collection still under an old name
-    //    ("Color Semantic"/"Color Modes") in place, same as the float executor's renameFrom threading.
+    //    never by name (TKT-0024). renameFrom (#491, SEMANTIC_RENAME_FROM) adopts a REGISTRY-TRACKED
+    //    collection still under an old name ("Color Semantic"/"Color Modes") in place. #492: an
+    //    UNREGISTERED collection already named "Color Roles" (or SEMANTIC_RENAME_FROM) — e.g. one
+    //    created by hand, or by an older build that never registered it — is offered for adoption
+    //    (confirmed, once) rather than silently duplicated.
     const colorReg = readColorRegistry();
+    const semCandidate = findAdoptionCandidate(SEMANTIC_COLLECTION, colorReg, SEMANTIC_RENAME_FROM, collections);
+    if (semCandidate && (await confirmAdopt(semCandidate.name))) { colorReg[SEMANTIC_COLLECTION] = semCandidate.id; adopted++; }
     const sem = await ensureCollection(SEMANTIC_COLLECTION, colorReg, SEMANTIC_RENAME_FROM);
     writeColorRegistry(colorReg);
     const lightMode = sem.modes[0].modeId;
@@ -415,8 +525,25 @@ async function main() {
 
   // 4. Type/Geometry breakpoint-moded FLOAT collections — baked at download time (see FLOAT_PLANS above).
   //    A no-op (fp stays null) for the generic/asset checked-in binder, whose FLOAT_PLANS is [].
+  //    #492: the SAME adoption-candidate check as the color collection above, once per DISTINCT
+  //    plan.collection (FLOAT_PLANS carries one entry per collection — Geometry, and Type Primitives
+  //    when the download baked one in). applyFloatPlans() is a SPLICED, byte-identical-to-the-flagship
+  //    function (colorparity/floatparity/collparity gates) — it is NEVER modified for this; instead the
+  //    float registry is pre-seeded here, BEFORE calling it, so its own (unchanged) readFloatRegistry()
+  //    picks up the adoption on its very next call.
   let fp = null;
-  if (FLOAT_PLANS.length) fp = await applyFloatPlans(FLOAT_PLANS);
+  if (FLOAT_PLANS.length) {
+    const floatReg = readFloatRegistry();
+    const asked = new Set();
+    for (const plan of FLOAT_PLANS) {
+      if (!plan || !plan.collection || asked.has(plan.collection)) continue;
+      asked.add(plan.collection);
+      const candidate = findAdoptionCandidate(plan.collection, floatReg, plan.renameFrom, collections);
+      if (candidate && (await confirmAdopt(candidate.name, { prunes: true }))) { floatReg[plan.collection] = candidate.id; adopted++; }
+    }
+    writeFloatRegistry(floatReg);
+    fp = await applyFloatPlans(FLOAT_PLANS);
+  }
 
   if (!rawColl && !fp) {
     figma.notify('No "Color Primitives" collection found — apply your palette in Ultimate Tokens first, then run the Binder.', { error: true });
@@ -431,6 +558,7 @@ async function main() {
       : 'Colour skipped — no "Color Primitives" collection',
   );
   if (fp) parts.push(fp.collections + " breakpoint collection" + (fp.collections === 1 ? "" : "s") + ", " + fp.variables + " sized var" + (fp.variables === 1 ? "" : "s"));
+  if (adopted) parts.push(adopted + " existing collection" + (adopted === 1 ? "" : "s") + " adopted");
   figma.notify(parts.join(" · "));
   figma.closePlugin();
 }

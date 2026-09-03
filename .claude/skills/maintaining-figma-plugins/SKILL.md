@@ -23,7 +23,7 @@ who creates what:
 | Path | `figma/binder/figma-semantic-binder/{code.js, manifest.json}` | `figma/plugin/{code.js, manifest.json, ui.html}` |
 | Does | aliases an existing raw collection → a new aliased `Color Roles` | the full generator UI; `applyBundle` CREATES both collections, prunes, can rebuild |
 | Needs | `Color Primitives` to ALREADY exist (else it notifies + closes) | nothing — it generates the raw colors too |
-| `ui.html` | none (no UI) | the generated app bundle (`npm run gen:figma-ui` → `<ultimate-tokens>` + the bridge) |
+| `ui.html` | none — but (#492) `confirmAdopt()` shows one inline `figma.showUI()` confirm dialog, no committed HTML file | the generated app bundle (`npm run gen:figma-ui` → `<ultimate-tokens>` + the bridge) |
 | Verifier | `test/figma/binder.mjs` | `test/figma/plugin.mjs` |
 
 The conceptual model — *why* aliasing is the only thing giving a live raw→semantic cascade — is owned by

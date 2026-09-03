@@ -4,7 +4,7 @@ Scores a change to either Figma plugin in ultimate-tokens. `[gate]` = mechanical
 verifier / `npm test` / grep); `[review]` = judgment with cited evidence. Score each 1–5. This file OWNS the
 per-verifier gate-group list (the authoritative source is each verifier's report loop — the `for (const g of
 [...])` near its end): `binder.mjs` prints `bindings · themes · offline · parity · floatanchor ·
-floatcreate · floatindep · floatnoop · colorprov · colorparity · collparity · floatparity`; `plugin.mjs`
+floatcreate · floatindep · floatnoop · colorprov · adoptconsent · colorparity · collparity · floatparity`; `plugin.mjs`
 prints `manifest · offline · vmsyntax · ui · parse ·
 apply · cascade · idempotent · prune · collnames · floatapply · floatidem · floatprune · floatprov ·
 applysys · applydone · config · read · fonts · resolveface · sweep`. The `compliance` AND `styles` checks
