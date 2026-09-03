@@ -68,9 +68,15 @@ touches them. Instead, `main()` calls a DISCOVERY-only helper, `findAdoptionCand
 renameFrom, cols)`, BEFORE each `ensureCollection`/`ensureFloatCollection` call: is there a LIVE
 collection named `name` (or a `renameFrom` name) that `reg` does NOT already track by id — an orphan,
 e.g. one built by hand, by an older build that predates the registry, or one the registry lost track of?
-If one exists, `confirmAdopt(name)` shows the ONE UI this plugin has (`figma.showUI()` with an inline
-HTML string — no `ui.html` file, no manifest change) and awaits a click. Confirmed ⇒ `main()` pre-seeds
-`reg[name] = candidate.id` ITSELF, then calls the (still-unchanged) `ensureCollection`/
+If one exists, `confirmAdopt(name, opts)` shows the ONE UI this plugin has (`figma.showUI()` with an
+inline HTML string — no `ui.html` file, no manifest change) and awaits a click OR the window closing
+(`figma.on("close", …)` settles as a decline — the ONLY otherwise-unhandled path, closing the window
+without a button, must never hang `main()` forever; review MINOR, proven by `adoptconsent`'s
+"close-without-choosing" leg, raced against a timeout so a regression fails loudly rather than hanging
+the test run). `opts.prunes` (true for the float call site only) adds a line to the dialog disclosing
+that an adopted Geometry/Type Primitives collection is fully reconciled on THIS SAME apply — a foreign
+variable inside it does not survive — before the user confirms, not after. Confirmed ⇒ `main()`
+pre-seeds `reg[name] = candidate.id` ITSELF, then calls the (still-unchanged) `ensureCollection`/
 `ensureFloatCollection`, which now takes its normal "known" fast path and returns that exact collection
 — zero risk to the provenance functions' own parity gates, since they were never touched. Declined ⇒
 today's pre-#492 behavior: a separate collection is created, the orphan is left alone (proven live by
@@ -81,7 +87,14 @@ before asserting decline preserved the foreign collection).
 registers the id (the normal path handles it forever after); a decline creates and registers a FRESH
 collection under that name (so the orphan-vs-registered check never fires for that name again either).
 No separate "have we asked" flag exists or is needed — the registry's own state transition IS the
-"once per file" gate the ticket asks for.
+"once per file" gate the ticket asks for. **Enforced by `findAdoptionCandidate`'s FIRST check** (review
+fix, MAJOR 1): before ever searching for an orphan, it checks whether `name` or any `renameFrom` entry
+ALREADY resolves to a live collection via `reg` — mirroring `ensureCollection`/`ensureFloatCollection`'s
+own "known" resolution exactly. Skipping that check (the original bug) let a declined orphan coexist
+forever alongside the fresh, now-registered collection `ensureCollection` created right after — every
+later run re-offered the same orphan, and a later confirm would silently overwrite the registry to point
+AT the orphan, abandoning the collection actually in use (on the ADIA file, that could re-target the
+registry onto the GROUPED "Color Semantic"/"Color Modes" collection — the inverse of the ruling).
 
 **The load-bearing asymmetry a live adoption inherits, unchanged:** the color role-binding loop (§3
 above) never prunes — an adopted Color Roles collection's own foreign variables survive. `applyFloatPlans`

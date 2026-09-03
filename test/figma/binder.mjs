@@ -154,12 +154,20 @@ function mockFigma() {
     // conservative default so existing tests that don't care about adoption see today's unchanged
     // behavior) is read fresh each call, so a test can flip it mid-run for a later prompt.
     // `_showUICalls` counts prompts shown, for asserting "asked once" / "never asked again".
+    // `_adoptAnswer = "close"` (#492 review, MINOR) simulates the user closing the plugin window
+    // WITHOUT clicking either button — fires the registered figma.on("close", …) handler instead of
+    // posting an adopt-confirm message, proving confirmAdopt's close-handler safety net (never hangs).
     _adoptAnswer: false,
     _showUICalls: 0,
+    _onClose: null,
+    on(event, cb) { if (event === "close") this._onClose = cb; },
     showUI() {
       this._showUICalls++;
       const answer = this._adoptAnswer;
-      Promise.resolve().then(() => { if (this.ui.onmessage) this.ui.onmessage({ type: "adopt-confirm", adopt: answer }); });
+      Promise.resolve().then(() => {
+        if (answer === "close") { if (this._onClose) this._onClose(); return; }
+        if (this.ui.onmessage) this.ui.onmessage({ type: "adopt-confirm", adopt: answer });
+      });
     },
     ui: { onmessage: null, close() {} },
     variables: {
@@ -198,19 +206,11 @@ if (!binderSrc.includes(FLOAT_ANCHOR)) FAIL("floatanchor", "code.js is missing t
 if (!/FLOAT_REGISTRY_KEY\s*=\s*"ultimate-tokens-float-collections"/.test(binderSrc)) FAIL("floatanchor", "code.js FLOAT_REGISTRY_KEY does not match the flagship plugin's key string");
 if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no applyFloatPlans executor");
 
-// ── bundlesafe (#492 real incident): this ENTIRE file — code, comments, everything — gets embedded as
-//    a single JS STRING (JSON.stringify(code), scripts/gen-figma-assets.mjs) INSIDE src/ui/figma-plugin-
-//    assets.js, which bundle.mjs then splices into the web app's own SINGLE inline <script> block
-//    (dist/ultimate-tokens.html). A literal, contiguous "</script>" ANYWHERE in this file — including
-//    inside a comment, not just executable code — closes THAT enclosing tag early in the bundled HTML,
-//    silently truncating and corrupting every line of app JS after it. `npm test` never caught this
-//    (it has no browser); only `npm run smoke`'s real-Chrome leg did, downstream, as "gallery boots" /
-//    "openCategory is not a function" — a confusing failure with no clue it originated here. This gate
-//    catches it at the SOURCE, cheaply, in the same run as every other static check. (confirmAdopt's
-//    inline showUI() HTML needs a literal closing script tag to actually close its OWN <script> block
-//    at runtime inside Figma — write it split, "<\/script>", which evaluates to the identical runtime
-//    string via JS's no-op "\/" escape but never appears as this dangerous contiguous substring.) ──
-if (binderSrc.includes("</" + "script>")) FAIL("bundlesafe", 'code.js contains a literal "</script>" — this file is embedded as a JS string inside the web app\'s own <script> block (figma-plugin-assets.js); write it split ("<\\/script>") instead, in code AND comments');
+// bundlesafe (#492 real incident, MINOR review fix): moved to scripts/gen-figma-assets.mjs, which now
+// throws (failing the FIRST step of both `npm test` and `npm run build`) if code.js contains a literal
+// closing-script-tag substring — the generator is the earliest point that can catch it, right where the
+// dangerous embedding happens, rather than a downstream test asserting on its output. See that script
+// for the full incident writeup (this file's own copy of that writeup is gone with the check).
 
 // ── floatcreate: applyFloatPlans creates the MERGED "Geometry" collection (type/ + box-geometry halves,
 //    TKT-0009; Base + a breakpoint mode), the sized vars carry a DIFFERENT value per mode, re-apply is
@@ -345,6 +345,77 @@ if (binderSrc.includes("</" + "script>")) FAIL("bundlesafe", 'code.js contains a
   } catch (e) { FAIL("adoptconsent", "main() threw during confirmed color adoption: " + e.message); }
 }
 {
+  // #492 review, MINOR — CLOSE WITHOUT CHOOSING: closing the plugin window (neither button clicked)
+  // must settle confirmAdopt's promise (as a decline) via the figma.on("close", …) safety net, never
+  // leave main() hanging forever. Raced against a short timeout so a regression FAILS this test loudly
+  // instead of hanging the whole `node test/figma/binder.mjs` run.
+  const F = mockFigma();
+  F.figma._adoptAnswer = "close"; // simulate the window closing, not a button click
+  const rawColl = F.figma.variables.createVariableCollection("Color Primitives");
+  for (const t of P.bindingTargets(["neutral"])) F.figma.variables.createVariable(t, rawColl, "COLOR").setValueForMode(rawColl.modes[0].modeId, { r: 0.5, g: 0.5, b: 0.5, a: 1 });
+  F.figma.variables.createVariableCollection("Color Roles"); // NOT registered — an orphan, prompted then closed-on
+  try {
+    const { main } = loadBinder(binderSrc, F.figma);
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("main() did not settle within 2s — confirmAdopt likely hung on window-close")), 2000));
+    await Promise.race([main(), timeout]);
+    if (F.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("adoptconsent", "close-without-choosing leg: expected the orphan + a separate fresh collection (2), the close must be treated as a decline");
+  } catch (e) { FAIL("adoptconsent", "close-without-choosing leg: " + e.message); }
+}
+{
+  // MAJOR 1 (review fix) — DECLINE then RE-RUN: a decline leaves the orphan untouched, but
+  // ensureCollection immediately creates+registers a FRESH "Color Roles" collection right after — so a
+  // SECOND run must show ZERO prompts (reg[name] now resolves live; findAdoptionCandidate's first check
+  // catches it before ever searching for an orphan again) and must NOT touch the orphan or mint a THIRD
+  // collection. Before the fix, findAdoptionCandidate only checked "is this candidate's id untracked
+  // anywhere in reg" — the still-untracked orphan kept matching that test forever, re-prompting every run.
+  const F = mockFigma();
+  F.figma._adoptAnswer = false; // DECLINE
+  const rawColl = F.figma.variables.createVariableCollection("Color Primitives");
+  for (const t of P.bindingTargets(["neutral"])) F.figma.variables.createVariable(t, rawColl, "COLOR").setValueForMode(rawColl.modes[0].modeId, { r: 0.5, g: 0.5, b: 0.5, a: 1 });
+  const orphan = F.figma.variables.createVariableCollection("Color Roles"); // NOT registered — an orphan, declined
+  try {
+    const { main } = loadBinder(binderSrc, F.figma);
+    await main();
+    if (F.figma._showUICalls !== 1) FAIL("adoptconsent", `decline leg: expected exactly 1 prompt on the first run, got ${F.figma._showUICalls}`);
+    const afterFirst = F.collections.filter((c) => c.name === "Color Roles");
+    if (afterFirst.length !== 2) FAIL("adoptconsent", `decline leg: expected the orphan + a separate fresh collection (2) after declining, got ${afterFirst.length}`);
+    const freshColl = afterFirst.find((c) => c !== orphan);
+    F.figma._showUICalls = 0;
+    const { main: main2 } = loadBinder(binderSrc, F.figma);
+    await main2();
+    if (F.figma._showUICalls !== 0) FAIL("adoptconsent", `decline leg: a re-run after a decline must show ZERO prompts (the fresh collection now resolves the name), got ${F.figma._showUICalls}`);
+    const afterSecond = F.collections.filter((c) => c.name === "Color Roles");
+    if (afterSecond.length !== 2) FAIL("adoptconsent", `decline leg: re-run after a decline must not mint a THIRD collection (still 2: orphan + fresh), got ${afterSecond.length}`);
+    if (!afterSecond.includes(freshColl)) FAIL("adoptconsent", "decline leg: re-run replaced the fresh collection instead of reusing it");
+    if (!afterSecond.includes(orphan)) FAIL("adoptconsent", "decline leg: re-run removed the declined orphan (it must be left alone, not deleted)");
+  } catch (e) { FAIL("adoptconsent", "main() threw during the decline-then-re-run leg: " + e.message); }
+}
+{
+  // MAJOR 1 (review fix) — an ALREADY-REGISTERED, LIVE collection coexists with a same-named ORPHAN
+  // (plausible on a file that has been through more than one era): main() must show ZERO prompts (the
+  // registered collection resolves the name; there is nothing to offer) and must NOT touch the
+  // registry entry — before the fix, a confirm on this exact scenario would have silently re-pointed
+  // the registry AT the orphan, abandoning the collection actually in use (on the ADIA file, the
+  // equivalent of re-targeting onto the stale grouped scheme — the inverse of the ruling).
+  const F = mockFigma();
+  F.figma._adoptAnswer = true; // even set to ADOPT — must still never be asked, so this must never fire
+  const rawColl = F.figma.variables.createVariableCollection("Color Primitives");
+  for (const t of P.bindingTargets(["neutral"])) F.figma.variables.createVariable(t, rawColl, "COLOR").setValueForMode(rawColl.modes[0].modeId, { r: 0.5, g: 0.5, b: 0.5, a: 1 });
+  const registeredColl = F.figma.variables.createVariableCollection("Color Roles");
+  registeredColl.addMode("Dark");
+  F.figma.root.setPluginData("ultimate-tokens-color-collections", JSON.stringify({ "Color Roles": registeredColl.id })); // pre-seed the registry directly
+  const coexistingOrphan = F.figma.variables.createVariableCollection("Color Roles"); // a SECOND, unregistered "Color Roles"
+  try {
+    const { main } = loadBinder(binderSrc, F.figma);
+    await main();
+    if (F.figma._showUICalls !== 0) FAIL("adoptconsent", `registered+orphan leg: expected ZERO prompts (the name already resolves live), got ${F.figma._showUICalls}`);
+    const reg = JSON.parse(F.figma.root.getPluginData("ultimate-tokens-color-collections"));
+    if (reg["Color Roles"] !== registeredColl.id) FAIL("adoptconsent", "registered+orphan leg: the registry entry must stay pointed at the already-registered collection, never silently switched to the orphan");
+    if (!F.variables.some((v) => v.variableCollectionId === registeredColl.id && v.name === "neutral/on-surface")) FAIL("adoptconsent", "registered+orphan leg: role variables must upsert into the REGISTERED collection");
+    if (F.variables.some((v) => v.variableCollectionId === coexistingOrphan.id)) FAIL("adoptconsent", "registered+orphan leg: the untouched orphan must receive no variables at all");
+  } catch (e) { FAIL("adoptconsent", "main() threw during the registered+orphan leg: " + e.message); }
+}
+{
   // float: an unregistered "Geometry" ORPHAN, confirmed ⇒ adopted by the SAME mechanism, proven via a
   // baked (injected) FLOAT_PLANS — mirrors floatindep's injection technique. Once adopted+registered,
   // applyFloatPlans' UNCHANGED full-mirror reconcile applies (create-or-reuse by name, prune anything
@@ -448,7 +519,7 @@ if (binderSrc.includes("</" + "script>")) FAIL("bundlesafe", 'code.js contains a
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "bundlesafe", "floatcreate", "floatindep", "floatnoop", "colorprov", "adoptconsent", "colorparity", "collparity", "floatparity"]) {
+for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "adoptconsent", "colorparity", "collparity", "floatparity"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
