@@ -47,8 +47,9 @@ const FLOAT_FNS = [
   // this list). LIBRARY_TYPE_VOICE_MAP itself is a CONST (extractConst only handles array consts), so
   // it's hand-duplicated in the binder instead — same precedent as SEMANTIC_RENAME_FROM (TKT-0024/#492).
   "substituteSegment", "expandVoiceAliasMap", "nearestStepByHeightVM", "geometryPlanStepHeights",
-  "expandGeometryAliasMap", "libraryReconcile", "valueChangedVM", "readLiveValuesByName",
-  "libraryModeReportVM", "libraryModeReportText", "confirmLibraryMode", "escapeHtmlVM",
+  "expandGeometryAliasMap", "resolveLiteralHeightVM", "liveAliasTargetsByNameVM", "libraryReconcile",
+  "valueChangedVM", "readLiveValuesByName", "libraryModeReportVM", "libraryModeReportText",
+  "confirmLibraryMode", "escapeHtmlVM",
 ];
 const COLOR_FNS = ["readColorRegistry", "writeColorRegistry", "ensureCollection"];
 

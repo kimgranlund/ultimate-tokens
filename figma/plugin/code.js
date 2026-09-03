@@ -451,8 +451,52 @@ function expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields) {
   return map;
 }
 
-// libraryReconcile(existingNames, wantedNames, aliasMap) — mirrors mode-apply-plan.mjs#libraryModeReconcile.
-function libraryReconcile(existingNames, wantedNames, aliasMap) {
+// resolveLiteralHeightVM(name, modeName, liveVarsByName, idToName, maxHops) — mirrors
+// mode-apply-plan.mjs#resolveLiteralHeight exactly: chase a possible ALIAS chain (bounded) from `name`'s
+// LIVE value at `modeName` to the underlying literal NUMBER a "size/{step}/height" variable ultimately
+// carries. Needed because library mode's OWN prior write redirects an old step's height to an ALIAS —
+// without this, a SECOND apply can't read a literal off an already-aliased old variable, loses the
+// ability to re-derive nearest-by-height for it, and misclassifies a correctly-mapped variable as
+// unmapped -> deprecate on every re-apply (a real defect found in review — see the #495 Findings).
+function resolveLiteralHeightVM(name, modeName, liveVarsByName, idToName, maxHops) {
+  const limit = maxHops == null ? 5 : maxHops;
+  let cur = name;
+  for (let i = 0; i <= limit; i++) {
+    const vals = liveVarsByName && liveVarsByName[cur];
+    const v = vals ? vals[modeName] : undefined;
+    if (typeof v === "number") return v;
+    if (v && typeof v === "object" && v.type === "VARIABLE_ALIAS" && v.id) {
+      const next = idToName && idToName[v.id];
+      if (!next || next === cur) return null;
+      cur = next;
+      continue;
+    }
+    return null;
+  }
+  return null;
+}
+// liveAliasTargetsByNameVM(existingNames, modeName, liveVarsByName, idToName) — mirrors
+// mode-apply-plan.mjs#liveAliasTargetsByName exactly: for every EXISTING name whose live value at
+// `modeName` is CURRENTLY a resolvable VARIABLE_ALIAS, its one-hop target NAME — the "belt" half of the
+// idempotency fix libraryReconcile below relies on.
+function liveAliasTargetsByNameVM(existingNames, modeName, liveVarsByName, idToName) {
+  const out = {};
+  for (const name of (existingNames || [])) {
+    const vals = liveVarsByName && liveVarsByName[name];
+    const v = vals ? vals[modeName] : undefined;
+    if (v && typeof v === "object" && v.type === "VARIABLE_ALIAS" && v.id) {
+      const target = idToName && idToName[v.id];
+      if (target && target !== name) out[name] = target;
+    }
+  }
+  return out;
+}
+
+// libraryReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) — mirrors
+// mode-apply-plan.mjs#libraryModeReconcile exactly (including the idempotency fix: a name already
+// correctly aliased to its resolved target — from `aliasMap`, or the `liveAliasTargets` fallback when
+// the map has no entry — is an omit-entirely no-op, never re-aliased or deprecated on a re-apply).
+function libraryReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) {
   const wanted = {};
   for (const n of wantedNames) wanted[n] = true;
   const toAlias = [];
@@ -460,8 +504,16 @@ function libraryReconcile(existingNames, wantedNames, aliasMap) {
   for (const name of existingNames.slice().sort()) {
     if (wanted[name]) continue;
     const mapped = aliasMap && Object.prototype.hasOwnProperty.call(aliasMap, name) ? aliasMap[name] : undefined;
-    if (mapped && wanted[mapped]) toAlias.push({ from: name, to: mapped });
-    else if (name.indexOf("_deprecated/") !== 0) toDeprecate.push({ from: name, to: "_deprecated/" + name });
+    const mappedTarget = mapped && wanted[mapped] ? mapped : undefined;
+    const liveTarget = liveAliasTargets && Object.prototype.hasOwnProperty.call(liveAliasTargets, name) ? liveAliasTargets[name] : undefined;
+    const liveTargetWanted = liveTarget && wanted[liveTarget] ? liveTarget : undefined;
+    const target = mappedTarget || liveTargetWanted;
+    if (target) {
+      if (liveTarget !== target) toAlias.push({ from: name, to: target });
+      // else: already correctly aliased to `target`, live — idempotent no-op, omit entirely.
+    } else if (name.indexOf("_deprecated/") !== 0) {
+      toDeprecate.push({ from: name, to: "_deprecated/" + name });
+    }
   }
   return { toAlias: toAlias, toDeprecate: toDeprecate };
 }
@@ -499,10 +551,12 @@ function readLiveValuesByName(byName, modeId) {
   return out;
 }
 
-// libraryModeReportVM(plan, liveVarsByName, aliasMap) — mirrors mode-apply-plan.mjs#libraryModeReport:
-// the FULL rename/add/value-update/alias/deprecate action list for ONE collection's plan, computed ONCE
-// so the dry-run report and the real apply (below) can never disagree.
-function libraryModeReportVM(plan, liveVarsByName, aliasMap) {
+// libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets) — mirrors
+// mode-apply-plan.mjs#libraryModeReport: the FULL rename/add/value-update/alias/deprecate action list for
+// ONE collection's plan, computed ONCE so the dry-run report and the real apply (below) can never
+// disagree. `liveAliasTargets` (optional) is liveAliasTargetsByNameVM's output, passed straight through
+// to libraryReconcile's idempotency check.
+function libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets) {
   const live = liveVarsByName || {};
   const wantedNames = plan.variables.map((v) => v.name);
   const renamesMap = plan.renames || {};
@@ -527,7 +581,7 @@ function libraryModeReportVM(plan, liveVarsByName, aliasMap) {
     if (!(v.name in effective)) { adds.push(v.name); continue; }
     if (valueChangedVM(effective[v.name], v)) valueUpdates.push(v.name);
   }
-  const rec = libraryReconcile(Object.keys(effective), wantedNames, aliasMap || {});
+  const rec = libraryReconcile(Object.keys(effective), wantedNames, aliasMap || {}, liveAliasTargets);
   return { renames: renamed, adds: adds.sort(), valueUpdates: valueUpdates.sort(), aliases: rec.toAlias, deprecates: rec.toDeprecate };
 }
 
@@ -631,10 +685,15 @@ async function applyFontPrimitivesModes(plan, opts) {
   }
   const byName = await varsByName(coll.id);
   // #495 "published library" mode: snapshot LIVE values + build the Type-voice alias map BEFORE the
-  // create/update loop below overwrites anything.
+  // create/update loop below overwrites anything. idToName + liveAliasTargets: an old voice ALREADY
+  // aliased by a prior library-mode apply is recognized as "already correctly mapped" directly off its
+  // LIVE value, so a re-apply reports/writes nothing for it instead of churning it to _deprecated/.
   const liveVarsByName = readLiveValuesByName(byName, modeId);
+  const idToName = {};
+  for (const nm of Object.keys(byName)) idToName[byName[nm].id] = nm;
   const aliasMap = expandVoiceAliasMap(Object.keys(byName), LIBRARY_TYPE_VOICE_MAP);
-  const report = libraryModeReportVM(plan, liveVarsByName, aliasMap);
+  const liveAliasTargets = liveAliasTargetsByNameVM(Object.keys(byName), plan.defaultMode, liveVarsByName, idToName);
+  const report = libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets);
 
   const current = new Set();
   let count = 0;
@@ -1164,6 +1223,13 @@ async function applyFloatPlans(plans, opts) {
     // applied only to the family (type/ or size/) each existing name actually belongs to.
     const liveVarsByName = readLiveValuesByName(byName, modeId);
     const existingNames = Object.keys(byName);
+    // idToName + liveAliasTargets: an old type/ or size/ variable ALREADY aliased by a prior library-mode
+    // apply has no literal value left to derive a fresh mapping from — resolveLiteralHeightVM below
+    // chases the alias chain back to a literal for the height-derivation path, and liveAliasTargets is
+    // the belt (recognizes "already correctly aliased to a wanted name" directly off LIVE state) so a
+    // re-apply reports/writes nothing for it instead of churning it to _deprecated/ on every apply.
+    const idToName = {};
+    for (const nm of existingNames) idToName[byName[nm].id] = nm;
     const combinedAliasMap = expandVoiceAliasMap(existingNames.filter((n) => n.indexOf("type/") === 0), LIBRARY_TYPE_VOICE_MAP);
     const sizeGeo = geometryPlanStepHeights(plan.variables);
     if (Object.keys(sizeGeo.currentStepHeights).length) {
@@ -1171,13 +1237,14 @@ async function applyFloatPlans(plans, opts) {
       for (const name of existingNames) {
         const seg = name.split("/");
         if (seg.length === 3 && seg[0] === "size" && seg[2] === "height" && !(seg[1] in sizeGeo.currentStepHeights)) {
-          const val = liveVarsByName[name] && liveVarsByName[name][plan.defaultMode];
+          const val = resolveLiteralHeightVM(name, plan.defaultMode, liveVarsByName, idToName);
           if (typeof val === "number") oldStepHeights[seg[1]] = val;
         }
       }
       Object.assign(combinedAliasMap, expandGeometryAliasMap(oldStepHeights, sizeGeo.currentStepHeights, sizeGeo.fields));
     }
-    const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap);
+    const liveAliasTargets = liveAliasTargetsByNameVM(existingNames, plan.defaultMode, liveVarsByName, idToName);
+    const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap, liveAliasTargets);
 
     const current = new Set();
     for (const v of plan.variables) {

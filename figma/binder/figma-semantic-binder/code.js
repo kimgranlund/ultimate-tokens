@@ -154,6 +154,13 @@ async function applyFloatPlans(plans, opts) {
     // applied only to the family (type/ or size/) each existing name actually belongs to.
     const liveVarsByName = readLiveValuesByName(byName, modeId);
     const existingNames = Object.keys(byName);
+    // idToName + liveAliasTargets: an old type/ or size/ variable ALREADY aliased by a prior library-mode
+    // apply has no literal value left to derive a fresh mapping from — resolveLiteralHeightVM below
+    // chases the alias chain back to a literal for the height-derivation path, and liveAliasTargets is
+    // the belt (recognizes "already correctly aliased to a wanted name" directly off LIVE state) so a
+    // re-apply reports/writes nothing for it instead of churning it to _deprecated/ on every apply.
+    const idToName = {};
+    for (const nm of existingNames) idToName[byName[nm].id] = nm;
     const combinedAliasMap = expandVoiceAliasMap(existingNames.filter((n) => n.indexOf("type/") === 0), LIBRARY_TYPE_VOICE_MAP);
     const sizeGeo = geometryPlanStepHeights(plan.variables);
     if (Object.keys(sizeGeo.currentStepHeights).length) {
@@ -161,13 +168,14 @@ async function applyFloatPlans(plans, opts) {
       for (const name of existingNames) {
         const seg = name.split("/");
         if (seg.length === 3 && seg[0] === "size" && seg[2] === "height" && !(seg[1] in sizeGeo.currentStepHeights)) {
-          const val = liveVarsByName[name] && liveVarsByName[name][plan.defaultMode];
+          const val = resolveLiteralHeightVM(name, plan.defaultMode, liveVarsByName, idToName);
           if (typeof val === "number") oldStepHeights[seg[1]] = val;
         }
       }
       Object.assign(combinedAliasMap, expandGeometryAliasMap(oldStepHeights, sizeGeo.currentStepHeights, sizeGeo.fields));
     }
-    const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap);
+    const liveAliasTargets = liveAliasTargetsByNameVM(existingNames, plan.defaultMode, liveVarsByName, idToName);
+    const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap, liveAliasTargets);
 
     const current = new Set();
     for (const v of plan.variables) {
@@ -272,7 +280,38 @@ function expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields) {
   return map;
 }
 
-function libraryReconcile(existingNames, wantedNames, aliasMap) {
+function resolveLiteralHeightVM(name, modeName, liveVarsByName, idToName, maxHops) {
+  const limit = maxHops == null ? 5 : maxHops;
+  let cur = name;
+  for (let i = 0; i <= limit; i++) {
+    const vals = liveVarsByName && liveVarsByName[cur];
+    const v = vals ? vals[modeName] : undefined;
+    if (typeof v === "number") return v;
+    if (v && typeof v === "object" && v.type === "VARIABLE_ALIAS" && v.id) {
+      const next = idToName && idToName[v.id];
+      if (!next || next === cur) return null;
+      cur = next;
+      continue;
+    }
+    return null;
+  }
+  return null;
+}
+
+function liveAliasTargetsByNameVM(existingNames, modeName, liveVarsByName, idToName) {
+  const out = {};
+  for (const name of (existingNames || [])) {
+    const vals = liveVarsByName && liveVarsByName[name];
+    const v = vals ? vals[modeName] : undefined;
+    if (v && typeof v === "object" && v.type === "VARIABLE_ALIAS" && v.id) {
+      const target = idToName && idToName[v.id];
+      if (target && target !== name) out[name] = target;
+    }
+  }
+  return out;
+}
+
+function libraryReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) {
   const wanted = {};
   for (const n of wantedNames) wanted[n] = true;
   const toAlias = [];
@@ -280,8 +319,16 @@ function libraryReconcile(existingNames, wantedNames, aliasMap) {
   for (const name of existingNames.slice().sort()) {
     if (wanted[name]) continue;
     const mapped = aliasMap && Object.prototype.hasOwnProperty.call(aliasMap, name) ? aliasMap[name] : undefined;
-    if (mapped && wanted[mapped]) toAlias.push({ from: name, to: mapped });
-    else if (name.indexOf("_deprecated/") !== 0) toDeprecate.push({ from: name, to: "_deprecated/" + name });
+    const mappedTarget = mapped && wanted[mapped] ? mapped : undefined;
+    const liveTarget = liveAliasTargets && Object.prototype.hasOwnProperty.call(liveAliasTargets, name) ? liveAliasTargets[name] : undefined;
+    const liveTargetWanted = liveTarget && wanted[liveTarget] ? liveTarget : undefined;
+    const target = mappedTarget || liveTargetWanted;
+    if (target) {
+      if (liveTarget !== target) toAlias.push({ from: name, to: target });
+      // else: already correctly aliased to `target`, live — idempotent no-op, omit entirely.
+    } else if (name.indexOf("_deprecated/") !== 0) {
+      toDeprecate.push({ from: name, to: "_deprecated/" + name });
+    }
   }
   return { toAlias: toAlias, toDeprecate: toDeprecate };
 }
@@ -311,7 +358,7 @@ function readLiveValuesByName(byName, modeId) {
   return out;
 }
 
-function libraryModeReportVM(plan, liveVarsByName, aliasMap) {
+function libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets) {
   const live = liveVarsByName || {};
   const wantedNames = plan.variables.map((v) => v.name);
   const renamesMap = plan.renames || {};
@@ -336,7 +383,7 @@ function libraryModeReportVM(plan, liveVarsByName, aliasMap) {
     if (!(v.name in effective)) { adds.push(v.name); continue; }
     if (valueChangedVM(effective[v.name], v)) valueUpdates.push(v.name);
   }
-  const rec = libraryReconcile(Object.keys(effective), wantedNames, aliasMap || {});
+  const rec = libraryReconcile(Object.keys(effective), wantedNames, aliasMap || {}, liveAliasTargets);
   return { renames: renamed, adds: adds.sort(), valueUpdates: valueUpdates.sort(), aliases: rec.toAlias, deprecates: rec.toDeprecate };
 }
 

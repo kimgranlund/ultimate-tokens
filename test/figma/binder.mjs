@@ -519,19 +519,23 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
       if (!val || val.type !== "VARIABLE_ALIAS" || val.id !== new2xlIcon.id) FAIL("librarygeom", "size/jumbo/icon did not alias to the nearest-by-height current step (2xl), got a different/no target");
     }
 
-    // IDEMPOTENT second run — same interactive answer, no doubled collection, no removals.
-    F.figma._libraryModeAnswer = true;
-    const injected2 = binderSrc.replace(FLOAT_ANCHOR, `JSON.parse(${JSON.stringify(JSON.stringify(plans2))}); /* injected */`);
-    const { main: main2 } = loadBinder(injected2, F.figma);
-    await main2();
+    // IDEMPOTENT second run, STRICT (#495 follow-up): a variable already correctly aliased from run 1
+    // needs NO further action on an unchanged re-apply — a published library must not rename/re-alias
+    // names on every apply. Called directly (libraryMode:true, pre-decided) rather than through main()'s
+    // interactive dialog — run 1 above already proves that wiring; this leg only needs the return value.
+    const { applyFloatPlans: apply2 } = loadBinder(binderSrc, F.figma);
+    const res2 = await apply2(plans2, { libraryMode: true });
     if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("librarygeom", "second (idempotent) run duplicated the Geometry collection");
-    // once a variable's value has been redirected to an ALIAS (run 1), its literal height is no longer
-    // readable, so a re-run can't re-derive nearest-by-height for it and it falls to DEPRECATE instead —
-    // still id-preserving, still 0 .remove() calls, just a different classification. Same tolerant
-    // by-name-OR-_deprecated/-prefix check as plugin.mjs's librarymode fixture (Font Primitives).
     const stillThere2 = oldVars.every((v) => F.variables.some((va) => va.variableCollectionId === geo.id && (va.name === v.name || va.name.indexOf("_deprecated/" + v.name) === 0)));
     if (!stillThere2) FAIL("librarygeom", "second run removed a size/* variable library mode should have preserved");
     if (F.variables.some((va) => va.variableCollectionId === geo.id && va.name.indexOf("_deprecated/_deprecated/") === 0)) FAIL("librarygeom", "second run double-prefixed an already-deprecated variable — not idempotent");
+    if (!res2 || !res2.libraryReports || !res2.libraryReports[0]) FAIL("librarygeom", "second run returned no libraryReports");
+    else {
+      const rpt2 = res2.libraryReports[0];
+      if (rpt2.aliases.length) FAIL("librarygeom", `second run should report 0 aliases (already correctly aliased = no-op), got ${JSON.stringify(rpt2.aliases)}`);
+      if (rpt2.deprecates.length) FAIL("librarygeom", `second run should report 0 deprecates (already resolved), got ${JSON.stringify(rpt2.deprecates)}`);
+      if (rpt2.renames.length) FAIL("librarygeom", `second run should report 0 renames, got ${JSON.stringify(rpt2.renames)}`);
+    }
   } catch (e) { FAIL("librarygeom", "the interactive box-geometry library-mode e2e threw: " + e.message); }
 }
 
