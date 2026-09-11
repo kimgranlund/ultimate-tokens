@@ -1,7 +1,7 @@
 ---
 doc-type: lld
 id: lld-muted-base-key-spikes
-status: draft           # draft | approved | superseded  (0.2.0 draft, tracks SPEC 0.2.0; 0.1.0 was approved)
+status: approved        # draft | approved | superseded  (0.2.0 approved 2026-09-11, tracks SPEC 0.2.0; supersedes 0.1.0)
 version: 0.2.0
 date: 2026-09-11
 owner: Kim Granlund
@@ -52,14 +52,16 @@ export function hueAnchorFrac(palette, controls);
 
 // prime.mjs (P2) — pure; imports effHue/hueAnchorFrac-free helpers from hct.js, okhsl.js, tonal.js
 export const PRIME_STEPS = ["brightest", "brighter", "bright", "prime", "dim", "dimmer", "dimmest"];
-export const PRIME_STEP = 0.09, PRIME_L_MIN = 0.14, PRIME_L_MAX = 0.94;   // R1
+export const PRIME_STEP = 0.09, PRIME_L_MIN = 0.14, PRIME_L_MAX = 0.94;   // R1 (ratified)
 export function primeSwatches(palette, controls)
   -> [{ step, l, s, hue, rgb: [r,g,b], hex, oklch: [L,C,H], inGamut: true }] // length 7, lightest first
 // Algorithm:
 //   baseHue = effHue(palette.hue, controls.hueSpace, (palette.chroma ?? 0) / 100)
 //   lPrime  = okhslLAt(peakC(baseHue).tone)              // the key colour's lightness (REQ-051)
 //   up = min(PRIME_STEP, (PRIME_L_MAX - lPrime) / 3); down = min(PRIME_STEP, (lPrime - PRIME_L_MIN) / 3)
-//   l[i] = i < 3 ? lPrime + up * (3 - i) : lPrime - down * (i - 3)
+//   g = 3 ** ((palette.skew ?? 0) / 100)                 // the ramp's toneAt gamma (REQ-053a, R5)
+//   t = (i - 3) / 3; w = i < 3 ? |t| ** (1 / g) : |t| ** g  // light side 1/g, dark side g; w(prime) = 0, w(ends) = 1
+//   l[i] = i < 3 ? lPrime + 3 * up * w : lPrime - 3 * down * w   // skew 0 ⇒ even ladder
 //   pc = (palette.primeChroma ?? controls.primeChroma ?? 100) / 100
 //   s  = clamp01((palette.chroma / 100) * pc)            // REQ-052, no damping
 //   hOk = controls.hueSpace === "oklch" ? solveOkhslHue(palette.hue, s, lPrime) : rgbToOkhsl(hctToRgb(baseHue, pk.c, pk.tone).rgb).h
@@ -115,7 +117,7 @@ key there. Their answer key is the `prime.mjs` verifier's independent re-derivat
 | # | Unit | Files | Size | Parity note |
 |---|---|---|---|---|
 | P1 | Retire the ramp spike: delete `identityStops`, `DEFAULT_IDENTITY_STOPS`, the fourth parameter, the `k` term; `intensityAt` returns `b`; callers in `model.mjs`/`exports.js` drop the set; `intensity-spike` group and `identity-stops` gate removed; new `intensity-uniform` group (AC-002/AC-004); `keyIntensity` stays in `DEFAULT_CONTROLS`/`DOMAINS` as an inert control until P3 so nothing else moves | `tonal.js`, `semantic.js`, `model.mjs`, `exports.js`, `test/engine/tonal.mjs`, `test/engine/semantic.mjs` | small | Output byte-identical at 100 (the retained fixture proves it); closes the visible patchy-ramp defect at any other intensity. `code.js` regenerates with no role-table diff |
-| P2 | Prime engine: `src/engine/prime.mjs` + `test/engine/prime.mjs` (AC-050 a..j, registered in `test/run.mjs`); `okhslLAt`/`solveOkhslHue` exported from `tonal.js`; reads `controls.primeChroma ?? controls.keyIntensity` during the P2..P3 window so the module works before the rename lands | `prime.mjs`, `tonal.js` (exports only), `test/engine/prime.mjs`, `test/run.mjs` | big | Pure addition, nothing consumes it yet |
+| P2 | Prime engine: `src/engine/prime.mjs` + `test/engine/prime.mjs` (AC-050 a..j incl. the (d2) skew-gamma monotonicity/edge/invariance gate, registered in `test/run.mjs`); `okhslLAt`/`solveOkhslHue` exported from `tonal.js`; reads `controls.primeChroma ?? controls.keyIntensity` during the P2..P3 window so the module works before the rename lands | `prime.mjs`, `tonal.js` (exports only), `test/engine/prime.mjs`, `test/run.mjs` | big | Pure addition, nothing consumes it yet |
 | P3 | Persist + model: schema v3 rename `keyIntensity` to `primeChroma`, `palette.primeChroma`, `DOMAINS`; `controlsOf`/`stateOf`; `projectView.palettes[i].prime`; `brandKit.prime`; `tokenCount` +7; the P2 fallback read removed | `persist.js`, `model.mjs`, `test/ui/persist.mjs`, `test/ui/shell.mjs` | small | `tokenCount` literal in `shell.mjs` and the footer readout move here (89 to 96); MCP tests that count kit keys are checked |
 | P4 | Emitters: CSS/OKLCH/JSON/DTCG/UI3/Tailwind prime group + `COLLECTIONS.colorPrime`; export gates (AC-051); the two sandbox literals + `collparity` | `exports.js`, `collections.js`, `figma/plugin/code.js` literal, `figma/binder/figma-semantic-binder/code.js` literal, `test/engine/exports.mjs`, `test/figma/binder.mjs` | big | `collparity` must see all three sites in the same PR; the binder does not bind prime tokens so `bindingPlan` is unchanged |
 | P5 | Figma apply: the plugin creates/updates `Color Prime` (provenance key, `Base` mode); plugin cascade gate extended (AC-052); `FIGMA_MIGRATIONS` entry not needed (new collection, no rename) | the app's Figma apply module, `figma/plugin/code.js`, `test/figma/plugin.mjs`, `scripts/gen-figma-ui.mjs` if it lists collections | small | `gen:figma-ui` and `bundle` rerun under `npm test` |
@@ -143,8 +145,9 @@ Sizes: P1 small · P2 big · P3 small · P4 big · P5 small · P6 small · P7 sm
    hue's cusp lightness, which is fine; at `chroma 0` `peakC` still returns a tone, `s = 0`, greys.
    Detection: AC-050 (c) includes `chroma 0`. Fallback: none.
 4. **Yellow compression (REQ-051, EX-5).** With `lPrime` near 0.9 the three light swatches sit
-   0.013 apart and may read as duplicates. Detection: human (R1). Fallback: lower `PRIME_L_MAX` bias
-   or a minimum step; both are one-constant changes gated by AC-050 (d).
+   0.013 apart and may read as duplicates, and a positive skew (Warning's `40`) pushes them closer
+   still. Detection: user report (R1 is ratified as is). Fallback: lower `PRIME_L_MAX` bias or a
+   minimum step; both are one-constant changes gated by AC-050 (d)/(d2).
 5. **Hue drift on the outer swatches (REQ-053).** `solveOkhslHue` anchors only `prime`; the ±0.27
    `l` excursions drift by the OKHSL/OKLCH Abney residual (~2° worst case, blues). Detection: AC-050
    (e) 2° budget. Fallback: solve per swatch (seven Newton loops, cheap).

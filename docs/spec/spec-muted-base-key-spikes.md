@@ -1,7 +1,7 @@
 ---
 doc-type: spec
 id: spec-muted-base-key-spikes
-status: draft           # draft | approved | superseded  (0.2.0 draft pending the R1..R5 ratifications below; 0.1.0 was approved)
+status: approved        # draft | approved | superseded  (0.2.0 approved 2026-09-11 with R1..R5 ratified; supersedes 0.1.0)
 version: 0.2.0
 date: 2026-09-11
 owner: Kim Granlund
@@ -78,7 +78,7 @@ ladder, their own chroma control, and their own token group; the editor strip re
 - **REQ-011** `CURRENT_SCHEMA_VERSION` becomes 3. Snapshots below 2 stamp `baseIntensity = 100`
   (unchanged from 0.1.0). Snapshots below 3 rename `keyIntensity` to `primeChroma` (value carried;
   the old key dropped; a snapshot already carrying `primeChroma` keeps it, the `RENAME_MAPS`
-  never-clobber rule). Answer to Open gap 5; the rename is ratification item R4.
+  never-clobber rule). Answer to Open gap 5; the rename is ratified 2026-09-11 (R4).
 - **REQ-012** Hydrating a pre-v2 snapshot never injects data palettes. Data palettes reach an
   existing document only through the explicit action in REQ-032.
 
@@ -137,25 +137,35 @@ ladder, their own chroma control, and their own token group; the editor strip re
   only `hct.js`, `okhsl.js`, and `tonal.js` helpers) returns seven entries
   `{ step, l, hex, rgb, oklch, inGamut }` in the fixed order brightest, brighter, bright, prime, dim,
   dimmer, dimmest, lightest first. Deterministic; no DOM.
-- **REQ-051** Ladder (default proposal, ratification item R1): lightness is OKHSL `l` (the same
+- **REQ-051** Ladder (ratified 2026-09-11, R1): lightness is OKHSL `l` (the same
   perceptually uniform axis the `perceptual` ramp path steps in). `l_prime` is the OKHSL lightness of
   the palette's key colour, `okhslLAt(peakC(effHue).tone)`, so `prime` sits where the hue is most
   chromatic (the same anchor `deriveKeyColor` uses for the gallery tile). Steps are EVEN in `l` with
   `PRIME_STEP = 0.09`, compressed at the edges so all seven stay inside `[PRIME_L_MIN, PRIME_L_MAX] =
   [0.14, 0.94]`: `up = min(PRIME_STEP, (PRIME_L_MAX - l_prime) / 3)`, `down = min(PRIME_STEP,
-  (l_prime - PRIME_L_MIN) / 3)`, `l_i = l_prime + up * (3 - i)` for `i = 0..2`, `l_prime - down *
-  (i - 3)` for `i = 4..6`. Yellow (cusp near white) therefore compresses upward and spreads downward;
-  blue does the reverse. Monotone strictly decreasing in `l` whenever `up, down > 0`.
+  (l_prime - PRIME_L_MIN) / 3)`. With the skew bend of REQ-053a, `l_i = l_prime + 3 * up * w_i`
+  for `i = 0..2` and `l_prime - 3 * down * w_i` for `i = 4..6`, where `w_i` is the bent offset weight
+  (`w_i = |t_i|` at `skew 0`, giving the even ladder `l_prime + up * (3 - i)` / `l_prime - down *
+  (i - 3)`). Yellow (cusp near white) therefore compresses upward and spreads downward; blue does the
+  reverse. Monotone strictly decreasing in `l` whenever `up, down > 0`, at every skew.
 - **REQ-052** Chroma: OKHSL saturation `s = clamp01(palette.chroma / 100 * pc)` where
   `pc = (palette.primeChroma ?? controls.primeChroma) / 100`, applied to all seven, no damping. In
   gamut by OKHSL construction; `inGamut` is always true and asserted.
 - **REQ-053** Hue: the palette's OKLCH hue, anchored with `solveOkhslHue` at the `prime` swatch's own
   `(s, l_prime)` so `prime` lands on the set OKLCH hue; `hueShift` applies with the ramp's rule
   (`dir = hueSameDir ? -|t| : t`, `t = (i - 3) / 3`, so `brightest` is `t = -1`, `dimmest` `t = +1`).
-  `skew`, `lift`, `damp*`, `vibrancy`, `cuspPull`, `toneMode` do NOT apply: they shape the ramp, and
-  the prime system is not the ramp (ratification item R5).
+  (Ratified 2026-09-11, R5.)
+- **REQ-053a** Skew (ratified 2026-09-11, R5): the palette's `skew` bends the ladder toward light or
+  dark the way it bends the ramp, as a gamma on ladder position, while `prime` and the two end
+  swatches stay put. With `g = 3 ** (skew / 100)` (the ramp's own gamma, `toneAt`) and
+  `t_i = (i - 3) / 3`: the light-side weight is `w_i = |t_i| ** (1 / g)` for `i < 3` and the dark-side
+  weight is `w_i = |t_i| ** g` for `i > 3`; `w_3 = 0`, `w_0 = w_6 = 1`. `skew > 0` (`g > 1`, lighter
+  mids on the ramp) pushes `brighter`/`bright` further from `prime` and pulls `dim`/`dimmer` toward it,
+  so every non-end swatch reads lighter; `skew < 0` does the reverse. `skew 0` is the even ladder.
+  `prime` is skew-invariant, so REQ-056 holds at every skew. `lift`, `damp*`, `vibrancy`, `cuspPull`,
+  `toneMode` do NOT apply: they shape the ramp, and the prime system is not the ramp.
 - **REQ-054** Tokens: a `prime` group per palette, primitives tier, mode-independent, one value per
-  step. Naming (ratification item R3): CSS `--{n}-prime-{step}` next to `--{n}-550`; DTCG, UI3, and
+  step. Naming (ratified 2026-09-11, R3): CSS `--{n}-prime-{step}` next to `--{n}-550`; DTCG, UI3, and
   JSON nest `{n}/prime/{step}` beside `{n}/scrim/*` and `{n}/key/*` (ADR-016 two-segment shape);
   Tailwind `--color-{n}-prime-{step}` in `@theme`; Figma: a new collection `COLLECTIONS.colorPrime =
   "Color Prime"` with the single mode `Base` and variables `{n}/{step}`; DS bundle: a `prime` block per
@@ -195,13 +205,20 @@ ladder, their own chroma control, and their own token group; the editor strip re
   EX-1. (Supersedes 0.1.0's EX-2/EX-3.)
 - **EX-3 (NORMATIVE, override).** As EX-2 but Warning carries `intensity 100`: Warning's ramp equals
   its EX-1 ramp; Primary is unchanged from EX-2.
-- **EX-4 (NORMATIVE, prime ladder).** Default Primary, `primeChroma 100`: `l_prime` is the OKHSL
+- **EX-4 (NORMATIVE, prime ladder).** Primary at `skew 0` (a probe; the default Primary carries
+  `skew -20`, see EX-4b), `primeChroma 100`: `l_prime` is the OKHSL
   lightness of the hue's cusp tone; `up = down = 0.09` (the cusp is far from both bounds), so the
   seven `l` values are `l_prime + 0.27, +0.18, +0.09, 0, -0.09, -0.18, -0.27`; `s = 0.95`;
   `prime.hex` equals `deriveKeyColor(primary).keyHex` within one 8-bit step per channel.
+- **EX-4b (NORMATIVE, skew bend).** As EX-4 with `skew -20`: `g = 3 ** -0.2 = 0.8027`; light-side
+  weights `|t| ** (1 / g)` for `t = 2/3, 1/3` are `0.6032, 0.2545`, dark-side weights `|t| ** g` are
+  `0.7223, 0.4140`; so `l = l_prime + 0.27, +0.1629, +0.0687, 0, -0.1118, -0.1950, -0.27`. Ends and
+  `prime` equal EX-4; every inner swatch is darker than in EX-4. With `skew +20` the weights swap
+  sides (`0.7223, 0.4140` light, `0.6032, 0.2545` dark) and every inner swatch is lighter.
 - **EX-5 (NORMATIVE, edge compression).** Default Warning (`hue 70, chroma 100`), cusp near white,
   say `l_prime = 0.90`: `up = min(0.09, 0.04 / 3) = 0.0133`, `down = 0.09`; `brightest = 0.94`,
-  `dimmest = 0.63`. All seven in `[0.14, 0.94]`, strictly decreasing.
+  `dimmest = 0.63` (at `skew 0`; the default Warning's `skew 40` bends the inner swatches lighter,
+  ends unchanged). All seven in `[0.14, 0.94]`, strictly decreasing.
 - **EX-6 (NORMATIVE, prime chroma).** As EX-4 with `primeChroma 50`: `s = 0.475` on all seven, `l`
   unchanged; the ramp is unchanged. With `palette.primeChroma 100` on Primary inside a document at
   `primeChroma 50`, Primary's prime system equals EX-4.
@@ -259,7 +276,12 @@ ladder, their own chroma control, and their own token group; the editor strip re
   (c) `inGamut` true for every entry at `primeChroma` in `{0, 50, 100}` and `chroma` in `{0, 50,
   100}`; (d) `up`/`down` re-derived independently in the test from `l_prime` equal the observed step
   sizes within 1e-9 (EX-5 on Warning binds the `up` compression, EX-4 on Primary binds the uncompressed
-  case); (e) measured OKLCH hue of `prime` equals the palette hue within 0.5° for every default
+  case); (d2) skew gamma (REQ-053a): for `skew` in `{-100, -60, -20, 0, 20, 60, 100}` on every default
+  palette, `l` is strictly decreasing and inside `[0.14, 0.94]`; `brightest`, `prime`, and `dimmest`
+  are skew-invariant within 1e-9; at `skew 0` the weights equal `|t|`; for `skew > 0` every inner
+  swatch's `l` is >= its `skew 0` value and for `skew < 0` <= (strict where `up`/`down > 0`); the
+  weights re-derived in the test from `3 ** (skew / 100)` match within 1e-9 (EX-4b binds the numbers);
+  (e) measured OKLCH hue of `prime` equals the palette hue within 0.5° for every default
   chromatic palette (chroma >= 20), and each other swatch within 2° when `hueShift 0`; (f) with
   `hueShift 20` the `brightest`/`dimmest` hues move by `-20`/`+20` within 2° and `prime` is invariant;
   (g) `s` scales linearly with `primeChroma` (ratio of measured OKHSL `s` at 50 vs 100 equals 0.5
@@ -287,8 +309,7 @@ ladder, their own chroma control, and their own token group; the editor strip re
   lettered group like `tonal.mjs`). The independent re-derivation in (d) and the measurement from
   emitted pixels in (e)/(g) are the anti-tautology controls.
 - AC-051..053: `node test/engine/exports.mjs`, `node test/figma/plugin.mjs`, `node test/mcp/brand-kit.mjs`.
-- Human exception: whether `PRIME_STEP = 0.09` reads as a pleasing seven-step ladder on the Safari
-  preview is R1; the numbers are the contract, the value is the choice.
+- No human exception remains: R1 is ratified, so `PRIME_STEP = 0.09` is a checked constant.
 
 ## Decisions on the issue's six Open gaps (as they stand after #533)
 
@@ -314,15 +335,12 @@ Ratified 2026-09-11 (H1..H4, team-lead relaying the owner):
   mode-independent: one set of seven swatches per palette, the same tokens in light and dark, like
   primitives. Roles stay the only mode-flipping layer.
 
-Open, proposed defaults marked in the text (0.2.0 stays `draft` until these are ruled; R2 is
-closed above):
+Ratified 2026-09-11 (R1, R3, R4, R5; team-lead relaying the owner). 0.2.0 is approved with these:
 - **R1** Ladder shape: OKHSL `l`, prime at the hue's cusp lightness, even `PRIME_STEP 0.09`,
-  edge-compressed into `[0.14, 0.94]` (REQ-051). Alternatives: OKLCH `L` instead of OKHSL `l`; a
-  fixed prime lightness instead of the cusp.
-- **R3** Naming: `prime` group, `--{n}-prime-{step}`, `{n}/prime/{step}`, Figma collection
-  `Color Prime` with `{n}/{step}` (REQ-054). Alternative: nest inside `Color Primitives` as
-  `{n}/prime/{step}` with no new collection.
-- **R4** Rename `keyIntensity` to `primeChroma` with a schema-v3 rename (REQ-011). Alternative: keep
-  the `keyIntensity` key and only relabel the UI.
-- **R5** `hueShift` applies to the prime ladder; `skew`, `lift`, damping, vibrancy, cusp pull do not
-  (REQ-053). Alternative: apply `skew` as a gamma on the ladder position.
+  edge-compressed into `[0.14, 0.94]` (REQ-051).
+- **R3** Naming: `prime` group, `--{n}-prime-{step}`, `{n}/prime/{step}`, new Figma collection
+  `Color Prime` with `{n}/{step}` (REQ-054).
+- **R4** Rename `keyIntensity` to `primeChroma` with a schema-v3 rename (REQ-011).
+- **R5** (changed from the proposed default) `hueShift` applies AND `skew` applies as a gamma on
+  ladder position with `prime` and the ends fixed (REQ-053, REQ-053a); `lift`, damping, vibrancy,
+  cusp pull do not apply.
