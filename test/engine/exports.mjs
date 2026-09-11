@@ -9,7 +9,7 @@ import * as Xcolor from "../../src/engine/exports.js";
 import * as Xds from "../../src/engine/ds-export.js";
 const X = { ...Xcolor, ...Xds };
 import { dsBundleGates } from "../../src/engine/ds-gates.js";
-import { typeScale } from "../../src/engine/type.mjs";
+import { typeScale, DEFAULT_TYPE } from "../../src/engine/type.mjs";
 import { geomScale, LADDER_MD_STEP, sizeAnchor } from "../../src/engine/geometry.mjs";
 import { PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { paletteGroup, brandKit, defaultDocument, stateOf } from "../../src/ui/model.mjs"; // paletteGroup is the SINGLE
@@ -434,6 +434,45 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   let parsed = null;
   try { parsed = JSON.parse(body); } catch (e) { FAIL("panda", `module body not valid JSON: ${e.message}`); }
   if (parsed && JSON.stringify(parsed) !== JSON.stringify(preset)) FAIL("panda", "module JSON does not deep-equal exportPanda(state)");
+
+  // AC-002 (REQ-007/008, K2 of #587): without opts.type/opts.geometry, the type/geometry blocks
+  // are absent and the colour output is byte-identical to the with-opts colour output.
+  if (preset.theme.extend.tokens.fonts) FAIL("panda", "tokens.fonts present without opts.type");
+  if (preset.theme.extend.textStyles) FAIL("panda", "textStyles present without opts.type");
+  if (preset.theme.extend.tokens.radii) FAIL("panda", "tokens.radii present without opts.geometry");
+  if (preset.theme.extend.tokens.spacing) FAIL("panda", "tokens.spacing present without opts.geometry");
+  if (preset.theme.extend.tokens.borderWidths) FAIL("panda", "tokens.borderWidths present without opts.geometry");
+
+  const typeScl = typeScale(DEFAULT_TYPE);
+  const geomScl = geomScale({});
+  const withOpts = X.exportPanda(ddState, { type: typeScl, geometry: geomScl });
+  if (JSON.stringify(withOpts.theme.extend.tokens.colors) !== JSON.stringify(ddRaw)) FAIL("panda", "EX-3 colour output changed by opts.type/opts.geometry");
+  if (JSON.stringify(withOpts.theme.extend.semanticTokens) !== JSON.stringify(ddPreset.theme.extend.semanticTokens)) FAIL("panda", "EX-3 semanticTokens changed by opts.type/opts.geometry");
+
+  // EX-3 (NORMATIVE, panda type + geometry).
+  const wf = withOpts.theme.extend.tokens.fonts;
+  if (!wf || wf.body.value !== "'Inter', sans-serif") FAIL("panda", `EX-3 tokens.fonts.body = ${wf && wf.body.value}`);
+  if (!wf || wf.display.value !== "'Inter Tight', sans-serif") FAIL("panda", `EX-3 tokens.fonts.display = ${wf && wf.display.value}`);
+  const bodyMd = withOpts.theme.extend.textStyles.body.md.value;
+  const expectBodyMd = { fontFamily: "{fonts.body}", fontSize: "16px", lineHeight: "24px", letterSpacing: "0px", fontWeight: 440, textTransform: "none" };
+  if (JSON.stringify(bodyMd) !== JSON.stringify(expectBodyMd)) FAIL("panda", `EX-3 textStyles.body.md = ${JSON.stringify(bodyMd)}`);
+  if (JSON.stringify(withOpts.theme.extend.textStyles.body.DEFAULT.value) !== JSON.stringify(expectBodyMd)) FAIL("panda", "EX-3 textStyles.body.DEFAULT != .md");
+  const wr = withOpts.theme.extend.tokens.radii;
+  if (!wr || wr.md.value !== "12px") FAIL("panda", `EX-3 tokens.radii.md = ${wr && wr.md.value}`);
+  if (!wr || wr.full.value !== "9999px") FAIL("panda", `EX-3 tokens.radii.full = ${wr && wr.full.value}`);
+  const wsp = withOpts.theme.extend.tokens.spacing;
+  if (!wsp || wsp["4"].value !== "16px") FAIL("panda", `EX-3 tokens.spacing.4 = ${wsp && wsp["4"].value}`);
+  const wbw = withOpts.theme.extend.tokens.borderWidths;
+  if (!wbw || wbw.thin.value !== "1px") FAIL("panda", `EX-3 tokens.borderWidths.thin = ${wbw && wbw.thin.value}`);
+  // every voice's textStyle carries sm/md/lg + DEFAULT, fontFamily referencing its resolved role.
+  const VOICE_COUNT = Object.keys(typeScl.categories).length;
+  if (VOICE_COUNT !== 15) FAIL("panda", `expected 15 type voices, got ${VOICE_COUNT}`);
+  for (const [voice, roleOf] of Object.entries(typeScl.roleOf)) {
+    const key = voice.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const st = withOpts.theme.extend.textStyles[key];
+    if (!st || !st.sm || !st.md || !st.lg || !st.DEFAULT) FAIL("panda", `textStyles.${key} missing sm/md/lg/DEFAULT`);
+    if (st && st.md.value.fontFamily !== `{fonts.${roleOf}}`) FAIL("panda", `textStyles.${key}.md.fontFamily = ${st.md.value.fontFamily}, want {fonts.${roleOf}}`);
+  }
 }
 
 // ── hpg-export-data-palette (#516 — isDataPalette, shadcn chart-1..5 binding, fallback exclusion) ──
