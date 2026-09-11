@@ -9,6 +9,7 @@ const X = { ...Xcolor, ...Xds };
 import { dsBundleGates } from "../../src/engine/ds-gates.js";
 import { typeScale } from "../../src/engine/type.mjs";
 import { geomScale, LADDER_MD_STEP, sizeAnchor } from "../../src/engine/geometry.mjs";
+import { PRIME_STEPS } from "../../src/engine/prime.mjs";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const C = (palettes) => ({ palettes, curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, hueSpace: "cam16", theme: "auto" });
@@ -381,6 +382,94 @@ if (!primVars[`raw/${slug0}/key/dominant`] || primVars[`raw/${slug0}/key/dominan
 if (!primVars[`raw/${slug0}/key/supportive`]) FAIL("keycolors-ui3", "UI3 raw/{n}/key/supportive missing");
 const noKeyUi3 = X.exportUI3(C(ALL)).collections["Color Primitives"].variables;
 if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("keycolors-ui3", "UI3 key/ variables present when no keyColors set");
+
+// ── hpg-export-prime (#539/P4, REQ-054, AC-051 — the seven-swatch prime group, engine-emitter half) ──
+// Naming per REQ-054: CSS/OKLCH "--{pfx}-{n}-prime-{step}"; JSON palette.prime[step] = {hex, oklch};
+// Tailwind "--color-{n}-prime-{step}". exportShadcn has no slot (non-goal) — proven as a negative
+// control below rather than assumed. UI3/DTCG naming has its own gates further down.
+const primeCss = X.exportCSS(C(ALL));
+const primeOklch = X.exportOKLCH(C(ALL));
+for (const step of PRIME_STEPS) {
+  if (!new RegExp(`--c-${slug0}-prime-${step}:\\s*#[0-9A-F]{6};`).test(primeCss)) FAIL("prime", `CSS missing --c-${slug0}-prime-${step} (hex)`);
+  if (!new RegExp(`--c-${slug0}-prime-${step}:\\s*oklch\\(`).test(primeOklch)) FAIL("prime", `OKLCH missing --c-${slug0}-prime-${step}`);
+}
+// count: every format except shadcn emits 7 * enabledCount prime leaves (AC-051).
+const primeCssCount = (css) => (css.match(/--c-[a-z0-9-]+-prime-[a-z]+:/g) || []).length;
+const wantPrime = 7 * enabledCount(C(ALL));
+if (primeCssCount(primeCss) !== wantPrime) FAIL("prime", `CSS prime leaf count ${primeCssCount(primeCss)} != ${wantPrime}`);
+if (primeCssCount(primeOklch) !== wantPrime) FAIL("prime", `OKLCH prime leaf count ${primeCssCount(primeOklch)} != ${wantPrime}`);
+
+const primeJsonP0 = X.exportJSON(C(ALL))[slug0];
+if (!primeJsonP0.prime || PRIME_STEPS.some((s) => !primeJsonP0.prime[s])) FAIL("prime", "JSON palette.prime missing a step");
+else {
+  for (const step of PRIME_STEPS) {
+    const leaf = primeJsonP0.prime[step];
+    if (!/^#[0-9A-F]{6}$/.test(leaf.hex || "")) FAIL("prime", `JSON prime.${step}.hex malformed: ${leaf.hex}`);
+    if (!/^oklch\(/.test(leaf.oklch || "")) FAIL("prime", `JSON prime.${step}.oklch malformed: ${leaf.oklch}`);
+  }
+}
+const primeJsonCount = Object.values(X.exportJSON(C(ALL))).filter((p) => p && p.prime).reduce((n, p) => n + Object.keys(p.prime).length, 0);
+if (primeJsonCount !== wantPrime) FAIL("prime", `JSON prime leaf count ${primeJsonCount} != ${wantPrime}`);
+
+const primeTw = X.exportTailwind(C(ALL));
+for (const step of PRIME_STEPS) {
+  if (!new RegExp(`--color-${slug0}-prime-${step}:\\s*oklch\\(`).test(primeTw)) FAIL("prime", `Tailwind missing --color-${slug0}-prime-${step}`);
+}
+const primeTwCount = (tw) => (tw.match(/--color-[a-z0-9-]+-prime-[a-z]+:/g) || []).length;
+if (primeTwCount(primeTw) !== wantPrime) FAIL("prime", `Tailwind prime leaf count ${primeTwCount(primeTw)} != ${wantPrime}`);
+
+// disabled palette: zero prime leaves anywhere for the disabled slug, and total counts drop by 7.
+const primeOff = C(ALL.map((p, i) => (i === 1 ? { ...p, on: false } : p)));
+if (X.exportCSS(primeOff).includes(`--c-${offName}-prime-`)) FAIL("prime", `disabled palette '${offName}' still emits CSS prime tokens`);
+if (X.exportTailwind(primeOff).includes(`--color-${offName}-prime-`)) FAIL("prime", `disabled palette '${offName}' still emits Tailwind prime tokens`);
+const offJson = X.exportJSON(primeOff);
+if (offJson[offName]) FAIL("prime", `disabled palette '${offName}' still present in JSON export`);
+const wantPrimeOff = 7 * enabledCount(primeOff);
+if (primeCssCount(X.exportCSS(primeOff)) !== wantPrimeOff) FAIL("prime", "disabling a palette did not drop the CSS prime count by exactly 7");
+
+// negative control: exportShadcn has NO prime slot (non-goal) — its output is unaffected by
+// primeChroma, byte-identical whether the control is 100 or 50 on every palette.
+const shadcnBase = X.exportShadcn(C(ALL));
+const shadcnPrimeChroma50 = X.exportShadcn({ ...C(ALL), primeChroma: 50 });
+if (shadcnBase !== shadcnPrimeChroma50) FAIL("prime", "exportShadcn output changed with primeChroma — it must have no prime slot (non-goal)");
+if (shadcnBase.includes("prime")) FAIL("prime", "exportShadcn output unexpectedly mentions 'prime'");
+
+// ── hpg-export-prime-dtcg (REQ-054 — raw tree nests prime beside scrim/key, same depth) ──────────
+const primeDtcgTree = X.exportDTCG(C(ALL))["palette.tokens.json"][slug0];
+if (!primeDtcgTree.prime || PRIME_STEPS.some((s) => !primeDtcgTree.prime[s])) FAIL("prime-dtcg", "DTCG raw tree missing prime/ group or a step");
+else {
+  for (const step of PRIME_STEPS) {
+    const leaf = primeDtcgTree.prime[step];
+    if (!leaf || leaf.$type !== "color" || !leaf.$value || leaf.$value.colorSpace !== "srgb" || leaf.$value.alpha !== 1) FAIL("prime-dtcg", `prime/${step} not a well-formed, opaque (frac=1) color leaf`);
+  }
+}
+// nesting depth: prime/{step} sits exactly as deep as scrim/{step} — both ONE segment under the
+// palette group (grp.scrim.{step} / grp.prime.{step}), never a numeral-compound or a deeper path.
+const scrimDepthKeys = Object.keys(primeDtcgTree.scrim);
+const primeDepthKeys = Object.keys(primeDtcgTree.prime);
+if (typeof primeDtcgTree.scrim !== "object" || typeof primeDtcgTree.prime !== "object" || !scrimDepthKeys.length || !primeDepthKeys.length) FAIL("prime-dtcg", "scrim/prime groups are not both one-level nested objects");
+// a disabled palette is wholly absent from the raw tree (derivedAll's own filter) — no prime/ leaks.
+const primeDtcgOff = X.exportDTCG(primeOff)["palette.tokens.json"];
+if (offName in primeDtcgOff) FAIL("prime-dtcg", `disabled palette '${offName}' still present in DTCG raw tree`);
+const primeDtcgRaw = X.exportDTCG(C(ALL))["palette.tokens.json"];
+const primeDtcgLeafCount = Object.keys(primeDtcgRaw).filter((k) => k !== "constants" && k !== "$extensions").reduce((n, k) => n + Object.keys(primeDtcgRaw[k].prime).length, 0);
+if (primeDtcgLeafCount !== wantPrime) FAIL("prime-dtcg", `DTCG prime leaf count ${primeDtcgLeafCount} != ${wantPrime}`);
+
+// ── hpg-export-prime-ui3 (REQ-054 — raw/{n}/prime/{step}, mirrors the key/ nesting used above) ────
+// NOTE (#539 sub-unit split): the LLD's dedicated top-level "Color Prime" collection
+// (COLLECTIONS.colorPrime, "{n}/{step}") needs collections.js + the two Figma sandbox literals to
+// move together for the `collparity` gate — deferred to #539's sub-unit B, stacked on this branch.
+// This gate covers only what this PR emits: prime nested under the EXISTING Color Primitives
+// collection, same tier as scrim/key.
+const primeUi3Vars = X.exportUI3(C(ALL)).collections["Color Primitives"].variables;
+for (const step of PRIME_STEPS) {
+  const v = primeUi3Vars[`raw/${slug0}/prime/${step}`];
+  if (!v || v.type !== "COLOR" || !/^#[0-9A-F]{6}$/.test(v.values.Base || "")) FAIL("prime-ui3", `UI3 raw/${slug0}/prime/${step} missing or malformed`);
+}
+const primeUi3Count = Object.keys(primeUi3Vars).filter((k) => /\/prime\//.test(k)).length;
+if (primeUi3Count !== wantPrime) FAIL("prime-ui3", `UI3 prime leaf count ${primeUi3Count} != ${wantPrime}`);
+const primeUi3Off = X.exportUI3(primeOff).collections["Color Primitives"].variables;
+if (Object.keys(primeUi3Off).some((k) => k.startsWith(`raw/${offName}/prime/`))) FAIL("prime-ui3", `disabled palette '${offName}' still emits UI3 prime variables`);
 
 // ── hpg-export-design-system (the LLM design-system bundle: DESIGN.md universal-dialect core + tokens.json
 // + @dsCard previews + README receipt). The engine gate runs the ported §8 verifier (ds-gates.js) on the
@@ -1114,7 +1203,7 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
 
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "keycolors", "keycolors-dtcg", "keycolors-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
