@@ -1,0 +1,95 @@
+{
+  "purpose": "Compatibility projection from Adia tonal primitives to Radix/Park UI 1\u201312 roles",
+  "source_of_truth": "Adia 050\u2013950 + prime-* + scrim-* token families",
+  "projection": {
+    "1": {
+      "role": "app-background",
+      "light": "100",
+      "dark": "900"
+    },
+    "2": {
+      "role": "subtle-background",
+      "light": "125",
+      "dark": "875"
+    },
+    "3": {
+      "role": "component-background",
+      "light": "150",
+      "dark": "850"
+    },
+    "4": {
+      "role": "component-hover",
+      "light": "175",
+      "dark": "825"
+    },
+    "5": {
+      "role": "component-active",
+      "light": "200",
+      "dark": "800"
+    },
+    "6": {
+      "role": "subtle-border",
+      "light": "250",
+      "dark": "750"
+    },
+    "7": {
+      "role": "interactive-border",
+      "light": "300",
+      "dark": "700"
+    },
+    "8": {
+      "role": "strong-border-focus",
+      "light": "350",
+      "dark": "650"
+    },
+    "9": {
+      "role": "solid-accent",
+      "light": "550",
+      "dark": "450"
+    },
+    "10": {
+      "role": "solid-accent-hover",
+      "light": "650",
+      "dark": "350"
+    },
+    "11": {
+      "role": "secondary-text",
+      "light": "750",
+      "dark": "250"
+    },
+    "12": {
+      "role": "primary-text",
+      "light": "950",
+      "dark": "050"
+    }
+  },
+  "preserve_separately": [
+    "prime-*",
+    "scrim-*"
+  ],
+  "families": [
+    "neutral",
+    "primary",
+    "secondary",
+    "tertiary",
+    "info",
+    "success",
+    "warning",
+    "danger",
+    "data-1",
+    "data-2",
+    "data-3",
+    "data-4",
+    "data-5",
+    "data-6",
+    "data-7",
+    "data-8"
+  ],
+  "validation": [
+    "contrast for steps 9/10 with intended foreground",
+    "state differentiation for 3\u21924\u21925",
+    "border salience for 6\u21927\u21928",
+    "foreground hierarchy for 11\u219212",
+    "light/dark perceptual consistency"
+  ]
+}
