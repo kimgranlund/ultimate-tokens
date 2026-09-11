@@ -33,6 +33,7 @@ import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, 
 import { COLLECTIONS } from "./collections.js";
 import { primeSwatches, PRIME_STEPS } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
+import { rampChromaOf, primeChromaOf } from "./resolve.mjs";
 
 // WCAG relative luminance of an [r,g,b] (0..255) triple — for the opt-in contrast on-color pick.
 // Exported: ds-export.js's dsContrast also needs it (kept as one source, not a duplicate).
@@ -231,15 +232,14 @@ function derivePalette(palette, controls, overrides) {
   // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp — reused below
   // for the on-color-contrast step so it's derived once per palette.
   const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
-  // rampChroma/primeChromaResolved (SPEC 0.3.0 REQ-002/004/008, Risk 0b): this file's OWN mirror of
-  // model.mjs's resolvePaletteGroups-based resolution, so the CSS/JSON/DTCG/… exports and the canvas
-  // agree byte for byte. `palette.group` arrives ALREADY resolved (a definite one of the four ids,
-  // never absent) — model.mjs's stateOf() stamps it before this file ever sees the palette, so no
-  // by-name default rule is duplicated here, only this two-line formula (mirrors controlsOf() above,
-  // same established pattern). tonal.js/prime.mjs stay fully unaware any of this exists.
-  const g = controls.paletteGroups[palette.group] || {};
-  const rampChroma = g.baseChroma ?? controls.baseChroma;
-  const primeChromaResolved = (g.locked ? undefined : palette.primeChroma) ?? g.primeChroma ?? controls.primeChroma;
+  // rampChroma/primeChromaResolved (SPEC 0.3.0 REQ-002/004/008, Risk 0b: "one shared resolver
+  // imported by both, never two copies") — engine/resolve.mjs's OWN pure functions, the SAME ones
+  // model.mjs's projectView calls, so the CSS/JSON/DTCG/… exports and the canvas agree byte for
+  // byte by construction, not by two hand-kept-in-sync formulas. `palette.group` arrives ALREADY
+  // resolved (a definite one of the four ids, never absent) — model.mjs's stateOf() stamps it
+  // before this file ever sees the palette, so no by-name default rule is duplicated here either.
+  const rampChroma = rampChromaOf(palette, controls.paletteGroups, controls);
+  const primeChromaResolved = primeChromaOf(palette, controls.paletteGroups, controls);
   const stopList = paletteStops(
     { hue: palette.hue, chroma: rampChroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull },
     ctl,

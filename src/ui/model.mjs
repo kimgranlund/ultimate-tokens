@@ -36,6 +36,7 @@ import {
 } from "../engine/tonal.js";
 import { deriveDataHues } from "../engine/data-hues.mjs";
 import { primeSwatches, PRIME_STEPS } from "../engine/prime.mjs";
+import { rampChromaOf as rampChromaOfPure, primeChromaOf as primeChromaOfPure } from "../engine/resolve.mjs";
 import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef } from "../engine/semantic.js";
 import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
 import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
@@ -374,7 +375,7 @@ export { GROUP_DEFAULTS };
 // resolvePaletteGroups(doc) — the doc's `paletteGroups` facet, default-filled per group from
 // GROUP_DEFAULTS: an explicit, in-domain per-group number wins; anything absent (the whole facet,
 // one group, or one field) falls back to that group's own default. Defensive — every caller here
-// (projectView, the Global tab's four rows, exports.js's own mirrored resolver via stateOf) can
+// (projectView, the Global tab's four rows, exports.js's derivePalette via stateOf) can
 // trust the result always has all four groups fully populated, whether `doc` came through
 // persist.hydrate()/defaultDocument() (which already fill it) or was hand-built (a test fixture).
 export function resolvePaletteGroups(doc) {
@@ -392,24 +393,19 @@ export function resolvePaletteGroups(doc) {
   return out;
 }
 
-// rampChromaOf(p, doc) — REQ-002: the ABSOLUTE chroma target paletteStops shapes and damps for
-// palette `p`. There is NO per-palette override in any group any more — `palette.intensity` is
-// retired entirely (a stored value, if a document somehow still carries one, is simply ignored).
+// rampChromaOf(p, doc) / primeChromaOf(p, doc) — the doc-shaped convenience wrappers every UI call
+// site (sections/color.js, the test suite) uses. Both defer their ACTUAL arithmetic entirely to
+// engine/resolve.mjs's pure rampChromaOf/primeChromaOf (Risk 0b: "one shared resolver imported by
+// both [projectView and exports.js's derivePalette], never two copies") — this file's job is only
+// to resolve `doc` down to the three plain values that pure module needs: the palette with its
+// group made definite, the default-filled paletteGroups map, and the two global-fallback controls.
 export function rampChromaOf(p, doc) {
-  const groups = resolvePaletteGroups(doc);
-  const g = groups[paletteGroup(p)];
-  return g.baseChroma ?? controlsOf(doc).baseIntensity;
+  const c = controlsOf(doc);
+  return rampChromaOfPure({ ...p, group: paletteGroup(p) }, resolvePaletteGroups(doc), { baseChroma: c.baseIntensity, primeChroma: c.primeChroma });
 }
-
-// primeChromaOf(p, doc) — REQ-008: palette.primeChroma ?? group.primeChroma ?? controls.primeChroma,
-// with the SAME "locked group ignores the per-palette override" shape #556/#559 already shipped for
-// Data — it stays in storage, just unused while grouped as Data, and becomes live again the moment
-// the palette moves to another group (the short-circuit simply stops applying).
 export function primeChromaOf(p, doc) {
-  const groups = resolvePaletteGroups(doc);
-  const g = groups[paletteGroup(p)];
-  if (g.locked) return g.primeChroma;
-  return p.primeChroma ?? g.primeChroma ?? controlsOf(doc).primeChroma;
+  const c = controlsOf(doc);
+  return primeChromaOfPure({ ...p, group: paletteGroup(p) }, resolvePaletteGroups(doc), { baseChroma: c.baseIntensity, primeChroma: c.primeChroma });
 }
 
 // camHueToOklch — convert a CAM16 hue to its OKLCH-hue EQUIVALENT by sampling the hue's vivid
@@ -561,15 +557,16 @@ export function resolvedPalettes(doc) {
 // stateOf — the exporter-shaped State slice of a document (palettes + resolved
 // controls). The one place the State shape is assembled; projectView, the exporters,
 // and figmaBundle all go through it so a new control is added in exactly one place.
-function stateOf(doc) {
+export function stateOf(doc) {
   const c = controlsOf(doc);
   return {
     // SPEC 0.3.0: each palette's `group` is resolved to a definite id here (resolvedPalettes) so
-    // exports.js's OWN mirrored resolver (derivePalette) never re-derives the by-name default rule;
-    // `paletteGroups` (below) carries the four groups' own baseChroma/primeChroma/locked. Neither
-    // `chroma` nor `primeChroma` is touched on the palette itself — derivePalette computes the
-    // ramp's absolute chroma target AND the prime system's resolved primeChroma itself, the same way
-    // projectView does, so the two can never resolve a palette's group differently (Risk 0b).
+    // exports.js's derivePalette never re-derives the by-name default rule; `paletteGroups` (below)
+    // carries the four groups' own baseChroma/primeChroma/locked. Neither `chroma` nor `primeChroma`
+    // is touched on the palette itself — derivePalette resolves the ramp's absolute chroma target
+    // AND the prime system's resolved primeChroma through engine/resolve.mjs's rampChromaOf/
+    // primeChromaOf, the SAME pure functions projectView calls (via this file's own doc-shaped
+    // wrappers below), so the two paths can never resolve a palette's group differently (Risk 0b).
     palettes: resolvedPalettes(doc),
     paletteGroups: resolvePaletteGroups(doc),
     roleOverrides: doc.roleOverrides ?? {}, // threaded to the exporters so re-points reach the output

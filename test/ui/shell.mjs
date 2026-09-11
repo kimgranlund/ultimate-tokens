@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import * as M from "../../src/ui/model.mjs";
 import { paletteStops, STOPS, EXPORT_STOPS } from "../../src/engine/tonal.js";
+import { derivedAll } from "../../src/engine/exports.js";
 import { PRESETS as NATURE_PRESETS } from "../../src/ui/categories/nature.js";
 import { DEFAULT_PALETTES } from "./counts.mjs";
 
@@ -241,8 +242,30 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
   if (Math.abs(neutralS - keyS * 0.6) > 1e-9) FAIL("ac008", `Neutral's prime saturation ${neutralS} must equal key.s*0.6 = ${keyS * 0.6} (Material's default primeChroma 60)`);
 }
 
+// (resolver-agree, conductor ruling 2026-09-11 on PR #566) The two ramp paths cannot drift apart:
+// projectView (src/ui/model.mjs) and derivePalette (src/engine/exports.js, via the exported
+// derivedAll) must both import the SAME engine/resolve.mjs rampChromaOf/primeChromaOf — this proves
+// it, over all 16 default palettes, at every one of the 25 EXPORT_STOPS, rather than trusting the
+// two call sites stay hand-in-sync.
+{
+  const dd = M.defaultDocument();
+  const dv = M.projectView(dd);
+  const derived = derivedAll(M.stateOf(dd));
+  if (derived.length !== dv.palettes.length) FAIL("resolver-agree", `derivedAll returned ${derived.length} palettes, projectView returned ${dv.palettes.length}`);
+  for (let i = 0; i < dv.palettes.length; i++) {
+    const viewP = dv.palettes[i];
+    const dp = derived.find((d) => d.name === viewP.name);
+    if (!dp) { FAIL("resolver-agree", `derivedAll has no entry for "${viewP.name}"`); continue; }
+    for (const s of viewP.fullRamp) {
+      const pad = String(s.stop).padStart(3, "0");
+      const got = dp.stops[pad] && dp.stops[pad].hex;
+      if (got !== s.hex) { FAIL("resolver-agree", `"${viewP.name}" stop ${s.stop}: projectView ${s.hex} != derivedAll ${got} — the two ramp paths resolved a different chroma`); break; }
+    }
+  }
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["model", "exports", "shell", "oklch-native", "ac002", "ac003b", "ac007", "ac008"]) {
+for (const g of ["model", "exports", "shell", "oklch-native", "ac002", "ac003b", "ac007", "ac008", "resolver-agree"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
