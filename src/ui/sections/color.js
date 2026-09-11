@@ -1,4 +1,4 @@
-import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, resolveGroups, seedFromKeyColor, slug } from "../model.mjs";
+import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
@@ -1677,12 +1677,10 @@ export class ColorSectionImpl {
     // skew + lift shape the CIELAB tone curve (toneAt) — they have NO effect in the OKHSL distribution
     // modes (perceptual/peak step lightness directly), so hide them there, matching the Global controls.
     const isEven = this.doc.toneMode === "even";
-    // ticket #559: this palette's resolved group + its baseIntensity/primeChroma defaults. A LOCKED
-    // group (Data) has no per-palette override at all — the Intensity/Prime chroma sliders below are
-    // hidden entirely for it (any stored p.intensity/p.primeChroma stays in the doc, just ignored
-    // while grouped as Data, per resolveGroupedIntensity/resolveGroupedPrimeChroma).
-    const groups = resolveGroups(this.doc);
-    const pGroup = groups[paletteGroup(p)];
+    // SPEC 0.3.0 (#556/#559 re-ruling): this palette's resolved group. A LOCKED group (Data) has no
+    // per-palette Prime chroma override at all — that slider is hidden entirely for it (any stored
+    // p.primeChroma stays in the doc, just ignored while grouped as Data, per primeChromaOf).
+    const pGroup = resolvePaletteGroups(this.doc)[paletteGroup(p)];
 
     return h(
       "div",
@@ -1740,17 +1738,13 @@ export class ColorSectionImpl {
         { labelTitle: "Which canvas group this palette is organized under — Material, Brand, System, or Data." },
       ),
       this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => (d.palettes[i].hue = v))),
+      // Chroma (SPEC 0.3.0 REQ-002/032) — feeds the KEY COLOUR and the prime system only now (the
+      // gallery tile, deriveKeyColor, and the seven prime swatches); the ramp no longer reads it at
+      // all — a palette's group supplies the ramp's own absolute chroma target instead (the four
+      // per-group rows on the Global tab). No "Intensity" slider exists any more, in any group.
       this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => (d.palettes[i].chroma = v))),
       isEven ? this.slider("Skew", p.skew, -100, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].skew = v))) : false,
       isEven ? this.slider("Lift", p.lift, -40, 40, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].lift = v))) : false,
-      // Intensity (SPEC spec-muted-base-key-spikes REQ-032) — this palette's override of its GROUP's
-      // baseIntensity default (ticket #559; the group sits between this override and the global Base
-      // chroma slider). Applies on BOTH ramp paths (REQ-002), unlike Cusp pull, so it stays visible in
-      // every toneMode. HIDDEN entirely for a locked (Data) group — that group has no per-palette
-      // override at all (its own stored intensity, if any, stays in the doc but is ignored).
-      pGroup.locked
-        ? false
-        : this.slider("Intensity", p.intensity ?? pGroup.baseIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].intensity = v))),
       // Cusp pull (perceptual only) — this palette's override of the global Vibrancy: how far its
       // richest stop is nudged toward 500. Starts at the inherited global value; the peak mode pins it.
       this.doc.toneMode === "perceptual"
@@ -1948,24 +1942,24 @@ export class ColorSectionImpl {
       // stays visible in every toneMode.
       this.slider("Base chroma", d.baseIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.baseIntensity = v))),
       this.slider("Prime chroma", d.primeChroma, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.primeChroma = v))),
-      // Per-group intensity defaults (ticket #559) — a GROUP layer between a palette's own override
-      // and the two global sliders above (Material/Brand/System/Data, PALETTE_GROUPS order). Each
-      // group gets its own baseIntensity/primeChroma pair, writing doc.groups[g] — resolveGroups(d)
-      // reads back the same default-filled shape resolveGroupedIntensity/resolveGroupedPrimeChroma
+      // Per-group base chroma (SPEC 0.3.0, #556/#559 re-ruling) — a GROUP layer between a palette's
+      // own resolution and the two global sliders above (Material/Brand/System/Data, PALETTE_GROUPS
+      // order). Each group gets its own baseChroma/primeChroma pair, writing doc.paletteGroups[g] —
+      // resolvePaletteGroups(d) reads back the same default-filled shape rampChromaOf/primeChromaOf
       // resolve every palette against, so a slider here always reflects the value actually applied.
-      h("div", { class: "insp-sub" }, "Per-group intensity defaults"),
+      h("div", { class: "insp-sub" }, "Per-group base chroma"),
       ...PALETTE_GROUPS.map((g) => {
-        const gv = resolveGroups(d)[g];
+        const gv = resolvePaletteGroups(d)[g];
         const setGroupField = (key) => (v) =>
           this.editDrag((doc) => {
-            doc.groups = doc.groups || {};
-            doc.groups[g] = { ...(doc.groups[g] || {}), [key]: v };
+            doc.paletteGroups = doc.paletteGroups || {};
+            doc.paletteGroups[g] = { ...(doc.paletteGroups[g] || {}), [key]: v };
           });
         return h(
           "div",
           { class: "field-group", "data-group-row": g },
           h("div", { class: "insp-sub" }, paletteGroupLabel(g)),
-          this.slider(`${paletteGroupLabel(g)} base chroma`, gv.baseIntensity, 0, 100, 1, (v) => fmt(v), setGroupField("baseIntensity")),
+          this.slider(`${paletteGroupLabel(g)} base chroma`, gv.baseChroma, 0, 100, 1, (v) => fmt(v), setGroupField("baseChroma")),
           this.slider(`${paletteGroupLabel(g)} prime chroma`, gv.primeChroma, 0, 100, 1, (v) => fmt(v), setGroupField("primeChroma")),
         );
       }),

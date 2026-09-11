@@ -45,11 +45,12 @@ export class DrawerMixinImpl {
     // view.exports). Computed from the same engines the modals + the Brand-Kit MCP use.
     const typeSc = this._typeScaleFor("base"); // override-aware base scale (Phase 3) — same as the matrix Base column
     const geomSc = this._geomScaleFor("base");
-    // ticket #559: the DS-bundle exporters (ds-export.js) read doc.palettes[i].intensity/primeChroma
-    // directly — they're called with a doc-shaped object below, never through stateOf/projectView —
-    // so without this they'd silently ignore the group layer. resolvedPalettes(doc) folds the group
-    // layer in while every other doc field (icons/name/story/…, which ds-export.js also reads) stays
-    // exactly as-is.
+    // SPEC 0.3.0 (ticket #559): the DS-bundle exporters (ds-export.js, via exports.js's derivePalette)
+    // read palette.group directly — they're called with a doc-shaped object below, never through
+    // stateOf/projectView — so without this a palette relying on the by-name default group (no
+    // explicit `.group` field) would resolve to nothing there. resolvedPalettes(doc) stamps every
+    // palette's group to its definite resolved id while every other doc field (icons/name/story/…,
+    // which ds-export.js also reads, and doc.paletteGroups itself, via the spread below) stays as-is.
     const dsDoc = { ...this.doc, palettes: resolvedPalettes(this.doc) };
     const u = { unit: this._exportUnit(), fontMode: this.fontMode }; // the CSS unit preference (Settings › Export) + the font-rendering mode (Settings › Appearance) — Figma outputs below deliberately read NEITHER (Figma always gets the as-designed families; a native Figma-mode axis is its own future phase)
     const ut = { ...u, prefix: this._typePrefix() }; // + the naming-scheme prefix for the type CSS
