@@ -1,7 +1,8 @@
 ---
 doc-type: plan
 id: plan-2026-09-export-schema-revision
-status: active          # active | complete | abandoned
+status: active          # active | complete | abandoned (the PLAN enum; the rulings below are ratified, see `ratified:`)
+ratified: 2026-09-11    # H-1..H-4 ruled by the owner via team-lead; the plan is approved to build
 date: 2026-09-11
 owner: Kim Granlund
 review-cadence: weekly
@@ -44,7 +45,8 @@ Legend: **E** emitted · **P** partial · **M** missing · **X** deliberately ex
 
 ## Rulings proposed per gap
 
-Each is a proposal with a default; the ones marked **ratify** need the owner.
+All four ratification items were ruled 2026-09-11 (owner via team-lead); the text below carries the
+ruling, and H-3 records a change from the proposed default.
 
 - **RP-1 Palette group becomes exported METADATA, never a name** (Open 1). Emit the group where a
   format has a metadata slot and nowhere else: JSON `palettes[n].group`; DTCG a
@@ -57,17 +59,21 @@ Each is a proposal with a default; the ones marked **ratify** need the owner.
   metadata slot short of `description`, and #556 ruled no Figma folders); ShadCN nothing. Rationale:
   a consumer (an agent reading the brand-kit, a DS bundle reader) needs to know which families are
   chart series and which are brand without name-matching, and the ruling only forbids names and
-  folders. Alternative: keep groups editor-only everywhere (zero export change). **Ratify (H-1).**
+  folders. **Ratified 2026-09-11 (H-1), exactly as proposed.**
 - **RP-2 Group chroma controls ride only the round-trippable formats.** JSON gains a top-level
   `meta` (`generator`, `schemaVersion`, `controls: { baseIntensity, primeChroma, paletteGroups }`),
   and the brand-kit gains the same `controls` block, so a kit states the chroma policy it was
   generated under; no other format carries controls (values already reflect them). Rationale: the
   brand-kit is the one surface agents interrogate for "why is neutral muted"; CSS consumers never
-  need it. Alternative: no controls anywhere. **Ratify (H-2).**
-- **RP-3 ShadCN stays at chart-1..5.** shadcn's contract has five chart slots; emitting `chart-6..8`
-  invents tokens no shadcn theme reads. Data-6..8 are reachable through every other format.
-  Rationale: SPEC non-goal "no prime tokens in ShadCN (fixed contract)" applies equally to extra
-  chart slots. **Ratify (H-3)**, because the charter asked the question explicitly.
+  need it. **Ratified 2026-09-11 (H-2).**
+- **RP-3 ShadCN extends to `chart-1..8`, mapped from `data-1..8`.** **Ratified 2026-09-11 (H-3),
+  a deliberate departure from the proposed default and from shadcn's stock five chart slots.**
+  `chart-1..5` stay byte-identical to today (data-N when enabled, else the existing fallback chain);
+  `chart-6..8` are added, bound to `data-6..8` when enabled and OMITTED when the palette is absent
+  or disabled (no fallback: an invented sixth colour would be exactly what the stock contract
+  lacks). `SHADCN_ORDER` grows by three; the `@theme inline` block mirrors them. The SPEC non-goal
+  "no prime tokens in ShadCN" stands: these are role-backed chart slots, not prime tokens. Owned by
+  step E5 below.
 - **RP-4 The DS bundle documents the prime tier per profile through the shared spine, proven by
   gate.** No per-profile prose fork: the Stitch and Make profiles already render the same section
   list; the gap is proof, not emission. Add the per-profile assertion to the existing
@@ -93,9 +99,10 @@ Each is a proposal with a default; the ones marked **ratify** need the owner.
   unstamped), so absence of a stamp means 1. Bump rule: any additive or shape change to an emitted
   format bumps the constant once, in the same PR, across all surfaces; a value-only change (a chroma
   default) never bumps. Alternative: per-format versions. Rejected because consumers of the zip get
-  several files from one generator run and one number is what they can compare. **Ratify (H-4)**,
-  specifically the DTCG root `$extensions` placement, which some strict importers may reject; the
-  fallback is a `$description` string on the root group.
+  several files from one generator run and one number is what they can compare. **Ratified
+  2026-09-11 (H-4), including the DTCG root `$extensions` placement**; the E6 gate proves our own
+  Figma apply path tolerates it, and a strict third-party importer that rejects root `$extensions`
+  is handled in a follow-up, not by moving the stamp.
 - **RP-9 knowledge-04 becomes the shape of record for all of the above** and its §1 table lists all
   eight formats plus the DS bundle and brand-kit with their stamps. No ratification.
 
@@ -129,54 +136,66 @@ small/big ladder.
 4. **E4 Binder report line + consumer plugin prose** (RP-6, RP-7). Owner: builder. Status: todo.
    `figma/binder/figma-semantic-binder/code.js` dry-run report names `Color Prime` as present and
    unbound (regenerated `code.js` outside the `GENERATED:ROLE_TABLE` markers; `collparity` unchanged);
-   `plugin/ultimate-tokens/skills/color-tokens/SKILL.md` "Data series" paragraph. Done when: the
+   `plugin/ultimate-tokens/skills/color-tokens/SKILL.md` "Data series" paragraph (naming
+   `--chart-1..8` per H-3). Done when: the
    binder shim test sees the line and `npm test` is green. Size: small. Serves REQ-033, REQ-040.
-5. **E5 Schema stamp** (RP-8, after H-4; LAST code step). Owner: builder. Status: todo.
+5. **E5 ShadCN `chart-6..8`** (RP-3, H-3). Owner: builder. Status: todo. `exportShadcn`: extend
+   `SHADCN_ORDER` and `MAP` with `chart-6..8` from `dataN(6..8)`, omitted when absent; `chart-1..5`
+   unchanged. Gates: `hpg-export-shadcn` byte-identical for 1..5 on the default doc; a new
+   `hpg-export-shadcn-chart-6-8` (present with data-6..8 enabled, absent with them disabled, values
+   equal the data palette's prime ROLE per scheme). Done when: green and the default-doc shadcn
+   output differs from main only by the three added lines per block. Size: small. Serves REQ-031.
+6. **E6 Schema stamp** (RP-8, H-4; LAST code step). Owner: builder. Status: todo.
    `EXPORT_SCHEMA_VERSION = 2` and every stamp listed in RP-8; `collections.js` unchanged; the Figma
    plugin's own DTCG reader tolerates the root `$extensions` (gate: apply the stamped bundle in
    `test/figma/plugin.mjs`). Gates: `hpg-export-schema-stamp` (every surface carries the same number;
    removing the constant turns every surface red, a negative control run once in the PR). Done when:
    green, and the smoke run's Figma apply reports the same variable counts as before. Size: small.
    Serves RP-8.
-6. **E6 Docs of record**. Owner: docs lane (P8-style sweep). Status: todo. knowledge-04 §1 table
+7. **E7 Docs of record**. Owner: docs lane (P8-style sweep). Status: todo. knowledge-04 §1 table
    (all formats + stamps), §3 `meta`, a new §11 "Group metadata" and §12 "Schema versioning";
    `mcp/README.md` (`list_palettes` group, `controls`); `docs/marketing/fact-sheet.md` (formats row
    unchanged in count, stamp mentioned); CHANGELOG entry; `adding-export-formats` skill gains the
    "bump `EXPORT_SCHEMA_VERSION` on any shape change" rule. Done when: the AC-040-style greps find no
    stale "two-collection" or "meta + per-palette" claims. Size: small. Serves REQ-040.
 
-Ordering: E1 → E2 (E2's `meta` object must not pre-empt E1's `group` placement decisions) → E3 and
-E4 in parallel → E5 → E6. E3 and E4 can also run before E1 if H-1 is slow, since neither changes a
-shape. Nothing here touches #566's files' resolvers; E2 reads `paletteGroups` through the model's
-resolver once #566 has merged, so E2 is blocked until then.
+Ordering: E1 → E2 (E2's `meta` object must not pre-empt E1's `group` placement decisions) → E3, E4,
+E5 in parallel → E6 → E7. E3, E4, and E5 are independent of E1 and may run first. Nothing here
+touches #566's files' resolvers; E2 reads `paletteGroups` through the model's resolver once #566 has
+merged, so E2 is blocked until then. Final list: E1 group metadata (big) · E2 controls meta (small)
+· E3 DS prime parity gate (small) · E4 binder line + consumer prose (small) · E5 shadcn chart-6..8
+(small) · E6 schema stamp (small, last code step) · E7 docs of record (small).
 
-## Ratification list
+## Ratification record (2026-09-11, owner via team-lead)
 
-- **H-1** Groups exported as metadata per RP-1 (default: yes). Alternative: editor-only forever.
-- **H-2** Controls block on JSON `meta` and the brand-kit per RP-2 (default: yes).
-- **H-3** ShadCN stays at chart-1..5 (default: yes, no chart-6..8).
-- **H-4** Versioning per RP-8 (default: one `EXPORT_SCHEMA_VERSION = 2`, DTCG root `$extensions`).
-  Alternative for DTCG: a root `$description`.
+- **H-1** Groups exported as metadata per RP-1, exactly as proposed. Ratified.
+- **H-2** Controls block on JSON `meta` and the brand-kit per RP-2. Ratified.
+- **H-3** CHANGED from the proposed default: ShadCN extends to `chart-1..8` from `data-1..8`, 1..5
+  byte-identical, 6..8 added (RP-3, step E5). Ratified.
+- **H-4** One `EXPORT_SCHEMA_VERSION = 2` stamped everywhere including the DTCG root `$extensions`
+  (RP-8, step E6). Ratified.
+No ratification remains open; the plan is approved to build.
 
 ## Validation
 
 - `npm test` green at every step; the new gates named per step exist and bite (each PR shows the
-  red-then-green run for its gate, and E5 runs the remove-the-constant negative control).
-- `npm run smoke` after E5: the built single-file exports every format with the stamp and the Figma
+  red-then-green run for its gate, and E6 runs the remove-the-constant negative control).
+- `npm run smoke` after E6: the built single-file exports every format with the stamp and the Figma
   apply path accepts the stamped DTCG.
 - Byte-diff discipline: E1 changes CSS/OKLCH/Tailwind only by comment lines; E2 changes JSON only by
-  the `meta` key; E5 changes each surface only by its stamp. Each PR includes the diff summary.
+  the `meta` key; E5 changes shadcn only by the three chart lines per block; E6 changes each surface
+  only by its stamp. Each PR includes the diff summary.
 - Name freeze: `git grep -nE "\-(material|brand|system|data)-" src/engine/exports.js` returns
   nothing new (groups never enter names), and no existing token is renamed (charter non-goal).
-- knowledge-04 rubric re-check by `docs:doc-checker` after E6.
+- knowledge-04 rubric re-check by `docs:doc-checker` after E7.
 
 ## Rollback
 
-- E1, E2, E4, E5 are additive keys, comment lines, or a tool field: revert the PR; no consumer
+- E1, E2, E4, E5, E6 are additive keys, comment lines, chart slots, or a tool field: revert the PR; no consumer
   breaks because absence already meant "v1".
 - E3 changes only tests unless a profile lacked the section; then the revert is the spine line.
-- E5's UI3 `$schema` bump is the one consumer-visible string change; rollback restores `.v1` and
-  is safe because no consumer is known to key on it, and the stamp lands last so a rollback of E5
+- E6's UI3 `$schema` bump is the one consumer-visible string change; rollback restores `.v1` and
+  is safe because no consumer is known to key on it, and the stamp lands last so a rollback of E6
   alone leaves every shape intact and merely unstamped (which reads as v1: acceptable for one
   release, noted in CHANGELOG if it happens).
 - Nothing here migrates documents; `persist.js` is untouched.
