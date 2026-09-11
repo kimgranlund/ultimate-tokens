@@ -106,8 +106,18 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
   brand `others` list) and DESIGN.md gains a short "Data series" section listing them.
 - **REQ-032** UI: a Color-section action "Add data palettes (8)" appends the derived set to a
   document that has none; "Re-derive data hues" recomputes hues for existing `Data N` palettes; the
-  global controls panel gains "Base intensity" and "Key intensity" sliders next to Vibrancy; the
-  palette inspector gains an "Intensity" per-palette slider next to Cusp pull.
+  Global tab (right pane) surfaces the two U1 controls as two separate chroma sliders placed
+  together next to Vibrancy, labelled "Base chroma" (`baseIntensity`, shapes the ramp) and "Prime
+  chroma" (`keyIntensity`, shapes the identity swatches); the palette inspector gains one "Intensity"
+  per-palette slider next to Cusp pull (ratified 2026-09-11). Defaults stay 100 (H1).
+- **REQ-034** Key swatch strip: each enabled palette row in the Color canvas renders five identity
+  swatches FIRST, left of the stop ramp, in this order with these display labels: `brighter`,
+  `bright`, `prime`, `dim`, `dimmer`. They map to the existing roles `{n}High`, `{n}Bright`, `{n}`,
+  `{n}Dim`, `{n}Low`; the labels are display text only, token and role names and the 53-role table
+  stay frozen (ratified 2026-09-11). Each swatch shows the RESOLVED role color for the active scheme
+  (so the prime-chroma spike is visible there), while the ramp beside it shows the base stops. Under
+  `accentRef "single"` the prime swatch is stop 500. The strip follows the row's scheme toggle and
+  the `stopsMode` (19 or 25) does not change it.
 - **REQ-033** Figma: the binder's binding plan grows to 53 x 16 = 848 semantic targets and the
   primitives collection to 16 x 36 = 576 variables at the default document, both under Figma's
   5,000-variables-per-collection ceiling; the mode count (2) is unchanged. Answer to Open gap 4.
@@ -136,6 +146,8 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
   authored (ratified 2026-09-11, H3).
 - No change to the "From Figma" import (`configFromVariables`); it reads chroma as stored today.
 - No new export format.
+- No new roles or tokens for the key strip labels: brighter, bright, prime, dim, dimmer are UI display
+  text over the five existing identity roles, never emitted names.
 
 ## Examples
 
@@ -158,6 +170,11 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 - **EX-6 (NORMATIVE, migration).** Snapshot `{schemaVersion: 1, palettes: [...8], vibrancy: 0}`
   hydrates to `baseIntensity 100, keyIntensity 100`, 8 palettes. Snapshot
   `{schemaVersion: 2, palettes: [...]}` with no `baseIntensity` hydrates to the domain default (100).
+- **EX-8 (NORMATIVE, key strip).** Default Primary, light scheme, `accentRef "mode"`: the strip reads
+  brighter = stop 650 (`primaryHigh`), bright = 350 (`primaryBright`), prime = 550 (`primary`),
+  dim = 650 (`primaryDim`), dimmer = 350 (`primaryLow`). Dark scheme: 400, 400, 450, 700, 700. With
+  `accentRef "single"` the prime swatch is 500 in both schemes. Brighter and dim share a stop in each
+  scheme by the frozen role table; the strip shows both anyway, since it is a role view, not a stop view.
 - **EX-7 (NORMATIVE, shadcn).** Default document: `--chart-1 .. --chart-5` resolve to the prime role of
   `data-1 .. data-5`. Data palettes all disabled: the pre-feature chart mapping is emitted.
 
@@ -198,9 +215,17 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 - **AC-031** EX-7 both halves; `exportShadcn` neutral and primary picks are unchanged from today on
   the default document; the design-system semantic layer has `53 * 16` entries and DESIGN.md contains
   the data section.
-- **AC-032** Headless-boot: the two global sliders and the per-palette slider exist and write the doc;
+- **AC-032** Headless-boot: the "Base chroma" and "Prime chroma" sliders exist on the Global tab,
+  are adjacent, and write `doc.baseIntensity` / `doc.keyIntensity`; the per-palette "Intensity" slider
+  writes `palettes[i].intensity`;
   "Add data palettes (8)" appends 8 on a document with none and is a no-op when 8 already exist;
   "Re-derive" rewrites hues only.
+- **AC-034** Headless-boot: every enabled ramp row has a key strip before the ramp strip with exactly
+  five swatches whose labels are, in order, brighter, bright, prime, dim, dimmer; each swatch's color
+  equals the row palette's resolved role hex (`primaryHigh`, `primaryBright`, `primary`, `primaryDim`,
+  `primaryLow`) for the active scheme; toggling the scheme swaps them; under `accentRef "single"` the
+  prime swatch equals the 500 stop hex; toggling `stopsMode` leaves the strip at five. The 53-role
+  table gate and `role-table.json` are unchanged by this unit.
 - **AC-033** `test/figma/binder.mjs` `bindingPlan(NAMES).length === 53 * 16` via the existing derived
   assertion; `test/figma/plugin.mjs` cascade passes with `semExpect` derived from the bundle.
 - **AC-040** `git grep -nE "\b8\b" -- docs/reference README.md CLAUDE.md mcp plugin docs/marketing |
@@ -214,7 +239,7 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
   `test/engine/fixtures/` and is regenerated only by an explicit script, never by `npm test`.
 - AC-010..012: `node test/ui/persist.mjs`.
 - AC-020..021: `node test/engine/data-hues.mjs` (new verifier, one PASS/FAIL line convention like `derive.mjs`).
-- AC-022..024, AC-030, AC-032: `node test/ui/shell.mjs` and the headless shim (`test/ui/headless-boot.mjs`,
+- AC-022..024, AC-030, AC-032, AC-034: `node test/ui/shell.mjs` and the headless shim (`test/ui/headless-boot.mjs`,
   lettered group). Slider presence is asserted through the shim's DOM, not computed style (the shim
   has no layout).
 - AC-031: `node test/engine/exports.mjs` `hpg-export-shadcn` and `hpg-export-design-system`.
