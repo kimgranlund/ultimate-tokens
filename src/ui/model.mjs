@@ -242,6 +242,8 @@ import {
   EXPORT_SCHEMA_VERSION,
   exportPanda,
   exportPandaModule,
+  exportParkUi,
+  exportParkUiModule,
   SCRIM_BASES,
   SCRIM_STEPS,
   dialogBackdropHex,
@@ -964,6 +966,7 @@ export function projectView(doc) {
     tailwind: exportTailwind(state),
     shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.radii }),
     panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom })),
+    parkui: exportParkUiModule(exportParkUi(state, { geometry: shadGeom })),
     figma: {
       light: JSON.stringify(dtcgObj["Light_tokens.json"], null, 2),
       dark: JSON.stringify(dtcgObj["Dark_tokens.json"], null, 2),
