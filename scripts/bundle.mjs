@@ -24,6 +24,8 @@ const MODS = [
   ["motion", "src/engine/motion.mjs"], // pure constants; BEFORE exports/model (which import it)
   ["persist", "src/ui/persist.js"],
   ["dsGates", "src/engine/ds-gates.js"], // zero-dep §8 carrier primitives; before `exports` (which imports them)
+  ["prime", "src/engine/prime.mjs"], // pure, imports hct/okhsl/tonal only (all above); BEFORE exports/ds-export
+  // (which import it for the prime-emitter block, #550) AND model (which imports it, #533 P3)
   ["exports", "src/engine/exports.js"],
   ["dsExport", "src/engine/ds-export.js"], // the DS-bundle subsystem (TKT-0015); imports from `exports`, so after it
   ["figmaPlugin", "src/ui/figma-plugin-assets.js"], ["mcpAssets", "src/ui/mcp-assets.js"], ["describeMcpAssets", "src/ui/describe-mcp-assets.js"], ["typeFonts", "src/ui/type-fonts.js"],
@@ -37,7 +39,6 @@ const MODS = [
 
   ["icons", "src/ui/icons.js"],
   ["dataHues", "src/engine/data-hues.mjs"], // pure, zero-dep; BEFORE model (which imports it, TKT #515/U6)
-  ["prime", "src/engine/prime.mjs"], // pure, imports hct/okhsl/tonal only; BEFORE model (which imports it, #533 P3)
   ["model", "src/ui/model.mjs"],
   // TKT-0023: app.js decomposed into a bootstrap/core + per-section prototype mixins. appHelpers is the
   // pure (no `this`) shared carrier (h()/btn/chip/… + storage/license/font-loading) both app.js and every
@@ -76,6 +77,7 @@ const DYNAMIC_IMPORT_RE = /\bimport\(\s*["']([^"']+)["']\s*\)/g;
 function preflight() {
   const problems = [];
   const modsKeys = new Set(MODS.map(([k]) => k));
+  const modsIndex = new Map(MODS.map(([k], i) => [k, i]));
 
   // (a) KEY -> MODS: every KEY value must be a real MODS key.
   for (const [basename, key] of Object.entries(KEY)) {
@@ -107,9 +109,24 @@ function preflight() {
       continue;
     }
     for (const m of src.matchAll(STATIC_IMPORT_RE)) {
-      if (!KEY[m[2].split("/").pop()]) problems.push(`${rel}: import path "${m[2]}" is not registered in KEY (and its module, if new, is not in MODS)`);
+      const targetKey = KEY[m[2].split("/").pop()];
+      if (!targetKey) { problems.push(`${rel}: import path "${m[2]}" is not registered in KEY (and its module, if new, is not in MODS)`); continue; }
+      // (d) MODS ORDER (ticket #560 real incident): each module is assembled as `__M.<key> = (function(){...})()`
+      // in MODS array order, and a static import rewrites to `const {x} = __M.<key>` at the TOP of the importing
+      // module's own IIFE — evaluated synchronously the moment that IIFE runs. So the imported module's MODS
+      // entry must come STRICTLY BEFORE the importing module's, or `__M.<key>` is still undefined and the
+      // destructure throws at runtime — a throw that (a) aborts the whole inline <script>, so `customElements.
+      // define` never runs and every element/method on the app looks "not a function"; and (b) never surfaces
+      // in `npm test`'s headless-DOM shim (it imports the real ES modules directly, unaffected by this file's
+      // concatenation order) — only in `npm run smoke`'s real-Chrome boot. Catching it HERE keeps that class of
+      // bug inside `npm test`'s own bundle step instead of the browser-only leg.
+      if (modsIndex.get(targetKey) >= modsIndex.get(key)) {
+        problems.push(`${rel}: imports "${m[2]}" (MODS["${targetKey}"]) but MODS lists "${targetKey}" at or after "${key}" — move the ["${targetKey}", ...] entry earlier in MODS, before ["${key}", ...], so __M.${targetKey} is assigned before ${rel}'s own IIFE reads it`);
+      }
     }
     for (const m of src.matchAll(DYNAMIC_IMPORT_RE)) {
+      // dynamic import()s rewrite to `Promise.resolve(__M.<key>)`, resolved lazily at CALL time (not at
+      // IIFE-assembly time), so — unlike a static import above — MODS order is irrelevant here.
       if (!KEY[m[1].split("/").pop()]) problems.push(`${rel}: dynamic import("${m[1]}") is not registered in KEY (and its module, if new, is not in MODS)`);
     }
     if (/^export\s+default\b/m.test(src)) problems.push(`${rel}: uses "export default" — not supported by this single-file inliner, use a named export instead`);
