@@ -16,7 +16,8 @@ const ok = (c, m) => { if (!c) fails.push(m); };
 
 // 1. generate a real brand kit from the default doc (no systems arg → all three, the back-compat default)
 const kit = brandKit(defaultDocument());
-ok(kit.$schema === "ultimate-tokens-brand-kit/1" && kit.palettes.length === 16, `brandKit shape: ${kit.palettes.length} palettes (want 16)`);
+// $schema/2 (RP-8, ticket #577, plan PR #571 step E6): EXPORT_SCHEMA_VERSION stamped verbatim.
+ok(kit.$schema === "ultimate-tokens-brand-kit/2" && kit.palettes.length === 16, `brandKit shape: $schema=${kit.$schema}, ${kit.palettes.length} palettes (want ultimate-tokens-brand-kit/2, 16)`);
 // ICONS — the kit ALWAYS names an icon library (an agent must never pick its own).
 ok(kit.icons && kit.icons.family === "Phosphor" && kit.icons.variant === "regular", `brandKit serves the default icon system: ${JSON.stringify(kit.icons)}`);
 {

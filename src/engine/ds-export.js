@@ -22,7 +22,7 @@ import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
 import { RAMP_LADDER, mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder size-anchor helpers + explicit ordering (issue #483 — the ladder's numeric step names trap a bare Object.keys/`.MD`/`.SM`/`.XS` access)
-import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette, oklchStr } from "./exports.js";
+import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette, oklchStr, EXPORT_SCHEMA_VERSION } from "./exports.js";
 import { PRIME_STEPS } from "./prime.mjs"; // the seven step names, brightest..dimmest (REQ-050/054)
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -275,6 +275,7 @@ export function exportDesignSystemTokens(state, typeSc, geomSc) {
   const note = `Design System tokens.json — Ultimate Tokens naming grammar: {family}[-slot], families ${ds.families.join("/")}; CSS prefix --${cssPrefixOf(state)}-. Two color tiers: \`colors\`/\`colorsDark\` are the reduced consumption grammar (the set the DESIGN.md teaches — the kit's resolved role values VERBATIM, per its onColorMode setting; contrast is measured and disclosed in README.md); \`semantic\`/\`semanticDark\` are the FULL semantic role layer (every role of every palette) for consumers that need the complete set. \`prime\` is a THIRD tier: every enabled palette's own seven identity swatches (brightest..dimmest, keyed by step name), primitives-tier and mode-independent — the SAME seven values in light and dark, never subject to onColorMode. Values are high-resolution OKLCH (never bare hex); alpha < 1 rides as \`oklch(L C H / A)\`. type.scale lineHeight is a unitless multiplier of size (leading factor — never px) and letterSpacing, where present, an em factor. \`geometry\` is the full dimensional system (control size ramp, insets, gaps, borders, focus ring; px numbers); \`spacing\`/\`radii\` remain the compact ladders. \`icons\` names the icon library + its stroke variant this kit binds to, with the size ramp it renders at (from geometry) — bind to it, never substitute another set. \`motion\` carries the easing curves + the ms duration ladder: bind these, never type a raw ms or bezier; entrances decelerate, exits accelerate and run faster.`;
   return JSON.stringify({
     $generator: "Ultimate Tokens",
+    $schemaVersion: EXPORT_SCHEMA_VERSION,
     $note: note,
     colors, colorsDark,
     prime: ds.prime,
@@ -388,7 +389,7 @@ export function exportDesignSystemSpine(state, typeSc, geomSc) {
   addComp("popover", { backgroundColor: `"{colors.${cn}-surface-high}"`, textColor: `"{colors.${cn}-on-surface}"`, rounded: `"{rounded.${rLg}}"`, padding: "16px" });
 
   const frontmatter = [
-    "---", "version: alpha", `name: ${name}`, `description: ${desc}`,
+    "---", "version: alpha", `tokensSchema: ${EXPORT_SCHEMA_VERSION}`, `name: ${name}`, `description: ${desc}`,
     "colors:", ...colorLines,
     "typography:", ...typeLines,
     "spacing:", ...spaceLines,

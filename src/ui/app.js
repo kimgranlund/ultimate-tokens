@@ -2464,7 +2464,7 @@ class HctApp extends HTMLElement {
     const kit = brandKit(this.doc, this.exportSystems);
     const base = slug(kit.name) || "brand-kit";
     const pkg = JSON.stringify(
-      { name: "ultimate-tokens-brand-kit", version: "0.1.0", type: "module", description: `MCP server for the "${kit.name}" brand kit (Ultimate Tokens)`, bin: { "brand-kit-mcp": "brand-kit-server.mjs" }, private: true },
+      { name: "ultimate-tokens-brand-kit", version: "0.2.0", type: "module", description: `MCP server for the "${kit.name}" brand kit (Ultimate Tokens)`, bin: { "brand-kit-mcp": "brand-kit-server.mjs" }, private: true },
       null, 2,
     );
     const files = [

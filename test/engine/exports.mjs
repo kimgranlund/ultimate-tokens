@@ -1438,7 +1438,8 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 // never a stale or independently re-derived snapshot. `doc` below carries NON-default controls
 // (every group differs from GROUP_DEFAULTS, the two global fallbacks differ from 100/100) so the
 // deep-equal actually exercises resolution, not a default-vs-default match that would pass even if
-// exportJSON ignored `state` entirely. No `schemaVersion` yet — that's E6 (#577), not this ticket.
+// exportJSON ignored `state` entirely. `schemaVersion` itself is covered by the hpg-export-schema-stamp
+// gate below (E6, #577), not here.
 {
   const doc = {
     ...defaultDocument(),
@@ -1456,7 +1457,6 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (!json.meta || typeof json.meta !== "object") FAIL("hpg-export-json-meta", "exportJSON output missing top-level meta");
   else {
     if (json.meta.generator !== "Ultimate Tokens") FAIL("hpg-export-json-meta", `meta.generator = ${JSON.stringify(json.meta.generator)}, want "Ultimate Tokens"`);
-    if ("schemaVersion" in json.meta) FAIL("hpg-export-json-meta", "meta unexpectedly carries schemaVersion (E6/#577's job, not E2's)");
     const c = json.meta.controls;
     if (!c || typeof c !== "object") FAIL("hpg-export-json-meta", "meta.controls missing");
     else {
@@ -1476,8 +1476,56 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   else if (JSON.stringify(kit.controls) !== JSON.stringify(json.meta.controls)) FAIL("hpg-export-json-meta", `brandKit(doc).controls disagrees with exportJSON's meta.controls: ${JSON.stringify(kit.controls)} vs ${JSON.stringify(json.meta.controls)}`);
 }
 
+// ── hpg-export-schema-stamp (SPEC 0.3.0 RP-8, ticket #577, plan PR #571 step E6) — one
+// EXPORT_SCHEMA_VERSION stamped, verbatim, on every surface that can carry it: JSON meta,
+// DTCG root $extensions (all 3 files), UI3 $schema, a first-line comment on CSS/OKLCH/Tailwind/
+// ShadCN, the DS bundle's tokens.json + DESIGN.md frontmatter, and the brand-kit $schema.
+// `v` is a HARDCODED literal (2), deliberately never X.EXPORT_SCHEMA_VERSION itself — reading the
+// constant back to build the expectation would make this gate vacuous (it would degrade in
+// lockstep with the very thing under test, proven live: neutering the constant to `undefined`
+// left every check here passing). Bumping the real constant is expected to turn this red until
+// `v` is bumped alongside it in the same PR — that IS the bump-rule contract, not a bug in the gate.
+{
+  const G = "hpg-export-schema-stamp";
+  const v = 2;
+  const doc = defaultDocument();
+  const state = stateOf(doc);
+  const tsc = typeScale({});
+  const gsc = geomScale({});
+  const stampComment = `/* ultimate-tokens export schema ${v} */`;
+
+  if (X.exportCSS(state).split("\n")[0] !== stampComment) FAIL(G, `CSS first line is not the schema stamp comment (want ${JSON.stringify(stampComment)})`);
+  if (X.exportOKLCH(state).split("\n")[0] !== stampComment) FAIL(G, `OKLCH first line is not the schema stamp comment (want ${JSON.stringify(stampComment)})`);
+  if (X.exportTailwind(state).split("\n")[0] !== stampComment) FAIL(G, `Tailwind first line is not the schema stamp comment (want ${JSON.stringify(stampComment)})`);
+  if (X.exportShadcn(state).split("\n")[0] !== stampComment) FAIL(G, `ShadCN first line is not the schema stamp comment (want ${JSON.stringify(stampComment)})`);
+
+  const json = X.exportJSON(state);
+  if (!json.meta || json.meta.schemaVersion !== v) FAIL(G, `JSON meta.schemaVersion = ${JSON.stringify(json.meta && json.meta.schemaVersion)}, want ${v}`);
+
+  const dtcg = X.exportDTCG(state);
+  const dtcgFiles = Object.keys(dtcg);
+  if (dtcgFiles.length !== 3) FAIL(G, `expected 3 DTCG files (got ${dtcgFiles.length}: ${dtcgFiles.join(", ")})`);
+  for (const file of dtcgFiles) {
+    const ext = dtcg[file].$extensions && dtcg[file].$extensions["com.ultimate-tokens"];
+    if (!ext || ext.schemaVersion !== v) FAIL(G, `DTCG ${file} root $extensions["com.ultimate-tokens"].schemaVersion = ${JSON.stringify(ext && ext.schemaVersion)}, want ${v}`);
+  }
+
+  const ui3 = X.exportUI3(state);
+  if (ui3.$schema !== `figma-ui3-variables.color.schema.v${v}`) FAIL(G, `UI3 $schema = ${JSON.stringify(ui3.$schema)}, want figma-ui3-variables.color.schema.v${v}`);
+
+  const tj = JSON.parse(X.exportDesignSystemTokens(state, tsc, gsc));
+  if (tj.$schemaVersion !== v) FAIL(G, `DS tokens.json $schemaVersion = ${JSON.stringify(tj.$schemaVersion)}, want ${v}`);
+
+  const md = X.exportDesignSystemSpine(state, tsc, gsc);
+  const fm = (md.match(/^---\n([\s\S]*?)\n---/) || [, ""])[1];
+  if (!new RegExp(`^tokensSchema: ${v}$`, "m").test(fm)) FAIL(G, `DESIGN.md frontmatter is missing "tokensSchema: ${v}"`);
+
+  const kit = brandKit(doc);
+  if (kit.$schema !== `ultimate-tokens-brand-kit/${v}`) FAIL(G, `brandKit $schema = ${JSON.stringify(kit.$schema)}, want ultimate-tokens-brand-kit/${v}`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

@@ -89,6 +89,22 @@ fragment — emitters use it to build a NAME, never to re-resolve a ref to a col
    format output shapes; add a section (and keep the eight-formats header count consistent if you added a color
    format). For ShadCN/Figma constraint changes, respect the fenced ADR notes (ADR-002 resolved-vs-aliased,
    ADR-007 UI3 is interchange-only) — do not "fix" them.
+7. **Bump rule: `EXPORT_SCHEMA_VERSION` (SPEC 0.3.0 RP-8, ticket #577).** `exports.js` exports one
+   `EXPORT_SCHEMA_VERSION` constant, stamped on every surface that can carry it — JSON `meta.schemaVersion`;
+   DTCG `$extensions["com.ultimate-tokens"].schemaVersion` at the root of all 3 files; the UI3 `$schema`
+   suffix; a first-line `/* ultimate-tokens export schema N */` comment on CSS/OKLCH/Tailwind/ShadCN; the DS
+   bundle's `tokens.json` `$schemaVersion` + DESIGN.md frontmatter `tokensSchema`; the brand-kit `$schema`
+   (`src/ui/model.mjs`'s `brandKit()`) and the brand-kit MCP server's own `SERVER.version`
+   (`mcp/brand-kit-core.mjs`, a hand-kept sibling literal — that file ships standalone, no cross-file import).
+   **Bump it, once, in the same PR, when** your new/changed format is additive or changes an existing
+   surface's SHAPE (a new key, a renamed field, a restructured tree) — every surface above moves together, not
+   just the one format you touched. **Never bump it for** a value-only change (a new default, a tuned chroma
+   curve, a renamed palette) — the shape is unchanged, so the version isn't either. Absence of a stamp on an
+   older export means version 1 (the pre-#503 shape, retroactive). The `hpg-export-schema-stamp` gate in
+   `test/engine/exports.mjs` asserts a HARDCODED literal against every surface (deliberately never
+   `X.EXPORT_SCHEMA_VERSION` itself — reading the constant back to build the expectation would make the gate
+   pass even if the constant were deleted); bump that literal in the same commit as the real constant, or the
+   gate goes red on purpose until you do.
 
 ## Validate (draft → check → fix → re-check)
 
@@ -96,7 +112,8 @@ Run the cheap pure verifier first — it is the fastest signal and gates the emi
 
 ```
 node test/engine/exports.mjs    # well-formed DTCG leaves, on-color policy, padding, disabled-palette,
-                                 # tailwind @theme + shadcn :root/.dark parity, every format non-empty
+                                 # tailwind @theme + shadcn :root/.dark parity, every format non-empty,
+                                 # every surface stamped with EXPORT_SCHEMA_VERSION (hpg-export-schema-stamp)
 node test/engine/type.mjs       # typeTokensCSS/DTCG: fontFamily group + composite typography $type
 node test/engine/geometry.mjs   # geomTokensDTCG (dimension) + geomTokensFigma (unitless number) shapes
 npm test                        # all of the above + headless-boot (drawer/download) + shell + persist

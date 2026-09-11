@@ -35,9 +35,9 @@ ok(typeof BRAND_NUDGE === "number" && BRAND_NUDGE >= 0 && Object.values(STATUS_B
 // ── generateKit: the basic shape, non-object / empty briefs still generate (§4.4 — never reject) ──
 {
   const { kit, doc, lint, meta } = generateKit({ families: { Primary: { hue: 30, chroma: 80 } } });
-  ok(kit.$schema === "ultimate-tokens-brand-kit/1" && kit.palettes.length === 8, "a minimal brief (Primary only) generates a full 8-palette kit");
+  ok(kit.$schema === "ultimate-tokens-brand-kit/2" && kit.palettes.length === 8, "a minimal brief (Primary only) generates a full 8-palette kit");
   ok(Array.isArray(lint) && Array.isArray(FAMILY_NAMES), "lint is an array");
-  ok(meta.generator === "Ultimate Tokens" && meta.kitSchema === "ultimate-tokens-brand-kit/1" && meta.briefSchema === "ultimate-tokens-palette-brief/1", "meta carries the generator + both schema ids");
+  ok(meta.generator === "Ultimate Tokens" && meta.kitSchema === "ultimate-tokens-brand-kit/2" && meta.briefSchema === "ultimate-tokens-palette-brief/1", "meta carries the generator + both schema ids");
   ok(JSON.stringify(meta.brief) === JSON.stringify({ families: { Primary: { hue: 30, chroma: 80 } } }), "meta.brief echoes the originating brief verbatim (the replay handle)");
   ok(typeof doc === "string" || typeof doc === "object", "doc is present"); // serialize() returns a plain object, not a string — just presence-checking the field here
 }
