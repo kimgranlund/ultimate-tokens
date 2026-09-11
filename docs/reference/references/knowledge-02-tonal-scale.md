@@ -11,6 +11,7 @@
 5. Chroma targeting and edge damping
 6. `paletteStops` — the per-stop pipeline
 7. Worked example
+8. Intensity (muted base ramps with key-stop spikes)
 
 ---
 
@@ -29,7 +30,7 @@
 
 ## 2. Global controls and defaults
 
-> ⚠️ **`toneMode` selects the whole ramp algorithm and defaults to `perceptual`, not the curve-driven path below.** `toneMode ∈ {perceptual (default), even, peak}`. The `curve`/`skew`/`lift`/`relChroma`/`chromaFloor` controls in this table and the `toneAt` math in §3–§4 apply to **`even` mode only**; `perceptual`/`peak` go through the OKHSL path (`okhslStops`), shaped by `lmin`/`lmax`/`damp`/`vibrancy`. The additional defaults not yet tabled here — `relChroma` (false), `chromaFloor` (40), `toneMode` (perceptual), `vibrancy` (0), `onColorMode` (fixed), `accentRef` (mode) — live in `DEFAULT_CONTROLS` in `tonal.js`.
+> ⚠️ **`toneMode` selects the whole ramp algorithm and defaults to `perceptual`, not the curve-driven path below.** `toneMode ∈ {perceptual (default), even, peak}`. The `curve`/`skew`/`lift`/`relChroma`/`chromaFloor` controls in this table and the `toneAt` math in §3–§4 apply to **`even` mode only**; `perceptual`/`peak` go through the OKHSL path (`okhslStops`), shaped by `lmin`/`lmax`/`damp`/`vibrancy`. The additional defaults not yet tabled here — `relChroma` (false), `chromaFloor` (40), `toneMode` (perceptual), `vibrancy` (0), `onColorMode` (fixed), `accentRef` (mode), `baseIntensity` (100), `keyIntensity` (100, §8) — live in `DEFAULT_CONTROLS` in `tonal.js`.
 
 | Control | Range | Default | Purpose |
 |---------|-------|---------|---------|
@@ -143,3 +144,62 @@ lmin 5, lmax 100, damp 80:
 - Stop 050: `p=0`, tone→`lmax=100` → `hctToRgb` returns white; chroma irrelevant (tone≥100
   branch). This is why every palette's `050` is `#FFFFFF` at `lmax=100`.
 - Stop 950: `p=1`, tone→`lmin=5`; heavy damping → near-neutral very dark color.
+
+## 8. Intensity (muted base ramps with key-stop spikes)
+
+> Spec: `docs/spec/spec-muted-base-key-spikes.md` (REQ-001..006); design: `docs/lld/lld-muted-base-key-spikes.md`.
+> Shipped in the engine (`tonal.js`, `semantic.js`); the shipped defaults (`baseIntensity: 100,
+> keyIntensity: 100`) make this section describe a capability, not yet a visual change: see the
+> CHANGELOG.
+
+**Intensity** is a fraction of a palette's own `chroma` control, applied as a per-stop multiplier
+*before* the damping in §5. `chroma` keeps its existing meaning (the brand's full chroma, % of the
+hue's peak); intensity scales what the ramp actually emits on top of it.
+
+Two global controls, plus one per-palette override:
+
+| Control | Range | Default | Purpose |
+|---------|-------|---------|---------|
+| `baseIntensity` | 0–100 | 100 | the chroma fraction every non-identity stop emits at |
+| `keyIntensity` | 0–100 | 100 | how far the identity stops (below) are lifted back toward full chroma |
+| `palette.intensity` | 0–100, optional | absent (inherits) | per-palette override of `baseIntensity`; resolved as `palette.intensity ?? controls.baseIntensity` |
+
+**Identity stops** are the solid ramp stops the five identity roles (the prime accent and its
+`-Dim`/`-Bright`/`-Low`/`-High` variants) resolve to, across both Light and Dark. Computed from the
+already-resolved role list (`identityStops(roles)` in `semantic.js`, called *after* `applyAccentRef`,
+never unioned with a static set): under `accentRef: "mode"` (the default) the set is
+`{350, 400, 450, 550, 650, 700}` (`DEFAULT_IDENTITY_STOPS` in `tonal.js`); under `accentRef: "single"`
+the prime role resolves to 500/500 instead, so the set becomes `{350, 400, 500, 650, 700}` and 450/550
+fall out to ordinary (non-identity) stops. `test/engine/semantic.mjs` gates the two literals against
+each other so they cannot drift apart.
+
+`intensityAt` is the per-stop factor:
+
+```
+intensityAt(stop, palette, controls, identityStops):
+  b = clamp01((palette.intensity ?? controls.baseIntensity ?? 100) / 100)
+  k = clamp01((controls.keyIntensity ?? 100) / 100)
+  return identityStops.has(stop) ? b + (1 - b) * k : b
+```
+
+The factor `I(stop)` multiplies the palette's chroma fraction on **both** ramp paths, before the
+damping multiplier `m` in §5: the OKHSL saturation on `perceptual`/`peak` (`s = chroma/100 · I(stop) ·
+(1 + dampAmp/100)`), and the intended chroma on `even` (`intended = chroma/100 · I(stop) · peakC(hue)`
+or `maxc500`, matching the `relChroma` branch already in §5). Gamut safety stays with the existing
+`min(target * m, cm)` clamp: intensity is a chroma-fraction input to that pipeline, not a second
+clamp. The stop-500 OKLCH/CAM16 hue anchor (`hueAnchorFrac`, §5) also multiplies by `I(500)`, so the
+`oklch-hue-anchor` guarantee holds at every intensity, not only at 100.
+
+At the shipped default (`baseIntensity 100`, any `keyIntensity`), `I(stop) = 1` everywhere: every
+emitted stop is byte-identical to the pre-intensity engine, for every palette, control set, and both
+ramp paths (the tonal verifier's own legacy-invariance proof). Away from 100, the effect is a **muted
+base with key-stop spikes**: every stop *except* the identity stops emits at the reduced fraction `b`,
+while the identity stops are lifted back toward full chroma by `k`, a discrete step, not a smooth
+falloff around 500 (a neighbour-falloff envelope would re-spike the identity stops themselves, so it
+is explicitly out of scope). The active-state stops (750/250) are never identity stops under either
+accent mode, so they always emit at the muted `b` fraction alongside the rest of the ramp.
+
+Worked example: default Primary (`hue 267, chroma 95`), `baseIntensity 40`, `keyIntensity 100`,
+`accentRef "mode"`: stops `{350, 400, 450, 550, 650, 700}` emit at `0.95 * m(stop)` (the §5 damping
+curve, unchanged); every other stop (500, 750, 250 included) emits at `0.95 * 0.40 * m(stop)` before
+the gamut clamp. Tones (from §4) are identical at every intensity; only chroma moves.

@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## 1.56 — 2026-09-11 — muted base ramps + key-stop spikes: intensity controls land in the engine (#503 U1)
+
+A new pair of ramp-shaping controls, `baseIntensity` and `keyIntensity` (0–100, plus an optional
+per-palette `intensity` override), land in `tonal.js`/`semantic.js`: `baseIntensity` mutes every stop's
+chroma fraction, and `keyIntensity` lifts it back toward full chroma at the **identity stops**, the
+solid refs the five identity roles (prime, Dim, Bright, Low, High) resolve to
+(`identityStops`/`DEFAULT_IDENTITY_STOPS`, `{350,400,450,550,650,700}` under the default `accentRef:
+"mode"`, `{350,400,500,650,700}` under `"single"`). The result, away from the defaults, is a muted base
+ramp with the brand's own key colors kept vivid: a discrete spike at the identity stops, not a smooth
+falloff. Applies on both ramp paths (OKHSL `perceptual`/`peak` and the CIELAB-`even` path), before edge
+damping, and the stop-500 hue anchor is intensity-aware so the OKLCH hue guarantee holds at every
+setting.
+
+**Shipped defaults stay `baseIntensity: 100, keyIntensity: 100`** (ratified H1): every existing
+palette, control set, and export is byte-identical to the pre-intensity engine; this revision is a new
+capability, not yet a visual change. See `docs/reference/references/knowledge-02-tonal-scale.md` §8 for
+the full math. The UI controls (two Global-tab sliders plus a per-palette slider, and a five-swatch
+key strip per ramp row, #522) and persistence (schema v2, #520) have since landed. Still landing:
+eight brand-derived data palettes (U5–U9). A muted default of 45 was proposed during spec review and
+deliberately deferred to its own follow-up (#521), pending the full feature.
+
+Gate: `npm test` green (extended tonal pin + 3 new intensity groups, identity-stops gate). Spec:
+`docs/spec/spec-muted-base-key-spikes.md`; design: `docs/lld/lld-muted-base-key-spikes.md`. Landed as
+#509.
+
 ## 1.55 — 2026-07-30 — preset typography declares REGISTERS (ADR-022)
 
 The 5-slot `type.slots` spec shape is retired: a spec palette now declares
