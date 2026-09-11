@@ -642,6 +642,9 @@ export function brandKit(doc, systems) {
     kit.stops = on[0] ? on[0].ramp.map((s) => s.stop) : [];
     kit.palettes = on.map((p) => ({
       name: p.name, slug: slug(p.name), key: p.key,
+      // group (SPEC 0.3.0 RP-1, ticket #572): metadata only, one of "material"/"brand"/"system"/"data"
+      // — read straight off projectView's own resolved field (paletteGroup(p) is the single resolver).
+      group: p.group,
       ramp: p.ramp.map((s) => ({ stop: s.stop, hex: s.hex })),
       // prime (REQ-054/057): the seven identity swatches, keyed by step name — an object here (unlike
       // projectView's ordered array) since a kit consumer looks a step up by name, not by position.
@@ -894,6 +897,9 @@ export function projectView(doc) {
     // ramp = 19 core display stops; fullRamp = all 25 EXPORT_STOPS (the extended view).
     palettes.push({
       name: p.name, on: p.on !== false, key: keyHex, keyOklch, ramp, fullRamp: fullStops, roles, keyColors, prime: primeTokens,
+      // group (SPEC 0.3.0 RP-1, ticket #572): the palette's resolved canvas group — metadata only,
+      // read by brandKit() below; never a token name (paletteGroup(p) is the single resolver, #556).
+      group: paletteGroup(p),
       // curated story (present for preset palettes): the color's evocative name, role, description.
       ...(p.colorName ? { colorName: p.colorName } : {}),
       ...(p.colorRole ? { colorRole: p.colorRole } : {}),

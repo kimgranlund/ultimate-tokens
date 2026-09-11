@@ -73,6 +73,31 @@ export function isDataPalette(p) {
   return /^data-\d+$/.test(slug(p.name));
 }
 
+// paletteGroupOf — the public/exported twin of model.mjs's paletteGroup(p) (ticket #556/#572, SPEC
+// 0.3.0 RP-1): a palette's own explicit `group` (when it's one of the four valid ids) else the SAME
+// by-name default rule model.mjs applies (Neutral -> material; Primary/Secondary/Tertiary -> brand;
+// Info/Success/Warning/Danger -> system; everything else, including Data N, -> data). Duplicated
+// here (not imported from src/ui/) for the same reason isDataPalette is its own engine-side twin
+// above — exports.js stays DOM/UI-import-free. model.mjs's stateOf() already stamps a DEFINITE
+// group onto every palette before a live doc reaches this file, so in practice this only re-derives
+// the default for state built directly (e.g. test fixtures) rather than through stateOf/projectView.
+const PALETTE_GROUP_IDS = ["material", "brand", "system", "data"];
+const DEFAULT_GROUP_BY_SLUG = {
+  neutral: "material",
+  primary: "brand",
+  secondary: "brand",
+  tertiary: "brand",
+  info: "system",
+  success: "system",
+  warning: "system",
+  danger: "system",
+};
+export function paletteGroupOf(p) {
+  const g = p && p.group;
+  if (PALETTE_GROUP_IDS.includes(g)) return g;
+  return DEFAULT_GROUP_BY_SLUG[slug(p && p.name)] || "data";
+}
+
 // pad3 — zero-pad a numeric stop to 3 digits. "50" -> "050", 950 -> "950".
 // (refKey from semantic.js handles the ref-string form, including scrim "-i".)
 function pad3(stop) {
@@ -320,7 +345,11 @@ function derivePalette(palette, controls, overrides) {
   const prime = {}; // { [step]: {step, l, s, hue, rgb, hex, oklch, inGamut} }
   for (const sw of primeList) prime[sw.step] = sw;
 
-  return { name: palette.name, n, hue: palette.hue, stops, byStop, scrims, roles, keyColors, prime };
+  // group (SPEC 0.3.0 RP-1, ticket #572): the palette's resolved canvas group — metadata every
+  // emitter below may surface (JSON `group`, DTCG `$extensions`, a CSS/OKLCH/Tailwind comment line),
+  // NEVER a token name or Figma folder (RP-1's own fence; UI3/ShadCN emit nothing from it).
+  const group = paletteGroupOf(palette);
+  return { name: palette.name, n, hue: palette.hue, group, stops, byStop, scrims, roles, keyColors, prime };
 }
 
 // derivedAll — every enabled palette derived, in State order. Exported: ds-export.js's DS-bundle
@@ -389,6 +418,8 @@ function cssFrom(palettes, oklch, pfx = "c") {
   lines.push(`  --${pfx}-black: ${oklch ? blackOklch() : blackHex()};`);
   for (const p of palettes) {
     lines.push("");
+    // group (SPEC 0.3.0 RP-1, ticket #572): metadata only — a comment, never a token.
+    lines.push(`  /* ${p.name} · ${p.group} */`);
     lines.push(`  /* ${p.name} — flat mode-independent primitives */`);
     // solid RAW vars: --{pfx}-{n}-050 .. -950 (raw stop names end in digits; semantic role names end
     // in a word, so the two never collide despite sharing the prefix).
@@ -472,7 +503,8 @@ export function exportJSON(state) {
       dark: r.dark.hex,
     }));
 
-    const palette = { stops, scrims, prime, semantic };
+    // group (SPEC 0.3.0 RP-1, ticket #572): metadata only, one of "material"/"brand"/"system"/"data".
+    const palette = { group: p.group, stops, scrims, prime, semantic };
     // keyColors: [{ role, oklch:[L,C,H], name? }] — retained exact brand colors (present only when set).
     if (p.keyColors.length) palette.keyColors = p.keyColors.map((kc) => ({ role: kc.role, oklch: kc.oklch, ...(kc.name ? { name: kc.name } : {}) }));
     out[p.n] = palette;
@@ -547,6 +579,9 @@ export function exportDTCG(state, opts) {
       for (const kc of p.keyColors) keyGrp[kc.role] = colorLeaf(kc.rgb, 1, null);
       grp.key = keyGrp;
     }
+    // group (SPEC 0.3.0 RP-1, ticket #572): metadata on the RAW palette node only (never the
+    // semantic theme files below) — a DTCG $extensions leaf, never a token name or Figma folder.
+    grp.$extensions = { "com.ultimate-tokens": { group: p.group } };
     rawTree[p.n] = grp;
   }
   // constants — fixed, non-palette raw primitives, a sibling GROUP to the palette names (never
@@ -686,6 +721,8 @@ export function exportTailwind(state) {
   lines.push(`  --color-black: ${blackOklch()};`);
   for (const p of palettes) {
     lines.push("");
+    // group (SPEC 0.3.0 RP-1, ticket #572): metadata only — a comment, never a token.
+    lines.push(`  /* ${p.name} · ${p.group} */`);
     lines.push(`  /* ${p.name} — scale */`);
     for (const key of Object.keys(p.stops)) {
       // pad3 "050" -> Tailwind key "50"; finer stops (150/250/…) stay as-is (valid in v4).

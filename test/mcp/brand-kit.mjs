@@ -7,7 +7,7 @@ import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { brandKit, defaultDocument } from "../../src/ui/model.mjs";
+import { brandKit, defaultDocument, paletteGroup } from "../../src/ui/model.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
@@ -118,6 +118,20 @@ try {
 
   const pal = await callTool("list_palettes", {});
   ok(Array.isArray(pal) && pal.length === 16 && /^#|^oklch/.test(pal[0].key || ""), "list_palettes → 16 palettes with identity colours");
+  // group metadata (SPEC 0.3.0 RP-1, ticket #572): every entry's group is one of the four valid ids
+  // and matches model.mjs's own paletteGroup(p) resolution for that palette — no drift between the
+  // MCP's served metadata and the single resolver every other surface reads.
+  {
+    const VALID_GROUPS = ["material", "brand", "system", "data"];
+    const dd = defaultDocument();
+    const bad = pal.filter((p) => !VALID_GROUPS.includes(p.group));
+    ok(bad.length === 0, `list_palettes: every palette's group is one of ${VALID_GROUPS.join("/")} (bad: ${JSON.stringify(bad)})`);
+    const drift = pal.filter((p) => {
+      const src = dd.palettes.find((d) => d.name === p.name);
+      return !src || p.group !== paletteGroup(src);
+    });
+    ok(drift.length === 0, `list_palettes: every palette's group matches paletteGroup(p)'s own resolution (drift: ${JSON.stringify(drift)})`);
+  }
 
   const tl = await callTool("resolve_token", { role: "primary/primary", scheme: "light" });
   const td = await callTool("resolve_token", { role: "primary/primary", scheme: "dark" });

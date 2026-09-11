@@ -191,6 +191,14 @@ export function dsColorRoles(state) {
 
   const families = [chrome.n, ...others.map((p) => p.n), ...intents.map((p) => p.n)];
 
+  // familiesByGroup (SPEC 0.3.0 RP-1, ticket #572): every ENABLED palette's slug bucketed by its
+  // resolved canvas group (`p.group`, stamped by exports.js's derivePalette) — metadata alongside
+  // the flat `families` list above (kept, unchanged, for existing consumers). Unlike `families`,
+  // this includes data-N palettes (bucketed under "data") so a consumer can tell which families are
+  // chart series vs brand without name-matching (RP-1's own rationale).
+  const familiesByGroup = { material: [], brand: [], system: [], data: [] };
+  for (const p of palettes) familiesByGroup[p.group].push(p.n);
+
   // ── prime (REQ-054): every enabled palette's own seven identity swatches (brightest..dimmest) —
   // primitives-tier and mode-independent, the SAME seven in both schemes, unlike the roles above.
   // Keyed by family slug (chrome + others + intents + data, i.e. every enabled palette in
@@ -206,7 +214,7 @@ export function dsColorRoles(state) {
     prime[p.n] = steps;
   }
 
-  return { chrome, tokens, alias, aliasDistinct, families, dataFamilies: dataPals.map((p) => p.n), prime };
+  return { chrome, tokens, alias, aliasDistinct, families, familiesByGroup, dataFamilies: dataPals.map((p) => p.n), prime };
 }
 
 // dsFactor — leading as a unitless multiplier of size (§9.2: never px). dsTypeLayer — the full voice·step
@@ -1330,12 +1338,20 @@ function dsMakePrimeSection(ds, pfx) {
 // runtime block (parsed from the SAME styles.css text via dsShadcnRuntimeMap — the D10 carrier).
 function dsMakeColorMd(ds, pfx, shadcnCss) {
   const rt = dsShadcnRuntimeMap(shadcnCss);
+  // groupOfFamily (SPEC 0.3.0 RP-1, ticket #572): looked up from ds.familiesByGroup rather than
+  // re-resolved — the table must never drift from the one metadata source every surface reads.
+  const groupOfFamily = (f) => {
+    for (const g of ["material", "brand", "system", "data"]) {
+      if ((ds.familiesByGroup[g] || []).includes(f)) return g;
+    }
+    return "data";
+  };
   const rows = ds.families.map((f) => {
     const base = ds.tokens.find((t) => t.name === f);
     const on = ds.tokens.find((t) => t.name === `${f}-on-${f}`);
     if (!base || !on) return null;
     const use = f === ds.chrome.n ? "chrome action fill" : "family fill";
-    return `| \`--${pfx}-${f}\` | ${base.light.oklch} | ${base.dark.oklch} | ${on.light.oklch} | ${on.dark.oklch} | ${use} |`;
+    return `| \`--${pfx}-${f}\` | ${groupOfFamily(f)} | ${base.light.oklch} | ${base.dark.oklch} | ${on.light.oklch} | ${on.dark.oklch} | ${use} |`;
   }).filter(Boolean);
   const runtimeLines = Object.entries(rt).map(([k, v]) => `  ${k}: light-dark(${v.light}, ${v.dark});`);
   return [
@@ -1375,8 +1391,8 @@ function dsMakeColorMd(ds, pfx, shadcnCss) {
     "that class; a family below with NO utility class (e.g. the muted signature families, `success`/",
     "`warning`) is a **reference hue** — bind it via `var(--{prefix}-{family})` or add a shadcn role to",
     "`styles.css`, never by hardcoding the hex:", "",
-    "| Token | Fill (Light) | Fill (Dark) | On (Light) | On (Dark) | Use |",
-    "|---|---|---|---|---|---|",
+    "| Token | Group | Fill (Light) | Fill (Dark) | On (Light) | On (Dark) | Use |",
+    "|---|---|---|---|---|---|---|",
     ...rows,
     "", ...dsMakePrimeSection(ds, pfx),
     "", "## Runtime alternative — `light-dark()` (illustrative)", "",
