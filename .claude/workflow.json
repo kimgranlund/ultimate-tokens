@@ -4,5 +4,8 @@
     "file-feature",
     "find-intent",
     "research-rules"
-  ]
+  ],
+  "toolchain": {
+    "gate": "npm test"
+  }
 }
