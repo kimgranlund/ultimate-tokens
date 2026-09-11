@@ -11,7 +11,7 @@ audience: builder, reviewer
 ---
 # LLD — Palette groups with an absolute base chroma, a per-palette prime system, data hue derivation
 
-Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.2.0 (REQ/AC ids below refer to it). Intent: issues
+Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.3.0 (REQ/AC ids below refer to it). Intent: issues
 #503 and #533. Substrate this design leans on and does not restate: `color-math` skill (two ramp
 paths, damping multiplier `m`, hue anchors, OKHSL bijection), `adding-export-formats` skill (the
 per-format emitter map), `maintaining-figma-plugins` (collections, provenance registry),
