@@ -427,9 +427,10 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (offName in disabledPanda.theme.extend.semanticTokens.colors) FAIL("panda", `disabled palette '${offName}' still in semanticTokens.colors`);
 
   // AC-005/REQ-043: theme-independent — exportPanda never reads state.theme, so the default
-  // document's preset is byte-identical whether the doc's theme is light, dark, or auto.
+  // document's preset is byte-identical whether STATE.theme (not the doc, which stateOf never
+  // copies theme off of) is light, dark, or auto.
   for (const t of ["light", "dark"]) {
-    const themed = X.exportPanda(stateOf({ ...defaultDocument(), theme: t }));
+    const themed = X.exportPanda({ ...ddState, theme: t });
     if (JSON.stringify(themed) !== JSON.stringify(ddPreset)) FAIL("panda", `REQ-043 preset differs under theme:${t} vs theme:auto`);
   }
 
@@ -628,9 +629,10 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (!colors["data-1"]) FAIL("parkui", "data-1 missing from colors (REQ-028: data palettes emitted like any other)");
 
   // AC-005/REQ-043: theme-independent — exportParkUi never reads state.theme, so the default
-  // document's preset is byte-identical whether the doc's theme is light, dark, or auto.
+  // document's preset is byte-identical whether STATE.theme (not the doc, which stateOf never
+  // copies theme off of) is light, dark, or auto.
   for (const t of ["light", "dark"]) {
-    const themedPark = X.exportParkUi(stateOf({ ...defaultDocument(), theme: t }));
+    const themedPark = X.exportParkUi({ ...ddState, theme: t });
     if (JSON.stringify(themedPark) !== JSON.stringify(ddParkPreset)) FAIL("parkui", `REQ-043 preset differs under theme:${t} vs theme:auto`);
   }
 
