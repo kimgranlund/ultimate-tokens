@@ -6,7 +6,8 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const SCRIPT = join(ROOT, "plugin/ultimate-tokens/skills/color-tokens/scripts/role-parity.mjs");
@@ -16,5 +17,31 @@ const r = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8" });
 process.stdout.write(r.stdout || "");
 process.stderr.write(r.stderr || "");
 if (r.status !== 0) { console.error("plugin FAIL: color-tokens skill drifted from the role table"); process.exit(1); }
-console.log("plugin PASS — color-tokens skill in parity with the canonical role table");
+
+// Negative control (TKT #527): a count word role-parity's NUM_WORD parser can't resolve (e.g. a
+// future two-digit/magnitude drift like "hundred") must FAIL LOUDLY, never silently no-op. A
+// happy-path pass alone doesn't prove the loud-failure branch actually fires, so exercise it
+// directly against a throwaway fixture skill dir via the ROLE_PARITY_SKILL_DIR test hook.
+const fixture = mkdtempSync(join(tmpdir(), "role-parity-fixture-"));
+try {
+  mkdirSync(join(fixture, "references"));
+  writeFileSync(join(fixture, "SKILL.md"), "# Fixture\n\nThe default kit ships hundred palettes.\n");
+  const neg = spawnSync(process.execPath, [SCRIPT], {
+    encoding: "utf8",
+    env: { ...process.env, ROLE_PARITY_SKILL_DIR: fixture },
+  });
+  if (neg.status === 0) {
+    console.error("plugin FAIL: role-parity silently passed an unrecognized count word (\"hundred palettes\") instead of failing loudly");
+    process.exit(1);
+  }
+  if (!/hundred/.test(neg.stderr) || !/outside the range/.test(neg.stderr)) {
+    console.error("plugin FAIL: role-parity failed on the out-of-range word but without a named, explicit error:");
+    process.stderr.write(neg.stderr || "");
+    process.exit(1);
+  }
+} finally {
+  rmSync(fixture, { recursive: true, force: true });
+}
+
+console.log("plugin PASS — color-tokens skill in parity with the canonical role table (incl. loud-failure negative control)");
 process.exit(0);
