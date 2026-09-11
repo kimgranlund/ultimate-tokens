@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="414" viewBox="0 0 900 414" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
-<rect x="0.5" y="0.5" width="899" height="413" rx="14" fill="#ffffff" stroke="#e8eaed"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="734" viewBox="0 0 900 734" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+<rect x="0.5" y="0.5" width="899" height="733" rx="14" fill="#ffffff" stroke="#e8eaed"/>
 <text x="136" y="36" font-size="9" fill="#9aa0a6" text-anchor="middle">50</text>
 <text x="176" y="36" font-size="9" fill="#9aa0a6" text-anchor="middle">100</text>
 <text x="216" y="36" font-size="9" fill="#9aa0a6" text-anchor="middle">150</text>
@@ -211,5 +211,197 @@
 </g>
 <rect x="116" y="328" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="349" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Danger</text>
-<text x="24" y="400" font-size="11" fill="#9aa0a6">HCT Palette Generator — the 8 default palettes, perceptually-even tonal ramps (050 → 950). Generated from the engine.</text>
+<clipPath id="r8"><rect x="116" y="368" width="760" height="34" rx="6"/></clipPath>
+<g clip-path="url(#r8)">
+<rect x="116" y="368" width="40" height="34" fill="#FFFFFF"/>
+<rect x="156" y="368" width="40" height="34" fill="#EEF0F7"/>
+<rect x="196" y="368" width="40" height="34" fill="#DCE1F2"/>
+<rect x="236" y="368" width="40" height="34" fill="#CAD3F0"/>
+<rect x="276" y="368" width="40" height="34" fill="#B7C4F0"/>
+<rect x="316" y="368" width="40" height="34" fill="#A3B4F1"/>
+<rect x="356" y="368" width="40" height="34" fill="#90A5F4"/>
+<rect x="396" y="368" width="40" height="34" fill="#7D94F7"/>
+<rect x="436" y="368" width="40" height="34" fill="#6B82F9"/>
+<rect x="476" y="368" width="40" height="34" fill="#5B70F9"/>
+<rect x="516" y="368" width="40" height="34" fill="#4E5FEF"/>
+<rect x="556" y="368" width="40" height="34" fill="#4454D8"/>
+<rect x="596" y="368" width="40" height="34" fill="#3C4BBA"/>
+<rect x="636" y="368" width="40" height="34" fill="#35439B"/>
+<rect x="676" y="368" width="40" height="34" fill="#2F3B7C"/>
+<rect x="716" y="368" width="40" height="34" fill="#28325F"/>
+<rect x="756" y="368" width="40" height="34" fill="#212844"/>
+<rect x="796" y="368" width="40" height="34" fill="#191D2D"/>
+<rect x="836" y="368" width="40" height="34" fill="#0F1117"/>
+</g>
+<rect x="116" y="368" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
+<text x="104" y="389" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 1</text>
+<clipPath id="r9"><rect x="116" y="408" width="760" height="34" rx="6"/></clipPath>
+<g clip-path="url(#r9)">
+<rect x="116" y="408" width="40" height="34" fill="#FFFFFF"/>
+<rect x="156" y="408" width="40" height="34" fill="#F4EEF4"/>
+<rect x="196" y="408" width="40" height="34" fill="#EDDCED"/>
+<rect x="236" y="408" width="40" height="34" fill="#E7C8E7"/>
+<rect x="276" y="408" width="40" height="34" fill="#E4B2E4"/>
+<rect x="316" y="408" width="40" height="34" fill="#E19BE2"/>
+<rect x="356" y="408" width="40" height="34" fill="#DF80E2"/>
+<rect x="396" y="408" width="40" height="34" fill="#DE5FE3"/>
+<rect x="436" y="408" width="40" height="34" fill="#D93AE0"/>
+<rect x="476" y="408" width="40" height="34" fill="#CB1ED3"/>
+<rect x="516" y="408" width="40" height="34" fill="#B71BBE"/>
+<rect x="556" y="408" width="40" height="34" fill="#A21CA9"/>
+<rect x="596" y="408" width="40" height="34" fill="#8D2291"/>
+<rect x="636" y="408" width="40" height="34" fill="#762779"/>
+<rect x="676" y="408" width="40" height="34" fill="#602862"/>
+<rect x="716" y="408" width="40" height="34" fill="#4B254C"/>
+<rect x="756" y="408" width="40" height="34" fill="#382038"/>
+<rect x="796" y="408" width="40" height="34" fill="#261926"/>
+<rect x="836" y="408" width="40" height="34" fill="#140F14"/>
+</g>
+<rect x="116" y="408" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
+<text x="104" y="429" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 2</text>
+<clipPath id="r10"><rect x="116" y="448" width="760" height="34" rx="6"/></clipPath>
+<g clip-path="url(#r10)">
+<rect x="116" y="448" width="40" height="34" fill="#FFFFFF"/>
+<rect x="156" y="448" width="40" height="34" fill="#F7EEEE"/>
+<rect x="196" y="448" width="40" height="34" fill="#F2DCDB"/>
+<rect x="236" y="448" width="40" height="34" fill="#F0C9C7"/>
+<rect x="276" y="448" width="40" height="34" fill="#F0B4B3"/>
+<rect x="316" y="448" width="40" height="34" fill="#F29D9D"/>
+<rect x="356" y="448" width="40" height="34" fill="#F48486"/>
+<rect x="396" y="448" width="40" height="34" fill="#F4676E"/>
+<rect x="436" y="448" width="40" height="34" fill="#F44457"/>
+<rect x="476" y="448" width="40" height="34" fill="#E92646"/>
+<rect x="516" y="448" width="40" height="34" fill="#D1253F"/>
+<rect x="556" y="448" width="40" height="34" fill="#B7283A"/>
+<rect x="596" y="448" width="40" height="34" fill="#9E2A36"/>
+<rect x="636" y="448" width="40" height="34" fill="#842B31"/>
+<rect x="676" y="448" width="40" height="34" fill="#6C292C"/>
+<rect x="716" y="448" width="40" height="34" fill="#552527"/>
+<rect x="756" y="448" width="40" height="34" fill="#3F2020"/>
+<rect x="796" y="448" width="40" height="34" fill="#2A1818"/>
+<rect x="836" y="448" width="40" height="34" fill="#170F0F"/>
+</g>
+<rect x="116" y="448" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
+<text x="104" y="469" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 3</text>
+<clipPath id="r11"><rect x="116" y="488" width="760" height="34" rx="6"/></clipPath>
+<g clip-path="url(#r11)">
+<rect x="116" y="488" width="40" height="34" fill="#FFFFFF"/>
+<rect x="156" y="488" width="40" height="34" fill="#F6EFE9"/>
+<rect x="196" y="488" width="40" height="34" fill="#F1DECF"/>
+<rect x="236" y="488" width="40" height="34" fill="#EECDB0"/>
+<rect x="276" y="488" width="40" height="34" fill="#EDBA8D"/>
+<rect x="316" y="488" width="40" height="34" fill="#ECA667"/>
+<rect x="356" y="488" width="40" height="34" fill="#E69443"/>
+<rect x="396" y="488" width="40" height="34" fill="#DB8426"/>
+<rect x="436" y="488" width="40" height="34" fill="#CB7713"/>
+<rect x="476" y="488" width="40" height="34" fill="#B96B09"/>
+<rect x="516" y="488" width="40" height="34" fill="#A7610C"/>
+<rect x="556" y="488" width="40" height="34" fill="#945610"/>
+<rect x="596" y="488" width="40" height="34" fill="#814C14"/>
+<rect x="636" y="488" width="40" height="34" fill="#6E4318"/>
+<rect x="676" y="488" width="40" height="34" fill="#5B3919"/>
+<rect x="716" y="488" width="40" height="34" fill="#493018"/>
+<rect x="756" y="488" width="40" height="34" fill="#372616"/>
+<rect x="796" y="488" width="40" height="34" fill="#261B12"/>
+<rect x="836" y="488" width="40" height="34" fill="#15100C"/>
+</g>
+<rect x="116" y="488" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
+<text x="104" y="509" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 4</text>
+<clipPath id="r12"><rect x="116" y="528" width="760" height="34" rx="6"/></clipPath>
+<g clip-path="url(#r12)">
+<rect x="116" y="528" width="40" height="34" fill="#FFFFFF"/>
+<rect x="156" y="528" width="40" height="34" fill="#F1F1E7"/>
+<rect x="196" y="528" width="40" height="34" fill="#E5E4C5"/>
+<rect x="236" y="528" width="40" height="34" fill="#DAD89C"/>
+<rect x="276" y="528" width="40" height="34" fill="#CFCA73"/>
+<rect x="316" y="528" width="40" height="34" fill="#C2BC51"/>
+<rect x="356" y="528" width="40" height="34" fill="#B5AE35"/>
+<rect x="396" y="528" width="40" height="34" fill="#A8A022"/>
+<rect x="436" y="528" width="40" height="34" fill="#9A9314"/>
+<rect x="476" y="528" width="40" height="34" fill="#8C850C"/>
+<rect x="516" y="528" width="40" height="34" fill="#7D7810"/>
+<rect x="556" y="528" width="40" height="34" fill="#6F6A14"/>
+<rect x="596" y="528" width="40" height="34" fill="#615D18"/>
+<rect x="636" y="528" width="40" height="34" fill="#54511A"/>
+<rect x="676" y="528" width="40" height="34" fill="#46441A"/>
+<rect x="716" y="528" width="40" height="34" fill="#393819"/>
+<rect x="756" y="528" width="40" height="34" fill="#2C2B16"/>
+<rect x="796" y="528" width="40" height="34" fill="#1F1F12"/>
+<rect x="836" y="528" width="40" height="34" fill="#12110C"/>
+</g>
+<rect x="116" y="528" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
+<text x="104" y="549" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 5</text>
+<clipPath id="r13"><rect x="116" y="568" width="760" height="34" rx="6"/></clipPath>
+<g clip-path="url(#r13)">
+<rect x="116" y="568" width="40" height="34" fill="#FFFFFF"/>
+<rect x="156" y="568" width="40" height="34" fill="#EAF3EC"/>
+<rect x="196" y="568" width="40" height="34" fill="#CFEAD4"/>
+<rect x="236" y="568" width="40" height="34" fill="#AEE3B8"/>
+<rect x="276" y="568" width="40" height="34" fill="#8DDB9E"/>
+<rect x="316" y="568" width="40" height="34" fill="#70D087"/>
+<rect x="356" y="568" width="40" height="34" fill="#58C475"/>
+<rect x="396" y="568" width="40" height="34" fill="#45B666"/>
+<rect x="436" y="568" width="40" height="34" fill="#34A859"/>
+<rect x="476" y="568" width="40" height="34" fill="#26994E"/>
+<rect x="516" y="568" width="40" height="34" fill="#2A8948"/>
+<rect x="556" y="568" width="40" height="34" fill="#2D7943"/>
+<rect x="596" y="568" width="40" height="34" fill="#2C6A3D"/>
+<rect x="636" y="568" width="40" height="34" fill="#295B36"/>
+<rect x="676" y="568" width="40" height="34" fill="#264C2F"/>
+<rect x="716" y="568" width="40" height="34" fill="#213D28"/>
+<rect x="756" y="568" width="40" height="34" fill="#1C2F20"/>
+<rect x="796" y="568" width="40" height="34" fill="#162118"/>
+<rect x="836" y="568" width="40" height="34" fill="#0D130E"/>
+</g>
+<rect x="116" y="568" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
+<text x="104" y="589" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 6</text>
+<clipPath id="r14"><rect x="116" y="608" width="760" height="34" rx="6"/></clipPath>
+<g clip-path="url(#r14)">
+<rect x="116" y="608" width="40" height="34" fill="#FFFFFF"/>
+<rect x="156" y="608" width="40" height="34" fill="#E7F3F3"/>
+<rect x="196" y="608" width="40" height="34" fill="#C7EAEA"/>
+<rect x="236" y="608" width="40" height="34" fill="#A0E2E1"/>
+<rect x="276" y="608" width="40" height="34" fill="#78D8D8"/>
+<rect x="316" y="608" width="40" height="34" fill="#55CDCD"/>
+<rect x="356" y="608" width="40" height="34" fill="#3ABFC0"/>
+<rect x="396" y="608" width="40" height="34" fill="#26B1B2"/>
+<rect x="436" y="608" width="40" height="34" fill="#18A2A3"/>
+<rect x="476" y="608" width="40" height="34" fill="#0F9494"/>
+<rect x="516" y="608" width="40" height="34" fill="#138585"/>
+<rect x="556" y="608" width="40" height="34" fill="#177676"/>
+<rect x="596" y="608" width="40" height="34" fill="#1A6767"/>
+<rect x="636" y="608" width="40" height="34" fill="#1B5959"/>
+<rect x="676" y="608" width="40" height="34" fill="#1B4B4B"/>
+<rect x="716" y="608" width="40" height="34" fill="#193D3D"/>
+<rect x="756" y="608" width="40" height="34" fill="#162F2F"/>
+<rect x="796" y="608" width="40" height="34" fill="#122121"/>
+<rect x="836" y="608" width="40" height="34" fill="#0C1313"/>
+</g>
+<rect x="116" y="608" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
+<text x="104" y="629" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 7</text>
+<clipPath id="r15"><rect x="116" y="648" width="760" height="34" rx="6"/></clipPath>
+<g clip-path="url(#r15)">
+<rect x="116" y="648" width="40" height="34" fill="#FFFFFF"/>
+<rect x="156" y="648" width="40" height="34" fill="#EBF2F6"/>
+<rect x="196" y="648" width="40" height="34" fill="#D3E5F2"/>
+<rect x="236" y="648" width="40" height="34" fill="#B9D9F0"/>
+<rect x="276" y="648" width="40" height="34" fill="#9BCDEF"/>
+<rect x="316" y="648" width="40" height="34" fill="#7AC0EF"/>
+<rect x="356" y="648" width="40" height="34" fill="#58B4ED"/>
+<rect x="396" y="648" width="40" height="34" fill="#37A6E6"/>
+<rect x="436" y="648" width="40" height="34" fill="#1D98D9"/>
+<rect x="476" y="648" width="40" height="34" fill="#0E8AC7"/>
+<rect x="516" y="648" width="40" height="34" fill="#107CB3"/>
+<rect x="556" y="648" width="40" height="34" fill="#136F9F"/>
+<rect x="596" y="648" width="40" height="34" fill="#18618A"/>
+<rect x="636" y="648" width="40" height="34" fill="#1B5475"/>
+<rect x="676" y="648" width="40" height="34" fill="#1B4661"/>
+<rect x="716" y="648" width="40" height="34" fill="#1A394D"/>
+<rect x="756" y="648" width="40" height="34" fill="#182D3A"/>
+<rect x="796" y="648" width="40" height="34" fill="#132028"/>
+<rect x="836" y="648" width="40" height="34" fill="#0C1216"/>
+</g>
+<rect x="116" y="648" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
+<text x="104" y="669" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 8</text>
+<text x="24" y="720" font-size="11" fill="#9aa0a6">HCT Palette Generator — the 16 default palettes, perceptually-even tonal ramps (050 → 950). Generated from the engine.</text>
 </svg>

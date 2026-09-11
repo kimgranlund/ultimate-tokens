@@ -108,7 +108,7 @@ lmin 5, lmax 100, damp 80, dampCurve 1.5, dampAmp 0, dampBias 0.
 
 ## 7. Data Model 📐
 Canonical machine-readable form: `data/role-table.json` (`constants`, `roleTable` 53 rows,
-`defaults` 8 palettes).
+`defaults` 16 palettes — 8 brand families + 8 data families).
 
 ```ts
 interface State {
@@ -207,7 +207,7 @@ OKLCH-native designers work in familiar numbers without changing the output colo
 | OD-002 | Surface bases 250/500 as semantic scrims | DEFERRED | scrim role coverage |
 | OD-003 | UI3 Collections schema authenticity | DECIDED (interchange-only) | the `ui3` export's usability |
 | OD-004 | Aliased semantic export without plugin | DEFERRED (spike implemented 2026-06-17, re-statused 2026-07-25 — stale 5.5 weeks with no test run) | The `rawColl` opt-in emits the FULL documented alias shape (`targetVariableName` + `targetVariableSetName`), **gated by `hpg-export-resolved`** so it can't regress. Still unvalidated end-to-end in real Figma (no Figma in CI) and there is no user-facing plugin-free download yet; the plugin stays the reliable path in the meantime. Re-open by running `docs/reference/references/od-004-plugin-free-import-test.md` in real Figma (import with the `Color Primitives` collection pre-existing) before exposing the plugin-free path or removing the plugin. |
-| OD-005 | Palette count beyond the default 8 | DECIDED (2026-06-15) — configurable | Every acceptance criterion is "for every palette", so it generalizes to any count; the validated `capability.system.ui-app` ships a configurable palette set. The 8 defaults are a seed set, NOT a ceiling. |
+| OD-005 | Palette count beyond the default 16 | DECIDED (2026-06-15) — configurable | Every acceptance criterion is "for every palette", so it generalizes to any count; the validated `capability.system.ui-app` ships a configurable palette set. The 16 defaults (8 brand + 8 data, issue #503) are a seed set, NOT a ceiling. |
 
 ## 15. Current Status
 
