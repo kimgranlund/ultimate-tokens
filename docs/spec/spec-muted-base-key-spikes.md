@@ -173,8 +173,9 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 - **EX-8 (NORMATIVE, key strip).** Default Primary, light scheme, `accentRef "mode"`: the strip reads
   brighter = stop 650 (`primaryHigh`), bright = 350 (`primaryBright`), prime = 550 (`primary`),
   dim = 650 (`primaryDim`), dimmer = 350 (`primaryLow`). Dark scheme: 400, 400, 450, 700, 700. With
-  `accentRef "single"` the prime swatch is 500 in both schemes. Brighter and dim share a stop in each
-  scheme by the frozen role table; the strip shows both anyway, since it is a role view, not a stop view.
+  `accentRef "single"` the prime swatch is 500 in both schemes. Pairs share a stop per scheme by the
+  frozen role table: light, brighter = dim (650) and bright = dimmer (350); dark, brighter = bright
+  (400) and dim = dimmer (700). The strip shows all five anyway, since it is a role view, not a stop view.
 - **EX-7 (NORMATIVE, shadcn).** Default document: `--chart-1 .. --chart-5` resolve to the prime role of
   `data-1 .. data-5`. Data palettes all disabled: the pre-feature chart mapping is emitted.
 
