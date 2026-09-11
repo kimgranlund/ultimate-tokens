@@ -19,6 +19,7 @@ const inDomainState = () => {
     const p = { name: "P" + i, hue: rnd() * 360, chroma: rnd() * 100, skew: -100 + rnd() * 200, lift: -40 + rnd() * 80, hueShift: -60 + rnd() * 120, hueSameDir: rnd() > 0.5, on: rnd() > 0.3 };
     if (rnd() > 0.5) p.cuspPull = rnd() * 100; // OPTIONAL per-palette override — must round-trip when present, and stay absent when not
     if (rnd() > 0.5) p.intensity = rnd() * 100; // OPTIONAL per-palette baseIntensity override (REQ-010) — same absent/round-trip shape as cuspPull
+    if (rnd() > 0.5) p.primeChroma = rnd() * 100; // OPTIONAL per-palette primeChroma override (REQ-010) — same absent/round-trip shape as cuspPull/intensity
     return p;
   });
   // per-doc semantic-mapping overrides: a random, shape-valid subset re-points some roles.
@@ -31,7 +32,7 @@ const inDomainState = () => {
   const geTok = {}; for (const [k, v] of [["MD|base", 30], ["2XL|base", 72], ["XS|base", 18]]) if (rnd() > 0.5) geTok[k] = v;
   return { curve: pick(["linear", "sine", "cubic", "logistic", "exp"]), tension: rnd() * 100, lmin: rnd() * 40, lmax: 60 + rnd() * 40,
     damp: rnd() * 100, dampCurve: 0.5 + rnd() * 3.5, dampAmp: rnd() * 100, dampBias: -100 + rnd() * 200,
-    baseIntensity: rnd() * 100, keyIntensity: rnd() * 100,
+    baseIntensity: rnd() * 100, primeChroma: rnd() * 100,
     hueSpace: pick(["cam16", "oklch"]), relChroma: rnd() > 0.5, chromaFloor: rnd() * 100, toneMode: pick(["even", "perceptual", "peak"]), vibrancy: rnd() * 100, onColorMode: pick(["fixed", "contrast"]), accentRef: pick(["mode", "single"]), type: { treatment: pick(["product", "luxury", "editorial", "technical", "statement"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { modes: [{ id: "tm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}), ...(Object.keys(tyTok).length ? { tokenOverrides: tyTok } : {}) }, geometry: { treatment: pick(["comfortable", "compact", "spacious", "touch", "pill"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { ramp: "linear4" } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}), ...(rnd() > 0.5 ? { modes: [{ id: "gm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}) }] } : {}), ...(Object.keys(geTok).length ? { tokenOverrides: geTok } : {}) }, theme: pick(["auto", "light", "dark"]), selected: Math.floor(rnd() * n), roleOverrides, palettes };
 };
 
@@ -51,14 +52,14 @@ const mut2 = JSON.parse(JSON.stringify(base)); mut2.palettes[0].hue = 410;   // 
 const hyd2 = U.hydrate(U.serialize(mut2));
 if (hyd2.palettes[0].hue !== 360) FAIL("clamp", `palette hue 410 -> ${hyd2.palettes[0].hue}, want 360`);
 if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "clamping palette hue disturbed sibling chroma");
-// intensity controls (REQ-010): baseIntensity/keyIntensity clamp alone; the optional per-palette
-// `intensity` override clamps alone when present and stays absent when not set.
+// intensity controls (REQ-010): baseIntensity/primeChroma clamp alone; the optional per-palette
+// `intensity`/`primeChroma` overrides clamp alone when present and stay absent when not set.
 {
-  const mut3 = JSON.parse(JSON.stringify(base)); mut3.baseIntensity = 140; mut3.keyIntensity = -20; // out of [0,100]
+  const mut3 = JSON.parse(JSON.stringify(base)); mut3.baseIntensity = 140; mut3.primeChroma = -20; // out of [0,100]
   const hyd3 = U.hydrate(U.serialize(mut3));
   if (hyd3.baseIntensity !== 100) FAIL("clamp", `baseIntensity 140 -> ${hyd3.baseIntensity}, want 100`);
-  if (hyd3.keyIntensity !== 0) FAIL("clamp", `keyIntensity -20 -> ${hyd3.keyIntensity}, want 0`);
-  for (const k of ["curve", "tension", "lmin", "damp", "hueSpace", "selected"]) if (!deepEq(hyd3[k], base[k])) FAIL("clamp", `clamping baseIntensity/keyIntensity disturbed ${k}`);
+  if (hyd3.primeChroma !== 0) FAIL("clamp", `primeChroma -20 -> ${hyd3.primeChroma}, want 0`);
+  for (const k of ["curve", "tension", "lmin", "damp", "hueSpace", "selected"]) if (!deepEq(hyd3[k], base[k])) FAIL("clamp", `clamping baseIntensity/primeChroma disturbed ${k}`);
 
   const withIntensity = JSON.parse(JSON.stringify(base)); withIntensity.palettes[0].intensity = 240; // out of [0,100]
   const hydI = U.hydrate(U.serialize(withIntensity));
@@ -67,18 +68,46 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
 
   const noIntensity = JSON.parse(JSON.stringify(base)); delete noIntensity.palettes[0].intensity;
   if ("intensity" in U.hydrate(U.serialize(noIntensity)).palettes[0]) FAIL("clamp", "absent palette.intensity must stay absent (identity gate)");
+
+  const withPrimeChroma = JSON.parse(JSON.stringify(base)); withPrimeChroma.palettes[0].primeChroma = 240; // out of [0,100]
+  const hydPC = U.hydrate(U.serialize(withPrimeChroma));
+  if (hydPC.palettes[0].primeChroma !== 100) FAIL("clamp", `palette.primeChroma 240 -> ${hydPC.palettes[0].primeChroma}, want 100`);
+  if (!deepEq(hydPC.palettes[0].hue, base.palettes[0].hue)) FAIL("clamp", "clamping palette.primeChroma disturbed sibling hue");
+
+  const noPrimeChroma = JSON.parse(JSON.stringify(base)); delete noPrimeChroma.palettes[0].primeChroma;
+  if ("primeChroma" in U.hydrate(U.serialize(noPrimeChroma)).palettes[0]) FAIL("clamp", "absent palette.primeChroma must stay absent (identity gate)");
 }
-// ── schema-rename (REQ-011, EX-6): pre-v2 snapshot stamps baseIntensity 100; v2 snapshot with the
+// ── schema-rename (REQ-011, EX-9): pre-v2 snapshot stamps baseIntensity 100; v2 snapshot with the
 // field absent hydrates to the domain default (also 100 today) ─────────────────────────────
 {
   const pre = { schemaVersion: 1, palettes: base.palettes, vibrancy: 0 };
   const hydPre = U.hydrate(pre);
-  if (hydPre.baseIntensity !== 100 || hydPre.keyIntensity !== 100) FAIL("schema-rename", `EX-6 pre-v2 snapshot -> baseIntensity ${hydPre.baseIntensity}, keyIntensity ${hydPre.keyIntensity}, want 100/100`);
-  if (hydPre.palettes.length !== base.palettes.length) FAIL("schema-rename", `EX-6 pre-v2 snapshot must not inject/drop palettes: got ${hydPre.palettes.length}, want ${base.palettes.length}`);
+  if (hydPre.baseIntensity !== 100 || hydPre.primeChroma !== 100) FAIL("schema-rename", `EX-9 pre-v2 snapshot -> baseIntensity ${hydPre.baseIntensity}, primeChroma ${hydPre.primeChroma}, want 100/100`);
+  if (hydPre.palettes.length !== base.palettes.length) FAIL("schema-rename", `EX-9 pre-v2 snapshot must not inject/drop palettes: got ${hydPre.palettes.length}, want ${base.palettes.length}`);
 
   const atV2 = { schemaVersion: 2, palettes: base.palettes };
   const hydV2 = U.hydrate(atV2);
-  if (hydV2.baseIntensity !== 100 || hydV2.keyIntensity !== 100) FAIL("schema-rename", `EX-6 v2 snapshot with absent field -> baseIntensity ${hydV2.baseIntensity}, keyIntensity ${hydV2.keyIntensity}, want domain default 100/100`);
+  if (hydV2.baseIntensity !== 100 || hydV2.primeChroma !== 100) FAIL("schema-rename", `EX-9 v2 snapshot with absent field -> baseIntensity ${hydV2.baseIntensity}, primeChroma ${hydV2.primeChroma}, want domain default 100/100`);
+}
+// ── schema-rename v3 (REQ-011, R4, EX-9): keyIntensity -> primeChroma, value carried, old key
+// dropped, never-clobbering an already-present primeChroma ──────────────────────────────────
+{
+  // EX-9: {schemaVersion: 2, keyIntensity: 70} hydrates to primeChroma 70, no keyIntensity key.
+  const withKeyIntensity = { schemaVersion: 2, palettes: base.palettes, keyIntensity: 70 };
+  const hydKI = U.hydrate(withKeyIntensity);
+  if (hydKI.primeChroma !== 70) FAIL("schema-rename", `v3 rename: keyIntensity 70 -> primeChroma ${hydKI.primeChroma}, want 70`);
+  if ("keyIntensity" in hydKI) FAIL("schema-rename", "v3 rename: keyIntensity must not survive onto the hydrated state");
+
+  // never-clobber: a doc carrying BOTH keeps its OWN primeChroma; the stale keyIntensity is dropped.
+  const withBoth = { schemaVersion: 2, palettes: base.palettes, keyIntensity: 40, primeChroma: 90 };
+  const hydBoth = U.hydrate(withBoth);
+  if (hydBoth.primeChroma !== 90) FAIL("schema-rename", `v3 rename never-clobber: primeChroma ${hydBoth.primeChroma}, want 90 (the doc's own value, not the stale keyIntensity)`);
+  if ("keyIntensity" in hydBoth) FAIL("schema-rename", "v3 rename never-clobber: keyIntensity must not survive onto the hydrated state");
+
+  // a doc already at schemaVersion 3 (or later) predates no rename — an absent field defaults as usual.
+  const atV3 = { schemaVersion: 3, palettes: base.palettes };
+  const hydV3 = U.hydrate(atV3);
+  if (hydV3.primeChroma !== 100) FAIL("schema-rename", `v3 snapshot with absent field -> primeChroma ${hydV3.primeChroma}, want domain default 100`);
 }
 // export-format prefs (doc.export = { unit, colorPrefix, … }) — each valid key round-trips; absent stays
 // absent; invalid keys drop; an all-invalid object drops the whole `export`. (colorFormat was REMOVED —
@@ -425,6 +454,12 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
     const withBogusGeomTov = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, tokenOverrides: { "XXL|base": 40, "MD|base": 30 } } }));
     if ("XXL|base" in (withBogusGeomTov.geometry.tokenOverrides || {})) FAIL("dropped-keys", "a geom tokenOverrides key with an unknown leading size segment must drop");
     if (!withBogusGeomTov[U.DROPPED_KEYS].some((d) => d.facet === "geometry.tokenOverrides" && d.key === "XXL|base")) FAIL("dropped-keys", `an unknown geom tokenOverrides size segment must be reported (got ${JSON.stringify(withBogusGeomTov[U.DROPPED_KEYS])})`);
+
+    // a stray keyIntensity on a doc that already claims schemaVersion 3+ predates no rename (REQ-011) —
+    // it's a leftover, not a legacy doc, so it must be reported loudly rather than silently vanish.
+    const withStrayKeyIntensity = U.hydrate({ schemaVersion: 3, palettes: seed.palettes, keyIntensity: 55 });
+    if ("keyIntensity" in withStrayKeyIntensity) FAIL("dropped-keys", "a stray post-v3 keyIntensity must not survive onto the hydrated state");
+    if (!withStrayKeyIntensity[U.DROPPED_KEYS].some((d) => d.facet === "controls" && d.key === "keyIntensity")) FAIL("dropped-keys", `a stray post-v3 keyIntensity must be reported in DROPPED_KEYS (got ${JSON.stringify(withStrayKeyIntensity[U.DROPPED_KEYS])})`);
 
     // a fully in-domain doc reports NOTHING dropped — the accounting must not false-positive.
     const clean = U.hydrate(U.serialize(seed));

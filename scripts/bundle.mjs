@@ -37,6 +37,7 @@ const MODS = [
 
   ["icons", "src/ui/icons.js"],
   ["dataHues", "src/engine/data-hues.mjs"], // pure, zero-dep; BEFORE model (which imports it, TKT #515/U6)
+  ["prime", "src/engine/prime.mjs"], // pure, imports hct/okhsl/tonal only; BEFORE model (which imports it, #533 P3)
   ["model", "src/ui/model.mjs"],
   // TKT-0023: app.js decomposed into a bootstrap/core + per-section prototype mixins. appHelpers is the
   // pure (no `this`) shared carrier (h()/btn/chip/… + storage/license/font-loading) both app.js and every
@@ -52,7 +53,7 @@ const MODS = [
   ["app", "src/ui/app.js"],
 ];
 const KEY = { "hct.js": "hct", "okhsl.js": "okhsl", "semantic.js": "semantic", "tonal.js": "tonal", "derive.mjs": "derive", "font-fallbacks.mjs": "fontFallbacks", "type.mjs": "type", "geometry.mjs": "geometry", "flags.js": "flags", "persist.js": "persist",
-  "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "model.mjs": "model",
+  "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "prime.mjs": "prime", "model.mjs": "model",
   "app-helpers.mjs": "appHelpers", "color.js": "colorSection", "typography.js": "typeSection", "geometry.js": "geomSection",
   "drawer.js": "drawerMixin", "apply-gate.js": "applyGateMixin", "settings.js": "settingsMixin",
   ...Object.fromEntries(CATEGORY_FILES.map((f) => [f, categoryKey(f)])) };
