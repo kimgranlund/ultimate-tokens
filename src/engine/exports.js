@@ -1043,6 +1043,206 @@ export function exportPandaModule(preset) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// 10. PARK UI (a Panda preset in Park's own 1..12/a1..a12/appearance-group color shape —
+//     docs/spec/spec-panda-park-ui-exports.md REQ-020..028)
+// ──────────────────────────────────────────────────────────────────────────────
+// The 1..8 steps of the 12-step ladder are RAW RAMP STOPS read straight from the palette's own
+// stops (issue #588's correction, superseding the original role-indirected/flattened P-1
+// default); 9..12 stay role-derived (bare accent / -hover / -on-surface-variant / -on-surface —
+// already ratified, unaffected by #588). Canonical source: docs/reference/data/radix-projection.json.
+const PARK_RAW_STEPS = [
+  { step: 1, light: 100, dark: 900 },
+  { step: 2, light: 125, dark: 875 },
+  { step: 3, light: 150, dark: 850 },
+  { step: 4, light: 175, dark: 825 },
+  { step: 5, light: 200, dark: 800 },
+  { step: 6, light: 250, dark: 750 },
+  { step: 7, light: 300, dark: 700 },
+  { step: 8, light: 350, dark: 650 },
+];
+// step -> the role suffix that drives it (9..12, REQ-021), read off p.roles by suffix.
+const PARK_ROLE_STEPS = [
+  { step: 9, suffix: "" }, // bare accent (prime)
+  { step: 10, suffix: "-hover" },
+  { step: 11, suffix: "-on-surface-variant" },
+  { step: 12, suffix: "-on-surface" },
+];
+
+// flattenOver(end, bgRgb) — Vocabulary "Flattened": a translucent role end composited over an
+// opaque background in 8-bit sRGB. Exported per REQ-041 for the test's independent check; no
+// caller remains inside exportParkUi after issue #588's correction (steps 1..8 are raw stops,
+// never flattened), kept as a pure utility.
+export function flattenOver(end, bgRgb) {
+  const a = end.frac;
+  return end.rgb.map((c, i) => Math.round(a * c + (1 - a) * bgRgb[i]));
+}
+
+// alphaProject(rgb, mode) — Vocabulary "Alpha projection": the Radix Colors construction of an
+// alpha step from a solid, over white ("light") or black ("dark"). Returns { rgb, a } (a in
+// [0,1]); a === 0 means the projection is exactly `transparent` (REQ-022).
+export function alphaProject(rgb, mode) {
+  const clamp = (x) => Math.max(0, Math.min(255, x));
+  if (mode === "dark") {
+    const a = Math.max(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255);
+    if (a === 0) return { rgb: [0, 0, 0], a: 0 };
+    return { rgb: rgb.map((t) => clamp(Math.round(t / a))), a };
+  }
+  const a = Math.max(1 - rgb[0] / 255, 1 - rgb[1] / 255, 1 - rgb[2] / 255);
+  if (a === 0) return { rgb: [255, 255, 255], a: 0 };
+  return { rgb: rgb.map((t) => clamp(Math.round((t - 255 * (1 - a)) / a))), a };
+}
+
+// alphaLeafValue — one mode's value for an a{k} leaf (REQ-022): "transparent" when the projected
+// alpha is exactly 0, else an `oklch(L C H / a%)` string (a to one decimal).
+function alphaLeafValue(rgb, mode) {
+  const { rgb: C, a } = alphaProject(rgb, mode);
+  if (a === 0) return "transparent";
+  return oklchStrA(rgbToOklch(C), num(a * 100, 1));
+}
+
+// deep-clone a plain-object/array tree of { value } leaves (no functions/Maps inside).
+function deepCloneLeaves(node) {
+  if (Array.isArray(node)) return node.map(deepCloneLeaves);
+  if (node && typeof node === "object") {
+    const out = {};
+    for (const k of Object.keys(node)) out[k] = deepCloneLeaves(node[k]);
+    return out;
+  }
+  return node;
+}
+
+// rewriteRefs — REQ-025: after deep-cloning a driver's own color group under a new group name
+// (accent <- primary, gray <- neutral), every internal `{colors.{fromN}.…}` reference must
+// re-point at `{colors.{toN}.…}` so the copy is self-contained, exactly as Park's own
+// `gray: colorPalettes.neutral` is (KF-4).
+function rewriteRefs(node, fromN, toN) {
+  const needle = `{colors.${fromN}.`;
+  const replacement = `{colors.${toN}.`;
+  if (typeof node === "string") return node.split(needle).join(replacement);
+  if (Array.isArray(node)) return node.map((v) => rewriteRefs(v, fromN, toN));
+  if (node && typeof node === "object") {
+    const out = {};
+    for (const k of Object.keys(node)) out[k] = rewriteRefs(node[k], fromN, toN);
+    return out;
+  }
+  return node;
+}
+
+// parkColorGroup(p) — one palette's Park-shaped color object (KF-3 + REQ-021..024): the 12
+// numbered steps, the 12 alpha steps, the five appearance groups (aliasing by step reference),
+// and the two additive leaves (on-accent, prime) Park's own scale has no slot for.
+function parkColorGroup(p) {
+  const group = {};
+  const rawSolid = {}; // step -> { base: [r,g,b], dark: [r,g,b] } — for the a{k} projection below.
+
+  for (const { step, light, dark } of PARK_RAW_STEPS) {
+    const lightRgb = p.byStop.get(light);
+    const darkRgb = p.byStop.get(dark);
+    rawSolid[step] = { base: lightRgb, dark: darkRgb };
+    group[String(step)] = { value: { base: roleOklch({ rgb: lightRgb, frac: 1 }), _dark: roleOklch({ rgb: darkRgb, frac: 1 }) } };
+  }
+  for (const { step, suffix } of PARK_ROLE_STEPS) {
+    const r = p.roles.find((x) => x.suffix === suffix);
+    rawSolid[step] = { base: r.light.rgb, dark: r.dark.rgb };
+    group[String(step)] = { value: { base: roleOklch(r.light), _dark: roleOklch(r.dark) } };
+  }
+  for (let step = 1; step <= 12; step++) {
+    const { base, dark } = rawSolid[step];
+    group[`a${step}`] = { value: { base: alphaLeafValue(base, "light"), _dark: alphaLeafValue(dark, "dark") } };
+  }
+
+  const ref = (k) => `{colors.${p.n}.${k}}`;
+  group.solid = {
+    bg: { DEFAULT: { value: ref("9") }, hover: { value: ref("10") } },
+    fg: { DEFAULT: { value: ref("on-accent") } },
+  };
+  group.subtle = {
+    bg: { DEFAULT: { value: ref("a3") }, hover: { value: ref("a4") }, active: { value: ref("a5") } },
+    fg: { DEFAULT: { value: ref("11") } },
+  };
+  group.surface = {
+    bg: { DEFAULT: { value: ref("a2") }, active: { value: ref("a3") } },
+    border: { DEFAULT: { value: ref("a6") }, hover: { value: ref("a7") } },
+    fg: { DEFAULT: { value: ref("11") } },
+  };
+  group.outline = {
+    bg: { hover: { value: ref("a2") }, active: { value: ref("a3") } },
+    border: { DEFAULT: { value: ref("a7") } },
+    fg: { DEFAULT: { value: ref("11") } },
+  };
+  group.plain = {
+    bg: { hover: { value: ref("a3") }, active: { value: ref("a4") } },
+    fg: { DEFAULT: { value: ref("11") } },
+  };
+
+  // REQ-024: two extra leaves Park's own scale has no slot for — a solid-foreground on-color and
+  // the mode-independent prime identity swatch (`base` only, per REQ-024).
+  const onAccent = p.roles.find((x) => x.suffix === `-on-${p.n}`);
+  group["on-accent"] = { value: { base: roleOklch(onAccent.light), _dark: roleOklch(onAccent.dark) } };
+  group.prime = { value: { base: oklchStr({ L: p.prime.prime.oklch[0], C: p.prime.prime.oklch[1], H: p.prime.prime.oklch[2] }) } };
+
+  return group;
+}
+
+// exportParkUi(state, opts) -> a preset OBJECT `{ name, theme: { extend: { semanticTokens: {
+// colors, radii? } } } }` (REQ-020). Returns the sentinel string, mirroring exportShadcn, when no
+// driver palette can be picked.
+export function exportParkUi(state, opts = {}) {
+  const palettes = derivedAll(state);
+  const { neutral, primary, danger } = pickDrivers(palettes);
+  if (!neutral || !primary) return "/* Park UI export needs at least one enabled non-data palette. */\n";
+
+  const colors = {};
+  for (const p of palettes) colors[p.n] = parkColorGroup(p);
+
+  // REQ-025: accent <- primary, gray <- neutral, each a self-contained deep copy with every
+  // internal reference re-pointed at the new group name (Park's own `gray: colorPalettes.neutral`
+  // pattern, KF-4).
+  colors.accent = rewriteRefs(deepCloneLeaves(colors[primary.n]), primary.n, "accent");
+  colors.gray = rewriteRefs(deepCloneLeaves(colors[neutral.n]), neutral.n, "gray");
+  colors.error = { value: `{colors.${danger ? danger.n : primary.n}.9}` };
+
+  // REQ-026: Park's own global semantic tokens, verbatim keys, referencing the just-built `gray`
+  // copy (KF-4) — no invented keys.
+  colors.fg = {
+    default: { value: "{colors.gray.12}" },
+    muted: { value: "{colors.gray.11}" },
+    subtle: { value: "{colors.gray.10}" },
+  };
+  colors.canvas = { value: "{colors.gray.1}" };
+  colors.border = { value: "{colors.gray.7}" };
+  colors.bg = { subtle: { value: "{colors.gray.2}" } };
+
+  // REQ-027: Park's own radii aliases, always emitted; tokens.radii (REQ-008's shape) only when
+  // opts.geometry resolves the brand's own corners.
+  const radii = { l1: { value: "{radii.xs}" }, l2: { value: "{radii.sm}" }, l3: { value: "{radii.md}" } };
+  const extend = { semanticTokens: { colors, radii } };
+  if (opts.geometry && opts.geometry.radii) {
+    const px = (n) => `${n}px`;
+    const g = opts.geometry.radii;
+    extend.tokens = { radii: { none: { value: px(g.none) }, xs: { value: px(g.xs) }, sm: { value: px(g.sm) }, md: { value: px(g.md) }, lg: { value: px(g.lg) }, xl: { value: px(g.xl) }, full: { value: px(g.full) } } };
+  }
+
+  const name = "ultimate-tokens-park-ui-" + slug(state.name || "brand-kit");
+  return { name, theme: { extend } };
+}
+
+// exportParkUiModule — the ESM preset-module STRING the drawer shows and the zip ships (REQ-020):
+// a header naming the driver bindings and the install order (ours last, after Park's own CLI-
+// copied preset). The no-driver sentinel (a plain string, mirroring exportShadcn) passes through
+// unwrapped.
+export function exportParkUiModule(preset) {
+  if (typeof preset === "string") return preset;
+  return [
+    "/* Park UI preset, generated by Ultimate Tokens.",
+    "   accent = primary, gray = neutral, error = danger.",
+    "   presets: [parkPreset, utParkPreset] (ours last). */",
+    "export default " + JSON.stringify(preset, null, 2) + ";",
+    "",
+  ].join("\n");
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // exportAll — every format in one object (theme-independent).
 // ──────────────────────────────────────────────────────────────────────────────
 export function exportAll(state, opts) {
@@ -1055,5 +1255,6 @@ export function exportAll(state, opts) {
     tailwind: exportTailwind(state),
     shadcn: exportShadcn(state),
     panda: exportPanda(state),
+    parkui: exportParkUi(state),
   };
 }
