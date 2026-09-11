@@ -72,6 +72,32 @@ ok(!geomOnly.palettes && !geomOnly.type && geomOnly.geometry, "brandKit({geometr
   ok(brandKit(nonBaseDoc).type.categories.Body.MD.size === plainKit.type.categories.Body.MD.size, "a non-base (|md) override does NOT leak into the BASE kit");
 }
 
+// controls (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2): the brand-kit states the chroma
+// policy it was generated under — the SAME shape exportJSON's `meta.controls` carries. Proven with a
+// document whose controls are NON-default (every group differs from GROUP_DEFAULTS, both global
+// fallbacks differ from 100/100) so the check exercises real resolution, not a default-vs-default
+// match that would pass even if brandKit ignored the document's controls entirely.
+{
+  const customDoc = {
+    ...defaultDocument(),
+    baseIntensity: 42,
+    primeChroma: 77,
+    paletteGroups: {
+      material: { baseChroma: 12, primeChroma: 34 },
+      brand: { baseChroma: 56, primeChroma: 78 },
+      system: { baseChroma: 90, primeChroma: 11 },
+      data: { baseChroma: 100, primeChroma: 100 }, // data stays locked to its own default (REQ-002)
+    },
+  };
+  const customKit = brandKit(customDoc);
+  ok(customKit.controls && customKit.controls.baseChroma === 42 && customKit.controls.primeChroma === 77,
+    `brandKit(doc).controls resolves the doc's own global fallbacks (got ${JSON.stringify(customKit.controls)})`);
+  ok(customKit.controls && customKit.controls.paletteGroups && customKit.controls.paletteGroups.brand.baseChroma === 56 && customKit.controls.paletteGroups.brand.primeChroma === 78,
+    `brandKit(doc).controls.paletteGroups resolves the doc's own per-group override (got ${JSON.stringify(customKit.controls && customKit.controls.paletteGroups.brand)})`);
+  ok(kit.controls && customKit.controls.baseChroma !== kit.controls.baseChroma,
+    "the default doc's kit.controls differs from the custom doc's — proves controls isn't a hardcoded constant");
+}
+
 const dir = mkdtempSync(join(tmpdir(), "ultimate-tokens-mcp-"));
 const kitPath = join(dir, "brand-kit.json");
 writeFileSync(kitPath, JSON.stringify(kit));
@@ -115,6 +141,13 @@ try {
   const resUris = (await rpc("resources/list")).result.resources.map((r) => r.uri);
   ok(resUris.includes("brand://type") && resUris.includes("brand://geometry"), `resources/list has brand://type + brand://geometry (${resUris})`);
   ok(resUris.includes("brand://palette/primary/prime") && resUris.filter((u) => /^brand:\/\/palette\/.+\/prime$/.test(u)).length === 16, `resources/list has one brand://palette/{slug}/prime per palette (${resUris.length} total)`);
+
+  // brand://kit serves the full kit object verbatim — its `controls` block (RP-2) must round-trip
+  // over the MCP protocol matching the local kit.controls exactly (no drift between what the server
+  // sends and what brandKit(doc) computed).
+  const kitRes = JSON.parse((await rpc("resources/read", { uri: "brand://kit" })).result.contents[0].text);
+  ok(kitRes && kitRes.controls && JSON.stringify(kitRes.controls) === JSON.stringify(kit.controls),
+    `brand://kit resource's controls round-trips over MCP matching the local kit.controls (got ${JSON.stringify(kitRes && kitRes.controls)})`);
 
   const pal = await callTool("list_palettes", {});
   ok(Array.isArray(pal) && pal.length === 16 && /^#|^oklch/.test(pal[0].key || ""), "list_palettes → 16 palettes with identity colours");
