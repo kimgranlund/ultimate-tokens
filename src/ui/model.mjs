@@ -12,10 +12,11 @@
 // app is projectView(document) — recomputed, never persisted.
 
 import { COLLECTIONS } from "../engine/collections.js";
-import { PALETTE_GROUPS } from "./persist.js"; // the canonical 4 group ids (ticket #556) — persist.js
-// is the single source of truth (the codebase's normal dependency direction has model import FROM
-// persist, never the reverse); re-exported below so every existing model.mjs importer
-// (sections/color.js, the test suite) keeps working unchanged.
+import { PALETTE_GROUPS, GROUP_INTENSITY_DEFAULTS } from "./persist.js"; // the canonical group ids
+// (ticket #556) + their intensity defaults (ticket #559) — persist.js is the single source of
+// truth (the codebase's normal dependency direction has model import FROM persist, never the
+// reverse); both re-exported below so every existing model.mjs importer (sections/color.js, the
+// test suite) keeps working unchanged.
 import {
   hctToRgb,
   hctToOklch,
@@ -361,17 +362,13 @@ export function paletteGroup(p) {
 }
 
 // ── Per-group intensity defaults (ticket #559) ────────────────────────────────────
-// GROUP_INTENSITY_DEFAULTS — the four groups' own baseIntensity/primeChroma defaults (ratified
-// 2026-09-11): Material renders muted by default (30/60, unlike the legacy 100/100); Brand/System
-// stay at the legacy 100/100 (no visible change); Data is LOCKED — its `locked:true` marks that a
-// Data-group palette's per-palette intensity/primeChroma override is IGNORED (not deleted, just
-// unused) by resolveGroupedIntensity/resolveGroupedPrimeChroma below.
-export const GROUP_INTENSITY_DEFAULTS = {
-  material: { baseIntensity: 30, primeChroma: 60 },
-  brand: { baseIntensity: 100, primeChroma: 100 },
-  system: { baseIntensity: 100, primeChroma: 100 },
-  data: { baseIntensity: 100, primeChroma: 100, locked: true },
-};
+// GROUP_INTENSITY_DEFAULTS (imported above, from persist.js) — the four groups' own
+// baseIntensity/primeChroma defaults (ratified 2026-09-11): Material renders muted by default
+// (30/60, unlike the legacy 100/100); Brand/System stay at the legacy 100/100 (no visible change);
+// Data is LOCKED — its `locked:true` marks that a Data-group palette's per-palette
+// intensity/primeChroma override is IGNORED (not deleted, just unused) by
+// resolveGroupedIntensity/resolveGroupedPrimeChroma below.
+export { GROUP_INTENSITY_DEFAULTS };
 
 // resolveGroups(doc) — the doc's `groups` facet, default-filled per group from
 // GROUP_INTENSITY_DEFAULTS: an explicit, in-domain per-group number wins; anything absent (the
@@ -543,23 +540,34 @@ function controlsOf(doc) {
   };
 }
 
+// resolvedPalettes(doc) -> palette[] — every palette with its intensity/primeChroma resolved
+// through the ticket #559 group layer (resolveGroupedIntensity/resolveGroupedPrimeChroma), every
+// other field untouched. stateOf() below uses this for its own `palettes` field; a caller that
+// needs the FULL doc shape preserved (icons/name/story/etc — fields stateOf's State slice drops)
+// spreads this over its own doc instead of handing stateOf(doc) to a doc-shaped consumer (see
+// drawer.js's ds-export.js call sites, which read doc.icons/doc.name/doc.story directly).
+export function resolvedPalettes(doc) {
+  const controls = controlsOf(doc);
+  const groups = resolveGroups(doc);
+  return (doc.palettes ?? []).map((p) => ({
+    ...p,
+    intensity: resolveGroupedIntensity(p, groups, controls),
+    primeChroma: resolveGroupedPrimeChroma(p, groups, controls),
+  }));
+}
+
 // stateOf — the exporter-shaped State slice of a document (palettes + resolved
 // controls). The one place the State shape is assembled; projectView, the exporters,
 // and figmaBundle all go through it so a new control is added in exactly one place.
 function stateOf(doc) {
   const c = controlsOf(doc);
-  const groups = resolveGroups(doc);
   return {
     // ticket #559: each palette's intensity/primeChroma is resolved to its FINAL number here (the
     // group layer folded in) before the exporters ever see it — they still read palette.intensity ??
     // controls.baseIntensity internally, but the ?? never falls through past this pre-resolved value,
     // so the engines stay unaware of groups while every export (CSS/OKLCH/JSON/DTCG/UI3/Tailwind/
     // shadcn/DS bundle/Figma) reflects the same resolved values the UI/MCP (projectView) render.
-    palettes: (doc.palettes ?? []).map((p) => ({
-      ...p,
-      intensity: resolveGroupedIntensity(p, groups, c),
-      primeChroma: resolveGroupedPrimeChroma(p, groups, c),
-    })),
+    palettes: resolvedPalettes(doc),
     roleOverrides: doc.roleOverrides ?? {}, // threaded to the exporters so re-points reach the output
     curve: c.curve,
     tension: c.tension,

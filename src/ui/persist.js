@@ -10,13 +10,13 @@ import { COLLECTIONS } from "../engine/collections.js";
 // persist.js validates a stored `group` value against.
 export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
 
-// per-group intensity defaults (ticket #559) — same local-literal shape as PALETTE_GROUPS above,
-// for the same reason: persist.js must never import model.mjs. model.mjs's own
-// GROUP_INTENSITY_DEFAULTS is the single source of truth for the RESOLUTION rule
-// (resolveGroupedIntensity/resolveGroupedPrimeChroma); this is only the shape persist.js defaults
-// an absent/invalid stored group value against, and the two must be kept in sync by hand if a
-// group's default number or the locked set ever changes.
-const GROUP_INTENSITY_DEFAULTS = {
+// GROUP_INTENSITY_DEFAULTS (ticket #559) — the four groups' own baseIntensity/primeChroma
+// defaults. Declared HERE, same reasoning and same import-back-and-re-export shape as
+// PALETTE_GROUPS above: persist.js must never import model.mjs, so this is the single canonical
+// definition. model.mjs's resolveGroupedIntensity/resolveGroupedPrimeChroma still own the
+// RESOLUTION rule that reads these numbers; this export is only the shape persist.js defaults an
+// absent/invalid stored group value against.
+export const GROUP_INTENSITY_DEFAULTS = {
   material: { baseIntensity: 30, primeChroma: 60 },
   brand: { baseIntensity: 100, primeChroma: 100 },
   system: { baseIntensity: 100, primeChroma: 100 },

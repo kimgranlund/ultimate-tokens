@@ -6,7 +6,7 @@
 // then test/ui/headless-boot.mjs's (dpa) group only exercises them THROUGH button clicks. This
 // file imports and calls them directly, pure, no DOM — covering SPEC
 // docs/spec/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
-import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, slug, typeScaleFor } from "../../src/ui/model.mjs";
+import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, resolvedPalettes, slug, typeScaleFor } from "../../src/ui/model.mjs";
 import { deriveDataHues } from "../../src/engine/data-hues.mjs";
 
 const fails = [];
@@ -192,6 +192,10 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
 // baseIntensity/primeChroma defaults (brand <-> system, both 100/100) is still byte-identical, and
 // the export TOKEN NAMES never move regardless of group.
 {
+  // dsDocOf mirrors drawer.js's own dsDoc: exportDesignSystemBundle reads doc.palettes[i].intensity/
+  // primeChroma directly (it's called with a doc-shaped object, never through stateOf/projectView),
+  // so it needs the group layer folded in explicitly or it silently ignores it (ticket #559).
+  const dsDocOf = (doc) => ({ ...doc, palettes: resolvedPalettes(doc) });
   const base = defaultDocument();
   const baseExports = projectView(base).exports;
 
@@ -217,8 +221,8 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   // of the 8 documented formats above) and the MCP brandKit() payload get the same coverage, with
   // the same fixed opts.date so the comparison is deterministic.
   const dsOpts = { date: "2026-01-01" };
-  const baseDs = exportDesignSystemBundle(base, typeScaleFor(base, "base"), geomScaleFor(base, "base"), dsOpts);
-  const sameDefaultsDs = exportDesignSystemBundle(sameDefaults, typeScaleFor(sameDefaults, "base"), geomScaleFor(sameDefaults, "base"), dsOpts);
+  const baseDs = exportDesignSystemBundle(dsDocOf(base), typeScaleFor(base, "base"), geomScaleFor(base, "base"), dsOpts);
+  const sameDefaultsDs = exportDesignSystemBundle(dsDocOf(sameDefaults), typeScaleFor(sameDefaults, "base"), geomScaleFor(sameDefaults, "base"), dsOpts);
   ok(JSON.stringify(baseDs) === JSON.stringify(sameDefaultsDs), "the DS bundle (ds-export.js) must stay byte-identical for a brand <-> system group swap");
   ok(JSON.stringify(brandKit(base)) === JSON.stringify(brandKit(sameDefaults)), "the MCP brandKit() payload must stay byte-identical for a brand <-> system group swap");
 
@@ -229,7 +233,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   neutralToBrand.palettes = neutralToBrand.palettes.map((p) => (p.name === "Neutral" ? { ...p, group: "brand" } : p));
   const neutralToBrandExports = projectView(neutralToBrand).exports;
   ok(baseExports.css !== neutralToBrandExports.css, "moving Neutral out of Material (30/60) into Brand (100/100) must change the CSS export bytes (ticket #559)");
-  const neutralToBrandDs = exportDesignSystemBundle(neutralToBrand, typeScaleFor(neutralToBrand, "base"), geomScaleFor(neutralToBrand, "base"), dsOpts);
+  const neutralToBrandDs = exportDesignSystemBundle(dsDocOf(neutralToBrand), typeScaleFor(neutralToBrand, "base"), geomScaleFor(neutralToBrand, "base"), dsOpts);
   ok(JSON.stringify(baseDs) !== JSON.stringify(neutralToBrandDs), "moving Neutral out of Material into Brand must also change the DS bundle bytes");
   ok(JSON.stringify(brandKit(base)) !== JSON.stringify(brandKit(neutralToBrand)), "moving Neutral out of Material into Brand must also change the MCP brandKit() payload");
 }
