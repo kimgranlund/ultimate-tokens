@@ -146,7 +146,8 @@ function mockFigma() {
   const collections = [], variables = [];
   let id = 0;
   const figma = {
-    notify() {}, closePlugin() {},
+    _notifyText: null,
+    notify(text) { this._notifyText = text; }, closePlugin() {},
     root: { _pd: {}, setPluginData(k, v) { this._pd[k] = String(v); }, getPluginData(k) { return this._pd[k] || ""; } },
     // ── #492 adoption-confirm UI mock ── confirmAdopt() calls showUI() then synchronously assigns
     // figma.ui.onmessage; the queued microtask below fires AFTER that assignment (JS microtask
@@ -320,6 +321,34 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     await main2();
     if (F.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("colorprov", "re-bind made a 3rd Color Roles (provenance registry not persisted to root pluginData)");
   } catch (e) { FAIL("colorprov", "main() threw with a foreign pre-existing Color Roles collection: " + e.message); }
+}
+
+// ── primereport (RP-6, #575): the binder reads nothing from "Color Prime" (roles never alias
+//    prime tokens, SPEC REQ-054 non-goal), so its report must say so explicitly rather than stay
+//    silent — a user could otherwise misread the silence as a miss. Present ⇒ the notify summary
+//    names it; absent (a kit predating the prime collection, or prime never applied) ⇒ no line. ──
+{
+  const F = mockFigma();
+  F.figma.variables.createVariableCollection("Color Primitives");
+  F.figma.variables.createVariableCollection("Color Prime");
+  try {
+    const { main } = loadBinder(binderSrc, F.figma);
+    await main();
+    if (!F.figma._notifyText || F.figma._notifyText.indexOf('"Color Prime" present, not bound by roles') === -1) {
+      FAIL("primereport", `expected the notify summary to name "Color Prime" as present-not-bound, got ${JSON.stringify(F.figma._notifyText)}`);
+    }
+  } catch (e) { FAIL("primereport", "main() threw with a live Color Prime collection: " + e.message); }
+}
+{
+  const F = mockFigma();
+  F.figma.variables.createVariableCollection("Color Primitives"); // no "Color Prime" collection this time
+  try {
+    const { main } = loadBinder(binderSrc, F.figma);
+    await main();
+    if (F.figma._notifyText && F.figma._notifyText.indexOf("Color Prime") !== -1) {
+      FAIL("primereport", `expected no "Color Prime" mention when the collection doesn't exist, got ${JSON.stringify(F.figma._notifyText)}`);
+    }
+  } catch (e) { FAIL("primereport", "main() threw with no Color Prime collection: " + e.message); }
 }
 
 // ── adoptconsent (#492): the ADOPTION path — a live collection matching the target name (or a
@@ -622,7 +651,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "adoptconsent", "librarygeom", "colorparity", "collparity", "floatparity"]) {
+for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "primereport", "adoptconsent", "librarygeom", "colorparity", "collparity", "floatparity"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

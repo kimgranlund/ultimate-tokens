@@ -754,6 +754,11 @@ async function confirmAdopt(name, opts) {
 async function main() {
   const collections = await figma.variables.getLocalVariableCollectionsAsync();
   const rawColl = collections.find((c) => c.name === RAW_COLLECTION);
+  // RP-6 (#575): this binder reads nothing from "Color Prime" (roles never alias prime tokens —
+  // SPEC REQ-054 non-goal), so its report would otherwise stay silent about the collection even
+  // when the flagship apply path created it — silence a user could misread as a miss rather than
+  // a deliberate exclusion.
+  const primeColl = collections.find((c) => c.name === PRIME_COLLECTION);
   let adopted = 0;
 
   // Color and Type/Geometry breakpoints are INDEPENDENT — neither aborts the other. Color needs a live
@@ -843,6 +848,7 @@ async function main() {
   );
   if (fp) parts.push(fp.collections + " breakpoint collection" + (fp.collections === 1 ? "" : "s") + ", " + fp.variables + " sized var" + (fp.variables === 1 ? "" : "s"));
   if (adopted) parts.push(adopted + " existing collection" + (adopted === 1 ? "" : "s") + " adopted");
+  if (primeColl) parts.push('"' + PRIME_COLLECTION + '" present, not bound by roles');
   figma.notify(parts.join(" · "));
   figma.closePlugin();
 }
