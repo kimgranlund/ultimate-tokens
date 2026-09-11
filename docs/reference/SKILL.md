@@ -54,8 +54,8 @@ procedures (including the three-implementation extraction for parity) are in tho
 files; engine anchors are `data/verification-anchors.json`.
 
 **Non-goals.** Eight explicit boundaries (contract block), each tied to an ADR or OPEN
-decision: not a brand picker / non-HCT tool (ADR-001; the 8-palette set is the current
-default with expansion OPEN in OD-005); not a build-time pipeline (ADR-010); no contrast-aware
+decision: not a brand picker / non-HCT tool (ADR-001; the default kit ships 16 palettes — 8
+brand + 8 data — configurable per OD-005, DECIDED 2026-06-15); not a build-time pipeline (ADR-010); no contrast-aware
 on-color auto-pick (ADR-003 / OD-001); no exposed VC controls (ADR-009);
 OKLCH is an *input hue space* (now the default, via the color-accurate chroma-aware bridge,
 ADR-011 — superseding ADR-008) and an *output format*, NOT the engine's internal color model
@@ -116,7 +116,7 @@ every role is aliased to its primitive, **idempotently** on re-apply).
     { "id": "hpg-export-theme-invariant", "check": "for one State, the byte output of all five exporters is identical with theme 'light', 'dark', and 'auto' — the theme switch changes UI appearance only, never an exported value (AC-U3)" }
   ],
   "non_goals": [
-    "brand-color selection or non-HCT palette generation (opinionated about HCT, ADR-001). Palette COUNT is NOT bounded — the 8 defaults are a seed set, every acceptance criterion is quantified 'for every palette' so it generalizes to any count, and the validated UI ships a configurable set (OD-005 DECIDED 2026-06-15)",
+    "brand-color selection or non-HCT palette generation (opinionated about HCT, ADR-001). Palette COUNT is NOT bounded — the 16 defaults (8 brand + 8 data) are a seed set, every acceptance criterion is quantified 'for every palette' so it generalizes to any count, and the validated UI ships a configurable set (OD-005 DECIDED 2026-06-15)",
     "a build-time / CI token pipeline — it is an interactive browser generator (ADR-010). 'Single-file / offline' is the DISTRIBUTION format (achievable by bundling the ES modules to one HTML), NOT an authoring constraint: the reference build authors modular ES modules and bundles to a single offline file",
     "the interactive editor UI itself (app shell, canvas, lenses, inspector, gallery, drawer) — a SEPARATE concern owned by the validated capability.system.ui-app; this spec covers the generator + its token output only (see references/ui-plan.md). This explicitly includes the editor-only surfaces the gallery/drawer add — the gallery 'Import' of a saved config and the drawer 'Config' tab that downloads serialize(doc) — which are convenience surfaces over the persistence round-trip that IS specced (hpg-persistence-roundtrip), not new token-output contracts",
     "contrast-aware on-color auto-picking (deliberately removed; the criteria REQUIRE the fixed 050/200 mapping, this non-goal excludes the dynamic one, ADR-003 / OD-001)",

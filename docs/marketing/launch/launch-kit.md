@@ -54,8 +54,8 @@ within a minute of clicking. Posture: **social/short-form** (§4). Facts:
 
 > Apply → Figma now writes styles, not just variables. Every token gets a Figma style bound to the
 > variable behind it — a paint style per semantic role, a text style per type voice and step — so a
-> style tracks Light and Dark on its own. That's 424 paint styles on the default 8-palette kit (53
-> roles × 8). Free, part of the Figma apply; turn off the "Styles" toggle for variables only.
+> style tracks Light and Dark on its own. That's 848 paint styles on the default 16-palette kit
+> (53 roles × 16). Free, part of the Figma apply; turn off the "Styles" toggle for variables only.
 > → (Community link)
 
 **Short variant** (one claim)

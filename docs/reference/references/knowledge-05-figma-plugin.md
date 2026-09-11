@@ -37,7 +37,9 @@ variable APIs.
 ## 3. What it does
 
 Constants: `RAW_COLLECTION = "Color Primitives"`, `SEMANTIC_COLLECTION = "Color Roles"` (#491),
-`PALETTES = [neutral, primary, secondary, tertiary, info, success, danger, warning]`.
+`PALETTES = [neutral, primary, secondary, tertiary, info, success, danger, warning, data-1 …
+data-8]` — 16 palettes at the default document (issue #503); every palette binds the same 53
+roles regardless of brand/data.
 
 Steps:
 1. Find the raw collection by name; index its variables by name into `rawVars`.

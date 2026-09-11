@@ -50,6 +50,11 @@ Internal role `key`s stay camelCase; every emitted role name is the kebab leaf (
 
 ## 3. The 53 roles (groups)
 
+The default kit ships **16 palettes**: eight brand families (`neutral`, `primary`, `secondary`,
+`tertiary`, `info`, `success`, `warning`, `danger`) plus eight data families (`data-1` … `data-8`,
+hue-derived from the brand primary at mint time). Every family, brand or data, carries the same 53
+roles below — a data palette is an ordinary palette, never a reduced set (issue #503).
+
 Full table with exact `light`/`dark` refs: `data/role-table.json` → `roleTable`. Grouped:
 
 | Group | Roles | Notes |
