@@ -3,7 +3,7 @@ doc-type: lld
 id: lld-muted-base-key-spikes
 status: draft           # draft | approved | superseded
 version: 0.1.0
-date: 2026-09-10
+date: 2026-09-11
 owner: Kim Granlund
 spec: spec-muted-base-key-spikes
 scope: feature
@@ -21,10 +21,10 @@ multiplier `m`, hue anchors), `adding-semantic-roles` skill (parity sites), `per
 | Component | File | Responsibility |
 |---|---|---|
 | Intensity factor | `src/engine/tonal.js` | `intensityAt(stop, palette, controls, identityStops)` returns `I(stop)` (REQ-002). Applied in `okhslStops` to `s` and in the even loop to `intended`, and to the stop-500 anchors (`s500`, `c500`) (REQ-005) |
-| Identity stop set | `src/engine/semantic.js` | `identityStops(roles)`: the sorted set of solid refs of the five identity roles (suffix in `''`, `-dim`, `-bright`, `-low`, `-high`) across `light` and `dark`. Pure over an already-resolved role list, so `applyAccentRef` "single" adds 500 for free (REQ-004, EX-3). Not part of `semanticRoles`; the answer key is untouched |
+| Identity stop set | `src/engine/semantic.js` | `identityStops(roles)`: the sorted set of solid refs of the five identity roles (suffix in `''`, `-dim`, `-bright`, `-low`, `-high`) across `light` and `dark`. Computed from the already-resolved role list (after `applyAccentRef`), no union with any static set: under "single" the prime resolves to 500 only, so the set is `{350,400,500,650,700}` and 450/550 drop out (REQ-004, EX-3, ruled 2026-09-11). Not part of `semanticRoles`; the answer key is untouched |
 | Controls plumbing | `src/ui/model.mjs` | `controlsOf` / `stateOf` thread `baseIntensity`, `keyIntensity`; `projectView` and `exports.js` `derivePalette` pass `identityStops(baseRoles)` and `p.intensity` into `paletteStops` |
 | Persistence | `src/ui/persist.js` | `DOMAINS` entries, `clampPalette` optional `intensity`, `CURRENT_SCHEMA_VERSION = 2`, a `RENAME_MAPS` entry `{version: 2, stampIntensity: true}` that sets `baseIntensity = 100` when absent (REQ-011) |
-| Data hue derivation | `src/engine/derive.mjs` | `deriveDataHues(primaryHue, brandHues, count)` returning `{phi, hues}`; `mintDataPalettes(doc)` in `model.mjs` builds the palette objects (REQ-020..022) |
+| Data hue derivation | `src/engine/data-hues.mjs` (new pure module; `derive.mjs` stays scoped to the New Palette modal per its header) | `deriveDataHues(primaryHue, brandHues, count)` returning `{phi, hues}`; `mintDataPalettes(doc)` in `model.mjs` builds the palette objects (REQ-020..022) |
 | Defaults | `src/ui/model.mjs` `DEFAULT_PALETTES`, `docs/reference/data/role-table.json` `defaults` | 16 entries; data entries are recorded numbers computed once by the build and committed (REQ-024) |
 | Export hooks | `src/engine/exports.js`, `src/engine/ds-export.js` | `isDataPalette(p)` (`/^data-\d+$/` on the slug); shadcn chart binding; DS `data` tier (REQ-031) |
 | UI | `src/ui/sections/color.js` | Two global sliders next to Vibrancy (`color.js:1797`), one per-palette slider next to Cusp pull (`color.js:1654`), the "Add data palettes" and "Re-derive data hues" actions (REQ-032) |
@@ -42,12 +42,15 @@ export function intensityAt(stop, palette, controls, identityStops /* Set<number
   return identityStops && identityStops.has(stop) ? b + (1 - b) * k : b;
 }
 paletteStops(palette, controls, stops, identityStops = DEFAULT_IDENTITY_STOPS);
-// DEFAULT_IDENTITY_STOPS = identityStops(semanticRoles("primary")) = {350,400,450,550,650,700}
+// DEFAULT_IDENTITY_STOPS = identityStops(semanticRoles("primary")) = {350,400,450,550,650,700} (accentRef "mode")
+// Callers ALWAYS pass identityStops(baseRoles) computed after applyAccentRef; under "single" that is
+// {350,400,500,650,700}. The default parameter exists only for callers with no role table (the tonal
+// verifier); it is never unioned with the computed set.
 
 // semantic.js
 export function identityStops(roles) -> Set<number>   // solid refs only; scrim refs ignored
 
-// derive.mjs
+// data-hues.mjs (new, pure, no DOM, no imports)
 export function deriveDataHues(primaryHue, brandHues, count = 8) -> { phi: number, hues: number[] }
 
 // model.mjs
@@ -105,7 +108,7 @@ primitives 576, roles 848 x 2 modes; `tokenCount` unchanged in formula.
 | U2 | Persistence: DOMAINS, `clampPalette.intensity`, schema v2 + stamp; `controlsOf`/`stateOf`/`derivePalette` threading | `persist.js`, `model.mjs`, `exports.js`, `test/ui/persist.mjs` | small | Invisible by design (defaults 100) |
 | U3 | UI sliders (global x2, per-palette x1) + shim group | `sections/color.js`, `test/ui/headless-boot.mjs` | small | Sliders show 100 |
 | U4 | Docs only: knowledge-02 intensity section, CHANGELOG entry, README control list. No default flip (H1); the 45 proposal is filed as a follow-up issue in this unit | `docs/reference/references/knowledge-02-tonal-scale.md`, `docs/reference/CHANGELOG.md`, `README.md` | small | No test literals |
-| U5 | `deriveDataHues` + verifier | `derive.mjs`, `test/engine/derive.mjs` | small | Pure addition |
+| U5 | `deriveDataHues` + verifier | new `src/engine/data-hues.mjs`, new `test/engine/data-hues.mjs` (registered in `test/run.mjs`) | small | Pure addition; `derive.mjs` untouched |
 | U6 | Data palettes in `defaultDocument` + `role-table.json` defaults (16) + count literals (`counts.mjs` DEFAULT_PALETTES, `shell.mjs`, `test/mcp/brand-kit*.mjs`) + `mintDataPalettes` | `model.mjs`, `role-table.json`, `test/ui/counts.mjs`, `test/ui/shell.mjs`, `test/mcp/*.mjs`, `test/ui/headless-boot.mjs` | big | The binder and plugin gates derive from `defaults` and the bundle, so they move by themselves in this same PR; `gen:figma-ui` and `bundle` rerun under `npm test`. H2 ratified 2026-09-11 |
 | U7 | Exports: `isDataPalette`, shadcn chart binding, DS `data` tier + DESIGN.md section, export gates | `exports.js`, `ds-export.js`, `test/engine/exports.mjs` | small | Data excluded from neutral/primary fallbacks so the shadcn picks on the default doc are unchanged |
 | U8 | UI actions: "Add data palettes (8)", "Re-derive data hues"; shim group | `sections/color.js`, `model.mjs` (`rederiveDataHues`), `test/ui/headless-boot.mjs` | small | Opt-in path for upgraded documents (REQ-012) |
@@ -146,7 +149,7 @@ U5 (small) · U6 (big) · U7 (small) · U8 (small) · U9 (small).
 ## Agent verification
 
 New instruments this design needs: the U1 byte-diff fixture (`test/engine/fixtures/`, generated by a
-script from the pre-change engine at a pinned commit) and the three tonal groups; the `derive.mjs`
+script from the pre-change engine at a pinned commit) and the three tonal groups; the `data-hues.mjs`
 data-hue gate with its brute-force re-derivation; two headless-boot lettered groups (U3 sliders, U8
 actions). Everything else runs on existing instruments named in the SPEC's Agent verification
 section: the tonal pin, persist roundtrip, the `shell.mjs` defaults gate, the export leaf and shadcn

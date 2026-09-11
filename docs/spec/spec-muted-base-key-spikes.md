@@ -3,7 +3,7 @@ doc-type: spec
 id: spec-muted-base-key-spikes
 status: draft           # draft | approved | superseded
 version: 0.1.0
-date: 2026-09-10
+date: 2026-09-11
 owner: Kim Granlund
 prd: none               # GitHub issue #503 is the intent record (ADR-017 git-native tickets)
 scope: feature
@@ -27,9 +27,10 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
   brand's full chroma, % of the hue's peak); intensity scales what the ramp actually emits.
 - **Identity stops** are the solid ramp stops the five identity roles resolve to, in either mode.
   From the frozen role table: `{n}` 550/450, `{n}Dim` 650/700, `{n}Bright` 350/400, `{n}Low` 350/700,
-  `{n}High` 650/400, so the set is `{350, 400, 450, 550, 650, 700}`. Under `accentRef: "single"` the
-  prime role resolves to 500/500 and 500 joins the set. The set is derived from the resolved roles,
-  never hard-coded.
+  `{n}High` 650/400, so under `accentRef: "mode"` the set is `{350, 400, 450, 550, 650, 700}`. Under
+  `accentRef: "single"` the prime role resolves to 500/500, so the set is `{350, 400, 500, 650, 700}`
+  and 450/550 are ordinary stops (REPLACE, not union; ruled 2026-09-11). The set is computed from the
+  already-resolved roles, never hard-coded and never merged with the mode set.
 - **Brand families** are the eight existing palettes (neutral, primary, secondary, tertiary, info,
   success, warning, danger). **Data families** are `data-1` … `data-8`.
 
@@ -49,8 +50,10 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
   override of 100 or absent) every emitted stop is byte-identical to the pre-feature engine for every
   palette, control set, and both ramp paths. `I(stop) = 1` everywhere is the proof obligation.
 - **REQ-004** The spike is discrete. Stops that are not identity stops receive exactly `b`, including
-  500 (containers, outlines, scrims all resolve on the 500 ramp) and the active-state stops 750/250.
-  Hover (650/350) inherits the spike because those ARE identity stops; no separate hover rule exists.
+  the active-state stops 750/250. Under `accentRef "mode"` that includes 500 (containers, outlines,
+  scrims all resolve on the 500 ramp); under `accentRef "single"` 500 is the prime stop and is spiked
+  while 450/550 receive `b`. Hover (650/350) inherits the spike because those ARE identity stops in
+  both accent modes; no separate hover rule exists.
 - **REQ-005** The OKLCH hue anchor (`solveOkhslHue` / `solveCam16Hue` at stop 500) uses the stop-500
   chroma AFTER intensity, so the `oklch-hue-anchor` guarantee (key stop lands on the set OKLCH hue)
   holds at every intensity.
@@ -75,7 +78,7 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 
 ### R-C. Data palettes
 
-- **REQ-020** `deriveDataHues(primaryHue, brandHues, count = 8)` (pure, `src/engine/derive.mjs`)
+- **REQ-020** `deriveDataHues(primaryHue, brandHues, count = 8)` (pure, new module `src/engine/data-hues.mjs`; `derive.mjs` stays scoped to the New Palette modal)
   returns `count` OKLCH hues `primaryHue + phi + i * (360 / count)`, `i = 0 .. count-1`, where `phi` is
   the integer degree in `[0, 360 / count)` that maximises the minimum circular distance between the
   data hues and every brand hue; ties resolve to the smallest `phi`. Answer to Open gap 3.
@@ -143,8 +146,8 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
   `accentRef "mode"`: stops 350, 400, 450, 550, 650, 700 emit at the chroma fraction `0.95 * m(stop)`;
   every other stop, 500 included, emits at `0.95 * 0.40 * m(stop)` (before the gamut clamp). Stop
   tones are identical to EX-1.
-- **EX-3 (NORMATIVE, single accent).** As EX-2 with `accentRef "single"`: stop 500 joins the spiked
-  set; 750/250 do not.
+- **EX-3 (NORMATIVE, single accent).** As EX-2 with `accentRef "single"`: the spiked set is
+  `{350, 400, 500, 650, 700}`; 450 and 550 emit at `0.95 * 0.40 * m(stop)` like 750/250.
 - **EX-4 (NORMATIVE, override).** As EX-2 but Warning carries `intensity 100`: Warning's ramp equals
   its EX-1 ramp; Primary is unchanged from EX-2.
 - **EX-5 (NORMATIVE, data hues).** Brand hues `{267, 165, 315, 235, 145, 70, 27}` (all chroma >= 20;
@@ -210,7 +213,7 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
   `intensity-override`, plus the existing groups under the extended pin). AC-003's fixture lands under
   `test/engine/fixtures/` and is regenerated only by an explicit script, never by `npm test`.
 - AC-010..012: `node test/ui/persist.mjs`.
-- AC-020..021: `node test/engine/derive.mjs` (one PASS/FAIL line convention).
+- AC-020..021: `node test/engine/data-hues.mjs` (new verifier, one PASS/FAIL line convention like `derive.mjs`).
 - AC-022..024, AC-030, AC-032: `node test/ui/shell.mjs` and the headless shim (`test/ui/headless-boot.mjs`,
   lettered group). Slider presence is asserted through the shim's DOM, not computed style (the shim
   has no layout).
@@ -225,7 +228,7 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 | Gap | Decision | Rationale | Ratify? |
 |---|---|---|---|
 | 1. Spike curve | Flat multiplier on the chroma fraction, gamut handled by the existing paths | OKHSL saturation is already gamut-proportional and hue-aware; even mode already clamps to `maxc`. A second cusp-aware boost would duplicate `cuspPull` and add a gate surface with no new capability | No |
-| 2. Hover/active | Only the identity stops; hover inherits by aliasing (650/350 are identity stops), active (750/250) does not | Roles alias primitives, so a spike lives on stops. Discrete stops keep 500 (containers, scrims, outlines) quiet, which is the feature's point | No |
+| 2. Hover/active | Only the identity stops; hover inherits by aliasing (650/350 are identity stops), active (750/250) does not | Roles alias primitives, so a spike lives on stops. Discrete stops keep 500 (containers, scrims, outlines) quiet under the default accent mode, which is the feature's point; under "single" the set is replaced, not extended | No |
 | 3. Data hue rule | Even 45° spacing from primary plus an integer offset maximising min distance to chromatic brand hues (chroma >= 20) | Deterministic, pure, brute-force testable, no name matching; works for unevenly spread brands because the offset search only needs one free parameter | No |
 | 4. Token ceiling | 848 role variables and 576 primitives per Figma file at 16 palettes, under the 5,000 per collection ceiling; modes unchanged | Counted from 53 and 25 + 11 per palette. CSS and JSON exports double in size, which is a file-size note, not a limit | No |
 | 5. Migration | Pre-v2 snapshots stamp `baseIntensity 100` (look preserved); the shipped default is also 100 | Same principle as the `hueSpace` legacy stamp: a saved kit never changes appearance on upgrade | No |
