@@ -57,17 +57,18 @@ export function primeSwatches(palette, controls)
   -> [{ step, l, s, hue, rgb: [r,g,b], hex, oklch: [L,C,H], inGamut: true }] // length 7, lightest first
 // Algorithm:
 //   baseHue = effHue(palette.hue, controls.hueSpace, (palette.chroma ?? 0) / 100)
-//   lPrime  = okhslLAt(peakC(baseHue).tone)              // the key colour's lightness (REQ-051)
+//   pk = peakC(baseHue); keyRgb = hctToRgb(baseHue, (palette.chroma / 100) * pk.c, pk.tone).rgb  // = deriveKeyColor
+//   key = rgbToOkhsl(keyRgb); lPrime = key.l              // the REAL key colour's lightness (REQ-051, #537 ruling)
 //   up = min(PRIME_STEP, (PRIME_L_MAX - lPrime) / 3); down = min(PRIME_STEP, (lPrime - PRIME_L_MIN) / 3)
 //   g = 3 ** ((palette.skew ?? 0) / 100)                 // the ramp's toneAt gamma (REQ-053a, R5)
 //   t = (i - 3) / 3; w = i < 3 ? |t| ** (1 / g) : |t| ** g  // light side 1/g, dark side g; w(prime) = 0, w(ends) = 1
 //   l[i] = i < 3 ? lPrime + 3 * up * w : lPrime - 3 * down * w   // skew 0 ⇒ even ladder
 //   pc = (palette.primeChroma ?? controls.primeChroma ?? 100) / 100
-//   s  = clamp01((palette.chroma / 100) * pc)            // REQ-052, no damping
-//   hOk = controls.hueSpace === "oklch" ? solveOkhslHue(palette.hue, s, lPrime) : rgbToOkhsl(hctToRgb(baseHue, pk.c, pk.tone).rgb).h
+//   s  = clamp01(key.s * pc)                             // REQ-052 (#537): the key colour's own saturation, no damping
+//   hOk = key.h                                          // REQ-053 (#537): read, never re-solved; prime == key colour at pc 100
 //   hue[i] = hOk + hueShift * (hueSameDir ? -|t| : t), t = (i - 3) / 3     // REQ-053
 //   rgb[i] = okhslToRgb(hue[i], s, l[i]); oklch via rgbToOklch (float), hex via the 8-bit rgb
-// okhslLAt and solveOkhslHue become named exports of tonal.js (they are module-private today).
+// okhslLAt and solveOkhslHue are exported from tonal.js (P2) but the prime system does not call them (#537).
 
 // persist.js (P3)
 export const CURRENT_SCHEMA_VERSION = 3;
@@ -148,9 +149,10 @@ Sizes: P1 small · P2 big · P3 small · P4 big · P5 small · P6 small · P7 sm
    0.013 apart and may read as duplicates, and a positive skew (Warning's `40`) pushes them closer
    still. Detection: user report (R1 is ratified as is). Fallback: lower `PRIME_L_MAX` bias or a
    minimum step; both are one-constant changes gated by AC-050 (d)/(d2).
-5. **Hue drift on the outer swatches (REQ-053).** `solveOkhslHue` anchors only `prime`; the ±0.27
-   `l` excursions drift by the OKHSL/OKLCH Abney residual (~2° worst case, blues). Detection: AC-050
-   (e) 2° budget. Fallback: solve per swatch (seven Newton loops, cheap).
+5. **Hue drift on the outer swatches (REQ-053).** All seven share `key.h`; the ±0.27 `l` excursions
+   drift by the OKHSL/OKLCH Abney residual (~2° worst case, blues) relative to `prime`'s pixel hue.
+   Detection: AC-050 (e) chroma-aware budget against the prime pixel. Fallback: none this round; a
+   per-swatch re-solve was ruled out on #537 (oscillates at low saturation, shares `tonal.js`).
 6. **`collparity` half-applied (P4) (REQ-054, AC-033).** Three literals (`collections.js`, two sandboxes). Detection:
    `test/figma/binder.mjs` `collparity`. Fallback: the P4 checklist.
 7. **Figma duplicate collections (P5) (REQ-054, AC-052).** A re-apply that does not find the provenance key creates a
