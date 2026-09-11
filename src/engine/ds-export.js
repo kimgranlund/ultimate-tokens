@@ -22,7 +22,7 @@ import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
 import { RAMP_LADDER, mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder size-anchor helpers + explicit ordering (issue #483 — the ladder's numeric step names trap a bare Object.keys/`.MD`/`.SM`/`.XS` access)
-import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn } from "./exports.js";
+import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette } from "./exports.js";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // DESIGN SYSTEM export — design-system-for-{claude-code,google-stitch,figma-make}
@@ -80,9 +80,12 @@ const dsRole = (p, suffix) => p && p.roles.find((r) => r.suffix === suffix);
 // receipt (the §8 G1 findings), never silently corrected — what ships is what the user designed.
 
 // dsColorRoles(state) → the reduced consumption set (§6.5/§7): { chrome, tokens:[{name, light,dark}],
-// alias }. Each end = { rgb, frac, hex, oklch } — the kit's role ends VERBATIM. tokens.json, the
-// DESIGN.md frontmatter, and every preview :root all read from this one source. Null when no palette
-// enabled. The reduced set is a NAME reduction of the semantic layer, never a value adjustment.
+// alias, families, dataFamilies }. Each end = { rgb, frac, hex, oklch } — the kit's role ends
+// VERBATIM. tokens.json, the DESIGN.md frontmatter, and every preview :root all read from this one
+// source. Null when no palette enabled. The reduced set is a NAME reduction of the semantic layer,
+// never a value adjustment. `dataFamilies` (#503 REQ-031) is the `data-N` slugs, kept OUT of
+// `families` — each carries only its own base token in `tokens` (see the data tier below), never
+// the full interactive-family treatment `families` members get.
 //
 // The extended color layer (#471): `-placeholder`/`-scrim`/`-inverse-surface`/`-inverse-on-surface`
 // (chrome-only — neutral/chrome-scoped concepts) and `-container`/`-container-low`/`-container-high`
@@ -145,7 +148,10 @@ export function dsColorRoles(state) {
   // already emitted its full trio above. When the brand IS the chrome it is not in this loop, so no dup.
   const brandPal = palettes.find((p) => /primary|brand/.test(p.name.toLowerCase())) || chrome;
   const isIntent = (p) => /danger|destruct|error|critical|success|positive|warn|caution|info/.test(p.name.toLowerCase());
-  const others = palettes.filter((p) => p !== chrome && !isIntent(p));
+  // #503 REQ-031: data palettes (data-1..8) are excluded from `others` — they never get the full
+  // interactive-family treatment (hover/active/disabled/container) or join the brand family
+  // prose/catalog loops; they form their own `data` tier just below instead.
+  const others = palettes.filter((p) => p !== chrome && !isIntent(p) && !isDataPalette(p));
   const intentOrder = ["danger", "success", "warning", "info"];
   const rank = (p) => { const t = p.name.toLowerCase(); const i = intentOrder.findIndex((k) => t.includes(k)); return i < 0 ? 99 : i; };
   const intents = palettes.filter((p) => p !== chrome && isIntent(p)).sort((a, b) => rank(a) - rank(b));
@@ -163,6 +169,13 @@ export function dsColorRoles(state) {
     slot(p, "-container-high", `${p.n}-container-high`);
   }
 
+  // ── data tier (#503 REQ-031): a chart/data-visualization series, not an interactive fill — base +
+  // its on-color only (a legend label needs a paired text color; the §8 G7 gate requires every fill
+  // to carry one), no hover/active/disabled/container states. Named-but-separate from `families`
+  // (below) so it never enters the brand family prose bullets or the @dsCard button/badge catalogs.
+  const dataPals = palettes.filter((p) => isDataPalette(p));
+  for (const p of dataPals) { slot(p, "", `${p.n}`); slot(p, `-on-${p.n}`, `${p.n}-on-${p.n}`); }
+
   // ── Stitch-compat alias: `primary` = the brand-base fill (satisfies the required `primary` role).
   // Mirror the brand family's already-emitted base token verbatim so the alias never diverges from it.
   const brand = brandPal;
@@ -176,7 +189,7 @@ export function dsColorRoles(state) {
   const aliasDistinct = !tokens.some((t) => t.name === alias.name);
 
   const families = [chrome.n, ...others.map((p) => p.n), ...intents.map((p) => p.n)];
-  return { chrome, tokens, alias, aliasDistinct, families };
+  return { chrome, tokens, alias, aliasDistinct, families, dataFamilies: dataPals.map((p) => p.n) };
 }
 
 // dsFactor — leading as a unitless multiplier of size (§9.2: never px). dsTypeLayer — the full voice·step
@@ -744,6 +757,20 @@ function dsSpineBody(ds, state, ctx) {
     "background/surface uses `on-surface` or `on-surface-variant`. A crossed pair fails contrast in one scheme.",
   ].join("\n");
 
+  // Data series (#503 REQ-031) — an EXTRA section (rides the unknown-section tolerance, like
+  // Iconography/Motion below), present only when the kit has enabled `data-N` palettes. A chart
+  // series is neither a brand action nor a status color, so it earns its own short listing rather
+  // than folding into the Colors family bullets above.
+  const dataSeries = ds.dataFamilies && ds.dataFamilies.length
+    ? [
+        "## Data series", "",
+        "Charts and data visualizations pull categorical/sequential series colors from the dedicated",
+        "`data-N` family, never from a brand or intent color — a brand color means action, an intent",
+        "color means status, a data series means neither.", "",
+        ds.dataFamilies.map((f) => `- \`${ref(f)}\``).join("\n"),
+      ].join("\n")
+    : "";
+
   const fontsObj = (ctx && ctx) && ds && (state.type ? null : null);
   const typography = [
     "## Typography", "",
@@ -912,7 +939,7 @@ function dsSpineBody(ds, state, ctx) {
     `Deliberately refused: ${refuses}`,
   ].join("\n");
 
-  return [overview, colors, typography, layout, elevation, shapes, iconography, motion, components, donts, responsive, agent].join("\n\n");
+  return [overview, colors, dataSeries, typography, layout, elevation, shapes, iconography, motion, components, donts, responsive, agent].filter(Boolean).join("\n\n");
 }
 
 // exportDesignSystemReceipt — the README.md profile receipt (§4). Every 🟢 cites a check; DIVERGENCE
