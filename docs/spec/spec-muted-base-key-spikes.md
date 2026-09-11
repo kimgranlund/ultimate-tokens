@@ -284,7 +284,8 @@ ladder, their own chroma control, and their own token group; the editor strip re
   behave as in 0.1.0.
 - **AC-033** Binder plan `53 * 16`; plugin cascade green; the `collparity` gate covers
   `COLLECTIONS.colorPrime` against both sandbox literals.
-- **AC-034** Headless-boot: every enabled ramp row has a `.key-strip` before `.ramp-strip` with
+- **AC-034** Headless-boot: every enabled ramp row has a `.prime-strip` (seven `.prime-swatch`; the
+  older `.key-strip`/`.key-cell` name the unrelated retained-key-colours row, #552) before `.ramp-strip` with
   exactly seven `<i>` whose labels are, in order, brightest, brighter, bright, prime, dim, dimmer,
   dimmest, and whose background equals `view.palettes[i].prime[k].hex`; toggling scheme, `accentRef`,
   and `stopsMode` leaves the strip byte-identical.

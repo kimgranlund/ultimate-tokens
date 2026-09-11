@@ -11,7 +11,7 @@
 5. Chroma targeting and edge damping
 6. `paletteStops` — the per-stop pipeline
 7. Worked example
-8. Intensity (muted base ramps with key-stop spikes)
+8. Intensity and the prime system (muted base ramp, seven prime swatches)
 
 ---
 
@@ -145,61 +145,87 @@ lmin 5, lmax 100, damp 80:
   branch). This is why every palette's `050` is `#FFFFFF` at `lmax=100`.
 - Stop 950: `p=1`, tone→`lmin=5`; heavy damping → near-neutral very dark color.
 
-## 8. Intensity (muted base ramps with key-stop spikes)
+## 8. Intensity and the prime system (muted base ramp, seven prime swatches)
 
-> Spec: `docs/spec/spec-muted-base-key-spikes.md` (REQ-001..006); design: `docs/lld/lld-muted-base-key-spikes.md`.
-> Shipped in the engine (`tonal.js`, `semantic.js`); the shipped defaults (`baseIntensity: 100,
-> keyIntensity: 100`) make this section describe a capability, not yet a visual change: see the
-> CHANGELOG.
+> Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.2.0 (REQ-001..007 base intensity, REQ-050..057
+> prime system, as merged in #547); design: `docs/lld/lld-muted-base-key-spikes.md` 0.2.0. Shipped
+> in the engine (`tonal.js`, `prime.mjs`); the shipped defaults (`baseIntensity: 100, primeChroma:
+> 100`) make this section describe a capability, not yet a visual change: see the CHANGELOG.
+> The 0.1.0 "key-stop spike" on the ramp (identity stops, `keyIntensity`) was retired under #533;
+> the ramp is continuous again and the vivid identity colours live in the prime system below.
 
-**Intensity** is a fraction of a palette's own `chroma` control, applied as a per-stop multiplier
-*before* the damping in §5. `chroma` keeps its existing meaning (the brand's full chroma, % of the
-hue's peak); intensity scales what the ramp actually emits on top of it.
+### 8.1 Base intensity (the ramp)
 
-Two global controls, plus one per-palette override:
+**Base intensity** is a fraction of a palette's own `chroma` control, applied as a per-stop
+multiplier *before* the damping in §5, the same for every stop. `chroma` keeps its existing meaning
+(the brand's full chroma, % of the hue's peak); base intensity scales what the ramp actually emits.
 
 | Control | Range | Default | Purpose |
 |---------|-------|---------|---------|
-| `baseIntensity` | 0–100 | 100 | the chroma fraction every non-identity stop emits at |
-| `keyIntensity` | 0–100 | 100 | how far the identity stops (below) are lifted back toward full chroma |
-| `palette.intensity` | 0–100, optional | absent (inherits) | per-palette override of `baseIntensity`; resolved as `palette.intensity ?? controls.baseIntensity` |
-
-**Identity stops** are the solid ramp stops the five identity roles (the prime accent and its
-`-Dim`/`-Bright`/`-Low`/`-High` variants) resolve to, across both Light and Dark. Computed from the
-already-resolved role list (`identityStops(roles)` in `semantic.js`, called *after* `applyAccentRef`,
-never unioned with a static set): under `accentRef: "mode"` (the default) the set is
-`{350, 400, 450, 550, 650, 700}` (`DEFAULT_IDENTITY_STOPS` in `tonal.js`); under `accentRef: "single"`
-the prime role resolves to 500/500 instead, so the set becomes `{350, 400, 500, 650, 700}` and 450/550
-fall out to ordinary (non-identity) stops. `test/engine/semantic.mjs` gates the two literals against
-each other so they cannot drift apart.
-
-`intensityAt` is the per-stop factor:
+| `baseIntensity` (UI "Base chroma") | 0–100 | 100 | the chroma fraction every ramp stop emits at |
+| `palette.intensity` (UI "Intensity") | 0–100, optional | absent (inherits) | per-palette override of `baseIntensity`; resolved as `palette.intensity ?? controls.baseIntensity` |
 
 ```
-intensityAt(stop, palette, controls, identityStops):
-  b = clamp01((palette.intensity ?? controls.baseIntensity ?? 100) / 100)
-  k = clamp01((controls.keyIntensity ?? 100) / 100)
-  return identityStops.has(stop) ? b + (1 - b) * k : b
+intensityAt(stop, palette, controls):
+  return clamp01((palette.intensity ?? controls.baseIntensity ?? 100) / 100)   // = b, every stop
 ```
 
-The factor `I(stop)` multiplies the palette's chroma fraction on **both** ramp paths, before the
-damping multiplier `m` in §5: the OKHSL saturation on `perceptual`/`peak` (`s = chroma/100 · I(stop) ·
-(1 + dampAmp/100)`), and the intended chroma on `even` (`intended = chroma/100 · I(stop) · peakC(hue)`
-or `maxc500`, matching the `relChroma` branch already in §5). Gamut safety stays with the existing
-`min(target * m, cm)` clamp: intensity is a chroma-fraction input to that pipeline, not a second
-clamp. The stop-500 OKLCH/CAM16 hue anchor (`hueAnchorFrac`, §5) also multiplies by `I(500)`, so the
-`oklch-hue-anchor` guarantee holds at every intensity, not only at 100.
+The factor `b` multiplies the palette's chroma fraction on **both** ramp paths, before the damping
+multiplier `m` in §5: the OKHSL saturation on `perceptual`/`peak` (`s = chroma/100 · b · (1 +
+dampAmp/100)`) and the intended chroma on `even` (`intended = chroma/100 · b · peakC(hue)` or
+`maxc500`, matching the `relChroma` branch in §5). Gamut safety stays with the existing `min(target
+* m, cm)` clamp. The stop-500 hue anchor (`hueAnchorFrac`, §5) also multiplies by `b`, so the
+`oklch-hue-anchor` guarantee holds at every intensity. No stop is exempt: there is no identity-stop
+set, no `k` term, and no neighbour rule (REQ-002, REQ-004).
 
-At the shipped default (`baseIntensity 100`, any `keyIntensity`), `I(stop) = 1` everywhere: every
-emitted stop is byte-identical to the pre-intensity engine, for every palette, control set, and both
-ramp paths (the tonal verifier's own legacy-invariance proof). Away from 100, the effect is a **muted
-base with key-stop spikes**: every stop *except* the identity stops emits at the reduced fraction `b`,
-while the identity stops are lifted back toward full chroma by `k`, a discrete step, not a smooth
-falloff around 500 (a neighbour-falloff envelope would re-spike the identity stops themselves, so it
-is explicitly out of scope). The active-state stops (750/250) are never identity stops under either
-accent mode, so they always emit at the muted `b` fraction alongside the rest of the ramp.
+At the shipped default (`baseIntensity 100`), `b = 1` and every emitted stop is byte-identical to the
+pre-intensity engine for every palette, control set, and both ramp paths (the tonal verifier's
+`intensity-legacy` fixture, REQ-003). Away from 100 the whole ramp mutes evenly; tones (§4) never move.
 
-Worked example: default Primary (`hue 267, chroma 95`), `baseIntensity 40`, `keyIntensity 100`,
-`accentRef "mode"`: stops `{350, 400, 450, 550, 650, 700}` emit at `0.95 * m(stop)` (the §5 damping
-curve, unchanged); every other stop (500, 750, 250 included) emits at `0.95 * 0.40 * m(stop)` before
-the gamut clamp. Tones (from §4) are identical at every intensity; only chroma moves.
+### 8.2 The prime system (`src/engine/prime.mjs`)
+
+The **prime system** is a per-palette set of seven swatches, `brightest · brighter · bright · prime ·
+dim · dimmer · dimmest`, lightest first, computed from the palette's key colour on their OWN OKHSL
+lightness ladder. They are primitives-tier tokens, mode-independent (one set, the same in Light and
+Dark, REQ-055), emitted as the `prime` group (`--{n}-prime-{step}`, `{n}/prime/{step}`, Figma
+collection "Color Prime"; knowledge-04). They are NOT ramp stops and NOT roles: the 53-role table is
+unchanged and roles never alias prime tokens (knowledge-03 §3).
+
+| Control | Range | Default | Purpose |
+|---------|-------|---------|---------|
+| `primeChroma` (UI "Prime chroma") | 0–100 | 100 | scales the seven swatches' saturation; was `keyIntensity` through schema v2, renamed at v3 (REQ-011, R4) |
+| `palette.primeChroma` (UI "Prime chroma", inspector) | 0–100, optional | absent (inherits) | per-palette override, `palette.primeChroma ?? controls.primeChroma` |
+
+`primeSwatches(palette, controls)` (REQ-050..053a, REQ-056; #537 ruling):
+
+```
+key    = rgbToOkhsl(deriveKeyColor(palette).rgb)      // the REAL key colour: effHue, peakC chroma × chroma/100, cusp tone
+lPrime = key.l                                        // REQ-051: never a neutral grey at the cusp tone
+up     = min(PRIME_STEP, (PRIME_L_MAX - lPrime) / 3)  // PRIME_STEP 0.09, [PRIME_L_MIN, PRIME_L_MAX] = [0.14, 0.94]
+down   = min(PRIME_STEP, (lPrime - PRIME_L_MIN) / 3)
+g      = 3 ** (skew / 100)                            // REQ-053a: the ramp's toneAt gamma, reused as the ladder bend
+t_i    = (i - 3) / 3;  w_i = i < 3 ? |t_i| ** (1 / g) : |t_i| ** g     // w(prime) = 0, w(ends) = 1
+l_i    = i < 3 ? lPrime + 3 · up · w_i : lPrime - 3 · down · w_i
+s      = clamp01(key.s · primeChroma / 100)           // REQ-052: the key colour's OWN OKHSL saturation, no damping
+hue_i  = key.h + hueShift · (hueSameDir ? -|t_i| : t_i)  // REQ-053: read, never re-solved
+rgb_i  = okhslToRgb(hue_i, s, l_i)                    // in gamut by OKHSL construction
+```
+
+Why the key colour's own coordinates: a chromatic colour and a grey at the same CIELAB L* differ in
+OKHSL `l` by a Helmholtz-Kohlrausch gap that grows toward the gamut edge; a CAM16 chroma fraction is
+not an OKHSL saturation; and anchoring the hue at peak chroma carried an Abney drift into the muted
+swatches. Reading `(l, s, h)` off `deriveKeyColor`'s colour makes `prime` equal the gallery tile
+EXACTLY at `primeChroma 100` (REQ-056), not approximately. Steps are even in `l` at `skew 0`;
+`skew > 0` pushes the light inner swatches away from `prime` and pulls the dark ones toward it (every
+inner swatch reads lighter, like the ramp), `skew < 0` the reverse, with `prime` and both ends fixed.
+`lift`, `damp*`, `vibrancy`, `cuspPull`, `toneMode` do not apply: they shape the ramp, not the prime
+system. The editor's Color canvas draws the seven as the `.prime-strip` ahead of each ramp row.
+
+Worked example (engine-regenerated, #537; `hueSpace "cam16"`, `role-table.json`'s raw `hue 267,
+chroma 95`, `skew 0`, `primeChroma 100`): `lPrime = 0.528528`, `s = 0.965345`, `up = down = 0.09`;
+`l`/hex brightest→dimmest `0.798528 #A5C8FE · 0.708528 #7CAEFE · 0.618528 #5194FC · 0.528528 #2177F6
+· 0.438528 #0F60D2 · 0.348528 #084BA8 · 0.258528 #04377F`; `#2177F6` is `deriveKeyColor(Primary)`
+byte for byte. With the default `skew -20` the inner four become `0.691458 #74AAFD · 0.597234
+#468DFB · 0.416749 #0D5BC8 · 0.333539 #0748A2`, ends and prime unchanged. Warning (`hue 70, chroma
+100`) has `lPrime = 0.749941`, `s = 1`, `up` compressed to `0.063353`, `brightest = 0.94 #FFEAD4`,
+`dimmest = 0.479941 #9E6300`. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
