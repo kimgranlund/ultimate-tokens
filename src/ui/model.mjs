@@ -3,7 +3,7 @@
 // No DOM, no storage, no globals. It composes the six validated capability
 // modules into:
 //
-//   defaultDocument()      -> a State (8 default palettes + DEFAULT_CONTROLS)
+//   defaultDocument()      -> a State (16 default palettes + DEFAULT_CONTROLS)
 //   projectView(document)  -> the document->view projection the whole right
 //                             side of the app renders from (no stored derived
 //                             state; recompute on every edit).
@@ -29,6 +29,7 @@ import {
   EXPORT_STOPS,
   DEFAULT_CONTROLS,
 } from "../engine/tonal.js";
+import { deriveDataHues } from "../engine/data-hues.mjs";
 import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef, identityStops } from "../engine/semantic.js";
 import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
 import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
@@ -254,7 +255,7 @@ import {
 // SAME source of truth as the exporters — no second, drift-prone hardcoded scrim-step list.
 export { SCRIM_BASES, SCRIM_STEPS, exportDesignSystemTokens, exportDesignSystemSpine, exportDesignSystemBundle, exportDesignSystemStitchBundle, exportDesignSystemMakeBundle };
 
-// The eight seed palettes (data/role-table.json `defaults`). Inlined so the
+// The sixteen seed palettes — 8 brand + 8 Data (data/role-table.json `defaults`). Inlined so the
 // pure core has no file I/O and runs identically in node and the browser.
 const DEFAULT_PALETTES = [
   { name: "Neutral", hue: 267, chroma: 29, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
@@ -265,6 +266,19 @@ const DEFAULT_PALETTES = [
   { name: "Success", hue: 145, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, on: true },
   { name: "Warning", hue: 70, chroma: 100, skew: 40, lift: 15, hueShift: 0, hueSameDir: false, on: true },
   { name: "Danger", hue: 27, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, on: true },
+  // Data 1..8 (REQ-024): derived ONCE via deriveDataHues(primaryHue 267, the 8 brand hues above
+  // filtered to chroma>=20, count 8) -> phi 20, hues [287,332,17,62,107,152,197,242]; chroma
+  // follows Primary's own chroma (H4). Recorded here as literal CAM16 seeds, parity-mirrored in
+  // role-table.json `defaults`, exactly like the 8 brand rows above (the build unit's own printed
+  // derivation is the source of these numbers, not a hand guess).
+  { name: "Data 1", hue: 287, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Data 2", hue: 332, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Data 3", hue: 17, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Data 4", hue: 62, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Data 5", hue: 107, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Data 6", hue: 152, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Data 7", hue: 197, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Data 8", hue: 242, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
 ];
 
 // configFromVariables — a best-effort PARAMETRIC seed from a Figma file's raw-colors variables,
@@ -353,6 +367,55 @@ export function defaultDocument() {
     type: { ...DEFAULT_TYPE }, // typography config (treatment + body base) — see engine/type.mjs
     geometry: { ...DEFAULT_GEOMETRY }, // dimensional config (treatment + base height) — see engine/geometry.mjs
   };
+}
+
+// isDataSlug — a palette's slug matches the data-family convention ("Data 1" -> "data-1"), per
+// REQ-020..024. Kept local (a one-line regex, not worth its own module); exports.js/ds-export.js
+// gain their own isDataPalette in a later build unit (U7) over the same rule.
+const isDataSlug = (name) => /^data-\d+$/.test(slug(name));
+
+// brandHuesOf — REQ-021: the hue of every NON-data palette whose chroma >= 20 (a tinted neutral
+// counts, a near-achromatic one doesn't; no name matching needed).
+function brandHuesOf(palettes) {
+  return (palettes || [])
+    .filter((p) => !isDataSlug(p.name) && (p.chroma ?? 0) >= 20)
+    .map((p) => p.hue);
+}
+
+// mintDataPalettes(doc) -> palette[] — REQ-020..022: 8 fresh "Data N" palette objects derived from
+// the document's own Primary hue and its brand hues, or [] when the document has no Primary
+// palette to derive from (nothing to anchor the derivation on). Pure: does not mutate `doc` or
+// append anything itself — the caller (the U8 "Add data palettes" action) does that.
+export function mintDataPalettes(doc) {
+  const palettes = (doc && doc.palettes) || [];
+  const primary = palettes.find((p) => slug(p.name) === "primary");
+  if (!primary) return [];
+  const { hues } = deriveDataHues(primary.hue, brandHuesOf(palettes), 8);
+  return hues.map((hue, i) => ({
+    name: `Data ${i + 1}`,
+    hue,
+    chroma: primary.chroma, // H4: data chroma follows the primary's own chroma
+    skew: 0,
+    lift: 0,
+    hueShift: 0,
+    hueSameDir: false,
+    on: true,
+  }));
+}
+
+// rederiveDataHues(doc) -> doc — REQ-023: the explicit "Re-derive data hues" action. Rewrites ONLY
+// the `hue` of palettes whose slug matches /^data-\d+$/, in place order, from a fresh
+// deriveDataHues call against the document's CURRENT Primary hue + brand hues; every other field
+// (chroma, name, skew, …) is left untouched. A document with no Primary, or no data palettes, is
+// returned unchanged (nothing to anchor or rewrite).
+export function rederiveDataHues(doc) {
+  const palettes = (doc && doc.palettes) || [];
+  const primary = palettes.find((p) => slug(p.name) === "primary");
+  const dataCount = palettes.filter((p) => isDataSlug(p.name)).length;
+  if (!primary || dataCount === 0) return doc;
+  const { hues } = deriveDataHues(primary.hue, brandHuesOf(palettes), dataCount);
+  let i = 0;
+  return { ...doc, palettes: palettes.map((p) => (isDataSlug(p.name) ? { ...p, hue: hues[i++] } : p)) };
 }
 
 // controlsOf — the tonal-controls slice of a document, defaulting any missing.
@@ -756,7 +819,7 @@ function round2(x) {
   return Math.round(x * 100) / 100;
 }
 
-// appThemeCSS — the FIXED app-theme stylesheet: exportCSS over the 8 default
+// appThemeCSS — the FIXED app-theme stylesheet: exportCSS over the default
 // palettes (NOT the user's edited document, so the chrome stays stable while
 // editing). This is the dogfooding hook — the same `exportCSS` the tool ships to
 // users generates the `--{n}-{stop}` raw vars + 53 `--c-{n}{suffix}` semantic
