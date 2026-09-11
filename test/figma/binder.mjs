@@ -561,17 +561,21 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("colorparity", "could not load/compare the flagship color-provenance functions: " + e.message); }
 }
 
-// ── collparity (#491): the four Figma collection NAMES are canonical in ONE place —
+// ── collparity (#491, +REQ-054/#539): the five Figma collection NAMES are canonical in ONE place —
 //    src/engine/collections.js's COLLECTIONS export — but neither sandbox (this binder, the flagship
 //    figma/plugin/code.js) can `import` it (non-module Figma VM), so each carries hand-typed literal
 //    copies. This is the tripwire root-caused by the 2026-07-17 librarian review (exportUI3 said
 //    "Color / Primitives" while the plugin created "Color Primitives" — a drift with no gate to catch
-//    it): RAW_COLLECTION/SEMANTIC_COLLECTION — the COLOR pair BOTH files hardcode as named constants —
-//    must equal COLLECTIONS.colorRaw/colorSemantic exactly in both. The Geometry/Type Primitives pair
-//    has no equivalent binder-side check: the standalone binder never hardcodes either name — it only
-//    ever receives them as DATA inside the baked FLOAT_PLANS (named by the app's own COLLECTIONS-derived
-//    plan at download time) — so only the flagship, which hardcodes both in readFloatVariables/
-//    byRegistry for its own read-back and styles paths, is checked for those two. ──
+//    it): RAW_COLLECTION/SEMANTIC_COLLECTION/PRIME_COLLECTION — the COLOR trio BOTH files hardcode as
+//    named constants — must equal COLLECTIONS.colorRaw/colorSemantic/colorPrime exactly in both.
+//    PRIME_COLLECTION joins the heavy dual-sandbox check, not the light flagship-only one below, per
+//    the LLD's Collections row ("both sandbox literals mirror it") — even though the binder does not
+//    yet bind or read prime tokens (LLD "Figma plugin apply" row), so a future P5 that wires it up
+//    cannot silently diverge the two copies. The Geometry/Type Primitives pair has no equivalent
+//    binder-side check: the standalone binder never hardcodes either name — it only ever receives them
+//    as DATA inside the baked FLOAT_PLANS (named by the app's own COLLECTIONS-derived plan at download
+//    time) — so only the flagship, which hardcodes both in readFloatVariables/byRegistry for its own
+//    read-back and styles paths, is checked for those two. ──
 {
   const FLAGSHIP_PATH = join(HERE, "..", "plugin", "code.js");
   const constLit = (src, name) => (new RegExp(`const ${name}\\s*=\\s*"([^"]*)"`).exec(src) || [])[1];
@@ -580,8 +584,10 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     for (const [label, src] of [["binder", binderSrc], ["flagship", flagSrc]]) {
       const raw = constLit(src, "RAW_COLLECTION");
       const sem = constLit(src, "SEMANTIC_COLLECTION");
+      const prime = constLit(src, "PRIME_COLLECTION");
       if (raw !== COLLECTIONS.colorRaw) FAIL("collparity", `${label} RAW_COLLECTION = ${JSON.stringify(raw)}, want ${JSON.stringify(COLLECTIONS.colorRaw)} (src/engine/collections.js)`);
       if (sem !== COLLECTIONS.colorSemantic) FAIL("collparity", `${label} SEMANTIC_COLLECTION = ${JSON.stringify(sem)}, want ${JSON.stringify(COLLECTIONS.colorSemantic)} (src/engine/collections.js)`);
+      if (prime !== COLLECTIONS.colorPrime) FAIL("collparity", `${label} PRIME_COLLECTION = ${JSON.stringify(prime)}, want ${JSON.stringify(COLLECTIONS.colorPrime)} (src/engine/collections.js)`);
     }
     if (!flagSrc.includes(`"${COLLECTIONS.breakpoints}"`)) FAIL("collparity", `flagship carries no literal "${COLLECTIONS.breakpoints}" (COLLECTIONS.breakpoints)`);
     if (!flagSrc.includes(`"${COLLECTIONS.fontPrimitives}"`)) FAIL("collparity", `flagship carries no literal "${COLLECTIONS.fontPrimitives}" (COLLECTIONS.fontPrimitives)`);

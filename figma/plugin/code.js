@@ -22,6 +22,7 @@
 
 const RAW_COLLECTION = "Color Primitives";   // the raw color primitives (one "Value" mode) — the DEFAULT name
 const SEMANTIC_COLLECTION = "Color Roles"; // the semantic Light/Dark tokens — the DEFAULT name (#491; was "Color Semantic", "Color Modes")
+const PRIME_COLLECTION = "Color Prime"; // REQ-054 (#539): the seven-swatch prime ladder, single "Base" mode; not created or read here yet (P5/#540 wires the actual apply), the literal exists only so `collparity` can guard it against drift ahead of that
 // COLL — the ACTIVE color-collection names. Settings › Token mapping can override the defaults
 // (doc.figmaCollections); the apply message carries the override and sets these before any write, and
 // readRawColors resolves them from the SAVED config so a renamed file still round-trips at boot. An

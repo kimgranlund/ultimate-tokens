@@ -8,9 +8,12 @@
 // "Type" vocabulary, not "Font") · "Geometry" (was "Breakpoints", a REVERT — the mode axis stays
 // Desktop/Tablet/Mobile; the name describes content, not the mode axis, matching the color pair).
 // Renames ride FIGMA_MIGRATIONS (TKT-0012) so existing user files adopt by id, never by prune.
+// colorPrime added at REQ-054 (#539, 2026-09-11): a fifth, mode-independent collection ("Base"
+// only) for the seven-swatch prime ladder — no rename history, a fresh name from day one.
 export const COLLECTIONS = {
   colorRaw: "Color Primitives",
   colorSemantic: "Color Roles",
   breakpoints: "Geometry",
   fontPrimitives: "Type Primitives",
+  colorPrime: "Color Prime",
 };
