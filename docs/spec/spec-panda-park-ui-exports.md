@@ -2,7 +2,7 @@
 doc-type: spec
 id: spec-panda-park-ui-exports
 status: approved        # draft | approved | superseded  (0.1.0 approved 2026-09-11: H-1..H-4, P-1, N-1..N-3 ratified by the owner via team-lead)
-version: 0.1.0
+version: 0.1.1          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw ramp stops (issue #588 ruling); EX-4 regenerated. Data correction to an approved SPEC, not a new draft round.
 date: 2026-09-11
 owner: Kim Granlund
 prd: none               # GitHub issue #570 is the intent record (ADR-017 git-native tickets)
@@ -201,36 +201,60 @@ Consequences that shape the design:
   neutral, error = danger`) and the install line (`presets: [parkPreset, utParkPreset]`, ours last).
   Returns the `/* Park UI export needs at least one enabled non-data palette. */` sentinel when no
   driver can be picked, mirroring `exportShadcn`.
-- **REQ-021 (12-step projection, ratified P-1)** For every enabled palette, ladder step `k` is the
-  role listed below, per mode (`base` = light end, `_dark` = dark end). Steps 6..8 are translucent
-  roles and are FLATTENED over that mode's step 1 so every ladder value is opaque, as Radix's are.
+- **REQ-021 (12-step projection, ratified P-1, corrected 2026-09-11 by issue #588's ruling)** For
+  every enabled palette, ladder step `k` per mode (`base` = light end, `_dark` = dark end) is:
 
-  | Step | Radix job | Role (suffix) | Opaque? |
-  |---|---|---|---|
-  | 1 | app background | `-surface-lowest` | yes |
-  | 2 | subtle background | `-surface-lower` | yes |
-  | 3 | UI element background | `-surface-low` | yes |
-  | 4 | hovered element background | `-surface` | yes |
-  | 5 | active / selected element | `-surface-high` | yes |
-  | 6 | subtle border, separator | `-outline-variant` | flattened over step 1 |
-  | 7 | element border, focus ring | `-outline` | flattened over step 1 |
-  | 8 | hovered border | `-outline-hover` | flattened over step 1 |
-  | 9 | solid background | `` (bare accent) | yes |
-  | 10 | hovered solid | `-hover` | yes |
-  | 11 | low-contrast text | `-on-surface-variant` | yes |
-  | 12 | high-contrast text | `-on-surface` | yes |
+  | Step | Radix job | Light stop | Dark stop | Opaque? |
+  |---|---|---|---|---|
+  | 1 | app background | `100` | `900` | yes (raw stop) |
+  | 2 | subtle background | `125` | `875` | yes (raw stop) |
+  | 3 | UI element background | `150` | `850` | yes (raw stop) |
+  | 4 | hovered element background | `175` | `825` | yes (raw stop) |
+  | 5 | active / selected element | `200` | `800` | yes (raw stop) |
+  | 6 | subtle border, separator | `250` | `750` | yes (raw stop) |
+  | 7 | element border, focus ring | `300` | `700` | yes (raw stop) |
+  | 8 | hovered border | `350` | `650` | yes (raw stop) |
+  | 9 | solid background | (bare accent role, `550`/`450`) | | yes (role) |
+  | 10 | hovered solid | (`-hover` role, `650`/`350`) | | yes (role) |
+  | 11 | low-contrast text | (`-on-surface-variant` role, `750`/`250`) | | yes (role) |
+  | 12 | high-contrast text | (`-on-surface` role, `950`/`050`) | | yes (role) |
 
-  Alternative rejected: picking 12 of the 25 stops per mode. Stops carry no job and no on-colour
-  guarantee; the roles were designed for exactly the jobs Radix names, and they already flip per
-  mode with measured contrast. The `-surface-*` tier is monotone by construction (refs 050 → 200 in
-  light, 950 → 800 in dark), which keeps steps 1..5 ordered for every palette.
+  Steps 1..8 are RAW RAMP STOPS: opaque values read directly from `derivedAll`'s `p.stops[key].rgb`
+  at exactly the light/dark stop numbers above, through the same `oklchStr(rgbToOklch(...))` path
+  `exportTailwind`/REQ-002 already use for raw stops. They are never role-indirected (no
+  `-surface-lowest`/`-outline`/etc. role lookup) and never flattened over step 1 or any other
+  background — the original ratification's role-indirection and step 6..8 flattening are
+  superseded for steps 1..8 by this table. Steps 9..12 are UNCHANGED: still the bare
+  accent/`-hover`/`-on-surface-variant`/`-on-surface` roles, because those already matched the
+  corrected source (issue #588's ruling comment, 2026-09-11, compared against
+  `src/engine/semantic.js`'s actual role stops and found already correct).
+
+  Canonical source: `docs/reference/data/radix-projection.json` (the committed projection table)
+  and `docs/reference/references/radix-park-adaptation.md` (the architecture + rules this table
+  comes from — source-of-truth direction, Prime/Scrim namespace separation, data-driven
+  exceptions).
+
+  Alternative rejected: picking 12 of the 25 stops evenly, and (the original P-1 default, now
+  superseded for 1..8) role-indirecting steps 1..8 through `-surface-*`/`-outline-*` and
+  flattening 6..8 over step 1. Steps 1..8 read the ramp's own stops directly because the Radix
+  job at each of those steps IS a raw opaque tonal stop in the corrected source mapping, not a
+  translucent role composited to look opaque. The stop sequence stays monotone by construction
+  for every palette (light stops 100→200 darken step over step, dark stops 900→800 lighten step
+  over step, mirroring each other), which keeps steps 1..5 ordered.
 - **REQ-022** Alpha steps `a1 … a12` are the alpha projection of the same-numbered solid step, over
   white in `base` and over black in `_dark`, emitted as `oklch(L C H / a%)` strings (`a` to one
   decimal) through `roleOklch({ rgb: C, frac: a })`; a step whose projection is `a = 0` emits
-  `"transparent"`.
+  `"transparent"`. Verified unaffected by the #588 correction: this formula reads "the
+  same-numbered solid step" generically, never assumed steps 6..8 were translucent, and needs no
+  wording change now that steps 6..8 are raw ramp stops rather than flattened role values — `a6/a7/
+  a8` simply project from the new (raw) `6/7/8` solids.
 - **REQ-023** Appearance groups per palette, aliasing the palette's own steps by reference (the
   shape of KF-3, the step numbers to be confirmed against `amber.ts` by the K3 builder and recorded
-  in the Findings of #570; the gate asserts keys, not numbers):
+  in the Findings of #570; the gate asserts keys, not numbers). Verified unaffected by the #588
+  correction: these aliases reference step/alpha-step NUMBERS only (`a6`, `a7`, `9`, `10`, `11`, …),
+  never assumed steps 6..8 were translucent, so the wiring is unchanged — only what steps 6..8 ARE
+  (raw stops, not flattened roles) changed, and these aliases resolve to whatever REQ-021/REQ-022
+  now emit for those numbers:
   `solid.bg.DEFAULT → {colors.{n}.9}`, `solid.bg.hover → 10`, `solid.fg.DEFAULT →
   {colors.{n}.on-accent}` (see REQ-024), `subtle.bg.DEFAULT → a3`, `.hover → a4`, `.active → a5`,
   `subtle.fg.DEFAULT → 11`, `surface.bg.DEFAULT → a2`, `.active → a3`, `surface.border.DEFAULT → a6`,
@@ -265,6 +289,10 @@ Consequences that shape the design:
   output is byte-identical before and after the refactor (gate).
 - **REQ-041** Two new pure helpers in `exports.js`: `flattenOver(end, bgRgb)` and
   `alphaProject(rgb, mode)` (the Vocabulary formulas), exported for the test's independent check.
+  Note (2026-09-11, #588 correction): REQ-021's steps 1..8 no longer flatten anything (they are raw
+  ramp stops), so `flattenOver` has no caller inside `exportParkUi` after this correction; it
+  remains exported per this REQ, and whether it stays a live helper, a test-only utility, or is
+  dropped is the K3 builder's call to record in #570's Findings, not restated here.
 - **REQ-042** `exportAll` gains `panda: exportPanda(state)` and `parkui: exportParkUi(state)`
   (objects, like `json`/`dtcg`); the `nonempty` key list in `test/engine/exports.mjs` gains both.
 - **REQ-043** Both emitters are theme-independent (never read `state.theme`) and disabled-palette
@@ -387,17 +415,26 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   "24px", letterSpacing: "0px", fontWeight: 440, textTransform: "none" }`, `textStyles.body.DEFAULT`
   equals it; `tokens.radii.md.value === "12px"`, `tokens.radii.full.value === "9999px"`,
   `tokens.spacing["4"].value === "16px"`, `tokens.borderWidths.thin.value === "1px"`.
-- **EX-4 (NORMATIVE, park ladder, gray = neutral).** Emitted `base` / `_dark` values, steps 6..8
-  flattened over step 1 of the same mode (engine-regenerated 2026-09-11):
-  `1` `oklch(1 0 0) / oklch(0.1774 0.0044 264.46)`; `2` `oklch(0.9787 0.0017 247.84) /
-  oklch(0.2082 0.0067 258.37)`; `3` `oklch(0.9552 0.0041 271.37) / oklch(0.2346 0.0083 264.4)`;
-  `4` `oklch(0.9336 0.0058 264.53) / oklch(0.2598 0.0121 264.34)`; `5` `oklch(0.9122 0.0088
-  264.52) / oklch(0.2854 0.0153 269.14)`; `6` `oklch(0.8855 0.0157 269.97) / oklch(0.3204 0.023
-  264.17)`; `7` `oklch(0.7668 0.033 267.89) / oklch(0.4472 0.0396 268.11)`; `8` `oklch(0.728
-  0.0384 266.59) / oklch(0.4871 0.0437 268.35)`; `9` `oklch(0.5598 0.056 266.1) / oklch(0.6475
-  0.0554 266.72)`; `10` `oklch(0.469 0.0461 267.38) / oklch(0.7351 0.041 267.83)`; `11`
-  `oklch(0.3797 0.0306 267.41) / oklch(0.8237 0.0233 269.4)`; `12` `oklch(0.1774 0.0044 264.46) /
-  oklch(1 0 0)`. Luminance is monotone in each mode (the REQ-061 control).
+- **EX-4 (NORMATIVE, park ladder, gray = neutral, corrected 2026-09-11 per issue #588's ruling).**
+  Emitted `base` / `_dark` values. Steps 1..8 are RAW RAMP STOPS (no flattening — superseding the
+  pre-#588 EX-4, which flattened steps 6..8 over step 1); steps 9..12 are unchanged role-derived
+  values. Regenerated 2026-09-11 by reading `src/engine/exports.js`'s actual resolved output
+  (`derivedAll(stateOf(defaultDocument()))`'s `neutral` palette, the same raw-stop path
+  `exportTailwind`/REQ-002 already use) against the corrected table in
+  `docs/reference/data/radix-projection.json`:
+  `1` (stop 100/900) `oklch(0.9552 0.0041 271.37) / oklch(0.2346 0.0083 264.4)`;
+  `2` (stop 125/875) `oklch(0.9336 0.0058 264.53) / oklch(0.2598 0.0121 264.34)`;
+  `3` (stop 150/850) `oklch(0.9122 0.0088 264.52) / oklch(0.2854 0.0153 269.14)`;
+  `4` (stop 175/825) `oklch(0.8907 0.0118 264.51) / oklch(0.3095 0.0188 268.07)`;
+  `5` (stop 200/800) `oklch(0.869 0.0148 264.49) / oklch(0.3331 0.0223 267.36)`;
+  `6` (stop 250/750) `oklch(0.8237 0.0233 269.4) / oklch(0.3797 0.0306 267.41)`;
+  `7` (stop 300/700) `oklch(0.7794 0.0329 267.89) / oklch(0.4249 0.0385 267.4)`;
+  `8` (stop 350/650) `oklch(0.7351 0.041 267.83) / oklch(0.469 0.0461 267.38)`;
+  `9` `oklch(0.5598 0.056 266.1) / oklch(0.6475 0.0554 266.72)`; `10` `oklch(0.469 0.0461 267.38) /
+  oklch(0.7351 0.041 267.83)`; `11` `oklch(0.3797 0.0306 267.41) / oklch(0.8237 0.0233 269.4)`;
+  `12` `oklch(0.1774 0.0044 264.46) / oklch(1 0 0)`. Luminance is still monotone in each mode (the
+  REQ-061 control): `base` L strictly decreases 0.9552 → 0.1774 across steps 1..12; `_dark` L
+  strictly increases 0.2346 → 1 across steps 1..12.
 - **EX-5 (NORMATIVE, park alpha projection, accent = primary).** Step 9 `base` solid `#136CE9`
   projects to `a = 0.9255`, `C = [0, 96, 231]`, emitted `oklch(… / 92.5%)`; `_dark` solid `#428BFB`
   over black projects to `a = 0.9843`, `C = [67, 141, 255]`. Gray step 3 `base` `#E7E9ED` projects
@@ -484,7 +521,7 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
 | H-2 | Park UI text styles | Not emitted (Park's `xs … 7xl` stays as installed) | Map 15 voices onto `xs … 7xl` + `label` | K3 | Ratified: default (not in v1) |
 | H-3 | Pro gating | Both formats Pro, like Tailwind and shadcn | Free | K1 | Ratified: Pro |
 | H-4 | Real `panda cssgen` leg | Script + a `panda-smoke` CI job (network, never in `npm test`) | Script only, run by hand at release | K5 | Ratified: script + CI job |
-| P-1 | 12-step projection | Roles per the REQ-021 table, 6..8 flattened | 12 of the 25 stops per mode | K3 | Ratified: by role |
+| P-1 | 12-step projection | Roles per the REQ-021 table, 6..8 flattened | 12 of the 25 stops per mode | K3 | Ratified: by role (2026-09-11), CORRECTED 2026-09-11: steps 1..8 are raw ramp stops (see issue #588's ruling comment, dated 2026-09-11), never role-indirected or flattened; steps 9..12 unchanged |
 | N-1 | Panda stop keys | Unpadded `50 … 950` (Panda/Tailwind convention) | ADR-006 padded `050 … 950` | K1 | Ratified: unpadded |
 | N-2 | Raw scrim group name if codegen rejects the `scrim` leaf/group coexistence | Keep `scrim` (proven by REQ-071) | Rename raw group to `scrims` | K5, only if triggered | Ratified as proposed (fallback only if triggered) |
 | N-3 | Colour value form | `oklch()` strings everywhere (as Tailwind/shadcn) | Hex for raw, `oklch()` for semantic | K1 | Ratified: oklch() |
@@ -517,3 +554,16 @@ first PR; K3 carries the Park UI wiring for the same reason; K4 is the joint gat
 ## Ratification record
 
 Ratified 2026-09-11 (team-lead relaying the owner): H-1 Panda v1 = colour + fonts + textStyles + radii/spacing/borderWidths; H-2 no Park UI textStyles in v1; H-3 both formats Pro-gated; H-4 codegen leg = script + CI `panda-smoke` job via npx, never in `npm test`; P-1 12-step projection by role, alpha steps Radix-style over white/black; N-1 unpadded `50 … 950`; N-2 as proposed (`scrims` fallback only if codegen rejects); N-3 `oklch()` strings everywhere. No human exception remains; every unit is buildable.
+
+**Correction, 2026-09-11 (issue #588's ruling comment, dated 2026-09-11).** Before K3 built, the
+conductor compared REQ-021's P-1 table against a validated Adia→Radix adaptation document supplied
+by the human and against `src/engine/semantic.js`'s actual role stops: steps 9..12 already matched
+what's ratified exactly, but steps 1..8 sat one tier lighter than the corrected mapping and treated
+6..8 as translucent-flattened-over-white rather than opaque raw stops. REQ-021 is amended for steps
+1..8 only (this SPEC's version bumps 0.1.0 → 0.1.1; status stays `approved`, this is a data
+correction to an already-approved SPEC, not a new draft round). The corrected table, EX-4's
+regenerated values, and the durable source material now live at
+`docs/reference/data/radix-projection.json` and `docs/reference/references/radix-park-adaptation.md`.
+REQ-022 and REQ-023 were checked against the correction and need no wording change (both operate on
+step/alpha-step numbers generically, never assumed steps 6..8 were translucent) — see the inline
+notes on each REQ.
