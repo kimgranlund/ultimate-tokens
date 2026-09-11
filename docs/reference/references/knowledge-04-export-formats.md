@@ -234,7 +234,7 @@ through `p.keyColors` directly) and closed the gap rather than fencing it.
 ## 10. Prime tokens (the seven per-palette identity swatches)
 
 Each palette also carries a `prime` group: seven raw swatches, `brightest · brighter · bright ·
-prime · dim · dimmer · dimmest` (REQ-054, knowledge-02 §8.2), computed on the key colour's own
+prime · dim · dimmer · dimmest` (REQ-054, knowledge-02 §8.3), computed on the key colour's own
 OKHSL lightness ladder rather than the ramp. Flat and mode-independent (R2): one set of values,
 no `light-dark()` wrapper, identical in Light and Dark. Emitted for every palette, always (not
 opt-in like key colors).
