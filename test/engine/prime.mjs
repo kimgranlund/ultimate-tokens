@@ -207,8 +207,10 @@ for (const p of DEFAULTS) {
   if (a !== b) FAIL("i", `${p.name}: two calls not deep-equal`);
 }
 
-// ── (j) palette.primeChroma overrides controls.primeChroma; keyIntensity fallback (P2..P3
-//        rename window, LLD Risk 2) applies when no primeChroma exists anywhere ────────────
+// ── (j) palette.primeChroma overrides controls.primeChroma; an absent controls.primeChroma
+//        defaults to 100 flat, with NO fallback to any stray keyIntensity field (the P2..P3
+//        rename window, LLD Risk 2, closed once P3/#548 landed primeChroma as a real control —
+//        the fallback tail was removed from primeSwatches accordingly) ─────────────────────
 {
   const swOverride = primeSwatches({ ...PRIMARY, primeChroma: 30 }, { ...CTL, primeChroma: 100 })[3];
   const swGlobal30 = primeSwatches(PRIMARY, { ...CTL, primeChroma: 30 })[3];
@@ -217,12 +219,12 @@ for (const p of DEFAULTS) {
   if (Math.abs(swOverride.s - swGlobal100.s) < 1e-9) FAIL("j", "palette.primeChroma override had no effect vs global primeChroma 100");
 }
 {
-  // no controls.primeChroma field at all (matches post-P1 DEFAULT_CONTROLS shape) -> falls through to keyIntensity
+  // no controls.primeChroma field at all -> defaults to 100, ignoring a stray keyIntensity: if the
+  // retired fallback tail were still present this would read key.s * 0.4 instead of key.s * 1.0.
   const ctlNoPC = { hueSpace: "oklch", keyIntensity: 40 };
   const sw = primeSwatches(PRIMARY, ctlNoPC)[3];
-  const { key } = lPrimeOf(PRIMARY.hue, PRIMARY.chroma, "oklch");
-  const expectedS = key.s * 0.4;
-  if (Math.abs(sw.s - expectedS) > 1e-9) FAIL("j", `keyIntensity fallback: s ${sw.s} != expected ${expectedS} (controls.keyIntensity=40, no primeChroma anywhere)`);
+  const swExplicit100 = primeSwatches(PRIMARY, { ...ctlNoPC, primeChroma: 100 })[3];
+  if (Math.abs(sw.s - swExplicit100.s) > 1e-9) FAIL("j", `absent controls.primeChroma did not default to 100 flat (s ${sw.s} != explicit-100 s ${swExplicit100.s}) — a stray keyIntensity must not affect it`);
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────

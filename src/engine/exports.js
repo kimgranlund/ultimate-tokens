@@ -31,6 +31,7 @@
 import { paletteStops, EXPORT_STOPS, DEFAULT_CONTROLS } from "./tonal.js";
 import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, DEFAULT_THEMES } from "./semantic.js";
 import { COLLECTIONS } from "./collections.js";
+import { primeSwatches, PRIME_STEPS } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
 
 // WCAG relative luminance of an [r,g,b] (0..255) triple — for the opt-in contrast on-color pick.
@@ -174,7 +175,10 @@ function controlsOf(state) {
     dampAmp: state.dampAmp ?? DEFAULT_CONTROLS.dampAmp,
     dampBias: state.dampBias ?? DEFAULT_CONTROLS.dampBias,
     baseIntensity: state.baseIntensity ?? DEFAULT_CONTROLS.baseIntensity,
-    keyIntensity: state.keyIntensity ?? DEFAULT_CONTROLS.keyIntensity,
+    // primeChroma (REQ-010/050..057): the prime system's own chroma control. DEFAULT_CONTROLS has no
+    // primeChroma field yet — mirrors model.mjs's controlsOf, which reuses tonal.js's still-inert
+    // keyIntensity (100) as its default source (same P1-kept-inert field, same reuse rationale).
+    primeChroma: state.primeChroma ?? DEFAULT_CONTROLS.keyIntensity,
     hueSpace: state.hueSpace ?? "cam16", // a raw legacy state without the field was authored in cam16 (mirror the UI's legacy-preservation stamp); a live doc always carries it explicitly
     // distribution mode + its shapers — previously dropped here, so exports always used the
     // default mode regardless of the doc. Threaded now so exports match what the UI renders.
@@ -208,7 +212,6 @@ function derivePalette(palette, controls, overrides) {
     dampAmp: controls.dampAmp,
     dampBias: controls.dampBias,
     baseIntensity: controls.baseIntensity,
-    keyIntensity: controls.keyIntensity,
     hueSpace: controls.hueSpace,
     toneMode: controls.toneMode,
     vibrancy: controls.vibrancy,
@@ -282,7 +285,20 @@ function derivePalette(palette, controls, overrides) {
   // shares one conversion instead of re-deriving it — CSS/JSON still read `oklch` directly.
   const keyColorsRaw = Array.isArray(palette.keyColors) ? palette.keyColors : [];
   const keyColors = keyColorsRaw.map((kc) => ({ ...kc, rgb: oklchToRgb(kc.oklch[0], kc.oklch[1], kc.oklch[2]) }));
-  return { name: palette.name, n, hue: palette.hue, stops, byStop, scrims, roles, keyColors };
+
+  // prime — the seven per-palette identity swatches (REQ-050..057), on their OWN OKHSL ladder,
+  // independent of the ramp above; mode-independent (R2), one set per palette. Built from
+  // prime.mjs's own primeSwatches(), never reimplemented here (same call shape model.mjs's
+  // projectView uses: the full `controls` object, not the ramp-only `ctl` slice, since
+  // primeSwatches reads controls.hueSpace/primeChroma, neither of which `ctl` needs).
+  const primeList = primeSwatches(
+    { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, primeChroma: palette.primeChroma },
+    controls,
+  );
+  const prime = {}; // { [step]: {step, l, s, hue, rgb, hex, oklch, inGamut} }
+  for (const sw of primeList) prime[sw.step] = sw;
+
+  return { name: palette.name, n, hue: palette.hue, stops, byStop, scrims, roles, keyColors, prime };
 }
 
 // derivedAll — every enabled palette derived, in State order. Exported: ds-export.js's DS-bundle
@@ -359,6 +375,13 @@ function cssFrom(palettes, oklch, pfx = "c") {
       const val = oklch ? oklchStr(rgbToOklch(rgb)) : hexOf(rgb);
       lines.push(`  --${pfx}-${p.n}-${key}: ${val};`);
     }
+    // PRIME RAW vars: --{pfx}-{n}-prime-{step} (REQ-054) — the seven identity swatches, next to the
+    // solid stops above; flat and mode-independent (R2), so no light-dark() wrapper.
+    for (const step of PRIME_STEPS) {
+      const sw = p.prime[step];
+      const val = oklch ? oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] }) : sw.hex;
+      lines.push(`  --${pfx}-${p.n}-prime-${step}: ${val};`);
+    }
     // scrim RAW vars: --{pfx}-{n}-scrim-{step} (ADR-016 nesting, hyphen surface; the canonical 500
     // base is omitted while SCRIM_BASES is single — refSlug re-adds it if a second base ever ships)
     for (const base of SCRIM_BASES) {
@@ -412,6 +435,14 @@ export function exportJSON(state) {
       }
     }
 
+    // prime: { "brightest": {hex, oklch}, ... } — keyed by step NAME (a word, not padded, mirroring
+    // keyColors' role keys), the seven identity swatches (REQ-054), always present (not opt-in).
+    const prime = {};
+    for (const step of PRIME_STEPS) {
+      const sw = p.prime[step];
+      prime[step] = { hex: sw.hex, oklch: oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] }) };
+    }
+
     // semantic: [{ key, light:"#hex", dark:"#hex" }, ...] — `key` is the kebab leaf (ADR-016).
     const semantic = p.roles.map((r) => ({
       key: roleLeaf(p.n, r),
@@ -419,7 +450,7 @@ export function exportJSON(state) {
       dark: r.dark.hex,
     }));
 
-    const palette = { stops, scrims, semantic };
+    const palette = { stops, scrims, prime, semantic };
     // keyColors: [{ role, oklch:[L,C,H], name? }] — retained exact brand colors (present only when set).
     if (p.keyColors.length) palette.keyColors = p.keyColors.map((kc) => ({ role: kc.role, oklch: kc.oklch, ...(kc.name ? { name: kc.name } : {}) }));
     out[p.n] = palette;
@@ -479,6 +510,12 @@ export function exportDTCG(state, opts) {
       }
     }
     grp.scrim = scrimGrp;
+    // prime NESTS under a prime/ group (mirrors scrim/'s two-segment shape, ADR-016) — the seven
+    // identity swatches (REQ-054), resolved, no aliasData, mode-independent (R2), always present
+    // (not opt-in like key/).
+    const primeGrp = {};
+    for (const step of PRIME_STEPS) primeGrp[step] = colorLeaf(p.prime[step].rgb, 1, null);
+    grp.prime = primeGrp;
     // key colors NEST under a key/ group (mirrors scrim/'s two-segment shape, ADR-016) — retained
     // brand colors, exact (frac 1, no alpha), keyed by their role string ("dominant"/"supportive"),
     // never pad3'd (a key role is a word, not a stop number). Present only when the palette set any
@@ -546,6 +583,7 @@ export function exportUI3(state) {
   const palettes = derivedAll(state);
   const primVars = {};
   const semVars = {};
+  const primeVars = {};
 
   for (const p of palettes) {
     // raw primitives: "raw/{n}/{pad3}" and "raw/{n}/{base-i}".
@@ -573,6 +611,12 @@ export function exportUI3(state) {
         },
       };
     }
+    // prime: its OWN top-level collection (REQ-054, LLD Interfaces block) — "{n}/{step}" (no "raw/"
+    // prefix, the same no-prefix convention the Semantic collection above already uses), one Base
+    // mode, the seven identity swatches, always present (not opt-in like key/).
+    for (const step of PRIME_STEPS) {
+      primeVars[`${p.n}/${step}`] = { type: "COLOR", values: { Base: p.prime[step].hex } };
+    }
   }
   // constants — fixed, non-palette raw primitives, Primitives-collection ONLY (mirrors the DTCG
   // raw-tree-only placement: the Semantic collection's top-level keys are treated elsewhere as real
@@ -587,6 +631,11 @@ export function exportUI3(state) {
     collections: {
       [COLLECTIONS.colorRaw]: { modes: ["Base"], variables: primVars },
       [COLLECTIONS.colorSemantic]: { modes: ["Light", "Dark"], variables: semVars },
+      // "Color Prime" (REQ-054): a literal name here, not COLLECTIONS.colorPrime — that constant is
+      // added by #539's sub-unit B (stacked on this branch) alongside the two Figma sandbox literal
+      // mirrors it must move in lockstep with for the `collparity` gate. Sub-unit B swaps this
+      // literal for the constant; the STRING VALUE must equal "Color Prime" either way.
+      "Color Prime": { modes: ["Base"], variables: primeVars },
     },
   };
 }
@@ -623,6 +672,12 @@ export function exportTailwind(state) {
     for (const key of Object.keys(p.stops)) {
       // pad3 "050" -> Tailwind key "50"; finer stops (150/250/…) stay as-is (valid in v4).
       lines.push(`  --color-${p.n}-${String(Number(key))}: ${oklchStr(rgbToOklch(p.stops[key].rgb))};`);
+    }
+    // PRIME — --color-{n}-prime-{step} (REQ-054), next to the scale above; the seven identity
+    // swatches, flat and mode-independent (R2).
+    for (const step of PRIME_STEPS) {
+      const sw = p.prime[step];
+      lines.push(`  --color-${p.n}-prime-${step}: ${oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] })};`);
     }
   }
   for (const p of palettes) {
