@@ -64,10 +64,13 @@ const stepsFor = (sizeKey) => ranksFor(sizeKey).map((r, i) => [r, SIZES[sizeKey]
 // not a control label).
 const cat = (role, sizeKey, leading, weight, trackingEm, transform = "none", box = role === "ui" || role === "mono") => ({ role, base: SIZES[sizeKey][ranksFor(sizeKey).indexOf("MD")], leading, weight, trackingEm, steps: stepsFor(sizeKey), transform, box });
 
-// makeVoices — the THIRTEEN named type VOICES (docs/reference/typography): Display · Headline ·
+// makeVoices — the FIFTEEN named type VOICES (docs/reference/typography): Display · Headline ·
 // Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label · Label-mono · Kicker · Tiny ·
-// Tiny-mono. A voice carries CHARACTER (weight, tracking, leading, case, font cut) that travels with it
-// across every step; the SIZE is now a fixed literal per voice+step (SIZES above), never derived.
+// Tiny-mono · UI-control · UI-widget (TKT-0008). A voice carries CHARACTER (weight, tracking, leading,
+// case, font cut) that travels with it across every step; the SIZE is now a fixed literal per
+// voice+step (SIZES above), never derived. EXPORTED (ticket #529) so the brand-voice gate's own
+// "type voices" pinned fact (`.claude/skills/ultimate-tokens-brand-voice/scripts/voice-check.mjs`) can
+// derive its count live from here instead of carrying a second, driftable hand-pinned literal.
 // Sub-heading is a bold, all-caps CONTEXT heading (a section label like "LATEST STORIES" sitting above
 // a list/grid — not a subordinate H2); Title is a smaller Headline; Sub-title is a smaller sub-heading
 // in an alternate (mono-by-default) typeface; Lead is a larger body intro (a former "Quote" folds in
@@ -88,7 +91,7 @@ const cat = (role, sizeKey, leading, weight, trackingEm, transform = "none", box
 // Body-mono) 1.0. Treatments express voice through font, weight, tracking, and case — NOT leading,
 // which is fixed to the intent (retune a per-voice `*Lead` knob only for a deliberate character
 // exception).
-function makeVoices(o = {}) {
+export function makeVoices(o = {}) {
   return {
     "Display": cat("display", "Display", o.dLead ?? 0.8, o.dWeight ?? 700, o.dTrack ?? -0.02, o.dTransform ?? "none"),
     "Headline": cat("heading", "Headline", o.hLead ?? 1.125, o.hWeight ?? 700, o.hTrack ?? -0.005, "none"),
