@@ -109,11 +109,15 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
 }
 {
   // a partial-migration state: only 3 Data N palettes (not the full 8), interspersed with a
-  // decoy palette whose name LOOKS data-ish but doesn't match the "Data N" slug at all.
+  // decoy palette whose SLUG CONTAINS the "data-<digits>" shape ("old-data-5" embeds "data-5")
+  // but isn't an EXACT match — this is the real regression net for isDataSlug's `^`/`$` anchors:
+  // an unanchored /data-\d+/ would wrongly match it too, so only the anchored regex tells them
+  // apart (a plain "Database" decoy wouldn't contain "data-<digits>" at all and so wouldn't
+  // exercise the anchors either way — a vacuous guard).
   const palettes = [
     { name: "Primary", hue: 100, chroma: 80 },
     { name: "Secondary", hue: 40, chroma: 60 },
-    { name: "Database", hue: 300, chroma: 80, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true }, // NOT a "Data N" slug — an ordinary brand palette, isDataSlug edge case
+    { name: "Old Data 5", hue: 300, chroma: 80, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true }, // slug "old-data-5" — NOT an exact "data-<digits>" slug, an ordinary brand palette
     { name: "Data 1", hue: 1, chroma: 80, skew: 5, lift: 3, hueShift: 2, hueSameDir: true, on: false },
     { name: "Data 2", hue: 2, chroma: 80, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
     { name: "Data 3", hue: 3, chroma: 80, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
@@ -124,14 +128,14 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(out.palettes.length === palettes.length, "rederiveDataHues must not add or remove palettes");
   ok(out.palettes[0] === palettes[0] && out.palettes[1] === palettes[1],
     "rederiveDataHues must leave non-Data-N palette OBJECTS untouched (same reference), not clone them needlessly");
-  ok(out.palettes[2].name === "Database" && out.palettes[2].hue === 300,
-    `isDataSlug must NOT match "Database" — it must be left completely untouched (got ${JSON.stringify(out.palettes[2])})`);
+  ok(out.palettes[2].name === "Old Data 5" && out.palettes[2].hue === 300,
+    `isDataSlug's anchors must reject "old-data-5" (embeds "data-5" but isn't an exact match) — it must be left completely untouched (got ${JSON.stringify(out.palettes[2])})`);
   ok(out.palettes.map((p) => p.name).join(",") === palettes.map((p) => p.name).join(","), "rederiveDataHues must preserve palette order");
 
   const dataOut = out.palettes.filter((p) => /^Data \d+$/.test(p.name));
   ok(dataOut.length === 3, `rederiveDataHues must recompute exactly the 3 real Data N palettes present, no more (got ${dataOut.length})`);
   // brandHues here: Primary(100, its own hue also counts, REQ-021 names no Primary exclusion) +
-  // Secondary(40) + "Database"(300) — all three chroma>=20, none a "Data N" slug.
+  // Secondary(40) + "Old Data 5"(300) — all three chroma>=20, none an exact "Data N" slug.
   const expectedHues = deriveDataHues(100, [100, 40, 300], 3).hues;
   ok(dataOut.every((p, i) => angClose(p.hue, expectedHues[i])),
     `REQ-023: recomputed hues ${JSON.stringify(dataOut.map((p) => p.hue))} must match deriveDataHues(100, [40,300], 3) = ${JSON.stringify(expectedHues)}`);
