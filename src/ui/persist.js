@@ -1,6 +1,7 @@
 import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
 import { COLLECTIONS } from "../engine/collections.js";
+import { PALETTE_GROUPS } from "./model.mjs";
 
 // persist.js — UI state persistence for the HCT Palette Generator.
 //
@@ -93,6 +94,11 @@ export const DOMAINS = {
     skew: { kind: "number", min: -100, max: 100 },
     lift: { kind: "number", min: -40, max: 40 },
     hueShift: { kind: "number", min: -60, max: 60, default: 0 }, // edge hue rotation
+    // canvas group (ticket #556) — OPTIONAL, same absent-means-derive-on-read shape as
+    // colorRole below: an explicit member of PALETTE_GROUPS round-trips as-is; absent/invalid
+    // is left absent (NOT stamped with a computed default here) — model.mjs's paletteGroup()
+    // is the single place the default-by-name rule is computed, at every read site.
+    group: { kind: "enum", values: PALETTE_GROUPS },
   },
 };
 
@@ -173,6 +179,10 @@ export function clampPalette(p) {
   if (typeof src.colorName === "string" && src.colorName) out.colorName = src.colorName;
   if (typeof src.description === "string" && src.description) out.description = src.description;
   if (src.colorRole === "dominant" || src.colorRole === "supporting" || src.colorRole === "accent") out.colorRole = src.colorRole;
+  // group (ticket #556) is OPTIONAL — a per-palette override of the canvas group it renders
+  // under. Absent/invalid stays absent (round-trip preserved); the effective group for a
+  // palette with none is computed on demand by model.mjs's paletteGroup(), never here.
+  if (DOMAINS.palette.group.values.includes(src.group)) out.group = src.group;
   return out;
 }
 

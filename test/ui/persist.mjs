@@ -20,6 +20,7 @@ const inDomainState = () => {
     if (rnd() > 0.5) p.cuspPull = rnd() * 100; // OPTIONAL per-palette override — must round-trip when present, and stay absent when not
     if (rnd() > 0.5) p.intensity = rnd() * 100; // OPTIONAL per-palette baseIntensity override (REQ-010) — same absent/round-trip shape as cuspPull
     if (rnd() > 0.5) p.primeChroma = rnd() * 100; // OPTIONAL per-palette primeChroma override (REQ-010) — same absent/round-trip shape as cuspPull/intensity
+    if (rnd() > 0.5) p.group = pick(["material", "brand", "system", "data"]); // OPTIONAL canvas group (ticket #556) — same absent/round-trip shape as cuspPull/intensity/primeChroma
     return p;
   });
   // per-doc semantic-mapping overrides: a random, shape-valid subset re-points some roles.
@@ -76,6 +77,32 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
 
   const noPrimeChroma = JSON.parse(JSON.stringify(base)); delete noPrimeChroma.palettes[0].primeChroma;
   if ("primeChroma" in U.hydrate(U.serialize(noPrimeChroma)).palettes[0]) FAIL("clamp", "absent palette.primeChroma must stay absent (identity gate)");
+}
+// canvas group (ticket #556): an explicit valid `group` round-trips as-is; an invalid one is
+// dropped (left absent) rather than defaulted here — model.mjs's paletteGroup() is the single
+// place the default-by-name rule is computed, never persist.js.
+{
+  const withGroup = JSON.parse(JSON.stringify(base)); withGroup.palettes[0].group = "system";
+  const hydG = U.hydrate(U.serialize(withGroup));
+  if (hydG.palettes[0].group !== "system") FAIL("clamp", `explicit palette.group "system" must round-trip as-is (got ${JSON.stringify(hydG.palettes[0].group)})`);
+  if (!deepEq(hydG.palettes[0].hue, base.palettes[0].hue)) FAIL("clamp", "setting palette.group disturbed sibling hue");
+
+  const badGroup = JSON.parse(JSON.stringify(base)); badGroup.palettes[0].group = "not-a-real-group";
+  const hydBad = U.hydrate(U.serialize(badGroup));
+  if ("group" in hydBad.palettes[0]) FAIL("clamp", `an invalid palette.group must be DROPPED (left absent), not defaulted or kept (got ${JSON.stringify(hydBad.palettes[0].group)})`);
+
+  const noGroup = JSON.parse(JSON.stringify(base)); delete noGroup.palettes[0].group;
+  if ("group" in U.hydrate(U.serialize(noGroup)).palettes[0]) FAIL("clamp", "absent palette.group must stay absent (identity gate) — the default is computed on read, never stamped by hydrate");
+
+  // a doc with NO group data at ALL (every palette) still gets sensible defaults on load — via
+  // model.mjs's paletteGroup(), not a persist.js-side default.
+  const noGroupsDoc = { palettes: [
+    { name: "Neutral", hue: 267, chroma: 29, on: true },
+    { name: "Primary", hue: 267, chroma: 95, on: true },
+    { name: "Data 1", hue: 287, chroma: 95, on: true },
+  ] };
+  const hydNoGroups = U.hydrate(U.serialize(noGroupsDoc));
+  if (hydNoGroups.palettes.some((p) => "group" in p)) FAIL("clamp", "a doc with no group data must hydrate with every palette.group still absent (nullable field)");
 }
 // ── schema-rename (REQ-011, EX-9): pre-v2 snapshot stamps baseIntensity 100; v2 snapshot with the
 // field absent hydrates to the domain default (also 100 today) ─────────────────────────────

@@ -558,7 +558,16 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .compare-col-label { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
   color: var(--ink-faint); margin: 0 0 8px 4px; }
 /* canvas = the ramps as the 2D space; each row IS the palette navigator */
-.ramp-stack { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
+.ramp-stack { display: flex; flex-direction: column; gap: 20px; padding: 4px; }
+/* .ramp-group — one canvas-group section (Material/Brand/System/Data, ticket #556); its own
+   rows keep the tighter 12px rhythm, while .ramp-stack's 20px gap separates the group blocks. */
+.ramp-group { display: flex; flex-direction: column; gap: 12px; }
+.ramp-group-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.ramp-group-count { font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--ink-dim); }
 .ramp-row {
   display: flex; flex-direction: column; gap: 6px;
   padding: 8px; border-radius: var(--r);

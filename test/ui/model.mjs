@@ -6,7 +6,7 @@
 // then test/ui/headless-boot.mjs's (dpa) group only exercises them THROUGH button clicks. This
 // file imports and calls them directly, pure, no DOM — covering SPEC
 // docs/spec/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
-import { mintDataPalettes, rederiveDataHues, slug } from "../../src/ui/model.mjs";
+import { PALETTE_GROUPS, defaultDocument, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, slug } from "../../src/ui/model.mjs";
 import { deriveDataHues } from "../../src/engine/data-hues.mjs";
 
 const fails = [];
@@ -144,6 +144,63 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
     `REQ-023: Re-derive must only touch hue, never skew/lift/hueShift/hueSameDir/on (got ${JSON.stringify(dataOut[0])})`);
 }
 
+// ── paletteGroup: ticket #556's default-by-name rule + explicit-wins ────────────────────
+{
+  ok(PALETTE_GROUPS.join(",") === "material,brand,system,data", `PALETTE_GROUPS must be [material,brand,system,data] in render order (got ${JSON.stringify(PALETTE_GROUPS)})`);
+  ok(paletteGroupLabel("material") === "Material" && paletteGroupLabel("brand") === "Brand" && paletteGroupLabel("system") === "System" && paletteGroupLabel("data") === "Data",
+    "paletteGroupLabel must title-case each of the four groups");
+  ok(paletteGroupLabel("bogus") === "Data", "paletteGroupLabel must fall back to the Data label for an unknown group id");
+
+  // all 16 default palettes land in the RIGHT group per the ratified default-by-name rule.
+  const EXPECTED = {
+    Neutral: "material", Primary: "brand", Secondary: "brand", Tertiary: "brand",
+    Info: "system", Success: "system", Warning: "system", Danger: "system",
+    "Data 1": "data", "Data 2": "data", "Data 3": "data", "Data 4": "data",
+    "Data 5": "data", "Data 6": "data", "Data 7": "data", "Data 8": "data",
+  };
+  const doc = defaultDocument();
+  ok(doc.palettes.length === 16, `defaultDocument must still ship 16 palettes (got ${doc.palettes.length})`);
+  for (const p of doc.palettes) {
+    ok(paletteGroup(p) === EXPECTED[p.name], `paletteGroup(${p.name}) must default to "${EXPECTED[p.name]}" (got "${paletteGroup(p)}")`);
+  }
+
+  // explicit `group` wins over the default-by-name rule for ANY name, including a
+  // special-cased one — fully user-assignable (ticket #556's Scope).
+  ok(paletteGroup({ name: "Neutral", group: "data" }) === "data", "an explicit valid group must override Neutral's material default");
+  ok(paletteGroup({ name: "Primary", group: "system" }) === "system", "an explicit valid group must override Primary's brand default");
+
+  // an invalid/unknown `group` value is NOT trusted — falls back to the default-by-name rule
+  // (persist.js only ever writes a valid enum member, but paletteGroup must be defensive too).
+  ok(paletteGroup({ name: "Neutral", group: "bogus" }) === "material", "an invalid group value must fall back to the default-by-name rule");
+  ok(paletteGroup({ name: "Palette 5" }) === "data", 'a freshly-minted "Palette N" name (matches no special case) must default to data');
+  ok(paletteGroup({ name: "Custom Brand Color" }) === "data", "an arbitrary user-named palette must default to data (every OTHER palette)");
+
+  // mintDataPalettes (the "Add data palettes" action) stamps an explicit group of "data" on
+  // every fresh Data-N palette it mints.
+  const withPrimary = { palettes: [{ name: "Primary", hue: 267, chroma: 95 }] };
+  const minted = mintDataPalettes(withPrimary);
+  ok(minted.length === 8 && minted.every((p) => p.group === "data"), "mintDataPalettes must stamp group:\"data\" on every minted Data-N palette");
+}
+
+// ── byte-identity export check (ticket #556 non-goal guard) ─────────────────────────────
+// exports/ds-export/figma/mcp/role-table are explicitly OUT of scope for this ticket: adding a
+// `group` field to a palette must never change a single byte of exportCSS/exportJSON/exportOKLCH/
+// exportTailwind output. Build the SAME default document once without any explicit `group` field
+// and once with EVERY palette's group explicitly (and non-default-ly) reassigned, and diff.
+{
+  const base = defaultDocument();
+  const baseExports = projectView(base).exports;
+
+  const withGroups = defaultDocument();
+  withGroups.palettes = withGroups.palettes.map((p, i) => ({ ...p, group: PALETTE_GROUPS[i % PALETTE_GROUPS.length] }));
+  const groupedExports = projectView(withGroups).exports;
+
+  for (const fmt of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn"]) {
+    ok(baseExports[fmt] === groupedExports[fmt], `export format "${fmt}" must be byte-identical whether or not palettes carry a group field (ticket #556 is editor-only)`);
+  }
+  ok(JSON.stringify(baseExports.figma) === JSON.stringify(groupedExports.figma), "the per-mode Figma DTCG exports must be byte-identical regardless of the group field");
+}
+
 if (fails.length) { console.error(`model FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("model PASS: mintDataPalettes + rederiveDataHues hold their REQ-020..024 contracts directly (mint shape, chroma threshold, EX-5 reproduction, re-derive scope/no-op/order)");
+console.log("model PASS: mintDataPalettes + rederiveDataHues hold their REQ-020..024 contracts directly (mint shape, chroma threshold, EX-5 reproduction, re-derive scope/no-op/order); paletteGroup's default-by-name rule + explicit override + export byte-identity (ticket #556) hold too");
 process.exit(0);

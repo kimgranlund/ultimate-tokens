@@ -322,6 +322,40 @@ export function slug(name) {
     .replace(/^-+|-+$/g, "");
 }
 
+// ── Canvas groups (ticket #556) ──────────────────────────────────────────────────
+// PALETTE_GROUPS — the four canvas groups, in render order. A palette's group is a
+// per-palette metadata field, orthogonal to every chroma/tone control (so a later
+// per-group Base/Prime chroma override, explicitly out of scope here, stays possible).
+export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
+export const PALETTE_GROUP_LABELS = { material: "Material", brand: "Brand", system: "System", data: "Data" };
+export function paletteGroupLabel(g) {
+  return PALETTE_GROUP_LABELS[g] || PALETTE_GROUP_LABELS.data;
+}
+
+// the default-by-name rule (ratified 2026-09-11): Neutral -> material; Primary/Secondary/
+// Tertiary -> brand; Info/Success/Warning/Danger -> system; every OTHER palette (Data 1..8,
+// user-added, preset-opened) -> data.
+const DEFAULT_GROUP_BY_SLUG = {
+  neutral: "material",
+  primary: "brand",
+  secondary: "brand",
+  tertiary: "brand",
+  info: "system",
+  success: "system",
+  warning: "system",
+  danger: "system",
+};
+
+// paletteGroup(p) — the SINGLE source of truth for a palette's effective canvas group:
+// its own explicit `group` (when valid) else the default-by-name rule above. Every other
+// piece of code (renderRampsScene, the new-palette modal, "Add data palettes", persist's
+// on-load default) calls this instead of re-implementing the rule.
+export function paletteGroup(p) {
+  const g = p && p.group;
+  if (PALETTE_GROUPS.includes(g)) return g;
+  return DEFAULT_GROUP_BY_SLUG[slug(p && p.name)] || "data";
+}
+
 // camHueToOklch — convert a CAM16 hue to its OKLCH-hue EQUIVALENT by sampling the hue's vivid
 // identity (its cusp: peakC's chroma at its tone) and reading the OKLCH hue back off it. The OKLCH
 // hue that, fed to effHue→oklchToCam16Hue under hueSpace:"oklch", recovers the same color family —
@@ -395,16 +429,20 @@ export function mintDataPalettes(doc) {
   const primary = palettes.find((p) => slug(p.name) === "primary");
   if (!primary) return [];
   const { hues } = deriveDataHues(primary.hue, brandHuesOf(palettes), 8);
-  return hues.map((hue, i) => ({
-    name: `Data ${i + 1}`,
-    hue,
-    chroma: primary.chroma, // H4: data chroma follows the primary's own chroma
-    skew: 0,
-    lift: 0,
-    hueShift: 0,
-    hueSameDir: false,
-    on: true,
-  }));
+  return hues.map((hue, i) => {
+    const name = `Data ${i + 1}`;
+    return {
+      name,
+      hue,
+      chroma: primary.chroma, // H4: data chroma follows the primary's own chroma
+      skew: 0,
+      lift: 0,
+      hueShift: 0,
+      hueSameDir: false,
+      on: true,
+      group: paletteGroup({ name }), // ticket #556 — always "data" for the Data-N convention
+    };
+  });
 }
 
 // rederiveDataHues(doc) -> doc — REQ-023: the explicit "Re-derive data hues" action. Rewrites ONLY
