@@ -22,15 +22,12 @@ const MODS = [
   ["type", "src/engine/type.mjs"], ["geometry", "src/engine/geometry.mjs"], ["flags", "src/engine/flags.js"],
   ["iconSystems", "src/engine/icon-systems.mjs"], // pure registry; BEFORE persist (which imports it)
   ["motion", "src/engine/motion.mjs"], // pure constants; BEFORE exports/model (which import it)
-  ["dataHues", "src/engine/data-hues.mjs"], // pure, zero-dep; BEFORE model (which imports it, TKT #515/U6)
+  ["persist", "src/ui/persist.js"],
+  ["dsGates", "src/engine/ds-gates.js"], // zero-dep §8 carrier primitives; before `exports` (which imports them)
   ["prime", "src/engine/prime.mjs"], // pure, imports hct/okhsl/tonal only (all above); BEFORE exports/ds-export
   // (which import it for the prime-emitter block, #550) AND model (which imports it, #533 P3)
-  ["dsGates", "src/engine/ds-gates.js"], // zero-dep §8 carrier primitives; before `exports` (which imports them)
   ["exports", "src/engine/exports.js"],
   ["dsExport", "src/engine/ds-export.js"], // the DS-bundle subsystem (TKT-0015); imports from `exports`, so after it
-  ["model", "src/ui/model.mjs"], // imports collections/hct/okhsl/iconSystems/motion/tonal/dataHues/prime/
-  // semantic/type/geometry/exports/dsExport (all above); BEFORE persist (which now imports it too, #556)
-  ["persist", "src/ui/persist.js"],
   ["figmaPlugin", "src/ui/figma-plugin-assets.js"], ["mcpAssets", "src/ui/mcp-assets.js"], ["describeMcpAssets", "src/ui/describe-mcp-assets.js"], ["typeFonts", "src/ui/type-fonts.js"],
   ...CATEGORY_FILES.filter((f) => f !== "index.js").map((f) => [categoryKey(f), `${CATEGORY_DIR}/${f}`]),
   ["categoryIndex", `${CATEGORY_DIR}/index.js`],
@@ -41,6 +38,8 @@ const MODS = [
   ["liveDiff", "figma/binder/live-diff.mjs"], // TKT-0020: pure apply-vs-live diff, imported by apply-gate.js
 
   ["icons", "src/ui/icons.js"],
+  ["dataHues", "src/engine/data-hues.mjs"], // pure, zero-dep; BEFORE model (which imports it, TKT #515/U6)
+  ["model", "src/ui/model.mjs"],
   // TKT-0023: app.js decomposed into a bootstrap/core + per-section prototype mixins. appHelpers is the
   // pure (no `this`) shared carrier (h()/btn/chip/… + storage/license/font-loading) both app.js and every
   // mixin below import from — dependency order: after model/icons (which it also imports), before every

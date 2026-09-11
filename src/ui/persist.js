@@ -1,7 +1,14 @@
 import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
 import { COLLECTIONS } from "../engine/collections.js";
-import { PALETTE_GROUPS } from "./model.mjs";
+
+// canvas group ids (ticket #556) — kept as a local literal, NOT imported from model.mjs: this
+// codebase's dependency direction is model.mjs importing FROM persist.js (never the reverse), so
+// persist.js pulling in model.mjs would be backwards regardless of bundle-ordering consequences.
+// model.mjs's own PALETTE_GROUPS is the single source of truth for the RUNTIME default-by-name
+// rule (paletteGroup()); this is only the shape persist.js validates a STORED value against, and
+// the two must be kept in sync by hand if a group is ever added/renamed.
+const PALETTE_GROUPS = ["material", "brand", "system", "data"];
 
 // persist.js — UI state persistence for the HCT Palette Generator.
 //

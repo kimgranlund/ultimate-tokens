@@ -6,7 +6,7 @@
 // then test/ui/headless-boot.mjs's (dpa) group only exercises them THROUGH button clicks. This
 // file imports and calls them directly, pure, no DOM — covering SPEC
 // docs/spec/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
-import { PALETTE_GROUPS, defaultDocument, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, slug } from "../../src/ui/model.mjs";
+import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, slug, typeScaleFor } from "../../src/ui/model.mjs";
 import { deriveDataHues } from "../../src/engine/data-hues.mjs";
 
 const fails = [];
@@ -192,13 +192,29 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   const baseExports = projectView(base).exports;
 
   const withGroups = defaultDocument();
-  withGroups.palettes = withGroups.palettes.map((p, i) => ({ ...p, group: PALETTE_GROUPS[i % PALETTE_GROUPS.length] }));
+  withGroups.palettes = withGroups.palettes.map((p) => {
+    // reassign relative to THIS palette's own default group (not a flat index cycle, which would
+    // land some palettes back on their own default by coincidence and understate the check).
+    const defaultIdx = PALETTE_GROUPS.indexOf(paletteGroup(p));
+    return { ...p, group: PALETTE_GROUPS[(defaultIdx + 1) % PALETTE_GROUPS.length] };
+  });
+  ok(withGroups.palettes.every((p, i) => p.group !== paletteGroup(base.palettes[i])), "test setup: every palette must be reassigned to a group DIFFERENT from its own default");
   const groupedExports = projectView(withGroups).exports;
 
   for (const fmt of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn"]) {
     ok(baseExports[fmt] === groupedExports[fmt], `export format "${fmt}" must be byte-identical whether or not palettes carry a group field (ticket #556 is editor-only)`);
   }
   ok(JSON.stringify(baseExports.figma) === JSON.stringify(groupedExports.figma), "the per-mode Figma DTCG exports must be byte-identical regardless of the group field");
+
+  // the DS bundle (ds-export.js — Claude Design/Stitch/Figma Make, split out at TKT-0015, NOT one
+  // of the 8 documented formats above) and the MCP brandKit() payload are explicitly named in the
+  // non-goal too — cover them with the same fixed opts.date so the comparison is deterministic.
+  const dsOpts = { date: "2026-01-01" };
+  const baseDs = exportDesignSystemBundle(base, typeScaleFor(base, "base"), geomScaleFor(base, "base"), dsOpts);
+  const groupedDs = exportDesignSystemBundle(withGroups, typeScaleFor(withGroups, "base"), geomScaleFor(withGroups, "base"), dsOpts);
+  ok(JSON.stringify(baseDs) === JSON.stringify(groupedDs), "the DS bundle (ds-export.js) must be byte-identical regardless of the group field");
+
+  ok(JSON.stringify(brandKit(base)) === JSON.stringify(brandKit(withGroups)), "the MCP brandKit() payload must be byte-identical regardless of the group field");
 }
 
 if (fails.length) { console.error(`model FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
