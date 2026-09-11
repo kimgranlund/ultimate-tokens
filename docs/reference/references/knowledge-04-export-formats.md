@@ -341,7 +341,7 @@ into them.
 
 | Format | Placement |
 |---|---|
-| JSON | `{paletteSlug}.group`, on each top-level palette object (JSON has no `palettes` wrapper — §3) |
+| JSON | `{paletteSlug}.group`, on each top-level palette object (JSON has no `palettes` wrapper) |
 | DTCG | `palette.tokens.json` (RAW): `$extensions["com.ultimate-tokens"].group` on each palette's raw node — the semantic Light/Dark theme files never carry it |
 | CSS / CSS OKLCH / Tailwind | a `/* {name} · {group} */` comment line above each palette's block — metadata only, never a token |
 | Brand-kit (`brandKit()`) | `palettes[i].group`; `list_palettes` returns it |
