@@ -1880,11 +1880,11 @@ export class ColorSectionImpl {
       d.toneMode === "perceptual"
         ? this.slider("Vibrancy", d.vibrancy, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.vibrancy = v)))
         : false,
-      // Base chroma / Prime chroma (SPEC spec-muted-base-key-spikes REQ-032) — the two ramp-shaping
-      // intensity controls, placed together next to Vibrancy. Unlike Vibrancy (perceptual-only), the
-      // intensity factor applies on BOTH ramp paths (REQ-002), so these two stay visible in every
-      // toneMode. Base chroma shapes the whole ramp (doc.baseIntensity); Prime chroma lifts only the
-      // identity stops back up (doc.keyIntensity) — the chroma spike this feature is named for.
+      // Base chroma (SPEC spec-muted-base-key-spikes REQ-032), placed next to Vibrancy. Unlike Vibrancy
+      // (perceptual-only), the intensity factor applies on BOTH ramp paths (REQ-002), so it stays visible
+      // in every toneMode: it shapes the whole ramp (doc.baseIntensity). Prime chroma (doc.keyIntensity)
+      // no longer affects the ramp — the identity-stop chroma spike it drove was retired (#536); the
+      // slider is kept, currently inert, pending a future re-purposing of the field.
       this.slider("Base chroma", d.baseIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.baseIntensity = v))),
       this.slider("Prime chroma", d.keyIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.keyIntensity = v))),
       // Curve · Tension · Chroma-basis shape the CIELAB "even" path ONLY — hide them in the OKHSL modes.

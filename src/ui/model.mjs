@@ -30,7 +30,7 @@ import {
   DEFAULT_CONTROLS,
 } from "../engine/tonal.js";
 import { deriveDataHues } from "../engine/data-hues.mjs";
-import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef, identityStops } from "../engine/semantic.js";
+import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef } from "../engine/semantic.js";
 import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
 import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
 
@@ -700,11 +700,9 @@ export function projectView(doc) {
 
   for (const p of allPalettes) {
     const n = slug(p.name);
-    // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp: the
-    // identity-stop set only needs this role shape, not any resolved color (SPEC spec-muted-base-key-
-    // spikes REQ-004/005) — reused below for the on-color-contrast step so it's derived once per palette.
+    // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp — reused below
+    // for the on-color-contrast step so it's derived once per palette.
     const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
-    const idStops = identityStops(accentRoles);
     // Resolve roles against the FULL EXPORT_STOPS ramp (25) so refs to the export-only
     // half-steps (75/125/175/825/875/925) resolve — they are absent from the 19 display STOPS,
     // and a miss used to fall back to #000000 (the black swatches in the Roles panel).
@@ -712,7 +710,6 @@ export function projectView(doc) {
       { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift, hueSameDir: p.hueSameDir, cuspPull: p.cuspPull, intensity: p.intensity },
       controls,
       EXPORT_STOPS,
-      idStops,
     ).map((s) => ({
       stop: s.stop,
       hex: s.hex,

@@ -8,7 +8,6 @@
 //   refKey(ref) -> padded ref ("50"->"050", "500-200"->"500-200")
 import { readFileSync } from "node:fs";
 import * as S from "../../src/engine/semantic.js";
-import * as T from "../../src/engine/tonal.js";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const CANON = RT.roleTable;                         // the canonical primary-palette table (answer key)
@@ -108,14 +107,16 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 }
 
 // ── hpg-semantic-identity-stops: identityStops(roles) = the solid refs of the 5 identity roles, REPLACE semantics
-// after applyAccentRef, and deep-equals tonal.js's DEFAULT_IDENTITY_STOPS literal under "mode" (the parity gate
-// that keeps the literal from drifting off the role table; spec-muted-base-key-spikes REQ-004, EX-3).
+// after applyAccentRef (spec-muted-base-key-spikes REQ-004, EX-3). tonal.js no longer consumes this set (the
+// ramp-level identity-stop chroma lift was retired, #536, dropping the paletteStops parameter this function's
+// result used to feed) — so the cross-file parity assertion this gate used to carry (against tonal.js's
+// DEFAULT_IDENTITY_STOPS literal, since removed) is gone too; this gate now only checks identityStops() itself,
+// kept exported for a possible future standalone prime-swatch system.
 {
   const same = (a, b) => a instanceof Set && b instanceof Set && a.size === b.size && [...a].every((x) => b.has(x));
   const mode = S.identityStops(S.applyAccentRef(ROLES, "mode"));
   const want = new Set([350, 400, 450, 550, 650, 700]);
   if (!same(mode, want)) FAIL("identity-stops", `'mode' set ${JSON.stringify([...mode])}, want ${JSON.stringify([...want])}`);
-  if (!same(mode, T.DEFAULT_IDENTITY_STOPS)) FAIL("identity-stops", `tonal.js DEFAULT_IDENTITY_STOPS ${JSON.stringify([...T.DEFAULT_IDENTITY_STOPS])} drifted from the role table's ${JSON.stringify([...mode])}`);
   const single = S.identityStops(S.applyAccentRef(ROLES, "single"));
   if (!same(single, new Set([350, 400, 500, 650, 700]))) FAIL("identity-stops", `'single' set ${JSON.stringify([...single])}, want [350,400,500,650,700] (450/550 must drop out — replace, not union)`);
   // sorted ascending, numbers, and no scrim refs leak in

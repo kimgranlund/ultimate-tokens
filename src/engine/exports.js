@@ -29,7 +29,7 @@
 // theme light/dark/auto.
 
 import { paletteStops, EXPORT_STOPS, DEFAULT_CONTROLS } from "./tonal.js";
-import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, identityStops, DEFAULT_THEMES } from "./semantic.js";
+import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, DEFAULT_THEMES } from "./semantic.js";
 import { COLLECTIONS } from "./collections.js";
 import { oklchToRgb } from "./okhsl.js";
 
@@ -215,16 +215,13 @@ function derivePalette(palette, controls, overrides) {
     relChroma: controls.relChroma,
     chromaFloor: controls.chromaFloor,
   };
-  // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp: the
-  // identity-stop set only needs this role shape, not any resolved color (SPEC spec-muted-base-key-
-  // spikes REQ-004/005) — reused below for the on-color-contrast step so it's derived once per palette.
+  // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp — reused below
+  // for the on-color-contrast step so it's derived once per palette.
   const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
-  const idStops = identityStops(accentRoles);
   const stopList = paletteStops(
     { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull, intensity: palette.intensity },
     ctl,
     EXPORT_STOPS,
-    idStops,
   );
 
   // stop (number) -> rgb int triple, for ref resolution.
