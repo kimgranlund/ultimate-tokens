@@ -639,6 +639,16 @@ export function brandKit(doc, systems) {
   if (sys.color) {
     const view = projectView(doc);
     const on = view.palettes.filter((p) => p.on);
+    // controls (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2): the same chroma-policy block
+    // exportJSON's `meta.controls` carries, gated by sys.color like stops/palettes/roles below (it
+    // states the policy behind the palette chroma this kit resolved, so it's meaningless without
+    // them) — read through the SAME controlsOf/resolvePaletteGroups this file's stateOf() uses, so
+    // the kit can never disagree with the JSON export's own resolved values. Key is `baseChroma`
+    // (not `baseIntensity`, the doc-level field it's read off of) to keep byte-for-byte parity with
+    // exportJSON's meta.controls, which is bound to that name by AC-004 (SPEC 0.3.0) — src/engine
+    // may never carry the literal string `baseIntensity`, even as a property name.
+    const c = controlsOf(doc);
+    kit.controls = { baseChroma: c.baseIntensity, primeChroma: c.primeChroma, paletteGroups: resolvePaletteGroups(doc) };
     kit.stops = on[0] ? on[0].ramp.map((s) => s.stop) : [];
     kit.palettes = on.map((p) => ({
       name: p.name, slug: slug(p.name), key: p.key,

@@ -473,7 +473,25 @@ function cssFrom(palettes, oklch, pfx = "c") {
 // implicit); semantic `key` is the kebab leaf shared with every surface. Disabled palettes absent.
 export function exportJSON(state) {
   const palettes = derivedAll(state);
-  const out = {};
+  // meta (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2): `generator` names this tool (the same
+  // literal ds-export.js's `$generator`/model.mjs's `brandKit().generator` already use); `controls`
+  // states the chroma policy this export was resolved under, verbatim off `state` (the SAME two
+  // global-fallback fields and `paletteGroups` derivePalette used for every palette above — never a
+  // re-derived or stale snapshot). The first control's key is `baseChroma`, not the document-level
+  // control name it's read off of: AC-004 (SPEC 0.3.0) bars that literal string from src/engine in
+  // ANY form, including as a mere property name here — see resolvePaletteGroups' own doc comment in
+  // model.mjs for the renamed-at-one-boundary rule this keeps. No `schemaVersion` here — E6 (#577)
+  // adds it once the stamp itself is ratified; this shape is complete for THIS concept on its own.
+  const out = {
+    meta: {
+      generator: "Ultimate Tokens",
+      controls: {
+        baseChroma: state.baseChroma,
+        primeChroma: state.primeChroma,
+        paletteGroups: state.paletteGroups,
+      },
+    },
+  };
   for (const p of palettes) {
     // stops: { "050": "#RRGGBB", ... } — 3-digit padded keys.
     const stops = {};

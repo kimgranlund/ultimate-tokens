@@ -10,9 +10,12 @@ import { dsBundleGates } from "../../src/engine/ds-gates.js";
 import { typeScale } from "../../src/engine/type.mjs";
 import { geomScale, LADDER_MD_STEP, sizeAnchor } from "../../src/engine/geometry.mjs";
 import { PRIME_STEPS } from "../../src/engine/prime.mjs";
-import { paletteGroup, brandKit, defaultDocument } from "../../src/ui/model.mjs"; // paletteGroup is the SINGLE
+import { paletteGroup, brandKit, defaultDocument, stateOf } from "../../src/ui/model.mjs"; // paletteGroup is the SINGLE
 // group resolver (ticket #556/#572) — the group-metadata gate below asserts every emitted surface
 // matches THIS, never a second hand-kept copy; brandKit/defaultDocument prove the MCP-facing kit too.
+// stateOf builds the exporter-shaped State the hpg-export-json-meta gate (ticket #573) deep-equals
+// exportJSON's `meta.controls` against — the SAME function every real export path (projectView,
+// figmaBundle) goes through, never a hand-built State that could drift from it.
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const C = (palettes) => ({ palettes, curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, hueSpace: "cam16", theme: "auto" });
@@ -1429,8 +1432,52 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   }
 }
 
+// ── hpg-export-json-meta (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2) — exportJSON's
+// top-level `meta` states the chroma policy the export was resolved under: `generator` names the
+// tool, `controls` deep-equals stateOf(doc)'s OWN resolved baseChroma/primeChroma/paletteGroups —
+// never a stale or independently re-derived snapshot. `doc` below carries NON-default controls
+// (every group differs from GROUP_DEFAULTS, the two global fallbacks differ from 100/100) so the
+// deep-equal actually exercises resolution, not a default-vs-default match that would pass even if
+// exportJSON ignored `state` entirely. No `schemaVersion` yet — that's E6 (#577), not this ticket.
+{
+  const doc = {
+    ...defaultDocument(),
+    baseIntensity: 42,
+    primeChroma: 77,
+    paletteGroups: {
+      material: { baseChroma: 12, primeChroma: 34 },
+      brand: { baseChroma: 56, primeChroma: 78 },
+      system: { baseChroma: 90, primeChroma: 11 },
+      data: { baseChroma: 100, primeChroma: 100 }, // data stays locked to its own default (REQ-002)
+    },
+  };
+  const state = stateOf(doc);
+  const json = X.exportJSON(state);
+  if (!json.meta || typeof json.meta !== "object") FAIL("hpg-export-json-meta", "exportJSON output missing top-level meta");
+  else {
+    if (json.meta.generator !== "Ultimate Tokens") FAIL("hpg-export-json-meta", `meta.generator = ${JSON.stringify(json.meta.generator)}, want "Ultimate Tokens"`);
+    if ("schemaVersion" in json.meta) FAIL("hpg-export-json-meta", "meta unexpectedly carries schemaVersion (E6/#577's job, not E2's)");
+    const c = json.meta.controls;
+    if (!c || typeof c !== "object") FAIL("hpg-export-json-meta", "meta.controls missing");
+    else {
+      if (c.baseChroma !== state.baseChroma) FAIL("hpg-export-json-meta", `meta.controls.baseChroma = ${c.baseChroma}, want stateOf(doc).baseChroma ${state.baseChroma}`);
+      if (c.primeChroma !== state.primeChroma) FAIL("hpg-export-json-meta", `meta.controls.primeChroma = ${c.primeChroma}, want stateOf(doc).primeChroma ${state.primeChroma}`);
+      if (JSON.stringify(c.paletteGroups) !== JSON.stringify(state.paletteGroups)) FAIL("hpg-export-json-meta", `meta.controls.paletteGroups drifted from stateOf(doc).paletteGroups: ${JSON.stringify(c.paletteGroups)} vs ${JSON.stringify(state.paletteGroups)}`);
+      // not a trivial pass: the resolved values must actually be the doc's own non-default numbers.
+      if (c.baseChroma !== 42) FAIL("hpg-export-json-meta", `meta.controls.baseChroma didn't resolve the doc's own non-default value (got ${c.baseChroma}, want 42)`);
+      if (c.primeChroma !== 77) FAIL("hpg-export-json-meta", `meta.controls.primeChroma didn't resolve the doc's own non-default value (got ${c.primeChroma}, want 77)`);
+      if (c.paletteGroups.brand.baseChroma !== 56 || c.paletteGroups.brand.primeChroma !== 78) FAIL("hpg-export-json-meta", `meta.controls.paletteGroups.brand didn't resolve the doc's own non-default override (got ${JSON.stringify(c.paletteGroups.brand)})`);
+    }
+  }
+
+  // brandKit carries the SAME controls block (RP-2's other surface), resolved from the SAME doc.
+  const kit = brandKit(doc);
+  if (!kit.controls || typeof kit.controls !== "object") FAIL("hpg-export-json-meta", "brandKit(doc) missing controls");
+  else if (JSON.stringify(kit.controls) !== JSON.stringify(json.meta.controls)) FAIL("hpg-export-json-meta", `brandKit(doc).controls disagrees with exportJSON's meta.controls: ${JSON.stringify(kit.controls)} vs ${JSON.stringify(json.meta.controls)}`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
