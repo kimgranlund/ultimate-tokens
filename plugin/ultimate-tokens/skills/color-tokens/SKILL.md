@@ -29,10 +29,9 @@ properties. Your job is never to invent a color — it is to pick the right **ro
    prefix (`-{palette}-{role}`) is identical. *This guide is for the CSS export;* the Tailwind
    (`--color-*`) and shadcn exports use different grammars — the role SEMANTICS still hold.
 2. **Enumerate the palettes.** Every `--c-<slug>-050` line marks a palette. The default kit ships
-   8 brand families (neutral, a brand accent, secondary/tertiary, and the four intents) plus 8
-   data palettes (`data-1`…`data-8`, same 53 roles, meant for charts/series rather than UI
-   chrome) — 16 palettes total — but kits vary; read what's actually there rather than assuming
-   the default set.
+   a neutral, a brand accent plus its own supporting accents, the four intents, and an eight-hue
+   data family (currently sixteen palettes) — but kits vary; read what's actually there rather than
+   assuming the default set.
 3. **Classify them.** The **chrome palette** (usually `neutral`, the lowest-chroma one) drives
    backgrounds, surfaces, text, and outlines app-wide. The **brand accent** (usually `primary`)
    drives CTAs, links, focus, selection. **Intent palettes** (`info/success/warning/danger`) are
