@@ -2663,6 +2663,74 @@ app.setStopsMode("core"); app.render(); flushRaf();
 // sanity check, the real gate is test/engine/semantic.mjs's refs-canonical group.
 ok(istVp0.roles.length === 53, `(ist8) the resolved role count is unchanged at 53 (got ${istVp0.roles.length})`);
 
+// ── (dpa) "Add data palettes (8)" / "Re-derive data hues" (SPEC spec-muted-base-key-spikes
+// REQ-032/REQ-012/REQ-023, AC-032 — the actions half of that criterion; the (bpc) group above
+// already covers the Base/Prime chroma sliders) ──────────────────────────────────────────
+// A FRESH defaultDocument(), not app.sets[0] — many earlier groups in this shared-`app` file
+// rename/replace app.sets[0]'s own palettes (e.g. the (h) live-rename group, the preset-open
+// group), and openSet() only resets undo history, not content, so by this point in the file
+// app.sets[0] no longer reliably carries a palette literally named "Primary".
+const { mintDataPalettes: mintDataPalettesDPA, defaultDocument: defaultDocumentDPA } = await import("../../src/ui/model.mjs");
+app.doc = defaultDocumentDPA();
+app.sel = { kind: "palette", id: 0 };
+app.history = []; app.future = [];
+app.setSegment("global"); app.render(); flushRaf();
+const dpaBtn = (label) => walk(app, (e) => e.tagName === "BUTTON" && txtOf(e).includes(label))[0];
+ok(!!dpaBtn("Add data palettes (8)") && !!dpaBtn("Re-derive data hues"), "(dpa1) the Global tab has both data-palette action buttons");
+
+// the default document already has 8 Data N palettes (REQ-024) — Add is disabled, Re-derive isn't.
+ok(dpaBtn("Add data palettes (8)").disabled === true, "(dpa2) Add is disabled once the document already has data palettes");
+ok(dpaBtn("Re-derive data hues").disabled !== true, "(dpa3) Re-derive is enabled when data palettes already exist");
+
+// clicking the (disabled) Add button on a doc that already has 8 is a genuine no-op (AC-032) —
+// the shim fires click regardless of the disabled flag, so this exercises the action's OWN guard.
+const dpaLenBefore = app.doc.palettes.length;
+dpaBtn("Add data palettes (8)").click();
+ok(app.doc.palettes.length === dpaLenBefore, `(dpa4) Add is a no-op once 8 Data N palettes already exist (got ${app.doc.palettes.length}, expected ${dpaLenBefore})`);
+
+// Re-derive: move Primary's hue, then re-derive — the Data N hues change to match a fresh
+// deriveDataHues computation; every other Data N field (chroma, name) is untouched (REQ-023).
+const dpaDataBefore = app.doc.palettes.filter((p) => p.name.startsWith("Data "));
+app.commit((d) => { d.palettes.find((p) => p.name === "Primary").hue = (d.palettes.find((p) => p.name === "Primary").hue + 40) % 360; });
+flushRaf();
+app.setSegment("global"); app.render(); flushRaf();
+dpaBtn("Re-derive data hues").click();
+const dpaDataAfter = app.doc.palettes.filter((p) => p.name.startsWith("Data "));
+ok(dpaDataAfter.length === 8, `(dpa5) Re-derive keeps exactly 8 Data N palettes (got ${dpaDataAfter.length})`);
+ok(dpaDataAfter.some((p, i) => p.hue !== dpaDataBefore[i].hue), "(dpa6) Re-derive actually changed at least one Data N hue after moving Primary's hue");
+ok(dpaDataAfter.every((p, i) => p.chroma === dpaDataBefore[i].chroma && p.name === dpaDataBefore[i].name), "(dpa7) Re-derive leaves every other Data N field (chroma, name) untouched");
+const dpaExpected = mintDataPalettesDPA(app.doc); // the SAME derivation, re-run fresh, against the current (post-move) Primary + brand hues
+ok(dpaDataAfter.every((p, i) => Math.abs(p.hue - dpaExpected[i].hue) < 1e-6), `(dpa8) the re-derived hues match a fresh deriveDataHues computation (got ${JSON.stringify(dpaDataAfter.map((p) => p.hue))} vs ${JSON.stringify(dpaExpected.map((p) => p.hue))})`);
+
+// build a document with NO data palettes (the opt-in path for an upgraded document, REQ-012) —
+// strip Data N off the current doc, leaving the 8 brand families.
+app.commit((d) => { d.palettes = d.palettes.filter((p) => !p.name.startsWith("Data ")); });
+flushRaf();
+app.setSegment("global"); app.render(); flushRaf();
+ok(app.doc.palettes.length === 8, `(dpa9) test setup: stripped to 8 brand palettes (got ${app.doc.palettes.length})`);
+ok(dpaBtn("Add data palettes (8)").disabled !== true, "(dpa10) Add is enabled once the document has no Data N palettes");
+ok(dpaBtn("Re-derive data hues").disabled === true, "(dpa11) Re-derive is disabled when the document has no Data N palettes");
+
+// clicking Re-derive while disabled (zero Data N palettes) is a genuine no-op too.
+const dpaLenBefore2 = app.doc.palettes.length;
+dpaBtn("Re-derive data hues").click();
+ok(app.doc.palettes.length === dpaLenBefore2 && app.doc.palettes.every((p) => !p.name.startsWith("Data ")), "(dpa12) Re-derive is a no-op with zero Data N palettes");
+
+// click Add — appends exactly 8 Data N palettes, named Data 1..Data 8 in order (REQ-020..022).
+dpaBtn("Add data palettes (8)").click();
+ok(app.doc.palettes.length === 16, `(dpa13) Add appends 8 data palettes to a document with none (got ${app.doc.palettes.length})`);
+const dpaAdded = app.doc.palettes.slice(8);
+ok(JSON.stringify(dpaAdded.map((p) => p.name)) === JSON.stringify(["Data 1", "Data 2", "Data 3", "Data 4", "Data 5", "Data 6", "Data 7", "Data 8"]),
+  `(dpa14) the appended palettes are named Data 1..Data 8 in order (got ${JSON.stringify(dpaAdded.map((p) => p.name))})`);
+const dpaPrimaryChroma = app.doc.palettes.find((p) => p.name === "Primary").chroma;
+ok(dpaAdded.every((p) => p.chroma === dpaPrimaryChroma), "(dpa15) each minted data palette's chroma follows the Primary's chroma (REQ-022/H4)");
+
+// clicking Add again now that 8 exist is a no-op (AC-032) — mirrors dpa4 for the freshly-minted set.
+app.setSegment("global"); app.render(); flushRaf();
+ok(dpaBtn("Add data palettes (8)").disabled === true, "(dpa16) Add is disabled again once 8 Data N palettes exist");
+dpaBtn("Add data palettes (8)").click();
+ok(app.doc.palettes.length === 16, `(dpa17) Add stays a no-op once 8 already exist (got ${app.doc.palettes.length})`);
+
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
   console.error("HEADLESS BOOT FAIL:");
