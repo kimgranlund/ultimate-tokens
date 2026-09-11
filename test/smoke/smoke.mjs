@@ -4,8 +4,11 @@
 // CDP (node's built-in WebSocket + fetch — no Playwright/puppeteer, keeping the zero-dep ethos) and
 // drives the core user flows: gallery hub → a category category → the editor → the export dialog.
 //
-// Run: `npm run build` then `npm run smoke`. Chrome is auto-detected (override with $CHROME_BIN).
-// CI uses the runner's preinstalled google-chrome. Screenshots land in smoke-out/ (gitignored).
+// Run: `npm run smoke` — the npm script rebuilds dist/ first, so this always boots the CURRENT
+// source, never a stale artifact left over from an earlier build (#564). Invoking this file
+// directly (`node test/smoke/smoke.mjs`) skips that rebuild — run `npm run build` first.
+// Chrome is auto-detected (override with $CHROME_BIN). CI uses the runner's preinstalled
+// google-chrome. Screenshots land in smoke-out/ (gitignored).
 import { createServer } from "node:http";
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
 import { spawn } from "node:child_process";

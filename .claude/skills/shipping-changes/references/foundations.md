@@ -24,6 +24,17 @@ single-file in the runner's **headless Chrome over CDP** and drives gallery → 
 dialog; it catches UI regressions the DOM shim can't. Screenshots land in `smoke-out/` (gitignored) and
 upload as the `smoke-screenshots` artifact (`if: always()`).
 
+**`npm run smoke` force-rebuilds `dist/` before booting Chrome** (#564): the npm script is
+`npm run build && node test/smoke/smoke.mjs`, not a bare invocation of the test file. `dist/` is
+gitignored — a fresh CI checkout never has one until the workflow's own `npm run build` step runs
+it — so this failure mode was always a **local/worktree** one: run `npm run build` once, keep editing
+source, then run `npm run smoke` alone later and it happily boots the now-stale `dist/ultimate-tokens.html`
+from the earlier build, reporting green over source that may no longer even compile. That is exactly
+the shape of risk #560's `prime.mjs` crash (fixed in #563) exposed — a standalone `npm run smoke`, run
+without a preceding fresh `npm run build`, would have stayed green. The forced rebuild closes it: the
+artifact smoke boots is always built from the current checkout, in CI or locally. In CI this makes the
+workflow's own preceding `npm run build` step a harmless redundant rebuild.
+
 You typically **cannot reproduce smoke's value locally** (it needs Chrome). So: let CI be the smoke gate,
 and for a UI change, **download and look at the `smoke-screenshots` artifact**. Critically, **green smoke is
 NOT cross-browser proof** — the user develops and previews in **Safari**, and WebKit is stricter (unquoted
