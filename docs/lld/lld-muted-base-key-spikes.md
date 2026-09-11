@@ -31,7 +31,7 @@ the data-palette units U5..U9 of 0.1.0 stand unchanged.
 | Prime system | `src/engine/prime.mjs` (new, pure) | `primeSwatches(palette, controls)` (REQ-050..053, REQ-056); constants `PRIME_STEPS`, `PRIME_STEP`, `PRIME_L_MIN`, `PRIME_L_MAX` |
 | Controls plumbing | `src/ui/model.mjs` | `controlsOf`/`stateOf` thread `baseIntensity`, `primeChroma`; `projectView` adds `palettes[i].prime`; `brandKit` adds `prime`; `tokenCount` adds 7 per enabled palette (REQ-057) |
 | Persistence | `src/ui/persist.js` | `DOMAINS.primeChroma`, `clampPalette` optional `primeChroma`, `CURRENT_SCHEMA_VERSION = 3`, `RENAME_MAPS` entry `{version: 3, renameControls: {keyIntensity: "primeChroma"}}` (REQ-010, REQ-011) |
-| Collections | `src/engine/collections.js` | `COLLECTIONS.colorPrime = "Color Prime"` (R3); both sandbox literals mirror it, diffed by the `collparity` gate |
+| Collections | `src/engine/collections.js` | `COLLECTIONS.colorPrime = "Color Prime"` (R3), single mode `Base` (R2 ratified: mode-independent); both sandbox literals mirror it, diffed by the `collparity` gate |
 | Emitters | `src/engine/exports.js` | `derivePalette` gains `prime` (seven entries); `cssFrom`, `exportJSON`, `exportDTCG`, `exportUI3`, `exportTailwind` emit the group (REQ-054); `exportShadcn` untouched |
 | DS bundle | `src/engine/ds-export.js` | `prime` block per family in `tokens.json`; "Prime swatches" section in DESIGN.md (Claude Design, Stitch, Make profiles) |
 | MCP | `mcp/brand-kit-core.mjs` | `get_prime(slug)` tool + `brand://palette/{slug}/prime` resource over `kit.palettes[i].prime` |

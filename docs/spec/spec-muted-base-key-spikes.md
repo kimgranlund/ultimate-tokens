@@ -162,9 +162,10 @@ ladder, their own chroma control, and their own token group; the editor strip re
   family in `tokens.json` plus a "Prime swatches" section in DESIGN.md; MCP brand-kit:
   `palettes[i].prime = { brightest: { hex, oklch }, … }` and `get_prime(slug)` returns it. ShadCN
   has no slot (fixed contract, non-goal).
-- **REQ-055** Same seven swatches in both schemes (ratification item R2): the group lives in the
-  primitives tier, which is mode-independent by knowledge-03 §1; a per-scheme prime ladder would need
-  a Light/Dark mode on the collection and is deliberately not built this round.
+- **REQ-055** Same seven swatches in both schemes (ratified 2026-09-11, R2): the prime system is
+  primitives-tier and mode-independent like the raw stops (knowledge-03 §1); one set of seven tokens
+  per palette, identical in light and dark. Roles remain the only mode-flipping layer. No per-scheme
+  ladder exists and the `Color Prime` collection has the single mode `Base`.
 - **REQ-056** Legacy identity: at `primeChroma 100` the `prime` swatch equals the palette's
   `deriveKeyColor` hex within one 8-bit step per channel (same hue anchor, same cusp tone, same
   chroma fraction), so the gallery tile and the strip's `prime` agree.
@@ -177,7 +178,7 @@ ladder, their own chroma control, and their own token group; the editor strip re
   `refs-canonical` gate and the binder mirror stay at 53. Roles do NOT alias prime tokens this round
   (a later round may re-point `{n}`/Dim/Bright to the prime group; it needs its own SPEC).
 - No chroma spike on the base ramp of any kind; no identity-stop set; the ramp is continuous.
-- No per-scheme prime ladder (R2); no Light/Dark mode on the prime collection.
+- No per-scheme prime ladder (ratified, R2); no Light/Dark mode on the prime collection.
 - No prime tokens in ShadCN (fixed contract) and no new export FORMAT (the group rides the eight).
 - No change to Typography or Geometry.
 - No live link from the primary hue to data hues after minting; no migration that adds palettes to a
@@ -309,13 +310,15 @@ Ratified 2026-09-11 (H1..H4, team-lead relaying the owner):
 - **H4** Data palette chroma follows the primary's chroma.
 - **#533 Findings** Ramp spike retired; prime swatches are their own system with their own ladder,
   chroma control, and token group; roles frozen; strip renders the prime system.
+- **R2** (ratified 2026-09-11, team-lead ruling on the former H5) The prime system is
+  mode-independent: one set of seven swatches per palette, the same tokens in light and dark, like
+  primitives. Roles stay the only mode-flipping layer.
 
-Open, proposed defaults marked in the text (0.2.0 stays `draft` until these are ruled):
+Open, proposed defaults marked in the text (0.2.0 stays `draft` until these are ruled; R2 is
+closed above):
 - **R1** Ladder shape: OKHSL `l`, prime at the hue's cusp lightness, even `PRIME_STEP 0.09`,
   edge-compressed into `[0.14, 0.94]` (REQ-051). Alternatives: OKLCH `L` instead of OKHSL `l`; a
   fixed prime lightness instead of the cusp.
-- **R2** Same seven swatches in both schemes, primitives tier (REQ-055). Alternative: a Light/Dark
-  mode on the prime collection with a per-scheme ladder.
 - **R3** Naming: `prime` group, `--{n}-prime-{step}`, `{n}/prime/{step}`, Figma collection
   `Color Prime` with `{n}/{step}` (REQ-054). Alternative: nest inside `Color Primitives` as
   `{n}/prime/{step}` with no new collection.
