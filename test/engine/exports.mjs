@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // verify.mjs — export-formats validation adapter (CRITIC side; deny-on-write to the advancer).
 import { readFileSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import * as Xcolor from "../../src/engine/exports.js";
 // The DS-bundle (Claude Design / Stitch / Make) subsystem moved to its own module (TKT-0015);
 // merge into the same `X` namespace so every existing X.foo call below is untouched.
@@ -174,7 +176,7 @@ try {
 
 // ── hpg-export-nonempty (5 formats non-empty; JSON has stops/scrims/semantic) ─────────────
 const all = X.exportAll(C(ALL), {});
-for (const k of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn"]) {
+for (const k of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn", "panda"]) {
   const v = all[k];
   if (v == null || (typeof v === "string" && v.length < 10) || (typeof v === "object" && Object.keys(v).length === 0)) FAIL("nonempty", `${k} empty`);
 }
@@ -306,6 +308,132 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (!withSys.includes("--font-mono: 'JetBrains Mono',")) FAIL("shadcn", "--font-mono not mapped from the mono font");
   // absent opts → the shadcn defaults (backward compatible)
   if (!X.exportShadcn(C(ALL)).includes("--radius: 0.625rem;") || X.exportShadcn(C(ALL)).includes("--font-sans:")) FAIL("shadcn", "no opts → default 0.625rem radius + no font vars");
+}
+
+// ── hpg-export-shadcn-baseline (REQ-040/062, #586 K1 — the pickDrivers refactor gate: exportShadcn's
+//    output over three fixtures is byte-identical to a string captured BEFORE the refactor) ──────
+{
+  const fixture = readFileSync(new URL("./fixtures/shadcn-baseline.css", import.meta.url), "utf8");
+  const section = (marker) => {
+    const start = fixture.indexOf(`/* === FIXTURE: ${marker} === */`) + `/* === FIXTURE: ${marker} === */`.length + 1;
+    const nextMarker = fixture.indexOf("/* === FIXTURE:", start);
+    return fixture.slice(start, nextMarker === -1 ? fixture.length : nextMarker).trimEnd();
+  };
+  const ALL_DATA_OFF = ALL.map((p) => (/^Data \d+$/.test(p.name) ? { ...p, on: false } : p));
+  const cases = [
+    ["ALL", X.exportShadcn(C(ALL))],
+    ["BRAND_ONLY", X.exportShadcn(C(BRAND_ONLY))],
+    ["ALL_DATA_OFF", X.exportShadcn(C(ALL_DATA_OFF))],
+  ];
+  for (const [marker, got] of cases) {
+    const want = section(marker);
+    if (got.trimEnd() !== want) FAIL("shadcn-baseline", `exportShadcn(${marker}) drifted from the pre-refactor fixture`);
+  }
+  // AC-004: pickDrivers is the ONLY site left holding the driver-pick regex — exactly one grep hit,
+  // and the exports.js source shows it sitting inside pickDrivers's own body (before exportShadcn).
+  const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+  const grepHits = execSync(`git grep -n "find(/neutral|gray" src/engine || true`, { cwd: repoRoot, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  if (grepHits.length !== 1) FAIL("shadcn-baseline", `find(/neutral|gray site count = ${grepHits.length}, want 1: ${grepHits.join(" | ")}`);
+  else {
+    const src = readFileSync(new URL("../../src/engine/exports.js", import.meta.url), "utf8");
+    const pickDriversStart = src.indexOf("export function pickDrivers(");
+    const exportShadcnStart = src.indexOf("export function exportShadcn(");
+    const regexAt = src.indexOf("find(/neutral|gray");
+    if (pickDriversStart === -1 || exportShadcnStart === -1 || !(regexAt > pickDriversStart && regexAt < exportShadcnStart))
+      FAIL("shadcn-baseline", "find(/neutral|gray site is not inside pickDrivers's own body");
+  }
+}
+
+// ── hpg-export-panda (Panda CSS preset — REQ-001..006/009/042 colour half; REQ-007/008 land in K2) ──
+{
+  const state = C(ALL);
+  const preset = X.exportPanda(state);
+  if (typeof preset.name !== "string" || !preset.name.startsWith("ultimate-tokens-")) FAIL("panda", `name malformed: ${preset.name}`);
+  if (!preset.theme || !preset.theme.extend || preset.theme.tokens) FAIL("panda", "theme.extend missing, or a bare theme.tokens leaked outside extend");
+  const { tokens, semanticTokens } = preset.theme.extend || {};
+  if (!tokens || !tokens.colors) FAIL("panda", "theme.extend.tokens.colors missing");
+  if (!semanticTokens || !semanticTokens.colors) FAIL("panda", "theme.extend.semanticTokens.colors missing");
+
+  // PF-2: every leaf is a bare { value }. Collect dotted paths -> value for tokens/semanticTokens
+  // SEPARATELY (Panda flattens each namespace by dot path, PF-4 — REQ-005's coexistence proof).
+  const COLOR_RE = /^oklch\([^)]*\)$/;
+  const collectLeaves = (node, path, out) => {
+    if (node && typeof node === "object" && !Array.isArray(node)) {
+      const keys = Object.keys(node);
+      if (keys.length === 1 && keys[0] === "value") { out[path] = node.value; return; }
+      for (const k of keys) collectLeaves(node[k], path ? `${path}.${k}` : k, out);
+    } else FAIL("panda", `non-leaf, non-object value at ${path}`);
+  };
+  const rawLeaves = {}; collectLeaves(tokens, "", rawLeaves); delete rawLeaves[""];
+  const semLeaves = {}; collectLeaves(semanticTokens, "", semLeaves); delete semLeaves[""];
+
+  for (const [path, v] of Object.entries(rawLeaves)) {
+    if (typeof v !== "string" || (!COLOR_RE.test(v) && v !== "transparent")) FAIL("panda", `raw leaf ${path} = ${JSON.stringify(v)} not oklch()/transparent`);
+  }
+  for (const [path, v] of Object.entries(semLeaves)) {
+    if (!v || typeof v !== "object" || typeof v.base !== "string" || typeof v._dark !== "string") FAIL("panda", `semantic leaf ${path} not {base,_dark} strings: ${JSON.stringify(v)}`);
+    else {
+      if (!COLOR_RE.test(v.base) && v.base !== "transparent") FAIL("panda", `semantic leaf ${path}.base not oklch(): ${v.base}`);
+      if (!COLOR_RE.test(v._dark) && v._dark !== "transparent") FAIL("panda", `semantic leaf ${path}._dark not oklch(): ${v._dark}`);
+    }
+  }
+  // no flat path emitted twice across the two maps (tokens vs semanticTokens).
+  const rawPaths = new Set(Object.keys(rawLeaves));
+  for (const p of Object.keys(semLeaves)) if (rawPaths.has(p)) FAIL("panda", `path ${p} emitted under both tokens and semanticTokens`);
+
+  // per-enabled-palette leaf counts: 25 stops + 11 scrims + 8 prime (7 + DEFAULT) raw; 53 semantic.
+  const derived = X.derivedAll(state);
+  for (const p of derived) {
+    const rawForP = Object.keys(rawLeaves).filter((k) => k.startsWith(`colors.${p.n}.`));
+    if (rawForP.length !== 25 + 11 + 8) FAIL("panda", `colors.${p.n} raw leaf count = ${rawForP.length}, want 44`);
+    const semForP = Object.keys(semLeaves).filter((k) => k.startsWith(`colors.${p.n}.`));
+    if (semForP.length !== 53) FAIL("panda", `colors.${p.n} semantic leaf count = ${semForP.length}, want 53`);
+  }
+  for (const k of ["white", "black", "backdrop"]) if (!(`colors.constant.${k}` in rawLeaves)) FAIL("panda", `colors.constant.${k} missing`);
+
+  // EX-1/EX-2 (normative literal spot-checks) — fed the SAME resolved state the drawer/every other
+  // export path uses (stateOf(defaultDocument())), per the SPEC's Examples header: calling derivedAll
+  // on a bare C(ALL)-shaped fixture skips the group chroma resolver and renders different numbers.
+  const ddState = stateOf(defaultDocument());
+  const ddPreset = X.exportPanda(ddState);
+  const ddRaw = ddPreset.theme.extend.tokens.colors;
+  const ddSem = ddPreset.theme.extend.semanticTokens.colors;
+  if (ddRaw.primary["500"].value !== "oklch(0.6034 0.2164 258.99)") FAIL("panda", `EX-1 colors.primary.500 = ${ddRaw.primary["500"].value}`);
+  if (ddRaw.primary["50"].value !== "oklch(1 0 0)") FAIL("panda", `EX-1 colors.primary.50 = ${ddRaw.primary["50"].value}`);
+  if (ddRaw.primary["950"].value !== "oklch(0.1763 0.014 258.36)") FAIL("panda", `EX-1 colors.primary.950 = ${ddRaw.primary["950"].value}`);
+  if (ddRaw.neutral["500"].value !== "oklch(0.6047 0.0578 267.06)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
+  if (ddRaw.primary.scrim["300"].value !== "oklch(0.6034 0.2164 258.99 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
+  if (ddRaw.primary.prime.prime.value !== "oklch(0.5929 0.2052 259)") FAIL("panda", `EX-1 colors.primary.prime.prime = ${ddRaw.primary.prime.prime.value}`);
+  if (ddRaw.primary.prime.brightest.value !== "oklch(0.8266 0.0853 258.93)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`);
+  if (ddRaw.primary.prime.dimmest.value !== "oklch(0.3543 0.1307 258.84)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
+  if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
+  if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.5589 0.205 259.06)", _dark: "oklch(0.6475 0.1823 258.88)" }))
+    FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.4699 0.1483 258.99)", _dark: "oklch(0.7351 0.1242 259.16)" }))
+    FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
+  if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
+    FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);
+  if (JSON.stringify(ddSem.neutral["on-surface"].value) !== JSON.stringify({ base: "oklch(0.1774 0.0044 264.46)", _dark: "oklch(1 0 0)" }))
+    FAIL("panda", `EX-2 colors.neutral.on-surface = ${JSON.stringify(ddSem.neutral["on-surface"].value)}`);
+  if (Object.keys(ddSem.primary).length !== 53) FAIL("panda", `EX-2 expected 53 keys under semanticTokens.colors.primary, got ${Object.keys(ddSem.primary).length}`);
+  if (Object.keys(ddSem).length !== 16) FAIL("panda", `EX-2 expected 16 palette groups, got ${Object.keys(ddSem).length}`);
+  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5584 0.2312 272.17)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
+
+  // disabled palette absent from both trees.
+  const disabledPanda = X.exportPanda(oneOff);
+  if (offName in disabledPanda.theme.extend.tokens.colors) FAIL("panda", `disabled palette '${offName}' still in tokens.colors`);
+  if (offName in disabledPanda.theme.extend.semanticTokens.colors) FAIL("panda", `disabled palette '${offName}' still in semanticTokens.colors`);
+
+  // module string (EX-7): fixed header, valid JS, JSON.parse(body) deep-equals exportPanda(state).
+  const mod = X.exportPandaModule(preset);
+  if (!mod.startsWith("/* Panda CSS preset, generated by Ultimate Tokens.")) FAIL("panda", "module header text wrong");
+  if (!mod.includes("export default {")) FAIL("panda", "module missing 'export default {'");
+  const bodyStart = mod.indexOf("export default ") + "export default ".length;
+  const body = mod.slice(bodyStart, mod.lastIndexOf(";"));
+  let parsed = null;
+  try { parsed = JSON.parse(body); } catch (e) { FAIL("panda", `module body not valid JSON: ${e.message}`); }
+  if (parsed && JSON.stringify(parsed) !== JSON.stringify(preset)) FAIL("panda", "module JSON does not deep-equal exportPanda(state)");
 }
 
 // ── hpg-export-data-palette (#516 — isDataPalette, shadcn chart-1..5 binding, fallback exclusion) ──
@@ -1525,7 +1653,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

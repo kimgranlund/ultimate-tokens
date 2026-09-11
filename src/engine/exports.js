@@ -797,10 +797,12 @@ const SHADCN_ORDER = [
   "sidebar-accent", "sidebar-accent-foreground", "sidebar-border", "sidebar-ring",
 ];
 
-export function exportShadcn(state, opts = {}) {
-  const palettes = derivedAll(state);
-  // #503 REQ-031: data palettes (data-1..8) never stand in for neutral/primary/"first palette" —
-  // every non-chart pick searches the non-data pool only, so 16-palette docs keep today's shadcn picks.
+// pickDrivers — the driver-palette pick (REQ-040 of spec-panda-park-ui-exports.md), extracted
+// from exportShadcn so exportParkUi (and exportPanda's header, for accent/gray naming) can reuse
+// the exact same name-regex logic instead of a second copy. #503 REQ-031: data palettes
+// (data-1..8) never stand in for neutral/primary/"first palette" — every non-chart pick searches
+// the non-data pool only, so 16-palette docs keep today's shadcn picks.
+export function pickDrivers(palettes) {
   const nonData = palettes.filter((p) => !isDataPalette(p));
   const find = (re) => nonData.find((p) => re.test(p.name.toLowerCase()));
   const neutral = find(/neutral|gray|grey|slate|stone|zinc|mono/) || nonData[0];
@@ -809,6 +811,12 @@ export function exportShadcn(state, opts = {}) {
   const success = find(/success|positive|green/);
   const warning = find(/warn|caution|amber|yellow|orange/);
   const secondary = find(/secondary|tertiary/);
+  return { neutral, primary, danger, success, warning, secondary };
+}
+
+export function exportShadcn(state, opts = {}) {
+  const palettes = derivedAll(state);
+  const { neutral, primary, danger, success, warning, secondary } = pickDrivers(palettes);
   if (!neutral || !primary) return "/* ShadCN export needs at least one enabled palette. */\n";
 
   // each MAP entry carries its palette-qualified token name so alias mode (opts.aliasPrefix) can emit
@@ -911,6 +919,79 @@ export function exportShadcn(state, opts = {}) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// 9. PANDA (a Panda CSS preset module — docs/spec/spec-panda-park-ui-exports.md REQ-001..009)
+// ──────────────────────────────────────────────────────────────────────────────
+// exportPanda(state, opts) -> a preset OBJECT `{ name, theme: { extend: { tokens,
+// semanticTokens } } }` — `theme.extend`, never bare `theme` (PF-1), so `@pandacss/preset-panda`
+// survives in the consumer's `presets` array. Every colour is a RESOLVED oklch() string (N-3);
+// unlike this file's ADR-006-padded CSS/JSON/DTCG/UI3 surfaces, every Panda key is UNPADDED
+// (N-1, the Panda/Tailwind convention exportTailwind already uses — `"50"`, not `"050"`).
+// v1 is colour-only (K1 of #586); the type (`fonts`/`textStyles`) and geometry (`radii`/
+// `spacing`/`borderWidths`) blocks land in K2 (#587) as `opts.type`/`opts.geometry`.
+export function exportPanda(state, opts = {}) {
+  const palettes = derivedAll(state);
+  const tokens = {
+    colors: {
+      constant: {
+        white: { value: whiteOklch() },
+        black: { value: blackOklch() },
+        backdrop: { value: dialogBackdropOklch() },
+      },
+    },
+  };
+  const semanticTokens = { colors: {} };
+  for (const p of palettes) {
+    // raw: {n}.{stop} (unpadded, REQ-002) + {n}.scrim.{step} (REQ-003) + {n}.prime.{step}/.DEFAULT
+    // (REQ-003) — a raw key is always a digit or one of the two group words `scrim`/`prime`, so it
+    // never collides with a semantic role key (REQ-005: no role suffix is `scrim`/`prime` alone).
+    const raw = {};
+    for (const key of Object.keys(p.stops)) {
+      raw[String(Number(key))] = { value: oklchStr(rgbToOklch(p.stops[key].rgb)) };
+    }
+    const scrim = {};
+    for (const base of SCRIM_BASES) {
+      for (const step of SCRIM_STEPS) {
+        const sc = p.scrims[base][step];
+        scrim[String(step)] = { value: roleOklch({ rgb: sc.rgb, frac: sc.frac }) };
+      }
+    }
+    raw.scrim = scrim;
+    const prime = {};
+    for (const step of PRIME_STEPS) {
+      const sw = p.prime[step];
+      prime[step] = { value: oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] }) };
+    }
+    prime.DEFAULT = prime.prime;
+    raw.prime = prime;
+    tokens.colors[p.n] = raw;
+
+    // semantic: {n}.{roleKey} for all 53 roles (REQ-005/006) — a role's suffix without its
+    // leading dash ("-on-surface" -> "on-surface"); the bare accent role (suffix "") is DEFAULT.
+    // Every leaf carries BOTH ends, resolved, even when they're byte-equal (REQ-006).
+    const sem = {};
+    for (const r of p.roles) {
+      const roleKey = r.suffix ? r.suffix.slice(1) : "DEFAULT";
+      sem[roleKey] = { value: { base: roleOklch(r.light), _dark: roleOklch(r.dark) } };
+    }
+    semanticTokens.colors[p.n] = sem;
+  }
+  const name = "ultimate-tokens-" + slug(state.name || "brand-kit");
+  return { name, theme: { extend: { tokens, semanticTokens } } };
+}
+
+// exportPandaModule — the ESM preset-module STRING the drawer shows and the zip ships (REQ-001):
+// a fixed two-line header comment, then `export default <preset JSON>;`. No import of
+// `@pandacss/dev` — `definePreset` is a no-op typing helper a consumer may wrap this in.
+export function exportPandaModule(preset) {
+  return [
+    "/* Panda CSS preset, generated by Ultimate Tokens.",
+    "   presets: ['@pandacss/preset-panda', preset]; dark mode = the .dark class (_dark). */",
+    "export default " + JSON.stringify(preset, null, 2) + ";",
+    "",
+  ].join("\n");
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // exportAll — every format in one object (theme-independent).
 // ──────────────────────────────────────────────────────────────────────────────
 export function exportAll(state, opts) {
@@ -922,5 +1003,6 @@ export function exportAll(state, opts) {
     ui3: exportUI3(state),
     tailwind: exportTailwind(state),
     shadcn: exportShadcn(state),
+    panda: exportPanda(state),
   };
 }

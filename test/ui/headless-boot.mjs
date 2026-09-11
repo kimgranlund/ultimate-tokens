@@ -1372,7 +1372,7 @@ const entries = zb[eocd + 10] | (zb[eocd + 11] << 8);
 // design-system-for-figma-make/ bundle: guidelines/{Guidelines.md, setup.md, styles.css,
 // foundations/{color,typography,spacing}.md, components/{overview,button}.md} + README.md (9, a routed tree),
 // all riding systems.color) + 4 figma-aliased + 5 typography (incl. figma/ + figma/ moded + figma/ primitives) + 4 geometry + config = 45.
-ok(eocdSig && entries === 67, `(ee) the EOCD reports 67 entries — colour (35, incl. the design-system-for-claude-code/ bundle of 14 [#473: the @dsCard catalog grew from 7 to 11 previews] + design-system-for-google-stitch/ of 2 + design-system-for-figma-make/ of 9) + figma-aliased (4) + typography (12: type.css + type.tokens.json + 4 breakpoint CSS bolt-ons [desktop-lg/-xl 2026-07-15, tablet/mobile #264] + 4 per-mode DTCG [type.1728/2560/992/476] + 2 figma/* type-tokens+primitives files) + geometry (12: geometry.css + geometry-sizes.css [#487, the size-only sibling] + geometry.tokens.json + 4 breakpoint CSS bolt-ons + 4 per-mode DTCG [geometry.1728/2560/992/476] + 1 figma/* raw-variables file) + the MERGED moded-variables file figma/tokens.modes.variables.json (1, TKT-0009 — was typography.modes + dimension.modes) + figma/styles.plan.json (1) + config + the root README (got ${entries})`);
+ok(eocdSig && entries === 68, `(ee) the EOCD reports 68 entries — colour (36, incl. panda/{s}.preset.mjs [#586 K1] + the design-system-for-claude-code/ bundle of 14 [#473: the @dsCard catalog grew from 7 to 11 previews] + design-system-for-google-stitch/ of 2 + design-system-for-figma-make/ of 9) + figma-aliased (4) + typography (12: type.css + type.tokens.json + 4 breakpoint CSS bolt-ons [desktop-lg/-xl 2026-07-15, tablet/mobile #264] + 4 per-mode DTCG [type.1728/2560/992/476] + 2 figma/* type-tokens+primitives files) + geometry (12: geometry.css + geometry-sizes.css [#487, the size-only sibling] + geometry.tokens.json + 4 breakpoint CSS bolt-ons + 4 per-mode DTCG [geometry.1728/2560/992/476] + 1 figma/* raw-variables file) + the MERGED moded-variables file figma/tokens.modes.variables.json (1, TKT-0009 — was typography.modes + dimension.modes) + figma/styles.plan.json (1) + config + the root README (got ${entries})`);
 const zipText = Buffer.from(zb).toString("latin1");
 // the root README makes the zip self-describing: the folder map, the consumption-plugin install
 // commands (the skills layer deliberately NOT bundled — it updates via the marketplace), the MCP
@@ -1390,7 +1390,7 @@ app.downloadBytes = realDB;
 const zipText2 = Buffer.from(zipCap2.bytes).toString("latin1");
 ok(/renamed in Settings/.test(zipText2) && /Token mapping/.test(zipText2) && /Brand Primitives/.test(zipText2) && /Brand Modes/.test(zipText2), `(ee) a renamed Figma collection surfaces its real name in the README's figma-aliased/ row`);
 app.commit((d) => { delete d.figmaCollections; }); flushRaf(); // restore default names for later legs
-const wantPaths = ["css-hex/", "css-oklch/", "json/", "dtcg/", "figma/Light_tokens.json", "figma/Dark_tokens.json", "figma/palette.tokens.json", "ui3/", "tailwind/", "shadcn/", "design-system-for-claude-code/DESIGN.md", "design-system-for-claude-code/tokens.json", "design-system-for-claude-code/components/colors.html", "design-system-for-claude-code/README.md", "design-system-for-google-stitch/DESIGN.md", "design-system-for-google-stitch/README.md", "design-system-for-figma-make/guidelines/Guidelines.md", "design-system-for-figma-make/guidelines/setup.md", "design-system-for-figma-make/guidelines/styles.css", "design-system-for-figma-make/guidelines/foundations/color.md", "design-system-for-figma-make/guidelines/foundations/typography.md", "design-system-for-figma-make/guidelines/foundations/spacing.md", "design-system-for-figma-make/guidelines/components/overview.md", "design-system-for-figma-make/guidelines/components/button.md", "design-system-for-figma-make/README.md", "ultimate-tokens-my-set-config.json",
+const wantPaths = ["css-hex/", "css-oklch/", "json/", "dtcg/", "figma/Light_tokens.json", "figma/Dark_tokens.json", "figma/palette.tokens.json", "ui3/", "tailwind/", "shadcn/", "panda/", "design-system-for-claude-code/DESIGN.md", "design-system-for-claude-code/tokens.json", "design-system-for-claude-code/components/colors.html", "design-system-for-claude-code/README.md", "design-system-for-google-stitch/DESIGN.md", "design-system-for-google-stitch/README.md", "design-system-for-figma-make/guidelines/Guidelines.md", "design-system-for-figma-make/guidelines/setup.md", "design-system-for-figma-make/guidelines/styles.css", "design-system-for-figma-make/guidelines/foundations/color.md", "design-system-for-figma-make/guidelines/foundations/typography.md", "design-system-for-figma-make/guidelines/foundations/spacing.md", "design-system-for-figma-make/guidelines/components/overview.md", "design-system-for-figma-make/guidelines/components/button.md", "design-system-for-figma-make/README.md", "ultimate-tokens-my-set-config.json",
   "figma-aliased/Light_tokens.json", "figma-aliased/Dark_tokens.json", "figma-aliased/palette.tokens.json", "figma-aliased/README.txt",
   "typography/type.css", "typography/type.tokens.json", "figma/type.tokens.json", "figma/tokens.modes.variables.json", "figma/typography.primitives.variables.json", "geometry/geometry.css", "geometry/geometry-sizes.css", "geometry/geometry.tokens.json", "figma/dimension.variables.json"];
 ok(wantPaths.every((p) => zipText.includes(p)), "(ee) every colour format + typography/ + geometry/ + the moded Figma-variable files + the config + the figma-aliased/ cascade variant is present in the archive");
@@ -1419,18 +1419,22 @@ ok(zipText.includes("com.figma.aliasData") && zipText.includes("Color Primitives
 app.openSet(app.sets[0].id); flushRaf(); // editor view (the drawer lives here)
 app.exportOpen = true; app.exportTab = "dtcg"; app.render(); flushRaf();
 ok(!!app.querySelector(".drawer-pre") && !app.querySelector(".pro-upsell"), "(pe) proExport unlocked → the DTCG preview shows code (no upsell)");
+app.exportTab = "panda"; app.render(); flushRaf();
+ok((txtOf(app.querySelector(".drawer-pre")) || "").startsWith("/* Panda CSS preset, generated by Ultimate Tokens."), "(pe) proExport unlocked → the Panda CSS tab renders code starting with the header comment");
 app.setProfile({ flagOverrides: { proExport: false } }); app.render(); flushRaf();
+ok(!app.querySelector(".drawer-pre") && !!app.querySelector(".pro-upsell"), "(pe) Free → a Pro format (Panda CSS) shows the upsell instead of its code");
+app.exportTab = "dtcg"; app.render(); flushRaf();
 ok(!app.querySelector(".drawer-pre") && !!app.querySelector(".pro-upsell"), "(pe) Free → a Pro format (DTCG) shows the upsell instead of its code");
 app.exportTab = "css"; app.render(); flushRaf();
 ok(!!app.querySelector(".drawer-pre") && !app.querySelector(".pro-upsell"), "(pe) CSS (free) still shows its code at Free");
 app.exportOpen = false; app.render(); flushRaf();
 const dlZipText = () => { let z = null; const real = app.downloadBytes.bind(app); app.downloadBytes = (b) => { z = b; }; app.downloadAllZip(projectViewZ(app.doc)); app.downloadBytes = real; return z ? Buffer.from(z).toString("latin1") : ""; };
 const peFreeZip = dlZipText();
-ok(!/tailwind\//.test(peFreeZip) && !/shadcn\//.test(peFreeZip) && !/dtcg\//.test(peFreeZip), "(pe) Download-All at Free omits the dtcg/tailwind/shadcn folders");
+ok(!/tailwind\//.test(peFreeZip) && !/shadcn\//.test(peFreeZip) && !/dtcg\//.test(peFreeZip) && !/panda\//.test(peFreeZip), "(pe) Download-All at Free omits the dtcg/tailwind/shadcn/panda folders");
 ok(/css-hex\//.test(peFreeZip) && /css-oklch\//.test(peFreeZip), "(pe) Download-All at Free still includes both free CSS folders (hex + oklch)");
 app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlocked
 const peProZip = dlZipText();
-ok(/tailwind\//.test(peProZip) && /shadcn\//.test(peProZip) && /dtcg\//.test(peProZip), "(pe) Download-All unlocked includes the dtcg/tailwind/shadcn folders");
+ok(/tailwind\//.test(peProZip) && /shadcn\//.test(peProZip) && /dtcg\//.test(peProZip) && /panda\//.test(peProZip), "(pe) Download-All unlocked includes the dtcg/tailwind/shadcn/panda folders");
 
 // ── (exu) CSS export unit (Settings › Export): _setExportUnit writes doc.export.unit; type/geom CSS+DTCG
 // honor it (px→rem), the figma/ folder + Figma variables stay px; the choice persists. ──
