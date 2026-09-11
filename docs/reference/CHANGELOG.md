@@ -16,10 +16,10 @@ setting.
 **Shipped defaults stay `baseIntensity: 100, keyIntensity: 100`** (ratified H1): every existing
 palette, control set, and export is byte-identical to the pre-intensity engine; this revision is a new
 capability, not yet a visual change. See `docs/reference/references/knowledge-02-tonal-scale.md` §8 for
-the full math. Still landing, in their own build units: the UI controls (two Global-tab sliders plus a
-per-palette slider, and a five-swatch key strip per ramp row), persistence (schema v2), and eight
-brand-derived data palettes. A muted default of 45 was proposed during spec review and deliberately
-deferred to its own follow-up (#521), pending the full feature.
+the full math. The UI controls (two Global-tab sliders plus a per-palette slider, and a five-swatch
+key strip per ramp row, #522) and persistence (schema v2, #520) have since landed. Still landing:
+eight brand-derived data palettes (U5–U9). A muted default of 45 was proposed during spec review and
+deliberately deferred to its own follow-up (#521), pending the full feature.
 
 Gate: `npm test` green (extended tonal pin + 3 new intensity groups, identity-stops gate). Spec:
 `docs/spec/spec-muted-base-key-spikes.md`; design: `docs/lld/lld-muted-base-key-spikes.md`. Landed as
