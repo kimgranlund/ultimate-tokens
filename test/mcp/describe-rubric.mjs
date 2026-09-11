@@ -69,7 +69,7 @@ for (const ex of EXEMPLARS) {
 // few-shot is not just illustrative prose, it is a brief the core actually accepts. ──
 for (const ex of EXEMPLARS) {
   const { kit } = generateKit({ name: ex.theme, families: ex.families });
-  ok(kit.$schema === "ultimate-tokens-brand-kit/1" && kit.palettes.length === 8, `${ex.id}: families feed generateKit() to a full 8-palette kit (proves the exemplar is a valid brief fragment, not just prose)`);
+  ok(kit.$schema === "ultimate-tokens-brand-kit/2" && kit.palettes.length === 8, `${ex.id}: families feed generateKit() to a full 8-palette kit (proves the exemplar is a valid brief fragment, not just prose)`);
 }
 
 // ── retrieveExemplars: shape, determinism, defaults ──

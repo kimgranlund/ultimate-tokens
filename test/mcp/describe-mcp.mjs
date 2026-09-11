@@ -48,7 +48,7 @@ try {
   // step 2: construct a brief per the returned schema, call again → a real kit
   const brief = { name: "Siberian Tigers on Parade", families: { Primary: { hue: 30, chroma: 70, colorName: "Amur tiger orange" } } };
   const generated = await callTool("generate_kit", { brief });
-  ok(generated.kit && generated.kit.$schema === "ultimate-tokens-brand-kit/1" && generated.kit.palettes.length === 8, "generate_kit({brief}) → a real 8-palette kit");
+  ok(generated.kit && generated.kit.$schema === "ultimate-tokens-brand-kit/2" && generated.kit.palettes.length === 8, "generate_kit({brief}) → a real 8-palette kit");
   ok(generated.meta && generated.meta.briefSchema === briefing.schema.$id && JSON.stringify(generated.meta.brief) === JSON.stringify(brief), "the result's meta echoes the brief schema id + the originating brief verbatim (the replay handle)");
 
   // step 3 (refine): patch the brief and resend — determinism means re-sending the SAME brief reproduces

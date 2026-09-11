@@ -239,6 +239,7 @@ import {
   exportUI3,
   exportTailwind,
   exportShadcn,
+  EXPORT_SCHEMA_VERSION,
   SCRIM_BASES,
   SCRIM_STEPS,
   dialogBackdropHex,
@@ -619,7 +620,7 @@ export function figmaBundle(doc) {
 // absent from the kit entirely, so the MCP serves only what the user chose to include.
 export function brandKit(doc, systems) {
   const sys = systems || { color: true, type: true, geometry: true };
-  const kit = { $schema: "ultimate-tokens-brand-kit/1", name: doc.name || (doc.story && doc.story.title) || "Brand Kit", generator: "Ultimate Tokens" };
+  const kit = { $schema: `ultimate-tokens-brand-kit/${EXPORT_SCHEMA_VERSION}`, name: doc.name || (doc.story && doc.story.title) || "Brand Kit", generator: "Ultimate Tokens" };
   // the ICON facet — always served: an agent must never have to pick a library. Sizes ride the geometry
   // system (below) when it is included; this names the library + its stroke/fill character.
   {

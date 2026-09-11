@@ -305,7 +305,7 @@ export function generateKit(brief) {
   const meta = {
     generator: "Ultimate Tokens",
     engineVersion: PACKAGE.version,
-    kitSchema: "ultimate-tokens-brand-kit/1",
+    kitSchema: kit.$schema, // brandKit(doc)'s own $schema (RP-8, ticket #577) — read back, never a second literal that could drift from it.
     briefSchema: PALETTE_BRIEF_SCHEMA.$id,
     // a JSON snapshot, not the caller's live reference — an in-process importer mutating its brief after
     // the call must not be able to corrupt the replay handle (§6.4). Identity for anything that arrived

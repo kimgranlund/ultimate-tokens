@@ -186,6 +186,17 @@ if (applyBundle) {
   const rawExpect = expect(bundle["palette.tokens.json"]) - primeExpect;
   const semExpect = expect(bundle["Light_tokens.json"]);
 
+  // ── schema stamp tolerance (SPEC 0.3.0 RP-8, ticket #577, plan PR #571 step E6) — the bundle
+  // already carries the new root $extensions["com.ultimate-tokens"].schemaVersion on all 3 files
+  // (exportDTCG's figmaMode, unconditional); confirm it's actually there (not silently dropped by
+  // figmaBundle's own aliasing pass) before proving below that applyBundle still parses/applies it
+  // with the SAME variable counts as an unstamped bundle would (childKeys() skips any "$"-prefixed
+  // root key, so the stamp is inert to the reader — this proves that, rather than assuming it).
+  for (const file of ["palette.tokens.json", "Light_tokens.json", "Dark_tokens.json"]) {
+    const ext = bundle[file].$extensions && bundle[file].$extensions["com.ultimate-tokens"];
+    if (!ext || ext.schemaVersion !== 2) FAIL("apply", `bundle["${file}"] missing root $extensions["com.ultimate-tokens"].schemaVersion=2 (got ${JSON.stringify(ext)})`);
+  }
+
   try {
     const res = await applyBundle(bundle);
     const raw = F.collections.find((c) => c.name === "Color Primitives");
