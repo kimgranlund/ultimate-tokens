@@ -9,7 +9,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const SKILL_DIR = join(HERE, "..");
+// ROLE_PARITY_SKILL_DIR lets a test point the gate at a fixture skill dir (e.g. a SKILL.md with a
+// deliberately bad count word) to prove the loud-failure path, without touching the real skill.
+const SKILL_DIR = process.env.ROLE_PARITY_SKILL_DIR || join(HERE, "..");
 const TABLE = join(HERE, "../../../../../docs/reference/data/role-table.json");
 if (!existsSync(TABLE)) { console.log("role-parity: canonical role table not found (outside the product repo) — skipping"); process.exit(0); }
 
@@ -47,15 +49,42 @@ for (const f of files) {
 
 // belt-and-braces: the counts the skill claims must match the canon (role count + default-palette
 // count — both are derived facts the token grep can't see, so they'd fossilize silently otherwise).
-const NUM_WORD = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+//
+// parseNumWord distinguishes three cases for a word sitting in front of "palettes":
+//  - a recognized number word in the parser's covered range (one..ninety-nine, including
+//    hyphenated compounds like "twenty-one") -> its integer value.
+//  - a recognized-but-uncovered number word (a magnitude word like "hundred"/"thousand") ->
+//    the sentinel OUT_OF_RANGE, so the caller can FAIL LOUDLY instead of silently no-op'ing.
+//  - anything else (an ordinary adjective — "default", "curated", "command" — not a number word
+//    at all) -> null, so the caller can silently skip it as before.
+const ONES = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19 };
+const TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+const MAGNITUDE_WORDS = new Set(["hundred", "thousand", "million", "billion"]);
+const OUT_OF_RANGE = Symbol("out-of-range count word");
+function parseNumWord(word) {
+  const w = word.toLowerCase();
+  if (w in ONES) return ONES[w];
+  if (w in TENS) return TENS[w];
+  if (MAGNITUDE_WORDS.has(w)) return OUT_OF_RANGE;
+  const parts = w.split("-");
+  if (parts.length === 2) {
+    if (parts[0] in TENS && parts[1] in ONES && ONES[parts[1]] < 10) return TENS[parts[0]] + ONES[parts[1]];
+    if (MAGNITUDE_WORDS.has(parts[0]) || MAGNITUDE_WORDS.has(parts[1])) return OUT_OF_RANGE;
+  }
+  return null;
+}
+
 for (const f of files) {
   const text = readFileSync(join(SKILL_DIR, f), "utf8");
   for (const m of text.matchAll(/(\d+)[-\s]+(?:semantic[-\s]+)?roles?\b/gi))
     if (m[1] !== String(rt.rolesPerPalette)) err(f, m[0], `role count drift — canon is ${rt.rolesPerPalette}`);
-  // "<word> palettes" (e.g. "eight palettes") must equal the default kit size.
-  for (const m of text.matchAll(/\b([a-z]+)\s+palettes\b/gi)) {
-    const n = NUM_WORD[m[1].toLowerCase()];
-    if (n !== undefined && n !== PALETTES.size) err(f, m[0], `default-palette count drift — canon is ${PALETTES.size}`);
+  // "<word> palettes" (e.g. "eight palettes", "twenty-one palettes") must equal the default kit
+  // size; a non-number word (an adjective) before "palettes" is not a count claim and is skipped.
+  for (const m of text.matchAll(/\b([a-z]+(?:-[a-z]+)?)\s+palettes\b/gi)) {
+    const n = parseNumWord(m[1]);
+    if (n === null) continue;
+    if (n === OUT_OF_RANGE) { err(f, m[0], `count word "${m[1]}" is outside the range role-parity's parser can resolve (one..ninety-nine) — extend parseNumWord instead of letting this pass unchecked`); continue; }
+    if (n !== PALETTES.size) err(f, m[0], `default-palette count drift — canon is ${PALETTES.size}`);
   }
 }
 
