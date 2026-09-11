@@ -631,11 +631,7 @@ export function exportUI3(state) {
     collections: {
       [COLLECTIONS.colorRaw]: { modes: ["Base"], variables: primVars },
       [COLLECTIONS.colorSemantic]: { modes: ["Light", "Dark"], variables: semVars },
-      // "Color Prime" (REQ-054): a literal name here, not COLLECTIONS.colorPrime — that constant is
-      // added by #539's sub-unit B (stacked on this branch) alongside the two Figma sandbox literal
-      // mirrors it must move in lockstep with for the `collparity` gate. Sub-unit B swaps this
-      // literal for the constant; the STRING VALUE must equal "Color Prime" either way.
-      "Color Prime": { modes: ["Base"], variables: primeVars },
+      [COLLECTIONS.colorPrime]: { modes: ["Base"], variables: primeVars },
     },
   };
 }

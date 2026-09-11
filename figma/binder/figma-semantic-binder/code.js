@@ -26,6 +26,7 @@
 
 const RAW_COLLECTION = "Color Primitives";
 const SEMANTIC_COLLECTION = "Color Roles"; // #491 (was "Color Semantic", "Color Modes")
+const PRIME_COLLECTION = "Color Prime"; // REQ-054 (#539): this binder reads nothing from it this round (LLD "Figma plugin apply" row) — the literal exists only so `collparity` can diff it against the flagship and src/engine/collections.js
 // SEMANTIC_RENAME_FROM — the old names ensureCollection adopts an existing registry-tracked collection
 // from, in place (renameFrom, mirrors FIGMA_MIGRATIONS.color.collections — this sandbox can't import
 // migrations.mjs, so the same list is hand-kept here; see figma/binder/migrations.mjs).
