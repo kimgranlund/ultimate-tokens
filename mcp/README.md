@@ -56,6 +56,7 @@ those systems are included)
 | `get_ramp(palette)` | a palette's full tonal ramp (stop → hex) |
 | `resolve_token(palette, role, scheme)` | the hex for a semantic role in `light`/`dark` (role can be `"palette/role"`) |
 | `get_semantic(scheme)` | all 53 roles per palette resolved for a scheme |
+<!-- TODO(P8/#543, after P6 merges): add `get_prime(palette)` — the seven prime swatches (brightest … dimmest, hex + oklch) and the `brand://palette/{slug}/prime` resource; SPEC REQ-054. -->
 | `nearest_token(hex)` | the brand token closest to a hex (reuse the system, don't invent a colour) |
 | `get_type` | the typography scale — treatment, fonts, and the per-voice size ramp |
 | `get_geometry` | the geometry scale — the size ramp, the centering law, radius + spacing |

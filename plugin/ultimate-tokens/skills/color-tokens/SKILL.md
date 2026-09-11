@@ -17,6 +17,7 @@ description: >
 An Ultimate Tokens export gives every palette the same **53 semantic roles** as CSS custom
 properties. Your job is never to invent a color — it is to pick the right **role** from the right
 **palette**. Raw stops exist only as the substrate the roles reference.
+<!-- TODO(P8/#543, after P4 merges): one paragraph on the `prime` token group (`--{n}-prime-brightest` … `-dimmest`): primitives-tier, mode-independent, NOT roles; when a consumer may reach for a prime swatch (hero/brand moments, charts) vs. must stay on roles (every UI surface); SPEC REQ-054. -->
 
 ## Bind to the project first (always step 1)
 
