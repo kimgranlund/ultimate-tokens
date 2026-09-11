@@ -21,13 +21,13 @@ multiplier `m`, hue anchors), `adding-semantic-roles` skill (parity sites), `per
 | Component | File | Responsibility |
 |---|---|---|
 | Intensity factor | `src/engine/tonal.js` | `intensityAt(stop, palette, controls, identityStops)` returns `I(stop)` (REQ-002). Applied in `okhslStops` to `s` and in the even loop to `intended`, and to the stop-500 anchors (`s500`, `c500`) (REQ-005) |
-| Identity stop set | `src/engine/semantic.js` | `identityStops(roles)`: the sorted set of solid refs of the five identity roles (suffix in `''`, `-dim`, `-bright`, `-low`, `-high`) across `light` and `dark`. Computed from the already-resolved role list (after `applyAccentRef`), no union with any static set: under "single" the prime resolves to 500 only, so the set is `{350,400,500,650,700}` and 450/550 drop out (REQ-004, EX-3, ruled 2026-09-11). Not part of `semanticRoles`; the answer key is untouched |
-| Controls plumbing | `src/ui/model.mjs` | `controlsOf` / `stateOf` thread `baseIntensity`, `keyIntensity`; `projectView` and `exports.js` `derivePalette` pass `identityStops(baseRoles)` and `p.intensity` into `paletteStops` |
+| Identity stop ladder | `src/engine/tonal.js` (`IDENTITY_STOPS`), `src/engine/semantic.js` (`identityStops()` kept as a thin re-export for existing callers) | The FIXED ladder `[200, 300, 400, 500, 600, 700, 800]`, the same in both schemes, independent of `accentRef` and the role table (REQ-004, EX-3; ratified 2026-09-11 under #533, supersedes the role-derived set). `identityStops()` returns the ladder and ignores any argument; no computation from resolved roles remains. The answer key is untouched |
+| Controls plumbing | `src/ui/model.mjs` | `controlsOf` / `stateOf` thread `baseIntensity`, `keyIntensity`; `projectView` and `exports.js` `derivePalette` pass `p.intensity` into `paletteStops` (the ladder is the engine default; the `identityStops(baseRoles)` call is removed) |
 | Persistence | `src/ui/persist.js` | `DOMAINS` entries, `clampPalette` optional `intensity`, `CURRENT_SCHEMA_VERSION = 2`, a `RENAME_MAPS` entry `{version: 2, stampIntensity: true}` that sets `baseIntensity = 100` when absent (REQ-011) |
 | Data hue derivation | `src/engine/data-hues.mjs` (new pure module; `derive.mjs` stays scoped to the New Palette modal per its header) | `deriveDataHues(primaryHue, brandHues, count)` returning `{phi, hues}`; `mintDataPalettes(doc)` in `model.mjs` builds the palette objects (REQ-020..022) |
 | Defaults | `src/ui/model.mjs` `DEFAULT_PALETTES`, `docs/reference/data/role-table.json` `defaults` | 16 entries; data entries are recorded numbers computed once by the build and committed (REQ-024) |
 | Export hooks | `src/engine/exports.js`, `src/engine/ds-export.js` | `isDataPalette(p)` (`/^data-\d+$/` on the slug); shadcn chart binding; DS `data` tier (REQ-031) |
-| UI | `src/ui/sections/color.js`, `src/ui/styles.css` | Global tab: "Base chroma" + "Prime chroma" sliders next to Vibrancy (`color.js:1797`); one per-palette "Intensity" slider next to Cusp pull (`color.js:1654`); the key swatch strip in `renderRampsScene` (`color.js:957`) rendered before `.ramp-strip` from `vp.roles` (REQ-034); the "Add data palettes" and "Re-derive data hues" actions (REQ-032) |
+| UI | `src/ui/sections/color.js`, `src/ui/styles.css` | Global tab: "Base chroma" + "Prime chroma" sliders next to Vibrancy (`color.js:1797`); one per-palette "Intensity" slider next to Cusp pull (`color.js:1654`); the key swatch strip in `renderRampsScene` (`color.js:957`) rendered before `.ramp-strip` from `vp.fullRamp` at the seven ladder stops (REQ-034, #533); the "Add data palettes" and "Re-derive data hues" actions (REQ-032) |
 | Binder | `figma/binder/` (generated `code.js`) | No source edit; `NAMES` come from `role-table.json` `defaults`, regenerate runs in `npm test` (REQ-033) |
 
 ## Interfaces
@@ -41,14 +41,13 @@ export function intensityAt(stop, palette, controls, identityStops /* Set<number
   const k = Math.min(1, Math.max(0, (controls.keyIntensity ?? 100) / 100));
   return identityStops && identityStops.has(stop) ? b + (1 - b) * k : b;
 }
-paletteStops(palette, controls, stops, identityStops = DEFAULT_IDENTITY_STOPS);
-// DEFAULT_IDENTITY_STOPS = identityStops(semanticRoles("primary")) = {350,400,450,550,650,700} (accentRef "mode")
-// Callers ALWAYS pass identityStops(baseRoles) computed after applyAccentRef; under "single" that is
-// {350,400,500,650,700}. The default parameter exists only for callers with no role table (the tonal
-// verifier); it is never unioned with the computed set.
+export const IDENTITY_STOPS = new Set([200, 300, 400, 500, 600, 700, 800]); // fixed ladder, #533
+paletteStops(palette, controls, stops, identityStops = IDENTITY_STOPS);
+// The parameter stays for the tonal verifier's probes; production callers never pass it. No role
+// table, accentRef, or scheme feeds the set (ratified 2026-09-11, supersedes the role-derived set).
 
 // semantic.js
-export function identityStops(roles) -> Set<number>   // solid refs only; scrim refs ignored
+export function identityStops() -> Set<number>   // returns IDENTITY_STOPS; argument ignored (#533)
 
 // data-hues.mjs (new, pure, no DOM, no imports)
 export function deriveDataHues(primaryHue, brandHues, count = 8) -> { phi: number, hues: number[] }
@@ -58,11 +57,10 @@ export function mintDataPalettes(doc) -> palette[]      // 8 objects per REQ-022
 export function rederiveDataHues(doc) -> doc            // rewrites hue on palettes whose slug matches /^data-\d+$/
 ```
 
-Circular tie-in for `tonal.js` importing `semantic.js`: `tonal.js` must not import `semantic.js`
-(engines stay independent; the tonal verifier pins controls with no role table). `paletteStops` takes
-the set as a parameter with a literal default; a gate in `test/engine/semantic.mjs` asserts
-`identityStops(semanticRoles("primary"))` deep-equals `DEFAULT_IDENTITY_STOPS` so the literal cannot
-drift from the role table (the same parity posture as the answer key).
+`tonal.js` still never imports `semantic.js`; with the ladder fixed there is no role table to read.
+The `test/engine/semantic.mjs` gate becomes: `identityStops()` deep-equals `[...IDENTITY_STOPS]` and
+equals `[200, 300, 400, 500, 600, 700, 800]`, and passing any roles argument does not change it
+(the earlier role-parity gate is retired, #533).
 
 Anchor math with intensity (REQ-005):
 
@@ -104,9 +102,9 @@ primitives 576, roles 848 x 2 modes; `tokenCount` unchanged in formula.
 
 | # | Unit | Files | Size | Parity note |
 |---|---|---|---|---|
-| U1 | Engine: `intensityAt`, `identityStops`, `DEFAULT_IDENTITY_STOPS`, both ramp paths, anchors; `DEFAULT_CONTROLS` at `baseIntensity 100 / keyIntensity 100` (the shipped default, H1) | `tonal.js`, `semantic.js`, `test/engine/tonal.mjs` (pin + 3 new groups + fixture), `test/engine/semantic.mjs` (identity-stops gate) | big | Output byte-identical; no count moves. `code.js` regenerates with no diff in the role table |
+| U1 | Engine (shipped role-derived in #509; #533 re-points it to the fixed `IDENTITY_STOPS` ladder in its own small follow-up PR): `intensityAt`, `identityStops`, both ramp paths, anchors; `DEFAULT_CONTROLS` at `baseIntensity 100 / keyIntensity 100` (the shipped default, H1) | `tonal.js`, `semantic.js`, `test/engine/tonal.mjs` (pin + 3 new groups + fixture), `test/engine/semantic.mjs` (identity-stops gate) | big | Output byte-identical; no count moves. `code.js` regenerates with no diff in the role table |
 | U2 | Persistence: DOMAINS, `clampPalette.intensity`, schema v2 + stamp; `controlsOf`/`stateOf`/`derivePalette` threading | `persist.js`, `model.mjs`, `exports.js`, `test/ui/persist.mjs` | small | Invisible by design (defaults 100) |
-| U3 | UI: "Base chroma" + "Prime chroma" sliders (Global tab, adjacent), per-palette "Intensity" slider, the key swatch strip (`.key-strip`, five `<i>` with `data-role` + label, before `.ramp-strip`, colors from `vp.roles` by suffix for the active scheme, reusing the ramp-strip hover/footer handlers), shim group for AC-032 + AC-034 (ratified 2026-09-11) | `sections/color.js`, `styles.css`, `test/ui/headless-boot.mjs` | small (upper edge: one context, no contract change; tips to big only if the strip needs new footer plumbing, which it should not) | Sliders show 100; the strip reads resolved role hexes, so no engine or count change |
+| U3 | UI: "Base chroma" + "Prime chroma" sliders (Global tab, adjacent), per-palette "Intensity" slider, the key swatch strip (`.key-strip`, seven `<i>` with `data-stop` + label brightest..dimmest, before `.ramp-strip`, colors from `vp.fullRamp` at 200..800 step 100, reusing the ramp-strip hover/footer handlers), shim group for AC-032 + AC-034 (ratified 2026-09-11; #533 ladder form) | `sections/color.js`, `styles.css`, `test/ui/headless-boot.mjs` | small (upper edge: one context, no contract change; tips to big only if the strip needs new footer plumbing, which it should not) | Sliders show 100; the strip reads ramp stop hexes, so no engine or count change |
 | U4 | Docs only: knowledge-02 intensity section, CHANGELOG entry, README control list. No default flip (H1); the 45 proposal is filed as a follow-up issue in this unit | `docs/reference/references/knowledge-02-tonal-scale.md`, `docs/reference/CHANGELOG.md`, `README.md` | small | No test literals |
 | U5 | `deriveDataHues` + verifier | new `src/engine/data-hues.mjs`, new `test/engine/data-hues.mjs` (registered in `test/run.mjs`) | small | Pure addition; `derive.mjs` untouched |
 | U6 | Data palettes in `defaultDocument` + `role-table.json` defaults (16) + count literals (`counts.mjs` DEFAULT_PALETTES, `shell.mjs`, `test/mcp/brand-kit*.mjs`) + `mintDataPalettes` | `model.mjs`, `role-table.json`, `test/ui/counts.mjs`, `test/ui/shell.mjs`, `test/mcp/*.mjs`, `test/ui/headless-boot.mjs` | big | The binder and plugin gates derive from `defaults` and the bundle, so they move by themselves in this same PR; `gen:figma-ui` and `bundle` rerun under `npm test`. H2 ratified 2026-09-11 |

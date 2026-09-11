@@ -73,9 +73,11 @@ Full table with exact `light`/`dark` refs: `data/role-table.json` → `roleTable
 `{N}` is the capitalized palette name (`Primary`); the CSS suffix builds `--c-{n}{suffix}`
 (e.g. `--c-primary-dim`). The prime role has empty suffix → `--c-{n}`.
 
-> The editor's Color canvas shows the five Accent roles as a **key swatch strip** ahead of each
-> ramp, labelled `brighter · bright · prime · dim · dimmer` = `{n}High · {n}Bright · {n} · {n}Dim ·
-> {n}Low` (issue #503, ratified 2026-09-11). Those are display labels only; no token, role key, or
+> The editor's Color canvas shows a **key swatch strip** ahead of each ramp: the seven fixed ladder
+> STOPS `200 · 300 · 400 · 500 · 600 · 700 · 800`, labelled `brightest · brighter · bright · prime ·
+> dim · dimmer · dimmest` (issue #533, ratified 2026-09-11; supersedes the five role-mapped swatches
+> of #503). The strip is a stop view, not a role view: it does not read the Accent roles, and the
+> prime ROLE `{n}` still resolves 550/450. The labels are display text only; no token, role key, or
 > suffix is named that way, and the 53-role table is unchanged.
 
 ## 4. On-colors (the `050` decision)

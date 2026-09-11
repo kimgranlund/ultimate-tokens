@@ -25,12 +25,11 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 
 - **Intensity** is a fraction of the palette's own `chroma` control. `chroma` keeps its meaning (the
   brand's full chroma, % of the hue's peak); intensity scales what the ramp actually emits.
-- **Identity stops** are the solid ramp stops the five identity roles resolve to, in either mode.
-  From the frozen role table: `{n}` 550/450, `{n}Dim` 650/700, `{n}Bright` 350/400, `{n}Low` 350/700,
-  `{n}High` 650/400, so under `accentRef: "mode"` the set is `{350, 400, 450, 550, 650, 700}`. Under
-  `accentRef: "single"` the prime role resolves to 500/500, so the set is `{350, 400, 500, 650, 700}`
-  and 450/550 are ordinary stops (REPLACE, not union; ruled 2026-09-11). The set is computed from the
-  already-resolved roles, never hard-coded and never merged with the mode set.
+- **Identity stops** are the FIXED seven-stop ladder `{200, 300, 400, 500, 600, 700, 800}`: prime 500 and three
+  steps either side, the same in both schemes, independent of `accentRef` and of the role table
+  (ratified 2026-09-11 under #533, supersedes the role-derived set `{350, 400, 450, 550, 650, 700}`
+  and its `accentRef "single"` variant). `identityStops()` returns this ladder; nothing is computed
+  from resolved roles. Roles are unchanged: `{n}` still resolves 550/450.
 - **Brand families** are the eight existing palettes (neutral, primary, secondary, tertiary, info,
   success, warning, danger). **Data families** are `data-1` … `data-8`.
 
@@ -49,11 +48,14 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 - **REQ-003** Legacy invariance: with `baseIntensity = 100` (any `keyIntensity`, any `intensity`
   override of 100 or absent) every emitted stop is byte-identical to the pre-feature engine for every
   palette, control set, and both ramp paths. `I(stop) = 1` everywhere is the proof obligation.
-- **REQ-004** The spike is discrete. Stops that are not identity stops receive exactly `b`, including
-  the active-state stops 750/250. Under `accentRef "mode"` that includes 500 (containers, outlines,
-  scrims all resolve on the 500 ramp); under `accentRef "single"` 500 is the prime stop and is spiked
-  while 450/550 receive `b`. Hover (650/350) inherits the spike because those ARE identity stops in
-  both accent modes; no separate hover rule exists.
+- **REQ-004** The spike is discrete and lands on the fixed ladder `{200, 300, 400, 500, 600, 700, 800}` only,
+  regardless of `accentRef` or scheme (ratified 2026-09-11 under #533, supersedes the role-derived
+  set). Every other stop receives exactly `b`: the half-steps 050..150 and 850..950, the quarter
+  stops 250, 350, 450, 550, 650, 750, and the export-only stops. Consequences a builder must accept,
+  not fix: the prime role `{n}` (550/450) is NOT on the ladder and renders at `b`; 500 (containers,
+  outlines, scrims via the 500 scrim ramp, and the prime under `accentRef "single"`) IS on the ladder
+  and is spiked; `{n}Dim`/`{n}High` at 650 (light) and `{n}Bright`/`{n}Low` at 350 (light) render at
+  `b`, while their dark refs 700 and 400 are spiked. No role-based or hover rule exists.
 - **REQ-005** The OKLCH hue anchor (`solveOkhslHue` / `solveCam16Hue` at stop 500) uses the stop-500
   chroma AFTER intensity, so the `oklch-hue-anchor` guarantee (key stop lands on the set OKLCH hue)
   holds at every intensity.
@@ -110,14 +112,15 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
   together next to Vibrancy, labelled "Base chroma" (`baseIntensity`, shapes the ramp) and "Prime
   chroma" (`keyIntensity`, shapes the identity swatches); the palette inspector gains one "Intensity"
   per-palette slider next to Cusp pull (ratified 2026-09-11). Defaults stay 100 (H1).
-- **REQ-034** Key swatch strip: each enabled palette row in the Color canvas renders five identity
-  swatches FIRST, left of the stop ramp, in this order with these display labels: `brighter`,
-  `bright`, `prime`, `dim`, `dimmer`. They map to the existing roles `{n}High`, `{n}Bright`, `{n}`,
-  `{n}Dim`, `{n}Low`; the labels are display text only, token and role names and the 53-role table
-  stay frozen (ratified 2026-09-11). Each swatch shows the RESOLVED role color for the active scheme
-  (so the prime-chroma spike is visible there), while the ramp beside it shows the base stops. Under
-  `accentRef "single"` the prime swatch is stop 500. The strip follows the row's scheme toggle and
-  the `stopsMode` (19 or 25) does not change it.
+- **REQ-034** Key swatch strip: each enabled palette row in the Color canvas renders SEVEN swatches
+  FIRST, left of the stop ramp, taken from the ramp stops of the fixed ladder with the spike applied,
+  in this order with these display labels: `brightest` 200, `brighter` 300, `bright` 400, `prime` 500,
+  `dim` 600, `dimmer` 700, `dimmest` 800 (ratified 2026-09-11 under #533, supersedes the five
+  role-mapped swatches). The strip is a stop view: it does not read roles, does not change with the
+  scheme or `accentRef`, and the `stopsMode` (19 or 25) does not change it. The labels are display
+  text only; token and role names and the 53-role table stay frozen, and `{n}` still resolves 550/450.
+  The ramp beside the strip shows the same stops in ramp order, so at `keyIntensity 100` the seven
+  swatches equal their ramp stops exactly.
 - **REQ-033** Figma: the binder's binding plan grows to 53 x 16 = 848 semantic targets and the
   primitives collection to 16 x 36 = 576 variables at the default document, both under Figma's
   5,000-variables-per-collection ceiling; the mode count (2) is unchanged. Answer to Open gap 4.
@@ -139,15 +142,15 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 - No new semantic roles, no muted-suffixed roles, no reduced role set for data palettes. The
   `refs-canonical` gate and the binder mirror stay at 53.
 - No change to Typography or Geometry.
-- No neighbour falloff around the identity stops (a smooth envelope would re-spike 500).
+- No neighbour falloff around the ladder stops; the spike is discrete at each of the seven.
 - No live link from the primary hue to data hues after minting.
 - No migration that adds palettes to a saved document; no change to curated category preset files
   under `docs/reference/colors/categories/`, and no change to preset OPEN behaviour: presets stay as
   authored (ratified 2026-09-11, H3).
 - No change to the "From Figma" import (`configFromVariables`); it reads chroma as stored today.
 - No new export format.
-- No new roles or tokens for the key strip labels: brighter, bright, prime, dim, dimmer are UI display
-  text over the five existing identity roles, never emitted names.
+- No new roles or tokens for the key strip labels: brightest, brighter, bright, prime, dim, dimmer,
+  dimmest are UI display text over ramp stops, never emitted names, and never role aliases.
 
 ## Examples
 
@@ -155,11 +158,12 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
   controls with `baseIntensity 100`, `keyIntensity 0` or `100`: every stop of the 25-stop export ramp
   equals the pre-feature engine output byte for byte.
 - **EX-2 (NORMATIVE, spike geometry).** Same palette, `baseIntensity 40`, `keyIntensity 100`,
-  `accentRef "mode"`: stops 350, 400, 450, 550, 650, 700 emit at the chroma fraction `0.95 * m(stop)`;
-  every other stop, 500 included, emits at `0.95 * 0.40 * m(stop)` (before the gamut clamp). Stop
-  tones are identical to EX-1.
-- **EX-3 (NORMATIVE, single accent).** As EX-2 with `accentRef "single"`: the spiked set is
-  `{350, 400, 500, 650, 700}`; 450 and 550 emit at `0.95 * 0.40 * m(stop)` like 750/250.
+  any `accentRef`: stops 200, 300, 400, 500, 600, 700, 800 emit at the chroma fraction
+  `0.95 * m(stop)`; every other stop, 450 and 550 included, emits at `0.95 * 0.40 * m(stop)` (before
+  the gamut clamp). Stop tones are identical to EX-1. (Ratified 2026-09-11 under #533.)
+- **EX-3 (NORMATIVE, accent mode invariance).** As EX-2 with `accentRef "single"`: every stop's
+  chroma is byte-identical to EX-2. The ladder does not move with `accentRef` (ratified 2026-09-11
+  under #533, supersedes the replace-set rule).
 - **EX-4 (NORMATIVE, override).** As EX-2 but Warning carries `intensity 100`: Warning's ramp equals
   its EX-1 ramp; Primary is unchanged from EX-2.
 - **EX-5 (NORMATIVE, data hues).** Brand hues `{267, 165, 315, 235, 145, 70, 27}` (all chroma >= 20;
@@ -170,12 +174,10 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 - **EX-6 (NORMATIVE, migration).** Snapshot `{schemaVersion: 1, palettes: [...8], vibrancy: 0}`
   hydrates to `baseIntensity 100, keyIntensity 100`, 8 palettes. Snapshot
   `{schemaVersion: 2, palettes: [...]}` with no `baseIntensity` hydrates to the domain default (100).
-- **EX-8 (NORMATIVE, key strip).** Default Primary, light scheme, `accentRef "mode"`: the strip reads
-  brighter = stop 650 (`primaryHigh`), bright = 350 (`primaryBright`), prime = 550 (`primary`),
-  dim = 650 (`primaryDim`), dimmer = 350 (`primaryLow`). Dark scheme: 400, 400, 450, 700, 700. With
-  `accentRef "single"` the prime swatch is 500 in both schemes. Pairs share a stop per scheme by the
-  frozen role table: light, brighter = dim (650) and bright = dimmer (350); dark, brighter = bright
-  (400) and dim = dimmer (700). The strip shows all five anyway, since it is a role view, not a stop view.
+- **EX-8 (NORMATIVE, key strip).** Default Primary, either scheme, either `accentRef`: the strip reads
+  brightest = stop 200, brighter = 300, bright = 400, prime = 500, dim = 600, dimmer = 700,
+  dimmest = 800, each the hex of that ramp stop. Toggling the scheme or `accentRef` changes nothing in
+  the strip. (Ratified 2026-09-11 under #533.)
 - **EX-7 (NORMATIVE, shadcn).** Default document: `--chart-1 .. --chart-5` resolve to the prime role of
   `data-1 .. data-5`. Data palettes all disabled: the pre-feature chart mapping is emitted.
 
@@ -183,14 +185,16 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 
 - **AC-001** `DEFAULT_CONTROLS` has both keys; `paletteStops` honours `palette.intensity` over
   `controls.baseIntensity` (a palette at 100 inside a document at 40 reproduces its legacy ramp).
-- **AC-002** For a probe palette below the gamut ceiling, measured stop chroma at each identity stop
-  divided by chroma at the same stop with `baseIntensity 100` equals `b + (1 - b) k` within 2% of
-  peak; at a non-identity stop it equals `b`. Checked on both ramp paths.
+- **AC-002** For a probe palette below the gamut ceiling, measured stop chroma at each ladder stop
+  (200, 300, 400, 500, 600, 700, 800) divided by chroma at the same stop with `baseIntensity 100`
+  equals `b + (1 - b) k` within 2% of peak; at every other stop it equals `b`. Checked on both ramp
+  paths and at both `accentRef` values (identical results).
 - **AC-003** A byte-diff gate: every default palette x 25 stops x both ramp paths at
   `baseIntensity 100` equals a committed fixture of the pre-feature output (generated in the same PR
   from the pre-change engine, `git stash` or a pinned commit).
 - **AC-004** With `baseIntensity 40, keyIntensity 100`, stop 500's chroma ratio to its legacy value is
-  `0.40` within tolerance, while 450 and 550 are at 1.0; stop 750 and 250 are at 0.40.
+  1.0 within tolerance, while 450 and 550 are at 0.40; stops 250 and 750 are at 0.40; 200 and 800 are
+  at 1.0. `identityStops()` deep-equals `[200, 300, 400, 500, 600, 700, 800]` and ignores its argument.
 - **AC-005** The existing `oklch-hue-anchor` gate passes at `baseIntensity` in `{20, 45, 100}`.
 - **AC-006** The full tonal verifier passes with its pin extended by `baseIntensity: 100`; a second run
   of the gamut and monotonic groups at `baseIntensity 45` also passes; tones are equal within 1e-9
@@ -222,11 +226,10 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
   "Add data palettes (8)" appends 8 on a document with none and is a no-op when 8 already exist;
   "Re-derive" rewrites hues only.
 - **AC-034** Headless-boot: every enabled ramp row has a key strip before the ramp strip with exactly
-  five swatches whose labels are, in order, brighter, bright, prime, dim, dimmer; each swatch's color
-  equals the row palette's resolved role hex (`primaryHigh`, `primaryBright`, `primary`, `primaryDim`,
-  `primaryLow`) for the active scheme; toggling the scheme swaps them; under `accentRef "single"` the
-  prime swatch equals the 500 stop hex; toggling `stopsMode` leaves the strip at five. The 53-role
-  table gate and `role-table.json` are unchanged by this unit.
+  seven swatches whose labels are, in order, brightest, brighter, bright, prime, dim, dimmer, dimmest;
+  each swatch's color equals the row palette's ramp hex at 200, 300, 400, 500, 600, 700, 800; toggling
+  the scheme, toggling `accentRef`, and toggling `stopsMode` leave the strip byte-identical and at
+  seven. The 53-role table gate and `role-table.json` are unchanged by this unit.
 - **AC-033** `test/figma/binder.mjs` `bindingPlan(NAMES).length === 53 * 16` via the existing derived
   assertion; `test/figma/plugin.mjs` cascade passes with `semExpect` derived from the bundle.
 - **AC-040** `git grep -nE "\b8\b" -- docs/reference README.md CLAUDE.md mcp plugin docs/marketing |
@@ -254,7 +257,7 @@ base intensity with a per-palette override on the `cuspPull ?? vibrancy` precede
 | Gap | Decision | Rationale | Ratify? |
 |---|---|---|---|
 | 1. Spike curve | Flat multiplier on the chroma fraction, gamut handled by the existing paths | OKHSL saturation is already gamut-proportional and hue-aware; even mode already clamps to `maxc`. A second cusp-aware boost would duplicate `cuspPull` and add a gate surface with no new capability | No |
-| 2. Hover/active | Only the identity stops; hover inherits by aliasing (650/350 are identity stops), active (750/250) does not | Roles alias primitives, so a spike lives on stops. Discrete stops keep 500 (containers, scrims, outlines) quiet under the default accent mode, which is the feature's point; under "single" the set is replaced, not extended | No |
+| 2. Hover/active | Superseded 2026-09-11 by #533: the spike lands on the fixed ladder {200..800 step 100}; no role, hover, or accentRef coupling. Hover 650/350 and active 750/250 are off the ladder and render at `b`; 500 is on it | Roles alias primitives, so a spike lives on stops. A fixed ladder is scheme- and accent-invariant and needs no role table in the engine (the earlier role-derived set was ratified, then replaced) | Ratified (#533) |
 | 3. Data hue rule | Even 45° spacing from primary plus an integer offset maximising min distance to chromatic brand hues (chroma >= 20) | Deterministic, pure, brute-force testable, no name matching; works for unevenly spread brands because the offset search only needs one free parameter | No |
 | 4. Token ceiling | 848 role variables and 576 primitives per Figma file at 16 palettes, under the 5,000 per collection ceiling; modes unchanged | Counted from 53 and 25 + 11 per palette. CSS and JSON exports double in size, which is a file-size note, not a limit | No |
 | 5. Migration | Pre-v2 snapshots stamp `baseIntensity 100` (look preserved); the shipped default is also 100 | Same principle as the `hueSpace` legacy stamp: a saved kit never changes appearance on upgrade | No |

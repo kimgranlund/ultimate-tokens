@@ -161,17 +161,16 @@ Two global controls, plus one per-palette override:
 | Control | Range | Default | Purpose |
 |---------|-------|---------|---------|
 | `baseIntensity` | 0–100 | 100 | the chroma fraction every non-identity stop emits at |
-| `keyIntensity` | 0–100 | 100 | how far the identity stops (below) are lifted back toward full chroma |
+| `keyIntensity` | 0–100 | 100 | how far the identity ladder stops (below) are lifted back toward full chroma |
 | `palette.intensity` | 0–100, optional | absent (inherits) | per-palette override of `baseIntensity`; resolved as `palette.intensity ?? controls.baseIntensity` |
 
-**Identity stops** are the solid ramp stops the five identity roles (the prime accent and its
-`-Dim`/`-Bright`/`-Low`/`-High` variants) resolve to, across both Light and Dark. Computed from the
-already-resolved role list (`identityStops(roles)` in `semantic.js`, called *after* `applyAccentRef`,
-never unioned with a static set): under `accentRef: "mode"` (the default) the set is
-`{350, 400, 450, 550, 650, 700}` (`DEFAULT_IDENTITY_STOPS` in `tonal.js`); under `accentRef: "single"`
-the prime role resolves to 500/500 instead, so the set becomes `{350, 400, 500, 650, 700}` and 450/550
-fall out to ordinary (non-identity) stops. `test/engine/semantic.mjs` gates the two literals against
-each other so they cannot drift apart.
+**Identity stops** are the FIXED seven-stop ladder `{200, 300, 400, 500, 600, 700, 800}`
+(`IDENTITY_STOPS` in `tonal.js`): prime 500 and three steps either side, the same in both Light and
+Dark, independent of `accentRef` and of the role table. Ratified 2026-09-11 under issue #533; this
+supersedes the role-derived set (`{350, 400, 450, 550, 650, 700}`, with a `"single"` variant) that
+#509 first shipped. `identityStops()` returns the ladder and ignores any argument. Note the prime
+ROLE `{n}` still resolves 550/450 (the role table is frozen), so the role itself sits off the ladder
+and renders at the base fraction; the ladder is a stop-space concept, not a role-space one.
 
 `intensityAt` is the per-stop factor:
 
@@ -194,12 +193,11 @@ At the shipped default (`baseIntensity 100`, any `keyIntensity`), `I(stop) = 1` 
 emitted stop is byte-identical to the pre-intensity engine, for every palette, control set, and both
 ramp paths (the tonal verifier's own legacy-invariance proof). Away from 100, the effect is a **muted
 base with key-stop spikes**: every stop *except* the identity stops emits at the reduced fraction `b`,
-while the identity stops are lifted back toward full chroma by `k`, a discrete step, not a smooth
-falloff around 500 (a neighbour-falloff envelope would re-spike the identity stops themselves, so it
-is explicitly out of scope). The active-state stops (750/250) are never identity stops under either
-accent mode, so they always emit at the muted `b` fraction alongside the rest of the ramp.
+while the ladder stops are lifted back toward full chroma by `k`, a discrete step at each of the
+seven, not a smooth falloff. Every quarter stop (250, 350, 450, 550, 650, 750) and every half-step
+is off the ladder and emits at the muted `b` fraction, whatever `accentRef` says.
 
 Worked example: default Primary (`hue 267, chroma 95`), `baseIntensity 40`, `keyIntensity 100`,
-`accentRef "mode"`: stops `{350, 400, 450, 550, 650, 700}` emit at `0.95 * m(stop)` (the §5 damping
-curve, unchanged); every other stop (500, 750, 250 included) emits at `0.95 * 0.40 * m(stop)` before
-the gamut clamp. Tones (from §4) are identical at every intensity; only chroma moves.
+any `accentRef`: stops `{200, 300, 400, 500, 600, 700, 800}` emit at `0.95 * m(stop)` (the §5
+damping curve, unchanged); every other stop (450, 550, 750, 250 included) emits at
+`0.95 * 0.40 * m(stop)` before the gamut clamp. Tones (from §4) are identical at every intensity; only chroma moves.
