@@ -60,11 +60,13 @@ export const DOMAINS = {
   dampCurve: { kind: "number", min: 0.5, max: 4, default: 1.5 },
   dampAmp: { kind: "number", min: 0, max: 100, default: 0 },
   dampBias: { kind: "number", min: -100, max: 100, default: 0 },
-  // ramp-shaping intensity (see tonal.js DEFAULT_CONTROLS.baseIntensity/keyIntensity, SPEC
-  // spec-muted-base-key-spikes REQ-001/010). Both default 100 — a fresh/absent-field doc renders
-  // exactly as today (legacy invariance, REQ-003/007).
+  // ramp-shaping intensity (baseIntensity) and the prime-system's own chroma control (primeChroma; see
+  // tonal.js DEFAULT_CONTROLS, SPEC spec-muted-base-key-spikes REQ-001/010/050..057). Both default 100 —
+  // a fresh/absent-field doc renders exactly as today (legacy invariance, REQ-003/007). primeChroma was
+  // named keyIntensity through schema v2; REQ-011/R4 renames it at v3 (RENAME_MAPS below) — DOMAINS no
+  // longer lists keyIntensity at all, so a v3+ doc that still somehow carries it gets it loudly dropped.
   baseIntensity: { kind: "number", min: 0, max: 100, default: 100 },
-  keyIntensity: { kind: "number", min: 0, max: 100, default: 100 },
+  primeChroma: { kind: "number", min: 0, max: 100, default: 100 },
   // Hue space (see tonal.js DEFAULT_CONTROLS.hueSpace). Default "oklch" (the slider value IS the OKLCH
   // hue). A doc PERSISTED with hueSpace:"cam16" round-trips as cam16 (legacy preserved); an absent field
   // hydrates to "oklch" (the new default). The legacy-storage stamp (app.js openSet) keeps a pre-hueSpace
@@ -163,6 +165,9 @@ export function clampPalette(p) {
   // intensity (REQ-010) is OPTIONAL — a per-palette override of the global `baseIntensity` (0..100),
   // same absent-means-inherit shape as cuspPull. Absent → inherit controls.baseIntensity.
   if (Number.isFinite(src.intensity)) out.intensity = clampNumber(src.intensity, 0, 100);
+  // primeChroma (REQ-010) is OPTIONAL — a per-palette override of the global `primeChroma` (0..100),
+  // same absent-means-inherit shape as cuspPull/intensity. Absent → inherit controls.primeChroma.
+  if (Number.isFinite(src.primeChroma)) out.primeChroma = clampNumber(src.primeChroma, 0, 100);
   // STORY (optional, from a curated preset): the source color's evocative name, a one-line
   // description, and its role in the set. Kept as-is iff present (free strings / known role).
   if (typeof src.colorName === "string" && src.colorName) out.colorName = src.colorName;
@@ -226,7 +231,7 @@ function clampOverrides(o) {
 // MUST add its own RENAME_MAPS entry here and bump CURRENT_SCHEMA_VERSION, in the SAME change that
 // renames it. This is not a one-off fix for the 2026-07-13 voices; it's how every rename ships from
 // now on, the same way a Figma variable rename ships its FIGMA_MIGRATIONS entry (TKT-0012).
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 // DROPPED_KEYS (TKT-0455) — the loud-fail accounting channel. hydrate() attaches the report of every
 // unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
@@ -258,6 +263,15 @@ const RENAME_MAPS = [
     // (also 100 today) — this stamp only fires for a doc that PREDATES the field existing at all.
     version: 2,
     stampIntensity: true,
+  },
+  {
+    // the keyIntensity -> primeChroma rename (SPEC spec-muted-base-key-spikes REQ-011, R4, EX-9): the
+    // retired ramp-spike control's persisted field now carries the prime system's own chroma control
+    // under its real name. Value carried onto primeChroma; the old key dropped; a doc that ALREADY
+    // carries primeChroma (e.g. one that picked up a fresh value mid-upgrade) is never clobbered by the
+    // stale keyIntensity — the same never-clobber shape renameKeyedMap already applies to renameVoices.
+    version: 3,
+    renameControls: { keyIntensity: "primeChroma" },
   },
 ];
 
@@ -305,6 +319,16 @@ function applyRenameMaps(snapshot) {
     }
     if (entry.stampIntensity && s && typeof s.baseIntensity !== "number") {
       s = { ...s, baseIntensity: 100 };
+    }
+    // renameControls: an old top-level control name -> new name, carrying the value across (never
+    // clobbering an already-present new-name value) — the REQ-011/R4 keyIntensity->primeChroma rename.
+    if (entry.renameControls && s && typeof s === "object") {
+      for (const oldKey of Object.keys(entry.renameControls)) {
+        if (!(oldKey in s)) continue;
+        const newKey = entry.renameControls[oldKey];
+        const { [oldKey]: oldVal, ...rest } = s;
+        s = newKey in rest ? rest : { ...rest, [newKey]: oldVal };
+      }
     }
   }
   return s;
@@ -361,6 +385,12 @@ export function hydrate(snapshot) {
     if (typeof console !== "undefined") console.warn(`[persist] dropped unknown ${facet} key ${JSON.stringify(key)} (${reason}) — stored state for it is gone`);
   };
 
+  // keyIntensity (REQ-011, TKT-0455): DOMAINS no longer lists it — applyRenameMaps already carries it
+  // onto primeChroma for any doc that predates the v3 rename, so a bare keyIntensity surviving to here
+  // can only belong to a doc whose schemaVersion already claims v3+ (the rename was skipped). That's a
+  // stray leftover, not a legacy doc — report it loudly instead of letting the allowlist silently drop it.
+  if (typeof s.keyIntensity === "number") drop("controls", "keyIntensity", "renamed to primeChroma at schema v3; a v3+ snapshot should never carry it");
+
   const result = {
     curve: clampEnum(s.curve, DOMAINS.curve.values, DOMAINS.curve.default),
     tension: clampNumber(s.tension, DOMAINS.tension.min, DOMAINS.tension.max),
@@ -371,7 +401,7 @@ export function hydrate(snapshot) {
     dampAmp: clampNumber(s.dampAmp ?? DOMAINS.dampAmp.default, DOMAINS.dampAmp.min, DOMAINS.dampAmp.max),
     dampBias: clampNumber(s.dampBias ?? DOMAINS.dampBias.default, DOMAINS.dampBias.min, DOMAINS.dampBias.max),
     baseIntensity: clampNumber(s.baseIntensity ?? DOMAINS.baseIntensity.default, DOMAINS.baseIntensity.min, DOMAINS.baseIntensity.max),
-    keyIntensity: clampNumber(s.keyIntensity ?? DOMAINS.keyIntensity.default, DOMAINS.keyIntensity.min, DOMAINS.keyIntensity.max),
+    primeChroma: clampNumber(s.primeChroma ?? DOMAINS.primeChroma.default, DOMAINS.primeChroma.min, DOMAINS.primeChroma.max),
     hueSpace: clampEnum(s.hueSpace, DOMAINS.hueSpace.values, DOMAINS.hueSpace.default),
     relChroma: s.relChroma === true, // boolean chroma-basis flag; absent/non-true -> false (legacy default)
     chromaFloor: clampNumber(s.chromaFloor ?? DOMAINS.chromaFloor.default, DOMAINS.chromaFloor.min, DOMAINS.chromaFloor.max),

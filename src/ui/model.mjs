@@ -30,6 +30,7 @@ import {
   DEFAULT_CONTROLS,
 } from "../engine/tonal.js";
 import { deriveDataHues } from "../engine/data-hues.mjs";
+import { primeSwatches, PRIME_STEPS } from "../engine/prime.mjs";
 import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef } from "../engine/semantic.js";
 import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
 import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
@@ -353,7 +354,10 @@ export function defaultDocument() {
     dampAmp: DEFAULT_CONTROLS.dampAmp,
     dampBias: DEFAULT_CONTROLS.dampBias,
     baseIntensity: DEFAULT_CONTROLS.baseIntensity,
-    keyIntensity: DEFAULT_CONTROLS.keyIntensity,
+    // primeChroma: the prime system's own chroma control (REQ-010/050..057). DEFAULT_CONTROLS has no
+    // primeChroma field yet — tonal.js's keyIntensity (100, kept inert by P1 for exactly this reuse)
+    // is its default source until a later unit adds one of its own.
+    primeChroma: DEFAULT_CONTROLS.keyIntensity,
     hueSpace: DEFAULT_CONTROLS.hueSpace,
     relChroma: DEFAULT_CONTROLS.relChroma,
     chromaFloor: DEFAULT_CONTROLS.chromaFloor,
@@ -430,7 +434,7 @@ function controlsOf(doc) {
     dampAmp: doc.dampAmp ?? DEFAULT_CONTROLS.dampAmp,
     dampBias: doc.dampBias ?? DEFAULT_CONTROLS.dampBias,
     baseIntensity: doc.baseIntensity ?? DEFAULT_CONTROLS.baseIntensity,
-    keyIntensity: doc.keyIntensity ?? DEFAULT_CONTROLS.keyIntensity,
+    primeChroma: doc.primeChroma ?? DEFAULT_CONTROLS.keyIntensity,
     hueSpace: doc.hueSpace ?? DEFAULT_CONTROLS.hueSpace,
     relChroma: doc.relChroma ?? DEFAULT_CONTROLS.relChroma,
     chromaFloor: doc.chromaFloor ?? DEFAULT_CONTROLS.chromaFloor,
@@ -458,7 +462,7 @@ function stateOf(doc) {
     dampAmp: c.dampAmp,
     dampBias: c.dampBias,
     baseIntensity: c.baseIntensity,
-    keyIntensity: c.keyIntensity,
+    primeChroma: c.primeChroma,
     hueSpace: c.hueSpace,
     relChroma: c.relChroma,
     chromaFloor: c.chromaFloor,
@@ -518,6 +522,9 @@ export function brandKit(doc, systems) {
     kit.palettes = on.map((p) => ({
       name: p.name, slug: slug(p.name), key: p.key,
       ramp: p.ramp.map((s) => ({ stop: s.stop, hex: s.hex })),
+      // prime (REQ-054/057): the seven identity swatches, keyed by step name — an object here (unlike
+      // projectView's ordered array) since a kit consumer looks a step up by name, not by position.
+      prime: Object.fromEntries(p.prime.map((sw) => [sw.step, { hex: sw.hex, oklch: keyCss(sw.oklch) }])),
     }));
     kit.roles = {};
     for (const p of on) {
@@ -749,9 +756,17 @@ export function projectView(doc) {
     // keyColors = retained brand colors placed on the ramp through the perceptual lens.
     const keyColors = placeKeyColors(p.keyColors, fullStops);
 
+    // prime = the seven per-palette identity swatches (REQ-050..057), on their own OKHSL ladder,
+    // independent of the ramp above — the key strip (REQ-034) and brandKit()/tokenCount() (REQ-057)
+    // read this. Built from prime.mjs's own primeSwatches(), never reimplemented here.
+    const primeTokens = primeSwatches(
+      { hue: p.hue, chroma: p.chroma, skew: p.skew, hueShift: p.hueShift, hueSameDir: p.hueSameDir, primeChroma: p.primeChroma },
+      controls,
+    );
+
     // ramp = 19 core display stops; fullRamp = all 25 EXPORT_STOPS (the extended view).
     palettes.push({
-      name: p.name, on: p.on !== false, key: keyHex, keyOklch, ramp, fullRamp: fullStops, roles, keyColors,
+      name: p.name, on: p.on !== false, key: keyHex, keyOklch, ramp, fullRamp: fullStops, roles, keyColors, prime: primeTokens,
       // curated story (present for preset palettes): the color's evocative name, role, description.
       ...(p.colorName ? { colorName: p.colorName } : {}),
       ...(p.colorRole ? { colorRole: p.colorRole } : {}),
@@ -843,10 +858,11 @@ export function appThemeCSS() {
 // app-footer "{tokens} tokens" readout). Counts only enabled palettes.
 export function tokenCount(doc) {
   const enabled = (doc.palettes ?? []).filter((p) => p.on !== false).length;
-  // per palette: 25 solids (EXPORT_STOPS) + scrims (SCRIM_BASES × SCRIM_STEPS) + the semantic --c-* roles.
-  // Derived from the engine (semanticRoles) so it can't drift — a hard-coded literal here had gone stale
-  // at 37 while the role set grew to 59. The count is palette-name-independent, so any name resolves it.
-  return enabled * (EXPORT_STOPS.length + SCRIM_BASES.length * SCRIM_STEPS.length + semanticRoles("primary").length);
+  // per palette: 25 solids (EXPORT_STOPS) + scrims (SCRIM_BASES × SCRIM_STEPS) + the semantic --c-* roles
+  // + the 7 prime swatches (REQ-057). Derived from the engine (semanticRoles/PRIME_STEPS) so it can't
+  // drift — a hard-coded literal here had gone stale at 37 while the role set grew to 59. The count is
+  // palette-name-independent, so any name resolves it.
+  return enabled * (EXPORT_STOPS.length + SCRIM_BASES.length * SCRIM_STEPS.length + semanticRoles("primary").length + PRIME_STEPS.length);
 }
 
 // Re-exports the app needs from the core (so app.js imports one module).
