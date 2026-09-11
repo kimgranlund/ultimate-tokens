@@ -341,7 +341,7 @@ into them.
 
 | Format | Placement |
 |---|---|
-| JSON | `palettes[n].group` |
+| JSON | `{paletteSlug}.group`, on each top-level palette object (JSON has no `palettes` wrapper — §3) |
 | DTCG | `palette.tokens.json` (RAW): `$extensions["com.ultimate-tokens"].group` on each palette's raw node — the semantic Light/Dark theme files never carry it |
 | CSS / CSS OKLCH / Tailwind | a `/* {name} · {group} */` comment line above each palette's block — metadata only, never a token |
 | Brand-kit (`brandKit()`) | `palettes[i].group`; `list_palettes` returns it |
@@ -372,5 +372,5 @@ wherever a surface has a slot for it; absence on an older export meant v1:
 | UI3 (Figma) | the `$schema` string's own trailing version, `figma-ui3-variables.color.schema.v{N}` |
 | CSS / CSS OKLCH / Tailwind / ShadCN | a first-line comment, `/* ultimate-tokens export schema {N} */` |
 | Brand-kit (`brandKit()`) | the `$schema` string's own trailing segment, `ultimate-tokens-brand-kit/{N}` (served as-is by `mcp/brand-kit-core.mjs`, which never itself reads or writes it); `SERVER.version` in `mcp/brand-kit-core.mjs` is a separate, hand-kept literal (that file ships standalone, no cross-file import) — bump it in step with `EXPORT_SCHEMA_VERSION` by convention, not by shared code |
-| DS bundle | `tokens.json`'s own `$schemaVersion`; DESIGN.md frontmatter's `tokensSchema` (Stitch/Make inherit both for free — same canonical spine) |
+| DS bundle | Claude Design profile only: `tokens.json`'s own `$schemaVersion` (`exportDesignSystemTokens`) and DESIGN.md frontmatter's `tokensSchema` (`exportDesignSystemSpine`). Stitch ships the same DESIGN.md (so inherits `tokensSchema`) but no `tokens.json` — no `$schemaVersion` there. Figma Make ships neither `DESIGN.md` nor `tokens.json` (its own `guidelines/foundations/color.md` + `styles.css` tree) — no schema stamp on any Make surface today, a real gap RP-8/E6 left open for that profile |
 | Panda CSS / Park UI | not emitted — a Panda/Park UI preset object has no metadata slot short of a comment, and neither `exportPandaModule`/`exportParkUiModule`'s two-line header carries one today |
