@@ -433,7 +433,9 @@ app.render();
 flushRaf();
 const sceneG0 = app.querySelector(".canvas-scene");
 const gPane = app.querySelector(".right-pane");
-const tensionInput = findIn(gPane, isRange); // first global slider in "even" = Tension
+// keyed by data-fk (not "first slider in the pane") — Base chroma/Prime chroma (SPEC
+// spec-muted-base-key-spikes REQ-032) now render ahead of Tension, unconditionally.
+const tensionInput = findIn(gPane, (e) => e.dataset && e.dataset.fk === "slider:Tension");
 ok(!!tensionInput, "found a global slider <input type=range>");
 const tStart = app.doc.tension;
 const tHistPre = app.history.length;
@@ -441,7 +443,7 @@ let gSame = true;
 for (let v = tStart + 1; v <= tStart + 6 && v <= 100; v++) {
   tensionInput.value = String(v);
   tensionInput.dispatch("input", {});
-  if (findIn(app.querySelector(".right-pane"), isRange) !== tensionInput) gSame = false;
+  if (findIn(app.querySelector(".right-pane"), (e) => e.dataset && e.dataset.fk === "slider:Tension") !== tensionInput) gSame = false;
 }
 ok(gSame, "(g) the global slider <input> is the SAME node throughout the drag");
 ok(app.doc.tension !== tStart, `(g) doc.tension updated during the drag (${app.doc.tension})`);
@@ -2572,6 +2574,94 @@ app.addStandardGeomModes(); flushRaf();
   ok(/@media \(min-width: 992px\) and \(max-width: 1279px\)/.test(files[0].css), "(std) the Tablet file is bounded both ends");
   ok(/@media \(max-width: 991px\)/.test(files[1].css) && !/min-width/.test(files[1].css), "(std) the Mobile file is open-ended below (no gap for the smallest viewports)");
 }
+
+// ── (bpc) Base chroma / Prime chroma sliders + per-palette Intensity (SPEC spec-muted-base-
+// key-spikes AC-032, slider portion — "Add data palettes"/"Re-derive" are U8's own scope) ──
+app.openSet(app.sets[0].id); flushRaf();
+app.setSegment("global"); app.render(); flushRaf();
+const baseChromaInput = findFk("slider:Base chroma");
+const primeChromaInput = findFk("slider:Prime chroma");
+ok(!!baseChromaInput && !!primeChromaInput, "(bpc1) Global tab has Base chroma + Prime chroma sliders");
+const gRightPane = app.querySelector(".right-pane");
+const gSliderFks = walk(gRightPane, (e) => e.dataset && /^slider:/.test(e.dataset.fk || "")).map((e) => e.dataset.fk);
+const bcIdx = gSliderFks.indexOf("slider:Base chroma"), pcIdx = gSliderFks.indexOf("slider:Prime chroma");
+ok(bcIdx >= 0 && pcIdx === bcIdx + 1, `(bpc2) Base chroma and Prime chroma are adjacent (got order ${JSON.stringify(gSliderFks)})`);
+baseChromaInput.value = "40"; baseChromaInput.dispatch("input", {});
+ok(app.doc.baseIntensity === 40, `(bpc3) the Base chroma slider writes doc.baseIntensity (got ${app.doc.baseIntensity})`);
+primeChromaInput.value = "70"; primeChromaInput.dispatch("input", {});
+ok(app.doc.keyIntensity === 70, `(bpc4) the Prime chroma slider writes doc.keyIntensity (got ${app.doc.keyIntensity})`);
+app.doc.baseIntensity = 100; app.doc.keyIntensity = 100; // restore the legacy-invariant default (REQ-007)
+
+app.setSegment("palette"); app.selectPalette(0); app.render(); flushRaf();
+const intensityInput = findFk("slider:Intensity");
+ok(!!intensityInput, "(bpc5) the palette inspector has an Intensity slider");
+const bpcSel = app.selectedIndex();
+intensityInput.value = "55"; intensityInput.dispatch("input", {});
+ok(app.doc.palettes[bpcSel].intensity === 55, `(bpc6) the Intensity slider writes palettes[i].intensity (got ${app.doc.palettes[bpcSel].intensity})`);
+delete app.doc.palettes[bpcSel].intensity; // restore absent (inherit) for later groups
+app.render(); flushRaf();
+
+// ── (ist) key swatch strip: five identity-role swatches before the ramp (SPEC spec-muted-
+// base-key-spikes AC-034) ──────────────────────────────────────────────────────────────
+const { projectView: projectViewIST } = await import("../../src/ui/model.mjs");
+app.openSet(app.sets[0].id); flushRaf();
+app.commit((d) => { d.accentRef = "mode"; }); flushRaf();
+app.setCanvasView("palettes"); app.colorMode = "light"; app.setStopsMode("core"); app.render(); flushRaf();
+const istScene0 = app.querySelector(".canvas-scene");
+const istStrips0 = walk(istScene0, (e) => e.classList && e.classList.contains("identity-strip"));
+ok(istStrips0.length > 0, `(ist1) every enabled ramp row has an identity strip (got ${istStrips0.length})`);
+const istSw0 = walk(istStrips0[0], (e) => e.classList && e.classList.contains("identity-swatch"));
+ok(istSw0.length === 5, `(ist2) the strip has exactly five swatches (got ${istSw0.length})`);
+ok(JSON.stringify(istSw0.map((e) => e.dataset.role)) === JSON.stringify(["brighter", "bright", "prime", "dim", "dimmer"]),
+  `(ist3) swatch labels are in order brighter/bright/prime/dim/dimmer (got ${JSON.stringify(istSw0.map((e) => e.dataset.role))})`);
+
+const istSwHex = (e) => (e.attrs.style.match(/background:(#[0-9a-fA-F]+)/) || [])[1];
+const istVp0 = (app._view || projectViewIST(app.doc)).palettes[0];
+const istRoleHex = (roles, suffix, side) => { const r = roles.find((x) => x.suffix === suffix); return side === "dark" ? r.darkHex : r.lightHex; };
+ok(
+  istSwHex(istSw0[0]) === istRoleHex(istVp0.roles, "-high", "light") &&
+  istSwHex(istSw0[1]) === istRoleHex(istVp0.roles, "-bright", "light") &&
+  istSwHex(istSw0[2]) === istRoleHex(istVp0.roles, "", "light") &&
+  istSwHex(istSw0[3]) === istRoleHex(istVp0.roles, "-dim", "light") &&
+  istSwHex(istSw0[4]) === istRoleHex(istVp0.roles, "-low", "light"),
+  "(ist4) each swatch's color equals the row palette's resolved role hex (light scheme, primaryHigh/Bright/prime/Dim/Low)",
+);
+
+// toggling the scheme swaps the swatch colors to the dark refs.
+app.colorMode = "dark"; app.render(); flushRaf();
+const istScene1 = app.querySelector(".canvas-scene");
+const istStrips1 = walk(istScene1, (e) => e.classList && e.classList.contains("identity-strip"));
+const istSw1 = walk(istStrips1[0], (e) => e.classList && e.classList.contains("identity-swatch"));
+ok(
+  istSwHex(istSw1[0]) === istRoleHex(istVp0.roles, "-high", "dark") &&
+  istSwHex(istSw1[2]) === istRoleHex(istVp0.roles, "", "dark"),
+  "(ist5) toggling the scheme swaps the strip to the dark-ref hexes",
+);
+ok(istSwHex(istSw1[0]) !== istSwHex(istSw0[0]) || istSwHex(istSw1[2]) !== istSwHex(istSw0[2]),
+  "(ist5b) the strip actually changed across the scheme toggle (light vs dark differ)");
+
+// under accentRef "single" the prime swatch equals the 500 stop hex.
+app.colorMode = "light";
+app.commit((d) => { d.accentRef = "single"; }); flushRaf();
+const istVp2 = (app._view || projectViewIST(app.doc)).palettes[0];
+const istStop500Hex = istVp2.fullRamp.find((s) => s.stop === 500).hex;
+const istScene2 = app.querySelector(".canvas-scene");
+const istStrips2 = walk(istScene2, (e) => e.classList && e.classList.contains("identity-strip"));
+const istSw2 = walk(istStrips2[0], (e) => e.classList && e.classList.contains("identity-swatch"));
+ok(istSwHex(istSw2[2]) === istStop500Hex, `(ist6) accentRef "single" — the prime swatch equals the 500 stop hex (got ${istSwHex(istSw2[2])} vs ${istStop500Hex})`);
+app.commit((d) => { d.accentRef = "mode"; }); flushRaf(); // restore the default for later groups
+
+// toggling stopsMode (19 vs 25 display stops) leaves the strip at five.
+app.setStopsMode("extended"); app.render(); flushRaf();
+const istScene3 = app.querySelector(".canvas-scene");
+const istStrips3 = walk(istScene3, (e) => e.classList && e.classList.contains("identity-strip"));
+const istSw3 = walk(istStrips3[0], (e) => e.classList && e.classList.contains("identity-swatch"));
+ok(istSw3.length === 5, `(ist7) toggling stopsMode leaves the strip at five swatches (got ${istSw3.length})`);
+app.setStopsMode("core"); app.render(); flushRaf();
+
+// the 53-role table gate and role-table.json are unchanged by this unit (AC-034) — a structural
+// sanity check, the real gate is test/engine/semantic.mjs's refs-canonical group.
+ok(istVp0.roles.length === 53, `(ist8) the resolved role count is unchanged at 53 (got ${istVp0.roles.length})`);
 
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {

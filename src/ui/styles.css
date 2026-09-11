@@ -616,6 +616,15 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 }
 .ramp-strip i:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
 
+/* identity strip — the five resolved identity-role swatches (brighter/bright/prime/dim/dimmer),
+   discrete chips (not a joined ramp) so they read as roles, not stops. */
+.identity-strip { display: flex; gap: 3px; margin-bottom: 6px; }
+.identity-swatch {
+  width: 26px; height: 32px; display: block; position: relative;
+  border-radius: 4px; box-shadow: var(--shadow);
+}
+.identity-swatch:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
+
 /* scrim view — 7 translucent 750-base overlays per palette, painted over a neutral
    checkerboard (the universal "this is translucent" indicator) so the alpha reads clearly. */
 .scrim-strip { display: flex; box-shadow: var(--shadow); border-radius: 6px; overflow: hidden; width: fit-content; }
