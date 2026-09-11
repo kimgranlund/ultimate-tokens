@@ -15,13 +15,16 @@ const C = (palettes) => ({ palettes, curve: "logistic", tension: 0, lmin: 5, lma
 const ALL = RT.defaults.map((p) => ({ ...p, on: true }));
 const enabledCount = (st) => st.palettes.filter((p) => p.on !== false).length;
 
-// ── DATA PALETTE FIXTURES (#516, U7 of #503) — #515/U6's model.mjs mintDataPalettes/defaultDocument
-// work may or may not have merged yet, so these are constructed directly, this repo's standard
-// engine-test pattern (fixture palette objects, not a live default document), independent of it.
+// ── DATA PALETTE FIXTURES (#516, U7 of #503) — constructed directly, this repo's standard
+// engine-test pattern (fixture palette objects, not a live default document), rather than relying on
+// RT.defaults' own data-N entries. #515/U6 has since landed real data-1..8 into role-table.json, so
+// ALL now already carries 16 (8 brand + 8 data) — BRAND_ONLY isolates the 8 brand families as the
+// stable "no data enabled" baseline these gates compare against.
 const dataPalette = (i, hue, chroma) => ({ name: `Data ${i}`, hue, chroma, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true });
-const PRIMARY_CHROMA = ALL.find((p) => p.name === "Primary").chroma; // REQ-022: data chroma follows primary's
+const BRAND_ONLY = ALL.filter((p) => !X.isDataPalette(p));
+const PRIMARY_CHROMA = BRAND_ONLY.find((p) => p.name === "Primary").chroma; // REQ-022: data chroma follows primary's
 const DATA_8 = [30, 75, 120, 165, 210, 255, 300, 345].map((hue, i) => dataPalette(i + 1, hue, PRIMARY_CHROMA));
-const ALL_WITH_DATA = [...ALL, ...DATA_8];
+const ALL_WITH_DATA = [...BRAND_ONLY, ...DATA_8];
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 
@@ -323,7 +326,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
 
   // EX-7 half 2 — data palettes all disabled: byte-identical to the pre-feature (no-data) baseline.
   const allDataOff = ALL_WITH_DATA.map((p) => (/^Data \d+$/.test(p.name) ? { ...p, on: false } : p));
-  if (X.exportShadcn(C(allDataOff)) !== X.exportShadcn(C(ALL))) FAIL("data-palette", "EX-7: with data palettes disabled, shadcn output differs from the pre-feature (no-data) baseline");
+  if (X.exportShadcn(C(allDataOff)) !== X.exportShadcn(C(BRAND_ONLY))) FAIL("data-palette", "EX-7: with data palettes disabled, shadcn output differs from the pre-feature (no-data) baseline");
 
   // fallback exclusion (REQ-031) — an adversarial fixture: data-1/data-2 listed FIRST, two renamed
   // brand palettes ("Aurora"/"Nightfall") matching NEITHER the neutral NOR the primary regex, so a
@@ -1078,8 +1081,8 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
   }
 
   // no data palettes enabled → no data tier, no Data series section (the pre-#516 shape, untouched).
-  const dsNoData = X.dsColorRoles(C(ALL));
-  const mdNoData = X.exportDesignSystemSpine(C(ALL), tsc, gsc);
+  const dsNoData = X.dsColorRoles(C(BRAND_ONLY));
+  const mdNoData = X.exportDesignSystemSpine(C(BRAND_ONLY), tsc, gsc);
   if (dsNoData.dataFamilies.length !== 0) FAIL("design-system-data", "dataFamilies non-empty with no data palettes enabled");
   if (mdNoData.includes("## Data series")) FAIL("design-system-data", "DESIGN.md carries a Data series section with no data palettes enabled");
 
