@@ -77,7 +77,7 @@ Full table with exact `light`/`dark` refs: `data/role-table.json` → `roleTable
 > each ramp row: the palette's **prime system**, `brightest · brighter · bright · prime · dim · dimmer
 > · dimmest`, lightest first (SPEC 0.2.0 REQ-034, issue #533, ratified 2026-09-11; supersedes the
 > five role-mapped swatches of #503). Those seven are primitives-tier tokens of their own (`prime`
-> group, knowledge-02 §8.2, knowledge-04), not ramp stops and not roles: the labels are display text
+> group, knowledge-02 §8.3, knowledge-04), not ramp stops and not roles: the labels are display text
 > over the prime tokens, no role key or suffix is named that way, roles never alias prime tokens, and
 > the 53-role table is unchanged. Roles remain the only mode-flipping layer; the prime set is one set,
 > identical in Light and Dark.
