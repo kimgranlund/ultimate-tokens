@@ -1252,10 +1252,39 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   for (const sec of ["## Overview", "## Colors", "## Typography", "## Components", "## Do's and Don'ts"]) if (!mdData.includes(sec)) FAIL("design-system-prime", `spine missing ${sec} once Prime swatches is present`);
   if (!(mdData.indexOf("## Colors") < mdData.indexOf("## Prime swatches") && mdData.indexOf("## Prime swatches") < mdData.indexOf("## Typography"))) FAIL("design-system-prime", "Prime swatches section is not positioned between Colors and Typography");
 
-  // Stitch shares the SAME canonical spine byte-for-byte (one core, two uploads).
+  // Stitch shares the SAME canonical spine byte-for-byte (one core, two uploads) — the byte-identity
+  // check above already proves Stitch's DESIGN.md carries the SAME Prime swatches section and every
+  // family reference the Claude Code profile does; asserted explicitly here too so the Stitch profile
+  // is its own named proof, not just inherited from the Claude Code assertions above.
   const stitchFiles = X.exportDesignSystemStitchBundle(stateData, tsc, gsc, { date: "2026-09-11" });
   const stitchMd = stitchFiles.find((f) => f.name === "DESIGN.md").data;
   if (stitchMd !== mdData) FAIL("design-system-prime", "Stitch DESIGN.md diverges from the Claude Code DESIGN.md once Prime swatches is present");
+  if (!stitchMd.includes("## Prime swatches")) FAIL("design-system-prime", "Stitch DESIGN.md missing the Prime swatches section");
+  for (const f of allFamilies) if (!stitchMd.includes(`${f}-prime-`)) FAIL("design-system-prime", `Stitch DESIGN.md Prime swatches section missing a reference to ${f}`);
+
+  // Figma Make profile (a DIFFERENT shape — no DESIGN.md/tokens.json, a guidelines/ tree): the prime
+  // section lives in foundations/color.md and the seven-step values live as raw CSS custom properties
+  // in styles.css's FULL token layers appendix (dsFullLayersCss) — proven per-profile, not inherited
+  // from the byte-identity check above (Make's carrier is NOT byte-identical to DESIGN.md).
+  const pfx = X.cssPrefixOf(stateData);
+  const makeFiles = X.exportDesignSystemMakeBundle(stateData, tsc, gsc, { date: "2026-09-11" });
+  const makeByName = Object.fromEntries(makeFiles.map((f) => [f.name, f.data]));
+  const makeColorMd = makeByName["guidelines/foundations/color.md"];
+  const makeStyles = makeByName["guidelines/styles.css"];
+  if (!makeColorMd.includes("## Prime swatches")) FAIL("design-system-prime", "Make foundations/color.md missing the Prime swatches section with data palettes enabled");
+  for (const f of allFamilies) {
+    if (!makeColorMd.includes(`${f}-prime-`)) FAIL("design-system-prime", `Make foundations/color.md Prime swatches section missing a reference to ${f}`);
+    for (const step of PRIME_STEPS) {
+      const want = rawJson[f] && rawJson[f].prime[step];
+      if (!want) continue;
+      if (!makeStyles.includes(`--${pfx}-${f}-prime-${step}: ${want.oklch};`)) FAIL("design-system-prime", `Make styles.css missing/mismatched --${pfx}-${f}-prime-${step} (want ${want.oklch})`);
+    }
+  }
+  // unconditional like Claude Code/Stitch — present even with NO data palettes enabled.
+  const makeFilesNoData = X.exportDesignSystemMakeBundle(C(BRAND_ONLY), tsc, gsc, { date: "2026-09-11" });
+  const makeColorMdNoData = Object.fromEntries(makeFilesNoData.map((f) => [f.name, f.data]))["guidelines/foundations/color.md"];
+  if (!makeColorMdNoData.includes("## Prime swatches")) FAIL("design-system-prime", "Make foundations/color.md missing the Prime swatches section with no data palettes enabled");
+  for (const f of X.dsColorRoles(C(BRAND_ONLY)).families) if (!makeColorMdNoData.includes(`${f}-prime-`)) FAIL("design-system-prime", `Make foundations/color.md Prime swatches section (no data) missing a reference to ${f}`);
 
   // a real bundle run still clears every non-G1 §8 gate with the new section present.
   const files = X.exportDesignSystemBundle(stateData, tsc, gsc, { date: "2026-09-11" });

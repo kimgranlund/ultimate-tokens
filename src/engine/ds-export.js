@@ -1303,6 +1303,27 @@ function dsMakeSetupMd(typeSc) {
   ].join("\n") + "\n";
 }
 
+// dsMakePrimeSection — the Make-profile equivalent of exportDesignSystemSpine's "Prime swatches"
+// section (REQ-054): unconditional (every enabled palette carries a prime system), lists every
+// family (including data-N) with its raw CSS var pattern. The actual seven values per family live
+// in `styles.css`'s FULL token layers appendix (dsFullLayersCss), not a tokens.json this profile
+// doesn't ship.
+function dsMakePrimeSection(ds, pfx) {
+  const primeFamilies = Object.keys(ds.prime || {});
+  if (!primeFamilies.length) return [];
+  return [
+    "## Prime swatches", "",
+    "Every palette also carries its own **prime** system — seven identity swatches on a private",
+    "OKHSL ladder, lightest to darkest: `brightest`, `brighter`, `bright`, `prime`, `dim`, `dimmer`,",
+    "`dimmest`. They are primitives-tier and mode-independent (the SAME seven swatches in both",
+    "schemes) — `styles.css`'s FULL token layers appendix carries the full seven-step value per",
+    "family. Reach for `prime` as a family's own signature colour outside a fill/on-fill pair (a",
+    "sparkline, a small identity mark, a legend swatch); it is never a button fill — buttons use",
+    "the family classes above.", "",
+    primeFamilies.map((f) => `- \`--${pfx}-${f}-prime-{step}\` (\`${f}\`)`).join("\n"),
+  ];
+}
+
 // dsMakeColorMd — shadcn/Tailwind class prose (fill/on pairs, states as modifiers) PLUS a
 // contrast-verified grammar-token reference table (D2/D3 carrier — dsColorRoles tokens are
 // the kit's resolved role values verbatim) PLUS the D4 paste-ready light-dark()
@@ -1357,6 +1378,7 @@ function dsMakeColorMd(ds, pfx, shadcnCss) {
     "| Token | Fill (Light) | Fill (Dark) | On (Light) | On (Dark) | Use |",
     "|---|---|---|---|---|---|",
     ...rows,
+    "", ...dsMakePrimeSection(ds, pfx),
     "", "## Runtime alternative — `light-dark()` (illustrative)", "",
     "Do NOT paste this into the app in place of `styles.css` — Figma Make's own dark-mode toggle",
     "is the `.dark` class shadcn already reads. This block re-expresses the SAME `:root`/`.dark`",
@@ -1531,6 +1553,15 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
   for (const p of derivedAll(state)) for (const r of p.roles) {
     L.push(`  --${pfx}-${p.n}${r.suffix}: ${roleOklch(r.light)};`);
     D.push(`  --${pfx}-${p.n}${r.suffix}: ${roleOklch(r.dark)};`);
+  }
+  // PRIME RAW vars (REQ-054) — mirrors exports.js's own --{pfx}-{family}-prime-{step} vars
+  // byte-for-byte (same pfx, same formula); mode-independent, so the SAME value lands in both
+  // :root and .dark (unlike the role vars above, prime is never re-derived per mode).
+  for (const p of derivedAll(state)) for (const step of PRIME_STEPS) {
+    const sw = p.prime[step];
+    const val = oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] });
+    L.push(`  --${pfx}-${p.n}-prime-${step}: ${val};`);
+    D.push(`  --${pfx}-${p.n}-prime-${step}: ${val};`);
   }
   const dims = [];
   if (geomSc) {
