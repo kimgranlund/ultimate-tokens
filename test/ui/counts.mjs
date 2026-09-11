@@ -8,7 +8,7 @@
 // literal here and the engine's real count is exactly what the assertions below are meant to catch.
 
 export const ROLES = 53;                   // semantic roles per palette (docs/reference/data/role-table.json)
-export const DEFAULT_PALETTES = 8;          // palettes in a freshly opened/seeded set
+export const DEFAULT_PALETTES = 16;         // palettes in a freshly opened/seeded set (8 brand + 8 data, REQ-024)
 export const CATEGORIES = 8;                // palette "categories" in the bundled gallery-hub index
 export const CATEGORY_PRESETS = 48;         // presets per non-"brands" category (the uniform sourced/decorative scale)
 export const BRAND_PRESETS = 7;             // presets in the small, real-identity "brands" category

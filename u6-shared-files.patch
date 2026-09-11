@@ -1,0 +1,88 @@
+diff --git a/src/ui/model.mjs b/src/ui/model.mjs
+index 38b769a..6a194b5 100644
+--- a/src/ui/model.mjs
++++ b/src/ui/model.mjs
+@@ -29,6 +29,7 @@ import {
+   EXPORT_STOPS,
+   DEFAULT_CONTROLS,
+ } from "../engine/tonal.js";
++import { deriveDataHues } from "../engine/data-hues.mjs";
+ import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef } from "../engine/semantic.js";
+ import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
+ import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
+@@ -265,6 +266,19 @@ const DEFAULT_PALETTES = [
+   { name: "Success", hue: 145, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, on: true },
+   { name: "Warning", hue: 70, chroma: 100, skew: 40, lift: 15, hueShift: 0, hueSameDir: false, on: true },
+   { name: "Danger", hue: 27, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, on: true },
++  // Data 1..8 (REQ-024): derived ONCE via deriveDataHues(primaryHue 267, the 8 brand hues above
++  // filtered to chroma>=20, count 8) -> phi 20, hues [287,332,17,62,107,152,197,242]; chroma
++  // follows Primary's own chroma (H4). Recorded here as literal CAM16 seeds, parity-mirrored in
++  // role-table.json `defaults`, exactly like the 8 brand rows above (the build unit's own printed
++  // derivation is the source of these numbers, not a hand guess).
++  { name: "Data 1", hue: 287, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
++  { name: "Data 2", hue: 332, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
++  { name: "Data 3", hue: 17, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
++  { name: "Data 4", hue: 62, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
++  { name: "Data 5", hue: 107, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
++  { name: "Data 6", hue: 152, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
++  { name: "Data 7", hue: 197, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
++  { name: "Data 8", hue: 242, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
+ ];
+ 
+ // configFromVariables — a best-effort PARAMETRIC seed from a Figma file's raw-colors variables,
+@@ -353,6 +367,55 @@ export function defaultDocument() {
+   };
+ }
+ 
++// isDataSlug — a palette's slug matches the data-family convention ("Data 1" -> "data-1"), per
++// REQ-020..024. Kept local (a one-line regex, not worth its own module); exports.js/ds-export.js
++// gain their own isDataPalette in a later build unit (U7) over the same rule.
++const isDataSlug = (name) => /^data-\d+$/.test(slug(name));
++
++// brandHuesOf — REQ-021: the hue of every NON-data palette whose chroma >= 20 (a tinted neutral
++// counts, a near-achromatic one doesn't; no name matching needed).
++function brandHuesOf(palettes) {
++  return (palettes || [])
++    .filter((p) => !isDataSlug(p.name) && (p.chroma ?? 0) >= 20)
++    .map((p) => p.hue);
++}
++
++// mintDataPalettes(doc) -> palette[] — REQ-020..022: 8 fresh "Data N" palette objects derived from
++// the document's own Primary hue and its brand hues, or [] when the document has no Primary
++// palette to derive from (nothing to anchor the derivation on). Pure: does not mutate `doc` or
++// append anything itself — the caller (the U8 "Add data palettes" action) does that.
++export function mintDataPalettes(doc) {
++  const palettes = (doc && doc.palettes) || [];
++  const primary = palettes.find((p) => slug(p.name) === "primary");
++  if (!primary) return [];
++  const { hues } = deriveDataHues(primary.hue, brandHuesOf(palettes), 8);
++  return hues.map((hue, i) => ({
++    name: `Data ${i + 1}`,
++    hue,
++    chroma: primary.chroma, // H4: data chroma follows the primary's own chroma
++    skew: 0,
++    lift: 0,
++    hueShift: 0,
++    hueSameDir: false,
++    on: true,
++  }));
++}
++
++// rederiveDataHues(doc) -> doc — REQ-023: the explicit "Re-derive data hues" action. Rewrites ONLY
++// the `hue` of palettes whose slug matches /^data-\d+$/, in place order, from a fresh
++// deriveDataHues call against the document's CURRENT Primary hue + brand hues; every other field
++// (chroma, name, skew, …) is left untouched. A document with no Primary, or no data palettes, is
++// returned unchanged (nothing to anchor or rewrite).
++export function rederiveDataHues(doc) {
++  const palettes = (doc && doc.palettes) || [];
++  const primary = palettes.find((p) => slug(p.name) === "primary");
++  const dataCount = palettes.filter((p) => isDataSlug(p.name)).length;
++  if (!primary || dataCount === 0) return doc;
++  const { hues } = deriveDataHues(primary.hue, brandHuesOf(palettes), dataCount);
++  let i = 0;
++  return { ...doc, palettes: palettes.map((p) => (isDataSlug(p.name) ? { ...p, hue: hues[i++] } : p)) };
++}
++
+ // controlsOf — the tonal-controls slice of a document, defaulting any missing.
+ function controlsOf(doc) {
+   return {

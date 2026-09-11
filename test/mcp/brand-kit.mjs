@@ -16,7 +16,7 @@ const ok = (c, m) => { if (!c) fails.push(m); };
 
 // 1. generate a real brand kit from the default doc (no systems arg → all three, the back-compat default)
 const kit = brandKit(defaultDocument());
-ok(kit.$schema === "ultimate-tokens-brand-kit/1" && kit.palettes.length === 8, `brandKit shape: ${kit.palettes.length} palettes (want 8)`);
+ok(kit.$schema === "ultimate-tokens-brand-kit/1" && kit.palettes.length === 16, `brandKit shape: ${kit.palettes.length} palettes (want 16)`);
 // ICONS — the kit ALWAYS names an icon library (an agent must never pick its own).
 ok(kit.icons && kit.icons.family === "Phosphor" && kit.icons.variant === "regular", `brandKit serves the default icon system: ${JSON.stringify(kit.icons)}`);
 {
@@ -116,7 +116,7 @@ try {
   ok(resUris.includes("brand://type") && resUris.includes("brand://geometry"), `resources/list has brand://type + brand://geometry (${resUris})`);
 
   const pal = await callTool("list_palettes", {});
-  ok(Array.isArray(pal) && pal.length === 8 && /^#|^oklch/.test(pal[0].key || ""), "list_palettes → 8 palettes with identity colours");
+  ok(Array.isArray(pal) && pal.length === 16 && /^#|^oklch/.test(pal[0].key || ""), "list_palettes → 16 palettes with identity colours");
 
   const tl = await callTool("resolve_token", { role: "primary/primary", scheme: "light" });
   const td = await callTool("resolve_token", { role: "primary/primary", scheme: "dark" });

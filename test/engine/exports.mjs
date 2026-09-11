@@ -124,9 +124,13 @@ if (cssChecked === 0) FAIL("css-resolves", "no --c-* light-dark(var,var) lines f
 }
 
 // ── hpg-export-padding (3-digit stop padding in CSS var names) ───────────────────────────
-for (const m of css.matchAll(/--c-[a-z0-9-]+?-(\d+)(?:-\d+)?\s*:/gi)) {
+// GREEDY prefix (not lazy): a lazy `+?` stops at the FIRST digit run, which a data-family slug like
+// "data-1" produces before the real stop (e.g. "--c-data-1-500:" would lazily capture "1", not "500").
+// Only a numeric run >= 50 is a real stop (every stop, padded or not, is 50..950); a data slug's own
+// trailing digit (1..8) is excluded, so e.g. the bare role var "--c-data-1:" is correctly ignored.
+for (const m of css.matchAll(/--c-[a-z0-9-]+-(\d+)\s*:/gi)) {
   const stop = m[1];
-  if (/^\d+$/.test(stop) && stop.length < 3) FAIL("padding", `unpadded stop in --c-…-${stop}`);
+  if (/^\d+$/.test(stop) && Number(stop) >= 50 && stop.length < 3) FAIL("padding", `unpadded stop in --c-…-${stop}`);
 }
 
 // ── on-color policy threads to exports (OD-001): "fixed" = on{N} pinned 050 both modes;
