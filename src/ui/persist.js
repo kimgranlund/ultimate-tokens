@@ -2,6 +2,14 @@ import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
 import { COLLECTIONS } from "../engine/collections.js";
 
+// PALETTE_GROUPS (ticket #556) — the four canvas group ids. Declared HERE, not in model.mjs: this
+// codebase's normal dependency direction is model.mjs importing FROM persist.js (never the
+// reverse), so this is the single canonical definition — model.mjs imports this same array back
+// (it re-exports it too) rather than carrying its own independently-drifting copy. model.mjs's
+// paletteGroup(p) still owns the RUNTIME default-by-name rule; this export is only the shape
+// persist.js validates a stored `group` value against.
+export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
+
 // persist.js — UI state persistence for the HCT Palette Generator.
 //
 // A PURE serialize/hydrate transform pair over the tool's `State` (spec-draft §7,
@@ -93,6 +101,11 @@ export const DOMAINS = {
     skew: { kind: "number", min: -100, max: 100 },
     lift: { kind: "number", min: -40, max: 40 },
     hueShift: { kind: "number", min: -60, max: 60, default: 0 }, // edge hue rotation
+    // canvas group (ticket #556) — OPTIONAL, same absent-means-derive-on-read shape as
+    // colorRole below: an explicit member of PALETTE_GROUPS round-trips as-is; absent/invalid
+    // is left absent (NOT stamped with a computed default here) — model.mjs's paletteGroup()
+    // is the single place the default-by-name rule is computed, at every read site.
+    group: { kind: "enum", values: PALETTE_GROUPS },
   },
 };
 
@@ -173,6 +186,10 @@ export function clampPalette(p) {
   if (typeof src.colorName === "string" && src.colorName) out.colorName = src.colorName;
   if (typeof src.description === "string" && src.description) out.description = src.description;
   if (src.colorRole === "dominant" || src.colorRole === "supporting" || src.colorRole === "accent") out.colorRole = src.colorRole;
+  // group (ticket #556) is OPTIONAL — a per-palette override of the canvas group it renders
+  // under. Absent/invalid stays absent (round-trip preserved); the effective group for a
+  // palette with none is computed on demand by model.mjs's paletteGroup(), never here.
+  if (DOMAINS.palette.group.values.includes(src.group)) out.group = src.group;
   return out;
 }
 

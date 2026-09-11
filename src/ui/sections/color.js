@@ -1,4 +1,4 @@
-import { SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, projectView, rederiveDataHues, seedFromKeyColor, slug } from "../model.mjs";
+import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
@@ -340,7 +340,8 @@ export class ColorSectionImpl {
       // A new palette starts from clean defaults: every shaping control reset to neutral (skew/lift 0,
       // edge-hue 0, same-dir off) so it never inherits the previous palette's tweaks — only the
       // hue/chroma seed defines it. (Global controls are doc-level and shared, so they're untouched.)
-      d.palettes.push({ name: "Palette " + (d.palettes.length + 1), hue: 200, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true });
+      const name = "Palette " + (d.palettes.length + 1);
+      d.palettes.push({ name, hue: 200, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: paletteGroup({ name }) });
     });
     this.selectPalette(this.doc.palettes.length - 1);
   }
@@ -467,7 +468,7 @@ export class ColorSectionImpl {
     if (!proposed) { this.toast("Pick at least one palette to derive from"); return; }
     const tab = this.newPalTab;
     const name = "Palette " + (this.doc.palettes.length + 1);
-    const pal = { name, hue: proposed.pal.hue, chroma: proposed.pal.chroma, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true };
+    const pal = { name, hue: proposed.pal.hue, chroma: proposed.pal.chroma, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: paletteGroup({ name }) };
     if (proposed.pal.keyColors) pal.keyColors = proposed.pal.keyColors; // A/B retain the derived dominant
     this.newPalOpen = false; // close on the commit's render (newPalOpen drives _syncNewPal)
     this.commit((d) => d.palettes.push(pal));
@@ -955,12 +956,12 @@ export class ColorSectionImpl {
 
 
   // Ramps scene — each ENABLED palette = a clickable navigator row: name + ●/○
-  // enable toggle + its stop swatches. Click (not drag) selects that palette.
+  // enable toggle + its stop swatches. Click (not drag) selects that palette. Rows are grouped
+  // under four headers (Material/Brand/System/Data, ticket #556) via paletteGroup(p) — a stable
+  // filter per group, so a group's visual block always reflects that group's palettes regardless
+  // of their order in the underlying doc.palettes array (drag-reorder still splices the REAL array).
   renderRampsScene(view) {
-    const rows = this.doc.palettes
-      .map((p, i) => ({ p, i, vp: view.palettes[i] }))
-      .filter((x) => x.vp && x.vp.on)
-      .map(({ p, i, vp }) => {
+    const buildRow = (p, i, vp) => {
         // highlight only when there's an EXPLICIT palette selection (Esc clears it)
         const selected = this.sel.kind === "palette" && this.selectedIndex() === i;
         const stops = this.stopsMode === "extended" ? vp.fullRamp : vp.ramp; // 25 vs 19
@@ -1037,44 +1038,67 @@ export class ColorSectionImpl {
           this.primeStrip(vp),
           strip,
         );
-      });
+    };
     // disabled palettes still appear as ghost rows so they can be re-enabled.
-    const offRows = this.doc.palettes
-      .map((p, i) => ({ p, i }))
-      .filter((x) => x.p.on === false)
-      .map(({ p, i }) =>
+    const buildOffRow = (p, i) =>
+      h(
+        "div",
+        {
+          class: "ramp-row off",
+          "data-pi": i,
+          onclick: () => {
+            if (this._reordering) { this._reordering = false; return; }
+            this.selectPalette(i);
+          },
+        },
         h(
           "div",
-          {
-            class: "ramp-row off",
-            "data-pi": i,
-            onclick: () => {
-              if (this._reordering) { this._reordering = false; return; }
-              this.selectPalette(i);
-            },
-          },
+          { class: "ramp-head" },
+          this.dragHandle(i),
           h(
-            "div",
-            { class: "ramp-head" },
-            this.dragHandle(i),
-            h(
-              "span",
-              {
-                class: "enable",
-                title: "Enable",
-                onclick: (e) => {
-                  e.stopPropagation();
-                  this.commit((d) => (d.palettes[i].on = true));
-                },
+            "span",
+            {
+              class: "enable",
+              title: "Enable",
+              onclick: (e) => {
+                e.stopPropagation();
+                this.commit((d) => (d.palettes[i].on = true));
               },
-              icon("circle", { size: 13 }),
-            ),
-            h("span", { class: "ramp-name off" }, p.name || "(unnamed)", h("small", {}, "disabled")),
+            },
+            icon("circle", { size: 13 }),
           ),
+          h("span", { class: "ramp-name off" }, p.name || "(unnamed)", h("small", {}, "disabled")),
         ),
       );
-    if (rows.length === 0 && offRows.length === 0) return h("div", { class: "empty-note" }, "No palettes");
-    const stack = h("div", { class: "ramp-stack" }, ...rows, ...offRows);
+
+    // one row element per palette index — built once, then bucketed into its group below.
+    const rowByIndex = new Map();
+    this.doc.palettes.forEach((p, i) => {
+      const vp = view.palettes[i];
+      if (vp && vp.on) rowByIndex.set(i, buildRow(p, i, vp));
+      else if (p.on === false) rowByIndex.set(i, buildOffRow(p, i));
+    });
+    if (rowByIndex.size === 0) return h("div", { class: "empty-note" }, "No palettes");
+
+    // four group sections in PALETTE_GROUPS order; a stable filter over doc.palettes keeps
+    // each group's own relative order — empty groups (no rows) are hidden entirely.
+    const sections = PALETTE_GROUPS.map((g) => {
+      const idxs = this.doc.palettes.map((_, i) => i).filter((i) => rowByIndex.has(i) && paletteGroup(this.doc.palettes[i]) === g);
+      if (!idxs.length) return null;
+      return h(
+        "div",
+        { class: "ramp-group", "data-group": g },
+        h(
+          "div",
+          { class: "ramp-group-header" },
+          h("span", { class: "ramp-group-title" }, paletteGroupLabel(g)),
+          h("span", { class: "ramp-group-count" }, String(idxs.length)),
+        ),
+        ...idxs.map((i) => rowByIndex.get(i)),
+      );
+    }).filter(Boolean);
+
+    const stack = h("div", { class: "ramp-stack" }, ...sections);
     this._wireReorder(stack); // pointer-drag the ⋮⋮ handle to reorder palettes
     return stack;
   }
@@ -1488,8 +1512,12 @@ export class ColorSectionImpl {
         const rows = this._rowRects().filter((r) => r.bottom - r.top > 1); // visible rows (not the collapsed source)
         const above = rows.filter((r) => r.bottom <= ph.top + 2).pop();    // row immediately above the placeholder
         const below = rows.find((r) => r.top >= ph.bottom - 2);            // row immediately below it
-        if (above && y < ph.top - SENS) { st.placeholderEl.parentNode.insertBefore(st.placeholderEl, above.el); continue; }
-        if (below && y > ph.bottom + SENS) { st.placeholderEl.parentNode.insertBefore(st.placeholderEl, below.el.nextSibling); continue; }
+        // insertBefore relative to the TARGET row's own parent, not the placeholder's cached one
+        // (ticket #556 — rows now nest inside per-group `.ramp-group` containers, so crossing a
+        // group boundary must re-parent the placeholder into the row's actual group; inserting
+        // against a stale parent throws when the neighbor lives in a different group's container).
+        if (above && y < ph.top - SENS) { above.el.parentNode.insertBefore(st.placeholderEl, above.el); continue; }
+        if (below && y > ph.bottom + SENS) { below.el.parentNode.insertBefore(st.placeholderEl, below.el.nextSibling); continue; }
         break; // cursor is within the proposed slot's hit area — stable
       }
       this._syncDropFromPlaceholder();
@@ -1534,12 +1562,24 @@ export class ColorSectionImpl {
     // adjust for the slice-out of `from` when from precedes the insertion point.
     if (from < to) to -= 1;
     to = Math.max(0, Math.min(to, pals.length - 1));
-    if (to === from) { this._reordering = false; this.render(); return; }
+
+    // the row we're dropping adjacent to decides the target group — dragging ACROSS a group
+    // header reassigns the moved palette's group (ratified Open Question 1, ticket #556); a
+    // reorder that never leaves its own group's rows leaves `.group` untouched. Only the
+    // "palettes" canvas view (renderRampsScene) shows group headers at all — Scrims/Mapping
+    // share this same reorder machinery but have no group boundaries to cross, so a reorder
+    // there must never silently reassign a palette's group.
+    const isGroupedView = this.canvasView !== "scrims" && this.canvasView !== "mapping";
+    const neighbor = pals[st.dropPi];
+    const targetGroup = isGroupedView ? (neighbor ? paletteGroup(neighbor) : paletteGroup(pals[from])) : paletteGroup(pals[from]);
+    const groupChanged = isGroupedView && paletteGroup(pals[from]) !== targetGroup;
+    if (to === from && !groupChanged) { this._reordering = false; this.render(); return; }
 
     // Track the currently-selected palette by identity so selection follows it.
     const selPal = this.doc.palettes[this.selectedIndex()];
     this.commit((doc) => { // ONE undo step for the whole reorder; commit()'s edit() saves + renders
       const [moved] = doc.palettes.splice(from, 1);
+      if (groupChanged) moved.group = targetGroup;
       doc.palettes.splice(to, 0, moved);
       // keep `selected` on the SAME palette object (now at its new index)
       const newSel = doc.palettes.indexOf(selPal);
@@ -1680,6 +1720,18 @@ export class ColorSectionImpl {
           label: p.on !== false ? "Enabled" : "Disabled",
           onToggle: () => this.commit((d) => (d.palettes[i].on = !(d.palettes[i].on !== false))),
         }),
+      ),
+      // Group (ticket #556) — which canvas group (Material/Brand/System/Data) this palette is
+      // organized under. Fully user-assignable: explicit here always wins over the default-by-name
+      // rule (model.mjs's paletteGroup, the same single source of truth the canvas grouping reads).
+      field(
+        "Group",
+        h(
+          "select",
+          { onchange: (e) => this.commit((d) => (d.palettes[i].group = e.target.value)) },
+          ...PALETTE_GROUPS.map((g) => h("option", { value: g, selected: paletteGroup(p) === g }, paletteGroupLabel(g))),
+        ),
+        { labelTitle: "Which canvas group this palette is organized under — Material, Brand, System, or Data." },
       ),
       this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => (d.palettes[i].hue = v))),
       this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => (d.palettes[i].chroma = v))),

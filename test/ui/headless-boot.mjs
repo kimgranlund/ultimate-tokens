@@ -2751,6 +2751,106 @@ dpaBtn("Add data palettes (8)").click();
 ok(app.doc.palettes.length === dpaLenBefore3, `(dpa19) Add is a no-op with no Primary to derive from (got ${app.doc.palettes.length}, expected ${dpaLenBefore3})`);
 ok(/primary/i.test(app.toastEl.textContent || ""), `(dpa20) Add toasts naming the missing Primary palette (got "${app.toastEl.textContent}")`);
 
+// ── (cg) Color canvas groups (ticket #556): four headers in order + counts, correct default
+// assignment of the 16 default palettes, the inspector's Group dropdown (+ persist round-trip),
+// and drag-reorder ACROSS a group header reassigning the moved palette's group. ────────────────
+// createSet() (not openSet on an existing gallery record — earlier sections above have mutated
+// app.sets[0]'s stored doc, e.g. (dpa) removed Primary/Data N) mints a genuinely pristine
+// defaultDocument(): 16 palettes spanning all 4 groups.
+app.createSet();
+app.canvasView = "palettes"; app.setSegment("palette"); app.render(); flushRaf();
+
+const cgWalk = (n) => (n._text || "") + (n.children || []).map(cgWalk).join("");
+
+{
+  const stack = app._rampStack;
+  const groups = stack.querySelectorAll(".ramp-group");
+  ok(groups.length === 4, `(cg1) all 4 groups render for the default doc (non-empty) — got ${groups.length}`);
+  ok(groups.map((g) => g.dataset.group).join(",") === "material,brand,system,data",
+    `(cg2) groups render Material → Brand → System → Data in order (got ${groups.map((g) => g.dataset.group).join(",")})`);
+
+  const expectedCount = { material: 1, brand: 3, system: 4, data: 8 };
+  const expectedLabel = { material: "Material", brand: "Brand", system: "System", data: "Data" };
+  for (const g of groups) {
+    const headerText = cgWalk(g.querySelector(".ramp-group-header"));
+    ok(headerText.includes(expectedLabel[g.dataset.group]), `(cg3) the "${g.dataset.group}" header shows its label (got "${headerText}")`);
+    ok(headerText.includes(String(expectedCount[g.dataset.group])),
+      `(cg3) the "${g.dataset.group}" header shows its palette count ${expectedCount[g.dataset.group]} (got "${headerText}")`);
+  }
+
+  // every one of the 16 default palettes lands under the RIGHT header.
+  const expectedGroupByName = { Neutral: "material", Primary: "brand", Secondary: "brand", Tertiary: "brand", Info: "system", Success: "system", Warning: "system", Danger: "system" };
+  for (const g of groups) {
+    for (const row of g.querySelectorAll(".ramp-row[data-pi]")) {
+      const name = app.doc.palettes[Number(row.getAttribute("data-pi"))].name;
+      const expected = name.startsWith("Data ") ? "data" : expectedGroupByName[name];
+      ok(g.dataset.group === expected, `(cg4) palette "${name}" must render under "${expected}" (found under "${g.dataset.group}")`);
+    }
+  }
+}
+
+// the inspector's Group dropdown reassigns a palette explicitly.
+app.selectPalette(0); // Neutral — defaults to material (no explicit field yet)
+app.render(); flushRaf();
+const cgSelect = findIn(app.querySelector(".right-pane"), (e) => e.tagName === "SELECT");
+ok(!!cgSelect, "(cg5) the palette inspector renders a Group <select>");
+cgSelect.value = "system";
+cgSelect.dispatch("change", { target: cgSelect });
+ok(app.doc.palettes[0].group === "system", `(cg6) picking "System" in the dropdown commits palettes[0].group (got ${JSON.stringify(app.doc.palettes[0].group)})`);
+app.render(); flushRaf();
+{
+  const groups2 = app._rampStack.querySelectorAll(".ramp-group");
+  const systemGroup = groups2.find((g) => g.dataset.group === "system");
+  const systemPis = systemGroup.querySelectorAll(".ramp-row[data-pi]").map((r) => Number(r.getAttribute("data-pi")));
+  ok(systemPis.includes(0), `(cg7) after the dropdown move, palette index 0 (Neutral) renders under System (got ${JSON.stringify(systemPis)})`);
+  ok(!groups2.some((g) => g.dataset.group === "material"), "(cg8) Material is now empty (Neutral was its only member) — its header is hidden entirely");
+}
+// the dropdown move persists across a serialize/hydrate round-trip.
+{
+  const reloaded = hyd(JSON.parse(JSON.stringify(ser(app.doc))));
+  ok(reloaded.palettes[0].group === "system", `(cg9) the explicit group reassignment survives serialize→hydrate (got ${JSON.stringify(reloaded.palettes[0].group)})`);
+}
+app.undo(); // back to material, for the drag test below
+flushRaf();
+
+// drag-reorder ACROSS a group header reassigns the moved palette's group (ratified Open
+// Question 1). Drag Secondary (index 2, Brand) down past Info (index 4, System) — the default
+// doc's visual row order matches its array order 1:1, so dropping just after row[4] lands it
+// inside System, between Info and Success.
+{
+  app.selectPalette(0);
+  app.render(); flushRaf();
+  const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
+  ok(rows[2].getAttribute("data-pi") === "2" && app.doc.palettes[2].name === "Secondary", "(cg10) row 2 is Secondary (Brand) before the drag");
+  const secondaryHandle = rows[2].querySelector(".drag-handle");
+  const histBefore = app.history.length;
+  app._beginReorder({ currentTarget: secondaryHandle, pointerId: 3, stopPropagation() {}, preventDefault() {} }, 2);
+  app._onReorderMove({ clientY: rows[4]._rect.bottom - 5, preventDefault() {} }); // just past Info, into System
+  app._onReorderUp();
+  ok(app.history.length - histBefore === 1, "(cg11) the cross-group drag is still ONE undo step");
+  ok(app.doc.palettes[4].name === "Secondary", `(cg12) Secondary moved to sit right after Info (got palettes[4]="${app.doc.palettes[4].name}")`);
+  ok(app.doc.palettes[4].group === "system", `(cg13) crossing into System's rows reassigned Secondary's group to "system" (got ${JSON.stringify(app.doc.palettes[4].group)})`);
+  ok(app.doc.palettes[2].name === "Tertiary", `(cg14) Tertiary shifted up to fill Secondary's old slot (got "${app.doc.palettes[2].name}")`);
+  app.undo();
+  ok(app.doc.palettes[2].name === "Secondary" && app.doc.palettes[2].group === undefined, "(cg15) undo reverts both the position AND the group reassignment");
+}
+
+// a within-group drag never touches `.group` — only CROSSING a header reassigns it.
+{
+  app.render(); flushRaf();
+  const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
+  ok(app.doc.palettes[4].name === "Info" && app.doc.palettes[4].group === undefined, "(cg16) Info (System) has no explicit group before this drag");
+  const infoHandle = rows[4].querySelector(".drag-handle");
+  app._beginReorder({ currentTarget: infoHandle, pointerId: 4, stopPropagation() {}, preventDefault() {} }, 4);
+  app._onReorderMove({ clientY: rows[6]._rect.bottom - 5, preventDefault() {} }); // still within System (rows 4..7)
+  app._onReorderUp();
+  const movedInfo = app.doc.palettes.find((p) => p.name === "Info");
+  ok(movedInfo.group === undefined, `(cg17) reordering WITHIN System must leave Info's group untouched (got ${JSON.stringify(movedInfo.group)})`);
+  app.undo();
+}
+
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
   console.error("HEADLESS BOOT FAIL:");
