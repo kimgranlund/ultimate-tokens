@@ -124,7 +124,7 @@ small/big ladder.
    against main differs only by comment lines. Size: big. Serves REQ-030, RP-1.
 2. **E2 Controls metadata on JSON and the brand-kit** (RP-2, after H-2). Owner: builder. Status:
    todo. `exportJSON` gains `meta` (`generator`, `controls`), `brandKit` gains `controls`; the JSON
-   `meta` is created here WITHOUT `schemaVersion` (E5 adds it) so the shape is complete for this
+   `meta` is created here WITHOUT `schemaVersion` (E6 adds it) so the shape is complete for this
    concept on its own. Gates: `hpg-export-json-meta` (controls deep-equal `stateOf(doc)`'s resolved
    values and `paletteGroups`), brand-kit test. Done when: green and knowledge-04 §3's "meta" claim is
    finally true. Size: small. Serves REQ-010, RP-2.
