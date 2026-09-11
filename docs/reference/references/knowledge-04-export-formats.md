@@ -13,6 +13,7 @@
 7. Figma import constraints (why resolved, not aliased)
 8. System constants (fixed, non-palette tokens)
 9. Key colors (retained brand colors)
+10. Prime tokens (the seven per-palette identity swatches)
 
 Tailwind v4 (`exportTailwind`) and ShadCN (`exportShadcn`) are introduced in §1 but do not yet have
 their own dedicated section here — their shapes are documented at the point of use in
@@ -55,6 +56,8 @@ serializer) with no rubric of record in this directory yet. It is out of scope f
   /* {Name} — cam16 hue {h}°; flat mode-independent RAW primitives. Raw names end in DIGITS,
      semantic names end in a WORD, so both share the --c- prefix with no collision. */
   --c-{n}-050: {hex};            ... --c-{n}-950: {hex};
+  /* prime — the seven identity swatches, flat, mode-independent (§10) */
+  --c-{n}-prime-brightest: {hex};  ...  --c-{n}-prime-dimmest: {hex};
   /* scrims (the 500 ramp; alpha% = step/10) */
   --c-{n}-scrim-050: {hex8};  ...  --c-{n}-scrim-950: {hex8};   (ADR-016 nesting — 500 base implicit)
   /* SEMANTIC roles -> light-dark of two raw primitives */
@@ -90,8 +93,8 @@ and both resolved hexes.
 
 `download()` emits `figma-tokens.zip` containing:
 
-- `palette.tokens.json` — **raw** collection, mode `Value`. Solid stops + 11 scrims (+ any key
-  colors, §9) per palette as resolved `colorLeaf`s.
+- `palette.tokens.json` — **raw** collection, mode `Value`. Solid stops + 11 scrims + the seven
+  prime swatches (§10) (+ any key colors, §9) per palette as resolved `colorLeaf`s.
 - One `"{theme.name}_tokens.json"` per entry in the **theme axis** — **semantic**, mode
   `theme.name`. Every role resolved to a `colorLeaf` using that theme's `side` end (`"light"` or
   `"dark"`). By default (no `opts.themes`), the axis is `semantic.js`'s `DEFAULT_THEMES` —
@@ -134,10 +137,13 @@ Single file `figma-ui3-variables.json`:
       "variables":{ "raw/{n}/{050}":{type:"COLOR",values:{Base:"#HEX"}}, ... } },
     "Color Roles":{ "modes":["Light","Dark"],
       "variables":{ "{n}/{roleKey}":{type:"COLOR",
-        values:{Light:"{raw/{n}/{refPath light}}", Dark:"{raw/{n}/{refPath dark}}"}}, ... } }   (semantic keys = "{n}/{kebab leaf}", ADR-016)
+        values:{Light:"{raw/{n}/{refPath light}}", Dark:"{raw/{n}/{refPath dark}}"}}, ... } },   (semantic keys = "{n}/{kebab leaf}", ADR-016)
+    "Color Prime":{ "modes":["Base"],
+      "variables":{ "{n}/{step}":{type:"COLOR",values:{Base:"#HEX"}}, ... } }   (the seven identity swatches, its OWN collection — §10)
   } }
 ```
-Semantic values are **in-file key-path aliases** the importer resolves.
+Semantic values are **in-file key-path aliases** the importer resolves; prime values are resolved
+(no aliasData), same as raw.
 
 > ⚠️ **OD-003 — UI3 schema authenticity.** `figma-ui3-variables.color.schema.v1` returns
 > zero hits in Figma's documentation and is **not** a verified native import format. Do not
@@ -224,3 +230,28 @@ invariant §8 describes for system constants (that invariant is about a tree's T
 their DTCG/UI3 absence — checked `decision-records.md` and found none; TKT-0022 confirmed it was
 an oversight (they exported fine via CSS/JSON, the two formats an emitter happened to route
 through `p.keyColors` directly) and closed the gap rather than fencing it.
+
+## 10. Prime tokens (the seven per-palette identity swatches)
+
+Each palette also carries a `prime` group: seven raw swatches, `brightest · brighter · bright ·
+prime · dim · dimmer · dimmest` (REQ-054, knowledge-02 §8.2), computed on the key colour's own
+OKHSL lightness ladder rather than the ramp. Flat and mode-independent (R2): one set of values,
+no `light-dark()` wrapper, identical in Light and Dark. Emitted for every palette, always (not
+opt-in like key colors).
+
+**Where it appears:**
+
+| Format | Placement |
+|---|---|
+| CSS (hex/oklch) | `--{pfx}-{n}-prime-{step}` lines, per palette, between that palette's solid stops and its scrims |
+| JSON | `palettes[n].prime: {"{step}": {hex, oklch}}`, keyed by step NAME (a word, not padded, mirroring `keyColors`' role keys) |
+| DTCG | `palette.tokens.json` (RAW): a `prime` group nested under the palette, keyed by step (`{n}.prime.{step}`), mirrors `scrim`'s two-segment shape, resolved `colorLeaf`s |
+| UI3 (Figma) | its OWN top-level collection, `Color Prime` (`COLLECTIONS.colorPrime`), one `Base` mode, `{n}/{step}` variable paths (no `raw/` prefix, same convention `Color Roles` already uses) |
+| Tailwind `@theme` | `--color-{n}-prime-{step}` lines, per palette, next to that palette's scale |
+| ShadCN | not emitted (curated subset, out of scope, same as scrims for Tailwind) |
+
+**Why UI3 gives prime its own collection instead of nesting it under `Color Primitives` (unlike
+scrims and key colors):** the prime ladder is not derived from the ramp and no role ever aliases
+it (knowledge-03 §3), so nesting it in the raw tree would suggest a raw-to-role relationship that
+does not exist for prime. A fifth, standalone collection keeps that boundary explicit in the Figma
+file itself (LLD Interfaces block, REQ-054).

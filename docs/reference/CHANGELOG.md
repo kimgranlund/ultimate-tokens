@@ -20,9 +20,10 @@ own primitives-tier group per palette, mode-independent, and roles do NOT alias 
 table and `role-table.json` are unchanged.
 
 **Shipped defaults stay `baseIntensity: 100, primeChroma: 100`** (H1): every ramp and every export is
-byte-identical to 1.55 until a user moves a slider. Still landing: the `prime` token group across the
-export formats, the "Color Prime" Figma collection, the DS bundle section, and the MCP `get_prime`
-tool (P4–P6), then the docs sweep (P8, #543). Eight brand-derived data palettes (U5–U9) continue.
+byte-identical to 1.55 until a user moves a slider. The `prime` token group now ships across the CSS,
+OKLCH, JSON, DTCG, UI3, and Tailwind export formats (#550), the "Color Prime" Figma collection (#553),
+the DS bundle section, and the MCP `get_prime` tool + `brand://palette/{slug}/prime` resource (P4–P6);
+this docs sweep (P8, #543) closes out the rollout. Eight brand-derived data palettes (U5–U9) continue.
 
 Gate: `npm test` green at each unit (`intensity-legacy` fixture retained, `intensity-uniform` group,
 `test/engine/prime.mjs` AC-050 a–j). Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.2.0 (#535,

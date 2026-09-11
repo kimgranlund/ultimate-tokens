@@ -17,7 +17,14 @@ description: >
 An Ultimate Tokens export gives every palette the same **53 semantic roles** as CSS custom
 properties. Your job is never to invent a color — it is to pick the right **role** from the right
 **palette**. Raw stops exist only as the substrate the roles reference.
-<!-- TODO(P8/#543, after P4 merges): one paragraph on the `prime` token group (`--{n}-prime-brightest` … `-dimmest`): primitives-tier, mode-independent, NOT roles; when a consumer may reach for a prime swatch (hero/brand moments, charts) vs. must stay on roles (every UI surface); SPEC REQ-054. -->
+Each palette also carries a `prime` group: seven raw swatches, `--{n}-prime-brightest` through
+`--{n}-prime-dimmest` (centered on bare `--{n}-prime`). These are primitives, not roles: one
+mode-independent set, the same in light and dark, computed on the key colour's own lightness ladder
+rather than the ramp. No role aliases a prime swatch and none ever will (SPEC REQ-054). Reach for one
+only where the design itself steps outside role territory: a hero or brand moment that wants the
+identity colour at full intensity, or a data-viz series that needs several shades of one hue (a
+heatmap, an intensity bar). Every ordinary surface, text, control, and state still binds to a role; a
+bare prime swatch in component code is the same defect as a raw stop.
 
 ## Bind to the project first (always step 1)
 
