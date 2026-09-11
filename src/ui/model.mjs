@@ -12,6 +12,10 @@
 // app is projectView(document) — recomputed, never persisted.
 
 import { COLLECTIONS } from "../engine/collections.js";
+import { PALETTE_GROUPS } from "./persist.js"; // the canonical 4 group ids (ticket #556) — persist.js
+// is the single source of truth (the codebase's normal dependency direction has model import FROM
+// persist, never the reverse); re-exported below so every existing model.mjs importer
+// (sections/color.js, the test suite) keeps working unchanged.
 import {
   hctToRgb,
   hctToOklch,
@@ -323,10 +327,10 @@ export function slug(name) {
 }
 
 // ── Canvas groups (ticket #556) ──────────────────────────────────────────────────
-// PALETTE_GROUPS — the four canvas groups, in render order. A palette's group is a
-// per-palette metadata field, orthogonal to every chroma/tone control (so a later
-// per-group Base/Prime chroma override, explicitly out of scope here, stays possible).
-export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
+// PALETTE_GROUPS (imported above, from persist.js) — the four canvas groups, in render order. A
+// palette's group is a per-palette metadata field, orthogonal to every chroma/tone control (so a
+// later per-group Base/Prime chroma override, explicitly out of scope here, stays possible).
+export { PALETTE_GROUPS };
 export const PALETTE_GROUP_LABELS = { material: "Material", brand: "Brand", system: "System", data: "Data" };
 export function paletteGroupLabel(g) {
   return PALETTE_GROUP_LABELS[g] || PALETTE_GROUP_LABELS.data;

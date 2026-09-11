@@ -1512,8 +1512,12 @@ export class ColorSectionImpl {
         const rows = this._rowRects().filter((r) => r.bottom - r.top > 1); // visible rows (not the collapsed source)
         const above = rows.filter((r) => r.bottom <= ph.top + 2).pop();    // row immediately above the placeholder
         const below = rows.find((r) => r.top >= ph.bottom - 2);            // row immediately below it
-        if (above && y < ph.top - SENS) { st.placeholderEl.parentNode.insertBefore(st.placeholderEl, above.el); continue; }
-        if (below && y > ph.bottom + SENS) { st.placeholderEl.parentNode.insertBefore(st.placeholderEl, below.el.nextSibling); continue; }
+        // insertBefore relative to the TARGET row's own parent, not the placeholder's cached one
+        // (ticket #556 — rows now nest inside per-group `.ramp-group` containers, so crossing a
+        // group boundary must re-parent the placeholder into the row's actual group; inserting
+        // against a stale parent throws when the neighbor lives in a different group's container).
+        if (above && y < ph.top - SENS) { above.el.parentNode.insertBefore(st.placeholderEl, above.el); continue; }
+        if (below && y > ph.bottom + SENS) { below.el.parentNode.insertBefore(st.placeholderEl, below.el.nextSibling); continue; }
         break; // cursor is within the proposed slot's hit area — stable
       }
       this._syncDropFromPlaceholder();
