@@ -101,7 +101,7 @@ try {
   notify("notifications/initialized");
 
   const tools = (await rpc("tools/list")).result.tools.map((t) => t.name);
-  ok(["list_palettes", "get_ramp", "resolve_token", "get_semantic", "nearest_token"].every((n) => tools.includes(n)), `tools/list has all 5 colour tools (${tools})`);
+  ok(["list_palettes", "get_ramp", "get_prime", "resolve_token", "get_semantic", "nearest_token"].every((n) => tools.includes(n)), `tools/list has all 6 colour tools (${tools})`);
   ok(tools.includes("get_type") && tools.includes("get_geometry"), `tools/list has get_type + get_geometry (the opted-in systems) (${tools})`);
 
   const ty = await callTool("get_type", {});
@@ -114,6 +114,7 @@ try {
 
   const resUris = (await rpc("resources/list")).result.resources.map((r) => r.uri);
   ok(resUris.includes("brand://type") && resUris.includes("brand://geometry"), `resources/list has brand://type + brand://geometry (${resUris})`);
+  ok(resUris.includes("brand://palette/primary/prime") && resUris.filter((u) => /^brand:\/\/palette\/.+\/prime$/.test(u)).length === 16, `resources/list has one brand://palette/{slug}/prime per palette (${resUris.length} total)`);
 
   const pal = await callTool("list_palettes", {});
   ok(Array.isArray(pal) && pal.length === 16 && /^#|^oklch/.test(pal[0].key || ""), "list_palettes → 16 palettes with identity colours");
@@ -124,6 +125,19 @@ try {
 
   const ramp = await callTool("get_ramp", { palette: "primary" });
   ok(ramp.ramp && ramp.ramp.length >= 19 && !!ramp.ramp.find((s) => s.stop === 500), "get_ramp → the tonal ramp incl. stop 500");
+
+  // AC-053: get_prime("primary") returns seven entries in step order, with real hex/oklch values
+  // taken verbatim from kit.palettes[i].prime (never re-derived here).
+  const prime = await callTool("get_prime", { palette: "primary" });
+  const wantOrder = ["brightest", "brighter", "bright", "prime", "dim", "dimmer", "dimmest"];
+  ok(prime.palette === "Primary" && Array.isArray(prime.steps) && prime.steps.length === 7, `get_prime("primary") → 7 entries (${JSON.stringify(prime)})`);
+  ok(prime.steps.map((s) => s.step).join() === wantOrder.join(), `get_prime("primary") → step order (${prime.steps.map((s) => s.step).join()})`);
+  const primaryKit = kit.palettes.find((p) => p.slug === "primary");
+  ok(prime.steps.every((s) => /^#[0-9A-F]{6}$/.test(s.hex) && /^oklch\(/.test(s.oklch)), `get_prime("primary") steps carry real hex/oklch values (${JSON.stringify(prime.steps[0])})`);
+  ok(prime.steps.every((s) => s.hex === primaryKit.prime[s.step].hex && s.oklch === primaryKit.prime[s.step].oklch), "get_prime(\"primary\") matches kit.palettes[i].prime verbatim");
+
+  const primeRes = JSON.parse((await rpc("resources/read", { uri: "brand://palette/primary/prime" })).result.contents[0].text);
+  ok(JSON.stringify(primeRes) === JSON.stringify(prime), "brand://palette/primary/prime matches get_prime(\"primary\") verbatim");
 
   const exact = kit.palettes[1].ramp.find((s) => s.stop === 500).hex;
   const near = await callTool("nearest_token", { hex: exact });

@@ -19,10 +19,11 @@ const callTool = (name, args) => JSON.parse(req("tools/call", { name, arguments:
 
 // ── buildSurface: the surface reflects the present systems ──
 const toolNames = surface.TOOLS.map((t) => t.name);
-ok(["list_palettes", "get_ramp", "resolve_token", "get_semantic", "nearest_token"].every((n) => toolNames.includes(n)), `surface has the 5 colour tools (${toolNames})`);
+ok(["list_palettes", "get_ramp", "get_prime", "resolve_token", "get_semantic", "nearest_token"].every((n) => toolNames.includes(n)), `surface has the 6 colour tools (${toolNames})`);
 ok(toolNames.includes("get_type") && toolNames.includes("get_geometry"), "surface has get_type + get_geometry (the opted-in systems)");
 const resUris = surface.RESOURCES.map((r) => r.uri);
-ok(["brand://kit", "brand://palettes", "brand://semantic/light", "brand://semantic/dark", "brand://type", "brand://geometry", "brand://guide"].every((u) => resUris.includes(u)), `surface has all resources (${resUris})`);
+ok(["brand://kit", "brand://palettes", "brand://semantic/light", "brand://semantic/dark", "brand://palette/primary/prime", "brand://type", "brand://geometry", "brand://guide"].every((u) => resUris.includes(u)), `surface has all resources (${resUris})`);
+ok(resUris.filter((u) => /^brand:\/\/palette\/.+\/prime$/.test(u)).length === 16, `surface has one brand://palette/{slug}/prime resource per palette (${resUris.length} total)`);
 ok(surface.PROMPTS.length === 1 && surface.PROMPTS[0].name === "apply_brand", "surface has the apply_brand prompt");
 ok(surface.SERVER === SERVER && surface.PROTOCOL_VERSION === PROTOCOL_VERSION && SERVER.name === "ultimate-tokens-brand-kit", "surface carries SERVER + PROTOCOL_VERSION");
 
@@ -43,6 +44,11 @@ const tl = callTool("resolve_token", { role: "primary/primary", scheme: "light" 
 ok(tl.hex === kit.roles.primary.primary.light, `resolve_token primary/primary light matches the kit (${tl.hex})`);
 const ramp = callTool("get_ramp", { palette: "primary" });
 ok(ramp.ramp && !!ramp.ramp.find((s) => s.stop === 500), "get_ramp → the tonal ramp incl. stop 500");
+const primeSteps = callTool("get_prime", { palette: "primary" });
+const wantPrimeOrder = ["brightest", "brighter", "bright", "prime", "dim", "dimmer", "dimmest"];
+ok(primeSteps.palette === "Primary" && Array.isArray(primeSteps.steps) && primeSteps.steps.length === 7, `get_prime → 7 entries (${JSON.stringify(primeSteps)})`);
+ok(primeSteps.steps.map((s) => s.step).join() === wantPrimeOrder.join(), `get_prime → step order (${primeSteps.steps.map((s) => s.step).join()})`);
+ok(primeSteps.steps.every((s) => s.hex === kit.palettes[1].prime[s.step].hex && s.oklch === kit.palettes[1].prime[s.step].oklch), "get_prime values match kit.palettes[i].prime verbatim");
 const exact = kit.palettes[1].ramp.find((s) => s.stop === 500).hex;
 ok(callTool("nearest_token", { hex: exact }).distance === 0, "nearest_token of an exact stop hex → distance 0");
 ok(typeof callTool("get_semantic", { scheme: "dark" })["primary/surface"] === "string", "get_semantic flattens to palette/role hexes");
@@ -53,6 +59,8 @@ ok(geo.sizes.MD.font !== ty.categories.Label.MD.size && geo.sizes.MD.font === 15
 
 // resources/read + prompts/get
 ok((req("resources/read", { uri: "brand://guide" }).result.contents[0].text || "").length > 50, "resources/read brand://guide → the usage guide");
+const primeRes = JSON.parse(req("resources/read", { uri: "brand://palette/primary/prime" }).result.contents[0].text);
+ok(JSON.stringify(primeRes) === JSON.stringify(primeSteps), "brand://palette/primary/prime matches get_prime(\"primary\") verbatim");
 ok((req("prompts/get", { name: "apply_brand" }).result.messages[0].content.text || "").length > 20, "prompts/get apply_brand → guidance");
 
 // errors

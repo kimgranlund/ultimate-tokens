@@ -45,8 +45,8 @@ claude mcp add brand-kit -- node /abs/path/to/brand-kit-server.mjs
 ## What it exposes
 
 **Resources** — `brand://kit` (full), `brand://guide`, plus (per included system) `brand://palettes` ·
-`brand://semantic/light` · `brand://semantic/dark` (Color), `brand://type` (Typography),
-`brand://geometry` (Geometry).
+`brand://semantic/light` · `brand://semantic/dark` · `brand://palette/{slug}/prime` (one per palette)
+(Color), `brand://type` (Typography), `brand://geometry` (Geometry).
 
 **Tools** (the colour tools listed only when palettes are present; `get_type` / `get_geometry` only when
 those systems are included)
@@ -54,6 +54,7 @@ those systems are included)
 |---|---|
 | `list_palettes` | the palettes + their identity colour |
 | `get_ramp(palette)` | a palette's full tonal ramp (stop → hex) |
+| `get_prime(palette)` | a palette's seven prime identity swatches (brightest…dimmest, `{step, hex, oklch}`), in step order — mode-independent, same values in light and dark |
 | `resolve_token(palette, role, scheme)` | the hex for a semantic role in `light`/`dark` (role can be `"palette/role"`) |
 | `get_semantic(scheme)` | all 53 roles per palette resolved for a scheme |
 | `nearest_token(hex)` | the brand token closest to a hex (reuse the system, don't invent a colour) |

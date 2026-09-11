@@ -77,10 +77,11 @@ These three gates each appear **four times** and must stay in lockstep (1–3 in
 `brand-kit-server.mjs`):
 1. **`usageGuide()`** — the markdown sections (`## Color` / `## Typography` / `## Geometry`) are each behind
    the matching gate (it recomputes a local `hasColorG`); `Systems in this kit:` lists the present ones (or `—`).
-2. **`TOOLS`** pushes — `if (hasColor) TOOLS.push(…5 colour tools)`, `if (kit.type) … get_type`,
+2. **`TOOLS`** pushes — `if (hasColor) TOOLS.push(…6 colour tools)`, `if (kit.type) … get_type`,
    `if (kit.geometry) … get_geometry`.
-3. **`RESOURCES`** pushes — `if (hasColor) … brand://palettes + semantic/{light,dark}`, then `if (kit.type)
-   brand://type`, `if (kit.geometry) brand://geometry`. (`brand://guide` is pushed last, always.)
+3. **`RESOURCES`** pushes — `if (hasColor) … brand://palettes + semantic/{light,dark} + one
+   brand://palette/{slug}/prime per palette`, then `if (kit.type) brand://type`, `if (kit.geometry)
+   brand://geometry`. (`brand://guide` is pushed last, always.)
 4. **The startup banner** (the server: `process.stderr.write` at file end, reading `surface.hasColor` /
    `palettes`) — names which systems are being served (`[N palettes · type · geometry]` or `empty`).
 
@@ -94,6 +95,12 @@ asserts this on the projection directly via `brandKit({color:true})` / `{type:tr
   is `(p.ramp||[]).length`, the ramp length).
 - **`get_ramp(palette)`** → `{ name, ramp: [{stop, hex}] }` or `{ error }`. `findPalette` matches on
   `slugOf(name)` against `p.name` OR `p.slug`, so `"primary"` and `"Primary"` both resolve.
+- **`get_prime(palette)`** → `{ palette, steps: [{ step, hex, oklch }] }` or `{ error }` — the seven prime
+  identity swatches (brightest…dimmest, `PRIME_STEPS` order), transformed from the kit's own
+  `palette.prime` (an object keyed by step name, REQ-054/057) into this ordered array. `PRIME_STEPS` is
+  duplicated locally (not imported) — this module ships standalone (`gen-mcp-assets.mjs` inlines only
+  the core + server + README), so it can't reach into `src/engine/prime.mjs`. `brand://palette/{slug}/prime`
+  (one resource per palette) returns the identical shape.
 - **`resolve_token(palette, role, scheme)`** → `{ palette, role, scheme, hex }` or `{ error }`. When `palette`
   is absent and `role` contains `/`, it splits on the **first** `/` and re-joins the rest (`const [pp,
   ...rest] = a.role.split("/"); slug = pp; key = rest.join("/")`) — so `"on/primary/x"`-style keys survive;

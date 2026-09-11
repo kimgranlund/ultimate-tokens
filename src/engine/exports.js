@@ -130,9 +130,11 @@ function rgbToOklch(rgb) {
   return { L, C, H };
 }
 
-// oklchStr / oklchStrA — the oklch() string forms for solids and scrims.
+// oklchStr / oklchStrA — the oklch() string forms for solids and scrims. Exported so ds-export.js
+// can format a raw [L,C,H]/{L,C,H} triple (e.g. a prime swatch's `oklch`) the same way this file
+// does everywhere else, rather than growing a second formatter.
 const num = (x, d) => Number(x.toFixed(d));
-function oklchStr({ L, C, H }) {
+export function oklchStr({ L, C, H }) {
   return `oklch(${num(L, 4)} ${num(C, 4)} ${num(H, 2)})`;
 }
 function oklchStrA({ L, C, H }, alphaPct) {

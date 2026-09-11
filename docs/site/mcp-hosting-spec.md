@@ -95,9 +95,10 @@ foundation the **Studio** (multi-seat) tier already assumes.
 | Multi-kit | one file = one kit | the account's kits via `list_kits` + a `kit` arg |
 | Surface | **identical** (same core module) | **identical** (same core module) |
 
-Surface (identical across both): tools `list_palettes` · `get_ramp` · `resolve_token` · `get_semantic` ·
-`nearest_token` · `get_type` · `get_geometry` (+ **`list_kits`** and an optional `kit` arg on the hosted
-server); resources `brand://kit|palettes|semantic/light|semantic/dark|type|geometry|guide`; prompt
+Surface (identical across both): tools `list_palettes` · `get_ramp` · `get_prime` · `resolve_token` ·
+`get_semantic` · `nearest_token` · `get_type` · `get_geometry` (+ **`list_kits`** and an optional `kit`
+arg on the hosted server); resources `brand://kit|palettes|semantic/light|semantic/dark|type|geometry|guide`
+plus one `brand://palette/{slug}/prime` per palette; prompt
 `apply_brand`; protocol `2025-06-18`.
 
 ---

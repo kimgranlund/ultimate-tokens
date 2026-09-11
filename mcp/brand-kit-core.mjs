@@ -14,6 +14,17 @@ export const SERVER = { name: "ultimate-tokens-brand-kit", version: "0.1.0" };
 const slugOf = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 const hexToRgb = (h) => { const m = String(h).replace("#", ""); return [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2) || "0", 16)); };
 
+// PRIME_STEPS — mirrors src/engine/prime.mjs's own order (brightest..dimmest). Duplicated, not
+// imported: this module ships standalone (gen-mcp-assets.mjs inlines ONLY this file + the server +
+// the README into the user's downloadable package), with no access to the rest of the repo.
+const PRIME_STEPS = ["brightest", "brighter", "bright", "prime", "dim", "dimmer", "dimmest"];
+// primeStepsOf(p) — a kit palette's `prime` (an object keyed by step, REQ-054/057) → the ordered
+// array shape `get_prime`/the prime resource both return: [{ step, hex, oklch }, ...] in PRIME_STEPS order.
+const primeStepsOf = (p) => {
+  const steps = (p && p.prime) || {};
+  return PRIME_STEPS.map((step) => ({ step, hex: (steps[step] || {}).hex, oklch: (steps[step] || {}).oklch }));
+};
+
 // buildSurface(kit) → { kit, palettes, hasColor, TOOLS, RESOURCES, PROMPTS, SERVER, PROTOCOL_VERSION }.
 // Each token SYSTEM is opt-in at export time, so the surface reflects what's PRESENT: the colour
 // tools/resources appear only when the kit has palettes/roles; type/geometry only when those were included.
@@ -77,6 +88,9 @@ export function buildSurface(kit) {
     { name: "get_ramp", description: "The full tonal ramp (stops → hex) for one palette.",
       inputSchema: { type: "object", properties: { palette: { type: "string" } }, required: ["palette"] },
       run: (a) => { const p = findPalette(a.palette); return p ? { name: p.name, ramp: p.ramp } : { error: `no palette "${a.palette}"` }; } },
+    { name: "get_prime", description: "A palette's seven prime identity swatches (brightest, brighter, bright, prime, dim, dimmer, dimmest), in step order — its own OKHSL ladder, mode-independent (same values in light and dark).",
+      inputSchema: { type: "object", properties: { palette: { type: "string" } }, required: ["palette"] },
+      run: (a) => { const p = findPalette(a.palette); return p ? { palette: p.name, steps: primeStepsOf(p) } : { error: `no palette "${a.palette}"` }; } },
     { name: "resolve_token", description: "Resolve a semantic role to its hex in a scheme. role = \"palette/roleKey\" (or palette + role).",
       inputSchema: { type: "object", properties: { palette: { type: "string" }, role: { type: "string" }, scheme: { type: "string", enum: ["light", "dark"] } } },
       run: (a) => {
@@ -110,6 +124,14 @@ export function buildSurface(kit) {
     { uri: "brand://palettes", name: "Palettes + ramps", mimeType: "application/json", read: () => JSON.stringify(palettes, null, 2) },
     { uri: "brand://semantic/light", name: "Semantic roles (light)", mimeType: "application/json", read: () => JSON.stringify(semanticFor("light"), null, 2) },
     { uri: "brand://semantic/dark", name: "Semantic roles (dark)", mimeType: "application/json", read: () => JSON.stringify(semanticFor("dark"), null, 2) },
+    // one prime resource per palette (REQ-054/057) — brand://palette/{slug}/prime, the same
+    // { palette, steps } shape get_prime returns, so the tool and the resource never disagree.
+    ...palettes.map((p) => ({
+      uri: `brand://palette/${p.slug || slugOf(p.name)}/prime`,
+      name: `${p.name} — prime`,
+      mimeType: "application/json",
+      read: () => JSON.stringify({ palette: p.name, steps: primeStepsOf(p) }, null, 2),
+    })),
   );
   if (kit.type) RESOURCES.push({ uri: "brand://type", name: "Typography scale", mimeType: "application/json", read: () => JSON.stringify(kit.type, null, 2) });
   if (kit.geometry) RESOURCES.push({ uri: "brand://geometry", name: "Geometry / dimensional scale", mimeType: "application/json", read: () => JSON.stringify(kit.geometry, null, 2) });

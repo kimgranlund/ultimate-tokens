@@ -49,9 +49,11 @@ The kit's `systems` arg (the drawer's **Include** toggles, passed as `this.expor
 in/out; omitted/undefined → **all three** (the back-compat default). `buildSurface(kit)` reads what's present:
 
 - **Color** (`palettes`/`roles` present) → tools `ultimate-tokens-brand-kit:list_palettes`,
-  `ultimate-tokens-brand-kit:get_ramp(palette)`, `ultimate-tokens-brand-kit:resolve_token(palette, role, scheme)`,
+  `ultimate-tokens-brand-kit:get_ramp(palette)`, `ultimate-tokens-brand-kit:get_prime(palette)`,
+  `ultimate-tokens-brand-kit:resolve_token(palette, role, scheme)`,
   `ultimate-tokens-brand-kit:get_semantic(scheme)`, `ultimate-tokens-brand-kit:nearest_token(hex)`; resources
-  `brand://palettes`, `brand://semantic/light`, `brand://semantic/dark`.
+  `brand://palettes`, `brand://semantic/light`, `brand://semantic/dark`, plus one
+  `brand://palette/{slug}/prime` per palette (the same seven-step `{palette, steps}` shape `get_prime` returns).
 - **Typography** (`kit.type` present) → tool `ultimate-tokens-brand-kit:get_type`; resource `brand://type`. `kit.type.categories`
   carries the **fifteen** `makeVoices` voices (the `type-scale` skill owns the taxonomy) — each step with
   `size · lineHeight · letterSpacing · weight` (+ `textTransform`, `paragraph*`). The guide prose teaches a
@@ -107,7 +109,7 @@ node test/mcp/core.mjs        # the PURE surface: buildSurface + handle driven d
                               #   parity lock shared by the stdio server and the hosted Worker
 node test/mcp/brand-kit.mjs   # generates a kit from defaultDocument(), spawns the server, asserts:
                               #   initialize → serverInfo.name "ultimate-tokens-brand-kit" + capabilities.tools
-                              #   tools/list has the 5 colour tools + get_type + get_geometry
+                              #   tools/list has the 6 colour tools + get_type + get_geometry
                               #   get_type (Body voice) · get_geometry (centering law on MD; font = type UI size)
                               #   resources/list (brand://type + brand://geometry) · list_palettes (8)
                               #   resolve_token primary/primary (light+dark) · get_ramp (>=19 stops, incl. 500)

@@ -1210,9 +1210,68 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (nonG1D.length > 0) FAIL("design-system-data", `§8 non-G1 gates fail with data palettes enabled: ${nonG1D.map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
 }
 
+// ── hpg-export-design-system-prime (#541 — the ds-export `prime` block per family in tokens.json +
+// DESIGN.md's "Prime swatches" section). REQ-054 / AC-031's prime part: every enabled palette
+// (chrome/others/intents AND data-N) carries its seven identity swatches in the DS bundle,
+// byte-identical to exportJSON's own canonical prime block; DESIGN.md gains a short section,
+// present UNCONDITIONALLY (unlike the opt-in Data series) between Colors and Typography, shared
+// byte-for-byte by the Claude Code and Stitch profiles (one core, two uploads).
+{
+  const tsc = typeScale({});
+  const gsc = geomScale({});
+  const stateData = C(ALL_WITH_DATA);
+  const ds = X.dsColorRoles(stateData);
+  const rawJson = X.exportJSON(stateData);
+  const allFamilies = [...ds.families, ...ds.dataFamilies];
+
+  for (const f of allFamilies) {
+    const p = ds.prime[f];
+    if (!p) { FAIL("design-system-prime", `dsColorRoles.prime missing family ${f}`); continue; }
+    if (Object.keys(p).join() !== PRIME_STEPS.join()) FAIL("design-system-prime", `dsColorRoles.prime[${f}] step order = ${Object.keys(p).join()}, want ${PRIME_STEPS.join()}`);
+    for (const step of PRIME_STEPS) {
+      const want = rawJson[f] && rawJson[f].prime[step];
+      if (!want) { FAIL("design-system-prime", `exportJSON missing ${f}.prime.${step} to compare against`); continue; }
+      if (p[step].hex !== want.hex || p[step].oklch !== want.oklch) FAIL("design-system-prime", `dsColorRoles.prime[${f}].${step} = ${JSON.stringify(p[step])}, want ${JSON.stringify(want)} (exportJSON)`);
+    }
+  }
+
+  // tokens.json carries the SAME prime block, byte-identical to dsColorRoles' own (no re-derivation).
+  const tj = JSON.parse(X.exportDesignSystemTokens(stateData, tsc, gsc));
+  if (JSON.stringify(tj.prime) !== JSON.stringify(ds.prime)) FAIL("design-system-prime", "tokens.json prime block diverges from dsColorRoles.prime");
+
+  // DESIGN.md gains the section unconditionally — present even with NO data palettes enabled.
+  const mdNoData = X.exportDesignSystemSpine(C(BRAND_ONLY), tsc, gsc);
+  if (!mdNoData.includes("## Prime swatches")) FAIL("design-system-prime", "DESIGN.md missing the Prime swatches section with no data palettes enabled");
+  for (const f of X.dsColorRoles(C(BRAND_ONLY)).families) if (!mdNoData.includes(`${f}-prime-`)) FAIL("design-system-prime", `Prime swatches section (no data) missing a reference to ${f}`);
+
+  const mdData = X.exportDesignSystemSpine(stateData, tsc, gsc);
+  if (!mdData.includes("## Prime swatches")) FAIL("design-system-prime", "DESIGN.md missing the Prime swatches section with data palettes enabled");
+  for (const f of allFamilies) if (!mdData.includes(`${f}-prime-`)) FAIL("design-system-prime", `Prime swatches section missing a reference to ${f}`);
+
+  // position: never reorders the canonical 8; Prime swatches sits between Colors and Typography.
+  for (const sec of ["## Overview", "## Colors", "## Typography", "## Components", "## Do's and Don'ts"]) if (!mdData.includes(sec)) FAIL("design-system-prime", `spine missing ${sec} once Prime swatches is present`);
+  if (!(mdData.indexOf("## Colors") < mdData.indexOf("## Prime swatches") && mdData.indexOf("## Prime swatches") < mdData.indexOf("## Typography"))) FAIL("design-system-prime", "Prime swatches section is not positioned between Colors and Typography");
+
+  // Stitch shares the SAME canonical spine byte-for-byte (one core, two uploads).
+  const stitchFiles = X.exportDesignSystemStitchBundle(stateData, tsc, gsc, { date: "2026-09-11" });
+  const stitchMd = stitchFiles.find((f) => f.name === "DESIGN.md").data;
+  if (stitchMd !== mdData) FAIL("design-system-prime", "Stitch DESIGN.md diverges from the Claude Code DESIGN.md once Prime swatches is present");
+
+  // a real bundle run still clears every non-G1 §8 gate with the new section present.
+  const files = X.exportDesignSystemBundle(stateData, tsc, gsc, { date: "2026-09-11" });
+  const byName = Object.fromEntries(files.map((f) => [f.name, f.data]));
+  const previews = files.filter((f) => f.name.startsWith("components/")).map((p) => ({ name: p.name.replace("components/", ""), html: p.data }));
+  const gate = dsBundleGates({ designMd: byName["DESIGN.md"], tokensJson: byName["tokens.json"], previews });
+  const nonG1 = gate.findings.filter((f) => f.level === "ERROR" && f.gate !== "G1");
+  if (nonG1.length > 0) FAIL("design-system-prime", `§8 non-G1 gates fail once Prime swatches is present: ${nonG1.map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
+
+  // disabled palettes: dsColorRoles(state) → null → tokens.json falls back to the note-only shape.
+  const offTokens = JSON.parse(X.exportDesignSystemTokens(C(RT.defaults.map((p) => ({ ...p, on: false }))), tsc, gsc));
+  if ("prime" in offTokens) FAIL("design-system-prime", "disabled-palette tokens.json unexpectedly carries a prime block");
+}
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
