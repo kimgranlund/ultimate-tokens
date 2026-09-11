@@ -4,9 +4,11 @@
 // fetch/XMLHttpRequest/WebSocket, no localStorage (ADR-010 / AC-P3 — offline by design;
 // manifest networkAccess is "none"). The generator UI runs in the iframe (ui.html); this
 // file only (a) opens that UI and (b) on an "apply" message turns the posted DTCG bundle
-// into two Figma variable COLLECTIONS:
+// into three Figma variable COLLECTIONS:
 //
 //   Color Primitives  (mode "Value")        — one COLOR var per stop/scrim, the concrete colors
+//   Color Prime          (mode "Base")        — one COLOR var per palette per prime step (REQ-054),
+//                                        "{n}/{step}", mode-independent (R2)
 //   Color Roles         (one mode per THEME) — one COLOR var per role, each mode ALIASED to the
 //                                        raw var named by the leaf's com.figma.aliasData
 //                                        (the live raw→semantic cascade native import can't do)
@@ -22,7 +24,7 @@
 
 const RAW_COLLECTION = "Color Primitives";   // the raw color primitives (one "Value" mode) — the DEFAULT name
 const SEMANTIC_COLLECTION = "Color Roles"; // the semantic Light/Dark tokens — the DEFAULT name (#491; was "Color Semantic", "Color Modes")
-const PRIME_COLLECTION = "Color Prime"; // REQ-054 (#539): the seven-swatch prime ladder, single "Base" mode; not created or read here yet (P5/#540 wires the actual apply), the literal exists only so `collparity` can guard it against drift ahead of that
+const PRIME_COLLECTION = "Color Prime"; // REQ-054 (#539/#540): the seven-swatch prime ladder, single "Base" mode; created/updated by applyBundle below, no Settings override (unlike COLL.raw/semantic)
 // COLL — the ACTIVE color-collection names. Settings › Token mapping can override the defaults
 // (doc.figmaCollections); the apply message carries the override and sets these before any write, and
 // readRawColors resolves them from the SAVED config so a renamed file still round-trips at boot. An
@@ -151,7 +153,7 @@ figma.ui.onmessage = async (msg) => {
         } catch (e) { console.error("[Ultimate Tokens] styles apply failed:", e); }
       }
       const parts = [];
-      if (r) parts.push(`${r.raw} primitives + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : ""));
+      if (r) parts.push(`${r.raw} primitives + ${r.prime} prime + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : ""));
       if (fr && fr.collections) parts.push(`${fr.variables} type/geometry variable${fr.variables === 1 ? "" : "s"} across ${fr.collections} collection${fr.collections === 1 ? "" : "s"}`);
       if (sr && (sr.paints || sr.texts)) parts.push(`${sr.paints + sr.texts} style${sr.paints + sr.texts === 1 ? "" : "s"} (${sr.paints} color · ${sr.texts} text)` + (sr.pruned ? `, ${sr.pruned} stale pruned` : ""));
       if (sr && sr.substitutedFonts && sr.substitutedFonts.length) figma.notify(`${sr.substituted} text style(s) use a placeholder face — install to see them as designed: ${sr.substitutedFonts.slice(0, 3).join(", ")}${sr.substitutedFonts.length > 3 ? "…" : ""}`, { timeout: 6000 });
@@ -159,7 +161,7 @@ figma.ui.onmessage = async (msg) => {
       figma.notify(parts.length ? "Applied " + parts.join(" · ") : "Nothing to apply — every system is toggled off.");
       // Signal the iframe UI that the async write actually COMPLETED (its optimistic "Applying…" toast alone
       // can't know when the sandbox finishes) → onApplyDone shows a real "Applied N…" toast + closes the gate.
-      figma.ui.postMessage({ type: "apply-done", raw: r ? r.raw : 0, semantic: r ? r.semantic : 0, floatVars: fr ? fr.variables : 0, floatCollections: fr ? fr.collections : 0, paintStyles: sr ? sr.paints : 0, textStyles: sr ? sr.texts : 0, missingFonts: sr && sr.missingFonts ? sr.missingFonts : [], substitutedFonts: sr && sr.substitutedFonts ? sr.substitutedFonts : [], substituted: sr ? sr.substituted : 0 });
+      figma.ui.postMessage({ type: "apply-done", raw: r ? r.raw : 0, prime: r ? r.prime : 0, semantic: r ? r.semantic : 0, floatVars: fr ? fr.variables : 0, floatCollections: fr ? fr.collections : 0, paintStyles: sr ? sr.paints : 0, textStyles: sr ? sr.texts : 0, missingFonts: sr && sr.missingFonts ? sr.missingFonts : [], substitutedFonts: sr && sr.substitutedFonts ? sr.substitutedFonts : [], substituted: sr ? sr.substituted : 0 });
     } else if (msg.type === "save-config") {
       writeConfig(msg.config);
       figma.notify("Palette set saved into this file");
@@ -1195,7 +1197,33 @@ async function applyBundle(dtcg, opts) {
   renameInPool(rawByName, renames.raw);
   const currentRaw = new Set(); // names this bundle WANTS in Color Primitives — everything else is stale
   let rawCount = 0;
+
+  // 1b) PRIME collection (REQ-054/#540) — the seven-swatch identity ladder, single "Base" mode, its
+  // own dedicated collection (not "raw/"-prefixed — mirrors how Color Roles names its own variables
+  // without a "raw/" prefix). rawTree nests it at "{n}/prime/{step}" (ADR-016 two-segment shape,
+  // beside "{n}/scrim/*"); PRIME_LEAF_RE picks those paths out of the SAME leafEntries walk below and
+  // routes them here as "{n}/{step}" instead of into Color Primitives — no other raw leaf's path
+  // changes. No FIGMA_MIGRATIONS entry: this is a brand-new collection, never a rename of an existing
+  // one, and no Settings override exists for its name (figmaCollectionNames only covers raw/semantic).
+  const PRIME_LEAF_RE = /^([^/]+)\/prime\/([^/]+)$/;
+  const prime = await ensureCollection(PRIME_COLLECTION, reg);
+  prime.renameMode(prime.modes[0].modeId, "Base");
+  const primeMode = prime.modes[0].modeId;
+  const primeByName = await varsByName(prime.id);
+  const currentPrime = new Set(); // names this bundle WANTS in Color Prime — everything else is stale
+  let primeCount = 0;
+
   for (const [name, leaf] of leafEntries(rawTree, "")) {
+    const pm = PRIME_LEAF_RE.exec(name);
+    if (pm) {
+      const primeName = pm[1] + "/" + pm[2];
+      const v = primeByName[primeName] || figma.variables.createVariable(primeName, prime, "COLOR");
+      v.setValueForMode(primeMode, rgbaOf(leaf));
+      primeByName[primeName] = v;
+      currentPrime.add(primeName);
+      primeCount++;
+      continue;
+    }
     const v = rawByName[name] || figma.variables.createVariable(name, raw, "COLOR");
     v.setValueForMode(rawMode, rgbaOf(leaf));
     rawByName[name] = v;
@@ -1272,11 +1300,12 @@ async function applyBundle(dtcg, opts) {
 
   // 3) PRUNE orphans — make each GENERATED collection mirror the current bundle exactly, so a
   // scrim-model/format change or a removed/renamed/disabled palette can't leave stale variables
-  // behind (e.g. the old base-index scrims 250-*/500-0..6/750-*). Scoped to these two generated
-  // collections ONLY: rawByName/semByName are filtered by collection id (varsByName), so no other
-  // collection is ever touched. Delete SEMANTIC orphans first — a stale semantic var may alias a
-  // stale raw var we then remove, whereas every CURRENT semantic var aliases a CURRENT (kept) raw
-  // var, so no live alias is broken.
+  // behind (e.g. the old base-index scrims 250-*/500-0..6/750-*). Scoped to these three generated
+  // collections ONLY: rawByName/semByName/primeByName are filtered by collection id (varsByName), so
+  // no other collection is ever touched. Delete SEMANTIC orphans first — a stale semantic var may
+  // alias a stale raw var we then remove, whereas every CURRENT semantic var aliases a CURRENT (kept)
+  // raw var, so no live alias is broken. Prime carries no aliases in or out, so its prune order
+  // relative to raw/semantic doesn't matter.
   let pruned = 0;
   for (const name of Object.keys(semByName)) {
     if (!currentSem.has(name)) { semByName[name].remove(); pruned++; }
@@ -1284,9 +1313,12 @@ async function applyBundle(dtcg, opts) {
   for (const name of Object.keys(rawByName)) {
     if (!currentRaw.has(name)) { rawByName[name].remove(); pruned++; }
   }
+  for (const name of Object.keys(primeByName)) {
+    if (!currentPrime.has(name)) { primeByName[name].remove(); pruned++; }
+  }
 
   writeColorRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { raw: rawCount, semantic: semCount, pruned: pruned, rebuilt: rebuilt, themeNames: themeNames };
+  return { raw: rawCount, semantic: semCount, prime: primeCount, pruned: pruned, rebuilt: rebuilt, themeNames: themeNames };
 }
 
 // ── the breakpoint-moded FLOAT apply (Type / Geometry) ────────────────────────────

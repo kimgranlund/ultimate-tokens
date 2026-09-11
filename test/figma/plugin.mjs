@@ -175,18 +175,40 @@ if (applyBundle) {
     }, 0);
     return walk(tree);
   };
-  const rawExpect = expect(bundle["palette.tokens.json"]);
+  // primeLeafCount — the "{n}/prime/{step}" leaves nested under each family (REQ-054): P5/#540 routes
+  // these into their OWN "Color Prime" collection, not "Color Primitives", so they're carved out of
+  // rawExpect below and counted separately as primeExpect.
+  const primeLeafCount = (tree) => Object.keys(tree).filter((k) => k[0] !== "$").reduce((a, n) => {
+    const grp = tree[n];
+    return a + (grp && grp.prime && typeof grp.prime === "object" ? Object.keys(grp.prime).filter((k) => k[0] !== "$").length : 0);
+  }, 0);
+  const primeExpect = primeLeafCount(bundle["palette.tokens.json"]);
+  const rawExpect = expect(bundle["palette.tokens.json"]) - primeExpect;
   const semExpect = expect(bundle["Light_tokens.json"]);
 
   try {
     const res = await applyBundle(bundle);
     const raw = F.collections.find((c) => c.name === "Color Primitives");
     const sem = F.collections.find((c) => c.name === "Color Roles");
+    const prime = F.collections.find((c) => c.name === "Color Prime");
     if (!raw) FAIL("apply", "no Color Primitives collection created");
     if (!sem) FAIL("apply", "no Color Roles collection created");
+    if (!prime) FAIL("apply", "no Color Prime collection created (AC-052)");
     if (sem && sem.modes.map((m) => m.name).join() !== "Light,Dark") FAIL("apply", `Color Roles modes = ${sem && sem.modes.map((m) => m.name)}, want Light,Dark`);
+    if (prime && prime.modes.map((m) => m.name).join() !== "Base") FAIL("apply", `Color Prime modes = ${prime && prime.modes.map((m) => m.name)}, want Base (REQ-054, mode-independent)`);
     if (res.raw !== rawExpect) FAIL("apply", `created ${res.raw} raw vars, expected ${rawExpect}`);
+    if (res.prime !== primeExpect) FAIL("apply", `created ${res.prime} prime vars, expected ${primeExpect} (AC-052: 7 * enabled palettes)`);
     if (res.semantic !== semExpect) FAIL("apply", `created ${res.semantic} semantic vars, expected ${semExpect}`);
+
+    if (prime) {
+      const primeNames = F.variables.filter((v) => v.variableCollectionId === prime.id).map((v) => v.name);
+      if (primeNames.length !== primeExpect) FAIL("apply", `Color Prime has ${primeNames.length} vars, expected ${primeExpect}`);
+      // REQ-054 naming: "{n}/{step}" — no "raw/" prefix, no leftover "/prime/" segment (that's the
+      // DTCG source path this leaf was routed FROM, not the Figma variable name).
+      if (!primeNames.includes("primary/brightest")) FAIL("apply", `Color Prime is missing "primary/brightest" (REQ-054 {n}/{step} naming); got e.g. ${primeNames.slice(0, 5).join(", ")}`);
+      const badName = primeNames.find((nm) => nm.indexOf("raw/") === 0 || /\/prime\//.test(nm));
+      if (badName) FAIL("apply", `Color Prime variable "${badName}" does not match the {n}/{step} grammar (REQ-054)`);
+    }
 
     if (raw && sem) {
       const rawIds = new Set(F.variables.filter((v) => v.variableCollectionId === raw.id).map((v) => v.id));
@@ -209,30 +231,38 @@ if (applyBundle) {
     const res2 = await applyBundle(bundle);
     const rawColls = F.collections.filter((c) => c.name === "Color Primitives").length;
     const semColls = F.collections.filter((c) => c.name === "Color Roles").length;
+    const primeColls = F.collections.filter((c) => c.name === "Color Prime").length;
     if (rawColls !== 1) FAIL("idempotent", `re-apply made ${rawColls} Color Primitives collections, want 1`);
     if (semColls !== 1) FAIL("idempotent", `re-apply made ${semColls} Color Roles collections, want 1`);
+    if (primeColls !== 1) FAIL("idempotent", `re-apply made ${primeColls} Color Prime collections, want 1 (AC-052)`);
     const rawVars2 = F.variables.filter((v) => raw && v.variableCollectionId === raw.id).length;
     const semVars2 = F.variables.filter((v) => sem && v.variableCollectionId === sem.id).length;
+    const primeVars2 = F.variables.filter((v) => prime && v.variableCollectionId === prime.id).length;
     if (rawVars2 !== rawExpect) FAIL("idempotent", `re-apply left ${rawVars2} raw vars, want ${rawExpect} (no duplicates)`);
     if (semVars2 !== semExpect) FAIL("idempotent", `re-apply left ${semVars2} semantic vars, want ${semExpect} (no duplicates)`);
+    if (primeVars2 !== primeExpect) FAIL("idempotent", `re-apply left ${primeVars2} prime vars, want ${primeExpect} (no duplicates, AC-052)`);
     if (sem && sem.modes.map((m) => m.name).join() !== "Light,Dark") FAIL("idempotent", `re-apply left Color Roles modes = ${sem && sem.modes.map((m) => m.name)}, want Light,Dark (no duplicate mode)`);
     if (res2.raw !== rawExpect || res2.semantic !== semExpect) FAIL("idempotent", `re-apply reported ${res2.raw}/${res2.semantic} vars, want ${rawExpect}/${semExpect}`);
+    if (res2.prime !== primeExpect) FAIL("idempotent", `re-apply reported prime=${res2.prime} vars, want ${primeExpect}`);
 
-    // ── ORPHAN PRUNE: re-apply removes any var NOT in the current bundle, in BOTH generated
-    //    collections — old-format scrims (250-*/500-0..6/750-*) and removed/renamed/disabled
-    //    palettes — so the file mirrors the generator exactly (full-mirror pruning). ──
+    // ── ORPHAN PRUNE: re-apply removes any var NOT in the current bundle, in ALL THREE generated
+    //    collections — old-format scrims (250-*/500-0..6/750-*), removed/renamed/disabled palettes,
+    //    and a stale prime var — so the file mirrors the generator exactly (full-mirror pruning). ──
     F.figma.variables.createVariable("neutral/500-0", raw, "COLOR"); // old base-index scrim
     F.figma.variables.createVariable("neutral/750-3", raw, "COLOR"); // old 750-base scrim
     F.figma.variables.createVariable("ghost/050", raw, "COLOR");     // removed-palette raw solid
     F.figma.variables.createVariable("ghost/primary", sem, "COLOR"); // removed-palette semantic var
+    F.figma.variables.createVariable("ghost/brightest", prime, "COLOR"); // removed-palette prime var
     const res3 = await applyBundle(bundle);
     const inColl = (cid) => F.variables.filter((v) => v.variableCollectionId === cid).map((v) => v.name);
-    const rawNames3 = inColl(raw.id), semNames3 = inColl(sem.id);
+    const rawNames3 = inColl(raw.id), semNames3 = inColl(sem.id), primeNames3 = inColl(prime.id);
     for (const dead of ["neutral/500-0", "neutral/750-3", "ghost/050"]) if (rawNames3.includes(dead)) FAIL("prune", `orphan raw var '${dead}' not pruned`);
     if (semNames3.includes("ghost/primary")) FAIL("prune", "orphan semantic var 'ghost/primary' not pruned");
+    if (primeNames3.includes("ghost/brightest")) FAIL("prune", "orphan prime var 'ghost/brightest' not pruned");
     if (rawNames3.length !== rawExpect) FAIL("prune", `Color Primitives has ${rawNames3.length} vars after prune, want ${rawExpect}`);
     if (semNames3.length !== semExpect) FAIL("prune", `Color Roles has ${semNames3.length} vars after prune, want ${semExpect}`);
-    if (res3.pruned !== 4) FAIL("prune", `apply reported pruned=${res3.pruned}, expected 4`);
+    if (primeNames3.length !== primeExpect) FAIL("prune", `Color Prime has ${primeNames3.length} vars after prune, want ${primeExpect}`);
+    if (res3.pruned !== 5) FAIL("prune", `apply reported pruned=${res3.pruned}, expected 5`);
 
     // ── REGROUP: apply with {rebuildSemantic} DELETES + re-creates the Color Roles collection (so it
     //    adopts the bundle's canonical order), leaving Color Primitives + the var counts intact and
@@ -263,6 +293,10 @@ if (applyBundle) {
       const bsem = F.collections.find((c) => c.name === "Brand Modes");
       if (!braw || !bsem) FAIL("collnames", "override apply did not create the custom-named collections");
       if (res5.raw !== rawExpect || res5.semantic !== semExpect) FAIL("collnames", `override apply created ${res5.raw}/${res5.semantic} vars, want ${rawExpect}/${semExpect}`);
+      // Color Prime has NO Settings override (figmaCollectionNames only covers raw/semantic) — it stays
+      // "Color Prime" even while raw/semantic are overridden, and its own var count is unaffected.
+      if (res5.prime !== primeExpect) FAIL("collnames", `override apply created ${res5.prime} prime vars, want ${primeExpect} (Color Prime has no name override)`);
+      if (F.collections.filter((c) => c.name === "Color Prime").length !== 1) FAIL("collnames", "override apply should not rename or duplicate Color Prime");
       // the default-named collections from the earlier legs are left untouched (no rename, no prune)
       if (!F.collections.some((c) => c.name === "Color Primitives")) FAIL("collnames", "override apply disturbed the existing default-named Color Primitives");
       setCollectionNames(null); // empty/absent → the defaults (the fallback contract)
@@ -270,6 +304,48 @@ if (applyBundle) {
       if (res6.raw !== rawExpect) FAIL("collnames", "setCollectionNames(null) did not fall back to the default names");
     }
   } catch (e) { FAIL("apply", "applyBundle threw: " + e.message); }
+
+  // ── PRIME RE-APPLY updates VALUES IN PLACE (AC-052's "re-applying updates in place" half — the
+  //    idempotent leg above proves count stability, not that a CHANGED prime color actually lands).
+  //    A fresh mock/load so this leg's own state can't be confused with the shared `F` above. ──
+  {
+    const F10 = mockFigma();
+    let load10;
+    try {
+      load10 = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(F10.figma, "<html>", undefined);
+    } catch (e) { FAIL("primevalue", "could not load code.js for the prime-value leg: " + e.message); }
+    if (load10 && load10.applyBundle) {
+      try {
+        const bundleA = figmaBundle(defaultDocument());
+        const resA = await load10.applyBundle(bundleA);
+        const primeA = F10.collections.find((c) => c.name === "Color Prime");
+        if (!primeA) FAIL("primevalue", "no Color Prime collection created");
+        else {
+          const varsA = F10.variables.filter((v) => v.variableCollectionId === primeA.id);
+          const brightestVar = varsA.find((v) => v.name === "primary/brightest");
+          if (!brightestVar) FAIL("primevalue", "Color Prime is missing 'primary/brightest'");
+          else {
+            const before = JSON.stringify(brightestVar.values[primeA.modes[0].modeId]);
+            // primeChroma (REQ-052) scales every prime swatch's saturation — a global change with no
+            // structural effect (same 7 steps, same names), the cleanest possible value-only mutation.
+            const doc10b = defaultDocument();
+            doc10b.primeChroma = 50;
+            const bundleB = figmaBundle(doc10b);
+            const resB = await load10.applyBundle(bundleB);
+            const primeCollsB = F10.collections.filter((c) => c.name === "Color Prime").length;
+            if (primeCollsB !== 1) FAIL("primevalue", `re-apply made ${primeCollsB} Color Prime collections, want 1`);
+            const varsB = F10.variables.filter((v) => v.variableCollectionId === primeA.id);
+            if (varsB.length !== resA.prime) FAIL("primevalue", `re-apply left ${varsB.length} prime vars, want ${resA.prime} (no duplicates)`);
+            if (resB.prime !== resA.prime) FAIL("primevalue", `re-apply reported prime=${resB.prime}, want ${resA.prime}`);
+            const brightestVar2 = varsB.find((v) => v.name === "primary/brightest");
+            if (!brightestVar2) FAIL("primevalue", "'primary/brightest' missing after re-apply");
+            else if (brightestVar2.id !== brightestVar.id) FAIL("primevalue", "re-apply created a NEW variable for 'primary/brightest' instead of updating the existing one in place");
+            else if (JSON.stringify(brightestVar2.values[primeA.modes[0].modeId]) === before) FAIL("primevalue", "re-apply with a changed primeChroma did not update 'primary/brightest' (still the OLD value)");
+          }
+        }
+      } catch (e) { FAIL("primevalue", "applyBundle threw on the prime-value leg: " + e.message); }
+    }
+  }
 
   // ── THEMES (TKT-0021 — the theme axis flows generically all the way to the apply executor): a
   //    3-theme bundle (Light/Dark/Dim, Dim on the "dark" side) creates a THREE-mode Color Roles
