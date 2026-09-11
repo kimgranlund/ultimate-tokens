@@ -14,6 +14,14 @@ const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table
 const C = (palettes) => ({ palettes, curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, hueSpace: "cam16", theme: "auto" });
 const ALL = RT.defaults.map((p) => ({ ...p, on: true }));
 const enabledCount = (st) => st.palettes.filter((p) => p.on !== false).length;
+
+// ── DATA PALETTE FIXTURES (#516, U7 of #503) — #515/U6's model.mjs mintDataPalettes/defaultDocument
+// work may or may not have merged yet, so these are constructed directly, this repo's standard
+// engine-test pattern (fixture palette objects, not a live default document), independent of it.
+const dataPalette = (i, hue, chroma) => ({ name: `Data ${i}`, hue, chroma, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true });
+const PRIMARY_CHROMA = ALL.find((p) => p.name === "Primary").chroma; // REQ-022: data chroma follows primary's
+const DATA_8 = [30, 75, 120, 165, 210, 255, 300, 345].map((hue, i) => dataPalette(i + 1, hue, PRIMARY_CHROMA));
+const ALL_WITH_DATA = [...ALL, ...DATA_8];
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 
@@ -288,6 +296,51 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (!withSys.includes("--font-mono: 'JetBrains Mono',")) FAIL("shadcn", "--font-mono not mapped from the mono font");
   // absent opts → the shadcn defaults (backward compatible)
   if (!X.exportShadcn(C(ALL)).includes("--radius: 0.625rem;") || X.exportShadcn(C(ALL)).includes("--font-sans:")) FAIL("shadcn", "no opts → default 0.625rem radius + no font vars");
+}
+
+// ── hpg-export-data-palette (#516 — isDataPalette, shadcn chart-1..5 binding, fallback exclusion) ──
+{
+  // isDataPalette: every derived palette's data-ness matches the /^data-\d+$/ slug pattern exactly.
+  const derivedWithData = X.derivedAll(C(ALL_WITH_DATA));
+  for (const p of derivedWithData) {
+    const want = /^data-\d+$/.test(p.n);
+    if (X.isDataPalette(p) !== want) FAIL("data-palette", `isDataPalette(${p.n}) = ${X.isDataPalette(p)}, want ${want}`);
+  }
+  // negative control: a palette merely NAMED like data ("Metadata") must not false-positive.
+  const fake = X.derivedAll(C([{ name: "Metadata", hue: 100, chroma: 50, skew: 0, lift: 0, on: true }]))[0];
+  if (X.isDataPalette(fake)) FAIL("data-palette", "isDataPalette false-positived on a non-'data-N' slug ('metadata')");
+
+  // EX-7 half 1 — chart-1..5 bind to the prime role of data-1..5 when those enabled palettes exist.
+  const scData = X.exportShadcn(C(ALL_WITH_DATA));
+  const chartMatches = (sc, n) => [...sc.matchAll(new RegExp(`--chart-${n}:\\s*(oklch\\([^;]+\\));`, "g"))].map((m) => m[1]);
+  for (let i = 1; i <= 5; i++) {
+    const dp = derivedWithData.find((p) => p.n === `data-${i}`);
+    const primeRole = dp.roles.find((r) => r.suffix === "");
+    const [gotLight, gotDark] = chartMatches(scData, i);
+    const wantLight = X.roleOklch(primeRole.light), wantDark = X.roleOklch(primeRole.dark);
+    if (gotLight !== wantLight || gotDark !== wantDark) FAIL("data-palette", `chart-${i} != prime role of data-${i} (light ${gotLight} vs ${wantLight}; dark ${gotDark} vs ${wantDark})`);
+  }
+
+  // EX-7 half 2 — data palettes all disabled: byte-identical to the pre-feature (no-data) baseline.
+  const allDataOff = ALL_WITH_DATA.map((p) => (/^Data \d+$/.test(p.name) ? { ...p, on: false } : p));
+  if (X.exportShadcn(C(allDataOff)) !== X.exportShadcn(C(ALL))) FAIL("data-palette", "EX-7: with data palettes disabled, shadcn output differs from the pre-feature (no-data) baseline");
+
+  // fallback exclusion (REQ-031) — an adversarial fixture: data-1/data-2 listed FIRST, two renamed
+  // brand palettes ("Aurora"/"Nightfall") matching NEITHER the neutral NOR the primary regex, so a
+  // bare `palettes[0]` fallback (the pre-fix bug) would resolve neutral straight to data-1. The fix
+  // must still land neutral on Aurora (first non-data) and primary on Nightfall (next non-data).
+  const RENAMED = [
+    dataPalette(1, 10, 50), dataPalette(2, 55, 50),
+    { name: "Aurora", hue: 200, chroma: 60, skew: 0, lift: 0, on: true },
+    { name: "Nightfall", hue: 260, chroma: 20, skew: 0, lift: 0, on: true },
+  ];
+  const scRenamed = X.exportShadcn(C(RENAMED));
+  const tokenVal = (sc, tok) => { const m = sc.match(new RegExp(`--${tok}:\\s*(oklch\\([^;]+\\));`)); return m && m[1]; };
+  const derivedRenamed = X.derivedAll(C(RENAMED));
+  const auroraBg = X.roleOklch(derivedRenamed.find((p) => p.n === "aurora").roles.find((r) => r.suffix === "-background").light);
+  const nightfallPrime = X.roleOklch(derivedRenamed.find((p) => p.n === "nightfall").roles.find((r) => r.suffix === "").light);
+  if (tokenVal(scRenamed, "background") !== auroraBg) FAIL("data-palette", "neutral fallback did not land on the first non-data palette (Aurora) — may have resolved to a data palette");
+  if (tokenVal(scRenamed, "primary") !== nightfallPrime) FAIL("data-palette", "primary fallback did not land on the first non-data non-neutral palette (Nightfall) — may have resolved to a data palette");
 }
 
 // ── hpg-export-keycolors (retained brand colors -> exact OKLCH tokens by role + JSON block) ──
@@ -1001,9 +1054,64 @@ if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("
   if (off.length !== 0) FAIL("design-system-make", "disabled make bundle is not empty");
 }
 
+// ── hpg-export-design-system-data (#516 — the ds-export `data` tier + DESIGN.md "Data series"
+// section). REQ-031: data palettes are excluded from `others`/`families` (no hover/active/disabled/
+// container treatment) and form their own tier; DESIGN.md gains a short listing, only when present.
+{
+  const tsc = typeScale({});
+  const gsc = geomScale({});
+  const stateData = C(ALL_WITH_DATA);
+  const ds = X.dsColorRoles(stateData);
+  const wantData = DATA_8.map((_, i) => `data-${i + 1}`);
+
+  if (JSON.stringify(ds.dataFamilies) !== JSON.stringify(wantData)) FAIL("design-system-data", `dataFamilies = ${JSON.stringify(ds.dataFamilies)}, want ${JSON.stringify(wantData)}`);
+  if (ds.families.some((f) => wantData.includes(f))) FAIL("design-system-data", "a data-N slug leaked into ds.families");
+  // minimal token: the prime + its on-color (a legend label pairing, and what the §8 G7 gate
+  // requires of every fill) are present, but none of the interactive-family states — proves the
+  // `others` exclusion actually bit.
+  for (const f of ds.dataFamilies) {
+    if (!ds.tokens.some((t) => t.name === f)) FAIL("design-system-data", `dsColorRoles missing the data prime token for ${f}`);
+    if (!ds.tokens.some((t) => t.name === `${f}-on-${f}`)) FAIL("design-system-data", `dsColorRoles missing the data on-color for ${f}`);
+    for (const suffix of ["-hover", "-active", "-disabled", "-container", "-container-low", "-container-high"]) {
+      if (ds.tokens.some((t) => t.name === `${f}${suffix}`)) FAIL("design-system-data", `data tier ${f} unexpectedly carries the full-family token ${f}${suffix}`);
+    }
+  }
+
+  // no data palettes enabled → no data tier, no Data series section (the pre-#516 shape, untouched).
+  const dsNoData = X.dsColorRoles(C(ALL));
+  const mdNoData = X.exportDesignSystemSpine(C(ALL), tsc, gsc);
+  if (dsNoData.dataFamilies.length !== 0) FAIL("design-system-data", "dataFamilies non-empty with no data palettes enabled");
+  if (mdNoData.includes("## Data series")) FAIL("design-system-data", "DESIGN.md carries a Data series section with no data palettes enabled");
+
+  // data palettes enabled → DESIGN.md gains the section, listing every data family with a
+  // {colors.data-N} reference that actually resolves in tokens.json (frontmatter/tokens.json accord).
+  const mdData = X.exportDesignSystemSpine(stateData, tsc, gsc);
+  if (!mdData.includes("## Data series")) FAIL("design-system-data", "DESIGN.md missing the Data series section with data palettes enabled");
+  const tjData = JSON.parse(X.exportDesignSystemTokens(stateData, tsc, gsc));
+  for (const f of wantData) {
+    if (!mdData.includes(`\`{colors.${f}}\``)) FAIL("design-system-data", `Data series section missing a reference to ${f}`);
+    if (!tjData.colors[f]) FAIL("design-system-data", `tokens.json colors missing ${f} referenced by the Data series section`);
+  }
+  // REQ-030: the FULL semantic layer's per-palette loop needs no edit — 53 x 16 entries.
+  if (Object.keys(tjData.semantic).length !== 53 * ALL_WITH_DATA.length) FAIL("design-system-data", `semantic layer = ${Object.keys(tjData.semantic).length} entries, want 53 * ${ALL_WITH_DATA.length} = ${53 * ALL_WITH_DATA.length}`);
+
+  // the extra section rides the unknown-section tolerance: every canonical section still present,
+  // and Data series sits between Colors and Typography (never reorders the canonical 8).
+  for (const sec of ["## Overview", "## Colors", "## Typography", "## Components", "## Do's and Don'ts"]) if (!mdData.includes(sec)) FAIL("design-system-data", `spine missing ${sec} once Data series is present`);
+  if (!(mdData.indexOf("## Colors") < mdData.indexOf("## Data series") && mdData.indexOf("## Data series") < mdData.indexOf("## Typography"))) FAIL("design-system-data", "Data series section is not positioned between Colors and Typography");
+
+  // a real bundle run with data palettes enabled still clears every non-G1 §8 gate.
+  const files = X.exportDesignSystemBundle(stateData, tsc, gsc, { date: "2026-09-11" });
+  const byNameD = Object.fromEntries(files.map((f) => [f.name, f.data]));
+  const previewsD = files.filter((f) => f.name.startsWith("components/")).map((p) => ({ name: p.name.replace("components/", ""), html: p.data }));
+  const gateD = dsBundleGates({ designMd: byNameD["DESIGN.md"], tokensJson: byNameD["tokens.json"], previews: previewsD });
+  const nonG1D = gateD.findings.filter((f) => f.level === "ERROR" && f.gate !== "G1");
+  if (nonG1D.length > 0) FAIL("design-system-data", `§8 non-G1 gates fail with data palettes enabled: ${nonG1D.map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
+}
+
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "keycolors", "keycolors-dtcg", "keycolors-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "keycolors", "keycolors-dtcg", "keycolors-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

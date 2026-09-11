@@ -63,6 +63,14 @@ function slug(name) {
     .replace(/^-+|-+$/g, "");
 }
 
+// isDataPalette — true for a data-family palette by its SLUG ("data-1".."data-8" convention; #503
+// REQ-020..024). The public/exported twin of model.mjs's local isDataSlug helper (mintDataPalettes /
+// rederiveDataHues) — same pattern, engine-side so exports.js/ds-export.js need no import from src/ui/.
+// Used by exportShadcn's chart binding and ds-export.js's data tier (REQ-031).
+export function isDataPalette(p) {
+  return /^data-\d+$/.test(slug(p.name));
+}
+
 // pad3 — zero-pad a numeric stop to 3 digits. "50" -> "050", 950 -> "950".
 // (refKey from semantic.js handles the ref-string form, including scrim "-i".)
 function pad3(stop) {
@@ -649,9 +657,12 @@ const SHADCN_ORDER = [
 
 export function exportShadcn(state, opts = {}) {
   const palettes = derivedAll(state);
-  const find = (re) => palettes.find((p) => re.test(p.name.toLowerCase()));
-  const neutral = find(/neutral|gray|grey|slate|stone|zinc|mono/) || palettes[0];
-  const primary = find(/primary|brand/) || palettes.find((p) => p !== neutral) || palettes[0];
+  // #503 REQ-031: data palettes (data-1..8) never stand in for neutral/primary/"first palette" —
+  // every non-chart pick searches the non-data pool only, so 16-palette docs keep today's shadcn picks.
+  const nonData = palettes.filter((p) => !isDataPalette(p));
+  const find = (re) => nonData.find((p) => re.test(p.name.toLowerCase()));
+  const neutral = find(/neutral|gray|grey|slate|stone|zinc|mono/) || nonData[0];
+  const primary = find(/primary|brand/) || nonData.find((p) => p !== neutral) || nonData[0];
   const danger = find(/danger|destruct|error|critical|red/) || primary;
   const success = find(/success|positive|green/);
   const warning = find(/warn|caution|amber|yellow|orange/);
@@ -665,6 +676,12 @@ export function exportShadcn(state, opts = {}) {
   const onAccent = (p) => p && rs(p, "-on-" + p.n);
   const aliasPfx = typeof opts.aliasPrefix === "string" && opts.aliasPrefix ? opts.aliasPrefix : null;
 
+  // chart-N (#503 REQ-031/EX-7): the prime role of data-N when that enabled palette exists (palettes
+  // is already the ENABLED set — derivedAll/enabledPalettes — so a disabled data-N falls straight
+  // through to the fallback); else the pre-feature fallback chain, unchanged.
+  const dataN = (i) => palettes.find((p) => p.n === `data-${i}`);
+  const chart = (i, fallback) => { const d = dataN(i); return d ? prime(d) : fallback; };
+
   // token -> the role whose light/dark ends drive it (null tokens are skipped).
   const MAP = {
     background: rs(neutral, "-background"), foreground: rs(neutral, "-on-surface"),
@@ -677,9 +694,9 @@ export function exportShadcn(state, opts = {}) {
     accent: rs(neutral, "-surface-high"), "accent-foreground": rs(neutral, "-on-surface"),
     destructive: prime(danger), "destructive-foreground": onAccent(danger),
     border: rs(neutral, "-outline-variant"), input: rs(neutral, "-outline-variant"), ring: prime(primary),
-    "chart-1": prime(primary), "chart-2": prime(success || secondary || primary),
-    "chart-3": prime(warning || secondary || primary), "chart-4": prime(danger),
-    "chart-5": prime(secondary || neutral),
+    "chart-1": chart(1, prime(primary)), "chart-2": chart(2, prime(success || secondary || primary)),
+    "chart-3": chart(3, prime(warning || secondary || primary)), "chart-4": chart(4, prime(danger)),
+    "chart-5": chart(5, prime(secondary || neutral)),
     sidebar: rs(neutral, "-surface"), "sidebar-foreground": rs(neutral, "-on-surface"),
     "sidebar-primary": prime(primary), "sidebar-primary-foreground": onAccent(primary),
     "sidebar-accent": rs(neutral, "-surface-high"), "sidebar-accent-foreground": rs(neutral, "-on-surface"),
