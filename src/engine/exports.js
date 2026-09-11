@@ -583,6 +583,7 @@ export function exportUI3(state) {
   const palettes = derivedAll(state);
   const primVars = {};
   const semVars = {};
+  const primeVars = {};
 
   for (const p of palettes) {
     // raw primitives: "raw/{n}/{pad3}" and "raw/{n}/{base-i}".
@@ -594,15 +595,6 @@ export function exportUI3(state) {
         const sc = p.scrims[base][step];
         primVars[`raw/${p.n}/${refPath(`${base}-${step}`)}`] = { type: "COLOR", values: { Base: sc.hex } };
       }
-    }
-    // prime: "raw/{n}/prime/{step}" — the seven identity swatches (REQ-054), mirrors the scrim/key
-    // nesting pattern above; always present (not opt-in like key/). NOTE: the LLD's fuller UI3 shape
-    // (a dedicated top-level "Color Prime" collection keyed "{n}/{step}", `COLLECTIONS.colorPrime`)
-    // needs collections.js and the two Figma sandbox literal mirrors to move together for the
-    // `collparity` gate (#539 sub-unit B, stacked on this branch) — this nests under the EXISTING
-    // Color Primitives collection meanwhile, same tier as scrim/key.
-    for (const step of PRIME_STEPS) {
-      primVars[`raw/${p.n}/prime/${step}`] = { type: "COLOR", values: { Base: p.prime[step].hex } };
     }
     // key colors: "raw/{n}/key/{role}" — retained brand colors, exact (mirrors the DTCG raw-tree
     // key/ group; TKT-0022). Present only when the palette set any.
@@ -619,6 +611,12 @@ export function exportUI3(state) {
         },
       };
     }
+    // prime: its OWN top-level collection (REQ-054, LLD Interfaces block) — "{n}/{step}" (no "raw/"
+    // prefix, the same no-prefix convention the Semantic collection above already uses), one Base
+    // mode, the seven identity swatches, always present (not opt-in like key/).
+    for (const step of PRIME_STEPS) {
+      primeVars[`${p.n}/${step}`] = { type: "COLOR", values: { Base: p.prime[step].hex } };
+    }
   }
   // constants — fixed, non-palette raw primitives, Primitives-collection ONLY (mirrors the DTCG
   // raw-tree-only placement: the Semantic collection's top-level keys are treated elsewhere as real
@@ -633,6 +631,11 @@ export function exportUI3(state) {
     collections: {
       [COLLECTIONS.colorRaw]: { modes: ["Base"], variables: primVars },
       [COLLECTIONS.colorSemantic]: { modes: ["Light", "Dark"], variables: semVars },
+      // "Color Prime" (REQ-054): a literal name here, not COLLECTIONS.colorPrime — that constant is
+      // added by #539's sub-unit B (stacked on this branch) alongside the two Figma sandbox literal
+      // mirrors it must move in lockstep with for the `collparity` gate. Sub-unit B swaps this
+      // literal for the constant; the STRING VALUE must equal "Color Prime" either way.
+      "Color Prime": { modes: ["Base"], variables: primeVars },
     },
   };
 }

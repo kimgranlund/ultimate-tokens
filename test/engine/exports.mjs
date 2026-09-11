@@ -455,21 +455,30 @@ const primeDtcgRaw = X.exportDTCG(C(ALL))["palette.tokens.json"];
 const primeDtcgLeafCount = Object.keys(primeDtcgRaw).filter((k) => k !== "constants" && k !== "$extensions").reduce((n, k) => n + Object.keys(primeDtcgRaw[k].prime).length, 0);
 if (primeDtcgLeafCount !== wantPrime) FAIL("prime-dtcg", `DTCG prime leaf count ${primeDtcgLeafCount} != ${wantPrime}`);
 
-// ── hpg-export-prime-ui3 (REQ-054 — raw/{n}/prime/{step}, mirrors the key/ nesting used above) ────
-// NOTE (#539 sub-unit split): the LLD's dedicated top-level "Color Prime" collection
-// (COLLECTIONS.colorPrime, "{n}/{step}") needs collections.js + the two Figma sandbox literals to
-// move together for the `collparity` gate — deferred to #539's sub-unit B, stacked on this branch.
-// This gate covers only what this PR emits: prime nested under the EXISTING Color Primitives
-// collection, same tier as scrim/key.
-const primeUi3Vars = X.exportUI3(C(ALL)).collections["Color Primitives"].variables;
-for (const step of PRIME_STEPS) {
-  const v = primeUi3Vars[`raw/${slug0}/prime/${step}`];
-  if (!v || v.type !== "COLOR" || !/^#[0-9A-F]{6}$/.test(v.values.Base || "")) FAIL("prime-ui3", `UI3 raw/${slug0}/prime/${step} missing or malformed`);
+// ── hpg-export-prime-ui3 (REQ-054, LLD Interfaces block — a DEDICATED "Color Prime" collection,
+//    one "Base" mode, variables keyed "{n}/{step}") ───────────────────────────────────────────
+// NOTE (#539 sub-unit split): the collection is a LITERAL "Color Prime" string here, not
+// COLLECTIONS.colorPrime — that constant is added by #539's sub-unit B (stacked on this branch)
+// together with the two Figma sandbox literal mirrors it must move in lockstep with for the
+// `collparity` gate. The STRING VALUE is fixed now so sub-unit B's constant has a stable shape to
+// agree with.
+const primeUi3Coll = X.exportUI3(C(ALL)).collections["Color Prime"];
+if (!primeUi3Coll || JSON.stringify(primeUi3Coll.modes) !== JSON.stringify(["Base"])) FAIL("prime-ui3", `UI3 "Color Prime" collection missing or wrong modes: ${JSON.stringify(primeUi3Coll && primeUi3Coll.modes)}`);
+else {
+  for (const step of PRIME_STEPS) {
+    const v = primeUi3Coll.variables[`${slug0}/${step}`];
+    if (!v || v.type !== "COLOR" || !/^#[0-9A-F]{6}$/.test(v.values.Base || "")) FAIL("prime-ui3", `UI3 "Color Prime" var ${slug0}/${step} missing or malformed`);
+  }
+  const primeUi3Count = Object.keys(primeUi3Coll.variables).length;
+  if (primeUi3Count !== wantPrime) FAIL("prime-ui3", `UI3 "Color Prime" leaf count ${primeUi3Count} != ${wantPrime}`);
 }
-const primeUi3Count = Object.keys(primeUi3Vars).filter((k) => /\/prime\//.test(k)).length;
-if (primeUi3Count !== wantPrime) FAIL("prime-ui3", `UI3 prime leaf count ${primeUi3Count} != ${wantPrime}`);
-const primeUi3Off = X.exportUI3(primeOff).collections["Color Primitives"].variables;
-if (Object.keys(primeUi3Off).some((k) => k.startsWith(`raw/${offName}/prime/`))) FAIL("prime-ui3", `disabled palette '${offName}' still emits UI3 prime variables`);
+// "Color Prime" carries ONLY prime data — no "raw/" prefixed keys leaked in from the Primitives shape.
+if (primeUi3Coll && Object.keys(primeUi3Coll.variables).some((k) => k.startsWith("raw/"))) FAIL("prime-ui3", `UI3 "Color Prime" variables leaked a "raw/"-prefixed key`);
+// the "Color Primitives" collection must NOT also carry prime data (moved wholesale to its own collection).
+const primitivesVars = X.exportUI3(C(ALL)).collections["Color Primitives"].variables;
+if (Object.keys(primitivesVars).some((k) => /\/prime\//.test(k))) FAIL("prime-ui3", `UI3 "Color Primitives" still carries prime/ keys — should have moved wholesale to "Color Prime"`);
+const primeUi3Off = X.exportUI3(primeOff).collections["Color Prime"].variables;
+if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("prime-ui3", `disabled palette '${offName}' still emits UI3 "Color Prime" variables`);
 
 // ── hpg-export-design-system (the LLM design-system bundle: DESIGN.md universal-dialect core + tokens.json
 // + @dsCard previews + README receipt). The engine gate runs the ported §8 verifier (ds-gates.js) on the
