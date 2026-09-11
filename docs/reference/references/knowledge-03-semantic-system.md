@@ -68,6 +68,11 @@ Full table with exact `light`/`dark` refs: `data/role-table.json` → `roleTable
 `{N}` is the capitalized palette name (`Primary`); the CSS suffix builds `--c-{n}{suffix}`
 (e.g. `--c-primary-dim`). The prime role has empty suffix → `--c-{n}`.
 
+> The editor's Color canvas shows the five Accent roles as a **key swatch strip** ahead of each
+> ramp, labelled `brighter · bright · prime · dim · dimmer` = `{n}High · {n}Bright · {n} · {n}Dim ·
+> {n}Low` (issue #503, ratified 2026-09-11). Those are display labels only; no token, role key, or
+> suffix is named that way, and the 53-role table is unchanged.
+
 ## 4. On-colors (the `050` decision)
 
 **Current mapping**: `on{N}` → `050` light / `050` dark; `on{N}Variant` → `200` / `200`.
