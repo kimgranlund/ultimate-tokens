@@ -128,7 +128,7 @@ export function hueAnchorFrac(palette, controls) {
 // lightness-dependent amount (Abney) — worst in the blues (~6°). Anchoring the KEY stop directly in the
 // RENDER space, at its ACTUAL saturation/lightness, lands it on the set OKLCH hue exactly, for any damping
 // — no CAM16 round-trip. f(h)≈h (slope ≈1), so h ← h − (got − target) is Newton; converges in a few steps.
-function solveOkhslHue(targetOklchHue, s, l) {
+export function solveOkhslHue(targetOklchHue, s, l) {
   let h = targetOklchHue; // seed: OKHSL hue ≈ OKLCH hue to first order
   for (let i = 0; i < 16; i++) {
     const got = rgbToOklchHue(okhslToRgb(h, s, l));
@@ -296,7 +296,7 @@ export function paletteStops(palette, controls, stops) {
 // saturation. Every emitted color is in gamut by OKHSL's construction. l is keyed off the STOP NUMBER
 // (not the array index) so a stop has the same color in the 19-stop display ramp and the 25-stop export ramp.
 const _okL = new Map(); // L* -> OKHSL lightness (via a neutral gray at that L*); memoized
-function okhslLAt(lstar) {
+export function okhslLAt(lstar) {
   const k = lstar.toFixed(2);
   let v = _okL.get(k);
   if (v === undefined) { v = rgbToOkhsl(hctToRgb(0, 0, lstar).rgb).l; _okL.set(k, v); }
