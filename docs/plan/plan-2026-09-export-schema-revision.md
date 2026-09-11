@@ -61,8 +61,9 @@ ruling, and H-3 records a change from the proposed default.
   chart series and which are brand without name-matching, and the ruling only forbids names and
   folders. **Ratified 2026-09-11 (H-1), exactly as proposed.** (Decided 2026-09-11, #578: E1's
   shipped "DESIGN.md family table gains a Group column" reads, in practice, as **Figma Make's own
-  Grammar token reference table only** (`dsMakeColorMd`) — the only one of the three profiles with a
-  literal per-family table. Claude Design's and Stitch's shared canonical Colors section (`dsColorRoles`'s
+  Grammar token reference table only** (`dsMakeColorMd`, rendered into Figma Make's own
+  `guidelines/foundations/color.md` — Make never emits a `DESIGN.md`) — the only one of the three
+  profiles with a literal per-family table. Claude Design's and Stitch's shared canonical Colors section (`dsColorRoles`'s
   `colors` block, byte-identical across both profiles) is prose bullets, not a table, and carries no
   group mention at all; `familiesByGroup` is available to it but unconsumed. This is Make-only by
   the shape of what shipped, not a stated non-goal — left as-is here rather than grown into a new
