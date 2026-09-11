@@ -29,7 +29,7 @@ import {
   EXPORT_STOPS,
   DEFAULT_CONTROLS,
 } from "../engine/tonal.js";
-import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef } from "../engine/semantic.js";
+import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef, identityStops } from "../engine/semantic.js";
 import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
 import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
 
@@ -338,6 +338,8 @@ export function defaultDocument() {
     dampCurve: DEFAULT_CONTROLS.dampCurve,
     dampAmp: DEFAULT_CONTROLS.dampAmp,
     dampBias: DEFAULT_CONTROLS.dampBias,
+    baseIntensity: DEFAULT_CONTROLS.baseIntensity,
+    keyIntensity: DEFAULT_CONTROLS.keyIntensity,
     hueSpace: DEFAULT_CONTROLS.hueSpace,
     relChroma: DEFAULT_CONTROLS.relChroma,
     chromaFloor: DEFAULT_CONTROLS.chromaFloor,
@@ -364,6 +366,8 @@ function controlsOf(doc) {
     dampCurve: doc.dampCurve ?? DEFAULT_CONTROLS.dampCurve,
     dampAmp: doc.dampAmp ?? DEFAULT_CONTROLS.dampAmp,
     dampBias: doc.dampBias ?? DEFAULT_CONTROLS.dampBias,
+    baseIntensity: doc.baseIntensity ?? DEFAULT_CONTROLS.baseIntensity,
+    keyIntensity: doc.keyIntensity ?? DEFAULT_CONTROLS.keyIntensity,
     hueSpace: doc.hueSpace ?? DEFAULT_CONTROLS.hueSpace,
     relChroma: doc.relChroma ?? DEFAULT_CONTROLS.relChroma,
     chromaFloor: doc.chromaFloor ?? DEFAULT_CONTROLS.chromaFloor,
@@ -390,6 +394,8 @@ function stateOf(doc) {
     dampCurve: c.dampCurve,
     dampAmp: c.dampAmp,
     dampBias: c.dampBias,
+    baseIntensity: c.baseIntensity,
+    keyIntensity: c.keyIntensity,
     hueSpace: c.hueSpace,
     relChroma: c.relChroma,
     chromaFloor: c.chromaFloor,
@@ -630,13 +636,20 @@ export function projectView(doc) {
   const contrast = [];
 
   for (const p of allPalettes) {
+    const n = slug(p.name);
+    // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp: the
+    // identity-stop set only needs this role shape, not any resolved color (SPEC spec-muted-base-key-
+    // spikes REQ-004/005) — reused below for the on-color-contrast step so it's derived once per palette.
+    const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
+    const idStops = identityStops(accentRoles);
     // Resolve roles against the FULL EXPORT_STOPS ramp (25) so refs to the export-only
     // half-steps (75/125/175/825/875/925) resolve — they are absent from the 19 display STOPS,
     // and a miss used to fall back to #000000 (the black swatches in the Roles panel).
     const fullStops = paletteStops(
-      { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift, hueSameDir: p.hueSameDir, cuspPull: p.cuspPull },
+      { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift, hueSameDir: p.hueSameDir, cuspPull: p.cuspPull, intensity: p.intensity },
       controls,
       EXPORT_STOPS,
+      idStops,
     ).map((s) => ({
       stop: s.stop,
       hex: s.hex,
@@ -649,13 +662,11 @@ export function projectView(doc) {
 
     const byStop = rampByStop(fullStops);                          // 25 stops — every role ref resolves
     const ramp = fullStops.filter((s) => STOPS.includes(s.stop));  // 19 display stops for the canvas
-    const n = slug(p.name);
     // on-color policy: in "contrast" mode flip the accent on-colors to the better-contrasting end
     // (vs the resolved accent fill) BEFORE per-doc overrides, so an explicit override still wins.
     const lumOf = (ref) => { const hit = byStop.get(Number(ref)); return hit ? relLum(hit.rgb) : 0; };
-    // accent ref ("single" → prime accent 500/500) then on-color policy — both resolution-layer, BEFORE
-    // per-doc overrides so an explicit override still wins.
-    const baseRoles = applyOnColorContrast(applyAccentRef(semanticRoles(n), controls.accentRef), n, lumOf, controls.onColorMode);
+    // on-color policy is resolution-layer, BEFORE per-doc overrides so an explicit override still wins.
+    const baseRoles = applyOnColorContrast(accentRoles, n, lumOf, controls.onColorMode);
     const roles = applyRoleOverrides(baseRoles, doc.roleOverrides).map((r) => ({
       key: r.key,
       suffix: r.suffix,

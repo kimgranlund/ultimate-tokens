@@ -18,6 +18,7 @@ const inDomainState = () => {
   const palettes = Array.from({ length: n }, (_, i) => {
     const p = { name: "P" + i, hue: rnd() * 360, chroma: rnd() * 100, skew: -100 + rnd() * 200, lift: -40 + rnd() * 80, hueShift: -60 + rnd() * 120, hueSameDir: rnd() > 0.5, on: rnd() > 0.3 };
     if (rnd() > 0.5) p.cuspPull = rnd() * 100; // OPTIONAL per-palette override — must round-trip when present, and stay absent when not
+    if (rnd() > 0.5) p.intensity = rnd() * 100; // OPTIONAL per-palette baseIntensity override (REQ-010) — same absent/round-trip shape as cuspPull
     return p;
   });
   // per-doc semantic-mapping overrides: a random, shape-valid subset re-points some roles.
@@ -30,6 +31,7 @@ const inDomainState = () => {
   const geTok = {}; for (const [k, v] of [["MD|base", 30], ["2XL|base", 72], ["XS|base", 18]]) if (rnd() > 0.5) geTok[k] = v;
   return { curve: pick(["linear", "sine", "cubic", "logistic", "exp"]), tension: rnd() * 100, lmin: rnd() * 40, lmax: 60 + rnd() * 40,
     damp: rnd() * 100, dampCurve: 0.5 + rnd() * 3.5, dampAmp: rnd() * 100, dampBias: -100 + rnd() * 200,
+    baseIntensity: rnd() * 100, keyIntensity: rnd() * 100,
     hueSpace: pick(["cam16", "oklch"]), relChroma: rnd() > 0.5, chromaFloor: rnd() * 100, toneMode: pick(["even", "perceptual", "peak"]), vibrancy: rnd() * 100, onColorMode: pick(["fixed", "contrast"]), accentRef: pick(["mode", "single"]), type: { treatment: pick(["product", "luxury", "editorial", "technical", "statement"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { modes: [{ id: "tm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}), ...(Object.keys(tyTok).length ? { tokenOverrides: tyTok } : {}) }, geometry: { treatment: pick(["comfortable", "compact", "spacious", "touch", "pill"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { ramp: "linear4" } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}), ...(rnd() > 0.5 ? { modes: [{ id: "gm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}) }] } : {}), ...(Object.keys(geTok).length ? { tokenOverrides: geTok } : {}) }, theme: pick(["auto", "light", "dark"]), selected: Math.floor(rnd() * n), roleOverrides, palettes };
 };
 
@@ -49,6 +51,35 @@ const mut2 = JSON.parse(JSON.stringify(base)); mut2.palettes[0].hue = 410;   // 
 const hyd2 = U.hydrate(U.serialize(mut2));
 if (hyd2.palettes[0].hue !== 360) FAIL("clamp", `palette hue 410 -> ${hyd2.palettes[0].hue}, want 360`);
 if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "clamping palette hue disturbed sibling chroma");
+// intensity controls (REQ-010): baseIntensity/keyIntensity clamp alone; the optional per-palette
+// `intensity` override clamps alone when present and stays absent when not set.
+{
+  const mut3 = JSON.parse(JSON.stringify(base)); mut3.baseIntensity = 140; mut3.keyIntensity = -20; // out of [0,100]
+  const hyd3 = U.hydrate(U.serialize(mut3));
+  if (hyd3.baseIntensity !== 100) FAIL("clamp", `baseIntensity 140 -> ${hyd3.baseIntensity}, want 100`);
+  if (hyd3.keyIntensity !== 0) FAIL("clamp", `keyIntensity -20 -> ${hyd3.keyIntensity}, want 0`);
+  for (const k of ["curve", "tension", "lmin", "damp", "hueSpace", "selected"]) if (!deepEq(hyd3[k], base[k])) FAIL("clamp", `clamping baseIntensity/keyIntensity disturbed ${k}`);
+
+  const withIntensity = JSON.parse(JSON.stringify(base)); withIntensity.palettes[0].intensity = 240; // out of [0,100]
+  const hydI = U.hydrate(U.serialize(withIntensity));
+  if (hydI.palettes[0].intensity !== 100) FAIL("clamp", `palette.intensity 240 -> ${hydI.palettes[0].intensity}, want 100`);
+  if (!deepEq(hydI.palettes[0].hue, base.palettes[0].hue)) FAIL("clamp", "clamping palette.intensity disturbed sibling hue");
+
+  const noIntensity = JSON.parse(JSON.stringify(base)); delete noIntensity.palettes[0].intensity;
+  if ("intensity" in U.hydrate(U.serialize(noIntensity)).palettes[0]) FAIL("clamp", "absent palette.intensity must stay absent (identity gate)");
+}
+// ── schema-rename (REQ-011, EX-6): pre-v2 snapshot stamps baseIntensity 100; v2 snapshot with the
+// field absent hydrates to the domain default (also 100 today) ─────────────────────────────
+{
+  const pre = { schemaVersion: 1, palettes: base.palettes, vibrancy: 0 };
+  const hydPre = U.hydrate(pre);
+  if (hydPre.baseIntensity !== 100 || hydPre.keyIntensity !== 100) FAIL("schema-rename", `EX-6 pre-v2 snapshot -> baseIntensity ${hydPre.baseIntensity}, keyIntensity ${hydPre.keyIntensity}, want 100/100`);
+  if (hydPre.palettes.length !== base.palettes.length) FAIL("schema-rename", `EX-6 pre-v2 snapshot must not inject/drop palettes: got ${hydPre.palettes.length}, want ${base.palettes.length}`);
+
+  const atV2 = { schemaVersion: 2, palettes: base.palettes };
+  const hydV2 = U.hydrate(atV2);
+  if (hydV2.baseIntensity !== 100 || hydV2.keyIntensity !== 100) FAIL("schema-rename", `EX-6 v2 snapshot with absent field -> baseIntensity ${hydV2.baseIntensity}, keyIntensity ${hydV2.keyIntensity}, want domain default 100/100`);
+}
 // export-format prefs (doc.export = { unit, colorPrefix, … }) — each valid key round-trips; absent stays
 // absent; invalid keys drop; an all-invalid object drops the whole `export`. (colorFormat was REMOVED —
 // Download-All now emits BOTH css-hex/ and css-oklch/, so a legacy colorFormat key is simply dropped.)
