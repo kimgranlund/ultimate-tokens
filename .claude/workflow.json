@@ -1,0 +1,8 @@
+{
+  "backend": "github",
+  "acknowledgedCollisions": [
+    "file-feature",
+    "find-intent",
+    "research-rules"
+  ]
+}
