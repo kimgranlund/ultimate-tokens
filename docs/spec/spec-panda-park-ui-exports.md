@@ -387,13 +387,17 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   "24px", letterSpacing: "0px", fontWeight: 440, textTransform: "none" }`, `textStyles.body.DEFAULT`
   equals it; `tokens.radii.md.value === "12px"`, `tokens.radii.full.value === "9999px"`,
   `tokens.spacing["4"].value === "16px"`, `tokens.borderWidths.thin.value === "1px"`.
-- **EX-4 (NORMATIVE, park ladder, gray = neutral).** `base` / `_dark` hex, then the emitted oklch:
-  `1` `#FFFFFF / #101113`; `2` `#F7F8F9 / #16181B`; `3` `#EFF0F3 / #1C1E22`; `4` `#E7E9ED / #21242A`;
-  `5` `#DFE2E8 / #272A32`; `6` = `-outline-variant` (`#7281A5` at 30%) flattened over step 1;
-  `7` at 60%; `8` at 70%; `9` `oklch(0.5598 0.056 266.1) / oklch(0.6475 0.0554 266.72)`;
-  `10` `oklch(0.469 0.0461 267.38) / oklch(0.7351 0.041 267.83)`; `11` `oklch(0.3797 0.0306 267.41)
-  / oklch(0.8237 0.0233 269.4)`; `12` `oklch(0.1774 0.0044 264.46) / oklch(1 0 0)`. Luminance is
-  monotone in each mode (the REQ-061 control).
+- **EX-4 (NORMATIVE, park ladder, gray = neutral).** Emitted `base` / `_dark` values, steps 6..8
+  flattened over step 1 of the same mode (engine-regenerated 2026-09-11):
+  `1` `oklch(1 0 0) / oklch(0.1774 0.0044 264.46)`; `2` `oklch(0.9787 0.0017 247.84) /
+  oklch(0.2082 0.0067 258.37)`; `3` `oklch(0.9552 0.0041 271.37) / oklch(0.2346 0.0083 264.4)`;
+  `4` `oklch(0.9336 0.0058 264.53) / oklch(0.2598 0.0121 264.34)`; `5` `oklch(0.9122 0.0088
+  264.52) / oklch(0.2854 0.0153 269.14)`; `6` `oklch(0.8855 0.0157 269.97) / oklch(0.3204 0.023
+  264.17)`; `7` `oklch(0.7668 0.033 267.89) / oklch(0.4472 0.0396 268.11)`; `8` `oklch(0.728
+  0.0384 266.59) / oklch(0.4871 0.0437 268.35)`; `9` `oklch(0.5598 0.056 266.1) / oklch(0.6475
+  0.0554 266.72)`; `10` `oklch(0.469 0.0461 267.38) / oklch(0.7351 0.041 267.83)`; `11`
+  `oklch(0.3797 0.0306 267.41) / oklch(0.8237 0.0233 269.4)`; `12` `oklch(0.1774 0.0044 264.46) /
+  oklch(1 0 0)`. Luminance is monotone in each mode (the REQ-061 control).
 - **EX-5 (NORMATIVE, park alpha projection, accent = primary).** Step 9 `base` solid `#136CE9`
   projects to `a = 0.9255`, `C = [0, 96, 231]`, emitted `oklch(… / 92.5%)`; `_dark` solid `#428BFB`
   over black projects to `a = 0.9843`, `C = [67, 141, 255]`. Gray step 3 `base` `#E7E9ED` projects
@@ -419,19 +423,26 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   `BRAND_ONLY`, and a one-palette-disabled fixture; EX-1, EX-2, EX-7 hold as literal assertions.
 - **AC-002** REQ-007, REQ-008: with `opts.type`/`opts.geometry` EX-3 holds; without, the blocks are
   absent and the colour output is byte-identical to the with-opts colour output.
-- **AC-003** REQ-020..028: the `parkui` gate of REQ-061 is green; EX-4, EX-5, EX-6 hold; the
-  alpha check uses the test's own compositing arithmetic, not `alphaProject`.
+- **AC-003** REQ-020..028, REQ-041: the `parkui` gate of REQ-061 is green; EX-4, EX-5, EX-6 hold; the
+  alpha check uses the test's own compositing arithmetic, not `alphaProject`; `flattenOver` and
+  `alphaProject` are exported from `exports.js` and each agrees with the test's arithmetic on the
+  EX-5 inputs.
 - **AC-004** REQ-040, REQ-062: EX-9 holds; `git grep -n "find(/neutral|gray" src/engine` returns
   exactly one site (`pickDrivers`).
-- **AC-005** REQ-042: the `nonempty` gate lists `panda` and `parkui` and both are objects with a
-  `theme.extend` key.
-- **AC-006** REQ-050..052, REQ-063: EX-8 holds in the headless shim; `npm run smoke` shows both tabs
-  render in Chrome (a screenshot in the PR).
+- **AC-005** REQ-042, REQ-043: the `nonempty` gate lists `panda` and `parkui` and both are objects
+  with a `theme.extend` key; for each, the object over the default document is deep-equal under
+  `theme` light, dark, and auto, and a disabled palette's group is absent. Satisfiable per half:
+  the `panda` half once `exportPanda` exists (K1), the `parkui` half once `exportParkUi` exists
+  (K3), both halves in K4.
+- **AC-006** REQ-050..053, REQ-063: EX-8 holds in the headless shim; `npm run smoke` shows both tabs
+  render in Chrome (a screenshot in the PR); REQ-053 by negative grep: `git grep -n "panda\|parkui"
+  mcp/ src/engine/ds-export.js` returns nothing.
 - **AC-007** REQ-064: `git grep -n "pandacss\|park-ui" package.json test/ scripts/` returns hits only
   in `scripts/smoke-panda.mjs` and its CI job.
-- **AC-008** REQ-070..071: `node scripts/smoke-panda.mjs` exits 0 on the K5 builder's machine and
+- **AC-008** REQ-070..072: `node scripts/smoke-panda.mjs` exits 0 on the K5 builder's machine and
   its console shows the seven asserted variable names; the three `[open]` facts are recorded as
-  proven or as their fallback in #570's Findings.
+  proven or as their fallback in #570's Findings; the `panda-smoke` job exists in the CI workflow
+  on the same trigger as the smoke leg and ran green on the K5 PR.
 - **AC-009** REQ-080..083: `git grep -n "8 documented\|eight formats\|8 formats\|the 8 color" CLAUDE.md
   src/engine/exports.js .claude/skills/adding-export-formats docs/reference/references/
   knowledge-04-export-formats.md README.md` returns nothing; `docs:doc-checker` re-scores
@@ -487,7 +498,8 @@ first PR; K3 carries the Park UI wiring for the same reason; K4 is the joint gat
 1. **K1 `exportPanda` colour + wiring** (REQ-001..006, 009, 040..043, 050..052 for `panda`, 060,
    062, 063 for `panda`). Touches `exports.js`, `model.mjs`, `drawer.js`, `app-helpers.mjs`,
    `test/engine/exports.mjs`, `test/engine/fixtures/shadcn-baseline.css`, `test/ui/headless-boot.mjs`.
-   Done when AC-001, AC-004, AC-005, AC-006 (panda half), AC-007 hold. Size: big. After N-1, N-3, H-3.
+   Done when AC-001, AC-004, AC-005 (panda half), AC-006 (panda half), AC-007 hold. Size: big. After
+   N-1, N-3, H-3.
 2. **K2 Panda type + geometry blocks** (REQ-007, 008). `exports.js`, `model.mjs` (the opts), the
    `panda` gate. Done when AC-002 holds. Size: small. After H-1.
 3. **K3 `exportParkUi` + wiring** (REQ-020..028, 041, 050..052 for `parkui`, 061, 063 for `parkui`).
