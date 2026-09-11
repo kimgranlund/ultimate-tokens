@@ -486,6 +486,21 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     return { rgb: oklchToRgb(Number(L), Number(C), Number(H)), a: a !== undefined ? Number(a) / 100 : 1 };
   };
 
+  // The ratified 1..8 raw-stop table (docs/reference/data/radix-projection.json), redeclared here
+  // independently of exports.js's own PARK_RAW_STEPS — pins the EXACT stop number per step, not
+  // just monotone direction (a same-direction off-by-one, e.g. step 6 duplicating step 5's stop,
+  // still reads monotone but is wrong).
+  const RATIFIED_RAW_STEPS = [
+    { step: 1, light: 100, dark: 900 },
+    { step: 2, light: 125, dark: 875 },
+    { step: 3, light: 150, dark: 850 },
+    { step: 4, light: 175, dark: 825 },
+    { step: 5, light: 200, dark: 800 },
+    { step: 6, light: 250, dark: 750 },
+    { step: 7, light: 300, dark: 700 },
+    { step: 8, light: 350, dark: 650 },
+  ];
+
   const state = C(ALL);
   const preset = X.exportParkUi(state);
   if (typeof preset.name !== "string" || !preset.name.startsWith("ultimate-tokens-park-ui-")) FAIL("parkui", `name malformed: ${preset.name}`);
@@ -526,6 +541,23 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     }
     if (!g["on-accent"] || typeof g["on-accent"].value.base !== "string") FAIL("parkui", `colors.${p.n}.on-accent missing`);
     if (!g.prime || typeof g.prime.value.base !== "string" || g.prime.value._dark !== undefined) FAIL("parkui", `colors.${p.n}.prime malformed (mode-independent, base only): ${JSON.stringify(g.prime)}`);
+
+    // exact-value pin (reviewer finding on #588's parkui gate): each of steps 1..8 must read the
+    // EXACT ratified stop number, not merely a monotone-in-the-right-direction neighbour — deep-equal
+    // the emitted leaf's parsed rgb against derivedAll's own byStop.get(expectedStop) for that step,
+    // per palette (cheap enough to run for all, not just one representative).
+    for (const { step, light, dark } of RATIFIED_RAW_STEPS) {
+      const parsedBase = parseOklch(g[String(step)].value.base);
+      const parsedDark = parseOklch(g[String(step)].value._dark);
+      const wantBase = p.byStop.get(light);
+      const wantDark = p.byStop.get(dark);
+      if (!parsedBase || !wantBase || parsedBase.rgb.some((c, i) => Math.abs(c - wantBase[i]) > 1)) {
+        FAIL("parkui", `colors.${p.n}.${step}.base rgb ${parsedBase && parsedBase.rgb} != byStop.get(${light}) ${wantBase} (exact-stop pin)`);
+      }
+      if (!parsedDark || !wantDark || parsedDark.rgb.some((c, i) => Math.abs(c - wantDark[i]) > 1)) {
+        FAIL("parkui", `colors.${p.n}.${step}._dark rgb ${parsedDark && parsedDark.rgb} != byStop.get(${dark}) ${wantDark} (exact-stop pin)`);
+      }
+    }
   }
 
   // REQ-025: accent/gray are self-contained deep copies of the driver groups, ref-rewritten.
