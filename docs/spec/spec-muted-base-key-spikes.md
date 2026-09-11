@@ -141,8 +141,12 @@ ladder, their own chroma control, and their own token group; the editor strip re
   dimmer, dimmest, lightest first. Deterministic; no DOM.
 - **REQ-051** Ladder (ratified 2026-09-11, R1): lightness is OKHSL `l` (the same
   perceptually uniform axis the `perceptual` ramp path steps in). `l_prime` is the OKHSL lightness of
-  the palette's key colour, `okhslLAt(peakC(effHue).tone)`, so `prime` sits where the hue is most
-  chromatic (the same anchor `deriveKeyColor` uses for the gallery tile). Steps are EVEN in `l` with
+  the palette's key colour ITSELF: `rgbToOkhsl(deriveKeyColor(palette).rgb).l`, the actual chromatic
+  cusp colour (`effHue`, `peakC` chroma scaled by `chroma / 100`, cusp tone through `hctToRgb`), never
+  the neutral grey at the cusp tone (ruled 2026-09-11 on #537: REQ-056 is the intent, this is the
+  means that satisfies it). Rationale: a chromatic colour and a grey at the same CIELAB L* differ in
+  OKHSL `l` by a Helmholtz-Kohlrausch gap that grows toward the gamut edge, so anchoring on the grey
+  put `prime` off the tile by more than one 8-bit step. Steps are EVEN in `l` with
   `PRIME_STEP = 0.09`, compressed at the edges so all seven stay inside `[PRIME_L_MIN, PRIME_L_MAX] =
   [0.14, 0.94]`: `up = min(PRIME_STEP, (PRIME_L_MAX - l_prime) / 3)`, `down = min(PRIME_STEP,
   (l_prime - PRIME_L_MIN) / 3)`. With the skew bend of REQ-053a, `l_i = l_prime + 3 * up * w_i`
@@ -150,11 +154,20 @@ ladder, their own chroma control, and their own token group; the editor strip re
   (`w_i = |t_i|` at `skew 0`, giving the even ladder `l_prime + up * (3 - i)` / `l_prime - down *
   (i - 3)`). Yellow (cusp near white) therefore compresses upward and spreads downward; blue does the
   reverse. Monotone strictly decreasing in `l` whenever `up, down > 0`, at every skew.
-- **REQ-052** Chroma: OKHSL saturation `s = clamp01(palette.chroma / 100 * pc)` where
-  `pc = (palette.primeChroma ?? controls.primeChroma) / 100`, applied to all seven, no damping. In
-  gamut by OKHSL construction; `inGamut` is always true and asserted.
-- **REQ-053** Hue: the palette's OKLCH hue, anchored with `solveOkhslHue` at the `prime` swatch's own
-  `(s, l_prime)` so `prime` lands on the set OKLCH hue; `hueShift` applies with the ramp's rule
+- **REQ-052** Chroma: OKHSL saturation `s = clamp01(key.s * pc)` where `key.s =
+  rgbToOkhsl(deriveKeyColor(palette).rgb).s` is the key colour's OWN OKHSL saturation and
+  `pc = (palette.primeChroma ?? controls.primeChroma) / 100`; `palette.chroma` enters only through
+  `deriveKeyColor`. Applied to all seven, no damping; in gamut by OKHSL construction; `inGamut` is
+  always true and asserted (ruled 2026-09-11 on #537). Rationale: a CAM16 chroma fraction is not an
+  OKHSL saturation, and solving the hue at one `s` while rendering at another reintroduced Abney
+  drift. With REQ-051 and REQ-053 this makes `prime` the key colour in all three OKHSL coordinates
+  at `primeChroma 100`, which is what REQ-056 asserts.
+- **REQ-053** Hue: the key colour's own OKHSL hue, `key.h = rgbToOkhsl(deriveKeyColor(palette).rgb).h`,
+  read directly and shared by all seven swatches; there is NO hue re-solve in the prime system
+  (ruled 2026-09-11 on #537: `solveOkhslHue` at the palette hue carried an Abney drift into the muted
+  swatches and can oscillate at very low saturation, and it is shared with `tonal.js`, whose legacy
+  fixture is a hard wall). Since `s = key.s` and `l_prime = key.l` at `primeChroma 100`, `prime`
+  reproduces the key colour exactly, not approximately. `hueShift` applies with the ramp's rule
   (`dir = hueSameDir ? -|t| : t`, `t = (i - 3) / 3`, so `brightest` is `t = -1`, `dimmest` `t = +1`).
   (Ratified 2026-09-11, R5.)
 - **REQ-053a** Skew (ratified 2026-09-11, R5): the palette's `skew` bends the ladder toward light or
@@ -208,20 +221,25 @@ ladder, their own chroma control, and their own token group; the editor strip re
 - **EX-3 (NORMATIVE, override).** As EX-2 but Warning carries `intensity 100`: Warning's ramp equals
   its EX-1 ramp; Primary is unchanged from EX-2.
 - **EX-4 (NORMATIVE, prime ladder).** Primary at `skew 0` (a probe; the default Primary carries
-  `skew -20`, see EX-4b), `primeChroma 100`: `l_prime` is the OKHSL
-  lightness of the hue's cusp tone; `up = down = 0.09` (the cusp is far from both bounds), so the
-  seven `l` values are `l_prime + 0.27, +0.18, +0.09, 0, -0.09, -0.18, -0.27`; `s = 0.95`;
-  `prime.hex` equals `deriveKeyColor(primary).keyHex` within one 8-bit step per channel.
-- **EX-4b (NORMATIVE, skew bend).** As EX-4 with `skew -20`: `g = 3 ** -0.2 = 0.8027`; light-side
-  weights `|t| ** (1 / g)` for `t = 2/3, 1/3` are `0.6032, 0.2545`, dark-side weights `|t| ** g` are
-  `0.7223, 0.4140`; so `l = l_prime + 0.27, +0.1629, +0.0687, 0, -0.1118, -0.1950, -0.27`. Ends and
-  `prime` equal EX-4; every inner swatch is darker than in EX-4. With `skew +20` the weights swap
-  sides (`0.7223, 0.4140` light, `0.6032, 0.2545` dark) and every inner swatch is lighter.
-- **EX-5 (NORMATIVE, edge compression).** Default Warning (`hue 70, chroma 100`), cusp near white,
-  say `l_prime = 0.90`: `up = min(0.09, 0.04 / 3) = 0.0133`, `down = 0.09`; `brightest = 0.94`,
-  `dimmest = 0.63` (at `skew 0`; the default Warning's `skew 40` bends the inner swatches lighter,
-  ends unchanged). All seven in `[0.14, 0.94]`, strictly decreasing.
-- **EX-6 (NORMATIVE, prime chroma).** As EX-4 with `primeChroma 50`: `s = 0.475` on all seven, `l`
+  `skew -20`, see EX-4b), `hueSpace "cam16"` with `role-table.json`'s raw pair (`hue 267, chroma 95`),
+  `primeChroma 100`. Engine-regenerated 2026-09-11 (#537): `l_prime = 0.528528`, `s = 0.965345` (the
+  key colour's own OKHSL saturation, no longer `chroma / 100`), `up = down = 0.09` (uncompressed).
+  `l` and hex, brightest to dimmest: `0.798528 #A5C8FE`, `0.708528 #7CAEFE`, `0.618528 #5194FC`,
+  `0.528528 #2177F6`, `0.438528 #0F60D2`, `0.348528 #084BA8`, `0.258528 #04377F`. `prime.hex`
+  equals `deriveKeyColor(Primary).keyHex` byte for byte.
+- **EX-4b (NORMATIVE, skew bend).** As EX-4 with `skew -20`: `g = 3 ** -0.2 = 0.802742`. `l` and
+  hex: `0.798528 #A5C8FE`, `0.691458 #74AAFD`, `0.597234 #468DFB`, `0.528528 #2177F6`,
+  `0.416749 #0D5BC8`, `0.333539 #0748A2`, `0.258528 #04377F`. Ends and `prime` equal EX-4; every
+  inner swatch is darker than in EX-4. With `skew +20` the light-side and dark-side weights swap and
+  every inner swatch is lighter. (Engine-regenerated 2026-09-11, #537.)
+- **EX-5 (NORMATIVE, edge compression).** Warning at `skew 0` (a probe; the default carries
+  `skew 40`), `hueSpace "cam16"`, raw pair `hue 70, chroma 100`, `primeChroma 100`. Engine-regenerated
+  2026-09-11 (#537): `l_prime = 0.749941`, `s = 1.000000` (a `chroma 100` palette sits on the OKHSL
+  saturation boundary), `up = min(0.09, (0.94 - 0.749941) / 3) = 0.063353` (compressed), `down =
+  0.09`. `l` and hex: `0.940000 #FFEAD4`, `0.876647 #FFD3A2`, `0.813294 #FFBB6A`, `0.749941 #FDA200`,
+  `0.659941 #DC8D00`, `0.569941 #BD7800`, `0.479941 #9E6300`. All seven in `[0.14, 0.94]`, strictly
+  decreasing; the default `skew 40` bends the inner swatches lighter with the ends unchanged.
+- **EX-6 (NORMATIVE, prime chroma).** As EX-4 with `primeChroma 50`: `s = key.s / 2` on all seven, `l`
   unchanged; the ramp is unchanged. With `palette.primeChroma 100` on Primary inside a document at
   `primeChroma 50`, Primary's prime system equals EX-4.
 - **EX-7 (NORMATIVE, naming).** For Primary the CSS export contains `--primary-prime-brightest` …
@@ -287,8 +305,16 @@ ladder, their own chroma control, and their own token group; the editor strip re
   are skew-invariant within 1e-9; at `skew 0` the weights equal `|t|`; for `skew > 0` every inner
   swatch's `l` is >= its `skew 0` value and for `skew < 0` <= (strict where `up`/`down > 0`); the
   weights re-derived in the test from `3 ** (skew / 100)` match within 1e-9 (EX-4b binds the numbers);
-  (e) measured OKLCH hue of `prime` equals the palette hue within 0.5° for every default
-  chromatic palette (chroma >= 20), and each other swatch within 2° when `hueShift 0`; (f) with
+  (e) hue, referenced to the KEY COLOUR's own pixel, never to the `hue` control (ruled 2026-09-11 on
+  #537, the AC-005 precedent, no exemptions): `prime`'s OKLCH hue measured from its emitted 8-bit
+  pixel equals the OKLCH hue measured from `deriveKeyColor(palette).rgb` (an identity at `primeChroma
+  100`; (h)'s exact-hex check is the stronger form and is kept alongside); each of the other six
+  swatches is within `max(0.5°, 2 * q)` of the `prime` pixel hue when `hueShift 0`, where `q` is the
+  hue quantum at THAT swatch's measured chroma, the hue swing produced by a 1/255 perturbation of one
+  RGB channel at that colour, re-derived in the test from the pixel. Near-neutral primes (Neutral:
+  about 8° of spread from ±1/255) are covered by the chroma-aware `tol`, never exempted. Any residual
+  between the `hue` control and the key colour's pixel hue is `deriveKeyColor`'s own ratified
+  behaviour and is not asserted here; (f) with
   `hueShift 20` the `brightest`/`dimmest` hues move by `-20`/`+20` within 2° and `prime` is invariant;
   (g) `s` scales linearly with `primeChroma` (ratio of measured OKHSL `s` at 50 vs 100 equals 0.5
   within 0.02 on an unclamped probe); (h) REQ-056: `prime.hex` vs `deriveKeyColor` within one 8-bit
