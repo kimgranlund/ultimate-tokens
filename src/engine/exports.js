@@ -29,7 +29,7 @@
 // theme light/dark/auto.
 
 import { paletteStops, EXPORT_STOPS, DEFAULT_CONTROLS } from "./tonal.js";
-import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, DEFAULT_THEMES } from "./semantic.js";
+import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, identityStops, DEFAULT_THEMES } from "./semantic.js";
 import { COLLECTIONS } from "./collections.js";
 import { oklchToRgb } from "./okhsl.js";
 
@@ -165,6 +165,8 @@ function controlsOf(state) {
     dampCurve: state.dampCurve ?? DEFAULT_CONTROLS.dampCurve,
     dampAmp: state.dampAmp ?? DEFAULT_CONTROLS.dampAmp,
     dampBias: state.dampBias ?? DEFAULT_CONTROLS.dampBias,
+    baseIntensity: state.baseIntensity ?? DEFAULT_CONTROLS.baseIntensity,
+    keyIntensity: state.keyIntensity ?? DEFAULT_CONTROLS.keyIntensity,
     hueSpace: state.hueSpace ?? "cam16", // a raw legacy state without the field was authored in cam16 (mirror the UI's legacy-preservation stamp); a live doc always carries it explicitly
     // distribution mode + its shapers — previously dropped here, so exports always used the
     // default mode regardless of the doc. Threaded now so exports match what the UI renders.
@@ -197,16 +199,24 @@ function derivePalette(palette, controls, overrides) {
     dampCurve: controls.dampCurve,
     dampAmp: controls.dampAmp,
     dampBias: controls.dampBias,
+    baseIntensity: controls.baseIntensity,
+    keyIntensity: controls.keyIntensity,
     hueSpace: controls.hueSpace,
     toneMode: controls.toneMode,
     vibrancy: controls.vibrancy,
     relChroma: controls.relChroma,
     chromaFloor: controls.chromaFloor,
   };
+  // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp: the
+  // identity-stop set only needs this role shape, not any resolved color (SPEC spec-muted-base-key-
+  // spikes REQ-004/005) — reused below for the on-color-contrast step so it's derived once per palette.
+  const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
+  const idStops = identityStops(accentRoles);
   const stopList = paletteStops(
-    { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull },
+    { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull, intensity: palette.intensity },
     ctl,
     EXPORT_STOPS,
+    idStops,
   );
 
   // stop (number) -> rgb int triple, for ref resolution.
@@ -247,7 +257,7 @@ function derivePalette(palette, controls, overrides) {
   // on-color policy: "contrast" mode flips the accent on-colors to the better-contrasting end
   // BEFORE per-doc overrides (so an explicit override still wins). No-op in the default "fixed" mode.
   const lumOf = (ref) => { const rgb = byStop.get(Number(ref)); return rgb ? relLumExp(rgb) : 0; };
-  const onAdjusted = applyOnColorContrast(applyAccentRef(semanticRoles(n), controls.accentRef), n, lumOf, controls.onColorMode);
+  const onAdjusted = applyOnColorContrast(accentRoles, n, lumOf, controls.onColorMode);
   const roles = applyRoleOverrides(onAdjusted, overrides).map((r) => {
     const L = resolveRef(r.light);
     const D = resolveRef(r.dark);

@@ -60,6 +60,11 @@ export const DOMAINS = {
   dampCurve: { kind: "number", min: 0.5, max: 4, default: 1.5 },
   dampAmp: { kind: "number", min: 0, max: 100, default: 0 },
   dampBias: { kind: "number", min: -100, max: 100, default: 0 },
+  // ramp-shaping intensity (see tonal.js DEFAULT_CONTROLS.baseIntensity/keyIntensity, SPEC
+  // spec-muted-base-key-spikes REQ-001/010). Both default 100 — a fresh/absent-field doc renders
+  // exactly as today (legacy invariance, REQ-003/007).
+  baseIntensity: { kind: "number", min: 0, max: 100, default: 100 },
+  keyIntensity: { kind: "number", min: 0, max: 100, default: 100 },
   // Hue space (see tonal.js DEFAULT_CONTROLS.hueSpace). Default "oklch" (the slider value IS the OKLCH
   // hue). A doc PERSISTED with hueSpace:"cam16" round-trips as cam16 (legacy preserved); an absent field
   // hydrates to "oklch" (the new default). The legacy-storage stamp (app.js openSet) keeps a pre-hueSpace
@@ -155,6 +160,9 @@ export function clampPalette(p) {
   // cuspPull (perceptual path) is OPTIONAL — a per-palette override of the global `vibrancy` (0..100):
   // how far this palette's richest stop is nudged toward stop 500. Absent → inherit the global vibrancy.
   if (Number.isFinite(src.cuspPull)) out.cuspPull = clampNumber(src.cuspPull, 0, 100);
+  // intensity (REQ-010) is OPTIONAL — a per-palette override of the global `baseIntensity` (0..100),
+  // same absent-means-inherit shape as cuspPull. Absent → inherit controls.baseIntensity.
+  if (Number.isFinite(src.intensity)) out.intensity = clampNumber(src.intensity, 0, 100);
   // STORY (optional, from a curated preset): the source color's evocative name, a one-line
   // description, and its role in the set. Kept as-is iff present (free strings / known role).
   if (typeof src.colorName === "string" && src.colorName) out.colorName = src.colorName;
@@ -218,7 +226,7 @@ function clampOverrides(o) {
 // MUST add its own RENAME_MAPS entry here and bump CURRENT_SCHEMA_VERSION, in the SAME change that
 // renames it. This is not a one-off fix for the 2026-07-13 voices; it's how every rename ships from
 // now on, the same way a Figma variable rename ships its FIGMA_MIGRATIONS entry (TKT-0012).
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 // DROPPED_KEYS (TKT-0455) — the loud-fail accounting channel. hydrate() attaches the report of every
 // unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
@@ -241,6 +249,15 @@ const RENAME_MAPS = [
   {
     version: 1, // the 2026-07-13 voice-taxonomy rename — every doc saved before it has schemaVersion 0/absent
     renameVoices: { Heading: "Headline", UI: "Label", Quote: "Lead", Caption: "Tiny", Legal: "Body" },
+  },
+  {
+    // the intensity-controls schema bump (SPEC spec-muted-base-key-spikes REQ-011, EX-6): a doc saved
+    // before baseIntensity/keyIntensity existed stamps baseIntensity: 100 (its pre-feature look) BEFORE
+    // the domain clamp, so a later default flip (the 45 muted-default follow-up) can never change how an
+    // already-saved kit renders. A v2+ doc with the field absent hydrates to the domain default instead
+    // (also 100 today) — this stamp only fires for a doc that PREDATES the field existing at all.
+    version: 2,
+    stampIntensity: true,
   },
 ];
 
@@ -285,6 +302,9 @@ function applyRenameMaps(snapshot) {
       });
       if (tov !== type.tokenOverrides) type = { ...type, tokenOverrides: tov };
       if (type !== s.type) s = { ...s, type };
+    }
+    if (entry.stampIntensity && s && typeof s.baseIntensity !== "number") {
+      s = { ...s, baseIntensity: 100 };
     }
   }
   return s;
@@ -350,6 +370,8 @@ export function hydrate(snapshot) {
     dampCurve: clampNumber(s.dampCurve ?? DOMAINS.dampCurve.default, DOMAINS.dampCurve.min, DOMAINS.dampCurve.max),
     dampAmp: clampNumber(s.dampAmp ?? DOMAINS.dampAmp.default, DOMAINS.dampAmp.min, DOMAINS.dampAmp.max),
     dampBias: clampNumber(s.dampBias ?? DOMAINS.dampBias.default, DOMAINS.dampBias.min, DOMAINS.dampBias.max),
+    baseIntensity: clampNumber(s.baseIntensity ?? DOMAINS.baseIntensity.default, DOMAINS.baseIntensity.min, DOMAINS.baseIntensity.max),
+    keyIntensity: clampNumber(s.keyIntensity ?? DOMAINS.keyIntensity.default, DOMAINS.keyIntensity.min, DOMAINS.keyIntensity.max),
     hueSpace: clampEnum(s.hueSpace, DOMAINS.hueSpace.values, DOMAINS.hueSpace.default),
     relChroma: s.relChroma === true, // boolean chroma-basis flag; absent/non-true -> false (legacy default)
     chromaFloor: clampNumber(s.chromaFloor ?? DOMAINS.chromaFloor.default, DOMAINS.chromaFloor.min, DOMAINS.chromaFloor.max),
