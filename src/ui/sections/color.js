@@ -1,4 +1,4 @@
-import { SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, projectView, seedFromKeyColor, slug } from "../model.mjs";
+import { SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, projectView, rederiveDataHues, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
@@ -1823,8 +1823,43 @@ export class ColorSectionImpl {
   }
 
 
+  // ── U8: "Add data palettes (8)" / "Re-derive data hues" (SPEC spec-muted-base-key-spikes
+  // REQ-032, the opt-in path for a document that predates this feature, REQ-012). ──────────
+  // dataPaletteCount — mirrors model.mjs's own local isDataSlug (its comment: each caller
+  // re-derives the "Data N" convention rather than share an export).
+  dataPaletteCount() {
+    return (this.doc.palettes || []).filter((p) => /^data-\d+$/.test(slug(p.name))).length;
+  }
+
+  // addDataPalettes — REQ-032/AC-032: appends the 8 derived Data N palettes. A no-op once any
+  // already exist (the opt-in only ever runs once per document); mintDataPalettes itself
+  // returns [] with no Primary palette to anchor the derivation on.
+  addDataPalettes() {
+    if (this.dataPaletteCount() > 0) return;
+    const fresh = mintDataPalettes(this.doc);
+    if (!fresh.length) {
+      this.toast("Add a Primary palette first");
+      return;
+    }
+    this.commit((d) => d.palettes.push(...fresh));
+    this.toast("Added 8 data palettes");
+  }
+
+  // rederiveDataHuesAction — REQ-023/AC-032: recomputes existing Data N hues from the CURRENT
+  // Primary + brand hues; every other field is left untouched. A no-op when the document has
+  // no Data N palettes yet.
+  rederiveDataHuesAction() {
+    if (this.dataPaletteCount() === 0) return;
+    this.commit((d) => {
+      d.palettes = rederiveDataHues(d).palettes;
+    });
+    this.toast("Re-derived data hues");
+  }
+
+
   renderGlobalInspector() {
     const d = this.doc;
+    const hasDataPalettes = this.dataPaletteCount() > 0;
     return h(
       "div",
       { class: "insp-body" },
@@ -1930,6 +1965,25 @@ export class ColorSectionImpl {
             { labelTitle: "peak: chroma is % of each hue's own peak. gamut: % of every stop's gamut ceiling — palettes harmonize across hue." },
           )
         : false,
+      // Data palettes (SPEC spec-muted-base-key-spikes REQ-032/REQ-012, U8) — the opt-in path for
+      // a document that predates this feature: "Add data palettes (8)" mints the 8 Data N
+      // palettes once (disabled once any exist); "Re-derive data hues" recomputes existing ones
+      // from the current Primary + brand hues (disabled when none exist yet).
+      h("div", { class: "sub-head" }, "Data palettes"),
+      h(
+        "div",
+        { class: "insp-actions" },
+        btn([icon("plus"), "Add data palettes (8)"], {
+          title: hasDataPalettes ? "This document already has data palettes" : "Derive 8 data palettes from Primary + the brand hues",
+          disabled: hasDataPalettes,
+          onclick: () => this.addDataPalettes(),
+        }),
+        btn([icon("arrows-clockwise"), "Re-derive data hues"], {
+          title: hasDataPalettes ? "Recompute Data N hues from the current Primary + brand hues" : "No data palettes yet",
+          disabled: !hasDataPalettes,
+          onclick: () => this.rederiveDataHuesAction(),
+        }),
+      ),
     );
   }
 
