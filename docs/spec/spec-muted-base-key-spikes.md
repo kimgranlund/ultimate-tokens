@@ -1,7 +1,7 @@
 ---
 doc-type: spec
 id: spec-muted-base-key-spikes
-status: draft           # draft | approved | superseded
+status: approved        # draft | approved | superseded
 version: 0.1.0
 date: 2026-09-11
 owner: Kim Granlund
