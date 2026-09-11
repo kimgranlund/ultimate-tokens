@@ -34,6 +34,7 @@ import { COLLECTIONS } from "./collections.js";
 import { primeSwatches, PRIME_STEPS } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
 import { rampChromaOf, primeChromaOf } from "./resolve.mjs";
+import { cssFontStack } from "./type.mjs";
 
 // WCAG relative luminance of an [r,g,b] (0..255) triple — for the opt-in contrast on-color pick.
 // Exported: ds-export.js's dsContrast also needs it (kept as one source, not a duplicate).
@@ -926,8 +927,10 @@ export function exportShadcn(state, opts = {}) {
 // survives in the consumer's `presets` array. Every colour is a RESOLVED oklch() string (N-3);
 // unlike this file's ADR-006-padded CSS/JSON/DTCG/UI3 surfaces, every Panda key is UNPADDED
 // (N-1, the Panda/Tailwind convention exportTailwind already uses — `"50"`, not `"050"`).
-// v1 is colour-only (K1 of #586); the type (`fonts`/`textStyles`) and geometry (`radii`/
-// `spacing`/`borderWidths`) blocks land in K2 (#587) as `opts.type`/`opts.geometry`.
+// Color is always emitted (K1 of #586); `opts.type` (a resolved typeScale) additionally emits
+// `tokens.fonts`/`textStyles`, and `opts.geometry` (a resolved geomScale) additionally emits
+// `tokens.radii`/`spacing`/`borderWidths` (K2 of #587, REQ-007/008) — absent opts, absent blocks
+// (backward-compatible, the shadcn precedent).
 export function exportPanda(state, opts = {}) {
   const palettes = derivedAll(state);
   const tokens = {
@@ -976,7 +979,55 @@ export function exportPanda(state, opts = {}) {
     semanticTokens.colors[p.n] = sem;
   }
   const name = "ultimate-tokens-" + slug(state.name || "brand-kit");
-  return { name, theme: { extend: { tokens, semanticTokens } } };
+
+  // REQ-007: opts.type (a resolved typeScale) -> tokens.fonts.{display,heading,body,ui,mono},
+  // the quoted stack typeTokensCSS already emits, plus textStyles.{voice}.{sm,md,lg} for the 15
+  // voices (voice = the CSS voice slug, e.g. "sub-heading"), DEFAULT aliasing md. paragraphSpacing/
+  // paragraphIndent are not Panda text-style fields and are dropped.
+  let textStyles;
+  if (opts.type && typeof opts.type === "object") {
+    const ts = opts.type;
+    tokens.fonts = {};
+    for (const [role, family] of Object.entries(ts.fonts)) {
+      tokens.fonts[role] = { value: cssFontStack(family, role, "premium") };
+    }
+    textStyles = {};
+    for (const [voice, steps] of Object.entries(ts.categories)) {
+      const voiceKey = slug(voice);
+      const fontFamily = `{fonts.${ts.roleOf[voice]}}`;
+      const style = {};
+      for (const rank of ["SM", "MD", "LG"]) {
+        const s = steps[rank];
+        style[rank.toLowerCase()] = {
+          value: {
+            fontFamily,
+            fontSize: `${s.size}px`,
+            lineHeight: `${s.lineHeight}px`,
+            letterSpacing: `${s.letterSpacing}px`,
+            fontWeight: s.weight,
+            textTransform: s.textTransform || "none",
+          },
+        };
+      }
+      style.DEFAULT = style.md;
+      textStyles[voiceKey] = style;
+    }
+  }
+
+  // REQ-008: opts.geometry (a resolved geomScale) -> tokens.radii.{none,xs,sm,md,lg,xl,full}
+  // (full = 9999px), tokens.spacing.{0..9}, tokens.borderWidths.{thin,thick} — all px strings
+  // (PF-2). The size ramp, insets, gaps, and focus are not emitted in v1 (non-goal).
+  if (opts.geometry && typeof opts.geometry === "object") {
+    const gs = opts.geometry;
+    tokens.radii = {};
+    for (const [k, v] of Object.entries(gs.radii)) tokens.radii[k] = { value: `${v}px` };
+    tokens.spacing = {};
+    for (const [k, v] of Object.entries(gs.space)) tokens.spacing[k] = { value: `${v}px` };
+    tokens.borderWidths = {};
+    for (const [k, v] of Object.entries(gs.borders)) tokens.borderWidths[k] = { value: `${v}px` };
+  }
+
+  return { name, theme: { extend: { tokens, semanticTokens, ...(textStyles ? { textStyles } : {}) } } };
 }
 
 // exportPandaModule — the ESM preset-module STRING the drawer shows and the zip ships (REQ-001):
