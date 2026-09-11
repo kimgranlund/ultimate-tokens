@@ -2,8 +2,9 @@
 //
 // The README hero is the tool's REAL output, not a mockup: it goes through the
 // exact same projection the app renders from (defaultDocument -> projectView),
-// so every swatch is the literal hex the generator emits for the 8 default
-// palettes' display ramps (19 stops, 050 light .. 950 dark).
+// so every swatch is the literal hex the generator emits for the default
+// palettes' display ramps (19 stops, 050 light .. 950 dark). Palette count is
+// read from the doc, never hardcoded, so this stays correct as defaults change.
 //
 // Regenerate with `npm run gen:preview` whenever the engine/defaults change.
 // It's a committed doc asset (not part of `npm run build`); SVG is text so it
@@ -91,7 +92,7 @@ palettes.forEach((p, r) => {
 
 // Footer caption — self-describing if the image is shared on its own.
 parts.push(
-  `<text x="${PAD}" y="${H - PAD + FOOT_H - 6}" font-size="11" fill="#9aa0a6">HCT Palette Generator — the 8 default palettes, perceptually-even tonal ramps (050 → 950). Generated from the engine.</text>`,
+  `<text x="${PAD}" y="${H - PAD + FOOT_H - 6}" font-size="11" fill="#9aa0a6">HCT Palette Generator — the ${palettes.length} default palettes, perceptually-even tonal ramps (050 → 950). Generated from the engine.</text>`,
 );
 parts.push(`</svg>`);
 

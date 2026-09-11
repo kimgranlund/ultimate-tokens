@@ -17,11 +17,12 @@ component**, and a **Figma plugin** that writes the palette straight into the fi
 collections.
 
 <!-- Hero: regenerate with `npm run gen:preview` — rendered straight from the engine (projectView) in the PERCEPTUAL distribution. -->
-![The 8 default palettes — perceptual tonal ramps, 050 → 950](docs/img/palette-preview.svg)
+![The 16 default palettes — perceptual tonal ramps, 050 → 950](docs/img/palette-preview.svg)
 
-> The image above is the tool's **real output** — the eight default palettes in the **perceptual**
-> distribution, rendered straight from the engine (no mockup): perceptually-even steps, in-gamut deep
-> ends, and `Warning`'s deliberately lifted light end. Regenerate any time with `npm run gen:preview`.
+> The image above is the tool's **real output** — the 16 default palettes (8 brand families + 8
+> data palettes) in the **perceptual** distribution, rendered straight from the engine (no mockup):
+> perceptually-even steps, in-gamut deep ends, and `Warning`'s deliberately lifted light end.
+> Regenerate any time with `npm run gen:preview`.
 
 ## What it does
 
