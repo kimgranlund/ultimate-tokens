@@ -16,6 +16,7 @@
 10. Prime tokens (the seven per-palette identity swatches)
 11. Panda CSS
 12. Park UI
+13. Palette groups, controls, and the schema stamp
 
 Tailwind v4 (`exportTailwind`) and ShadCN (`exportShadcn`) are introduced in §1 but do not yet have
 their own dedicated section here — their shapes are documented at the point of use in
@@ -327,3 +328,49 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
   unwrapped (mirroring `exportShadcn`'s own no-driver sentinel pattern).
 - **Not emitted in v1** (non-goals): Park UI text styles, size ramp, insets, gaps, focus, recipes,
   patterns, `globalCss`, or conditions of our own (`.dark` is Park's).
+
+## 13. Palette groups, controls, and the schema stamp
+
+Three cross-cutting concepts SPEC 0.3.0 (RP-1/RP-2/RP-8, plan `docs/plan/plan-2026-09-export-schema-
+revision.md`, steps E1/E2/E6) layer onto the formats above. None of the three enters a token NAME,
+value, or Figma folder on any surface — they are metadata, read alongside the tokens, never mixed
+into them.
+
+**Palette groups** (E1, ticket #572) — every palette resolves to one of four groups (`material` ·
+`brand` · `system` · `data`, `paletteGroupOf`), surfaced only where a format has a metadata slot:
+
+| Format | Placement |
+|---|---|
+| JSON | `palettes[n].group` |
+| DTCG | `palette.tokens.json` (RAW): `$extensions["com.ultimate-tokens"].group` on each palette's raw node — the semantic Light/Dark theme files never carry it |
+| CSS / CSS OKLCH / Tailwind | a `/* {name} · {group} */` comment line above each palette's block — metadata only, never a token |
+| Brand-kit (`brandKit()`) | `palettes[i].group`; `list_palettes` returns it |
+| DS bundle | `familiesByGroup: { material, brand, system, data }` (family slugs bucketed by group) alongside the existing flat `families`; consumed today only by Figma Make's Grammar table (§11/§12's own "curated-contract" formats have no analogous slot; see the plan's RP-1 ruling for the Claude Design/Stitch scope decision) |
+| UI3, ShadCN, Panda CSS, Park UI | not emitted (Figma variables have no metadata slot short of `description`, and #556 ruled out Figma folders; ShadCN/Panda/Park UI have no comparable comment-line mechanism) |
+
+**Controls** (E2, ticket #573) — the chroma policy an export was resolved under, so a consumer can
+answer "why is neutral muted" without re-deriving it:
+
+| Format | Placement |
+|---|---|
+| JSON | a top-level `meta.controls: { baseChroma, primeChroma, paletteGroups }`, verbatim off the same resolved state every palette in the file was derived from |
+| Brand-kit (`brandKit()`) | the same shape, `kit.controls: { baseChroma, primeChroma, paletteGroups }` |
+| Every other format | not emitted — values already reflect the resolved controls, so a CSS/DTCG/UI3/Tailwind/ShadCN/Panda/Park UI consumer never needs the policy that produced them |
+
+`baseChroma` is the public field name in both places — never the document-level `baseIntensity` the
+UI still carries internally (`src/ui/persist.js`); AC-004 (`spec-muted-base-key-spikes.md`) bars the
+literal string `baseIntensity` from `src/engine` entirely, including as a property name, and this is
+the export-facing rename boundary that keeps it out.
+
+**The schema stamp** (E6, ticket #577, `EXPORT_SCHEMA_VERSION`, currently `2`) — one constant, stamped
+wherever a surface has a slot for it; absence on an older export meant v1:
+
+| Format | Placement |
+|---|---|
+| JSON | `meta.schemaVersion` |
+| DTCG | a root-level `$extensions["com.ultimate-tokens"].schemaVersion`, a sibling of `com.figma.modeName`, on all 3 files (raw + both theme files) |
+| UI3 (Figma) | the `$schema` string's own trailing version, `figma-ui3-variables.color.schema.v{N}` |
+| CSS / CSS OKLCH / Tailwind / ShadCN | a first-line comment, `/* ultimate-tokens export schema {N} */` |
+| Brand-kit (`brandKit()`) | the `$schema` string's own trailing segment, `ultimate-tokens-brand-kit/{N}` (served as-is by `mcp/brand-kit-core.mjs`, which never itself reads or writes it); `SERVER.version` in `mcp/brand-kit-core.mjs` is a separate, hand-kept literal (that file ships standalone, no cross-file import) — bump it in step with `EXPORT_SCHEMA_VERSION` by convention, not by shared code |
+| DS bundle | `tokens.json`'s own `$schemaVersion`; DESIGN.md frontmatter's `tokensSchema` (Stitch/Make inherit both for free — same canonical spine) |
+| Panda CSS / Park UI | not emitted — a Panda/Park UI preset object has no metadata slot short of a comment, and neither `exportPandaModule`/`exportParkUiModule`'s two-line header carries one today |

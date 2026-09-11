@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## 1.58 — 2026-09-11 — palette groups + absolute per-group base chroma (#559, SPEC/LLD 0.3.0)
+
+Every palette now carries a **group** — `material` · `brand` · `system` · `data` (#556) — assigned by
+name by default (neutral → material; primary/secondary/tertiary → brand; the four intents → system;
+every other palette, including all data palettes, → data) and fully user-reassignable via a Group
+dropdown in the palette inspector. The color canvas renders rows under four group headers in that
+order, empty groups hidden, each header showing its palette count; drag-reorder stays within a group.
+Groups are an editor concept only — they never enter token names, CSS, or Figma folders.
+
+**"Base chroma" becomes a per-group absolute ramp-chroma target, not a multiplier** (#559, superseding
+the branch's own earlier multiplier-based build): `palette.chroma` no longer feeds the ramp at all — it
+feeds only `deriveKeyColor` and the prime system. The per-palette ramp override (`palette.intensity`)
+is **removed for every group**, not just Data; stored values are dropped by the schema-v4 migration
+and reported via `DROPPED_KEYS`. Each group carries its own `{ baseChroma, primeChroma, locked? }`
+default — `material { 30, 60 }`, `brand/system/data { 100, 100 }`, Data additionally `locked: true` (no
+per-palette override; the inspector hides its Intensity/Prime-chroma sliders). The Global tab's Base
+chroma / Prime chroma sliders become the **fallback**, read only when a palette's own group carries no
+value: `rampChromaOf(p, doc) = paletteGroups[paletteGroup(p)].baseChroma ?? controls.baseIntensity`.
+`intensityAt` is deleted from `src/engine/tonal.js` entirely, and the literal string `baseIntensity` is
+barred from `src/engine` (AC-004, gated by a real `git grep` in `test/engine/tonal.mjs`) — the field
+survives only as the document/UI-side legacy name (`src/ui/persist.js` `DOMAINS`), renamed to
+**`baseChroma`** at every export/brand-kit boundary (`model.mjs`'s `stateOf()`), which is the public
+name external docs and the brand-kit `controls` block use.
+
+**Byte-identity at chroma 100 is intentionally gone** for any palette whose own `chroma` differs from
+its group's resolved `baseChroma` — only **Secondary** and **Warning** stay byte-identical among the
+default palettes (both chroma 100, inside a group whose `baseChroma` is 100); Neutral, Primary,
+Tertiary, Info, Success, Danger, and all eight data palettes (minted at chroma 95) now render
+differently, muting Material by default exactly as intended. `src/engine/exports.js` carries a small
+mirrored resolver (reads the pre-stamped `palette.group` + `controls.paletteGroups`) so canvas and
+every export format stay in agreement without an engine→UI import.
+
+Gate: `npm test` green (the AC-004 `git grep` gates plus the new AC-002/003(b)/007/008 resolver gates);
+`npm run build` and `npm run smoke` clean. Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.3.0 (#556,
+#559, PR #567); design: `docs/lld/lld-muted-base-key-spikes.md` 0.3.0. Knowledge: knowledge-02 §8
+(docs sweep #568).
+
 ## 1.57 — 2026-09-11 — the prime system replaces the key-stop spike (#533, SPEC/LLD 0.2.0)
 
 The 1.56 chroma spike on the ramp's identity stops is **retired** (#536, P1): `identityStops`,
