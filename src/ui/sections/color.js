@@ -1032,9 +1032,9 @@ export class ColorSectionImpl {
           // retained key colors (when set): the brand colors, above the generated ramp,
           // each captioned with its nearest stop (the perceptual placement). Off-ramp by design.
           this.keyStrip(vp),
-          // the five identity-role swatches, resolved to the active scheme — SPEC
-          // spec-muted-base-key-spikes REQ-034 (the prime-chroma spike, visible here).
-          this.identityStrip(vp),
+          // the seven prime swatches, lightest first, mode-independent — SPEC
+          // spec-muted-base-key-spikes REQ-034.
+          this.primeStrip(vp),
           strip,
         );
       });
@@ -1206,44 +1206,36 @@ export class ColorSectionImpl {
   }
 
 
-  // identityStrip — the five identity-role swatches (SPEC spec-muted-base-key-spikes REQ-034):
-  // brighter/bright/prime/dim/dimmer, mapped to the {n}High/{n}Bright/{n}/{n}Dim/{n}Low roles
-  // (role suffixes -high/-bright/''/-dim/-low) already resolved in vp.roles. Each swatch shows the
-  // RESOLVED role hex for the active scheme (so the prime-chroma spike from Intensity is visible —
-  // under accentRef "single" the prime role resolves to the 500 stop, so the swatch follows with no
-  // special-casing here). Reuses the ramp-strip's hover/footer wiring, keyed off the underlying stop.
-  identityStrip(vp) {
-    const scheme = this.resolvedCanvasScheme();
-    const ORDER = [
-      ["brighter", "-high"],
-      ["bright", "-bright"],
-      ["prime", ""],
-      ["dim", "-dim"],
-      ["dimmer", "-low"],
-    ];
+  // primeStrip — the seven prime swatches (SPEC spec-muted-base-key-spikes REQ-034), lightest
+  // first: brightest/brighter/bright/prime/dim/dimmer/dimmest. Reads vp.prime DIRECTLY (the
+  // primeSwatches() output, REQ-050..057) — never ramp stops or roles — so unlike the 0.1.0
+  // role-mapped identity strip this replaces, the strip does NOT change with the scheme toggle,
+  // accentRef, or stopsMode: the prime system is mode-independent by construction. Renamed from
+  // identity-strip/identity-swatch (stale "identity role" terminology now that the LLD names this
+  // the prime system); .key-strip/.key-cell stay reserved for the unrelated retained-key-colors
+  // row (keyStrip() above). Reuses the ramp-strip's hover/footer wiring; there is no ramp stop to
+  // key hover off, so the footer gets its own "prime" hover kind (paintCanvasFooter in app.js).
+  primeStrip(vp) {
+    if (!vp.prime || !vp.prime.length) return false;
     return h(
       "div",
-      { class: "identity-strip" },
-      ...ORDER.map(([label, suffix]) => {
-        const r = vp.roles.find((role) => role.suffix === suffix);
-        const hex = r ? (scheme === "dark" ? r.darkHex : r.lightHex) : "#000000";
-        const stop = r ? Number(scheme === "dark" ? r.darkRef : r.lightRef) : null;
-        const s = stop != null ? vp.fullRamp.find((x) => x.stop === stop) : null;
-        return h("i", {
-          class: "identity-swatch",
-          "data-role": label,
-          style: `background:${hex}`,
-          title: `${vp.name} ${label} · ${hex}`,
+      { class: "prime-strip" },
+      ...vp.prime.map((sw) =>
+        h("i", {
+          class: "prime-swatch",
+          "data-step": sw.step,
+          style: `background:${sw.hex}`,
+          title: `${vp.name} ${sw.step} · ${sw.hex}`,
           onmouseenter: () => {
-            this.hover = { name: vp.name, stop, hex, tone: s ? s.tone : null, inGamut: s ? s.inGamut : true };
+            this.hover = { kind: "prime", name: vp.name, step: sw.step, hex: sw.hex, inGamut: sw.inGamut };
             this.paintCanvasFooter();
           },
           onmouseleave: () => {
             this.hover = null;
             this.paintCanvasFooter();
           },
-        });
-      }),
+        }),
+      ),
     );
   }
 
@@ -1702,6 +1694,11 @@ export class ColorSectionImpl {
       this.doc.toneMode === "perceptual"
         ? this.slider("Cusp pull", p.cuspPull ?? (this.doc.vibrancy ?? 0), 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].cuspPull = v)))
         : false,
+      // Prime chroma (SPEC spec-muted-base-key-spikes REQ-032) — this palette's override of the
+      // global Prime chroma. Absent inherits doc.primeChroma, same absent-means-inherit shape as
+      // Intensity above. Shapes the prime system only (REQ-052), never the ramp, so unlike Cusp
+      // pull it stays visible in every toneMode.
+      this.slider("Prime chroma", p.primeChroma ?? (this.doc.primeChroma ?? 100), 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].primeChroma = v))),
       // Edge hue rotation — bipolar, centre 0. The readout shows the light/dark torsion:
       // left = light + / dark −, right = light − / dark + (the slider value = the dark edge).
       this.slider(
@@ -1882,11 +1879,11 @@ export class ColorSectionImpl {
         : false,
       // Base chroma (SPEC spec-muted-base-key-spikes REQ-032), placed next to Vibrancy. Unlike Vibrancy
       // (perceptual-only), the intensity factor applies on BOTH ramp paths (REQ-002), so it stays visible
-      // in every toneMode: it shapes the whole ramp (doc.baseIntensity). Prime chroma (doc.keyIntensity)
-      // no longer affects the ramp — the identity-stop chroma spike it drove was retired (#536); the
-      // slider is kept, currently inert, pending a future re-purposing of the field.
+      // in every toneMode: it shapes the whole ramp (doc.baseIntensity). Prime chroma (doc.primeChroma)
+      // shapes the separate prime system instead (REQ-050..057) — it never touches the ramp, so it too
+      // stays visible in every toneMode.
       this.slider("Base chroma", d.baseIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.baseIntensity = v))),
-      this.slider("Prime chroma", d.keyIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.keyIntensity = v))),
+      this.slider("Prime chroma", d.primeChroma, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.primeChroma = v))),
       // Curve · Tension · Chroma-basis shape the CIELAB "even" path ONLY — hide them in the OKHSL modes.
       d.toneMode === "even"
         ? field(
