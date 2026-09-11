@@ -28,8 +28,11 @@ is Chrome-only.
 `npm test` regenerates the committed artifacts (`figma/plugin/ui.html`, `src/ui/figma-plugin-assets.js`,
 `src/ui/mcp-assets.js`) as its first act — so a green `npm test` also leaves them in sync with source.
 CI (`.github/workflows/ci.yml`) runs `npm install` → `npm run build` → `npm test` → `npm run smoke`
-(real headless Chrome over CDP). You cannot reproduce smoke's value locally without Chrome, so let CI
-be the smoke gate and download the `smoke-screenshots` artifact if a UI change is involved.
+(real headless Chrome over CDP). `npm run smoke` itself runs `npm run build` before booting Chrome
+(#564 — a standalone `npm run smoke` must never trust a stale `dist/`), so CI's own preceding build
+step is a harmless redundant rebuild, not a dependency smoke relies on. You cannot reproduce smoke's
+value locally without Chrome, so let CI be the smoke gate and download the `smoke-screenshots`
+artifact if a UI change is involved.
 
 ## Procedure
 

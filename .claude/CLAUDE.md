@@ -14,8 +14,9 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
   `gen:figma-ui`) then runs `test/run.mjs` — engine verifiers + a custom headless-DOM shim. No browser.
 - `npm run build` — `gen:*` → `tsc` → `vite build` → `bundle` → `gen:figma-ui`. **Needs `node_modules`**
   (vite/tsc); `npm test` does not.
-- `npm run smoke` — boots the built single-file in **real headless Chrome** over CDP (the only
-  real-browser leg). Screenshots land in `smoke-out/` (gitignored).
+- `npm run smoke` — runs `npm run build` first (never trust a stale `dist/`, #564), then boots the
+  built single-file in **real headless Chrome** over CDP (the only real-browser leg). Screenshots
+  land in `smoke-out/` (gitignored).
 - `npm run dev` — Vite dev server (the app the user previews, in **Safari**).
 - `gen:figma-assets` · `gen:mcp-assets` · `gen:categories` · `gen:type-fonts` — regenerate committed
   artifacts; `test`/`build` run the first three. Run `gen:type-fonts` by hand after changing bundled fonts.
