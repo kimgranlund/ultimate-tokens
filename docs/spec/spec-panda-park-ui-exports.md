@@ -474,8 +474,12 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
 - **AC-006** REQ-050..053, REQ-063: EX-8 holds in the headless shim; `npm run smoke` shows both tabs
   render in Chrome (a screenshot in the PR); REQ-053 by negative grep: `git grep -n "panda\|parkui"
   mcp/ src/engine/ds-export.js` returns nothing.
-- **AC-007** REQ-064: `git grep -n "pandacss\|park-ui" package.json test/ scripts/` returns hits only
-  in `scripts/smoke-panda.mjs` and its CI job.
+- **AC-007** REQ-064: `git grep -nE '"@?(pandacss|park-ui)(/[a-zA-Z0-9._-]+)?"[[:space:]]*:|(from|require)\([[:space:]]*['"'"'"]@?(pandacss|park-ui)' package.json test/ scripts/`
+  returns hits only in `scripts/smoke-panda.mjs` and its CI job. Anchored to a `package.json`
+  dependency key or an `import`/`require` of the real packages, per Ruling 2026-09-11 on #588: the
+  original bare `"pandacss\|park-ui"` pattern also matched this repo's own `park-ui/` export-folder
+  and fixture-name strings in `test/ui/headless-boot.mjs` and `test/engine/exports.mjs` — a
+  feature-name collision, not a dependency, and not a real AC-007 failure.
 - **AC-008** REQ-070..072: `node scripts/smoke-panda.mjs` exits 0 on the K5 builder's machine and
   its console shows the seven asserted variable names; the three `[open]` facts are recorded as
   proven or as their fallback in #570's Findings; the `panda-smoke` job exists in the CI workflow

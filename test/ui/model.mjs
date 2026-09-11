@@ -269,7 +269,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(baseExports.figma.light === sameDefaultsExports.figma.light && baseExports.figma.dark === sameDefaultsExports.figma.dark, "the Figma DTCG semantic (Light/Dark) files must stay strictly byte-identical for a brand <-> system group swap — RP-1 never touches the theme files");
 
   // the DS bundle (ds-export.js — Claude Design/Stitch/Figma Make, split out at TKT-0015, NOT one
-  // of the 8 documented formats above) and the MCP brandKit() payload get the same coverage, with
+  // of the 10 documented formats above) and the MCP brandKit() payload get the same coverage, with
   // the same fixed opts.date so the comparison is deterministic.
   const dsOpts = { date: "2026-01-01" };
   // exportDesignSystemBundle is the Claude Design profile (DESIGN.md/tokens.json/components/

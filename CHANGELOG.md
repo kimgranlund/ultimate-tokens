@@ -8,6 +8,20 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-09-11
+
+#### Added
+- **Panda CSS and Park UI color exports** (#570) — `src/engine/exports.js` gains `exportPanda`/
+  `exportPandaModule` and `exportParkUi`/`exportParkUiModule`, wired into `exportAll`, the drawer's
+  Colors tab, and the Download-All zip (`panda/` and `park-ui/` preset modules), bringing the engine's
+  documented color-format count from 8 to 10. Panda CSS is auto-flow (every semantic role maps to a
+  leaf automatically, plus opt-in type/geometry blocks); Park UI is a curated-contract format like
+  shadcn — a fixed `accent`/`gray`/`error`/`fg`/`canvas`/`border`/`bg` set built from the shared
+  `pickDrivers` driver pick, a 12-step per-role projection, and Radix-style alpha steps over
+  white/black. `docs/reference/references/knowledge-04-export-formats.md` gains §11/§12 documenting
+  both shapes; `CLAUDE.md`, `.claude/skills/adding-export-formats/SKILL.md`, `README.md`, and the
+  marketing corpus are swept from "8"/"eight formats" to 10.
+
 ### 2026-07-12
 
 #### Added

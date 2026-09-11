@@ -1,16 +1,16 @@
-// exports.js — the 8 documented COLOR export formats (vanilla ESM, no deps).
+// exports.js — the 10 documented COLOR export formats (vanilla ESM, no deps).
 //
 // Turns a generator State into the HCT Palette Generator's portable token
-// artifacts in eight formats: CSS (hex), CSS (OKLCH), JSON, Figma DTCG (the
-// 3-file set), the UI3 interchange shape, Tailwind v4, ShadCN, plus the
-// exportAll aggregator. Every emitter operates over the ENABLED palettes only
-// and the 25 EXPORT_STOPS, and every stop reference is 3-digit zero-padded
-// (ADR-006).
+// artifacts in ten formats: CSS (hex), CSS (OKLCH), JSON, Figma DTCG (the
+// 3-file set), the UI3 interchange shape, Tailwind v4, ShadCN, Panda CSS,
+// Park UI, plus the exportAll aggregator. Every emitter operates over the
+// ENABLED palettes only and the 25 EXPORT_STOPS, and every stop reference is
+// 3-digit zero-padded (ADR-006).
 //
 // The Claude Design / Google Stitch / Figma Make "DS bundle" DESIGN.md-authoring
 // subsystem lives in the sibling ds-export.js (TKT-0015) — a different KIND of
 // code (content/prose authoring for a consumption bundle, not token
-// serialization) that was split out so this file's own documented 8-format
+// serialization) that was split out so this file's own documented 10-format
 // pattern (adding-export-formats) stays an accurate map of what's here.
 // ds-export.js imports several of this file's helpers (derivedAll, roleOklch,
 // hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, exportShadcn) —

@@ -24,9 +24,9 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
 ## Layout
 
 - `src/engine/` — the **pure** engines (ESM, **no DOM**): `semantic.js` (the 53-role table) · `type.mjs` ·
-  `geometry.mjs` · `exports.js` (the 8 documented color formats: CSS/OKLCH/JSON/DTCG/UI3/Tailwind/shadcn)
-  · `ds-export.js` (the Claude Design/Google Stitch/Figma Make design-system bundle export, split out
-  of `exports.js` at TKT-0015 — undocumented elsewhere, not one of the 8) · `derive`/`tonal`/`hct`/`okhsl`.
+  `geometry.mjs` · `exports.js` (the 10 documented color formats: CSS/OKLCH/JSON/DTCG/UI3/Tailwind/shadcn/
+  Panda/Park UI) · `ds-export.js` (the Claude Design/Google Stitch/Figma Make design-system bundle export,
+  split out of `exports.js` at TKT-0015 — undocumented elsewhere, not one of the 10) · `derive`/`tonal`/`hct`/`okhsl`.
 - `src/ui/` — `app.js` (the `HctApp` custom element, ~all UI) · `styles.css` · `model.mjs`
   (`projectView` + `geometryScale` — where Geometry composes Type) · `persist.js` · generated
   `*-assets.js` / `type-fonts.js` (do not hand-edit) · `categories/`.

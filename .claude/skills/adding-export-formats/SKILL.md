@@ -15,8 +15,8 @@ user-invocable: true
 # Adding (or changing) an export format — ultimate-tokens
 
 An export format is one serializer that turns the resolved engine output into a portable artifact (a CSS
-string, a DTCG tree, a framework file). The **color** formats live in `src/engine/exports.js` (8 of them,
-and ONLY those 8 — see below); **type** + **geometry** formats live in `src/engine/type.mjs` and
+string, a DTCG tree, a framework file). The **color** formats live in `src/engine/exports.js` (10 of them,
+and ONLY those 10 — see below); **type** + **geometry** formats live in `src/engine/type.mjs` and
 `src/engine/geometry.mjs`. The non-obvious truth of this repo: almost every color emitter MAPS over each
 palette's resolved `roles`, so a new semantic role emits a leaf **automatically** — you add a format, not
 a per-role branch. The two things that bite are (1) ShadCN is the deliberate exception to that auto-flow,
@@ -27,10 +27,10 @@ auto-flow is owned by `adding-semantic-roles` — cite it, don't duplicate.
 
 **Not this skill's territory: `src/engine/ds-export.js`.** The Claude Design / Google Stitch / Figma Make
 "DS bundle" DESIGN.md-authoring subsystem (`dsColorRoles`, `exportDesignSystemTokens/Spine/Components/
-Receipt/Bundle/StitchBundle/MakeBundle`, the `dsMake*Md` prose generators) used to share a file with the 8
+Receipt/Bundle/StitchBundle/MakeBundle`, the `dsMake*Md` prose generators) used to share a file with the 10
 color formats above — split out in TKT-0015 because it's a different KIND of code (content/prose authoring
 for a consumption bundle, not token serialization) and was undocumented drift risk for this skill's own
-"8 formats" claim. It imports a handful of this file's helpers (`derivedAll`, `roleOklch`, `hexOf`, `hex8`,
+"10 formats" claim. It imports a handful of this file's helpers (`derivedAll`, `roleOklch`, `hexOf`, `hex8`,
 `relLumExp`, plus the already-public `cssPrefixOf`/`dialogBackdropOklch`/`exportShadcn`) but is otherwise
 independent, has no rubric of record in `docs/reference/` yet, and is out of scope here — don't route a
 DS-bundle change through this skill's procedure, and don't add its formats to `exportAll` (it is bundled by
@@ -47,15 +47,17 @@ never re-resolving a ref. `derivedAll(state)` maps it over `enabledPalettes` (th
 order — so **disabled palettes are absent from every format**, for free. Every color emitter starts
 `const palettes = derivedAll(state)` and loops.
 
-**The auto-flow vs the ShadCN exception.** `exportCSS / exportOKLCH / exportJSON / exportDTCG / exportUI3 /
-exportTailwind` all iterate `p.roles` directly — a new role flows through with no edit. **`exportShadcn` does
-NOT.** It iterates the fixed `SHADCN_ORDER` array (in `exports.js`) over a hand-curated suffix-lookup
-`MAP` that pulls roles BY SUFFIX (`rs(neutral, "-surface")`, `prime(primary)` = the empty-suffix accent) and
-picks the driver palette BY NAME REGEX — neutral-, primary-, and danger-family name matches, so it survives
-renamed/preset palettes (the exact regexes: `references/foundations.md` §3). A new role appears in ShadCN
-only if you wire it into `MAP` — and
-that is a deliberate design choice (ShadCN has a FIXED token contract), not a gate. Don't "fix" it by spilling
-all roles in.
+**The auto-flow vs the curated-contract exceptions.** `exportCSS / exportOKLCH / exportJSON / exportDTCG /
+exportUI3 / exportTailwind / exportPanda` all iterate `p.roles` directly — a new role flows through with no
+edit. **`exportShadcn` and `exportParkUi` do NOT.** `exportShadcn` iterates the fixed `SHADCN_ORDER` array
+(in `exports.js`) over a hand-curated suffix-lookup `MAP` that pulls roles BY SUFFIX (`rs(neutral,
+"-surface")`, `prime(primary)` = the empty-suffix accent) and picks the driver palette BY NAME REGEX —
+neutral-, primary-, and danger-family name matches, so it survives renamed/preset palettes (the exact
+regexes: `references/foundations.md` §3). `exportParkUi` is the second curated-contract format: it calls
+the same `pickDrivers` driver-selection and writes Park's own fixed `accent`/`gray`/`error`/`fg`/`canvas`/
+`border`/`bg` semantic keys, never a per-role loop. A new role appears in ShadCN or Park UI only if you wire
+it into `MAP` (ShadCN) or the driver-copy block (Park UI) — and that is a deliberate design choice (both
+have a FIXED token contract), not a gate. Don't "fix" either by spilling all roles in.
 
 **The shared naming rules** (don't reinvent): `pad3` (3-digit stop padding, ADR-006), `slug` (palette → token
 namespace), the `--c-*` custom props where raw names end in DIGITS and semantic names end in a WORD so they
@@ -86,7 +88,7 @@ fragment — emitters use it to build a NAME, never to re-resolve a ref to a col
    `sys.color`; the `figma/` folder + the experimental `figma-aliased/` cascade (via `this.figmaBundle()`,
    OD-004) live there too. The re-importable config is pushed ALWAYS.
 6. **Document the shape** in `docs/reference/references/knowledge-04-export-formats.md` — it is the owner of per-
-   format output shapes; add a section (and keep the eight-formats header count consistent if you added a color
+   format output shapes; add a section (and keep the ten-formats header count consistent if you added a color
    format). For ShadCN/Figma constraint changes, respect the fenced ADR notes (ADR-002 resolved-vs-aliased,
    ADR-007 UI3 is interchange-only) — do not "fix" them.
 7. **Bump rule: `EXPORT_SCHEMA_VERSION` (SPEC 0.3.0 RP-8, ticket #577).** `exports.js` exports one
@@ -121,7 +123,7 @@ npm test                        # all of the above + headless-boot (drawer/downl
 
 The gate that catches a malformed color leaf is `leaf-valid` in `exports.mjs` (srgb, components in [0,1], hex
 reconstructs from components). The gate that catches a format you forgot to bundle is `nonempty` — it loops a
-fixed key list (`css/oklch/json/dtcg/ui3/tailwind/shadcn`) over `exportAll`, so a new color format absent from
+fixed key list (`css/oklch/json/dtcg/ui3/tailwind/shadcn/panda/parkui`) over `exportAll`, so a new color format absent from
 either `exportAll` OR that key list is not actually checked — add it to BOTH. For a new FRAMEWORK format, add a
 dedicated `[gate]` group asserting its load-bearing structure (mirror the `tailwind` / `shadcn` gate groups:
 `@theme {` present, `oklch(` values, `:root`/`.dark` token-set parity, disabled palette absent). Don't call it
