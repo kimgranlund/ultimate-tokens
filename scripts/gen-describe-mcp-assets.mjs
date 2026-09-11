@@ -37,6 +37,7 @@ const FILES = [
   "src/engine/tonal.js",
   "src/engine/data-hues.mjs",
   "src/engine/prime.mjs",
+  "src/engine/resolve.mjs",
   "src/engine/semantic.js",
   "src/engine/font-fallbacks.mjs",
   "src/engine/type.mjs",

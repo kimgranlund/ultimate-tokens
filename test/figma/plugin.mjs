@@ -326,10 +326,14 @@ if (applyBundle) {
           if (!brightestVar) FAIL("primevalue", "Color Prime is missing 'primary/brightest'");
           else {
             const before = JSON.stringify(brightestVar.values[primeA.modes[0].modeId]);
-            // primeChroma (REQ-052) scales every prime swatch's saturation — a global change with no
-            // structural effect (same 7 steps, same names), the cleanest possible value-only mutation.
+            // primeChroma (REQ-052) scales every prime swatch's saturation — a value-only mutation
+            // with no structural effect (same 7 steps, same names). Set it on the PALETTE itself
+            // (Primary's own override), not the top-level doc.primeChroma: ticket #559 put a GROUP
+            // layer between the two (Primary's "brand" group has its own explicit primeChroma
+            // default), so the global slider alone no longer reaches a grouped palette once
+            // resolveGroups() has filled every group's default — a per-palette override still does.
             const doc10b = defaultDocument();
-            doc10b.primeChroma = 50;
+            doc10b.palettes.find((p) => p.name === "Primary").primeChroma = 50;
             const bundleB = figmaBundle(doc10b);
             const resB = await load10.applyBundle(bundleB);
             const primeCollsB = F10.collections.filter((c) => c.name === "Color Prime").length;

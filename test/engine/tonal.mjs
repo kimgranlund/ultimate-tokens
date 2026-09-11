@@ -343,134 +343,89 @@ for (const mode of ["perceptual", "peak"]) {
       }
     }
   }
+  // (c) AC-005 (0.3.0): the anchor holds specifically at chroma in {20, 45, 100} — the values a group's
+  // resolved rampChroma (Material 30-ish, Brand/System/Data 100) actually feeds `paletteStops` as
+  // `palette.chroma` now that there is no separate baseIntensity multiplier (REQ-002/004/005).
+  for (const toneMode of ["perceptual", "even"]) {
+    const oc = { ...(T.DEFAULT_CONTROLS || {}), hueSpace: "oklch", toneMode, damp: 96, dampCurve: 1.2 };
+    for (const chroma of [20, 45, 100]) {
+      const s500 = T.paletteStops({ hue: 267, chroma, skew: 0, lift: 0 }, oc, T.EXPORT_STOPS).find((s) => s.stop === 500);
+      const err = angDiff(rgbToOklchHue(s500.rgb), 267);
+      if (err > 1.0) FAIL("oklch-hue-anchor", `${toneMode} chroma ${chroma} (AC-005): stop 500 exports OKLCH hue off by ${err.toFixed(2)}° (>1° — anchor drift)`);
+    }
+  }
 }
 
-// ── hpg-tonal-intensity-legacy: baseIntensity 100 is byte-identical to the pre-feature engine (AC-003/007, EX-1)
-// The fixture was generated from the pre-change engine (commit 83756bb) by scripts/gen-tonal-fixture.mjs and is
-// regenerated only by hand, never by npm test. keyIntensity is inert everywhere now (#536 retired the ramp-level
-// spike it used to drive), so 0 and 100 both match at base 100 — and at every other base too (see intensity-spike).
+// ── hpg-tonal-intensity-legacy: paletteStops is byte-identical to the pre-0.2.0 engine (AC-003a/006,
+// EX-1) — 0.3.0 (#556/#559 re-ruling) removes the baseIntensity multiplier entirely, so this fixture
+// (generated from the pre-0.2.0 engine, commit 83756bb, by scripts/gen-tonal-fixture.mjs; regenerated
+// only by hand, never by npm test) is the direct, unconditional engine contract again — no controls
+// field varies the result at all now, so a single pass over DEFAULTS proves it. ─────────────────────
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};
-  if (dc.baseIntensity !== 100 || dc.keyIntensity !== 100) FAIL("intensity-legacy", `DEFAULT_CONTROLS intensity ${dc.baseIntensity}/${dc.keyIntensity}, want 100/100 (H1)`);
+  if ("baseIntensity" in dc) FAIL("intensity-legacy", "DEFAULT_CONTROLS must carry no baseIntensity field at all (AC-004) — that fallback default lives in src/ui/ now, never in the engine");
   if (T.DEFAULT_IDENTITY_STOPS !== undefined) FAIL("intensity-legacy", "DEFAULT_IDENTITY_STOPS must not exist — the ramp no longer special-cases any stop (#536)");
   let cells = 0;
-  for (const toneMode of ["perceptual", "even"]) for (const p of DEFAULTS) for (const keyIntensity of [0, 100]) {
-    const ctl = { ...dc, toneMode, baseIntensity: 100, keyIntensity };
+  for (const toneMode of ["perceptual", "even"]) for (const p of DEFAULTS) {
+    const ctl = { ...dc, toneMode };
     const got = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, ctl, STOPS).map((r) => r.hex);
     const want = FX[toneMode][p.name];
     if (!want || want.length !== STOPS.length) { FAIL("intensity-legacy", `fixture has no ${toneMode}/${p.name} ramp of ${STOPS.length} stops`); continue; }
-    for (let i = 0; i < STOPS.length; i++) { cells++; if (got[i] !== want[i]) { FAIL("intensity-legacy", `${toneMode} ${p.name} stop ${STOPS[i]} (k=${keyIntensity}): ${got[i]} != fixture ${want[i]}`); break; } }
+    for (let i = 0; i < STOPS.length; i++) { cells++; if (got[i] !== want[i]) { FAIL("intensity-legacy", `${toneMode} ${p.name} stop ${STOPS[i]}: ${got[i]} != fixture ${want[i]}`); break; } }
   }
   if (cells < 2 * DEFAULTS.length * STOPS.length) FAIL("intensity-legacy", `only ${cells} fixture cells compared`);
-  // a palette `intensity: 100` override inside a document at 100 is also inert
-  const p = DEFAULTS.find((d) => d.chroma >= 50) || DEFAULTS[0];
-  const a = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: 0, lift: 0, intensity: 100 }, { ...dc, baseIntensity: 100 }, STOPS).map((r) => r.hex).join();
-  if (a !== FX.perceptual[p.name].join()) FAIL("intensity-legacy", `${p.name} intensity:100 override at base 100 moved the ramp`);
-}
-
-// ── hpg-tonal-intensity-spike: I(stop) = b uniformly, no stop special-cased; keyIntensity is fully inert
-// (#536 retired the identity-stop chroma lift this group used to test — AC-002/004/006, EX-2) ────────────
-{
-  const dc = T.DEFAULT_CONTROLS || {};
-  // (a) intensityAt itself — the formula, the clamp, and proof no stop (nor keyIntensity) is special-cased.
-  // FORMER_IDENTITY_STOPS is the retired spike's stop set, reused here ONLY as a negative control: every one
-  // of them must now behave exactly like an ordinary stop (500/750/250).
-  const near = (a, b, tol = 1e-12) => Math.abs(a - b) <= tol;
-  const FORMER_IDENTITY_STOPS = [350, 400, 450, 550, 650, 700];
-  for (const stop of [...FORMER_IDENTITY_STOPS, 500, 750, 250]) {
-    if (!near(T.intensityAt(stop, {}, { baseIntensity: 40 }), 0.4)) FAIL("intensity-spike", `I(${stop}) must be b (0.4) — no stop is special-cased`);
-    // keyIntensity, at any value, must not move the result — the spike it used to drive is retired
-    if (!near(T.intensityAt(stop, {}, { baseIntensity: 40, keyIntensity: 100 }), 0.4)) FAIL("intensity-spike", `I(${stop}) at keyIntensity 100 must still be b — keyIntensity is inert`);
-    if (!near(T.intensityAt(stop, {}, { baseIntensity: 40, keyIntensity: 0 }), 0.4)) FAIL("intensity-spike", `I(${stop}) at keyIntensity 0 must still be b — keyIntensity is inert`);
-  }
-  if (!near(T.intensityAt(550, {}, { baseIntensity: 140 }), 1.0)) FAIL("intensity-spike", "baseIntensity must clamp to 1 above 100");
-  if (!near(T.intensityAt(550, {}, { baseIntensity: -5 }), 0)) FAIL("intensity-spike", "baseIntensity must clamp to 0 below 0");
-  if (!near(T.intensityAt(550, {}, {}), 1.0)) FAIL("intensity-spike", "no controls → 1");
-  if (!near(T.intensityAt(500, { intensity: 40 }, { baseIntensity: 100 }), 0.4)) FAIL("intensity-spike", "palette.intensity still overrides controls.baseIntensity");
-  // (b) measured ramps on BOTH paths: a probe palette below the gamut ceiling (chroma 40) so no clamp binds.
-  // Even path: r.chroma is the APPLIED chroma → ratio is exact. Perceptual path: read the OKHSL saturation
-  // back from the emitted pixel (8-bit quantised) → ratio within 2% of the peak (s=1).
-  // hueSpace pinned to "cam16" so the stop-500 hue anchor doesn't re-solve the base hue under intensity,
-  // isolating the multiplier; (d) below covers the oklch anchor at every intensity.
-  const probe = { hue: 267, chroma: 40, skew: 0, lift: 0 };
-  const b = 0.4;
-  for (const toneMode of ["perceptual", "even"]) {
-    const base = { ...dc, toneMode, hueSpace: "cam16", chromaFloor: 0 };
-    const legacy = T.paletteStops(probe, { ...base, baseIntensity: 100 }, STOPS);
-    // keyIntensity: 37 — an arbitrary, asymmetric value; the ramp must come out identical to keyIntensity absent
-    const muted = T.paletteStops(probe, { ...base, baseIntensity: b * 100, keyIntensity: 37 }, STOPS);
-    for (let i = 0; i < STOPS.length; i++) {
-      const stop = STOPS[i], want = b; // every stop, uniformly — the identity-stop lift is gone
-      let ratio, tol;
-      if (toneMode === "even") { if (legacy[i].chroma < 0.5 || legacy[i].chroma >= legacy[i].maxc - 1e-6) continue; /* ceiling-bound (050 white) */ ratio = muted[i].chroma / legacy[i].chroma; tol = 1e-9; }
-      else {
-        const sl = rgbToOkhsl(legacy[i].rgb).s, sm = rgbToOkhsl(muted[i].rgb).s;
-        // The light/dark ends (measured chroma < 10) sit where one 8-bit step moves OKHSL s by >2%, so the
-        // ratio is quantisation noise there; assert only that muting never ADDS saturation, and measure the
-        // ratio on the mid stops.
-        if (legacy[i].chroma < 10) { if (sm > sl + 0.02 && legacy[i].chroma > 3) { FAIL("intensity-spike", `${toneMode} stop ${stop}: muted s ${sm.toFixed(3)} > legacy ${sl.toFixed(3)}`); break; } continue; }
-        ratio = sm / sl; tol = 0.02 / sl;
-      }
-      if (Math.abs(ratio - want) > tol + 1e-9) { FAIL("intensity-spike", `${toneMode} stop ${stop}: chroma ratio ${ratio.toFixed(4)} vs I=${want} (tol ${tol.toFixed(3)})`); break; }
-      // tones are the SAME across intensities (REQ-002 touches chroma only) — even path: toneAt; perceptual: OKHSL l
-      if (toneMode === "even" && Math.abs(muted[i].tone - legacy[i].tone) > 1e-9) { FAIL("intensity-spike", `${toneMode} stop ${stop}: tone moved under intensity`); break; }
-      if (toneMode === "perceptual" && Math.abs(rgbToOkhsl(muted[i].rgb).l - rgbToOkhsl(legacy[i].rgb).l) > 0.02) { FAIL("intensity-spike", `${toneMode} stop ${stop}: OKHSL lightness moved under intensity`); break; }
-    }
-  }
-  // (d) AC-005: the OKLCH hue anchor holds at every intensity — stop 500 exports on the SET hue at baseIntensity
-  // 20/45/100 on both paths. At low baseIntensity, stop 500 sits at low CAM16 chroma (near grey), where ONE
-  // 8-bit step moves the pixel's OKLCH hue by several degrees: the 1° figure is below the pixel's own
-  // resolution there. Tolerance = max(1°, 2 × the one-step hue quantum of the emitted pixel): one step for
-  // the solver (it iterates on rounded pixels) plus one for emission. Negative control (measured while building
-  // this gate, pre-#536): with I(500) dropped from the anchors the even path sits at 6.5-9.4° at 20 and
-  // 2.7-4.8° at 45 — several quanta out — so the bound still bites on the defect REQ-005 exists to prevent.
-  const quantum = (rgb) => { const h0 = rgbToOklchHue(rgb); let m = 0; for (let c = 0; c < 3; c++) for (const d of [-1, 1]) { const r = [...rgb]; r[c] = Math.min(255, Math.max(0, r[c] + d)); m = Math.max(m, angDiff(rgbToOklchHue(r), h0)); } return m; };
-  for (const toneMode of ["perceptual", "even"]) for (const baseIntensity of [20, 45, 100]) {
-    const oc = { ...dc, hueSpace: "oklch", toneMode, baseIntensity, damp: 96, dampCurve: 1.2 };
-    for (const [hue, chroma] of [[300, 76], [235, 80], [270, 70], [70, 100], [27, 55], [145, 55], [190, 60]]) {
-      const s500 = T.paletteStops({ hue, chroma, skew: 0, lift: 0 }, oc, STOPS).find((s) => s.stop === 500);
-      const err = angDiff(rgbToOklchHue(s500.rgb), hue), tol = Math.max(1.0, 2 * quantum(s500.rgb));
-      if (err > tol) { FAIL("intensity-spike", `${toneMode} hue ${hue} at baseIntensity ${baseIntensity}: stop 500 off by ${err.toFixed(2)}° (> ${tol.toFixed(2)}° = max(1°, 2 quanta))`); break; }
-    }
-  }
-  // (e) AC-006: gamut + monotonic + white endpoint hold at baseIntensity 45 on the defaults; even-path tones equal within 1e-9
+  // controls.baseIntensity has NO effect at all any more (0.3.0 REQ-002/004): a document at baseIntensity
+  // 40 renders every default palette's ramp exactly as at 100 — the multiplier is gone, not just at 100.
   for (const toneMode of ["perceptual", "even"]) for (const p of DEFAULTS) {
-    const c45 = { ...dc, toneMode, baseIntensity: 45 }, c100 = { ...dc, toneMode, baseIntensity: 100 };
-    const pal = { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: 0 }; // lift 0: the monotonic contract is lift-0 (hpg-tonal-monotonic)
-    const rows = T.paletteStops(pal, c45, STOPS), ref = T.paletteStops(pal, c100, STOPS);
-    if (rows[0].rgb.some((v) => v !== 255)) FAIL("intensity-spike", `${toneMode} ${p.name} 050 not white at baseIntensity 45`);
-    for (let i = 0; i < rows.length; i++) {
-      // ceiling check on the even path only (as hpg-tonal-ingamut): the perceptual path reports MEASURED chroma
-      if (!rows[i].inGamut || (toneMode === "even" && rows[i].chroma > rows[i].maxc + 0.5)) { FAIL("intensity-spike", `${toneMode} ${p.name} stop ${STOPS[i]} out of gamut at baseIntensity 45`); break; }
-      if (i && rows[i].tone > rows[i - 1].tone + 1e-6) { FAIL("intensity-spike", `${toneMode} ${p.name}: tone rose at stop ${STOPS[i]} under baseIntensity 45`); break; }
-      if (toneMode === "even" && Math.abs(rows[i].tone - ref[i].tone) > 1e-9) { FAIL("intensity-spike", `${toneMode} ${p.name} stop ${STOPS[i]}: tone differs across intensities`); break; }
-    }
+    const pal = { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift };
+    const at100 = T.paletteStops(pal, { ...dc, toneMode, baseIntensity: 100 }, STOPS).map((r) => r.hex).join();
+    const at40 = T.paletteStops(pal, { ...dc, toneMode, baseIntensity: 40 }, STOPS).map((r) => r.hex).join();
+    if (at100 !== at40) { FAIL("intensity-legacy", `${toneMode} ${p.name}: controls.baseIntensity still moves the ramp (40 != 100) — the multiplier must be fully removed (Risk 0)`); break; }
   }
 }
 
-// ── hpg-tonal-intensity-override: palette.intensity wins over controls.baseIntensity (AC-001, EX-4) ─────
+// ── hpg-tonal-ac004-greps: AC-004 (0.3.0) — intensityAt/baseIntensity/palette.intensity are fully gone
+// from the engine; identityStops/keyIntensity are fully gone outside RENAME_MAPS + its own test.
+// Scoped to real source (never the generated `*-assets.js`/`categories/*.js` bundles, which embed other
+// files' text verbatim or ship literal preset JSON carrying pre-migration field names as plain DATA —
+// neither is code the AC-004 grep is asking about, and categories/*.js alone is megabytes of preset
+// text that overflows a child-process pipe). ─────────────────────────────────────────────────────────
 {
-  const dc = T.DEFAULT_CONTROLS || {};
-  for (const toneMode of ["perceptual", "even"]) {
-    const doc40 = { ...dc, toneMode, baseIntensity: 40, keyIntensity: 100 };
-    const doc100 = { ...dc, toneMode, baseIntensity: 100 };
-    const warn = DEFAULTS.find((d) => /warn/i.test(d.name)) || DEFAULTS[1], prim = DEFAULTS[0];
-    const pal = (p, extra) => ({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift, ...extra });
-    const hexes = (p, c) => T.paletteStops(p, c, STOPS).map((r) => r.hex).join();
-    // a palette at 100 inside a document at 40 reproduces its legacy ramp exactly
-    if (hexes(pal(warn, { intensity: 100 }), doc40) !== hexes(pal(warn), doc100)) FAIL("intensity-override", `${toneMode}: ${warn.name} intensity:100 in a 40 document != its legacy ramp`);
-    // ...while an un-overridden palette in the same document is muted (differs from legacy)
-    if (hexes(pal(prim), doc40) === hexes(pal(prim), doc100)) FAIL("intensity-override", `${toneMode}: ${prim.name} at base 40 equals legacy — intensity not applied`);
-    // a palette override BELOW the document base also wins (override is a replacement, not a min/max)
-    if (hexes(pal(prim, { intensity: 40 }), doc100) !== hexes(pal(prim), doc40)) FAIL("intensity-override", `${toneMode}: intensity:40 in a 100 document != base-40 ramp`);
-    // null/undefined intensity falls through to the document base
-    if (hexes(pal(prim, { intensity: undefined }), doc40) !== hexes(pal(prim), doc40)) FAIL("intensity-override", `${toneMode}: undefined intensity must fall through to baseIntensity`);
-  }
+  const { execFileSync } = await import("node:child_process");
+  const repoRoot = new URL("../../", import.meta.url).pathname;
+  const EXCLUDE = [":(exclude)src/ui/categories", ":(exclude)src/ui/*-assets.js", ":(exclude)figma/plugin/ui.html"];
+  const gitGrep = (pattern, paths) => {
+    try {
+      return execFileSync("git", ["grep", "-n", pattern, "--", ...paths, ...EXCLUDE], { cwd: repoRoot, encoding: "utf8" }).trim();
+    } catch (e) {
+      if (e.status === 1) return ""; // git grep exits 1 on "no matches" — not an error here
+      throw e;
+    }
+  };
+  const grep1 = gitGrep("intensityAt\\|baseIntensity\\|\\.intensity\\b", ["src/engine"]);
+  // baseIntensity is still a legitimate DOMAINS/DEFAULT_CONTROLS field name OUTSIDE src/engine (persist.js,
+  // model.mjs) — AC-004 scopes this grep to src/engine only, where it must be entirely absent now.
+  if (grep1) FAIL("ac004-greps", `intensityAt/baseIntensity/.intensity must not appear in src/engine:\n${grep1}`);
+  // semantic.js's own identityStops(roles) is a DIFFERENT, still-live concept (which solid stops the
+  // five identity ROLES resolve to) that predates and is unrelated to the retired RAMP-chroma spike
+  // this grep is hunting — excluded by name, not by file, so a real regression in tonal.js/model.mjs
+  // still trips it.
+  //
+  // keyIntensity itself is scoped to src/engine + model.mjs only (not persist.js or the wider test
+  // tree): the pre-existing v3 keyIntensity->primeChroma RENAME_MAPS machinery in persist.js, and its
+  // own dedicated test coverage, legitimately keeps that string for exactly the reason REQ-011 states
+  // (a snapshot older than schema v3 still carries the old name and must translate) — 0.3.0 does not
+  // touch that mechanism, only proves the ENGINE/model layer has no live (non-migration) dependency
+  // on it left.
+  const grep2 = gitGrep("keyIntensity", ["src/engine", "src/ui/model.mjs"]);
+  if (grep2) FAIL("ac004-greps", `keyIntensity must not appear in src/engine or model.mjs (outside the v3 migration machinery, which lives in persist.js):\n${grep2}`);
+  // DEFAULT_IDENTITY_STOPS itself is asserted undefined directly above (intensity-legacy) — a
+  // whole-tree text grep for it here would also match this very check's own source, so it isn't repeated.
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "vibrancy", "oklch-hue-anchor", "intensity-legacy", "intensity-spike", "intensity-override"]) {
+for (const g of ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "vibrancy", "oklch-hue-anchor", "intensity-legacy", "ac004-greps"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

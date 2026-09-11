@@ -1,4 +1,4 @@
-import { exportDesignSystemBundle, exportDesignSystemMakeBundle, exportDesignSystemSpine, exportDesignSystemStitchBundle, exportDesignSystemTokens, figmaBundle, figmaCollectionNames, slug, tokenCount } from "../model.mjs";
+import { exportDesignSystemBundle, exportDesignSystemMakeBundle, exportDesignSystemSpine, exportDesignSystemStitchBundle, exportDesignSystemTokens, figmaBundle, figmaCollectionNames, resolvedPalettes, slug, tokenCount } from "../model.mjs";
 import { serialize } from "../persist.js";
 import { typeTokensBreakpointCSS, typeTokensCSS, typeTokensDTCG, typeTokensFigmaModes, typeTokensFigmaPrimitivesModes } from "../../engine/type.mjs";
 import { geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes, geomTokensSizesCSS } from "../../engine/geometry.mjs";
@@ -45,6 +45,13 @@ export class DrawerMixinImpl {
     // view.exports). Computed from the same engines the modals + the Brand-Kit MCP use.
     const typeSc = this._typeScaleFor("base"); // override-aware base scale (Phase 3) — same as the matrix Base column
     const geomSc = this._geomScaleFor("base");
+    // SPEC 0.3.0 (ticket #559): the DS-bundle exporters (ds-export.js, via exports.js's derivePalette)
+    // read palette.group directly — they're called with a doc-shaped object below, never through
+    // stateOf/projectView — so without this a palette relying on the by-name default group (no
+    // explicit `.group` field) would resolve to nothing there. resolvedPalettes(doc) stamps every
+    // palette's group to its definite resolved id while every other doc field (icons/name/story/…,
+    // which ds-export.js also reads, and doc.paletteGroups itself, via the spread below) stays as-is.
+    const dsDoc = { ...this.doc, palettes: resolvedPalettes(this.doc) };
     const u = { unit: this._exportUnit(), fontMode: this.fontMode }; // the CSS unit preference (Settings › Export) + the font-rendering mode (Settings › Appearance) — Figma outputs below deliberately read NEITHER (Figma always gets the as-designed families; a native Figma-mode axis is its own future phase)
     const ut = { ...u, prefix: this._typePrefix() }; // + the naming-scheme prefix for the type CSS
     const ug = { ...u, prefix: this._geomPrefix() }; // + the naming-scheme prefix for the geometry CSS
@@ -66,8 +73,8 @@ export class DrawerMixinImpl {
       "geom-dtcg": () => JSON.stringify(geomTokensDTCG(geomSc, u), null, 2),
       // the Design System export — the universal-dialect DESIGN.md core + tokens.json (the LLM generation
       // system); the component previews ride the Download-All bundle only (a folder, not a single preview).
-      "ds-tokens": () => exportDesignSystemTokens(this.doc, typeSc, geomSc),
-      "ds-spine": () => exportDesignSystemSpine(this.doc, typeSc, geomSc),
+      "ds-tokens": () => exportDesignSystemTokens(dsDoc, typeSc, geomSc),
+      "ds-spine": () => exportDesignSystemSpine(dsDoc, typeSc, geomSc),
     };
     const SYSTEM_LABEL = { "type-css": "Typography · CSS", "type-dtcg": "Typography · DTCG", "geom-css": "Geometry · CSS", "geom-css-sizes": "Geometry · CSS (sizes only)", "geom-dtcg": "Geometry · DTCG", "ds-tokens": "Design System · tokens.json", "ds-spine": "Design System · DESIGN.md" };
     // the systems currently opted into the Download-All + MCP bundle (for the footer summary).
@@ -310,6 +317,9 @@ export class DrawerMixinImpl {
     const sys = this.exportSystems;
     const u = { unit: this._exportUnit() }; // the CSS unit preference; the figma/ folder stays px (Figma is numeric)
     const ex = view.exports;
+    // ticket #559: see renderDrawer's own dsDoc for why the DS-bundle exporters need this instead
+    // of the raw this.doc.
+    const dsDoc = { ...this.doc, palettes: resolvedPalettes(this.doc) };
     const files = [];
     if (sys.color) {
       files.push(
@@ -348,15 +358,15 @@ export class DrawerMixinImpl {
       // value-equal by construction. Rides `systems.color`. A vision-capable Claude reads the folder to
       // generate on-brand screens; the measured-reduction on-colors hold WCAG AA in both schemes.
       const dsDate = new Date().toISOString().slice(0, 10);
-      files.push(...exportDesignSystemBundle(this.doc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
+      files.push(...exportDesignSystemBundle(dsDoc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
         .map((f) => ({ name: `design-system-for-claude-code/${f.name}`, data: f.data })));
       // design-system-for-google-stitch/ — the SAME canonical DESIGN.md (Stitch consumes one file,
       // byte-identical to the Claude Code spine) + a Stitch-profile README receipt. One core, two uploads.
-      files.push(...exportDesignSystemStitchBundle(this.doc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
+      files.push(...exportDesignSystemStitchBundle(dsDoc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
         .map((f) => ({ name: `design-system-for-google-stitch/${f.name}`, data: f.data })));
       // design-system-for-figma-make/ — a routed guidelines/ tree Figma Make reads directly (no
       // linter/schema of its own — make_guidelines_check.py is the gate of record) + a profile README.
-      files.push(...exportDesignSystemMakeBundle(this.doc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
+      files.push(...exportDesignSystemMakeBundle(dsDoc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
         .map((f) => ({ name: `design-system-for-figma-make/${f.name}`, data: f.data })));
     }
     // the two halves of the merged breakpoint-moded "Geometry" collection (TKT-0009) — filled by the

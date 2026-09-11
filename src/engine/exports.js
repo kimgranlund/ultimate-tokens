@@ -33,6 +33,7 @@ import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, 
 import { COLLECTIONS } from "./collections.js";
 import { primeSwatches, PRIME_STEPS } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
+import { rampChromaOf, primeChromaOf } from "./resolve.mjs";
 
 // WCAG relative luminance of an [r,g,b] (0..255) triple — for the opt-in contrast on-color pick.
 // Exported: ds-export.js's dsContrast also needs it (kept as one source, not a duplicate).
@@ -176,11 +177,20 @@ function controlsOf(state) {
     dampCurve: state.dampCurve ?? DEFAULT_CONTROLS.dampCurve,
     dampAmp: state.dampAmp ?? DEFAULT_CONTROLS.dampAmp,
     dampBias: state.dampBias ?? DEFAULT_CONTROLS.dampBias,
-    baseIntensity: state.baseIntensity ?? DEFAULT_CONTROLS.baseIntensity,
-    // primeChroma (REQ-010/050..057): the prime system's own chroma control. DEFAULT_CONTROLS has no
-    // primeChroma field yet — mirrors model.mjs's controlsOf, which reuses tonal.js's still-inert
-    // keyIntensity (100) as its default source (same P1-kept-inert field, same reuse rationale).
-    primeChroma: state.primeChroma ?? DEFAULT_CONTROLS.keyIntensity,
+    // baseChroma (SPEC 0.3.0 REQ-002/004): the GLOBAL fallback ramp-chroma target — used only when a
+    // palette's group carries no value of its own. Named `state.baseChroma` here — a DIFFERENT name
+    // than the field persist.js/model.mjs persist on the document (kept there for backward compat) —
+    // because a retired per-stop multiplier control once lived under that old name right in this file,
+    // and AC-004 bars its reintroduction, in any form, under src/engine. model.mjs's stateOf() is the
+    // one place that renames the document's own field onto this one when building `state`.
+    baseChroma: state.baseChroma ?? 100,
+    // primeChroma (REQ-008/050..057): the prime system's own chroma control, a plain 100 default.
+    primeChroma: state.primeChroma ?? 100,
+    // paletteGroups (REQ-002/008): each group's own { baseChroma, primeChroma, locked? }, default-filled
+    // by model.mjs's resolvePaletteGroups() before this state ever reaches an exporter. derivePalette
+    // below reads controls.paletteGroups[palette.group] — model.mjs also stamps `palette.group` onto
+    // every state-shaped palette object, so this file never re-derives the by-name default rule.
+    paletteGroups: state.paletteGroups ?? {},
     hueSpace: state.hueSpace ?? "cam16", // a raw legacy state without the field was authored in cam16 (mirror the UI's legacy-preservation stamp); a live doc always carries it explicitly
     // distribution mode + its shapers — previously dropped here, so exports always used the
     // default mode regardless of the doc. Threaded now so exports match what the UI renders.
@@ -213,7 +223,6 @@ function derivePalette(palette, controls, overrides) {
     dampCurve: controls.dampCurve,
     dampAmp: controls.dampAmp,
     dampBias: controls.dampBias,
-    baseIntensity: controls.baseIntensity,
     hueSpace: controls.hueSpace,
     toneMode: controls.toneMode,
     vibrancy: controls.vibrancy,
@@ -223,8 +232,16 @@ function derivePalette(palette, controls, overrides) {
   // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp — reused below
   // for the on-color-contrast step so it's derived once per palette.
   const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
+  // rampChroma/primeChromaResolved (SPEC 0.3.0 REQ-002/004/008, Risk 0b: "one shared resolver
+  // imported by both, never two copies") — engine/resolve.mjs's OWN pure functions, the SAME ones
+  // model.mjs's projectView calls, so the CSS/JSON/DTCG/… exports and the canvas agree byte for
+  // byte by construction, not by two hand-kept-in-sync formulas. `palette.group` arrives ALREADY
+  // resolved (a definite one of the four ids, never absent) — model.mjs's stateOf() stamps it
+  // before this file ever sees the palette, so no by-name default rule is duplicated here either.
+  const rampChroma = rampChromaOf(palette, controls.paletteGroups, controls);
+  const primeChromaResolved = primeChromaOf(palette, controls.paletteGroups, controls);
   const stopList = paletteStops(
-    { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull, intensity: palette.intensity },
+    { hue: palette.hue, chroma: rampChroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull },
     ctl,
     EXPORT_STOPS,
   );
@@ -292,10 +309,13 @@ function derivePalette(palette, controls, overrides) {
   // independent of the ramp above; mode-independent (R2), one set per palette. Built from
   // prime.mjs's own primeSwatches(), never reimplemented here (same call shape model.mjs's
   // projectView uses: the full `controls` object, not the ramp-only `ctl` slice, since
-  // primeSwatches reads controls.hueSpace/primeChroma, neither of which `ctl` needs).
+  // primeSwatches reads controls.hueSpace/primeChroma, neither of which `ctl` needs). `chroma` is
+  // the palette's OWN unresolved value (REQ-002: the ramp target above never feeds this); `primeChroma`
+  // is cleared on the palette so prime.mjs's own `palette.primeChroma ?? controls.primeChroma` falls
+  // straight through to the value already resolved above (REQ-008) — prime.mjs itself never changes.
   const primeList = primeSwatches(
-    { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, primeChroma: palette.primeChroma },
-    controls,
+    { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, primeChroma: undefined },
+    { ...controls, primeChroma: primeChromaResolved },
   );
   const prime = {}; // { [step]: {step, l, s, hue, rgb, hex, oklch, inGamut} }
   for (const sw of primeList) prime[sw.step] = sw;

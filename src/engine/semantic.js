@@ -305,8 +305,8 @@ export function applyAccentRef(roles, accentRef) {
 
 // The five IDENTITY roles: the prime accent and its Dim/Bright/Low/High variants (suffixes below). Their
 // solid refs are the stops that read as "the brand color". tonal.js no longer consumes this set — the
-// ramp-level chroma lift it used to drive under keyIntensity was retired (#536, I(stop) = b everywhere) —
-// kept here for a possible future standalone prime-swatch system.
+// ramp-level chroma lift it used to drive under the old prime-chroma control's retired field name was
+// removed (#536) — kept here for a possible future standalone prime-swatch system.
 const IDENTITY_SUFFIXES = new Set(['', '-dim', '-bright', '-low', '-high']);
 
 /**
