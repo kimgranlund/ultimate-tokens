@@ -22,7 +22,8 @@ import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
 import { RAMP_LADDER, mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder size-anchor helpers + explicit ordering (issue #483 — the ladder's numeric step names trap a bare Object.keys/`.MD`/`.SM`/`.XS` access)
-import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette } from "./exports.js";
+import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette, oklchStr } from "./exports.js";
+import { PRIME_STEPS } from "./prime.mjs"; // the seven step names, brightest..dimmest (REQ-050/054)
 
 // ══════════════════════════════════════════════════════════════════════════════
 // DESIGN SYSTEM export — design-system-for-{claude-code,google-stitch,figma-make}
@@ -189,7 +190,23 @@ export function dsColorRoles(state) {
   const aliasDistinct = !tokens.some((t) => t.name === alias.name);
 
   const families = [chrome.n, ...others.map((p) => p.n), ...intents.map((p) => p.n)];
-  return { chrome, tokens, alias, aliasDistinct, families, dataFamilies: dataPals.map((p) => p.n) };
+
+  // ── prime (REQ-054): every enabled palette's own seven identity swatches (brightest..dimmest) —
+  // primitives-tier and mode-independent, the SAME seven in both schemes, unlike the roles above.
+  // Keyed by family slug (chrome + others + intents + data, i.e. every enabled palette in
+  // `palettes`) so tokens.json and the DESIGN.md prose can both name a family and its prime block.
+  // {hex, oklch} per step, mirroring exportJSON's own prime block (exports.js) byte-for-byte.
+  const prime = {};
+  for (const p of palettes) {
+    const steps = {};
+    for (const step of PRIME_STEPS) {
+      const sw = p.prime[step];
+      steps[step] = { hex: sw.hex, oklch: oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] }) };
+    }
+    prime[p.n] = steps;
+  }
+
+  return { chrome, tokens, alias, aliasDistinct, families, dataFamilies: dataPals.map((p) => p.n), prime };
 }
 
 // dsFactor — leading as a unitless multiplier of size (§9.2: never px). dsTypeLayer — the full voice·step
@@ -247,11 +264,12 @@ export function exportDesignSystemTokens(state, typeSc, geomSc) {
   for (const t of ds.tokens) { colors[t.name] = t.light.oklch; colorsDark[t.name] = t.dark.oklch; }
   if (ds.aliasDistinct) { colors[ds.alias.name] = ds.alias.light.oklch; colorsDark[ds.alias.name] = ds.alias.dark.oklch; }
   const { semantic, semanticDark } = dsSemanticLayer(state);
-  const note = `Design System tokens.json — Ultimate Tokens naming grammar: {family}[-slot], families ${ds.families.join("/")}; CSS prefix --${cssPrefixOf(state)}-. Two color tiers: \`colors\`/\`colorsDark\` are the reduced consumption grammar (the set the DESIGN.md teaches — the kit's resolved role values VERBATIM, per its onColorMode setting; contrast is measured and disclosed in README.md); \`semantic\`/\`semanticDark\` are the FULL semantic role layer (every role of every palette) for consumers that need the complete set. Values are high-resolution OKLCH (never bare hex); alpha < 1 rides as \`oklch(L C H / A)\`. type.scale lineHeight is a unitless multiplier of size (leading factor — never px) and letterSpacing, where present, an em factor. \`geometry\` is the full dimensional system (control size ramp, insets, gaps, borders, focus ring; px numbers); \`spacing\`/\`radii\` remain the compact ladders. \`icons\` names the icon library + its stroke variant this kit binds to, with the size ramp it renders at (from geometry) — bind to it, never substitute another set. \`motion\` carries the easing curves + the ms duration ladder: bind these, never type a raw ms or bezier; entrances decelerate, exits accelerate and run faster.`;
+  const note = `Design System tokens.json — Ultimate Tokens naming grammar: {family}[-slot], families ${ds.families.join("/")}; CSS prefix --${cssPrefixOf(state)}-. Two color tiers: \`colors\`/\`colorsDark\` are the reduced consumption grammar (the set the DESIGN.md teaches — the kit's resolved role values VERBATIM, per its onColorMode setting; contrast is measured and disclosed in README.md); \`semantic\`/\`semanticDark\` are the FULL semantic role layer (every role of every palette) for consumers that need the complete set. \`prime\` is a THIRD tier: every enabled palette's own seven identity swatches (brightest..dimmest, keyed by step name), primitives-tier and mode-independent — the SAME seven values in light and dark, never subject to onColorMode. Values are high-resolution OKLCH (never bare hex); alpha < 1 rides as \`oklch(L C H / A)\`. type.scale lineHeight is a unitless multiplier of size (leading factor — never px) and letterSpacing, where present, an em factor. \`geometry\` is the full dimensional system (control size ramp, insets, gaps, borders, focus ring; px numbers); \`spacing\`/\`radii\` remain the compact ladders. \`icons\` names the icon library + its stroke variant this kit binds to, with the size ramp it renders at (from geometry) — bind to it, never substitute another set. \`motion\` carries the easing curves + the ms duration ladder: bind these, never type a raw ms or bezier; entrances decelerate, exits accelerate and run faster.`;
   return JSON.stringify({
     $generator: "Ultimate Tokens",
     $note: note,
     colors, colorsDark,
+    prime: ds.prime,
     semantic, semanticDark,
     type: dsTypeLayer(typeSc), spacing: dsSpacing(geomSc), radii: dsRadii(geomSc),
     geometry: dsGeometryLayer(geomSc),
@@ -757,6 +775,25 @@ function dsSpineBody(ds, state, ctx) {
     "background/surface uses `on-surface` or `on-surface-variant`. A crossed pair fails contrast in one scheme.",
   ].join("\n");
 
+  // Prime swatches (REQ-054) — an EXTRA section (rides the unknown-section tolerance, like Data
+  // series/Iconography/Motion), always present (not opt-in — every enabled palette carries a prime
+  // system). Lists every family (including data-N) with its prime token pattern; the actual seven
+  // values per family live in tokens.json's own `prime` block, not the frontmatter `colors:` map.
+  const primeFamilies = Object.keys(ds.prime || {});
+  const primeSection = primeFamilies.length
+    ? [
+        "## Prime swatches", "",
+        "Every palette also carries its own **prime** system — seven identity swatches on a private",
+        "OKHSL ladder, lightest to darkest: `brightest`, `brighter`, `bright`, `prime`, `dim`, `dimmer`,",
+        "`dimmest`. They are primitives-tier and mode-independent (the SAME seven swatches in both",
+        "schemes, never subject to `onColorMode`) — `tokens.json`'s `prime` block carries the full",
+        "seven-step `{hex, oklch}` value per family. Reach for `prime` as a family's own signature",
+        "colour outside a fill/on-fill pair (a sparkline, a small identity mark, a legend swatch); it is",
+        "never a button fill — buttons use the family's role tokens above.", "",
+        primeFamilies.map((f) => `- \`--${pfx}-${f}-prime-{step}\` (\`${f}\`)`).join("\n"),
+      ].join("\n")
+    : "";
+
   // Data series (#503 REQ-031) — an EXTRA section (rides the unknown-section tolerance, like
   // Iconography/Motion below), present only when the kit has enabled `data-N` palettes. A chart
   // series is neither a brand action nor a status color, so it earns its own short listing rather
@@ -939,7 +976,7 @@ function dsSpineBody(ds, state, ctx) {
     `Deliberately refused: ${refuses}`,
   ].join("\n");
 
-  return [overview, colors, dataSeries, typography, layout, elevation, shapes, iconography, motion, components, donts, responsive, agent].filter(Boolean).join("\n\n");
+  return [overview, colors, primeSection, dataSeries, typography, layout, elevation, shapes, iconography, motion, components, donts, responsive, agent].filter(Boolean).join("\n\n");
 }
 
 // exportDesignSystemReceipt — the README.md profile receipt (§4). Every 🟢 cites a check; DIVERGENCE

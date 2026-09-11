@@ -432,7 +432,7 @@ the same JSON-RPC switch:
   || {})`'s own presence-driven tool list naturally contributes zero read tools for an empty kit),
   not special-cased.
 - **Post-generate:** the surface rebinds to the generated kit — `list_palettes` · `get_ramp` ·
-  `resolve_token` · `get_semantic` · `nearest_token` · `get_type` · `get_geometry`, the
+  `get_prime` · `resolve_token` · `get_semantic` · `nearest_token` · `get_type` · `get_geometry`, the
   `brand://…` resources, and the `apply_brand` prompt all serve it immediately. Within a session,
   last generate wins; a loaded sibling kit is the initial binding. A **teaching-mode** (`{description}`)
   call never rebinds — only a successful generation does, so exploring the method mid-session can't
