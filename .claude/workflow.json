@@ -6,6 +6,9 @@
     "research-rules"
   ],
   "toolchain": {
-    "gate": "npm test"
+    "pluginRoot": "plugin/{name}",
+    "gate": [
+      "npm test"
+    ]
   }
 }
