@@ -76,32 +76,25 @@ export const DEFAULT_CONTROLS = {
   // to 550 (light) / 450 (dark) — mode-specific, better contrast per scheme. "single": both modes map to
   // 500 — one mode-agnostic accent token. Applied via applyAccentRef alongside applyOnColorContrast.
   accentRef: "mode",
-  // Intensity (ramp shaping, SPEC spec-muted-base-key-spikes REQ-001..004). baseIntensity: the palette's
+  // Intensity (ramp shaping, SPEC spec-muted-base-key-spikes REQ-001/002). baseIntensity: the palette's
   // chroma fraction is multiplied by b = baseIntensity/100 at EVERY stop, BEFORE damping, on both ramp
-  // paths — a muted base. keyIntensity: at the IDENTITY stops (the solid refs of the five identity roles,
-  // see identityStops in semantic.js / DEFAULT_IDENTITY_STOPS below) the factor is lifted back toward 1 by
-  // k = keyIntensity/100: I = b + (1 - b) * k. Discrete — non-identity stops get exactly b. A palette may
-  // carry its own `intensity` (0..100) overriding baseIntensity for that palette only. At 100/100 (the
-  // shipped default, H1) I = 1 everywhere and the engine is byte-identical to the pre-feature output.
+  // paths — a muted base, with no stop special-cased. A palette may carry its own `intensity` (0..100)
+  // overriding baseIntensity for that palette only. At 100 (the shipped default, H1) I = 1 everywhere and
+  // the engine is byte-identical to the pre-feature output.
   baseIntensity: 100,
+  // keyIntensity: no longer read by the ramp — the identity-stop chroma lift it used to drive was retired
+  // (#536: I(stop) = b unconditionally now, see intensityAt). Kept as a persisted control value — the UI
+  // slider ("Prime chroma") still writes it — so a later ticket can re-purpose the field for the standalone
+  // prime-swatch system via a schema-versioned rename, instead of reintroducing it from scratch.
   keyIntensity: 100,
 };
 
-// DEFAULT_IDENTITY_STOPS — the solid refs of the five identity roles (prime, -dim, -bright, -low, -high)
-// across light + dark under accentRef "mode": prime 550/450, dim 650/700, bright 350/400, low 350/700,
-// high 650/400. A LITERAL: tonal.js must not import semantic.js (engines stay independent, the tonal
-// verifier pins controls with no role table); test/engine/semantic.mjs's identity-stops gate asserts
-// identityStops(semanticRoles("primary")) deep-equals this set so it cannot drift from the role table.
-// Callers with a role table ALWAYS pass identityStops(resolvedRoles) (after applyAccentRef — under "single"
-// the prime resolves to 500 and the set is {350,400,500,650,700}); this default is only for callers with none.
-export const DEFAULT_IDENTITY_STOPS = new Set([350, 400, 450, 550, 650, 700]);
-
 // intensityAt — the per-stop intensity factor I(stop) (REQ-002): b = (palette.intensity ?? baseIntensity)/100,
-// k = keyIntensity/100; I = b + (1 - b) * k at an identity stop, b elsewhere. Both clamped to [0,1].
-export function intensityAt(stop, palette, controls, identityStops) {
-  const b = Math.min(1, Math.max(0, ((palette && palette.intensity) ?? (controls && controls.baseIntensity) ?? 100) / 100));
-  const k = Math.min(1, Math.max(0, ((controls && controls.keyIntensity) ?? 100) / 100));
-  return identityStops && identityStops.has(stop) ? b + (1 - b) * k : b;
+// clamped to [0,1]. Every stop gets exactly b — no stop is special (the identity-stop chroma lift this used
+// to apply at the solid refs of the five identity roles, via keyIntensity, was retired — #536; see
+// DEFAULT_CONTROLS.keyIntensity above).
+export function intensityAt(stop, palette, controls) {
+  return Math.min(1, Math.max(0, ((palette && palette.intensity) ?? (controls && controls.baseIntensity) ?? 100) / 100));
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -125,9 +118,9 @@ export function effHue(hue, hueSpace, chromaFrac = 1) {
 // term vanishes there), capped at the gamut peak. Anchoring effHue here — not at the raw nominal chroma —
 // puts the OKLCH-hue calibration on the saturated swatches the user reads, so they land on the SET hue.
 // Multiplied by I(500) (REQ-005): it seeds the gamut basis, so it follows the stop-500 chroma AFTER intensity.
-export function hueAnchorFrac(palette, controls, identityStops = DEFAULT_IDENTITY_STOPS) {
+export function hueAnchorFrac(palette, controls) {
   const nominal = (palette.chroma ?? 0) / 100;
-  return Math.min(1, nominal * intensityAt(500, palette, controls, identityStops) * (1 + (controls.dampAmp ?? 0) / 100));
+  return Math.min(1, nominal * intensityAt(500, palette, controls) * (1 + (controls.dampAmp ?? 0) / 100));
 }
 
 // solveOkhslHue — the OKHSL hue whose color at (s, l) reads back at `targetOklchHue`. The perceptual ramp
@@ -219,12 +212,10 @@ export function toneAt(stop, skew, lift, { curve, lmin, lmax, tension }) {
 // paletteStops — full per-stop pipeline for one palette.
 // palette: { hue, chroma, skew, lift }; controls: DEFAULT_CONTROLS-shaped.
 // Returns [{ stop, tone, chroma, maxc, rgb, hex, inGamut }] for each stop.
-// identityStops: Set<number> of the stops that receive the keyIntensity lift (see intensityAt); callers with a
-// resolved role table pass identityStops(roles) from semantic.js, the default is the accentRef "mode" literal.
-export function paletteStops(palette, controls, stops, identityStops = DEFAULT_IDENTITY_STOPS) {
+export function paletteStops(palette, controls, stops) {
   const mode = controls.toneMode || "perceptual";
-  if (mode === "perceptual" || mode === "peak") return okhslStops(palette, controls, stops, mode, identityStops);
-  const I = (stop) => intensityAt(stop, palette, controls, identityStops);
+  if (mode === "perceptual" || mode === "peak") return okhslStops(palette, controls, stops, mode);
+  const I = (stop) => intensityAt(stop, palette, controls);
   const shift = palette.hueShift ?? 0; // edge hue rotation: ±deg at the ends
   const sameDir = palette.hueSameDir === true; // true = both ends bend the SAME way (|s|), else opposite (s)
   const ctl = {
@@ -241,7 +232,7 @@ export function paletteStops(palette, controls, stops, identityStops = DEFAULT_I
   let baseHue;
   if (controls.hueSpace === "oklch") {
     const tone500 = toneAt(500, palette.skew, palette.lift, ctl);
-    const seedHue = effHue(palette.hue, "oklch", hueAnchorFrac(palette, controls, identityStops)); // ~baseHue, only for the gamut basis
+    const seedHue = effHue(palette.hue, "oklch", hueAnchorFrac(palette, controls)); // ~baseHue, only for the gamut basis
     const maxc500 = maxChromaInGamut(seedHue, tone500);
     // stop-500 chroma AFTER intensity (REQ-005), so the anchor lands the key stop on the set OKLCH hue at any intensity
     const intended500 = (palette.chroma / 100) * I(500) * (controls.relChroma ? maxc500 : peakC(seedHue).c);
@@ -312,9 +303,9 @@ function okhslLAt(lstar) {
   return v;
 }
 
-function okhslStops(palette, controls, stops, mode, identityStops) {
-  const I = (stop) => intensityAt(stop, palette, controls, identityStops);
-  const baseHue = effHue(palette.hue, controls.hueSpace, hueAnchorFrac(palette, controls, identityStops));
+function okhslStops(palette, controls, stops, mode) {
+  const I = (stop) => intensityAt(stop, palette, controls);
+  const baseHue = effHue(palette.hue, controls.hueSpace, hueAnchorFrac(palette, controls));
   const pk = peakC(baseHue);                                       // { c, tone } — the cusp (peak geometry)
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;

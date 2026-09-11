@@ -347,12 +347,13 @@ for (const mode of ["perceptual", "peak"]) {
 
 // ── hpg-tonal-intensity-legacy: baseIntensity 100 is byte-identical to the pre-feature engine (AC-003/007, EX-1)
 // The fixture was generated from the pre-change engine (commit 83756bb) by scripts/gen-tonal-fixture.mjs and is
-// regenerated only by hand, never by npm test. keyIntensity is inert at base 100 (REQ-003), so 0 and 100 both match.
+// regenerated only by hand, never by npm test. keyIntensity is inert everywhere now (#536 retired the ramp-level
+// spike it used to drive), so 0 and 100 both match at base 100 — and at every other base too (see intensity-spike).
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};
   if (dc.baseIntensity !== 100 || dc.keyIntensity !== 100) FAIL("intensity-legacy", `DEFAULT_CONTROLS intensity ${dc.baseIntensity}/${dc.keyIntensity}, want 100/100 (H1)`);
-  if (!(T.DEFAULT_IDENTITY_STOPS instanceof Set) || T.DEFAULT_IDENTITY_STOPS.size !== 6) FAIL("intensity-legacy", "DEFAULT_IDENTITY_STOPS missing or not the 6-stop set");
+  if (T.DEFAULT_IDENTITY_STOPS !== undefined) FAIL("intensity-legacy", "DEFAULT_IDENTITY_STOPS must not exist — the ramp no longer special-cases any stop (#536)");
   let cells = 0;
   for (const toneMode of ["perceptual", "even"]) for (const p of DEFAULTS) for (const keyIntensity of [0, 100]) {
     const ctl = { ...dc, toneMode, baseIntensity: 100, keyIntensity };
@@ -368,42 +369,46 @@ for (const mode of ["perceptual", "peak"]) {
   if (a !== FX.perceptual[p.name].join()) FAIL("intensity-legacy", `${p.name} intensity:100 override at base 100 moved the ramp`);
 }
 
-// ── hpg-tonal-intensity-spike: I(stop) = b + (1-b)k at identity stops, exactly b elsewhere (AC-002/004/005/006, EX-2/3)
+// ── hpg-tonal-intensity-spike: I(stop) = b uniformly, no stop special-cased; keyIntensity is fully inert
+// (#536 retired the identity-stop chroma lift this group used to test — AC-002/004/006, EX-2) ────────────
 {
   const dc = T.DEFAULT_CONTROLS || {};
-  const IDS = T.DEFAULT_IDENTITY_STOPS;
-  // (a) intensityAt itself — the formula, the clamps, the discrete set
+  // (a) intensityAt itself — the formula, the clamp, and proof no stop (nor keyIntensity) is special-cased.
+  // FORMER_IDENTITY_STOPS is the retired spike's stop set, reused here ONLY as a negative control: every one
+  // of them must now behave exactly like an ordinary stop (500/750/250).
   const near = (a, b, tol = 1e-12) => Math.abs(a - b) <= tol;
-  if (!near(T.intensityAt(500, {}, { baseIntensity: 40, keyIntensity: 100 }, IDS), 0.4)) FAIL("intensity-spike", "I(500) under 'mode' must be b (500 is not an identity stop)");
-  if (!near(T.intensityAt(550, {}, { baseIntensity: 40, keyIntensity: 100 }, IDS), 1.0)) FAIL("intensity-spike", "I(550) at k=100 must be 1");
-  if (!near(T.intensityAt(550, {}, { baseIntensity: 40, keyIntensity: 50 }, IDS), 0.7)) FAIL("intensity-spike", "I(550) at b=.4,k=.5 must be .7");
-  if (!near(T.intensityAt(750, {}, { baseIntensity: 40, keyIntensity: 100 }, IDS), 0.4)) FAIL("intensity-spike", "I(750) (active) must be b");
-  if (!near(T.intensityAt(550, {}, { baseIntensity: 140, keyIntensity: -5 }, IDS), 1.0)) FAIL("intensity-spike", "b/k must clamp to [0,1]");
-  if (!near(T.intensityAt(550, {}, {}, undefined), 1.0)) FAIL("intensity-spike", "no controls, no set → 1");
-  const single = new Set([350, 400, 500, 650, 700]);
-  if (!near(T.intensityAt(500, {}, { baseIntensity: 40, keyIntensity: 100 }, single), 1.0) || !near(T.intensityAt(550, {}, { baseIntensity: 40, keyIntensity: 100 }, single), 0.4)) FAIL("intensity-spike", "a 'single' set must spike 500 and not 550 (EX-3)");
+  const FORMER_IDENTITY_STOPS = [350, 400, 450, 550, 650, 700];
+  for (const stop of [...FORMER_IDENTITY_STOPS, 500, 750, 250]) {
+    if (!near(T.intensityAt(stop, {}, { baseIntensity: 40 }), 0.4)) FAIL("intensity-spike", `I(${stop}) must be b (0.4) — no stop is special-cased`);
+    // keyIntensity, at any value, must not move the result — the spike it used to drive is retired
+    if (!near(T.intensityAt(stop, {}, { baseIntensity: 40, keyIntensity: 100 }), 0.4)) FAIL("intensity-spike", `I(${stop}) at keyIntensity 100 must still be b — keyIntensity is inert`);
+    if (!near(T.intensityAt(stop, {}, { baseIntensity: 40, keyIntensity: 0 }), 0.4)) FAIL("intensity-spike", `I(${stop}) at keyIntensity 0 must still be b — keyIntensity is inert`);
+  }
+  if (!near(T.intensityAt(550, {}, { baseIntensity: 140 }), 1.0)) FAIL("intensity-spike", "baseIntensity must clamp to 1 above 100");
+  if (!near(T.intensityAt(550, {}, { baseIntensity: -5 }), 0)) FAIL("intensity-spike", "baseIntensity must clamp to 0 below 0");
+  if (!near(T.intensityAt(550, {}, {}), 1.0)) FAIL("intensity-spike", "no controls → 1");
+  if (!near(T.intensityAt(500, { intensity: 40 }, { baseIntensity: 100 }), 0.4)) FAIL("intensity-spike", "palette.intensity still overrides controls.baseIntensity");
   // (b) measured ramps on BOTH paths: a probe palette below the gamut ceiling (chroma 40) so no clamp binds.
   // Even path: r.chroma is the APPLIED chroma → ratio is exact. Perceptual path: read the OKHSL saturation
   // back from the emitted pixel (8-bit quantised) → ratio within 2% of the peak (s=1).
-  // hueSpace pinned to "cam16": under "oklch" the stop-500 hue anchor re-solves at the post-intensity chroma
-  // (REQ-005), which moves the base hue a fraction of a degree and with it the peak/ceiling basis, so the ratio
-  // is only approximately b there; cam16 passes the hue straight through and isolates the multiplier. (d) below
-  // covers the oklch anchor at every intensity.
+  // hueSpace pinned to "cam16" so the stop-500 hue anchor doesn't re-solve the base hue under intensity,
+  // isolating the multiplier; (d) below covers the oklch anchor at every intensity.
   const probe = { hue: 267, chroma: 40, skew: 0, lift: 0 };
-  const b = 0.4, k = 1;
+  const b = 0.4;
   for (const toneMode of ["perceptual", "even"]) {
     const base = { ...dc, toneMode, hueSpace: "cam16", chromaFloor: 0 };
     const legacy = T.paletteStops(probe, { ...base, baseIntensity: 100 }, STOPS);
-    const muted = T.paletteStops(probe, { ...base, baseIntensity: b * 100, keyIntensity: k * 100 }, STOPS);
+    // keyIntensity: 37 — an arbitrary, asymmetric value; the ramp must come out identical to keyIntensity absent
+    const muted = T.paletteStops(probe, { ...base, baseIntensity: b * 100, keyIntensity: 37 }, STOPS);
     for (let i = 0; i < STOPS.length; i++) {
-      const stop = STOPS[i], want = IDS.has(stop) ? b + (1 - b) * k : b;
+      const stop = STOPS[i], want = b; // every stop, uniformly — the identity-stop lift is gone
       let ratio, tol;
       if (toneMode === "even") { if (legacy[i].chroma < 0.5 || legacy[i].chroma >= legacy[i].maxc - 1e-6) continue; /* ceiling-bound (050 white) */ ratio = muted[i].chroma / legacy[i].chroma; tol = 1e-9; }
       else {
         const sl = rgbToOkhsl(legacy[i].rgb).s, sm = rgbToOkhsl(muted[i].rgb).s;
         // The light/dark ends (measured chroma < 10) sit where one 8-bit step moves OKHSL s by >2%, so the
         // ratio is quantisation noise there; assert only that muting never ADDS saturation, and measure the
-        // ratio on the mid stops (200..850 on this probe), which cover every identity stop and its neighbours.
+        // ratio on the mid stops.
         if (legacy[i].chroma < 10) { if (sm > sl + 0.02 && legacy[i].chroma > 3) { FAIL("intensity-spike", `${toneMode} stop ${stop}: muted s ${sm.toFixed(3)} > legacy ${sl.toFixed(3)}`); break; } continue; }
         ratio = sm / sl; tol = 0.02 / sl;
       }
@@ -412,23 +417,17 @@ for (const mode of ["perceptual", "peak"]) {
       if (toneMode === "even" && Math.abs(muted[i].tone - legacy[i].tone) > 1e-9) { FAIL("intensity-spike", `${toneMode} stop ${stop}: tone moved under intensity`); break; }
       if (toneMode === "perceptual" && Math.abs(rgbToOkhsl(muted[i].rgb).l - rgbToOkhsl(legacy[i].rgb).l) > 0.02) { FAIL("intensity-spike", `${toneMode} stop ${stop}: OKHSL lightness moved under intensity`); break; }
     }
-    // (c) EX-3: the 'single' set passed as the 4th argument REPLACES the default set — 500 spikes, 450/550 mute
-    const sgl = T.paletteStops(probe, { ...base, baseIntensity: b * 100, keyIntensity: 100 }, STOPS, single);
-    const at = (rows, s) => rows[STOPS.indexOf(s)];
-    const sat = (r) => toneMode === "even" ? r.chroma : rgbToOkhsl(r.rgb).s;
-    const r500 = sat(at(sgl, 500)) / sat(at(legacy, 500)), r550 = sat(at(sgl, 550)) / sat(at(legacy, 550));
-    if (Math.abs(r500 - 1) > 0.05 || Math.abs(r550 - b) > 0.05) FAIL("intensity-spike", `${toneMode} single-set: 500 ratio ${r500.toFixed(3)} (want 1), 550 ratio ${r550.toFixed(3)} (want ${b})`);
   }
   // (d) AC-005: the OKLCH hue anchor holds at every intensity — stop 500 exports on the SET hue at baseIntensity
-  // 20/45/100 on both paths. Under "mode" 500 is NOT an identity stop, so at 20 it sits at CAM16 chroma ~7-16
-  // (near grey), where ONE 8-bit step moves the pixel's OKLCH hue by 2-9°: the 1° figure is below the pixel's
-  // own resolution there. Tolerance = max(1°, 2 × the one-step hue quantum of the emitted pixel): one step for
+  // 20/45/100 on both paths. At low baseIntensity, stop 500 sits at low CAM16 chroma (near grey), where ONE
+  // 8-bit step moves the pixel's OKLCH hue by several degrees: the 1° figure is below the pixel's own
+  // resolution there. Tolerance = max(1°, 2 × the one-step hue quantum of the emitted pixel): one step for
   // the solver (it iterates on rounded pixels) plus one for emission. Negative control (measured while building
-  // this gate): with I(500) dropped from the anchors the even path sits at 6.5-9.4° at 20 and 2.7-4.8° at 45 —
-  // several quanta out — so the bound still bites on the defect REQ-005 exists to prevent.
+  // this gate, pre-#536): with I(500) dropped from the anchors the even path sits at 6.5-9.4° at 20 and
+  // 2.7-4.8° at 45 — several quanta out — so the bound still bites on the defect REQ-005 exists to prevent.
   const quantum = (rgb) => { const h0 = rgbToOklchHue(rgb); let m = 0; for (let c = 0; c < 3; c++) for (const d of [-1, 1]) { const r = [...rgb]; r[c] = Math.min(255, Math.max(0, r[c] + d)); m = Math.max(m, angDiff(rgbToOklchHue(r), h0)); } return m; };
   for (const toneMode of ["perceptual", "even"]) for (const baseIntensity of [20, 45, 100]) {
-    const oc = { ...dc, hueSpace: "oklch", toneMode, baseIntensity, keyIntensity: 100, damp: 96, dampCurve: 1.2 };
+    const oc = { ...dc, hueSpace: "oklch", toneMode, baseIntensity, damp: 96, dampCurve: 1.2 };
     for (const [hue, chroma] of [[300, 76], [235, 80], [270, 70], [70, 100], [27, 55], [145, 55], [190, 60]]) {
       const s500 = T.paletteStops({ hue, chroma, skew: 0, lift: 0 }, oc, STOPS).find((s) => s.stop === 500);
       const err = angDiff(rgbToOklchHue(s500.rgb), hue), tol = Math.max(1.0, 2 * quantum(s500.rgb));

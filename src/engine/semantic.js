@@ -304,8 +304,9 @@ export function applyAccentRef(roles, accentRef) {
 }
 
 // The five IDENTITY roles: the prime accent and its Dim/Bright/Low/High variants (suffixes below). Their
-// solid refs are the stops that read as "the brand color" — the set tonal.js lifts back to full chroma
-// under keyIntensity (SPEC spec-muted-base-key-spikes REQ-004).
+// solid refs are the stops that read as "the brand color". tonal.js no longer consumes this set — the
+// ramp-level chroma lift it used to drive under keyIntensity was retired (#536, I(stop) = b everywhere) —
+// kept here for a possible future standalone prime-swatch system.
 const IDENTITY_SUFFIXES = new Set(['', '-dim', '-bright', '-low', '-high']);
 
 /**
@@ -313,9 +314,9 @@ const IDENTITY_SUFFIXES = new Set(['', '-dim', '-bright', '-low', '-high']);
  * dark. Computed from the ALREADY-RESOLVED role list (call it AFTER applyAccentRef; REPLACE semantics, never a
  * union with a static set): under accentRef "mode" that is {350,400,450,550,650,700}; under "single" the prime
  * resolves to 500 only, so 450/550 drop out and the set is {350,400,500,650,700} (EX-3). Scrim-shaped refs
- * ("500-200") are ignored. Not part of `semanticRoles`; the role-table answer key is untouched. Pass the result
- * as `paletteStops`' fourth argument; tonal.js carries the "mode" set as a literal (DEFAULT_IDENTITY_STOPS)
- * so it never imports this module, and test/engine/semantic.mjs gates the two against each other.
+ * ("500-200") are ignored. Not part of `semanticRoles`; the role-table answer key is untouched. No longer
+ * threaded into the ramp (tonal.js's `paletteStops` dropped its identity-stop parameter — #536); currently
+ * unconsumed outside this file, kept exported for a possible future standalone prime-swatch system.
  * @param {{key,suffix,light,dark}[]} roles resolved roles
  * @returns {Set<number>}
  */
