@@ -29,9 +29,10 @@ bare prime swatch in component code is the same defect as a raw stop.
 **Data series.** The default kit's eight-hue `data-1`…`data-8` family (step 2 below) is not a
 special construct — each is an ordinary palette, chroma peers of one another by construction (SPEC
 0.3.0), that happens to make a good chart-series set: the same 53 roles, and its own `prime` swatches
-for a series that needs several shades of one hue. They bind to shadcn's `--chart-1`…`--chart-8`; use
-those shadcn vars as a chart library's series-color source, and the data palettes' own roles for
-everything else around the chart (legends, tooltips, axis text).
+for a series that needs several shades of one hue. They bind to shadcn's `--chart-N` slots (read the
+export's own generated CSS for how many the kit at hand defines); use those shadcn vars as a chart
+library's series-color source, and the data palettes' own roles for everything else around the chart
+(legends, tooltips, axis text).
 
 ## Bind to the project first (always step 1)
 
