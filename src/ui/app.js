@@ -1911,6 +1911,14 @@ class HctApp extends HTMLElement {
         h("span", { class: "sw", style: `background:${this.hover.hex}` }),
         document.createTextNode(`${this.hover.name} · ${this.hover.label} · 750 @ ${this.hover.alpha}% · ${this.hover.hex}`),
       );
+    } else if (this.hover && this.hover.kind === "prime") {
+      // prime swatches have no ramp stop/tone to report — the strip is off-ramp by construction
+      // (SPEC spec-muted-base-key-spikes REQ-034/REQ-050).
+      el.replaceChildren(
+        document.createTextNode(`x:${xy.x} y:${xy.y} · ${z}% · `),
+        h("span", { class: "sw", style: `background:${this.hover.hex}` }),
+        document.createTextNode(`${this.hover.name} · ${this.hover.step} · ${this.hover.hex}`),
+      );
     } else if (this.hover) {
       el.replaceChildren(
         document.createTextNode(`x:${xy.x} y:${xy.y} · ${z}% · `),
