@@ -44,8 +44,8 @@ Perceptual color, type & geometry tokens — written straight into Figma variabl
 > touches the ones you drew yourself.
 >
 > The same kit exports beyond Figma from the web app: CSS custom properties, W3C design tokens
-> (DTCG), Tailwind, shadcn, and a Brand-Kit MCP server for AI agents — every format derived from the
-> one source, in sync by construction.
+> (DTCG), Tailwind, shadcn, Panda CSS, Park UI, and a Brand-Kit MCP server for AI agents — every
+> format derived from the one source, in sync by construction.
 
 **Support / privacy lines (listing fields)**
 

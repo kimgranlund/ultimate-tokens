@@ -64,9 +64,9 @@ Tailwind + ShadCN addition.
 ### Document and validate the shape
 
 - **knowledge-04 owns the output shapes.** After adding/changing a format, add or update its section there and
-  keep the eight-formats header count consistent if you added a color format. It was just de-staled to the
-  8-format reality (7 serializers + `exportAll`) + the ShadCN exception, so it's accurate to extend — don't
-  fork a second description into the SKILL.
+  keep the ten-formats header count consistent if you added a color format. It was just de-staled to the
+  10-format reality (9 serializers + `exportAll`) + the ShadCN/Park UI curated-contract exceptions, so it's
+  accurate to extend — don't fork a second description into the SKILL.
 - **Add a `[gate]` for a new framework format.** The shape gate (`test/engine/exports.mjs`) is the durable net.
   Mirror the `tailwind` / `shadcn` gate groups: assert the load-bearing structure (`@theme {` present,
   `oklch(` values, `:root`/`.dark` token-set parity), that a disabled palette is absent, and add the key to

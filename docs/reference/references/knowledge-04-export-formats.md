@@ -1,6 +1,6 @@
 # Knowledge 04 — Export Formats
 
-> Topic: the eight color export formats (CSS hex, CSS OKLCH, JSON, Figma DTCG, UI3, Tailwind, ShadCN, plus `exportAll`), their exact output shapes, naming/padding rules, and the
+> Topic: the ten color export formats (CSS hex, CSS OKLCH, JSON, Figma DTCG, UI3, Tailwind, ShadCN, Panda CSS, Park UI, plus `exportAll`), their exact output shapes, naming/padding rules, and the
 > Figma-import constraints that drove the resolved-vs-aliased decision.
 
 ## Table of Contents
@@ -14,6 +14,9 @@
 8. System constants (fixed, non-palette tokens)
 9. Key colors (retained brand colors)
 10. Prime tokens (the seven per-palette identity swatches)
+11. Panda CSS
+12. Park UI
+13. Palette groups, controls, and the schema stamp
 
 Tailwind v4 (`exportTailwind`) and ShadCN (`exportShadcn`) are introduced in §1 but do not yet have
 their own dedicated section here — their shapes are documented at the point of use in
@@ -34,13 +37,16 @@ scope was the §8 addition only.)
 
 All formats operate over **enabled** palettes (`palette.on`) and **export stops** (25).
 
-Two more **framework** formats ship alongside these (see `src/engine/exports.js`, not detailed below):
-**Tailwind v4** (`tailwind` · `exportTailwind`) and **ShadCN** (`shadcn` · `exportShadcn`). ShadCN is a
-**curated subset** — a fixed `SHADCN_ORDER` over a hand-kept suffix `MAP`, NOT all roles — so a new
-semantic role does not surface in it unless explicitly wired into `MAP`.
+Four more **framework** formats ship alongside these (see `src/engine/exports.js`, not all detailed
+below): **Tailwind v4** (`tailwind` · `exportTailwind`), **ShadCN** (`shadcn` · `exportShadcn`),
+**Panda CSS** (`panda` · `exportPanda`, §11), and **Park UI** (`parkui` · `exportParkUi`, §12).
+ShadCN and Park UI are both **curated-contract** formats — ShadCN a fixed `SHADCN_ORDER` over a
+hand-kept suffix `MAP`, Park UI a fixed `accent`/`gray`/`error`/`fg`/`canvas`/`border`/`bg` set built
+from `pickDrivers` — NOT all roles, so a new semantic role does not surface in either unless
+explicitly wired in. Panda CSS, like Tailwind, is auto-flow: it maps every palette's `roles` directly.
 
-**Scope note (TKT-0015):** `src/engine/exports.js` holds ONLY these 8 formats (the 7 emitters above plus
-the `exportAll` aggregator) plus their shared helpers (`derivePalette`/`derivedAll`, `pad3`/`slug`/`hexOf`/
+**Scope note (TKT-0015):** `src/engine/exports.js` holds ONLY these 10 formats (the 9 emitters above
+plus the `exportAll` aggregator) plus their shared helpers (`derivePalette`/`derivedAll`, `pad3`/`slug`/`hexOf`/
 `hex8`/`colorLeaf`/`roleOklch`, the `dialogBackdrop*` system constant). The Claude Design / Google Stitch /
 Figma Make "DS bundle" DESIGN.md-authoring subsystem that used to share the file now lives in the sibling
 `src/engine/ds-export.js` — a different kind of artifact (a consumption-bundle spec + prose, not a token
@@ -192,6 +198,8 @@ namespace covers them too.
 | UI3 (Figma) | `raw/constants/{dialog-backdrop,white,black}` in `Color Primitives` **only** |
 | Tailwind `@theme` | `--color-dialog-backdrop` / `-white` / `-black` lines, outside any palette's scale/role blocks |
 | ShadCN | `--overlay` in both `:root`/`.dark` (literal, or `var(--{aliasPrefix}-dialog-backdrop)` when aliased), mapped in `@theme inline` — **`dialog-backdrop` only**; `white`/`black` have no slot in shadcn's fixed token contract, so they don't appear there |
+| Panda CSS | `tokens.colors.constant.{white,black,backdrop}` (§11) — namespaced under `constant`, never `colors.white`/`colors.black` directly (would collide with `preset-panda`'s own tokens of those names) |
+| Park UI | not emitted (curated contract, out of scope, same as scrims for Tailwind) |
 
 **Why it is absent from the DTCG/UI3 *semantic* tree (Light/Dark · Color Roles) — load-bearing,
 don't "fix" this:** every top-level key of that tree is treated elsewhere as a REAL PALETTE with a
@@ -249,9 +257,120 @@ opt-in like key colors).
 | UI3 (Figma) | its OWN top-level collection, `Color Prime` (`COLLECTIONS.colorPrime`), one `Base` mode, `{n}/{step}` variable paths (no `raw/` prefix, same convention `Color Roles` already uses) |
 | Tailwind `@theme` | `--color-{n}-prime-{step}` lines, per palette, next to that palette's scale |
 | ShadCN | not emitted (curated subset, out of scope, same as scrims for Tailwind) |
+| Panda CSS | `raw.prime.{step}` per palette (unpadded stop namespace, §11), plus `raw.prime.DEFAULT` aliasing `raw.prime.prime` |
+| Park UI | one leaf only, `colors.{n}.prime` (`base` only, no `_dark` — mode-independent per REQ-024, §12); Park's own ladder has no slot for the other six prime steps |
 
 **Why UI3 gives prime its own collection instead of nesting it under `Color Primitives` (unlike
 scrims and key colors):** the prime ladder is not derived from the ramp and no role ever aliases
 it (knowledge-03 §3), so nesting it in the raw tree would suggest a raw-to-role relationship that
 does not exist for prime. A fifth, standalone collection keeps that boundary explicit in the Figma
 file itself (LLD Interfaces block, REQ-054).
+
+## 11. Panda CSS
+
+`exportPanda(state, opts)` (`panda` · `src/engine/exports.js`) emits a Panda CSS preset object —
+`{ name, theme: { extend: { tokens, semanticTokens, textStyles? } } }` — auto-flow like Tailwind:
+every palette's `roles` map straight to a semantic leaf, so a new role needs no edit here.
+
+- **System constants** (`tokens.colors.constant.{white,black,backdrop}`, REQ-004, unconditional):
+  `whiteOklch()`/`blackOklch()`/`dialogBackdropOklch()` — deliberately namespaced under `constant`,
+  never `colors.white`/`colors.black` directly, which would collide with and override
+  `@pandacss/preset-panda`'s own token names of the same name.
+- **Raw tokens** (`tokens.colors.{n}`): unpadded stop keys (`"50"…"950"`, REQ-002, unlike every
+  other format's `pad3`), plus `{n}.scrim.{step}` and `{n}.prime.{step}`/`.DEFAULT` (REQ-003) —
+  digit-or-`scrim`/`prime` keys never collide with a semantic role suffix (REQ-005).
+- **Semantic tokens** (`semanticTokens.colors.{n}.{roleKey}`): `roleKey` is the role's suffix minus
+  its leading dash (`"-on-surface"` → `"on-surface"`); the bare accent role (empty suffix) is
+  `DEFAULT`. Every leaf carries both `base` (light) and `_dark` (dark), resolved (REQ-005/006).
+- **Type** (opt-in via `opts.type`, a resolved `typeScale`, REQ-007): `tokens.fonts.{display,heading,
+  body,ui,mono}` (the quoted stack `typeTokensCSS` already emits) plus `theme.extend.textStyles.
+  {voice}.{sm,md,lg}` for the 15 voices (`voice` = the CSS voice slug), `DEFAULT` aliasing `md`.
+  `paragraphSpacing`/`paragraphIndent` are dropped (not Panda text-style fields).
+- **Geometry** (opt-in via `opts.geometry`, a resolved `geomScale`, REQ-008): `tokens.radii.
+  {none…full}` (`full` = `9999px`), `tokens.spacing.{0..9}`, `tokens.borderWidths.{thin,thick}` —
+  all px strings (PF-2). The size ramp, insets, gaps, and focus are not emitted in v1 (non-goal).
+- **`exportPandaModule(preset)`** wraps the preset as the ESM module string the drawer shows and
+  the zip ships: a fixed two-line header comment, then `export default <preset JSON>;`. No import
+  of `@pandacss/dev` — a consumer wires it in via `presets: ['@pandacss/preset-panda', preset]`.
+
+## 12. Park UI
+
+`exportParkUi(state, opts)` (`parkui` · `src/engine/exports.js`) emits a Park UI preset object —
+`{ name, theme: { extend: { semanticTokens: { colors, radii }, tokens? } } }` — a **curated-contract**
+format like ShadCN: it calls the shared `pickDrivers(palettes)` (REQ-040, byte-identical to ShadCN's
+driver pick) and writes Park's own fixed semantic keys, never a per-role loop. A palette with no
+enabled non-data neutral or primary palette returns a `/* … needs at least one enabled non-data
+palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel).
+
+- **Per-palette colors** (`colors.{n}`, `parkColorGroup`): a Radix-style **12-step ladder**, steps
+  1–8 the raw ramp stops and 9–12 role-derived (REQ-021), each step carrying `base`/`_dark`. Alongside
+  it, **`a1`..`a12`** are the same 12 steps re-expressed as alpha values projected over white/black
+  (Radix-style, REQ-022) — a different mechanism from this doc's own §6 `scrim` (which projects only
+  the 500 stop over itself); Park UI has no `scrim` group. Five **appearance groups** alias those
+  steps by reference (REQ-023): `solid` (`bg`/`bg-hover`/`fg` from steps 9/10/on-accent), `subtle`
+  (from `a3`/`a4`/`a5`/step 11), `surface` (`a2`/`a3`/step 11 + `a6`/`a7` border), `outline` (`a2`/`a3`
+  bg + `a7` border + step-11 fg), `plain` (`a3`/`a4` bg + step-11 fg). Two additive leaves round it
+  out (REQ-024): `on-accent` (the solid-foreground on-color, `base`/`_dark`) and `prime` (the
+  mode-independent prime identity swatch, `base` only — no `_dark`, unlike every other leaf here).
+- **Driver aliases** (REQ-025): `colors.accent` ← a deep clone of the primary driver's group with
+  every internal reference re-pointed from `{primary.n}` to `accent`; `colors.gray` ← the same for
+  the neutral driver, re-pointed to `gray` (Park's own `gray: colorPalettes.neutral` pattern, KF-4).
+  `colors.error` is a single alias, `{colors.{danger ?? primary}.9}`.
+  A `danger` driver, when enabled, backs `error`; otherwise `error` falls back to the primary driver.
+- **Global semantic tokens** (REQ-026, Park's own verbatim keys, all referencing the just-built
+  `gray` copy): `colors.fg.{default,muted,subtle}` → `gray.{12,11,10}`; `colors.canvas` → `gray.1`;
+  `colors.border` → `gray.7`; `colors.bg.subtle` → `gray.2`.
+- **Radii** (REQ-027): `radii.{l1,l2,l3}` always alias `{radii.xs,sm,md}`; `tokens.radii.{none…full}`
+  (px strings) is only emitted when `opts.geometry` resolves the brand's own corners.
+- **`exportParkUiModule(preset)`** wraps the preset as the ESM module string the drawer shows and
+  the zip ships (REQ-020): a header naming the driver bindings and the install order (Park's own
+  CLI-copied preset first, `utParkPreset` last). The no-driver sentinel string passes through
+  unwrapped (mirroring `exportShadcn`'s own no-driver sentinel pattern).
+- **Not emitted in v1** (non-goals): Park UI text styles, size ramp, insets, gaps, focus, recipes,
+  patterns, `globalCss`, or conditions of our own (`.dark` is Park's).
+
+## 13. Palette groups, controls, and the schema stamp
+
+Three cross-cutting concepts SPEC 0.3.0 (RP-1/RP-2/RP-8, plan `docs/plan/plan-2026-09-export-schema-
+revision.md`, steps E1/E2/E6) layer onto the formats above. None of the three enters a token NAME,
+value, or Figma folder on any surface — they are metadata, read alongside the tokens, never mixed
+into them.
+
+**Palette groups** (E1, ticket #572) — every palette resolves to one of four groups (`material` ·
+`brand` · `system` · `data`, `paletteGroupOf`), surfaced only where a format has a metadata slot:
+
+| Format | Placement |
+|---|---|
+| JSON | `palettes[n].group` |
+| DTCG | `palette.tokens.json` (RAW): `$extensions["com.ultimate-tokens"].group` on each palette's raw node — the semantic Light/Dark theme files never carry it |
+| CSS / CSS OKLCH / Tailwind | a `/* {name} · {group} */` comment line above each palette's block — metadata only, never a token |
+| Brand-kit (`brandKit()`) | `palettes[i].group`; `list_palettes` returns it |
+| DS bundle | `familiesByGroup: { material, brand, system, data }` (family slugs bucketed by group) alongside the existing flat `families`; consumed today only by Figma Make's Grammar table (§11/§12's own "curated-contract" formats have no analogous slot; see the plan's RP-1 ruling for the Claude Design/Stitch scope decision) |
+| UI3, ShadCN, Panda CSS, Park UI | not emitted (Figma variables have no metadata slot short of `description`, and #556 ruled out Figma folders; ShadCN/Panda/Park UI have no comparable comment-line mechanism) |
+
+**Controls** (E2, ticket #573) — the chroma policy an export was resolved under, so a consumer can
+answer "why is neutral muted" without re-deriving it:
+
+| Format | Placement |
+|---|---|
+| JSON | a top-level `meta.controls: { baseChroma, primeChroma, paletteGroups }`, verbatim off the same resolved state every palette in the file was derived from |
+| Brand-kit (`brandKit()`) | the same shape, `kit.controls: { baseChroma, primeChroma, paletteGroups }` |
+| Every other format | not emitted — values already reflect the resolved controls, so a CSS/DTCG/UI3/Tailwind/ShadCN/Panda/Park UI consumer never needs the policy that produced them |
+
+`baseChroma` is the public field name in both places — never the document-level `baseIntensity` the
+UI still carries internally (`src/ui/persist.js`); AC-004 (`spec-muted-base-key-spikes.md`) bars the
+literal string `baseIntensity` from `src/engine` entirely, including as a property name, and this is
+the export-facing rename boundary that keeps it out.
+
+**The schema stamp** (E6, ticket #577, `EXPORT_SCHEMA_VERSION`, currently `2`) — one constant, stamped
+wherever a surface has a slot for it; absence on an older export meant v1:
+
+| Format | Placement |
+|---|---|
+| JSON | `meta.schemaVersion` |
+| DTCG | a root-level `$extensions["com.ultimate-tokens"].schemaVersion`, a sibling of `com.figma.modeName`, on all 3 files (raw + both theme files) |
+| UI3 (Figma) | the `$schema` string's own trailing version, `figma-ui3-variables.color.schema.v{N}` |
+| CSS / CSS OKLCH / Tailwind / ShadCN | a first-line comment, `/* ultimate-tokens export schema {N} */` |
+| Brand-kit (`brandKit()`) | the `$schema` string's own trailing segment, `ultimate-tokens-brand-kit/{N}` (served as-is by `mcp/brand-kit-core.mjs`, which never itself reads or writes it); `SERVER.version` in `mcp/brand-kit-core.mjs` is a separate, hand-kept literal (that file ships standalone, no cross-file import) — bump it in step with `EXPORT_SCHEMA_VERSION` by convention, not by shared code |
+| DS bundle | `tokens.json`'s own `$schemaVersion`; DESIGN.md frontmatter's `tokensSchema` (Stitch/Make inherit both for free — same canonical spine) |
+| Panda CSS / Park UI | not emitted — a Panda/Park UI preset object has no metadata slot short of a comment, and neither `exportPandaModule`/`exportParkUiModule`'s two-line header carries one today |

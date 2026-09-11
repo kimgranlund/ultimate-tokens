@@ -3,9 +3,9 @@
 // Split out of exports.js (TKT-0015 / architecture review MAJOR-1): the Claude Design / Google
 // Stitch / Figma Make "design-system export" authoring layer — DESIGN.md, tokens.json, the
 // @dsCard component previews, and the per-platform profile receipts. This is a DIFFERENT kind of
-// code than exports.js's 8 documented color formats (content/prose authoring for a consumption
+// code than exports.js's 10 documented color formats (content/prose authoring for a consumption
 // bundle, not token serialization) and is specced nowhere in docs/reference/ — it earned its own
-// file so a contributor reading exports.js's own documented 8-format pattern (adding-export-formats)
+// file so a contributor reading exports.js's own documented 10-format pattern (adding-export-formats)
 // no longer wades through ~1,200 unrelated lines to find them.
 //
 // Everything below is a VERBATIM move — no logic changes, only the import/export surface needed to
