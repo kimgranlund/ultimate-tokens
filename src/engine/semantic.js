@@ -302,3 +302,28 @@ export function applyAccentRef(roles, accentRef) {
   if (accentRef !== 'single') return roles;
   return roles.map((r) => (r.suffix === '' ? { ...r, light: '500', dark: '500' } : r));
 }
+
+// The five IDENTITY roles: the prime accent and its Dim/Bright/Low/High variants (suffixes below). Their
+// solid refs are the stops that read as "the brand color" — the set tonal.js lifts back to full chroma
+// under keyIntensity (SPEC spec-muted-base-key-spikes REQ-004).
+const IDENTITY_SUFFIXES = new Set(['', '-dim', '-bright', '-low', '-high']);
+
+/**
+ * identityStops — the sorted set of solid stop numbers the five identity roles resolve to, across light AND
+ * dark. Computed from the ALREADY-RESOLVED role list (call it AFTER applyAccentRef; REPLACE semantics, never a
+ * union with a static set): under accentRef "mode" that is {350,400,450,550,650,700}; under "single" the prime
+ * resolves to 500 only, so 450/550 drop out and the set is {350,400,500,650,700} (EX-3). Scrim-shaped refs
+ * ("500-200") are ignored. Not part of `semanticRoles`; the role-table answer key is untouched. Pass the result
+ * as `paletteStops`' fourth argument; tonal.js carries the "mode" set as a literal (DEFAULT_IDENTITY_STOPS)
+ * so it never imports this module, and test/engine/semantic.mjs gates the two against each other.
+ * @param {{key,suffix,light,dark}[]} roles resolved roles
+ * @returns {Set<number>}
+ */
+export function identityStops(roles) {
+  const stops = new Set();
+  for (const r of roles) {
+    if (!IDENTITY_SUFFIXES.has(r.suffix)) continue;
+    for (const ref of [r.light, r.dark]) if (/^\d+$/.test(ref)) stops.add(parseInt(ref, 10));
+  }
+  return new Set([...stops].sort((a, b) => a - b));
+}
