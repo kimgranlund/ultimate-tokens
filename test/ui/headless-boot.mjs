@@ -2594,6 +2594,12 @@ primeChromaInput.value = "70"; primeChromaInput.dispatch("input", {});
 ok(app.doc.primeChroma === 70, `(bpc4) the global Prime chroma slider writes doc.primeChroma (got ${app.doc.primeChroma})`);
 app.doc.baseIntensity = 100; app.doc.primeChroma = 100; // restore the legacy-invariant default (REQ-007)
 
+// ticket #559: palette 0 at this point in the shared `app` session may be a leftover named-set
+// palette from an earlier test block (not necessarily "Neutral"), so it can default into the
+// LOCKED Data group (any unrecognized name does) — which now correctly HIDES the Intensity/Prime
+// chroma override sliders below. Pin it to "brand" (unlocked, non-default-numbers) explicitly so
+// this block tests the per-palette OVERRIDE sliders themselves, not the group-default rule.
+app.doc.palettes[0].group = "brand";
 app.setSegment("palette"); app.selectPalette(0); app.render(); flushRaf();
 const intensityInput = findFk("slider:Intensity");
 ok(!!intensityInput, "(bpc5) the palette inspector has an Intensity slider");
@@ -2849,6 +2855,89 @@ flushRaf();
   const movedInfo = app.doc.palettes.find((p) => p.name === "Info");
   ok(movedInfo.group === undefined, `(cg17) reordering WITHIN System must leave Info's group untouched (got ${JSON.stringify(movedInfo.group)})`);
   app.undo();
+}
+
+// ── (gid) Per-group intensity defaults (ticket #559): the GROUP layer between a palette's own
+// override and the two global sliders — Material muted (30/60) by default, Brand/System/Data at
+// the legacy 100/100, Data LOCKED (no per-palette override at all). ────────────────────────────
+{
+  const { defaultDocument: ddGID, paletteGroup: pgGID, projectView: pvGID, GROUP_INTENSITY_DEFAULTS: GIDDEF } = await import("../../src/ui/model.mjs");
+
+  // (gid1) a FRESH default document already resolves Neutral (Material) to 30/60 — pinning
+  // intensity:30/primeChroma:60 explicitly produces the byte-identical ramp/prime, and the legacy
+  // 100/100 pin produces a DIFFERENT one (the mute is real, not a no-op).
+  const freshDoc = ddGID();
+  const freshView = pvGID(freshDoc);
+  const nIdx = freshDoc.palettes.findIndex((p) => p.name === "Neutral");
+  ok(pgGID(freshDoc.palettes[nIdx]) === "material", "(gid1) Neutral defaults to the Material group");
+  const pinned30 = { ...freshDoc, palettes: freshDoc.palettes.map((p, i) => (i === nIdx ? { ...p, intensity: 30, primeChroma: 60 } : p)) };
+  const pinned100 = { ...freshDoc, palettes: freshDoc.palettes.map((p, i) => (i === nIdx ? { ...p, intensity: 100, primeChroma: 100 } : p)) };
+  const view30 = pvGID(pinned30), view100 = pvGID(pinned100);
+  ok(JSON.stringify(freshView.palettes[nIdx].ramp) === JSON.stringify(view30.palettes[nIdx].ramp), "(gid2) a fresh doc's Neutral ramp already equals an explicit intensity:30 pin (Material's default)");
+  ok(JSON.stringify(freshView.palettes[nIdx].prime) === JSON.stringify(view30.palettes[nIdx].prime), "(gid2b) ...and its prime strip already equals an explicit primeChroma:60 pin");
+  ok(JSON.stringify(freshView.palettes[nIdx].ramp) !== JSON.stringify(view100.palettes[nIdx].ramp), "(gid3) a fresh doc's Neutral ramp differs from the legacy 100/100 pin — visibly muted, not a no-op");
+
+  // (gid4) the Global tab renders all four group rows, each with its own base+prime chroma
+  // sliders, seeded from GROUP_INTENSITY_DEFAULTS.
+  app.createSet(); app.setSegment("global"); app.render(); flushRaf();
+  for (const [g, label] of [["material", "Material"], ["brand", "Brand"], ["system", "System"], ["data", "Data"]]) {
+    const baseInput = findFk(`slider:${label} base chroma`);
+    const primeInput = findFk(`slider:${label} prime chroma`);
+    ok(!!baseInput && !!primeInput, `(gid4) Global tab has a "${label}" row with base + prime chroma sliders`);
+    if (baseInput && primeInput) {
+      ok(Number(baseInput.getAttribute("value")) === GIDDEF[g].baseIntensity, `(gid4b) ${label} base chroma slider shows its default ${GIDDEF[g].baseIntensity} (got ${baseInput.getAttribute("value")})`);
+      ok(Number(primeInput.getAttribute("value")) === GIDDEF[g].primeChroma, `(gid4c) ${label} prime chroma slider shows its default ${GIDDEF[g].primeChroma} (got ${primeInput.getAttribute("value")})`);
+    }
+  }
+
+  // (gid5) the palette inspector HIDES Intensity + Prime chroma entirely for a Data-group palette.
+  app.setSegment("palette");
+  const dataIdx = app.doc.palettes.findIndex((p) => pgGID(p) === "data");
+  app.selectPalette(dataIdx); app.render(); flushRaf();
+  ok(!findFk("slider:Intensity"), "(gid5) the Intensity slider is hidden for a Data-group palette");
+  ok(!findFk("slider:Prime chroma"), "(gid5b) the Prime chroma slider is hidden for a Data-group palette");
+
+  // (gid6) an explicit per-palette override on a BRAND-group palette (Primary) still wins over
+  // its group's own default (100) when set.
+  const primaryIdx = app.doc.palettes.findIndex((p) => p.name === "Primary");
+  app.selectPalette(primaryIdx); app.render(); flushRaf();
+  const intensityInput = findFk("slider:Intensity");
+  ok(!!intensityInput, "(gid6) the Brand-group palette Primary shows the Intensity slider");
+  ok(Number(intensityInput.getAttribute("value")) === 100, `(gid6b) with no override, Primary's Intensity slider shows Brand's own default 100 (got ${intensityInput.getAttribute("value")})`);
+  intensityInput.value = "42"; intensityInput.dispatch("input", {});
+  ok(app.doc.palettes[primaryIdx].intensity === 42, `(gid7) setting the slider writes palettes[i].intensity (got ${app.doc.palettes[primaryIdx].intensity})`);
+  app.render(); flushRaf();
+  const overriddenView = pvGID(app.doc);
+  const groupDefaultDoc = { ...app.doc, palettes: app.doc.palettes.map((p, i) => (i === primaryIdx ? { ...p, intensity: 100 } : p)) };
+  const groupDefaultView = pvGID(groupDefaultDoc);
+  ok(JSON.stringify(overriddenView.palettes[primaryIdx].ramp) !== JSON.stringify(groupDefaultView.palettes[primaryIdx].ramp), "(gid8) Primary's explicit override (42) renders a different ramp than its group's default (100) — the override wins");
+  delete app.doc.palettes[primaryIdx].intensity; // restore absent (inherit) for later assertions
+  app.render(); flushRaf();
+
+  // (gid9) moving a palette OUT of Data restores its stored per-palette override (ratified Open
+  // Question 1): a Data-group palette's stored intensity/primeChroma is IGNORED (not deleted)
+  // while locked; reassigning its group away from "data" makes the same stored values live again,
+  // with no extra "restore" step.
+  const dataIdx2 = app.doc.palettes.findIndex((p) => pgGID(p) === "data");
+  app.doc.palettes[dataIdx2].intensity = 77;
+  app.doc.palettes[dataIdx2].primeChroma = 33;
+  app.render(); flushRaf();
+  const stripOverride = (doc, idx) => ({ ...doc, palettes: doc.palettes.map((p, i) => { if (i !== idx) return p; const { intensity, primeChroma, ...rest } = p; return rest; }) });
+  const lockedView = pvGID(app.doc);
+  const lockedNoOverrideView = pvGID(stripOverride(app.doc, dataIdx2));
+  ok(JSON.stringify(lockedView.palettes[dataIdx2].ramp) === JSON.stringify(lockedNoOverrideView.palettes[dataIdx2].ramp), "(gid9) while still grouped as Data, the stored intensity:77/primeChroma:33 override is IGNORED — ramp matches the no-override (locked-default) ramp");
+
+  app.doc.palettes[dataIdx2].group = "brand"; // move it OUT of Data
+  app.render(); flushRaf();
+  const movedView = pvGID(app.doc);
+  const movedNoOverrideView = pvGID(stripOverride(app.doc, dataIdx2));
+  ok(JSON.stringify(movedView.palettes[dataIdx2].ramp) !== JSON.stringify(movedNoOverrideView.palettes[dataIdx2].ramp), "(gid10) moving the palette OUT of Data into Brand makes the SAME stored override (77) live again — its ramp now differs from the no-override ramp, with no restore step taken");
+  ok(app.doc.palettes[dataIdx2].intensity === 77 && app.doc.palettes[dataIdx2].primeChroma === 33, "(gid10b) the stored override values are still exactly 77/33 — they were never deleted while locked, only unused");
+
+  app.selectPalette(dataIdx2); app.render(); flushRaf();
+  const restoredInput = findFk("slider:Intensity");
+  ok(!!restoredInput, "(gid11) after leaving Data, the Intensity slider is visible again");
+  ok(Number(restoredInput.getAttribute("value")) === 77, `(gid11b) ...and shows the restored override value 77 (got ${restoredInput && restoredInput.getAttribute("value")})`);
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────

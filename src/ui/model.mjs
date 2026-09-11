@@ -360,6 +360,58 @@ export function paletteGroup(p) {
   return DEFAULT_GROUP_BY_SLUG[slug(p && p.name)] || "data";
 }
 
+// ── Per-group intensity defaults (ticket #559) ────────────────────────────────────
+// GROUP_INTENSITY_DEFAULTS — the four groups' own baseIntensity/primeChroma defaults (ratified
+// 2026-09-11): Material renders muted by default (30/60, unlike the legacy 100/100); Brand/System
+// stay at the legacy 100/100 (no visible change); Data is LOCKED — its `locked:true` marks that a
+// Data-group palette's per-palette intensity/primeChroma override is IGNORED (not deleted, just
+// unused) by resolveGroupedIntensity/resolveGroupedPrimeChroma below.
+export const GROUP_INTENSITY_DEFAULTS = {
+  material: { baseIntensity: 30, primeChroma: 60 },
+  brand: { baseIntensity: 100, primeChroma: 100 },
+  system: { baseIntensity: 100, primeChroma: 100 },
+  data: { baseIntensity: 100, primeChroma: 100, locked: true },
+};
+
+// resolveGroups(doc) — the doc's `groups` facet, default-filled per group from
+// GROUP_INTENSITY_DEFAULTS: an explicit, in-domain per-group number wins; anything absent (the
+// whole facet, one group, or one field) falls back to that group's own default. Defensive — every
+// caller here (projectView, the Global tab's four rows) can trust the result always has all four
+// groups fully populated, whether `doc` came through persist.hydrate()/defaultDocument() (which
+// already fill it) or was hand-built (a test fixture, an importer).
+export function resolveGroups(doc) {
+  const raw = (doc && doc.groups) || {};
+  const out = {};
+  for (const g of PALETTE_GROUPS) {
+    const d = GROUP_INTENSITY_DEFAULTS[g];
+    const r = (raw[g] && typeof raw[g] === "object") ? raw[g] : {};
+    out[g] = {
+      baseIntensity: typeof r.baseIntensity === "number" ? r.baseIntensity : d.baseIntensity,
+      primeChroma: typeof r.primeChroma === "number" ? r.primeChroma : d.primeChroma,
+      ...(d.locked ? { locked: true } : {}),
+    };
+  }
+  return out;
+}
+
+// resolveGroupedIntensity/resolveGroupedPrimeChroma — the ticket #559 resolution chain:
+//   effective baseIntensity = palette.intensity ?? group.baseIntensity ?? controls.baseIntensity
+//   effective primeChroma   = palette.primeChroma ?? group.primeChroma ?? controls.primeChroma
+// with one twist: a LOCKED group (Data) short-circuits straight to its own group default,
+// ignoring any stored per-palette override entirely — it stays in storage, just unused while
+// grouped as Data. Moving the palette to another group makes it live again with no extra step:
+// the short-circuit simply stops applying once paletteGroup(p) changes.
+export function resolveGroupedIntensity(p, groups, controls) {
+  const g = groups[paletteGroup(p)];
+  if (g.locked) return g.baseIntensity;
+  return p.intensity ?? g.baseIntensity ?? (controls && controls.baseIntensity) ?? 100;
+}
+export function resolveGroupedPrimeChroma(p, groups, controls) {
+  const g = groups[paletteGroup(p)];
+  if (g.locked) return g.primeChroma;
+  return p.primeChroma ?? g.primeChroma ?? (controls && controls.primeChroma) ?? 100;
+}
+
 // camHueToOklch — convert a CAM16 hue to its OKLCH-hue EQUIVALENT by sampling the hue's vivid
 // identity (its cusp: peakC's chroma at its tone) and reading the OKLCH hue back off it. The OKLCH
 // hue that, fed to effHue→oklchToCam16Hue under hueSpace:"oklch", recovers the same color family —
@@ -405,6 +457,10 @@ export function defaultDocument() {
     accentRef: DEFAULT_CONTROLS.accentRef,
     theme: "auto",
     selected: 0,
+    // groups (ticket #559) — the four canvas groups' own baseIntensity/primeChroma defaults, seeded
+    // from GROUP_INTENSITY_DEFAULTS so a fresh document round-trips these explicitly (rather than
+    // relying on resolveGroups' absent-field fallback, which stays for a doc that predates groups).
+    groups: JSON.parse(JSON.stringify(GROUP_INTENSITY_DEFAULTS)),
     roleOverrides: {}, // per-doc semantic-mapping re-points (empty = canonical role table)
     type: { ...DEFAULT_TYPE }, // typography config (treatment + body base) — see engine/type.mjs
     geometry: { ...DEFAULT_GEOMETRY }, // dimensional config (treatment + base height) — see engine/geometry.mjs
@@ -492,8 +548,18 @@ function controlsOf(doc) {
 // and figmaBundle all go through it so a new control is added in exactly one place.
 function stateOf(doc) {
   const c = controlsOf(doc);
+  const groups = resolveGroups(doc);
   return {
-    palettes: doc.palettes ?? [],
+    // ticket #559: each palette's intensity/primeChroma is resolved to its FINAL number here (the
+    // group layer folded in) before the exporters ever see it — they still read palette.intensity ??
+    // controls.baseIntensity internally, but the ?? never falls through past this pre-resolved value,
+    // so the engines stay unaware of groups while every export (CSS/OKLCH/JSON/DTCG/UI3/Tailwind/
+    // shadcn/DS bundle/Figma) reflects the same resolved values the UI/MCP (projectView) render.
+    palettes: (doc.palettes ?? []).map((p) => ({
+      ...p,
+      intensity: resolveGroupedIntensity(p, groups, c),
+      primeChroma: resolveGroupedPrimeChroma(p, groups, c),
+    })),
     roleOverrides: doc.roleOverrides ?? {}, // threaded to the exporters so re-points reach the output
     curve: c.curve,
     tension: c.tension,
@@ -740,6 +806,11 @@ export function paletteKeyColors(doc) {
 export function projectView(doc) {
   const controls = controlsOf(doc);
   const allPalettes = doc.palettes ?? [];
+  // ticket #559: the group layer, resolved once per projectView call — see resolveGroupedIntensity/
+  // resolveGroupedPrimeChroma for the palette.intensity ?? group.baseIntensity ?? controls.baseIntensity
+  // chain (Data-group palettes short-circuit to their LOCKED group default regardless of any stored
+  // per-palette override).
+  const groups = resolveGroups(doc);
 
   // Per-palette: the display ramp (19 STOPS), its 53 resolved roles, and the
   // L*xC plot points (applied chroma vs gamut ceiling along the tone line).
@@ -752,11 +823,15 @@ export function projectView(doc) {
     // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp — reused below
     // for the on-color-contrast step so it's derived once per palette.
     const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
+    // ticket #559: the ALREADY-RESOLVED baseIntensity/primeChroma this palette renders at — the
+    // engines (tonal.js/prime.mjs) below take these as a plain number, never seeing palette.group.
+    const effIntensity = resolveGroupedIntensity(p, groups, controls);
+    const effPrimeChroma = resolveGroupedPrimeChroma(p, groups, controls);
     // Resolve roles against the FULL EXPORT_STOPS ramp (25) so refs to the export-only
     // half-steps (75/125/175/825/875/925) resolve — they are absent from the 19 display STOPS,
     // and a miss used to fall back to #000000 (the black swatches in the Roles panel).
     const fullStops = paletteStops(
-      { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift, hueSameDir: p.hueSameDir, cuspPull: p.cuspPull, intensity: p.intensity },
+      { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift, hueSameDir: p.hueSameDir, cuspPull: p.cuspPull, intensity: effIntensity },
       controls,
       EXPORT_STOPS,
     ).map((s) => ({
@@ -802,7 +877,7 @@ export function projectView(doc) {
     // independent of the ramp above — the key strip (REQ-034) and brandKit()/tokenCount() (REQ-057)
     // read this. Built from prime.mjs's own primeSwatches(), never reimplemented here.
     const primeTokens = primeSwatches(
-      { hue: p.hue, chroma: p.chroma, skew: p.skew, hueShift: p.hueShift, hueSameDir: p.hueSameDir, primeChroma: p.primeChroma },
+      { hue: p.hue, chroma: p.chroma, skew: p.skew, hueShift: p.hueShift, hueSameDir: p.hueSameDir, primeChroma: effPrimeChroma },
       controls,
     );
 

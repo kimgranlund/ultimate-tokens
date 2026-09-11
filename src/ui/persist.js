@@ -10,6 +10,19 @@ import { COLLECTIONS } from "../engine/collections.js";
 // persist.js validates a stored `group` value against.
 export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
 
+// per-group intensity defaults (ticket #559) — same local-literal shape as PALETTE_GROUPS above,
+// for the same reason: persist.js must never import model.mjs. model.mjs's own
+// GROUP_INTENSITY_DEFAULTS is the single source of truth for the RESOLUTION rule
+// (resolveGroupedIntensity/resolveGroupedPrimeChroma); this is only the shape persist.js defaults
+// an absent/invalid stored group value against, and the two must be kept in sync by hand if a
+// group's default number or the locked set ever changes.
+const GROUP_INTENSITY_DEFAULTS = {
+  material: { baseIntensity: 30, primeChroma: 60 },
+  brand: { baseIntensity: 100, primeChroma: 100 },
+  system: { baseIntensity: 100, primeChroma: 100 },
+  data: { baseIntensity: 100, primeChroma: 100, locked: true },
+};
+
 // persist.js — UI state persistence for the HCT Palette Generator.
 //
 // A PURE serialize/hydrate transform pair over the tool's `State` (spec-draft §7,
@@ -75,6 +88,21 @@ export const DOMAINS = {
   // longer lists keyIntensity at all, so a v3+ doc that still somehow carries it gets it loudly dropped.
   baseIntensity: { kind: "number", min: 0, max: 100, default: 100 },
   primeChroma: { kind: "number", min: 0, max: 100, default: 100 },
+  // groups (ticket #559) — the four canvas groups' OWN baseIntensity/primeChroma defaults, sitting
+  // between a palette's per-palette override and the two global sliders above. Each group's number is
+  // its own field (min 0, max 100), defaulted per GROUP_INTENSITY_DEFAULTS (model.mjs, the single
+  // source of truth these mirror) — same absent-field-hydrates-to-a-sensible-default shape as lmin/
+  // lmax/damp above, no schema-version bump needed. `data`'s `locked:true` is NOT user-settable; it is
+  // always stamped by clampGroups below, never read from the incoming snapshot.
+  groups: Object.fromEntries(
+    PALETTE_GROUPS.map((g) => [
+      g,
+      {
+        baseIntensity: { kind: "number", min: 0, max: 100, default: GROUP_INTENSITY_DEFAULTS[g].baseIntensity },
+        primeChroma: { kind: "number", min: 0, max: 100, default: GROUP_INTENSITY_DEFAULTS[g].primeChroma },
+      },
+    ]),
+  ),
   // Hue space (see tonal.js DEFAULT_CONTROLS.hueSpace). Default "oklch" (the slider value IS the OKLCH
   // hue). A doc PERSISTED with hueSpace:"cam16" round-trips as cam16 (legacy preserved); an absent field
   // hydrates to "oklch" (the new default). The legacy-storage stamp (app.js openSet) keeps a pre-hueSpace
@@ -207,6 +235,28 @@ export function clampStory(s) {
     if (g.length) out.groups = g;
   }
   return Object.keys(out).length ? out : null;
+}
+
+// clampGroups — the four canvas groups' baseIntensity/primeChroma facet (ticket #559). Per-field
+// clamp, same as clampPalette: an in-domain number on one group/field is preserved byte-for-byte;
+// anything absent or out-of-domain falls back to that field's own DOMAINS default
+// (GROUP_INTENSITY_DEFAULTS, mirrored above). ALWAYS returns all four groups fully populated (the
+// "required, default-filled" shape, not the "absent stays absent" shape clampPalette's `group` uses)
+// — a doc that predates this feature hydrates straight to the ratified defaults, no migration step
+// needed. `locked` is never read from `src`; it is stamped `true` for `data` only, per DOMAINS.
+function clampGroups(src) {
+  const raw = (src && typeof src === "object") ? src : {};
+  const out = {};
+  for (const g of PALETTE_GROUPS) {
+    const D = DOMAINS.groups[g];
+    const r = (raw[g] && typeof raw[g] === "object") ? raw[g] : {};
+    out[g] = {
+      baseIntensity: clampNumber(r.baseIntensity ?? D.baseIntensity.default, D.baseIntensity.min, D.baseIntensity.max),
+      primeChroma: clampNumber(r.primeChroma ?? D.primeChroma.default, D.primeChroma.min, D.primeChroma.max),
+      ...(GROUP_INTENSITY_DEFAULTS[g].locked ? { locked: true } : {}),
+    };
+  }
+  return out;
 }
 
 // Per-doc semantic-mapping overrides: { [roleKey]: { light?, dark? } } — a role re-pointed to a
@@ -419,6 +469,7 @@ export function hydrate(snapshot) {
     dampBias: clampNumber(s.dampBias ?? DOMAINS.dampBias.default, DOMAINS.dampBias.min, DOMAINS.dampBias.max),
     baseIntensity: clampNumber(s.baseIntensity ?? DOMAINS.baseIntensity.default, DOMAINS.baseIntensity.min, DOMAINS.baseIntensity.max),
     primeChroma: clampNumber(s.primeChroma ?? DOMAINS.primeChroma.default, DOMAINS.primeChroma.min, DOMAINS.primeChroma.max),
+    groups: clampGroups(s.groups),
     hueSpace: clampEnum(s.hueSpace, DOMAINS.hueSpace.values, DOMAINS.hueSpace.default),
     relChroma: s.relChroma === true, // boolean chroma-basis flag; absent/non-true -> false (legacy default)
     chromaFloor: clampNumber(s.chromaFloor ?? DOMAINS.chromaFloor.default, DOMAINS.chromaFloor.min, DOMAINS.chromaFloor.max),

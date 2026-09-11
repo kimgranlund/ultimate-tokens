@@ -31,9 +31,16 @@ const inDomainState = () => {
   // the modeKey suffix; values are in-domain integers so they must round-trip byte-for-byte when present.
   const tyTok = {}; for (const [k, v] of [["Body|MD|base", 40], ["Display|XL|base", 90], ["Label|SM|base", 13]]) if (rnd() > 0.5) tyTok[k] = v;
   const geTok = {}; for (const [k, v] of [["MD|base", 30], ["2XL|base", 72], ["XS|base", 18]]) if (rnd() > 0.5) geTok[k] = v;
+  // groups (ticket #559) — the four canvas groups' own baseIntensity/primeChroma, a REQUIRED,
+  // always-present field (like lmin/lmax/damp above), not an OPTIONAL per-palette one like
+  // cuspPull/intensity/group above. `data.locked` is never user-writable — persist.js always stamps
+  // it `true` regardless of input — so an in-domain S must already carry it for round-trip identity.
+  const groups = Object.fromEntries(
+    ["material", "brand", "system", "data"].map((g) => [g, { baseIntensity: rnd() * 100, primeChroma: rnd() * 100, ...(g === "data" ? { locked: true } : {}) }]),
+  );
   return { curve: pick(["linear", "sine", "cubic", "logistic", "exp"]), tension: rnd() * 100, lmin: rnd() * 40, lmax: 60 + rnd() * 40,
     damp: rnd() * 100, dampCurve: 0.5 + rnd() * 3.5, dampAmp: rnd() * 100, dampBias: -100 + rnd() * 200,
-    baseIntensity: rnd() * 100, primeChroma: rnd() * 100,
+    baseIntensity: rnd() * 100, primeChroma: rnd() * 100, groups,
     hueSpace: pick(["cam16", "oklch"]), relChroma: rnd() > 0.5, chromaFloor: rnd() * 100, toneMode: pick(["even", "perceptual", "peak"]), vibrancy: rnd() * 100, onColorMode: pick(["fixed", "contrast"]), accentRef: pick(["mode", "single"]), type: { treatment: pick(["product", "luxury", "editorial", "technical", "statement"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { modes: [{ id: "tm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}), ...(Object.keys(tyTok).length ? { tokenOverrides: tyTok } : {}) }, geometry: { treatment: pick(["comfortable", "compact", "spacious", "touch", "pill"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { ramp: "linear4" } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}), ...(rnd() > 0.5 ? { modes: [{ id: "gm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}) }] } : {}), ...(Object.keys(geTok).length ? { tokenOverrides: geTok } : {}) }, theme: pick(["auto", "light", "dark"]), selected: Math.floor(rnd() * n), roleOverrides, palettes };
 };
 
@@ -103,6 +110,41 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   ] };
   const hydNoGroups = U.hydrate(U.serialize(noGroupsDoc));
   if (hydNoGroups.palettes.some((p) => "group" in p)) FAIL("clamp", "a doc with no group data must hydrate with every palette.group still absent (nullable field)");
+}
+// groups (ticket #559): the four canvas groups' own baseIntensity/primeChroma. Unlike palette.group
+// above (an OPTIONAL, absent-stays-absent field), `groups` is REQUIRED and default-filled — a doc
+// missing it entirely (or missing one group, or one field) hydrates straight to
+// GROUP_INTENSITY_DEFAULTS, same shape as lmin/lmax/damp. `data.locked` is never user-writable.
+{
+  // per-field clamp: an out-of-domain group field clamps alone; every sibling (the other field on
+  // the SAME group, and every OTHER group) is preserved byte-for-byte.
+  const mutG = JSON.parse(JSON.stringify(base)); mutG.groups.material.baseIntensity = 140; // out of [0,100]
+  const hydMutG = U.hydrate(U.serialize(mutG));
+  if (hydMutG.groups.material.baseIntensity !== 100) FAIL("clamp", `groups.material.baseIntensity 140 -> ${hydMutG.groups.material.baseIntensity}, want 100`);
+  if (!deepEq(hydMutG.groups.material.primeChroma, base.groups.material.primeChroma)) FAIL("clamp", "clamping groups.material.baseIntensity disturbed sibling primeChroma");
+  for (const g of ["brand", "system", "data"]) if (!deepEq(hydMutG.groups[g], base.groups[g])) FAIL("clamp", `clamping groups.material.baseIntensity disturbed groups.${g}`);
+
+  // a doc predating this feature (no `groups` at all) hydrates straight to the ratified defaults —
+  // Material 30/60, Brand/System 100/100, Data 100/100 locked — no migration step, just the same
+  // absent-field-hydrates-to-a-sensible-default shape lmin/lmax/damp already use.
+  const noGroupsAtAll = { palettes: base.palettes };
+  const hydNoGroupsAtAll = U.hydrate(U.serialize(noGroupsAtAll));
+  const wantDefaults = { material: { baseIntensity: 30, primeChroma: 60 }, brand: { baseIntensity: 100, primeChroma: 100 }, system: { baseIntensity: 100, primeChroma: 100 }, data: { baseIntensity: 100, primeChroma: 100, locked: true } };
+  if (!deepEq(hydNoGroupsAtAll.groups, wantDefaults)) FAIL("field-default", `a doc with no \`groups\` at all must hydrate to the ratified per-group defaults, got ${JSON.stringify(hydNoGroupsAtAll.groups)}`);
+
+  // one group present, the other three absent: only the present group's explicit numbers survive;
+  // the other three still default-fill.
+  const partialGroups = { palettes: base.palettes, groups: { material: { baseIntensity: 55, primeChroma: 77 } } };
+  const hydPartial = U.hydrate(U.serialize(partialGroups));
+  if (hydPartial.groups.material.baseIntensity !== 55 || hydPartial.groups.material.primeChroma !== 77) FAIL("field-default", "an explicit groups.material must round-trip its own numbers, not the default");
+  if (hydPartial.groups.brand.baseIntensity !== 100 || hydPartial.groups.system.baseIntensity !== 100) FAIL("field-default", "an absent groups.brand/system must default-fill to 100/100");
+
+  // `locked` is never user-writable: a snapshot that tries to unset Data's lock, or set it on
+  // another group, is ignored either way.
+  const spoofedLock = { palettes: base.palettes, groups: { data: { baseIntensity: 40, primeChroma: 40, locked: false }, brand: { baseIntensity: 20, primeChroma: 20, locked: true } } };
+  const hydSpoofed = U.hydrate(U.serialize(spoofedLock));
+  if (hydSpoofed.groups.data.locked !== true) FAIL("clamp", "groups.data.locked must always be true, regardless of the incoming snapshot");
+  if ("locked" in hydSpoofed.groups.brand) FAIL("clamp", "groups.brand must never carry a locked field, regardless of the incoming snapshot");
 }
 // ── schema-rename (REQ-011, EX-9): pre-v2 snapshot stamps baseIntensity 100; v2 snapshot with the
 // field absent hydrates to the domain default (also 100 today) ─────────────────────────────

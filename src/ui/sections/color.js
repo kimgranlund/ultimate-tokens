@@ -1,4 +1,4 @@
-import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, seedFromKeyColor, slug } from "../model.mjs";
+import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, resolveGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
@@ -1677,6 +1677,12 @@ export class ColorSectionImpl {
     // skew + lift shape the CIELAB tone curve (toneAt) — they have NO effect in the OKHSL distribution
     // modes (perceptual/peak step lightness directly), so hide them there, matching the Global controls.
     const isEven = this.doc.toneMode === "even";
+    // ticket #559: this palette's resolved group + its baseIntensity/primeChroma defaults. A LOCKED
+    // group (Data) has no per-palette override at all — the Intensity/Prime chroma sliders below are
+    // hidden entirely for it (any stored p.intensity/p.primeChroma stays in the doc, just ignored
+    // while grouped as Data, per resolveGroupedIntensity/resolveGroupedPrimeChroma).
+    const groups = resolveGroups(this.doc);
+    const pGroup = groups[paletteGroup(p)];
 
     return h(
       "div",
@@ -1737,20 +1743,26 @@ export class ColorSectionImpl {
       this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => (d.palettes[i].chroma = v))),
       isEven ? this.slider("Skew", p.skew, -100, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].skew = v))) : false,
       isEven ? this.slider("Lift", p.lift, -40, 40, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].lift = v))) : false,
-      // Intensity (SPEC spec-muted-base-key-spikes REQ-032) — this palette's override of the global
-      // Base chroma. Absent inherits the document's baseIntensity, same shape as Cusp pull below.
-      // Applies on BOTH ramp paths (REQ-002), unlike Cusp pull, so it stays visible in every toneMode.
-      this.slider("Intensity", p.intensity ?? (this.doc.baseIntensity ?? 100), 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].intensity = v))),
+      // Intensity (SPEC spec-muted-base-key-spikes REQ-032) — this palette's override of its GROUP's
+      // baseIntensity default (ticket #559; the group sits between this override and the global Base
+      // chroma slider). Applies on BOTH ramp paths (REQ-002), unlike Cusp pull, so it stays visible in
+      // every toneMode. HIDDEN entirely for a locked (Data) group — that group has no per-palette
+      // override at all (its own stored intensity, if any, stays in the doc but is ignored).
+      pGroup.locked
+        ? false
+        : this.slider("Intensity", p.intensity ?? pGroup.baseIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].intensity = v))),
       // Cusp pull (perceptual only) — this palette's override of the global Vibrancy: how far its
       // richest stop is nudged toward 500. Starts at the inherited global value; the peak mode pins it.
       this.doc.toneMode === "perceptual"
         ? this.slider("Cusp pull", p.cuspPull ?? (this.doc.vibrancy ?? 0), 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].cuspPull = v)))
         : false,
-      // Prime chroma (SPEC spec-muted-base-key-spikes REQ-032) — this palette's override of the
-      // global Prime chroma. Absent inherits doc.primeChroma, same absent-means-inherit shape as
-      // Intensity above. Shapes the prime system only (REQ-052), never the ramp, so unlike Cusp
-      // pull it stays visible in every toneMode.
-      this.slider("Prime chroma", p.primeChroma ?? (this.doc.primeChroma ?? 100), 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].primeChroma = v))),
+      // Prime chroma (SPEC spec-muted-base-key-spikes REQ-032) — this palette's override of its
+      // GROUP's primeChroma default (ticket #559), same group-in-the-middle shape as Intensity above.
+      // Shapes the prime system only (REQ-052), never the ramp, so unlike Cusp pull it stays visible
+      // in every toneMode. HIDDEN entirely for a locked (Data) group, same reasoning as Intensity.
+      pGroup.locked
+        ? false
+        : this.slider("Prime chroma", p.primeChroma ?? pGroup.primeChroma, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].primeChroma = v))),
       // Edge hue rotation — bipolar, centre 0. The readout shows the light/dark torsion:
       // left = light + / dark −, right = light − / dark + (the slider value = the dark edge).
       this.slider(
@@ -1936,6 +1948,27 @@ export class ColorSectionImpl {
       // stays visible in every toneMode.
       this.slider("Base chroma", d.baseIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.baseIntensity = v))),
       this.slider("Prime chroma", d.primeChroma, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.primeChroma = v))),
+      // Per-group intensity defaults (ticket #559) — a GROUP layer between a palette's own override
+      // and the two global sliders above (Material/Brand/System/Data, PALETTE_GROUPS order). Each
+      // group gets its own baseIntensity/primeChroma pair, writing doc.groups[g] — resolveGroups(d)
+      // reads back the same default-filled shape resolveGroupedIntensity/resolveGroupedPrimeChroma
+      // resolve every palette against, so a slider here always reflects the value actually applied.
+      h("div", { class: "insp-sub" }, "Per-group intensity defaults"),
+      ...PALETTE_GROUPS.map((g) => {
+        const gv = resolveGroups(d)[g];
+        const setGroupField = (key) => (v) =>
+          this.editDrag((doc) => {
+            doc.groups = doc.groups || {};
+            doc.groups[g] = { ...(doc.groups[g] || {}), [key]: v };
+          });
+        return h(
+          "div",
+          { class: "field-group", "data-group-row": g },
+          h("div", { class: "insp-sub" }, paletteGroupLabel(g)),
+          this.slider(`${paletteGroupLabel(g)} base chroma`, gv.baseIntensity, 0, 100, 1, (v) => fmt(v), setGroupField("baseIntensity")),
+          this.slider(`${paletteGroupLabel(g)} prime chroma`, gv.primeChroma, 0, 100, 1, (v) => fmt(v), setGroupField("primeChroma")),
+        );
+      }),
       // Curve · Tension · Chroma-basis shape the CIELAB "even" path ONLY — hide them in the OKHSL modes.
       d.toneMode === "even"
         ? field(

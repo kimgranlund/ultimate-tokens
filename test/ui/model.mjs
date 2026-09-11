@@ -182,39 +182,56 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(minted.length === 8 && minted.every((p) => p.group === "data"), "mintDataPalettes must stamp group:\"data\" on every minted Data-N palette");
 }
 
-// ── byte-identity export check (ticket #556 non-goal guard) ─────────────────────────────
-// exports/ds-export/figma/mcp/role-table are explicitly OUT of scope for this ticket: adding a
-// `group` field to a palette must never change a single byte of exportCSS/exportJSON/exportOKLCH/
-// exportTailwind output. Build the SAME default document once without any explicit `group` field
-// and once with EVERY palette's group explicitly (and non-default-ly) reassigned, and diff.
+// ── byte-identity export check (ticket #556 non-goal guard, SUPERSEDED for intensity/primeChroma
+// by ticket #559) ──────────────────────────────────────────────────────────────────────
+// #556 shipped `group` as purely editor/organizational metadata with zero export effect. #559 makes
+// a palette's GROUP drive its resolved baseIntensity/primeChroma (Material 30/60 vs Brand/System/Data
+// all 100/100 by default) — so reassigning a palette's group no longer guarantees byte-identical
+// exports in general; that is the whole point of the ticket. What still holds, and what #556's
+// original guard narrows down to: a group reassignment between two groups that share the SAME
+// baseIntensity/primeChroma defaults (brand <-> system, both 100/100) is still byte-identical, and
+// the export TOKEN NAMES never move regardless of group.
 {
   const base = defaultDocument();
   const baseExports = projectView(base).exports;
 
-  const withGroups = defaultDocument();
-  withGroups.palettes = withGroups.palettes.map((p) => {
-    // reassign relative to THIS palette's own default group (not a flat index cycle, which would
-    // land some palettes back on their own default by coincidence and understate the check).
-    const defaultIdx = PALETTE_GROUPS.indexOf(paletteGroup(p));
-    return { ...p, group: PALETTE_GROUPS[(defaultIdx + 1) % PALETTE_GROUPS.length] };
+  // brand <-> system swap: same 100/100 defaults on both sides — must still be byte-identical.
+  // Reassign every brand/system palette to the OTHER of the two (not a flat index cycle, which
+  // could coincidentally land a palette back on its own default and understate the check, per
+  // #556's own review fix).
+  const sameDefaults = defaultDocument();
+  sameDefaults.palettes = sameDefaults.palettes.map((p) => {
+    const g = paletteGroup(p);
+    if (g === "brand") return { ...p, group: "system" };
+    if (g === "system") return { ...p, group: "brand" };
+    return p;
   });
-  ok(withGroups.palettes.every((p, i) => p.group !== paletteGroup(base.palettes[i])), "test setup: every palette must be reassigned to a group DIFFERENT from its own default");
-  const groupedExports = projectView(withGroups).exports;
-
+  ok(sameDefaults.palettes.some((p, i) => paletteGroup(p) !== paletteGroup(base.palettes[i])), "test setup: at least one palette must actually change group in the brand<->system swap");
+  const sameDefaultsExports = projectView(sameDefaults).exports;
   for (const fmt of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn"]) {
-    ok(baseExports[fmt] === groupedExports[fmt], `export format "${fmt}" must be byte-identical whether or not palettes carry a group field (ticket #556 is editor-only)`);
+    ok(baseExports[fmt] === sameDefaultsExports[fmt], `export format "${fmt}" must stay byte-identical when a palette moves between two groups sharing the same baseIntensity/primeChroma default (brand <-> system)`);
   }
-  ok(JSON.stringify(baseExports.figma) === JSON.stringify(groupedExports.figma), "the per-mode Figma DTCG exports must be byte-identical regardless of the group field");
+  ok(JSON.stringify(baseExports.figma) === JSON.stringify(sameDefaultsExports.figma), "the per-mode Figma DTCG exports must stay byte-identical for a brand <-> system group swap");
 
   // the DS bundle (ds-export.js — Claude Design/Stitch/Figma Make, split out at TKT-0015, NOT one
-  // of the 8 documented formats above) and the MCP brandKit() payload are explicitly named in the
-  // non-goal too — cover them with the same fixed opts.date so the comparison is deterministic.
+  // of the 8 documented formats above) and the MCP brandKit() payload get the same coverage, with
+  // the same fixed opts.date so the comparison is deterministic.
   const dsOpts = { date: "2026-01-01" };
   const baseDs = exportDesignSystemBundle(base, typeScaleFor(base, "base"), geomScaleFor(base, "base"), dsOpts);
-  const groupedDs = exportDesignSystemBundle(withGroups, typeScaleFor(withGroups, "base"), geomScaleFor(withGroups, "base"), dsOpts);
-  ok(JSON.stringify(baseDs) === JSON.stringify(groupedDs), "the DS bundle (ds-export.js) must be byte-identical regardless of the group field");
+  const sameDefaultsDs = exportDesignSystemBundle(sameDefaults, typeScaleFor(sameDefaults, "base"), geomScaleFor(sameDefaults, "base"), dsOpts);
+  ok(JSON.stringify(baseDs) === JSON.stringify(sameDefaultsDs), "the DS bundle (ds-export.js) must stay byte-identical for a brand <-> system group swap");
+  ok(JSON.stringify(brandKit(base)) === JSON.stringify(brandKit(sameDefaults)), "the MCP brandKit() payload must stay byte-identical for a brand <-> system group swap");
 
-  ok(JSON.stringify(brandKit(base)) === JSON.stringify(brandKit(withGroups)), "the MCP brandKit() payload must be byte-identical regardless of the group field");
+  // moving Neutral out of Material (default 30/60) into Brand (default 100/100) MUST move the
+  // export bytes on EVERY surface — proves ticket #559's group layer actually reaches every
+  // export/DS-bundle/MCP output, not just the UI.
+  const neutralToBrand = defaultDocument();
+  neutralToBrand.palettes = neutralToBrand.palettes.map((p) => (p.name === "Neutral" ? { ...p, group: "brand" } : p));
+  const neutralToBrandExports = projectView(neutralToBrand).exports;
+  ok(baseExports.css !== neutralToBrandExports.css, "moving Neutral out of Material (30/60) into Brand (100/100) must change the CSS export bytes (ticket #559)");
+  const neutralToBrandDs = exportDesignSystemBundle(neutralToBrand, typeScaleFor(neutralToBrand, "base"), geomScaleFor(neutralToBrand, "base"), dsOpts);
+  ok(JSON.stringify(baseDs) !== JSON.stringify(neutralToBrandDs), "moving Neutral out of Material into Brand must also change the DS bundle bytes");
+  ok(JSON.stringify(brandKit(base)) !== JSON.stringify(brandKit(neutralToBrand)), "moving Neutral out of Material into Brand must also change the MCP brandKit() payload");
 }
 
 if (fails.length) { console.error(`model FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
