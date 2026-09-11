@@ -65,6 +65,22 @@ jobs:
         with:
           path: _site
 
+  # ── Panda/Park UI codegen smoke (K5, #590, docs/spec/spec-panda-park-ui-exports.md REQ-072) ──
+  # A REAL `panda cssgen`/`codegen` run over both preset modules via `npx` — the one leg in this
+  # repo that legitimately needs registry access. Independent of build-test (own runner, no
+  # `needs:`) so it never blocks `deploy`; same trigger as the rest of this workflow's `on:`
+  # block (H-4: script + CI job, never inside `npm test`, which stays zero-dependency). No
+  # `npm ci` needed — the script imports only this repo's own engine/UI ESM modules, no npm
+  # package of its own; `npx --yes` fetches `@pandacss/dev` straight from the registry at run time.
+  panda-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/smoke-panda.mjs
+
   # ── Pages deploy (#489) — push-to-main only, consumes the artifact build-test already uploaded
   # above (no rebuild). A separate JOB-LEVEL concurrency group (not the workflow-level one above,
   # which is keyed per-ref and would let two main pushes' deploys race) — preserves pages.yml's own
