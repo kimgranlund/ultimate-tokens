@@ -720,7 +720,7 @@ const SHADCN_ORDER = [
   "background", "foreground", "card", "card-foreground", "popover", "popover-foreground",
   "primary", "primary-foreground", "secondary", "secondary-foreground", "muted", "muted-foreground",
   "accent", "accent-foreground", "destructive", "destructive-foreground", "border", "input", "ring",
-  "chart-1", "chart-2", "chart-3", "chart-4", "chart-5",
+  "chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "chart-7", "chart-8",
   "sidebar", "sidebar-foreground", "sidebar-primary", "sidebar-primary-foreground",
   "sidebar-accent", "sidebar-accent-foreground", "sidebar-border", "sidebar-ring",
 ];
@@ -751,6 +751,10 @@ export function exportShadcn(state, opts = {}) {
   // through to the fallback); else the pre-feature fallback chain, unchanged.
   const dataN = (i) => palettes.find((p) => p.n === `data-${i}`);
   const chart = (i, fallback) => { const d = dataN(i); return d ? prime(d) : fallback; };
+  // chart-6..8 (#569 RP-3/H-3, a deliberate departure from shadcn's stock 5 chart slots): the prime
+  // role of data-6..8 when enabled, else OMITTED entirely — no fallback chain, unlike chart-1..5.
+  // An invented sixth/seventh/eighth colour would be exactly what the stock contract lacks.
+  const chartData = (i) => { const d = dataN(i); return d ? prime(d) : null; };
 
   // token -> the role whose light/dark ends drive it (null tokens are skipped).
   const MAP = {
@@ -767,6 +771,7 @@ export function exportShadcn(state, opts = {}) {
     "chart-1": chart(1, prime(primary)), "chart-2": chart(2, prime(success || secondary || primary)),
     "chart-3": chart(3, prime(warning || secondary || primary)), "chart-4": chart(4, prime(danger)),
     "chart-5": chart(5, prime(secondary || neutral)),
+    "chart-6": chartData(6), "chart-7": chartData(7), "chart-8": chartData(8),
     sidebar: rs(neutral, "-surface"), "sidebar-foreground": rs(neutral, "-on-surface"),
     "sidebar-primary": prime(primary), "sidebar-primary-foreground": onAccent(primary),
     "sidebar-accent": rs(neutral, "-surface-high"), "sidebar-accent-foreground": rs(neutral, "-on-surface"),

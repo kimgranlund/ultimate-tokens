@@ -347,6 +347,42 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (tokenVal(scRenamed, "primary") !== nightfallPrime) FAIL("data-palette", "primary fallback did not land on the first non-data non-neutral palette (Nightfall) — may have resolved to a data palette");
 }
 
+// ── hpg-export-shadcn-chart-6-8 (#576, #569 RP-3/H-3 — a deliberate departure from shadcn's stock
+//    5 chart slots: chart-6..8 bind to data-6..8's prime role when enabled, and are OMITTED
+//    entirely — not fallback-filled — when those data palettes are absent/disabled) ──
+{
+  const chartMatches = (sc, n) => [...sc.matchAll(new RegExp(`--chart-${n}:\\s*(oklch\\([^;]+\\));`, "g"))].map((m) => m[1]);
+
+  // enabled: chart-6..8 present, equal to the prime role of data-6..8 per scheme, and mapped in @theme inline.
+  const scData = X.exportShadcn(C(ALL_WITH_DATA));
+  const derivedWithData8 = X.derivedAll(C(ALL_WITH_DATA));
+  for (let i = 6; i <= 8; i++) {
+    const dp = derivedWithData8.find((p) => p.n === `data-${i}`);
+    const primeRole = dp.roles.find((r) => r.suffix === "");
+    const [gotLight, gotDark] = chartMatches(scData, i);
+    const wantLight = X.roleOklch(primeRole.light), wantDark = X.roleOklch(primeRole.dark);
+    if (gotLight !== wantLight || gotDark !== wantDark) FAIL("shadcn-chart-6-8", `chart-${i} != prime role of data-${i} (light ${gotLight} vs ${wantLight}; dark ${gotDark} vs ${wantDark})`);
+    if (!scData.includes(`--color-chart-${i}: var(--chart-${i});`)) FAIL("shadcn-chart-6-8", `@theme inline missing --color-chart-${i} -> var(--chart-${i})`);
+  }
+
+  // disabled (no data palettes at all, BRAND_ONLY): chart-6..8 entirely absent — no fallback.
+  const scBrandOnly = X.exportShadcn(C(BRAND_ONLY));
+  for (let i = 6; i <= 8; i++) {
+    if (new RegExp(`--chart-${i}:`).test(scBrandOnly)) FAIL("shadcn-chart-6-8", `chart-${i} present with data-${i} disabled/absent (must be omitted, no fallback)`);
+    if (scBrandOnly.includes(`--color-chart-${i}:`)) FAIL("shadcn-chart-6-8", `@theme inline includes chart-${i} with data-${i} disabled/absent`);
+  }
+
+  // selective: only data-6..8 disabled, data-1..5 stay enabled — chart-6..8 absent, chart-1..5 unaffected.
+  const only678Off = ALL_WITH_DATA.map((p) => (/^Data [678]$/.test(p.name) ? { ...p, on: false } : p));
+  const sc678Off = X.exportShadcn(C(only678Off));
+  for (let i = 6; i <= 8; i++) {
+    if (new RegExp(`--chart-${i}:`).test(sc678Off)) FAIL("shadcn-chart-6-8", `chart-${i} present when data-${i} alone is disabled`);
+  }
+  for (let i = 1; i <= 5; i++) {
+    if (!new RegExp(`--chart-${i}:`).test(sc678Off)) FAIL("shadcn-chart-6-8", `chart-${i} missing when only data-6..8 are disabled (chart-1..5 must be unaffected)`);
+  }
+}
+
 // ── hpg-export-keycolors (retained brand colors -> exact OKLCH tokens by role + JSON block) ──
 const withKey = C(ALL.map((p, i) => (i === 0 ? { ...p, keyColors: [{ role: "dominant", oklch: [0.32, 0.05, 150] }, { role: "supportive", oklch: [0.7, 0.04, 160] }] } : p)));
 const kcss = X.exportCSS(withKey);
@@ -1271,7 +1307,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
