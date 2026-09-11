@@ -2698,7 +2698,11 @@ dpaBtn("Re-derive data hues").click();
 const dpaDataAfter = app.doc.palettes.filter((p) => p.name.startsWith("Data "));
 ok(dpaDataAfter.length === 8, `(dpa5) Re-derive keeps exactly 8 Data N palettes (got ${dpaDataAfter.length})`);
 ok(dpaDataAfter.some((p, i) => p.hue !== dpaDataBefore[i].hue), "(dpa6) Re-derive actually changed at least one Data N hue after moving Primary's hue");
-ok(dpaDataAfter.every((p, i) => p.chroma === dpaDataBefore[i].chroma && p.name === dpaDataBefore[i].name), "(dpa7) Re-derive leaves every other Data N field (chroma, name) untouched");
+ok(dpaDataAfter.every((p, i) => {
+  const { hue: _hAfter, ...restAfter } = p;
+  const { hue: _hBefore, ...restBefore } = dpaDataBefore[i];
+  return JSON.stringify(restAfter) === JSON.stringify(restBefore);
+}), "(dpa7) Re-derive leaves every OTHER Data N field (name, chroma, skew, lift, hueShift, hueSameDir, on) untouched, only hue moves");
 const dpaExpected = mintDataPalettesDPA(app.doc); // the SAME derivation, re-run fresh, against the current (post-move) Primary + brand hues
 ok(dpaDataAfter.every((p, i) => Math.abs(p.hue - dpaExpected[i].hue) < 1e-6), `(dpa8) the re-derived hues match a fresh deriveDataHues computation (got ${JSON.stringify(dpaDataAfter.map((p) => p.hue))} vs ${JSON.stringify(dpaExpected.map((p) => p.hue))})`);
 
@@ -2730,6 +2734,19 @@ app.setSegment("global"); app.render(); flushRaf();
 ok(dpaBtn("Add data palettes (8)").disabled === true, "(dpa16) Add is disabled again once 8 Data N palettes exist");
 dpaBtn("Add data palettes (8)").click();
 ok(app.doc.palettes.length === 16, `(dpa17) Add stays a no-op once 8 already exist (got ${app.doc.palettes.length})`);
+
+// edge case: a document with NEITHER a Primary palette NOR Data N palettes — Add is enabled
+// (zero Data N, so nothing blocks it by count) but the click is still a no-op, since
+// mintDataPalettes(doc) has no Primary hue to anchor the derivation on, and it toasts.
+app.commit((d) => { d.palettes = d.palettes.filter((p) => p.name !== "Primary" && !p.name.startsWith("Data ")); });
+flushRaf();
+app.setSegment("global"); app.render(); flushRaf();
+ok(dpaBtn("Add data palettes (8)").disabled !== true, "(dpa18) Add is enabled with zero Data N palettes even when there's no Primary either");
+const dpaLenBefore3 = app.doc.palettes.length;
+app.toastEl.textContent = ""; // clear any earlier toast text before asserting this click's own
+dpaBtn("Add data palettes (8)").click();
+ok(app.doc.palettes.length === dpaLenBefore3, `(dpa19) Add is a no-op with no Primary to derive from (got ${app.doc.palettes.length}, expected ${dpaLenBefore3})`);
+ok(/primary/i.test(app.toastEl.textContent || ""), `(dpa20) Add toasts naming the missing Primary palette (got "${app.toastEl.textContent}")`);
 
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
