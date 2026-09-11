@@ -10,6 +10,9 @@ import { dsBundleGates } from "../../src/engine/ds-gates.js";
 import { typeScale } from "../../src/engine/type.mjs";
 import { geomScale, LADDER_MD_STEP, sizeAnchor } from "../../src/engine/geometry.mjs";
 import { PRIME_STEPS } from "../../src/engine/prime.mjs";
+import { paletteGroup, brandKit, defaultDocument } from "../../src/ui/model.mjs"; // paletteGroup is the SINGLE
+// group resolver (ticket #556/#572) — the group-metadata gate below asserts every emitted surface
+// matches THIS, never a second hand-kept copy; brandKit/defaultDocument prove the MCP-facing kit too.
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const C = (palettes) => ({ palettes, curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, hueSpace: "cam16", theme: "auto" });
@@ -1335,8 +1338,99 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if ("prime" in offTokens) FAIL("design-system-prime", "disabled-palette tokens.json unexpectedly carries a prime block");
 }
 
+// ── hpg-export-group-metadata (SPEC 0.3.0 RP-1, ticket #572, plan PR #571 step E1) — the palette
+// group (material/brand/system/data) is exported METADATA on every surface that has a metadata slot
+// (JSON, DTCG's raw file, a CSS/OKLCH/Tailwind comment line, the DS bundle's familiesByGroup) and is
+// ABSENT from UI3/ShadCN (no metadata slot short of `description`, #556's own no-Figma-folder ruling)
+// — every emitted group is one of the four valid ids AND matches model.mjs's paletteGroup(p), the
+// single resolver (no drift between the metadata and the real resolver).
+{
+  const VALID_GROUPS = ["material", "brand", "system", "data"];
+  const tsc = typeScale({});
+  const gsc = geomScale({});
+  const gstate = C(ALL_WITH_DATA);
+  const derived = X.derivedAll(gstate); // [{name, n, group, ...}] — group per exports.js's own derivePalette
+
+  const gjson = X.exportJSON(gstate);
+  const gdtcg = X.exportDTCG(gstate, {});
+  const gcss = X.exportCSS(gstate);
+  const goklch = X.exportOKLCH(gstate);
+  const gtw = X.exportTailwind(gstate);
+  const gui3 = X.exportUI3(gstate);
+  const gshadcn = X.exportShadcn(gstate);
+  const gds = X.dsColorRoles(gstate);
+
+  for (const d of derived) {
+    // ALL_WITH_DATA's fixture palettes carry no explicit `.group` — paletteGroup(p)'s own by-name
+    // default rule is what resolves them, the SAME rule exports.js's paletteGroupOf mirrors.
+    const src = ALL_WITH_DATA.find((p) => p.name === d.name);
+    const want = paletteGroup(src);
+    if (!VALID_GROUPS.includes(d.group)) FAIL("hpg-export-group-metadata", `derivePalette group "${d.group}" for "${d.name}" is not one of ${VALID_GROUPS.join("/")}`);
+    if (d.group !== want) FAIL("hpg-export-group-metadata", `derivePalette group for "${d.name}" is "${d.group}", want "${want}" (paletteGroup(p))`);
+
+    // JSON — palettes[n].group
+    const j = gjson[d.n];
+    if (!j || !VALID_GROUPS.includes(j.group)) FAIL("hpg-export-group-metadata", `JSON group for "${d.name}" is ${JSON.stringify(j && j.group)}, want one of ${VALID_GROUPS.join("/")}`);
+    else if (j.group !== want) FAIL("hpg-export-group-metadata", `JSON group for "${d.name}" is "${j.group}", want "${want}"`);
+
+    // DTCG — the RAW file's palette group node carries $extensions["com.ultimate-tokens"].group;
+    // the two SEMANTIC theme files must NEVER carry it (RP-1: raw file only).
+    const rawNode = gdtcg["palette.tokens.json"][d.n];
+    const dtcgExt = rawNode && rawNode.$extensions && rawNode.$extensions["com.ultimate-tokens"];
+    if (!dtcgExt || !VALID_GROUPS.includes(dtcgExt.group)) FAIL("hpg-export-group-metadata", `DTCG raw group for "${d.name}" is ${JSON.stringify(dtcgExt)}, want one of ${VALID_GROUPS.join("/")}`);
+    else if (dtcgExt.group !== want) FAIL("hpg-export-group-metadata", `DTCG raw group for "${d.name}" is "${dtcgExt.group}", want "${want}"`);
+    for (const themeFile of ["Light_tokens.json", "Dark_tokens.json"]) {
+      const themeNode = gdtcg[themeFile][d.n];
+      if (themeNode && themeNode.$extensions && themeNode.$extensions["com.ultimate-tokens"]) FAIL("hpg-export-group-metadata", `DTCG ${themeFile} palette node for "${d.name}" unexpectedly carries com.ultimate-tokens group metadata (raw file only, per RP-1)`);
+    }
+
+    // CSS / OKLCH / Tailwind — one ADDED comment line per palette block, never a token.
+    const commentLine = `/* ${d.name} · ${want} */`;
+    if (!gcss.includes(commentLine)) FAIL("hpg-export-group-metadata", `CSS missing group comment for "${d.name}" (want "${commentLine}")`);
+    if (!goklch.includes(commentLine)) FAIL("hpg-export-group-metadata", `OKLCH missing group comment for "${d.name}" (want "${commentLine}")`);
+    if (!gtw.includes(commentLine)) FAIL("hpg-export-group-metadata", `Tailwind missing group comment for "${d.name}" (want "${commentLine}")`);
+  }
+
+  // negative check: UI3 and ShadCN carry NOTHING group-shaped — no group id/keyword anywhere.
+  const groupWordRe = /"material"|"brand"|"system"|com\.ultimate-tokens|"group"\s*:/;
+  if (groupWordRe.test(JSON.stringify(gui3))) FAIL("hpg-export-group-metadata", "UI3 output unexpectedly carries group metadata (ruled out — no Figma metadata slot, #556)");
+  if (groupWordRe.test(gshadcn)) FAIL("hpg-export-group-metadata", "ShadCN output unexpectedly carries group metadata (fixed contract, no groups)");
+
+  // DS bundle — familiesByGroup partitions EXACTLY the union of families + dataFamilies, one bucket
+  // per valid group, alongside the existing flat `families` (kept, unchanged, for consumers).
+  for (const g of VALID_GROUPS) if (!Array.isArray(gds.familiesByGroup && gds.familiesByGroup[g])) FAIL("hpg-export-group-metadata", `dsColorRoles.familiesByGroup missing/invalid group "${g}"`);
+  else {
+    const wantMembers = derived.filter((d) => d.group === g).map((d) => d.n).sort();
+    const gotMembers = [...gds.familiesByGroup[g]].sort();
+    if (JSON.stringify(gotMembers) !== JSON.stringify(wantMembers)) FAIL("hpg-export-group-metadata", `dsColorRoles.familiesByGroup["${g}"] = ${JSON.stringify(gotMembers)}, want ${JSON.stringify(wantMembers)}`);
+  }
+  const allDsFamilies = [...gds.families, ...gds.dataFamilies].sort();
+  const bucketed = VALID_GROUPS.flatMap((g) => gds.familiesByGroup[g]).sort();
+  if (JSON.stringify(bucketed) !== JSON.stringify(allDsFamilies)) FAIL("hpg-export-group-metadata", `familiesByGroup does not partition families+dataFamilies exactly (bucketed=${JSON.stringify(bucketed)}, want ${JSON.stringify(allDsFamilies)})`);
+
+  // Figma Make profile's "Grammar token reference" table — the one literal per-family markdown
+  // table in the DS bundle — gains a Group column matching familiesByGroup.
+  const makeFiles = X.exportDesignSystemMakeBundle(gstate, tsc, gsc, { date: "2026-09-11" });
+  const makeColorMd = Object.fromEntries(makeFiles.map((f) => [f.name, f.data]))["guidelines/foundations/color.md"];
+  if (!makeColorMd.includes("| Token | Group | Fill (Light) | Fill (Dark) | On (Light) | On (Dark) | Use |")) FAIL("hpg-export-group-metadata", "Make foundations/color.md grammar table missing the Group column header");
+  for (const f of gds.families) {
+    const g = VALID_GROUPS.find((grp) => gds.familiesByGroup[grp].includes(f));
+    if (!makeColorMd.includes(`\`--${X.cssPrefixOf(gstate)}-${f}\` | ${g} |`)) FAIL("hpg-export-group-metadata", `Make foundations/color.md grammar table row for "${f}" missing/mismatched Group cell (want "${g}")`);
+  }
+
+  // brandKit / MCP list_palettes — every entry's group is valid and matches paletteGroup(p).
+  const dd = defaultDocument();
+  const kit = brandKit(dd);
+  for (const kp of kit.palettes) {
+    const src2 = dd.palettes.find((p) => p.name === kp.name);
+    const want2 = paletteGroup(src2);
+    if (!VALID_GROUPS.includes(kp.group)) FAIL("hpg-export-group-metadata", `brandKit palette "${kp.name}" group "${kp.group}" is not one of ${VALID_GROUPS.join("/")}`);
+    else if (kp.group !== want2) FAIL("hpg-export-group-metadata", `brandKit palette "${kp.name}" group "${kp.group}" !== paletteGroup(p) "${want2}"`);
+  }
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

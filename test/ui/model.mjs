@@ -183,15 +183,55 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
 }
 
 // ── byte-identity export check (ticket #556 non-goal guard, SUPERSEDED for intensity/primeChroma
-// by ticket #559) ──────────────────────────────────────────────────────────────────────
+// by ticket #559, and again for the GROUP METADATA ITSELF by ticket #572/RP-1) ────────────────────
 // #556 shipped `group` as purely editor/organizational metadata with zero export effect. #559 makes
 // a palette's GROUP drive its resolved baseIntensity/primeChroma (Material 30/60 vs Brand/System/Data
 // all 100/100 by default) — so reassigning a palette's group no longer guarantees byte-identical
-// exports in general; that is the whole point of the ticket. What still holds, and what #556's
-// original guard narrows down to: a group reassignment between two groups that share the SAME
-// baseIntensity/primeChroma defaults (brand <-> system, both 100/100) is still byte-identical, and
-// the export TOKEN NAMES never move regardless of group.
+// exports in general; that is the whole point of the ticket. #572/RP-1 then makes the group ITSELF
+// exported metadata (JSON `group`, DTCG raw `$extensions`, a CSS/OKLCH/Tailwind comment line,
+// brandKit `group`) — so even a brand<->system swap (same 100/100 chroma defaults) now legitimately
+// changes those metadata bytes; that is RP-1's whole point too. What still holds, narrowed twice
+// now: a brand<->system swap changes ONLY the group metadata itself (the new comment line's word,
+// the `group`/`$extensions` field) — every VALUE (ramp colors, role hex, prime swatches) and every
+// TOKEN NAME is unaffected, on every surface, regardless of group.
 {
+  // stripGroupComments (RP-1, ticket #572): drop the ADDED `/* name · group */` comment lines so a
+  // brand<->system swap (identical underlying values) still compares byte-identical net of the
+  // metadata line itself, which legitimately differs by design.
+  const stripGroupComments = (text) => text.split("\n").filter((l) => !/^\s*\/\* .* · (material|brand|system|data) \*\/$/.test(l)).join("\n");
+  // stripJsonGroup (RP-1): exportJSON's per-palette `group` field, deleted before comparing (every
+  // OTHER key — stops/scrims/prime/semantic/keyColors — must still match exactly).
+  const stripJsonGroup = (jsonText) => {
+    const obj = JSON.parse(jsonText);
+    for (const k of Object.keys(obj)) { if (k !== "constants" && obj[k] && typeof obj[k].group !== "undefined") delete obj[k].group; }
+    return JSON.stringify(obj);
+  };
+  // stripRawGroupExt (RP-1): a RAW DTCG tree object (palette-slug-keyed) with each palette node's
+  // `$extensions["com.ultimate-tokens"]` removed, mutated in place — the shared step both
+  // stripDtcgGroupExt (the combined 3-file bundle) and the figma.raw comparison below reuse.
+  const stripRawGroupExt = (rawTree) => {
+    for (const k of Object.keys(rawTree)) {
+      if (k === "$extensions" || k === "constants") continue;
+      if (rawTree[k] && typeof rawTree[k] === "object" && rawTree[k].$extensions && rawTree[k].$extensions["com.ultimate-tokens"]) delete rawTree[k].$extensions;
+    }
+    return rawTree;
+  };
+  // stripDtcgGroupExt (RP-1): exportDTCG's raw-file-only `$extensions["com.ultimate-tokens"]` per
+  // palette group node, deleted before comparing (theme files never carry it in the first place —
+  // "palette.tokens.json" is the only one of the 3 files this ticket's DTCG contract touches).
+  const stripDtcgGroupExt = (jsonText) => {
+    const obj = JSON.parse(jsonText);
+    if (obj["palette.tokens.json"]) stripRawGroupExt(obj["palette.tokens.json"]);
+    return JSON.stringify(obj);
+  };
+  // stripRawFileGroupExt (RP-1): same stripping for a STANDALONE raw-file string (figma.raw, which
+  // IS the raw tree, not wrapped in the 3-file bundle shape).
+  const stripRawFileGroupExt = (jsonText) => JSON.stringify(stripRawGroupExt(JSON.parse(jsonText)));
+  const stripBrandKitGroup = (kit) => {
+    const clone = JSON.parse(JSON.stringify(kit));
+    for (const p of clone.palettes || []) delete p.group;
+    return JSON.stringify(clone);
+  };
   // dsDocOf mirrors drawer.js's own dsDoc: exportDesignSystemBundle reads doc.palettes[i].intensity/
   // primeChroma directly (it's called with a doc-shaped object, never through stateOf/projectView),
   // so it needs the group layer folded in explicitly or it silently ignores it (ticket #559).
@@ -212,19 +252,33 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   });
   ok(sameDefaults.palettes.some((p, i) => paletteGroup(p) !== paletteGroup(base.palettes[i])), "test setup: at least one palette must actually change group in the brand<->system swap");
   const sameDefaultsExports = projectView(sameDefaults).exports;
-  for (const fmt of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn"]) {
+  // ui3/shadcn carry NO group metadata (RP-1: ruled out — no Figma metadata slot short of
+  // `description`, #556; ShadCN's fixed contract) — still strictly byte-identical.
+  for (const fmt of ["ui3", "shadcn"]) {
     ok(baseExports[fmt] === sameDefaultsExports[fmt], `export format "${fmt}" must stay byte-identical when a palette moves between two groups sharing the same baseIntensity/primeChroma default (brand <-> system)`);
   }
-  ok(JSON.stringify(baseExports.figma) === JSON.stringify(sameDefaultsExports.figma), "the per-mode Figma DTCG exports must stay byte-identical for a brand <-> system group swap");
+  // css/oklch/tailwind carry a group comment line (RP-1) — byte-identical once that line is
+  // stripped; json/dtcg carry a group field/extension — byte-identical once THAT is stripped.
+  for (const fmt of ["css", "oklch", "tailwind"]) {
+    ok(stripGroupComments(baseExports[fmt]) === stripGroupComments(sameDefaultsExports[fmt]), `export format "${fmt}" must stay byte-identical (net of the RP-1 group comment line) when a palette moves between two groups sharing the same baseIntensity/primeChroma default (brand <-> system)`);
+    ok(baseExports[fmt] !== sameDefaultsExports[fmt], `export format "${fmt}" IS expected to differ (only by its RP-1 group comment line) across the brand <-> system swap — if this fails, the swap stopped changing anything`);
+  }
+  ok(stripJsonGroup(baseExports.json) === stripJsonGroup(sameDefaultsExports.json), `export format "json" must stay byte-identical (net of the RP-1 \`group\` field) when a palette moves between two groups sharing the same baseIntensity/primeChroma default (brand <-> system)`);
+  ok(stripDtcgGroupExt(baseExports.dtcg) === stripDtcgGroupExt(sameDefaultsExports.dtcg), `export format "dtcg" must stay byte-identical (net of the RP-1 raw-file $extensions) when a palette moves between two groups sharing the same baseIntensity/primeChroma default (brand <-> system)`);
+  ok(stripRawFileGroupExt(baseExports.figma.raw) === stripRawFileGroupExt(sameDefaultsExports.figma.raw), "the Figma DTCG raw file must stay byte-identical (net of the RP-1 $extensions) for a brand <-> system group swap");
+  ok(baseExports.figma.light === sameDefaultsExports.figma.light && baseExports.figma.dark === sameDefaultsExports.figma.dark, "the Figma DTCG semantic (Light/Dark) files must stay strictly byte-identical for a brand <-> system group swap — RP-1 never touches the theme files");
 
   // the DS bundle (ds-export.js — Claude Design/Stitch/Figma Make, split out at TKT-0015, NOT one
   // of the 8 documented formats above) and the MCP brandKit() payload get the same coverage, with
   // the same fixed opts.date so the comparison is deterministic.
   const dsOpts = { date: "2026-01-01" };
+  // exportDesignSystemBundle is the Claude Design profile (DESIGN.md/tokens.json/components/
+  // README) — RP-1's familiesByGroup/Group-column additions live ONLY in the Figma Make profile's
+  // foundations/color.md (not part of this bundle), so this stays strictly byte-identical.
   const baseDs = exportDesignSystemBundle(dsDocOf(base), typeScaleFor(base, "base"), geomScaleFor(base, "base"), dsOpts);
   const sameDefaultsDs = exportDesignSystemBundle(dsDocOf(sameDefaults), typeScaleFor(sameDefaults, "base"), geomScaleFor(sameDefaults, "base"), dsOpts);
   ok(JSON.stringify(baseDs) === JSON.stringify(sameDefaultsDs), "the DS bundle (ds-export.js) must stay byte-identical for a brand <-> system group swap");
-  ok(JSON.stringify(brandKit(base)) === JSON.stringify(brandKit(sameDefaults)), "the MCP brandKit() payload must stay byte-identical for a brand <-> system group swap");
+  ok(stripBrandKitGroup(brandKit(base)) === stripBrandKitGroup(brandKit(sameDefaults)), "the MCP brandKit() payload must stay byte-identical (net of the RP-1 `group` field) for a brand <-> system group swap");
 
   // moving Neutral out of Material (default 30/60) into Brand (default 100/100) MUST move the
   // export bytes on EVERY surface — proves ticket #559's group layer actually reaches every

@@ -82,9 +82,9 @@ export function buildSurface(kit) {
   // ── tools ──
   const TOOLS = [];
   if (hasColor) TOOLS.push(
-    { name: "list_palettes", description: "List the brand's palettes with their identity colour.",
+    { name: "list_palettes", description: "List the brand's palettes with their identity colour and canvas group (material/brand/system/data).",
       inputSchema: { type: "object", properties: {} },
-      run: () => palettes.map((p) => ({ name: p.name, key: p.key, stops: (p.ramp || []).length })) },
+      run: () => palettes.map((p) => ({ name: p.name, key: p.key, group: p.group, stops: (p.ramp || []).length })) },
     { name: "get_ramp", description: "The full tonal ramp (stops → hex) for one palette.",
       inputSchema: { type: "object", properties: { palette: { type: "string" } }, required: ["palette"] },
       run: (a) => { const p = findPalette(a.palette); return p ? { name: p.name, ramp: p.ramp } : { error: `no palette "${a.palette}"` }; } },
