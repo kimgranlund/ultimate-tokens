@@ -66,10 +66,8 @@ export function primeSwatches(palette, controls) {
   const g = 3 ** ((palette.skew ?? 0) / 100); // REQ-053a: the ramp's own toneAt gamma, reused as the ladder bend
 
   // REQ-052 (superseded 2026-09-11): flat OKHSL saturation is the key colour's OWN saturation scaled
-  // by prime chroma, no damping. Rename window (P2..P3, LLD Risk 2): controls.primeChroma does not
-  // exist yet post-P1 — fall through to the still-live controls.keyIntensity, and let a per-palette
-  // override win over either global.
-  const pc = (palette.primeChroma ?? controls.primeChroma ?? controls.keyIntensity ?? 100) / 100;
+  // by prime chroma, no damping; a per-palette override wins over the global control.
+  const pc = (palette.primeChroma ?? controls.primeChroma ?? 100) / 100;
   const s = clamp01(key.s * pc);
 
   // REQ-053 (superseded 2026-09-11): the hue anchor is the key colour's own measured OKHSL hue,

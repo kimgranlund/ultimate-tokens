@@ -175,7 +175,6 @@ function controlsOf(state) {
     dampAmp: state.dampAmp ?? DEFAULT_CONTROLS.dampAmp,
     dampBias: state.dampBias ?? DEFAULT_CONTROLS.dampBias,
     baseIntensity: state.baseIntensity ?? DEFAULT_CONTROLS.baseIntensity,
-    keyIntensity: state.keyIntensity ?? DEFAULT_CONTROLS.keyIntensity,
     // primeChroma (REQ-010/050..057): the prime system's own chroma control. DEFAULT_CONTROLS has no
     // primeChroma field yet — mirrors model.mjs's controlsOf, which reuses tonal.js's still-inert
     // keyIntensity (100) as its default source (same P1-kept-inert field, same reuse rationale).
@@ -213,7 +212,6 @@ function derivePalette(palette, controls, overrides) {
     dampAmp: controls.dampAmp,
     dampBias: controls.dampBias,
     baseIntensity: controls.baseIntensity,
-    keyIntensity: controls.keyIntensity,
     hueSpace: controls.hueSpace,
     toneMode: controls.toneMode,
     vibrancy: controls.vibrancy,
