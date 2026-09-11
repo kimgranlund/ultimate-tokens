@@ -31,11 +31,11 @@ the data-palette units U5..U9 of 0.1.0 stand unchanged.
 | Prime system | `src/engine/prime.mjs` (new, pure) | `primeSwatches(palette, controls)` (REQ-050..053, REQ-056); constants `PRIME_STEPS`, `PRIME_STEP`, `PRIME_L_MIN`, `PRIME_L_MAX` |
 | Controls plumbing | `src/ui/model.mjs` | `controlsOf`/`stateOf` thread `baseIntensity`, `primeChroma`; `projectView` adds `palettes[i].prime`; `brandKit` adds `prime`; `tokenCount` adds 7 per enabled palette (REQ-057) |
 | Persistence | `src/ui/persist.js` | `DOMAINS.primeChroma`, `clampPalette` optional `primeChroma`, `CURRENT_SCHEMA_VERSION = 3`, `RENAME_MAPS` entry `{version: 3, renameControls: {keyIntensity: "primeChroma"}}` (REQ-010, REQ-011) |
-| Collections | `src/engine/collections.js` | `COLLECTIONS.colorPrime = "Color Prime"` (R3), single mode `Base` (R2 ratified: mode-independent); both sandbox literals mirror it, diffed by the `collparity` gate |
+| Collections | `src/engine/collections.js` | `COLLECTIONS.colorPrime = "Color Prime"` (REQ-054, R3), single mode `Base` (R2 ratified: mode-independent); both sandbox literals mirror it, diffed by the `collparity` gate |
 | Emitters | `src/engine/exports.js` | `derivePalette` gains `prime` (seven entries); `cssFrom`, `exportJSON`, `exportDTCG`, `exportUI3`, `exportTailwind` emit the group (REQ-054); `exportShadcn` untouched |
-| DS bundle | `src/engine/ds-export.js` | `prime` block per family in `tokens.json`; "Prime swatches" section in DESIGN.md (Claude Design, Stitch, Make profiles) |
-| MCP | `mcp/brand-kit-core.mjs` | `get_prime(slug)` tool + `brand://palette/{slug}/prime` resource over `kit.palettes[i].prime` |
-| Figma plugin apply | `figma/plugin/` (generated `ui.html` from the app), `src/ui/figma-apply*.js` (whichever module builds the apply message) | Creates or finds `Color Prime` by provenance registry key, one `Base` mode, `{n}/{step}` variables; the binder reads nothing from it this round |
+| DS bundle | `src/engine/ds-export.js` | `prime` block per family in `tokens.json`; "Prime swatches" section in DESIGN.md (Claude Design, Stitch, Make profiles) (REQ-054, REQ-031) |
+| MCP | `mcp/brand-kit-core.mjs` | `get_prime(slug)` tool + `brand://palette/{slug}/prime` resource over `kit.palettes[i].prime` (REQ-054, REQ-057) |
+| Figma plugin apply | `figma/plugin/` (generated `ui.html` from the app), `src/ui/figma-apply*.js` (whichever module builds the apply message) | Creates or finds `Color Prime` by provenance registry key, one `Base` mode, `{n}/{step}` variables; the binder reads nothing from it this round (REQ-033, REQ-054) |
 | UI | `src/ui/sections/color.js`, `src/ui/styles.css` | Global tab "Base chroma" + "Prime chroma" sliders next to Vibrancy; palette inspector "Intensity" + "Prime chroma" override sliders next to Cusp pull; `.key-strip` in `renderRampsScene` before `.ramp-strip` from `vp.prime` (REQ-032, REQ-034) |
 | Data palettes | `src/engine/data-hues.mjs`, `src/ui/model.mjs`, `role-table.json` | Unchanged from 0.1.0 (U5..U9) |
 
@@ -116,7 +116,7 @@ key there. Their answer key is the `prime.mjs` verifier's independent re-derivat
 
 | # | Unit | Files | Size | Parity note |
 |---|---|---|---|---|
-| P1 | Retire the ramp spike: delete `identityStops`, `DEFAULT_IDENTITY_STOPS`, the fourth parameter, the `k` term; `intensityAt` returns `b`; callers in `model.mjs`/`exports.js` drop the set; `intensity-spike` group and `identity-stops` gate removed; new `intensity-uniform` group (AC-002/AC-004); `keyIntensity` stays in `DEFAULT_CONTROLS`/`DOMAINS` as an inert control until P3 so nothing else moves | `tonal.js`, `semantic.js`, `model.mjs`, `exports.js`, `test/engine/tonal.mjs`, `test/engine/semantic.mjs` | small | Output byte-identical at 100 (the retained fixture proves it); closes the visible patchy-ramp defect at any other intensity. `code.js` regenerates with no role-table diff |
+| P1 | Retire the ramp spike (REQ-004, REQ-042): delete `identityStops`, `DEFAULT_IDENTITY_STOPS`, the fourth parameter, the `k` term; `intensityAt` returns `b`; callers in `model.mjs`/`exports.js` drop the set; `intensity-spike` group and `identity-stops` gate removed; new `intensity-uniform` group (AC-002/AC-004); `keyIntensity` stays in `DEFAULT_CONTROLS`/`DOMAINS` as an inert control until P3 so nothing else moves | `tonal.js`, `semantic.js`, `model.mjs`, `exports.js`, `test/engine/tonal.mjs`, `test/engine/semantic.mjs` | small | Output byte-identical at 100 (the retained fixture proves it); closes the visible patchy-ramp defect at any other intensity. `code.js` regenerates with no role-table diff |
 | P2 | Prime engine: `src/engine/prime.mjs` + `test/engine/prime.mjs` (AC-050 a..j incl. the (d2) skew-gamma monotonicity/edge/invariance gate, registered in `test/run.mjs`); `okhslLAt`/`solveOkhslHue` exported from `tonal.js`; reads `controls.primeChroma ?? controls.keyIntensity` during the P2..P3 window so the module works before the rename lands | `prime.mjs`, `tonal.js` (exports only), `test/engine/prime.mjs`, `test/run.mjs` | big | Pure addition, nothing consumes it yet |
 | P3 | Persist + model: schema v3 rename `keyIntensity` to `primeChroma`, `palette.primeChroma`, `DOMAINS`; `controlsOf`/`stateOf`; `projectView.palettes[i].prime`; `brandKit.prime`; `tokenCount` +7; the P2 fallback read removed | `persist.js`, `model.mjs`, `test/ui/persist.mjs`, `test/ui/shell.mjs` | small | `tokenCount` literal in `shell.mjs` and the footer readout move here (89 to 96); MCP tests that count kit keys are checked |
 | P4 | Emitters: CSS/OKLCH/JSON/DTCG/UI3/Tailwind prime group + `COLLECTIONS.colorPrime`; export gates (AC-051); the two sandbox literals + `collparity` | `exports.js`, `collections.js`, `figma/plugin/code.js` literal, `figma/binder/figma-semantic-binder/code.js` literal, `test/engine/exports.mjs`, `test/figma/binder.mjs` | big | `collparity` must see all three sites in the same PR; the binder does not bind prime tokens so `bindingPlan` is unchanged |
@@ -138,10 +138,10 @@ Sizes: P1 small · P2 big · P3 small · P4 big · P5 small · P6 small · P7 sm
 1. **Retirement leaves a stale caller (REQ-004, AC-004).** `model.mjs:707` and `exports.js:222` call
    `identityStops`; a missed one throws at import. Detection: `npm test` at P1 and the AC-004 grep.
    Fallback: none needed.
-2. **Rename window (P2..P3).** `prime.mjs` reads `primeChroma ?? keyIntensity` until P3 lands, then
+2. **Rename window (P2..P3) (REQ-011, AC-011).** `prime.mjs` reads `primeChroma ?? keyIntensity` until P3 lands, then
    the fallback is deleted. Detection: a P3 test asserts `keyIntensity` is absent from `DOMAINS` and
    from `DEFAULT_CONTROLS`. Fallback: keep the fallback one more PR.
-3. **Cusp-anchored prime on near-achromatic palettes.** For Neutral (chroma 29) `lPrime` is still the
+3. **Cusp-anchored prime on near-achromatic palettes (REQ-051, REQ-052).** For Neutral (chroma 29) `lPrime` is still the
    hue's cusp lightness, which is fine; at `chroma 0` `peakC` still returns a tone, `s = 0`, greys.
    Detection: AC-050 (c) includes `chroma 0`. Fallback: none.
 4. **Yellow compression (REQ-051, EX-5).** With `lPrime` near 0.9 the three light swatches sit
@@ -151,13 +151,13 @@ Sizes: P1 small · P2 big · P3 small · P4 big · P5 small · P6 small · P7 sm
 5. **Hue drift on the outer swatches (REQ-053).** `solveOkhslHue` anchors only `prime`; the ±0.27
    `l` excursions drift by the OKHSL/OKLCH Abney residual (~2° worst case, blues). Detection: AC-050
    (e) 2° budget. Fallback: solve per swatch (seven Newton loops, cheap).
-6. **`collparity` half-applied (P4).** Three literals (`collections.js`, two sandboxes). Detection:
+6. **`collparity` half-applied (P4) (REQ-054, AC-033).** Three literals (`collections.js`, two sandboxes). Detection:
    `test/figma/binder.mjs` `collparity`. Fallback: the P4 checklist.
-7. **Figma duplicate collections (P5).** A re-apply that does not find the provenance key creates a
+7. **Figma duplicate collections (P5) (REQ-054, AC-052).** A re-apply that does not find the provenance key creates a
    second `Color Prime`. Detection: AC-052 re-apply assertion. Fallback: adopt-by-name with UI
    confirm, the #494 precedent.
-8. **Export size and MCP payload.** +7 tokens per palette is small; no action.
-9. **Data-palette risks from 0.1.0** (hue collisions, count literals, answer-key hand edit,
+8. **Export size and MCP payload (REQ-030, REQ-057).** +7 tokens per palette is small; no action.
+9. **Data-palette risks from 0.1.0 (REQ-020..024, REQ-041)** (hue collisions, count literals, answer-key hand edit,
    marketing drift) stand unchanged.
 
 ## Agent verification

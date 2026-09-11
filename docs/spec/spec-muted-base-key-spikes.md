@@ -130,6 +130,8 @@ ladder, their own chroma control, and their own token group; the editor strip re
 - **REQ-041** Count literals under `test/` that encode the default palette count or the per-palette
   token count move together (`test/ui/counts.mjs`, `test/ui/shell.mjs`, `test/mcp/brand-kit*.mjs`,
   `tokenCount` expectations). Literals derived from `role-table.json` or the bundle need no edit.
+- **REQ-042** Every build unit listed in the LLD leaves `npm test` green at its boundary; no parity
+  gate (role-table deep-equal, binder mirror, `collparity`, count literals) is red between PRs.
 
 ### R-F. The prime system (new in 0.2.0)
 
@@ -270,7 +272,11 @@ ladder, their own chroma control, and their own token group; the editor strip re
   and `stopsMode` leaves the strip byte-identical.
 - **AC-040** Count grep as in 0.1.0 plus `git grep -n "\b89\b" -- src test docs/reference mcp` returns
   only historical hits.
-- **AC-041** `npm test` green at every build-unit boundary listed in the LLD.
+- **AC-041** After the count-moving units land: `test/ui/counts.mjs` `DEFAULT_PALETTES === 16`,
+  `test/ui/shell.mjs` and `test/mcp/brand-kit*.mjs` assert 16 palettes, `tokenCount` expectations
+  read 96 per palette, and `test/figma/binder.mjs` / `test/figma/plugin.mjs` are unedited (their
+  bounds derive). Checked by the AC-040 greps plus a green `npm test`.
+- **AC-042** `npm test` green at every build-unit boundary listed in the LLD.
 - **AC-050** `test/engine/prime.mjs`: (a) exactly seven entries in the fixed step order for every
   default palette; (b) `l` strictly decreasing and every `l` within `[0.14, 0.94]` (within 1e-9);
   (c) `inGamut` true for every entry at `primeChroma` in `{0, 50, 100}` and `chroma` in `{0, 50,
@@ -309,6 +315,7 @@ ladder, their own chroma control, and their own token group; the editor strip re
   lettered group like `tonal.mjs`). The independent re-derivation in (d) and the measurement from
   emitted pixels in (e)/(g) are the anti-tautology controls.
 - AC-051..053: `node test/engine/exports.mjs`, `node test/figma/plugin.mjs`, `node test/mcp/brand-kit.mjs`.
+- AC-040..042: the AC-040 greps and `npm test`, run at each build-unit boundary.
 - No human exception remains: R1 is ratified, so `PRIME_STEP = 0.09` is a checked constant.
 
 ## Decisions on the issue's six Open gaps (as they stand after #533)
