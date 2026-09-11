@@ -1032,6 +1032,9 @@ export class ColorSectionImpl {
           // retained key colors (when set): the brand colors, above the generated ramp,
           // each captioned with its nearest stop (the perceptual placement). Off-ramp by design.
           this.keyStrip(vp),
+          // the five identity-role swatches, resolved to the active scheme — SPEC
+          // spec-muted-base-key-spikes REQ-034 (the prime-chroma spike, visible here).
+          this.identityStrip(vp),
           strip,
         );
       });
@@ -1199,6 +1202,48 @@ export class ColorSectionImpl {
           h("small", {}, kc.role + " ≈" + kc.nearStop),
         ),
       ),
+    );
+  }
+
+
+  // identityStrip — the five identity-role swatches (SPEC spec-muted-base-key-spikes REQ-034):
+  // brighter/bright/prime/dim/dimmer, mapped to the {n}High/{n}Bright/{n}/{n}Dim/{n}Low roles
+  // (role suffixes -high/-bright/''/-dim/-low) already resolved in vp.roles. Each swatch shows the
+  // RESOLVED role hex for the active scheme (so the prime-chroma spike from Intensity is visible —
+  // under accentRef "single" the prime role resolves to the 500 stop, so the swatch follows with no
+  // special-casing here). Reuses the ramp-strip's hover/footer wiring, keyed off the underlying stop.
+  identityStrip(vp) {
+    const scheme = this.resolvedCanvasScheme();
+    const ORDER = [
+      ["brighter", "-high"],
+      ["bright", "-bright"],
+      ["prime", ""],
+      ["dim", "-dim"],
+      ["dimmer", "-low"],
+    ];
+    return h(
+      "div",
+      { class: "identity-strip" },
+      ...ORDER.map(([label, suffix]) => {
+        const r = vp.roles.find((role) => role.suffix === suffix);
+        const hex = r ? (scheme === "dark" ? r.darkHex : r.lightHex) : "#000000";
+        const stop = r ? Number(scheme === "dark" ? r.darkRef : r.lightRef) : null;
+        const s = stop != null ? vp.fullRamp.find((x) => x.stop === stop) : null;
+        return h("i", {
+          class: "identity-swatch",
+          "data-role": label,
+          style: `background:${hex}`,
+          title: `${vp.name} ${label} · ${hex}`,
+          onmouseenter: () => {
+            this.hover = { name: vp.name, stop, hex, tone: s ? s.tone : null, inGamut: s ? s.inGamut : true };
+            this.paintCanvasFooter();
+          },
+          onmouseleave: () => {
+            this.hover = null;
+            this.paintCanvasFooter();
+          },
+        });
+      }),
     );
   }
 
@@ -1648,6 +1693,10 @@ export class ColorSectionImpl {
       this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => (d.palettes[i].chroma = v))),
       isEven ? this.slider("Skew", p.skew, -100, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].skew = v))) : false,
       isEven ? this.slider("Lift", p.lift, -40, 40, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].lift = v))) : false,
+      // Intensity (SPEC spec-muted-base-key-spikes REQ-032) — this palette's override of the global
+      // Base chroma. Absent inherits the document's baseIntensity, same shape as Cusp pull below.
+      // Applies on BOTH ramp paths (REQ-002), unlike Cusp pull, so it stays visible in every toneMode.
+      this.slider("Intensity", p.intensity ?? (this.doc.baseIntensity ?? 100), 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].intensity = v))),
       // Cusp pull (perceptual only) — this palette's override of the global Vibrancy: how far its
       // richest stop is nudged toward 500. Starts at the inherited global value; the peak mode pins it.
       this.doc.toneMode === "perceptual"
@@ -1796,6 +1845,13 @@ export class ColorSectionImpl {
       d.toneMode === "perceptual"
         ? this.slider("Vibrancy", d.vibrancy, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.vibrancy = v)))
         : false,
+      // Base chroma / Prime chroma (SPEC spec-muted-base-key-spikes REQ-032) — the two ramp-shaping
+      // intensity controls, placed together next to Vibrancy. Unlike Vibrancy (perceptual-only), the
+      // intensity factor applies on BOTH ramp paths (REQ-002), so these two stay visible in every
+      // toneMode. Base chroma shapes the whole ramp (doc.baseIntensity); Prime chroma lifts only the
+      // identity stops back up (doc.keyIntensity) — the chroma spike this feature is named for.
+      this.slider("Base chroma", d.baseIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.baseIntensity = v))),
+      this.slider("Prime chroma", d.keyIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.keyIntensity = v))),
       // Curve · Tension · Chroma-basis shape the CIELAB "even" path ONLY — hide them in the OKHSL modes.
       d.toneMode === "even"
         ? field(
