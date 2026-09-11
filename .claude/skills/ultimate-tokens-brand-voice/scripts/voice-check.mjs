@@ -6,6 +6,13 @@
 //
 // Usage: node voice-check.mjs <file.md> [more files…]   (exit 1 on any ERROR; warnings don't fail)
 import { readFileSync } from "node:fs";
+import { makeVoices } from "../../../../src/engine/type.mjs";
+
+// "type voices" (below) is derived live from this — ticket #529: the pin was hand-set to 11 and
+// stuck while makeVoices already returned 15, and makeVoices wasn't even exported, so nothing could
+// mechanically re-verify or self-correct the drift. A future voice added/removed in makeVoices now
+// flows straight into this count instead of needing a second, driftable hand-edit here.
+const TYPE_VOICE_COUNT = String(Object.keys(makeVoices()).length);
 
 // Banned lexicon (platform §5). Extend HERE, not in prose — word-boundary, case-insensitive.
 const BANNED = [
@@ -22,7 +29,7 @@ const PINNED = [
   { re: /\b(\d+)\s+categories\b/gi, want: "7", name: "color categories" },
   { re: /\b(\d+)\s+(?:curated\s+)?palettes\s+(?:in\s+)?total\b/gi, want: "336", name: "total curated palettes" },
   { re: /\b(\d+)\s+composing\s+systems?\b/gi, want: "3", name: "composing systems" },
-  { re: /\b(\d+)\s+(?:type\s+)?voices\b/gi, want: "11", name: "type voices" },
+  { re: /\b(\d+)\s+(?:type\s+)?voices\b/gi, want: TYPE_VOICE_COUNT, name: "type voices" },
   { re: /\b(\d+)\s+seats?\s+included\b/gi, want: "5", name: "Studio seats included" },
   { re: /\b(\d+)[-\s]day\s+refund\b/gi, want: "14", name: "refund window" },
 ];
