@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## 1.57 — 2026-09-11 — the prime system replaces the key-stop spike (#533, SPEC/LLD 0.2.0)
+
+The 1.56 chroma spike on the ramp's identity stops is **retired** (#536, P1): `identityStops`,
+`DEFAULT_IDENTITY_STOPS`, and the `k` term are gone, `intensityAt` returns the base fraction for
+every stop, and the ramp is continuous again (the patchy vivid/grey/vivid strip the spike produced in
+the editor was the defect #533 closes). `baseIntensity` (UI **Base chroma**, plus the per-palette
+**Intensity** override) now shapes the whole ramp alone; the byte-identity fixture at 100 still holds.
+
+In its place, every palette gets a **prime system** (P2, #537): seven swatches, `brightest · brighter ·
+bright · prime · dim · dimmer · dimmest`, on their own OKHSL lightness ladder (`src/engine/prime.mjs`,
+`PRIME_STEP 0.09`, edge-compressed into `[0.14, 0.94]`, bent by the palette's `skew` as a gamma with
+`prime` and the ends fixed), with `prime` reading its lightness, saturation, and hue off
+`deriveKeyColor`'s actual key colour, so at full **Prime chroma** it equals the gallery tile exactly.
+`keyIntensity` is renamed **`primeChroma`** (schema v3, P3, with a per-palette override); the editor's
+Global tab carries **Base chroma** and **Prime chroma** side by side, the inspector carries the two
+overrides, and each ramp row now leads with the seven-swatch prime strip (P7). Prime tokens are their
+own primitives-tier group per palette, mode-independent, and roles do NOT alias them; the 53-role
+table and `role-table.json` are unchanged.
+
+**Shipped defaults stay `baseIntensity: 100, primeChroma: 100`** (H1): every ramp and every export is
+byte-identical to 1.55 until a user moves a slider. The `prime` token group now ships across the CSS,
+OKLCH, JSON, DTCG, UI3, and Tailwind export formats (#550), the "Color Prime" Figma collection (#553),
+the DS bundle section, and the MCP `get_prime` tool + `brand://palette/{slug}/prime` resource (P4–P6);
+this docs sweep (P8, #543) closes out the rollout. Eight brand-derived data palettes (U5–U9) continue.
+
+Gate: `npm test` green at each unit (`intensity-legacy` fixture retained, `intensity-uniform` group,
+`test/engine/prime.mjs` AC-050 a–j). Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.2.0 (#535,
+#544, #547); design: `docs/lld/lld-muted-base-key-spikes.md` 0.2.0. Knowledge: knowledge-02 §8.
+
 ## 1.56 — 2026-09-11 — muted base ramps + key-stop spikes: intensity controls land in the engine (#503 U1)
 
 A new pair of ramp-shaping controls, `baseIntensity` and `keyIntensity` (0–100, plus an optional
