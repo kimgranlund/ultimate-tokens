@@ -10,5 +10,11 @@
     "gate": [
       "npm test"
     ]
+  },
+  "merge": {
+    "style": "squash"
+  },
+  "release": {
+    "cadence": "batch"
   }
 }
