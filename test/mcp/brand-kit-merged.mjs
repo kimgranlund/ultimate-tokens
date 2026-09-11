@@ -99,7 +99,7 @@ function spawnClient(args) {
     ok(tools.includes("list_palettes") && tools.includes("generate_kit"), `loading a sibling kit surfaces the read tools immediately, alongside the generator (got ${tools})`);
 
     const pal = await c.callTool("list_palettes", {});
-    ok(pal.length === 8, "the read tools serve the LOADED kit before any generate call");
+    ok(pal.length === 16, "the read tools serve the LOADED kit before any generate call");
 
     const exp = await c.callTool("export_tokens", { format: "css" });
     ok(exp.error, "export_tokens is still gated for a loaded-kit-only session (no doc exists for a raw brand-kit.json)");

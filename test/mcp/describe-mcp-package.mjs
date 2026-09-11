@@ -75,7 +75,7 @@ try {
   const tools = (await c.rpc("tools/list")).result.tools.map((t) => t.name);
   ok(tools.includes("list_palettes") && tools.includes("generate_kit") && tools.includes("export_tokens"), `the seeded package lists BOTH the read tools and generate_kit/export_tokens from first boot (got ${tools.join(",")})`);
   const palettes = await c.callTool("list_palettes", {});
-  ok(Array.isArray(palettes) && palettes.length === 8, `the seeded brand-kit.json's read surface is live: list_palettes returns all 8 families (got ${JSON.stringify(palettes)})`);
+  ok(Array.isArray(palettes) && palettes.length === 16, `the seeded brand-kit.json's read surface is live: list_palettes returns all 16 palettes (got ${JSON.stringify(palettes)})`);
 
   // ── generate_kit end to end, entirely from the extracted package's own describe-kit-core.mjs/model.mjs ──
   const briefing = await c.callTool("generate_kit", { description: "a rainy Tokyo alley at night, neon reflections" });

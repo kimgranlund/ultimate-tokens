@@ -461,6 +461,70 @@
       "skew": -20,
       "lift": -5,
       "on": true
+    },
+    {
+      "name": "Data 1",
+      "hue": 287,
+      "chroma": 95,
+      "skew": 0,
+      "lift": 0,
+      "on": true
+    },
+    {
+      "name": "Data 2",
+      "hue": 332,
+      "chroma": 95,
+      "skew": 0,
+      "lift": 0,
+      "on": true
+    },
+    {
+      "name": "Data 3",
+      "hue": 17,
+      "chroma": 95,
+      "skew": 0,
+      "lift": 0,
+      "on": true
+    },
+    {
+      "name": "Data 4",
+      "hue": 62,
+      "chroma": 95,
+      "skew": 0,
+      "lift": 0,
+      "on": true
+    },
+    {
+      "name": "Data 5",
+      "hue": 107,
+      "chroma": 95,
+      "skew": 0,
+      "lift": 0,
+      "on": true
+    },
+    {
+      "name": "Data 6",
+      "hue": 152,
+      "chroma": 95,
+      "skew": 0,
+      "lift": 0,
+      "on": true
+    },
+    {
+      "name": "Data 7",
+      "hue": 197,
+      "chroma": 95,
+      "skew": 0,
+      "lift": 0,
+      "on": true
+    },
+    {
+      "name": "Data 8",
+      "hue": 242,
+      "chroma": 95,
+      "skew": 0,
+      "lift": 0,
+      "on": true
     }
   ]
 }

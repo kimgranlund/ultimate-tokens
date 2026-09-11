@@ -8,6 +8,7 @@ import { dirname, join } from "node:path";
 import * as M from "../../src/ui/model.mjs";
 import { paletteStops, STOPS } from "../../src/engine/tonal.js";
 import { PRESETS as NATURE_PRESETS } from "../../src/ui/categories/nature.js";
+import { DEFAULT_PALETTES } from "./counts.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const UI = join(HERE, "..", "..", "src", "ui"); // the shell files live in src/ui/
@@ -16,9 +17,9 @@ const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.pu
 
 // ── model: projectView(defaultDocument()) composes the 6 modules into a renderable view ──
 const doc = M.defaultDocument();
-if (!doc || !Array.isArray(doc.palettes) || doc.palettes.length !== 8) FAIL("model", `defaultDocument has ${doc && doc.palettes && doc.palettes.length} palettes, want 8`);
+if (!doc || !Array.isArray(doc.palettes) || doc.palettes.length !== DEFAULT_PALETTES) FAIL("model", `defaultDocument has ${doc && doc.palettes && doc.palettes.length} palettes, want ${DEFAULT_PALETTES}`);
 const v = M.projectView(doc);
-if (!v || !Array.isArray(v.palettes) || v.palettes.length !== 8) FAIL("model", `projectView returned ${v && v.palettes && v.palettes.length} palettes`);
+if (!v || !Array.isArray(v.palettes) || v.palettes.length !== DEFAULT_PALETTES) FAIL("model", `projectView returned ${v && v.palettes && v.palettes.length} palettes`);
 else for (const p of v.palettes) {
   if (!Array.isArray(p.ramp) || p.ramp.length === 0) { FAIL("model", `${p.name} ramp empty`); break; }
   if (!p.ramp[0] || typeof p.ramp[0].hex !== "string" || !/^#[0-9A-Fa-f]{6}/.test(p.ramp[0].hex)) { FAIL("model", `${p.name} ramp swatch has no hex`); break; }
@@ -34,7 +35,7 @@ for (const k of ["css", "oklch", "json", "dtcg", "ui3"]) {
 if (typeof v.exports.css !== "string" || !v.exports.css.includes("--c-")) FAIL("exports", "css missing --c-* semantic vars");
 
 // ── plot + contrast data (the Analysis lens + readout render these) ───────────────────────
-if (!Array.isArray(v.plot) || v.plot.length !== 8) FAIL("model", `plot has ${v.plot && v.plot.length} entries, want 8`);
+if (!Array.isArray(v.plot) || v.plot.length !== DEFAULT_PALETTES) FAIL("model", `plot has ${v.plot && v.plot.length} entries, want ${DEFAULT_PALETTES}`);
 else if (!v.plot[0].points || !v.plot[0].points[0] || !("applied" in v.plot[0].points[0]) || !("ceiling" in v.plot[0].points[0])) FAIL("model", "plot points missing applied/ceiling");
 if (!Array.isArray(v.contrast) || v.contrast.length === 0) FAIL("model", "no contrast data");
 
@@ -141,7 +142,7 @@ for (const g of ["model", "exports", "shell", "oklch-native"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
-console.log(`  (projectView: 8 palettes · ${v.palettes ? v.palettes.reduce((n, p) => n + (p.roles ? p.roles.length : 0), 0) : 0} role tokens · css ${v.exports && v.exports.css ? v.exports.css.length : 0} B)`);
+console.log(`  (projectView: ${DEFAULT_PALETTES} palettes · ${v.palettes ? v.palettes.reduce((n, p) => n + (p.roles ? p.roles.length : 0), 0) : 0} role tokens · css ${v.exports && v.exports.css ? v.exports.css.length : 0} B)`);
 console.log("  note  visual/interaction layer verified by serve + headless boot, not this adapter");
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: ui-app pure core + shell clear the checkable predicates");

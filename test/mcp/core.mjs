@@ -38,7 +38,7 @@ ok(req("prompts/list").result.prompts[0].name === "apply_brand", "prompts/list �
 
 // tools/call — the actual brand data, end to end through handle()
 const pal = callTool("list_palettes", {});
-ok(Array.isArray(pal) && pal.length === 8, "list_palettes → 8 palettes");
+ok(Array.isArray(pal) && pal.length === 16, "list_palettes → 16 palettes");
 const tl = callTool("resolve_token", { role: "primary/primary", scheme: "light" });
 ok(tl.hex === kit.roles.primary.primary.light, `resolve_token primary/primary light matches the kit (${tl.hex})`);
 const ramp = callTool("get_ramp", { palette: "primary" });

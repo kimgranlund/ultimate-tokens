@@ -36,7 +36,7 @@ const callTool = (session, name, args) => JSON.parse(req(session, "tools/call", 
   const toolNames = req(session, "tools/list").result.tools.map((t) => t.name);
   ok(toolNames.includes("list_palettes") && toolNames.includes("generate_kit") && toolNames.includes("export_tokens"), `an initial kit surfaces the read tools immediately alongside the generator tools (got ${toolNames.join()})`);
   const pal = callTool(session, "list_palettes", {});
-  ok(Array.isArray(pal) && pal.length === 8, "the read tools serve the LOADED initial kit correctly");
+  ok(Array.isArray(pal) && pal.length === 16, "the read tools serve the LOADED initial kit correctly");
   const exp = callTool(session, "export_tokens", { format: "css" });
   ok(exp.error, "export_tokens is STILL unavailable for a loaded-kit-only session — no doc exists for it (spec §7)");
 }
