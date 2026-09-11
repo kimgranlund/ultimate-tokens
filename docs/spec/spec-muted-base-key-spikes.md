@@ -1,8 +1,8 @@
 ---
 doc-type: spec
 id: spec-muted-base-key-spikes
-status: approved        # draft | approved | superseded  (0.2.0 approved 2026-09-11 with R1..R5 ratified; supersedes 0.1.0)
-version: 0.2.0
+status: approved        # draft | approved | superseded  (0.3.0 approved 2026-09-11: palette groups + absolute per-group base chroma, #556/#559; supersedes 0.2.0)
+version: 0.3.0
 date: 2026-09-11
 owner: Kim Granlund
 prd: none               # GitHub issues #503 and #533 are the intent records (ADR-017 git-native tickets)
@@ -16,8 +16,11 @@ prime-system re-ruling, Findings 2026-09-11). Companion design: `docs/lld/lld-mu
 
 Version history: 0.1.0 (approved 2026-09-11) put chroma spikes on identity stops of the base ramp.
 0.2.0 (this revision, ratified in principle 2026-09-11 under #533) RETIRES the ramp spike entirely and
-defines the prime swatches as their own token system per palette. The id and file name are kept so
-existing links resolve; the title no longer mentions spikes.
+defines the prime swatches as their own token system per palette. 0.3.0 (ratified 2026-09-11 under
+#556 and the #559 re-ruling) adds user-assignable PALETTE GROUPS (material, brand, system, data) and
+makes the group's Base chroma an ABSOLUTE ramp chroma target shared by every ramp in the group;
+`palette.chroma` feeds only the key colour and the prime system. The id and file name are kept so
+existing links resolve.
 
 Ruled before this SPEC (not reopened here): the 53-role table and `docs/reference/data/role-table.json`
 role list stay frozen; data palettes are full ordinary palettes; data hues derive from the brand
@@ -28,10 +31,18 @@ ladder, their own chroma control, and their own token group; the editor strip re
 
 ## Vocabulary
 
-- **Base intensity** (`baseIntensity`, UI "Base chroma") is a fraction of the palette's own `chroma`
-  control applied to every ramp stop. `chroma` keeps its meaning (the brand's full chroma, % of the
-  hue's peak); base intensity scales what the ramp emits. The ramp is continuous: no stop is treated
-  differently from its neighbours.
+- **Palette group** (`palette.group`, editor-only) is one of `material`, `brand`, `system`, `data`.
+  Defaults by name: `neutral` is material; `primary`, `secondary`, `tertiary` are brand; `info`,
+  `success`, `warning`, `danger` are system; every other palette (data-1..8, user-added,
+  preset-opened) is data. Fully user-assignable. Groups never enter token names, Figma paths, the
+  role table, or MCP output (ratified 2026-09-11, #556).
+- **Base chroma** is the group's ABSOLUTE ramp chroma target, `paletteGroups[g].baseChroma`, in the
+  same `%`-of-peak units `palette.chroma` already used for the ramp. Every ramp in a group is shaped
+  and damped from the same target; `palette.chroma` no longer feeds the ramp at all (ratified
+  2026-09-11, #559 re-ruling, supersedes 0.2.0's multiplier model). The global `baseIntensity`
+  control (UI "Base chroma") survives only as the fallback target for a group with no value.
+- **Palette chroma** (`palette.chroma`, UI "Chroma") now feeds only `deriveKeyColor` and therefore
+  the prime system (the gallery tile and the seven prime swatches). The ramp ignores it.
 - **Prime system** is a per-palette set of seven swatches, `brightest`, `brighter`, `bright`, `prime`,
   `dim`, `dimmer`, `dimmest`, lightest first, computed from the palette's hue and chroma on their own
   lightness ladder, NOT from ramp stops. They are primitives-tier tokens (mode-independent).
@@ -42,43 +53,68 @@ ladder, their own chroma control, and their own token group; the editor strip re
 
 ## Requirements
 
-### R-A. Base intensity (ramp shaping)
+### R-A. Palette groups and base chroma (ramp shaping)
 
-- **REQ-001** `DEFAULT_CONTROLS` carries `baseIntensity` (number, 0..100). A palette may carry an
-  optional `intensity` (0..100) that overrides `baseIntensity` for that palette only, resolved exactly
-  as `palette.intensity ?? controls.baseIntensity`.
-- **REQ-002** The per-stop factor is `I(stop) = b` for EVERY stop, where `b` is the resolved base
-  fraction. It multiplies the palette's chroma fraction before damping on BOTH ramp paths (OKHSL
-  saturation on `perceptual`/`peak`; the intended chroma on `even`), so gamut safety stays with the
-  existing clamps. (0.2.0: the `k` term and the identity-stop set of 0.1.0 are retired; ratified
-  2026-09-11 under #533, supersedes REQ-002/REQ-004 of 0.1.0.)
-- **REQ-003** Legacy invariance: with `baseIntensity = 100` (any `intensity` override of 100 or
-  absent) every emitted stop is byte-identical to the pre-feature engine for every palette, control
-  set, and both ramp paths. The AC-003 fixture is retained.
-- **REQ-004** Retirement of the ramp spike (ratified 2026-09-11 under #533): `identityStops`,
-  `DEFAULT_IDENTITY_STOPS`, the fourth `identityStops` argument of `paletteStops` and
-  `hueAnchorFrac`, the `k` term in `intensityAt`, and `keyIntensity` as a ramp input are removed
-  from the engine. `intensityAt(stop, palette, controls)` returns `b`. The tonal verifier's
-  `intensity-spike` group and the semantic verifier's `identity-stops` gate are retired; the
-  `intensity-legacy` fixture gate stays. No residual "patchy" chroma remains on any ramp at any
-  intensity.
-- **REQ-005** The OKLCH hue anchor (`solveOkhslHue` / `solveCam16Hue` at stop 500) uses the stop-500
-  chroma AFTER base intensity, so the `oklch-hue-anchor` guarantee holds at every intensity.
-- **REQ-006** Every existing tonal gate stays green with its control pin extended by
-  `baseIntensity: 100`. Intensity never perturbs tone.
-- **REQ-007** Product default: `DEFAULT_CONTROLS.baseIntensity = 100` (ratified 2026-09-11, H1). A
-  muted default is a follow-up, not part of this contract.
+- **REQ-001** Each palette carries an optional `group` field in `{material, brand, system, data}`.
+  `paletteGroup(p)` (model) resolves `p.group ?? defaultGroupByName(p.name)` with the defaults in
+  Vocabulary. The document carries `paletteGroups`, an object keyed by group with `{ baseChroma,
+  primeChroma, locked? }`; shipped defaults: material `{30, 60}`, brand `{100, 100}`, system
+  `{100, 100}`, data `{100, 100, locked: true}` (ratified 2026-09-11, #556/#559; the material values
+  may be tuned in a follow-up after a Safari look). `DEFAULT_CONTROLS` keeps `baseIntensity` (0..100,
+  default 100) and `primeChroma` (0..100, default 100) as the global fallbacks.
+- **REQ-002** Ramp chroma target: for palette `p` in group `g`, the chroma value `paletteStops`
+  shapes and damps is `rampChroma(p) = paletteGroups[g].baseChroma ?? controls.baseIntensity`, an
+  absolute target in `%` of the hue's peak, resolved in the model and passed to the engine as the
+  palette's chroma (`paletteStops({ ...p, chroma: rampChroma(p) }, controls, stops)`). It applies
+  on BOTH ramp paths exactly as `palette.chroma` did in 0.2.0; gamut safety stays with the existing
+  clamps. There is no per-palette ramp override in any group: `palette.intensity` is retired and a
+  stored value is ignored on read (ratified 2026-09-11, #559 re-ruling; supersedes 0.2.0's
+  `I(stop) = b` multiplier). `palette.chroma` feeds only `deriveKeyColor` and the prime system.
+- **REQ-003** Byte identity, stated at two levels. Engine level: `paletteStops(palette, controls,
+  stops)` is byte-identical to 0.2.0 for every input (the engine no longer reads `baseIntensity`,
+  and at `baseIntensity 100` the 0.2.0 multiplier was 1); the `intensity-legacy` fixture stays as the
+  proof. Document level: a palette's rendered ramp is byte-identical to 0.2.0 IF AND ONLY IF its
+  `chroma` control equals its resolved `rampChroma`. In the default document that holds for
+  Secondary (100, brand 100), Warning (100, system 100), and every data palette minted at the
+  primary's chroma only when that chroma is 100; Neutral (29 vs 30), Primary (95), Tertiary (33),
+  Info (40), Success (55), Danger (55), and the default data palettes (95) CHANGE by design. Exports,
+  Figma values, and MCP values move with them; names never do.
+- **REQ-004** Engine retirement, extended (0.2.0's spike retirement stands): `intensityAt` and the
+  `baseIntensity` read inside `tonal.js` are removed; `paletteStops` and `hueAnchorFrac` read only
+  `palette.chroma` as before 0.1.0. Resolution of the target lives in `src/ui/model.mjs` and
+  `src/engine/exports.js` `derivePalette` (both call one shared resolver); `tonal.js` and `prime.mjs`
+  stay pure and group-unaware.
+- **REQ-005** The OKLCH hue anchor at stop 500 uses the resolved ramp chroma, so the
+  `oklch-hue-anchor` guarantee holds for every group target.
+- **REQ-006** Every existing tonal gate stays green with no pin change (the engine contract is the
+  0.2.0 one). Chroma targets never perturb tone.
+- **REQ-007** Product defaults: `paletteGroups` as in REQ-001; global `baseIntensity 100`,
+  `primeChroma 100`. A fresh default document renders Neutral visibly muted (ramp at 30, prime at
+  60) and the eight data palettes at equal ramp chroma (100), with Brand and System ramps at 100.
+  (Supersedes H1's "no visual change" for the material and data groups; ratified 2026-09-11.)
+- **REQ-008** Prime chroma resolution: `primeChromaOf(p) = (locked(g) ? undefined : p.primeChroma)
+  ?? paletteGroups[g].primeChroma ?? controls.primeChroma`. The data group is locked: its palettes
+  have no per-palette prime override (a stored value is ignored, not deleted, and comes back when
+  the palette is moved out of data). Fed to `primeSwatches` as `controls.primeChroma` with
+  `palette.primeChroma` cleared, so `prime.mjs` stays unchanged.
+- **REQ-009** Editor grouping: the Color canvas renders palette rows under four headers, Material,
+  Brand, System, Data, in that order, empty groups hidden, each header showing its count;
+  drag-reorder across a header reassigns the group; the inspector has a Group dropdown; "Add data
+  palettes (8)" and the new-palette modal set the default group.
 
 ### R-B. Persistence and migration
 
-- **REQ-010** `persist.js` `DOMAINS` carries `baseIntensity` (0..100, default 100) and `primeChroma`
-  (0..100, default 100); the palette domain carries optional `intensity` and optional `primeChroma`
-  (0..100 each, absent means inherit, clamped only when finite, the `cuspPull` rule). Roundtrip
-  identity and per-field clamp hold.
-- **REQ-011** `CURRENT_SCHEMA_VERSION` becomes 3. Snapshots below 2 stamp `baseIntensity = 100`
-  (unchanged from 0.1.0). Snapshots below 3 rename `keyIntensity` to `primeChroma` (value carried;
-  the old key dropped; a snapshot already carrying `primeChroma` keeps it, the `RENAME_MAPS`
-  never-clobber rule). Answer to Open gap 5; the rename is ratified 2026-09-11 (R4).
+- **REQ-010** `persist.js` `DOMAINS` carries `baseIntensity` (0..100, default 100), `primeChroma`
+  (0..100, default 100), and `paletteGroups` (per group: `baseChroma` 0..100, `primeChroma` 0..100,
+  `locked` boolean; an absent group or field default-fills from REQ-001, the `lmin`/`lmax` precedent);
+  the palette domain carries optional `group` (enum, absent means derive-by-name on read) and
+  optional `primeChroma` (0..100, absent means inherit, clamped only when finite). `intensity` is no
+  longer in the palette domain. Roundtrip identity and per-field clamp hold. The document key is
+  `paletteGroups`, not `groups`: `story.groups` already names the curated story's concept groups.
+- **REQ-011** `CURRENT_SCHEMA_VERSION` becomes 4. Below 2: stamp `baseIntensity 100`. Below 3: rename
+  `keyIntensity` to `primeChroma`. Below 4: delete `palette.intensity` from every palette (reported
+  through `DROPPED_KEYS`) and default-fill `paletteGroups`; `palette.group` is NOT written by the
+  migration (derive-on-read keeps old documents byte-stable on reload except for the dropped key).
 - **REQ-012** Hydrating a pre-v2 snapshot never injects data palettes. Data palettes reach an
   existing document only through the explicit action in REQ-032.
 
@@ -106,10 +142,13 @@ ladder, their own chroma control, and their own token group; the editor strip re
   the current fallback chain; data palettes are excluded from the neutral, primary, and "first
   palette" fallbacks. `ds-export`: data palettes form a `data` tier and DESIGN.md gains a "Data
   series" section.
-- **REQ-032** UI: "Add data palettes (8)" and "Re-derive data hues" actions; the Global tab keeps two
-  adjacent sliders next to Vibrancy, "Base chroma" (`baseIntensity`) and "Prime chroma"
-  (`primeChroma`); the palette inspector carries "Intensity" (`palette.intensity`) and "Prime chroma"
-  (`palette.primeChroma`) override sliders next to Cusp pull. Defaults stay 100.
+- **REQ-032** UI: "Add data palettes (8)" and "Re-derive data hues" actions; the Global tab keeps
+  "Base chroma" (`baseIntensity`, the fallback target) and "Prime chroma" (`primeChroma`) next to
+  Vibrancy, and beneath them a per-group row for Material, Brand, System, Data with two sliders each
+  writing `paletteGroups[g].baseChroma` / `.primeChroma`; the palette inspector keeps "Chroma"
+  (`palette.chroma`, now labelled as feeding the key colour and prime system), gains a Group
+  dropdown, carries "Prime chroma" (`palette.primeChroma`) next to Cusp pull for every group except
+  Data, and no longer carries an "Intensity" slider (ratified 2026-09-11, #556/#559).
 - **REQ-033** Figma: binding plan 53 x 16 = 848 role targets; Color Primitives 16 x 36 = 576
   variables; the new prime collection (REQ-054) 16 x 7 = 112 variables; all under the 5,000 per
   collection ceiling; the role collection's mode count (2) is unchanged.
@@ -203,6 +242,10 @@ ladder, their own chroma control, and their own token group; the editor strip re
   `refs-canonical` gate and the binder mirror stay at 53. Roles do NOT alias prime tokens this round
   (a later round may re-point `{n}`/Dim/Bright to the prime group; it needs its own SPEC).
 - No chroma spike on the base ramp of any kind; no identity-stop set; the ramp is continuous.
+- No per-palette ramp chroma in any group (0.3.0): ramps in a group are chroma peers by
+  construction; `palette.chroma` shapes the key colour and prime system only.
+- Groups never enter token names, CSS variables, Figma paths or folders, the role table, the DS
+  bundle grammar, or MCP output; they are an editor concept (a separate ticket if ever wanted).
 - No per-scheme prime ladder (ratified, R2); no Light/Dark mode on the prime collection.
 - No prime tokens in ShadCN (fixed contract) and no new export FORMAT (the group rides the eight).
 - No change to Typography or Geometry.
@@ -212,14 +255,18 @@ ladder, their own chroma control, and their own token group; the editor strip re
 
 ## Examples
 
-- **EX-1 (NORMATIVE, legacy invariance).** Default Primary (`hue 267 OKLCH, chroma 95`), default
-  controls with `baseIntensity 100`: every stop of the 25-stop export ramp equals the pre-feature
-  engine output byte for byte, and `primeChroma` has no effect on any ramp stop.
-- **EX-2 (NORMATIVE, muted ramp).** Same palette, `baseIntensity 40`: every stop emits at the chroma
-  fraction `0.95 * 0.40 * m(stop)` before the gamut clamp; no stop is exempt. Tones are identical to
-  EX-1. (Supersedes 0.1.0's EX-2/EX-3.)
-- **EX-3 (NORMATIVE, override).** As EX-2 but Warning carries `intensity 100`: Warning's ramp equals
-  its EX-1 ramp; Primary is unchanged from EX-2.
+- **EX-1 (NORMATIVE, engine identity).** `paletteStops({hue: 267, chroma: 95, skew: -20, lift: 0},
+  DEFAULT_CONTROLS, EXPORT_STOPS)` equals the 0.2.0 output byte for byte, and neither `baseIntensity`
+  nor `primeChroma` nor any group value has any effect on it.
+- **EX-2 (NORMATIVE, group target).** Default document, brand `baseChroma 100`: Primary's ramp equals
+  `paletteStops({hue: 267, chroma: 100, skew: -20, lift: 0}, ...)`, not the `chroma 95` ramp; its
+  prime system and gallery tile are still computed at `chroma 95`. Secondary (`chroma 100`) is
+  byte-identical to 0.2.0. Material `baseChroma 30`: Neutral's ramp is the `chroma 30` ramp.
+- **EX-3 (NORMATIVE, group edit and fallback).** Set brand `baseChroma 60`: Primary, Secondary, and
+  Tertiary ramps all become their `chroma 60` ramps; System palettes are unchanged. Delete brand's
+  `baseChroma` (absent): those three ramps follow the global `baseIntensity` (100 by default). A
+  stored `palette.intensity 100` on Tertiary changes nothing. Move Tertiary to the Data group: its
+  ramp becomes the data target and its stored `primeChroma` override is ignored until moved back.
 - **EX-4 (NORMATIVE, prime ladder).** Primary at `skew 0` (a probe; the default Primary carries
   `skew -20`, see EX-4b), `hueSpace "cam16"` with `role-table.json`'s raw pair (`hue 267, chroma 95`),
   `primeChroma 100`. Engine-regenerated 2026-09-11 (#537): `l_prime = 0.528528`, `s = 0.965345` (the
@@ -250,38 +297,64 @@ ladder, their own chroma control, and their own token group; the editor strip re
   `view.palettes[i].prime[k].hex`. Nothing in the strip changes with the scheme toggle.
 - **EX-9 (NORMATIVE, migration).** Snapshot `{schemaVersion: 2, keyIntensity: 70}` hydrates to
   `primeChroma 70` with no `keyIntensity` key. Snapshot `{schemaVersion: 1}` hydrates to
-  `baseIntensity 100, primeChroma 100`.
+  `baseIntensity 100, primeChroma 100`. Snapshot `{schemaVersion: 3, palettes: [{name: "Primary",
+  intensity: 40, ...}]}` hydrates with no `intensity` key on Primary, `DROPPED_KEYS` naming it, and
+  `paletteGroups` filled with the REQ-001 defaults; `palettes[i].group` stays absent.
+- **EX-12 (NORMATIVE, grouping).** `defaultDocument()`: Neutral is material; Primary, Secondary,
+  Tertiary are brand; Info, Success, Warning, Danger are system; Data 1..8 are data. The canvas shows
+  the four headers with counts 1, 3, 4, 8. A user-added "Accent" palette lands in data; choosing
+  brand in its Group dropdown moves it under Brand and its ramp to the brand target.
 - **EX-10 (NORMATIVE, data hues).** Unchanged from 0.1.0 EX-5.
 - **EX-11 (NORMATIVE, shadcn).** Unchanged from 0.1.0 EX-7 (chart-1..5 from data-1..5).
 
 ## Acceptance
 
 - **AC-001** `DEFAULT_CONTROLS` has `baseIntensity` and `primeChroma`, no `keyIntensity`;
-  `paletteStops` honours `palette.intensity` over `controls.baseIntensity`.
-- **AC-002** For a probe palette below the gamut ceiling, measured stop chroma at EVERY stop divided
-  by chroma at `baseIntensity 100` equals `b` within 2% of peak; both ramp paths; the ratio has zero
-  dependence on `primeChroma` and on `accentRef`.
-- **AC-003** Byte-diff fixture gate at `baseIntensity 100` (retained from 0.1.0).
-- **AC-004** `paletteStops.length === 3` (no fourth parameter); `tonal.js` and `semantic.js` export
-  no `identityStops` or `DEFAULT_IDENTITY_STOPS`; `git grep -n "identityStops\|keyIntensity" src
-  test` returns nothing outside `RENAME_MAPS` and its test.
-- **AC-005** `oklch-hue-anchor` gate passes at `baseIntensity` in `{20, 45, 100}`.
-- **AC-006** The full tonal verifier passes with its pin extended by `baseIntensity: 100`; tones
-  equal within 1e-9 across intensities.
-- **AC-007** `DEFAULT_CONTROLS.baseIntensity === 100 && primeChroma === 100`.
+  `defaultDocument().paletteGroups` deep-equals the REQ-001 defaults; `paletteGroup(p)` returns the
+  by-name defaults for all 16 default palettes and honours an explicit `p.group`.
+- **AC-002** `rampChroma(p)` equals `paletteGroups[g].baseChroma` when present, else
+  `controls.baseIntensity`; it ignores `palette.chroma` and `palette.intensity` (a probe with
+  `chroma 10, intensity 100` in a group at 60 renders the `chroma 60` ramp on both ramp paths).
+- **AC-003** Two fixtures. (a) Engine: `test/engine/fixtures/tonal-legacy.json` retained, compared
+  byte for byte by `test/engine/tonal.mjs` (`intensity-legacy`), regenerated only by hand. (b)
+  Document: a new `test/ui/fixtures/default-doc-ramps.json` holding `projectView(defaultDocument())`'s
+  25-stop hex per palette at the ratified `paletteGroups` defaults, compared byte for byte by
+  `test/ui/shell.mjs`, regenerated only by `node scripts/gen-ramp-fixture.mjs` (never by `npm test`;
+  the #559 builder generates it once the resolver lands). The same gate also asserts the REQ-003
+  identity rule live: for every default palette whose `chroma` equals its `rampChroma`, the fixture
+  row equals `paletteStops(p, controls, EXPORT_STOPS)` computed with `p.chroma`; for every other
+  default palette it differs.
+- **AC-004** `tonal.js` exports no `intensityAt` and never reads `baseIntensity` or `intensity`
+  (`git grep -n "intensityAt\|baseIntensity\|\.intensity\b" src/engine` returns nothing); `git grep
+  -n "identityStops\|keyIntensity" src test` returns nothing outside `RENAME_MAPS` and its test.
+- **AC-005** `oklch-hue-anchor` gate passes with `rampChroma` in `{20, 45, 100}` passed as chroma.
+- **AC-006** The full tonal verifier passes with its 0.2.0 pin unchanged; tones equal within 1e-9
+  across group targets.
+- **AC-007** `DEFAULT_CONTROLS.baseIntensity === 100 && primeChroma === 100`; in
+  `projectView(defaultDocument())` Neutral's ramp equals its `chroma 30` ramp and the eight data
+  palettes' ramps all equal their `chroma 100` ramps.
+- **AC-008** `primeChromaOf`: a brand palette's override wins over its group default; a data
+  palette's stored override is ignored and its group default applies; moving it to brand restores
+  the override; the material default 60 reaches Neutral's `prime` (its `s` is `key.s * 0.6`).
+- **AC-009** Headless-boot: four headers in order with counts 1, 3, 4, 8 on the default document;
+  empty groups hidden; the Group dropdown moves a palette between headers; drag-reorder across a
+  header reassigns the group; the new-palette modal and "Add data palettes (8)" assign the default
+  group.
 - **AC-010** `test/ui/persist.mjs` roundtrip and clamp groups cover `baseIntensity`, `primeChroma`,
-  `palette.intensity`, `palette.primeChroma`.
-- **AC-011** EX-9 both halves as hydrate assertions; `CURRENT_SCHEMA_VERSION === 3`.
+  `paletteGroups` (per-field clamp, absent default-fill), `palette.group` (enum clamp, absent stays
+  absent), `palette.primeChroma`; `palette.intensity` is dropped and reported.
+- **AC-011** EX-9 all three snapshots as hydrate assertions; `CURRENT_SCHEMA_VERSION === 4`.
 - **AC-012** Hydrating a v1 snapshot with 8 palettes yields exactly 8 palettes.
 - **AC-020..024** Unchanged from 0.1.0 (data hues, minting, defaults 16).
 - **AC-030** `hpg-export-leaf-valid` passes with `enabledCount` 16; `tokenCount(defaultDocument())
   === 16 * 96`.
 - **AC-031** EX-11; shadcn neutral and primary picks unchanged; DS semantic layer `53 * 16`; DESIGN.md
   has the data section and the prime section.
-- **AC-032** Headless-boot: "Base chroma" and "Prime chroma" sliders exist on the Global tab, are
-  adjacent, and write `doc.baseIntensity` / `doc.primeChroma`; the per-palette "Intensity" and "Prime
-  chroma" sliders write `palettes[i].intensity` / `palettes[i].primeChroma`; the two data actions
-  behave as in 0.1.0.
+- **AC-032** Headless-boot: "Base chroma" and "Prime chroma" sliders exist on the Global tab and
+  write `doc.baseIntensity` / `doc.primeChroma`; four per-group rows with two sliders each write
+  `doc.paletteGroups[g].baseChroma` / `.primeChroma`; the inspector has no "Intensity" slider, shows
+  "Prime chroma" for a brand palette and hides it for a data palette, and its "Chroma" slider changes
+  the prime strip but not the ramp; the two data actions behave as in 0.1.0.
 - **AC-033** Binder plan `53 * 16`; plugin cascade green; the `collparity` gate covers
   `COLLECTIONS.colorPrime` against both sandbox literals.
 - **AC-034** Headless-boot: every enabled ramp row has a `.prime-strip` (seven `.prime-swatch`; the
@@ -331,8 +404,10 @@ ladder, their own chroma control, and their own token group; the editor strip re
 
 ## Agent verification
 
-- AC-001..007: `node test/engine/tonal.mjs` (`intensity-legacy` fixture group retained; `intensity-spike`
-  removed; a new `intensity-uniform` group for AC-002/AC-004). AC-004's grep runs in the same script.
+- AC-001..003(a), AC-004..006: `node test/engine/tonal.mjs` (`intensity-legacy` fixture retained; the
+  0.2.0 `intensity-uniform` group is retired with `intensityAt`). AC-004's greps run in the same script.
+- AC-002, AC-003(b), AC-007, AC-008: `node test/ui/shell.mjs` (resolver gates, the document fixture,
+  the live identity rule). AC-009, AC-032: the headless shim lettered group.
 - AC-010..012: `node test/ui/persist.mjs`.
 - AC-020..024: `node test/engine/data-hues.mjs`, `node test/ui/shell.mjs`.
 - AC-030..034: `node test/engine/exports.mjs`, `node test/figma/binder.mjs`, `node test/figma/plugin.mjs`,
@@ -378,3 +453,16 @@ Ratified 2026-09-11 (R1, R3, R4, R5; team-lead relaying the owner). 0.2.0 is app
 - **R5** (changed from the proposed default) `hueShift` applies AND `skew` applies as a gamma on
   ladder position with `prime` and the ends fixed (REQ-053, REQ-053a); `lift`, damping, vibrancy,
   cusp pull do not apply.
+
+Ratified 2026-09-11 for 0.3.0 (#556, #559 and its re-ruling; team-lead relaying the owner):
+- **G1** Palette groups material / brand / system / data, user-assignable, editor-only (REQ-001,
+  REQ-009).
+- **G2** The group's Base chroma is an absolute ramp chroma target shared by every ramp in the group;
+  `palette.chroma` feeds only the key colour and prime system; per-palette ramp override removed for
+  all groups; defaults material 30, brand 100, system 100, data 100; global Base chroma is the
+  fallback (REQ-002, REQ-007).
+- **G3** Prime chroma: group default plus per-palette override, Data locked (REQ-008); material
+  default 60.
+- **G4** Byte identity re-pinned at two levels and AC-003 replaced by the engine fixture plus a
+  regenerable document fixture (REQ-003, AC-003).
+- Open, follow-up only: the material 30/60 values may be tuned after a Safari look (#559 Open 2).
