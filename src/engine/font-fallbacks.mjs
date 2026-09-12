@@ -41,6 +41,150 @@ export const FONT_FALLBACKS = {
   "Linotype Clarendon": "Clarendon URW",
   "Trade Gothic": "Oswald",
   "Trajan Pro": "Cinzel",
+
+  // TKT-451 — corpus-wide sweep, batch 2. Grouped by lineage/character, not foundry, since most
+  // remaining premium names are grotesque/geometric/serif REVIVALS rather than one shop's catalog.
+
+  // Grotesques & signage faces (Berthold/Linotype/Monotype/Font Bureau/ATF lineage)
+  "Akzidenz-Grotesk": "Archivo",
+  "Univers": "Work Sans",
+  "Frutiger": "PT Sans",
+  "Neue Haas Grotesk": "Inter",
+  "Neue Haas Grotesk Display": "Inter",
+  "Neue Haas Grotesk Text": "Inter",
+  "Helvetica Now Text": "Inter",
+  "News Gothic": "Public Sans",
+  "News Gothic Std": "Public Sans",
+  "News Gothic Nova": "Public Sans",
+  "Interstate": "Archivo",
+  "FF DIN": "Oswald",
+  "DIN 1451 Mittelschrift": "Big Shoulders Display",
+  "Highway Gothic": "Big Shoulders Display",
+  "Trade Gothic Bold Condensed": "Archivo Narrow",
+  "Trade Gothic Bold Condensed No. 20": "Archivo Narrow",
+  "ATF Alternate Gothic Condensed": "Oswald",
+  "Compacta": "Bebas Neue",
+  "Eurostile Next": "Rajdhani",
+  "Eurostile Bold Extended No. 2": "Rajdhani",
+  "Copperplate Gothic": "Cinzel",
+
+  // Geometric sans (Futura/Bauhaus lineage)
+  "Futura": "Jost",
+  "Futura PT": "Jost",
+  "Futura PT Condensed": "Oswald",
+  "Architype Bayer": "Jost",
+  "Verlag": "Poppins",
+  "Gotham": "Poppins",
+  "ITC Avant Garde Gothic": "Poppins",
+  "Neutraface 2 Display": "Jost",
+  "Marianne": "Work Sans",
+
+  // Humanist sans & contemporary neutral grotesques
+  "Gill Sans Nova": "Public Sans",
+  "Optima": "Nunito",
+  "Optima nova": "Nunito",
+  "FF Meta": "Fira Sans",
+  "Cronos": "PT Sans",
+  "Untitled Sans": "Inter",
+  "Satoshi": "Inter",
+  "ITC Officina Sans": "IBM Plex Sans",
+  "Forma DJR": "Inter",
+  "Forma DJR Text": "Inter",
+  "Forma DJR Micro": "Inter",
+  "Clash Display": "Space Grotesk",
+
+  // Licensed system/OS fonts (Linotype/Monotype originals bundled with Windows/macOS but not
+  // servable from the Google Fonts CDN) — same grotesque-lineage precedent as Helvetica Now Text/
+  // Neue Haas Grotesk above for the sans pair; the two serifs use Google's own purpose-built
+  // metric-compatible replacements rather than a generic pick.
+  "Helvetica": "Inter",
+  "Helvetica Neue": "Inter",
+  "Times New Roman": "Tinos",
+  "Georgia": "Gelasio",
+
+  // Garamond/old-style-lineage serifs
+  "Sabon": "EB Garamond",
+  "Adobe Jenson": "EB Garamond",
+  "Adobe Caslon Pro": "EB Garamond",
+  "Adobe Garamond Pro": "EB Garamond",
+  "Adobe Garamond": "EB Garamond",
+  "ITC Garamond": "EB Garamond",
+  "Bembo Book": "EB Garamond",
+  "Fournier": "EB Garamond",
+  "Williams Caslon Text": "EB Garamond",
+  "Caslon Antique": "EB Garamond",
+  "Cochin": "Cormorant",
+  "Perpetua": "Cormorant",
+
+  // Transitional / text serifs
+  "Miller Text": "Source Serif 4",
+  "New Caledonia": "Lora",
+  "Charter": "PT Serif",
+  "Plantin": "PT Serif",
+  "Bell MT": "Libre Baskerville",
+  "Iowan Old Style": "Source Serif 4",
+  "Freight Text": "Lora",
+
+  // Slab serifs
+  "Sentinel": "Roboto Slab",
+  "FF Tisa": "Bitter",
+  "Century Schoolbook": "Bitter",
+  "Bookman Old Style": "Bitter",
+  "Rockwell": "Roboto Slab",
+  "Serifa": "Zilla Slab",
+  "Chaparral": "Bitter",
+  "Clarendon": "Roboto Slab",
+  "URW Clarendon": "Rokkitt",
+  "Archer": "Zilla Slab",
+  "National Park": "Bevan",
+
+  // Didone / high-contrast display serifs
+  "Didot": "Playfair Display",
+  "Bauer Bodoni": "Bodoni Moda",
+  "Kazimir": "Playfair Display",
+
+  // ITC display-serif oddities
+  "ITC Serif Gothic": "Cinzel",
+  "ITC Cheltenham": "PT Serif",
+  "Cheltenham": "PT Serif",
+  "ITC Benguiat": "Prata",
+
+  // Script / decorative / wood-type / blackletter / novelty display
+  "Kaufmann": "Pacifico",
+  "Rosewood Std": "Rye",
+  "Arnold Boecklin": "Fascinate",
+  "Fette Fraktur": "UnifrakturCook",
+  "Goudy Text": "UnifrakturMaguntia",
+  "Goudy Text MT Lombardic Capitals": "UnifrakturMaguntia",
+  "Windsor": "Yeseva One",
+  "Aachen": "Alfa Slab One",
+  "Broadway": "Bungee",
+  "Broadway Engraved": "Bungee",
+  "Broadway Condensed": "Bungee",
+  "Cooper Black": "Fraunces",
+  "Cooper BT": "Fraunces",
+  "Cooper Std": "Fraunces",
+  "Data 70": "Orbitron",
+
+  // Druk family (Commercial Type) — ultra-bold condensed display
+  "Druk": "Anton",
+  "Druk Text": "Anton",
+  "Druk Condensed": "Anton",
+
+  // Typewriter / OCR / monospace
+  "Courier Std": "Courier Prime",
+  "Prestige Elite Std": "Courier Prime",
+  "OCR-B Std": "Fragment Mono",
+  "OCR-A Std": "Fragment Mono",
+  "OCR-B": "Fragment Mono",
+  "FF Trixie": "Special Elite",
+
+  // Trajan Pro's newer Adobe revision — same fallback as the base cut already above
+  "Trajan Pro 3": "Cinzel",
+
+  // Burger King "Flame" identity — an in-house commissioned brand face, never licensable
+  "Flame": "Alfa Slab One",
+  "Flame Sans": "Poppins",
 };
 
 // FONT_FALLBACKS_BY_ROLE — role-aware refinements over the family-keyed table (2026-08-14, at
