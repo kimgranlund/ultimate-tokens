@@ -382,6 +382,18 @@ for (const slug of CATS) {
   mustThrow({ brand: { baseChroma: "forty", primeChroma: 40 } }, "brand.baseChroma", "bad-basechroma");
   // non-numeric primeChroma, same contract.
   mustThrow({ brand: { baseChroma: 40, primeChroma: "forty" } }, "brand.primeChroma", "bad-primechroma");
+  // out-of-range baseChroma (above the documented max) must fail loudly, naming the value + range —
+  // typeof-only checking would silently accept this and let hydrate() floor/ceil it later (#617/#619/#620
+  // review follow-up: same silent-typo-becomes-wrong-value hazard, moved from "wrong type" to "out of range").
+  mustThrow({ brand: { baseChroma: 500, primeChroma: 40 } }, "brand.baseChroma", "bad-basechroma-above-max");
+  mustThrow({ brand: { baseChroma: 500, primeChroma: 40 } }, "out of range", "bad-basechroma-above-max-range");
+  // out-of-range baseChroma (below the documented min) must fail loudly the same way.
+  mustThrow({ brand: { baseChroma: -1, primeChroma: 40 } }, "brand.baseChroma", "bad-basechroma-below-min");
+  mustThrow({ brand: { baseChroma: -1, primeChroma: 40 } }, "out of range", "bad-basechroma-below-min-range");
+  // a non-object group value (a string/array where an object belongs) must fail loudly rather than
+  // silently falling through to the group's plain defaults.
+  mustThrow({ brand: "not-an-object" }, "brand", "bad-group-shape-string");
+  mustThrow({ brand: [40, 40] }, "brand", "bad-group-shape-array");
   // a VALID override across all four groups must still pass through fine — no regression.
   const okDoc = makeGroupsDoc({
     material: { baseChroma: 20, primeChroma: 30 },

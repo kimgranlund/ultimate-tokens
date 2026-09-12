@@ -38,7 +38,7 @@ import { toneAt, DEFAULT_CONTROLS } from "../src/engine/tonal.js";
 import { deriveNeutral } from "../src/engine/derive.mjs";
 import { seedFromKeyColor } from "../src/ui/model.mjs";
 import { siblingWeightDefaults, bodyClassSiblingDefaults, BODY_CLASS_VOICES } from "../src/engine/type.mjs";
-import { PALETTE_GROUPS } from "../src/ui/persist.js";
+import { PALETTE_GROUPS, DOMAINS } from "../src/ui/persist.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SRCDIR = resolve(here, "../docs/reference/colors/categories");
@@ -355,21 +355,33 @@ export function buildCategory(doc) {
       const geomCfg = p.geometry && typeof p.geometry === "object" ? p.geometry : null;
       // per-preset PALETTE GROUPS config (#617) — see the comment above CURVE_OVERRIDE_KEYS's declaration.
       const groupsCfg = p.paletteGroups && typeof p.paletteGroups === "object" ? p.paletteGroups : null;
-      // PALETTE-GROUPS AUTHORING TRIPWIRE (#617 review follow-up): `clampPaletteGroups` (persist.js) is
-      // a defensive, SILENT last-resort clamp for a live document — an unrecognized group key is simply
-      // never iterated (dropped with no warning) and a non-numeric baseChroma/primeChroma quietly falls
-      // back to that field's domain MINIMUM (clampNumber's non-finite branch). That's the right behavior
-      // for a live doc, but it means a curated category JSON's typo (a misspelled group name, or a string
-      // where a number belongs) would bake silently into the committed src/ui/categories/*.js output with
-      // zero signal — same class of hazard as the retired type.slots/type.faces shape above. Fail the
-      // GENERATOR loudly instead, same style as that tripwire, naming the bad file/key/value.
+      // PALETTE-GROUPS AUTHORING TRIPWIRE (#617 review follow-up, extended #617/#619/#620 fold-in):
+      // `clampPaletteGroups` (persist.js) is a defensive, SILENT last-resort clamp for a live document —
+      // an unrecognized group key is simply never iterated (dropped with no warning), a non-numeric
+      // baseChroma/primeChroma quietly falls back to that field's domain MINIMUM (clampNumber's
+      // non-finite branch), an OUT-OF-RANGE number is silently floored/ceiled to the nearest valid bound,
+      // and a non-object group value (a string/array where an object belongs) falls through to the
+      // group's plain defaults. That's the right behavior for a live doc, but it means a curated category
+      // JSON's typo (a misspelled group name, a string where a number belongs, a fitted value outside the
+      // documented range, or a malformed group entry) would bake silently into the committed
+      // src/ui/categories/*.js output with zero signal — same class of hazard as the retired
+      // type.slots/type.faces shape above. Fail the GENERATOR loudly instead, same style as that
+      // tripwire, naming the bad doc/palette/group/field/value. The range/shape checks below read
+      // DOMAINS.paletteGroups (persist.js) so this can never drift from the actual hydrate() clamp bounds.
       if (groupsCfg) {
         for (const [key, val] of Object.entries(groupsCfg)) {
           if (!PALETTE_GROUPS.includes(key))
             throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups has unrecognized group key "${key}" (expected one of ${PALETTE_GROUPS.join(", ")})`);
+          if (val === null || typeof val !== "object" || Array.isArray(val))
+            throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups.${key} must be an object (got ${JSON.stringify(val)})`);
           for (const field of ["baseChroma", "primeChroma"]) {
-            if (val && typeof val === "object" && field in val && typeof val[field] !== "number")
-              throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups.${key}.${field} is not a number (got ${JSON.stringify(val[field])})`);
+            if (!(field in val)) continue;
+            const value = val[field];
+            if (typeof value !== "number")
+              throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups.${key}.${field} is not a number (got ${JSON.stringify(value)})`);
+            const { min, max } = DOMAINS.paletteGroups[key][field];
+            if (value < min || value > max)
+              throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups.${key}.${field} is out of range: ${value} (valid range ${min}-${max})`);
           }
         }
       }
