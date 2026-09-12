@@ -93,6 +93,15 @@ export const FONT_FALLBACKS = {
   "Forma DJR Micro": "Inter",
   "Clash Display": "Space Grotesk",
 
+  // Licensed system/OS fonts (Linotype/Monotype originals bundled with Windows/macOS but not
+  // servable from the Google Fonts CDN) — same grotesque-lineage precedent as Helvetica Now Text/
+  // Neue Haas Grotesk above for the sans pair; the two serifs use Google's own purpose-built
+  // metric-compatible replacements rather than a generic pick.
+  "Helvetica": "Inter",
+  "Helvetica Neue": "Inter",
+  "Times New Roman": "Tinos",
+  "Georgia": "Gelasio",
+
   // Garamond/old-style-lineage serifs
   "Sabon": "EB Garamond",
   "Adobe Jenson": "EB Garamond",
@@ -125,7 +134,7 @@ export const FONT_FALLBACKS = {
   "Serifa": "Zilla Slab",
   "Chaparral": "Bitter",
   "Clarendon": "Roboto Slab",
-  "URW Clarendon": "Clarendon URW",
+  "URW Clarendon": "Rokkitt",
   "Archer": "Zilla Slab",
   "National Park": "Bevan",
 
