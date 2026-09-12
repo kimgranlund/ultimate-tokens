@@ -182,6 +182,15 @@ const CURVE_OVERRIDE_KEYS = ["damp", "dampCurve", "dampAmp", "dampBias"];
 // own. A preset with no `geometry` key is byte-identical to before this was added — same "opt-in,
 // no-op by default" contract as CURVE_OVERRIDE_KEYS and the `type.fonts` pass-through below.
 
+// per-entry PALETTE GROUPS config (#617) — opt-in, mirrors `geometry`'s pass-through exactly (no
+// register-mapping layer needed: `paletteGroups`' shape — { material:{baseChroma,primeChroma},
+// brand:{...}, system:{...}, data:{baseChroma,primeChroma,locked} } — is already the engine/persist
+// shape, SPEC/LLD 0.3.0 REQ-001/010). A spec palette may carry a `paletteGroups` object that passes
+// straight through to the generated preset verbatim; opening the preset (openConfigAsSet -> hydrate ->
+// clampPaletteGroups) re-validates/clamps/default-fills it the same as any other doc.paletteGroups, so
+// gen-time does no sanitizing of its own. A preset with no `paletteGroups` key is byte-identical to
+// before this was added — same "opt-in, no-op by default" contract as CURVE_OVERRIDE_KEYS/`geometry`.
+
 // ── per-palette TYPOGRAPHY: map a spec palette's REGISTER declaration (its optional `type`) to an
 // engine typeScale config { treatment, bodyBase?, fonts, voices }. Registers are the intended-use
 // canon's Layer 3 (docs/reference/typography/intended-use.md): a story/brand's tone tiers mapped
@@ -304,7 +313,10 @@ function registersToTypeConfig(t) {
 }
 
 // ── build one category → { volumes, presets, strip } ─────────────────────────────────────────────
-function buildCategory(doc) {
+// exported (not just called below) so test/engine/categories.mjs can run the REAL generator logic
+// against a synthetic doc — e.g. to prove the paletteGroups opt-in (#617) actually discriminates
+// output, without writing a fitted value into any real curated category (that's #618's job).
+export function buildCategory(doc) {
   const volumes = {}, presets = [], strip = [];
   for (const v of doc.volumes || []) {
     const vol = v.roman;
@@ -340,6 +352,8 @@ function buildCategory(doc) {
       for (const k of CURVE_OVERRIDE_KEYS) if (p[k] !== undefined) curveOverrides[k] = p[k];
       // per-preset GEOMETRY config (#485) — see the comment above CURVE_OVERRIDE_KEYS's declaration.
       const geomCfg = p.geometry && typeof p.geometry === "object" ? p.geometry : null;
+      // per-preset PALETTE GROUPS config (#617) — see the comment above CURVE_OVERRIDE_KEYS's declaration.
+      const groupsCfg = p.paletteGroups && typeof p.paletteGroups === "object" ? p.paletteGroups : null;
       presets.push({
         // the tile/set name is the KICKER (a clean structured label, e.g. "59° N · January · Lake
         // Baikal corridor"); the long evocative `title` lives in story.title (Story tab + per-color line).
@@ -362,6 +376,12 @@ function buildCategory(doc) {
         // the opened doc's every export. Absent when the spec palette has no `geometry` (falls back to
         // the global default ramp — the identity gate every other preset still gets).
         ...(geomCfg ? { geometry: geomCfg } : {}),
+        // per-preset PALETTE GROUPS (#617) — same opening path (openConfigAsSet -> hydrate ->
+        // clampPaletteGroups) carries this palette's group baseChroma/primeChroma/locked dial into the
+        // opened doc, so a curated preset can reproduce a real document's group-level tuning instead of
+        // silently losing it. Absent when the spec palette has no `paletteGroups` (falls back to the
+        // global GROUP_DEFAULTS every other preset still gets).
+        ...(groupsCfg ? { paletteGroups: groupsCfg } : {}),
         // neutral first (derived from the character palettes' key colors), then the named families —
         // unless `direct` supplies the full array itself (verbatim, in its own authored order).
         palettes: direct || (() => { const pals = mapColors(p.swatches || []); return [deriveNeutralPalette(pals), ...pals]; })(),
@@ -372,6 +392,10 @@ function buildCategory(doc) {
 }
 
 // ── emit ──────────────────────────────────────────────────────────────────────────────────────
+// guarded so this module can be IMPORTED (for `buildCategory` above) without the side effect of
+// re-running the whole generation — only fires when run directly (`node scripts/gen-categories.mjs`
+// / `npm run gen:categories`), same behavior as before this guard was added.
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
 const files = readdirSync(SRCDIR).filter((f) => f.endsWith(".json")).sort();
 mkdirSync(OUTDIR, { recursive: true });
 const index = [];
@@ -404,3 +428,4 @@ const idx =
   "export const loadCategory = (slug) => (LOADERS[slug] ? LOADERS[slug]() : Promise.resolve(null));\n";
 writeFileSync(resolve(OUTDIR, "index.js"), idx);
 console.log(`wrote ${OUTDIR}/index.js  (${index.length} categories · ${index.reduce((a, c) => a + c.count, 0)} palettes total)`);
+}
