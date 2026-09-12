@@ -341,12 +341,67 @@ for (const slug of CATS) {
   if (cWith === cWithout) FAIL("groups", "the paletteGroups schema slot does not discriminate — with/without overrides resolved to the same ramp chroma");
 }
 
+// (groups-validate) #617 review follow-up: the GENERATOR itself must fail loudly on an authoring
+// mistake in a curated category JSON's `paletteGroups` block — an unrecognized group key, or a
+// non-numeric baseChroma/primeChroma — rather than letting it through to be silently dropped/clamped
+// by persist.js's clampPaletteGroups at OPEN time (a live doc's clamp-and-move-on is a distinct,
+// legitimate use case; a curated category JSON baked into committed src/ui/categories/*.js is not).
+// Reuses the same synthetic-fixture shape as (groups-discriminate) above.
+{
+  const makeGroupsDoc = (paletteGroups) => ({
+    slug: "synthetic-groups-validate-fixture",
+    volumes: [{
+      roman: "I",
+      h1: "Synthetic",
+      preface: [],
+      palettes: [{
+        kicker: "Synthetic",
+        title: "Synthetic",
+        source: "",
+        refuses: "",
+        hierarchy: {},
+        dominantHex: "#335577",
+        palettes: [{ name: "Primary", hue: 250, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: "brand" }],
+        paletteGroups,
+      }],
+    }],
+  });
+  const mustThrow = (paletteGroups, wantSubstr, label) => {
+    try {
+      buildCategory(makeGroupsDoc(paletteGroups));
+      FAIL("groups-validate", `${label}: buildCategory did not throw for ${JSON.stringify(paletteGroups)}`);
+    } catch (e) {
+      if (!(e instanceof Error) || !e.message.includes(wantSubstr))
+        FAIL("groups-validate", `${label}: threw, but message ${JSON.stringify(e && e.message)} did not name ${JSON.stringify(wantSubstr)}`);
+    }
+  };
+  // unrecognized group key (a misspelled group name) must fail loudly, naming the doc + bad key.
+  mustThrow({ brnad: { baseChroma: 40, primeChroma: 40 } }, "brnad", "bad-key");
+  mustThrow({ brnad: { baseChroma: 40, primeChroma: 40 } }, "synthetic-groups-validate-fixture", "bad-key-names-doc");
+  // non-numeric baseChroma (a string typo'd where a number belongs) must fail loudly, naming the field.
+  mustThrow({ brand: { baseChroma: "forty", primeChroma: 40 } }, "brand.baseChroma", "bad-basechroma");
+  // non-numeric primeChroma, same contract.
+  mustThrow({ brand: { baseChroma: 40, primeChroma: "forty" } }, "brand.primeChroma", "bad-primechroma");
+  // a VALID override across all four groups must still pass through fine — no regression.
+  const okDoc = makeGroupsDoc({
+    material: { baseChroma: 20, primeChroma: 30 },
+    brand: { baseChroma: 40, primeChroma: 50 },
+    system: { baseChroma: 60, primeChroma: 70 },
+    data: { baseChroma: 80, primeChroma: 90 },
+  });
+  let okResult;
+  try { okResult = buildCategory(okDoc); }
+  catch (e) { FAIL("groups-validate", `a valid paletteGroups override should not throw, but got: ${e && e.message}`); }
+  if (okResult && !eq(okResult.presets[0].paletteGroups, okDoc.volumes[0].palettes[0].paletteGroups))
+    FAIL("groups-validate", "a valid paletteGroups override was not passed through verbatim");
+}
+
 // (g) NEGATIVE control: an un-typed palette still yields the global product default (fallback intact)
 const noType = hydrate({ palettes: [{ name: "x", hue: 200, chroma: 60, on: true }] });
 if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL("fallback", "un-typed palette lost the product default");
 
 // ── REPORT ──
-for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "fallback"]) {
+for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "fallback"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
