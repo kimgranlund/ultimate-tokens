@@ -38,6 +38,7 @@ import { toneAt, DEFAULT_CONTROLS } from "../src/engine/tonal.js";
 import { deriveNeutral } from "../src/engine/derive.mjs";
 import { seedFromKeyColor } from "../src/ui/model.mjs";
 import { siblingWeightDefaults, bodyClassSiblingDefaults, BODY_CLASS_VOICES } from "../src/engine/type.mjs";
+import { PALETTE_GROUPS } from "../src/ui/persist.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SRCDIR = resolve(here, "../docs/reference/colors/categories");
@@ -354,6 +355,24 @@ export function buildCategory(doc) {
       const geomCfg = p.geometry && typeof p.geometry === "object" ? p.geometry : null;
       // per-preset PALETTE GROUPS config (#617) — see the comment above CURVE_OVERRIDE_KEYS's declaration.
       const groupsCfg = p.paletteGroups && typeof p.paletteGroups === "object" ? p.paletteGroups : null;
+      // PALETTE-GROUPS AUTHORING TRIPWIRE (#617 review follow-up): `clampPaletteGroups` (persist.js) is
+      // a defensive, SILENT last-resort clamp for a live document — an unrecognized group key is simply
+      // never iterated (dropped with no warning) and a non-numeric baseChroma/primeChroma quietly falls
+      // back to that field's domain MINIMUM (clampNumber's non-finite branch). That's the right behavior
+      // for a live doc, but it means a curated category JSON's typo (a misspelled group name, or a string
+      // where a number belongs) would bake silently into the committed src/ui/categories/*.js output with
+      // zero signal — same class of hazard as the retired type.slots/type.faces shape above. Fail the
+      // GENERATOR loudly instead, same style as that tripwire, naming the bad file/key/value.
+      if (groupsCfg) {
+        for (const [key, val] of Object.entries(groupsCfg)) {
+          if (!PALETTE_GROUPS.includes(key))
+            throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups has unrecognized group key "${key}" (expected one of ${PALETTE_GROUPS.join(", ")})`);
+          for (const field of ["baseChroma", "primeChroma"]) {
+            if (val && typeof val === "object" && field in val && typeof val[field] !== "number")
+              throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups.${key}.${field} is not a number (got ${JSON.stringify(val[field])})`);
+          }
+        }
+      }
       presets.push({
         // the tile/set name is the KICKER (a clean structured label, e.g. "59° N · January · Lake
         // Baikal corridor"); the long evocative `title` lives in story.title (Story tab + per-color line).
