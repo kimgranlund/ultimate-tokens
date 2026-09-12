@@ -78,22 +78,26 @@ serializer) with no rubric of record in this directory yet. It is out of scope f
 
 ## 3. JSON
 
+No top-level `palettes` array wrapper — each palette sits directly on the root object, keyed by
+its slug, alongside a `meta` object and a `constants` block (§13 documents `meta.controls` and
+`palette.group`; this section covers the rest of the shape):
+
 ```
 {
-  "model": "HCT (CAM16 H/C + CIELAB L*)",
-  "curve", "tension", "lstar":{min,max}, "damp", "hueSpace",
-  "scrimAlphas": [...],
-  "palettes": [
-    { "name", "hue", "chromaPct", "skew",
-      "stops":   { "050": {hex, lstar, chroma}, ... },
-      "scrims":  { "050": {hex,alpha}, "100":{...}, ... "950":{...} },   (keyed by padded step; palette keys are SLUGS; semantic `key` is the kebab leaf — ADR-016)
-      "semantic":{ "<roleKey>": {css, light, dark, lightHex, darkHex}, ... }
-    }
-  ]
+  "meta": { "generator": "Ultimate Tokens", "schemaVersion": <n>, "controls": {...} },
+  "{paletteSlug}": {
+    "group":    "material" | "brand" | "system" | "data",
+    "stops":    { "050": "#hex", ... "950": "#hex" },
+    "scrims":   { "050": {hex,alpha}, "100":{...}, ... "950":{...} },   (keyed by padded step; palette keys are SLUGS; semantic `key` is the kebab leaf — ADR-016)
+    "prime":    { "brightest": {hex,oklch}, ... "dimmest": {...} },
+    "semantic": [ { "key", "light":"#hex", "dark":"#hex" }, ... ],
+    "keyColors": [ {role, oklch, name?}, ... ]   (only when the palette sets key colors, §9)
+  },
+  "constants": { "dialog-backdrop": {hex}, "white": {hex}, "black": {hex} }
 }
 ```
-Stop keys padded to 3 digits. The `semantic` block lists every role with its CSS var name
-and both resolved hexes.
+Stop keys padded to 3 digits. The `semantic` array lists every role with its kebab-leaf `key` and
+both resolved hexes (not an object keyed by role — an array of `{key, light, dark}` entries).
 
 ## 4. Figma DTCG (the raw file plus one semantic file per theme)
 
@@ -225,7 +229,7 @@ palette actually sets `keyColors` — absent otherwise (opt-in, not a per-palett
 | Format | Placement |
 |---|---|
 | CSS (hex/oklch) | `--{pfx}-{n}-key-{role}` lines, per palette, after that palette's semantic roles |
-| JSON | `palettes[n].keyColors: [{role, oklch, name?}]` — verbatim passthrough |
+| JSON | `{paletteSlug}.keyColors: [{role, oklch, name?}]` — verbatim passthrough (JSON has no `palettes` wrapper) |
 | DTCG | `palette.tokens.json` (RAW): a `key` group nested under the palette, keyed by `role` — mirrors `scrim`'s two-segment shape (`{n}.key.{role}`), a resolved `colorLeaf` (frac 1, no alpha) |
 | UI3 (Figma) | `raw/{n}/key/{role}` in `Color Primitives` — mirrors the `raw/{n}/scrim/{step}` shape |
 | Tailwind / ShadCN | not emitted (frameworks; out of scope, same as scrims for Tailwind) |
@@ -252,7 +256,7 @@ opt-in like key colors).
 | Format | Placement |
 |---|---|
 | CSS (hex/oklch) | `--{pfx}-{n}-prime-{step}` lines, per palette, between that palette's solid stops and its scrims |
-| JSON | `palettes[n].prime: {"{step}": {hex, oklch}}`, keyed by step NAME (a word, not padded, mirroring `keyColors`' role keys) |
+| JSON | `{paletteSlug}.prime: {"{step}": {hex, oklch}}`, keyed by step NAME (a word, not padded, mirroring `keyColors`' role keys); JSON has no `palettes` wrapper |
 | DTCG | `palette.tokens.json` (RAW): a `prime` group nested under the palette, keyed by step (`{n}.prime.{step}`), mirrors `scrim`'s two-segment shape, resolved `colorLeaf`s |
 | UI3 (Figma) | its OWN top-level collection, `Color Prime` (`COLLECTIONS.colorPrime`), one `Base` mode, `{n}/{step}` variable paths (no `raw/` prefix, same convention `Color Roles` already uses) |
 | Tailwind `@theme` | `--color-{n}-prime-{step}` lines, per palette, next to that palette's scale |
