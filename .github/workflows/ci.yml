@@ -65,7 +65,7 @@ jobs:
         with:
           path: _site
 
-  # ── Panda/Park UI codegen smoke (K5, #590, docs/spec/spec-panda-park-ui-exports.md REQ-072) ──
+  # ── Panda/Radix codegen smoke (K5, #590, docs/spec/spec-panda-park-ui-exports.md REQ-072) ──
   # A REAL `panda cssgen`/`codegen` run over both preset modules via `npx` — the one leg in this
   # repo that legitimately needs registry access. Independent of build-test (own runner, no
   # `needs:`) so it never blocks `deploy`; same trigger as the rest of this workflow's `on:`

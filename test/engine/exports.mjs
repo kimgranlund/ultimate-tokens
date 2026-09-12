@@ -12,7 +12,7 @@ import { dsBundleGates } from "../../src/engine/ds-gates.js";
 import { typeScale, DEFAULT_TYPE } from "../../src/engine/type.mjs";
 import { geomScale, LADDER_MD_STEP, sizeAnchor } from "../../src/engine/geometry.mjs";
 import { PRIME_STEPS } from "../../src/engine/prime.mjs";
-import { oklchToRgb } from "../../src/engine/okhsl.js"; // parkui gate's own oklch()->rgb inverse (anti-tautology, never X's forward path)
+import { oklchToRgb } from "../../src/engine/okhsl.js"; // radix gate's own oklch()->rgb inverse (anti-tautology, never X's forward path)
 import { paletteGroup, brandKit, defaultDocument, stateOf } from "../../src/ui/model.mjs"; // paletteGroup is the SINGLE
 // group resolver (ticket #556/#572) — the group-metadata gate below asserts every emitted surface
 // matches THIS, never a second hand-kept copy; brandKit/defaultDocument prove the MCP-facing kit too.
@@ -177,7 +177,7 @@ try {
 
 // ── hpg-export-nonempty (5 formats non-empty; JSON has stops/scrims/semantic) ─────────────
 const all = X.exportAll(C(ALL), {});
-for (const k of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn", "panda", "parkui"]) {
+for (const k of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn", "panda", "radix"]) {
   const v = all[k];
   if (v == null || (typeof v === "string" && v.length < 10) || (typeof v === "object" && Object.keys(v).length === 0)) FAIL("nonempty", `${k} empty`);
 }
@@ -485,7 +485,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   }
 }
 
-// ── hpg-export-parkui (Park UI preset — REQ-020..028/041/061; issue #588's corrected 1..8) ────
+// ── hpg-export-radix (Radix preset — REQ-020..028/041/061; issue #588's corrected 1..8) ────
 {
   const parseOklch = (s) => {
     if (s === "transparent") return { rgb: null, a: 0 };
@@ -496,7 +496,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   };
 
   // The ratified 1..8 raw-stop table (docs/reference/data/radix-projection.json), redeclared here
-  // independently of exports.js's own PARK_RAW_STEPS — pins the EXACT stop number per step, not
+  // independently of exports.js's own RADIX_RAW_STEPS — pins the EXACT stop number per step, not
   // just monotone direction (a same-direction off-by-one, e.g. step 6 duplicating step 5's stop,
   // still reads monotone but is wrong).
   const RATIFIED_RAW_STEPS = [
@@ -511,18 +511,18 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   ];
 
   const state = C(ALL);
-  const preset = X.exportParkUi(state);
-  if (typeof preset.name !== "string" || !preset.name.startsWith("ultimate-tokens-park-ui-")) FAIL("parkui", `name malformed: ${preset.name}`);
-  if (!preset.theme || !preset.theme.extend || !preset.theme.extend.semanticTokens) FAIL("parkui", "theme.extend.semanticTokens missing");
+  const preset = X.exportRadix(state);
+  if (typeof preset.name !== "string" || !preset.name.startsWith("ultimate-tokens-radix-")) FAIL("radix", `name malformed: ${preset.name}`);
+  if (!preset.theme || !preset.theme.extend || !preset.theme.extend.semanticTokens) FAIL("radix", "theme.extend.semanticTokens missing");
   const { colors, radii } = preset.theme.extend.semanticTokens || {};
-  if (!colors) FAIL("parkui", "semanticTokens.colors missing");
-  if (!radii || !radii.l1 || !radii.l2 || !radii.l3) FAIL("parkui", "semanticTokens.radii.l1..l3 missing");
+  if (!colors) FAIL("radix", "semanticTokens.colors missing");
+  if (!radii || !radii.l1 || !radii.l2 || !radii.l3) FAIL("radix", "semanticTokens.radii.l1..l3 missing");
   if (radii) {
-    if (radii.l1.value !== "{radii.xs}") FAIL("parkui", `radii.l1 = ${radii.l1.value}`);
-    if (radii.l2.value !== "{radii.sm}") FAIL("parkui", `radii.l2 = ${radii.l2.value}`);
-    if (radii.l3.value !== "{radii.md}") FAIL("parkui", `radii.l3 = ${radii.l3.value}`);
+    if (radii.l1.value !== "{radii.xs}") FAIL("radix", `radii.l1 = ${radii.l1.value}`);
+    if (radii.l2.value !== "{radii.sm}") FAIL("radix", `radii.l2 = ${radii.l2.value}`);
+    if (radii.l3.value !== "{radii.md}") FAIL("radix", `radii.l3 = ${radii.l3.value}`);
   }
-  if (preset.theme.extend.textStyles) FAIL("parkui", "textStyles must not be emitted in v1 (H-2)");
+  if (preset.theme.extend.textStyles) FAIL("radix", "textStyles must not be emitted in v1 (H-2)");
 
   const derived = X.derivedAll(state);
   const APPEARANCE_KEYS = {
@@ -535,23 +535,23 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   const dig = (obj, path) => path.split(".").reduce((o, k) => (o ? o[k] : undefined), obj);
   for (const p of derived) {
     const g = colors[p.n];
-    if (!g) { FAIL("parkui", `colors.${p.n} missing`); continue; }
+    if (!g) { FAIL("radix", `colors.${p.n} missing`); continue; }
     for (let k = 1; k <= 12; k++) {
       const v = g[String(k)];
-      if (!v || typeof v.value.base !== "string" || typeof v.value._dark !== "string") FAIL("parkui", `colors.${p.n}.${k} not {base,_dark}`);
+      if (!v || typeof v.value.base !== "string" || typeof v.value._dark !== "string") FAIL("radix", `colors.${p.n}.${k} not {base,_dark}`);
       const a = g[`a${k}`];
-      if (!a || typeof a.value.base !== "string" || typeof a.value._dark !== "string") FAIL("parkui", `colors.${p.n}.a${k} not {base,_dark}`);
+      if (!a || typeof a.value.base !== "string" || typeof a.value._dark !== "string") FAIL("radix", `colors.${p.n}.a${k} not {base,_dark}`);
     }
     for (const [grp, keys] of Object.entries(APPEARANCE_KEYS)) {
       for (const path of keys) {
         const v = dig(g[grp], path);
-        if (!v || typeof v.value !== "string" || !v.value.startsWith(`{colors.${p.n}.`)) FAIL("parkui", `colors.${p.n}.${grp}.${path} not an alias ref: ${v && v.value}`);
+        if (!v || typeof v.value !== "string" || !v.value.startsWith(`{colors.${p.n}.`)) FAIL("radix", `colors.${p.n}.${grp}.${path} not an alias ref: ${v && v.value}`);
       }
     }
-    if (!g["on-accent"] || typeof g["on-accent"].value.base !== "string") FAIL("parkui", `colors.${p.n}.on-accent missing`);
-    if (!g.prime || typeof g.prime.value.base !== "string" || g.prime.value._dark !== undefined) FAIL("parkui", `colors.${p.n}.prime malformed (mode-independent, base only): ${JSON.stringify(g.prime)}`);
+    if (!g["on-accent"] || typeof g["on-accent"].value.base !== "string") FAIL("radix", `colors.${p.n}.on-accent missing`);
+    if (!g.prime || typeof g.prime.value.base !== "string" || g.prime.value._dark !== undefined) FAIL("radix", `colors.${p.n}.prime malformed (mode-independent, base only): ${JSON.stringify(g.prime)}`);
 
-    // exact-value pin (reviewer finding on #588's parkui gate): each of steps 1..8 must read the
+    // exact-value pin (reviewer finding on #588's radix gate): each of steps 1..8 must read the
     // EXACT ratified stop number, not merely a monotone-in-the-right-direction neighbour — deep-equal
     // the emitted leaf's parsed rgb against derivedAll's own byStop.get(expectedStop) for that step,
     // per palette (cheap enough to run for all, not just one representative).
@@ -561,10 +561,10 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
       const wantBase = p.byStop.get(light);
       const wantDark = p.byStop.get(dark);
       if (!parsedBase || !wantBase || parsedBase.rgb.some((c, i) => Math.abs(c - wantBase[i]) > 1)) {
-        FAIL("parkui", `colors.${p.n}.${step}.base rgb ${parsedBase && parsedBase.rgb} != byStop.get(${light}) ${wantBase} (exact-stop pin)`);
+        FAIL("radix", `colors.${p.n}.${step}.base rgb ${parsedBase && parsedBase.rgb} != byStop.get(${light}) ${wantBase} (exact-stop pin)`);
       }
       if (!parsedDark || !wantDark || parsedDark.rgb.some((c, i) => Math.abs(c - wantDark[i]) > 1)) {
-        FAIL("parkui", `colors.${p.n}.${step}._dark rgb ${parsedDark && parsedDark.rgb} != byStop.get(${dark}) ${wantDark} (exact-stop pin)`);
+        FAIL("radix", `colors.${p.n}.${step}._dark rgb ${parsedDark && parsedDark.rgb} != byStop.get(${dark}) ${wantDark} (exact-stop pin)`);
       }
     }
   }
@@ -572,22 +572,22 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // REQ-025: accent/gray are self-contained deep copies of the driver groups, ref-rewritten.
   const { primary, neutral, danger } = X.pickDrivers(derived);
   const rewriteBack = (json, toN, fromN) => json.split(`{colors.${toN}.`).join(`{colors.${fromN}.`);
-  if (JSON.stringify(colors[primary.n]) !== rewriteBack(JSON.stringify(colors.accent), "accent", primary.n)) FAIL("parkui", "colors.accent is not primary's group with refs rewritten");
-  if (JSON.stringify(colors[neutral.n]) !== rewriteBack(JSON.stringify(colors.gray), "gray", neutral.n)) FAIL("parkui", "colors.gray is not neutral's group with refs rewritten");
-  if (X.isDataPalette({ name: primary.name }) || X.isDataPalette({ name: neutral.name })) FAIL("parkui", "a data palette was picked as accent/gray driver");
+  if (JSON.stringify(colors[primary.n]) !== rewriteBack(JSON.stringify(colors.accent), "accent", primary.n)) FAIL("radix", "colors.accent is not primary's group with refs rewritten");
+  if (JSON.stringify(colors[neutral.n]) !== rewriteBack(JSON.stringify(colors.gray), "gray", neutral.n)) FAIL("radix", "colors.gray is not neutral's group with refs rewritten");
+  if (X.isDataPalette({ name: primary.name }) || X.isDataPalette({ name: neutral.name })) FAIL("radix", "a data palette was picked as accent/gray driver");
 
   // REQ-026: globals + error, present and resolving to an existing leaf.
-  if (colors.fg?.default?.value !== "{colors.gray.12}") FAIL("parkui", `fg.default = ${colors.fg?.default?.value}`);
-  if (colors.fg?.muted?.value !== "{colors.gray.11}") FAIL("parkui", `fg.muted = ${colors.fg?.muted?.value}`);
-  if (colors.fg?.subtle?.value !== "{colors.gray.10}") FAIL("parkui", `fg.subtle = ${colors.fg?.subtle?.value}`);
-  if (colors.canvas?.value !== "{colors.gray.1}") FAIL("parkui", `canvas = ${colors.canvas?.value}`);
-  if (colors.border?.value !== "{colors.gray.7}") FAIL("parkui", `border = ${colors.border?.value}`);
-  if (colors.bg?.subtle?.value !== "{colors.gray.2}") FAIL("parkui", `bg.subtle = ${colors.bg?.subtle?.value}`);
-  if (!colors.error || typeof colors.error.value !== "string" || !colors.error.value.startsWith("{colors.")) FAIL("parkui", `error = ${colors.error && colors.error.value}`);
+  if (colors.fg?.default?.value !== "{colors.gray.12}") FAIL("radix", `fg.default = ${colors.fg?.default?.value}`);
+  if (colors.fg?.muted?.value !== "{colors.gray.11}") FAIL("radix", `fg.muted = ${colors.fg?.muted?.value}`);
+  if (colors.fg?.subtle?.value !== "{colors.gray.10}") FAIL("radix", `fg.subtle = ${colors.fg?.subtle?.value}`);
+  if (colors.canvas?.value !== "{colors.gray.1}") FAIL("radix", `canvas = ${colors.canvas?.value}`);
+  if (colors.border?.value !== "{colors.gray.7}") FAIL("radix", `border = ${colors.border?.value}`);
+  if (colors.bg?.subtle?.value !== "{colors.gray.2}") FAIL("radix", `bg.subtle = ${colors.bg?.subtle?.value}`);
+  if (!colors.error || typeof colors.error.value !== "string" || !colors.error.value.startsWith("{colors.")) FAIL("radix", `error = ${colors.error && colors.error.value}`);
   for (const [k, v] of [["fg.default", colors.fg?.default], ["fg.muted", colors.fg?.muted], ["fg.subtle", colors.fg?.subtle], ["canvas", colors.canvas], ["border", colors.border], ["bg.subtle", colors.bg?.subtle], ["error", colors.error]]) {
     const ref = v && v.value;
     const m = ref && /^\{colors\.([\w-]+)\.([\w-]+)\}$/.exec(ref);
-    if (!m || !colors[m[1]] || !colors[m[1]][m[2]]) FAIL("parkui", `${k} = ${ref} does not resolve to an emitted leaf`);
+    if (!m || !colors[m[1]] || !colors[m[1]][m[2]]) FAIL("radix", `${k} = ${ref} does not resolve to an emitted leaf`);
   }
 
   // REQ-022 anti-tautology: a{k}'s alpha value, composited over white (base)/black (_dark) by
@@ -598,11 +598,11 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     for (const [mode, bg] of [["base", [255, 255, 255]], ["_dark", [0, 0, 0]]]) {
       const a = parseOklch(primaryGroup[`a${k}`].value[mode]);
       const solid = parseOklch(primaryGroup[String(k)].value[mode]);
-      if (!a || !solid) { FAIL("parkui", `a${k}.${mode} or solid ${k}.${mode} failed to parse`); continue; }
+      if (!a || !solid) { FAIL("radix", `a${k}.${mode} or solid ${k}.${mode} failed to parse`); continue; }
       if (a.a === 0) continue; // transparent — nothing to composite
       const composited = a.rgb.map((c, i) => Math.round(a.a * c + (1 - a.a) * bg[i]));
       for (let i = 0; i < 3; i++) {
-        if (Math.abs(composited[i] - solid.rgb[i]) > 1) FAIL("parkui", `a${k}.${mode} composited over ${mode === "base" ? "white" : "black"} = ${composited} not within 1/255 of solid ${k} = ${solid.rgb}`);
+        if (Math.abs(composited[i] - solid.rgb[i]) > 1) FAIL("radix", `a${k}.${mode} composited over ${mode === "base" ? "white" : "black"} = ${composited} not within 1/255 of solid ${k} = ${solid.rgb}`);
       }
     }
   }
@@ -612,45 +612,45 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   const ddState = stateOf(defaultDocument());
   const ddDerived = X.derivedAll(ddState);
   const ddDrivers = X.pickDrivers(ddDerived);
-  const ddParkPreset = X.exportParkUi(ddState);
-  const ddGray = ddParkPreset.theme.extend.semanticTokens.colors[ddDrivers.neutral.n];
+  const ddRadixPreset = X.exportRadix(ddState);
+  const ddGray = ddRadixPreset.theme.extend.semanticTokens.colors[ddDrivers.neutral.n];
   let prevBase = Infinity, prevDark = -Infinity;
   for (let k = 1; k <= 12; k++) {
     const base = parseOklch(ddGray[String(k)].value.base);
     const dark = parseOklch(ddGray[String(k)].value._dark);
     const lumBase = X.relLumExp(base.rgb), lumDark = X.relLumExp(dark.rgb);
-    if (lumBase > prevBase + 1e-6) FAIL("parkui", `gray base luminance not monotone non-increasing at step ${k}`);
-    if (lumDark < prevDark - 1e-6) FAIL("parkui", `gray _dark luminance not monotone non-decreasing at step ${k}`);
+    if (lumBase > prevBase + 1e-6) FAIL("radix", `gray base luminance not monotone non-increasing at step ${k}`);
+    if (lumDark < prevDark - 1e-6) FAIL("radix", `gray _dark luminance not monotone non-decreasing at step ${k}`);
     prevBase = lumBase; prevDark = lumDark;
   }
 
   // disabled palette absent; data palettes present but never accent/gray.
-  const disabledParkUi = X.exportParkUi(oneOff);
-  if (offName in disabledParkUi.theme.extend.semanticTokens.colors) FAIL("parkui", `disabled palette '${offName}' still in colors`);
-  if (!colors["data-1"]) FAIL("parkui", "data-1 missing from colors (REQ-028: data palettes emitted like any other)");
+  const disabledRadix = X.exportRadix(oneOff);
+  if (offName in disabledRadix.theme.extend.semanticTokens.colors) FAIL("radix", `disabled palette '${offName}' still in colors`);
+  if (!colors["data-1"]) FAIL("radix", "data-1 missing from colors (REQ-028: data palettes emitted like any other)");
 
-  // AC-005/REQ-043: theme-independent — exportParkUi never reads state.theme, so the default
+  // AC-005/REQ-043: theme-independent — exportRadix never reads state.theme, so the default
   // document's preset is byte-identical whether STATE.theme (not the doc, which stateOf never
   // copies theme off of) is light, dark, or auto.
   for (const t of ["light", "dark"]) {
-    const themedPark = X.exportParkUi({ ...ddState, theme: t });
-    if (JSON.stringify(themedPark) !== JSON.stringify(ddParkPreset)) FAIL("parkui", `REQ-043 preset differs under theme:${t} vs theme:auto`);
+    const themedRadix = X.exportRadix({ ...ddState, theme: t });
+    if (JSON.stringify(themedRadix) !== JSON.stringify(ddRadixPreset)) FAIL("radix", `REQ-043 preset differs under theme:${t} vs theme:auto`);
   }
 
   // no-driver sentinel (mirrors exportShadcn).
-  const sentinel = X.exportParkUi(C([]));
-  if (typeof sentinel !== "string" || !sentinel.startsWith("/* Park UI export needs")) FAIL("parkui", `no-driver sentinel wrong: ${JSON.stringify(sentinel)}`);
-  if (X.exportParkUiModule(sentinel) !== sentinel) FAIL("parkui", "exportParkUiModule must pass the sentinel through unwrapped");
+  const sentinel = X.exportRadix(C([]));
+  if (typeof sentinel !== "string" || !sentinel.startsWith("/* Radix export needs")) FAIL("radix", `no-driver sentinel wrong: ${JSON.stringify(sentinel)}`);
+  if (X.exportRadixModule(sentinel) !== sentinel) FAIL("radix", "exportRadixModule must pass the sentinel through unwrapped");
 
-  // module string: header, valid JSON, deep-equals exportParkUi(state).
-  const mod = X.exportParkUiModule(preset);
-  if (!mod.includes("/* Park UI preset, generated by Ultimate Tokens.")) FAIL("parkui", "module header text wrong");
-  if (!mod.startsWith("/* ultimate-tokens export schema ")) FAIL("parkui", "module missing the leading schema-stamp comment (ticket #606)");
+  // module string: header, valid JSON, deep-equals exportRadix(state).
+  const mod = X.exportRadixModule(preset);
+  if (!mod.includes("/* Radix preset, generated by Ultimate Tokens.")) FAIL("radix", "module header text wrong");
+  if (!mod.startsWith("/* ultimate-tokens export schema ")) FAIL("radix", "module missing the leading schema-stamp comment (ticket #606)");
   const bodyStart = mod.indexOf("export default ") + "export default ".length;
   const body = mod.slice(bodyStart, mod.lastIndexOf(";"));
   let parsedMod = null;
-  try { parsedMod = JSON.parse(body); } catch (e) { FAIL("parkui", `module body not valid JSON: ${e.message}`); }
-  if (parsedMod && JSON.stringify(parsedMod) !== JSON.stringify(preset)) FAIL("parkui", "module JSON does not deep-equal exportParkUi(state)");
+  try { parsedMod = JSON.parse(body); } catch (e) { FAIL("radix", `module body not valid JSON: ${e.message}`); }
+  if (parsedMod && JSON.stringify(parsedMod) !== JSON.stringify(preset)) FAIL("radix", "module JSON does not deep-equal exportRadix(state)");
 }
 
 // ── hpg-export-data-palette (#516 — isDataPalette, shadcn chart-1..5 binding, fallback exclusion) ──
@@ -1825,8 +1825,8 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 // ── hpg-export-schema-stamp (SPEC 0.3.0 RP-8, ticket #577, plan PR #571 step E6) — one
 // EXPORT_SCHEMA_VERSION stamped, verbatim, on every surface that can carry it: JSON meta,
 // DTCG root $extensions (all 3 files), UI3 $schema, a first-line comment on CSS/OKLCH/Tailwind/
-// ShadCN/Panda module/Park UI module, the DS bundle's tokens.json + DESIGN.md frontmatter, and
-// the brand-kit $schema. (ticket #606: the gate originally missed the Panda/Park UI module stamps.)
+// ShadCN/Panda module/Radix module, the DS bundle's tokens.json + DESIGN.md frontmatter, and
+// the brand-kit $schema. (ticket #606: the gate originally missed the Panda/Radix module stamps.)
 // `v` is a HARDCODED literal (2), deliberately never X.EXPORT_SCHEMA_VERSION itself — reading the
 // constant back to build the expectation would make this gate vacuous (it would degrade in
 // lockstep with the very thing under test, proven live: neutering the constant to `undefined`
@@ -1846,7 +1846,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (X.exportTailwind(state).split("\n")[0] !== stampComment) FAIL(G, `Tailwind first line is not the schema stamp comment (want ${JSON.stringify(stampComment)})`);
   if (X.exportShadcn(state).split("\n")[0] !== stampComment) FAIL(G, `ShadCN first line is not the schema stamp comment (want ${JSON.stringify(stampComment)})`);
   if (X.exportPandaModule(X.exportPanda(state)).split("\n")[0] !== stampComment) FAIL(G, `Panda module first line is not the schema stamp comment (want ${JSON.stringify(stampComment)})`);
-  if (X.exportParkUiModule(X.exportParkUi(state)).split("\n")[0] !== stampComment) FAIL(G, `Park UI module first line is not the schema stamp comment (want ${JSON.stringify(stampComment)})`);
+  if (X.exportRadixModule(X.exportRadix(state)).split("\n")[0] !== stampComment) FAIL(G, `Radix module first line is not the schema stamp comment (want ${JSON.stringify(stampComment)})`);
 
   const json = X.exportJSON(state);
   if (!json.meta || json.meta.schemaVersion !== v) FAIL(G, `JSON meta.schemaVersion = ${JSON.stringify(json.meta && json.meta.schemaVersion)}, want ${v}`);
@@ -1882,7 +1882,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "parkui", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

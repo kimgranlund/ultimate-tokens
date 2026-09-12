@@ -3,7 +3,7 @@
 // Turns a generator State into the HCT Palette Generator's portable token
 // artifacts in ten formats: CSS (hex), CSS (OKLCH), JSON, Figma DTCG (the
 // 3-file set), the UI3 interchange shape, Tailwind v4, ShadCN, Panda CSS,
-// Park UI, plus the exportAll aggregator. Every emitter operates over the
+// Radix, plus the exportAll aggregator. Every emitter operates over the
 // ENABLED palettes only and the 25 EXPORT_STOPS, and every stop reference is
 // 3-digit zero-padded (ADR-006).
 //
@@ -799,7 +799,7 @@ const SHADCN_ORDER = [
 ];
 
 // pickDrivers — the driver-palette pick (REQ-040 of spec-panda-park-ui-exports.md), extracted
-// from exportShadcn so exportParkUi (and exportPanda's header, for accent/gray naming) can reuse
+// from exportShadcn so exportRadix (and exportPanda's header, for accent/gray naming) can reuse
 // the exact same name-regex logic instead of a second copy. #503 REQ-031: data palettes
 // (data-1..8) never stand in for neutral/primary/"first palette" — every non-chart pick searches
 // the non-data pool only, so 16-palette docs keep today's shadcn picks.
@@ -1044,14 +1044,14 @@ export function exportPandaModule(preset) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 10. PARK UI (a Panda preset in Park's own 1..12/a1..a12/appearance-group color shape —
+// 10. RADIX (a Panda preset in Park UI's own 1..12/a1..a12/appearance-group color shape —
 //     docs/spec/spec-panda-park-ui-exports.md REQ-020..028)
 // ──────────────────────────────────────────────────────────────────────────────
 // The 1..8 steps of the 12-step ladder are RAW RAMP STOPS read straight from the palette's own
 // stops (issue #588's correction, superseding the original role-indirected/flattened P-1
 // default); 9..12 stay role-derived (bare accent / -hover / -on-surface-variant / -on-surface —
 // already ratified, unaffected by #588). Canonical source: docs/reference/data/radix-projection.json.
-const PARK_RAW_STEPS = [
+const RADIX_RAW_STEPS = [
   { step: 1, light: 100, dark: 900 },
   { step: 2, light: 125, dark: 875 },
   { step: 3, light: 150, dark: 850 },
@@ -1062,7 +1062,7 @@ const PARK_RAW_STEPS = [
   { step: 8, light: 350, dark: 650 },
 ];
 // step -> the role suffix that drives it (9..12, REQ-021), read off p.roles by suffix.
-const PARK_ROLE_STEPS = [
+const RADIX_ROLE_STEPS = [
   { step: 9, suffix: "" }, // bare accent (prime)
   { step: 10, suffix: "-hover" },
   { step: 11, suffix: "-on-surface-variant" },
@@ -1071,7 +1071,7 @@ const PARK_ROLE_STEPS = [
 
 // flattenOver(end, bgRgb) — Vocabulary "Flattened": a translucent role end composited over an
 // opaque background in 8-bit sRGB. Exported per REQ-041 for the test's independent check; no
-// caller remains inside exportParkUi after issue #588's correction (steps 1..8 are raw stops,
+// caller remains inside exportRadix after issue #588's correction (steps 1..8 are raw stops,
 // never flattened), kept as a pure utility.
 export function flattenOver(end, bgRgb) {
   const a = end.frac;
@@ -1129,20 +1129,20 @@ function rewriteRefs(node, fromN, toN) {
   return node;
 }
 
-// parkColorGroup(p) — one palette's Park-shaped color object (KF-3 + REQ-021..024): the 12
+// radixColorGroup(p) — one palette's Park-UI-shaped color object (KF-3 + REQ-021..024): the 12
 // numbered steps, the 12 alpha steps, the five appearance groups (aliasing by step reference),
 // and the two additive leaves (on-accent, prime) Park's own scale has no slot for.
-function parkColorGroup(p) {
+function radixColorGroup(p) {
   const group = {};
   const rawSolid = {}; // step -> { base: [r,g,b], dark: [r,g,b] } — for the a{k} projection below.
 
-  for (const { step, light, dark } of PARK_RAW_STEPS) {
+  for (const { step, light, dark } of RADIX_RAW_STEPS) {
     const lightRgb = p.byStop.get(light);
     const darkRgb = p.byStop.get(dark);
     rawSolid[step] = { base: lightRgb, dark: darkRgb };
     group[String(step)] = { value: { base: roleOklch({ rgb: lightRgb, frac: 1 }), _dark: roleOklch({ rgb: darkRgb, frac: 1 }) } };
   }
-  for (const { step, suffix } of PARK_ROLE_STEPS) {
+  for (const { step, suffix } of RADIX_ROLE_STEPS) {
     const r = p.roles.find((x) => x.suffix === suffix);
     rawSolid[step] = { base: r.light.rgb, dark: r.dark.rgb };
     group[String(step)] = { value: { base: roleOklch(r.light), _dark: roleOklch(r.dark) } };
@@ -1185,16 +1185,16 @@ function parkColorGroup(p) {
   return group;
 }
 
-// exportParkUi(state, opts) -> a preset OBJECT `{ name, theme: { extend: { semanticTokens: {
+// exportRadix(state, opts) -> a preset OBJECT `{ name, theme: { extend: { semanticTokens: {
 // colors, radii? } } } }` (REQ-020). Returns the sentinel string, mirroring exportShadcn, when no
 // driver palette can be picked.
-export function exportParkUi(state, opts = {}) {
+export function exportRadix(state, opts = {}) {
   const palettes = derivedAll(state);
   const { neutral, primary, danger } = pickDrivers(palettes);
-  if (!neutral || !primary) return "/* Park UI export needs at least one enabled non-data palette. */\n";
+  if (!neutral || !primary) return "/* Radix export needs at least one enabled non-data palette. */\n";
 
   const colors = {};
-  for (const p of palettes) colors[p.n] = parkColorGroup(p);
+  for (const p of palettes) colors[p.n] = radixColorGroup(p);
 
   // REQ-025: accent <- primary, gray <- neutral, each a self-contained deep copy with every
   // internal reference re-pointed at the new group name (Park's own `gray: colorPalettes.neutral`
@@ -1224,21 +1224,21 @@ export function exportParkUi(state, opts = {}) {
     extend.tokens = { radii: { none: { value: px(g.none) }, xs: { value: px(g.xs) }, sm: { value: px(g.sm) }, md: { value: px(g.md) }, lg: { value: px(g.lg) }, xl: { value: px(g.xl) }, full: { value: px(g.full) } } };
   }
 
-  const name = "ultimate-tokens-park-ui-" + slug(state.name || "brand-kit");
+  const name = "ultimate-tokens-radix-" + slug(state.name || "brand-kit");
   return { name, theme: { extend } };
 }
 
-// exportParkUiModule — the ESM preset-module STRING the drawer shows and the zip ships (REQ-020):
+// exportRadixModule — the ESM preset-module STRING the drawer shows and the zip ships (REQ-020):
 // a header naming the driver bindings and the install order (ours last, after Park's own CLI-
 // copied preset). The no-driver sentinel (a plain string, mirroring exportShadcn) passes through
 // unwrapped.
-export function exportParkUiModule(preset) {
+export function exportRadixModule(preset) {
   if (typeof preset === "string") return preset;
   return [
     `/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`,
-    "/* Park UI preset, generated by Ultimate Tokens.",
+    "/* Radix preset, generated by Ultimate Tokens.",
     "   accent = primary, gray = neutral, error = danger.",
-    "   presets: [parkPreset, utParkPreset] (ours last). */",
+    "   presets: [parkPreset, utRadixPreset] (ours last). */",
     "export default " + JSON.stringify(preset, null, 2) + ";",
     "",
   ].join("\n");
@@ -1257,6 +1257,6 @@ export function exportAll(state, opts) {
     tailwind: exportTailwind(state),
     shadcn: exportShadcn(state),
     panda: exportPanda(state),
-    parkui: exportParkUi(state),
+    radix: exportRadix(state),
   };
 }

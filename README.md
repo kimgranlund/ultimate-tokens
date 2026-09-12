@@ -9,7 +9,7 @@ local build; download it and it runs offline from `file://`.)
 
 A perceptual color-palette and **design-token** generator. It builds tonal ramps that are visually
 even across their whole range, derives a **53-role semantic layer** (surfaces, on-colors, outlines,
-containers, scrims, inverse), and exports to **CSS, Tailwind v4, shadcn/ui, Panda CSS, Park UI, Figma,
+containers, scrims, inverse), and exports to **CSS, Tailwind v4, shadcn/ui, Panda CSS, Radix, Figma,
 DTCG, JSON, Claude Design** and more — plus a one-click `.zip` of everything.
 
 It ships three ways: a **Vite web app**, a single dependency-free **`<ultimate-tokens>` web
@@ -52,7 +52,7 @@ collections.
   Nature, Travel), each **12 volumes × 4 = 48** palettes (336 total), sourced from real places, dishes,
   films, biomes… and carrying their story. Open any one as an editable copy. Each category's data is
   lazy-loaded.
-- **Exports.** CSS (Hex or **OKLCH**), **Tailwind v4**, **shadcn/ui**, **Panda CSS**, **Park UI**,
+- **Exports.** CSS (Hex or **OKLCH**), **Tailwind v4**, **shadcn/ui**, **Panda CSS**, **Radix**,
   **Figma** variables, **Figma UI3** (Material), **DTCG**, **JSON**, a **design-system export** (`DESIGN.md` +
   `tokens.json` + preview cards, in a target each for Claude (`claude.ai/design` and Claude Code),
   Google Stitch, and Figma Make to generate on-brand UI), a re-importable parametric

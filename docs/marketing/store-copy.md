@@ -135,7 +135,7 @@ rest of the body to begin after it so the card truncates on a complete thought
 >
 > ### One source, every export
 > Ship the whole kit without a hand-off: **CSS custom properties**, **W3C design tokens (DTCG)**,
-> **Tailwind**, **shadcn**, **Panda CSS**, and **Park UI** — under your own naming, whether that's the
+> **Tailwind**, **shadcn**, **Panda CSS**, and **Radix** — under your own naming, whether that's the
 > default, a Material 3-style `--md-sys-*` root, or a `--{brand}-*` prefix your codebase already uses.
 > Bind it to **Figma variables** —
 > Color Primitives and Color Roles, aliased so a raw-color edit cascades to every role — with **style
@@ -206,7 +206,7 @@ bullets + FAQ only.
 • OKLCH-native — perceptually even ramps; HEX derived only for output
 • 53 semantic roles per palette, light + dark
 • Three composing systems — Color · Typography · Geometry
-• Exports: CSS · DTCG · Tailwind · shadcn · Panda CSS · Park UI
+• Exports: CSS · DTCG · Tailwind · shadcn · Panda CSS · Radix
 • Your own naming — Ultimate, Material 3-style --md-sys-*, or a --{brand}-* root
 • Figma variables — semantic binding cascade + breakpoint modes, plus bound paint & text style swatches
 • Brand-Kit MCP — feed your exact tokens to Claude, Cursor, VS Code
@@ -259,7 +259,7 @@ bullets + FAQ only.
 > No — the Figma plugin is free and runs fully offline. Pro lives in the web app.
 >
 > **What can I export?**
-> CSS custom properties, W3C design tokens (DTCG), Tailwind, shadcn, Panda CSS, and Park UI — plus
+> CSS custom properties, W3C design tokens (DTCG), Tailwind, shadcn, Panda CSS, and Radix — plus
 > Figma variables (with bound paint & text style swatches), a Brand-Kit MCP server for AI agents,
 > and a design-system export in
 > a target each for Claude (`claude.ai/design` and Claude Code), Google Stitch, and Figma Make to generate

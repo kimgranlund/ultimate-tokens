@@ -27,7 +27,7 @@ Derive OKLCH-true color, type & geometry systems from one source. Export to CSS,
 > Ultimate Tokens is a perceptual design-token generator. Pick a key color and it derives an even,
 > OKLCH-true tonal ramp, mapped to 53 semantic roles across light and dark. Compose a type scale and
 > a geometry system from the same source, then export everything — CSS, DTCG, Tailwind, shadcn,
-> Panda CSS, Park UI, Figma variables, MCP, a design system for Claude, Stitch, or Figma Make —
+> Panda CSS, Radix, Figma variables, MCP, a design system for Claude, Stitch, or Figma Make —
 > perfectly in sync. Free to start.
 
 **Long (the full paragraph, about pages / press)**
@@ -37,7 +37,7 @@ Derive OKLCH-true color, type & geometry systems from one source. Export to CSS,
 > color becomes a measured tonal ramp and 53 semantic roles, resolved for light and dark in one pass.
 > Typography and geometry compose from the same source: eleven type voices on a modular scale, a size
 > ramp built on one centering law. Every export — CSS custom properties, W3C design tokens, Tailwind,
-> shadcn, Panda CSS, Park UI, Figma variables (with bound paint & text style swatches), and a
+> shadcn, Panda CSS, Radix, Figma variables (with bound paint & text style swatches), and a
 > Brand-Kit MCP server your AI agents read directly, each under whichever naming convention your
 > team already uses — is the same
 > decision, exported twice; it cannot drift. The

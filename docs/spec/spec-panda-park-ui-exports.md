@@ -2,14 +2,26 @@
 doc-type: spec
 id: spec-panda-park-ui-exports
 status: approved        # draft | approved | superseded  (0.1.0 approved 2026-09-11: H-1..H-4, P-1, N-1..N-3 ratified by the owner via team-lead)
-version: 0.1.1          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw ramp stops (issue #588 ruling); EX-4 regenerated. Data correction to an approved SPEC, not a new draft round.
+version: 0.2.0          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw ramp stops (issue #588 ruling); EX-4 regenerated. Data correction to an approved SPEC, not a new draft round.
+                        # 0.2.0 2026-09-12: ticket #614 renamed the "Park UI" format to "Radix" everywhere in
+                        # the live surfaces (exportParkUi/exportParkUiModule -> exportRadix/exportRadixModule,
+                        # format id parkui -> radix, drawer label/zip folder park-ui/ -> radix/) — a rename
+                        # only, no shape change; validated against real Radix/Park UI docs per #588/#603. The
+                        # REQ-020..028/041..043/050..052/061/063 sections below are left as originally
+                        # ratified (they describe the #570 build under its then-current names) rather than
+                        # rewritten to match the new names — this version note is the record of the rename.
 date: 2026-09-11
 owner: Kim Granlund
 prd: none               # GitHub issue #570 is the intent record (ADR-017 git-native tickets)
 scope: feature
 audience: builder, reviewer, planner
 ---
-# SPEC: Panda CSS and Park UI export formats
+# SPEC: Panda CSS and Radix export formats
+
+(Renamed from "Panda CSS and Park UI export formats" at 0.2.0/ticket #614 — see the version header.
+Park UI is still named throughout this SPEC where it is the accurate historical/technical referent:
+the format is a Panda preset built in Park UI's own token shape, and Park UI was the format's
+original real-world consumer.)
 
 Intent record: GitHub issue #570 (`kind:feature`, `size:big`, `lane:exports`). Structural precedent:
 `exportShadcn` in `src/engine/exports.js` (a curated, fixed-contract framework format driven by

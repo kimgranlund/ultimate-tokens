@@ -35,7 +35,7 @@ export class DrawerMixinImpl {
     // item names disambiguate where a format spans systems (Type · DTCG vs the colour DTCG). Internal ids
     // (css/oklch/tailwind/…) are unchanged — only the display grouping + labels.
     const FORMAT_GROUPS = [
-      ["Colors", [["css", "Hex"], ["oklch", "OKLCH"], ["tailwind", "Tailwind v4"], ["shadcn", "shadcn/ui"], ["panda", "Panda CSS"], ["parkui", "Park UI"], ["figma", "Figma"], ["ui3", "Figma UI3"], ["dtcg", "DTCG"], ["json", "JSON"]]],
+      ["Colors", [["css", "Hex"], ["oklch", "OKLCH"], ["tailwind", "Tailwind v4"], ["shadcn", "shadcn/ui"], ["panda", "Panda CSS"], ["radix", "Radix"], ["figma", "Figma"], ["ui3", "Figma UI3"], ["dtcg", "DTCG"], ["json", "JSON"]]],
       ["Typography", [["type-css", "Type · CSS"], ["type-dtcg", "Type · DTCG"]]],
       ["Geometry", [["geom-css", "Geometry · CSS"], ["geom-css-sizes", "Geometry · CSS (sizes only)"], ["geom-dtcg", "Geometry · DTCG"]]],
       ["Design System", [["ds-tokens", "tokens.json"], ["ds-spine", "DESIGN.md"]]],
@@ -92,7 +92,7 @@ export class DrawerMixinImpl {
     // proExport gate: a Pro format the plan doesn't unlock shows an upsell instead of its code (NO-OP until
     // go-live). PRO_LABEL names the upsell; the format <select> tags the option " · Pro".
     const proLocked = this._proExportLocked(this.exportTab);
-    const PRO_LABEL = { dtcg: "DTCG", tailwind: "Tailwind v4", shadcn: "shadcn/ui", panda: "Panda CSS", parkui: "Park UI" };
+    const PRO_LABEL = { dtcg: "DTCG", tailwind: "Tailwind v4", shadcn: "shadcn/ui", panda: "Panda CSS", radix: "Radix" };
     const code = proLocked
       ? ""
       : isConfig
@@ -340,7 +340,7 @@ export class DrawerMixinImpl {
         { name: `tailwind/${s}.css`, data: ex.tailwind },
         { name: `shadcn/${s}.css`, data: ex.shadcn },
         { name: `panda/${s}.preset.mjs`, data: ex.panda },
-        { name: `park-ui/${s}.preset.mjs`, data: ex.parkui },
+        { name: `radix/${s}.preset.mjs`, data: ex.radix },
       );
       // figma-aliased/ — the SAME tokens, but the Light/Dark leaves carry com.figma.aliasData targeting
       // the "Color Primitives" collection (figmaBundle). For TESTING plugin-free import / the live cascade

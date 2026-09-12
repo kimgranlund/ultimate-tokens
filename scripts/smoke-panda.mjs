@@ -15,7 +15,7 @@ import { execFileSync } from "node:child_process";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..");
 
-const { exportPanda, exportPandaModule, exportParkUi, exportParkUiModule } = await import(
+const { exportPanda, exportPandaModule, exportRadix, exportRadixModule } = await import(
   resolve(ROOT, "src/engine/exports.js")
 );
 const { typeScale, DEFAULT_TYPE } = await import(resolve(ROOT, "src/engine/type.mjs"));
@@ -31,19 +31,19 @@ const typeScl = typeScale(DEFAULT_TYPE);
 const geomScl = geomScale({});
 
 const pandaPreset = exportPanda(state, { type: typeScl, geometry: geomScl });
-const parkPreset = exportParkUi(state, { geometry: geomScl });
+const radixPreset = exportRadix(state, { geometry: geomScl });
 
-if (typeof parkPreset === "string") {
-  console.error("smoke-panda: exportParkUi returned the no-driver sentinel for the default document — cannot proceed");
+if (typeof radixPreset === "string") {
+  console.error("smoke-panda: exportRadix returned the no-driver sentinel for the default document — cannot proceed");
   process.exit(1);
 }
 
 const pandaModule = exportPandaModule(pandaPreset);
-const parkModule = exportParkUiModule(parkPreset);
+const radixModule = exportRadixModule(radixPreset);
 
 const scratch = mkdtempSync(join(tmpdir(), "ut-panda-smoke-"));
 writeFileSync(join(scratch, "panda.preset.mjs"), pandaModule);
-writeFileSync(join(scratch, "parkui.preset.mjs"), parkModule);
+writeFileSync(join(scratch, "radix.preset.mjs"), radixModule);
 
 // Minimal config: both presets plus Panda's own base preset, no `include` (no source files to
 // scan — this only needs the token layer's generated CSS, never a component's usage). A plain
@@ -52,9 +52,9 @@ writeFileSync(join(scratch, "parkui.preset.mjs"), parkModule);
 // resolvable from THIS scratch dir's own node_modules, which npx never populates locally.
 const config = [
   "import panda from './panda.preset.mjs';",
-  "import parkui from './parkui.preset.mjs';",
+  "import radix from './radix.preset.mjs';",
   "export default {",
-  "  presets: ['@pandacss/preset-panda', panda, parkui],",
+  "  presets: ['@pandacss/preset-panda', panda, radix],",
   "  include: [],",
   "  outdir: 'out',",
   "};",

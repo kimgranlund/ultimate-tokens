@@ -1,6 +1,6 @@
 # Knowledge 04 — Export Formats
 
-> Topic: the ten color export formats (CSS hex, CSS OKLCH, JSON, Figma DTCG, UI3, Tailwind, ShadCN, Panda CSS, Park UI, plus `exportAll`), their exact output shapes, naming/padding rules, and the
+> Topic: the ten color export formats (CSS hex, CSS OKLCH, JSON, Figma DTCG, UI3, Tailwind, ShadCN, Panda CSS, Radix, plus `exportAll`), their exact output shapes, naming/padding rules, and the
 > Figma-import constraints that drove the resolved-vs-aliased decision.
 
 ## Table of Contents
@@ -15,7 +15,7 @@
 9. Key colors (retained brand colors)
 10. Prime tokens (the seven per-palette identity swatches)
 11. Panda CSS
-12. Park UI
+12. Radix
 13. Palette groups, controls, and the schema stamp
 
 Tailwind v4 (`exportTailwind`) and ShadCN (`exportShadcn`) are introduced in §1 but do not yet have
@@ -39,9 +39,9 @@ All formats operate over **enabled** palettes (`palette.on`) and **export stops*
 
 Four more **framework** formats ship alongside these (see `src/engine/exports.js`, not all detailed
 below): **Tailwind v4** (`tailwind` · `exportTailwind`), **ShadCN** (`shadcn` · `exportShadcn`),
-**Panda CSS** (`panda` · `exportPanda`, §11), and **Park UI** (`parkui` · `exportParkUi`, §12).
-ShadCN and Park UI are both **curated-contract** formats — ShadCN a fixed `SHADCN_ORDER` over a
-hand-kept suffix `MAP`, Park UI a fixed `accent`/`gray`/`error`/`fg`/`canvas`/`border`/`bg` set built
+**Panda CSS** (`panda` · `exportPanda`, §11), and **Radix** (`radix` · `exportRadix`, §12).
+ShadCN and Radix are both **curated-contract** formats — ShadCN a fixed `SHADCN_ORDER` over a
+hand-kept suffix `MAP`, Radix a fixed `accent`/`gray`/`error`/`fg`/`canvas`/`border`/`bg` set built
 from `pickDrivers` — NOT all roles, so a new semantic role does not surface in either unless
 explicitly wired in. Panda CSS, like Tailwind, is auto-flow: it maps every palette's `roles` directly.
 
@@ -203,7 +203,7 @@ namespace covers them too.
 | Tailwind `@theme` | `--color-dialog-backdrop` / `-white` / `-black` lines, outside any palette's scale/role blocks |
 | ShadCN | `--overlay` in both `:root`/`.dark` (literal, or `var(--{aliasPrefix}-dialog-backdrop)` when aliased), mapped in `@theme inline` — **`dialog-backdrop` only**; `white`/`black` have no slot in shadcn's fixed token contract, so they don't appear there |
 | Panda CSS | `tokens.colors.constant.{white,black,backdrop}` (§11) — namespaced under `constant`, never `colors.white`/`colors.black` directly (would collide with `preset-panda`'s own tokens of those names) |
-| Park UI | not emitted (curated contract, out of scope, same as scrims for Tailwind) |
+| Radix | not emitted (curated contract, out of scope, same as scrims for Tailwind) |
 
 **Why it is absent from the DTCG/UI3 *semantic* tree (Light/Dark · Color Roles) — load-bearing,
 don't "fix" this:** every top-level key of that tree is treated elsewhere as a REAL PALETTE with a
@@ -262,7 +262,7 @@ opt-in like key colors).
 | Tailwind `@theme` | `--color-{n}-prime-{step}` lines, per palette, next to that palette's scale |
 | ShadCN | not emitted (curated subset, out of scope, same as scrims for Tailwind) |
 | Panda CSS | `raw.prime.{step}` per palette (unpadded stop namespace, §11), plus `raw.prime.DEFAULT` aliasing `raw.prime.prime` |
-| Park UI | one leaf only, `colors.{n}.prime` (`base` only, no `_dark` — mode-independent per REQ-024, §12); Park's own ladder has no slot for the other six prime steps |
+| Radix | one leaf only, `colors.{n}.prime` (`base` only, no `_dark` — mode-independent per REQ-024, §12); Park UI's own ladder has no slot for the other six prime steps |
 
 **Why UI3 gives prime its own collection instead of nesting it under `Color Primitives` (unlike
 scrims and key colors):** the prime ladder is not derived from the ramp and no role ever aliases
@@ -297,20 +297,23 @@ every palette's `roles` map straight to a semantic leaf, so a new role needs no 
   the zip ships: a fixed two-line header comment, then `export default <preset JSON>;`. No import
   of `@pandacss/dev` — a consumer wires it in via `presets: ['@pandacss/preset-panda', preset]`.
 
-## 12. Park UI
+## 12. Radix
 
-`exportParkUi(state, opts)` (`parkui` · `src/engine/exports.js`) emits a Park UI preset object —
+`exportRadix(state, opts)` (`radix` · `src/engine/exports.js`) emits a Radix preset object —
 `{ name, theme: { extend: { semanticTokens: { colors, radii }, tokens? } } }` — a **curated-contract**
 format like ShadCN: it calls the shared `pickDrivers(palettes)` (REQ-040, byte-identical to ShadCN's
-driver pick) and writes Park's own fixed semantic keys, never a per-role loop. A palette with no
+driver pick) and writes Park UI's own fixed semantic keys, never a per-role loop. This format is a
+Panda preset built in Park UI's own token shape (Park UI is built on Radix's color scale, and is the
+format's real-world consumer — TKT-614 renamed the format from "Park UI" to "Radix" to name the
+general color system rather than one downstream consumer; the shape is unchanged). A palette with no
 enabled non-data neutral or primary palette returns a `/* … needs at least one enabled non-data
 palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel).
 
-- **Per-palette colors** (`colors.{n}`, `parkColorGroup`): a Radix-style **12-step ladder**, steps
+- **Per-palette colors** (`colors.{n}`, `radixColorGroup`): a Radix-style **12-step ladder**, steps
   1–8 the raw ramp stops and 9–12 role-derived (REQ-021), each step carrying `base`/`_dark`. Alongside
   it, **`a1`..`a12`** are the same 12 steps re-expressed as alpha values projected over white/black
   (Radix-style, REQ-022) — a different mechanism from this doc's own §6 `scrim` (which projects only
-  the 500 stop over itself); Park UI has no `scrim` group. Five **appearance groups** alias those
+  the 500 stop over itself); Radix has no `scrim` group. Five **appearance groups** alias those
   steps by reference (REQ-023): `solid` (`bg`/`bg-hover`/`fg` from steps 9/10/on-accent), `subtle`
   (from `a3`/`a4`/`a5`/step 11), `surface` (`a2`/`a3`/step 11 + `a6`/`a7` border), `outline` (`a2`/`a3`
   bg + `a7` border + step-11 fg), `plain` (`a3`/`a4` bg + step-11 fg). Two additive leaves round it
@@ -318,20 +321,20 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
   mode-independent prime identity swatch, `base` only — no `_dark`, unlike every other leaf here).
 - **Driver aliases** (REQ-025): `colors.accent` ← a deep clone of the primary driver's group with
   every internal reference re-pointed from `{primary.n}` to `accent`; `colors.gray` ← the same for
-  the neutral driver, re-pointed to `gray` (Park's own `gray: colorPalettes.neutral` pattern, KF-4).
+  the neutral driver, re-pointed to `gray` (Park UI's own `gray: colorPalettes.neutral` pattern, KF-4).
   `colors.error` is a single alias, `{colors.{danger ?? primary}.9}`.
   A `danger` driver, when enabled, backs `error`; otherwise `error` falls back to the primary driver.
-- **Global semantic tokens** (REQ-026, Park's own verbatim keys, all referencing the just-built
+- **Global semantic tokens** (REQ-026, Park UI's own verbatim keys, all referencing the just-built
   `gray` copy): `colors.fg.{default,muted,subtle}` → `gray.{12,11,10}`; `colors.canvas` → `gray.1`;
   `colors.border` → `gray.7`; `colors.bg.subtle` → `gray.2`.
 - **Radii** (REQ-027): `radii.{l1,l2,l3}` always alias `{radii.xs,sm,md}`; `tokens.radii.{none…full}`
   (px strings) is only emitted when `opts.geometry` resolves the brand's own corners.
-- **`exportParkUiModule(preset)`** wraps the preset as the ESM module string the drawer shows and
-  the zip ships (REQ-020): a header naming the driver bindings and the install order (Park's own
-  CLI-copied preset first, `utParkPreset` last). The no-driver sentinel string passes through
+- **`exportRadixModule(preset)`** wraps the preset as the ESM module string the drawer shows and
+  the zip ships (REQ-020): a header naming the driver bindings and the install order (Park UI's own
+  CLI-copied preset first, `utRadixPreset` last). The no-driver sentinel string passes through
   unwrapped (mirroring `exportShadcn`'s own no-driver sentinel pattern).
 - **Not emitted in v1** (non-goals): Park UI text styles, size ramp, insets, gaps, focus, recipes,
-  patterns, `globalCss`, or conditions of our own (`.dark` is Park's).
+  patterns, `globalCss`, or conditions of our own (`.dark` is Park UI's).
 
 ## 13. Palette groups, controls, and the schema stamp
 
@@ -350,7 +353,7 @@ into them.
 | CSS / CSS OKLCH / Tailwind | a `/* {name} · {group} */` comment line above each palette's block — metadata only, never a token |
 | Brand-kit (`brandKit()`) | `palettes[i].group`; `list_palettes` returns it |
 | DS bundle | `familiesByGroup: { material, brand, system, data }` (family slugs bucketed by group) alongside the existing flat `families`; consumed today only by Figma Make's Grammar table (§11/§12's own "curated-contract" formats have no analogous slot; see the plan's RP-1 ruling for the Claude Design/Stitch scope decision) |
-| UI3, ShadCN, Panda CSS, Park UI | not emitted (Figma variables have no metadata slot short of `description`, and #556 ruled out Figma folders; ShadCN/Panda/Park UI have no comparable comment-line mechanism) |
+| UI3, ShadCN, Panda CSS, Radix | not emitted (Figma variables have no metadata slot short of `description`, and #556 ruled out Figma folders; ShadCN/Panda/Radix have no comparable comment-line mechanism) |
 
 **Controls** (E2, ticket #573) — the chroma policy an export was resolved under, so a consumer can
 answer "why is neutral muted" without re-deriving it:
@@ -359,7 +362,7 @@ answer "why is neutral muted" without re-deriving it:
 |---|---|
 | JSON | a top-level `meta.controls: { baseChroma, primeChroma, paletteGroups }`, verbatim off the same resolved state every palette in the file was derived from |
 | Brand-kit (`brandKit()`) | the same shape, `kit.controls: { baseChroma, primeChroma, paletteGroups }` |
-| Every other format | not emitted — values already reflect the resolved controls, so a CSS/DTCG/UI3/Tailwind/ShadCN/Panda/Park UI consumer never needs the policy that produced them |
+| Every other format | not emitted — values already reflect the resolved controls, so a CSS/DTCG/UI3/Tailwind/ShadCN/Panda/Radix consumer never needs the policy that produced them |
 
 `baseChroma` is the public field name in both places — never the document-level `baseIntensity` the
 UI still carries internally (`src/ui/persist.js`); AC-004 (`spec-muted-base-key-spikes.md`) bars the
@@ -377,4 +380,4 @@ wherever a surface has a slot for it; absence on an older export meant v1:
 | CSS / CSS OKLCH / Tailwind / ShadCN | a first-line comment, `/* ultimate-tokens export schema {N} */` |
 | Brand-kit (`brandKit()`) | the `$schema` string's own trailing segment, `ultimate-tokens-brand-kit/{N}` (served as-is by `mcp/brand-kit-core.mjs`, which never itself reads or writes it); `SERVER.version` in `mcp/brand-kit-core.mjs` is a separate, hand-kept literal (that file ships standalone, no cross-file import) — bump it in step with `EXPORT_SCHEMA_VERSION` by convention, not by shared code |
 | DS bundle | Claude Design profile: `tokens.json`'s own `$schemaVersion` (`exportDesignSystemTokens`) and DESIGN.md frontmatter's `tokensSchema` (`exportDesignSystemSpine`). Stitch ships the same DESIGN.md (so inherits `tokensSchema`) but no `tokens.json` — no `$schemaVersion` there. Figma Make ships neither `DESIGN.md` nor `tokens.json` (its own `guidelines/` tree + `styles.css` + `README.md`) — its `styles.css` is `exportShadcn()`'s own output, so it INHERITS that format's `/* ultimate-tokens export schema N */` first-line comment for free; the figma-make profile's `README.md` receipt (`exportDesignSystemReceipt`) cites that same comment verbatim as its own "Schema stamp" line (ticket #607) so the stamp is explicit and gated (`hpg-export-schema-stamp`), not merely incidental |
-| Panda CSS / Park UI | not emitted — a Panda/Park UI preset object has no metadata slot short of a comment, and neither `exportPandaModule`/`exportParkUiModule`'s two-line header carries one today |
+| Panda CSS / Radix | not emitted — a Panda/Radix preset object has no metadata slot short of a comment, and neither `exportPandaModule`/`exportRadixModule`'s two-line header carries one today |

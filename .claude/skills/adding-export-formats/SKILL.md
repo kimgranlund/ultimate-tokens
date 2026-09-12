@@ -49,15 +49,16 @@ order — so **disabled palettes are absent from every format**, for free. Every
 
 **The auto-flow vs the curated-contract exceptions.** `exportCSS / exportOKLCH / exportJSON / exportDTCG /
 exportUI3 / exportTailwind / exportPanda` all iterate `p.roles` directly — a new role flows through with no
-edit. **`exportShadcn` and `exportParkUi` do NOT.** `exportShadcn` iterates the fixed `SHADCN_ORDER` array
+edit. **`exportShadcn` and `exportRadix` do NOT.** `exportShadcn` iterates the fixed `SHADCN_ORDER` array
 (in `exports.js`) over a hand-curated suffix-lookup `MAP` that pulls roles BY SUFFIX (`rs(neutral,
 "-surface")`, `prime(primary)` = the empty-suffix accent) and picks the driver palette BY NAME REGEX —
 neutral-, primary-, and danger-family name matches, so it survives renamed/preset palettes (the exact
-regexes: `references/foundations.md` §3). `exportParkUi` is the second curated-contract format: it calls
-the same `pickDrivers` driver-selection and writes Park's own fixed `accent`/`gray`/`error`/`fg`/`canvas`/
-`border`/`bg` semantic keys, never a per-role loop. A new role appears in ShadCN or Park UI only if you wire
-it into `MAP` (ShadCN) or the driver-copy block (Park UI) — and that is a deliberate design choice (both
-have a FIXED token contract), not a gate. Don't "fix" either by spilling all roles in.
+regexes: `references/foundations.md` §3). `exportRadix` is the second curated-contract format (it produces
+the Panda-preset shape Park UI/Panda consume): it calls the same `pickDrivers` driver-selection and writes
+Park UI's own fixed `accent`/`gray`/`error`/`fg`/`canvas`/`border`/`bg` semantic keys, never a per-role loop.
+A new role appears in ShadCN or Radix only if you wire it into `MAP` (ShadCN) or the driver-copy block
+(Radix) — and that is a deliberate design choice (both have a FIXED token contract), not a gate. Don't "fix"
+either by spilling all roles in.
 
 **The shared naming rules** (don't reinvent): `pad3` (3-digit stop padding, ADR-006), `slug` (palette → token
 namespace), the `--c-*` custom props where raw names end in DIGITS and semantic names end in a WORD so they
@@ -123,7 +124,7 @@ npm test                        # all of the above + headless-boot (drawer/downl
 
 The gate that catches a malformed color leaf is `leaf-valid` in `exports.mjs` (srgb, components in [0,1], hex
 reconstructs from components). The gate that catches a format you forgot to bundle is `nonempty` — it loops a
-fixed key list (`css/oklch/json/dtcg/ui3/tailwind/shadcn/panda/parkui`) over `exportAll`, so a new color format absent from
+fixed key list (`css/oklch/json/dtcg/ui3/tailwind/shadcn/panda/radix`) over `exportAll`, so a new color format absent from
 either `exportAll` OR that key list is not actually checked — add it to BOTH. For a new FRAMEWORK format, add a
 dedicated `[gate]` group asserting its load-bearing structure (mirror the `tailwind` / `shadcn` gate groups:
 `@theme {` present, `oklch(` values, `:root`/`.dark` token-set parity, disabled palette absent). Don't call it
