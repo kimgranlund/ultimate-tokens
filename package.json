@@ -4,6 +4,14 @@
   "description": "Ultimate Tokens — a perceptually-even color-palette + semantic-token generator built on the HCT color space (pure engine, web component, Figma plugin).",
   "type": "module",
   "license": "MIT",
+  "main": "./src/engine/exports.js",
+  "exports": {
+    ".": "./src/engine/exports.js",
+    "./tonal": "./src/engine/tonal.js",
+    "./semantic": "./src/engine/semantic.js",
+    "./model": "./src/ui/model.mjs",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "dev": "vite",
     "gen:figma-binder-code": "node scripts/gen-figma-binder-code.mjs",
