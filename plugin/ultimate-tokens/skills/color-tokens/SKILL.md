@@ -43,11 +43,12 @@ library's series-color source, and the data palettes' own roles for everything e
    `--md-sys-color-*` or a custom `--{brand}-*` prefix — **read the actual prefix from the file** and
    use it throughout; the examples below use `--c-` as the default, but the role grammar after the
    prefix (`-{palette}-{role}`) is identical. *This guide is for the CSS export;* the Tailwind
-   (`--color-*`), shadcn, Panda CSS, and Park UI exports use different grammars — the role SEMANTICS
+   (`--color-*`), shadcn, Panda CSS, and Radix exports use different grammars — the role SEMANTICS
    still hold. Panda CSS: `colors.{palette}.{role}` in the preset object maps to `--colors-{palette}-
    {role}` at runtime, with the bare accent role as the group's `DEFAULT` (`colors.{palette}.DEFAULT`).
-   Park UI: driver-aliased semantic keys (`colorPalette.solid.bg` and its `accent`/`gray` siblings) —
-   `accent` is the brand's primary palette, `gray` is its neutral, not a literal palette name.
+   Radix: driver-aliased semantic keys (`colorPalette.solid.bg` and its `accent`/`gray` siblings, the
+   same shape Park UI/Panda consume) — `accent` is the brand's primary palette, `gray` is its neutral,
+   not a literal palette name.
 2. **Enumerate the palettes.** Every `--c-<slug>-050` line marks a palette. The default kit ships
    a neutral, a brand accent plus its own supporting accents, the four intents, and an eight-hue
    data family (currently sixteen palettes) — but kits vary; read what's actually there rather than

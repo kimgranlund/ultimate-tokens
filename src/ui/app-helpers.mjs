@@ -42,7 +42,7 @@ export const ACCOUNT_URL = "https://app.lemonsqueezy.com/my-orders";
 // Pro-gated export formats (the proExport flag). Free = CSS (css/oklch) + the Figma/JSON interchange; Pro =
 // DTCG + the framework configs. flagOf("proExport") is true (unlocked) while TIERS_ENFORCED is off, so these
 // only actually gate after go-live. The single-format preview shows an upsell; Download-All omits them.
-export const PRO_EXPORT_FORMATS = new Set(["dtcg", "tailwind", "shadcn", "panda", "parkui"]);
+export const PRO_EXPORT_FORMATS = new Set(["dtcg", "tailwind", "shadcn", "panda", "radix"]);
 
 // README shipped inside the Download-All zip's experimental figma-aliased/ folder (OD-004).
 export const ALIASED_README = `figma-aliased/ — EXPERIMENTAL plugin-free cascade (OD-004)

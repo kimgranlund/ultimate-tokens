@@ -8,6 +8,17 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-09-12
+
+#### Changed
+- **Renamed the "Park UI" color export format to "Radix"** (#614) — a rename only, the shape is
+  unchanged (the same Panda-preset wrapper Park UI/Panda actually consume). `exportParkUi`/
+  `exportParkUiModule` become `exportRadix`/`exportRadixModule`; the format id `parkui` becomes
+  `radix`; the drawer tab, PRO_LABEL/PRO_EXPORT_FORMATS, and the Download-All zip folder (`park-ui/`
+  → `radix/`) all move with it. Park UI is still named where prose explains provenance or
+  compatibility (it's built on Radix's color scale, and is the format's original real-world
+  consumer) — only the format's own identifiers/labels/title changed.
+
 ### 2026-09-11
 
 #### Added
