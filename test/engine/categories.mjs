@@ -3,12 +3,18 @@
 // `type.registers` — ADR-022) and it survives the APPLY path (openConfigAsSet → hydrate → clampType →
 // typeScale) so opening a palette dresses the doc in its designed fonts — guards the seam the "every
 // palette still shows Inter" bug lived in. The (geometry) block near the end of the main loop pins the
-// smaller, verbatim `geometry` pass-through (#485, currently only Adia's `{ramp:"linear4"}`) the same way.
+// smaller, verbatim `geometry` pass-through (#485, currently only Adia's `{ramp:"linear4"}`) the same way,
+// and the (groups) block pins the `paletteGroups` pass-through (#617) the same way again, plus a
+// standalone (groups-discriminate) synthetic-fixture check proving the opt-in actually changes the
+// derived ramp-chroma target, not just that it round-trips inertly.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { typeScale, DEFAULT_TYPE, siblingWeightDefaults, bodyClassSiblingDefaults, BODY_CLASS_VOICES, resolvedFontFor } from "../../src/engine/type.mjs";
 import { hydrate } from "../../src/ui/persist.js";
+import { paletteGroup, resolvePaletteGroups } from "../../src/ui/model.mjs";
+import { rampChromaOf } from "../../src/engine/resolve.mjs";
+import { buildCategory } from "../../scripts/gen-categories.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SPECDIR = join(HERE, "..", "..", "docs", "reference", "colors", "categories");
@@ -266,7 +272,73 @@ for (const slug of CATS) {
     } else if ("geometry" in p) {
       FAIL("geometry", `${slug}[${i}] carries a generated "geometry" field with no matching spec key — the opt-in must be byte-identical-absent by default`);
     }
+
+    // (groups) per-preset PALETTE GROUPS pass-through (#617) — same opt-in, verbatim shape as
+    // `geometry` above: a spec palette's `paletteGroups` object (none of the 7 sourced/decorative
+    // categories or "brands" carries one yet — Adia's fitted values land separately, #618) must
+    // survive generate → hydrate unmodified, and a palette with NO `paletteGroups` key must carry
+    // no `paletteGroups` field on its generated preset at all (byte-identical-absent by default,
+    // asserted here across every real category so this stays true as #618 lands real values).
+    const sgp = specPals[i]?.paletteGroups;
+    if (sgp) {
+      if (!eq(p.paletteGroups, sgp)) FAIL("groups", `${slug}[${i}] the generated preset's paletteGroups ${JSON.stringify(p.paletteGroups)} != the spec's ${JSON.stringify(sgp)}`);
+      for (const g of Object.keys(sgp)) {
+        if (!eq(doc.paletteGroups[g].baseChroma, sgp[g].baseChroma ?? doc.paletteGroups[g].baseChroma))
+          FAIL("groups", `${slug}[${i}] hydrate lost/changed paletteGroups.${g}.baseChroma`);
+      }
+    } else if ("paletteGroups" in p) {
+      FAIL("groups", `${slug}[${i}] carries a generated "paletteGroups" field with no matching spec key — the opt-in must be byte-identical-absent by default`);
+    }
   });
+}
+
+// (groups-discriminate) #617's DISCRIMINATING control: a category preset carrying an explicit
+// `paletteGroups` override must actually resolve to a DIFFERENT ramp-chroma target than the same
+// preset without one — proving the schema slot is real plumbing, not inert JSON that generate/hydrate
+// silently ignore. Runs buildCategory() (the REAL generator function, not a reimplementation) against
+// a synthetic doc — NOT a real curated category — so this stays independent of whatever real values
+// #618 eventually fits for Adia. Uses the `brands`-style `palettes` direct pass-through (no swatch/hier
+// derivation needed) so the fixture only has to carry the one thing under test.
+{
+  const groupOverride = { brand: { baseChroma: 40, primeChroma: 40 } };
+  const makeDoc = (withOverride) => ({
+    slug: "synthetic-groups-fixture",
+    volumes: [{
+      roman: "I",
+      h1: "Synthetic",
+      preface: [],
+      palettes: [{
+        kicker: "Synthetic",
+        title: "Synthetic",
+        source: "",
+        refuses: "",
+        hierarchy: {},
+        dominantHex: "#335577",
+        palettes: [{ name: "Primary", hue: 250, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: "brand" }],
+        ...(withOverride ? { paletteGroups: groupOverride } : {}),
+      }],
+    }],
+  });
+
+  const withPG = buildCategory(makeDoc(true)).presets[0];
+  const withoutPG = buildCategory(makeDoc(false)).presets[0];
+
+  if (!("paletteGroups" in withPG) || !eq(withPG.paletteGroups, groupOverride))
+    FAIL("groups", `synthetic fixture: buildCategory did not pass paletteGroups through verbatim (got ${JSON.stringify(withPG.paletteGroups)})`);
+  if ("paletteGroups" in withoutPG)
+    FAIL("groups", `synthetic fixture: buildCategory emitted a paletteGroups field with no spec key present`);
+
+  const rampChromaFor = (preset) => {
+    const doc = hydrate(preset);
+    const p = { ...doc.palettes[0], group: paletteGroup(doc.palettes[0]) };
+    return rampChromaOf(p, resolvePaletteGroups(doc), { baseChroma: doc.baseIntensity, primeChroma: doc.primeChroma });
+  };
+  const cWith = rampChromaFor(withPG);
+  const cWithout = rampChromaFor(withoutPG);
+
+  if (cWithout !== 100) FAIL("groups", `synthetic fixture without an override resolved brand baseChroma to ${cWithout}, want the GROUP_DEFAULTS brand default (100)`);
+  if (cWith !== 40) FAIL("groups", `synthetic fixture WITH a paletteGroups override resolved brand baseChroma to ${cWith}, want the overridden 40`);
+  if (cWith === cWithout) FAIL("groups", "the paletteGroups schema slot does not discriminate — with/without overrides resolved to the same ramp chroma");
 }
 
 // (g) NEGATIVE control: an un-typed palette still yields the global product default (fallback intact)
@@ -274,7 +346,7 @@ const noType = hydrate({ palettes: [{ name: "x", hue: 200, chroma: 60, on: true 
 if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL("fallback", "un-typed palette lost the product default");
 
 // ── REPORT ──
-for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "fallback"]) {
+for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "fallback"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
