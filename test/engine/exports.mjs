@@ -1529,6 +1529,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   const rm = byName["README.md"];
   if (!/design-system-for-figma-make — Figma Make profile export/.test(rm)) FAIL("design-system-make", "README is not the figma-make profile receipt");
   if (!/make_guidelines_check\.py/.test(rm)) FAIL("design-system-make", "README does not cite make_guidelines_check.py as the gate of record");
+  if (!rm.includes(`/* ultimate-tokens export schema ${X.EXPORT_SCHEMA_VERSION} */`)) FAIL("design-system-make", "README does not cite the styles.css schema stamp");
 
   // theme-general — no hardcoded golden-theme (Studio 54) names leak into a default-theme run.
   const allText = Object.values(byName).join("\n").toLowerCase();
@@ -1862,6 +1863,14 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   const md = X.exportDesignSystemSpine(state, tsc, gsc);
   const fm = (md.match(/^---\n([\s\S]*?)\n---/) || [, ""])[1];
   if (!new RegExp(`^tokensSchema: ${v}$`, "m").test(fm)) FAIL(G, `DESIGN.md frontmatter is missing "tokensSchema: ${v}"`);
+
+  // Figma Make ships no DESIGN.md/tokens.json — styles.css's inherited shadcn first-line comment IS
+  // its schema carrier (E6 follow-up, ticket #607), cited explicitly in the profile's own README receipt.
+  const makeFiles = X.exportDesignSystemMakeBundle(state, tsc, gsc);
+  const makeStyles = makeFiles.find((f) => f.name === "guidelines/styles.css");
+  if (!makeStyles || makeStyles.data.split("\n")[0] !== stampComment) FAIL(G, `Make styles.css first line is not the schema stamp comment (want ${JSON.stringify(stampComment)})`);
+  const makeReadme = makeFiles.find((f) => f.name === "README.md");
+  if (!makeReadme || !makeReadme.data.includes(stampComment)) FAIL(G, "Make README does not cite the schema stamp comment");
 
   const kit = brandKit(doc);
   if (kit.$schema !== `ultimate-tokens-brand-kit/${v}`) FAIL(G, `brandKit $schema = ${JSON.stringify(kit.$schema)}, want ultimate-tokens-brand-kit/${v}`);
