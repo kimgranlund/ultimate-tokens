@@ -156,102 +156,192 @@
                 "weight": 700,
                 "styleName": "Bold",
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Black", "weight": 900 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  }
                 ]
               },
               "Headline": {
                 "weight": 700,
                 "styleName": "Bold",
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Black", "weight": 900 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Black",
+                    "weight": 900
+                  }
                 ]
               },
               "Sub-heading": {
                 "weight": 500,
                 "styleName": "Medium",
                 "weights": [
-                  { "name": "Regular", "weight": 400 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "Title": {
                 "weight": 500,
                 "styleName": "Medium",
                 "weights": [
-                  { "name": "Regular", "weight": 400 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "Sub-title": {
                 "weight": 500,
                 "styleName": "Medium",
                 "weights": [
-                  { "name": "Regular", "weight": 400 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "Kicker": {
                 "weight": 500,
                 "styleName": "Medium",
                 "weights": [
-                  { "name": "Regular", "weight": 400 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Regular",
+                    "weight": 400
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "Lead": {
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "Body": {
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "Body-mono": {
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "Label": {
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "Label-mono": {
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "Tiny": {
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "Tiny-mono": {
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "UI-control": {
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               },
               "UI-widget": {
                 "weights": [
-                  { "name": "Medium", "weight": 500 },
-                  { "name": "Bold", "weight": 700 }
+                  {
+                    "name": "Medium",
+                    "weight": 500
+                  },
+                  {
+                    "name": "Bold",
+                    "weight": 700
+                  }
                 ]
               }
             }
@@ -262,93 +352,217 @@
           "palettes": [
             {
               "name": "Neutral",
-              "hue": 225,
-              "chroma": 10,
+              "hue": 267,
+              "chroma": 56,
               "skew": -20,
               "lift": 0,
-              "hueShift": 15,
+              "hueShift": -10,
               "hueSameDir": false,
               "on": true,
-              "cuspPull": 0
+              "cuspPull": 0,
+              "primeChroma": 100
             },
             {
               "name": "Primary",
               "hue": 235,
-              "chroma": 85,
-              "skew": -20,
+              "chroma": 100,
+              "skew": -25,
               "lift": 0,
-              "hueShift": 10,
+              "hueShift": 0,
               "hueSameDir": false,
               "on": true,
-              "cuspPull": 26,
+              "cuspPull": 3,
+              "primeChroma": 99,
               "colorRole": "dominant"
             },
             {
               "name": "Secondary",
-              "hue": 205,
-              "chroma": 40,
-              "skew": 0,
+              "hue": 214,
+              "chroma": 75,
+              "skew": 1,
               "lift": 0,
-              "hueShift": 20,
+              "hueShift": -1,
               "hueSameDir": false,
               "on": true,
-              "cuspPull": 25,
+              "cuspPull": 1,
+              "primeChroma": 100,
               "colorRole": "supporting"
             },
             {
               "name": "Tertiary",
               "hue": 285,
-              "chroma": 45,
-              "skew": -20,
+              "chroma": 74,
+              "skew": -16,
               "lift": 0,
-              "hueShift": 20,
+              "hueShift": 1,
               "hueSameDir": false,
               "on": true,
+              "cuspPull": 2,
+              "primeChroma": 100,
               "colorRole": "supporting"
             },
             {
               "name": "Info",
-              "hue": 265,
-              "chroma": 45,
+              "hue": 238,
+              "chroma": 39,
               "skew": -20,
               "lift": 0,
-              "hueShift": 20,
+              "hueShift": 1,
               "hueSameDir": false,
-              "on": true
+              "on": true,
+              "cuspPull": 6,
+              "primeChroma": 100
             },
             {
               "name": "Success",
-              "hue": 150,
-              "chroma": 40,
-              "skew": -20,
-              "lift": -5,
-              "hueShift": 0,
+              "hue": 142,
+              "chroma": 56,
+              "skew": -16,
+              "lift": 0,
+              "hueShift": 1,
               "hueSameDir": false,
-              "on": true
+              "on": true,
+              "cuspPull": 0,
+              "primeChroma": 100
             },
             {
               "name": "Warning",
-              "hue": 75,
-              "chroma": 50,
-              "skew": 40,
-              "lift": 15,
-              "hueShift": 30,
+              "hue": 71,
+              "chroma": 98,
+              "skew": 36,
+              "lift": 0,
+              "hueShift": 6,
               "hueSameDir": true,
               "on": true,
-              "cuspPull": 100
+              "cuspPull": 0,
+              "primeChroma": 100
             },
             {
               "name": "Danger",
-              "hue": 25,
-              "chroma": 40,
-              "skew": -20,
-              "lift": -5,
+              "hue": 31,
+              "chroma": 53,
+              "skew": -44,
+              "lift": 0,
               "hueShift": 0,
               "hueSameDir": false,
               "on": true,
-              "cuspPull": 0
+              "cuspPull": 0,
+              "primeChroma": 100
+            },
+            {
+              "name": "Data 1",
+              "hue": 273,
+              "chroma": 70,
+              "skew": -2,
+              "lift": 0,
+              "hueShift": -2,
+              "hueSameDir": false,
+              "on": true,
+              "cuspPull": 0,
+              "primeChroma": 100
+            },
+            {
+              "name": "Data 2",
+              "hue": 326,
+              "chroma": 68,
+              "skew": 20,
+              "lift": 0,
+              "hueShift": 0,
+              "hueSameDir": false,
+              "on": true,
+              "cuspPull": 0,
+              "primeChroma": 100
+            },
+            {
+              "name": "Data 3",
+              "hue": 21,
+              "chroma": 64,
+              "skew": 16,
+              "lift": 0,
+              "hueShift": -2,
+              "hueSameDir": false,
+              "on": true,
+              "cuspPull": 0,
+              "primeChroma": 100
+            },
+            {
+              "name": "Data 4",
+              "hue": 62,
+              "chroma": 68,
+              "skew": 1,
+              "lift": 0,
+              "hueShift": 0,
+              "hueSameDir": false,
+              "on": true,
+              "cuspPull": 0,
+              "primeChroma": 100
+            },
+            {
+              "name": "Data 5",
+              "hue": 107,
+              "chroma": 27,
+              "skew": -22,
+              "lift": 0,
+              "hueShift": 1,
+              "hueSameDir": false,
+              "on": true,
+              "cuspPull": 0,
+              "primeChroma": 100
+            },
+            {
+              "name": "Data 6",
+              "hue": 150,
+              "chroma": 66,
+              "skew": -15,
+              "lift": 0,
+              "hueShift": 1,
+              "hueSameDir": false,
+              "on": true,
+              "cuspPull": 0,
+              "primeChroma": 100
+            },
+            {
+              "name": "Data 7",
+              "hue": 195,
+              "chroma": 66,
+              "skew": -13,
+              "lift": 0,
+              "hueShift": 0,
+              "hueSameDir": false,
+              "on": true,
+              "cuspPull": 0,
+              "primeChroma": 100
+            },
+            {
+              "name": "Data 8",
+              "hue": 239,
+              "chroma": 82,
+              "skew": 0,
+              "lift": 0,
+              "hueShift": -1,
+              "hueSameDir": true,
+              "on": true,
+              "cuspPull": 0,
+              "primeChroma": 100
             }
-          ]
+          ],
+          "lmin": 3,
+          "lmax": 100,
+          "dampBias": 0,
+          "paletteGroups": {
+            "material": {
+              "baseChroma": 25
+            },
+            "brand": {
+              "baseChroma": 41
+            },
+            "system": {
+              "baseChroma": 32
+            },
+            "data": {
+              "baseChroma": 27
+            }
+          }
         },
         {
           "kicker": "BZZR · The product's own design system",
