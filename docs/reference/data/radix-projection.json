@@ -1,4 +1,5 @@
 {
+  "version": "1.0.0",
   "purpose": "Compatibility projection from Adia tonal primitives to Radix/Park UI 1\u201312 roles",
   "source_of_truth": "Adia 050\u2013950 + prime-* + scrim-* token families",
   "projection": {
