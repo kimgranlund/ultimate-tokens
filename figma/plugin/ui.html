@@ -17600,9 +17600,19 @@ class ApplyGateMixinImpl {
         { class: "apply-gate-body" },
         h("p", { class: "apply-gate-lede" }, rebuild
           ? "Regroup deletes and re-creates the Color Roles variables so they adopt the grouped order. Any layers or styles bound to them will detach and need reconnecting — the Ultimate Tokens style swatches are re-bound automatically on this same apply. (Color Primitives are untouched.)"
-          : (this.exportSystems && this.exportSystems.styles === false
-              ? "This creates or updates the Color Primitives + Color Roles variable collections in this file. Variables with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want)."
-              : "This creates or updates the Color Primitives + Color Roles variable collections in this file, plus the STYLE swatches bound to them (paint styles per semantic role, text styles per type step — toggle \u201CStyles\u201D in the drawer to opt out). Variables and Ultimate Tokens styles with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want).")),
+          : (() => {
+              // #496/P1: the lede must name only the systems this apply will actually write —
+              // both non-rebuild branches were previously keyed ONLY on exportSystems.styles, so a
+              // Colour-off apply still claimed "creates or updates the Color Primitives + Color
+              // Roles variable collections", which is false whenever exportSystems.color is off.
+              const sys = this.exportSystems || {};
+              const collections = sys.color === false
+                ? "Type and Geometry variable collections"
+                : "Color Primitives + Color Roles variable collections";
+              return sys.styles === false
+                ? "This creates or updates the " + collections + " in this file. Variables with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want)."
+                : "This creates or updates the " + collections + " in this file, plus the STYLE swatches bound to them (paint styles per semantic role, text styles per type step — toggle \u201CStyles\u201D in the drawer to opt out). Variables and Ultimate Tokens styles with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want).";
+            })()),
         h(
           "div",
           { class: "apply-gate-warn" },

@@ -975,6 +975,38 @@ ok(posted && posted.pluginMessage.rebuildSemantic === true, "(xg) confirming the
 ok(app._applyConsented() === true, "(xg) Regroup confirm does NOT change the apply consent");
 try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
 
+// ── (xg) ticket #496/P1: the apply-gate lede must name only the systems the apply will
+// actually write — a Colour-off apply must not claim it creates/updates "Color Primitives" /
+// "Color Roles" (both non-rebuild branches were previously keyed only on exportSystems.styles) ──
+{
+  const _origExportSystems = app.exportSystems;
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.exportSystems = { color: false, type: true, geometry: true, styles: true };
+  app.requestApplyToFigma(false);
+  let lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(!lede.includes("Color Primitives") && !lede.includes("Color Roles"), "(xg/496) Colour off + styles on: the lede names neither Color Primitives nor Color Roles");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  app.exportSystems = { color: false, type: true, geometry: true, styles: false };
+  app.requestApplyToFigma(false);
+  lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(!lede.includes("Color Primitives") && !lede.includes("Color Roles"), "(xg/496) Colour off + styles off: the lede names neither Color Primitives nor Color Roles (both branches carried the defect)");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  app.exportSystems = { color: true, type: true, geometry: true, styles: true };
+  app.requestApplyToFigma(false);
+  lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(lede.includes("Color Primitives") && lede.includes("Color Roles"), "(xg/496) Colour on + styles on: the lede still names Color Primitives + Color Roles (the fix is a branch, not a deletion)");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  app.exportSystems = { color: true, type: true, geometry: true, styles: false };
+  app.requestApplyToFigma(false);
+  lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(lede.includes("Color Primitives") && lede.includes("Color Roles"), "(xg/496) Colour on + styles off: the lede still names Color Primitives + Color Roles");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.exportSystems = _origExportSystems;
+}
+
 // ── (xg) TKT-0020: the changed-value diff — receiveLiveFloatVariables + _figmaChangedCount + the
 // gate's rendered count, over the app's OWN real next-apply plan (not a synthetic fixture) ──
 app.applyGateOpen = false; app._applyBusy = false; posted = null; // TKT-0004: reset busy — the Regroup confirm above never got a matching onApplyDone/onApplyError
