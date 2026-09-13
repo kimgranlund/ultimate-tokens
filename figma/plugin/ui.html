@@ -17605,13 +17605,33 @@ class ApplyGateMixinImpl {
               // both non-rebuild branches were previously keyed ONLY on exportSystems.styles, so a
               // Colour-off apply still claimed "creates or updates the Color Primitives + Color
               // Roles variable collections", which is false whenever exportSystems.color is off.
+              //
+              // Re-fold (review of #496): the FIRST fix still built both clauses off fixed strings
+              // keyed on a single flag each, so two more reachable false claims survived — (a) the
+              // "Type and Geometry variable collections" phrase claimed a "Type Primitives" write
+              // that only happens when Styles is ALSO on (:83/:103 below), and {color:false,
+              // type:false, geometry:true} (legal per the drawer's keep-one-system guard,
+              // overlays/drawer.js:301) writes only "Geometry"; (b) the styles parenthetical named
+              // BOTH "paint styles" and "text styles" unconditionally whenever Styles was on, but
+              // {color:false, styles:true, type:true} (ticket #496's own U5t/U5s configuration)
+              // writes zero paints (stylePlans({include:{color:false}}) — figma/plugin/code.js:987
+              // skips the whole paint leg when paints.length is 0). Both clauses now derive from the
+              // SAME `sys` flags applyToFigma/_figmaFloatPlans actually gate on, so the lede can never
+              // claim a write this apply won't make.
               const sys = this.exportSystems || {};
-              const collections = sys.color === false
-                ? "Type and Geometry variable collections"
-                : "Color Primitives + Color Roles variable collections";
-              return sys.styles === false
+              const collectionParts = [
+                sys.color !== false && "Color Primitives + Color Roles",
+                (sys.type !== false || sys.geometry !== false) && "Geometry",
+                (sys.type !== false && sys.styles !== false) && "Type Primitives",
+              ].filter(Boolean);
+              const collections = collectionParts.join(" + ") + " variable collection" + (collectionParts.length === 1 ? "" : "s");
+              const styleParts = [
+                sys.color !== false && "paint styles per semantic role",
+                sys.type !== false && "text styles per type step",
+              ].filter(Boolean);
+              return (sys.styles === false || !styleParts.length)
                 ? "This creates or updates the " + collections + " in this file. Variables with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want)."
-                : "This creates or updates the " + collections + " in this file, plus the STYLE swatches bound to them (paint styles per semantic role, text styles per type step — toggle \u201CStyles\u201D in the drawer to opt out). Variables and Ultimate Tokens styles with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want).";
+                : "This creates or updates the " + collections + " in this file, plus the STYLE swatches bound to them (" + styleParts.join(", ") + " — toggle \u201CStyles\u201D in the drawer to opt out). Variables and Ultimate Tokens styles with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want).";
             })()),
         h(
           "div",

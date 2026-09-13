@@ -985,24 +985,46 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   app.requestApplyToFigma(false);
   let lede = txtOf(app.querySelector(".apply-gate-lede") || {});
   ok(!lede.includes("Color Primitives") && !lede.includes("Color Roles"), "(xg/496) Colour off + styles on: the lede names neither Color Primitives nor Color Roles");
+  ok(lede.length > 0, "(xg/496) Colour off + styles on: the lede is non-empty (the absence assertion above isn't vacuously satisfied)");
+  // Re-fold finding (major): {color:false, styles:true, type:true} is the exact U5t/U5s
+  // configuration under which stylePlans({include:{color:false,type:true}}) emits ZERO paints
+  // (figma/plugin/code.js:987 gates the whole paint leg on paints.length) — so a Colour-off apply
+  // must never claim it writes "paint styles", even though it still writes text styles.
+  ok(!lede.includes("paint styles"), "(xg/496) Colour off + styles on: the lede does NOT claim paint styles will be written (color is off, so stylePlans emits zero paints)");
+  ok(lede.includes("text styles"), "(xg/496) Colour off + styles on: the lede still claims text styles will be written (type is on)");
   app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
 
   app.exportSystems = { color: false, type: true, geometry: true, styles: false };
   app.requestApplyToFigma(false);
   lede = txtOf(app.querySelector(".apply-gate-lede") || {});
   ok(!lede.includes("Color Primitives") && !lede.includes("Color Roles"), "(xg/496) Colour off + styles off: the lede names neither Color Primitives nor Color Roles (both branches carried the defect)");
+  ok(lede.length > 0, "(xg/496) Colour off + styles off: the lede is non-empty (the absence assertion above isn't vacuously satisfied)");
+  // styles-axis coverage: pin the branch difference against the styles:true leg above — a
+  // styles:false lede must not mention the STYLE-swatches sentence at all.
+  ok(!lede.includes("STYLE swatches"), "(xg/496) Colour off + styles off: the lede does NOT mention STYLE swatches (Styles is off)");
   app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
 
   app.exportSystems = { color: true, type: true, geometry: true, styles: true };
   app.requestApplyToFigma(false);
   lede = txtOf(app.querySelector(".apply-gate-lede") || {});
   ok(lede.includes("Color Primitives") && lede.includes("Color Roles"), "(xg/496) Colour on + styles on: the lede still names Color Primitives + Color Roles (the fix is a branch, not a deletion)");
+  ok(lede.includes("STYLE swatches") && lede.includes("paint styles") && lede.includes("text styles"), "(xg/496) Colour on + styles on: the lede claims both paint styles and text styles (color and type both on)");
   app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
 
   app.exportSystems = { color: true, type: true, geometry: true, styles: false };
   app.requestApplyToFigma(false);
   lede = txtOf(app.querySelector(".apply-gate-lede") || {});
   ok(lede.includes("Color Primitives") && lede.includes("Color Roles"), "(xg/496) Colour on + styles off: the lede still names Color Primitives + Color Roles");
+  ok(!lede.includes("STYLE swatches"), "(xg/496) Colour on + styles off: the lede does NOT mention STYLE swatches (Styles is off — the styles axis is genuinely covered, not just exercised)");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  // minor #2 (review of #496): Type Primitives is only ever written alongside Styles (:83/:103) —
+  // {color:false, type:false, geometry:true} is a reachable state (drawer's keep-one-system guard,
+  // overlays/drawer.js:301) where only the merged "Geometry" collection is actually written.
+  app.exportSystems = { color: false, type: false, geometry: true, styles: true };
+  app.requestApplyToFigma(false);
+  lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(lede.includes("Geometry") && !lede.includes("Type Primitives") && !lede.includes("Color Primitives"), "(xg/496) Geometry-only apply: the lede names only the Geometry collection, not Type Primitives or Color Primitives");
   app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
   app.exportSystems = _origExportSystems;
 }
