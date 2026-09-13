@@ -14,6 +14,7 @@ import { typeScale, DEFAULT_TYPE, siblingWeightDefaults, bodyClassSiblingDefault
 import { hydrate } from "../../src/ui/persist.js";
 import { paletteGroup, resolvePaletteGroups } from "../../src/ui/model.mjs";
 import { rampChromaOf } from "../../src/engine/resolve.mjs";
+import { paletteStops, STOPS } from "../../src/engine/tonal.js";
 import { buildCategory } from "../../scripts/gen-categories.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -289,6 +290,20 @@ for (const slug of CATS) {
     } else if ("paletteGroups" in p) {
       FAIL("groups", `${slug}[${i}] carries a generated "paletteGroups" field with no matching spec key — the opt-in must be byte-identical-absent by default`);
     }
+
+    // (curve) per-preset CURVE OVERRIDE pass-through (#479, extended #625 for lmin/lmax) — unlike
+    // `geometry`/`paletteGroups` (optional keys, absent by default), lmin/lmax are CORE
+    // DEFAULT_CONTROLS fields present on every preset — so the byte-identity contract here is "an
+    // un-overridden preset carries the DEFAULT_CONTROLS value (5/100)", not "the field is absent".
+    // None of the 7 sourced/decorative categories or "brands" carries an lmin/lmax override yet
+    // (Adia's fitted lmin:3 lands separately, #618), so every real preset today must resolve to the
+    // engine default — asserted here across every real category so this stays true as #618 lands
+    // real values.
+    const CURVE_DEFAULTS = { lmin: 5, lmax: 100 };
+    for (const k of ["lmin", "lmax"]) {
+      const want = k in specPals[i] ? specPals[i][k] : CURVE_DEFAULTS[k];
+      if (p[k] !== want) FAIL("curve", `${slug}[${i}] the generated preset's ${k} ${p[k]} != expected ${want} (spec ${k in specPals[i] ? specPals[i][k] : "absent, engine default"})`);
+    }
   });
 }
 
@@ -408,12 +423,113 @@ for (const slug of CATS) {
     FAIL("groups-validate", "a valid paletteGroups override was not passed through verbatim");
 }
 
+// (curve-discriminate) #625's DISCRIMINATING control: a category preset carrying an explicit
+// lmin override must actually resolve to a DIFFERENT ramp tone at the dark end than the same preset
+// without one — proving the schema slot is real plumbing, not inert JSON that generate/hydrate
+// silently ignore (same shape as (groups-discriminate) above). Runs buildCategory() (the REAL
+// generator function) against a synthetic doc — NOT a real curated category — so this stays
+// independent of whatever real value #618 eventually fits for Adia.
+{
+  const makeCurveDoc = (withOverride) => ({
+    slug: "synthetic-curve-fixture",
+    volumes: [{
+      roman: "I",
+      h1: "Synthetic",
+      preface: [],
+      palettes: [{
+        kicker: "Synthetic",
+        title: "Synthetic",
+        source: "",
+        refuses: "",
+        hierarchy: {},
+        dominantHex: "#335577",
+        palettes: [{ name: "Primary", hue: 250, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: "brand" }],
+        ...(withOverride ? { lmin: 30 } : {}),
+      }],
+    }],
+  });
+
+  const withLmin = buildCategory(makeCurveDoc(true)).presets[0];
+  const withoutLmin = buildCategory(makeCurveDoc(false)).presets[0];
+
+  if (withLmin.lmin !== 30) FAIL("curve", `synthetic fixture: buildCategory did not pass lmin through verbatim (got ${withLmin.lmin})`);
+  if (withoutLmin.lmin !== 5) FAIL("curve", `synthetic fixture: buildCategory did not fall back to the DEFAULT_CONTROLS lmin (5) with no override (got ${withoutLmin.lmin})`);
+
+  // the ramp's darkest stop is the tone MOST sensitive to lmin (the ramp's dark floor) — resolve
+  // each fixture's own palette through the REAL generator pipeline (hydrate → paletteStops), reading
+  // this preset's OWN lmin/lmax/toneMode (not DEFAULT_CONTROLS), so the comparison exercises exactly
+  // what a real document would render.
+  const darkestToneFor = (preset) => {
+    const doc = hydrate(preset);
+    const stops = paletteStops(doc.palettes[0], doc, STOPS);
+    return stops[stops.length - 1].tone;
+  };
+  const darkWith = darkestToneFor(withLmin);
+  const darkWithout = darkestToneFor(withoutLmin);
+  if (darkWith === darkWithout) FAIL("curve", "the lmin schema slot does not discriminate — with/without overrides resolved to the same darkest-stop tone");
+  if (darkWith <= darkWithout) FAIL("curve", `an lmin:30 override (raising the dark floor above the default 5) should resolve a LIGHTER darkest-stop tone than the default, got ${darkWith} vs default ${darkWithout}`);
+}
+
+// (curve-validate) #625, same rigor as (groups-validate): the GENERATOR itself must fail loudly on
+// an authoring mistake in a curated category JSON's lmin/lmax fields — a non-numeric value, or one
+// outside DOMAINS.lmin/lmax's documented range — rather than letting it through to be silently
+// floored/ceiled by persist.js's clampNumber at OPEN time.
+{
+  const makeCurveValidateDoc = (fields) => ({
+    slug: "synthetic-curve-validate-fixture",
+    volumes: [{
+      roman: "I",
+      h1: "Synthetic",
+      preface: [],
+      palettes: [{
+        kicker: "Synthetic",
+        title: "Synthetic",
+        source: "",
+        refuses: "",
+        hierarchy: {},
+        dominantHex: "#335577",
+        palettes: [{ name: "Primary", hue: 250, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: "brand" }],
+        ...fields,
+      }],
+    }],
+  });
+  const mustThrow = (fields, wantSubstr, label) => {
+    try {
+      buildCategory(makeCurveValidateDoc(fields));
+      FAIL("curve-validate", `${label}: buildCategory did not throw for ${JSON.stringify(fields)}`);
+    } catch (e) {
+      if (!(e instanceof Error) || !e.message.includes(wantSubstr))
+        FAIL("curve-validate", `${label}: threw, but message ${JSON.stringify(e && e.message)} did not name ${JSON.stringify(wantSubstr)}`);
+    }
+  };
+  // non-numeric lmin (a string typo'd where a number belongs) must fail loudly, naming the field.
+  mustThrow({ lmin: "three" }, "lmin", "bad-lmin-type");
+  mustThrow({ lmin: "three" }, "synthetic-curve-validate-fixture", "bad-lmin-type-names-doc");
+  // non-numeric lmax, same contract.
+  mustThrow({ lmax: "ninety" }, "lmax", "bad-lmax-type");
+  // out-of-range lmin (above DOMAINS.lmin.max=40) must fail loudly, naming the value + range.
+  mustThrow({ lmin: 41 }, "lmin", "bad-lmin-above-max");
+  mustThrow({ lmin: 41 }, "out of range", "bad-lmin-above-max-range");
+  // out-of-range lmin (below DOMAINS.lmin.min=0) must fail loudly the same way.
+  mustThrow({ lmin: -1 }, "out of range", "bad-lmin-below-min-range");
+  // out-of-range lmax (below DOMAINS.lmax.min=60, above DOMAINS.lmax.max=100) must fail loudly too.
+  mustThrow({ lmax: 59 }, "out of range", "bad-lmax-below-min-range");
+  mustThrow({ lmax: 101 }, "out of range", "bad-lmax-above-max-range");
+  // a VALID override must still pass through fine — no regression.
+  const okDoc = makeCurveValidateDoc({ lmin: 3, lmax: 95 });
+  let okResult;
+  try { okResult = buildCategory(okDoc); }
+  catch (e) { FAIL("curve-validate", `a valid lmin/lmax override should not throw, but got: ${e && e.message}`); }
+  if (okResult && (okResult.presets[0].lmin !== 3 || okResult.presets[0].lmax !== 95))
+    FAIL("curve-validate", "a valid lmin/lmax override was not passed through verbatim");
+}
+
 // (g) NEGATIVE control: an un-typed palette still yields the global product default (fallback intact)
 const noType = hydrate({ palettes: [{ name: "x", hue: 200, chroma: 60, on: true }] });
 if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL("fallback", "un-typed palette lost the product default");
 
 // ── REPORT ──
-for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "fallback"]) {
+for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

@@ -168,12 +168,23 @@ function deriveNeutralPalette(palettes) {
 }
 
 const VIVID_MIDS = { damp: 70, dampCurve: 1.5, dampAmp: 55, dampBias: 0 };
-// per-entry curve override (#479) — opt-in, currently only exercised by "brands"' `direct` shapes: a
-// real shipped product's own generator settings can drift from every OTHER preset's shared VIVID_MIDS
-// (e.g. Adia's product export re-tuned damp/dampCurve/dampAmp). A preset that sets any of these keys
-// wins over VIVID_MIDS for THAT preset only; a preset that sets none is byte-identical to before this
-// was added — same "opt-in, no-op by default" contract as the `direct` palette pass-through above.
-const CURVE_OVERRIDE_KEYS = ["damp", "dampCurve", "dampAmp", "dampBias"];
+// per-entry curve override (#479, extended #625) — opt-in, currently only exercised by "brands"'
+// `direct` shapes: a real shipped product's own generator settings can drift from every OTHER
+// preset's shared VIVID_MIDS/DEFAULT_CONTROLS (e.g. Adia's product export re-tuned damp/dampCurve/
+// dampAmp, and #625's fitted Adia document needs lmin:3 to reproduce its one remaining shared
+// residual). A preset that sets any of these keys wins over VIVID_MIDS/DEFAULT_CONTROLS for THAT
+// preset only; a preset that sets none is byte-identical to before this was added — same "opt-in,
+// no-op by default" contract as the `direct` palette pass-through above. `lmin`/`lmax` are the ramp's
+// lightness-domain bounds (tonal.js DEFAULT_CONTROLS, default 5/100) — see the validation below,
+// which gives them the SAME loud-failure rigor as the `paletteGroups` tripwire (#617/#620/#621);
+// damp/dampCurve/dampAmp/dampBias carry no such gen-time validation of their own (unchanged here).
+const CURVE_OVERRIDE_KEYS = ["damp", "dampCurve", "dampAmp", "dampBias", "lmin", "lmax"];
+// per-entry lmin/lmax validation (#625) — mirrors the paletteGroups tripwire's rigor (loud failure at
+// gen time on a non-numeric or out-of-range value) rather than leaving these two fields less
+// validated than paletteGroups' own baseChroma/primeChroma. Range comes from DOMAINS.lmin/lmax
+// (persist.js) — the SAME bounds hydrate()'s clampNumber enforces on a live document — so this can
+// never drift from the actual hydrate() clamp.
+const CURVE_RANGE_KEYS = ["lmin", "lmax"];
 // per-entry GEOMETRY config (#485) — opt-in, currently only Adia's "brands" entry: a spec palette may
 // carry a `geometry` object (the same shape doc.geometry takes — e.g. `{ "ramp": "linear4" }` to opt
 // that ONE preset into the linear-ladder ramp, issue #483/#484) that passes straight through to the
@@ -348,9 +359,23 @@ export function buildCategory(doc) {
       // directly (the "brands" pass-through shape — a real doc's own type config) — pass it through
       // verbatim rather than running it through the register mapper, which wouldn't recognize it.
       const typeCfg = p.type && p.type.fonts ? p.type : registersToTypeConfig(p.type);
-      // per-preset curve override (#479) — see CURVE_OVERRIDE_KEYS above.
+      // per-preset curve override (#479, extended #625) — see CURVE_OVERRIDE_KEYS above.
       const curveOverrides = {};
       for (const k of CURVE_OVERRIDE_KEYS) if (p[k] !== undefined) curveOverrides[k] = p[k];
+      // CURVE-OVERRIDE RANGE TRIPWIRE (#625, same style as the paletteGroups tripwire below): a
+      // curated category JSON's typo (a non-numeric lmin/lmax, or a fitted value outside the
+      // documented domain) would otherwise bake silently into the committed src/ui/categories/*.js
+      // output — hydrate()'s clampNumber would silently floor/ceil it on open, with zero signal at
+      // gen time. Fail the GENERATOR loudly instead, naming the bad doc/palette/field/value.
+      for (const k of CURVE_RANGE_KEYS) {
+        if (p[k] === undefined) continue;
+        const value = p[k];
+        if (typeof value !== "number" || !Number.isFinite(value))
+          throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" ${k} is not a number (got ${JSON.stringify(value)})`);
+        const { min, max } = DOMAINS[k];
+        if (value < min || value > max)
+          throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" ${k} is out of range: ${value} (valid range ${min}-${max})`);
+      }
       // per-preset GEOMETRY config (#485) — see the comment above CURVE_OVERRIDE_KEYS's declaration.
       const geomCfg = p.geometry && typeof p.geometry === "object" ? p.geometry : null;
       // per-preset PALETTE GROUPS config (#617) — see the comment above CURVE_OVERRIDE_KEYS's declaration.
