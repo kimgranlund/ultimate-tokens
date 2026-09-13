@@ -975,6 +975,71 @@ ok(posted && posted.pluginMessage.rebuildSemantic === true, "(xg) confirming the
 ok(app._applyConsented() === true, "(xg) Regroup confirm does NOT change the apply consent");
 try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
 
+// ── (xg) ticket #496/P1: the apply-gate lede must name only the systems the apply will
+// actually write — a Colour-off apply must not claim it creates/updates "Color Primitives" /
+// "Color Roles" (both non-rebuild branches were previously keyed only on exportSystems.styles) ──
+{
+  const _origExportSystems = app.exportSystems;
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.exportSystems = { color: false, type: true, geometry: true, styles: true };
+  app.requestApplyToFigma(false);
+  let lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(!lede.includes("Color Primitives") && !lede.includes("Color Roles"), "(xg/496) Colour off + styles on: the lede names neither Color Primitives nor Color Roles");
+  ok(lede.length > 0, "(xg/496) Colour off + styles on: the lede is non-empty (the absence assertion above isn't vacuously satisfied)");
+  // Re-fold finding (major): {color:false, styles:true, type:true} is the exact U5t/U5s
+  // configuration under which stylePlans({include:{color:false,type:true}}) emits ZERO paints
+  // (figma/plugin/code.js:987 gates the whole paint leg on paints.length) — so a Colour-off apply
+  // must never claim it writes "paint styles", even though it still writes text styles.
+  ok(!lede.includes("paint styles"), "(xg/496) Colour off + styles on: the lede does NOT claim paint styles will be written (color is off, so stylePlans emits zero paints)");
+  ok(lede.includes("text styles"), "(xg/496) Colour off + styles on: the lede still claims text styles will be written (type is on)");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  app.exportSystems = { color: false, type: true, geometry: true, styles: false };
+  app.requestApplyToFigma(false);
+  lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(!lede.includes("Color Primitives") && !lede.includes("Color Roles"), "(xg/496) Colour off + styles off: the lede names neither Color Primitives nor Color Roles (both branches carried the defect)");
+  ok(lede.length > 0, "(xg/496) Colour off + styles off: the lede is non-empty (the absence assertion above isn't vacuously satisfied)");
+  // styles-axis coverage: pin the branch difference against the styles:true leg above — a
+  // styles:false lede must not mention the STYLE-swatches sentence at all.
+  ok(!lede.includes("STYLE swatches"), "(xg/496) Colour off + styles off: the lede does NOT mention STYLE swatches (Styles is off)");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  app.exportSystems = { color: true, type: true, geometry: true, styles: true };
+  app.requestApplyToFigma(false);
+  lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(lede.includes("Color Primitives") && lede.includes("Color Roles"), "(xg/496) Colour on + styles on: the lede still names Color Primitives + Color Roles (the fix is a branch, not a deletion)");
+  ok(lede.includes("STYLE swatches") && lede.includes("paint styles") && lede.includes("text styles"), "(xg/496) Colour on + styles on: the lede claims both paint styles and text styles (color and type both on)");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  app.exportSystems = { color: true, type: true, geometry: true, styles: false };
+  app.requestApplyToFigma(false);
+  lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(lede.includes("Color Primitives") && lede.includes("Color Roles"), "(xg/496) Colour on + styles off: the lede still names Color Primitives + Color Roles");
+  ok(!lede.includes("STYLE swatches"), "(xg/496) Colour on + styles off: the lede does NOT mention STYLE swatches (Styles is off — the styles axis is genuinely covered, not just exercised)");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  // minor #2 (review of #496): Type Primitives is only ever written alongside Styles (:83/:103) —
+  // {color:false, type:false, geometry:true} is a reachable state (drawer's keep-one-system guard,
+  // overlays/drawer.js:301) where only the merged "Geometry" collection is actually written.
+  app.exportSystems = { color: false, type: false, geometry: true, styles: true };
+  app.requestApplyToFigma(false);
+  lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(lede.includes("Geometry") && !lede.includes("Type Primitives") && !lede.includes("Color Primitives"), "(xg/496) Geometry-only apply: the lede names only the Geometry collection, not Type Primitives or Color Primitives");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  // fold-review regression: {color:true, type:false, geometry:false} (reachable via the drawer's
+  // keep-one-system guard, overlays/drawer.js:301) has exactly ONE collectionPart ("Color
+  // Primitives + Color Roles"), but that part alone names TWO collections — the lede must still
+  // pluralize "collections", not fall to the singular just because the PART count is 1.
+  app.exportSystems = { color: true, type: false, geometry: false, styles: false };
+  app.requestApplyToFigma(false);
+  lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(lede.includes("Color Primitives") && lede.includes("Color Roles"), "(xg/496) Color-only apply: the lede names both Color Primitives and Color Roles");
+  ok(lede.includes("variable collections") && !lede.includes("variable collection "), "(xg/496) Color-only apply: the lede says 'variable collections' (plural) — naming two collections, not one");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.exportSystems = _origExportSystems;
+}
+
 // ── (xg) TKT-0020: the changed-value diff — receiveLiveFloatVariables + _figmaChangedCount + the
 // gate's rendered count, over the app's OWN real next-apply plan (not a synthetic fixture) ──
 app.applyGateOpen = false; app._applyBusy = false; posted = null; // TKT-0004: reset busy — the Regroup confirm above never got a matching onApplyDone/onApplyError
