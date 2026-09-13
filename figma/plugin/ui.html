@@ -17624,7 +17624,11 @@ class ApplyGateMixinImpl {
                 (sys.type !== false || sys.geometry !== false) && "Geometry",
                 (sys.type !== false && sys.styles !== false) && "Type Primitives",
               ].filter(Boolean);
-              const collections = collectionParts.join(" + ") + " variable collection" + (collectionParts.length === 1 ? "" : "s");
+              // The "Color Primitives + Color Roles" part alone names TWO collections, so pluralize
+              // whenever color is included (or there's more than one part) — counting PARTS instead
+              // of actual collections under-pluralizes the color-only case (fold-review fix).
+              const isPluralCollections = collectionParts.length !== 1 || sys.color !== false;
+              const collections = collectionParts.join(" + ") + " variable collection" + (isPluralCollections ? "s" : "");
               const styleParts = [
                 sys.color !== false && "paint styles per semantic role",
                 sys.type !== false && "text styles per type step",

@@ -1026,6 +1026,17 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   lede = txtOf(app.querySelector(".apply-gate-lede") || {});
   ok(lede.includes("Geometry") && !lede.includes("Type Primitives") && !lede.includes("Color Primitives"), "(xg/496) Geometry-only apply: the lede names only the Geometry collection, not Type Primitives or Color Primitives");
   app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  // fold-review regression: {color:true, type:false, geometry:false} (reachable via the drawer's
+  // keep-one-system guard, overlays/drawer.js:301) has exactly ONE collectionPart ("Color
+  // Primitives + Color Roles"), but that part alone names TWO collections — the lede must still
+  // pluralize "collections", not fall to the singular just because the PART count is 1.
+  app.exportSystems = { color: true, type: false, geometry: false, styles: false };
+  app.requestApplyToFigma(false);
+  lede = txtOf(app.querySelector(".apply-gate-lede") || {});
+  ok(lede.includes("Color Primitives") && lede.includes("Color Roles"), "(xg/496) Color-only apply: the lede names both Color Primitives and Color Roles");
+  ok(lede.includes("variable collections") && !lede.includes("variable collection "), "(xg/496) Color-only apply: the lede says 'variable collections' (plural) — naming two collections, not one");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
   app.exportSystems = _origExportSystems;
 }
 
