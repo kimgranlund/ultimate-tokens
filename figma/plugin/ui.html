@@ -660,6 +660,19 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 /* small scrim swatches for the right-pane sub-variant preview */
 .scrim-cell.sm { width: 28px; height: 24px; }
 
+/* radix view (ticket #637) — one row per enabled palette, either a 12-step Park UI ladder read
+   straight from the engine's own exportRadix output, or (a name collision with a reserved alias
+   key) a single badge line and nothing else — read-only, no drag handle, no reorder. */
+.radix-scene { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
+.radix-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; border: 1px solid transparent; }
+.radix-row:hover { border-color: var(--line); }
+.radix-ladder { display: flex; box-shadow: var(--shadow); border-radius: 6px; overflow: hidden; width: fit-content; }
+.radix-step { width: 26px; height: 40px; display: block; position: relative; }
+.radix-step:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
+.radix-row.radix-collision { opacity: .85; }
+.radix-badge { font-size: 12px; color: var(--ink-dim); }
+.radix-empty { color: var(--ink-dim); padding: 40px 0; text-align: center; }
+
 /* Semantic Mapping view — a DATA TABLE in the canvas slot: scrolls, no pan/zoom. */
 .canvas-area.is-table { cursor: default; overflow: hidden; }
 .canvas-area.is-table .canvas-scene {
@@ -12612,7 +12625,7 @@ const field = (labelText, control, { labelTitle } = {}) => {
 return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, sanitizeSetRecords, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, field };
 })();
 __M.colorSection = (function(){
-const { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } = __M.model;
+const { PALETTE_GROUPS, RADIX_COLLISION_BADGE, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } = __M.model;
 const { RELATIONSHIPS, deriveNeutral, deriveRelative } = __M.derive;
 const { icon } = __M.icons;
 const { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } = __M.appHelpers;
@@ -12901,6 +12914,7 @@ class ColorSectionImpl {
   _canvasScene(view) {
     if (this.canvasView === "scrims") return this.renderScrimsScene(view);
     if (this.canvasView === "mapping") return this.renderMappingScene(view);
+    if (this.canvasView === "radix") return this.renderRadixScene(view);
     return this.renderRampsScene(view);
   }
 
@@ -13428,13 +13442,16 @@ class ColorSectionImpl {
           { id: "palettes", label: "Palettes", title: "Palettes — the tonal ramps" },
           { id: "scrims", label: "Scrims", title: "Scrims — the 7 translucent 500 overlays per palette, over a checkerboard" },
           { id: "mapping", label: "Mapping", title: "Semantic Mapping — each role's Light/Dark raw token, as a table" },
+          { id: "radix", label: "Radix", title: "Radix — the 12-step Park UI ladder per palette, read straight from the engine's own Radix export" },
         ],
         this.canvasView,
         (id) => this.setCanvasView(id),
         { cls: "canvas-seg", ariaLabel: "Canvas view", idPrefix: "cview" },
       ),
       // stops density (Palettes + Scrims ramps): 19 core stops vs the 25 extended set (half-steps).
-      this.canvasView !== "mapping"
+      // I3: an explicit allow-list, not a deny-list — meaningless for Mapping's table AND for
+      // Radix's fixed 12-step ladder, so both are excluded by construction rather than by luck.
+      (this.canvasView === "palettes" || this.canvasView === "scrims")
         ? this.segmented(
             [
               { id: "core", label: "Core", title: "19 stops · 050/100/150/200/…" },
@@ -13474,7 +13491,7 @@ class ColorSectionImpl {
   // view is a DATA TABLE, not a visual scene — it scrolls instead of pan/zoom (is-table).
   renderCanvasArea(view) {
     const isTable = this.canvasView === "mapping";
-    // Color "Both" mode → the side-by-side Compare (Palettes/Scrims only; the Mapping table already shows
+    // Color "Both" mode → the side-by-side Compare (Palettes/Scrims/Radix; the Mapping table already shows
     // both modes' refs, so it renders normally).
     if (this.section === "color" && this.colorMode === "both" && !isTable) return this.renderCompareArea(view);
     const scene = this._canvasScene(view);
@@ -13715,6 +13732,45 @@ class ColorSectionImpl {
     const stack = h("div", { class: "ramp-stack" }, ...sections);
     this._wireReorder(stack); // pointer-drag the ⋮⋮ handle to reorder palettes
     return stack;
+  }
+
+
+  // renderRadixScene (ticket #637) — the "Radix" canvas view: one row per ENABLED palette (I5),
+  // each rendering the engine's OWN exportRadix output (view.radixPreset, OQ-1) as a 12-step
+  // ladder, never re-derived and never cross-checked against radix-projection.json. This scene is
+  // READ-ONLY (I1): no drag handle, no reorder wiring, no document mutation of any kind — it is
+  // NOT one of the isGroupedView canvas views and adds no export affordance whatsoever (I6).
+  //
+  // Three states only (no fourth):
+  //   - no-drivers (I9): view.radixPreset is the exportRadix no-driver sentinel STRING — the scene
+  //     still renders, wrapped, with exactly one .radix-empty node and no rows.
+  //   - collision (I10/OQ-2 option (c)/A6): radixKeyCollision(p.name) — the row renders exactly
+  //     one .radix-badge text node (the pinned RADIX_COLLISION_BADGE) and NOTHING else — no
+  //     ladder, no second line.
+  //   - normal: a .radix-ladder of 12 .radix-step nodes, painted base/_dark per
+  //     resolvedCanvasScheme() into a style attribute (never a class).
+  renderRadixScene(view) {
+    if (typeof view.radixPreset === "string") {
+      return h("div", { class: "radix-scene" }, h("div", { class: "radix-empty" }, "No non-data palette is enabled to drive the Radix export."));
+    }
+    const scheme = this.resolvedCanvasScheme();
+    const colors = view.radixPreset.theme.extend.semanticTokens.colors;
+    const rows = view.palettes.filter((p) => p.on !== false).map((p) => {
+      const n = slug(p.name);
+      if (radixKeyCollision(p.name)) {
+        return h("div", { class: "radix-row radix-collision" }, h("span", { class: "radix-badge" }, RADIX_COLLISION_BADGE));
+      }
+      const group = colors[n] || {};
+      const steps = [];
+      for (let step = 1; step <= 12; step++) {
+        const leaf = group[String(step)];
+        const val = leaf && leaf.value ? leaf.value : { base: "transparent", _dark: "transparent" };
+        const paint = scheme === "dark" ? val._dark : val.base;
+        steps.push(h("i", { class: "radix-step", style: `background:${paint}`, title: `${p.name} ${step}` }));
+      }
+      return h("div", { class: "radix-row" }, h("span", { class: "ramp-name" }, p.name), h("div", { class: "radix-ladder" }, ...steps));
+    });
+    return h("div", { class: "radix-scene" }, ...rows);
   }
 
 
@@ -14183,7 +14239,7 @@ class ColorSectionImpl {
     // "palettes" canvas view (renderRampsScene) shows group headers at all — Scrims/Mapping
     // share this same reorder machinery but have no group boundaries to cross, so a reorder
     // there must never silently reassign a palette's group.
-    const isGroupedView = this.canvasView !== "scrims" && this.canvasView !== "mapping";
+    const isGroupedView = this.canvasView === "palettes";
     const neighbor = pals[st.dropPi];
     const targetGroup = isGroupedView ? (neighbor ? paletteGroup(neighbor) : paletteGroup(pals[from])) : paletteGroup(pals[from]);
     const groupChanged = isGroupedView && paletteGroup(pals[from]) !== targetGroup;
@@ -15028,7 +15084,7 @@ class TypeSectionImpl {
 
   // renderTypeCanvasHeader — the Typography section's own canvas header: pane toggles + the
   // Specimen·Tokens mode segment + the reused fit/scheme/zoom controls. It deliberately omits the
-  // color-only Palettes/Scrims/Mapping + stops segments and the "+ Palette" button.
+  // color-only Palettes/Scrims/Mapping/Radix + stops segments and the "+ Palette" button.
   renderTypeCanvasHeader() {
     return h(
       "div",
@@ -18289,7 +18345,7 @@ class HctApp extends HTMLElement {
     this.panesRight = true; // right inspector shown
     this.canvasTheme = "system"; // canvas preview color-scheme: system (follow OS) | light | dark — INDEPENDENT of app chrome ◐
     this.colorMode = "system"; // Color section value-mode control: system (follow OS, until an explicit pick) | light | dark | both (Compare) — persisted (app prefs)
-    this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table)
+    this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table) | radix (the 12-step Park UI ladder)
     this.section = "color"; // editor section: color | typography | geometry — ui-session, routes the whole editor (never persisted)
     this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (editable token matrix: Base + breakpoints) — type-section sub-state
     this.typeMode = "base"; // active Typography breakpoint mode: "base" | a doc.type.modes[].id | "compare" (Phase 5/5.3) — ui-session

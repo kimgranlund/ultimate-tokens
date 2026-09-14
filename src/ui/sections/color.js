@@ -1,4 +1,4 @@
-import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
+import { PALETTE_GROUPS, RADIX_COLLISION_BADGE, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
@@ -287,6 +287,7 @@ export class ColorSectionImpl {
   _canvasScene(view) {
     if (this.canvasView === "scrims") return this.renderScrimsScene(view);
     if (this.canvasView === "mapping") return this.renderMappingScene(view);
+    if (this.canvasView === "radix") return this.renderRadixScene(view);
     return this.renderRampsScene(view);
   }
 
@@ -814,13 +815,16 @@ export class ColorSectionImpl {
           { id: "palettes", label: "Palettes", title: "Palettes — the tonal ramps" },
           { id: "scrims", label: "Scrims", title: "Scrims — the 7 translucent 500 overlays per palette, over a checkerboard" },
           { id: "mapping", label: "Mapping", title: "Semantic Mapping — each role's Light/Dark raw token, as a table" },
+          { id: "radix", label: "Radix", title: "Radix — the 12-step Park UI ladder per palette, read straight from the engine's own Radix export" },
         ],
         this.canvasView,
         (id) => this.setCanvasView(id),
         { cls: "canvas-seg", ariaLabel: "Canvas view", idPrefix: "cview" },
       ),
       // stops density (Palettes + Scrims ramps): 19 core stops vs the 25 extended set (half-steps).
-      this.canvasView !== "mapping"
+      // I3: an explicit allow-list, not a deny-list — meaningless for Mapping's table AND for
+      // Radix's fixed 12-step ladder, so both are excluded by construction rather than by luck.
+      (this.canvasView === "palettes" || this.canvasView === "scrims")
         ? this.segmented(
             [
               { id: "core", label: "Core", title: "19 stops · 050/100/150/200/…" },
@@ -860,7 +864,7 @@ export class ColorSectionImpl {
   // view is a DATA TABLE, not a visual scene — it scrolls instead of pan/zoom (is-table).
   renderCanvasArea(view) {
     const isTable = this.canvasView === "mapping";
-    // Color "Both" mode → the side-by-side Compare (Palettes/Scrims only; the Mapping table already shows
+    // Color "Both" mode → the side-by-side Compare (Palettes/Scrims/Radix; the Mapping table already shows
     // both modes' refs, so it renders normally).
     if (this.section === "color" && this.colorMode === "both" && !isTable) return this.renderCompareArea(view);
     const scene = this._canvasScene(view);
@@ -1101,6 +1105,45 @@ export class ColorSectionImpl {
     const stack = h("div", { class: "ramp-stack" }, ...sections);
     this._wireReorder(stack); // pointer-drag the ⋮⋮ handle to reorder palettes
     return stack;
+  }
+
+
+  // renderRadixScene (ticket #637) — the "Radix" canvas view: one row per ENABLED palette (I5),
+  // each rendering the engine's OWN exportRadix output (view.radixPreset, OQ-1) as a 12-step
+  // ladder, never re-derived and never cross-checked against radix-projection.json. This scene is
+  // READ-ONLY (I1): no drag handle, no reorder wiring, no document mutation of any kind — it is
+  // NOT one of the isGroupedView canvas views and adds no export affordance whatsoever (I6).
+  //
+  // Three states only (no fourth):
+  //   - no-drivers (I9): view.radixPreset is the exportRadix no-driver sentinel STRING — the scene
+  //     still renders, wrapped, with exactly one .radix-empty node and no rows.
+  //   - collision (I10/OQ-2 option (c)/A6): radixKeyCollision(p.name) — the row renders exactly
+  //     one .radix-badge text node (the pinned RADIX_COLLISION_BADGE) and NOTHING else — no
+  //     ladder, no second line.
+  //   - normal: a .radix-ladder of 12 .radix-step nodes, painted base/_dark per
+  //     resolvedCanvasScheme() into a style attribute (never a class).
+  renderRadixScene(view) {
+    if (typeof view.radixPreset === "string") {
+      return h("div", { class: "radix-scene" }, h("div", { class: "radix-empty" }, "No non-data palette is enabled to drive the Radix export."));
+    }
+    const scheme = this.resolvedCanvasScheme();
+    const colors = view.radixPreset.theme.extend.semanticTokens.colors;
+    const rows = view.palettes.filter((p) => p.on !== false).map((p) => {
+      const n = slug(p.name);
+      if (radixKeyCollision(p.name)) {
+        return h("div", { class: "radix-row radix-collision" }, h("span", { class: "radix-badge" }, RADIX_COLLISION_BADGE));
+      }
+      const group = colors[n] || {};
+      const steps = [];
+      for (let step = 1; step <= 12; step++) {
+        const leaf = group[String(step)];
+        const val = leaf && leaf.value ? leaf.value : { base: "transparent", _dark: "transparent" };
+        const paint = scheme === "dark" ? val._dark : val.base;
+        steps.push(h("i", { class: "radix-step", style: `background:${paint}`, title: `${p.name} ${step}` }));
+      }
+      return h("div", { class: "radix-row" }, h("span", { class: "ramp-name" }, p.name), h("div", { class: "radix-ladder" }, ...steps));
+    });
+    return h("div", { class: "radix-scene" }, ...rows);
   }
 
 
@@ -1569,7 +1612,7 @@ export class ColorSectionImpl {
     // "palettes" canvas view (renderRampsScene) shows group headers at all — Scrims/Mapping
     // share this same reorder machinery but have no group boundaries to cross, so a reorder
     // there must never silently reassign a palette's group.
-    const isGroupedView = this.canvasView !== "scrims" && this.canvasView !== "mapping";
+    const isGroupedView = this.canvasView === "palettes";
     const neighbor = pals[st.dropPi];
     const targetGroup = isGroupedView ? (neighbor ? paletteGroup(neighbor) : paletteGroup(pals[from])) : paletteGroup(pals[from]);
     const groupChanged = isGroupedView && paletteGroup(pals[from]) !== targetGroup;

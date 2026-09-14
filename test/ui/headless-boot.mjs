@@ -3033,6 +3033,262 @@ flushRaf();
   ok(Number(restoredInput.getAttribute("value")) === 33, `(gid11b) ...and shows the restored override value 33 (got ${restoredInput && restoredInput.getAttribute("value")})`);
 }
 
+// ── (rx) renderRadixScene — the pannable "Radix" canvas view (ticket #637). ONE ATOMIC UNIT
+//    (I2): the chip, the dispatch branch, and renderRadixScene land in the same commit — test
+//    (rx3) is the single assertion that fails on a tree shipping only half of that. ─────────────
+{
+  const { defaultDocument: defaultDocumentRX, radixKeyCollision: radixKeyCollisionRX, RADIX_COLLISION_BADGE: RADIX_COLLISION_BADGE_RX, projectView: projectViewRX, slug: slugRX } = await import("../../src/ui/model.mjs");
+  const { isDataPalette: isDataPaletteRX } = await import("../../src/engine/exports.js");
+  const { loadCategory: loadCategoryRX } = await import("../../src/ui/categories/index.js");
+  const { readFileSync: readFileSyncRX } = await import("node:fs");
+  const { fileURLToPath: fileURLToPathRX } = await import("node:url");
+  const { dirname: dirnameRX, resolve: resolveRX } = await import("node:path");
+  // globalThis.URL is shadowed by this shim's own createObjectURL stub above — resolve paths via
+  // node:path/node:url instead of `new URL(...)`.
+  const colorJsPathRX = resolveRX(dirnameRX(fileURLToPathRX(import.meta.url)), "../../src/ui/sections/color.js");
+
+  const rxView0 = app.canvasView, rxMode0 = app.colorMode;
+  app.setSection("color");
+  app.colorMode = "light";
+
+  const routeA = () => { app.doc = defaultDocumentRX(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = []; app.render(); flushRaf(); };
+
+  // test 1: fixture Route A — the chip + the dispatch branch, together.
+  routeA();
+  app.setCanvasView("radix"); flushRaf();
+  ok(app.querySelector(".radix-scene") != null, "(rx1) .radix-scene exists under canvasView=radix");
+  ok(app.querySelector(".canvas-scene") != null, "(rx1) .canvas-scene exists (existing code)");
+  ok(walk(app, (e) => e.getAttribute && e.getAttribute("data-fk") === "cview:radix").length === 1, "(rx1) exactly one cview:radix chip");
+  ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && /^cview:/.test(e.getAttribute("data-fk") || "")).length === 4, "(rx1) exactly 4 canvas-view chips (palettes/scrims/mapping/radix)");
+
+  // test 2: is-table, with its negative control.
+  routeA();
+  app.setCanvasView("radix"); flushRaf();
+  ok(app.querySelector(".canvas-area").classList.contains("is-table") === false, "(rx2) radix's .canvas-area lacks is-table");
+  app.setCanvasView("mapping"); flushRaf();
+  ok(app.querySelector(".canvas-area").classList.contains("is-table") === true, "(rx2) control: mapping's .canvas-area HAS is-table");
+  app.setCanvasView("radix"); flushRaf();
+
+  // test 3: THE I1/I2 ATOMICITY GATE.
+  routeA();
+  app.canvasView = "radix"; app.render(); flushRaf();
+  ok(app.querySelectorAll(".drag-handle").length === 0, "(rx3) THE I1/I2 ATOMICITY GATE: 0 .drag-handle under radix");
+
+  // test 4: mandatory negative control for test 3 (I7).
+  app.setCanvasView("palettes"); flushRaf();
+  ok(app.querySelectorAll(".drag-handle").length > 0, "(rx4) control: palettes still renders live drag handles");
+  app.setCanvasView("radix"); flushRaf();
+
+  // test 4b: structural call-site gate — extract renderRadixScene's own body and prove it calls
+  // neither dragHandle( nor _wireReorder(; the SAME grep, run over renderRampsScene's body, must
+  // fire (>= 1) as the proven-firing negative control (I7) so a typo'd pattern can't pass vacuously.
+  {
+    const colorSrc = readFileSyncRX(colorJsPathRX, "utf8");
+    const methodBody = (name) => {
+      const re = new RegExp(`^  ${name}\\([^)]*\\) \\{$`, "m");
+      const m = re.exec(colorSrc);
+      if (!m) return null;
+      const rest = colorSrc.slice(m.index + m[0].length);
+      const next = /\n  [A-Za-z_$][\w$]*\([^)]*\)\s*\{/.exec(rest);
+      return next ? rest.slice(0, next.index) : rest;
+    };
+    const radixBody = methodBody("renderRadixScene");
+    const rampsBody = methodBody("renderRampsScene");
+    ok(radixBody != null, "(rx4b) renderRadixScene's body was found for extraction");
+    ok(rampsBody != null, "(rx4b) renderRampsScene's body was found for extraction");
+    const hits = (body) => (body ? (body.match(/dragHandle\(|_wireReorder\(/g) || []).length : -1);
+    ok(hits(radixBody) === 0, `(rx4b) renderRadixScene's body calls neither dragHandle( nor _wireReorder( (got ${hits(radixBody)})`);
+    ok(hits(rampsBody) >= 1, `(rx4b) control: renderRampsScene's body DOES call dragHandle(/_wireReorder( (got ${hits(rampsBody)})`);
+  }
+
+  // test 5: normal state, Route B "Maison" (8 palettes, 8 enabled, 0 collisions).
+  {
+    const { PRESETS: BRANDS_RX } = await loadCategoryRX("brands");
+    const maison = BRANDS_RX.find((p) => p.name === "Maison · The product's own design system");
+    app.openConfigAsSet(maison, "Radix"); flushRaf();
+    app.setCanvasView("radix"); flushRaf();
+    const E = app.doc.palettes.filter((p) => p.on !== false).length;
+    ok(app.querySelectorAll(".radix-row").length === E, `(rx5) .radix-row === E (${E})`);
+    ok(app.querySelectorAll(".radix-ladder").length === E, `(rx5) .radix-ladder === E (${E})`);
+    ok(app.querySelectorAll(".radix-step").length === 12 * E, `(rx5) .radix-step === 12*E (${12 * E})`);
+    ok(app.querySelectorAll(".radix-collision").length === 0, "(rx5) .radix-collision === 0 (control: test 6)");
+    ok(app.querySelectorAll(".radix-badge").length === 0, "(rx5) .radix-badge === 0 (control: test 6)");
+    ok(app.querySelectorAll(".radix-empty").length === 0, "(rx5) .radix-empty === 0 (control: test 7)");
+  }
+
+  // test 6: collision state, Route B "Modal jazz" (11 palettes, 11 enabled, palettes[5]==="accent").
+  {
+    const { PRESETS: BRANDS_RX2 } = await loadCategoryRX("brands");
+    const modalJazz = BRANDS_RX2.find((p) => p.name === "Modal jazz · the cool-blue session");
+    app.openConfigAsSet(modalJazz, "Radix"); flushRaf();
+    app.setCanvasView("radix"); flushRaf();
+    const E6 = app.doc.palettes.filter((p) => p.on !== false).length;
+    const C6 = app.doc.palettes.filter((p) => p.on !== false && radixKeyCollisionRX(p.name)).length;
+    ok(C6 === 1, `(rx6) fixture still carries exactly 1 collision (got ${C6})`);
+    ok(app.querySelectorAll(".radix-collision").length === C6, "(rx6) .radix-collision === C");
+    ok(walk(app, (e) => e.classList && e.classList.contains("radix-badge")).length === C6, "(rx6) .radix-badge === C, scoped via walk");
+    ok(app.querySelectorAll(".radix-ladder").length === E6 - C6, "(rx6) .radix-ladder === E-C");
+    ok(app.querySelectorAll(".radix-step").length === 12 * (E6 - C6), `(rx6) .radix-step === 12*(E-C) (proves option (c): the colliding row renders NO ladder)`);
+    ok(app.querySelectorAll(".radix-empty").length === 0, "(rx6) .radix-empty === 0 (I9 must not appear here, control: test 7)");
+    // 6b — the OQ-3 gate: the badge's own text, never a re-typed literal.
+    const badgeNode = walk(app, (e) => e.classList && e.classList.contains("radix-badge"))[0];
+    ok(!!badgeNode && txtOf(badgeNode) === RADIX_COLLISION_BADGE_RX, "(rx6b) .radix-badge text equals the IMPORTED RADIX_COLLISION_BADGE");
+  }
+
+  // test 7: I9 gate, its OWN fresh Route A document, all non-data palettes disabled.
+  {
+    routeA();
+    app.commit((d) => { for (const p of d.palettes) if (!isDataPaletteRX(p)) p.on = false; });
+    flushRaf();
+    app.setCanvasView("radix"); flushRaf(); // must not throw
+    ok(app.querySelectorAll(".radix-scene").length === 1, "(rx7) .radix-scene === 1");
+    ok(app.querySelectorAll(".radix-empty").length === 1, "(rx7) .radix-empty === 1");
+    ok(app.querySelectorAll(".radix-row").length === 0, "(rx7) .radix-row === 0");
+    ok(app.querySelectorAll(".radix-ladder").length === 0, "(rx7) .radix-ladder === 0");
+    ok(app.querySelectorAll(".radix-step").length === 0, "(rx7) .radix-step === 0");
+    ok(app.querySelectorAll(".radix-collision").length === 0, "(rx7) .radix-collision === 0 (control: test 6)");
+    ok(app.querySelectorAll(".radix-badge").length === 0, "(rx7) .radix-badge === 0 (control: test 6)");
+  }
+
+  // test 8: A1/Compare gate, its OWN fresh Route A document WITH drivers.
+  {
+    routeA();
+    app.colorMode = "both"; app.canvasView = "radix"; app.render(); flushRaf();
+    ok(app.querySelectorAll(".radix-scene").length === 2, "(rx8) .radix-scene === 2 (one per compare column)");
+    const cols = app.querySelectorAll(".compare-col");
+    ok(cols.length === 2, "(rx8) two .compare-col nodes");
+    if (cols.length === 2) {
+      const view8 = projectViewRX(app.doc);
+      const firstPal = view8.palettes.find((p) => p.on !== false);
+      const leaf = view8.radixPreset.theme.extend.semanticTokens.colors[slugRX(firstPal.name)]["1"].value;
+      const step0 = walk(cols[0], (e) => e.classList && e.classList.contains("radix-step"))[0];
+      const step1 = walk(cols[1], (e) => e.classList && e.classList.contains("radix-step"))[0];
+      const s0 = step0 && step0.getAttribute("style");
+      const s1 = step1 && step1.getAttribute("style");
+      ok(!!s0 && !!s1 && s0 !== s1, "(rx8) the two columns' first .radix-step style values differ");
+      ok(s0 === `background:${leaf.base}`, `(rx8) the light column's first step matches value.base (got ${s0})`);
+      ok(s1 === `background:${leaf._dark}`, `(rx8) the dark column's first step matches value._dark (got ${s1})`);
+    }
+    app.colorMode = "light"; app.render(); flushRaf();
+  }
+
+  // test 9: the records gate for I8 place 5 (folded per OQ-4) — both greps verified green.
+  {
+    const colorSrc9 = readFileSyncRX(colorJsPathRX, "utf8");
+    const lines9 = colorSrc9.split("\n");
+    const sxsLine = lines9.find((l) => l.includes("side-by-side Compare"));
+    ok(!!sxsLine && /radix/i.test(sxsLine), "(rx9a) the side-by-side Compare comment now names radix");
+    ok(!colorSrc9.includes("Palettes/Scrims only"), "(rx9b) the stale 'Palettes/Scrims only' phrase is gone");
+  }
+
+  app.canvasView = rxView0; app.colorMode = rxMode0; app.render(); flushRaf();
+}
+
+// ── (rxs) stops-density deny-list to allow-list (I3, ticket #637) ───────────────────────────
+{
+  const { defaultDocument: defaultDocumentRXS } = await import("../../src/ui/model.mjs");
+  const rxsView0 = app.canvasView, rxsMode0 = app.colorMode;
+  app.doc = defaultDocumentRXS(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = [];
+  app.setSection("color"); app.colorMode = "light"; app.render(); flushRaf();
+
+  const stopsCoreCount = () => walk(app, (e) => e.getAttribute && e.getAttribute("data-fk") === "stops:core").length;
+
+  app.setCanvasView("radix"); flushRaf();
+  ok(stopsCoreCount() === 0, "(rxs1) stops:core is absent under radix");
+
+  app.setCanvasView("palettes"); flushRaf();
+  ok(stopsCoreCount() === 1, "(rxs2) control: stops:core present under palettes");
+  app.setCanvasView("scrims"); flushRaf();
+  ok(stopsCoreCount() === 1, "(rxs2) control: stops:core present under scrims");
+
+  app.setCanvasView("mapping"); flushRaf();
+  ok(stopsCoreCount() === 0, "(rxs3) stops:core absent under mapping (pre-existing behavior)");
+
+  app.canvasView = rxsView0; app.colorMode = rxsMode0; app.render(); flushRaf();
+}
+
+// ── (rxg) isGroupedView deny-list to allow-list (I3, ticket #637) ───────────────────────────
+{
+  const { defaultDocument: defaultDocumentRXG, paletteGroup: paletteGroupRXG } = await import("../../src/ui/model.mjs");
+  const rxgView0 = app.canvasView, rxgMode0 = app.colorMode;
+  app.doc = defaultDocumentRXG(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = [];
+  app.setSection("color"); app.colorMode = "light";
+  app.selectPalette(0);
+  app.render(); flushRaf(); // render "palettes" first — reorder machinery live (_wireReorder sets this._rampStack)
+
+  const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
+  ok(app.doc.palettes[0].name === "Neutral" && paletteGroupRXG(app.doc.palettes[0]) === "material", "(rxg0) row 0 is Neutral (Material) before the drag");
+  ok(app.doc.palettes[4].name === "Info" && paletteGroupRXG(app.doc.palettes[4]) === "system", "(rxg0) row 4 is Info (System) — a different group, the drop target");
+
+  // canvasView flips to radix DIRECTLY, without setCanvasView and without a re-render, so only the
+  // :1613 (isGroupedView) READ changes — proving the move actually ran under it, not a stale render.
+  app.canvasView = "radix";
+
+  const neutralHandle = rows[0].querySelector(".drag-handle");
+  app._beginReorder({ currentTarget: neutralHandle, pointerId: 9, stopPropagation() {}, preventDefault() {} }, 0);
+  app._onReorderMove({ clientY: rows[4]._rect.bottom - 5, preventDefault() {} }); // just past Info, into System
+  app._onReorderUp();
+  flushRaf();
+
+  ok(app.doc.palettes[4].name === "Neutral", `(rxg1) the moved palette's array index changed (Neutral now sits at palettes[4], got palettes[4]="${app.doc.palettes[4].name}") — proves :1580's commit ran, not an early return`);
+  ok(app.doc.palettes[4].group === undefined, `(rxg1) the moved palette's .group is UNTOUCHED under radix (got ${JSON.stringify(app.doc.palettes[4].group)}) — the :1582 write did not fire`);
+
+  app.undo(); flushRaf(); // revert the reorder before the negative control drives the SAME machinery
+
+  // negative control, produced by EXISTING code: the same drive under canvasView="palettes" DOES
+  // reassign .group — already asserted today by (cg13)/(cg17); re-verify it stays green.
+  app.setCanvasView("palettes"); flushRaf();
+  const rows2 = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  rows2.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
+  const neutralHandle2 = rows2[0].querySelector(".drag-handle");
+  app._beginReorder({ currentTarget: neutralHandle2, pointerId: 10, stopPropagation() {}, preventDefault() {} }, 0);
+  app._onReorderMove({ clientY: rows2[4]._rect.bottom - 5, preventDefault() {} });
+  app._onReorderUp();
+  flushRaf();
+  ok(app.doc.palettes[4].name === "Neutral" && app.doc.palettes[4].group === "system", `(rxg2) control: the SAME drive under canvasView=palettes DOES reassign .group to "system" (got name=${app.doc.palettes[4] && app.doc.palettes[4].name}, group=${JSON.stringify(app.doc.palettes[4] && app.doc.palettes[4].group)})`);
+
+  app.undo(); flushRaf();
+  app.canvasView = rxgView0; app.colorMode = rxgMode0; app.render(); flushRaf();
+}
+
+// ── (rxp) confirm the free-view / gated-export split (I6, ticket #637) ──────────────────────
+{
+  const { defaultDocument: defaultDocumentRXP } = await import("../../src/ui/model.mjs");
+  const { PRO_EXPORT_FORMATS: PRO_EXPORT_FORMATS_RXP } = await import("../../src/ui/app-helpers.mjs");
+  const rxpView0 = app.canvasView, rxpMode0 = app.colorMode;
+  app.doc = defaultDocumentRXP(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = [];
+  app.setSection("color"); app.colorMode = "light"; app.render(); flushRaf();
+  app.selectPalette(0); flushRaf();
+
+  // test 1: proExport unlocked (default) — the radix scene renders.
+  app.setCanvasView("radix"); flushRaf();
+  ok(app.querySelector(".radix-scene") != null, "(rxp1) .radix-scene renders with proExport unlocked");
+
+  // test 2: proExport locked — the view is STILL free.
+  app.setProfile({ flagOverrides: { proExport: false } }); app.render(); flushRaf();
+  ok(app.querySelector(".radix-scene") != null, "(rxp2) .radix-scene STILL renders with proExport locked (the view is free either way)");
+  app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlocked immediately
+
+  // test 3: the one gated path is unmoved.
+  ok(PRO_EXPORT_FORMATS_RXP.has("radix") === true, "(rxp3) PRO_EXPORT_FORMATS still names radix as the gated EXPORT format");
+
+  // test 4: the existing (pe) assertions are re-verified green by the full suite run (not repeated
+  // here) — this group only re-confirms it did not disturb the unlocked profile state.
+  ok(app.doc != null, "(rxp4) sanity: app.doc is set (the existing (pe) group asserts the real (pe) coverage elsewhere in this file)");
+
+  // test 5: the BUTTON A/B gate for I6, on the unlocked profile.
+  app.setCanvasView("radix"); flushRaf();
+  const radixButtons = walk(app.querySelector(".canvas-scene"), (e) => e.tagName === "BUTTON").length;
+  ok(radixButtons === 0, `(rxp5) no <button> anywhere inside .canvas-scene under radix (got ${radixButtons})`);
+  app.setCanvasView("mapping"); flushRaf();
+  const mappingButtons = walk(app.querySelector(".canvas-scene"), (e) => e.tagName === "BUTTON").length;
+  ok(mappingButtons >= 1, `(rxp5) control: renderMappingScene DOES emit >= 1 <button> in the same wrapper (got ${mappingButtons})`);
+  app.setCanvasView("radix"); flushRaf();
+
+  app.canvasView = rxpView0; app.colorMode = rxpMode0; app.render(); flushRaf();
+}
+
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
   console.error("HEADLESS BOOT FAIL:");

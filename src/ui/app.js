@@ -94,7 +94,7 @@ class HctApp extends HTMLElement {
     this.panesRight = true; // right inspector shown
     this.canvasTheme = "system"; // canvas preview color-scheme: system (follow OS) | light | dark — INDEPENDENT of app chrome ◐
     this.colorMode = "system"; // Color section value-mode control: system (follow OS, until an explicit pick) | light | dark | both (Compare) — persisted (app prefs)
-    this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table)
+    this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table) | radix (the 12-step Park UI ladder)
     this.section = "color"; // editor section: color | typography | geometry — ui-session, routes the whole editor (never persisted)
     this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (editable token matrix: Base + breakpoints) — type-section sub-state
     this.typeMode = "base"; // active Typography breakpoint mode: "base" | a doc.type.modes[].id | "compare" (Phase 5/5.3) — ui-session
