@@ -1069,6 +1069,14 @@ const RADIX_ROLE_STEPS = [
   { step: 12, suffix: "-on-surface" },
 ];
 
+// exportRadix's own reserved alias keys (I4, ticket #637): it writes `accent` (<- primary), `gray`
+// (<- neutral), `error`, and Park's global `fg`/`canvas`/`border`/`bg` into the SAME
+// `semanticTokens.colors` object the per-palette groups live in. A palette whose slug equals one of
+// these would be overwritten and silently lost from the export (#630). This is the ONE source of
+// truth for the 7 keys — every consumer (scripts/gen-adia-derived-exports.mjs, src/ui/model.mjs's
+// `radixKeyCollision`) imports this constant rather than re-typing the literal.
+export const RESERVED_ALIAS_KEYS = ["accent", "gray", "error", "fg", "canvas", "border", "bg"];
+
 // flattenOver(end, bgRgb) — Vocabulary "Flattened": a translucent role end composited over an
 // opaque background in 8-bit sRGB. Exported per REQ-041 for the test's independent check; no
 // caller remains inside exportRadix after issue #588's correction (steps 1..8 are raw stops,

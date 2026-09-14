@@ -653,6 +653,16 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (parsedMod && JSON.stringify(parsedMod) !== JSON.stringify(preset)) FAIL("radix", "module JSON does not deep-equal exportRadix(state)");
 }
 
+// ── radix-keys-drift (I4, ticket #637) — RESERVED_ALIAS_KEYS is the ONE source of truth for the
+//    non-palette keys exportRadix writes into semanticTokens.colors; a future edit that adds an
+//    8th alias key without updating the constant must go red here. ────────────────────────────────
+{
+  const st = stateOf(defaultDocument());
+  const paletteSlugs = X.derivedAll(st).map((p) => p.n);
+  const aliasKeys = Object.keys(X.exportRadix(st).theme.extend.semanticTokens.colors).filter((k) => !paletteSlugs.includes(k));
+  if (JSON.stringify(aliasKeys) !== JSON.stringify(X.RESERVED_ALIAS_KEYS)) FAIL("radix-keys-drift", `non-palette keys ${JSON.stringify(aliasKeys)} != RESERVED_ALIAS_KEYS ${JSON.stringify(X.RESERVED_ALIAS_KEYS)}`);
+}
+
 // ── hpg-export-data-palette (#516 — isDataPalette, shadcn chart-1..5 binding, fallback exclusion) ──
 {
   // isDataPalette: every derived palette's data-ness matches the /^data-\d+$/ slug pattern exactly.
@@ -1882,7 +1892,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

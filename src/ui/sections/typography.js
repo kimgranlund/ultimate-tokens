@@ -299,7 +299,7 @@ export class TypeSectionImpl {
 
   // renderTypeCanvasHeader — the Typography section's own canvas header: pane toggles + the
   // Specimen·Tokens mode segment + the reused fit/scheme/zoom controls. It deliberately omits the
-  // color-only Palettes/Scrims/Mapping + stops segments and the "+ Palette" button.
+  // color-only Palettes/Scrims/Mapping/Radix + stops segments and the "+ Palette" button.
   renderTypeCanvasHeader() {
     return h(
       "div",

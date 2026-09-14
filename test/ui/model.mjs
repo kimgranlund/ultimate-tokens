@@ -6,8 +6,13 @@
 // then test/ui/headless-boot.mjs's (dpa) group only exercises them THROUGH button clicks. This
 // file imports and calls them directly, pure, no DOM — covering SPEC
 // docs/spec/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
-import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, rederiveDataHues, resolvedPalettes, slug, typeScaleFor } from "../../src/ui/model.mjs";
+import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, resolvedPalettes, slug, typeScaleFor } from "../../src/ui/model.mjs";
 import { deriveDataHues } from "../../src/engine/data-hues.mjs";
+import { RESERVED_ALIAS_KEYS, isDataPalette, exportRadixModule } from "../../src/engine/exports.js";
+import { PRESETS as BRAND_PRESETS } from "../../src/ui/categories/brands.js";
+import { hydrate } from "../../src/ui/persist.js";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const fails = [];
 const ok = (c, m) => { if (!c) fails.push(m); };
@@ -290,6 +295,57 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   const neutralToBrandDs = exportDesignSystemBundle(dsDocOf(neutralToBrand), typeScaleFor(neutralToBrand, "base"), geomScaleFor(neutralToBrand, "base"), dsOpts);
   ok(JSON.stringify(baseDs) !== JSON.stringify(neutralToBrandDs), "moving Neutral out of Material into Brand must also change the DS bundle bytes");
   ok(JSON.stringify(brandKit(base)) !== JSON.stringify(brandKit(neutralToBrand)), "moving Neutral out of Material into Brand must also change the MCP brandKit() payload");
+}
+
+// ── U2 (#637): radixKeyCollision(name) + RADIX_COLLISION_BADGE (I4/I5/OQ-3) ────────────────
+{
+  for (const k of RESERVED_ALIAS_KEYS) {
+    ok(radixKeyCollision(k) === true, `radixKeyCollision(${JSON.stringify(k)}) must be true (reserved alias key)`);
+  }
+  ok(radixKeyCollision("Accent") === true, `radixKeyCollision("Accent") must be true (case-insensitive via slug)`);
+  ok(radixKeyCollision("Gray") === true, `radixKeyCollision("Gray") must be true (case-insensitive via slug)`);
+  ok(radixKeyCollision("accent-muted") === false, `radixKeyCollision("accent-muted") must be false (real, non-colliding palette name)`);
+  ok(radixKeyCollision("primary") === false, `radixKeyCollision("primary") must be false (real, non-colliding palette name)`);
+
+  const modelSrc = readFileSync(fileURLToPath(new URL("../../src/ui/model.mjs", import.meta.url)), "utf8");
+  const slugDeclCount = (modelSrc.match(/^export function slug/gm) || []).length;
+  ok(slugDeclCount === 1, `src/ui/model.mjs must declare "export function slug" exactly once (got ${slugDeclCount}) — radixKeyCollision must reuse it, never redeclare`);
+
+  ok(RADIX_COLLISION_BADGE === "Name matches a reserved export key", `RADIX_COLLISION_BADGE must be the pinned OQ-3 string verbatim, got ${JSON.stringify(RADIX_COLLISION_BADGE)}`);
+}
+
+// ── U3 (#637): projectView(...).radixPreset — the hoisted OBJECT (OQ-1) ────────────────────
+{
+  const doc = defaultDocument();
+  const view = projectView(doc);
+  ok(typeof view.radixPreset === "object" && view.radixPreset !== null, `projectView(defaultDocument()).radixPreset must be an object, got ${typeof view.radixPreset}`);
+  if (view.radixPreset && typeof view.radixPreset === "object") {
+    const colors = view.radixPreset.theme.extend.semanticTokens.colors;
+    const enabledSlugs = doc.palettes.filter((p) => p.on !== false).map((p) => slug(p.name));
+    for (const s of enabledSlugs) {
+      ok(Object.prototype.hasOwnProperty.call(colors, s), `radixPreset.theme.extend.semanticTokens.colors is missing enabled-palette slug "${s}"`);
+    }
+  }
+
+  // Self-consistency: projectView(doc).exports.radix === exportRadixModule(projectView(doc).radixPreset)
+  for (const [label, d] of [["defaultDocument()", defaultDocument()], ["a brand-preset document", hydrate(BRAND_PRESETS[0])]]) {
+    const v = projectView(d);
+    ok(v.exports.radix === exportRadixModule(v.radixPreset), `self-consistency failed for ${label}: projectView(doc).exports.radix !== exportRadixModule(projectView(doc).radixPreset)`);
+  }
+
+  // Data-palette-only document -> the I9 sentinel reaches the UI intact (radixPreset is a string).
+  const dataOnly = defaultDocument();
+  dataOnly.palettes = dataOnly.palettes.map((p) => (isDataPalette(p) ? p : { ...p, on: false }));
+  ok(typeof projectView(dataOnly).radixPreset === "string", `a data-palette-only document must yield a STRING radixPreset (I9 sentinel), got ${typeof projectView(dataOnly).radixPreset}`);
+
+  // The direct gate for the { geometry: shadGeom } opt: theme.extend.tokens.radii carries exactly
+  // none/xs/sm/md/lg/xl/full — a bare exportRadix(doc) (no opts) omits `tokens` entirely.
+  const radii = view.radixPreset && view.radixPreset.theme.extend.tokens && view.radixPreset.theme.extend.tokens.radii;
+  ok(!!radii, `projectView(defaultDocument()).radixPreset.theme.extend.tokens.radii must be present (the geometry opt must travel with the hoist)`);
+  if (radii) {
+    const wantKeys = ["none", "xs", "sm", "md", "lg", "xl", "full"];
+    ok(JSON.stringify(Object.keys(radii)) === JSON.stringify(wantKeys), `radixPreset.theme.extend.tokens.radii keys = ${JSON.stringify(Object.keys(radii))}, want ${JSON.stringify(wantKeys)}`);
+  }
 }
 
 if (fails.length) { console.error(`model FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }

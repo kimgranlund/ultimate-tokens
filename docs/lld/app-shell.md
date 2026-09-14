@@ -169,9 +169,9 @@ anchor. "Interface" is the method's contract, not its body.
   a drag without a re-render.
 
 - **LLD-C6a canvas-header (color)** — the collapsed-left toggle (when applicable) · the view segmented
-  `[Palettes · Scrims · Mapping]` · a stops-density `[Core · All]` segmented (hidden in Mapping) · a
-  spacer · **Fit** · the unified **Mode** control `[Light · Dark · Both]` (Both = side-by-side Compare)
-  · zoom −/readout/+.
+  `[Palettes · Scrims · Mapping · Radix]` · a stops-density `[Core · All]` segmented (hidden in Mapping
+  and Radix) · a spacer · **Fit** · the unified **Mode** control `[Light · Dark · Both]` (Both =
+  side-by-side Compare) · zoom −/readout/+.
 
 ---
 
@@ -190,7 +190,7 @@ State lives on the element instance. Two tiers, and the split is load-bearing:
 |-------|--------|--------|
 | `this.view` | `gallery` \| `editor` | LLD-C1 top-level fork |
 | `this.section` | `color` \| `typography` \| `geometry` | LLD-C4 — all three panes |
-| `this.canvasView` | `palettes` \| `scrims` \| `mapping` | LLD-C6b color scene shape |
+| `this.canvasView` | `palettes` \| `scrims` \| `mapping` \| `radix` | LLD-C6b color scene shape |
 | `this.stopsMode` | `core` \| `extended` | LLD-C6b ramp density |
 | `this.colorMode` | `light` \| `dark` \| `both` | LLD-C6 preview scheme / Compare |
 | `this.segment` | `palette` \| `global` \| `roles` \| `story` | LLD-C7 inspector panel |

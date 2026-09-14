@@ -45,6 +45,7 @@ import { dirname, resolve } from "node:path";
 import { PRESETS } from "../src/ui/categories/brands.js";
 import { hydrate } from "../src/ui/persist.js";
 import { projectView } from "../src/ui/model.mjs";
+import { RESERVED_ALIAS_KEYS } from "../src/engine/exports.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const OUTDIR = resolve(here, "../docs/reference/data");
@@ -62,12 +63,11 @@ export const ARTIFACTS = [
   { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.0.0" },
 ];
 
-// exportRadix's own reserved alias keys: it writes `accent` (<- primary), `gray` (<- neutral),
-// `error`, and Park's global `fg`/`canvas`/`border`/`bg` into the SAME `semanticTokens.colors`
-// object the per-palette groups live in. A palette whose slug equals one of these would be
-// overwritten and silently lost from the export (#630). Re-checked at generation time so a future
-// palette rename in brands.json cannot land quietly.
-export const RESERVED_ALIAS_KEYS = ["accent", "gray", "error", "fg", "canvas", "border", "bg"];
+// exportRadix's own reserved alias keys (I4, ticket #637): promoted into src/engine/exports.js as
+// the ONE named, importable copy — imported above, re-exported here under the same name so
+// test/engine/adia-derived-exports.mjs's existing import keeps working unchanged. Re-checked at
+// generation time so a future palette rename in brands.json cannot land quietly.
+export { RESERVED_ALIAS_KEYS };
 
 // slug — MIRRORS src/engine/exports.js's own (non-exported) `slug`: the palette name -> token
 // namespace mapping the Radix/CSS exporters use. Kept here so the collision check below tests the

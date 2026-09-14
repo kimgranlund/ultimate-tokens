@@ -244,6 +244,7 @@ import {
   exportPandaModule,
   exportRadix,
   exportRadixModule,
+  RESERVED_ALIAS_KEYS,
   SCRIM_BASES,
   SCRIM_STEPS,
   dialogBackdropHex,
@@ -332,6 +333,17 @@ export function slug(name) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+// radixKeyCollision(name) — I5/OQ-2: true iff this palette's slug collides with one of
+// exportRadix's 7 reserved alias keys (RESERVED_ALIAS_KEYS, the one imported source of truth —
+// I4). No taxonomy, no outcome claim: this is a NAME check only.
+export function radixKeyCollision(name) {
+  return RESERVED_ALIAS_KEYS.includes(slug(name));
+}
+
+// RADIX_COLLISION_BADGE — the pinned badge string (OQ-3, repo owner ruling, revision 4). States
+// the NAME fact only; asserts nothing about the export outcome. Never paraphrase this string.
+export const RADIX_COLLISION_BADGE = "Name matches a reserved export key";
 
 // ── Canvas groups (ticket #556) ──────────────────────────────────────────────────
 // PALETTE_GROUPS (imported above, from persist.js) — the four canvas groups, in render order. A
@@ -957,6 +969,10 @@ export function projectView(doc) {
   // affect them), so the base scales are correct here.
   const shadType = typeScaleFor(state, "base");
   const shadGeom = geomScaleFor(state, "base");
+  // radixPreset (U3, #637, OQ-1) — hoisted so the radix canvas scene can read the engine's own
+  // preset OBJECT directly (never re-deriving it, never reading radix-projection.json). The
+  // `{ geometry: shadGeom }` opt MUST travel with the hoist — it is what emits `tokens.radii`.
+  const radixPreset = exportRadix(state, { geometry: shadGeom });
   const exports = {
     css: exportCSS(state),
     oklch: exportOKLCH(state),
@@ -966,7 +982,7 @@ export function projectView(doc) {
     tailwind: exportTailwind(state),
     shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.radii }),
     panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom })),
-    radix: exportRadixModule(exportRadix(state, { geometry: shadGeom })),
+    radix: exportRadixModule(radixPreset),
     figma: {
       light: JSON.stringify(dtcgObj["Light_tokens.json"], null, 2),
       dark: JSON.stringify(dtcgObj["Dark_tokens.json"], null, 2),
@@ -974,7 +990,7 @@ export function projectView(doc) {
     },
   };
 
-  return { palettes, plot, exports, contrast, story: doc.story || null };
+  return { palettes, plot, exports, contrast, story: doc.story || null, radixPreset };
 }
 
 function round2(x) {
