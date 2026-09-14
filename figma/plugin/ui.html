@@ -666,6 +666,10 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .radix-scene { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
 .radix-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; border: 1px solid transparent; }
 .radix-row:hover { border-color: var(--line); }
+/* fixed name column so every ladder starts at the same x — the ramps scene stacks name ABOVE
+   strip (column layout, alignment doesn't matter there); this row is a flex row, so without a
+   width every ladder would start at a different offset depending on palette-name length. */
+.radix-row .ramp-name { flex: none; width: 132px; }
 .radix-ladder { display: flex; box-shadow: var(--shadow); border-radius: 6px; overflow: hidden; width: fit-content; }
 .radix-step { width: 26px; height: 40px; display: block; position: relative; }
 .radix-step:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
@@ -12895,8 +12899,9 @@ class ColorSectionImpl {
   }
 
 
-  // setCanvasView — switch the canvas between the palette ramps, the scrim overlays, and the
-  // semantic-mapping table (ui-session state, like canvasTheme — never persisted with the doc).
+  // setCanvasView — switch the canvas between the palette ramps, the scrim overlays, the
+  // semantic-mapping table, and the radix ladder view (ui-session state, like canvasTheme —
+  // never persisted with the doc).
   setCanvasView(v) {
     this.canvasView = v;
     this.render();
@@ -14238,7 +14243,8 @@ class ColorSectionImpl {
     // reorder that never leaves its own group's rows leaves `.group` untouched. Only the
     // "palettes" canvas view (renderRampsScene) shows group headers at all — Scrims/Mapping
     // share this same reorder machinery but have no group boundaries to cross, so a reorder
-    // there must never silently reassign a palette's group.
+    // there must never silently reassign a palette's group. Radix (ticket #637) has no drag
+    // handle at all and never reaches this reorder machinery — read-only, no reorder.
     const isGroupedView = this.canvasView === "palettes";
     const neighbor = pals[st.dropPi];
     const targetGroup = isGroupedView ? (neighbor ? paletteGroup(neighbor) : paletteGroup(pals[from])) : paletteGroup(pals[from]);
