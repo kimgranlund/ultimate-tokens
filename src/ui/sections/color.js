@@ -268,8 +268,9 @@ export class ColorSectionImpl {
   }
 
 
-  // setCanvasView — switch the canvas between the palette ramps, the scrim overlays, and the
-  // semantic-mapping table (ui-session state, like canvasTheme — never persisted with the doc).
+  // setCanvasView — switch the canvas between the palette ramps, the scrim overlays, the
+  // semantic-mapping table, and the radix ladder view (ui-session state, like canvasTheme —
+  // never persisted with the doc).
   setCanvasView(v) {
     this.canvasView = v;
     this.render();
@@ -1611,7 +1612,8 @@ export class ColorSectionImpl {
     // reorder that never leaves its own group's rows leaves `.group` untouched. Only the
     // "palettes" canvas view (renderRampsScene) shows group headers at all — Scrims/Mapping
     // share this same reorder machinery but have no group boundaries to cross, so a reorder
-    // there must never silently reassign a palette's group.
+    // there must never silently reassign a palette's group. Radix (ticket #637) has no drag
+    // handle at all and never reaches this reorder machinery — read-only, no reorder.
     const isGroupedView = this.canvasView === "palettes";
     const neighbor = pals[st.dropPi];
     const targetGroup = isGroupedView ? (neighbor ? paletteGroup(neighbor) : paletteGroup(pals[from])) : paletteGroup(pals[from]);

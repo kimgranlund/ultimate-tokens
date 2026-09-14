@@ -3270,12 +3270,11 @@ flushRaf();
   ok(app.querySelector(".radix-scene") != null, "(rxp2) .radix-scene STILL renders with proExport locked (the view is free either way)");
   app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlocked immediately
 
-  // test 3: the one gated path is unmoved.
+  // test 3: the one gated path is unmoved, and the test-2 override didn't leak into the restored
+  // profile — proExport reads unlocked again (the existing (pe) assertions re-verify the real
+  // (pe) coverage elsewhere in this file; this group only confirms it left the profile as found).
   ok(PRO_EXPORT_FORMATS_RXP.has("radix") === true, "(rxp3) PRO_EXPORT_FORMATS still names radix as the gated EXPORT format");
-
-  // test 4: the existing (pe) assertions are re-verified green by the full suite run (not repeated
-  // here) — this group only re-confirms it did not disturb the unlocked profile state.
-  ok(app.doc != null, "(rxp4) sanity: app.doc is set (the existing (pe) group asserts the real (pe) coverage elsewhere in this file)");
+  ok(app.flagOf("proExport") === true, "(rxp3) proExport reads unlocked again after the test-2 override was restored");
 
   // test 5: the BUTTON A/B gate for I6, on the unlocked profile.
   app.setCanvasView("radix"); flushRaf();
