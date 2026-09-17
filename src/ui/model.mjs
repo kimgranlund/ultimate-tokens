@@ -490,7 +490,8 @@ const isDataSlug = (name) => /^data-\d+$/.test(slug(name));
 
 // hasDataPalettes(doc) -> boolean — the identical no-op guard color.js's addDataPalettes() button
 // action uses (`dataPaletteCount() > 0`, `/^data-\d+$/.test(slug(p.name))`), exported so #644's
-// document-CREATION call sites (createSet/newSet, openConfigAsSet) can reuse the exact same
+// document-CREATION call sites (createSet/newSet, and openConfigAsSet's { mintData: true } tile
+// path only — its other three restore-your-own-work call sites opt out) can reuse the exact same
 // condition instead of re-deriving it, so a doc that already ships a complete data-N layer (the
 // Adia preset) is never re-minted/duplicated at creation time either.
 export function hasDataPalettes(doc) {

@@ -3216,9 +3216,9 @@ flushRaf();
     ok(hits(rampsBody) >= 1, `(rx4b) control: renderRampsScene's body DOES call dragHandle(/_wireReorder( (got ${hits(rampsBody)})`);
   }
 
-  // test 5: normal state, Route B "Maison" (8 palettes authored + 8 auto-minted Data-N per #644,
-  // all 16 enabled, 0 collisions). E/C below are read off app.doc, not hardcoded, so this stays
-  // correct regardless of the auto-mint.
+  // test 5: normal state, Route B "Maison" (8 palettes authored; openConfigAsSet here has no
+  // mintData flag, so #644's auto-mint does NOT fire — 8 total, all enabled, 0 collisions). E/C
+  // below are read off app.doc, not hardcoded, so this stays correct either way.
   {
     const { PRESETS: BRANDS_RX } = await loadCategoryRX("brands");
     const maison = BRANDS_RX.find((p) => p.name === "Maison · The product's own design system");
@@ -3233,9 +3233,9 @@ flushRaf();
     ok(app.querySelectorAll(".radix-empty").length === 0, "(rx5) .radix-empty === 0 (control: test 7)");
   }
 
-  // test 6: collision state, Route B "Modal jazz" (11 palettes authored + 8 auto-minted Data-N
-  // per #644, all 19 enabled, palettes[5]==="accent"). E6/C6 below are read off app.doc, not
-  // hardcoded, so this stays correct regardless of the auto-mint.
+  // test 6: collision state, Route B "Modal jazz" (11 palettes authored; no mintData flag here
+  // either, so #644's auto-mint does NOT fire — 11 total, all enabled, palettes[5]==="accent").
+  // E6/C6 below are read off app.doc, not hardcoded, so this stays correct either way.
   {
     const { PRESETS: BRANDS_RX2 } = await loadCategoryRX("brands");
     const modalJazz = BRANDS_RX2.find((p) => p.name === "Modal jazz · the cool-blue session");
