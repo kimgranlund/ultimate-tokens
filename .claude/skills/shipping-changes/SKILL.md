@@ -15,8 +15,8 @@ user-invocable: true
 
 `CLAUDE.md`'s Shipping + Always sections have the one-paragraph version — read them; this skill owns
 the full procedure and the concurrency recovery. The repo is squash-merge; guards are the
-`PreToolUse` privacy hook plus, under sdlc, the plugin's board hooks via `core.hooksPath` — the
-content guards below stay manual (conventions + CI + the test gate, not enforced pre-commit) — and
+`PreToolUse` privacy hook plus, under sdlc, the plugin's board hooks via `core.hooksPath`; the
+content guards below stay manual (conventions + CI + the test gate, not enforced pre-commit); and
 the smoke leg is Chrome-only. Landing under sdlc composes this procedure with `adapter.py`; see
 `.sdlc/adapter.md` §2.1.
 
