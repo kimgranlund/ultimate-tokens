@@ -18,7 +18,7 @@ Reconciled from `.sdlc/records/cards/` oldest to newest. A decision is live only
 | ADR-001 HCT engine | live | bridge to OKLCH input re-ruled by ADR-011 |
 | ADR-002 resolved semantic export | live | amended 2026-06-15 (aliasData fallback softens framing), 2026-06-17 (`rawColl` shape gate); feeds OD-004 (open) |
 | ADR-003 on-colors fixed 050 | live (OVERRIDE) | amended 2026-06-25: opt-in `onColorMode:"contrast"`, default unchanged |
-| ADR-004 scrims on base 750 | superseded | by the 500-ramp scrim revision, 2026-06-17, recorded only as a note inside ADR-004 (gap G2) |
+| ADR-004 scrims on base 750 | superseded | by ADR-023 (2026-09-16), closing gap G2; the 500-ramp scrim revision of 2026-06-17 had briefly lived as a bare note here before that |
 | ADR-005 flat raw + semantic light-dark() | live | none |
 | ADR-006 3-digit padding, `--c-` prefix | live | amended 2026-06-17/24 (prefix grammar); ADR-016 restates padding as grammar rule; SPEC-panda-park N-1 ratifies UNPADDED keys for Panda/Radix only (fenced divergence) |
 | ADR-007 UI3 schema interchange-only | live (CAUTION, OD-003) | none |
