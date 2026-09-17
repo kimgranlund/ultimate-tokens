@@ -26,7 +26,11 @@
     "authorkit@nonoun-plugins": true,
     "figma@claude-plugins-official": true,
     "cloudflare@claude-plugins-official": true,
-    "sdlc@adia": true
+    "sdlc@adia": false,
+    "sdlc@nonoun": true
+  },
+  "worktree": {
+    "bgIsolation": "none"
   },
   "extraKnownMarketplaces": {
     "nonoun-plugins": {
