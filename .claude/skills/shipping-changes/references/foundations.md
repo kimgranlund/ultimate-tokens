@@ -68,7 +68,7 @@ The only hooks are the `PreToolUse` privacy guard and, under sdlc, the plugin's 
   `node_modules`, so both a real dir and a stray symlink are now ignored. Re-adding it is a regression: a
   circular self-symlink there once survived a branch-switch, clobbered a real `node_modules`, and made
   `npx` try to **fetch vite over the network** (`vite`/`npm run build` → exit 194). CI was unaffected
-  *because it always `npm install`s* — so CI is **not** the guard for this; you are. (This is exactly why
+  *because it always reinstalls from the lockfile*, so CI is **not** the guard for this; you are. (This is exactly why
   the worktree technique **symlinks** an existing `node_modules` rather than committing or reinstalling one.)
 - **Generated artifacts** (`figma/plugin/ui.html` — a bundle inlining the whole app; `src/ui/
   figma-plugin-assets.js`; `src/ui/mcp-assets.js`) are outputs. The build regenerates them; drift means you
