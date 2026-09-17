@@ -360,7 +360,15 @@ for (const mode of ["perceptual", "peak"]) {
 // EX-1) — 0.3.0 (#556/#559 re-ruling) removes the baseIntensity multiplier entirely, so this fixture
 // (generated from the pre-0.2.0 engine, commit 83756bb, by scripts/gen-tonal-fixture.mjs; regenerated
 // only by hand, never by npm test) is the direct, unconditional engine contract again — no controls
-// field varies the result at all now, so a single pass over DEFAULTS proves it. ─────────────────────
+// field varies the result at all now, so a single pass over DEFAULTS proves it.
+//   #648 CARVE-OUT: 3 of these 32 ramps are deliberately NO LONGER pre-0.2.0-identical — even/Warning,
+//   even/Success and even/Danger, the only three defaults carrying a non-zero `lift`. The legacy engine
+//   applied lift as an additive TONE bump, which drove Warning's stops 050-300 past lmax into six
+//   identical #FFFFFF swatches; lift is now a displacement of the STOP (see liftStop in tonal.js), so
+//   those three ramps moved by design and the fixture was regenerated for them. The other 29 ramps —
+//   all 16 perceptual, and the 13 even ramps whose lift is 0 — are byte-for-byte what 83756bb emitted,
+//   which is what re-generating this file was verified against. Do NOT regenerate it to make an
+//   unexplained red go green: a diff outside those 3 ramps is a regression, not a refresh. ───────────
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};
@@ -424,8 +432,141 @@ for (const mode of ["perceptual", "peak"]) {
   // whole-tree text grep for it here would also match this very check's own source, so it isn't repeated.
 }
 
+// ── hpg-tonal-lift-monotonic (#648): `lift` must not flatten or reverse the ramp. The bump used to be
+//    ADDITIVE in TONE space (t += lift·w), which ignores the base curve's local slope: under
+//    logistic/tension 0 the light end is nearly flat, skew 40 flattens it further, and the default
+//    Warning palette (skew 40, lift 15) pushed t past lmax at stops 200-300 while REVERSING it at
+//    100-150 — the trailing clamp then saturated 050-300 into six identical #FFFFFF stops. The
+//    hpg-tonal-monotonic group above ran its curve × skew grid at lift 0 ONLY, so nothing caught it.
+//    Lift is now a displacement of the STOP, evaluated on the unchanged monotone curve, which makes
+//    the clamp a no-op safety net. These checks are black-box: they never restate the implementation's
+//    own bump formula, so a refit of that formula cannot slip past them.
+{
+  const LIFTS = [-40, -20, -5, 0, 5, 15, 20, 40];
+  const TENSIONS = [0, 50, 100];
+  // (i) every default palette, in BOTH ramp distributions, is a STRICTLY descending ladder.
+  //     `DEFAULTS` is role-table.json's `defaults` — already this file's palette source, and it
+  //     carries all 16 (8 brand + 8 Data), including the three that ship a non-zero lift
+  //     (Warning +15, Success/Danger -5), so it needs no second source from model.mjs.
+  for (const mode of ["even", "perceptual", "peak"]) {
+    for (const p of DEFAULTS) {
+      const rows = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, { ...CTL, toneMode: mode }, STOPS);
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i].tone >= rows[i - 1].tone) {
+          FAIL("lift-monotonic", `${mode} ${p.name} (skew ${p.skew} lift ${p.lift}): stop ${rows[i - 1].stop}->${rows[i].stop} did not descend (${rows[i - 1].tone.toFixed(6)} -> ${rows[i].tone.toFixed(6)})`);
+          break;
+        }
+      }
+      // Range tolerance is mode-aware: "even" REPORTS the tone it targeted, so the bound is exact;
+      // the OKHSL paths report the MEASURED L* of an 8-bit RGB triple, which lands a few hundredths
+      // off lmin/lmax by quantisation alone (e.g. Primary 950 measures 4.953). Part (ii) below does
+      // the exact-bound work on toneAt itself, so nothing is lost by the slack here.
+      const tol = mode === "even" ? 1e-9 : 0.5;
+      for (const r of rows) if (!(r.tone >= CTL.lmin - tol && r.tone <= CTL.lmax + tol))
+        FAIL("lift-monotonic", `${mode} ${p.name}: stop ${r.stop} tone ${r.tone} outside [${CTL.lmin}, ${CTL.lmax}]`);
+      // the visible symptom the defect produced: a run of identical swatches.
+      const distinct = new Set(rows.map((r) => r.hex)).size;
+      if (distinct < STOPS.length)
+        FAIL("lift-monotonic", `${mode} ${p.name}: only ${distinct}/${STOPS.length} distinct swatches (flat plateau)`);
+    }
+  }
+  // (ii) the full control grid, on `STOPS` — which in this file is T.EXPORT_STOPS, the 25-stop export
+  //      ramp: a superset of the display 19, so a half-step cannot hide a reversal the 19 step over.
+  for (const curve of CURVES) for (const skew of SKEWS) for (const lift of LIFTS) for (const tension of TENSIONS) {
+    const c = { curve, lmin: CTL.lmin, lmax: CTL.lmax, tension };
+    const cell = `${curve} skew ${skew} lift ${lift} tension ${tension}`;
+    const tones = STOPS.map((s) => T.toneAt(s, skew, lift, c));
+    for (let i = 1; i < tones.length; i++) if (tones[i] >= tones[i - 1]) {
+      FAIL("lift-monotonic", `${cell}: stop ${STOPS[i - 1]}->${STOPS[i]} did not descend (${tones[i - 1].toFixed(9)} -> ${tones[i].toFixed(9)})`);
+      break;
+    }
+    // Endpoints are EXACT — the bump's weight is 0 at 050/950 — so lift can never move the ends.
+    if (tones[0] !== CTL.lmax) FAIL("lift-monotonic", `${cell}: stop 050 = ${tones[0]}, expected lmax ${CTL.lmax}`);
+    if (tones[tones.length - 1] !== CTL.lmin) FAIL("lift-monotonic", `${cell}: stop 950 = ${tones[tones.length - 1]}, expected lmin ${CTL.lmin}`);
+    // The trailing clamp must never be what PRODUCES a value. Proven black-box, without re-deriving
+    // the pre-clamp expression: a fired clamp pins its stop EXACTLY to a bound, so asserting every
+    // INTERIOR stop sits strictly inside (lmin, lmax) is exactly the statement "the clamp never fired".
+    for (let i = 1; i < tones.length - 1; i++) if (tones[i] >= CTL.lmax || tones[i] <= CTL.lmin) {
+      FAIL("lift-monotonic", `${cell}: interior stop ${STOPS[i]} pinned to a bound (${tones[i]}) — the clamp fired`);
+      break;
+    }
+  }
+  // (iii) lift 0 is BYTE-IDENTICAL to the documented curve, checked against an INDEPENDENT derivation
+  //       written out here from the spec's own formulas — not by calling the module's shape()/toneAt
+  //       internals. A test that re-uses the implementation's expression cannot catch a refit of it
+  //       (how the sibling defect in test/engine/prime.mjs group (d) shipped green).
+  const refShape = (x, curve, ten) => {
+    if (curve === "linear") return x;
+    if (curve === "sine") return 0.5 - 0.5 * Math.cos(Math.PI * x);
+    if (curve === "cubic") return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(2 - 2 * x, 3) / 2;
+    if (curve === "logistic") {                       // normalized sigmoid, k from 4 (ten 0) to 16 (ten 1)
+      const k = 4 + 12 * ten;
+      const f = (u) => 1 / (1 + Math.exp(-k * (u - 0.5)));
+      return (f(x) - f(0)) / (f(1) - f(0));
+    }
+    const k = 0.4 + 4.6 * ten;                        // "exp": compressed lights, k from 0.4 to 5
+    return (Math.exp(k * x) - 1) / (Math.exp(k) - 1);
+  };
+  const refTone = (stop, skew, { curve, lmin, lmax, tension }) =>
+    lmax - (lmax - lmin) * refShape(Math.pow((stop - 50) / 900, Math.pow(3, skew / 100)), curve, tension / 100);
+  for (const curve of CURVES) for (const skew of SKEWS) for (const tension of TENSIONS) for (const s of STOPS) {
+    const c = { curve, lmin: CTL.lmin, lmax: CTL.lmax, tension };
+    const got = T.toneAt(s, skew, 0, c), want = refTone(s, skew, c);
+    if (Math.abs(got - want) > 1e-9)
+      FAIL("lift-monotonic", `lift 0 drifted from the documented curve: ${curve} skew ${skew} tension ${tension} stop ${s} -> ${got}, expected ${want}`);
+  }
+  // (iv) the bump keeps its CHARACTER. Stated against what the bump IS — a cosine displacement of the
+  //      STOP, centered on 500 — and what it must DO to the tone, which are different claims. The
+  //      DISPLACEMENT peaks at 500 and tapers monotonically to exactly 0 at both ends. The TONE
+  //      response does NOT have to peak at 500, and asserting that it did would be wrong: the tone
+  //      moves most where the curve is steepest, which a strong skew deliberately drags off-center
+  //      (linear, skew 100 puts it near 800). Forcing the RESPONSE to be centered is precisely the
+  //      tone-space-additive mistake that caused #648, so the test must not demand it back.
+  for (const lift of [-40, -20, -5, 5, 15, 20, 40]) {
+    const disp = STOPS.map((s) => T.liftStop(s, lift) - s);
+    const mid = STOPS.indexOf(500);
+    if (disp[0] !== 0 || disp[disp.length - 1] !== 0)
+      FAIL("lift-monotonic", `lift ${lift}: liftStop moved an endpoint (050 ${disp[0]}, 950 ${disp[disp.length - 1]}) — the ends must be pinned`);
+    const peak = Math.max(...disp.map(Math.abs));
+    if (Math.abs(disp[mid]) < peak - 1e-12)
+      FAIL("lift-monotonic", `lift ${lift}: displacement peaks at stop ${STOPS[disp.findIndex((v) => Math.abs(v) === peak)]}, not 500 — the bump is off-center`);
+    for (let i = 1; i <= mid; i++) if (Math.abs(disp[i]) < Math.abs(disp[i - 1]) - 1e-12)
+      FAIL("lift-monotonic", `lift ${lift}: displacement dips on the way up to 500 at stop ${STOPS[i]}`);
+    for (let i = mid + 1; i < disp.length; i++) if (Math.abs(disp[i]) > Math.abs(disp[i - 1]) + 1e-12)
+      FAIL("lift-monotonic", `lift ${lift}: displacement grows again past 500 at stop ${STOPS[i]}`);
+    // lift>0 must read a LIGHTER (lower) stop, lift<0 a darker one.
+    if (disp.some((v) => v * lift > 1e-12))
+      FAIL("lift-monotonic", `lift ${lift}: displacement runs the wrong way`);
+  }
+  for (const curve of CURVES) for (const skew of SKEWS) for (const tension of TENSIONS) for (const lift of [-40, -20, -5, 5, 15, 20, 40]) {
+    const c = { curve, lmin: CTL.lmin, lmax: CTL.lmax, tension };
+    const cell = `${curve} skew ${skew} tension ${tension} lift ${lift}`;
+    const d = STOPS.map((s) => T.toneAt(s, skew, lift, c) - T.toneAt(s, skew, 0, c));
+    if (d[0] !== 0 || d[d.length - 1] !== 0)
+      FAIL("lift-monotonic", `${cell}: an endpoint's tone moved (050 ${d[0]}, 950 ${d[d.length - 1]})`);
+    // lift>0 lightens, lift<0 darkens — at EVERY stop, never a flip in between.
+    for (let i = 1; i < d.length - 1; i++) if (d[i] * lift < -1e-12) {
+      FAIL("lift-monotonic", `${cell}: stop ${STOPS[i]} moved the wrong way (${d[i].toFixed(6)})`);
+      break;
+    }
+    if (Math.abs(d[STOPS.indexOf(500)]) < 1e-6)
+      FAIL("lift-monotonic", `${cell}: stop 500 did not move — lift is inert`);
+  }
+
+  // (v) the display(19) and export(25) ramps must agree at every SHARED stop — toneAt stays a pure
+  //     function of the one stop value, so no whole-ramp renormalisation can creep into the fix.
+  for (const p of DEFAULTS) {
+    const d19 = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, CTL, T.STOPS);
+    const d25 = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, CTL, STOPS);
+    for (const r of d19) {
+      const m = d25.find((x) => x.stop === r.stop);
+      if (m.hex !== r.hex) FAIL("lift-monotonic", `${p.name}: stop ${r.stop} is ${r.hex} on the 19-stop ramp but ${m.hex} on the 25-stop ramp`);
+    }
+  }
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "vibrancy", "oklch-hue-anchor", "intensity-legacy", "ac004-greps"]) {
+for (const g of ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "lift-monotonic", "vibrancy", "oklch-hue-anchor", "intensity-legacy", "ac004-greps"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
