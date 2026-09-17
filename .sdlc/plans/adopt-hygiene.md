@@ -3,7 +3,7 @@ status: approved
 ticket: #643 (github; mirrored from local T-0001, kept in .sdlc/tickets as history)
 priority: P1
 lane: docs
-size: M (U1 M + U2 M + U3 S + U4 S + U5 S + U6 S + U7 S + U8 S = 10 points)
+size: M (U1 M + U2 M + U3 S + U4 S + U5 S + U6 S + U7 S + U8 S + U9 S = 11 points)
 labels: kind:chore · size:M · lane:docs · mode:multi
 unit: A7
 written: 2026-09-16
@@ -40,6 +40,7 @@ Branding rule (adapter C12). `test/repo/branding.mjs` scans `.sdlc/` and `docs/`
 - [x] U6 (S) pre-land 2: stale pointers to archived plans, eval key scope, adapter amendments, debt rows · grade l3 · reviewer-l2 · verifier-l2
 - [x] U7 (S) declare the `nonoun` marketplace; debt rows for the unpushed repo and the U6 review minors · grade l2 · reviewer-l1 · verifier-l1 · pass 2: grade l7 · reviewer-l3 · verifier-l3
 - [x] U8 (S) staleness and wording sweep: every live record agrees with the head · grade l2 · reviewer-l1 · verifier-l2 · pass 2: grade l7 · reviewer-l4 · verifier-l3
+- [~] U9 (S) pre-land 4: four false cells, plus a path-resolution and claim sweep over the records · grade l3 · reviewer-l4 · verifier-l3
 
 Dispatch order: U2 first when possible (it adds `.worktrees/` to `.gitignore` and to the branding skip list, so a root-checkout `npm test` stops walking the unit worktrees). U1 and U3 are independent of U2 and of each other; their file sets do not overlap. Builders run gates inside `.worktrees/<unit>` only. `npm run build` is required for U2 (it touches `.github/` and `test/repo/`, and the verifier at pre-land runs it always); U1 and U3 need only `npm test`.
 
@@ -136,7 +137,7 @@ Human answer B in `.sdlc/questions/adopt-hygiene-marketplace.md` (commit cec7529
 | # | Criterion | Command | Expected | Negative control |
 |---|---|---|---|---|
 | 1 | `nonoun` is declared with the same shape as `nonoun-plugins`; nothing else in settings changes | `node -e 'const s=require("./.claude/settings.json"); const m=s.extraKnownMarketplaces.nonoun; console.log(m&&m.source.source, m&&m.source.repo, s.enabledPlugins["sdlc@nonoun"], s.worktree===undefined)'; git diff 39db0a9 -- .claude/settings.json \| grep -cE '^[-+][^-+]'` | `github kimgranlund/sdlc-orchestration true true`, then `6` changed lines at most (the `nonoun-plugins` entry shape is 6 lines; one may be the preceding `}` gaining a comma), with no removed line other than that one (read the diff) | at 39db0a9: `undefined undefined true true` |
-| 2 | debt records the unpushed marketplace repo, C5 resolved, C6 complete, every debt C id this plan added that also exists in adapter §4 says so on its row, no em dash or bold inline label in the file, row count line true | the two commands of pass 1 (their text is at 65bbda3 in history; the `/Users/` loop is now `git grep -lE '/Users/[a-z]' --`, revised under U8 pass 2), then the clash-and-wording block in `.sdlc/plans/adopt-hygiene-U7-p2.md` | `2`, no `missing` line, then no `clash` line, `0`, `0`, `7 / 7`, `45 / 45` | at 65bbda3: first count `0`, `missing .sdlc/debt.md`, `clash C5` and `clash C6`, counts `4 / 6` and `41 / 44`; at ac52be8: `clash C13 without note`, `2`, `1`, `4 / 7`, `41 / 45`; on a scratch copy of the fixed file with `C7` renamed `C8` the block prints exactly `clash C8 without note` |
+| 2 | debt records the unpushed marketplace repo, C5 resolved, C6 complete, every debt C id this plan added that also exists in adapter §4 says so on its row, no em dash or bold inline label in the file, row count line true | the two commands of pass 1 (their text is at 65bbda3 in history; the `/Users/` loop is now `git grep -lE '/Users/[a-z]' -- ':!.sdlc/plans/*-p2.md' ':!.sdlc/plans/adopt-hygiene-prepr3.md'`, revised under U8 pass 2), then the clash-and-wording block in `.sdlc/plans/adopt-hygiene-U7-p2.md` | `2`, no `missing` line, then no `clash` line, `0`, `0`, `7 / 7`, `45 / 45` | at 65bbda3: first count `0`, `missing .sdlc/debt.md`, `clash C5` and `clash C6`, counts `4 / 6` and `41 / 44`; at ac52be8: `clash C13 without note`, `2`, `1`, `4 / 7`, `41 / 45`; on a scratch copy of the fixed file with `C7` renamed `C8` the block prints exactly `clash C8 without note` |
 | 3 | JSON valid, `npm test` green, tree clean, branding clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l` | `all 44 test files passed`, `0` | P1 control, then rerun `npm test` |
 
 ### U8 staleness and wording sweep (S, grade l2)
@@ -160,6 +161,19 @@ Added after `.sdlc/verdicts/adopt-hygiene-prepr.md` 🔴 on b44883d; re-diagnosi
 | 13 | Orchestrator at merge: board U2 cell closed, U8 row present | `grep -c 'follow-up' .sdlc/board.md; grep -c 'U8' .sdlc/board.md` | `0`, `1` or more | b44883d: `1`, `0` |
 
 Prototype (2026-09-17, detached scratch worktree of 61a3f90 with the §1 to §3 edits applied by script, then removed): rows 1 to 10 printed exactly the Expected column; at 61a3f90 they printed exactly the Negative control column. Rows 11 to 13 were not rerun in the scratch (row 2's deletion count and row 3's U7 block are included in the prototype output; `npm test` is the builder's and verifier's own run).
+
+### U9 pre-land fixes, round 4 (S, grade l3)
+
+Added after `.sdlc/verdicts/adopt-hygiene-prepr.md` 🔴 on 4f30855 (four one-cell defects of the same class: a live record states something the head makes false). Files: `.sdlc/records/cards/OD-004.md` (line 7), `.sdlc/records/decisions.md` (line 21), `.claude/skills/shipping-changes/SKILL.md` (line 32), `.sdlc/debt.md` (C6 file list). The U7-2 loop exclusion is a plan edit already applied by the Orchestrator. Not touched: history dirs, `.sdlc/survey.md`, `.sdlc/baseline.md`, `.claude/CLAUDE.md`, anything behind the P3 wall. No em dash, no bold inline label.
+
+| # | Criterion | Command | Expected | Negative control |
+|---|---|---|---|---|
+| 1 | the OD-004 card names the record U1 repointed to, and every file path any `.sdlc/records` file names resolves at the head | `grep -c 'docs/spec/CHANGELOG.md' .sdlc/records/cards/OD-004.md; for f in $(grep -rhoE '[A-Za-z0-9_./-]+\.(md\|mjs\|js\|json\|yml)' .sdlc/records \| sort -u); do [ -e "$f" ] \|\| git cat-file -e HEAD:"$f" 2>/dev/null \|\| echo "missing $f"; done` | `0`, then no `missing` line (a path the records name only as history text is rewritten to the real one or dropped) | at 4f30855: `1`, and `missing docs/spec/CHANGELOG.md` |
+| 2 | `decisions.md` does not contradict itself on ADR-004 and gap G2: the lineage cell names ADR-023 the way `index.md:19` does | `grep -n 'ADR-004' .sdlc/records/decisions.md \| grep -c 'only as a note'; grep -c 'ADR-023' .sdlc/records/decisions.md` | `0`, then `2` or more | at 4f30855: `1` |
+| 3 | no record or skill claims CI installs with `npm install`; CI's own line is `npm ci` | `git grep -c 'npm install' -- .claude/skills .sdlc ':!.sdlc/verdicts' ':!.sdlc/handoffs' ':!.sdlc/plans' \| wc -l; grep -c 'npm ci' .github/workflows/ci.yml` | `0`, then `1` or more | at 4f30855: first count `1` (`shipping-changes/SKILL.md:32`) |
+| 4 | debt C6's file list names every `.sdlc` file with a home path that the U7-2 loop still sees | the U7-2 loop as revised, then `for f in $(git grep -lE '/Users/[a-z]' -- .sdlc ':!.sdlc/plans/*-p2.md' ':!.sdlc/plans/adopt-hygiene-prepr3.md'); do grep -q "$f" .sdlc/debt.md \|\| echo "missing $f"; done` | no `missing` line | at 4f30855, without the plan exclusions: `missing .sdlc/plans/adopt-hygiene-U8-p2.md` |
+| 5 | the U8 sweep checks stay green (records index, adapter amendments, debt closures, wording) | `sh u8check.sh; sh wording-check.sh origin/main HEAD; echo "exit $?"` | every line as in §U8, `exit 0` | as in §U8 |
+| 6 | gates green, tree clean, branding clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l; node test/repo/branding.mjs \| tail -1` | `all 44 test files passed`, `0`, `clean (N files scanned)` | P1 control, then rerun `npm test` |
 
 ## Risks and assumptions
 
@@ -212,3 +226,4 @@ The close-out commit that archives this plan also: (1) repoints `docs/site/descr
 | 2026-09-17 | U8 added (staleness and wording sweep): one fact table for every change U1 to U7 made, one grep per fact over every live record, an added-line wording sweep with an enumerated kept list, and a Landing paragraph for the spec repoint, the branch sweep, and the R12 trigger; plan wording fixed (three units, bold lead-ins) | pre-land record 🔴 on b44883d, third stale-record blocker in a row; re-diagnosis .sdlc/plans/adopt-hygiene-prepr3.md |
 | 2026-09-17 | U8 pass 2: criterion 3 reads each debt row's own evidence (`debt-closure-check.sh`) instead of the note string; prepr3 §3 corrected, R6, R8, D2, G2 are partials not closures; criterion 1 also reads the PLAN-overhaul index status; U7 row 2's `/Users/` loop matches paths only (`/Users/[a-z]`) | verdict .sdlc/verdicts/adopt-hygiene-U8.md 🔴 (I1, I2, criterion 3 certified a false closure); re-diagnosis .sdlc/plans/adopt-hygiene-U8-p2.md |
 | 2026-09-17 | U8 review minors: U7 row 2 names where the pass 1 commands live and the revised `/Users/` loop; criterion 10's control says committed | review .sdlc/verdicts/adopt-hygiene-U8-review.md M2, M3 |
+| 2026-09-17 | U9 added (four false cells plus a path-resolution sweep over `.sdlc/records` and an `npm install` claim check); U7-2's loop excludes the re-diagnosis docs, which the plan already treats as history | pre-land record 🔴 on 4f30855, four new one-cell defects |
