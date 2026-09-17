@@ -200,7 +200,7 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   ok(heroDominant.width - wpDominant.width > 3, `Hero vs War and Peace: the vivid dominant renders > 3 points wider than the candle-gold one (hero=${heroDominant.width.toFixed(2)}, wp=${wpDominant.width.toFixed(2)})`);
   ok([heroDominant.width, wpDominant.width].every((w) => w >= POSTER_STRIP_MAX_BAND_PCT_LOW - 0.01 && w <= POSTER_STRIP_MAX_BAND_PCT_HIGH + 0.01), `both dominants sit within [${POSTER_STRIP_MAX_BAND_PCT_LOW}, ${POSTER_STRIP_MAX_BAND_PCT_HIGH}] (hero=${heroDominant.width.toFixed(2)}, wp=${wpDominant.width.toFixed(2)})`);
   // with the vector normalized, the cap binds at a true 45% here and 5 other bands share the
-  // remaining 55% (neutral 8 + two floored accents leave ~27% for three supporting bands), so the
+  // remaining 55% (neutral 8 + two floored accents leave ~27% for the two supporting bands that make the strip), so the
   // widest neighbor can legitimately reach ~15%: 1.5x is a comfortable margin.
   ok(heroRest.every((b) => heroDominant.width >= b.width * 1.5), `Hero: the vivid dominant remains clearly the strip's leading band, at least 1.5x its widest neighbor (dominant=${heroDominant.width.toFixed(2)}, rest=${heroRest.map((b) => b.width.toFixed(2)).join(",")})`);
   assertRendered("Hero · 2002", heroBands);

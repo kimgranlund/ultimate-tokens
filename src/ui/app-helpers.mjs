@@ -603,8 +603,8 @@ export const field = (labelText, control, { labelTitle } = {}) => {
 // A preset/set with no story.groups (a user's own "Your Palettes" set) skips fixes 1/3/4 and the
 // reorder entirely, falling back EXACTLY to the original fixed SAMPLED_W template in its original
 // order — no regression there.
-export const POSTER_STRIP_MAX_BAND_PCT = 35;        // cap for any NON-dominant band, and the dominant's floor-of-cap
-export const POSTER_STRIP_MAX_BAND_PCT_LOW = 35;    // dominant cap at/below POSTER_STRIP_CAP_CHROMA_LOW
+export const POSTER_STRIP_MAX_BAND_PCT = 35;        // cap for any NON-dominant band
+export const POSTER_STRIP_MAX_BAND_PCT_LOW = POSTER_STRIP_MAX_BAND_PCT; // dominant cap at/below CAP_CHROMA_LOW, tied to the flat cap
 export const POSTER_STRIP_MAX_BAND_PCT_HIGH = 45;   // dominant cap at/above POSTER_STRIP_CAP_CHROMA_HIGH
 export const POSTER_STRIP_ACCENT_FLOOR_PCT = 10;
 const POSTER_STRIP_NEUTRAL_PCT = 8;
@@ -692,9 +692,10 @@ function posterStripClampAndFloor(shown, widths) {
   const n = widths.length;
   const locked = shown.map(posterStripIsNeutral);
   const isAccent = shown.map((p) => p.colorRole === "accent");
-  // the dominant's cap is chroma-scaled (35..45); every other band keeps the flat 35 — after the
-  // accent floors and the dominant's share, no non-dominant band can plausibly reach it, the flat
-  // cap is a backstop, not a shaping rule.
+  // the dominant's cap is chroma-scaled (35..45); every other band keeps the flat 35. On the 343
+  // curated presets no non-dominant band comes near it (measured max 24.6%, every preset has >= 2
+  // supporting siblings); with a single supporting sibling (d45/s45/a10) the 4-pass loop can
+  // overshoot it by ~1 point, a corner no shipped data reaches.
   const cap = shown.map((p) => (p.colorRole === "dominant" ? posterStripDominantCap(p.key) : POSTER_STRIP_MAX_BAND_PCT));
   const w = widths.slice();
   for (let pass = 0; pass < 4; pass++) {

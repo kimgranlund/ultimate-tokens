@@ -1477,7 +1477,7 @@ ok(jjHeroDominant.width - jjWPDominant.width > 3, `(jj) TKT-0003: Hero's vivid d
 ok([jjHeroDominant.width, jjWPDominant.width].every((w) => w >= jjCapLow - 0.01 && w <= jjCapHigh + 0.01), `(jj) both dominants sit within [${jjCapLow}, ${jjCapHigh}] (hero=${jjHeroDominant.width.toFixed(2)}, wp=${jjWPDominant.width.toFixed(2)})`);
 ok(jjHeroBands[0].name === "neutral", `(jj) #646 fix 4: Hero's neutral is the leading band too (got ${jjHeroBands.map((b) => b.name).join(",")})`);
 // with the vector normalized the cap binds at a true 45% here, and 5 other bands share the
-// remaining 55% (neutral 8 + two floored accents leave ~27% for three supporting bands), so the
+// remaining 55% (neutral 8 + two floored accents leave ~27% for the two supporting bands that make the strip), so the
 // widest neighbor can legitimately reach ~15%: 1.5x is a comfortable margin.
 ok(jjHeroRest.every((b) => jjHeroDominant.width >= b.width * 1.5), `(jj) #646: the vivid dominant remains clearly the strip's leading band, at least 1.5x its widest neighbor (dominant=${jjHeroDominant.width.toFixed(2)}, rest=${jjHeroRest.map((b) => b.width.toFixed(2)).join(",")})`);
 ok(jjCrossCheck(jjHero), "(jj) #646: Hero's DOM strip matches posterStripBands() exactly");
