@@ -39,7 +39,7 @@ Branding rule (adapter C12). `test/repo/branding.mjs` scans `.sdlc/` and `docs/`
 - [x] U5 (S) drop the drill-only `worktree.bgIsolation` from committed `.claude/settings.json` · grade l1 · reviewer-l1 · verifier-l1
 - [x] U6 (S) pre-land 2: stale pointers to archived plans, eval key scope, adapter amendments, debt rows · grade l3 · reviewer-l2 · verifier-l2
 - [x] U7 (S) declare the `nonoun` marketplace; debt rows for the unpushed repo and the U6 review minors · grade l2 · reviewer-l1 · verifier-l1 · pass 2: grade l7 · reviewer-l3 · verifier-l3
-- [~] U8 (S) staleness and wording sweep: every live record agrees with the head · grade l2 · reviewer-l1 · verifier-l2
+- [r] U8 (S) staleness and wording sweep: every live record agrees with the head · grade l2 · reviewer-l1 · verifier-l2 · pass 2: grade l7 · reviewer-l4 · verifier-l3
 
 Dispatch order: U2 first when possible (it adds `.worktrees/` to `.gitignore` and to the branding skip list, so a root-checkout `npm test` stops walking the unit worktrees). U1 and U3 are independent of U2 and of each other; their file sets do not overlap. Builders run gates inside `.worktrees/<unit>` only. `npm run build` is required for U2 (it touches `.github/` and `test/repo/`, and the verifier at pre-land runs it always); U1 and U3 need only `npm test`.
 
