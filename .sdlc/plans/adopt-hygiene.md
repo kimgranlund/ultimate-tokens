@@ -32,7 +32,7 @@ Sixteen S items the debt map lists under "A7 hygiene candidates", plus the eight
 
 ## Units
 
-- [r] U1 (M) records, plans, stubs, moved docs · grade l1 · reviewer-l1 · verifier-l1 · pass 2: grade l7 · reviewer-l3 · verifier-l3
+- [x] U1 (M) records, plans, stubs, moved docs · grade l1 · reviewer-l1 · verifier-l1 · pass 2: grade l7 · reviewer-l3 · verifier-l3
 - [x] U2 (M) harness, config, ignores, workflows, CLAUDE.md `## SDLC` · grade l1 · reviewer-l1 · verifier-l1 · pass 2: grade l7 · reviewer-l3 · verifier-l3
 - [x] U3 (S) repo settings, git index, local branches · grade l1 · reviewer-l1 · verifier-l1
 
