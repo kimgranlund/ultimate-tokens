@@ -19,8 +19,8 @@
 ## Note on criterion 3
 
 The red is not caused by this unit's change. `test/repo/branding.mjs` fails on
-`.sdlc/verdicts/adopt-hygiene-U1-review.md` (P4 row: "contains NONOUN" / "contains a nonoun.io
-URL"). That row's fix is already committed on `unit/hygiene-U4` @ 8ebf172
+`.sdlc/verdicts/adopt-hygiene-U1-review.md` (P4 row: it names the retired maker brand and its
+domain). That row's fix is already committed on `unit/hygiene-U4` @ 8ebf172
 ("paraphrase retired brand in U1 review") but `unit/hygiene-U4` has not merged into `sdlc/adopt`
 yet — the plan head (`806bc03`) that this unit's worktree branched from still carries the
 unparaphrased row. Confirmed by diffing `806bc03:.sdlc/verdicts/adopt-hygiene-U1-review.md`
