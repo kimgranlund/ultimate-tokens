@@ -25,3 +25,10 @@ Chosen: Approve, mobilize (Recommended)
 | Question | Pre-land red a fifth time, each on a new class of stale record; U10 already building with a committed check script. How to cap? |
 | Options | Let U10 finish, cap at one more red (recommended) · stop U10, re-plan the records layer · stop here, land nothing |
 | Chosen | Let U10 finish, cap at one more red: pre-land 6 runs the committed checks; a sixth 🔴 stops the plan, no U11, re-diagnosis goes to the human |
+
+## Addendum (2026-09-17, conductor): pre-land 6 rerun
+| Field | Value |
+|---|---|
+| Question | Pre-land 6 red on two cells of the plan text only; units, gates, checks green; fix at e07d346. Rerun the record or stop? |
+| Options | Rerun pre-land on e07d346 (recommended) · stop the plan |
+| Chosen | Rerun pre-land on e07d346. A 🔴 on anything but plan text after this stops the plan |
