@@ -13,13 +13,11 @@ on:
 jobs:
   describe-eval:
     runs-on: ubuntu-latest
-    # CI secret custody (#375's own stated open item; R8): ANTHROPIC_API_KEY must be added as a
-    # repository secret before the eval can run at all. The secret is read here, at job level, because
-    # GitHub rejects the `secrets` context in a step-level `if:`; the shell test below is what fails
-    # loudly on an empty value, rather than letting describe-eval-runner.mjs's own no-key path report a
-    # quiet success. A badge that can't lie is the point.
-    env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    # CI secret custody (#375's own stated open item; R8): the eval key must be added as a
+    # repository secret before the eval can run at all. It is scoped to the two steps that need it,
+    # at step level (GitHub allows the `secrets` context in step `env:`, only not in a step `if:`);
+    # the shell test below is what fails loudly on an empty value, rather than letting
+    # describe-eval-runner.mjs's own no-key path report a quiet success. A badge that can't lie is the point.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,10 +25,14 @@ jobs:
           node-version: 22
       - run: npm ci
       - name: Require the eval key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           if [ -z "$ANTHROPIC_API_KEY" ]; then
             echo "::error::ANTHROPIC_API_KEY is not set: add it as a repository secret (gh secret set ANTHROPIC_API_KEY) before this eval can run" >&2
             exit 1
           fi
       - name: Run the golden-description eval
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node mcp/describe-eval-runner.mjs

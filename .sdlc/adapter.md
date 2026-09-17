@@ -65,6 +65,8 @@ No config file exists (adapter defaults to preset `local`), yet the repo is GitH
 
 Tokens stay in `gh auth`; a `token` key is refused by the adapter.
 
+**Amendment (2026-09-17).** `.sdlc/config.json` is committed with exactly this preset, by U2.
+
 ## 3. Hooks and guards
 
 | Guard | Where it bites | What it does | sdlc consequence |
@@ -80,6 +82,8 @@ Tokens stay in `gh auth`; a `token` key is refused by the adapter.
 | `.sdlc/runtime/` | plan-rules says gitignored; the repo's `.gitignore` does not list it yet | `worktrees.json`, `preview.json` are per-checkout state | A7 adds `.sdlc/runtime/` and `.sdlc/.fake-tickets/`, `.sdlc/.fake-releases/` (selftest scratch) to `.gitignore` |
 | `.worktrees/` | `worktrees.py add` creates `.worktrees/<unit>` inside the repo root; not in `.gitignore` (only `.git-worktrees/` is) and not in the branding gate's skip list (only `worktrees` and `.git-worktrees`) | A unit worktree is a full nested copy of the repo | Until A7 adds `.worktrees/` to `.gitignore` and to `SKIP_DIRS` in `test/repo/branding.mjs`, an `npm test` in the root checkout walks every nested worktree, and `git status` in the root shows `.worktrees/` as untracked. Either fix lands in A7; a seat that sees `?? .worktrees/` in `git status` leaves it unstaged |
 | `.claude/ops/` | `.gitignore` line 14 ignores the dir; 7 files under it are tracked (C8 🟡) | Ops-family (harness plugin) coordination state from July, plus live lock files | Conflict C6 |
+
+**Amendment (2026-09-17).** U2 added `.worktrees/` to `.gitignore` and to `SKIP_DIRS` in `test/repo/branding.mjs`, so a root-checkout `npm test` no longer walks nested unit worktrees; U3 untracked the seven `.claude/ops/` files (C6) and set the GitHub repo to squash-merge only (P1).
 
 ## 4. Conflicts: existing agent instructions vs sdlc
 
