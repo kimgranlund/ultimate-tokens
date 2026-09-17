@@ -30,6 +30,8 @@ import {
   SCRIM_BASES,
   SCRIM_STEPS,
   modeTierNudge,
+  hasDataPalettes,
+  mintDataPalettes,
 } from "./model.mjs";
 import { STORAGE_KEY, serialize, hydrate } from "./persist.js";
 import { clampProfile, resolveFlags, flagOf as flagFromFlags, resolveTier, entitlementActive } from "../engine/flags.js";
@@ -2374,10 +2376,15 @@ class HctApp extends HTMLElement {
   // openConfigAsSet — shape-clamp an (untrusted) config and open it as a new set. hydrateStoredDoc()
   // domain-clamps every field AND applies the legacy stamp (a config lacking hueSpace was authored under
   // cam16 — keep it cam16, consistent with openSet), so a junk/partial config is sanitized + preserved.
+  // #644: this is a document-CREATION path (a preset opened as a fresh copy, or a loaded project file
+  // opened as a new set) — mint the 8 Data-N palettes onto `doc` here, before serialize(), reusing the
+  // exact hasDataPalettes()/mintDataPalettes() guard so a preset that already ships a complete data-N
+  // layer (Adia) is left untouched rather than duplicated.
   openConfigAsSet(config, toastMsg) {
     const doc = hydrateStoredDoc(config);
     const name = (typeof config.name === "string" && config.name.trim()) || "Project";
     doc.name = name;
+    if (!hasDataPalettes(doc)) doc.palettes.push(...mintDataPalettes(doc));
     const id = "set-" + Date.now().toString(36);
     this.sets.push({ id, name, doc: serialize(doc), updated: Date.now() });
     this.persistSets();

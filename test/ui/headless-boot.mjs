@@ -1361,8 +1361,18 @@ const setsBeforeHH = app.sets.length;
 const openPreset = TP[0];
 app.openConfigAsSet(openPreset, "Opened");
 ok(app.view === "editor" && app.sets.length === setsBeforeHH + 1, "(hh) opening a preset adds an EDITABLE copy to your sets + enters the editor");
-ok(app.doc.palettes.length === CATEGORY_PRESET_PALETTES && app.doc.palettes[0].name === "neutral" && app.doc.palettes[1].name === "primary", `(hh) the opened copy carries the ${CATEGORY_PRESET_PALETTES} named palettes (neutral first, then primary)`);
+// #644: opening a preset also auto-mints the 8 Data-N palettes the preset itself doesn't ship
+// (only 1 of 343 presets, Adia, ships its own) — the opened copy carries the preset's own
+// CATEGORY_PRESET_PALETTES named palettes PLUS 8 more, appended in order.
+ok(app.doc.palettes.length === CATEGORY_PRESET_PALETTES + 8 && app.doc.palettes[0].name === "neutral" && app.doc.palettes[1].name === "primary", `(hh) the opened copy carries the ${CATEGORY_PRESET_PALETTES} named palettes (neutral first, then primary) plus 8 auto-minted Data-N (got ${app.doc.palettes.length})`);
 ok(["info","success","warning","danger"].every((n) => app.doc.palettes.some((p) => p.name === n)), "(hh) the status palettes (info/success/warning/danger) are present in the copy");
+const hhDataAdded = app.doc.palettes.slice(CATEGORY_PRESET_PALETTES);
+ok(JSON.stringify(hhDataAdded.map((p) => p.name)) === JSON.stringify(["Data 1", "Data 2", "Data 3", "Data 4", "Data 5", "Data 6", "Data 7", "Data 8"]),
+  `(hh) #644 auto-mints Data 1..Data 8, appended after the preset's own palettes, in order (got ${JSON.stringify(hhDataAdded.map((p) => p.name))})`);
+const { mintDataPalettes: mintDataPalettesHH } = await import("../../src/ui/model.mjs");
+const hhExpected = mintDataPalettesHH(app.doc);
+ok(hhDataAdded.every((p, i) => Math.abs(p.hue - hhExpected[i].hue) < 1e-6 && p.chroma === hhExpected[i].chroma),
+  "(hh) #644 the auto-minted hues/chroma match a real mintDataPalettes derivation off the preset's OWN Primary hue (not placeholder values)");
 app.toGallery(); flushRaf();
 ok(app.category === "travel", "(hh) returning from the editor lands back on the open category page");
 // search filters the category's shelf — use a distinctive long word from the opened preset's name
@@ -2847,6 +2857,94 @@ dpaBtn("Add data palettes (8)").click();
 ok(app.doc.palettes.length === dpaLenBefore3, `(dpa19) Add is a no-op with no Primary to derive from (got ${app.doc.palettes.length}, expected ${dpaLenBefore3})`);
 ok(/primary/i.test(app.toastEl.textContent || ""), `(dpa20) Add toasts naming the missing Primary palette (got "${app.toastEl.textContent}")`);
 
+// ── #644: auto-mint the 8 Data-N palettes on document CREATION (createSet()/newSet() and
+// openConfigAsSet()), not just via the opt-in "Add data palettes (8)" button exercised above.
+// Both creation paths reuse mintDataPalettes()/hasDataPalettes() — the SAME derivation and the
+// SAME no-op guard the button already uses — so this covers: a from-scratch document, a
+// story-schema preset with no data layer of its own, the ONE direct-schema preset (Adia) that
+// already ships a complete data layer (must not duplicate), and a negative control proving an
+// EXISTING saved set is never auto-mutated merely by loading it. ─────────────────────────────
+const { loadCategory: LSdpa } = await import("../../src/ui/categories/index.js");
+const { hydrateStoredDoc: hydrateStoredDocDPA } = await import("../../src/ui/app-helpers.mjs");
+
+// createSet(): the from-scratch "+ New" path. defaultDocument() already bakes literal Data-N
+// defaults (REQ-024), derived ONCE via deriveDataHues in CAM16 space and then EACH hue converted
+// independently through camHueToOklch — so a fresh mintDataPalettes(doc) call against the
+// already-OKLCH-converted doc is NOT expected to reproduce those baked hues bit-for-bit (the
+// CAM16→OKLCH hue remap is nonlinear, so it doesn't commute with deriveDataHues' own spacing
+// math); newSet()'s guarded mint call is correctly a no-op against it either way. The acceptance
+// is that the CREATED doc carries exactly 8 real, non-placeholder Data-N palettes immediately —
+// asserted directly (chroma follows Primary per H4, hues are 8 DISTINCT in-range values, not
+// stub/zeroed placeholders).
+const dpaSetsBefore21 = app.sets.length;
+app.createSet(); flushRaf();
+ok(app.sets.length === dpaSetsBefore21 + 1, "(dpa21) createSet() adds a new kit");
+const dpaCreatedData = app.doc.palettes.filter((p) => p.name.startsWith("Data "));
+ok(dpaCreatedData.length === 8, `(dpa21) a freshly created document has exactly 8 Data-N palettes immediately (got ${dpaCreatedData.length})`);
+const dpaCreatedPrimaryChroma = app.doc.palettes.find((p) => p.name === "Primary").chroma;
+ok(dpaCreatedData.every((p) => p.chroma === dpaCreatedPrimaryChroma), "(dpa22) createSet()'s Data-N chroma follows the Primary's own chroma (REQ-022/H4)");
+ok(new Set(dpaCreatedData.map((p) => p.hue)).size === 8 && dpaCreatedData.every((p) => Number.isFinite(p.hue) && p.hue >= 0 && p.hue < 360),
+  "(dpa22) createSet()'s Data-N hues are 8 distinct, real in-range derived values, not placeholder/stub values");
+
+// openConfigAsSet() on a story-schema preset with NO data layer of its own (336 of 343 presets):
+// 8 Data-N palettes are minted onto the editable copy immediately at open time.
+const dpaSetsBefore23 = app.sets.length;
+app.openConfigAsSet(TP[1], null);
+ok(app.sets.length === dpaSetsBefore23 + 1, "(dpa23) openConfigAsSet() adds a new kit");
+const dpaPresetData = app.doc.palettes.filter((p) => p.name.startsWith("Data "));
+ok(dpaPresetData.length === 8, `(dpa23) opening a story-schema preset with no data layer auto-mints 8 Data-N palettes (got ${dpaPresetData.length})`);
+ok(JSON.stringify(dpaPresetData.map((p) => p.name)) === JSON.stringify(["Data 1", "Data 2", "Data 3", "Data 4", "Data 5", "Data 6", "Data 7", "Data 8"]),
+  "(dpa23) the auto-minted palettes are named Data 1..Data 8 in order");
+
+// the "Add data palettes (8)" button's existing show/disable logic still behaves correctly
+// against a document that ALREADY has 8 from AUTO-mint (no dead/duplicate-mint button state) —
+// checked while app.doc is still this just-opened, auto-minted preset copy.
+app.setSegment("global"); app.render(); flushRaf();
+ok(dpaBtn("Add data palettes (8)").disabled === true, "(dpa23b) Add is disabled against a doc auto-minted with 8 Data-N palettes at creation");
+ok(dpaBtn("Re-derive data hues").disabled !== true, "(dpa23b) Re-derive is enabled against a doc auto-minted with 8 Data-N palettes at creation");
+const dpaLenBefore4 = app.doc.palettes.length;
+dpaBtn("Add data palettes (8)").click();
+ok(app.doc.palettes.length === dpaLenBefore4, `(dpa23c) clicking Add against an auto-minted doc is a genuine no-op, not a duplicate mint (got ${app.doc.palettes.length}, expected ${dpaLenBefore4})`);
+
+// openConfigAsSet() on the ONE direct-schema preset that ALREADY ships a complete, hand-authored
+// data layer (Adia, brands.json): stays exactly 8, never duplicated to 16, and left byte-for-byte
+// untouched by the mint (compared against a plain hydrate with no mint involved, so this isolates
+// the guard's own behavior from hydrate()'s ordinary domain-clamping).
+const dpaBrands = (await LSdpa("brands")).PRESETS;
+const dpaAdiaPreset = dpaBrands.find((p) => /adia/i.test(p.name));
+ok(!!dpaAdiaPreset, "(dpa24) test setup: the Adia preset ships in the brands category");
+const dpaAdiaDataSource = dpaAdiaPreset.palettes.filter((p) => p.name.startsWith("Data "));
+ok(dpaAdiaDataSource.length === 8, "(dpa24) test setup: Adia's own authored preset already carries exactly 8 Data-N palettes");
+const dpaAdiaExpected = hydrateStoredDocDPA(dpaAdiaPreset).palettes.filter((p) => p.name.startsWith("Data "));
+app.openConfigAsSet(dpaAdiaPreset, null);
+const dpaAdiaDataAfter = app.doc.palettes.filter((p) => p.name.startsWith("Data "));
+ok(dpaAdiaDataAfter.length === 8, `(dpa25) opening Adia (already has a complete data layer) still has exactly 8 Data-N palettes, not 16 (got ${dpaAdiaDataAfter.length})`);
+ok(JSON.stringify(dpaAdiaDataAfter) === JSON.stringify(dpaAdiaExpected), "(dpa25) Adia's own authored Data-N palettes are left byte-for-byte untouched — no re-derivation, no duplication");
+
+// negative control: an EXISTING saved set opened via the gallery's normal openSet() flow (a LOAD,
+// not a creation) must be byte-for-byte unaffected — no auto-mint fires on load. Simulated with a
+// legacy-shaped stored record (no data layer, as any pre-#644 saved set would be): the STORED
+// bytes are mutated directly (never through commit()/save(), which would itself be a live edit,
+// not a load) so this exercises openSet() alone.
+app.createSet(); flushRaf();
+const dpaLegacyId = app.activeId;
+const dpaLegacyRec = app.sets.find((s) => s.id === dpaLegacyId);
+dpaLegacyRec.doc = { ...JSON.parse(JSON.stringify(dpaLegacyRec.doc)), palettes: dpaLegacyRec.doc.palettes.filter((p) => !p.name.startsWith("Data ")) };
+const dpaLegacySnapshotBefore = JSON.stringify(dpaLegacyRec.doc);
+app.toGallery(); flushRaf();
+app.openSet(dpaLegacyId); flushRaf();
+ok(!app.doc.palettes.some((p) => p.name.startsWith("Data ")), "(dpa26) openSet() on an EXISTING saved set with no data layer does NOT auto-mint on load");
+ok(JSON.stringify(app.sets.find((s) => s.id === dpaLegacyId).doc) === dpaLegacySnapshotBefore, "(dpa26) the underlying stored record is byte-for-byte unaffected merely by opening it");
+
+// wiring is guard-safe with no Primary to anchor the derivation either (mintDataPalettes returns
+// [] and the spread is a no-op) — a config shaped like this shouldn't occur in practice (every
+// preset + defaultDocument() carries a Primary) but the creation-site wiring must not assume it.
+const dpaNoPrimaryConfig = { name: "No primary", palettes: TP[2].palettes.filter((p) => p.name !== "primary") };
+let dpaNoPrimaryThrew = false;
+try { app.openConfigAsSet(dpaNoPrimaryConfig, null); } catch { dpaNoPrimaryThrew = true; }
+ok(!dpaNoPrimaryThrew, "(dpa27) openConfigAsSet() on a doc with no Primary palette does not throw");
+ok(!app.doc.palettes.some((p) => p.name.startsWith("Data ")), "(dpa27) …and mints nothing (mintDataPalettes has no Primary hue to anchor the derivation on)");
+
 // ── (cg) Color canvas groups (ticket #556): four headers in order + counts, correct default
 // assignment of the 16 default palettes, the inspector's Group dropdown (+ persist round-trip),
 // and drag-reorder ACROSS a group header reassigning the moved palette's group. ────────────────
@@ -3101,7 +3199,9 @@ flushRaf();
     ok(hits(rampsBody) >= 1, `(rx4b) control: renderRampsScene's body DOES call dragHandle(/_wireReorder( (got ${hits(rampsBody)})`);
   }
 
-  // test 5: normal state, Route B "Maison" (8 palettes, 8 enabled, 0 collisions).
+  // test 5: normal state, Route B "Maison" (8 palettes authored + 8 auto-minted Data-N per #644,
+  // all 16 enabled, 0 collisions). E/C below are read off app.doc, not hardcoded, so this stays
+  // correct regardless of the auto-mint.
   {
     const { PRESETS: BRANDS_RX } = await loadCategoryRX("brands");
     const maison = BRANDS_RX.find((p) => p.name === "Maison · The product's own design system");
@@ -3116,7 +3216,9 @@ flushRaf();
     ok(app.querySelectorAll(".radix-empty").length === 0, "(rx5) .radix-empty === 0 (control: test 7)");
   }
 
-  // test 6: collision state, Route B "Modal jazz" (11 palettes, 11 enabled, palettes[5]==="accent").
+  // test 6: collision state, Route B "Modal jazz" (11 palettes authored + 8 auto-minted Data-N
+  // per #644, all 19 enabled, palettes[5]==="accent"). E6/C6 below are read off app.doc, not
+  // hardcoded, so this stays correct regardless of the auto-mint.
   {
     const { PRESETS: BRANDS_RX2 } = await loadCategoryRX("brands");
     const modalJazz = BRANDS_RX2.find((p) => p.name === "Modal jazz · the cool-blue session");

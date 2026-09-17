@@ -488,6 +488,15 @@ export function defaultDocument() {
 // gain their own isDataPalette in a later build unit (U7) over the same rule.
 const isDataSlug = (name) => /^data-\d+$/.test(slug(name));
 
+// hasDataPalettes(doc) -> boolean — the identical no-op guard color.js's addDataPalettes() button
+// action uses (`dataPaletteCount() > 0`, `/^data-\d+$/.test(slug(p.name))`), exported so #644's
+// document-CREATION call sites (createSet/newSet, openConfigAsSet) can reuse the exact same
+// condition instead of re-deriving it, so a doc that already ships a complete data-N layer (the
+// Adia preset) is never re-minted/duplicated at creation time either.
+export function hasDataPalettes(doc) {
+  return ((doc && doc.palettes) || []).some((p) => isDataSlug(p.name));
+}
+
 // brandHuesOf — REQ-021: the hue of every NON-data palette whose chroma >= 20 (a tinted neutral
 // counts, a near-achromatic one doesn't; no name matching needed).
 function brandHuesOf(palettes) {
