@@ -15,11 +15,24 @@ import { paletteKeyColors } from "../../src/ui/model.mjs";
 import { hydrate } from "../../src/ui/persist.js";
 import { PRESETS as LITERATURE_PRESETS } from "../../src/ui/categories/literature.js";
 import { PRESETS as FILM_PRESETS } from "../../src/ui/categories/film.js";
+import { PRESETS as BRANDS_PRESETS } from "../../src/ui/categories/brands.js";
 
 const fails = [];
 const ok = (c, m) => { if (!c) fails.push(m); };
 const chroma = (hex) => hexToOklch(hex)[1];
 const near = (a, b, tol = 0.01) => Math.abs(a - b) < tol;
+const sumOf = (bands) => bands.reduce((s, b) => s + b.width, 0);
+// the bands render as `flex:${width}` grow factors (src/ui/app.js presetTile), so a band's RENDERED
+// share is width / sum, not width — the review of #646 found the vector summed to 87.73 (66.88 for
+// Corsa) so the "35" cap actually rendered at 40-52%. Every story-path result must now sum to 100
+// and its widest band's rendered share must respect the cap.
+const assertRendered = (label, bands) => {
+  const sum = sumOf(bands);
+  ok(Math.abs(sum - 100) < 1e-6, `${label}: the returned widths sum to 100 so flex shares equal widths (got ${sum.toFixed(6)})`);
+  const max = Math.max(...bands.map((b) => b.width));
+  ok(max / sum <= POSTER_STRIP_MAX_BAND_PCT / 100 + 1e-9, `${label}: the widest band's RENDERED share (max/sum) respects the cap (want <= ${POSTER_STRIP_MAX_BAND_PCT}%, got ${(100 * max / sum).toFixed(2)}%)`);
+};
+const enabledOf = (preset) => paletteKeyColors(hydrate(preset)).filter((p) => p.on);
 
 // a hand-built 7-swatch cohort in the SAME shape paletteKeyColors() emits: 1 neutral (achromatic),
 // 1 dominant (moderate chroma, candle-gold-like), 3 supporting (low-to-moderate chroma), 2 accent
@@ -63,6 +76,41 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   // the clamp's surplus + the floor's deficit must net out somewhere on the two surviving
   // supporting bands (the only flexible, non-locked, non-floored bands left) — neither goes negative.
   ok(byName["supporting-1"].width > 0 && byName["supporting-2"].width > 0, `redistribution never pushes a flexible band negative (got ${byName["supporting-1"].width.toFixed(2)}/${byName["supporting-2"].width.toFixed(2)})`);
+  assertRendered("hand-built cohort", bands);
+}
+
+// ── fix A (review): fewer than 6 hierarchy-tagged palettes + a capitalized "Neutral" ─────────────
+{
+  // Maison authors 8 enabled palettes but only 3 carry a colorRole (Primary/dominant, Secondary +
+  // Tertiary/supporting); Info/Success/Warning/Danger carry none, and its neutral is "Neutral".
+  // The first cut of #646 selected by exact name/colorRole only, so it rendered 3 bands with no
+  // neutral ground at all where the old `enabled.slice(0, 6)` rendered 6.
+  const maison = BRANDS_PRESETS.find((p) => p.name.startsWith("Maison ·"));
+  const enabled = enabledOf(maison);
+  ok(enabled.length === 8 && enabled.filter((p) => p.colorRole).length === 3 && enabled[0].name === "Neutral", `test setup: Maison really has 8 enabled palettes, 3 hierarchy-tagged, and a capitalized "Neutral" (got ${enabled.map((p) => `${p.name}${p.colorRole ? ":" + p.colorRole : ""}`).join(",")})`);
+  const bands = posterStripBands(enabled, maison.story.groups);
+  const names = bands.map((b) => b.name);
+  ok(bands.length === 6, `Maison: a preset with fewer than 6 hierarchy-tagged palettes still fills 6 bands from its colorRole-less palettes (got ${bands.length}: ${names.join(",")})`);
+  ok(names.includes("Neutral"), `Maison: the capitalized "Neutral" ground is among the bands (got ${names.join(",")})`);
+  ok(near(bands.find((b) => b.name === "Neutral").width, 8), `Maison: "Neutral" is treated as THE neutral, keeping the fixed 8% backdrop share (got ${bands.find((b) => b.name === "Neutral").width.toFixed(2)})`);
+  ok(["Primary", "Secondary", "Tertiary"].every((n) => names.includes(n)), `Maison: every hierarchy-tagged palette is still shown (got ${names.join(",")})`);
+  ok(names.includes("Info") && names.includes("Success"), `Maison: the free slots are topped up from the leftover palettes in authored order, Info then Success (got ${names.join(",")})`);
+  assertRendered("Maison", bands);
+}
+
+// ── fix B (review): the worst-case vector, Corsa's 8 accent-role + 5 supporting-role palettes ───
+{
+  // the base widths divide a role's share across every ENABLED sibling, so the 6 accents and 3
+  // supporting palettes that do NOT make the strip took their share out of the total (66.88 before
+  // normalization), and the "35" cap rendered at 52.3%, wider than the ~46% the ticket was filed about.
+  const corsa = BRANDS_PRESETS.find((p) => p.name.startsWith("Corsa ·"));
+  const enabled = enabledOf(corsa);
+  ok(enabled.filter((p) => p.colorRole === "accent").length === 8 && enabled.filter((p) => p.colorRole === "supporting").length === 5, `test setup: Corsa really authors 8 accent-role + 5 supporting-role palettes (got a=${enabled.filter((p) => p.colorRole === "accent").length}, s=${enabled.filter((p) => p.colorRole === "supporting").length})`);
+  const bands = posterStripBands(enabled, corsa.story.groups);
+  ok(bands.length === 6, `Corsa: 6 bands (got ${bands.length})`);
+  ok(bands.filter((b) => b.colorRole === "accent").length === 2, `Corsa: exactly 2 accents shown (got ${bands.filter((b) => b.colorRole === "accent").length})`);
+  assertRendered("Corsa", bands);
+  ok(near(bands.find((b) => b.colorRole === "dominant").width, POSTER_STRIP_MAX_BAND_PCT), `Corsa: the dominant is clamped to the cap in RENDERED terms, not 52% (got ${bands.find((b) => b.colorRole === "dominant").width.toFixed(2)})`);
 }
 
 // ── fix 3: width additionally weighted by each swatch's OWN OKLCH chroma ───────────────────────
@@ -115,6 +163,7 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   ok(wpAccents.length === 2, `War and Peace: both accent swatches (icon crimson + gilt gold) survive (got ${wpAccents.length})`);
   ok(near(wpDominant.width, POSTER_STRIP_MAX_BAND_PCT), `War and Peace: the candle-gold dominant (authored 50%, ~46% uncapped) is clamped (want ${POSTER_STRIP_MAX_BAND_PCT}, got ${wpDominant.width.toFixed(2)})`);
   ok(wpAccents.every((b) => b.width >= POSTER_STRIP_ACCENT_FLOOR_PCT - 0.01), `War and Peace: both accent bands are floored, no longer slivers (got ${wpAccents.map((b) => b.width.toFixed(2))})`);
+  assertRendered("War and Peace", wpBands);
 
   const hero = FILM_PRESETS.find((p) => p.name.includes("Hero · 2002"));
   const heroEnabled = paletteKeyColors(hydrate(hero)).filter((p) => p.on);
@@ -123,9 +172,13 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   const heroRest = heroBands.filter((b) => b.name !== heroDominant.name);
   ok(chroma(heroDominant.key) > 0.15, `test setup: Hero's dominant (courtyard red) really is already high-chroma (got ${chroma(heroDominant.key).toFixed(3)})`);
   ok(heroDominant.width >= 30, `Hero: an already-vivid dominant is NOT over-compressed by the clamp (got ${heroDominant.width.toFixed(2)})`);
-  ok(heroRest.every((b) => heroDominant.width >= b.width * 2), `Hero: the vivid dominant remains clearly the strip's leading band, at least 2x its widest neighbor (dominant=${heroDominant.width.toFixed(2)}, rest=${heroRest.map((b) => b.width.toFixed(2)).join(",")})`);
+  // with the vector normalized, the cap binds at a true 35% and 5 other bands share the remaining
+  // 65% (neutral 8 + two floored accents 10 each leave ~37% for the three supporting bands), so the
+  // widest neighbor can legitimately reach ~20%: 1.5x is the margin the cap actually guarantees.
+  ok(heroRest.every((b) => heroDominant.width >= b.width * 1.5), `Hero: the vivid dominant remains clearly the strip's leading band, at least 1.5x its widest neighbor (dominant=${heroDominant.width.toFixed(2)}, rest=${heroRest.map((b) => b.width.toFixed(2)).join(",")})`);
+  assertRendered("Hero · 2002", heroBands);
 }
 
 if (fails.length) { console.error(`poster-strip FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("poster-strip PASS: posterStripBands() holds all four #646 fixes directly — never drops the 2nd accent (fix 2), clamps the max band + floors accent bands via proportional redistribution (fix 1), weights width by relative chroma without shifting a uniformly-saturated cohort (fix 3), and reorders the two highest-chroma bands to the strip's edges (fix 4) — against both a hand-built cohort and two real curated presets (War and Peace's low-chroma dominant, Hero's already-vivid one)");
+console.log("poster-strip PASS: posterStripBands() holds all four #646 fixes directly — never drops the 2nd accent (fix 2), clamps the max band + floors accent bands via proportional redistribution (fix 1), weights width by relative chroma without shifting a uniformly-saturated cohort (fix 3), and reorders the two highest-chroma bands to the strip's edges (fix 4) — plus the review fold-ins: a capitalized Neutral + colorRole-less top-up still fill 6 bands (Maison), and every story-path vector sums to 100 with the widest band's rendered share under the cap (Corsa's worst case, War and Peace, Hero)");
 process.exit(0);
