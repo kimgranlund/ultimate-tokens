@@ -1,9 +1,9 @@
 ---
 status: approved
-ticket: T-0001 (local preset, .sdlc/tickets)
+ticket: #643 (github; mirrored from local T-0001, kept in .sdlc/tickets as history)
 priority: P1
 lane: docs
-size: M (U1 M + U2 M + U3 S + U4 S = 6 points)
+size: M (U1 M + U2 M + U3 S + U4 S + U5 S = 7 points)
 labels: kind:chore · size:M · lane:docs · mode:multi
 unit: A7
 written: 2026-09-16
@@ -36,6 +36,7 @@ Sixteen S items the debt map lists under "A7 hygiene candidates", plus the eight
 - [x] U2 (M) harness, config, ignores, workflows, CLAUDE.md `## SDLC` · grade l1 · reviewer-l1 · verifier-l1 · pass 2: grade l7 · reviewer-l3 · verifier-l3
 - [x] U3 (S) repo settings, git index, local branches · grade l1 · reviewer-l1 · verifier-l1
 - [~] U4 (S) pre-land fixes: branding in a committed review record, U1-7 ticket exclusion · grade l2 · reviewer-l1 · verifier-l1
+- [~] U5 (S) drop the drill-only `worktree.bgIsolation` from committed `.claude/settings.json` · grade l1 · reviewer-l1 · verifier-l1
 
 Dispatch order: U2 first when possible (it adds `.worktrees/` to `.gitignore` and to the branding skip list, so a root-checkout `npm test` stops walking the unit worktrees). U1 and U3 are independent of U2 and of each other; their file sets do not overlap. Builders run gates inside `.worktrees/<unit>` only. `npm run build` is required for U2 (it touches `.github/` and `test/repo/`, and the verifier at pre-land runs it always); U1 and U3 need only `npm test`.
 
@@ -103,6 +104,16 @@ Added after `.sdlc/verdicts/adopt-hygiene-prepr.md` 🔴 on 29a2c06. Files: `.sd
 | 2 | U1 row 7's stale-path grep excludes `.sdlc/tickets` (a historical record, like handoffs) and prints 0 on the head | row 7 command as revised | `moved`, `1`, `0` | the same grep without `':!.sdlc/tickets'`: `1` (the match in `.sdlc/tickets/T-0001.md`) |
 | 3 | `npm test` green on the head, tree clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l` | `all 44 test files passed`, `0` | at 29a2c06: `1/44 test file(s) failed` |
 
+### U5 drop the drill-only setting (S, grade l1)
+
+Human answer A in `.sdlc/questions/adopt-hygiene-bgisolation.md`. File: `.claude/settings.json` only. Dispatched with U4; merged last, right before the pre-land rerun, because the root checkout runs the drill on this setting: at merge time the Orchestrator writes a question for the local copy (for example `.claude/settings.local.json`), it never edits settings itself.
+
+| # | Criterion | Command | Expected | Negative control |
+|---|---|---|---|---|
+| 1 | committed settings carry no `worktree` block; everything else unchanged | `node -e 'const s=require("./.claude/settings.json"); console.log(s.worktree===undefined)'; git diff origin/main -- .claude/settings.json \| grep -c bgIsolation` | `true`, `0` | at 39b78dc: `false`, `1` |
+| 2 | the file is valid JSON and the plugin flags from f9e20c5 stay | `node -e 'const s=require("./.claude/settings.json"); console.log(s.enabledPlugins["sdlc@nonoun"], s.enabledPlugins["sdlc@adia"])'` | `true false` | a trailing comma planted: `node` throws; restored |
+| 3 | `npm test` green, tree clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l` | `all 44 test files passed`, `0` | P1 control |
+
 ## Risks and assumptions
 
 | Risk | Handling |
@@ -144,3 +155,4 @@ python3 /Users/kimba/Projects/nonoun/sdlc-orchestration/plugins/sdlc/scripts/ada
 | 2026-09-16 | U2 pass 2: row 9 adds actionlint (YAML load cannot reject a bad expression context); row 3 adds a mechanism-exists check (a count alone let a wrong fact through) | verdict adopt-hygiene-U2 🔴, re-diagnosis .sdlc/plans/adopt-hygiene-U2-p2.md |
 | 2026-09-16 | U1 pass 2: row 6 drops the two ticket numbers it called PRs and adds a resolver (counting complete/todo cannot see a number that is not a PR; four E3 to E6 SHAs were branch tips); row 7 excludes `.sdlc/handoffs` | verdict adopt-hygiene-U1 🔴, re-diagnosis .sdlc/plans/adopt-hygiene-U1-p2.md |
 | 2026-09-16 | U4 added (pre-land fixes); row 7 also excludes `.sdlc/tickets` | pre-land record .sdlc/verdicts/adopt-hygiene-prepr.md 🔴 on 29a2c06: npm test red on a committed record, U1-7 hit in the local ticket |
+| 2026-09-17 | ticket mirrored to GitHub #643; U5 added (drop drill-only bgIsolation) | human answers A, A, A in commit 2304368 |
