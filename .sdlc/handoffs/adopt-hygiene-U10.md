@@ -8,7 +8,9 @@ built: 2026-09-17
 
 # U10 handoff: pre-land fixes, round 5
 
-Branch `unit/hygiene-U10` from `sdlc/adopt` @ e64b082. One commit.
+Branch `unit/hygiene-U10` from `sdlc/adopt` @ e64b082. Two commits: the six-card fix, then a merge
+of `sdlc/adopt` @ 29fc25b (the U10 review's criterion 6, and the second, non-vacuous version of
+`card-amendment-check.sh`) plus the source-range fix that criterion needs.
 
 ## What changed
 
@@ -33,21 +35,28 @@ the card's older content):
 - `SITE-describe-palette`: the adopt-hygiene plan flips the describe-eval workflow from a clean
   no-op skip to failing loudly (`exit 1`) when the provider key is absent.
 
-## Checks run
+## Round 1 (the six cards)
 
-- Criterion 1 (`sh .sdlc/checks/card-amendment-check.sh`): `stale total: 0`. One-card-drop
-  control (dropped the `ADR-010` amendment clause, reran): `stale card ADR-010`, `stale total: 1`;
-  restored, back to `0`.
-- Criterion 2 baseline (`awk` over ADR-011's own section): `0`, as expected: ADR-011 has no
-  amendment. Reported, not fixed: the plan's negative control for this row ("planting the
-  amendment line in ADR-011's section makes the script print `stale card ADR-011`") does not fire
-  against the committed `card-amendment-check.sh`: that script hardcodes only the six records
-  this unit owns (`ADR-010`, `ADR-013`, `ADR-016`, the three LLD/SITE files) and never scans
-  ADR-011 at all, so a plant there is invisible to it regardless of the card. Confirmed by
-  planting `- **Amendment (2026-09-16).** Plant for criterion 2 control.` into ADR-011's section
-  and rerunning the script: still `stale total: 0`. Restored before commit. The literal command
-  the criterion names (the `awk` baseline) passes; the script's scope, not this unit's edits, is
-  why the described control can't be reproduced as written.
+Reported, not fixed, in the first pass: the plan's criterion 2 negative control ("planting the
+amendment line in ADR-011's section makes the script print `stale card ADR-011`") did not fire
+against that first `card-amendment-check.sh`, because it hardcoded only the six records this unit
+owns and never scanned ADR-011 at all. The Orchestrator's review confirmed this, rewrote the
+script to derive its card set from each card's own `Source` row instead of a hardcoded list, and
+added criterion 6 below for the `Source` line ranges U1's amendments had shifted.
+
+## Round 2 (criterion 6, after merging `sdlc/adopt` @ 29fc25b)
+
+`sh .sdlc/checks/card-source-range-check.sh` printed 12 stale ranges, `ADR-011` through `ADR-022`
+(every card whose heading sits after `ADR-010`, which is exactly where U1's three amendment blocks
+insert lines). Recomputed each range from the file directly (`grep -nE '^## ADR-0NN '`, end =
+next heading's line minus one) and rewrote all 12 `Source` cells.
+
+## Checks run (rerun in full after both rounds)
+
+- Criterion 1 (`sh .sdlc/checks/card-amendment-check.sh`): `stale total: 0`.
+- Criterion 2: planted `- **Amendment (2026-09-16).**` under `## ADR-011`, ran the (now
+  card-set-derived) script: `stale card ADR-011`, `stale index ADR-011`, `stale total: 2`.
+  Restored, back to `0`. The negative control now fires as the plan describes.
 - Criterion 3 (`grep ... index.md | grep -c 'none'` over the six rows): `0`.
 - Criterion 4: `u8check.sh` and `debt-closure-check.sh` (copied from
   `.sdlc/plans/adopt-hygiene-prepr3.md` §Checks, run with `gh` authenticated, no `NO_GH`):
@@ -56,12 +65,14 @@ the card's older content):
   rerun directly: criterion 1 prints exactly the three named `missing` lines
   (`.claude/ops/plan.md`, `data/role-table.json`, `figma-aliased/palette.tokens.json`); criterion
   3's `git grep` prints no line, `npm ci` count in `ci.yml` is `3`.
-- Criterion 5: `npm test` → `all 44 test files passed`; `git status --porcelain | wc -l` → `7`
-  (the six cards plus `index.md`, all touched by this unit, tree otherwise clean); `node
-  test/repo/branding.mjs` → `clean (433 files scanned)`.
+- Criterion 5: `npm test` → `all 44 test files passed`; `git status --porcelain | wc -l` → `12`
+  after round 1's cards, `index.md`, and this handoff were already committed; the range fix
+  touches exactly `ADR-011` through `ADR-022`, tree otherwise clean. `node test/repo/branding.mjs`
+  → `clean (435 files scanned)`.
+- Criterion 6 (`sh .sdlc/checks/card-source-range-check.sh`): `range mismatches: 0`. One-line-shift
+  control (shifted `ADR-011`'s start by one line, reran): `range ADR-011 says 164, heading at 163`,
+  `range mismatches: 1`; restored, back to `0`.
 
 ## Result
 
-4/5 criteria pass cleanly; criterion 2 passes on its literal command but its stated negative
-control doesn't reproduce against the committed script, for the reason above (script scope, not
-an unfixed defect in this unit's six records).
+All 6 criteria pass cleanly, including both negative controls.
