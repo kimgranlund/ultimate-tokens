@@ -3,7 +3,7 @@ status: approved
 ticket: #643 (github; mirrored from local T-0001, kept in .sdlc/tickets as history)
 priority: P1
 lane: docs
-size: M (U1 M + U2 M + U3 S + U4 S + U5 S + U6 S + U7 S = 9 points)
+size: M (U1 M + U2 M + U3 S + U4 S + U5 S + U6 S + U7 S + U8 S = 10 points)
 labels: kind:chore · size:M · lane:docs · mode:multi
 unit: A7
 written: 2026-09-16
@@ -14,11 +14,11 @@ inputs: .sdlc/debt.md §A7 hygiene candidates, .sdlc/adapter.md §3 §5 §6 §7 
 
 # Close the adoption's hygiene debt without touching engine, UI, test-gate, or mcp source
 
-Sixteen S items the debt map lists under "A7 hygiene candidates", plus the eight things `adapter.md` §8 hands A7, grouped into three units a `builder-l1` can each finish in one pass. Every criterion below is a shell command run from the unit worktree root, its expected output, and a negative control that would make it fail. The Verifier runs every command itself; a handoff's `Ran` row is never evidence.
+Sixteen S items the debt map lists under "A7 hygiene candidates", plus the eight things `adapter.md` §8 hands A7, grouped into three units at approval (seven after the pre-land rounds U4 to U7, eight with the U8 sweep), each sized for one pass. Every criterion below is a shell command run from the unit worktree root, its expected output, and a negative control that would make it fail. The Verifier runs every command itself; a handoff's `Ran` row is never evidence.
 
-**Scope wall (in force for all three units).** Nothing under `src/`, `mcp/`, `scripts/`, or `test/` changes except the one `SKIP_DIRS` line in `test/repo/branding.mjs`. Everything in scope is docs, `.claude/` harness files, two workflows, `.gitignore`, `.gitattributes`, `.sdlc/` records, the git index, GitHub repo settings, and local branches. The L5/L2 rows the debt map excludes stay excluded: R2 (`hostedMcp` unwire), the `drawer.js` half of R3, R9, R10, R5, G1, K14, K17, C2, C3, every H row.
+Scope wall, in force for every unit. Nothing under `src/`, `mcp/`, `scripts/`, or `test/` changes except the one `SKIP_DIRS` line in `test/repo/branding.mjs`. Everything in scope is docs, `.claude/` harness files, two workflows, `.gitignore`, `.gitattributes`, `.sdlc/` records, the git index, GitHub repo settings, and local branches. The L5/L2 rows the debt map excludes stay excluded: R2 (`hostedMcp` unwire), the `drawer.js` half of R3, R9, R10, R5, G1, K14, K17, C2, C3, every H row.
 
-**Branding rule (adapter C12).** `test/repo/branding.mjs` scans `.sdlc/` and `docs/`. No file this plan writes quotes the retired maker brand or the pre-rename element identifier, even when the amended ADR does; paraphrase.
+Branding rule (adapter C12). `test/repo/branding.mjs` scans `.sdlc/` and `docs/`. No file this plan writes quotes the retired maker brand or the pre-rename element identifier, even when the amended ADR does; paraphrase.
 
 ## Criteria (plan-level, checked on every unit and again at pre-land)
 
@@ -39,6 +39,7 @@ Sixteen S items the debt map lists under "A7 hygiene candidates", plus the eight
 - [x] U5 (S) drop the drill-only `worktree.bgIsolation` from committed `.claude/settings.json` · grade l1 · reviewer-l1 · verifier-l1
 - [x] U6 (S) pre-land 2: stale pointers to archived plans, eval key scope, adapter amendments, debt rows · grade l3 · reviewer-l2 · verifier-l2
 - [x] U7 (S) declare the `nonoun` marketplace; debt rows for the unpushed repo and the U6 review minors · grade l2 · reviewer-l1 · verifier-l1 · pass 2: grade l7 · reviewer-l3 · verifier-l3
+- [~] U8 (S) staleness and wording sweep: every live record agrees with the head · grade l2 · reviewer-l1 · verifier-l2
 
 Dispatch order: U2 first when possible (it adds `.worktrees/` to `.gitignore` and to the branding skip list, so a root-checkout `npm test` stops walking the unit worktrees). U1 and U3 are independent of U2 and of each other; their file sets do not overlap. Builders run gates inside `.worktrees/<unit>` only. `npm run build` is required for U2 (it touches `.github/` and `test/repo/`, and the verifier at pre-land runs it always); U1 and U3 need only `npm test`.
 
@@ -138,6 +139,28 @@ Human answer B in `.sdlc/questions/adopt-hygiene-marketplace.md` (commit cec7529
 | 2 | debt records the unpushed marketplace repo, C5 resolved, C6 complete, every debt C id this plan added that also exists in adapter §4 says so on its row, no em dash or bold inline label in the file, row count line true | the two commands of pass 1, then the clash-and-wording block in `.sdlc/plans/adopt-hygiene-U7-p2.md` | `2`, no `missing` line, then no `clash` line, `0`, `0`, `7 / 7`, `45 / 45` | at 65bbda3: first count `0`, `missing .sdlc/debt.md`, `clash C5` and `clash C6`, counts `4 / 6` and `41 / 44`; at ac52be8: `clash C13 without note`, `2`, `1`, `4 / 7`, `41 / 45`; on a scratch copy of the fixed file with `C7` renamed `C8` the block prints exactly `clash C8 without note` |
 | 3 | JSON valid, `npm test` green, tree clean, branding clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l` | `all 44 test files passed`, `0` | P1 control, then rerun `npm test` |
 
+### U8 staleness and wording sweep (S, grade l2)
+
+Added after `.sdlc/verdicts/adopt-hygiene-prepr.md` 🔴 on b44883d; re-diagnosis `.sdlc/plans/adopt-hygiene-prepr3.md` (fact table §1, kept-list §2b, note texts §3). Files: `.sdlc/records/index.md`, `.sdlc/records/decisions.md`, `.sdlc/records/cards/{ADR-004,PLAN-adia-exports,PLAN-export-schema,PLAN-overhaul,PRD-0001}.md`, `.sdlc/debt.md` (note text appended to existing rows only), `.sdlc/adapter.md` (three appended amendment lines, nothing deleted), `.sdlc/architecture.md` (K18 table row only), `.claude/skills/shipping-changes/SKILL.md` (lines 18 to 19), `.claude/skills/shipping-changes/references/{foundations,rubric}.md`, `.claude/skills/project-docs/SKILL.md` (SPEC row), `README.md:56`, `docs/lld/lld-muted-base-key-spikes.md:221`, `docs/plan/archive/overhaul-plan-2026-08-14.md:75`, `docs/prd/prd-0001-app-shell.md:8`, `docs/reference/references/decision-records.md:397`, `docs/site/go-live-runbook.md:34`. Not touched: `.sdlc/survey.md`, `.sdlc/baseline.md` (dated snapshots), `.claude/CLAUDE.md` (C9), `.sdlc/board.md` (Orchestrator), anything behind the P3 wall. The plan wording (F19, bold lead-ins) and the Landing paragraph were applied by the Orchestrator before dispatch. Every replacement text is in `adopt-hygiene-prepr3.md` §1 to §3; the two check scripts are in its §Checks and are run from the unit worktree root as `sh <script> origin/main HEAD` after copying them to `$CLAUDE_JOB_DIR/tmp`.
+
+| # | Criterion | Command | Expected | Negative control (measured at 61a3f90, whose tree equals b44883d outside `.sdlc/verdicts`) |
+|---|---|---|---|---|
+| 1 | records index agrees with the head: ADR-004 names ADR-023, PRD gap closed, ops row marked untracked, reactivity review listed | `u8check.sh` line 1 | `1 index stale: 0 reactivity: 1 ops-untracked: 1` | `2 0 0` |
+| 2 | adapter carries three appended amendments (§2 Merge, §3 ignore rules, §8 landed) and no deletion since 80ae4d8 (U6-4 carried) | `u8check.sh` line 2 | `s2: 1 s3-ignores: 1 s8: 1 deletions-vs-80ae4d8: 0` | `0 0 0 0`; a reword of any adapter line makes the last count non-zero |
+| 3 | the 17 closed debt rows say which unit closed them, the three partials name U1/U3, R12 names its trigger, the U7 wording block stays green | `u8check.sh` line 3 | `open-of-17: [] partials: 3 R12-trigger: 1 emdash: 0 bold: 0 counts: 7/7 45/45` | `[R1 R4 R6 R7 R8 R11 C1 D1 D2 D3 D4 G2 G3 G4 K11 K18 P2] 0 0 0 0 7/7 45/45`; dropping one note prints that id inside the brackets |
+| 4 | decisions ledger: gaps G1 to G5 closed with a date, ADR-013/ADR-016/ADR-020/SITE-runbook/PLAN-overhaul rows updated, G6 notes the loud failure | `u8check.sh` line 4 | `gaps-closed: 5 rows: 1 1 1 1 1 G6: 1` | `0 0 0 0 0 0 0` |
+| 5 | cards: the two legacy plan cards no longer read `active`, PLAN-overhaul reads closed, ADR-004's card names ADR-023 | `u8check.sh` line 5 | `active: 0 overhaul-closed: 1 adr004-names-023: 2` | `2 0 0` |
+| 6 | architecture K18 table row describes the §6.1 script as written; the script still passes | `u8check.sh` line 6 | `vN: 0 snapshot: 1 script: 0` | `1 1 0` |
+| 7 | the plan no longer says three units and has no bold lead-in paragraph; U8 is on the units list | `u8check.sh` line 7 | `three-units: 0 bold-lead: 0 U8-listed: 1` | `3 3 0` |
+| 8 | shipping-changes skill and its references carry no "no hooks" claim and no pinned model | `u8check.sh` line 8 | `stale: 0` | `3` |
+| 9 | project-docs SPEC row names the two spec files that exist | `u8check.sh` line 9 | `spec-absent: 0 spec-files: 2` | `1 2` |
+| 10 | no plan-authored em dash and no plan-authored bold inline label on any added line (kept list §2b encoded as the script's exclusions) | `sh wording-check.sh origin/main HEAD; echo "exit $?"` | prints only `plan-authored em dashes: 0, bold labels: 0`, `exit 0` | at 61a3f90: the nine §2a lines and the three plan labels print, `9, 3`, `exit 1`; on a scratch copy of the fixed tree, one dash restored in `README.md:56` prints that line and `1, 0` |
+| 11 | plan criteria that must stay green: P1 to P5, U1-7, U1-8, U1-11, U1-12, U2-4, U6-1, U6-4, U7-2 | those rows as written | as written | as written (U6-4 is the append-only guard for row 2 here) |
+| 12 | gates green, tree clean, branding clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l; node test/repo/branding.mjs \| tail -1` | `all 44 test files passed`, `0`, `clean (N files scanned)` | P1 control, then rerun `npm test` so generated files settle |
+| 13 | Orchestrator at merge: board U2 cell closed, U8 row present | `grep -c 'follow-up' .sdlc/board.md; grep -c 'U8' .sdlc/board.md` | `0`, `1` or more | b44883d: `1`, `0` |
+
+Prototype (2026-09-17, detached scratch worktree of 61a3f90 with the §1 to §3 edits applied by script, then removed): rows 1 to 10 printed exactly the Expected column; at 61a3f90 they printed exactly the Negative control column. Rows 11 to 13 were not rerun in the scratch (row 2's deletion count and row 3's U7 block are included in the prototype output; `npm test` is the builder's and verifier's own run).
+
 ## Risks and assumptions
 
 | Risk | Handling |
@@ -160,15 +183,17 @@ Human answer B in `.sdlc/questions/adopt-hygiene-marketplace.md` (commit cec7529
 
 ## Landing
 
-**Before mobilizing (X1).** `.sdlc/` is untracked at f9e20c5, so a unit worktree branched from `sdlc/adopt` would have no `.sdlc/` at all. The Conductor commits the whole `.sdlc/` record (survey, architecture, baseline, records, verdicts, questions, adapter, debt, this plan) to `sdlc/adopt` in the approval commit, before any `worktrees.py add`. That is what makes U1 criteria 7, 9, and 12 and U2 criterion 1 checkable inside a worktree as written; they are not rewritten to point at the root checkout.
+Before mobilizing (X1). `.sdlc/` is untracked at f9e20c5, so a unit worktree branched from `sdlc/adopt` would have no `.sdlc/` at all. The Conductor commits the whole `.sdlc/` record (survey, architecture, baseline, records, verdicts, questions, adapter, debt, this plan) to `sdlc/adopt` in the approval commit, before any `worktrees.py add`. That is what makes U1 criteria 7, 9, and 12 and U2 criterion 1 checkable inside a worktree as written; they are not rewritten to point at the root checkout.
 
-One PR from `sdlc/adopt` to `main`. It carries the whole adoption record under `.sdlc/` (survey, architecture, baseline, records, verdicts, questions, adapter, debt, this plan) plus the three unit commits and the board. The door is `.sdlc/adapter.md` §2.1 as ruled (C4): after the last unit verifies, the pre-land review writes `.sdlc/verdicts/adopt-hygiene-prepr.md` with `verdict: 🟢` and `sha: <branch head>`; the Orchestrator proves the gate with
+One PR from `sdlc/adopt` to `main`. It carries the whole adoption record under `.sdlc/` (survey, architecture, baseline, records, verdicts, questions, adapter, debt, this plan) plus the unit commits and the board. The door is `.sdlc/adapter.md` §2.1 as ruled (C4): after the last unit verifies, the pre-land review writes `.sdlc/verdicts/adopt-hygiene-prepr.md` with `verdict: 🟢` and `sha: <branch head>`; the Orchestrator proves the gate with
 
 ```
 python3 /Users/kimba/Projects/nonoun/sdlc-orchestration/plugins/sdlc/scripts/adapter.py land --branch sdlc/adopt --gate .sdlc/verdicts/adopt-hygiene-prepr.md --dry-run
 ```
 
 (exit 0, JSON naming the branch and the verdict path; a stale `sha` or a missing record exits 2), then opens the PR per `shipping-changes` steps 5 and 6 (`--body-file`, title `chore(sdlc): adopt the sdlc plugin and close the A7 hygiene debt`), polls `gh run list --branch sdlc/adopt` until a run id exists and `gh run watch <id> --exit-status` reports `success` for both `build-test` and `panda-smoke`, squash-merges per step 7, syncs local main per step 8, and closes the ticket with `adapter.py close <id> --reason .sdlc/verdicts/adopt-hygiene-prepr.md`. Then it applies §5 to this plan itself: status `done`, revision row `closed on landing of PR #<n>`, file moved to `.sdlc/plans/archive/`. With U3 landed the squash is the only merge style GitHub offers, so the merge command cannot silently produce a merge commit.
+
+The close-out commit that archives this plan also: (1) repoints `docs/site/describe-palette-spec.md:579` from `.sdlc/plans/adopt-hygiene.md` to `.sdlc/plans/archive/adopt-hygiene.md` (check: `grep -c 'plans/archive/adopt-hygiene.md' docs/site/describe-palette-spec.md` prints `1` and `git cat-file -e HEAD:.sdlc/plans/archive/adopt-hygiene.md` succeeds; before the move both fail); (2) flips this plan's status from `approved` to `done` (the plan never carried `active`; §5's "active to done" applies from `approved`); (3) moves every `.sdlc/board.md` row to 🟢 with a Next cell that names the PR. After the merge, the local branch sweep: `git branch -D sdlc/adopt unit/hygiene-U1 unit/hygiene-U2 unit/hygiene-U3 unit/hygiene-U4 unit/hygiene-U5 unit/hygiene-U6 unit/hygiene-U7 unit/hygiene-U8` (all squash-merged, so `-d` refuses), after which `git branch | wc -l` prints `28` and U3-4 is met as written (the head count 36 is 28 plus `sdlc/adopt` and seven unit branches; U8 adds one more). U3-5 (remote count 40, two deletes before the plan) stays a carried 🟡 with nothing to do. R12 trigger: the `adapter.py close 643` reason comment names debt R12 (`gh issue view 643 --comments | grep -c R12` prints `1` or more) so the first plan that opens `scripts/` or `test/` picks it up.
 
 ## Revisions
 
@@ -184,3 +209,4 @@ python3 /Users/kimba/Projects/nonoun/sdlc-orchestration/plugins/sdlc/scripts/ada
 | 2026-09-17 | U7 added (declare `nonoun` marketplace, debt rows, U6 review minors) | human answer B, `.sdlc/questions/adopt-hygiene-marketplace.md` |
 | 2026-09-17 | U7 row 1 line count 5 → 6 (the matching entry shape is 6 lines; the orchestrator miscounted) | U7 builder flag, handoff .sdlc/handoffs/adopt-hygiene-U7.md |
 | 2026-09-17 | U7 pass 2: row 2 adds an id-clash join against adapter §4, em dash and bold greps, and a row-count self-check (a string count cannot see an id, a dash, or a label); the new debt row is C7 with a note, not C13 | verdict adopt-hygiene-U7 🔴, re-diagnosis .sdlc/plans/adopt-hygiene-U7-p2.md |
+| 2026-09-17 | U8 added (staleness and wording sweep): one fact table for every change U1 to U7 made, one grep per fact over every live record, an added-line wording sweep with an enumerated kept list, and a Landing paragraph for the spec repoint, the branch sweep, and the R12 trigger; plan wording fixed (three units, bold lead-ins) | pre-land record 🔴 on b44883d, third stale-record blocker in a row; re-diagnosis .sdlc/plans/adopt-hygiene-prepr3.md |
