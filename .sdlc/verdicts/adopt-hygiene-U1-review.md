@@ -58,7 +58,7 @@ Fresh-context review against the root checkout's `.sdlc/plans/adopt-hygiene.md` 
 | P1 | `npm test` green, tree byte-stable | 🟢 | `✓ all 44 test files passed`, exit 0; status 0 | role-table `"scrim` → `"scrimX`: FAIL count 3. Restored, rerun green, status 0 |
 | P2 | private folder and `node_modules` untracked | 🟢 | 0 | origin/main `.claude/ops/` ls-tree 7 |
 | P3 | scope wall | 🟢 | 0 | `// probe` in `src/engine/motion.mjs`: 2, restored |
-| P4 | branding clean | 🟢 | `clean (398 files scanned)`, exit 0 | `docs/x.md` copy of the records file: FAIL (NONOUN, nonoun.io), removed |
+| P4 | branding clean | 🟢 | `clean (398 files scanned)`, exit 0 | `docs/x.md` copy of the records file: FAIL (the retired maker brand and its domain), removed |
 | P5 | no rewritten record | 🟢 | 0 | not re-planted (pass 2 does not touch the file) |
 
 ## Beyond the criteria
