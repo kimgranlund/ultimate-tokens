@@ -576,6 +576,10 @@ not bundled with the free downloadable kit. Concretely:
    provider key remains genuinely open** — the workflow reads `secrets.ANTHROPIC_API_KEY`, but adding
    that secret to the repo is the user's own action; `describe-eval-runner.mjs` degrades to a clean,
    green no-op skip until it exists, so the workflow is safe to ship ahead of that decision.
+   **Amendment (2026-09-16).** The adopt-hygiene plan (`.sdlc/plans/adopt-hygiene.md`) flips this: the
+   workflow now fails loudly (`exit 1`) when the key is absent instead of the clean no-op skip, so the
+   weekly badge stops lying about coverage it never ran. The key itself stays the user's own action
+   (`gh secret set ANTHROPIC_API_KEY`); until it is added, the scheduled run is expected red.
 7. ~~**The Secondary-from-Primary harmony recipe**~~ — **RESOLVED (#369's build):** Secondary
    (absent) is the **complement** of Primary (`SECONDARY_HARMONY_OFFSET = 180°`, the classic
    two-color brand pairing); Tertiary (absent) is the **analogous** of Secondary

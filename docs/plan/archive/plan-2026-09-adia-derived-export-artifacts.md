@@ -1,7 +1,7 @@
 ---
 doc-type: plan
 id: plan-2026-09-adia-derived-export-artifacts
-status: active          # active | complete | abandoned
+status: complete        # active | complete | abandoned
 date: 2026-09-13
 owner: Kim Granlund
 review-cadence: weekly
@@ -202,13 +202,13 @@ fails, reverts, and notes it in the PR.
 
 ## Steps
 
-1. **Generator.** Owner: builder. Status: todo. Write `scripts/gen-adia-derived-exports.mjs` per
+1. **Generator.** Owner: builder. Status: done. Write `scripts/gen-adia-derived-exports.mjs` per
    R-3/R-4 (header comment in the `gen-categories.mjs` style: what it reads, what it writes, why
    `projectView`, why `hydrate` == `hydrateStoredDoc` here, the R-2 bump policy). Add
    `gen:adia-exports` to `package.json` and chain it into `test` and `build` after
    `gen:categories`. done-when: `npm run gen:adia-exports` exits 0, writes both files, and a
    second run leaves `git status --porcelain docs/reference/data` empty.
-2. **Artifacts.** Owner: builder. Status: todo. Commit the two generated files from step 1. Done
+2. **Artifacts.** Owner: builder. Status: done. Commit the two generated files from step 1. Done
    when: stripping the provenance block from each file and hashing the remainder reproduces the
    two body hashes in R-3 (`95235b6a...` and `2f03074d...`); if either differs, stop and
    diagnose (engine moved since `770297b`, or the call sequence deviates from R-3) before going
@@ -217,26 +217,26 @@ fails, reverts, and notes it in the PR.
    divergence, and item 3's "eight" vs the real 16 palette slugs (R-F), were escalated to #631 as
    a comment before this step runs (2026-09-13), per dispatch-ticket's discovered-design-fork
    discipline — not silently reinterpreted.
-3. **Gate.** Owner: builder. Status: todo. Add `test/engine/adia-derived-exports.mjs` per R-7 and
+3. **Gate.** Owner: builder. Status: done. Add `test/engine/adia-derived-exports.mjs` per R-7 and
    register it in `test/run.mjs`. done-when: `node test/engine/adia-derived-exports.mjs` exits 0
    on the branch, and exits 1 after a one-byte mutation of either artifact (negative control,
    then reverted).
-4. **Repo gates.** Owner: builder. Status: todo. done-when: `npm test` exits 0 and `npm run build`
+4. **Repo gates.** Owner: builder. Status: done. done-when: `npm test` exits 0 and `npm run build`
    exits 0 (build chain touched, Acceptance item 9), and `git status` shows only the intended
    files (generator, package.json, two artifacts, test file, test/run.mjs, this plan).
-5. **Hashes.** Owner: builder. Status: todo. done-when: `shasum -a 256
+5. **Hashes.** Owner: builder. Status: done. done-when: `shasum -a 256
    docs/reference/data/adia-oklch-export.css docs/reference/data/adia-radix-export.mjs` output is
    captured verbatim for the PR body. Serves Acceptance item 6.
-6. **PR.** Owner: builder, via the `shipping-changes` skill. Status: todo. PR body carries: the
+6. **PR.** Owner: builder, via the `shipping-changes` skill. Status: done. PR body carries: the
    two paths, the two whole-file sha256 values, the source tag/commit, the negative-control note
    from step 3, and a link to this plan. done-when: CI green (including the drift gate and smoke)
    and the PR is squash-merged to `main`.
-7. **Tags.** Owner: builder (or owner, per the write-gate in force). Status: todo. On the merge
+7. **Tags.** Owner: builder (or owner, per the write-gate in force). Status: done. On the merge
    commit: `git tag -a adia-oklch-export@1.0.0 -m "..."` and `git tag -a adia-radix-export@1.0.0
    -m "..."`, then `git push origin --tags` (or the two tags by name). done-when: `git ls-remote
    --tags origin` lists both and `git tag --points-at <merge-sha>` lists both. Serves Acceptance
    item 7.
-8. **Record.** Owner: builder. Status: todo. Comment on #618 with: both tag names, the merge sha,
+8. **Record.** Owner: builder. Status: done. Comment on #618 with: both tag names, the merge sha,
    both paths, both sha256 values, `EXPORT_SCHEMA_VERSION` (2), and the R-1 scope note (OKLCH +
    Radix; Panda deferred, follow-up on request). Fill #631's Findings with the same plus a link to
    this plan. done-when: `gh issue view 618 --json comments` shows the comment. Serves Acceptance
@@ -300,6 +300,12 @@ fails, reverts, and notes it in the PR.
   gets a new patch/minor version and a new tag; the old tag stays and its hash stays true for the
   bytes it named.
 - Step 8: a correcting comment on #618, never an edit of the original.
+
+## Revisions
+
+| Date | Change | Why |
+|---|---|---|
+| 2026-09-16 | status flipped active to complete; all eight steps ticked done; file archived to `docs/plan/archive/` | closed on landing of PR #631, per `.sdlc/adapter.md` §5 (adopt-hygiene plan, U1) |
 
 <!-- LIVING STATE: one canonical copy. On completion: status flip to complete, R-3's measured
      hashes replaced by the committed whole-file hashes, file moved to docs/plan/archive/. -->

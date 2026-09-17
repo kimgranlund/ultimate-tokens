@@ -1,7 +1,7 @@
 ---
 doc-type: plan
 id: plan-2026-09-export-schema-revision
-status: active          # active | complete | abandoned (the PLAN enum; the rulings below are ratified, see `ratified:`)
+status: complete        # active | complete | abandoned (the PLAN enum; the rulings below are ratified, see `ratified:`)
 ratified: 2026-09-11    # H-1..H-4 ruled by the owner via team-lead; the plan is approved to build
 date: 2026-09-11
 owner: Kim Granlund
@@ -127,7 +127,7 @@ it, with its gates, so no format ever emits a half-shape. The version stamp land
 shapes it certifies exist. Each step is one PR with `npm test` green; sizes use the repo's
 small/big ladder.
 
-1. **E1 Group metadata everywhere it may go** (RP-1, after H-1). Owner: builder lane. Status: todo.
+1. **E1 Group metadata everywhere it may go** (RP-1, after H-1). Owner: builder lane. Status: done.
    Touches `exports.js` (JSON `group`, DTCG `$extensions` on the raw palette node, CSS/OKLCH/Tailwind
    comment lines), `ds-export.js` (`familiesByGroup`, DESIGN.md Group column across the three
    profiles), `model.mjs` `brandKit` (`group`), `mcp/brand-kit-core.mjs` (`list_palettes`),
@@ -137,36 +137,36 @@ small/big ladder.
    system" test/engine/fixtures` shows no group word inside a token name, and the CSS byte-diff
    against main differs only by comment lines. Size: big. Serves REQ-030, RP-1.
 2. **E2 Controls metadata on JSON and the brand-kit** (RP-2, after H-2). Owner: builder. Status:
-   todo. `exportJSON` gains `meta` (`generator`, `controls`), `brandKit` gains `controls`; the JSON
+   done. `exportJSON` gains `meta` (`generator`, `controls`), `brandKit` gains `controls`; the JSON
    `meta` is created here WITHOUT `schemaVersion` (E6 adds it) so the shape is complete for this
    concept on its own. Gates: `hpg-export-json-meta` (controls deep-equal `stateOf(doc)`'s resolved
    values and `paletteGroups`), brand-kit test. Done when: green and knowledge-04 §3's "meta" claim is
    finally true. Size: small. Serves REQ-010, RP-2.
-3. **E3 DS bundle prime parity per profile** (RP-4). Owner: builder. Status: todo. Extend
+3. **E3 DS bundle prime parity per profile** (RP-4). Owner: builder. Status: done. Extend
    `hpg-export-design-system-prime` to assert the "Prime swatches" section and the `prime` block (where
    the profile has tokens.json) in the Stitch and Make outputs. Done when: three profiles asserted,
    green with no emitter change (if a profile lacks it, the fix is in the shared spine, same PR).
    Size: small. Serves REQ-054.
-4. **E4 Binder report line + consumer plugin prose** (RP-6, RP-7). Owner: builder. Status: todo.
+4. **E4 Binder report line + consumer plugin prose** (RP-6, RP-7). Owner: builder. Status: done.
    `figma/binder/figma-semantic-binder/code.js` dry-run report names `Color Prime` as present and
    unbound (regenerated `code.js` outside the `GENERATED:ROLE_TABLE` markers; `collparity` unchanged);
    `plugin/ultimate-tokens/skills/color-tokens/SKILL.md` "Data series" paragraph (naming
    `--chart-1..8` per H-3). Done when: the
    binder shim test sees the line and `npm test` is green. Size: small. Serves REQ-033, REQ-040.
-5. **E5 ShadCN `chart-6..8`** (RP-3, H-3). Owner: builder. Status: todo. `exportShadcn`: extend
+5. **E5 ShadCN `chart-6..8`** (RP-3, H-3). Owner: builder. Status: done. `exportShadcn`: extend
    `SHADCN_ORDER` and `MAP` with `chart-6..8` from `dataN(6..8)`, omitted when absent; `chart-1..5`
    unchanged. Gates: `hpg-export-shadcn` byte-identical for 1..5 on the default doc; a new
    `hpg-export-shadcn-chart-6-8` (present with data-6..8 enabled, absent with them disabled, values
    equal the data palette's prime ROLE per scheme). Done when: green and the default-doc shadcn
    output differs from main only by the three added lines per block. Size: small. Serves REQ-031.
-6. **E6 Schema stamp** (RP-8, H-4; LAST code step). Owner: builder. Status: todo.
+6. **E6 Schema stamp** (RP-8, H-4; LAST code step). Owner: builder. Status: done.
    `EXPORT_SCHEMA_VERSION = 2` and every stamp listed in RP-8; `collections.js` unchanged; the Figma
    plugin's own DTCG reader tolerates the root `$extensions` (gate: apply the stamped bundle in
    `test/figma/plugin.mjs`). Gates: `hpg-export-schema-stamp` (every surface carries the same number;
    removing the constant turns every surface red, a negative control run once in the PR). Done when:
    green, and the smoke run's Figma apply reports the same variable counts as before. Size: small.
    Serves RP-8.
-7. **E7 Docs of record**. Owner: docs lane (P8-style sweep). Status: todo. knowledge-04 §1 table
+7. **E7 Docs of record**. Owner: docs lane (P8-style sweep). Status: done. knowledge-04 §1 table
    (all formats + stamps), §3 `meta`, a new §11 "Group metadata" and §12 "Schema versioning";
    `mcp/README.md` (`list_palettes` group, `controls`); `docs/marketing/fact-sheet.md` (formats row
    unchanged in count, stamp mentioned); CHANGELOG entry; `adding-export-formats` skill gains the
@@ -213,6 +213,12 @@ No ratification remains open; the plan is approved to build.
   alone leaves every shape intact and merely unstamped (which reads as v1: acceptable for one
   release, noted in CHANGELOG if it happens).
 - Nothing here migrates documents; `persist.js` is untouched.
+
+## Revisions
+
+| Date | Change | Why |
+|---|---|---|
+| 2026-09-16 | status flipped active to complete; all seven E-steps ticked done; file archived to `docs/plan/archive/` | closed on landing of PRs #578 (E1), #593 (E2), and the merge commits for E3-E6 (`5a0e438`/`620ac4b`, `918125f`/`f291597`, `8108717`/`1937f95`, `28b6116`/`44c84f3`) verified against `main`, per `.sdlc/adapter.md` §5 and `.sdlc/debt.md` R4 (adopt-hygiene plan, U1) |
 
 <!-- LIVING STATE: one canonical copy. On completion: status flip, learnings promoted to
      knowledge-04 and the adding-export-formats skill, file moved to docs/plan/archive/. -->

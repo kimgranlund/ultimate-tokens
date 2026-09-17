@@ -38,7 +38,7 @@ Can a user import the tokens into Figma **without the plugin** and get the live 
      the cascade path, and leave OD-004 OPEN. ❌
 
 ## Record the result
-Note the Figma version + date and the outcome (PASS/FAIL + screenshots) in `docs/spec/CHANGELOG.md`
+Note the Figma version + date and the outcome (PASS/FAIL + screenshots) in `CHANGELOG.md`
 and update **ADR-002 / OD-004** accordingly. If PASS, consider promoting `figma-aliased/` from
 "experimental" to a documented plugin-free path. If FAIL, the spike stays OPEN and the README's
 "unverified" framing stands.

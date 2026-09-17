@@ -35,6 +35,8 @@ Decision order: ADRs by number, then everything else by first commit date. All d
 | ADR-020 | bundle.mjs stays the inliner; vite not adopted | 2026-07-17 | decided (TKT-0028) | | cards/ADR-020.md |
 | ADR-021 | Hosted describe-palette MCP breaches "generator stays client-side" | 2026-07-18 | decided (#376) | amends ADR-010 | cards/ADR-021.md |
 | ADR-022 | Preset typography declares REGISTERS, not slots | 2026-07-30 | decided (#405) | | cards/ADR-022.md |
+| ADR-023 | Scrims are one 500-based alpha ramp, mode-flat | 2026-09-16 | decided | supersedes ADR-004 | cards/ADR-023.md |
+| ADR-024 | vite is the dev server and type check; bundle.mjs is the shipped artifact | 2026-09-16 | decided | amends ADR-010, complements ADR-020 | cards/ADR-024.md |
 
 ## Specs, LLDs, plans, open decisions (carded)
 
@@ -47,12 +49,13 @@ Decision order: ADRs by number, then everything else by first commit date. All d
 | LLD-app-shell | docs/lld/app-shell.md | lld | 2026-07-12 (last 2026-09-13) | none | cards/LLD-app-shell.md |
 | OD-004 | docs/reference/references/od-004-plugin-free-import-test.md | open decision | 2026-07-12 | OPEN | cards/OD-004.md |
 | SITE-describe-palette | docs/site/describe-palette-spec.md | spec | 2026-07-18 (last 2026-09-11) | none | cards/SITE-describe-palette.md |
-| PLAN-overhaul | .claude/overhaul-plan-2026-08-14.md | plan | 2026-08-14 | none | cards/PLAN-overhaul.md |
+| PLAN-overhaul | docs/plan/archive/overhaul-plan-2026-08-14.md | plan | 2026-08-14 | none | cards/PLAN-overhaul.md |
 | SPEC-muted-base | docs/spec/spec-muted-base-key-spikes.md | spec | 2026-09-10 | approved | cards/SPEC-muted-base.md |
 | LLD-muted-base | docs/lld/lld-muted-base-key-spikes.md | lld | 2026-09-10 | approved | cards/LLD-muted-base.md |
 | SPEC-panda-park | docs/spec/spec-panda-park-ui-exports.md | spec | 2026-09-11 | approved | cards/SPEC-panda-park.md |
-| PLAN-export-schema | docs/plan/plan-2026-09-export-schema-revision.md | plan | 2026-09-11 | active | cards/PLAN-export-schema.md |
-| PLAN-adia-exports | docs/plan/plan-2026-09-adia-derived-export-artifacts.md | plan | 2026-09-12 | active | cards/PLAN-adia-exports.md |
+| PLAN-export-schema | docs/plan/archive/plan-2026-09-export-schema-revision.md | plan | 2026-09-11 (closed 2026-09-16) | complete | cards/PLAN-export-schema.md |
+| PLAN-adia-exports | docs/plan/archive/plan-2026-09-adia-derived-export-artifacts.md | plan | 2026-09-12 (closed 2026-09-16) | complete | cards/PLAN-adia-exports.md |
+| PRD-0001 | docs/prd/prd-0001-app-shell.md | prd | 2026-09-16 | stub | cards/PRD-0001.md |
 
 ## Listed, not carded (reference material, no decision of its own)
 
