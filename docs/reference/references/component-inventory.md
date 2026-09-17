@@ -22,7 +22,7 @@
 ## The architecture finding (read first)
 
 There is **no component library**. The entire UI is one monolithic autonomous web component —
-`ultimate-tokens` (`src/ui/app.js`, ~5,330 lines, `customElements.define` at `app.js:2601`) —
+`ultimate-tokens` (`src/ui/app.js`, ~5,330 lines, `customElements.define` at `app.js:2575`) —
 that builds every control inline with a single hyperscript helper `h(tag, attrs, ...kids)`
 (`app-helpers.mjs:318`), across ~25 `render*()` methods. Styling is ~570 CSS class selectors in
 `src/ui/styles.css` (~1,282 lines). Consequences that recur in every card below:
@@ -30,7 +30,7 @@ that builds every control inline with a single hyperscript helper `h(tag, attrs,
 - **S2 is not a second surface.** `scripts/gen-figma-ui.mjs` bundles the *same* compiled app
   (`dist/ultimate-tokens.html`) and injects a postMessage bridge that flips `inFigma`
   (`markInFigma()`, `gen-figma-ui.mjs:23-33`). So **S2 reuses S1's primitives verbatim**; the only S2-specific
-  *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1391`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1239`),
+  *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1391`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1213`),
   `.figma-plugin-btn` `overlays/drawer.js:212`) and the `.figma-files` mode segment (`overlays/drawer.js:209`).
 - **No native-replacement layer + no FACE.** Controls are a mix of *native* elements (`<input
   type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets* — none are
@@ -73,10 +73,10 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
 | 1 | **Button** | component | native `<button>` | ~9 (primary · ghost · danger · undo/redo · add-pal · pane-toggle · figma-plugin · ex-btn · copy-float · map-reset) | ~20 sites, 85+ refs | `button`, `.primary`, `.ghost`, `.danger`, `.ex-btn`, `.copy-float`, `.map-reset`, `.pane-toggle` | good (focus-visible, aria-pressed×9, aria-label on icon-only) | no forced-colors; variant sprawl via ad-hoc classes |
 | 2 | **Toggle / switch** | component | **custom `<div>`** | 1 | 3 | `.toggle`, `.track` | ✗ **none** — no role, no tabindex, no keyboard, no aria-checked | **worst a11y gap**; not focusable |
 | 3 | **Segmented control** | component (composes buttons) | custom (`<button>`s) | 4 (inspector tabs · canvas-seg tabs · canvas-seg group · drawer-tabs · figma-files) | 6 | `.segmented`, `.canvas-seg`, `.drawer-tabs`, `.figma-files` | mixed — tabs do roving tabindex + arrows + `role=tab/tablist`; drawer-tabs/figma-files do not | 2 well-built + 2 ad-hoc lookalikes (drift) |
-| 4 | **Slider / range** | component | native `<input type=range>` | 1 (via `slider()` helper) | 1 helper, ~14 instances | `input[type=range]`, `.field` | partial — `aria-label` set (label sibling NOT associated, noted in code `app.js:2085-2088`); no forced-colors | custom thumb only; consistent — the model primitive |
+| 4 | **Slider / range** | component | native `<input type=range>` | 1 (via `slider()` helper) | 1 helper, ~14 instances | `input[type=range]`, `.field` | partial — `aria-label` set (label sibling NOT associated, noted in code `app.js:2059-2062`); no forced-colors | custom thumb only; consistent — the model primitive |
 | 5 | **Select** | component | native `<select>` | 1 + `.map-raw-select` | 3 | `select`, `.map-raw-select` | partial — `.map-raw-select` has `aria-label`; Distribution/Curve rely on unassociated sibling label | inconsistent label wiring |
 | 6 | **Text input** | component | native `<input type=text>` | 2 (`.field` name · `.map-raw-input`) | 2 | `input[type=text]`, `.map-raw-input` | partial — map-raw-input has `aria-label`; Name uses unassociated sibling label | label-association drift |
-| 7 | **Search input** | component | native `<input type=search>` | 1 | 1 (singleton, reused) | `input[type=search]` | good — `aria-label` + placeholder | reused node to preserve focus (`app.js:889-893`) |
+| 7 | **Search input** | component | native `<input type=search>` | 1 | 1 (singleton, reused) | `input[type=search]` | good — `aria-label` + placeholder | reused node to preserve focus (`app.js:863-867`) |
 | 8 | **Checkbox** | component | native `<input type=checkbox>` | 1 | 1 | `.mini-check` | good — label-wrapped (associated), `accent-color` | only one instance |
 | 9 | **Chip / pill** | component | custom span/button | 3 (tile-tag · preset · drift-sum) | ~6 | `.tile-tag`, `.damp-presets .preset`, `.map-drift-sum` | n/a (status) / preset is a clickable `<button>` | 3 unrelated "pill" stylings |
 | 10 | **Field wrapper** | primitive (layout) | custom `<div>` | 1 | ~7 | `.field`, `.field > label` | n/a — wraps label + control | the only true layout primitive |
@@ -104,9 +104,9 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
   (modifier on `.ghost`, `app-helpers.mjs:412`), `.add-pal-btn` (dashed, `styles.css:511`),
   `.ex-btn` (preview, `cursor:default` — non-interactive, `styles.css:900-903`), `.copy-float` (`styles.css:1093`),
   `.map-reset` (borderless icon, `styles.css:731`), `.pane-toggle` (`styles.css:406`),
-  `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1427/1428`).
+  `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1401/1402`).
 - **States** default · hover (`button:hover` `styles.css:170`) · focus-visible (`styles.css:179`) ·
-  disabled (`styles.css:188`) · toggle-pressed (`.on` + `aria-pressed`, 9 sites e.g. `app.js:1491/1628`, `sections/color.js:527`).
+  disabled (`styles.css:188`) · toggle-pressed (`.on` + `aria-pressed`, 9 sites e.g. `app.js:1465/1602`, `sections/color.js:527`).
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:854`). ✗ no `forced_colors`.
 - **Geometry** `padding:4px 9px; border-radius:5px; gap:6px` — ad-hoc, not a ramp.
@@ -143,7 +143,7 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
 
 - **Surface** S1. **Sites** 6. **Variants** four distinct stylings of one idea:
   - **Inspector tabs** `.segmented` `[Palette|Global|Roles]` — `role=tablist`/`tab`, roving
-    tabindex, ArrowLeft/ArrowRight (`app.js:1612-1645`). *Well-built.*
+    tabindex, ArrowLeft/ArrowRight (`app.js:1586-1619`). *Well-built.*
   - **Canvas view** `.canvas-seg` `[Palettes|Scrims|Mapping|Radix]` — `role=tablist` (`sections/color.js:814-824`).
   - **Canvas stops** `.canvas-seg` `role=group` (`sections/color.js:829-837`).
   - **Drawer format tabs** `.drawer-tabs` (as-found; now the `.drawer-format` `<select>`, `overlays/drawer.js:168-185`, `styles.css:1077-1079`) — **no roving tabindex,
@@ -166,14 +166,14 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
 ### 4 · Slider / range  ★ the model primitive
 
 - **Surface** S1. **Sites** one helper `slider(label,value,min,max,step,fmtFn,onInput)`
-  (`app.js:2079-2104`), ~14 instances: Hue/Chroma/Skew/Lift/Edge-hue `sections/color.js:1785-1812`;
+  (`app.js:2053-2078`), ~14 instances: Hue/Chroma/Skew/Lift/Edge-hue `sections/color.js:1785-1812`;
   Tension/L*min/L*max/Damp/Chroma-floor/Falloff/Amplify/Bias `sections/color.js:2025-2047`.
 - **Anatomy** `.field` `[ label · readout(<b>) · input[type=range] ]`; track + custom thumb
   (`styles.css:936-950`).
 - **API** clean function signature; `fmtFn` for the live readout, `onInput` callback; `data-fk`
-  carries a focus key so re-render preserves focus, `app.js:2087`.
+  carries a focus key so re-render preserves focus, `app.js:2061`.
 - **a11y** ✓ `aria-label` on the input (the sibling `<label>` is deliberately *not* associated —
-  documented at `app.js:2085-2088`). Native keyboard, arrows/Home/End, inherited. ✗ no forced-colors on
+  documented at `app.js:2059-2062`). Native keyboard, arrows/Home/End, inherited. ✗ no forced-colors on
   the custom thumb.
 - **Verdict** the one consistently-factored primitive — every slider goes through one helper.
 
@@ -220,8 +220,8 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
 
 ### 7 · Search input
 
-- **Surface** S1 (gallery). **Sites** 1 — `this._searchInput` (`ensureSearchInput()`, `app.js:891-893`), **created once and
-  reused** across renders so typing never loses focus (the documented bug-fix at `app.js:889-890`).
+- **Surface** S1 (gallery). **Sites** 1 — `this._searchInput` (`ensureSearchInput()`, `app.js:865-867`), **created once and
+  reused** across renders so typing never loses focus (the documented bug-fix at `app.js:863-864`).
 - **a11y** ✓ `aria-label` "Search palette sets" + placeholder. Native clear/keyboard.
 - **Style** shares the `input[type="text"], input[type="search"], select` base (`styles.css:192`); width pinned in the
   gallery title (`styles.css:262`).

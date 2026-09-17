@@ -56,7 +56,7 @@ Stable handles for the ui-plan clauses the shell realizes. These are the *what*;
 
 ---
 
-## 1. The frame — CSS grid (`renderEditor` `app.js:1369` · `.editor` `styles.css:369`)
+## 1. The frame — CSS grid (`renderEditor` `app.js:1343` · `.editor` `styles.css:369`)
 
 `renderEditor()` returns a `.editor` grid plus its overlay siblings (drawer, dialogs, toast). The grid
 is a fixed 3×3:
@@ -78,7 +78,7 @@ is a fixed 3×3:
 ```
 
 Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` /
-`toggleRightPane`, `app.js:1473` `:1475`); the `.18s` transition on `grid-template-columns` animates it. The
+`toggleRightPane`, `app.js:1447` `:1449`); the `.18s` transition on `grid-template-columns` animates it. The
 pane element stays in the DOM (`.left-pane` keeps its box, its padding/border zero out,
 `styles.css:502`) — collapse is layout,
 not teardown.
@@ -119,17 +119,17 @@ anchor. "Interface" is the method's contract, not its body.
 | ID | Component | Method (bare `:N` = `src/ui/app.js`) | Traces to |
 |----|-----------|-------------------|-----------|
 | **LLD-C1** | Root element / view fork | `render` :570 | SPEC-R9 (gallery) + SPEC-R10 (editor) |
-| **LLD-C2** | Editor frame (grid + overlays) | `renderEditor` :1369 | SPEC-R10 |
-| **LLD-C3** | App-header | `renderAppHeader` :1390 | SPEC-R1, SPEC-R8, SPEC-R7 |
-| **LLD-C4** | Section switcher | `sectionSwitcher` :1440 / `setSection` :1460 | SPEC-R12 |
-| **LLD-C5** | Left pane (Analysis rail) | `renderLeftPane` :1556 | SPEC-R11, SPEC-R5, SPEC-R6 |
-| **LLD-C6** | Center (canvas) | `renderCenter` :1655 | SPEC-R11, SPEC-R2, SPEC-R3 |
+| **LLD-C2** | Editor frame (grid + overlays) | `renderEditor` :1343 | SPEC-R10 |
+| **LLD-C3** | App-header | `renderAppHeader` :1364 | SPEC-R1, SPEC-R8, SPEC-R7 |
+| **LLD-C4** | Section switcher | `sectionSwitcher` :1414 / `setSection` :1434 | SPEC-R12 |
+| **LLD-C5** | Left pane (Analysis rail) | `renderLeftPane` :1530 | SPEC-R11, SPEC-R5, SPEC-R6 |
+| **LLD-C6** | Center (canvas) | `renderCenter` :1629 | SPEC-R11, SPEC-R2, SPEC-R3 |
 | **LLD-C6a** | Canvas header | `renderCanvasHeader` `sections/color.js:807` | SPEC-R11, SPEC-R7 |
 | **LLD-C6b** | Canvas area / scene | `renderCanvasArea` `sections/color.js:866` | SPEC-R10 (pannable canvas), SPEC-R2 |
-| **LLD-C6c** | Canvas footer | `renderCanvasFooter` :1900 / `paintCanvasFooter` :1905 | SPEC-R5 |
-| **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :1941 | SPEC-R11, SPEC-R3, SPEC-R4 |
-| **LLD-C8** | App-footer | `renderAppFooter` :2176 / `paintAppFooter` :2196 | SPEC-R6, SPEC-R1 |
-| **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1473 / `paneToggle` :1483 | SPEC-R10 (density) |
+| **LLD-C6c** | Canvas footer | `renderCanvasFooter` :1874 / `paintCanvasFooter` :1879 | SPEC-R5 |
+| **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :1915 | SPEC-R11, SPEC-R3, SPEC-R4 |
+| **LLD-C8** | App-footer | `renderAppFooter` :2150 / `paintAppFooter` :2170 | SPEC-R6, SPEC-R1 |
+| **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1447 / `paneToggle` :1457 | SPEC-R10 (density) |
 | **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:32` / `renderSettings` `overlays/settings.js:459` / `renderNewPalette` `sections/color.js:482` / `renderApplyGate` `overlays/apply-gate.js:325` | SPEC-R8, SPEC-R2, SPEC-R1 |
 
 ### 2.1 Region responsibilities (the non-obvious contracts)
@@ -141,7 +141,7 @@ anchor. "Interface" is the method's contract, not its body.
   touch (see §4.2) so the doc-name caret survives typing.
 
 - **LLD-C4 Section switcher** — the single `segmented()` tablist that writes `this.section`. `setSection`
-  (`:1460`) is the crossover point: on leaving `color` it **stashes** the pan/zoom viewport
+  (`:1434`) is the crossover point: on leaving `color` it **stashes** the pan/zoom viewport
   (`this._colorViewport`) and on return **restores** it; typography/geometry scenes are static, so it
   `fit()`s them; entering typography lazily injects the base type fonts (`ensureTypeFonts`). Every pane
   method (`renderLeftPane`, `renderCenter`, `renderRightPane`) branches on `this.section` first.
@@ -256,7 +256,7 @@ the toggle relocates (see §6).
 |------|-------|----------|
 | **No palette enabled / empty set** | LLD-C6, LLD-C8 | `projectView` yields an empty `view.palettes`; footer paints `0 palettes`; canvas renders an empty scene (no throw). Export of an all-disabled set yields tokens-only JSON with a `$note` (engine-side). |
 | **Selected index out of range** | LLD-C5, LLD-C7 | `selectedIndex()` + `view.palettes[idx]` guarded; name falls back to `""`, cards render `—` empties (`an-empty`). |
-| **`Story` tab absent** | LLD-C7 | `hasStory=false` → the tab is not pushed and a `segment==="story"` selection falls back to `palette` (`hasStory`, `app.js:1946`). |
+| **`Story` tab absent** | LLD-C7 | `hasStory=false` → the tab is not pushed and a `segment==="story"` selection falls back to `palette` (`hasStory`, `app.js:1920`). |
 | **Both/Compare + live drag** | LLD-C6b, §4.2 | `liveRefresh` bails to a full `render()` — the two scheme columns can't be patched in place. |
 | **Render mid-open-drawer** | LLD-C10, §4.1 | Fresh closed `<dialog>` each render; the open drawer is re-`showModal()`'d post-mount so it survives. |
 | **Focus/caret during a drag** | LLD-C3, §4.2 | Partial `liveRefresh` never rebuilds the header or the active control; the doc-name `<input>` keeps focus + caret while typing (rename settles on `change`). |
@@ -287,7 +287,7 @@ the toggle relocates (see §6).
 │              │ canvas-area / scene                                       │0│
 ```
 
-**Gallery** (`this.view==="gallery"`, `renderGallery` :912 — the other top-level fork):
+**Gallery** (`this.view==="gallery"`, `renderGallery` :886 — the other top-level fork):
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ Ultimate Tokens                        [⤓ Project] [⤒ Import] [+ New]  ◐   │
