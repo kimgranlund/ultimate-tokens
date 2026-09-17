@@ -12081,7 +12081,7 @@ __M.appHelpers = (function(){
 // migration + multi-set/profile persistence, the offline license seam, font-loading (self-hosted + lazy
 // Google Fonts), app-theme injection, and the per-treatment type specimen copy. No 'this' — safe to import
 // from anywhere without creating a cycle back into app.js.
-const { appThemeCSS, defaultDocument, hasDataPalettes, mintDataPalettes } = __M.model;
+const { appThemeCSS, defaultDocument, hasDataPalettes, hexToOklch, mintDataPalettes } = __M.model;
 const { STORAGE_KEY, hydrate, serialize } = __M.persist;
 const { clampProfile } = __M.flags;
 const { TYPE_FONTS_CSS } = __M.typeFonts;
@@ -12646,7 +12646,145 @@ const field = (labelText, control, { labelTitle } = {}) => {
   return h("div", { class: "field" }, h("label", { for: id, title: labelTitle }, labelText), control);
 };
 
-return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, sanitizeSetRecords, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, field };
+
+// ── posterStripBands — presetTile()'s poster-strip width/order computation (#646) ──────────────
+// Pure, no DOM: takes a preset's ENABLED palette key-colors (paletteKeyColors() output, filtered to
+// .on) and its authored story.groups (dominant/supporting/accent hierarchy pcts, TKT-0003), and
+// returns the strip's bands in FINAL RENDER ORDER — [{ key, name, colorRole, width }, ...] — ready
+// to zip straight into `flex:${width}` <i> children.
+//
+// #646: the gallery's poster strip read neutral-heavy because a preset's DOMINANT hue is often
+// itself low-chroma (candle gold, not a vivid color), and the old computation gave it an uncapped
+// share of the strip while a fixed `enabled.slice(0, 6)` cap could silently drop the 2nd accent
+// swatch. Four fixes over the original inline computation:
+//  1. Any one band is capped at POSTER_STRIP_MAX_BAND_PCT (~35%) and any accent band is floored at
+//     POSTER_STRIP_ACCENT_FLOOR_PCT (~10%); the resulting surplus/deficit is redistributed
+//     proportionally across the remaining flexible (uncapped, unfloored, non-neutral) bands.
+//  2. Band SELECTION (not just width) changes: neutral + the dominant swatch + BOTH accent
+//     swatches (up to 2) are always kept; only a SUPPORTING sliver gets dropped when the
+//     hierarchy overflows the 6-band cap — never the 2nd accent.
+//  3. Each non-neutral band's authored-pct width is additionally weighted by its own OKLCH chroma
+//     (relative to POSTER_STRIP_CHROMA_REF, a typical "vivid" chroma) before the clamp/floor pass —
+//     the weighting is renormalized to preserve the shared non-neutral pool's total, so a preset
+//     whose bands are ALL equally muted (or all equally vivid) renders identically to before; only
+//     RELATIVE chroma differences between a preset's own bands shift width.
+//  4. Bands are reordered by chroma, highest first, alternating the strip's two edges inward, so
+//     the most characterful colors frame the strip instead of being backloaded after neutrals.
+//
+// A preset/set with no story.groups (a user's own "Your Palettes" set) skips fixes 1/3/4 and the
+// reorder entirely, falling back EXACTLY to the original fixed SAMPLED_W template in its original
+// order — no regression there.
+const POSTER_STRIP_MAX_BAND_PCT = 35;
+const POSTER_STRIP_ACCENT_FLOOR_PCT = 10;
+const POSTER_STRIP_NEUTRAL_PCT = 8;
+const POSTER_STRIP_FALLBACK_PCT = 5;
+const POSTER_STRIP_HIER_OF_ROLE = { dominant: "d", supporting: "s", accent: "a" };
+const POSTER_STRIP_SAMPLED_W = [36, 19, 19, 16, 6, 4];
+const POSTER_STRIP_CHROMA_FLOOR_WEIGHT = 0.5; // weight given to a fully-desaturated swatch
+const POSTER_STRIP_CHROMA_REF = 0.15;         // chroma at/above which a swatch gets full weight
+
+const posterStripChroma = (hex) => Math.max(0, hexToOklch(hex)[1] || 0);
+const posterStripChromaWeight = (hex) => {
+  const norm = Math.min(posterStripChroma(hex) / POSTER_STRIP_CHROMA_REF, 1);
+  return POSTER_STRIP_CHROMA_FLOOR_WEIGHT + (1 - POSTER_STRIP_CHROMA_FLOOR_WEIGHT) * norm;
+};
+
+// fix 2 — never drop the 2nd accent: guarantee neutral + dominant + up to 2 accents survive the
+// 6-band cap, then fill any remaining slots with supporting bands in their authored order (a
+// supporting sliver is what gets dropped on overflow now, never an accent).
+function posterStripSelect(enabled) {
+  const BAND_CAP = 6;
+  const neutral = enabled.filter((p) => p.name === "neutral");
+  const dominant = enabled.filter((p) => p.colorRole === "dominant");
+  const accents = enabled.filter((p) => p.colorRole === "accent").slice(0, 2);
+  const supporting = enabled.filter((p) => p.colorRole === "supporting");
+  const guaranteed = [...neutral, ...dominant, ...accents];
+  const remaining = Math.max(0, BAND_CAP - guaranteed.length);
+  const shown = [...guaranteed, ...supporting.slice(0, remaining)];
+  shown.sort((a, b) => enabled.indexOf(a) - enabled.indexOf(b)); // restore authored order
+  return shown;
+}
+
+// the original TKT-0003 pct/roleCount math, unchanged — neutral keeps a fixed 8% backdrop share,
+// every OTHER shown band's authored group pct is scaled to fill the remaining 92% and split evenly
+// across however many ENABLED palettes (not just the shown ones) share its colorRole.
+function posterStripBaseWidths(shown, enabled, groups) {
+  const scaledByHier = {};
+  for (const g of groups) scaledByHier[g.hier] = (g.pct || 0) * ((100 - POSTER_STRIP_NEUTRAL_PCT) / 100);
+  const roleCounts = {};
+  for (const p of enabled) if (p.colorRole) roleCounts[p.colorRole] = (roleCounts[p.colorRole] || 0) + 1;
+  return shown.map((p) => {
+    if (p.name === "neutral") return POSTER_STRIP_NEUTRAL_PCT;
+    const hier = POSTER_STRIP_HIER_OF_ROLE[p.colorRole];
+    const scaled = hier != null ? scaledByHier[hier] : undefined;
+    if (scaled == null) return POSTER_STRIP_FALLBACK_PCT; // defensive: a curated preset missing a colorRole tag
+    return scaled / (roleCounts[p.colorRole] || 1);
+  });
+}
+
+// fix 3 — weight by chroma, then rescale so the shared non-neutral pool's TOTAL is preserved: a
+// uniformly muted (or uniformly vivid) preset cancels out and renders unchanged; only relative
+// chroma differences between a preset's own bands shift width.
+function posterStripWeightByChroma(shown, widths) {
+  const locked = shown.map((p) => p.name === "neutral");
+  const weights = shown.map((p, i) => (locked[i] ? 1 : posterStripChromaWeight(p.key)));
+  const weighted = widths.map((w, i) => w * weights[i]);
+  const origPool = widths.reduce((s, w, i) => s + (locked[i] ? 0 : w), 0);
+  const weightedPool = weighted.reduce((s, w, i) => s + (locked[i] ? 0 : w), 0);
+  const scale = weightedPool > 0 ? origPool / weightedPool : 1;
+  return weighted.map((w, i) => (locked[i] ? w : w * scale));
+}
+
+// fix 1 — clamp the max band + floor accent bands, redistributing the surplus/deficit
+// proportionally across the remaining flexible bands (neutral is always locked). A few passes
+// settle any band a redistribution round pushed back over/under a bound.
+function posterStripClampAndFloor(shown, widths) {
+  const n = widths.length;
+  const locked = shown.map((p) => p.name === "neutral");
+  const isAccent = shown.map((p) => p.colorRole === "accent");
+  const w = widths.slice();
+  for (let pass = 0; pass < 4; pass++) {
+    const fixed = locked.slice();
+    let surplus = 0, deficit = 0, changed = false;
+    for (let i = 0; i < n; i++) {
+      if (fixed[i]) continue;
+      if (w[i] > POSTER_STRIP_MAX_BAND_PCT) { surplus += w[i] - POSTER_STRIP_MAX_BAND_PCT; w[i] = POSTER_STRIP_MAX_BAND_PCT; fixed[i] = true; changed = true; }
+      else if (isAccent[i] && w[i] < POSTER_STRIP_ACCENT_FLOOR_PCT) { deficit += POSTER_STRIP_ACCENT_FLOOR_PCT - w[i]; w[i] = POSTER_STRIP_ACCENT_FLOOR_PCT; fixed[i] = true; changed = true; }
+    }
+    if (!changed) break;
+    const net = surplus - deficit; // positive: extra to give the flexible bands; negative: take from them
+    const flexIdx = [];
+    for (let i = 0; i < n; i++) if (!fixed[i]) flexIdx.push(i);
+    const flexTotal = flexIdx.reduce((s, i) => s + w[i], 0);
+    if (flexTotal > 0) for (const i of flexIdx) w[i] = Math.max(0, w[i] + net * (w[i] / flexTotal));
+  }
+  return w;
+}
+
+// fix 4 — reorder by chroma, highest first, alternating strip-left/strip-right inward, so the most
+// saturated bands frame the strip instead of being backloaded after a run of neutrals.
+function posterStripReorderByChroma(shown, widths) {
+  const order = shown.map((_, i) => i).sort((a, b) => posterStripChroma(shown[b].key) - posterStripChroma(shown[a].key));
+  const n = order.length;
+  const positions = new Array(n);
+  let lo = 0, hi = n - 1;
+  for (let k = 0; k < n; k++) { const bandIdx = order[k]; if (k % 2 === 0) positions[lo++] = bandIdx; else positions[hi--] = bandIdx; }
+  return positions.map((i) => ({ key: shown[i].key, name: shown[i].name, colorRole: shown[i].colorRole, width: widths[i] }));
+}
+
+function posterStripBands(enabled, groups) {
+  if (!Array.isArray(groups) || !groups.length) {
+    const shown = enabled.slice(0, 6); // no authored story — the original fixed template, unordered
+    return shown.map((p, i) => ({ key: p.key, name: p.name, colorRole: p.colorRole, width: POSTER_STRIP_SAMPLED_W[i] || 1 }));
+  }
+  const shown = posterStripSelect(enabled);
+  let widths = posterStripBaseWidths(shown, enabled, groups);
+  widths = posterStripWeightByChroma(shown, widths);
+  widths = posterStripClampAndFloor(shown, widths);
+  return posterStripReorderByChroma(shown, widths);
+}
+
+return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, sanitizeSetRecords, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, field, POSTER_STRIP_MAX_BAND_PCT, POSTER_STRIP_ACCENT_FLOOR_PCT, posterStripBands };
 })();
 __M.colorSection = (function(){
 const { PALETTE_GROUPS, RADIX_COLLISION_BADGE, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } = __M.model;
@@ -18327,7 +18465,7 @@ const { COLLECTIONS } = __M.collections;
 const { stylePlans } = __M.stylePlan;
 const { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } = __M.iconSystems;
 const { icon } = __M.icons;
-const { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } = __M.appHelpers;
+const { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, posterStripBands, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } = __M.appHelpers;
 const { ColorSection } = __M.colorSection;
 const { TypeSection } = __M.typeSection;
 const { GeomSection } = __M.geomSection;
@@ -19059,49 +19197,23 @@ class HctApp extends HTMLElement {
 
 
   // presetTile — one read-only preset card. Clicking opens an editable copy into the user's sets.
-  // The strip's per-swatch WIDTH tracks the preset's own authored dominant/supporting/accent hierarchy
-  // (story.groups[].pct, via each palette's colorRole — TKT-0003) instead of a fixed template, so a
-  // strip is evocative of ITS concept rather than generically neutral-heavy. Neutral (no colorRole)
-  // keeps a small fixed backdrop share (8%); the groups' pcts are scaled to fill the remaining 92% and
-  // split EQUALLY across however many enabled palettes share each colorRole (dominant:1, supporting:3,
-  // accent:2 — split even when the strip shows only some of a group, e.g. accent's 2nd swatch is
-  // sliced off below). A palette with no matching colorRole/group gets a small fallback share (5%),
-  // never the old fixed template. Sets with no `story` (a user's own "Your Palettes" set) fall back to
-  // the fixed SAMPLED_W template exactly as before — no regression there.
+  // The strip's per-swatch selection/width/order is posterStripBands() (app-helpers.mjs, #646): it
+  // tracks the preset's own authored dominant/supporting/accent hierarchy (story.groups[].pct via
+  // colorRole — TKT-0003) AND each swatch's own OKLCH chroma, clamped/floored/reordered so a
+  // low-chroma dominant can't starve the accent bands into slivers or drop the 2nd accent outright.
+  // Sets with no `story` (a user's own "Your Palettes" set) fall back to the fixed SAMPLED_W
+  // template exactly as before — no regression there.
   presetTile(preset) {
     // paletteKeyColors, NOT projectView — this only ever reads .key/.name/.colorRole/.on below;
     // projectView would additionally compute the 25-stop ramp, the 53-role table, and all 7 export
     // formats per palette, for every one of a category's 48 presets, on every category open. Measured
     // ~200-300ms/preset via projectView vs. ~0.01ms/preset here.
     const enabled = paletteKeyColors(hydrate(preset)).filter((p) => p.on);
-    const shown = enabled.slice(0, 6); // same 6 bands as before — neutral + primary/-muted + secondary/-muted + accent
-    const SAMPLED_W = [36, 19, 19, 16, 6, 4];
-    const groups = preset.story?.groups;
-    let widths;
-    if (Array.isArray(groups) && groups.length) {
-      const NEUTRAL_PCT = 8, FALLBACK_PCT = 5;
-      const HIER_OF_ROLE = { dominant: "d", supporting: "s", accent: "a" };
-      const scaledByHier = {};
-      for (const g of groups) scaledByHier[g.hier] = (g.pct || 0) * ((100 - NEUTRAL_PCT) / 100);
-      // how many ENABLED palettes (not just the shown 6) share each colorRole — dominant:1, supporting:3,
-      // accent:2 — so the authored share splits evenly across the real cohort even when one sibling
-      // (accent-muted) doesn't make the sliced strip.
-      const roleCounts = {};
-      for (const p of enabled) if (p.colorRole) roleCounts[p.colorRole] = (roleCounts[p.colorRole] || 0) + 1;
-      widths = shown.map((p) => {
-        if (p.name === "neutral") return NEUTRAL_PCT;
-        const hier = HIER_OF_ROLE[p.colorRole];
-        const scaled = hier != null ? scaledByHier[hier] : undefined;
-        if (scaled == null) return FALLBACK_PCT; // defensive: curated preset missing a colorRole tag
-        return scaled / (roleCounts[p.colorRole] || 1);
-      });
-    } else {
-      widths = shown.map((_, i) => SAMPLED_W[i] || 1); // no authored story — the original fixed template
-    }
+    const bands = posterStripBands(enabled, preset.story?.groups);
     const strip = h(
       "div",
       { class: "strip" },
-      ...shown.map((p, i) => h("i", { style: `background:${p.key};flex:${widths[i]}` })),
+      ...bands.map((b) => h("i", { style: `background:${b.key};flex:${b.width}` })),
     );
     return h(
       "button",

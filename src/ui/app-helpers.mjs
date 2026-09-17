@@ -4,7 +4,7 @@
 // migration + multi-set/profile persistence, the offline license seam, font-loading (self-hosted + lazy
 // Google Fonts), app-theme injection, and the per-treatment type specimen copy. No 'this' — safe to import
 // from anywhere without creating a cycle back into app.js.
-import { appThemeCSS, defaultDocument, hasDataPalettes, mintDataPalettes } from "./model.mjs";
+import { appThemeCSS, defaultDocument, hasDataPalettes, hexToOklch, mintDataPalettes } from "./model.mjs";
 import { STORAGE_KEY, hydrate, serialize } from "./persist.js";
 import { clampProfile } from "../engine/flags.js";
 import { TYPE_FONTS_CSS } from "./type-fonts.js";
@@ -568,3 +568,141 @@ export const field = (labelText, control, { labelTitle } = {}) => {
   }
   return h("div", { class: "field" }, h("label", { for: id, title: labelTitle }, labelText), control);
 };
+
+
+// ── posterStripBands — presetTile()'s poster-strip width/order computation (#646) ──────────────
+// Pure, no DOM: takes a preset's ENABLED palette key-colors (paletteKeyColors() output, filtered to
+// .on) and its authored story.groups (dominant/supporting/accent hierarchy pcts, TKT-0003), and
+// returns the strip's bands in FINAL RENDER ORDER — [{ key, name, colorRole, width }, ...] — ready
+// to zip straight into `flex:${width}` <i> children.
+//
+// #646: the gallery's poster strip read neutral-heavy because a preset's DOMINANT hue is often
+// itself low-chroma (candle gold, not a vivid color), and the old computation gave it an uncapped
+// share of the strip while a fixed `enabled.slice(0, 6)` cap could silently drop the 2nd accent
+// swatch. Four fixes over the original inline computation:
+//  1. Any one band is capped at POSTER_STRIP_MAX_BAND_PCT (~35%) and any accent band is floored at
+//     POSTER_STRIP_ACCENT_FLOOR_PCT (~10%); the resulting surplus/deficit is redistributed
+//     proportionally across the remaining flexible (uncapped, unfloored, non-neutral) bands.
+//  2. Band SELECTION (not just width) changes: neutral + the dominant swatch + BOTH accent
+//     swatches (up to 2) are always kept; only a SUPPORTING sliver gets dropped when the
+//     hierarchy overflows the 6-band cap — never the 2nd accent.
+//  3. Each non-neutral band's authored-pct width is additionally weighted by its own OKLCH chroma
+//     (relative to POSTER_STRIP_CHROMA_REF, a typical "vivid" chroma) before the clamp/floor pass —
+//     the weighting is renormalized to preserve the shared non-neutral pool's total, so a preset
+//     whose bands are ALL equally muted (or all equally vivid) renders identically to before; only
+//     RELATIVE chroma differences between a preset's own bands shift width.
+//  4. Bands are reordered by chroma, highest first, alternating the strip's two edges inward, so
+//     the most characterful colors frame the strip instead of being backloaded after neutrals.
+//
+// A preset/set with no story.groups (a user's own "Your Palettes" set) skips fixes 1/3/4 and the
+// reorder entirely, falling back EXACTLY to the original fixed SAMPLED_W template in its original
+// order — no regression there.
+export const POSTER_STRIP_MAX_BAND_PCT = 35;
+export const POSTER_STRIP_ACCENT_FLOOR_PCT = 10;
+const POSTER_STRIP_NEUTRAL_PCT = 8;
+const POSTER_STRIP_FALLBACK_PCT = 5;
+const POSTER_STRIP_HIER_OF_ROLE = { dominant: "d", supporting: "s", accent: "a" };
+const POSTER_STRIP_SAMPLED_W = [36, 19, 19, 16, 6, 4];
+const POSTER_STRIP_CHROMA_FLOOR_WEIGHT = 0.5; // weight given to a fully-desaturated swatch
+const POSTER_STRIP_CHROMA_REF = 0.15;         // chroma at/above which a swatch gets full weight
+
+const posterStripChroma = (hex) => Math.max(0, hexToOklch(hex)[1] || 0);
+const posterStripChromaWeight = (hex) => {
+  const norm = Math.min(posterStripChroma(hex) / POSTER_STRIP_CHROMA_REF, 1);
+  return POSTER_STRIP_CHROMA_FLOOR_WEIGHT + (1 - POSTER_STRIP_CHROMA_FLOOR_WEIGHT) * norm;
+};
+
+// fix 2 — never drop the 2nd accent: guarantee neutral + dominant + up to 2 accents survive the
+// 6-band cap, then fill any remaining slots with supporting bands in their authored order (a
+// supporting sliver is what gets dropped on overflow now, never an accent).
+function posterStripSelect(enabled) {
+  const BAND_CAP = 6;
+  const neutral = enabled.filter((p) => p.name === "neutral");
+  const dominant = enabled.filter((p) => p.colorRole === "dominant");
+  const accents = enabled.filter((p) => p.colorRole === "accent").slice(0, 2);
+  const supporting = enabled.filter((p) => p.colorRole === "supporting");
+  const guaranteed = [...neutral, ...dominant, ...accents];
+  const remaining = Math.max(0, BAND_CAP - guaranteed.length);
+  const shown = [...guaranteed, ...supporting.slice(0, remaining)];
+  shown.sort((a, b) => enabled.indexOf(a) - enabled.indexOf(b)); // restore authored order
+  return shown;
+}
+
+// the original TKT-0003 pct/roleCount math, unchanged — neutral keeps a fixed 8% backdrop share,
+// every OTHER shown band's authored group pct is scaled to fill the remaining 92% and split evenly
+// across however many ENABLED palettes (not just the shown ones) share its colorRole.
+function posterStripBaseWidths(shown, enabled, groups) {
+  const scaledByHier = {};
+  for (const g of groups) scaledByHier[g.hier] = (g.pct || 0) * ((100 - POSTER_STRIP_NEUTRAL_PCT) / 100);
+  const roleCounts = {};
+  for (const p of enabled) if (p.colorRole) roleCounts[p.colorRole] = (roleCounts[p.colorRole] || 0) + 1;
+  return shown.map((p) => {
+    if (p.name === "neutral") return POSTER_STRIP_NEUTRAL_PCT;
+    const hier = POSTER_STRIP_HIER_OF_ROLE[p.colorRole];
+    const scaled = hier != null ? scaledByHier[hier] : undefined;
+    if (scaled == null) return POSTER_STRIP_FALLBACK_PCT; // defensive: a curated preset missing a colorRole tag
+    return scaled / (roleCounts[p.colorRole] || 1);
+  });
+}
+
+// fix 3 — weight by chroma, then rescale so the shared non-neutral pool's TOTAL is preserved: a
+// uniformly muted (or uniformly vivid) preset cancels out and renders unchanged; only relative
+// chroma differences between a preset's own bands shift width.
+function posterStripWeightByChroma(shown, widths) {
+  const locked = shown.map((p) => p.name === "neutral");
+  const weights = shown.map((p, i) => (locked[i] ? 1 : posterStripChromaWeight(p.key)));
+  const weighted = widths.map((w, i) => w * weights[i]);
+  const origPool = widths.reduce((s, w, i) => s + (locked[i] ? 0 : w), 0);
+  const weightedPool = weighted.reduce((s, w, i) => s + (locked[i] ? 0 : w), 0);
+  const scale = weightedPool > 0 ? origPool / weightedPool : 1;
+  return weighted.map((w, i) => (locked[i] ? w : w * scale));
+}
+
+// fix 1 — clamp the max band + floor accent bands, redistributing the surplus/deficit
+// proportionally across the remaining flexible bands (neutral is always locked). A few passes
+// settle any band a redistribution round pushed back over/under a bound.
+function posterStripClampAndFloor(shown, widths) {
+  const n = widths.length;
+  const locked = shown.map((p) => p.name === "neutral");
+  const isAccent = shown.map((p) => p.colorRole === "accent");
+  const w = widths.slice();
+  for (let pass = 0; pass < 4; pass++) {
+    const fixed = locked.slice();
+    let surplus = 0, deficit = 0, changed = false;
+    for (let i = 0; i < n; i++) {
+      if (fixed[i]) continue;
+      if (w[i] > POSTER_STRIP_MAX_BAND_PCT) { surplus += w[i] - POSTER_STRIP_MAX_BAND_PCT; w[i] = POSTER_STRIP_MAX_BAND_PCT; fixed[i] = true; changed = true; }
+      else if (isAccent[i] && w[i] < POSTER_STRIP_ACCENT_FLOOR_PCT) { deficit += POSTER_STRIP_ACCENT_FLOOR_PCT - w[i]; w[i] = POSTER_STRIP_ACCENT_FLOOR_PCT; fixed[i] = true; changed = true; }
+    }
+    if (!changed) break;
+    const net = surplus - deficit; // positive: extra to give the flexible bands; negative: take from them
+    const flexIdx = [];
+    for (let i = 0; i < n; i++) if (!fixed[i]) flexIdx.push(i);
+    const flexTotal = flexIdx.reduce((s, i) => s + w[i], 0);
+    if (flexTotal > 0) for (const i of flexIdx) w[i] = Math.max(0, w[i] + net * (w[i] / flexTotal));
+  }
+  return w;
+}
+
+// fix 4 — reorder by chroma, highest first, alternating strip-left/strip-right inward, so the most
+// saturated bands frame the strip instead of being backloaded after a run of neutrals.
+function posterStripReorderByChroma(shown, widths) {
+  const order = shown.map((_, i) => i).sort((a, b) => posterStripChroma(shown[b].key) - posterStripChroma(shown[a].key));
+  const n = order.length;
+  const positions = new Array(n);
+  let lo = 0, hi = n - 1;
+  for (let k = 0; k < n; k++) { const bandIdx = order[k]; if (k % 2 === 0) positions[lo++] = bandIdx; else positions[hi--] = bandIdx; }
+  return positions.map((i) => ({ key: shown[i].key, name: shown[i].name, colorRole: shown[i].colorRole, width: widths[i] }));
+}
+
+export function posterStripBands(enabled, groups) {
+  if (!Array.isArray(groups) || !groups.length) {
+    const shown = enabled.slice(0, 6); // no authored story — the original fixed template, unordered
+    return shown.map((p, i) => ({ key: p.key, name: p.name, colorRole: p.colorRole, width: POSTER_STRIP_SAMPLED_W[i] || 1 }));
+  }
+  const shown = posterStripSelect(enabled);
+  let widths = posterStripBaseWidths(shown, enabled, groups);
+  widths = posterStripWeightByChroma(shown, widths);
+  widths = posterStripClampAndFloor(shown, widths);
+  return posterStripReorderByChroma(shown, widths);
+}
