@@ -191,6 +191,10 @@ export const DEV_FLAG_TOGGLES = [
 // fresh doc BEFORE serialize(), reusing mintDataPalettes/hasDataPalettes's exact guard so a doc
 // that somehow already ships a data-N layer at creation time is never duplicated (defaultDocument()
 // never does, but the guard costs nothing and keeps this in lockstep with addDataPalettes()).
+// NOTE: this branch is defensive, not load-bearing today — defaultDocument() already bakes 8
+// hardcoded Data-N palettes (REQ-024), so hasDataPalettes(fresh) is currently always true and the
+// mint call below is a no-op in practice. Keep it: it's the guard that keeps this function correct
+// if defaultDocument() ever stops shipping Data-N palettes by default.
 export function newSet(name) {
   const fresh = defaultDocument();
   if (!hasDataPalettes(fresh)) fresh.palettes.push(...mintDataPalettes(fresh));

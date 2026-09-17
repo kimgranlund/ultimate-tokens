@@ -12267,6 +12267,10 @@ const DEV_FLAG_TOGGLES = [
 // fresh doc BEFORE serialize(), reusing mintDataPalettes/hasDataPalettes's exact guard so a doc
 // that somehow already ships a data-N layer at creation time is never duplicated (defaultDocument()
 // never does, but the guard costs nothing and keeps this in lockstep with addDataPalettes()).
+// NOTE: this branch is defensive, not load-bearing today — defaultDocument() already bakes 8
+// hardcoded Data-N palettes (REQ-024), so hasDataPalettes(fresh) is currently always true and the
+// mint call below is a no-op in practice. Keep it: it's the guard that keeps this function correct
+// if defaultDocument() ever stops shipping Data-N palettes by default.
 function newSet(name) {
   const fresh = defaultDocument();
   if (!hasDataPalettes(fresh)) fresh.palettes.push(...mintDataPalettes(fresh));
@@ -12644,7 +12648,7 @@ const field = (labelText, control, { labelTitle } = {}) => {
 return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, sanitizeSetRecords, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, field };
 })();
 __M.colorSection = (function(){
-const { PALETTE_GROUPS, RADIX_COLLISION_BADGE, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } = __M.model;
+const { PALETTE_GROUPS, RADIX_COLLISION_BADGE, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } = __M.model;
 const { RELATIONSHIPS, deriveNeutral, deriveRelative } = __M.derive;
 const { icon } = __M.icons;
 const { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } = __M.appHelpers;
@@ -14571,8 +14575,10 @@ class ColorSectionImpl {
 
   // ── U8: "Add data palettes (8)" / "Re-derive data hues" (SPEC spec-muted-base-key-spikes
   // REQ-032, the opt-in path for a document that predates this feature, REQ-012). ──────────
-  // dataPaletteCount — mirrors model.mjs's own local isDataSlug (its comment: each caller
-  // re-derives the "Data N" convention rather than share an export).
+  // dataPaletteCount — the actual COUNT of Data-N palettes (not just whether any exist). Kept
+  // distinct from model.mjs's exported hasDataPalettes(doc), which only answers the existence
+  // question; the two boolean-only call sites below use that shared export instead of re-deriving
+  // the regex here, so this local re-derivation only backs a genuine count consumer.
   dataPaletteCount() {
     return (this.doc.palettes || []).filter((p) => /^data-\d+$/.test(slug(p.name))).length;
   }
@@ -14581,7 +14587,7 @@ class ColorSectionImpl {
   // already exist (the opt-in only ever runs once per document); mintDataPalettes itself
   // returns [] with no Primary palette to anchor the derivation on.
   addDataPalettes() {
-    if (this.dataPaletteCount() > 0) return;
+    if (hasDataPalettes(this.doc)) return;
     const fresh = mintDataPalettes(this.doc);
     if (!fresh.length) {
       this.toast("Add a Primary palette first");
@@ -14595,7 +14601,7 @@ class ColorSectionImpl {
   // Primary + brand hues; every other field is left untouched. A no-op when the document has
   // no Data N palettes yet.
   rederiveDataHuesAction() {
-    if (this.dataPaletteCount() === 0) return;
+    if (!hasDataPalettes(this.doc)) return;
     this.commit((d) => {
       d.palettes = rederiveDataHues(d).palettes;
     });
@@ -14605,7 +14611,7 @@ class ColorSectionImpl {
 
   renderGlobalInspector() {
     const d = this.doc;
-    const hasDataPalettes = this.dataPaletteCount() > 0;
+    const alreadyHasData = hasDataPalettes(this.doc);
     return h(
       "div",
       { class: "insp-body" },
@@ -14741,13 +14747,13 @@ class ColorSectionImpl {
         "div",
         { class: "insp-actions" },
         btn([icon("plus"), "Add data palettes (8)"], {
-          title: hasDataPalettes ? "This document already has data palettes" : "Derive 8 data palettes from Primary + the brand hues",
-          disabled: hasDataPalettes,
+          title: alreadyHasData ? "This document already has data palettes" : "Derive 8 data palettes from Primary + the brand hues",
+          disabled: alreadyHasData,
           onclick: () => this.addDataPalettes(),
         }),
         btn([icon("arrows-clockwise"), "Re-derive data hues"], {
-          title: hasDataPalettes ? "Recompute Data N hues from the current Primary + brand hues" : "No data palettes yet",
-          disabled: !hasDataPalettes,
+          title: alreadyHasData ? "Recompute Data N hues from the current Primary + brand hues" : "No data palettes yet",
+          disabled: !alreadyHasData,
           onclick: () => this.rederiveDataHuesAction(),
         }),
       ),
@@ -19098,7 +19104,7 @@ class HctApp extends HTMLElement {
     );
     return h(
       "button",
-      { class: "set-tile preset", title: `Open a copy of “${preset.name}”`, onclick: () => this.openConfigAsSet(preset, `Opened “${preset.name}”`) },
+      { class: "set-tile preset", title: `Open a copy of “${preset.name}”`, onclick: () => this.openConfigAsSet(preset, `Opened “${preset.name}”`, { mintData: true }) },
       h(
         "div",
         { class: "set-thumb" },
@@ -20646,15 +20652,16 @@ class HctApp extends HTMLElement {
   // openConfigAsSet — shape-clamp an (untrusted) config and open it as a new set. hydrateStoredDoc()
   // domain-clamps every field AND applies the legacy stamp (a config lacking hueSpace was authored under
   // cam16 — keep it cam16, consistent with openSet), so a junk/partial config is sanitized + preserved.
-  // #644: this is a document-CREATION path (a preset opened as a fresh copy, or a loaded project file
-  // opened as a new set) — mint the 8 Data-N palettes onto `doc` here, before serialize(), reusing the
-  // exact hasDataPalettes()/mintDataPalettes() guard so a preset that already ships a complete data-N
-  // layer (Adia) is left untouched rather than duplicated.
-  openConfigAsSet(config, toastMsg) {
+  // #644: `mintData` is opt-in per call site, NOT ambient. Only the preset-gallery tile (a genuine
+  // document-CREATION path) passes `mintData: true`. The other three call sites — "Open saved palette"
+  // (which promises "opens exactly as saved"), the Figma-variables approximate read, and the ⬇ Project
+  // restore — are all "restore my own saved work" paths (REQ-012, H2: auto-mint is opt-in for an
+  // upgraded/restored document, not a fresh one) and must stay byte-identical to before #644.
+  openConfigAsSet(config, toastMsg, { mintData = false } = {}) {
     const doc = hydrateStoredDoc(config);
     const name = (typeof config.name === "string" && config.name.trim()) || "Project";
     doc.name = name;
-    if (!hasDataPalettes(doc)) doc.palettes.push(...mintDataPalettes(doc));
+    if (mintData && !hasDataPalettes(doc)) doc.palettes.push(...mintDataPalettes(doc));
     const id = "set-" + Date.now().toString(36);
     this.sets.push({ id, name, doc: serialize(doc), updated: Date.now() });
     this.persistSets();
