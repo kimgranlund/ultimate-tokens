@@ -56,10 +56,9 @@ title** (see `git log --oneline`: `feat(engine): … (#41)`, `feat(geometry): �
 After merge, sync local main with a **fast-forward only** merge: `git merge --ff-only origin/main`. If that
 errors, your local main has drifted (a stray commit) — investigate, don't force.
 
-## 4. The guards exist because there are no hooks
+## 4. The guards are manual because hooks cover only privacy and the sdlc board
 
-There are **no local git hooks** in this repo (CLAUDE.md says so explicitly). Every guard is a convention +
-CI + the test gate — meaning **you** are the enforcement at commit time:
+The only hooks are the `PreToolUse` privacy guard and, under sdlc, the plugin's board hooks via `core.hooksPath` (`.sdlc/adapter.md` §3). Every content guard below is a convention plus CI plus the test gate, so you are the enforcement at commit time:
 
 - **`.claude/docs/other/`** is a private working folder, ignored via **`.git/info/exclude`** (local, not the shared
   `.gitignore`). A teammate's clone has no such exclude, so committing it would leak local scratch into the

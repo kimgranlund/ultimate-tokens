@@ -16,7 +16,7 @@ Decision order: ADRs by number, then everything else by first commit date. All d
 | ADR-001 | HCT (CAM16 H/C + CIELAB L*) over OKLCH-only | 2026-06-15 | decided | | cards/ADR-001.md |
 | ADR-002 | Semantic export ships RESOLVED colors, not aliasData | 2026-06-15 | decided | | cards/ADR-002.md |
 | ADR-003 | On-colors fixed to `050` in both modes | 2026-06-25 | decided (override) | | cards/ADR-003.md |
-| ADR-004 | Semantic scrim roles use base 750 only | 2026-07-12 | superseded | superseded (by: unstated in heading) | cards/ADR-004.md |
+| ADR-004 | Semantic scrim roles use base 750 only | 2026-07-12 | superseded | superseded by ADR-023 (the heading names no id; ADR-023 records the supersession) | cards/ADR-004.md |
 | ADR-005 | Two-layer model: flat raw + semantic light-dark() | 2026-07-12 | decided | | cards/ADR-005.md |
 | ADR-006 | 3-digit zero padding everywhere | 2026-07-12 | decided | | cards/ADR-006.md |
 | ADR-007 | UI3 Collections schema is interchange-only | 2026-07-12 | decided (OD-003) | | cards/ADR-007.md |
@@ -73,8 +73,9 @@ Decision order: ADRs by number, then everything else by first commit date. All d
 | docs/reference/references/spec-draft.md | reference | 2026-07-12 | 2026-09-11 |
 | docs/reference/references/ui-plan.md | reference | 2026-07-12 | 2026-07-30 |
 | docs/reference/reviews/2026-07-17-*.md | review (6) | 2026-07-17 | 2026-07-17 |
+| docs/reference/reviews/2026-08-20-reactivity/*.md | review (6), moved from `.claude/docs/reports/` by U1 | 2026-08-20 | 2026-08-20 |
 | docs/reference/rubrics/*.md | rubric (4) | 2026-07-12 | 2026-08-14 |
-| .claude/ops/plan.md, .claude/ops/reports/*.md | ops (4) | 2026-07-25 | 2026-07-29 |
+| .claude/ops/plan.md, .claude/ops/reports/*.md | ops (4), untracked by U3 on 2026-09-17 (on disk, ignored, no longer a record) | 2026-07-25 | 2026-07-29 |
 | docs/tickets/*.md | ticket archive (31) | 2026-07-12 | 2026-07-17 |
 
-No PRD, RFC, RDD, or IDR files exist; `app-shell-patterns.md` and `storage-and-sync-spec.md` cite PRD goals whose source document is not in the repo (gap G1).
+No RFC, RDD, or IDR files exist. The PRD gap (G1: `app-shell-patterns.md` and `storage-and-sync-spec.md` cited PRD goals with no source document) closed on 2026-09-16 with the PRD-0001 stub above.

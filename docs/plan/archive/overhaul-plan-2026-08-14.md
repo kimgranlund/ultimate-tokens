@@ -72,7 +72,7 @@ parallel.
 ## Phase 4 — Closeout (per wave, once tickets land)
 
 - [ ] `/check-routing` clean for every touched plugin (n/a here — repo-local estate; substitute: a session smoke that each renamed member still triggers/dispatches)
-- [x] `fix-old-names` sweep run against consumer repos (here: this repo + the user memory index at `~/.claude/projects/-Users-kimba-Projects-nonoun-ultimate-tokens/memory/`) — verified 2026-09-16: `git grep` for the four pre-rename names outside this plan file returns nothing tracked under `.claude/`
+- [x] `fix-old-names` sweep run against consumer repos (here: this repo + the user memory index at `~/.claude/projects/-Users-kimba-Projects-nonoun-ultimate-tokens/memory/`); verified 2026-09-16: `git grep` for the four pre-rename names outside this plan file returns nothing tracked under `.claude/`
 - [ ] Records amended with dated supersession notes (never rewritten)
 - [ ] naming-audit re-run: exemptions 10 → 6, errors still 0
 

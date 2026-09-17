@@ -46,6 +46,8 @@ Rules the gates imply:
 | Commit trailers | `Co-Authored-By: <the running model's attribution line>` on every commit (see conflict C8 for which string). A commit that stages `.sdlc/board.md` also carries `Seat: orchestrator` (section 3) | harness attribution reminder; sdlc `commit-msg` hook |
 | After merge | `git switch main && git fetch origin && git merge --ff-only origin/main`; delete the plan branch locally with `-D` (a squash leaves it "unmerged") and remotely with `gh api -X DELETE repos/:owner/:repo/git/refs/heads/<branch>` (`--delete-branch` fails when `main` is checked out in the primary worktree) | `shipping-changes` step 8, §gh quirks |
 
+**Amendment (2026-09-17).** U3 set the repository to squash-merge only (`allow_merge_commit` and `allow_rebase_merge` false, ruling P1), so the Merge row's "not enforced" no longer holds; `main` still has no branch protection.
+
 ### 2.1 Landing: `shipping-changes` and `adapter.py land` composed
 
 `shipping-changes` is the landing procedure of record. sdlc adds two things in front of it and one door through it:
@@ -84,6 +86,8 @@ Tokens stay in `gh auth`; a `token` key is refused by the adapter.
 | `.claude/ops/` | `.gitignore` line 14 ignores the dir; 7 files under it are tracked (C8 🟡) | Ops-family (harness plugin) coordination state from July, plus live lock files | Conflict C6 |
 
 **Amendment (2026-09-17).** U2 added `.worktrees/` to `.gitignore` and to `SKIP_DIRS` in `test/repo/branding.mjs`, so a root-checkout `npm test` no longer walks nested unit worktrees; U3 untracked the seven `.claude/ops/` files (C6) and set the GitHub repo to squash-merge only (P1).
+
+**Amendment (2026-09-17, second).** U2 also added `.sdlc/runtime/`, `.sdlc/.fake-tickets/`, and `.sdlc/.fake-releases/` to `.gitignore`, closing the `.sdlc/runtime/` row above.
 
 ## 4. Conflicts: existing agent instructions vs sdlc
 
@@ -172,3 +176,5 @@ planning, building, or landing. The one-paragraph version:
 | `.claude/ops/` | `git rm --cached` the seven tracked files if C6 is approved | S |
 | Legacy plans | close and archive per section 5 (Q4) | S |
 | Records | ADR-023, ADR-024, `docs/prd/prd-0001-app-shell.md`, cards, index rows (section 6) | M |
+
+**Amendment (2026-09-17).** Every row above landed: CLAUDE.md, `.gitignore`, `SKIP_DIRS`, `shipping-changes`, and `.sdlc/config.json` by U2; `.claude/ops/` by U3; the legacy plans and the records by U1.

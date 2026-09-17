@@ -394,7 +394,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
 - **Amendment (2026-09-16).** The #491 ruling (2026-09-02) renamed the collection set again,
   content-named and tier-matched: "Color Semantic" → **"Color Roles"** (was "Color Modes"),
   "Font Primitives" → **"Type Primitives"** (the product's own "Type" vocabulary, not "Font"),
-  and "Breakpoints" → **"Geometry"** (a revert — the mode axis stays the same collection, just
+  and "Breakpoints" → **"Geometry"** (a revert: the mode axis stays the same collection, just
   renamed back). "Color Primitives" is unchanged. `src/engine/collections.js` is the one shared
   constant for both the export and the Figma plugin.
 

@@ -5,7 +5,7 @@ status: stub
 date: 2026-09-16
 ---
 
-# PRD-0001 — App shell
+# PRD-0001: App shell
 
 **Why this exists.** `docs/reference/app-shell-patterns.md` and `docs/site/storage-and-sync-spec.md`
 cite goals PRD-G1 to PRD-G7 whose source document was never written (gap G1). This stub is that
