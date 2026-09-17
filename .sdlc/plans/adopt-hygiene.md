@@ -38,7 +38,7 @@ Sixteen S items the debt map lists under "A7 hygiene candidates", plus the eight
 - [x] U4 (S) pre-land fixes: branding in a committed review record, U1-7 ticket exclusion · grade l2 · reviewer-l1 · verifier-l1
 - [x] U5 (S) drop the drill-only `worktree.bgIsolation` from committed `.claude/settings.json` · grade l1 · reviewer-l1 · verifier-l1
 - [x] U6 (S) pre-land 2: stale pointers to archived plans, eval key scope, adapter amendments, debt rows · grade l3 · reviewer-l2 · verifier-l2
-- [~] U7 (S) declare the `nonoun` marketplace; debt rows for the unpushed repo and the U6 review minors · grade l2 · reviewer-l1 · verifier-l1
+- [r] U7 (S) declare the `nonoun` marketplace; debt rows for the unpushed repo and the U6 review minors · grade l2 · reviewer-l1 · verifier-l1 · pass 2: grade l7 · reviewer-l3 · verifier-l3
 
 Dispatch order: U2 first when possible (it adds `.worktrees/` to `.gitignore` and to the branding skip list, so a root-checkout `npm test` stops walking the unit worktrees). U1 and U3 are independent of U2 and of each other; their file sets do not overlap. Builders run gates inside `.worktrees/<unit>` only. `npm run build` is required for U2 (it touches `.github/` and `test/repo/`, and the verifier at pre-land runs it always); U1 and U3 need only `npm test`.
 
@@ -134,7 +134,7 @@ Human answer B in `.sdlc/questions/adopt-hygiene-marketplace.md` (commit cec7529
 
 | # | Criterion | Command | Expected | Negative control |
 |---|---|---|---|---|
-| 1 | `nonoun` is declared with the same shape as `nonoun-plugins`; nothing else in settings changes | `node -e 'const s=require("./.claude/settings.json"); const m=s.extraKnownMarketplaces.nonoun; console.log(m&&m.source.source, m&&m.source.repo, s.enabledPlugins["sdlc@nonoun"], s.worktree===undefined)'; git diff 39db0a9 -- .claude/settings.json \| grep -cE '^[-+][^-+]'` | `github kimgranlund/sdlc-orchestration true true`, then `5` or fewer added lines and `0` removed non-comma lines (read the diff) | at 39db0a9: `undefined undefined true true` |
+| 1 | `nonoun` is declared with the same shape as `nonoun-plugins`; nothing else in settings changes | `node -e 'const s=require("./.claude/settings.json"); const m=s.extraKnownMarketplaces.nonoun; console.log(m&&m.source.source, m&&m.source.repo, s.enabledPlugins["sdlc@nonoun"], s.worktree===undefined)'; git diff 39db0a9 -- .claude/settings.json \| grep -cE '^[-+][^-+]'` | `github kimgranlund/sdlc-orchestration true true`, then `6` changed lines at most (the `nonoun-plugins` entry shape is 6 lines; one may be the preceding `}` gaining a comma), with no removed line other than that one (read the diff) | at 39db0a9: `undefined undefined true true` |
 | 2 | debt records the unpushed marketplace repo, C5 resolved, C6 complete, id clash addressed | `grep -c 'sdlc-orchestration' .sdlc/debt.md; git grep -l '/Users/' -- .sdlc ':!.sdlc/verdicts' ':!.sdlc/handoffs' ':!.sdlc/runtime' \| while read f; do grep -q "$f" .sdlc/debt.md \|\| echo "missing $f"; done` | `1`+, then no `missing` line | at 39db0a9: first count `0` |
 | 3 | JSON valid, `npm test` green, tree clean, branding clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l` | `all 44 test files passed`, `0` | P1 control, then rerun `npm test` |
 
@@ -182,3 +182,4 @@ python3 /Users/kimba/Projects/nonoun/sdlc-orchestration/plugins/sdlc/scripts/ada
 | 2026-09-17 | ticket mirrored to GitHub #643; U5 added (drop drill-only bgIsolation) | human answers A, A, A in commit 2304368 |
 | 2026-09-17 | U6 added (stale pointers, eval key scope, adapter amendments, debt rows); P1 control recipe: rerun `npm test` after restoring | pre-land record 🔴 on 80ae4d8 |
 | 2026-09-17 | U7 added (declare `nonoun` marketplace, debt rows, U6 review minors) | human answer B, `.sdlc/questions/adopt-hygiene-marketplace.md` |
+| 2026-09-17 | U7 row 1 line count 5 → 6 (the matching entry shape is 6 lines; the orchestrator miscounted) | U7 builder flag, handoff .sdlc/handoffs/adopt-hygiene-U7.md |
