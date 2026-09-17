@@ -18,8 +18,9 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
   built single-file in **real headless Chrome** over CDP (the only real-browser leg). Screenshots
   land in `smoke-out/` (gitignored).
 - `npm run dev` — Vite dev server (the app the user previews, in **Safari**).
-- `gen:figma-assets` · `gen:mcp-assets` · `gen:categories` · `gen:type-fonts` — regenerate committed
-  artifacts; `test`/`build` run the first three. Run `gen:type-fonts` by hand after changing bundled fonts.
+- `gen:figma-assets` · `gen:mcp-assets` · `gen:categories` · `gen:adia-exports` · `gen:type-fonts` —
+  regenerate committed artifacts; `test`/`build` run all but `gen:type-fonts`. Run `gen:type-fonts` by
+  hand after changing bundled fonts.
 
 ## Layout
 
@@ -62,6 +63,9 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
   Unquoted, WebKit/Safari drops the declaration (the digit is invalid); Chrome tolerates it.
 - **SVG line charts set `fill: none`** on the path (an open `<path>` fills by closing → wedge artifacts);
   qualify the rule (`.an-svg .x-line`) so a shared series-color class can't override it.
+- **The `html:` SVG-chart exception: 12 live attributes.** `src/ui/sections/{color,geometry,typography}.js`
+  embed inline `<foreignObject>` markup (`html:` attribute namespace) inside otherwise-SVG chart canvases;
+  a new one is fine, a count drift means the ratified exception moved and this line needs updating with it.
 - **`node_modules` is NOT tracked** (`npm install`/`npm ci` is the source of truth); never re-add it.
 
 ## Testing
@@ -74,6 +78,30 @@ consult those before writing or debugging a test rather than re-deriving here.
 
 Full release workflow (branch → gates → PR → CI → squash-merge → sync) is owned by the
 `shipping-changes` skill — invoke it when a change is ready to land.
+
+## SDLC
+
+This repo runs under the `sdlc` plugin (`sdlc@nonoun` in `.claude/settings.json`). `.sdlc/adapter.md`
+is the contract between the plugin and this harness and wins over plugin defaults; read it before
+planning, building, or landing. The one-paragraph version:
+
+- Seats: the Conductor talks to the human; the Orchestrator plans units, dispatches graded
+  builders and reviewers in `.worktrees/<unit>` off `plan/<slug>`, and owns `.sdlc/board.md`
+  (commits carry `Seat: orchestrator`); the Verifier's 🟢 verdict is what "done" means. A builder's
+  own green `npm test` is its floor (see Always), not the verdict.
+- Gates and what green means live in `.sdlc/adapter.md` §1 and `.sdlc/baseline.md`: `npm test`
+  (no `node_modules`, ~60 s, tree clean after), `npm run build` (needs `npm ci`), `npm run smoke`
+  (needs Chrome). Run them in the unit worktree, never in a tree another seat is editing.
+- Tickets, PRs, and releases go through `adapter.py` (`.sdlc/config.json`, preset `github`); one
+  ticket, one `plan/<slug>` branch, one PR per plan. Landing needs a 🟢 pre-land record
+  (`.sdlc/verdicts/<plan>-prepr.md`) and green CI (`build-test` + `panda-smoke`), then the
+  `shipping-changes` squash and sync steps. Human-filed bugs and features still go through
+  `/file-bug` and `/file-feature` per ADR-017.
+- The Orchestrator closes a plan on landing: status flipped, steps ticked, file moved to
+  `docs/plan/archive/` or `.sdlc/plans/archive/`, ticket closed (`.sdlc/adapter.md` §5).
+- New ADRs append to `docs/reference/references/decision-records.md` before its Quick map.
+- `test/repo/branding.mjs` scans `.sdlc/` too: paraphrase the retired maker brand in every record,
+  verdict, and handoff there. `.claude/docs/other/` and `node_modules` stay out of every commit.
 
 ## Always
 

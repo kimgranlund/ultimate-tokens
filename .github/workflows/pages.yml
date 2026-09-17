@@ -35,8 +35,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: npm install
+          node-version: 22
+      - run: npm ci
       - run: npm run build
       # The offline single-file build IS the demo — copy it to the site root as index.html.
       # It has no external assets, so no base-path juggling is needed under the project subpath.
