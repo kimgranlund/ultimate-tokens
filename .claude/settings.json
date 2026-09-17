@@ -29,9 +29,6 @@
     "sdlc@adia": false,
     "sdlc@nonoun": true
   },
-  "worktree": {
-    "bgIsolation": "none"
-  },
   "extraKnownMarketplaces": {
     "nonoun-plugins": {
       "source": {
