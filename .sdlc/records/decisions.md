@@ -37,6 +37,8 @@ Reconciled from `.sdlc/records/cards/` oldest to newest. A decision is live only
 | ADR-020 bundle.mjs stays the inliner | live | vite still runs `vite build` inside `npm run build` for the SPA; ADR rules only the single-file artifact (verifier: confirm the split is still that) |
 | ADR-021 hosted describe-palette exception | live | amends ADR-010 and `mcp-hosting-spec.md` §1; #377 hosted build not started |
 | ADR-022 type registers, not slots | live | migration `scripts/migrate-type-registers.mjs` kept as record |
+| ADR-023 scrims one 500-based alpha ramp | live | supersedes ADR-004; closes gap G2 |
+| ADR-024 vite dev/typecheck, bundle.mjs ships | live | amends ADR-010 wording, complements ADR-020; closes gap G3 |
 
 ## Specs, LLDs, plans
 
@@ -51,9 +53,10 @@ Reconciled from `.sdlc/records/cards/` oldest to newest. A decision is live only
 | LLD-app-shell (as-built) | live | one custom element, 3×3 grid, `this.section` routing, `render`/`liveRefresh` split, extension order | last edited 2026-09-13; verifier: still matches `src/ui/app.js`? |
 | SPEC-muted-base 0.3.0 + LLD-muted-base (approved 2026-09-11) | live | prime system (7 swatches, `Color Prime`/`Base`), palette groups with absolute `baseChroma`, schema v4, 16-palette default with `Data 1..8`, 96 tokens/palette | supersedes own 0.1.0/0.2.0; verifier: P1..P8 + G1/G2 landed? |
 | SPEC-panda-park 0.2.0 (approved) | live | `exportPanda` + `exportRadix` (renamed from parkui, #614), 12-step projection per `radix-projection.json`, unpadded keys, Pro-gated, `smoke-panda` CI leg, "10 formats" | K1..K6; verifier: rename complete across surfaces, `flattenOver` fate |
-| PLAN-export-schema (active) | live, partly executed | group as metadata never name; `EXPORT_SCHEMA_VERSION = 2` stamped on every surface; shadcn `chart-1..8` | E1, E2 shipped (#578, #593); E3–E7 status unknown; checklist never flipped (gap G5) |
-| PLAN-adia-exports (active) | executed, checklist stale | sha256-pinned `adia-oklch-export.css` / `adia-radix-export.mjs`, `gen:adia-exports` in test+build | landed 14c4260 (#631); all 8 steps still "todo" in the file (gap G5) |
+| PLAN-export-schema (complete, closed 2026-09-16) | live, fully executed | group as metadata never name; `EXPORT_SCHEMA_VERSION = 2` stamped on every surface; shadcn `chart-1..8` | E1-E7 all landed (verified against `main`); checklist flipped and file archived, closing gap G5 for this plan |
+| PLAN-adia-exports (complete, closed 2026-09-16) | live, fully executed | sha256-pinned `adia-oklch-export.css` / `adia-radix-export.mjs`, `gen:adia-exports` in test+build | landed 14c4260 (#631); checklist flipped and file archived, closing gap G5 for this plan |
 | PLAN-overhaul (2026-08-14) | Wave 1 executed, Phase 4 open | rename 3 agents + 1 skill; 6 gerund skills grandfathered | PRs #439–#442 done; 4 closeout items unticked (gap G5) |
+| PRD-0001 app shell (stub, 2026-09-16) | live | recovers PRD-G1..G7 cited by SITE-storage-sync and app-shell-patterns.md | closes gap G1; users/non-goals/success measures still owed (debt A6) |
 
 ## Gaps: load-bearing with no record of their own
 

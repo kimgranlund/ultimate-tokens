@@ -140,8 +140,7 @@ done
 K18:
 ```bash
 CUR=$(grep -oE "^export const CURRENT_SCHEMA_VERSION = [0-9]+" src/ui/persist.js | grep -oE "[0-9]+$")
-grep -qE "\bv${CUR}\b" src/ui/persist.js || echo "no v${CUR} rule for CURRENT_SCHEMA_VERSION ${CUR}"
-grep -oE "^\s+version: [0-9]+," src/ui/persist.js | grep -oE "[0-9]+" | while read v; do [ "$v" -gt "$CUR" ] && echo "RENAME_MAPS version $v > CURRENT $CUR"; done
+grep -qE "schema-rename v${CUR}\b" test/ui/persist.mjs || echo "no test/ui/persist.mjs snapshot case for CURRENT_SCHEMA_VERSION ${CUR}"
 ```
 
 ## 7. Counts

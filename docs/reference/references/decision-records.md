@@ -155,6 +155,10 @@ Format: Context → Decision → Rationale → Consequences → Status.
   export · persist) and **bundles** them to one offline HTML (`ultimate-tokens.html`, ~111 KB,
   opens via `file://`). Authoring modular *and* distributing single-file are both satisfied — the
   "no build step" line means *no toolchain is required to run it*, not *the source must be one file*.
+- **Amendment (2026-09-16).** The live storage chain (`window.storage → localStorage → in-memory`)
+  now lives as a comment in `src/ui/persist.js`, not as code in this record; `persist.js` stays the
+  pure serialize/hydrate pair, and the running app owns the actual I/O. The hand-rolled zip writer
+  is `zipStore` (`src/ui/zip.mjs`), not `makeZip`.
 
 ## ADR-011 — OKLCH-native hue model + chroma-aware OKLCH→CAM16 inverse  (supersedes ADR-008)
 - **Context.** The per-palette `hue` was a CAM16 hue by default, and the OKLCH→CAM16 bridge
@@ -283,6 +287,11 @@ Format: Context → Decision → Rationale → Consequences → Status.
   Figma Styles panel. A voice explicitly opted OUT via `weights: []` is the only remaining case that
   keeps the bare `Voice/step` name. See `figma/binder/style-plan.mjs` and the "Sibling weights"
   section of `docs/reference/typography/README.md`.
+- **Amendment (2026-09-16).** Voice count moved thirteen → **fifteen** (TKT-0008): `UI-control` and
+  `UI-widget` were added, splitting the interactive `ui` role into controls (buttons/inputs/selects,
+  the ratified control table) and widgets (tags/badges/switches). `src/engine/type.mjs`'s header
+  comment names the current fifteen: Display · Headline · Sub-heading · Title · Sub-title · Lead ·
+  Body · Body-mono · Label · Label-mono · Kicker · Tiny · Tiny-mono · UI-control · UI-widget.
 
 ---
 
@@ -382,6 +391,12 @@ Format: Context → Decision → Rationale → Consequences → Status.
   registry keys. Deliberate divergences stay fenced: Tailwind's literal `color` namespace,
   ShadCN's fixed vocabulary, Figma's all-pixel rule.
 - **Status.** DECIDED (ratified 2026-07-17; execution TKT-0011..0014).
+- **Amendment (2026-09-16).** The #491 ruling (2026-09-02) renamed the collection set again,
+  content-named and tier-matched: "Color Semantic" → **"Color Roles"** (was "Color Modes"),
+  "Font Primitives" → **"Type Primitives"** (the product's own "Type" vocabulary, not "Font"),
+  and "Breakpoints" → **"Geometry"** (a revert — the mode axis stays the same collection, just
+  renamed back). "Color Primitives" is unchanged. `src/engine/collections.js` is the one shared
+  constant for both the export and the Figma plugin.
 
 ## ADR-017 — Ticket backend moves from `docs/tickets/*.md` files to GitHub Issues
 - **Context.** Since 2026-07-12 ([[tickets-workflow-adopted]]) `docs/tickets/` held every `kind:
@@ -650,6 +665,33 @@ Format: Context → Decision → Rationale → Consequences → Status.
   shapes, ownership, styleName tier, units) and generation throws on a retired shape.
 - **Status.** DECIDED (2026-07-30; issue #405). The pass-through shape (`type.fonts`/`type.voices`)
   is unchanged — it remains the escape hatch for a real exported doc config (BZZR, Modal jazz).
+
+## ADR-023 — Scrims are one 500-based alpha ramp, mode-flat (records the ADR-004 supersession)
+- **Context.** ADR-004 put the seven scrim roles on base 750; a note inside it (2026-06-17) records
+  that this was superseded, but the live model has no record of its own.
+- **Decision.** A scrim is `500-{step}`: the palette's 500 color at alpha% = step/10, 3-digit padded
+  (ADR-006), identical in light and dark. All twelve scrim-using roles (the seven `scrim*` strengths
+  plus outline and the container Low/High family) resolve onto that ramp; bases 250 and 750 stay raw
+  primitives.
+- **Rationale.** One saturated mid base reads as the same overlay in both modes; a per-mode base made
+  scrims flip tone with the theme.
+- **Consequences.** `src/engine/semantic.js` emits every scrim ref as `500-NNN`; any change moves
+  `role-table.json`, the binder table, and the count gates in lockstep (ADR-018).
+- **Status.** DECIDED (as-built since 2026-06-17; recorded 2026-09-16). Supersedes ADR-004.
+
+## ADR-024 — vite is the dev server and type check; bundle.mjs is the shipped artifact (rules the split ADR-010 and ADR-020 imply)
+- **Context.** ADR-010 says "no build step" and ADR-020 rejects vite for the single-file bundle, yet
+  `vite` runs in `npm run dev`, `npm run preview`, and inside `npm run build` (`tsc` then `vite
+  build`). The split was implied, never ruled (verdict G3).
+- **Decision.** vite serves development (`dev`, `preview`) and, with `tsc`, is the static check
+  inside `build`; its output under `dist/` is never deployed or shipped. `scripts/bundle.mjs` alone
+  produces the shipped artifact `dist/ultimate-tokens.html`, which CI copies to Pages and
+  `gen-figma-ui` wraps into the plugin.
+- **Rationale.** ADR-010's "no build step" means no toolchain is needed to run the artifact, not to
+  author it; ADR-020's byte-parity bar keeps the inliner.
+- **Consequences.** A change to `vite.config.js` cannot alter what ships; a module reachable from the
+  app must still be registered in `bundle.mjs` MODS/KEY (K7). `npm test` stays vite-free.
+- **Status.** DECIDED (as-built; recorded 2026-09-16). Amends ADR-010 wording; complements ADR-020.
 
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |

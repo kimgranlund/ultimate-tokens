@@ -72,9 +72,13 @@ parallel.
 ## Phase 4 — Closeout (per wave, once tickets land)
 
 - [ ] `/check-routing` clean for every touched plugin (n/a here — repo-local estate; substitute: a session smoke that each renamed member still triggers/dispatches)
-- [ ] `fix-old-names` sweep run against consumer repos (here: this repo + the user memory index at `~/.claude/projects/-Users-kimba-Projects-nonoun-ultimate-tokens/memory/`)
+- [x] `fix-old-names` sweep run against consumer repos (here: this repo + the user memory index at `~/.claude/projects/-Users-kimba-Projects-nonoun-ultimate-tokens/memory/`) — verified 2026-09-16: `git grep` for the four pre-rename names outside this plan file returns nothing tracked under `.claude/`
 - [ ] Records amended with dated supersession notes (never rewritten)
 - [ ] naming-audit re-run: exemptions 10 → 6, errors still 0
+
+**Closed 2026-09-16.** Only item 2 above has verdict evidence (checked, this pass); items 1, 3,
+and 4 were never re-run and are not ticked on assumption. They stand as debt D2 (`.sdlc/debt.md`),
+owed to whoever next touches this estate's naming, not executed by this closing pass.
 
 ## The five respect invariants
 
@@ -86,6 +90,8 @@ parallel.
 
 ## Next step
 
-This plan and its ticket seeds are generated only — nothing above has been executed. A human
-reviews the seed list and approves each row; approved rows are minted through their owning
-intake skill (`file-task`, per ADR-017 → GitHub Issues), never auto-created here.
+This plan and its ticket seeds are generated only — nothing above has been executed (as of
+2026-08-14). A human reviews the seed list and approves each row; approved rows are minted
+through their owning intake skill (`file-task`, per ADR-017 → GitHub Issues), never auto-created
+here. Wave 1 (W1-A through W1-D) was since approved and executed 2026-08-14 (see the ticked rows
+above); everything else in this plan is still unexecuted as of the 2026-09-16 closing pass.
