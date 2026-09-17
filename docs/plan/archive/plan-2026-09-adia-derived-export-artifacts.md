@@ -305,7 +305,7 @@ fails, reverts, and notes it in the PR.
 
 | Date | Change | Why |
 |---|---|---|
-| 2026-09-16 | status flipped active to complete; all eight steps ticked done; file archived to `docs/plan/archive/` | closed on landing of PR #631, per `.sdlc/adapter.md` §5 (adopt-hygiene plan, U1) |
+| 2026-09-16 | status flipped active to complete; all eight steps ticked done; file archived to `docs/plan/archive/` | closed on landing of PR #633 (`14c4260`, squash-merged to `main` 2026-09-13, steps 1 to 6); tags `adia-oklch-export@1.0.0` and `adia-radix-export@1.0.0` at `14c4260` (step 7); the issue #618 comment and issue #631 Findings of 2026-09-13 (step 8); per `.sdlc/adapter.md` §5 (adopt-hygiene plan, U1) |
 
 <!-- LIVING STATE: one canonical copy. On completion: status flip to complete, R-3's measured
      hashes replaced by the committed whole-file hashes, file moved to docs/plan/archive/. -->

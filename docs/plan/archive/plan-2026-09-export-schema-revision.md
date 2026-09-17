@@ -218,7 +218,7 @@ No ratification remains open; the plan is approved to build.
 
 | Date | Change | Why |
 |---|---|---|
-| 2026-09-16 | status flipped active to complete; all seven E-steps ticked done; file archived to `docs/plan/archive/` | closed on landing of PRs #578 (E1), #593 (E2), and the merge commits for E3-E6 (`5a0e438`/`620ac4b`, `918125f`/`f291597`, `8108717`/`1937f95`, `28b6116`/`44c84f3`) verified against `main`, per `.sdlc/adapter.md` §5 and `.sdlc/debt.md` R4 (adopt-hygiene plan, U1) |
+| 2026-09-16 | status flipped active to complete; all seven E-steps ticked done; file archived to `docs/plan/archive/` | closed on landing of PR #592 (E1, `9a9b9b2`), PR #593 (E2, `bdc3b59`), PR #580 (E3, `620ac4b`), PR #583 (E4, `f291597`), PR #581 (E5, `1937f95`), PR #595 (E6, `44c84f3`), PR #604 and PR #605 (E7, `848b80d`, `e026007`), each squash-merged to `main` 2026-09-11, per `.sdlc/adapter.md` §5 and `.sdlc/debt.md` R4 (adopt-hygiene plan, U1) |
 
 <!-- LIVING STATE: one canonical copy. On completion: status flip, learnings promoted to
      knowledge-04 and the adding-export-formats skill, file moved to docs/plan/archive/. -->

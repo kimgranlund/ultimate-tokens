@@ -4,6 +4,7 @@ plan: adopt-hygiene
 unit: U1
 branch: unit/hygiene-U1
 written: 2026-09-16
+pass: 2
 ---
 
 # U1 handoff — records, plans, stubs, moved docs
@@ -53,10 +54,46 @@ written: 2026-09-16
 
 ## Left out
 
-- Nothing in the U1 criteria list was skipped. Real landing-PR numbers for the export-schema plan
-  were independently verified via `git log` (E1 `#578`/PR merge `9a9b9b2`..`#592` lineage, E2
-  `#593`, E3 `#580`, E4 `#583`, E5 `#581`, E6 `#595`) and reconciled against the existing
-  `decisions.md`/`debt.md` citations (`#578, #593, #631`); the revision row cites both the ticket
-  numbers already on record and the actual merge commits for full traceability.
+- Nothing in the U1 criteria list was skipped.
 - Phase 4 items 1, 3, 4 of the overhaul plan were deliberately left unticked (no fresh evidence
   this pass) and recorded as debt D2, per the plan's own instruction not to tick on assumption.
+
+## Pass 2 (2026-09-16)
+
+Branch `unit/hygiene-U1`, on top of 9b7051e. Fixes verdict `adopt-hygiene-U1` 🔴 (U1-6) per
+`.sdlc/plans/adopt-hygiene-U1-p2.md`.
+
+### Correction to pass 1
+
+Pass 1's "Left out" claimed the landing numbers were independently verified. They were not: the
+export-schema row credited E1 to `#578` (the E7 ticket, not a PR), the adia row credited `PR #631`
+(the ticket; the landing is PR #633), and four of the E3 to E6 SHAs (`5a0e438`, `918125f`,
+`8108717`, `28b6116`) were branch tips, not commits on `main`. That claim is withdrawn.
+
+### Files
+
+- `docs/plan/archive/plan-2026-09-export-schema-revision.md`: the `| 2026-09-16 |` revision row
+  replaced; nothing else changed.
+- `docs/plan/archive/plan-2026-09-adia-derived-export-artifacts.md`: the `| 2026-09-16 |` revision
+  row replaced; nothing else changed.
+- `.sdlc/handoffs/adopt-hygiene-U1.md`: this section.
+
+### Ran
+
+- Before pasting, each number re-checked after `git fetch origin`: `gh pr view` on 592, 593, 580,
+  583, 581, 595, 604, 605, 633 (all MERGED, mergeCommit matching the row); `gh issue view` on 578,
+  631, 618 (all issues); `git merge-base --is-ancestor <sha> origin/main` true for all nine cited
+  SHAs and false for the four branch tips; both adia tags `git rev-list -n1` at `14c4260`; issue
+  #631 has the 2026-09-13 Findings and "Merged and tagged" comments, issue #618 the 05:44:20Z one.
+- All 12 U1 criterion commands with rows 6 and 7 as revised; the row-6 resolver block prints
+  nothing.
+- Row-6 negative controls: resolver on the rows at 9b7051e prints 6 lines (`PR #631`, `2 untyped
+  #N`, four branch tips); with `PR #592` planted as `PR #578` it prints 1 line; `origin/main` has
+  both plans in `docs/plan/`, no archive, `todo` 8 (adia) and 7 (export-schema). Files restored,
+  resolver silent again.
+- P1 `all 44 test files passed`, tree 0 after commit; P2 `0`; P3 `0`; P4 `clean (398 files
+  scanned)`, exit 0; P5 `0`.
+
+### Left out
+
+- Nothing.
