@@ -31,7 +31,7 @@ knowledge-04-export-formats.md`. Color system of record: `docs/spec/spec-muted-b
 0.3.0 (25 export stops per ramp, 53 roles, the seven-swatch prime system, the 16-palette default
 document with `data-1..8`, palette groups as an editor concept).
 
-Sibling in flight: #569 (`docs/plan/plan-2026-09-export-schema-revision.md` on branch
+Sibling in flight: #569 (`docs/plan/archive/plan-2026-09-export-schema-revision.md` on branch
 `docs/569-export-plan`) revises the existing formats and stamps `EXPORT_SCHEMA_VERSION`. This SPEC
 adds two NEW formats and does not restate #569's rulings; the overlap is named in "Overlap with #569".
 

@@ -338,8 +338,8 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
 
 ## 13. Palette groups, controls, and the schema stamp
 
-Three cross-cutting concepts SPEC 0.3.0 (RP-1/RP-2/RP-8, plan `docs/plan/plan-2026-09-export-schema-
-revision.md`, steps E1/E2/E6) layer onto the formats above. None of the three enters a token NAME,
+Three cross-cutting concepts SPEC 0.3.0 (RP-1/RP-2/RP-8, plan `docs/plan/archive/plan-2026-09-export-
+schema-revision.md`, steps E1/E2/E6) layer onto the formats above. None of the three enters a token NAME,
 value, or Figma folder on any surface — they are metadata, read alongside the tokens, never mixed
 into them.
 
