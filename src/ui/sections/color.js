@@ -1,4 +1,4 @@
-import { PALETTE_GROUPS, RADIX_COLLISION_BADGE, SCRIM_BASES, SCRIM_STEPS, STOPS, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
+import { PALETTE_GROUPS, RADIX_COLLISION_BADGE, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
@@ -1925,8 +1925,10 @@ export class ColorSectionImpl {
 
   // ── U8: "Add data palettes (8)" / "Re-derive data hues" (SPEC spec-muted-base-key-spikes
   // REQ-032, the opt-in path for a document that predates this feature, REQ-012). ──────────
-  // dataPaletteCount — mirrors model.mjs's own local isDataSlug (its comment: each caller
-  // re-derives the "Data N" convention rather than share an export).
+  // dataPaletteCount — the actual COUNT of Data-N palettes (not just whether any exist). Kept
+  // distinct from model.mjs's exported hasDataPalettes(doc), which only answers the existence
+  // question; the two boolean-only call sites below use that shared export instead of re-deriving
+  // the regex here, so this local re-derivation only backs a genuine count consumer.
   dataPaletteCount() {
     return (this.doc.palettes || []).filter((p) => /^data-\d+$/.test(slug(p.name))).length;
   }
@@ -1935,7 +1937,7 @@ export class ColorSectionImpl {
   // already exist (the opt-in only ever runs once per document); mintDataPalettes itself
   // returns [] with no Primary palette to anchor the derivation on.
   addDataPalettes() {
-    if (this.dataPaletteCount() > 0) return;
+    if (hasDataPalettes(this.doc)) return;
     const fresh = mintDataPalettes(this.doc);
     if (!fresh.length) {
       this.toast("Add a Primary palette first");
@@ -1949,7 +1951,7 @@ export class ColorSectionImpl {
   // Primary + brand hues; every other field is left untouched. A no-op when the document has
   // no Data N palettes yet.
   rederiveDataHuesAction() {
-    if (this.dataPaletteCount() === 0) return;
+    if (!hasDataPalettes(this.doc)) return;
     this.commit((d) => {
       d.palettes = rederiveDataHues(d).palettes;
     });
@@ -1959,7 +1961,7 @@ export class ColorSectionImpl {
 
   renderGlobalInspector() {
     const d = this.doc;
-    const hasDataPalettes = this.dataPaletteCount() > 0;
+    const alreadyHasData = hasDataPalettes(this.doc);
     return h(
       "div",
       { class: "insp-body" },
@@ -2095,13 +2097,13 @@ export class ColorSectionImpl {
         "div",
         { class: "insp-actions" },
         btn([icon("plus"), "Add data palettes (8)"], {
-          title: hasDataPalettes ? "This document already has data palettes" : "Derive 8 data palettes from Primary + the brand hues",
-          disabled: hasDataPalettes,
+          title: alreadyHasData ? "This document already has data palettes" : "Derive 8 data palettes from Primary + the brand hues",
+          disabled: alreadyHasData,
           onclick: () => this.addDataPalettes(),
         }),
         btn([icon("arrows-clockwise"), "Re-derive data hues"], {
-          title: hasDataPalettes ? "Recompute Data N hues from the current Primary + brand hues" : "No data palettes yet",
-          disabled: !hasDataPalettes,
+          title: alreadyHasData ? "Recompute Data N hues from the current Primary + brand hues" : "No data palettes yet",
+          disabled: !alreadyHasData,
           onclick: () => this.rederiveDataHuesAction(),
         }),
       ),

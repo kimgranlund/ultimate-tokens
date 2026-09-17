@@ -4,7 +4,7 @@
 // migration + multi-set/profile persistence, the offline license seam, font-loading (self-hosted + lazy
 // Google Fonts), app-theme injection, and the per-treatment type specimen copy. No 'this' — safe to import
 // from anywhere without creating a cycle back into app.js.
-import { appThemeCSS, defaultDocument } from "./model.mjs";
+import { appThemeCSS, defaultDocument, hasDataPalettes, mintDataPalettes } from "./model.mjs";
 import { STORAGE_KEY, hydrate, serialize } from "./persist.js";
 import { clampProfile } from "../engine/flags.js";
 import { TYPE_FONTS_CSS } from "./type-fonts.js";
@@ -187,8 +187,18 @@ export const DEV_FLAG_TOGGLES = [
   { key: "hostedMcp", label: "Hosted MCP", desc: "Force the hosted Brand-Kit MCP capability." },
 ];
 
+// newSet — the from-scratch "+ New" creation path (#644). Mint the 8 Data-N palettes onto the
+// fresh doc BEFORE serialize(), reusing mintDataPalettes/hasDataPalettes's exact guard so a doc
+// that somehow already ships a data-N layer at creation time is never duplicated (defaultDocument()
+// never does, but the guard costs nothing and keeps this in lockstep with addDataPalettes()).
+// NOTE: this branch is defensive, not load-bearing today — defaultDocument() already bakes 8
+// hardcoded Data-N palettes (REQ-024), so hasDataPalettes(fresh) is currently always true and the
+// mint call below is a no-op in practice. Keep it: it's the guard that keeps this function correct
+// if defaultDocument() ever stops shipping Data-N palettes by default.
 export function newSet(name) {
-  const doc = serialize(defaultDocument());
+  const fresh = defaultDocument();
+  if (!hasDataPalettes(fresh)) fresh.palettes.push(...mintDataPalettes(fresh));
+  const doc = serialize(fresh);
   return { id: "set-" + Math.random().toString(36).slice(2, 9), name, doc, updated: Date.now() };
 }
 
