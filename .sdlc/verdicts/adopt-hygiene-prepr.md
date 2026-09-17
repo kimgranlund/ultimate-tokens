@@ -1,47 +1,41 @@
-# Pre-PR · adopt-hygiene · 4f3085545f9c79f953a3e093c91df8794952fa90
+# Pre-PR · adopt-hygiene · 279ae0f701b43d85e1196cafafdfeb7015a83abc
 verdict: 🔴
-sha: 4f3085545f9c79f953a3e093c91df8794952fa90
+sha: 279ae0f701b43d85e1196cafafdfeb7015a83abc
 
-Written by sdlc-verifier on 2026-09-17, replacing the 🔴 record on b44883d. Two fresh-context workers ran against `origin/main` @ 7faf3aa...`sdlc/adopt` @ 4f30855 (head unchanged start to end, branch unpushed): `adopt-hygiene-prepr-verifier-p4` (verifier-l3, Fable 5.1; six scratch worktrees, all removed; root untouched) and `adopt-hygiene-prepr-reviewer-p4` (reviewer on Fable, read-only: 0 blocker, 2 major, 3 minor, 10 nit). The Verifier seat reconfirmed all four 🔴 rows below with its own commands.
-Tally: 32 rows. 🟢 24 · 🟡 4 · 🔴 4. Every b44883d row that U8 targeted is closed. Four new rows fail, all of the same class the last two records blocked on: a criterion that no longer passes as written, and three live records that state something false at the head.
+Written by sdlc-verifier on 2026-09-17, replacing the 🔴 record on 4f30855. Two fresh-context workers ran against `origin/main` @ 797173e...`sdlc/adopt` @ 279ae0f (origin/main is now an ancestor: the 8125cf4 merge brought its 7 files through byte-identical; head unchanged start to end): `adopt-hygiene-prepr-verifier-p5` (verifier-l3, Fable 5.1; scratch worktrees removed, root untouched) and `adopt-hygiene-prepr-reviewer-p5` (reviewer-l4, Fable; 0 blocker, 2 major, 5 minor, 8 nit). The Verifier seat reconfirmed all three 🔴 rows with its own commands. Unit criteria graded at the f39a640 plan wording.
+Tally: 31 rows. 🟢 22 · 🟡 6 · 🔴 3. All four 4f30855 blockers are closed and every unit criterion passes. Three rows fail, all the same class as before: a live record that states something false at this head. Two are in the plan's own Landing paragraph and U7 row, one is in six record cards.
 
 | Check | State | Evidence | Negative control |
 |---|---|---|---|
-| gate `npm test` | 🟢 | exit 0, `✓ all 44 test files passed`, tree clean | role-table `"scrimX"`: exit 1, `✗ 1/44`; restored, green |
-| gate `npm ci && npm run build` | 🟢 | ci 0; build 0, `wrote figma/plugin/ui.html 3695.6 KB`; tree clean | type error in `src/main.ts`: exit 2 |
+| gate `npm test` | 🟢 | exit 0, `✓ all 44 test files passed`, tree clean | role-table plant: exit 1, `✗ 1/44` |
+| gate `npm ci && npm run build` | 🟢 | ci 0; build 0, `wrote figma/plugin/ui.html`; tree clean | type error in `src/main.ts`: exit 2 |
 | gate `npm run smoke` | 🟢 | `SMOKE PASS`, tree clean | throw at line 1 of `src/ui/app.js`: `SMOKE FAIL` |
-| U1-1..12 | 🟢 | all expected values on head | origin/main differs on every row; planted controls per row |
-| U2-1..8, 10..12 | 🟢 | CLAUDE.md equals adapter §7; ignores, attributes, pages.yml, workflow.json, config.json as specified | origin/main values; 13th `html:`: 13; `github.token` planted: exit 2 |
-| U2-9 / U6-3 eval key scope | 🟢 | parsed YAML: no workflow or job `env`; key only on guard and eval steps; guard exits 1 without it; actionlint 0 | 80ae4d8: job-level `true` |
-| U3-1..3 | 🟢 | ops tracked 0; one 7-path commit; live `[true,false,false]` | origin/main ops tree 7; other repo `[true,true,true]` |
-| U3-4, U3-5 counts (carried) | 🟡 | 37 local (29 non-unit + 8 unit branches), 40 remote; the Landing section now holds the branch sweep | carried from the U3 verdict |
-| U4, U5, U6 rows | 🟢 | branding clean; no `worktree` block; repointed plan paths resolve; adapter amendments append-only | 29a2c06 file: FAIL 2; 39b78dc: bgIsolation 1; 80ae4d8: 4 stale pointer files |
-| U7-1 marketplace entry | 🟢 | `github kimgranlund/sdlc-orchestration true true`; 6 added lines only | 39db0a9: `undefined` |
-| U7-2 `/Users/` loop (carried by U8-11) | 🔴 | the revised loop `git grep -lE '/Users/[a-z]' -- .sdlc` prints `missing .sdlc/plans/adopt-hygiene-U8-p2.md` on the head; expected is no `missing` line. That file carries a home path at line 80, committed in aa4394e after the measurement the revision row cites, and debt C6 does not list it | the same loop is silent on the rows C6 does list; at d7cf7f4 the file did not exist |
-| U8-1..13 | 🟢 | index facts, adapter amendments, closure notes (`disagreeing: 0` with live `gh`), decisions ledger, cards, K18, plan wording, shipping-changes, SPEC row, wording sweep `0, 0`, board | 61a3f90: 20 `no-note`; d7cf7f4: four `false-close`; planted false closures on G2, D2, C4 each fire; b44883d values on the rest |
-| P1..P5 | 🟢 | 44 pass and tree clean; 0; 0; branding clean; 0 deleted lines | planted controls each fire |
-| stale pointers to archived plans | 🟢 | all remaining hits are historical records or the two behind-wall files; wrap scan clean | on origin/main the old paths exist |
-| behind-wall pointers | 🟢 | debt R12 now names its trigger; the Landing section holds it | b44883d: no trigger |
-| `.sdlc/records/cards/OD-004.md:7` | 🔴 | the card says the eval result is to be recorded in `docs/spec/CHANGELOG.md`; that path does not exist at head (`git cat-file -e` fails) and U1's R6 repointed the source record to the root `CHANGELOG.md`. The plan's fact table missed this cell | the root `CHANGELOG.md` resolves, so the same check separates the two |
-| `.sdlc/records/decisions.md:21` | 🔴 | the ADR-004 lineage cell says the scrim revision is "recorded only as a note inside ADR-004 (gap G2)", while line 40 of the same file says ADR-023 supersedes ADR-004 and line 68 records G2 closed by ADR-023. U8 fixed the same sentence in `index.md:19` and missed this one | `index.md:19` now names ADR-023, so the corrected shape exists to compare against |
-| `.claude/skills/shipping-changes/SKILL.md:32` | 🔴 | says CI runs `npm install`; `.github/workflows/ci.yml:28` runs `npm ci`, with a comment insisting on `ci`, not `install`. Pre-existing, but U2-4 and U8-8 edited this file to remove exactly this kind of stale claim | the workflow line and its comment are the counter-evidence; the same grep on `ci.yml` finds no `npm install` |
-| merge styles in canonical records | 🟢 | adapter §2 amendment and debt C4, P1 now match live `[true,false,false]` | another repo returns `[true,true,true]` |
-| debt rows closed or partial | 🟢 | all 21 re-derived against their own evidence with the verifier's commands and live `gh`; none disagrees; the closure check fires on planted false closures | d7cf7f4: four rows disagreed |
-| project-docs SPEC row, shipping-changes references, plan wording | 🟢 | `spec-absent: 0 spec-files: 2`; `stale: 0`; `three-units: 0 bold-lead: 0` | b44883d: `1 2`, `3`, `3 3` |
-| wording contract on added lines | 🟢 | `plan-authored em dashes: 0, bold labels: 0`, exit 0; the remaining dashes are the ratified kept classes and seat records | 61a3f90: `9, 3`, exit 1 |
-| dead-path scan on added lines | 🟢 | 53 non-resolving paths, all classified (ignored dirs, control probes, glob prefixes, future paths, dated snapshots); 0 live misses besides the OD-004 row above | the scan resolves the pointers U1 and U6 fixed |
-| marketplace and home paths | 🟡 | `nonoun` declared; the source repo still cannot be resolved on GitHub, tracked as debt C7 (human, after landing); home paths debt C6 accepted but its file list is short by the U8 re-diagnosis file (see the 🔴 row) | 65bbda3: C7 absent |
-| Landing holds the deferred steps | 🟢 | the Landing section names the spec repoint, the branch sweep, and the R12 trigger | b44883d: the spec repoint appeared only in the U6 preamble, count 0 in Landing |
-| checker family (carried) | 🟡 | both workers Fable 5.1, fresh context; builders Opus | self-declared; nothing in the tree can falsify a model name |
-| CI on this head | 🟡 | the branch is unpushed, so `build-test` and `panda-smoke` have not run on 4f30855; the adapter requires green CI before landing | n/a: no run exists to control |
-| integration, secrets, dependencies, commit hygiene | 🟢 | all eight units integrate; no `package*.json` change; only `secrets.ANTHROPIC_API_KEY`; no private folder or `node_modules` path in any commit | P3 probe |
+| U1 to U9 criteria, P1 to P5 | 🟢 | every row at its expected value on the head, at the f39a640 wording | controls at 797173e, 4f30855, and 61a3f90 each fire |
+| 4f30855 blocker: OD-004 card path | 🟢 | the card names the root `CHANGELOG.md`, which resolves; the U9-1 scan prints exactly its three named misses | at 4f30855 a fourth line, `missing docs/spec/CHANGELOG.md` |
+| 4f30855 blocker: `decisions.md:21` | 🟢 | the lineage cell names ADR-023 and the G2 closure, matching `:40`, `:66`, and `index.md:19` | at 4f30855: the old "only as a note" sentence |
+| 4f30855 blocker: CI `npm install` claims | 🟢 | no line at head; `npm ci` count 3 in `ci.yml` | at 4f30855 the f39a640 pattern prints all three pre-fix lines |
+| 4f30855 blocker: U7-2 `/Users/` loop result | 🟢 | the loop as scoped to `.sdlc` sees only files debt C6 lists | without the plan exclusions: `missing .sdlc/plans/adopt-hygiene-U8-p2.md` |
+| plan U7 row 2, the quoted loop | 🔴 | the loop quoted at `.sdlc/plans/adopt-hygiene.md:140` has lost its `-- .sdlc` scope (pass 1 at 65bbda3 and U9-4 at line 174 both carry it). Run literally at this head it prints `missing .claude/skills/shipping-changes/references/best-practices.md`, a file outside `.sdlc` and not in debt C6, so the criterion fails as written. Confirmed by the Verifier seat | the same loop with `-- .sdlc` restored prints nothing |
+| plan Landing, branch sweep | 🔴 | line 210 sweeps `sdlc/adopt` and `unit/hygiene-U1` through `U8` and says the count then prints 28. `unit/hygiene-U9` exists (merged at 1ee2a40) and `git branch \| wc -l` is 38 at this head, so the sweep as written leaves 29 and U3-4's "at most 28" is not met. Confirmed by the Verifier seat | `git branch --list 'unit/hygiene-*'` prints 9 names, U9 among them |
+| record cards omit U1's amendments | 🔴 | six cards (`ADR-010`, `ADR-013`, `ADR-016`, `SITE-runbook`, `SITE-describe-palette`, `LLD-muted-base`) do not name the `Amendment (2026-09-16)` U1 appended to their sources; `ADR-016` and `SITE-runbook` read "none stated" while `decisions.md:33` and `:50` record the amendment, so the two records contradict each other. The card format does carry in-body amendments (ADR-002's cell names two) | `grep -E '^\| Supersedes' ` on the six cards, counting `2026-09-16`: `0` six times; the source `decision-records.md` carries 3 such amendments |
+| origin/main merge did not reintroduce or invalidate anything | 🟢 | the merge brought main's 7 files through byte-identical; the facts the plan asserts about them still hold (`html:` 12, `TESTS` 44, attributes, role table, README, CLAUDE.md, workflows) | recounted against the tree; a changed count would show in the same greps |
+| merge styles, debt closures, index facts, marketplace, R12 | 🟢 | adapter §2 and debt C4, P1 match live `[true,false,false]`; all closed and partial debt rows re-derived against their own evidence, `disagreeing: 0`; index facts true; `nonoun` declared with C7 open; R12 names its trigger | planted false closures on G2, D2, C4 each fire; 61a3f90 prints 20 `no-note` lines |
+| Landing holds the deferred steps | 🟡 | the spec repoint and the R12 trigger are held with checks; the branch sweep is held but is wrong (see the 🔴 row) | at b44883d the spec repoint was not in Landing at all |
+| dead-path scan on added lines | 🟢 | 0 live misses; every non-resolving path classified (ignored dirs, control probes, glob prefixes, future paths, dated snapshots) | the scan resolves the pointers U1, U6, and U9 fixed |
+| wording contract | 🟢 | `plan-authored em dashes: 0, bold labels: 0`, exit 0 | 61a3f90: `9, 3`, exit 1 |
+| index lineage cells for the same six records | 🟡 | `index.md` carries the same omission as the cards; one fix should cover both files | same grep as the 🔴 row |
+| plan section count, `decisions.md:21` wording | 🟡 | the plan's §17 enumeration stops at eight units while nine exist; `decisions.md:21` uses a deictic "here" that reads oddly out of context | reviewer minors, re-derived |
+| U3-4, U3-5 branch counts (carried) | 🟡 | 38 local, 40 remote at this head; the Landing sweep is meant to close U3-4 and does not | counted by me |
+| marketplace repo, home paths | 🟡 | the source repo still cannot be resolved on GitHub (debt C7, human, after landing); debt C6 lists the `.sdlc` files the scoped loop sees | 65bbda3: C7 absent |
+| CI on this head | 🟡 | the branch is unpushed, so `build-test` and `panda-smoke` have not run on 279ae0f; the adapter requires green CI on the landing head | no run exists to control |
+| checker family (carried) | 🟡 | both workers Fable 5.1, fresh context; builders Opus | self-declared |
+| integration, secrets, dependencies, commit hygiene, branding | 🟢 | nine units integrate; no `package*.json` change; only `secrets.ANTHROPIC_API_KEY`; no private folder or `node_modules` path; branding clean | P3 probe; planted brand string fires |
 
 ## Gaps for the next pass
 
-1. 🔴 U7-2's loop flags `.sdlc/plans/adopt-hygiene-U8-p2.md`. Either exclude the re-diagnosis class the plan already calls history, or add the file to debt C6.
-2. 🔴 `.sdlc/records/cards/OD-004.md:7` names a file that does not exist; it should name the record U1 repointed to.
-3. 🔴 `.sdlc/records/decisions.md:21` contradicts lines 40 and 68 of its own file about ADR-004 and gap G2.
-4. 🔴 `.claude/skills/shipping-changes/SKILL.md:32` says CI runs `npm install`; CI runs `npm ci`.
-5. 🟡 Debt C6's file list is short; push the marketplace repo before or after landing (C7, human); U3-4 and U3-5 counts carried; checker family self-declared.
-6. 🟡 CI has not run on this head: the branch is unpushed. Landing needs green `build-test` and `panda-smoke` on the landing head.
-7. Any new commit on `sdlc/adopt` invalidates this record; rerun on the new head.
+1. 🔴 `.sdlc/plans/adopt-hygiene.md:140`: restore the `-- .sdlc` scope on the quoted `/Users/` loop, or the U7 row fails as written.
+2. 🔴 `.sdlc/plans/adopt-hygiene.md:210`: add `unit/hygiene-U9` to the branch sweep and restate the resulting count from a measurement (38 local at this head).
+3. 🔴 Six cards, and the matching `index.md` lineage cells, omit the `Amendment (2026-09-16)` U1 appended to their sources; two of them read "none stated" against `decisions.md`. Needs a criterion whose check fails on 279ae0f.
+4. 🟡 Plan §17 stops at eight units; `decisions.md:21` deictic wording; U3-4 and U3-5 counts; marketplace repo unpushed (C7, human).
+5. 🟡 CI has not run on this head. Landing needs green `build-test` and `panda-smoke` on the landing head.
+6. Any new commit on `sdlc/adopt` invalidates this record; rerun on the new head.
