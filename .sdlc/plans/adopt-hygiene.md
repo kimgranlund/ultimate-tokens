@@ -34,7 +34,7 @@ Sixteen S items the debt map lists under "A7 hygiene candidates", plus the eight
 
 - [~] U1 (M) records, plans, stubs, moved docs · grade l1 · reviewer-l1 · verifier-l1
 - [~] U2 (M) harness, config, ignores, workflows, CLAUDE.md `## SDLC` · grade l1 · reviewer-l1 · verifier-l1
-- [~] U3 (S) repo settings, git index, local branches · grade l1 · reviewer-l1 · verifier-l1
+- [x] U3 (S) repo settings, git index, local branches · grade l1 · reviewer-l1 · verifier-l1
 
 Dispatch order: U2 first when possible (it adds `.worktrees/` to `.gitignore` and to the branding skip list, so a root-checkout `npm test` stops walking the unit worktrees). U1 and U3 are independent of U2 and of each other; their file sets do not overlap. Builders run gates inside `.worktrees/<unit>` only. `npm run build` is required for U2 (it touches `.github/` and `test/repo/`, and the verifier at pre-land runs it always); U1 and U3 need only `npm test`.
 
