@@ -4,6 +4,6 @@ Orchestrator-only. Rows edited in place. Plan branch for adopt-hygiene is `sdlc/
 
 | Unit | Ticket | Size | State | Pass | Owner | Worker | Branch | Worktree | Doc | Next |
 |---|---|---|---|---|---|---|---|---|---|---|
-| adopt-hygiene U1 records, plans, stubs, moved docs | T-0001 | M | 🔵 | 1 | orchestrator | waiting on verifier seat | unit/hygiene-U1 @ 9b7051e | .worktrees/hygiene-U1 | .sdlc/verdicts/adopt-hygiene-U1-review.md | reviewed 🟢; send to sdlc-verifier (verifier-l1) once the seat is up |
-| adopt-hygiene U2 harness, config, ignores, workflows, CLAUDE.md | T-0001 | M | 🔁 | 2 | builder | hygiene-U2-builder-l7-p2 | unit/hygiene-U2 @ 04b93f0 | .worktrees/hygiene-U2 | .sdlc/plans/adopt-hygiene-U2-p2.md | pass 2 build, then reviewer-l3 |
+| adopt-hygiene U1 records, plans, stubs, moved docs | T-0001 | M | 🔁 | 2 | planner | U1-planner | unit/hygiene-U1 @ 9b7051e | .worktrees/hygiene-U1 | .sdlc/verdicts/adopt-hygiene-U1.md | verdict 🔴 U1-6 wrong PR refs; re-diagnosis, then builder-l7 p2 |
+| adopt-hygiene U2 harness, config, ignores, workflows, CLAUDE.md | T-0001 | M | 🔵 | 2 | verifier | sdlc-verifier (verifier-l3) | unit/hygiene-U2 @ 0ad0faa | .worktrees/hygiene-U2 | .sdlc/plans/adopt-hygiene-U2-p2.md | pass 2 reviewed 🟢 (1 minor, secret scope); verifying, then merge |
 | adopt-hygiene U3 repo settings, git index, local branches | T-0001 | S | 🟢 | 1 | verifier | sdlc-verifier (verifier-l1) | unit/hygiene-U3 @ d731a9e merged 6b57378 | removed | .sdlc/verdicts/adopt-hygiene-U3.md | merged; 2 🟡 non-blocking (branch counts, external) |
