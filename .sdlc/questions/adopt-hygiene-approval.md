@@ -11,3 +11,10 @@ Options:
 - Approve without U3
 - Changes first
 Chosen: Approve, mobilize (Recommended)
+
+## Addendum (2026-09-17, conductor): U8 sweep approved
+| Field | Value |
+|---|---|
+| Question | Pre-land red a third time on a new stale record. Run one sweep unit U8 over every fact the plan changed, with mechanical checks, instead of one finding per unit? |
+| Options | Run the U8 sweep (recommended) · fix only index.md and rerun · stop here, land nothing |
+| Chosen | Run the U8 sweep |
