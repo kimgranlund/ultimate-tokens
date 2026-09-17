@@ -17,7 +17,7 @@ for c in .sdlc/records/cards/*.md; do
     *) body=$(cat "$src") ;;
   esac
   printf '%s' "$body" | grep -q 'Amendment (2026-09-16)' || continue
-  grep -q '2026-09-16' "$c" || { echo "stale card $id"; n=$((n+1)); }
+  grep -E '^\| (Supersedes|Amended|Lineage)' "$c" | grep -q '2026-09-16' || { echo "stale card $id"; n=$((n+1)); }
   grep -E "^\| $id " .sdlc/records/index.md | grep -q '2026-09-16' || { echo "stale index $id"; n=$((n+1)); }
 done
 echo "stale total: $n"
