@@ -1,34 +1,46 @@
-# Pre-PR · adopt-hygiene · 29a2c066cbb0f1ff945519f28115b128594b626a
+# Pre-PR · adopt-hygiene · 80ae4d8a66b4b96c395e00e31880d13024c9ea93
 verdict: 🔴
-sha: 29a2c066cbb0f1ff945519f28115b128594b626a
+sha: 80ae4d8a66b4b96c395e00e31880d13024c9ea93
 
-Written by sdlc-verifier on 2026-09-16. I checked out `sdlc/adopt` @ 29a2c06 in a detached worktree, `.worktrees/prepr`, compared it with `origin/main` (23 commits, 105 files), and ran every command there myself. Every negative control was reverted; the tree ended with 0 dirty paths.
-Tally: 4 🔴 · 5 🟡 · 10 🟢 (19 rows). Two blockers: `npm test` fails on this head, and the checks were not run at the grade the protocol requires. Every unit criterion was re-run; the rows below group them.
+Written by sdlc-verifier on 2026-09-17, replacing the 🔴 record on 29a2c06. Per answer A in `.sdlc/questions/adopt-hygiene-prepr.md`, two fresh-context workers ran against `origin/main` @ 7faf3aa...`sdlc/adopt` (36 commits, 114 files): `adopt-hygiene-prepr-verifier` (verifier-l3, Fable 5.1), which ran every gate and criterion in detached scratch worktrees (removed; root checkout untouched), and `adopt-hygiene-prepr-reviewer` (reviewer-l3 on Fable, read-only diff review: 0 blocker, 2 major, 5 minor, 3 nit, recommends ship). The Verifier seat reconfirmed the head sha and the stale-pointer rows itself.
+Tally: 30 rows. 🟢 21 · 🟡 8 · 🔴 1. One blocker: the plan moved two plan files and left live pointers to them, including two records this plan created. Stale context is a defect (CLAUDE.md standing convictions), and the fix is in scope, so it is 🔴 rather than 🟡, overruling the reviewer's "ship".
 
 | Check | State | Evidence | Negative control |
 |---|---|---|---|
-| baseline `npm test` | 🔴 | `✗ 1/44 test file(s) failed`, exit 1: `repo/branding.mjs` finds 2 violations in `.sdlc/verdicts/adopt-hygiene-U1-review.md`. Its P4 row quotes the retired maker brand in capitals and the retired `.io` domain. The file came in at 54f96e4 and merged to the head at 4cf0686. U1's worktree was clean because the file was not on that branch; the merge makes the gate scan it. This breaks plan rule C12 ("paraphrase") and CLAUDE.md §SDLC | the failing gate is the control: it fires on a real file |
-| baseline `npm run build` | 🟢 | `npm ci` 0; build exit 0, `wrote figma/plugin/ui.html 3695.6 KB`; status 0 | type error in `src/main.ts`: build exit 2; restored |
-| checker grade and family | 🔴 | The skill requires `reviewer-l3` and `verifier-l3` in fresh context, from a model family that did not build the plan. This record was run by the L1 Verifier seat (Opus, the same family as the U1/U2 pass 2 builders), which has no Agent tool. The question is open: `.sdlc/questions/adopt-hygiene-prepr.md` | n/a: no fresh-context L3 run exists to test |
-| P4 branding on head | 🔴 | same failure as baseline `npm test` | same |
-| U1 rows 1-5, 8-12 | 🟢 | 1 1 1; ADR-022, 023, 024, Quick map; 1 1; amendments 1 per file and `resolve.mjs` 1; 0 1; 4 2 0; 3 3 3; 1 1 0; `moved` 1 0; K18 1 with an empty block | `CURRENT_SCHEMA_VERSION` set to 5: K18 prints the missing-case line; unit-pass controls for the rest (`.sdlc/verdicts/adopt-hygiene-U1.md`) |
-| U1-6 plans closed, landings real | 🟡 | 0, 3, 2, `todo` 0 and 0; resolver prints nothing. Concern carried: the resolver does not check that a SHA belongs to its PR. I checked all 9 pairs by hand at U1 pass 2, and the rows have not changed since 89c9538 | `620ac4b` swapped for the branch tip `5a0e438`: 1 line; restored |
-| U1-7 PLAN-overhaul stale path | 🟡 | `moved`, 1, but the grep prints **1**, not 0. The match is `.sdlc/tickets/T-0001.md`, the local ticket, which copies the plan's own U1 text (lines 45, 57), so it is a historical record rather than a live pointer. The exclusion list misses `.sdlc/tickets`, the same gap `.sdlc/handoffs` had | base `b885e67`: 3 |
-| U2 rows 1, 2, 4, 5, 7, 8, 10, 11 | 🟢 | Shipping, SDLC, Always + `same`; 1 0; 0 1 1; 4; 0 (`--source=origin/main` gives 34); 1 0 1; `.sdlc/adapter.md squash`; `github main kimgranlund/ultimate-tokens false`, adapter preset `github`, exit 0 | `origin/main` attrs 34; unit-pass controls for the rest (`.sdlc/verdicts/adopt-hygiene-U2.md`) |
-| U2-3 `html:` convention | 🟢 | 1, 12, 1, 0; `src/ui` has `innerHTML`, no `foreignObject` | 13th `html:` planted: 13; restored |
-| U2-6 branding skips `.worktrees/` | 🔴 | `"\.worktrees"` 1, but the probe run prints `FAIL: 2 branding violation(s) across 407 files`, caused by the review file above, not by the probe | skip behavior proven at the unit pass; the gate is red on head |
-| U2-9 describe-eval fails without the key | 🟡 | actionlint exit 0; `exit 1` 1; `stays green` 0; `yaml-ok`; `mcp/` 0; step-level secrets `if:` 0. Concern carried: the key is set in job-level `env`, so `npm ci` receives it | step-level `if: ${{ secrets… }}` planted in scratch: actionlint exit 1 |
-| U2-12 build | 🟢 | see baseline build | see baseline build |
-| U3-1, U3-2, U3-3 | 🟢 | `.claude/ops` tracked 0, on disk 3, status 0; one commit `untrack .claude/ops (D1, C6)`, 7 deletions, 7 paths; live `[true,false,false]` | unit-pass controls (`.sdlc/verdicts/adopt-hygiene-U3.md`) |
-| U3-4, U3-5 branch counts | 🟡 | gone 0; `main` and `sdlc/adopt` kept (2); 31 local branches (32 lines include this worktree's `(no branch)`); 40 remote. Same causes as the U3 verdict: the three `unit/hygiene-*` branches, and two remote branches deleted before this plan | unit-pass controls |
-| P2, P3, P5 | 🟢 | 0, 0, 0 | `src/engine/motion.mjs` probe: 2; deleted a line of decision-records: 1; restored |
-| integration across units | 🟢 | Unit file sets are disjoint; the three merge commits applied cleanly. CLAUDE.md `## SDLC` names `.sdlc/adapter.md` §5, the archive paths U1 created, and the `.worktrees/` U2 ignores. No `package.json` or lockfile change | U2-6/P4 is the one cross-unit break (a U1 record trips the U2-era gate) |
-| config smells | 🟡 | `.claude/settings.json` gains `"worktree": {"bgIsolation": "none"}` from f9e20c5, whose subject says "for the readiness drill". No `.sdlc/` record says the setting should outlive the drill, so a drill-only setting would land on `main` | `git grep -i 'bgIsolation\|readiness drill'` outside settings.json: 0 |
-| secrets | 🟢 | no literal key, token, or password assignments in the full `main...sdlc/adopt` diff; the only secret reference is `${{ secrets.ANTHROPIC_API_KEY }}` | n/a (pattern scan) |
-| docs current | 🟢 | CLAUDE.md Commands and Conventions updated (U2-2, U2-3); shipping-changes no longer says "no hooks" and no longer pins a model; README and project-docs updated (U1-8, U1-10) | `origin/main` counts in the unit-pass records |
+| gate `npm test` | 🟢 | exit 0, `✓ all 44 test files passed`, dirty 0 | `"scrim` → `"scrimX` in role-table: exit 1, `✗ 1/44` |
+| gate `npm ci && npm run build` | 🟢 | build exit 0, `wrote figma/plugin/ui.html 3695.6 KB`, dirty 0 | type error in `src/main.ts`: exit 2 |
+| gate `npm run smoke` | 🟡 | exit 0, `SMOKE PASS: gallery · category · editor · export dialog`, dirty 0 | none run; smoke has no plan control |
+| prior 🔴 npm test / P4 / U2-6 on U1 review record | 🟢 | `branding: clean (416 files scanned)`; U1 review diff vs 29a2c06: +1/−1 | 29a2c06 review file restored: `FAIL: 2` |
+| prior 🔴 checker grade and family | 🟡 | verifier-l3 and reviewer on Fable, fresh context; unit content commits (9b7051e, 89c9538, 04b93f0, 0ad0faa, 492b616, d422287, ed565dd) all Opus trailers; the 6 Fable commits are `.sdlc/`-only seat records | self-declared model; no control can falsify it from inside the run |
+| prior 🔴 `worktree.bgIsolation` | 🟢 | `s.worktree===undefined` true; settings diff vs origin/main is the two plugin flags only | 39b78dc: false, bgIsolation 1 |
+| U1-1..5, 8..11 | 🟢 | 1 1 1; ADR-022/023/024/Quick map; 1 1; amendments + `resolve.mjs`; 0 1; 4 2 0; 3 3 3; 1 1 0; `moved` 1 0 | origin/main values differ on every row (worker run) |
+| U1-6 plans closed | 🟢 | 0, 3, 2, todo 0 and 0; resolver silent | origin/main: todo 8 and 7 |
+| U1-6 SHA-to-PR pairing (carried 🟡) | 🟢 | all 9 pairs match `gh pr view --json mergeCommit`, all MERGED; concern closed | `PR #592`→`#578`: 1 line; `620ac4b`→`5a0e438`: 1 line |
+| U1-7 / U4-2 stale path | 🟢 | `moved`, 1, 0 | without `.sdlc/tickets` exclusion: 1 |
+| U1-12 K18 | 🟢 | grep 1, block silent | `CURRENT_SCHEMA_VERSION = 5`: missing-case line |
+| U2-1..8, 10, 11 | 🟢 | Shipping/SDLC/Always same; 1 0; 1 12 1 0; 0 1 1; 4; `.worktrees` skip clean; 0 of 34 attrs off; 1 0 1; `squash`; preset github exit 0 | 13th `html:`: 13; origin/main branding with `.worktrees` plant: FAIL 3; radix line dropped: 2; `github.token` planted: exit 2 |
+| U2-9 describe-eval (carried 🟡) | 🟡 | actionlint 0, guard exits 1 without key. Still stands: `ANTHROPIC_API_KEY` in job-level `env` (`describe-eval.yml:21-22`) reaches `npm ci` (:28); reviewer rates major | step-level `if: secrets`: actionlint exit 1 |
+| U2-12 build | 🟢 | see gate row | see gate row |
+| U3-1, U3-2, U3-3 | 🟢 | ops tracked 0; one 7-path deletion commit; live `[true,false,false]` | ignore line removed: `?? .claude/ops/`; b885e67: 52 paths; other repos `[true,true,true]` |
+| U3-4 local branch count | 🟡 | gone 0; 33 local, over "at most 28" only by the 5 `unit/hygiene-*` branches | carried from U3 verdict |
+| U3-5 remote count | 🟡 | 40; 2 external deletes before the plan | carried |
+| U4-1, U4-3 | 🟢 | branding clean; `npm test` 44 pass | 29a2c06 file: FAIL 2; role-table corrupt: exit 1 |
+| U5-1, U5-2 | 🟢 | no `worktree` block; flags `true false` | 39b78dc: 1; trailing comma: SyntaxError |
+| P1 | 🟢 | gate green, dirty 0 | FAIL 3, exit 1 |
+| P1 control restore (carried 🟡) | 🟡 | still stands: after restoring role-table, `ui.html` and `describe-mcp-assets.js` stay modified until a second `npm test`; plan recipe gap | reproduction is the control |
+| P2, P3, P5 | 🟢 | 0, 0, 0 | origin/main ops tree 7; `// probe` in motion.mjs: 2; decision-records line deleted: 1 |
+| P4 branding | 🟢 | clean (416), head worktree | `docs/x.md` copy: FAIL 3 |
+| integration | 🟢 | top-level diff .claude 12, .sdlc 81, docs 15, .github 2, root files, test 1; no package or lockfile change | P3 probe |
+| secrets | 🟢 | no literal key, token, or password; only `secrets.ANTHROPIC_API_KEY` | pattern scan |
+| docs current: CLAUDE.md, shipping-changes, README, project-docs | 🟢 | expected greps on head | origin/main counts |
+| stale pointers to archived plans, in scope | 🔴 | U1 moved `docs/plan/plan-2026-09-adia-derived-export-artifacts.md` and `...-export-schema-revision.md` to `docs/plan/archive/` (`git cat-file -e 80ae4d8:<old path>` fails; origin/main has both). Live pointers left: `.sdlc/records/cards/PLAN-adia-exports.md:9` and `PLAN-export-schema.md:9` (Source rows, files new in this plan), `docs/reference/references/knowledge-04-export-formats.md:341`, `docs/spec/spec-panda-park-ui-exports.md:34`. No criterion covered them | on origin/main the same doc pointers resolve (files present), so the grep separates broken from valid |
+| stale pointers behind the scope wall | 🟡 | `scripts/gen-adia-derived-exports.mjs:3`, `test/engine/adia-derived-exports.mjs:6` also point at the old paths; P3 forbids touching them, and no debt row names them (precedent: G2) | same `cat-file` check |
+| config and records (reviewer minors) | 🟡 | `.sdlc/adapter.md` §2.2/§3 still state pre-U2/U3 facts with no amendment; `sdlc@nonoun` enabled without an `extraKnownMarketplaces` entry, so a fresh clone cannot resolve it; machine-local absolute home paths in `.sdlc/plans/adopt-hygiene.md`, `.sdlc/tickets/T-0001.md`, `.sdlc/architecture.md`; T-0001 lacks #643; `docs/site/describe-palette-spec.md:579` links the plan path Landing will archive | reviewer read at head; not independently controlled |
+| commit hygiene (reviewer nits) | 🟢 | varied trailer order, f9e20c5 lacks attribution; squash collapses them; `sdlc@adia: false` dead config; Quick map omits ADR-023/024 (selective map) | n/a, non-blocking nits |
 
 ## Gaps for the next pass
 
-1. `npm test` is red on the head. A committed `.sdlc/verdicts/` record quotes the retired brand; every `.sdlc/` record must paraphrase it (C12).
-2. Checker grade: waiting on `.sdlc/questions/adopt-hygiene-prepr.md`. A 🟢 record needs the answer, or an L3 run from a model family that did not build this plan.
-3. Non-blocking, decide before landing: whether `bgIsolation: none` should ship; add `.sdlc/tickets` to the U1-7 exclusions; the carried concerns from U1-6, P1 control restore, and U2-9.
+1. 🔴 Repoint the four in-scope live pointers (two `.sdlc/records/cards` Source rows, two docs) at the archived paths, with a criterion whose check fails on the current head.
+2. 🟡 Record the two `scripts/`/`test/` pointers as debt, or rule them out of the wall.
+3. 🟡 Decide before landing: U2-9 job-level key (reviewer major), adapter §2.2/§3 amendment, undeclared marketplace, absolute home paths, spec link that Landing will invalidate.
+4. Any new commit on `sdlc/adopt` invalidates this record; rerun on the new head.

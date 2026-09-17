@@ -3,7 +3,7 @@ status: approved
 ticket: #643 (github; mirrored from local T-0001, kept in .sdlc/tickets as history)
 priority: P1
 lane: docs
-size: M (U1 M + U2 M + U3 S + U4 S + U5 S = 7 points)
+size: M (U1 M + U2 M + U3 S + U4 S + U5 S + U6 S = 8 points)
 labels: kind:chore · size:M · lane:docs · mode:multi
 unit: A7
 written: 2026-09-16
@@ -37,6 +37,7 @@ Sixteen S items the debt map lists under "A7 hygiene candidates", plus the eight
 - [x] U3 (S) repo settings, git index, local branches · grade l1 · reviewer-l1 · verifier-l1
 - [x] U4 (S) pre-land fixes: branding in a committed review record, U1-7 ticket exclusion · grade l2 · reviewer-l1 · verifier-l1
 - [x] U5 (S) drop the drill-only `worktree.bgIsolation` from committed `.claude/settings.json` · grade l1 · reviewer-l1 · verifier-l1
+- [~] U6 (S) pre-land 2: stale pointers to archived plans, eval key scope, adapter amendments, debt rows · grade l3 · reviewer-l2 · verifier-l2
 
 Dispatch order: U2 first when possible (it adds `.worktrees/` to `.gitignore` and to the branding skip list, so a root-checkout `npm test` stops walking the unit worktrees). U1 and U3 are independent of U2 and of each other; their file sets do not overlap. Builders run gates inside `.worktrees/<unit>` only. `npm run build` is required for U2 (it touches `.github/` and `test/repo/`, and the verifier at pre-land runs it always); U1 and U3 need only `npm test`.
 
@@ -114,6 +115,18 @@ Human answer A in `.sdlc/questions/adopt-hygiene-bgisolation.md`. File: `.claude
 | 2 | the file is valid JSON and the plugin flags from f9e20c5 stay | `node -e 'const s=require("./.claude/settings.json"); console.log(s.enabledPlugins["sdlc@nonoun"], s.enabledPlugins["sdlc@adia"])'` | `true false` | a trailing comma planted: `node` throws; restored |
 | 3 | `npm test` green, tree clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l` | `all 44 test files passed`, `0` | P1 control |
 
+### U6 pre-land fixes, round 2 (S, grade l3)
+
+Added after `.sdlc/verdicts/adopt-hygiene-prepr.md` 🔴 on 80ae4d8. Files: `.sdlc/records/cards/PLAN-adia-exports.md`, `.sdlc/records/cards/PLAN-export-schema.md`, `docs/reference/references/knowledge-04-export-formats.md`, `docs/spec/spec-panda-park-ui-exports.md`, `.github/workflows/describe-eval.yml`, `.sdlc/adapter.md` (append-only amendment lines), `.sdlc/debt.md` (new rows), `.sdlc/tickets/T-0001.md` (one line). `scripts/` and `test/` stay behind the wall (P3). The marketplace entry is a question for the Conductor; absolute home paths in `.sdlc/` records stay (seat-local records, 🟡 accepted). `docs/site/describe-palette-spec.md:579` is repointed in the close-out commit that archives this plan.
+
+| # | Criterion | Command | Expected | Negative control |
+|---|---|---|---|---|
+| 1 | no live pointer outside the wall names the two pre-archive plan paths; the four sites name `docs/plan/archive/` | `git grep -lE 'docs/plan/plan-2026-09-(adia-derived-export-artifacts\|export-schema-(\s*)?$\|export-schema-revision)' -- ':!docs/plan/archive' ':!CHANGELOG.md' ':!.sdlc/verdicts' ':!.sdlc/plans' ':!.sdlc/handoffs' ':!.sdlc/tickets' ':!.sdlc/debt.md' ':!.sdlc/survey.md' ':!scripts' ':!test' \| wc -l; git grep -c 'docs/plan/archive/plan-2026-09-' -- .sdlc/records/cards/PLAN-adia-exports.md .sdlc/records/cards/PLAN-export-schema.md docs/reference/references/knowledge-04-export-formats.md docs/spec/spec-panda-park-ui-exports.md \| wc -l` | `0`, `4` | at 80ae4d8: first count `3` or more (the knowledge-04 pointer wraps a line, so also read line 341 by eye) |
+| 2 | every repointed path resolves | `for f in docs/plan/archive/plan-2026-09-adia-derived-export-artifacts.md docs/plan/archive/plan-2026-09-export-schema-revision.md; do git cat-file -e HEAD:$f && echo ok; done` | `ok` twice | the pre-archive paths: `git cat-file -e HEAD:docs/plan/plan-2026-09-export-schema-revision.md` fails |
+| 3 | the eval key reaches only the guard and eval steps (U2-9) | `actionlint .github/workflows/describe-eval.yml; echo "exit $?"; node -e 'const y=require("fs").readFileSync(".github/workflows/describe-eval.yml","utf8"); const job=y.split(/\n\s*steps:/)[0]; console.log(/ANTHROPIC_API_KEY/.test(job))'; grep -c 'secrets.ANTHROPIC_API_KEY' .github/workflows/describe-eval.yml` | `exit 0`, `false`, `2`; U2 row 9 commands still as expected | at 80ae4d8: `true`, `1` |
+| 4 | the two behind-wall pointers are debt rows, adapter §2.2 and §3 carry dated amendments naming what U2/U3 changed, T-0001 names #643 | `grep -c 'gen-adia-derived-exports.mjs' .sdlc/debt.md; awk '/^### 2.2/,/^## 3/' .sdlc/adapter.md \| grep -c 'Amendment (2026-09-17)'; awk '/^## 3/,/^## 4/' .sdlc/adapter.md \| grep -c 'Amendment (2026-09-17)'; grep -c '#643' .sdlc/tickets/T-0001.md; git diff 80ae4d8 -- .sdlc/adapter.md \| grep -cE '^-[^-]'` | `1`+, `1`, `1`, `1`+, `0` | at 80ae4d8: `0`, `0`, `0`, `0` |
+| 5 | gates green, tree clean, branding clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l` | `all 44 test files passed`, `0` | P1 control (restore, then rerun `npm test` so generated files settle) |
+
 ## Risks and assumptions
 
 | Risk | Handling |
@@ -156,3 +169,4 @@ python3 /Users/kimba/Projects/nonoun/sdlc-orchestration/plugins/sdlc/scripts/ada
 | 2026-09-16 | U1 pass 2: row 6 drops the two ticket numbers it called PRs and adds a resolver (counting complete/todo cannot see a number that is not a PR; four E3 to E6 SHAs were branch tips); row 7 excludes `.sdlc/handoffs` | verdict adopt-hygiene-U1 🔴, re-diagnosis .sdlc/plans/adopt-hygiene-U1-p2.md |
 | 2026-09-16 | U4 added (pre-land fixes); row 7 also excludes `.sdlc/tickets` | pre-land record .sdlc/verdicts/adopt-hygiene-prepr.md 🔴 on 29a2c06: npm test red on a committed record, U1-7 hit in the local ticket |
 | 2026-09-17 | ticket mirrored to GitHub #643; U5 added (drop drill-only bgIsolation) | human answers A, A, A in commit 2304368 |
+| 2026-09-17 | U6 added (stale pointers, eval key scope, adapter amendments, debt rows); P1 control recipe: rerun `npm test` after restoring | pre-land record 🔴 on 80ae4d8 |
