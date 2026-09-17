@@ -64,7 +64,7 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
 - **SVG line charts set `fill: none`** on the path (an open `<path>` fills by closing → wedge artifacts);
   qualify the rule (`.an-svg .x-line`) so a shared series-color class can't override it.
 - **The `html:` SVG-chart exception: 12 live attributes.** `src/ui/sections/{color,geometry,typography}.js`
-  embed inline `<foreignObject>` markup (`html:` attribute namespace) inside otherwise-SVG chart canvases;
+  pass an SVG string to `h("div", { class: "an-svg", html: svg })`, which sets `innerHTML` (`app-helpers.mjs`);
   a new one is fine, a count drift means the ratified exception moved and this line needs updating with it.
 - **`node_modules` is NOT tracked** (`npm install`/`npm ci` is the source of truth); never re-add it.
 
