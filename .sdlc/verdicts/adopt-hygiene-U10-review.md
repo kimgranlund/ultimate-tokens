@@ -1,53 +1,54 @@
-# Review U10 · 🔴 (pass 2, at 1ad1958)
+# Review U10 · 🟢 (pass 3, at a6e32b2)
 
-Reviewer: U10-reviewer-l4-p1 (fresh context). Branch `unit/hygiene-U10` @ 1ad1958 (merged `sdlc/adopt` @ 29fc25b). Criteria: root `.sdlc/plans/adopt-hygiene.md` §U10, 6 rows. Both `.sdlc/checks/*.sh` are byte-identical on the branch and the root (`cmp`), so the runs below use them as committed.
+Reviewer: U10-reviewer-l4-p1 (fresh context). Branch `unit/hygiene-U10` @ a6e32b2 (merged `sdlc/adopt` @ 6c83520). Criteria: root `.sdlc/plans/adopt-hygiene.md` §U10, 6 rows. Both `.sdlc/checks/*.sh` are byte-identical on the branch and the root (`cmp`). Pass 1 (9020e96) flagged the stale ADR Source starts; pass 2 (1ad1958) went 🔴 on ADR-010's end excluding its own amendment and on the start-only script. Both are fixed here; this record replaces the earlier two.
 
-Method: the branch was exported with `git archive 1ad1958` to `$CLAUDE_JOB_DIR/tmp/u10b`; every destructive control ran there and the file was restored and rerun to `0` each time. `npm test`, branding, and the U8/U9 sweeps ran in the worktree; porcelain `0` before and after. Pass 1 (at 9020e96) found 0 blocking and flagged the stale ADR Source ranges; that record is replaced by this one.
+Method: `git archive a6e32b2` to `$CLAUDE_JOB_DIR/tmp/u10c`; every destructive control ran on that export, the file restored from the commit, and the script rerun to `0` each time. `npm test`, branding and the U8/U9 sweeps ran in the worktree; porcelain `0` before and after.
 
 | # | Criterion | State | Evidence | Negative control |
 |---|---|---|---|---|
-| 1 | six cards and six index cells name the amendment; no "none stated" contradiction | 🟢 | `stale total: 0`, no `stale` line | ADR-016's amendment clause cut on the export: `stale card ADR-016`, `stale total: 1`; restored: `0` |
+| 1 | six cards and six index cells name the amendment; no "none stated" contradiction | 🟢 | `stale total: 0`, no `stale` line | SITE-runbook's amendment clause cut: `stale card SITE-runbook`, `stale total: 1`; restored: `0` |
 | 2 | amendment script not vacuous | 🟢 | `- **Amendment (2026-09-16).** plant` under `## ADR-011`: `stale card ADR-011`, `stale index ADR-011`, `stale total: 2`; restored: `0` | without the plant: neither line |
 | 3 | no `none` on the six index rows | 🟢 | `0` | plan-measured `2` at 279ae0f; not rerun |
-| 4 | U8 and U9 sweeps green | 🟢 | `u8check.sh` rows 1 to 9 print the §U8 Expected column verbatim, exit 0; `wording-check.sh origin/main HEAD` and `29fc25b HEAD`: `em dashes: 0, bold labels: 0`, exit 0 both; U9 c1: `0` then exactly the three expected `missing` lines; U9 c3: no line, `npm ci` count `3` | as in §U8 and §U9; not rerun |
+| 4 | U8 and U9 sweeps green | 🟢 | `u8check.sh` rows 1 to 9 print the §U8 Expected column verbatim, exit 0; `wording-check.sh origin/main HEAD` and `1ad1958 HEAD`: `em dashes: 0, bold labels: 0`, exit 0 both; U9 c1: `0` then exactly the three expected `missing` lines; U9 c3: no line, `npm ci` count `3` | as in §U8 and §U9; not rerun |
 | 5 | gates, tree, branding | 🟢 | `all 44 test files passed`; porcelain `0` after the run; `branding: clean (435 files scanned)` | P1 control not rerun: it requires writing a retired brand string, which this review is barred from |
-| 6 | every ADR card's Source range points at its heading and section at this head | 🔴 | script: `range mismatches: 0`. Section read for all 24 ADRs (heading line, next `## ` line, last non-blank line before it): the 12 recomputed starts all sit on their heading. But `ADR-010` still cites `144-157` and its section runs to 161: the `Amendment (2026-09-16)` U1 appended at `:158-161` is outside the cited range, on the one card whose amended-by cell (row 1) names that amendment. The criterion text is not met for ADR-010; the plan's parenthesis "moved every range below ADR-010" is the reason it was skipped (the block was appended inside ADR-010, extending it, not below it) | plan control reproduced: `ADR-011` start shifted to 164 prints `range ADR-011 says 164, heading at 163`, `range mismatches: 1`. Blind spot measured: `ADR-011` end shifted from 192 to 222 (30 lines past the next heading) prints `range mismatches: 0`; the script compares the start line only, so a wrong end, including ADR-010's, never prints |
+| 6 | every ADR card's Source range is its section, start at the heading, end at the last non-blank line | 🟢 | script: `range mismatches: 0`, no line. Independent measurement of all 24 sections (heading line, next `## ` line, last non-blank before it) agrees with all 24 card ranges, see the table below | four controls, each `range mismatches: 1`, restored to `0`: ADR-011 end 191 → 222 prints `end ADR-011 says 222, section ends at 191` (the plan's control); ADR-010 start 144 → 145 prints `start ADR-010 says 145, heading at 144`; ADR-010 back to its pre-fix `144-157` prints `end ADR-010 says 157, section ends at 161` (pass 2's red now bites); ADR-024 end 694 → 695 (the trailing blank) prints `end ADR-024 says 695, section ends at 694` |
 
-## Range read, all 24 ADR cards (heading / next heading / last non-blank / card range)
+## Range read, all 24 ADR cards
 
-ADR-001 to ADR-009: card end equals the last non-blank line (13-22, 24-50, 52-70, 72-86, 88-98, 100-112, 114-121, 123-134, 136-142) 🟢. ADR-010: 144 / 163 / 161 / card `144-157` 🔴. ADR-011 to ADR-022: starts match (163, 193, 222, 298, 330, 363, 401, 434, 476, 526, 576, 645); every recomputed end is `next heading minus 1`, the blank line one past the last content line (192 vs 191, 221 vs 220, 297 vs 296, 329 vs 328, 362 vs 361, 400 vs 399, 433 vs 432, 475 vs 474, 525 vs 524, 575 vs 574, 644 vs 643, 668 vs 667) 🟡 cosmetic, a convention split from the 13 untouched cards, no content missed. ADR-023: 669-681 (last non-blank 680, same one-blank convention) 🟢. ADR-024: 682-694, last non-blank 694, "Quick map" at 696 🟢.
+Card range / heading / next heading / last non-blank, every row matching:
 
-## Fix for the red
+| Card | Range | Heading | Next | Last non-blank |
+|---|---|---|---|---|
+| ADR-001 to ADR-009 | 13-22 · 24-50 · 52-70 · 72-86 · 88-98 · 100-112 · 114-121 · 123-134 · 136-142 | each on its heading | | each on its last content line |
+| ADR-010 | 144-161 | 144 | 163 | 161 (the amendment is `:158-161`, inside; `:162` is the blank) |
+| ADR-011 to ADR-022 | 163-191 · 193-220 · 222-296 · 298-328 · 330-361 · 363-399 · 401-432 · 434-474 · 476-524 · 526-574 · 576-643 · 645-667 | each on its heading | | each on its last content line, one before the blank pass 2 flagged |
+| ADR-023 | 669-680 | 669 | 682 | 680 (`:681` blank) |
+| ADR-024 | 682-694 | 682 | 696 (the "Quick map" heading, file end for ADRs) | 694 (`:695` blank) |
 
-One cell: `ADR-010` Source `144-157` → `144-161` (or `144-162` on the branch's minus-one convention). And the script should compare the end too, or criterion 6 keeps passing on a wrong end: after `start=...`, read `end` from the row, compute `next` as the first `^## ` line after `head` and require `end` between the last non-blank line and `next - 1`. Then the end-shift control above prints `range ADR-011 end 222, section ends 192`.
+The end convention (last non-blank line, no trailing blank claimed) now holds for every ADR card, the 10 untouched ones included, not only the 14 this pass changed. The script's own fallback for a section with no following heading (`wc -l + 1`) is not exercised at this head because "Quick map" follows ADR-024; it reads correctly.
 
-## Cell fidelity (unchanged since pass 1, re-read at 1ad1958)
+## Cell fidelity (re-read at a6e32b2, unchanged)
 
 | Record | Source | Card and index cells |
 |---|---|---|
 | ADR-010 | `decision-records.md:158` | 🟢 `persist.js` comment, `zipStore` in `src/ui/zip.mjs` not `makeZip` |
-| ADR-013 | `:290` | 🟢 thirteen → fifteen, `UI-control`/`UI-widget` split off `ui`; nothing added |
+| ADR-013 | `:290` | 🟢 thirteen → fifteen, `UI-control`/`UI-widget` split off `ui` |
 | ADR-016 | `:394` | 🟢 three renames plus "Color Primitives" unchanged |
 | LLD-muted-base | `lld-muted-base-key-spikes.md:220` | 🟢 `src/engine/resolve.mjs`, canvas + `derivePalette` |
 | SITE-runbook | `go-live-runbook.md:32` | 🟢 four wired consumers, `hostedMcp` alone unwired and why |
 | SITE-describe-palette | `describe-palette-spec.md:579` | 🟢 no-op skip → `exit 1`, key stays the user's action |
 
-`decisions.md:33` and `:50` agree with the ADR-016 and SITE-runbook cells.
-
-## Other cards under the amendment script
-
-All 38 cards have a resolving `| Source |` row; the 24 ADR cards are read by their own section, the 14 others whole-file. Exactly six sources carry `Amendment (2026-09-16)` (`grep -rn` over `docs/`), all six flagged clean. Classes it cannot see: another date (the string is date-fixed); another marker shape; a cell that names the date but misstates the amendment (covered by the table above); a non-ADR `## ` heading between two ADR sections.
+`decisions.md:33` and `:50` agree with the ADR-016 and SITE-runbook cells. Exactly six sources carry `Amendment (2026-09-16)` (`grep -rn` over `docs/`), all six covered; the amendment script's remaining blind classes are another date, another marker shape, a cell that names the date but misstates the text (the table above), and a non-ADR `## ` heading between two ADR sections.
 
 ## Scope, wording, branding
 
-Diff 29fc25b..1ad1958: 18 files, the six cards, twelve ADR range cells, `index.md`, the handoff. Raw scan of added lines: one em dash (inside the quoted source phrase `"settled — do not relitigate"` the SITE-describe-palette line already carried) and one bold label (the handoff quoting the `- **Amendment (date).**` marker shape); both are kept exceptions the wording script encodes, and it prints `0, 0`. No retired brand string.
+Diff 1ad1958..a6e32b2 on the branch: fourteen ADR range cells, the range script, the handoff, plus the merge's own `board.md`, plan and verdict rows from `sdlc/adopt`. Raw scan of added lines outside `.sdlc/verdicts`: 0 em dashes, 0 bold labels. No retired brand string. Handoff's criterion 6 control (`end ADR-010 says 160, section ends at 161`) is a fifth distinct control from the four above; all agree.
 
 ## Would block a fresh pre-land read
 
 | Item | State | Evidence |
 |---|---|---|
-| ADR-010 Source range excludes its own amendment | 🔴 | criterion 6 above |
-| `card-source-range-check.sh` checks start only | 🟡 | end-shift control prints `0`; the criterion's own control (start shift) is the only thing it can fail on |
-| twelve recomputed ends land on the blank line, thirteen untouched ends on the last content line | 🟡 | cosmetic; pick one convention when ADR-010 is fixed |
+| nothing blocking in U10's files or the records they point at | 🟢 | rows 1 to 6 |
+| plan §U10 row 6 negative-control prose says ADR-010's "section runs to 162" while the criterion's own convention ends it at 161 (162 is the blank line) | 🟡 | `sed -n '133p' .sdlc/plans/adopt-hygiene.md`; one word in plan text, the script and the card say 161; fix in the pre-land round's plan pass |
 
-Blocking: 1.
+Blocking: 0.
