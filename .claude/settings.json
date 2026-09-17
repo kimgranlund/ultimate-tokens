@@ -36,6 +36,12 @@
         "repo": "kimgranlund/claude-plugins"
       }
     },
+    "nonoun": {
+      "source": {
+        "source": "github",
+        "repo": "kimgranlund/sdlc-orchestration"
+      }
+    },
     "adia": {
       "source": {
         "source": "github",
