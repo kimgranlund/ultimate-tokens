@@ -159,8 +159,8 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
 ```json
 { "component":"segmented","layer":"component","role":"tablist|group","replaces_native":false,
   "parts":["track","segment"],"states":["on"],"keyboard":["ArrowLeft","ArrowRight (tabs only)"],
-  "forced_colors":false,"owns_outer_margin":true,
-  "flags":["4 stylings of one pattern","drawer-tabs/figma-files miss the keyboard model","self-margin (styles.css:582)"] }
+  "forced_colors":false,"owns_outer_margin":false,
+  "flags":["4 stylings of one pattern","drawer-tabs/figma-files miss the keyboard model","no self-margin, the parent owns spacing: segmented (styles.css:869-870)"] }
 ```
 
 ### 4 · Slider / range  ★ the model primitive
@@ -276,7 +276,7 @@ Three unrelated "pill" stylings — a naming/coherence drift, not one primitive:
 ```json
 { "component":"field","layer":"primitive","role":null,"replaces_native":false,
   "parts":["label","readout","control(slot)"],"states":[],"keyboard":[],"forced_colors":"n/a",
-  "owns_outer_margin":true,"flags":["self-owned margin-bottom (styles.css:610)"] }
+  "owns_outer_margin":false,"flags":["no self-owned margin, margin: 0 on field (styles.css:928); only .newpal-custom .field sets margin-bottom (styles.css:1184)"] }
 ```
 
 ---
