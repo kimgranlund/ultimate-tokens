@@ -1395,7 +1395,7 @@ ok(app.category === null && app.querySelectorAll(".category-card").length === CA
 // pure posterStripBands() (src/ui/app-helpers.mjs, #646), which additionally: (1) clamps any one
 // band's share and floors accent bands, redistributing the difference proportionally; (2) never
 // drops the 2nd accent swatch off the 6-band cap; (3) weights width by each swatch's own OKLCH
-// chroma; (4) reorders the strip so the highest-chroma bands sit at its two edges. This block
+// chroma; (4) reorders the strip: neutral pinned first, highest-chroma band last. This block
 // cross-checks presetTile()'s DOM-rendered strip against that function directly (proving the DOM
 // path is actually wired through it), then exercises the four fixes against REAL curated presets.
 // A focused, DOM-free unit test of posterStripBands() itself lives in test/ui/poster-strip.mjs.
@@ -1404,7 +1404,7 @@ const colorOf = (i) => { const m = /background:\s*([^;]+)/.exec(i.getAttribute("
 const stripWidths = (preset) => [...app.presetTile(preset).querySelector(".strip").children].map(flexOf);
 const { paletteKeyColors: jjPaletteKeyColors, hexToOklch: jjHexToOklch } = await import("../../src/ui/model.mjs");
 const { hydrate: jjHydrate } = await import("../../src/ui/persist.js");
-const { posterStripBands: jjPosterStripBands } = await import("../../src/ui/app-helpers.mjs");
+const { posterStripBands: jjPosterStripBands, posterStripDominantCap: jjDominantCap, POSTER_STRIP_MAX_BAND_PCT_LOW: jjCapLow, POSTER_STRIP_MAX_BAND_PCT_HIGH: jjCapHigh } = await import("../../src/ui/app-helpers.mjs");
 const jjEnabled = (preset) => jjPaletteKeyColors(jjHydrate(preset)).filter((p) => p.on);
 const jjChroma = (hex) => jjHexToOklch(hex)[1];
 // bands rendered by the REAL presetTile() DOM, annotated with each swatch's own name/colorRole
@@ -1428,8 +1428,9 @@ const jjCrossCheck = (preset) => {
 const jjRendered = (label, bands) => {
   const sum = bands.reduce((s, b) => s + b.width, 0);
   ok(Math.abs(sum - 100) < 1e-6, `(jj) ${label}: the DOM strip's flex factors sum to 100 (got ${sum.toFixed(6)})`);
-  const max = Math.max(...bands.map((b) => b.width));
-  ok(max / sum <= 35 / 100 + 1e-9, `(jj) ${label}: the widest band's RENDERED share (max/sum) respects the ~35% cap (got ${(100 * max / sum).toFixed(2)}%)`);
+  // the dominant's cap is chroma-scaled (owner ruling, 35..45); every other band keeps the flat 35.
+  const capOf = (b) => (b.colorRole === "dominant" ? jjDominantCap(b.key) : 35);
+  for (const b of bands) ok(b.width / sum <= capOf(b) / 100 + 1e-9, `(jj) ${label}: band ${b.name}'s RENDERED share respects its own cap (want <= ${capOf(b).toFixed(2)}%, got ${(100 * b.width / sum).toFixed(2)}%)`);
 };
 
 const jjPreset0 = TP[0]; // d:60,s:30,a:10 (travel) — a generic sanity check, not the fix-specific probes
@@ -1448,13 +1449,14 @@ ok(jjWPBands.length === 6, `(jj) #646: War and Peace still shows 6 bands (got ${
 const jjWPDominant = jjWPBands.find((b) => b.colorRole === "dominant");
 const jjWPAccents = jjWPBands.filter((b) => b.colorRole === "accent");
 ok(jjWPAccents.length === 2, `(jj) #646 fix 2: War and Peace shows BOTH accent swatches (icon crimson + gilt gold), never just one (got ${jjWPAccents.length})`);
-ok(Math.abs(jjWPDominant.width - 35) < 0.01, `(jj) #646 fix 1: the candle-gold dominant (authored 50% -> ~46% uncapped) is clamped to the ~35% max band share (got ${jjWPDominant.width.toFixed(2)})`);
+ok(Math.abs(jjWPDominant.width - jjDominantCap(jjWPDominant.key)) < 0.01 && jjDominantCap(jjWPDominant.key) < 39, `(jj) #646 fix 1: the candle-gold dominant (authored 50% -> ~46% uncapped) is clamped to its chroma-scaled cap near the low end (want ${jjDominantCap(jjWPDominant.key).toFixed(2)}, got ${jjWPDominant.width.toFixed(2)})`);
 ok(jjWPAccents.every((b) => b.width >= 10 - 0.01), `(jj) #646 fix 1: both accent bands are floored to >= ~10% each — no longer slivers (got ${jjWPAccents.map((b) => b.width.toFixed(2)).join(",")})`);
-// #646 fix 4: the strip's two EDGE bands are its two highest-chroma swatches, not backloaded
-// after a run of neutrals/supporting.
-const jjWPByChroma = [...jjWPBands].sort((a, b) => jjChroma(b.key) - jjChroma(a.key));
-const jjWPEdges = [jjWPBands[0].key, jjWPBands[jjWPBands.length - 1].key];
-ok(jjWPEdges.includes(jjWPByChroma[0].key) && jjWPEdges.includes(jjWPByChroma[1].key), `(jj) #646 fix 4: the strip's two edges are its two highest-chroma bands (edges=${jjWPEdges.join(",")}, top2=${jjWPByChroma.slice(0, 2).map((b) => b.key).join(",")})`);
+// #646 fix 4 (owner ruling): neutral is pinned to the LEADING edge and the highest-chroma band
+// sits at the FAR edge, so the strip reads grounded-then-vivid instead of split around a mid-strip
+// neutral or backloaded after a run of supporting bands.
+const jjWPByChroma = jjWPBands.filter((b) => b.name !== "neutral").sort((a, b) => jjChroma(b.key) - jjChroma(a.key));
+ok(jjWPBands[0].name === "neutral", `(jj) #646 fix 4: War and Peace's neutral is the leading band (got ${jjWPBands.map((b) => b.name).join(",")})`);
+ok(jjWPBands[jjWPBands.length - 1].key === jjWPByChroma[0].key, `(jj) #646 fix 4: War and Peace's far edge is its highest-chroma band (last=${jjWPBands[jjWPBands.length - 1].name}, want ${jjWPByChroma[0].name})`);
 ok(jjCrossCheck(jjWP), "(jj) #646: War and Peace's DOM strip matches posterStripBands() exactly");
 jjRendered("War and Peace", jjWPBands);
 
@@ -1467,10 +1469,16 @@ const jjHeroBands = jjBandsOf(jjHero);
 const jjHeroDominant = jjHeroBands.find((b) => b.colorRole === "dominant");
 const jjHeroRest = jjHeroBands.filter((b) => b.name !== jjHeroDominant.name);
 ok(jjChroma(jjHeroDominant.key) > 0.15, `(jj) test setup: Hero's dominant (courtyard red) really is already high-chroma (got ${jjChroma(jjHeroDominant.key).toFixed(3)})`);
-ok(jjHeroDominant.width >= 30, `(jj) #646: an already-vivid dominant is not over-compressed by the clamp (got ${jjHeroDominant.width.toFixed(2)})`);
-// with the vector normalized the cap binds at a true 35%, and 5 other bands share the remaining 65%
-// (neutral 8 + two floored accents leave ~37% for three supporting bands), so the widest neighbor
-// can legitimately reach ~20%: 1.5x is the margin the cap actually guarantees.
+ok(Math.abs(jjHeroDominant.width - jjCapHigh) < 0.01, `(jj) #646: an already-vivid dominant gets the full ${jjCapHigh}% cap, not squashed to 35 (got ${jjHeroDominant.width.toFixed(2)})`);
+// TKT-0003 differentiation, restored (the first cut of #646 deleted the assertion that pinned
+// it): two presets whose dominants differ in chroma render visibly different dominant widths,
+// both inside the [35, 45] band the ruling defines.
+ok(jjHeroDominant.width - jjWPDominant.width > 3, `(jj) TKT-0003: Hero's vivid dominant renders > 3 points wider than War and Peace's candle gold (hero=${jjHeroDominant.width.toFixed(2)}, wp=${jjWPDominant.width.toFixed(2)})`);
+ok([jjHeroDominant.width, jjWPDominant.width].every((w) => w >= jjCapLow - 0.01 && w <= jjCapHigh + 0.01), `(jj) both dominants sit within [${jjCapLow}, ${jjCapHigh}] (hero=${jjHeroDominant.width.toFixed(2)}, wp=${jjWPDominant.width.toFixed(2)})`);
+ok(jjHeroBands[0].name === "neutral", `(jj) #646 fix 4: Hero's neutral is the leading band too (got ${jjHeroBands.map((b) => b.name).join(",")})`);
+// with the vector normalized the cap binds at a true 45% here, and 5 other bands share the
+// remaining 55% (neutral 8 + two floored accents leave ~27% for three supporting bands), so the
+// widest neighbor can legitimately reach ~15%: 1.5x is a comfortable margin.
 ok(jjHeroRest.every((b) => jjHeroDominant.width >= b.width * 1.5), `(jj) #646: the vivid dominant remains clearly the strip's leading band, at least 1.5x its widest neighbor (dominant=${jjHeroDominant.width.toFixed(2)}, rest=${jjHeroRest.map((b) => b.width.toFixed(2)).join(",")})`);
 ok(jjCrossCheck(jjHero), "(jj) #646: Hero's DOM strip matches posterStripBands() exactly");
 jjRendered("Hero · 2002", jjHeroBands);
@@ -1510,7 +1518,8 @@ jjRendered("Maison", jjMaisonBands);
 const jjCorsa = BRANDSm.find((p) => p.name.startsWith("Corsa ·"));
 const jjCorsaBands = jjBandsOf(jjCorsa);
 ok(jjCorsaBands.length === 6, `(jj) #646 review B: Corsa renders 6 bands (got ${jjCorsaBands.length})`);
-ok(Math.abs(jjCorsaBands.find((b) => b.colorRole === "dominant").width - 35) < 0.01, `(jj) #646 review B: Corsa's dominant is clamped to the ~35% cap in RENDERED terms, not 52% (got ${jjCorsaBands.find((b) => b.colorRole === "dominant").width.toFixed(2)})`);
+const jjCorsaDom = jjCorsaBands.find((b) => b.colorRole === "dominant");
+ok(Math.abs(jjCorsaDom.width - jjDominantCap(jjCorsaDom.key)) < 0.01, `(jj) #646 review B: Corsa's dominant is clamped to its chroma-scaled cap in RENDERED terms, not 52% (want ${jjDominantCap(jjCorsaDom.key).toFixed(2)}, got ${jjCorsaDom.width.toFixed(2)})`);
 ok(jjCrossCheck(jjCorsa), "(jj) #646 review B: Corsa's DOM strip matches posterStripBands() exactly");
 jjRendered("Corsa", jjCorsaBands);
 

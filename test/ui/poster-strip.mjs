@@ -9,7 +9,7 @@
 // low-chroma dominant, one already-vivid) so the fixes are proven against real data too — the
 // integration-level DOM assertions (presetTile() actually wiring through this function) live in
 // test/ui/headless-boot.mjs's (jj) group.
-import { POSTER_STRIP_ACCENT_FLOOR_PCT, POSTER_STRIP_MAX_BAND_PCT, posterStripBands } from "../../src/ui/app-helpers.mjs";
+import { POSTER_STRIP_ACCENT_FLOOR_PCT, POSTER_STRIP_MAX_BAND_PCT, POSTER_STRIP_MAX_BAND_PCT_HIGH, POSTER_STRIP_MAX_BAND_PCT_LOW, posterStripBands, posterStripDominantCap } from "../../src/ui/app-helpers.mjs";
 import { hexToOklch } from "../../src/ui/model.mjs";
 import { paletteKeyColors } from "../../src/ui/model.mjs";
 import { hydrate } from "../../src/ui/persist.js";
@@ -29,8 +29,10 @@ const sumOf = (bands) => bands.reduce((s, b) => s + b.width, 0);
 const assertRendered = (label, bands) => {
   const sum = sumOf(bands);
   ok(Math.abs(sum - 100) < 1e-6, `${label}: the returned widths sum to 100 so flex shares equal widths (got ${sum.toFixed(6)})`);
-  const max = Math.max(...bands.map((b) => b.width));
-  ok(max / sum <= POSTER_STRIP_MAX_BAND_PCT / 100 + 1e-9, `${label}: the widest band's RENDERED share (max/sum) respects the cap (want <= ${POSTER_STRIP_MAX_BAND_PCT}%, got ${(100 * max / sum).toFixed(2)}%)`);
+  // the dominant's cap is chroma-scaled (owner ruling: 35% near-neutral .. 45% vivid); every
+  // other band keeps the flat cap.
+  const capOf = (b) => (b.colorRole === "dominant" ? posterStripDominantCap(b.key) : POSTER_STRIP_MAX_BAND_PCT);
+  for (const b of bands) ok(b.width / sum <= capOf(b) / 100 + 1e-9, `${label}: band ${b.name}'s RENDERED share (width/sum) respects its own cap (want <= ${capOf(b).toFixed(2)}%, got ${(100 * b.width / sum).toFixed(2)}%)`);
 };
 const enabledOf = (preset) => paletteKeyColors(hydrate(preset)).filter((p) => p.on);
 
@@ -67,8 +69,11 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
 {
   const bands = posterStripBands(ENABLED, GROUPS);
   const byName = Object.fromEntries(bands.map((b) => [b.name, b]));
-  // dominant's authored share (50% * 92% = 46%) uncapped would swamp the strip — clamped to the max.
-  ok(near(byName["dominant-swatch"].width, POSTER_STRIP_MAX_BAND_PCT), `the dominant band is clamped to the max band share (want ${POSTER_STRIP_MAX_BAND_PCT}, got ${byName["dominant-swatch"].width.toFixed(2)})`);
+  // dominant's authored share (50% * 92% = 46%) uncapped would swamp the strip — clamped to ITS
+  // chroma-scaled cap (~0.092 chroma sits between the 0.02 and 0.15 endpoints, so strictly 35..45).
+  const domCap = posterStripDominantCap(byName["dominant-swatch"].key);
+  ok(domCap > POSTER_STRIP_MAX_BAND_PCT_LOW + 1 && domCap < POSTER_STRIP_MAX_BAND_PCT_HIGH - 1, `test setup: the cohort's moderate-chroma dominant gets a cap strictly between the endpoints (got ${domCap.toFixed(2)})`);
+  ok(near(byName["dominant-swatch"].width, domCap), `the dominant band is clamped to its chroma-scaled cap (want ${domCap.toFixed(2)}, got ${byName["dominant-swatch"].width.toFixed(2)})`);
   // accent's authored share (10% * 92% / 2 = 4.6% each) uncapped would be a sliver — floored up.
   ok(byName["accent-1"].width >= POSTER_STRIP_ACCENT_FLOOR_PCT - 0.01 && byName["accent-2"].width >= POSTER_STRIP_ACCENT_FLOOR_PCT - 0.01,
     `both accent bands are floored to at least the accent floor (want >= ${POSTER_STRIP_ACCENT_FLOOR_PCT}, got ${byName["accent-1"].width.toFixed(2)}/${byName["accent-2"].width.toFixed(2)})`);
@@ -110,7 +115,8 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   ok(bands.length === 6, `Corsa: 6 bands (got ${bands.length})`);
   ok(bands.filter((b) => b.colorRole === "accent").length === 2, `Corsa: exactly 2 accents shown (got ${bands.filter((b) => b.colorRole === "accent").length})`);
   assertRendered("Corsa", bands);
-  ok(near(bands.find((b) => b.colorRole === "dominant").width, POSTER_STRIP_MAX_BAND_PCT), `Corsa: the dominant is clamped to the cap in RENDERED terms, not 52% (got ${bands.find((b) => b.colorRole === "dominant").width.toFixed(2)})`);
+  const corsaDom = bands.find((b) => b.colorRole === "dominant");
+  ok(near(corsaDom.width, posterStripDominantCap(corsaDom.key)), `Corsa: the dominant is clamped to its chroma-scaled cap in RENDERED terms, not 52% (want ${posterStripDominantCap(corsaDom.key).toFixed(2)}, got ${corsaDom.width.toFixed(2)})`);
 }
 
 // ── fix 3: width additionally weighted by each swatch's OWN OKLCH chroma ───────────────────────
@@ -132,18 +138,30 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   const uniformHigh = ENABLED.map((p) => (p.name === "neutral" ? p : { ...p, key: "#913029" }));  // all non-neutral chroma ~0.132
   const lowBands = posterStripBands(uniformLow, GROUPS);
   const highBands = posterStripBands(uniformHigh, GROUPS);
-  const widthsByRole = (bands) => bands.map((b) => +b.width.toFixed(6)).sort((a, b) => a - b);
-  ok(JSON.stringify(widthsByRole(lowBands)) === JSON.stringify(widthsByRole(highBands)),
-    `a uniformly muted cohort renders the SAME width distribution as a uniformly vivid one at the same authored pcts (low=${JSON.stringify(widthsByRole(lowBands))}, high=${JSON.stringify(widthsByRole(highBands))})`);
+  // the chroma WEIGHTING cancels out for a uniformly-saturated cohort; the one thing that differs
+  // by design is the dominant's chroma-scaled CAP (owner ruling), so: neutral and the two floored
+  // accents are identical, the dominant lands at each cohort's own cap (low near 35, high above
+  // it), and the two supporting bands stay equal to each other in both.
+  const byRole = (bands) => Object.fromEntries(bands.map((b) => [b.name, b.width]));
+  const lo = byRole(lowBands), hi = byRole(highBands);
+  ok(near(lo.neutral, hi.neutral) && near(lo["accent-1"], hi["accent-1"]) && near(lo["accent-2"], hi["accent-2"]), `uniform cohorts: neutral + floored accents identical (low=${JSON.stringify(lo)}, high=${JSON.stringify(hi)})`);
+  ok(near(lo["dominant-swatch"], POSTER_STRIP_MAX_BAND_PCT_LOW) && hi["dominant-swatch"] > lo["dominant-swatch"] + 5 && near(hi["dominant-swatch"], posterStripDominantCap("#913029")), `uniform cohorts: the dominant sits at each cohort's own chroma-scaled cap, muted at ${POSTER_STRIP_MAX_BAND_PCT_LOW}, vivid well above it (low=${lo["dominant-swatch"].toFixed(2)}, high=${hi["dominant-swatch"].toFixed(2)})`);
+  ok(near(lo["supporting-1"], lo["supporting-2"]) && near(hi["supporting-1"], hi["supporting-2"]), `uniform cohorts: the weighting itself cancels, same-pct supporting bands stay equal to each other in both (low=${lo["supporting-1"].toFixed(2)}/${lo["supporting-2"].toFixed(2)}, high=${hi["supporting-1"].toFixed(2)}/${hi["supporting-2"].toFixed(2)})`);
 }
 
-// ── fix 4: reorder so the two highest-chroma bands sit at the strip's two edges ─────────────────
+// ── fix 4 (owner ruling): neutral pinned to the leading edge, highest chroma at the far edge ────
 {
   const bands = posterStripBands(ENABLED, GROUPS);
-  const byChromaDesc = [...bands].sort((a, b) => chroma(b.key) - chroma(a.key));
-  const edgeKeys = [bands[0].key, bands[bands.length - 1].key];
-  const top2Keys = [byChromaDesc[0].key, byChromaDesc[1].key];
-  ok(edgeKeys.includes(top2Keys[0]) && edgeKeys.includes(top2Keys[1]), `the strip's two edge bands are its two highest-chroma swatches (edges=${edgeKeys.join(",")}, top2=${top2Keys.join(",")})`);
+  const nonNeutralDesc = bands.filter((b) => b.name !== "neutral").sort((a, b) => chroma(b.key) - chroma(a.key));
+  ok(bands[0].name === "neutral", `the neutral ground is the FIRST band (got ${bands.map((b) => b.name).join(",")})`);
+  ok(bands[bands.length - 1].key === nonNeutralDesc[0].key, `the LAST band is the highest-chroma non-neutral swatch (last=${bands[bands.length - 1].name}, want ${nonNeutralDesc[0].name})`);
+  ok(bands[1].key === nonNeutralDesc[1].key, `the rest alternate high-chroma-outward from the far edge: band[1] is the 2nd-highest chroma (got ${bands[1].name}, want ${nonNeutralDesc[1].name})`);
+  // no neutral shown at all: the original alternation stands, two highest chroma at the two edges.
+  const noNeutral = ENABLED.filter((p) => p.name !== "neutral");
+  const nn = posterStripBands(noNeutral, GROUPS);
+  const nnDesc = [...nn].sort((a, b) => chroma(b.key) - chroma(a.key));
+  const nnEdges = [nn[0].key, nn[nn.length - 1].key];
+  ok(!nn.some((b) => b.name === "neutral") && nnEdges.includes(nnDesc[0].key) && nnEdges.includes(nnDesc[1].key), `with no neutral, the two edge bands are the two highest-chroma swatches (edges=${nnEdges.join(",")}, top2=${nnDesc[0].key},${nnDesc[1].key})`);
 }
 
 // ── no story.groups: falls back EXACTLY to the original fixed SAMPLED_W template, unordered ────
@@ -161,7 +179,12 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   const wpDominant = wpBands.find((b) => b.colorRole === "dominant");
   const wpAccents = wpBands.filter((b) => b.colorRole === "accent");
   ok(wpAccents.length === 2, `War and Peace: both accent swatches (icon crimson + gilt gold) survive (got ${wpAccents.length})`);
-  ok(near(wpDominant.width, POSTER_STRIP_MAX_BAND_PCT), `War and Peace: the candle-gold dominant (authored 50%, ~46% uncapped) is clamped (want ${POSTER_STRIP_MAX_BAND_PCT}, got ${wpDominant.width.toFixed(2)})`);
+  const wpCap = posterStripDominantCap(wpDominant.key);
+  ok(wpCap < 39, `test setup: candle gold (chroma ~0.057) earns a cap near the low end (got ${wpCap.toFixed(2)})`);
+  ok(near(wpDominant.width, wpCap), `War and Peace: the candle-gold dominant (authored 50%, ~46% uncapped) is clamped to its chroma-scaled cap (want ${wpCap.toFixed(2)}, got ${wpDominant.width.toFixed(2)})`);
+  ok(wpBands[0].colorRole == null && wpBands[0].name === "neutral", `War and Peace: neutral is the leading band (got ${wpBands.map((b) => b.name).join(",")})`);
+  const wpTop = wpBands.filter((b) => b.name !== "neutral").sort((a, b) => chroma(b.key) - chroma(a.key))[0];
+  ok(wpBands[wpBands.length - 1].key === wpTop.key, `War and Peace: the far edge is the highest-chroma band, icon crimson (got ${wpBands[wpBands.length - 1].name}, want ${wpTop.name})`);
   ok(wpAccents.every((b) => b.width >= POSTER_STRIP_ACCENT_FLOOR_PCT - 0.01), `War and Peace: both accent bands are floored, no longer slivers (got ${wpAccents.map((b) => b.width.toFixed(2))})`);
   assertRendered("War and Peace", wpBands);
 
@@ -171,14 +194,18 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   const heroDominant = heroBands.find((b) => b.colorRole === "dominant");
   const heroRest = heroBands.filter((b) => b.name !== heroDominant.name);
   ok(chroma(heroDominant.key) > 0.15, `test setup: Hero's dominant (courtyard red) really is already high-chroma (got ${chroma(heroDominant.key).toFixed(3)})`);
-  ok(heroDominant.width >= 30, `Hero: an already-vivid dominant is NOT over-compressed by the clamp (got ${heroDominant.width.toFixed(2)})`);
-  // with the vector normalized, the cap binds at a true 35% and 5 other bands share the remaining
-  // 65% (neutral 8 + two floored accents 10 each leave ~37% for the three supporting bands), so the
-  // widest neighbor can legitimately reach ~20%: 1.5x is the margin the cap actually guarantees.
+  ok(near(heroDominant.width, POSTER_STRIP_MAX_BAND_PCT_HIGH), `Hero: an already-vivid dominant (chroma > 0.15) gets the full high cap (want ${POSTER_STRIP_MAX_BAND_PCT_HIGH}, got ${heroDominant.width.toFixed(2)})`);
+  // TKT-0003 differentiation, restored: presets whose dominants differ in chroma render visibly
+  // different dominant widths, both within the [35, 45] band the ruling defines.
+  ok(heroDominant.width - wpDominant.width > 3, `Hero vs War and Peace: the vivid dominant renders > 3 points wider than the candle-gold one (hero=${heroDominant.width.toFixed(2)}, wp=${wpDominant.width.toFixed(2)})`);
+  ok([heroDominant.width, wpDominant.width].every((w) => w >= POSTER_STRIP_MAX_BAND_PCT_LOW - 0.01 && w <= POSTER_STRIP_MAX_BAND_PCT_HIGH + 0.01), `both dominants sit within [${POSTER_STRIP_MAX_BAND_PCT_LOW}, ${POSTER_STRIP_MAX_BAND_PCT_HIGH}] (hero=${heroDominant.width.toFixed(2)}, wp=${wpDominant.width.toFixed(2)})`);
+  // with the vector normalized, the cap binds at a true 45% here and 5 other bands share the
+  // remaining 55% (neutral 8 + two floored accents leave ~27% for three supporting bands), so the
+  // widest neighbor can legitimately reach ~15%: 1.5x is a comfortable margin.
   ok(heroRest.every((b) => heroDominant.width >= b.width * 1.5), `Hero: the vivid dominant remains clearly the strip's leading band, at least 1.5x its widest neighbor (dominant=${heroDominant.width.toFixed(2)}, rest=${heroRest.map((b) => b.width.toFixed(2)).join(",")})`);
   assertRendered("Hero · 2002", heroBands);
 }
 
 if (fails.length) { console.error(`poster-strip FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("poster-strip PASS: posterStripBands() holds all four #646 fixes directly — never drops the 2nd accent (fix 2), clamps the max band + floors accent bands via proportional redistribution (fix 1), weights width by relative chroma without shifting a uniformly-saturated cohort (fix 3), and reorders the two highest-chroma bands to the strip's edges (fix 4) — plus the review fold-ins: a capitalized Neutral + colorRole-less top-up still fill 6 bands (Maison), and every story-path vector sums to 100 with the widest band's rendered share under the cap (Corsa's worst case, War and Peace, Hero)");
+console.log("poster-strip PASS: posterStripBands() holds all four #646 fixes directly — never drops the 2nd accent (fix 2), clamps the dominant to a chroma-scaled 35..45 cap + floors accent bands via proportional redistribution (fix 1), weights width by relative chroma without shifting a uniformly-saturated cohort (fix 3), and pins neutral first and the highest-chroma band last (fix 4) — plus the review fold-ins: a capitalized Neutral + colorRole-less top-up still fill 6 bands (Maison), and every story-path vector sums to 100 with the widest band's rendered share under the cap (Corsa's worst case, War and Peace, Hero)");
 process.exit(0);
