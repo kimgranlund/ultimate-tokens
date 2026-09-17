@@ -580,7 +580,8 @@ export const field = (labelText, control, { labelTitle } = {}) => {
 // itself low-chroma (candle gold, not a vivid color), and the old computation gave it an uncapped
 // share of the strip while a fixed `enabled.slice(0, 6)` cap could silently drop the 2nd accent
 // swatch. Four fixes over the original inline computation:
-//  1. Any one band is capped at POSTER_STRIP_MAX_BAND_PCT (~35%) and any accent band is floored at
+//  1. The dominant band is capped at a chroma-scaled share (posterStripDominantCap, 35%..45%), any
+//     other band at POSTER_STRIP_MAX_BAND_PCT (35%), and any accent band is floored at
 //     POSTER_STRIP_ACCENT_FLOOR_PCT (~10%); the resulting surplus/deficit is redistributed
 //     proportionally across the remaining flexible (uncapped, unfloored, non-neutral) bands.
 //  2. Band SELECTION (not just width) changes: neutral + the dominant swatch + BOTH accent
@@ -591,8 +592,9 @@ export const field = (labelText, control, { labelTitle } = {}) => {
 //     the weighting is renormalized to preserve the shared non-neutral pool's total, so a preset
 //     whose bands are ALL equally muted (or all equally vivid) renders identically to before; only
 //     RELATIVE chroma differences between a preset's own bands shift width.
-//  4. Bands are reordered by chroma, highest first, alternating the strip's two edges inward, so
-//     the most characterful colors frame the strip instead of being backloaded after neutrals.
+//  4. Bands are reordered by chroma: neutral pinned to the leading edge, the rest alternating
+//     high-chroma-outward from the far edge, so the most characterful colors frame the strip
+//     instead of being backloaded after neutrals.
 // Two review fold-ins: the neutral ground is matched case-insensitively and free slots are topped
 // up from colorRole-less palettes (fix A), and the width vector is normalized to sum to 100 before
 // the clamp/floor pass, since the bands render as flex grow factors (fix B). The returned widths
@@ -601,7 +603,9 @@ export const field = (labelText, control, { labelTitle } = {}) => {
 // A preset/set with no story.groups (a user's own "Your Palettes" set) skips fixes 1/3/4 and the
 // reorder entirely, falling back EXACTLY to the original fixed SAMPLED_W template in its original
 // order — no regression there.
-export const POSTER_STRIP_MAX_BAND_PCT = 35;
+export const POSTER_STRIP_MAX_BAND_PCT = 35;        // cap for any NON-dominant band, and the dominant's floor-of-cap
+export const POSTER_STRIP_MAX_BAND_PCT_LOW = 35;    // dominant cap at/below POSTER_STRIP_CAP_CHROMA_LOW
+export const POSTER_STRIP_MAX_BAND_PCT_HIGH = 45;   // dominant cap at/above POSTER_STRIP_CAP_CHROMA_HIGH
 export const POSTER_STRIP_ACCENT_FLOOR_PCT = 10;
 const POSTER_STRIP_NEUTRAL_PCT = 8;
 const POSTER_STRIP_FALLBACK_PCT = 5;
@@ -609,6 +613,19 @@ const POSTER_STRIP_HIER_OF_ROLE = { dominant: "d", supporting: "s", accent: "a" 
 const POSTER_STRIP_SAMPLED_W = [36, 19, 19, 16, 6, 4];
 const POSTER_STRIP_CHROMA_FLOOR_WEIGHT = 0.5; // weight given to a fully-desaturated swatch
 const POSTER_STRIP_CHROMA_REF = 0.15;         // chroma at/above which a swatch gets full weight
+// Owner ruling (review of #646): the dominant's cap scales with ITS OWN chroma, 35% for a near-
+// neutral dominant up to 45% for a vivid one, so chroma weighting reaches the band the ticket is
+// about and presets with different authored/vivid dominants stay visibly different (TKT-0003).
+// Endpoints come from the 343 curated story presets' dominant chromas at 5155f3f: p25 0.0125,
+// p50 0.046, p75 0.079, p90 0.129, max 0.294. LOW sits just above p25 (below it a dominant reads
+// as a tinted neutral); HIGH is POSTER_STRIP_CHROMA_REF, the same "vivid" threshold fix 3 uses.
+export const POSTER_STRIP_CAP_CHROMA_LOW = 0.02;
+export const POSTER_STRIP_CAP_CHROMA_HIGH = POSTER_STRIP_CHROMA_REF;
+export function posterStripDominantCap(hex) {
+  const c = posterStripChroma(hex);
+  const t = Math.min(1, Math.max(0, (c - POSTER_STRIP_CAP_CHROMA_LOW) / (POSTER_STRIP_CAP_CHROMA_HIGH - POSTER_STRIP_CAP_CHROMA_LOW)));
+  return POSTER_STRIP_MAX_BAND_PCT_LOW + t * (POSTER_STRIP_MAX_BAND_PCT_HIGH - POSTER_STRIP_MAX_BAND_PCT_LOW);
+}
 
 // the neutral ground is matched case-insensitively: curated presets author it as "neutral", the
 // product's own design-system presets (Maison/Adia/BZZR in categories/brands.js) as "Neutral".
@@ -675,6 +692,10 @@ function posterStripClampAndFloor(shown, widths) {
   const n = widths.length;
   const locked = shown.map(posterStripIsNeutral);
   const isAccent = shown.map((p) => p.colorRole === "accent");
+  // the dominant's cap is chroma-scaled (35..45); every other band keeps the flat 35 — after the
+  // accent floors and the dominant's share, no non-dominant band can plausibly reach it, the flat
+  // cap is a backstop, not a shaping rule.
+  const cap = shown.map((p) => (p.colorRole === "dominant" ? posterStripDominantCap(p.key) : POSTER_STRIP_MAX_BAND_PCT));
   const w = widths.slice();
   for (let pass = 0; pass < 4; pass++) {
     const fixed = locked.slice();
@@ -682,7 +703,7 @@ function posterStripClampAndFloor(shown, widths) {
     let surplus = 0, deficit = 0;
     for (let i = 0; i < n; i++) {
       if (fixed[i]) continue;
-      if (w[i] > POSTER_STRIP_MAX_BAND_PCT) { surplus += w[i] - POSTER_STRIP_MAX_BAND_PCT; w[i] = POSTER_STRIP_MAX_BAND_PCT; fixed[i] = true; clampedNow.push(i); }
+      if (w[i] > cap[i]) { surplus += w[i] - cap[i]; w[i] = cap[i]; fixed[i] = true; clampedNow.push(i); }
       else if (isAccent[i] && w[i] < POSTER_STRIP_ACCENT_FLOOR_PCT) { deficit += POSTER_STRIP_ACCENT_FLOOR_PCT - w[i]; w[i] = POSTER_STRIP_ACCENT_FLOOR_PCT; fixed[i] = true; flooredNow.push(i); }
     }
     if (!clampedNow.length && !flooredNow.length) break;
@@ -718,14 +739,24 @@ function posterStripNormalize(shown, widths) {
   return widths.map((w, i) => (locked[i] ? w : (w * target) / poolTotal));
 }
 
-// fix 4 — reorder by chroma, highest first, alternating strip-left/strip-right inward, so the most
-// saturated bands frame the strip instead of being backloaded after a run of neutrals.
+// fix 4 — reorder by chroma so the most saturated bands frame the strip instead of being
+// backloaded after a run of neutrals. Owner ruling (review of #646): the neutral ground is pinned
+// to the LEADING edge, then the rest alternate high-chroma-outward from the FAR end, so the last
+// band is the highest-chroma non-neutral and the strip reads grounded-then-vivid rather than split
+// around a mid-strip neutral. With no neutral shown (possible via the top-up path) the original
+// alternation stands: the two highest-chroma bands take the two edges.
 function posterStripReorderByChroma(shown, widths) {
-  const order = shown.map((_, i) => i).sort((a, b) => posterStripChroma(shown[b].key) - posterStripChroma(shown[a].key));
-  const n = order.length;
+  const n = shown.length;
+  const neutralIdx = shown.findIndex(posterStripIsNeutral);
+  const rest = shown.map((_, i) => i).filter((i) => i !== neutralIdx)
+    .sort((a, b) => posterStripChroma(shown[b].key) - posterStripChroma(shown[a].key));
   const positions = new Array(n);
   let lo = 0, hi = n - 1;
-  for (let k = 0; k < n; k++) { const bandIdx = order[k]; if (k % 2 === 0) positions[lo++] = bandIdx; else positions[hi--] = bandIdx; }
+  if (neutralIdx >= 0) positions[lo++] = neutralIdx;
+  // with a pinned neutral the first (highest-chroma) band goes to the far edge; without one it goes
+  // to the leading edge, exactly as before.
+  let toHi = neutralIdx >= 0;
+  for (const bandIdx of rest) { if (toHi) positions[hi--] = bandIdx; else positions[lo++] = bandIdx; toHi = !toHi; }
   return positions.map((i) => ({ key: shown[i].key, name: shown[i].name, colorRole: shown[i].colorRole, width: widths[i] }));
 }
 
