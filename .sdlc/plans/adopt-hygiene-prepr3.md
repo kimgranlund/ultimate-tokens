@@ -20,14 +20,14 @@ Two record classes are declared history and left alone, with the reason: `.sdlc/
 | F6 | ADR-023 and ADR-024 added (U1) | `index.md:19` ADR-004 "superseded (by: unstated in heading)"; `cards/ADR-004.md:1` and `:8` "no ADR id named"; `decisions.md:37` ADR-020 "verifier: confirm the split"; `decisions.md:66-67` gaps G2, G3 read open | name ADR-023 in the index row and the card; ADR-020 row cites ADR-024; G2, G3 closing notes. Card and ADR-020 lines are new |
 | F7 | ADR-013 and ADR-016 amended (U1, R1) | `decisions.md:30` "with no amendment note in ADR-013 (gap G4)"; `decisions.md:33` ADR-016 row silent on the Geometry rename; `decisions.md:68` G4 reads open | append to the two lineage rows; G4 closing note. New |
 | F8 | runbook amended: four `flagOf()` consumers (U1) | `decisions.md:50` "verifier: ... whether `flagOf()` has consumers" | append the answer to the row. New |
-| F9 | legacy plans closed and archived (U1) | `cards/PLAN-adia-exports.md:1` and `cards/PLAN-export-schema.md:1` title status `active`; `cards/PLAN-overhaul.md:1` "none stated (plan-only; nothing here is executed)"; `decisions.md:58` PLAN-overhaul "Phase 4 open ... 4 closeout items unticked"; `decisions.md:69` G5 reads open; `debt.md` R4, D2 read open | card title statuses; PLAN-overhaul row; G5 note; R4, D2 closing notes. Cards and the overhaul row are new |
+| F9 | legacy plans closed and archived (U1) | `cards/PLAN-adia-exports.md:1` and `cards/PLAN-export-schema.md:1` title status `active`; `cards/PLAN-overhaul.md:1` "none stated (plan-only; nothing here is executed)"; `decisions.md:58` PLAN-overhaul "Phase 4 open ... 4 closeout items unticked"; `decisions.md:69` G5 reads open; `debt.md` R4, D2 read open | card title statuses; PLAN-overhaul row; G5 note; R4 closing note, D2 partial note (items 1, 3, 4 stay open). Cards and the overhaul row are new |
 | F10 | reactivity report moved to `docs/reference/reviews/2026-08-20-reactivity/` (U1) | `index.md:75` lists only the 2026-07-17 reviews; `debt.md` D4 reads open | add the review row; D4 closing note. Index row is new |
 | F11 | K18 control reworded to the snapshot case (U1) | `.sdlc/architecture.md:112` K18 table row still describes the old script ("require a `vN` mention ... flag any `RENAME_MAPS`"), its control message, and its `v5` comment limit | reword the three cells to match the §6.1 script. New |
 | F12 | `shipping-changes` rewritten: hooks exist, no pinned model (U2, C5, C8) | `.claude/skills/shipping-changes/references/foundations.md:59-62` "The guards exist because there are no hooks ... There are no local git hooks in this repo"; `references/rubric.md:11` H4 pins `Claude Opus 4.8 (1M context)` | rewrite the §4 heading and sentence; H4 names the running model's line. New (U2-4 grepped SKILL.md only) |
-| F13 | describe-eval fails loudly without the key (U2, U6) | `debt.md` R8 reads open; `decisions.md:70` G6 "custody undecided" is still true but silent on the loud failure; `.sdlc/board.md:8` U2 Next "🟡 U2-9 key at job-level env, follow-up" | R8 closing note; G6 appended; board cell (Orchestrator, at merge). Board cell is new |
-| F14 | CLAUDE.md, pages.yml, `.gitattributes`, `workflow.json`, README, K11 (U2, U1) | `debt.md` R11, C1, G2, G3, D3, R3 (README half), K11 read open | closing notes |
+| F13 | describe-eval fails loudly without the key (U2, U6) | `debt.md` R8 reads open; `decisions.md:70` G6 "custody undecided" is still true but silent on the loud failure; `.sdlc/board.md:8` U2 Next "🟡 U2-9 key at job-level env, follow-up" | R8 partial note (the secret stays human); G6 appended; board cell (Orchestrator, at merge). Board cell is new |
+| F14 | CLAUDE.md, pages.yml, `.gitattributes`, `workflow.json`, README, K11 (U2, U1) | `debt.md` R11, C1, G2, G3, D3, R3 (README half), K11 read open | closing notes; G2 and R3 partial (the header line and the drawer half stay open) |
 | F15 | local branches pruned (U3) | `debt.md` P2 reads open | closing note (local half; remote stays human) |
-| F16 | OD-004 repointed, R1 amendments, PRD/ADR stubs (U1) | `debt.md` R6, R1, R7 read open | closing notes |
+| F16 | OD-004 repointed, R1 amendments, PRD/ADR stubs (U1) | `debt.md` R6, R1, R7 read open | closing notes; R6 partial (the Figma run stays human) |
 | F17 | adapter §8 inheritance table all landed (U1, U2, U3) | `adapter.md:165-174` every row still reads as a to-do ("if C6 is approved") | append one dated amendment after the table. New |
 | F18 | `docs/spec/` holds two specs (pre-existing, the U1 edit sat in the same table) | `.claude/skills/project-docs/SKILL.md:24` "`docs/spec/` (SPEC-*) not present yet" | name the two files |
 | F19 | plan grew from three to seven units (U4 to U7) | `.sdlc/plans/adopt-hygiene.md:17` "grouped into three units", `:19` "in force for all three units", `:165` "the three unit commits" | reword the three lines. New |
@@ -68,20 +68,25 @@ Bold inline labels on added lines: 44. Fix 3, all in `.sdlc/plans/adopt-hygiene.
 
 ## 3. Debt rows the plan closed (one plain note each, appended to the last cell)
 
+Corrected on 2026-09-17 by the U8 pass 2 re-diagnosis (`.sdlc/plans/adopt-hygiene-U8-p2.md`): the first version of this table closed R6, R8, D2, and G2 outright. Each of those rows has a half the plan left open (the row's own grade cell says `human + L1`, or the plan's own out-of-scope table names the remainder), so they are partials. Every note is appended to the last cell; nothing is deleted or reworded.
+
 | Row | Note to append |
 |---|---|
-| R1, R4, R6, R7, D2, D4, G4, K18 | `. Closed by U1 in plan adopt-hygiene (#643)` |
-| R11, C1, D3, G2, G3, K11 | `. Closed by U2 in plan adopt-hygiene (#643)` |
-| R8 | `. Closed by U2 and U6 in plan adopt-hygiene (#643)` |
+| R1, R4, R7, D4, G4, K18 | `. Closed by U1 in plan adopt-hygiene (#643)` |
+| R11, C1, D3, G3, K11 | `. Closed by U2 in plan adopt-hygiene (#643)` |
 | D1 | `. Closed by U3 in plan adopt-hygiene (#643)` |
-| P2 | `. Closed by U3 (local half; the remote sweep stays human) in plan adopt-hygiene (#643)` |
-| C4 (partial) | `. Squash-only set by U3; `delete_branch_on_merge` and protection stay open` |
+| P2 (partial) | `. Closed by U3 (local half; the remote sweep stays human) in plan adopt-hygiene (#643)` |
+| R6 (partial) | `. Results file repointed by U1 in plan adopt-hygiene (#643); the Figma run and the OD-004 decision stay open (human)` |
+| R8 (partial) | `. Workflow half closed by U2 and U6 in plan adopt-hygiene (#643), the run fails loudly without the key; the secret stays open with G6 (human)` |
+| G2 (partial) | `. \`.gitattributes\` half closed by U2 in plan adopt-hygiene (#643); the header line stays open behind the P3 wall` |
+| D2 (partial) | `. Archived and item 2 ticked by U1 in plan adopt-hygiene (#643); Phase 4 items 1, 3, 4 stay open` |
+| C4 (partial) | `. Squash-only set by U3; \`delete_branch_on_merge\` and protection stay open` |
 | P1 (partial) | `. Squash is policy since U3; delete-branch-on-merge stays open with C4` |
 | R3 (partial) | `. README half closed by U1; the drawer half stays open` |
 | P4 | `. Closed by A5: adapter.md §5 names the Orchestrator` |
 | R12 | replace "so it waits for a unit that can" with "so it waits for the first plan after #643 that opens `scripts/` or `test/`; the Orchestrator names R12 in the close comment on #643 (Landing) and adds it to that plan" |
 
-No row is deleted or renumbered; the `Row count:` line stays `7 / 7`, `45 / 45`; the U7 row 2 block stays green (no em dash, no bold in the file).
+That is 13 full closures (12 by unit plus P4) and 8 partials. For the four rows that the first version of this table closed outright, the builder at d7cf7f4 wrote `Closed by ...`; the pass 2 builder replaces that trailing note with the partial text above (the only edit to a note U8 itself wrote; every other cell stays as it is). No row is deleted or renumbered; the `Row count:` line stays `7 / 7`, `45 / 45`; the U7 row 2 block stays green (no em dash, no bold in the file).
 
 ## 4. Landing and close-out items (not U8)
 
@@ -97,13 +102,13 @@ Orchestrator before dispatch: add the units line, this section, the Landing para
 
 ### U8 staleness and wording sweep (S, grade l2)
 
-Added after `.sdlc/verdicts/adopt-hygiene-prepr.md` 🔴 on b44883d; re-diagnosis `.sdlc/plans/adopt-hygiene-prepr3.md` (fact table §1, kept-list §2b, note texts §3). Files: `.sdlc/records/index.md`, `.sdlc/records/decisions.md`, `.sdlc/records/cards/{ADR-004,PLAN-adia-exports,PLAN-export-schema,PLAN-overhaul,PRD-0001}.md`, `.sdlc/debt.md` (note text appended to existing rows only), `.sdlc/adapter.md` (three appended amendment lines, nothing deleted), `.sdlc/architecture.md` (K18 table row only), `.sdlc/plans/adopt-hygiene.md` (lines 17, 19, 21, 163, 165 wording only), `.claude/skills/shipping-changes/SKILL.md` (lines 18 to 19), `.claude/skills/shipping-changes/references/{foundations,rubric}.md`, `.claude/skills/project-docs/SKILL.md` (SPEC row), `README.md:56`, `docs/lld/lld-muted-base-key-spikes.md:221`, `docs/plan/archive/overhaul-plan-2026-08-14.md:75`, `docs/prd/prd-0001-app-shell.md:8`, `docs/reference/references/decision-records.md:397`, `docs/site/go-live-runbook.md:34`. Not touched: `.sdlc/survey.md`, `.sdlc/baseline.md` (dated snapshots), `.claude/CLAUDE.md` (C9), `.sdlc/board.md` (Orchestrator), anything behind the P3 wall. Every replacement text is in `adopt-hygiene-prepr3.md` §1 to §3; the two check scripts are in its §Checks and are run from the unit worktree root as `sh <script> origin/main HEAD` after copying them to `$CLAUDE_JOB_DIR/tmp`.
+Added after `.sdlc/verdicts/adopt-hygiene-prepr.md` 🔴 on b44883d; re-diagnosis `.sdlc/plans/adopt-hygiene-prepr3.md` (fact table §1, kept-list §2b, note texts §3). Files: `.sdlc/records/index.md`, `.sdlc/records/decisions.md`, `.sdlc/records/cards/{ADR-004,PLAN-adia-exports,PLAN-export-schema,PLAN-overhaul,PRD-0001}.md`, `.sdlc/debt.md` (note text appended to existing rows only), `.sdlc/adapter.md` (three appended amendment lines, nothing deleted), `.sdlc/architecture.md` (K18 table row only), `.sdlc/plans/adopt-hygiene.md` (lines 17, 19, 21, 163, 165 wording only), `.claude/skills/shipping-changes/SKILL.md` (lines 18 to 19), `.claude/skills/shipping-changes/references/{foundations,rubric}.md`, `.claude/skills/project-docs/SKILL.md` (SPEC row), `README.md:56`, `docs/lld/lld-muted-base-key-spikes.md:221`, `docs/plan/archive/overhaul-plan-2026-08-14.md:75`, `docs/prd/prd-0001-app-shell.md:8`, `docs/reference/references/decision-records.md:397`, `docs/site/go-live-runbook.md:34`. Not touched: `.sdlc/survey.md`, `.sdlc/baseline.md` (dated snapshots), `.claude/CLAUDE.md` (C9), `.sdlc/board.md` (Orchestrator), anything behind the P3 wall. Every replacement text is in `adopt-hygiene-prepr3.md` §1 to §3; the three check scripts are in its §Checks and are run from the unit worktree root after copying all three to `$CLAUDE_JOB_DIR/tmp` (`sh u8check.sh`, which calls `debt-closure-check.sh` beside it; `sh wording-check.sh origin/main HEAD`).
 
 | # | Criterion | Command | Expected | Negative control (measured at 61a3f90, whose tree equals b44883d outside `.sdlc/verdicts`) |
 |---|---|---|---|---|
 | 1 | records index agrees with the head: ADR-004 names ADR-023, PRD gap closed, ops row marked untracked, reactivity review listed | `u8check.sh` line 1 | `1 index stale: 0 reactivity: 1 ops-untracked: 1` | `2 0 0` |
 | 2 | adapter carries three appended amendments (§2 Merge, §3 ignore rules, §8 landed) and no deletion since 80ae4d8 (U6-4 carried) | `u8check.sh` line 2 | `s2: 1 s3-ignores: 1 s8: 1 deletions-vs-80ae4d8: 0` | `0 0 0 0`; a reword of any adapter line makes the last count non-zero |
-| 3 | the 17 closed debt rows say which unit closed them, the three partials name U1/U3, R12 names its trigger, the U7 wording block stays green | `u8check.sh` line 3 | `open-of-17: [] partials: 3 R12-trigger: 1 emdash: 0 bold: 0 counts: 7/7 45/45` | `[R1 R4 R6 R7 R8 R11 C1 D1 D2 D3 D4 G2 G3 G4 K11 K18 P2] 0 0 0 0 7/7 45/45`; dropping one note prints that id inside the brackets |
+| 3 | every closing note in `debt.md` agrees with its row's own evidence: 13 full closures whose evidence is true and nothing named is still open, 8 partials whose closed half is true and whose open half is still open, no closure without a note; R12 names its trigger; the U7 wording block stays green | `u8check.sh` line 3 (runs `debt-closure-check.sh`, §Checks) | no row line, then `3 debt disagreeing: 0 R12-trigger: 1 emdash: 0 bold: 0 counts: 7/7 45/45` | at 61a3f90: twenty `no-note` lines (every audited row but R3), `disagreeing: 20`; at d7cf7f4: `false-close R6`, `false-close R8`, `false-close D2`, `false-close G2`, `disagreeing: 4`; on a scratch copy of the corrected file: a generated header planted in the first 600 bytes of `ui.html` prints `half-gone G2`; `.gitattributes` removed prints `not-done G2` and `not-done G3`; ticking overhaul Phase 4 items 1, 3, 4 prints `half-gone D2`; dropping D4's note prints `no-note D4` |
 | 4 | decisions ledger: gaps G1 to G5 closed with a date, ADR-013/ADR-016/ADR-020/SITE-runbook/PLAN-overhaul rows updated, G6 notes the loud failure | `u8check.sh` line 4 | `gaps-closed: 5 rows: 1 1 1 1 1 G6: 1` | `0 0 0 0 0 0 0` |
 | 5 | cards: the two legacy plan cards no longer read `active`, PLAN-overhaul reads closed, ADR-004's card names ADR-023 | `u8check.sh` line 5 | `active: 0 overhaul-closed: 1 adr004-names-023: 2` | `2 0 0` |
 | 6 | architecture K18 table row describes the §6.1 script as written; the script still passes | `u8check.sh` line 6 | `vN: 0 snapshot: 1 script: 0` | `1 1 0` |
@@ -115,7 +120,7 @@ Added after `.sdlc/verdicts/adopt-hygiene-prepr.md` 🔴 on b44883d; re-diagnosi
 | 12 | gates green, tree clean, branding clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l; node test/repo/branding.mjs \| tail -1` | `all 44 test files passed`, `0`, `clean (N files scanned)` | P1 control, then rerun `npm test` so generated files settle |
 | 13 | Orchestrator at merge: board U2 cell closed, U8 row present | `grep -c 'follow-up' .sdlc/board.md; grep -c 'U8' .sdlc/board.md` | `0`, `1` or more | b44883d: `1`, `0` |
 
-Prototype (2026-09-17, detached scratch worktree of 61a3f90 with the §1 to §3 edits applied by script, then removed): rows 1 to 10 printed exactly the Expected column; at 61a3f90 they printed exactly the Negative control column. Rows 11 to 13 were not rerun in the scratch (row 2's deletion count and row 3's U7 block are included in the prototype output; `npm test` is the builder's and verifier's own run).
+Prototype (2026-09-17, detached scratch worktree of 61a3f90 with the §1 to §3 edits applied by script, then removed): rows 1 to 10 printed exactly the Expected column; at 61a3f90 they printed exactly the Negative control column. Row 3 was re-prototyped in pass 2 (2026-09-17, `.sdlc/plans/adopt-hygiene-U8-p2.md`): `debt-closure-check.sh` run in scratch worktrees at b44883d and d7cf7f4 and on a scratch copy of d7cf7f4 with the corrected §3 notes, printing the Negative control column and `0` respectively; the four flipped-reality controls printed the lines named. Rows 11 to 13 were not rerun in the scratch (row 2's deletion count and row 3's U7 block are included in the prototype output; `npm test` is the builder's and verifier's own run).
 
 ## Checks
 
@@ -126,14 +131,81 @@ Prototype (2026-09-17, detached scratch worktree of 61a3f90 with the §1 to §3 
 X=":!.sdlc/verdicts :!.sdlc/handoffs :!.sdlc/plans/*-p*.md :!.sdlc/questions :!.sdlc/tickets :!.sdlc/survey.md :!.sdlc/baseline.md :!docs/plan/archive :!CHANGELOG.md :!docs/tickets"
 echo "1 index stale: $(grep -c 'unstated in heading\|^No PRD' .sdlc/records/index.md) reactivity: $(grep -c '2026-08-20-reactivity' .sdlc/records/index.md) ops-untracked: $(grep -E '^\| \.claude/ops' .sdlc/records/index.md | grep -c untracked)"
 echo "2 adapter amendments s2: $(awk '/^## 2\. /,/^### 2\.1/' .sdlc/adapter.md | grep -c 'Amendment (2026-09-17)') s3-ignores: $(awk '/^## 3\. /,/^## 4\. /' .sdlc/adapter.md | grep -c 'Amendment.*fake-tickets') s8: $(awk '/^## 8\. /,0' .sdlc/adapter.md | grep -c 'Amendment (2026-09-17)') deletions-vs-80ae4d8: $(git diff 80ae4d8 -- .sdlc/adapter.md | grep -cE '^-[^-]')"
-open=$(for id in R1 R4 R6 R7 R8 R11 C1 D1 D2 D3 D4 G2 G3 G4 K11 K18 P2; do grep -E "^\| $id " .sdlc/debt.md | grep -qE 'Closed by U[1-7]' || printf '%s ' "$id"; done)
-echo "3 debt open-of-17: [${open}] partials: $(grep -E '^\| (C4|P1|R3) ' .sdlc/debt.md | grep -c 'U[13]') R12-trigger: $(grep -E '^\| R12 ' .sdlc/debt.md | grep -c '#643') emdash: $(grep -c $'\xe2\x80\x94' .sdlc/debt.md) bold: $(grep -cE '\*\*[^*]+\*\*' .sdlc/debt.md) counts: $(grep -oE 'Config smells [0-9]+' .sdlc/debt.md | tr -dc '0-9')/$(grep -cE '^\| C[0-9]+ ' .sdlc/debt.md) $(grep -oE 'total [0-9]+' .sdlc/debt.md | tr -dc '0-9')/$(grep -cE '^\| [HRCGDKP][0-9]+ ' .sdlc/debt.md)"
+DC=$(sh "$(dirname "$0")/debt-closure-check.sh"); echo "$DC" | grep -v '^debt closure'
+echo "3 debt disagreeing: $(echo "$DC" | tail -n1 | tr -dc '0-9') R12-trigger: $(grep -E '^\| R12 ' .sdlc/debt.md | grep -c '#643') emdash: $(grep -c $'\xe2\x80\x94' .sdlc/debt.md) bold: $(grep -cE '\*\*[^*]+\*\*' .sdlc/debt.md) counts: $(grep -oE 'Config smells [0-9]+' .sdlc/debt.md | tr -dc '0-9')/$(grep -cE '^\| C[0-9]+ ' .sdlc/debt.md) $(grep -oE 'total [0-9]+' .sdlc/debt.md | tr -dc '0-9')/$(grep -cE '^\| [HRCGDKP][0-9]+ ' .sdlc/debt.md)"
 echo "4 decisions gaps-closed: $(awk '/^## Gaps/,/^## Human/' .sdlc/records/decisions.md | grep -cE '^\| G[1-5] .*closed 2026-09-16') rows: $(grep -E '^\| ADR-013 ' .sdlc/records/decisions.md | grep -c 'closing G4') $(grep -E '^\| ADR-016 ' .sdlc/records/decisions.md | grep -c 'amended 2026-09-16') $(grep -E '^\| ADR-020 ' .sdlc/records/decisions.md | grep -c 'ADR-024') $(grep -E '^\| SITE-runbook ' .sdlc/records/decisions.md | grep -c 'amended 2026-09-16') $(grep -E '^\| PLAN-overhaul ' .sdlc/records/decisions.md | grep -c 'closed 2026-09-16') G6: $(grep -E '^\| G6 ' .sdlc/records/decisions.md | grep -c 'fails loudly')"
 echo "5 cards active: $(cat .sdlc/records/cards/PLAN-adia-exports.md .sdlc/records/cards/PLAN-export-schema.md | grep -E '^# ' | grep -c '· active') overhaul-closed: $(head -n1 .sdlc/records/cards/PLAN-overhaul.md | grep -c 'closed 2026-09-16') adr004-names-023: $(grep -c 'ADR-023' .sdlc/records/cards/ADR-004.md)"
 echo "6 architecture K18 vN: $(grep -E '^\| K18 ' .sdlc/architecture.md | grep -c 'vN` mention') snapshot: $(grep -E '^\| K18 ' .sdlc/architecture.md | grep -c 'test/ui/persist.mjs') script: $(sed -n '/^K18:/,/^```$/p' .sdlc/architecture.md | sed '1d;2d;$d' | bash | wc -l | tr -d ' ')"
 echo "7 plan three-units: $(grep -c 'three units a `\|all three units\|three unit commits' .sdlc/plans/adopt-hygiene.md) bold-lead: $(grep -cE '^\*\*[^*]+\*\*' .sdlc/plans/adopt-hygiene.md) U8-listed: $(grep -c '^- \[.\] U8 ' .sdlc/plans/adopt-hygiene.md)"
 echo "8 shipping refs stale: $(cat .claude/skills/shipping-changes/references/foundations.md .claude/skills/shipping-changes/references/rubric.md .claude/skills/shipping-changes/SKILL.md | grep -c 'no local git hooks\|there are no hooks\|Opus 4.8')"
 echo "9 project-docs spec-absent: $(grep 'docs/spec/' .claude/skills/project-docs/SKILL.md | grep -c 'not present yet') spec-files: $(ls docs/spec/*.md | wc -l | tr -d ' ')"
+```
+
+`debt-closure-check.sh` (called by `u8check.sh` line 3 from the same directory; each row's closed part and open part are read from the tree, the note only tells the script which of the two must hold):
+
+```sh
+#!/bin/sh
+# debt-closure-check.sh: every closing note in .sdlc/debt.md is checked against the row's own evidence,
+# not against the note string. Run from the checkout root. Prints one line per row whose note and
+# reality disagree, then a summary; exit 1 if any row printed.
+#   false-close <id>   the note reads as a full closure but part of the row is still open
+#   not-done <id>      the note claims a closure (full or partial) whose closed part is not true
+#   half-gone <id>     a partial note names an open half that is no longer open
+#   no-note <id>       the row's closed part is true and the row carries no closing note
+# Probes that need gh (C4, P1, R8) read the live repository; set NO_GH=1 to skip them.
+DR=docs/reference/references/decision-records.md
+OV=docs/plan/archive/overhaul-plan-2026-08-14.md
+note() { grep -E "^\| $1 " .sdlc/debt.md | awk -F'|' '{print $(NF-1)}'; }
+# closed part of the row, true when the unit did what the note says
+done_probe() { case $1 in
+  R1) [ "$(grep -c 'Amendment (2026-09-16)' $DR)" -ge 3 ] && grep -q 'resolve.mjs' docs/lld/lld-muted-base-key-spikes.md \
+      && grep -q 'flagOf()` consumers' docs/site/go-live-runbook.md && grep -q 'Amendment (2026-09-16)' docs/site/describe-palette-spec.md ;;
+  R3) grep -q 'interchange-only' README.md ;;
+  R4) ! ls docs/plan/*.md >/dev/null 2>&1 && [ -z "$(grep -L '^status: complete' docs/plan/archive/plan-2026-09-*.md)" ] && grep -q 'Closed 2026-09-16' $OV ;;
+  R6) ! grep -q 'docs/spec/CHANGELOG' docs/reference/references/od-004-plugin-free-import-test.md $DR && git ls-files --error-unmatch CHANGELOG.md >/dev/null 2>&1 ;;
+  R7) grep -q '^## ADR-023 ' $DR && grep -q '^## ADR-024 ' $DR && [ -f docs/prd/prd-0001-app-shell.md ] ;;
+  R8) grep -q 'ANTHROPIC_API_KEY is not set' .github/workflows/describe-eval.yml && grep -q 'exit 1' .github/workflows/describe-eval.yml ;;
+  R11) grep -q 'gen:adia-exports' .claude/CLAUDE.md ;;
+  C1) grep -q 'node-version: 22' .github/workflows/pages.yml && grep -q 'npm ci' .github/workflows/pages.yml && ! grep -q 'npm install' .github/workflows/pages.yml ;;
+  C4|P1) [ -n "$NO_GH" ] || [ "$(gh api repos/:owner/:repo --jq '[.allow_squash_merge,.allow_merge_commit,.allow_rebase_merge]' 2>/dev/null)" = "[true,false,false]" ] ;;
+  D1) [ -z "$(git ls-files .claude/ops)" ] ;;
+  D2) [ "$(awk '/^## Phase 4/,/^\*\*Closed/' $OV | grep -c '^- \[x\]')" -ge 1 ] && grep -q 'Closed 2026-09-16' $OV ;;
+  D3) [ ! -f .claude/workflow.json ] || grep -q '"canonical": ".sdlc/adapter.md"' .claude/workflow.json ;;
+  D4) [ -z "$(git ls-files .claude/docs/reports)" ] && ls docs/reference/reviews/2026-08-20-reactivity/*.md >/dev/null 2>&1 ;;
+  G2) grep -q '^figma/plugin/ui.html linguist-generated -diff' .gitattributes 2>/dev/null ;;
+  G3) grep -q '^src/ui/describe-mcp-assets.js linguist-generated -diff' .gitattributes 2>/dev/null ;;
+  G4) grep -q 'gen-font-test' README.md || [ ! -e scripts/gen-font-test.mjs ] ;;
+  K11) grep 'html:' .claude/CLAUDE.md | grep -q 'exception' ;;
+  K18) sed -n '/^K18:/,/^```$/p' .sdlc/architecture.md | grep -q 'test/ui/persist.mjs' ;;
+  P2) [ "$(git branch -vv | grep -c ': gone\]')" -eq 0 ] ;;
+  P4) awk '/^## 5\. /,/^## 6\. /' .sdlc/adapter.md | grep -q 'The Orchestrator closes a plan' ;;
+  *) return 2 ;;
+esac; }
+# open part of the row: true while something the row names is still undone (rows with no open half return 1)
+open_probe() { case $1 in
+  R3) grep 'Figma UI3' src/ui/overlays/drawer.js | grep -qvi 'interchange' ;;
+  R6) grep -E '^\| OD-004 ' .sdlc/records/index.md | grep -q 'OPEN' ;;
+  R8) [ -n "$NO_GH" ] && return 1; ! gh secret list 2>/dev/null | grep -q '^ANTHROPIC_API_KEY' ;;
+  C4) [ -n "$NO_GH" ] && return 1; [ "$(gh api repos/:owner/:repo --jq '.delete_branch_on_merge' 2>/dev/null)" = "false" ] || ! gh api repos/:owner/:repo/branches/main/protection >/dev/null 2>&1 ;;
+  P1) [ -n "$NO_GH" ] && return 1; [ "$(gh api repos/:owner/:repo --jq '.delete_branch_on_merge' 2>/dev/null)" = "false" ] ;;
+  D2) [ "$(awk '/^## Phase 4/,/^\*\*Closed/' $OV | grep -c '^- \[ \]')" -ge 1 ] ;;
+  G2) ! head -c 600 figma/plugin/ui.html | grep -qi 'generated' ;;
+  P2) git branch -r | grep -vqE 'origin/(HEAD|main)$' ;;
+  *) return 1 ;;
+esac; }
+bad=0
+for id in R1 R3 R4 R6 R7 R8 R11 C1 C4 D1 D2 D3 D4 G2 G3 G4 K11 K18 P1 P2 P4; do
+  n=$(note $id); kind=open
+  echo "$n" | grep -qE 'half|stays? open|stay open' && kind=partial
+  [ $kind = open ] && echo "$n" | grep -qE 'Closed by (U[0-9]|A5)|set by U[0-9]|policy since U[0-9]' && kind=full
+  done_probe $id; d=$?; open_probe $id; o=$?
+  case $kind in
+    full)    [ $d -eq 0 ] || { echo "not-done $id"; bad=$((bad+1)); }; [ $o -ne 0 ] || { echo "false-close $id"; bad=$((bad+1)); } ;;
+    partial) [ $d -eq 0 ] || { echo "not-done $id"; bad=$((bad+1)); }; [ $o -eq 0 ] || { echo "half-gone $id"; bad=$((bad+1)); } ;;
+    open)    [ $d -ne 0 ] || { echo "no-note $id"; bad=$((bad+1)); } ;;
+  esac
+done
+echo "debt closure rows disagreeing with their evidence: $bad"; [ $bad -eq 0 ]
 ```
 
 `wording-check.sh` (the dash is spelled as bytes, so the plan and this file carry none):
@@ -160,7 +232,7 @@ nd=$(printf '%s' "$dashes" | grep -c .); nl=$(printf '%s' "$labels" | grep -c .)
 echo "plan-authored em dashes: $nd, bold labels: $nl"; [ "$nd" -eq 0 ] && [ "$nl" -eq 0 ]
 ```
 
-Why these bite where the earlier rounds did not: each fact grep reads the sentence the fact made false (or the note that closes it), not a count of some other string; the debt loop prints the id of any closed row without its note; the adapter check pairs "amendment present" with "no deletion", so a fix that rewrites instead of appending fails; the wording script starts from every added line and subtracts an enumerated kept list, so a new dash or label anywhere the plan wrote shows up and a kept exception cannot hide a new one on the same file.
+Why these bite where the earlier rounds did not: each fact grep reads the sentence the fact made false (or the note that closes it), not a count of some other string; the debt script reads each row's own evidence, so a note that closes a row whose open half is still true prints `false-close`, a note whose closed half is not in the tree prints `not-done`, and a row that is done with no note prints `no-note`; the adapter check pairs "amendment present" with "no deletion", so a fix that rewrites instead of appending fails; the wording script starts from every added line and subtracts an enumerated kept list, so a new dash or label anywhere the plan wrote shows up and a kept exception cannot hide a new one on the same file.
 
 ## Replacement texts (for the builder, exact)
 
