@@ -3,7 +3,7 @@ status: approved
 ticket: #643 (github; mirrored from local T-0001, kept in .sdlc/tickets as history)
 priority: P1
 lane: docs
-size: M (U1 M + U2 M + U3 S + U4 S + U5 S + U6 S = 8 points)
+size: M (U1 M + U2 M + U3 S + U4 S + U5 S + U6 S + U7 S = 9 points)
 labels: kind:chore · size:M · lane:docs · mode:multi
 unit: A7
 written: 2026-09-16
@@ -38,6 +38,7 @@ Sixteen S items the debt map lists under "A7 hygiene candidates", plus the eight
 - [x] U4 (S) pre-land fixes: branding in a committed review record, U1-7 ticket exclusion · grade l2 · reviewer-l1 · verifier-l1
 - [x] U5 (S) drop the drill-only `worktree.bgIsolation` from committed `.claude/settings.json` · grade l1 · reviewer-l1 · verifier-l1
 - [x] U6 (S) pre-land 2: stale pointers to archived plans, eval key scope, adapter amendments, debt rows · grade l3 · reviewer-l2 · verifier-l2
+- [~] U7 (S) declare the `nonoun` marketplace; debt rows for the unpushed repo and the U6 review minors · grade l2 · reviewer-l1 · verifier-l1
 
 Dispatch order: U2 first when possible (it adds `.worktrees/` to `.gitignore` and to the branding skip list, so a root-checkout `npm test` stops walking the unit worktrees). U1 and U3 are independent of U2 and of each other; their file sets do not overlap. Builders run gates inside `.worktrees/<unit>` only. `npm run build` is required for U2 (it touches `.github/` and `test/repo/`, and the verifier at pre-land runs it always); U1 and U3 need only `npm test`.
 
@@ -127,6 +128,16 @@ Added after `.sdlc/verdicts/adopt-hygiene-prepr.md` 🔴 on 80ae4d8. Files: `.sd
 | 4 | the two behind-wall pointers are debt rows, adapter §2.2 and §3 carry dated amendments naming what U2/U3 changed, T-0001 names #643 | `grep -c 'gen-adia-derived-exports.mjs' .sdlc/debt.md; awk '/^### 2.2/,/^## 3/' .sdlc/adapter.md \| grep -c 'Amendment (2026-09-17)'; awk '/^## 3/,/^## 4/' .sdlc/adapter.md \| grep -c 'Amendment (2026-09-17)'; grep -c '#643' .sdlc/tickets/T-0001.md; git diff 80ae4d8 -- .sdlc/adapter.md \| grep -cE '^-[^-]'` | `1`+, `1`, `1`, `1`+, `0` | at 80ae4d8: `0`, `0`, `0`, `0` |
 | 5 | gates green, tree clean, branding clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l` | `all 44 test files passed`, `0` | P1 control (restore, then rerun `npm test` so generated files settle) |
 
+### U7 declare the nonoun marketplace (S, grade l2)
+
+Human answer B in `.sdlc/questions/adopt-hygiene-marketplace.md` (commit cec7529). Files: `.claude/settings.json` (`extraKnownMarketplaces` only), `.sdlc/debt.md` (debt C5 marked resolved by this unit, a new row for pushing `kimgranlund/sdlc-orchestration` to GitHub, and the two U6 review minors: C6 lists `.sdlc/debt.md` too; the new C5/C6 ids that collide with adapter conflict ids get a note or distinct ids).
+
+| # | Criterion | Command | Expected | Negative control |
+|---|---|---|---|---|
+| 1 | `nonoun` is declared with the same shape as `nonoun-plugins`; nothing else in settings changes | `node -e 'const s=require("./.claude/settings.json"); const m=s.extraKnownMarketplaces.nonoun; console.log(m&&m.source.source, m&&m.source.repo, s.enabledPlugins["sdlc@nonoun"], s.worktree===undefined)'; git diff 39db0a9 -- .claude/settings.json \| grep -cE '^[-+][^-+]'` | `github kimgranlund/sdlc-orchestration true true`, then `5` or fewer added lines and `0` removed non-comma lines (read the diff) | at 39db0a9: `undefined undefined true true` |
+| 2 | debt records the unpushed marketplace repo, C5 resolved, C6 complete, id clash addressed | `grep -c 'sdlc-orchestration' .sdlc/debt.md; git grep -l '/Users/' -- .sdlc ':!.sdlc/verdicts' ':!.sdlc/handoffs' ':!.sdlc/runtime' \| while read f; do grep -q "$f" .sdlc/debt.md \|\| echo "missing $f"; done` | `1`+, then no `missing` line | at 39db0a9: first count `0` |
+| 3 | JSON valid, `npm test` green, tree clean, branding clean | `npm test 2>&1 \| tail -1; git status --porcelain \| wc -l` | `all 44 test files passed`, `0` | P1 control, then rerun `npm test` |
+
 ## Risks and assumptions
 
 | Risk | Handling |
@@ -170,3 +181,4 @@ python3 /Users/kimba/Projects/nonoun/sdlc-orchestration/plugins/sdlc/scripts/ada
 | 2026-09-16 | U4 added (pre-land fixes); row 7 also excludes `.sdlc/tickets` | pre-land record .sdlc/verdicts/adopt-hygiene-prepr.md 🔴 on 29a2c06: npm test red on a committed record, U1-7 hit in the local ticket |
 | 2026-09-17 | ticket mirrored to GitHub #643; U5 added (drop drill-only bgIsolation) | human answers A, A, A in commit 2304368 |
 | 2026-09-17 | U6 added (stale pointers, eval key scope, adapter amendments, debt rows); P1 control recipe: rerun `npm test` after restoring | pre-land record 🔴 on 80ae4d8 |
+| 2026-09-17 | U7 added (declare `nonoun` marketplace, debt rows, U6 review minors) | human answer B, `.sdlc/questions/adopt-hygiene-marketplace.md` |
