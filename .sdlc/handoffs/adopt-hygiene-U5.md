@@ -30,6 +30,12 @@ This unit's scope is `.claude/settings.json` only (per plan); it does not touch
 `.sdlc/verdicts/`. Once U4 merges ahead of or alongside U5, `npm test` on the merged tree will
 be green with no further action needed here.
 
+**Combined-tree verification (2026-09-17).** `git worktree add --detach /tmp/u5-probe fe89fc9`,
+`git -C /tmp/u5-probe merge --no-commit --no-ff 8ebf172` (U4's head) merged clean; `npm test`
+there printed `✓ all 44 test files passed`. Probe removed
+(`git worktree remove /tmp/u5-probe --force`). Confirms U5 + U4 together are green; the
+criterion-3 red on U5 alone is exactly the missing U4 merge, nothing else.
+
 ## Plan-level scope wall
 
 No file outside `.claude/settings.json` changed. No `--no-verify`. `.sdlc/board.md` untouched.
