@@ -49,7 +49,7 @@ Decision order: ADRs by number, then everything else by first commit date. All d
 | LLD-app-shell | docs/lld/app-shell.md | lld | 2026-07-12 (last 2026-09-13) | none | cards/LLD-app-shell.md |
 | OD-004 | docs/reference/references/od-004-plugin-free-import-test.md | open decision | 2026-07-12 | OPEN | cards/OD-004.md |
 | SITE-describe-palette | docs/site/describe-palette-spec.md | spec | 2026-07-18 (last 2026-09-11) | none | cards/SITE-describe-palette.md |
-| PLAN-overhaul | docs/plan/archive/overhaul-plan-2026-08-14.md | plan | 2026-08-14 | none | cards/PLAN-overhaul.md |
+| PLAN-overhaul | docs/plan/archive/overhaul-plan-2026-08-14.md | plan | 2026-08-14 (closed 2026-09-16) | complete (the file has no status field; the dated Closed note under Phase 4 rules, items 1, 3, 4 carried as debt D2) | cards/PLAN-overhaul.md |
 | SPEC-muted-base | docs/spec/spec-muted-base-key-spikes.md | spec | 2026-09-10 | approved | cards/SPEC-muted-base.md |
 | LLD-muted-base | docs/lld/lld-muted-base-key-spikes.md | lld | 2026-09-10 | approved | cards/LLD-muted-base.md |
 | SPEC-panda-park | docs/spec/spec-panda-park-ui-exports.md | spec | 2026-09-11 | approved | cards/SPEC-panda-park.md |
