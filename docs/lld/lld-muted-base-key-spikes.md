@@ -190,10 +190,23 @@ P8 documents groups last.
 3. **Cusp-anchored prime on near-achromatic palettes (REQ-051, REQ-052).** For Neutral (chroma 29) `lPrime` is still the
    hue's cusp lightness, which is fine; at `chroma 0` `peakC` still returns a tone, `s = 0`, greys.
    Detection: AC-050 (c) includes `chroma 0`. Fallback: none.
-4. **Yellow compression (REQ-051, EX-5).** With `lPrime` near 0.9 the three light swatches sit
-   0.013 apart and may read as duplicates, and a positive skew (Warning's `40`) pushes them closer
-   still. Detection: user report (R1 is ratified as is). Fallback: lower `PRIME_L_MAX` bias or a
-   minimum step; both are one-constant changes gated by AC-050 (d)/(d2).
+4. **Yellow compression (REQ-051, EX-5). FIRED 2026-09-13, remedied 2026-09-17 (#641).** With
+   `lPrime` near 0.9 the three light swatches sit 0.013 apart and may read as duplicates, and a
+   positive skew (Warning's `40`) pushes them closer still. Detection: user report (R1 is ratified as
+   is) — and the detection signal DID fire, as a user report on 2026-09-13 filed as #641. Measured at
+   the time: ten of the sixteen default palettes spanned less than `6 * PRIME_STEP`, down to 0.276 for
+   Data 5, because the clipped side's lost travel was never handed to the other side. Remedy taken
+   (owner ruling option A, 2026-09-17): shortfall REDISTRIBUTION in `primeSteps(lPrime)` — each side
+   keeps its own even spacing, and a clipped side's lost travel moves to the unclipped side, capped by
+   that side's room. The listed `PRIME_L_MAX` bias fallback was NOT taken: biasing the bound moves
+   `lPrime` itself, and `l = key.l` is the mechanism by which REQ-056 makes `prime` reproduce
+   `deriveKeyColor`'s hex exactly, so the bias would trade this defect for a worse one. Redistribution
+   leaves the anchor untouched and leaves every unclipped palette byte-identical. Gated by the rewritten
+   AC-050 (d1)/(d3)/(d4)/(d5)/(d6).
+   Left open (separate defect, out of #641's scope): for yellow-green hues around 108..119 the cusp
+   construction puts `lPrime` ITSELF above `PRIME_L_MAX` (up to 0.958), so `prime` is out of bounds
+   before any ladder is built and the light side inverts. Byte-identical before and after #641; AC-050
+   (d4) now pins the offending hues to that band so it cannot spread.
 5. **Hue drift on the outer swatches (REQ-053).** All seven share `key.h`; the ±0.27 `l` excursions
    drift by the OKHSL/OKLCH Abney residual (~2° worst case, blues) relative to `prime`'s pixel hue.
    Detection: AC-050 (e) chroma-aware budget against the prime pixel. Fallback: none this round; a
