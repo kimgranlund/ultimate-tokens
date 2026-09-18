@@ -352,8 +352,14 @@ function derivePalette(palette, controls, overrides) {
   // the palette's OWN unresolved value (REQ-002: the ramp target above never feeds this); `primeChroma`
   // is cleared on the palette so prime.mjs's own `palette.primeChroma ?? controls.primeChroma` falls
   // straight through to the value already resolved above (REQ-008) — prime.mjs itself never changes.
+  // `anchor` (ticket #681, U1) forwards straight through: prime.mjs's own branch is a no-op when it
+  // is absent (byte-identical to the pre-#681 call below), and this is the ONLY site that resolves a
+  // palette down into the primeSwatches() call for every emitted export format — omitting it here
+  // would leave `prime.DEFAULT` cusp-derived in every real export while `primeSwatches()` called
+  // directly (as the anchor-identity test does) rendered the anchor, a silent split between the two
+  // that C2/C4 (test/engine/anchor.mjs) exist specifically to catch.
   const primeList = primeSwatches(
-    { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, primeChroma: undefined },
+    { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, anchor: palette.anchor, primeChroma: undefined },
     { ...controls, primeChroma: primeChromaResolved },
   );
   const prime = {}; // { [step]: {step, l, s, hue, rgb, hex, oklch, inGamut} }

@@ -22,6 +22,9 @@ const inDomainState = () => {
     // fuzzed palette carries it any more; the field's own drop+report is covered separately below.
     if (rnd() > 0.5) p.primeChroma = rnd() * 100; // OPTIONAL per-palette primeChroma override (REQ-010) — same absent/round-trip shape as cuspPull
     if (rnd() > 0.5) p.group = pick(["material", "brand", "system", "data"]); // OPTIONAL canvas group (ticket #556) — same absent/round-trip shape as cuspPull/primeChroma
+    // anchor / sourceAnchor (ticket #681, U1) — OPTIONAL, well-formed "#RRGGBB" only (an in-domain
+    // fuzzed value never exercises the malformed-drop path; that's the dedicated clamp block above).
+    if (rnd() > 0.5) { const hex = "#" + Math.floor(rnd() * 0x1000000).toString(16).padStart(6, "0").toUpperCase(); p.anchor = hex; p.sourceAnchor = hex; }
     return p;
   });
   // per-doc semantic-mapping overrides: a random, shape-valid subset re-points some roles.
@@ -111,6 +114,27 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   ] };
   const hydNoGroups = U.hydrate(U.serialize(noGroupsDoc));
   if (hydNoGroups.palettes.some((p) => "group" in p)) FAIL("clamp", "a doc with no group data must hydrate with every palette.group still absent (nullable field)");
+}
+// anchor / sourceAnchor (ticket #681, U1): a well-formed "#RRGGBB" round-trips as-is; a malformed one
+// (wrong length, no "#", lowercase — the domain is the canonical UPPERCASE form the generator emits)
+// is DROPPED (left absent), same shape as `group` above — persist.js's clampHex has no "nearest valid
+// hex" to clamp toward, so an out-of-domain value has nowhere to go but absent.
+{
+  const withAnchor = JSON.parse(JSON.stringify(base)); withAnchor.palettes[0].anchor = "#0C5DCC"; withAnchor.palettes[0].sourceAnchor = "#0C5DCC";
+  const hydA = U.hydrate(U.serialize(withAnchor));
+  if (hydA.palettes[0].anchor !== "#0C5DCC") FAIL("clamp", `explicit palette.anchor "#0C5DCC" must round-trip as-is (got ${JSON.stringify(hydA.palettes[0].anchor)})`);
+  if (hydA.palettes[0].sourceAnchor !== "#0C5DCC") FAIL("clamp", `explicit palette.sourceAnchor "#0C5DCC" must round-trip as-is (got ${JSON.stringify(hydA.palettes[0].sourceAnchor)})`);
+  if (!deepEq(hydA.palettes[0].hue, base.palettes[0].hue)) FAIL("clamp", "setting palette.anchor disturbed sibling hue");
+
+  for (const bad of ["0C5DCC", "#0C5DC", "#0C5DCCC", "#0c5dcc", "not-a-hex", 12345]) {
+    const badA = JSON.parse(JSON.stringify(base)); badA.palettes[0].anchor = bad;
+    const hydBadA = U.hydrate(U.serialize(badA));
+    if ("anchor" in hydBadA.palettes[0]) FAIL("clamp", `a malformed palette.anchor ${JSON.stringify(bad)} must be DROPPED (left absent), got ${JSON.stringify(hydBadA.palettes[0].anchor)}`);
+  }
+
+  const noAnchor = JSON.parse(JSON.stringify(base)); delete noAnchor.palettes[0].anchor; delete noAnchor.palettes[0].sourceAnchor;
+  const hydNoA = U.hydrate(U.serialize(noAnchor));
+  if ("anchor" in hydNoA.palettes[0] || "sourceAnchor" in hydNoA.palettes[0]) FAIL("clamp", "absent palette.anchor/sourceAnchor must stay absent (identity gate)");
 }
 // paletteGroups (SPEC 0.3.0, ticket #559): the four canvas groups' own baseChroma/primeChroma.
 // Unlike palette.group above (an OPTIONAL, absent-stays-absent field), `paletteGroups` is REQUIRED

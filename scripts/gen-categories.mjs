@@ -128,6 +128,16 @@ const palette = (name, hex, oklch, sw) => {
     lift: liftForTone(lstarFromRgb(rgb)),
     hueShift: 0,
     hueSameDir: false,
+    // anchor / sourceAnchor (ticket #681, U1) — the SOURCE color, stored byte-for-byte (never
+    // re-derived through the hue/chroma rounding two lines up): `hex` here is ALREADY the sampled or
+    // status swatch's own uppercase "#RRGGBB" (mapColors uppercases it; STATUS's literals are
+    // authored uppercase), so it round-trips through persist.js's hex domain unchanged. `anchor` is
+    // the LIVE anchor prime.mjs's `prime` step and (U2) the ramp's stop 500 render verbatim;
+    // `sourceAnchor` is this generator's OWN never-user-written copy, read back by the Reset action
+    // (Q6, U2's C12) after a hue/chroma edit detaches `anchor`. `direct` palettes (the brands.json
+    // pass-through) are untouched here — they opt in only if their own JSON authors `anchor` (Q5).
+    anchor: hex,
+    sourceAnchor: hex,
     // retain the EXACT source color as the `dominant` key color, in OKLCH (less lossy than hex).
     keyColors: [{ role: "dominant", oklch: oklch.map(r4) }],
     // the curated color's STORY: evocative name, one-line description, source role.

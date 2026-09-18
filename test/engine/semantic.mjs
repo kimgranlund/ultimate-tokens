@@ -331,19 +331,22 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   //   `hue` is deliberately NOT compared. defaultDocument() is OKLCH-native and converts each stored
   //   cam16 seed hue on construction, so its number legitimately differs by a degree or two (Neutral
   //   267 -> 268). That leg has its own gate — test/ui/shell.mjs's `oklch-native`, which bounds the
-  //   converted ramp against the cam16 intent in RGB. chroma/skew/lift are raw in both files.
+  //   converted ramp against the cam16 intent in RGB. chroma/skew/lift/anchor are raw in both files.
+  //   `anchor` (ticket #681, U1): each default family's own Q2 (b) hex, same split-brain risk as
+  //   chroma/skew/lift — a value typed into only one of the two sources is exactly the "two default
+  //   sources have split" failure this loop already exists to catch.
   {
     const ddPalettes = defaultDocument().palettes;
     let compared = 0;
     for (const rt of RT.defaults) {
       const mine = ddPalettes.find((p) => p.name === rt.name);
       if (!mine) { FAIL("role-contrast", `role-table default "${rt.name}" is missing from defaultDocument()`); continue; }
-      for (const f of ["chroma", "skew", "lift"]) {
+      for (const f of ["chroma", "skew", "lift", "anchor"]) {
         compared++;
         if (mine[f] !== rt[f]) FAIL("role-contrast", `default "${rt.name}" ${f}: model.mjs has ${mine[f]}, role-table.json has ${rt[f]} — the two default sources have split`);
       }
     }
-    if (compared !== 3 * RT.defaults.length) FAIL("role-contrast", `default parity compared ${compared} fields, want ${3 * RT.defaults.length}`);
+    if (compared !== 4 * RT.defaults.length) FAIL("role-contrast", `default parity compared ${compared} fields, want ${4 * RT.defaults.length}`);
   }
 }
 

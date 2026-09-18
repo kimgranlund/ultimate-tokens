@@ -271,32 +271,41 @@ export { SCRIM_BASES, SCRIM_STEPS, exportDesignSystemTokens, exportDesignSystemS
 
 // The sixteen seed palettes — 8 brand + 8 Data (data/role-table.json `defaults`). Inlined so the
 // pure core has no file I/O and runs identically in node and the browser.
+//
+// `anchor` (ticket #681 U1, Q2 (b) ruled): each default family's own TODAY's stop-550 hex — measured
+// against this file's own `chroma`/`skew`/`lift` in "perceptual" mode (the shipped default toneMode),
+// with the ramp chroma resolved through each family's CANVAS GROUP (rampChromaOf: Neutral is
+// "material" baseChroma 30, every other default is "brand"/"system"/"data" baseChroma 100 — never
+// the raw `chroma` field above, which only feeds the prime/key-colour construction, REQ-002). Minted
+// so no default family's prime ladder collapses under U6's equal-compress wall rule (mechanism (3));
+// re-verified against this branch's own base before being typed in here (a stale value would fail
+// C2/test/engine/anchor.mjs loudly, not silently).
 const DEFAULT_PALETTES = [
-  { name: "Neutral", hue: 267, chroma: 29, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Primary", hue: 267, chroma: 95, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Secondary", hue: 165, chroma: 100, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Tertiary", hue: 315, chroma: 33, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Info", hue: 235, chroma: 40, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Success", hue: 145, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Neutral", hue: 267, chroma: 29, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#576485", on: true },
+  { name: "Primary", hue: 267, chroma: 95, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#0C5DCC", on: true },
+  { name: "Secondary", hue: 165, chroma: 100, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#108960", on: true },
+  { name: "Tertiary", hue: 315, chroma: 33, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#920CC6", on: true },
+  { name: "Info", hue: 235, chroma: 40, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#046C9B", on: true },
+  { name: "Success", hue: 145, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, anchor: "#21701A", on: true },
   // Warning lift retuned 15 -> -36 at #647: skew 40 + lift 15 put its accent (550 light / 450 dark)
   // at 1.90:1 against its pinned light on-color in "even" mode, and #647 carried that into the default
   // perceptual mode too (2.18:1). -36 is the smallest change from (40, 15) by |dskew| + |dlift| that
   // clears WCAG AA in BOTH ruled modes; skew is deliberately untouched. Gated by hpg-role-contrast.
-  { name: "Warning", hue: 70, chroma: 100, skew: 40, lift: -36, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Danger", hue: 27, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Warning", hue: 70, chroma: 100, skew: 40, lift: -36, hueShift: 0, hueSameDir: false, anchor: "#774902", on: true },
+  { name: "Danger", hue: 27, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, anchor: "#AD1A0D", on: true },
   // Data 1..8 (REQ-024): derived ONCE via deriveDataHues(primaryHue 267, the 8 brand hues above
   // filtered to chroma>=20, count 8) -> phi 20, hues [287,332,17,62,107,152,197,242]; chroma
   // follows Primary's own chroma (H4). Recorded here as literal CAM16 seeds, parity-mirrored in
   // role-table.json `defaults`, exactly like the 8 brand rows above (the build unit's own printed
   // derivation is the source of these numbers, not a hand guess).
-  { name: "Data 1", hue: 287, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 2", hue: 332, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 3", hue: 17, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 4", hue: 62, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 5", hue: 107, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 6", hue: 152, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 7", hue: 197, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 8", hue: 242, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Data 1", hue: 287, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#4C5BF8", on: true },
+  { name: "Data 2", hue: 332, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#B90CC1", on: true },
+  { name: "Data 3", hue: 17, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#D6153B", on: true },
+  { name: "Data 4", hue: 62, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#A86004", on: true },
+  { name: "Data 5", hue: 107, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#7E7806", on: true },
+  { name: "Data 6", hue: 152, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#1A8B43", on: true },
+  { name: "Data 7", hue: 197, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#088585", on: true },
+  { name: "Data 8", hue: 242, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#067CB5", on: true },
 ];
 
 // configFromVariables — a best-effort PARAMETRIC seed from a Figma file's raw-colors variables,
@@ -960,9 +969,12 @@ export function projectView(doc) {
 
     // prime = the seven per-palette identity swatches (REQ-050..057), on their own OKHSL ladder,
     // independent of the ramp above — the key strip (REQ-034) and brandKit()/tokenCount() (REQ-057)
-    // read this. Built from prime.mjs's own primeSwatches(), never reimplemented here.
+    // read this. Built from prime.mjs's own primeSwatches(), never reimplemented here. `anchor`
+    // (ticket #681, U1) forwards through the same way exports.js's derivePalette does — a no-op when
+    // absent, so the canvas and every export format render the SAME prime.DEFAULT for an anchored
+    // palette rather than the live UI staying cusp-derived while exports alone pick up the anchor.
     const primeTokens = primeSwatches(
-      { hue: p.hue, chroma: p.chroma, skew: p.skew, hueShift: p.hueShift, hueSameDir: p.hueSameDir, primeChroma: undefined },
+      { hue: p.hue, chroma: p.chroma, skew: p.skew, hueShift: p.hueShift, hueSameDir: p.hueSameDir, anchor: p.anchor, primeChroma: undefined },
       { ...controls, primeChroma: primeChromaResolved },
     );
 
