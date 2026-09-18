@@ -30,7 +30,7 @@
 
 ## 2. Global controls and defaults
 
-> ⚠️ **`toneMode` selects the whole ramp algorithm and defaults to `perceptual`, not the curve-driven path below.** `toneMode ∈ {perceptual (default), even, peak}`. The `curve`/`skew`/`lift`/`relChroma`/`chromaFloor` controls in this table and the `toneAt` math in §3–§4 apply to **`even` mode only**; `perceptual`/`peak` go through the OKHSL path (`okhslStops`), shaped by `lmin`/`lmax`/`damp`/`vibrancy`. The additional defaults not yet tabled here — `relChroma` (false), `chromaFloor` (40), `toneMode` (perceptual), `vibrancy` (0), `onColorMode` (fixed), `accentRef` (mode) — live in `DEFAULT_CONTROLS` in `tonal.js`. `baseIntensity` and `primeChroma` (100 each, §8) are NOT engine controls: SPEC 0.3.0 retired both from `tonal.js`'s `DEFAULT_CONTROLS` entirely — they live only on the document/UI side (`src/ui/persist.js` `DOMAINS`), as the two global fallbacks the palette-group resolvers in §8 read.
+> ⚠️ **`toneMode` selects the whole ramp algorithm and defaults to `perceptual`, not the curve-driven path below.** `toneMode ∈ {perceptual (default), even, peak}`. The `curve`/`relChroma`/`chromaFloor` controls in this table and the `toneAt` math in §3–§4 apply to **`even` mode only**; `perceptual`/`peak` go through the OKHSL path (`okhslStops`), shaped by `lmin`/`lmax`/`damp`/`vibrancy`. `skew` and `lift` are the exception: both apply in every tone mode, since #647 wired them into `okhslStops` via the shared `liftStop` helper. The additional defaults not yet tabled here — `relChroma` (false), `chromaFloor` (40), `toneMode` (perceptual), `vibrancy` (0), `onColorMode` (fixed), `accentRef` (mode) — live in `DEFAULT_CONTROLS` in `tonal.js`. `baseIntensity` and `primeChroma` (100 each, §8) are NOT engine controls: SPEC 0.3.0 retired both from `tonal.js`'s `DEFAULT_CONTROLS` entirely — they live only on the document/UI side (`src/ui/persist.js` `DOMAINS`), as the two global fallbacks the palette-group resolvers in §8 read.
 
 | Control | Range | Default | Purpose |
 |---------|-------|---------|---------|
@@ -100,11 +100,11 @@ toneAt(stop, skew, lift):
   clamp flattened stops 050–300 into six identical swatches (#648). Displacing the stop is
   monotone for any lift by one closed-form bound, `|A| · π/900 < 1`, which holds for every
   curve, skew, tension, `lmin` and `lmax`. Still used to nudge a palette's mid lightness
-  (e.g. Warning gets `lift +15`), but because the shift rides the curve, a given lift moves
+  (e.g. Warning gets `lift −36`), but because the shift rides the curve, a given lift moves
   the tone furthest where the ramp is STEEPEST — its effect in L\* is not a fixed amount, and
-  it is attenuated relative to the old additive bump (Warning's +15 moves the stop-500 tone
-  by +10.49 L\*, not +15.00). **Even path only**: the `perceptual`/`peak` distributions ignore
-  skew and lift entirely until #647 wires them to `liftStop`.
+  it is attenuated relative to the old additive bump. `skew` and `lift` apply in every tone
+  mode: #647 wired them into the `perceptual`/`peak` OKHSL distributions through this same
+  `liftStop` helper.
 
 ## 5. Chroma targeting and edge damping
 

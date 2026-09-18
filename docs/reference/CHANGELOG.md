@@ -31,6 +31,7 @@ ratchet at each family's own shipped ratio, so several non-Warning families are 
 at their current values: in `perceptual`, Secondary is lowest at 3.05:1 dark, with Info 4.07,
 Neutral 4.21, Primary 4.31 and Success 4.31. Those were not retuned — the ruling was Warning-only —
 and remain open.
+
 ## 1.60 — 2026-09-17 — the prime ladder spans its full range at every hue (#641, #655, SPEC/LLD 0.3.2)
 
 **Every palette's seven prime swatches now span the full `6 * PRIME_STEP = 0.54` in OKHSL `l`**, at

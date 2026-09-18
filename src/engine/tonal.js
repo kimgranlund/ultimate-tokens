@@ -222,8 +222,7 @@ export const LIFT_GAIN = 6;
 // and 950, so both endpoints are fixed exactly and the ends keep their lmax/lmin.
 // Factored out rather than inlined so that #647, which wires skew/lift into the
 // OKHSL path (okhslStops is also keyed off the stop NUMBER), reuses THIS helper
-// instead of growing a second copy of the bump. As of today okhslStops does not
-// call it: perceptual/peak still ignore skew and lift entirely.
+// instead of growing a second copy of the bump.
 export function liftStop(stop, lift) {
   if (!lift) return stop;
   const a = Math.min(Math.max(lift * LIFT_GAIN, -LIFT_SHIFT_MAX), LIFT_SHIFT_MAX);
