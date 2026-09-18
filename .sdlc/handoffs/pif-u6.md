@@ -223,11 +223,13 @@ blockers, both closed the same way the reviewer recommended: fix `hct.js`'s cach
 
 1. `src/engine/hct.js`: `maxChromaInGamut`/`peakC`/`oklchToCam16Hue` now key on the exact float
    (default `toString`, lossless) instead of `.toFixed(2)`/`.toFixed(3)`. Closes N7 and N8 together —
-   they were the same root cause at two call sites. Cost measured standalone (`node test/engine/prime.mjs`,
-   3 runs): 37.06s/36.64s/41.91s against the prior construction's 38.36s/35.03s/34.96s on the same
-   host — the ranges overlap, so there is no measurable regression (see the commit's own comment in
-   `hct.js` for the reasoning: most repeated calls in this codebase's hot paths are bit-identical
-   repeats, which an exact key still caches, and the truncated key's only EXTRA hits were wrong ones).
+   they were the same root cause at two call sites. Cost: **corrected, review pass 6 (N9)** — see that
+   section below. The original claim here ("no measurable regression", from the standalone
+   `node test/engine/prime.mjs` timing) was wrong; that gate's own sweeps dominate its runtime and
+   cannot show this cost. Re-measured at corpus scale, fresh cold processes, CPU time: a real, repeatable
+   **+21%** (four clean pairs, no inversions), corroborating the reviewer's own independent +26%/+32%
+   finding. Accepted, not reverted — see review pass 6 for the full measurement and the `CACHE_CAP`
+   mitigation attempt (did not help).
 2. `src/engine/prime.mjs`: `localMaxChroma`/`localPeakC` deleted; `primeSwatches` now calls hct.js's
    shared `maxChromaInGamut`/`peakC` directly. With those exact-keyed, the anchor and rung calls are
    literally the same call `deriveKeyColor` makes — REQ-056 holds by construction, not by two
@@ -240,11 +242,16 @@ blockers, both closed the same way the reviewer recommended: fix `hct.js`'s cach
    `test/engine/prime-determinism-worker.mjs` — one renders `DET_CASES` cold (no poison at all), the
    other renders `POISON_CASES` (real `primeSwatches()` palette renders, not a synthetic grid) FIRST,
    before a single `DET_CASES` call runs, then the identical `DET_CASES`. Both compare emitted HEXES,
-   not `inGamut`. Sized to 500 cases / 1,500 poison for cost (a real palette render costs ~5.25ms per
-   DISTINCT hue with a cold cache — measured, 1,000 renders, 5,251ms — far more than the retired grid's
-   bare `peakC` calls, so matching the reviewer's literal 4,000-and-4,000 would cost roughly a minute
-   standalone for this one gate). Committed gate measures **0/500** order-dependent, three repeated
-   runs.
+   not `inGamut`. Initially sized to 500 cases / 1,500 poison for cost (a real palette render costs
+   ~5.25ms per DISTINCT hue with a cold cache — measured, 1,000 renders, 5,251ms — far more than the
+   retired grid's bare `peakC` calls). **Revised, review pass 6 (N10):** 500 cases left only a ~74%
+   chance of catching a regression at the reviewer's own measured pre-fix collision rate (11/4,000,
+   0.275%) — a coin-flip-ish guard for a gate whose whole job is to stop this defect coming back.
+   `DET_CASES` raised to 2,000 (near-certain catch rate at that rate, `POISON_CASES` unchanged — the
+   reviewer's own note that the poison set "would not need to grow" holds, since catch probability
+   tracks case count, not poison density, once poison is realistic and runs first). Committed gate
+   measures **0/2,000** order-dependent, standalone `node test/engine/prime.mjs` now ~54.5s (up from
+   ~36.8s at 500 cases).
    - **Verified the methodology bites** (not requested to commit, done and reported here): a scratch
      copy of the pre-fix engine (`hct.js`/`prime.mjs` at `3dfa0f0`, the state this fix supersedes,
      which still had N7's live channel) run through the SAME worker-based clean-vs-poisoned-before-
@@ -279,7 +286,77 @@ Issue #686 (`gh issue view 686`) is closed by this fold: both call sites it name
 known to still assume truncated-key behavior; recommend closing #686 on land, with a note that if a
 future caller finds a NEW order-dependence, it is a new defect, not this one reopened.
 
-## Commits (post-rebase onto plan tip f11ae18, plus the gamut-ceiling, review-pass-2/3, and review-pass-4/5 folds)
+## Review pass 6 (fresh-context reviewer, 🟡 PASS with items before land) — folded
+
+Report: appended to the same review file (`pif-u6-review-1.md`). Verdict: both blockers (N7, N8) closed
+and independently re-verified by the reviewer's own checks (0/4,000 on their interleave, 0 mismatches
+of 32 on REQ-056, the committed gate's own methodology reproduced at 3/500 truncated vs 0/500 exact,
+`prime.mjs` byte-identical to `deriveKeyColor`'s construction). Two items before land, both closed here.
+
+### 🟡 N9: the "no measurable regression" claim was wrong, and unsupported by the measurement it cited
+
+The reviewer's finding, and my own re-check, agree: `node test/engine/prime.mjs`'s own standalone
+timing cannot show this cost, because that gate's runtime is dominated by its own sweeps and, at the
+PRIOR head, `prime.mjs` already carried a private, exact-keyed 20,000-slot cache — both sides of that
+comparison were already paying exact-key behaviour, so it measured nothing.
+
+**Re-measured where the cost actually lands**, per the reviewer's own prescription: a corpus-scale
+render (343 curated documents, 3,780 palettes, 3 tone modes, `paletteStops` + `primeSwatches`), two
+engine variants differing ONLY in `hct.js`'s three cache keys (`prime.mjs` byte-identical between them,
+confirmed via `cmp`), CPU time (`user`+`system`). Two methodologies tried:
+
+1. **In-process, alternating, with JIT warmup** (my first attempt): median ratio ~1.005 — appeared to
+   show no regression. This is a methodology artifact, not a real result: re-running the SAME corpus
+   repeatedly in one warmed process lets every distinct hue's exact-key cache entry from the FIRST pass
+   serve every LATER pass, which is not what a real one-shot invocation (a generator script, a fresh
+   `npm test`) does. Discarded.
+2. **Fresh, cold process per measurement, no warmup** (matching a real invocation) — four clean pairs:
+
+```
+truncated keys: 14,863ms / 15,074ms / 14,809ms / 15,255ms   (mean ~15,000ms)
+exact keys:     18,672ms / 17,740ms / 18,229ms / 17,778ms   (mean ~18,105ms)
+```
+
+A real, consistent **+21%**, no inversions. This corroborates the reviewer's own independent corpus-
+scale finding (+26% and +32%, on a more contended host) — same direction, same order of magnitude,
+from two different scripts and methodologies. It also explains their `npm test` **user CPU** finding
+(101.91s prior, 155.92s/143.77s after): the corpus-wide cost increase is real and propagates through
+every code path that touches `hct.js`, not just `prime.mjs`'s own gate.
+
+**`CACHE_CAP` tried, did not help** (the reviewer's own "obvious first thing to try", left inconclusive
+under load): raised 5,000 to 60,000 in a third variant, measured 19,072ms / 19,157ms / 20,616ms — no
+improvement, slightly worse. Exact keys make a cache hit rare for the genuinely distinct hues a real
+corpus sweeps (that IS the correctness fix), so a bigger cache has little more to capture and adds
+Map/GC overhead instead.
+
+**Accepted, not reverted**: the correctness gain is #686's whole point (a shipped export defect). Fixed
+in this fold: `src/engine/hct.js`'s comment corrected to state the real, measured cost and the
+`CACHE_CAP` result honestly; `.sdlc/adapter.md` §1's `npm test` budget row updated from the stale
+58-62s to the observed post-fix range, with a note explaining why (repo's own rule: a change
+invalidating a record repairs that record in the same change).
+
+### 🟡 N10: the determinism tripwire's catch rate was a coin flip
+
+At `DET_CASES` 500, the reviewer's own arithmetic on the gate's own comment: ~74% chance of catching a
+regression at the reviewer's measured pre-fix rate (11/4,000, 0.275%) — about one run in four would let
+a true reversion through, for a gate whose entire purpose is to stop exactly that. Fixed: `DET_CASES`
+raised to 2,000 (near-certain catch rate at that rate: `1-(1-0.00275)^2000` > 99.7%). `POISON_CASES`
+unchanged at 1,500 per the reviewer's own note that it would not need to grow — catch probability
+tracks case count, not poison density, once the poison set is realistic and runs before any case
+renders. Standalone `node test/engine/prime.mjs` cost moved from ~36.8s to ~54.5s; still reads
+**0/2,000**.
+
+### N4 (carried since review pass 2, closed here)
+
+Named in the handoff for the first time (see "Regenerated artifacts" above): exactly one of the 224
+default-kit rungs has ever moved across this whole unit's history (Data 2 `brighter`, oklch,
+review pass 2's fold). This review pass 4/5/6 fold moves zero further default rungs, independently
+re-measured against `f0fbd9f` (the state immediately before this fold): `moved: 0 of 224`.
+
+`npm test`: exit 0, `✓ all 47 test files passed` (`DET_CASES` 2,000), `git status --short` empty after;
+`node scripts/audit-citations.mjs` STALE 0; `node test/repo/branding.mjs` clean.
+
+## Commits (post-rebase onto plan tip f11ae18, plus the gamut-ceiling, review-pass-2/3, review-pass-4/5, and review-pass-6 folds)
 
 - `2e73ef4` feat(prime): ladder steps equally in perceived CIE L*, held CAM16 chroma (#681 U6)
 - `578ed03` test(prime): cite the d5 frozen snapshot's capture commit (#681 U6)
@@ -452,12 +529,12 @@ doesn't check). This is plan unit U5's territory ("records") per the plan's own 
 
 | Criterion | Command | Observed | Negative control |
 |---|---|---|---|
-| C1 `npm test` green | `npm test` | exit 0, `✓ all 47 test files passed`; `git status --short` empty after every fold's re-run, including this one; `node scripts/audit-citations.mjs` STALE 0 everywhere; `node test/repo/branding.mjs` clean (448 files, this handoff added); `npm test` measured 1:34.94/1:39.75/1:47.86 across three post-fold runs on this host — the adapter's documented ~60s budget is for a quiet host, and every prior pass's own timing note carries the same concurrent-session caveat; not attributed to this fold's own added cost, which is the ~10s the determinism gate's own comment states | not re-run here (owned by C1's own negative control in `.sdlc/adapter.md` §1 — corrupt role-table.json, expect 17 FAIL — out of my unit's scope to re-verify; my own red-then-green is below) |
+| C1 `npm test` green | `npm test` | exit 0, `✓ all 47 test files passed`; `git status --short` empty after every fold's re-run, including this one; `node scripts/audit-citations.mjs` STALE 0 everywhere; `node test/repo/branding.mjs` clean (448 files). `npm test` measured 1:34.94/1:39.75/1:47.86 across three runs at `DET_CASES` 500, then 2:50.70 (173.89s user) at `DET_CASES` 2,000 (review pass 6, N10) — **corrected, review pass 6 (N9): this is a real cost, not host noise**, see that section below for the isolated, contention-controlled measurement and `.sdlc/adapter.md` §1's updated budget | not re-run here (owned by C1's own negative control in `.sdlc/adapter.md` §1 — corrupt role-table.json, expect 17 FAIL — out of my unit's scope to re-verify; my own red-then-green is below) |
 | C5 (ladder half) | `node test/engine/prime.mjs`, gate `ladder-window` | `ladder-window allow-list: 21 (expected 21)` — iterates every swatch across `docs/reference/colors/categories/*.json`, re-derives the six-role mapping independently, matches C5's 21-name list on (category, role, hex) exactly (review pass 1 S2; superseded the false-premise "0" this gate printed before review) | synthetic [40,60] narrow window inside the same gate: found more than 21 out-of-window cases, proving the filter discriminates on the window bounds |
 | C11 symmetry | `node test/engine/prime.mjs`, gate `symmetry` | by-construction: 0/464 fails, `|up-down|` exactly 0 every case. Measured (pixel `lstarFromRgb`): 0/464 exceed 3 L\*, max measured asymmetry 0.518 L\* | the frozen `prime-pre-681.mjs` fixture (pre-#681 redistribute rule), same 464-case sweep: 295/464 exceed 3 L\*, max asymmetry 52.01 L\* — FAILS as required (review pass 1 S1: this control previously read `origin/main` live via `git show`, now a committed fixture) |
 | gamut-ceiling (owner ruling, post-review, corrected review pass 3, control rebuilt review pass 4/5) | `node test/engine/prime.mjs`, gate `gamut-ceiling` | 0/151,200 real out-of-gamut rungs, pinned ceiling 0, on this gate's own dedicated sweep (hue step 2 x chroma {25,50,75,100} x hueShift {0,±10,±20} x skew {0,±40} x both hue spaces — see "Review pass 3" above for why this is no longer the reviewer's/gate-(c)'s 302,400-rung sweep) | `vulnPrimeSwatches`, now against a PRIVATE `.toFixed(2)`-truncated reconstruction (`vulnPeakC`/`vulnMaxChroma`, review pass 4/5 fold) in place of hct.js's own now-exact shared cache: 114/151,200 at this sweep's own resolution, reproducible across three runs (superseding review pass 3's history-dependent 327-vs-89 figures) — proves the gate discriminates a regression back to a truncated cache, closing review pass 3's "cannot fail" finding and staying alive past this fix's own landing (which is what made the OLD control read 0 and go vacuous) |
 | REQ-056 / gate (h) (tightened review pass 4/5) | `node test/engine/prime.mjs`, gate `h` | byte-identical, both hue spaces, all 16 defaults (tightened from a one-8-bit-step tolerance, widened from cam16-only) | reverting to a scratch copy of the pre-fix engine (`3dfa0f0`) reproduces the N8 divergence this gate now catches: `#671CF1` vs `#671CF2` for Data 1, oklch |
-| determinism (rebuilt review pass 4/5, N7) | `node test/engine/prime.mjs`, gate `c`'s determinism block | 0/500 order-dependent palettes, cold process vs a process poisoned by real palette renders before any `DET_CASES` call runs, three runs | the SAME worker-based methodology against a scratch copy of the pre-fix engine (`3dfa0f0`), at the reviewer's own 4,000/4,000 scale: 3/4,000 order-dependent, real and reproducible (not committed, reported here); the committed gate's own smaller scale (500/1,500) against that same scratch copy was not separately re-run, since the 4,000-scale run already proves the methodology bites and the smaller scale is a cost trade-off, not a different method |
+| determinism (rebuilt review pass 4/5 N7, `DET_CASES` raised review pass 6 N10) | `node test/engine/prime.mjs`, gate `c`'s determinism block | 0/2,000 order-dependent palettes, cold process vs a process poisoned by real palette renders before any `DET_CASES` call runs | the SAME worker-based methodology against a scratch copy of the pre-fix engine (`3dfa0f0`), at the reviewer's own 4,000/4,000 scale: 3/4,000 order-dependent, real and reproducible (not committed, reported here) — proves the methodology bites |
 
 Red-then-green, every gate: before my `src/engine/prime.mjs` edit, `node test/engine/prime.mjs` threw a
 `SyntaxError` (`PRIME_STEP` no longer exported) — the RED state, since I edited the engine before the
@@ -485,6 +562,17 @@ empty for those paths across two consecutive `npm test` runs.
 fonts, or `package*.json` (`.sdlc/adapter.md` §1's build trigger list), and `node_modules` is not
 present in this worktree. `npm run smoke` was not run for the same reason (touches no `src/ui/`,
 `src/main.ts`, `scripts/bundle.mjs`, `scripts/gen-figma-ui.mjs`).
+
+**Named, per review pass 2/6's N4 (carried forward unrecorded across three passes — closed here):**
+across the whole unit, exactly one of the 224 default-kit rungs (16 families x 7 rungs x 2 hue spaces)
+has ever moved a rendered hex: oklch space, Data 2 `brighter`, `#FF98EB` to `#FF99EB`, on the
+review-pass-2 fold (`localPeakC` added). The review pass 4/5 fold (this pass's own `hct.js`/`prime.mjs`
+work) moves **zero** further default-kit rungs — independently re-measured here (`before` =
+`f0fbd9f`'s `prime.mjs`/`hct.js` with the private caches, `after` = this fold's shared, exact-keyed
+construction; all 224 default rungs compared by hex, both hue spaces): `moved: 0 of 224`. `figma/
+plugin/ui.html` and `src/ui/describe-mcp-assets.js` still regenerate on this fold regardless, because
+they embed `prime.mjs`'s and `hct.js`'s own SOURCE TEXT verbatim, not only the hexes those files
+compute — a source edit moves them even when every emitted default hex is unchanged.
 
 ## Re-measured figures versus the plan
 
