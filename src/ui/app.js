@@ -148,6 +148,7 @@ class HctApp extends HTMLElement {
     this.typeVoice = null; // the selected voice in the Scale tab (null = none expanded) — drives per-voice tuning
     this.examplesExpanded = false; // right-pane preview gallery: collapsed to the first artifact until expanded (ui-session)
     this.figmaFile = "light"; // which Figma mode file the Figma tab previews/downloads
+    this.radixFile = "values"; // which Radix preset file the Radix tab previews (#638: values | refs; the zip always ships both)
     this.hover = null; // hovered swatch info for footers
     this.search = "";
     // ── undo / redo (whole-document snapshots) ───────────────────────────────
