@@ -3,38 +3,53 @@
 | Field | Value |
 |---|---|
 | Unit | U1 (M) anchor field + `prime.DEFAULT` byte-exact, plan `preset-intent-fidelity` (ticket #681) |
-| Branch | unit/pif-u1-anchor @ 7a317e024419398cc4727c41dbb7f353767a2fdd |
-| Base | cf8e61a26b2e97ea68dd7e8c5a21a682106a4b88 (`git merge-base HEAD origin/main`) |
+| Branch | unit/pif-u1-anchor @ 329d515dcb70eccf8f40bf1e39e70eeff67a8d7a |
+| Base | bf2aaf659fde4db3bddaed8dfa23e2f485ab2c46 (`git merge-base HEAD origin/main`, post-rebase; equals `origin/main`'s own tip at rebase time, no further drift) |
 | Grade | l3 |
-| Ran | `npm test` ✅ (47/47) · `npm run build` ✅ · `node scripts/audit-citations.mjs` ✅ (exit 0, 0 STALE) · `node test/repo/branding.mjs` ✅ (444 files, clean) · `git status --short` ✅ (empty after every run) |
+| Ran (post-rebase) | `npm test` ✅ (48/48) · `npm run build` ✅ · `node scripts/audit-citations.mjs` ✅ (exit 0, 0 STALE) · `node test/repo/branding.mjs` ✅ (446 files, clean) · `git status --short` ✅ (empty after every run) |
 | Left out | Ramp anchor (U2), chroma envelope (U3), ladder metric/L* rewrite (U6), Reset UI action (U2's C12), records (U5) — none touched |
 
-## Base-count note (adapter.md §1 baseline drift)
+## Rebase note (superseding the original build's drift notes below)
 
-`.sdlc/baseline.md` records 44 test files at `origin/main @ 7faf3aa`. This branch's actual base
-(`cf8e61a`, five commits ahead of the baseline sha) already carries **46** registered test files
-before this unit. This unit adds `test/engine/anchor.mjs`, bringing the count to **47** — `all 47
-test files passed` is this unit's correct green, not the plan's stated "45" (written against a
-different, now-superseded head).
+This unit was rebased once, on team-lead instruction, from its original base `cf8e61a` onto
+`origin/plan/preset-intent-fidelity @ 362cc48` (itself rebased onto `origin/main @ bf2aaf6`, which
+now includes #662 "contrast on-color policy by default" and #674 "Adia Warning lift retune + a
+curated-corpus contrast gate"). `git rebase origin/plan/preset-intent-fidelity` produced conflicts
+in exactly the files expected from the two units landing in parallel:
 
-## origin/main moved during this build
+- `test/run.mjs` — both sides added a test file to `TESTS` (`engine/curated-contrast.mjs` from #674,
+  `engine/anchor.mjs` from this unit); merged to keep both, count now 48.
+- `docs/spec/spec-panda-park-ui-exports.md` — both sides extended the same "re-generated N times"
+  narrative paragraph (#662's on-color-black note, this unit's anchor note); merged to keep both in
+  chronological order, then RE-VERIFIED every EX-1/EX-2 literal by direct computation post-merge
+  (not assumed from either side) — all matched, including `on-primary._dark` now `oklch(0 0 0)`
+  (#662) alongside `prime.prime` now `oklch(0.504 0.1867 258.99)` (this unit).
+- `figma/plugin/ui.html`, `src/ui/categories/*.js` (7), `src/ui/describe-mcp-assets.js` — all
+  GENERATED artifacts; resolved by regenerating via `npm run gen:categories` / the full `npm test`
+  pipeline rather than hand-merging, since the source (`scripts/gen-categories.mjs`,
+  `docs/reference/colors/categories/*.json`) had no conflict at all.
+- `src/ui/persist.js`, `test/engine/semantic.mjs` — **auto-merged cleanly, no conflict**, confirming
+  this unit's edits stayed clear of `onColorMode`/persist.js:126 and of `test/engine/semantic.mjs`'s
+  floors/comment block, exactly as briefed.
 
-`origin/main` is now at `1ea2f80` (#662, "contrast on-color policy by default", landed after this
-branch's base `cf8e61a` was cut — the plan's own Risks row anticipated this: "#662 ... Land #662
-first"). This unit's `test/engine/semantic.mjs` edit is scoped to the `compared` parity loop only,
-exactly as instructed, so the eventual rebase of `plan/preset-intent-fidelity` onto `origin/main`
-should be a clean merge in that file. `git diff origin/main` therefore shows unrelated #662 files
-(`src/engine/semantic.js`, `src/engine/tonal.js`, `docs/reference/rubrics/quality-rubric.md`,
-`mcp/describe-mcp-core.mjs`, `test/engine/fixtures/shadcn-baseline.css`,
-`test/mcp/describe-mcp-core.mjs`) that this unit never touched — verified via `git diff --stat
-cf8e61a` (the correct base), which shows only this unit's own 27 files. All criteria evidence below
-is measured against `cf8e61a`, per the dispatch's own instruction ("C4 reads it from there").
+`git diff --stat 362cc48..HEAD` (this unit's own two commits, isolated from the plan-branch history
+it now sits on) shows the same 27 files as the original build, byte-for-byte the same insertion/
+deletion shape modulo the generated artifacts' regenerated content. No contrast-ratio figures are
+quoted anywhere in this document (the one place the team-lead flagged that risk) — U1's own criteria
+never touch contrast.
+
+## Base-count note (adapter.md §1 baseline drift, from the original build — still accurate)
+
+`.sdlc/baseline.md` records 44 test files at `origin/main @ 7faf3aa`. Before this unit's own test
+file, the branch already carried 46 (its original base) then 47 (after #674 landed upstream, adding
+`engine/curated-contrast.mjs`); this unit's `test/engine/anchor.mjs` brings the post-rebase count to
+**48** — `all 48 test files passed` is this unit's correct green.
 
 ## Criteria
 
 | # | Criterion | State | Command + observed output | Negative control |
 |---|---|---|---|---|
-| C1 | `npm test` green, tree clean after | 🟢 | `npm test` → `✓ all 47 test files passed`; `git status --short` → empty | Corrupted `docs/reference/data/role-table.json` in a scratch copy during development (structural edits mid-build) reliably broke `semantic.mjs`/`prime.mjs`/`anchor.mjs`; not re-run as a final artifact since it would dirty the tree — the adapter's own named 17-FAIL control is `.sdlc/adapter.md`'s, unmodified by this unit |
+| C1 | `npm test` green, tree clean after | 🟢 | `npm test` → `✓ all 48 test files passed` (post-rebase); `git status --short` → empty | Corrupted `docs/reference/data/role-table.json` in a scratch copy during development (structural edits mid-build) reliably broke `semantic.mjs`/`prime.mjs`/`anchor.mjs`; not re-run as a final artifact since it would dirty the tree — the adapter's own named 17-FAIL control is `.sdlc/adapter.md`'s, unmodified by this unit |
 | C2 | Anchor identity: `primeSwatches(...)[3].hex === anchor` and exports.js's `prime.DEFAULT` oklch equals an independent hex→oklch of `anchor`, over every anchored corpus palette | 🟢 | `node test/engine/anchor.mjs` → `anchor-identity: 3380 exact, 0 off` (2,028 sampled + 1,352 status, verified by direct JSON-structure count before writing the gate, not assumed from the plan) | Live, in the test file, on every run: one real anchored palette's hex is corrupted by one digit and the gate is proven to catch it BY NAME before the real 3,380 are graded. Also verified red-then-green by hand: reverting `src/engine/prime.mjs` to its pre-unit content and rerunning gave `FAIL anchor-identity: 0 exact, 3380 off` |
 | C4 (prime part) | Non-anchored `primeSwatches` is byte-identical to pre-#681 behaviour | 🟢 | `node test/engine/anchor.mjs` → `prime-identity-control: 3796 exact, 0 off` (3,780 corpus + 16 default kit, `anchor` stripped, compared against a FRESH from-scratch reimplementation of the pre-#681 deriveKeyColor formula, never calling `primeSwatches` internals) | One subject's chroma mutated by 37 between the two derivations at test start; the loop is proven to catch the mismatch before the real 3,796 are graded |
 | C10 (schema note only) | The persist.js schema bump documents itself per TKT-0016's standing convention | 🟢 | `src/ui/persist.js` `CURRENT_SCHEMA_VERSION` bumped 4→5 with an inline comment explaining why no `RENAME_MAPS` entry is needed (a new field, not a rename — same shape as the existing v4 note) | n/a — this is documentation, not a gated predicate; C10's own grep list (ADR-025, CHANGELOG 1.62, glossary, knowledge-02 §9, color-math SKILL.md, rubrics) is U5's scope and none of those files were touched here |
@@ -42,7 +57,7 @@ is measured against `cf8e61a`, per the dispatch's own instruction ("C4 reads it 
 `npm run build`: `tsc` strict passed, `vite build` succeeded, `bundle`/`gen:figma-ui` wrote
 `figma/plugin/ui.html` (3915.3 KB) — tree clean after (build outputs under `dist/` are gitignored).
 
-## Files changed (27, `git diff --stat cf8e61a`)
+## Files changed (27, `git diff --stat 362cc48..HEAD` — this unit's own two commits, post-rebase; the file list and per-file shape are unchanged from the original build, only the generated artifacts' bytes moved)
 
 - `src/engine/prime.mjs` — anchor branch: `prime` step (index 3) renders the anchor rgb verbatim,
   unconditionally (never scaled by `primeChroma`); the other six steps ladder from
@@ -134,10 +149,11 @@ status` confirmed no diff there).
   L* per its own plan text). U6 also inherits `test/engine/prime.mjs`'s anchor-stripped `DEFAULTS` —
   U6's own plan text already expects to rewrite this file's gates for the anchored case, so removing
   the strip is part of that unit's own work, not a leftover bug.
-- **Rebase risk**: `origin/main` is now ahead of this branch's base by #662 (`1ea2f80`), which
-  touches `test/engine/semantic.mjs` heavily. This unit's own edit to that file is scoped to the
-  `compared` parity loop only (per the dispatch's own caution), so the eventual merge should be
-  mechanical, but it is untested against #662's actual content since #662 is not in this branch.
+- **Rebase risk — resolved.** This unit has now been rebased onto `origin/plan/preset-intent-fidelity
+  @ 362cc48` (which carries #662 and #674). `test/engine/semantic.mjs` and `src/ui/persist.js` both
+  auto-merged with zero conflicts, confirming the scoping held. See "Rebase note" above for the full
+  conflict list and how each was resolved (mechanical merges for `test/run.mjs`/the spec doc,
+  regeneration for the generated artifacts).
 
 ## Open questions
 
