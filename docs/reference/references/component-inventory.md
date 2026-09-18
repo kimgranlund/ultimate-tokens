@@ -31,7 +31,7 @@ that builds every control inline with a single hyperscript helper `h(tag, attrs,
 - **S2 is not a second surface.** `scripts/gen-figma-ui.mjs` bundles the *same* compiled app
   (`dist/ultimate-tokens.html`) and injects a postMessage bridge that flips `inFigma`
   (`markInFigma()`, `gen-figma-ui.mjs:23-33`). So **S2 reuses S1's primitives verbatim**; the only S2-specific
-  *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1391`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1213`),
+  *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1396`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1213`),
   `.figma-plugin-btn` `overlays/drawer.js:212`) and the `.figma-files` mode segment (`overlays/drawer.js:209`).
 - **No native-replacement layer + no FACE.** Controls are a mix of *native* elements (`<input
   type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets* — none are
@@ -122,8 +122,8 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
 
 ### 2 · Toggle / switch  ⚠ worst card
 
-- **Surface** S1. **Sites** 3 — palette Enabled/Disabled (`sections/color.js:1766-1770`), Hue space oklch/cam16
-  (`hueSpace`, `sections/color.js:2060-2065`), Chroma basis peak/gamut (`sections/color.js:2082-2086`).
+- **Surface** S1. **Sites** 3 — palette Enabled/Disabled (`sections/color.js:1771-1775`), Hue space oklch/cam16
+  (`hueSpace`, `sections/color.js:2064-2070`), Chroma basis peak/gamut (`sections/color.js:2087-2091`).
 - **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:955-971`; the `.track`
   is 34×19 with a 15px ::after thumb that translates on `.on`.
 - **API** a bare `<div class="toggle">` with an `onclick` that flips a model boolean. State =
@@ -187,13 +187,13 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
 
 ### 5 · Select (native)
 
-- **Surface** S1. **Sites** 3 — Distribution (`field()`, `sections/color.js:1970`), Curve (`sections/color.js:2015`),
-  `.map-raw-select` raw token (`sections/color.js:1349`, with `.ov` override state).
+- **Surface** S1. **Sites** 3 — Distribution (`field()`, `sections/color.js:1975`), Curve (`sections/color.js:2020`),
+  `.map-raw-select` raw token (`sections/color.js:1354`, with `.ov` override state).
 - **Anatomy** native `<select>` + `<option>[]`; `.map-raw-select` is a compact mono variant
   (`styles.css:723-729`).
-- **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1349-1351`);
+- **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1354-1356`);
   ✗ Distribution/Curve have **no `aria-label`** and their `<label>` sibling is not associated
-  (`sections/color.js:1970/2015`) → screen-reader-nameless.
+  (`sections/color.js:1975/2020`) → screen-reader-nameless.
 - **Flag** label-association is inconsistent between the config selects and the map select.
 
 ```json
@@ -205,12 +205,12 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
 
 ### 6 · Text input
 
-- **Surface** S1. **Sites** 2 — palette **Name** in `.field` (`sections/color.js:1746-1748`), `.map-raw-input`
-  free-text token editor (`sections/color.js:1339`, `.ov` override state).
-- **a11y** ✓ `.map-raw-input` has `aria-label` (`sections/color.js:1339-1343`); ✗ **Name** relies on an
+- **Surface** S1. **Sites** 2 — palette **Name** in `.field` (`sections/color.js:1751-1753`), `.map-raw-input`
+  free-text token editor (`sections/color.js:1344`, `.ov` override state).
+- **a11y** ✓ `.map-raw-input` has `aria-label` (`sections/color.js:1344-1348`); ✗ **Name** relies on an
   unassociated sibling `<label>` and has no `aria-label` → nameless to SR.
 - **Behaviour** both debounce into one undo step (`editDrag`) and survive re-render without losing
-  focus/caret (partial `liveRefresh`, documented `sections/color.js:1752-1756`).
+  focus/caret (partial `liveRefresh`, documented `sections/color.js:1757-1761`).
 
 ```json
 { "component":"text-input","layer":"component","role":"textbox(native)","replaces_native":false,
@@ -235,7 +235,7 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
 
 ### 8 · Checkbox
 
-- **Surface** S1. **Sites** 1 — "ends bend same way" (`sections/color.js:1825-1827`, native `type=checkbox`).
+- **Surface** S1. **Sites** 1 — "ends bend same way" (`sections/color.js:1830-1832`, native `type=checkbox`).
 - **Anatomy** `.mini-check` `<label>` **wrapping** the native input + text (`styles.css:817-818`) →
   label *is* associated (the correct pattern, unlike the sliders/Name input).
 - **a11y** ✓ associated label, ✓ `accent-color: var(--accent)`, native keyboard (Space).
@@ -257,7 +257,7 @@ Three unrelated "pill" stylings — a naming/coherence drift, not one primitive:
 - **`.damp-presets .preset`** (`styles.css:819-820`) — **interactive** preset chip (a `<button>`),
   pill radius, `.on` active state; rendered by `dampPresets()`.
 - **`.map-drift-sum`** (`styles.css:803-804`) — status pill: `.in-sync` (green) / `.has-drift`
-  (red) (`sections/color.js:1389`).
+  (red) (`sections/color.js:1394`).
 
 ```json
 { "component":"chip","layer":"component","role":"status|button","replaces_native":false,
@@ -294,7 +294,7 @@ One concept — *a rectangle filled with a color, optionally over a transparency
 **six idioms**: `.ramp-strip i` (26×40 ramp cell + `.oog` out-of-gamut hatch + hover outline, `styles.css:619-626`),
 `.scrim-cell` + `.scrim-fill` (checkerboard, `styles.css:640-644`),
 `.map-swatch` + `.map-swatch-fill` (checkerboard token swatch, `styles.css:692-696`), `.swatch-dot`
-(now `swatch()`, `sections/color.js:1733`), `.roles-table .sw` (16px, now `swatch()` `.swatch`, `styles.css:702-707`), `.canvas-footer .sw` (12px,
+(now `swatch()`, `sections/color.js:1738`), `.roles-table .sw` (16px, now `swatch()` `.swatch`, `styles.css:702-707`), `.canvas-footer .sw` (12px,
 `styles.css:840-843`). **Flag:** the checkerboard background is copy-pasted in 3 of these; no shared
 swatch primitive.
 
