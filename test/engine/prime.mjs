@@ -131,23 +131,50 @@ for (const p of DEFAULTS) {
     }
   }
 }
-{
-  let checked = 0;
-  for (const hueSpace of SPACES) {
-    for (let hue = 0; hue < 360; hue += 3) {
-      for (const chroma of [0, 25, 50, 75, 100]) {
-        for (const hueShift of [0, 10, -10, 20, -20]) {
-          for (const skew of [0, 40, -40]) {
-            checked++;
-            const sw = primeSwatches({ name: `h${hue}`, hue, chroma, hueShift, skew }, { hueSpace });
-            for (const s of sw) if (s.inGamut !== true) FAIL("c", `hue${hue}/c${chroma}/hueShift${hueShift}/skew${skew}/${hueSpace} ${s.step}: inGamut ${s.inGamut} (hex ${s.hex})`);
+// GAMUT_SWEEP — the reviewer's own reproduction sweep (review pass 1, S3): hue 0..359 step 1 x
+// hueShift {0,±10,±20} x skew {0,±40} x both hue spaces, run once and shared by gate (c) (all five
+// chroma values, including 0) and the `gamut-ceiling` gate below (chroma {25,50,75,100} only — chroma 0
+// is neutral, `peakC.c` 0, trivially always in gamut, and the reviewer's own 302,400-rung denominator
+// excludes it: 360 x 4 x 5 x 3 x 2 x 7 rungs = 302,400).
+const GAMUT_SWEEP = { checked: 0, violations: [], ceilingChecked: 0, ceilingViolations: 0 };
+for (const hueSpace of SPACES) {
+  for (let hue = 0; hue < 360; hue += 1) {
+    for (const chroma of [0, 25, 50, 75, 100]) {
+      for (const hueShift of [0, 10, -10, 20, -20]) {
+        for (const skew of [0, 40, -40]) {
+          GAMUT_SWEEP.checked++;
+          const sw = primeSwatches({ name: `h${hue}`, hue, chroma, hueShift, skew }, { hueSpace });
+          for (const s of sw) {
+            if (chroma > 0) { GAMUT_SWEEP.ceilingChecked++; if (!s.inGamut) GAMUT_SWEEP.ceilingViolations++; }
+            if (!s.inGamut) GAMUT_SWEEP.violations.push(`hue${hue}/c${chroma}/hueShift${hueShift}/skew${skew}/${hueSpace} ${s.step} (hex ${s.hex})`);
           }
         }
       }
     }
   }
-  if (checked < 15000) FAIL("c", `only ${checked} hueShift-sweep cases checked — the widened sweep did not run`);
 }
+{
+  if (GAMUT_SWEEP.checked < 15000) FAIL("c", `only ${GAMUT_SWEEP.checked} hueShift-sweep cases checked — the widened sweep did not run`);
+  for (const v of GAMUT_SWEEP.violations.slice(0, 20)) FAIL("c", v);
+}
+
+// ── (gamut-ceiling) owner ruling, 2026-09-18 (#681 U6 review pass 1 fold): a fresh-context reviewer's
+//    own reproduction of GAMUT_SWEEP's exact parameters (hue 0..359 step 1 x chroma {25,50,75,100} x
+//    hueShift {0,±10,±20} x skew {0,±40} x both hue spaces = 43,200 palettes x 7 rungs = 302,400 rungs,
+//    chroma 0 excluded since it is neutral and trivially always in gamut) found 1,288/302,400 rungs
+//    out of gamut on the head BEFORE the S3 determinism fix (the shared, memoized `maxChromaInGamut`
+//    cache in hct.js producing stray `inGamut:false` on cache-bucket collisions — see the `localMaxChroma`
+//    comment in src/engine/prime.mjs). The owner accepted that 1,288 count as shippable in principle and
+//    asked for a numeric ceiling gate pinned to what THIS head actually measures, not a hardcoded 1,288.
+//    S3's fix (already shipped, required regardless to close the REQ-043 determinism break) turns out to
+//    eliminate the out-of-gamut rungs entirely: PINNED_GAMUT_CEILING below is measured directly from
+//    GAMUT_SWEEP (the same sweep gate (c) just ran, restricted to chroma>0 to match the reviewer's
+//    302,400-rung denominator exactly) on this commit, and is 0 — not a re-assertion of the owner's
+//    1,288 figure, which described the pre-fix head, not this one.
+const PINNED_GAMUT_CEILING = 0;
+if (GAMUT_SWEEP.ceilingChecked !== 302400) FAIL("gamut-ceiling", `expected exactly 302400 chroma>0 rungs (reviewer's own denominator) — measured ${GAMUT_SWEEP.ceilingChecked}, sweep parameters drifted`);
+if (GAMUT_SWEEP.ceilingViolations > PINNED_GAMUT_CEILING) FAIL("gamut-ceiling", `${GAMUT_SWEEP.ceilingViolations}/${GAMUT_SWEEP.ceilingChecked} out-of-gamut rungs exceeds the pinned ceiling of ${PINNED_GAMUT_CEILING} (owner-accepted precedent: 1288/302400 on the pre-S3 head)`);
+console.log(`  gamut-ceiling: ${GAMUT_SWEEP.ceilingViolations}/${GAMUT_SWEEP.ceilingChecked} out-of-gamut rungs (pinned ceiling ${PINNED_GAMUT_CEILING})`);
 
 // ── (d) Q8/Q9 (2026-09-18, ticket #681 U6): the ladder spans a FULL 6 x STEP_L in CIE L* at every hue
 //        and chroma UNLESS a bound is closer than STEP_L*3 on either side, in which case BOTH sides
@@ -601,7 +628,7 @@ let LADDER_WINDOW_ALLOWLIST;
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["a", "b", "c", "d1", "d2a", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j", "k", "ladder-window", "symmetry"]) {
+for (const g of ["a", "b", "c", "gamut-ceiling", "d1", "d2a", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j", "k", "ladder-window", "symmetry"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
