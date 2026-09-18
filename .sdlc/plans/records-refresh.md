@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: pending (the Orchestrator mints it with `adapter.py create` on approval, labels below)
 priority: P1
 lane: docs

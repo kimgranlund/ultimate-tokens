@@ -44,3 +44,19 @@ Options:
 - Move #681 to these seats
 - I will sort it out myself
 Chosen: That session owns them (Recommended)
+
+## Q5
+Question: The verifier found the records-refresh plan fully checkable (14/14 criteria, 0 returned to the planner). Approve it for mobilization? It reruns the baseline, fixes the stale 44-to-46 test count in adapter.md and baseline.md, and moves two local-only ignore rules into the repo's .gitignore.
+Options:
+- Approve (Recommended)
+- Show me the plan first
+- Hold
+Chosen: Approve (Recommended)
+
+## Q6
+Question: While assembling the roadmap for your approval, I found the other session had also fully built #673 (unpushed commit) and was mid-edit on #672, both of which the planner had drafted as "ours to take next." I withdrew that recommendation. With #681, #674, #638, #668, #673 and #672 all in flight elsewhere, and records-refresh the only thing left for our seats, what should our seats do once records-refresh lands?
+Options:
+- Stand by (Recommended): no new plan, watch the board, report when a lane frees up or something new needs planning
+- Take an owner-tracked item (#602, #519, #514, #496)
+- Something else
+Chosen: Stand by (Recommended)
