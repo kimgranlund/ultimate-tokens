@@ -189,23 +189,27 @@ for (const hueSpace of SPACES) {
 //    (review pass 2's original finding: two DIFFERENT in-gamut hexes both read `inGamut: true`, so
 //    `inGamut` alone cannot prove determinism).
 //
-//    Sizing, measured (this fix): a full `primeSwatches` render through `effHue`'s oklch path (the
-//    channel N7 found) at a distinct, never-repeated hue costs ~5.25ms (1000 distinct-hue renders,
-//    5,251ms, this host) — going through a REAL palette render for poison is far costlier per entry
-//    than the OLD grid's bare `peakC`/`maxChromaInGamut` calls, so matching the reviewer's literal
-//    4,000-and-4,000 would cost roughly a minute standalone for this one gate. Sized to DET_CASES 500 /
-//    POISON_CASES 1,500 (3x, poison denser than cases per this file's own established precedent of
-//    cutting CASE count for cost while keeping poison density up, see the retired grid's own comment
-//    history) — ~10s added here. At the reviewer's own measured pre-fix collision rate (11/4,000,
-//    0.275%), 500 cases has a ~74% chance of catching a regression that reproduces that EXACT narrow
-//    residual rate; a full reversion of hct.js's exact-key fix would produce a far higher collision rate
-//    across ANY non-round sweep, so this gate's practical job is a fast regression tripwire, not a
-//    precision measurement. The precision measurement — reproducing the reviewer's own 4,000-case scale,
-//    PLUS a red-then-green check against a scratch copy with the truncated keys restored, to prove this
-//    methodology actually bites — was run standalone, not committed for cost, and is reported in the
-//    handoff (`.sdlc/handoffs/pif-u6.md`) and in this unit's own report.
+//    Sizing, measured (this fix, revised review pass 6 N10): a full `primeSwatches` render through
+//    `effHue`'s oklch path (the channel N7 found) at a distinct, never-repeated hue costs ~5.25ms
+//    (1000 distinct-hue renders, 5,251ms, this host) — going through a REAL palette render for poison
+//    is far costlier per entry than the OLD grid's bare `peakC`/`maxChromaInGamut` calls, so matching
+//    the reviewer's literal 4,000-and-4,000 would cost roughly a minute standalone for this one gate.
+//    An initial cut to DET_CASES 500 / POISON_CASES 1,500 was sized for cost alone (review pass
+//    4/5) and left only a ~74% chance of catching a regression at the reviewer's own measured pre-fix
+//    collision rate (11/4,000, 0.275%) — a coin-flip-ish guard for a gate whose entire job is to stop
+//    this defect coming back (review pass 6, N10). DET_CASES raised to 2,000: 1-(1-0.00275)^2000 is
+//    effectively 1 (>99.7%), near-certain at that rate. POISON_CASES stays at 1,500 — it is already
+//    dense real-palette coverage and the reviewer's own note that it "would not need to grow" holds:
+//    catch probability is driven by case count, not poison density, once the poison set is realistic
+//    and runs before any case renders. A full reversion of hct.js's exact-key fix would produce a far
+//    higher collision rate across ANY non-round sweep, so this gate's practical job is a fast
+//    regression tripwire, not a precision measurement. The precision measurement — reproducing the
+//    reviewer's own 4,000-case scale, PLUS a red-then-green check against a scratch copy with the
+//    truncated keys restored, to prove this methodology actually bites — was run standalone, not
+//    committed for cost, and is reported in the handoff (`.sdlc/handoffs/pif-u6.md`) and in this
+//    unit's own report.
 const DET_CASES = [];
-for (let i = 0; i < 500; i++) {
+for (let i = 0; i < 2000; i++) {
   DET_CASES.push({
     name: `d${i}`,
     hue: (i * 0.1381 + 13.7) % 360,
