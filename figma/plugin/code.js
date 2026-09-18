@@ -153,7 +153,11 @@ figma.ui.onmessage = async (msg) => {
       // standalone binder's own main() passes it), undefined resolves straight to false, i.e. classic
       // prune, which is exactly the legacy behavior an old bundle expects.
       // SCOPE (#629 ruling Q1): the flag covers TYPE, GEOMETRY and STYLES only. applyBundle's color
-      // reconcile is deliberately NOT threaded: the checkbox label and the gate lede say so.
+      // reconcile is deliberately NOT threaded, and the two surfaces that SET the flag say so: the
+      // gate checkbox is labelled "...type, geometry and style names", and the Settings row's help
+      // line says "Color variables are unaffected either way". The gate LEDE says nothing about the
+      // flag at all (it describes what the apply writes, not how it prunes), so do not read a scope
+      // claim into it. PR #675 review: this comment used to name the lede, which was an overclaim.
       let fr = null;
       if (Array.isArray(msg.floatPlans) && msg.floatPlans.length) {
         try { fr = await applyFloatPlans(msg.floatPlans, { libraryMode: msg.libraryMode }); }
