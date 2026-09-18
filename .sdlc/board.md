@@ -1,6 +1,6 @@
 # Board
 
-Orchestrator-only. Rows edited in place. adopt-hygiene landed as PR #653 (squash `180eca0`); its plan is archived at `.sdlc/plans/archive/adopt-hygiene.md` and the root checkout is back on `main`.
+Orchestrator-only. Rows edited in place. adopt-hygiene landed as PR #653 (squash `180eca0`); its plan is archived at `.sdlc/plans/archive/adopt-hygiene.md` and the root checkout is back on `main`. records-refresh (#691) is in flight on `plan/records-refresh`.
 
 | Unit | Ticket | Size | State | Pass | Owner | Worker | Branch | Worktree | Doc | Next |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -14,3 +14,4 @@ Orchestrator-only. Rows edited in place. adopt-hygiene landed as PR #653 (squash
 | adopt-hygiene U8 staleness and wording sweep | #643 | S | 🟢 | 2 | verifier | sdlc-verifier (verifier-l3) | unit/hygiene-U8 @ 266d13e merged a9ffe6e | removed | .sdlc/verdicts/adopt-hygiene-U8.md | landed in PR #653, squash 180eca0 |
 | adopt-hygiene U9 pre-land fixes round 4 | #643 | S | 🟢 | 1 | verifier | sdlc-verifier (verifier-l3) | unit/hygiene-U9 @ 10072b4 merged 1ee2a40 | removed | .sdlc/verdicts/adopt-hygiene-U9.md | landed in PR #653, squash 180eca0 |
 | adopt-hygiene U10 card and index lineage | #643 | S | 🟢 | 1 | verifier | sdlc-verifier (verifier-l3) | unit/hygiene-U10 @ a6e32b2 merged d79360e | removed | .sdlc/verdicts/adopt-hygiene-U10.md | landed in PR #653, squash 180eca0 |
+| records-refresh U1 rerun baseline, drop copied numbers, ignore rules, staleness notes | #691 | S | 🔵 | 1 | builder | rr-U1-builder-l2-p1 (builder-l2; reviewer-l1, verifier-l1) | unit/rr-U1 @ 4f17247 | .worktrees/rr-U1 | .sdlc/plans/records-refresh.md | builder runs the baseline and §Texts, returns a handoff |

@@ -1,6 +1,6 @@
 ---
-status: approved
-ticket: pending (the Orchestrator mints it with `adapter.py create` on approval, labels below)
+status: active
+ticket: #691
 priority: P1
 lane: docs
 size: S (U1 S = 1 point)
@@ -41,7 +41,7 @@ Every negative control that edits a file runs in a throwaway clone (`git clone -
 
 ## Units
 
-- [ ] U1 (S) rerun the baseline, remove the copied numbers, add the two ignore rules, state C11's scope, add the two staleness notes · grade l2 · reviewer-l1 · verifier-l1
+- [~] U1 (S) rerun the baseline, remove the copied numbers, add the two ignore rules, state C11's scope, add the two staleness notes · grade l2 · reviewer-l1 · verifier-l1
 
 Grade. The Orchestrator's table puts docs and config at l1, and `debt.md` grades every docs row L1. This unit goes one up, on the table's own evidence rule: it touches six files, its core job is transcribing nine measured runs without error, and three of the four l1 records units in adopt-hygiene needed a second pass. l2 keeps the l1 checker pair (reviewer-l1, verifier-l1). The reviewer dispatch names `.claude/agents/change-reviewer-agent.md` §What to check (adapter C2).
 
@@ -194,3 +194,4 @@ One PR from `plan/records-refresh` to `main`, carrying the refreshed survey, its
 | Date | Change | Why |
 |---|---|---|
 | 2026-09-18 | plan written (draft) from approval Q2 and the survey verdict's corrections line; every U1 command was run by the planner at 746f93d (controls) and again in a throwaway clone rebased onto 1ea2f80 with §Texts applied by script (expected values); P1 to P3 were not rerun, their figures come from the 2026-09-18 survey verdict | records-refresh dispatch |
+| 2026-09-18 | mobilized: ticket #691 minted; branch rebased onto `origin/main` @ `841e185` (not `1ea2f80`: #673 landed first), so read every `1ea2f80` above as `841e185`; unit worktree is `.worktrees/rr-U1` on `unit/rr-U1` (a plan-scoped name, since `U1` alone collides across plans) | Orchestrator, on the Conductor's mobilize |
