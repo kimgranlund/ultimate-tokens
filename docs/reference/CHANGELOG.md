@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## 1.62 — 2026-09-18 — travel's curated hexes are rendered from their OKLCH again (#656)
+
+**`oklch` is the authored root of a curated swatch; `hex` is its render.** Six of the seven sibling
+category specs already obey that: `hex` equals `oklchToRgb(oklch)` byte-for-byte on all 288 swatches
+each, with no exception, while `oklch` is not recoverable from the 8-bit hex. The rule is stated
+outright in the contract that authors these specs ("In-gamut sRGB, hex equals oklch"). `travel.json`
+was the one spec that disobeyed, and congenitally: it was minted from a hand-authored markdown table
+whose OKLCH and HEX were two independently typed columns, so **287 of its 288 swatches described two
+different colours**, by up to 7.42 L*. The three per-palette system colours in that same table, which
+the table says were *computed* in OKLCH rather than typed, agree to 0.000 — the drift is exactly the
+hand-typed half.
+
+Downstream that split the preset in two: `scripts/gen-categories.mjs` fits each prime anchor's `lift`
+(and recovers `chroma` via CAM16) from the **hex**, while the built preset stores the **oklch** as its
+key colour. Every travel preset therefore carried a key colour and a lift aimed at different targets.
+
+**All 288 travel hexes are now the exact render of their own oklch**, as are the 144 `hierarchy.*.c`
+copies of them. No `oklch` value moved, so no curated colour was re-chosen — only the second,
+derived spelling of it was corrected. The two documents the palette-researcher reads as its exemplars,
+`docs/reference/colors/travel-palettes.md` (288 of 432 pairs) and the worked example in
+`color-model-function.md`, were re-rendered from their own OKLCH columns in the same change, so the
+corpus no longer teaches the defect.
+
+**Token impact.** All 48 travel presets move. 216 of the 288 sampled palettes change their fitted
+`lift` (max 11) and 257 change `chroma` (max 20); hue, name and the stored key colours are untouched.
+Rendered across all nineteen stops, 275 of 528 palettes move, median 0.000 L*, p90 1.581, max
+**7.159** — visible only because 1.61 (#647) wired `lift` into the default `perceptual` ramp, where it
+had been inert. The movement is the correction: the rendered prime's distance from the colour the
+preset actually stores falls from median 3.816 / max 13.679 L* to 3.307 / 7.647, and travel's
+prime-anchor fit error now sits inside the sibling band (in-band median 2.082 → 0.169 L*, against
+nature's 0.198).
+
+The `lift-anchor` gate's named per-spec drift carve-out for travel (`test/engine/categories.mjs`)
+drops from `{count: 287, max: 7.5}` to `{count: 0, max: 0}`, the same bound the six clean sourced
+specs hold. It fails in both directions, so a future spec that reintroduces the drift reds by name.
+
 ## 1.61 — 2026-09-17 — skew and lift reach every tone mode; Warning retuned for AA (#647)
 
 **A palette's `skew` and `lift` now shape the ramp in every tone mode.** Both controls were persisted,

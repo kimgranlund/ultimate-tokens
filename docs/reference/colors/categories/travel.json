@@ -24,7 +24,7 @@
             {
               "name": "Frozen birch forest at noon, silver",
               "oklch": "0.918 0.005 215",
-              "hex": "#E3E6E7",
+              "hex": "#E0E5E6",
               "note": "Snow-laden taiga under overcast at 59° N; the dominant reading of the entire trip from the train window.",
               "hier": "d",
               "light": true
@@ -32,7 +32,7 @@
             {
               "name": "Window condensation, compartment side",
               "oklch": "0.857 0.011 80",
-              "hex": "#DAD3C4",
+              "hex": "#D4CFC8",
               "note": "Glass fogged by breath, warmed faintly by the yellow heater bulb at the carriage end.",
               "hier": "s",
               "light": true
@@ -40,7 +40,7 @@
             {
               "name": "Birch bark, peeling, betula pendula",
               "oklch": "0.778 0.012 75",
-              "hex": "#C5BCB1",
+              "hex": "#BBB6AE",
               "note": "Chalky surface of the dominant taiga species, slightly warm against the snow.",
               "hier": "s",
               "light": true
@@ -48,38 +48,38 @@
             {
               "name": "Samovar brass, lacquer scoured off",
               "oklch": "0.620 0.068 78",
-              "hex": "#A08361",
+              "hex": "#9D8157",
               "note": "Restaurant-car samovar, the lacquer worn through by decades of provodnitsa hands.",
               "hier": "s"
             },
             {
               "name": "Kupé upholstery, deep maroon velour",
               "oklch": "0.322 0.045 28",
-              "hex": "#4B2F2C",
+              "hex": "#482A26",
               "note": "The carriage-interior fabric standardised across RZhD wagons since the late Soviet period.",
               "hier": "a"
             },
             {
               "name": "Three-o'clock dusk, ultramarine over snow",
               "oklch": "0.303 0.048 268",
-              "hex": "#343C54",
+              "hex": "#242D47",
               "note": "Civil twilight comes early at this latitude in January; the snow takes the sky's shadow before the lamps come on.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#e3e6e7",
+              "c": "#e0e5e6",
               "pct": 60,
               "text": "Birch-forest silver anchors every surface; nothing competes with it."
             },
             "s": {
-              "c": "#a08361",
+              "c": "#9d8157",
               "pct": 30,
               "text": "Condensation, birch bark, samovar brass — the interior warmth that keeps the silver from being clinical."
             },
             "a": {
-              "c": "#343c54",
+              "c": "#242d47",
               "pct": 10,
               "text": "Maroon and dusk-violet only in small quantity, as punctuation."
             }
@@ -170,7 +170,7 @@
             {
               "name": "Tadelakt rose, late sun on plaster",
               "oklch": "0.780 0.062 32",
-              "hex": "#D8B1A1",
+              "hex": "#DCA99F",
               "note": "Lime-and-marble plaster of the medina, polished with olive-soap stone; the colour of the souk walls at golden hour.",
               "hier": "d",
               "light": true
@@ -178,7 +178,7 @@
             {
               "name": "Zellige white, tea-stained",
               "oklch": "0.884 0.022 88",
-              "hex": "#E8DEC9",
+              "hex": "#DFD8C9",
               "note": "Hand-cut glazed mosaic tile, the ground colour between the geometric darks.",
               "hier": "s",
               "light": true
@@ -186,45 +186,45 @@
             {
               "name": "Saffron, oxidised in burlap",
               "oklch": "0.748 0.132 74",
-              "hex": "#D2A25D",
+              "hex": "#DF9F41",
               "note": "Cured threads from the Atlas highlands; mound colour rather than fresh stigma.",
               "hier": "s"
             },
             {
               "name": "Lantern through pierced brass",
               "oklch": "0.652 0.118 62",
-              "hex": "#BC7E4C",
+              "hex": "#C37E3C",
               "note": "Light cast on the floor through a hanging Marrakchi lantern as the day shifts to lamp-light.",
               "hier": "s"
             },
             {
               "name": "Cobalt sky through the roof gap",
               "oklch": "0.423 0.158 263",
-              "hex": "#2C4A8A",
+              "hex": "#1B45A2",
               "note": "A narrow strip of post-sunset sky read between palm-frond slats overhead.",
               "hier": "a"
             },
             {
               "name": "Majorelle, named as colonial import (1924)",
               "oklch": "0.452 0.198 268",
-              "hex": "#3147A8",
+              "hex": "#2943C1",
               "note": "Synthetic ultramarine popularised by Jacques Majorelle; included <em>as accent, not as identity</em>, with its origin named.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#d8b1a1",
+              "c": "#dca99f",
               "pct": 55,
               "text": "Tadelakt rose carries the palette; warm plaster reads from across a square."
             },
             "s": {
-              "c": "#d2a25d",
+              "c": "#df9f41",
               "pct": 35,
               "text": "Saffron, brass-light, zellige white — the warm range of the souk floor and goods."
             },
             "a": {
-              "c": "#3147a8",
+              "c": "#2943c1",
               "pct": 10,
               "text": "The two blues only as small jolts — the sky-gap and the Majorelle quotation."
             }
@@ -310,7 +310,7 @@
             {
               "name": "Halite crust, sun-bleached",
               "oklch": "0.937 0.006 92",
-              "hex": "#ECEAE3",
+              "hex": "#EBEAE6",
               "note": "Sodium-chloride crust at the salar's edge, faintly warmed by sub-pixel mineral dust.",
               "hier": "d",
               "light": true
@@ -318,7 +318,7 @@
             {
               "name": "Vicuña wool, undyed, altiplano herd",
               "oklch": "0.722 0.038 78",
-              "hex": "#BEAE95",
+              "hex": "#B3A38B",
               "note": "Natural fibre tone of <em>vicugna vicugna</em>, the textile of Aymara and Atacameño weaving traditions.",
               "hier": "s",
               "light": true
@@ -326,21 +326,21 @@
             {
               "name": "Andean copper terracotta",
               "oklch": "0.585 0.094 46",
-              "hex": "#A37254",
+              "hex": "#AA694A",
               "note": "Iron-oxide rust of the Cordillera de la Sal and the adobe walls of San Pedro.",
               "hier": "s"
             },
             {
               "name": "Volcanic basalt, weathered",
               "oklch": "0.382 0.014 52",
-              "hex": "#564D44",
+              "hex": "#49413C",
               "note": "Andesitic scree on the Licancabur flanks; the dark mineral that grounds the white.",
               "hier": "s"
             },
             {
               "name": "High-altitude shadow, lilac on pale ground",
               "oklch": "0.722 0.038 298",
-              "hex": "#B5ABC1",
+              "hex": "#A8A1BB",
               "note": "The specific cold violet that appears in shadows at 2,300 m when there is almost no atmospheric scatter; only visible against white salt.",
               "hier": "a",
               "light": true
@@ -348,7 +348,7 @@
             {
               "name": "Atacama sky, bleached cobalt",
               "oklch": "0.618 0.090 248",
-              "hex": "#6F95C4",
+              "hex": "#588AB9",
               "note": "Thin atmosphere and extreme UV produce a blue with less depth than at sea level — almost dusty.",
               "hier": "a",
               "light": true
@@ -356,17 +356,17 @@
           ],
           "hierarchy": {
             "d": {
-              "c": "#eceae3",
+              "c": "#ebeae6",
               "pct": 60,
               "text": "Halite white anchors the salar; everything else is read against it."
             },
             "s": {
-              "c": "#a37254",
+              "c": "#aa694a",
               "pct": 30,
               "text": "Vicuña, copper terracotta, basalt — the warm earths that make the white feel like ground, not paper."
             },
             "a": {
-              "c": "#b5abc1",
+              "c": "#a8a1bb",
               "pct": 10,
               "text": "Shadow lilac and bleached cobalt only at small scale, where the altitude actually shows."
             }
@@ -452,14 +452,14 @@
             {
               "name": "November Aegean swell, grey-green",
               "oklch": "0.522 0.026 168",
-              "hex": "#6C7C75",
+              "hex": "#5B6F67",
               "note": "Aegean water in late autumn: no algal bloom, no resort blue, churned grey-green under overcast.",
               "hier": "d"
             },
             {
               "name": "Weathered fibreglass, hull paint",
               "oklch": "0.862 0.018 88",
-              "hex": "#DFD7C7",
+              "hex": "#D6D1C5",
               "note": "GRP marine paint, yellowed by years of salt and sun; the off-white of every working hull.",
               "hier": "s",
               "light": true
@@ -467,7 +467,7 @@
             {
               "name": "Horizon, indeterminate",
               "oklch": "0.683 0.010 235",
-              "hex": "#A4A8AD",
+              "hex": "#949A9F",
               "note": "The grey where sky meets sea; low contrast, no line you could draw.",
               "hier": "s",
               "light": true
@@ -475,21 +475,21 @@
             {
               "name": "Funnel stripe, faded indigo enamel",
               "oklch": "0.420 0.062 268",
-              "hex": "#4D5778",
+              "hex": "#3E4C6F",
               "note": "Company colour on the smokestack, alkyd marine enamel, sun-bleached down a register or two.",
               "hier": "s"
             },
             {
               "name": "Diesel sheen on the water, near the rail",
               "oklch": "0.298 0.022 295",
-              "hex": "#36333D",
+              "hex": "#2E2B37",
               "note": "Iridescent dark grey-purple film along the waterline below the gangway.",
               "hier": "a"
             },
             {
               "name": "Fluorescent T8, passenger lounge",
               "oklch": "0.948 0.042 138",
-              "hex": "#E7EFD6",
+              "hex": "#E1F5DA",
               "note": "Single overhead tube in the saloon; the slightly sickly green-white that makes everyone's face look like they didn't sleep.",
               "hier": "a",
               "light": true
@@ -497,17 +497,17 @@
           ],
           "hierarchy": {
             "d": {
-              "c": "#6c7c75",
+              "c": "#5b6f67",
               "pct": 55,
               "text": "Aegean grey-green; the colour you spend the night staring at through the window."
             },
             "s": {
-              "c": "#dfd7c7",
+              "c": "#d6d1c5",
               "pct": 35,
               "text": "Weathered fibreglass, horizon grey, faded indigo — the ship's own muted vocabulary."
             },
             "a": {
-              "c": "#e7efd6",
+              "c": "#e1f5da",
               "pct": 10,
               "text": "Diesel and fluorescent only as flicker; introduce them anywhere larger and the palette stops being honest."
             }
@@ -610,7 +610,7 @@
             {
               "name": "Fluorescent saloon white, mid-car",
               "oklch": "0.918 0.012 235",
-              "hex": "#E3E8EC",
+              "hex": "#DDE5EB",
               "note": "Cool overhead lighting in a JR East 235-series car, reading slightly blue against the platform glow.",
               "hier": "d",
               "light": true
@@ -618,7 +618,7 @@
             {
               "name": "Shōwa-era platform tile, cream",
               "oklch": "0.838 0.026 88",
-              "hex": "#D8CFBA",
+              "hex": "#D1C9B7",
               "note": "Glazed wall tile of older Yamanote stations; the cream that pre-dates the LED-white refurbishment.",
               "hier": "s",
               "light": true
@@ -626,45 +626,45 @@
             {
               "name": "Salaryman wool, navy at 30°",
               "oklch": "0.298 0.038 268",
-              "hex": "#2C3245",
+              "hex": "#252D41",
               "note": "The standard winter suit cloth; the dominant <em>moving</em> colour, not the dominant <em>surface</em> colour.",
               "hier": "s"
             },
             {
               "name": "Moquette plum, JR East seat",
               "oklch": "0.428 0.058 350",
-              "hex": "#6B4658",
+              "hex": "#684254",
               "note": "The patterned wool-blend upholstery on the bench seats; designed to hide the seventeen-year wear pattern.",
               "hier": "s"
             },
             {
               "name": "Sodium-pink neon, wet pavement",
               "oklch": "0.678 0.118 32",
-              "hex": "#D2715D",
+              "hex": "#D67B69",
               "note": "Reflection of a side-street sign in a Kabukichō puddle as the train pulls past; only visible at this hour, in this weather.",
               "hier": "a"
             },
             {
               "name": "Vending machine red, faded",
               "oklch": "0.508 0.142 28",
-              "hex": "#A93729",
+              "hex": "#A73D34",
               "note": "The corporate red of an old Coca-Cola / Suntory machine in the station underpass, sun-bleached two registers down.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#e3e8ec",
+              "c": "#dde5eb",
               "pct": 55,
               "text": "Saloon white reads from every flat surface inside the car."
             },
             "s": {
-              "c": "#2c3245",
+              "c": "#252d41",
               "pct": 35,
               "text": "Platform cream, salaryman navy, moquette plum — the resting surfaces of the system."
             },
             "a": {
-              "c": "#d2715d",
+              "c": "#d67b69",
               "pct": 10,
               "text": "Neon-pink and faded red only as small punctuation through windows."
             }
@@ -740,7 +740,7 @@
             {
               "name": "Calçada limestone, sun-polished",
               "oklch": "0.838 0.030 88",
-              "hex": "#D8CDB6",
+              "hex": "#D2C9B4",
               "note": "Pale Estremadura limestone, hand-cut to a 4cm cube; the dominant ground texture of the city.",
               "hier": "d",
               "light": true
@@ -748,14 +748,14 @@
             {
               "name": "Calçada basalt, interleaved seam",
               "oklch": "0.402 0.008 78",
-              "hex": "#4A4540",
+              "hex": "#4B4843",
               "note": "Dark basalt set in patterns into the limestone field — the half of the pavement that makes the other half legible.",
               "hier": "s"
             },
             {
               "name": "Faded paint-on-stucco, Largo das Portas",
               "oklch": "0.748 0.062 18",
-              "hex": "#D49AA0",
+              "hex": "#D29E9F",
               "note": "Building paint near Portas do Sol, originally red oxide, weathered to a dusty pink across one Atlantic decade.",
               "hier": "s",
               "light": true
@@ -763,38 +763,38 @@
             {
               "name": "Cork bark, raw, Alentejo",
               "oklch": "0.668 0.062 58",
-              "hex": "#B88E69",
+              "hex": "#B28C6F",
               "note": "Stripped <em>Quercus suber</em> bark from the cork plantations south of the Tagus; the material culture you can buy in every souvenir shop, but here as bark, not as gimmick.",
               "hier": "s"
             },
             {
               "name": "Azulejo blue, Pombaline tin-glaze",
               "oklch": "0.518 0.108 248",
-              "hex": "#2D6DA3",
+              "hex": "#2E6CA3",
               "note": "Cobalt-on-tin glaze, 18th-c. Lisboa tradition; on facades only, never extended into the dominant.",
               "hier": "a"
             },
             {
               "name": "Tram livery yellow, oxidised",
               "oklch": "0.748 0.118 78",
-              "hex": "#D6A14A",
+              "hex": "#D6A34F",
               "note": "The Carris yellow as it appears on the actual 28 — not on the brochure version — after fifty Lisbon summers.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#d8cdb6",
+              "c": "#d2c9b4",
               "pct": 50,
               "text": "Limestone calçada carries every street and square the tram passes."
             },
             "s": {
-              "c": "#b88e69",
+              "c": "#b28c6f",
               "pct": 40,
               "text": "Basalt seam, faded pink, cork — the working materials of the city, not its tourist signage."
             },
             "a": {
-              "c": "#2d6da3",
+              "c": "#2e6ca3",
               "pct": 10,
               "text": "Azulejo blue and tram yellow only where they actually exist: on tile and on livery."
             }
@@ -870,14 +870,14 @@
             {
               "name": "Basalt sand, Reynisfjara",
               "oklch": "0.262 0.005 280",
-              "hex": "#2A2A2C",
+              "hex": "#242427",
               "note": "Sub-millimetre fragments of erupted basalt; the only beach surface that reads black even when wet.",
               "hier": "d"
             },
             {
               "name": "Sheep wool, raw and unscoured",
               "oklch": "0.898 0.018 88",
-              "hex": "#EBE4D4",
+              "hex": "#E2DDD0",
               "note": "Icelandic sheep fleece before washing or dyeing — the lanolin-cream of an unspun roving.",
               "hier": "s",
               "light": true
@@ -885,7 +885,7 @@
             {
               "name": "Glacial-melt silt, river-mouth blue",
               "oklch": "0.788 0.022 198",
-              "hex": "#B8C8C5",
+              "hex": "#AABFBF",
               "note": "Suspended rock flour from a sandur outwash plain; the colour of an Icelandic river where it meets the sea.",
               "hier": "s",
               "light": true
@@ -893,38 +893,38 @@
             {
               "name": "Tussock grass, wind-scoured",
               "oklch": "0.548 0.038 118",
-              "hex": "#7A8462",
+              "hex": "#6F745B",
               "note": "Hardy <em>Festuca</em> on the cliff above the beach; the only chlorophyll in the territory and only at small scale.",
               "hier": "s"
             },
             {
               "name": "Lupine, past its peak",
               "oklch": "0.498 0.052 305",
-              "hex": "#695779",
+              "hex": "#695B7B",
               "note": "Invasive <em>Lupinus nootkatensis</em>, introduced for soil reclamation; brilliant in June, this purple-grey by late August.",
               "hier": "a"
             },
             {
               "name": "Basalt column, wet sea-stack",
               "oklch": "0.328 0.008 268",
-              "hex": "#393A3E",
+              "hex": "#333539",
               "note": "Hexagonal columnar basalt at the Reynisdrangar stacks; the same mineral as the sand, with a cooler cast when soaked.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#2a2a2c",
+              "c": "#242427",
               "pct": 55,
               "text": "Basalt sand — the territory's only honest \"neutral.\""
             },
             "s": {
-              "c": "#b8c8c5",
+              "c": "#aabfbf",
               "pct": 35,
               "text": "Wool cream, glacial silt, tussock grass — the materials that keep the palette from going to charcoal."
             },
             "a": {
-              "c": "#695779",
+              "c": "#695B7B",
               "pct": 10,
               "text": "Late-summer lupine and wet basalt, in small reads only."
             }
@@ -1000,21 +1000,21 @@
             {
               "name": "Wet laterite, exposed wall",
               "oklch": "0.488 0.098 38",
-              "hex": "#8A4A37",
+              "hex": "#8E4A35",
               "note": "Iron-rich laterite rock cut into blocks and tile; reads dark and saturated after rain, lighter after the sun returns.",
               "hier": "d"
             },
             {
               "name": "Banyan leaf, post-rain",
               "oklch": "0.488 0.038 138",
-              "hex": "#4A6147",
+              "hex": "#556550",
               "note": "Broad <em>Ficus benghalensis</em> foliage, still dripping; deepest green that survives the overcast.",
               "hier": "s"
             },
             {
               "name": "Rain-light, between squalls",
               "oklch": "0.578 0.038 245",
-              "hex": "#6A7B8E",
+              "hex": "#677D8F",
               "note": "The cool grey-blue of the Arabian Sea sky in monsoon; <em>this</em> is what the Kerala blue actually looks like, not turquoise.",
               "hier": "s",
               "light": true
@@ -1022,38 +1022,38 @@
             {
               "name": "Coconut coir, soaked rope",
               "oklch": "0.402 0.038 58",
-              "hex": "#5E4630",
+              "hex": "#584334",
               "note": "Hand-spun coir from the Alappuzha coast; dark brown when wet, warmer when dry.",
               "hier": "s"
             },
             {
               "name": "Portuguese-import indigo, trim",
               "oklch": "0.388 0.052 248",
-              "hex": "#2F4256",
+              "hex": "#2D475F",
               "note": "Indigo trim on shutters and door frames, surviving from 16th-c. Portuguese paint stocks — cited here as colonial import, like Majorelle in Vol I.",
               "hier": "a"
             },
             {
               "name": "Brass diya, polished by rain",
               "oklch": "0.668 0.082 78",
-              "hex": "#B89060",
+              "hex": "#B08F59",
               "note": "Hindu temple-lamp brass at a wayside shrine; the only warm metal in the territory.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#8a4a37",
+              "c": "#8e4a35",
               "pct": 55,
               "text": "Laterite red is the colour of every wall and roof tile; it carries the territory."
             },
             "s": {
-              "c": "#4a6147",
+              "c": "#556550",
               "pct": 35,
               "text": "Wet banyan, rain-light, coir — the working textures of the port."
             },
             "a": {
-              "c": "#2f4256",
+              "c": "#2d475f",
               "pct": 10,
               "text": "Indigo and brass only where colonial trade or temple use put them."
             }
@@ -1141,7 +1141,7 @@
             {
               "name": "North Atlantic sea-fog, mid-morning",
               "oklch": "0.802 0.006 138",
-              "hex": "#C2C4C0",
+              "hex": "#BCBFBB",
               "note": "The almost-achromatic grey of a true Faroese mist; reads slightly green only against the painted houses.",
               "hier": "d",
               "light": true
@@ -1149,14 +1149,14 @@
             {
               "name": "Tarred wood, old Tinganes cladding",
               "oklch": "0.222 0.018 58",
-              "hex": "#2A201A",
+              "hex": "#221913",
               "note": "Pitch-coated timber on the harbour's oldest buildings; near-black, with a warm undertone.",
               "hier": "s"
             },
             {
               "name": "Wool oil cream, raw fleece",
               "oklch": "0.838 0.030 85",
-              "hex": "#D9CBB4",
+              "hex": "#D3C9B4",
               "note": "Undyed Føroyskt sheep wool with lanolin still in it; the cream of a fisherman's jumper before it is washed.",
               "hier": "s",
               "light": true
@@ -1164,38 +1164,38 @@
             {
               "name": "Wet peat, field edge",
               "oklch": "0.318 0.022 58",
-              "hex": "#3D342A",
+              "hex": "#3B3027",
               "note": "Cut turf for fuel and roofing; the dark organic ground that surrounds every Faroese settlement.",
               "hier": "s"
             },
             {
               "name": "Painted-house ochre, Sjóvinnubankin",
               "oklch": "0.638 0.108 72",
-              "hex": "#B88A4A",
+              "hex": "#B48039",
               "note": "Saturated yellow-ochre on Tinganes — one of the two paint pigments the Faroese consistently maintain.",
               "hier": "a"
             },
             {
               "name": "Painted-house oxblood, turf-roof saltbox",
               "oklch": "0.412 0.082 28",
-              "hex": "#6E3A32",
+              "hex": "#713831",
               "note": "Iron-oxide red on the turf-roofed houses; the only other saturated pigment the climate tolerates.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#c2c4c0",
+              "c": "#bcbfbb",
               "pct": 60,
               "text": "Fog grey reads from sky, sea, and stone all at once."
             },
             "s": {
-              "c": "#2a201a",
+              "c": "#221913",
               "pct": 30,
               "text": "Tarred wood, wool, peat — the structural and material darks."
             },
             "a": {
-              "c": "#b88a4a",
+              "c": "#b48039",
               "pct": 10,
               "text": "Ochre and oxblood — the painted houses are the entire colour event."
             }
@@ -1268,7 +1268,7 @@
             {
               "name": "Sheep felt, undyed",
               "oklch": "0.828 0.046 88",
-              "hex": "#D8C9A8",
+              "hex": "#D3C6A5",
               "note": "The felted-wool covering of the ger, inside and out; the dominant surface of the entire encampment.",
               "hier": "d",
               "light": true
@@ -1276,7 +1276,7 @@
             {
               "name": "Steppe dust, dawn",
               "oklch": "0.668 0.030 78",
-              "hex": "#A89880",
+              "hex": "#9F9380",
               "note": "Wind-borne loess that coats every flat surface in the camp by morning.",
               "hier": "s",
               "light": true
@@ -1284,45 +1284,45 @@
             {
               "name": "Horsehair, bay",
               "oklch": "0.318 0.058 36",
-              "hex": "#4A2E22",
+              "hex": "#4B271D",
               "note": "Mane and tail rope used for halter, reins, and the small wall ornaments inside the ger.",
               "hier": "s"
             },
             {
               "name": "Civil twilight, cold blue",
               "oklch": "0.448 0.038 248",
-              "hex": "#495B73",
+              "hex": "#445769",
               "note": "The narrow band of light through the open door-flap at 5:55 am, 47° N, October — before the sun is up but after the stars are gone.",
               "hier": "s"
             },
             {
               "name": "Dung-fire on felt, interior wall",
               "oklch": "0.598 0.142 52",
-              "hex": "#C47238",
+              "hex": "#C0631C",
               "note": "Argal (dried-dung) flame reflected onto the inside felt; warm orange, never red.",
               "hier": "a"
             },
             {
               "name": "Khadag silk, Tengri blue",
               "oklch": "0.598 0.082 245",
-              "hex": "#5688B8",
+              "hex": "#5485AE",
               "note": "Ceremonial blue scarf tied to the support pole or the head of the herd; the single saturated colour in the ger.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#d8c9a8",
+              "c": "#d3c6a5",
               "pct": 60,
               "text": "Felt is the territory; every other reading is read against it."
             },
             "s": {
-              "c": "#a89880",
+              "c": "#9f9380",
               "pct": 30,
               "text": "Steppe dust, horsehair, dawn blue — the working textures of the camp."
             },
             "a": {
-              "c": "#c47238",
+              "c": "#c0631c",
               "pct": 10,
               "text": "Hearth-fire and khadag blue, in tiny quantities."
             }
@@ -1391,7 +1391,7 @@
             {
               "name": "Nicotine-aged plaster, ceiling",
               "oklch": "0.808 0.042 82",
-              "hex": "#D6C4A4",
+              "hex": "#CEBEA2",
               "note": "A century of tobacco on the plaster overhead, never washed; the warm ivory that defines a real kaffeehaus interior.",
               "hier": "d",
               "light": true
@@ -1399,7 +1399,7 @@
             {
               "name": "Marble table top, grey-veined",
               "oklch": "0.838 0.006 88",
-              "hex": "#D3D0C8",
+              "hex": "#CBCAC5",
               "note": "Carrara-style table marble, cool against the warm plaster above it.",
               "hier": "s",
               "light": true
@@ -1407,45 +1407,45 @@
             {
               "name": "Banquette leather, Thonet olive",
               "oklch": "0.348 0.030 158",
-              "hex": "#2F4337",
+              "hex": "#2D3F34",
               "note": "Dark olive-green dyed leather on the wall-side banquette; original to several Mariahilf-quarter cafés.",
               "hier": "s"
             },
             {
               "name": "Oxidised brass, hat-rack and rail",
               "oklch": "0.488 0.038 78",
-              "hex": "#756247",
+              "hex": "#6C5D48",
               "note": "Patinated brass fittings on every coat hook and brass rail; warm but not gold.",
               "hier": "s"
             },
             {
               "name": "Gilt mirror lettering",
               "oklch": "0.648 0.082 78",
-              "hex": "#B48F4F",
+              "hex": "#AA8853",
               "note": "Gold-leaf signage on the back-bar mirror; the single bright thing in the room when the lamps are low.",
               "hier": "a"
             },
             {
               "name": "Wet cobble, through the window",
               "oklch": "0.252 0.006 78",
-              "hex": "#2C2A28",
+              "hex": "#24221F",
               "note": "Mariahilfer Straße at dusk after rain, glimpsed past the curtain — almost-black, very slightly warm.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#d6c4a4",
+              "c": "#cebea2",
               "pct": 55,
               "text": "Tobacco-aged plaster — the literal atmosphere of the room."
             },
             "s": {
-              "c": "#2f4337",
+              "c": "#2d3f34",
               "pct": 35,
               "text": "Marble, banquette green, oxidised brass — the furniture and fittings."
             },
             "a": {
-              "c": "#b48f4f",
+              "c": "#aa8853",
               "pct": 10,
               "text": "Gilt and wet cobble only as flicker."
             }
@@ -1514,21 +1514,21 @@
             {
               "name": "Adobe wall, low-angle sun",
               "oklch": "0.708 0.072 56",
-              "hex": "#C79A72",
+              "hex": "#C49675",
               "note": "Sun-warmed Pueblo Revival earth wall, read on the south face at 16:30 in February.",
               "hier": "d"
             },
             {
               "name": "Sage, mountain mahogany",
               "oklch": "0.598 0.022 108",
-              "hex": "#8E9276",
+              "hex": "#818172",
               "note": "<em>Artemisia tridentata</em> at the valley floor; the only consistent green in the territory.",
               "hier": "s"
             },
             {
               "name": "Shaded-snow blue, Sangre de Cristos",
               "oklch": "0.808 0.018 248",
-              "hex": "#C0C8D2",
+              "hex": "#B8C2CC",
               "note": "Late-winter snow on the north slope, already in shadow at this hour; the cold-blue reading that makes the adobe look warm.",
               "hier": "s",
               "light": true
@@ -1536,38 +1536,38 @@
             {
               "name": "Juniper bark, twisted",
               "oklch": "0.398 0.038 58",
-              "hex": "#5E4530",
+              "hex": "#574233",
               "note": "<em>Juniperus monosperma</em> on the road verge; the dark warm that anchors sage and adobe together.",
               "hier": "s"
             },
             {
               "name": "Spanish-colonial blue, door trim",
               "oklch": "0.518 0.062 245",
-              "hex": "#4A6E8E",
+              "hex": "#496C8A",
               "note": "Indigo trim around windows and doors — a protective pigment in Spanish-colonial folk tradition, not decoration.",
               "hier": "a"
             },
             {
               "name": "Alpenglow on snow, peach",
               "oklch": "0.748 0.062 48",
-              "hex": "#D8A888",
+              "hex": "#CFA28C",
               "note": "Late-winter alpenglow on the high snowfield, only available in the last twenty minutes before the sun drops behind the range.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#c79a72",
+              "c": "#c49675",
               "pct": 55,
               "text": "Adobe carries the territory; every wall, every road shoulder."
             },
             "s": {
-              "c": "#8e9276",
+              "c": "#818172",
               "pct": 35,
               "text": "Sage, juniper bark, shaded-snow blue — the land's other constants."
             },
             "a": {
-              "c": "#4a6e8e",
+              "c": "#496c8a",
               "pct": 10,
               "text": "Door-trim blue and alpenglow peach only where they actually appear."
             }
@@ -1643,7 +1643,7 @@
             {
               "name": "North Atlantic fog cream",
               "oklch": "0.852 0.008 88",
-              "hex": "#D8D4CC",
+              "hex": "#D0CEC9",
               "note": "Low-altitude sea-mist over the harbour; the dominant reading for the first three hours of the morning.",
               "hier": "d",
               "light": true
@@ -1651,52 +1651,52 @@
             {
               "name": "Dory grey, gunwale paint",
               "oklch": "0.522 0.012 200",
-              "hex": "#6D7A78",
+              "hex": "#626C6C",
               "note": "Sun-and-salt oil-paint on the working boats; the standard outport hull colour.",
               "hier": "s"
             },
             {
               "name": "Atlantic harbour green",
               "oklch": "0.452 0.024 168",
-              "hex": "#4F6760",
+              "hex": "#495A53",
               "note": "Tidal water inside the breakwater, dulled by suspended kelp.",
               "hier": "s"
             },
             {
               "name": "Kelp wrack, low tide",
               "oklch": "0.342 0.038 65",
-              "hex": "#4A3A26",
+              "hex": "#463423",
               "note": "Bladderwrack and rockweed exposed on the slipway stones.",
               "hier": "s"
             },
             {
               "name": "Saltbox red, painted clapboard",
               "oklch": "0.522 0.158 30",
-              "hex": "#B04332",
+              "hex": "#B23B2C",
               "note": "Iron-oxide marine paint on the houses above the harbour; reads at twice its hue in fog.",
               "hier": "a"
             },
             {
               "name": "Rock lichen, orange",
               "oklch": "0.652 0.118 62",
-              "hex": "#C08646",
+              "hex": "#C37E3C",
               "note": "<em>Xanthoria</em> lichen on the exposed granite of the headland.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#D8D4CC",
+              "c": "#D0CEC9",
               "pct": 55,
               "text": "Fog cream sits on the boats, the houses, the water, the sky."
             },
             "s": {
-              "c": "#6D7A78",
+              "c": "#626C6C",
               "pct": 35,
               "text": "Dory grey, harbour green, kelp brown — the working surfaces."
             },
             "a": {
-              "c": "#B04332",
+              "c": "#B23B2C",
               "pct": 10,
               "text": "Saltbox red and lichen orange, the only saturated colours in the cove."
             }
@@ -1764,42 +1764,42 @@
             {
               "name": "Monsoon-stained concrete, jetty",
               "oklch": "0.598 0.012 88",
-              "hex": "#8C8678",
+              "hex": "#827F78",
               "note": "The dominant ground texture of the koliwada — concrete that has seen ten monsoons.",
               "hier": "d"
             },
             {
               "name": "Painted hull cobalt, koli boat",
               "oklch": "0.408 0.122 248",
-              "hex": "#1C4D7C",
+              "hex": "#004C88",
               "note": "The boat-paint blue maintained across the koli fleet; a working pigment, not a decorative one.",
               "hier": "s"
             },
             {
               "name": "Fishwife sari indigo",
               "oklch": "0.282 0.072 282",
-              "hex": "#2B2C52",
+              "hex": "#24234B",
               "note": "Deep indigo-purple sari worn under the working drape; the dominant <em>moving</em> colour in the village.",
               "hier": "s"
             },
             {
               "name": "Drying net, nylon green",
               "oklch": "0.502 0.058 152",
-              "hex": "#487058",
+              "hex": "#4A6E53",
               "note": "Mass-produced fishing-mesh slung between the masts to dry overnight.",
               "hier": "s"
             },
             {
               "name": "Bombay duck, sun-dried",
               "oklch": "0.728 0.046 65",
-              "hex": "#C3A98C",
+              "hex": "#BCA289",
               "note": "<em>Bombil</em> fish on the drying rack; mottled cream-pink in the early light.",
               "hier": "a"
             },
             {
               "name": "Arabian-Sea dawn pink",
               "oklch": "0.752 0.052 28",
-              "hex": "#D6A89E",
+              "hex": "#CEA39C",
               "note": "The fifteen-minute warm sky over a haze-loaded industrial horizon.",
               "hier": "a",
               "light": true
@@ -1807,17 +1807,17 @@
           ],
           "hierarchy": {
             "d": {
-              "c": "#8C8678",
+              "c": "#827F78",
               "pct": 55,
               "text": "Concrete jetty grey carries every surface above the waterline."
             },
             "s": {
-              "c": "#1C4D7C",
+              "c": "#004C88",
               "pct": 35,
               "text": "Cobalt hulls, sari indigo, net green — the working colours of the koli."
             },
             "a": {
-              "c": "#D6A89E",
+              "c": "#CEA39C",
               "pct": 10,
               "text": "Dawn-pink sky and dried-fish cream as brief flashes."
             }
@@ -1884,14 +1884,14 @@
             {
               "name": "Breton granite, blue-grey",
               "oklch": "0.532 0.014 248",
-              "hex": "#6E7681",
+              "hex": "#666D74",
               "note": "Quarried Cap Fréhel granite cut into the seawall blocks; the city's structural colour.",
               "hier": "d"
             },
             {
               "name": "Channel fog white",
               "oklch": "0.852 0.004 88",
-              "hex": "#D9D8D2",
+              "hex": "#CFCECB",
               "note": "Mid-morning salt-mist that lifts only slowly off the bay.",
               "hier": "s",
               "light": true
@@ -1899,7 +1899,7 @@
             {
               "name": "Oyster shell, sun-bleached",
               "oklch": "0.788 0.012 88",
-              "hex": "#C8C2B3",
+              "hex": "#BDBAB1",
               "note": "Discarded oyster halves from the Cancale beds; a regional material-culture cream.",
               "hier": "s",
               "light": true
@@ -1907,38 +1907,38 @@
             {
               "name": "Slate roof, salt-washed",
               "oklch": "0.412 0.006 248",
-              "hex": "#4D4F53",
+              "hex": "#484B4E",
               "note": "Cap-de-la-Hague slate on the old quayside houses, kept dark by the spray.",
               "hier": "s"
             },
             {
               "name": "Wet rockweed brown",
               "oklch": "0.342 0.042 62",
-              "hex": "#4A3826",
+              "hex": "#483421",
               "note": "<em>Fucus</em> on the exposed lower stones, glossy at low tide.",
               "hier": "a"
             },
             {
               "name": "Creosote wood, pier piling",
               "oklch": "0.232 0.020 58",
-              "hex": "#2B231B",
+              "hex": "#251B14",
               "note": "Tar-coated piling visible only at the year's lowest tide.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#6E7681",
+              "c": "#666D74",
               "pct": 60,
               "text": "Granite is the entire built fabric of the port."
             },
             "s": {
-              "c": "#D9D8D2",
+              "c": "#CFCECB",
               "pct": 30,
               "text": "Fog white, oyster shell, slate roof — the materials around the granite."
             },
             "a": {
-              "c": "#4A3826",
+              "c": "#483421",
               "pct": 10,
               "text": "Rockweed and creosote, only where the tide exposes them."
             }
@@ -2006,59 +2006,59 @@
             {
               "name": "Drying mat, woven rice straw",
               "oklch": "0.748 0.062 78",
-              "hex": "#C7B288",
+              "hex": "#C3A981",
               "note": "The standard <em>komo</em> mat used to sun-dry kombu; covers the entire shore by mid-morning.",
               "hier": "d"
             },
             {
               "name": "Wet kombu, blackish kelp",
               "oklch": "0.252 0.024 100",
-              "hex": "#2C2C1F",
+              "hex": "#252215",
               "note": "Freshly hauled <em>Saccharina japonica</em>, still seawater-glossy.",
               "hier": "s"
             },
             {
               "name": "Sun-dried kombu, olive ribbon",
               "oklch": "0.498 0.078 100",
-              "hex": "#6E6B2E",
+              "hex": "#6D642B",
               "note": "The same kelp eight hours later — colour shifted from black to olive as it dries.",
               "hier": "s"
             },
             {
               "name": "Hokkaido sea grey-green",
               "oklch": "0.522 0.020 168",
-              "hex": "#6E7C75",
+              "hex": "#5F6D67",
               "note": "Northern Pacific water at this latitude in summer; never a tropical hue.",
               "hier": "s"
             },
             {
               "name": "Fisherman's rubber bib, faded blue",
               "oklch": "0.572 0.034 245",
-              "hex": "#6D7D8E",
+              "hex": "#687B8B",
               "note": "The standard kelp-harvest apron, sun-faded from a deeper navy.",
               "hier": "a"
             },
             {
               "name": "Volcanic black sand",
               "oklch": "0.272 0.006 80",
-              "hex": "#2F2E2C",
+              "hex": "#282724",
               "note": "Hidaka shore sand, derived from regional basalt.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#C7B288",
+              "c": "#C3A981",
               "pct": 55,
               "text": "Straw drying mats — the entire shore from above looks like cream."
             },
             "s": {
-              "c": "#2C2C1F",
+              "c": "#252215",
               "pct": 35,
               "text": "Two registers of kombu plus the cool Hokkaido sea."
             },
             "a": {
-              "c": "#6D7D8E",
+              "c": "#687B8B",
               "pct": 10,
               "text": "Fisherman bib blue and volcanic sand only as small reads."
             }
@@ -2146,7 +2146,7 @@
             {
               "name": "Snow-glare white, mountain reflection",
               "oklch": "0.918 0.006 215",
-              "hex": "#E8EAEC",
+              "hex": "#E0E5E6",
               "note": "Reflected light off the peaks behind the teahouse, still bright at this hour.",
               "hier": "d",
               "light": true
@@ -2154,52 +2154,52 @@
             {
               "name": "Wood-smoke veil, interior",
               "oklch": "0.612 0.022 78",
-              "hex": "#948672",
+              "hex": "#8B8275",
               "note": "The atmosphere of the room itself — every interior surface reads through this haze.",
               "hier": "s"
             },
             {
               "name": "Stove iron, soot black",
               "oklch": "0.222 0.012 60",
-              "hex": "#2A2521",
+              "hex": "#1F1A16",
               "note": "The yak-dung stove at the centre of the kitchen; near-black with a warm cast.",
               "hier": "s"
             },
             {
               "name": "Prayer flag, faded blue",
               "oklch": "0.612 0.058 245",
-              "hex": "#6E8EB0",
+              "hex": "#6688A5",
               "note": "One of the five flag colours, sun-bleached past saturation; pinned above the kitchen door.",
               "hier": "s"
             },
             {
               "name": "Yak-butter lamp, gold flame",
               "oklch": "0.628 0.122 60",
-              "hex": "#C98A3A",
+              "hex": "#BD7532",
               "note": "Lit during prayer hours and at supper; the only warm source after sunset.",
               "hier": "a"
             },
             {
               "name": "Rhododendron leaf, autumn rust",
               "oklch": "0.422 0.092 38",
-              "hex": "#6E3E2A",
+              "hex": "#773926",
               "note": "Late-October leaf colour on the slope behind the teahouse — the only deep-red of the territory.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#E8EAEC",
+              "c": "#E0E5E6",
               "pct": 55,
               "text": "Snow-glare white anchors the territory; nothing reads warmer than it."
             },
             "s": {
-              "c": "#948672",
+              "c": "#8B8275",
               "pct": 35,
               "text": "Smoke, stove iron, faded prayer-flag blue — the room you sit in."
             },
             "a": {
-              "c": "#C98A3A",
+              "c": "#BD7532",
               "pct": 10,
               "text": "Butter-lamp gold and rhododendron rust, in small reads only."
             }
@@ -2255,42 +2255,42 @@
             {
               "name": "Spanish-colonial ochre plaster",
               "oklch": "0.658 0.112 70",
-              "hex": "#C08C4A",
+              "hex": "#BD843D",
               "note": "The dominant building colour around the plaza, applied over Inca foundations.",
               "hier": "d"
             },
             {
               "name": "Inca stone, blue-grey andesite",
               "oklch": "0.532 0.008 248",
-              "hex": "#6E7378",
+              "hex": "#696D71",
               "note": "Pre-conquest masonry at the base of every wall, fitted without mortar.",
               "hier": "s"
             },
             {
               "name": "Terracotta tile, sun-bleached",
               "oklch": "0.548 0.118 38",
-              "hex": "#A45838",
+              "hex": "#AA553B",
               "note": "Roof tile across the cathedral district, bleached from a deeper red.",
               "hier": "s"
             },
             {
               "name": "Eucalyptus, hillside green-grey",
               "oklch": "0.518 0.048 118",
-              "hex": "#6E7D52",
+              "hex": "#666C4D",
               "note": "Imported eucalyptus on the slopes above the plaza — the dominant green of modern Cuzco.",
               "hier": "s"
             },
             {
               "name": "Andean red, woven textile",
               "oklch": "0.402 0.142 28",
-              "hex": "#7D2622",
+              "hex": "#841A16",
               "note": "Cochineal-derived red in the regional <em>manta</em> textiles; used here as accent, not as identity.",
               "hier": "a"
             },
             {
               "name": "Highland sky, thin atmosphere",
               "oklch": "0.722 0.052 235",
-              "hex": "#94B0C8",
+              "hex": "#86ABC2",
               "note": "Blue at 3,400 m: less saturated than at sea level, less dense than at the salar.",
               "hier": "a",
               "light": true
@@ -2298,17 +2298,17 @@
           ],
           "hierarchy": {
             "d": {
-              "c": "#C08C4A",
+              "c": "#BD843D",
               "pct": 50,
               "text": "Ochre plaster is the city's dominant facade colour."
             },
             "s": {
-              "c": "#6E7378",
+              "c": "#696D71",
               "pct": 40,
               "text": "Inca stone, tile, eucalyptus — the working materials of Cuzco."
             },
             "a": {
-              "c": "#7D2622",
+              "c": "#841A16",
               "pct": 10,
               "text": "Andean red and highland sky only as small reads."
             }
@@ -2364,7 +2364,7 @@
             {
               "name": "Dolomia limestone pink, sun-lit peak",
               "oklch": "0.708 0.062 36",
-              "hex": "#C89E88",
+              "hex": "#C49486",
               "note": "The defining pink-tinted limestone of the Dolomites at full afternoon sun.",
               "hier": "d",
               "light": true
@@ -2372,52 +2372,52 @@
             {
               "name": "Refuge wood, oiled spruce",
               "oklch": "0.422 0.068 62",
-              "hex": "#6E4F30",
+              "hex": "#684524",
               "note": "Interior cladding of the rifugio, oiled annually against the winter.",
               "hier": "s"
             },
             {
               "name": "Mountain-shadow blue, glacial slope",
               "oklch": "0.488 0.042 248",
-              "hex": "#5E7088",
+              "hex": "#4D6277",
               "note": "Cold shadow on the north face directly across the valley.",
               "hier": "s"
             },
             {
               "name": "Wool blanket, regimental grey",
               "oklch": "0.498 0.006 168",
-              "hex": "#6A6E6B",
+              "hex": "#606462",
               "note": "Alpini-issue wool blanket folded on every bunk.",
               "hier": "s"
             },
             {
               "name": "Larch russet, gone over",
               "oklch": "0.402 0.082 56",
-              "hex": "#6E4828",
+              "hex": "#693B16",
               "note": "Last autumn's larch needles, still on the trees, no longer bright.",
               "hier": "a"
             },
             {
               "name": "Prosecco bottle green, emptied",
               "oklch": "0.342 0.044 152",
-              "hex": "#2C4232",
+              "hex": "#273F2D",
               "note": "An end-of-season relic on the railing; the only saturated green visible.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#C89E88",
+              "c": "#C49486",
               "pct": 55,
               "text": "Dolomia pink reads from the peaks above the refuge all afternoon."
             },
             "s": {
-              "c": "#6E4F30",
+              "c": "#684524",
               "pct": 35,
               "text": "Refuge wood, blanket grey, mountain-shadow blue — the closed-up interior."
             },
             "a": {
-              "c": "#6E4828",
+              "c": "#693B16",
               "pct": 10,
               "text": "Larch russet and prosecco green, end-of-season punctuation."
             }
@@ -2473,14 +2473,14 @@
             {
               "name": "Earthen wall, sun-baked adobe",
               "oklch": "0.628 0.082 62",
-              "hex": "#B78657",
+              "hex": "#AC7D53",
               "note": "The dominant exterior surface of every Ladakhi monastery building.",
               "hier": "d"
             },
             {
               "name": "Snow-rinse white, mani wall",
               "oklch": "0.848 0.018 88",
-              "hex": "#D8D4C6",
+              "hex": "#D2CDC0",
               "note": "Annually rewhitewashed mani wall along the access path; reflects late light strongly.",
               "hier": "s",
               "light": true
@@ -2488,45 +2488,45 @@
             {
               "name": "Juniper smoke, cold-blue veil",
               "oklch": "0.522 0.024 245",
-              "hex": "#6A7888",
+              "hex": "#5E6B77",
               "note": "Ritual juniper-bough smoke from the morning offering, still hanging at dusk.",
               "hier": "s"
             },
             {
               "name": "Thangka cobalt",
               "oklch": "0.408 0.122 252",
-              "hex": "#2E4E8A",
+              "hex": "#004A89",
               "note": "Mineral cobalt used in painted scroll backgrounds inside the assembly hall.",
               "hier": "s"
             },
             {
               "name": "Prayer-hall red, oxide pigment",
               "oklch": "0.392 0.148 28",
-              "hex": "#7A2A1F",
+              "hex": "#83110F",
               "note": "Iron-oxide red band painted around the prayer-hall facade.",
               "hier": "a"
             },
             {
               "name": "Marigold gold, offering",
               "oklch": "0.722 0.142 65",
-              "hex": "#D89438",
+              "hex": "#E19034",
               "note": "Flowers heaped on the altar at the puja; brief saturated yellow inside an otherwise muted territory.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#B78657",
+              "c": "#AC7D53",
               "pct": 55,
               "text": "Adobe carries the territory at this hour; the warm dominant against the cold sky."
             },
             "s": {
-              "c": "#D8D4C6",
+              "c": "#D2CDC0",
               "pct": 35,
               "text": "Mani-wall white, juniper smoke, thangka cobalt — the cooler register."
             },
             "a": {
-              "c": "#7A2A1F",
+              "c": "#83110F",
               "pct": 10,
               "text": "Prayer-hall red and marigold gold, where the ritual leaves its mark."
             }
@@ -2594,14 +2594,14 @@
             {
               "name": "Cobblestone wet, basalt set",
               "oklch": "0.322 0.004 78",
-              "hex": "#3A3A37",
+              "hex": "#343331",
               "note": "The Sunday street wash leaves the granite block paving dark for an hour.",
               "hier": "d"
             },
             {
               "name": "Café wall, dulce-de-leche cream",
               "oklch": "0.788 0.062 75",
-              "hex": "#D8B88A",
+              "hex": "#D2B58E",
               "note": "The standard 1940s parrilla facade colour — warm, never bright.",
               "hier": "s",
               "light": true
@@ -2609,45 +2609,45 @@
             {
               "name": "Mate green-grey, gourd",
               "oklch": "0.518 0.024 118",
-              "hex": "#6E7460",
+              "hex": "#676A5B",
               "note": "Worn-yerba colour on the corner table; the city's domestic drink, not a tourist signifier.",
               "hier": "s"
             },
             {
               "name": "Asphalt sodium-spilled sky",
               "oklch": "0.262 0.012 268",
-              "hex": "#2C2E34",
+              "hex": "#22242B",
               "note": "The colour of the sky between streetlamps — not black, never blue.",
               "hier": "s"
             },
             {
               "name": "Sodium streetlamp, low-pressure",
               "oklch": "0.658 0.122 50",
-              "hex": "#C87A3E",
+              "hex": "#CC7948",
               "note": "Classic municipal lamp colour over the cobble; the night's warm wash.",
               "hier": "a"
             },
             {
               "name": "Fileteado red, sign-painter",
               "oklch": "0.498 0.152 28",
-              "hex": "#A3382C",
+              "hex": "#A8352D",
               "note": "The deep oxide-red of the carrera-fileteado tradition on bar windows and grocer's signs.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#3A3A37",
+              "c": "#343331",
               "pct": 50,
               "text": "Wet cobblestone is the entire ground plane after the fair closes."
             },
             "s": {
-              "c": "#D8B88A",
+              "c": "#D2B58E",
               "pct": 40,
               "text": "Dulce-de-leche, mate, sodium-asphalt sky — the surfaces around the cobble."
             },
             "a": {
-              "c": "#C87A3E",
+              "c": "#CC7948",
               "pct": 10,
               "text": "Streetlamp warmth and fileteado red, in small reads only."
             }
@@ -2704,21 +2704,21 @@
             {
               "name": "Bosphorus diesel-water green",
               "oklch": "0.422 0.030 168",
-              "hex": "#4A5E54",
+              "hex": "#3E534A",
               "note": "Late-autumn water along the seawall, churned by ferry traffic.",
               "hier": "d"
             },
             {
               "name": "Granite mosque shadow",
               "oklch": "0.412 0.008 78",
-              "hex": "#4E4A44",
+              "hex": "#4D4A46",
               "note": "The Yeni Camii silhouette above the bridge, lit only from below.",
               "hier": "s"
             },
             {
               "name": "Fluorescent ferry cabin",
               "oklch": "0.812 0.034 138",
-              "hex": "#C8D3C0",
+              "hex": "#B7C7B2",
               "note": "The slightly green-white of the city's working ferry interiors.",
               "hier": "s",
               "light": true
@@ -2726,38 +2726,38 @@
             {
               "name": "Stamboul night sky, sodium-haze",
               "oklch": "0.232 0.022 65",
-              "hex": "#2E2820",
+              "hex": "#251B12",
               "note": "Light-polluted sky over Eminönü; never really black.",
               "hier": "s"
             },
             {
               "name": "Simit sesame gold, cart-side",
               "oklch": "0.668 0.108 68",
-              "hex": "#C2904E",
+              "hex": "#C08745",
               "note": "The vendor's stacked simit, lit by the cart's tungsten bulb.",
               "hier": "a"
             },
             {
               "name": "Çay tulip-glass amber",
               "oklch": "0.518 0.158 42",
-              "hex": "#A44E22",
+              "hex": "#AF3F00",
               "note": "Tea-brown read through a small glass on the seawall railing.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#4A5E54",
+              "c": "#3E534A",
               "pct": 55,
               "text": "Bosphorus green-grey is the entire waterway and reflects up onto every wall."
             },
             "s": {
-              "c": "#4E4A44",
+              "c": "#4D4A46",
               "pct": 35,
               "text": "Mosque granite, fluorescent ferry, night sky — the surrounding fabric."
             },
             "a": {
-              "c": "#C2904E",
+              "c": "#C08745",
               "pct": 10,
               "text": "Simit gold and çay amber — the night's only warm punctuation."
             }
@@ -2814,35 +2814,35 @@
             {
               "name": "French-colonial ochre, wall",
               "oklch": "0.688 0.108 68",
-              "hex": "#C8954E",
+              "hex": "#C78D4C",
               "note": "The dominant Old Quarter facade colour; the city's signature, even at 2 am.",
               "hier": "d"
             },
             {
               "name": "Banyan leaf, lamplit",
               "oklch": "0.432 0.046 138",
-              "hex": "#4A5A40",
+              "hex": "#44573E",
               "note": "<em>Ficus benghalensis</em> on the corner, lit only by the shop's tube.",
               "hier": "s"
             },
             {
               "name": "Phở broth steam, pale",
               "oklch": "0.708 0.022 78",
-              "hex": "#B4A890",
+              "hex": "#A99F92",
               "note": "Vapor still rising from a half-cleared stall at the corner.",
               "hier": "s"
             },
             {
               "name": "Motorbike lacquer, deep maroon",
               "oklch": "0.318 0.092 28",
-              "hex": "#5A2620",
+              "hex": "#581B16",
               "note": "The standard scooter paint job — deep, almost-black red.",
               "hier": "s"
             },
             {
               "name": "Fluorescent tube, cold",
               "oklch": "0.872 0.022 168",
-              "hex": "#D3E0D6",
+              "hex": "#C8DAD2",
               "note": "Single overhead tube in the closed shop; the night's only direct light.",
               "hier": "a",
               "light": true
@@ -2850,24 +2850,24 @@
             {
               "name": "Plastic stool, sidewalk red",
               "oklch": "0.532 0.158 28",
-              "hex": "#B73228",
+              "hex": "#B63D34",
               "note": "The ubiquitous sidewalk-dining stool, stacked at the corner.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#C8954E",
+              "c": "#C78D4C",
               "pct": 55,
               "text": "French-colonial ochre is the city's wall; it carries the territory."
             },
             "s": {
-              "c": "#4A5A40",
+              "c": "#44573E",
               "pct": 35,
               "text": "Banyan, phở steam, motorbike lacquer — the working night materials."
             },
             "a": {
-              "c": "#D3E0D6",
+              "c": "#C8DAD2",
               "pct": 10,
               "text": "Fluorescent cold and plastic-stool red — the night's only saturated reads."
             }
@@ -2924,59 +2924,59 @@
             {
               "name": "Soviet apartment block, panel grey",
               "oklch": "0.548 0.004 100",
-              "hex": "#757674",
+              "hex": "#71716E",
               "note": "The dominant <em>frequency</em> of any night view from Mtatsminda; thousands of pre-fab blocks.",
               "hier": "d"
             },
             {
               "name": "Slate sky, Caucasus cool",
               "oklch": "0.448 0.014 248",
-              "hex": "#4E5560",
+              "hex": "#4F565C",
               "note": "October night over the city, no moon.",
               "hier": "s"
             },
             {
               "name": "Mtkvari river gorge, deep",
               "oklch": "0.328 0.018 268",
-              "hex": "#383A44",
+              "hex": "#31353E",
               "note": "The river itself, unlit between the bridges.",
               "hier": "s"
             },
             {
               "name": "Sulfur spring yellow, Abanotubani",
               "oklch": "0.668 0.062 88",
-              "hex": "#B39E62",
+              "hex": "#A59368",
               "note": "The bath-house quarter dome-lights — pale yellow steam visible from the upper station.",
               "hier": "s"
             },
             {
               "name": "Old Town terracotta, lit from below",
               "oklch": "0.572 0.138 48",
-              "hex": "#B56838",
+              "hex": "#B75A21",
               "note": "The clay-tiled facades of Old Tbilisi, lit by floodlight at street level.",
               "hier": "a"
             },
             {
               "name": "Candle-lit balcony, ochre warm",
               "oklch": "0.628 0.132 60",
-              "hex": "#C8853E",
+              "hex": "#C17325",
               "note": "The single small light read from a wooden carved balcony — the territory's last warm note.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#757674",
+              "c": "#71716E",
               "pct": 60,
               "text": "Block grey carries the view; everything is read against it."
             },
             "s": {
-              "c": "#4E5560",
+              "c": "#4F565C",
               "pct": 30,
               "text": "Slate sky, gorge dark, sulfur-spring yellow — the surrounding fabric."
             },
             "a": {
-              "c": "#B56838",
+              "c": "#B75A21",
               "pct": 10,
               "text": "Old Town terracotta and balcony candlelight, in small bright reads."
             }
@@ -3050,14 +3050,14 @@
             {
               "name": "Longyi indigo, vendor cloth",
               "oklch": "0.328 0.098 268",
-              "hex": "#2A3A64",
+              "hex": "#1F3066",
               "note": "The dominant <em>moving</em> colour of the market — every other vendor wears it.",
               "hier": "d"
             },
             {
               "name": "Thanakha cream, applied to face",
               "oklch": "0.808 0.060 88",
-              "hex": "#D8C08C",
+              "hex": "#D0BF94",
               "note": "Sandalwood paste worn as sun-protection and cosmetic across the country.",
               "hier": "s",
               "light": true
@@ -3065,45 +3065,45 @@
             {
               "name": "Jade, raw stone",
               "oklch": "0.508 0.058 158",
-              "hex": "#4A6E54",
+              "hex": "#487059",
               "note": "Unworked Burmese jadeite strung on cord at the stone counter.",
               "hier": "s"
             },
             {
               "name": "Market lamp, tungsten warm",
               "oklch": "0.708 0.072 70",
-              "hex": "#C89A6A",
+              "hex": "#BE996F",
               "note": "Bare-bulb illumination at the goldsmith and lacquer stalls.",
               "hier": "s"
             },
             {
               "name": "Lacquerware oxblood, Bagan tradition",
               "oklch": "0.362 0.128 28",
-              "hex": "#6E2622",
+              "hex": "#721511",
               "note": "The deep red of <em>yun-de</em> lacquer bowls stacked at the craft stall.",
               "hier": "a"
             },
             {
               "name": "Gold leaf, prayer-offering packet",
               "oklch": "0.708 0.108 80",
-              "hex": "#C89E4A",
+              "hex": "#C4994C",
               "note": "Small folded squares sold by the goldsmith for temple offering.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#2A3A64",
+              "c": "#1F3066",
               "pct": 50,
               "text": "Longyi indigo carries the market by sheer number of vendors."
             },
             "s": {
-              "c": "#D8C08C",
+              "c": "#D0BF94",
               "pct": 40,
               "text": "Thanakha, jade, lamp warm — the working palette around the indigo."
             },
             "a": {
-              "c": "#6E2622",
+              "c": "#721511",
               "pct": 10,
               "text": "Lacquer oxblood and gold leaf where the craft stalls cluster."
             }
@@ -3174,7 +3174,7 @@
             {
               "name": "Butcher's tile, glazed cream-grey",
               "oklch": "0.802 0.014 88",
-              "hex": "#C8C4B4",
+              "hex": "#C2BEB4",
               "note": "Floor and back-wall tile across every meat counter in the market.",
               "hier": "d",
               "light": true
@@ -3182,21 +3182,21 @@
             {
               "name": "Paper cone, kraft brown",
               "oklch": "0.628 0.058 65",
-              "hex": "#A8835A",
+              "hex": "#A18263",
               "note": "Standard market-issue wrapping for olives, almonds, dried fruit.",
               "hier": "s"
             },
             {
               "name": "Vendor apron, marine navy",
               "oklch": "0.392 0.082 248",
-              "hex": "#2E4A6E",
+              "hex": "#1C486F",
               "note": "The standard fishmonger and butcher apron across the stalls.",
               "hier": "s"
             },
             {
               "name": "Fluorescent overhead, market shed white",
               "oklch": "0.892 0.022 118",
-              "hex": "#E0E3D8",
+              "hex": "#DADECE",
               "note": "The 1914 iron-and-glass roof plus modern fluorescents — a slightly green-white wash.",
               "hier": "s",
               "light": true
@@ -3204,31 +3204,31 @@
             {
               "name": "Iberico ham, cured deep",
               "oklch": "0.392 0.142 28",
-              "hex": "#862E22",
+              "hex": "#811613",
               "note": "The dominant red in the market by hung-square-footage.",
               "hier": "a"
             },
             {
               "name": "Persimmon orange, fruit stall",
               "oklch": "0.668 0.158 50",
-              "hex": "#D97A32",
+              "hex": "#DF7229",
               "note": "Stacked Sharon-fruit pyramid on the central island — the single most saturated colour visible.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#C8C4B4",
+              "c": "#C2BEB4",
               "pct": 50,
               "text": "Butcher's tile is the entire back wall of every counter."
             },
             "s": {
-              "c": "#A8835A",
+              "c": "#A18263",
               "pct": 40,
               "text": "Paper cones, vendor aprons, fluorescent shed white — the working surfaces."
             },
             "a": {
-              "c": "#862E22",
+              "c": "#811613",
               "pct": 10,
               "text": "Cured Iberico and persimmon orange, in small intense reads."
             }
@@ -3309,14 +3309,14 @@
             {
               "name": "Hmong indigo, dyed and re-dyed",
               "oklch": "0.262 0.072 252",
-              "hex": "#1C2A3C",
+              "hex": "#042546",
               "note": "The deepest blue-black on the bolt-cloth; many passes through the dye pot.",
               "hier": "d"
             },
             {
               "name": "Mountain mist white",
               "oklch": "0.802 0.004 138",
-              "hex": "#C8C8C4",
+              "hex": "#BDBFBC",
               "note": "The entire visual background of the market in winter morning.",
               "hier": "s",
               "light": true
@@ -3324,7 +3324,7 @@
             {
               "name": "Batik wax, undyed reserve",
               "oklch": "0.832 0.030 88",
-              "hex": "#D8CAB0",
+              "hex": "#D0C7B2",
               "note": "Cream of the wax-resist pattern where the indigo did not take.",
               "hier": "s",
               "light": true
@@ -3332,38 +3332,38 @@
             {
               "name": "Bamboo basket, woven yellow-green",
               "oklch": "0.668 0.080 110",
-              "hex": "#A8A258",
+              "hex": "#97995E",
               "note": "Stacked carry-baskets at every textile stall.",
               "hier": "s"
             },
             {
               "name": "Rhododendron, faded winter pink",
               "oklch": "0.578 0.052 28",
-              "hex": "#A87A6E",
+              "hex": "#966E69",
               "note": "The hill-slope flower out of season, dusty and pale.",
               "hier": "a"
             },
             {
               "name": "Dry corn, hung-yellow",
               "oklch": "0.682 0.122 78",
-              "hex": "#C89432",
+              "hex": "#C28E33",
               "note": "Cobs of maize hung above the meat stalls to dry-roast.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#1C2A3C",
+              "c": "#042546",
               "pct": 50,
               "text": "Hmong indigo carries the textile half of the market entirely."
             },
             "s": {
-              "c": "#C8C8C4",
+              "c": "#BDBFBC",
               "pct": 40,
               "text": "Mountain mist, batik wax cream, bamboo basket — the cooler register."
             },
             "a": {
-              "c": "#C89432",
+              "c": "#C28E33",
               "pct": 10,
               "text": "Rhododendron pink and dry-corn yellow, small bright threads."
             }
@@ -3424,14 +3424,14 @@
             {
               "name": "Counter wood, oiled hardwood",
               "oklch": "0.452 0.068 60",
-              "hex": "#6E4A30",
+              "hex": "#724C2D",
               "note": "The dominant working surface — every stall counter, every chopping board.",
               "hier": "d"
             },
             {
               "name": "Market roof glass-grey",
               "oklch": "0.748 0.006 78",
-              "hex": "#B8B4AC",
+              "hex": "#AFADA9",
               "note": "The iron-and-glass ceiling overhead; reads as a flat overcast diffuser.",
               "hier": "s",
               "light": true
@@ -3439,7 +3439,7 @@
             {
               "name": "Cured bacalhau, dried cod",
               "oklch": "0.708 0.038 88",
-              "hex": "#B8A878",
+              "hex": "#ABA086",
               "note": "Salt-dried cod hung at the fishmonger; the dominant cream of the market.",
               "hier": "s",
               "light": true
@@ -3447,38 +3447,38 @@
             {
               "name": "Copper pot, market hardware",
               "oklch": "0.628 0.082 65",
-              "hex": "#A87A48",
+              "hex": "#AB7E52",
               "note": "Strung-up pots and pans above the kitchen stalls; a regional hardware colour.",
               "hier": "s"
             },
             {
               "name": "Broken azulejo, vendor backsplash",
               "oklch": "0.582 0.082 245",
-              "hex": "#4A78A4",
+              "hex": "#4F80A8",
               "note": "The market's tile is chipped and back-of-house — the working blue, not the designer's blue.",
               "hier": "a"
             },
             {
               "name": "Rooster-lettering red, sign",
               "oklch": "0.518 0.168 28",
-              "hex": "#B62C22",
+              "hex": "#B5332B",
               "note": "Hand-painted vendor sign red — the colour of Galo de Barcelos lettering.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#6E4A30",
+              "c": "#724C2D",
               "pct": 55,
               "text": "Counter wood is every stall, every chopping board, the entire working surface."
             },
             "s": {
-              "c": "#B8A878",
+              "c": "#ABA086",
               "pct": 35,
               "text": "Roof glass-grey, cured cod, copper hardware — the materials around the wood."
             },
             "a": {
-              "c": "#4A78A4",
+              "c": "#4F80A8",
               "pct": 10,
               "text": "Azulejo and lettering red, in chipped working amounts."
             }
@@ -3566,21 +3566,21 @@
             {
               "name": "Birch-panel cream, Finnish design",
               "oklch": "0.802 0.046 82",
-              "hex": "#D4C4A0",
+              "hex": "#CDBC9D",
               "note": "Standard VR overnight-carriage panelling; warm-cream against the snow outside.",
               "hier": "d"
             },
             {
               "name": "Sleeper curtain, forest green",
               "oklch": "0.328 0.042 152",
-              "hex": "#2A3E2E",
+              "hex": "#243B2A",
               "note": "Heavy compartment curtain; the dominant rest-state surface when drawn.",
               "hier": "s"
             },
             {
               "name": "Aluminium fitting, brushed",
               "oklch": "0.748 0.002 215",
-              "hex": "#B4B8B8",
+              "hex": "#ACADAE",
               "note": "Door handles, ladder rails, sink fixtures — the carriage hardware.",
               "hier": "s",
               "light": true
@@ -3588,38 +3588,38 @@
             {
               "name": "Dining-car upholstery navy",
               "oklch": "0.272 0.038 272",
-              "hex": "#2A2E44",
+              "hex": "#20263A",
               "note": "Restaurant-car bench fabric, two carriages forward.",
               "hier": "s"
             },
             {
               "name": "Platform sodium on snow",
               "oklch": "0.708 0.092 78",
-              "hex": "#C8A468",
+              "hex": "#C19A5C",
               "note": "Three-second flash of station light during the Oulu stop.",
               "hier": "a"
             },
             {
               "name": "Route map red, line marker",
               "oklch": "0.498 0.168 28",
-              "hex": "#A82C22",
+              "hex": "#AE2C25",
               "note": "The single red line on the printed map in every compartment.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#D4C4A0",
+              "c": "#CDBC9D",
               "pct": 55,
               "text": "Birch panelling is every compartment wall and ceiling."
             },
             "s": {
-              "c": "#2A3E2E",
+              "c": "#243B2A",
               "pct": 35,
               "text": "Curtain forest-green, aluminium, dining navy — the engineered surfaces."
             },
             "a": {
-              "c": "#C8A468",
+              "c": "#C19A5C",
               "pct": 10,
               "text": "Platform sodium and route-red, in tiny reads."
             }
@@ -3691,14 +3691,14 @@
             {
               "name": "Vinyl couchette tan, deck seat",
               "oklch": "0.668 0.062 70",
-              "hex": "#B89870",
+              "hex": "#AE8E6B",
               "note": "1980s passenger-couchette vinyl; the dominant interior surface below decks.",
               "hier": "d"
             },
             {
               "name": "Ouzo glass cloudy",
               "oklch": "0.848 0.022 88",
-              "hex": "#D8D3C0",
+              "hex": "#D3CDBD",
               "note": "Anise spirit in water on the deck table; the only off-white reading.",
               "hier": "s",
               "light": true
@@ -3706,14 +3706,14 @@
             {
               "name": "Deckhand uniform navy",
               "oklch": "0.328 0.030 252",
-              "hex": "#2E3848",
+              "hex": "#2A3644",
               "note": "Crew-issue navy work shirt, sun-faded.",
               "hier": "s"
             },
             {
               "name": "Lounge fluorescent, green-white",
               "oklch": "0.852 0.052 122",
-              "hex": "#D0DCBE",
+              "hex": "#C8D4AF",
               "note": "The single overhead in the passenger saloon, a familiar register from Vol I's ferry.",
               "hier": "s",
               "light": true
@@ -3721,31 +3721,31 @@
             {
               "name": "Life-ring, international orange",
               "oklch": "0.598 0.180 38",
-              "hex": "#C84A22",
+              "hex": "#D44D1C",
               "note": "Mounted on every bulkhead by regulation; the most saturated colour aboard.",
               "hier": "a"
             },
             {
               "name": "Ferry-hull rust, splash zone",
               "oklch": "0.422 0.082 38",
-              "hex": "#6E4030",
+              "hex": "#733C2B",
               "note": "Iron-oxide bloom along the hull at the waterline, visible from the open deck.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#B89870",
+              "c": "#AE8E6B",
               "pct": 50,
               "text": "Vinyl couchette tan is every seat, headrest, and bulkhead below decks."
             },
             "s": {
-              "c": "#D8D3C0",
+              "c": "#D3CDBD",
               "pct": 40,
               "text": "Ouzo cloudy, deckhand navy, saloon fluorescent — the working surroundings."
             },
             "a": {
-              "c": "#C84A22",
+              "c": "#D44D1C",
               "pct": 10,
               "text": "Life-ring orange and hull rust, by regulation and weather."
             }
@@ -3822,7 +3822,7 @@
             {
               "name": "Carriage cream, 1970s laminate",
               "oklch": "0.812 0.030 88",
-              "hex": "#D4CAB0",
+              "hex": "#CAC1AC",
               "note": "Original Indian Pacific interior surface; the dominant interior read.",
               "hier": "d",
               "light": true
@@ -3830,7 +3830,7 @@
             {
               "name": "Pale Outback sky, parched",
               "oklch": "0.762 0.034 215",
-              "hex": "#A8C0C8",
+              "hex": "#9AB8BF",
               "note": "Nullarbor sky in September; never the deep blue of an inland holiday brochure.",
               "hier": "s",
               "light": true
@@ -3838,14 +3838,14 @@
             {
               "name": "Saltbush blue-grey, middle distance",
               "oklch": "0.652 0.012 168",
-              "hex": "#94A098",
+              "hex": "#89928E",
               "note": "<em>Atriplex</em> on the salt-pan plain; the only consistent green in the territory.",
               "hier": "s"
             },
             {
               "name": "Dining tablecloth, starched white",
               "oklch": "0.898 0.018 88",
-              "hex": "#E8E3D6",
+              "hex": "#E2DDD0",
               "note": "Service cloth on the Restaurant Car table at lunch.",
               "hier": "s",
               "light": true
@@ -3853,31 +3853,31 @@
             {
               "name": "Nullarbor red soil",
               "oklch": "0.522 0.168 42",
-              "hex": "#A84A22",
+              "hex": "#B43C00",
               "note": "Iron-oxide topsoil; the dominant <em>landscape</em> colour the train moves through.",
               "hier": "a"
             },
             {
               "name": "Gibber plain, rust pebble",
               "oklch": "0.448 0.108 45",
-              "hex": "#7C4828",
+              "hex": "#843E1A",
               "note": "Wind-polished surface stones across the long stretches between sidings.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#D4CAB0",
+              "c": "#CAC1AC",
               "pct": 55,
               "text": "Carriage cream — the interior carries the dominant for everyone reading or sleeping."
             },
             "s": {
-              "c": "#A8C0C8",
+              "c": "#9AB8BF",
               "pct": 35,
               "text": "Pale sky, saltbush, tablecloth — the cooler surrounds."
             },
             "a": {
-              "c": "#A84A22",
+              "c": "#B43C00",
               "pct": 10,
               "text": "Nullarbor red and gibber rust — outside the window, in pulses."
             }
@@ -3949,7 +3949,7 @@
             {
               "name": "High-speed train silver, livery",
               "oklch": "0.792 0.006 235",
-              "hex": "#C0C4C8",
+              "hex": "#B8BCBE",
               "note": "Al Boraq's external livery — modernist silver, not heritage colour.",
               "hier": "d",
               "light": true
@@ -3957,14 +3957,14 @@
             {
               "name": "Sahel ochre, low hills",
               "oklch": "0.688 0.088 68",
-              "hex": "#C89060",
+              "hex": "#BF905D",
               "note": "Coastal-plain soil and stubble fields between Kenitra and Tangier.",
               "hier": "s"
             },
             {
               "name": "Atlas snow distant, peak",
               "oklch": "0.892 0.012 235",
-              "hex": "#D8E0E4",
+              "hex": "#D4DDE2",
               "note": "Mid-Atlas snowcap on the far horizon at this time of year.",
               "hier": "s",
               "light": true
@@ -3972,21 +3972,21 @@
             {
               "name": "Overhead-line copper, oxidised",
               "oklch": "0.452 0.072 58",
-              "hex": "#6E4A2E",
+              "hex": "#744B2B",
               "note": "Catenary copper that the train slides under at 320 km/h.",
               "hier": "s"
             },
             {
               "name": "Station tile blue, Casa Voyageurs",
               "oklch": "0.532 0.098 248",
-              "hex": "#2E6E9C",
+              "hex": "#3970A2",
               "note": "Cobalt-on-tin glazed tile in the modern station's circulation halls.",
               "hier": "a"
             },
             {
               "name": "Almond blossom, late-spring orchard",
               "oklch": "0.788 0.030 22",
-              "hex": "#D8B8B8",
+              "hex": "#CDB3B1",
               "note": "Brief mid-April bloom in the orchards visible from the window.",
               "hier": "a",
               "light": true
@@ -3994,17 +3994,17 @@
           ],
           "hierarchy": {
             "d": {
-              "c": "#C0C4C8",
+              "c": "#B8BCBE",
               "pct": 55,
               "text": "Train silver carries every interior surface and every reflection."
             },
             "s": {
-              "c": "#C89060",
+              "c": "#BF905D",
               "pct": 35,
               "text": "Sahel ochre, Atlas snow, oxidised copper — the moving landscape."
             },
             "a": {
-              "c": "#2E6E9C",
+              "c": "#3970A2",
               "pct": 10,
               "text": "Station tile and almond blossom — small saturated reads at platforms and orchards."
             }
@@ -4088,7 +4088,7 @@
             {
               "name": "Candle-wax warm-white, congregation",
               "oklch": "0.872 0.042 88",
-              "hex": "#E3D8B8",
+              "hex": "#E0D4B6",
               "note": "Hundreds of beeswax candles passed person-to-person at midnight; the night's dominant light.",
               "hier": "d",
               "light": true
@@ -4096,7 +4096,7 @@
             {
               "name": "Marble floor, cold grey",
               "oklch": "0.782 0.006 88",
-              "hex": "#C4C0B8",
+              "hex": "#B9B8B4",
               "note": "Greek island marble underfoot — cooler than the candle-warmed air above.",
               "hier": "s",
               "light": true
@@ -4104,45 +4104,45 @@
             {
               "name": "Incense smoke, frankincense",
               "oklch": "0.578 0.012 78",
-              "hex": "#8C8478",
+              "hex": "#7E7972",
               "note": "Liturgical incense from the censer; the atmosphere everyone reads through.",
               "hier": "s"
             },
             {
               "name": "Monk's habit, sun-faded black",
               "oklch": "0.252 0.004 80",
-              "hex": "#2E2C2A",
+              "hex": "#232220",
               "note": "Cassock fabric that has been worn outdoors enough to lose its true black.",
               "hier": "s"
             },
             {
               "name": "Gold-leaf icon, iconostasis",
               "oklch": "0.682 0.122 78",
-              "hex": "#C8923A",
+              "hex": "#C28E33",
               "note": "Hammered gold backing on the icons above the royal doors.",
               "hier": "a"
             },
             {
               "name": "Red dyed Easter egg, table",
               "oklch": "0.498 0.168 28",
-              "hex": "#A82A26",
+              "hex": "#AE2C25",
               "note": "Eggs dyed in onion-skin red for the Easter table at the back of the nave.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#E3D8B8",
+              "c": "#E0D4B6",
               "pct": 55,
               "text": "Candle warm-white is the entire light source after midnight."
             },
             "s": {
-              "c": "#C4C0B8",
+              "c": "#B9B8B4",
               "pct": 35,
               "text": "Marble, incense smoke, monk's habit — the spatial container."
             },
             "a": {
-              "c": "#C8923A",
+              "c": "#C28E33",
               "pct": 10,
               "text": "Gold-leaf icons and red eggs, the two saturated reads of the night."
             }
@@ -4214,59 +4214,59 @@
             {
               "name": "Vermillion lacquer, fresh torii",
               "oklch": "0.598 0.180 38",
-              "hex": "#C84A22",
+              "hex": "#D44D1C",
               "note": "The specific lead-mercury <em>shu</em> vermillion of recently re-painted torii.",
               "hier": "d"
             },
             {
               "name": "Cryptomeria bark, forest pillar",
               "oklch": "0.342 0.042 62",
-              "hex": "#4A3826",
+              "hex": "#483421",
               "note": "Standing trunk of <em>Cryptomeria japonica</em> between every gate cluster.",
               "hier": "s"
             },
             {
               "name": "Moss, gravel path",
               "oklch": "0.512 0.062 118",
-              "hex": "#6E7848",
+              "hex": "#636C42",
               "note": "Compacted moss on the path edge, kept damp by the shaded canopy.",
               "hier": "s"
             },
             {
               "name": "Stone fox grey, kitsune statue",
               "oklch": "0.708 0.004 88",
-              "hex": "#A8A49C",
+              "hex": "#A2A19E",
               "note": "Granite or stone <em>kitsune</em> guardian — the cool counterweight to the vermillion.",
               "hier": "s"
             },
             {
               "name": "Weathered vermillion, outer torii",
               "oklch": "0.548 0.108 38",
-              "hex": "#A85E3E",
+              "hex": "#A65840",
               "note": "Older outer-route gates, sun-bleached over years toward terracotta.",
               "hier": "a"
             },
             {
               "name": "Pre-dawn blue, sky through canopy",
               "oklch": "0.548 0.038 245",
-              "hex": "#6E7D92",
+              "hex": "#5F7486",
               "note": "Narrow strip of sky visible above the topmost torii at 04:30.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#C84A22",
+              "c": "#D44D1C",
               "pct": 55,
               "text": "Vermillion is the territory; every other reading sits inside it."
             },
             "s": {
-              "c": "#4A3826",
+              "c": "#483421",
               "pct": 35,
               "text": "Cryptomeria bark, moss, stone fox grey — the forest around the gates."
             },
             "a": {
-              "c": "#A85E3E",
+              "c": "#A65840",
               "pct": 10,
               "text": "Weathered torii and pre-dawn blue, in small reads only."
             }
@@ -4326,14 +4326,14 @@
             {
               "name": "Shrine-tile emerald",
               "oklch": "0.512 0.082 158",
-              "hex": "#2C6E54",
+              "hex": "#397554",
               "note": "Glazed Multan/Hala-tradition tile across the dome interior and walls.",
               "hier": "d"
             },
             {
               "name": "White kafan cloth, devotee",
               "oklch": "0.892 0.014 88",
-              "hex": "#E3E0D6",
+              "hex": "#DFDBD1",
               "note": "Ritual white worn by the gathered pilgrims; the dominant <em>moving</em> colour.",
               "hier": "s",
               "light": true
@@ -4341,7 +4341,7 @@
             {
               "name": "Mirror-mosaic silver, dome interior",
               "oklch": "0.792 0.004 100",
-              "hex": "#C4C4C0",
+              "hex": "#BCBBB8",
               "note": "<em>Sheesh</em>-work mirror fragments inlaid into the upper dome.",
               "hier": "s",
               "light": true
@@ -4349,38 +4349,38 @@
             {
               "name": "Qawwali drum brown, leather",
               "oklch": "0.452 0.068 60",
-              "hex": "#6E4A30",
+              "hex": "#724C2D",
               "note": "Tabla and dholak skins under the musicians' courtyard.",
               "hier": "s"
             },
             {
               "name": "Marigold garland gold",
               "oklch": "0.722 0.142 78",
-              "hex": "#D89432",
+              "hex": "#D59821",
               "note": "<em>Gainda</em> flowers strung in lengths across the threshold; renewed each evening.",
               "hier": "a"
             },
             {
               "name": "Dust-haze red sun",
               "oklch": "0.648 0.142 38",
-              "hex": "#C86A48",
+              "hex": "#D66C4A",
               "note": "The sun setting through Sindh-summer dust outside the courtyard wall.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#2C6E54",
+              "c": "#397554",
               "pct": 55,
               "text": "Shrine emerald reads from every wall and dome interior."
             },
             "s": {
-              "c": "#E3E0D6",
+              "c": "#DFDBD1",
               "pct": 35,
               "text": "Kafan white, mirror silver, drum-leather — the working ritual textures."
             },
             "a": {
-              "c": "#D89432",
+              "c": "#D59821",
               "pct": 10,
               "text": "Marigold gold and red-dust sun, at threshold and horizon."
             }
@@ -4449,7 +4449,7 @@
             {
               "name": "Tomb whitewash, cal",
               "oklch": "0.822 0.024 88",
-              "hex": "#D4CDB8",
+              "hex": "#CBC4B4",
               "note": "Annually rewhitewashed cement tomb surface across the cemetery.",
               "hier": "d",
               "light": true
@@ -4457,35 +4457,35 @@
             {
               "name": "Cempasúchil marigold gold",
               "oklch": "0.722 0.158 75",
-              "hex": "#D8902C",
+              "hex": "#DE9400",
               "note": "<em>Tagetes erecta</em> petals laid in trails to guide the dead.",
               "hier": "s"
             },
             {
               "name": "Copal smoke, blue-haze",
               "oklch": "0.508 0.004 168",
-              "hex": "#6A6E6C",
+              "hex": "#636665",
               "note": "Resin incense burned at every tomb; the air's actual texture this night.",
               "hier": "s"
             },
             {
               "name": "Fresh-dug earth",
               "oklch": "0.342 0.042 62",
-              "hex": "#4A3826",
+              "hex": "#483421",
               "note": "Recently turned grave soil at the foot of each visited tomb.",
               "hier": "s"
             },
             {
               "name": "Papel picado, magenta",
               "oklch": "0.532 0.182 348",
-              "hex": "#B8326E",
+              "hex": "#B2307F",
               "note": "Cut paper banner strung between tombs; the night's most saturated colour.",
               "hier": "a"
             },
             {
               "name": "Candle wax, warm flicker",
               "oklch": "0.832 0.082 88",
-              "hex": "#E3C890",
+              "hex": "#DEC58A",
               "note": "Dozens of beeswax tapers per tomb; the literal local light source.",
               "hier": "a",
               "light": true
@@ -4493,17 +4493,17 @@
           ],
           "hierarchy": {
             "d": {
-              "c": "#D4CDB8",
+              "c": "#CBC4B4",
               "pct": 55,
               "text": "Tomb whitewash carries the entire cemetery surface."
             },
             "s": {
-              "c": "#D8902C",
+              "c": "#DE9400",
               "pct": 35,
               "text": "Marigold, copal smoke, fresh earth — the night's working materials."
             },
             "a": {
-              "c": "#B8326E",
+              "c": "#B2307F",
               "pct": 10,
               "text": "Papel picado magenta and candle wax warm — saturated punctuation."
             }
@@ -4596,7 +4596,7 @@
             {
               "name": "Dune-crest pink, sunrise face",
               "oklch": "0.762 0.062 32",
-              "hex": "#D8A888",
+              "hex": "#D6A499",
               "note": "Iron-oxide-coated quartz sand catching the first sun.",
               "hier": "d",
               "light": true
@@ -4604,7 +4604,7 @@
             {
               "name": "Mineral salt crust, sabkha",
               "oklch": "0.852 0.012 88",
-              "hex": "#D8D3C8",
+              "hex": "#D2CEC6",
               "note": "Evaporite crust in inter-dune lows; the second great pale surface.",
               "hier": "s",
               "light": true
@@ -4612,7 +4612,7 @@
             {
               "name": "Thin pale sky, low humidity",
               "oklch": "0.732 0.052 235",
-              "hex": "#94B4C8",
+              "hex": "#89AEC5",
               "note": "Cloudless sky at 23° N in January; never deep, low-humidity pale.",
               "hier": "s",
               "light": true
@@ -4620,38 +4620,38 @@
             {
               "name": "Camel hair, undyed cream",
               "oklch": "0.668 0.062 78",
-              "hex": "#B89868",
+              "hex": "#AA9069",
               "note": "The literal animal of the territory and the woven fibre of its saddles.",
               "hier": "s"
             },
             {
               "name": "Dune-shadow violet, west face",
               "oklch": "0.502 0.052 308",
-              "hex": "#6E5A78",
+              "hex": "#6C5C7B",
               "note": "The cool shadow side of any large dune at this hour.",
               "hier": "a"
             },
             {
               "name": "Bedouin black tent, goat hair",
               "oklch": "0.222 0.012 60",
-              "hex": "#2A2522",
+              "hex": "#1F1A16",
               "note": "Hand-woven <em>bayt al-sha'r</em> — the dark fabric of every encampment.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#D8A888",
+              "c": "#D6A499",
               "pct": 55,
               "text": "Sunrise dune pink — the entire visible east face at this hour."
             },
             "s": {
-              "c": "#D8D3C8",
+              "c": "#D2CEC6",
               "pct": 35,
               "text": "Salt crust, thin sky, camel hair — the wider pale envelope."
             },
             "a": {
-              "c": "#6E5A78",
+              "c": "#6C5C7B",
               "pct": 10,
               "text": "Shadow violet and black tent — the only dark reads in the territory."
             }
@@ -4733,14 +4733,14 @@
             {
               "name": "Nubian sandstone red, cliff",
               "oklch": "0.522 0.168 42",
-              "hex": "#A84A22",
+              "hex": "#B43C00",
               "note": "The high cliff walls of Jebel Khazali and the surrounding jebels.",
               "hier": "d"
             },
             {
               "name": "Wind-polished sand, wadi floor",
               "oklch": "0.792 0.062 78",
-              "hex": "#D8B888",
+              "hex": "#D1B78F",
               "note": "Pale fine sand swept smooth between rock walls.",
               "hier": "s",
               "light": true
@@ -4748,7 +4748,7 @@
             {
               "name": "Distant haze, layered air",
               "oklch": "0.708 0.018 38",
-              "hex": "#B8A8A0",
+              "hex": "#AC9D99",
               "note": "Atmospheric haze that stacks visibly in the wadi by mid-afternoon.",
               "hier": "s",
               "light": true
@@ -4756,38 +4756,38 @@
             {
               "name": "Saddle leather, sun-cracked",
               "oklch": "0.448 0.108 45",
-              "hex": "#7C4828",
+              "hex": "#843E1A",
               "note": "Bedouin camel saddle, the dominant <em>worked</em> material in camp.",
               "hier": "s"
             },
             {
               "name": "Basalt black, scree",
               "oklch": "0.232 0.004 80",
-              "hex": "#2A2A26",
+              "hex": "#1E1D1B",
               "note": "Volcanic boulders fallen to the cliff base; small reads but defining contrast.",
               "hier": "a"
             },
             {
               "name": "Cardamom tea brown",
               "oklch": "0.382 0.108 38",
-              "hex": "#6E3A22",
+              "hex": "#712911",
               "note": "Bedouin afternoon tea — material culture of the encampment.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#A84A22",
+              "c": "#B43C00",
               "pct": 60,
               "text": "Nubian sandstone is the entire vertical of the territory."
             },
             "s": {
-              "c": "#D8B888",
+              "c": "#D1B78F",
               "pct": 30,
               "text": "Wadi-floor sand, distant haze, saddle leather — the horizontal and the worked."
             },
             "a": {
-              "c": "#2A2A26",
+              "c": "#1E1D1B",
               "pct": 10,
               "text": "Basalt scree and tea, in small reads at base and camp."
             }
@@ -4869,14 +4869,14 @@
             {
               "name": "Fog-into-dune ochre",
               "oklch": "0.668 0.046 60",
-              "hex": "#B8957A",
+              "hex": "#AA8E79",
               "note": "The dunes seen through Benguela fog — a desaturated, mixed reading.",
               "hier": "d"
             },
             {
               "name": "Oryx grey, antelope coat",
               "oklch": "0.622 0.008 78",
-              "hex": "#948E84",
+              "hex": "#898681",
               "note": "The single large mammal of the territory.",
               "hier": "s",
               "light": true
@@ -4884,7 +4884,7 @@
             {
               "name": "Seal-bone pale, beach litter",
               "oklch": "0.812 0.030 88",
-              "hex": "#D4CAB0",
+              "hex": "#CAC1AC",
               "note": "Bleached cape-fur-seal bone scattered along the strandline.",
               "hier": "s",
               "light": true
@@ -4892,38 +4892,38 @@
             {
               "name": "Atlantic cold green, current",
               "oklch": "0.488 0.034 192",
-              "hex": "#4A6E6E",
+              "hex": "#496665",
               "note": "The Benguela cold-current sea, never warm-blue here.",
               "hier": "s"
             },
             {
               "name": "Lichen rust, on shipwreck",
               "oklch": "0.482 0.118 42",
-              "hex": "#8C4828",
+              "hex": "#934321",
               "note": "Orange lichen growing on wrecked iron plating.",
               "hier": "a"
             },
             {
               "name": "Shipwreck steel, oxidised",
               "oklch": "0.342 0.022 38",
-              "hex": "#4A3A32",
+              "hex": "#433530",
               "note": "The dark rust of an iron hull that has been here decades.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#B8957A",
+              "c": "#AA8E79",
               "pct": 55,
               "text": "Fog-into-dune ochre carries the entire visible inland."
             },
             "s": {
-              "c": "#948E84",
+              "c": "#898681",
               "pct": 35,
               "text": "Oryx grey, seal-bone, Atlantic cold green — the working surrounds."
             },
             "a": {
-              "c": "#8C4828",
+              "c": "#934321",
               "pct": 10,
               "text": "Lichen rust and oxidised steel only where the wrecks are."
             }
@@ -5005,7 +5005,7 @@
             {
               "name": "Mineral salt crust",
               "oklch": "0.882 0.016 88",
-              "hex": "#E0DCCC",
+              "hex": "#DCD8CD",
               "note": "Halite crust where the lake has receded; reads pure white from the causeway.",
               "hier": "d",
               "light": true
@@ -5013,7 +5013,7 @@
             {
               "name": "Gull-white, brackish bird",
               "oklch": "0.832 0.012 88",
-              "hex": "#D4D0C4",
+              "hex": "#CBC8BF",
               "note": "<em>Larus californicus</em> feeding on the brine flies along the shore.",
               "hier": "s",
               "light": true
@@ -5021,45 +5021,45 @@
             {
               "name": "Sage hillside, green-grey",
               "oklch": "0.598 0.022 108",
-              "hex": "#8E9276",
+              "hex": "#818172",
               "note": "<em>Artemisia tridentata</em> on the slope above the causeway.",
               "hier": "s"
             },
             {
               "name": "Mountain silhouette, Wasatch",
               "oklch": "0.342 0.018 358",
-              "hex": "#4A3A3E",
+              "hex": "#413538",
               "note": "The range behind the lake at sunset, taking the warm reflected light from the west.",
               "hier": "s"
             },
             {
               "name": "Pink algae brine, Dunaliella bloom",
               "oklch": "0.722 0.108 28",
-              "hex": "#D88478",
+              "hex": "#E18A7F",
               "note": "The lake's specific pink water — biological, not optical illusion.",
               "hier": "a"
             },
             {
               "name": "Sunset orange, sky reflection",
               "oklch": "0.658 0.158 50",
-              "hex": "#D87432",
+              "hex": "#DB6F25",
               "note": "Late-July sun reflected through the haze of a desert summer evening.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#E0DCCC",
+              "c": "#DCD8CD",
               "pct": 55,
               "text": "Salt crust is the dominant mineral surface of the foreshore."
             },
             "s": {
-              "c": "#D4D0C4",
+              "c": "#CBC8BF",
               "pct": 35,
               "text": "Gull white, sage hillside, Wasatch silhouette — the surrounding fabric."
             },
             "a": {
-              "c": "#D88478",
+              "c": "#E18A7F",
               "pct": 10,
               "text": "Algae pink and sunset orange — the two warm reads of the hour."
             }
@@ -5153,28 +5153,28 @@
             {
               "name": "Gloom under canopy, indirect light",
               "oklch": "0.328 0.008 138",
-              "hex": "#3A3E38",
+              "hex": "#333632",
               "note": "The dominant ambient at midday under old-growth canopy in rain.",
               "hier": "d"
             },
             {
               "name": "Sitka spruce bark, wet",
               "oklch": "0.342 0.042 62",
-              "hex": "#4A3826",
+              "hex": "#483421",
               "note": "<em>Picea sitchensis</em> trunk, soaked through after hours of rain.",
               "hier": "s"
             },
             {
               "name": "Sphagnum moss, green-yellow",
               "oklch": "0.498 0.060 118",
-              "hex": "#6E7C48",
+              "hex": "#5F6840",
               "note": "Continuous moss carpet across roots, stumps, and forest floor.",
               "hier": "s"
             },
             {
               "name": "Glacier-melt creek, mineral grey-green",
               "oklch": "0.668 0.020 168",
-              "hex": "#94A8A0",
+              "hex": "#899992",
               "note": "Outwash stream colour where it cuts through the forest.",
               "hier": "s",
               "light": true
@@ -5182,31 +5182,31 @@
             {
               "name": "Salmonberry red, fruit",
               "oklch": "0.532 0.158 28",
-              "hex": "#B8423A",
+              "hex": "#B63D34",
               "note": "<em>Rubus spectabilis</em> berry on the brush at trail-side.",
               "hier": "a"
             },
             {
               "name": "Salmon flesh, sockeye",
               "oklch": "0.628 0.142 40",
-              "hex": "#C86848",
+              "hex": "#CE6641",
               "note": "<em>Oncorhynchus nerka</em> in the spawning channel, visible through the surface.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#3A3E38",
+              "c": "#333632",
               "pct": 55,
               "text": "Canopy gloom — the dominant ambient most of the year."
             },
             "s": {
-              "c": "#4A3826",
+              "c": "#483421",
               "pct": 35,
               "text": "Wet bark, sphagnum, glacier creek — the actual textures under foot and hand."
             },
             "a": {
-              "c": "#B8423A",
+              "c": "#B63D34",
               "pct": 10,
               "text": "Salmonberry and salmon flesh, the only saturated reds of the forest."
             }
@@ -5278,28 +5278,28 @@
             {
               "name": "Spruce canopy dark",
               "oklch": "0.328 0.032 152",
-              "hex": "#2A3A2E",
+              "hex": "#293A2D",
               "note": "<em>Picea abies</em> canopy at this latitude in November.",
               "hier": "d"
             },
             {
               "name": "Half-timbered cottage, oiled hardwood",
               "oklch": "0.452 0.068 60",
-              "hex": "#6E4A30",
+              "hex": "#724C2D",
               "note": "Oiled cladding on the few cottages visible from the path.",
               "hier": "s"
             },
             {
               "name": "Stream water, mineral-clear",
               "oklch": "0.548 0.014 215",
-              "hex": "#6E8484",
+              "hex": "#687376",
               "note": "Cold-flow stream cutting between the spruce stands.",
               "hier": "s"
             },
             {
               "name": "Tannenbaum mist, fog between trunks",
               "oklch": "0.762 0.008 138",
-              "hex": "#B8C0B8",
+              "hex": "#AFB3AE",
               "note": "Low-altitude cloud sitting in the woodland; the visibility of the day.",
               "hier": "s",
               "light": true
@@ -5307,31 +5307,31 @@
             {
               "name": "Beech leaf rust, fallen",
               "oklch": "0.482 0.118 42",
-              "hex": "#8C4828",
+              "hex": "#934321",
               "note": "<em>Fagus sylvatica</em> leaf cover on the forest path.",
               "hier": "a"
             },
             {
               "name": "Chanterelle yellow, mushroom",
               "oklch": "0.682 0.122 78",
-              "hex": "#C89432",
+              "hex": "#C28E33",
               "note": "<em>Cantharellus cibarius</em> still pushing up through the autumn duff.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#2A3A2E",
+              "c": "#293A2D",
               "pct": 55,
               "text": "Spruce canopy is the whole vertical of the territory."
             },
             "s": {
-              "c": "#6E4A30",
+              "c": "#724C2D",
               "pct": 35,
               "text": "Cottage wood, stream water, mist — the working surrounds."
             },
             "a": {
-              "c": "#8C4828",
+              "c": "#934321",
               "pct": 10,
               "text": "Beech leaf and chanterelle, on the ground only."
             }
@@ -5408,28 +5408,28 @@
             {
               "name": "Cypress-knee grey, knot",
               "oklch": "0.502 0.008 78",
-              "hex": "#6E6E64",
+              "hex": "#66635F",
               "note": "<em>Taxodium distichum</em> root knees poking above the water surface.",
               "hier": "d"
             },
             {
               "name": "Spanish moss, silver drape",
               "oklch": "0.602 0.004 88",
-              "hex": "#8C8C84",
+              "hex": "#82817E",
               "note": "<em>Tillandsia usneoides</em> hanging in every available limb.",
               "hier": "s"
             },
             {
               "name": "Alligator-mud brown",
               "oklch": "0.272 0.026 58",
-              "hex": "#3A2E22",
+              "hex": "#31241A",
               "note": "Bank silt where the alligators come out to bask.",
               "hier": "s"
             },
             {
               "name": "Dawn pink, humidity-haze",
               "oklch": "0.762 0.030 28",
-              "hex": "#D8A8A0",
+              "hex": "#C4ABA7",
               "note": "Brief warm cast in the air before the sun fully rises.",
               "hier": "s",
               "light": true
@@ -5437,14 +5437,14 @@
             {
               "name": "Swamp water tannin, black tea",
               "oklch": "0.222 0.018 58",
-              "hex": "#2A201A",
+              "hex": "#221913",
               "note": "The deeply tea-stained colour of cypress-leaf decomposition water.",
               "hier": "a"
             },
             {
               "name": "Egret white, wading bird",
               "oklch": "0.852 0.008 88",
-              "hex": "#D8D4C8",
+              "hex": "#D0CEC9",
               "note": "<em>Ardea alba</em> standing in the shallows — the only true white in the slough.",
               "hier": "a",
               "light": true
@@ -5452,17 +5452,17 @@
           ],
           "hierarchy": {
             "d": {
-              "c": "#6E6E64",
+              "c": "#66635F",
               "pct": 50,
               "text": "Cypress-knee grey across the entire water surface."
             },
             "s": {
-              "c": "#8C8C84",
+              "c": "#82817E",
               "pct": 40,
               "text": "Spanish moss, mud-brown, dawn pink — the working surrounds."
             },
             "a": {
-              "c": "#2A201A",
+              "c": "#221913",
               "pct": 10,
               "text": "Tannin water and egret white — the two extremes of contrast."
             }
@@ -5543,14 +5543,14 @@
             {
               "name": "Birch leaf, full summer",
               "oklch": "0.498 0.060 118",
-              "hex": "#6E7C48",
+              "hex": "#5F6840",
               "note": "<em>Betula ermanii</em> at midsummer; the dominant deciduous green at this latitude.",
               "hier": "d"
             },
             {
               "name": "Low-cloud grey, summer overcast",
               "oklch": "0.738 0.004 88",
-              "hex": "#B4B4B0",
+              "hex": "#ABAAA7",
               "note": "The standard Kamchatkan summer sky — never deep blue at this latitude.",
               "hier": "s",
               "light": true
@@ -5558,45 +5558,45 @@
             {
               "name": "Bear-fern green, ground cover",
               "oklch": "0.428 0.058 138",
-              "hex": "#4A5E3A",
+              "hex": "#3F5737",
               "note": "<em>Dryopteris</em> at thigh height across most of the taiga floor.",
               "hier": "s"
             },
             {
               "name": "Salmon stream, glacial",
               "oklch": "0.548 0.014 215",
-              "hex": "#6E8484",
+              "hex": "#687376",
               "note": "Cold spawning river cutting through the lowland.",
               "hier": "s"
             },
             {
               "name": "Fireweed pink, willow-herb spike",
               "oklch": "0.548 0.142 348",
-              "hex": "#B8487A",
+              "hex": "#AA497F",
               "note": "<em>Chamaenerion angustifolium</em> in full bloom across burn-recovery ground.",
               "hier": "a"
             },
             {
               "name": "Volcanic ash, weathered",
               "oklch": "0.452 0.020 50",
-              "hex": "#6E5E54",
+              "hex": "#5F534C",
               "note": "Deposits from previous Avacha eruptions, mixed into the trail soil.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#6E7C48",
+              "c": "#5F6840",
               "pct": 55,
               "text": "Birch-leaf summer green carries the territory."
             },
             "s": {
-              "c": "#B4B4B0",
+              "c": "#ABAAA7",
               "pct": 35,
               "text": "Overcast cloud, bear-fern, salmon stream — the surrounds."
             },
             "a": {
-              "c": "#B8487A",
+              "c": "#AA497F",
               "pct": 10,
               "text": "Fireweed pink and volcanic ash, in small reads only."
             }
@@ -5694,7 +5694,7 @@
             {
               "name": "Monsoon sky white, plum-rain",
               "oklch": "0.802 0.004 138",
-              "hex": "#C8C8C4",
+              "hex": "#BDBFBC",
               "note": "Continuous overcast of mid-June southern China; the dominant ambient.",
               "hier": "d",
               "light": true
@@ -5702,21 +5702,21 @@
             {
               "name": "Wet stone path, slate",
               "oklch": "0.412 0.008 78",
-              "hex": "#4E4A44",
+              "hex": "#4D4A46",
               "note": "Kiln-yard paving wet from continuous rain.",
               "hier": "s"
             },
             {
               "name": "Bamboo wet green, grove",
               "oklch": "0.448 0.046 138",
-              "hex": "#4A6248",
+              "hex": "#485B42",
               "note": "<em>Phyllostachys</em> grove behind the workshop, deepened by rain.",
               "hier": "s"
             },
             {
               "name": "River haze, Taihu",
               "oklch": "0.668 0.010 215",
-              "hex": "#94A0A4",
+              "hex": "#8E9698",
               "note": "Lake fog rolled inland by the season.",
               "hier": "s",
               "light": true
@@ -5724,31 +5724,31 @@
             {
               "name": "Zisha clay, fired teapot red",
               "oklch": "0.382 0.108 38",
-              "hex": "#6E3A22",
+              "hex": "#712911",
               "note": "Famous Yixing teapot clay, the deep oxide red of the local mineral.",
               "hier": "a"
             },
             {
               "name": "Fired clay rim, kiln-mark grey",
               "oklch": "0.612 0.012 80",
-              "hex": "#948A7C",
+              "hex": "#88837C",
               "note": "Unglazed rim of an unfinished pot, kiln-fired but uncured.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#C8C8C4",
+              "c": "#BDBFBC",
               "pct": 55,
               "text": "Plum-rain sky carries everything; even the workshops read through it."
             },
             "s": {
-              "c": "#4E4A44",
+              "c": "#4D4A46",
               "pct": 35,
               "text": "Wet stone, bamboo, river haze — the rain-soaked surrounds."
             },
             "a": {
-              "c": "#6E3A22",
+              "c": "#712911",
               "pct": 10,
               "text": "Zisha red and kiln-fired rim, in small fired reads only."
             }
@@ -5809,7 +5809,7 @@
             {
               "name": "Snow on pine bough",
               "oklch": "0.862 0.004 138",
-              "hex": "#D8DAD6",
+              "hex": "#D0D2D0",
               "note": "Loaded conifer along the boardwalk; reads pure cold-white at noon.",
               "hier": "d",
               "light": true
@@ -5817,14 +5817,14 @@
             {
               "name": "Baltic Sea grey-blue, ice-edged",
               "oklch": "0.508 0.022 248",
-              "hex": "#6E7484",
+              "hex": "#5C6772",
               "note": "The Gulf of Riga in January — slate water with floating brash ice.",
               "hier": "s"
             },
             {
               "name": "Sauna birch, fresh-cut bench",
               "oklch": "0.798 0.044 78",
-              "hex": "#D4C0A0",
+              "hex": "#CDBA9E",
               "note": "<em>Betula pendula</em> bench in a public sauna; the regional sit-surface.",
               "hier": "s",
               "light": true
@@ -5832,38 +5832,38 @@
             {
               "name": "Dacha mint-green shutter",
               "oklch": "0.658 0.040 152",
-              "hex": "#8CA890",
+              "hex": "#809986",
               "note": "Painted summer-house shutter visible from the boardwalk all year.",
               "hier": "s"
             },
             {
               "name": "Kvass amber, glass",
               "oklch": "0.488 0.132 42",
-              "hex": "#944C22",
+              "hex": "#9B4017",
               "note": "Fermented-bread drink from the still-open cart at the pier entrance.",
               "hier": "a"
             },
             {
               "name": "Lantern yellow, pier light",
               "oklch": "0.682 0.122 78",
-              "hex": "#C89432",
+              "hex": "#C28E33",
               "note": "Sodium pier-head lamp at the boardwalk's seaward end.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#D8DAD6",
+              "c": "#D0D2D0",
               "pct": 55,
               "text": "Snow on pine carries the boardwalk and the dacha gardens."
             },
             "s": {
-              "c": "#6E7484",
+              "c": "#5C6772",
               "pct": 35,
               "text": "Baltic grey, sauna birch, dacha mint-green — the working surrounds."
             },
             "a": {
-              "c": "#944C22",
+              "c": "#9B4017",
               "pct": 10,
               "text": "Kvass amber and lantern yellow — the only saturated reads in the territory."
             }
@@ -5926,42 +5926,42 @@
             {
               "name": "Typhoon cloud green-grey",
               "oklch": "0.518 0.014 168",
-              "hex": "#6E7A76",
+              "hex": "#616B67",
               "note": "The standard cloud colour during an active western-Pacific typhoon afternoon.",
               "hier": "d"
             },
             {
               "name": "Wet asphalt, road glare",
               "oklch": "0.412 0.004 80",
-              "hex": "#4E4A48",
+              "hex": "#4C4B48",
               "note": "Saturated road surface with horizontal rain running across it.",
               "hier": "s"
             },
             {
               "name": "Banyan dark canopy, wind-tossed",
               "oklch": "0.328 0.030 138",
-              "hex": "#2E3A2E",
+              "hex": "#2D392A",
               "note": "<em>Ficus microcarpa</em> windbreak, leaves storm-darkened.",
               "hier": "s"
             },
             {
               "name": "Sugarcane field, pre-harvest",
               "oklch": "0.628 0.080 100",
-              "hex": "#948A4A",
+              "hex": "#948A4F",
               "note": "<em>Saccharum officinarum</em> fields visible inland when wind drops.",
               "hier": "s"
             },
             {
               "name": "Ryukyuan tile-red, roof",
               "oklch": "0.522 0.158 38",
-              "hex": "#A84A32",
+              "hex": "#B13E15",
               "note": "Traditional <em>akagawara</em> roof tile; brilliant in this weather against the grey.",
               "hier": "a"
             },
             {
               "name": "Plumeria washed pale, fallen blossom",
               "oklch": "0.832 0.022 78",
-              "hex": "#D8C8B8",
+              "hex": "#D0C7B8",
               "note": "<em>Plumeria</em> blossoms knocked down by the wind onto wet pavement.",
               "hier": "a",
               "light": true
@@ -5969,17 +5969,17 @@
           ],
           "hierarchy": {
             "d": {
-              "c": "#6E7A76",
+              "c": "#616B67",
               "pct": 60,
               "text": "Typhoon cloud carries every visible square metre of sky."
             },
             "s": {
-              "c": "#4E4A48",
+              "c": "#4C4B48",
               "pct": 30,
               "text": "Wet asphalt, banyan dark, sugarcane field — the wind-blown surrounds."
             },
             "a": {
-              "c": "#A84A32",
+              "c": "#B13E15",
               "pct": 10,
               "text": "Ryukyuan tile-red and plumeria pale — the only warm reads in the storm."
             }
@@ -6049,7 +6049,7 @@
             {
               "name": "Coastal fog white",
               "oklch": "0.852 0.008 88",
-              "hex": "#D8D4CC",
+              "hex": "#D0CEC9",
               "note": "The marine layer locked along the peninsula for weeks in July — the dominant for the month.",
               "hier": "d",
               "light": true
@@ -6057,28 +6057,28 @@
             {
               "name": "Beach grass, salt-tolerant green",
               "oklch": "0.668 0.052 122",
-              "hex": "#8CA878",
+              "hex": "#8F9A77",
               "note": "<em>Ammophila</em> on the foredunes — the territory's only consistent green.",
               "hier": "s"
             },
             {
               "name": "Weather-grey cypress, wind-shaped",
               "oklch": "0.498 0.006 88",
-              "hex": "#6A6A64",
+              "hex": "#64625F",
               "note": "<em>Hesperocyparis macrocarpa</em> shaped by the prevailing wind; the structural tree.",
               "hier": "s"
             },
             {
               "name": "Sandstone bluff, low light",
               "oklch": "0.668 0.058 60",
-              "hex": "#B88E6C",
+              "hex": "#B08D71",
               "note": "Tomales-Bay-side cliff sandstone seen through fog.",
               "hier": "s"
             },
             {
               "name": "Abalone shell, iridescent inner",
               "oklch": "0.768 0.042 78",
-              "hex": "#C8B89C",
+              "hex": "#C3B196",
               "note": "<em>Haliotis</em> inner-shell glint at the wrack line — the brief saturated read.",
               "hier": "a",
               "light": true
@@ -6086,24 +6086,24 @@
             {
               "name": "Kelp wrack brown, strandline",
               "oklch": "0.342 0.042 62",
-              "hex": "#4A3826",
+              "hex": "#483421",
               "note": "<em>Macrocystis</em> washed up overnight, dark and warm against the fog grey.",
               "hier": "a"
             }
           ],
           "hierarchy": {
             "d": {
-              "c": "#D8D4CC",
+              "c": "#D0CEC9",
               "pct": 60,
               "text": "Coastal fog is the dominant for the entire month of July."
             },
             "s": {
-              "c": "#8CA878",
+              "c": "#8F9A77",
               "pct": 30,
               "text": "Beach grass, weather-grey cypress, sandstone bluff — the surrounds in fog."
             },
             "a": {
-              "c": "#4A3826",
+              "c": "#483421",
               "pct": 10,
               "text": "Abalone shell and kelp wrack — the only reads with any saturation."
             }

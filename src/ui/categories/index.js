@@ -9,7 +9,7 @@ export const CATEGORY_INDEX = [
   {"slug":"literature","category":"Literature","eyebrow":"Literary Palette · Sourced from setting & page","tagline":"Forty-eight books, read for their colour, not their dust-jacket.","count":48,"strip":["#C49F60","#C6D0D6","#6F9E6A","#A8865B","#7A3F5F","#9E6042","#63676B","#6794C0","#C09B67","#68915A","#B0946E","#817A6F"]},
   {"slug":"music","category":"Music / Genre & Era","eyebrow":"Music Palette · Sourced from scene & sleeve","tagline":"Forty-eight scenes, read for their colour, not their logo.","count":48,"strip":["#265986","#1F1F23","#2B2734","#267C46","#777B80","#E9CA42","#1E2024","#4C698A","#722620","#EB7D2C","#EEBBCB","#AD8048"]},
   {"slug":"nature","category":"Nature / Biomes","eyebrow":"Biome Palette · Sourced from real ecosystems","tagline":"Forty-eight biomes, read for their colour, not their postcard.","count":48,"strip":["#A3A7AC","#CBD3D7","#6EAB67","#9C4333","#B4613C","#305C37","#9E9D58","#BDA46D","#6CBBBB","#AB8958","#1D1D20","#C0492F"]},
-  {"slug":"travel","category":"Travel / Territories","eyebrow":"Territory Palette · Sourced from real places","tagline":"Forty-eight territories, read for their colour, not their postcard.","count":48,"strip":["#E3E6E7","#E3E8EC","#C2C4C0","#D8D4CC","#E8EAEC","#3A3A37","#2A3A64","#D4C4A0","#E3D8B8","#D8A888","#3A3E38","#C8C8C4"]}
+  {"slug":"travel","category":"Travel / Territories","eyebrow":"Territory Palette · Sourced from real places","tagline":"Forty-eight territories, read for their colour, not their postcard.","count":48,"strip":["#E0E5E6","#DDE5EB","#BCBFBB","#D0CEC9","#E0E5E6","#343331","#1F3066","#CDBC9D","#E0D4B6","#D6A499","#333632","#BDBFBC"]}
 ];
 
 const LOADERS = {
