@@ -125,6 +125,10 @@ figma.ui.onmessage = async (msg) => {
     if (msg.type === "apply") {
       // the Settings-overridable color-collection names ride the message; set BEFORE any write.
       setCollectionNames(msg.collections);
+      // #632: BEFORE any write, offer to adopt a live collection that matches a target name but isn't
+      // registry-tracked (a file applied to under the pre-rename plugin id, or a hand-made collection).
+      // Nothing is adopted without explicit consent; declining is today's behaviour, unchanged.
+      await adoptExistingCollections(msg);
       // `dtcg` is OMITTED when the Color system is toggled off in the UI — skip the color collections
       // entirely (the existing ones are left untouched, not pruned). Type/Geometry filtering happens UI-side.
       const r = msg.dtcg ? await applyBundle(msg.dtcg, { rebuildSemantic: !!msg.rebuildSemantic, renames: msg.renames && msg.renames.color }) : null;
@@ -727,6 +731,145 @@ async function confirmLibraryMode(collectionName, report) {
   });
 }
 function escapeHtmlVM(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+// ── #632: consented adoption of an existing, same-named collection ─────────────────────────────
+// WHY: ensureCollection / ensureFloatCollection resolve a collection by PROVENANCE only (the
+// registry's stored id), never by name (TKT-0024). So a file whose registry was written under the
+// pre-rename plugin id, or was never written at all, gets a fresh DUPLICATE collection on the next
+// apply while the collection actually in use is silently orphaned, and the apply no-ops against it.
+// The TKT-0024 guarantee is "never adopt a same-named collection the user did not consent to", not
+// "never adopt one", so the fix is a consent gate in FRONT of those two functions rather than a change
+// to them: both stay byte-identical (their binder parity gates stay green) and the caller pre-seeds
+// reg[name] = candidate.id BEFORE calling them, so each takes its normal "known" fast path and returns
+// that exact collection. Same shape the standalone binder's main() already uses (#492).
+//
+// findAdoptionCandidate is a verbatim port of the binder's, including its #492 MAJOR-1 guard: if
+// `name` or ANY renameFrom entry ALREADY resolves to a live collection through `reg`, there is nothing
+// to adopt and it returns null before ever searching for an orphan. Without that guard a DECLINED
+// orphan stays unregistered forever and is re-offered on every later run, and a later confirm on that
+// stale re-prompt would re-point the registry AT the orphan, abandoning the collection actually in
+// use. Pure and read-only: it never mutates `cols` or `reg`.
+//
+// The binder's copies are deliberately left in place rather than mirrored through
+// scripts/gen-figma-binder-code.mjs: confirmAdopt CANNOT be byte-identical across the two plugins (the
+// flagship runs a persistent app iframe it must tear down and restore around the dialog, and its copy
+// always discloses pruning, see below), so only findAdoptionCandidate could be spliced, and adding one
+// pure function to the generated block would move the generator, the binder source, and the
+// floatparity gate's function list for no behavioural gain. Both parity gates keep comparing exactly
+// the executor functions this change does not touch.
+function findAdoptionCandidate(name, reg, renameFrom, cols) {
+  const names = [name].concat(Array.isArray(renameFrom) ? renameFrom : []);
+  for (const n of names) {
+    if (reg[n] && cols.some((c) => c.id === reg[n])) return null; // `n` already resolves live, nothing to adopt
+  }
+  const registered = new Set(Object.keys(reg).map((k) => reg[k]));
+  for (const n of names) {
+    const hit = cols.find((c) => c.name === n && !registered.has(c.id));
+    if (hit) return hit;
+  }
+  return null;
+}
+// restoreAppUI: put the generator app back after a modal borrowed the single plugin iframe.
+// figma.showUI() can only show ONE ui at a time, so any sandbox-side dialog REPLACES the running app.
+// This is the other half of that trade, and the reason confirmAdopt is safe to call mid-apply here at
+// all: it re-shows the app bundle, re-installs the message handler the dialog overwrote (confirmAdopt
+// assigns figma.ui.onmessage; without this the app's own handler would be gone for the rest of the
+// session and every later request from the UI would be dropped), and re-sends figma-init so the
+// re-booted iframe reveals its Apply button again. Called once per dialog, by confirmAdopt itself.
+function restoreAppUI(handler) {
+  figma.showUI(__html__, { width: 1440, height: 900, themeColors: true });
+  figma.ui.onmessage = handler;
+  figma.ui.postMessage({ type: "figma-init" });
+}
+// confirmAdopt: the one-time "adopt this existing collection?" gate, a real modal (the standalone
+// binder's #492 dialog, ported), not a dismissible figma.notify toast: adopting means writing into a
+// collection this plugin did not create, which is exactly the consequential choice the apply gate
+// already treats as deliberate. Resolves true (adopt) or false (skip, which is today's unchanged
+// behaviour: ensureCollection/ensureFloatCollection mint a separate collection right after).
+//
+// Two deliberate differences from the binder's copy:
+//   1. It restores the app iframe and the app's message handler afterwards (restoreAppUI above). The
+//      binder has no persistent UI, so its copy needs neither.
+//   2. It ALWAYS discloses that the collection will be fully reconciled and pruned. The binder's copy
+//      takes a `prunes` flag because its colour path only aliases and never prunes; every flagship
+//      adoption target is pruned (applyBundle prunes orphans in all three colour collections,
+//      applyFloatPlans full-mirrors its own), so there is no non-pruning case to describe here.
+// "Asked once per file" is guaranteed by findAdoptionCandidate's first check, not by any stored flag:
+// EITHER outcome leaves the name resolving to a live, registered collection, so a later run returns
+// null before looking for an orphan. Escapes the interpolated collection name via escapeHtmlVM.
+async function confirmAdopt(name) {
+  const appHandler = figma.ui.onmessage; // the app's own handler, overwritten below and restored after
+  const answer = await new Promise((resolve) => {
+    let settled = false;
+    const settle = (v) => { if (!settled) { settled = true; resolve(v); } };
+    // Closing the plugin window (the X, not either button) never fires figma.ui.onmessage, which would
+    // hang the apply on a promise that never settles. figma.on "close" fires for EVERY dismissal path,
+    // so it is registered unconditionally; settle() is idempotent, so a real button click still wins
+    // the race. A close is treated as a DECLINE: never touch anything without explicit consent.
+    figma.on("close", () => settle(false));
+    figma.showUI(
+      "<style>body{font:12px -apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:16px;color:#1a1a1a}" +
+      "p{margin:0 0 14px;line-height:1.5}button{font:inherit;padding:7px 14px;border-radius:6px;cursor:pointer;margin-right:8px}" +
+      "#adopt{background:#18A0FB;color:#fff;border:1px solid #18A0FB}#skip{background:#fff;border:1px solid #ccc}</style>" +
+      "<p>Found an existing <b>“" + escapeHtmlVM(name) + "”</b> collection this plugin didn’t create. " +
+      "Adopt it and apply into it, instead of creating a separate collection? " +
+      "Adoption takes the collection over: anything in it that is not part of this apply is removed.</p>" +
+      "<button id=\"adopt\">Adopt “" + escapeHtmlVM(name) + "”</button><button id=\"skip\">Skip (create new)</button>" +
+      // the closing tag below is written "<\/script>" so this SOURCE FILE never contains the literal,
+      // contiguous closing-script-tag substring: writing it here, in code OR in a comment, truncates
+      // the single inline script block this file is embedded into elsewhere (a real smoke-test
+      // incident on the binder's identical dialog). "<\/script>" is the identical string at runtime.
+      "<script>document.getElementById('adopt').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:true}},'*');" +
+      "document.getElementById('skip').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:false}},'*');<\/script>",
+      { width: 360, height: 192 },
+    );
+    figma.ui.onmessage = (msg) => {
+      if (!msg || msg.type !== "adopt-confirm") return;
+      // settle() BEFORE close() so the real answer wins even if close() fires the "close" handler synchronously.
+      settle(!!msg.adopt);
+      figma.ui.close();
+    };
+  });
+  restoreAppUI(appHandler);
+  return answer;
+}
+// adoptExistingCollections: the DISCOVERY + consent pass, run ONCE at the top of an apply, before any
+// write. Every collection this apply would ensure is checked for an untracked live namesake; each
+// confirmed one is seeded into its registry and persisted to root pluginData, so the ensure* functions
+// downstream resolve it by id on their normal fast path. Declining changes nothing at all.
+// Running it here, ahead of applyBundle/applyFloatPlans rather than inside them, is what keeps the
+// iframe disruption bounded: the app is torn down and restored before the apply writes anything, not
+// halfway through it, and each collection is asked about at most once per apply.
+async function adoptExistingCollections(msg) {
+  const cols = await figma.variables.getLocalVariableCollectionsAsync();
+  const renames = (msg && msg.renames && msg.renames.color && msg.renames.color.collections) || {};
+  // colour: the three generated collections applyBundle ensures, skipped entirely when the Color
+  // system is toggled off (no dtcg on the message means those collections are never touched).
+  if (msg && msg.dtcg) {
+    const reg = readColorRegistry();
+    let seeded = false;
+    for (const name of [COLL.raw, PRIME_COLLECTION, COLL.semantic]) {
+      const cand = findAdoptionCandidate(name, reg, renames[name], cols);
+      if (cand && (await confirmAdopt(cand.name))) { reg[name] = cand.id; seeded = true; }
+    }
+    if (seeded) writeColorRegistry(reg);
+  }
+  // Type/Geometry: one ask per DISTINCT plan collection, across both float call sites (applyFloatPlans
+  // and applyFontPrimitivesModes share FLOAT_REGISTRY_KEY, so they share this pass).
+  const plans = (Array.isArray(msg && msg.floatPlans) ? msg.floatPlans : []).concat(msg && msg.fontPrimitivesModes ? [msg.fontPrimitivesModes] : []);
+  if (plans.length) {
+    const reg = readFloatRegistry();
+    const asked = new Set();
+    let seeded = false;
+    for (const plan of plans) {
+      if (!plan || !plan.collection || asked.has(plan.collection)) continue;
+      asked.add(plan.collection);
+      const cand = findAdoptionCandidate(plan.collection, reg, plan.renameFrom, cols);
+      if (cand && (await confirmAdopt(cand.name))) { reg[plan.collection] = cand.id; seeded = true; }
+    }
+    if (seeded) writeFloatRegistry(reg);
+  }
+}
 
 // ── STYLES: Type Primitives + paint/text styles bound to the variables ─────────────────────────
 // The UI computes the plans (figma/binder/style-plan.mjs — pure, parity-gated); this executor runs

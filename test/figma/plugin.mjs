@@ -77,12 +77,30 @@ function mockFigma() {
   const collections = [], variables = [];
   let id = 0;
   const figma = {
-    showUI() {},
+    // ── #632 adoption-confirm UI mock ── confirmAdopt() calls showUI() then synchronously assigns
+    // figma.ui.onmessage; the queued microtask below fires AFTER that assignment (JS microtask
+    // ordering), so it always reaches the dialog's own handler. `_adoptAnswer` (default false, DECLINE,
+    // the conservative default so every existing test keeps seeing today's unchanged behaviour) is read
+    // fresh per call. `_showUICalls` counts ADOPTION prompts only, detected from the posted-message type
+    // embedded in the html, so restoreAppUI's re-show of the app bundle is not miscounted as a prompt.
+    _adoptAnswer: false,
+    _showUICalls: 0,
+    _onClose: null,
+    on(event, cb) { if (event === "close") this._onClose = cb; },
+    showUI(html) {
+      if (typeof html !== "string" || html.indexOf("adopt-confirm") === -1) return; // the app bundle, not a dialog
+      this._showUICalls++;
+      const answer = this._adoptAnswer;
+      Promise.resolve().then(() => {
+        if (answer === "close") { if (this._onClose) this._onClose(); return; }
+        if (this.ui.onmessage) this.ui.onmessage({ type: "adopt-confirm", adopt: answer });
+      });
+    },
     notify() {},
     closePlugin() {},
     // the document root carries the embedded config (setPluginData is a synchronous string store).
     root: { _pd: {}, setPluginData(k, v) { this._pd[k] = String(v); }, getPluginData(k) { return this._pd[k] || ""; } },
-    ui: { _h: null, _posted: [], postMessage(m) { this._posted.push(m); }, set onmessage(fn) { this._h = fn; }, get onmessage() { return this._h; } },
+    ui: { _h: null, _posted: [], postMessage(m) { this._posted.push(m); }, close() {}, set onmessage(fn) { this._h = fn; }, get onmessage() { return this._h; } },
     clientStorage: { _s: {}, async setAsync(k, v) { this._s[k] = v; }, async getAsync(k) { return this._s[k]; } },
     // ── styles (paint + text) — the styles executor's surface ──
     _styles: [],
@@ -654,6 +672,102 @@ if (applyBundle) {
     if (FC.collections.filter((c) => c.name === "Color Primitives").length !== 2) FAIL("colorprov", "re-apply made a 3rd Color Primitives (provenance registry not persisted to root pluginData)");
     if (FC.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("colorprov", "re-apply made a 3rd Color Roles (provenance registry not persisted to root pluginData)");
   } catch (e) { FAIL("colorprov", "provenance guard threw: " + e.message); }
+}
+
+// ── adoptconsent (#632): a live collection matching a target name that ISN'T registry-tracked (a file
+//    applied to under the pre-rename plugin id, or a hand-made collection) is now OFFERED for adoption
+//    through a real modal, once, BEFORE any write. Confirmed => the apply upserts INTO that collection
+//    (same id, no duplicate, registry seeded); declined => today's unchanged behaviour, a separate
+//    collection (colorprov above proves that path in full). A name that already resolves live through
+//    the registry is never offered at all (the #492 MAJOR-1 guard). Driven through the REAL message
+//    handler, since the consent pass runs there, ahead of applyBundle/applyFloatPlans. ──
+if (applyBundle) {
+  const bundleAd = figmaBundle(defaultDocument());
+  const COLOR_REG = "ultimate-tokens-color-collections";
+  const FLOAT_REG = "ultimate-tokens-float-collections";
+  const regOf = (F, key) => { try { return JSON.parse(F.figma.root.getPluginData(key) || "{}"); } catch (e) { return {}; } };
+  // (a)+(b) ACCEPT: asked exactly once, resolves to the EXISTING collection id, no duplicate, registry seeded.
+  try {
+    const FE = mockFigma();
+    new Function("figma", "__html__", "module", code)(FE.figma, "<html>", undefined); // registers the app's onmessage
+    FE.figma._adoptAnswer = true;
+    const orphan = FE.figma.variables.createVariableCollection("Color Roles"); // live, but NOT registry-tracked
+    FE.figma.variables.createVariable("foreign/leftover", orphan, "COLOR").setValueForMode(orphan.modes[0].modeId, { r: 0, g: 1, b: 0, a: 1 });
+    await FE.figma.ui._h({ type: "apply", dtcg: bundleAd });
+    if (FE.figma._showUICalls !== 1) FAIL("adoptconsent", `expected exactly 1 adoption prompt, got ${FE.figma._showUICalls}`);
+    const semAd = FE.collections.filter((c) => c.name === "Color Roles");
+    if (semAd.length !== 1) FAIL("adoptconsent", `confirmed adoption must NOT create a second Color Roles collection, got ${semAd.length}`);
+    else if (semAd[0] !== orphan) FAIL("adoptconsent", "confirmed adoption minted a NEW collection instead of resolving to the existing one (bindings would orphan)");
+    if (!FE.variables.some((v) => v.variableCollectionId === orphan.id && v.name === "neutral/on-surface")) FAIL("adoptconsent", "adoption did not upsert role variables INTO the adopted collection");
+    if (regOf(FE, COLOR_REG)["Color Roles"] !== orphan.id) FAIL("adoptconsent", `the colour registry was not seeded with the adopted collection id (got ${JSON.stringify(regOf(FE, COLOR_REG)["Color Roles"])}, want ${orphan.id})`);
+    // the dialog promises the collection is taken over and reconciled: prove the prune actually happens,
+    // so the disclosure isn't describing behaviour the code doesn't have.
+    if (FE.variables.some((v) => v.variableCollectionId === orphan.id && v.name === "foreign/leftover")) FAIL("adoptconsent", "an adopted collection must be fully reconciled (the dialog says so): a variable outside the apply survived");
+    if (!FE.figma.ui._posted.some((m) => m && m.type === "apply-done")) FAIL("adoptconsent", "a confirmed adoption apply posted no {apply-done} (the apply did not complete)");
+    // the app iframe + its message handler come back after the modal borrowed the single plugin ui:
+    // prove it by SERVING a later request, not by type-checking the slot (the dialog's own handler is
+    // a function too, so a typeof check would pass with the restore deleted).
+    FE.figma.ui._posted.length = 0;
+    await FE.figma.ui._h({ type: "list-fonts" });
+    if (!FE.figma.ui._posted.some((m) => m && m.type === "fonts-listed")) FAIL("adoptconsent", "the app's own message handler was not restored after the adoption dialog: a later UI request went unanswered");
+    // SECOND apply: the registry now tracks it by id, so no re-ask and no duplicate.
+    FE.figma._showUICalls = 0;
+    await FE.figma.ui._h({ type: "apply", dtcg: bundleAd });
+    if (FE.figma._showUICalls !== 0) FAIL("adoptconsent", `a second apply must not re-ask about an already-adopted collection, got ${FE.figma._showUICalls} prompt(s)`);
+    if (FE.collections.filter((c) => c.name === "Color Roles").length !== 1) FAIL("adoptconsent", "re-apply after adoption duplicated the collection");
+  } catch (e) { FAIL("adoptconsent", "the confirmed-adoption leg threw: " + e.message); }
+  // (c) DECLINE: asked once, the orphan is left completely alone, a separate collection is created (today's behaviour).
+  try {
+    const FF = mockFigma();
+    new Function("figma", "__html__", "module", code)(FF.figma, "<html>", undefined);
+    FF.figma._adoptAnswer = false;
+    const orphan = FF.figma.variables.createVariableCollection("Color Roles");
+    FF.figma.variables.createVariable("foreign/leftover", orphan, "COLOR").setValueForMode(orphan.modes[0].modeId, { r: 0, g: 1, b: 0, a: 1 });
+    await FF.figma.ui._h({ type: "apply", dtcg: bundleAd });
+    if (FF.figma._showUICalls !== 1) FAIL("adoptconsent", `decline leg: expected exactly 1 prompt, got ${FF.figma._showUICalls}`);
+    const semDec = FF.collections.filter((c) => c.name === "Color Roles");
+    if (semDec.length !== 2) FAIL("adoptconsent", `decline leg: expected the orphan + a separate plugin-created collection (2), got ${semDec.length}`);
+    if (!FF.variables.some((v) => v.variableCollectionId === orphan.id && v.name === "foreign/leftover")) FAIL("adoptconsent", "decline leg: the declined collection was written to anyway");
+    if (orphan.modes[0].name !== "Mode 1" || orphan.modes.length !== 1) FAIL("adoptconsent", "decline leg: the declined collection's modes were touched");
+    if (regOf(FF, COLOR_REG)["Color Roles"] === orphan.id) FAIL("adoptconsent", "decline leg: the registry was seeded with the declined collection's id");
+    // re-run after a decline: the fresh collection now resolves the name, so ZERO prompts and no third collection.
+    FF.figma._showUICalls = 0;
+    await FF.figma.ui._h({ type: "apply", dtcg: bundleAd });
+    if (FF.figma._showUICalls !== 0) FAIL("adoptconsent", `decline leg: a re-run must show ZERO prompts, got ${FF.figma._showUICalls}`);
+    if (FF.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("adoptconsent", "decline leg: a re-run minted a THIRD Color Roles collection");
+  } catch (e) { FAIL("adoptconsent", "the decline leg threw: " + e.message); }
+  // (d) MAJOR-1 guard: a name that ALREADY resolves live through the registry is never offered, even
+  //     when a same-named orphan also exists. Without the guard, confirming here would re-point the
+  //     registry AT the orphan and abandon the collection actually in use.
+  try {
+    const FG2 = mockFigma();
+    new Function("figma", "__html__", "module", code)(FG2.figma, "<html>", undefined);
+    FG2.figma._adoptAnswer = true; // would adopt if ever asked
+    await FG2.figma.ui._h({ type: "apply", dtcg: bundleAd }); // era 1: creates + registers our own
+    const ours = FG2.collections.find((c) => c.name === "Color Roles");
+    const orphan = FG2.figma.variables.createVariableCollection("Color Roles"); // a same-named newcomer, untracked
+    FG2.figma._showUICalls = 0;
+    await FG2.figma.ui._h({ type: "apply", dtcg: bundleAd });
+    if (FG2.figma._showUICalls !== 0) FAIL("adoptconsent", `guard leg: a name that already resolves live must never prompt, got ${FG2.figma._showUICalls} prompt(s)`);
+    if (regOf(FG2, COLOR_REG)["Color Roles"] !== ours.id) FAIL("adoptconsent", "guard leg: the registry was re-pointed away from the collection actually in use");
+    if (FG2.variables.some((v) => v.variableCollectionId === orphan.id)) FAIL("adoptconsent", "guard leg: the apply wrote into the untracked namesake");
+  } catch (e) { FAIL("adoptconsent", "the already-resolves-live guard leg threw: " + e.message); }
+  // (e) the FLOAT call site: the same consent pass covers the Type/Geometry collections, whose registry
+  //     is pre-seeded before applyFloatPlans runs (its own ensureFloatCollection stays untouched).
+  try {
+    const FH = mockFigma();
+    new Function("figma", "__html__", "module", code)(FH.figma, "<html>", undefined);
+    FH.figma._adoptAnswer = true;
+    const orphanGeo = FH.figma.variables.createVariableCollection("Geometry"); // live, untracked
+    const planH = modeApplyPlan(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product" }), []));
+    await FH.figma.ui._h({ type: "apply", floatPlans: planH });
+    if (FH.figma._showUICalls !== 1) FAIL("adoptconsent", `float leg: expected exactly 1 prompt, got ${FH.figma._showUICalls}`);
+    const geos = FH.collections.filter((c) => c.name === "Geometry");
+    if (geos.length !== 1) FAIL("adoptconsent", `float leg: confirmed adoption must not create a second Geometry collection, got ${geos.length}`);
+    else if (geos[0] !== orphanGeo) FAIL("adoptconsent", "float leg: confirmed adoption minted a NEW collection instead of resolving to the existing one");
+    if (regOf(FH, FLOAT_REG)["Geometry"] !== orphanGeo.id) FAIL("adoptconsent", "float leg: the float registry was not seeded with the adopted collection id");
+    if (!FH.variables.some((v) => v.variableCollectionId === orphanGeo.id)) FAIL("adoptconsent", "float leg: the apply wrote no variables into the adopted collection");
+  } catch (e) { FAIL("adoptconsent", "the float adoption leg threw: " + e.message); }
 }
 
 // ── TKT-0024: the color collections' id-preserving RENAME capability still works once ensureCollection
@@ -1546,6 +1660,10 @@ if (applyFloatPlans) {
 {
   const f = fails.find((x) => x.startsWith("librarymode:"));
   console.log(`  ${f ? "FAIL" : "pass"}  librarymode${f ? "  — " + f.slice(12) : ""}`);
+}
+{
+  const f = fails.find((x) => x.startsWith("adoptconsent:"));
+  console.log(`  ${f ? "FAIL" : "pass"}  adoptconsent${f ? "  — " + f.slice(14) : ""}`);
 }
 {
   const f = fails.find((x) => x.startsWith("librarygrammar:"));
