@@ -8,7 +8,28 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-09-18
+
+#### Added
+- **A reference form of the Radix color export** (#638) — `exportRadix(state, { refs: true })` emits
+  the same Radix preset shape, with every numbered step leaf's `base`/`_dark` a `var(--{pfx}-{n}-*)`
+  link into the kit's own CSS custom-property layer instead of a baked `oklch(...)` value. One format
+  with two forms, not an eleventh: the drawer's Radix tab gains a "Values · References" file picker,
+  and both `radix/{s}.preset.mjs` and `radix/{s}.refs.preset.mjs` ship in the Download-All zip under
+  the existing Pro gate. `EXPORT_SCHEMA_VERSION` moves 2 → 3 (the link leaf is a new value shape), and
+  the brand-kit MCP's zip `package.json` version is now generated from the server's own
+  `SERVER.version` rather than a hand-kept sibling literal, closing the drift the bump surfaced.
+
 ### 2026-09-17
+
+#### Fixed
+- **A palette named after a Radix alias key (`accent`, `gray`, `error`, `fg`, `canvas`, `border`,
+  `bg`) no longer loses its ladder** (#630) — `exportRadix` wrote one group per palette slug and then
+  overwrote it with the seven Park UI alias keys, so a palette literally named `accent` lost its own
+  12-step ladder and a palette named `error` turned `colors.error` into a dangling self-reference.
+  `radixPaletteKey` now emits a colliding palette under `<slug>-palette` (suffixed again if that key
+  is also taken) and points the driver clones and `error` at the renamed key; a non-colliding slug is
+  untouched.
 
 #### Changed
 - **Classic prune is monotonic over `_deprecated/` names, at both library-mode gates** (#659, #666).

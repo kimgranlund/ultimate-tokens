@@ -60,6 +60,16 @@ A new role appears in ShadCN or Radix only if you wire it into `MAP` (ShadCN) or
 (Radix) — and that is a deliberate design choice (both have a FIXED token contract), not a gate. Don't "fix"
 either by spilling all roles in.
 
+**A variant of an existing format is a flag, not a new format (ticket #638).** `exportRadix(state, {
+refs: true })` is the worked example: it emits the SAME keys, group names, and internal aliases as the
+default (values) form, only swapping each numbered leaf's baked `oklch(...)` for a `var(--{pfx}-{n}-
+{frag})` link into this kit's own CSS custom-property layer — `radixRefLeaves` vs the default
+`RADIX_VALUE_LEAVES` in `exports.js`, both passed into the same `radixColorGroup`. Wiring a variant
+like this touches the same three sites as a new format, but narrower: an `opts` flag on the existing
+`exportX`, a second `view.exports` key (`radixRef` beside `radix`) instead of a new drawer format
+entry, and a second zip file beside the first — never a new `FORMAT_GROUPS` row, never a new format id.
+`radixRef` is `exportAll`'s key for it (see `nonempty` below); the color-format count stays at 10.
+
 **The shared naming rules** (don't reinvent): `pad3` (3-digit stop padding, ADR-006), `slug` (palette → token
 namespace), the `--c-*` custom props where raw names end in DIGITS and semantic names end in a WORD so they
 share the prefix without collision, `light-dark()` for the mode flip in the semantic layer (ADR-005), and
@@ -103,7 +113,13 @@ fragment — emitters use it to build a NAME, never to re-resolve a ref to a col
    surface's SHAPE (a new key, a renamed field, a restructured tree) — every surface above moves together, not
    just the one format you touched. **Never bump it for** a value-only change (a new default, a tuned chroma
    curve, a renamed palette) — the shape is unchanged, so the version isn't either. Absence of a stamp on an
-   older export means version 1 (the pre-#503 shape, retroactive). The `hpg-export-schema-stamp` gate in
+   older export means version 1 (the pre-#503 shape, retroactive). Worked example: ticket #638's
+   `exportRadix` reference-form variant bumped 2 → 3, because a `var()`-link leaf is a new value SHAPE
+   for a leaf that was always a baked string. That bump moves `MCP_BRAND_KIT_VERSION`
+   (`scripts/gen-mcp-assets.mjs`) too, since it is generated from the same server's `SERVER.version` —
+   `test/mcp/brand-kit.mjs` pins the zip's `package.json` version against `SERVER.version` so the pair
+   cannot split apart again, the gate a #638 review round added after the first bump landed without it.
+   The `hpg-export-schema-stamp` gate in
    `test/engine/exports.mjs` asserts a HARDCODED literal against every surface (deliberately never
    `X.EXPORT_SCHEMA_VERSION` itself — reading the constant back to build the expectation would make the gate
    pass even if the constant were deleted); bump that literal in the same commit as the real constant, or the
@@ -124,7 +140,7 @@ npm test                        # all of the above + headless-boot (drawer/downl
 
 The gate that catches a malformed color leaf is `leaf-valid` in `exports.mjs` (srgb, components in [0,1], hex
 reconstructs from components). The gate that catches a format you forgot to bundle is `nonempty` — it loops a
-fixed key list (`css/oklch/json/dtcg/ui3/tailwind/shadcn/panda/radix`) over `exportAll`, so a new color format absent from
+fixed key list (`css/oklch/json/dtcg/ui3/tailwind/shadcn/panda/radix/radixRef`) over `exportAll`, so a new color format absent from
 either `exportAll` OR that key list is not actually checked — add it to BOTH. For a new FRAMEWORK format, add a
 dedicated `[gate]` group asserting its load-bearing structure (mirror the `tailwind` / `shadcn` gate groups:
 `@theme {` present, `oklch(` values, `:root`/`.dark` token-set parity, disabled palette absent). Don't call it

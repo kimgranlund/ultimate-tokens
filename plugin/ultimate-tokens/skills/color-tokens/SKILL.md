@@ -49,7 +49,11 @@ library's series-color source, and the data palettes' own roles for everything e
    Radix: driver-aliased semantic keys (`colorPalette.solid.bg` and its `accent`/`gray` siblings, the
    same shape Park UI/Panda consume) — `accent` is the brand's primary palette, `gray` is its neutral,
    not a literal palette name. A palette actually named after one of the seven alias keys (`accent`,
-   `gray`, `error`, `fg`, `canvas`, `border`, `bg`) is exported under `<slug>-palette` instead.
+   `gray`, `error`, `fg`, `canvas`, `border`, `bg`) is exported under `<slug>-palette` instead. A kit
+   may hand you either of two Radix files: the values form (`{s}.preset.mjs`, baked `oklch(...)`
+   colors, self-contained) or the reference form (`{s}.refs.preset.mjs`, every numbered step a
+   `var(--c-*)` link) — the reference form only resolves once the kit's CSS or OKLCH export is also
+   loaded, since its step values are links into that layer, not colors of their own.
 2. **Enumerate the palettes.** Every `--c-<slug>-050` line marks a palette. The default kit ships
    a neutral, a brand accent plus its own supporting accents, the four intents, and an eight-hue
    data family (currently sixteen palettes) — but kits vary; read what's actually there rather than
