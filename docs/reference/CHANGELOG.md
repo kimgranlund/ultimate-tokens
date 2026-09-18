@@ -99,9 +99,11 @@ or darker than the reachable band at stop 550 (17.77–76.52 L\*), which clamp t
 
 Threaded through `tonal.js` (engine), `scripts/gen-categories.mjs`, and the agent-facing rubric in
 `mcp/describe-rubric.mjs`; `knowledge-02-tonal-scale.md` §4 and `glossary.md` updated. New gates:
-`hpg-tonal-lift-monotonic` (the 16 defaults in all three tone modes, a curve × skew × lift × tension ×
-`lmin`/`lmax`-band grid, an independent derivation of the `lift 0` curve, and the `LIFT_GAIN` ↔ `lift`
-domain coupling) and `lift-anchor` in `test/engine/categories.mjs` (every built preset's prime anchored
+`lift-monotonic` in `test/engine/tonal.mjs` (the 16 defaults in all three tone modes, a curve × skew ×
+lift × tension × `lmin`/`lmax`-band grid, an independent derivation of the `lift 0` curve, and the
+`LIFT_GAIN` ↔ `lift` domain coupling; this group carries the full `even`-path claim behind the
+`hpg-tonal-monotonic` criterion, `docs/reference/SKILL.md`, #652) and `lift-anchor` in
+`test/engine/categories.mjs` (every built preset's prime anchored
 within 1.5 L\* of its source, at the best available integer). `test/engine/fixtures/tonal-legacy.json`
 regenerated for exactly the three even-mode ramps that carry a lift; its other 29 stay byte-for-byte
 what commit 83756bb emitted.

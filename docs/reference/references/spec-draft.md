@@ -101,7 +101,7 @@ Acceptance: roundtrip `max_channel_delta <= 2` (current: 0).
 See `references/knowledge-02-tonal-scale.md`. Stops 050–950 (display 19, export 25);
 five curves via `shape(p)`; `toneAt(stop,skew,lift)` applies a gamma skew (`3^(skew/100)`) to
 the normalized position, and `liftStop` DISPLACES the stop by `A · w(stop)` before the curve is
-evaluated (`A = clamp(lift × 6, ±243.51)`, `w` a cosine weight, 1 at stop 500 / 0 at the ends) —
+evaluated (`A = clamp(lift × 6, ±243.51)`, `w` a cosine weight, 1 at stop 500 / 0 at the ends);
 since #647 the same `liftStop`/skew-gamma also shape the `perceptual`/`peak` OKHSL path
 (`effStop`), not only `even`; chroma `target = chroma% × peakC`, then a **differential damping multiplier**
 `m = max(0, 1 + (dampAmp/100)·(1−uᵞ) − (damp/100)·sideW·uᵞ)` (u = |stop−500|/450, γ = dampCurve,

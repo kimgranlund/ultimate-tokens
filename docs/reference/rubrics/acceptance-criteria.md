@@ -17,10 +17,11 @@
 - **AC-T1** For every default palette and every export stop, the emitted color is in gamut
   (`hctToRgb(...).inGamut === true`).
 - **AC-T2** With `lmax = 100`, every palette's `050` resolves to `#FFFFFF`.
-- **AC-T3** Tone is strictly monotonic in stop for each curve (050 lightest → 950 darkest);
-  skew warps but does not break monotonicity for |skew| ≤ 100, and lift (a cosine
-  displacement of the stop, `src/engine/tonal.js`'s `liftStop`) does not break monotonicity
-  for |lift| ≤ 40 either, at any tension.
+- **AC-T3** On the `even` tone mode (`toneAt`) only: tone is strictly monotonic in stop for
+  each curve (050 lightest → 950 darkest); skew warps but does not break monotonicity for
+  |skew| ≤ 100, and lift (a cosine displacement of the stop, `src/engine/tonal.js`'s
+  `liftStop`) does not break monotonicity for |lift| ≤ 40 either, at any tension. Not claimed
+  for `perceptual`/`peak` (`okhslStops`), which have no monotonicity gate of their own.
 - **AC-T4** Applied chroma never exceeds the gamut ceiling at any stop
   (`chroma <= maxc` for every stop).
 - **AC-T5** Edge damping reduces chroma toward 050/950 (chroma at 500 ≥ chroma at 050 and

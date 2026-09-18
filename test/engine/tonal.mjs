@@ -39,7 +39,12 @@ for (const p of DEFAULTS) for (const r of rampOf(p)) {
   if (r.chroma > r.maxc + 0.5) FAIL("ingamut", `${p.name} stop ${r.stop} chroma ${r.chroma.toFixed(1)} > ceiling ${r.maxc.toFixed(1)}`);
 }
 
-// ── hpg-tonal-monotonic: weakly non-increasing tone 050->950, 5 curves × skew grid (lift 0) ─
+// ── hpg-tonal-monotonic: this group is the LIFT-0 SLICE of the id's full claim (SKILL.md:94):
+//    weakly non-increasing tone 050->950, 5 curves × skew grid, lift pinned to 0. The full claim
+//    (strict descent, no duplicate stops, over the whole curve × skew × lift × tension × band grid,
+//    `even` path only) is what the `lift-monotonic` group below (#648, line ~448) actually asserts;
+//    that group's `lift 0` slice repeats this same check strictly (`>=` there vs `>` here), so
+//    nothing here is load-bearing on its own once that group runs. Kept as a cheap early smoke.
 for (const curve of CURVES) for (const skew of SKEWS) {
   const ctl = { ...CTL, curve };
   const tones = STOPS.map((s) => T.toneAt(s, skew, 0, ctl));
