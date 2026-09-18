@@ -73,6 +73,41 @@ Citation fallout from the fold's own insertions (persist.js/model.mjs both grew 
 (`persist.js:602` → `:625`) — re-pinned the same way as the rebase's own re-pins (mechanically
 verified against the current file content at each destination line, not guessed).
 
+## Re-review fold (same review file, addendum after the FIX-FIRST fold, 🟢 PASS with one fix)
+
+- **N1 (fix before land, folded)** — `test/engine/anchor.mjs`'s `anchor-ladder` gate compared only
+  `orderNames.length`/`dupeNames.length` against expected integers, so a same-count substitution (one
+  corpus source moving in across the window bound while another moved out) would have stayed green.
+  Fixed: both lists are now frozen BY NAME as sorted constants (`ORDER_ALLOW`, 23 entries;
+  `DUPE_ALLOW`, 4 entries, printed by an earlier run of the gate itself, not retyped by hand), and the
+  corpus's own sorted name arrays are compared against them directly — any missing or unexpected
+  member is named in the failure, not just a count delta. New negative control: a same-length,
+  one-member-swapped copy of `ORDER_ALLOW` is confirmed to fail the comparison before the real lists
+  are trusted (the exact scenario the review named). Red-then-green: reverting to a length-only
+  compare and mutating one real corpus anchor's hex to move it across the window bound (while the
+  total count coincidentally stays 23) reproduces the review's exact failure mode (green, silently);
+  the name-based compare catches it as `order-allow-list: unexpected member` / `expected member
+  missing`.
+- **N2 (handoff note, no code)** — this gate's `order-allow-list: 23` is measured in OKHSL `l` against
+  `[PRIME_L_MIN, PRIME_L_MAX]`; the plan's own C5/C11 `ladder-window allow-list: 21 (expected 21)`
+  (U6, not yet built) is measured in CIE L* against `[12.25, 96.88]`. This gate's 23 adds travel "A
+  Patmos Greek Orthodox church" `#232220` and film "The Night of the Hunter" tertiary `#1E211E`
+  relative to the plan's 21 — both lists are correct for their own window, not a drift, and the
+  Verifier should not read the two counts side by side as disagreement once U6 lands its own gate.
+- **N3 (handoff note, no code)** — the `anchor-ladder` gate evaluates at `primeChroma: 100` only.
+  Rung saturation scales with `primeChroma`, so the 8-bit collisions F1's widening search exists to
+  break are in principle a function of it too; C4's non-anchored control already sweeps 100/60/0 but
+  nothing sweeps the anchored ladder below 100. Left as a known gap, cheap to widen later, not
+  blocking this unit.
+- **N4 (carried forward from the first review, unchanged, no code)** — `src/engine/prime.mjs`'s
+  `rungHex` helper re-implements the same `t`/`w`/`l`/`hue`/`hex` chain the final `PRIME_STEPS.map`
+  below it uses, rather than the map calling `rungHex` directly. If the two ever drift, the widening
+  search would validate a ladder that is not the one actually emitted. Mitigated today because
+  `anchor-ladder` reads real `primeSwatches` output (a drift would surface as a count/name mismatch,
+  not silently), so this is a comment-worthy risk, not a defect.
+
+F4, F5, F6 from the first review stand as written (Low, handoff-note-only, unchanged by either fold).
+
 ## Rebase note (superseding the original build's drift notes below)
 
 This unit was rebased once, on team-lead instruction, from its original base `cf8e61a` onto
