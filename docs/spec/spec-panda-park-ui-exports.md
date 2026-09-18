@@ -407,23 +407,26 @@ Consequences that shape the design:
 
 ## Examples
 
-All values engine-generated 2026-09-11 from `defaultDocument()` resolved through `resolvedPalettes`
+All values engine-generated from `defaultDocument()` resolved through `resolvedPalettes`
+(colour values below re-generated 2026-09-17 at #647, which made the perceptual ramp honour a
+palette's `skew` and `lift`; Primary and Neutral both carry skew -20, so every literal derived from
+their ramp moved. Type, geometry and park values are untouched.)
 (the drawer's path; calling `derivedAll` on the raw document skips the group resolver and renders
 Neutral at full chroma, the emitters must be fed the resolved state, as the drawer already does).
 
-- **EX-1 (NORMATIVE, panda raw).** `tokens.colors.primary["500"].value === "oklch(0.6034 0.2164
-  258.99)"`, `["50"] === "oklch(1 0 0)"`, `["950"] === "oklch(0.1763 0.014 258.36)"`;
-  `tokens.colors.neutral["500"].value === "oklch(0.6047 0.0578 267.06)"` (material group ramp at
-  30). `tokens.colors.primary.scrim["300"].value === "oklch(0.6034 0.2164 258.99 / 30%)"`.
+- **EX-1 (NORMATIVE, panda raw).** `tokens.colors.primary["500"].value === "oklch(0.546 0.2114
+  258.97)"`, `["50"] === "oklch(1 0 0)"`, `["950"] === "oklch(0.1763 0.014 258.36)"`;
+  `tokens.colors.neutral["500"].value === "oklch(0.5443 0.059 267.96)"` (material group ramp at
+  30). `tokens.colors.primary.scrim["300"].value === "oklch(0.546 0.2114 258.97 / 30%)"`.
   `tokens.colors.primary.prime.prime.value === "oklch(0.5929 0.2052 259.00)"` (`#2177F5`),
   `.brightest === "oklch(0.8266 0.0853 258.93)"`, `.dimmest === "oklch(0.3543 0.1307 258.84)"`,
   `.DEFAULT` equals `.prime`. `tokens.colors.constant.backdrop.value === "oklch(0 0 0 / 80%)"`.
 - **EX-2 (NORMATIVE, panda semantic).** `semanticTokens.colors.primary.DEFAULT.value` deep-equals
-  `{ base: "oklch(0.5589 0.205 259.06)", _dark: "oklch(0.6475 0.1823 258.88)" }`;
-  `primary.hover` `{ base: "oklch(0.4699 0.1483 258.99)", _dark: "oklch(0.7351 0.1242 259.16)" }`;
+  `{ base: "oklch(0.5048 0.188 259.1)", _dark: "oklch(0.5861 0.2112 259.05)" }`;
+  `primary.hover` `{ base: "oklch(0.4253 0.1357 259.04)", _dark: "oklch(0.672 0.1504 258.98)" }`;
   `primary["on-primary"]` `{ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }`;
   `neutral["on-surface"]` `{ base: "oklch(0.1774 0.0044 264.46)", _dark: "oklch(1 0 0)" }`;
-  `neutral.scrim` (the role) `{ base: "oklch(0.6047 0.0578 267.06 / 30%)", _dark: same }` next to
+  `neutral.scrim` (the role) `{ base: "oklch(0.5443 0.059 267.96 / 30%)", _dark: same }` next to
   the raw group `neutral.scrim["300"]`. 53 keys under `semanticTokens.colors.primary`, 16 palette
   groups, `data-1.DEFAULT.base === "oklch(0.5584 0.2312 272.17)"`.
 - **EX-3 (NORMATIVE, panda type + geometry, after H-1).** `tokens.fonts.body.value === "'Inter',
