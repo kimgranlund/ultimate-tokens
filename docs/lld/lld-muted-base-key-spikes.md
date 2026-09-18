@@ -184,8 +184,8 @@ P8 documents groups last.
 0c. **`story.groups` name clash (REQ-010).** A builder naming the document key `groups` collides with
    the curated story field. Detection: review; `clampStory` already reads `s.groups`. Fallback: the
    key is `paletteGroups`, stated in the SPEC.
-1. **Retirement leaves a stale caller (REQ-004, AC-004).** `model.mjs:707` and `exports.js:222` call
-   `identityStops`; a missed one throws at import. Detection: `npm test` at P1 and the AC-004 grep.
+1. **Retirement leaves a stale caller (REQ-004, AC-004).** `model.mjs` and `exports.js` called
+   `identityStops` (both callers removed in #545; the definition stays at `src/engine/semantic.js:323`); a missed one throws at import. Detection: `npm test` at P1 and the AC-004 grep.
    Fallback: none needed.
 2. **Rename window (P2..P3) (REQ-011, AC-011).** `prime.mjs` reads `primeChroma ?? keyIntensity` until P3 lands, then
    the fallback is deleted. Detection: a P3 test asserts `keyIntensity` is absent from `DOMAINS` and
