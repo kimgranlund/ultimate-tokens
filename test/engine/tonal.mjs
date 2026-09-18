@@ -362,14 +362,21 @@ for (const mode of ["perceptual", "peak"]) {
 // (generated from the pre-0.2.0 engine, commit 83756bb, by scripts/gen-tonal-fixture.mjs; regenerated
 // only by hand, never by npm test) is the direct, unconditional engine contract again — no controls
 // field varies the result at all now, so a single pass over DEFAULTS proves it.
-//   #648 CARVE-OUT: 3 of these 32 ramps are deliberately NO LONGER pre-0.2.0-identical — even/Warning,
-//   even/Success and even/Danger, the only three defaults carrying a non-zero `lift`. The legacy engine
-//   applied lift as an additive TONE bump, which drove Warning's stops 050-300 past lmax into six
-//   identical #FFFFFF swatches; lift is now a displacement of the STOP (see liftStop in tonal.js), so
-//   those three ramps moved by design and the fixture was regenerated for them. The other 29 ramps —
-//   all 16 perceptual, and the 13 even ramps whose lift is 0 — are byte-for-byte what 83756bb emitted,
-//   which is what re-generating this file was verified against. Do NOT regenerate it to make an
-//   unexplained red go green: a diff outside those 3 ramps is a regression, not a refresh. ───────────
+//   #648 + #647 CARVE-OUT: 10 of these 32 ramps are deliberately NO LONGER pre-0.2.0-identical, and the
+//   list is EXACT — a diff outside it is a regression, never a refresh.
+//     #648 (3, even path): even/Warning, even/Success, even/Danger — the only three defaults carrying a
+//       non-zero `lift`. The legacy engine applied lift as an additive TONE bump, which drove Warning's
+//       stops 050-300 past lmax into six identical #FFFFFF swatches; lift is now a displacement of the
+//       STOP (liftStop in tonal.js), so those three moved by design.
+//     #647 (7, perceptual path): perceptual/Neutral, /Primary, /Tertiary, /Info, /Success, /Warning and
+//       /Danger — EXACTLY the defaults carrying a non-zero `skew` or `lift` (skew -20 on Neutral,
+//       Primary, Tertiary, Info, Success and Danger; skew 40 + lift 15 on Warning; lift -5 on Success
+//       and Danger). okhslStops used to ignore both controls, so the shipped DEFAULT tone mode rendered
+//       them as if they were zero; it now reads its lightness at an effective stop that carries them.
+//   The remaining 22 ramps — the 13 even and the 9 perceptual ramps whose skew AND lift are both 0
+//   (Secondary and Data 1-8) — are byte-for-byte what 83756bb emitted, and that is what each
+//   regeneration of this file was verified against. Do NOT regenerate it to make an unexplained red go
+//   green. ────────────────────────────────────────────────────────────────────────────────────────────
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};
@@ -584,8 +591,172 @@ for (const mode of ["perceptual", "peak"]) {
   }
 }
 
+// ── hpg-tonal-skew-lift-okhsl (#647): the per-palette `skew` and `lift` must shape the ramp in EVERY
+//    tone mode, not just "even". They were persisted (persist.js, domain -40..40 / -100..100), threaded
+//    through both ramp call sites, shipped with non-zero defaults on 7 of the 8 semantic palettes and
+//    exposed as sliders — but okhslStops never read them, so in the SHIPPED DEFAULT mode ("perceptual")
+//    dragging Skew moved the 7-swatch prime ladder (prime.mjs DOES read skew) while the 19-stop gradient
+//    beneath it sat still. okhslStops now reads its LIGHTNESS at an EFFECTIVE stop that carries both
+//    controls, in toneAt's own order (liftStop's displacement, then skew's gamma on position); hue and
+//    saturation stay keyed on the REAL stop, since they are damping/rotation terms about the centre.
+{
+  const OK = (mode, extra = {}) => ({ ...(T.DEFAULT_CONTROLS || {}), toneMode: mode, ...extra });
+  const zeroDefaults = DEFAULTS.filter((p) => (p.skew ?? 0) === 0 && (p.lift ?? 0) === 0);
+  if (zeroDefaults.length < 9) FAIL("skew-lift-okhsl", `(i) expected the 9 skew-0/lift-0 defaults (Secondary + Data 1-8), found ${zeroDefaults.length}`);
+
+  // (i) skew 0 + lift 0 is the UNWARPED distribution — checked against an INDEPENDENT derivation written
+  //     out here from the documented one (even steps in OKHSL lightness between the lmax/lmin endpoints;
+  //     "peak" pivots each half on the hue's cusp), read back off the EMITTED pixel via rgbToOkhsl. It
+  //     never calls the ramp's own lightness path with the controls zeroed, so a refit of that path
+  //     cannot be compared against itself. okhslLAt/effHue/peakC are separate, independently gated engine
+  //     functions, not the expression under test. Budget 3e-3: the 8-bit RGB round-trip alone costs up to
+  //     2.0e-3 of OKHSL l, an order of magnitude under the ~0.02 gap between neighbouring stops.
+  const okl = (rgb) => rgbToOkhsl(rgb).l;
+  const LQ = 3e-3;
+  for (const mode of ["perceptual", "peak"]) {
+    for (const hueSpace of ["oklch", "cam16"]) {
+      for (const p of zeroDefaults) {
+        const ctl = OK(mode, { hueSpace, vibrancy: 0 });
+        const lLight = T.okhslLAt(ctl.lmax), lDark = T.okhslLAt(ctl.lmin);
+        const cuspL = T.okhslLAt(E.peakC(T.effHue(p.hue, hueSpace, T.hueAnchorFrac(p, ctl))).tone);
+        const rows = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, ctl, STOPS);
+        for (const r of rows) {
+          const want = mode === "peak"
+            ? (r.stop <= 500 ? lLight + (cuspL - lLight) * ((r.stop - 50) / 450) : cuspL + (lDark - cuspL) * ((r.stop - 500) / 450))
+            : lLight + (lDark - lLight) * ((r.stop - 50) / 900);
+          if (Math.abs(okl(r.rgb) - want) > LQ) {
+            FAIL("skew-lift-okhsl", `(i) ${mode}/${hueSpace} ${p.name} stop ${r.stop}: skew 0 + lift 0 is not the unwarped distribution — emitted OKHSL l ${okl(r.rgb).toFixed(5)} vs independent ${want.toFixed(5)}`);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // (ii) a NON-ZERO skew or lift must MOVE the perceptual/peak ramp, and move it the documented way:
+  //      skew>0 and lift>0 both LIGHTEN the mids (toneAt's direction), their negatives darken them.
+  //      This is the ticket's own gate: before #647 every one of these was a no-op.
+  for (const mode of ["perceptual", "peak"]) {
+    const base = { hue: 267, chroma: 80 };
+    const at500 = (skew, lift) => T.paletteStops({ ...base, skew, lift }, OK(mode), STOPS).find((r) => r.stop === 500).tone;
+    const flat = at500(0, 0);
+    for (const [label, skew, lift, dir] of [["skew +40", 40, 0, 1], ["skew -40", -40, 0, -1], ["lift +20", 0, 20, 1], ["lift -20", 0, -20, -1]]) {
+      const got = at500(skew, lift);
+      if (Math.abs(got - flat) < 0.5)
+        FAIL("skew-lift-okhsl", `(ii) ${mode}: ${label} left stop 500 at L* ${got.toFixed(3)} — the control is inert on this path (#647)`);
+      else if ((got - flat) * dir < 0)
+        FAIL("skew-lift-okhsl", `(ii) ${mode}: ${label} moved stop 500 the WRONG way (${flat.toFixed(2)} -> ${got.toFixed(2)})`);
+    }
+    // whole-ramp, on the shipped defaults that carry a non-zero control: at least one stop must differ.
+    for (const p of DEFAULTS.filter((d) => (d.skew ?? 0) !== 0 || (d.lift ?? 0) !== 0)) {
+      const warped = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, OK(mode), STOPS).map((r) => r.hex).join();
+      const flatR = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: 0, lift: 0 }, OK(mode), STOPS).map((r) => r.hex).join();
+      if (warped === flatR)
+        FAIL("skew-lift-okhsl", `(ii) ${mode} ${p.name} (skew ${p.skew} lift ${p.lift}): the shipped controls do not change the ramp at all`);
+    }
+  }
+
+  // (iii) ORDER. Two claims, kept apart.
+  //   (a) EXACT, no tolerance: the effective stop the lightness is read at is STRICTLY increasing, which
+  //       is the whole monotonicity argument (both lightness formulas are non-increasing in it). Derived
+  //       here from the EXPORTED liftStop plus the documented gamma 3^(skew/100) — never from okhslStops.
+  //   (b) RENDERED: the emitted pixels' OKHSL lightness never RISES across the grid, to within the 3e-3
+  //       read-back budget of (i). The reported `tone` is the MEASURED CIELAB L* of an 8-bit triple, and
+  //       L* also moves with CHROMA — which is keyed on the real stop by design — so at a domain extreme
+  //       (|skew| 100 or |lift| 40) a stop whose lightness step has been compressed to near nothing can
+  //       measure up to 0.152 L* higher than its neighbour. That is a chroma artefact, not a lightness
+  //       reversal, which is exactly why (b) gates the LIGHTNESS ladder and (iv) gates the defaults.
+  const SKEW_G = [-100, -50, -20, 0, 40, 50, 100];
+  const LIFT_G = [-40, -20, -5, 0, 5, 15, 20, 40];
+  const HUES_G = [...new Set(DEFAULTS.map((d) => d.hue))];
+  const effRef = (stop, skew, lift) => {
+    const sL = T.liftStop(stop, lift);
+    return 50 + 900 * Math.pow(Math.min(1, Math.max(0, (sL - 50) / 900)), Math.pow(3, skew / 100));
+  };
+  for (const skew of SKEW_G) for (const lift of LIFT_G) {
+    const se = STOPS.map((s) => effRef(s, skew, lift));
+    for (let i = 1; i < se.length; i++) if (!(se[i] > se[i - 1])) {
+      FAIL("skew-lift-okhsl", `(iii a) skew ${skew} lift ${lift}: effective stop did not strictly increase at ${STOPS[i - 1]}->${STOPS[i]} (${se[i - 1]} -> ${se[i]})`);
+      break;
+    }
+    if (se[0] !== 50 || Math.abs(se[se.length - 1] - 950) > 1e-9)
+      FAIL("skew-lift-okhsl", `(iii a) skew ${skew} lift ${lift}: the endpoints moved (050 -> ${se[0]}, 950 -> ${se[se.length - 1]})`);
+  }
+  let gridCells = 0;
+  for (const mode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const vibrancy of [0, 50, 100])
+    for (const skew of SKEW_G) for (const lift of LIFT_G) for (const hue of HUES_G) {
+      gridCells++;
+      const rows = T.paletteStops({ hue, chroma: 95, skew, lift }, OK(mode, { hueSpace, vibrancy }), STOPS);
+      const ls = rows.map((r) => okl(r.rgb));
+      for (let i = 1; i < ls.length; i++) if (ls[i] > ls[i - 1] + LQ) {
+        FAIL("skew-lift-okhsl", `(iii b) ${mode}/${hueSpace} hue ${hue} skew ${skew} lift ${lift} vibrancy ${vibrancy}: OKHSL lightness ROSE at stop ${STOPS[i - 1]}->${STOPS[i]} (${ls[i - 1].toFixed(5)} -> ${ls[i].toFixed(5)})`);
+        break;
+      }
+    }
+  if (gridCells < 2 * 2 * 3 * SKEW_G.length * LIFT_G.length * HUES_G.length)
+    FAIL("skew-lift-okhsl", `(iii b) grid only covered ${gridCells} cells`);
+
+  // (iv) the 16 SHIPPED defaults keep a clean ladder in both OKHSL modes now that their controls bite:
+  //      strictly descending measured L*, every swatch distinct, endpoints untouched.
+  for (const mode of ["perceptual", "peak"]) for (const p of DEFAULTS) {
+    const rows = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, OK(mode), STOPS);
+    for (let i = 1; i < rows.length; i++) if (rows[i].tone >= rows[i - 1].tone) {
+      FAIL("skew-lift-okhsl", `(iv) ${mode} ${p.name} (skew ${p.skew} lift ${p.lift}): stop ${rows[i - 1].stop}->${rows[i].stop} did not descend (${rows[i - 1].tone.toFixed(6)} -> ${rows[i].tone.toFixed(6)})`);
+      break;
+    }
+    const distinct = new Set(rows.map((r) => r.hex)).size;
+    if (distinct < STOPS.length) FAIL("skew-lift-okhsl", `(iv) ${mode} ${p.name}: only ${distinct}/${STOPS.length} distinct swatches`);
+    if (rows[0].hex !== "#FFFFFF") FAIL("skew-lift-okhsl", `(iv) ${mode} ${p.name}: stop 050 is ${rows[0].hex}, not white at lmax 100 — the warp must fix the endpoints`);
+  }
+
+  // (v) the stop-500 HUE ANCHOR survives the warp. The OKHSL hue is solved ONCE, at stop 500, against
+  //     that stop's own saturation and lightness; the solve is now handed the lightness the WARPED ramp
+  //     actually emits there, not the unwarped midpoint, so the solve and the emission can never describe
+  //     different colors. The oklch-hue-anchor gate above locks the same property at skew 0 / lift 0 and
+  //     says nothing about a warped ramp, which is the hole this fills.
+  //
+  //     Scoped to a SATURATED emission (measured CAM16 chroma >= 50) on purpose. okhslToRgb builds the
+  //     color straight from the OKHSL hue ANGLE in OKLab, so the OKHSL->OKLCH hue map is exact before
+  //     gamut clipping; the whole residual is clipping plus the 8-bit round, and a fixed ~0.0015-OKLab
+  //     rounding error subtends an angle inversely proportional to the chroma it is measured at. Skew and
+  //     lift deliberately drag stop 500 toward an end, where the ramp is PALE, so below that chroma the
+  //     read-back is quantisation-bound (up to ~3° at an extreme grid corner, on both this construction
+  //     and the unwarped one) and an angular budget would be measuring the 8-bit grid, not the anchor.
+  //     Above it the shipped 1° budget holds: worst measured 0.79° across this grid.
+  {
+    let anchored = 0;
+    for (const [skew, lift] of [[40, 15], [-20, -5], [100, 0], [0, 40], [-100, -40], [50, 20]]) {
+      for (const hue of [235, 267, 300, 27, 70, 145, 190]) {
+        for (const chroma of [60, 80, 100]) {
+          for (const mode of ["perceptual", "peak"]) {
+            const oc = OK(mode, { hueSpace: "oklch" });
+            const s500 = T.paletteStops({ hue, chroma, skew, lift }, oc, STOPS).find((s) => s.stop === 500);
+            if (s500.chroma < 50) continue;                    // quantisation-bound — see the note above
+            anchored++;
+            const err = angDiff(rgbToOklchHue(s500.rgb), hue);
+            if (err > 1.0) FAIL("skew-lift-okhsl", `(v) ${mode} hue ${hue} chroma ${chroma} skew ${skew} lift ${lift}: stop 500 exports OKLCH hue off by ${err.toFixed(2)}° (>1°, at measured chroma ${s500.chroma.toFixed(0)} — the anchor did not survive the warp)`);
+          }
+        }
+      }
+    }
+    if (anchored < 30) FAIL("skew-lift-okhsl", `(v) only ${anchored} warped cells cleared the chroma floor — the check has gone vacuous, lower the floor or raise the probe chroma`);
+  }
+
+  // (vi) the warp stays PURE in the single stop value: the 19-stop display ramp and the 25-stop export
+  //      ramp must still agree at every shared stop (no whole-ramp renormalisation crept in).
+  for (const p of DEFAULTS) for (const mode of ["perceptual", "peak"]) {
+    const pal = { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift };
+    const d19 = T.paletteStops(pal, OK(mode), T.STOPS);
+    const d25 = T.paletteStops(pal, OK(mode), T.EXPORT_STOPS);
+    for (const r of d19) {
+      const m = d25.find((x) => x.stop === r.stop);
+      if (m.hex !== r.hex) { FAIL("skew-lift-okhsl", `(vi) ${mode} ${p.name}: stop ${r.stop} is ${r.hex} on the 19-stop ramp but ${m.hex} on the 25-stop ramp`); break; }
+    }
+  }
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "lift-monotonic", "vibrancy", "oklch-hue-anchor", "intensity-legacy", "ac004-greps"]) {
+for (const g of ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "intensity-legacy", "ac004-greps"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

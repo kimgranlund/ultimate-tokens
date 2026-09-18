@@ -57,7 +57,8 @@ export const DEFAULT_CONTROLS = {
   //                  chroma; harmonizes saturation across hue (no near-white dead zone). The `vibrancy`
   //                  control (below) pulls each hue's center toward its chroma cusp for a vibrant mid.
   //   "even"       — the classic CIELAB-L* curve below (toneAt): per-stop tone is the SAME L* for every
-  //                  hue (tone-aligned). curve/skew/lift/relChroma/chromaFloor apply to "even" only.
+  //                  hue (tone-aligned). curve/relChroma/chromaFloor apply to "even" only; the per-palette
+  //                  skew/lift apply to EVERY mode (#647 — see effStop on the OKHSL path).
   //   "peak"       — like perceptual with vibrancy pinned at 100: the hue's CUSP (peak chroma) anchored
   //                  at stop 500 (Tailwind-style "the color is 500").
   // perceptual/peak go through the OKHSL path (okhslStops); lmin/lmax/damp/vibrancy shape it there.
@@ -340,6 +341,26 @@ export function okhslLAt(lstar) {
   return v;
 }
 
+// effStop — the OKHSL path's EFFECTIVE stop (#647): the stop whose position the LIGHTNESS is read at
+// once the palette's own `skew` and `lift` have warped it. Both controls were persisted, threaded and
+// sliders-exposed, but only the "even" path (toneAt) ever read them, so in the shipped DEFAULT tone mode
+// dragging Skew moved the 7-swatch prime ladder (prime.mjs DOES read skew) while the 19-stop gradient
+// under it sat still. Warping the stop rather than the lightness reuses toneAt's exact two transfer
+// functions in the same order — liftStop's cosine displacement first (#648's shared helper, never a
+// second bump), then skew's gamma on the normalized position — so the two paths agree on what the
+// controls MEAN, and the OKHSL curve itself is untouched.
+//
+// Monotone by composition: liftStop is strictly increasing (|A|·π/900 < 1 by #648's bound), p^g preserves
+// order for any g>0, and both lightness formulas below are non-increasing in the effective stop. The
+// endpoints are fixed exactly — liftStop is the identity at 050/950 and the gamma fixes p=0 and p=1.
+// Pure in the single stop value (no neighbour lookup, no whole-ramp state), so the 19-stop display ramp
+// and the 25-stop export ramp still agree at every shared stop.
+function effStop(stop, palette) {
+  const sLift = liftStop(stop, palette.lift ?? 0);
+  const p = Math.min(1, Math.max(0, (sLift - 50) / 900)) ** (3 ** ((palette.skew ?? 0) / 100)); // skew>0 -> gamma>1 -> lighter mids
+  return 50 + 900 * p;
+}
+
 function okhslStops(palette, controls, stops, mode) {
   const baseHue = effHue(palette.hue, controls.hueSpace, hueAnchorFrac(palette, controls));
   const pk = peakC(baseHue);                                       // { c, tone } — the cusp (peak geometry)
@@ -348,6 +369,19 @@ function okhslStops(palette, controls, stops, mode) {
   const lLight = okhslLAt(controls.lmax ?? 100);                   // light end (l≈1 at lmax=100 → 050 white)
   const lDark = okhslLAt(controls.lmin ?? 5);                      // dark end
   const cuspL = okhslLAt(pk.tone);                                 // OKHSL lightness of the cusp (peak pivot)
+  // lightnessAt — the ramp's OKHSL lightness at a stop, blended even↔cusp by `t`. Evaluated at the
+  // EFFECTIVE stop (effStop), so skew/lift warp WHICH position of the distribution a stop reads while
+  // hue and saturation below stay keyed on the REAL stop (they are damping/rotation terms about the
+  // centre, not lightness). The cusp pivot therefore follows the warp: with skew > 0 the cusp lands at
+  // a DARKER real stop, so more stops sit on its light side — the same "lighter mids" direction
+  // toneAt's gamma gives the even path. Shared by the per-stop map AND the stop-500 hue anchor below so
+  // the solved hue can never drift from the lightness the ramp actually emits there (#647).
+  const lightnessAt = (stop, t) => {
+    const se = effStop(stop, palette);
+    const evenL = lerp(lLight, lDark, (se - 50) / 900);
+    const peakL = se <= 500 ? lerp(lLight, cuspL, (se - 50) / 450) : lerp(cuspL, lDark, (se - 500) / 450);
+    return lerp(evenL, peakL, t);
+  };
   // The palette's hue in OKHSL space — constant across the ramp when hueShift=0. For an OKLCH-hue palette,
   // SOLVE it directly so the KEY stop (500) reads back at the SET OKLCH hue, anchored at that stop's OWN
   // saturation + lightness in the render space (kills the Abney drift the CAM16 proxy left — worst in the
@@ -357,7 +391,7 @@ function okhslStops(palette, controls, stops, mode) {
     const s500 = Math.min(1, Math.max(0, (palette.chroma / 100) * (1 + (controls.dampAmp ?? 0) / 100))); // sp=0 ⇒ m = 1 + dampAmp/100
     const v = palette.cuspPull ?? controls.vibrancy ?? 0;
     const t500 = mode === "peak" ? 1 : Math.max(0, Math.min(1, v / 100));
-    const l500 = lerp(lerp(lLight, lDark, 0.5), cuspL, t500);      // stop-500 lightness (even↔cusp blend)
+    const l500 = lightnessAt(500, t500);                           // stop-500 lightness (even↔cusp blend, warped)
     hOk = solveOkhslHue(palette.hue, s500, l500);
   } else {
     hOk = rgbToOkhsl(hctToRgb(baseHue, pk.c, pk.tone).rgb).h;
@@ -367,13 +401,11 @@ function okhslStops(palette, controls, stops, mode) {
     // Blend the EVEN-perceptual distribution toward the CUSP-anchored ("peak") one by `vibrancy`:
     // t=0 → even lightness (uniform), t=1 → the hue's cusp sits at stop 500 (vibrant center). "peak"
     // mode pins t=1. Pulling the center to the cusp is what lets off-center hues (yellow) read vibrant.
-    const evenL = lerp(lLight, lDark, (stop - 50) / 900);
-    const peakL = stop <= 500 ? lerp(lLight, cuspL, (stop - 50) / 450) : lerp(cuspL, lDark, (stop - 500) / 450);
     // blend amount = the PER-PALETTE "cusp pull" when set, else the global `vibrancy`. Lets one palette
     // (e.g. yellow Warning, cusp at high L*) nudge its richest stop toward 500 without touching the rest.
     const v = palette.cuspPull ?? controls.vibrancy ?? 0;
     const t = mode === "peak" ? 1 : Math.max(0, Math.min(1, v / 100));
-    const l = lerp(evenL, peakL, t);
+    const l = lightnessAt(stop, t); // skew/lift warp the position read (effStop); see lightnessAt above
     // saturation = chroma% of the gamut, shaped by the SAME damping multiplier m as the even path (so
     // damp/dampCurve/dampAmp/dampBias stay meaningful here), clamped to OKHSL's [0,1].
     const sp = (stop - 500) / 450;
