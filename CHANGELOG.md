@@ -17,7 +17,10 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   dropped a color role still deleted the variable consumer files were bound to. With the box ticked,
   a stale color name is now renamed under `_deprecated/` at all three generated collections (Color
   Roles, Color Primitives, Color Prime), keeping its id and every binding; the apply notice reports
-  the kept count. Unticked, the prune is unchanged. The gate checkbox and the Settings row say so.
+  the kept count. The Color Roles theme-MODE prune is guarded the same way: a mode for a theme the doc
+  no longer carries is kept and reported instead of removed, because a consumer file pins a mode
+  exactly as it binds a variable. Unticked, both prunes are unchanged. The gate checkbox and the
+  Settings row say so.
 
 #### Added
 - **A reference form of the Radix color export** (#638): `exportRadix(state, { refs: true })` emits

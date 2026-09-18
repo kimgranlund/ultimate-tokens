@@ -231,11 +231,19 @@ What the flag actually changes lives in `figma/plugin/code.js`: `applyStylePlans
 style and its registry slot and counts `out.preserved` instead of `out.pruned`;
 `applyFontPrimitivesModes` keeps stale MODES and reports them as `libraryReport.staleModes`;
 `applyFloatPlans` takes the alias/deprecate branch. `applyBundle` (#673) deprecates a stale color
-variable under `_deprecated/` instead of removing it, at all THREE of its prune sites (Color Roles, Color
-Primitives, Color Prime), and reports `preserved` plus a per-collection `colorReports` entry. It reports no
-aliases: a color rename rides `opts.renames` and is executed id-preservingly by `renameInPool` before the
-reconcile runs, so there is no value-redirect channel to build an alias map from. #629's ruling Q1 left
-color on the classic prune under either setting; #673 retired that exemption.
+variable under `_deprecated/` instead of removing it, at all THREE of its variable prune sites (Color Roles,
+Color Primitives, Color Prime), and reports `preserved` plus a per-collection `colorReports` entry. It
+reports no aliases: a color rename rides `opts.renames` and is executed id-preservingly by `renameInPool`
+before the reconcile runs, so there is no value-redirect channel to build an alias map from. #673 also
+guards `applyBundle`'s FOURTH destructive site, the Color Roles theme-MODE prune: a mode for a theme the
+doc no longer carries is kept and reported as `staleModes` (the field name `applyFontPrimitivesModes`
+already uses) rather than `removeMode`d, because a consumer file pins a mode exactly as it binds a
+variable. #629's ruling Q1 left color on the classic prune under either setting; #673 retired that
+exemption.
+
+**One destructive site remains UNGUARDED, deliberately:** `applyFloatPlans`' own breakpoint-`removeMode`.
+It predates #629 and sits in a different subsystem, so #673 left it alone rather than widening scope
+without a ticket. Do not write "every prune reads the flag" anywhere until that site is closed.
 
 ### 7. The config round-trip OUT of variables
 

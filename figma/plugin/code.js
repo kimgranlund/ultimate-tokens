@@ -146,13 +146,17 @@ figma.ui.onmessage = async (msg) => {
       // applyFontPrimitivesModes' confirmLibraryMode() dialog: with no askIfUndecided passed (only the
       // standalone binder's own main() passes it), undefined resolves straight to false, i.e. classic
       // prune, which is exactly the legacy behavior an old bundle expects.
-      // SCOPE: the flag covers COLOR, TYPE, GEOMETRY and STYLES, all four. #629's ruling Q1 left
-      // applyBundle's color reconcile on the classic prune whatever the flag said; #673 threaded it, so
-      // a published library no longer loses the color variable a consumer file is bound to. The two
-      // surfaces that SET the flag say so: the gate checkbox is labelled "...color, type, geometry and
-      // style names", and the Settings row's help line names color first. The gate LEDE says nothing
-      // about the flag at all (it describes what the apply writes, not how it prunes), so do not read a
-      // scope claim into it. PR #675 review: an earlier comment named the lede, which was an overclaim.
+      // SCOPE, stated exactly. The flag guards: applyBundle's color VARIABLE reconcile and its Color
+      // Roles theme-MODE prune (both #673); applyFloatPlans' type/geometry VARIABLE prune, and
+      // applyFontPrimitivesModes' variable prune AND its Type Primitives mode prune (both #629); and
+      // applyStylePlans' paint and text prunes (#629). It does NOT guard applyFloatPlans' own
+      // breakpoint-MODE removeMode, which is unguarded on main and was left alone by #673 rather than
+      // widened without a ticket. Do not upgrade this list to "every prune" without re-reading that
+      // site. #629's ruling Q1 kept color out entirely; #673 retired that exemption. The gate checkbox
+      // is labelled "...color, type, geometry and style names" and the Settings row's help line names
+      // color first. The gate LEDE says nothing about the flag at all (it describes what the apply
+      // writes, not how it prunes), so do not read a scope claim into it. PR #675 review: an earlier
+      // comment named the lede, which was an overclaim.
       // `dtcg` is OMITTED when the Color system is toggled off in the UI — skip the color collections
       // entirely (the existing ones are left untouched, not pruned). Type/Geometry filtering happens UI-side.
       const r = msg.dtcg ? await applyBundle(msg.dtcg, { rebuildSemantic: !!msg.rebuildSemantic, renames: msg.renames && msg.renames.color, libraryMode: msg.libraryMode }) : null;
@@ -179,6 +183,10 @@ figma.ui.onmessage = async (msg) => {
           sr = await applyStylePlans(msg.stylePlans, { libraryMode: msg.libraryMode });
         } catch (e) { console.error("[Ultimate Tokens] styles apply failed:", e); }
       }
+      // #673: under "published library" mode a stale THEME mode is kept, not removed. Say so, or a kept
+      // mode looks like the prune silently failed. It is the same disclosure applyFontPrimitivesModes'
+      // own staleModes gets above.
+      if (r && r.staleModes && r.staleModes.length) console.warn("[Ultimate Tokens] published-library mode: kept", r.staleModes.length, "stale Color Roles theme mode(s) instead of removing them:", r.staleModes.join(", "));
       const parts = [];
       if (r) parts.push(`${r.raw} primitives + ${r.prime} prime + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : "") + (r.preserved ? `, ${r.preserved} stale kept (published library)` : ""));
       if (fr && fr.collections) parts.push(`${fr.variables} type/geometry variable${fr.variables === 1 ? "" : "s"} across ${fr.collections} collection${fr.collections === 1 ? "" : "s"}`);
@@ -1406,6 +1414,12 @@ function leafEntries(node, prefix) {
 }
 async function applyBundle(dtcg, opts) {
   opts = opts || {};
+  // #673: read the "published library" flag ONCE, here, because applyBundle has TWO destructive sites
+  // and the first of them (the theme-MODE prune below) runs long before the variable reconcile at the
+  // bottom of this function. Same resolution as every other gate: an explicit true is the only thing
+  // that turns preservation on; false, and the undefined an old pre-#629 ui.html bundle posts, take the
+  // classic prune. This function never asks interactively (no askIfUndecided channel reaches it).
+  const libraryMode = opts.libraryMode === true;
   const renames = opts.renames || {};
   const collectionRenames = renames.collections || {};
   const rawTree = dtcg && dtcg["palette.tokens.json"];
@@ -1502,10 +1516,19 @@ async function applyBundle(dtcg, opts) {
   }
   // prune stale theme modes (a theme the doc no longer carries) — never the collection's default
   // mode (just renamed above, always in wantedModes), never the last remaining mode.
+  // #673 (PR review on 8dac051), mirroring applyFontPrimitivesModes' own guard above: "published
+  // library" mode covers THIS prune too. Removing a theme MODE from a PUBLISHED Color Roles collection
+  // breaks every consumer file that pinned it, exactly as removing a variable does, and #629's ruling Q2
+  // already settled that a mode prune must be guarded. Under libraryMode the stale theme modes are only
+  // REPORTED (staleThemeModes below, surfaced as the Color Roles colorReports entry's `staleModes`, the
+  // same field name applyFontPrimitivesModes uses) and left standing. Classic path unchanged.
   const wantedModes = new Set(themeNames);
+  const staleThemeModes = [];
   for (const m of sem.modes.slice()) {
     if (m.modeId === firstModeId) continue;
-    if (!wantedModes.has(m.name) && sem.modes.length > 1) sem.removeMode(m.modeId);
+    if (wantedModes.has(m.name)) continue;
+    if (libraryMode) { staleThemeModes.push(m.name); continue; }
+    if (sem.modes.length > 1) sem.removeMode(m.modeId);
   }
 
   const semByName = await varsByName(sem.id);
@@ -1557,7 +1580,6 @@ async function applyBundle(dtcg, opts) {
   // THREE prune sites, one per generated collection (Color Roles, Color Primitives, Color Prime), each
   // taking the guard on its own: the style path's own review (#629, PR #675) found a guard that read
   // correct at two sites but was only ever exercised at one, so each site is asserted separately.
-  const libraryMode = opts.libraryMode === true;
   let pruned = 0;
   let preserved = 0;
   const colorReports = [];
@@ -1567,12 +1589,15 @@ async function applyBundle(dtcg, opts) {
   // prior library-mode apply deliberately kept, or library mode defeats itself on the next ordinary
   // apply). No color "_deprecated/" name can exist before this ticket, so the carve-out subtracts nothing
   // from today's behavior for any state a live file can currently be in.
-  const reconcileColorCollection = (collectionName, byName, current) => {
+  // `staleModes` (optional) is the collection's kept-mode list, empty everywhere but Color Roles, which
+  // is the only one of the three that carries a mode axis at all.
+  const reconcileColorCollection = (collectionName, byName, current, staleModes) => {
     const existing = Object.keys(byName);
+    const modes = staleModes || [];
     if (!libraryMode) {
       const removed = pruneCandidatesVM(existing, Array.from(current));
       for (const name of removed) { byName[name].remove(); pruned++; }
-      colorReports.push({ collection: collectionName, libraryMode: false, aliases: [], deprecates: [], removed: removed });
+      colorReports.push({ collection: collectionName, libraryMode: false, aliases: [], deprecates: [], removed: removed, staleModes: modes });
       return;
     }
     const rec = libraryReconcile(existing, Array.from(current), {}, {});
@@ -1586,14 +1611,14 @@ async function applyBundle(dtcg, opts) {
       preserved++;
       deprecates.push(r);
     }
-    colorReports.push({ collection: collectionName, libraryMode: true, aliases: [], deprecates: deprecates, removed: [] });
+    colorReports.push({ collection: collectionName, libraryMode: true, aliases: [], deprecates: deprecates, removed: [], staleModes: modes });
   };
-  reconcileColorCollection(sem.name, semByName, currentSem);
+  reconcileColorCollection(sem.name, semByName, currentSem, staleThemeModes);
   reconcileColorCollection(raw.name, rawByName, currentRaw);
   reconcileColorCollection(prime.name, primeByName, currentPrime);
 
   writeColorRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { raw: rawCount, semantic: semCount, prime: primeCount, pruned: pruned, preserved: preserved, libraryMode: libraryMode, colorReports: colorReports, rebuilt: rebuilt, themeNames: themeNames };
+  return { raw: rawCount, semantic: semCount, prime: primeCount, pruned: pruned, preserved: preserved, libraryMode: libraryMode, colorReports: colorReports, staleModes: staleThemeModes, rebuilt: rebuilt, themeNames: themeNames };
 }
 
 // ── the breakpoint-moded FLOAT apply (Type / Geometry) ────────────────────────────

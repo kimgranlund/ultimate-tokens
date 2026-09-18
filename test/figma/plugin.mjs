@@ -798,6 +798,40 @@ if (applyBundle) {
     const resUndef = await lc3.applyBundle(bundleCut, {});
     if (resUndef.pruned !== totalStale || resUndef.preserved !== 0) FAIL("colorlibrary", `an omitted libraryMode pruned ${resUndef.pruned}/preserved ${resUndef.preserved}, want ${totalStale}/0: undefined must resolve to the classic prune`);
 
+    // ── LEG 4: the theme-MODE prune. applyBundle has a SECOND destructive site: Color Roles carries
+    // one MODE per theme, and a theme the doc no longer carries is removeMode'd. A consumer file pinned
+    // to that mode loses its binding exactly as it would lose a removed variable, which is why #629's
+    // ruling Q2 already settled that a mode prune is guarded like a variable prune. The variables are
+    // NOT stale on this leg (every theme shares one name set), so it measures the mode axis alone.
+    const bundleOneTheme = { ...bundleFull };
+    delete bundleOneTheme["Dark_tokens.json"];
+    const droppedTheme = bundleFull["Dark_tokens.json"] && bundleFull["Dark_tokens.json"].$extensions;
+    const droppedMode = droppedTheme && droppedTheme["com.figma.modeName"];
+    if (!droppedMode || Object.keys(bundleOneTheme).filter((k) => k !== "palette.tokens.json").length !== 1) {
+      FAIL("colorlibrary", "fixture: dropping Dark_tokens.json did not leave a single-theme bundle with a named mode to lose");
+    } else {
+      const FM = mockFigma();
+      const lm = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FM.figma, "<html>", undefined);
+      await lm.applyBundle(bundleFull, { libraryMode: true });
+      const semM = FM.collections.find((c) => c.name === "Color Roles");
+      if (!semM || !semM.modes.some((m) => m.name === droppedMode)) FAIL("colorlibrary", `fixture: Color Roles has no '${droppedMode}' mode after the full apply`);
+      else {
+        const resM = await lm.applyBundle(bundleOneTheme, { libraryMode: true });
+        if (!semM.modes.some((m) => m.name === droppedMode)) FAIL("colorlibrary", `libraryMode:true removed the stale '${droppedMode}' theme mode from Color Roles: a published collection's mode must survive, every consumer file pinned it`);
+        if (!(resM.staleModes || []).includes(droppedMode)) FAIL("colorlibrary", `libraryMode:true did not report '${droppedMode}' in staleModes: a kept mode must be disclosed, or it reads as a prune that silently failed`);
+        const repM = (resM.colorReports || []).find((x) => x.collection === "Color Roles");
+        if (!repM || !(repM.staleModes || []).includes(droppedMode)) FAIL("colorlibrary", `the Color Roles colorReports entry does not carry '${droppedMode}' in staleModes`);
+      }
+      // the SAME theme drop with the flag off still removes the mode, unchanged.
+      const FM2 = mockFigma();
+      const lm2 = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FM2.figma, "<html>", undefined);
+      await lm2.applyBundle(bundleFull, { libraryMode: false });
+      const resM2 = await lm2.applyBundle(bundleOneTheme, { libraryMode: false });
+      const semM2 = FM2.collections.find((c) => c.name === "Color Roles");
+      if (semM2 && semM2.modes.some((m) => m.name === droppedMode)) FAIL("colorlibrary", `libraryMode:false left the stale '${droppedMode}' theme mode standing: the classic mode prune must be unchanged`);
+      if ((resM2.staleModes || []).length) FAIL("colorlibrary", `libraryMode:false reported ${resM2.staleModes.length} staleModes: the classic path keeps none`);
+    }
+
     // ── LEG 3: the MESSAGE HANDLER threads msg.libraryMode into applyBundle. The two legs above call
     // applyBundle directly, so they stay green even if the handler never passes the flag, which is
     // exactly the shape of the gap #673 closes. This leg drives the real "apply" message instead.
