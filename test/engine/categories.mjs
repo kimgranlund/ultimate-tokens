@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { typeScale, DEFAULT_TYPE, siblingWeightDefaults, bodyClassSiblingDefaults, BODY_CLASS_VOICES, resolvedFontFor } from "../../src/engine/type.mjs";
-import { hydrate } from "../../src/ui/persist.js";
+import { hydrate, DOMAINS } from "../../src/ui/persist.js";
 import { paletteGroup, resolvePaletteGroups } from "../../src/ui/model.mjs";
 import { rampChromaOf } from "../../src/engine/resolve.mjs";
 import { paletteStops, STOPS, toneAt, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
@@ -542,7 +542,7 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
 //    a generator fault that isn't there. Name + oklch is unique in all 8 specs.
 {
   const TOL = 1.5;                                   // L* the review fixed as "anchored"
-  const LIFT_MIN = -40, LIFT_MAX = 40;               // persist.js's own domain for lift
+  const LIFT_MIN = DOMAINS.palette.lift.min, LIFT_MAX = DOMAINS.palette.lift.max; // persist.js's own domain, imported
   const pt = (lift) => toneAt(550, 0, lift, DEFAULT_CONTROLS);
   const BAND_LO = pt(LIFT_MIN), BAND_HI = pt(LIFT_MAX);
   const r4 = (v) => Number(Number(v).toFixed(4));
@@ -552,26 +552,49 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
   let checked = 0, outOfBand = 0;
   // A spec whose swatch `hex` and `oklch` describe DIFFERENT colors is a pre-existing data defect,
   // not a lift defect: the generator fits the hex while the preset stores the oklch, so the two
-  // disagree downstream. Exactly one spec is in that state today (travel, 198/288 swatches, up to
-  // 7.42 L*). Counting it here rather than naming it keeps the carve-out self-policing: if a second
-  // spec drifts, or travel is repaired, this gate says so instead of quietly widening.
-  const KNOWN_HEX_OKLCH_DRIFTED = 1;
-  let drifted = 0;
+  // disagree downstream. The expectation is PER SPEC and BY NAME, not a bare total, and it counts
+  // ANY drift above float noise rather than only drift past this gate's own 1.5 L* tolerance. A bare
+  // total had two holes: sub-tolerance drift in a clean spec went unseen, and "travel repaired while
+  // another spec drifts" still summed to one. Named per-spec counts fail in BOTH directions — a new
+  // drifted spec raises its own entry, a repaired travel lowers travel's — and each says which spec.
+  // travel is tracked as #656; repairing it must bring its entry to 0 in the same change.
+  const DRIFT_EPS = 0.01;        // below this is 8-bit/rounding noise, not authored disagreement
+  const EXPECTED_DRIFT = {
+    architecture: { count: 0, max: 0 },
+    cuisine:      { count: 0, max: 0 },
+    film:         { count: 0, max: 0 },
+    literature:   { count: 0, max: 0 },
+    music:        { count: 0, max: 0 },
+    nature:       { count: 0, max: 0 },
+    // authored 2-decimal oklch; immaterial to the fit (worst 0.88 L*, well inside TOL) but real
+    brands:       { count: 7, max: 1.0 },
+    // #656: hex and oklch describe different colors across nearly the whole spec
+    travel:       { count: 287, max: 7.5 },
+  };
+  for (const slug of CATS) if (!EXPECTED_DRIFT[slug]) FAIL("lift-anchor", `spec "${slug}" has no EXPECTED_DRIFT entry — a new category must declare whether its hex and oklch agree`);
   for (const slug of CATS) {
     const doc = JSON.parse(readFileSync(join(SPECDIR, `${slug}.json`), "utf8"));
     // spec swatch: r4(oklch) -> hex, the exact key `palette()` stores on the built palette.
     const byKey = new Map();
-    let specDrift = 0, specSwatches = 0;
+    let specDrift = 0, specSwatches = 0, driftMax = 0;
     JSON.stringify(doc, (k, v) => {
       if (v && typeof v === "object" && v.hex && v.oklch) {
         const ok = String(v.oklch).trim().split(/\s+/).map(Number);
         byKey.set(clean(v.name) + "|" + ok.map(r4).join(","), String(v.hex).toUpperCase());
         specSwatches++;
-        if (Math.abs(lstarFromRgb(hexToRgb(v.hex)) - lstarFromRgb(oklchToRgb(ok[0], ok[1], ok[2]))) > TOL) specDrift++;
+        const dd = Math.abs(lstarFromRgb(hexToRgb(v.hex)) - lstarFromRgb(oklchToRgb(ok[0], ok[1], ok[2])));
+        if (dd > DRIFT_EPS) specDrift++;
+        if (dd > driftMax) driftMax = dd;
       }
       return v;
     });
-    if (specDrift) drifted++;
+    const exp = EXPECTED_DRIFT[slug];
+    if (exp) {
+      if (specDrift !== exp.count)
+        FAIL("lift-anchor", `spec "${slug}": ${specDrift} of ${specSwatches} swatches have hex/oklch disagreeing by more than ${DRIFT_EPS} L*, expected ${exp.count}. ${specDrift > exp.count ? "New drift is a data regression" : "Repaired drift should lower this expectation in the same change"} (travel is #656).`);
+      if (driftMax > exp.max)
+        FAIL("lift-anchor", `spec "${slug}": worst hex/oklch disagreement is ${driftMax.toFixed(2)} L*, above the ${exp.max} L* this spec is allowed — the drift got worse even if the count did not.`);
+    }
     // The `direct` pass-through (a real product's own authored settings — 5 of the 7 brands presets)
     // never goes through the generator's palette(), so its lift is authored, not fitted, and this gate
     // has no claim on it. buildCategory passes those objects through VERBATIM, so identity is an exact
@@ -607,10 +630,9 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
       }
     }
   }
-  if (drifted !== KNOWN_HEX_OKLCH_DRIFTED)
-    FAIL("lift-anchor", `${drifted} category spec(s) have swatches whose hex and oklch disagree by more than ${TOL} L*, expected exactly ${KNOWN_HEX_OKLCH_DRIFTED} (travel). A new one is a data regression; a repaired one should lower this count.`);
   if (checked < 1500) FAIL("lift-anchor", `only ${checked} in-band sampled palettes compared — the join or the corpus shrank`);
-  console.log(`  (lift-anchor: ${checked} in-band sampled primes anchored within ${TOL} L*, ${outOfBand} clamped to the lift domain edge)`);
+  if (!fails.some((f) => f.startsWith("lift-anchor:")))
+    console.log(`  (lift-anchor: ${checked} in-band sampled primes anchored within ${TOL} L*, ${outOfBand} clamped to the lift domain edge)`);
 }
 
 // ── REPORT ──

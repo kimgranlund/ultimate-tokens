@@ -96,9 +96,12 @@ function tidyVolumeTitle(s) {
 // STRICTLY INCREASING in lift (liftStop is monotone in lift, and the base curve is monotone in stop),
 // so a fixed-iteration bisection converges deterministically — no tuning, same answer on every host,
 // which matters because this output is a committed artifact under CI's drift gate. The stored value is
-// the INTEGER the schema keeps (persist.js clamps lift to -40..40), chosen as whichever of the two
+// the INTEGER the schema keeps (persist.js owns the bounds, imported below), chosen as whichever of the two
 // neighbouring integers lands closer to the target rather than by blind rounding.
-const LIFT_MIN = -40, LIFT_MAX = 40;
+// The lift domain is persist.js's, not a second copy of it: the generator, the gate and the slider
+// must clamp to the SAME range or a re-fit can store a value the app then clamps away. persist.js
+// imports in plain node (no DOM), so this is a real import rather than a restated constant.
+const LIFT_MIN = DOMAINS.palette.lift.min, LIFT_MAX = DOMAINS.palette.lift.max;
 const primeTone = (lift) => toneAt(550, 0, lift, DEFAULT_CONTROLS);
 const PRIME_TONE_MIN = primeTone(LIFT_MIN), PRIME_TONE_MAX = primeTone(LIFT_MAX);
 let liftUnreachable = 0; // sources whose lightness lies outside what the lift domain can reach

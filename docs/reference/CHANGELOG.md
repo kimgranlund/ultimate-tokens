@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## 1.59 — 2026-09-17 — `lift` becomes a stop displacement; the even ramp is strictly monotone (#648)
+
+**`lift` no longer ADDS L\*, it DISPLACES the stop.** The per-palette `lift` control used to add a
+cosine-weighted bump to the tone (`t += lift · w`), which ignores the base curve's local slope. Where
+the curve is flat — the light end under `logistic` at tension 0, flattened further by a positive skew
+— the bump's own slope won: the default **Warning** palette (skew 40, lift 15) REVERSED the ramp at
+stops 100–150 and pushed the tone past `lmax` at 200–300, and the trailing clamp then saturated
+050–300 into **six identical `#FFFFFF` swatches** (14 distinct stops out of 19). `toneAt` now reads
+the unchanged, already-monotone curve at a displaced stop, `t = base(stop − A · w(stop))` with
+`A = clamp(lift × 6, ±243.51)` stops, factored into an exported `liftStop(stop, lift)`. Monotonicity
+follows from one closed-form bound, `|A| · π/900 < 1`, which holds for **every** curve, skew, tension,
+`lmin` and `lmax` — no per-curve tuning, and the final clamp is now a no-op safety net rather than the
+thing producing a value. Warning renders 19 distinct swatches again.
+
+**Even-mode ramps re-render wherever `lift` is non-zero; `lift 0` is byte-unchanged.** `toneAt` is
+bit-identical at `lift 0` over 2,537,625 curve × skew × tension × stop points, and the
+`perceptual`/`peak` paths are untouched (they route to `okhslStops`, which never calls `toneAt` and
+still ignores skew/lift until #647). So the re-render is confined to the `even` path: the three
+role-table defaults carrying a lift (Warning +15, Success/Danger −5) and any document that set one.
+Because the shift rides the curve, a given lift moves the tone furthest where the ramp is steepest, and
+its effect is **attenuated** versus the old bump — Warning's +15 moves the stop-500 tone by +10.49 L\*
+(was +15.00), Success/Danger's −5 by −3.68 (was −5.00). The authored role-table lifts are NOT re-fitted
+here; #647's Warning retune absorbs that.
+
+**2,480 of 3,780 stored preset lifts re-fitted.** `scripts/gen-categories.mjs` anchored each curated
+preset's prime (stop 550) on its sampled source color via `lift = round(sourceL* − toneAt(550,0,0))` —
+the algebra of the retired additive bump, and simply the wrong inverse now (off ~9 L\* at lift +40,
+~12 at −40). It now SOLVES the inverse by a deterministic bisection over the `lift` domain, picking the
+closer of the two neighbouring integers; the committed category assets are regenerated accordingly.
+Anchor fit error across the corpus drops from a median **3.93 L\*** to **1.08**, and 0.35 restricted to
+the in-band sampled palettes it actually fits — the residual is entirely the 368 source colors lighter
+or darker than the reachable band at stop 550 (17.77–76.52 L\*), which clamp to the domain edge.
+
+Threaded through `tonal.js` (engine), `scripts/gen-categories.mjs`, and the agent-facing rubric in
+`mcp/describe-rubric.mjs`; `knowledge-02-tonal-scale.md` §4 and `glossary.md` updated. New gates:
+`hpg-tonal-lift-monotonic` (the 16 defaults in all three tone modes, a curve × skew × lift × tension ×
+`lmin`/`lmax`-band grid, an independent derivation of the `lift 0` curve, and the `LIFT_GAIN` ↔ `lift`
+domain coupling) and `lift-anchor` in `test/engine/categories.mjs` (every built preset's prime anchored
+within 1.5 L\* of its source, at the best available integer). `test/engine/fixtures/tonal-legacy.json`
+regenerated for exactly the three even-mode ramps that carry a lift; its other 29 stay byte-for-byte
+what commit 83756bb emitted.
+
 ## 1.58 — 2026-09-11 — palette groups + absolute per-group base chroma (#559, SPEC/LLD 0.3.0)
 
 Every palette now carries a **group** — `material` · `brand` · `system` · `data` (#556) — assigned by

@@ -21,7 +21,7 @@
 | **`dampAmp`** (amplify) | Mid-tone chroma boost (0–100, default 0): the **additive** term that lifts `m` above 1 toward the gamut ceiling. Opposite sign of effect to `damp` — and NOT the same control. |
 | **`dampBias`** | Light(−)↔dark(+) asymmetry of the damping (−100..100, default 0); `+dampBias` damps the dark half more, via a mirror-symmetric per-side weight. |
 | **Skew** | Gamma warp of the tone distribution; positive lightens mid-tones (peak drifts light). |
-| **Lift** | Cosine-weighted additive L\* bump centered on stop 500. |
+| **Lift** | Cosine-weighted DISPLACEMENT of the stop (−40..40), `A · w(stop)` stops with `A = clamp(lift × 6, ±243.51)` and `w` = 1 at stop 500, 0 at the ends — the tone at a stop is the unchanged curve's tone at a nearby one. Monotone for any lift by `|A| · π/900 < 1`. Was an additive L\* bump until #648, which could flatten the light stops into one swatch. Even path only until #647. |
 | **Scrim primitive** | A *raw* semi-transparent overlay token: the palette's 500 color at alpha% = step/10, named `{base}-{step}` (e.g. `500-200` = 500 @ 20%). A valid **ref target**, like a solid stop. |
 | **Scrim role** | A *semantic role* (`scrimWeakest…scrimStrongest`, 7 per palette) whose ref points at a **scrim primitive** on the 500 ramp. NOT itself a ref target — only scrim *primitives* are. Do not conflate with *scrim primitive*. |
 | **On-color** | Foreground (text/icon) color meant to sit on a fill. `on{N}` → the 50 stop and `on{N}Variant` → the 200 stop, fixed in both modes (ADR-003). |
