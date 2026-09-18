@@ -213,8 +213,42 @@ console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "F
 //       "print the list, fail on any other count" shape), not a silent carve-out. A handful sit close
 //       enough to the window floor that even the F1 widening search's full PRIME_STEP of reserve
 //       cannot keep `prime` distinct from the rung it ends up beside — a stricter subset of (b).
-const EXPECT_ORDER_ALLOW = 23; // sources where prime.mjs's F1 widening cannot keep `prime` inside [bright, dim]
-const EXPECT_DUPE_ALLOW = 4; // the subset of those where widening ALSO cannot keep every hex distinct
+// N1 (U1 re-review, 2026-09-18): a count alone lets one corpus source swap for another — one moving
+// in across the window bound, another moving out — and stay green at the same length. Both lists are
+// frozen BY NAME (sorted), mirroring C5's own "fail on any other count or any other name" shape, and
+// the corpus is compared against the frozen arrays directly, not just their lengths. Printed by the
+// gate itself (`node test/engine/anchor.mjs`), so a real drift is copy-pasteable back into this file.
+const ORDER_ALLOW = [
+  `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
+  `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
+  `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
+  `film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`,
+  `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
+  `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
+  `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
+  `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
+  `music "Black metal · the forest at night" secondary #1E2024`,
+  `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
+  `music "The late-night club · the smoky set" primary-muted #1F1F23`,
+  `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
+  `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
+  `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
+  `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
+  `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
+  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
+  `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`,
+  `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
+  `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
+  `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
+];
+const DUPE_ALLOW = [
+  `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
+  `music "Black metal · the forest at night" secondary #1E2024`,
+  `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
+];
 {
   const orderNames = [], dupeNames = [];
   for (const { slug, presetName, hueSpace, palette: p } of anchored) {
@@ -228,15 +262,38 @@ const EXPECT_DUPE_ALLOW = 4; // the subset of those where widening ALSO cannot k
     if (!(sw[2].l > sw[3].l && sw[3].l > sw[4].l)) orderNames.push(label);
     if (new Set(sw.map((x) => x.hex)).size < 7) dupeNames.push(label);
   }
-  console.log(`  ${orderNames.length === EXPECT_ORDER_ALLOW ? "pass" : "FAIL"}  anchor-ladder order-allow-list: ${orderNames.length} (expected ${EXPECT_ORDER_ALLOW})`);
+  orderNames.sort();
+  dupeNames.sort();
+  console.log(`  ${orderNames.length === ORDER_ALLOW.length ? "pass" : "FAIL"}  anchor-ladder order-allow-list: ${orderNames.length} (expected ${ORDER_ALLOW.length})`);
   for (const n of orderNames) console.log(`    r ${n}`);
-  console.log(`  ${dupeNames.length === EXPECT_DUPE_ALLOW ? "pass" : "FAIL"}  anchor-ladder dupe-allow-list: ${dupeNames.length} (expected ${EXPECT_DUPE_ALLOW})`);
+  console.log(`  ${dupeNames.length === DUPE_ALLOW.length ? "pass" : "FAIL"}  anchor-ladder dupe-allow-list: ${dupeNames.length} (expected ${DUPE_ALLOW.length})`);
   for (const n of dupeNames) console.log(`    d ${n}`);
-  if (orderNames.length !== EXPECT_ORDER_ALLOW) FAIL("anchor-ladder", `order-allow-list count ${orderNames.length} !== expected ${EXPECT_ORDER_ALLOW} — a corpus anchor moved across the window bound, or F1's widening search regressed`);
-  if (dupeNames.length !== EXPECT_DUPE_ALLOW) FAIL("anchor-ladder", `dupe-allow-list count ${dupeNames.length} !== expected ${EXPECT_DUPE_ALLOW} — a corpus anchor moved relative to the 8-bit quantisation cliff, or F1's widening search regressed`);
+  // Compare the SORTED ARRAYS, not just their lengths (N1) — a swapped name at an unchanged count
+  // must still fail, naming both the entry that's missing and the one that showed up uninvited.
+  if (orderNames.length !== ORDER_ALLOW.length || orderNames.some((n, i) => n !== ORDER_ALLOW[i])) {
+    for (const n of ORDER_ALLOW) if (!orderNames.includes(n)) FAIL("anchor-ladder", `order-allow-list: expected member missing — ${n}`);
+    for (const n of orderNames) if (!ORDER_ALLOW.includes(n)) FAIL("anchor-ladder", `order-allow-list: unexpected member — ${n}`);
+    if (!fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `order-allow-list count ${orderNames.length} !== expected ${ORDER_ALLOW.length} with no single-name diff found — investigate before trusting either count`);
+  }
+  if (dupeNames.length !== DUPE_ALLOW.length || dupeNames.some((n, i) => n !== DUPE_ALLOW[i])) {
+    for (const n of DUPE_ALLOW) if (!dupeNames.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: expected member missing — ${n}`);
+    for (const n of dupeNames) if (!DUPE_ALLOW.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: unexpected member — ${n}`);
+    if (!fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `dupe-allow-list count ${dupeNames.length} !== expected ${DUPE_ALLOW.length} with no single-name diff found — investigate before trusting either count`);
+  }
   // every dupe MUST also be an order violation (the F1 widening search cannot fail (b) without also
   // failing (a): a collapsed rung is, by definition, not strictly between its neighbours in l).
   for (const n of dupeNames) if (!orderNames.includes(n)) FAIL("anchor-ladder", `${n}: has a duplicate hex but passes the prime-between-bright-and-dim check — inconsistent with F1's own mechanism, investigate before trusting either count`);
+}
+
+// N1's own negative control: a frozen list with one real member swapped for a plausible-but-wrong
+// one, at the SAME length, must fail the sorted-array comparison — proving a same-count substitution
+// cannot slip through silently (the exact failure scenario N1 named).
+{
+  const swapped = ORDER_ALLOW.slice(0, -1).concat(`film "A Made-Up Title" primary #000001`).sort();
+  const realSorted = [...ORDER_ALLOW].sort();
+  const sameLength = swapped.length === realSorted.length;
+  const identical = sameLength && swapped.every((n, i) => n === realSorted[i]);
+  if (!sameLength || identical) FAIL("anchor-ladder", "negative control DID NOT bite: a same-length, one-member-swapped allow-list compared equal to the real one — the sorted-array comparison cannot discriminate a substitution");
 }
 
 // negative control: a synthetic anchor pinned at OKHSL l=0 (pure black, unambiguously past
