@@ -200,7 +200,7 @@ function shape(p, curve, ten) {
 // bound, so the guarantee survives even a lift outside its schema domain.
 const BUMP_SLOPE_MAX = Math.PI / 900;     // peak |dw/dstop| of the cosine bump
 const LIFT_SAFETY = 0.85;                 // keep d/dstop[A·w] <= this, always < 1
-const LIFT_SHIFT_MAX = LIFT_SAFETY / BUMP_SLOPE_MAX; // ≈ 243.5 stops
+export const LIFT_SHIFT_MAX = LIFT_SAFETY / BUMP_SLOPE_MAX; // ≈ 243.5 stops
 // Stops of displacement per unit of lift. No gain can reproduce the old additive
 // bump's AMPLITUDE — that amplitude is exactly what broke monotonicity, so some
 // attenuation is forced — and `lift` is load-bearing well beyond the Warning
@@ -213,14 +213,16 @@ const LIFT_SHIFT_MAX = LIFT_SAFETY / BUMP_SLOPE_MAX; // ≈ 243.5 stops
 // short enough of 1 that the ramp never stalls (the whole 3,780-palette preset
 // corpus renders with no duplicate swatch and a >=0.55 L* gap at every step).
 // The cap is a pure out-of-domain safety net, not something in-domain relies on.
-const LIFT_GAIN = 6;
+export const LIFT_GAIN = 6;
 
 // liftStop — the stop `lift` displaces `stop` to. Pure in the single `stop`
 // value (no neighbour lookup, no whole-ramp state), so the 19-stop display ramp
 // and the 25-stop EXPORT_STOPS ramp agree at every shared stop. w is 0 at 050
 // and 950, so both endpoints are fixed exactly and the ends keep their lmax/lmin.
-// Shared rather than inlined so the OKHSL path (okhslStops, which is also keyed
-// off the stop NUMBER) can apply the SAME bump without a second copy of it.
+// Factored out rather than inlined so that #647, which wires skew/lift into the
+// OKHSL path (okhslStops is also keyed off the stop NUMBER), reuses THIS helper
+// instead of growing a second copy of the bump. As of today okhslStops does not
+// call it: perceptual/peak still ignore skew and lift entirely.
 export function liftStop(stop, lift) {
   if (!lift) return stop;
   const a = Math.min(Math.max(lift * LIFT_GAIN, -LIFT_SHIFT_MAX), LIFT_SHIFT_MAX);

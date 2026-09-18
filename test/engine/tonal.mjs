@@ -9,6 +9,7 @@
 //   paletteStops(palette, controls, stops)          -> [{ stop, tone, chroma, maxc, rgb:[r,g,b], hex, inGamut }]
 //   EXPORT_STOPS  (number[])   DEFAULT_CONTROLS ({curve,tension,lmin,lmax,damp,hueSpace})
 import { readFileSync } from "node:fs";
+import { DOMAINS } from "../../src/ui/persist.js";
 import * as T from "../../src/engine/tonal.js";
 import * as E from "../../src/engine/hct.js";
 import { rgbToOklchHue, rgbToOkhsl } from "../../src/engine/okhsl.js";
@@ -472,21 +473,26 @@ for (const mode of ["perceptual", "peak"]) {
   }
   // (ii) the full control grid, on `STOPS` — which in this file is T.EXPORT_STOPS, the 25-stop export
   //      ramp: a superset of the display 19, so a half-step cannot hide a reversal the 19 step over.
-  for (const curve of CURVES) for (const skew of SKEWS) for (const lift of LIFTS) for (const tension of TENSIONS) {
-    const c = { curve, lmin: CTL.lmin, lmax: CTL.lmax, tension };
-    const cell = `${curve} skew ${skew} lift ${lift} tension ${tension}`;
+  //      The lmin/lmax pairs matter as much as the curve: the guarantee is claimed to be independent of
+  //      the ramp's endpoints, and a document can set them (the presets ship lmax 100/lmin 5, but the
+  //      DARK domain default is lmax 60). If the bound were secretly endpoint-dependent, a narrow band
+  //      is where it would show, because the same displacement covers more of a shorter ramp.
+  const BANDS = [[CTL.lmin, CTL.lmax], [0, 100], [0, 60], [20, 80], [40, 60], [5, 60]];
+  for (const curve of CURVES) for (const skew of SKEWS) for (const lift of LIFTS) for (const tension of TENSIONS) for (const [lmin, lmax] of BANDS) {
+    const c = { curve, lmin, lmax, tension };
+    const cell = `${curve} skew ${skew} lift ${lift} tension ${tension} band ${lmin}..${lmax}`;
     const tones = STOPS.map((s) => T.toneAt(s, skew, lift, c));
     for (let i = 1; i < tones.length; i++) if (tones[i] >= tones[i - 1]) {
       FAIL("lift-monotonic", `${cell}: stop ${STOPS[i - 1]}->${STOPS[i]} did not descend (${tones[i - 1].toFixed(9)} -> ${tones[i].toFixed(9)})`);
       break;
     }
     // Endpoints are EXACT — the bump's weight is 0 at 050/950 — so lift can never move the ends.
-    if (tones[0] !== CTL.lmax) FAIL("lift-monotonic", `${cell}: stop 050 = ${tones[0]}, expected lmax ${CTL.lmax}`);
-    if (tones[tones.length - 1] !== CTL.lmin) FAIL("lift-monotonic", `${cell}: stop 950 = ${tones[tones.length - 1]}, expected lmin ${CTL.lmin}`);
+    if (tones[0] !== lmax) FAIL("lift-monotonic", `${cell}: stop 050 = ${tones[0]}, expected lmax ${lmax}`);
+    if (tones[tones.length - 1] !== lmin) FAIL("lift-monotonic", `${cell}: stop 950 = ${tones[tones.length - 1]}, expected lmin ${lmin}`);
     // The trailing clamp must never be what PRODUCES a value. Proven black-box, without re-deriving
     // the pre-clamp expression: a fired clamp pins its stop EXACTLY to a bound, so asserting every
     // INTERIOR stop sits strictly inside (lmin, lmax) is exactly the statement "the clamp never fired".
-    for (let i = 1; i < tones.length - 1; i++) if (tones[i] >= CTL.lmax || tones[i] <= CTL.lmin) {
+    for (let i = 1; i < tones.length - 1; i++) if (tones[i] >= lmax || tones[i] <= lmin) {
       FAIL("lift-monotonic", `${cell}: interior stop ${STOPS[i]} pinned to a bound (${tones[i]}) — the clamp fired`);
       break;
     }
@@ -553,7 +559,20 @@ for (const mode of ["perceptual", "peak"]) {
       FAIL("lift-monotonic", `${cell}: stop 500 did not move — lift is inert`);
   }
 
-  // (v) the display(19) and export(25) ramps must agree at every SHARED stop — toneAt stays a pure
+  // (v) LIFT_GAIN and the `lift` DOMAIN are coupled across two files: tonal.js sizes the displacement,
+  //     persist.js decides how far lift can be pushed. The in-domain guarantee ("the cap never binds,
+  //     so lift stays linear across its whole range") is exactly LIFT_GAIN * domainMax < LIFT_SHIFT_MAX,
+  //     and widening the domain in persist.js alone would silently break it with nothing else noticing.
+  //     DOMAINS is read by IMPORT, not by parsing the file text — persist.js loads in plain node with
+  //     no DOM — so this cannot drift from what the app actually clamps to.
+  {
+    const dom = DOMAINS.palette.lift;
+    const reach = Math.max(Math.abs(dom.min), Math.abs(dom.max));
+    if (!(T.LIFT_GAIN * reach < T.LIFT_SHIFT_MAX))
+      FAIL("lift-monotonic", `LIFT_GAIN ${T.LIFT_GAIN} x lift domain ${reach} = ${T.LIFT_GAIN * reach} exceeds LIFT_SHIFT_MAX ${T.LIFT_SHIFT_MAX.toFixed(2)} — the cap would bind inside the domain, so lift stops being linear over its own range`);
+  }
+
+  // (vi) the display(19) and export(25) ramps must agree at every SHARED stop — toneAt stays a pure
   //     function of the one stop value, so no whole-ramp renormalisation can creep into the fix.
   for (const p of DEFAULTS) {
     const d19 = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, CTL, T.STOPS);
