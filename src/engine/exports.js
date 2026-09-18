@@ -278,7 +278,7 @@ function derivePalette(palette, controls, overrides) {
   const rampChroma = rampChromaOf(palette, controls.paletteGroups, controls);
   const primeChromaResolved = primeChromaOf(palette, controls.paletteGroups, controls);
   const stopList = paletteStops(
-    { hue: palette.hue, chroma: rampChroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull },
+    { hue: palette.hue, chroma: rampChroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull, anchor: palette.anchor },
     ctl,
     EXPORT_STOPS,
   );
