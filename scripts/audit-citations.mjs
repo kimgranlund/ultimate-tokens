@@ -168,6 +168,32 @@ export function parseCitations(raw, implied) {
 }
 const reExtTail = new RegExp(`\\.(?:${EXT})$`);
 const LIT = "~~LIT~~"; // sentinel prefix marking a literal code fragment rather than an identifier
+// A citation-shaped run, for detecting "this token sits directly next to an actual citation" --
+// distinct from the parser's own reExplicit/reBare (which extract citations to resolve), this is
+// used only to test adjacency when deciding whether a NEIGHBORING bare word gets to anchor.
+const reCiteLike = new RegExp(`:\\d{2,4}|[A-Za-z0-9_@./-]+\\.(?:${EXT}):\\d+`);
+const reCiteStart = new RegExp(`^(?::\\d{2,4}|[A-Za-z0-9_@./-]+\\.(?:${EXT}):\\d+)`);
+const reCiteEnd = new RegExp(`(?::\\d{2,4}(?:[-–]\\d{2,4})?|[A-Za-z0-9_@./-]+\\.(?:${EXT}):\\d+(?:[-–]\\d+)?)\\s*$`);
+
+// A small, closed-class set of English function words (articles, prepositions, conjunctions,
+// pronouns, common copulas/auxiliaries): never an anchor, from either bare heuristic below,
+// REGARDLESS of case shape or backtick placement (#672 round 2, F1). Needed because case shape
+// alone cannot separate a real symbol from an English word of the same shape -- both
+// `` `render` `` and `` `the` `` are plain lowercase, backtick-hugged, non-call tokens; only a
+// closed-class list tells them apart. Reviewer-verified live contaminants (at, in, to, out,
+// after, it, only, inside) are all in this class; kept short and closed rather than open-ended,
+// so it stays auditable in one read rather than growing into an unbounded blocklist.
+const STOPWORDS = new Set([
+  "a", "an", "the", "this", "that", "these", "those", "and", "or", "but", "not", "no", "yes",
+  "in", "on", "at", "to", "for", "of", "by", "as", "is", "are", "was", "were", "be", "been", "being",
+  "it", "its", "he", "she", "we", "you", "i", "they", "them", "their", "his", "her", "our", "your",
+  "with", "from", "into", "onto", "over", "under", "above", "below", "after", "before", "again",
+  "so", "if", "than", "then", "when", "where", "which", "who", "whom", "whose", "what", "why", "how",
+  "all", "any", "some", "each", "every", "both", "few", "more", "most", "other", "such", "only",
+  "own", "same", "too", "very", "just", "also", "still", "now", "here", "there", "out", "up", "down",
+  "off", "per", "via", "one", "two", "do", "does", "did", "has", "have", "had", "will", "would", "can",
+  "could", "should", "may", "might", "inside", "outside",
+]);
 
 function resolvePath(cited) {
   if (tracked.includes(cited)) return cited;
@@ -184,35 +210,84 @@ function resolvePath(cited) {
 export function anchorsOf(docLine) {
   const out = new Set();
   const add = (tok) => { if (tok && !reExtTail.test(tok)) out.add(tok); };
-  const spans = [...docLine.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
-  for (const raw of spans) {
+  for (const m of docLine.matchAll(/`([^`]+)`/g)) {
+    const raw = m[1];
     // a code FRAGMENT (a CSS declaration, a JS expression) is matched literally: the
     // doc claims this exact text lives at the cited line.
     const frag = raw.trim();
-    if (/[:;=]/.test(frag) && /\s/.test(frag) && !new RegExp(`\\.(?:${EXT}):\\d`).test(frag)) out.add(LIT + frag);
+    if (/[:;=]/.test(frag) && /\s/.test(frag) && !new RegExp(`\\.(?:${EXT}):\\d`).test(frag)) { out.add(LIT + frag); continue; }
     const s = raw.replace(new RegExp(`[A-Za-z0-9_@./-]+\\.(?:${EXT}):\\d+`, "g"), (mm) => " ".repeat(mm.length));
+    let sawShapedToken = false;
     for (const t of s.matchAll(/(?<![A-Za-z0-9_$.#])[.#]?[A-Za-z_$][A-Za-z0-9_$-]*/g)) {
       const tok = t[0];
       const bare = tok.replace(/^[.#]/, "");
       const isSelector = /^[.#]/.test(tok);
       const isCamel = /[A-Z]/.test(bare);
       const isCall = new RegExp(`${bare.replace(/[-]/g, "\\$&")}\\s*\\(`).test(s);
-      if (isSelector || isCamel || isCall) add(tok);
+      if (isSelector || isCamel || isCall) { add(tok); sawShapedToken = true; }
+    }
+    // A WHOLE, standalone backtick span (nothing else inside it) that is a plain lowercase word
+    // or hyphenated label, with no camelCase/call/selector signal of its own, still anchors when
+    // it directly hugs an actual citation on either side (`` `render`, `app.js:570` `` /
+    // `` test/engine/tonal.mjs:246-264 `okhsl-modes` `` / `` `aria-pressed` at
+    // `app.js:1466/1602` ``): the author's placing it immediately next to the citation IS the
+    // signal -- same logic as the bare `:N` hug below, generalized to the explicit-citation
+    // shape, to either direction, and past ONE short connector word (at/in/on) so ordinary
+    // English between the subject and its citation doesn't defeat the adjacency (#672 round 2).
+    // Never for a stopword (`` `the`, `app.js:570` `` still must not anchor -- the connector
+    // itself is never the candidate token, only what it's connecting), and never when the span
+    // carries other text (that's prose, not a lone symbol name).
+    if (!sawShapedToken && /^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(frag) && !STOPWORDS.has(frag.toLowerCase())) {
+      const before = docLine.slice(Math.max(0, m.index - 80), m.index);
+      const after = docLine.slice(m.index + m[0].length, m.index + m[0].length + 80).replace(/^[,;\s`]*(?:(?:at|in|on)\s+)?[,;\s`]*/, "");
+      const hugsAfter = reCiteStart.test(after);
+      const hugsBefore = reCiteEnd.test(before);
+      if (hugsAfter || hugsBefore) add(frag);
     }
   }
-  // `name :N` / `name(` outside backticks too -- the component table's own shape. This `:N`
-  // heuristic has no punctuation/call signal of its own to lean on, so a FULLY BARE name (no
-  // backtick anywhere between it and the number) must be camelCase/PascalCase/snake_case itself
-  // (`/[A-Z_]/`) -- otherwise ANY bare English word immediately ahead of a bare `:N` citation
-  // (the doc's own "aimed at :200" prose, not a symbol) anchored it, which is how a wrong-line
-  // citation could pass on a generic word instead of the cited symbol (#672).
-  // A name with a backtick in the gap before the number (`` `render` :570 ``) is exempted from
-  // that shape check: the backtick is the author's own signal that this is code, not prose, and
-  // requiring camelCase there too wrongly stales a correct, plain-lowercase, backticked function
-  // name (found via the live audit after the #672 fix landed -- `render` :570 in app-shell.md).
-  for (const m of docLine.matchAll(/(?<![A-Za-z0-9_$.])([A-Za-z_$][A-Za-z0-9_$]*)([\s`]*):\d{2,4}/g))
-    if (m[2].includes("`") || /[A-Z_]/.test(m[1])) add(m[1]);
-  for (const m of docLine.matchAll(/(?<![A-Za-z0-9_$.])([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g)) add(m[1]);
+  // `name :N` / `name(` outside backticks too -- the component table's own shape. Both
+  // heuristics have no punctuation/call signal of their own to lean on for a BARE occurrence, so
+  // a fully bare name (#672) must be camelCase/PascalCase/snake_case itself (`/[A-Z_]/`) --
+  // otherwise ANY bare English word ahead of a bare `:N` or `(` (the doc's own "aimed at :200"
+  // or "carve-out (" prose, not a symbol) anchored it, which is how a wrong-line citation could
+  // pass on a generic word instead of the cited symbol.
+  //
+  // The `:N` form ALSO accepts a name that is backtick-HUGGED on both sides
+  // (`` `render` :570 ``, no space between the name and either backtick): the backtick is the
+  // author's own "this is code" signal, so a plain-lowercase, non-call, backticked function name
+  // still anchors. A backtick merely somewhere in the gap is NOT hugging and does not exempt --
+  // "the memo is aimed at `:200`" backticks the CITATION, not the word "at", and must still read
+  // as no anchor (#672 round 2, F1.1: a naive `gap.includes(backtick)` check missed this and let
+  // a 230-line-off citation pass on the anchor `to`/`at`). Hugging alone still isn't enough,
+  // because a real symbol and an English word of the same shape are indistinguishable by shape or
+  // position alone (`` `render` :570 `` vs. `` `the` :200 ``) -- so hugging exempts the SHAPE
+  // check but never the STOPWORDS check above, closed-class and shape-independent.
+  for (const m of docLine.matchAll(/(?<![A-Za-z0-9_$.])([A-Za-z_$][A-Za-z0-9_$]*)([\s`]*):\d{2,4}/g)) {
+    const name = m[1];
+    if (STOPWORDS.has(name.toLowerCase())) continue;
+    const hugged = docLine[m.index - 1] === "`" && m[2].startsWith("`");
+    if (hugged || /[A-Z_]/.test(name)) add(name);
+  }
+  // The `(` form's backtick-hug equivalent is the span rule above (`` `render()` `` or a
+  // citation-adjacent whole span); a fully bare, unbacked `name(` must be shape-restricted, OR
+  // its own parenthetical must itself contain a real citation (`segmented (styles.css:869-870)`,
+  // the doc's own component-inventory convention) -- otherwise a parenthetical aside
+  // ("carve-out (the old path)", "not to (singleton) worry") contaminates the anchor set on the
+  // strength of an ordinary word sitting next to an open paren (#672 round 2, F1.2: live
+  // contaminants included "out", "to", "path", "grid", "inside", "only"). The citation-inside
+  // exemption is still stopword-gated: "only (test/…:246-264 …)" must not anchor on "only".
+  // The lookbehind/character-class also cover hyphens (not just letters/digits/dot), so a
+  // hyphenated compound (`carve-out (`) matches as ONE token instead of splitting at the hyphen
+  // into an orphaned `out` -- the whole compound is what actually appears verbatim at a cited
+  // line ("Add a carve-out below for...", "margin-bottom: 16px"), and the citation-inside
+  // exemption below is what lets a shapeless compound like this still anchor.
+  for (const m of docLine.matchAll(/(?<![A-Za-z0-9_$.-])([A-Za-z_$][A-Za-z0-9_$-]*)\s*\(/g)) {
+    const name = m[1];
+    if (STOPWORDS.has(name.toLowerCase())) continue;
+    const closeIdx = docLine.indexOf(")", m.index + m[0].length);
+    const inside = docLine.slice(m.index + m[0].length, closeIdx === -1 ? undefined : closeIdx);
+    if (/[A-Z_]/.test(name) || reCiteLike.test(inside)) add(name);
+  }
   return [...out];
 }
 
@@ -258,6 +333,67 @@ function homesOf(anchor) {
 }
 
 // ---------- run ----------
+// Judges every citation found on ONE doc line (`lines[i]`), against `resolveAndRead(cited)` ->
+// `[target, targetLines]` (or `[null, null]` for NOFILE). Split out of runAudit() (#672 round 2,
+// F3) so --selftest can drive this SAME verdict logic -- the real matcher and the real widen --
+// over an in-memory fixture, instead of re-deriving `anchorsOf().some(...)` by hand on literal
+// strings (which passed unchanged under a mutant that broke either one).
+export function judgeLine(lines, i, implied, resolveAndRead) {
+  const raw = lines[i], n = i + 1;
+  const cites = parseCitations(raw, implied);
+  if (!cites.length) return [];
+
+  // Anchors come from the WHOLE enclosing prose paragraph, not just the citing line: a
+  // citation's subject can sit in the previous (wrapped) sentence, e.g. app-shell.md:143 /
+  // :219, and a line with two citations can need a different adjacent anchor for each (#672
+  // round 2: component-inventory.md:44's `app-helpers.mjs:370` citation needs `switchControl`
+  // from the PREVIOUS line, even though the citing line itself already anchors its OTHER
+  // citation on `segmented`) -- so this always unions the paragraph rather than widening only
+  // when the citing line is completely empty. Safe per the same invariant that justified the
+  // original widen: a wider anchor set can only make a verdict MORE forgiving, never falsely
+  // stale, since STALE requires the absence of a match, not its presence.
+  const para = [];
+  for (let j = i; j >= 0 && lines[j].trim() !== ""; j--) para.push(lines[j]);
+  for (let j = i + 1; j < lines.length && lines[j].trim() !== ""; j++) para.push(lines[j]);
+  const anchors = [...new Set(para.flatMap(anchorsOf))];
+  const anchorScope = para.length > 1 ? "paragraph" : "line";
+  const rows = [];
+  for (const c of cites) {
+    // a bare `:N` in a doc with no declared implied file: nothing to resolve against, and
+    // guessing app.js would manufacture verdicts. UNDECIDABLE, a human must read it.
+    if (c.cited == null) { rows.push({ line: n, form: c.form, list: c.list, cited: null, target: null, anchors, anchorScope, verdict: "UNDECIDABLE", detail: "bare :N and this doc declares no implied file (DOCS_IMPLIED)" }); continue; }
+    const [target, tl] = resolveAndRead(c.cited);
+    const base = { line: n, form: c.form, list: c.list, cited: c.cited, target, anchors, anchorScope };
+    if (!target) { rows.push({ ...base, verdict: "NOFILE", detail: "cited path is not tracked" }); continue; }
+    const homes = () => Object.fromEntries(anchors.map((a) => [a, homesOf(a).slice(0, 4)]).filter(([, h]) => h.length));
+    const end = Math.min(c.end ?? c.n, tl.length);
+    const cited = [];
+    for (let k = c.n; k <= end; k++) cited.push(k);
+    if (c.n > tl.length) { rows.push({ ...base, verdict: "STALE-PAST-EOF", detail: `${target} is ${tl.length} lines`, homes: homes() }); continue; }
+    if (!anchors.length) { rows.push({ ...base, verdict: "UNDECIDABLE", detail: `${target}:${c.n} reads: ${tl[c.n - 1].trim() || "(blank)"}` }); continue; }
+    // ANY anchor in scope satisfies the citation (#672 correction): the identifier-shape
+    // restriction on `anchors` itself is what keeps a bare English word from qualifying, not
+    // narrowing to one "nearest" anchor -- narrowing broke real multi-symbol and wrapped-line
+    // citations (see the ANCHOR definition above).
+    const inRange = cited.find((k) => anchors.some((a) => hasToken(tl[k - 1], a)));
+    if (inRange) {
+      const matched = anchors.find((a) => hasToken(tl[inRange - 1], a));
+      rows.push({ ...base, verdict: "OK", detail: `matched \`${matched.replace(LIT, "")}\` at ${target}:${inRange}` }); continue;
+    }
+    const w = WINDOW(target), near = [];
+    for (let d = -w; d <= w + (end - c.n); d++) {
+      const j = c.n - 1 + d;
+      if (cited.includes(j + 1) || j < 0 || j >= tl.length) continue;
+      const h = anchors.find((a) => hasToken(tl[j], a));
+      if (h) near.push(`${target}:${j + 1} has \`${h.replace(LIT, "")}\` (${d > 0 ? "+" : ""}${d})`);
+    }
+    rows.push({ ...base, verdict: near.length ? "NEAR" : "STALE-WRONG-LINE",
+      detail: near.length ? near.slice(0, 3).join("; ") : `${target}:${c.n} reads: ${tl[c.n - 1].trim() || "(blank)"}`,
+      homes: near.length ? undefined : homes() });
+  }
+  return rows;
+}
+
 export function runAudit() {
 const VALUES = canvasViewValues();
 const report = { head: execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim(), canvasViewValues: VALUES, docs: {} };
@@ -285,55 +421,10 @@ for (const { path: doc, implied } of DOCS) {
         enums.push({ line: n, named, text: raw.trim() });
     }
 
-    const cites = parseCitations(raw, implied);
-    if (!cites.length) continue;
-
-    // Anchors come from the citing line. If it carries none (a citation whose subject
-    // sits in the previous sentence, e.g. app-shell.md:143 / :219), widen to the
-    // enclosing prose paragraph rather than reporting UNDECIDABLE: a wider anchor set
-    // can only make the verdict MORE forgiving, never falsely stale.
-    let anchors = anchorsOf(raw), anchorScope = "line";
-    if (!anchors.length) {
-      const para = [];
-      for (let j = i; j >= 0 && lines[j].trim() !== ""; j--) para.push(lines[j]);
-      for (let j = i + 1; j < lines.length && lines[j].trim() !== ""; j++) para.push(lines[j]);
-      anchors = [...new Set(para.flatMap(anchorsOf))];
-      if (anchors.length) anchorScope = "paragraph";
-    }
-    for (const c of cites) {
-      // a bare `:N` in a doc with no declared implied file: nothing to resolve against, and
-      // guessing app.js would manufacture verdicts. UNDECIDABLE, a human must read it.
-      if (c.cited == null) { rows.push({ line: n, form: c.form, list: c.list, cited: null, target: null, anchors, anchorScope, verdict: "UNDECIDABLE", detail: "bare :N and this doc declares no implied file (DOCS_IMPLIED)" }); continue; }
-      const target = resolvePath(c.cited);
-      const base = { line: n, form: c.form, list: c.list, cited: c.cited, target, anchors, anchorScope };
-      if (!target) { rows.push({ ...base, verdict: "NOFILE", detail: "cited path is not tracked" }); continue; }
-      const tl = read(target);
-      const homes = () => Object.fromEntries(anchors.map((a) => [a, homesOf(a).slice(0, 4)]).filter(([, h]) => h.length));
-      const end = Math.min(c.end ?? c.n, tl.length);
-      const cited = [];
-      for (let k = c.n; k <= end; k++) cited.push(k);
-      if (c.n > tl.length) { rows.push({ ...base, verdict: "STALE-PAST-EOF", detail: `${target} is ${tl.length} lines`, homes: homes() }); continue; }
-      if (!anchors.length) { rows.push({ ...base, verdict: "UNDECIDABLE", detail: `${target}:${c.n} reads: ${tl[c.n - 1].trim() || "(blank)"}` }); continue; }
-      // ANY anchor in scope satisfies the citation (#672 correction): the identifier-shape
-      // restriction on `anchors` itself is what keeps a bare English word from qualifying, not
-      // narrowing to one "nearest" anchor -- narrowing broke real multi-symbol and wrapped-line
-      // citations (see the ANCHOR definition above).
-      const inRange = cited.find((k) => anchors.some((a) => hasToken(tl[k - 1], a)));
-      if (inRange) {
-        const matched = anchors.find((a) => hasToken(tl[inRange - 1], a));
-        rows.push({ ...base, verdict: "OK", detail: `matched \`${matched.replace(LIT, "")}\` at ${target}:${inRange}` }); continue;
-      }
-      const w = WINDOW(target), near = [];
-      for (let d = -w; d <= w + (end - c.n); d++) {
-        const j = c.n - 1 + d;
-        if (cited.includes(j + 1) || j < 0 || j >= tl.length) continue;
-        const h = anchors.find((a) => hasToken(tl[j], a));
-        if (h) near.push(`${target}:${j + 1} has \`${h.replace(LIT, "")}\` (${d > 0 ? "+" : ""}${d})`);
-      }
-      rows.push({ ...base, verdict: near.length ? "NEAR" : "STALE-WRONG-LINE",
-        detail: near.length ? near.slice(0, 3).join("; ") : `${target}:${c.n} reads: ${tl[c.n - 1].trim() || "(blank)"}`,
-        homes: near.length ? undefined : homes() });
-    }
+    rows.push(...judgeLine(lines, i, implied, (cited) => {
+      const target = resolvePath(cited);
+      return [target, target ? read(target) : null];
+    }));
   }
   report.docs[doc] = { lines: lines.length, citations: rows, enumerations: enums };
 }
@@ -408,39 +499,46 @@ export function selftest() {
   // #672 follow-up (lead's ruling on the live audit): a first fix draft narrowed matching to the
   // ONE anchor nearest a citation's position (or the first anchor once the scope widened to the
   // paragraph). That broke real, correct citations -- caught by hand-reading the "68 STALE"
-  // false positives the narrowed binder produced against the live docs. Each case here is
-  // checked against the ANY-anchor matching runAudit() actually uses (anchorsOf() + hasToken()
-  // over the whole anchor set), never a single picked anchor.
+  // false positives the narrowed binder produced against the live docs. Cases (a)/(b) below
+  // drive the REAL gate function, `judgeLine()` (round 2, F3: the reviewer mutation-tested a
+  // hand-rolled `anchorsOf(...).some(...)` version of these and found it survived a
+  // `[anchors[0]]` matcher mutant, and case (b) hand-built its own paragraph anchor set instead
+  // of letting the widen produce it, so it survived the widen being deleted too). Both mutants
+  // are proven red against these two cases, then green again, as part of this unit's own
+  // verification (not re-run here -- selftest only needs to pass against the real code).
 
-  // (a) two symbols named before ONE shared citation, slash-separated, where the cited line
-  // holds the FIRST one and the NEARER backtick belongs to a different, correct citation
-  // elsewhere on the same line. A nearest-anchor binder picks `toggleRightPane` and misses.
+  // (a) two symbols named before ONE shared citation, slash-separated, where each citation's
+  // cited line holds a DIFFERENT one and the anchor nearest each citation's position is the
+  // WRONG one for it. A nearest-anchor binder picks `paneToggle`/`toggleLeftPane` respectively
+  // and misses both; `[anchors[0]]` (always the first-seen anchor) also misses the second.
   {
-    const docLine = "collapse: `toggleLeftPane`/`toggleRightPane` :1448 / `paneToggle` :1458";
-    const anchors = anchorsOf(docLine);
-    const citedLine1448 = "toggleLeftPane() { this.panesLeft = !this.panesLeft; this.render(); }";
-    const ok = anchors.some((a) => hasToken(citedLine1448, a));
-    console.log(`  ${ok ? "✓" : "✗"} a slash-separated symbol pair matches on the FAR (not nearest) anchor \`toggleLeftPane\` (anchors: ${JSON.stringify(anchors)})`);
+    const docLines = ["collapse: `toggleLeftPane`/`toggleRightPane` :11 / `paneToggle` :12"];
+    const fixtureSource = [
+      ...Array(10).fill("// filler"),
+      "toggleLeftPane() { this.panesLeft = !this.panesLeft; this.render(); }",
+      "toggleRightPane() { this.panesRight = !this.panesRight; this.render(); }",
+    ];
+    const rows = judgeLine(docLines, 0, "fixture-target.js", () => ["fixture-target.js", fixtureSource]);
+    const v1 = rows.find((r) => r.form === ":11")?.verdict, v2 = rows.find((r) => r.form === ":12")?.verdict;
+    const ok = v1 === "OK" && v2 === "OK";
+    console.log(`  ${ok ? "✓" : "✗"} judgeLine() matches each citation on its OWN correct anchor, not the nearest/first one (got :11=${v1}, :12=${v2})`);
     if (!ok) failed++;
   }
 
-  // (b) the cited symbol sits on the PREVIOUS doc line (a wrapped sentence); the citing line
-  // itself carries no anchor at all (only the citation form), so runAudit() widens to the
-  // enclosing paragraph -- and every anchor collected there, not just the first, must be tried.
+  // (b) the cited symbol sits on the PREVIOUS doc line (a wrapped sentence), with an earlier,
+  // wrong decoy anchor (`.toggle`) also in that paragraph; the citing line itself carries no
+  // anchor at all (only the citation form), so judgeLine() must widen to the enclosing paragraph
+  // AND try every anchor there, not just the first (`.toggle`) or none at all.
   {
-    // the earlier `.toggle`/`segmented()` anchors are the decoy: a "first anchor in scope"
-    // binder picks `.toggle` here and misses, even though `switchControl` (later in the same
-    // paragraph) is the real, correct symbol.
-    const prevLine = "(`.toggle`, `segmented()`) are built on real buttons with ARIA roles (`switchControl`,";
-    const citingLine = "`app-helpers.mjs:370`; `segmented`, `app.js:1587`), so they keep focus.";
-    const lineAnchors = anchorsOf(citingLine);
-    console.log(`  ${lineAnchors.length === 0 ? "✓" : "✗"} the citing line alone carries no anchor, forcing the paragraph widen (got ${JSON.stringify(lineAnchors)})`);
-    if (lineAnchors.length !== 0) failed++;
-    const paraAnchors = [...new Set([...lineAnchors, ...anchorsOf(prevLine)])];
-    const citedLine370 = "export const switchControl = ({ on, onToggle, label, ariaLabel }) =>";
-    const ok = paraAnchors.some((a) => hasToken(citedLine370, a));
-    console.log(`  ${ok ? "✓" : "✗"} the wrapped-sentence symbol \`switchControl\` still matches, not just the first paragraph anchor (anchors: ${JSON.stringify(paraAnchors)})`);
-    if (!ok) failed++;
+    const docLines = [
+      "(`.toggle`, `segmented()`) are built on real buttons with ARIA roles (`switchControl`,",
+      "`fixture-target.js:1`; `segmented`, `app.js:1587`), so they keep focus.",
+    ];
+    const fixtureSource = ["export const switchControl = ({ on, onToggle, label, ariaLabel }) =>"];
+    const rows = judgeLine(docLines, 1, null, (cited) => [cited, fixtureSource]);
+    const verdict = rows[0]?.verdict;
+    console.log(`  ${verdict === "OK" ? "✓" : "✗"} judgeLine() widens to the paragraph and matches \`switchControl\`, not just the first (decoy) anchor there (got ${verdict})`);
+    if (verdict !== "OK") failed++;
   }
 
   // (c) a comma-separated symbol list: same shape as (a), the other separator the ticket named.
