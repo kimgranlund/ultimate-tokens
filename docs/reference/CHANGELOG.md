@@ -1,5 +1,56 @@
 # CHANGELOG
 
+## 1.63 — 2026-09-18 — WCAG-safe on-colors are the default, with an achromatic fall-through (#662, closes #636)
+
+**`onColorMode` now defaults to `"contrast"`, and no ramp stop moved.** ADR-003 pinned every accent's
+on-color to the light tint (`050`/`200`) in both schemes as an explicit brand override, and the
+2026-06-25 amendment offered `"contrast"` only as an opt-in. So the shipped default kit still put
+labels on accents that miss WCAG AA: on the production path, perceptual dark measured Secondary 3.05,
+Info 4.07, Neutral 4.21, Primary 4.31 and Success 4.31, every data family between 3.03 and 3.79, and
+`peak` was far worse (Secondary 1.24, Success 1.58, Warning 2.52). Park UI's `solid.fg` on `solid.bg`
+resolves the same role pair, so the shipped Adia brand document missed in 18 of its 32 cells, worst
+Warning dark at 2.19 — the defect #636 reported.
+
+**The flip alone does not close it, and that is the whole reason this entry exists.**
+`applyOnColorContrast` chose the better of exactly two ramp ends, `050` and `950`. Where the accent
+sits mid-lightness neither end clears 4.5:1, and the ramp cannot be moved to fix it. Measured: the
+flip alone still left Secondary light at 4.40, Neutral dark 4.48, Primary dark 4.39, Success dark
+4.36, Data 6 light 4.36 and Data 7 light 4.46. So the policy gained an **achromatic fall-through** —
+a ramp end is kept while it clears AA, because it carries the palette's own hue, and otherwise the
+on-color takes the document's `white`/`black` constant with the better contrast. In all six cells
+that is black. `on{N}Variant` now follows the side the prime chose rather than running its own pick,
+so a fill can never wear a dark label beside a light tint.
+
+**Contrast, 16 families x 2 schemes, per tone mode.**
+
+| tone mode | cells clearing AA before | after | worst before | worst after |
+|---|---|---|---|---|
+| perceptual | 16 / 32 | 32 / 32 | 3.03 | 4.59 |
+| even | 23 / 32 | 32 / 32 | 3.22 | 4.51 |
+| peak | 13 / 32 | 32 / 32 | 1.13 | 4.51 |
+
+`peak` inverts from the worst of the three to the best. That was always a property of the on-color,
+not of peak's ramp, so `knowledge-02` now records peak's accessibility caveat as history rather than
+a live warning.
+
+**Nothing in the ramp moved.** Every one of the 576 primitive stop lines in the OKLCH export is
+identical before and after in all three tone modes, and `brandKit`'s `ramp` and `prime` blocks are
+byte-identical. Only `-on-*` role aliases changed. The 343 curated presets all clear too: 7,560
+accent/on-color cells, 5,220 of them under 4.5 before, none now.
+
+**Token impact.** Accent on-colors move in every format. An on-color may now resolve to the
+document-level `white`/`black` constant, which every format already emits once per document, so it
+aliases `--{pfx}-white` / `raw/constants/white` rather than a per-palette var and ADR-005's invariant
+holds without a new primitive. The role TABLE is untouched: `role-table.json` still maps `on{N}` to
+`050` and `on{N}Variant` to `200`, and the Figma binder mirror is unchanged — this lives entirely in
+the resolution layer. `"fixed"` remains as the opt-out, and a saved kit keeps whatever policy it
+stored, since `serialize` writes the key explicitly.
+
+`hpg-role-contrast` grows to three legs: the ruled 4.5 floor for all 16 families in both schemes and
+all three tone modes, the Park `solid.fg`/`solid.bg` pairing on the default and Adia documents, and
+the variant-side invariant. On the pre-change engine those red 44, 34 and 7 rows respectively.
+Ratified as ADR-025, amending ADR-003 and closing OD-001.
+
 ## 1.62 — 2026-09-18 — travel's curated hexes are rendered from their OKLCH again (#656)
 
 **`oklch` is the authored root of a curated swatch; `hex` is its render.** Six of the seven sibling

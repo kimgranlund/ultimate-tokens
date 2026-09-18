@@ -122,8 +122,11 @@ export const DOMAINS = {
   toneMode: { kind: "enum", values: ["even", "perceptual", "peak"], default: "perceptual" },
   // perceptual-path vibrancy: 0 = even lightness, 100 = cusp-anchored center (see tonal.js). Default 0.
   vibrancy: { kind: "number", min: 0, max: 100, default: 0 },
-  // on-color policy: "fixed" (050 both modes, ADR-003) | "contrast" (WCAG-aware flip, OD-001). Default fixed.
-  onColorMode: { kind: "enum", values: ["fixed", "contrast"], default: "fixed" },
+  // on-color policy: "contrast" (WCAG-aware flip + achromatic fall-through, OD-001) | "fixed" (050
+  // both modes, the pre-#662 default). Default contrast — this governs a STORED document that
+  // carries no onColorMode key, so it must track tonal.js's DEFAULT_CONTROLS or a saved kit would
+  // hydrate onto the other policy.
+  onColorMode: { kind: "enum", values: ["fixed", "contrast"], default: "contrast" },
   // prime-accent ref: "mode" (550/450 per scheme) | "single" (500/500, mode-agnostic). Default mode.
   accentRef: { kind: "enum", values: ["mode", "single"], default: "mode" },
   // even-mode light/dark chroma floor, % of gamut (see tonal.js). Default on, so absent → 40 not 0.

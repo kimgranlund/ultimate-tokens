@@ -37,7 +37,7 @@ import {
 import { deriveDataHues } from "../engine/data-hues.mjs";
 import { primeSwatches, PRIME_STEPS } from "../engine/prime.mjs";
 import { rampChromaOf as rampChromaOfPure, primeChromaOf as primeChromaOfPure } from "../engine/resolve.mjs";
-import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef } from "../engine/semantic.js";
+import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef, isAchromaticRef } from "../engine/semantic.js";
 import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
 import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
 
@@ -821,10 +821,19 @@ export function hexToOklch(hex) {
   return rgbToOklchArr(hexToRgb(String(hex)));
 }
 
+// rawTokenName — the raw token a role's ref points at. A stop or scrim ref is palette-prefixed
+// ("neutral-550"); an achromatic ref (#662) names the document-level constant instead, since
+// white/black are emitted once per document and belong to no palette.
+function rawTokenName(n, ref) {
+  return isAchromaticRef(ref) ? String(ref) : n + "-" + refKey(ref);
+}
+
 // resolveRoleHex — a role ref ("550" solid | "500-200" scrim) -> a display hex
 // for the given mode side, resolved against this palette's own ramp.
 function resolveRoleHex(ref, byStop) {
   const str = String(ref);
+  // achromatic refs (#662): the document-level white/black constants, not a stop on this ramp.
+  if (isAchromaticRef(str)) return str === "white" ? "#FFFFFF" : "#000000";
   const dash = str.indexOf("-");
   if (dash === -1) {
     const hit = byStop.get(Number(str));
@@ -933,8 +942,8 @@ export function projectView(doc) {
       name: n + r.suffix, // the semantic token name (e.g. "neutral", "neutral-dim")
       lightRef: r.light, // the raw stop/scrim ref this role points at, per mode
       darkRef: r.dark,
-      lightRaw: n + "-" + refKey(r.light), // the raw token name (e.g. "neutral-550")
-      darkRaw: n + "-" + refKey(r.dark),
+      lightRaw: rawTokenName(n, r.light), // the raw token name (e.g. "neutral-550"; "white"/"black" for #662's achromatic refs)
+      darkRaw: rawTokenName(n, r.dark),
       lightHex: resolveRoleHex(r.light, byStop),
       darkHex: resolveRoleHex(r.dark, byStop),
     }));

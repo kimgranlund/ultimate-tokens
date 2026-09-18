@@ -68,11 +68,14 @@ export const DEFAULT_CONTROLS = {
   // chromatic. The fix for hues whose vivid expression lives off-center (e.g. yellow, cusp at high L*):
   // crank it and the mid stops read vibrant for ANY hue. ("peak" mode = vibrancy 100.)
   vibrancy: 0,
-  // On-color policy (resolution layer, not the ramp). "fixed" (default, ADR-003): on{N} pinned to
-  // the light tint (050/200) in both modes — uniform but can fail contrast on light accents.
-  // "contrast" (OD-001 opt-in): on{N}/on{N}Variant flip to the end with the better WCAG contrast vs
-  // the accent fill (550/450) per mode. Applied in projectView + derivePalette via applyOnColorContrast.
-  onColorMode: "fixed",
+  // On-color policy (resolution layer, not the ramp). "contrast" (DEFAULT since #662, ADR-003
+  // amendment): on{N}/on{N}Variant take the end with the better WCAG contrast vs the accent fill
+  // (550/450) per mode, falling through to the white/black constants when neither ramp end clears
+  // AA 4.5:1 — which is what puts every family over the floor in both schemes without moving a stop.
+  // "fixed" (the opt-out, the pre-#662 default): on{N} pinned to the light tint (050/200) in both
+  // modes — uniform, but fails contrast on light accents. Applied in projectView + derivePalette
+  // via applyOnColorContrast.
+  onColorMode: "contrast",
   // Prime-accent ref (resolution layer, not the ramp). "mode" (default): the prime accent role resolves
   // to 550 (light) / 450 (dark) — mode-specific, better contrast per scheme. "single": both modes map to
   // 500 — one mode-agnostic accent token. Applied via applyAccentRef alongside applyOnColorContrast.

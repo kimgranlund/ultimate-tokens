@@ -12,7 +12,23 @@ import * as S from "../../src/engine/semantic.js";
 // applyAccentRef -> applyOnColorContrast -> role overrides, then brandKit's kit.roles). The
 // role-contrast gate below reads that resolved kit and model's own contrastRatio, exactly as the
 // MCP `contrastLint` does, so the gate and the lint can never disagree about which two colors pair.
-import { defaultDocument, brandKit, contrastRatio, slug } from "../../src/ui/model.mjs";
+import { defaultDocument, brandKit, contrastRatio, slug, stateOf, projectView } from "../../src/ui/model.mjs";
+// the Park leg (#636) measures the SECOND derivation of the same pairing: exports.js's derivedAll,
+// which is the object radixColorGroup reads, on the default document and on the committed Adia brand
+// document (PRESETS is the generated mirror of docs/reference/colors/categories/brands.json that
+// scripts/gen-adia-derived-exports.mjs reads; `hydrate` is the same loader it uses).
+import { derivedAll } from "../../src/engine/exports.js";
+import { PRESETS } from "../../src/ui/categories/brands.js";
+import { hydrate } from "../../src/ui/persist.js";
+// The Adia preset's name is READ OUT of the generator's source rather than imported: importing
+// gen-adia-derived-exports.mjs would run it (it writes its artifacts at module scope), and a
+// hand-copied literal here would silently stop pointing at the shipped document the day the
+// generator's pin moves. Regex, so the two can never disagree without this gate saying so.
+const ADIA_PRESET_NAME = (() => {
+  const src = readFileSync(new URL("../../scripts/gen-adia-derived-exports.mjs", import.meta.url), "utf8");
+  const m = src.match(/export const PRESET_NAME = "([^"]+)"/);
+  return m ? m[1] : null;
+})();
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const CANON = RT.roleTable;                         // the canonical primary-palette table (answer key)
@@ -132,65 +148,97 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   if (ROLES.some((r) => /identity/i.test(r.key))) FAIL("identity-stops", "identityStops must not add a role");
 }
 
-// ── hpg-role-contrast (#647): every semantic family's ACCENT must stay readable against its own
-//    on-color, in both ramp distributions the ruling names. #647 made the perceptual ramp honour a
-//    palette's skew and lift, which exposed that Warning's shipped skew 40 / lift 15 put its accent at
-//    2.18:1 against its pinned light on-color — and that "even" mode, which had honoured those controls
-//    all along, had been shipping 1.90:1 unnoticed, because nothing gated this pairing outside the MCP
-//    lint's advisory 3.0 floor. The owner ruled Warning must clear WCAG AA (4.5:1) in BOTH modes;
-//    `lift` moved 15 -> -36 (src/ui/model.mjs + role-table.json `defaults`, which must agree).
+// ── hpg-role-contrast (#647, widened at #662): every family's ACCENT must stay readable against its
+//    own on-color, in both schemes. #647 made the perceptual ramp honour a palette's skew and lift,
+//    which exposed that Warning's shipped skew 40 / lift 15 put its accent at 2.18:1 against its
+//    pinned light on-color, and that "even" mode had been shipping 1.90:1 unnoticed. That ruling was
+//    Warning-only, so the other families stayed pinned wherever they sat — several of them under AA.
+//
+//    #662 closed that gap at the POLICY layer rather than the ramp: `onColorMode` now defaults to
+//    "contrast", and when neither ramp end clears 4.5:1 against the accent fill the on-color falls
+//    through to the white/black constant (semantic.js's applyOnColorContrast). No stop moved. So the
+//    ruled floor is now AA 4.5:1 for ALL SIXTEEN families (8 semantic + 8 data), both schemes, and it
+//    is met in every tone mode — including "peak", which before #662 was the worst of the three
+//    (Secondary 1.24, Success 1.58, Info 2.44, Warning 2.52 in the dark scheme) and is now the best.
 //
 //    The pair is read off brandKit's resolved kit.roles — the same object, via the same resolution
 //    ladder, that mcp/describe-mcp-core.mjs's contrastLint reads — so this gate cannot drift from the
-//    lint's notion of "the accent" (550 light / 450 dark, per accentRef "mode") or "the on-color"
-//    (pinned to the light tint under the "fixed" policy, ADR-003).
+//    lint's notion of "the accent" (550 light / 450 dark, per accentRef "mode") or "the on-color".
 //
-//    The floors are a RATCHET, not an aspiration: each is that family's own post-retune measured ratio
-//    floored to one decimal, never below 3.0 (the lint's floor) and never below 4.5 for Warning (the
-//    ruled floor). So an intentional default change has to move a number here deliberately, and an
-//    accidental one reds. #657 moved exactly one of these numbers down: giving the OKHSL hue solver
-//    its best iterate re-landed perceptual/Info's light accent one 8-bit step over (#046C9A ->
-//    #046C9B), 5.806:1 -> 5.796:1, so its light floor ratchets 5.8 -> 5.7. That pairing stays well
-//    clear of AA (4.5); the ratchet is what makes the 0.01 visible at all. Two pairings moved the
-//    other way in the same change and keep their floors: Primary 6.064 -> 6.081 light and 4.312 ->
-//    4.314 dark, Warning 7.596 -> 7.669 light. The other 29 of the 32 pairs are byte-identical, and
-//    all 16 "even" readings are untouched, since that path solves through solveCam16Hue.
-//    Seven of the eight were NOT retuned — #647's ruling is Warning-only — so
-//    several are pinned below AA at their shipped values. That is a live finding for the owner, recorded
-//    here rather than silently normalised: in perceptual, Neutral 4.21, Primary 4.31, Info 4.07 and
-//    Success 4.31 sit just under 4.5 in the DARK scheme, and Secondary is lowest at 3.05 (3.24 in even,
-//    its only sub-AA reading there). "peak" is deliberately NOT gated — the ruling names perceptual and
-//    even — and it is materially worse: post-retune Warning measures 4.82 light / 2.52 dark there, so
-//    peak still misses both 4.5 AND the lint's 3.0, as do Secondary (1.24), Success (1.58) and Info
-//    (2.44), all of which already did before #647. ──────────────────────────────────────────────────
+//    The per-family floors stay a RATCHET on top of the ruled floor: each is that family's own
+//    measured ratio floored to one decimal, never below AA. An intentional default change has to move
+//    a number here deliberately; an accidental one reds. Every entry is now >= 4.5, so nothing in this
+//    table records a shipped miss any more. The table was re-measured whole on top of #657, whose
+//    OKHSL hue solver returns its best iterate and shifts a few perceptual accents by one 8-bit step;
+//    that change is folded into these numbers rather than tracked separately.
+//
+//    The PARK leg (#636) checks the same pairing through the OTHER derivation — exports.js's
+//    derivedAll, which is what radixColorGroup reads for Park's `solid.bg` (step 9 = the bare accent
+//    role) and `solid.fg` (`on-accent` = the `-on-{n}` role) — on the default document AND on the
+//    committed Adia brand document, so a policy that passed via model.mjs cannot fail via the
+//    exporters. ────────────────────────────────────────────────────────────────────────────────────
 {
   const hexToRgb = (hex) => [0, 2, 4].map((i) => parseInt(String(hex).slice(1 + i, 3 + i), 16));
-  const AA = 4.5;                                   // the ruled floor for Warning, both modes
-  // [family, light floor, dark floor] — max(lint floor, own measured ratio floored to 1 decimal)
+  const AA = 4.5;                                   // the ruled floor (#662): every family, both schemes
+  // [family, light floor, dark floor] — max(AA, own measured ratio floored to 1 decimal)
   const FLOORS = {
     perceptual: [
-      ["Neutral", 5.8, 4.2],                        // measured 5.89 / 4.21
-      ["Primary", 6.0, 4.3],                        // measured 6.06 / 4.31
-      ["Secondary", 4.4, 3.0],                      // measured 4.40 / 3.05  <- lowest shipped pairing
-      ["Tertiary", 6.7, 4.8],                       // measured 6.80 / 4.86
-      ["Info", 5.7, 4.0],                           // measured 5.80 / 4.07 (#657, was 5.81 / 4.08)
-      ["Success", 6.1, 4.3],                        // measured 6.18 / 4.31
-      ["Warning", 7.5, 4.6],                        // measured 7.60 / 4.65  <- the retuned family
-      ["Danger", 7.1, 5.1],                         // measured 7.17 / 5.13
+      ["Neutral", 5.8, 4.9],   // measured 5.89 / 4.98
+      ["Primary", 6.0, 4.8],   // measured 6.08 / 4.87
+      ["Secondary", 4.7, 6.1],   // measured 4.77 / 6.17
+      ["Tertiary", 6.7, 4.8],   // measured 6.80 / 4.86
+      ["Info", 5.7, 4.6],   // measured 5.80 / 4.64
+      ["Success", 6.1, 4.8],   // measured 6.18 / 4.87
+      ["Warning", 7.6, 4.6],   // measured 7.67 / 4.65
+      ["Danger", 7.1, 5.1],   // measured 7.17 / 5.13
+      ["Data 1", 5.0, 5.5],   // measured 5.05 / 5.58
+      ["Data 2", 5.4, 4.9],   // measured 5.40 / 4.99
+      ["Data 3", 5.2, 5.1],   // measured 5.21 / 5.17
+      ["Data 4", 4.8, 5.5],   // measured 4.84 / 5.55
+      ["Data 5", 4.5, 5.8],   // measured 4.59 / 5.90
+      ["Data 6", 4.8, 6.2],   // measured 4.82 / 6.21
+      ["Data 7", 4.7, 6.0],   // measured 4.70 / 6.07
+      ["Data 8", 4.6, 5.8],   // measured 4.61 / 5.87
     ],
     even: [
-      ["Neutral", 7.0, 4.5],                        // measured 7.10 / 4.53
-      ["Primary", 7.1, 4.5],                        // measured 7.16 / 4.51
-      ["Secondary", 5.2, 3.2],                      // measured 5.23 / 3.24
-      ["Tertiary", 7.1, 4.5],                       // measured 7.10 / 4.51
-      ["Info", 7.1, 4.5],                           // measured 7.12 / 4.52
-      ["Success", 8.0, 5.1],                        // measured 8.05 / 5.19
-      ["Warning", 9.4, 5.0],                        // measured 9.46 / 5.02  <- the retuned family
-      ["Danger", 8.0, 5.1],                         // measured 8.05 / 5.15
+      ["Neutral", 7.0, 4.5],   // measured 7.10 / 4.53
+      ["Primary", 7.1, 4.5],   // measured 7.16 / 4.51
+      ["Secondary", 5.2, 5.8],   // measured 5.23 / 5.84
+      ["Tertiary", 7.1, 4.5],   // measured 7.10 / 4.51
+      ["Info", 7.1, 4.5],   // measured 7.12 / 4.52
+      ["Success", 8.0, 5.1],   // measured 8.05 / 5.19
+      ["Warning", 9.4, 5.0],   // measured 9.46 / 5.02
+      ["Danger", 8.0, 5.1],   // measured 8.05 / 5.15
+      ["Data 1", 5.2, 5.8],   // measured 5.23 / 5.84
+      ["Data 2", 5.2, 5.8],   // measured 5.24 / 5.88
+      ["Data 3", 5.2, 5.8],   // measured 5.24 / 5.86
+      ["Data 4", 5.2, 5.8],   // measured 5.26 / 5.86
+      ["Data 5", 5.2, 5.8],   // measured 5.29 / 5.85
+      ["Data 6", 5.2, 5.8],   // measured 5.26 / 5.85
+      ["Data 7", 5.2, 5.8],   // measured 5.24 / 5.84
+      ["Data 8", 5.2, 5.8],   // measured 5.24 / 5.88
+    ],
+    peak: [
+      ["Neutral", 6.2, 4.5],   // measured 6.26 / 4.51
+      ["Primary", 6.4, 4.6],   // measured 6.44 / 4.63
+      ["Secondary", 11.5, 15.1],   // measured 11.55 / 15.20
+      ["Tertiary", 7.5, 5.5],   // measured 7.57 / 5.58
+      ["Info", 5.0, 7.7],   // measured 5.07 / 7.72
+      ["Success", 7.2, 11.8],   // measured 7.21 / 11.87
+      ["Warning", 4.8, 7.4],   // measured 4.82 / 7.49
+      ["Danger", 7.1, 5.1],   // measured 7.17 / 5.13
+      ["Data 1", 10.0, 6.7],   // measured 10.00 / 6.78
+      ["Data 2", 4.7, 5.5],   // measured 4.80 / 5.59
+      ["Data 3", 5.2, 5.1],   // measured 5.25 / 5.16
+      ["Data 4", 6.3, 8.7],   // measured 6.35 / 8.76
+      ["Data 5", 12.8, 16.7],   // measured 12.82 / 16.79
+      ["Data 6", 11.6, 15.0],   // measured 11.64 / 15.10
+      ["Data 7", 11.8, 15.5],   // measured 11.88 / 15.55
+      ["Data 8", 6.3, 8.8],   // measured 6.38 / 8.84
     ],
   };
   let checked = 0;
-  for (const mode of ["perceptual", "even"]) {
+  for (const mode of ["perceptual", "even", "peak"]) {
     const doc = defaultDocument();
     doc.toneMode = mode;
     const kit = brandKit(doc, { color: true });
@@ -203,14 +251,80 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       const light = contrastRatio(hexToRgb(accent.light), hexToRgb(on.light));
       const dark = contrastRatio(hexToRgb(accent.dark), hexToRgb(on.dark));
       checked += 2;
+      // the RULED floor first, stated separately from the ratchet so the ruling is legible in the text
+      if (light < AA) FAIL("role-contrast", `${mode} ${family} LIGHT: accent ${accent.light} on ${on.light} = ${light.toFixed(2)}:1, under the ruled WCAG AA floor ${AA}:1 (#662) — fix the on-color policy, do not lower this gate`);
+      if (dark < AA) FAIL("role-contrast", `${mode} ${family} DARK: accent ${accent.dark} on ${on.dark} = ${dark.toFixed(2)}:1, under the ruled WCAG AA floor ${AA}:1 (#662) — fix the on-color policy, do not lower this gate`);
       if (light < lightFloor) FAIL("role-contrast", `${mode} ${family} LIGHT: accent ${accent.light} on ${on.light} = ${light.toFixed(2)}:1, below its pinned floor ${lightFloor}:1`);
       if (dark < darkFloor) FAIL("role-contrast", `${mode} ${family} DARK: accent ${accent.dark} on ${on.dark} = ${dark.toFixed(2)}:1, below its pinned floor ${darkFloor}:1`);
-      // the RULED floor, stated separately from the ratchet so the ruling is legible in the failure text
-      if (family === "Warning" && Math.min(light, dark) < AA)
-        FAIL("role-contrast", `${mode} Warning: worst on-color contrast ${Math.min(light, dark).toFixed(2)}:1 misses the ruled WCAG AA floor ${AA}:1 (#647) — retune its skew/lift, do not lower this gate`);
     }
   }
-  if (checked !== 32) FAIL("role-contrast", `compared ${checked} accent/on-color pairs, want 32 (8 families x 2 modes x 2 schemes)`);
+  if (checked !== 96) FAIL("role-contrast", `compared ${checked} accent/on-color pairs, want 96 (16 families x 3 tone modes x 2 schemes)`);
+
+  // ── the PARK leg (#636): the SAME pairing through exports.js's own derivation. Park's `solid.fg`
+  //    sits on `solid.bg`; radixColorGroup builds step 9 from the bare accent role and `on-accent`
+  //    from the `-on-{n}` role, both off derivedAll's resolved `r.light.rgb` / `r.dark.rgb`. Measured
+  //    on the default document and on the committed Adia brand document (the generated brands.js
+  //    mirror gen-adia-derived-exports.mjs reads), so neither the app's default nor the one shipped
+  //    real-world kit can regress. rgb triples straight from the engine — no hex round-trip.
+  let parkChecked = 0;
+  {
+    const adia = PRESETS.find((p) => p.name === ADIA_PRESET_NAME);
+    if (!adia) FAIL("role-contrast", `the Adia brand preset "${ADIA_PRESET_NAME}" is missing from src/ui/categories/brands.js — the Park leg has nothing to measure`);
+    const docs = [["default document", defaultDocument()], ...(adia ? [["Adia brand document", hydrate(adia)]] : [])];
+    for (const [label, doc] of docs) {
+      for (const p of derivedAll(stateOf(doc))) {
+        const bg = p.roles.find((r) => r.suffix === "");              // Park solid.bg  (radix step 9)
+        const fg = p.roles.find((r) => r.suffix === `-on-${p.n}`);    // Park solid.fg  (on-accent)
+        if (!bg || !fg) { FAIL("role-contrast", `${label} ${p.name}: no accent/on-accent role pair in derivedAll — radixColorGroup would throw`); continue; }
+        for (const side of ["light", "dark"]) {
+          const ratio = contrastRatio(bg[side].rgb, fg[side].rgb);
+          parkChecked++;
+          if (ratio < AA) FAIL("role-contrast", `${label} ${p.name} ${side.toUpperCase()} (Park solid.fg on solid.bg): ${ratio.toFixed(2)}:1, under the ruled WCAG AA floor ${AA}:1 (#636/#662)`);
+        }
+      }
+    }
+    if (parkChecked !== 64) FAIL("role-contrast", `Park leg compared ${parkChecked} solid.fg/solid.bg pairs, want 64 (2 documents x 16 palettes x 2 schemes)`);
+  }
+
+  // ── the VARIANT-SIDE leg (#662): `on{N}Variant` must sit on the SAME SIDE as `on{N}`. The policy's
+  //    own contract calls the variant "a softer tint of the same end", but it used to run its OWN
+  //    independent contrast pick against the same fill, which is not the same thing — 200 and 800 are
+  //    much closer to the fill than 050 and 950, so the two picks can disagree, and then a fill wears
+  //    a dark label with a light tint beside it. Measured on bda9584, the pre-#662 engine under the
+  //    contrast policy: 7 of these 96 cells straddled (perceptual Tertiary dark; even Neutral, Primary,
+  //    Tertiary and Info dark; peak Neutral and Primary dark — every one of them prime 050 against
+  //    variant 800). The achromatic fall-through would have added more in the other direction, with the
+  //    prime on black and the variant still on the 200 tint. applyOnColorContrast now derives the
+  //    variant FROM the prime's chosen end, so this is an invariant rather than a coincidence. It is
+  //    read off the REFS (projectView's lightRef/darkRef), not the resolved colors, because the claim
+  //    is about which end the policy chose, not about how that end happened to render. ───────────────
+  {
+    const LIGHT_END = new Set(["050", "200", "white"]);
+    const DARK_END = new Set(["950", "800", "black"]);
+    const sideOf = (ref) => (LIGHT_END.has(String(ref)) ? "light" : DARK_END.has(String(ref)) ? "dark" : null);
+    let sideChecked = 0;
+    for (const mode of ["perceptual", "even", "peak"]) {
+      const doc = defaultDocument();
+      doc.toneMode = mode;
+      doc.onColorMode = "contrast";                 // named, not inherited: this leg tests the POLICY
+      for (const p of projectView(doc).palettes) {
+        const n = slug(p.name);
+        const prime = p.roles.find((r) => r.suffix === `-on-${n}`);
+        const variant = p.roles.find((r) => r.suffix === `-on-${n}-variant`);
+        if (!prime || !variant) { FAIL("role-contrast", `${mode} ${p.name}: no on/on-variant role pair in projectView — the role suffixes changed shape`); continue; }
+        for (const [scheme, key] of [["LIGHT", "lightRef"], ["DARK", "darkRef"]]) {
+          sideChecked++;
+          const a = sideOf(prime[key]);
+          const b = sideOf(variant[key]);
+          if (!a) { FAIL("role-contrast", `${mode} ${p.name} ${scheme}: on-color ref ${prime[key]} is neither a known light nor dark end — a new end was added without teaching this gate`); continue; }
+          if (!b) { FAIL("role-contrast", `${mode} ${p.name} ${scheme}: on-color VARIANT ref ${variant[key]} is neither a known light nor dark end — a new end was added without teaching this gate`); continue; }
+          if (a !== b) FAIL("role-contrast", `${mode} ${p.name} ${scheme}: on-color is ${prime[key]} (${a} end) but its variant is ${variant[key]} (${b} end) — the variant must follow the side the prime chose (#662)`);
+        }
+      }
+    }
+    if (sideChecked !== 96) FAIL("role-contrast", `variant-side leg compared ${sideChecked} on/on-variant pairs, want 96 (16 families x 3 tone modes x 2 schemes)`);
+  }
+
   // role-table.json and model.mjs's inlined DEFAULT_PALETTES are two copies of the same defaults, and
   // the retune had to land in BOTH. Assert it directly rather than relying on a downstream ramp-distance
   // gate to notice: a skew or lift that differs between them is a silent split-brain default.

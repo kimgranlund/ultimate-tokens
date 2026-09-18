@@ -408,11 +408,14 @@ Consequences that shape the design:
 ## Examples
 
 All values engine-generated from `defaultDocument()` resolved through `resolvedPalettes`
-(colour values below re-generated twice: 2026-09-17 at #647, which made the perceptual ramp honour a
-palette's `skew` and `lift` — Primary and Neutral both carry skew -20, so every literal derived from
-their ramp moved; and 2026-09-18 at #657, which gave that ramp's OKHSL hue solver its best iterate
-instead of an unread last one, moving Primary's accent by one 8-bit step. Type, geometry and park
-values are untouched by both.)
+(colour values below re-generated three times: 2026-09-17 at #647, which made the perceptual ramp
+honour a palette's `skew` and `lift` — Primary and Neutral both carry skew -20, so every literal
+derived from their ramp moved; 2026-09-18 at #657, which gave that ramp's OKHSL hue solver its best
+iterate instead of an unread last one, moving Primary's accent by one 8-bit step; and 2026-09-18 at
+#662, which made `onColorMode: "contrast"` the default and added the achromatic fall-through, moving
+`primary["on-primary"]._dark` to the black constant. #662 moved no ramp stop, so every raw literal
+and every semantic literal that is not an accent on-color is byte-for-byte the #657 capture. Type,
+geometry and park values are untouched by all three.)
 (the drawer's path; calling `derivedAll` on the raw document skips the group resolver and renders
 Neutral at full chroma, the emitters must be fed the resolved state, as the drawer already does).
 
@@ -426,7 +429,7 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
 - **EX-2 (NORMATIVE, panda semantic).** `semanticTokens.colors.primary.DEFAULT.value` deep-equals
   `{ base: "oklch(0.504 0.1867 258.99)", _dark: "oklch(0.586 0.2114 258.97)" }`;
   `primary.hover` `{ base: "oklch(0.4253 0.1357 259.04)", _dark: "oklch(0.672 0.1504 258.98)" }`;
-  `primary["on-primary"]` `{ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }`;
+  `primary["on-primary"]` `{ base: "oklch(1 0 0)", _dark: "oklch(0 0 0)" }`;
   `neutral["on-surface"]` `{ base: "oklch(0.1774 0.0044 264.46)", _dark: "oklch(1 0 0)" }`;
   `neutral.scrim` (the role) `{ base: "oklch(0.5443 0.059 267.96 / 30%)", _dark: same }` next to
   the raw group `neutral.scrim["300"]`. 53 keys under `semanticTokens.colors.primary`, 16 palette

@@ -29,7 +29,7 @@
 // theme light/dark/auto.
 
 import { paletteStops, EXPORT_STOPS, DEFAULT_CONTROLS } from "./tonal.js";
-import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, DEFAULT_THEMES } from "./semantic.js";
+import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, isAchromaticRef, DEFAULT_THEMES } from "./semantic.js";
 import { COLLECTIONS } from "./collections.js";
 import { primeSwatches, PRIME_STEPS } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
@@ -307,6 +307,8 @@ function derivePalette(palette, controls, overrides) {
   // frac === 1 for a solid; for a scrim "{base}-{step}" it's step/1000 (rgb is the base's solid).
   const resolveRef = (ref) => {
     const s = String(ref);
+    // achromatic refs (#662): the document-level white/black constants, not a stop on this ramp.
+    if (isAchromaticRef(s)) return { rgb: s === "white" ? WHITE_RGB : BLACK_RGB, frac: 1 };
     const dash = s.indexOf("-");
     if (dash === -1) {
       return { rgb: byStop.get(Number(s)), frac: 1 };
@@ -460,8 +462,11 @@ function cssFrom(palettes, oklch, pfx = "c") {
     // SEMANTIC --{pfx}-{n}-{role} vars: light-dark(var(light raw), var(dark raw)) (ADR-005)
     lines.push(`  /* ${p.name} — semantic roles */`);
     for (const r of p.roles) {
-      const lv = `var(--${pfx}-${p.n}-${refSlug(r.lightRef)})`;
-      const dv = `var(--${pfx}-${p.n}-${refSlug(r.darkRef)})`;
+      // an achromatic ref (#662) aliases the DOCUMENT-level constant (--{pfx}-white/--{pfx}-black,
+      // emitted once in :root above), never a per-palette var that does not exist.
+      const rawVar = (ref) => (isAchromaticRef(ref) ? `var(--${pfx}-${ref})` : `var(--${pfx}-${p.n}-${refSlug(ref)})`);
+      const lv = rawVar(r.lightRef);
+      const dv = rawVar(r.darkRef);
       lines.push(`  --${pfx}-${p.n}${r.suffix}: light-dark(${lv}, ${dv});`);
     }
     // KEY COLORS — retained brand values by expression (dominant/supportive), exact in OKLCH
@@ -633,8 +638,9 @@ export function exportDTCG(state, opts) {
       for (const r of p.roles) {
         const end = side === "light" ? r.light : r.dark;
         const ref = side === "light" ? r.lightRef : r.darkRef;
+        // achromatic refs (#662) target the raw tree's own constants group, not this palette.
         const alias = rawColl
-          ? { targetVariableName: `${p.n}/${refPath(ref)}`, targetVariableSetName: rawColl }
+          ? { targetVariableName: isAchromaticRef(ref) ? `constants/${ref}` : `${p.n}/${refPath(ref)}`, targetVariableSetName: rawColl }
           : null;
         grp[roleLeaf(p.n, r)] = colorLeaf(end.rgb, end.frac, alias);
       }
@@ -694,12 +700,15 @@ export function exportUI3(state) {
       primVars[`raw/${p.n}/key/${kc.role}`] = { type: "COLOR", values: { Base: hexOf(kc.rgb) } };
     }
     // semantic: "{n}/{kebab leaf}" -> in-file aliases to the raw key paths per mode (ADR-016).
+    // An achromatic ref (#662) points at the raw tree's own constants group — "raw/constants/white",
+    // written below alongside dialog-backdrop — rather than a per-palette path that does not exist.
+    const rawPath = (n, ref) => (isAchromaticRef(ref) ? `{raw/constants/${ref}}` : `{raw/${n}/${refPath(ref)}}`);
     for (const r of p.roles) {
       semVars[`${p.n}/${roleLeaf(p.n, r)}`] = {
         type: "COLOR",
         values: {
-          Light: `{raw/${p.n}/${refPath(r.lightRef)}}`,
-          Dark: `{raw/${p.n}/${refPath(r.darkRef)}}`,
+          Light: rawPath(p.n, r.lightRef),
+          Dark: rawPath(p.n, r.darkRef),
         },
       };
     }

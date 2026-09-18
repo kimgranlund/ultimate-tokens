@@ -19,17 +19,20 @@ import { swatchBoardImageBlock } from "./png-swatch-board.mjs";
 export const PROTOCOL_VERSION = "2025-06-18";
 export const SERVER = { name: "ultimate-tokens-describe-palette", version: "0.1.0" };
 
-// CONTRAST_MIN (#373, spec §6.3) — the prime-vs-on-prime contrast floor. 3.0, not the stricter 4.5
-// (WCAG AA normal text): the app's own "fixed" onColorMode (ADR-003) targets large-text/UI-component
-// contrast (WCAG's 3:1 floor for bold button-scale text), not body text — the DEFAULT document's own
-// dark-mode ratios cluster at 3.0-3.4 by design. A 4.5 floor would fire on every unmodified default kit,
-// defeating the "actionable signal" goal (spec §6.3) with noise instead of a real problem. A fine sweep of
-// the brief's exposed per-family parameters (hue/chroma/skew/lift) found a worst reachable case of
-// ~3.028 (hue 150, chroma 100, skew -100, lift -40) — THIN headroom, not the wide margin it might sound
-// like: this floor is a genuine safety net for the on-color system's own edge, one already close to being
-// exercised by legal input, not a check with room to spare. `test/mcp/describe-mcp-core.mjs` pins that
-// exact worst-known config as a regression guard — a future engine retune that pushes it under 3.0 must
-// fail a test, not surface silently.
+// CONTRAST_MIN (#373, spec §6.3) — the prime-vs-on-prime contrast floor, 3.0.
+// HISTORY (#662). It was set at 3.0 rather than WCAG AA 4.5 because the app's then-default "fixed"
+// onColorMode (ADR-003) targeted large-text/UI-component contrast, and the DEFAULT document's own
+// dark-mode ratios clustered at 3.0-3.4 by design — a 4.5 floor would have fired on every unmodified
+// kit, replacing actionable signal with noise. A fine sweep of the brief's exposed per-family
+// parameters (hue/chroma/skew/lift) found a worst reachable case of ~3.028 (hue 150, chroma 100,
+// skew -100, lift -40): thin headroom, a genuine safety net.
+// That headroom is now WIDE. ADR-025 made the contrast policy the default and added the achromatic
+// fall-through, so the same worst-known config measures ~4.58 and the app's own default document
+// clears 4.5 in every family and both schemes. The floor is kept at 3.0 deliberately: this lint reads
+// kits an AGENT composed, which may set "fixed" or override an on-color, so 3.0 remains the level at
+// which a kit is genuinely unreadable rather than merely below AA. `test/mcp/describe-mcp-core.mjs`
+// still pins that config as a regression guard — it is no longer tight, and a retune that pushes it
+// back under 3.0 must fail a test, not surface silently.
 export const CONTRAST_MIN = 3.0;
 // CHROMA_BUDGET_AVG_THRESHOLD (#373) — flags a kit whose 8 families average NEAR peak chroma (the
 // rubric's "vivid" tier, #370, starts at ~80). The app's own DEFAULT document already averages ~63
