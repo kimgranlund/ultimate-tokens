@@ -112,17 +112,22 @@ for (const p of DEFAULTS) {
   }
 }
 
-// ── (c) inGamut true for every entry. Widened (#681 U6 review pass 1, S3): the 16-defaults x
-//        primeChroma x chroma sweep alone never exercises a hueShift-perturbed rung, and the reviewer's
-//        finding was specifically that a shifted rung's float hue could fall in a shared
-//        `maxChromaInGamut`/`peakC` memoization bucket whose cached cap was computed for a neighbouring
-//        hue (hct.js, `hue.toFixed(2)` cache keys) — enough to occasionally clip a fraction of a
-//        CAM16-chroma unit outside the TRUE gamut boundary, including on the prime rung itself, AND to
-//        make two calls for the SAME logical palette disagree depending on what else had rendered
-//        earlier in the same process (a real reproduced break of REQ-043's theme-independence check via
-//        `exportPanda`). `localMaxChroma` in prime.mjs replaces the shared cache with its own uncached,
-//        per-call binary search, so this gate proves BOTH gamut-correctness and determinism over a
-//        sweep that actually reaches hueShift, both hue spaces, and both integer and fractional hues. ─
+// ── (c) inGamut true for every entry, PLUS a real hex-determinism assertion (not just inGamut).
+//        Widened (#681 U6 review pass 1, S3): the 16-defaults x primeChroma x chroma sweep alone never
+//        exercises a hueShift-perturbed rung, and the reviewer's finding was specifically that a
+//        shifted rung's float hue could fall in a shared `maxChromaInGamut`/`peakC` memoization bucket
+//        whose cached cap was computed for a neighbouring hue (hct.js, `hue.toFixed(2)` cache keys) —
+//        enough to occasionally clip a fraction of a CAM16-chroma unit outside the TRUE gamut boundary,
+//        including on the prime rung itself, AND to make two calls for the SAME logical palette
+//        disagree depending on what else had rendered earlier in the same process (a real reproduced
+//        break of REQ-043's theme-independence check via `exportPanda`). `localMaxChroma`/`localPeakC`
+//        in prime.mjs replace hct.js's shared, TRUNCATED-key caches with their own PRIVATE,
+//        EXACT-keyed ones (review pass 1 S3 for the rung caps, review pass 2 for the anchor's own
+//        `peakC` call, which the S3 fix had left on the shared cache). Below: the gamut sweep checks
+//        `inGamut` (a first pass claimed this alone proved determinism — reviewer finding, review pass
+//        2: it does not, since two DIFFERENT-but-both-in-gamut hex outputs both read `inGamut: true`);
+//        the `determinism` block afterward is the actual hex-identity assertion, run twice with an
+//        hct.js-shared-cache-poisoning sweep interleaved. ────────────────────────────────────────────
 for (const p of DEFAULTS) {
   for (const primeChroma of [0, 50, 100]) {
     for (const chroma of [0, 50, 100]) {
@@ -157,6 +162,42 @@ for (const hueSpace of SPACES) {
   if (GAMUT_SWEEP.checked < 15000) FAIL("c", `only ${GAMUT_SWEEP.checked} hueShift-sweep cases checked — the widened sweep did not run`);
   for (const v of GAMUT_SWEEP.violations.slice(0, 20)) FAIL("c", v);
 }
+
+// ── (determinism, folded into gate "c") — asserts hex identity, not just inGamut (review pass 2
+//    finding: a prior version of this gate claimed determinism from the inGamut sweep alone, which
+//    cannot catch two DIFFERENT in-gamut hexes for the same logical palette). Runs a dense, non-integer
+//    hue sweep (1500 cases, hue step 0.0917deg — deliberately NOT round numbers, so many fall at
+//    different hct.js `hue.toFixed(2)` truncation-bucket boundaries, the shape of the reviewer's
+//    63/4000 repro) through `primeSwatches` TWICE, with a POISON sweep of hct.js's own SHARED
+//    `peakC`/`maxChromaInGamut` caches (imported above, already used by other gates in this file)
+//    interleaved between the two passes — 3600 unrelated hues at a dense 0.1deg step, forcing heavy
+//    eviction/repopulation of hct.js's shared 5000-slot LRUs. `primeSwatches`'s own PRIVATE caches
+//    (`localMaxChroma`/`localPeakC` in prime.mjs) are untouched by this poisoning — they are separate
+//    instances, exact-keyed, so this proves the SEPARATION holds: primeSwatches no longer reads hct.js's
+//    shared cache state at all, anchor or rung. Sized down from an initial 4000-case version (cost:
+//    ~45s standalone) to 1500 (~20s) — cut by REDUCING CASE COUNT, not the poison sweep's density,
+//    since a scratch reproduction (not committed; described in the U6 handoff) found that thinning the
+//    poison sweep to step 0.5 made the vulnerable pre-fix code read 0/1500 mismatches — false-clean —
+//    while keeping poison step 0.1 and only cutting cases to 1500 still caught 3/1500 on the same
+//    vulnerable code. Case count is the safe lever here; poison density is not.
+const DET_CASES = [];
+for (let i = 0; i < 1500; i++) {
+  DET_CASES.push({
+    name: `d${i}`,
+    hue: (i * 0.0917) % 360,
+    chroma: 20 + (i % 5) * 18,
+    hueShift: (i % 7) - 3,
+    skew: ((i % 5) - 2) * 20,
+  });
+}
+const DET_SPACE = DET_CASES.map((_, i) => (i % 2 === 0 ? "cam16" : "oklch"));
+const detBefore = DET_CASES.map((p, i) => primeSwatches(p, { ...CTL, hueSpace: DET_SPACE[i] }).map((s) => s.hex).join(","));
+for (let hue = 0; hue < 360; hue += 0.1) { peakC(hue); maxChromaInGamut(hue, 4 + (hue % 90)); maxChromaInGamut(hue, 50); maxChromaInGamut(hue, 96 - (hue % 90)); }
+const detAfter = DET_CASES.map((p, i) => primeSwatches(p, { ...CTL, hueSpace: DET_SPACE[i] }).map((s) => s.hex).join(","));
+let detMismatch = 0;
+for (let i = 0; i < DET_CASES.length; i++) if (detBefore[i] !== detAfter[i]) detMismatch++;
+console.log(`  determinism (hct.js shared-cache-poisoning interleave): ${detMismatch}/${DET_CASES.length} palettes shifted hex by call order`);
+if (detMismatch > 0) FAIL("c", `${detMismatch}/${DET_CASES.length} palettes returned a different hex on the second call after an hct.js shared-cache-poisoning sweep — primeSwatches still depends on shared cache state`);
 
 // ── (gamut-ceiling) owner ruling, 2026-09-18 (#681 U6 review pass 1 fold): a fresh-context reviewer's
 //    own reproduction of GAMUT_SWEEP's exact parameters (hue 0..359 step 1 x chroma {25,50,75,100} x
