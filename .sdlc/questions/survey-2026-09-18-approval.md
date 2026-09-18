@@ -36,3 +36,11 @@ Options:
 - Yes, draft it (Recommended)
 - Not now
 Chosen: Yes, draft it (Recommended)
+
+## Q4
+Question: Another session (most likely ultimate-tokens-4b, the one that took your #681 approval) is building #681 U1 right now: it just committed 7a317e0 on unit/pif-u1-anchor (26 files, Sonnet builder), outside this SDLC's orchestrator and before #674 and #668 landed. It also drives the 638, 668 and 674 worktrees. Who owns #681 and those fixes?
+Options:
+- That session owns them (Recommended): the sdlc seats keep hands off #681, #638, #668, #674 and list them as in flight outside sdlc on the roadmap
+- Move #681 to these seats
+- I will sort it out myself
+Chosen: That session owns them (Recommended)
