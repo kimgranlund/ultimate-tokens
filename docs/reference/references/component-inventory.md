@@ -165,7 +165,7 @@ incrementally.
   `sections/typography.js:177`, `sections/geometry.js:230`; specimen mode `sections/typography.js:308`,
   `sections/geometry.js:381`; Figma files `overlays/drawer.js:202`; and one settings-row call
   `overlays/settings.js:30` inside the settingRow helper, one live instance per settings row, called
-  from 9 rows across `overlays/settings.js`. **Variants** as found, four stylings of one idea; today two
+  from 10 call sites (11-12 live rows) across `overlays/settings.js`. **Variants** as found, four stylings of one idea; today two
   base stylings plus four modifiers remain:
   - **Inspector tabs** `.segmented` `[Palette|Global|Roles]` — `role=tablist`/`tab`, roving
     tabindex, ArrowLeft/ArrowRight (`app.js:1586-1619`). *Well-built.*
