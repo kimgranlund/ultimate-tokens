@@ -29,8 +29,8 @@ There is **no component library**. The entire UI is one autonomous web component
 `src/ui/app.js` (~2,580 lines: state, render dispatch, the frame) plus the section and overlay
 mixins in `src/ui/sections/` and `src/ui/overlays/` (~5,600 lines, `mixinInto` at `app.js:2569`).
 It builds every control inline with a single hyperscript helper `h(tag, attrs, ...kids)`
-(`app-helpers.mjs:318`), across ~39 `render*()` methods. Styling is ~570 CSS class selectors in
-`src/ui/styles.css` (~1,600 lines). Consequences that recur in every card below:
+(`app-helpers.mjs:318`), across ~39 `render*()` methods. Styling is ~705 class-led selector lines in
+`src/ui/styles.css` (~1,600 lines; count: `grep -cE '^\s*\.' src/ui/styles.css`, 544 unique class names). Consequences that recur in every card below:
 
 - **S2 is not a second surface.** `scripts/gen-figma-ui.mjs` bundles the *same* compiled app
   (`dist/ultimate-tokens.html`) and injects a postMessage bridge that flips `inFigma`
