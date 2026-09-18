@@ -400,6 +400,25 @@ export function priorLibraryUplift(existingNames, wantedNames, liveAliasTargets)
   return false;
 }
 
+// pruneCandidates(existingNames, wantedNames) — PURE: the names the CLASSIC prune branch may remove =
+// existingNames - wantedNames - {"_deprecated/*"}. A "_deprecated/" name exists ONLY because a prior
+// library-mode apply deliberately kept it (the id-preserving rename libraryModeReconcile plans), so it
+// is never a prune candidate (#659) — regardless of what ELSE the collection holds. Without this rule
+// the gate was non-monotonic: a lone "_deprecated/x" survived (empty report -> priorLibraryUplift ->
+// library mode), but the same "_deprecated/x" beside one unrelated stale name was deleted, because the
+// stale name made the report non-empty and a "Remove" answer pruned EVERY unwanted name. Mirrored by
+// code.js#pruneCandidatesVM (parity-gated) and read by BOTH executor gates.
+export function pruneCandidates(existingNames, wantedNames) {
+  const wanted = new Set(wantedNames || []);
+  const out = [];
+  for (const name of (existingNames || [])) {
+    if (typeof name !== "string" || wanted.has(name)) continue;
+    if (name.startsWith("_deprecated/")) continue;
+    out.push(name);
+  }
+  return out;
+}
+
 // libraryModeReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) — PURE: for each LIVE
 // variable name NOT in the current plan (`wantedNames`), classify what "published library" mode does
 // instead of deleting it:

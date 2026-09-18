@@ -565,6 +565,22 @@ function priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets) {
   return false;
 }
 
+// pruneCandidatesVM(existingNames, wantedNames) — mirrors mode-apply-plan.mjs#pruneCandidates exactly
+// (#659): the names the CLASSIC prune branch may remove = existing - wanted - "_deprecated/*". A
+// "_deprecated/" name exists only because a prior library-mode apply deliberately kept it, so the prune
+// is MONOTONIC over it: it survives whether or not an unrelated stale name sits beside it. Read by BOTH
+// prune branches below (applyFontPrimitivesModes and applyFloatPlans).
+function pruneCandidatesVM(existingNames, wantedNames) {
+  const wanted = new Set(wantedNames || []);
+  const out = [];
+  for (const name of (existingNames || [])) {
+    if (typeof name !== "string" || wanted.has(name)) continue;
+    if (name.startsWith("_deprecated/")) continue;
+    out.push(name);
+  }
+  return out;
+}
+
 // libraryReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) — mirrors
 // mode-apply-plan.mjs#libraryModeReconcile exactly (including the idempotency fix: a name already
 // correctly aliased to its resolved target — from `aliasMap`, or the `liveAliasTargets` fallback when
@@ -889,10 +905,11 @@ async function applyFontPrimitivesModes(plan, opts) {
       if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
     }
   } else {
-    for (const name of Object.keys(byName)) if (!current.has(name)) byName[name].remove();
+    // #659: never a "_deprecated/" name — pruneCandidatesVM keeps the prune monotonic over them.
+    for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
   }
   writeFloatRegistry(reg);
-  return { variables: count, libraryReport: { collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)) } };
+  return { variables: count, libraryReport: { collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []) } };
 }
 
 // resolveFace — pick a REAL face for {family, weight, styleName?} from Figma's actual font list
@@ -1465,9 +1482,10 @@ async function applyFloatPlans(plans, opts) {
         if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
       }
     } else {
-      for (const name of Object.keys(byName)) if (!current.has(name)) byName[name].remove();
+      // #659: never a "_deprecated/" name — pruneCandidatesVM keeps the prune monotonic over them.
+      for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
     }
-    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)) });
+    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []) });
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles

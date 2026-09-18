@@ -227,9 +227,10 @@ async function applyFloatPlans(plans, opts) {
         if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
       }
     } else {
-      for (const name of Object.keys(byName)) if (!current.has(name)) byName[name].remove();
+      // #659: never a "_deprecated/" name — pruneCandidatesVM keeps the prune monotonic over them.
+      for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
     }
-    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)) });
+    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []) });
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles
@@ -340,6 +341,17 @@ function priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets) {
     if (Object.prototype.hasOwnProperty.call(targets, name) && targets[name]) return true;
   }
   return false;
+}
+
+function pruneCandidatesVM(existingNames, wantedNames) {
+  const wanted = new Set(wantedNames || []);
+  const out = [];
+  for (const name of (existingNames || [])) {
+    if (typeof name !== "string" || wanted.has(name)) continue;
+    if (name.startsWith("_deprecated/")) continue;
+    out.push(name);
+  }
+  return out;
 }
 
 function libraryReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) {

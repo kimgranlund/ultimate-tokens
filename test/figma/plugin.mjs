@@ -12,7 +12,7 @@ import { figmaBundle, defaultDocument } from "../../src/ui/model.mjs";
 import * as TYPE from "../../src/engine/type.mjs";
 import * as GEOM from "../../src/engine/geometry.mjs";
 import { exportDTCG } from "../../src/engine/exports.js";
-import { modeApplyPlan, mergeModeInterchanges, libraryModeReconcile, libraryModeReport, valueChanged, nearestStepByHeight, geometrySizeAliasMap, resolveLiteralHeight, liveAliasTargetsByName, priorLibraryUplift, parseOldTypeStepName, typeStepAliasMap, typeWeightAliasMap, TYPE_STEP_FIELD_MAP } from "../../figma/binder/mode-apply-plan.mjs";
+import { modeApplyPlan, mergeModeInterchanges, libraryModeReconcile, libraryModeReport, valueChanged, nearestStepByHeight, geometrySizeAliasMap, resolveLiteralHeight, liveAliasTargetsByName, priorLibraryUplift, pruneCandidates, parseOldTypeStepName, typeStepAliasMap, typeWeightAliasMap, TYPE_STEP_FIELD_MAP } from "../../figma/binder/mode-apply-plan.mjs";
 import { stylePlans, primitivesModesApplyPlan } from "../../figma/binder/style-plan.mjs";
 import { LIBRARY_TYPE_VOICE_MAP, GEOMETRY_FIELD_RENAME_MAP } from "../../figma/binder/migrations.mjs";
 import { googleSafeFontFor } from "../../src/engine/font-fallbacks.mjs";
@@ -144,12 +144,12 @@ function mockFigma() {
 let applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight;
 // #495 "published library" mode — the hand-written VM mirrors of mode-apply-plan.mjs's pure planner
 // functions, extracted for the `libraryparity` behavioral-parity gate below (see its own header comment).
-let vmLibraryReconcile, vmValueChanged, vmLibraryModeReport, vmNearestStepByHeight, vmExpandGeometryAliasMap, vmExpandVoiceAliasMap, vmGeometryPlanStepHeights, vmLibraryTypeVoiceMap, vmResolveLiteralHeight, vmLiveAliasTargetsByName, vmPriorLibraryUplift;
+let vmLibraryReconcile, vmValueChanged, vmLibraryModeReport, vmNearestStepByHeight, vmExpandGeometryAliasMap, vmExpandVoiceAliasMap, vmGeometryPlanStepHeights, vmLibraryTypeVoiceMap, vmResolveLiteralHeight, vmLiveAliasTargetsByName, vmPriorLibraryUplift, vmPruneCandidates;
 // #498 grammar bridge — the hand-written VM mirrors, extracted for the same libraryparity gate.
 let vmParseOldTypeStepName, vmTypeStepAliasMap, vmTypeWeightAliasMap, vmTypeStepFieldMap, vmGeometryFieldRenameMap;
 const F = mockFigma();
 try {
-  const load = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight, libraryReconcile, valueChangedVM, libraryModeReportVM, nearestStepByHeightVM, expandGeometryAliasMap, expandVoiceAliasMap, geometryPlanStepHeights, LIBRARY_TYPE_VOICE_MAP, resolveLiteralHeightVM, liveAliasTargetsByNameVM, priorLibraryUpliftVM, parseOldTypeStepNameVM, typeStepAliasMapVM, typeWeightAliasMapVM, TYPE_STEP_FIELD_MAP, GEOMETRY_FIELD_RENAME_MAP };");
+  const load = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight, libraryReconcile, valueChangedVM, libraryModeReportVM, nearestStepByHeightVM, expandGeometryAliasMap, expandVoiceAliasMap, geometryPlanStepHeights, LIBRARY_TYPE_VOICE_MAP, resolveLiteralHeightVM, liveAliasTargetsByNameVM, priorLibraryUpliftVM, pruneCandidatesVM, parseOldTypeStepNameVM, typeStepAliasMapVM, typeWeightAliasMapVM, TYPE_STEP_FIELD_MAP, GEOMETRY_FIELD_RENAME_MAP };");
   const loaded = load(F.figma, "<html>", undefined); // closes over the MOCK figma
   applyBundle = loaded.applyBundle; applyFloatPlans = loaded.applyFloatPlans;
   applyFontPrimitivesModes = loaded.applyFontPrimitivesModes; applyStylePlans = loaded.applyStylePlans;
@@ -159,7 +159,7 @@ try {
   vmLibraryModeReport = loaded.libraryModeReportVM; vmNearestStepByHeight = loaded.nearestStepByHeightVM;
   vmExpandGeometryAliasMap = loaded.expandGeometryAliasMap; vmExpandVoiceAliasMap = loaded.expandVoiceAliasMap;
   vmGeometryPlanStepHeights = loaded.geometryPlanStepHeights; vmLibraryTypeVoiceMap = loaded.LIBRARY_TYPE_VOICE_MAP;
-  vmResolveLiteralHeight = loaded.resolveLiteralHeightVM; vmLiveAliasTargetsByName = loaded.liveAliasTargetsByNameVM; vmPriorLibraryUplift = loaded.priorLibraryUpliftVM;
+  vmResolveLiteralHeight = loaded.resolveLiteralHeightVM; vmLiveAliasTargetsByName = loaded.liveAliasTargetsByNameVM; vmPriorLibraryUplift = loaded.priorLibraryUpliftVM; vmPruneCandidates = loaded.pruneCandidatesVM;
   vmParseOldTypeStepName = loaded.parseOldTypeStepNameVM; vmTypeStepAliasMap = loaded.typeStepAliasMapVM;
   vmTypeWeightAliasMap = loaded.typeWeightAliasMapVM; vmTypeStepFieldMap = loaded.TYPE_STEP_FIELD_MAP;
   vmGeometryFieldRenameMap = loaded.GEOMETRY_FIELD_RENAME_MAP;
@@ -1207,6 +1207,23 @@ if (applyFontPrimitivesModes) {
   if (priorLibraryUplift(["font/body", "font/sans"], ["font/body", "font/sans"], { "font/body": "font/sans" }) !== false) FAIL("libraryparity", "priorLibraryUplift must be false when the only live alias belongs to a WANTED name (the plan's own ALIAS variable)");
   if (priorLibraryUplift(["_deprecated/a"], ["_deprecated/a"], {}) !== false) FAIL("libraryparity", "priorLibraryUplift must be false when the only _deprecated/ name is itself wanted");
   if (priorLibraryUplift(["a", "b"], ["b"], { a: "b" }) !== true || priorLibraryUplift(["_deprecated/a", "b"], ["b"], {}) !== true) FAIL("libraryparity", "priorLibraryUplift must be true on an UNWANTED live alias or an UNWANTED _deprecated/ name");
+
+  // pruneCandidates / pruneCandidatesVM (#659) — the classic prune's candidate set is MONOTONIC over
+  // "_deprecated/" names: existing - wanted - "_deprecated/*", whatever else the collection holds.
+  const pruneCases = [
+    [["size/sm/height"], ["size/sm/height"]],
+    [["_deprecated/size/small/height"], ["size/sm/height"]],
+    [["_deprecated/size/small/height", "size/old", "size/sm/height"], ["size/sm/height"]],
+    [["_deprecated/a"], ["_deprecated/a"]], [[], []], [undefined, undefined],
+  ];
+  for (const [names, wanted] of pruneCases) {
+    const mjsP = JSON.stringify(pruneCandidates(names, wanted));
+    const vmP = vmPruneCandidates ? JSON.stringify(vmPruneCandidates(names, wanted)) : "MISSING";
+    if (mjsP !== vmP) FAIL("libraryparity", `pruneCandidates disagree for ${JSON.stringify({ names, wanted })}: mjs=${mjsP} vm=${vmP}`);
+  }
+  if (JSON.stringify(pruneCandidates(["_deprecated/size/small/height"], ["size/sm/height"])) !== "[]") FAIL("libraryparity", "pruneCandidates must never list a lone _deprecated/ name");
+  if (JSON.stringify(pruneCandidates(["_deprecated/size/small/height", "size/old", "size/sm/height"], ["size/sm/height"])) !== JSON.stringify(["size/old"])) FAIL("libraryparity", "pruneCandidates must list the unrelated stale name and STILL skip the _deprecated/ name beside it (monotonic)");
+  if (JSON.stringify(pruneCandidates(["size/sm/height"], ["size/sm/height"])) !== "[]") FAIL("libraryparity", "pruneCandidates must be empty when existing == wanted");
 
   // LIBRARY_TYPE_VOICE_MAP — the same static map, migrations.mjs vs the code.js literal copy
   if (JSON.stringify(LIBRARY_TYPE_VOICE_MAP) !== JSON.stringify(vmLibraryTypeVoiceMap)) FAIL("libraryparity", `LIBRARY_TYPE_VOICE_MAP drifted: migrations.mjs=${JSON.stringify(LIBRARY_TYPE_VOICE_MAP)} code.js=${JSON.stringify(vmLibraryTypeVoiceMap)}`);
