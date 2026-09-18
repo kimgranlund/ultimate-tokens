@@ -233,3 +233,62 @@ Options:
 `scripts/report-preset-fidelity.mjs --envelope` is NOT wired into `npm test` or any `npm run gate:*`
 script pending this ruling — it is a standalone report, exactly matching the plan's own command line,
 and its current exit code (1, both readings fail) is accurate to what it measures, not a defect to hide.
+
+### Q7 addendum — reading (a)'s above-100% population broken down (measurement only, no code change)
+
+Team-lead asked whether reading (a)'s much larger above-100% counts (1793/1521/2301, vs reading (b)'s
+16-all-Adia) are a concentrated defect or a broad shortfall. Measured directly per instance (which
+stops exceed stop 500's own chroma, by how much, and against what palette geometry), scratchpad-only,
+not wired into any gate:
+
+**Source split — broad, not Adia-concentrated. Adia's count is fixed at 16 in every mode (matching
+reading (b) exactly); the rest is curated corpus, roughly proportional to its share of the whole
+corpus (2,896 non-Adia curated instances at source chroma >= 10):**
+
+| mode | flagged | Adia | curated (non-Adia) | default kit | % of the 2,896 non-Adia curated instances |
+|---|---|---|---|---|---|
+| perceptual | 1793 | 16 | 1772 | 5 | 61.2% |
+| peak | 1521 | 16 | 1500 | 5 | 51.8% |
+| even | 2301 | 16 | 2278 | 7 | 78.7% |
+
+**Category spread is uniform, not clustered — every one of the 8 categories (+ brands' non-Adia
+presets) falls inside a tight band in every mode (per-category flagged/total-at-source-chroma>=10):**
+perceptual 55.5%-67.8%, peak 49.5%-55.9%, even 75.9%-83.1%. No single category departs from that band
+by more than ~8pp; this is a corpus-wide characteristic, not a hot spot.
+
+**Driven by lift sign and hue cusp tone, NOT by dampAmp or skew:**
+- Lift: dominant among flagged instances (lift>0 is 61-75% of the flagged population in every mode;
+  lift=0 is only 32-34 instances, ~1-2%); the exceeding stops cluster on the SIDE lift pushes the
+  cusp toward — 350/400/450 (light-of-center) in perceptual/even, 550/600/650 (dark-of-center) in
+  peak, where 450 alone accounts for 1671-2084 of the flagged instances' exceedances.
+- Skew: 98.3-98.6% of flagged instances have `skew: 0` — essentially uncorrelated, rules skew out.
+- Cusp tone (the hue's own OKHSL peak-chroma tone, via `peakC`): 70-88% of flagged instances have a
+  cusp tone above 60 — hues whose vivid expression sits at a bright tone (yellows, warm greens)
+  dominate, consistent with the existing `#668`/cusp-offset family of findings already in this unit's
+  record, though this metric (chroma-vs-stop-500 ratio) is distinct from the uptick counter's tone
+  monotonicity check and was not cross-verified against it this pass.
+- `dampAmp`: every one of the worst-5 instances in perceptual and even mode, and 4 of 5 in peak mode
+  (the 5th is Adia's own Warning family), carries `dampAmp: 0` — the extreme outliers are NOT
+  damping-driven at all, they come from the underlying lift/cusp-warped chroma curve alone.
+
+**Magnitude — modest at the median, a long tail at the worst:** median excess over stop 500's chroma
+is 3.8pp (perceptual), 17.1pp (peak), 12.5pp (even); worst-case is 89.3pp/93.8pp/241.6pp. The extreme
+outliers are low-source-chroma palettes (10-19% source chroma, e.g.
+`cuisine/Sushi & sashimi · the cypress counter/primary-muted`) at `lift: +38..+40`, where a
+near-zero stop-500 denominator amplifies a small absolute chroma difference into a large percentage.
+
+**Distinct palettes vs. instances — roughly half the flagged population is literal duplicates:**
+grouping by a full geometry+control shape key (hue/chroma/skew/lift/hueShift/cuspPull +
+damp/dampCurve/dampAmp/dampBias/lmin/lmax/curve/tension/hueSpace), only 956/1793 (53.3%, perceptual),
+994/1521 (65.3%, peak), and 1096/2301 (47.6%, even) of the flagged instances are unique shapes — the
+rest are the same palette archetype reused verbatim across differently-named presets in the corpus.
+
+**Reading:** this is a broad, roughly-uniform-across-the-corpus property of reading (a)'s literal
+metric (51-79% of the whole non-Adia curated corpus, depending on mode), not a narrow defect and not
+an Adia/dampAmp artifact — dampAmp is essentially irrelevant here (Adia's fixed 16 is a small fraction
+of every mode's total, and the worst outliers all have `dampAmp: 0`). It tracks `lift` sign and hue
+cusp-tone position, both pre-existing geometry the chroma-envelope unification does not touch. Whether
+this predates Design B (this unit's own change) was not measured this pass — every worst-case witness
+has `dampAmp: 0`, which is consistent with it being pre-existing, but that is an inference from this
+data, not a direct baseline (bf2aaf6) re-measurement; flagging as a gap if the owner wants it closed
+before ruling.
