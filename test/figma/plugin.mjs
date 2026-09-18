@@ -798,7 +798,7 @@ if (applyBundle) {
     const resUndef = await lc3.applyBundle(bundleCut, {});
     if (resUndef.pruned !== totalStale || resUndef.preserved !== 0) FAIL("colorlibrary", `an omitted libraryMode pruned ${resUndef.pruned}/preserved ${resUndef.preserved}, want ${totalStale}/0: undefined must resolve to the classic prune`);
 
-    // ── LEG 4: the theme-MODE prune. applyBundle has a SECOND destructive site: Color Roles carries
+    // ── LEG 3: the theme-MODE prune. applyBundle has a SECOND destructive site: Color Roles carries
     // one MODE per theme, and a theme the doc no longer carries is removeMode'd. A consumer file pinned
     // to that mode loses its binding exactly as it would lose a removed variable, which is why #629's
     // ruling Q2 already settled that a mode prune is guarded like a variable prune. The variables are
@@ -832,7 +832,7 @@ if (applyBundle) {
       if ((resM2.staleModes || []).length) FAIL("colorlibrary", `libraryMode:false reported ${resM2.staleModes.length} staleModes: the classic path keeps none`);
     }
 
-    // ── LEG 3: the MESSAGE HANDLER threads msg.libraryMode into applyBundle. The two legs above call
+    // ── LEG 4: the MESSAGE HANDLER threads msg.libraryMode into applyBundle. The two legs above call
     // applyBundle directly, so they stay green even if the handler never passes the flag, which is
     // exactly the shape of the gap #673 closes. This leg drives the real "apply" message instead.
     const FH = mockFigma();

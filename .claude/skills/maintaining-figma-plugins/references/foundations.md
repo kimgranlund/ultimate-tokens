@@ -241,7 +241,7 @@ already uses) rather than `removeMode`d, because a consumer file pins a mode exa
 variable. #629's ruling Q1 left color on the classic prune under either setting; #673 retired that
 exemption.
 
-**One destructive site remains UNGUARDED, deliberately:** `applyFloatPlans`' own breakpoint-`removeMode`.
+**One destructive site remains UNGUARDED, deliberately:** `applyFloatPlans`' own breakpoint-`removeMode`, tracked as #687.
 It predates #629 and sits in a different subsystem, so #673 left it alone rather than widening scope
 without a ticket. Do not write "every prune reads the flag" anywhere until that site is closed.
 

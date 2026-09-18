@@ -72,7 +72,7 @@ means "this file is a PUBLISHED library", so the apply aliases and deprecates na
 instead of removing them. Guarded sites, exactly: `applyBundle`'s three-collection color VARIABLE
 reconcile and its Color Roles theme-MODE prune (#673); `applyFloatPlans`' type/geometry variable prune and
 `applyFontPrimitivesModes`' variable + Type Primitives MODE prunes (#629); `applyStylePlans`' paint and
-text prunes (#629). One destructive site is still UNGUARDED: `applyFloatPlans`' own breakpoint-`removeMode`,
+text prunes (#629). One destructive site is still UNGUARDED: `applyFloatPlans`' own breakpoint-`removeMode` (#687),
 which predates #629 and which #673 deliberately did not widen into. #629 shipped the flag with color
 exempt by ruling Q1; #673 retired that exemption. Two surfaces, one persisted key
 (`ultimate-tokens-library-mode-v1`, the `_applyConsentKey` precedent, storing both `"1"` and `"0"`

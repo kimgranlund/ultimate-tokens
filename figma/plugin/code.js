@@ -150,7 +150,7 @@ figma.ui.onmessage = async (msg) => {
       // Roles theme-MODE prune (both #673); applyFloatPlans' type/geometry VARIABLE prune, and
       // applyFontPrimitivesModes' variable prune AND its Type Primitives mode prune (both #629); and
       // applyStylePlans' paint and text prunes (#629). It does NOT guard applyFloatPlans' own
-      // breakpoint-MODE removeMode, which is unguarded on main and was left alone by #673 rather than
+      // breakpoint-MODE removeMode, which is unguarded on main (tracked as #687) and was left alone by #673 rather than
       // widened without a ticket. Do not upgrade this list to "every prune" without re-reading that
       // site. #629's ruling Q1 kept color out entirely; #673 retired that exemption. The gate checkbox
       // is labelled "...color, type, geometry and style names" and the Settings row's help line names
