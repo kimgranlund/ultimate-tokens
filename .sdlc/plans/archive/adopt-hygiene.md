@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: #643 (github; mirrored from local T-0001, kept in .sdlc/tickets as history)
 priority: P1
 lane: docs
@@ -227,6 +227,7 @@ The close-out commit that archives this plan also: (1) repoints `docs/site/descr
 
 | Date | Change | Why |
 |---|---|---|
+| 2026-09-18 | closed on landing of PR #653 (squash `180eca0` on `main`), ticket #643, plan archived | close-out, `.sdlc/adapter.md` §5 |
 | 2026-09-16 | plan written (draft) from debt.md §A7 candidates and adapter.md §8 | A7 dispatch |
 | 2026-09-16 | 14 tweaks from `.sdlc/verdicts/adopt-hygiene-plan.md` applied: X1 approval commit in Landing; X2/P1 status count excludes the settings reorder; P2 control reads `origin/main` tree; P3 planted-edit control; U1-6 counts and revision-row note; U1-12 line ref; U2-3 literal count grep; U2-7 `--`, baseline 28, adia + binder paths; U2-12 `npm ci` and type-error control; U3-1 delete by content; U3-2 `show --stat` count; U3-4 pre-plan count 43; U3-5 remote count 42 | criteria review 🟡 |
 | 2026-09-16 | U2 pass 2: row 9 adds actionlint (YAML load cannot reject a bad expression context); row 3 adds a mechanism-exists check (a count alone let a wrong fact through) | verdict adopt-hygiene-U2 🔴, re-diagnosis .sdlc/plans/adopt-hygiene-U2-p2.md |
