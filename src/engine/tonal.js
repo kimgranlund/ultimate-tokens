@@ -189,43 +189,49 @@ const ANCHOR_STOP = 500;
 
 // chromaEnvelope — the single per-stop chroma multiplier shared by the "even" path (evenChroma) and the
 // OKHSL path (okhslStops): one function replaces what used to be two separately-typed copies of the same
-// damping formula ("m" in each, #647/#668). Exactly 1 at the anchor for EVERY damp/dampCurve/dampAmp/
-// dampBias combination WHEN lift is 0 — sd is 0 there by construction (liftStop is the identity at
-// lift 0), so uG is 0, the shoulder term vanishes (its own factor is uG), and the edge-damp term
-// vanishes too (its factor is uG) — no branch needed, and nothing here can accidentally lift the anchor
-// off 1 the way the old dampAmp term did (Q7: the old form's mid-tone "boost" landed ON the centre
-// itself, the 144%-of-source defect C6 exists to close).
+// damping formula ("m" in each, #647/#668). Position is read at the LIFTED stop (liftStop, #668) — never
+// the nominal stop, and never a separately re-derived "effective" stop (effStop, which additionally
+// composes skew's gamma): keying on effStop additionally moves every skew-only palette — including the
+// shipped Primary and Neutral, both skew -20 lift 0 — for a defect they do not have, moves the normative
+// Panda/shadcn spec literals derived from them, and is measurably worse at its own job (4 of 10,080
+// synthetic grid cells still rise under it, worst +0.006 L* — 668-report.md §4).
 //
-// Position is read at the LIFTED stop (liftStop, #668) — never the nominal stop, and never a separately
-// re-derived "effective" stop (effStop, which additionally composes skew's gamma): a negative control
-// across the whole curve x skew x hue x vibrancy x mode grid (test/engine/tonal.mjs "skew-lift-okhsl"
-// (iii c), 10,080 cells) shows the measured ramp never rises for ANY skew/lift/hue/vibrancy/mode
-// combination under this exact form — sd measured against the RAW numeric anchorStop, not a lift-shifted
-// reading of it. Keying on liftStop this way covers the whole #668 mechanism; keying on effStop
-// additionally moves every skew-only palette — including the shipped Primary and Neutral, both skew -20
-// lift 0 — for a defect they do not have, moves the normative Panda/shadcn spec literals derived from
-// them, and is measurably WORSE at the job itself (4 of 10,080 cells still rise under it, worst
-// +0.006 L*, against 0 here — 668-report.md §4).
+// sd is measured against `liftStop(anchorStop, lift)` — the anchor's OWN lifted reading, not the raw
+// numeric anchorStop (e.g. 500) — so env(anchorStop) === 1 EXACTLY for EVERY damp/dampCurve/dampAmp/
+// dampBias/lift combination, unconditionally, not only at lift 0 (R2, revised from the first draft below).
+// sd is 0 at the anchor by construction, so uG is 0, the shoulder term vanishes (its own factor is uG),
+// and the edge-damp term vanishes too (its factor is uG) — no branch needed, and nothing here can
+// accidentally lift the anchor off 1 the way the old dampAmp term did (Q7: the old form's mid-tone
+// "boost" landed ON the centre itself, the 144%-of-source defect C6 exists to close).
 //
-// KNOWN GAP, written up in .sdlc/questions/pif-u3.md rather than "fixed" here: sd is measured against
-// the RAW numeric anchorStop (e.g. 500), not against `liftStop(anchorStop, lift)`. A non-zero lift
-// displaces where the nominal anchor stop itself reads (liftStop(anchorStop, lift) != anchorStop
-// whenever the lift bump's weight there isn't zero — and it peaks, not vanishes, at the ramp's own
-// centre), so this function's return value at stop === anchorStop is NOT exactly 1 for lift != 0; it
-// can be off by a large fraction at strong lift. A second draft re-centred sd on the anchor's OWN
-// lifted reading (`liftStop(anchorStop, lift)`) specifically to close this — env(anchorStop) became
-// exactly 1 for every lift, unconditionally, and the corpus-wide "chroma above the anchor's" violation
-// count dropped substantially — but it reopened #668: 21 of the SAME 10,080 grid cells rose under it,
-// up to +0.21 L*, including a skew=0 case (hue 145, lift 40, stop 300->350), so the regression is not
-// only the skew/effStop mismatch already ruled out above. A third draft (the same re-centred sd,
-// normalized post hoc by dividing by its own value at the anchor) was WORSE (33 rises) and could still
-// return exactly 0 at the anchor instead of 1 when the raw formula's own floor clips there. This
-// function keeps the FIRST, exact-zero-upticks form because a visible color regression on shipped
-// ramps outweighs an anchor that is only exact at lift 0 — "Damping must never perturb tone" is this
-// unit's hard floor. Closing the gap for real needs lightness ALSO pinned at the nominal anchor stop
-// independent of lift (U2's "anchored branch"), which is out of this unit's lane.
+// R1 (reverted) measured sd against the RAW numeric anchorStop instead: exact only at lift 0, and NOT
+// at lift != 0 (liftStop(anchorStop, lift) != anchorStop whenever the lift bump's weight there isn't
+// zero, and it peaks — not vanishes — at the ramp's own centre). That form avoided all 10,080 cells of
+// a synthetic curve x skew x hue x vibrancy x mode grid probe (test/engine/tonal.mjs "skew-lift-okhsl"
+// (iii c), chroma pinned at 95) rising, at the cost of the inexact anchor under lift AND, measured
+// against the corpus the product actually renders (`rampChromaOf`'s resolved chroma through
+// `src/ui/model.mjs`'s `projectView`, not a palette's raw stored `chroma` — the two differ for 3,777 of
+// 3,780 curated palettes), TWO duplicate-hex ramps on the 25-stop export ramp, peak mode, near white:
+// nature "Varanger / Finnmark tundra" tertiary and nature "English oak woodland" primary, both stops
+// 150&175, both #FDFDFB. Neither ramp was named or gated under R1 — its own gate scanned raw `chroma`,
+// which is a different ramp than either one renders.
+//
+// R2 (shipped) re-centres sd on the anchor's own lifted reading. On the corpus the product renders, this
+// closes BOTH duplicate-hex ramps to zero (0/0/0 across perceptual/peak/even, both stop sets) alongside
+// the #668 uptick class already at zero, and gives the exact-anchor property Q1 originally wanted. The
+// cost is real and disclosed, not free: 21 of the SAME 10,080 synthetic grid cells rise under R2, all
+// near-white (measured tone 90.9-99.5), worst +0.1314 L* (about 1/6 the +0.83 L* #668 defect this unit
+// repairs) — reachable only through a skew/lift/vibrancy/hue combination no curated preset or role
+// default uses (chroma pinned at the grid's own probe value, 95; skew as extreme as ±100, unused by any
+// shipped default). test/engine/tonal.mjs "skew-lift-okhsl" (iii c) names and cites all 21 as a bounded,
+// verified-both-directions exception (the same shape C6(ii)'s duplicate-hex list already uses), rather
+// than silently loosening the gate to a count. Full trade-off and the rejected alternatives (R1 as
+// above; a third draft, post-hoc-normalized sd, which was worse at 33 rises and could return exactly 0
+// instead of 1 at the anchor when the raw formula's own floor clips there) are in
+// .sdlc/questions/pif-u3.md Q1 (superseded first read kept for the record) and the U3 review this
+// revision answers.
 export function chromaEnvelope(stop, anchorStop, lift, controls) {
-  const sd = (liftStop(stop, lift) - anchorStop) / 450; // signed position, relative to the RAW numeric anchor
+  const sd = (liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450; // position vs the anchor's OWN lifted reading (R2)
   const uG = Math.abs(sd) ** (controls.dampCurve ?? 1.5);
   const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(sd));
   const shoulder = ((controls.dampAmp ?? 0) / 100) * 4 * uG * (1 - uG); // 0 at sd=0 AND |sd|=1 — shoulders only
@@ -489,8 +495,6 @@ function okhslStops(palette, controls, stops, mode) {
     const v = palette.cuspPull ?? controls.vibrancy ?? 0;
     const t = mode === "peak" ? 1 : Math.max(0, Math.min(1, v / 100));
     const l = lightnessAt(stop, t); // skew/lift warp the position read (effStop); see lightnessAt above
-    // saturation = chroma% of the gamut, shaped by the SAME damping multiplier m as the even path (so
-    // damp/dampCurve/dampAmp/dampBias stay meaningful here), clamped to OKHSL's [0,1].
     const sp = (stop - 500) / 450;
     const dir = sameDir ? -Math.abs(sp) : sp;
     const hue = (((hOk + shift * dir) % 360) + 360) % 360;

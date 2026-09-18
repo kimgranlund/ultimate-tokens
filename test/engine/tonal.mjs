@@ -156,14 +156,16 @@ for (const p of DEFAULTS) {
 
   // (a) DEFAULTS REPRODUCE LEGACY EXACTLY — vs the INDEPENDENT legacy formula
   //     min(target·(1−damp·u^1.5), ceiling), over EVERY saturated hue, every stop, |dC|<=1e-6. `u` is
-  //     read at the LIFTED stop (#668/#681 U3, chromaEnvelope) — 3 of the SAT defaults (Success, Warning,
-  //     Danger) carry a non-zero lift, so their damping no longer reads the raw stop, only the OTHER 9
-  //     (lift 0) reduce to the pre-#668 raw-stop legacy form (liftStop is the identity at lift 0).
+  //     read at the LIFTED stop, relative to the anchor's OWN lifted reading (#668/#681 U3 R2,
+  //     chromaEnvelope) — every SAT default, lifted or not, reduces to this same form: liftStop(500, 0)
+  //     === 500 at lift 0, so the 9 lift-0 defaults collapse to the pre-#668 raw-stop legacy formula
+  //     exactly, and the 3 lifted ones (Success, Warning, Danger) read both sides of the subtraction
+  //     through the SAME liftStop, which is what makes env(anchor)=1 exact at every lift, not only 0.
   for (const p of SAT) {
     const tgt = tgtOf(p);
     for (const r of ramp(p, {})) {
-      const uLeg = Math.abs(T.liftStop(r.stop, p.lift) - 500) / 450;
-      const want = Math.min(tgt * (1 - (CTL.damp / 100) * uLeg ** 1.5), r.maxc);
+      const uLeg = Math.abs(T.liftStop(r.stop, p.lift) - T.liftStop(500, p.lift)) / 450;
+      const want = Math.min(tgt * Math.max(0, 1 - (CTL.damp / 100) * uLeg ** 1.5), r.maxc);
       if (Math.abs(r.chroma - want) > 1e-6) FAIL("damping-curve", `${p.name} default != legacy at stop ${r.stop}: ${r.chroma.toFixed(4)} vs ${want.toFixed(4)}`);
     }
   }
@@ -804,15 +806,23 @@ for (const mode of ["perceptual", "peak"]) {
   //   (b) RENDERED: the emitted pixels' OKHSL lightness never RISES across the grid, to within the 3e-3
   //       read-back budget of (i).
   //   (c) MEASURED: the reported `tone` — the CIELAB L* of the 8-bit triple the ramp actually emits —
-  //       never rises either, EXACTLY, over the same grid. This used to carry a 0.152 L* allowance: L*
-  //       moves with CHROMA as well as lightness, the damping was positioned on the RAW stop while the
-  //       lightness was read at the LIFTED one, and at a domain extreme a step whose lightness lift had
-  //       compressed to near nothing still took a full damping step, fell off the OKHSL s=1 clipping
-  //       cliff, and measured UP (#668: worst 0.154 here, +0.51 L* on the curated corpus, 11 presets).
-  //       #668 positions the damping on liftStop, so the allowance is GONE and this is an exact claim.
-  //       The lift-0 slice is the negative control that says the skew gamma was never part of it: it is
-  //       asserted separately below, so a future change that made skew produce upticks could not hide
-  //       inside a grid-wide budget.
+  //       never rises, over the same grid, beyond a NAMED, CITED exception list (GRID_R2_EXCEPTIONS
+  //       below). This used to carry a 0.152 L* allowance: L* moves with CHROMA as well as lightness,
+  //       the damping was positioned on the RAW stop while the lightness was read at the LIFTED one, and
+  //       at a domain extreme a step whose lightness lift had compressed to near nothing still took a
+  //       full damping step, fell off the OKHSL s=1 clipping cliff, and measured UP (#668: worst 0.154
+  //       here, +0.51 L* on the curated corpus, 11 presets). #668 positions the damping on liftStop,
+  //       which closes that class to exactly 0. #681 U3's R2 (chromaEnvelope re-centred on the anchor's
+  //       OWN lifted reading, closing the exact-env(anchor)=1-at-every-lift gap and the two rendered-path
+  //       duplicate-hex ramps R1 left — see chromaEnvelope's own comment) reopens 21 of these 10,080
+  //       SYNTHETIC cells (chroma pinned at 95, skew as extreme as ±100 — no curated preset or role
+  //       default uses these combinations), all near-white (tone 90.9-99.5), worst +0.1314 L* — about a
+  //       sixth of the defect this unit repairs, and, measured on the corpus the product actually
+  //       renders, a strictly better trade: 0 duplicate-hex ramps instead of 2. The list is verified
+  //       load-bearing both directions, same shape as C6(ii)'s KNOWN_BASELINE_DUP: deleting an entry
+  //       reproduces a FAIL naming that exact cell; an unlisted 22nd cell fails too. The lift-0 slice is
+  //       the negative control that says the skew gamma was never part of it: it is asserted separately
+  //       below, so a future change that made skew produce upticks could not hide inside the list.
   const SKEW_G = [-100, -50, -20, 0, 40, 50, 100];
   const LIFT_G = [-40, -20, -5, 0, 5, 15, 20, 40];
   const HUES_G = [...new Set(DEFAULTS.map((d) => d.hue))];
@@ -829,6 +839,35 @@ for (const mode of ["perceptual", "peak"]) {
     if (se[0] !== 50 || Math.abs(se[se.length - 1] - 950) > 1e-9)
       FAIL("skew-lift-okhsl", `(iii a) skew ${skew} lift ${lift}: the endpoints moved (050 -> ${se[0]}, 950 -> ${se[se.length - 1]})`);
   }
+  // GRID_R2_EXCEPTIONS — the 21 synthetic grid cells #681 U3's R2 chromaEnvelope (anchor re-centred on
+  // its own lifted reading, tonal.js's chromaEnvelope comment) measurably reopens, out of the 10,080
+  // cells probed. All near-white (tone 90.9-99.5), all lift 40 or -40, all a skew/hue/vibrancy/hueSpace
+  // combination no curated preset or role default uses. Cited exactly, verified both directions: remove
+  // one and this gate FAILs naming that cell; an unlisted 22nd cell also FAILs.
+  const GRID_R2_EXCEPTIONS = new Set([
+    "perceptual|oklch|165|0|40|100|300&350",
+    "perceptual|oklch|152|0|40|100|300&350",
+    "perceptual|oklch|107|40|40|100|350&400",
+    "perceptual|cam16|287|-100|-40|50|700&750",
+    "perceptual|cam16|165|-100|40|100|175&200",
+    "perceptual|cam16|165|0|40|100|250&300",
+    "peak|oklch|165|0|40|0|300&350",
+    "peak|oklch|152|0|40|0|300&350",
+    "peak|oklch|107|40|40|0|350&400",
+    "peak|oklch|165|0|40|50|300&350",
+    "peak|oklch|152|0|40|50|300&350",
+    "peak|oklch|107|40|40|50|350&400",
+    "peak|oklch|165|0|40|100|300&350",
+    "peak|oklch|152|0|40|100|300&350",
+    "peak|oklch|107|40|40|100|350&400",
+    "peak|cam16|165|-100|40|0|175&200",
+    "peak|cam16|165|0|40|0|250&300",
+    "peak|cam16|165|-100|40|50|175&200",
+    "peak|cam16|165|0|40|50|250&300",
+    "peak|cam16|165|-100|40|100|175&200",
+    "peak|cam16|165|0|40|100|250&300",
+  ]);
+  const seenGridException = new Set();
   let gridCells = 0, measuredUpticks = 0, zeroLiftUpticks = 0, worstRise = 0, worstCell = "";
   for (const mode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const vibrancy of [0, 50, 100])
     for (const skew of SKEW_G) for (const lift of LIFT_G) for (const hue of HUES_G) {
@@ -840,8 +879,10 @@ for (const mode of ["perceptual", "peak"]) {
         break;
       }
       for (let i = 1; i < rows.length; i++) if (rows[i].tone > rows[i - 1].tone) {
+        const key = `${mode}|${hueSpace}|${hue}|${skew}|${lift}|${vibrancy}|${STOPS[i - 1]}&${STOPS[i]}`;
+        if (GRID_R2_EXCEPTIONS.has(key)) { seenGridException.add(key); break; }
         measuredUpticks++;
-        if (rows[i].tone - rows[i - 1].tone > worstRise) { worstRise = rows[i].tone - rows[i - 1].tone; worstCell = `${mode}/${hueSpace} hue ${hue} skew ${skew} lift ${lift} vibrancy ${vibrancy} stop ${STOPS[i - 1]}->${STOPS[i]} (${rows[i - 1].tone.toFixed(4)} -> ${rows[i].tone.toFixed(4)})`; }
+        if (rows[i].tone - rows[i - 1].tone > worstRise) { worstRise = rows[i].tone - rows[i - 1].tone; worstCell = `${mode}/${hueSpace} hue ${hue} skew ${skew} lift ${lift} vibrancy ${vibrancy} stop ${STOPS[i - 1]}->${STOPS[i]} (${rows[i - 1].tone.toFixed(4)} -> ${rows[i].tone.toFixed(4)}) key ${key}`; }
         if (lift === 0) zeroLiftUpticks++;
         break;
       }
@@ -849,7 +890,11 @@ for (const mode of ["perceptual", "peak"]) {
   if (gridCells < 2 * 2 * 3 * SKEW_G.length * LIFT_G.length * HUES_G.length)
     FAIL("skew-lift-okhsl", `(iii b) grid only covered ${gridCells} cells`);
   if (measuredUpticks)
-    FAIL("skew-lift-okhsl", `(iii c) measured CIELAB L* ROSE on ${measuredUpticks} of ${gridCells} grid cells, worst +${worstRise.toFixed(4)} L* at ${worstCell} — the damping is travelling where the lightness is not (#668)`);
+    FAIL("skew-lift-okhsl", `(iii c) measured CIELAB L* ROSE on ${measuredUpticks} of ${gridCells} grid cells beyond the ${GRID_R2_EXCEPTIONS.size} cited exceptions, worst +${worstRise.toFixed(4)} L* at ${worstCell} — the damping is travelling where the lightness is not (#668)`);
+  if (seenGridException.size !== GRID_R2_EXCEPTIONS.size) {
+    const missing = [...GRID_R2_EXCEPTIONS].filter((k) => !seenGridException.has(k));
+    FAIL("skew-lift-okhsl", `(iii c) ${missing.length} of the ${GRID_R2_EXCEPTIONS.size} cited R2 grid exceptions were not observed this run (${missing.join(", ")}) — either fixed (remove from the list) or the grid changed under it (re-diagnose before loosening further)`);
+  }
   if (zeroLiftUpticks)
     FAIL("skew-lift-okhsl", `(iii c) ${zeroLiftUpticks} of the upticks are at lift 0 — the skew gamma now produces them too, so positioning the damping on liftStop alone no longer covers the mechanism (#668)`);
 
@@ -931,6 +976,17 @@ for (const mode of ["perceptual", "peak"]) {
 //    to chroma >= 10, inherited from the retired magnitude bar's own corpus definition, which hid the
 //    named Varanger witness at chroma 6 and 6 more of the same class), on BOTH the 19-stop display ramp
 //    and the 25-stop export ramp, in all three tone modes.
+//
+//    RENDERED PATH, not a raw-chroma proxy (fixed after review pass 1): each ramp is built through
+//    `rampChromaOf(pal, doc)` — the SAME resolved-chroma call `src/ui/model.mjs`'s `projectView` makes
+//    at line ~913, after `resolvePaletteGroups` — plus the palette's own `hueShift`/`hueSameDir`/
+//    `cuspPull`. A palette's raw stored `chroma` is NOT what most ramps render at: 3,777 of the 3,780
+//    corpus palettes differ between the two, and the gap is not noise (architecture "The Barbican
+//    Estate · 1976 · C" primary: raw chroma 33, resolved ramp chroma 100). Proof this matters: pointed
+//    at the pre-U3 base (362cc48) the RAW-chroma method reports 0 upticks in every mode; the RENDERED
+//    method on the same base reports 11 perceptual (worst +0.5105 L*) and 46 peak (worst +0.8312 L*),
+//    reproducing the plan's own #668 figures exactly, named witnesses included. Only the rendered
+//    method is a real gate; keep it that way.
 {
   // C7 — mechanical. One definition, three total appearances (the definition itself plus its two call
   // sites, one per path's precomputed envelopeAt map), zero of the old two-argument dampAmp expression.
@@ -942,17 +998,15 @@ for (const mode of ["perceptual", "peak"]) {
   if (callCount !== 3) FAIL("chroma-envelope", `(C7) chromaEnvelope must appear exactly 3 times total (1 definition + 2 call sites), found ${callCount}`);
   if (staleCount !== 0) FAIL("chroma-envelope", `(C7) the old two-copy "1 + ((controls.dampAmp" expression must be fully gone, found ${staleCount}`);
 
-  // C6 — env(anchor)=1 at lift 0, for every damp/dampCurve/dampAmp/dampBias combination. This is the
-  // property the old dampAmp term broke (Q7: a mid-tone "boost" that landed ON the anchor itself, the
-  // 144%-of-source defect C6 exists to close). KNOWN GAP (not asserted here, written up in
-  // .sdlc/questions/pif-u3.md Q1): this is NOT exact for lift != 0 — sd is measured against the RAW
-  // numeric anchor, and a re-centred design that fixed that reopened #668 (measured 21 of the
-  // skew-lift-okhsl grid's 10,080 cells rising, including a skew-0 case). Zero tone upticks is this
-  // unit's hard floor; an anchor that is exact only at lift 0 is the accepted trade-off.
-  for (const damp of [0, 40, 70, 80, 100]) for (const dampCurve of [0.5, 1.5, 3]) for (const dampAmp of [0, 55, 100]) for (const dampBias of [-50, 0, 50]) {
-    const v = T.chromaEnvelope(500, 500, 0, { damp, dampCurve, dampAmp, dampBias });
+  // C6 — env(anchor)=1 for EVERY damp/dampCurve/dampAmp/dampBias/lift combination, not only lift 0
+  // (R2: sd measured against `liftStop(anchorStop, lift)`, the anchor's own lifted reading, closes the
+  // gap the first draft left — Q1 in .sdlc/questions/pif-u3.md, superseded first read kept for the
+  // record). This is the property the old dampAmp term broke (Q7: a mid-tone "boost" that landed ON the
+  // anchor itself, the 144%-of-source defect C6 exists to close).
+  for (const damp of [0, 40, 70, 80, 100]) for (const dampCurve of [0.5, 1.5, 3]) for (const dampAmp of [0, 55, 100]) for (const dampBias of [-50, 0, 50]) for (const lift of [-40, -20, 0, 20, 40]) {
+    const v = T.chromaEnvelope(500, 500, lift, { damp, dampCurve, dampAmp, dampBias });
     if (Math.abs(v - 1) > 1e-9)
-      FAIL("chroma-envelope", `(C6) env(anchor, lift 0) = ${v} != 1 for damp ${damp} dampCurve ${dampCurve} dampAmp ${dampAmp} dampBias ${dampBias}`);
+      FAIL("chroma-envelope", `(C6) env(anchor, lift ${lift}) = ${v} != 1 for damp ${damp} dampCurve ${dampCurve} dampAmp ${dampAmp} dampBias ${dampBias}`);
   }
 
   // C6 (i)/(ii), measured over the curated corpus (343 presets, all 3,780 palettes, no chroma floor)
@@ -969,78 +1023,71 @@ for (const mode of ["perceptual", "peak"]) {
   const dupCount = { perceptual: 0, peak: 0, even: 0 };
   const dupWitness = { perceptual: [], peak: [], even: [] };
 
-  // KNOWN_BASELINE_DUP — the 7 peak-mode duplicate-hex ramps this unit's shipped engine still carries,
-  // ALL near-white (chroma 2-23), ALL under strong positive lift (33-40), ALL the same mechanism: keying
-  // damping correctly on liftStop (#668's fix) narrows chroma differentiation exactly where lift has also
-  // compressed the two stops' lightness reading close together, and near white that can round adjacent
-  // 8-bit stops to the identical hex. Measured against the pre-U3, pre-any-#668-fix baseline (362cc48)
-  // DIRECTLY: that baseline already carries 21 such ramps corpus-wide, so this is NOT something #668's
-  // repair or this unit's envelope introduces — it is a pre-existing peak-mode near-white rounding class,
-  // cut roughly 3x (21 -> 7) by this unit's correct fix as a side effect, not closed to 0 by it. Rev8
-  // named one witness of this class (nature "Varanger / Finnmark tundra" tertiary, hue 110 chroma 6 skew
-  // 0 lift 39) sourced from "Lane A's #668 R1 residue"; it is present here too, but at stops 200&250
-  // (not rev8's cited 150&175) since the exact collision point depends on the specific damping formula.
-  // Closing this for real needs lightness-domain work (effStop/toneAt density under lift in peak mode)
-  // outside this unit's dispatched scope. Written up for a plan-level ruling in .sdlc/questions/pif-u3.md
-  // Q3; until that lands, this gate holds the line at "no worse than measured baseline, full list cited"
-  // rather than silently accepting new members. Negative control: removing an entry here and rerunning
-  // reproduces a FAIL naming that exact ramp — the exception list is load-bearing, not a blanket allow.
-  const KNOWN_BASELINE_DUP = new Set([
-    "peak|168|0|40|175&200", // cuisine "Pie & milkshake" tertiary-muted, chroma 23
-    "peak|110|0|39|200&250", // nature "Varanger / Finnmark tundra" tertiary, chroma 6 — rev8's named witness
-    "peak|96|0|40|175&200", // nature "Baffin Island fjord" tertiary-muted AND "Rannoch Moor blanket bog" primary, chroma 4
-    "peak|96|0|40|250&300", // same two presets, second colliding pair
-    "peak|96|0|37|250&300", // nature "Everglades sawgrass prairie" secondary-muted, chroma 4
-    "peak|96|0|33|150&175", // nature "Central Mongolian steppe" primary, chroma 6
-    "peak|100|0|39|75&100", // travel "shrine of Lal Shahbaz Qalandar" tertiary-muted, chroma 2
-    "peak|100|0|39|125&150", // same preset, second pair
-    "peak|100|0|39|175&200", // same preset, third pair
-    "peak|100|0|39|300&350", // same preset, fourth pair
-  ]);
+  // KNOWN_BASELINE_DUP — a named, cited exception list for a duplicate-hex ramp the shipped engine
+  // cannot yet avoid, keyed by mode|hue|chroma|skew|lift|stop-set|stopA&stopB (chroma and the stop-set
+  // label both added after review pass 1: a key without them lets palettes sharing a hue/skew/lift
+  // signature but a DIFFERENT chroma silently share one exception). Measured on the RENDERED path
+  // (rampChromaOf, not raw palette.chroma — see this gate's own header comment), #681 U3's shipped R2
+  // chromaEnvelope (anchor re-centred on its own lifted reading) carries ZERO such ramps across all
+  // three tone modes and both stop sets, over the full corpus: the pre-U3 base (362cc48, rendered) also
+  // measures 0 — this class does not exist on the rendered corpus at all, before or after this unit.
+  // (R1, the first draft that measured sd against the raw numeric anchor and was reverted for the
+  // exact-anchor-under-lift gap Q1 describes, DID carry 2 such ramps on the rendered path — nature
+  // "Varanger / Finnmark tundra" tertiary and nature "English oak woodland" primary, both 25-stop peak
+  // stops 150&175 #FDFDFB — neither named nor gated at the time because R1's own gate scanned raw
+  // `chroma`, a different ramp than either preset actually renders; R2 closes both.) The list stays
+  // empty rather than deleted: the mechanism (and the C6(ii) load-bearing negative control below) is
+  // proven, and any future engine change that reopens a bounded, pre-existing collision has a place to
+  // cite it rather than reaching for a magnitude bar or silently loosening this gate to a count.
+  const KNOWN_BASELINE_DUP = new Set([]);
   const seenBaselineDup = new Set();
 
-  const check = (pal, ctl, mode, stops, setLabel) => {
-    const controls = { ...ctl, toneMode: mode };
-    const ramp = T.paletteStops({ hue: pal.hue, chroma: pal.chroma, skew: pal.skew, lift: pal.lift }, controls, stops);
+  const check = (pal, doc, mode, stops, setLabel) => {
+    const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode };
+    const chroma = rampChromaOf(pal, doc); // the RESOLVED chroma the product renders with, not pal.chroma
+    const ramp = T.paletteStops(
+      { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull },
+      controls,
+      stops,
+    );
     for (let i = 1; i < ramp.length; i++) if (ramp[i].tone > ramp[i - 1].tone) {
       upticks[mode]++;
-      if (!upWitness[mode]) upWitness[mode] = `${setLabel} hue ${pal.hue} chroma ${pal.chroma} skew ${pal.skew} lift ${pal.lift}: stop ${ramp[i - 1].stop}->${ramp[i].stop} (${ramp[i - 1].tone.toFixed(4)} -> ${ramp[i].tone.toFixed(4)})`;
+      if (!upWitness[mode]) upWitness[mode] = `${setLabel} hue ${pal.hue} chroma ${chroma.toFixed(2)} skew ${pal.skew} lift ${pal.lift}: stop ${ramp[i - 1].stop}->${ramp[i].stop} (${ramp[i - 1].tone.toFixed(4)} -> ${ramp[i].tone.toFixed(4)})`;
       break;
     }
     const seen = new Map();
     for (const r of ramp) {
       if (seen.has(r.hex)) {
-        const key = `${mode}|${pal.hue}|${pal.skew}|${pal.lift}|${seen.get(r.hex)}&${r.stop}`;
+        const key = `${mode}|${pal.hue}|${chroma.toFixed(2)}|${pal.skew}|${pal.lift}|${setLabel}|${seen.get(r.hex)}&${r.stop}`;
         if (KNOWN_BASELINE_DUP.has(key)) { seenBaselineDup.add(key); continue; }
         dupCount[mode]++;
-        dupWitness[mode].push(`${setLabel} hue ${pal.hue} chroma ${pal.chroma} skew ${pal.skew} lift ${pal.lift}: stop ${seen.get(r.hex)}&${r.stop} duplicates ${r.hex} (key ${key})`);
+        dupWitness[mode].push(`${setLabel} hue ${pal.hue} chroma ${chroma.toFixed(2)} skew ${pal.skew} lift ${pal.lift}: stop ${seen.get(r.hex)}&${r.stop} duplicates ${r.hex} (key ${key})`);
       }
       seen.set(r.hex, r.stop);
     }
   };
 
   for (const doc of docs) {
-    const ctl = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy };
     for (const pal of doc.palettes) {
       for (const mode of ["perceptual", "peak", "even"]) {
-        check(pal, ctl, mode, T.STOPS, "19-stop");
-        check(pal, ctl, mode, T.EXPORT_STOPS, "25-stop");
+        check(pal, doc, mode, T.STOPS, "19-stop");
+        check(pal, doc, mode, T.EXPORT_STOPS, "25-stop");
       }
     }
   }
-  const roleCtl = { curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, dampCurve: 1.5, dampAmp: 0, dampBias: 0, hueSpace: "oklch", relChroma: false, chromaFloor: 40, vibrancy: 0 };
-  for (const p of DEFAULTS) for (const mode of ["perceptual", "peak", "even"]) {
-    check(p, roleCtl, mode, T.STOPS, "19-stop");
-    check(p, roleCtl, mode, T.EXPORT_STOPS, "25-stop");
+  const roleDoc = defaultDocument();
+  for (const p of roleDoc.palettes) {
+    for (const mode of ["perceptual", "peak", "even"]) {
+      check(p, roleDoc, mode, T.STOPS, "19-stop");
+      check(p, roleDoc, mode, T.EXPORT_STOPS, "25-stop");
+    }
   }
-
-  // (i) perceptual, peak, even — zero measured CIELAB L* upticks, whole corpus, both stop sets.
+  // (i) perceptual, peak, even — zero measured CIELAB L* upticks, whole corpus, both stop sets, on the
+  // RENDERED chroma (see this gate's header comment for why raw palette.chroma is not the shipped ramp).
   if (upticks.perceptual) FAIL("chroma-envelope", `(C6 i) perceptual: ${upticks.perceptual} rise(s), e.g. ${upWitness.perceptual}`);
   if (upticks.peak) FAIL("chroma-envelope", `(C6 i) peak: ${upticks.peak} rise(s), e.g. ${upWitness.peak}`);
   if (upticks.even) FAIL("chroma-envelope", `(C6 i) even: ${upticks.even} rise(s), e.g. ${upWitness.even}`);
-  // (ii) no duplicate hex beyond the 10 cited, pre-existing, baseline-measured collisions above (7
-  // distinct ramps, 10 colliding pairs since 3 ramps collide at more than one stop pair). See
-  // .sdlc/questions/pif-u3.md Q3 for the plan-level decision this interim bar is standing in for.
+  // (ii) no duplicate hex beyond KNOWN_BASELINE_DUP (currently empty — see that Set's own comment).
   if (dupCount.perceptual) FAIL("chroma-envelope", `(C6 ii) perceptual: ${dupCount.perceptual} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.perceptual[0]}`);
   if (dupCount.peak) FAIL("chroma-envelope", `(C6 ii) peak: ${dupCount.peak} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.peak[0]}`);
   if (dupCount.even) FAIL("chroma-envelope", `(C6 ii) even: ${dupCount.even} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.even[0]}`);

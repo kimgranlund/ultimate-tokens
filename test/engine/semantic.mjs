@@ -181,65 +181,77 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   const hexToRgb = (hex) => [0, 2, 4].map((i) => parseInt(String(hex).slice(1 + i, 3 + i), 16));
   const AA = 4.5;                                   // the ruled floor (#662): every family, both schemes
   // [family, light floor, dark floor] — max(AA, own measured ratio floored to 1 decimal)
-  // Re-measured whole for #681 U3 (chromaEnvelope shared by both paths + the keyS saturation basis):
-  // "even" is unchanged to one decimal (only Success/Warning/Danger's damping moved there, all lift-
-  // driven, and each still floors to the same digit); "perceptual" and "peak" move at several families
-  // — mostly Neutral (low-chroma, key.s diverges most from chroma%) and the lift-bearing Success/
-  // Warning/Danger (#668's liftStop keying). Every entry stays >= the ruled AA floor 4.5.
+  // Re-measured whole for #681 U3 R2 (chromaEnvelope re-centred on the anchor's own lifted reading,
+  // shared by both paths + the keyS saturation basis) against the TRUE pre-U3 landed floors (bf2aaf6),
+  // not against R1's own (lower, undisclosed) numbers, per the U3 review this revision answers.
+  // Compared floor-for-floor (1-decimal truncated to 4 significant measured digits, not the 2-digit
+  // rounding an earlier pass of this comment mistook for a Tertiary regression that was never real)
+  // against bf2aaf6: "even" is byte-identical; "peak" holds or IMPROVES at every family (Neutral,
+  // Secondary, Success, Warning and Data 2 dark all move up); "perceptual" holds at every family
+  // EXCEPT ONE — Neutral dark, 4.9 -> 4.5 (measured 4.98 -> 4.53). This is NOT an R1-vs-R2 artifact:
+  // Neutral carries lift 0, so chromaEnvelope's sd is identical under every design tried
+  // (liftStop(stop, 0) === stop always) — the move is REQ-052 itself (this unit's mandated saturation-
+  // basis change, chroma% of gamut -> the key colour's own OKHSL s), which the plan's own mechanism (2)
+  // text names as a foreseeable risk ("the accent's own L* shift... which the 16-family ratchet... both
+  // catch"). Still clears the ruled AA floor 4.5 (0.03 of headroom) via #662's contrast policy, which
+  // guarantees AA rather than a rising ratchet — but per "re-pin only upward, or hand any downward move
+  // to #662's policy," this one specific move is surfaced, not silently re-pinned: see
+  // .sdlc/questions/pif-u3.md Q3 for the owner ruling this needs (U1's anchor move and U6's ladder, both
+  // in flight on this same plan, can each move Neutral's accent lightness further).
   const FLOORS = {
     perceptual: [
-      ["Neutral", 5.9, 4.5],   // measured 5.90 / 4.53
-      ["Primary", 6.0, 4.8],   // measured 6.08 / 4.87
-      ["Secondary", 4.7, 6.1],   // measured 4.77 / 6.17
-      ["Tertiary", 6.7, 4.8],   // measured 6.80 / 4.86
-      ["Info", 5.7, 4.6],   // measured 5.80 / 4.64
-      ["Success", 6.1, 4.8],   // measured 6.18 / 4.86
-      ["Warning", 7.5, 4.6],   // measured 7.54 / 4.65
-      ["Danger", 7.1, 5.1],   // measured 7.12 / 5.14
-      ["Data 1", 5.0, 5.5],   // measured 5.05 / 5.58
-      ["Data 2", 5.4, 4.9],   // measured 5.40 / 4.99
-      ["Data 3", 5.2, 5.1],   // measured 5.21 / 5.17
-      ["Data 4", 4.8, 5.5],   // measured 4.84 / 5.55
-      ["Data 5", 4.5, 5.8],   // measured 4.59 / 5.90
-      ["Data 6", 4.8, 6.2],   // measured 4.82 / 6.21
-      ["Data 7", 4.7, 6.0],   // measured 4.70 / 6.07
-      ["Data 8", 4.6, 5.8],   // measured 4.61 / 5.87
+      ["Neutral", 5.9, 4.5],   // measured 5.9007 / 4.5327 — light UP, dark DOWN from bf2aaf6's 5.8/4.9 (5.89/4.98) — REQ-052, not R1-vs-R2 (lift 0) — see comment above, Q3
+      ["Primary", 6.0, 4.8],   // measured 6.0811 / 4.8678
+      ["Secondary", 4.7, 6.1],   // measured 4.7692 / 6.1745
+      ["Tertiary", 6.7, 4.8],   // measured 6.7956 / 4.8641
+      ["Info", 5.7, 4.6],   // measured 5.7955 / 4.6354
+      ["Success", 6.1, 4.8],   // measured 6.1018 / 4.8771
+      ["Warning", 7.6, 4.6],   // measured 7.6690 / 4.6452
+      ["Danger", 7.1, 5.1],   // measured 7.1662 / 5.1315
+      ["Data 1", 5.0, 5.5],   // measured 5.0491 / 5.5780
+      ["Data 2", 5.4, 4.9],   // measured 5.4047 / 4.9892
+      ["Data 3", 5.2, 5.1],   // measured 5.2114 / 5.1744
+      ["Data 4", 4.8, 5.5],   // measured 4.8389 / 5.5475
+      ["Data 5", 4.5, 5.8],   // measured 4.5888 / 5.8979
+      ["Data 6", 4.8, 6.2],   // measured 4.8180 / 6.2091
+      ["Data 7", 4.7, 6.0],   // measured 4.7040 / 6.0728
+      ["Data 8", 4.6, 5.8],   // measured 4.6072 / 5.8657
     ],
     even: [
-      ["Neutral", 7.0, 4.5],   // measured 7.10 / 4.53
-      ["Primary", 7.1, 4.5],   // measured 7.16 / 4.51
-      ["Secondary", 5.2, 5.8],   // measured 5.23 / 5.84
-      ["Tertiary", 7.1, 4.5],   // measured 7.10 / 4.51
-      ["Info", 7.1, 4.5],   // measured 7.12 / 4.52
-      ["Success", 8.0, 5.1],   // measured 8.05 / 5.19
-      ["Warning", 9.4, 5.0],   // measured 9.46 / 5.02
-      ["Danger", 8.0, 5.1],   // measured 8.05 / 5.15
-      ["Data 1", 5.2, 5.8],   // measured 5.23 / 5.84
-      ["Data 2", 5.2, 5.8],   // measured 5.24 / 5.88
-      ["Data 3", 5.2, 5.8],   // measured 5.24 / 5.86
-      ["Data 4", 5.2, 5.8],   // measured 5.26 / 5.86
-      ["Data 5", 5.2, 5.8],   // measured 5.29 / 5.85
-      ["Data 6", 5.2, 5.8],   // measured 5.26 / 5.85
-      ["Data 7", 5.2, 5.8],   // measured 5.24 / 5.84
-      ["Data 8", 5.2, 5.8],   // measured 5.24 / 5.88
+      ["Neutral", 7.0, 4.5],   // measured 7.0970 / 4.5280
+      ["Primary", 7.1, 4.5],   // measured 7.1597 / 4.5104
+      ["Secondary", 5.2, 5.8],   // measured 5.2314 / 5.8367
+      ["Tertiary", 7.1, 4.5],   // measured 7.1043 / 4.5145
+      ["Info", 7.1, 4.5],   // measured 7.1164 / 4.5225
+      ["Success", 8.0, 5.1],   // measured 8.0496 / 5.1852
+      ["Warning", 9.4, 5.0],   // measured 9.4559 / 5.0231
+      ["Danger", 8.0, 5.1],   // measured 8.0463 / 5.1543
+      ["Data 1", 5.2, 5.8],   // measured 5.2342 / 5.8396
+      ["Data 2", 5.2, 5.8],   // measured 5.2436 / 5.8765
+      ["Data 3", 5.2, 5.8],   // measured 5.2402 / 5.8614
+      ["Data 4", 5.2, 5.8],   // measured 5.2616 / 5.8562
+      ["Data 5", 5.2, 5.8],   // measured 5.2857 / 5.8518
+      ["Data 6", 5.2, 5.8],   // measured 5.2624 / 5.8526
+      ["Data 7", 5.2, 5.8],   // measured 5.2355 / 5.8380
+      ["Data 8", 5.2, 5.8],   // measured 5.2365 / 5.8757
     ],
     peak: [
-      ["Neutral", 6.2, 4.6],   // measured 6.28 / 4.70
-      ["Primary", 6.4, 4.6],   // measured 6.44 / 4.63
-      ["Secondary", 11.5, 15.1],   // measured 11.55 / 15.20
-      ["Tertiary", 7.5, 5.5],   // measured 7.57 / 5.58
-      ["Info", 5.0, 7.7],   // measured 5.07 / 7.72
-      ["Success", 7.1, 11.9],   // measured 7.16 / 11.94
-      ["Warning", 4.7, 7.5],   // measured 4.79 / 7.52
-      ["Danger", 7.1, 5.1],   // measured 7.12 / 5.14
-      ["Data 1", 10.0, 6.7],   // measured 10.00 / 6.78
-      ["Data 2", 4.7, 5.5],   // measured 4.80 / 5.58
-      ["Data 3", 5.2, 5.1],   // measured 5.25 / 5.16
-      ["Data 4", 6.3, 8.7],   // measured 6.35 / 8.76
-      ["Data 5", 12.8, 16.7],   // measured 12.82 / 16.79
-      ["Data 6", 11.6, 15.0],   // measured 11.64 / 15.10
-      ["Data 7", 11.8, 15.5],   // measured 11.88 / 15.55
-      ["Data 8", 6.3, 8.8],   // measured 6.38 / 8.84
+      ["Neutral", 6.2, 4.6],   // measured 6.2782 / 4.6977 — dark UP from bf2aaf6's 4.5 (4.51)
+      ["Primary", 6.4, 4.6],   // measured 6.4444 / 4.6253
+      ["Secondary", 11.5, 15.1],   // measured 11.5512 / 15.1950
+      ["Tertiary", 7.5, 5.5],   // measured 7.5699 / 5.5770
+      ["Info", 5.0, 7.7],   // measured 5.0696 / 7.7182
+      ["Success", 7.2, 11.9],   // measured 7.2142 / 11.9037 — dark UP from bf2aaf6's 11.8 (11.87)
+      ["Warning", 4.8, 7.5],   // measured 4.8392 / 7.5156 — dark UP from bf2aaf6's 7.4 (7.49)
+      ["Danger", 7.1, 5.1],   // measured 7.1662 / 5.1315
+      ["Data 1", 10.0, 6.7],   // measured 10.0035 / 6.7813
+      ["Data 2", 4.7, 5.5],   // measured 4.7957 / 5.5797
+      ["Data 3", 5.2, 5.1],   // measured 5.2532 / 5.1571
+      ["Data 4", 6.3, 8.7],   // measured 6.3489 / 8.7609
+      ["Data 5", 12.8, 16.7],   // measured 12.8163 / 16.7900
+      ["Data 6", 11.6, 15.0],   // measured 11.6401 / 15.0969
+      ["Data 7", 11.8, 15.5],   // measured 11.8825 / 15.5544
+      ["Data 8", 6.3, 8.8],   // measured 6.3796 / 8.8369
     ],
   };
   let checked = 0;
