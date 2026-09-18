@@ -5,9 +5,10 @@
 > `design-skills:component-decomposer` method. This is a **DECOMPOSE of the as-built UI** — it
 > records reality (including the gaps against the skill's family policy), it does not redesign.
 >
-> ⚠️ **Line numbers drift.** The exact `file:line` citations below are a past snapshot (`src/ui/app.js`
-> has since grown to ~5330 lines); treat them as **structural pointers**, not addresses — `grep` the named
-> symbol/class to locate it. The anatomy, layering, and API observations remain valid.
+> ℹ️ **Line numbers are maintained.** Every `file:line` citation below is checked by
+> `node scripts/audit-citations.mjs` (STALE 0 as of #640, against the current `src/ui/` split: `app.js`,
+> `app-helpers.mjs`, `sections/*.js`, `overlays/*.js`). Re-run it after any rebase; a citation that drifts
+> reads STALE, never silently wrong. The anatomy, layering, and API observations remain valid.
 
 ## How to read this
 
@@ -270,8 +271,9 @@ Three unrelated "pill" stylings — a naming/coherence drift, not one primitive:
 - **Surface** S1. **Sites** ~7 (every slider + Name + the selects/toggles in the inspector).
 - **Anatomy** `.field` `[ label[ text · readout(<b>) ] · control ]` — label is `display:flex;
   justify-content:space-between` so the readout right-aligns, `styles.css:929-932`.
-- **Role** the one genuine layout primitive (token-only, no domain name). Owns `margin-bottom:14px`
-  — i.e. it **does set its own outer margin** (`styles.css:928`), the classic drift flag.
+- **Role** the one genuine layout primitive (token-only, no domain name). Owns no outer margin:
+  `.field { margin: 0; }` (`styles.css:928`), the parent provides spacing; the only scoped exception is
+  `.newpal-custom .field { margin-bottom: 16px; }` (`styles.css:1184`).
 
 ```json
 { "component":"field","layer":"primitive","role":null,"replaces_native":false,
@@ -401,9 +403,9 @@ fine as bespoke one-offs.
    `interactive`/`status` modes + tones; `damp-presets` and `map-drift-sum` migrated. (The
    absolutely-positioned `.tile-tag` overlay badge stays separate — it is an overlay, not an in-flow
    chip.)
-8. **⏳ 🟡 Self-owned outer margins** on `.field` / `.segmented`. *Deferred — intentional.* Converting
-   to parent `gap` means making every inspector panel a flex-column, a layout change with real
-   visual-regression risk for a 🟡 win. Left as-is and noted.
+8. **✅ Self-owned outer margins** on `.field` / `.segmented`: resolved. Both are `margin: 0`
+   (`styles.css:928`, `styles.css:869-870`, the latter with a "no self-margin" comment); the parent owns
+   spacing. The earlier "deferred, intentional" note described a state that no longer exists.
 9. **✅ ⚪ Set-tile nested interactive.** *Fixed + corrected* — it was a `.del` **`<span>`** (mouse-only)
    inside the tile `<button>`, not a button-in-button (so not invalid HTML, but the delete had no
    keyboard). The tile is now a `<div role=button>` (Enter/Space) so `.del` is a real focusable
