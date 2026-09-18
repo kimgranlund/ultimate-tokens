@@ -206,6 +206,187 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   assertRendered("Hero · 2002", heroBands);
 }
 
+// ── #650: the clamp/floor pass is a converging fit under RENDERED-SHARE caps ───────────────────
+// The bands render as flex grow factors, so a cap is only meaningful as width / sum. Two defects in
+// the old 4-pass loop (issue #650): a positive net with nothing floored was dropped (sum < 100, the
+// one band rendered at 100%), and the loop was not a fixed-point solver (one supporting sibling at
+// d45/s45/a10 landed ~1 point over its cap). Owner ruling: when locked + sum(caps) < the pool the
+// caps are scaled up by one common factor until the set is feasible (likewise floors are scaled
+// DOWN if they alone exceed the pool), then the fit iterates to a fixed point where no bound is
+// violated and the sum is exactly what came in. The expected bounds below are derived HERE, from
+// the rule, not read back from the helper, so this block is an independent check of the fit.
+{
+  const NEUTRAL_W = 8;
+  // the effective (feasibility-scaled) bounds for a returned band vector, from the ruling alone
+  const effectiveBounds = (bands) => {
+    const sum = sumOf(bands);
+    const flex = bands.filter((b) => b.name.toLowerCase() !== "neutral");
+    const pool = sum - (bands.length - flex.length) * NEUTRAL_W;
+    let caps = flex.map((b) => (b.colorRole === "dominant" ? posterStripDominantCap(b.key) : POSTER_STRIP_MAX_BAND_PCT));
+    let floors = flex.map((b) => (b.colorRole === "accent" ? POSTER_STRIP_ACCENT_FLOOR_PCT : 0));
+    const capSum = caps.reduce((a, c) => a + c, 0), floorSum = floors.reduce((a, c) => a + c, 0);
+    const capScale = capSum < pool ? pool / capSum : 1;
+    const floorScale = floorSum > pool ? pool / floorSum : 1;
+    if (capScale !== 1) caps = caps.map((c) => c * capScale);
+    if (floorScale !== 1) floors = floors.map((f) => f * floorScale);
+    return { sum, capScale, floorScale, bounds: new Map(flex.map((b, i) => [b, { cap: caps[i], floor: floors[i] }])) };
+  };
+  // one cohort -> zero or more failure messages (sum, every rendered share within its bounds)
+  const checkFit = (label, bands) => {
+    const msgs = [];
+    const { sum, capScale, floorScale, bounds } = effectiveBounds(bands);
+    if (!(Math.abs(sum - 100) < 1e-6)) msgs.push(`${label}: widths sum to 100 (got ${sum.toFixed(6)})`);
+    for (const [b, { cap, floor }] of bounds) {
+      if (!(b.width / sum <= cap / 100 + 1e-9)) msgs.push(`${label}: band ${b.name} (${b.colorRole}) rendered share <= its effective cap (cap ${cap.toFixed(4)}${capScale !== 1 ? ` scaled x${capScale.toFixed(4)}` : ""}, got ${(100 * b.width / sum).toFixed(4)})`);
+      if (!(b.width / sum >= floor / 100 - 1e-9)) msgs.push(`${label}: ${b.colorRole || "untagged"} ${b.name} rendered share >= its effective floor (floor ${floor.toFixed(4)}${floorScale !== 1 ? ` scaled x${floorScale.toFixed(4)}` : ""}, got ${(100 * b.width / sum).toFixed(4)})`);
+    }
+    return msgs;
+  };
+  // the fit throws when its iteration cap is hit (a fixed point it could not reach): that is a
+  // test failure, never a silent return.
+  const runFit = (label, enabled, groups) => {
+    try { return { bands: posterStripBands(enabled, groups) }; }
+    catch (e) { return { error: `${label}: the fit terminated without hitting its iteration cap (threw: ${e.message})` }; }
+  };
+  const N = { name: "neutral", on: true, key: "#AAAAAA" };
+  const D = { name: "dominant", on: true, key: "#C49F60", colorRole: "dominant" };   // cap ~40.56
+  const S = { name: "supporting", on: true, key: "#2B4B37", colorRole: "supporting" };
+  const A = { name: "accent", on: true, key: "#913029", colorRole: "accent" };
+  const domCap = posterStripDominantCap(D.key);
+  ok(near(domCap, 40.56), `test setup: the probe dominant's cap is ~40.56 (got ${domCap.toFixed(2)})`);
+
+  // case A: one dominant + one accent, no neutral, d50/s40/a10. Caps 40.56 + 35 < 100, so both
+  // scale by 100/75.56 and the dominant lands EXACTLY at its scaled cap; sum 100. (Old loop:
+  // sum 100 but dominant 65, cap violated.)
+  {
+    const r = runFit("case A", [D, A], GROUPS);
+    if (r.error) fails.push(r.error);
+    else {
+      for (const m of checkFit("case A", r.bands)) fails.push(m);
+      const dom = r.bands.find((b) => b.colorRole === "dominant");
+      const scaled = domCap * (100 / (domCap + POSTER_STRIP_MAX_BAND_PCT));
+      ok(Math.abs(dom.width - scaled) < 1e-9, `case A: the dominant sits exactly at its feasibility-scaled cap (want ${scaled.toFixed(6)}, got ${dom.width.toFixed(6)})`);
+    }
+  }
+  // case A': neutral + a lone dominant, d50/s40/a10. Locked 8 + cap 40.56 < 100, so the one cap
+  // scales to 92 and the dominant takes it; sum 100. (Old loop: surplus dropped, sum 48.56.)
+  {
+    const r = runFit("case A'", [N, D], GROUPS);
+    if (r.error) fails.push(r.error);
+    else {
+      for (const m of checkFit("case A'", r.bands)) fails.push(m);
+      const dom = r.bands.find((b) => b.colorRole === "dominant");
+      ok(Math.abs(dom.width - 92) < 1e-9, `case A': the lone dominant fills what neutral leaves, its cap scaled to 92 (got ${dom.width.toFixed(6)})`);
+    }
+  }
+  // case B: neutral + dominant + ONE supporting + one accent, d45/s45/a10: feasible (8 + 40.56 +
+  // 35 + 35 > 100), so no scaling; the fit must land dominant <= 40.56 and supporting <= 35 to
+  // 1e-9, sum 100. (Old loop: supporting ~1 point over, or the dominant over after pass 4.)
+  {
+    const r = runFit("case B", [N, D, S, A], [{ hier: "d", pct: 45 }, { hier: "s", pct: 45 }, { hier: "a", pct: 10 }]);
+    if (r.error) fails.push(r.error);
+    else {
+      for (const m of checkFit("case B", r.bands)) fails.push(m);
+      const dom = r.bands.find((b) => b.colorRole === "dominant"), sup = r.bands.find((b) => b.colorRole === "supporting");
+      ok(dom.width <= domCap + 1e-9, `case B: the dominant respects its unscaled cap to 1e-9 (cap ${domCap.toFixed(6)}, got ${dom.width.toFixed(6)})`);
+      ok(sup.width <= POSTER_STRIP_MAX_BAND_PCT + 1e-9, `case B: the single supporting sibling respects the flat cap to 1e-9 (cap ${POSTER_STRIP_MAX_BAND_PCT}, got ${sup.width.toFixed(6)})`);
+    }
+  }
+  // case C: one dominant, nothing else. Its cap scales to 100 and it takes it. (Old loop: sum
+  // 40.56, the band renders at 100% with the sum silently short.)
+  {
+    const r = runFit("case C", [D], GROUPS);
+    if (r.error) fails.push(r.error);
+    else {
+      for (const m of checkFit("case C", r.bands)) fails.push(m);
+      ok(r.bands.length === 1 && Math.abs(r.bands[0].width - 100) < 1e-9, `case C: a lone dominant's cap scales to 100 and it fills the strip (got ${r.bands.map((b) => b.width.toFixed(6)).join(",")})`);
+    }
+  }
+
+  // case D (review round 1 of #650): neutral + dominant + one supporting + two accents + "Info", a
+  // colorRole-less TOP-UP band (posterStripSelect fills free slots from untagged palettes; Maison/
+  // Adia/BZZR ship them), at d50/s49/a1. Info's base width is the 5 fallback, the accents start at
+  // 0.46 each: the two accent floors take ~19 from the pool, more than Info + the pinned bands can
+  // give, so the redistribution pushes Info NEGATIVE. The pre-review fit truncated it at 0 with
+  // Math.max, silently dropping the shortfall: sum 103.559582, both accents rendered 9.6563 (under
+  // the 10 floor). A top-up band is a flexible band with lower bound 0: it may go to 0, but the
+  // deficit it cannot absorb is carried to the remaining flexible bands, never truncated.
+  {
+    const A2 = { name: "accent-1", on: true, key: "#1F4E8C", colorRole: "accent" };
+    const INFO = { name: "Info", on: true, key: "#3A7BD5" }; // no colorRole: a top-up band
+    const r = runFit("case D", [N, D, S, A, A2, INFO], [{ hier: "d", pct: 50 }, { hier: "s", pct: 49 }, { hier: "a", pct: 1 }]);
+    if (r.error) fails.push(r.error);
+    else {
+      for (const m of checkFit("case D", r.bands)) fails.push(m);
+      const sum = sumOf(r.bands);
+      const info = r.bands.find((b) => b.name === "Info");
+      ok(Math.abs(sum - 100) < 1e-6, `case D: an untagged top-up band never truncates the net, widths sum to 100 (got ${sum.toFixed(6)})`);
+      ok(info && info.width >= 0, `case D: the top-up band stays >= 0 (got ${info && info.width})`);
+      const { bounds } = effectiveBounds(r.bands);
+      for (const b of r.bands.filter((x) => x.colorRole === "accent")) {
+        const { floor } = bounds.get(b);
+        ok(100 * b.width / sum >= floor - 1e-9, `case D: accent ${b.name} rendered share >= its effective floor ${floor.toFixed(4)} (got ${(100 * b.width / sum).toFixed(4)})`);
+      }
+    }
+  }
+
+  // fuzz: random cohorts over role mix (0-1 neutral, 1 dominant, 0-4 supporting, 0-4 accents,
+  // 0-2 UNTAGGED top-up bands such as Info/Success/Data-N, which carry no colorRole and take the
+  // 5 fallback width), random pct splits, random hex keys (so chroma weighting and the dominant
+  // cap vary). Fixed seed, so a failure reproduces; the first 8 failures are reported with their
+  // cohort. The untagged bands were added at review round 1 of #650: without them the fuzz never
+  // exercised the negative-net truncation that case D pins.
+  const FUZZ_CASES = 4000, FUZZ_SEED = 0x650;
+  const rng = (() => { let a = FUZZ_SEED >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })();
+  const randInt = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
+  const randHex = () => "#" + Array.from({ length: 6 }, () => "0123456789ABCDEF"[randInt(0, 15)]).join("");
+  const fuzzFails = [];
+  let fuzzRun = 0;
+  for (let c = 0; c < FUZZ_CASES; c++) {
+    const enabled = [];
+    if (randInt(0, 1)) enabled.push({ name: "neutral", on: true, key: randHex() });
+    enabled.push({ name: "dominant", on: true, key: randHex(), colorRole: "dominant" });
+    for (let i = 0, k = randInt(0, 4); i < k; i++) enabled.push({ name: `supporting-${i}`, on: true, key: randHex(), colorRole: "supporting" });
+    for (let i = 0, k = randInt(0, 4); i < k; i++) enabled.push({ name: `accent-${i}`, on: true, key: randHex(), colorRole: "accent" });
+    for (let i = 0, k = randInt(0, 2); i < k; i++) enabled.push({ name: `untagged-${i}`, on: true, key: randHex() });
+    // a random split; a group may be 0 (an authored preset can drop a tier), the three sum to 100.
+    // A cohort whose SHOWN tiers all have pct 0 has no pool at all: posterStripNormalize (kept as
+    // is, out of this fit's remit) returns that vector unchanged, so such cohorts are re-rolled.
+    let pcts;
+    do {
+      const raw = [rng(), rng(), rng()].map((x) => (rng() < 0.1 ? 0 : x));
+      const rawSum = raw.reduce((a, b) => a + b, 0) || 1;
+      pcts = raw.map((x) => Math.round((100 * x) / rawSum));
+    } while (!enabled.some((p) => p.colorRole && pcts[{ dominant: 0, supporting: 1, accent: 2 }[p.colorRole]] > 0));
+    const groups = [{ hier: "d", pct: pcts[0] }, { hier: "s", pct: pcts[1] }, { hier: "a", pct: pcts[2] }];
+    const label = `fuzz #${c} [${enabled.map((p) => `${p.name}:${p.key}`).join(" ")}] d${pcts[0]}/s${pcts[1]}/a${pcts[2]}`;
+    const r = runFit(label, enabled, groups);
+    fuzzRun++;
+    if (r.error) { fuzzFails.push(r.error); continue; }
+    for (const m of checkFit(label, r.bands)) fuzzFails.push(m);
+  }
+  // every curated preset with a story is a FEASIBLE cohort: the pre-step must never fire on shipped
+  // data (the ruling's claim that feasible cohorts are untouched), and every one holds the fit's
+  // invariants. Widths were also checked bit-identical to main@5035189 for all 343 when #650 landed.
+  {
+    const cats = await Promise.all(["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"].map((s) => import(`../../src/ui/categories/${s}.js`)));
+    let presets = 0; const presetFails = [];
+    for (const { PRESETS } of cats) for (const p of PRESETS) {
+      if (!p.story?.groups) continue;
+      presets++;
+      const r = runFit(p.name, enabledOf(p), p.story.groups);
+      if (r.error) { presetFails.push(r.error); continue; }
+      for (const m of checkFit(p.name, r.bands)) presetFails.push(m);
+      const { capScale, floorScale } = effectiveBounds(r.bands);
+      if (capScale !== 1 || floorScale !== 1) presetFails.push(`${p.name}: the feasibility pre-step fired on a curated preset (capScale ${capScale}, floorScale ${floorScale})`);
+    }
+    ok(presets === 343, `curated sweep: 343 presets carry a story.groups (got ${presets})`);
+    ok(presetFails.length === 0, `curated sweep: every preset is feasible and holds the fit's invariants, ${presetFails.length} failure(s):\n    ` + presetFails.slice(0, 8).join("\n    "));
+  }
+  ok(fuzzRun === FUZZ_CASES, `fuzz: all ${FUZZ_CASES} cohorts ran (got ${fuzzRun})`);
+  ok(fuzzFails.length === 0, `fuzz (seed ${FUZZ_SEED.toString(16)}, ${FUZZ_CASES} cohorts): ${fuzzFails.length} violation(s), first ${Math.min(8, fuzzFails.length)}:\n    ` + fuzzFails.slice(0, 8).join("\n    "));
+}
+
 if (fails.length) { console.error(`poster-strip FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("poster-strip PASS: posterStripBands() holds all four #646 fixes directly — never drops the 2nd accent (fix 2), clamps the dominant to a chroma-scaled 35..45 cap + floors accent bands via proportional redistribution (fix 1), weights width by relative chroma without shifting a uniformly-saturated cohort (fix 3), and pins neutral first and the highest-chroma band last (fix 4) — plus the review fold-ins: a capitalized Neutral + colorRole-less top-up still fill 6 bands (Maison), and every story-path vector sums to 100 with the widest band's rendered share under the cap (Corsa's worst case, War and Peace, Hero)");
 process.exit(0);

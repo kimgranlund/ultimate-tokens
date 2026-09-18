@@ -582,8 +582,12 @@ export const field = (labelText, control, { labelTitle } = {}) => {
 // swatch. Four fixes over the original inline computation:
 //  1. The dominant band is capped at a chroma-scaled share (posterStripDominantCap, 35%..45%), any
 //     other band at POSTER_STRIP_MAX_BAND_PCT (35%), and any accent band is floored at
-//     POSTER_STRIP_ACCENT_FLOOR_PCT (~10%); the resulting surplus/deficit is redistributed
-//     proportionally across the remaining flexible (uncapped, unfloored, non-neutral) bands.
+//     POSTER_STRIP_ACCENT_FLOOR_PCT (~10%); a colorRole-less top-up band is flexible with floor 0.
+//     The caps/floors are RENDERED shares, held by a converging fit (#650, posterStripClampAndFloor):
+//     each round clamps/floors every crossing band and hands the net proportionally to the bands
+//     with no active bound, to a fixed point where the sum is exactly what came in. Caps scale UP
+//     (floors scale DOWN) by one common factor only when the bound set is infeasible at the
+//     incoming sum; every curated preset is feasible and is untouched by that pre-step.
 //  2. Band SELECTION (not just width) changes: neutral + the dominant swatch + BOTH accent
 //     swatches (up to 2) are always kept; only a SUPPORTING sliver gets dropped when the
 //     hierarchy overflows the 6-band cap — never the 2nd accent.
@@ -613,6 +617,7 @@ const POSTER_STRIP_HIER_OF_ROLE = { dominant: "d", supporting: "s", accent: "a" 
 const POSTER_STRIP_SAMPLED_W = [36, 19, 19, 16, 6, 4];
 const POSTER_STRIP_CHROMA_FLOOR_WEIGHT = 0.5; // weight given to a fully-desaturated swatch
 const POSTER_STRIP_CHROMA_REF = 0.15;         // chroma at/above which a swatch gets full weight
+const POSTER_STRIP_FIT_EPS = 1e-9;            // a net below this is floating-point residue, the fit is at its fixed point
 // Owner ruling (review of #646): the dominant's cap scales with ITS OWN chroma, 35% for a near-
 // neutral dominant up to 45% for a vivid one, so chroma weighting reaches the band the ticket is
 // about and presets with different authored/vivid dominants stay visibly different (TKT-0003).
@@ -686,40 +691,83 @@ function posterStripWeightByChroma(shown, widths) {
 }
 
 // fix 1 — clamp the max band + floor accent bands, redistributing the surplus/deficit
-// proportionally across the remaining flexible bands (neutral is always locked). A few passes
-// settle any band a redistribution round pushed back over/under a bound.
+// proportionally across the remaining flexible bands (neutral is always locked), as a CONVERGING
+// fit (#650). The bands render as flex grow factors, so a cap is only meaningful as a RENDERED
+// share (width / sum); the fit therefore preserves the incoming sum exactly and never drops a net,
+// including the part of a negative net that a top-up band (no colorRole, floor 0) cannot absorb.
+//
+// Owner ruling (#650): the caps and floors are rendered shares, so when the constraint set cannot
+// hold at the incoming sum it is made feasible first, by one common factor:
+//   - locked + sum(caps) < sum  ->  every flexible cap scales UP by (pool / sum(caps)), so a lone
+//     dominant fills what neutral leaves (92) instead of the surplus being dropped on the floor;
+//   - sum(floors) > pool         ->  every accent floor scales DOWN by (pool / sum(floors)).
+// A feasible cohort (every curated preset) is untouched by the pre-step, so its widths are
+// byte-identical to the previous loop wherever that loop had already converged.
+//
+// The fit: clamp/floor every flexible band, take the net (surplus - deficit) and hand it
+// proportionally to the bands whose bounds are NOT active; a band the redistribution pushes over
+// a bound is clamped in the next round and its excess redistributed again; when no band crosses,
+// the vector is at a fixed point. If every band sits at a bound while a net remains, the bands
+// held at the bound the net can move AWAY from are released (a positive net lifts floored bands
+// above their floor, a negative one lowers capped bands below their cap), which the feasibility
+// pre-step guarantees can absorb it. Every round either clears the net or pins at least one more
+// band, and a released band can only be pinned once more, so the loop is bounded; the cap below is
+// an invariant guard, never a return path.
+function posterStripBounds(shown, poolTotal) {
+  const locked = shown.map(posterStripIsNeutral);
+  const hi = shown.map((p, i) => (locked[i] ? null : p.colorRole === "dominant" ? posterStripDominantCap(p.key) : POSTER_STRIP_MAX_BAND_PCT));
+  const lo = shown.map((p, i) => (locked[i] ? null : p.colorRole === "accent" ? POSTER_STRIP_ACCENT_FLOOR_PCT : 0));
+  const hiSum = hi.reduce((s, v) => s + (v == null ? 0 : v), 0);
+  const loSum = lo.reduce((s, v) => s + (v == null ? 0 : v), 0);
+  const capScale = hiSum > 0 && hiSum < poolTotal ? poolTotal / hiSum : 1;
+  const floorScale = loSum > 0 && loSum > poolTotal ? poolTotal / loSum : 1;
+  return {
+    hi: capScale === 1 ? hi : hi.map((v) => (v == null ? null : v * capScale)),
+    lo: floorScale === 1 ? lo : lo.map((v) => (v == null ? null : v * floorScale)),
+    capScale, floorScale,
+  };
+}
+
 function posterStripClampAndFloor(shown, widths) {
   const n = widths.length;
   const locked = shown.map(posterStripIsNeutral);
-  const isAccent = shown.map((p) => p.colorRole === "accent");
-  // the dominant's cap is chroma-scaled (35..45); every other band keeps the flat 35. On the 343
-  // curated presets no non-dominant band comes near it (measured max 24.6%, every preset has >= 2
-  // supporting siblings); with a single supporting sibling (d45/s45/a10) the 4-pass loop can
-  // overshoot it by ~1 point, a corner no shipped data reaches.
-  const cap = shown.map((p) => (p.colorRole === "dominant" ? posterStripDominantCap(p.key) : POSTER_STRIP_MAX_BAND_PCT));
+  const poolTotal = widths.reduce((s, w, i) => s + (locked[i] ? 0 : w), 0);
+  const { hi, lo } = posterStripBounds(shown, poolTotal);
   const w = widths.slice();
-  for (let pass = 0; pass < 4; pass++) {
-    const fixed = locked.slice();
-    const clampedNow = [], flooredNow = [];
-    let surplus = 0, deficit = 0;
+  const pinnedHi = new Array(n).fill(false), pinnedLo = new Array(n).fill(false);
+  const MAX_ROUNDS = 4 * n + 8;
+  for (let round = 0; ; round++) {
+    if (round >= MAX_ROUNDS) throw new Error(`posterStripClampAndFloor: no fixed point after ${MAX_ROUNDS} rounds (widths ${JSON.stringify(w)})`);
+    let surplus = 0, deficit = 0, crossed = false;
     for (let i = 0; i < n; i++) {
-      if (fixed[i]) continue;
-      if (w[i] > cap[i]) { surplus += w[i] - cap[i]; w[i] = cap[i]; fixed[i] = true; clampedNow.push(i); }
-      else if (isAccent[i] && w[i] < POSTER_STRIP_ACCENT_FLOOR_PCT) { deficit += POSTER_STRIP_ACCENT_FLOOR_PCT - w[i]; w[i] = POSTER_STRIP_ACCENT_FLOOR_PCT; fixed[i] = true; flooredNow.push(i); }
+      if (locked[i]) continue;
+      if (w[i] > hi[i]) { surplus += w[i] - hi[i]; w[i] = hi[i]; pinnedHi[i] = true; pinnedLo[i] = false; crossed = true; }
+      else if (w[i] < lo[i]) { deficit += lo[i] - w[i]; w[i] = lo[i]; pinnedLo[i] = true; pinnedHi[i] = false; crossed = true; }
     }
-    if (!clampedNow.length && !flooredNow.length) break;
+    if (!crossed) break;
     const net = surplus - deficit; // positive: extra to give the flexible bands; negative: take from them
+    // a scaled cap set sums to the pool only up to floating point, so a residual of ~1e-14 is the
+    // fixed point, not a net still owed (the sum stays within 1e-9 of what came in).
+    if (Math.abs(net) < POSTER_STRIP_FIT_EPS) break;
     let pool = [];
-    for (let i = 0; i < n; i++) if (!fixed[i]) pool.push(i);
-    // Every non-neutral band got clamped or floored in the same pass, so there is no flexible band
-    // to absorb `net` — never drop it on the floor (the sum must stay exactly what came in, that is
-    // what lets the constants mean what they say in rendered terms). A positive net goes to the
-    // floored bands (rising above the floor is allowed); a negative net comes off the clamped bands
-    // (falling below the cap is allowed). A later pass re-checks whichever bound that could cross.
-    if (!pool.length) pool = net > 0 ? flooredNow : clampedNow;
+    for (let i = 0; i < n; i++) if (!locked[i] && !pinnedHi[i] && !pinnedLo[i]) pool.push(i);
+    if (!pool.length) {
+      // every flexible band is at a bound: release the ones the net moves away from
+      for (let i = 0; i < n; i++) {
+        if (locked[i]) continue;
+        if (net > 0 && pinnedLo[i]) { pinnedLo[i] = false; pool.push(i); }
+        else if (net < 0 && pinnedHi[i]) { pinnedHi[i] = false; pool.push(i); }
+      }
+    }
+    if (!pool.length) throw new Error(`posterStripClampAndFloor: infeasible bounds, net ${net} with no band to absorb it (widths ${JSON.stringify(w)})`);
+    // The net is handed over WITHOUT truncation (review round 1 of #650): a band a negative net
+    // pushes below its floor (a colorRole-less top-up band's floor is 0) crosses it in the next
+    // round, is pinned there, and the part of the net it could not absorb is carried to the bands
+    // still free. Truncating at 0 here dropped that shortfall on the floor, and the next round saw
+    // nothing crossing and returned with the sum over 100 and the accents under their floor.
     const poolTotal = pool.reduce((s, i) => s + w[i], 0);
-    if (poolTotal > 0) for (const i of pool) w[i] = Math.max(0, w[i] + net * (w[i] / poolTotal));
-    else if (pool.length) for (const i of pool) w[i] = Math.max(0, w[i] + net / pool.length);
+    if (poolTotal > 0) for (const i of pool) w[i] += net * (w[i] / poolTotal);
+    else for (const i of pool) w[i] += net / pool.length;
   }
   return w;
 }
