@@ -79,9 +79,9 @@ incrementally.
 
 | # | Primitive | Layer | Native / Custom | Variants | Call-sites | Owning CSS | a11y | Flags |
 |---|---|---|---|---|---|---|---|---|
-| 1 | **Button** | component | native `<button>` | ~9 (primary · ghost · danger · undo/redo · add-pal · pane-toggle · figma-plugin · ex-btn · copy-float · map-reset) | ~20 sites, 85+ refs | `button`, `.primary`, `.ghost`, `.danger`, `.ex-btn`, `.copy-float`, `.map-reset`, `.pane-toggle` | good (focus-visible, aria-pressed×9, aria-label on icon-only) | no forced-colors; variant sprawl via ad-hoc classes |
+| 1 | **Button** | component | native `<button>` | ~9 (primary · ghost · danger · undo/redo · add-pal · pane-toggle · figma-plugin · ex-btn · copy-float · map-reset) | ~20 sites, 85+ refs | `button`, `.primary`, `.ghost`, `.danger`, `.ex-btn`, `.copy-float`, `.map-reset`, `.pane-toggle` | good (focus-visible, aria-pressed×7, aria-label on icon-only) | no forced-colors; variant sprawl via ad-hoc classes |
 | 2 | **Toggle / switch** | component | custom `<button role=switch>` (`switchControl()`) | 1 | 2 | `.toggle`, `.track` | ✓ role=switch, aria-checked, aria-label, native focus + Space/Enter | palette site has no `<label>` |
-| 3 | **Segmented control** | component (composes buttons) | custom (`<button>`s via `segmented()`) | 3 stylings (`.segmented` · `.canvas-seg` · `.figma-files`) | 8 | `.segmented`, `.canvas-seg`, `.figma-files` | ✓ one keyboard model: roving tabindex + arrows on every site; `role=tablist` or `group` | drawer format is a native `<select>` now, not a segment |
+| 3 | **Segmented control** | component (composes buttons) | custom (`<button>`s via `segmented()`) | 2 base stylings (`.segmented` · `.figma-files`) + 4 modifiers (`.canvas-seg` · `.segmented.seg-sm` · `.newpal-seg` · `.settings-seg`) | 15 | `.segmented`, `.canvas-seg`, `.figma-files`, `.newpal-seg`, `.settings-seg` | ✓ one keyboard model: roving tabindex + arrows on every site; `role=tablist` or `group` | drawer format is a native `<select>` now, not a segment |
 | 4 | **Slider / range** | component | native `<input type=range>` | 1 (via `slider()` helper) | 1 helper, ~14 instances | `input[type=range]`, `.field` | partial — `aria-label` set (label sibling NOT associated, noted in code `app.js:2059-2062`); no forced-colors | custom thumb only; consistent — the model primitive |
 | 5 | **Select** | component | native `<select>` | 1 + `.map-raw-select` | 3 | `select`, `.map-raw-select` | ✓ `.map-raw-select` has `aria-label`; Distribution/Curve are `field()` rows (label[for] + fallback aria-label) | two naming paths |
 | 6 | **Text input** | component | native `<input type=text>` | 2 (`.field` name · `.map-raw-input`) | 2 | `input[type=text]`, `.map-raw-input` | ✓ map-raw-input has `aria-label`; Name is a `field()` row (label[for] + fallback aria-label) | two naming paths |
@@ -152,20 +152,30 @@ incrementally.
 ```json
 { "component":"toggle","layer":"component","role":"switch","replaces_native":true,
   "parts":["track(aria-hidden)","thumb(::after)","label"],"states":["on"],"keyboard":["native button: Space/Enter"],
-  "forced_colors":false,"owns_outer_margin":false,
+  "forced_colors":true,"owns_outer_margin":false,
   "flags":["palette site has no <label>; name comes from aria-label only"] }
 ```
 
 ### 3 · Segmented control
 
-- **Surface** S1. **Sites** 8 `segmented()` calls (section switcher `app.js:1415`, inspector `app.js:1936`,
-  new-palette mode `sections/color.js:537`, canvas view/stops `sections/color.js:814/829`, hue space /
-  on-colors `sections/color.js:2065/2076`, Figma files `overlays/drawer.js:202`). **Variants** as found,
-  four stylings of one idea; today three remain:
+- **Surface** S1. **Sites** 15 static `segmented()` calls: section switcher `app.js:1415`; inspector
+  tabs `app.js:1936`, `sections/typography.js:613`, `sections/geometry.js:716`; new-palette mode
+  `sections/color.js:537`; canvas view `sections/color.js:814`; canvas stops `sections/color.js:829`;
+  hue space `sections/color.js:2065`; on-colors `sections/color.js:2076`; breakpoint mode
+  `sections/typography.js:177`, `sections/geometry.js:230`; specimen mode `sections/typography.js:308`,
+  `sections/geometry.js:381`; Figma files `overlays/drawer.js:202`; and one settings-row call
+  `overlays/settings.js:30` inside the settingRow helper, one live instance per settings row, called
+  from 9 rows across `overlays/settings.js`. **Variants** as found, four stylings of one idea; today two
+  base stylings plus four modifiers remain:
   - **Inspector tabs** `.segmented` `[Palette|Global|Roles]` — `role=tablist`/`tab`, roving
     tabindex, ArrowLeft/ArrowRight (`app.js:1586-1619`). *Well-built.*
   - **Canvas view** `.canvas-seg` `[Palettes|Scrims|Mapping|Radix]` — `role=tablist` (`sections/color.js:814-824`).
-  - **Canvas stops** `.canvas-seg` `role=group` (`sections/color.js:829-837`).
+  - **Canvas stops** `.canvas-seg` `role=group` (`sections/color.js:829-837`); the Typography and Geometry
+    breakpoint-mode and specimen-mode segments reuse the same modifier: `sections/typography.js:177`,
+    `sections/typography.js:308`, `sections/geometry.js:230`, `sections/geometry.js:381`.
+  - **New-palette mode** `.newpal-seg` `role=group`, `sections/color.js:537`, `styles.css:1156`.
+  - **Settings rows** `.settings-seg` `role=group`, one live instance per row, `overlays/settings.js:30`,
+    `styles.css:1293`.
   - **Drawer format picker**: the as-found `.drawer-tabs` segmented row no longer exists in `src/`; the
     format is chosen with a native labelled `<select>` (`.drawer-format`, `label[for=export-format]` +
     `aria-label`, `overlays/drawer.js:165-186`, `styles.css:1077-1079`), so it is a select (card 5), not a
@@ -174,18 +184,18 @@ incrementally.
     `role=group` (`overlays/drawer.js:202-209`, `styles.css:1083-1085`), so it carries the same roving
     tabindex + Arrow keys as every other `segmented()` site.
 - **Anatomy** `[ track (group) · segment (button)[] ]`; active = `.on` (`styles.css:879`).
-- **a11y** ✓ every site shares one keyboard model, set on each segment inside `segmented()` (`app.js:1586-1616`)
-  regardless of role: roving `tabindex` and an ArrowLeft/ArrowRight `onkeydown`; `role=tablist` sites add
-  `role=tab` + `aria-selected` + `aria-controls`, `role=group` sites add `aria-pressed`. The former
-  `.drawer-tabs`/`.figma-files` keyboard gap is closed.
+- **a11y** ✓ every one of the 15 sites shares one keyboard model, set on each segment inside `segmented()`
+  (`app.js:1586-1616`) regardless of role: roving `tabindex` and an ArrowLeft/ArrowRight `onkeydown`;
+  `role=tablist` sites add `role=tab` + `aria-selected` + `aria-controls`, `role=group` sites add
+  `aria-pressed`. The former `.drawer-tabs`/`.figma-files` keyboard gap is closed.
 - **Composition** A4: composes the button primitive into a capacity-fixed group. No overflow story
   (acceptable — fixed 3–4 segments).
 
 ```json
 { "component":"segmented","layer":"component","role":"tablist|group","replaces_native":false,
-  "parts":["track","segment"],"states":["on"],"keyboard":["ArrowLeft","ArrowRight (tabs only)"],
-  "forced_colors":false,"owns_outer_margin":false,
-  "flags":["4 stylings of one pattern","one segmented() helper backs every site; drawer format is a native select now","no self-margin, the parent owns spacing: segmented (styles.css:869-870)"] }
+  "parts":["track","segment"],"states":["on"],"keyboard":["ArrowLeft","ArrowRight"],
+  "forced_colors":true,"owns_outer_margin":false,
+  "flags":["2 base stylings (.segmented, .figma-files) + 4 modifiers (.canvas-seg, .segmented.seg-sm, .newpal-seg, .settings-seg)","one segmented() helper backs every site (15 static call sites); drawer format is a native select now","no self-margin, the parent owns spacing: segmented (styles.css:869-870)"] }
 ```
 
 ### 4 · Slider / range  ★ the model primitive
