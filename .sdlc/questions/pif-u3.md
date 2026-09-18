@@ -115,7 +115,16 @@ Options (unchanged from pass 1):
   unit owns that doc instead (not recommended — the STALE lines exist only because of this unit's own
   comment growth, across two passes now)
 
-## Q6 — NEW this pass: perceptual Neutral dark's contrast floor drops for real, 4.9 -> 4.5 (0.03 headroom over AA)
+## Q6 — RESOLVED (owner ruling, 2026-09-18): the C8 re-pin (4.9 -> 4.5) is accepted
+
+**Owner ruling:** accept the re-pinned floor as shipped (4.5, matching the measured 4.53) — it still
+clears the ruled AA floor, and the cell is re-measured once U1 and U6 land, per the first option below.
+The re-measure obligation is carried in `.sdlc/handoffs/pif-u3.md`'s Risks section so U4 or whoever
+integrates the plan cannot miss it. No further action from U3.
+
+### (original text, kept for the record)
+
+perceptual Neutral dark's contrast floor drops for real, 4.9 -> 4.5 (0.03 headroom over AA)
 
 The review's finding 3 flagged four `hpg-role-contrast` floors lowered under Design A without
 disclosure. Re-measured against the TRUE pre-U3 landed floors (bf2aaf6, not Design A's own numbers)

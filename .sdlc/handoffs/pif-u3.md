@@ -23,8 +23,8 @@ contrast floors also moved down in four places without disclosure.
 
 This pass fixes the gate to measure the rendered path, re-derives every figure from scratch, and
 re-decides Design A vs B on the corrected evidence: **Design B ships** (see
-`.sdlc/questions/pif-u3.md` Q1). One question is newly open (Q6, a genuine 0.03-headroom contrast-floor
-drop); Q1 and Q3 are resolved; Q4 and Q5 are unchanged from pass 1.
+`.sdlc/questions/pif-u3.md` Q1). Q1, Q3 and Q6 are resolved (Q6 by owner ruling, with a re-measure
+obligation carried below); Q4 and Q5 are unchanged from pass 1.
 
 ## Criteria table
 
@@ -121,14 +121,19 @@ in `.sdlc/questions/preset-intent-fidelity-u3-movement.md` (C6 iv).
   per-palette anchor stop, the seed's saturation will follow it while the seed's lightness stays at 500.
 - **U4:** the movement-table report (C6 iv) should measure against the SAME full-corpus, rendered,
   both-stop-set scope this unit's gate now uses.
-- **U1 / U6 (new, Q6):** either can move Neutral's accent lightness, and perceptual Neutral dark's
-  contrast floor now sits at 4.53 against the ruled AA 4.5 floor — 0.03 of headroom. Re-measure this
-  one cell after either lands.
+- **U1 / U6, OBLIGATION (Q6, owner-ruled 2026-09-18):** the owner accepted this unit's C8 re-pin
+  (perceptual Neutral dark, 4.9 -> 4.5, measured 4.53) ON THE CONDITION that the cell is re-measured
+  once U1 and U6 both land — either can move Neutral's accent lightness (U1's anchor move, U6's ladder
+  change), and 0.03 of headroom over the ruled AA 4.5 floor is thin enough that either could tip it
+  under without touching this unit's own files. Whoever integrates the plan (U4 or the Orchestrator)
+  MUST re-run `test/engine/semantic.mjs`'s `hpg-role-contrast` after U1 and U6 both land and confirm
+  perceptual Neutral dark still clears 4.5 before the plan ships — this is not optional cleanup, it is
+  the condition the owner's acceptance rests on.
 
 ## Open questions
 
 See `.sdlc/questions/pif-u3.md`: Q1 (RESOLVED — Design B shipped, both tables shown), Q2 (moot, kept
 for the record), Q3 (RESOLVED — the "21 baseline duplicates" story was a proxy artefact; true count is
 0/0 before/after), Q4 (Panda/shadcn spec literal drift, needs a docs-owning seat, unchanged), Q5 (2
-docs/ exception paths, unchanged in shape), Q6 (NEW — Neutral perceptual dark's contrast floor drops
-for real, 0.03 headroom over AA, owner ruling needed).
+docs/ exception paths, unchanged in shape), Q6 (RESOLVED — owner accepted the C8 re-pin conditioned on
+a re-measure after U1 and U6 land, carried as an OBLIGATION in this handoff's Risks section above).
