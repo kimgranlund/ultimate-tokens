@@ -1053,8 +1053,8 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   const box = app.querySelector(".apply-gate-librarymode-box");
   ok(!!box, "(629) the apply gate renders a real 'Published library' checkbox");
   ok(/Published library/.test(txtOf(app.querySelector(".apply-gate"))), "(629) the checkbox is labelled 'Published library'");
-  ok(/type, geometry and style/i.test(txtOf(app.querySelector(".apply-gate"))), "(629) the label names what the flag covers (type, geometry, styles, and NOT color)");
-  ok(!/color/i.test(txtOf(app.querySelector(".apply-gate-librarymode") || {})), "(629) the label does not claim the flag covers color (ruling Q1: color prune is out of scope)");
+  ok(/color, type, geometry and style/i.test(txtOf(app.querySelector(".apply-gate"))), "(673) the label names all four systems the flag covers (color, type, geometry, styles)");
+  ok(/color/i.test(txtOf(app.querySelector(".apply-gate-librarymode") || {})), "(673) the label names COLOR: #673 threaded applyBundle's color reconcile, retiring #629's ruling-Q1 exemption");
   ok(app.applyGateLibraryMode === false, "(629) the checkbox defaults OFF with no stored preference (classic prune, today's behavior)");
 
   // UNCHECKED -> an explicit false, never undefined.

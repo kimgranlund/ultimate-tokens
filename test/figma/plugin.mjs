@@ -683,6 +683,186 @@ if (applyBundle) {
   } catch (e) { FAIL("colorprov", "provenance guard threw: " + e.message); }
 }
 
+// ── colorlibrary (#673): "published library" mode covers applyBundle's COLOR reconcile too. #629
+//    threaded the flag into the float, font-mode and style prunes and left color on the classic prune
+//    by ruling Q1; #673 retired that exemption. libraryMode:true must remove NOTHING from any of the
+//    three generated color collections: a stale name is renamed under "_deprecated/" instead, keeping
+//    its id and every consumer binding. libraryMode:false must prune exactly as before.
+//
+//    THREE SITES, THREE LEGS. applyBundle prunes Color Roles, Color Primitives AND Color Prime. #629's
+//    own PR review found a style guard that read correct at both its sites but was only ever exercised
+//    at one, because the fixture never made a name stale at the other. So each collection is asserted
+//    on its own: a guard applied to only one or two of the three reds on the collections it missed.
+//
+//    THE FIXTURE drops a whole PALETTE FAMILY from the doc between two applies. Every one of that
+//    family's names goes stale at once, in all three collections, which is exactly the published-library
+//    accident this ticket exists to prevent. ──
+if (applyBundle) {
+  try {
+    const docFull = defaultDocument();
+    const docCut = { ...docFull, palettes: docFull.palettes.slice(0, -1) };
+    const dropped = docFull.palettes[docFull.palettes.length - 1];
+    const bundleFull = figmaBundle(docFull);
+    const bundleCut = figmaBundle(docCut);
+    // the names the FULL bundle wants and the CUT one does not, per collection, computed from the
+    // bundles themselves, not from the apply's own report, so the assertions have an independent count.
+    const leaves = (node, prefix) => {
+      const out = [];
+      for (const k of Object.keys(node).filter((x) => x[0] !== "$")) {
+        const c = node[k]; const path = prefix ? prefix + "/" + k : k;
+        if (c && typeof c === "object" && "$value" in c) out.push(path);
+        else if (c && typeof c === "object") out.push(...leaves(c, path));
+      }
+      return out;
+    };
+    const PRIME_RE = /^([^/]+)\/prime\/([^/]+)$/;
+    const splitRaw = (b) => {
+      const raw = [], prime = [];
+      for (const n of leaves(b["palette.tokens.json"], "")) {
+        const m = PRIME_RE.exec(n);
+        if (m) prime.push(m[1] + "/" + m[2]); else raw.push(n);
+      }
+      return { raw, prime };
+    };
+    const semNames = (b) => leaves(b["Light_tokens.json"], "");
+    const staleOf = (full, cut) => full.filter((n) => cut.indexOf(n) < 0);
+    const fullRaw = splitRaw(bundleFull), cutRaw = splitRaw(bundleCut);
+    const stale = {
+      "Color Roles": staleOf(semNames(bundleFull), semNames(bundleCut)),
+      "Color Primitives": staleOf(fullRaw.raw, cutRaw.raw),
+      "Color Prime": staleOf(fullRaw.prime, cutRaw.prime),
+    };
+    const COLLS = Object.keys(stale);
+    for (const cn of COLLS) if (!stale[cn].length) FAIL("colorlibrary", `fixture: dropping the '${dropped && dropped.name}' palette left NO stale name in ${cn}: the leg would be vacuous`);
+
+    // ── LEG 1: libraryMode:true prunes nothing, anywhere ──
+    const FL = mockFigma();
+    const ll = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FL.figma, "<html>", undefined);
+    await ll.applyBundle(bundleFull, {});
+    const idsBefore = {};
+    for (const cn of COLLS) {
+      const coll = FL.collections.find((c) => c.name === cn);
+      if (!coll) { FAIL("colorlibrary", `no ${cn} collection after the first apply`); continue; }
+      idsBefore[cn] = {};
+      for (const n of stale[cn]) {
+        const v = FL.variables.find((x) => x.variableCollectionId === coll.id && x.name === n);
+        if (v) idsBefore[cn][n] = v.id;
+      }
+      if (Object.keys(idsBefore[cn]).length !== stale[cn].length) FAIL("colorlibrary", `fixture: ${cn} is missing ${stale[cn].length - Object.keys(idsBefore[cn]).length} of the names the full bundle should have created`);
+    }
+    const resLib = await ll.applyBundle(bundleCut, { libraryMode: true });
+    if (resLib.pruned !== 0) FAIL("colorlibrary", `libraryMode:true pruned ${resLib.pruned} color variable(s): a published library must never remove a name a consumer file is bound to`);
+    const totalStale = COLLS.reduce((a, cn) => a + stale[cn].length, 0);
+    if (resLib.preserved !== totalStale) FAIL("colorlibrary", `libraryMode:true reported ${resLib.preserved} preserved, want ${totalStale} (every stale name in all three collections)`);
+    for (const cn of COLLS) {
+      const coll = FL.collections.find((c) => c.name === cn);
+      if (!coll) continue;
+      const live = FL.variables.filter((v) => v.variableCollectionId === coll.id);
+      const missing = stale[cn].filter((n) => !live.some((v) => v.id === idsBefore[cn][n]));
+      if (missing.length) FAIL("colorlibrary", `libraryMode:true removed ${missing.length} stale variable(s) from ${cn} (e.g. ${missing[0]}): the guard is missing at this prune site`);
+      const notDeprecated = stale[cn].filter((n) => { const v = live.find((x) => x.id === idsBefore[cn][n]); return v && v.name !== "_deprecated/" + n; });
+      if (notDeprecated.length) FAIL("colorlibrary", `libraryMode:true kept ${notDeprecated.length} stale ${cn} variable(s) under the ORIGINAL name (e.g. ${notDeprecated[0]}): a preserved name must be renamed under _deprecated/`);
+      const rep = (resLib.colorReports || []).find((x) => x.collection === cn);
+      if (!rep) FAIL("colorlibrary", `no colorReports entry for ${cn}`);
+      else {
+        if (rep.removed.length) FAIL("colorlibrary", `${cn}'s library-mode report lists ${rep.removed.length} removed name(s); it must be empty`);
+        if (rep.deprecates.length !== stale[cn].length) FAIL("colorlibrary", `${cn}'s library-mode report lists ${rep.deprecates.length} deprecates, want ${stale[cn].length}`);
+      }
+    }
+    // idempotent: a SECOND library-mode apply of the same cut bundle must not re-deprecate or remove.
+    const resLib2 = await ll.applyBundle(bundleCut, { libraryMode: true });
+    if (resLib2.pruned !== 0 || resLib2.preserved !== 0) FAIL("colorlibrary", `a repeat libraryMode:true apply reported pruned=${resLib2.pruned} preserved=${resLib2.preserved}: an already-deprecated name must be a no-op`);
+
+    // ── LEG 2: libraryMode:false reproduces today's prune, on a fresh file ──
+    const FC2 = mockFigma();
+    const lc2 = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FC2.figma, "<html>", undefined);
+    await lc2.applyBundle(bundleFull, {});
+    const resCla = await lc2.applyBundle(bundleCut, { libraryMode: false });
+    if (resCla.pruned !== totalStale) FAIL("colorlibrary", `libraryMode:false pruned ${resCla.pruned}, want ${totalStale}: the classic prune must be unchanged`);
+    if (resCla.preserved !== 0) FAIL("colorlibrary", `libraryMode:false preserved ${resCla.preserved}: the classic prune keeps nothing`);
+    for (const cn of COLLS) {
+      const coll = FC2.collections.find((c) => c.name === cn);
+      if (!coll) continue;
+      const live = FC2.variables.filter((v) => v.variableCollectionId === coll.id).map((v) => v.name);
+      const left = stale[cn].filter((n) => live.indexOf(n) >= 0 || live.indexOf("_deprecated/" + n) >= 0);
+      if (left.length) FAIL("colorlibrary", `libraryMode:false left ${left.length} stale variable(s) in ${cn} (e.g. ${left[0]}): the classic prune must still remove them`);
+      const rep = (resCla.colorReports || []).find((x) => x.collection === cn);
+      if (!rep) FAIL("colorlibrary", `no classic-mode colorReports entry for ${cn}`);
+      else if (rep.removed.length !== stale[cn].length) FAIL("colorlibrary", `${cn}'s classic report lists ${rep.removed.length} removed, want ${stale[cn].length}`);
+    }
+    // an OMITTED libraryMode (an old pre-#629 ui.html bundle) resolves to the classic prune, never to a
+    // dialog and never to preservation, the same legacy resolution the float executors give it.
+    const FC3 = mockFigma();
+    const lc3 = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FC3.figma, "<html>", undefined);
+    await lc3.applyBundle(bundleFull, {});
+    const resUndef = await lc3.applyBundle(bundleCut, {});
+    if (resUndef.pruned !== totalStale || resUndef.preserved !== 0) FAIL("colorlibrary", `an omitted libraryMode pruned ${resUndef.pruned}/preserved ${resUndef.preserved}, want ${totalStale}/0: undefined must resolve to the classic prune`);
+
+    // ── LEG 3: the theme-MODE prune. applyBundle has a SECOND destructive site: Color Roles carries
+    // one MODE per theme, and a theme the doc no longer carries is removeMode'd. A consumer file pinned
+    // to that mode loses its binding exactly as it would lose a removed variable, which is why #629's
+    // ruling Q2 already settled that a mode prune is guarded like a variable prune. The variables are
+    // NOT stale on this leg (every theme shares one name set), so it measures the mode axis alone.
+    const bundleOneTheme = { ...bundleFull };
+    delete bundleOneTheme["Dark_tokens.json"];
+    const droppedTheme = bundleFull["Dark_tokens.json"] && bundleFull["Dark_tokens.json"].$extensions;
+    const droppedMode = droppedTheme && droppedTheme["com.figma.modeName"];
+    if (!droppedMode || Object.keys(bundleOneTheme).filter((k) => k !== "palette.tokens.json").length !== 1) {
+      FAIL("colorlibrary", "fixture: dropping Dark_tokens.json did not leave a single-theme bundle with a named mode to lose");
+    } else {
+      const FM = mockFigma();
+      const lm = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FM.figma, "<html>", undefined);
+      await lm.applyBundle(bundleFull, { libraryMode: true });
+      const semM = FM.collections.find((c) => c.name === "Color Roles");
+      if (!semM || !semM.modes.some((m) => m.name === droppedMode)) FAIL("colorlibrary", `fixture: Color Roles has no '${droppedMode}' mode after the full apply`);
+      else {
+        const resM = await lm.applyBundle(bundleOneTheme, { libraryMode: true });
+        if (!semM.modes.some((m) => m.name === droppedMode)) FAIL("colorlibrary", `libraryMode:true removed the stale '${droppedMode}' theme mode from Color Roles: a published collection's mode must survive, every consumer file pinned it`);
+        if (!(resM.staleModes || []).includes(droppedMode)) FAIL("colorlibrary", `libraryMode:true did not report '${droppedMode}' in staleModes: a kept mode must be disclosed, or it reads as a prune that silently failed`);
+        const repM = (resM.colorReports || []).find((x) => x.collection === "Color Roles");
+        if (!repM || !(repM.staleModes || []).includes(droppedMode)) FAIL("colorlibrary", `the Color Roles colorReports entry does not carry '${droppedMode}' in staleModes`);
+      }
+      // the SAME theme drop with the flag off still removes the mode, unchanged.
+      const FM2 = mockFigma();
+      const lm2 = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FM2.figma, "<html>", undefined);
+      await lm2.applyBundle(bundleFull, { libraryMode: false });
+      const resM2 = await lm2.applyBundle(bundleOneTheme, { libraryMode: false });
+      const semM2 = FM2.collections.find((c) => c.name === "Color Roles");
+      if (semM2 && semM2.modes.some((m) => m.name === droppedMode)) FAIL("colorlibrary", `libraryMode:false left the stale '${droppedMode}' theme mode standing: the classic mode prune must be unchanged`);
+      if ((resM2.staleModes || []).length) FAIL("colorlibrary", `libraryMode:false reported ${resM2.staleModes.length} staleModes: the classic path keeps none`);
+    }
+
+    // ── LEG 4: the MESSAGE HANDLER threads msg.libraryMode into applyBundle. The two legs above call
+    // applyBundle directly, so they stay green even if the handler never passes the flag, which is
+    // exactly the shape of the gap #673 closes. This leg drives the real "apply" message instead.
+    const FH = mockFigma();
+    new Function("figma", "__html__", "module", code)(FH.figma, "<html>", undefined);
+    if (typeof FH.figma.ui._h !== "function") FAIL("colorlibrary", "the plugin never registered a ui.onmessage handler");
+    else {
+      await FH.figma.ui._h({ type: "apply", dtcg: bundleFull, libraryMode: true });
+      await FH.figma.ui._h({ type: "apply", dtcg: bundleCut, libraryMode: true });
+      for (const cn of COLLS) {
+        const coll = FH.collections.find((c) => c.name === cn);
+        if (!coll) { FAIL("colorlibrary", `no ${cn} collection after the handler-driven apply`); continue; }
+        const live = FH.variables.filter((v) => v.variableCollectionId === coll.id).map((v) => v.name);
+        const lost = stale[cn].filter((n) => live.indexOf("_deprecated/" + n) < 0);
+        if (lost.length) FAIL("colorlibrary", `the apply MESSAGE with libraryMode:true lost ${lost.length} stale ${cn} variable(s) (e.g. ${lost[0]}): the handler is not threading the flag into applyBundle`);
+      }
+      const FH2 = mockFigma();
+      new Function("figma", "__html__", "module", code)(FH2.figma, "<html>", undefined);
+      await FH2.figma.ui._h({ type: "apply", dtcg: bundleFull, libraryMode: false });
+      await FH2.figma.ui._h({ type: "apply", dtcg: bundleCut, libraryMode: false });
+      for (const cn of COLLS) {
+        const coll = FH2.collections.find((c) => c.name === cn);
+        if (!coll) continue;
+        const live = FH2.variables.filter((v) => v.variableCollectionId === coll.id).map((v) => v.name);
+        const kept = stale[cn].filter((n) => live.indexOf(n) >= 0 || live.indexOf("_deprecated/" + n) >= 0);
+        if (kept.length) FAIL("colorlibrary", `the apply MESSAGE with libraryMode:false kept ${kept.length} stale ${cn} variable(s) (e.g. ${kept[0]}): an unchecked box must still take the classic prune`);
+      }
+    }
+  } catch (e) { FAIL("colorlibrary", "the color library-mode legs threw: " + e.message); }
+}
+
 // ── adoptconsent (#632): a live collection matching a target name that ISN'T registry-tracked (a file
 //    applied to under the pre-rename plugin id, or a hand-made collection) is now OFFERED for adoption
 //    through a real modal, once, BEFORE any write. Confirmed => the apply upserts INTO that collection
@@ -970,7 +1150,7 @@ if (sweepCandidates) {
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────
-for (const g of ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "renamecap", "colorprov", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep"]) {
+for (const g of ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "renamecap", "colorprov", "colorlibrary", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

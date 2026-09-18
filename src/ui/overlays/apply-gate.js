@@ -96,8 +96,13 @@ export class ApplyGateMixinImpl {
       // undefined as "nobody decided" and fall through to classic prune, which reads identically to a
       // deliberate false: so an explicit false is what makes the unchecked box a real, auditable
       // answer. Read from the persisted preference (not the transient gate field) because a consented
-      // apply skips the gate entirely and must still carry the user's last choice. RULING Q1: this
-      // covers type, geometry and styles only: msg.dtcg's color reconcile is NOT gated by it.
+      // apply skips the gate entirely and must still carry the user's last choice. SCOPE (#673): one
+      // checkbox, read by every executor this message reaches. It guards the color variable reconcile
+      // and the Color Roles theme-mode prune in msg.dtcg's applyBundle, the type/geometry variable
+      // prune, the Type Primitives variable and mode prunes, and the paint/text style prunes. The one
+      // destructive site it does NOT reach is applyFloatPlans' breakpoint-mode removeMode (#687), unguarded on
+      // main and out of #673's scope. #629's ruling Q1 exempted color entirely; #673 retired that
+      // exemption, because a published library that renames a role still lost the variable.
       const msg = { type: "apply", config: serialize(this.doc), rebuildSemantic: !!rebuild, libraryMode: this._libraryMode(), floatPlans: this._figmaFloatPlans(), collections: figmaCollectionNames(this.doc), renames: { color: { ...kebabWaveColorRenames(_colorSlugs), collections: FIGMA_MIGRATIONS.color.collections } } };
       if (sys.color !== false) msg.dtcg = this.figmaBundle();
       // STYLES (opt-out): the swatch layer bound to the variables — paint styles per semantic role
@@ -441,7 +446,7 @@ export class ApplyGateMixinImpl {
             onchange: (e) => { this.applyGateLibraryMode = !!e.target.checked; },
           }),
           h("span", {},
-            "Published library: alias and deprecate type, geometry and style names instead of pruning",
+            "Published library: alias and deprecate color, type, geometry and style names instead of pruning",
             h("span", { class: "apply-gate-librarymode-hint" }, "Consumer files stay bound. Leave this off for an ordinary, unpublished file."),
           ),
         ),
