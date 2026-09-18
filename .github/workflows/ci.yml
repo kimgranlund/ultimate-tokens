@@ -81,6 +81,21 @@ jobs:
           node-version: 22
       - run: node scripts/smoke-panda.mjs
 
+  # ── FULL curated-corpus contrast sweep (#674, test/engine/curated-contrast.mjs --full) ──
+  # `npm test` runs the same gate SAMPLED (brands.json in full + one deterministic volume per gallery
+  # category, 2.5 s) so the suite stays fast; the full 343-document / 7560-cell sweep is 12 s and runs
+  # here instead. Own runner, no `needs:` — it is a data gate over committed generated mirrors
+  # (src/ui/categories/*.js), so it never blocks `deploy` and needs no `npm ci`: zero dependencies,
+  # this repo's own ESM only. The build-test job's drift gate is what proves those mirrors are current.
+  corpus-contrast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run gate:corpus-contrast
+
   # ── Pages deploy (#489) — push-to-main only, consumes the artifact build-test already uploaded
   # above (no rebuild). A separate JOB-LEVEL concurrency group (not the workflow-level one above,
   # which is keyed per-ref and would let two main pushes' deploys race) — preserves pages.yml's own
