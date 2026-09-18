@@ -1,1 +1,1 @@
-{ "preset": "github", "baseBranch": "main", "github": { "repo": "kimgranlund/ultimate-tokens", "remote": "origin" } }
+{ "preset": "github", "baseBranch": "main", "github": { "repo": "kimgranlund/ultimate-tokens", "remote": "origin", "mergeStyle": "squash" } }
