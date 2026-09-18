@@ -184,20 +184,26 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   // Re-measured whole for #681 U3 R2 (chromaEnvelope re-centred on the anchor's own lifted reading,
   // shared by both paths + the keyS saturation basis) against the TRUE pre-U3 landed floors (bf2aaf6),
   // not against R1's own (lower, undisclosed) numbers, per the U3 review this revision answers.
-  // Compared floor-for-floor (1-decimal truncated to 4 significant measured digits, not the 2-digit
-  // rounding an earlier pass of this comment mistook for a Tertiary regression that was never real)
-  // against bf2aaf6: "even" is byte-identical; "peak" holds or IMPROVES at every family (Neutral,
-  // Secondary, Success, Warning and Data 2 dark all move up); "perceptual" holds at every family
-  // EXCEPT ONE — Neutral dark, 4.9 -> 4.5 (measured 4.98 -> 4.53). This is NOT an R1-vs-R2 artifact:
-  // Neutral carries lift 0, so chromaEnvelope's sd is identical under every design tried
-  // (liftStop(stop, 0) === stop always) — the move is REQ-052 itself (this unit's mandated saturation-
-  // basis change, chroma% of gamut -> the key colour's own OKHSL s), which the plan's own mechanism (2)
-  // text names as a foreseeable risk ("the accent's own L* shift... which the 16-family ratchet... both
-  // catch"). Still clears the ruled AA floor 4.5 (0.03 of headroom) via #662's contrast policy, which
-  // guarantees AA rather than a rising ratchet — but per "re-pin only upward, or hand any downward move
-  // to #662's policy," this one specific move is surfaced, not silently re-pinned: see
-  // .sdlc/questions/pif-u3.md Q3 for the owner ruling this needs (U1's anchor move and U6's ladder, both
-  // in flight on this same plan, can each move Neutral's accent lightness further).
+  // Compared PRECISELY (not floor-truncated) against bf2aaf6: "even" is byte-identical. "Perceptual"
+  // and "peak" both hold every PINNED (1-decimal) floor except perceptual Neutral dark, 4.9 -> 4.5
+  // (measured 4.9841 -> 4.5327) — but several families move by a fraction of a percent WITHOUT
+  // crossing a floor digit in either direction: perceptual Warning dark (4.6457->4.6452), perceptual
+  // Danger dark and peak Danger dark (5.1324->5.1315, identical in both modes since Danger's
+  // accent/on-color pair coincides at the same pixel in perceptual and peak here), and peak
+  // Data 2 dark (5.5943->5.5797) all drop slightly; peak Neutral/Success/Warning (light and dark) and
+  // perceptual Neutral light/Success dark all rise. "Holds or improves at every family" is therefore an
+  // overclaim for a few hundredths-of-a-point moves; no PINNED floor moves except the one named below.
+  // The Neutral dark move is NOT an R1-vs-R2 artifact: Neutral carries lift 0, so chromaEnvelope's sd
+  // is identical under every design tried (liftStop(stop, 0) === stop always) — the move is REQ-052
+  // itself (this unit's mandated saturation-basis change, chroma% of gamut -> the key colour's own
+  // OKHSL s), which the plan's own mechanism (2) text names as a foreseeable risk ("the accent's own
+  // L* shift... which the 16-family ratchet... both catch"). Still clears the ruled AA floor 4.5 (0.03
+  // of headroom) via #662's contrast policy, which guarantees AA rather than a rising ratchet — but
+  // per "re-pin only upward, or hand any downward move to #662's policy," this one specific PINNED-
+  // floor move is surfaced, not silently re-pinned: see .sdlc/questions/pif-u3.md Q6 (owner-ruled) for
+  // the acceptance, now widened to the true set of thin cells (see the handoff's Risks section) since
+  // perceptual Neutral dark is not actually the thinnest cell in the 96 — three pre-existing "even"
+  // family/dark cells sit closer to AA and were unaffected by any unit's work.
   const FLOORS = {
     perceptual: [
       ["Neutral", 5.9, 4.5],   // measured 5.9007 / 4.5327 — light UP, dark DOWN from bf2aaf6's 5.8/4.9 (5.89/4.98) — REQ-052, not R1-vs-R2 (lift 0) — see comment above, Q3

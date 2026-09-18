@@ -23,8 +23,14 @@ contrast floors also moved down in four places without disclosure.
 
 This pass fixes the gate to measure the rendered path, re-derives every figure from scratch, and
 re-decides Design A vs B on the corrected evidence: **Design B ships** (see
-`.sdlc/questions/pif-u3.md` Q1). Q1, Q3 and Q6 are resolved (Q6 by owner ruling, with a re-measure
-obligation carried below); Q4 and Q5 are unchanged from pass 1.
+`.sdlc/questions/pif-u3.md` Q1). A second verifier pass then found this unit's own gate suite never
+asserted C6's PRIMARY envelope-shape table (the Q4-ruled median/p90 numeric targets) — a real gap, not
+a nitpick: `.sdlc/questions/pif-u3.md` Q2 misread revision 7 as retiring it, when rev7 retired only the
+unrelated #668 magnitude bar. `scripts/report-preset-fidelity.mjs --envelope` is now built and run for
+the first time (Q7, new), and it fails the numeric table under both readings of C6's ambiguous prose —
+reported honestly with real numbers, not silently made to pass. Q1, Q3 and Q6 are resolved (Q6 by
+owner ruling, widened this pass to its true scope per a second verifier finding); Q4 and Q5 are
+unchanged from pass 1; Q7 is new and needs an owner ruling before C6 can be called fully met.
 
 ## Criteria table
 
@@ -38,7 +44,8 @@ obligation carried below); Q4 and Q5 are unchanged from pass 1.
 | C6-ii | 0 duplicate hex, full corpus, both stop sets, RENDERED path | same file, (C6 ii) | **0** duplicate-hex ramps in every mode, both stop sets — `KNOWN_BASELINE_DUP` is an empty Set; no exception needed | the pre-U3 base also measures 0 on the rendered path (Q3); pass 1's Design A measured 2 (both named in Q1's table) — Design B's own negative control: patching back to Design A's `sd` formula in a scratch copy reproduces both |
 | iii-c | measured CIELAB L* never rises beyond a NAMED exception list, 10,080-cell synthetic grid | `test/engine/tonal.mjs` "skew-lift-okhsl" | 21 of 10,080 rise under Design B (worst +0.1314 L*; 20 near-white, one near-black at tone 7.55); all 21 named and cited in `GRID_R2_EXCEPTIONS`, verified both directions | deleting one cited cell reproduces a FAIL naming it; an unlisted 22nd cell also fails |
 | C6-iii | no docs/ literal moves without a named exception | `git diff --stat 690b0a1 -- docs/` | 4 paths: 2 expected `adia-*` regen files, 2 citation-line fixes (this pass moved the SAME two lines again, `:404`->`:410`, not repeated from pass 1's `:395`->`:404`) — Q5 | n/a |
-| C8 | `hpg-role-contrast` floors re-pinned vs the TRUE pre-U3 baseline (bf2aaf6, not pass 1's own numbers) | `test/engine/semantic.mjs` | peak improves at 5 families; even unchanged; perceptual holds at 15 of 16, ONE real drop (Neutral dark 4.9->4.5, Q6) | restoring Neutral dark to 4.9 in a scratch copy reds at measured 4.53 |
+| C6-envelope | Q4-ruled median/p90 chroma-envelope table, NEWLY BUILT this pass (verifier caught this unit's own gate suite never asserted it — see Q7) | `node scripts/report-preset-fidelity.mjs --envelope` | Built, run, reported honestly: FAILS the plan's numeric targets under both plausible readings of C6's prose. Full tables in Q7. Owner ruling needed; script is standalone, not wired into `npm test` | `--damp-amp 55` (the plan's own named control): above-100% count jumps 16->2920 (reading b) and ~1500-2300->2400-2900 (reading a) across modes — the mechanism discriminates correctly |
+| C8 | `hpg-role-contrast` floors re-pinned vs the TRUE pre-U3 baseline (bf2aaf6, not pass 1's own numbers), re-measured PRECISELY this pass (not floor-truncated) | `test/engine/semantic.mjs` | Exactly ONE pinned floor moves down: perceptual Neutral dark 4.9->4.5 (Q6, owner-ruled). Several unpinned fractional moves exist beyond that (peak Data 2/Danger dark, perceptual Warning/Danger dark all drop by hundredths without crossing a floor digit) — "holds or improves at every family" was an overclaim, corrected in-line | restoring Neutral dark to 4.9 in a scratch copy reds at measured 4.5327 |
 | gate:corpus-contrast | 0 of 7,560 cells under 4.5 | `npm run gate:corpus-contrast` | `168 named per cell, 0 carried below 4.5`, worst cell 4.503:1 | n/a |
 | contrastLint | 0/0/0 across modes | `contrastLint(brandKit(defaultDocument()))` per mode | `0 0 0` | n/a |
 | Q4 | Panda literal | `test/engine/exports.mjs` | unchanged from pass 1 — `oklch(0.5458 0.0462 266.73)`, confirmed design-invariant (Neutral/Primary both lift 0) | n/a |
@@ -85,6 +92,20 @@ role default. Full rationale and the rejected third draft are in `src/engine/ton
 - `docs/reference/reviews/2026-08-20-reactivity/{00-synthesis,04-context-and-messaging}.md` — the same
   2 citation lines pass 1 fixed, moved again by this pass's own comment growth (`:404` -> `:410`).
 
+## Files changed, verifier FIX-FIRST response (this round, on top of `9bb813b`/`4f3378b`)
+
+- `scripts/report-preset-fidelity.mjs` (NEW) — `--envelope [--damp-amp N]`, the plan's own named C6
+  command, never built before this round. Reports BOTH plausible readings of C6's prose (emitted
+  chroma vs the envelope multiplier itself) over the corpus C6 names, all three modes, on the rendered
+  path. Standalone; not wired into `npm test` pending Q7's owner ruling.
+- `test/engine/semantic.mjs` — `FLOORS`'s header comment corrected: the stale `Q3` cross-reference now
+  reads `Q6` (the actual owner-ruling question), and the "peak holds or improves at every family" claim
+  is corrected to name the several small non-floor-crossing drops the precise (not floor-truncated)
+  re-measurement actually shows.
+- `.sdlc/questions/pif-u3.md` — Q7 added (the envelope-table gap, both readings' real numbers, the
+  Adia `dampAmp` carve-out question). Q6's re-measure obligation's scope corrected.
+- `.sdlc/handoffs/pif-u3.md` — this file, updated in place.
+
 ## Regenerated artifacts (committed)
 
 - `test/engine/fixtures/tonal-legacy.json` (CARVE-OUT header updated for R2), `test/engine/fixtures/
@@ -121,14 +142,20 @@ in `.sdlc/questions/preset-intent-fidelity-u3-movement.md` (C6 iv).
   per-palette anchor stop, the seed's saturation will follow it while the seed's lightness stays at 500.
 - **U4:** the movement-table report (C6 iv) should measure against the SAME full-corpus, rendered,
   both-stop-set scope this unit's gate now uses.
-- **U1 / U6, OBLIGATION (Q6, owner-ruled 2026-09-18):** the owner accepted this unit's C8 re-pin
-  (perceptual Neutral dark, 4.9 -> 4.5, measured 4.53) ON THE CONDITION that the cell is re-measured
-  once U1 and U6 both land — either can move Neutral's accent lightness (U1's anchor move, U6's ladder
-  change), and 0.03 of headroom over the ruled AA 4.5 floor is thin enough that either could tip it
-  under without touching this unit's own files. Whoever integrates the plan (U4 or the Orchestrator)
-  MUST re-run `test/engine/semantic.mjs`'s `hpg-role-contrast` after U1 and U6 both land and confirm
-  perceptual Neutral dark still clears 4.5 before the plan ships — this is not optional cleanup, it is
-  the condition the owner's acceptance rests on.
+- **U1 / U6, OBLIGATION (Q6, owner-ruled 2026-09-18, WIDENED per verifier re-review):** the owner
+  accepted this unit's C8 re-pin (perceptual Neutral dark, 4.9 -> 4.5, measured 4.5327) ON THE CONDITION
+  that the cell is re-measured once U1 and U6 both land. The verifier's independent 96-pair measurement
+  found perceptual Neutral dark is not the thinnest cell in the corpus — re-verified here directly, the
+  full set of cells under 4.55 (headroom under 0.05 over the ruled AA 4.5 floor), sorted thinnest first:
+  `even|Primary|dark` 4.5104 (+0.0104), `even|Tertiary|dark` 4.5145 (+0.0145), `even|Info|dark` 4.5225
+  (+0.0225), `even|Neutral|dark` 4.5280 (+0.0280, present in both the verifier's and my own sweep but
+  not named in either's prose list), and `perceptual|Neutral|dark` 4.5327 (+0.0327, the only one this
+  unit's own re-pin moved — the other four are unchanged, pre-existing values from `bf2aaf6`). Whoever
+  integrates the plan (U4 or the Orchestrator) MUST re-run `test/engine/semantic.mjs`'s
+  `hpg-role-contrast` after U1 and U6 both land and confirm ALL FIVE cells above still clear 4.5 before
+  the plan ships — U1's anchor move and U6's ladder change can each move Neutral's AND Primary's/
+  Tertiary's/Info's accent lightness. This is not optional cleanup; it is the condition the owner's Q6
+  acceptance rests on, now stated for its true scope rather than the one cell this unit happened to move.
 
 ## Open questions
 
@@ -136,4 +163,8 @@ See `.sdlc/questions/pif-u3.md`: Q1 (RESOLVED — Design B shipped, both tables 
 for the record), Q3 (RESOLVED — the "21 baseline duplicates" story was a proxy artefact; true count is
 0/0 before/after), Q4 (Panda/shadcn spec literal drift, needs a docs-owning seat, unchanged), Q5 (2
 docs/ exception paths, unchanged in shape), Q6 (RESOLVED — owner accepted the C8 re-pin conditioned on
-a re-measure after U1 and U6 land, carried as an OBLIGATION in this handoff's Risks section above).
+a re-measure after U1 and U6 land, carried as an OBLIGATION in this handoff's Risks section above,
+WIDENED to 5 cells per a second verifier finding), Q7 (NEW — C6's primary envelope-shape table was
+never built or measured; now built and run, fails the plan's numeric targets under both readings of
+C6's prose; real numbers for both readings plus the Adia `dampAmp` carve-out question are in Q7 itself;
+owner ruling needed before C6 can be called fully met).
