@@ -26,6 +26,8 @@
 //      Success, Warning, Data 1, Data 4, Data 5, Data 6, Data 7 clip; see the `clipped defaults` gate
 //      below). This is flagged in .sdlc/questions/pif-u6.md rather than silently adopted either way.
 import { readFileSync, readdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { primeSwatches, primeSteps, PRIME_STEPS, PRIME_L_MIN, PRIME_L_MAX, STEP_L } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, maxChromaInGamut, cam16FromRgb, lstarFromRgb } from "../../src/engine/hct.js";
 import { effHue, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
@@ -163,41 +165,88 @@ for (const hueSpace of SPACES) {
   for (const v of GAMUT_SWEEP.violations.slice(0, 20)) FAIL("c", v);
 }
 
-// ── (determinism, folded into gate "c") — asserts hex identity, not just inGamut (review pass 2
-//    finding: a prior version of this gate claimed determinism from the inGamut sweep alone, which
-//    cannot catch two DIFFERENT in-gamut hexes for the same logical palette). Runs a dense, non-integer
-//    hue sweep (1500 cases, hue step 0.0917deg — deliberately NOT round numbers, so many fall at
-//    different hct.js `hue.toFixed(2)` truncation-bucket boundaries, the shape of the reviewer's
-//    63/4000 repro) through `primeSwatches` TWICE, with a POISON sweep of hct.js's own SHARED
-//    `peakC`/`maxChromaInGamut` caches (imported above, already used by other gates in this file)
-//    interleaved between the two passes — 3600 unrelated hues at a dense 0.1deg step, forcing heavy
-//    eviction/repopulation of hct.js's shared 5000-slot LRUs. `primeSwatches`'s own PRIVATE caches
-//    (`localMaxChroma`/`localPeakC` in prime.mjs) are untouched by this poisoning — they are separate
-//    instances, exact-keyed, so this proves the SEPARATION holds: primeSwatches no longer reads hct.js's
-//    shared cache state at all, anchor or rung. Sized down from an initial 4000-case version (cost:
-//    ~45s standalone) to 1500 (~20s) — cut by REDUCING CASE COUNT, not the poison sweep's density,
-//    since a scratch reproduction (not committed; described in the U6 handoff) found that thinning the
-//    poison sweep to step 0.5 made the vulnerable pre-fix code read 0/1500 mismatches — false-clean —
-//    while keeping poison step 0.1 and only cutting cases to 1500 still caught 3/1500 on the same
-//    vulnerable code. Case count is the safe lever here; poison density is not.
+// ── (determinism, folded into gate "c") — REBUILT (#686, #681 U6 review passes 4-5, findings N7/N8).
+//    The PRIOR version of this gate ran entirely in-process: render, THEN poison, THEN re-render. By
+//    the second render every memo the poison was meant to corrupt was already warm from the FIRST
+//    render, so the gate could only ever read 0 mismatches regardless of whether the engine was
+//    actually order-dependent (review pass 4 finding N7). Its poison was also a synthetic 0.1deg grid,
+//    which only ever fills the truncation buckets whose second decimal is zero — about a tenth of the
+//    space hct.js's OLD `hue.toFixed(2)` keys actually spanned — while a real palette render (what a
+//    corpus generator or the live editor actually does) is the realistic poisoner and is what found the
+//    surviving channel (`oklchToCam16Hue`'s Newton loop reading hct.js's shared `peakC` through
+//    `effHue`'s oklch path, 11/4,000 order-dependent palettes on the pre-hct.js-fix head, review pass 4;
+//    the reviewer's OWN discovery of REQ-056's anchor divergence, N8, traced to the identical cause).
+//
+//    Node's own ES module cache makes "two cold imports in one process" impossible to fake: re-importing
+//    "../../src/engine/prime.mjs" even under a cache-busting query on its own URL still resolves
+//    "./hct.js" to the SAME already-instantiated module, so hct.js's module-level `_mc`/`_pk`/`_oh`
+//    caches survive across "fresh" imports in one process (see prime-determinism-worker.mjs's own
+//    header). A genuinely cold cache needs a genuinely separate process, so this gate now spawns TWO,
+//    via `prime-determinism-worker.mjs`: one renders DET_CASES with an EMPTY poison set (nothing has
+//    touched hct.js's caches before these exact calls); the other renders POISON_CASES — REAL
+//    `primeSwatches()` palette renders, not a synthetic grid — FIRST, before a single DET_CASES call
+//    runs, then renders the identical DET_CASES. Both compare emitted HEXES per rung, not `inGamut`
+//    (review pass 2's original finding: two DIFFERENT in-gamut hexes both read `inGamut: true`, so
+//    `inGamut` alone cannot prove determinism).
+//
+//    Sizing, measured (this fix): a full `primeSwatches` render through `effHue`'s oklch path (the
+//    channel N7 found) at a distinct, never-repeated hue costs ~5.25ms (1000 distinct-hue renders,
+//    5,251ms, this host) — going through a REAL palette render for poison is far costlier per entry
+//    than the OLD grid's bare `peakC`/`maxChromaInGamut` calls, so matching the reviewer's literal
+//    4,000-and-4,000 would cost roughly a minute standalone for this one gate. Sized to DET_CASES 500 /
+//    POISON_CASES 1,500 (3x, poison denser than cases per this file's own established precedent of
+//    cutting CASE count for cost while keeping poison density up, see the retired grid's own comment
+//    history) — ~10s added here. At the reviewer's own measured pre-fix collision rate (11/4,000,
+//    0.275%), 500 cases has a ~74% chance of catching a regression that reproduces that EXACT narrow
+//    residual rate; a full reversion of hct.js's exact-key fix would produce a far higher collision rate
+//    across ANY non-round sweep, so this gate's practical job is a fast regression tripwire, not a
+//    precision measurement. The precision measurement — reproducing the reviewer's own 4,000-case scale,
+//    PLUS a red-then-green check against a scratch copy with the truncated keys restored, to prove this
+//    methodology actually bites — was run standalone, not committed for cost, and is reported in the
+//    handoff (`.sdlc/handoffs/pif-u6.md`) and in this unit's own report.
 const DET_CASES = [];
-for (let i = 0; i < 1500; i++) {
+for (let i = 0; i < 500; i++) {
   DET_CASES.push({
     name: `d${i}`,
-    hue: (i * 0.0917) % 360,
-    chroma: 20 + (i % 5) * 18,
-    hueShift: (i % 7) - 3,
-    skew: ((i % 5) - 2) * 20,
+    hue: (i * 0.1381 + 13.7) % 360,
+    chroma: 15 + (i % 6) * 15,
+    hueShift: (i % 5) - 2,
+    skew: ((i % 9) - 4) * 10,
+    hueSpace: i % 2 === 0 ? "cam16" : "oklch",
   });
 }
-const DET_SPACE = DET_CASES.map((_, i) => (i % 2 === 0 ? "cam16" : "oklch"));
-const detBefore = DET_CASES.map((p, i) => primeSwatches(p, { ...CTL, hueSpace: DET_SPACE[i] }).map((s) => s.hex).join(","));
-for (let hue = 0; hue < 360; hue += 0.1) { peakC(hue); maxChromaInGamut(hue, 4 + (hue % 90)); maxChromaInGamut(hue, 50); maxChromaInGamut(hue, 96 - (hue % 90)); }
-const detAfter = DET_CASES.map((p, i) => primeSwatches(p, { ...CTL, hueSpace: DET_SPACE[i] }).map((s) => s.hex).join(","));
+const POISON_CASES = [];
+for (let i = 0; i < 1500; i++) {
+  POISON_CASES.push({
+    name: `p${i}`,
+    hue: (i * 0.0917) % 360,
+    chroma: 20 + (i % 7) * 11,
+    hueShift: (i % 9) - 4,
+    skew: ((i % 7) - 3) * 15,
+    hueSpace: i % 2 === 0 ? "oklch" : "cam16",
+  });
+}
+const DET_WORKER_PATH = fileURLToPath(new URL("./prime-determinism-worker.mjs", import.meta.url));
+function runDeterminismWorker(poison, cases) {
+  const out = execFileSync(process.execPath, [DET_WORKER_PATH], {
+    input: JSON.stringify({ poison, cases }),
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  return JSON.parse(out);
+}
+const detClean = runDeterminismWorker([], DET_CASES);
+const detPoisoned = runDeterminismWorker(POISON_CASES, DET_CASES);
 let detMismatch = 0;
-for (let i = 0; i < DET_CASES.length; i++) if (detBefore[i] !== detAfter[i]) detMismatch++;
-console.log(`  determinism (hct.js shared-cache-poisoning interleave): ${detMismatch}/${DET_CASES.length} palettes shifted hex by call order`);
-if (detMismatch > 0) FAIL("c", `${detMismatch}/${DET_CASES.length} palettes returned a different hex on the second call after an hct.js shared-cache-poisoning sweep — primeSwatches still depends on shared cache state`);
+const detMismatchExamples = [];
+for (let i = 0; i < DET_CASES.length; i++) {
+  if (detClean[i] !== detPoisoned[i]) {
+    detMismatch++;
+    if (detMismatchExamples.length < 3) detMismatchExamples.push(`${DET_CASES[i].name}: clean [${detClean[i]}] poisoned [${detPoisoned[i]}]`);
+  }
+}
+console.log(`  determinism (cold process vs poisoned-before-any-render process, real-palette poison, hex comparison): ${detMismatch}/${DET_CASES.length} palettes shifted hex by call order`);
+if (detMismatch > 0) FAIL("c", `${detMismatch}/${DET_CASES.length} palettes returned a different hex when rendered in a process poisoned by real palette renders before anything else touched it — primeSwatches still depends on shared cache state (examples: ${detMismatchExamples.join("; ")})`);
 
 // ── (gamut-ceiling) owner ruling, 2026-09-18 (#681 U6 review pass 1 fold), corrected review pass 3:
 //    a fresh-context reviewer originally found ~1,288/302,400 rungs out of gamut on the head BEFORE the
@@ -209,26 +258,72 @@ if (detMismatch > 0) FAIL("c", `${detMismatch}/${DET_CASES.length} palettes retu
 //    mathematical tautology given the current construction, not a fact this test can discover, and it
 //    was riding on gate (c)'s own sweep with no negative control of its own (a 40s cost for zero
 //    additional discriminating power beyond a 1-case probe). Corrected: `vulnPrimeSwatches` below
-//    reimplements `primeSwatches`'s exact chroma-hold construction but using hct.js's SHARED,
-//    `.toFixed(2)`-truncated `peakC`/`maxChromaInGamut` in place of prime.mjs's private, exact-keyed
-//    `localPeakC`/`localMaxChroma` — i.e. the actual pre-S3/pre-S-anchor construction, which CAN clip a
-//    fraction of a chroma unit past the true boundary on a cache-bucket collision, a real (non-
-//    tautological) failure mode. Both constructions run over the SAME dedicated sweep (this gate's own,
-//    separate from GAMUT_SWEEP — hue step 2 x chroma {25,50,75,100} x hueShift {0,±10,±20} x
-//    skew {0,±40} x both hue spaces = 180 x 4 x 5 x 3 x 2 x 7 rungs = 151,200 rungs; these are THIS
-//    gate's own parameters, not a reproduction of the reviewer's — review pass 3 correction #2: an
-//    earlier version of this comment credited "the reviewer's own sweep" while actually using different
-//    axis counts (4 hueShifts x 5 chromas for theirs, 5 x 4 here) that only coincidentally summed to the
-//    same 302,400 denominator; measured independently on THESE parameters, not copied). Measured on
-//    this commit: 0/151,200 real violations (`PINNED_GAMUT_CEILING`), 89/151,200 on the vulnerable
-//    reconstruction — nonzero and comfortably above noise, proving the check would have caught the
-//    regression this fixes. At full hue-step-1 resolution (302,400 rungs, ~47s, not run by default) the
-//    vulnerable count is 1,549 — cited here as a cross-check, independently re-measured on this head,
-//    not copied from the reviewer's own number (which used their different axis composition).
+//    reimplements `primeSwatches`'s exact chroma-hold construction but against a PRIVATE, `.toFixed(2)`-
+//    TRUNCATED reconstruction of `peakC`/`maxChromaInGamut` (`vulnPeakC`/`vulnMaxChroma` below) — i.e.
+//    the actual pre-#686 vulnerable construction, which CAN clip a fraction of a chroma unit past the
+//    true boundary on a cache-bucket collision, a real (non-tautological) failure mode. This control
+//    used to call hct.js's own SHARED `peakC`/`maxChromaInGamut` directly, which was correct while those
+//    were still truncated-key — but #686/#681 U6's own fix (see hct.js's `maxChromaInGamut` comment)
+//    made them EXACT, so calling them here would no longer reproduce anything: the vulnerability this
+//    control exists to catch would vanish along with the bug it is supposed to prove absent, and this
+//    gate would go quietly vacuous the moment the fix it is validating landed. `vulnPeakC`/
+//    `vulnMaxChroma` reconstruct the truncation locally instead, so the control stays meaningful
+//    regardless of hct.js's own current state. Both constructions run over the SAME dedicated sweep
+//    (this gate's own, separate from GAMUT_SWEEP — hue step 2 x chroma {25,50,75,100} x
+//    hueShift {0,±10,±20} x skew {0,±40} x both hue spaces = 180 x 4 x 5 x 3 x 2 x 7 rungs = 151,200
+//    rungs; these are THIS gate's own parameters, not a reproduction of the reviewer's — review pass 3
+//    correction #2: an earlier version of this comment credited "the reviewer's own sweep" while
+//    actually using different axis counts (4 hueShifts x 5 chromas for theirs, 5 x 4 here) that only
+//    coincidentally summed to the same 302,400 denominator; measured independently on THESE parameters,
+//    not copied). Before this fix, the control's own violation count was a measure of CACHE POLLUTION
+//    under the WHOLE FILE's own call order — it called hct.js's shared, then-truncated cache directly,
+//    so whatever else ran earlier in the same process changed its answer (review pass 4 measured
+//    327/151,200 against an earlier run's 89/151,200 on the identical construction). Read as INDICATIVE
+//    at that time, not a pinned measurement. That history-dependence is now gone along with the reason
+//    for it: `vulnPeakC`/`vulnMaxChroma` are PRIVATE to this gate (a fresh `Map` per process, touched by
+//    nothing else in this file), so the sweep below is now a genuinely reproducible measurement, not an
+//    artifact of whatever ran first — measured, this commit, three runs: 114/151,200 every time.
+//    At full hue-step-1 resolution (302,400 rungs, ~43s standalone, not run by default) the same
+//    reproducible construction measures 742/302,400 — cited here for scale, re-measured on this head's
+//    own axes rather than copied from the reviewer's (which used a different axis composition), and
+//    superseding this comment's own prior 1,549 figure, itself measured under the old, history-dependent
+//    construction and no longer reproducible under this one.
 const CEILING_PARAMS = { hueStep: 2, chromas: [25, 50, 75, 100], hueShifts: [0, 10, -10, 20, -20], skews: [0, 40, -40] };
+// vulnPeakC(hue) / vulnMaxChroma(hue, tone) — a PRIVATE reconstruction of hct.js's OWN pre-#686
+// vulnerable caches (`hue.toFixed(2)`/`tone.toFixed(2)` keys), kept local to this gate so the negative
+// control below still discriminates a truncation regression even though hct.js's real, shared
+// `peakC`/`maxChromaInGamut` are exact-keyed as of this same commit (see their own comments in hct.js).
+const _vulnMcCache = new Map();
+function vulnMaxChroma(hue, tone) {
+  if (tone <= 0 || tone >= 100) return 0;
+  const key = hue.toFixed(2) + "|" + tone.toFixed(2);
+  const hit = _vulnMcCache.get(key);
+  if (hit !== undefined) return hit;
+  let lo = 0, hi = 180;
+  for (let i = 0; i < 18; i++) {
+    const mid = (lo + hi) / 2;
+    if (hctToRgb(hue, mid, tone).inGamut) lo = mid; else hi = mid;
+  }
+  _vulnMcCache.set(key, lo);
+  return lo;
+}
+const _vulnPkCache = new Map();
+function vulnPeakC(hue) {
+  const key = hue.toFixed(2);
+  const hit = _vulnPkCache.get(key);
+  if (hit !== undefined) return hit;
+  let bestC = 0, bestT = 0;
+  for (let t = 4; t <= 96; t += 2) {
+    const c = vulnMaxChroma(hue, t);
+    if (c > bestC) { bestC = c; bestT = t; }
+  }
+  const res = { c: bestC, tone: bestT };
+  _vulnPkCache.set(key, res);
+  return res;
+}
 function vulnPrimeSwatches(palette, controls) {
   const baseHue = effHue(palette.hue, controls.hueSpace, (palette.chroma ?? 0) / 100);
-  const pk = peakC(baseHue); // SHARED, truncated-key peakC — the pre-review-pass-2 anchor
+  const pk = vulnPeakC(baseHue); // PRIVATE, truncated-key peakC — the pre-#686 anchor
   const lPrime = pk.tone;
   const keyChroma = ((palette.chroma ?? 0) / 100) * pk.c;
   const { up, down } = primeSteps(lPrime);
@@ -245,7 +340,7 @@ function vulnPrimeSwatches(palette, controls) {
     const l = i < 3 ? lPrime + 3 * up * w : lPrime - 3 * down * w;
     const dir = sameDir ? -absT : t;
     const hue = (((hOk + shift * dir) % 360) + 360) % 360;
-    const cap = maxChromaInGamut(hue, l); // SHARED, truncated-key maxChromaInGamut — the pre-S3 rung cap
+    const cap = vulnMaxChroma(hue, l); // PRIVATE, truncated-key maxChromaInGamut — the pre-#686 rung cap
     const chroma = Math.min(cPrime, cap);
     const { inGamut } = hctToRgb(hue, chroma, l);
     return { inGamut };
@@ -268,7 +363,7 @@ for (const hueSpace of SPACES) {
   }
 }
 const PINNED_GAMUT_CEILING = 0;
-console.log(`  gamut-ceiling: ${CEILING.realViolations}/${CEILING.checked * 7} real out-of-gamut rungs (pinned ceiling ${PINNED_GAMUT_CEILING}); negative control (vulnerable shared-cache construction, same sweep): ${CEILING.vulnViolations}/${CEILING.checked * 7}`);
+console.log(`  gamut-ceiling: ${CEILING.realViolations}/${CEILING.checked * 7} real out-of-gamut rungs (pinned ceiling ${PINNED_GAMUT_CEILING}); negative control (private truncated-key reconstruction, same sweep): ${CEILING.vulnViolations}/${CEILING.checked * 7}`);
 if (CEILING.realViolations > PINNED_GAMUT_CEILING) FAIL("gamut-ceiling", `${CEILING.realViolations}/${CEILING.checked * 7} out-of-gamut rungs exceeds the pinned ceiling of ${PINNED_GAMUT_CEILING}`);
 if (CEILING.vulnViolations === 0) FAIL("gamut-ceiling", "negative control: the vulnerable shared-cache reconstruction measured 0 violations on this sweep — expected a nonzero count (this gate would not discriminate a regression back to the shared cache)");
 
@@ -530,14 +625,26 @@ for (const p of DEFAULTS) {
   if (Math.abs(ratio - 0.5) > 1e-6) FAIL("g", `Primary: measured chroma ratio (primeChroma 50/100) = ${ratio.toFixed(6)}, expected 0.5 exactly (unclamped)`);
 }
 
-// ── (h) REQ-056: at primeChroma 100, prime.hex == deriveKeyColor hex within one 8-bit step
-//        per channel, every default palette ────────────────────────────────────────────────
-for (const p of DEFAULTS) {
-  const sw = primeSwatches(p, { ...CTL, primeChroma: 100 });
-  const primeRgb = sw[3].rgb;
-  const keyRgb = deriveKeyRgb(p, CTL.hueSpace);
-  const diff = [0, 1, 2].map((i) => Math.abs(primeRgb[i] - keyRgb[i]));
-  if (diff.some((d) => d > 1)) FAIL("h", `${p.name}: prime rgb [${primeRgb}] vs deriveKeyColor rgb [${keyRgb}] (diff [${diff}])`);
+// ── (h) REQ-056: at primeChroma 100, prime.hex == deriveKeyColor hex, BYTE-IDENTICAL, every default
+//        palette, BOTH hue spaces (#686, #681 U6 review pass 4 finding N8, tightened here per the
+//        owner's ruling: this gate used to tolerate one 8-bit step per channel, which is why it passed
+//        while `deriveKeyColor` and `primeSwatches` measurably disagreed — review pass 4 measured
+//        `#671CF1` (this file's construction) against `#671CF2` (`deriveKeyColor`, `src/ui/model.mjs`)
+//        for Data 1 in OKLCH space. The divergence traced to `hct.js`'s shared `peakC` still being
+//        truncated-key at the time: `primeSwatches` read an exact cusp, `deriveKeyColor` read a stale
+//        one warmed by an unrelated earlier hue. With `hct.js`'s cache keys now exact (this commit) the
+//        two calls are LITERALLY the same call, so the tolerance is no longer buying anything but cover
+//        for a real regression — tightened to zero. Also widened to run BOTH hue spaces: the prior
+//        version hardcoded `CTL` (cam16 only), so it could never have caught N8, which was specifically
+//        an OKLCH-path divergence (`effHue`'s oklch branch is the one that calls `oklchToCam16Hue`). ──
+for (const hueSpace of SPACES) {
+  for (const p of DEFAULTS) {
+    const sw = primeSwatches(p, { hueSpace, primeChroma: 100 });
+    const primeRgb = sw[3].rgb;
+    const keyRgb = deriveKeyRgb(p, hueSpace);
+    const diff = [0, 1, 2].map((i) => Math.abs(primeRgb[i] - keyRgb[i]));
+    if (diff.some((d) => d > 0)) FAIL("h", `${p.name}/${hueSpace}: prime rgb [${primeRgb}] vs deriveKeyColor rgb [${keyRgb}] (diff [${diff}])`);
+  }
 }
 
 // ── (i) determinism: two calls deep-equal ───────────────────────────────────────────────────
