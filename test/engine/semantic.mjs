@@ -148,7 +148,14 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    The floors are a RATCHET, not an aspiration: each is that family's own post-retune measured ratio
 //    floored to one decimal, never below 3.0 (the lint's floor) and never below 4.5 for Warning (the
 //    ruled floor). So an intentional default change has to move a number here deliberately, and an
-//    accidental one reds. Seven of the eight were NOT retuned — #647's ruling is Warning-only — so
+//    accidental one reds. #657 moved exactly one of these numbers down: giving the OKHSL hue solver
+//    its best iterate re-landed perceptual/Info's light accent one 8-bit step over (#046C9A ->
+//    #046C9B), 5.806:1 -> 5.796:1, so its light floor ratchets 5.8 -> 5.7. That pairing stays well
+//    clear of AA (4.5); the ratchet is what makes the 0.01 visible at all. Two pairings moved the
+//    other way in the same change and keep their floors: Primary 6.064 -> 6.081 light and 4.312 ->
+//    4.314 dark, Warning 7.596 -> 7.669 light. The other 29 of the 32 pairs are byte-identical, and
+//    all 16 "even" readings are untouched, since that path solves through solveCam16Hue.
+//    Seven of the eight were NOT retuned — #647's ruling is Warning-only — so
 //    several are pinned below AA at their shipped values. That is a live finding for the owner, recorded
 //    here rather than silently normalised: in perceptual, Neutral 4.21, Primary 4.31, Info 4.07 and
 //    Success 4.31 sit just under 4.5 in the DARK scheme, and Secondary is lowest at 3.05 (3.24 in even,
@@ -166,7 +173,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       ["Primary", 6.0, 4.3],                        // measured 6.06 / 4.31
       ["Secondary", 4.4, 3.0],                      // measured 4.40 / 3.05  <- lowest shipped pairing
       ["Tertiary", 6.7, 4.8],                       // measured 6.80 / 4.86
-      ["Info", 5.8, 4.0],                           // measured 5.81 / 4.07
+      ["Info", 5.7, 4.0],                           // measured 5.80 / 4.07 (#657, was 5.81 / 4.08)
       ["Success", 6.1, 4.3],                        // measured 6.18 / 4.31
       ["Warning", 7.5, 4.6],                        // measured 7.60 / 4.65  <- the retuned family
       ["Danger", 7.1, 5.1],                         // measured 7.17 / 5.13

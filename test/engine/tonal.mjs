@@ -10,9 +10,10 @@
 //   EXPORT_STOPS  (number[])   DEFAULT_CONTROLS ({curve,tension,lmin,lmax,damp,hueSpace})
 import { readFileSync } from "node:fs";
 import { DOMAINS } from "../../src/ui/persist.js";
+import { defaultDocument, rampChromaOf } from "../../src/ui/model.mjs";
 import * as T from "../../src/engine/tonal.js";
 import * as E from "../../src/engine/hct.js";
-import { rgbToOklchHue, rgbToOkhsl } from "../../src/engine/okhsl.js";
+import { rgbToOklchHue, rgbToOkhsl, okhslToRgb } from "../../src/engine/okhsl.js";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const DEFAULTS = RT.defaults;                       // 8 palettes {name,hue,chroma,skew,lift,on}
@@ -357,13 +358,125 @@ for (const mode of ["perceptual", "peak"]) {
   }
 }
 
+// ── hue-solver-best (#657): solveOkhslHue returns its BEST iterate, not its last ─────────────
+// `okhslToRgb` quantises to integer RGB, so the read-back f(h) the solver inverts is an 8-BIT
+// STAIRCASE — piecewise constant in h. The 1e-3 criterion is therefore unreachable on nearly every
+// cell (0 of the 560 grid cells below converge), the loop exhausts, and the pre-#657 code returned
+// the hue the LAST update produced — an iterate it never read back. On a flat step that update is a
+// fixed drift, so that hue can be 100°+ off. These gates pin the best-iterate contract. The old
+// update rule is RE-DERIVED here, never imported, so the gate cannot pass by agreeing with the
+// engine's own arithmetic.
+{
+  const wrap = (d) => (((d % 360) + 540) % 360) - 180;
+  const readErr = (h, s, l, target) => Math.abs(wrap(rgbToOklchHue(okhslToRgb(h, s, l)) - target));
+  // the pre-#657 loop, independently re-derived: `last` is what it RETURNED, `seen` is every hue it
+  // ever produced (the 17th included — the one it returned blind on exhaustion).
+  const oldRule = (target, s, l) => {
+    let h = target; const seen = [];
+    for (let i = 0; i < 16; i++) {
+      seen.push(h);
+      const err = wrap(rgbToOklchHue(okhslToRgb(h, s, l)) - target);
+      if (Math.abs(err) < 1e-3) return { last: h, seen, converged: true };
+      h = (((h - err) % 360) + 360) % 360;
+    }
+    seen.push(h);
+    return { last: h, seen, converged: false };
+  };
+
+  // (i) the staircase cases: cells where the old loop exhausts. The solved hue's read-back error must
+  // be <= the minimum over every candidate the loop produced (min computed HERE, from the re-derived
+  // rule) — and the old last-iterate must be strictly worse, or the case would not discriminate.
+  // Three of the four carry a PALETTE claim, and a claim in a comment is worth nothing here, so each
+  // one is PROVEN below rather than asserted in prose: `owner` names the default palette and tone
+  // mode the cell is supposed to be the stop-500 cell OF, and the loop checks two things against the
+  // engine — that the target hue IS that palette's hue in defaultDocument(), and that rendering the
+  // solved hue at this (s, l) reproduces, byte for byte, the pixel paletteStops actually emits at
+  // stop 500 for that palette. A change that moves the stop-500 cell (as #647 did when it wired skew
+  // and lift into this path) therefore reds this gate by name instead of silently leaving a comment
+  // describing a cell that no longer exists. The hues are the DOCUMENT's OKLCH hues, which is what
+  // the solver takes — not role-table.json's CAM16 numbers, which differ (Neutral 268 vs 267,
+  // Data 7 195 vs 197): `defaultDocument()` maps one to the other through camHueToOklch.
+  const STAIRCASE = [
+    // target, s, l, owner (null = synthetic). The (s, l) are FULL PRECISION on purpose: rounding
+    // 0.4556174494320429 to 0.456 lands on a different tread of the staircase and quietly changes
+    // which cell is under test (0.6262 vs 0.4684 for Neutral), which is exactly the failure mode
+    // this group exists to catch.
+    [275, 0.05, 0.98, null],                                        // pale near-white: every h renders
+                                                                    // the SAME pixel, so the update
+                                                                    // runs away instead of oscillating
+    [268, 0.3, 0.4556174494320429, ["Neutral", "peak"]],            // the worst real default, low chroma
+    [195, 1, 0.5399970062712544, ["Data 7", "perceptual"]],         // saturated, the default tone mode
+    [326, 1, 0.5782463229408346, ["Data 2", "peak"]],
+  ];
+  {
+    const doc = defaultDocument();
+    for (const [target, s, l, owner] of STAIRCASE) {
+      if (!owner) continue;
+      const [name, toneMode] = owner;
+      const p = doc.palettes.find((x) => x.name === name);
+      if (!p) { FAIL("hue-solver-best", `(i) cell ${target}/${s}/${l} claims default palette "${name}", which defaultDocument() does not have`); continue; }
+      if (p.hue !== target) FAIL("hue-solver-best", `(i) cell claims "${name}" but its hue is ${p.hue}, not ${target} — relabel the cell or repin it`);
+      const pal = { hue: p.hue, chroma: rampChromaOf(p, doc), skew: p.skew, lift: p.lift, cuspPull: p.cuspPull };
+      const emitted = T.paletteStops(pal, { ...(T.DEFAULT_CONTROLS || {}), toneMode }, T.EXPORT_STOPS).find((r) => r.stop === 500);
+      const here = okhslToRgb(T.solveOkhslHue(target, s, l), s, l);
+      if (here.join() !== emitted.rgb.join())
+        FAIL("hue-solver-best", `(i) cell ${target}/${s}/${l} claims "${name}" @ ${toneMode} stop 500, but renders ${here.join()} where the ramp emits ${emitted.rgb.join()} — the stop-500 cell moved, repin (s, l)`);
+    }
+  }
+  for (const [target, s, l] of STAIRCASE) {
+    const old = oldRule(target, s, l);
+    if (old.converged) FAIL("hue-solver-best", `(i) cell ${target}/${s}/${l} CONVERGES — no longer a staircase case, the gate is vacuous`);
+    const floor = Math.min(...old.seen.map((h) => readErr(h, s, l, target)));
+    const got = T.solveOkhslHue(target, s, l);
+    const gotErr = readErr(got, s, l, target);
+    if (gotErr > floor + 1e-12) FAIL("hue-solver-best", `(i) cell ${target}/${s}/${l}: solved hue reads back ${gotErr.toFixed(4)}° off, worse than the best iterate's ${floor.toFixed(4)}°`);
+    const oldErr = readErr(old.last, s, l, target);
+    if (!(oldErr > gotErr + 1e-9)) FAIL("hue-solver-best", `(i) cell ${target}/${s}/${l}: the old last-iterate error (${oldErr.toFixed(4)}°) is not worse than the new one (${gotErr.toFixed(4)}°) — the case proves nothing`);
+  }
+
+  // (ii) monotone improvement over a grid of (target, s, l), pale low-chroma cells included: the new
+  // solver's read-back error is never worse than the old last-iterate's, and on a real share of the
+  // grid it is much better (the >1° counter is the vacuity guard — a no-op fix would score 0).
+  const G_HUES = [20, 62, 106, 150, 195, 239, 272, 275, 312, 326];
+  const G_S = [0.03, 0.05, 0.12, 0.3, 0.55, 0.8, 1.0];
+  const G_L = [0.08, 0.25, 0.5, 0.54, 0.72, 0.9, 0.96, 0.98];
+  let cells = 0, improvedALot = 0;
+  for (const target of G_HUES) for (const s of G_S) for (const l of G_L) {
+    cells++;
+    const old = oldRule(target, s, l);
+    const oldErr = readErr(old.last, s, l, target);
+    const gotErr = readErr(T.solveOkhslHue(target, s, l), s, l, target);
+    if (gotErr > oldErr + 1e-12) FAIL("hue-solver-best", `(ii) cell ${target}/${s}/${l}: new error ${gotErr.toFixed(4)}° > old ${oldErr.toFixed(4)}° — the solver got WORSE`);
+    if (oldErr - gotErr > 1) improvedALot++;
+  }
+  if (cells !== 560) FAIL("hue-solver-best", `(ii) grid is ${cells} cells, expected 560`);
+  if (improvedALot < 50) FAIL("hue-solver-best", `(ii) only ${improvedALot} of ${cells} cells improve by >1° — the grid no longer exercises the runaway (measured: 109)`);
+
+  // (iii) converged cells are BIT-IDENTICAL: where the old loop broke early on |err| < 1e-3, nothing
+  // before that iterate can be smaller, so the argmin IS that iterate and the return is unchanged.
+  // Two of these converge at iteration 1 and 3, not at the seed, so the check is not trivial.
+  const CONVERGED = [
+    [199, 0.2, 0.5], [248, 0.05, 0.5], [261, 1.0, 0.5], [270, 1.0, 0.5],
+    [322, 1.0, 0.05], [339, 0.4, 0.5], [340, 1.0, 0.5], [340, 1.0, 0.95],
+  ];
+  let checked = 0;
+  for (const [target, s, l] of CONVERGED) {
+    const old = oldRule(target, s, l);
+    if (!old.converged) FAIL("hue-solver-best", `(iii) cell ${target}/${s}/${l} no longer converges early — pick another, this one proves nothing`);
+    else checked++;
+    const got = T.solveOkhslHue(target, s, l);
+    if (got !== old.last) FAIL("hue-solver-best", `(iii) cell ${target}/${s}/${l}: converged case moved, ${old.last} -> ${got} (must be bit-identical)`);
+  }
+  if (checked < 6) FAIL("hue-solver-best", `(iii) only ${checked} of ${CONVERGED.length} cells still converge early`);
+}
+
 // ── hpg-tonal-intensity-legacy: paletteStops is byte-identical to the pre-0.2.0 engine (AC-003a/006,
 // EX-1) — 0.3.0 (#556/#559 re-ruling) removes the baseIntensity multiplier entirely, so this fixture
 // (generated from the pre-0.2.0 engine, commit 83756bb, by scripts/gen-tonal-fixture.mjs; regenerated
 // only by hand, never by npm test) is the direct, unconditional engine contract again — no controls
 // field varies the result at all now, so a single pass over DEFAULTS proves it.
-//   #648 + #647 CARVE-OUT: 10 of these 32 ramps are deliberately NO LONGER pre-0.2.0-identical, and the
-//   list is EXACT — a diff outside it is a regression, never a refresh.
+//   #648 + #647 + #657 CARVE-OUTS: 18 of these 32 ramps are deliberately NO LONGER pre-0.2.0-identical,
+//   and the list is EXACT — a diff outside it is a regression, never a refresh.
 //     #648 (3, even path): even/Warning, even/Success, even/Danger — the only three defaults carrying a
 //       non-zero `lift`. The legacy engine applied lift as an additive TONE bump, which drove Warning's
 //       stops 050-300 past lmax into six identical #FFFFFF swatches; lift is now a displacement of the
@@ -378,10 +491,21 @@ for (const mode of ["perceptual", "peak"]) {
 //       from 15 to -36 to clear WCAG AA in both ruled modes. even/Warning was already carved out above
 //       for #648 and moved again; perceptual/Warning moved a second time. No other ramp moved with it,
 //       which is asserted by hpg-role-contrast's default-parity check and was verified entry by entry.
-//   The remaining 22 ramps — the 13 even and the 9 perceptual ramps whose skew AND lift are both 0
-//   (Secondary and Data 1-8) — are byte-for-byte what 83756bb emitted, and that is what each
-//   regeneration of this file was verified against. Do NOT regenerate it to make an unexplained red go
-//   green. ────────────────────────────────────────────────────────────────────────────────────────────
+//   #657 CARVE-OUT (supersedes the #647 line above): the perceptual list is now 15, not 7 — every
+//     default but Secondary. `solveOkhslHue` used to return the hue its LAST Newton update produced
+//     without ever reading it back; on the 8-bit staircase that read-back is piecewise constant, so
+//     the 1e-3 criterion is unreachable and ALL 32 default cells exhaust. It now returns its best
+//     scored candidate, which moves each palette's stop-500 anchor hue by 0.03° to 0.69° and re-lands
+//     1 to 11 of that ramp's 25 stops by one 8-bit LSB. Biggest movers, with their stop-500 read-back
+//     error before -> after: Neutral 0.69° (1.671° -> 0.573°), Info 0.54°, Warning 0.49°
+//     (0.970° -> 0.064°), Tertiary 0.44° (1.142° -> 0.559°). Secondary's anchor moved 0.03°, too
+//     little to cross a quantisation boundary at any stop, so it is the one perceptual ramp still
+//     pre-0.2.0-identical. The 16 EVEN ramps are untouched by #657 — that path solves through
+//     solveCam16Hue, which #657 did not change — so the #648 even carve-out above stands as written.
+//   Carved total after #657: 18 of 32 (3 even + 15 perceptual). The remaining 14 — the 13 even ramps
+//   whose lift is 0, and perceptual/Secondary — are byte-for-byte what 83756bb emitted, and that is
+//   what each regeneration of this file was verified against. Do NOT regenerate it to make an
+//   unexplained red go green. ──────────────────────────────────────────────────────────────────────
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};
@@ -727,7 +851,9 @@ for (const mode of ["perceptual", "peak"]) {
   //     lift deliberately drag stop 500 toward an end, where the ramp is PALE, so below that chroma the
   //     read-back is quantisation-bound (up to ~3° at an extreme grid corner, on both this construction
   //     and the unwarped one) and an angular budget would be measuring the 8-bit grid, not the anchor.
-  //     Above it the shipped 1° budget holds: worst measured 0.79° across this grid.
+  //     Above it the shipped 1° budget holds: worst measured 0.41° across this grid (it was 0.79°
+  //     when #647 wrote this note; #657 gave the OKHSL solver its best iterate instead of an unread
+  //     last one, which halved the residual here without moving a single cell past the budget).
   {
     let anchored = 0;
     for (const [skew, lift] of [[40, 15], [-20, -5], [100, 0], [0, 40], [-100, -40], [50, 20]]) {
@@ -761,7 +887,7 @@ for (const mode of ["perceptual", "peak"]) {
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "intensity-legacy", "ac004-greps"]) {
+for (const g of ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

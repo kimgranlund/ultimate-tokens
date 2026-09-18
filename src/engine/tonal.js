@@ -117,15 +117,27 @@ export function hueAnchorFrac(palette, controls) {
 // lightness-dependent amount (Abney) — worst in the blues (~6°). Anchoring the KEY stop directly in the
 // RENDER space, at its ACTUAL saturation/lightness, lands it on the set OKLCH hue exactly, for any damping
 // — no CAM16 round-trip. f(h)≈h (slope ≈1), so h ← h − (got − target) is Newton; converges in a few steps.
+// #657: f is an 8-BIT STAIRCASE — okhslToRgb quantises to integer RGB, so `got` is piecewise CONSTANT in h
+// and the 1e-3 criterion is unreachable on most cells. Where the step is flat the update h ← h − err is a
+// fixed drift, so the LAST iterate can be 100°+ off target (pale, low-chroma cells near white are the worst:
+// every h renders the same pixel). Track the BEST (h, |err|) seen and return that on exhaustion. Converged
+// cells are unaffected: nothing before an iterate with |err| < 1e-3 can be smaller, so the min IS that
+// iterate and the return is bit-identical. Strict `<` keeps the EARLIEST minimum, so the result is stable.
+// The loop runs to i=16 so the hue the OLD code returned — the 17th, produced by the last update and
+// never read back — is a scored candidate too, not a blind return. Without that pass the old value could
+// still win by luck on a cycling cell (measured: 2 of 3,780 curated peak palettes, by <=0.0003°); with it,
+// the returned hue is the argmin over every candidate the old loop ever produced, so it is never worse.
 export function solveOkhslHue(targetOklchHue, s, l) {
   let h = targetOklchHue; // seed: OKHSL hue ≈ OKLCH hue to first order
-  for (let i = 0; i < 16; i++) {
+  let bestH = h, bestErr = Infinity;
+  for (let i = 0; i <= 16; i++) {                                        // 16 Newton steps => 17 candidates
     const got = rgbToOklchHue(okhslToRgb(h, s, l));
     const err = (((got - targetOklchHue) % 360) + 540) % 360 - 180;
-    if (Math.abs(err) < 1e-3) break;
-    h = (((h - err) % 360) + 360) % 360;
+    if (Math.abs(err) < bestErr) { bestErr = Math.abs(err); bestH = h; } // strict: the EARLIEST minimum wins
+    if (bestErr < 1e-3) break;                                          // converged => this iterate IS the min
+    h = (((h - err) % 360) + 360) % 360;                                 // i=16's update is evaluated by nobody
   }
-  return h;
+  return bestH;
 }
 
 // solveCam16Hue — the even/CAM16 analog of solveOkhslHue: the CAM16 hue whose color at (chroma, tone) reads
