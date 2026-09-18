@@ -85,10 +85,19 @@ function mockFigma() {
     // embedded in the html, so restoreAppUI's re-show of the app bundle is not miscounted as a prompt.
     _adoptAnswer: false,
     _showUICalls: 0,
+    _restoreCalls: 0,
+    _configAtRestore: null,
     _onClose: null,
     on(event, cb) { if (event === "close") this._onClose = cb; },
     showUI(html) {
-      if (typeof html !== "string" || html.indexOf("adopt-confirm") === -1) return; // the app bundle, not a dialog
+      if (typeof html !== "string" || html.indexOf("adopt-confirm") === -1) {
+        // the app bundle, not a dialog: this is a BOOT (module top) or a restoreAppUI REBOOT. Record what
+        // the file's embedded config reads as right now, because that is exactly what the freshly booted
+        // app would load back (#632 MAJOR-1) — a real iframe the mock cannot otherwise model.
+        this._restoreCalls++;
+        this._configAtRestore = this.root.getPluginData("ultimate-tokens-config");
+        return;
+      }
       this._showUICalls++;
       const answer = this._adoptAnswer;
       Promise.resolve().then(() => {
@@ -730,6 +739,12 @@ if (applyBundle) {
     if (!FF.variables.some((v) => v.variableCollectionId === orphan.id && v.name === "foreign/leftover")) FAIL("adoptconsent", "decline leg: the declined collection was written to anyway");
     if (orphan.modes[0].name !== "Mode 1" || orphan.modes.length !== 1) FAIL("adoptconsent", "decline leg: the declined collection's modes were touched");
     if (regOf(FF, COLOR_REG)["Color Roles"] === orphan.id) FAIL("adoptconsent", "decline leg: the registry was seeded with the declined collection's id");
+    // the restore is unconditional in confirmAdopt, so it must be proven on the DECLINE branch too, not
+    // only on accept: decline is the branch a cautious user actually takes, and a restore-on-accept-only
+    // regression would otherwise leave every later UI request unanswered for exactly those users.
+    FF.figma.ui._posted.length = 0;
+    await FF.figma.ui._h({ type: "list-fonts" });
+    if (!FF.figma.ui._posted.some((m) => m && m.type === "fonts-listed")) FAIL("adoptconsent", "decline leg: the app's own message handler was not restored after a DECLINED adoption dialog: a later UI request went unanswered");
     // re-run after a decline: the fresh collection now resolves the name, so ZERO prompts and no third collection.
     FF.figma._showUICalls = 0;
     await FF.figma.ui._h({ type: "apply", dtcg: bundleAd });
@@ -752,6 +767,23 @@ if (applyBundle) {
     if (regOf(FG2, COLOR_REG)["Color Roles"] !== ours.id) FAIL("adoptconsent", "guard leg: the registry was re-pointed away from the collection actually in use");
     if (FG2.variables.some((v) => v.variableCollectionId === orphan.id)) FAIL("adoptconsent", "guard leg: the apply wrote into the untracked namesake");
   } catch (e) { FAIL("adoptconsent", "the already-resolves-live guard leg threw: " + e.message); }
+  // (f) MAJOR-1 ORDERING: answering the dialog reboots the app iframe, and a freshly booted app reloads
+  //     the config embedded in the file. That config must already be the one being APPLIED, which means
+  //     writeConfig has to run before the consent pass, not after the apply where it used to sit. The mock
+  //     has no iframe, so this reads the embedded config at the exact moment the app bundle is re-shown.
+  try {
+    const FI = mockFigma();
+    new Function("figma", "__html__", "module", code)(FI.figma, "<html>", undefined);
+    FI.figma._adoptAnswer = true;
+    FI.figma.root.setPluginData("ultimate-tokens-config", JSON.stringify({ name: "previous-apply" })); // an earlier apply's params
+    FI.figma.variables.createVariableCollection("Color Roles"); // live, untracked: forces one prompt
+    await FI.figma.ui._h({ type: "apply", dtcg: bundleAd, config: { name: "in-progress" } });
+    if (FI.figma._showUICalls !== 1) FAIL("adoptconsent", `ordering leg: expected exactly 1 prompt, got ${FI.figma._showUICalls}`);
+    if (FI.figma._restoreCalls < 2) FAIL("adoptconsent", `ordering leg: expected the module-top boot plus one restore re-show (2+), got ${FI.figma._restoreCalls}`);
+    let atRestore = null;
+    try { atRestore = JSON.parse(FI.figma._configAtRestore || "null"); } catch (e) { atRestore = null; }
+    if (!atRestore || atRestore.name !== "in-progress") FAIL("adoptconsent", `ordering leg: the rebooted app would reload ${JSON.stringify(atRestore && atRestore.name)}, not the config being applied: writeConfig must run BEFORE the adoption dialog reboots the iframe`);
+  } catch (e) { FAIL("adoptconsent", "the config-ordering leg threw: " + e.message); }
   // (e) the FLOAT call site: the same consent pass covers the Type/Geometry collections, whose registry
   //     is pre-seeded before applyFloatPlans runs (its own ensureFloatCollection stays untouched).
   try {

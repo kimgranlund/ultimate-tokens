@@ -125,16 +125,23 @@ figma.ui.onmessage = async (msg) => {
     if (msg.type === "apply") {
       // the Settings-overridable color-collection names ride the message; set BEFORE any write.
       setCollectionNames(msg.collections);
-      // #632: BEFORE any write, offer to adopt a live collection that matches a target name but isn't
-      // registry-tracked (a file applied to under the pre-rename plugin id, or a hand-made collection).
-      // Nothing is adopted without explicit consent; declining is today's behaviour, unchanged.
+      // Embed the exact params in the file ALONGSIDE the variables, so a later read round-trips
+      // losslessly (the variables alone can only seed an approximate hue/chroma).
+      // #632 ORDERING: this runs BEFORE adoptExistingCollections, not after the apply where it used to
+      // sit. An adoption dialog borrows the single plugin ui and reboots the app iframe on the way out
+      // (restoreAppUI), and a freshly booted app asks the file for its config. Written after the apply,
+      // the config the reboot reloaded would be the PREVIOUS apply's, so the user would come back to
+      // stale state; written here, it is the state actually being applied. The cost is that a config is
+      // now embedded even if the apply below throws, which is benign: the config is the generator's
+      // params, not a claim about what is in the file, and a re-apply (idempotent) converges the rest.
+      if (msg.config) writeConfig(msg.config);
+      // #632: BEFORE any write to the collections, offer to adopt a live collection that matches a target
+      // name but isn't registry-tracked (a file applied to under the pre-rename plugin id, or a hand-made
+      // collection). Nothing is adopted without explicit consent; declining is today's behaviour, unchanged.
       await adoptExistingCollections(msg);
       // `dtcg` is OMITTED when the Color system is toggled off in the UI — skip the color collections
       // entirely (the existing ones are left untouched, not pruned). Type/Geometry filtering happens UI-side.
       const r = msg.dtcg ? await applyBundle(msg.dtcg, { rebuildSemantic: !!msg.rebuildSemantic, renames: msg.renames && msg.renames.color }) : null;
-      // Embed the exact params in the file ALONGSIDE the variables, so a later read round-trips
-      // losslessly (the variables alone can only seed an approximate hue/chroma).
-      if (msg.config) writeConfig(msg.config);
       // Type + Geometry breakpoint-moded FLOAT collections (UI-computed, pre-validated apply plans). Isolated
       // in its OWN try so a float-apply failure can't mask the color apply that already succeeded above — the
       // user still gets the color result (+ a console error), and a re-apply (idempotent) converges the rest.
@@ -813,12 +820,16 @@ async function confirmAdopt(name) {
       "#adopt{background:#18A0FB;color:#fff;border:1px solid #18A0FB}#skip{background:#fff;border:1px solid #ccc}</style>" +
       "<p>Found an existing <b>“" + escapeHtmlVM(name) + "”</b> collection this plugin didn’t create. " +
       "Adopt it and apply into it, instead of creating a separate collection? " +
-      "Adoption takes the collection over: anything in it that is not part of this apply is removed.</p>" +
+      "Adoption takes the collection over: anything in it that is not part of this apply is removed. " +
+      "Either way, answering this reloads the editor: your saved palette set comes back, anything unsaved in this session does not.</p>" +
       "<button id=\"adopt\">Adopt “" + escapeHtmlVM(name) + "”</button><button id=\"skip\">Skip (create new)</button>" +
       // the closing tag below is written "<\/script>" so this SOURCE FILE never contains the literal,
-      // contiguous closing-script-tag substring: writing it here, in code OR in a comment, truncates
-      // the single inline script block this file is embedded into elsewhere (a real smoke-test
-      // incident on the binder's identical dialog). "<\/script>" is the identical string at runtime.
+      // contiguous closing-script-tag substring. Figma loads THIS file as a file, so it is not itself at
+      // risk today; the binder is (gen-figma-assets.mjs embeds it in one inline script block, where the
+      // literal substring closes that tag early, a real smoke-test incident on the binder's identical
+      // dialog), and gen-figma-binder-code.mjs splices flagship functions INTO the binder, so the habit
+      // is kept here rather than made conditional on which functions are currently spliced.
+      // "<\/script>" is the identical string at runtime.
       "<script>document.getElementById('adopt').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:true}},'*');" +
       "document.getElementById('skip').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:false}},'*');<\/script>",
       { width: 360, height: 192 },

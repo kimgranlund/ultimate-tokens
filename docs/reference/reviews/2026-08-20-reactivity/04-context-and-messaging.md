@@ -22,35 +22,35 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 
 | Type | Call site | Sandbox handler | Reply |
 |---|---|---|---|
-| `load-config` | `app.js:1006` (probe), `app.js:2323` (explicit load), posting `type: "load-config"` | `code.js:168-171` (`msg.type === "load-config"`) | `config-loaded` |
-| `read-variables` | `app.js:1007` (probe), `app.js:2377` (manual re-read), posting `type: "read-variables"` | `code.js:179-182` (`msg.type === "read-variables"`) | `variables-read` |
-| `load-sets` | `app.js:1008` (probe), posting `type: "load-sets"` | `code.js:186-189` (`msg.type === "load-sets"`) | `sets-loaded` |
-| `read-float-variables` | `apply-gate.js:42` (gate open), posting `type: "read-float-variables"` | `code.js:183-185` (`msg.type === "read-float-variables"`) | `float-variables-read` |
-| `list-fonts` | `typography.js:808` (one-shot), posting `type: "list-fonts"` | `code.js:172-178` (`msg.type === "list-fonts"`) | `fonts-listed` |
-| `save-sets` | `app.js:1157` (`persistSets`), posting `type: "save-sets"` | `code.js:190-192` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
-| `save-config` | `app.js:2310`, posting `type: "save-config"` | `code.js:165-167` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
-| `apply` | `apply-gate.js:78`, posting `type: "apply"` | `code.js:125-164` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
-| `sweep-scan` | `apply-gate.js:195`, posting `type: "sweep-scan"` | `code.js:193-199` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
-| `sweep-delete` | `apply-gate.js:222`, posting `type: "sweep-delete"` | `code.js:200-209` (`msg.type === "sweep-delete"`) | `sweep-done` |
+| `load-config` | `app.js:1006` (probe), `app.js:2323` (explicit load), posting `type: "load-config"` | `code.js:179-182` (`msg.type === "load-config"`) | `config-loaded` |
+| `read-variables` | `app.js:1007` (probe), `app.js:2377` (manual re-read), posting `type: "read-variables"` | `code.js:190-193` (`msg.type === "read-variables"`) | `variables-read` |
+| `load-sets` | `app.js:1008` (probe), posting `type: "load-sets"` | `code.js:197-200` (`msg.type === "load-sets"`) | `sets-loaded` |
+| `read-float-variables` | `apply-gate.js:42` (gate open), posting `type: "read-float-variables"` | `code.js:194-196` (`msg.type === "read-float-variables"`) | `float-variables-read` |
+| `list-fonts` | `typography.js:808` (one-shot), posting `type: "list-fonts"` | `code.js:183-189` (`msg.type === "list-fonts"`) | `fonts-listed` |
+| `save-sets` | `app.js:1157` (`persistSets`), posting `type: "save-sets"` | `code.js:201-203` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
+| `save-config` | `app.js:2310`, posting `type: "save-config"` | `code.js:176-178` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
+| `apply` | `apply-gate.js:78`, posting `type: "apply"` | `code.js:125-175` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
+| `sweep-scan` | `apply-gate.js:195`, posting `type: "sweep-scan"` | `code.js:204-210` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
+| `sweep-delete` | `apply-gate.js:222`, posting `type: "sweep-delete"` | `code.js:211-220` (`msg.type === "sweep-delete"`) | `sweep-done` |
 
 **Sandbox → UI** (`figma.ui.postMessage`, all dispatched by the bridge):
 
 | Type | Sandbox origin | Bridge line | UI handler | State mutated | Re-renders? |
 |---|---|---|---|---|---|
 | `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2255 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2261`) |
-| `config-loaded` | `code.js:174` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2337 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
-| `variables-read` | `code.js:185` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2381 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
-| `float-variables-read` | `code.js:189` (`type: "float-variables-read"`) | `gen-figma-ui.mjs:39` | `apply-gate.js:276 receiveLiveFloatVariables` | `this._liveFloatVars` | yes |
-| `sets-loaded` | `code.js:193` (`type: "sets-loaded"`) | `gen-figma-ui.mjs:42` | `app.js:1165 receiveStoredSets` | `this.sets` (guarded) | yes |
-| `fonts-listed` | `code.js:182` (`type: "fonts-listed"`) | `gen-figma-ui.mjs:45` | `typography.js:811 receiveFigmaFonts` | `this._figmaFonts` | yes |
-| `apply-done` | `code.js:168` (`type: "apply-done"`) | `gen-figma-ui.mjs:48` | `apply-gate.js:127 onApplyDone` | `this._applyBusy=false`, `this.applyGateOpen=false` | yes |
-| `apply-error` | `code.js:223` (`type: "apply-error"`) (catch-all, apply only) | `gen-figma-ui.mjs:49` | `apply-gate.js:147 onApplyError` | `this._applyBusy=false` | yes |
-| `sweep-scanned` | `code.js:203` (`type: "sweep-scanned"`) | `gen-figma-ui.mjs:52` | `apply-gate.js:199 receiveSweepScan` | `this.sweepResults`, `this.sweepBusy=false` | yes |
-| `sweep-done` | `code.js:212` (`type: "sweep-done"`) | `gen-figma-ui.mjs:53` | `apply-gate.js:226 onSweepDone` | `this.sweepBusy=false`, clears results | yes |
+| `config-loaded` | `code.js:181` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2337 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
+| `variables-read` | `code.js:192` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2381 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
+| `float-variables-read` | `code.js:196` (`type: "float-variables-read"`) | `gen-figma-ui.mjs:39` | `apply-gate.js:276 receiveLiveFloatVariables` | `this._liveFloatVars` | yes |
+| `sets-loaded` | `code.js:200` (`type: "sets-loaded"`) | `gen-figma-ui.mjs:42` | `app.js:1165 receiveStoredSets` | `this.sets` (guarded) | yes |
+| `fonts-listed` | `code.js:189` (`type: "fonts-listed"`) | `gen-figma-ui.mjs:45` | `typography.js:811 receiveFigmaFonts` | `this._figmaFonts` | yes |
+| `apply-done` | `code.js:175` (`type: "apply-done"`) | `gen-figma-ui.mjs:48` | `apply-gate.js:127 onApplyDone` | `this._applyBusy=false`, `this.applyGateOpen=false` | yes |
+| `apply-error` | `code.js:230` (`type: "apply-error"`) (catch-all, apply only) | `gen-figma-ui.mjs:49` | `apply-gate.js:147 onApplyError` | `this._applyBusy=false` | yes |
+| `sweep-scanned` | `code.js:210` (`type: "sweep-scanned"`) | `gen-figma-ui.mjs:52` | `apply-gate.js:199 receiveSweepScan` | `this.sweepResults`, `this.sweepBusy=false` | yes |
+| `sweep-done` | `code.js:219` (`type: "sweep-done"`) | `gen-figma-ui.mjs:53` | `apply-gate.js:226 onSweepDone` | `this.sweepBusy=false`, clears results | yes |
 
 Refresh discipline is consistent — every inbound handler calls `this.render()` (or delegates to one that does). The one intentional exception: `receiveStoredSets` (`app.js:1166`) no-ops if `this.view !== "gallery"` — a deliberate anti-clobber guard, not a bug (a probe reply landing after the user already opened an editor mustn't overwrite `this.sets`).
 
-**Asymmetry (the one real design gap):** `apply` is the only inbound request with a guaranteed reply on failure — `code.js`'s outer `catch` (`code.js:210-221`) explicitly special-cases `msg.type === "apply"` to post `apply-error`. `sweep-scan` and `sweep-delete` get NO such carve-out [since fixed: `code.js:219-221` now post empty `sweep-scanned`/`sweep-done` from the same catch]: if `figma.getLocalTextStylesAsync()`/`sweepCandidates`/the delete loop throws, the catch only calls `figma.notify(...)` — no `sweep-scanned`/`sweep-done` is ever posted. See (B) below — this is a real wedge, not theoretical.
+**Asymmetry (the one real design gap):** `apply` is the only inbound request with a guaranteed reply on failure — `code.js`'s outer `catch` (`code.js:221-235`) explicitly special-cases `msg.type === "apply"` to post `apply-error`. `sweep-scan` and `sweep-delete` get NO such carve-out [since fixed: `code.js:231-232` now post empty `sweep-scanned`/`sweep-done` from the same catch]: if `figma.getLocalTextStylesAsync()`/`sweepCandidates`/the delete loop throws, the catch only calls `figma.notify(...)` — no `sweep-scanned`/`sweep-done` is ever posted. See (B) below — this is a real wedge, not theoretical.
 
 ## B — In-flight flags + cache inventory
 
