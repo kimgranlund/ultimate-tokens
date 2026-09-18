@@ -59,8 +59,11 @@ export const SOURCE_COMMIT = "770297b";
 // The artifact table. Adding a format later (e.g. Panda) is one row here plus one tag — the emit
 // loop, the validation and the provenance block are all format-agnostic.
 export const ARTIFACTS = [
-  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "1.0.0" },
-  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.0.0" },
+  // 1.1.0 (#638): both artifacts re-exported from the SAME tagged document under
+  // EXPORT_SCHEMA_VERSION 3 — the bump policy's `minor` case. Only the schema stamp and this
+  // provenance block moved; no token value, name or ordering changed.
+  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "1.1.0" },
+  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.1.0" },
 ];
 
 // exportRadix's own reserved alias keys (I4, ticket #637): promoted into src/engine/exports.js as

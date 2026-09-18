@@ -5,6 +5,7 @@ import { geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG, geomTokensFigma
 import { zipStore } from "../zip.mjs";
 import { mergeModeInterchanges } from "../../../figma/binder/mode-apply-plan.mjs";
 import { COLLECTIONS } from "../../engine/collections.js";
+import { cssPrefixOf } from "../../engine/exports.js";
 import { primitivesModesApplyPlan, stylePlans } from "../../../figma/binder/style-plan.mjs";
 import { icon } from "../icons.js";
 import { ALIASED_README, REPO_URL, btn, chip, h } from "../app-helpers.mjs";
@@ -86,7 +87,15 @@ export class DrawerMixinImpl {
       ["dark", "Dark", "Dark_tokens.json"],
       ["raw", "Raw values", "palette.tokens.json"],
     ];
+    // The two Radix preset files (#638): the same document, baked values or var() links into the
+    // kit's own CSS custom-property layer. [stateKey, label]. Both ride the one `radix` format id,
+    // so the format list stays ten Colors options and Pro gating is untouched.
+    const RADIX = [
+      ["values", "Values"],
+      ["refs", "References"],
+    ];
     const isFigma = this.exportTab === "figma";
+    const isRadix = this.exportTab === "radix";
     const isConfig = this.exportTab === "config";
     const figCur = FIGMA.find((f) => f[0] === this.figmaFile) || FIGMA[0];
     // proExport gate: a Pro format the plan doesn't unlock shows an upsell instead of its code (NO-OP until
@@ -99,6 +108,8 @@ export class DrawerMixinImpl {
         ? JSON.stringify(serialize(this.doc), null, 2) // the parametric doc — re-importable via the gallery's ⬆ Import
         : isFigma
           ? view.exports.figma[this.figmaFile]
+          : isRadix
+            ? (this.radixFile === "refs" ? view.exports.radixRef : view.exports.radix)
           : SYSTEM_CODE[this.exportTab]
             ? SYSTEM_CODE[this.exportTab]()
             : view.exports[this.exportTab];
@@ -123,6 +134,7 @@ export class DrawerMixinImpl {
       this._drawerSystemsRow(),
       this._drawerFormatSelect(FORMAT_GROUPS),
       isFigma ? this._drawerFigmaBar(FIGMA) : false,
+      isRadix ? this._drawerRadixBar(RADIX) : false,
       isConfig ? this._drawerConfigBar() : false,
       this._drawerCodeBlock(code, proLocked, PRO_LABEL),
       this._drawerFooter(view, { included, isFigma, isConfig, figCur, proLocked, PRO_LABEL, SYSTEM_LABEL, bytes }),
@@ -225,6 +237,33 @@ export class DrawerMixinImpl {
               onclick: () => this.requestApplyToFigma(true),
             })
           : false,
+      ),
+    );
+  }
+
+  // Radix sub-bar (#638): one format, two files. Mirrors the Figma tab's mode-file bar, a two-way
+  // segmented control over `radixFile`, which only picks which file the <pre> previews. Download-All
+  // always ships both. Rendered under the Pro gate too, so the upsell is reachable from either file.
+  _drawerRadixBar(RADIX) {
+    return h(
+      "div",
+      { class: "radix-bar" },
+      // the prefix is a persisted Settings control, so this copy names the properties the export
+      // ACTUALLY emits. cssPrefixOf reads only `state.export.colorPrefix`, and stateOf passes
+      // doc.export through verbatim, so the doc is a legal argument and cannot drift from the file.
+      h("span", { class: "radix-note" }, `Two files of the same preset. Values is self-contained; References links every step into this kit's own --${cssPrefixOf(this.doc)}-* custom properties, so load the css-hex/ or css-oklch/ export first. Download-All ships both.`),
+      h(
+        "div",
+        { class: "radix-bar-row" },
+        this.segmented(
+          RADIX.map(([id, label]) => ({ id, label })),
+          this.radixFile,
+          (id) => {
+            this.radixFile = id;
+            this.render();
+          },
+          { baseClass: "radix-files", ariaLabel: "Radix preset file", role: "group", idPrefix: "rxfile" },
+        ),
       ),
     );
   }
@@ -341,6 +380,9 @@ export class DrawerMixinImpl {
         { name: `shadcn/${s}.css`, data: ex.shadcn },
         { name: `panda/${s}.preset.mjs`, data: ex.panda },
         { name: `radix/${s}.preset.mjs`, data: ex.radix },
+        // the reference form (#638) beside the values form: the same steps, as var(--c-*) links into
+        // the css-hex/ · css-oklch/ files above. Both ride the same proExport gate.
+        { name: `radix/${s}.refs.preset.mjs`, data: ex.radixRef },
       );
       // figma-aliased/ — the SAME tokens, but the Light/Dark leaves carry com.figma.aliasData targeting
       // the "Color Primitives" collection (figmaBundle). For TESTING plugin-free import / the live cascade
@@ -470,6 +512,9 @@ export class DrawerMixinImpl {
       if (this.flagOf("proExport")) rows.push(
         "| `dtcg/` | W3C-DTCG design tokens |",
         "| `tailwind/` · `shadcn/` | Framework presets |",
+        // same reason as the sub-bar note: `--c-*` is only the DEFAULT prefix, so the row names the
+        // one this kit really emits (Settings › Token mapping can move it to --md-sys-color-*).
+        "| `panda/` · `radix/` | Panda CSS + Park UI/Radix presets. `radix/` ships BOTH `" + s + ".preset.mjs` (self-contained baked values) and `" + s + ".refs.preset.mjs` (the same steps as `var(--" + cssPrefixOf(this.doc) + "-*)` links into the CSS files above, so load one of those first) |",
       );
       const collNames = figmaCollectionNames(this.doc);
       const customColl = collNames.raw !== COLLECTIONS.colorRaw || collNames.semantic !== COLLECTIONS.colorSemantic;

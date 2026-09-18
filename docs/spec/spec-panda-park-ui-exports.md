@@ -2,7 +2,7 @@
 doc-type: spec
 id: spec-panda-park-ui-exports
 status: approved        # draft | approved | superseded  (0.1.0 approved 2026-09-11: H-1..H-4, P-1, N-1..N-3 ratified by the owner via team-lead)
-version: 0.2.0          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw ramp stops (issue #588 ruling); EX-4 regenerated. Data correction to an approved SPEC, not a new draft round.
+version: 0.3.0          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw ramp stops (issue #588 ruling); EX-4 regenerated. Data correction to an approved SPEC, not a new draft round.
                         # 0.2.0 2026-09-12: ticket #614 renamed the "Park UI" format to "Radix" everywhere in
                         # the live surfaces (exportParkUi/exportParkUiModule -> exportRadix/exportRadixModule,
                         # format id parkui -> radix, drawer label/zip folder park-ui/ -> radix/) — a rename
@@ -10,6 +10,10 @@ version: 0.2.0          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw r
                         # REQ-020..028/041..043/050..052/061/063 sections below are left as originally
                         # ratified (they describe the #570 build under its then-current names) rather than
                         # rewritten to match the new names — this version note is the record of the rename.
+                        # 0.3.0 2026-09-18: ticket #638 adds a reference form of the Radix preset (REQ-029
+                        # under R-B, a new gate row REQ-065 under R-E), one format with two forms, not an
+                        # eleventh format. Owner rulings on Q(a)..Q(f) (below, dated 2026-09-18) and the U0
+                        # spike result are the record of the decision; existing REQ text is unchanged.
 date: 2026-09-11
 owner: Kim Granlund
 prd: none               # GitHub issue #570 is the intent record (ADR-017 git-native tickets)
@@ -297,6 +301,28 @@ Consequences that shape the design:
   size ladder, ours is a voice ladder, and the mapping is a design call).
 - **REQ-028** Data palettes are emitted like every other palette (so `colorPalette="data-3"` works in
   a Park recipe) and are never picked as a driver.
+- **REQ-029 (reference form, ticket #638, owner rulings dated 2026-09-18)** `exportRadix(state, {
+  refs: true })` emits the SAME preset shape as REQ-020..028 (same keys, same group names, same
+  internal `{colors.…}` aliases, same Pro gating), with every numbered step leaf's `base`/`_dark`
+  replaced by a `var(--{pfx}-{n}-{frag})` LINK into this kit's own CSS custom-property layer instead
+  of a baked `oklch(...)` value. One format with two forms, never an eleventh format; the format id
+  stays `radix`. Owner rulings, each cited to its plan question in `.sdlc/638-plan.md` §1:
+
+  | Q | Ruling |
+  |---|---|
+  | (a) reference target | a1: raw palette primitives for all 12 steps, 1..8 the ratified stop `RADIX_RAW_STEPS` already reads (REQ-021's own table), 9..12 the driving role's own `lightRef`/`darkRef` (so role overrides, `accentRef`, and on-color policy travel with the link); `prime` links the `prime-prime` identity primitive. Alpha steps `a1..a12` stay computed (REQ-022), since no primitive exists for an alpha projection. |
+  | (b) output shape | b2: ONE format, an engine flag; a "Values · References" sub-bar on the existing Radix tab (the Figma-tab mode-file pattern); both files ship in the `radix/` zip folder; Pro gating unchanged. |
+  | (c) ladder mapping | c1: identity mapping to the stops the engine already reads, no re-derivation, no snapping to a different stop set. |
+  | (d) reserved alias keys (#630) | d1: the group key stays `radixPaletteKey` (`<slug>-palette`); its references use the palette's RAW slug `p.n`, never the renamed key, because the primitive surfaces (`exportCSS`/`exportOKLCH`) only ever emit under the raw slug. |
+  | (e) reference syntax | e1: a CSS custom property `var(--{pfx}-{n}-{frag})`, prefix from `cssPrefixOf(state)`, the same names `exportCSS`/`exportOKLCH` emit, and the ratified shadcn `aliasPrefix` precedent (REQ-051's sibling format). Leaves keep `{ base, _dark }` so Park UI's `.dark` class condition still flips. |
+  | (f) schema stamp | bump `EXPORT_SCHEMA_VERSION` 2 → 3 (`src/engine/exports.js`), the `hpg-export-schema-stamp` gate literal, and the MCP `SERVER.version` sibling, all in the same commit. |
+
+  U0 spike result (recorded before U1 started): Panda 1.12.1 passes a raw `var()` string through a
+  `{ base, _dark }` semantic-token leaf unchanged, confirming (e1) is viable without falling back to
+  a Panda-token-path alternative.
+
+  The values form (REQ-020..028) is unchanged by this REQ: `exportRadix(state)` with no `opts.refs`
+  is byte-identical to the pre-#638 output, stamp line excepted.
 
 ### R-C. Shared engine
 
@@ -357,6 +383,17 @@ Consequences that shape the design:
   group asserts both folders are absent at Free and present when unlocked; the drawer renders both
   tabs and each tab's `<pre>` starts with the header comment.
 - **REQ-064** `npm test` stays zero-dependency: no gate imports or spawns Panda.
+- **REQ-065 (reference-form gates, REQ-029)** `test/engine/exports.mjs` gains a `radix-refs-*` gate
+  group (`radix-refs-values-unchanged`, `-shape`, `-raw-pin`, `-role-pin`, `-parity`, `-alpha`,
+  `-extras`, `-clones`, `-collision`, `-prefix`, `-module`, `-sentinel`): every numbered leaf 1..12
+  is a `var()` link matching the raw-pin/role-pin table; ref parity resolves each link through
+  `exportOKLCH`'s own emitted declarations and agrees with the values form within 1/255 per channel;
+  alpha steps stay string-equal across both forms; the `#630` collision fixture links the RAW slug,
+  never the renamed group key; a custom `colorPrefix` moves the link's prefix; the module header
+  names the link contract; the no-driver sentinel is shared. `test/ui/headless-boot.mjs` gains an
+  `(rxr)` group: a two-item "Values · References" segmented bar on the Radix tab, both `radix/*.preset.
+  mjs` files in the Download-All zip under the existing Pro gate, and the zip README's `radix/` row
+  naming both files. `nonempty` (`test/engine/exports.mjs`) gains `radixRef` beside `radix`.
 
 ### R-F. The real codegen leg (outside `npm test`)
 

@@ -52,7 +52,7 @@ export const relLumExp = (rgb) => {
 // Bump rule (adding-export-formats/SKILL.md carries the same note): any additive or shape change
 // to an emitted format bumps this ONE constant, once, across every surface, in the same PR; a
 // value-only change (e.g. a chroma default) never bumps it.
-export const EXPORT_SCHEMA_VERSION = 2;
+export const EXPORT_SCHEMA_VERSION = 3;
 
 // ── Constants (from data/role-table.json) ─────────────────────────────────────
 // Scrims are a 500-based translucency ramp: a scrim primitive "{n}/500-{step}" is the
@@ -1171,12 +1171,50 @@ function rewriteRefs(node, fromN, toN) {
   return node;
 }
 
+// ── The Radix leaf builders (#638) — the ONE thing that differs between the two forms of the
+// Radix preset. `radixColorGroup` reads the same stops and the same resolved roles either way and
+// asks the builder for each numbered leaf's `{ base, _dark }` value, so the two files can never
+// describe different colors: the reference form points at the primitive the values form resolved.
+//
+//   VALUES (the default, unchanged since REQ-021): a baked `oklch(L C H)` string per mode.
+//   REFS  (opts.refs, owner ruling (a1)/(e1) on #638): `var(--{pfx}-{n}-{frag})`, the SAME custom
+//         property exportCSS/exportOKLCH emit for that primitive, prefix from cssPrefixOf(state).
+//         Steps 1..8 link the ratified raw stop; 9..12 link the driving role's own lightRef/darkRef
+//         (so role overrides, accentRef and the on-color policy travel with the link); prime links
+//         the `prime-prime` identity primitive. Alpha steps a1..a12 are NOT built here — no
+//         primitive exists for an alpha projection, so both forms compute them identically.
+//
+// Reference leaves use the palette's RAW slug `p.n`, never the group key (#630 ruling d1): the
+// primitive surfaces only ever emit `--{pfx}-{raw slug}-…`, so a `<slug>-palette` group still
+// links names that exist. It also keeps the accent/gray clone rewrite harmless, since rewriteRefs
+// only ever rewrites `{colors.{n}.` Panda paths and cannot occur inside a var() string.
+const RADIX_VALUE_LEAVES = {
+  rawStep: (p, lightStop, darkStop) => ({ base: roleOklch({ rgb: p.byStop.get(lightStop), frac: 1 }), _dark: roleOklch({ rgb: p.byStop.get(darkStop), frac: 1 }) }),
+  roleStep: (p, r) => ({ base: roleOklch(r.light), _dark: roleOklch(r.dark) }),
+  primeStep: (p) => ({ base: oklchStr({ L: p.prime.prime.oklch[0], C: p.prime.prime.oklch[1], H: p.prime.prime.oklch[2] }) }),
+};
+function radixRefLeaves(pfx) {
+  const link = (n, frag) => `var(--${pfx}-${n}-${frag})`;
+  // A role ref is usually a stop in its OWN palette, but it can be achromatic (white/black), and
+  // an achromatic ref lives under no palette: exportCSS declares it once as `--{pfx}-white` /
+  // `--{pfx}-black` and links it that way (its own `rawVar`). The reference form has to follow the
+  // same rule, or it emits `--{pfx}-{n}-black`, a name no CSS export ever declares. #662 made this
+  // reachable by default: with the contrast on-color policy a role falls through to the white or
+  // black constant whenever neither ramp end clears AA.
+  const roleVar = (p, ref) => (isAchromaticRef(ref) ? `var(--${pfx}-${ref})` : link(p.n, refSlug(ref)));
+  return {
+    rawStep: (p, lightStop, darkStop) => ({ base: link(p.n, pad3(lightStop)), _dark: link(p.n, pad3(darkStop)) }),
+    roleStep: (p, r) => ({ base: roleVar(p, r.lightRef), _dark: roleVar(p, r.darkRef) }),
+    primeStep: (p) => ({ base: link(p.n, "prime-prime") }),
+  };
+}
+
 // radixColorGroup(p, key) — one palette's Park-UI-shaped color object (KF-3 + REQ-021..024): the 12
 // numbered steps, the 12 alpha steps, the five appearance groups (aliasing by step reference),
 // and the two additive leaves (on-accent, prime) Park's own scale has no slot for. `key` is the
 // group's emitted key (radixPaletteKey, #630) so the internal `{colors.{key}.…}` references
 // resolve even when the palette's slug was suffixed away from a reserved alias key.
-function radixColorGroup(p, key = p.n) {
+function radixColorGroup(p, key = p.n, leaves = RADIX_VALUE_LEAVES) {
   const group = {};
   const rawSolid = {}; // step -> { base: [r,g,b], dark: [r,g,b] } — for the a{k} projection below.
 
@@ -1184,12 +1222,12 @@ function radixColorGroup(p, key = p.n) {
     const lightRgb = p.byStop.get(light);
     const darkRgb = p.byStop.get(dark);
     rawSolid[step] = { base: lightRgb, dark: darkRgb };
-    group[String(step)] = { value: { base: roleOklch({ rgb: lightRgb, frac: 1 }), _dark: roleOklch({ rgb: darkRgb, frac: 1 }) } };
+    group[String(step)] = { value: leaves.rawStep(p, light, dark) };
   }
   for (const { step, suffix } of RADIX_ROLE_STEPS) {
     const r = p.roles.find((x) => x.suffix === suffix);
     rawSolid[step] = { base: r.light.rgb, dark: r.dark.rgb };
-    group[String(step)] = { value: { base: roleOklch(r.light), _dark: roleOklch(r.dark) } };
+    group[String(step)] = { value: leaves.roleStep(p, r) };
   }
   for (let step = 1; step <= 12; step++) {
     const { base, dark } = rawSolid[step];
@@ -1223,8 +1261,8 @@ function radixColorGroup(p, key = p.n) {
   // REQ-024: two extra leaves Park's own scale has no slot for — a solid-foreground on-color and
   // the mode-independent prime identity swatch (`base` only, per REQ-024).
   const onAccent = p.roles.find((x) => x.suffix === `-on-${p.n}`);
-  group["on-accent"] = { value: { base: roleOklch(onAccent.light), _dark: roleOklch(onAccent.dark) } };
-  group.prime = { value: { base: oklchStr({ L: p.prime.prime.oklch[0], C: p.prime.prime.oklch[1], H: p.prime.prime.oklch[2] }) } };
+  group["on-accent"] = { value: leaves.roleStep(p, onAccent) };
+  group.prime = { value: leaves.primeStep(p) };
 
   return group;
 }
@@ -1232,8 +1270,15 @@ function radixColorGroup(p, key = p.n) {
 // exportRadix(state, opts) -> a preset OBJECT `{ name, theme: { extend: { semanticTokens: {
 // colors, radii? } } } }` (REQ-020). Returns the sentinel string, mirroring exportShadcn, when no
 // driver palette can be picked.
+//
+// opts.refs (#638) switches the numbered leaves from baked oklch() values to `var(--{pfx}-*)`
+// LINKS into this kit's own CSS custom-property layer (RADIX_VALUE_LEAVES vs radixRefLeaves above).
+// It is one format with two forms, not an eleventh format: same keys, same group names, same
+// internal `{colors.…}` aliases, same Pro gating. Everything else in this function is shared, so
+// the two files cannot drift in shape.
 export function exportRadix(state, opts = {}) {
   const palettes = derivedAll(state);
+  const leaves = opts.refs ? radixRefLeaves(cssPrefixOf(state)) : RADIX_VALUE_LEAVES;
   const { neutral, primary, danger } = pickDrivers(palettes);
   if (!neutral || !primary) return "/* Radix export needs at least one enabled non-data palette. */\n";
 
@@ -1245,7 +1290,7 @@ export function exportRadix(state, opts = {}) {
   const keys = radixPaletteKeys(palettes.map((p) => p.n));
   const keyOf = new Map(palettes.map((p, i) => [p, keys[i]]));
   const colors = {};
-  for (const p of palettes) colors[keyOf.get(p)] = radixColorGroup(p, keyOf.get(p));
+  for (const p of palettes) colors[keyOf.get(p)] = radixColorGroup(p, keyOf.get(p), leaves);
 
   // REQ-025: accent <- primary, gray <- neutral, each a self-contained deep copy with every
   // internal reference re-pointed at the new group name (Park's own `gray: colorPalettes.neutral`
@@ -1279,15 +1324,40 @@ export function exportRadix(state, opts = {}) {
   return { name, theme: { extend } };
 }
 
+// radixIsRefForm — is this preset the reference form? Read off the emitted output (a numbered leaf
+// whose base is a var() link) rather than a flag baked into the preset, because the preset OBJECT
+// is byte-pinned (#638 U1.1) and must not grow a marker field. `exportRadixModule(preset, opts)`
+// takes an explicit `opts.refs` when a caller already knows, and falls back to this.
+function radixIsRefForm(preset) {
+  const colors = preset && preset.theme && preset.theme.extend && preset.theme.extend.semanticTokens
+    ? preset.theme.extend.semanticTokens.colors : null;
+  if (!colors) return false;
+  for (const g of Object.values(colors)) {
+    const leaf = g && g["1"] && g["1"].value;
+    if (leaf && typeof leaf.base === "string") return leaf.base.startsWith("var(");
+  }
+  return false;
+}
+
 // exportRadixModule — the ESM preset-module STRING the drawer shows and the zip ships (REQ-020):
 // a header naming the driver bindings and the install order (ours last, after Park's own CLI-
-// copied preset). The no-driver sentinel (a plain string, mirroring exportShadcn) passes through
-// unwrapped.
-export function exportRadixModule(preset) {
+// copied preset). The reference form (#638) gets one extra header line naming the link contract,
+// because that file is NOT self-contained: its values resolve only once the kit's own CSS
+// custom-property layer is loaded. The no-driver sentinel (a plain string, mirroring exportShadcn)
+// passes through unwrapped.
+export function exportRadixModule(preset, opts = {}) {
   if (typeof preset === "string") return preset;
+  const refs = opts.refs !== undefined ? !!opts.refs : radixIsRefForm(preset);
+  const head = refs
+    ? [
+      "/* Radix preset (reference form), generated by Ultimate Tokens.",
+      "   Step values are LINKS into this kit's own CSS custom properties (var(--...)):",
+      "   load the css-hex/ or css-oklch/ export FIRST, or every step resolves to nothing.",
+    ]
+    : ["/* Radix preset, generated by Ultimate Tokens."];
   return [
     `/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`,
-    "/* Radix preset, generated by Ultimate Tokens.",
+    ...head,
     "   accent = primary, gray = neutral, error = danger.",
     "   presets: [parkPreset, utRadixPreset] (ours last). */",
     "export default " + JSON.stringify(preset, null, 2) + ";",
@@ -1309,5 +1379,6 @@ export function exportAll(state, opts) {
     shadcn: exportShadcn(state),
     panda: exportPanda(state),
     radix: exportRadix(state),
+    radixRef: exportRadix(state, { refs: true }),
   };
 }

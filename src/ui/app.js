@@ -36,7 +36,7 @@ import {
 import { STORAGE_KEY, serialize, hydrate } from "./persist.js";
 import { clampProfile, resolveFlags, flagOf as flagFromFlags, resolveTier, entitlementActive } from "../engine/flags.js";
 import { FIGMA_PLUGIN } from "./figma-plugin-assets.js";
-import { MCP_BRAND_KIT } from "./mcp-assets.js";
+import { MCP_BRAND_KIT, MCP_BRAND_KIT_VERSION } from "./mcp-assets.js";
 import { DESCRIBE_MCP_FILES, DESCRIBE_MCP_README, DESCRIBE_MCP_ENGINE_VERSION } from "./describe-mcp-assets.js";
 import { TYPE_FONTS_CSS } from "./type-fonts.js";
 import { CATEGORY_INDEX, loadCategory } from "./categories/index.js";
@@ -148,6 +148,7 @@ class HctApp extends HTMLElement {
     this.typeVoice = null; // the selected voice in the Scale tab (null = none expanded) — drives per-voice tuning
     this.examplesExpanded = false; // right-pane preview gallery: collapsed to the first artifact until expanded (ui-session)
     this.figmaFile = "light"; // which Figma mode file the Figma tab previews/downloads
+    this.radixFile = "values"; // which Radix preset file the Radix tab previews (#638: values | refs; the zip always ships both)
     this.hover = null; // hovered swatch info for footers
     this.search = "";
     // ── undo / redo (whole-document snapshots) ───────────────────────────────
@@ -2446,7 +2447,7 @@ class HctApp extends HTMLElement {
     const kit = brandKit(this.doc, this.exportSystems);
     const base = slug(kit.name) || "brand-kit";
     const pkg = JSON.stringify(
-      { name: "ultimate-tokens-brand-kit", version: "0.2.0", type: "module", description: `MCP server for the "${kit.name}" brand kit (Ultimate Tokens)`, bin: { "brand-kit-mcp": "brand-kit-server.mjs" }, private: true },
+      { name: "ultimate-tokens-brand-kit", version: MCP_BRAND_KIT_VERSION /* generated from the server's own SERVER.version (#638) */, type: "module", description: `MCP server for the "${kit.name}" brand kit (Ultimate Tokens)`, bin: { "brand-kit-mcp": "brand-kit-server.mjs" }, private: true },
       null, 2,
     );
     const files = [

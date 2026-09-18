@@ -22,13 +22,13 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 
 | Type | Call site | Sandbox handler | Reply |
 |---|---|---|---|
-| `load-config` | `app.js:1006` (probe), `app.js:2323` (explicit load), posting `type: "load-config"` | `code.js:194-197` (`msg.type === "load-config"`) | `config-loaded` |
-| `read-variables` | `app.js:1007` (probe), `app.js:2377` (manual re-read), posting `type: "read-variables"` | `code.js:205-208` (`msg.type === "read-variables"`) | `variables-read` |
-| `load-sets` | `app.js:1008` (probe), posting `type: "load-sets"` | `code.js:212-215` (`msg.type === "load-sets"`) | `sets-loaded` |
+| `load-config` | `app.js:1007` (probe), `app.js:2324` (explicit load), posting `type: "load-config"` | `code.js:194-197` (`msg.type === "load-config"`) | `config-loaded` |
+| `read-variables` | `app.js:1008` (probe), `app.js:2378` (manual re-read), posting `type: "read-variables"` | `code.js:205-208` (`msg.type === "read-variables"`) | `variables-read` |
+| `load-sets` | `app.js:1009` (probe), posting `type: "load-sets"` | `code.js:212-215` (`msg.type === "load-sets"`) | `sets-loaded` |
 | `read-float-variables` | `apply-gate.js:45` (gate open), posting `type: "read-float-variables"` | `code.js:209-211` (`msg.type === "read-float-variables"`) | `float-variables-read` |
 | `list-fonts` | `typography.js:808` (one-shot), posting `type: "list-fonts"` | `code.js:198-204` (`msg.type === "list-fonts"`) | `fonts-listed` |
-| `save-sets` | `app.js:1157` (`persistSets`), posting `type: "save-sets"` | `code.js:216-218` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
-| `save-config` | `app.js:2310`, posting `type: "save-config"` | `code.js:191-193` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
+| `save-sets` | `app.js:1158` (`persistSets`), posting `type: "save-sets"` | `code.js:216-218` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
+| `save-config` | `app.js:2311`, posting `type: "save-config"` | `code.js:191-193` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
 | `apply` | `apply-gate.js:101`, posting `type: "apply"` | `code.js:125-190` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
 | `sweep-scan` | `apply-gate.js:218`, posting `type: "sweep-scan"` | `code.js:219-225` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
 | `sweep-delete` | `apply-gate.js:245`, posting `type: "sweep-delete"` | `code.js:226-234` (`msg.type === "sweep-delete"`) | `sweep-done` |
@@ -37,11 +37,11 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 
 | Type | Sandbox origin | Bridge line | UI handler | State mutated | Re-renders? |
 |---|---|---|---|---|---|
-| `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2255 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2261`) |
-| `config-loaded` | `code.js:196` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2337 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
-| `variables-read` | `code.js:207` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2381 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
+| `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2256 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2261`) |
+| `config-loaded` | `code.js:196` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2338 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
+| `variables-read` | `code.js:207` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2382 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
 | `float-variables-read` | `code.js:211` (`type: "float-variables-read"`) | `gen-figma-ui.mjs:39` | `apply-gate.js:299 receiveLiveFloatVariables` | `this._liveFloatVars` | yes |
-| `sets-loaded` | `code.js:215` (`type: "sets-loaded"`) | `gen-figma-ui.mjs:42` | `app.js:1165 receiveStoredSets` | `this.sets` (guarded) | yes |
+| `sets-loaded` | `code.js:215` (`type: "sets-loaded"`) | `gen-figma-ui.mjs:42` | `app.js:1166 receiveStoredSets` | `this.sets` (guarded) | yes |
 | `fonts-listed` | `code.js:204` (`type: "fonts-listed"`) | `gen-figma-ui.mjs:45` | `typography.js:811 receiveFigmaFonts` | `this._figmaFonts` | yes |
 | `apply-done` | `code.js:190` (`type: "apply-done"`) | `gen-figma-ui.mjs:48` | `apply-gate.js:150 onApplyDone` | `this._applyBusy=false`, `this.applyGateOpen=false` | yes |
 | `apply-error` | `code.js:245` (`type: "apply-error"`) (catch-all, apply only) | `gen-figma-ui.mjs:49` | `apply-gate.js:170 onApplyError` | `this._applyBusy=false` | yes |
@@ -58,7 +58,7 @@ Refresh discipline is consistent — every inbound handler calls `this.render()`
 |---|---|---|---|
 | `_applyBusy` (`app.js:134`) | `apply-gate.js:135` (`applyToFigma`) | `onApplyDone` (`apply-gate.js:155`) or `onApplyError` (`apply-gate.js:172`) | **Covered on the Figma-side throw** (code.js always answers `apply` either way). **Not covered** if the reply never arrives at all — no timeout, so a UI reload/detach of the plugin frame mid-apply wedges it forever (session-scoped only; a fresh open resets the constructor default). Documented intent (TKT-0004) is "belt-and-suspenders re-entry guard," not "impossible to wedge." |
 | `sweepBusy` (`app.js:82`) | `apply-gate.js:217` (scan), `apply-gate.js:244` (delete) | `receiveSweepScan` (`apply-gate.js:225`), `onSweepDone` (`apply-gate.js:251`), or the local `catch` if `postMessage` itself throws (`apply-gate.js:219`, `apply-gate.js:246`) | **NOT covered** if the sandbox's OWN handler throws after receipt — see the asymmetry in (A). A throwing `sweep-scan`/`sweep-delete` sets `sweepBusy=true`, the sandbox only `figma.notify`s, no reply ever posts, and the Cleanup panel's Scan/Delete buttons (`disabled: busy`, `settings.js:352,367-370`) stay disabled **permanently** for the rest of the session. Real bug — worth a ticket (either code.js posts `sweep-scanned:{texts:[],paints:[]}`/`sweep-done:{removed:0}` from its own catch, mirroring the apply carve-out, or the UI needs a timeout fallback). |
-| `_loadRequested` (`app.js:87`) | `loadFromProject` (`app.js:2321`) | `applyLoadedConfig` (`app.js:2344`) on any exit path, or the local `catch`/no-raw branches (`app.js:2323,2328,2329`) | Fully covered — every path resets it. No wedge. |
+| `_loadRequested` (`app.js:87`) | `loadFromProject` (`app.js:2321`) | `applyLoadedConfig` (`app.js:2345`) on any exit path, or the local `catch`/no-raw branches (`app.js:2324,2329,2330`) | Fully covered — every path resets it. No wedge. |
 | `_figmaProbed` (`app.js:88`) | `probeFigmaProject` (`app.js:1004`), immediately | never reset (one-shot by design — "probe once when the gallery opens") | Not a wedge — a fire-once latch, correctly documented as such. |
 | `_figmaFontsRequested` (`app.js:79`) | `typography.js:807`, immediately | never reset | Same shape — deliberate one-shot per the adjacent comment. Not a wedge. |
 
@@ -66,14 +66,14 @@ Two more request/reply pairs have no busy flag at all, and don't need one: `read
 
 **Cache inventory** (module- and instance-scoped):
 
-- `_categoryData` (`app.js:76`, `{}` → `slug → module`) — lazy `import()` cache, populated in `openCategory` (`app.js:831-839`). Invalidation: never (categories are static generated modules, correctly never invalidated). Race safety: **good** — the `.then` callback re-checks `this.category === slug` (`app.js:837`) before rendering, and the promise closure captures its own `slug`, so navigating away mid-import can't cause a stale render.
+- `_categoryData` (`app.js:76`, `{}` → `slug → module`) — lazy `import()` cache, populated in `openCategory` (`app.js:831-839`). Invalidation: never (categories are static generated modules, correctly never invalidated). Race safety: **good** — the `.then` callback re-checks `this.category === slug` (`app.js:838`) before rendering, and the promise closure captures its own `slug`, so navigating away mid-import can't cause a stale render.
 - `_faceCache` (`app.js:83`, `Map`, family → renders-here boolean) — invalidated on font-family change (`typography.js:898,955`) and on `document.fonts.ready` firing once per hook (`typography.js:872-874`, guarded by `_fontsReadyHooked`). Correctly per-instance.
 - `_okL` (`src/engine/tonal.js:347`, module-level `Map`, `L*.toFixed(2) → OKHSL lightness`) — the **only actual module-scope mutable state** found anywhere in `engine/*` or `model.mjs`/`app-helpers.mjs`/`sections/*`. A pure memoization with a naturally bounded domain (≤10,001 keys), never invalidated, never needs to be — not a leak, but the one spot where "pure, no module state" isn't literally true.
 - Everything else checked in `model.mjs`, `app-helpers.mjs`, `sections/*.js`, and every `engine/*` file has zero top-level `let`/`var` — every apparent hit was function-local (confirmed by grep + spot read).
 
 ## C — Implicit-context coupling (via the flattened `this`)
 
-`mixinInto` (`app.js:2545-2563`) copies every prototype method from `ColorSection`, `TypeSection`, `GeomSection`, `DrawerMixin`, `ApplyGateMixin`, `SettingsMixin` onto one `HctApp.prototype` (composition point: `app.js:2569`). There is no interface, no explicit import of "the methods I depend on" — every mixin file just calls `this.whatever()` and trusts it exists somewhere in the final flattened prototype. Cross-file dependencies found:
+`mixinInto` (`app.js:2545-2563`) copies every prototype method from `ColorSection`, `TypeSection`, `GeomSection`, `DrawerMixin`, `ApplyGateMixin`, `SettingsMixin` onto one `HctApp.prototype` (composition point: `app.js:2570`). There is no interface, no explicit import of "the methods I depend on" — every mixin file just calls `this.whatever()` and trusts it exists somewhere in the final flattened prototype. Cross-file dependencies found:
 
 - `overlays/drawer.js` (never defines these itself) calls: `this._typeScaleFor`, `this._geomScaleFor`, `this._typeModeScales`, `this._geomModeScales`, `this._typeBaseOpts`, `this._geomBaseOpts`, `this._typePrefix`, `this._geomPrefix`, `this._typeModeDTCGFiles`, `this._geomModeDTCGFiles` (defined in sections/typography.js/geometry.js), plus `this._exportUnit`, `this._proExportLocked`, `this.figmaBundle`, `this.flagOf`, `this.segmented`, `this.copy`, `this.downloadBytes`, `this.toast` (core app.js), plus `this.requestApplyToFigma`, `this._applyBusy`, `this.downloadFigmaPlugin` (ApplyGateMixin/core). One render method (`renderDrawer`) touches all six source files' worth of state with zero declared contract.
 - `overlays/apply-gate.js` reads `this.exportSystems`, `this.doc`, `this._typeScaleFor` (typography), and writes `this._applyBusy`, `this.applyGateOpen`, `this.sweepBusy`, `this.sweepResults`, `this.sweepSelected`, `this._liveFloatVars` — none declared anywhere near apply-gate.js itself except the shared app.js constructor (`app.js:76-134`).
@@ -91,7 +91,7 @@ Only ONE `disconnectedCallback` exists in the codebase (`app.js:184-192`), clean
 Not cleaned up:
 - `_bindRangeDrag` (`app.js:2096-2142`): a `pointerdown` listener on `this` (dies with the element) that, on drag-start, adds `pointermove`/`pointerup`/`pointercancel` on `window` — cleaned by its own `end()` on pointerup/cancel (`app.js:2132-2136`), **but not if the element disconnects mid-drag**: those three window-level listeners, and the closure holding the whole app instance, live on indefinitely.
 - `_liveRaf` (`app.js:284-289`): never cancelled; a post-disconnect rAF still runs `_liveRefreshNow` against a detached subtree (harmless, wasted work, unguarded).
-- `_dragTimer` (`app.js:161,363`): a settled-drag commit up to 250ms after disconnect still mutates `this.history`/`this.future` on a dead instance.
+- `_dragTimer` (`app.js:162,363`): a settled-drag commit up to 250ms after disconnect still mutates `this.history`/`this.future` on a dead instance.
 - `_toastT` (`app.js:2534-2535`): same shape, ≤1800ms tail.
 - The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2232`, 1500ms) and the code.js-download timer (`download()`, `app.js:2438`, 150ms): both harmless, also uncleaned.
 
