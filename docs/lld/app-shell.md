@@ -7,8 +7,12 @@
 > clauses (its **tasks T1–T9** and **Revision A** arrangement) — the IDs are new, the requirements are
 > not. Every component traces to a `SPEC-R#`. Engine/role contracts live in `knowledge-01…06` +
 > `data/role-table.json`.
-> **Source of record:** `src/ui/app.js` (the `HctApp` custom element, ~all UI) · `src/ui/styles.css`
-> (the grid) · `src/ui/model.mjs` (`projectView` — the read-model each render consumes).
+> **Source of record:** `src/ui/app.js` (the `HctApp` custom element: state, render dispatch, header,
+> footers, inspector shell, i.e. the frame) · `src/ui/sections/{color,typography,geometry}.js` (the per-section
+> pane bodies) · `src/ui/overlays/{drawer,settings,apply-gate}.js` (the overlays); both sets are mixed
+> onto the `HctApp` prototype (`mixinInto`, `app.js:2569`) ·
+> `src/ui/app-helpers.mjs` (`h` + the shared primitives) · `src/ui/styles.css` (the grid) ·
+> `src/ui/model.mjs` (`projectView` — the read-model each render consumes).
 > **Scope:** the shell — the frame, its regions, the render pipeline, and the state that routes them.
 > The *contents* of a region (the L\*×C graph, the 53-role table, the type specimen) are out of scope;
 > they are named where they mount and owned by their own sections.
@@ -211,13 +215,21 @@ directly then `render()`ed — no undo entry, no persistence.
 ### 4.1 Full render (`render` :570)
 ```
 render():
-  guard: skip if a text field is mid-edit that a rebuild would disrupt   (focus-preservation)
+  focus = _captureFocus()            (focused control by data-fk + caret + [data-scroll] offsets; no skip, always rebuilds)
   this.replaceChildren( view==="gallery" ? renderGallery() : renderEditor() )
-  if editor: paintAppFooter(view) ; paintCanvasFooter() ; re-show drawer if it was open
+  stamp data-theme / data-motion on the host ; toggle .apply-busy on host + open .drawer
+  if editor: paintAppFooter(this._view)     (the canvas footer is NOT painted here, see below)
+  _restoreFocus(focus)
+  _syncDrawer() ; _syncNewPal() ; _syncApplyGate() ; _syncSettings()   (re-show each open <dialog>)
 ```
-A full render **rebuilds the whole subtree** and mounts a *fresh, closed* `<dialog>` for each overlay;
-an open export drawer is re-`showModal()`'d after mount so a render mid-drawer doesn't dismiss it
-(`_syncDrawer`, `app.js:609`).
+There is no mid-edit guard: `render` (`app.js:570`) always rebuilds and instead snapshots the focused
+control before the swap and puts it back after (`_captureFocus` `app.js:634`, `_restoreFocus` `app.js:653`).
+A full render mounts a *fresh, closed* `<dialog>` for each overlay; an open export drawer is
+re-`showModal()`'d after mount so a render mid-drawer doesn't dismiss it (`_syncDrawer`, `app.js:609`).
+`paintCanvasFooter` (`app.js:1879`) is not on the full-render path: the canvas footer mounts with its
+static hint (`renderCanvasFooter`, `app.js:1874`) and is painted by `applyTransform` (`app.js:1684`), the
+canvas pointer handlers and `_liveRefreshNow` (`app.js:292`); each calls
+`paintCanvasFooter` (`app.js:1692`, `app.js:1825`, `app.js:325`).
 
 ### 4.2 Live refresh (partial — during a continuous drag, `liveRefresh` `app.js:277` → `_liveRefreshNow` `app.js:292`)
 A slider/swatch drag must not full-render (it would blow away the active control's focus/caret). Instead
