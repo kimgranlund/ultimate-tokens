@@ -1044,16 +1044,19 @@ async function applyFontPrimitivesModes(plan, opts) {
       byName[v.name] = vr; current.add(v.name); count++;
     }
   }
-  // #495: NEVER prune when "published library" mode is active — same decision channel as
+  // #495: NEVER prune when "published library" mode is active. Same decision channel as
   // applyFloatPlans below. opts.libraryMode: explicit true/false = pre-decided by the caller. undefined
   // + opts.askIfUndecided: true = ask HERE via confirmLibraryMode (the standalone binder's own main()
-  // passes this — it has no persistent UI a mid-apply dialog could disturb). undefined WITHOUT
-  // askIfUndecided (the flagship's message handler, today — no apply-gate.js toggle exists yet, out of
-  // #495's own scope) = default to classic prune, UNCHANGED from every existing flagship user's current
-  // behavior: figma.showUI() can only show ONE ui at a time, so an interactive dialog here would
-  // REPLACE the running app's iframe content mid-apply — a real, disruptive cost this ticket does not
-  // take on for the flagship without a proper apply-gate-integrated review UI (see confirmLibraryMode's
-  // own header comment, and the #495 Findings, for the follow-up this leaves on the table).
+  // is the ONLY caller that passes it, because the binder has no persistent UI a mid-apply dialog
+  // could disturb). undefined WITHOUT askIfUndecided = default to classic prune.
+  // #629 UPDATE: the flagship's message handler no longer sends undefined. apply-gate.js's
+  // "Published library" checkbox (renderApplyGate) sets msg.libraryMode on EVERY apply, true or
+  // false, persisted under ultimate-tokens-library-mode-v1 and also settable from Settings ›
+  // Token mapping. So the flagship is now always in the "pre-decided by the caller" branch, and
+  // undefined here means only an OLD ui.html bundle posting a pre-#629 message. The flagship still
+  // never reaches confirmLibraryMode, and still should not: figma.showUI() can show ONE ui at a
+  // time, so an interactive dialog here would REPLACE the running app's iframe content mid-apply.
+  // The apply gate IS the flagship's review surface; that is what the checkbox bought.
   let useLibrary = opts.libraryMode;
   if (useLibrary == null) {
     if (report.aliases.length || report.deprecates.length) useLibrary = opts.askIfUndecided ? await confirmLibraryMode(plan.collection, report) : false;

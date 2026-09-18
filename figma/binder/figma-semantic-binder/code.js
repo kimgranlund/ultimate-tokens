@@ -54,15 +54,23 @@ const FLOAT_PLANS = JSON.parse("[]"); /* __ULTIMATE_TOKENS_FLOAT_PLANS__ */
 
 // FLOAT_REGISTRY_KEY — the PROVENANCE registry for the breakpoint-moded Type/Geometry collections, a
 // name→collectionId map stored in root pluginData (travels with the .fig, like the palette set). Kept
-// as the SAME key string as figma/plugin/code.js so the flagship plugin and this binder converge on the
-// SAME collections idempotently if a user runs both against one file.
+// as the SAME key string as figma/plugin/code.js, but NOT because the two vehicles share a store:
+// Figma namespaces root.setPluginData BY PLUGIN ID (figma/plugin/code.js says so at CONFIG_KEY), and
+// the two manifests carry different ids, so the flagship's registry and this binder's are DISJOINT.
+// Adopting a collection here never registers it for the flagship, and vice versa. What the shared key
+// name buys is one grep across both runtimes, diffable stores, and a collparity gate that can compare
+// them at all. Correction C7 (#629, from #496 planning): the old text here claimed the two converge on
+// the same collections idempotently. They do not, and reading it that way sends a flagship-only step
+// into an apply that mints a duplicate collection and uplifts nothing.
 const FLOAT_REGISTRY_KEY = "ultimate-tokens-float-collections";
 
 // COLOR_REGISTRY_KEY — TKT-0024: the SAME provenance discipline, back-ported to the Color Roles
 // collection this binder creates/finds (the raw "Color Primitives" collection is only ever READ here,
 // never created — see main() below — so it needs no registry entry of its own). Kept as the SAME key
-// string as figma/plugin/code.js so the flagship plugin and this binder converge on the SAME collection
-// if a user runs both against one file. Before this, main() adopted ANY same-named "Color Roles"
+// string as figma/plugin/code.js for the same reason FLOAT_REGISTRY_KEY is, and with the same caveat:
+// per-plugin-id pluginData namespacing keeps the two stores disjoint, so this binder adopting a Color
+// Roles collection does not register it for the flagship (correction C7, #629). Before this, main()
+// adopted ANY same-named "Color Roles"
 // collection by NAME alone — a user's own collection with that exact name got silently adopted and
 // populated with aliases on the next bind.
 const COLOR_REGISTRY_KEY = "ultimate-tokens-color-collections";

@@ -1091,6 +1091,38 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   app.applyGateLibraryMode = true; posted = null; app.confirmApplyGate();
   ok(posted && posted.pluginMessage.libraryMode === true && posted.pluginMessage.rebuildSemantic === true, "(629) a Regroup apply carries libraryMode alongside rebuildSemantic");
 
+  // SETTINGS ROW (review M2): "Don't show this again" hides the gate on the normal apply path and
+  // nothing in the app clears that consent, so the toggle must also live somewhere consent cannot
+  // hide. Settings > Token mapping > Figma apply carries the SAME persisted key, and flipping it
+  // there has to change what the apply message actually posts, not just what the panel looks like.
+  try { localStorage.removeItem("ultimate-tokens-library-mode-v1"); } catch {}
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.openSettings(); app.settingsSection = "mapping"; app.render(); flushRaf();
+  const byFk = (fk) => app._all((e) => e.getAttribute && e.getAttribute("data-fk") === fk, [])[0] || null;
+  const segOff = byFk("setlibmode:off");
+  const segOn = byFk("setlibmode:on");
+  ok(!!segOff && !!segOn, "(629) Settings > Token mapping carries a 'Published library' row, reachable after 'Don't show this again'");
+  ok(/Published library/.test(txtOf(app.querySelector(".settings"))), "(629) the settings row is labelled 'Published library'");
+  ok(!!segOn && segOn.classList.contains("on") === false && !!segOff && segOff.classList.contains("on"), "(629) the settings row reads OFF with no stored preference");
+  if (segOn) segOn.dispatch("click", { target: segOn });
+  ok(app._libraryMode() === true, "(629) picking On in Settings writes the SAME persisted key the gate's checkbox uses");
+  app.closeSettings(); flushRaf();
+  // consent is set, so this apply skips the gate entirely: exactly the M2 user.
+  app._setApplyConsent();
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.requestApplyToFigma(false);
+  ok(app.applyGateOpen === false, "(629) fixture: a consented apply skips the gate, so Settings is that user's only route to the toggle");
+  ok(posted && posted.pluginMessage.type === "apply" && posted.pluginMessage.libraryMode === true,
+    `(629) flipping the Settings row changes what the apply message POSTS (got ${posted && JSON.stringify(posted.pluginMessage.libraryMode)})`);
+  // and back off through the same row.
+  app._applyBusy = false; posted = null;
+  app.openSettings(); app.settingsSection = "mapping"; app.render(); flushRaf();
+  const segOff2 = byFk("setlibmode:off");
+  if (segOff2) segOff2.dispatch("click", { target: segOff2 });
+  app.closeSettings(); flushRaf();
+  app._applyBusy = false; posted = null; app.applyToFigma(false);
+  ok(posted && posted.pluginMessage.libraryMode === false, "(629) picking Off in Settings posts libraryMode:false on the next apply");
+
   app.applyGateOpen = false; app._applyBusy = false; posted = null;
   try { localStorage.removeItem("ultimate-tokens-library-mode-v1"); } catch {}
   try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
