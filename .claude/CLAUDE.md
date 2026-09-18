@@ -28,7 +28,9 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
   `geometry.mjs` · `exports.js` (the 10 documented color formats: CSS/OKLCH/JSON/DTCG/UI3/Tailwind/shadcn/
   Panda/Radix) · `ds-export.js` (the Claude Design/Google Stitch/Figma Make design-system bundle export,
   split out of `exports.js` at TKT-0015 — undocumented elsewhere, not one of the 10) · `derive`/`tonal`/`hct`/`okhsl`.
-- `src/ui/` — `app.js` (the `HctApp` custom element, ~all UI) · `styles.css` · `model.mjs`
+- `src/ui/` — `app.js` (the `HctApp` custom element: state, render dispatch, the frame) · `sections/`
+  (`color`/`typography`/`geometry` pane bodies) + `overlays/` (`drawer`/`settings`/`apply-gate`), both
+  mixed onto `HctApp` · `app-helpers.mjs` (`h` + shared primitives) · `styles.css` · `model.mjs`
   (`projectView` + `geometryScale` — where Geometry composes Type) · `persist.js` · generated
   `*-assets.js` / `type-fonts.js` (do not hand-edit) · `categories/`.
 - `figma/` — the plugin: `figma/binder/figma-semantic-binder/code.js` mirrors `semanticRoles` for the
