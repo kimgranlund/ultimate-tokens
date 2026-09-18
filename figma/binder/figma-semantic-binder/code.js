@@ -234,7 +234,9 @@ async function applyFloatPlans(plans, opts) {
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles
-    // re-bind to the merged targets in the SAME apply run (applyStylePlans executes after this).
+    // re-bind to the merged targets in the SAME apply run in the FLAGSHIP, which calls applyStylePlans
+    // after this executor. This function is spliced verbatim into the standalone binder, which has no
+    // applyStylePlans and no styles at all: there, nothing re-binds, because nothing was bound.
     for (const nm of (Array.isArray(plan.retire) ? plan.retire : [])) {
       if (!reg[nm]) continue;
       const cols = await figma.variables.getLocalVariableCollectionsAsync();
@@ -843,8 +845,10 @@ async function main() {
   // 4. Type/Geometry breakpoint-moded FLOAT collections — baked at download time (see FLOAT_PLANS above).
   //    A no-op (fp stays null) for the generic/asset checked-in binder, whose FLOAT_PLANS is [].
   //    #492: the SAME adoption-candidate check as the color collection above, once per DISTINCT
-  //    plan.collection (FLOAT_PLANS carries one entry per collection — Geometry, and Type Primitives
-  //    when the download baked one in). applyFloatPlans() is a SPLICED, byte-identical-to-the-flagship
+  //    plan.collection. FLOAT_PLANS is whatever downloadFigmaPlugin baked in, which is exactly
+  //    _figmaFloatPlans() (src/ui/app.js), Geometry only. It never carries a Type Primitives plan:
+  //    only typeTokensFigmaPrimitivesModes builds one, and that is called from apply-gate.js alone,
+  //    never from the download path. applyFloatPlans() is a SPLICED, byte-identical-to-the-flagship
   //    function (colorparity/floatparity/collparity gates) — it is NEVER modified for this; instead the
   //    float registry is pre-seeded here, BEFORE calling it, so its own (unchanged) readFloatRegistry()
   //    picks up the adoption on its very next call.

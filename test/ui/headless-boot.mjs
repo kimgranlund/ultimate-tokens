@@ -1040,6 +1040,62 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   app.exportSystems = _origExportSystems;
 }
 
+// ── (xg) ticket #629: the "Published library" toggle. The apply message must carry an EXPLICIT
+// libraryMode boolean on EVERY apply: undefined is not an answer (figma/plugin/code.js resolves
+// undefined to classic prune without ever asking, so it is silently indistinguishable from a
+// deliberate false, which is exactly the bug this toggle exists to close). ──
+{
+  try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
+  try { localStorage.removeItem("ultimate-tokens-library-mode-v1"); } catch {}
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
+  app.requestApplyToFigma(false);
+  const box = app.querySelector(".apply-gate-librarymode-box");
+  ok(!!box, "(629) the apply gate renders a real 'Published library' checkbox");
+  ok(/Published library/.test(txtOf(app.querySelector(".apply-gate"))), "(629) the checkbox is labelled 'Published library'");
+  ok(/type, geometry and style/i.test(txtOf(app.querySelector(".apply-gate"))), "(629) the label names what the flag covers (type, geometry, styles, and NOT color)");
+  ok(!/color/i.test(txtOf(app.querySelector(".apply-gate-librarymode") || {})), "(629) the label does not claim the flag covers color (ruling Q1: color prune is out of scope)");
+  ok(app.applyGateLibraryMode === false, "(629) the checkbox defaults OFF with no stored preference (classic prune, today's behavior)");
+
+  // UNCHECKED -> an explicit false, never undefined.
+  posted = null; app.applyGateLibraryMode = false; app.confirmApplyGate();
+  const unchecked = posted && posted.pluginMessage;
+  ok(!!unchecked && unchecked.type === "apply", "(629) fixture: the unchecked confirm posted an apply");
+  ok(unchecked && "libraryMode" in unchecked, "(629) the apply message CARRIES a libraryMode key when the box is unchecked");
+  ok(unchecked && unchecked.libraryMode === false, `(629) unchecked posts libraryMode:false, not undefined (got ${unchecked && JSON.stringify(unchecked.libraryMode)})`);
+
+  // CHECKED -> true, via the real DOM onchange handler, not just the field.
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.requestApplyToFigma(false);
+  const box2 = app.querySelector(".apply-gate-librarymode-box");
+  if (box2) { box2.checked = true; box2.dispatch("change", { target: box2 }); }
+  ok(app.applyGateLibraryMode === true, "(629) ticking the checkbox (its own onchange) flips applyGateLibraryMode");
+  posted = null; app.confirmApplyGate();
+  const checked = posted && posted.pluginMessage;
+  ok(checked && checked.libraryMode === true, `(629) checked posts libraryMode:true (got ${checked && JSON.stringify(checked.libraryMode)})`);
+
+  // PERSISTED: a consented apply skips the gate entirely and must still carry the last answer.
+  app._applyBusy = false; posted = null;
+  app.applyToFigma(false);
+  ok(posted && posted.pluginMessage.libraryMode === true, "(629) the choice persists: a gate-skipping apply still posts libraryMode:true");
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.requestApplyToFigma(false);
+  ok(app.applyGateLibraryMode === true, "(629) re-opening the gate seeds the checkbox from the persisted preference");
+  app.applyGateLibraryMode = false; posted = null; app.confirmApplyGate();
+  ok(posted && posted.pluginMessage.libraryMode === false, "(629) un-ticking it again posts libraryMode:false (the preference is two-valued, not set/absent)");
+
+  // Regroup carries the same floatPlans/stylePlans, so it must carry the flag too.
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.requestApplyToFigma(true);
+  ok(!!app.querySelector(".apply-gate-librarymode-box"), "(629) the Regroup gate shows the toggle too (it posts the same prune-bearing plans)");
+  app.applyGateLibraryMode = true; posted = null; app.confirmApplyGate();
+  ok(posted && posted.pluginMessage.libraryMode === true && posted.pluginMessage.rebuildSemantic === true, "(629) a Regroup apply carries libraryMode alongside rebuildSemantic");
+
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  try { localStorage.removeItem("ultimate-tokens-library-mode-v1"); } catch {}
+  try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
+}
+
 // ── (xg) TKT-0020: the changed-value diff — receiveLiveFloatVariables + _figmaChangedCount + the
 // gate's rendered count, over the app's OWN real next-apply plan (not a synthetic fixture) ──
 app.applyGateOpen = false; app._applyBusy = false; posted = null; // TKT-0004: reset busy — the Regroup confirm above never got a matching onApplyDone/onApplyError

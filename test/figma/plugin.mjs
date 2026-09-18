@@ -1144,6 +1144,26 @@ if (applyStylePlans && applyFontPrimitivesModes) {
     if (!F.figma._styles.some((x) => x.name === "Display/md")) FAIL("styles", "the core did not revert to its bare name once siblings were dropped");
     if (!F.figma._styles.some((x) => x.name === "My Own/keep-me")) FAIL("styles", "prune touched a USER style (provenance violated)");
     if (!sr2.pruned) FAIL("styles", "prune count not reported");
+
+    // ── #629 "published library" mode: a name the CURRENT plan no longer produces is still bound in
+    // every consumer file that subscribed to this library, so removing it breaks them. Run the two
+    // modes over the SAME starting state: `reduced` (above) is already applied, so re-applying the
+    // FULL `plans` and then `reduced` again is a registry holding names the plan does not want.
+    // libraryMode:true must report them (pruned:0, preserved>0) and leave the live styles alone;
+    // libraryMode:false must reproduce today's prune, byte-for-byte unchanged.
+    await applyStylePlans(plans); // back to the full set: the registry now holds the sibling names again
+    const libRes = await applyStylePlans(reduced, { libraryMode: true });
+    if (libRes.pruned !== 0) FAIL("styles", `#629 libraryMode:true pruned ${libRes.pruned} styles: a published library must never remove a name a consumer file is bound to`);
+    if (!libRes.preserved) FAIL("styles", "#629 libraryMode:true reported no preserved styles: the fixture did not actually put a stale name in front of the prune");
+    if (!F.figma._styles.some((x) => x.name === "Display/md/lighter")) FAIL("styles", "#629 libraryMode:true removed the dropped sibling style anyway (it must survive)");
+    const libReg = JSON.parse(F.figma.root.getPluginData("ultimate-tokens-styles"));
+    if (!libReg.texts["Display/md/lighter"]) FAIL("styles", "#629 libraryMode:true dropped the preserved style's registry slot: a later classic apply could then never find or prune it");
+    // and the SAME call under libraryMode:false still prunes exactly as it does today.
+    const classicRes = await applyStylePlans(reduced, { libraryMode: false });
+    if (!classicRes.pruned) FAIL("styles", "#629 libraryMode:false stopped pruning: classic behavior regressed");
+    if (classicRes.preserved) FAIL("styles", `#629 libraryMode:false preserved ${classicRes.preserved} styles: it must remove, not report`);
+    if (F.figma._styles.some((x) => x.name === "Display/md/lighter")) FAIL("styles", "#629 libraryMode:false left the dropped sibling style behind");
+    if (!F.figma._styles.some((x) => x.name === "My Own/keep-me")) FAIL("styles", "#629 the library/classic round trip touched a USER style (provenance violated)");
   } catch (e) { FAIL("styles", "styles apply threw: " + e.message); }
 }
 
@@ -1213,6 +1233,35 @@ if (applyFontPrimitivesModes) {
     if (healed.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("fontmodes", `returning-file: modes after self-heal = ${healed.modes.map((m) => m.name)}, want Premium,Google Fonts`);
     const healedFam = F11.variables.find((v) => v.variableCollectionId === healed.id && v.name === "family/display");
     if (!healedFam || healedFam.id !== keepVarId) FAIL("fontmodes", "returning-file: family/display was pruned+recreated instead of updated in place (id changed — no data loss means SAME id)");
+
+    // ── #629 ruling Q2: "published library" mode guards the Type Primitives MODE prune too, not just
+    // the variable prune. Removing a MODE from a published collection breaks every consumer file that
+    // pinned it, so libraryMode:true must REPORT the stale mode (libraryReport.staleModes) and leave
+    // it standing; false must remove it exactly as today. Fresh mock per leg so the two are compared
+    // from the SAME starting state (a collection carrying Premium + Google Fonts), not in sequence.
+    const narrowPlan = { collection: "Type Primitives", modes: ["Premium"], defaultMode: "Premium", addModes: [], variables: [
+      { name: "family/display", type: "STRING", values: [{ mode: "Premium", value: "Inter Tight" }] },
+    ] };
+    const widePlan = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 })));
+    for (const leg of [{ libraryMode: true }, { libraryMode: false }, undefined]) {
+      const FQ = mockFigma();
+      const lq = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(FQ.figma, "<html>", undefined);
+      await lq.applyFontPrimitivesModes(widePlan);
+      const before = FQ.collections.find((c) => c.name === "Type Primitives");
+      if (!before || before.modes.map((m) => m.name).join() !== "Premium,Google Fonts") { FAIL("fontmodes", "#629 fixture: the wide plan did not leave a Premium + Google Fonts axis to narrow"); break; }
+      const res = await lq.applyFontPrimitivesModes(narrowPlan, leg);
+      const after = FQ.collections.find((c) => c.name === "Type Primitives");
+      const modeNames = after.modes.map((m) => m.name);
+      const stale = (res && res.libraryReport && res.libraryReport.staleModes) || [];
+      const label = leg === undefined ? "undefined (a pre-#629 ui.html bundle)" : `libraryMode:${leg.libraryMode}`;
+      if (leg && leg.libraryMode === true) {
+        if (!modeNames.includes("Google Fonts")) FAIL("fontmodes", "#629 libraryMode:true removed the stale 'Google Fonts' mode: a published collection's mode must survive");
+        if (!stale.includes("Google Fonts")) FAIL("fontmodes", `#629 libraryMode:true did not REPORT the kept stale mode (libraryReport.staleModes = ${JSON.stringify(stale)})`);
+      } else {
+        if (modeNames.includes("Google Fonts")) FAIL("fontmodes", `#629 ${label} left the stale 'Google Fonts' mode behind: classic prune regressed`);
+        if (stale.length) FAIL("fontmodes", `#629 ${label} reported staleModes ${JSON.stringify(stale)} instead of removing them`);
+      }
+    }
   } catch (e) { FAIL("fontmodes", "applyFontPrimitivesModes e2e threw: " + e.message); }
 } else {
   FAIL("fontmodes", "code.js exported no applyFontPrimitivesModes");
