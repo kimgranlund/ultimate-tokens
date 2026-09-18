@@ -202,7 +202,7 @@ try {
 
 // ── hpg-export-nonempty (5 formats non-empty; JSON has stops/scrims/semantic) ─────────────
 const all = X.exportAll(C(ALL), {});
-for (const k of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn", "panda", "radix"]) {
+for (const k of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn", "panda", "radix", "radixRef"]) {
   const v = all[k];
   if (v == null || (typeof v === "string" && v.length < 10) || (typeof v === "object" && Object.keys(v).length === 0)) FAIL("nonempty", `${k} empty`);
 }

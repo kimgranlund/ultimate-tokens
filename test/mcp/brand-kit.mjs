@@ -8,6 +8,8 @@ import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { brandKit, defaultDocument, paletteGroup } from "../../src/ui/model.mjs";
+import { SERVER } from "../../mcp/brand-kit-core.mjs";
+import { MCP_BRAND_KIT_VERSION } from "../../src/ui/mcp-assets.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
@@ -18,6 +20,12 @@ const ok = (c, m) => { if (!c) fails.push(m); };
 const kit = brandKit(defaultDocument());
 // $schema/2 (RP-8, ticket #577, plan PR #571 step E6): EXPORT_SCHEMA_VERSION stamped verbatim.
 ok(kit.$schema === "ultimate-tokens-brand-kit/3" && kit.palettes.length === 16, `brandKit shape: $schema=${kit.$schema}, ${kit.palettes.length} palettes (want ultimate-tokens-brand-kit/3, 16)`);
+// ZIP PACKAGE VERSION (#638 review F1): the downloaded Brand-Kit MCP zip declares a package.json
+// version, and it must be the version the server it packages reports over MCP. app.js used to carry
+// a hand-kept copy of that string, which the EXPORT_SCHEMA_VERSION 2 -> 3 bump left at 0.2.0 while
+// SERVER.version moved to 0.3.0. The constant is now GENERATED from SERVER.version, and this pins
+// the pair so a future bump cannot silently split them again.
+ok(MCP_BRAND_KIT_VERSION === SERVER.version, `the downloaded package.json version (${MCP_BRAND_KIT_VERSION}) must equal the server's own SERVER.version (${SERVER.version}); regenerate with npm run gen:mcp-assets`);
 // ICONS — the kit ALWAYS names an icon library (an agent must never pick its own).
 ok(kit.icons && kit.icons.family === "Phosphor" && kit.icons.variant === "regular", `brandKit serves the default icon system: ${JSON.stringify(kit.icons)}`);
 {
