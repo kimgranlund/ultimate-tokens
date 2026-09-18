@@ -10,6 +10,15 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ### 2026-09-18
 
+#### Changed
+- **"Published library" mode now covers the color-variable prune too** (#673). The toggle #629 added
+  to the apply gate guarded the type, geometry, style and font-mode prunes, but `applyBundle`'s color
+  reconcile stayed on the classic prune whatever the box said, so a published library that renamed or
+  dropped a color role still deleted the variable consumer files were bound to. With the box ticked,
+  a stale color name is now renamed under `_deprecated/` at all three generated collections (Color
+  Roles, Color Primitives, Color Prime), keeping its id and every binding; the apply notice reports
+  the kept count. Unticked, the prune is unchanged. The gate checkbox and the Settings row say so.
+
 #### Added
 - **A reference form of the Radix color export** (#638): `exportRadix(state, { refs: true })` emits
   the same Radix preset shape, with every numbered step leaf's `base`/`_dark` a `var(--{pfx}-{n}-*)`

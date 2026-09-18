@@ -69,9 +69,10 @@ versioned localStorage key, the destructive **Regroup** ALWAYS warns) → `apply
 `figma/plugin/code.js#applyBundle` creates Color Primitives + Color Roles, prunes orphans, embeds the config
 in `figma.root` pluginData. **`libraryMode` (#629) is ALWAYS an explicit boolean**, never undefined: `true`
 means "this file is a PUBLISHED library", so the apply aliases and deprecates names it no longer produces
-instead of removing them. It covers TYPE, GEOMETRY and STYLES only (`applyFloatPlans`,
-`applyFontPrimitivesModes` including its MODE prune, and `applyStylePlans`); `applyBundle`'s COLOR
-reconcile is deliberately outside it. Two surfaces, one persisted key
+instead of removing them. It covers COLOR, TYPE, GEOMETRY and STYLES (`applyBundle`'s three-collection
+color reconcile since #673, plus `applyFloatPlans`, `applyFontPrimitivesModes` including its MODE prune,
+and `applyStylePlans`). #629 shipped the flag with color exempt by ruling Q1; #673 retired that exemption,
+so every prune on the apply path now reads one flag. Two surfaces, one persisted key
 (`ultimate-tokens-library-mode-v1`, the `_applyConsentKey` precedent, storing both `"1"` and `"0"`
 because unchecked is a real answer): the gate's "Published library" checkbox, and Settings › Token
 mapping › "Figma apply", which exists because "don't show again" makes the gate unreachable and

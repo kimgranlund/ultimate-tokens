@@ -139,25 +139,26 @@ figma.ui.onmessage = async (msg) => {
       // name but isn't registry-tracked (a file applied to under the pre-rename plugin id, or a hand-made
       // collection). Nothing is adopted without explicit consent; declining is today's behaviour, unchanged.
       await adoptExistingCollections(msg);
-      // `dtcg` is OMITTED when the Color system is toggled off in the UI — skip the color collections
-      // entirely (the existing ones are left untouched, not pruned). Type/Geometry filtering happens UI-side.
-      const r = msg.dtcg ? await applyBundle(msg.dtcg, { rebuildSemantic: !!msg.rebuildSemantic, renames: msg.renames && msg.renames.color }) : null;
-      // Type + Geometry breakpoint-moded FLOAT collections (UI-computed, pre-validated apply plans). Isolated
-      // in its OWN try so a float-apply failure can't mask the color apply that already succeeded above — the
-      // user still gets the color result (+ a console error), and a re-apply (idempotent) converges the rest.
-      // #629 "published library" mode: msg.libraryMode is now ALWAYS an explicit boolean: the
+      // #629/#673 "published library" mode: msg.libraryMode is ALWAYS an explicit boolean: the
       // apply-gate's "Published library" checkbox sets it on every apply (true = alias/deprecate,
-      // false = classic prune), so the undefined branch below is only ever reached by an OLD ui.html
-      // bundle posting a pre-#629 message. That undefined does NOT reach applyFloatPlans/
+      // false = classic prune), so the undefined branch in the executors below is only ever reached by
+      // an OLD ui.html bundle posting a pre-#629 message. That undefined does NOT reach applyFloatPlans/
       // applyFontPrimitivesModes' confirmLibraryMode() dialog: with no askIfUndecided passed (only the
       // standalone binder's own main() passes it), undefined resolves straight to false, i.e. classic
       // prune, which is exactly the legacy behavior an old bundle expects.
-      // SCOPE (#629 ruling Q1): the flag covers TYPE, GEOMETRY and STYLES only. applyBundle's color
-      // reconcile is deliberately NOT threaded, and the two surfaces that SET the flag say so: the
-      // gate checkbox is labelled "...type, geometry and style names", and the Settings row's help
-      // line says "Color variables are unaffected either way". The gate LEDE says nothing about the
-      // flag at all (it describes what the apply writes, not how it prunes), so do not read a scope
-      // claim into it. PR #675 review: this comment used to name the lede, which was an overclaim.
+      // SCOPE: the flag covers COLOR, TYPE, GEOMETRY and STYLES, all four. #629's ruling Q1 left
+      // applyBundle's color reconcile on the classic prune whatever the flag said; #673 threaded it, so
+      // a published library no longer loses the color variable a consumer file is bound to. The two
+      // surfaces that SET the flag say so: the gate checkbox is labelled "...color, type, geometry and
+      // style names", and the Settings row's help line names color first. The gate LEDE says nothing
+      // about the flag at all (it describes what the apply writes, not how it prunes), so do not read a
+      // scope claim into it. PR #675 review: an earlier comment named the lede, which was an overclaim.
+      // `dtcg` is OMITTED when the Color system is toggled off in the UI — skip the color collections
+      // entirely (the existing ones are left untouched, not pruned). Type/Geometry filtering happens UI-side.
+      const r = msg.dtcg ? await applyBundle(msg.dtcg, { rebuildSemantic: !!msg.rebuildSemantic, renames: msg.renames && msg.renames.color, libraryMode: msg.libraryMode }) : null;
+      // Type + Geometry breakpoint-moded FLOAT collections (UI-computed, pre-validated apply plans). Isolated
+      // in its OWN try so a float-apply failure can't mask the color apply that already succeeded above — the
+      // user still gets the color result (+ a console error), and a re-apply (idempotent) converges the rest.
       let fr = null;
       if (Array.isArray(msg.floatPlans) && msg.floatPlans.length) {
         try { fr = await applyFloatPlans(msg.floatPlans, { libraryMode: msg.libraryMode }); }
@@ -179,7 +180,7 @@ figma.ui.onmessage = async (msg) => {
         } catch (e) { console.error("[Ultimate Tokens] styles apply failed:", e); }
       }
       const parts = [];
-      if (r) parts.push(`${r.raw} primitives + ${r.prime} prime + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : ""));
+      if (r) parts.push(`${r.raw} primitives + ${r.prime} prime + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : "") + (r.preserved ? `, ${r.preserved} stale kept (published library)` : ""));
       if (fr && fr.collections) parts.push(`${fr.variables} type/geometry variable${fr.variables === 1 ? "" : "s"} across ${fr.collections} collection${fr.collections === 1 ? "" : "s"}`);
       if (sr && (sr.paints || sr.texts)) parts.push(`${sr.paints + sr.texts} style${sr.paints + sr.texts === 1 ? "" : "s"} (${sr.paints} color · ${sr.texts} text)` + (sr.pruned ? `, ${sr.pruned} stale pruned` : "") + (sr.preserved ? `, ${sr.preserved} stale kept (published library)` : ""));
       if (sr && sr.substitutedFonts && sr.substitutedFonts.length) figma.notify(`${sr.substituted} text style(s) use a placeholder face — install to see them as designed: ${sr.substitutedFonts.slice(0, 3).join(", ")}${sr.substitutedFonts.length > 3 ? "…" : ""}`, { timeout: 6000 });
@@ -1541,19 +1542,58 @@ async function applyBundle(dtcg, opts) {
   // alias a stale raw var we then remove, whereas every CURRENT semantic var aliases a CURRENT (kept)
   // raw var, so no live alias is broken. Prime carries no aliases in or out, so its prune order
   // relative to raw/semantic doesn't matter.
+  // #673: "published library" mode covers THIS prune too. opts.libraryMode === true means the file is
+  // a PUBLISHED library, so a color variable this bundle no longer produces is DEPRECATED (id-preserving
+  // rename under "_deprecated/") instead of removed, and every consumer file stays bound. false, and the
+  // undefined an old pre-#629 ui.html bundle posts, prune exactly as before. #629 ruling Q1 kept color
+  // out; #673 closes that gap, so the flag now covers color, type, geometry and styles alike.
+  //
+  // WHY THERE ARE NO ALIASES HERE, unlike applyFloatPlans' branch: a color rename arrives as
+  // opts.renames and is executed id-preservingly by renameInPool ABOVE, before the reconcile ever runs,
+  // so a renamed name is never stale by the time we get here. There is no second, value-redirect channel
+  // to build an alias map from, and libraryReconcile with an empty map therefore reports deprecates only.
+  // The empty `aliases` array is kept in the report for shape-parity with the float path's libraryReport.
+  //
+  // THREE prune sites, one per generated collection (Color Roles, Color Primitives, Color Prime), each
+  // taking the guard on its own: the style path's own review (#629, PR #675) found a guard that read
+  // correct at two sites but was only ever exercised at one, so each site is asserted separately.
+  const libraryMode = opts.libraryMode === true;
   let pruned = 0;
-  for (const name of Object.keys(semByName)) {
-    if (!currentSem.has(name)) { semByName[name].remove(); pruned++; }
-  }
-  for (const name of Object.keys(rawByName)) {
-    if (!currentRaw.has(name)) { rawByName[name].remove(); pruned++; }
-  }
-  for (const name of Object.keys(primeByName)) {
-    if (!currentPrime.has(name)) { primeByName[name].remove(); pruned++; }
-  }
+  let preserved = 0;
+  const colorReports = [];
+  // reconcileColorCollection(collectionName, byName, current): one collection's stale-name decision.
+  // CLASSIC: remove every unwanted name, minus the "_deprecated/" carve-out pruneCandidatesVM applies at
+  // the other two library-mode gates (#659/#666: the classic prune must stay MONOTONIC over a name a
+  // prior library-mode apply deliberately kept, or library mode defeats itself on the next ordinary
+  // apply). No color "_deprecated/" name can exist before this ticket, so the carve-out subtracts nothing
+  // from today's behavior for any state a live file can currently be in.
+  const reconcileColorCollection = (collectionName, byName, current) => {
+    const existing = Object.keys(byName);
+    if (!libraryMode) {
+      const removed = pruneCandidatesVM(existing, Array.from(current));
+      for (const name of removed) { byName[name].remove(); pruned++; }
+      colorReports.push({ collection: collectionName, libraryMode: false, aliases: [], deprecates: [], removed: removed });
+      return;
+    }
+    const rec = libraryReconcile(existing, Array.from(current), {}, {});
+    const deprecates = [];
+    for (const r of rec.toDeprecate) {
+      const vr = byName[r.from];
+      if (!vr || byName[r.to]) continue; // a "_deprecated/" name already taken: leave the live one alone
+      vr.name = r.to;
+      byName[r.to] = vr;
+      delete byName[r.from];
+      preserved++;
+      deprecates.push(r);
+    }
+    colorReports.push({ collection: collectionName, libraryMode: true, aliases: [], deprecates: deprecates, removed: [] });
+  };
+  reconcileColorCollection(sem.name, semByName, currentSem);
+  reconcileColorCollection(raw.name, rawByName, currentRaw);
+  reconcileColorCollection(prime.name, primeByName, currentPrime);
 
   writeColorRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { raw: rawCount, semantic: semCount, prime: primeCount, pruned: pruned, rebuilt: rebuilt, themeNames: themeNames };
+  return { raw: rawCount, semantic: semCount, prime: primeCount, pruned: pruned, preserved: preserved, libraryMode: libraryMode, colorReports: colorReports, rebuilt: rebuilt, themeNames: themeNames };
 }
 
 // ── the breakpoint-moded FLOAT apply (Type / Geometry) ────────────────────────────

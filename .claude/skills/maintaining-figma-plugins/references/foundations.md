@@ -230,8 +230,12 @@ further gate-only control, ask the same question.
 What the flag actually changes lives in `figma/plugin/code.js`: `applyStylePlans(sp, opts)` keeps the
 style and its registry slot and counts `out.preserved` instead of `out.pruned`;
 `applyFontPrimitivesModes` keeps stale MODES and reports them as `libraryReport.staleModes`;
-`applyFloatPlans` takes the alias/deprecate branch. `applyBundle`'s color reconcile is NOT threaded
-(ruling Q1 on #629), so a color-variable prune happens under either setting.
+`applyFloatPlans` takes the alias/deprecate branch. `applyBundle` (#673) deprecates a stale color
+variable under `_deprecated/` instead of removing it, at all THREE of its prune sites (Color Roles, Color
+Primitives, Color Prime), and reports `preserved` plus a per-collection `colorReports` entry. It reports no
+aliases: a color rename rides `opts.renames` and is executed id-preservingly by `renameInPool` before the
+reconcile runs, so there is no value-redirect channel to build an alias map from. #629's ruling Q1 left
+color on the classic prune under either setting; #673 retired that exemption.
 
 ### 7. The config round-trip OUT of variables
 
