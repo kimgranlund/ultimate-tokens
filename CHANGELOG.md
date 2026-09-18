@@ -8,6 +8,18 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-09-17
+
+#### Changed
+- **Classic prune is monotonic over `_deprecated/` names, at both library-mode gates** (#659, #666).
+  `applyFloatPlans` and `applyFontPrimitivesModes` (`figma/plugin/code.js`) share one prune-candidate
+  rule now: existing names minus wanted names minus any `_deprecated/*` name. Before this fix, a lone
+  `_deprecated/*` name survived a classic-prune apply, but the same name sitting beside one unrelated
+  stale name did not. Whether it survived depended on what else was in the collection, at either gate.
+  Policy note: an explicit `libraryMode:false` apply through the plugin can no longer delete any
+  `_deprecated/*` name, at either gate. Cleaning up a `_deprecated/*` variable is now a manual, Figma-side
+  action, not something the plugin's classic prune will ever do for you.
+
 ### 2026-09-12
 
 #### Changed

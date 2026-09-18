@@ -684,6 +684,43 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     if (has("size/old")) FAIL("prunemono", "\"Remove\" no longer prunes the unrelated stale name size/old");
     if (!has(DEP)) FAIL("prunemono", `${DEP} was pruned along with the unrelated stale name size/old (non-monotonic: it survives alone but not beside a stale name)`);
   } catch (e) { FAIL("prunemono", "leg (b) threw: " + e.message); }
+
+  // ── font-gate twin (critic finding on PR #666): pruneCandidatesVM's classic-prune call is
+  //    DUPLICATED at applyFontPrimitivesModes (figma/plugin/code.js — never spliced into the standalone
+  //    binder, so it is loaded directly here, same technique as colorparity/collparity/floatparity
+  //    below) — a guard removed at ONLY that call site would leave legs (a)/(b) above green while
+  //    breaking font-side monotonicity. Same two legs, driving applyFontPrimitivesModes instead of
+  //    applyFloatPlans; leg (b) is again the negative control. ──
+  const DEPF = "_deprecated/font/legacy";
+  const seedFontWith = async (extraNames) => {
+    const flagSrc = readFileSync(join(HERE, "..", "plugin", "code.js"), "utf8");
+    const F = mockFigma();
+    F.figma._libraryModeAnswer = false; // "Remove" — the classic prune
+    F.figma.ui.postMessage = () => {}; // the flagship's top-level `figma.ui.postMessage({type:"figma-init"})` fires on load
+    const loaded = new Function("figma", "__html__", "module", flagSrc + "\nreturn { applyFontPrimitivesModes };")(F.figma, "<html>", undefined);
+    const basePlan = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [{ name: "font/heading", type: "STRING", values: [{ mode: "Value", value: "Body Font" }] }] };
+    const seeded = JSON.parse(JSON.stringify(basePlan));
+    for (const nm of extraNames) seeded.variables.push({ name: nm, type: "STRING", values: [{ mode: "Value", value: "Old Font" }] });
+    await loaded.applyFontPrimitivesModes(seeded); // registered, at the seeded shape
+    await loaded.applyFontPrimitivesModes(basePlan, { askIfUndecided: true }); // the undecided path
+    const coll = F.collections.find((c) => c.name === "Type Primitives");
+    const has = (nm) => !!coll && F.variables.some((va) => va.variableCollectionId === coll.id && va.name === nm);
+    return { F, has };
+  };
+  // (a) lone _deprecated/ name, empty report: kept, no prompt.
+  try {
+    const { F, has } = await seedFontWith([DEPF]);
+    if (F.figma._libraryShowUICalls !== 0) FAIL("prunemono", `font gate: lone _deprecated/ name must not prompt, got ${F.figma._libraryShowUICalls}`);
+    if (!has(DEPF)) FAIL("prunemono", `font gate: lone ${DEPF} was pruned`);
+  } catch (e) { FAIL("prunemono", "font-gate leg (a) threw: " + e.message); }
+  // (b) NEGATIVE CONTROL: _deprecated/ name + one unrelated stale name, dialog answers "Remove": the
+  // stale name goes, the _deprecated/ name STAYS.
+  try {
+    const { F, has } = await seedFontWith([DEPF, "font/old"]);
+    if (F.figma._libraryShowUICalls !== 1) FAIL("prunemono", `font gate: _deprecated/ + stale name must ask once, got ${F.figma._libraryShowUICalls}`);
+    if (has("font/old")) FAIL("prunemono", "font gate: \"Remove\" no longer prunes the unrelated stale name font/old");
+    if (!has(DEPF)) FAIL("prunemono", `font gate: ${DEPF} was pruned along with the unrelated stale name font/old (non-monotonic: it survives alone but not beside a stale name)`);
+  } catch (e) { FAIL("prunemono", "font-gate leg (b) threw: " + e.message); }
 }
 
 // ── colorparity: the binder's checked-in code.js's readColorRegistry/writeColorRegistry/ensureCollection
