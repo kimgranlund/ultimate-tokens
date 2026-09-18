@@ -200,6 +200,55 @@ for (const { label, hueSpace, palette: p } of controlSubjects) {
 }
 console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "FAIL" : "pass"}  prime-identity-control: ${ctrlExact} exact, ${ctrlOff} off (non-anchored primeSwatches unchanged by #681)`);
 
+// ── anchor-ladder (F1, U1 review 2026-09-18) ────────────────────────────────────────────────────
+// The anchored ladder's own well-formedness at primeChroma 100 (the same evaluation point C2/C4
+// use), over all 3,380 anchored corpus palettes, two invariants:
+//   (a) the SIX ladder rungs (every step but `prime`) are strictly decreasing in OKHSL `l` — this
+//       comes only from `primeSteps`' redistribution and prime.mjs's F1 widening search, never from
+//       the anchor's own position, so it holds unconditionally: 0 exceptions anywhere in the corpus.
+//   (b) all SEVEN rungs render distinct hexes, and `prime` sits strictly between `bright` and `dim`
+//       in `l` — Q3 (b) ruled the token stays exact regardless of the window, so a source whose true
+//       OKHSL `l` sits at or past [PRIME_L_MIN, PRIME_L_MAX] can only get a real six-rung ladder by
+//       letting `prime` sit outside it; those sources are a named, counted allow-list (mirroring C5's
+//       "print the list, fail on any other count" shape), not a silent carve-out. A handful sit close
+//       enough to the window floor that even the F1 widening search's full PRIME_STEP of reserve
+//       cannot keep `prime` distinct from the rung it ends up beside — a stricter subset of (b).
+const EXPECT_ORDER_ALLOW = 23; // sources where prime.mjs's F1 widening cannot keep `prime` inside [bright, dim]
+const EXPECT_DUPE_ALLOW = 4; // the subset of those where widening ALSO cannot keep every hex distinct
+{
+  const orderNames = [], dupeNames = [];
+  for (const { slug, presetName, hueSpace, palette: p } of anchored) {
+    const ctl = { hueSpace: hueSpace ?? "oklch", primeChroma: 100 };
+    const sw = primeSwatches(p, ctl);
+    const label = `${slug} "${presetName}" ${p.name} ${p.anchor}`;
+    const sixIdx = [0, 1, 2, 4, 5, 6]; // every step but prime (index 3)
+    let sixMono = true;
+    for (let k = 1; k < sixIdx.length; k++) if (!(sw[sixIdx[k - 1]].l > sw[sixIdx[k]].l)) sixMono = false;
+    if (!sixMono) FAIL("anchor-ladder", `${label}: the six ladder rungs (excluding prime) are not strictly decreasing in l — primeSteps or the F1 widening search regressed`);
+    if (!(sw[2].l > sw[3].l && sw[3].l > sw[4].l)) orderNames.push(label);
+    if (new Set(sw.map((x) => x.hex)).size < 7) dupeNames.push(label);
+  }
+  console.log(`  ${orderNames.length === EXPECT_ORDER_ALLOW ? "pass" : "FAIL"}  anchor-ladder order-allow-list: ${orderNames.length} (expected ${EXPECT_ORDER_ALLOW})`);
+  for (const n of orderNames) console.log(`    r ${n}`);
+  console.log(`  ${dupeNames.length === EXPECT_DUPE_ALLOW ? "pass" : "FAIL"}  anchor-ladder dupe-allow-list: ${dupeNames.length} (expected ${EXPECT_DUPE_ALLOW})`);
+  for (const n of dupeNames) console.log(`    d ${n}`);
+  if (orderNames.length !== EXPECT_ORDER_ALLOW) FAIL("anchor-ladder", `order-allow-list count ${orderNames.length} !== expected ${EXPECT_ORDER_ALLOW} — a corpus anchor moved across the window bound, or F1's widening search regressed`);
+  if (dupeNames.length !== EXPECT_DUPE_ALLOW) FAIL("anchor-ladder", `dupe-allow-list count ${dupeNames.length} !== expected ${EXPECT_DUPE_ALLOW} — a corpus anchor moved relative to the 8-bit quantisation cliff, or F1's widening search regressed`);
+  // every dupe MUST also be an order violation (the F1 widening search cannot fail (b) without also
+  // failing (a): a collapsed rung is, by definition, not strictly between its neighbours in l).
+  for (const n of dupeNames) if (!orderNames.includes(n)) FAIL("anchor-ladder", `${n}: has a duplicate hex but passes the prime-between-bright-and-dim check — inconsistent with F1's own mechanism, investigate before trusting either count`);
+}
+
+// negative control: a synthetic anchor pinned at OKHSL l=0 (pure black, unambiguously past
+// PRIME_L_MIN) must be caught by the SAME predicate the corpus loop above counts with — proving the
+// predicate itself discriminates rather than the corpus happening to already contain 23/4.
+{
+  const synthetic = { anchor: "#000000" };
+  const sw = primeSwatches(synthetic, { hueSpace: "oklch", primeChroma: 100 });
+  const orderViolation = !(sw[2].l > sw[3].l && sw[3].l > sw[4].l);
+  if (!orderViolation) FAIL("anchor-ladder", "negative control DID NOT bite: a synthetic #000000 anchor (OKHSL l=0, unambiguously outside [PRIME_L_MIN, PRIME_L_MAX]) passed the prime-between-bright-and-dim check — the predicate cannot discriminate an out-of-window anchor");
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 for (const g of ["anchor-identity", "prime-identity-control"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));

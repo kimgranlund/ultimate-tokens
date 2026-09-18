@@ -482,7 +482,13 @@ export function camHueToOklch(camHue, chromaFrac = 1) {
 export function defaultDocument() {
   return {
     name: "Default",
-    palettes: DEFAULT_PALETTES.map((p) => ({ ...p, hue: camHueToOklch(p.hue, (p.chroma ?? 0) / 100) })),
+    // sourceAnchor (F2, U1 review 2026-09-18): the plan's own U1 line says this field is "written
+    // only by the generator and by defaultDocument()" so U2's Reset action (C12) has something to
+    // read after a hue/chroma edit detaches `anchor` (Q6). scripts/gen-categories.mjs's half was
+    // done at U1 landing; this is the other half — every default-kit palette starts with
+    // `sourceAnchor` equal to its own `anchor` (Q2 (b)'s stop-550 hex), never stored twice in
+    // DEFAULT_PALETTES itself (that array stays the single source, `anchor` alone).
+    palettes: DEFAULT_PALETTES.map((p) => ({ ...p, hue: camHueToOklch(p.hue, (p.chroma ?? 0) / 100), sourceAnchor: p.anchor })),
     curve: ENGINE_DEFAULT_CONTROLS.curve,
     tension: ENGINE_DEFAULT_CONTROLS.tension,
     lmin: ENGINE_DEFAULT_CONTROLS.lmin,
