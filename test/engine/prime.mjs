@@ -11,28 +11,29 @@
 // plan's mechanism (3) text says "the anchor's L*", this file and src/engine/prime.mjs read the
 // EXISTING key colour's own L* (`peakC`'s cusp tone) on the non-anchored path, exactly as prime.mjs
 // did before #681. Two consequences, both re-measured here rather than copied from the plan:
-//   1. The plan's C5 "ladder-window allow-list: 21 (expected 21)" is a property of the REAL curated
-//      preset SOURCE colours (U1/U4's corpus, hex values as dark as L* 7.32) — data this branch has no
-//      access to. The cusp-anchor construction's own L* range is [32, 96] (measured, both hue spaces,
-//      1-degree sweep) — comfortably inside the ladder window — so THIS branch's own `ladder-window`
-//      gate honestly reports 0. Once U1 lands and this unit rebases onto a source-anchored corpus, that
-//      gate must be extended to iterate the corpus too; see .sdlc/handoffs/pif-u6.md.
+//   1. C5's own 21-name allow-list is NOT gated on U1's `anchor` field: the source hexes it names are
+//      already shipped on this branch, under `docs/reference/colors/categories/*.json`'s
+//      `palettes[].swatches[].hex` (the curated corpus the generator maps into primary/primary-muted/
+//      secondary/secondary-muted/tertiary/tertiary-muted — the SAME mapping `scripts/gen-categories.mjs`
+//      `mapColors()` uses). A first pass of this gate wrongly reasoned this was U1-only data and
+//      reported a vacuous 0 (reviewer finding, corrected here): the `ladder-window` gate below iterates
+//      that corpus directly and re-derives the 21-name allow-list from it, independent of primeSwatches
+//      and independent of whether an `anchor` field exists anywhere.
 //   2. The plan/dispatch names Tertiary, Danger, Warning as the three defaults that clip at STEP_L 9,
 //      with spans 52.8 / 49.9 / 46.3 L* — computed against U1's Q2(b) minted stop-550-hex anchors.
 //      Measured against THIS branch's cusp anchors, Tertiary and Danger do not clip at all (span 54
 //      exactly) and Warning clips to 45.77, not 46.3 — a different set entirely (Secondary, Info,
 //      Success, Warning, Data 1, Data 4, Data 5, Data 6, Data 7 clip; see the `clipped defaults` gate
 //      below). This is flagged in .sdlc/questions/pif-u6.md rather than silently adopted either way.
-import { readFileSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { execFileSync } from "node:child_process";
+import { readFileSync, readdirSync } from "node:fs";
 import { primeSwatches, primeSteps, PRIME_STEPS, PRIME_L_MIN, PRIME_L_MAX, STEP_L } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, maxChromaInGamut, cam16FromRgb, lstarFromRgb } from "../../src/engine/hct.js";
 import { effHue, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
 
 const REPO_ROOT = new URL("../../", import.meta.url);
 const RT = JSON.parse(readFileSync(new URL("docs/reference/data/role-table.json", REPO_ROOT), "utf8"));
+const CATEGORIES_DIR = new URL("docs/reference/colors/categories/", REPO_ROOT);
+const hexToRgb = (hex) => { const h = String(hex).replace("#", ""); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); };
 const DEFAULTS = RT.defaults; // the 16 default palettes {name,hue,chroma,skew,lift,on}
 // hueSpace "cam16": role-table.json's hue numbers ARE CAM16 hues (the raw, un-converted seeds
 // defaultDocument() maps through camHueToOklch before storing) — `CTL` pins cam16 so effHue passes
@@ -111,7 +112,17 @@ for (const p of DEFAULTS) {
   }
 }
 
-// ── (c) inGamut true for every entry, primeChroma x chroma in {0,50,100}^2, every default ──
+// ── (c) inGamut true for every entry. Widened (#681 U6 review pass 1, S3): the 16-defaults x
+//        primeChroma x chroma sweep alone never exercises a hueShift-perturbed rung, and the reviewer's
+//        finding was specifically that a shifted rung's float hue could fall in a shared
+//        `maxChromaInGamut`/`peakC` memoization bucket whose cached cap was computed for a neighbouring
+//        hue (hct.js, `hue.toFixed(2)` cache keys) — enough to occasionally clip a fraction of a
+//        CAM16-chroma unit outside the TRUE gamut boundary, including on the prime rung itself, AND to
+//        make two calls for the SAME logical palette disagree depending on what else had rendered
+//        earlier in the same process (a real reproduced break of REQ-043's theme-independence check via
+//        `exportPanda`). `localMaxChroma` in prime.mjs replaces the shared cache with its own uncached,
+//        per-call binary search, so this gate proves BOTH gamut-correctness and determinism over a
+//        sweep that actually reaches hueShift, both hue spaces, and both integer and fractional hues. ─
 for (const p of DEFAULTS) {
   for (const primeChroma of [0, 50, 100]) {
     for (const chroma of [0, 50, 100]) {
@@ -119,6 +130,23 @@ for (const p of DEFAULTS) {
       for (const s of sw) if (s.inGamut !== true) FAIL("c", `${p.name} chroma${chroma} primeChroma${primeChroma} ${s.step}: inGamut ${s.inGamut}`);
     }
   }
+}
+{
+  let checked = 0;
+  for (const hueSpace of SPACES) {
+    for (let hue = 0; hue < 360; hue += 3) {
+      for (const chroma of [0, 25, 50, 75, 100]) {
+        for (const hueShift of [0, 10, -10, 20, -20]) {
+          for (const skew of [0, 40, -40]) {
+            checked++;
+            const sw = primeSwatches({ name: `h${hue}`, hue, chroma, hueShift, skew }, { hueSpace });
+            for (const s of sw) if (s.inGamut !== true) FAIL("c", `hue${hue}/c${chroma}/hueShift${hueShift}/skew${skew}/${hueSpace} ${s.step}: inGamut ${s.inGamut} (hex ${s.hex})`);
+          }
+        }
+      }
+    }
+  }
+  if (checked < 15000) FAIL("c", `only ${checked} hueShift-sweep cases checked — the widened sweep did not run`);
 }
 
 // ── (d) Q8/Q9 (2026-09-18, ticket #681 U6): the ladder spans a FULL 6 x STEP_L in CIE L* at every hue
@@ -218,8 +246,9 @@ for (const c of CASES) {
 
 // (d5) unclipped byte-identity: a FROZEN snapshot of the defaults whose cusp anchor needs no
 //      equal-compress at STEP_L 9 — i.e. min(roomUp,roomDown) >= STEP_L — captured from THIS unit's
-//      OWN construction, commit 766478b ("feat(prime): ladder steps equally in perceived CIE L*, held
-//      CAM16 chroma (#681 U6)", `unit/pif-u6-ladder`). Frozen
+//      OWN construction, commit c286d40 ("feat(prime): ladder steps equally in perceived CIE L*, held
+//      CAM16 chroma (#681 U6)", `unit/pif-u6-ladder`, post-rebase-onto-6429c49 sha; superseded the
+//      pre-rebase 766478b, review pass 1 S7). Frozen
 //      literals, so the check is independent of the present implementation by construction. cam16, the
 //      space they were captured in. Seven families (one more than #641's six-family pre-#681 set:
 //      Data 8 clips under the 0.94-ceiling OKHSL construction but does NOT clip under the L*-domain
@@ -440,21 +469,93 @@ for (const p of DEFAULTS) {
   if (checked < 2000) FAIL("k", `only ${checked} rungs checked (${skipped} skipped as near-neutral) — the sweep did not run`);
 }
 
-// ── ladder-window: prints the allow-list of CASES whose cusp anchor falls outside
-//        [PRIME_L_MIN, PRIME_L_MAX] — expected 0 on THIS branch (see the U6 SCOPE NOTE at the top of
-//        this file: the plan's 21-name corpus list needs U1's source-anchored data, not available
-//        here). Negative control: with the window narrowed to exclude the sweep's own measured range
-//        (a synthetic [40, 60] window), the same predicate finds a large, non-zero count — proving the
-//        predicate itself discriminates rather than being vacuously always-0.
+// ── ladder-window (C5, corrected — reviewer finding): C5's 21-name allow-list is a property of the
+//        CURATED CORPUS'S SOURCE SWATCHES, shipped on this branch under
+//        `docs/reference/colors/categories/*.json`, `palettes[].swatches[].hex` — not of U1's `anchor`
+//        field, which this gate does not need. `mapColorsRoles` independently re-derives the SAME
+//        six-role mapping `scripts/gen-categories.mjs`'s `mapColors()` uses (dE-nearest supporting
+//        swatch to the dominant -> secondary-muted; the other supporting swatch, sorted by chroma ->
+//        tertiary/tertiary-muted; the two accent swatches, in array order -> primary/primary-muted),
+//        from the RAW hex/oklch fields alone — never by importing or calling gen-categories.mjs, so a
+//        bug in the generator's own mapping cannot make this gate agree with it by construction. ─────
+function mapColorsRoles(swatches) {
+  const oklab = (ok) => { const [L, C, H] = ok; const h = (H * Math.PI) / 180; return [L, C * Math.cos(h), C * Math.sin(h)]; };
+  const dE = (a, b) => { const A = oklab(a), B = oklab(b); return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]); };
+  const parseOklch = (s) => s.split(/\s+/).map(Number);
+  const sw = swatches.map((s) => ({ hex: String(s.hex).toUpperCase(), hier: s.hier, ok: parseOklch(s.oklch) }));
+  const dom = sw.find((s) => s.hier === "d");
+  const sup = sw.filter((s) => s.hier === "s");
+  const acc = sw.filter((s) => s.hier === "a");
+  if (!dom || sup.length < 1 || acc.length < 2) return null; // malformed preset — never silently skip cheaper
+  const byNearGround = [...sup].sort((a, b) => dE(a.ok, dom.ok) - dE(b.ok, dom.ok));
+  const domMuted = byNearGround[0];
+  const domSupport = byNearGround.slice(1).sort((a, b) => b.ok[1] - a.ok[1]); // chroma descending
+  return [
+    ["primary", acc[0]], ["primary-muted", acc[1]],
+    ["secondary", dom], ["secondary-muted", domMuted],
+    ["tertiary", domSupport[0]], ["tertiary-muted", domSupport[1]],
+  ];
+}
+
+// EXPECTED_LADDER_ALLOWLIST — C5's own 21-name list, as (category, role, hex) triples (the plan's
+// prose kickers are hand-abbreviated with no formal derivation from the JSON, so this file matches on
+// category + role + hex, an exact and unambiguous key, rather than chasing the plan's prose strings).
+const EXPECTED_LADDER_ALLOWLIST = [
+  ["Brands", "secondary", "#101820"], ["Brands", "tertiary-muted", "#FFFFFF"],
+  ["Film / Cinema", "primary", "#1B1B1D"], ["Film / Cinema", "primary", "#161618"],
+  ["Film / Cinema", "primary", "#241E1A"], ["Film / Cinema", "tertiary-muted", "#1A1B1E"],
+  ["Film / Cinema", "secondary", "#181B1F"], ["Film / Cinema", "tertiary-muted", "#201F25"],
+  ["Film / Cinema", "tertiary-muted", "#1F1F24"],
+  ["Music / Genre & Era", "primary-muted", "#1F1F23"], ["Music / Genre & Era", "secondary", "#1F1F23"],
+  ["Music / Genre & Era", "secondary-muted", "#211E27"], ["Music / Genre & Era", "secondary", "#1E2024"],
+  ["Nature / Biomes", "secondary", "#1D1D20"],
+  ["Travel / Territories", "tertiary-muted", "#221913"], ["Travel / Territories", "primary-muted", "#251B14"],
+  ["Travel / Territories", "tertiary-muted", "#1F1A16"], ["Travel / Territories", "tertiary-muted", "#251B12"],
+  ["Travel / Territories", "primary-muted", "#1F1A16"], ["Travel / Territories", "primary", "#1E1D1B"],
+  ["Travel / Territories", "primary", "#221913"],
+];
+
 let LADDER_WINDOW_ALLOWLIST;
 {
-  const outside = CASES.filter((c) => !c.inBounds).map((c) => c.label);
+  const outside = [];
+  const files = readdirSync(CATEGORIES_DIR).filter((f) => f.endsWith(".json")).sort();
+  for (const f of files) {
+    const doc = JSON.parse(readFileSync(new URL(f, CATEGORIES_DIR), "utf8"));
+    for (const vol of doc.volumes || []) {
+      for (const preset of vol.palettes || []) {
+        const roles = preset.swatches ? mapColorsRoles(preset.swatches) : null;
+        if (!roles) continue;
+        for (const [role, s] of roles) {
+          const L = lstarFromRgb(hexToRgb(s.hex));
+          if (L < PRIME_L_MIN || L > PRIME_L_MAX) outside.push({ category: doc.category, kicker: preset.kicker, role, hex: s.hex, L });
+        }
+      }
+    }
+  }
   LADDER_WINDOW_ALLOWLIST = outside;
-  console.log(`  ladder-window allow-list: ${outside.length} (expected 0 on this branch; U1's source corpus is out of scope here — see .sdlc/handoffs/pif-u6.md)`);
-  if (outside.length !== 0) FAIL("ladder-window", `${outside.length} case(s) outside the ladder window: ${outside.slice(0, 5).join(", ")}${outside.length > 5 ? "…" : ""}`);
-  // negative control: a synthetic narrow window must find violations, proving the filter isn't vacuous
-  const narrowOutside = CASES.filter((c) => c.lPrime < 40 || c.lPrime > 60).length;
-  if (narrowOutside === 0) FAIL("ladder-window", "negative control: narrowing the window to [40,60] found 0 out-of-window cases — the predicate is vacuous");
+  console.log(`  ladder-window allow-list: ${outside.length} (expected 21)`);
+  for (const o of outside) console.log(`    ${o.category} "${o.kicker}" ${o.role} ${o.hex} L* ${o.L.toFixed(2)}`);
+  if (outside.length !== 21) FAIL("ladder-window", `allow-list count ${outside.length} != expected 21`);
+  const got = outside.map((o) => `${o.category}|${o.role}|${o.hex}`).sort();
+  const exp = EXPECTED_LADDER_ALLOWLIST.map(([c, r, h]) => `${c}|${r}|${h}`).sort();
+  if (JSON.stringify(got) !== JSON.stringify(exp)) {
+    const missing = exp.filter((e) => !got.includes(e));
+    const extra = got.filter((g) => !exp.includes(g));
+    FAIL("ladder-window", `allow-list contents differ from C5's list. Missing: ${missing.join(", ") || "none"}. Extra: ${extra.join(", ") || "none"}.`);
+  }
+  // negative control: a synthetic narrow window must find MORE violations than the real one, proving
+  // the filter discriminates on the window bounds rather than being vacuously constant.
+  let narrowOutside = 0;
+  const files2 = files; // same corpus, re-walked at a deliberately narrow synthetic window [40,60] L*
+  for (const f of files2) {
+    const doc = JSON.parse(readFileSync(new URL(f, CATEGORIES_DIR), "utf8"));
+    for (const vol of doc.volumes || []) for (const preset of vol.palettes || []) {
+      const roles = preset.swatches ? mapColorsRoles(preset.swatches) : null;
+      if (!roles) continue;
+      for (const [, s] of roles) { const L = lstarFromRgb(hexToRgb(s.hex)); if (L < 40 || L > 60) narrowOutside++; }
+    }
+  }
+  if (narrowOutside <= 21) FAIL("ladder-window", `negative control: narrowing the window to [40,60] found only ${narrowOutside} (expected clearly more than the real window's 21) — the predicate may not be discriminating on the bounds`);
 }
 
 // ── symmetry (C11, Q9): |up - down| <= 1e-9 L* BY CONSTRUCTION on every case (equal-compress makes
@@ -476,43 +577,27 @@ let LADDER_WINDOW_ALLOWLIST;
   }
   console.log(`  symmetry (this branch): by-construction fails ${byConstructionFails}, measured exceed-3L* ${measuredExceed}/${CASES.length}, max measured asymmetry ${measuredMaxAsym.toFixed(4)} L*`);
 
-  // Negative control: origin/main's prime.mjs (pre-#681, the #641 redistribute rule) over the SAME
-  // sweep, run out-of-process against a temp copy whose imports are rewritten to this worktree's own
-  // (unchanged) hct.js/okhsl.js/tonal.js. FAILS to demonstrate this gate discriminates, not just passes.
-  let oldExceed = null, oldMaxAsym = null, controlError = null;
-  const tmp = mkdtempSync(join(tmpdir(), "pif-u6-negctl-"));
-  try {
-    const mainSrc = execFileSync("git", ["show", "origin/main:src/engine/prime.mjs"], { cwd: new URL(".", REPO_ROOT).pathname, encoding: "utf8" });
-    const hctPath = new URL("src/engine/hct.js", REPO_ROOT).pathname;
-    const okhslPath = new URL("src/engine/okhsl.js", REPO_ROOT).pathname;
-    const tonalPath = new URL("src/engine/tonal.js", REPO_ROOT).pathname;
-    const rewritten = mainSrc
-      .replace('from "./hct.js"', `from ${JSON.stringify(hctPath)}`)
-      .replace('from "./okhsl.js"', `from ${JSON.stringify(okhslPath)}`)
-      .replace('from "./tonal.js"', `from ${JSON.stringify(tonalPath)}`);
-    const tmpFile = join(tmp, "prime-main.mjs");
-    writeFileSync(tmpFile, rewritten);
-    const oldMod = await import(`file://${tmpFile}`);
-    oldExceed = 0; oldMaxAsym = 0;
-    for (const c of CASES) {
-      const swO = oldMod.primeSwatches(c.p, c.ctl);
-      const upPx = lstarFromRgb(swO[0].rgb) - lstarFromRgb(swO[3].rgb);
-      const downPx = lstarFromRgb(swO[3].rgb) - lstarFromRgb(swO[6].rgb);
-      const asym = Math.abs(upPx - downPx);
-      oldMaxAsym = Math.max(oldMaxAsym, asym);
-      if (asym > 3) oldExceed++;
-    }
-  } catch (e) {
-    controlError = e.message;
-  } finally {
-    rmSync(tmp, { recursive: true, force: true });
+  // Negative control: the pre-#681 redistribute rule (ticket #641), over the SAME sweep, run against
+  // `test/engine/fixtures/prime-pre-681.mjs` — a FROZEN, committed copy of `src/engine/prime.mjs` as it
+  // stood at `origin/main` blob `c744fb8` (commit `9195773`). Reviewer finding (first pass of this
+  // gate): reading `origin/main` LIVE via `git show` at test-run time reds `npm test` twice over — in
+  // PR CI (`actions/checkout@v4` on a `pull_request` event creates no `origin/main` ref) and
+  // permanently on `main` after this unit's own squash-merge (the "old" module then IS the new one, so
+  // `oldExceed` becomes 0 and the FAIL below would fire on every future `npm test`). A frozen fixture
+  // has neither failure mode — same discipline as `d5`'s frozen hex snapshot. FAILS to demonstrate this
+  // gate discriminates, not just passes.
+  const oldMod = await import("./fixtures/prime-pre-681.mjs");
+  let oldExceed = 0, oldMaxAsym = 0;
+  for (const c of CASES) {
+    const swO = oldMod.primeSwatches(c.p, c.ctl);
+    const upPx = lstarFromRgb(swO[0].rgb) - lstarFromRgb(swO[3].rgb);
+    const downPx = lstarFromRgb(swO[3].rgb) - lstarFromRgb(swO[6].rgb);
+    const asym = Math.abs(upPx - downPx);
+    oldMaxAsym = Math.max(oldMaxAsym, asym);
+    if (asym > 3) oldExceed++;
   }
-  if (controlError) {
-    FAIL("symmetry", `negative control could not run against origin/main: ${controlError}`);
-  } else {
-    console.log(`  symmetry negative control (origin/main prime.mjs, same sweep): exceed-3L* ${oldExceed}/${CASES.length}, max asymmetry ${oldMaxAsym.toFixed(4)} L*`);
-    if (oldExceed === 0) FAIL("symmetry", `negative control: origin/main's prime.mjs measured 0 exceptions — expected a large non-zero count (this gate would not have caught #641's redistribute asymmetry)`);
-  }
+  console.log(`  symmetry negative control (frozen pre-#681 fixture, same sweep): exceed-3L* ${oldExceed}/${CASES.length}, max asymmetry ${oldMaxAsym.toFixed(4)} L*`);
+  if (oldExceed === 0) FAIL("symmetry", `negative control: the frozen pre-#681 fixture measured 0 exceptions — expected a large non-zero count (this gate would not have caught #641's redistribute asymmetry)`);
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────

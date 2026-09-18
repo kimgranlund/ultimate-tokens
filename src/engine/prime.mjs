@@ -32,7 +32,7 @@
 // samples tone 4..96 (hct.js), so every possible `pk.tone` anchor already sits inside [12.25, 96.88]
 // with room to spare — unlike the old OKHSL-domain window, which the cusp construction could reach
 // almost exactly (0.961183 at cam16 hue 109.75, see the retired PRIME_L_MAX history below).
-import { hctToRgb, maxChromaInGamut, peakC, lstarFromRgb } from "./hct.js";
+import { hctToRgb, peakC, lstarFromRgb } from "./hct.js";
 import { okhslToRgb } from "./okhsl.js";
 import { effHue } from "./tonal.js";
 
@@ -49,6 +49,31 @@ export const PRIME_L_MAX = lstarFromRgb(okhslToRgb(0, 0, GREY_L_HI)); // ≈ 96.
 export const STEP_L = 9;
 // PRIME_STEP retired 2026-09-18 (#681 U6): the ladder no longer has an OKHSL-domain step; STEP_L is
 // its L*-domain replacement. Nothing outside this file and its own test imported PRIME_STEP.
+
+// localMaxChroma(hue, tone) — a PRIVATE, UNCACHED re-implementation of hct.js's own
+// `maxChromaInGamut` binary search (same lo/hi/18-iteration shape), used INSTEAD of the shared,
+// memoized export (reviewer finding, #681 U6 review pass 1, S3). `maxChromaInGamut`/`peakC` memoize on
+// `hue.toFixed(2)`, a coarser key than the float hues this ladder renders at per rung (CAM16-converted,
+// hueShift-perturbed); across a busy render (many palettes, many distinct hues, the shared 5000-slot
+// LRU cache in hct.js) two different hues can round to the same cache bucket, so the SAME logical rung
+// could read a cap computed for a NEIGHBOURING hue depending on unrelated calls made earlier in the
+// SAME process — a real, reproduced non-determinism (a plain `X.exportPanda(state)` call returned
+// byte-different `prime.*` values depending on what else had rendered first in the same test file,
+// breaking REQ-043's theme-independence check). A rung's gamut cap here is instead computed FRESH, by
+// its own exact (hue, tone) alone, every time — no cache, no cross-call interference, a genuinely pure
+// function of its two arguments, matching this file's own "Pure, no DOM" and REQ-050 determinism
+// contract. `hctToRgb` itself is NOT memoized (only `maxChromaInGamut`/`peakC`/`oklchToCam16Hue` are),
+// so this duplication touches nothing shared and needs no epsilon: `lo` is always the last value
+// `hctToRgb(hue, lo, tone)` itself confirmed in-gamut, so re-testing it is in-gamut by construction.
+function localMaxChroma(hue, tone) {
+  if (tone <= 0 || tone >= 100) return 0;
+  let lo = 0, hi = 180;
+  for (let i = 0; i < 18; i++) {
+    const mid = (lo + hi) / 2;
+    if (hctToRgb(hue, mid, tone).inGamut) lo = mid; else hi = mid;
+  }
+  return lo;
+}
 
 // primeSteps(lPrimeStar) — REQ-051, re-ruled 2026-09-18 (Q9, "equal-compress"). The per-side CIE L*
 // step of the seven-swatch ladder around a FIXED anchor at `lPrimeStar`. Each side naturally wants
@@ -130,7 +155,8 @@ export function primeSwatches(palette, controls) {
     // Chroma is HELD at cPrime on every rung (Q9 "hold CAM16 chroma") and desaturated ONLY where the
     // gamut at this rung's own (hue, L) cannot carry it — never damped by lightness distance the way
     // the retired flat-OKHSL-saturation construction implicitly was.
-    const cap = maxChromaInGamut(hue, l);
+    //
+    const cap = localMaxChroma(hue, l);
     const chroma = Math.min(cPrime, cap);
     const { rgb, inGamut } = hctToRgb(hue, chroma, l);
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
