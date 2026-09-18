@@ -1409,8 +1409,11 @@ ok(TP.every((p) => { const n = p.palettes[0]; return n.name === "neutral" && n.c
 // names are the PLACE only (no "IV·01 ·" vol-index prefix)
 ok(!TP.some((p) => /^[IVXLC]+·\d/.test(p.name)), "(hh) preset names drop the vol·index prefix (just the place)");
 // presets carry the full controls (a config that OMITS them hydrates to the DARK domain-min, lmax 60,
-// which made every preset render muddy) AND use the "Vivid mids" damping by default (damp 70 / amp 55).
-ok(TP.every((p) => p.lmax === 100 && p.lmin === 5 && p.damp === 70 && p.dampAmp === 55 && p.chromaFloor === 40), "(hh) presets carry controls + 'Vivid mids' damping (damp 70, amp 55) + the chroma floor (40)");
+// which made every preset render muddy) AND use the shared damp/dampCurve by default (damp 70), with
+// dampAmp 0 (#681 U3, Q7: chromaEnvelope normalises at the anchor, so a non-zero dampAmp can only
+// reshape the shoulders below the anchor's own chroma — the "Vivid mids" UI preset in app-helpers.mjs
+// DAMP_PRESETS still offers amp 55 as a manual, opt-in choice; the CURATED corpus no longer ships it).
+ok(TP.every((p) => p.lmax === 100 && p.lmin === 5 && p.damp === 70 && p.dampAmp === 0 && p.chromaFloor === 40), "(hh) presets carry controls + the shared damping (damp 70, amp 0) + the chroma floor (40)");
 // re-import captures each curated source color as a `dominant` key color (OKLCH), so the preset
 // retains the original palette exactly while the ramp re-derives an even scale from it.
 ok(TP.every((p) => p.palettes.slice(1, 7).every((q) => q.keyColors && q.keyColors.length === 1 && q.keyColors[0].role === "dominant" && Array.isArray(q.keyColors[0].oklch) && q.keyColors[0].oklch.length === 3)),

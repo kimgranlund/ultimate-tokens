@@ -190,7 +190,12 @@ function deriveNeutralPalette(palettes) {
   };
 }
 
-const VIVID_MIDS = { damp: 70, dampCurve: 1.5, dampAmp: 55, dampBias: 0 };
+// dampAmp 55 -> 0 (#681 U3, Q7 ruled): chromaEnvelope normalises at the anchor stop, so a non-zero
+// dampAmp can no longer lift the anchor above the palette's own intent the way the old, un-normalised
+// "m" formula did — it can only reshape the shoulders, which C6 forbids raising above 75%/90% of the
+// anchor's own chroma at 300/700. 55 was tuned for that now-retired boost; 0 is the shipped value the
+// corpus regenerates with (see .sdlc/handoffs/pif-u3.md for the before/after C6 table).
+const VIVID_MIDS = { damp: 70, dampCurve: 1.5, dampAmp: 0, dampBias: 0 };
 // per-entry curve override (#479, extended #625) — opt-in, currently only exercised by "brands"'
 // `direct` shapes: a real shipped product's own generator settings can drift from every OTHER
 // preset's shared VIVID_MIDS/DEFAULT_CONTROLS (e.g. Adia's product export re-tuned damp/dampCurve/

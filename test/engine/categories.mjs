@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { typeScale, DEFAULT_TYPE, siblingWeightDefaults, bodyClassSiblingDefaults, BODY_CLASS_VOICES, resolvedFontFor } from "../../src/engine/type.mjs";
 import { hydrate, DOMAINS } from "../../src/ui/persist.js";
-import { paletteGroup, resolvePaletteGroups } from "../../src/ui/model.mjs";
+import { paletteGroup, resolvePaletteGroups, projectView } from "../../src/ui/model.mjs";
 import { rampChromaOf } from "../../src/engine/resolve.mjs";
 import { paletteStops, STOPS, toneAt, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
 import { lstarFromRgb } from "../../src/engine/hct.js";
@@ -642,8 +642,64 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
     console.log(`  (lift-anchor: ${checked} in-band sampled primes anchored within ${TOL} L*, ${outOfBand} clamped to the lift domain edge)`);
 }
 
+// ── (ramp-monotone) #668: the curated presets that carried the measured-L* UPTICK must not carry it any
+// more. A perceptual ramp reports `tone` as the CIELAB L* of the 8-bit pixel it emits, and L* moves with
+// CHROMA as well as lightness. The damping used to be positioned on the RAW stop while the lightness was
+// read at the LIFTED one, so on a strongly lifted palette a step whose lightness had been compressed to
+// near nothing still took a full damping step, fell off the OKHSL s=1 clipping cliff, and MEASURED UP.
+// Eleven curated palettes did this at stop 800, worst +0.5105 L*, every one at lift <= -34 (the ticket
+// named nine; #648's re-fit and #656's travel repair moved the set to these eleven). tonal.mjs (iii c)
+// gates the synthetic grid; this gates the shipped data those eleven are drawn from, exactly and with no
+// tolerance, because the corpus is what the defect was reported against.
+//
+// Two guards keep it from going vacuous. Every named cell must still RESOLVE (a renamed preset or palette
+// would otherwise silently check nothing), and every named cell's stored lift must still be <= -34 — the
+// condition the mechanism needs. If a re-fit lifts one of these out of that band the cell stops being a
+// witness, and the gate says so instead of passing on a palette that could no longer fail.
+{
+  const WITNESSES = [
+    ["travel", "San Telmo", "secondary-muted"],
+    ["travel", "Lake Baikal corridor", "primary-muted"],
+    ["travel", "Rovaniemi", "tertiary-muted"],
+    ["travel", "Yamanote line", "tertiary-muted"],
+    ["travel", "Bogyoke Aung San Market", "secondary"],
+    ["film", "Touch of Evil", "secondary"],
+    ["film", "2001: A Space Odyssey", "tertiary-muted"],
+    ["film", "Arrival", "primary-muted"],
+    ["film", "Blade Runner · 1982", "secondary"],
+    ["film", "John Wick", "tertiary-muted"],
+    ["music", "Black metal", "secondary"],
+  ];
+  const LIFT_BAND = -34;                       // the band the uptick lived in; a witness must still be in it
+  let witnessed = 0;
+  const rose = [];
+  for (const [slug, needle, palName] of WITNESSES) {
+    const { PRESETS } = await import(`../../src/ui/categories/${slug}.js`);
+    const hits = PRESETS.filter((x) => x.name.includes(needle));
+    if (hits.length !== 1) { FAIL("ramp-monotone", `${slug} "${needle}": ${hits.length} presets match that name — the #668 witness cannot be resolved, repoint it`); continue; }
+    const doc = hydrate({ ...hits[0] });
+    const view = projectView(doc);
+    const idx = view.palettes.findIndex((q) => q.name === palName);
+    if (idx < 0) { FAIL("ramp-monotone", `${slug} "${needle}": no palette named "${palName}" — the #668 witness cannot be resolved, repoint it`); continue; }
+    const lift = doc.palettes[idx]?.lift ?? 0;
+    if (lift > LIFT_BAND) { FAIL("ramp-monotone", `${slug} "${needle}" ${palName}: lift is now ${lift}, outside the <= ${LIFT_BAND} band the uptick needs — this cell no longer witnesses #668, pick one that does`); continue; }
+    if ((doc.toneMode || "perceptual") !== "perceptual") { FAIL("ramp-monotone", `${slug} "${needle}": toneMode is "${doc.toneMode}", not perceptual — the witness no longer exercises the OKHSL path`); continue; }
+    witnessed++;
+    const ramp = view.palettes[idx].fullRamp || view.palettes[idx].ramp;
+    for (let i = 1; i < ramp.length; i++) if (ramp[i].tone > ramp[i - 1].tone) {
+      rose.push(`${slug} "${needle}" ${palName} (lift ${lift}) +${(ramp[i].tone - ramp[i - 1].tone).toFixed(4)} L* at ${ramp[i - 1].stop}->${ramp[i].stop}`);
+      break;
+    }
+  }
+  if (rose.length)
+    FAIL("ramp-monotone", `measured L* ROSE on ${rose.length} of ${WITNESSES.length} #668 witnesses — the damping is travelling where the lightness is not: ${rose.join("; ")}`);
+  if (witnessed !== WITNESSES.length) FAIL("ramp-monotone", `only ${witnessed} of ${WITNESSES.length} #668 witnesses resolved into the band — the gate is no longer proving what it claims`);
+  if (!fails.some((f) => f.startsWith("ramp-monotone:")))
+    console.log(`  (ramp-monotone: ${witnessed} lift <= ${LIFT_BAND} curated witnesses hold measured L* non-increasing across all ${25} export stops)`);
+}
+
 // ── REPORT ──
-for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback", "lift-anchor"]) {
+for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback", "lift-anchor", "ramp-monotone"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

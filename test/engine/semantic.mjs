@@ -181,16 +181,21 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   const hexToRgb = (hex) => [0, 2, 4].map((i) => parseInt(String(hex).slice(1 + i, 3 + i), 16));
   const AA = 4.5;                                   // the ruled floor (#662): every family, both schemes
   // [family, light floor, dark floor] — max(AA, own measured ratio floored to 1 decimal)
+  // Re-measured whole for #681 U3 (chromaEnvelope shared by both paths + the keyS saturation basis):
+  // "even" is unchanged to one decimal (only Success/Warning/Danger's damping moved there, all lift-
+  // driven, and each still floors to the same digit); "perceptual" and "peak" move at several families
+  // — mostly Neutral (low-chroma, key.s diverges most from chroma%) and the lift-bearing Success/
+  // Warning/Danger (#668's liftStop keying). Every entry stays >= the ruled AA floor 4.5.
   const FLOORS = {
     perceptual: [
-      ["Neutral", 5.8, 4.9],   // measured 5.89 / 4.98
+      ["Neutral", 5.9, 4.5],   // measured 5.90 / 4.53
       ["Primary", 6.0, 4.8],   // measured 6.08 / 4.87
       ["Secondary", 4.7, 6.1],   // measured 4.77 / 6.17
       ["Tertiary", 6.7, 4.8],   // measured 6.80 / 4.86
       ["Info", 5.7, 4.6],   // measured 5.80 / 4.64
-      ["Success", 6.1, 4.8],   // measured 6.18 / 4.87
-      ["Warning", 7.6, 4.6],   // measured 7.67 / 4.65
-      ["Danger", 7.1, 5.1],   // measured 7.17 / 5.13
+      ["Success", 6.1, 4.8],   // measured 6.18 / 4.86
+      ["Warning", 7.5, 4.6],   // measured 7.54 / 4.65
+      ["Danger", 7.1, 5.1],   // measured 7.12 / 5.14
       ["Data 1", 5.0, 5.5],   // measured 5.05 / 5.58
       ["Data 2", 5.4, 4.9],   // measured 5.40 / 4.99
       ["Data 3", 5.2, 5.1],   // measured 5.21 / 5.17
@@ -219,16 +224,16 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       ["Data 8", 5.2, 5.8],   // measured 5.24 / 5.88
     ],
     peak: [
-      ["Neutral", 6.2, 4.5],   // measured 6.26 / 4.51
+      ["Neutral", 6.2, 4.6],   // measured 6.28 / 4.70
       ["Primary", 6.4, 4.6],   // measured 6.44 / 4.63
       ["Secondary", 11.5, 15.1],   // measured 11.55 / 15.20
       ["Tertiary", 7.5, 5.5],   // measured 7.57 / 5.58
       ["Info", 5.0, 7.7],   // measured 5.07 / 7.72
-      ["Success", 7.2, 11.8],   // measured 7.21 / 11.87
-      ["Warning", 4.8, 7.4],   // measured 4.82 / 7.49
-      ["Danger", 7.1, 5.1],   // measured 7.17 / 5.13
+      ["Success", 7.1, 11.9],   // measured 7.16 / 11.94
+      ["Warning", 4.7, 7.5],   // measured 4.79 / 7.52
+      ["Danger", 7.1, 5.1],   // measured 7.12 / 5.14
       ["Data 1", 10.0, 6.7],   // measured 10.00 / 6.78
-      ["Data 2", 4.7, 5.5],   // measured 4.80 / 5.59
+      ["Data 2", 4.7, 5.5],   // measured 4.80 / 5.58
       ["Data 3", 5.2, 5.1],   // measured 5.25 / 5.16
       ["Data 4", 6.3, 8.7],   // measured 6.35 / 8.76
       ["Data 5", 12.8, 16.7],   // measured 12.82 / 16.79

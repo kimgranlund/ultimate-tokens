@@ -103,16 +103,21 @@ export function effHue(hue, hueSpace, chromaFrac = 1) {
   return hueSpace === "oklch" ? oklchToCam16Hue(hue, chromaFrac) : hue;
 }
 
-// hueAnchorFrac — the chroma fraction the ramp's VIVID CENTER stop (500) actually reaches: the nominal
-// chroma amplified by the peak damping multiplier (m at stop 500 = 1 + dampAmp/100, since the edge-damp
-// term vanishes there), capped at the gamut peak. Anchoring effHue here — not at the raw nominal chroma —
+// hueAnchorFrac — the chroma fraction the ramp's VIVID CENTER stop (500) actually reaches: the palette's
+// own nominal chroma, capped at the gamut peak. Anchoring effHue here — not at the raw un-anchored hue —
 // puts the OKLCH-hue calibration on the saturated swatches the user reads, so they land on the SET hue.
 // REQ-005 (0.3.0): `palette.chroma` is the resolved value paletteStops was called with — the absolute
 // group target on the group-resolution callers, the palette's own chroma on a direct engine call — so
 // the anchor always follows the SAME chroma the ramp itself is built from; no separate factor needed.
+//
+// No longer amplified by dampAmp (#681 U3, Q7): chromaEnvelope is exactly 1 at the anchor stop for EVERY
+// dampAmp value when lift is 0 (the anchor's own rendered chroma no longer moves with dampAmp — that
+// "mid-tone boost landing on the centre itself" was the 144%-of-source defect C6 exists to close), so the
+// chroma fraction the anchor ACTUALLY reaches is simply the nominal chroma, full stop. `controls` stays
+// in the signature for call-site compatibility.
 export function hueAnchorFrac(palette, controls) {
-  const nominal = (palette.chroma ?? 0) / 100;
-  return Math.min(1, nominal * (1 + (controls.dampAmp ?? 0) / 100));
+  void controls;
+  return Math.min(1, (palette.chroma ?? 0) / 100);
 }
 
 // solveOkhslHue — the OKHSL hue whose color at (s, l) reads back at `targetOklchHue`. The perceptual ramp
@@ -163,13 +168,68 @@ function solveCam16Hue(targetOklchHue, chroma, tone) {
 }
 
 // evenChroma — the even path's per-stop chroma from the gamut ceiling + a pre-computed intended target and
-// damping multiplier m: damp toward intended·m, floor toward chromaFloor% of the gamut but never past
-// intended, clamp in-gamut. Factored so the per-stop map AND the stop-500 hue anchor share ONE formula and
-// can't drift (the oklch-hue-anchor gate reads the exported hue, so any drift here trips it).
-function evenChroma(maxc, intended, m, chromaFloor) {
-  const damped = Math.min(intended * m, maxc);
+// the chromaEnvelope value `env` at this stop: damp toward intended·env, floor toward chromaFloor% of the
+// gamut but NEVER past intended (an envelope floor: intended is exactly the anchor's own chroma, env=1
+// there, so the floor can never lift a stop past the anchor — #681 U3), clamp in-gamut. A high-chroma
+// palette's `intended` is itself large relative to any stop's shrinking gamut ceiling, so
+// chromaFloor%·maxc stays well under `damped` there and the floor never binds — it only rescues the
+// LOW-chroma ramps chromaFloor exists for. Factored so the per-stop map AND the stop-500 hue anchor share
+// ONE formula and can't drift (the oklch-hue-anchor gate reads the exported hue, so any drift here trips
+// it).
+function evenChroma(maxc, intended, env, chromaFloor) {
+  const damped = Math.min(intended * env, maxc);
   const floorC = Math.min(((chromaFloor ?? 0) / 100) * maxc, intended);
   return Math.min(maxc, Math.max(damped, floorC));
+}
+
+// The ramp's centre stop, prime.DEFAULT's home. 500 for every palette today; U2 threads a palette's own
+// `anchor` stop through paletteStops/okhslStops's callers into chromaEnvelope's `anchorStop` parameter —
+// this module stays unaware of where that value comes from (U3 is built behind the parameter).
+const ANCHOR_STOP = 500;
+
+// chromaEnvelope — the single per-stop chroma multiplier shared by the "even" path (evenChroma) and the
+// OKHSL path (okhslStops): one function replaces what used to be two separately-typed copies of the same
+// damping formula ("m" in each, #647/#668). Exactly 1 at the anchor for EVERY damp/dampCurve/dampAmp/
+// dampBias combination WHEN lift is 0 — sd is 0 there by construction (liftStop is the identity at
+// lift 0), so uG is 0, the shoulder term vanishes (its own factor is uG), and the edge-damp term
+// vanishes too (its factor is uG) — no branch needed, and nothing here can accidentally lift the anchor
+// off 1 the way the old dampAmp term did (Q7: the old form's mid-tone "boost" landed ON the centre
+// itself, the 144%-of-source defect C6 exists to close).
+//
+// Position is read at the LIFTED stop (liftStop, #668) — never the nominal stop, and never a separately
+// re-derived "effective" stop (effStop, which additionally composes skew's gamma): a negative control
+// across the whole curve x skew x hue x vibrancy x mode grid (test/engine/tonal.mjs "skew-lift-okhsl"
+// (iii c), 10,080 cells) shows the measured ramp never rises for ANY skew/lift/hue/vibrancy/mode
+// combination under this exact form — sd measured against the RAW numeric anchorStop, not a lift-shifted
+// reading of it. Keying on liftStop this way covers the whole #668 mechanism; keying on effStop
+// additionally moves every skew-only palette — including the shipped Primary and Neutral, both skew -20
+// lift 0 — for a defect they do not have, moves the normative Panda/shadcn spec literals derived from
+// them, and is measurably WORSE at the job itself (4 of 10,080 cells still rise under it, worst
+// +0.006 L*, against 0 here — 668-report.md §4).
+//
+// KNOWN GAP, written up in .sdlc/questions/pif-u3.md rather than "fixed" here: sd is measured against
+// the RAW numeric anchorStop (e.g. 500), not against `liftStop(anchorStop, lift)`. A non-zero lift
+// displaces where the nominal anchor stop itself reads (liftStop(anchorStop, lift) != anchorStop
+// whenever the lift bump's weight there isn't zero — and it peaks, not vanishes, at the ramp's own
+// centre), so this function's return value at stop === anchorStop is NOT exactly 1 for lift != 0; it
+// can be off by a large fraction at strong lift. A second draft re-centred sd on the anchor's OWN
+// lifted reading (`liftStop(anchorStop, lift)`) specifically to close this — env(anchorStop) became
+// exactly 1 for every lift, unconditionally, and the corpus-wide "chroma above the anchor's" violation
+// count dropped substantially — but it reopened #668: 21 of the SAME 10,080 grid cells rose under it,
+// up to +0.21 L*, including a skew=0 case (hue 145, lift 40, stop 300->350), so the regression is not
+// only the skew/effStop mismatch already ruled out above. A third draft (the same re-centred sd,
+// normalized post hoc by dividing by its own value at the anchor) was WORSE (33 rises) and could still
+// return exactly 0 at the anchor instead of 1 when the raw formula's own floor clips there. This
+// function keeps the FIRST, exact-zero-upticks form because a visible color regression on shipped
+// ramps outweighs an anchor that is only exact at lift 0 — "Damping must never perturb tone" is this
+// unit's hard floor. Closing the gap for real needs lightness ALSO pinned at the nominal anchor stop
+// independent of lift (U2's "anchored branch"), which is out of this unit's lane.
+export function chromaEnvelope(stop, anchorStop, lift, controls) {
+  const sd = (liftStop(stop, lift) - anchorStop) / 450; // signed position, relative to the RAW numeric anchor
+  const uG = Math.abs(sd) ** (controls.dampCurve ?? 1.5);
+  const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(sd));
+  const shoulder = ((controls.dampAmp ?? 0) / 100) * 4 * uG * (1 - uG); // 0 at sd=0 AND |sd|=1 — shoulders only
+  return Math.max(0, 1 + shoulder - (controls.damp / 100) * sideW * uG);
 }
 
 // shape — remap normalized position p∈[0,1] (0=light end, 1=dark end) to q∈[0,1].
@@ -278,6 +338,12 @@ export function paletteStops(palette, controls, stops) {
     lmax: controls.lmax,
     tension: controls.tension,
   };
+  const lift = palette.lift ?? 0;
+  // chromaEnvelope per stop, computed ONCE (C7: exactly one call site) — the anchor stop is guaranteed
+  // present so the stop-500 hue/chroma SEED below and the per-stop map read the SAME value, never a
+  // second, independently-typed derivation (the "can't drift" property the old evenChroma comment named).
+  const envStops = stops.includes(ANCHOR_STOP) ? stops : [...stops, ANCHOR_STOP];
+  const envelopeAt = new Map(envStops.map((stop) => [stop, chromaEnvelope(stop, ANCHOR_STOP, lift, controls)]));
   // Resolve the BASE CAM16 hue once (flat across the ramp when hueShift=0 — the hue-stability default).
   // For an OKLCH-hue palette, SOLVE it in the RENDER space at the KEY stop (500)'s ACTUAL chroma + tone so
   // it exports back at the SET OKLCH hue — killing the Abney residual the peak-tone-anchored effHue proxy
@@ -289,7 +355,7 @@ export function paletteStops(palette, controls, stops) {
     const seedHue = effHue(palette.hue, "oklch", hueAnchorFrac(palette, controls)); // ~baseHue, only for the gamut basis
     const maxc500 = maxChromaInGamut(seedHue, tone500);
     const intended500 = (palette.chroma / 100) * (controls.relChroma ? maxc500 : peakC(seedHue).c);
-    const c500 = evenChroma(maxc500, intended500, 1 + (controls.dampAmp ?? 0) / 100, controls.chromaFloor); // s=0 ⇒ m = 1 + dampAmp/100
+    const c500 = evenChroma(maxc500, intended500, envelopeAt.get(ANCHOR_STOP), controls.chromaFloor);
     baseHue = solveCam16Hue(palette.hue, Math.max(c500, 8), tone500); // floor the solve chroma so the hue stays well-defined for near-greys
   } else {
     baseHue = palette.hue;
@@ -306,32 +372,20 @@ export function paletteStops(palette, controls, stops) {
     const dir = sameDir ? -Math.abs(s) : s;
     const hue = (((baseHue + shift * dir) % 360) + 360) % 360;
     const maxc = maxChromaInGamut(hue, tone); // gamut ceiling at the (rotated) hue
-    // Differential damping curve — a per-stop chroma multiplier m(stop):
-    //   • falloff (dampCurve, γ) shapes WHERE damping bites: low = broad (into the
-    //     mids), high = confined to the extreme ends.
-    //   • amplify (dampAmp) boosts the mids toward the ceiling (m can exceed 1);
-    //     it peaks at stop 500 and tapers to 0 at the ends, so it never fights the
-    //     edge damp. The min(·, maxc) clamp keeps every result in-gamut.
-    //   • bias (dampBias) tilts damping toward the dark (>0) or light (<0) end.
-    // Defaults γ=1.5, amp=0, bias=0 reproduce the legacy 1 − damp·u^1.5 curve.
-    const uG = Math.abs(s) ** (controls.dampCurve ?? 1.5);
-    const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(s));
-    const m = Math.max(
-      0,
-      1 + ((controls.dampAmp ?? 0) / 100) * (1 - uG) - (controls.damp / 100) * sideW * uG,
-    );
-    // Chroma basis (controls.relChroma): default scales the base-hue PEAK target by the damping m and
-    // caps at the per-stop ceiling — the chroma is a constant target shaped by damping, then clamped.
-    // Relative mode scales EACH stop by its OWN gamut ceiling, so every hue fills the same fraction of
-    // its gamut envelope and palettes read as equally saturated regardless of hue. min(·, maxc) keeps
-    // it in-gamut either way (m can exceed 1 via dampAmp).
+    // Chroma basis (controls.relChroma): default scales the base-hue PEAK target by chromaEnvelope's
+    // multiplier and caps at the per-stop ceiling — the chroma is a constant target shaped by the
+    // envelope, then clamped. Relative mode scales EACH stop by its OWN gamut ceiling, so every hue
+    // fills the same fraction of its gamut envelope and palettes read as equally saturated regardless
+    // of hue. min(·, maxc) keeps it in-gamut either way.
     const intended = controls.relChroma ? (palette.chroma / 100) * maxc : target; // un-damped chroma for this stop
-    // evenChroma: damp toward intended·m, then apply the chroma FLOOR — the edge damping starves the
-    // light/dark ends, so for a LOW-chroma palette the light stops collapse to near-white (the "dead
-    // zone"); the floor lifts each stop back toward INTENDED, up to chromaFloor% of the stop's gamut but
-    // NEVER above intended (a muted palette stays muted, a neutral stays neutral, saturated stops already
-    // clamp at/near maxc so the floor never binds). Shared with the stop-500 hue anchor so they can't drift.
-    const chroma = evenChroma(maxc, intended, m, controls.chromaFloor);
+    // evenChroma: scale intended by chromaEnvelope's multiplier (exactly 1 at ANCHOR_STOP, by
+    // construction — the edge damping starves the light/dark ends, never the anchor), then apply the
+    // chroma FLOOR on the envelope itself — for a LOW-chroma palette the light stops collapse to near-
+    // white (the "dead zone"); the floor lifts each stop's envelope back toward 1, up to chromaFloor%,
+    // NEVER past the anchor's own envelope of 1 (a muted palette stays muted, a neutral stays neutral,
+    // saturated stops already clamp at/near maxc so the floor never binds). Shared with the stop-500 hue
+    // anchor so they can't drift.
+    const chroma = evenChroma(maxc, intended, envelopeAt.get(stop), controls.chromaFloor);
     // Emit via the engine at the per-stop (hue, chroma, tone): in-gamut, hits the
     // tone, holds the SPECIFIED hue (constant when hueShift=0, else edge-rotated).
     const out = hctToRgb(hue, chroma, tone);
@@ -396,16 +450,31 @@ function okhslStops(palette, controls, stops, mode) {
     const peakL = se <= 500 ? lerp(lLight, cuspL, (se - 50) / 450) : lerp(cuspL, lDark, (se - 500) / 450);
     return lerp(evenL, peakL, t);
   };
+  // keyS — REQ-052, the same "key colour" prime.mjs reads (src/engine/prime.mjs): the palette's own
+  // chroma/hue rendered at the hue's CUSP tone (baseHue, keyChroma, pk.tone), measured back through
+  // OKHSL. This is the ramp's saturation BASIS at the anchor stop now, in place of the old "chroma% of
+  // the sRGB gamut" fraction (palette.chroma/100 read as if it were already an OKHSL saturation — two
+  // quantities that don't coincide, e.g. Info: chroma% 0.400 vs key.s 0.289). Every other stop scales
+  // this by chromaEnvelope below, which is exactly 1 at the anchor, so the anchor stop always renders at
+  // 100% of the key colour's own saturation — never "chroma% of gamut" damped toward a multiplier.
+  const keyChroma = ((palette.chroma ?? 0) / 100) * pk.c;
+  const keyS = rgbToOkhsl(hctToRgb(baseHue, keyChroma, pk.tone).rgb).s;
+  // chromaEnvelope per stop, computed ONCE (C7: exactly one call site) — shared by the stop-500 hue seed
+  // below and the per-stop map, so the two can never drift apart (#647's original reason for factoring
+  // the stop-500 read out of the per-stop formula in the first place).
+  const lift = palette.lift ?? 0;
+  const envStops = stops.includes(ANCHOR_STOP) ? stops : [...stops, ANCHOR_STOP];
+  const envelopeAt = new Map(envStops.map((stop) => [stop, chromaEnvelope(stop, ANCHOR_STOP, lift, controls)]));
   // The palette's hue in OKHSL space — constant across the ramp when hueShift=0. For an OKLCH-hue palette,
   // SOLVE it directly so the KEY stop (500) reads back at the SET OKLCH hue, anchored at that stop's OWN
   // saturation + lightness in the render space (kills the Abney drift the CAM16 proxy left — worst in the
   // blues, ~6°). For a CAM16-hue palette the hue IS a CAM16 hue, so carry baseHue through OKHSL as before.
   let hOk;
   if (controls.hueSpace === "oklch") {
-    const s500 = Math.min(1, Math.max(0, (palette.chroma / 100) * (1 + (controls.dampAmp ?? 0) / 100))); // sp=0 ⇒ m = 1 + dampAmp/100
     const v = palette.cuspPull ?? controls.vibrancy ?? 0;
     const t500 = mode === "peak" ? 1 : Math.max(0, Math.min(1, v / 100));
     const l500 = lightnessAt(500, t500);                           // stop-500 lightness (even↔cusp blend, warped)
+    const s500 = Math.min(1, Math.max(0, keyS * envelopeAt.get(ANCHOR_STOP)));
     hOk = solveOkhslHue(palette.hue, s500, l500);
   } else {
     hOk = rgbToOkhsl(hctToRgb(baseHue, pk.c, pk.tone).rgb).h;
@@ -425,10 +494,9 @@ function okhslStops(palette, controls, stops, mode) {
     const sp = (stop - 500) / 450;
     const dir = sameDir ? -Math.abs(sp) : sp;
     const hue = (((hOk + shift * dir) % 360) + 360) % 360;
-    const uG = Math.abs(sp) ** (controls.dampCurve ?? 1.5);
-    const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(sp));
-    const m = Math.max(0, 1 + ((controls.dampAmp ?? 0) / 100) * (1 - uG) - (controls.damp / 100) * sideW * uG);
-    const s = Math.min(1, Math.max(0, (palette.chroma / 100) * m));
+    // saturation = the key colour's own OKHSL s (keyS), shaped by chromaEnvelope — the SAME envelope the
+    // even path uses (so damp/dampCurve/dampAmp/dampBias stay meaningful here too), clamped to [0,1].
+    const s = Math.min(1, Math.max(0, keyS * envelopeAt.get(stop)));
     const rgb = okhslToRgb(hue, s, l);
     const tone = lstarFromRgb(rgb);                                 // report ACTUAL L* (for graphs / roles)
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
