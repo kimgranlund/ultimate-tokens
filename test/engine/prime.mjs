@@ -136,21 +136,21 @@ for (const p of DEFAULTS) {
     }
   }
 }
-// GAMUT_SWEEP — the reviewer's own reproduction sweep (review pass 1, S3): hue 0..359 step 1 x
-// hueShift {0,±10,±20} x skew {0,±40} x both hue spaces, run once and shared by gate (c) (all five
-// chroma values, including 0) and the `gamut-ceiling` gate below (chroma {25,50,75,100} only — chroma 0
-// is neutral, `peakC.c` 0, trivially always in gamut, and the reviewer's own 302,400-rung denominator
-// excludes it: 360 x 4 x 5 x 3 x 2 x 7 rungs = 302,400).
-const GAMUT_SWEEP = { checked: 0, violations: [], ceilingChecked: 0, ceilingViolations: 0 };
+// GAMUT_SWEEP — gate (c)'s own broad correctness sweep (review pass 1, S3), independent of the
+// `gamut-ceiling` gate below (review pass 3 finding: this used to run at hue step 1, purely to match
+// what was believed to be the reviewer's own reproduction denominator for the ceiling gate — that
+// premise was wrong (their sweep uses 4 hueShifts x 5 chromas, this one 5 x 4; the 302,400 totals
+// coincided by accident), so gate (c) reverts to its review-pass-1-approved, cheaper step-3 resolution;
+// `gamut-ceiling` below now runs its OWN separately-scaled sweep).
+const GAMUT_SWEEP = { checked: 0, violations: [] };
 for (const hueSpace of SPACES) {
-  for (let hue = 0; hue < 360; hue += 1) {
+  for (let hue = 0; hue < 360; hue += 3) {
     for (const chroma of [0, 25, 50, 75, 100]) {
       for (const hueShift of [0, 10, -10, 20, -20]) {
         for (const skew of [0, 40, -40]) {
           GAMUT_SWEEP.checked++;
           const sw = primeSwatches({ name: `h${hue}`, hue, chroma, hueShift, skew }, { hueSpace });
           for (const s of sw) {
-            if (chroma > 0) { GAMUT_SWEEP.ceilingChecked++; if (!s.inGamut) GAMUT_SWEEP.ceilingViolations++; }
             if (!s.inGamut) GAMUT_SWEEP.violations.push(`hue${hue}/c${chroma}/hueShift${hueShift}/skew${skew}/${hueSpace} ${s.step} (hex ${s.hex})`);
           }
         }
@@ -199,23 +199,78 @@ for (let i = 0; i < DET_CASES.length; i++) if (detBefore[i] !== detAfter[i]) det
 console.log(`  determinism (hct.js shared-cache-poisoning interleave): ${detMismatch}/${DET_CASES.length} palettes shifted hex by call order`);
 if (detMismatch > 0) FAIL("c", `${detMismatch}/${DET_CASES.length} palettes returned a different hex on the second call after an hct.js shared-cache-poisoning sweep — primeSwatches still depends on shared cache state`);
 
-// ── (gamut-ceiling) owner ruling, 2026-09-18 (#681 U6 review pass 1 fold): a fresh-context reviewer's
-//    own reproduction of GAMUT_SWEEP's exact parameters (hue 0..359 step 1 x chroma {25,50,75,100} x
-//    hueShift {0,±10,±20} x skew {0,±40} x both hue spaces = 43,200 palettes x 7 rungs = 302,400 rungs,
-//    chroma 0 excluded since it is neutral and trivially always in gamut) found 1,288/302,400 rungs
-//    out of gamut on the head BEFORE the S3 determinism fix (the shared, memoized `maxChromaInGamut`
-//    cache in hct.js producing stray `inGamut:false` on cache-bucket collisions — see the `localMaxChroma`
-//    comment in src/engine/prime.mjs). The owner accepted that 1,288 count as shippable in principle and
-//    asked for a numeric ceiling gate pinned to what THIS head actually measures, not a hardcoded 1,288.
-//    S3's fix (already shipped, required regardless to close the REQ-043 determinism break) turns out to
-//    eliminate the out-of-gamut rungs entirely: PINNED_GAMUT_CEILING below is measured directly from
-//    GAMUT_SWEEP (the same sweep gate (c) just ran, restricted to chroma>0 to match the reviewer's
-//    302,400-rung denominator exactly) on this commit, and is 0 — not a re-assertion of the owner's
-//    1,288 figure, which described the pre-fix head, not this one.
+// ── (gamut-ceiling) owner ruling, 2026-09-18 (#681 U6 review pass 1 fold), corrected review pass 3:
+//    a fresh-context reviewer originally found ~1,288/302,400 rungs out of gamut on the head BEFORE the
+//    S3 determinism fix, and the owner accepted that as shippable in principle, asking for a numeric
+//    ceiling gate pinned to what THIS head actually measures. Review pass 3 found the FIRST version of
+//    this gate could never fail: its `chroma` is `Math.min(cPrime, cap)` where `cap` is itself a value
+//    `localMaxChroma`'s own binary search JUST confirmed in gamut, so "chroma <= cap is in gamut" is
+//    guaranteed by the SAME monotonicity assumption the binary search itself already relies on — a
+//    mathematical tautology given the current construction, not a fact this test can discover, and it
+//    was riding on gate (c)'s own sweep with no negative control of its own (a 40s cost for zero
+//    additional discriminating power beyond a 1-case probe). Corrected: `vulnPrimeSwatches` below
+//    reimplements `primeSwatches`'s exact chroma-hold construction but using hct.js's SHARED,
+//    `.toFixed(2)`-truncated `peakC`/`maxChromaInGamut` in place of prime.mjs's private, exact-keyed
+//    `localPeakC`/`localMaxChroma` — i.e. the actual pre-S3/pre-S-anchor construction, which CAN clip a
+//    fraction of a chroma unit past the true boundary on a cache-bucket collision, a real (non-
+//    tautological) failure mode. Both constructions run over the SAME dedicated sweep (this gate's own,
+//    separate from GAMUT_SWEEP — hue step 2 x chroma {25,50,75,100} x hueShift {0,±10,±20} x
+//    skew {0,±40} x both hue spaces = 180 x 4 x 5 x 3 x 2 x 7 rungs = 151,200 rungs; these are THIS
+//    gate's own parameters, not a reproduction of the reviewer's — review pass 3 correction #2: an
+//    earlier version of this comment credited "the reviewer's own sweep" while actually using different
+//    axis counts (4 hueShifts x 5 chromas for theirs, 5 x 4 here) that only coincidentally summed to the
+//    same 302,400 denominator; measured independently on THESE parameters, not copied). Measured on
+//    this commit: 0/151,200 real violations (`PINNED_GAMUT_CEILING`), 89/151,200 on the vulnerable
+//    reconstruction — nonzero and comfortably above noise, proving the check would have caught the
+//    regression this fixes. At full hue-step-1 resolution (302,400 rungs, ~47s, not run by default) the
+//    vulnerable count is 1,549 — cited here as a cross-check, independently re-measured on this head,
+//    not copied from the reviewer's own number (which used their different axis composition).
+const CEILING_PARAMS = { hueStep: 2, chromas: [25, 50, 75, 100], hueShifts: [0, 10, -10, 20, -20], skews: [0, 40, -40] };
+function vulnPrimeSwatches(palette, controls) {
+  const baseHue = effHue(palette.hue, controls.hueSpace, (palette.chroma ?? 0) / 100);
+  const pk = peakC(baseHue); // SHARED, truncated-key peakC — the pre-review-pass-2 anchor
+  const lPrime = pk.tone;
+  const keyChroma = ((palette.chroma ?? 0) / 100) * pk.c;
+  const { up, down } = primeSteps(lPrime);
+  const g = 3 ** ((palette.skew ?? 0) / 100);
+  const pc = (palette.primeChroma ?? controls.primeChroma ?? 100) / 100;
+  const cPrime = Math.max(0, keyChroma * pc);
+  const hOk = baseHue;
+  const shift = palette.hueShift ?? 0;
+  const sameDir = palette.hueSameDir === true;
+  return PRIME_STEPS.map((step, i) => {
+    const t = (i - 3) / 3;
+    const absT = Math.abs(t);
+    const w = i < 3 ? absT ** (1 / g) : absT ** g;
+    const l = i < 3 ? lPrime + 3 * up * w : lPrime - 3 * down * w;
+    const dir = sameDir ? -absT : t;
+    const hue = (((hOk + shift * dir) % 360) + 360) % 360;
+    const cap = maxChromaInGamut(hue, l); // SHARED, truncated-key maxChromaInGamut — the pre-S3 rung cap
+    const chroma = Math.min(cPrime, cap);
+    const { inGamut } = hctToRgb(hue, chroma, l);
+    return { inGamut };
+  });
+}
+const CEILING = { checked: 0, realViolations: 0, vulnViolations: 0 };
+for (const hueSpace of SPACES) {
+  for (let hue = 0; hue < 360; hue += CEILING_PARAMS.hueStep) {
+    for (const chroma of CEILING_PARAMS.chromas) {
+      for (const hueShift of CEILING_PARAMS.hueShifts) {
+        for (const skew of CEILING_PARAMS.skews) {
+          CEILING.checked++;
+          const p = { name: `c${hue}`, hue, chroma, hueShift, skew };
+          const ctl = { hueSpace };
+          for (const s of primeSwatches(p, ctl)) if (!s.inGamut) CEILING.realViolations++;
+          for (const s of vulnPrimeSwatches(p, ctl)) if (!s.inGamut) CEILING.vulnViolations++;
+        }
+      }
+    }
+  }
+}
 const PINNED_GAMUT_CEILING = 0;
-if (GAMUT_SWEEP.ceilingChecked !== 302400) FAIL("gamut-ceiling", `expected exactly 302400 chroma>0 rungs (reviewer's own denominator) — measured ${GAMUT_SWEEP.ceilingChecked}, sweep parameters drifted`);
-if (GAMUT_SWEEP.ceilingViolations > PINNED_GAMUT_CEILING) FAIL("gamut-ceiling", `${GAMUT_SWEEP.ceilingViolations}/${GAMUT_SWEEP.ceilingChecked} out-of-gamut rungs exceeds the pinned ceiling of ${PINNED_GAMUT_CEILING} (owner-accepted precedent: 1288/302400 on the pre-S3 head)`);
-console.log(`  gamut-ceiling: ${GAMUT_SWEEP.ceilingViolations}/${GAMUT_SWEEP.ceilingChecked} out-of-gamut rungs (pinned ceiling ${PINNED_GAMUT_CEILING})`);
+console.log(`  gamut-ceiling: ${CEILING.realViolations}/${CEILING.checked * 7} real out-of-gamut rungs (pinned ceiling ${PINNED_GAMUT_CEILING}); negative control (vulnerable shared-cache construction, same sweep): ${CEILING.vulnViolations}/${CEILING.checked * 7}`);
+if (CEILING.realViolations > PINNED_GAMUT_CEILING) FAIL("gamut-ceiling", `${CEILING.realViolations}/${CEILING.checked * 7} out-of-gamut rungs exceeds the pinned ceiling of ${PINNED_GAMUT_CEILING}`);
+if (CEILING.vulnViolations === 0) FAIL("gamut-ceiling", "negative control: the vulnerable shared-cache reconstruction measured 0 violations on this sweep — expected a nonzero count (this gate would not discriminate a regression back to the shared cache)");
 
 // ── (d) Q8/Q9 (2026-09-18, ticket #681 U6): the ladder spans a FULL 6 x STEP_L in CIE L* at every hue
 //        and chroma UNLESS a bound is closer than STEP_L*3 on either side, in which case BOTH sides
