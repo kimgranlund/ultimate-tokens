@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Unit | U1 (M) anchor field + `prime.DEFAULT` byte-exact, plan `preset-intent-fidelity` (ticket #681) |
-| Branch | unit/pif-u1-anchor @ FOLD_HEAD_PLACEHOLDER (post FIX-FIRST fold; see below) |
+| Branch | unit/pif-u1-anchor @ d9f375b7d8b5f2e96d2ae40452fc2ce4e8658e24 (post FIX-FIRST fold; see below) |
 | Base | bf2aaf659fde4db3bddaed8dfa23e2f485ab2c46 (`git merge-base HEAD origin/main`, post-rebase; unchanged by the fold — no further rebase happened) |
 | Grade | l3 |
 | Ran (post-fold) | `npm test` ✅ (48/48) · `node scripts/audit-citations.mjs` ✅ (exit 0, 0 STALE) · `node test/repo/branding.mjs` ✅ (`branding: clean (446 files scanned)`) · `git status --short` ✅ (empty after every run) |
