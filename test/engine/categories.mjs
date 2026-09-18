@@ -11,10 +11,12 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { typeScale, DEFAULT_TYPE, siblingWeightDefaults, bodyClassSiblingDefaults, BODY_CLASS_VOICES, resolvedFontFor } from "../../src/engine/type.mjs";
-import { hydrate } from "../../src/ui/persist.js";
+import { hydrate, DOMAINS } from "../../src/ui/persist.js";
 import { paletteGroup, resolvePaletteGroups } from "../../src/ui/model.mjs";
 import { rampChromaOf } from "../../src/engine/resolve.mjs";
-import { paletteStops, STOPS } from "../../src/engine/tonal.js";
+import { paletteStops, STOPS, toneAt, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
+import { lstarFromRgb } from "../../src/engine/hct.js";
+import { oklchToRgb } from "../../src/engine/okhsl.js";
 import { buildCategory } from "../../scripts/gen-categories.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -528,8 +530,113 @@ for (const slug of CATS) {
 const noType = hydrate({ palettes: [{ name: "x", hue: 200, chroma: 60, on: true }] });
 if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL("fallback", "un-typed palette lost the product default");
 
+// ── lift-anchor (#648): the prime-anchor INVERSE in scripts/gen-categories.mjs must actually hit its
+//    target. A preset anchors its prime (stop 550) on the sampled source color by storing a `lift`.
+//    That inverse used to be the algebra of the RETIRED additive bump, `sourceL* - toneAt(550,0,0)`,
+//    which is simply wrong now that lift DISPLACES the stop (#648) — it missed by ~9 L* at lift +40
+//    and ~12 at -40. The generator now SOLVES the inverse, and this gate is what keeps it solved: it
+//    re-derives each built palette's target from the spec and checks the stored integer reproduces it.
+//    Joined on the palette's stored colorName + key-color OKLCH back to the spec's HEX, because the
+//    HEX is what the generator fits against. OKLCH alone is NOT a unique key: 7 travel swatches share
+//    an oklch string with a different hex, and joining on it alone picks the wrong target and reports
+//    a generator fault that isn't there. Name + oklch is unique in all 8 specs.
+{
+  const TOL = 1.5;                                   // L* the review fixed as "anchored"
+  const LIFT_MIN = DOMAINS.palette.lift.min, LIFT_MAX = DOMAINS.palette.lift.max; // persist.js's own domain, imported
+  const pt = (lift) => toneAt(550, 0, lift, DEFAULT_CONTROLS);
+  const BAND_LO = pt(LIFT_MIN), BAND_HI = pt(LIFT_MAX);
+  const r4 = (v) => Number(Number(v).toFixed(4));
+  const hexToRgb = (h) => { const x = String(h).replace("#", ""); return [0, 2, 4].map((i) => parseInt(x.slice(i, i + 2), 16)); };
+  const clean = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();   // the generator's own normalisation
+  const SAMPLED = new Set(["primary", "primary-muted", "secondary", "secondary-muted", "tertiary", "tertiary-muted"]);
+  let checked = 0, outOfBand = 0;
+  // A spec whose swatch `hex` and `oklch` describe DIFFERENT colors is a pre-existing data defect,
+  // not a lift defect: the generator fits the hex while the preset stores the oklch, so the two
+  // disagree downstream. The expectation is PER SPEC and BY NAME, not a bare total, and it counts
+  // ANY drift above float noise rather than only drift past this gate's own 1.5 L* tolerance. A bare
+  // total had two holes: sub-tolerance drift in a clean spec went unseen, and "travel repaired while
+  // another spec drifts" still summed to one. Named per-spec counts fail in BOTH directions — a new
+  // drifted spec raises its own entry, a repaired travel lowers travel's — and each says which spec.
+  // travel is tracked as #656; repairing it must bring its entry to 0 in the same change.
+  const DRIFT_EPS = 0.01;        // below this is 8-bit/rounding noise, not authored disagreement
+  const EXPECTED_DRIFT = {
+    architecture: { count: 0, max: 0 },
+    cuisine:      { count: 0, max: 0 },
+    film:         { count: 0, max: 0 },
+    literature:   { count: 0, max: 0 },
+    music:        { count: 0, max: 0 },
+    nature:       { count: 0, max: 0 },
+    // authored 2-decimal oklch; immaterial to the fit (worst 0.88 L*, well inside TOL) but real
+    brands:       { count: 7, max: 1.0 },
+    // #656: hex and oklch describe different colors across nearly the whole spec
+    travel:       { count: 287, max: 7.5 },
+  };
+  for (const slug of CATS) if (!EXPECTED_DRIFT[slug]) FAIL("lift-anchor", `spec "${slug}" has no EXPECTED_DRIFT entry — a new category must declare whether its hex and oklch agree`);
+  for (const slug of CATS) {
+    const doc = JSON.parse(readFileSync(join(SPECDIR, `${slug}.json`), "utf8"));
+    // spec swatch: r4(oklch) -> hex, the exact key `palette()` stores on the built palette.
+    const byKey = new Map();
+    let specDrift = 0, specSwatches = 0, driftMax = 0;
+    JSON.stringify(doc, (k, v) => {
+      if (v && typeof v === "object" && v.hex && v.oklch) {
+        const ok = String(v.oklch).trim().split(/\s+/).map(Number);
+        byKey.set(clean(v.name) + "|" + ok.map(r4).join(","), String(v.hex).toUpperCase());
+        specSwatches++;
+        const dd = Math.abs(lstarFromRgb(hexToRgb(v.hex)) - lstarFromRgb(oklchToRgb(ok[0], ok[1], ok[2])));
+        if (dd > DRIFT_EPS) specDrift++;
+        if (dd > driftMax) driftMax = dd;
+      }
+      return v;
+    });
+    const exp = EXPECTED_DRIFT[slug];
+    if (exp) {
+      if (specDrift !== exp.count)
+        FAIL("lift-anchor", `spec "${slug}": ${specDrift} of ${specSwatches} swatches have hex/oklch disagreeing by more than ${DRIFT_EPS} L*, expected ${exp.count}. ${specDrift > exp.count ? "New drift is a data regression" : "Repaired drift should lower this expectation in the same change"} (travel is #656).`);
+      if (driftMax > exp.max)
+        FAIL("lift-anchor", `spec "${slug}": worst hex/oklch disagreement is ${driftMax.toFixed(2)} L*, above the ${exp.max} L* this spec is allowed — the drift got worse even if the count did not.`);
+    }
+    // The `direct` pass-through (a real product's own authored settings — 5 of the 7 brands presets)
+    // never goes through the generator's palette(), so its lift is authored, not fitted, and this gate
+    // has no claim on it. buildCategory passes those objects through VERBATIM, so identity is an exact
+    // test — no name matching, and no risk of silently skipping a palette that SHOULD have been fitted.
+    const directPalettes = new Set();
+    for (const v of doc.volumes || []) for (const sp of v.palettes || [])
+      if (Array.isArray(sp.palettes) && sp.palettes.length) for (const dp of sp.palettes) directPalettes.add(dp);
+    for (const preset of buildCategory(doc).presets) {
+      for (const q of preset.palettes) {
+        if (directPalettes.has(q)) continue;
+        if (!SAMPLED.has(q.name) || !q.keyColors || !q.keyColors[0]) continue;
+        const hex = byKey.get(q.colorName + "|" + q.keyColors[0].oklch.join(","));
+        if (!hex) { FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: key color ${q.colorName} ${q.keyColors[0].oklch} matches no spec swatch — the join broke`); continue; }
+        const target = lstarFromRgb(hexToRgb(hex));
+        if (!(q.lift >= LIFT_MIN && q.lift <= LIFT_MAX && Number.isInteger(q.lift)))
+          FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: lift ${q.lift} is not an integer in [${LIFT_MIN}, ${LIFT_MAX}]`);
+        if (target < BAND_LO || target > BAND_HI) {
+          // Unreachable: the source is lighter or darker than lift can carry stop 550. The only
+          // correct answer is the domain edge on the right side — assert THAT, don't excuse it.
+          outOfBand++;
+          const want = target < BAND_LO ? LIFT_MIN : LIFT_MAX;
+          if (q.lift !== want) FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: source L* ${target.toFixed(2)} is outside the reachable band ${BAND_LO.toFixed(2)}..${BAND_HI.toFixed(2)}, so lift must clamp to ${want}, got ${q.lift}`);
+          continue;
+        }
+        checked++;
+        const err = Math.abs(pt(q.lift) - target);
+        if (err > TOL) FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: prime lands at ${pt(q.lift).toFixed(2)} L* but the source is ${target.toFixed(2)} (off by ${err.toFixed(2)}, tol ${TOL}) — stored lift ${q.lift}`);
+        // and it must be the BEST integer, not merely a close one: a systematically biased inverse
+        // (the additive-algebra one was biased) can sit inside 1.5 L* and still be wrong everywhere.
+        let best = q.lift, bestErr = err;
+        for (let k = LIFT_MIN; k <= LIFT_MAX; k++) { const e = Math.abs(pt(k) - target); if (e < bestErr - 1e-9) { best = k; bestErr = e; } }
+        if (best !== q.lift) FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: stored lift ${q.lift} (err ${err.toFixed(3)}) is not the best integer — ${best} gives ${bestErr.toFixed(3)}`);
+      }
+    }
+  }
+  if (checked < 1500) FAIL("lift-anchor", `only ${checked} in-band sampled palettes compared — the join or the corpus shrank`);
+  if (!fails.some((f) => f.startsWith("lift-anchor:")))
+    console.log(`  (lift-anchor: ${checked} in-band sampled primes anchored within ${TOL} L*, ${outOfBand} clamped to the lift domain edge)`);
+}
+
 // ── REPORT ──
-for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback"]) {
+for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback", "lift-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

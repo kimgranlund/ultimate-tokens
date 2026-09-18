@@ -75,22 +75,36 @@ exp:       k = lerp(0.4,5,ten); q = (e^(k p) - 1)/(e^k - 1)
 ## 4. `toneAt` — tone per stop
 
 ```
+liftStop(stop, lift):                    // #648: lift DISPLACES the stop, it does not add L*
+  if lift == 0: return stop
+  A = clamp(lift * 6, -243.51, +243.51)  // stops of displacement; 6 per unit of lift
+  w = 0.5 * (1 + cos(π * (stop - 500) / 450))   // 1 at 500, 0 at 050/950
+  return stop - A * w                    // lift>0 -> read a LIGHTER stop -> lighter mids
+
 toneAt(stop, skew, lift):
-  p = (stop - 50) / 900                  // 0 at 050 (light) .. 1 at 950 (dark)
+  s = liftStop(stop, lift)
+  p = (s - 50) / 900                     // 0 at 050 (light) .. 1 at 950 (dark)
   g = 3 ^ (skew/100)                     // skew>0 -> gamma>1 -> lighter mids (peak drifts light)
   p = p ^ g
   q = shape(p)
   t = lmax - (lmax - lmin) * q
-  if lift:                               // additive bump centered on 500, 0 at 050/950
-    w = 0.5 * (1 + cos(π * (stop - 500) / 450))
-    t += lift * w
-  return clamp(t, lmin, lmax)
+  return clamp(t, lmin, lmax)            // a no-op safety net: q∈[0,1] keeps t in range already
 ```
 
 - **skew** warps the tone distribution via a gamma on `p`. Positive skew lightens the
   mid-tones (the visual chroma peak drifts toward lighter stops).
-- **lift** adds a cosine-weighted L\* bump centered on stop 500, tapering to 0 at the ends.
-  Used to nudge a palette's mid lightness (e.g. Warning gets `lift +15`).
+- **lift** DISPLACES the stop along the ramp and reads the unchanged curve there, by
+  `A · w(stop)` stops where `A = clamp(lift × 6, ±243.51)` and `w` is a cosine weight that
+  is 1 at stop 500 and 0 at both ends. It used to ADD a cosine-weighted L\* bump; that form
+  ignored the curve's local slope, so on a flat light end it reversed the ramp and the final
+  clamp flattened stops 050–300 into six identical swatches (#648). Displacing the stop is
+  monotone for any lift by one closed-form bound, `|A| · π/900 < 1`, which holds for every
+  curve, skew, tension, `lmin` and `lmax`. Still used to nudge a palette's mid lightness
+  (e.g. Warning gets `lift +15`), but because the shift rides the curve, a given lift moves
+  the tone furthest where the ramp is STEEPEST — its effect in L\* is not a fixed amount, and
+  it is attenuated relative to the old additive bump (Warning's +15 moves the stop-500 tone
+  by +10.49 L\*, not +15.00). **Even path only**: the `perceptual`/`peak` distributions ignore
+  skew and lift entirely until #647 wires them to `liftStop`.
 
 ## 5. Chroma targeting and edge damping
 

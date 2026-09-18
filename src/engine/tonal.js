@@ -180,20 +180,72 @@ function shape(p, curve, ten) {
   }
 }
 
+// ── Lift: a cosine bump applied in STOP space ────────────────────────────────
+// `lift` lightens (>0) or darkens (<0) a palette's mid stops. It used to be an
+// ADDITIVE bump in TONE space (t += lift·w). That form ignores the base curve's
+// local slope, so wherever the curve is flat — the light end under logistic at
+// tension 0, flattened further by a positive skew — the bump's own slope won.
+// The default Warning palette (skew 40, lift 15) drove t ABOVE lmax at stops
+// 200-300 AND reversed the ramp at 100-150; the trailing clamp then flattened
+// 050-300 into six identical #FFFFFF stops (#648).
+//
+// The fix applies the bump as a DISPLACEMENT OF THE STOP, then evaluates the
+// unchanged, already-monotone tone curve there: t = base(stop − A·w(stop)).
+// Because base(·) is non-increasing, the composition is monotone as soon as the
+// displaced stop is strictly INCREASING in `stop`, i.e. d/dstop[A·w] < 1. With
+//   w(stop) = ½(1 + cos(π(stop−500)/450))   ⇒   |w'| ≤ π/900
+// that is one closed-form inequality, |A|·π/900 < 1, holding for EVERY curve,
+// skew, tension, lmin and lmax — no per-curve tuning and nothing to re-verify
+// when a curve is added. LIFT_SHIFT_MAX caps |A| at a safety factor of that
+// bound, so the guarantee survives even a lift outside its schema domain.
+const BUMP_SLOPE_MAX = Math.PI / 900;     // peak |dw/dstop| of the cosine bump
+const LIFT_SAFETY = 0.85;                 // keep d/dstop[A·w] <= this, always < 1
+export const LIFT_SHIFT_MAX = LIFT_SAFETY / BUMP_SLOPE_MAX; // ≈ 243.5 stops
+// Stops of displacement per unit of lift. No gain can reproduce the old additive
+// bump's AMPLITUDE — that amplitude is exactly what broke monotonicity, so some
+// attenuation is forced — and `lift` is load-bearing well beyond the Warning
+// default: ~90% of the curated category presets carry a non-zero lift, which is
+// how a preset anchors its ramp on a sampled key color. 6 is therefore chosen as
+// the largest gain that still keeps the guarantee comfortably inside its bound:
+// at the extreme of lift's own domain (persist.js clamps lift to ±40) it asks for
+// 6·40 = 240 stops, under LIFT_SHIFT_MAX, so the cap NEVER binds in-domain and
+// lift stays linear across its whole range, while d/dstop[A·w] peaks at 0.838 —
+// short enough of 1 that the ramp never stalls (the whole 3,780-palette preset
+// corpus renders with no duplicate swatch and a >=0.55 L* gap at every step).
+// The cap is a pure out-of-domain safety net, not something in-domain relies on.
+export const LIFT_GAIN = 6;
+
+// liftStop — the stop `lift` displaces `stop` to. Pure in the single `stop`
+// value (no neighbour lookup, no whole-ramp state), so the 19-stop display ramp
+// and the 25-stop EXPORT_STOPS ramp agree at every shared stop. w is 0 at 050
+// and 950, so both endpoints are fixed exactly and the ends keep their lmax/lmin.
+// Factored out rather than inlined so that #647, which wires skew/lift into the
+// OKHSL path (okhslStops is also keyed off the stop NUMBER), reuses THIS helper
+// instead of growing a second copy of the bump. As of today okhslStops does not
+// call it: perceptual/peak still ignore skew and lift entirely.
+export function liftStop(stop, lift) {
+  if (!lift) return stop;
+  const a = Math.min(Math.max(lift * LIFT_GAIN, -LIFT_SHIFT_MAX), LIFT_SHIFT_MAX);
+  const w = 0.5 * (1 + Math.cos((Math.PI * (stop - 500)) / 450)); // 1 at 500, 0 at 050/950
+  return stop - a * w; // lift>0 -> read a LIGHTER stop -> lighter mids
+}
+
 // toneAt — L* for a stop given per-palette skew/lift and the tone controls.
-// Monotonic non-increasing 050->950 (lift 0): p rises, p^g preserves order for
-// any g>0, every shape() is non-decreasing, and t = lmax-(lmax-lmin)*q inverts q.
+// Strictly monotonic non-increasing 050->950 for ANY lift, not just lift 0:
+// liftStop is strictly increasing in stop (see LIFT_SHIFT_MAX above), p rises,
+// p^g preserves order for any g>0, every shape() is non-decreasing, and
+// t = lmax-(lmax-lmin)*q inverts q. q stays in [0,1], so t stays in [lmin,lmax]
+// by construction and the trailing clamp never fires — it is a safety net only,
+// never the thing that produces a value (that is exactly the #648 defect).
 export function toneAt(stop, skew, lift, { curve, lmin, lmax, tension }) {
-  let p = (stop - 50) / 900; // 0 at 050 (light) .. 1 at 950 (dark)
+  const s = liftStop(stop, lift);
+  // 0 at 050 (light) .. 1 at 950 (dark). liftStop fixes both endpoints, so the
+  // clamp only absorbs float dust at 050/950 and is identity for lift 0.
+  let p = Math.min(1, Math.max(0, (s - 50) / 900));
   const g = 3 ** (skew / 100); // skew>0 -> gamma>1 -> lighter mids
   p = p ** g;
   const q = shape(p, curve, tension / 100);
-  let t = lmax - (lmax - lmin) * q;
-  if (lift) {
-    // additive cosine bump centered on stop 500, tapering to 0 at 050/950.
-    const w = 0.5 * (1 + Math.cos((Math.PI * (stop - 500)) / 450));
-    t += lift * w;
-  }
+  const t = lmax - (lmax - lmin) * q;
   return Math.min(Math.max(t, lmin), lmax);
 }
 
