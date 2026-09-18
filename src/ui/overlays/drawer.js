@@ -5,6 +5,7 @@ import { geomTokensBreakpointCSS, geomTokensCSS, geomTokensDTCG, geomTokensFigma
 import { zipStore } from "../zip.mjs";
 import { mergeModeInterchanges } from "../../../figma/binder/mode-apply-plan.mjs";
 import { COLLECTIONS } from "../../engine/collections.js";
+import { cssPrefixOf } from "../../engine/exports.js";
 import { primitivesModesApplyPlan, stylePlans } from "../../../figma/binder/style-plan.mjs";
 import { icon } from "../icons.js";
 import { ALIASED_README, REPO_URL, btn, chip, h } from "../app-helpers.mjs";
@@ -247,7 +248,10 @@ export class DrawerMixinImpl {
     return h(
       "div",
       { class: "radix-bar" },
-      h("span", { class: "radix-note" }, "Two files of the same preset. Values is self-contained; References links every step into this kit's own --c-* custom properties, so load the css-hex/ or css-oklch/ export first. Download-All ships both."),
+      // the prefix is a persisted Settings control, so this copy names the properties the export
+      // ACTUALLY emits. cssPrefixOf reads only `state.export.colorPrefix`, and stateOf passes
+      // doc.export through verbatim, so the doc is a legal argument and cannot drift from the file.
+      h("span", { class: "radix-note" }, `Two files of the same preset. Values is self-contained; References links every step into this kit's own --${cssPrefixOf(this.doc)}-* custom properties, so load the css-hex/ or css-oklch/ export first. Download-All ships both.`),
       h(
         "div",
         { class: "radix-bar-row" },
@@ -508,7 +512,9 @@ export class DrawerMixinImpl {
       if (this.flagOf("proExport")) rows.push(
         "| `dtcg/` | W3C-DTCG design tokens |",
         "| `tailwind/` · `shadcn/` | Framework presets |",
-        "| `panda/` · `radix/` | Panda CSS + Park UI/Radix presets. `radix/` ships BOTH `" + s + ".preset.mjs` (self-contained baked values) and `" + s + ".refs.preset.mjs` (the same steps as `var(--c-*)` links into the CSS files above, so load one of those first) |",
+        // same reason as the sub-bar note: `--c-*` is only the DEFAULT prefix, so the row names the
+        // one this kit really emits (Settings › Token mapping can move it to --md-sys-color-*).
+        "| `panda/` · `radix/` | Panda CSS + Park UI/Radix presets. `radix/` ships BOTH `" + s + ".preset.mjs` (self-contained baked values) and `" + s + ".refs.preset.mjs` (the same steps as `var(--" + cssPrefixOf(this.doc) + "-*)` links into the CSS files above, so load one of those first) |",
       );
       const collNames = figmaCollectionNames(this.doc);
       const customColl = collNames.raw !== COLLECTIONS.colorRaw || collNames.semantic !== COLLECTIONS.colorSemantic;

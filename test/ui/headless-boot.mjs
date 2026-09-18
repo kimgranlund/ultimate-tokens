@@ -1777,6 +1777,21 @@ app.exportOpen = true; app.exportTab = "radix"; app.radixFile = "values"; app.re
   ok(rxrOpts === 10, `(rxr2) the format select still offers exactly 10 Colors options: #638 is a flag, not an 11th format (got ${rxrOpts})`);
   app.radixFile = "values"; app.exportOpen = false; app.render(); flushRaf();
 }
+// (rxr4) the CSS prefix is a persisted Settings control, so BOTH pieces of Radix copy have to name
+// the properties this kit really emits. A kit on the Material naming scheme reads --md-sys-color-*.
+{
+  app._setNamingScheme("material"); flushRaf();
+  app.exportOpen = true; app.exportTab = "radix"; app.render(); flushRaf();
+  const rxrNote = txtOf(app.querySelector(".radix-note")) || "";
+  ok(rxrNote.includes("--md-sys-color-*") && !rxrNote.includes("--c-*"), `(rxr4) the sub-bar note names the kit's OWN prefix, not the default --c-* (got ${rxrNote.slice(0, 140)})`);
+  const rxrMdReadme = app._zipReadme("my-set", { color: true, type: true, geometry: true });
+  ok(rxrMdReadme.includes("var(--md-sys-color-*)") && !rxrMdReadme.includes("var(--c-*)"), "(rxr4) the zip README's radix row names the kit's OWN prefix too");
+  app._setNamingScheme("ultimate"); flushRaf();
+  app.render(); flushRaf();
+  const rxrDefNote = txtOf(app.querySelector(".radix-note")) || "";
+  ok(rxrDefNote.includes("--c-*"), "(rxr4) control: back on the default scheme the copy reads --c-* again");
+  app.exportOpen = false; app.render(); flushRaf();
+}
 {
   const rxrReadme = app._zipReadme("my-set", { color: true, type: true, geometry: true });
   ok(rxrReadme.includes("`panda/` · `radix/`"), "(rxr3) the zip README's folder map carries the previously-missing panda/ · radix/ row");
