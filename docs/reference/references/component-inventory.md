@@ -8,7 +8,9 @@
 > ℹ️ **Line numbers are maintained.** Every `file:line` citation below is checked by
 > `node scripts/audit-citations.mjs` (STALE 0 as of #640, against the current `src/ui/` split: `app.js`,
 > `app-helpers.mjs`, `sections/*.js`, `overlays/*.js`). Re-run it after any rebase; a citation that drifts
-> reads STALE, never silently wrong. The anatomy, layering, and API observations remain valid.
+> reads STALE, never silently wrong. Since #664 the audit discovers every `docs/**/*.md` that carries a
+> citation (engine, test, and script paths included), not just this file and `app-shell.md`; only these two
+> declare `app.js` as the file a bare `:NNN` means. The anatomy, layering, and API observations remain valid.
 
 ## How to read this
 

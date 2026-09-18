@@ -12,8 +12,9 @@
 //
 // It answers two questions MECHANICALLY, so that §6's enumeration is generated rather
 // than hand-counted:
-//   (A) which LINES of the two committed records carry a citation that no longer
-//       describes what it points at, and
+//   (A) which LINES of every citing doc under docs/ (discovered, see DOCS_IMPLIED /
+//       DOCS_EXEMPT / discoverDocs below) carry a citation that no longer describes what
+//       it points at, and
 //   (B) which LINES carry a canvasView value-set enumeration that a 4th value falsifies.
 //
 // Definitions, stated as code rather than as prose:
@@ -42,10 +43,34 @@ import { readFileSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const DOCS = [
-  { path: "docs/lld/app-shell.md", implied: "src/ui/app.js" },
-  { path: "docs/reference/references/component-inventory.md", implied: "src/ui/app.js" },
+// ---------- the audited set: DISCOVERED, not hand-listed (#664) ----------
+// Every tracked `docs/**/*.md` that carries at least one citation the parser recognizes is
+// audited. The old hand-listed 2-doc DOCS array left every citation into src/engine/* (or any
+// tree other than app.js) structurally outside the gate: two review records cited
+// `src/engine/tonal.js:275` for `_okL` while it sat at :283, and the gate read STALE 0.
+// DOCS_IMPLIED declares the file a doc's BARE `:NNN` citations point at; a doc without an entry
+// gets no default, and its bare citations classify UNDECIDABLE (never silently app.js).
+// DOCS_EXEMPT is the allow-list, one reason string per entry; ship it empty unless a doc
+// genuinely cannot be pinned (an archived record citing a deleted file is NOFILE, not STALE,
+// so it needs no exemption).
+const DOCS_IMPLIED = {
+  "docs/lld/app-shell.md": "src/ui/app.js",
+  "docs/reference/references/component-inventory.md": "src/ui/app.js",
+};
+// An entry's `path` is an exact tracked path or, ending in `/` or `-`, a prefix. Ruling #664:
+// dated snapshots are exempt, live records are not.
+export const DOCS_EXEMPT = [
+  // the 2026-07-17 CTO/librarian/export-drift review round: a dated snapshot of the pre-#646
+  // monolithic app.js (7000+ lines, now 2578); its citations describe a file that no longer exists
+  { path: "docs/reference/reviews/2026-07-17-", reason: "archived 2026-07-17 review round, pre-#646 app.js snapshot" },
+  // the file-ticket archive, frozen when tickets moved to GitHub Issues (ADR-017, 2026-07-17)
+  { path: "docs/tickets/", reason: "archived file tickets, frozen at ADR-017 (2026-07-17)" },
+  // closed plans, moved here on landing (.sdlc/adapter.md §5); a closed plan is a record of the
+  // tree it was built on, not a claim about the current tree
+  { path: "docs/plan/archive/", reason: "closed plans, archived on landing" },
 ];
+const isExempt = (p) => DOCS_EXEMPT.some((e) => p === e.path || (/[\/-]$/.test(e.path) && p.startsWith(e.path)));
+const reDocPath = /^docs\/.*\.md$/;
 const EXT = "js|mjs|cjs|css|html|json|md";
 const WINDOW = (target) => (target.endsWith(".css") ? 15 : 3); // a CSS rule body is long
 
@@ -64,6 +89,17 @@ function read(p) {
     cache.set(p, t);
   }
   return cache.get(p);
+}
+// `[{ path, implied }]` for every tracked docs/**/*.md with >= 1 recognized citation, minus
+// DOCS_EXEMPT. Exported so the gate can assert the discovered count is not vacuous.
+export function discoverDocs() {
+  const out = [];
+  for (const p of tracked) {
+    if (!reDocPath.test(p) || isExempt(p)) continue;
+    const implied = DOCS_IMPLIED[p] ?? null;
+    if (read(p).some((ln) => parseCitations(ln, implied).length)) out.push({ path: p, implied });
+  }
+  return out;
 }
 
 // ---------- the canvasView value set, DERIVED from src/, never hardcoded ----------
@@ -89,7 +125,7 @@ const reExplicit = new RegExp(`([A-Za-z0-9_@./-]+\\.(?:${EXT})):(\\d+)(?:[-\u201
 const reBare = /(?:^|[^A-Za-z0-9_./)\]])[:](\d{2,4})(?:[-\u2013](\d{2,4}))?((?:\/\d{2,4})+)?\b/g;
 
 // One doc line -> its citations, each `{ cited, n, end, form, list }`. `cited` is the path as
-// written (an explicit one) or `implied`. A slash list yields one entry per member, each
+// written (an explicit one) or `implied` (null when the doc declares none). A slash list yields one entry per member, each
 // carrying the whole list in `list` so the report can still show what the doc wrote.
 export function parseCitations(raw, implied) {
   const cites = [];
@@ -194,6 +230,8 @@ export function runAudit() {
 const VALUES = canvasViewValues();
 const report = { head: execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim(), canvasViewValues: VALUES, docs: {} };
 
+const DOCS = discoverDocs();
+report.audited = DOCS.length;
 for (const { path: doc, implied } of DOCS) {
   const lines = read(doc);
   let fenced = false;
@@ -231,6 +269,9 @@ for (const { path: doc, implied } of DOCS) {
       if (anchors.length) anchorScope = "paragraph";
     }
     for (const c of cites) {
+      // a bare `:N` in a doc with no declared implied file: nothing to resolve against, and
+      // guessing app.js would manufacture verdicts. UNDECIDABLE, a human must read it.
+      if (c.cited == null) { rows.push({ line: n, form: c.form, list: c.list, cited: null, target: null, anchors, anchorScope, verdict: "UNDECIDABLE", detail: "bare :N and this doc declares no implied file (DOCS_IMPLIED)" }); continue; }
       const target = resolvePath(c.cited);
       const base = { line: n, form: c.form, list: c.list, cited: c.cited, target, anchors, anchorScope };
       if (!target) { rows.push({ ...base, verdict: "NOFILE", detail: "cited path is not tracked" }); continue; }
@@ -279,6 +320,10 @@ export function selftest() {
     ["`styles.css:114`", "src/ui/app.js", [["styles.css", 114, 114]]],
     ["`styles.css:291-302` and `app.js:726`", "src/ui/app.js", [["styles.css", 291, 302], ["app.js", 726, 726]]],
     ["no citation here, 12:30 is a clock", "src/ui/app.js", []],
+    // a doc with NO declared implied file: the bare form still parses (so discovery sees it)
+    // but carries a null target, which runAudit classifies UNDECIDABLE, never app.js
+    ["see :836/837 for the tags", null, [[null, 836, 836], [null, 837, 837]]],
+    ["`src/engine/tonal.js:283` memo", null, [["src/engine/tonal.js", 283, 283]]],
   ];
   let failed = 0;
   for (const [line, implied, want] of cases) {
