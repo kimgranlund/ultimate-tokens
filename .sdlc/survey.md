@@ -4,9 +4,10 @@ repo: ultimate-tokens
 surveyed_at: 2026-09-18
 head: cf8e61a26b2e97ea68dd7e8c5a21a682106a4b88
 branch: main
-status: ungraded
+status: graded
 verdict: .sdlc/verdicts/survey.md
 supersedes: survey of 2026-09-16 at f9e20c5 (graded, corrected)
+corrected: 2026-09-18 (C9, C11, C14, C15 facts fixed per verdict c1c0a32)
 ---
 
 # Survey: ultimate-tokens
@@ -60,7 +61,7 @@ Tracked files only (`git ls-files`), 460 total.
 ## Tests
 
 - runner: custom Node runner, `node test/run.mjs`
-- test files: 49 tracked under `test/` (engine 15, figma 6, mcp 11, plugin 5, repo 3, smoke 1, ui 7, top level 1)
+- test files: 52 tracked under `test/` (engine 17, ui 8, mcp 11, figma 6, plugin 5, repo 3, smoke 1, `run.mjs` 1), 3 of them fixtures; the scout's 49 was the non-fixture count. `test/run.mjs` registers 46 tests; `test/ui/counts.mjs` is tracked and registered nowhere
 - test command: `npm test` (`package.json:29`, the six generators then `node test/run.mjs`); CI runs `npm test` at `.github/workflows/ci.yml:30`
 
 ## CI
@@ -109,7 +110,7 @@ Worktrees at survey time (`git worktree list`):
 | `/private/tmp/pr682-main-critic` | cf8e61a | detached |
 | `/private/tmp/pr682-review-critic` | ae7f75d | detached |
 
-The 638 and 674 heads moved between two reads a few minutes apart (ed229a8 to c269dbf, df87682 to dd97b98): another session is committing in them. None of the five `.git-worktrees/` rows has a board row.
+The 638 and 674 heads moved between two reads a few minutes apart (ed229a8 to c269dbf, df87682 to dd97b98): another session is committing in them. None of the five `.git-worktrees/` rows has a board row. The table is a snapshot: during grading the two `/private/tmp/pr682-*` entries went away, `fix/674-adia-warning-lift` moved to `9667ac3`, and `origin/main` advanced to `1ea2f80`.
 
 ## Harnesses
 
@@ -217,10 +218,10 @@ Process note: the hygiene and authorship scouts each wrote an untracked report f
 | C6 | The repo allows squash-merge only | adapter §2.1 amendment | `gh api repos/{owner}/{repo} -q '.allow_squash_merge,.allow_merge_commit,.allow_rebase_merge'` |
 | C7 | 49 of the last 50 subjects end `(#NNN)`, 1 merge commit, oldest of the 50 is `bef0bfd` dated 2026-09-11 | authorship scout + conductor | `git log -50 --format='%h %cs %s'` |
 | C8 | `.claude/` tracks 57 files: 3 agents, 14 skills, 1 hook, CLAUDE.md, settings.json, workflow.json, naming.manifest.json, the rest skill support files | conductor | `git ls-files .claude` |
-| C9 | 49 tracked files under `test/`; adapter §1's baseline N = 44 still matches what `test/run.mjs` registers, or names the new N | tests scout, adapter §1 | `git ls-files test \| wc -l`; count TESTS in `test/run.mjs` |
+| C9 | 52 tracked files under `test/`; `test/run.mjs` registers N = 46, so `.sdlc/adapter.md:24` and `.sdlc/baseline.md:17` are stale at 44 (corrected per verdict) | tests scout, adapter §1 | `git ls-files test \| wc -l`; count TESTS in `test/run.mjs` |
 | C10 | 24 ADRs, highest ADR-024; the approved plan preset-intent-fidelity reserves ADR-025 and nothing on main has taken it | docs scout, plan C10 | grep `^## ADR-` in decision-records.md |
-| C11 | Generated assets are byte-identical after `npm test` on `cf8e61a` (`git status --short` empty) | CLAUDE.md, adapter §1 | run with C1 |
+| C11 | Every asset `npm test` regenerates is byte-identical on `cf8e61a` (`git status --short` empty); `src/ui/type-fonts.js` is outside that set because `gen:type-fonts` is not in the chain (corrected per verdict) | CLAUDE.md, adapter §1 | run with C1 |
 | C12 | No secrets in tracked files | hygiene scout | rerun the greps |
 | C13 | `.claude/settings.local.json` and `.sdlc/launcher.env` cannot reach a commit from this checkout | hygiene scout + conductor | `git check-ignore -v` both paths |
 | C14 | Five `.git-worktrees/` worktrees exist with no board row, and `unit/pif-u1-anchor` equals `origin/plan/preset-intent-fidelity` at `fb3ad33` | branches scout, orchestrator reconcile note | `git worktree list`; `git rev-parse` both refs |
-| C15 | `.sdlc/baseline.md`, `.sdlc/architecture.md`, `.sdlc/debt.md` cite a head older than `cf8e61a`; list which of their facts the 8 commits since `180eca0` touch | conductor | `git diff --stat 180eca0..cf8e61a` against each file's cited paths |
+| C15 | `.sdlc/baseline.md`, `.sdlc/architecture.md`, `.sdlc/debt.md` cite a head older than `cf8e61a`; list which of their facts the 16 commits since `180eca0` touch (corrected per verdict: `baseline.md` test count 44 to 46, `ui.html` 3695.6 to 3753.6 KB, CI run id superseded; 18 of 72 architecture paths and 16 of 96 debt paths edited in range) | conductor | `git diff --stat 180eca0..cf8e61a` against each file's cited paths |
