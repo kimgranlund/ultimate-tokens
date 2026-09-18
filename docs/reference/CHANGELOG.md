@@ -8,8 +8,8 @@ colour's own lightness (`l = key.l`, the mechanism by which `prime` reproduces t
 exactly), and the anchor floats with hue because it sits at the hue's CUSP tone, which runs from L* 34
 at violet to 94 at yellow-green. The window was a fixed `±3 × PRIME_STEP` clamped by the bounds, so
 wherever the anchor sat near a bound that side collapsed and its lost travel was simply DROPPED. Ten
-of the sixteen default palettes were short, the worst being Data 5 at 0.2762, and 209 of 360 swept
-hues fell short at full chroma. The fix (owner ruling, option A) hands the shortfall to whichever side
+of the sixteen default palettes were short, the worst being Data 5 at 0.2762, and at full chroma 209
+of 360 swept hues fell short in `cam16` and 207 of 360 in `oklch`, the product default. The fix (owner ruling, option A) hands the shortfall to whichever side
 did NOT clip, capped by that side's own room: each side stays evenly spaced within itself, the two
 sides now differ from each other by exactly the handed-over travel, and `3 * up + 3 * down` is always
 0.54. The anchor never moves, so the exact key-colour identity is untouched. A palette that never

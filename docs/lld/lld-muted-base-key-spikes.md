@@ -213,10 +213,15 @@ P8 documents groups last.
    owner ruling 2026-09-17): for yellow-green hues the cusp construction puts `lPrime` ITSELF above the
    old `PRIME_L_MAX` of 0.94 — it peaks at 0.961183 (cam16 hue 109.75, chroma 0.75; the oklch peak is
    the same value near hue 98) — so `prime` was out of bounds before any ladder was built, `roomUp`
-   went NEGATIVE, and the three light swatches inverted. Affected bands under 0.94: cam16 hues 108..122
-   and oklch 96..114 (15 and 19 hues at chroma 0; six each at chroma 50 and 100). Remedy: `PRIME_L_MAX`
-   raised to 0.97 (REQ-051a) and each room floored at 0 so travel can never go negative. AC-050 (d4)
-   now asserts ZERO out-of-window anchors across the full sweep in both hue spaces.
+   went NEGATIVE, and the three light swatches inverted — reading DARKER than `prime`, not lighter.
+   Affected hues under 0.94, per chroma and as the union across chromas `{0, 50, 100}` — cam16: 15 hues
+   108..122 at chroma 0, six at 110..115 at chroma 50 and the same six at chroma 100, union 15 hues
+   108..122. oklch: 13 hues 96..108 at chroma 0, six at 107..112 at chroma 50, six at 109..114 at
+   chroma 100, union 19 hues spanning 96..114. So cam16's 15 is both its chroma-0 count AND its union,
+   whereas oklch's 19 is the UNION only — its own chroma-0 count is 13. `oklch` is the product default
+   and carries the wider union. Remedy: `PRIME_L_MAX` raised to 0.97 (REQ-051a) and each room floored
+   at 0 so travel can never go negative. AC-050 (d4) now asserts ZERO out-of-window anchors across the
+   full sweep in both hue spaces.
    Correction to this record as first written (2026-09-17): the inversion was described here as
    "byte-identical before and after #641". That was true only of the LIGHT side. The dark side moved
    substantially under the round-1 redistribution, because the negative `roomUp` credited EXTRA travel

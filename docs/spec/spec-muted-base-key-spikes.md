@@ -214,13 +214,18 @@ ladder, their own chroma control, and their own token group; the editor strip re
   own cusp construction. Sweeping hue 0..359 x chroma 0..100 in BOTH hue spaces, `l_prime` peaks at
   `0.961183` (cam16 hue 109.75 at chroma 0.75; the oklch peak is the same value near hue 98), so for
   yellow-green hues the ANCHOR itself fell outside the window: `prime` was out of bounds before any
-  ladder was built, `room_up` went negative, and the three light swatches INVERTED (they read lighter
-  than `prime`, with `brightest` the darkest of the four). The ceiling must therefore clear `0.961183`.
+  ladder was built, `room_up` went negative, and the three light swatches INVERTED: they read DARKER
+  than `prime`, with `brightest` the darkest of the four. Measured at hue 112, chroma 100, `cam16`, the
+  four were `0.94000 0.94328 0.94656` against a `prime` of `0.94983` — ascending toward the anchor
+  instead of away from it. The ceiling must therefore clear `0.961183`.
   `0.97` is chosen over the bare minimum: it is the smallest value that is both round and keeps the
   three light swatches DISTINCT in 8-bit hex at every swept hue and chroma in both spaces. At `0.962`
   all four light entries collapse to a single hex at the worst cell; `0.967` is the exact threshold for
-  distinctness and sits on the quantisation cliff; `0.97` leaves `min up = 0.003918` (cam16 hue 110,
-  chroma 0) and a `0.008817` margin above the anchor's peak. `PRIME_L_MIN` is unchanged at `0.14`.
+  distinctness and sits on the quantisation cliff; `0.97` leaves a `0.008817` margin above the anchor's
+  peak. Worst-case light travel under `0.97`, by sweep resolution: `min up = 0.003918` over integer
+  hues 0..359 x chroma `{0, 50, 100}` (cam16 hue 110, chroma 0), and `min up = 0.002939` over the
+  continuous sweep at 0.25 steps in hue and chroma (cam16 hue 109.75, chroma 0.75 — the same cell that
+  carries the anchor's peak). `PRIME_L_MIN` is unchanged at `0.14`.
 - **REQ-052** Chroma: OKHSL saturation `s = clamp01(key.s * pc)` where `key.s =
   rgbToOkhsl(deriveKeyColor(palette).rgb).s` is the key colour's OWN OKHSL saturation and
   `pc = (palette.primeChroma ?? controls.primeChroma) / 100`; `palette.chroma` enters only through
