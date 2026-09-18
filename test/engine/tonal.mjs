@@ -370,9 +370,14 @@ for (const mode of ["perceptual", "peak"]) {
 //       STOP (liftStop in tonal.js), so those three moved by design.
 //     #647 (7, perceptual path): perceptual/Neutral, /Primary, /Tertiary, /Info, /Success, /Warning and
 //       /Danger — EXACTLY the defaults carrying a non-zero `skew` or `lift` (skew -20 on Neutral,
-//       Primary, Tertiary, Info, Success and Danger; skew 40 + lift 15 on Warning; lift -5 on Success
-//       and Danger). okhslStops used to ignore both controls, so the shipped DEFAULT tone mode rendered
-//       them as if they were zero; it now reads its lightness at an effective stop that carries them.
+//       Primary, Tertiary, Info, Success and Danger; skew 40 on Warning; lift -5 on Success and Danger).
+//       okhslStops used to ignore both controls, so the shipped DEFAULT tone mode rendered them as if
+//       they were zero; it now reads its lightness at an effective stop that carries them.
+//     #647 retune (2 re-captured, both Warning): honouring those controls put Warning's accent at
+//       2.18:1 (perceptual) and 1.90:1 (even) against its on-color, so the owner ruled its `lift` down
+//       from 15 to -36 to clear WCAG AA in both ruled modes. even/Warning was already carved out above
+//       for #648 and moved again; perceptual/Warning moved a second time. No other ramp moved with it,
+//       which is asserted by hpg-role-contrast's default-parity check and was verified entry by entry.
 //   The remaining 22 ramps — the 13 even and the 9 perceptual ramps whose skew AND lift are both 0
 //   (Secondary and Data 1-8) — are byte-for-byte what 83756bb emitted, and that is what each
 //   regeneration of this file was verified against. Do NOT regenerate it to make an unexplained red go

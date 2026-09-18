@@ -1,11 +1,12 @@
 /* shadcn-baseline.css — REQ-062 byte-identical fixture, first captured BEFORE the pickDrivers
    refactor (#586/K1). Regenerated ONLY by hand when the ramp feeding exportShadcn changes by a
    ratified engine ruling — never to make a refactor gate pass, which defeats the point.
-   #647 CARVE-OUT: re-captured once, from the engine that honours a palette's skew and lift on the
-   perceptual ramp (okhslStops, the shipped default tone mode). Only color VALUES moved, and only for
-   the 7 default palettes carrying a non-zero skew or lift — Neutral, Primary, Tertiary, Info, Success,
-   Danger (skew -20; Success/Danger also lift -5) and Warning (skew 40, lift 15). Secondary and Data 1-8
-   are byte-for-byte what the pre-#647 capture held, and no token NAME, block or ordering changed.
+   #647 CARVE-OUT: re-captured from the engine that honours a palette's skew and lift on the
+   perceptual ramp (okhslStops, the shipped default tone mode), with Warning's own lift retuned from
+   15 to -36 so its accent clears WCAG AA. Only color VALUES moved, and only for the 7 default
+   palettes carrying a non-zero skew or lift — Neutral, Primary, Tertiary, Info, Success, Danger
+   (skew -20; Success/Danger also lift -5) and Warning (skew 40, lift -36). Secondary and Data 1-8 are
+   byte-for-byte what the pre-#647 capture held, and no token NAME, block or ordering changed.
    exportShadcn's own contract is untouched. */
 /* === FIXTURE: ALL === */
 /* ultimate-tokens export schema 2 */
@@ -160,7 +161,7 @@
   --ring: oklch(0.5035 0.1817 258.32);
   --chart-1: oklch(0.5035 0.1817 258.32);
   --chart-2: oklch(0.482 0.1371 144.67);
-  --chart-3: oklch(0.7635 0.1609 69.97);
+  --chart-3: oklch(0.4503 0.0968 69.78);
   --chart-4: oklch(0.4816 0.1863 29.02);
   --chart-5: oklch(0.5588 0.1179 162.45);
   --sidebar: oklch(0.8936 0.0267 257.03);
@@ -196,7 +197,7 @@
   --ring: oklch(0.5856 0.2066 258.36);
   --chart-1: oklch(0.5856 0.2066 258.36);
   --chart-2: oklch(0.562 0.1608 144.6);
-  --chart-3: oklch(0.8467 0.1182 70.27);
+  --chart-3: oklch(0.5658 0.1216 69.69);
   --chart-4: oklch(0.5624 0.2163 28.94);
   --chart-5: oklch(0.6485 0.1376 162.36);
   --sidebar: oklch(0.2455 0.0368 257.14);
@@ -276,7 +277,7 @@
   --ring: oklch(0.5035 0.1817 258.32);
   --chart-1: oklch(0.5035 0.1817 258.32);
   --chart-2: oklch(0.482 0.1371 144.67);
-  --chart-3: oklch(0.7635 0.1609 69.97);
+  --chart-3: oklch(0.4503 0.0968 69.78);
   --chart-4: oklch(0.4816 0.1863 29.02);
   --chart-5: oklch(0.5588 0.1179 162.45);
   --sidebar: oklch(0.8936 0.0267 257.03);
@@ -312,7 +313,7 @@
   --ring: oklch(0.5856 0.2066 258.36);
   --chart-1: oklch(0.5856 0.2066 258.36);
   --chart-2: oklch(0.562 0.1608 144.6);
-  --chart-3: oklch(0.8467 0.1182 70.27);
+  --chart-3: oklch(0.5658 0.1216 69.69);
   --chart-4: oklch(0.5624 0.2163 28.94);
   --chart-5: oklch(0.6485 0.1376 162.36);
   --sidebar: oklch(0.2455 0.0368 257.14);

@@ -278,7 +278,11 @@ const DEFAULT_PALETTES = [
   { name: "Tertiary", hue: 315, chroma: 33, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
   { name: "Info", hue: 235, chroma: 40, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
   { name: "Success", hue: 145, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Warning", hue: 70, chroma: 100, skew: 40, lift: 15, hueShift: 0, hueSameDir: false, on: true },
+  // Warning lift retuned 15 -> -36 at #647: skew 40 + lift 15 put its accent (550 light / 450 dark)
+  // at 1.90:1 against its pinned light on-color in "even" mode, and #647 carried that into the default
+  // perceptual mode too (2.18:1). -36 is the smallest change from (40, 15) by |dskew| + |dlift| that
+  // clears WCAG AA in BOTH ruled modes; skew is deliberately untouched. Gated by hpg-role-contrast.
+  { name: "Warning", hue: 70, chroma: 100, skew: 40, lift: -36, hueShift: 0, hueSameDir: false, on: true },
   { name: "Danger", hue: 27, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, on: true },
   // Data 1..8 (REQ-024): derived ONCE via deriveDataHues(primaryHue 267, the 8 brand hues above
   // filtered to chroma>=20, count 8) -> phi 20, hues [287,332,17,62,107,152,197,242]; chroma

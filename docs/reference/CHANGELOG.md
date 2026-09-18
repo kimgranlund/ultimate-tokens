@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## 1.61 — 2026-09-17 — skew and lift reach every tone mode; Warning retuned for AA (#647)
+
+**A palette's `skew` and `lift` now shape the ramp in every tone mode.** Both controls were persisted,
+threaded through both ramp call sites, shipped with non-zero defaults on seven of the eight semantic
+palettes and exposed as sliders — but only the `even` distribution ever read them. In the shipped
+default mode (`perceptual`) they were inert, so dragging Skew moved the seven-swatch prime ladder,
+which does read it, while the nineteen-stop gradient underneath sat still. `okhslStops` now reads its
+lightness at an **effective stop** carrying both controls, applied with `toneAt`'s own two transfer
+functions in `toneAt`'s own order: 1.59's `liftStop` displaces the stop, then skew's gamma warps the
+normalised position. Hue and saturation stay keyed on the real stop, since they are damping and
+rotation terms about the centre. The cusp pivot follows the warp. Endpoints are fixed exactly and the
+warp stays pure in the single stop value, so the nineteen- and twenty-five-stop ramps still agree.
+
+Seven of the sixteen default palettes move in `perceptual` and `peak`; Secondary and Data 1–8, whose
+skew and lift are both zero, are byte-identical.
+
+**Warning's default `lift` moves from 15 to −36.** Honouring those controls put its accent at 2.18:1
+against its pinned on-color in `perceptual`, and revealed that `even`, which had honoured them all
+along, had been shipping 1.90:1 unnoticed. −36 is the smallest change from (40, 15) that clears WCAG AA
+in both of those modes; skew is untouched. Warning now measures 7.60:1 light / 4.65:1 dark in
+`perceptual` and 9.46:1 / 5.02:1 in `even`. `peak` is not covered by the ruling and still falls short
+at 4.82:1 / 2.52:1, as it already did before.
+
+A new `hpg-role-contrast` gate (`test/engine/semantic.mjs`) pins the accent-versus-on-color ratio for
+all eight semantic families in both ruled modes and both schemes, reading the same resolved
+`kit.roles` the MCP contrast lint reads, and asserts the two default sources (`src/ui/model.mjs` and
+`docs/reference/data/role-table.json`) have not split on chroma, skew or lift. Its floors are a
+ratchet at each family's own shipped ratio, so several non-Warning families are pinned just under AA
+at their current values: in `perceptual`, Secondary is lowest at 3.05:1 dark, with Info 4.07,
+Neutral 4.21, Primary 4.31 and Success 4.31. Those were not retuned — the ruling was Warning-only —
+and remain open.
 ## 1.60 — 2026-09-17 — the prime ladder spans its full range at every hue (#641, #655, SPEC/LLD 0.3.2)
 
 **Every palette's seven prime swatches now span the full `6 * PRIME_STEP = 0.54` in OKHSL `l`**, at
