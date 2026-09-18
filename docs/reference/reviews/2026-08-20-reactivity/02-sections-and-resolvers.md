@@ -24,11 +24,11 @@ same principle that already justified model.mjs.
 - `typeAnalysisCards(view)` (typography.js:16) — comment explicitly: "`view` is accepted for dispatch parity but unused (typography is doc-driven...)". Reads `this._activeTypeScale()`.
 - Canvas (`renderTypographyScene`, typography.js:538) — `this._activeType()`/`this._activeTypeScale()`.
 - Right (`renderTypeInspector`, typography.js:602+) — binds `this.doc.type`.
-- Exports — `_typeScaleFor("base")` / `_typeModeScales()` (drawer.js:46,67,363-395; apply-gate.js:107,176,250,305).
+- Exports — `_typeScaleFor("base")` / `_typeModeScales()` (drawer.js:47,67,363-395; apply-gate.js:107,176,250,305).
 
-**Geometry** — mirrors Typography exactly, method-for-method: `geomAnalysisCards(view)` (geometry.js:573, same "unused view" comment) → `this._activeGeomScale()`; `renderGeomInspector` (geometry.js:707) binds `this.doc.geometry`; exports via `_geomScaleFor("base")`/`_geomModeScales()` (drawer.js:47,69,398-419; apply-gate.js:274).
+**Geometry** — mirrors Typography exactly, method-for-method: `geomAnalysisCards(view)` (geometry.js:573, same "unused view" comment) → `this._activeGeomScale()`; `renderGeomInspector` (geometry.js:707) binds `this.doc.geometry`; exports via `_geomScaleFor("base")`/`_geomModeScales()` (drawer.js:48,69,398-419; apply-gate.js:274).
 
-`renderCenter`/`renderLeftPane`/`renderRightPane` (app.js:1629,1530,1915) are thin routers in app.js, exactly per SKILL.md step 1; every actual body method lives in its own section file (color.js/typography.js/geometry.js) — verified no leakage.
+`renderCenter`/`renderLeftPane`/`renderRightPane` (app.js:1630,1530,1915) are thin routers in app.js, exactly per SKILL.md step 1; every actual body method lives in its own section file (color.js/typography.js/geometry.js) — verified no leakage.
 
 ## (B) Resolver-bypass / duplication findings
 
@@ -38,7 +38,7 @@ Both independently rebuild "the type scale for a synthesized tier" inside `_type
 
 **B2 [MEDIUM]** — geometry.js has a *third* independent geomScale+typeScale join: `_geomScaleFor` (geometry.js:34-36, now delegating to `geomScaleFor` at model.mjs:169-177) vs the `synth()` closure inside `geomModeScales` (model.mjs:226, lifted there from geometry.js by #460) — same idiom, two code paths in the same file (real/materialized modes vs. synthesized tiers).
 
-**B3 [MEDIUM]** — model.mjs's `geometryScale(doc, opts)` (model.mjs:53-58) is a *fourth* independent implementation of "geomScale composed with typeScale," used only by `brandKit()` (model.mjs:669-725, consumed at app.js:2446/2478 for the MCP-kit zip downloads) and `projectView`'s shadcn radii (model.mjs:1024). None of the section resolvers that drive every CSS/DTCG/Figma/DS-bundle export (drawer.js, apply-gate.js) call through it — they reimplement the join via `_typeScaleFor`/`_geomScaleFor` instead. Currently equivalent for base-mode-no-nudge, but only by coincidence of two independently-written override slicers agreeing (see B4), not by shared code.
+**B3 [MEDIUM]** — model.mjs's `geometryScale(doc, opts)` (model.mjs:53-58) is a *fourth* independent implementation of "geomScale composed with typeScale," used only by `brandKit()` (model.mjs:669-725, consumed at app.js:2447/2479 for the MCP-kit zip downloads) and `projectView`'s shadcn radii (model.mjs:1024). None of the section resolvers that drive every CSS/DTCG/Figma/DS-bundle export (drawer.js, apply-gate.js) call through it — they reimplement the join via `_typeScaleFor`/`_geomScaleFor` instead. Currently equivalent for base-mode-no-nudge, but only by coincidence of two independently-written override slicers agreeing (see B4), not by shared code.
 
 **B4 [LOW]** — the "slice tokenOverrides by mode suffix" helper is implemented 3x: `baseOverrideSlice` (removed in #460; the one `overridesFor` slicer at model.mjs:134-145 filters non-finite/≤0 values) vs `_typeOverridesFor`/`_geomOverridesFor` (typography.js:390-392, geometry.js:13-15, now one-line delegates onto that same slicer). Dormant risk only — persist.js's `clampTokenOverrides` (persist.js:600-612) and the live setters already guarantee valid values reach these stores, so the missing filter isn't currently reachable, but it's the same duplication grain as B1.
 
@@ -48,13 +48,13 @@ Both independently rebuild "the type scale for a synthesized tier" inside `_type
 
 ## (C) Ownership misplacements
 
-**C1 [the core finding]** — `_typeScaleFor`, `_geomScaleFor`, `_typeModeScales`, `_geomModeScales`, `_modeTierNudge` are all *pure functions of doc* (+ a modeKey arg) — none read any other mutable instance state (confirmed by inspection: `_typeScaleFor` touches only `this.doc.type` + doc-only helpers + `_modeTierNudge(mf)`, itself pure in `mf`). By the exact principle that already put `projectView(doc)`/`geometryScale(doc)` in model.mjs, this whole mode-aware resolution layer belongs there too, not scattered across app.js (`_modeTierNudge`, app.js:1766, since #460 a delegate onto `modeTierNudge` at model.mjs:112) and the two section mixins. Centralizing it would collapse B1/B2/B3 into one implementation that `brandKit` and the section resolvers both call.
+**C1 [the core finding]** — `_typeScaleFor`, `_geomScaleFor`, `_typeModeScales`, `_geomModeScales`, `_modeTierNudge` are all *pure functions of doc* (+ a modeKey arg) — none read any other mutable instance state (confirmed by inspection: `_typeScaleFor` touches only `this.doc.type` + doc-only helpers + `_modeTierNudge(mf)`, itself pure in `mf`). By the exact principle that already put `projectView(doc)`/`geometryScale(doc)` in model.mjs, this whole mode-aware resolution layer belongs there too, not scattered across app.js (`_modeTierNudge`, app.js:1767, since #460 a delegate onto `modeTierNudge` at model.mjs:112) and the two section mixins. Centralizing it would collapse B1/B2/B3 into one implementation that `brandKit` and the section resolvers both call.
 
 **C2 [minor]** — `_modeTierNudge`'s placement in app.js's shared core is fine (it's genuinely cross-section). The misplacement is one level up: the formula that *wraps* it into a resolved scale should have followed it into a shared spot and didn't — each section reinvented that wrapper.
 
 **C3 [verified clean]** — no leakage between app.js (routing) and section files (bodies); mixin composition (app.js:2545-2569: `mixinInto(HctApp, ColorSection, TypeSection, GeomSection, DrawerMixin, ApplyGateMixin, SettingsMixin)`) matches the documented "sections/overlays live in per-file mixins, flattened onto one prototype" contract.
 
-**C4 [non-issue]** — `_pickTypeTreatment`/`_pickGeomTreatment` (app.js:1260-1269) are the only type/geom-named methods living in app.js proper, but they're the shared paywall-gate-then-commit pattern (`_treatmentBlocked`), not resolution logic — defensible placement.
+**C4 [non-issue]** — `_pickTypeTreatment`/`_pickGeomTreatment` (app.js:1261-1270) are the only type/geom-named methods living in app.js proper, but they're the shared paywall-gate-then-commit pattern (`_treatmentBlocked`), not resolution logic — defensible placement.
 
 ## Mode/override channel trace + compare overrides
 
@@ -64,7 +64,7 @@ Traced matrix cell edit → `setTypeTokenOverride`/`setGeomTokenOverride` → `_
 
 Clamping mirror check: setters clamp type to [1,512] (typography.js:423) and geom to [8,256] (geometry.js:44, and the live-drag `_setGeomSize` at geometry.js:69); persist.js's `clampTokenOverrides` calls at persist.js:643 (`1, 512, 3`) and persist.js:761 (`8, 256, 2`) match exactly. No drift here.
 
-The three transient-override mechanisms (`_schemeOverride`, `_typeModeOverride`, `_geomModeOverride`): same semantics (`!= null ? override : this.<mode>`, set/cleared around a Compare column's render), but **not identically implemented** — `_typeModeOverride`/`_geomModeOverride` are explicitly declared `= null` in the app.js constructor (app.js:104,144, both commented "mirrors _schemeOverride"), but `_schemeOverride` itself is *never* declared/initialized anywhere — it only exists via its setter/clearer inside color.js's compare-column function (color.js:950,953). Functionally harmless (`resolvedCanvasScheme()` at app.js:1514 uses a truthy check, so `undefined` and `null` behave the same), but it's a real asymmetry: scanning the app.js constructor for "what state exists" misses `_schemeOverride` entirely, contradicting the other two's own comments that claim to mirror it.
+The three transient-override mechanisms (`_schemeOverride`, `_typeModeOverride`, `_geomModeOverride`): same semantics (`!= null ? override : this.<mode>`, set/cleared around a Compare column's render), but **not identically implemented** — `_typeModeOverride`/`_geomModeOverride` are explicitly declared `= null` in the app.js constructor (app.js:104,144, both commented "mirrors _schemeOverride"), but `_schemeOverride` itself is *never* declared/initialized anywhere — it only exists via its setter/clearer inside color.js's compare-column function (color.js:950,953). Functionally harmless (`resolvedCanvasScheme()` at app.js:1515 uses a truthy check, so `undefined` and `null` behave the same), but it's a real asymmetry: scanning the app.js constructor for "what state exists" misses `_schemeOverride` entirely, contradicting the other two's own comments that claim to mirror it.
 
 ## (D) Verdict — one pattern or three dialects?
 
