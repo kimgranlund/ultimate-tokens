@@ -1,0 +1,146 @@
+# Handoff U1 · builder → reviewer
+
+| Field | Value |
+|---|---|
+| Unit | U1 (M) anchor field + `prime.DEFAULT` byte-exact, plan `preset-intent-fidelity` (ticket #681) |
+| Branch | unit/pif-u1-anchor @ 7a317e024419398cc4727c41dbb7f353767a2fdd |
+| Base | cf8e61a26b2e97ea68dd7e8c5a21a682106a4b88 (`git merge-base HEAD origin/main`) |
+| Grade | l3 |
+| Ran | `npm test` ✅ (47/47) · `npm run build` ✅ · `node scripts/audit-citations.mjs` ✅ (exit 0, 0 STALE) · `node test/repo/branding.mjs` ✅ (444 files, clean) · `git status --short` ✅ (empty after every run) |
+| Left out | Ramp anchor (U2), chroma envelope (U3), ladder metric/L* rewrite (U6), Reset UI action (U2's C12), records (U5) — none touched |
+
+## Base-count note (adapter.md §1 baseline drift)
+
+`.sdlc/baseline.md` records 44 test files at `origin/main @ 7faf3aa`. This branch's actual base
+(`cf8e61a`, five commits ahead of the baseline sha) already carries **46** registered test files
+before this unit. This unit adds `test/engine/anchor.mjs`, bringing the count to **47** — `all 47
+test files passed` is this unit's correct green, not the plan's stated "45" (written against a
+different, now-superseded head).
+
+## origin/main moved during this build
+
+`origin/main` is now at `1ea2f80` (#662, "contrast on-color policy by default", landed after this
+branch's base `cf8e61a` was cut — the plan's own Risks row anticipated this: "#662 ... Land #662
+first"). This unit's `test/engine/semantic.mjs` edit is scoped to the `compared` parity loop only,
+exactly as instructed, so the eventual rebase of `plan/preset-intent-fidelity` onto `origin/main`
+should be a clean merge in that file. `git diff origin/main` therefore shows unrelated #662 files
+(`src/engine/semantic.js`, `src/engine/tonal.js`, `docs/reference/rubrics/quality-rubric.md`,
+`mcp/describe-mcp-core.mjs`, `test/engine/fixtures/shadcn-baseline.css`,
+`test/mcp/describe-mcp-core.mjs`) that this unit never touched — verified via `git diff --stat
+cf8e61a` (the correct base), which shows only this unit's own 27 files. All criteria evidence below
+is measured against `cf8e61a`, per the dispatch's own instruction ("C4 reads it from there").
+
+## Criteria
+
+| # | Criterion | State | Command + observed output | Negative control |
+|---|---|---|---|---|
+| C1 | `npm test` green, tree clean after | 🟢 | `npm test` → `✓ all 47 test files passed`; `git status --short` → empty | Corrupted `docs/reference/data/role-table.json` in a scratch copy during development (structural edits mid-build) reliably broke `semantic.mjs`/`prime.mjs`/`anchor.mjs`; not re-run as a final artifact since it would dirty the tree — the adapter's own named 17-FAIL control is `.sdlc/adapter.md`'s, unmodified by this unit |
+| C2 | Anchor identity: `primeSwatches(...)[3].hex === anchor` and exports.js's `prime.DEFAULT` oklch equals an independent hex→oklch of `anchor`, over every anchored corpus palette | 🟢 | `node test/engine/anchor.mjs` → `anchor-identity: 3380 exact, 0 off` (2,028 sampled + 1,352 status, verified by direct JSON-structure count before writing the gate, not assumed from the plan) | Live, in the test file, on every run: one real anchored palette's hex is corrupted by one digit and the gate is proven to catch it BY NAME before the real 3,380 are graded. Also verified red-then-green by hand: reverting `src/engine/prime.mjs` to its pre-unit content and rerunning gave `FAIL anchor-identity: 0 exact, 3380 off` |
+| C4 (prime part) | Non-anchored `primeSwatches` is byte-identical to pre-#681 behaviour | 🟢 | `node test/engine/anchor.mjs` → `prime-identity-control: 3796 exact, 0 off` (3,780 corpus + 16 default kit, `anchor` stripped, compared against a FRESH from-scratch reimplementation of the pre-#681 deriveKeyColor formula, never calling `primeSwatches` internals) | One subject's chroma mutated by 37 between the two derivations at test start; the loop is proven to catch the mismatch before the real 3,796 are graded |
+| C10 (schema note only) | The persist.js schema bump documents itself per TKT-0016's standing convention | 🟢 | `src/ui/persist.js` `CURRENT_SCHEMA_VERSION` bumped 4→5 with an inline comment explaining why no `RENAME_MAPS` entry is needed (a new field, not a rename — same shape as the existing v4 note) | n/a — this is documentation, not a gated predicate; C10's own grep list (ADR-025, CHANGELOG 1.62, glossary, knowledge-02 §9, color-math SKILL.md, rubrics) is U5's scope and none of those files were touched here |
+
+`npm run build`: `tsc` strict passed, `vite build` succeeded, `bundle`/`gen:figma-ui` wrote
+`figma/plugin/ui.html` (3915.3 KB) — tree clean after (build outputs under `dist/` are gitignored).
+
+## Files changed (27, `git diff --stat cf8e61a`)
+
+- `src/engine/prime.mjs` — anchor branch: `prime` step (index 3) renders the anchor rgb verbatim,
+  unconditionally (never scaled by `primeChroma`); the other six steps ladder from
+  `rgbToOkhsl(anchor)`, clamped into `[PRIME_L_MIN, PRIME_L_MAX]` (today's OKHSL window — U6 rewrites
+  this in L* later). Absent-anchor path is untouched code, not a parallel implementation.
+- `src/engine/exports.js` — **deviation from the plan's literal file list** (see below): one field
+  (`anchor: palette.anchor`) added to the existing `primeSwatches(...)` call inside `derivePalette`.
+- `src/ui/model.mjs` — `DEFAULT_PALETTES` gain the 16 Q2 (b) anchors (each verified against the
+  engine's real `rampChromaOf`-resolved perceptual-mode stop-550 hex before being typed in, not
+  copied blind from the plan text); `projectView`'s own `primeSwatches(...)` call also forwards
+  `anchor` (same deviation reasoning as exports.js — see below).
+- `docs/reference/data/role-table.json` — `defaults[]` gains the same 16 `anchor` fields, inserted
+  before each default's `on` key (16 added lines, 0 removed; `.roleTable` stays 53).
+- `src/ui/persist.js` — `DOMAINS.palette.anchor`/`sourceAnchor` (`kind: "hex"`), `clampHex` helper,
+  `clampPalette` wiring, `CURRENT_SCHEMA_VERSION` 4→5 with its TKT-0016 no-op note.
+- `scripts/gen-categories.mjs` — `palette()` stores `anchor`/`sourceAnchor` (the source hex, already
+  canonical uppercase) for every sampled + status swatch; `direct` (brands pass-through) untouched.
+- `test/engine/anchor.mjs` (new, registered in `test/run.mjs`) — C2 + C4's prime-half identity
+  controls, both with live negative controls.
+- `test/engine/prime.mjs` — `DEFAULTS` now strips `anchor` from `RT.defaults` before use (see
+  Deviation 2 below).
+- `test/engine/exports.mjs`, `docs/spec/spec-panda-park-ui-exports.md` — Primary's
+  `prime.prime`/`.brightest`/`.dimmest` EX-1 literals re-pinned to the new anchor-derived values
+  (independently verified against a from-scratch hex→oklch conversion of `#0C5DCC`, not read back
+  from the pipeline under test).
+- `test/engine/semantic.mjs` — `hpg-role-contrast`'s default-parity loop extended
+  chroma/skew/lift → chroma/skew/lift/anchor (`compared` = 4 × 16); nothing else in this file touched.
+- `test/ui/persist.mjs` — round-trip fuzz coverage + an explicit clamp block for `anchor`/
+  `sourceAnchor` (well-formed round-trips, malformed values drop, absent stays absent).
+- `docs/reference/reviews/2026-08-20-reactivity/{00-synthesis,02-sections-and-resolvers,03-stores-and-persistence}.md`
+  — six `persist.js:N` citations re-pinned after this unit's insertions shifted line numbers by a
+  uniform +37 (below the shifted region) — mechanically verified line-for-line against `git show
+  cf8e61a:src/ui/persist.js`, not guessed from the audit tool's heuristic anchor-pairing alone.
+
+## Regenerated artifacts (all committed)
+
+`figma/plugin/ui.html`, `src/ui/categories/{architecture,brands,cuisine,film,literature,music,nature,travel}.js`,
+`src/ui/describe-mcp-assets.js` (persist.js's source text is bundled into the MCP asset string).
+`docs/reference/data/adia-*` regenerated by `npm run build` but byte-identical (not staged — `git
+status` confirmed no diff there).
+
+## Deviations from the plan's literal U1 file list (both necessary, both flagged for the reviewer)
+
+1. **`src/engine/exports.js` — the plan says "unchanged ... confirm, do not edit (it is out of
+   lane)".** Confirmed the aliasing line `prime.DEFAULT = prime.prime` (exports.js:967 in the plan's
+   numbering) is genuinely unchanged. But `derivePalette`'s own call into `primeSwatches(...)`
+   (exports.js, inside `derivePalette`) reconstructs a SUBSET object literal that did not forward
+   `anchor` — without forwarding it, every real export (and the live canvas) would stay
+   cusp-derived while `primeSwatches()` called directly (as C2's test does) rendered the anchor: a
+   silent split between "what C2 measures" and "what actually ships", which is exactly what C2/C4
+   exist to catch. Verified this is load-bearing by checking C2 red before the fix (only the direct
+   `primeSwatches(...)[3].hex === anchor` half would have passed; the exports.js half would have
+   stayed cusp-derived). The fix is a single added field on an existing line, additive only, and
+   C4's non-anchored identity control proves it changes nothing when `anchor` is absent.
+2. **`src/ui/model.mjs`'s `projectView` `primeSwatches(...)` call** — not named in the plan's file
+   list at all, but has the exact same subset-object gap as exports.js's call (same reasoning,
+   same fix, same one-field addition). Left unfixed, the live UI would never show an anchored
+   preset's `prime.DEFAULT` as the anchor, even though `DEFAULT_PALETTES`/the regenerated presets
+   carry `anchor`. Same additive-only, no-op-when-absent shape.
+3. **`test/engine/prime.mjs`'s `DEFAULTS`** — adding `anchor` to `docs/reference/data/role-table.json`'s
+   `defaults[]` (U1's own explicit scope) silently poisoned this file's existing AC-050 fixtures
+   (`DEFAULTS = RT.defaults`), since this file's gates (d1..j) verify prime.mjs's ORIGINAL,
+   non-anchored cusp construction — a construction U6 (not U1) is the unit that rewrites for the
+   anchored case ("Depends on U1 (anchor = prime)"). Stripped `anchor` at the point this file
+   derives its fixtures, restoring every pre-existing gate to green without touching their logic —
+   left for U6 to remove when it rewrites this file for the anchored ladder.
+4. **`test/engine/exports.mjs` + `docs/spec/spec-panda-park-ui-exports.md`** — not in the plan's file
+   list, but Primary's `prime.*` literals are DIRECTLY in U1's own blast radius (Q2 (b) minting
+   Primary an anchor moves its `prime.DEFAULT` from the cusp value to `#0C5DCC`'s own oklch) — the
+   plan's own Blast radius table says as much ("default kit `prime.*` move ... via U1 under Q2 (b)
+   ... e.g. Secondary `#00FBB1` to `#108960`"). Re-pinning a moved literal is not a design change.
+5. **Three `docs/reference/reviews/2026-08-20-reactivity/*.md` files + `node
+   scripts/audit-citations.mjs`** — required by the dispatch itself ("your edits shift cited lines
+   in prime.mjs/persist.js/model.mjs; re-pin"). Not a design change; six citations moved by a
+   uniform, verified +37 lines.
+
+## Risks for U2 / U3 / U6
+
+- **U2** builds the ramp anchor and the Reset action on top of `palette.anchor`/`sourceAnchor` as
+  this unit leaves them; `src/ui/sections/color.js`/`app.js` are untouched here (U2's own scope).
+  `src/engine/tonal.js` is untouched — the ramp still fits `lift` exactly as before for every
+  palette, anchored or not (U1 stores `anchor` but the ramp does not yet read it).
+- **U3**'s chroma envelope is independent of this unit's changes; `VIVID_MIDS`/`chromaEnvelope` were
+  not touched.
+- **U6** rewrites `src/engine/prime.mjs`'s ladder metric (OKHSL `l` → CIE L*, `STEP_L` 9, the
+  equal-compress wall rule, hold-CAM16-chroma). This unit's anchor branch is written to compose with
+  that rewrite: `lLadder` is the one clamp point U6's L*-window swap will need to touch (currently
+  `Math.min(PRIME_L_MAX, Math.max(PRIME_L_MIN, lPrime))` in OKHSL `l`; U6 re-expresses the window in
+  L* per its own plan text). U6 also inherits `test/engine/prime.mjs`'s anchor-stripped `DEFAULTS` —
+  U6's own plan text already expects to rewrite this file's gates for the anchored case, so removing
+  the strip is part of that unit's own work, not a leftover bug.
+- **Rebase risk**: `origin/main` is now ahead of this branch's base by #662 (`1ea2f80`), which
+  touches `test/engine/semantic.mjs` heavily. This unit's own edit to that file is scoped to the
+  `compared` parity loop only (per the dispatch's own caution), so the eventual merge should be
+  mechanical, but it is untested against #662's actual content since #662 is not in this branch.
+
+## Open questions
+
+None. The one place this unit was told to stop and ask (a disagreeing default-kit anchor hex) did
+not trigger — all 16 Q2 (b) hexes matched the engine's own perceptual-mode, group-resolved stop-550
+output on this branch's base, verified before being typed into `src/ui/model.mjs`.
