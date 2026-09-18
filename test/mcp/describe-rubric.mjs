@@ -21,9 +21,11 @@ for (const heading of [
 // wrong tone and re-derive the wrong inverse (exactly the bug #648 fixed in gen-categories.mjs). A
 // title-only check passed happily while the body taught the retired model, so gate both directions:
 // the new mechanism must be stated, and the retired word must be gone.
-ok(/displac/i.test(RUBRIC), "RUBRIC states that lift DISPLACES the stop (the #648 mechanism), not merely that skew/lift exist");
-ok(!/additive/i.test(RUBRIC), "RUBRIC must not describe lift as an ADDITIVE bump — that mechanism was retired in #648");
-ok(RUBRIC.includes("\u00b7 w(stop)") || RUBRIC.includes("w(stop)"), "RUBRIC names the cosine weight w(stop) the displacement is scaled by");
+const LIFT_SECTION = (RUBRIC.match(/## 7\. Skew \/ lift semantics[\s\S]*?(?=\n## 8\.)/) || [""])[0];
+ok(LIFT_SECTION.length > 0, "RUBRIC contains the \"Skew / lift semantics\" section (§7) to scope the lift-mechanism checks to");
+ok(/displac/i.test(LIFT_SECTION), "RUBRIC's lift section (§7) states that lift DISPLACES the stop (the #648 mechanism), not merely that skew/lift exist");
+ok(!/additive/i.test(LIFT_SECTION), "RUBRIC's lift section (§7) must not describe lift as an ADDITIVE bump — that mechanism was retired in #648 (dampAmp, elsewhere in the rubric, is genuinely additive and must not trip this check)");
+ok(LIFT_SECTION.includes("\u00b7 w(stop)") || LIFT_SECTION.includes("w(stop)"), "RUBRIC's lift section (\u00a77) names the cosine weight w(stop) the displacement is scaled by");
 // The rubric must state the EXACT same harmony numbers describe-kit-core.mjs actually uses — via
 // interpolation of the imported constants, not a hand-typed restatement that could drift.
 ok(RUBRIC.includes(`Primary.hue + ${SECONDARY_HARMONY_OFFSET}°`), `RUBRIC states the Secondary recipe using the core's own SECONDARY_HARMONY_OFFSET (${SECONDARY_HARMONY_OFFSET})`);

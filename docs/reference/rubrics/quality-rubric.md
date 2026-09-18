@@ -36,7 +36,12 @@ Mark each. **Any FAIL blocks delivery.**
 
 ### B2 — Tonal scale
 - [ ] All five curves given as formulas, with the `tension` lerp ranges.
-- [ ] `toneAt` gamma-skew (`3^(skew/100)`) and cosine lift (centered 500) are explicit.
+- [ ] `toneAt` gamma-skew (`3^(skew/100)`) is explicit, and lift's mechanism is stated as a
+  displacement, not an addition: `liftStop(stop, lift)` moves the STOP by `A · w(stop)`
+  (`A = clamp(lift * 6, ±243.51)`, `w` a cosine weight that is 1 at stop 500 and 0 at the
+  ends), and `toneAt` then evaluates the unchanged base curve at that displaced stop. Since
+  #647 the same `liftStop` (and the skew gamma) also shape the `perceptual`/`peak` OKHSL
+  path via `effStop`, not just `even`.
 - [ ] Chroma target (% of `peakC`) and damping formula (`^1.5`) are explicit.
 - [ ] Display vs export stop sets are both enumerated.
 
