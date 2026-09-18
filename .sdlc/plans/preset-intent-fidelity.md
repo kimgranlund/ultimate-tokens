@@ -1,0 +1,284 @@
+---
+status: approved
+ticket: "#681"
+priority: P1
+lane: color-engine
+written: 2026-09-18
+head: 279dc74
+inputs: owner rulings 2026-09-18 (prime fidelity + muted ramps + ladder symmetry, then the nine question rulings in scratchpad/plan-rulings-preset-intent.md), scripts/gen-categories.mjs, src/engine/{prime.mjs,tonal.js,exports.js}, test/engine/{categories,prime,semantic,tonal}.mjs, issues #641 #647 #648 #656 #657 #662 #668 #674, PRs #663 #678 #679
+measurements: scratchpad baseline-preset-fidelity.mjs, baseline-2-feasibility.mjs, baseline-3-prime-ladder.mjs, baseline-4-ruled-ladder.mjs, baseline-5-stop500.mjs (read-only; anchor, chroma and stop-500 rows re-run on main @ 279dc74 after #657 and #656 landed, outputs baseline-out-279dc74.txt, baseline-2-out-279dc74.txt, baseline-5-out.txt; ladder rows on 988420d, which #657/#656 do not touch)
+---
+
+# Every preset's `prime.DEFAULT` is its sampled source colour byte-for-byte, the ramp passes through that anchor at the prime stop, and every ramp falls away from the anchor in chroma more than today
+
+## Ruling this plan implements (owner, 2026-09-18)
+
+1. `prime.DEFAULT` (the `prime.*` ladder's anchor token, `prime.DEFAULT = prime.prime` in `src/engine/exports.js:967`) renders the preset's authored or sampled source colour exactly, byte-for-byte. Skew and lift shape the ramp around that anchor and never move it. Applies to all 343 curated presets (3,780 palettes) and to the default kit.
+2. Tonal palettes are more muted: global ramp shaping in all three tone modes (perceptual, peak, even). The prime stop keeps full intent chroma; chroma falls away from the anchor faster than today.
+3. The prime ladder brightest → dimmest steps in perceived lightness, equal on both sides of `prime` (ruled 2026-09-18 on the owner's screenshot finding that brightest and dimmest do not read 1:1 around prime). Metric, step and wall rule ruled with Q9: CIE L*, 9 L* per rung, equal-compress, hold CAM16 chroma.
+4. The anchor stop is 500 (Q1, ruled against the plan's 550 recommendation): the ramp passes through the source at stop 500, so both scheme accents (550 light, 450 dark) sit one step off the source.
+
+## Two things are called "prime" today, and the ruling names the first
+
+| Name | Where | What it is today |
+|---|---|---|
+| `prime.DEFAULT`, `prime.*` | `src/engine/prime.mjs` `primeSwatches`, exported as `--{n}-prime-{step}` and `{n}.prime.{step}` | the seven-swatch identity ladder. Its `prime` step is `deriveKeyColor`: the palette's integer `hue` and integer `chroma` (% of peak) rendered at the hue's cusp tone. It has no lightness relation to the source colour at all. |
+| the prime accent role, "Prime fill" | `src/engine/semantic.js:124`, stop 550 light / 450 dark | the ramp stop the generator's `liftForTone` fits `lift` for, in `even` mode only (`toneAt(550, 0, lift)`), while the shipped default mode is `perceptual`. |
+
+So the fit in `scripts/gen-categories.mjs` targets a stop that is not the ruled token, on a tone path that is not the shipped one. The baseline below measures both.
+
+## Baseline (measured 2026-09-18; sections (1), (2) and the prototype on main @ 279dc74, section (3) on 988420d)
+
+Corpus: 343 presets, 3,780 palettes: 62 direct/authored (brands), 340 derived neutrals (no source), 3,380 fitted palettes with a source hex (2,028 sampled + 1,352 status, the four status palettes repeat per preset). Anchor error is `prime.DEFAULT` versus the spec swatch hex the generator fits against. Default kit: `prime.DEFAULT` equals its intent by construction (the intent is the `hue`/`chroma` pair itself), so its anchor error is 0 and only the chroma profile applies.
+
+### (1) Anchor error today
+
+| Token compared to source | exact | > 0.5 L* | > 2 L* | > 5 L* | dL* med / p90 / max | dE2000 med / p90 / max |
+|---|---|---|---|---|---|---|
+| `prime.DEFAULT` (the ruled token), all 3,380 | 0 | 3,356 | 3,248 | 3,062 | 17.16 / 41.30 / 82.87 | 15.07 / 33.21 / 78.96 |
+| stop 550, `perceptual` (shipped default) | 0 | 3,252 | 2,121 | 629 | 2.60 / 6.91 / 29.57 | 7.21 / 21.30 / 31.68 |
+| stop 550, `peak` | 0 | 2,969 | 2,811 | 2,220 | 11.23 / 36.49 / 43.53 | 17.87 / 32.24 / 41.26 |
+| stop 550, `even` (the path the fit runs on) | 2 | 712 | 285 | 191 | 0.32 / 1.05 / 23.40 | 6.41 / 20.82 / 30.43 |
+
+- Generator fit target `toneAt(550, 0, lift, DEFAULT_CONTROLS)` versus source L*: reachable band 17.77 to 76.52 L*; in-band worst 0.40 L*; overall worst 23.48 L*; 358 palettes over 0.5 L*.
+- Clamped at the lift domain edge: 373 palettes carry lift ±40 (87 at −40, 286 at +40) in 245 presets; 365 of them are strictly outside the band (the generator's own `liftUnreachable` count; 368 before #656 repaired travel), 8 more round to the edge.
+- Even where the L* fit is exact, the token is still not the colour: dE2000 median 6.4 in `even` comes from the integer OKLCH hue (`|dHue|` CAM16 median 2.11°, p90 6.2°) and the integer %-of-peak chroma rendered at a different tone (dChroma median −6.8, p10 −19.0).
+- Worst `prime.DEFAULT` cases are dark low-chroma sources whose hue's cusp sits near white, e.g. travel "Hidaka coast" tertiary-muted: source `#2C2C1F`, `prime.DEFAULT` `#F7F4E5`, 78.4 L* apart; the worst after the travel repair is 82.9 L*.
+- Byte-exactness constraints measured: the stored `keyColors[0].oklch` (4 decimals) reproduces the source hex for 2,020 of 2,028 swatches after #656 (1,732 before), still not all, so the anchor must be stored as the hex itself. `okhslToRgb(rgbToOkhsl(rgb))` is byte-exact on all 2,028 source hexes, so the ladder can be built in OKHSL from the anchor, but the `prime` step should still emit the anchor's rgb directly so identity never depends on that round trip.
+
+### (2) Chroma profile today
+
+CAM16 chroma at a stop divided by the source colour's CAM16 chroma, median over the 2,836 fitted palettes with source chroma ≥ 10 (presets render with `VIVID_MIDS`: damp 70, dampCurve 1.5, dampAmp 55).
+
+| mode | 100 | 300 | 500 | 700 | 900 | vs ramp max: 100 / 300 / 500 / 700 / 900 | median peak-chroma stop |
+|---|---|---|---|---|---|---|---|
+| perceptual | 18% | 129% | 144% | 107% | 39% | 9 / 73 / 89 / 67 / 21% | 400 |
+| peak | 13% | 85% | 141% | 139% | 41% | 5 / 46 / 92 / 76 / 24% | 550 |
+| even | 16% | 95% | 138% | 92% | 58% | 8 / 56 / 89 / 62 / 34% | 450 |
+
+The mids overshoot the source's own chroma by about 40% (dampAmp 55 pushes the centre past the intent), and the shoulders (300/700) sit at or above it. "The prime stop keeps full intent chroma, chroma falls away from it" is the opposite shape: 100% at the anchor, everything else below it.
+
+Default kit (DEFAULT_CONTROLS, dampAmp 0), chroma relative to `prime.DEFAULT`'s chroma, perceptual: Primary 15 / 69 / 101 / 61 / 21%, Secondary 13 / 74 / 74 / 46 / 16%, Tertiary 29 / 181 / 286 / 175 / 49%, Info 49 / 205 / 201 / 137 / 54%, Neutral 36 / 143 / 197 / 130 / 43%. The low-chroma families (Tertiary 33, Info 40, Neutral 29) render their mids at two to three times their key colour's chroma because the ramp's OKHSL saturation is `% of gamut`, not the key colour's own saturation.
+
+Accent-versus-on-color today (the `hpg-role-contrast` gate's own numbers, reproduced by the scratch script to two decimals): perceptual Neutral 5.89/4.21, Primary 6.06/4.31, Secondary 4.40/3.05, Tertiary 6.80/4.86, Info 5.81/4.07, Success 6.18/4.31, Warning 7.60/4.65, Danger 7.17/5.13.
+
+### Feasibility prototype (scratch, not source)
+
+A pinned OKHSL ladder through the anchor (piecewise linear in OKHSL `l` on each side of the anchor stop, `s` normalised so the anchor stop keeps its own saturation, hue = the anchor's own OKHSL hue) over the 3,380 fitted palettes, at the ruled anchor stop 500 and, for comparison, at 550 (scratch `baseline-5-stop500.mjs`, main @ 279dc74):
+
+| anchor stop | byte-exact at the anchor | dup-hex ramps | non-monotone L* | light accent 550 vs source, dL* med (p10 / p90) | dark accent 450 vs source | accent/050 under 4.5:1 (today 2,943) | max \|dL*\| vs today med / p90 / max |
+|---|---|---|---|---|---|---|---|
+| 500 (ruled) | 3,380 | 2 | 1 (the L* 100 source) | −4.43 (−7.41 / −2.79) | +6.16 (+2.87 / +7.62) | 2,330 | 6.6 / 10.1 / 23.2 |
+| 550 | 3,380 | 1 | 0 | 0.00 | +10.74 (+5.12 / +13.67) | 2,884 | 3.0 / 6.9 / 29.6 |
+
+At 500, the light-scheme accent reads about 4 L* darker than the sampled colour and the dark-scheme accent about 6 L* lighter; the two accents straddle the source instead of one of them being it. The accent/050 proxy improves (the light accent is darker) and the corpus moves more than at 550 (median 6.6 L* at the worst stop). Source L* distribution: p5 23.6, p95 81.6, min 7.32, max 100.0; with nine stops on each side of 500 and a 0.55 L* minimum gap, the ramp needs the source inside [9.95, 95.05] L*: 9 sources are darker, 1 (pure white) is lighter, 10 in all. The ladder window [12.25, 96.88] L* excludes 20 dark sources and the same white; the union is the 21-name allow-list in C5.
+
+### (3) Prime ladder span and symmetry today
+
+`primeSwatches` at PRIME_STEP 0.09, window [0.14, 0.97] OKHSL `l`, over the 3,780 corpus palettes and the 16 default-kit palettes (scratch `baseline-3-prime-ladder.mjs`, output `baseline-3-out.txt`).
+
+| Measure | corpus 3,780 | default kit 16 |
+|---|---|---|
+| achieved span, OKHSL `l` (brightest − dimmest) | 0.540 on every ladder (#641's redistribution guarantees it) | 0.540 on every ladder |
+| ladders hitting the 0.97 wall (light side clipped) | 2,076 (55%); clipped side compressed by median 45%, max 97% of its 0.27 | 8 of 16; median 56%, max 87% |
+| ladders hitting the 0.14 wall (dark side clipped) | 29; median 11%, max 25% | 1 (Data 1); 11% |
+| up vs down in OKHSL `l` | 0.27 / 0.27 on the 1,675 unclipped ladders; on a clipped ladder the clipped side is 3 × room (median 0.149 light) and the other side takes the remainder (median 0.391), by #641's rule | 0.27 / 0.27 on 7 of 16; Secondary 0.117 / 0.423, Data 5 0.036 / 0.504 |
+| up vs down in CIE L* (brightest − prime vs prime − dimmest) | up median 23.0, down median 31.2; up − down median −8.2, p10 −34.9; 2,034 ladders with \|up − down\| > 3 L* | up 26.8, down 27.9; 10 of 16 over 3 L* |
+| dE2000 brightest→prime vs dimmest→prime | 19.7 vs 28.0 | 24.0 vs 26.5 |
+| chroma retained (CAM16, rung / prime; prime C ≥ 5) | brightest median 32%, dimmest 92%; 2,982 of 2,990 ladders have a rung under 70% | brightest 28%, dimmest 70%; 15 of 16 |
+
+Two separate causes, both visible in the default kit:
+
+- The wall redistribution (#641). An unclipped ladder is already close to symmetric in CIE L*: Primary up 27.9 / down 27.4, Neutral 27.1 / 27.6, Danger 28.2 / 26.9. The asymmetry the owner saw on Secondary is the clipped case: `prime` sits at OKHSL `l` 0.853, the light side has 9.5 L* of room and the dark side is handed the rest, 43.7 L*. Same on Success (9.5 / 43.7), Data 5 (3.3 / 50.6), Data 6, Data 7. Because today's `prime` is the cusp colour, 55% of the corpus sits in this clipped regime; the source colours the anchor moves to in U1 have median L* 46.7, so under U1 only 464 light-side and 554 dark-side clips remain at a 9 L* step.
+- Flat OKHSL saturation. The six other rungs reuse `prime`'s OKHSL `s` (REQ-052), and OKHSL `s` is relative to the gamut at that lightness, so absolute chroma collapses toward white: brightest keeps 32% of prime's CAM16 chroma (Warning 8%, Data 4 7%, Info 25%) while dimmest keeps 92%. That is the "washed" brightest on Primary (53% kept) and it is independent of the step size or the metric.
+
+Seven rung values at PRIME_STEP 0.09 / 0.11 / 0.13 for six representative palettes (OKHSL `l`, then CIE L*; `*` marks a rung on a clipped side, so its value does not change with the step):
+
+| palette | step | l brightest … dimmest | L* brightest … dimmest |
+|---|---|---|---|
+| light key: literature "The Sound and the Fury" success, prime `#B2EAC0` l 0.869 L* 88.0 C 32 | 0.09 | 0.970* 0.936* 0.903* 0.869 0.723 0.576 0.430 | 97.2 94.1 91.1 88.0 73.7 59.0 44.0 |
+| | 0.11 | 0.970* 0.936* 0.903* 0.869 0.683 0.496 0.310 | 97.2 94.1 91.1 88.0 69.8 50.7 31.4 |
+| | 0.13 | 0.970* 0.936* 0.903* 0.869 0.643 0.416 0.190 | 97.2 94.1 91.1 88.0 65.6 42.6 18.7 |
+| dark key: brands "Maison" Primary, prime `#361DF1` l 0.379 L* 34.0 C 83 | 0.09 | 0.680 0.580 0.479 0.379 0.299* 0.220* 0.140* | 67.4 56.7 45.7 34.0 26.4 18.5 10.3 |
+| | 0.11 | 0.800 0.660 0.519 0.379 0.299* 0.220* 0.140* | 79.8 65.1 50.3 34.0 26.4 18.5 10.3 |
+| | 0.13 | 0.920 0.740 0.559 0.379 0.299* 0.220* 0.140* | 92.0 73.7 54.6 34.0 26.4 18.5 10.3 |
+| mid key: literature "Dracula" danger, prime `#E43D38` l 0.548 L* 52.0 C 83 | 0.09 | 0.818 0.728 0.638 0.548 0.458 0.368 0.278 | 80.9 71.2 61.4 52.0 43.2 34.4 25.4 |
+| | 0.11 | 0.878 0.768 0.658 0.548 0.438 0.328 0.218 | 87.1 75.6 63.6 52.0 41.1 30.4 19.4 |
+| | 0.13 | 0.938 0.808 0.678 0.548 0.418 0.288 0.158 | 93.4 79.8 65.7 52.0 39.2 26.4 12.9 |
+| high-chroma key: brands "Adia" Warning, prime `#FAA30E` l 0.748 L* 73.9 C 59, chroma 98 | 0.09 | 0.970* 0.896* 0.822* 0.748 0.642 0.536 0.430 | 97.0 89.4 81.7 73.9 63.3 53.0 42.3 |
+| | 0.11 | 0.970* 0.896* 0.822* 0.748 0.602 0.456 0.310 | 97.0 89.4 81.7 73.9 59.4 44.9 30.2 |
+| | 0.13 | 0.970* 0.896* 0.822* 0.748 0.562 0.376 0.190 | 97.0 89.4 81.7 73.9 55.6 36.8 17.4 |
+| neutral: default Neutral, prime `#767C8C` l 0.521 L* 52.0 C 13 | 0.09 | 0.791 0.701 0.611 0.521 0.431 0.341 0.251 | 79.1 70.3 61.2 52.0 43.1 33.6 24.4 |
+| | 0.11 | 0.851 0.741 0.631 0.521 0.411 0.301 0.191 | 85.2 74.1 63.1 52.0 41.1 29.7 18.0 |
+| | 0.13 | 0.920 0.787 0.654 0.521 0.394* 0.267* 0.140* | 92.0 78.7 65.5 52.0 39.1 26.1 12.2 |
+| default Primary, prime `#2177F5` l 0.528 L* 52.0 C 68 | 0.09 | 0.798 0.708 0.618 0.528 0.438 0.348 0.258 | 79.9 70.6 61.4 52.0 42.8 33.7 24.5 |
+| | 0.11 | 0.858 0.748 0.638 0.528 0.418 0.308 0.198 | 85.7 74.8 63.6 52.0 40.7 29.7 18.3 |
+| | 0.13 | 0.920 0.789 0.658 0.528 0.398* 0.269* 0.140* | 92.0 78.9 65.7 52.0 38.9 25.9 11.8 |
+
+Corpus wall counts by step, today's cusp anchors: 0.09 → 2,076 light / 29 dark clipped; 0.11 → 2,451 / 88; 0.13 → 3,003 / 132 (no ladder clips on both sides at any step, so #641's full-span guarantee still holds at all three).
+
+Ruled-ladder simulation (equal steps both sides; `prime` fixed; scratch `baseline-4-ruled-ladder.mjs`, output `baseline-4-out.txt`). "equal-compress" = at a wall both sides take the clipped side's room; "redistribute" = today's #641 rule; "flat s" = today's chroma rule; "hold C" = keep prime's CAM16 chroma on every rung, desaturate only where the gamut at that tone cannot carry it.
+
+| anchor set | metric, step, wall, chroma | clipped light / dark | span L* min / median | spans < 30 L* | dup-hex ladders | chroma kept brightest / dimmest | rungs < 70% (ladders) | \|up − down\| > 3 |
+|---|---|---|---|---|---|---|---|---|
+| cusp (today, 3,780) | L* 9, equal, flat s | 2,104 / 25 | 1.4 / 45.7 | 1,118 | 0 | 36% / 101% | 2,977 | 0 |
+| cusp | L* 9, equal, hold C | 2,104 / 25 | 1.4 / 45.8 | 1,121 | 5 | 67% / 100% | 1,879 | 0 |
+| cusp | L* 9, redistribute, hold C | 2,104 / 25 | 53.7 / 54.0 | 0 | 5 | 66% / 100% | 1,879 | 2,024 |
+| cusp | OKLab L 9, equal, flat s | 2,398 / 35 | 1.4 / 39.4 | 1,230 | 0 | 28% / 102% | 2,985 | 0 |
+| source (post-U1, 3,380) | L* 9, equal, flat s | 464 / 554 | 0.0 / 53.9 | 372 | 16 | 81% / 65% | 2,910 | 0 |
+| source | L* 9, equal, hold C | 464 / 554 | 0.0 / 54.0 | 373 | 19 | 99% / 91% | 1,148 | 0 |
+| source | L* 9, redistribute, hold C | 464 / 554 | 53.7 / 54.1 | 0 | 19 | 99% / 89% | 1,148 | 927 |
+| source | L* 11, equal, hold C | 656 / 1,092 | 0.0 / 64.1 | 373 | 19 | 76% / 84% | 2,025 | 0 |
+| source | L* 13, equal, hold C | 852 / 2,326 | 0.0 / 64.1 | 373 | 19 | 76% / 80% | 2,119 | 0 |
+| source | OKLab L 9, equal, flat s | 595 / 1,037 | 0.0 / 53.8 | 461 | 16 | 70% / 58% | 3,028 | 0 |
+| default kit (key colour, 16) | L* 9, equal, hold C | 7 / 1 | 5.7 / 51.8 | 5 (Secondary 17.7, Success 17.9, Data 5 5.7, Data 6 17.9, Data 7 13.8) | 0 | 41% / 95% | 14 | 0 |
+| default kit | L* 9, redistribute, hold C | 7 / 1 | 53.9 / 54.0 | 0 | 0 | 41% / 72% | 14 | 8 |
+
+Window in CIE L*: [12.25, 96.88] (the greys at OKHSL `l` 0.14 and 0.97). Today's 0.27 OKHSL `l` per side equals 26.9 L* up / 27.6 L* down at a mid grey, so a 9 L* rung keeps today's span (54 L*) for an unclipped ladder; 0.66 and 0.78 OKHSL correspond to 11 and 13 L* rungs.
+
+## Mechanism for (3): the ruled ladder
+
+Ruled: seven rungs, equal perceived-lightness steps on both sides of `prime`, `prime` never moves. What the plan recommends for the open parts, from the table above:
+
+All four ruled with Q9 as recommended.
+
+- Metric: CIE L*. The ramp's tone axis (`toneAt`), the analysis plots, the contrast maths and every pixel-measured gate already read L*; OKLab L would be a third lightness in the product, clips more (2,398 vs 2,104 light clips on the cusp set) and keeps less chroma (28% vs 36% at brightest). OKHSL `l` was already near-symmetric in L* when unclipped, so the ruling's real content is the wall rule and the chroma rule, not the metric.
+- Step: 9 L* per rung (54 L* span), the equivalent of today's 0.54. Q8 ruled: keep 54.
+- Wall: equal-compress (both sides take the clipped side's room), which is what "equal on both sides" means at a wall. Cost: light cusp anchors collapse (Data 5 to a 5.7 L* span, Secondary/Success/Data 6/7 to 14 to 18 L*). Under U1's source anchors only 373 of 3,380 ladders fall under 30 L*, mostly pale sources where a short ladder is the honest picture. For the default kit the fix is the anchor, not the ladder: Q2 (b), ruled, mints default-kit anchors from today's stop-550 hexes (L* 35 to 51, listed in `baseline-5-out.txt`: Neutral `#576485`, Primary `#0C5DCC`, Secondary `#108960`, Tertiary `#920CC6`, Info `#046C9B`, Success `#21701A`, Warning `#774902`, Danger `#AD1A0D`, Data 1 to 8 `#4C5BF8 #B90CC1 #D6153B #A86004 #7E7806 #1A8B43 #088585 #067CB5`), so no default family drops under C11's 30 L* line. Three of the sixteen do clip on the dark side at STEP_L 9 (27 L* of room needed above the 12.25 L* window floor): Tertiary at L* 38.64 has 26.39, Danger at 37.21 has 24.96, Warning at 35.38 has 23.13, so under equal-compress their spans are 52.8, 49.9 and 46.3 L*; the other 13 families take the full 54.
+- Chroma: hold `prime`'s CAM16 chroma on every rung and desaturate only where the gamut forces it (addendum option b). Brightest keeps 99% instead of 81% on source anchors and 67% instead of 36% on cusp anchors; it removes the washed brightest independent of the step. This changes gate (g) (s linear in `primeChroma` becomes chroma linear in `primeChroma`) and re-freezes (d5).
+
+Gates in `test/engine/prime.mjs` and how each choice moves them:
+
+| gate | today | ruled ladder, step 9 L*, equal-compress | if the span had widened (Q8 ruled: keep 54; column kept for the record) |
+|---|---|---|---|
+| d1 span floor | brightest − dimmest = 6 × 0.09 OKHSL `l` exactly when in bounds | = 6 × 9 L* exactly when neither side clips (13 of the 16 defaults); = 6 × min(room) when one does (Tertiary 52.8, Danger 49.9, Warning 46.3 L*); never more | constant changes to 66 or 78 L*; the "when neither side clips" set shrinks to 40% / 30% of the source corpus |
+| d2a anchor identity | `prime.l` = key.l | unchanged (prime = the anchor, U1) | unchanged |
+| d3 even per side | three equal steps per side; sides may differ | three equal steps per side AND the two sides equal (stronger) | unchanged in form |
+| d4 bounds and order | every rung in [0.14, 0.97], strictly decreasing | window expressed in L* [12.25, 96.88]; strictly decreasing in L* | unchanged |
+| d5 frozen unclipped defaults | six pre-#641 hex snapshots (Neutral, Primary, Tertiary, Danger, Data 2, Data 3) | re-frozen from the new construction over the 13 families that do not clip under Q2 (b) anchors (Neutral, Primary, Secondary, Info, Success, Data 1 to 8); Tertiary and Danger leave the set because they clip; the capture commit is named in the gate comment | re-frozen again |
+| d6 clipped-side fill | clipped side runs to the bound, other side takes the owed travel | replaced: at a wall both sides equal the clipped room; the gate asserts up == down and the clipped side touches the bound | unchanged in form |
+| e, h prime pixel identity | prime == deriveKeyColor hex | anchored palettes: prime == anchor (U1); non-anchored: unchanged | unchanged |
+| g s linear in primeChroma | OKHSL s ratio 0.5 at 50 | CAM16 chroma ratio 0.5 at 50 (hold C) | unchanged |
+
+## Mechanism for (1): options
+
+| Option | What changes | Anchor error after | Trade-offs |
+|---|---|---|---|
+| A. real-valued lift | `liftForTone` returns a float, schema keeps floats | stop-550 L* in `even` 0.4 → 0.0; `prime.DEFAULT` unchanged (17 L* median) | fixes the wrong token on the wrong path; hue/chroma quantisation stays (dE 6.7); the 368 clamped stay clamped |
+| B. widen the lift domain | `DOMAINS.palette.lift` ±40 → wider; `LIFT_GAIN`/`LIFT_SHIFT_MAX` bound (#648) is 243.5 stops, so lift beyond ±40.6 needs a smaller gain or breaks the monotonicity guarantee | clamped 368 → fewer; `prime.DEFAULT` unchanged | trades #648's guarantee for reach; still not the ruled token; every stored lift moves |
+| C. pin the anchor (recommended, ruled) | the palette stores the source as `anchor` (hex). `prime.mjs` reads the anchor: the `prime` step emits the anchor rgb verbatim, the six other steps ladder from it (U6). The ramp passes through the anchor at stop 500 (Q1 ruled) in all three modes; skew/lift warp each side of 500 with 500 a fixed point; the generator stops fitting lift (stores 0) | 0 on all 3,380 (`prime.DEFAULT`) and 0 at stop 500 in every mode; accents 550/450 one step off (−4.4 / +6.2 L* median) | new palette field; the fit, `liftForTone`, and the `lift-anchor` gate retire; non-anchored palettes (the default kit, authored brands) are byte-identical by construction; sources outside the ladder's workable window need a rule (open question Q3) |
+
+Recommendation: C, ruled. A and B cannot reach the ruled token at all, since `prime.DEFAULT` is the cusp colour and no lift touches it. C makes the anchor a stored fact instead of a fitted approximation, which is what "never moves it" means. The plan recommended stop 550 so the light accent would be the source itself; the owner ruled 500 (glossary "PEAK / prime", the `accentRef: single` accent), accepting that both scheme accents sit one step off the source.
+
+How C interacts with the standing guarantees:
+
+- #648 monotonicity: the pinned ladder is monotone per side by construction (a lerp on each side of the anchor, then skew's gamma on the per-side normalised position, exactly `prime.mjs`'s `w` construction). Anchored palettes no longer rely on `LIFT_SHIFT_MAX`; non-anchored palettes keep `liftStop`/`effStop` untouched, so the #648 bound and its gates stay as they are. The "no duplicate swatch, ≥ 0.55 L* gap" property has to be re-asserted over the anchored corpus: with the anchor at 500 there are nine stops on each side, so the gap holds for anchors inside [9.95, 95.05] L*; 10 sources fall outside (9 dark, 1 white) and take Q3's ruled rule (the ramp lands at the nearest workable L*, the token stays exact, the gate names them).
+- #641 span floor: `primeSteps(lPrime)` stays. The anchor's `lPrime` becomes `rgbToOkhsl(anchor).l` instead of the cusp `l`; 14 sources sit outside [PRIME_L_MIN, PRIME_L_MAX], where the #655/F1 floor at 0 prevents inverted travel but the ladder collapses on that side. Rule (Q3): the `prime` step is exact regardless; the six other steps clamp their ladder anchor into the window.
+- #657 (hue solver): anchored palettes take the anchor's own OKHSL hue for the perceptual/peak paths and need no Newton solve; the `even` path renders 550 verbatim and solves the CAM16 hue for the other stops from the anchor's measured CAM16 hue. Non-anchored palettes keep `solveOkhslHue`. #657's fix still matters for them and for the byte-identity control.
+
+## Mechanism for (2): options
+
+| Option | What changes | Effect | Trade-offs |
+|---|---|---|---|
+| D. default/knob change | `VIVID_MIDS.dampAmp` 55 → 0 for presets, `dampCurve` 1.5 → 1.0, `damp` 70/80 → higher | removes the 44% mid overshoot; shoulders drop to about 64% (stop 300) and 29% (stop 100) of the centre | still centred on stop 500, not the anchor, so the anchor stop sits at 0.97 of full chroma; the default kit's low-chroma families still render mids at 2 to 3x their key colour because `s = chroma% of gamut`; `chromaFloor` on `even` still lifts the ends back up |
+| E. anchor-centred chroma envelope (recommended, ruled) | one `chromaEnvelope(stop, anchorStop, controls)` in `tonal.js` replaces the two identical copies of the damping multiplier `m` (the skill's "computed identically in both paths" invariant becomes one function). `env(500) = 1` exactly (one centre for every palette now that Q1 rules the anchor stop 500); falls to `edge` at 050/950 with `damp` as depth, `dampCurve` as exponent, `dampBias` as asymmetry; `dampAmp` keeps its slot (Q7) but the envelope is normalised at 500, so it reshapes the shoulders and never lifts the anchor. Anchored palettes: saturation at 500 = the anchor's own OKHSL `s`. Non-anchored palettes: saturation at 500 = the key colour's own OKHSL `s` (the same quantity `prime.mjs` already reads, REQ-052) instead of `chroma% of gamut`. `even` path: `chromaFloor` becomes a floor on the envelope, never above `env` at the anchor | prime stop at 100% of intent chroma in every mode; shoulders below it by construction; the default kit's Tertiary/Info/Neutral mids stop overshooting their key colour | moves every ramp in the product (blast radius is the whole corpus plus the default kit); `intensity-legacy` fixture (`test/engine/fixtures/tonal-legacy.json`) must be regenerated with a recorded rationale; `hpg-role-contrast` ratchet floors move and must be re-pinned |
+
+Target (Q4 ruled), measured as CAM16 chroma at the stop over CAM16 chroma at stop 500, per mode, over the fitted corpus and the default kit:
+
+| stop | today (perceptual, median) | target |
+|---|---|---|
+| 500 (the anchor stop) | 144% of source | 100% ± 1% (exact at the anchor for anchored palettes) |
+| 300 and 700 | 129% / 107% | median ≤ 75%, p90 ≤ 90% |
+| 100 and 900 | 18% / 39% | median ≤ 25%, p90 ≤ 35% |
+| any stop | up to 144% | none above 100% of the anchor's chroma (peak mode may equal it at the cusp) |
+
+Effect on the 53 roles and on the on-color gates: the accents (550/450) sit one envelope step from the anchor and keep close to its chroma, so their lightness moves little; the tints (050 to 200, the on-colors and containers) lose chroma and move toward white, which raises accent-versus-on-color ratios slightly; hover/active (650/750, 350/250) and outline/scrim bases (500 alpha ramp) get less chroma. Under `onColorMode: fixed` the on-color is stop 050 in both schemes, so the ratio change is dominated by the accent's own L* shift (Helmholtz-Kohlrausch: CIELAB L* rises when chroma falls at fixed OKHSL `l`, #668). `hpg-role-contrast` is a ratchet floored to one decimal; U3 must print each family's new ratio and re-pin only upward, or hand any downward move to #662's policy. Prototype proxy over the curated corpus: 2,943 fitted palettes already sit under 4.5:1 at the accent/050 pair today (they are muted sampled colours, not accents), 2,330 after the pinned ladder at 500; #674's curated-corpus gate must be measured against the landed U3, not against today.
+
+## Criteria (verifier-checkable)
+
+- C1 `npm test` green on the branch head: exit 0 and the runner's last line reads `all 45 test files passed` (baseline 44 per `.sdlc/baseline.md`, plus `test/engine/anchor.mjs` registered in `test/run.mjs` TESTS); then `git status --short` prints nothing. Negative control: corrupt `docs/reference/data/role-table.json`, expect the 17 FAIL lines `.sdlc/adapter.md` §1 names.
+- C2 Anchor identity: for every palette that carries `anchor`, `primeSwatches(...)[3].hex === anchor` and `exports.js`'s `prime.DEFAULT` OKLCH string equals `oklchStr(rgbToOklch(hexToRgb(anchor)))`; count = 3,380 on the regenerated corpus (2,028 sampled + 1,352 status), 0 mismatches. Command: `node test/engine/anchor.mjs` prints `anchor-identity: 3380 exact, 0 off`. Negative control: patch one spec swatch hex by one byte in a scratch copy and rerun the generator into a temp dir, the gate names that preset and palette.
+- C3 Ramp pass-through: for every anchored palette, `paletteStops(p, controls, STOPS)` stop 500 hex equals `anchor` in each of `perceptual`, `peak`, `even` (3 × 3,380 checks, 0 misses), and the 25-stop export ramp agrees at 500. Command: `node test/engine/anchor.mjs` prints `anchor-ramp: 10140 exact, 0 off`. Negative control: set `lift: 40` on an anchored palette, stop 500 unchanged; on a non-anchored copy of the same palette stop 500 moves.
+- C4 Non-anchored byte identity (the engine-level negative control): with every `anchor` stripped from the regenerated presets and the envelope defaults reverted to today's values, `paletteStops` and `primeSwatches` output is byte-identical to `origin/main` at branch creation (the sha recorded in the unit handoff's `base:` row, never a fixed commit in this plan) for all 3,780 palettes in all three modes, and the default kit is byte-identical. Command: `node scripts/report-preset-fidelity.mjs --identity-control --base <sha>` prints `0 differing cells`; the verifier reads `<sha>` from the handoff and confirms `git merge-base plan/<slug> origin/main` equals it.
+- C5 Monotone and distinct: every anchored ramp has non-increasing OKHSL `l` 050 → 950, a ≥ 0.55 L* gap between neighbouring stops, and no two stops share a hex. The Q3 rule (ruled b) applies to exactly the sources outside the ramp window [9.95, 95.05] L*: their `prime.DEFAULT` is still the source byte-for-byte (C2), the ramp's stop 500 lands at the window edge nearest the source, and the gate prints the allow-list by name with its expected count, 10 (9 dark sources at 7.32 to 9.84 L* plus the one pure-white source), failing on any other count or any other name. Measured CIELAB L* non-increasing except the #668 class, whose count must not exceed today's 9 and is expected to fall to 0 (anchored palettes carry lift 0). Command: `node test/engine/anchor.mjs` prints `anchor-ramp allow-list: 10 (expected 10)` then the ten r-tagged lines below (Nike secondary, Nike tertiary-muted white, Double Indemnity, The Night of the Hunter, 2001, TRON: Legacy, Tórshavn, Khumbu, Rub' al Khali, Atchafalaya); an eleventh line or a changed name is a FAIL. The ladder window [12.25, 96.88] L* (U6) excludes 21 sources including these 10; U6's `ladder-window` gate in `test/engine/prime.mjs` prints that list the same way (`ladder-window allow-list: 21 (expected 21)`). The 21 names, measured on 279dc74 (`baseline-5-out.txt`), tagged r = outside the ramp window, l = outside the ladder window:
+  brands "Nike · The Swoosh · Since 1971" secondary `#101820` L* 7.84 (r, l) · brands "Nike · The Swoosh · Since 1971" tertiary-muted `#FFFFFF` L* 100.00 (r, l) · film "Double Indemnity" primary `#1B1B1D` 9.84 (r, l) · film "The Night of the Hunter" primary `#161618` 7.32 (r, l) · film "Apocalypse Now" primary `#241E1A` 11.81 (l) · film "2001: A Space Odyssey" tertiary-muted `#1A1B1E` 9.78 (r, l) · film "TRON: Legacy" secondary `#181B1F` 9.62 (r, l) · film "Suspiria" tertiary-muted `#201F25` 12.09 (l) · film "The Matrix" tertiary-muted `#1F1F24` 11.95 (l) · music "The late-night club" primary-muted `#1F1F23` 11.91 (l) · music "UK '77" secondary `#1F1F23` 11.91 (l) · music "P-Funk" secondary-muted `#211E27` 11.95 (l) · music "Black metal" secondary `#1E2024` 12.20 (l) · nature "32° N Carlsbad Caverns" secondary `#1D1D20` 10.88 (l) · travel "62° N Tórshavn" tertiary-muted `#221913` 9.66 (r, l) · travel "48° N Saint-Malo" primary-muted `#251B14` 10.76 (l) · travel "27° N Khumbu teahouse" tertiary-muted `#1F1A16` 9.70 (r, l) · travel "41° N Eminönü" tertiary-muted `#251B12` 10.71 (l) · travel "20° N Rub' al Khali" primary-muted `#1F1A16` 9.70 (r, l) · travel "30° N Wadi Rum" primary `#1E1D1B` 10.80 (l) · travel "30° N Atchafalaya" primary `#221913` 9.66 (r, l). Negative control: lower one allow-listed source's L* in a scratch spec copy so it re-enters the window, the count line reads 9 and the gate fails.
+- C6 Chroma envelope (Q4 ruled): `node scripts/report-preset-fidelity.mjs --envelope` prints, per mode, the median and p90 of CAM16 chroma at stops 100/300/700/900 over stop 500, over the 2,836 fitted palettes with source chroma ≥ 10 and over the 8 default-kit semantic families; pass is median ≤ 75% and p90 ≤ 90% at 300 and 700, median ≤ 25% and p90 ≤ 35% at 100 and 900, and 0 palettes with any stop above 100% of stop 500 (peak mode included: the cusp coincides with 500 by construction, so no exemption), in all three modes; `env(500) = 1` within 1e-9 for every controls combination in the sweep. Negative control: rerun with `--damp-amp 55`, expect the `above 100%` count to be non-zero and the line marked FAIL.
+- C7 Both paths share one envelope: `grep -c "export function chromaEnvelope(" src/engine/tonal.js` prints 1, `grep -c "chromaEnvelope(" src/engine/tonal.js` prints exactly 3 (the definition plus the even-path and OKHSL-path calls), and `grep -c "1 + ((controls.dampAmp" src/engine/tonal.js` prints 0 (today 2, lines 318 and 427). Damping never perturbs tone: the `damping-curve (f)` gate stays green at `|Δ| ≤ 1e-9`.
+- C8 Contrast: `hpg-role-contrast` green with floors re-pinned to the new measured ratios; no family's new ratio is below its current floor (`test/engine/semantic.mjs` FLOORS, perceptual and even) unless #662's landed policy rules otherwise, in which case the gate comment cites the ruling. MCP `contrastLint` over the default kit (`contrastLint(brandKit(defaultDocument()))` per mode): today 0 entries in perceptual, 0 in even, 9 in peak (Secondary, Info, Success, Warning, Data 4 to 8); pass is ≤ 0, ≤ 0 and ≤ 9. Negative control: lower one FLOORS entry by 0.1 below the measured ratio in a scratch copy of the gate, expect it to stay green; raise it 0.1 above, expect that family's line to FAIL.
+- C9 Regenerated assets: after `npm run gen:categories && npm run gen:adia-exports && npm run gen:mcp-assets && npm run bundle && npm run gen:figma-ui`, `git status --short` prints nothing; `git diff --stat origin/main -- figma/binder/figma-semantic-binder/code.js` prints nothing; `docs/reference/data/role-table.json` changes only by the 16 `defaults[].anchor` fields U1 adds: `git diff origin/main -- docs/reference/data/role-table.json | grep -c '^[-+]' ` prints 18 (16 added lines plus the two file-header lines) and `jq '.defaults | map(has("anchor")) | all' docs/reference/data/role-table.json` prints `true`, while `jq '.roles | length'` and the 53-role deep-equal gate are unchanged; `git tag --list 'adia-*@1.1.0'` prints exactly three lines (`adia-brand-document@1.1.0`, `adia-oklch-export@1.1.0`, `adia-radix-export@1.1.0`), cut on the squash commit per the #631 procedure, and `git tag --list 'adia-*'` prints six.
+- C10 Records, one grep each, all non-zero on the branch and zero on `origin/main`: `grep -c "^## ADR-025" docs/reference/references/decision-records.md` = 1 and it precedes `## Quick map`; `grep -c "^## 1.62" docs/reference/CHANGELOG.md` = 1; `grep -c "^| \*\*Anchor\*\*" docs/reference/references/glossary.md` = 1; `grep -c "^## 9\. Anchored palettes" docs/reference/references/knowledge-02-tonal-scale.md` = 1; `grep -ci "anchor" .claude/skills/color-math/SKILL.md` ≥ 3; `grep -ci "anchored palette" docs/reference/rubrics/acceptance-criteria.md docs/reference/rubrics/quality-rubric.md` ≥ 1 in each file (today 0 in both: the rubrics state lift's displacement mechanism at `quality-rubric.md:39-43` and `acceptance-criteria.md:22-25` and carry no anchor predicate; the new text must state that an anchored palette's `prime.DEFAULT` and stop 500 equal `anchor` byte-for-byte and that skew/lift never move them). `node test/repo/branding.mjs` and the #664 citation gate green.
+- C11 Ladder symmetry (Q8, Q9 ruled): over the full sweep (both hue spaces, hue 0..359 step 5 × chroma {0, 50, 100}) plus the 16 defaults plus the 3,380 anchored palettes, `L*(brightest) − L*(prime) == L*(prime) − L*(dimmest)` within 1e-9 by construction and within 3 L* measured from the emitted pixels, 0 exceptions; every rung keeps ≥ 70% of prime's CAM16 chroma or equals `maxChromaInGamut(hue, L)` at its tone within 0.5 (the gate prints which); the corpus report prints the ladders with span < 30 L*: expected 373 ± 5 on source anchors (the prototype's count under the ruled rules; the tolerance covers the U6 window constants being derived rather than retyped) and exactly 0 on the default kit under Q2 (b). Negative control: run the gate against `origin/main`'s `prime.mjs`, expect the symmetry line to FAIL with 2,034 ± 10 corpus ladders over 3 L*.
+
+- C12 Reset action (Q6, ruled): on an opened anchored preset copy, editing `hue` or `chroma` removes `anchor` from the palette (the palette becomes ordinary and `prime.DEFAULT` reverts to the key colour) while the generator-written `sourceAnchor` field (U1 schema: the same hex, never edited by the UI, persisted through serialize/hydrate) stays; the inspector shows a "Reset" action, visible only when `sourceAnchor` is present and `anchor` is absent, that sets `anchor = sourceAnchor` and re-derives hue/chroma/lift from it, after which `paletteStops` and `primeSwatches` output is byte-identical to the untouched preset. Command: the headless shim run (`test/ui/headless-boot.mjs`, a new lettered group) opens a curated preset, drags Hue by +10, asserts `anchor` absent, `sourceAnchor` still equal to the preset's source hex, and the prime hex changed, clicks Reset, asserts `anchor` restored and the 19 ramp hexes plus the 7 prime hexes deep-equal the pre-edit capture; skew and lift edits keep `anchor` (asserted in the same group). Negative control: with the Reset handler stubbed to a no-op, the group fails on the `anchor` restored assertion.
+## Units
+
+- [ ] U1 (M) anchor field + `prime.DEFAULT` byte-exact · grade l3
+  `src/ui/model.mjs` (`DEFAULT_PALETTES` gain `anchor` = today's stop-550 hex per Q2 (b), the 16 values listed under mechanism (3)), `docs/reference/data/role-table.json` (`defaults[]` gains the same 16 `anchor` fields, and `hpg-role-contrast`'s two-source parity loop in `test/engine/semantic.mjs` extends its compared fields from chroma/skew/lift to chroma/skew/lift/anchor, `compared` = 4 × 16), `src/ui/persist.js` (`DOMAINS.palette.anchor` and `DOMAINS.palette.sourceAnchor`, `clampPalette`: each a 6-hex string or absent, `sourceAnchor` written only by the generator and by `defaultDocument()`, so Reset (C12) has a field to read after a detach; schema version bump with a RENAME_MAPS no-op entry per the TKT-0016 rule), `scripts/gen-categories.mjs` (store `anchor: hex` for sampled + status palettes; `direct` palettes untouched unless the JSON authors `anchor`), `src/engine/prime.mjs` (anchor branch: `prime` step emits the anchor rgb verbatim, ladder from `rgbToOkhsl(anchor)`, window clamp for the six other steps), `src/engine/exports.js` unchanged (`prime.DEFAULT = prime.prime` already), new `test/engine/anchor.mjs` registered in `test/run.mjs` (C2 + the identity control of C4 for `primeSwatches`). Criteria: C1, C2, C4 (prime part), C10 for the schema note.
+- [ ] U2 (L) the ramp passes through the anchor at stop 500 in all three modes, with the Reset action · grade l4
+  `src/engine/tonal.js`: anchored branch in `okhslStops` (piecewise ladder through `(500, anchor.l)`, skew/lift as per-side warps with 500 fixed, hue = anchor OKHSL hue, s at 500 = anchor.s) and in `paletteStops`' even path (`toneAt` piecewise through `(500, anchor L*)`, chroma at 500 = anchor CAM16 chroma, hue solved from the anchor's CAM16 hue, 500 emitted verbatim); sources outside [9.95, 95.05] L* land at the nearest window edge (Q3 b). `scripts/gen-categories.mjs`: `liftForTone` retired, `lift: 0` stored, the summary line reports anchors and the allow-list instead of the band. `test/engine/categories.mjs`: `lift-anchor` gate replaced by the `anchor-ramp` gate in `test/engine/anchor.mjs` (C3, C5); #656 is landed, so `EXPECTED_DRIFT` retires with it. `src/ui/sections/color.js` + `src/ui/app.js`: hue/chroma edits drop `anchor`, a Reset action restores it (Q6, C12), with a headless-shim group in `test/ui/headless-boot.mjs`. Criteria: C1, C3, C4 (ramp part), C5, C12. Depends on U1.
+- [ ] U3 (M) anchor-centred chroma envelope, all modes · grade l4
+  `src/engine/tonal.js` (`chromaEnvelope`, both paths, keyed on the EFFECTIVE stop (`effStop`, the lift-displaced position, the same one lightness reads) and never on the nominal stop, so #668's damping-versus-lightness mismatch cannot return; `chromaFloor` as an envelope floor, saturation basis = the key colour's own OKHSL `s` for non-anchored palettes), `scripts/gen-categories.mjs` (`VIVID_MIDS.dampAmp` 55 → 0, Q7 ruled: the envelope is normalised at 500 so a non-zero `dampAmp` can only raise the shoulders, which C6 forbids above 75%; the builder reports the C6 table at both values and ships 0), `test/engine/tonal.mjs` (envelope gate C6/C7; regenerate `fixtures/tonal-legacy.json` via `scripts/gen-tonal-fixture.mjs` with the rationale in the fixture header), `test/engine/semantic.mjs` (`hpg-role-contrast` floors re-pinned, C8). Depends on U1 (anchor stop) and on #668 R1 (Lane A, landing now); can be built in parallel with U2 behind the `anchorStop` parameter. Named case for C6: the nine #668 palettes (film "Touch of Evil" secondary, "2001: A Space Odyssey" tertiary-muted, "Arrival" primary-muted, "Blade Runner" secondary, "John Wick" tertiary-muted; music "Black metal, the forest at night" secondary; travel "35 N Yamanote" tertiary-muted, "34 S San Telmo" secondary-muted, "67 N Helsinki" tertiary-muted) with their pre-plan lifts (≤ −34) applied to a non-anchored copy render a measured CIELAB L* that is non-increasing across every step, 750 to 800 included, in perceptual mode; the report prints the nine names with their worst step and the count of upticks, expected 0 (today 9 on 279dc74; #668 R1 fixes them first and U3 must keep them fixed).
+- [ ] U4 (S) corpus regeneration and blast-radius report · grade l2
+  Runs every generator, commits the moved assets, and adds `scripts/report-preset-fidelity.mjs` (lifted from the two scratch scripts) whose output goes into the PR body and `.sdlc/handoffs/`: presets moved / 343, palettes moved / 3,780, max |dL*| per stop and per mode, max dChroma, per-family default-kit ratios before and after, exports that moved (the 10 colour formats, the DS bundle, `figma/plugin/ui.html`, `src/ui/categories/*.js`, `mcp` assets, `docs/reference/data/adia-*` at 1.1.0), C4's identity-control line, C5's allow-list count, #668's count. Criteria: C1, C4, C9. Depends on U1 to U3.
+- [ ] U6 (M) prime ladder steps equally in perceived lightness · grade l4
+  `src/engine/prime.mjs`: the ladder is built in CIE L* around the anchor's L* (rung k = L*prime ± k × STEP_L, STEP_L 9 by default, Q8), both sides take `min(roomUp, roomDown)` when either side hits the window (equal-compress), each rung rendered by `hctToRgb(anchorHue, min(C_prime, maxChromaInGamut(hue, L)), L)` so chroma is held and only the gamut desaturates; `primeSteps` becomes the L*-domain equivalent; `skew` keeps its per-side gamma on the normalised position; `PRIME_L_MIN/MAX` are re-expressed as the L* window [12.25, 96.88] (constants derived from the greys, not retyped). `test/engine/prime.mjs`: d1/d3/d4/d6 rewritten per the gate table, d5 re-frozen, g re-based on chroma, a new `symmetry` gate (|up − down| ≤ 1e-9 L* on every case, and ≤ 3 L* measured from pixels), a `ladder-window` gate that prints the 21-name allow-list with its expected count (C5), and the three clipped defaults (Tertiary, Danger, Warning) asserted at their equal-compress spans 52.8 / 49.9 / 46.3 L* ± 0.05. Criteria: C1, C5 (ladder half), C11. Depends on U1 (anchor = prime); independent of U2/U3.
+- [ ] U5 (S) records · grade l2
+  `docs/reference/references/knowledge-02-tonal-scale.md` (§2 controls: `anchor`; §4 `toneAt` pinned form; §5 the envelope replaces the `m` formula; new §9 "Anchored palettes"; §8.3 the anchor branch of the ladder), `glossary.md` (rows `Lift`, `Prime fill`, `dampAmp`; new `Anchor`), `docs/reference/rubrics/{acceptance-criteria,quality-rubric}.md` (the predicates that bless `liftForTone` and the 1.5 L* anchor tolerance become the exact-anchor predicate), `docs/reference/CHANGELOG.md` 1.62, `.claude/skills/color-math/SKILL.md` and `references/foundations.md` (the two-path warning gains the anchor rule and the single envelope), `docs/reference/references/decision-records.md` ADR-025 "A palette's anchor is stored, not fitted" appended before Quick map, `docs/reference/data/adia-*` tag notes. Criteria: C10. Depends on U1 to U3 for the final numbers.
+
+## Blast radius (what U4 must report)
+
+| Measure | Expected direction |
+|---|---|
+| presets with any moved byte | 343 / 343 (the envelope is global); with the envelope reverted, 338 (the 5 direct Adia presets are untouched by U1/U2) |
+| palettes with `prime.DEFAULT` moved | 3,380 (all fitted) plus the 16 default-kit palettes (Q2 b); 0 direct unless a JSON opts in (Q5) |
+| max dL* at stop 500, anchored | up to 23.2 at the worst stop (median 6.6); the clamped presets landing on their source |
+| max dChroma at any stop | up to about 99 CAM16 units at stop 500 on vivid sources (the 44% overshoot removed) |
+| default kit ramps | move in every mode via U3 only |
+| default kit `prime.*` | move via U6 (metric, wall and chroma rule) for all 16 families; and via U1 under Q2 (b), ruled (the anchor becomes today's stop-550 hex, so `prime.DEFAULT` moves for all 16 families, e.g. Secondary `#00FBB1` to `#108960`); the d5 snapshot is re-frozen once |
+| corpus `prime.*` other six rungs | all 3,780 move via U6; the `prime` rung moves only via U1 (3,380 to their source) |
+| exports | all colour formats, DS bundle, Figma plugin bundle, categories modules, MCP assets, Adia artifacts; `role-table.json`, binder `code.js`, type and geometry exports unchanged |
+
+## Risks and sequencing
+
+| Risk | Handling |
+|---|---|
+| #662 (on-color policy, big, in flight) changes what the accent/on-color gate means; U3 moves those ratios | Land #662 first. U3 then re-measures under the landed policy. If #662 slips, U3 re-pins floors upward only and leaves a dated note in the gate for the downward ones. |
+| #674 (Adia Warning lift retune + a curated-corpus contrast gate) | Land #674 first. Its Adia retune is authored (`direct`), so U2 does not zero it; its curated gate floors are re-measured in U4 against the landed envelope. |
+| #656 (travel hex/oklch) | Landed (PR #679, `e3ef1d6`): hex and oklch agree; the anchor is minted from the hex. |
+| #657 (hue solver best iterate) | Landed (PR #678, `bda9584`); the baseline rows above are re-measured on 279dc74 and the C4 identity control compares against that head. |
+| #668 (L* uptick at 800 with lift ≤ −34) | Lane A lands R1 now (damping keyed on the effective stop). U3's envelope must stay keyed on the effective stop or the nine cases return; C6's named case checks the nine with their old lifts on non-anchored copies. Anchored presets also store lift 0, so U4's corpus count is expected 0 either way. Land #668 R1 before U3 is dispatched. |
+| `intensity-legacy` fixture (frozen at 83756bb) reds on any envelope change | U3 regenerates it with the rationale; the fixture's purpose (proving `baseIntensity` retirement) is preserved by keeping the two-mode comparison. |
+| Sources outside the workable window (10 for the ramp, 21 for the ladder, named in C5) | Q3 (b) ruled: token exact, ramp lands at the nearest window edge, both gates print the named allow-list with its expected count. |
+| U6 moves every `prime.*` token in every export (3,780 corpus ladders, 16 default families) and re-freezes the d5 snapshot; a light cusp anchor collapses to a short ladder under equal-compress | The corpus report (U4) prints the short-ladder list; Q2 (b) removes the default-kit cases; the d5 re-freeze names its capture commit so the gate stays independent of the new construction. |
+| Users editing an anchored preset copy | Q6 ruled: hue/chroma edits detach, a Reset action re-attaches; in U2's scope with a shim test (C12). |
+| With the anchor at 500 (Q1) neither scheme accent is the source: the light accent reads about 4 L* darker and the dark accent about 6 L* lighter (medians); sources near white (105 above L* 85) still give pale accents | That is the ruling; the on-color policy (#662) is the tool for readability, not the anchor. U4 reports both accents' dL* from the source per preset. |
+
+Sequence: #668 R1, #674 and #662 land (#657 and #656 have); then U1 → U2, U3 and U6 in parallel → U4 → U5 and pre-land review.
+
+## Open questions: all ruled (owner via the conductor, 2026-09-18, `scratchpad/plan-rulings-preset-intent.md`)
+
+| Q | Question | Plan recommended | Ruled | Where it lands |
+|---|---|---|---|---|
+| Q1 | which ramp stop carries the anchor | 550 | 500 | mechanism (1) C, envelope centre, U2, C3, C5, C6, blast radius; re-measured above |
+| Q2 | default kit anchors | (b) after the ladder measurement | (b) mint from today's stop-550 hexes | U1, mechanism (3), C11, blast radius |
+| Q3 | sources the window cannot hold | (b) | (b) token exact, ramp at the nearest workable L*, gate names them | C5 (9 ramp / 21 ladder names), U2 |
+| Q4 | envelope numbers | 300/700 ≤ 75%, 100/900 ≤ 25%, none above 100% | as recommended | mechanism (2) target table, C6, U3 |
+| Q5 | authored brand presets | opt-in `anchor` | opt-in | U1, blast radius |
+| Q6 | edits on an anchored copy | (a) detach on hue/chroma | detach on hue/chroma, plus a Reset action that re-attaches (owner: "we should have a Reset action to re-attach") | U2, C12 |
+| Q7 | `dampAmp` | keep the slot, default 0, document | as recommended | mechanism (2) E, U3, U5 |
+| Q8 | ladder span | keep 54 L* | keep 54 L* | U6, d1 constant |
+| Q9 | ladder metric, step, wall, chroma | CIE L*, 9 L*, equal-compress, hold CAM16 chroma | as recommended | U6, C11, gate table |
+
+The pre-ruling option text for each question is kept in the plan's git history (revision 2 below) and in `scratchpad/plan-rulings-preset-intent.md`.
+
+## Revisions
+
+| Date | Change | Why |
+|---|---|---|
+| 2026-09-18 | drafted from the owner's ruling with a measured baseline on 988420d | planner-preset-intent, read-only; no ticket yet, priority unranked |
+| 2026-09-18 | added baseline (3) prime ladder span and symmetry, the PRIME_STEP 0.09/0.11/0.13 rung table, the ruled-ladder simulation, mechanism (3), U6, C11, Q8, Q9; Q2 recommendation revised to (b); blast radius rows for `prime.*` | owner finding (ladder not 1:1 around prime) ruled as equal perceived-lightness steps; span widening still open |
+| 2026-09-18 | revision 1 (team-lead request plan-revision-1.md): confirmed U6, C11, the symmetry and span tables, Q8/Q9 are present; added the OKHSL up/down row and a U6 risk row | checkability review pre-pass |
+| 2026-09-18 | revision 2: nine rulings applied (Q1 anchor stop 500 against the 550 recommendation, re-measured on 279dc74: 3,380 exact at 500, accents −4.4 / +6.2 L*; Q2 b; Q3 b with the 21-name allow-list in C5; Q6 Reset action into U2 with C12); head set to 279dc74 after #657 and #656 landed; baseline (1), (2) and the prototype re-run; open questions replaced by the ruled table | checkability review reds C5 and U2 resolved by the rulings |
+| 2026-09-18 | revision 3 (checkability yellows): `src/ui/model.mjs` added to U1 for the Q2 (b) anchors; C1, C6, C7, C8, C9, C10, C11 rewritten with a command, a numeric threshold and a control each (contrastLint today 0 / 0 / 9 per mode measured on 279dc74); C4 pins the identity control to `origin/main` at branch creation with the sha in the handoff; U3's `dampAmp` conditional replaced by a rule | checkability record `scratchpad/plan-preset-intent-checkability.md` |
+| 2026-09-18 | revision 4 (re-check): C5 allow-list count corrected to 10 in all three places and the ten names listed; C9 states the `role-table.json` change (16 `defaults[].anchor` fields, parity loop extended) instead of "unchanged"; C10's vacuous `liftForTone` grep replaced by an `anchored palette` grep that is 0 on main; C12 names `sourceAnchor` as the field Reset reads; U6 names Tertiary, Danger, Warning as the defaults that clip at STEP_L 9 with their spans, d1/d5 rows and the `ladder-window` gate | re-check in `scratchpad/plan-preset-intent-checkability.md` |
+| 2026-09-18 | revision 5: U3's envelope keyed on the effective (lift-displaced) stop, the nine #668 palettes named as a C6 case with expected 0 upticks, #668 R1 added as a dependency in Risks and the sequence | team-lead, #668 R1 landing in Lane A |
