@@ -22,7 +22,7 @@
   |skew| ≤ 100, and lift (a cosine displacement of the stop, `src/engine/tonal.js`'s
   `liftStop`) does not break monotonicity for |lift| ≤ 40 either, at any tension. Not claimed
   for `perceptual`/`peak` (`okhslStops`): gated at the default palettes only
-  (`test/engine/tonal.mjs:246-264` okhsl-modes, `test/engine/tonal.mjs:593-601` lift-monotonic), no grid-wide guarantee.
+  (`test/engine/tonal.mjs:246-264` okhsl-modes, `test/engine/tonal.mjs:577-601` lift-monotonic), no grid-wide guarantee.
 - **AC-T4** Applied chroma never exceeds the gamut ceiling at any stop
   (`chroma <= maxc` for every stop).
 - **AC-T5** Edge damping reduces chroma toward 050/950 (chroma at 500 ≥ chroma at 050 and
