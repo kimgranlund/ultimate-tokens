@@ -4,7 +4,7 @@ unit: U6 (M) prime ladder steps equally in perceived lightness
 plan: preset-intent-fidelity (ticket #681, P1)
 branch: unit/pif-u6-ladder
 written: 2026-09-18
-status: gates green, rebased onto origin/plan/preset-intent-fidelity @ 6429c49, review pass 1 folded, gamut-ceiling gate added per owner ruling
+status: gates green, rebased onto origin/plan/preset-intent-fidelity @ 6429c49, review passes 1-3 folded, gamut-ceiling gate added per owner ruling and given a real negative control
 ---
 
 # U6 handoff: prime ladder steps equally in perceived CIE L*, held CAM16 chroma
@@ -60,27 +60,40 @@ Report: kept by the team lead, not committed to this branch. All findings addres
 
 New file: `test/engine/fixtures/prime-pre-681.mjs` (frozen negative-control fixture, S1).
 
-## Gamut-ceiling criterion (owner ruling, folded after review pass 1)
+## Gamut-ceiling criterion (owner ruling, folded after review pass 1; superseded by review pass 3 — see below)
 
 The owner ruled: the reviewer's pre-S3 count of 1,288/302,400 out-of-gamut rungs is accepted,
 ship as is; a rev9 of the plan adds a numeric ceiling criterion on U6 for exactly that count;
 gate it by measuring the count on my own folded head (not by re-asserting the reviewer's 1,288
 figure, which described the PRE-S3 head, not mine) and assert it does not exceed what I measure.
 
-- **What I pinned:** `PINNED_GAMUT_CEILING = 0` in `test/engine/prime.mjs` (new `gamut-ceiling` gate).
-- **How derived:** reused gate (c)'s widened sweep, now run at full precision (hue step 1, matching
-  the reviewer's own reproduction exactly: hue 0..359 x chroma {25,50,75,100} x hueShift {0,±10,±20}
-  x skew {0,±40} x both hue spaces = 43,200 palettes x 7 rungs = 302,400 rungs, chroma 0 excluded to
-  match the reviewer's denominator since it is neutral and trivially always in gamut). Measured on
-  commit `7cd5e2e` (this fold): **0/302,400** out-of-gamut. The S3 fix (`localMaxChroma`, already
-  shipped before this ruling arrived — it was required regardless to close the REQ-043 determinism
-  break) turns out to eliminate the violations entirely, so the honestly-measured ceiling on this
-  head is 0, not a re-statement of the owner-accepted 1,288 figure from the pre-S3 head. The gate
-  also asserts the swept-rung count is exactly 302,400 as a canary against the sweep parameters
-  drifting silently.
-- Gate (c) itself was widened alongside this (hue step 3 → step 1) since the two now share one sweep
-  pass rather than running two separate expensive loops; `checked < 15000` threshold left as a floor
-  (actual count is now 43,200, well above it).
+**Superseded, review pass 3 (see the "Review pass 3" section below for the full fold):** the version
+described in the rest of this section — riding on gate (c)'s full-precision sweep, pinning
+`PINNED_GAMUT_CEILING = 0` with no negative control — could never fail by construction (`chroma` is
+always `min(cPrime, cap)` where `cap` is a value the binary search just confirmed in gamut, so
+"chroma <= cap is in gamut" is a tautology, not a testable fact). Kept below as a record of what
+shipped between the pass-1 and pass-3 folds; the shipped gate now uses its own smaller sweep with a
+real negative control (`vulnPrimeSwatches`), still pinning a measured ceiling of 0.
+
+- **What I pinned (pass 1 fold, since revised):** `PINNED_GAMUT_CEILING = 0` in `test/engine/prime.mjs`
+  (new `gamut-ceiling` gate).
+- **How derived (pass 1 fold, since revised):** reused gate (c)'s widened sweep, now run at full
+  precision (hue step 1, matching what was BELIEVED to be the reviewer's own reproduction exactly: hue
+  0..359 x chroma {25,50,75,100} x hueShift {0,±10,±20} x skew {0,±40} x both hue spaces = 43,200
+  palettes x 7 rungs = 302,400 rungs, chroma 0 excluded to match the reviewer's denominator since it is
+  neutral and trivially always in gamut). Measured on commit `7cd5e2e` (this fold): **0/302,400**
+  out-of-gamut. The S3 fix (`localMaxChroma`, already shipped before this ruling arrived — it was
+  required regardless to close the REQ-043 determinism break) turns out to eliminate the violations
+  entirely, so the honestly-measured ceiling on this head is 0, not a re-statement of the
+  owner-accepted 1,288 figure from the pre-S3 head. **Correction, review pass 3:** the belief that this
+  matched "the reviewer's own reproduction exactly" was wrong — their sweep uses 4 hueShift values x 5
+  chroma values, this one used 5 x 4; the 302,400 totals coincided by accident. On MY parameters the
+  pre-fix violation count is 1,549, not the reviewer's 1,288 (also independently re-measured, see
+  "Review pass 3" below) — I had been citing a number from different axis parameters as if it were
+  the same measurement.
+- Gate (c) itself was widened alongside this (hue step 3 → step 1) since the two now shared one sweep
+  pass rather than running two separate expensive loops; **reverted to step 3 in review pass 3** once
+  the two gates were decoupled (see below).
 
 ## Review pass 2 (fresh-context reviewer, 🔴 FIX-FIRST, narrow) — folded
 
@@ -125,7 +138,60 @@ findings, both addressed:
   poison kept) brought `npm test` to 1:49 (109.9s) and the standalone `node test/engine/prime.mjs` run to
   1:03 (63.8s) — both re-measured on this fold's head, full re-run, tree clean after.
 
-## Commits (post-rebase, plus the gamut-ceiling and review-pass-2 folds)
+## Review pass 3 (fresh-context reviewer, 🔴 FIX-FIRST, then two corrections) — folded
+
+Report: appended to the same review file the team lead holds. Confirmed: the 0/302,400 pin from the
+gamut-ceiling fold above is real (1,288 pre-fix, 0 on this head); the reviewer's own three "apparent
+survivors" while checking my work were probe artefacts on their end, not a bug here. One new finding,
+plus two corrections the team lead relayed after their own re-check:
+
+- **Finding: the gamut-ceiling gate cannot fail.** `chroma` in `primeSwatches` is always
+  `Math.min(cPrime, cap)`, and `cap` (`localMaxChroma(hue, l)`) is itself a value the SAME function's
+  own 18-iteration binary search just confirmed in gamut via `hctToRgb`. "chroma <= cap renders in
+  gamut" holds by the identical monotonicity assumption the binary search itself depends on to be
+  valid at all — a mathematical tautology given the current construction, un-falsifiable by any sweep
+  at any scale, not a fact this test can discover. The reviewer's own 1,456-slice probe already showed
+  zero counterexamples; running the SAME tautological check at 302,400-rung scale (riding on gate (c)'s
+  sweep) bought no additional discriminating power for real cost (part of what pushed `npm test` to
+  2:21). Fixed: decoupled gate (c) from the ceiling gate. Gate (c) reverted to its review-pass-1-
+  approved, cheaper step-3 sweep (its own purpose — a broad `inGamut===true` correctness check — never
+  needed step-1 resolution; that was only added to match a denominator the ceiling gate no longer
+  needs). The `gamut-ceiling` gate now runs its own smaller, dedicated sweep (hue step 2 x chroma
+  {25,50,75,100} x hueShift {0,±10,±20} x skew {0,±40} x both hue spaces = 151,200 rungs) and adds a
+  REAL negative control: `vulnPrimeSwatches`, a reimplementation of `primeSwatches`'s exact
+  construction but using hct.js's shared, `.toFixed(2)`-truncated `peakC`/`maxChromaInGamut` in place
+  of `prime.mjs`'s private, exact-keyed `localPeakC`/`localMaxChroma` — i.e. literally the pre-fix
+  construction, which CAN clip past the true gamut boundary on a cache-bucket collision (a real,
+  non-tautological failure mode). Measured on this fold: 0/151,200 real violations (the pinned
+  ceiling, unchanged), and a robust, repeatable nonzero count on the vulnerable reconstruction
+  (327/151,200 in this test file's own run context — the count is inherently order-dependent, since
+  it deliberately reads hct.js's shared, history-sensitive cache, but stayed at exactly 327 across
+  repeated runs of the unchanged file, and a standalone, cold-cache measurement of the same sweep
+  parameters found 89/151,200 — both comfortably nonzero, proving the check would catch a regression
+  back to the shared cache). `npm test` standalone `node test/engine/prime.mjs` time: 63.8s -> 39.8s.
+- **Correction 1 (relayed after the finding above).** The negative control already existed in spirit —
+  the pre-fix cached-cap construction, run on the reviewer's own parameters, measures 1,546/302,400.
+  This also licenses a far smaller sweep than the 40s one I had been running. Addressed by building
+  `vulnPrimeSwatches` (above) rather than reusing a fixture, since no committed fixture captured this
+  specific intermediate (post-S3, pre-review-pass-3) construction — `test/engine/fixtures/prime-pre-681.mjs`
+  is the OLDER, pre-#681 OKHSL-domain construction, a different bug entirely; reimplementing the
+  cap-only difference inline (mirroring this file's own stated pattern of independently re-deriving
+  expectations from hct.js's own primitives, never calling back into `primeSwatches`'s internals) was
+  more honest than trying to make an unrelated fixture serve double duty.
+- **Correction 2.** My gate's own comment had credited "the reviewer's own reproduction sweep" for the
+  302,400 denominator while actually using different axis composition (theirs: 4 hueShift values x 5
+  chroma values; mine: 5 x 4) that only coincidentally summed to the same total — and on MY axis
+  composition the pre-fix violation count is 1,549, not the reviewer's 1,288 (a number that belongs to
+  a DIFFERENT parameter set, not mine). Instructed to measure my own parameters and cite that, or adopt
+  theirs, rather than carry a copied figure. Fixed: independently re-measured 1,549 on my own 5x4 axis
+  composition at full hue-step-1 resolution (302,400 rungs) via a standalone script before writing
+  anything into the committed gate — it matched the team lead's own independent re-check exactly. The
+  shipped gate's comment now states its own parameters plainly, cites the 1,549 cross-check as
+  independently re-measured (not copied), and the actual committed negative control runs its own
+  smaller 151,200-rung sweep (327/151,200 vulnerable, in this file's run context) rather than the full
+  302,400-rung one, per the cost finding above.
+
+## Commits (post-rebase, plus the gamut-ceiling, review-pass-2, and review-pass-3 folds)
 
 - `c286d40` feat(prime): ladder steps equally in perceived CIE L*, held CAM16 chroma (#681 U6)
 - `b0e2adb` test(prime): cite the d5 frozen snapshot's capture commit (#681 U6)
@@ -135,8 +201,10 @@ findings, both addressed:
 - `8b9400d` docs(sdlc): fold the gamut-ceiling ruling into the U6 handoff (#681 U6)
 - `3fe82d9` fix(prime): close the anchor-path determinism hazard, assert hex identity (#681 U6 review
   pass 2)
+- `49ac4e7` docs(sdlc): fold review pass 2 into the U6 handoff (#681 U6)
+- `3a9e6bb` test(prime): give the gamut-ceiling gate a real negative control (#681 U6 review pass 3)
 
-`head: 3fe82d9` (pending this handoff commit). `base: bf2aaf6` (`git merge-base HEAD origin/main`,
+`head: 3a9e6bb` (pending this handoff commit). `base: bf2aaf6` (`git merge-base HEAD origin/main`,
 re-measured after rebasing onto
 `origin/plan/preset-intent-fidelity` @ `6429c49`, per team-lead instruction). Rebased cleanly, no
 conflicts (`git rebase origin/plan/preset-intent-fidelity`). Re-read `.sdlc/plans/preset-intent-fidelity.md`
@@ -262,10 +330,10 @@ doesn't check). This is plan unit U5's territory ("records") per the plan's own 
 
 | Criterion | Command | Observed | Negative control |
 |---|---|---|---|
-| C1 `npm test` green | `npm test` | exit 0, `✓ all 47 test files passed` (46 pre-rebase; 47 post-rebase — the extra registered file came from upstream #662/#674 work already on the rebased plan branch, not from this unit, which adds no new registered test file); `git status --short` empty after the rebase and after two further consecutive runs (byte-stable); `node scripts/audit-citations.mjs` STALE 0 everywhere; `node test/repo/branding.mjs` clean (447 files, re-measured on the review-pass-2 fold head); `npm test` total time 1:49 (109.9s) on the review-pass-2 fold head, down from 2:47/2:21 during the fold itself (see "Review pass 2" above for the cost breakdown) | not re-run here (owned by C1's own negative control in `.sdlc/adapter.md` §1 — corrupt role-table.json, expect 17 FAIL — out of my unit's scope to re-verify; my own red-then-green is below) |
+| C1 `npm test` green | `npm test` | exit 0, `✓ all 47 test files passed`; `git status --short` empty after every fold's re-run; `node scripts/audit-citations.mjs` STALE 0 everywhere; `node test/repo/branding.mjs` clean (447 files); standalone `node test/engine/prime.mjs` 39.8s on the review-pass-3 fold head (down from 63.8s pre-pass-3, 45s+ during the pass-2 fold itself) — `npm test` total wall time varied 1:36-2:10 across repeated runs on this fold's head, which I attribute to other worktrees/sessions competing for CPU on this machine (consistent with the earlier "concurrent run" caveat this session was given), not to this gate's own cost; the standalone, single-process figure is the reliable signal | not re-run here (owned by C1's own negative control in `.sdlc/adapter.md` §1 — corrupt role-table.json, expect 17 FAIL — out of my unit's scope to re-verify; my own red-then-green is below) |
 | C5 (ladder half) | `node test/engine/prime.mjs`, gate `ladder-window` | `ladder-window allow-list: 21 (expected 21)` — iterates every swatch across `docs/reference/colors/categories/*.json`, re-derives the six-role mapping independently, matches C5's 21-name list on (category, role, hex) exactly (review pass 1 S2; superseded the false-premise "0" this gate printed before review) | synthetic [40,60] narrow window inside the same gate: found more than 21 out-of-window cases, proving the filter discriminates on the window bounds |
 | C11 symmetry | `node test/engine/prime.mjs`, gate `symmetry` | by-construction: 0/464 fails, `|up-down|` exactly 0 every case. Measured (pixel `lstarFromRgb`): 0/464 exceed 3 L\*, max measured asymmetry 0.518 L\* | the frozen `prime-pre-681.mjs` fixture (pre-#681 redistribute rule), same 464-case sweep: 295/464 exceed 3 L\*, max asymmetry 52.01 L\* — FAILS as required (review pass 1 S1: this control previously read `origin/main` live via `git show`, now a committed fixture) |
-| gamut-ceiling (owner ruling, post-review) | `node test/engine/prime.mjs`, gate `gamut-ceiling` | 0/302,400 out-of-gamut rungs, pinned ceiling 0 (see "Gamut-ceiling criterion" above for exact sweep parameters and derivation) | canary: gate FAILs if the swept-rung count drifts from exactly 302,400, catching a silent sweep-parameter change |
+| gamut-ceiling (owner ruling, post-review, corrected review pass 3) | `node test/engine/prime.mjs`, gate `gamut-ceiling` | 0/151,200 real out-of-gamut rungs, pinned ceiling 0, on this gate's own dedicated sweep (hue step 2 x chroma {25,50,75,100} x hueShift {0,±10,±20} x skew {0,±40} x both hue spaces — see "Review pass 3" above for why this is no longer the reviewer's/gate-(c)'s 302,400-rung sweep) | `vulnPrimeSwatches`, a reimplementation using hct.js's shared, truncated-key `peakC`/`maxChromaInGamut` in place of `localPeakC`/`localMaxChroma` (the real pre-fix construction): 327/151,200 in this file's own run context (order-dependent by construction, repeatably nonzero across runs; 89/151,200 measured cold-cache, standalone) — proves the gate discriminates a regression back to the shared cache, closing review pass 3's "cannot fail" finding |
 
 Red-then-green, every gate: before my `src/engine/prime.mjs` edit, `node test/engine/prime.mjs` threw a
 `SyntaxError` (`PRIME_STEP` no longer exported) — the RED state, since I edited the engine before the
@@ -350,7 +418,8 @@ comparable to the plan's corpus-scale numbers, reported for scale only.
   citation re-pointed (S7); post-review pass 1: gate (c) sweep taken to full precision (hue step 1) and
   a new `gamut-ceiling` gate added, reusing that sweep, per the owner's numeric-ceiling ruling; review
   pass 2: a real hex-identity determinism assertion added to gate (c), replacing its prior inGamut-only
-  claim)
+  claim; review pass 3: gate (c) reverted to its cheaper step-3 sweep, decoupled from `gamut-ceiling`,
+  which gained its own smaller dedicated sweep plus `vulnPrimeSwatches` as a real negative control)
 - `test/engine/fixtures/prime-pre-681.mjs` (new, review pass 1 S1 — frozen pre-#681 `prime.mjs`, vendored
   from `origin/main` blob `c744fb8`)
 - `test/engine/exports.mjs` (two literals + comment, mechanical re-pin)
