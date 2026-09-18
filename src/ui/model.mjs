@@ -245,6 +245,7 @@ import {
   exportRadix,
   exportRadixModule,
   RESERVED_ALIAS_KEYS,
+  radixPaletteKey,
   SCRIM_BASES,
   SCRIM_STEPS,
   dialogBackdropHex,
@@ -341,9 +342,29 @@ export function radixKeyCollision(name) {
   return RESERVED_ALIAS_KEYS.includes(slug(name));
 }
 
-// RADIX_COLLISION_BADGE — the pinned badge string (OQ-3, repo owner ruling, revision 4). States
-// the NAME fact only; asserts nothing about the export outcome. Never paraphrase this string.
-export const RADIX_COLLISION_BADGE = "Name matches a reserved export key";
+// radixExportKey(name, palettes) — the key exportRadix actually emits this palette's group under
+// (#630): the engine's own radixPaletteKey over the OTHER enabled palettes' slugs, never a second
+// copy of the suffix rule. For a non-colliding name this is just slug(name).
+export function radixExportKey(name, palettes) {
+  const n = slug(name);
+  const others = new Set();
+  let self = false;
+  for (const p of palettes) {
+    if (p.on === false) continue;
+    const s = slug(p.name);
+    if (s === n && !self) { self = true; continue; }
+    others.add(s);
+  }
+  return radixPaletteKey(n, others);
+}
+
+// RADIX_COLLISION_BADGE — the pinned badge prefix (OQ-3, repo owner ruling; re-ruled for #630: the
+// colliding palette is no longer dropped, it is exported under a renamed key, and the badge names
+// that key). radixCollisionBadge(key) is the full rendered note. Never paraphrase this string.
+export const RADIX_COLLISION_BADGE = "Exported as";
+export function radixCollisionBadge(key) {
+  return `${RADIX_COLLISION_BADGE} ${key}`;
+}
 
 // ── Canvas groups (ticket #556) ──────────────────────────────────────────────────
 // PALETTE_GROUPS (imported above, from persist.js) — the four canvas groups, in render order. A

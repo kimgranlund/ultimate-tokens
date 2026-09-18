@@ -42,8 +42,9 @@ below): **Tailwind v4** (`tailwind` · `exportTailwind`), **ShadCN** (`shadcn` �
 **Panda CSS** (`panda` · `exportPanda`, §11), and **Radix** (`radix` · `exportRadix`, §12).
 ShadCN and Radix are both **curated-contract** formats — ShadCN a fixed `SHADCN_ORDER` over a
 hand-kept suffix `MAP`, Radix a fixed `accent`/`gray`/`error`/`fg`/`canvas`/`border`/`bg` set built
-from `pickDrivers` — NOT all roles, so a new semantic role does not surface in either unless
-explicitly wired in. Panda CSS, like Tailwind, is auto-flow: it maps every palette's `roles` directly.
+from `pickDrivers` (a palette whose slug equals one of those seven keys is emitted as
+`<slug>-palette` instead, #630) — NOT all roles, so a new semantic role does not surface in either
+unless explicitly wired in. Panda CSS, like Tailwind, is auto-flow: it maps every palette's `roles` directly.
 
 **Scope note (TKT-0015):** `src/engine/exports.js` holds ONLY these 10 formats (the 9 emitters above
 plus the `exportAll` aggregator) plus their shared helpers (`derivePalette`/`derivedAll`, `pad3`/`slug`/`hexOf`/
@@ -324,6 +325,10 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
   the neutral driver, re-pointed to `gray` (Park UI's own `gray: colorPalettes.neutral` pattern, KF-4).
   `colors.error` is a single alias, `{colors.{danger ?? primary}.9}`.
   A `danger` driver, when enabled, backs `error`; otherwise `error` falls back to the primary driver.
+- **Reserved-key collision** (#630, `radixPaletteKey`): a palette whose slug equals one of the seven
+  alias keys above (or another palette's slug) is emitted under `<slug>-palette`, the suffix repeated
+  until unique (order-independent), and every driver/internal reference uses that renamed key, so
+  the aliases stay verbatim and no ladder is overwritten; collision-free documents are unchanged.
 - **Global semantic tokens** (REQ-026, Park UI's own verbatim keys, all referencing the just-built
   `gray` copy): `colors.fg.{default,muted,subtle}` → `gray.{12,11,10}`; `colors.canvas` → `gray.1`;
   `colors.border` → `gray.7`; `colors.bg.subtle` → `gray.2`.

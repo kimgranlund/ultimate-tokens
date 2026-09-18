@@ -1077,6 +1077,26 @@ const RADIX_ROLE_STEPS = [
 // `radixKeyCollision`) imports this constant rather than re-typing the literal.
 export const RESERVED_ALIAS_KEYS = ["accent", "gray", "error", "fg", "canvas", "border", "bg"];
 
+// radixPaletteKey(n, otherSlugs) — the #630 rule (option (a), owner-ruled): the key a palette's
+// group is emitted under. A slug that collides with a reserved alias key OR with another
+// palette's raw slug gets `-palette` appended, repeated until unique, so the 7 alias keys stay
+// verbatim (REQ-026) and no palette ladder is overwritten. `otherSlugs` is the Set of the OTHER
+// palettes' raw slugs (never the palette's own), which makes the answer independent of palette
+// order: "accent" + "accent-palette" -> "accent-palette-palette" + "accent-palette" either way.
+// Non-colliding slugs pass through untouched, so collision-free documents are byte-identical.
+export function radixPaletteKey(n, otherSlugs) {
+  let key = n;
+  while (RESERVED_ALIAS_KEYS.includes(key) || otherSlugs.has(key)) key += "-palette";
+  return key;
+}
+
+// radixPaletteKeys(slugs) — radixPaletteKey for every slug of a document, aligned by index. The
+// ONE derivation exportRadix and the UI (src/ui/model.mjs's radixExportKey) both call, so the
+// canvas note and the exported key can never drift.
+export function radixPaletteKeys(slugs) {
+  return slugs.map((n, i) => radixPaletteKey(n, new Set(slugs.filter((_, j) => j !== i))));
+}
+
 // flattenOver(end, bgRgb) — Vocabulary "Flattened": a translucent role end composited over an
 // opaque background in 8-bit sRGB. Exported per REQ-041 for the test's independent check; no
 // caller remains inside exportRadix after issue #588's correction (steps 1..8 are raw stops,
@@ -1137,10 +1157,12 @@ function rewriteRefs(node, fromN, toN) {
   return node;
 }
 
-// radixColorGroup(p) — one palette's Park-UI-shaped color object (KF-3 + REQ-021..024): the 12
+// radixColorGroup(p, key) — one palette's Park-UI-shaped color object (KF-3 + REQ-021..024): the 12
 // numbered steps, the 12 alpha steps, the five appearance groups (aliasing by step reference),
-// and the two additive leaves (on-accent, prime) Park's own scale has no slot for.
-function radixColorGroup(p) {
+// and the two additive leaves (on-accent, prime) Park's own scale has no slot for. `key` is the
+// group's emitted key (radixPaletteKey, #630) so the internal `{colors.{key}.…}` references
+// resolve even when the palette's slug was suffixed away from a reserved alias key.
+function radixColorGroup(p, key = p.n) {
   const group = {};
   const rawSolid = {}; // step -> { base: [r,g,b], dark: [r,g,b] } — for the a{k} projection below.
 
@@ -1160,7 +1182,7 @@ function radixColorGroup(p) {
     group[`a${step}`] = { value: { base: alphaLeafValue(base, "light"), _dark: alphaLeafValue(dark, "dark") } };
   }
 
-  const ref = (k) => `{colors.${p.n}.${k}}`;
+  const ref = (k) => `{colors.${key}.${k}}`;
   group.solid = {
     bg: { DEFAULT: { value: ref("9") }, hover: { value: ref("10") } },
     fg: { DEFAULT: { value: ref("on-accent") } },
@@ -1201,15 +1223,21 @@ export function exportRadix(state, opts = {}) {
   const { neutral, primary, danger } = pickDrivers(palettes);
   if (!neutral || !primary) return "/* Radix export needs at least one enabled non-data palette. */\n";
 
+  // #630: a palette whose slug collides with one of RESERVED_ALIAS_KEYS (or another palette's
+  // slug) is emitted under its radixPaletteKey (`<slug>-palette`, suffix repeated until unique),
+  // so the alias writes below can no longer overwrite a ladder. Every driver reference goes
+  // through `keyOf` so a renamed driver (e.g. a palette named "error") still resolves.
+  const keys = radixPaletteKeys(palettes.map((p) => p.n));
+  const keyOf = new Map(palettes.map((p, i) => [p, keys[i]]));
   const colors = {};
-  for (const p of palettes) colors[p.n] = radixColorGroup(p);
+  for (const p of palettes) colors[keyOf.get(p)] = radixColorGroup(p, keyOf.get(p));
 
   // REQ-025: accent <- primary, gray <- neutral, each a self-contained deep copy with every
   // internal reference re-pointed at the new group name (Park's own `gray: colorPalettes.neutral`
   // pattern, KF-4).
-  colors.accent = rewriteRefs(deepCloneLeaves(colors[primary.n]), primary.n, "accent");
-  colors.gray = rewriteRefs(deepCloneLeaves(colors[neutral.n]), neutral.n, "gray");
-  colors.error = { value: `{colors.${danger ? danger.n : primary.n}.9}` };
+  colors.accent = rewriteRefs(deepCloneLeaves(colors[keyOf.get(primary)]), keyOf.get(primary), "accent");
+  colors.gray = rewriteRefs(deepCloneLeaves(colors[keyOf.get(neutral)]), keyOf.get(neutral), "gray");
+  colors.error = { value: `{colors.${keyOf.get(danger || primary)}.9}` };
 
   // REQ-026: Park's own global semantic tokens, verbatim keys, referencing the just-built `gray`
   // copy (KF-4) — no invented keys.

@@ -3249,7 +3249,7 @@ flushRaf();
 //    (I2): the chip, the dispatch branch, and renderRadixScene land in the same commit — test
 //    (rx3) is the single assertion that fails on a tree shipping only half of that. ─────────────
 {
-  const { defaultDocument: defaultDocumentRX, radixKeyCollision: radixKeyCollisionRX, RADIX_COLLISION_BADGE: RADIX_COLLISION_BADGE_RX, projectView: projectViewRX, slug: slugRX } = await import("../../src/ui/model.mjs");
+  const { defaultDocument: defaultDocumentRX, radixKeyCollision: radixKeyCollisionRX, radixCollisionBadge: radixCollisionBadgeRX, radixExportKey: radixExportKeyRX, projectView: projectViewRX, slug: slugRX } = await import("../../src/ui/model.mjs");
   const { isDataPalette: isDataPaletteRX } = await import("../../src/engine/exports.js");
   const { loadCategory: loadCategoryRX } = await import("../../src/ui/categories/index.js");
   const { readFileSync: readFileSyncRX } = await import("node:fs");
@@ -3343,12 +3343,27 @@ flushRaf();
     ok(C6 === 1, `(rx6) fixture still carries exactly 1 collision (got ${C6})`);
     ok(app.querySelectorAll(".radix-collision").length === C6, "(rx6) .radix-collision === C");
     ok(walk(app, (e) => e.classList && e.classList.contains("radix-badge")).length === C6, "(rx6) .radix-badge === C, scoped via walk");
-    ok(app.querySelectorAll(".radix-ladder").length === E6 - C6, "(rx6) .radix-ladder === E-C");
-    ok(app.querySelectorAll(".radix-step").length === 12 * (E6 - C6), `(rx6) .radix-step === 12*(E-C) (proves option (c): the colliding row renders NO ladder)`);
+    // #630 option (a): the colliding row now renders its FULL ladder (read from the renamed key)
+    // plus the note — so ladders and steps count EVERY enabled palette, collision included.
+    ok(app.querySelectorAll(".radix-ladder").length === E6, `(rx6) .radix-ladder === E (${E6}): the colliding row renders a ladder too (#630)`);
+    ok(app.querySelectorAll(".radix-step").length === 12 * E6, `(rx6) .radix-step === 12*E (${12 * E6}): the colliding palette's ladder is present (#630)`);
+    const collisionRow = app.querySelectorAll(".radix-collision")[0];
+    ok(!!collisionRow && collisionRow.querySelectorAll(".radix-step").length === 12, "(rx6) the .radix-collision row itself holds 12 .radix-step nodes");
     ok(app.querySelectorAll(".radix-empty").length === 0, "(rx6) .radix-empty === 0 (I9 must not appear here, control: test 7)");
-    // 6b — the OQ-3 gate: the badge's own text, never a re-typed literal.
+    // 6b — the note names the key the engine actually exported the palette under (radixExportKey,
+    // the engine's own radixPaletteKey), never a re-typed literal; and that key holds a ladder.
+    const enabled6 = app.doc.palettes.filter((p) => p.on !== false);
+    const colliding6 = enabled6.find((p) => radixKeyCollisionRX(p.name));
+    const key6 = radixExportKeyRX(colliding6.name, enabled6);
+    ok(key6 === "accent-palette", `(rx6b) Modal jazz's colliding "accent" palette exports as "accent-palette" (got ${key6})`);
     const badgeNode = walk(app, (e) => e.classList && e.classList.contains("radix-badge"))[0];
-    ok(!!badgeNode && txtOf(badgeNode) === RADIX_COLLISION_BADGE_RX, "(rx6b) .radix-badge text equals the IMPORTED RADIX_COLLISION_BADGE");
+    ok(!!badgeNode && txtOf(badgeNode) === radixCollisionBadgeRX(key6), `(rx6b) .radix-badge text equals radixCollisionBadge(key) ("${radixCollisionBadgeRX(key6)}")`);
+    const colors6 = projectViewRX(app.doc).radixPreset.theme.extend.semanticTokens.colors;
+    ok(!!colors6[key6] && !!colors6[key6]["12"], "(rx6b) the engine preset holds a 12-step ladder under the renamed key");
+    // the painted ladder is the RENAMED group's, not the `accent` driver clone's (they differ in hue).
+    const step9 = collisionRow.querySelectorAll(".radix-step")[8].getAttribute("style");
+    const want9 = colors6[key6]["9"].value[app.resolvedCanvasScheme() === "dark" ? "_dark" : "base"];
+    ok(step9 === `background:${want9}`, `(rx6b) the colliding row's step 9 paints colors["${key6}"].9, got ${step9}`);
   }
 
   // test 7: I9 gate, its OWN fresh Route A document, all non-data palettes disabled.

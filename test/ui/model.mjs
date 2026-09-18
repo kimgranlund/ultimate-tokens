@@ -6,7 +6,7 @@
 // then test/ui/headless-boot.mjs's (dpa) group only exercises them THROUGH button clicks. This
 // file imports and calls them directly, pure, no DOM — covering SPEC
 // docs/spec/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
-import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, resolvedPalettes, slug, typeScaleFor } from "../../src/ui/model.mjs";
+import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, resolvedPalettes, slug, typeScaleFor } from "../../src/ui/model.mjs";
 import { deriveDataHues } from "../../src/engine/data-hues.mjs";
 import { RESERVED_ALIAS_KEYS, isDataPalette, exportRadixModule } from "../../src/engine/exports.js";
 import { PRESETS as BRAND_PRESETS } from "../../src/ui/categories/brands.js";
@@ -311,7 +311,21 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   const slugDeclCount = (modelSrc.match(/^export function slug/gm) || []).length;
   ok(slugDeclCount === 1, `src/ui/model.mjs must declare "export function slug" exactly once (got ${slugDeclCount}) — radixKeyCollision must reuse it, never redeclare`);
 
-  ok(RADIX_COLLISION_BADGE === "Name matches a reserved export key", `RADIX_COLLISION_BADGE must be the pinned OQ-3 string verbatim, got ${JSON.stringify(RADIX_COLLISION_BADGE)}`);
+  ok(RADIX_COLLISION_BADGE === "Exported as", `RADIX_COLLISION_BADGE must be the pinned #630 prefix verbatim, got ${JSON.stringify(RADIX_COLLISION_BADGE)}`);
+  ok(radixCollisionBadge("accent-palette") === "Exported as accent-palette", `radixCollisionBadge("accent-palette") must read "Exported as accent-palette", got ${JSON.stringify(radixCollisionBadge("accent-palette"))}`);
+
+  // radixExportKey (#630): the UI's key for a palette is the ENGINE's radixPaletteKey, so the canvas
+  // note and the exported key cannot drift.
+  const pals = [{ name: "Neutral", on: true }, { name: "Accent", on: true }, { name: "Primary", on: true }];
+  ok(radixExportKey("Accent", pals) === "accent-palette", `radixExportKey("Accent") must be "accent-palette", got ${JSON.stringify(radixExportKey("Accent", pals))}`);
+  ok(radixExportKey("Primary", pals) === "primary", `radixExportKey("Primary") must pass through as "primary"`);
+  const withSuffix = [...pals, { name: "accent-palette", on: true }];
+  ok(radixExportKey("Accent", withSuffix) === "accent-palette-palette", `radixExportKey("Accent") next to an "accent-palette" palette must be "accent-palette-palette"`);
+  ok(radixExportKey("accent-palette", withSuffix) === "accent-palette", `radixExportKey("accent-palette") must keep its own slug`);
+  const mjDoc = defaultDocument();
+  mjDoc.palettes = [...mjDoc.palettes, { ...mjDoc.palettes[0], name: "Accent" }];
+  const mjColors = projectView(mjDoc).radixPreset.theme.extend.semanticTokens.colors;
+  ok(!!mjColors[radixExportKey("Accent", mjDoc.palettes)] && !!mjColors[radixExportKey("Accent", mjDoc.palettes)]["12"], `projectView(...).radixPreset must carry the colliding palette's ladder under radixExportKey(...)`);
 }
 
 // ── U3 (#637): projectView(...).radixPreset — the hoisted OBJECT (OQ-1) ────────────────────
