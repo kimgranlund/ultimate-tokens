@@ -3,11 +3,75 @@
 | Field | Value |
 |---|---|
 | Unit | U1 (M) anchor field + `prime.DEFAULT` byte-exact, plan `preset-intent-fidelity` (ticket #681) |
-| Branch | unit/pif-u1-anchor @ 329d515dcb70eccf8f40bf1e39e70eeff67a8d7a |
-| Base | bf2aaf659fde4db3bddaed8dfa23e2f485ab2c46 (`git merge-base HEAD origin/main`, post-rebase; equals `origin/main`'s own tip at rebase time, no further drift) |
+| Branch | unit/pif-u1-anchor @ FOLD_HEAD_PLACEHOLDER (post FIX-FIRST fold; see below) |
+| Base | bf2aaf659fde4db3bddaed8dfa23e2f485ab2c46 (`git merge-base HEAD origin/main`, post-rebase; unchanged by the fold — no further rebase happened) |
 | Grade | l3 |
-| Ran (post-rebase) | `npm test` ✅ (48/48) · `npm run build` ✅ · `node scripts/audit-citations.mjs` ✅ (exit 0, 0 STALE) · `node test/repo/branding.mjs` ✅ (446 files, clean) · `git status --short` ✅ (empty after every run) |
+| Ran (post-fold) | `npm test` ✅ (48/48) · `node scripts/audit-citations.mjs` ✅ (exit 0, 0 STALE) · `node test/repo/branding.mjs` ✅ (`branding: clean (446 files scanned)`) · `git status --short` ✅ (empty after every run) |
 | Left out | Ramp anchor (U2), chroma envelope (U3), ladder metric/L* rewrite (U6), Reset UI action (U2's C12), records (U5) — none touched |
+
+## FIX-FIRST fold (review `scratchpad/pif-u1-review-1.md`, 🔴 verdict, folded 2026-09-18)
+
+Three findings, all fixed on top of the post-rebase commit (`ed6ac8e`), no further rebase:
+
+- **F1 (High) — the anchored ladder collapsed for out-of-window sources.** `src/engine/prime.mjs`'s
+  `lLadder` clamp (`Math.min(PRIME_L_MAX, Math.max(PRIME_L_MIN, lPrime))`) is unchanged, but when the
+  clamped side's room hit 0 (or near enough that 8-bit rounding still collapsed it — 3 of the review's
+  measured cases were technically 0.0001-0.001 *inside* the window, not past it), every rung on that
+  side rendered the same byte-identical swatch, and `prime` (rendered exact, per Q3 (b)) could sit
+  outside the resulting six-rung ladder entirely. Fix: `primeSwatches` now renders the natural
+  (unchanged) ladder first and, ONLY if that produces a duplicate hex among the seven swatches,
+  iteratively widens the reserved room on the clamped side (0.001 OKHSL-`l` steps, capped at one full
+  `PRIME_STEP`) until every hex is distinct — re-using the SAME hue/skew/shift math the final render
+  uses (a shared `rungHex` helper), so the search and the output can never disagree. `prime` itself
+  never moves; non-anchored palettes and anchors already inside the window take the identical
+  zero-iteration fast path as before (byte-identical to pre-fold, confirmed by C4 staying 3796/3796).
+  A handful of sources sit close enough to the window floor that even a full `PRIME_STEP` of reserve
+  cannot separate `dimmest` from `prime` — those are a named, counted allow-list, not silently passed.
+  New gate, `test/engine/anchor.mjs`'s `anchor-ladder` (registered in the same file as C2/C4, not a
+  new plan criterion): over the 3,380 anchored corpus palettes at primeChroma 100 —
+  (a) the six non-`prime` rungs are strictly decreasing in `l`, unconditionally, 0 exceptions (this
+  holds purely from `primeSteps`/the widening search, never from the anchor's position);
+  (b) `prime` sits strictly between `bright` and `dim` in `l`, with a named order-allow-list, measured
+  count **23** (`anchor-ladder order-allow-list: 23 (expected 23)`) — 21 of these are the same named
+  sources the plan's own C5/U6 text already earmarks for a future CIE-L*-domain "ladder-window"
+  allow-list (Nike, Double Indemnity, Night of the Hunter, 2001, TRON: Legacy, Tórshavn, Khumbu, Rub'
+  al Khali, Atchafalaya, etc.), plus 2 more that only cross the line in OKHSL `l` (not CIE L*) —
+  expected, since this is a provisional OKHSL-domain fix, not U6's rewrite;
+  (c) all seven hexes are distinct, with a STRICTER dupe-allow-list (subset of (b)'s 23), measured
+  count **4** (`anchor-ladder dupe-allow-list: 4 (expected 4)`) — every dupe is cross-checked to also
+  be an order violation (asserted in the gate itself). Negative control: a synthetic `#000000` anchor
+  (OKHSL `l`=0, unambiguously outside the window) is confirmed to fail the SAME predicate the corpus
+  loop counts with, before the real 23/4 are trusted. Red-then-green: reverting the widening loop
+  (keeping only the pre-fold `lLadder` clamp) reproduces the review's own measured hexes exactly
+  (`#161618` → `dim`/`dimmer`/`dimmest` all `#202022`) and fails the new gate at `order-allow-list: 27
+  (expected 23)` / `dupe-allow-list: 24 (expected 4)`.
+- **F2 (Medium) — `defaultDocument()` never wrote `sourceAnchor`.** The plan's U1 line says
+  `sourceAnchor` is "written only by the generator and by `defaultDocument()`"; the generator half
+  (`scripts/gen-categories.mjs`) was already done, `defaultDocument()`'s half was missing, which would
+  have silently disabled U2's Reset action for all 16 default families (Reset needs `sourceAnchor`
+  present to re-derive `anchor` after a detach). Fix: `src/ui/model.mjs`'s `defaultDocument()` now
+  stamps `sourceAnchor: p.anchor` alongside the existing `hue` conversion in the `DEFAULT_PALETTES.map`
+  call — NOT added to `DEFAULT_PALETTES` itself (would have doubled the literal in source) and NOT to
+  `docs/reference/data/role-table.json` (would have broken C9's `grep -c '^[-+]'` = 18 assertion and
+  the `hpg-role-contrast` parity loop's `compared = 4 × 16` field count, per the review's own note).
+  Verified: all 16 default-kit palettes now round-trip `sourceAnchor === anchor` from
+  `defaultDocument()`, and the `anchor-ladder` gate confirms all 16 stay `distinct=7, mono=true`
+  (unaffected by F1's widening search — well inside the window, as Q2 (b) intended).
+- **F3 (Medium) — engine and persistence disagreed on lowercase anchor hex.** `src/engine/prime.mjs`'s
+  `ANCHOR_HEX` accepted and normalized lowercase; `src/ui/persist.js`'s `clampHex` accepted uppercase
+  only and silently DROPPED lowercase (no `DROPPED_KEYS` report), so a Q5-authored spec JSON or a
+  hand-edited import with a lowercase anchor rendered correctly in the live session and then lost the
+  anchor on the next save/reload. Fix: `clampHex`'s regex now accepts either case and normalizes to
+  uppercase (`v.toUpperCase()`), matching the engine — same domain, same behaviour, no more silent
+  loss. `test/ui/persist.mjs`'s malformed-value list dropped `"#0c5dcc"` (now covered by a dedicated
+  normalization assertion instead) and gained an explicit case: lowercase `"#0c5dcc"` round-trips as
+  uppercase `"#0C5DCC"`.
+
+Citation fallout from the fold's own insertions (persist.js/model.mjs both grew by a few lines):
+`docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md` (`model.mjs:1019` →
+`:1031`, `persist.js:680`/`:798` → `:690`/`:808`) and `.../03-stores-and-persistence.md`
+(`persist.js:602` → `:625`) — re-pinned the same way as the rebase's own re-pins (mechanically
+verified against the current file content at each destination line, not guessed).
 
 ## Rebase note (superseding the original build's drift notes below)
 
@@ -62,21 +126,29 @@ file, the branch already carried 46 (its original base) then 47 (after #674 land
 - `src/engine/prime.mjs` — anchor branch: `prime` step (index 3) renders the anchor rgb verbatim,
   unconditionally (never scaled by `primeChroma`); the other six steps ladder from
   `rgbToOkhsl(anchor)`, clamped into `[PRIME_L_MIN, PRIME_L_MAX]` (today's OKHSL window — U6 rewrites
-  this in L* later). Absent-anchor path is untouched code, not a parallel implementation.
+  this in L* later). Absent-anchor path is untouched code, not a parallel implementation. **F1 fold**:
+  a widening search (capped at one `PRIME_STEP` of reserve) now runs only when the natural ladder
+  would produce a duplicate hex, sharing its hex-rendering math with the final output via a `rungHex`
+  helper so the two can never disagree; byte-identical to pre-fold for every already-passing anchor.
 - `src/engine/exports.js` — **deviation from the plan's literal file list** (see below): one field
   (`anchor: palette.anchor`) added to the existing `primeSwatches(...)` call inside `derivePalette`.
 - `src/ui/model.mjs` — `DEFAULT_PALETTES` gain the 16 Q2 (b) anchors (each verified against the
   engine's real `rampChromaOf`-resolved perceptual-mode stop-550 hex before being typed in, not
   copied blind from the plan text); `projectView`'s own `primeSwatches(...)` call also forwards
-  `anchor` (same deviation reasoning as exports.js — see below).
+  `anchor` (same deviation reasoning as exports.js — see below). **F2 fold**: `defaultDocument()`
+  now stamps `sourceAnchor: p.anchor` on every default-kit palette, not just `anchor`.
 - `docs/reference/data/role-table.json` — `defaults[]` gains the same 16 `anchor` fields, inserted
   before each default's `on` key (16 added lines, 0 removed; `.roleTable` stays 53).
 - `src/ui/persist.js` — `DOMAINS.palette.anchor`/`sourceAnchor` (`kind: "hex"`), `clampHex` helper,
-  `clampPalette` wiring, `CURRENT_SCHEMA_VERSION` 4→5 with its TKT-0016 no-op note.
+  `clampPalette` wiring, `CURRENT_SCHEMA_VERSION` 4→5 with its TKT-0016 no-op note. **F3 fold**:
+  `clampHex`'s regex now accepts lowercase too, normalizing to uppercase, matching
+  `src/engine/prime.mjs`'s `ANCHOR_HEX` instead of disagreeing with it.
 - `scripts/gen-categories.mjs` — `palette()` stores `anchor`/`sourceAnchor` (the source hex, already
   canonical uppercase) for every sampled + status swatch; `direct` (brands pass-through) untouched.
 - `test/engine/anchor.mjs` (new, registered in `test/run.mjs`) — C2 + C4's prime-half identity
-  controls, both with live negative controls.
+  controls, both with live negative controls. **F1 fold**: gained the `anchor-ladder` gate (six-rung
+  monotonicity, unconditional; prime-between-bright-and-dim and all-seven-distinct, both with a
+  named, counted allow-list; a synthetic `#000000` negative control) — see "FIX-FIRST fold" above.
 - `test/engine/prime.mjs` — `DEFAULTS` now strips `anchor` from `RT.defaults` before use (see
   Deviation 2 below).
 - `test/engine/exports.mjs`, `docs/spec/spec-panda-park-ui-exports.md` — Primary's
@@ -86,11 +158,16 @@ file, the branch already carried 46 (its original base) then 47 (after #674 land
 - `test/engine/semantic.mjs` — `hpg-role-contrast`'s default-parity loop extended
   chroma/skew/lift → chroma/skew/lift/anchor (`compared` = 4 × 16); nothing else in this file touched.
 - `test/ui/persist.mjs` — round-trip fuzz coverage + an explicit clamp block for `anchor`/
-  `sourceAnchor` (well-formed round-trips, malformed values drop, absent stays absent).
+  `sourceAnchor` (well-formed round-trips, malformed values drop, absent stays absent). **F3 fold**:
+  lowercase moved from the malformed/dropped list to its own normalization assertion
+  (`"#0c5dcc"` → `"#0C5DCC"`).
 - `docs/reference/reviews/2026-08-20-reactivity/{00-synthesis,02-sections-and-resolvers,03-stores-and-persistence}.md`
   — six `persist.js:N` citations re-pinned after this unit's insertions shifted line numbers by a
   uniform +37 (below the shifted region) — mechanically verified line-for-line against `git show
   cf8e61a:src/ui/persist.js`, not guessed from the audit tool's heuristic anchor-pairing alone.
+  **Fold**: `02-sections-and-resolvers.md` and `03-stores-and-persistence.md` re-pinned a second time
+  (`model.mjs:1019→1031`, `persist.js:680→690`, `persist.js:798→808`, `persist.js:602→625`) after
+  F2/F3's own insertions shifted the same region again — same mechanical verification, not guessed.
 
 ## Regenerated artifacts (all committed)
 
@@ -148,7 +225,14 @@ status` confirmed no diff there).
   `Math.min(PRIME_L_MAX, Math.max(PRIME_L_MIN, lPrime))` in OKHSL `l`; U6 re-expresses the window in
   L* per its own plan text). U6 also inherits `test/engine/prime.mjs`'s anchor-stripped `DEFAULTS` —
   U6's own plan text already expects to rewrite this file's gates for the anchored case, so removing
-  the strip is part of that unit's own work, not a leftover bug.
+  the strip is part of that unit's own work, not a leftover bug. **F1's fold adds one more thing U6
+  inherits and should retire**: the F1 widening search and `test/engine/anchor.mjs`'s `anchor-ladder`
+  gate (OKHSL-domain, counts 23/4) are this unit's provisional fix for the collapse/inversion defect;
+  U6's own plan text already names a 21-source CIE-L*-domain "ladder-window" allow-list with the
+  equal-compress wall rule as the real, permanent fix — U6 should replace F1's widening search (not
+  layer on top of it) and re-derive `anchor-ladder`'s counts in L* terms, expecting a different
+  number (this fix's 23/4 are OKHSL-domain and will not match U6's 21 one-for-one; 2 of this fix's 23
+  are OKHSL-only near-boundary cases the CIE-L* window may not need to allow-list at all).
 - **Rebase risk — resolved.** This unit has now been rebased onto `origin/plan/preset-intent-fidelity
   @ 362cc48` (which carries #662 and #674). `test/engine/semantic.mjs` and `src/ui/persist.js` both
   auto-merged with zero conflicts, confirming the scoping held. See "Rebase note" above for the full

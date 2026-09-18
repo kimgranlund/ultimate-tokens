@@ -115,10 +115,14 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   const hydNoGroups = U.hydrate(U.serialize(noGroupsDoc));
   if (hydNoGroups.palettes.some((p) => "group" in p)) FAIL("clamp", "a doc with no group data must hydrate with every palette.group still absent (nullable field)");
 }
-// anchor / sourceAnchor (ticket #681, U1): a well-formed "#RRGGBB" round-trips as-is; a malformed one
-// (wrong length, no "#", lowercase — the domain is the canonical UPPERCASE form the generator emits)
-// is DROPPED (left absent), same shape as `group` above — persist.js's clampHex has no "nearest valid
-// hex" to clamp toward, so an out-of-domain value has nowhere to go but absent.
+// anchor / sourceAnchor (ticket #681, U1; case-folding fixed per the U1 review's F3, 2026-09-18): a
+// well-formed "#RRGGBB" round-trips as-is; a LOWERCASE well-formed hex is NORMALIZED to uppercase
+// (matching src/engine/prime.mjs's own ANCHOR_HEX, which accepts and normalizes the same way, so the
+// engine and persistence no longer disagree on whether a lowercase anchor is valid — an authored Q5
+// spec JSON or a hand-edited import spelling a valid hex in lowercase used to render correctly for
+// the live session, then silently lose the anchor on the next save/reload); anything else malformed
+// (wrong length, no "#", non-hex characters) is DROPPED (left absent), same shape as `group` above —
+// persist.js's clampHex has no "nearest valid hex" to clamp a truly malformed value toward.
 {
   const withAnchor = JSON.parse(JSON.stringify(base)); withAnchor.palettes[0].anchor = "#0C5DCC"; withAnchor.palettes[0].sourceAnchor = "#0C5DCC";
   const hydA = U.hydrate(U.serialize(withAnchor));
@@ -126,7 +130,11 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if (hydA.palettes[0].sourceAnchor !== "#0C5DCC") FAIL("clamp", `explicit palette.sourceAnchor "#0C5DCC" must round-trip as-is (got ${JSON.stringify(hydA.palettes[0].sourceAnchor)})`);
   if (!deepEq(hydA.palettes[0].hue, base.palettes[0].hue)) FAIL("clamp", "setting palette.anchor disturbed sibling hue");
 
-  for (const bad of ["0C5DCC", "#0C5DC", "#0C5DCCC", "#0c5dcc", "not-a-hex", 12345]) {
+  const withLowerAnchor = JSON.parse(JSON.stringify(base)); withLowerAnchor.palettes[0].anchor = "#0c5dcc";
+  const hydLowerA = U.hydrate(U.serialize(withLowerAnchor));
+  if (hydLowerA.palettes[0].anchor !== "#0C5DCC") FAIL("clamp", `lowercase palette.anchor "#0c5dcc" must be NORMALIZED to uppercase "#0C5DCC" (got ${JSON.stringify(hydLowerA.palettes[0].anchor)})`);
+
+  for (const bad of ["0C5DCC", "#0C5DC", "#0C5DCCC", "not-a-hex", 12345]) {
     const badA = JSON.parse(JSON.stringify(base)); badA.palettes[0].anchor = bad;
     const hydBadA = U.hydrate(U.serialize(badA));
     if ("anchor" in hydBadA.palettes[0]) FAIL("clamp", `a malformed palette.anchor ${JSON.stringify(bad)} must be DROPPED (left absent), got ${JSON.stringify(hydBadA.palettes[0].anchor)}`);

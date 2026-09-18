@@ -148,10 +148,12 @@ export const DOMAINS = {
     // is the single place the default-by-name rule is computed, at every read site.
     group: { kind: "enum", values: PALETTE_GROUPS },
     // anchor / sourceAnchor (ticket #681, U1) — a palette's stored SOURCE color, byte-for-byte, as
-    // "#" + 6 hex digits (the SAME canonical uppercase shape scripts/gen-categories.mjs and
-    // defaultDocument() emit) — never a number to clamp toward a bound, so "kind: hex" is its own
-    // domain: a present value must match exactly or it is DROPPED (like an unknown enum member),
-    // not coerced. Both OPTIONAL, same absent-stays-absent shape as `group` above. `anchor` is the
+    // "#" + 6 hex digits in either case, normalized to the SAME canonical uppercase shape
+    // scripts/gen-categories.mjs, defaultDocument() and src/engine/prime.mjs's own ANCHOR_HEX all
+    // emit/accept (case-folding fixed per the U1 review's F3, 2026-09-18) — never a number to clamp
+    // toward a bound, so "kind: hex" is its own domain: a well-formed value normalizes, anything else
+    // is DROPPED (like an unknown enum member). Both OPTIONAL, same absent-stays-absent shape as
+    // `group` above. `anchor` is the
     // LIVE anchor prime.mjs's `prime` step (and, from U2, the ramp's stop 500) renders verbatim;
     // `sourceAnchor` is the GENERATOR's own copy — written only by scripts/gen-categories.mjs and by
     // defaultDocument(), never by the UI — so a Reset action (Q6, U2's C12) has something to
@@ -180,15 +182,20 @@ function clampEnum(v, values, dflt) {
   return values.includes(v) ? v : dflt;
 }
 
-// Hex clamp (ticket #681, U1): keep the value iff it is EXACTLY "#" + 6 hex digits in the canonical
-// uppercase form the generator and defaultDocument() emit (DOMAINS.palette.anchor/sourceAnchor above),
-// else undefined — the caller only attaches the field when this returns non-undefined, same
-// absent-stays-absent shape every other optional palette field (cuspPull, primeChroma, group) uses.
-// Not a "nearest bound" clamp — a malformed or lowercase hex has no well-defined nearest valid hex, so
-// (like an unrecognized enum member) it is simply dropped rather than coerced.
-const HEX6 = /^#[0-9A-F]{6}$/;
+// Hex clamp (ticket #681, U1; case-folding fixed per the U1 review's F3, 2026-09-18): keep the value
+// iff it is "#" + 6 hex digits in EITHER case, normalized to the canonical uppercase form the
+// generator, defaultDocument() and src/engine/prime.mjs's own ANCHOR_HEX all emit/accept — else
+// undefined. The caller only attaches the field when this returns non-undefined, same absent-stays-
+// absent shape every other optional palette field (cuspPull, primeChroma, group) uses. Lowercase was
+// DROPPED before the fix: an authored Q5 spec JSON or a hand-edited import spelling a valid hex in
+// lowercase rendered correctly for the live session (prime.mjs accepts+normalizes it) but silently
+// lost the anchor on the next save/reload, with no DROPPED_KEYS report — persist.js and prime.mjs now
+// agree on the same domain, a case-insensitive "#RRGGBB". Still not a "nearest bound" clamp — a
+// malformed hex (wrong length, non-hex characters) has no well-defined nearest valid hex, so it is
+// simply dropped rather than coerced, same as an unrecognized enum member.
+const HEX6 = /^#[0-9A-Fa-f]{6}$/;
 function clampHex(v) {
-  return typeof v === "string" && HEX6.test(v) ? v : undefined;
+  return typeof v === "string" && HEX6.test(v) ? v.toUpperCase() : undefined;
 }
 
 // Per-palette clamp. Builds a fresh object so the result is a clean State, but copies
