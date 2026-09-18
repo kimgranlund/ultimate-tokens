@@ -86,7 +86,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 - `this.view` (route string) vs local `view` (`projectView` result) one underscore apart at app.js:295 (documented at app.js:594-596) — rename the route field (e.g. `this.route`) or the locals.
 - `disconnectedCallback` teardown set asymmetric with what connectedCallback registers (`_liveRaf`, `_dragTimer`, `_toastT`, window-level drag listeners) — inert for a page-lifetime singleton; either complete the inventory or comment why it's deliberately partial (01 §B6, 04 §D).
 - Stale copy in `graphGeomComposition` (geometry.js:683) contradicts its own card title — font DOES still compose from Type's UI-control voice (02 §B6).
-- `_okL` (`src/engine/tonal.js:335`) module-level memo Map is the one true exception to "engines are pure, no module state" — bounded and harmless; worth one comment acknowledging it (04 §B).
+- `_okL` (`src/engine/tonal.js:347`) module-level memo Map is the one true exception to "engines are pure, no module state" — bounded and harmless; worth one comment acknowledging it (04 §B).
 
 ## Deliberately fine — do not "fix"
 
