@@ -19,7 +19,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
    (`_typeScaleFor`/`_geomScaleFor`/`_typeModeScales`/`_geomModeScales`) lives as mirrored
    instance methods in two section files, with the tier-synthesis closure byte-identical in
    both (since #460 ONE closure, `typeTierScale`, model.mjs:183-187), a third geomScale+typeScale join inside
-   `_geomModeScales` (geometry.js:196-198, now a delegate to `geomModeScales`, model.mjs:214-234), and a FOURTH, disconnected implementation in
+   `_geomModeScales` (geometry.js:196-198, now a delegate to `geomModeScales`, model.mjs:214-233), and a FOURTH, disconnected implementation in
    `model.mjs#geometryScale` that only `brandKit()` uses. They agree today by coincidence of
    independently-written code, not by sharing.
 2. **Storage is three disciplines** (03): persist.js's spec-grade doc store (fuzzed roundtrip
