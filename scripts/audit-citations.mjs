@@ -4,11 +4,12 @@
 // Run from the repo root:  node scripts/audit-citations.mjs  [--md | --json | --selftest]
 // Read-only: readFileSync + `git ls-files`. It writes nothing and mutates nothing.
 //
-// EXIT CODE (PR #658 review, finding 1): 1 when any audited doc has STALE > 0 lines, or
-// when a read/parse fails; 0 otherwise. `--md`/`--json` keep their output AND the same
-// exit semantics. `--selftest` exercises parseCitations() on literal strings and exits
-// nonzero on the first miss. `runAudit()` / `parseCitations()` / `staleLines()` are
-// exported so the gate imports the logic instead of scraping stdout.
+// EXIT CODE (PR #658 review, finding 1; #672: NOFILE joins STALE): 1 when any audited doc has a
+// STALE or NOFILE line, or when a read/parse fails; 0 otherwise. `--md`/`--json` keep their output
+// AND the same exit semantics. `--selftest` exercises parseCitations() on literal strings, then
+// the anchor/symbol predicate on synthetic lines (#672's negative controls), and exits nonzero on
+// the first miss. `runAudit()` / `parseCitations()` / `staleLines()` are exported so the gate
+// imports the logic instead of scraping stdout.
 //
 // It answers two questions MECHANICALLY, so that §6's enumeration is generated rather
 // than hand-counted:
@@ -25,16 +26,34 @@
 //               `:<N>/<M>/<K>` (`app.js:726/727/836/837`) is one citation PER number:
 //               every member is checked and the doc line is STALE if any member is
 //               (PR #658 review, finding 2: only the first member used to be checked).
-//   ANCHOR    = a token on the CITING line specific enough to look for in the CITED
-//               line: a camelCase/PascalCase identifier, a `.class`/`#id`, or any
-//               identifier the doc writes as a call (`name(`) or as the citation's own
-//               subject (`name :N`). Bare lowercase English is NOT an anchor.
+//   ANCHOR    = a token on the CITING line (or, when the line itself carries none, the
+//               enclosing prose paragraph -- a citing sentence commonly wraps onto the
+//               previous doc line) specific enough to look for in the CITED line: a
+//               camelCase/PascalCase identifier, a `.class`/`#id`, any identifier the doc
+//               writes as a call (`name(`), or the citation's own subject written as
+//               `name :N` -- backticked (`` `render` :570 ``) or, if fully bare with no
+//               backtick anywhere before the number, required to itself be
+//               camelCase/PascalCase/snake_case (#672). A FULLY BARE lowercase English
+//               word is NOT an anchor -- that restriction, not "which one anchor wins", is
+//               #672's actual fix: a `tonal.js:335` cite for `_okL` no longer passes on a
+//               same-line prose word like "domain".
+//               A citation is judged against EVERY anchor in scope, and passes if ANY of
+//               them occurs at/near the cited line (#672 correction, PR review by the
+//               lead): an earlier draft narrowed this to the ONE anchor nearest the
+//               citation's position, which broke two real shapes -- a doc line naming two
+//               symbols before one shared line number (`` `toggleLeftPane`/`toggleRightPane`
+//               :1448 ``, where the nearer backtick belongs to the OTHER method) and a
+//               wrapped sentence whose subject sits on the previous doc line -- both
+//               correct citations, both misread as STALE. "Any anchor" over an
+//               identifier-only set keeps the ticket's real win without reintroducing the
+//               "any anchor" bug on BARE ENGLISH WORDS, because bare words were never
+//               anchors to begin with.
 //   VERDICTS  STALE-PAST-EOF   cited line number exceeds the cited file's length
 //             STALE-WRONG-LINE no anchor occurs at the cited line or within WINDOW
 //             NEAR             an anchor occurs within WINDOW of the cited line
 //             OK               an anchor occurs AT the cited line
-//             UNDECIDABLE      the citing line carries no anchor; a human must read it
-//             NOFILE           the cited path is not tracked
+//             UNDECIDABLE      the citing line (and paragraph) carry no anchor; a human must read it
+//             NOFILE           the cited path is not tracked -- fails the gate like STALE (#672)
 // STALE ∪ NEAR ∪ UNDECIDABLE ∪ OK ∪ NOFILE partitions every citation, so the
 // DENOMINATOR (total citation lines) is generated too, which is the thing two rounds
 // of hand-enumeration could not produce.
@@ -159,7 +178,10 @@ function resolvePath(cited) {
   return hits.sort((a, b) => rank(a) - rank(b) || a.length - b.length)[0];
 }
 
-function anchorsOf(docLine) {
+// Every identifier-shaped anchor on a doc line, deduped. A citation passes if ANY of them
+// occurs at/near the cited line (#672 correction) -- but the SET itself stays restricted to
+// tokens that look like real symbols, which is what keeps a bare English word from qualifying.
+export function anchorsOf(docLine) {
   const out = new Set();
   const add = (tok) => { if (tok && !reExtTail.test(tok)) out.add(tok); };
   const spans = [...docLine.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
@@ -168,7 +190,7 @@ function anchorsOf(docLine) {
     // doc claims this exact text lives at the cited line.
     const frag = raw.trim();
     if (/[:;=]/.test(frag) && /\s/.test(frag) && !new RegExp(`\\.(?:${EXT}):\\d`).test(frag)) out.add(LIT + frag);
-    const s = raw.replace(new RegExp(`[A-Za-z0-9_@./-]+\\.(?:${EXT}):\\d+`, "g"), " ");
+    const s = raw.replace(new RegExp(`[A-Za-z0-9_@./-]+\\.(?:${EXT}):\\d+`, "g"), (mm) => " ".repeat(mm.length));
     for (const t of s.matchAll(/(?<![A-Za-z0-9_$.#])[.#]?[A-Za-z_$][A-Za-z0-9_$-]*/g)) {
       const tok = t[0];
       const bare = tok.replace(/^[.#]/, "");
@@ -178,14 +200,24 @@ function anchorsOf(docLine) {
       if (isSelector || isCamel || isCall) add(tok);
     }
   }
-  // `name :N` / `name(` outside backticks too -- the component table's own shape
-  for (const m of docLine.matchAll(/(?<![A-Za-z0-9_$.])([A-Za-z_$][A-Za-z0-9_$]*)[\s`]*:\d{2,4}/g)) add(m[1]);
+  // `name :N` / `name(` outside backticks too -- the component table's own shape. This `:N`
+  // heuristic has no punctuation/call signal of its own to lean on, so a FULLY BARE name (no
+  // backtick anywhere between it and the number) must be camelCase/PascalCase/snake_case itself
+  // (`/[A-Z_]/`) -- otherwise ANY bare English word immediately ahead of a bare `:N` citation
+  // (the doc's own "aimed at :200" prose, not a symbol) anchored it, which is how a wrong-line
+  // citation could pass on a generic word instead of the cited symbol (#672).
+  // A name with a backtick in the gap before the number (`` `render` :570 ``) is exempted from
+  // that shape check: the backtick is the author's own signal that this is code, not prose, and
+  // requiring camelCase there too wrongly stales a correct, plain-lowercase, backticked function
+  // name (found via the live audit after the #672 fix landed -- `render` :570 in app-shell.md).
+  for (const m of docLine.matchAll(/(?<![A-Za-z0-9_$.])([A-Za-z_$][A-Za-z0-9_$]*)([\s`]*):\d{2,4}/g))
+    if (m[2].includes("`") || /[A-Z_]/.test(m[1])) add(m[1]);
   for (const m of docLine.matchAll(/(?<![A-Za-z0-9_$.])([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g)) add(m[1]);
   return [...out];
 }
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const hasToken = (line, anchor) => {
+export const hasToken = (line, anchor) => {
   if (anchor.startsWith(LIT)) return line.includes(anchor.slice(LIT.length)); // literal fragment
   const t = esc(anchor.replace(/^[.#]/, ""));
   return new RegExp(`(?<![A-Za-z0-9_$])${t}(?![A-Za-z0-9_$-])`).test(line);
@@ -282,9 +314,14 @@ for (const { path: doc, implied } of DOCS) {
       for (let k = c.n; k <= end; k++) cited.push(k);
       if (c.n > tl.length) { rows.push({ ...base, verdict: "STALE-PAST-EOF", detail: `${target} is ${tl.length} lines`, homes: homes() }); continue; }
       if (!anchors.length) { rows.push({ ...base, verdict: "UNDECIDABLE", detail: `${target}:${c.n} reads: ${tl[c.n - 1].trim() || "(blank)"}` }); continue; }
+      // ANY anchor in scope satisfies the citation (#672 correction): the identifier-shape
+      // restriction on `anchors` itself is what keeps a bare English word from qualifying, not
+      // narrowing to one "nearest" anchor -- narrowing broke real multi-symbol and wrapped-line
+      // citations (see the ANCHOR definition above).
       const inRange = cited.find((k) => anchors.some((a) => hasToken(tl[k - 1], a)));
       if (inRange) {
-        rows.push({ ...base, verdict: "OK", detail: `matched \`${anchors.find((a) => hasToken(tl[inRange - 1], a)).replace(LIT, "")}\` at ${target}:${inRange}` }); continue;
+        const matched = anchors.find((a) => hasToken(tl[inRange - 1], a));
+        rows.push({ ...base, verdict: "OK", detail: `matched \`${matched.replace(LIT, "")}\` at ${target}:${inRange}` }); continue;
       }
       const w = WINDOW(target), near = [];
       for (let d = -w; d <= w + (end - c.n); d++) {
@@ -305,9 +342,14 @@ return report;
 
 const lineSet = (rows, pred) => new Set(rows.filter(pred).map((c) => c.line));
 const STALE = (c) => c.verdict.startsWith("STALE");
-// doc path -> sorted STALE doc-line numbers; the gate predicate is "every array empty".
+// #672: NOFILE (a cite to an untracked path) fails the gate too, same as STALE -- a cite to a
+// deleted/renamed file is exactly the same drift the STALE verdicts exist to catch. It stays its
+// own verdict label in the report (NOFILE, never renamed to STALE); only the failing predicate
+// folds the two together.
+const FAILS = (c) => STALE(c) || c.verdict === "NOFILE";
+// doc path -> sorted STALE/NOFILE doc-line numbers; the gate predicate is "every array empty".
 export function staleLines(report) {
-  return Object.fromEntries(Object.entries(report.docs).map(([doc, r]) => [doc, [...lineSet(r.citations, STALE)].sort((a, b) => a - b)]));
+  return Object.fromEntries(Object.entries(report.docs).map(([doc, r]) => [doc, [...lineSet(r.citations, FAILS)].sort((a, b) => a - b)]));
 }
 
 // ---------- --selftest: the parser on literal strings ----------
@@ -332,6 +374,116 @@ export function selftest() {
     if (!ok) failed++;
     console.log(`  ${ok ? "✓" : "✗"} parseCitations(${JSON.stringify(line)}) -> ${JSON.stringify(got)}${ok ? "" : ` (want ${JSON.stringify(want)})`}`);
   }
+
+  // #672 negative control 1: a cite whose SYMBOL is absent from the cited line, but a generic
+  // word from the citing sentence IS present there, must read STALE -- never OK/NEAR on the
+  // strength of the generic word. This is the exact shape of the reported bug: a
+  // `tonal.js:335` cite for `_okL` aimed at the wrong line passed because "domain" (or here,
+  // "at") also occurred on that line. Checked two ways: the loose word must never even become
+  // an anchor, and the real symbol's absence must drive the verdict to STALE.
+  {
+    const docLine = "the real subject is `_okL`, but this text is aimed at :200 for no reason";
+    const anchors = anchorsOf(docLine);
+    const looseWordAnchored = anchors.some((a) => a === "at" || a === "aimed" || a === "for");
+    console.log(`  ${!looseWordAnchored ? "✓" : "✗"} anchorsOf() rejects a generic word ahead of a bare :N citation (got ${JSON.stringify(anchors)})`);
+    if (looseWordAnchored) failed++;
+
+    // the wrong cited line contains the generic word ("at") the pre-#672 any-word predicate
+    // would have matched on; none of the (identifier-only) anchors can match it, which is what
+    // drives runAudit()'s verdict to STALE-WRONG-LINE (or NEAR, if within WINDOW; either way
+    // never OK).
+    const wrongCitedLine = "there is nothing here at all related to the topic";
+    const staleUnderPredicate = !anchors.some((a) => hasToken(wrongCitedLine, a));
+    console.log(`  ${staleUnderPredicate ? "✓" : "✗"} no anchor matches the wrong line (drives STALE), though it contains "at" (anchors: ${JSON.stringify(anchors)})`);
+    if (!staleUnderPredicate) failed++;
+
+    // the real symbol must still match its own, correct line -- the fix must not overcorrect
+    // into rejecting a genuinely right citation.
+    const rightCitedLine = "function _okL(x) { return x.L; }";
+    const okUnderPredicate = anchors.some((a) => hasToken(rightCitedLine, a));
+    console.log(`  ${okUnderPredicate ? "✓" : "✗"} the real symbol \`_okL\` still matches its own line (anchors: ${JSON.stringify(anchors)})`);
+    if (!okUnderPredicate) failed++;
+  }
+
+  // #672 follow-up (lead's ruling on the live audit): a first fix draft narrowed matching to the
+  // ONE anchor nearest a citation's position (or the first anchor once the scope widened to the
+  // paragraph). That broke real, correct citations -- caught by hand-reading the "68 STALE"
+  // false positives the narrowed binder produced against the live docs. Each case here is
+  // checked against the ANY-anchor matching runAudit() actually uses (anchorsOf() + hasToken()
+  // over the whole anchor set), never a single picked anchor.
+
+  // (a) two symbols named before ONE shared citation, slash-separated, where the cited line
+  // holds the FIRST one and the NEARER backtick belongs to a different, correct citation
+  // elsewhere on the same line. A nearest-anchor binder picks `toggleRightPane` and misses.
+  {
+    const docLine = "collapse: `toggleLeftPane`/`toggleRightPane` :1448 / `paneToggle` :1458";
+    const anchors = anchorsOf(docLine);
+    const citedLine1448 = "toggleLeftPane() { this.panesLeft = !this.panesLeft; this.render(); }";
+    const ok = anchors.some((a) => hasToken(citedLine1448, a));
+    console.log(`  ${ok ? "✓" : "✗"} a slash-separated symbol pair matches on the FAR (not nearest) anchor \`toggleLeftPane\` (anchors: ${JSON.stringify(anchors)})`);
+    if (!ok) failed++;
+  }
+
+  // (b) the cited symbol sits on the PREVIOUS doc line (a wrapped sentence); the citing line
+  // itself carries no anchor at all (only the citation form), so runAudit() widens to the
+  // enclosing paragraph -- and every anchor collected there, not just the first, must be tried.
+  {
+    // the earlier `.toggle`/`segmented()` anchors are the decoy: a "first anchor in scope"
+    // binder picks `.toggle` here and misses, even though `switchControl` (later in the same
+    // paragraph) is the real, correct symbol.
+    const prevLine = "(`.toggle`, `segmented()`) are built on real buttons with ARIA roles (`switchControl`,";
+    const citingLine = "`app-helpers.mjs:370`; `segmented`, `app.js:1587`), so they keep focus.";
+    const lineAnchors = anchorsOf(citingLine);
+    console.log(`  ${lineAnchors.length === 0 ? "✓" : "✗"} the citing line alone carries no anchor, forcing the paragraph widen (got ${JSON.stringify(lineAnchors)})`);
+    if (lineAnchors.length !== 0) failed++;
+    const paraAnchors = [...new Set([...lineAnchors, ...anchorsOf(prevLine)])];
+    const citedLine370 = "export const switchControl = ({ on, onToggle, label, ariaLabel }) =>";
+    const ok = paraAnchors.some((a) => hasToken(citedLine370, a));
+    console.log(`  ${ok ? "✓" : "✗"} the wrapped-sentence symbol \`switchControl\` still matches, not just the first paragraph anchor (anchors: ${JSON.stringify(paraAnchors)})`);
+    if (!ok) failed++;
+  }
+
+  // (c) a comma-separated symbol list: same shape as (a), the other separator the ticket named.
+  {
+    const docLine = "wired via `onCancel`, `onSave` :204 in the same dialog handler";
+    const anchors = anchorsOf(docLine);
+    const citedLine204 = "function onCancel() { this.dialog.close(); }";
+    const ok = anchors.some((a) => hasToken(citedLine204, a));
+    console.log(`  ${ok ? "✓" : "✗"} a comma-separated symbol pair matches on the FAR (not nearest) anchor \`onCancel\` (anchors: ${JSON.stringify(anchors)})`);
+    if (!ok) failed++;
+  }
+
+  // (d) a plain lowercase, non-call identifier that IS backticked as the citation's own subject
+  // (`` `render` :570 ``) must still anchor, even though it fails camelCase/PascalCase/snake_case
+  // and has no parens: found live, post-fix, in docs/lld/app-shell.md (the audit's lone real
+  // STALE-WRONG-LINE after cases a-c landed). The backtick is the author's own "this is code"
+  // signal; requiring the shape check on it too over-corrected the ticket's real fix.
+  {
+    const docLine = "| **LLD-C1** | Root element / view fork | `render` :570 | SPEC-R9 (gallery) + SPEC-R10 (editor) |";
+    const anchors = anchorsOf(docLine);
+    const renderAnchored = anchors.includes("render");
+    console.log(`  ${renderAnchored ? "✓" : "✗"} a backticked lowercase, non-call subject \`render\` still anchors (got ${JSON.stringify(anchors)})`);
+    if (!renderAnchored) failed++;
+    // and the ticket's real win survives: a bare (non-backticked) generic word still must not.
+    const stillRejectsBareProse = !anchorsOf("this text is aimed at :200 for no reason").includes("at");
+    console.log(`  ${stillRejectsBareProse ? "✓" : "✗"} a bare (non-backticked) generic word still does not anchor`);
+    if (!stillRejectsBareProse) failed++;
+  }
+
+  // #672 negative control 2: a NOFILE verdict must fail the gate (exit 1) unless the doc itself
+  // is exempt -- checked directly against staleLines(), the single choke point both this
+  // script's own exit code and test/repo/citations.mjs's FAIL loop read.
+  {
+    const fakeReport = { docs: { "docs/fake-for-selftest.md": { citations: [
+      { line: 7, verdict: "NOFILE" },
+      { line: 12, verdict: "OK" },
+    ] } } };
+    const failing = staleLines(fakeReport)["docs/fake-for-selftest.md"];
+    const nofileFails = Array.isArray(failing) && failing.includes(7) && !failing.includes(12);
+    console.log(`  ${nofileFails ? "✓" : "✗"} staleLines() fails a NOFILE line (exit 1) and leaves an OK line alone (got ${JSON.stringify(failing)})`);
+    if (!nofileFails) failed++;
+  }
+
   return failed;
 }
 
@@ -394,7 +546,7 @@ if (process.argv.includes("--json")) {
 }
 
 const stale = Object.values(staleLines(report)).reduce((n, v) => n + v.length, 0);
-if (stale && !process.argv.includes("--json")) console.log(`✗ ${stale} STALE citation line(s); exit 1`);
+if (stale && !process.argv.includes("--json")) console.log(`✗ ${stale} STALE/NOFILE citation line(s); exit 1`);
 process.exit(stale ? 1 : 0);
 }
 
