@@ -38,7 +38,7 @@ commit):
 | Data 2 | 0.022 | up to ~0.02 |
 | Data 5 | 0.010 | — |
 
-Status: **awaiting-owner** (adia-ui-kit's #253 review page). Does not block this commit or
+Status: **accepted as-is** (owner sign-off recorded on adia-ui-kit's #251, 2026-09-13: the prime-ladder residual, 5 families at dL 0.010-0.022, is accepted, no refit owed from ultimate-tokens; #253, the review page, is closed). Does not block this commit or
 `#616`'s tag cut — per the ruling recorded on #618 (comment `5647608697`, 2026-09-12): this
 repo's own gate is the versioned/tagged commit itself, not what ships downstream; shipping happens
 on adia-ui-kit's own side, held for their owner's review there.
