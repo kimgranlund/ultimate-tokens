@@ -218,7 +218,8 @@ for (const c of CASES) {
 
 // (d5) unclipped byte-identity: a FROZEN snapshot of the defaults whose cusp anchor needs no
 //      equal-compress at STEP_L 9 — i.e. min(roomUp,roomDown) >= STEP_L — captured from THIS unit's
-//      OWN construction, commit <FILLED IN A FOLLOW-UP COMMIT, see .sdlc/handoffs/pif-u6.md>. Frozen
+//      OWN construction, commit 766478b ("feat(prime): ladder steps equally in perceived CIE L*, held
+//      CAM16 chroma (#681 U6)", `unit/pif-u6-ladder`). Frozen
 //      literals, so the check is independent of the present implementation by construction. cam16, the
 //      space they were captured in. Seven families (one more than #641's six-family pre-#681 set:
 //      Data 8 clips under the 0.94-ceiling OKHSL construction but does NOT clip under the L*-domain
