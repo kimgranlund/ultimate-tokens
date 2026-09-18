@@ -451,7 +451,7 @@
       "hue": 70,
       "chroma": 100,
       "skew": 40,
-      "lift": 15,
+      "lift": -36,
       "on": true
     },
     {

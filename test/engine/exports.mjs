@@ -395,23 +395,28 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // EX-1/EX-2 (normative literal spot-checks) — fed the SAME resolved state the drawer/every other
   // export path uses (stateOf(defaultDocument())), per the SPEC's Examples header: calling derivedAll
   // on a bare C(ALL)-shaped fixture skips the group chroma resolver and renders different numbers.
+  // #647 re-capture: the five colour literals below moved when okhslStops started honouring a
+  // palette's skew and lift on the perceptual ramp (Primary and Neutral both ship skew -20), so every
+  // value derived from their ramp shifted. Re-pinned here AND in the SPEC's own Examples section in the
+  // same change, so the normative text and this mirror cannot drift apart. The prime ladder, on-colors,
+  // data-1 and constant.backdrop did not move.
   const ddState = stateOf(defaultDocument());
   const ddPreset = X.exportPanda(ddState);
   const ddRaw = ddPreset.theme.extend.tokens.colors;
   const ddSem = ddPreset.theme.extend.semanticTokens.colors;
-  if (ddRaw.primary["500"].value !== "oklch(0.6034 0.2164 258.99)") FAIL("panda", `EX-1 colors.primary.500 = ${ddRaw.primary["500"].value}`);
+  if (ddRaw.primary["500"].value !== "oklch(0.546 0.2114 258.97)") FAIL("panda", `EX-1 colors.primary.500 = ${ddRaw.primary["500"].value}`);
   if (ddRaw.primary["50"].value !== "oklch(1 0 0)") FAIL("panda", `EX-1 colors.primary.50 = ${ddRaw.primary["50"].value}`);
   if (ddRaw.primary["950"].value !== "oklch(0.1763 0.014 258.36)") FAIL("panda", `EX-1 colors.primary.950 = ${ddRaw.primary["950"].value}`);
-  if (ddRaw.neutral["500"].value !== "oklch(0.6047 0.0578 267.06)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
-  if (ddRaw.primary.scrim["300"].value !== "oklch(0.6034 0.2164 258.99 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
+  if (ddRaw.neutral["500"].value !== "oklch(0.5443 0.059 267.96)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
+  if (ddRaw.primary.scrim["300"].value !== "oklch(0.546 0.2114 258.97 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
   if (ddRaw.primary.prime.prime.value !== "oklch(0.5929 0.2052 259)") FAIL("panda", `EX-1 colors.primary.prime.prime = ${ddRaw.primary.prime.prime.value}`);
   if (ddRaw.primary.prime.brightest.value !== "oklch(0.8266 0.0853 258.93)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`);
   if (ddRaw.primary.prime.dimmest.value !== "oklch(0.3543 0.1307 258.84)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.5589 0.205 259.06)", _dark: "oklch(0.6475 0.1823 258.88)" }))
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.5048 0.188 259.1)", _dark: "oklch(0.5861 0.2112 259.05)" }))
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.4699 0.1483 258.99)", _dark: "oklch(0.7351 0.1242 259.16)" }))
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.4253 0.1357 259.04)", _dark: "oklch(0.672 0.1504 258.98)" }))
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
   if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);

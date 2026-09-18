@@ -8,6 +8,11 @@
 //   refKey(ref) -> padded ref ("50"->"050", "500-200"->"500-200")
 import { readFileSync } from "node:fs";
 import * as S from "../../src/engine/semantic.js";
+// model.mjs is the SINGLE place the accent/on-color pairing is resolved (semanticRoles ->
+// applyAccentRef -> applyOnColorContrast -> role overrides, then brandKit's kit.roles). The
+// role-contrast gate below reads that resolved kit and model's own contrastRatio, exactly as the
+// MCP `contrastLint` does, so the gate and the lint can never disagree about which two colors pair.
+import { defaultDocument, brandKit, contrastRatio, slug } from "../../src/ui/model.mjs";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const CANON = RT.roleTable;                         // the canonical primary-palette table (answer key)
@@ -127,8 +132,102 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   if (ROLES.some((r) => /identity/i.test(r.key))) FAIL("identity-stops", "identityStops must not add a role");
 }
 
+// ── hpg-role-contrast (#647): every semantic family's ACCENT must stay readable against its own
+//    on-color, in both ramp distributions the ruling names. #647 made the perceptual ramp honour a
+//    palette's skew and lift, which exposed that Warning's shipped skew 40 / lift 15 put its accent at
+//    2.18:1 against its pinned light on-color — and that "even" mode, which had honoured those controls
+//    all along, had been shipping 1.90:1 unnoticed, because nothing gated this pairing outside the MCP
+//    lint's advisory 3.0 floor. The owner ruled Warning must clear WCAG AA (4.5:1) in BOTH modes;
+//    `lift` moved 15 -> -36 (src/ui/model.mjs + role-table.json `defaults`, which must agree).
+//
+//    The pair is read off brandKit's resolved kit.roles — the same object, via the same resolution
+//    ladder, that mcp/describe-mcp-core.mjs's contrastLint reads — so this gate cannot drift from the
+//    lint's notion of "the accent" (550 light / 450 dark, per accentRef "mode") or "the on-color"
+//    (pinned to the light tint under the "fixed" policy, ADR-003).
+//
+//    The floors are a RATCHET, not an aspiration: each is that family's own post-retune measured ratio
+//    floored to one decimal, never below 3.0 (the lint's floor) and never below 4.5 for Warning (the
+//    ruled floor). So an intentional default change has to move a number here deliberately, and an
+//    accidental one reds. Seven of the eight were NOT retuned — #647's ruling is Warning-only — so
+//    several are pinned below AA at their shipped values. That is a live finding for the owner, recorded
+//    here rather than silently normalised: in perceptual, Neutral 4.21, Primary 4.31, Info 4.07 and
+//    Success 4.31 sit just under 4.5 in the DARK scheme, and Secondary is lowest at 3.05 (3.24 in even,
+//    its only sub-AA reading there). "peak" is deliberately NOT gated — the ruling names perceptual and
+//    even — and it is materially worse: post-retune Warning measures 4.82 light / 2.52 dark there, so
+//    peak still misses both 4.5 AND the lint's 3.0, as do Secondary (1.24), Success (1.58) and Info
+//    (2.44), all of which already did before #647. ──────────────────────────────────────────────────
+{
+  const hexToRgb = (hex) => [0, 2, 4].map((i) => parseInt(String(hex).slice(1 + i, 3 + i), 16));
+  const AA = 4.5;                                   // the ruled floor for Warning, both modes
+  // [family, light floor, dark floor] — max(lint floor, own measured ratio floored to 1 decimal)
+  const FLOORS = {
+    perceptual: [
+      ["Neutral", 5.8, 4.2],                        // measured 5.89 / 4.21
+      ["Primary", 6.0, 4.3],                        // measured 6.06 / 4.31
+      ["Secondary", 4.4, 3.0],                      // measured 4.40 / 3.05  <- lowest shipped pairing
+      ["Tertiary", 6.7, 4.8],                       // measured 6.80 / 4.86
+      ["Info", 5.8, 4.0],                           // measured 5.81 / 4.07
+      ["Success", 6.1, 4.3],                        // measured 6.18 / 4.31
+      ["Warning", 7.5, 4.6],                        // measured 7.60 / 4.65  <- the retuned family
+      ["Danger", 7.1, 5.1],                         // measured 7.17 / 5.13
+    ],
+    even: [
+      ["Neutral", 7.0, 4.5],                        // measured 7.10 / 4.53
+      ["Primary", 7.1, 4.5],                        // measured 7.16 / 4.51
+      ["Secondary", 5.2, 3.2],                      // measured 5.23 / 3.24
+      ["Tertiary", 7.1, 4.5],                       // measured 7.10 / 4.51
+      ["Info", 7.1, 4.5],                           // measured 7.12 / 4.52
+      ["Success", 8.0, 5.1],                        // measured 8.05 / 5.19
+      ["Warning", 9.4, 5.0],                        // measured 9.46 / 5.02  <- the retuned family
+      ["Danger", 8.0, 5.1],                         // measured 8.05 / 5.15
+    ],
+  };
+  let checked = 0;
+  for (const mode of ["perceptual", "even"]) {
+    const doc = defaultDocument();
+    doc.toneMode = mode;
+    const kit = brandKit(doc, { color: true });
+    for (const [family, lightFloor, darkFloor] of FLOORS[mode]) {
+      const key = slug(family);
+      const roles = kit.roles && kit.roles[key];
+      const accent = roles && roles[key];
+      const on = roles && roles["on" + key.charAt(0).toUpperCase() + key.slice(1)];
+      if (!accent || !on) { FAIL("role-contrast", `${mode} ${family}: no accent/on-color pair in kit.roles — the resolution ladder changed shape`); continue; }
+      const light = contrastRatio(hexToRgb(accent.light), hexToRgb(on.light));
+      const dark = contrastRatio(hexToRgb(accent.dark), hexToRgb(on.dark));
+      checked += 2;
+      if (light < lightFloor) FAIL("role-contrast", `${mode} ${family} LIGHT: accent ${accent.light} on ${on.light} = ${light.toFixed(2)}:1, below its pinned floor ${lightFloor}:1`);
+      if (dark < darkFloor) FAIL("role-contrast", `${mode} ${family} DARK: accent ${accent.dark} on ${on.dark} = ${dark.toFixed(2)}:1, below its pinned floor ${darkFloor}:1`);
+      // the RULED floor, stated separately from the ratchet so the ruling is legible in the failure text
+      if (family === "Warning" && Math.min(light, dark) < AA)
+        FAIL("role-contrast", `${mode} Warning: worst on-color contrast ${Math.min(light, dark).toFixed(2)}:1 misses the ruled WCAG AA floor ${AA}:1 (#647) — retune its skew/lift, do not lower this gate`);
+    }
+  }
+  if (checked !== 32) FAIL("role-contrast", `compared ${checked} accent/on-color pairs, want 32 (8 families x 2 modes x 2 schemes)`);
+  // role-table.json and model.mjs's inlined DEFAULT_PALETTES are two copies of the same defaults, and
+  // the retune had to land in BOTH. Assert it directly rather than relying on a downstream ramp-distance
+  // gate to notice: a skew or lift that differs between them is a silent split-brain default.
+  //   `hue` is deliberately NOT compared. defaultDocument() is OKLCH-native and converts each stored
+  //   cam16 seed hue on construction, so its number legitimately differs by a degree or two (Neutral
+  //   267 -> 268). That leg has its own gate — test/ui/shell.mjs's `oklch-native`, which bounds the
+  //   converted ramp against the cam16 intent in RGB. chroma/skew/lift are raw in both files.
+  {
+    const ddPalettes = defaultDocument().palettes;
+    let compared = 0;
+    for (const rt of RT.defaults) {
+      const mine = ddPalettes.find((p) => p.name === rt.name);
+      if (!mine) { FAIL("role-contrast", `role-table default "${rt.name}" is missing from defaultDocument()`); continue; }
+      for (const f of ["chroma", "skew", "lift"]) {
+        compared++;
+        if (mine[f] !== rt[f]) FAIL("role-contrast", `default "${rt.name}" ${f}: model.mjs has ${mine[f]}, role-table.json has ${rt[f]} — the two default sources have split`);
+      }
+    }
+    if (compared !== 3 * RT.defaults.length) FAIL("role-contrast", `default parity compared ${compared} fields, want ${3 * RT.defaults.length}`);
+  }
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["roles", "oncolors", "refs-canonical", "surface-mode", "identity-stops"]) {
+for (const g of ["roles", "oncolors", "refs-canonical", "surface-mode", "identity-stops", "role-contrast"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

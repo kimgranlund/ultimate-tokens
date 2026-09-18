@@ -216,11 +216,11 @@ always tier as **a** — the ladder and the hierarchy tiers reinforce each other
   and 0 at the ramp's light/dark extremes. That keeps the ramp strictly monotone, because the shift's
   own slope stays under 1 (\`|A| · π/900 < 1\`); the scheme this replaced simply added L* at each stop,
   which did not, and could push the light stops into a flat plateau of identical swatches. **lift > 0** still punches the anchor
-  brighter/hotter (Warning: **+15**, an "electric" amber core); **lift < 0** still dips it darker/deeper
-  (Success and Danger both default to **−5**, a grounded, non-neon core even at high chroma). Because
+  brighter/hotter; **lift < 0** still dips it darker/deeper (Success and Danger both default to **−5**,
+  and Warning to **−36**, a grounded, non-neon core even at high chroma). Because
   the shift rides the curve, a given lift moves the tone furthest where the ramp is steepest, so its
-  effect in L* is not a fixed amount. Today it applies on the \`even\` tone path only; the
-  \`perceptual\`/\`peak\` paths ignore skew/lift until #647 wires them to the same helper.
+  effect in L* is not a fixed amount. It applies across all three tone modes — \`even\`, \`perceptual\`,
+  and \`peak\` — through the same \`liftStop\` helper.
 
 Rule: leave skew/lift OUT of a family seed unless the theme specifically calls for a ramp that reads
 lighter/darker or hotter/deeper than the family's own role-table default — the core fills them in from each
