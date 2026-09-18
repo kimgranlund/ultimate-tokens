@@ -36,7 +36,7 @@ It builds every control inline with a single hyperscript helper `h(tag, attrs, .
   (`dist/ultimate-tokens.html`) and injects a postMessage bridge that flips `inFigma`
   (`markInFigma()`, `gen-figma-ui.mjs:23-33`). So **S2 reuses S1's primitives verbatim**; the only S2-specific
   *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1396`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1213`),
-  `.figma-plugin-btn` `overlays/drawer.js:212`) and the `.figma-files` mode segment (`overlays/drawer.js:209`).
+  `.figma-plugin-btn` `overlays/drawer.js:223`) and the `.figma-files` mode segment (`overlays/drawer.js:220`).
 - **No native-replacement layer + no FACE.** Controls are a mix of *native* elements (`<input
   type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets* — none are
   form-associated custom elements. The native ones inherit native a11y for free; the custom ones
