@@ -1430,13 +1430,17 @@ for (const c of SI) {
       `(hh) category "${c.slug}" loads ${CATEGORY_PRESETS} presets × ${CATEGORY_PRESET_PALETTES} palettes`);
   }
 }
-// lift-anchoring (EVEN mode): a LIGHT dominant must open LIGHT, not the old mid-dark L*≈46 grey.
-// This is the "colors look really wrong" fix. Keyed on any preset whose primary source is light.
+// anchoring (EVEN mode): a LIGHT dominant must open LIGHT, not the old mid-dark L*≈46 grey. This was
+// the "colors look really wrong" fix, originally a lift fit to stop 550; ticket #681 U2 retired that
+// fit (stop 550 was never the ruled anchor token) in favor of pinning the ramp's stop 500 to the
+// palette's own stored `anchor` exactly (Q1 ruled) — so the assertion now reads stop 500 directly,
+// the stop the anchor guarantees byte-exact, rather than 550's own approximate neighbourhood.
+// Keyed on any preset whose primary source is light.
 const { projectView: _pvHH } = await import("../../src/ui/model.mjs");
 const { hydrate: _hydHH } = await import("../../src/ui/persist.js");
 const _light = TP.find((p) => p.palettes[1].keyColors[0].oklch[0] > 0.85); // primary (after the neutral at [0])
-const _lightPrime = _pvHH(_hydHH({ ..._light, toneMode: "even" })).palettes[1].ramp.find((s) => s.stop === 550);
-ok(_lightPrime.tone > 72, `(hh) [even] lift anchors the prime to source lightness — a light dominant opens LIGHT (550 L*=${_lightPrime.tone.toFixed(0)})`);
+const _lightAnchor = _pvHH(_hydHH({ ..._light, toneMode: "even" })).palettes[1].ramp.find((s) => s.stop === 500);
+ok(_lightAnchor.tone > 72, `(hh) [even] the anchor pins the ramp to source lightness at stop 500 — a light dominant opens LIGHT (500 L*=${_lightAnchor.tone.toFixed(0)})`);
 app.toGallery(); flushRaf();
 // the HUB shows a category card per category (not the presets directly)
 ok(app.querySelectorAll(".category-card").length === CATEGORIES, `(hh) the gallery hub renders a category card per category (got ${app.querySelectorAll(".category-card").length})`);
@@ -3266,8 +3270,8 @@ flushRaf();
   ok(pgGID(neutral) === "material", "(gid1) Neutral defaults to the Material group");
   ok(rcGID(neutral, freshDoc) === 30, `(gid1b) rampChromaOf(Neutral) resolves to Material's default 30 (got ${rcGID(neutral, freshDoc)})`);
   const ctlGID = { toneMode: freshDoc.toneMode, hueSpace: freshDoc.hueSpace, lmin: freshDoc.lmin, lmax: freshDoc.lmax, damp: freshDoc.damp, dampCurve: freshDoc.dampCurve, dampAmp: freshDoc.dampAmp, dampBias: freshDoc.dampBias, curve: freshDoc.curve, tension: freshDoc.tension, relChroma: freshDoc.relChroma, chromaFloor: freshDoc.chromaFloor, vibrancy: freshDoc.vibrancy };
-  const direct30 = psGID({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir }, ctlGID, esGID);
-  const direct100 = psGID({ hue: neutral.hue, chroma: 100, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir }, ctlGID, esGID);
+  const direct30 = psGID({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
+  const direct100 = psGID({ hue: neutral.hue, chroma: 100, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
   ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) === JSON.stringify(direct30.map((s) => s.hex)), "(gid2) a fresh doc's Neutral ramp equals a direct engine call at chroma 30 (Material's default)");
   ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) !== JSON.stringify(direct100.map((s) => s.hex)), "(gid3) a fresh doc's Neutral ramp differs from the legacy chroma-100 ramp — visibly muted, not a no-op");
 
@@ -3605,6 +3609,84 @@ flushRaf();
   app.setCanvasView("radix"); flushRaf();
 
   app.canvasView = rxpView0; app.colorMode = rxpMode0; app.render(); flushRaf();
+}
+
+// ── (rst) Reset re-attaches a detached anchored palette (ticket #681, U2's C12; Q6) ─────────────
+// Opens a REAL curated preset (openConfigAsSet — the same entry point the gallery tile's onclick
+// uses, per the (hh) group's own comment above; that group already covers the tile's OWN wiring, so
+// a direct call here is enough) rather than the default kit: a curated preset's sampled palettes'
+// hue/chroma are exactly `seedFromKeyColor`-derivable from their own anchor (scripts/gen-
+// categories.mjs's `palette()` uses the SAME formula), so Reset's round trip is byte-exact. The
+// default kit's 16 hand-tuned palettes are NOT a safe target for this — several of them (Primary
+// included) carry a deliberately hand-picked chroma that is NOT what a fresh CAM16 measurement of
+// their own anchor hex would recompute, by design (the anchor pins the identity color; the family's
+// overall chroma is an independent aesthetic choice), so Reset's re-derivation would legitimately
+// NOT round-trip for those — that is correct behavior, not a bug, but it makes them a bad fixture
+// for asserting an EXACT pre/post match.
+{
+  const { projectView: pvRST } = await import("../../src/ui/model.mjs");
+  const rstPreset = TP[1]; // a different preset than (hh)'s TP[0], independent of that group's state
+  app.openConfigAsSet(rstPreset, null, { mintData: false });
+  app.setSection("color"); app.colorMode = "light";
+  app.selectPalette(1); app.render(); flushRaf(); // palettes[1] = "primary" (palettes[0] = "neutral")
+
+  const idx = 1;
+  const p0 = app.doc.palettes[idx];
+  ok(p0.name === "primary", `(rst-setup) test setup: palettes[1] is "primary" (got ${p0.name})`);
+  ok(!!p0.anchor && !!p0.sourceAnchor, "(rst0) the opened preset's primary palette starts anchored, with a sourceAnchor to restore from");
+  const anchorBefore = p0.anchor, sourceAnchorBefore = p0.sourceAnchor, hueBefore = p0.hue, chromaBefore = p0.chroma;
+  const viewBefore = pvRST(app.doc).palettes[idx];
+  const rampBefore = viewBefore.ramp.map((s) => s.hex);
+  const primeBefore = JSON.stringify(viewBefore.prime);
+
+  // drag Hue by +10 — the detach trigger.
+  const hueInput = findFk("slider:Hue");
+  const newHue = (hueBefore + 10) % 360;
+  hueInput.value = String(newHue);
+  hueInput.dispatch("input", {});
+  app.commitDrag();
+  ok(app.doc.palettes[idx].anchor === undefined, "(rst1) a Hue edit drops `anchor`");
+  ok(app.doc.palettes[idx].sourceAnchor === sourceAnchorBefore, "(rst1b) `sourceAnchor` survives the edit untouched");
+  ok(app.doc.palettes[idx].hue === newHue, `(rst1c) the Hue slider still writes palettes[i].hue (got ${app.doc.palettes[idx].hue}, want ${newHue})`);
+  const primeAfterEdit = JSON.stringify(pvRST(app.doc).palettes[idx].prime);
+  ok(primeAfterEdit !== primeBefore, "(rst1d) the prime strip actually moved (a real detach, not a no-op)");
+
+  // click Reset — the button itself, rendered only while sourceAnchor is present and anchor absent.
+  app.render(); flushRaf();
+  const resetBtnText = (e) => (e._text || "") + (e.children || []).map(resetBtnText).join("");
+  const resetBtn = walk(app.querySelector(".right-pane") || app, (e) => e.tagName === "BUTTON" && /Reset to source color/.test(resetBtnText(e)))[0];
+  ok(!!resetBtn, "(rst2) the Reset button renders once the palette is detached");
+  if (resetBtn) resetBtn.click();
+  flushRaf();
+  const afterReset = app.doc.palettes[idx];
+  ok(afterReset.anchor === anchorBefore, `(rst3) Reset restores anchor (got ${afterReset.anchor}, want ${anchorBefore})`);
+  ok(afterReset.hue === hueBefore && afterReset.chroma === chromaBefore, `(rst3b) Reset re-derives hue/chroma back to the anchor's own values (got hue=${afterReset.hue}/chroma=${afterReset.chroma}, want hue=${hueBefore}/chroma=${chromaBefore})`);
+  ok(afterReset.lift === 0, `(rst3c) Reset re-derives lift to 0 (got ${afterReset.lift})`);
+  const viewAfterReset = pvRST(app.doc).palettes[idx];
+  ok(JSON.stringify(viewAfterReset.ramp.map((s) => s.hex)) === JSON.stringify(rampBefore), "(rst4) all 19 ramp hexes deep-equal the pre-edit capture after Reset");
+  ok(JSON.stringify(viewAfterReset.prime) === primeBefore, "(rst4b) all 7 prime rungs deep-equal the pre-edit capture after Reset");
+
+  // skew/lift edits do NOT detach — the anchor stays through both.
+  app.commit((d) => (d.palettes[idx].skew = ((d.palettes[idx].skew || 0) + 20 + 100) % 200 - 100));
+  ok(app.doc.palettes[idx].anchor === anchorBefore, "(rst5) a Skew edit keeps `anchor`");
+  app.commit((d) => (d.palettes[idx].lift = ((d.palettes[idx].lift || 0) + 5)));
+  ok(app.doc.palettes[idx].anchor === anchorBefore, "(rst5b) a Lift edit keeps `anchor`");
+
+  // negative control: stub resetAnchor to a no-op, redo the detach, "click" the stub, and confirm the
+  // restoration check above WOULD have failed — proving (rst3)/(rst4) actually discriminate a broken
+  // Reset rather than passing by construction. Runs as an ordinary assertion in THIS suite (it asserts
+  // the stub correctly leaves the palette detached), never disabled or skipped.
+  {
+    const realResetAnchor = app.resetAnchor;
+    app.resetAnchor = () => {}; // no-op stub — simulates a broken Reset handler
+    app.commit((d) => { d.palettes[idx].hue = (d.palettes[idx].hue + 10) % 360; if (d.palettes[idx].anchor) delete d.palettes[idx].anchor; });
+    ok(app.doc.palettes[idx].anchor === undefined, "(rst6) setup: the stub scenario starts detached, same as (rst1)");
+    app.resetAnchor(idx); // the stub — does nothing
+    const stubRestored = app.doc.palettes[idx].anchor === anchorBefore;
+    ok(stubRestored === false, "(rst6b) negative control: with Reset stubbed to a no-op, the palette stays detached — (rst3)'s own restoration check would correctly FAIL against this stub, proving it has teeth");
+    app.resetAnchor = realResetAnchor; // restore the real method
+    app.resetAnchor(idx); // leave the doc clean for whatever runs after this block
+  }
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────

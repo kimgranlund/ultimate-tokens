@@ -1787,12 +1787,34 @@ export class ColorSectionImpl {
         ),
         { labelTitle: "Which canvas group this palette is organized under — Material, Brand, System, or Data." },
       ),
-      this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => (d.palettes[i].hue = v))),
+      // Hue/Chroma edits DETACH an anchored palette (ticket #681, U2/Q6): they drop the live `anchor`
+      // (the generator-written `sourceAnchor` copy stays, so Reset below can restore it) — a hue or
+      // chroma slider drag makes an anchor-carrying palette ordinary again, since the ramp's stop 500
+      // and prime.mjs's own anchor rung would otherwise keep rendering the OLD source color while the
+      // hue/chroma the user just set claims a different one. Skew/lift edits do NOT detach (their own
+      // sliders below are untouched) — they're aesthetic warps ABOUT the anchor's own fixed pivot, not
+      // a claim about a different source color.
+      this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => { d.palettes[i].hue = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
       // Chroma (SPEC 0.3.0 REQ-002/032) — feeds the KEY COLOUR and the prime system only now (the
       // gallery tile, deriveKeyColor, and the seven prime swatches); the ramp no longer reads it at
       // all — a palette's group supplies the ramp's own absolute chroma target instead (the four
       // per-group rows on the Global tab). No "Intensity" slider exists any more, in any group.
-      this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => (d.palettes[i].chroma = v))),
+      this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => { d.palettes[i].chroma = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
+      // Reset — re-attach a detached palette (Q6, U2's C12): restores `anchor = sourceAnchor` and
+      // re-derives hue/chroma/lift from it (resetAnchor below). Visible ONLY when there is something
+      // to restore (`sourceAnchor` present) and the palette is actually detached (`anchor` absent) —
+      // an already-anchored palette has nothing to reset, and one with no `sourceAnchor` at all (never
+      // generator-written, e.g. a hand-built palette) has nothing to restore TO.
+      p.sourceAnchor && !p.anchor
+        ? h(
+            "div",
+            { class: "field" },
+            btn([icon("arrow-counter-clockwise"), "Reset to source color"], {
+              title: "Restore the anchor this palette was generated from, and re-derive hue/chroma/lift from it",
+              onclick: () => this.resetAnchor(i),
+            }),
+          )
+        : false,
       isEven ? this.slider("Skew", p.skew, -100, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].skew = v))) : false,
       isEven ? this.slider("Lift", p.lift, -40, 40, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].lift = v))) : false,
       // Cusp pull (perceptual only) — this palette's override of the global Vibrancy: how far its
@@ -1906,6 +1928,30 @@ export class ColorSectionImpl {
     const s = kc && seedFromKeyColor(kc.oklch, this.doc.hueSpace);
     if (!s) return;
     this.commit((d) => { d.palettes[i].hue = s.hue; d.palettes[i].chroma = s.chroma; });
+  }
+
+
+  // resetAnchor — re-attach a detached palette (ticket #681, U2/Q6): restores `anchor = sourceAnchor`
+  // (the generator's never-user-written copy, unaffected by the hue/chroma edit that dropped `anchor`)
+  // and re-derives hue/chroma/lift from it, the SAME `seedFromKeyColor` formula scripts/gen-
+  // categories.mjs bakes in at generation time (mirrored here for the live doc's own hueSpace, since a
+  // legacy CAM16 doc must seed a CAM16 hue, not the source's raw OKLCH one) — lift resets to 0 (the
+  // anchored default; #681 U2 retired lift-fitting, so 0 is what a freshly generated anchor gets).
+  // Skew is left alone: only hue/chroma (the detach trigger) and lift (the retired fit target) are
+  // "back to how the generator would make it," not the user's own skew warp. Only reachable when
+  // `sourceAnchor` is present and `anchor` is absent (the inspector hides the button otherwise) — a
+  // no-op guard here too, so a stray call (e.g. a stubbed-out UI event) can never silently misfire.
+  resetAnchor(i) {
+    const p = this.doc.palettes[i];
+    if (!p || !p.sourceAnchor || p.anchor) return;
+    const s = seedFromKeyColor(hexToOklch(p.sourceAnchor), this.doc.hueSpace);
+    if (!s) return;
+    this.commit((d) => {
+      d.palettes[i].anchor = p.sourceAnchor;
+      d.palettes[i].hue = s.hue;
+      d.palettes[i].chroma = s.chroma;
+      d.palettes[i].lift = 0;
+    });
   }
 
 
