@@ -274,18 +274,39 @@ const CACHE_CAP = 5000; // generous for a single session (curated-library browsi
 // emitted different bytes for the same state depending on unrelated earlier renders, #686). An exact
 // key can never let two different floats share a bucket, so a HIT only ever fires for a bit-identical
 // repeat and, by definition, returns exactly what a fresh computation would — genuinely pure again.
-// Cost, measured (#686/#681 U6, this fix): standalone `node test/engine/prime.mjs`, 3 runs, this
-// commit's engine (exact keys) plus prime.mjs reading the shared functions directly (its own private
-// caches removed in the same change): 37.06s / 36.64s / 41.91s. Review pass 5 measured the PRIOR head
-// (truncated shared keys, private exact-keyed duplicates inside prime.mjs) at 38.36s / 35.03s / 34.96s
-// on the same host. The two ranges overlap; there is no measurable regression. This is not a
-// coincidence: most repeated calls in this codebase's own hot paths (a fixed palette's `baseHue`
-// recurring across every hueShift/skew combination, a ramp's per-stop calls at the SAME anchor) are
-// bit-identical repeats, which an exact key still caches; the truncated key's ONLY extra hits were the
-// WRONG ones — a different hue's answer served from a neighbouring bucket — so losing them is a
-// correctness gain with no real cache-utilization cost. `npm test` total wall time is dominated by
-// concurrent-host variance on this machine (per the U6 handoff's own caveat) and was not used as the
-// cost signal for that reason; the standalone, single-process figure above is the reliable one.
+// Cost, measured honestly (#686/#681 U6, review pass 6 N9 correction): an EARLIER version of this
+// comment claimed "no measurable regression" from the standalone `node test/engine/prime.mjs` timing
+// alone. That claim was wrong, and the measurement it rested on cannot show this cost at all:
+// `prime.mjs`'s own sweeps dominate that gate's runtime, and at the PRIOR head `prime.mjs` already
+// carried a private, exact-keyed 20,000-slot cache of its own, so both sides of that comparison were
+// already paying exact-key behaviour — it measures the same thing twice, not the regression.
+//
+// Measured where the cost actually lands: a corpus-scale render (343 curated documents, 3,780
+// palettes, 3 tone modes, `paletteStops` + `primeSwatches`) in a FRESH, unwarmed node process per
+// measurement (matching a real one-shot invocation — `npm test`'s own `gen:*` steps, a generator
+// script — not a long-lived warmed process, which hides the cost by letting later passes hit a cache
+// the first pass already populated), two engine variants differing ONLY in these three cache keys
+// (`prime.mjs` byte-identical between them, confirmed via `cmp`), CPU time (`user`+`system`, the
+// signal to trust — wall clock is noisy on a shared host and directionally misleading):
+//
+//   truncated keys (prior): 14,863ms / 15,074ms / 14,809ms / 15,255ms  (mean ~15,000ms)
+//   exact keys (this fix):  18,672ms / 17,740ms / 18,229ms / 17,778ms  (mean ~18,105ms)
+//
+// A real, consistent +21% CPU cost, four clean pairs, no inversions. This corroborates an independent
+// reviewer's own corpus-scale measurement (+26% and +32%, on a more contended host) — same direction,
+// same order of magnitude, from two different methodologies. `npm test`'s own `user` CPU time moved
+// with it (~102s at the prior head to ~144-156s here, contention-sensitive but consistently higher).
+//
+// Tried and did NOT help: raising `CACHE_CAP` (below) from 5,000 to 60,000 measured 19,072ms /
+// 19,157ms / 20,616ms — no improvement, slightly worse. Exact keys make a hit rare for the genuinely
+// distinct hues a real corpus sweeps (that IS the correctness fix — a hit now only ever fires for a
+// bit-identical repeat), so a bigger cache has little more to capture and only adds Map/GC overhead.
+//
+// Accepted anyway: the correctness gain is the whole point of #686 (a shipped export defect,
+// `exportPanda` emitting different bytes for the same state), and this cost is the honest price of
+// closing it, not a defect to chase further inside this unit. `.sdlc/adapter.md` §1's gate budget is
+// updated in this same commit, per this repo's own rule that a change invalidating a record repairs
+// that record in the same change.
 const _mc = boundedCache(CACHE_CAP);
 export function maxChromaInGamut(hue, tone) {
   if (tone <= 0 || tone >= 100) return 0;
