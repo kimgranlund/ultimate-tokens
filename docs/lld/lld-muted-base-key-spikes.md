@@ -67,17 +67,20 @@ export function primeChromaOf(p, doc) -> number      // (locked ? undefined : p.
 
 // prime.mjs (P2) — pure; imports effHue/hueAnchorFrac-free helpers from hct.js, okhsl.js, tonal.js
 export const PRIME_STEPS = ["brightest", "brighter", "bright", "prime", "dim", "dimmer", "dimmest"];
-export const PRIME_STEP = 0.09, PRIME_L_MIN = 0.14, PRIME_L_MAX = 0.94;   // R1 (ratified)
+export const PRIME_STEP = 0.09, PRIME_L_MIN = 0.14, PRIME_L_MAX = 0.97;   // R1, ceiling raised #655/#641
 export function primeSwatches(palette, controls)
   -> [{ step, l, s, hue, rgb: [r,g,b], hex, oklch: [L,C,H], inGamut: true }] // length 7, lightest first
 // Algorithm:
 //   baseHue = effHue(palette.hue, controls.hueSpace, (palette.chroma ?? 0) / 100)
 //   pk = peakC(baseHue); keyRgb = hctToRgb(baseHue, (palette.chroma / 100) * pk.c, pk.tone).rgb  // = deriveKeyColor
 //   key = rgbToOkhsl(keyRgb); lPrime = key.l              // the REAL key colour's lightness (REQ-051, #537 ruling)
-//   up = min(PRIME_STEP, (PRIME_L_MAX - lPrime) / 3); down = min(PRIME_STEP, (lPrime - PRIME_L_MIN) / 3)
+//   { up, down } = primeSteps(lPrime)                  // REQ-051 (#641): even per side, shortfall redistributed
+//     roomUp = max(0, (PRIME_L_MAX - lPrime) / 3); roomDown = max(0, (lPrime - PRIME_L_MIN) / 3)
+//     up = min(PRIME_STEP, roomUp); down = min(PRIME_STEP, roomDown)
+//     short = (PRIME_STEP - up) + (PRIME_STEP - down)  // handed to whichever side did NOT clip, capped by its room
 //   g = 3 ** ((palette.skew ?? 0) / 100)                 // the ramp's toneAt gamma (REQ-053a, R5)
 //   t = (i - 3) / 3; w = i < 3 ? |t| ** (1 / g) : |t| ** g  // light side 1/g, dark side g; w(prime) = 0, w(ends) = 1
-//   l[i] = i < 3 ? lPrime + 3 * up * w : lPrime - 3 * down * w   // skew 0 ⇒ even ladder
+//   l[i] = i < 3 ? lPrime + 3 * up * w : lPrime - 3 * down * w   // skew 0 ⇒ even WITHIN each side
 //   pc = (palette.primeChroma ?? controls.primeChroma ?? 100) / 100
 //   s  = clamp01(key.s * pc)                             // REQ-052 (#537): the key colour's own saturation, no damping
 //   hOk = key.h                                          // REQ-053 (#537): read, never re-solved; prime == key colour at pc 100
@@ -190,10 +193,41 @@ P8 documents groups last.
 3. **Cusp-anchored prime on near-achromatic palettes (REQ-051, REQ-052).** For Neutral (chroma 29) `lPrime` is still the
    hue's cusp lightness, which is fine; at `chroma 0` `peakC` still returns a tone, `s = 0`, greys.
    Detection: AC-050 (c) includes `chroma 0`. Fallback: none.
-4. **Yellow compression (REQ-051, EX-5).** With `lPrime` near 0.9 the three light swatches sit
-   0.013 apart and may read as duplicates, and a positive skew (Warning's `40`) pushes them closer
-   still. Detection: user report (R1 is ratified as is). Fallback: lower `PRIME_L_MAX` bias or a
-   minimum step; both are one-constant changes gated by AC-050 (d)/(d2).
+4. **Yellow compression (REQ-051, EX-5). FIRED 2026-09-13, remedied 2026-09-17 (#641).** With
+   `lPrime` near 0.9 the three light swatches sit 0.013 apart and may read as duplicates, and a
+   positive skew (Warning's `40`) pushes them closer still. Detection: user report (R1 is ratified as
+   is) — and the detection signal DID fire, as a user report on 2026-09-13 filed as #641. Measured at
+   the time: ten of the sixteen default palettes spanned less than `6 * PRIME_STEP`, the worst being
+   Data 5 at 0.2762 through `defaultDocument()` (hueSpace `oklch`, its shipped `chroma`) and 0.2955
+   with the raw `role-table.json` pair read as `cam16` at the same chroma — the two hue spaces reach
+   different cusp tones, so the same palette has two different anchors. The cause in both: the clipped
+   side's lost travel was never handed to the other side. Remedy taken
+   (owner ruling option A, 2026-09-17): shortfall REDISTRIBUTION in `primeSteps(lPrime)` — each side
+   keeps its own even spacing, and a clipped side's lost travel moves to the unclipped side, capped by
+   that side's room. The listed `PRIME_L_MAX` bias fallback was NOT taken: biasing the bound moves
+   `lPrime` itself, and `l = key.l` is the mechanism by which REQ-056 makes `prime` reproduce
+   `deriveKeyColor`'s hex exactly, so the bias would trade this defect for a worse one. Redistribution
+   leaves the anchor untouched and leaves every unclipped palette byte-identical. Gated by the rewritten
+   AC-050 (d1)/(d2a)/(d3)/(d4)/(d5)/(d6), which run over both hue spaces.
+   Second defect, found while fixing the first and FIXED in the same change (#655, folded into #641 by
+   owner ruling 2026-09-17): for yellow-green hues the cusp construction puts `lPrime` ITSELF above the
+   old `PRIME_L_MAX` of 0.94 — it peaks at 0.961183 (cam16 hue 109.75, chroma 0.75; the oklch peak is
+   the same value near hue 98) — so `prime` was out of bounds before any ladder was built, `roomUp`
+   went NEGATIVE, and the three light swatches inverted — reading DARKER than `prime`, not lighter.
+   Affected hues under 0.94, per chroma and as the union across chromas `{0, 50, 100}` — cam16: 15 hues
+   108..122 at chroma 0, six at 110..115 at chroma 50 and the same six at chroma 100, union 15 hues
+   108..122. oklch: 13 hues 96..108 at chroma 0, six at 107..112 at chroma 50, six at 109..114 at
+   chroma 100, union 19 hues spanning 96..114. So cam16's 15 is both its chroma-0 count AND its union,
+   whereas oklch's 19 is the UNION only — its own chroma-0 count is 13. `oklch` is the product default
+   and carries the wider union. Remedy: `PRIME_L_MAX` raised to 0.97 (REQ-051a) and each room floored
+   at 0 so travel can never go negative. AC-050 (d4) now asserts ZERO out-of-window anchors across the
+   full sweep in both hue spaces.
+   Correction to this record as first written (2026-09-17): the inversion was described here as
+   "byte-identical before and after #641". That was true only of the LIGHT side. The dark side moved
+   substantially under the round-1 redistribution, because the negative `roomUp` credited EXTRA travel
+   downward: at hue 112 / chroma 100 `dimmest` went 0.67983 -> 0.40000 (cam16), and the shipped Adia
+   `Data 5` went 0.68555 -> 0.40000, then to 0.43000 under the raised ceiling. Only the round-2 ceiling
+   and guard make that ladder monotone at all.
 5. **Hue drift on the outer swatches (REQ-053).** All seven share `key.h`; the ±0.27 `l` excursions
    drift by the OKHSL/OKLCH Abney residual (~2° worst case, blues) relative to `prime`'s pixel hue.
    Detection: AC-050 (e) chroma-aware budget against the prime pixel. Fallback: none this round; a

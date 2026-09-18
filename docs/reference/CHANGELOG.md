@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## 1.60 — 2026-09-17 — the prime ladder spans its full range at every hue (#641, #655, SPEC/LLD 0.3.2)
+
+**Every palette's seven prime swatches now span the full `6 * PRIME_STEP = 0.54` in OKHSL `l`**, at
+every hue and every chroma. They did not before: the ladder is built around a FIXED anchor at the key
+colour's own lightness (`l = key.l`, the mechanism by which `prime` reproduces the gallery tile's hex
+exactly), and the anchor floats with hue because it sits at the hue's CUSP tone, which runs from L* 34
+at violet to 94 at yellow-green. The window was a fixed `±3 × PRIME_STEP` clamped by the bounds, so
+wherever the anchor sat near a bound that side collapsed and its lost travel was simply DROPPED. Ten
+of the sixteen default palettes were short, the worst being Data 5 at 0.2762, and at full chroma 209
+of 360 swept hues fell short in `cam16` and 207 of 360 in `oklch`, the product default. The fix (owner ruling, option A) hands the shortfall to whichever side
+did NOT clip, capped by that side's own room: each side stays evenly spaced within itself, the two
+sides now differ from each other by exactly the handed-over travel, and `3 * up + 3 * down` is always
+0.54. The anchor never moves, so the exact key-colour identity is untouched. A palette that never
+touched a bound is byte-identical.
+
+**`PRIME_L_MAX` rises 0.94 → 0.97** (#655, folded into this ticket by owner ruling so the high-cusp
+tokens move only once). 0.94 was below the reach of the cusp anchor itself: sweeping hue 0..359 ×
+chroma 0..100 in both hue spaces, `l_prime` peaks at 0.961183, so for yellow-green hues (cam16
+108..122, oklch 96..114) `prime` was OUT OF BOUNDS before any ladder was built, the light side's room
+went negative, and `brightest`/`brighter`/`bright` INVERTED — they read darker than `prime`. 0.97 is
+the smallest round ceiling that clears that peak and also keeps the three light swatches distinct in
+8-bit hex at every swept cell; each side's room is additionally floored at zero so negative travel can
+never be credited to the other side.
+
+**Token impact.** Every `prime.*` value changes for the clipped palettes, across all ten documented
+color formats and the Figma `Color Prime` collection. In the default document ten of sixteen palettes
+move (Secondary, Info, Success, Warning, Data 1, Data 4, Data 5, Data 6, Data 7, Data 8) and six are
+byte-identical (Neutral, Primary, Tertiary, Danger, Data 2, Data 3). Across the curated categories
+2346 of 3780 palettes move, 22 of them from a genuinely inverted ladder. The committed Adia export
+artifact (`docs/reference/data/adia-oklch-export.css`) is regenerated. Ramps, roles, typography and
+geometry are untouched — this is the prime system only.
+
 ## 1.59 — 2026-09-17 — `lift` becomes a stop displacement; the even ramp is strictly monotone (#648)
 
 **`lift` no longer ADDS L\*, it DISPLACES the stop.** The per-palette `lift` control used to add a
@@ -41,6 +73,7 @@ domain coupling) and `lift-anchor` in `test/engine/categories.mjs` (every built 
 within 1.5 L\* of its source, at the best available integer). `test/engine/fixtures/tonal-legacy.json`
 regenerated for exactly the three even-mode ramps that carry a lift; its other 29 stay byte-for-byte
 what commit 83756bb emitted.
+
 
 ## 1.58 — 2026-09-11 — palette groups + absolute per-group base chroma (#559, SPEC/LLD 0.3.0)
 
