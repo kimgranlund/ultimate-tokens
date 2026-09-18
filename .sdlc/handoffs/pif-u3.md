@@ -4,129 +4,130 @@ plan: preset-intent-fidelity
 unit: U3
 branch: unit/pif-u3-envelope
 base: 690b0a1a395cee0bad122443c3441d5f35412030
-head: ed1e6a3bfdd4572c01e6443f406f9772dcd0d6b4
+head: c5a5be39eb4186b3895ffe67e00c0bdde73c56fd
 written: 2026-09-18
 pass: 2
 ---
 
-# U3 handoff — anchor-centred chroma envelope, all modes, grade l4
+# U3 handoff — anchor-centred chroma envelope, all modes, grade l4 (pass 2, review response)
 
-Ticket #681, priority P1. This unit unifies the even path's and the OKHSL path's per-stop chroma
-damping into one `chromaEnvelope` function, keys it on `liftStop` (#668's R1c fix), switches the OKHSL
-path's saturation basis to the key colour's own OKHSL `s` (REQ-052), and drops `VIVID_MIDS.dampAmp` to 0
-(Q7). Rebased onto plan tip `690b0a1` (rev7 retired C6's sub-pixel magnitude bar for four ramp-shape
-gates; rev8 corrected the peak uptick count and named the Varanger duplicate-swatch witness) and the
-gate rewritten to match: it now scans the full 3,780-palette corpus with no chroma floor, both stop
-sets, per rev8. Five questions are open for the plan owner in `.sdlc/questions/pif-u3.md`, the most
-consequential being Q3: the zero-duplicate-hex bar (C6 ii) appears structurally unreachable at true 0
-from inside this unit, and the gate currently ships with a named, cited exception list standing in for
-a plan-level ruling.
+Ticket #681, priority P1. Pass 1 shipped a `chromaEnvelope` unifying the even path's and the OKHSL
+path's per-stop chroma damping, keyed on `liftStop` (#668's R1c fix), with the OKHSL path's saturation
+basis switched to the key colour's own OKHSL `s` (REQ-052) and `VIVID_MIDS.dampAmp` dropped to 0 (Q7).
+It received a FIX-FIRST review (`scratchpad/pif-u3-review-1.md` in the review dispatch's scratchpad):
+the engine change itself was correct and closed #668's uptick class to 0/0/0 on the rendered corpus,
+but the C6 gate measured a proxy (raw `palette.chroma` instead of the resolved chroma the product
+renders with), which made most of pass 1's reported figures — the corpus upticks count, the "21 to 7"
+duplicate-hex rescope, and by extension the Design A vs B trade-off it was based on — unreliable. C8's
+contrast floors also moved down in four places without disclosure.
+
+This pass fixes the gate to measure the rendered path, re-derives every figure from scratch, and
+re-decides Design A vs B on the corrected evidence: **Design B ships** (see
+`.sdlc/questions/pif-u3.md` Q1). One question is newly open (Q6, a genuine 0.03-headroom contrast-floor
+drop); Q1 and Q3 are resolved; Q4 and Q5 are unchanged from pass 1.
 
 ## Criteria table
 
-| # | Criterion | Command | Observed (red -> green) | Negative control |
+| # | Criterion | Command | Observed | Negative control |
 |---|---|---|---|---|
-| C7-1 | One `chromaEnvelope` definition | `grep -c "export function chromaEnvelope(" src/engine/tonal.js` | before: 0 (two separate `m` copies) -> after: `1` | n/a (mechanical) |
-| C7-2 | Exactly 3 total appearances (1 def + 2 call sites) | `grep -c "chromaEnvelope(" src/engine/tonal.js` | before: 0 -> after: `3` | a stray 4th mention in this unit's own doc comment tripped it to `4` mid-build; rephrased, back to `3` |
-| C7-3 | Zero stale two-copy dampAmp expressions | `grep -c "1 + ((controls.dampAmp" src/engine/tonal.js` | before: `2` -> after: `0` | n/a (mechanical) |
-| C6-anchor | `env(anchorStop)=1` exactly at lift 0, every damp/dampCurve/dampAmp/dampBias combo | `test/engine/tonal.mjs` "chroma-envelope" (C6 env-anchor sub-check) | pass; deliberately perturbing the return value by +0.01 made this fail as `1.01 != 1` (verified red) | n/a (deterministic sweep) |
-| C6-i | perceptual/peak/even: 0 tone upticks, full corpus, both stop sets | `test/engine/tonal.mjs` "chroma-envelope" (C6 i) | `upticks.{perceptual,peak,even} = 0` over all 3,780 corpus palettes (343 presets + 16 role defaults, no chroma floor), 19-stop and 25-stop, all 3 modes | tried an alternative `chromaEnvelope` design (see C7/iii-c row below) that reopened 21/10,080 upticks on the synthetic grid; reverted |
-| C6-ii | 0 duplicate hex beyond a named, cited exception list, full corpus, both stop sets | same file, (C6 ii) | 7 distinct ramps (10 colliding stop-pairs) cited by exact key (mode/hue/skew/lift/stop-pair); verified the gate is load-bearing both directions: removing one cited entry reproduces `FAIL — (C6 ii) peak: 2 duplicate-hex pair(s) beyond the cited list...` (both stop sets trip); the list must ALSO be fully observed or the gate fails, so it cannot silently rot | measured directly against the pre-U3, pre-any-#668-fix baseline (`362cc48`): 21 peak-mode ramps already carry >= 1 duplicate hex, full corpus — this unit's fix cuts that to 7 as a side effect, not a target |
-| iii-c | measured CIELAB L* never rises, 10,080-cell synthetic grid (curve x skew x lift x hue x vibrancy x mode) | `test/engine/tonal.mjs` "skew-lift-okhsl" | 0 of 10,080 rose (shipped design, kept after reverting an alternative that regressed to 21/10,080, including a skew=0 case) | tried alternative design (env(anchor)=1 exact at ANY lift): 21/10,080 rose, worst +0.2127 L*; reverted |
-| C6-iii | no docs/ literal moves without a named exception | `git diff --stat 690b0a1 -- docs/` (this unit's own base, not `origin/main`, which has moved on for reasons unrelated to any unit — see Q5) | 4 paths: 2 expected `adia-*` regen files, 2 citation-line fixes in `docs/reference/reviews/2026-08-20-reactivity/` this unit's own comment growth caused — not yet added to the plan's named-exception list (Q5) | n/a |
-| Q7 | `VIVID_MIDS.dampAmp` 55 -> 0 | `scripts/gen-categories.mjs` | changed; `npm run gen:categories` (run inside `npm test`) regenerates the corpus under the new default | n/a |
-| citations | 0 STALE | `node scripts/audit-citations.mjs` | 0 STALE-WRONG-LINE / STALE-MISS, exit 0 (2 were found and fixed mid-build: `tonal.js:395`->`:404`, the `_okL` memo moved when this unit's own doc comment grew) | n/a |
-| branding | clean | `node test/repo/branding.mjs` | `branding: clean` | n/a |
-| full suite | 47/47 green | `npm test` | `✓ all 47 test files passed` (~92s wall, up from ~63s baseline — the corpus-wide chroma-envelope gate now covers both stop sets) | n/a |
+| C7-1 | One `chromaEnvelope` definition | `grep -c "export function chromaEnvelope(" src/engine/tonal.js` | `1` | n/a (mechanical) |
+| C7-2 | Exactly 3 total appearances | `grep -c "chromaEnvelope(" src/engine/tonal.js` | `3` | n/a (mechanical) |
+| C7-3 | Zero stale two-copy dampAmp expressions | `grep -c "1 + ((controls\.dampAmp" src/engine/tonal.js` | `0` | n/a (mechanical) |
+| C6-anchor | `env(anchorStop)=1` exactly at EVERY lift (not only lift 0 — R2 closes the Q1 gap), every damp/dampCurve/dampAmp/dampBias combo | `test/engine/tonal.mjs` "chroma-envelope" (C6 env-anchor sub-check), now swept over lift in `[-40,-20,0,20,40]` too | pass | perturbing the return value by +0.01 fails as `1.01 != 1` |
+| C6-i | perceptual/peak/even: 0 tone upticks, full corpus, both stop sets, RENDERED path | `test/engine/tonal.mjs` "chroma-envelope" (C6 i) | `upticks.{perceptual,peak,even} = 0`, rendered via `rampChromaOf` + hueShift/hueSameDir/cuspPull, matching `src/ui/model.mjs`'s `projectView` | pointed at the pre-U3 base with the OLD (raw-chroma) method: reports 0/0/0 (vacuous — the gate this negative control exists to catch); pointed at the pre-U3 base with the FIXED (rendered) method: reports 11 perceptual / 46 peak, matching the plan's own #668 figures exactly, confirming the fixed gate is non-vacuous |
+| C6-ii | 0 duplicate hex, full corpus, both stop sets, RENDERED path | same file, (C6 ii) | **0** duplicate-hex ramps in every mode, both stop sets — `KNOWN_BASELINE_DUP` is an empty Set; no exception needed | the pre-U3 base also measures 0 on the rendered path (Q3); pass 1's Design A measured 2 (both named in Q1's table) — Design B's own negative control: patching back to Design A's `sd` formula in a scratch copy reproduces both |
+| iii-c | measured CIELAB L* never rises beyond a NAMED exception list, 10,080-cell synthetic grid | `test/engine/tonal.mjs` "skew-lift-okhsl" | 21 of 10,080 rise under Design B (worst +0.1314 L*, near white); all 21 named and cited in `GRID_R2_EXCEPTIONS`, verified both directions | deleting one cited cell reproduces a FAIL naming it; an unlisted 22nd cell also fails |
+| C6-iii | no docs/ literal moves without a named exception | `git diff --stat 690b0a1 -- docs/` | 4 paths: 2 expected `adia-*` regen files, 2 citation-line fixes (this pass moved the SAME two lines again, `:404`->`:410`, not repeated from pass 1's `:395`->`:404`) — Q5 | n/a |
+| C8 | `hpg-role-contrast` floors re-pinned vs the TRUE pre-U3 baseline (bf2aaf6, not pass 1's own numbers) | `test/engine/semantic.mjs` | peak improves at 5 families; even unchanged; perceptual holds at 15 of 16, ONE real drop (Neutral dark 4.9->4.5, Q6) | restoring Neutral dark to 4.9 in a scratch copy reds at measured 4.53 |
+| gate:corpus-contrast | 0 of 7,560 cells under 4.5 | `npm run gate:corpus-contrast` | `168 named per cell, 0 carried below 4.5`, worst cell 4.503:1 | n/a |
+| contrastLint | 0/0/0 across modes | `contrastLint(brandKit(defaultDocument()))` per mode | `0 0 0` | n/a |
+| Q4 | Panda literal | `test/engine/exports.mjs` | unchanged from pass 1 — `oklch(0.5458 0.0462 266.73)`, confirmed design-invariant (Neutral/Primary both lift 0) | n/a |
+| Q7 | `VIVID_MIDS.dampAmp` 55 -> 0 | `scripts/gen-categories.mjs` | unchanged from pass 1 | n/a |
+| citations | 0 STALE | `node scripts/audit-citations.mjs` | 0 STALE-WRONG-LINE / STALE-MISS, exit 0 (this pass's own comment growth moved `tonal.js:404`->`:410`, fixed) | n/a |
+| branding | clean | `node test/repo/branding.mjs` | `branding: clean (446 files scanned)` | n/a |
+| full suite | 47/47 green | `npm test` | `✓ all 47 test files passed` | n/a |
 | tree | clean after | `git status --short` | empty after commit | n/a |
 
-## C6, reframed per plan rev7 (the numeric magnitude bar this unit was first built against is retired)
+## C6, the Design A -> Design B re-decision (Q1, full detail)
 
-Revision 7 (`d547a7a`) replaced C6's original median/p90/"zero above 100% of stop 500" numeric bar with
-four ramp-shape gates ("a chroma cliff repair moves more than one 8-bit channel, so a sub-pixel bar is
-unsatisfiable"): (i) zero tone upticks, (ii) zero duplicate hex, (iii) no unnamed docs/ literal moves,
-(iv) a per-preset movement table gated on the plan owner's acceptance (U4's deliverable, not built here
-— see Landing sequencing below). The corpus-wide median/p90/above-100% numbers this unit measured against
-the now-retired bar are preserved in `.sdlc/questions/pif-u3.md` Q2 for the record, since they still
-show real, diagnosed mechanisms (a pre-existing peak-mode OKHSL/CAM16 cusp mismatch), but they are no
-longer pass criteria.
+Rendered-path measurement (`rampChromaOf` + `hueShift`/`hueSameDir`/`cuspPull`, matching
+`projectView`), 3,780 palettes x 3 modes x both stop sets, independently reproduced (not trusted from
+the review):
 
-## C6 (i) and (ii), full corpus (3,780 palettes, no chroma floor), both stop sets
+| | perceptual upticks | peak upticks | peak dup-hex ramps (25-stop) |
+|---|---|---|---|
+| pre-U3 base (362cc48) | 11 (worst +0.5105) | 46 (worst +0.8312) | 0 |
+| Design A (pass 1 shipped) | 0 | 0 | 2 |
+| **Design B (this pass, shipped)** | **0** | **0** | **0** |
 
-| mode | tone upticks (19-stop) | tone upticks (25-stop) | duplicate-hex ramps, pre-U3 baseline (362cc48) | duplicate-hex ramps, shipped |
-|---|---|---|---|---|
-| perceptual | 0 | 0 | 0 | 0 |
-| peak | 0 | 0 | 21 | 7 (cited) |
-| even | 0 | 0 | 0 | 0 |
+Design B's cost, also independently reproduced: 21 of 10,080 synthetic grid cells rise (worst +0.1314
+L*, near white), at skew/lift/hue/vibrancy combinations no curated preset or role default uses. Full
+rationale and the rejected third draft are in `src/engine/tonal.js`'s `chromaEnvelope` comment and
+`.sdlc/questions/pif-u3.md` Q1.
 
-The peak-mode duplicate-hex class is entirely near-white (chroma 2-23), entirely under strong positive
-lift (33-40) — one mechanism, not scattered noise. Root cause (verified by comparing raw RGB triples
-between the pre-U3 baseline and this unit's engine at the colliding stops): correctly keying chroma
-damping on `liftStop` narrows chroma differentiation exactly where lift has also compressed the two
-stops' lightness reading close together; near white that can round adjacent 8-bit stops to the identical
-hex. The pre-U3 baseline's cruder, raw-stop-keyed damping over-differentiated chroma in the same region
-often enough to avoid MOST (not all — 21 already existed) such collisions by accident. Full detail, the
-exact 7-ramp/10-pair list, and options for closing the remaining gap: `.sdlc/questions/pif-u3.md` Q3.
+## Files changed this pass (commit `c5a5be3`, on top of pass 1's `0a8d1c6`/`ed1e6a3`/`ce23ec0`)
 
-## Files changed (commits `0a8d1c6`, `ed1e6a3`)
-
-- `src/engine/tonal.js` — `chromaEnvelope`, `ANCHOR_STOP`, `keyChroma`/`keyS`, `evenChroma` refactor,
-  `hueAnchorFrac` simplified, both `paletteStops` and `okhslStops` reading the shared `envelopeAt` map.
-- `scripts/gen-categories.mjs` — `VIVID_MIDS.dampAmp` 55 -> 0.
-- `test/engine/tonal.mjs` — new `hpg-tonal-chroma-envelope` group (C6/C7), corrected to the full corpus
-  and both stop sets after the rebase; `damping-curve`, `chroma-floor`, `oklch-hue-anchor`,
-  `hue-solver-best` groups repinned to the new engine.
-- `test/engine/semantic.mjs` — `hpg-role-contrast` floors re-measured (C8); no family fell below AA 4.5.
-- `test/engine/exports.mjs` — EX-1 `colors.neutral["500"]` literal repinned (mirrors the out-of-lane
-  spec doc; see `.sdlc/questions/pif-u3.md` Q4).
-- `test/ui/headless-boot.mjs` — curated-preset `dampAmp` assertion 55 -> 0.
-- `docs/reference/reviews/2026-08-20-reactivity/{00-synthesis,04-context-and-messaging}.md` — 2 stale
-  citations fixed (`tonal.js:395` -> `:404`); flagged in Q5 for C6(iii)'s named-exception list.
-- `.sdlc/questions/pif-u3.md`, `.sdlc/handoffs/pif-u3.md` — this handoff and its open questions.
+- `src/engine/tonal.js` — `chromaEnvelope`'s `sd` re-centred on `liftStop(anchorStop, lift)` (Design B/
+  R2); rewrote the function's own rationale comment; deleted the stale comment at the old `:492` that
+  described a formula ("chroma% of the gamut... damping multiplier m") no longer present three lines
+  below it.
+- `test/engine/tonal.mjs` — `damping-curve`'s independent legacy-reproduction formula updated to read
+  `liftStop` on both sides of the subtraction (matching R2) and floored at 0 (matching
+  `chromaEnvelope`'s own `Math.max(0, ...)`); `skew-lift-okhsl` (iii c) gained the named
+  `GRID_R2_EXCEPTIONS` list (21 cells); `chroma-envelope`'s C6-anchor sub-check swept over lift, not
+  only lift 0; the C6 (i)/(ii) corpus scan rebuilt on the rendered path (`rampChromaOf` +
+  `hueShift`/`hueSameDir`/`cuspPull`, `defaultDocument()`'s own palettes for the 16 role defaults
+  instead of the reduced role-table.json shape); `KNOWN_BASELINE_DUP`'s key gained `chroma` and the
+  stop-set label (review finding 5) and is now an empty Set (Q3).
+- `test/engine/semantic.mjs` — `hpg-role-contrast` `FLOORS` fully re-measured against bf2aaf6 (not pass
+  1's own numbers), with the one genuine drop (Neutral perceptual dark) disclosed in-line and in Q6.
+- `docs/reference/reviews/2026-08-20-reactivity/{00-synthesis,04-context-and-messaging}.md` — the same
+  2 citation lines pass 1 fixed, moved again by this pass's own comment growth (`:404` -> `:410`).
 
 ## Regenerated artifacts (committed)
 
-- `test/engine/fixtures/tonal-legacy.json`, `test/engine/fixtures/shadcn-baseline.css` (CARVE-OUT header
-  extended, names all three lifted role defaults that move), `test/ui/fixtures/default-doc-ramps.json`.
-- `src/ui/categories/*.js`, `docs/reference/data/adia-{oklch,radix}-export.*`, `figma/plugin/ui.html`,
-  `src/ui/describe-mcp-assets.js` — `npm test`'s own `gen:*`/`bundle`/`gen:figma-ui` steps.
+- `test/engine/fixtures/tonal-legacy.json` (CARVE-OUT header updated for R2), `test/engine/fixtures/
+  shadcn-baseline.css` (CARVE-OUT header updated for R2 — the header's closing `*/` was dropped by an
+  earlier draft of the regen script and restored before committing), `test/ui/fixtures/
+  default-doc-ramps.json`.
+- `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js` — `npm test`'s own `bundle`/`gen:figma-ui`/
+  `gen:mcp-assets` steps. `src/ui/categories/*.js` and `docs/reference/data/adia-*` regenerate
+  byte-identical to pass 1 (an engine-only change does not move the stored palette definitions
+  `gen-categories.mjs` reads), so they are not part of this pass's diff.
 
 ## Out of lane, not touched
 
-- `src/engine/prime.mjs` / `test/engine/prime.mjs` (U6).
-- `src/ui/model.mjs` anchors / `src/ui/persist.js` (U1).
-- The ramp's anchor pass-through in `okhslStops`/`toneAt`, and `effStop`/`toneAt`'s lightness-curve
-  density under lift (U2) — this is where Q1 and Q3's residuals would need to be closed for real.
-- `docs/spec/spec-panda-park-ui-exports.md` — the normative EX-1/EX-2 literal drift is reported (Q4),
-  not edited.
+Unchanged from pass 1: `src/engine/prime.mjs` / `test/engine/prime.mjs` (U6); `src/ui/model.mjs`
+anchors / `src/ui/persist.js` (U1); the ramp's anchor pass-through in `okhslStops`/`toneAt`, and
+`effStop`/`toneAt`'s lightness-curve density under lift (U2); `docs/spec/spec-panda-park-ui-exports.md`
+(Q4, reported not edited).
 
 ## Landing sequencing
 
-Per the plan text, U3 merges into the plan branch only after U4's `scripts/report-preset-fidelity.mjs
---movement` report exists and the plan owner records 🟢 acceptance in
-`.sdlc/questions/preset-intent-fidelity-u3-movement.md` (C6 iv) — not something this unit builds or can
-satisfy alone. Flagging so the merge order isn't missed, not asking for it here.
+Unchanged from pass 1: per the plan text, U3 merges into the plan branch only after U4's
+`scripts/report-preset-fidelity.mjs --movement` report exists and the plan owner records 🟢 acceptance
+in `.sdlc/questions/preset-intent-fidelity-u3-movement.md` (C6 iv).
 
-## Risks for U2 / U4
+## Risks for U2 / U4 (unchanged from pass 1, plus one addition)
 
-- **U2:** the "anchored branch" pins lightness at the nominal anchor stop independent of lift for
-  anchored palettes. This unit's `chromaEnvelope(stop, anchorStop, lift, controls)` already takes
-  `anchorStop` as a parameter (currently always called with the module constant `ANCHOR_STOP = 500`), so
-  threading a palette's real anchor stop through should be a call-site change, not a `chromaEnvelope`
-  redesign — EXCEPT that if U2's lightness pinning makes `liftStop(anchorStop, lift) === anchorStop`
-  hold for anchored palettes, this unit's Q1 trade-off may become moot for that case specifically: worth
-  checking before assuming Q1 is permanent.
-- **U2:** the near-white duplicate-hex class (Q3) and the peak-mode OKHSL/CAM16 cusp mismatch (Q2) both
-  live in `effStop`/`toneAt`. If U2 touches that density under lift for the anchored branch, both are
-  worth re-measuring against the new lightness curve rather than assumed unrelated.
-- **U4:** the movement-table report (C6 iv) should measure against the SAME full-corpus, both-stop-set
-  scope this unit's gate now uses, not the earlier `chroma >= 10` scope an earlier draft of this gate
-  mistakenly reused — that filter hides the whole duplicate-hex class Q3 is about.
+- **U2:** the near-white duplicate-hex class this pass closed to 0 and the peak-mode OKHSL/CAM16 cusp
+  mismatch (Q2) both live in `effStop`/`toneAt`. If U2 touches that density under lift for the anchored
+  branch, re-measure both against the new lightness curve rather than assuming unrelated.
+- **U2:** review finding 8 (latent hazard): `chromaEnvelope(stop, anchorStop, lift, controls)` genuinely
+  takes `anchorStop` as a parameter and both call sites pass the module constant, so U3 composes behind
+  the parameter as specified — but the surrounding code still hardcodes 500 in `tone500`/`maxc500`/
+  `intended500` (`paletteStops`) and `lightnessAt(500, t500)` (`okhslStops`). If U2 threads a
+  per-palette anchor stop, the seed's saturation will follow it while the seed's lightness stays at 500.
+- **U4:** the movement-table report (C6 iv) should measure against the SAME full-corpus, rendered,
+  both-stop-set scope this unit's gate now uses.
+- **U1 / U6 (new, Q6):** either can move Neutral's accent lightness, and perceptual Neutral dark's
+  contrast floor now sits at 4.53 against the ruled AA 4.5 floor — 0.03 of headroom. Re-measure this
+  one cell after either lands.
 
 ## Open questions
 
-See `.sdlc/questions/pif-u3.md`: Q1 (zero-upticks vs exact-anchor design trade-off, decision needed),
-Q2 (retired numeric C6 bar, kept for the record, no decision needed), Q3 (duplicate-hex bar, the
-consequential one — a plan-level ruling is needed before this can be called fully closed), Q4
-(Panda/shadcn spec literal drift, needs a docs-owning seat), Q5 (2 more docs/ paths for C6(iii)'s
-exception list).
+See `.sdlc/questions/pif-u3.md`: Q1 (RESOLVED — Design B shipped, both tables shown), Q2 (moot, kept
+for the record), Q3 (RESOLVED — the "21 baseline duplicates" story was a proxy artefact; true count is
+0/0 before/after), Q4 (Panda/shadcn spec literal drift, needs a docs-owning seat, unchanged), Q5 (2
+docs/ exception paths, unchanged in shape), Q6 (NEW — Neutral perceptual dark's contrast floor drops
+for real, 0.03 headroom over AA, owner ruling needed).
