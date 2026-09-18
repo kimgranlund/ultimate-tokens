@@ -191,7 +191,95 @@ plus two corrections the team lead relayed after their own re-check:
   smaller 151,200-rung sweep (327/151,200 vulnerable, in this file's run context) rather than the full
   302,400-rung one, per the cost finding above.
 
-## Commits (post-rebase onto plan tip 690b0a1, plus the gamut-ceiling, review-pass-2, and review-pass-3 folds)
+## Review pass 4/5 (fresh-context reviewer, 🔴 FIX-FIRST both passes) — folded
+
+Report: appended to the same review file the team lead holds (`pif-u6-review-1.md`). Pass 5 re-graded a
+pre-rebase sha and found it content-identical to what pass 4 already graded (`git diff --stat` empty
+across all three shas), so both passes' verdicts are one finding set, folded together here. Two
+blockers, both closed the same way the reviewer recommended: fix `hct.js`'s cache keys at the root.
+
+- **N7 (blocking): the "0 order-dependent palettes" claim was unfalsifiable, not true.** The prior
+  determinism gate (folded into gate c) rendered, THEN poisoned, THEN re-rendered — inside one process.
+  By the second render, every memo the poison targeted was already warm from the first, so the gate
+  could only ever read 0 regardless of whether the engine was order-dependent. Its poison was also a
+  synthetic 0.1deg grid, which only ever fills the `.toFixed(2)` truncation buckets ending in `.0` —
+  about a tenth of the bucket space. The reviewer's own interleave, poisoning correctly, found 11 of
+  4,000 order-dependent palettes on the head this gate claimed 0/1500 on. The surviving channel:
+  `primeSwatches` calls `effHue`, which on the OKLCH path calls `oklchToCam16Hue`, whose Newton loop
+  calls hct.js's shared, `.toFixed(2)`-keyed `peakC` — so privatising `prime.mjs`'s OWN anchor/rung
+  caches (review passes 1-2) never closed this; it is one level above both of them, in shared code.
+- **N8 (blocking): REQ-056 genuinely broke in the product's default hue space.** Measured in isolated
+  processes: the prime rung rendered `#671CF1` for Data 1 (oklch) while `deriveKeyColor`
+  (`src/ui/model.mjs`) rendered `#671CF2` for the identical input — a real, reproducible divergence, not
+  pollution (cold-cache the two agree exactly; after `effHue` has run once, they don't). Gate (h) only
+  enforced a one-8-bit-step tolerance and is hardcoded to `CTL` (cam16 only), so it could neither see
+  nor even exercise the hue space where this happened.
+- Small corrections carried: the `89/151,200` vs `327/151,200` vulnerable-control discrepancy (review
+  pass 3's own figures) is because that control read hct.js's shared, then-still-truncated cache, whose
+  answer depended on whatever else had run earlier in the SAME process — reviewer's own wording:
+  "a figure quoted as measured should either be reproducible or be described as indicative."
+
+**Fix, per the reviewer's own prescribed order, all four steps taken in this fold:**
+
+1. `src/engine/hct.js`: `maxChromaInGamut`/`peakC`/`oklchToCam16Hue` now key on the exact float
+   (default `toString`, lossless) instead of `.toFixed(2)`/`.toFixed(3)`. Closes N7 and N8 together —
+   they were the same root cause at two call sites. Cost measured standalone (`node test/engine/prime.mjs`,
+   3 runs): 37.06s/36.64s/41.91s against the prior construction's 38.36s/35.03s/34.96s on the same
+   host — the ranges overlap, so there is no measurable regression (see the commit's own comment in
+   `hct.js` for the reasoning: most repeated calls in this codebase's hot paths are bit-identical
+   repeats, which an exact key still caches, and the truncated key's only EXTRA hits were wrong ones).
+2. `src/engine/prime.mjs`: `localMaxChroma`/`localPeakC` deleted; `primeSwatches` now calls hct.js's
+   shared `maxChromaInGamut`/`peakC` directly. With those exact-keyed, the anchor and rung calls are
+   literally the same call `deriveKeyColor` makes — REQ-056 holds by construction, not by two
+   independently-recomputing callers hoping to agree.
+3. Gate (h) tightened from a one-8-bit-step tolerance to byte identity, and widened from `CTL`
+   (cam16-only) to both hue spaces (`SPACES`) — the prior version was structurally unable to see N8.
+   Re-verified byte-identical across all 16 defaults, both hue spaces, maxDiff 0 (standalone check, not
+   committed as a separate script).
+4. The determinism gate rebuilt on two SEPARATE node child processes via a new
+   `test/engine/prime-determinism-worker.mjs` — one renders `DET_CASES` cold (no poison at all), the
+   other renders `POISON_CASES` (real `primeSwatches()` palette renders, not a synthetic grid) FIRST,
+   before a single `DET_CASES` call runs, then the identical `DET_CASES`. Both compare emitted HEXES,
+   not `inGamut`. Sized to 500 cases / 1,500 poison for cost (a real palette render costs ~5.25ms per
+   DISTINCT hue with a cold cache — measured, 1,000 renders, 5,251ms — far more than the retired grid's
+   bare `peakC` calls, so matching the reviewer's literal 4,000-and-4,000 would cost roughly a minute
+   standalone for this one gate). Committed gate measures **0/500** order-dependent, three repeated
+   runs.
+   - **Verified the methodology bites** (not requested to commit, done and reported here): a scratch
+     copy of the pre-fix engine (`hct.js`/`prime.mjs` at `3dfa0f0`, the state this fix supersedes,
+     which still had N7's live channel) run through the SAME worker-based clean-vs-poisoned-before-
+     render methodology at the reviewer's own 4,000/4,000 scale measured **3/4,000** order-dependent —
+     real, nonzero, single-8-bit-step diffs matching the N7/N8 shape exactly (e.g. `d623`: clean
+     `...,#F1E133,...` vs poisoned `...,#F1E134,...`). The SAME script against this fix's own engine at
+     that same 4,000/4,000 scale measured **0/4,000**. Both scratch scripts and their output live in
+     the session scratchpad (`u6p3-vuln-check/`, `u6p3-fixed-check/`), not committed.
+5. `vulnPrimeSwatches`'s own negative control (gamut-ceiling gate) used to call hct.js's shared
+   `peakC`/`maxChromaInGamut` directly — correct while those were truncated, but it read 0 violations
+   once step 1 landed, going quietly vacuous the moment the fix it exists to validate shipped (the
+   control would have gone silently blind on this SAME branch without this repair). Fixed:
+   `vulnPeakC`/`vulnMaxChroma`, a private `.toFixed(2)`-truncated reconstruction local to the gate, so
+   the control stays meaningful regardless of hct.js's own state. As a side effect this also makes the
+   control's own count reproducible for the first time — **114/151,200** at the gate's own resolution
+   (three runs, unchanged each time) and **742/302,400** at full hue-step-1 resolution, standalone,
+   ~43s — superseding review pass 3's 89-vs-327 figures and its own retired 1,549 cross-check, both of
+   which were measured under the old, history-dependent construction and are not reproducible under
+   this one. Console wording and the gate's own comment updated to say so; no longer described as
+   "indicative" since it no longer needs to be.
+
+`npm test`: exit 0, `✓ all 47 test files passed`, `git status --short` empty after; `node
+scripts/audit-citations.mjs` STALE 0 everywhere; `node test/repo/branding.mjs` clean (448 files, one
+more than review pass 3's 447 — this handoff itself). Rebased cleanly onto the plan tip's move to
+`f11ae18` (a docs-only commit to `.sdlc/plans/preset-intent-fidelity.md`, U1's own `anchor-ladder`
+dupe-allow-list in `test/engine/anchor.mjs` — a different file, U1's own gate, not this unit's
+`ladder-window`; U6's 21-name allow-list is unaffected and unchanged).
+
+Issue #686 (`gh issue view 686`) is closed by this fold: both call sites it named (`maxChromaInGamut`,
+`peakC`) are exact-keyed, and its own comment's scope correction (the `peakC` channel via
+`oklchToCam16Hue`) is the exact N7 channel this fix closes. No other caller of these two functions is
+known to still assume truncated-key behavior; recommend closing #686 on land, with a note that if a
+future caller finds a NEW order-dependence, it is a new defect, not this one reopened.
+
+## Commits (post-rebase onto plan tip f11ae18, plus the gamut-ceiling, review-pass-2/3, and review-pass-4/5 folds)
 
 - `2e73ef4` feat(prime): ladder steps equally in perceived CIE L*, held CAM16 chroma (#681 U6)
 - `578ed03` test(prime): cite the d5 frozen snapshot's capture commit (#681 U6)
@@ -205,11 +293,24 @@ plus two corrections the team lead relayed after their own re-check:
 - `249f71d` docs(sdlc): fold review pass 2 into the U6 handoff (#681 U6)
 - `e0606b3` test(prime): give the gamut-ceiling gate a real negative control (#681 U6 review pass 3)
 - `b26ce28` docs(sdlc): fold review pass 3 into the U6 handoff (#681 U6)
+- `859d677` fix(hct): exact float cache keys close the shared gamut-cache order-dependence (#686, #681 U6)
+- `a14d2ad` fix(prime): read hct.js's shared, now-exact peakC/maxChromaInGamut, drop the private caches
+  (#686, #681 U6)
+- `0a6fddf` test(prime): rebuild determinism on cold worker processes, byte-identical gate (h), fix
+  ceiling control (#686, #681 U6)
+- `2a8a636` chore(assets): regenerate figma/mcp bundles for the exact-key hct.js/prime.mjs fix (#681 U6)
 
-`head: b26ce28` (pending this handoff commit). `base: bf2aaf6` (`git merge-base HEAD origin/main`,
-unchanged across all three rebases). Rebased cleanly a third time, no conflicts
-(`git fetch origin && git rebase origin/plan/preset-intent-fidelity`, new tip `690b0a1`). Re-read
-`.sdlc/plans/preset-intent-fidelity.md` at the new tip: U6's own unit bullet (line 223-224) is still
+`head: 2a8a636` (pending this handoff commit). `base: bf2aaf6` (`git merge-base HEAD origin/main`,
+unchanged across all rebases). Rebased cleanly a fourth time, no conflicts (`git fetch origin && git
+rebase origin/plan/preset-intent-fidelity`, new tip `f11ae18`, a docs-only commit to
+`.sdlc/plans/preset-intent-fidelity.md` adding U1's own `anchor-ladder` dupe-allow-list to its own
+gate in `test/engine/anchor.mjs` — a different file and a different gate than this unit's
+`ladder-window`; this unit's 21-name allow-list is unchanged and unaffected). Re-read the plan at the
+new tip: U6's own unit bullet is still byte-identical to what this unit was built against.
+
+Rebased cleanly a third time, no conflicts (`git fetch origin && git rebase
+origin/plan/preset-intent-fidelity`, tip `690b0a1`). Re-read
+`.sdlc/plans/preset-intent-fidelity.md` at that tip: U6's own unit bullet (line 223-224) is still
 byte-identical to what this unit was built against. `690b0a1`'s own commit ("route the stale Panda
 EX-1 prime-ladder literal to U5") is revision 10, confirming what this handoff's STOP-and-report
 section already flagged: the stale `docs/spec/spec-panda-park-ui-exports.md` EX-1 literal is now
@@ -221,8 +322,10 @@ still states the ORIGINAL, pre-any-fix framing — a percentage format
 "disable the `maxChromaInGamut` fallback (hold C unconditionally on every rung)" — none of which
 matches what review passes 1-3 actually ruled and what is shipped: a raw-count ceiling (not a
 percentage), pinned at 0 (not 1,288/0.43%, since the S3/S-anchor fixes eliminate the violations on
-this head), with a negative control that swaps in hct.js's SHARED, truncated-key cache
-(`vulnPrimeSwatches`), not a "disable the fallback entirely" construction (which would trivially blow
+this head), with a negative control that reconstructs the pre-#686 truncated-key cache privately
+(`vulnPrimeSwatches`, via `vulnPeakC`/`vulnMaxChroma` — a private reconstruction as of the review
+pass 4/5 fold above, since hct.js's own shared cache is exact-keyed now and calling it directly would
+no longer reproduce anything), not a "disable the fallback entirely" construction (which would trivially blow
 past any ceiling and prove nothing about the actual collision bug this criterion exists to catch).
 This looks like the plan text predates review pass 3's fold and simply hasn't been given a revision
 11 yet — I have not changed the shipped gate to match the stale plan wording, since the direct,
@@ -349,10 +452,12 @@ doesn't check). This is plan unit U5's territory ("records") per the plan's own 
 
 | Criterion | Command | Observed | Negative control |
 |---|---|---|---|
-| C1 `npm test` green | `npm test` | exit 0, `✓ all 47 test files passed`; `git status --short` empty after every fold's re-run; `node scripts/audit-citations.mjs` STALE 0 everywhere; `node test/repo/branding.mjs` clean (447 files); standalone `node test/engine/prime.mjs` 39.8s on the review-pass-3 fold head (down from 63.8s pre-pass-3, 45s+ during the pass-2 fold itself) — `npm test` total wall time varied 1:36-2:10 across repeated runs on this fold's head, which I attribute to other worktrees/sessions competing for CPU on this machine (consistent with the earlier "concurrent run" caveat this session was given), not to this gate's own cost; the standalone, single-process figure is the reliable signal | not re-run here (owned by C1's own negative control in `.sdlc/adapter.md` §1 — corrupt role-table.json, expect 17 FAIL — out of my unit's scope to re-verify; my own red-then-green is below) |
+| C1 `npm test` green | `npm test` | exit 0, `✓ all 47 test files passed`; `git status --short` empty after every fold's re-run, including this one; `node scripts/audit-citations.mjs` STALE 0 everywhere; `node test/repo/branding.mjs` clean (448 files, this handoff added); `npm test` measured 1:34.94/1:39.75/1:47.86 across three post-fold runs on this host — the adapter's documented ~60s budget is for a quiet host, and every prior pass's own timing note carries the same concurrent-session caveat; not attributed to this fold's own added cost, which is the ~10s the determinism gate's own comment states | not re-run here (owned by C1's own negative control in `.sdlc/adapter.md` §1 — corrupt role-table.json, expect 17 FAIL — out of my unit's scope to re-verify; my own red-then-green is below) |
 | C5 (ladder half) | `node test/engine/prime.mjs`, gate `ladder-window` | `ladder-window allow-list: 21 (expected 21)` — iterates every swatch across `docs/reference/colors/categories/*.json`, re-derives the six-role mapping independently, matches C5's 21-name list on (category, role, hex) exactly (review pass 1 S2; superseded the false-premise "0" this gate printed before review) | synthetic [40,60] narrow window inside the same gate: found more than 21 out-of-window cases, proving the filter discriminates on the window bounds |
 | C11 symmetry | `node test/engine/prime.mjs`, gate `symmetry` | by-construction: 0/464 fails, `|up-down|` exactly 0 every case. Measured (pixel `lstarFromRgb`): 0/464 exceed 3 L\*, max measured asymmetry 0.518 L\* | the frozen `prime-pre-681.mjs` fixture (pre-#681 redistribute rule), same 464-case sweep: 295/464 exceed 3 L\*, max asymmetry 52.01 L\* — FAILS as required (review pass 1 S1: this control previously read `origin/main` live via `git show`, now a committed fixture) |
-| gamut-ceiling (owner ruling, post-review, corrected review pass 3) | `node test/engine/prime.mjs`, gate `gamut-ceiling` | 0/151,200 real out-of-gamut rungs, pinned ceiling 0, on this gate's own dedicated sweep (hue step 2 x chroma {25,50,75,100} x hueShift {0,±10,±20} x skew {0,±40} x both hue spaces — see "Review pass 3" above for why this is no longer the reviewer's/gate-(c)'s 302,400-rung sweep) | `vulnPrimeSwatches`, a reimplementation using hct.js's shared, truncated-key `peakC`/`maxChromaInGamut` in place of `localPeakC`/`localMaxChroma` (the real pre-fix construction): 327/151,200 in this file's own run context (order-dependent by construction, repeatably nonzero across runs; 89/151,200 measured cold-cache, standalone) — proves the gate discriminates a regression back to the shared cache, closing review pass 3's "cannot fail" finding |
+| gamut-ceiling (owner ruling, post-review, corrected review pass 3, control rebuilt review pass 4/5) | `node test/engine/prime.mjs`, gate `gamut-ceiling` | 0/151,200 real out-of-gamut rungs, pinned ceiling 0, on this gate's own dedicated sweep (hue step 2 x chroma {25,50,75,100} x hueShift {0,±10,±20} x skew {0,±40} x both hue spaces — see "Review pass 3" above for why this is no longer the reviewer's/gate-(c)'s 302,400-rung sweep) | `vulnPrimeSwatches`, now against a PRIVATE `.toFixed(2)`-truncated reconstruction (`vulnPeakC`/`vulnMaxChroma`, review pass 4/5 fold) in place of hct.js's own now-exact shared cache: 114/151,200 at this sweep's own resolution, reproducible across three runs (superseding review pass 3's history-dependent 327-vs-89 figures) — proves the gate discriminates a regression back to a truncated cache, closing review pass 3's "cannot fail" finding and staying alive past this fix's own landing (which is what made the OLD control read 0 and go vacuous) |
+| REQ-056 / gate (h) (tightened review pass 4/5) | `node test/engine/prime.mjs`, gate `h` | byte-identical, both hue spaces, all 16 defaults (tightened from a one-8-bit-step tolerance, widened from cam16-only) | reverting to a scratch copy of the pre-fix engine (`3dfa0f0`) reproduces the N8 divergence this gate now catches: `#671CF1` vs `#671CF2` for Data 1, oklch |
+| determinism (rebuilt review pass 4/5, N7) | `node test/engine/prime.mjs`, gate `c`'s determinism block | 0/500 order-dependent palettes, cold process vs a process poisoned by real palette renders before any `DET_CASES` call runs, three runs | the SAME worker-based methodology against a scratch copy of the pre-fix engine (`3dfa0f0`), at the reviewer's own 4,000/4,000 scale: 3/4,000 order-dependent, real and reproducible (not committed, reported here); the committed gate's own smaller scale (500/1,500) against that same scratch copy was not separately re-run, since the 4,000-scale run already proves the methodology bites and the smaller scale is a cost trade-off, not a different method |
 
 Red-then-green, every gate: before my `src/engine/prime.mjs` edit, `node test/engine/prime.mjs` threw a
 `SyntaxError` (`PRIME_STEP` no longer exported) — the RED state, since I edited the engine before the
@@ -411,38 +516,56 @@ comparable to the plan's corpus-scale numbers, reported for scale only.
    three files is currently in U5's file list
    (`.sdlc/plans/preset-intent-fidelity.md:225-226`) — a plan defect, not a unit defect. Needs the
    Orchestrator to add them to U5's scope; not editable from this unit.
-5. **Corrected, review pass 2:** an earlier version of this risk described `src/engine/hct.js`'s
-   `maxChromaInGamut`/`peakC` memoization (`hue.toFixed(2)` cache keys) as a risk `prime.mjs` was merely
-   exposed to by calling shared code — that framing was wrong. `prime.mjs` was not a bystander:
-   `primeSwatches` called `peakC(baseHue)` directly for its own ANCHOR (`lPrime`/`keyChroma`), and that
-   call was directly vulnerable — the reviewer's own repro shifted 63/4000 colliding palettes' ANCHOR
-   hex by call order, even after S3's rung-level fix. Fixed here, not deferred: `localPeakC` in
-   `prime.mjs` is `prime.mjs`'s own private, exact-keyed re-implementation of `peakC`, so no part of
-   `primeSwatches` (anchor or rung) reads hct.js's shared cache anymore. What DOES remain a
-   pre-existing, out-of-lane risk in shared engine code: `hct.js`'s OWN `maxChromaInGamut`/`peakC`
-   exports still truncate cache keys to 2 decimals, so ANY OTHER caller (e.g. a future chroma envelope
-   or gamut-mapping pass in U3) that computes a gamut cap for a fractional, densely-swept hue can still
-   hit the same collision — `hct.js` itself is unchanged and out of this unit's scope file list. Worth a
-   ticket of its own.
+5. **Corrected, review pass 2, then superseded and closed, review pass 4/5:** an earlier version of
+   this risk described `src/engine/hct.js`'s `maxChromaInGamut`/`peakC` memoization (`hue.toFixed(2)`
+   cache keys) as a risk `prime.mjs` was merely exposed to by calling shared code — that framing was
+   wrong. `prime.mjs` was not a bystander: `primeSwatches` called `peakC(baseHue)` directly for its own
+   ANCHOR (`lPrime`/`keyChroma`), and that call was directly vulnerable — the reviewer's own repro
+   shifted 63/4000 colliding palettes' ANCHOR hex by call order, even after S3's rung-level fix. Fixed
+   at the time by privatising `prime.mjs`'s own caches — but review pass 4 found that fix incomplete
+   too: `effHue`'s OKLCH path still reached hct.js's shared, truncated `peakC` through
+   `oklchToCam16Hue`'s own Newton loop, 11/4,000 order-dependent palettes on that head (finding N7), and
+   the anchor construction genuinely diverged from `deriveKeyColor` in the product's default hue space
+   (finding N8). Both closed in this fold, at the root the reviewer named: `src/engine/hct.js`'s cache
+   keys are now exact (issue #686), out of this unit's original scope file list but taken here on the
+   owner's explicit ruling, citing #686. `prime.mjs` no longer carries private caches at all — it reads
+   the shared, now-exact functions directly, so this risk is closed, not merely narrowed: any OTHER
+   caller of `maxChromaInGamut`/`peakC`/`oklchToCam16Hue` (a future chroma envelope, a gamut-mapping
+   pass in U3) now gets a genuinely pure function, not a coarser-keyed one to work around.
 
 ## Files changed
 
+- `src/engine/hct.js` (review pass 4/5, #686 — new: `maxChromaInGamut`/`peakC`/`oklchToCam16Hue` keyed
+  on the exact float instead of `.toFixed(2)`/`.toFixed(3)`. Out of this unit's original scope file
+  list; taken here on the owner's explicit ruling citing #686, since the two blockers could not close
+  any other way — see "Review pass 4/5" above)
 - `src/engine/prime.mjs` (rewritten; review pass 1: `localMaxChroma` replaces the shared-cache
   `maxChromaInGamut` call inside `primeSwatches`, S3; review pass 2: `localPeakC` added, replacing the
   shared-cache `peakC(baseHue)` anchor call, both now backed by a PRIVATE, exact-keyed cache instead of
-  being fully uncached, for cost)
+  being fully uncached, for cost; review pass 4/5: `localMaxChroma`/`localPeakC` deleted — with
+  `hct.js` fixed at the root, `primeSwatches` reads the shared `maxChromaInGamut`/`peakC` directly)
 - `test/engine/prime.mjs` (rewritten; review pass 1: frozen fixture import replaces the live `git show`
   negative control (S1), `ladder-window` iterates the real corpus (S2), gate (c) widened (S3), d5
   citation re-pointed (S7); post-review pass 1: gate (c) sweep taken to full precision (hue step 1) and
   a new `gamut-ceiling` gate added, reusing that sweep, per the owner's numeric-ceiling ruling; review
   pass 2: a real hex-identity determinism assertion added to gate (c), replacing its prior inGamut-only
   claim; review pass 3: gate (c) reverted to its cheaper step-3 sweep, decoupled from `gamut-ceiling`,
-  which gained its own smaller dedicated sweep plus `vulnPrimeSwatches` as a real negative control)
+  which gained its own smaller dedicated sweep plus `vulnPrimeSwatches` as a real negative control;
+  review pass 4/5: the determinism block rebuilt on two cold worker processes (see the new file below),
+  gate (h) tightened to byte identity and widened to both hue spaces, `vulnPrimeSwatches` rebuilt on a
+  private truncated-key reconstruction instead of hct.js's now-fixed shared cache)
+- `test/engine/prime-determinism-worker.mjs` (new, review pass 4/5 — the cold-process worker the
+  rebuilt determinism gate spawns twice; see its own header comment for why a single process cannot
+  fake this)
 - `test/engine/fixtures/prime-pre-681.mjs` (new, review pass 1 S1 — frozen pre-#681 `prime.mjs`, vendored
   from `origin/main` blob `c744fb8`)
 - `test/engine/exports.mjs` (two literals + comment, mechanical re-pin)
-- `docs/reference/data/adia-oklch-export.css`, `docs/reference/data/adia-radix-export.mjs`,
-  `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js` (regenerated; the latter two embed
-  `prime.mjs`'s own source text, so they moved again on the review-pass-2 source edit)
+- `docs/reference/data/adia-oklch-export.css`, `docs/reference/data/adia-radix-export.mjs`
+  (regenerated on review pass 2's source edit; unchanged by review pass 4/5 — confirmed via
+  `git status --short` after `npm test`, since these two bake hex VALUES, which did not move, not
+  source text)
+- `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js` (regenerated again on review pass 4/5: these
+  two embed `prime.mjs`'s/`hct.js`'s own source text verbatim, which changed even though no product
+  default's emitted hex moved)
 - `.sdlc/questions/pif-u6.md` (new; amended review pass 1 S5)
 - `.sdlc/handoffs/pif-u6.md` (this file)
