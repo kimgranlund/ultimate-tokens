@@ -36,7 +36,7 @@ drop); Q1 and Q3 are resolved; Q4 and Q5 are unchanged from pass 1.
 | C6-anchor | `env(anchorStop)=1` exactly at EVERY lift (not only lift 0 — R2 closes the Q1 gap), every damp/dampCurve/dampAmp/dampBias combo | `test/engine/tonal.mjs` "chroma-envelope" (C6 env-anchor sub-check), now swept over lift in `[-40,-20,0,20,40]` too | pass | perturbing the return value by +0.01 fails as `1.01 != 1` |
 | C6-i | perceptual/peak/even: 0 tone upticks, full corpus, both stop sets, RENDERED path | `test/engine/tonal.mjs` "chroma-envelope" (C6 i) | `upticks.{perceptual,peak,even} = 0`, rendered via `rampChromaOf` + hueShift/hueSameDir/cuspPull, matching `src/ui/model.mjs`'s `projectView` | pointed at the pre-U3 base with the OLD (raw-chroma) method: reports 0/0/0 (vacuous — the gate this negative control exists to catch); pointed at the pre-U3 base with the FIXED (rendered) method: reports 11 perceptual / 46 peak, matching the plan's own #668 figures exactly, confirming the fixed gate is non-vacuous |
 | C6-ii | 0 duplicate hex, full corpus, both stop sets, RENDERED path | same file, (C6 ii) | **0** duplicate-hex ramps in every mode, both stop sets — `KNOWN_BASELINE_DUP` is an empty Set; no exception needed | the pre-U3 base also measures 0 on the rendered path (Q3); pass 1's Design A measured 2 (both named in Q1's table) — Design B's own negative control: patching back to Design A's `sd` formula in a scratch copy reproduces both |
-| iii-c | measured CIELAB L* never rises beyond a NAMED exception list, 10,080-cell synthetic grid | `test/engine/tonal.mjs` "skew-lift-okhsl" | 21 of 10,080 rise under Design B (worst +0.1314 L*, near white); all 21 named and cited in `GRID_R2_EXCEPTIONS`, verified both directions | deleting one cited cell reproduces a FAIL naming it; an unlisted 22nd cell also fails |
+| iii-c | measured CIELAB L* never rises beyond a NAMED exception list, 10,080-cell synthetic grid | `test/engine/tonal.mjs` "skew-lift-okhsl" | 21 of 10,080 rise under Design B (worst +0.1314 L*; 20 near-white, one near-black at tone 7.55); all 21 named and cited in `GRID_R2_EXCEPTIONS`, verified both directions | deleting one cited cell reproduces a FAIL naming it; an unlisted 22nd cell also fails |
 | C6-iii | no docs/ literal moves without a named exception | `git diff --stat 690b0a1 -- docs/` | 4 paths: 2 expected `adia-*` regen files, 2 citation-line fixes (this pass moved the SAME two lines again, `:404`->`:410`, not repeated from pass 1's `:395`->`:404`) — Q5 | n/a |
 | C8 | `hpg-role-contrast` floors re-pinned vs the TRUE pre-U3 baseline (bf2aaf6, not pass 1's own numbers) | `test/engine/semantic.mjs` | peak improves at 5 families; even unchanged; perceptual holds at 15 of 16, ONE real drop (Neutral dark 4.9->4.5, Q6) | restoring Neutral dark to 4.9 in a scratch copy reds at measured 4.53 |
 | gate:corpus-contrast | 0 of 7,560 cells under 4.5 | `npm run gate:corpus-contrast` | `168 named per cell, 0 carried below 4.5`, worst cell 4.503:1 | n/a |
@@ -61,9 +61,10 @@ the review):
 | **Design B (this pass, shipped)** | **0** | **0** | **0** |
 
 Design B's cost, also independently reproduced: 21 of 10,080 synthetic grid cells rise (worst +0.1314
-L*, near white), at skew/lift/hue/vibrancy combinations no curated preset or role default uses. Full
-rationale and the rejected third draft are in `src/engine/tonal.js`'s `chromaEnvelope` comment and
-`.sdlc/questions/pif-u3.md` Q1.
+L*; 20 near-white, tone 90.9-99.5, one near-black at tone 7.55, hue 287 skew -100 lift -40), at
+skew/lift/hue/vibrancy combinations within the user-settable ranges but unused by any shipped preset or
+role default. Full rationale and the rejected third draft are in `src/engine/tonal.js`'s
+`chromaEnvelope` comment and `.sdlc/questions/pif-u3.md` Q1.
 
 ## Files changed this pass (commit `c5a5be3`, on top of pass 1's `0a8d1c6`/`ed1e6a3`/`ce23ec0`)
 

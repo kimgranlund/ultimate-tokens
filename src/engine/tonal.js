@@ -219,12 +219,13 @@ const ANCHOR_STOP = 500;
 // R2 (shipped) re-centres sd on the anchor's own lifted reading. On the corpus the product renders, this
 // closes BOTH duplicate-hex ramps to zero (0/0/0 across perceptual/peak/even, both stop sets) alongside
 // the #668 uptick class already at zero, and gives the exact-anchor property Q1 originally wanted. The
-// cost is real and disclosed, not free: 21 of the SAME 10,080 synthetic grid cells rise under R2, all
-// near-white (measured tone 90.9-99.5), worst +0.1314 L* (about 1/6 the +0.83 L* #668 defect this unit
-// repairs) — reachable only through a skew/lift/vibrancy/hue combination no curated preset or role
-// default uses (chroma pinned at the grid's own probe value, 95; skew as extreme as ±100, unused by any
-// shipped default). test/engine/tonal.mjs "skew-lift-okhsl" (iii c) names and cites all 21 as a bounded,
-// verified-both-directions exception (the same shape C6(ii)'s duplicate-hex list already uses), rather
+// cost is real and disclosed, not free: 21 of the SAME 10,080 synthetic grid cells rise under R2, worst
+// +0.1314 L* (20 near-white, measured tone 90.9-99.5, plus one near-black at tone 7.55, hue 287
+// skew -100 lift -40) — about 1/6 the +0.83 L* #668 defect this unit repairs, at a skew/lift/vibrancy/
+// hue combination within the user-settable ranges (chroma pinned at the grid's own probe value, 95;
+// skew as extreme as ±100) but unused by any shipped preset or role default. test/engine/tonal.mjs
+// "skew-lift-okhsl" (iii c) names and cites all 21 as a bounded, verified-both-directions exception
+// (the same shape C6(ii)'s duplicate-hex list already uses), rather
 // than silently loosening the gate to a count. Full trade-off and the rejected alternatives (R1 as
 // above; a third draft, post-hoc-normalized sd, which was worse at 33 rises and could return exactly 0
 // instead of 1 at the anchor when the raw formula's own floor clips there) are in

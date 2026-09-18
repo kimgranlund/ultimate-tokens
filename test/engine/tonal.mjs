@@ -815,9 +815,10 @@ for (const mode of ["perceptual", "peak"]) {
   //       which closes that class to exactly 0. #681 U3's R2 (chromaEnvelope re-centred on the anchor's
   //       OWN lifted reading, closing the exact-env(anchor)=1-at-every-lift gap and the two rendered-path
   //       duplicate-hex ramps R1 left — see chromaEnvelope's own comment) reopens 21 of these 10,080
-  //       SYNTHETIC cells (chroma pinned at 95, skew as extreme as ±100 — no curated preset or role
-  //       default uses these combinations), all near-white (tone 90.9-99.5), worst +0.1314 L* — about a
-  //       sixth of the defect this unit repairs, and, measured on the corpus the product actually
+  //       SYNTHETIC cells (chroma pinned at 95, skew as extreme as ±100 — within the user-settable
+  //       ranges, but unused by any shipped preset or role default), 20 near-white (tone 90.9-99.5) and
+  //       one near-black (tone 7.55, hue 287 skew -100 lift -40), worst +0.1314 L* — about a sixth of
+  //       the defect this unit repairs, and, measured on the corpus the product actually
   //       renders, a strictly better trade: 0 duplicate-hex ramps instead of 2. The list is verified
   //       load-bearing both directions, same shape as C6(ii)'s KNOWN_BASELINE_DUP: deleting an entry
   //       reproduces a FAIL naming that exact cell; an unlisted 22nd cell fails too. The lift-0 slice is
@@ -841,9 +842,11 @@ for (const mode of ["perceptual", "peak"]) {
   }
   // GRID_R2_EXCEPTIONS — the 21 synthetic grid cells #681 U3's R2 chromaEnvelope (anchor re-centred on
   // its own lifted reading, tonal.js's chromaEnvelope comment) measurably reopens, out of the 10,080
-  // cells probed. All near-white (tone 90.9-99.5), all lift 40 or -40, all a skew/hue/vibrancy/hueSpace
-  // combination no curated preset or role default uses. Cited exactly, verified both directions: remove
-  // one and this gate FAILs naming that cell; an unlisted 22nd cell also FAILs.
+  // cells probed. 20 near-white (tone 90.9-99.5), one near-black (tone 7.55, hue 287 skew -100
+  // lift -40, perceptual/cam16, stop 700->750); all lift 40 or -40; all a skew/hue/vibrancy/hueSpace
+  // combination within the user-settable ranges but unused by any shipped preset or role default.
+  // Cited exactly, verified both directions: remove one and this gate FAILs naming that cell; an
+  // unlisted 22nd cell also FAILs.
   const GRID_R2_EXCEPTIONS = new Set([
     "perceptual|oklch|165|0|40|100|300&350",
     "perceptual|oklch|152|0|40|100|300&350",

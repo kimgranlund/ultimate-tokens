@@ -32,8 +32,9 @@ renders). B also gives `env(anchorStop) = 1` exactly for every lift, not only li
 original Q1 gap outright rather than trading it for a different one.
 
 The cost, measured directly (not assumed): 21 of the same 10,080 synthetic grid cells rise under B,
-worst +0.1314 L* (near white, tone 90.9-99.5), about a sixth of the +0.83 L* #668 defect this unit
-repairs, at a skew/lift/hue/vibrancy combination no curated preset or role default uses (the grid
+worst +0.1314 L* (20 near-white, tone 90.9-99.5, plus one near-black at tone 7.55, hue 287 skew -100
+lift -40), about a sixth of the +0.83 L* #668 defect this unit repairs, at a skew/lift/hue/vibrancy
+combination within the user-settable ranges but unused by any shipped preset or role default (the grid
 probe pins chroma at 95 and sweeps skew to +-100). `test/engine/tonal.mjs` "skew-lift-okhsl" (iii c)
 now carries these 21 cells as a named, cited exception list, verified both directions exactly like
 C6(ii)'s own duplicate-hex list (deleting an entry FAILs naming that cell; an unlisted 22nd cell FAILs
