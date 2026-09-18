@@ -102,8 +102,9 @@ export function buildArtifacts() {
   if (collisions.length)
     throw new Error(
       `gen-adia-derived-exports: palette slug(s) ${collisions.join(", ")} collide with exportRadix's reserved ` +
-        `alias keys (${RESERVED_ALIAS_KEYS.join(", ")}) — the palette would be overwritten and lost from the ` +
-        `export (#630). Rename the palette in ${SOURCE_FILE}.`,
+        `alias keys (${RESERVED_ALIAS_KEYS.join(", ")}) — exportRadix would emit the palette under ` +
+        `<slug>-palette (#630), and the derived artifacts are kept collision-free by policy. ` +
+        `Rename the palette in ${SOURCE_FILE}.`,
     );
 
   return ARTIFACTS.map((row) => {

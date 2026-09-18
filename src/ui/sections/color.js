@@ -1,4 +1,4 @@
-import { PALETTE_GROUPS, RADIX_COLLISION_BADGE, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
+import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
@@ -1118,9 +1118,9 @@ export class ColorSectionImpl {
   // Three states only (no fourth):
   //   - no-drivers (I9): view.radixPreset is the exportRadix no-driver sentinel STRING — the scene
   //     still renders, wrapped, with exactly one .radix-empty node and no rows.
-  //   - collision (I10/OQ-2 option (c)/A6): radixKeyCollision(p.name) — the row renders exactly
-  //     one .radix-badge text node (the pinned RADIX_COLLISION_BADGE) and NOTHING else — no
-  //     ladder, no second line.
+  //   - collision (#630, option (a)): radixKeyCollision(p.name) — the engine emits the palette
+  //     under radixExportKey(...) (`<slug>-palette`), so the row renders its FULL ladder read from
+  //     that key PLUS exactly one .radix-badge text node (radixCollisionBadge(key), naming it).
   //   - normal: a .radix-ladder of 12 .radix-step nodes, painted base/_dark per
   //     resolvedCanvasScheme() into a style attribute (never a class).
   renderRadixScene(view) {
@@ -1129,12 +1129,11 @@ export class ColorSectionImpl {
     }
     const scheme = this.resolvedCanvasScheme();
     const colors = view.radixPreset.theme.extend.semanticTokens.colors;
-    const rows = view.palettes.filter((p) => p.on !== false).map((p) => {
-      const n = slug(p.name);
-      if (radixKeyCollision(p.name)) {
-        return h("div", { class: "radix-row radix-collision" }, h("span", { class: "radix-badge" }, RADIX_COLLISION_BADGE));
-      }
-      const group = colors[n] || {};
+    const enabled = view.palettes.filter((p) => p.on !== false);
+    const rows = enabled.map((p) => {
+      const key = radixExportKey(p.name, enabled);
+      const collision = radixKeyCollision(p.name);
+      const group = colors[key] || {};
       const steps = [];
       for (let step = 1; step <= 12; step++) {
         const leaf = group[String(step)];
@@ -1142,7 +1141,13 @@ export class ColorSectionImpl {
         const paint = scheme === "dark" ? val._dark : val.base;
         steps.push(h("i", { class: "radix-step", style: `background:${paint}`, title: `${p.name} ${step}` }));
       }
-      return h("div", { class: "radix-row" }, h("span", { class: "ramp-name" }, p.name), h("div", { class: "radix-ladder" }, ...steps));
+      return h(
+        "div",
+        { class: collision ? "radix-row radix-collision" : "radix-row" },
+        h("span", { class: "ramp-name" }, p.name),
+        h("div", { class: "radix-ladder" }, ...steps),
+        collision ? h("span", { class: "radix-badge" }, radixCollisionBadge(key)) : null,
+      );
     });
     return h("div", { class: "radix-scene" }, ...rows);
   }

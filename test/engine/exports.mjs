@@ -653,14 +653,104 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (parsedMod && JSON.stringify(parsedMod) !== JSON.stringify(preset)) FAIL("radix", "module JSON does not deep-equal exportRadix(state)");
 }
 
-// ── radix-keys-drift (I4, ticket #637) — RESERVED_ALIAS_KEYS is the ONE source of truth for the
-//    non-palette keys exportRadix writes into semanticTokens.colors; a future edit that adds an
-//    8th alias key without updating the constant must go red here. ────────────────────────────────
+// ── radix-keys-drift (I4, ticket #637; rewritten for #630) — RESERVED_ALIAS_KEYS is the ONE source
+//    of truth for the non-palette keys exportRadix writes into semanticTokens.colors. Under the #630
+//    rule a colliding palette is emitted under `<slug>-palette`, so "subtract the palette slugs" no
+//    longer isolates the aliases; instead: the 7 reserved keys are present verbatim and in order, and
+//    EVERY other key is either a palette slug or that palette's radixPaletteKey. An 8th alias key
+//    added without updating the constant lands in neither bucket and goes red here. ───────────────
 {
-  const st = stateOf(defaultDocument());
-  const paletteSlugs = X.derivedAll(st).map((p) => p.n);
-  const aliasKeys = Object.keys(X.exportRadix(st).theme.extend.semanticTokens.colors).filter((k) => !paletteSlugs.includes(k));
-  if (JSON.stringify(aliasKeys) !== JSON.stringify(X.RESERVED_ALIAS_KEYS)) FAIL("radix-keys-drift", `non-palette keys ${JSON.stringify(aliasKeys)} != RESERVED_ALIAS_KEYS ${JSON.stringify(X.RESERVED_ALIAS_KEYS)}`);
+  const check = (st, label) => {
+    const derived = X.derivedAll(st);
+    const slugs = derived.map((p) => p.n);
+    const expectKeys = new Set(X.radixPaletteKeys(slugs));
+    const keys = Object.keys(X.exportRadix(st).theme.extend.semanticTokens.colors);
+    const aliasKeys = keys.filter((k) => X.RESERVED_ALIAS_KEYS.includes(k));
+    if (JSON.stringify(aliasKeys) !== JSON.stringify(X.RESERVED_ALIAS_KEYS)) FAIL("radix-keys-drift", `${label}: reserved keys ${JSON.stringify(aliasKeys)} != RESERVED_ALIAS_KEYS ${JSON.stringify(X.RESERVED_ALIAS_KEYS)} (verbatim, in order)`);
+    const stray = keys.filter((k) => !X.RESERVED_ALIAS_KEYS.includes(k) && !expectKeys.has(k));
+    if (stray.length) FAIL("radix-keys-drift", `${label}: keys ${JSON.stringify(stray)} are neither a reserved alias key nor a palette's radixPaletteKey`);
+    const missing = [...expectKeys].filter((k) => !keys.includes(k));
+    if (missing.length) FAIL("radix-keys-drift", `${label}: palette keys ${JSON.stringify(missing)} missing from the export`);
+  };
+  check(stateOf(defaultDocument()), "default document");
+  check(C([...BRAND_ONLY, { name: "Accent", hue: 40, chroma: 60, skew: 0, lift: 0, on: true }]), "with a colliding 'Accent' palette");
+}
+
+// ── radix-alias-collision (#630) — a palette whose slug equals a reserved alias key is emitted
+//    under `<slug>-palette` (suffix repeated until unique against the reserved set AND the other
+//    palettes' slugs; order-independent), the 7 alias keys stay verbatim, and every `{colors.X.N}`
+//    reference in the document resolves. Negative control: against the pre-fix engine (797173e)
+//    the ladder is absent (alias overwrote it) and `error` is `{colors.error.9}`, a self-reference.
+{
+  const mk = (name, hue) => ({ name, hue, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true });
+  // stock "Danger" is dropped from the fixture so pickDrivers' danger regex lands on "Error".
+  const NO_DANGER = BRAND_ONLY.filter((p) => p.name !== "Danger");
+  const colliding = C([...NO_DANGER, mk("Accent", 40), mk("Error", 350)]);
+  const preset = X.exportRadix(colliding);
+  const colors = typeof preset === "string" ? {} : preset.theme.extend.semanticTokens.colors;
+  const isLadder = (g) => !!g && [...Array(12)].every((_, i) => g[String(i + 1)] && g[String(i + 1)].value && typeof g[String(i + 1)].value.base === "string" && g[`a${i + 1}`]);
+  const { primary, danger } = X.pickDrivers(X.derivedAll(colliding));
+  if (!danger || danger.n !== "error") FAIL("radix-collision", `fixture: danger driver should be the 'error' palette, got ${danger && danger.n}`);
+  if (!isLadder(colors["accent-palette"])) FAIL("radix-collision", `colors["accent-palette"] must hold the 'Accent' palette's full 12-step ladder (keys: ${JSON.stringify(Object.keys(colors["accent-palette"] || {}))})`);
+  if (!isLadder(colors["error-palette"])) FAIL("radix-collision", `colors["error-palette"] must hold the 'Error' palette's full 12-step ladder`);
+  if (!isLadder(colors.accent)) FAIL("radix-collision", "colors.accent must still be the primary driver's clone (a full ladder)");
+  if (JSON.stringify(colors.accent) !== JSON.stringify(X.exportRadix(C([...BRAND_ONLY])).theme.extend.semanticTokens.colors.accent)) FAIL("radix-collision", "colors.accent (the driver clone) must be unaffected by a colliding 'Accent' palette");
+  const errRef = colors.error && colors.error.value;
+  if (errRef !== "{colors.error-palette.9}") FAIL("radix-collision", `colors.error must reference the renamed danger key, got ${JSON.stringify(errRef)}${errRef === "{colors.error.9}" ? " (a dangling self-reference)" : ""}`);
+  // internal refs of the renamed group point at the renamed key, not the alias.
+  const solidBg = colors["accent-palette"] && colors["accent-palette"].solid && colors["accent-palette"].solid.bg.DEFAULT.value;
+  if (solidBg !== "{colors.accent-palette.9}") FAIL("radix-collision", `accent-palette.solid.bg.DEFAULT must be {colors.accent-palette.9}, got ${JSON.stringify(solidBg)}`);
+  // every {colors.X.leaf} reference in the whole document resolves to an existing leaf.
+  const unresolved = [];
+  const walkRefs = (node, path) => {
+    if (typeof node === "string") {
+      const m = /^\{colors\.([^.}]+)\.([^}]+)\}$/.exec(node);
+      if (m) {
+        const g = colors[m[1]];
+        if (!g || !g[m[2]] || g[m[2]].value === undefined) unresolved.push(`${path} -> ${node}`);
+      }
+      return;
+    }
+    if (node && typeof node === "object") for (const k of Object.keys(node)) walkRefs(node[k], `${path}.${k}`);
+  };
+  walkRefs(colors, "colors");
+  if (unresolved.length) FAIL("radix-collision", `unresolved {colors.…} refs: ${unresolved.slice(0, 3).join("; ")}`);
+  // non-colliding documents are byte-identical to the pre-rule output (the rule is a no-op for them).
+  const plainKeys = Object.keys(X.exportRadix(C([...BRAND_ONLY])).theme.extend.semanticTokens.colors);
+  if (plainKeys.some((k) => k.endsWith("-palette"))) FAIL("radix-collision", "a collision-free document must emit no '-palette' keys");
+  // the suffix loop: "accent" and "accent-palette" -> "accent-palette-palette" and "accent-palette"
+  // (the raw "accent-palette" slug is taken by the other palette, so the suffix repeats once more;
+  // the same answer in either palette order).
+  for (const order of [[mk("accent", 40), mk("accent-palette", 200)], [mk("accent-palette", 200), mk("accent", 40)]]) {
+    const st = C([...BRAND_ONLY, ...order]);
+    const keys = Object.keys(X.exportRadix(st).theme.extend.semanticTokens.colors);
+    if (!keys.includes("accent-palette-palette") || !keys.includes("accent-palette")) FAIL("radix-collision", `suffix loop: expected both accent-palette and accent-palette-palette, got ${JSON.stringify(keys.filter((k) => k.startsWith("accent")))}`);
+    const ks = X.radixPaletteKeys(X.derivedAll(st).map((p) => p.n));
+    const byName = Object.fromEntries(X.derivedAll(st).map((p, i) => [p.n, ks[i]]));
+    if (byName.accent !== "accent-palette-palette" || byName["accent-palette"] !== "accent-palette") FAIL("radix-collision", `radixPaletteKeys order-independence: ${JSON.stringify(byName)}`);
+  }
+  if (X.radixPaletteKey("gray", new Set()) !== "gray-palette") FAIL("radix-collision", "radixPaletteKey('gray', {}) must be 'gray-palette'");
+  if (X.radixPaletteKey("primary", new Set(["neutral"])) !== "primary") FAIL("radix-collision", "radixPaletteKey must leave a non-colliding slug alone");
+  // review round 1, F1: `otherSlugs` is consulted only AFTER a reserved collision changed the key.
+  // Two palettes both named "Neutral" are NOT a reserved collision: both keep the raw `neutral`
+  // key and collapse last-write-wins exactly as before the fix (no `neutral-palette`), so a
+  // duplicate-name document is byte-identical to the pre-fix output.
+  if (X.radixPaletteKey("neutral", new Set(["neutral"])) !== "neutral") FAIL("radix-collision", `radixPaletteKey('neutral', {neutral}) must stay 'neutral' (duplicate names are not a collision), got ${X.radixPaletteKey("neutral", new Set(["neutral"]))}`);
+  {
+    const dup = C([...BRAND_ONLY, mk("Neutral", 250)]);
+    const dupPalettes = X.derivedAll(dup);
+    const dupColors = X.exportRadix(dup).theme.extend.semanticTokens.colors;
+    const dupKeys = Object.keys(dupColors);
+    if (dupKeys.some((k) => k.endsWith("-palette"))) FAIL("radix-collision", `duplicate-name document must emit no '-palette' key, got ${JSON.stringify(dupKeys.filter((k) => k.endsWith("-palette")))}`);
+    if (dupKeys.filter((k) => k === "neutral").length !== 1) FAIL("radix-collision", "duplicate-name document must emit exactly one 'neutral' key");
+    const ks = X.radixPaletteKeys(dupPalettes.map((p) => p.n));
+    if (ks.filter((k) => k === "neutral").length !== 2) FAIL("radix-collision", `radixPaletteKeys must map both 'neutral' slugs to 'neutral', got ${JSON.stringify(ks)}`);
+    // last-write-wins: the emitted ladder is the LAST "Neutral" palette's group, as before the fix
+    // (a group depends only on its own palette + key, so a document carrying just that palette
+    // as "Neutral" emits the identical group).
+    const onlyLast = X.exportRadix(C([...BRAND_ONLY.filter((p) => p.name !== "Neutral"), mk("Neutral", 250)])).theme.extend.semanticTokens.colors.neutral;
+    if (JSON.stringify(dupColors.neutral) !== JSON.stringify(onlyLast)) FAIL("radix-collision", "duplicate-name document: colors.neutral must be the last 'Neutral' palette's ladder (last-write-wins, as pre-fix)");
+  }
 }
 
 // ── hpg-export-data-palette (#516 — isDataPalette, shadcn chart-1..5 binding, fallback exclusion) ──
@@ -1892,7 +1982,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
