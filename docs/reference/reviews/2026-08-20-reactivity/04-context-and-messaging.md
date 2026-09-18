@@ -80,7 +80,7 @@ Two more request/reply pairs have no busy flag at all, and don't need one: `read
 - `overlays/settings.js` (`_cleanupPanel`, `settings.js:345-382`) reads `this.sweepResults`/`this.sweepBusy` (owned by ApplyGateMixin) and calls `this.scanForLegacyStyles()`/`this.deleteSelectedSweep()` (also ApplyGateMixin) directly — a Settings panel driving another mixin's state machine with no boundary.
 - `sections/typography.js` reads `this.inFigma`, `this.fontMode` (core) and is the sole owner of `_figmaFonts`/`_figmaFontsRequested`/`_faceCache`/`_fontsReadyHooked`, which drawer.js and apply-gate.js depend on transitively through `_typeScaleFor`.
 
-Net effect: the module boundary (`src/ui/sections/*`, `src/ui/overlays/*`) is a **file-organization** boundary, not an **encapsulation** boundary — explicitly documented that way in the `app.js:2564-2568` comment. A deliberate, acknowledged trade-off (TKT-0023), not an accident, but there is no way to know from reading `drawer.js` alone which of its ~15 `this.*` dependencies are guaranteed to exist without also reading typography.js, geometry.js, and app.js in full.
+Net effect: the module boundary (`src/ui/sections/*`, `src/ui/overlays/*`) is a **file-organization** boundary, not an **encapsulation** boundary — explicitly documented that way in the `app.js:2565-2569` comment. A deliberate, acknowledged trade-off (TKT-0023), not an accident, but there is no way to know from reading `drawer.js` alone which of its ~15 `this.*` dependencies are guaranteed to exist without also reading typography.js, geometry.js, and app.js in full.
 
 ## D — Cleanup / leak findings
 
