@@ -77,8 +77,8 @@ is a fixed 3×3:
 .editor.left-collapsed.right-collapsed { grid-template-columns: 0 1fr 0; }
 ```
 
-Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` /
-`toggleRightPane`, `app.js:1447` `:1449`); the `.18s` transition on `grid-template-columns` animates it. The
+Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` `app.js:1447` /
+`toggleRightPane` `app.js:1449`); the `.18s` transition on `grid-template-columns` animates it. The
 pane element stays in the DOM (`.left-pane` keeps its box, its padding/border zero out,
 `styles.css:502`) — collapse is layout,
 not teardown.
