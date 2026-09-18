@@ -35,6 +35,14 @@ const BRAND_ONLY = ALL.filter((p) => !X.isDataPalette(p));
 const PRIMARY_CHROMA = BRAND_ONLY.find((p) => p.name === "Primary").chroma; // REQ-022: data chroma follows primary's
 const DATA_8 = [30, 75, 120, 165, 210, 255, 300, 345].map((hue, i) => dataPalette(i + 1, hue, PRIMARY_CHROMA));
 const ALL_WITH_DATA = [...BRAND_ONLY, ...DATA_8];
+
+// RADIX_COLLIDING (#630, reused by #638's reference-form gates) — the reserved-alias-key collision
+// document: stock "Danger" dropped so pickDrivers' danger regex lands on the "Error" palette, plus
+// palettes whose slugs ARE reserved alias keys ("accent", "error"), so both are emitted under a
+// `<slug>-palette` key. Declared once here because radix-alias-collision and radix-refs-collision
+// must exercise the SAME document; a second hand-built copy could drift from it.
+const RADIX_MK = (name, hue) => ({ name, hue, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true });
+const RADIX_COLLIDING = [...BRAND_ONLY.filter((p) => p.name !== "Danger"), RADIX_MK("Accent", 40), RADIX_MK("Error", 350)];
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 
@@ -772,6 +780,23 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     // as "Neutral" emits the identical group).
     const onlyLast = X.exportRadix(C([...BRAND_ONLY.filter((p) => p.name !== "Neutral"), mk("Neutral", 250)])).theme.extend.semanticTokens.colors.neutral;
     if (JSON.stringify(dupColors.neutral) !== JSON.stringify(onlyLast)) FAIL("radix-collision", "duplicate-name document: colors.neutral must be the last 'Neutral' palette's ladder (last-write-wins, as pre-fix)");
+  }
+}
+
+// ── radix-refs-values-unchanged (#638 U1.1) — the REFERENCE form is purely additive: the VALUES
+//    form exportRadix(state) must stay byte-identical to the output captured at 2805f40, BEFORE
+//    the opts.refs branch existed. The REQ-062 pattern (hpg-export-shadcn-baseline above): a
+//    committed fixture, not a self-derived expectation, so a leaf builder that quietly changed the
+//    values path — or a refs branch that leaked into the default — goes red here and nowhere else.
+//    The preset object carries no schema stamp, so the 2 -> 3 bump does not touch this fixture.
+{
+  const G = "radix-refs-values-unchanged";
+  const fixture = JSON.parse(readFileSync(new URL("./fixtures/radix-baseline.json", import.meta.url), "utf8"));
+  for (const [marker, st] of [["ALL", C(ALL)], ["BRAND_ONLY", C(BRAND_ONLY)], ["COLLIDING", C(RADIX_COLLIDING)]]) {
+    const got = JSON.stringify(X.exportRadix(st));
+    const want = JSON.stringify(fixture[marker]);
+    if (!want) { FAIL(G, `fixture section ${marker} missing from radix-baseline.json`); continue; }
+    if (got !== want) FAIL(G, `exportRadix(${marker}) drifted from the pre-#638 values-form baseline`);
   }
 }
 
@@ -2004,7 +2029,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "oncolors", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "oncolors", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "radix-refs-values-unchanged", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
