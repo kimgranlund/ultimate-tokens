@@ -4,14 +4,14 @@
 // helpers, never model.mjs or semantic.js (REQ-050).
 //
 // `prime` (index 3) sits at deriveKeyColor's (src/ui/model.mjs) OWN chromatic identity colour: its
-// hue+chroma+cusp-tone construction (`baseHue`/`keyChroma`/`pk.tone`, matching deriveKeyColor exactly).
-// The cusp TONE `pk.tone` returned by `localPeakC` below (this file's own private, safely-cached
-// re-implementation of hct.js's `peakC` algorithm, review pass 2 — see its own comment) IS the key colour's own
-// CIE L* already — hctToRgb's `tone` argument converges to that exact L* by construction (its internal
-// binary search targets `lFromY(...) === tone`) — so the ladder's anchor lightness needs no OKHSL round
-// trip at all; it reads `pk.tone` directly (conductor ruling 2026-09-11 fixed the hue/chroma anchor
-// this way already; U6 extends the same "read the REAL key colour, never a proxy" discipline to the
-// ladder's lightness axis).
+// hue+chroma+cusp-tone construction (`baseHue`/`keyChroma`/`pk.tone`, matching deriveKeyColor exactly —
+// gate (h) asserts byte identity, not a tolerance). The cusp TONE `pk.tone`, returned by hct.js's
+// SHARED `peakC` (see the import-block note below for why this is the shared function, not a private
+// copy), IS the key colour's own CIE L* already — hctToRgb's `tone` argument converges to that exact
+// L* by construction (its internal binary search targets `lFromY(...) === tone`) — so the ladder's
+// anchor lightness needs no OKHSL round trip at all; it reads `pk.tone` directly (conductor ruling
+// 2026-09-11 fixed the hue/chroma anchor this way already; U6 extends the same "read the REAL key
+// colour, never a proxy" discipline to the ladder's lightness axis).
 //
 // REQ-050..053a/056 pre-#681: the other six rungs shared the anchor's flat OKHSL saturation, only OKHSL
 // `l` varied. Owner ruling 2026-09-18 (screenshot finding: brightest/dimmest did not read 1:1 around
@@ -30,12 +30,30 @@
 // light swatches distinct in 8-bit hex). A grey has no hue/chroma, so converting `okhslToRgb(0,0,l)`
 // through `lstarFromRgb` is exact and keeps ONE source of truth for the window instead of a second,
 // independently-typed L* literal that could drift from the OKHSL one. The window's REAL job under the
-// new construction is generous headroom, not a tight ceiling: `localPeakC`'s own cusp-tone search only
-// ever samples tone 4..96 (same shape as hct.js's `peakC`), so every possible `pk.tone` anchor already
-// sits inside [12.25, 96.88]
-// with room to spare — unlike the old OKHSL-domain window, which the cusp construction could reach
-// almost exactly (0.961183 at cam16 hue 109.75, see the retired PRIME_L_MAX history below).
-import { hctToRgb, lstarFromRgb, boundedCache } from "./hct.js";
+// new construction is generous headroom, not a tight ceiling: `peakC`'s own cusp-tone search only ever
+// samples tone 4..96, so every possible `pk.tone` anchor already sits inside [12.25, 96.88] with room
+// to spare — unlike the old OKHSL-domain window, which the cusp construction could reach almost
+// exactly (0.961183 at cam16 hue 109.75, see the retired PRIME_L_MAX history below).
+//
+// This file calls hct.js's SHARED `maxChromaInGamut`/`peakC` directly — no private re-implementation
+// (#686, #681 U6 review passes 1/2/3/4). Earlier passes shipped a private, exact-keyed
+// `localMaxChroma`/`localPeakC` INSIDE this file specifically to dodge hct.js's own `hue.toFixed(2)`
+// cache-key truncation (a real, reproduced order-dependence: two calls for the identical logical
+// palette could return different hex values depending on what else had rendered earlier in the same
+// process). That workaround fixed THIS file in isolation but could never close the whole defect,
+// because `src/ui/model.mjs`'s `deriveKeyColor` — this file's own REQ-056 comparison target, out of
+// this unit's lane — reads the SAME shared `peakC`/`maxChromaInGamut` `primeSwatches` used to call, so
+// a private recompute here just meant the two disagreed under a collision instead of agreeing (review
+// pass 4, finding N8: measured `#671CF1` here vs. `deriveKeyColor`'s `#671CF2` for the same input,
+// after `effHue`'s own oklch path had warmed the shared `peakC` cache for a neighbouring hue). The
+// root cause was hct.js's cache KEY, not which caller owned a copy of the search: `hct.js` now keys
+// `maxChromaInGamut`/`peakC`/`oklchToCam16Hue` on the EXACT float (issue #686), so a cache hit only
+// ever fires for a bit-identical repeat and returns exactly what a fresh computation would — a
+// genuinely pure function of its own arguments, shared or not. With that fixed at the source, this
+// file reads the shared functions directly: REQ-056 holds by construction (the anchor call is now
+// LITERALLY the same call `deriveKeyColor` makes, not a parallel one that could disagree), and the
+// duplicate private caches the reviewer objected to are gone.
+import { hctToRgb, lstarFromRgb, maxChromaInGamut, peakC } from "./hct.js";
 import { okhslToRgb } from "./okhsl.js";
 import { effHue } from "./tonal.js";
 
@@ -52,57 +70,6 @@ export const PRIME_L_MAX = lstarFromRgb(okhslToRgb(0, 0, GREY_L_HI)); // ≈ 96.
 export const STEP_L = 9;
 // PRIME_STEP retired 2026-09-18 (#681 U6): the ladder no longer has an OKHSL-domain step; STEP_L is
 // its L*-domain replacement. Nothing outside this file and its own test imported PRIME_STEP.
-
-// localMaxChroma(hue, tone) / localPeakC(hue) — PRIVATE re-implementations of hct.js's own
-// `maxChromaInGamut`/`peakC` (identical lo/hi/18-iteration and t=4..96-step-2 search shapes), used
-// INSTEAD of the shared exports (reviewer finding, #681 U6 review pass 1 S3 + review pass 2: S3 closed
-// the RUNG chroma cap's hazard; pass 2 found `primeSwatches`'s ANCHOR — `lPrime`/`keyChroma`, from
-// `peakC(baseHue)` — still called hct.js's SHARED, memoized `peakC`, which itself calls hct.js's SHARED
-// `maxChromaInGamut` across its own t-sweep, reproducing the same hazard one level up: 63/4000
-// colliding palettes in the reviewer's repro shifted ANCHOR hex by call order even after S3).
-//
-// The bug was never caching itself — it was hct.js's cache KEY: `hue.toFixed(2)`/`tone.toFixed(2)`
-// TRUNCATES to 2 decimals, a MANY-to-one mapping, so two DIFFERENT float hues from unrelated calls
-// (CAM16-converted, hueShift-perturbed — never round numbers) can collide into the SAME bucket and one
-// evicts/overwrites the other's cached cap. These two functions below cache too — dropping the cache
-// entirely made a single widened sweep ~2 minutes slower for no correctness gain, since the anchor's
-// baseHue recurs identically across every hueShift/skew combination for a fixed (hue,chroma,hueSpace)
-// — but key on the EXACT, UNTRUNCATED float (`String(hue)`/`String(tone)`, JS's default float-to-string,
-// which is lossless and round-trips bit-for-bit), so two DIFFERENT hues can never share a bucket: a hit
-// only ever fires for a bit-identical repeat of the same input, and by definition returns exactly what
-// a fresh, uncached computation would — a genuinely pure function of its own arguments, independent of
-// history, matching this file's own "Pure, no DOM" and REQ-050 contract. The caches are PRIVATE
-// instances (own `boundedCache(...)` calls, imported as a stateless factory — see its own comment in
-// hct.js), never shared with hct.js's own `_mc`/`_pk` instances or any other caller.
-const _localMcCache = boundedCache(20000);
-function localMaxChroma(hue, tone) {
-  if (tone <= 0 || tone >= 100) return 0;
-  const key = hue + "|" + tone;
-  const hit = _localMcCache.get(key);
-  if (hit !== undefined) return hit;
-  let lo = 0, hi = 180;
-  for (let i = 0; i < 18; i++) {
-    const mid = (lo + hi) / 2;
-    if (hctToRgb(hue, mid, tone).inGamut) lo = mid; else hi = mid;
-  }
-  _localMcCache.set(key, lo);
-  return lo;
-}
-
-const _localPkCache = boundedCache(5000);
-function localPeakC(hue) {
-  const key = String(hue);
-  const hit = _localPkCache.get(key);
-  if (hit !== undefined) return hit;
-  let bestC = 0, bestT = 0;
-  for (let t = 4; t <= 96; t += 2) {
-    const c = localMaxChroma(hue, t);
-    if (c > bestC) { bestC = c; bestT = t; }
-  }
-  const res = { c: bestC, tone: bestT };
-  _localPkCache.set(key, res);
-  return res;
-}
 
 // primeSteps(lPrimeStar) — REQ-051, re-ruled 2026-09-18 (Q9, "equal-compress"). The per-side CIE L*
 // step of the seven-swatch ladder around a FIXED anchor at `lPrimeStar`. Each side naturally wants
@@ -146,7 +113,7 @@ function rgbToOklch([r, g, b]) {
 // REQ-053 superseded 2026-09-11). Deterministic; no DOM.
 export function primeSwatches(palette, controls) {
   const baseHue = effHue(palette.hue, controls.hueSpace, (palette.chroma ?? 0) / 100);
-  const pk = localPeakC(baseHue);
+  const pk = peakC(baseHue); // SHARED (hct.js, exact-keyed per #686) — the SAME call deriveKeyColor makes.
 
   // REQ-051/056 (conductor ruling 2026-09-11): the SAME construction deriveKeyColor uses
   // (baseHue/keyChroma/pk.tone). `pk.tone` IS the key colour's own CIE L* by construction (see header
@@ -163,11 +130,13 @@ export function primeSwatches(palette, controls) {
   const cPrime = Math.max(0, keyChroma * pc);
 
   // REQ-053 (superseded 2026-09-11): the hue anchor is the key colour's own CAM16 hue, directly — no
-  // re-solve. At primeChroma 100 the prime rung reproduces deriveKeyColor's hex EXACTLY (REQ-056):
-  // `chroma` below cannot exceed `localMaxChroma(baseHue, lPrime)`, which equals `pk.c` exactly — either
-  // a cache HIT on the same (hue=baseHue, tone=lPrime) entry `localPeakC`'s own t-sweep already
-  // populated at t=lPrime (the common case), or, on a cold cache, a fresh re-run of the identical
-  // binary search — so at t=0 `min(cPrime, cap) === cPrime === keyChroma` either way.
+  // re-solve. At primeChroma 100 the prime rung reproduces deriveKeyColor's hex EXACTLY (REQ-056, gate
+  // (h) asserts byte identity, not a tolerance): `chroma` below cannot exceed `maxChromaInGamut(baseHue,
+  // lPrime)`, which equals `pk.c` exactly — either a cache HIT on the same (hue=baseHue, tone=lPrime)
+  // entry `peakC`'s own t-sweep already populated at t=lPrime (the common case), or, on a cold cache, a
+  // fresh re-run of the identical binary search — so at t=0 `min(cPrime, cap) === cPrime === keyChroma`
+  // either way. This is now the SAME shared function `deriveKeyColor` calls, so the two can never
+  // disagree the way a private recompute could (#686).
   const hOk = baseHue;
 
   const shift = palette.hueShift ?? 0;
@@ -185,9 +154,9 @@ export function primeSwatches(palette, controls) {
     const hue = (((hOk + shift * dir) % 360) + 360) % 360;
     // Chroma is HELD at cPrime on every rung (Q9 "hold CAM16 chroma") and desaturated ONLY where the
     // gamut at this rung's own (hue, L) cannot carry it — never damped by lightness distance the way
-    // the retired flat-OKHSL-saturation construction implicitly was.
-    //
-    const cap = localMaxChroma(hue, l);
+    // the retired flat-OKHSL-saturation construction implicitly was. SHARED `maxChromaInGamut` (#686:
+    // exact-keyed, so no different-hue collision can silently clip or over-carry a rung's chroma).
+    const cap = maxChromaInGamut(hue, l);
     const chroma = Math.min(cPrime, cap);
     const { rgb, inGamut } = hctToRgb(hue, chroma, l);
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
