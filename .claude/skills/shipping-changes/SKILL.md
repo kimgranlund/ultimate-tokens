@@ -14,9 +14,11 @@ user-invocable: true
 # Shipping changes (ultimate-tokens)
 
 `CLAUDE.md`'s Shipping + Always sections have the one-paragraph version — read them; this skill owns
-the full procedure and the concurrency recovery. The repo is squash-merge, has no local git hooks
-(the guards below are conventions + CI + the test gate, not enforced pre-commit), and the smoke leg
-is Chrome-only.
+the full procedure and the concurrency recovery. The repo is squash-merge; guards are the
+`PreToolUse` privacy hook plus, under sdlc, the plugin's board hooks via `core.hooksPath`; the
+content guards below stay manual (conventions + CI + the test gate, not enforced pre-commit); and
+the smoke leg is Chrome-only. Landing under sdlc composes this procedure with `adapter.py`; see
+`.sdlc/adapter.md` §2.1.
 
 ## The two gates (before any PR)
 
@@ -27,7 +29,7 @@ is Chrome-only.
 
 `npm test` regenerates the committed artifacts (`figma/plugin/ui.html`, `src/ui/figma-plugin-assets.js`,
 `src/ui/mcp-assets.js`) as its first act — so a green `npm test` also leaves them in sync with source.
-CI (`.github/workflows/ci.yml`) runs `npm install` → `npm run build` → `npm test` → `npm run smoke`
+CI (`.github/workflows/ci.yml`) runs `npm ci` → `npm run build` → `npm test` → `npm run smoke`
 (real headless Chrome over CDP). `npm run smoke` itself runs `npm run build` before booting Chrome
 (#564 — a standalone `npm run smoke` must never trust a stale `dist/`), so CI's own preceding build
 step is a harmless redundant rebuild, not a dependency smoke relies on. You cannot reproduce smoke's
@@ -60,7 +62,7 @@ artifact if a UI change is involved.
    leaves the feature branch looking unmerged, so delete with `git branch -D <branch>` (capital D),
    and delete the remote branch via the API call below.
 
-## Guards (every commit — there is no hook; you are the hook)
+## Guards (every commit — manual content guards; hooks cover privacy + the sdlc board only)
 
 - `git status -s | grep .claude/docs/other` MUST be empty. `.claude/docs/other/` is local-only (ignored
   via `.git/info/exclude`, not `.gitignore`) — keep it out of every commit.
@@ -81,7 +83,7 @@ artifact if a UI change is involved.
 
 ## Trailers (exact strings)
 
-- Commit message ends with: `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
+- Commit message ends with: the attribution line the harness reminder gives for the running model
 - PR body ends with: `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
 
 ## gh quirks (verify the state — the exit code lies)

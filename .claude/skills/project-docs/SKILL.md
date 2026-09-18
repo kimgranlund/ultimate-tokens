@@ -20,11 +20,11 @@ path; a question the corpus doesn't answer is reported as absent, never guessed.
 
 | Ask | Look in |
 |---|---|
-| Problem, users, outcomes — the why | `docs/prd/` (PRD-*) — not present yet |
-| Requirements, exact behavior, acceptance criteria (scribe-authored) | `docs/spec/` (SPEC-*) — not present yet |
+| Problem, users, outcomes — the why | `docs/prd/` (PRD-*) — one stub, `prd-0001-app-shell.md` |
+| Requirements, exact behavior, acceptance criteria (scribe-authored) | `docs/spec/` (SPEC-*) — two: `spec-muted-base-key-spikes.md`, `spec-panda-park-ui-exports.md` |
 | A ratified decision and its alternatives | `docs/adr/` (ADR-*, accepted = append-only) — not present yet |
 | What's queued, in flight, or done | **GitHub Issues first** (`gh issue list` — ADR-017, 2026-07-17: the live ticket backend) — `docs/tickets/` is the pre-2026-07-17 ARCHIVE only (frontmatter `kind:`/`size:`/`status:` on those files reflects state as of the migration date, not current; a migrated file's `migrated-to:` frontmatter + top-of-file pointer names its Issue) |
-| Sequenced steps with done-whens | `docs/plan/` (PLAN-*) — not present yet |
+| Sequenced steps with done-whens | `docs/plan/` (PLAN-*) — closed plans archive to `docs/plan/archive/`; none active right now |
 | Horizons of intent — Now / Next / Later | `docs/roadmap/` (ROADMAP-*) — not present yet |
 | One actor, one sitting, one done-when | `docs/task/` (TASK-*) — not present yet |
 | The color/type/geometry ENGINE's own canonical reference (role tables, export-format shapes, typography/geometry specs, rubrics) | `docs/reference/` — pre-existing, own conventions (not scribe TICKET/SPEC frontmatter); the role-answer-key is `docs/reference/data/role-table.json` |

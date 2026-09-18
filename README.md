@@ -53,7 +53,7 @@ collections.
   films, biomes… and carrying their story. Open any one as an editable copy. Each category's data is
   lazy-loaded.
 - **Exports.** CSS (Hex or **OKLCH**), **Tailwind v4**, **shadcn/ui**, **Panda CSS**, **Radix**,
-  **Figma** variables, **Figma UI3** (Material), **DTCG**, **JSON**, a **design-system export** (`DESIGN.md` +
+  **Figma** variables, **Figma UI3** (Material, interchange-only, not a native Figma format), **DTCG**, **JSON**, a **design-system export** (`DESIGN.md` +
   `tokens.json` + preview cards, in a target each for Claude (`claude.ai/design` and Claude Code),
   Google Stitch, and Figma Make to generate on-brand UI), a re-importable parametric
   **Config**, and a **Download-all `.zip`**. An **Include** toggle row picks which token systems — **Color · Typography ·
@@ -117,7 +117,8 @@ src/
 figma/
   plugin/   code.js · manifest.json · ui.html              — the generator AS a Figma plugin
   binder/   bind-plan.mjs · figma-semantic-binder/          — the standalone Semantic Binder plugin
-scripts/    bundle.mjs · gen-categories.mjs · gen-figma-ui.mjs · gen-figma-assets.mjs · gen-preview.mjs
+scripts/    bundle.mjs · gen-categories.mjs · gen-figma-ui.mjs · gen-figma-assets.mjs · gen-preview.mjs ·
+            gen-font-test.mjs
 docs/reference/  the product specification, the canonical data/role-table.json (the answer key),
             and colors/categories/*.json (the color-category source data gen-categories reads)
 test/       engine/ · ui/ · figma/ · run.mjs

@@ -13,16 +13,25 @@ on:
 jobs:
   describe-eval:
     runs-on: ubuntu-latest
+    # CI secret custody (#375's own stated open item; R8): the eval key must be added as a
+    # repository secret before the eval can run at all. It is scoped to the two steps that need it,
+    # at step level (GitHub allows the `secrets` context in step `env:`, only not in a step `if:`);
+    # the shell test below is what fails loudly on an empty value, rather than letting
+    # describe-eval-runner.mjs's own no-key path report a quiet success. A badge that can't lie is the point.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci
-      # CI secret custody (#375's own stated open item): ANTHROPIC_API_KEY must be added as a repository
-      # secret before this step does anything but skip. Until then, describe-eval-runner.mjs's own
-      # no-key path prints a clear message and exits 0 — this job stays green, not silently broken, while
-      # the key is genuinely absent.
+      - name: Require the eval key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::ANTHROPIC_API_KEY is not set: add it as a repository secret (gh secret set ANTHROPIC_API_KEY) before this eval can run" >&2
+            exit 1
+          fi
       - name: Run the golden-description eval
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -29,6 +29,12 @@ Gates to wire (and the decisions each needs):
 - [ ] **`hostedMcp`** → the hosted Brand-Kit MCP endpoint. **Blocked:** no hosted MCP server is deployed
       yet, so only the free *download* exists — nothing to gate until one ships.
 
+**Amendment (2026-09-16).** Step 0's premise is now stale: `maxSets`, `proExport`,
+`advancedTreatments`, and `describePalette` are wired `flagOf()` consumers (`src/ui/app.js`,
+`src/ui/overlays/drawer.js`). `hostedMcp` remains the only unwired flag; it still gates nothing,
+since no hosted MCP server is deployed (its only reference outside `src/engine/flags.js` is the
+Account dev-toggle label in `src/ui/app-helpers.mjs`).
+
 ---
 
 ## 1. Lemon Squeezy dashboard config

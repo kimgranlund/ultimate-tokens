@@ -26,13 +26,20 @@
     "authorkit@nonoun-plugins": true,
     "figma@claude-plugins-official": true,
     "cloudflare@claude-plugins-official": true,
-    "sdlc@adia": true
+    "sdlc@adia": false,
+    "sdlc@nonoun": true
   },
   "extraKnownMarketplaces": {
     "nonoun-plugins": {
       "source": {
         "source": "github",
         "repo": "kimgranlund/claude-plugins"
+      }
+    },
+    "nonoun": {
+      "source": {
+        "source": "github",
+        "repo": "kimgranlund/sdlc-orchestration"
       }
     },
     "adia": {

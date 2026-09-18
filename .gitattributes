@@ -1,0 +1,11 @@
+# Generated artifacts (K9 watched set): committed for zero-dependency `npm test`/`build`, but a
+# human review never needs to read their diff and GitHub's language stats should not count them.
+figma/plugin/ui.html linguist-generated -diff
+src/ui/figma-plugin-assets.js linguist-generated -diff
+src/ui/mcp-assets.js linguist-generated -diff
+src/ui/describe-mcp-assets.js linguist-generated -diff
+src/ui/type-fonts.js linguist-generated -diff
+src/ui/categories/*.js linguist-generated -diff
+docs/reference/data/adia-oklch-export.css linguist-generated -diff
+docs/reference/data/adia-radix-export.mjs linguist-generated -diff
+figma/binder/figma-semantic-binder/code.js linguist-generated -diff

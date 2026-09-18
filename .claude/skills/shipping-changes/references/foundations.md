@@ -18,7 +18,7 @@ a pure engine/UI-logic change, `npm test` is sufficient locally and CI runs the 
 
 ## 2. CI is the smoke gate — and it is Chrome-only
 
-`.github/workflows/ci.yml` runs `npm install` → `npm run build` → `npm test` → **`npm run smoke`** on
+`.github/workflows/ci.yml` runs `npm ci` → `npm run build` → `npm test` → **`npm run smoke`** on
 `ubuntu-latest`, node 22 (smoke uses node's global WebSocket, stable in 22). Smoke boots the built
 single-file in the runner's **headless Chrome over CDP** and drives gallery → category → editor → export
 dialog; it catches UI regressions the DOM shim can't. Screenshots land in `smoke-out/` (gitignored) and
@@ -56,10 +56,9 @@ title** (see `git log --oneline`: `feat(engine): … (#41)`, `feat(geometry): �
 After merge, sync local main with a **fast-forward only** merge: `git merge --ff-only origin/main`. If that
 errors, your local main has drifted (a stray commit) — investigate, don't force.
 
-## 4. The guards exist because there are no hooks
+## 4. The guards are manual because hooks cover only privacy and the sdlc board
 
-There are **no local git hooks** in this repo (CLAUDE.md says so explicitly). Every guard is a convention +
-CI + the test gate — meaning **you** are the enforcement at commit time:
+The only hooks are the `PreToolUse` privacy guard and, under sdlc, the plugin's board hooks via `core.hooksPath` (`.sdlc/adapter.md` §3). Every content guard below is a convention plus CI plus the test gate, so you are the enforcement at commit time:
 
 - **`.claude/docs/other/`** is a private working folder, ignored via **`.git/info/exclude`** (local, not the shared
   `.gitignore`). A teammate's clone has no such exclude, so committing it would leak local scratch into the
@@ -69,7 +68,7 @@ CI + the test gate — meaning **you** are the enforcement at commit time:
   `node_modules`, so both a real dir and a stray symlink are now ignored. Re-adding it is a regression: a
   circular self-symlink there once survived a branch-switch, clobbered a real `node_modules`, and made
   `npx` try to **fetch vite over the network** (`vite`/`npm run build` → exit 194). CI was unaffected
-  *because it always `npm install`s* — so CI is **not** the guard for this; you are. (This is exactly why
+  *because it always reinstalls from the lockfile*, so CI is **not** the guard for this; you are. (This is exactly why
   the worktree technique **symlinks** an existing `node_modules` rather than committing or reinstalling one.)
 - **Generated artifacts** (`figma/plugin/ui.html` — a bundle inlining the whole app; `src/ui/
   figma-plugin-assets.js`; `src/ui/mcp-assets.js`) are outputs. The build regenerates them; drift means you

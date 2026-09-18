@@ -216,3 +216,8 @@ for the new collection; a `get_prime` MCP test; a headless-boot lettered group f
 four sliders. Retained: the `intensity-legacy` byte fixture. Retired: `intensity-spike`,
 `identity-stops`. Everything else runs on existing instruments named in the SPEC's Agent verification
 section.
+
+- **Amendment (2026-09-16).** The "one shared resolver" this LLD's risk table and Agent verification
+  section refer to lives at `src/engine/resolve.mjs`, the group-chroma resolvers imported by both the
+  canvas and every export format (`exports.js`'s `derivePalette`), so a palette can never resolve two
+  different ways.

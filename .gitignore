@@ -12,3 +12,7 @@ test/plugin/.hosted-pack-scratch/
 
 # sdlc live per-checkout coordination state
 .claude/ops/
+.sdlc/runtime/
+.sdlc/.fake-tickets/
+.sdlc/.fake-releases/
+.worktrees/
