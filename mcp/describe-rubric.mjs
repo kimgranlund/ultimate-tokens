@@ -210,10 +210,17 @@ always tier as **a** — the ladder and the hierarchy tiers reinforce each other
   0** biases mid stops darker/richer (a "deeper, moodier" reading ramp). Role-table calibration: most
   families default to skew **−20** (a slightly rich, non-washed-out ramp); **Warning defaults to skew
   +40** — amber/gold reads naturally light, so its ramp is deliberately biased lighter to match.
-- **lift** is an ADDITIVE brightness bump centered on the ramp's anchor stop (500), fading to zero at the
-  ramp's light/dark extremes. **lift > 0** punches the anchor brighter/hotter (Warning: **+15**, an
-  "electric" amber core); **lift < 0** dips the anchor darker/deeper (Success and Danger both default to
-  **−5**, a grounded, non-neon core even at high chroma).
+- **lift** DISPLACES the ramp's anchor along the ramp instead of adding brightness to it: the tone at a
+  stop is the tone the unchanged curve already has at a nearby stop, shifted by \`A · w(stop)\` where
+  \`A = clamp(lift × 6, ±243.51)\` stops and \`w\` is a cosine weight that is 1 at the anchor stop (500)
+  and 0 at the ramp's light/dark extremes. That keeps the ramp strictly monotone, because the shift's
+  own slope stays under 1 (\`|A| · π/900 < 1\`); the scheme this replaced simply added L* at each stop,
+  which did not, and could push the light stops into a flat plateau of identical swatches. **lift > 0** still punches the anchor
+  brighter/hotter (Warning: **+15**, an "electric" amber core); **lift < 0** still dips it darker/deeper
+  (Success and Danger both default to **−5**, a grounded, non-neon core even at high chroma). Because
+  the shift rides the curve, a given lift moves the tone furthest where the ramp is steepest, so its
+  effect in L* is not a fixed amount. Today it applies on the \`even\` tone path only; the
+  \`perceptual\`/\`peak\` paths ignore skew/lift until #647 wires them to the same helper.
 
 Rule: leave skew/lift OUT of a family seed unless the theme specifically calls for a ramp that reads
 lighter/darker or hotter/deeper than the family's own role-table default — the core fills them in from each

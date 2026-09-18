@@ -16,6 +16,14 @@ for (const heading of [
 ]) {
   ok(RUBRIC.includes(heading), `RUBRIC covers "${heading}"`);
 }
+// #648: the rubric must teach the MECHANISM, not just own a section title. `lift` DISPLACES the stop
+// along the ramp; it is no longer an additive L* bump, and an agent told otherwise will predict the
+// wrong tone and re-derive the wrong inverse (exactly the bug #648 fixed in gen-categories.mjs). A
+// title-only check passed happily while the body taught the retired model, so gate both directions:
+// the new mechanism must be stated, and the retired word must be gone.
+ok(/displac/i.test(RUBRIC), "RUBRIC states that lift DISPLACES the stop (the #648 mechanism), not merely that skew/lift exist");
+ok(!/additive/i.test(RUBRIC), "RUBRIC must not describe lift as an ADDITIVE bump — that mechanism was retired in #648");
+ok(RUBRIC.includes("\u00b7 w(stop)") || RUBRIC.includes("w(stop)"), "RUBRIC names the cosine weight w(stop) the displacement is scaled by");
 // The rubric must state the EXACT same harmony numbers describe-kit-core.mjs actually uses — via
 // interpolation of the imported constants, not a hand-typed restatement that could drift.
 ok(RUBRIC.includes(`Primary.hue + ${SECONDARY_HARMONY_OFFSET}°`), `RUBRIC states the Secondary recipe using the core's own SECONDARY_HARMONY_OFFSET (${SECONDARY_HARMONY_OFFSET})`);
