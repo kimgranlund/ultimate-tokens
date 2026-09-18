@@ -13,12 +13,17 @@ import { rgbToOklchHue, rgbToOkhsl } from "../../src/engine/okhsl.js";
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const DEFAULTS = RT.defaults; // the 16 default palettes {name,hue,chroma,skew,lift,on}
 // hueSpace "cam16": role-table.json's hue numbers ARE CAM16 hues (the raw, un-converted seeds
-// defaultDocument() maps through camHueToOklch before storing) — pin cam16 here so effHue passes
+// defaultDocument() maps through camHueToOklch before storing) — `CTL` pins cam16 so effHue passes
 // them straight through, exactly as test/engine/tonal.mjs's own DEFAULTS convention does, and so
 // EX-4/EX-4b/EX-5's literal worked numbers (written against these same hue/chroma pairs) reproduce.
-// prime.mjs's own hue is `key.h` directly (no re-solve, conductor ruling 2026-09-11), so nothing in
-// this file is hueSpace-branch-specific any more — one CTL covers every gate.
+// prime.mjs's own hue is `key.h` directly (no re-solve, conductor ruling 2026-09-11), so no gate is
+// hueSpace-BRANCHED — but the two spaces feed effHue different hues, so they reach different cusp
+// tones and different `l_prime` values, and the PRODUCT default is oklch (`tonal.js` DEFAULT_CONTROLS).
+// The ladder gates therefore run over BOTH spaces (`SPACES`/`CTLS`, #641 round-2 F5); only the frozen
+// hex snapshot in (d5) is cam16-only, because that is the space it was captured in.
 const CTL = { ...DEFAULT_CONTROLS, hueSpace: "cam16" };
+const SPACES = ["cam16", "oklch"];
+const CTLS = SPACES.map((hueSpace) => ({ ...DEFAULT_CONTROLS, hueSpace }));
 const PRIMARY = DEFAULTS.find((d) => d.name === "Primary");
 
 const fails = [];
@@ -90,74 +95,103 @@ for (const p of DEFAULTS) {
 
 // ── (d) REQ-051 (amended 2026-09-17, #641): the ladder spans a FULL 6 x PRIME_STEP at every hue and
 //        chroma — a side clipped by a bound hands its lost travel to the other side, which stays even
-//        within itself. Every gate below states a PROPERTY the SPEC asserts; none re-implements
-//        primeSteps's own expression, so a fitted formula cannot satisfy them by mirroring. ────────
+//        within itself — and PRIME_L_MAX 0.97 (raised from 0.94, #655 folded in) is above the cusp
+//        construction's own reach, so no anchor is ever outside the window. Every gate below states a
+//        PROPERTY the SPEC asserts; none re-implements primeSteps's own expression, so a fitted
+//        formula cannot satisfy them by mirroring. All of (d) runs over BOTH hue spaces. ───────────
 const SPAN = 6 * PRIME_STEP;
-// SWEEP — hue 0..359 step 5 x chroma {0,50,100}, the generalisation past the 16 shipped defaults.
-const SWEEP = [];
-for (let hue = 0; hue < 360; hue += 5) for (const chroma of [0, 50, 100]) SWEEP.push({ name: `hue${hue}/c${chroma}`, hue, chroma, skew: 0 });
-const ALL = [...DEFAULTS.map((p) => ({ ...p, skew: 0 })), ...SWEEP];
+// CASES — for each hue space: the 16 shipped defaults, plus a sweep of hue 0..359 step 5 x
+// chroma {0,50,100} that generalises past them.
+const CASES = [];
+for (let k = 0; k < SPACES.length; k++) {
+  const hueSpace = SPACES[k], ctl = CTLS[k];
+  for (const p of DEFAULTS) CASES.push({ p: { ...p, skew: 0 }, ctl, hueSpace, label: `${p.name}/${hueSpace}` });
+  for (let hue = 0; hue < 360; hue += 5) for (const chroma of [0, 50, 100]) {
+    CASES.push({ p: { name: `hue${hue}`, hue, chroma, skew: 0 }, ctl, hueSpace, label: `hue${hue}/c${chroma}/${hueSpace}` });
+  }
+}
+// each case's independently re-derived anchor and per-side ROOM (from lPrimeOf, never primeSteps)
+for (const c of CASES) {
+  c.lPrime = lPrimeOf(c.p.hue, c.p.chroma, c.hueSpace).lPrime;
+  c.roomUp = (PRIME_L_MAX - c.lPrime) / 3;
+  c.roomDown = (c.lPrime - PRIME_L_MIN) / 3;
+  c.inBounds = c.lPrime >= PRIME_L_MIN && c.lPrime <= PRIME_L_MAX;
+  c.sw = primeSwatches(c.p, c.ctl);
+}
+if (CASES.length < 2 * (16 + 72 * 3)) FAIL("d1", `CASES built only ${CASES.length} cases — the sweep did not run`);
 
-// (d1) span floor: brightest - dimmest === 6 * PRIME_STEP, unconditionally. This is the ticket's
-//      whole point — before #641 the span COLLAPSED toward 0.28 wherever the cusp tone sat near a
-//      bound, and 200-plus of the sweep's hues fell short at every chroma.
-for (const p of ALL) {
-  const sw = primeSwatches(p, CTL);
-  const span = sw[0].l - sw[6].l;
-  if (Math.abs(span - SPAN) > 1e-9) FAIL("d1", `${p.name}: span ${span.toFixed(6)} != 6 x PRIME_STEP ${SPAN} (short by ${(SPAN - span).toFixed(6)})`);
+// (d1) span floor: brightest - dimmest === 6 * PRIME_STEP EXACTLY (1e-9), for every case whose anchor
+//      is in bounds. This is the ticket's whole point — before #641 the span COLLAPSED toward 0.28
+//      wherever the cusp tone sat near a bound, and 200-plus of the sweep's hues fell short at every
+//      chroma. The in-bounds condition is not an escape hatch: (d4) separately asserts that NO case
+//      is out of bounds, so every case must satisfy this. If an anchor ever were outside the window,
+//      or so extreme that BOTH sides clip, the span cannot be honoured and the guard caps it instead;
+//      that case must degrade to a SHORTER span, never a longer one or an inverted ladder.
+for (const c of CASES) {
+  const span = c.sw[0].l - c.sw[6].l;
+  const bothClip = c.roomUp < PRIME_STEP && c.roomDown < PRIME_STEP;
+  if (c.inBounds && !bothClip) {
+    if (Math.abs(span - SPAN) > 1e-9) FAIL("d1", `${c.label}: span ${span.toFixed(6)} != 6 x PRIME_STEP ${SPAN} (short by ${(SPAN - span).toFixed(6)})`);
+  } else if (span > SPAN + 1e-9) {
+    FAIL("d1", `${c.label}: span ${span.toFixed(6)} EXCEEDS ${SPAN} with an out-of-window or doubly-clipped anchor (${c.lPrime})`);
+  }
 }
 
 // (d2a) anchor: `prime`'s l IS the key colour's own OKHSL lightness (REQ-056's mechanism — the
-//       redistribution must never move the anchor, which is what rules out a PRIME_L_MAX bias).
-for (const p of ALL) {
-  const { lPrime } = lPrimeOf(p.hue, p.chroma, CTL.hueSpace);
-  const sw = primeSwatches(p, CTL);
-  if (Math.abs(sw[3].l - lPrime) > 1e-12) FAIL("d1", `${p.name}: anchor l ${sw[3].l} != key.l ${lPrime}`);
+//       redistribution and the raised ceiling must never move the anchor, which is what rules out a
+//       PRIME_L_MAX bias on the anchor itself). Its own gate key (#641 round-2 F7).
+for (const c of CASES) {
+  if (Math.abs(c.sw[3].l - c.lPrime) > 1e-12) FAIL("d2a", `${c.label}: anchor l ${c.sw[3].l} != key.l ${c.lPrime}`);
 }
 
 // (d3) even PER SIDE: the three consecutive l differences are equal to each other on the light side
 //      and equal to each other on the dark side (skew 0). The two sides need NOT match — that is the
-//      amendment. Both step sizes strictly positive wherever the anchor itself is in bounds.
-for (const p of ALL) {
-  const sw = primeSwatches(p, CTL);
-  const { lPrime } = lPrimeOf(p.hue, p.chroma, CTL.hueSpace);
-  const anchorInBounds = lPrime >= PRIME_L_MIN && lPrime <= PRIME_L_MAX;
-  const upObs = [sw[2].l - sw[3].l, sw[1].l - sw[2].l, sw[0].l - sw[1].l];
-  const downObs = [sw[3].l - sw[4].l, sw[4].l - sw[5].l, sw[5].l - sw[6].l];
-  for (const v of upObs) if (Math.abs(v - upObs[0]) > 1e-9) FAIL("d3", `${p.name}: light-side steps uneven ${upObs.map((x) => x.toFixed(9)).join("/")}`);
-  for (const v of downObs) if (Math.abs(v - downObs[0]) > 1e-9) FAIL("d3", `${p.name}: dark-side steps uneven ${downObs.map((x) => x.toFixed(9)).join("/")}`);
-  if (anchorInBounds && !(upObs[0] > 0 && downObs[0] > 0)) FAIL("d3", `${p.name}: a side has a non-positive step (up ${upObs[0]}, down ${downObs[0]}) with an in-bounds anchor ${lPrime}`);
+//      amendment. Both step sizes strictly positive, unconditionally: with PRIME_L_MAX 0.97 there is
+//      no anchor for which a side has zero room (min up across the full sweep is 0.0039).
+for (const c of CASES) {
+  const upObs = [c.sw[2].l - c.sw[3].l, c.sw[1].l - c.sw[2].l, c.sw[0].l - c.sw[1].l];
+  const downObs = [c.sw[3].l - c.sw[4].l, c.sw[4].l - c.sw[5].l, c.sw[5].l - c.sw[6].l];
+  for (const v of upObs) if (Math.abs(v - upObs[0]) > 1e-9) FAIL("d3", `${c.label}: light-side steps uneven ${upObs.map((x) => x.toFixed(9)).join("/")}`);
+  for (const v of downObs) if (Math.abs(v - downObs[0]) > 1e-9) FAIL("d3", `${c.label}: dark-side steps uneven ${downObs.map((x) => x.toFixed(9)).join("/")}`);
+  if (!(upObs[0] > 0 && downObs[0] > 0)) FAIL("d3", `${c.label}: a side has a non-positive step (up ${upObs[0]}, down ${downObs[0]}), anchor ${c.lPrime}`);
 }
-// primeSteps's own algebraic contract, at three hand-computed anchors (no engine call, no mirrored
-// expression): centre takes both full steps; a high anchor hands its shortfall down; a low one up.
-for (const [lP, expUp, expDown] of [[0.54, 0.09, 0.09], [0.90, 0.04 / 3, 0.09 + (0.09 - 0.04 / 3)], [0.20, 0.09 + (0.09 - 0.02), 0.02]]) {
+// primeSteps's own algebraic contract, at hand-computed anchors (no engine call, no mirrored
+// expression): centre takes both full steps; a high anchor hands its shortfall down, a low one up;
+// and an anchor OUTSIDE the window is floored at zero travel, never negative (#641 round-2 F1 guard).
+for (const [lP, expUp, expDown] of [
+  [0.55, 0.09, 0.09],
+  [0.93, (PRIME_L_MAX - 0.93) / 3, 0.09 + (0.09 - (PRIME_L_MAX - 0.93) / 3)],
+  [0.20, 0.09 + (0.09 - 0.02), 0.02],
+  [PRIME_L_MAX + 0.01, 0, 0.18],          // above the ceiling: no light travel, never negative
+  [PRIME_L_MIN - 0.01, 0.18, 0],          // below the floor: no dark travel, never negative
+]) {
   const { up, down } = primeSteps(lP);
   if (Math.abs(up - expUp) > 1e-12 || Math.abs(down - expDown) > 1e-12) FAIL("d3", `primeSteps(${lP}) = {up ${up}, down ${down}}, expected {up ${expUp}, down ${expDown}}`);
-  if (Math.abs(3 * (up + down) - SPAN) > 1e-12) FAIL("d3", `primeSteps(${lP}): 3*(up+down) ${3 * (up + down)} != ${SPAN}`);
+  if (up < 0 || down < 0) FAIL("d3", `primeSteps(${lP}) returned negative travel {up ${up}, down ${down}} — the Math.max(0, ...) guard is gone`);
 }
 
-// (d4) bounds and order, wherever the ANCHOR itself is inside the window. A handful of yellow-green
-//      hues construct a key colour ABOVE PRIME_L_MAX (l_prime up to 0.958), so `prime` is already out
-//      of bounds before any ladder is built — a PRE-EXISTING defect of the cusp-tone anchor,
-//      byte-identical before and after #641, and out of this ticket's scope. Gated here so it cannot
-//      spread: the offending hues must stay confined to the yellow-green band.
-const oobHues = new Set();
-for (const p of ALL) {
-  const { lPrime } = lPrimeOf(p.hue, p.chroma, CTL.hueSpace);
-  if (lPrime < PRIME_L_MIN || lPrime > PRIME_L_MAX) { oobHues.add(p.hue); continue; }
-  const sw = primeSwatches(p, CTL);
+// (d4) bounds and order, unconditionally — plus the #655 gate: ZERO anchors outside the window, over
+//      the whole sweep in BOTH hue spaces. Under the old 0.94 ceiling this was NOT true: the cusp
+//      construction reaches l_prime 0.961183, so yellow-green hues (cam16 108..122, oklch 96..114)
+//      put `prime` itself out of bounds and the light side INVERTED. 0.97 clears that reach.
+{
+  const oob = CASES.filter((c) => !c.inBounds);
+  if (oob.length) FAIL("d4", `${oob.length} case(s) with an anchor outside [${PRIME_L_MIN},${PRIME_L_MAX}], e.g. ${oob[0].label} l_prime ${oob[0].lPrime} — PRIME_L_MAX no longer clears the cusp construction's reach (#655)`);
+}
+for (const c of CASES) {
   for (let i = 0; i < 7; i++) {
-    if (sw[i].l < PRIME_L_MIN - 1e-9 || sw[i].l > PRIME_L_MAX + 1e-9) FAIL("d4", `${p.name} ${sw[i].step}: l ${sw[i].l} outside [${PRIME_L_MIN},${PRIME_L_MAX}]`);
-    if (i > 0 && sw[i].l >= sw[i - 1].l) FAIL("d4", `${p.name}: l not strictly decreasing at ${sw[i].step}`);
+    if (c.sw[i].l < PRIME_L_MIN - 1e-9 || c.sw[i].l > PRIME_L_MAX + 1e-9) FAIL("d4", `${c.label} ${c.sw[i].step}: l ${c.sw[i].l} outside [${PRIME_L_MIN},${PRIME_L_MAX}]`);
+    if (i > 0 && c.sw[i].l >= c.sw[i - 1].l) FAIL("d4", `${c.label}: l not strictly decreasing at ${c.sw[i].step} (${c.sw[i - 1].l} -> ${c.sw[i].l})`);
   }
 }
-for (const h of oobHues) if (h < 100 || h > 125) FAIL("d4", `out-of-bounds l_prime at hue ${h}, outside the known yellow-green band 100..125 — the anchor defect has spread`);
 
-// (d5) unclipped byte-identity: a FROZEN snapshot of the six defaults whose anchor needed no
-//      redistribution, captured from origin/main @ 1b2c750 BEFORE this change
-//      (`git show origin/main:src/engine/prime.mjs`, run against these same DEFAULTS + CTL). Frozen
-//      literals, so the check is independent of the present implementation by construction. NOTE:
-//      six, not the four the #641 brief named — Data 2 and Data 3 are unclipped too (measured).
+// (d5) unclipped byte-identity: a FROZEN snapshot of the defaults whose anchor needs no
+//      redistribution AND never touched either bound, captured from origin/main @ 1b2c750 BEFORE
+//      #641 (`git show origin/main:src/engine/prime.mjs`, run against these same DEFAULTS + CTL).
+//      Frozen literals, so the check is independent of the present implementation by construction.
+//      cam16, the space they were captured in. NOTE: six, not the four the #641 brief named — Data 2
+//      and Data 3 are unclipped too (measured). Data 8 is NOT here: it is unclipped under the raised
+//      0.97 ceiling but was light-clipped under 0.94, so its hexes legitimately moved.
 const FROZEN = {
   "Neutral": ["#BDC4D6", "#9DA7BF", "#838EA9", "#717C97", "#566078", "#434C60", "#333A4B"],
   "Primary": ["#A5C8FE", "#74AAFD", "#468DFB", "#2177F6", "#0D5BC8", "#0748A2", "#04377F"],
@@ -173,38 +207,39 @@ for (const [name, hexes] of Object.entries(FROZEN)) {
   for (let i = 0; i < 7; i++) if (got[i] !== hexes[i]) FAIL("d5", `${name} ${PRIME_STEPS[i]}: ${got[i]} != frozen pre-#641 ${hexes[i]} — an UNCLIPPED palette must be byte-identical`);
 }
 
-// (d6) clipped-side fill: for a light-clipped palette the light side runs right up to PRIME_L_MAX,
-//      and the dark step is whatever the span still owes, derived here from (PRIME_L_MAX - key.l)
-//      ALONE — never from primeSteps.
-for (const name of ["Warning", "Data 5", "Secondary", "Success", "Info", "Data 4", "Data 6", "Data 7", "Data 8"]) {
-  const p = { ...DEFAULTS.find((d) => d.name === name), skew: 0 };
-  const { lPrime } = lPrimeOf(p.hue, p.chroma, CTL.hueSpace);
-  const roomUp = (PRIME_L_MAX - lPrime) / 3;
-  if (roomUp >= PRIME_STEP) { FAIL("d6", `${name}: expected a LIGHT-clipped palette, but roomUp ${roomUp} >= PRIME_STEP`); continue; }
-  const sw = primeSwatches(p, CTL);
-  if (Math.abs(sw[0].l - PRIME_L_MAX) > 1e-9) FAIL("d6", `${name}: brightest l ${sw[0].l} != PRIME_L_MAX ${PRIME_L_MAX} (clipped side must fill to the bound)`);
-  const expDown = (SPAN - 3 * roomUp) / 3;
-  const gotDown = sw[3].l - sw[4].l;
-  if (Math.abs(gotDown - expDown) > 1e-9) FAIL("d6", `${name}: dark step ${gotDown} != owed ${expDown}`);
-}
-// the mirror case: Data 1 is DARK-clipped, so the dark side sits on PRIME_L_MIN and the light side fills.
+// (d6) clipped-side fill: a clipped side runs right up to its bound, and the OTHER side's step is
+//      whatever the span still owes, derived here from that bound and key.l ALONE — never from
+//      primeSteps. Which defaults are clipped depends on PRIME_L_MAX, so the sets are DERIVED, and
+//      asserted non-empty on both sides so the gate cannot go vacuous if the constant moves again.
 {
-  const p = { ...DEFAULTS.find((d) => d.name === "Data 1"), skew: 0 };
-  const { lPrime } = lPrimeOf(p.hue, p.chroma, CTL.hueSpace);
-  const roomDown = (lPrime - PRIME_L_MIN) / 3;
-  if (roomDown >= PRIME_STEP) FAIL("d6", `Data 1: expected a DARK-clipped palette, but roomDown ${roomDown} >= PRIME_STEP`);
-  const sw = primeSwatches(p, CTL);
-  if (Math.abs(sw[6].l - PRIME_L_MIN) > 1e-9) FAIL("d6", `Data 1: dimmest l ${sw[6].l} != PRIME_L_MIN ${PRIME_L_MIN}`);
-  const expUp = (SPAN - 3 * roomDown) / 3;
-  const gotUp = sw[2].l - sw[3].l;
-  if (Math.abs(gotUp - expUp) > 1e-9) FAIL("d6", `Data 1: light step ${gotUp} != owed ${expUp}`);
+  let nLight = 0, nDark = 0;
+  for (const c of CASES.filter((x) => DEFAULTS.some((d) => d.name === x.p.name))) {
+    if (c.roomUp < PRIME_STEP && c.roomDown >= PRIME_STEP) {
+      nLight++;
+      if (Math.abs(c.sw[0].l - PRIME_L_MAX) > 1e-9) FAIL("d6", `${c.label}: brightest l ${c.sw[0].l} != PRIME_L_MAX ${PRIME_L_MAX} (clipped side must fill to the bound)`);
+      const expDown = (SPAN - 3 * c.roomUp) / 3;
+      const gotDown = c.sw[3].l - c.sw[4].l;
+      if (Math.abs(gotDown - expDown) > 1e-9) FAIL("d6", `${c.label}: dark step ${gotDown} != owed ${expDown}`);
+    } else if (c.roomDown < PRIME_STEP && c.roomUp >= PRIME_STEP) {
+      nDark++;
+      if (Math.abs(c.sw[6].l - PRIME_L_MIN) > 1e-9) FAIL("d6", `${c.label}: dimmest l ${c.sw[6].l} != PRIME_L_MIN ${PRIME_L_MIN}`);
+      const expUp = (SPAN - 3 * c.roomDown) / 3;
+      const gotUp = c.sw[2].l - c.sw[3].l;
+      if (Math.abs(gotUp - expUp) > 1e-9) FAIL("d6", `${c.label}: light step ${gotUp} != owed ${expUp}`);
+    }
+  }
+  if (nLight === 0) FAIL("d6", "no light-clipped default found — this gate has gone vacuous");
+  if (nDark === 0) FAIL("d6", "no dark-clipped default found — this gate has gone vacuous");
 }
 
 // ── (d2) skew gamma (REQ-053a): monotone/bounds, end+prime invariance, weight re-derivation,
 //        skew0 weights == |t|, and direction vs the skew-0 baseline, for every default palette ──
 {
   const SKEWS = [-100, -60, -20, 0, 20, 60, 100];
-  for (const p of DEFAULTS) {
+  for (let k = 0; k < SPACES.length; k++) {
+   const CTL = CTLS[k];
+   for (const p0 of DEFAULTS) {
+    const p = { ...p0, name: `${p0.name}/${SPACES[k]}` };
     const { lPrime } = lPrimeOf(p.hue, p.chroma, CTL.hueSpace);
     const base0 = primeSwatches({ ...p, skew: 0 }, CTL);
     // per-side extents read off the skew-0 ENDPOINTS, not re-computed from the clipping rule — this
@@ -232,6 +267,7 @@ for (const name of ["Warning", "Data 5", "Secondary", "Success", "Info", "Data 4
         if (skew < 0 && up > 1e-9 && down > 1e-9 && sw[i].l > base0[i].l + 1e-9) FAIL("d2", `${p.name} skew${skew} ${sw[i].step}: l ${sw[i].l} > skew0 baseline ${base0[i].l} (expected <=)`);
       }
     }
+   }
   }
 }
 
@@ -318,7 +354,7 @@ for (const p of DEFAULTS) {
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["a", "b", "c", "d1", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j"]) {
+for (const g of ["a", "b", "c", "d1", "d2a", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

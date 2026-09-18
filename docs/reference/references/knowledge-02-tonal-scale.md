@@ -264,8 +264,11 @@ cleared and the already-resolved number rides in on `controls.primeChroma` inste
 ```
 key    = rgbToOkhsl(deriveKeyColor(palette).rgb)      // the REAL key colour: effHue, peakC chroma × chroma/100, cusp tone
 lPrime = key.l                                        // REQ-051: never a neutral grey at the cusp tone
-up     = min(PRIME_STEP, (PRIME_L_MAX - lPrime) / 3)  // PRIME_STEP 0.09, [PRIME_L_MIN, PRIME_L_MAX] = [0.14, 0.94]
-down   = min(PRIME_STEP, (lPrime - PRIME_L_MIN) / 3)
+{ up, down } = primeSteps(lPrime)                     // PRIME_STEP 0.09, [PRIME_L_MIN, PRIME_L_MAX] = [0.14, 0.97]
+  roomUp = max(0, (PRIME_L_MAX - lPrime) / 3);  roomDown = max(0, (lPrime - PRIME_L_MIN) / 3)
+  up = min(PRIME_STEP, roomUp);  down = min(PRIME_STEP, roomDown)
+  short = (PRIME_STEP - up) + (PRIME_STEP - down)     // REQ-051 (#641): handed to the side that did NOT clip,
+  up |= min(roomUp, up + short) if unclipped;  down likewise   // capped by its own room, so the span is always 6·PRIME_STEP
 g      = 3 ** (skew / 100)                            // REQ-053a: the ramp's toneAt gamma, reused as the ladder bend
 t_i    = (i - 3) / 3;  w_i = i < 3 ? |t_i| ** (1 / g) : |t_i| ** g     // w(prime) = 0, w(ends) = 1
 l_i    = i < 3 ? lPrime + 3 · up · w_i : lPrime - 3 · down · w_i
@@ -278,7 +281,9 @@ Why the key colour's own coordinates: a chromatic colour and a grey at the same 
 OKHSL `l` by a Helmholtz-Kohlrausch gap that grows toward the gamut edge; a CAM16 chroma fraction is
 not an OKHSL saturation; and anchoring the hue at peak chroma carried an Abney drift into the muted
 swatches. Reading `(l, s, h)` off `deriveKeyColor`'s colour makes `prime` equal the gallery tile
-EXACTLY at `primeChroma 100` (REQ-056), not approximately. Steps are even in `l` at `skew 0`;
+EXACTLY at `primeChroma 100` (REQ-056), not approximately. Steps are even in `l` WITHIN EACH SIDE of
+the anchor at `skew 0`, and the two sides differ by exactly the travel a clipped side hands over
+(REQ-051, amended #641) — so the span is always `6 * PRIME_STEP = 0.54`, at every hue and chroma;
 `skew > 0` pushes the light inner swatches away from `prime` and pulls the dark ones toward it (every
 inner swatch reads lighter, like the ramp), `skew < 0` the reverse, with `prime` and both ends fixed.
 `lift`, `damp*`, `vibrancy`, `cuspPull`, `toneMode` do not apply: they shape the ramp, not the prime
@@ -290,8 +295,9 @@ chroma 95`, `skew 0`, `primeChroma 100`): `lPrime = 0.528528`, `s = 0.965345`, `
 · 0.438528 #0F60D2 · 0.348528 #084BA8 · 0.258528 #04377F`; `#2177F6` is `deriveKeyColor(Primary)`
 byte for byte. With the default `skew -20` the inner four become `0.691458 #74AAFD · 0.597234
 #468DFB · 0.416749 #0D5BC8 · 0.333539 #0748A2`, ends and prime unchanged. Warning (`hue 70, chroma
-100`) has `lPrime = 0.749941`, `s = 1`, `up` compressed to `0.063353`, `brightest = 0.94 #FFEAD4`,
-`dimmest = 0.479941 #9E6300`. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
+100`) has `lPrime = 0.749941`, `s = 1`, a clipped light side at `up = 0.073353`, and the `0.016647` it
+loses handed down to `down = 0.106647`: `brightest = 0.97 #FFF5EA`, `dimmest = 0.43 #8D5800`, span
+`0.54`. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
 
 ### 8.4 Migration (schema v4)
 

@@ -13,13 +13,22 @@
 // `solveOkhslHue`, since REQ-003's frozen legacy-ramp fixture depends on its exact current behaviour).
 // So at `primeChroma 100`, `prime` reproduces deriveKeyColor's hex EXACTLY (REQ-056) by construction —
 // `s = key.s`, `l = key.l`, `hue = key.h`, not approximately. The other six steps share this SAME `s`
-// and hue, only `l` varies, even in OKHSL `l`, edge-compressed into [PRIME_L_MIN, PRIME_L_MAX], bent by
+// and hue, only `l` varies, even in OKHSL `l`, held inside [PRIME_L_MIN, PRIME_L_MAX] = [0.14, 0.97], bent by
 // `skew` as a gamma on ladder position (REQ-053a) with `prime` and both ends fixed.
 //
 // The ladder's per-side step sizes come from `primeSteps` (REQ-051, ticket #641): the anchor stays
 // pinned at `key.l` (REQ-056's mechanism), so a hue whose cusp tone sits near a bound has less room
 // on that side than `PRIME_STEP` asks for. That shortfall is handed to the OTHER side rather than
 // silently shortening the ladder, so every hue at every chroma spans the full 6 x PRIME_STEP.
+//
+// PRIME_L_MAX is 0.97, not the 0.94 R1 originally ratified (raised 2026-09-17, ticket #655 folded
+// into #641 by owner ruling). 0.94 was BELOW the cusp construction's own reach: `lPrime` peaks at
+// 0.961183 (cam16 hue 109.75, chroma 0.75; the oklch peak is the same value at hue ~98), so for
+// yellow-green hues the ANCHOR itself fell outside the window and the light side inverted. The
+// ceiling must therefore clear 0.961183; 0.97 is the smallest round value that also keeps the three
+// light swatches DISTINCT in 8-bit hex at every swept hue/chroma in both hue spaces (0.962 collapses
+// all four light entries to one hex at the worst cell; 0.967 is the bare minimum and sits exactly on
+// the quantisation cliff). PRIME_L_MIN is unchanged.
 import { hctToRgb, peakC } from "./hct.js";
 import { okhslToRgb, rgbToOkhsl } from "./okhsl.js";
 import { effHue } from "./tonal.js";
@@ -27,7 +36,7 @@ import { effHue } from "./tonal.js";
 export const PRIME_STEPS = ["brightest", "brighter", "bright", "prime", "dim", "dimmer", "dimmest"];
 export const PRIME_STEP = 0.09;
 export const PRIME_L_MIN = 0.14;
-export const PRIME_L_MAX = 0.94;
+export const PRIME_L_MAX = 0.97;
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
@@ -38,13 +47,17 @@ const clamp01 = (v) => Math.min(1, Math.max(0, v));
 // by that side's own room — so the two sides are each internally even but differ from each other by
 // exactly the handed-over travel, and the total span stays 3*up + 3*down = 6 * PRIME_STEP.
 //
-// `roomUp + roomDown` is `(PRIME_L_MAX - PRIME_L_MIN) / 3` for ANY lPrime inside the bounds — 0.2667,
-// comfortably above the 0.18 the full span needs — so the receiving side always has the room, and at
-// most one side is ever clipped (a side clips only within PRIME_STEP*3 of its bound, and the two
-// bounds are further apart than that). An unclipped palette gets `short === 0` and is untouched.
+// `roomUp + roomDown` is `(PRIME_L_MAX - PRIME_L_MIN) / 3` for ANY lPrime inside the bounds —
+// 0.276667, comfortably above the 0.18 the full span needs — so the receiving side always has the
+// room, and at most one side is ever clipped (a side clips only within PRIME_STEP*3 of its bound, and
+// the two bounds are further apart than that). An unclipped palette gets `short === 0` and is
+// untouched. Each room is floored at 0 so that an anchor somehow outside the window can never credit
+// NEGATIVE travel to the other side (#655/F1); with PRIME_L_MAX 0.97 no such anchor exists — the
+// AC-050 (d4) gate asserts zero of them across the full sweep in both hue spaces — but a future
+// change to the cusp construction must not silently reintroduce an inverted ladder.
 export function primeSteps(lPrime) {
-  const roomUp = (PRIME_L_MAX - lPrime) / 3;
-  const roomDown = (lPrime - PRIME_L_MIN) / 3;
+  const roomUp = Math.max(0, (PRIME_L_MAX - lPrime) / 3);
+  const roomDown = Math.max(0, (lPrime - PRIME_L_MIN) / 3);
   let up = Math.min(PRIME_STEP, roomUp);
   let down = Math.min(PRIME_STEP, roomDown);
   const short = (PRIME_STEP - up) + (PRIME_STEP - down); // travel lost to clipping, 0 when neither clips
