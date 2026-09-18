@@ -252,7 +252,7 @@ incrementally.
 { "component":"text-input","layer":"component","role":"textbox(native)","replaces_native":false,
   "parts":["input"],"states":["focus","ov(map only)"],"keyboard":["native"],
   "forced_colors":"native","owns_outer_margin":false,
-  "flags":["shares the input (text/search) + select base style, styles.css:192"] }
+  "flags":["input (styles.css:192) shares its base style with select, across text/search variants"] }
 ```
 
 ### 7 · Search input
@@ -362,7 +362,7 @@ the canvas preview's `color-scheme`, not the chrome's.
 ### 14 · Contrast bar
 
 `.an-bar` `[ .an-bk label · .an-track[ .an-fill(.bad) · .an-thresh 4.5:1 line ] · b(pass/fail) ]`
-(`styles.css:326-340`). WCAG contrast viz with a fixed threshold line at 64.3%.
+(`styles.css:466-478`). WCAG contrast viz with a fixed threshold line at 64.3%.
 
 ### 15 · Hue wheel
 
