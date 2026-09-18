@@ -253,7 +253,7 @@ swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable incre
 
 Three unrelated "pill" stylings — a naming/coherence drift, not one primitive:
 - **`.tile-tag`** (`styles.css:291-302`) — non-interactive status badge on gallery tiles: palette
-  count + "preset"/"ago" (`app.js:726/727/836/837`); `pointer-events:none`, absolute over the thumb.
+  count + "preset"/"ago" (`app.js:726/727/810/811`); `pointer-events:none`, absolute over the thumb.
 - **`.damp-presets .preset`** (`styles.css:819-820`) — **interactive** preset chip (a `<button>`),
   pill radius, `.on` active state; rendered by `dampPresets()`.
 - **`.map-drift-sum`** (`styles.css:803-804`) — status pill: `.in-sync` (green) / `.has-drift`

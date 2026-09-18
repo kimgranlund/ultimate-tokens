@@ -1,7 +1,14 @@
 #!/usr/bin/env node
-// audit-citations.mjs -- the generative completeness predicate for #637 §6 filing item 1.
-// Run from the repo root:  node audit-citations.mjs  [--md | --json]
+// audit-citations.mjs -- the generative completeness predicate for #637 §6 filing item 1,
+// and a GATE: `test/repo/citations.mjs` runs it from `npm test`.
+// Run from the repo root:  node scripts/audit-citations.mjs  [--md | --json | --selftest]
 // Read-only: readFileSync + `git ls-files`. It writes nothing and mutates nothing.
+//
+// EXIT CODE (PR #658 review, finding 1): 1 when any audited doc has STALE > 0 lines, or
+// when a read/parse fails; 0 otherwise. `--md`/`--json` keep their output AND the same
+// exit semantics. `--selftest` exercises parseCitations() on literal strings and exits
+// nonzero on the first miss. `runAudit()` / `parseCitations()` / `staleLines()` are
+// exported so the gate imports the logic instead of scraping stdout.
 //
 // It answers two questions MECHANICALLY, so that §6's enumeration is generated rather
 // than hand-counted:
@@ -13,6 +20,10 @@
 //   CITATION  = `<file>.<ext>:<N>` anywhere in the doc, INCLUDING inside a fenced
 //               code block, or a bare `:<N>` whose file is the doc's own stated
 //               default (DOCS[].implied).  The ENUMERATION test alone skips fences.
+//               A range `:<N>-<M>` is one citation spanning N..M. A SLASH LIST
+//               `:<N>/<M>/<K>` (`app.js:726/727/836/837`) is one citation PER number:
+//               every member is checked and the doc line is STALE if any member is
+//               (PR #658 review, finding 2: only the first member used to be checked).
 //   ANCHOR    = a token on the CITING line specific enough to look for in the CITED
 //               line: a camelCase/PascalCase identifier, a `.class`/`#id`, or any
 //               identifier the doc writes as a call (`name(`) or as the citation's own
@@ -29,6 +40,7 @@
 
 import { readFileSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const DOCS = [
   { path: "docs/lld/app-shell.md", implied: "src/ui/app.js" },
@@ -73,8 +85,32 @@ function canvasViewValues() {
 }
 
 // ---------- citation extraction ----------
-const reExplicit = new RegExp(`([A-Za-z0-9_@./-]+\\.(?:${EXT})):(\\d+)(?:[-\u2013](\\d+))?`, "g");
-const reBare = /(?:^|[^A-Za-z0-9_./)\]])[:](\d{2,4})(?:[-\u2013](\d{2,4}))?\b/g;
+const reExplicit = new RegExp(`([A-Za-z0-9_@./-]+\\.(?:${EXT})):(\\d+)(?:[-\u2013](\\d+))?((?:/\\d+)+)?`, "g");
+const reBare = /(?:^|[^A-Za-z0-9_./)\]])[:](\d{2,4})(?:[-\u2013](\d{2,4}))?((?:\/\d{2,4})+)?\b/g;
+
+// One doc line -> its citations, each `{ cited, n, end, form, list }`. `cited` is the path as
+// written (an explicit one) or `implied`. A slash list yields one entry per member, each
+// carrying the whole list in `list` so the report can still show what the doc wrote.
+export function parseCitations(raw, implied) {
+  const cites = [];
+  const expand = (cited, n, end, slash, form) => {
+    const members = slash ? slash.split("/").filter(Boolean).map(Number) : [];
+    const list = members.length ? form : undefined;
+    cites.push({ cited, n, end, form: members.length ? form.slice(0, form.length - slash.length) : form, list });
+    const prefix = form.slice(0, form.indexOf(":") + 1);
+    for (const m of members) cites.push({ cited, n: m, end: m, form: `${prefix}${m}`, list });
+  };
+  let stripped = raw;
+  for (const m of raw.matchAll(reExplicit)) {
+    expand(m[1], +m[2], m[3] ? +m[3] : +m[2], m[4] || "", m[0]);
+    stripped = stripped.replace(m[0], " ".repeat(m[0].length));
+  }
+  for (const m of stripped.matchAll(reBare)) {
+    const form = `:${m[1]}${m[2] ? "-" + m[2] : ""}${m[3] || ""}`;
+    expand(implied, +m[1], m[2] ? +m[2] : +m[1], m[3] || "", form);
+  }
+  return cites;
+}
 const reExtTail = new RegExp(`\\.(?:${EXT})$`);
 const LIT = "~~LIT~~"; // sentinel prefix marking a literal code fragment rather than an identifier
 
@@ -154,6 +190,7 @@ function homesOf(anchor) {
 }
 
 // ---------- run ----------
+export function runAudit() {
 const VALUES = canvasViewValues();
 const report = { head: execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim(), canvasViewValues: VALUES, docs: {} };
 
@@ -178,13 +215,7 @@ for (const { path: doc, implied } of DOCS) {
         enums.push({ line: n, named, text: raw.trim() });
     }
 
-    const cites = [];
-    let stripped = raw;
-    for (const m of raw.matchAll(reExplicit)) {
-      cites.push({ cited: m[1], n: +m[2], end: m[3] ? +m[3] : +m[2], form: m[0] });
-      stripped = stripped.replace(m[0], " ".repeat(m[0].length));
-    }
-    for (const m of stripped.matchAll(reBare)) cites.push({ cited: implied, n: +m[1], end: m[2] ? +m[2] : +m[1], form: `:${m[1]}${m[2] ? "-" + m[2] : ""}` });
+    const cites = parseCitations(raw, implied);
     if (!cites.length) continue;
 
     // Anchors come from the citing line. If it carries none (a citation whose subject
@@ -201,7 +232,7 @@ for (const { path: doc, implied } of DOCS) {
     }
     for (const c of cites) {
       const target = resolvePath(c.cited);
-      const base = { line: n, form: c.form, cited: c.cited, target, anchors, anchorScope };
+      const base = { line: n, form: c.form, list: c.list, cited: c.cited, target, anchors, anchorScope };
       if (!target) { rows.push({ ...base, verdict: "NOFILE", detail: "cited path is not tracked" }); continue; }
       const tl = read(target);
       const homes = () => Object.fromEntries(anchors.map((a) => [a, homesOf(a).slice(0, 4)]).filter(([, h]) => h.length));
@@ -228,9 +259,47 @@ for (const { path: doc, implied } of DOCS) {
   }
   report.docs[doc] = { lines: lines.length, citations: rows, enumerations: enums };
 }
+return report;
+}
 
 const lineSet = (rows, pred) => new Set(rows.filter(pred).map((c) => c.line));
 const STALE = (c) => c.verdict.startsWith("STALE");
+// doc path -> sorted STALE doc-line numbers; the gate predicate is "every array empty".
+export function staleLines(report) {
+  return Object.fromEntries(Object.entries(report.docs).map(([doc, r]) => [doc, [...lineSet(r.citations, STALE)].sort((a, b) => a - b)]));
+}
+
+// ---------- --selftest: the parser on literal strings ----------
+export function selftest() {
+  const cases = [
+    ["`app.js:836/837`", "src/ui/app.js", [["app.js", 836, 836], ["app.js", 837, 837]]],
+    ["count + \"preset\"/\"ago\" (`app.js:726/727/836/837`)", "src/ui/app.js", [["app.js", 726, 726], ["app.js", 727, 727], ["app.js", 836, 836], ["app.js", 837, 837]]],
+    ["see :836/837 for the tags", "src/ui/app.js", [["src/ui/app.js", 836, 836], ["src/ui/app.js", 837, 837]]],
+    ["`:1656-1660` is the handler", "src/ui/app.js", [["src/ui/app.js", 1656, 1660]]],
+    ["`styles.css:114`", "src/ui/app.js", [["styles.css", 114, 114]]],
+    ["`styles.css:291-302` and `app.js:726`", "src/ui/app.js", [["styles.css", 291, 302], ["app.js", 726, 726]]],
+    ["no citation here, 12:30 is a clock", "src/ui/app.js", []],
+  ];
+  let failed = 0;
+  for (const [line, implied, want] of cases) {
+    const got = parseCitations(line, implied).map((c) => [c.cited, c.n, c.end]);
+    const ok = JSON.stringify(got) === JSON.stringify(want);
+    if (!ok) failed++;
+    console.log(`  ${ok ? "✓" : "✗"} parseCitations(${JSON.stringify(line)}) -> ${JSON.stringify(got)}${ok ? "" : ` (want ${JSON.stringify(want)})`}`);
+  }
+  return failed;
+}
+
+function main() {
+if (process.argv.includes("--selftest")) {
+  const failed = selftest();
+  console.log(failed ? `✗ selftest: ${failed} case(s) failed` : "✓ selftest: parseCitations cases pass");
+  process.exit(failed ? 1 : 0);
+}
+let report;
+try { report = runAudit(); }
+catch (e) { console.error(`✗ audit-citations: ${e.message}`); process.exit(1); }
+const VALUES = report.canvasViewValues;
 
 if (process.argv.includes("--json")) {
   console.log(JSON.stringify(report, null, 2));
@@ -278,3 +347,10 @@ if (process.argv.includes("--json")) {
     console.log();
   }
 }
+
+const stale = Object.values(staleLines(report)).reduce((n, v) => n + v.length, 0);
+if (stale && !process.argv.includes("--json")) console.log(`✗ ${stale} STALE citation line(s); exit 1`);
+process.exit(stale ? 1 : 0);
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main();
