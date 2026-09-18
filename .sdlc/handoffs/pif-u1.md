@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Unit | U1 (M) anchor field + `prime.DEFAULT` byte-exact, plan `preset-intent-fidelity` (ticket #681) |
-| Branch | unit/pif-u1-anchor @ d9f375b7d8b5f2e96d2ae40452fc2ce4e8658e24 (post FIX-FIRST fold; see below) |
-| Base | bf2aaf659fde4db3bddaed8dfa23e2f485ab2c46 (`git merge-base HEAD origin/main`, post-rebase; unchanged by the fold — no further rebase happened) |
+| Branch | unit/pif-u1-anchor @ e2e8a43af484b8a9b3055e3050a94a4afb0fd7e1 (post N1 fold, rebased onto plan tip `690b0a1`) |
+| Base | bf2aaf659fde4db3bddaed8dfa23e2f485ab2c46 (`git merge-base HEAD origin/main`; unchanged across both rebases — `origin/main` has since moved further to `7390aff` via #638/#674, but the PLAN branch this unit rebases onto has not yet absorbed that advance) |
 | Grade | l3 |
-| Ran (post-fold) | `npm test` ✅ (48/48) · `node scripts/audit-citations.mjs` ✅ (exit 0, 0 STALE) · `node test/repo/branding.mjs` ✅ (`branding: clean (446 files scanned)`) · `git status --short` ✅ (empty after every run) |
+| Ran (post-rebase-onto-690b0a1) | `npm test` ✅ (48/48) · `node scripts/audit-citations.mjs` ✅ (exit 0, 0 STALE) · `node test/repo/branding.mjs` ✅ (`branding: clean (446 files scanned)`) · `git status --short` ✅ (empty after every run) · rebase itself produced ZERO conflicts (`git rebase origin/plan/preset-intent-fidelity` from `690b0a1` fast-replayed all three of this unit's commits cleanly) |
 | Left out | Ramp anchor (U2), chroma envelope (U3), ladder metric/L* rewrite (U6), Reset UI action (U2's C12), records (U5) — none touched |
 
 ## FIX-FIRST fold (review `scratchpad/pif-u1-review-1.md`, 🔴 verdict, folded 2026-09-18)
@@ -108,6 +108,24 @@ verified against the current file content at each destination line, not guessed)
 
 F4, F5, F6 from the first review stand as written (Low, handoff-note-only, unchanged by either fold).
 
+## Owner-ruled acceptance: hex inequality is the bar, not channel distance
+
+Measured directly against the shipped corpus (`primeSwatches(...)`, `primeChroma` 100), for the
+record rather than only in the review file:
+
+- The 4 `DUPE_ALLOW` presets (`anchor-ladder dupe-allow-list`, see above) repeat `prime` and
+  `dimmest` BYTE-IDENTICALLY (same hex, not merely close): `#1E211E`, `#201F25`, `#211E27`,
+  `#1E2024` each render `prime.hex === dimmest.hex` exactly.
+- Beyond those 4, **53 of the 3,380** anchored ladders have an adjacent non-`prime` rung pair (two
+  consecutive steps on the same side, e.g. `dim`/`dimmer`) whose sRGB channels differ by at most 2
+  units on every channel (0 < max-channel-delta ≤ 2) while still being distinct hexes — visually
+  near-identical but not the byte-identity F1's gate forbids.
+- The owner's ruling: hex inequality is the acceptance bar for this unit, not a minimum channel
+  distance. The 4 are accepted as F1's own named, counted exception (real, physical floor-of-the-
+  window coincidence); the 53 pass `anchor-ladder` as-is (distinct hexes, correctly ordered) and are
+  not a defect under this ruling — recorded here so a future near-duplicate complaint against one of
+  the 53 is read against this ruling rather than as a fresh U1 regression.
+
 ## Rebase note (superseding the original build's drift notes below)
 
 This unit was rebased once, on team-lead instruction, from its original base `cf8e61a` onto
@@ -136,6 +154,13 @@ it now sits on) shows the same 27 files as the original build, byte-for-byte the
 deletion shape modulo the generated artifacts' regenerated content. No contrast-ratio figures are
 quoted anywhere in this document (the one place the team-lead flagged that risk) — U1's own criteria
 never touch contrast.
+
+**Second rebase (this pass):** after the FIX-FIRST and N1 folds, rebased again from `362cc48` onto
+`origin/plan/preset-intent-fidelity @ 690b0a1` (plan-only commits since the first rebase; `origin/main`
+has separately advanced to `7390aff` via #638/#674, but the plan branch has not yet absorbed that).
+`git rebase origin/plan/preset-intent-fidelity` replayed all three of this unit's post-rebase commits
+(the FIX-FIRST fold, its own handoff-sha follow-up, and N1) with **zero conflicts** — `git merge-base
+HEAD origin/main` stays `bf2aaf6`, unchanged.
 
 ## Base-count note (adapter.md §1 baseline drift, from the original build — still accurate)
 
