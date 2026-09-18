@@ -4,7 +4,7 @@ unit: U6 (M) prime ladder steps equally in perceived lightness
 plan: preset-intent-fidelity (ticket #681, P1)
 branch: unit/pif-u6-ladder
 written: 2026-09-18
-status: gates green, rebased onto origin/plan/preset-intent-fidelity @ 6429c49, review passes 1-3 folded, gamut-ceiling gate added per owner ruling and given a real negative control
+status: gates green, rebased onto origin/plan/preset-intent-fidelity @ 690b0a1, review passes 1-3 folded, gamut-ceiling gate added per owner ruling and given a real negative control
 ---
 
 # U6 handoff: prime ladder steps equally in perceived CIE L*, held CAM16 chroma
@@ -191,30 +191,49 @@ plus two corrections the team lead relayed after their own re-check:
   smaller 151,200-rung sweep (327/151,200 vulnerable, in this file's run context) rather than the full
   302,400-rung one, per the cost finding above.
 
-## Commits (post-rebase, plus the gamut-ceiling, review-pass-2, and review-pass-3 folds)
+## Commits (post-rebase onto plan tip 690b0a1, plus the gamut-ceiling, review-pass-2, and review-pass-3 folds)
 
-- `c286d40` feat(prime): ladder steps equally in perceived CIE L*, held CAM16 chroma (#681 U6)
-- `b0e2adb` test(prime): cite the d5 frozen snapshot's capture commit (#681 U6)
-- `ac93f2b` docs(sdlc): U6 handoff for #681 prime ladder (#681 U6)
-- `d922aaf`/`a5e5986`/`f9fb08e` review pass 1 fold (S1-S7, see above)
-- `7cd5e2e` test(prime): pin a numeric gamut-ceiling gate per owner ruling (#681 U6)
-- `8b9400d` docs(sdlc): fold the gamut-ceiling ruling into the U6 handoff (#681 U6)
-- `3fe82d9` fix(prime): close the anchor-path determinism hazard, assert hex identity (#681 U6 review
+- `2e73ef4` feat(prime): ladder steps equally in perceived CIE L*, held CAM16 chroma (#681 U6)
+- `578ed03` test(prime): cite the d5 frozen snapshot's capture commit (#681 U6)
+- `486ab0e` docs(sdlc): U6 handoff for #681 prime ladder (#681 U6)
+- `d087416` docs(sdlc): update U6 handoff for the rebase onto plan tip 6429c49 (#681 U6)
+- `ea5fc08`/`cded82e` review pass 1 fold (S1-S7, see above)
+- `7e23cb3` test(prime): pin a numeric gamut-ceiling gate per owner ruling (#681 U6)
+- `eb3386c` docs(sdlc): fold the gamut-ceiling ruling into the U6 handoff (#681 U6)
+- `fcd2f19` fix(prime): close the anchor-path determinism hazard, assert hex identity (#681 U6 review
   pass 2)
-- `49ac4e7` docs(sdlc): fold review pass 2 into the U6 handoff (#681 U6)
-- `3a9e6bb` test(prime): give the gamut-ceiling gate a real negative control (#681 U6 review pass 3)
+- `249f71d` docs(sdlc): fold review pass 2 into the U6 handoff (#681 U6)
+- `e0606b3` test(prime): give the gamut-ceiling gate a real negative control (#681 U6 review pass 3)
+- `b26ce28` docs(sdlc): fold review pass 3 into the U6 handoff (#681 U6)
 
-`head: 3a9e6bb` (pending this handoff commit). `base: bf2aaf6` (`git merge-base HEAD origin/main`,
-re-measured after rebasing onto
-`origin/plan/preset-intent-fidelity` @ `6429c49`, per team-lead instruction). Rebased cleanly, no
-conflicts (`git rebase origin/plan/preset-intent-fidelity`). Re-read `.sdlc/plans/preset-intent-fidelity.md`
-at the new tip: U6's own unit bullet (line 223-224) is byte-identical to what this unit was built
-against — revisions 7 and 8 on the rebased plan branch are both in U3's text, confirmed via
-`git diff fb3ad33 6429c49 -- .sdlc/plans/preset-intent-fidelity.md`. No changes needed as a result.
-No further rebase has happened since (rev9 plan tip not yet sent).
+`head: b26ce28` (pending this handoff commit). `base: bf2aaf6` (`git merge-base HEAD origin/main`,
+unchanged across all three rebases). Rebased cleanly a third time, no conflicts
+(`git fetch origin && git rebase origin/plan/preset-intent-fidelity`, new tip `690b0a1`). Re-read
+`.sdlc/plans/preset-intent-fidelity.md` at the new tip: U6's own unit bullet (line 223-224) is still
+byte-identical to what this unit was built against. `690b0a1`'s own commit ("route the stale Panda
+EX-1 prime-ladder literal to U5") is revision 10, confirming what this handoff's STOP-and-report
+section already flagged: the stale `docs/spec/spec-panda-park-ui-exports.md` EX-1 literal is now
+formally in U5's file list. No action needed here.
 
-Original (pre-rebase) commits, superseded by the rebase: `766478b`/`9bbfe0a`/`95355a5` (same content,
-different shas after the rebase rewrote parent history).
+**Flagging, not fixing (plan text vs. shipped code):** revision 9's C11 gamut-ceiling clause (line 210)
+still states the ORIGINAL, pre-any-fix framing — a percentage format
+(`gamut-ceiling: 1288 of 302400, 0.43% (ceiling 0.5%)`, FAIL above 0.5%) and a negative control of
+"disable the `maxChromaInGamut` fallback (hold C unconditionally on every rung)" — none of which
+matches what review passes 1-3 actually ruled and what is shipped: a raw-count ceiling (not a
+percentage), pinned at 0 (not 1,288/0.43%, since the S3/S-anchor fixes eliminate the violations on
+this head), with a negative control that swaps in hct.js's SHARED, truncated-key cache
+(`vulnPrimeSwatches`), not a "disable the fallback entirely" construction (which would trivially blow
+past any ceiling and prove nothing about the actual collision bug this criterion exists to catch).
+This looks like the plan text predates review pass 3's fold and simply hasn't been given a revision
+11 yet — I have not changed the shipped gate to match the stale plan wording, since the direct,
+more recent rulings (relayed to me directly, after revision 9 was written) are what I built to; noting
+it here per STOP-and-report so the Orchestrator can reconcile the plan text, the same way S4's
+plan-defect flag from review pass 1 was later resolved by revision 10.
+
+Original (pre-rebase) commits, superseded by the two earlier rebases: `766478b`/`9bbfe0a`/`95355a5`
+(original), then `c286d40`/`b0e2adb`/`ac93f2b`/`d922aaf`/`a5e5986`/`f9fb08e`/`7cd5e2e`/`8b9400d`/
+`3fe82d9`/`49ac4e7`/`3a9e6bb`/`cba5656` (post-second-rebase, superseded by this third rebase) — same
+content, different shas each time the rebase rewrote parent history.
 
 ## Scope note (read this first)
 
@@ -375,11 +394,10 @@ comparable to the plan's corpus-scale numbers, reported for scale only.
 
 ## Risks / open items
 
-1. **Rebase: done.** Rebased onto `origin/plan/preset-intent-fidelity` @ `6429c49` (team-lead
-   instruction, two messages: first naming `362cc48`, superseded by `6429c49` before I acted on the
-   first). Clean rebase, no conflicts, three commits reapplied with new shas (see Commits above). Full
-   `npm test` re-run post-rebase: green, 47/47, tree clean. `audit-citations.mjs` STALE 0,
-   `branding.mjs` clean.
+1. **Rebase: done, three times.** `362cc48` (superseded before I acted) → `6429c49` → `690b0a1` (this
+   fold), each a clean rebase, no conflicts, all commits reapplied with new shas each time (see
+   Commits above). Full `npm test` re-run after every rebase: green, 47/47, tree clean.
+   `audit-citations.mjs` STALE 0, `branding.mjs` clean, on all three heads.
 2. `.sdlc/questions/pif-u6.md`: the clipped-default numbers disagreement (Tertiary/Danger/Warning).
    Team lead: "routed to the owner; assume option 1 stands unless I say otherwise" — option 1 (keep U6
    standalone, assert the measured cusp-anchor clip set, with an explicit Tertiary/Danger-unclipped
