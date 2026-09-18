@@ -4,10 +4,59 @@ unit: U6 (M) prime ladder steps equally in perceived lightness
 plan: preset-intent-fidelity (ticket #681, P1)
 branch: unit/pif-u6-ladder
 written: 2026-09-18
-status: gates green, rebased onto origin/plan/preset-intent-fidelity @ 6429c49
+status: gates green, rebased onto origin/plan/preset-intent-fidelity @ 6429c49, review pass 1 folded
 ---
 
 # U6 handoff: prime ladder steps equally in perceived CIE L*, held CAM16 chroma
+
+## Review pass 1 (fresh-context reviewer, 🔴 FIX-FIRST against head ac93f2b) — folded
+
+Report: kept by the team lead, not committed to this branch. All findings addressed:
+
+- **S1 (blocking).** The `symmetry` negative control read `origin/main` live via `git show` at
+  test-run time, which reds `npm test` in PR CI (no `origin/main` ref on a `pull_request` checkout) and
+  permanently on `main` after this unit's own squash-merge. Fixed: vendored
+  `test/engine/fixtures/prime-pre-681.mjs`, a frozen, committed copy of `src/engine/prime.mjs` at
+  `origin/main` blob `c744fb8` (commit `9195773`), imported statically. Same discipline as `d5`'s frozen
+  hex snapshot. Re-verified: same 295/464 exceed-3L* count as the live version.
+- **S2 (blocking for C5).** `ladder-window` printed 0 on the false premise that C5's 21-name corpus was
+  U1-only data. It is not: the source hexes are shipped now, under
+  `docs/reference/colors/categories/*.json` `palettes[].swatches[].hex`. Fixed: `mapColorsRoles` in
+  `test/engine/prime.mjs` independently re-derives `scripts/gen-categories.mjs`'s own six-role mapping
+  from the raw swatch data (never calling the generator), iterates all eight category files, and asserts
+  both the count (21) and the exact (category, role, hex) triple set against C5's canonical list. Every
+  hex and role matches C5 character for character.
+- **S3 (🟡, escalated).** `inGamut: false` (including on the prime rung) surfaced because
+  `maxChromaInGamut`/`peakC` (`src/engine/hct.js`) memoize on `hue.toFixed(2)`, a coarser key than the
+  float hues this ladder renders at per rung. Investigating the reviewer's suggested epsilon-shave fix
+  surfaced something bigger: the SAME shared-cache bucketing makes two calls to `primeSwatches` for the
+  identical logical palette return DIFFERENT hex values depending on what else had rendered earlier in
+  the same process — reproduced directly as a break of `test/engine/exports.mjs`'s REQ-043
+  theme-independence check (`exportPanda({...state, theme:'light'})` disagreeing with the same call
+  under `theme:'auto'`, purely from an unrelated `exportPanda` call for a different fixture running in
+  between and evicting/repopulating the shared cache). An epsilon nudge conditioned on the observed
+  `inGamut` flag does not fix this, because `inGamut` itself is cache-order-dependent. Fixed properly:
+  `localMaxChroma` in `prime.mjs`, a private, UNCACHED reimplementation of `maxChromaInGamut`'s own
+  binary search, used only inside `primeSwatches` — a genuinely pure function of `(hue, tone)` alone, no
+  cross-call interference possible. Gate (c) widened to a hueShift x skew x both-space sweep (matching
+  the reviewer's reproduction scale) and the REQ-043 scenario re-verified directly: 0 violations over
+  54,000 palettes / 378,000 swatches, and `exportPanda` under `light`/`dark`/`auto` now byte-identical
+  again even with an intervening unrelated export call.
+- **S4 (🟡).** Confirmed as described: `docs/spec/spec-muted-base-key-spikes.md`,
+  `docs/lld/lld-muted-base-key-spikes.md`, and `docs/spec/spec-panda-park-ui-exports.md` are now stale
+  and none is in U5's file list (`.sdlc/plans/preset-intent-fidelity.md:225-226`). This is a plan edit,
+  not a unit edit — reported to the team lead / Orchestrator to add to U5's scope; not changed here.
+- **S5.** `.sdlc/questions/pif-u6.md` amended: the clipped-defaults trip-wire stays green through a
+  plain U1 merge (unknown fields forwarded harmlessly) and only reds on the actual U1+U6 integration
+  edit to `prime.mjs` — stated explicitly now so a green `npm test` right after a U1 merge is not
+  mistaken for "the ladder is anchored."
+- **S6 (🟢 note).** No action — expected pre-U1 state, cited as-is (five default families ship a
+  collapsed prime ladder under cusp anchors; Q2(b)'s minted anchors are the cure, per U1).
+- **S7 (🟢 low).** `test/engine/prime.mjs`'s d5 capture-commit citation re-pointed from the pre-rebase
+  `766478b` to `c286d40`. The handoff's test-file count was already corrected to 47 in the prior
+  (rebase) update.
+
+New file: `test/engine/fixtures/prime-pre-681.mjs` (frozen negative-control fixture, S1).
 
 ## Commits (post-rebase)
 
@@ -33,9 +82,12 @@ alone, and say so in the handoff." Concretely: `src/engine/prime.mjs`'s ladder a
 `peakC(baseHue).tone` (the cusp key colour's own CIE L\*, unchanged from pre-#681), not U1's minted
 source hex. This has two knock-on effects, both surfaced below and in `.sdlc/questions/pif-u6.md`:
 
-1. The plan's C5 "ladder-window allow-list: 21 (expected 21)" needs U1's source-anchored corpus data,
-   not available here. This branch's own `ladder-window` gate honestly reports 0 (the cusp anchor's own
-   range is [32, 96] L\*, measured, comfortably inside the [12.25, 96.88] window) and documents why.
+1. ~~The plan's C5 "ladder-window allow-list: 21 (expected 21)" needs U1's source-anchored corpus
+   data~~ — CORRECTED in review pass 1 (S2, false premise): C5's 21-name list is a property of the
+   already-shipped curated corpus source swatches (`docs/reference/colors/categories/*.json`), not of
+   U1's `anchor` field. `ladder-window` now iterates that corpus directly and matches C5's list exactly
+   (count and every name). The cusp anchor's own [32, 96] L\* range (comfortably inside the ladder
+   window) is a separate, true fact about `primeSwatches`'s ANCHORS, unrelated to this gate's real job.
 2. The dispatch's pinned clipped-default spans (Tertiary/Danger/Warning at 52.8/49.9/46.3 L\*) are
    computed against U1's anchors and do not reproduce on the cusp anchor: Tertiary and Danger are
    UNCLIPPED here (span 54 exactly), and Warning clips to 45.77, not 46.3. `test/engine/prime.mjs`
@@ -78,12 +130,15 @@ chroma (the code was already domain-agnostic — only the comment and tolerance 
 measured property change, not a test bug); new gate (k) verifies the chroma-hold property from measured
 pixels (`cam16FromRgb`, not the internal `.s` field), skipping near-neutral cases (measured prime chroma
 < 3 CAM16 units) the same way (e)/(f)'s hue tolerance already skips near-neutral hue noise; new
-`ladder-window` gate (honest 0 here, negative-controlled against a synthetic narrow window); new
-`symmetry` gate: by-construction `|up-down| <= 1e-9` (0 failures, 464 cases: 16 defaults + hue 0..359
-step 5 x chroma {0,50,100}, both hue spaces) and pixel-measured `<= 3 L*` (0 exceptions, max measured
-asymmetry 0.518 L\*), with a negative control that dynamically imports `origin/main`'s `prime.mjs`
-(via `git show`, imports rewritten to this worktree's unchanged `hct.js`/`okhsl.js`/`tonal.js`) over the
-SAME sweep and confirms it FAILS: 295/464 cases exceed 3 L\*, max asymmetry 52.01 L\*.
+`ladder-window` gate (iterates the real curated corpus, review pass 1 S2 — see below); new `symmetry`
+gate: by-construction `|up-down| <= 1e-9` (0 failures, 464 cases: 16 defaults + hue 0..359 step 5 x
+chroma {0,50,100}, both hue spaces) and pixel-measured `<= 3 L*` (0 exceptions, max measured asymmetry
+0.518 L\*), with a negative control against a FROZEN fixture, `test/engine/fixtures/prime-pre-681.mjs`
+(a committed, byte-for-byte copy of `origin/main`'s pre-#681 `prime.mjs` at blob `c744fb8`, imports
+rewritten to this worktree's unchanged `hct.js`/`okhsl.js`/`tonal.js`; review pass 1 S1 — a first pass
+read `origin/main` live via `git show` at test-run time, which reds `npm test` in PR CI and permanently
+on `main` after this unit's own squash-merge) over the SAME sweep, confirming it FAILS: 295/464 cases
+exceed 3 L\*, max asymmetry 52.01 L\*.
 
 **Why (e)/(f) moved to CAM16 hue.** The old construction rendered every non-prime rung through
 `okhslToRgb(hue, s, l)` at a fixed OKHSL hue, so the rendered pixel's measured OKLCH hue stayed fairly
@@ -134,8 +189,8 @@ doesn't check). This is plan unit U5's territory ("records") per the plan's own 
 | Criterion | Command | Observed | Negative control |
 |---|---|---|---|
 | C1 `npm test` green | `npm test` | exit 0, `✓ all 47 test files passed` (46 pre-rebase; 47 post-rebase — the extra registered file came from upstream #662/#674 work already on the rebased plan branch, not from this unit, which adds no new registered test file); `git status --short` empty after the rebase and after two further consecutive runs (byte-stable); `node scripts/audit-citations.mjs` STALE 0 everywhere; `node test/repo/branding.mjs` clean (446 files) | not re-run here (owned by C1's own negative control in `.sdlc/adapter.md` §1 — corrupt role-table.json, expect 17 FAIL — out of my unit's scope to re-verify; my own red-then-green is below) |
-| C5 (ladder half) | `node test/engine/prime.mjs`, gate `ladder-window` | `ladder-window allow-list: 0 (expected 0 on this branch...)` — see Scope note above for why this is 0, not 21 | synthetic [40,60] narrow window inside the same gate: found a large non-zero out-of-window count, proving the filter isn't vacuous |
-| C11 symmetry | `node test/engine/prime.mjs`, gate `symmetry` | by-construction: 0/464 fails, `|up-down|` exactly 0 every case. Measured (pixel `lstarFromRgb`): 0/464 exceed 3 L\*, max measured asymmetry 0.518 L\* | origin/main's `prime.mjs` (pre-#681 redistribute rule), same 464-case sweep, dynamically imported via `git show`: 295/464 exceed 3 L\*, max asymmetry 52.01 L\* — FAILS as required |
+| C5 (ladder half) | `node test/engine/prime.mjs`, gate `ladder-window` | `ladder-window allow-list: 21 (expected 21)` — iterates every swatch across `docs/reference/colors/categories/*.json`, re-derives the six-role mapping independently, matches C5's 21-name list on (category, role, hex) exactly (review pass 1 S2; superseded the false-premise "0" this gate printed before review) | synthetic [40,60] narrow window inside the same gate: found more than 21 out-of-window cases, proving the filter discriminates on the window bounds |
+| C11 symmetry | `node test/engine/prime.mjs`, gate `symmetry` | by-construction: 0/464 fails, `|up-down|` exactly 0 every case. Measured (pixel `lstarFromRgb`): 0/464 exceed 3 L\*, max measured asymmetry 0.518 L\* | the frozen `prime-pre-681.mjs` fixture (pre-#681 redistribute rule), same 464-case sweep: 295/464 exceed 3 L\*, max asymmetry 52.01 L\* — FAILS as required (review pass 1 S1: this control previously read `origin/main` live via `git show`, now a committed fixture) |
 
 Red-then-green, every gate: before my `src/engine/prime.mjs` edit, `node test/engine/prime.mjs` threw a
 `SyntaxError` (`PRIME_STEP` no longer exported) — the RED state, since I edited the engine before the
@@ -167,11 +222,13 @@ present in this worktree. `npm run smoke` was not run for the same reason (touch
 ## Re-measured figures versus the plan
 
 See `.sdlc/questions/pif-u6.md` for the full table. Summary: PRIME_L_MIN/MAX (12.250030101522825 /
-96.88492823209958) match the plan's stated [12.25, 96.88]. The 373±5/2,034±10 corpus figures (C11) and
-the 21-name ladder-window allow-list (C5) are properties of the U1 source-anchored corpus and were not
-re-measured here (this branch has no source-anchored corpus); this branch's own 464-case sweep (16
-defaults + hue×chroma×hueSpace) found 0 symmetry exceptions (vs. origin/main's 295) and 164 ladders
-under 30 L\* span — not directly comparable to the plan's corpus-scale numbers, reported for scale only.
+96.88492823209958) match the plan's stated [12.25, 96.88]. The 21-name ladder-window allow-list (C5) IS
+re-measured here (review pass 1 S2), matching the plan exactly — see the Criteria table above. The
+373±5/2,034±10 corpus-scale figures (C11's ladders-under-30-L\*-span and the negative-control exception
+count) remain properties of the full 3,780-palette anchored corpus and were not re-measured at that
+scale here; this branch's own 464-case sweep (16 defaults + hue×chroma×hueSpace) found 0 symmetry
+exceptions (vs. the frozen pre-#681 fixture's 295) and 164 ladders under 30 L\* span — not directly
+comparable to the plan's corpus-scale numbers, reported for scale only.
 
 ## Risks / open items
 
@@ -187,16 +244,31 @@ under 30 L\* span — not directly comparable to the plan's corpus-scale numbers
 3. For U2/U3 (parallel units): U6 does not touch `src/engine/tonal.js` or `scripts/gen-categories.mjs`'s
    lift fitting (out of lane, untouched, checked via `git diff --stat`). U6's `prime.mjs` rewrite is
    independent of U2/U3's ramp-envelope work; no shared functions changed.
-4. Stale docs/spec listed above need U5 (or a dedicated docs pass) once U1–U3 land and the real numbers
-   settle, since several of these files' formulas would need to describe the ANCHORED case too, not
-   just Q8/Q9's ladder change in isolation.
+4. Stale docs/spec listed above (see "STOP-and-report" — `docs/spec/spec-muted-base-key-spikes.md`,
+   `docs/lld/lld-muted-base-key-spikes.md`, `docs/spec/spec-panda-park-ui-exports.md`) need U5 (or a
+   dedicated docs pass) once U1–U3 land and the real numbers settle. Review pass 1 S4: NONE of these
+   three files is currently in U5's file list
+   (`.sdlc/plans/preset-intent-fidelity.md:225-226`) — a plan defect, not a unit defect. Needs the
+   Orchestrator to add them to U5's scope; not editable from this unit.
+5. `src/engine/hct.js`'s `maxChromaInGamut`/`peakC` memoization (`hue.toFixed(2)` cache keys) is a
+   latent, PRE-EXISTING correctness/determinism risk in shared engine code, surfaced by U6's own S3 fix
+   but not specific to `prime.mjs`: ANY caller that computes a gamut cap for a fractional, densely-swept
+   hue (e.g. a future chroma envelope or gamut-mapping pass in U3) can hit the same cache-bucket
+   collision. `prime.mjs` now works around it locally (`localMaxChroma`, uncached); `hct.js` itself is
+   unchanged and the underlying bug still exists for every OTHER caller of `maxChromaInGamut`/`peakC`.
+   Worth a ticket of its own (out of this unit's lane — `hct.js` is not a U6 scope file).
 
 ## Files changed
 
-- `src/engine/prime.mjs` (rewritten)
-- `test/engine/prime.mjs` (rewritten)
+- `src/engine/prime.mjs` (rewritten; review pass 1: `localMaxChroma` replaces the shared-cache
+  `maxChromaInGamut` call inside `primeSwatches`, S3)
+- `test/engine/prime.mjs` (rewritten; review pass 1: frozen fixture import replaces the live `git show`
+  negative control (S1), `ladder-window` iterates the real corpus (S2), gate (c) widened (S3), d5
+  citation re-pointed (S7))
+- `test/engine/fixtures/prime-pre-681.mjs` (new, review pass 1 S1 — frozen pre-#681 `prime.mjs`, vendored
+  from `origin/main` blob `c744fb8`)
 - `test/engine/exports.mjs` (two literals + comment, mechanical re-pin)
 - `docs/reference/data/adia-oklch-export.css`, `docs/reference/data/adia-radix-export.mjs`,
   `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js` (regenerated)
-- `.sdlc/questions/pif-u6.md` (new)
+- `.sdlc/questions/pif-u6.md` (new; amended review pass 1 S5)
 - `.sdlc/handoffs/pif-u6.md` (this file)

@@ -67,3 +67,21 @@ Route to the plan owner / U1 builder: confirm option (1) is acceptable as an int
 the U1+U6 integration (whoever rebases U6 onto U1's `anchor` field) is expected to replace
 `CLIPPED_DEFAULTS` and the Tertiary/Danger-unclipped assertion in `test/engine/prime.mjs` with the
 plan's original post-U1 numbers (52.8 / 49.9 / 46.3 L\* for Tertiary / Danger / Warning) at that time.
+
+## Ruling (team lead, 2026-09-18)
+
+Routed to the owner; option (1) stands unless told otherwise. No code change made under this ruling —
+`test/engine/prime.mjs` already ships option (1) as described above.
+
+## Amendment (2026-09-18, review pass 1, finding S5)
+
+The fresh-context reviewer found the trip-wire weaker than the "Ask" above implies: `primeSwatches`
+forwards a palette object it doesn't recognise every field of, so once U1 adds `defaults[].anchor` to
+`role-table.json`, **`CLIPPED_DEFAULTS` and the Tertiary/Danger-unclipped assertion stay GREEN on this
+branch's own construction even after that merge** — they only go red once someone actually wires an
+anchor branch into `src/engine/prime.mjs` (the U1+U6 integration edit itself), because until then
+`primeSwatches` keeps reading the cusp tone regardless of whether `anchor` is present on the palette.
+So: green on `CLIPPED_DEFAULTS` after a plain U1 merge does NOT mean U6's construction is anchor-aware —
+it means nothing changed yet. Whoever does the U1+U6 integration must not treat a green `npm test`
+immediately after merging U1 as evidence the ladder is anchored; the replacement described in "Ask"
+above is a real code change to `prime.mjs`, not just a data change to `role-table.json`.
