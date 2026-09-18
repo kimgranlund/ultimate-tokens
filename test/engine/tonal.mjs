@@ -987,9 +987,13 @@ for (const mode of ["perceptual", "peak"]) {
 //    corpus palettes differ between the two, and the gap is not noise (architecture "The Barbican
 //    Estate · 1976 · C" primary: raw chroma 33, resolved ramp chroma 100). Proof this matters: pointed
 //    at the pre-U3 base (362cc48) the RAW-chroma method reports 0 upticks in every mode; the RENDERED
-//    method on the same base reports 11 perceptual (worst +0.5105 L*) and 46 peak (worst +0.8312 L*),
-//    reproducing the plan's own #668 figures exactly, named witnesses included. Only the rendered
-//    method is a real gate; keep it that way.
+//    method on the same base reports 11 perceptual (worst +0.5105 L*) and 46 peak (worst +0.8312 L*)
+//    AFFECTED PALETTES on the 25-stop export ramp (43 peak on the 19-stop display ramp), reproducing
+//    the plan's own #668 figures exactly, named witnesses included. The gate's own `upticks` counters
+//    below sum BOTH stop sets, so they print 22 perceptual and 89 peak (GATECOUNTER), not 11/46 — the
+//    two figures answer different questions (palettes-affected-on-one-ramp vs. total-ramps-flagged
+//    across both) and are not a typo of one another. Only the rendered method is a real gate; keep it
+//    that way.
 {
   // C7 — mechanical. One definition, three total appearances (the definition itself plus its two call
   // sites, one per path's precomputed envelopeAt map), zero of the old two-argument dampAmp expression.
