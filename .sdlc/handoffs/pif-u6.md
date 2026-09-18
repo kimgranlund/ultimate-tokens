@@ -4,7 +4,7 @@ unit: U6 (M) prime ladder steps equally in perceived lightness
 plan: preset-intent-fidelity (ticket #681, P1)
 branch: unit/pif-u6-ladder
 written: 2026-09-18
-status: gates green, rebased onto origin/plan/preset-intent-fidelity @ 6429c49, review pass 1 folded
+status: gates green, rebased onto origin/plan/preset-intent-fidelity @ 6429c49, review pass 1 folded, gamut-ceiling gate added per owner ruling
 ---
 
 # U6 handoff: prime ladder steps equally in perceived CIE L*, held CAM16 chroma
@@ -58,18 +58,43 @@ Report: kept by the team lead, not committed to this branch. All findings addres
 
 New file: `test/engine/fixtures/prime-pre-681.mjs` (frozen negative-control fixture, S1).
 
-## Commits (post-rebase)
+## Gamut-ceiling criterion (owner ruling, folded after review pass 1)
+
+The owner ruled: the reviewer's pre-S3 count of 1,288/302,400 out-of-gamut rungs is accepted,
+ship as is; a rev9 of the plan adds a numeric ceiling criterion on U6 for exactly that count;
+gate it by measuring the count on my own folded head (not by re-asserting the reviewer's 1,288
+figure, which described the PRE-S3 head, not mine) and assert it does not exceed what I measure.
+
+- **What I pinned:** `PINNED_GAMUT_CEILING = 0` in `test/engine/prime.mjs` (new `gamut-ceiling` gate).
+- **How derived:** reused gate (c)'s widened sweep, now run at full precision (hue step 1, matching
+  the reviewer's own reproduction exactly: hue 0..359 x chroma {25,50,75,100} x hueShift {0,±10,±20}
+  x skew {0,±40} x both hue spaces = 43,200 palettes x 7 rungs = 302,400 rungs, chroma 0 excluded to
+  match the reviewer's denominator since it is neutral and trivially always in gamut). Measured on
+  commit `7cd5e2e` (this fold): **0/302,400** out-of-gamut. The S3 fix (`localMaxChroma`, already
+  shipped before this ruling arrived — it was required regardless to close the REQ-043 determinism
+  break) turns out to eliminate the violations entirely, so the honestly-measured ceiling on this
+  head is 0, not a re-statement of the owner-accepted 1,288 figure from the pre-S3 head. The gate
+  also asserts the swept-rung count is exactly 302,400 as a canary against the sweep parameters
+  drifting silently.
+- Gate (c) itself was widened alongside this (hue step 3 → step 1) since the two now share one sweep
+  pass rather than running two separate expensive loops; `checked < 15000` threshold left as a floor
+  (actual count is now 43,200, well above it).
+
+## Commits (post-rebase, plus the gamut-ceiling fold)
 
 - `c286d40` feat(prime): ladder steps equally in perceived CIE L*, held CAM16 chroma (#681 U6)
 - `b0e2adb` test(prime): cite the d5 frozen snapshot's capture commit (#681 U6)
 - `ac93f2b` docs(sdlc): U6 handoff for #681 prime ladder (#681 U6)
+- `d922aaf`/`a5e5986`/`f9fb08e` review pass 1 fold (S1-S7, see above)
+- `7cd5e2e` test(prime): pin a numeric gamut-ceiling gate per owner ruling (#681 U6)
 
-`head: ac93f2b`. `base: bf2aaf6` (`git merge-base HEAD origin/main`, re-measured after rebasing onto
+`head: 7cd5e2e`. `base: bf2aaf6` (`git merge-base HEAD origin/main`, re-measured after rebasing onto
 `origin/plan/preset-intent-fidelity` @ `6429c49`, per team-lead instruction). Rebased cleanly, no
 conflicts (`git rebase origin/plan/preset-intent-fidelity`). Re-read `.sdlc/plans/preset-intent-fidelity.md`
 at the new tip: U6's own unit bullet (line 223-224) is byte-identical to what this unit was built
 against — revisions 7 and 8 on the rebased plan branch are both in U3's text, confirmed via
 `git diff fb3ad33 6429c49 -- .sdlc/plans/preset-intent-fidelity.md`. No changes needed as a result.
+No further rebase has happened since (rev9 plan tip not yet sent).
 
 Original (pre-rebase) commits, superseded by the rebase: `766478b`/`9bbfe0a`/`95355a5` (same content,
 different shas after the rebase rewrote parent history).
@@ -191,6 +216,7 @@ doesn't check). This is plan unit U5's territory ("records") per the plan's own 
 | C1 `npm test` green | `npm test` | exit 0, `✓ all 47 test files passed` (46 pre-rebase; 47 post-rebase — the extra registered file came from upstream #662/#674 work already on the rebased plan branch, not from this unit, which adds no new registered test file); `git status --short` empty after the rebase and after two further consecutive runs (byte-stable); `node scripts/audit-citations.mjs` STALE 0 everywhere; `node test/repo/branding.mjs` clean (446 files) | not re-run here (owned by C1's own negative control in `.sdlc/adapter.md` §1 — corrupt role-table.json, expect 17 FAIL — out of my unit's scope to re-verify; my own red-then-green is below) |
 | C5 (ladder half) | `node test/engine/prime.mjs`, gate `ladder-window` | `ladder-window allow-list: 21 (expected 21)` — iterates every swatch across `docs/reference/colors/categories/*.json`, re-derives the six-role mapping independently, matches C5's 21-name list on (category, role, hex) exactly (review pass 1 S2; superseded the false-premise "0" this gate printed before review) | synthetic [40,60] narrow window inside the same gate: found more than 21 out-of-window cases, proving the filter discriminates on the window bounds |
 | C11 symmetry | `node test/engine/prime.mjs`, gate `symmetry` | by-construction: 0/464 fails, `|up-down|` exactly 0 every case. Measured (pixel `lstarFromRgb`): 0/464 exceed 3 L\*, max measured asymmetry 0.518 L\* | the frozen `prime-pre-681.mjs` fixture (pre-#681 redistribute rule), same 464-case sweep: 295/464 exceed 3 L\*, max asymmetry 52.01 L\* — FAILS as required (review pass 1 S1: this control previously read `origin/main` live via `git show`, now a committed fixture) |
+| gamut-ceiling (owner ruling, post-review) | `node test/engine/prime.mjs`, gate `gamut-ceiling` | 0/302,400 out-of-gamut rungs, pinned ceiling 0 (see "Gamut-ceiling criterion" above for exact sweep parameters and derivation) | canary: gate FAILs if the swept-rung count drifts from exactly 302,400, catching a silent sweep-parameter change |
 
 Red-then-green, every gate: before my `src/engine/prime.mjs` edit, `node test/engine/prime.mjs` threw a
 `SyntaxError` (`PRIME_STEP` no longer exported) — the RED state, since I edited the engine before the
@@ -264,7 +290,8 @@ comparable to the plan's corpus-scale numbers, reported for scale only.
   `maxChromaInGamut` call inside `primeSwatches`, S3)
 - `test/engine/prime.mjs` (rewritten; review pass 1: frozen fixture import replaces the live `git show`
   negative control (S1), `ladder-window` iterates the real corpus (S2), gate (c) widened (S3), d5
-  citation re-pointed (S7))
+  citation re-pointed (S7); post-review: gate (c) sweep taken to full precision (hue step 1) and a new
+  `gamut-ceiling` gate added, reusing that sweep, per the owner's numeric-ceiling ruling)
 - `test/engine/fixtures/prime-pre-681.mjs` (new, review pass 1 S1 — frozen pre-#681 `prime.mjs`, vendored
   from `origin/main` blob `c744fb8`)
 - `test/engine/exports.mjs` (two literals + comment, mechanical re-pin)
