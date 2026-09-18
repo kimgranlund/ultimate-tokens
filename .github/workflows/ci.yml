@@ -83,9 +83,12 @@ jobs:
 
   # ── FULL curated-corpus contrast sweep (#674, test/engine/curated-contrast.mjs --full) ──
   # `npm test` runs the same gate SAMPLED (brands.json in full + one deterministic volume per gallery
-  # category, 2.5 s) so the suite stays fast; the full 343-document / 7560-cell sweep is 12 s and runs
-  # here instead. Own runner, no `needs:` — it is a data gate over committed generated mirrors
-  # (src/ui/categories/*.js), so it never blocks `deploy` and needs no `npm ci`: zero dependencies,
+  # category) so the suite stays fast; the full sweep — 343 documents x 3 tone modes = 22680
+  # accent/on-color cells — runs here instead. It measured 17-27 s on a dev host, but that is
+  # host-sensitive (mirror parsing dominates, not the derivation); this job's own time is the one to
+  # read. Own runner, no `needs:` — it is a data gate
+  # over committed generated mirrors (src/ui/categories/*.js), so it never blocks `deploy` and needs
+  # no `npm ci`: zero dependencies,
   # this repo's own ESM only. The build-test job's drift gate is what proves those mirrors are current.
   corpus-contrast:
     runs-on: ubuntu-latest
