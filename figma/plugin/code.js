@@ -145,10 +145,19 @@ figma.ui.onmessage = async (msg) => {
       // Type + Geometry breakpoint-moded FLOAT collections (UI-computed, pre-validated apply plans). Isolated
       // in its OWN try so a float-apply failure can't mask the color apply that already succeeded above — the
       // user still gets the color result (+ a console error), and a re-apply (idempotent) converges the rest.
-      // #495 "published library" mode: msg.libraryMode is undefined unless a future UI explicitly sets
-      // it (no apply-gate.js toggle exists yet — out of THIS ticket's scope, documented in the #495
-      // Findings) — undefined falls through to applyFloatPlans/applyFontPrimitivesModes' OWN
-      // confirmLibraryMode() dialog, asked only if there's actually something at stake for this apply.
+      // #629 "published library" mode: msg.libraryMode is now ALWAYS an explicit boolean: the
+      // apply-gate's "Published library" checkbox sets it on every apply (true = alias/deprecate,
+      // false = classic prune), so the undefined branch below is only ever reached by an OLD ui.html
+      // bundle posting a pre-#629 message. That undefined does NOT reach applyFloatPlans/
+      // applyFontPrimitivesModes' confirmLibraryMode() dialog: with no askIfUndecided passed (only the
+      // standalone binder's own main() passes it), undefined resolves straight to false, i.e. classic
+      // prune, which is exactly the legacy behavior an old bundle expects.
+      // SCOPE (#629 ruling Q1): the flag covers TYPE, GEOMETRY and STYLES only. applyBundle's color
+      // reconcile is deliberately NOT threaded, and the two surfaces that SET the flag say so: the
+      // gate checkbox is labelled "...type, geometry and style names", and the Settings row's help
+      // line says "Color variables are unaffected either way". The gate LEDE says nothing about the
+      // flag at all (it describes what the apply writes, not how it prunes), so do not read a scope
+      // claim into it. PR #675 review: this comment used to name the lede, which was an overclaim.
       let fr = null;
       if (Array.isArray(msg.floatPlans) && msg.floatPlans.length) {
         try { fr = await applyFloatPlans(msg.floatPlans, { libraryMode: msg.libraryMode }); }
@@ -159,14 +168,20 @@ figma.ui.onmessage = async (msg) => {
       let sr = null;
       if (msg.stylePlans && ((msg.stylePlans.paints || []).length || (msg.stylePlans.texts || []).length)) {
         try {
-          if (msg.fontPrimitivesModes) await applyFontPrimitivesModes(msg.fontPrimitivesModes, { libraryMode: msg.libraryMode });
-          sr = await applyStylePlans(msg.stylePlans);
+          if (msg.fontPrimitivesModes) {
+            const fpr = await applyFontPrimitivesModes(msg.fontPrimitivesModes, { libraryMode: msg.libraryMode });
+            // #629 Q2: under "published library" mode the stale Type Primitives modes are REPORTED, not
+            // removed: say so, or a kept mode looks like the prune silently failed.
+            const staleModes = (fpr && fpr.libraryReport && fpr.libraryReport.staleModes) || [];
+            if (staleModes.length) console.warn("[Ultimate Tokens] published-library mode: kept", staleModes.length, "stale Type Primitives mode(s) instead of removing them:", staleModes.join(", "));
+          }
+          sr = await applyStylePlans(msg.stylePlans, { libraryMode: msg.libraryMode });
         } catch (e) { console.error("[Ultimate Tokens] styles apply failed:", e); }
       }
       const parts = [];
       if (r) parts.push(`${r.raw} primitives + ${r.prime} prime + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : ""));
       if (fr && fr.collections) parts.push(`${fr.variables} type/geometry variable${fr.variables === 1 ? "" : "s"} across ${fr.collections} collection${fr.collections === 1 ? "" : "s"}`);
-      if (sr && (sr.paints || sr.texts)) parts.push(`${sr.paints + sr.texts} style${sr.paints + sr.texts === 1 ? "" : "s"} (${sr.paints} color · ${sr.texts} text)` + (sr.pruned ? `, ${sr.pruned} stale pruned` : ""));
+      if (sr && (sr.paints || sr.texts)) parts.push(`${sr.paints + sr.texts} style${sr.paints + sr.texts === 1 ? "" : "s"} (${sr.paints} color · ${sr.texts} text)` + (sr.pruned ? `, ${sr.pruned} stale pruned` : "") + (sr.preserved ? `, ${sr.preserved} stale kept (published library)` : ""));
       if (sr && sr.substitutedFonts && sr.substitutedFonts.length) figma.notify(`${sr.substituted} text style(s) use a placeholder face — install to see them as designed: ${sr.substitutedFonts.slice(0, 3).join(", ")}${sr.substitutedFonts.length > 3 ? "…" : ""}`, { timeout: 6000 });
       if (sr && sr.missingFonts && sr.missingFonts.length) figma.notify(`Some text styles were skipped — no usable font: ${sr.missingFonts.slice(0, 3).join(", ")}${sr.missingFonts.length > 3 ? "…" : ""}`, { timeout: 6000 });
       figma.notify(parts.length ? "Applied " + parts.join(" · ") : "Nothing to apply — every system is toggled off.");
@@ -922,10 +937,19 @@ async function applyFontPrimitivesModes(plan, opts) {
   for (const nm of plan.addModes) { const ex = findMode(nm); modeId[nm] = ex ? ex.modeId : coll.addMode(nm); }
   // prune stale modes (e.g. a returning file's old single "Value" mode, once renamed away — never the
   // default, never the last remaining mode).
+  // #629 Q2: "published library" mode guards THIS prune too, not just the variable prune below.
+  // Removing a mode from a PUBLISHED collection breaks every consumer file that pinned it, so
+  // opts.libraryMode === true only REPORTS the stale modes (returned as libraryReport.staleModes) and
+  // leaves them in place. Anything else (false, or the undefined an old pre-#629 ui.html bundle
+  // posts) prunes exactly as before. The decision has to be taken HERE, before the variable pass builds its
+  // report, so it reads opts.libraryMode directly rather than the resolved `useLibrary` further down.
   const wanted = new Set(plan.modes.map((m) => String(m).toLowerCase()));
+  const staleModes = [];
   for (const m of coll.modes.slice()) {
     if (m.modeId === defaultId) continue;
-    if (!wanted.has(m.name.toLowerCase()) && coll.modes.length > 1) coll.removeMode(m.modeId);
+    if (wanted.has(m.name.toLowerCase())) continue;
+    if (opts.libraryMode === true) { staleModes.push(m.name); continue; }
+    if (coll.modes.length > 1) coll.removeMode(m.modeId);
   }
   const byName = await varsByName(coll.id);
   // #495 "published library" mode: snapshot LIVE values + build the Type-voice alias map BEFORE the
@@ -1024,16 +1048,19 @@ async function applyFontPrimitivesModes(plan, opts) {
       byName[v.name] = vr; current.add(v.name); count++;
     }
   }
-  // #495: NEVER prune when "published library" mode is active — same decision channel as
+  // #495: NEVER prune when "published library" mode is active. Same decision channel as
   // applyFloatPlans below. opts.libraryMode: explicit true/false = pre-decided by the caller. undefined
   // + opts.askIfUndecided: true = ask HERE via confirmLibraryMode (the standalone binder's own main()
-  // passes this — it has no persistent UI a mid-apply dialog could disturb). undefined WITHOUT
-  // askIfUndecided (the flagship's message handler, today — no apply-gate.js toggle exists yet, out of
-  // #495's own scope) = default to classic prune, UNCHANGED from every existing flagship user's current
-  // behavior: figma.showUI() can only show ONE ui at a time, so an interactive dialog here would
-  // REPLACE the running app's iframe content mid-apply — a real, disruptive cost this ticket does not
-  // take on for the flagship without a proper apply-gate-integrated review UI (see confirmLibraryMode's
-  // own header comment, and the #495 Findings, for the follow-up this leaves on the table).
+  // is the ONLY caller that passes it, because the binder has no persistent UI a mid-apply dialog
+  // could disturb). undefined WITHOUT askIfUndecided = default to classic prune.
+  // #629 UPDATE: the flagship's message handler no longer sends undefined. apply-gate.js's
+  // "Published library" checkbox (renderApplyGate) sets msg.libraryMode on EVERY apply, true or
+  // false, persisted under ultimate-tokens-library-mode-v1 and also settable from Settings ›
+  // Token mapping. So the flagship is now always in the "pre-decided by the caller" branch, and
+  // undefined here means only an OLD ui.html bundle posting a pre-#629 message. The flagship still
+  // never reaches confirmLibraryMode, and still should not: figma.showUI() can show ONE ui at a
+  // time, so an interactive dialog here would REPLACE the running app's iframe content mid-apply.
+  // The apply gate IS the flagship's review surface; that is what the checkbox bought.
   let useLibrary = opts.libraryMode;
   if (useLibrary == null) {
     if (report.aliases.length || report.deprecates.length) useLibrary = opts.askIfUndecided ? await confirmLibraryMode(plan.collection, report) : false;
@@ -1063,7 +1090,7 @@ async function applyFontPrimitivesModes(plan, opts) {
     for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
   }
   writeFloatRegistry(reg);
-  return { variables: count, libraryReport: { collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []) } };
+  return { variables: count, libraryReport: { collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes } };
 }
 
 // resolveFace — pick a REAL face for {family, weight, styleName?} from Figma's actual font list
@@ -1161,8 +1188,15 @@ function sweepCandidates(knownTextNames, knownPaintNames, localTexts, localPaint
 // (per-field graceful fallback: an absent variable or an unsupported binding leaves the literal value).
 // lineHeight/letterSpacing stay LITERAL PERCENT in v1 — the type/ vars carry them as % of size,
 // and a FLOAT binding on those fields reads as px, which would mis-set them.
-async function applyStylePlans(sp) {
-  const out = { paints: 0, texts: 0, pruned: 0, missingVars: 0 };
+// #629 opts.libraryMode: "this file is a PUBLISHED library". A style this plan no longer produces
+// is still bound in every consumer file that subscribed to it, so removing it breaks them. true =
+// never remove a registry-tracked style; keep its registry slot (so a later classic apply can still
+// find and prune it) and count it as out.preserved instead of out.pruned. false, and the undefined
+// an old pre-#629 ui.html bundle posts, prune exactly as before.
+async function applyStylePlans(sp, opts) {
+  opts = opts || {};
+  const libraryMode = opts.libraryMode === true;
+  const out = { paints: 0, texts: 0, pruned: 0, preserved: 0, missingVars: 0 };
   // TKT-0012 — id-preserving STYLE renames: re-key the provenance registry and rename the live style
   // object BEFORE reconcile, so a renamed style is adopted instead of pruned+recreated (bindings and
   // any team-library publish identity survive). sp.renames = { paints: {old:new}, texts: {old:new} }.
@@ -1211,6 +1245,7 @@ async function applyStylePlans(sp) {
     }
     for (const name of Object.keys(reg.paints)) {
       if (current[name]) continue;
+      if (libraryMode) { current[name] = reg.paints[name]; out.preserved++; continue; } // #629: report, never remove
       try { const st = await figma.getStyleByIdAsync(reg.paints[name]); if (st) { st.remove(); out.pruned++; } } catch (e) { /* already gone */ }
     }
     reg.paints = current;
@@ -1322,6 +1357,7 @@ async function applyStylePlans(sp) {
     }
     for (const name of Object.keys(reg.texts)) {
       if (current[name]) continue;
+      if (libraryMode) { current[name] = reg.texts[name]; out.preserved++; continue; } // #629: report, never remove
       try { const st = await figma.getStyleByIdAsync(reg.texts[name]); if (st) { st.remove(); out.pruned++; } } catch (e) { /* already gone */ }
     }
     reg.texts = current;
@@ -1643,7 +1679,9 @@ async function applyFloatPlans(plans, opts) {
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles
-    // re-bind to the merged targets in the SAME apply run (applyStylePlans executes after this).
+    // re-bind to the merged targets in the SAME apply run in the FLAGSHIP, which calls applyStylePlans
+    // after this executor. This function is spliced verbatim into the standalone binder, which has no
+    // applyStylePlans and no styles at all: there, nothing re-binds, because nothing was bound.
     for (const nm of (Array.isArray(plan.retire) ? plan.retire : [])) {
       if (!reg[nm]) continue;
       const cols = await figma.variables.getLocalVariableCollectionsAsync();

@@ -211,6 +211,28 @@ posts the `apply` message; `_syncApplyGate` reconciles the `<dialog>`. This is a
 (explicit awareness before modifying the file) + destructive-overwrite protection (same-named vars get
 overwritten, re-skinning bound components; Regroup detaches bound layers).
 
+**The gate carries a SECOND checkbox (#629), and it is unconditional.** "Published library"
+(`.apply-gate-librarymode`) renders on BOTH paths, unlike "don't show again", because Regroup posts the
+same prune-bearing `floatPlans`/`stylePlans` the normal apply does. It is a second persisted key,
+`ultimate-tokens-library-mode-v1` (`_libraryMode()` / `_setLibraryMode()`), and it differs from the
+consent key in storing BOTH answers (`"1"` and `"0"`) rather than set-or-absent: a consented apply skips
+the gate entirely and still has to carry the last answer. `applyToFigma` stamps
+`libraryMode: this._libraryMode()` into the message on every apply, so `msg.libraryMode` is a boolean on
+every code path, including a blocked-storage throw. Default OFF, which is classic prune, which is every
+pre-#629 user's behavior unchanged.
+
+The SAME setting also has a row at Settings › Token mapping › "Figma apply" (`overlays/settings.js`,
+`idPrefix` `setlibmode`), on the same key. That row is not a convenience: `requestApplyToFigma` returns
+before the gate ever opens once the consent key is set, and NOTHING in the app clears that key, so a
+consented user has no other route to the checkbox than the destructive Regroup gate. When you add any
+further gate-only control, ask the same question.
+
+What the flag actually changes lives in `figma/plugin/code.js`: `applyStylePlans(sp, opts)` keeps the
+style and its registry slot and counts `out.preserved` instead of `out.pruned`;
+`applyFontPrimitivesModes` keeps stale MODES and reports them as `libraryReport.staleModes`;
+`applyFloatPlans` takes the alias/deprecate branch. `applyBundle`'s color reconcile is NOT threaded
+(ruling Q1 on #629), so a color-variable prune happens under either setting.
+
 ### 7. The config round-trip OUT of variables
 
 When a file has no embedded config (or to seed a new set), `configFromVariables(liveVars)`

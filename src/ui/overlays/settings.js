@@ -304,6 +304,22 @@ export class SettingsMixinImpl {
             ? [h("p", { class: "settings-note settings-warn" }, "The two collections need distinct names — identical names would merge the primitives and roles into one collection on apply.")]
             : []),
         ]),
+        // #629 review M2: the apply gate carries this same toggle, but "Don't show this again" makes
+        // that gate unreachable on the normal apply path and nothing in the app clears that consent.
+        // A team publishing a library is exactly the cohort most likely to have consented long ago, so
+        // the toggle needs a home that consent cannot hide. Same persisted key as the gate's checkbox
+        // (ultimate-tokens-library-mode-v1), so the two surfaces are one setting, not two.
+        this._settingsGroup("Figma apply", [
+          this._settingRow(
+            "Published library",
+            "On: an apply aliases and deprecates type, geometry and style names it no longer produces, instead of removing them, so files subscribed to this library stay bound. Off is the ordinary unpublished-file behavior. Color variables are unaffected either way.",
+            [{ id: "off", label: "Off" }, { id: "on", label: "On" }],
+            this._libraryMode() ? "on" : "off",
+            (id) => { this._setLibraryMode(id === "on"); this.applyGateLibraryMode = id === "on"; this.render(); },
+            "setlibmode",
+          ),
+          h("p", { class: "settings-note" }, "A per-user choice for this browser, like the backup warning. It describes the Figma file you apply to, so it does not travel with the set."),
+        ]),
         h("p", { class: "settings-note" }, "These are resolution-layer mapping choices — they re-point how roles resolve, not the ramps, and apply to every export."),
       ],
     };

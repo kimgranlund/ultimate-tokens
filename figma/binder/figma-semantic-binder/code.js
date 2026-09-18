@@ -54,15 +54,23 @@ const FLOAT_PLANS = JSON.parse("[]"); /* __ULTIMATE_TOKENS_FLOAT_PLANS__ */
 
 // FLOAT_REGISTRY_KEY — the PROVENANCE registry for the breakpoint-moded Type/Geometry collections, a
 // name→collectionId map stored in root pluginData (travels with the .fig, like the palette set). Kept
-// as the SAME key string as figma/plugin/code.js so the flagship plugin and this binder converge on the
-// SAME collections idempotently if a user runs both against one file.
+// as the SAME key string as figma/plugin/code.js, but NOT because the two vehicles share a store:
+// Figma namespaces root.setPluginData BY PLUGIN ID (figma/plugin/code.js says so at CONFIG_KEY), and
+// the two manifests carry different ids, so the flagship's registry and this binder's are DISJOINT.
+// Adopting a collection here never registers it for the flagship, and vice versa. What the shared key
+// name buys is one grep across both runtimes, diffable stores, and a collparity gate that can compare
+// them at all. Correction C7 (#629, from #496 planning): the old text here claimed the two converge on
+// the same collections idempotently. They do not, and reading it that way sends a flagship-only step
+// into an apply that mints a duplicate collection and uplifts nothing.
 const FLOAT_REGISTRY_KEY = "ultimate-tokens-float-collections";
 
 // COLOR_REGISTRY_KEY — TKT-0024: the SAME provenance discipline, back-ported to the Color Roles
 // collection this binder creates/finds (the raw "Color Primitives" collection is only ever READ here,
 // never created — see main() below — so it needs no registry entry of its own). Kept as the SAME key
-// string as figma/plugin/code.js so the flagship plugin and this binder converge on the SAME collection
-// if a user runs both against one file. Before this, main() adopted ANY same-named "Color Roles"
+// string as figma/plugin/code.js for the same reason FLOAT_REGISTRY_KEY is, and with the same caveat:
+// per-plugin-id pluginData namespacing keeps the two stores disjoint, so this binder adopting a Color
+// Roles collection does not register it for the flagship (correction C7, #629). Before this, main()
+// adopted ANY same-named "Color Roles"
 // collection by NAME alone — a user's own collection with that exact name got silently adopted and
 // populated with aliases on the next bind.
 const COLOR_REGISTRY_KEY = "ultimate-tokens-color-collections";
@@ -234,7 +242,9 @@ async function applyFloatPlans(plans, opts) {
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles
-    // re-bind to the merged targets in the SAME apply run (applyStylePlans executes after this).
+    // re-bind to the merged targets in the SAME apply run in the FLAGSHIP, which calls applyStylePlans
+    // after this executor. This function is spliced verbatim into the standalone binder, which has no
+    // applyStylePlans and no styles at all: there, nothing re-binds, because nothing was bound.
     for (const nm of (Array.isArray(plan.retire) ? plan.retire : [])) {
       if (!reg[nm]) continue;
       const cols = await figma.variables.getLocalVariableCollectionsAsync();
@@ -843,8 +853,10 @@ async function main() {
   // 4. Type/Geometry breakpoint-moded FLOAT collections — baked at download time (see FLOAT_PLANS above).
   //    A no-op (fp stays null) for the generic/asset checked-in binder, whose FLOAT_PLANS is [].
   //    #492: the SAME adoption-candidate check as the color collection above, once per DISTINCT
-  //    plan.collection (FLOAT_PLANS carries one entry per collection — Geometry, and Type Primitives
-  //    when the download baked one in). applyFloatPlans() is a SPLICED, byte-identical-to-the-flagship
+  //    plan.collection. FLOAT_PLANS is whatever downloadFigmaPlugin baked in, which is exactly
+  //    _figmaFloatPlans() (src/ui/app.js), Geometry only. It never carries a Type Primitives plan:
+  //    only typeTokensFigmaPrimitivesModes builds one, and that is called from apply-gate.js alone,
+  //    never from the download path. applyFloatPlans() is a SPLICED, byte-identical-to-the-flagship
   //    function (colorparity/floatparity/collparity gates) — it is NEVER modified for this; instead the
   //    float registry is pre-seeded here, BEFORE calling it, so its own (unchanged) readFloatRegistry()
   //    picks up the adoption on its very next call.

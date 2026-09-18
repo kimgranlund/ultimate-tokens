@@ -65,9 +65,19 @@ canonical raw-colors name (solid → pad3 `"50"→"050"`; scrim → `"500-{step}
 **App apply path** (grep `src/ui/app.js`): the buttons call `requestApplyToFigma(rebuild)` →
 `renderApplyGate()` (a consent road-block: *back up your file first*; normal apply is cookieable via a
 versioned localStorage key, the destructive **Regroup** ALWAYS warns) → `applyToFigma` posts
-`{type:"apply", dtcg: this.figmaBundle(), config: serialize(this.doc), rebuildSemantic, collections}`.
+`{type:"apply", dtcg: this.figmaBundle(), config: serialize(this.doc), rebuildSemantic, libraryMode, collections}`.
 `figma/plugin/code.js#applyBundle` creates Color Primitives + Color Roles, prunes orphans, embeds the config
-in `figma.root` pluginData. **The two collection NAMES are per-doc overridable (#255)** — Settings ›
+in `figma.root` pluginData. **`libraryMode` (#629) is ALWAYS an explicit boolean**, never undefined: `true`
+means "this file is a PUBLISHED library", so the apply aliases and deprecates names it no longer produces
+instead of removing them. It covers TYPE, GEOMETRY and STYLES only (`applyFloatPlans`,
+`applyFontPrimitivesModes` including its MODE prune, and `applyStylePlans`); `applyBundle`'s COLOR
+reconcile is deliberately outside it. Two surfaces, one persisted key
+(`ultimate-tokens-library-mode-v1`, the `_applyConsentKey` precedent, storing both `"1"` and `"0"`
+because unchecked is a real answer): the gate's "Published library" checkbox, and Settings › Token
+mapping › "Figma apply", which exists because "don't show again" makes the gate unreachable and
+nothing in the app clears that consent. An `undefined` reaching `code.js` now means only an OLD
+`ui.html` bundle; it resolves to classic prune, never to `confirmLibraryMode` (only the standalone
+binder's own `main()` passes `askIfUndecided`). **The two collection NAMES are per-doc overridable (#255)** — Settings ›
 Token mapping › "Figma collections" writes `doc.figmaCollections {raw, semantic}` (persisted, absent =
 defaults); `figmaCollectionNames(doc)` (model.mjs) resolves, rides the bundle's aliasData
 `targetVariableSetName` AND `msg.collections`; code.js `setCollectionNames()` adopts it with constant

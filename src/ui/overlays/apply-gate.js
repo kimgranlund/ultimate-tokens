@@ -34,6 +34,9 @@ export class ApplyGateMixinImpl {
     if (!rebuild && this._applyConsented()) { this.applyToFigma(false); return; }
     this.applyGateRebuild = !!rebuild;
     this.applyGateDontShow = false;
+    // #629: seed the "Published library" checkbox from the persisted preference, so the gate always
+    // shows the state the NEXT apply will actually use (including a consented, gate-skipping apply).
+    this.applyGateLibraryMode = this._libraryMode();
     this.applyGateOpen = true;
     // TKT-0020: kick off the live Geometry/Type Primitives read-back so the gate can show a
     // changed-value count before the user commits — reset to null (not stale) until the reply lands;
@@ -49,6 +52,9 @@ export class ApplyGateMixinImpl {
   confirmApplyGate() {
     const rebuild = this.applyGateRebuild;
     if (!rebuild && this.applyGateDontShow) this._setApplyConsent();
+    // #629: persist the library-mode choice BEFORE applyToFigma reads it back: it is the single
+    // source of truth for msg.libraryMode on every apply, gated or consent-skipped.
+    this._setLibraryMode(!!this.applyGateLibraryMode);
     this.applyGateOpen = false;
     this.render(); // CLOSE the gate <dialog> (via _syncApplyGate) + rebuild toastEl — toast() alone never renders
     this.applyToFigma(rebuild);
@@ -63,6 +69,17 @@ export class ApplyGateMixinImpl {
 
   _setApplyConsent() { try { localStorage.setItem(this._applyConsentKey(), "1"); } catch { /* storage blocked */ } }
 
+  // #629 "Published library" mode: a per-USER preference stored exactly like the apply consent above
+  // (localStorage, versioned key), NOT doc state: it describes the Figma file being applied to, which
+  // no exported kit can know. Absent = unset = classic prune, every existing user's current behavior.
+  // Unlike the consent key this stores BOTH answers ("1"/"0"), because "unchecked" is a real decision
+  // the gate must reflect back, not just the absence of one.
+  _libraryModeKey() { return "ultimate-tokens-library-mode-v1"; }
+
+  _libraryMode() { try { return localStorage.getItem(this._libraryModeKey()) === "1"; } catch { return false; } }
+
+  _setLibraryMode(on) { try { localStorage.setItem(this._libraryModeKey(), on ? "1" : "0"); } catch { /* storage blocked */ } }
+
 
   applyToFigma(rebuild = false) {
     // rebuild = the opt-in "Regroup" path: re-create the Color Roles collection so it adopts the
@@ -75,7 +92,13 @@ export class ApplyGateMixinImpl {
       // Type/Geometry are filtered out of floatPlans below. The config embed travels regardless.
       const sys = this.exportSystems || {};
       const _colorSlugs = sys.color !== false ? (this.doc.palettes || []).filter((p) => p && p.on !== false).map((p) => slug(p.name)) : [];
-      const msg = { type: "apply", config: serialize(this.doc), rebuildSemantic: !!rebuild, floatPlans: this._figmaFloatPlans(), collections: figmaCollectionNames(this.doc), renames: { color: { ...kebabWaveColorRenames(_colorSlugs), collections: FIGMA_MIGRATIONS.color.collections } } };
+      // #629 libraryMode: ALWAYS an explicit boolean, never undefined. code.js's executors treat
+      // undefined as "nobody decided" and fall through to classic prune, which reads identically to a
+      // deliberate false: so an explicit false is what makes the unchecked box a real, auditable
+      // answer. Read from the persisted preference (not the transient gate field) because a consented
+      // apply skips the gate entirely and must still carry the user's last choice. RULING Q1: this
+      // covers type, geometry and styles only: msg.dtcg's color reconcile is NOT gated by it.
+      const msg = { type: "apply", config: serialize(this.doc), rebuildSemantic: !!rebuild, libraryMode: this._libraryMode(), floatPlans: this._figmaFloatPlans(), collections: figmaCollectionNames(this.doc), renames: { color: { ...kebabWaveColorRenames(_colorSlugs), collections: FIGMA_MIGRATIONS.color.collections } } };
       if (sys.color !== false) msg.dtcg = this.figmaBundle();
       // STYLES (opt-out): the swatch layer bound to the variables — paint styles per semantic role
       // (color on), text styles per voice×step×weight (type on). Pure plans (style-plan.mjs); the
@@ -404,6 +427,23 @@ export class ApplyGateMixinImpl {
         h("p", { class: "apply-gate-learn" },
           "Re-routing semantic tokens onto existing variables? ",
           h("button", { type: "button", class: "linklike", onclick: () => { try { window.open(MAPPINGS_DOC, "_blank", "noopener"); } catch {} } }, "Learn how mappings work →"),
+        ),
+        // #629 "Published library": shown on BOTH paths (Regroup posts the same floatPlans/stylePlans,
+        // so the same prune sites are live there). Sets msg.libraryMode explicitly; persisted, so a
+        // consented apply that never opens this gate still carries the answer.
+        h(
+          "label",
+          { class: "apply-gate-librarymode" },
+          h("input", {
+            type: "checkbox",
+            class: "apply-gate-librarymode-box",
+            checked: this.applyGateLibraryMode ? true : undefined,
+            onchange: (e) => { this.applyGateLibraryMode = !!e.target.checked; },
+          }),
+          h("span", {},
+            "Published library: alias and deprecate type, geometry and style names instead of pruning",
+            h("span", { class: "apply-gate-librarymode-hint" }, "Consumer files stay bound. Leave this off for an ordinary, unpublished file."),
+          ),
         ),
         // "Don't show again" — normal apply only; the destructive Regroup always warns.
         rebuild ? false : h(

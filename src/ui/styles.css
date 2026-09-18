@@ -1245,6 +1245,10 @@ dialog.apply-gate::backdrop { background: rgba(10,14,22,.34); }
 .linklike:hover { color: var(--accent); filter: brightness(1.1); }
 .apply-gate-dontshow { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-dim); cursor: pointer; }
 .apply-gate-dontshow input { width: 14px; height: 14px; accent-color: var(--accent); }
+/* #629 "Published library": same checkbox row as .apply-gate-dontshow, plus a wrapping hint line. */
+.apply-gate-librarymode { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--ink-dim); cursor: pointer; }
+.apply-gate-librarymode input { width: 14px; height: 14px; margin-top: 2px; flex: none; accent-color: var(--accent); }
+.apply-gate-librarymode .apply-gate-librarymode-hint { display: block; margin-top: 2px; opacity: 0.8; }
 .apply-gate-foot { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--line); }
 .apply-gate-foot .spacer { flex: 1; }
 

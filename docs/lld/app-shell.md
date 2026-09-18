@@ -134,7 +134,7 @@ anchor. "Interface" is the method's contract, not its body.
 | **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :1915 | SPEC-R11, SPEC-R3, SPEC-R4 |
 | **LLD-C8** | App-footer | `renderAppFooter` :2150 / `paintAppFooter` :2170 | SPEC-R6, SPEC-R1 |
 | **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1447 / `paneToggle` :1457 | SPEC-R10 (density) |
-| **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:32` / `renderSettings` `overlays/settings.js:459` / `renderNewPalette` `sections/color.js:482` / `renderApplyGate` `overlays/apply-gate.js:325` | SPEC-R8, SPEC-R2, SPEC-R1 |
+| **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:32` / `renderSettings` `overlays/settings.js:475` / `renderNewPalette` `sections/color.js:482` / `renderApplyGate` `overlays/apply-gate.js:348` | SPEC-R8, SPEC-R2, SPEC-R1 |
 
 ### 2.1 Region responsibilities (the non-obvious contracts)
 
