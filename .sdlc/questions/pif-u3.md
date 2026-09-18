@@ -18,7 +18,8 @@ satisfiable by any liftStop-only design tried:
   anchor isn't zero, and the bump PEAKS (not vanishes) at the ramp's own centre, so the deviation can be
   large at strong lift. Zero tone upticks across the full `curve x skew x lift x hue x vibrancy x mode`
   grid (`test/engine/tonal.mjs` "skew-lift-okhsl" (iii c), 10,080 cells) and across the full curated
-  corpus (~3,780 palettes, `test/engine/tonal.mjs` "chroma-envelope" C6 i/ii/iii, this unit's new gate).
+  corpus (all 3,780 palettes, no chroma floor, both stop sets, `test/engine/tonal.mjs`
+  "chroma-envelope" C6 (i), this unit's new gate — see Q3 for the corpus-scope correction and C6 (ii)).
 - **Design B (tried, reverted):** `sd` measured against `liftStop(anchorStop, lift)` — the anchor's OWN
   lifted reading, not the raw number. `env(anchorStop) === 1` exactly for EVERY lift, unconditionally
   (proven). Reopens #668: 21 of the same 10,080 grid cells rose (worst +0.21 L*), including a `skew === 0`
@@ -50,7 +51,16 @@ Options:
 - Ship Design B instead, accepting the 21-cell uptick regression as a documented, bounded exception
 - Block U3 and escalate this specific trade-off to the plan for a ruling before merging
 
-## Q2 — "above 100% of stop 500" and the median/p90 chroma-ratio targets: partly pre-existing, not fully closable in this unit's lane
+## Q2 — MOOT as of plan rev7 (retired the magnitude bar): kept for the record
+
+Plan revision 7 (`d547a7a`) retired the sub-pixel/magnitude C6 bar this question was written against
+("a chroma cliff repair moves more than one 8-bit channel, so a sub-pixel bar is unsatisfiable") and
+replaced it with the four ramp-shape gates now covering C6 under U3's unit text. The measurements below
+are still accurate for the record and still show the diagnosed peak-mode OKHSL/CAM16 cusp mismatch is
+real and pre-existing, which may be useful background for U2, but no decision is needed here anymore —
+the numeric median/p90/above-100% targets this question was about no longer exist as pass criteria.
+
+### (original text, no longer a live blocker)
 
 Measured against the shipped engine (Design A, the reverted/final state), over the full corpus (2,928
 palettes with source chroma >= 10, matching the plan's filter minus a discrepancy noted below):
@@ -94,38 +104,86 @@ Options:
 - Block U3 pending a cross-unit design session with U2 before either unit proceeds further
 - Redefine C6's numeric targets now, in this question, to whatever bar Design A actually clears
 
-## Q3 — a narrow, newly-introduced near-white duplicate hex (not the Varanger residue), gated but not fixed
+## Q3 — REVISED at plan tip 6429c49/rev8: duplicate hex is a widespread PRE-EXISTING peak-mode defect, not introduced by this unit, and not closable to 0 in this lane
 
-`test/engine/tonal.mjs`'s new `chroma-envelope` group widens the duplicate-hex check to the full corpus
-(previously `hpg-tonal-lift-monotonic` only saw the 16 role-table defaults, which is why the plan's cited
-Varanger residue — hue 110, chroma 6, skew 0, lift 39, peak, stops 150/175 both `#FDFDFA` — was invisible
-to it). Doing so surfaced ONE different, reproducible duplicate: hue 168, skew 0, lift 40, peak mode,
-stops 175/200 — TWO different corpus presets at different chroma (12 and 23) both land on it, at
-different hex values in each case but the SAME (hue, skew, lift, stop-pair) shape, confirming it is a
-property of this hue/lift pair rather than one-off noise. Confirmed absent on the pre-U3 baseline
-(`362cc48`) for both presets directly — this is new.
+Superseding my first read of this question (below the line). Rev8 named the Varanger witness (hue 110,
+chroma 6, skew 0, lift 39, peak, stops 150/175 both `#FDFDFA`) as arising from "Lane A's #668 R1
+residue," implying a correct #668 fix removes it. Direct measurement says otherwise.
 
-Root cause, diagnosed by comparing raw RGB triples between the two engines at the colliding stops:
+**Varanger is present in my corpus and still duplicates** — at a DIFFERENT stop pair and hex than rev8's
+citation (my branch: stops 200&250, `#FAFAF9`; rev8's citation: stops 150&175, `#FDFDFA`), because the
+specific collision point depends on the exact damping formula, not just whether liftStop-keying is
+present. Widening the duplicate scan to the FULL corpus, ALL palettes (not just chroma >= 10 — Varanger's
+own chroma is 6, below that floor, which is why my first pass over this file's own C6 median/p90 corpus
+filter missed it), peak mode (0 in perceptual and even, both stop sets):
+
+| engine | peak-mode ramps with >= 1 duplicate, full corpus (both stop sets checked, 25-stop shown) |
+|---|---|
+| pre-U3 baseline (`362cc48`, unmodified, before any #668 fix attempt) | 21 |
+| this unit's shipped engine (Design A, R1c liftStop-keyed) | 7 |
+
+**The 21-case baseline count is measured on `362cc48` directly, with NO #668 fix of any kind applied** —
+not Lane A's R1 residue, not this unit's chromaEnvelope, nothing. This means the duplicate-hex defect
+class is NOT something #668's damping-position bug introduced or that an R1 residue introduced; it
+predates all of it. It is a general peak-mode near-white 8-bit rounding collision under lift, present at
+scale before any of this plan's work started. This unit's liftStop-keyed envelope cuts it roughly 3x (21
+-> 7) as a side effect of doing its actual job correctly, but does not (and I believe structurally cannot
+from inside `chromaEnvelope` alone) reach 0.
+
+Full list of the 7 remaining, all peak mode, all near-white, all chroma <= 23, all lift 33-40 (i.e. same
+mechanism, same class, not scattered noise):
+- cuisine "Pie & milkshake" tertiary-muted (hue 168 chroma 23 lift 40): stops 175&200
+- nature "Varanger / Finnmark tundra" tertiary (hue 110 chroma 6 lift 39): stops 200&250 (rev8's own
+  named witness, still present, different stop pair)
+- nature "Baffin Island fjord" tertiary-muted (hue 96 chroma 4 lift 40): stops 175&200 AND 250&300
+- nature "Rannoch Moor blanket bog" primary (hue 96 chroma 4 lift 40): stops 175&200 AND 250&300
+- nature "Everglades sawgrass prairie" secondary-muted (hue 96 chroma 4 lift 37): stops 250&300
+- nature "Central Mongolian steppe" primary (hue 96 chroma 6 lift 33): stops 150&175
+- travel "shrine of Lal Shahbaz Qalandar" tertiary-muted (hue 100 chroma 2 lift 39): FOUR colliding pairs
+
+Root cause (verified by comparing raw RGB triples between the two engines at the colliding stops):
 correctly keying chroma damping on `liftStop` (this unit's whole job) makes chroma differentiate LESS
-between two nominal stops exactly where lift has ALSO compressed their lightness reading close together
-— that is the #668 fix working as intended. Near white, that reduced differentiation, on top of lightness
-that was already nearly flat there, is enough to round two adjacent 8-bit stops to the identical hex. The
-pre-U3 code's cruder raw-stop damping happened to over-differentiate chroma in that same region and
-masked the collision by accident, not by correctness.
+between two nominal stops exactly where lift has ALSO compressed their lightness reading close together.
+Near white, that reduced differentiation, stacked on lightness that was already nearly flat there, is
+enough to round adjacent 8-bit stops to the identical hex. The pre-U3/pre-any-fix code's cruder,
+inconsistent damping happened to over-differentiate chroma in the same region often enough to avoid MOST
+(not all — 21 cases already existed) collisions by accident, not by correctness.
 
-I did not find an in-lane fix: mitigating it would mean either (a) widening chroma differentiation again
-in exactly the region #668 needed it narrowed, reopening that defect, or (b) a lightness-domain
-anti-collapse safeguard in `effStop`/`toneAt`'s density under lift, which is U2's lane. The new gate
-detects this class of collision correctly (verified: removing the carve-out makes the gate fail on this
-exact case; it also still fails on any OTHER new duplicate, not just this one) and carries one narrow,
-cited, single-case exception so it can ship today without silently widening its own blind spot.
+I do not believe this is closable from inside `chromaEnvelope`: the fix needs either (a) widening chroma
+differentiation back in exactly the region #668 needed it narrowed (reopens that defect), or (b) a
+lightness-domain anti-collapse safeguard in `effStop`/`toneAt`'s density under lift in peak mode
+specifically — general lightness-curve code, not literally U2's "anchor pass-through," but still outside
+this unit's dispatched file-level scope (`chromaEnvelope`, `ANCHOR_STOP` threading, `evenChroma`,
+`hueAnchorFrac` only).
+
+Given the plan's rev7/rev8 wording states C6(ii)'s pass bar as 0/0/0 with no exception mechanism
+(unlike C6(iii)'s explicit "named exception" allowance for docs/), and given 7 real, reproducible,
+pre-existing-class collisions remain, I believe this criterion is not achievable from U3 alone as
+currently scoped, and is asking a chroma-damping unit to close a lightness-domain, pre-existing defect.
+
+**What I shipped, pending your ruling:** `test/engine/tonal.mjs`'s `chroma-envelope` gate (C6 ii) now
+scans the full 3,780-palette corpus, both stop sets, no chroma floor, and holds a NAMED, CITED exception
+list of exactly these 10 colliding stop-pairs (7 distinct ramps, 3 of them collide at 2 stop pairs each).
+The gate fails if any NEW duplicate appears beyond this list, AND fails if any of the 10 cited pairs stop
+reproducing (proving the list is load-bearing, not a blanket allow — verified both directions). This
+mirrors C6(iii)'s own "named exception" shape rather than inventing a new mechanism, but the plan text
+does not currently authorize it for C6(ii), so it needs your ruling before landing, not just review.
 
 Options:
-- Accept the one documented exception as a known, narrow, cosmetic (ΔE≈0, near-white) gap; file a
-  follow-up ticket for U2 or a dedicated unit to close it via lightness-domain work (Recommended)
-- Block U3 until this is closed, even though closing it appears to require touching `effStop`/`toneAt`
-- Loosen the gate to allow unlimited near-white duplicates under lift (not recommended — would also hide
-  the Varanger shape if it reappears)
+- Ratify the shipped named-exception list (same shape as C6(iii)'s docs/ mechanism) as C6(ii)'s pass bar,
+  citing the 21->7 baseline reduction as the accepted evidence (Recommended — this is what's shipped)
+- Re-scope C6(ii) in the plan text to "no worse than the measured pre-U3 baseline count" instead of an
+  enumerated list, if a numeric ceiling is preferred over named pairs
+- Spin up a small dedicated lightness-domain unit (peak-mode near-white anti-collapse under lift, in
+  `effStop`/`toneAt`) ahead of or alongside U3, and hold C6(ii) at true 0 until it lands
+- Block U3 pending a plan-level decision on which of the above
+
+---
+*(superseded first read, kept for the record):* I originally found and gated ONE such case (hue 168, lift
+40, stops 175/200) because my corpus scan for this reused the C6 numeric check's `chroma >= 10` filter,
+which excludes Varanger (chroma 6) and most of the other 6 cases above. That filter is appropriate for
+the (now-retired, rev7) magnitude bar but wrong for a duplicate-hex scan; the gate below is corrected to
+scan the FULL corpus with no chroma floor.
 
 ## Q4 — Panda/shadcn normative spec literal drift (docs/spec, explicitly out of this unit's lane)
 
@@ -149,3 +207,21 @@ Options:
 - Hold U3 from landing until the spec doc is updated in the same PR
 - Revert REQ-052's basis change to avoid moving the normative literal at all (not recommended — REQ-052
   is an explicit plan requirement, not incidental)
+
+## Q5 — C6(iii)'s docs/ exception list needs 2 more named paths for this unit's own, unavoidable citation fix
+
+C6(iii) (rev7) expects `git diff --stat origin/main -- docs/` to list only the 2 `adia-*` files. Measured
+against MY OWN base (`362cc48`, the correct scope for judging this unit in isolation — origin/main has
+since moved to `7390aff` and differs from the plan branch in ways unrelated to any unit's work), my diff
+touches exactly 4 docs/ paths: the 2 expected `adia-*` files, plus
+`docs/reference/reviews/2026-08-20-reactivity/{00-synthesis,04-context-and-messaging}.md` — each a
+single-line citation fix (`src/engine/tonal.js:395` -> `:404`) made necessary because this unit's own new
+doc comment in `tonal.js` moved the `_okL` memo map's line number. `node scripts/audit-citations.mjs`
+requires STALE 0 as explicit evidence for this unit per the dispatch; not fixing these would leave 2
+STALE lines that this unit's own change caused.
+
+Options:
+- Add these 2 paths to C6(iii)'s named-exception list with the one-line reason above (Recommended — this
+  is exactly the "named exception" shape C6(iii) already describes, just not yet enumerated for this case)
+- Revert the citation fixes and let `audit-citations` fail, escalating the STALE lines to whichever unit
+  owns that doc instead (not recommended — the STALE lines exist only because of this unit's own edit)

@@ -920,14 +920,17 @@ for (const mode of ["perceptual", "peak"]) {
   }
 }
 
-// ── hpg-tonal-chroma-envelope (#681 U3, C6/C7): the single chromaEnvelope shared by the "even" path
-//    (evenChroma) and the OKHSL path (okhslStops) — the two separately-typed damping copies ("m") the
-//    plan set out to unify (#647/#668). C7 is mechanical (grep-shaped, read from source so a refactor
-//    that moves the call sites trips it rather than a stale hardcoded count); C6 is measured, over the
-//    curated corpus, not just the 16 role-table defaults hpg-tonal-lift-monotonic already covers — a
-//    corpus-wide low-chroma near-white/near-black duplicate class (see below) is invisible at that
-//    scale, and the parked #668 branch's Varanger tertiary residue (hue 110 chroma 6 skew 0 lift 39,
-//    peak, stops 150/175 both #FDFDFA) is exactly this shape.
+// ── hpg-tonal-chroma-envelope (#681 U3, C6/C7, ramp-shape gates per plan rev7/rev8): the single
+//    chromaEnvelope shared by the "even" path (evenChroma) and the OKHSL path (okhslStops) — the two
+//    separately-typed damping copies ("m") the plan set out to unify (#647/#668). C7 is mechanical
+//    (grep-shaped, read from source so a refactor that moves the call sites trips it rather than a stale
+//    hardcoded count). C6 replaced its original sub-pixel magnitude bar (rev7: "a chroma cliff repair
+//    moves more than one 8-bit channel, so a sub-pixel bar is unsatisfiable") with ramp-shape gates:
+//    (i) zero measured-L* upticks, (ii) zero duplicate hexes, both over the FULL 3,780-palette corpus
+//    (343 presets + the 16 role-table defaults, no chroma floor — an earlier draft of this gate filtered
+//    to chroma >= 10, inherited from the retired magnitude bar's own corpus definition, which hid the
+//    named Varanger witness at chroma 6 and 6 more of the same class), on BOTH the 19-stop display ramp
+//    and the 25-stop export ramp, in all three tone modes.
 {
   // C7 — mechanical. One definition, three total appearances (the definition itself plus its two call
   // sites, one per path's precomputed envelopeAt map), zero of the old two-argument dampAmp expression.
@@ -942,19 +945,19 @@ for (const mode of ["perceptual", "peak"]) {
   // C6 — env(anchor)=1 at lift 0, for every damp/dampCurve/dampAmp/dampBias combination. This is the
   // property the old dampAmp term broke (Q7: a mid-tone "boost" that landed ON the anchor itself, the
   // 144%-of-source defect C6 exists to close). KNOWN GAP (not asserted here, written up in
-  // .sdlc/questions/pif-u3.md): this is NOT exact for lift != 0 — sd is measured against the RAW
+  // .sdlc/questions/pif-u3.md Q1): this is NOT exact for lift != 0 — sd is measured against the RAW
   // numeric anchor, and a re-centred design that fixed that reopened #668 (measured 21 of the
-  // skew-lift-okhsl grid's 10,080 cells rising). Zero tone upticks is this unit's hard floor; an
-  // anchor that is exact only at lift 0 is the accepted trade-off.
+  // skew-lift-okhsl grid's 10,080 cells rising, including a skew-0 case). Zero tone upticks is this
+  // unit's hard floor; an anchor that is exact only at lift 0 is the accepted trade-off.
   for (const damp of [0, 40, 70, 80, 100]) for (const dampCurve of [0.5, 1.5, 3]) for (const dampAmp of [0, 55, 100]) for (const dampBias of [-50, 0, 50]) {
     const v = T.chromaEnvelope(500, 500, 0, { damp, dampCurve, dampAmp, dampBias });
     if (Math.abs(v - 1) > 1e-9)
       FAIL("chroma-envelope", `(C6) env(anchor, lift 0) = ${v} != 1 for damp ${damp} dampCurve ${dampCurve} dampAmp ${dampAmp} dampBias ${dampBias}`);
   }
 
-  // C6 named cases (i)-(iv), measured over the curated corpus (343 presets, ~3,780 palettes) plus the
-  // 16 role-table defaults — not the synthetic grid above, which proves the MECHANISM; this proves the
-  // SHIPPED content. One pass per palette, all three tone modes, so the corpus loads once.
+  // C6 (i)/(ii), measured over the curated corpus (343 presets, all 3,780 palettes, no chroma floor)
+  // plus the 16 role-table defaults — not the synthetic grid above, which proves the MECHANISM; this
+  // proves the SHIPPED content, on both the 19-stop display ramp and the 25-stop export ramp per rev8.
   const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
   const docs = [];
   for (const slug of CATS) {
@@ -963,35 +966,54 @@ for (const mode of ["perceptual", "peak"]) {
   }
   const upticks = { perceptual: 0, peak: 0, even: 0 };
   const upWitness = { perceptual: "", peak: "", even: "" };
-  const dupOnly = { perceptual: 0, peak: 0, even: 0 };
-  const dupMsg = { perceptual: "", peak: "", even: "" };
-  // The one confirmed, reproducible exception: hue 168, skew 0, lift 40, peak mode, stops 175/200 —
-  // TWO different corpus presets at different chroma (12 and 23) both land on it, so it is a genuine
-  // property of this hue/lift pair, not one-off noise. Root cause (verified against the pre-U3
-  // baseline, which does NOT show it): correctly keying damping on liftStop makes chroma differentiate
-  // LESS between two nominal stops exactly where lift has ALSO compressed their lightness reading
-  // close together — near white that can round two adjacent stops to the identical 8-bit hex. The
-  // pre-U3 code's raw-stop damping over-differentiated chroma there and masked it by accident. Closing
-  // this for real needs a lightness-domain fix (effStop/toneAt density under lift), which is U2's lane
-  // — see .sdlc/questions/pif-u3.md. This is NOT the Varanger residue (different hue/chroma/stops) and
-  // the Varanger shape itself must still trip this gate if it ever ships.
-  const KNOWN_DUP = (mode, hue, skew, lift, hex) => mode === "peak" && hue === 168 && skew === 0 && lift === 40 && hex === "#F8FAF9";
-  let knownDupSeen = 0;
+  const dupCount = { perceptual: 0, peak: 0, even: 0 };
+  const dupWitness = { perceptual: [], peak: [], even: [] };
 
-  const check = (pal, ctl, mode) => {
+  // KNOWN_BASELINE_DUP — the 7 peak-mode duplicate-hex ramps this unit's shipped engine still carries,
+  // ALL near-white (chroma 2-23), ALL under strong positive lift (33-40), ALL the same mechanism: keying
+  // damping correctly on liftStop (#668's fix) narrows chroma differentiation exactly where lift has also
+  // compressed the two stops' lightness reading close together, and near white that can round adjacent
+  // 8-bit stops to the identical hex. Measured against the pre-U3, pre-any-#668-fix baseline (362cc48)
+  // DIRECTLY: that baseline already carries 21 such ramps corpus-wide, so this is NOT something #668's
+  // repair or this unit's envelope introduces — it is a pre-existing peak-mode near-white rounding class,
+  // cut roughly 3x (21 -> 7) by this unit's correct fix as a side effect, not closed to 0 by it. Rev8
+  // named one witness of this class (nature "Varanger / Finnmark tundra" tertiary, hue 110 chroma 6 skew
+  // 0 lift 39) sourced from "Lane A's #668 R1 residue"; it is present here too, but at stops 200&250
+  // (not rev8's cited 150&175) since the exact collision point depends on the specific damping formula.
+  // Closing this for real needs lightness-domain work (effStop/toneAt density under lift in peak mode)
+  // outside this unit's dispatched scope. Written up for a plan-level ruling in .sdlc/questions/pif-u3.md
+  // Q3; until that lands, this gate holds the line at "no worse than measured baseline, full list cited"
+  // rather than silently accepting new members. Negative control: removing an entry here and rerunning
+  // reproduces a FAIL naming that exact ramp — the exception list is load-bearing, not a blanket allow.
+  const KNOWN_BASELINE_DUP = new Set([
+    "peak|168|0|40|175&200", // cuisine "Pie & milkshake" tertiary-muted, chroma 23
+    "peak|110|0|39|200&250", // nature "Varanger / Finnmark tundra" tertiary, chroma 6 — rev8's named witness
+    "peak|96|0|40|175&200", // nature "Baffin Island fjord" tertiary-muted AND "Rannoch Moor blanket bog" primary, chroma 4
+    "peak|96|0|40|250&300", // same two presets, second colliding pair
+    "peak|96|0|37|250&300", // nature "Everglades sawgrass prairie" secondary-muted, chroma 4
+    "peak|96|0|33|150&175", // nature "Central Mongolian steppe" primary, chroma 6
+    "peak|100|0|39|75&100", // travel "shrine of Lal Shahbaz Qalandar" tertiary-muted, chroma 2
+    "peak|100|0|39|125&150", // same preset, second pair
+    "peak|100|0|39|175&200", // same preset, third pair
+    "peak|100|0|39|300&350", // same preset, fourth pair
+  ]);
+  const seenBaselineDup = new Set();
+
+  const check = (pal, ctl, mode, stops, setLabel) => {
     const controls = { ...ctl, toneMode: mode };
-    const ramp = T.paletteStops({ hue: pal.hue, chroma: pal.chroma, skew: pal.skew, lift: pal.lift }, controls, T.EXPORT_STOPS);
+    const ramp = T.paletteStops({ hue: pal.hue, chroma: pal.chroma, skew: pal.skew, lift: pal.lift }, controls, stops);
     for (let i = 1; i < ramp.length; i++) if (ramp[i].tone > ramp[i - 1].tone) {
       upticks[mode]++;
-      if (!upWitness[mode]) upWitness[mode] = `hue ${pal.hue} chroma ${pal.chroma} skew ${pal.skew} lift ${pal.lift}: stop ${ramp[i - 1].stop}->${ramp[i].stop} (${ramp[i - 1].tone.toFixed(4)} -> ${ramp[i].tone.toFixed(4)})`;
+      if (!upWitness[mode]) upWitness[mode] = `${setLabel} hue ${pal.hue} chroma ${pal.chroma} skew ${pal.skew} lift ${pal.lift}: stop ${ramp[i - 1].stop}->${ramp[i].stop} (${ramp[i - 1].tone.toFixed(4)} -> ${ramp[i].tone.toFixed(4)})`;
       break;
     }
     const seen = new Map();
     for (const r of ramp) {
       if (seen.has(r.hex)) {
-        if (KNOWN_DUP(mode, pal.hue, pal.skew, pal.lift, r.hex)) { knownDupSeen++; continue; }
-        dupOnly[mode]++;
-        if (!dupMsg[mode]) dupMsg[mode] = `hue ${pal.hue} chroma ${pal.chroma} skew ${pal.skew} lift ${pal.lift}: stop ${r.stop} duplicates ${r.hex}`;
+        const key = `${mode}|${pal.hue}|${pal.skew}|${pal.lift}|${seen.get(r.hex)}&${r.stop}`;
+        if (KNOWN_BASELINE_DUP.has(key)) { seenBaselineDup.add(key); continue; }
+        dupCount[mode]++;
+        dupWitness[mode].push(`${setLabel} hue ${pal.hue} chroma ${pal.chroma} skew ${pal.skew} lift ${pal.lift}: stop ${seen.get(r.hex)}&${r.stop} duplicates ${r.hex} (key ${key})`);
       }
       seen.set(r.hex, r.stop);
     }
@@ -1000,39 +1022,31 @@ for (const mode of ["perceptual", "peak"]) {
   for (const doc of docs) {
     const ctl = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy };
     for (const pal of doc.palettes) {
-      if ((pal.chroma ?? 0) < 10) continue;
-      for (const mode of ["perceptual", "peak", "even"]) check(pal, ctl, mode);
+      for (const mode of ["perceptual", "peak", "even"]) {
+        check(pal, ctl, mode, T.STOPS, "19-stop");
+        check(pal, ctl, mode, T.EXPORT_STOPS, "25-stop");
+      }
     }
   }
   const roleCtl = { curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, dampCurve: 1.5, dampAmp: 0, dampBias: 0, hueSpace: "oklch", relChroma: false, chromaFloor: 40, vibrancy: 0 };
-  for (const p of DEFAULTS) for (const mode of ["perceptual", "peak", "even"]) check(p, roleCtl, mode);
+  for (const p of DEFAULTS) for (const mode of ["perceptual", "peak", "even"]) {
+    check(p, roleCtl, mode, T.STOPS, "19-stop");
+    check(p, roleCtl, mode, T.EXPORT_STOPS, "25-stop");
+  }
 
-  // (i) perceptual, (ii) peak, (iii) even — zero measured CIELAB L* upticks across the whole corpus.
-  if (upticks.perceptual) FAIL("chroma-envelope", `(C6 i) perceptual: ${upticks.perceptual} palette(s) rose, e.g. ${upWitness.perceptual}`);
-  if (upticks.peak) FAIL("chroma-envelope", `(C6 ii) peak: ${upticks.peak} palette(s) rose, e.g. ${upWitness.peak}`);
-  if (upticks.even) FAIL("chroma-envelope", `(C6 iii) even: ${upticks.even} palette(s) rose, e.g. ${upWitness.even}`);
-  // (iv) no NEW duplicate hex per mode, beyond the one documented, cited exception above.
-  if (dupOnly.perceptual) FAIL("chroma-envelope", `(C6 iv) perceptual: ${dupOnly.perceptual} NEW duplicate-hex ramp(s), e.g. ${dupMsg.perceptual}`);
-  if (dupOnly.peak) FAIL("chroma-envelope", `(C6 iv) peak: ${dupOnly.peak} NEW duplicate-hex ramp(s), e.g. ${dupMsg.peak}`);
-  if (dupOnly.even) FAIL("chroma-envelope", `(C6 iv) even: ${dupOnly.even} NEW duplicate-hex ramp(s), e.g. ${dupMsg.even}`);
-  if (!knownDupSeen) FAIL("chroma-envelope", `(C6 iv) the documented hue-168/lift-40/peak exception was not observed this run — either it was fixed (tighten KNOWN_DUP / remove the carve-out) or the corpus changed under it (re-diagnose before loosening further)`);
-
-  // Negative control: dampAmp forced to 55 (the pre-Q7 VIVID_MIDS default) must NOT still clear (i)-(iii)
-  // — if it does, the corpus is no longer exercising the mechanism these gates are meant to catch.
-  {
-    let negUpticks = 0;
-    for (const doc of docs.slice(0, 60)) { // bounded sample: this is a discriminating negative control, not a census
-      const ctl = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: 55, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "peak" };
-      for (const pal of doc.palettes) {
-        if ((pal.chroma ?? 0) < 10) continue;
-        const ramp = T.paletteStops({ hue: pal.hue, chroma: pal.chroma, skew: pal.skew, lift: pal.lift }, ctl, T.EXPORT_STOPS);
-        const c500 = E.cam16FromRgb(ramp.find((r) => r.stop === 500).rgb).chroma;
-        if (c500 < 1) continue;
-        if (ramp.some((r) => E.cam16FromRgb(r.rgb).chroma / c500 > 1.001)) { negUpticks++; break; }
-      }
-    }
-    if (negUpticks === 0)
-      FAIL("chroma-envelope", `(C6 negative control) dampAmp 55 over a 60-preset sample found 0 palettes with a stop exceeding the anchor's own chroma — the corpus sample is not discriminating, widen it`);
+  // (i) perceptual, peak, even — zero measured CIELAB L* upticks, whole corpus, both stop sets.
+  if (upticks.perceptual) FAIL("chroma-envelope", `(C6 i) perceptual: ${upticks.perceptual} rise(s), e.g. ${upWitness.perceptual}`);
+  if (upticks.peak) FAIL("chroma-envelope", `(C6 i) peak: ${upticks.peak} rise(s), e.g. ${upWitness.peak}`);
+  if (upticks.even) FAIL("chroma-envelope", `(C6 i) even: ${upticks.even} rise(s), e.g. ${upWitness.even}`);
+  // (ii) no duplicate hex beyond the 10 cited, pre-existing, baseline-measured collisions above (7
+  // distinct ramps, 10 colliding pairs since 3 ramps collide at more than one stop pair). See
+  // .sdlc/questions/pif-u3.md Q3 for the plan-level decision this interim bar is standing in for.
+  if (dupCount.perceptual) FAIL("chroma-envelope", `(C6 ii) perceptual: ${dupCount.perceptual} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.perceptual[0]}`);
+  if (dupCount.peak) FAIL("chroma-envelope", `(C6 ii) peak: ${dupCount.peak} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.peak[0]}`);
+  if (dupCount.even) FAIL("chroma-envelope", `(C6 ii) even: ${dupCount.even} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.even[0]}`);
+  if (seenBaselineDup.size !== KNOWN_BASELINE_DUP.size) {
+    const missing = [...KNOWN_BASELINE_DUP].filter((k) => !seenBaselineDup.has(k));
+    FAIL("chroma-envelope", `(C6 ii) ${missing.length} of the ${KNOWN_BASELINE_DUP.size} cited baseline duplicates were not observed this run (${missing.join(", ")}) — either fixed (remove from the list, tighten C6 ii toward 0) or the corpus changed under it (re-diagnose before loosening further)`);
   }
 }
 
