@@ -408,14 +408,19 @@ Consequences that shape the design:
 ## Examples
 
 All values engine-generated from `defaultDocument()` resolved through `resolvedPalettes`
-(colour values below re-generated three times: 2026-09-17 at #647, which made the perceptual ramp
+(colour values below re-generated five times: 2026-09-17 at #647, which made the perceptual ramp
 honour a palette's `skew` and `lift` — Primary and Neutral both carry skew -20, so every literal
 derived from their ramp moved; 2026-09-18 at #657, which gave that ramp's OKHSL hue solver its best
-iterate instead of an unread last one, moving Primary's accent by one 8-bit step; and 2026-09-18 at
+iterate instead of an unread last one, moving Primary's accent by one 8-bit step; 2026-09-18 at
 #662, which made `onColorMode: "contrast"` the default and added the achromatic fall-through, moving
-`primary["on-primary"]._dark` to the black constant. #662 moved no ramp stop, so every raw literal
-and every semantic literal that is not an accent on-color is byte-for-byte the #657 capture. Type,
-geometry and park values are untouched by all three.)
+`primary["on-primary"]._dark` to the black constant (#662 moved no ramp stop, so every raw literal
+and every semantic literal that is not an accent on-color is byte-for-byte the #657 capture); and
+2026-09-18 at #681 (U1), which minted Primary's DEFAULT_PALETTES entry an `anchor: "#0C5DCC"`
+(today's stop-550 hex, Q2 (b)) — the `prime` step now renders that hex verbatim instead of
+deriveKeyColor's cusp identity, moving Primary's prime.prime/.brightest/.dimmest. The RAMP stops
+(500/050/950/scrim) and every other default family's prime are untouched by #681, and #681 moves no
+on-color, so #662's own capture stands for every semantic literal. Type, geometry and park values
+are untouched by all four.)
 (the drawer's path; calling `derivedAll` on the raw document skips the group resolver and renders
 Neutral at full chroma, the emitters must be fed the resolved state, as the drawer already does).
 
@@ -423,8 +428,9 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   258.97)"`, `["50"] === "oklch(1 0 0)"`, `["950"] === "oklch(0.1763 0.014 258.36)"`;
   `tokens.colors.neutral["500"].value === "oklch(0.5443 0.059 267.96)"` (material group ramp at
   30). `tokens.colors.primary.scrim["300"].value === "oklch(0.546 0.2114 258.97 / 30%)"`.
-  `tokens.colors.primary.prime.prime.value === "oklch(0.5929 0.2052 259.00)"` (`#2177F5`),
-  `.brightest === "oklch(0.8266 0.0853 258.93)"`, `.dimmest === "oklch(0.3543 0.1307 258.84)"`,
+  `tokens.colors.primary.prime.prime.value === "oklch(0.504 0.1867 258.99)"` (Primary's stored
+  `anchor` `#0C5DCC`, rendered verbatim — #681 U1),
+  `.brightest === "oklch(0.7391 0.1335 259.07)"`, `.dimmest === "oklch(0.2575 0.0972 259.02)"`,
   `.DEFAULT` equals `.prime`. `tokens.colors.constant.backdrop.value === "oklch(0 0 0 / 80%)"`.
 - **EX-2 (NORMATIVE, panda semantic).** `semanticTokens.colors.primary.DEFAULT.value` deep-equals
   `{ base: "oklch(0.504 0.1867 258.99)", _dark: "oklch(0.586 0.2114 258.97)" }`;

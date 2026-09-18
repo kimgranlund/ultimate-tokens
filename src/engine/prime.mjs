@@ -66,6 +66,15 @@ export function primeSteps(lPrime) {
   return { up, down };
 }
 
+// hexToRgb(hex) — local "#RRGGBB" -> sRGB(0..255) triple. Same REQ-050 reasoning as rgbToOklch below:
+// prime.mjs may only import hct.js/okhsl.js/tonal.js, none of which export a hex parser, so this is
+// its own minimal copy (mirrors gen-categories.mjs's/exports.js's identically-scoped private ones).
+const ANCHOR_HEX = /^#[0-9A-Fa-f]{6}$/;
+function hexToRgb(hex) {
+  const s = hex.slice(1);
+  return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)];
+}
+
 // rgbToOklch([r,g,b]) — local sRGB(0..255)->OKLCH(L,C,H) helper (Björn Ottosson's matrices, the same
 // ones okhsl.js's private linearSrgbToOklab uses). prime.mjs may only import hct.js/okhsl.js/tonal.js
 // (REQ-050), and neither exports the full L,C,H triple (okhsl.js's rgbToOklchHue returns H alone), so
@@ -88,20 +97,50 @@ function rgbToOklch([r, g, b]) {
 
 // primeSwatches(palette, controls) — REQ-050. Returns seven { step, l, s, hue, rgb, hex, oklch,
 // inGamut } entries, brightest..dimmest, lightest first. Deterministic; no DOM.
+//
+// ANCHOR BRANCH (ticket #681, U1 — "every preset's prime.DEFAULT is its sampled source colour
+// byte-for-byte"): a palette carrying a valid `anchor` (a STORED source hex, never fitted — see
+// persist.js DOMAINS.palette.anchor) renders its `prime` step (index 3) from that hex VERBATIM,
+// never reconstructed via okhslToRgb — the ticket's baseline measured the round trip
+// `okhslToRgb(rgbToOkhsl(anchorRgb))` byte-exact on only 2,020 of 2,028 real sampled sources, so a
+// re-derived swatch cannot be trusted to reproduce the stored hex exactly; the stored bytes always
+// can, by definition. The other six steps still ladder off the anchor's OWN measured OKHSL identity
+// (`rgbToOkhsl(anchorRgb)`) — the same "read off the real colour, not a proxy" principle REQ-052/053
+// below already applies in the non-anchored (deriveKeyColor) case, just anchored to the palette's
+// stored source instead of its cusp identity. A palette with no (or malformed) `anchor` takes the
+// ORIGINAL, byte-identical path below (C4's non-anchored identity control): `anchorHex` is null,
+// `lLadder === lPrime`, and every other line executes exactly as it did before this ticket.
 export function primeSwatches(palette, controls) {
-  const baseHue = effHue(palette.hue, controls.hueSpace, (palette.chroma ?? 0) / 100);
-  const pk = peakC(baseHue);
+  const anchorHex = typeof palette.anchor === "string" && ANCHOR_HEX.test(palette.anchor) ? palette.anchor.toUpperCase() : null;
 
-  // REQ-051/052/REQ-056 (conductor ruling 2026-09-11): the SAME construction deriveKeyColor uses
-  // (baseHue/keyChroma/pk.tone) — measured back through OKHSL so l_prime, the hue anchor, AND the
-  // ladder's flat saturation all read off the REAL key colour, not a neutral-grey `l` proxy or a raw
-  // chroma-fraction `s` proxy (two different quantities that don't coincide).
-  const keyChroma = ((palette.chroma ?? 0) / 100) * pk.c;
-  const keyRgb = hctToRgb(baseHue, keyChroma, pk.tone).rgb;
-  const key = rgbToOkhsl(keyRgb); // { h, s, l } of the REAL key colour
-  const lPrime = key.l;
+  let key, anchorRgb, anchorOklch;
+  if (anchorHex) {
+    anchorRgb = hexToRgb(anchorHex);
+    key = rgbToOkhsl(anchorRgb); // { h, s, l } of the REAL, STORED source colour
+    anchorOklch = rgbToOklch(anchorRgb);
+  } else {
+    const baseHue = effHue(palette.hue, controls.hueSpace, (palette.chroma ?? 0) / 100);
+    const pk = peakC(baseHue);
 
-  const { up, down } = primeSteps(lPrime); // REQ-051: even per side, clipped travel redistributed
+    // REQ-051/052/REQ-056 (conductor ruling 2026-09-11): the SAME construction deriveKeyColor uses
+    // (baseHue/keyChroma/pk.tone) — measured back through OKHSL so l_prime, the hue anchor, AND the
+    // ladder's flat saturation all read off the REAL key colour, not a neutral-grey `l` proxy or a raw
+    // chroma-fraction `s` proxy (two different quantities that don't coincide).
+    const keyChroma = ((palette.chroma ?? 0) / 100) * pk.c;
+    const keyRgb = hctToRgb(baseHue, keyChroma, pk.tone).rgb;
+    key = rgbToOkhsl(keyRgb); // { h, s, l } of the REAL key colour
+  }
+  const lPrime = key.l; // the swatch's OWN reported lightness — the anchor's TRUE l, unclamped
+  // Q3 (b), ruled: the `prime` step is exact regardless of the ladder window; the six OTHER steps
+  // clamp their ladder anchor into [PRIME_L_MIN, PRIME_L_MAX] so a source outside that window (e.g. a
+  // near-white or very dark sampled swatch) still gets a real six-rung ladder rather than `primeSteps`
+  // crediting one side out-of-domain room (its own floor-at-0 only guards a side past ITS OWN bound,
+  // never an lPrime past BOTH bounds at once — a case the cusp construction can't produce, REQ-051's
+  // own comment, but a stored anchor CAN). Non-anchored: identical to `lPrime` (a no-op), so
+  // `primeSteps` sees exactly what it always did.
+  const lLadder = anchorHex ? Math.min(PRIME_L_MAX, Math.max(PRIME_L_MIN, lPrime)) : lPrime;
+
+  const { up, down } = primeSteps(lLadder); // REQ-051: even per side, clipped travel redistributed
   const g = 3 ** ((palette.skew ?? 0) / 100); // REQ-053a: the ramp's own toneAt gamma, reused as the ladder bend
 
   // REQ-052 (superseded 2026-09-11): flat OKHSL saturation is the key colour's OWN saturation scaled
@@ -118,12 +157,18 @@ export function primeSwatches(palette, controls) {
   const sameDir = palette.hueSameDir === true;
 
   return PRIME_STEPS.map((step, i) => {
+    // The anchor branch's `prime` step (i===3) renders the STORED hex verbatim — unconditionally,
+    // never scaled by `primeChroma` (unlike the other six steps' `s` above): the ticket's "never
+    // moves it" applies even to that control, not only to the okhslToRgb round trip this bypasses.
+    if (anchorHex && i === 3) {
+      return { step, l: lPrime, s: key.s, hue: hOk, rgb: anchorRgb, hex: anchorHex, oklch: anchorOklch, inGamut: true };
+    }
     const t = (i - 3) / 3; // brightest -1 .. prime 0 .. dimmest +1
     const absT = Math.abs(t);
     // The bend is normalised PER SIDE — `w` runs 0..1 on each side independently — so it applies to
     // that side's OWN extent (3*up or 3*down), whatever redistribution made those extents (REQ-053a).
     const w = i < 3 ? absT ** (1 / g) : absT ** g; // light side 1/g, dark side g; w(prime)=0, w(ends)=1
-    const l = i < 3 ? lPrime + 3 * up * w : lPrime - 3 * down * w;
+    const l = i < 3 ? lLadder + 3 * up * w : lLadder - 3 * down * w;
     const dir = sameDir ? -absT : t;
     const hue = (((hOk + shift * dir) % 360) + 360) % 360;
     const rgb = okhslToRgb(hue, s, l);

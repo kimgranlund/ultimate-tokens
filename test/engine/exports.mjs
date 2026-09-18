@@ -417,6 +417,14 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // value derived from their ramp shifted. Re-pinned here AND in the SPEC's own Examples section in the
   // same change, so the normative text and this mirror cannot drift apart. The prime ladder, on-colors,
   // data-1 and constant.backdrop did not move.
+  // #681 re-capture (U1, Q2 (b)): Primary's prime.prime/.brightest/.dimmest moved AGAIN — Primary's
+  // DEFAULT_PALETTES entry now carries `anchor: "#0C5DCC"` (today's stop-550 hex), so its `prime` step
+  // renders that hex verbatim instead of deriveKeyColor's cusp identity, and the other six ladder
+  // rungs bend around the anchor's own OKHSL l/s/h instead of the cusp's. Re-pinned to the anchor's
+  // own oklch (independently verified: hexToRgb("#0C5DCC") -> oklch(0.504 0.1867 258.99) by a
+  // from-scratch sRGB->OKLab->OKLCH conversion, not by reading this pipeline's own output back). The
+  // ramp stops (500/050/950/scrim) and every OTHER default family's prime are untouched by U1 — only
+  // Primary's row happens to be this file's literal spot check.
   const ddState = stateOf(defaultDocument());
   const ddPreset = X.exportPanda(ddState);
   const ddRaw = ddPreset.theme.extend.tokens.colors;
@@ -426,9 +434,9 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.primary["950"].value !== "oklch(0.1763 0.014 258.36)") FAIL("panda", `EX-1 colors.primary.950 = ${ddRaw.primary["950"].value}`);
   if (ddRaw.neutral["500"].value !== "oklch(0.5443 0.059 267.96)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
   if (ddRaw.primary.scrim["300"].value !== "oklch(0.546 0.2114 258.97 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
-  if (ddRaw.primary.prime.prime.value !== "oklch(0.5929 0.2052 259)") FAIL("panda", `EX-1 colors.primary.prime.prime = ${ddRaw.primary.prime.prime.value}`);
-  if (ddRaw.primary.prime.brightest.value !== "oklch(0.8266 0.0853 258.93)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`);
-  if (ddRaw.primary.prime.dimmest.value !== "oklch(0.3543 0.1307 258.84)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
+  if (ddRaw.primary.prime.prime.value !== "oklch(0.504 0.1867 258.99)") FAIL("panda", `EX-1 colors.primary.prime.prime = ${ddRaw.primary.prime.prime.value}`);
+  if (ddRaw.primary.prime.brightest.value !== "oklch(0.7391 0.1335 259.07)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`);
+  if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2575 0.0972 259.02)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
   if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.504 0.1867 258.99)", _dark: "oklch(0.586 0.2114 258.97)" }))
