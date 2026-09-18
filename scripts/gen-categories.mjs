@@ -89,8 +89,28 @@ function tidyVolumeTitle(s) {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-// The prime role is stop 550; anchor each prime to its SOURCE lightness via `lift` (centred tone bump).
-const PRIME_TONE = toneAt(550, 0, 0, DEFAULT_CONTROLS);
+// The prime role is stop 550; anchor each prime to its SOURCE lightness via `lift`.
+// `lift` is a DISPLACEMENT OF THE STOP (#648), not an additive L* offset, so the inverse is no longer
+// the algebraic `sourceL* - PRIME_TONE` this used to be — under the displacement mechanism that
+// expression misses by up to ~12 L* at the domain edges. Solve it instead: toneAt(550, 0, ·) is
+// STRICTLY INCREASING in lift (liftStop is monotone in lift, and the base curve is monotone in stop),
+// so a fixed-iteration bisection converges deterministically — no tuning, same answer on every host,
+// which matters because this output is a committed artifact under CI's drift gate. The stored value is
+// the INTEGER the schema keeps (persist.js clamps lift to -40..40), chosen as whichever of the two
+// neighbouring integers lands closer to the target rather than by blind rounding.
+const LIFT_MIN = -40, LIFT_MAX = 40;
+const primeTone = (lift) => toneAt(550, 0, lift, DEFAULT_CONTROLS);
+const PRIME_TONE_MIN = primeTone(LIFT_MIN), PRIME_TONE_MAX = primeTone(LIFT_MAX);
+let liftUnreachable = 0; // sources whose lightness lies outside what the lift domain can reach
+function liftForTone(targetL) {
+  if (targetL <= PRIME_TONE_MIN) { if (targetL < PRIME_TONE_MIN) liftUnreachable++; return LIFT_MIN; }
+  if (targetL >= PRIME_TONE_MAX) { if (targetL > PRIME_TONE_MAX) liftUnreachable++; return LIFT_MAX; }
+  let lo = LIFT_MIN, hi = LIFT_MAX;
+  for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (primeTone(mid) < targetL) lo = mid; else hi = mid; }
+  const a = Math.max(LIFT_MIN, Math.min(LIFT_MAX, Math.floor(lo)));
+  const b = Math.min(LIFT_MAX, a + 1);
+  return Math.abs(primeTone(a) - targetL) <= Math.abs(primeTone(b) - targetL) ? a : b;
+}
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const palette = (name, hex, oklch, sw) => {
   const rgb = hexToRgb(hex);
@@ -102,7 +122,7 @@ const palette = (name, hex, oklch, sw) => {
     hue: ((Math.round(Number(oklch[2])) % 360) + 360) % 360, // round THEN wrap so 359.7 → 0, not 360
     chroma: Math.round(Math.min(100, Math.max(0, chroma))),
     skew: 0,
-    lift: Math.round(clamp(lstarFromRgb(rgb) - PRIME_TONE, -40, 40)),
+    lift: liftForTone(lstarFromRgb(rgb)),
     hueShift: 0,
     hueSameDir: false,
     // retain the EXACT source color as the `dominant` key color, in OKLCH (less lossy than hex).
@@ -484,4 +504,5 @@ const idx =
   "export const loadCategory = (slug) => (LOADERS[slug] ? LOADERS[slug]() : Promise.resolve(null));\n";
 writeFileSync(resolve(OUTDIR, "index.js"), idx);
 console.log(`wrote ${OUTDIR}/index.js  (${index.length} categories · ${index.reduce((a, c) => a + c.count, 0)} palettes total)`);
+console.log(`prime-anchor lift: reachable range ${PRIME_TONE_MIN.toFixed(2)}..${PRIME_TONE_MAX.toFixed(2)} L* at stop 550 · ${liftUnreachable} source color(s) outside it (clamped to the domain edge)`);
 }

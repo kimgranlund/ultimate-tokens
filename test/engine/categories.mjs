@@ -14,7 +14,9 @@ import { typeScale, DEFAULT_TYPE, siblingWeightDefaults, bodyClassSiblingDefault
 import { hydrate } from "../../src/ui/persist.js";
 import { paletteGroup, resolvePaletteGroups } from "../../src/ui/model.mjs";
 import { rampChromaOf } from "../../src/engine/resolve.mjs";
-import { paletteStops, STOPS } from "../../src/engine/tonal.js";
+import { paletteStops, STOPS, toneAt, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
+import { lstarFromRgb } from "../../src/engine/hct.js";
+import { oklchToRgb } from "../../src/engine/okhsl.js";
 import { buildCategory } from "../../scripts/gen-categories.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -528,8 +530,91 @@ for (const slug of CATS) {
 const noType = hydrate({ palettes: [{ name: "x", hue: 200, chroma: 60, on: true }] });
 if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL("fallback", "un-typed palette lost the product default");
 
+// ── lift-anchor (#648): the prime-anchor INVERSE in scripts/gen-categories.mjs must actually hit its
+//    target. A preset anchors its prime (stop 550) on the sampled source color by storing a `lift`.
+//    That inverse used to be the algebra of the RETIRED additive bump, `sourceL* - toneAt(550,0,0)`,
+//    which is simply wrong now that lift DISPLACES the stop (#648) — it missed by ~9 L* at lift +40
+//    and ~12 at -40. The generator now SOLVES the inverse, and this gate is what keeps it solved: it
+//    re-derives each built palette's target from the spec and checks the stored integer reproduces it.
+//    Joined on the palette's stored colorName + key-color OKLCH back to the spec's HEX, because the
+//    HEX is what the generator fits against. OKLCH alone is NOT a unique key: 7 travel swatches share
+//    an oklch string with a different hex, and joining on it alone picks the wrong target and reports
+//    a generator fault that isn't there. Name + oklch is unique in all 8 specs.
+{
+  const TOL = 1.5;                                   // L* the review fixed as "anchored"
+  const LIFT_MIN = -40, LIFT_MAX = 40;               // persist.js's own domain for lift
+  const pt = (lift) => toneAt(550, 0, lift, DEFAULT_CONTROLS);
+  const BAND_LO = pt(LIFT_MIN), BAND_HI = pt(LIFT_MAX);
+  const r4 = (v) => Number(Number(v).toFixed(4));
+  const hexToRgb = (h) => { const x = String(h).replace("#", ""); return [0, 2, 4].map((i) => parseInt(x.slice(i, i + 2), 16)); };
+  const clean = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();   // the generator's own normalisation
+  const SAMPLED = new Set(["primary", "primary-muted", "secondary", "secondary-muted", "tertiary", "tertiary-muted"]);
+  let checked = 0, outOfBand = 0;
+  // A spec whose swatch `hex` and `oklch` describe DIFFERENT colors is a pre-existing data defect,
+  // not a lift defect: the generator fits the hex while the preset stores the oklch, so the two
+  // disagree downstream. Exactly one spec is in that state today (travel, 198/288 swatches, up to
+  // 7.42 L*). Counting it here rather than naming it keeps the carve-out self-policing: if a second
+  // spec drifts, or travel is repaired, this gate says so instead of quietly widening.
+  const KNOWN_HEX_OKLCH_DRIFTED = 1;
+  let drifted = 0;
+  for (const slug of CATS) {
+    const doc = JSON.parse(readFileSync(join(SPECDIR, `${slug}.json`), "utf8"));
+    // spec swatch: r4(oklch) -> hex, the exact key `palette()` stores on the built palette.
+    const byKey = new Map();
+    let specDrift = 0, specSwatches = 0;
+    JSON.stringify(doc, (k, v) => {
+      if (v && typeof v === "object" && v.hex && v.oklch) {
+        const ok = String(v.oklch).trim().split(/\s+/).map(Number);
+        byKey.set(clean(v.name) + "|" + ok.map(r4).join(","), String(v.hex).toUpperCase());
+        specSwatches++;
+        if (Math.abs(lstarFromRgb(hexToRgb(v.hex)) - lstarFromRgb(oklchToRgb(ok[0], ok[1], ok[2]))) > TOL) specDrift++;
+      }
+      return v;
+    });
+    if (specDrift) drifted++;
+    // The `direct` pass-through (a real product's own authored settings — 5 of the 7 brands presets)
+    // never goes through the generator's palette(), so its lift is authored, not fitted, and this gate
+    // has no claim on it. buildCategory passes those objects through VERBATIM, so identity is an exact
+    // test — no name matching, and no risk of silently skipping a palette that SHOULD have been fitted.
+    const directPalettes = new Set();
+    for (const v of doc.volumes || []) for (const sp of v.palettes || [])
+      if (Array.isArray(sp.palettes) && sp.palettes.length) for (const dp of sp.palettes) directPalettes.add(dp);
+    for (const preset of buildCategory(doc).presets) {
+      for (const q of preset.palettes) {
+        if (directPalettes.has(q)) continue;
+        if (!SAMPLED.has(q.name) || !q.keyColors || !q.keyColors[0]) continue;
+        const hex = byKey.get(q.colorName + "|" + q.keyColors[0].oklch.join(","));
+        if (!hex) { FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: key color ${q.colorName} ${q.keyColors[0].oklch} matches no spec swatch — the join broke`); continue; }
+        const target = lstarFromRgb(hexToRgb(hex));
+        if (!(q.lift >= LIFT_MIN && q.lift <= LIFT_MAX && Number.isInteger(q.lift)))
+          FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: lift ${q.lift} is not an integer in [${LIFT_MIN}, ${LIFT_MAX}]`);
+        if (target < BAND_LO || target > BAND_HI) {
+          // Unreachable: the source is lighter or darker than lift can carry stop 550. The only
+          // correct answer is the domain edge on the right side — assert THAT, don't excuse it.
+          outOfBand++;
+          const want = target < BAND_LO ? LIFT_MIN : LIFT_MAX;
+          if (q.lift !== want) FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: source L* ${target.toFixed(2)} is outside the reachable band ${BAND_LO.toFixed(2)}..${BAND_HI.toFixed(2)}, so lift must clamp to ${want}, got ${q.lift}`);
+          continue;
+        }
+        checked++;
+        const err = Math.abs(pt(q.lift) - target);
+        if (err > TOL) FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: prime lands at ${pt(q.lift).toFixed(2)} L* but the source is ${target.toFixed(2)} (off by ${err.toFixed(2)}, tol ${TOL}) — stored lift ${q.lift}`);
+        // and it must be the BEST integer, not merely a close one: a systematically biased inverse
+        // (the additive-algebra one was biased) can sit inside 1.5 L* and still be wrong everywhere.
+        let best = q.lift, bestErr = err;
+        for (let k = LIFT_MIN; k <= LIFT_MAX; k++) { const e = Math.abs(pt(k) - target); if (e < bestErr - 1e-9) { best = k; bestErr = e; } }
+        if (best !== q.lift) FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: stored lift ${q.lift} (err ${err.toFixed(3)}) is not the best integer — ${best} gives ${bestErr.toFixed(3)}`);
+      }
+    }
+  }
+  if (drifted !== KNOWN_HEX_OKLCH_DRIFTED)
+    FAIL("lift-anchor", `${drifted} category spec(s) have swatches whose hex and oklch disagree by more than ${TOL} L*, expected exactly ${KNOWN_HEX_OKLCH_DRIFTED} (travel). A new one is a data regression; a repaired one should lower this count.`);
+  if (checked < 1500) FAIL("lift-anchor", `only ${checked} in-band sampled palettes compared — the join or the corpus shrank`);
+  console.log(`  (lift-anchor: ${checked} in-band sampled primes anchored within ${TOL} L*, ${outOfBand} clamped to the lift domain edge)`);
+}
+
 // ── REPORT ──
-for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback"]) {
+for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback", "lift-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }
