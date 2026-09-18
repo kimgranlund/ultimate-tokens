@@ -568,6 +568,84 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("librarygeom", "the interactive box-geometry library-mode e2e threw: " + e.message); }
 }
 
+// ── libraryidem (#635): library-mode apply must be IDEMPOTENT through the binder's own INTERACTIVE
+//    gate. librarygeom above proves run 2 only with a PRE-DECIDED apply2(plans2, {libraryMode:true}),
+//    which bypasses the gate; the real user runs main() twice. On run 2 the reconcile report is EMPTY
+//    (every old name is already correctly aliased — nothing to write), so the gate never asked and fell
+//    through to the classic prune, deleting the 30 names run 1 had preserved (122 -> 92 variables).
+//    The rule: an empty report on a collection carrying EVIDENCE of a prior uplift (any live alias
+//    target, or any "_deprecated/" name) is "library mode, already decided" — no dialog, no prune.
+//    Non-regression legs: a never-touched collection with an empty report still takes the prune branch
+//    (libraryMode:false), and a never-touched collection with a non-empty report still ASKS. ──
+{
+  const F = mockFigma();
+  F.figma._libraryModeAnswer = true;
+  try {
+    const FIELDS = ["height", "icon", "caret", "icon-gap", "min-width", "padding-narrow", "padding-narrow-compact", "padding-wide", "padding-wide-compact", "pill-radius"];
+    const OLD_STEPS = { small: 25, large: 40, jumbo: 70 };
+    const oldVars = [];
+    for (const [step, h] of Object.entries(OLD_STEPS)) {
+      for (const f of FIELDS) oldVars.push({ name: `size/${step}/${f}`, type: "FLOAT", values: [{ mode: "Base", value: f === "height" ? h : Math.round(h / 2) }] });
+    }
+    const { applyFloatPlans: apply1 } = loadBinder(binderSrc, F.figma);
+    await apply1([{ collection: "Geometry", modes: ["Base"], defaultMode: "Base", addModes: [], variables: oldVars }]);
+    const geomIx = GEOM.geomTokensFigmaModes(GEOM.geomScale({ treatment: "comfortable", baseHeight: 28 }), []);
+    const plans2 = MAP.modeApplyPlan(geomIx);
+    const injected = binderSrc.replace(FLOAT_ANCHOR, `JSON.parse(${JSON.stringify(JSON.stringify(plans2))}); /* injected */`);
+
+    // Run 1 through main(): the dialog fires once, the user picks "Preserve".
+    await loadBinder(injected, F.figma).main();
+    const geo = F.collections.find((c) => c.name === "Geometry");
+    if (!geo) throw new Error("run 1 produced no Geometry collection");
+    const countOf = () => F.variables.filter((va) => va.variableCollectionId === geo.id).length;
+    const oldPresent = () => oldVars.filter((v) => F.variables.some((va) => va.variableCollectionId === geo.id && va.name === v.name)).length;
+    const n1 = countOf(), old1 = oldPresent();
+    if (F.figma._libraryShowUICalls !== 1) FAIL("libraryidem", `run 1 expected exactly 1 library-mode prompt, got ${F.figma._libraryShowUICalls}`);
+    if (old1 !== oldVars.length) FAIL("libraryidem", `run 1 preserved ${old1}/${oldVars.length} old names (fixture broken, run 2 would prove nothing)`);
+
+    // Run 2 through main() AGAIN — the interactive path, answer UNSET (mock default: "Remove"), so a
+    // dialog firing here would ALSO be a failure of a different kind (the user is asked a question run 1
+    // already answered). The gate must recognise the uplifted collection and neither ask nor prune.
+    F.figma._libraryShowUICalls = 0;
+    F.figma._libraryModeAnswer = false;
+    await loadBinder(injected, F.figma).main();
+    const n2 = countOf(), old2 = oldPresent();
+    if (F.figma._libraryShowUICalls !== 0) FAIL("libraryidem", `run 2 must not re-ask on an already-uplifted collection, got ${F.figma._libraryShowUICalls} prompt(s)`);
+    if (n2 !== n1 || old2 !== oldVars.length) FAIL("libraryidem", `run 2 is not idempotent: variables ${n1} -> ${n2}, old names kept ${old2}/${oldVars.length} (the classic prune deleted what run 1 preserved)`);
+    if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("libraryidem", "run 2 duplicated the Geometry collection");
+  } catch (e) { FAIL("libraryidem", "the interactive idempotency e2e threw: " + e.message); }
+
+  // Non-regression A: a NEVER-touched collection whose report is empty (existing == wanted) has no
+  // evidence of an uplift — the gate must still take the classic prune branch, silently (0 prompts).
+  const G = mockFigma();
+  try {
+    const geomIx = GEOM.geomTokensFigmaModes(GEOM.geomScale({ treatment: "comfortable", baseHeight: 28 }), []);
+    const plans = MAP.modeApplyPlan(geomIx);
+    await loadBinder(binderSrc, G.figma).applyFloatPlans(plans);
+    const res = await loadBinder(binderSrc, G.figma).applyFloatPlans(plans, { askIfUndecided: true }); // main()'s exact opts
+    if (G.figma._libraryShowUICalls !== 0) FAIL("libraryidem", `never-touched + empty report must not prompt, got ${G.figma._libraryShowUICalls}`);
+    const rpt = res && res.libraryReports && res.libraryReports.find((r) => r.collection === "Geometry");
+    if (!rpt) FAIL("libraryidem", "never-touched re-apply returned no Geometry libraryReport");
+    else if (rpt.libraryMode !== false) FAIL("libraryidem", `never-touched + empty report must stay on the classic prune branch (libraryMode:false), got ${rpt.libraryMode} — the fix turned every collection into library mode`);
+  } catch (e) { FAIL("libraryidem", "non-regression A threw: " + e.message); }
+
+  // Non-regression B: a NEVER-touched collection with a stray extra name (non-empty report) still ASKS,
+  // and "Remove" still prunes it — the pre-#635 contract for a real decision is unchanged.
+  const H = mockFigma();
+  H.figma._libraryModeAnswer = false;
+  try {
+    const geomIx = GEOM.geomTokensFigmaModes(GEOM.geomScale({ treatment: "comfortable", baseHeight: 28 }), []);
+    const plans = MAP.modeApplyPlan(geomIx);
+    const seeded = JSON.parse(JSON.stringify(plans));
+    seeded[0].variables.push({ name: "size/stray/height", type: "FLOAT", values: [{ mode: plans[0].defaultMode, value: 99 }] });
+    await loadBinder(binderSrc, H.figma).applyFloatPlans(seeded);
+    await loadBinder(binderSrc, H.figma).applyFloatPlans(plans, { askIfUndecided: true });
+    if (H.figma._libraryShowUICalls !== 1) FAIL("libraryidem", `never-touched + non-empty report must still ask once, got ${H.figma._libraryShowUICalls}`);
+    const geo = H.collections.find((c) => c.name === "Geometry");
+    if (geo && H.variables.some((va) => va.variableCollectionId === geo.id && va.name === "size/stray/height")) FAIL("libraryidem", "\"Remove\" on a never-touched collection no longer prunes the stray name");
+  } catch (e) { FAIL("libraryidem", "non-regression B threw: " + e.message); }
+}
+
 // ── colorparity: the binder's checked-in code.js's readColorRegistry/writeColorRegistry/ensureCollection
 //    are GENERATED (TKT-0024, splicing the FLOAT_EXECUTOR technique from TKT-0019) — spliced verbatim from
 //    the flagship figma/plugin/code.js by scripts/gen-figma-binder-code.mjs into the
@@ -651,7 +729,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "primereport", "adoptconsent", "librarygeom", "colorparity", "collparity", "floatparity"]) {
+for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "primereport", "adoptconsent", "librarygeom", "libraryidem", "colorparity", "collparity", "floatparity"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

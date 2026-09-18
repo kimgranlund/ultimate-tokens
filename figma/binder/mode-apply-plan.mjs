@@ -376,6 +376,21 @@ export function liveAliasTargetsByName(existingNames, modeName, liveVarsByName, 
   return out;
 }
 
+// priorLibraryUplift(existingNames, liveAliasTargets) — PURE (#635): does this collection carry EVIDENCE
+// that a previous apply already ran in "published library" mode? True when ANY existing name currently
+// resolves as a live alias (liveAliasTargetsByName above found a target — the aliases run 1 wrote), OR
+// any existing name sits under "_deprecated/" (the deprecates run 1 wrote). The gate needs this because
+// libraryModeReconcile below is IDEMPOTENT by design: on a re-apply it omits every already-correctly-
+// aliased name and every already-deprecated one, so run 2's report is EMPTY — indistinguishable from a
+// never-touched collection — and the gate used to fall through to the classic prune, deleting exactly
+// the names run 1 had preserved. An empty report on a collection with this evidence is "library mode,
+// already decided": nothing to ask, nothing to prune. A never-touched collection has neither signal.
+export function priorLibraryUplift(existingNames, liveAliasTargets) {
+  if (liveAliasTargets && Object.keys(liveAliasTargets).length) return true;
+  for (const name of (existingNames || [])) if (typeof name === "string" && name.startsWith("_deprecated/")) return true;
+  return false;
+}
+
 // libraryModeReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) — PURE: for each LIVE
 // variable name NOT in the current plan (`wantedNames`), classify what "published library" mode does
 // instead of deleting it:

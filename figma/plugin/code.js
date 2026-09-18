@@ -548,6 +548,16 @@ function liveAliasTargetsByNameVM(existingNames, modeName, liveVarsByName, idToN
   return out;
 }
 
+// priorLibraryUpliftVM(existingNames, liveAliasTargets) — mirrors mode-apply-plan.mjs#priorLibraryUplift
+// exactly (#635): evidence that a previous apply already ran in library mode — any live alias target, or
+// any "_deprecated/" name. Read by BOTH library-mode gates below (applyFontPrimitivesModes and
+// applyFloatPlans) so the two can never drift on what "already uplifted" means.
+function priorLibraryUpliftVM(existingNames, liveAliasTargets) {
+  if (liveAliasTargets && Object.keys(liveAliasTargets).length) return true;
+  for (const name of (existingNames || [])) if (typeof name === "string" && name.startsWith("_deprecated/")) return true;
+  return false;
+}
+
 // libraryReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) — mirrors
 // mode-apply-plan.mjs#libraryModeReconcile exactly (including the idempotency fix: a name already
 // correctly aliased to its resolved target — from `aliasMap`, or the `liveAliasTargets` fallback when
@@ -844,7 +854,12 @@ async function applyFontPrimitivesModes(plan, opts) {
   // own header comment, and the #495 Findings, for the follow-up this leaves on the table).
   let useLibrary = opts.libraryMode;
   if (useLibrary == null) {
-    useLibrary = (opts.askIfUndecided && (report.aliases.length || report.deprecates.length)) ? await confirmLibraryMode(plan.collection, report) : false;
+    if (report.aliases.length || report.deprecates.length) useLibrary = opts.askIfUndecided ? await confirmLibraryMode(plan.collection, report) : false;
+    // #635: an EMPTY report on a collection that already carries a prior uplift's aliases/_deprecated/
+    // names is "library mode, already decided" — the reconcile is idempotent (nothing left to write),
+    // so without this the gate would fall through to the classic prune and delete exactly the names an
+    // earlier library-mode apply preserved. A never-touched collection has no such evidence: prune as before.
+    else useLibrary = priorLibraryUpliftVM(Object.keys(byName), liveAliasTargets);
   }
   if (useLibrary) {
     for (const r of report.aliases) {
@@ -1418,7 +1433,10 @@ async function applyFloatPlans(plans, opts) {
     // prune — unchanged behavior, no mid-apply UI disruption, until a proper apply-gate toggle exists.
     let useLibrary = opts.libraryMode;
     if (useLibrary == null) {
-      useLibrary = (opts.askIfUndecided && (report.aliases.length || report.deprecates.length)) ? await confirmLibraryMode(plan.collection, report) : false;
+      if (report.aliases.length || report.deprecates.length) useLibrary = opts.askIfUndecided ? await confirmLibraryMode(plan.collection, report) : false;
+      // #635: empty report + evidence of a prior uplift (live aliases or _deprecated/ names) = library
+      // mode, already decided — no dialog, no prune. See applyFontPrimitivesModes' matching block above.
+      else useLibrary = priorLibraryUpliftVM(existingNames, liveAliasTargets);
     }
     if (useLibrary) {
       for (const r of report.aliases) {
