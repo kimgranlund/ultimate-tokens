@@ -701,7 +701,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("collparity", "could not load/compare the collection-name literals: " + e.message); }
 }
 
-// ── floatparity: the binder ports 5 float-executor functions VERBATIM from the flagship
+// ── floatparity: the binder ports 6 float-executor functions VERBATIM from the flagship
 //    (figma/plugin/code.js). They're a pure DATA executor with no planner to spec-gate against, so — per
 //    the repo's culture (see the roleTable PARITY GUARD above; scrim-drift incident 2026-06-18) — the two
 //    copies are gated against silent drift. Extract each function from BOTH files and compare their
@@ -710,7 +710,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 //    binder against one file converges on the SAME collection set (they share FLOAT_REGISTRY_KEY) ──
 {
   const FLAGSHIP_PATH = join(HERE, "..", "plugin", "code.js");
-  const FLOAT_FNS = ["readFloatRegistry", "writeFloatRegistry", "ensureFloatCollection", "varsByName", "applyFloatPlans"];
+  const FLOAT_FNS = ["readFloatRegistry", "writeFloatRegistry", "ensureFloatCollection", "varsByName", "applyFloatPlans", "priorLibraryUpliftVM"];
   // extractFunctionSource is the SAME brace-matched extraction scripts/gen-figma-binder-code.mjs uses
   // to splice these functions into the binder (TKT-0019) — shared from splice-utils.mjs so the
   // generator and this tripwire can never quietly disagree on what "the same function" means.

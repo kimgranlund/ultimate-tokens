@@ -190,6 +190,7 @@ async function applyFloatPlans(plans, opts) {
     }
     const liveAliasTargets = liveAliasTargetsByNameVM(existingNames, plan.defaultMode, liveVarsByName, idToName);
     const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap, liveAliasTargets);
+    const wantedNames = plan.variables.map((v) => v.name);
 
     const current = new Set();
     for (const v of plan.variables) {
@@ -209,9 +210,10 @@ async function applyFloatPlans(plans, opts) {
     let useLibrary = opts.libraryMode;
     if (useLibrary == null) {
       if (report.aliases.length || report.deprecates.length) useLibrary = opts.askIfUndecided ? await confirmLibraryMode(plan.collection, report) : false;
-      // #635: empty report + evidence of a prior uplift (live aliases or _deprecated/ names) = library
-      // mode, already decided — no dialog, no prune. See applyFontPrimitivesModes' matching block above.
-      else useLibrary = priorLibraryUpliftVM(existingNames, liveAliasTargets);
+      // #635: empty report + evidence of a prior uplift (an UNWANTED live alias or _deprecated/ name,
+      // judged on the pre-write existingNames snapshot) = library mode, already decided — no dialog, no
+      // prune. See applyFontPrimitivesModes' matching block above.
+      else useLibrary = priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets);
     }
     if (useLibrary) {
       for (const r of report.aliases) {
@@ -329,9 +331,14 @@ function liveAliasTargetsByNameVM(existingNames, modeName, liveVarsByName, idToN
   return out;
 }
 
-function priorLibraryUpliftVM(existingNames, liveAliasTargets) {
-  if (liveAliasTargets && Object.keys(liveAliasTargets).length) return true;
-  for (const name of (existingNames || [])) if (typeof name === "string" && name.startsWith("_deprecated/")) return true;
+function priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets) {
+  const wanted = new Set(wantedNames || []);
+  const targets = liveAliasTargets || {};
+  for (const name of (existingNames || [])) {
+    if (typeof name !== "string" || wanted.has(name)) continue;
+    if (name.startsWith("_deprecated/")) return true;
+    if (Object.prototype.hasOwnProperty.call(targets, name) && targets[name]) return true;
+  }
   return false;
 }
 

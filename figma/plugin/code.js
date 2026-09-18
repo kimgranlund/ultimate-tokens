@@ -548,13 +548,20 @@ function liveAliasTargetsByNameVM(existingNames, modeName, liveVarsByName, idToN
   return out;
 }
 
-// priorLibraryUpliftVM(existingNames, liveAliasTargets) — mirrors mode-apply-plan.mjs#priorLibraryUplift
-// exactly (#635): evidence that a previous apply already ran in library mode — any live alias target, or
-// any "_deprecated/" name. Read by BOTH library-mode gates below (applyFontPrimitivesModes and
-// applyFloatPlans) so the two can never drift on what "already uplifted" means.
-function priorLibraryUpliftVM(existingNames, liveAliasTargets) {
-  if (liveAliasTargets && Object.keys(liveAliasTargets).length) return true;
-  for (const name of (existingNames || [])) if (typeof name === "string" && name.startsWith("_deprecated/")) return true;
+// priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets) — mirrors
+// mode-apply-plan.mjs#priorLibraryUplift exactly (#635): evidence that a previous apply already ran in
+// library mode — an existing name the plan does NOT want that carries a live alias target, or sits under
+// "_deprecated/". A wanted name's alias (the plan's own ALIAS variables) is never evidence. Read by BOTH
+// library-mode gates below (applyFontPrimitivesModes and applyFloatPlans) so the two can never drift on
+// what "already uplifted" means; both feed it the snapshot taken BEFORE any write in the pass.
+function priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets) {
+  const wanted = new Set(wantedNames || []);
+  const targets = liveAliasTargets || {};
+  for (const name of (existingNames || [])) {
+    if (typeof name !== "string" || wanted.has(name)) continue;
+    if (name.startsWith("_deprecated/")) return true;
+    if (Object.prototype.hasOwnProperty.call(targets, name) && targets[name]) return true;
+  }
   return false;
 }
 
@@ -817,8 +824,13 @@ async function applyFontPrimitivesModes(plan, opts) {
     extraWantedNames = Object.values(typeStepMap); // these are GEOMETRY names — never in plan.variables
     Object.assign(aliasMap, typeWeightAliasMapVM(oldWeightRecords, LIBRARY_TYPE_VOICE_MAP, weightCandidates));
   }
-  const liveAliasTargets = liveAliasTargetsByNameVM(Object.keys(byName), plan.defaultMode, liveVarsByName, combinedIdToName);
+  // #635: snapshot the pre-write name set HERE — the create/update loop below mutates byName, and the
+  // library-mode gate after it must judge the collection as it was BEFORE this pass wrote anything
+  // (same snapshot discipline as applyFloatPlans' existingNames).
+  const existingNames = Object.keys(byName);
+  const liveAliasTargets = liveAliasTargetsByNameVM(existingNames, plan.defaultMode, liveVarsByName, combinedIdToName);
   const report = libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames);
+  const wantedNames = plan.variables.map((v) => v.name).concat(extraWantedNames || []);
 
   const current = new Set();
   let count = 0;
@@ -858,8 +870,9 @@ async function applyFontPrimitivesModes(plan, opts) {
     // #635: an EMPTY report on a collection that already carries a prior uplift's aliases/_deprecated/
     // names is "library mode, already decided" — the reconcile is idempotent (nothing left to write),
     // so without this the gate would fall through to the classic prune and delete exactly the names an
-    // earlier library-mode apply preserved. A never-touched collection has no such evidence: prune as before.
-    else useLibrary = priorLibraryUpliftVM(Object.keys(byName), liveAliasTargets);
+    // earlier library-mode apply preserved. Evidence is scoped to names the plan does NOT want: a
+    // never-touched collection (whose plan-level ALIAS variables also read as live aliases) has none: prune as before.
+    else useLibrary = priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets);
   }
   if (useLibrary) {
     for (const r of report.aliases) {
@@ -1415,6 +1428,7 @@ async function applyFloatPlans(plans, opts) {
     }
     const liveAliasTargets = liveAliasTargetsByNameVM(existingNames, plan.defaultMode, liveVarsByName, idToName);
     const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap, liveAliasTargets);
+    const wantedNames = plan.variables.map((v) => v.name);
 
     const current = new Set();
     for (const v of plan.variables) {
@@ -1434,9 +1448,10 @@ async function applyFloatPlans(plans, opts) {
     let useLibrary = opts.libraryMode;
     if (useLibrary == null) {
       if (report.aliases.length || report.deprecates.length) useLibrary = opts.askIfUndecided ? await confirmLibraryMode(plan.collection, report) : false;
-      // #635: empty report + evidence of a prior uplift (live aliases or _deprecated/ names) = library
-      // mode, already decided — no dialog, no prune. See applyFontPrimitivesModes' matching block above.
-      else useLibrary = priorLibraryUpliftVM(existingNames, liveAliasTargets);
+      // #635: empty report + evidence of a prior uplift (an UNWANTED live alias or _deprecated/ name,
+      // judged on the pre-write existingNames snapshot) = library mode, already decided — no dialog, no
+      // prune. See applyFontPrimitivesModes' matching block above.
+      else useLibrary = priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets);
     }
     if (useLibrary) {
       for (const r of report.aliases) {

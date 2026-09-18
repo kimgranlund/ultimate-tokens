@@ -1186,19 +1186,27 @@ if (applyFontPrimitivesModes) {
   if (mjsReport2.aliases.length) FAIL("libraryparity", `libraryModeReport must omit an already-correctly-aliased name (idempotency fix), got ${JSON.stringify(mjsReport2.aliases)}`);
   if (mjsReport2.deprecates.length) FAIL("libraryparity", `libraryModeReport must not deprecate an already-correctly-aliased name, got ${JSON.stringify(mjsReport2.deprecates)}`);
 
-  // priorLibraryUplift / priorLibraryUpliftVM (#635) — the gate's "already uplifted" evidence rule: any
-  // live alias target OR any "_deprecated/" name; neither on a never-touched collection.
+  // priorLibraryUplift / priorLibraryUpliftVM (#635, tightened in review round 1) — the gate's "already
+  // uplifted" evidence rule: an existing name NOT in wantedNames that carries a live alias target OR sits
+  // under "_deprecated/". A wanted name's alias (the plan's own ALIAS variables) is NOT evidence.
   const upliftCases = [
-    [["size/sm/height"], {}], [["size/sm/height", "size/small/height"], { "size/small/height": "size/sm/height" }],
-    [["size/sm/height", "_deprecated/size/odd/height"], {}], [[], undefined], [["_deprecated/x"], undefined],
+    [["size/sm/height"], ["size/sm/height"], {}],
+    [["size/sm/height", "size/small/height"], ["size/sm/height"], { "size/small/height": "size/sm/height" }],
+    [["size/sm/height", "_deprecated/size/odd/height"], ["size/sm/height"], {}],
+    [[], [], undefined], [["_deprecated/x"], [], undefined],
+    [["font/body", "font/sans"], ["font/body", "font/sans"], { "font/body": "font/sans" }],
+    [["font/body", "font/sans", "font/heading"], ["font/body", "font/sans"], { "font/body": "font/sans", "font/heading": "font/sans" }],
+    [["_deprecated/a"], ["_deprecated/a"], {}],
   ];
-  for (const [names, targets] of upliftCases) {
-    const mjsU = priorLibraryUplift(names, targets);
-    const vmU = vmPriorLibraryUplift ? vmPriorLibraryUplift(names, targets) : "MISSING";
-    if (mjsU !== vmU) FAIL("libraryparity", `priorLibraryUplift disagree for ${JSON.stringify({ names, targets })}: mjs=${mjsU} vm=${vmU}`);
+  for (const [names, wanted, targets] of upliftCases) {
+    const mjsU = priorLibraryUplift(names, wanted, targets);
+    const vmU = vmPriorLibraryUplift ? vmPriorLibraryUplift(names, wanted, targets) : "MISSING";
+    if (mjsU !== vmU) FAIL("libraryparity", `priorLibraryUplift disagree for ${JSON.stringify({ names, wanted, targets })}: mjs=${mjsU} vm=${vmU}`);
   }
-  if (priorLibraryUplift(["size/sm/height"], {}) !== false) FAIL("libraryparity", "priorLibraryUplift must be false for a never-touched collection");
-  if (priorLibraryUplift(["a"], { a: "b" }) !== true || priorLibraryUplift(["_deprecated/a"], {}) !== true) FAIL("libraryparity", "priorLibraryUplift must be true on a live alias or a _deprecated/ name");
+  if (priorLibraryUplift(["size/sm/height"], ["size/sm/height"], {}) !== false) FAIL("libraryparity", "priorLibraryUplift must be false for a never-touched collection");
+  if (priorLibraryUplift(["font/body", "font/sans"], ["font/body", "font/sans"], { "font/body": "font/sans" }) !== false) FAIL("libraryparity", "priorLibraryUplift must be false when the only live alias belongs to a WANTED name (the plan's own ALIAS variable)");
+  if (priorLibraryUplift(["_deprecated/a"], ["_deprecated/a"], {}) !== false) FAIL("libraryparity", "priorLibraryUplift must be false when the only _deprecated/ name is itself wanted");
+  if (priorLibraryUplift(["a", "b"], ["b"], { a: "b" }) !== true || priorLibraryUplift(["_deprecated/a", "b"], ["b"], {}) !== true) FAIL("libraryparity", "priorLibraryUplift must be true on an UNWANTED live alias or an UNWANTED _deprecated/ name");
 
   // LIBRARY_TYPE_VOICE_MAP — the same static map, migrations.mjs vs the code.js literal copy
   if (JSON.stringify(LIBRARY_TYPE_VOICE_MAP) !== JSON.stringify(vmLibraryTypeVoiceMap)) FAIL("libraryparity", `LIBRARY_TYPE_VOICE_MAP drifted: migrations.mjs=${JSON.stringify(LIBRARY_TYPE_VOICE_MAP)} code.js=${JSON.stringify(vmLibraryTypeVoiceMap)}`);
@@ -1322,6 +1330,26 @@ if (applyFontPrimitivesModes) {
       if (rpt2.renames.length) FAIL("librarymode", `second run should report 0 renames, got ${JSON.stringify(rpt2.renames)}`);
     }
   } catch (e) { FAIL("librarymode", "applyFontPrimitivesModes library-mode e2e threw: " + e.message); }
+
+  // #635 review round 1, negative control: a NEVER-touched Font Primitives collection re-applied with the
+  // SAME plan (empty report) and an UNDECIDED library mode must read libraryMode:false. The plan carries
+  // plan-level ALIAS variables (font/<voice> -> font/<face>), so liveAliasTargets is non-empty on a
+  // collection nobody ever uplifted — the evidence must be scoped to existing names the plan does NOT
+  // want, or every Font Primitives collection reads as "already uplifted".
+  try {
+    const FN = mockFigma();
+    const ln = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(FN.figma, "<html>", undefined);
+    const planN = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 })));
+    if (!planN.variables.some((v) => v.type === "ALIAS")) FAIL("librarymode", "fixture broken: the Font Primitives plan carries no plan-level ALIAS variable, so this control proves nothing");
+    await ln.applyFontPrimitivesModes(planN);
+    const resN = await ln.applyFontPrimitivesModes(planN, {});
+    if (!resN || !resN.libraryReport) FAIL("librarymode", "never-touched Font Primitives re-apply returned no libraryReport");
+    else {
+      const r = resN.libraryReport;
+      if (r.aliases.length || r.deprecates.length) FAIL("librarymode", `fixture broken: never-touched re-apply must have an EMPTY report, got aliases=${JSON.stringify(r.aliases)} deprecates=${JSON.stringify(r.deprecates)}`);
+      else if (r.libraryMode !== false) FAIL("librarymode", `never-touched Font Primitives + empty report must read libraryMode:false, got ${r.libraryMode} — the plan's own ALIAS variables were mistaken for a prior uplift`);
+    }
+  } catch (e) { FAIL("librarymode", "never-touched Font Primitives control threw: " + e.message); }
 }
 
 // ── librarygrammar (#498): the ADIA file's TWO older grammars, bridged instead of deprecated — a
