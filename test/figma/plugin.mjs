@@ -1164,6 +1164,41 @@ if (applyStylePlans && applyFontPrimitivesModes) {
     if (classicRes.preserved) FAIL("styles", `#629 libraryMode:false preserved ${classicRes.preserved} styles: it must remove, not report`);
     if (F.figma._styles.some((x) => x.name === "Display/md/lighter")) FAIL("styles", "#629 libraryMode:false left the dropped sibling style behind");
     if (!F.figma._styles.some((x) => x.name === "My Own/keep-me")) FAIL("styles", "#629 the library/classic round trip touched a USER style (provenance violated)");
+
+    // ── #629 round 3 (PR #675 critic): the PAINT half of the same guard. The leg above drops a TEXT
+    // sibling only, so no paint name is ever stale there and removing the paint guard at
+    // applyStylePlans' paint prune site reds NOTHING. Drop a whole FAMILY instead: every paint style
+    // in that family goes stale while the text set stays identical (same scale), so preserved and
+    // pruned below are paint-only figures and the assertion cannot be satisfied by the text guard.
+    const fewerFamilies = families.slice(0, -1);
+    const droppedFamily = families[families.length - 1];
+    const paintDropPlans = stylePlans({ families: fewerFamilies, scale });
+    const keptPaintNames = new Set(paintDropPlans.paints.map((p) => p.name));
+    const droppedPaintNames = plans.paints.map((p) => p.name).filter((n) => !keptPaintNames.has(n));
+    if (!droppedPaintNames.length) FAIL("styles", `#629 fixture: dropping family '${droppedFamily && droppedFamily.name}' left every paint name in the plan, so the paint guard is still unexercised`);
+    else {
+      await applyStylePlans(plans); // full set: the registry now holds the dropped family's paints again
+      const paintLib = await applyStylePlans(paintDropPlans, { libraryMode: true });
+      if (paintLib.pruned !== 0) FAIL("styles", `#629 libraryMode:true pruned ${paintLib.pruned} PAINT styles: a published library must never remove a paint a consumer file is bound to`);
+      if (paintLib.preserved !== droppedPaintNames.length) FAIL("styles", `#629 libraryMode:true preserved ${paintLib.preserved} styles, expected exactly the ${droppedPaintNames.length} dropped paints`);
+      const liveNames = new Set(F.figma._styles.filter((x) => x._kind === "PAINT").map((x) => x.name));
+      const gonePaints = droppedPaintNames.filter((n) => !liveNames.has(n));
+      if (gonePaints.length) FAIL("styles", `#629 libraryMode:true removed ${gonePaints.length} dropped paint style(s) anyway (e.g. ${gonePaints[0]}): they must survive`);
+      const paintReg = JSON.parse(F.figma.root.getPluginData("ultimate-tokens-styles"));
+      const lostSlots = droppedPaintNames.filter((n) => !paintReg.paints[n]);
+      if (lostSlots.length) FAIL("styles", `#629 libraryMode:true dropped ${lostSlots.length} preserved PAINT registry slot(s) (e.g. ${lostSlots[0]}): a later classic apply could then never find or prune them`);
+
+      // the SAME family drop under libraryMode:false still prunes exactly as it does today.
+      await applyStylePlans(plans);
+      const paintClassic = await applyStylePlans(paintDropPlans, { libraryMode: false });
+      if (paintClassic.pruned !== droppedPaintNames.length) FAIL("styles", `#629 libraryMode:false pruned ${paintClassic.pruned} paint styles, expected the ${droppedPaintNames.length} dropped ones: classic behavior regressed`);
+      if (paintClassic.preserved) FAIL("styles", `#629 libraryMode:false preserved ${paintClassic.preserved} paint styles: it must remove, not report`);
+      const liveAfter = new Set(F.figma._styles.filter((x) => x._kind === "PAINT").map((x) => x.name));
+      const survivors = droppedPaintNames.filter((n) => liveAfter.has(n));
+      if (survivors.length) FAIL("styles", `#629 libraryMode:false left ${survivors.length} dropped paint style(s) behind (e.g. ${survivors[0]})`);
+      if (!F.figma._styles.some((x) => x.name === "My Own/keep-me")) FAIL("styles", "#629 the paint-drop round trip touched a USER style (provenance violated)");
+      await applyStylePlans(plans); // leave the mock on the full set for anything downstream
+    }
   } catch (e) { FAIL("styles", "styles apply threw: " + e.message); }
 }
 
