@@ -376,6 +376,30 @@ export function liveAliasTargetsByName(existingNames, modeName, liveVarsByName, 
   return out;
 }
 
+// priorLibraryUplift(existingNames, wantedNames, liveAliasTargets) — PURE (#635): does this collection
+// carry EVIDENCE that a previous apply already ran in "published library" mode? True when ANY existing
+// name the current plan does NOT want (not in `wantedNames`) currently resolves as a live alias
+// (liveAliasTargetsByName above found a target — the aliases run 1 wrote), OR sits under "_deprecated/"
+// (the deprecates run 1 wrote). Scoped to UNWANTED names on purpose (review round 1): a plan's OWN
+// ALIAS variables (Font Primitives' font/<voice> -> font/<face>) make liveAliasTargets non-empty on a
+// collection nobody ever uplifted, and a wanted name is never something a prior uplift left behind.
+// The gate needs this because libraryModeReconcile below is IDEMPOTENT by design: on a re-apply it
+// omits every already-correctly-aliased name and every already-deprecated one, so run 2's report is
+// EMPTY — indistinguishable from a never-touched collection — and the gate used to fall through to the
+// classic prune, deleting exactly the names run 1 had preserved. An empty report on a collection with
+// this evidence is "library mode, already decided": nothing to ask, nothing to prune. A never-touched
+// collection has neither signal.
+export function priorLibraryUplift(existingNames, wantedNames, liveAliasTargets) {
+  const wanted = new Set(wantedNames || []);
+  const targets = liveAliasTargets || {};
+  for (const name of (existingNames || [])) {
+    if (typeof name !== "string" || wanted.has(name)) continue;
+    if (name.startsWith("_deprecated/")) return true;
+    if (Object.prototype.hasOwnProperty.call(targets, name) && targets[name]) return true;
+  }
+  return false;
+}
+
 // libraryModeReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) — PURE: for each LIVE
 // variable name NOT in the current plan (`wantedNames`), classify what "published library" mode does
 // instead of deleting it:
