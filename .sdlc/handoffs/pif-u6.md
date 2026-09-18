@@ -4,20 +4,26 @@ unit: U6 (M) prime ladder steps equally in perceived lightness
 plan: preset-intent-fidelity (ticket #681, P1)
 branch: unit/pif-u6-ladder
 written: 2026-09-18
-status: gates green, rebase pending (see Risks)
+status: gates green, rebased onto origin/plan/preset-intent-fidelity @ 6429c49
 ---
 
 # U6 handoff: prime ladder steps equally in perceived CIE L*, held CAM16 chroma
 
-## Commits
+## Commits (post-rebase)
 
-- `766478b` feat(prime): ladder steps equally in perceived CIE L*, held CAM16 chroma (#681 U6)
-- `9bbfe0a` test(prime): cite the d5 frozen snapshot's capture commit (#681 U6)
+- `c286d40` feat(prime): ladder steps equally in perceived CIE L*, held CAM16 chroma (#681 U6)
+- `b0e2adb` test(prime): cite the d5 frozen snapshot's capture commit (#681 U6)
+- `ac93f2b` docs(sdlc): U6 handoff for #681 prime ladder (#681 U6)
 
-`head: 9bbfe0a`. `base: cf8e61a` (`git merge-base HEAD origin/main`, measured at handoff time — see
-the Risks section: `origin/main` and `origin/plan/preset-intent-fidelity` have both moved further
-since this worktree was created at `fb3ad33`, and the promised "new plan head to rebase onto" has not
-arrived yet in this session).
+`head: ac93f2b`. `base: bf2aaf6` (`git merge-base HEAD origin/main`, re-measured after rebasing onto
+`origin/plan/preset-intent-fidelity` @ `6429c49`, per team-lead instruction). Rebased cleanly, no
+conflicts (`git rebase origin/plan/preset-intent-fidelity`). Re-read `.sdlc/plans/preset-intent-fidelity.md`
+at the new tip: U6's own unit bullet (line 223-224) is byte-identical to what this unit was built
+against — revisions 7 and 8 on the rebased plan branch are both in U3's text, confirmed via
+`git diff fb3ad33 6429c49 -- .sdlc/plans/preset-intent-fidelity.md`. No changes needed as a result.
+
+Original (pre-rebase) commits, superseded by the rebase: `766478b`/`9bbfe0a`/`95355a5` (same content,
+different shas after the rebase rewrote parent history).
 
 ## Scope note (read this first)
 
@@ -127,7 +133,7 @@ doesn't check). This is plan unit U5's territory ("records") per the plan's own 
 
 | Criterion | Command | Observed | Negative control |
 |---|---|---|---|
-| C1 `npm test` green | `npm test` | exit 0, `✓ all 46 test files passed` (46 before AND after — this unit adds no new registered test file); `git status --short` empty after two consecutive runs (byte-stable) | not re-run here (owned by C1's own negative control in `.sdlc/adapter.md` §1 — corrupt role-table.json, expect 17 FAIL — out of my unit's scope to re-verify; my own red-then-green is below) |
+| C1 `npm test` green | `npm test` | exit 0, `✓ all 47 test files passed` (46 pre-rebase; 47 post-rebase — the extra registered file came from upstream #662/#674 work already on the rebased plan branch, not from this unit, which adds no new registered test file); `git status --short` empty after the rebase and after two further consecutive runs (byte-stable); `node scripts/audit-citations.mjs` STALE 0 everywhere; `node test/repo/branding.mjs` clean (446 files) | not re-run here (owned by C1's own negative control in `.sdlc/adapter.md` §1 — corrupt role-table.json, expect 17 FAIL — out of my unit's scope to re-verify; my own red-then-green is below) |
 | C5 (ladder half) | `node test/engine/prime.mjs`, gate `ladder-window` | `ladder-window allow-list: 0 (expected 0 on this branch...)` — see Scope note above for why this is 0, not 21 | synthetic [40,60] narrow window inside the same gate: found a large non-zero out-of-window count, proving the filter isn't vacuous |
 | C11 symmetry | `node test/engine/prime.mjs`, gate `symmetry` | by-construction: 0/464 fails, `|up-down|` exactly 0 every case. Measured (pixel `lstarFromRgb`): 0/464 exceed 3 L\*, max measured asymmetry 0.518 L\* | origin/main's `prime.mjs` (pre-#681 redistribute rule), same 464-case sweep, dynamically imported via `git show`: 295/464 exceed 3 L\*, max asymmetry 52.01 L\* — FAILS as required |
 
@@ -169,16 +175,15 @@ under 30 L\* span — not directly comparable to the plan's corpus-scale numbers
 
 ## Risks / open items
 
-1. **Rebase pending.** The team-lead dispatch said the plan branch was being rebased onto `main` and
-   promised "the new plan head" to rebase onto before gates/handoff. That message has not arrived in
-   this session. `origin/main` and `origin/plan/preset-intent-fidelity` have both moved past this
-   worktree's starting point (`fb3ad33`) since I began — `origin/main` is now `381b8d5`,
-   `origin/plan/preset-intent-fidelity` is now `6429c49`. `base: cf8e61a` (`git merge-base HEAD
-   origin/main`) is what I could measure without guessing which head to target. All gates above are
-   green on THIS branch as built; I have not rebased, per instruction, and I'm flagging this rather than
-   guessing which head to rebase onto.
-2. `.sdlc/questions/pif-u6.md`: the clipped-default numbers disagreement (Tertiary/Danger/Warning),
-   routed for the plan owner / U1 builder to confirm the interim resolution.
+1. **Rebase: done.** Rebased onto `origin/plan/preset-intent-fidelity` @ `6429c49` (team-lead
+   instruction, two messages: first naming `362cc48`, superseded by `6429c49` before I acted on the
+   first). Clean rebase, no conflicts, three commits reapplied with new shas (see Commits above). Full
+   `npm test` re-run post-rebase: green, 47/47, tree clean. `audit-citations.mjs` STALE 0,
+   `branding.mjs` clean.
+2. `.sdlc/questions/pif-u6.md`: the clipped-default numbers disagreement (Tertiary/Danger/Warning).
+   Team lead: "routed to the owner; assume option 1 stands unless I say otherwise" — option 1 (keep U6
+   standalone, assert the measured cusp-anchor clip set, with an explicit Tertiary/Danger-unclipped
+   trip-wire) is what `test/engine/prime.mjs` ships. No code change needed under this ruling.
 3. For U2/U3 (parallel units): U6 does not touch `src/engine/tonal.js` or `scripts/gen-categories.mjs`'s
    lift fitting (out of lane, untouched, checked via `git diff --stat`). U6's `prime.mjs` rewrite is
    independent of U2/U3's ramp-envelope work; no shared functions changed.
