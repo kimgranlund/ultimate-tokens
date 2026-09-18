@@ -282,8 +282,9 @@ Consequences that shape the design:
   `{colors.gray.…}` so the copy is self-contained (Park's own `gray: colorPalettes.neutral` is a copy,
   KF-4). `error` = `{ value: "{colors.{danger}.9}" }`.
   *Amendment (#630):* a palette whose slug equals one of the seven reserved alias keys of REQ-025/026
-  (or another palette's slug) is emitted under `<slug>-palette`, suffix repeated until unique
-  (`radixPaletteKey`); the driver clones and `error` reference that renamed key. The seven alias keys
+  is emitted under `<slug>-palette`, suffix repeated until the key is neither reserved nor another
+  palette's slug (`radixPaletteKey`); the driver clones and `error` reference that renamed key. A
+  non-reserved slug is never renamed, even when two palettes share it. The seven alias keys
   themselves are unchanged.
 - **REQ-026** Globals, verbatim Park keys (KF-4): `fg.default → {colors.gray.12}`, `fg.muted →
   {colors.gray.11}`, `fg.subtle → {colors.gray.10}`, `canvas → {colors.gray.1}`, `border →

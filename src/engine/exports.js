@@ -1078,15 +1078,20 @@ const RADIX_ROLE_STEPS = [
 export const RESERVED_ALIAS_KEYS = ["accent", "gray", "error", "fg", "canvas", "border", "bg"];
 
 // radixPaletteKey(n, otherSlugs) — the #630 rule (option (a), owner-ruled): the key a palette's
-// group is emitted under. A slug that collides with a reserved alias key OR with another
-// palette's raw slug gets `-palette` appended, repeated until unique, so the 7 alias keys stay
-// verbatim (REQ-026) and no palette ladder is overwritten. `otherSlugs` is the Set of the OTHER
-// palettes' raw slugs (never the palette's own), which makes the answer independent of palette
-// order: "accent" + "accent-palette" -> "accent-palette-palette" + "accent-palette" either way.
-// Non-colliding slugs pass through untouched, so collision-free documents are byte-identical.
+// group is emitted under. A slug that equals a reserved alias key gets `-palette` appended,
+// repeated while the result is still reserved OR is another palette's raw slug, so the 7 alias
+// keys stay verbatim (REQ-026) and no palette ladder is overwritten by an alias. `otherSlugs`
+// (the Set of the OTHER palettes' raw slugs, never the palette's own) is consulted only AFTER a
+// reserved collision changed the key, which makes the answer independent of palette order:
+// "accent" + "accent-palette" -> "accent-palette-palette" + "accent-palette" either way.
+// A slug that is NOT reserved passes through untouched even when another palette shares it
+// (review round 1, F1): two palettes both named "Neutral" both stay `neutral` and collapse
+// last-write-wins exactly as before, so every document without a reserved-key collision is
+// byte-identical to the pre-rule output.
 export function radixPaletteKey(n, otherSlugs) {
   let key = n;
-  while (RESERVED_ALIAS_KEYS.includes(key) || otherSlugs.has(key)) key += "-palette";
+  if (!RESERVED_ALIAS_KEYS.includes(key)) return key;
+  do { key += "-palette"; } while (RESERVED_ALIAS_KEYS.includes(key) || otherSlugs.has(key));
   return key;
 }
 
@@ -1223,8 +1228,9 @@ export function exportRadix(state, opts = {}) {
   const { neutral, primary, danger } = pickDrivers(palettes);
   if (!neutral || !primary) return "/* Radix export needs at least one enabled non-data palette. */\n";
 
-  // #630: a palette whose slug collides with one of RESERVED_ALIAS_KEYS (or another palette's
-  // slug) is emitted under its radixPaletteKey (`<slug>-palette`, suffix repeated until unique),
+  // #630: a palette whose slug collides with one of RESERVED_ALIAS_KEYS is emitted under its
+  // radixPaletteKey (`<slug>-palette`, suffix repeated until unique against the reserved set and
+  // the other palettes' slugs; a duplicate NON-reserved slug is left alone, F1),
   // so the alias writes below can no longer overwrite a ladder. Every driver reference goes
   // through `keyOf` so a renamed driver (e.g. a palette named "error") still resolves.
   const keys = radixPaletteKeys(palettes.map((p) => p.n));

@@ -335,9 +335,11 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(typeof view.radixPreset === "object" && view.radixPreset !== null, `projectView(defaultDocument()).radixPreset must be an object, got ${typeof view.radixPreset}`);
   if (view.radixPreset && typeof view.radixPreset === "object") {
     const colors = view.radixPreset.theme.extend.semanticTokens.colors;
-    const enabledSlugs = doc.palettes.filter((p) => p.on !== false).map((p) => slug(p.name));
-    for (const s of enabledSlugs) {
-      ok(Object.prototype.hasOwnProperty.call(colors, s), `radixPreset.theme.extend.semanticTokens.colors is missing enabled-palette slug "${s}"`);
+    // review round 1, F5: expressed through radixExportKey so the assertion cannot drift from the
+    // engine's key rule (for the default document every key is the raw slug).
+    for (const p of doc.palettes.filter((p) => p.on !== false)) {
+      const k = radixExportKey(p.name, doc.palettes);
+      ok(Object.prototype.hasOwnProperty.call(colors, k), `radixPreset.theme.extend.semanticTokens.colors is missing enabled palette "${p.name}" under radixExportKey(...) = "${k}"`);
     }
   }
 

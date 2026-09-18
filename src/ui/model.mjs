@@ -358,9 +358,10 @@ export function radixExportKey(name, palettes) {
   return radixPaletteKey(n, others);
 }
 
-// RADIX_COLLISION_BADGE — the pinned badge prefix (OQ-3, repo owner ruling; re-ruled for #630: the
-// colliding palette is no longer dropped, it is exported under a renamed key, and the badge names
-// that key). radixCollisionBadge(key) is the full rendered note. Never paraphrase this string.
+// RADIX_COLLISION_BADGE — a PREFIX, not the whole note (OQ-3, repo owner ruling; re-ruled for #630:
+// the colliding palette is no longer dropped, it is exported under a renamed key, and the note names
+// that key). The rendered note is radixCollisionBadge(key) = `${RADIX_COLLISION_BADGE} ${key}`.
+// Never paraphrase this prefix.
 export const RADIX_COLLISION_BADGE = "Exported as";
 export function radixCollisionBadge(key) {
   return `${RADIX_COLLISION_BADGE} ${key}`;

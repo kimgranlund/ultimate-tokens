@@ -731,6 +731,26 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   }
   if (X.radixPaletteKey("gray", new Set()) !== "gray-palette") FAIL("radix-collision", "radixPaletteKey('gray', {}) must be 'gray-palette'");
   if (X.radixPaletteKey("primary", new Set(["neutral"])) !== "primary") FAIL("radix-collision", "radixPaletteKey must leave a non-colliding slug alone");
+  // review round 1, F1: `otherSlugs` is consulted only AFTER a reserved collision changed the key.
+  // Two palettes both named "Neutral" are NOT a reserved collision: both keep the raw `neutral`
+  // key and collapse last-write-wins exactly as before the fix (no `neutral-palette`), so a
+  // duplicate-name document is byte-identical to the pre-fix output.
+  if (X.radixPaletteKey("neutral", new Set(["neutral"])) !== "neutral") FAIL("radix-collision", `radixPaletteKey('neutral', {neutral}) must stay 'neutral' (duplicate names are not a collision), got ${X.radixPaletteKey("neutral", new Set(["neutral"]))}`);
+  {
+    const dup = C([...BRAND_ONLY, mk("Neutral", 250)]);
+    const dupPalettes = X.derivedAll(dup);
+    const dupColors = X.exportRadix(dup).theme.extend.semanticTokens.colors;
+    const dupKeys = Object.keys(dupColors);
+    if (dupKeys.some((k) => k.endsWith("-palette"))) FAIL("radix-collision", `duplicate-name document must emit no '-palette' key, got ${JSON.stringify(dupKeys.filter((k) => k.endsWith("-palette")))}`);
+    if (dupKeys.filter((k) => k === "neutral").length !== 1) FAIL("radix-collision", "duplicate-name document must emit exactly one 'neutral' key");
+    const ks = X.radixPaletteKeys(dupPalettes.map((p) => p.n));
+    if (ks.filter((k) => k === "neutral").length !== 2) FAIL("radix-collision", `radixPaletteKeys must map both 'neutral' slugs to 'neutral', got ${JSON.stringify(ks)}`);
+    // last-write-wins: the emitted ladder is the LAST "Neutral" palette's group, as before the fix
+    // (a group depends only on its own palette + key, so a document carrying just that palette
+    // as "Neutral" emits the identical group).
+    const onlyLast = X.exportRadix(C([...BRAND_ONLY.filter((p) => p.name !== "Neutral"), mk("Neutral", 250)])).theme.extend.semanticTokens.colors.neutral;
+    if (JSON.stringify(dupColors.neutral) !== JSON.stringify(onlyLast)) FAIL("radix-collision", "duplicate-name document: colors.neutral must be the last 'Neutral' palette's ladder (last-write-wins, as pre-fix)");
+  }
 }
 
 // ── hpg-export-data-palette (#516 — isDataPalette, shadcn chart-1..5 binding, fallback exclusion) ──

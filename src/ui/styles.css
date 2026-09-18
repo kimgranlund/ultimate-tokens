@@ -658,7 +658,7 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .radix-ladder { display: flex; box-shadow: var(--shadow); border-radius: 6px; overflow: hidden; width: fit-content; }
 .radix-step { width: 26px; height: 40px; display: block; position: relative; }
 .radix-step:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
-.radix-row.radix-collision { opacity: .85; }
+.radix-collision .radix-badge { opacity: .85; }
 .radix-badge { font-size: 12px; color: var(--ink-dim); }
 .radix-empty { color: var(--ink-dim); padding: 40px 0; text-align: center; }
 

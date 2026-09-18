@@ -326,9 +326,11 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
   `colors.error` is a single alias, `{colors.{danger ?? primary}.9}`.
   A `danger` driver, when enabled, backs `error`; otherwise `error` falls back to the primary driver.
 - **Reserved-key collision** (#630, `radixPaletteKey`): a palette whose slug equals one of the seven
-  alias keys above (or another palette's slug) is emitted under `<slug>-palette`, the suffix repeated
-  until unique (order-independent), and every driver/internal reference uses that renamed key, so
-  the aliases stay verbatim and no ladder is overwritten; collision-free documents are unchanged.
+  alias keys above is emitted under `<slug>-palette`, the suffix repeated until the key is neither
+  reserved nor another palette's slug (order-independent), and every driver/internal reference uses
+  that renamed key, so the aliases stay verbatim and no ladder is overwritten by an alias. A slug
+  that is not reserved is never renamed, even when two palettes share it (they collapse
+  last-write-wins as before); collision-free documents are unchanged.
 - **Global semantic tokens** (REQ-026, Park UI's own verbatim keys, all referencing the just-built
   `gray` copy): `colors.fg.{default,muted,subtle}` → `gray.{12,11,10}`; `colors.canvas` → `gray.1`;
   `colors.border` → `gray.7`; `colors.bg.subtle` → `gray.2`.
