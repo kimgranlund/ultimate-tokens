@@ -154,14 +154,31 @@ for (const m of css.matchAll(/--c-[a-z0-9-]+-(\d+)\s*:/gi)) {
   if (/^\d+$/.test(stop) && Number(stop) >= 50 && stop.length < 3) FAIL("padding", `unpadded stop in --c-…-${stop}`);
 }
 
-// ── on-color policy threads to exports (OD-001): "fixed" = on{N} pinned 050 both modes;
-//    "contrast" re-points at least one to the better-contrasting end (proves onColorMode is wired). ──
-const onRefs = (cssStr) => [...cssStr.matchAll(/--c-([a-z]+)-on-\1:\s*light-dark\(var\(--c-[a-z]+-([0-9-]+)\),\s*var\(--c-[a-z]+-([0-9-]+)\)/gi)].map((m) => `${m[1]}:${m[2]}/${m[3]}`);
-const fixedOn = onRefs(X.exportCSS(C(ALL)));
+// ── on-color policy threads to exports (OD-001 / ADR-025): "fixed" = on{N} pinned 050 both modes;
+//    "contrast" (the DEFAULT since #662) re-points at least one to the better-contrasting end, and
+//    falls through to the document-level white/black constants where neither ramp end clears AA.
+//    BOTH modes are named explicitly — reading one of them off the engine default would make this
+//    gate re-state whatever DEFAULT_CONTROLS happens to say instead of testing the two policies. ──
+//    The ref group accepts a stop, a scrim ref, OR a bare `white`/`black`, because an achromatic
+//    on-color aliases the document constant (`var(--c-white)`), not a per-palette var.
+const onRefs = (cssStr) => [...cssStr.matchAll(/--c-([a-z]+)-on-\1:\s*light-dark\(var\(--c-(?:[a-z]+-)?([0-9-]+|white|black)\),\s*var\(--c-(?:[a-z]+-)?([0-9-]+|white|black)\)/gi)].map((m) => `${m[1]}:${m[2]}/${m[3]}`);
+const fixedOn = onRefs(X.exportCSS({ ...C(ALL), onColorMode: "fixed" }));
 const contrastOn = onRefs(X.exportCSS({ ...C(ALL), onColorMode: "contrast" }));
 if (fixedOn.length === 0) FAIL("oncolors", "no on-{n} CSS vars found");
+if (contrastOn.length !== fixedOn.length) FAIL("oncolors", `contrast mode matched ${contrastOn.length} on-{n} vars, fixed matched ${fixedOn.length} — a ref shape the matcher does not know about`);
 if (!fixedOn.every((r) => /:050\/050$/.test(r))) FAIL("oncolors", `fixed mode: on-colors not all 050/050 (${fixedOn.find((r) => !/:050\/050$/.test(r))})`);
 if (JSON.stringify(fixedOn) === JSON.stringify(contrastOn)) FAIL("oncolors", "contrast mode changed no on-color — onColorMode not threaded to exports");
+// #662: the achromatic fall-through reaches the CSS emitter, and it aliases the emitted document
+// constant rather than a per-palette var that would not resolve.
+const contrastCss = X.exportCSS({ ...C(ALL), onColorMode: "contrast" });
+if (!contrastOn.some((r) => /white|black/.test(r)))
+  FAIL("oncolors", "contrast mode produced no white/black on-color — the achromatic fall-through (#662) is not wired to the exporters");
+for (const which of ["white", "black"]) {
+  if (contrastCss.includes(`var(--c-${which})`) && !contrastCss.includes(`--c-${which}: `))
+    FAIL("oncolors", `an on-color aliases var(--c-${which}) but --c-${which} is not emitted in :root (ADR-005)`);
+  if (/--c-[a-z0-9-]+-(white|black)\b/.test(contrastCss))
+    FAIL("oncolors", `an achromatic ref was emitted palette-prefixed (--c-{n}-${which}) — it must alias the document constant`);
+}
 
 // ── hpg-export-disabled-palette (on:false absent; all-disabled = valid empty, no throw) ───
 const oneOff = C(ALL.map((p, i) => (i === 1 ? { ...p, on: false } : p)));
@@ -418,7 +435,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
   if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.4253 0.1357 259.04)", _dark: "oklch(0.672 0.1504 258.98)" }))
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
-  if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
+  if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(0 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);
   if (JSON.stringify(ddSem.neutral["on-surface"].value) !== JSON.stringify({ base: "oklch(0.1774 0.0044 264.46)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.neutral.on-surface = ${JSON.stringify(ddSem.neutral["on-surface"].value)}`);
@@ -1987,7 +2004,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
+for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "oncolors", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

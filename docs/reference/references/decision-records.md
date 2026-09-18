@@ -693,10 +693,45 @@ Format: Context → Decision → Rationale → Consequences → Status.
   app must still be registered in `bundle.mjs` MODS/KEY (K7). `npm test` stays vite-free.
 - **Status.** DECIDED (as-built; recorded 2026-09-16). Amends ADR-010 wording; complements ADR-020.
 
+## ADR-025 — WCAG-safe on-colors are the DEFAULT, with an achromatic fall-through (amends ADR-003 / closes OD-001)
+- **Context.** ADR-003 pinned `on{N}` to `050` in both modes as an explicit brand override, and its
+  2026-06-25 amendment added `onColorMode: "contrast"` as an OPT-IN. The default document therefore
+  still shipped accents that miss WCAG AA against their own on-color: measured on the production path
+  (`brandKit(doc).roles` + `contrastRatio`), perceptual dark Secondary 3.05, Info 4.07, Neutral 4.21,
+  Primary 4.31, Success 4.31, and every data family between 3.03 and 3.79; "peak" was far worse
+  (Secondary 1.24, Success 1.58, Info 2.44, Warning 2.52). Park UI's `solid.fg` on `solid.bg` reads the
+  same pairing, so the shipped Adia brand document missed the floor too: 18 of its 32 cells, worst
+  Warning dark at 2.19. Flipping the default alone was measured first and does NOT close it:
+  `applyOnColorContrast` only chose the better of two ramp ends, and where neither end clears 4.5
+  against a mid-lightness accent there is nothing on the ramp to choose. Under the flip alone the
+  default document still missed six cells and Adia two (Primary dark 4.44, Data 5 dark 4.48).
+- **Decision.** `onColorMode` defaults to `"contrast"` (`tonal.js` DEFAULT_CONTROLS and `persist.js`
+  DOMAINS, which must agree or a stored kit hydrates onto the other policy), and the policy gains an
+  ACHROMATIC FALL-THROUGH: a ramp end is kept while it clears AA 4.5:1, and otherwise the on-color
+  takes the pure `white`/`black` constant with the better contrast. `on{N}Variant` follows the side
+  the prime chose rather than running its own pick, so the pair can never straddle. `"fixed"` remains
+  as the opt-out for a brand that wants the uniform light tint back.
+- **Rationale.** The floor is an accessibility requirement, not a brand preference, and it is now met
+  without touching a single ramp stop — the owner's explicit constraint. White and black are already
+  emitted once per document in every format (`--{pfx}-white`, `constants.white`,
+  `raw/constants/white`), so aliasing to them keeps ADR-005's "every semantic var points at a raw var
+  that is itself emitted" invariant. The alternative, retuning each family's skew and lift, would move
+  the ramps and change the product's colors.
+- **Consequences.** All 16 default families clear AA 4.5:1 in both schemes in all three tone modes
+  (96 of 96 cells, from 52 of 96); the Adia document's Park mapping clears all 32, from 14. On-color refs may now
+  be `white`/`black`, which every ref consumer routes to the constants namespace rather than the
+  palette's own. Accent on-colors moved in every export format; no ramp stop moved. ADR-003's
+  historical decision stands as the record of why the fixed policy existed; its default no longer
+  ships. OD-001 is CLOSED.
+- **Status.** DECIDED 2026-09-18 (#662, closes #636). Amends ADR-003; the `hpg-role-contrast` gate in
+  `test/engine/semantic.mjs` holds the floor for all 16 families, both schemes, all three tone modes,
+  plus the Park `solid.fg`/`solid.bg` pairing on the default and Adia documents.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
-| ADR-003 | on-colors fail WCAG on Warning | explicit brand override; contrast-aware was removed on purpose |
+| ADR-003 | on-colors fail WCAG on Warning | the historical brand override; AMENDED by ADR-025 — contrast-aware on-colors are the default since #662 |
+| ADR-025 | on-colors jump to pure white/black on some accents | the ramp ends miss AA there and #662 forbids moving a stop; the achromatic constants are the only way to the floor |
 | ADR-004 | scrims unified onto one 500 ramp (SUPERSEDED) | scrims now a single 500 ramp; the former base-750-only decision is superseded |
 | ADR-002 | semantic could alias raw to cascade | native import errors on name-only aliasData; plugin does cascade |
 | ADR-011 | `role-table.json` still encodes cam16 hues though hueSpace is now OKLCH | role-table is the cam16 answer key for the parity gate; the OKLCH flip is at the doc/seed layer, not the role table |

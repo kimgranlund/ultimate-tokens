@@ -119,7 +119,7 @@ interface State {
   vibrancy: number;         // 0..100   pulls the ramp toward the hue's cusp-anchored center (perceptual)
   chromaFloor: number;      // 0..100   min chroma (% of ceiling) to kill the near-white dead zone
   relChroma: boolean;       // harmonize saturation across hues (relative-chroma)
-  onColorMode: 'fixed'|'contrast';  // opt-in WCAG-safe on-colors (default 'fixed', ADR-003 / OD-001)
+  onColorMode: 'contrast'|'fixed';  // WCAG-safe on-colors, DEFAULT 'contrast' + achromatic fall-through (ADR-003 amendment = ADR-025; OD-001 closed); 'fixed' is the opt-out
   curve: 'linear'|'sine'|'cubic'|'logistic'|'exp';  // 'even' path only
   tension: number;          // 0..100
   lmin: number;             // 0..40
@@ -149,8 +149,9 @@ Field-table convention and clamp ranges: `knowledge-02` §2 and `hydrate()` vali
 
 ## 8. Semantic Token System 📐
 See `references/knowledge-03-semantic-system.md`. Two layers (flat raw + semantic
-`light-dark()`, ADR-005); 53 roles/palette; on-colors fixed to `050`/`200` (ADR-003,
-OD-001); 7 scrim roles on base 500 (ADR-004, OD-002); surface Dim/Bright (non-mirror) vs
+`light-dark()`, ADR-005); 53 roles/palette; the on-color TABLE maps `050`/`200`, resolved
+per fill by the default `onColorMode: contrast` (ADR-003 amendment / ADR-025, OD-001 closed);
+7 scrim roles on base 500 (ADR-004, OD-002); surface Dim/Bright (non-mirror) vs
 Low/High (mirror).
 
 ## 9. Export Formats 📐
@@ -206,7 +207,7 @@ OKLCH-native designers work in familiar numbers without changing the output colo
 
 | OD | Title | Status | Affects |
 |----|-------|--------|---------|
-| OD-001 | On-color contrast vs fixed `050` | DECIDED (override) | accessibility of `on*` on light fills, esp. Warning/dark mode |
+| OD-001 | On-color contrast vs fixed `050` | CLOSED (contrast is the default) | was: accessibility of `on*` on light fills. Resolved by ADR-025 (the ADR-003 amendment) — every family now clears WCAG AA 4.5:1 in both schemes |
 | OD-002 | Surface bases 250/500 as semantic scrims | DEFERRED | scrim role coverage |
 | OD-003 | UI3 Collections schema authenticity | DECIDED (interchange-only) | the `ui3` export's usability |
 | OD-004 | Aliased semantic export without plugin | DEFERRED (spike implemented 2026-06-17, re-statused 2026-07-25 — stale 5.5 weeks with no test run) | The `rawColl` opt-in emits the FULL documented alias shape (`targetVariableName` + `targetVariableSetName`), **gated by `hpg-export-resolved`** so it can't regress. Still unvalidated end-to-end in real Figma (no Figma in CI) and there is no user-facing plugin-free download yet; the plugin stays the reliable path in the meantime. Re-open by running `docs/reference/references/od-004-plugin-free-import-test.md` in real Figma (import with the `Color Primitives` collection pre-existing) before exposing the plugin-free path or removing the plugin. |

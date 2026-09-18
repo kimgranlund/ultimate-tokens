@@ -251,7 +251,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.15 0.0021 286.14)"
               }
             },
             "prime": {
@@ -499,7 +499,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0 0 0)"
               }
             },
             "prime": {
@@ -747,7 +747,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.1489 0.0027 248.08)"
               }
             },
             "prime": {
@@ -995,7 +995,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.15 0.0021 286.14)"
               }
             },
             "prime": {
@@ -1243,7 +1243,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.1489 0.0027 248.08)"
               }
             },
             "prime": {
@@ -1491,7 +1491,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.1491 0.0021 106.65)"
               }
             },
             "prime": {
@@ -1738,8 +1738,8 @@ export default {
             },
             "on-accent": {
               "value": {
-                "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "base": "oklch(0.1504 0.0027 67.55)",
+                "_dark": "oklch(0.1504 0.0027 67.55)"
               }
             },
             "prime": {
@@ -2235,7 +2235,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.15 0.0021 286.14)"
               }
             },
             "prime": {
@@ -2482,8 +2482,8 @@ export default {
             },
             "on-accent": {
               "value": {
-                "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "base": "oklch(0.1496 0 0)",
+                "_dark": "oklch(0.1496 0 0)"
               }
             },
             "prime": {
@@ -2730,8 +2730,8 @@ export default {
             },
             "on-accent": {
               "value": {
-                "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "base": "oklch(0.1508 0.0017 17.35)",
+                "_dark": "oklch(0.1508 0.0017 17.35)"
               }
             },
             "prime": {
@@ -2979,7 +2979,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.1504 0.0027 67.55)"
               }
             },
             "prime": {
@@ -3227,7 +3227,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0 0 0)"
               }
             },
             "prime": {
@@ -3475,7 +3475,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.1496 0 0)"
               }
             },
             "prime": {
@@ -3723,7 +3723,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.1484 0.0017 196.97)"
               }
             },
             "prime": {
@@ -3971,7 +3971,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.1489 0.0027 248.08)"
               }
             },
             "prime": {
@@ -4219,7 +4219,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0 0 0)"
               }
             },
             "prime": {
@@ -4467,7 +4467,7 @@ export default {
             "on-accent": {
               "value": {
                 "base": "oklch(1 0 0)",
-                "_dark": "oklch(1 0 0)"
+                "_dark": "oklch(0.15 0.0021 286.14)"
               }
             },
             "prime": {

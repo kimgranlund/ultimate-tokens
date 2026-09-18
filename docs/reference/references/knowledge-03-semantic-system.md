@@ -91,13 +91,17 @@ Both are fixed to the light end in *both* modes, for *all* palettes.
 - If `lmax` is lowered, `050` becomes a tinted near-white and the on-colors track it
   automatically (they alias `050`).
 
-> ⚠️ **OD-001 — On-color contrast.** Fixed-light on-colors are a deliberate brand choice
-> that overrides perceptual contrast. White-on-`Warning` (yellow fill) is ~1.8:1, below the
-> WCAG 4.5:1 floor; in dark mode several palettes' fills lighten (prime = 450) and
-> white-on-fill contrast drops broadly. A prior revision used *contrast-aware* on-colors
-> (auto-pick white/black per fill per mode) — that logic was **removed** at user request.
-> See ADR-003. This is the single most likely thing a downstream agent will try to "fix";
-> it is intentional.
+> ⚠️ **OD-001 — On-color contrast. CLOSED; contrast-aware on-colors are the DEFAULT.** The
+> role TABLE still points `on{N}` at `050` and `on{N}Variant` at `200` — that is the canonical
+> answer key and it has not moved. What resolves those refs has. `onColorMode` defaults to
+> `contrast`: each accent on-color takes whichever end reads better against the fill it sits on
+> (`550` light / `450` dark), and where NEITHER ramp end clears 4.5:1 it falls through to the
+> document's own `white`/`black` constant. `on{N}Variant` follows the side the prime chose, so
+> the pair never straddles. Under the former fixed-light policy white-on-`Warning` measured
+> ~1.8:1 and several dark-mode fills dropped with it; every family now clears WCAG AA 4.5:1 in
+> both schemes, in all three tone modes. `fixed` remains as the opt-out for a brand that wants
+> the uniform light tint back. See ADR-025, the ADR-003 amendment. What a downstream agent should NOT
+> "fix" is the table — the resolution layer is where this lives, deliberately.
 
 ## 5. Scrims
 

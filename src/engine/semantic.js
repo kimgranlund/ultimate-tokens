@@ -248,44 +248,77 @@ export function applyRoleOverrides(roles, overrides) {
   });
 }
 
+// ACHROMATIC_REFS — the two non-ramp refs an on-color may resolve to under the "contrast" policy
+// (#662). They are NOT stops: they name the document-level `white`/`black` constants every color
+// format already emits once per document (`--{pfx}-white`, JSON `constants.white`, DTCG/UI3
+// `raw/constants/white`), so aliasing to them keeps ADR-005's "every semantic var references a raw
+// var that is itself emitted" invariant intact without inventing a new primitive. Every consumer
+// that turns a ref into a name or a color routes these to the constants namespace instead of the
+// palette's own (`exports.js` resolveRef/cssFrom/uiThreeVars/semanticTree, `model.mjs`
+// resolveRoleHex + the raw-token names).
+export const ACHROMATIC_REFS = { white: 1, black: 0 };
+export const isAchromaticRef = (ref) => Object.prototype.hasOwnProperty.call(ACHROMATIC_REFS, String(ref));
+
+// AA_FLOOR — WCAG AA for normal text. The floor the "contrast" policy is required to clear for the
+// prime accent/on-color pair of every family, in both schemes (#662 ruling 3).
+export const AA_FLOOR = 4.5;
+
 /**
- * Opt-in WCAG-safe on-colors (OD-001). By default `on{N}` is pinned to `050` in both modes
- * (ADR-003) — uniform but failing contrast on light accents (e.g. white-on-Warning ≈ 1.8:1). In
- * "contrast" mode this re-points the accent on-colors to the END (light vs dark extreme) that
- * maximizes WCAG contrast against the accent fill they sit on (`550` light / `450` dark), per mode:
- * `on{N}` → 050|950, `on{N}Variant` → 200|800 (a softer tint of the same end). All other roles are
- * untouched, and the canonical `semanticRoles` table is unchanged — this is a resolution-layer
- * adjustment, gated by the explicit `onColorMode` opt-in (ADR-003 forbids changing the default).
+ * WCAG-safe on-colors (OD-001, the DEFAULT policy since #662). `on{N}` re-points to whichever end
+ * reads best against the accent fill it sits on (`550` light / `450` dark), per mode:
+ * `on{N}` → 050|950, `on{N}Variant` → 200|800 (a softer tint of the SAME end the prime chose).
+ *
+ * ACHROMATIC FALL-THROUGH (#662). A ramp end is preferred while it clears AA_FLOOR, because it
+ * carries the palette's own hue. When NEITHER end clears 4.5:1 against the fill — which happens
+ * wherever the accent sits mid-lightness, and which the ramp cannot fix because #662 ruling 1
+ * forbids moving a stop — `on{N}` falls through to the pure achromatic extreme (`white`/`black`)
+ * with the better contrast. That is always at least as good as the ramp end on the same side, so
+ * the floor is reachable without touching a single stop. The fall-through applies to the three
+ * roles whose ends ARE the ramp extremes (prime, hover, active); `on{N}Variant` is a deliberately
+ * softer tint and follows the prime's SIDE rather than running its own pick, so the pair can never
+ * straddle (a light tint label beside a black one on the same fill).
+ *
+ * All other roles are untouched and the canonical `semanticRoles` table is unchanged — this stays a
+ * resolution-layer adjustment, selected by `onColorMode` ("contrast" default, "fixed" opt-out).
  *
  * `lumOf(ref)` must return the WCAG relative luminance (0..1) of a solid-stop ref's resolved color;
- * the caller supplies it (it has the resolved ramp). A no-op unless onColorMode === "contrast".
+ * the caller supplies it (it has the resolved ramp). It is never called with an achromatic ref —
+ * those luminances are exact constants. A no-op unless onColorMode === "contrast".
  * @param {{key,suffix,light,dark}[]} roles
  * @param {string} n palette slug (for the `-on-${n}` suffixes)
  * @param {(ref:string)=>number} lumOf relative luminance of a solid stop ref
- * @param {string} [onColorMode] "fixed" (default) | "contrast"
+ * @param {string} [onColorMode] "contrast" (default) | "fixed"
  */
 export function applyOnColorContrast(roles, n, lumOf, onColorMode) {
   if (onColorMode !== 'contrast') return roles;
   const wcag = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  const lum = (ref) => (isAchromaticRef(ref) ? ACHROMATIC_REFS[ref] : lumOf(ref));
+  // pick — the better-contrasting ramp end against this fill, or, when that end still misses
+  // AA_FLOOR, the better-contrasting achromatic extreme.
   const pick = (fillRef, ends) => {
-    const f = lumOf(fillRef);
-    return wcag(lumOf(ends[0]), f) >= wcag(lumOf(ends[1]), f) ? ends[0] : ends[1];
+    const f = lum(fillRef);
+    const end = wcag(lum(ends[0]), f) >= wcag(lum(ends[1]), f) ? ends[0] : ends[1];
+    if (wcag(lum(end), f) >= AA_FLOOR) return end;
+    return wcag(1, f) >= wcag(0, f) ? 'white' : 'black';
   };
-  // suffix -> { fill: [lightFillRef, darkFillRef], ends }: each on-color flips to the END (light vs dark
-  // extreme) that maximizes WCAG contrast against the SPECIFIC fill it sits on. Prime/variant ride the
-  // base accent (550/450); the interaction-state on-colors ride their own state fills (hover 650/350,
-  // active 750/250) so the label stays consistent with its base in this mode. `-on-{n}-disabled` is
-  // deliberately ABSENT — disabled opts out of the contrast guarantee (it stays the inert translucent label).
+  // The prime on-color rides the base accent (550/450); the interaction-state on-colors ride their
+  // OWN state fills (hover 650/350, active 750/250) so each label is measured against what it
+  // actually sits on. `-on-{n}-disabled` is deliberately ABSENT — disabled opts out of the contrast
+  // guarantee (it stays the inert translucent label).
+  const primeLight = pick('550', ['050', '950']);
+  const primeDark = pick('450', ['050', '950']);
+  // the variant tracks the prime's side: light end (050 or white) -> 200, dark end (950 or black) -> 800.
+  const variantOf = (primeRef) => (primeRef === '050' || primeRef === 'white' ? '200' : '800');
   const M = {
-    [`-on-${n}`]: { fill: ['550', '450'], ends: ['050', '950'] },
-    [`-on-${n}-variant`]: { fill: ['550', '450'], ends: ['200', '800'] },
-    [`-on-${n}-hover`]: { fill: ['650', '350'], ends: ['050', '950'] },
-    [`-on-${n}-active`]: { fill: ['750', '250'], ends: ['050', '950'] },
+    [`-on-${n}`]: { light: primeLight, dark: primeDark },
+    [`-on-${n}-variant`]: { light: variantOf(primeLight), dark: variantOf(primeDark) },
+    [`-on-${n}-hover`]: { light: pick('650', ['050', '950']), dark: pick('350', ['050', '950']) },
+    [`-on-${n}-active`]: { light: pick('750', ['050', '950']), dark: pick('250', ['050', '950']) },
   };
   return roles.map((r) => {
     const m = M[r.suffix];
     if (!m) return r;
-    return { ...r, light: pick(m.fill[0], m.ends), dark: pick(m.fill[1], m.ends) };
+    return { ...r, light: m.light, dark: m.dark };
   });
 }
 

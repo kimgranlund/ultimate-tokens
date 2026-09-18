@@ -155,9 +155,11 @@ ok(req("nope/nope", {}).error.code === -32601, "unknown method (request) → -32
 }
 {
   // REGRESSION GUARD: a fine sweep of the brief's exposed per-family parameters (hue/chroma/skew/lift)
-  // found this the tightest reachable config — worst contrast ~3.028, THIN headroom above CONTRAST_MIN.
-  // Pinning it here means a future engine retune that pushes this exact config under 3.0 fails a test
-  // immediately, instead of silently shipping on-color pairs the system no longer actually guarantees.
+  // found this the tightest reachable config. It measured ~3.028 when the "fixed" on-color policy was
+  // the default — thin headroom above CONTRAST_MIN — and measures ~4.58 since ADR-025 (#662) made the
+  // contrast policy and its achromatic fall-through the default. The guard is deliberately kept at the
+  // same config: it is no longer tight, but it is still the known worst, so a retune that pushes it
+  // back under 3.0 fails a test immediately instead of silently shipping unreadable on-color pairs.
   const result = generateKitTool({ brief: { families: { Primary: { hue: 150, chroma: 100, skew: -100, lift: -40 } } } });
   ok(!result.lint.some((l) => l.code === "contrast"), "the known tightest reachable config still clears CONTRAST_MIN (no contrast lint fires) — if this ever fails, the engine's on-color guarantee has genuinely regressed under 3.0");
 }
