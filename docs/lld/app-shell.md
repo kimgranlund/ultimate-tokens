@@ -19,7 +19,7 @@
 
 `HctApp` is a single vanilla custom element (no framework), built with the `h(tag, attrs, ...kids)`
 hyperscript into **light DOM**. It has exactly two top-level views and forks between them on every
-render (`app.js:944`):
+render (`render`, `app.js:570`):
 
 ```
 render() ─┬─ this.view === "gallery" → renderGallery()   (the home / set browser — UI:T9)
@@ -56,7 +56,7 @@ Stable handles for the ui-plan clauses the shell realizes. These are the *what*;
 
 ---
 
-## 1. The frame — CSS grid (`app.js:1644` `renderEditor` · `styles.css:296`)
+## 1. The frame — CSS grid (`renderEditor` `app.js:1343` · `.editor` `styles.css:369`)
 
 `renderEditor()` returns a `.editor` grid plus its overlay siblings (drawer, dialogs, toast). The grid
 is a fixed 3×3:
@@ -77,9 +77,10 @@ is a fixed 3×3:
 .editor.left-collapsed.right-collapsed { grid-template-columns: 0 1fr 0; }
 ```
 
-Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` /
-`toggleRightPane`, `app.js:1745`); the `.18s` transition on `grid-template-columns` animates it. The
-pane element stays in the DOM (its padding/border zero out, `styles.css:431`) — collapse is layout,
+Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` `app.js:1447` /
+`toggleRightPane` `app.js:1449`); the `.18s` transition on `grid-template-columns` animates it. The
+pane element stays in the DOM (`.left-pane` keeps its box, its padding/border zero out,
+`styles.css:502`) — collapse is layout,
 not teardown.
 
 ### 1.1 Editor shell wireframe
@@ -115,21 +116,21 @@ not teardown.
 Each shell component below carries a local ID (`LLD-C*`), the requirement it serves, and its source
 anchor. "Interface" is the method's contract, not its body.
 
-| ID | Component | Method (`app.js`) | Traces to |
+| ID | Component | Method (bare `:N` = `src/ui/app.js`) | Traces to |
 |----|-----------|-------------------|-----------|
-| **LLD-C1** | Root element / view fork | `render` :936, `:944` | SPEC-R9 (gallery) + SPEC-R10 (editor) |
-| **LLD-C2** | Editor frame (grid + overlays) | `renderEditor` :1644 | SPEC-R10 |
-| **LLD-C3** | App-header | `renderAppHeader` :1664 | SPEC-R1, SPEC-R8, SPEC-R7 |
-| **LLD-C4** | Section switcher | `sectionSwitcher` :1714 / `setSection` :1733 | SPEC-R12 |
-| **LLD-C5** | Left pane (Analysis rail) | `renderLeftPane` :1819 | SPEC-R11, SPEC-R5, SPEC-R6 |
-| **LLD-C6** | Center (canvas) | `renderCenter` :2778 | SPEC-R11, SPEC-R2, SPEC-R3 |
-| **LLD-C6a** | Canvas header | `renderCanvasHeader` :2801 | SPEC-R11, SPEC-R7 |
-| **LLD-C6b** | Canvas area / scene | `renderCanvasArea` :2926 | SPEC-R10 (pannable canvas), SPEC-R2 |
-| **LLD-C6c** | Canvas footer | `renderCanvasFooter` :4242 / `paintCanvasFooter` :4246 | SPEC-R5 |
-| **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :4273 | SPEC-R11, SPEC-R3, SPEC-R4 |
-| **LLD-C8** | App-footer | `renderAppFooter` :5145 / `paintAppFooter` :5164 | SPEC-R6, SPEC-R1 |
-| **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1745 / `paneToggle` :1753 | SPEC-R10 (density) |
-| **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` / `renderSettings` / `renderNewPalette` / `renderApplyGate` :1656–1660 | SPEC-R8, SPEC-R2, SPEC-R1 |
+| **LLD-C1** | Root element / view fork | `render` :570 | SPEC-R9 (gallery) + SPEC-R10 (editor) |
+| **LLD-C2** | Editor frame (grid + overlays) | `renderEditor` :1343 | SPEC-R10 |
+| **LLD-C3** | App-header | `renderAppHeader` :1364 | SPEC-R1, SPEC-R8, SPEC-R7 |
+| **LLD-C4** | Section switcher | `sectionSwitcher` :1414 / `setSection` :1434 | SPEC-R12 |
+| **LLD-C5** | Left pane (Analysis rail) | `renderLeftPane` :1530 | SPEC-R11, SPEC-R5, SPEC-R6 |
+| **LLD-C6** | Center (canvas) | `renderCenter` :1629 | SPEC-R11, SPEC-R2, SPEC-R3 |
+| **LLD-C6a** | Canvas header | `renderCanvasHeader` `sections/color.js:807` | SPEC-R11, SPEC-R7 |
+| **LLD-C6b** | Canvas area / scene | `renderCanvasArea` `sections/color.js:866` | SPEC-R10 (pannable canvas), SPEC-R2 |
+| **LLD-C6c** | Canvas footer | `renderCanvasFooter` :1874 / `paintCanvasFooter` :1879 | SPEC-R5 |
+| **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :1915 | SPEC-R11, SPEC-R3, SPEC-R4 |
+| **LLD-C8** | App-footer | `renderAppFooter` :2150 / `paintAppFooter` :2170 | SPEC-R6, SPEC-R1 |
+| **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1447 / `paneToggle` :1457 | SPEC-R10 (density) |
+| **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:32` / `renderSettings` `overlays/settings.js:459` / `renderNewPalette` `sections/color.js:482` / `renderApplyGate` `overlays/apply-gate.js:325` | SPEC-R8, SPEC-R2, SPEC-R1 |
 
 ### 2.1 Region responsibilities (the non-obvious contracts)
 
@@ -140,7 +141,7 @@ anchor. "Interface" is the method's contract, not its body.
   touch (see §4.2) so the doc-name caret survives typing.
 
 - **LLD-C4 Section switcher** — the single `segmented()` tablist that writes `this.section`. `setSection`
-  (`:1733`) is the crossover point: on leaving `color` it **stashes** the pan/zoom viewport
+  (`:1434`) is the crossover point: on leaving `color` it **stashes** the pan/zoom viewport
   (`this._colorViewport`) and on return **restores** it; typography/geometry scenes are static, so it
   `fit()`s them; entering typography lazily injects the base type fonts (`ensureTypeFonts`). Every pane
   method (`renderLeftPane`, `renderCenter`, `renderRightPane`) branches on `this.section` first.
@@ -207,7 +208,7 @@ directly then `render()`ed — no undo entry, no persistence.
 
 ## 4. The render pipeline (control flow)
 
-### 4.1 Full render (`render` :936)
+### 4.1 Full render (`render` :570)
 ```
 render():
   guard: skip if a text field is mid-edit that a rebuild would disrupt   (focus-preservation)
@@ -216,9 +217,9 @@ render():
 ```
 A full render **rebuilds the whole subtree** and mounts a *fresh, closed* `<dialog>` for each overlay;
 an open export drawer is re-`showModal()`'d after mount so a render mid-drawer doesn't dismiss it
-(`app.js:957`).
+(`_syncDrawer`, `app.js:609`).
 
-### 4.2 Live refresh (partial — during a continuous drag, `app.js:664`)
+### 4.2 Live refresh (partial — during a continuous drag, `liveRefresh` `app.js:277` → `_liveRefreshNow` `app.js:292`)
 A slider/swatch drag must not full-render (it would blow away the active control's focus/caret). Instead
 `liveRefresh` surgically updates only what the drag changed, leaving the header, panes shell, and the
 active control untouched:
@@ -255,14 +256,14 @@ the toggle relocates (see §6).
 |------|-------|----------|
 | **No palette enabled / empty set** | LLD-C6, LLD-C8 | `projectView` yields an empty `view.palettes`; footer paints `0 palettes`; canvas renders an empty scene (no throw). Export of an all-disabled set yields tokens-only JSON with a `$note` (engine-side). |
 | **Selected index out of range** | LLD-C5, LLD-C7 | `selectedIndex()` + `view.palettes[idx]` guarded; name falls back to `""`, cards render `—` empties (`an-empty`). |
-| **`Story` tab absent** | LLD-C7 | `hasStory=false` → the tab is not pushed and a `segment==="story"` selection falls back to `palette` (`app.js:4279`). |
+| **`Story` tab absent** | LLD-C7 | `hasStory=false` → the tab is not pushed and a `segment==="story"` selection falls back to `palette` (`hasStory`, `app.js:1920`). |
 | **Both/Compare + live drag** | LLD-C6b, §4.2 | `liveRefresh` bails to a full `render()` — the two scheme columns can't be patched in place. |
 | **Render mid-open-drawer** | LLD-C10, §4.1 | Fresh closed `<dialog>` each render; the open drawer is re-`showModal()`'d post-mount so it survives. |
 | **Focus/caret during a drag** | LLD-C3, §4.2 | Partial `liveRefresh` never rebuilds the header or the active control; the doc-name `<input>` keeps focus + caret while typing (rename settles on `change`). |
 | **Collapsed pane has no in-pane toggle** | LLD-C9 | The toggle is the *same* button rendered in two places by state: in the pane header while open, and popped to the canvas-header's edge once collapsed — so there is always an affordance to reopen. |
 | **In Figma (no web-only APIs)** | LLD-C1, LLD-C3 | `this.inFigma` gates: gallery probes the Figma file once (`probeFigmaProject`); license activation is refused with a message ("available in the web app"); runtime Google-Fonts loading is disabled (base faces only). |
 | **Typography font not bundled** | LLD-C4, LLD-C6b | Only 4 base faces are self-hosted; entering typography injects the rest from Google Fonts in the web app (`ensureTypeFonts`); if a face never loads the specimen falls back to a generic (`genericFor`), exports are unaffected. |
-| **System scheme changes while `system` selected** | LLD-C1 | A `prefers-color-scheme` listener re-`render()`s when `theme` or `canvasTheme` is `system` (`app.js:614`). |
+| **System scheme changes while `system` selected** | LLD-C1 | A `prefers-color-scheme` listener re-`render()`s when `theme` or `canvasTheme` is `system` (`app.js:171`). |
 
 ---
 
@@ -286,7 +287,7 @@ the toggle relocates (see §6).
 │              │ canvas-area / scene                                       │0│
 ```
 
-**Gallery** (`this.view==="gallery"`, `renderGallery` :1213 — the other top-level fork):
+**Gallery** (`this.view==="gallery"`, `renderGallery` :886 — the other top-level fork):
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ Ultimate Tokens                        [⤓ Project] [⤒ Import] [+ New]  ◐   │
