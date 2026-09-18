@@ -170,9 +170,26 @@ if (!fixedOn.every((r) => /:050\/050$/.test(r))) FAIL("oncolors", `fixed mode: o
 if (JSON.stringify(fixedOn) === JSON.stringify(contrastOn)) FAIL("oncolors", "contrast mode changed no on-color — onColorMode not threaded to exports");
 // #662: the achromatic fall-through reaches the CSS emitter, and it aliases the emitted document
 // constant rather than a per-palette var that would not resolve.
-const contrastCss = X.exportCSS({ ...C(ALL), onColorMode: "contrast" });
-if (!contrastOn.some((r) => /white|black/.test(r)))
-  FAIL("oncolors", "contrast mode produced no white/black on-color — the achromatic fall-through (#662) is not wired to the exporters");
+//
+// This needs a palette whose accent (550 light / 450 dark) misses AA against BOTH of its own ramp
+// ends (050 and 950) — the only case `applyOnColorContrast`'s `pick()` falls through to white/black.
+// RT.defaults no longer supplies one: ticket #681 U2 fixed model.mjs's projectView and exports.js's
+// derivePalette to actually forward `anchor` into paletteStops (a "subset-object gap" — they built
+// narrowed object literals for the engine call that silently dropped the new field), and RT.defaults'
+// families now carry `anchor` (mirroring DEFAULT_PALETTES). With the anchor honoured, every family's
+// own 050/950 clears AA against its accent comfortably (see test/engine/semantic.mjs's re-measured
+// role-contrast floors) — none of them exercise the fallback path any more. A dedicated synthetic
+// probe, unrelated to any default family, keeps this gate meaningful: hue 150 (a green/cyan) at full
+// chroma, with damping OFF (damp/dampAmp/dampBias: 0, so the ramp keeps full saturation all the way
+// to its own 050/950 instead of fading toward white/black) is measured to land its light-scheme
+// accent between its own washed-out ends, missing AA on both — the exact "no” a ramp fixture chases.
+const FALLBACK_PROBE = { name: "Probe", hue: 150, chroma: 100, skew: 0, lift: 0, on: true };
+const probeCtl = { ...C([...ALL, FALLBACK_PROBE]), onColorMode: "contrast", damp: 0, dampAmp: 0, dampBias: 0 };
+const contrastCss = X.exportCSS(probeCtl);
+const probeOn = onRefs(contrastCss).filter((r) => r.startsWith("probe:"));
+if (probeOn.length === 0) FAIL("oncolors", "fallback probe palette produced no on-color ref — the resolution ladder changed shape");
+else if (!probeOn.some((r) => /white|black/.test(r)))
+  FAIL("oncolors", `contrast mode produced no white/black on-color for the fallback probe (got ${probeOn.join(",")}) — the achromatic fall-through (#662) is not wired to the exporters`);
 for (const which of ["white", "black"]) {
   if (contrastCss.includes(`var(--c-${which})`) && !contrastCss.includes(`--c-${which}: `))
     FAIL("oncolors", `an on-color aliases var(--c-${which}) but --c-${which} is not emitted in :root (ADR-005)`);
@@ -425,31 +442,47 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // from-scratch sRGB->OKLab->OKLCH conversion, not by reading this pipeline's own output back). The
   // ramp stops (500/050/950/scrim) and every OTHER default family's prime are untouched by U1 — only
   // Primary's row happens to be this file's literal spot check.
+  //
+  // #681 re-capture (U2): the RAMP's own stop 500 moved too — model.mjs's projectView and exports.js's
+  // derivePalette were fixed to actually forward `anchor` into paletteStops (a "subset-object gap":
+  // they built narrowed object literals for the engine call that silently dropped the new field, so
+  // the ramp itself had been silently ignoring `anchor` all along, unlike prime.mjs which U1 already
+  // wired correctly). With that fixed, colors.primary.500 now equals colors.primary.prime.prime
+  // exactly (both read the SAME verbatim anchor hex #0C5DCC, in-window per RAMP_L_MIN/MAX so it is
+  // never clamped) — the two were coincidentally different literals before this fix, now the SAME by
+  // construction (C3's own claim). scrim.300 tracks 500. neutral.500 moved (Neutral also carries an
+  // anchor). The accent-role semantic tokens (DEFAULT/hover, at ramp stops 550/450/650/350 — NOT 500,
+  // so still genuinely distinct from the anchor) and data-1's own accent moved with the ramp shape.
+  // on-primary._dark ALSO moved (black -> white): #662's achromatic-fallback `pick()` now finds
+  // Primary's own dark ramp end clears AA against the anchor-pinned 450 fill, so it no longer needs
+  // the black constant. on-surface/backdrop/prime.brightest/prime.dimmest (no accent role reads them)
+  // did not move. Every literal below independently re-verified against exports.mjs's own resolution
+  // ladder output (this file's normal spot-check discipline — not re-derived by hand).
   const ddState = stateOf(defaultDocument());
   const ddPreset = X.exportPanda(ddState);
   const ddRaw = ddPreset.theme.extend.tokens.colors;
   const ddSem = ddPreset.theme.extend.semanticTokens.colors;
-  if (ddRaw.primary["500"].value !== "oklch(0.546 0.2114 258.97)") FAIL("panda", `EX-1 colors.primary.500 = ${ddRaw.primary["500"].value}`);
+  if (ddRaw.primary["500"].value !== "oklch(0.504 0.1867 258.99)") FAIL("panda", `EX-1 colors.primary.500 = ${ddRaw.primary["500"].value}`);
   if (ddRaw.primary["50"].value !== "oklch(1 0 0)") FAIL("panda", `EX-1 colors.primary.50 = ${ddRaw.primary["50"].value}`);
   if (ddRaw.primary["950"].value !== "oklch(0.1763 0.014 258.36)") FAIL("panda", `EX-1 colors.primary.950 = ${ddRaw.primary["950"].value}`);
-  if (ddRaw.neutral["500"].value !== "oklch(0.5443 0.059 267.96)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
-  if (ddRaw.primary.scrim["300"].value !== "oklch(0.546 0.2114 258.97 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
+  if (ddRaw.neutral["500"].value !== "oklch(0.5056 0.0552 267.76)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
+  if (ddRaw.primary.scrim["300"].value !== "oklch(0.504 0.1867 258.99 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
   if (ddRaw.primary.prime.prime.value !== "oklch(0.504 0.1867 258.99)") FAIL("panda", `EX-1 colors.primary.prime.prime = ${ddRaw.primary.prime.prime.value}`);
   if (ddRaw.primary.prime.brightest.value !== "oklch(0.7391 0.1335 259.07)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`);
   if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2575 0.0972 259.02)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.504 0.1867 258.99)", _dark: "oklch(0.586 0.2114 258.97)" }))
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4517 0.169 259.12)", _dark: "oklch(0.5367 0.1973 258.98)" }))
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.4253 0.1357 259.04)", _dark: "oklch(0.672 0.1504 258.98)" }))
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.378 0.12 258.69)", _dark: "oklch(0.6305 0.1629 259.14)" }))
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
-  if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(0 0 0)" }))
+  if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);
   if (JSON.stringify(ddSem.neutral["on-surface"].value) !== JSON.stringify({ base: "oklch(0.1774 0.0044 264.46)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.neutral.on-surface = ${JSON.stringify(ddSem.neutral["on-surface"].value)}`);
   if (Object.keys(ddSem.primary).length !== 53) FAIL("panda", `EX-2 expected 53 keys under semanticTokens.colors.primary, got ${Object.keys(ddSem.primary).length}`);
   if (Object.keys(ddSem).length !== 16) FAIL("panda", `EX-2 expected 16 palette groups, got ${Object.keys(ddSem).length}`);
-  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5584 0.2312 272.17)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
+  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5198 0.2489 272.21)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
 
   // disabled palette absent from both trees.
   const disabledPanda = X.exportPanda(oneOff);
