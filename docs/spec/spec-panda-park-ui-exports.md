@@ -408,9 +408,11 @@ Consequences that shape the design:
 ## Examples
 
 All values engine-generated from `defaultDocument()` resolved through `resolvedPalettes`
-(colour values below re-generated 2026-09-17 at #647, which made the perceptual ramp honour a
-palette's `skew` and `lift`; Primary and Neutral both carry skew -20, so every literal derived from
-their ramp moved. Type, geometry and park values are untouched.)
+(colour values below re-generated twice: 2026-09-17 at #647, which made the perceptual ramp honour a
+palette's `skew` and `lift` — Primary and Neutral both carry skew -20, so every literal derived from
+their ramp moved; and 2026-09-18 at #657, which gave that ramp's OKHSL hue solver its best iterate
+instead of an unread last one, moving Primary's accent by one 8-bit step. Type, geometry and park
+values are untouched by both.)
 (the drawer's path; calling `derivedAll` on the raw document skips the group resolver and renders
 Neutral at full chroma, the emitters must be fed the resolved state, as the drawer already does).
 
@@ -422,7 +424,7 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   `.brightest === "oklch(0.8266 0.0853 258.93)"`, `.dimmest === "oklch(0.3543 0.1307 258.84)"`,
   `.DEFAULT` equals `.prime`. `tokens.colors.constant.backdrop.value === "oklch(0 0 0 / 80%)"`.
 - **EX-2 (NORMATIVE, panda semantic).** `semanticTokens.colors.primary.DEFAULT.value` deep-equals
-  `{ base: "oklch(0.5048 0.188 259.1)", _dark: "oklch(0.5861 0.2112 259.05)" }`;
+  `{ base: "oklch(0.504 0.1867 258.99)", _dark: "oklch(0.586 0.2114 258.97)" }`;
   `primary.hover` `{ base: "oklch(0.4253 0.1357 259.04)", _dark: "oklch(0.672 0.1504 258.98)" }`;
   `primary["on-primary"]` `{ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }`;
   `neutral["on-surface"]` `{ base: "oklch(0.1774 0.0044 264.46)", _dark: "oklch(1 0 0)" }`;
