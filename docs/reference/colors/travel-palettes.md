@@ -18,12 +18,12 @@ A condensation window on the № 002, somewhere between Krasnoyarsk and Irkutsk
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Frozen birch forest at noon, silver | `0.918 0.005 215` | `#E3E6E7` |
-| Supporting | Window condensation, compartment side | `0.857 0.011 80` | `#DAD3C4` |
-| Supporting | Birch bark, peeling, betula pendula | `0.778 0.012 75` | `#C5BCB1` |
-| Supporting | Samovar brass, lacquer scoured off | `0.620 0.068 78` | `#A08361` |
-| Accent | Kupé upholstery, deep maroon velour | `0.322 0.045 28` | `#4B2F2C` |
-| Accent | Three-o'clock dusk, ultramarine over snow | `0.303 0.048 268` | `#343C54` |
+| Dominant | Frozen birch forest at noon, silver | `0.918 0.005 215` | `#E0E5E6` |
+| Supporting | Window condensation, compartment side | `0.857 0.011 80` | `#D4CFC8` |
+| Supporting | Birch bark, peeling, betula pendula | `0.778 0.012 75` | `#BBB6AE` |
+| Supporting | Samovar brass, lacquer scoured off | `0.620 0.068 78` | `#9D8157` |
+| Accent | Kupé upholstery, deep maroon velour | `0.322 0.045 28` | `#482A26` |
+| Accent | Three-o'clock dusk, ultramarine over snow | `0.303 0.048 268` | `#242D47` |
 
 **System colors (relative)**
 
@@ -49,12 +49,12 @@ The fifteen minutes when the souk's roof slats stop letting in white light and s
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Tadelakt rose, late sun on plaster | `0.780 0.062 32` | `#D8B1A1` |
-| Supporting | Zellige white, tea-stained | `0.884 0.022 88` | `#E8DEC9` |
-| Supporting | Saffron, oxidised in burlap | `0.748 0.132 74` | `#D2A25D` |
-| Supporting | Lantern through pierced brass | `0.652 0.118 62` | `#BC7E4C` |
-| Accent | Cobalt sky through the roof gap | `0.423 0.158 263` | `#2C4A8A` |
-| Accent | Majorelle, named as colonial import (1924) | `0.452 0.198 268` | `#3147A8` |
+| Dominant | Tadelakt rose, late sun on plaster | `0.780 0.062 32` | `#DCA99F` |
+| Supporting | Zellige white, tea-stained | `0.884 0.022 88` | `#DFD8C9` |
+| Supporting | Saffron, oxidised in burlap | `0.748 0.132 74` | `#DF9F41` |
+| Supporting | Lantern through pierced brass | `0.652 0.118 62` | `#C37E3C` |
+| Accent | Cobalt sky through the roof gap | `0.423 0.158 263` | `#1B45A2` |
+| Accent | Majorelle, named as colonial import (1924) | `0.452 0.198 268` | `#2943C1` |
 
 **System colors (relative)**
 
@@ -80,12 +80,12 @@ Late afternoon on the salt flat, with the Licancabur shadow already starting to 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Halite crust, sun-bleached | `0.937 0.006 92` | `#ECEAE3` |
-| Supporting | Vicuña wool, undyed, altiplano herd | `0.722 0.038 78` | `#BEAE95` |
-| Supporting | Andean copper terracotta | `0.585 0.094 46` | `#A37254` |
-| Supporting | Volcanic basalt, weathered | `0.382 0.014 52` | `#564D44` |
-| Accent | High-altitude shadow, lilac on pale ground | `0.722 0.038 298` | `#B5ABC1` |
-| Accent | Atacama sky, bleached cobalt | `0.618 0.090 248` | `#6F95C4` |
+| Dominant | Halite crust, sun-bleached | `0.937 0.006 92` | `#EBEAE6` |
+| Supporting | Vicuña wool, undyed, altiplano herd | `0.722 0.038 78` | `#B3A38B` |
+| Supporting | Andean copper terracotta | `0.585 0.094 46` | `#AA694A` |
+| Supporting | Volcanic basalt, weathered | `0.382 0.014 52` | `#49413C` |
+| Accent | High-altitude shadow, lilac on pale ground | `0.722 0.038 298` | `#A8A1BB` |
+| Accent | Atacama sky, bleached cobalt | `0.618 0.090 248` | `#588AB9` |
 
 **System colors (relative)**
 
@@ -111,12 +111,12 @@ The fluorescent-lit passenger lounge of an off-season ferry, an hour before dock
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | November Aegean swell, grey-green | `0.522 0.026 168` | `#6C7C75` |
-| Supporting | Weathered fibreglass, hull paint | `0.862 0.018 88` | `#DFD7C7` |
-| Supporting | Horizon, indeterminate | `0.683 0.010 235` | `#A4A8AD` |
-| Supporting | Funnel stripe, faded indigo enamel | `0.420 0.062 268` | `#4D5778` |
-| Accent | Diesel sheen on the water, near the rail | `0.298 0.022 295` | `#36333D` |
-| Accent | Fluorescent T8, passenger lounge | `0.948 0.042 138` | `#E7EFD6` |
+| Dominant | November Aegean swell, grey-green | `0.522 0.026 168` | `#5B6F67` |
+| Supporting | Weathered fibreglass, hull paint | `0.862 0.018 88` | `#D6D1C5` |
+| Supporting | Horizon, indeterminate | `0.683 0.010 235` | `#949A9F` |
+| Supporting | Funnel stripe, faded indigo enamel | `0.420 0.062 268` | `#3E4C6F` |
+| Accent | Diesel sheen on the water, near the rail | `0.298 0.022 295` | `#2E2B37` |
+| Accent | Fluorescent T8, passenger lounge | `0.948 0.042 138` | `#E1F5DA` |
 
 **System colors (relative)**
 
@@ -148,12 +148,12 @@ The last train of the night, fluorescent-lit, with the overcoat-thick warmth of 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Fluorescent saloon white, mid-car | `0.918 0.012 235` | `#E3E8EC` |
-| Supporting | Shōwa-era platform tile, cream | `0.838 0.026 88` | `#D8CFBA` |
-| Supporting | Salaryman wool, navy at 30° | `0.298 0.038 268` | `#2C3245` |
-| Supporting | Moquette plum, JR East seat | `0.428 0.058 350` | `#6B4658` |
-| Accent | Sodium-pink neon, wet pavement | `0.678 0.118 32` | `#D2715D` |
-| Accent | Vending machine red, faded | `0.508 0.142 28` | `#A93729` |
+| Dominant | Fluorescent saloon white, mid-car | `0.918 0.012 235` | `#DDE5EB` |
+| Supporting | Shōwa-era platform tile, cream | `0.838 0.026 88` | `#D1C9B7` |
+| Supporting | Salaryman wool, navy at 30° | `0.298 0.038 268` | `#252D41` |
+| Supporting | Moquette plum, JR East seat | `0.428 0.058 350` | `#684254` |
+| Accent | Sodium-pink neon, wet pavement | `0.678 0.118 32` | `#D67B69` |
+| Accent | Vending machine red, faded | `0.508 0.142 28` | `#A73D34` |
 
 **System colors (relative)**
 
@@ -179,12 +179,12 @@ The narrow climb past the cathedral, where the calçada is half limestone, half 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Calçada limestone, sun-polished | `0.838 0.030 88` | `#D8CDB6` |
-| Supporting | Calçada basalt, interleaved seam | `0.402 0.008 78` | `#4A4540` |
-| Supporting | Faded paint-on-stucco, Largo das Portas | `0.748 0.062 18` | `#D49AA0` |
-| Supporting | Cork bark, raw, Alentejo | `0.668 0.062 58` | `#B88E69` |
-| Accent | Azulejo blue, Pombaline tin-glaze | `0.518 0.108 248` | `#2D6DA3` |
-| Accent | Tram livery yellow, oxidised | `0.748 0.118 78` | `#D6A14A` |
+| Dominant | Calçada limestone, sun-polished | `0.838 0.030 88` | `#D2C9B4` |
+| Supporting | Calçada basalt, interleaved seam | `0.402 0.008 78` | `#4B4843` |
+| Supporting | Faded paint-on-stucco, Largo das Portas | `0.748 0.062 18` | `#D29E9F` |
+| Supporting | Cork bark, raw, Alentejo | `0.668 0.062 58` | `#B28C6F` |
+| Accent | Azulejo blue, Pombaline tin-glaze | `0.518 0.108 248` | `#2E6CA3` |
+| Accent | Tram livery yellow, oxidised | `0.748 0.118 78` | `#D6A34F` |
 
 **System colors (relative)**
 
@@ -210,12 +210,12 @@ The black-sand beach below the basalt cliff, with the glacial-melt river-mouth s
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Basalt sand, Reynisfjara | `0.262 0.005 280` | `#2A2A2C` |
-| Supporting | Sheep wool, raw and unscoured | `0.898 0.018 88` | `#EBE4D4` |
-| Supporting | Glacial-melt silt, river-mouth blue | `0.788 0.022 198` | `#B8C8C5` |
-| Supporting | Tussock grass, wind-scoured | `0.548 0.038 118` | `#7A8462` |
-| Accent | Lupine, past its peak | `0.498 0.052 305` | `#695779` |
-| Accent | Basalt column, wet sea-stack | `0.328 0.008 268` | `#393A3E` |
+| Dominant | Basalt sand, Reynisfjara | `0.262 0.005 280` | `#242427` |
+| Supporting | Sheep wool, raw and unscoured | `0.898 0.018 88` | `#E2DDD0` |
+| Supporting | Glacial-melt silt, river-mouth blue | `0.788 0.022 198` | `#AABFBF` |
+| Supporting | Tussock grass, wind-scoured | `0.548 0.038 118` | `#6F745B` |
+| Accent | Lupine, past its peak | `0.498 0.052 305` | `#695B7B` |
+| Accent | Basalt column, wet sea-stack | `0.328 0.008 268` | `#333539` |
 
 **System colors (relative)**
 
@@ -241,12 +241,12 @@ Wet laterite walls and Portuguese-import indigo trim, the banyan still dripping,
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Wet laterite, exposed wall | `0.488 0.098 38` | `#8A4A37` |
-| Supporting | Banyan leaf, post-rain | `0.488 0.038 138` | `#4A6147` |
-| Supporting | Rain-light, between squalls | `0.578 0.038 245` | `#6A7B8E` |
-| Supporting | Coconut coir, soaked rope | `0.402 0.038 58` | `#5E4630` |
-| Accent | Portuguese-import indigo, trim | `0.388 0.052 248` | `#2F4256` |
-| Accent | Brass diya, polished by rain | `0.668 0.082 78` | `#B89060` |
+| Dominant | Wet laterite, exposed wall | `0.488 0.098 38` | `#8E4A35` |
+| Supporting | Banyan leaf, post-rain | `0.488 0.038 138` | `#556550` |
+| Supporting | Rain-light, between squalls | `0.578 0.038 245` | `#677D8F` |
+| Supporting | Coconut coir, soaked rope | `0.402 0.038 58` | `#584334` |
+| Accent | Portuguese-import indigo, trim | `0.388 0.052 248` | `#2D475F` |
+| Accent | Brass diya, polished by rain | `0.668 0.082 78` | `#B08F59` |
 
 **System colors (relative)**
 
@@ -278,12 +278,12 @@ A Faroese harbour at half-visibility, where the painted-house pigments are the o
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | North Atlantic sea-fog, mid-morning | `0.802 0.006 138` | `#C2C4C0` |
-| Supporting | Tarred wood, old Tinganes cladding | `0.222 0.018 58` | `#2A201A` |
-| Supporting | Wool oil cream, raw fleece | `0.838 0.030 85` | `#D9CBB4` |
-| Supporting | Wet peat, field edge | `0.318 0.022 58` | `#3D342A` |
-| Accent | Painted-house ochre, Sjóvinnubankin | `0.638 0.108 72` | `#B88A4A` |
-| Accent | Painted-house oxblood, turf-roof saltbox | `0.412 0.082 28` | `#6E3A32` |
+| Dominant | North Atlantic sea-fog, mid-morning | `0.802 0.006 138` | `#BCBFBB` |
+| Supporting | Tarred wood, old Tinganes cladding | `0.222 0.018 58` | `#221913` |
+| Supporting | Wool oil cream, raw fleece | `0.838 0.030 85` | `#D3C9B4` |
+| Supporting | Wet peat, field edge | `0.318 0.022 58` | `#3B3027` |
+| Accent | Painted-house ochre, Sjóvinnubankin | `0.638 0.108 72` | `#B48039` |
+| Accent | Painted-house oxblood, turf-roof saltbox | `0.412 0.082 28` | `#713831` |
 
 **System colors (relative)**
 
@@ -309,12 +309,12 @@ Inside the felt, with the dung-fire still burning and the door-flap open to the 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Sheep felt, undyed | `0.828 0.046 88` | `#D8C9A8` |
-| Supporting | Steppe dust, dawn | `0.668 0.030 78` | `#A89880` |
-| Supporting | Horsehair, bay | `0.318 0.058 36` | `#4A2E22` |
-| Supporting | Civil twilight, cold blue | `0.448 0.038 248` | `#495B73` |
-| Accent | Dung-fire on felt, interior wall | `0.598 0.142 52` | `#C47238` |
-| Accent | Khadag silk, Tengri blue | `0.598 0.082 245` | `#5688B8` |
+| Dominant | Sheep felt, undyed | `0.828 0.046 88` | `#D3C6A5` |
+| Supporting | Steppe dust, dawn | `0.668 0.030 78` | `#9F9380` |
+| Supporting | Horsehair, bay | `0.318 0.058 36` | `#4B271D` |
+| Supporting | Civil twilight, cold blue | `0.448 0.038 248` | `#445769` |
+| Accent | Dung-fire on felt, interior wall | `0.598 0.142 52` | `#C0631C` |
+| Accent | Khadag silk, Tengri blue | `0.598 0.082 245` | `#5485AE` |
 
 **System colors (relative)**
 
@@ -340,12 +340,12 @@ The working café, not the imperial pageant: marble table, banquette leather, a 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Nicotine-aged plaster, ceiling | `0.808 0.042 82` | `#D6C4A4` |
-| Supporting | Marble table top, grey-veined | `0.838 0.006 88` | `#D3D0C8` |
-| Supporting | Banquette leather, Thonet olive | `0.348 0.030 158` | `#2F4337` |
-| Supporting | Oxidised brass, hat-rack and rail | `0.488 0.038 78` | `#756247` |
-| Accent | Gilt mirror lettering | `0.648 0.082 78` | `#B48F4F` |
-| Accent | Wet cobble, through the window | `0.252 0.006 78` | `#2C2A28` |
+| Dominant | Nicotine-aged plaster, ceiling | `0.808 0.042 82` | `#CEBEA2` |
+| Supporting | Marble table top, grey-veined | `0.838 0.006 88` | `#CBCAC5` |
+| Supporting | Banquette leather, Thonet olive | `0.348 0.030 158` | `#2D3F34` |
+| Supporting | Oxidised brass, hat-rack and rail | `0.488 0.038 78` | `#6C5D48` |
+| Accent | Gilt mirror lettering | `0.648 0.082 78` | `#AA8853` |
+| Accent | Wet cobble, through the window | `0.252 0.006 78` | `#24221F` |
 
 **System colors (relative)**
 
@@ -371,12 +371,12 @@ Late winter on the high desert, with adobe still holding the day's heat and the 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Adobe wall, low-angle sun | `0.708 0.072 56` | `#C79A72` |
-| Supporting | Sage, mountain mahogany | `0.598 0.022 108` | `#8E9276` |
-| Supporting | Shaded-snow blue, Sangre de Cristos | `0.808 0.018 248` | `#C0C8D2` |
-| Supporting | Juniper bark, twisted | `0.398 0.038 58` | `#5E4530` |
-| Accent | Spanish-colonial blue, door trim | `0.518 0.062 245` | `#4A6E8E` |
-| Accent | Alpenglow on snow, peach | `0.748 0.062 48` | `#D8A888` |
+| Dominant | Adobe wall, low-angle sun | `0.708 0.072 56` | `#C49675` |
+| Supporting | Sage, mountain mahogany | `0.598 0.022 108` | `#818172` |
+| Supporting | Shaded-snow blue, Sangre de Cristos | `0.808 0.018 248` | `#B8C2CC` |
+| Supporting | Juniper bark, twisted | `0.398 0.038 58` | `#574233` |
+| Accent | Spanish-colonial blue, door trim | `0.518 0.062 245` | `#496C8A` |
+| Accent | Alpenglow on snow, peach | `0.748 0.062 48` | `#CFA28C` |
 
 **System colors (relative)**
 
@@ -408,12 +408,12 @@ A Newfoundland outport with the saltbox-red clapboard reading at twice its hue a
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | North Atlantic fog cream | `0.852 0.008 88` | `#D8D4CC` |
-| Supporting | Dory grey, gunwale paint | `0.522 0.012 200` | `#6D7A78` |
-| Supporting | Atlantic harbour green | `0.452 0.024 168` | `#4F6760` |
-| Supporting | Kelp wrack, low tide | `0.342 0.038 65` | `#4A3A26` |
-| Accent | Saltbox red, painted clapboard | `0.522 0.158 30` | `#B04332` |
-| Accent | Rock lichen, orange | `0.652 0.118 62` | `#C08646` |
+| Dominant | North Atlantic fog cream | `0.852 0.008 88` | `#D0CEC9` |
+| Supporting | Dory grey, gunwale paint | `0.522 0.012 200` | `#626C6C` |
+| Supporting | Atlantic harbour green | `0.452 0.024 168` | `#495A53` |
+| Supporting | Kelp wrack, low tide | `0.342 0.038 65` | `#463423` |
+| Accent | Saltbox red, painted clapboard | `0.522 0.158 30` | `#B23B2C` |
+| Accent | Rock lichen, orange | `0.652 0.118 62` | `#C37E3C` |
 
 **System colors (relative)**
 
@@ -439,12 +439,12 @@ A working koli fishing village at dawn, the painted boats still on the slipway a
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Monsoon-stained concrete, jetty | `0.598 0.012 88` | `#8C8678` |
-| Supporting | Painted hull cobalt, koli boat | `0.408 0.122 248` | `#1C4D7C` |
-| Supporting | Fishwife sari indigo | `0.282 0.072 282` | `#2B2C52` |
-| Supporting | Drying net, nylon green | `0.502 0.058 152` | `#487058` |
-| Accent | Bombay duck, sun-dried | `0.728 0.046 65` | `#C3A98C` |
-| Accent | Arabian-Sea dawn pink | `0.752 0.052 28` | `#D6A89E` |
+| Dominant | Monsoon-stained concrete, jetty | `0.598 0.012 88` | `#827F78` |
+| Supporting | Painted hull cobalt, koli boat | `0.408 0.122 248` | `#004C88` |
+| Supporting | Fishwife sari indigo | `0.282 0.072 282` | `#24234B` |
+| Supporting | Drying net, nylon green | `0.502 0.058 152` | `#4A6E53` |
+| Accent | Bombay duck, sun-dried | `0.728 0.046 65` | `#BCA289` |
+| Accent | Arabian-Sea dawn pink | `0.752 0.052 28` | `#CEA39C` |
 
 **System colors (relative)**
 
@@ -470,12 +470,12 @@ A Breton granite quay laid bare by the spring tide, with oyster baskets stacked 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Breton granite, blue-grey | `0.532 0.014 248` | `#6E7681` |
-| Supporting | Channel fog white | `0.852 0.004 88` | `#D9D8D2` |
-| Supporting | Oyster shell, sun-bleached | `0.788 0.012 88` | `#C8C2B3` |
-| Supporting | Slate roof, salt-washed | `0.412 0.006 248` | `#4D4F53` |
-| Accent | Wet rockweed brown | `0.342 0.042 62` | `#4A3826` |
-| Accent | Creosote wood, pier piling | `0.232 0.020 58` | `#2B231B` |
+| Dominant | Breton granite, blue-grey | `0.532 0.014 248` | `#666D74` |
+| Supporting | Channel fog white | `0.852 0.004 88` | `#CFCECB` |
+| Supporting | Oyster shell, sun-bleached | `0.788 0.012 88` | `#BDBAB1` |
+| Supporting | Slate roof, salt-washed | `0.412 0.006 248` | `#484B4E` |
+| Accent | Wet rockweed brown | `0.342 0.042 62` | `#483421` |
+| Accent | Creosote wood, pier piling | `0.232 0.020 58` | `#251B14` |
 
 **System colors (relative)**
 
@@ -501,12 +501,12 @@ Two hundred metres of black volcanic shore, with kombu laid out on woven mats to
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Drying mat, woven rice straw | `0.748 0.062 78` | `#C7B288` |
-| Supporting | Wet kombu, blackish kelp | `0.252 0.024 100` | `#2C2C1F` |
-| Supporting | Sun-dried kombu, olive ribbon | `0.498 0.078 100` | `#6E6B2E` |
-| Supporting | Hokkaido sea grey-green | `0.522 0.020 168` | `#6E7C75` |
-| Accent | Fisherman's rubber bib, faded blue | `0.572 0.034 245` | `#6D7D8E` |
-| Accent | Volcanic black sand | `0.272 0.006 80` | `#2F2E2C` |
+| Dominant | Drying mat, woven rice straw | `0.748 0.062 78` | `#C3A981` |
+| Supporting | Wet kombu, blackish kelp | `0.252 0.024 100` | `#252215` |
+| Supporting | Sun-dried kombu, olive ribbon | `0.498 0.078 100` | `#6D642B` |
+| Supporting | Hokkaido sea grey-green | `0.522 0.020 168` | `#5F6D67` |
+| Accent | Fisherman's rubber bib, faded blue | `0.572 0.034 245` | `#687B8B` |
+| Accent | Volcanic black sand | `0.272 0.006 80` | `#282724` |
 
 **System colors (relative)**
 
@@ -538,12 +538,12 @@ Inside the teahouse at last light, with the yak-dung stove lit and the kitchen r
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Snow-glare white, mountain reflection | `0.918 0.006 215` | `#E8EAEC` |
-| Supporting | Wood-smoke veil, interior | `0.612 0.022 78` | `#948672` |
-| Supporting | Stove iron, soot black | `0.222 0.012 60` | `#2A2521` |
-| Supporting | Prayer flag, faded blue | `0.612 0.058 245` | `#6E8EB0` |
-| Accent | Yak-butter lamp, gold flame | `0.628 0.122 60` | `#C98A3A` |
-| Accent | Rhododendron leaf, autumn rust | `0.422 0.092 38` | `#6E3E2A` |
+| Dominant | Snow-glare white, mountain reflection | `0.918 0.006 215` | `#E0E5E6` |
+| Supporting | Wood-smoke veil, interior | `0.612 0.022 78` | `#8B8275` |
+| Supporting | Stove iron, soot black | `0.222 0.012 60` | `#1F1A16` |
+| Supporting | Prayer flag, faded blue | `0.612 0.058 245` | `#6688A5` |
+| Accent | Yak-butter lamp, gold flame | `0.628 0.122 60` | `#BD7532` |
+| Accent | Rhododendron leaf, autumn rust | `0.422 0.092 38` | `#773926` |
 
 **System colors (relative)**
 
@@ -569,12 +569,12 @@ The plaza at mid-morning, with the colonial ochre walls still cold and the Inca 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Spanish-colonial ochre plaster | `0.658 0.112 70` | `#C08C4A` |
-| Supporting | Inca stone, blue-grey andesite | `0.532 0.008 248` | `#6E7378` |
-| Supporting | Terracotta tile, sun-bleached | `0.548 0.118 38` | `#A45838` |
-| Supporting | Eucalyptus, hillside green-grey | `0.518 0.048 118` | `#6E7D52` |
-| Accent | Andean red, woven textile | `0.402 0.142 28` | `#7D2622` |
-| Accent | Highland sky, thin atmosphere | `0.722 0.052 235` | `#94B0C8` |
+| Dominant | Spanish-colonial ochre plaster | `0.658 0.112 70` | `#BD843D` |
+| Supporting | Inca stone, blue-grey andesite | `0.532 0.008 248` | `#696D71` |
+| Supporting | Terracotta tile, sun-bleached | `0.548 0.118 38` | `#AA553B` |
+| Supporting | Eucalyptus, hillside green-grey | `0.518 0.048 118` | `#666C4D` |
+| Accent | Andean red, woven textile | `0.402 0.142 28` | `#841A16` |
+| Accent | Highland sky, thin atmosphere | `0.722 0.052 235` | `#86ABC2` |
 
 **System colors (relative)**
 
@@ -600,12 +600,12 @@ The end of the ski season, when the snow is sun-cupped and the larch on the slop
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Dolomia limestone pink, sun-lit peak | `0.708 0.062 36` | `#C89E88` |
-| Supporting | Refuge wood, oiled spruce | `0.422 0.068 62` | `#6E4F30` |
-| Supporting | Mountain-shadow blue, glacial slope | `0.488 0.042 248` | `#5E7088` |
-| Supporting | Wool blanket, regimental grey | `0.498 0.006 168` | `#6A6E6B` |
-| Accent | Larch russet, gone over | `0.402 0.082 56` | `#6E4828` |
-| Accent | Prosecco bottle green, emptied | `0.342 0.044 152` | `#2C4232` |
+| Dominant | Dolomia limestone pink, sun-lit peak | `0.708 0.062 36` | `#C49486` |
+| Supporting | Refuge wood, oiled spruce | `0.422 0.068 62` | `#684524` |
+| Supporting | Mountain-shadow blue, glacial slope | `0.488 0.042 248` | `#4D6277` |
+| Supporting | Wool blanket, regimental grey | `0.498 0.006 168` | `#606462` |
+| Accent | Larch russet, gone over | `0.402 0.082 56` | `#693B16` |
+| Accent | Prosecco bottle green, emptied | `0.342 0.044 152` | `#273F2D` |
 
 **System colors (relative)**
 
@@ -631,12 +631,12 @@ The cliff-side monastery as the lamps go on inside the prayer hall and the snow 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Earthen wall, sun-baked adobe | `0.628 0.082 62` | `#B78657` |
-| Supporting | Snow-rinse white, mani wall | `0.848 0.018 88` | `#D8D4C6` |
-| Supporting | Juniper smoke, cold-blue veil | `0.522 0.024 245` | `#6A7888` |
-| Supporting | Thangka cobalt | `0.408 0.122 252` | `#2E4E8A` |
-| Accent | Prayer-hall red, oxide pigment | `0.392 0.148 28` | `#7A2A1F` |
-| Accent | Marigold gold, offering | `0.722 0.142 65` | `#D89438` |
+| Dominant | Earthen wall, sun-baked adobe | `0.628 0.082 62` | `#AC7D53` |
+| Supporting | Snow-rinse white, mani wall | `0.848 0.018 88` | `#D2CDC0` |
+| Supporting | Juniper smoke, cold-blue veil | `0.522 0.024 245` | `#5E6B77` |
+| Supporting | Thangka cobalt | `0.408 0.122 252` | `#004A89` |
+| Accent | Prayer-hall red, oxide pigment | `0.392 0.148 28` | `#83110F` |
+| Accent | Marigold gold, offering | `0.722 0.142 65` | `#E19034` |
 
 **System colors (relative)**
 
@@ -668,12 +668,12 @@ Cobblestone wet from the fountain wash, the sodium streetlights on, the parrilla
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Cobblestone wet, basalt set | `0.322 0.004 78` | `#3A3A37` |
-| Supporting | Café wall, dulce-de-leche cream | `0.788 0.062 75` | `#D8B88A` |
-| Supporting | Mate green-grey, gourd | `0.518 0.024 118` | `#6E7460` |
-| Supporting | Asphalt sodium-spilled sky | `0.262 0.012 268` | `#2C2E34` |
-| Accent | Sodium streetlamp, low-pressure | `0.658 0.122 50` | `#C87A3E` |
-| Accent | Fileteado red, sign-painter | `0.498 0.152 28` | `#A3382C` |
+| Dominant | Cobblestone wet, basalt set | `0.322 0.004 78` | `#343331` |
+| Supporting | Café wall, dulce-de-leche cream | `0.788 0.062 75` | `#D2B58E` |
+| Supporting | Mate green-grey, gourd | `0.518 0.024 118` | `#676A5B` |
+| Supporting | Asphalt sodium-spilled sky | `0.262 0.012 268` | `#22242B` |
+| Accent | Sodium streetlamp, low-pressure | `0.658 0.122 50` | `#CC7948` |
+| Accent | Fileteado red, sign-painter | `0.498 0.152 28` | `#A8352D` |
 
 **System colors (relative)**
 
@@ -699,12 +699,12 @@ The Galata bridge in light rain, with the simit carts still out and the Bosphoru
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Bosphorus diesel-water green | `0.422 0.030 168` | `#4A5E54` |
-| Supporting | Granite mosque shadow | `0.412 0.008 78` | `#4E4A44` |
-| Supporting | Fluorescent ferry cabin | `0.812 0.034 138` | `#C8D3C0` |
-| Supporting | Stamboul night sky, sodium-haze | `0.232 0.022 65` | `#2E2820` |
-| Accent | Simit sesame gold, cart-side | `0.668 0.108 68` | `#C2904E` |
-| Accent | Çay tulip-glass amber | `0.518 0.158 42` | `#A44E22` |
+| Dominant | Bosphorus diesel-water green | `0.422 0.030 168` | `#3E534A` |
+| Supporting | Granite mosque shadow | `0.412 0.008 78` | `#4D4A46` |
+| Supporting | Fluorescent ferry cabin | `0.812 0.034 138` | `#B7C7B2` |
+| Supporting | Stamboul night sky, sodium-haze | `0.232 0.022 65` | `#251B12` |
+| Accent | Simit sesame gold, cart-side | `0.668 0.108 68` | `#C08745` |
+| Accent | Çay tulip-glass amber | `0.518 0.158 42` | `#AF3F00` |
 
 **System colors (relative)**
 
@@ -730,12 +730,12 @@ A single fluorescent strip in a shuttered shop, the ochre walls of the colonial 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | French-colonial ochre, wall | `0.688 0.108 68` | `#C8954E` |
-| Supporting | Banyan leaf, lamplit | `0.432 0.046 138` | `#4A5A40` |
-| Supporting | Phở broth steam, pale | `0.708 0.022 78` | `#B4A890` |
-| Supporting | Motorbike lacquer, deep maroon | `0.318 0.092 28` | `#5A2620` |
-| Accent | Fluorescent tube, cold | `0.872 0.022 168` | `#D3E0D6` |
-| Accent | Plastic stool, sidewalk red | `0.532 0.158 28` | `#B73228` |
+| Dominant | French-colonial ochre, wall | `0.688 0.108 68` | `#C78D4C` |
+| Supporting | Banyan leaf, lamplit | `0.432 0.046 138` | `#44573E` |
+| Supporting | Phở broth steam, pale | `0.708 0.022 78` | `#A99F92` |
+| Supporting | Motorbike lacquer, deep maroon | `0.318 0.092 28` | `#581B16` |
+| Accent | Fluorescent tube, cold | `0.872 0.022 168` | `#C8DAD2` |
+| Accent | Plastic stool, sidewalk red | `0.532 0.158 28` | `#B63D34` |
 
 **System colors (relative)**
 
@@ -761,12 +761,12 @@ Soviet apartment blocks below, Old Town terracotta lit from beneath, the Mtkvari
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Soviet apartment block, panel grey | `0.548 0.004 100` | `#757674` |
-| Supporting | Slate sky, Caucasus cool | `0.448 0.014 248` | `#4E5560` |
-| Supporting | Mtkvari river gorge, deep | `0.328 0.018 268` | `#383A44` |
-| Supporting | Sulfur spring yellow, Abanotubani | `0.668 0.062 88` | `#B39E62` |
-| Accent | Old Town terracotta, lit from below | `0.572 0.138 48` | `#B56838` |
-| Accent | Candle-lit balcony, ochre warm | `0.628 0.132 60` | `#C8853E` |
+| Dominant | Soviet apartment block, panel grey | `0.548 0.004 100` | `#71716E` |
+| Supporting | Slate sky, Caucasus cool | `0.448 0.014 248` | `#4F565C` |
+| Supporting | Mtkvari river gorge, deep | `0.328 0.018 268` | `#31353E` |
+| Supporting | Sulfur spring yellow, Abanotubani | `0.668 0.062 88` | `#A59368` |
+| Accent | Old Town terracotta, lit from below | `0.572 0.138 48` | `#B75A21` |
+| Accent | Candle-lit balcony, ochre warm | `0.628 0.132 60` | `#C17325` |
 
 **System colors (relative)**
 
@@ -798,12 +798,12 @@ Longyi indigo on every vendor, lacquerware stacked, gold-leaf packets at the gol
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Longyi indigo, vendor cloth | `0.328 0.098 268` | `#2A3A64` |
-| Supporting | Thanakha cream, applied to face | `0.808 0.060 88` | `#D8C08C` |
-| Supporting | Jade, raw stone | `0.508 0.058 158` | `#4A6E54` |
-| Supporting | Market lamp, tungsten warm | `0.708 0.072 70` | `#C89A6A` |
-| Accent | Lacquerware oxblood, Bagan tradition | `0.362 0.128 28` | `#6E2622` |
-| Accent | Gold leaf, prayer-offering packet | `0.708 0.108 80` | `#C89E4A` |
+| Dominant | Longyi indigo, vendor cloth | `0.328 0.098 268` | `#1F3066` |
+| Supporting | Thanakha cream, applied to face | `0.808 0.060 88` | `#D0BF94` |
+| Supporting | Jade, raw stone | `0.508 0.058 158` | `#487059` |
+| Supporting | Market lamp, tungsten warm | `0.708 0.072 70` | `#BE996F` |
+| Accent | Lacquerware oxblood, Bagan tradition | `0.362 0.128 28` | `#721511` |
+| Accent | Gold leaf, prayer-offering packet | `0.708 0.108 80` | `#C4994C` |
 
 **System colors (relative)**
 
@@ -829,12 +829,12 @@ Full-bright fluorescent overhead, butchers up, the persimmon stand still being a
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Butcher's tile, glazed cream-grey | `0.802 0.014 88` | `#C8C4B4` |
-| Supporting | Paper cone, kraft brown | `0.628 0.058 65` | `#A8835A` |
-| Supporting | Vendor apron, marine navy | `0.392 0.082 248` | `#2E4A6E` |
-| Supporting | Fluorescent overhead, market shed white | `0.892 0.022 118` | `#E0E3D8` |
-| Accent | Iberico ham, cured deep | `0.392 0.142 28` | `#862E22` |
-| Accent | Persimmon orange, fruit stall | `0.668 0.158 50` | `#D97A32` |
+| Dominant | Butcher's tile, glazed cream-grey | `0.802 0.014 88` | `#C2BEB4` |
+| Supporting | Paper cone, kraft brown | `0.628 0.058 65` | `#A18263` |
+| Supporting | Vendor apron, marine navy | `0.392 0.082 248` | `#1C486F` |
+| Supporting | Fluorescent overhead, market shed white | `0.892 0.022 118` | `#DADECE` |
+| Accent | Iberico ham, cured deep | `0.392 0.142 28` | `#811613` |
+| Accent | Persimmon orange, fruit stall | `0.668 0.158 50` | `#DF7229` |
 
 **System colors (relative)**
 
@@ -860,12 +860,12 @@ Hmong textile and the working materials of the market: indigo, mountain mist, ha
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Hmong indigo, dyed and re-dyed | `0.262 0.072 252` | `#1C2A3C` |
-| Supporting | Mountain mist white | `0.802 0.004 138` | `#C8C8C4` |
-| Supporting | Batik wax, undyed reserve | `0.832 0.030 88` | `#D8CAB0` |
-| Supporting | Bamboo basket, woven yellow-green | `0.668 0.080 110` | `#A8A258` |
-| Accent | Rhododendron, faded winter pink | `0.578 0.052 28` | `#A87A6E` |
-| Accent | Dry corn, hung-yellow | `0.682 0.122 78` | `#C89432` |
+| Dominant | Hmong indigo, dyed and re-dyed | `0.262 0.072 252` | `#042546` |
+| Supporting | Mountain mist white | `0.802 0.004 138` | `#BDBFBC` |
+| Supporting | Batik wax, undyed reserve | `0.832 0.030 88` | `#D0C7B2` |
+| Supporting | Bamboo basket, woven yellow-green | `0.668 0.080 110` | `#97995E` |
+| Accent | Rhododendron, faded winter pink | `0.578 0.052 28` | `#966E69` |
+| Accent | Dry corn, hung-yellow | `0.682 0.122 78` | `#C28E33` |
 
 **System colors (relative)**
 
@@ -891,12 +891,12 @@ Counter wood and roof glass, copper pots strung above the kitchen stalls, broken
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Counter wood, oiled hardwood | `0.452 0.068 60` | `#6E4A30` |
-| Supporting | Market roof glass-grey | `0.748 0.006 78` | `#B8B4AC` |
-| Supporting | Cured bacalhau, dried cod | `0.708 0.038 88` | `#B8A878` |
-| Supporting | Copper pot, market hardware | `0.628 0.082 65` | `#A87A48` |
-| Accent | Broken azulejo, vendor backsplash | `0.582 0.082 245` | `#4A78A4` |
-| Accent | Rooster-lettering red, sign | `0.518 0.168 28` | `#B62C22` |
+| Dominant | Counter wood, oiled hardwood | `0.452 0.068 60` | `#724C2D` |
+| Supporting | Market roof glass-grey | `0.748 0.006 78` | `#AFADA9` |
+| Supporting | Cured bacalhau, dried cod | `0.708 0.038 88` | `#ABA086` |
+| Supporting | Copper pot, market hardware | `0.628 0.082 65` | `#AB7E52` |
+| Accent | Broken azulejo, vendor backsplash | `0.582 0.082 245` | `#4F80A8` |
+| Accent | Rooster-lettering red, sign | `0.518 0.168 28` | `#B5332B` |
 
 **System colors (relative)**
 
@@ -928,12 +928,12 @@ The sleeper carriage at the deepest hour, with the platform sodium briefly readi
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Birch-panel cream, Finnish design | `0.802 0.046 82` | `#D4C4A0` |
-| Supporting | Sleeper curtain, forest green | `0.328 0.042 152` | `#2A3E2E` |
-| Supporting | Aluminium fitting, brushed | `0.748 0.002 215` | `#B4B8B8` |
-| Supporting | Dining-car upholstery navy | `0.272 0.038 272` | `#2A2E44` |
-| Accent | Platform sodium on snow | `0.708 0.092 78` | `#C8A468` |
-| Accent | Route map red, line marker | `0.498 0.168 28` | `#A82C22` |
+| Dominant | Birch-panel cream, Finnish design | `0.802 0.046 82` | `#CDBC9D` |
+| Supporting | Sleeper curtain, forest green | `0.328 0.042 152` | `#243B2A` |
+| Supporting | Aluminium fitting, brushed | `0.748 0.002 215` | `#ACADAE` |
+| Supporting | Dining-car upholstery navy | `0.272 0.038 272` | `#20263A` |
+| Accent | Platform sodium on snow | `0.708 0.092 78` | `#C19A5C` |
+| Accent | Route map red, line marker | `0.498 0.168 28` | `#AE2C25` |
 
 **System colors (relative)**
 
@@ -959,12 +959,12 @@ Couchette tan vinyl below, fluorescent in the saloon, the life-ring still bright
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Vinyl couchette tan, deck seat | `0.668 0.062 70` | `#B89870` |
-| Supporting | Ouzo glass cloudy | `0.848 0.022 88` | `#D8D3C0` |
-| Supporting | Deckhand uniform navy | `0.328 0.030 252` | `#2E3848` |
-| Supporting | Lounge fluorescent, green-white | `0.852 0.052 122` | `#D0DCBE` |
-| Accent | Life-ring, international orange | `0.598 0.180 38` | `#C84A22` |
-| Accent | Ferry-hull rust, splash zone | `0.422 0.082 38` | `#6E4030` |
+| Dominant | Vinyl couchette tan, deck seat | `0.668 0.062 70` | `#AE8E6B` |
+| Supporting | Ouzo glass cloudy | `0.848 0.022 88` | `#D3CDBD` |
+| Supporting | Deckhand uniform navy | `0.328 0.030 252` | `#2A3644` |
+| Supporting | Lounge fluorescent, green-white | `0.852 0.052 122` | `#C8D4AF` |
+| Accent | Life-ring, international orange | `0.598 0.180 38` | `#D44D1C` |
+| Accent | Ferry-hull rust, splash zone | `0.422 0.082 38` | `#733C2B` |
 
 **System colors (relative)**
 
@@ -990,12 +990,12 @@ Carriage cream against red soil to the horizon, with the saltbush only ever appe
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Carriage cream, 1970s laminate | `0.812 0.030 88` | `#D4CAB0` |
-| Supporting | Pale Outback sky, parched | `0.762 0.034 215` | `#A8C0C8` |
-| Supporting | Saltbush blue-grey, middle distance | `0.652 0.012 168` | `#94A098` |
-| Supporting | Dining tablecloth, starched white | `0.898 0.018 88` | `#E8E3D6` |
-| Accent | Nullarbor red soil | `0.522 0.168 42` | `#A84A22` |
-| Accent | Gibber plain, rust pebble | `0.448 0.108 45` | `#7C4828` |
+| Dominant | Carriage cream, 1970s laminate | `0.812 0.030 88` | `#CAC1AC` |
+| Supporting | Pale Outback sky, parched | `0.762 0.034 215` | `#9AB8BF` |
+| Supporting | Saltbush blue-grey, middle distance | `0.652 0.012 168` | `#89928E` |
+| Supporting | Dining tablecloth, starched white | `0.898 0.018 88` | `#E2DDD0` |
+| Accent | Nullarbor red soil | `0.522 0.168 42` | `#B43C00` |
+| Accent | Gibber plain, rust pebble | `0.448 0.108 45` | `#843E1A` |
 
 **System colors (relative)**
 
@@ -1021,12 +1021,12 @@ Modernist engineering palette against the sahel, with the Atlas snow still on th
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | High-speed train silver, livery | `0.792 0.006 235` | `#C0C4C8` |
-| Supporting | Sahel ochre, low hills | `0.688 0.088 68` | `#C89060` |
-| Supporting | Atlas snow distant, peak | `0.892 0.012 235` | `#D8E0E4` |
-| Supporting | Overhead-line copper, oxidised | `0.452 0.072 58` | `#6E4A2E` |
-| Accent | Station tile blue, Casa Voyageurs | `0.532 0.098 248` | `#2E6E9C` |
-| Accent | Almond blossom, late-spring orchard | `0.788 0.030 22` | `#D8B8B8` |
+| Dominant | High-speed train silver, livery | `0.792 0.006 235` | `#B8BCBE` |
+| Supporting | Sahel ochre, low hills | `0.688 0.088 68` | `#BF905D` |
+| Supporting | Atlas snow distant, peak | `0.892 0.012 235` | `#D4DDE2` |
+| Supporting | Overhead-line copper, oxidised | `0.452 0.072 58` | `#744B2B` |
+| Accent | Station tile blue, Casa Voyageurs | `0.532 0.098 248` | `#3970A2` |
+| Accent | Almond blossom, late-spring orchard | `0.788 0.030 22` | `#CDB3B1` |
 
 **System colors (relative)**
 
@@ -1058,12 +1058,12 @@ The moment the priest emerges with the candle and the congregation lights from h
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Candle-wax warm-white, congregation | `0.872 0.042 88` | `#E3D8B8` |
-| Supporting | Marble floor, cold grey | `0.782 0.006 88` | `#C4C0B8` |
-| Supporting | Incense smoke, frankincense | `0.578 0.012 78` | `#8C8478` |
-| Supporting | Monk's habit, sun-faded black | `0.252 0.004 80` | `#2E2C2A` |
-| Accent | Gold-leaf icon, iconostasis | `0.682 0.122 78` | `#C8923A` |
-| Accent | Red dyed Easter egg, table | `0.498 0.168 28` | `#A82A26` |
+| Dominant | Candle-wax warm-white, congregation | `0.872 0.042 88` | `#E0D4B6` |
+| Supporting | Marble floor, cold grey | `0.782 0.006 88` | `#B9B8B4` |
+| Supporting | Incense smoke, frankincense | `0.578 0.012 78` | `#7E7972` |
+| Supporting | Monk's habit, sun-faded black | `0.252 0.004 80` | `#232220` |
+| Accent | Gold-leaf icon, iconostasis | `0.682 0.122 78` | `#C28E33` |
+| Accent | Red dyed Easter egg, table | `0.498 0.168 28` | `#AE2C25` |
 
 **System colors (relative)**
 
@@ -1089,12 +1089,12 @@ The first hour of the morning, when the lower paths are empty and the dew is sti
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Vermillion lacquer, fresh torii | `0.598 0.180 38` | `#C84A22` |
-| Supporting | Cryptomeria bark, forest pillar | `0.342 0.042 62` | `#4A3826` |
-| Supporting | Moss, gravel path | `0.512 0.062 118` | `#6E7848` |
-| Supporting | Stone fox grey, kitsune statue | `0.708 0.004 88` | `#A8A49C` |
-| Accent | Weathered vermillion, outer torii | `0.548 0.108 38` | `#A85E3E` |
-| Accent | Pre-dawn blue, sky through canopy | `0.548 0.038 245` | `#6E7D92` |
+| Dominant | Vermillion lacquer, fresh torii | `0.598 0.180 38` | `#D44D1C` |
+| Supporting | Cryptomeria bark, forest pillar | `0.342 0.042 62` | `#483421` |
+| Supporting | Moss, gravel path | `0.512 0.062 118` | `#636C42` |
+| Supporting | Stone fox grey, kitsune statue | `0.708 0.004 88` | `#A2A19E` |
+| Accent | Weathered vermillion, outer torii | `0.548 0.108 38` | `#A65840` |
+| Accent | Pre-dawn blue, sky through canopy | `0.548 0.038 245` | `#5F7486` |
 
 **System colors (relative)**
 
@@ -1120,12 +1120,12 @@ Drum, marigold, mirror-mosaic, white shrouds — the moment the qawwali starts a
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Shrine-tile emerald | `0.512 0.082 158` | `#2C6E54` |
-| Supporting | White kafan cloth, devotee | `0.892 0.014 88` | `#E3E0D6` |
-| Supporting | Mirror-mosaic silver, dome interior | `0.792 0.004 100` | `#C4C4C0` |
-| Supporting | Qawwali drum brown, leather | `0.452 0.068 60` | `#6E4A30` |
-| Accent | Marigold garland gold | `0.722 0.142 78` | `#D89432` |
-| Accent | Dust-haze red sun | `0.648 0.142 38` | `#C86A48` |
+| Dominant | Shrine-tile emerald | `0.512 0.082 158` | `#397554` |
+| Supporting | White kafan cloth, devotee | `0.892 0.014 88` | `#DFDBD1` |
+| Supporting | Mirror-mosaic silver, dome interior | `0.792 0.004 100` | `#BCBBB8` |
+| Supporting | Qawwali drum brown, leather | `0.452 0.068 60` | `#724C2D` |
+| Accent | Marigold garland gold | `0.722 0.142 78` | `#D59821` |
+| Accent | Dust-haze red sun | `0.648 0.142 38` | `#D66C4A` |
 
 **System colors (relative)**
 
@@ -1151,12 +1151,12 @@ Whitewashed tombs covered in marigold, candles lit, papel picado overhead, copal
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Tomb whitewash, cal | `0.822 0.024 88` | `#D4CDB8` |
-| Supporting | Cempasúchil marigold gold | `0.722 0.158 75` | `#D8902C` |
-| Supporting | Copal smoke, blue-haze | `0.508 0.004 168` | `#6A6E6C` |
-| Supporting | Fresh-dug earth | `0.342 0.042 62` | `#4A3826` |
-| Accent | Papel picado, magenta | `0.532 0.182 348` | `#B8326E` |
-| Accent | Candle wax, warm flicker | `0.832 0.082 88` | `#E3C890` |
+| Dominant | Tomb whitewash, cal | `0.822 0.024 88` | `#CBC4B4` |
+| Supporting | Cempasúchil marigold gold | `0.722 0.158 75` | `#DE9400` |
+| Supporting | Copal smoke, blue-haze | `0.508 0.004 168` | `#636665` |
+| Supporting | Fresh-dug earth | `0.342 0.042 62` | `#483421` |
+| Accent | Papel picado, magenta | `0.532 0.182 348` | `#B2307F` |
+| Accent | Candle wax, warm flicker | `0.832 0.082 88` | `#DEC58A` |
 
 **System colors (relative)**
 
@@ -1188,12 +1188,12 @@ Sand dunes the size of small mountains, with the east face already pink and the 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Dune-crest pink, sunrise face | `0.762 0.062 32` | `#D8A888` |
-| Supporting | Mineral salt crust, sabkha | `0.852 0.012 88` | `#D8D3C8` |
-| Supporting | Thin pale sky, low humidity | `0.732 0.052 235` | `#94B4C8` |
-| Supporting | Camel hair, undyed cream | `0.668 0.062 78` | `#B89868` |
-| Accent | Dune-shadow violet, west face | `0.502 0.052 308` | `#6E5A78` |
-| Accent | Bedouin black tent, goat hair | `0.222 0.012 60` | `#2A2522` |
+| Dominant | Dune-crest pink, sunrise face | `0.762 0.062 32` | `#D6A499` |
+| Supporting | Mineral salt crust, sabkha | `0.852 0.012 88` | `#D2CEC6` |
+| Supporting | Thin pale sky, low humidity | `0.732 0.052 235` | `#89AEC5` |
+| Supporting | Camel hair, undyed cream | `0.668 0.062 78` | `#AA9069` |
+| Accent | Dune-shadow violet, west face | `0.502 0.052 308` | `#6C5C7B` |
+| Accent | Bedouin black tent, goat hair | `0.222 0.012 60` | `#1F1A16` |
 
 **System colors (relative)**
 
@@ -1219,12 +1219,12 @@ Sandstone red the size of cathedrals and basalt scree at the base, with the air 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Nubian sandstone red, cliff | `0.522 0.168 42` | `#A84A22` |
-| Supporting | Wind-polished sand, wadi floor | `0.792 0.062 78` | `#D8B888` |
-| Supporting | Distant haze, layered air | `0.708 0.018 38` | `#B8A8A0` |
-| Supporting | Saddle leather, sun-cracked | `0.448 0.108 45` | `#7C4828` |
-| Accent | Basalt black, scree | `0.232 0.004 80` | `#2A2A26` |
-| Accent | Cardamom tea brown | `0.382 0.108 38` | `#6E3A22` |
+| Dominant | Nubian sandstone red, cliff | `0.522 0.168 42` | `#B43C00` |
+| Supporting | Wind-polished sand, wadi floor | `0.792 0.062 78` | `#D1B78F` |
+| Supporting | Distant haze, layered air | `0.708 0.018 38` | `#AC9D99` |
+| Supporting | Saddle leather, sun-cracked | `0.448 0.108 45` | `#843E1A` |
+| Accent | Basalt black, scree | `0.232 0.004 80` | `#1E1D1B` |
+| Accent | Cardamom tea brown | `0.382 0.108 38` | `#712911` |
 
 **System colors (relative)**
 
@@ -1250,12 +1250,12 @@ Where the fog comes off the cold current and the only colour for kilometres is r
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Fog-into-dune ochre | `0.668 0.046 60` | `#B8957A` |
-| Supporting | Oryx grey, antelope coat | `0.622 0.008 78` | `#948E84` |
-| Supporting | Seal-bone pale, beach litter | `0.812 0.030 88` | `#D4CAB0` |
-| Supporting | Atlantic cold green, current | `0.488 0.034 192` | `#4A6E6E` |
-| Accent | Lichen rust, on shipwreck | `0.482 0.118 42` | `#8C4828` |
-| Accent | Shipwreck steel, oxidised | `0.342 0.022 38` | `#4A3A32` |
+| Dominant | Fog-into-dune ochre | `0.668 0.046 60` | `#AA8E79` |
+| Supporting | Oryx grey, antelope coat | `0.622 0.008 78` | `#898681` |
+| Supporting | Seal-bone pale, beach litter | `0.812 0.030 88` | `#CAC1AC` |
+| Supporting | Atlantic cold green, current | `0.488 0.034 192` | `#496665` |
+| Accent | Lichen rust, on shipwreck | `0.482 0.118 42` | `#934321` |
+| Accent | Shipwreck steel, oxidised | `0.342 0.022 38` | `#433530` |
 
 **System colors (relative)**
 
@@ -1281,12 +1281,12 @@ Hypersaline pink water against mineral-white salt and the Wasatch silhouette beh
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Mineral salt crust | `0.882 0.016 88` | `#E0DCCC` |
-| Supporting | Gull-white, brackish bird | `0.832 0.012 88` | `#D4D0C4` |
-| Supporting | Sage hillside, green-grey | `0.598 0.022 108` | `#8E9276` |
-| Supporting | Mountain silhouette, Wasatch | `0.342 0.018 358` | `#4A3A3E` |
-| Accent | Pink algae brine, Dunaliella bloom | `0.722 0.108 28` | `#D88478` |
-| Accent | Sunset orange, sky reflection | `0.658 0.158 50` | `#D87432` |
+| Dominant | Mineral salt crust | `0.882 0.016 88` | `#DCD8CD` |
+| Supporting | Gull-white, brackish bird | `0.832 0.012 88` | `#CBC8BF` |
+| Supporting | Sage hillside, green-grey | `0.598 0.022 108` | `#818172` |
+| Supporting | Mountain silhouette, Wasatch | `0.342 0.018 358` | `#413538` |
+| Accent | Pink algae brine, Dunaliella bloom | `0.722 0.108 28` | `#E18A7F` |
+| Accent | Sunset orange, sky reflection | `0.658 0.158 50` | `#DB6F25` |
 
 **System colors (relative)**
 
@@ -1318,12 +1318,12 @@ Under the canopy in autumn rain, with the salmon stream just visible through the
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Gloom under canopy, indirect light | `0.328 0.008 138` | `#3A3E38` |
-| Supporting | Sitka spruce bark, wet | `0.342 0.042 62` | `#4A3826` |
-| Supporting | Sphagnum moss, green-yellow | `0.498 0.060 118` | `#6E7C48` |
-| Supporting | Glacier-melt creek, mineral grey-green | `0.668 0.020 168` | `#94A8A0` |
-| Accent | Salmonberry red, fruit | `0.532 0.158 28` | `#B8423A` |
-| Accent | Salmon flesh, sockeye | `0.628 0.142 40` | `#C86848` |
+| Dominant | Gloom under canopy, indirect light | `0.328 0.008 138` | `#333632` |
+| Supporting | Sitka spruce bark, wet | `0.342 0.042 62` | `#483421` |
+| Supporting | Sphagnum moss, green-yellow | `0.498 0.060 118` | `#5F6840` |
+| Supporting | Glacier-melt creek, mineral grey-green | `0.668 0.020 168` | `#899992` |
+| Accent | Salmonberry red, fruit | `0.532 0.158 28` | `#B63D34` |
+| Accent | Salmon flesh, sockeye | `0.628 0.142 40` | `#CE6641` |
 
 **System colors (relative)**
 
@@ -1349,12 +1349,12 @@ Beech leaves down on the path, spruce canopy dark above, the cottage half-timber
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Spruce canopy dark | `0.328 0.032 152` | `#2A3A2E` |
-| Supporting | Half-timbered cottage, oiled hardwood | `0.452 0.068 60` | `#6E4A30` |
-| Supporting | Stream water, mineral-clear | `0.548 0.014 215` | `#6E8484` |
-| Supporting | Tannenbaum mist, fog between trunks | `0.762 0.008 138` | `#B8C0B8` |
-| Accent | Beech leaf rust, fallen | `0.482 0.118 42` | `#8C4828` |
-| Accent | Chanterelle yellow, mushroom | `0.682 0.122 78` | `#C89432` |
+| Dominant | Spruce canopy dark | `0.328 0.032 152` | `#293A2D` |
+| Supporting | Half-timbered cottage, oiled hardwood | `0.452 0.068 60` | `#724C2D` |
+| Supporting | Stream water, mineral-clear | `0.548 0.014 215` | `#687376` |
+| Supporting | Tannenbaum mist, fog between trunks | `0.762 0.008 138` | `#AFB3AE` |
+| Accent | Beech leaf rust, fallen | `0.482 0.118 42` | `#934321` |
+| Accent | Chanterelle yellow, mushroom | `0.682 0.122 78` | `#C28E33` |
 
 **System colors (relative)**
 
@@ -1380,12 +1380,12 @@ Cypress knees, Spanish moss, swamp water tannin-black, the egret white standing 
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Cypress-knee grey, knot | `0.502 0.008 78` | `#6E6E64` |
-| Supporting | Spanish moss, silver drape | `0.602 0.004 88` | `#8C8C84` |
-| Supporting | Alligator-mud brown | `0.272 0.026 58` | `#3A2E22` |
-| Supporting | Dawn pink, humidity-haze | `0.762 0.030 28` | `#D8A8A0` |
-| Accent | Swamp water tannin, black tea | `0.222 0.018 58` | `#2A201A` |
-| Accent | Egret white, wading bird | `0.852 0.008 88` | `#D8D4C8` |
+| Dominant | Cypress-knee grey, knot | `0.502 0.008 78` | `#66635F` |
+| Supporting | Spanish moss, silver drape | `0.602 0.004 88` | `#82817E` |
+| Supporting | Alligator-mud brown | `0.272 0.026 58` | `#31241A` |
+| Supporting | Dawn pink, humidity-haze | `0.762 0.030 28` | `#C4ABA7` |
+| Accent | Swamp water tannin, black tea | `0.222 0.018 58` | `#221913` |
+| Accent | Egret white, wading bird | `0.852 0.008 88` | `#D0CEC9` |
 
 **System colors (relative)**
 
@@ -1411,12 +1411,12 @@ Birch leaf and fireweed in full summer, the volcanic peaks visible only as silho
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Birch leaf, full summer | `0.498 0.060 118` | `#6E7C48` |
-| Supporting | Low-cloud grey, summer overcast | `0.738 0.004 88` | `#B4B4B0` |
-| Supporting | Bear-fern green, ground cover | `0.428 0.058 138` | `#4A5E3A` |
-| Supporting | Salmon stream, glacial | `0.548 0.014 215` | `#6E8484` |
-| Accent | Fireweed pink, willow-herb spike | `0.548 0.142 348` | `#B8487A` |
-| Accent | Volcanic ash, weathered | `0.452 0.020 50` | `#6E5E54` |
+| Dominant | Birch leaf, full summer | `0.498 0.060 118` | `#5F6840` |
+| Supporting | Low-cloud grey, summer overcast | `0.738 0.004 88` | `#ABAAA7` |
+| Supporting | Bear-fern green, ground cover | `0.428 0.058 138` | `#3F5737` |
+| Supporting | Salmon stream, glacial | `0.548 0.014 215` | `#687376` |
+| Accent | Fireweed pink, willow-herb spike | `0.548 0.142 348` | `#AA497F` |
+| Accent | Volcanic ash, weathered | `0.452 0.020 50` | `#5F534C` |
 
 **System colors (relative)**
 
@@ -1448,12 +1448,12 @@ The hour the rain pauses, and the bamboo grove behind the kiln is steaming
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Monsoon sky white, plum-rain | `0.802 0.004 138` | `#C8C8C4` |
-| Supporting | Wet stone path, slate | `0.412 0.008 78` | `#4E4A44` |
-| Supporting | Bamboo wet green, grove | `0.448 0.046 138` | `#4A6248` |
-| Supporting | River haze, Taihu | `0.668 0.010 215` | `#94A0A4` |
-| Accent | Zisha clay, fired teapot red | `0.382 0.108 38` | `#6E3A22` |
-| Accent | Fired clay rim, kiln-mark grey | `0.612 0.012 80` | `#948A7C` |
+| Dominant | Monsoon sky white, plum-rain | `0.802 0.004 138` | `#BDBFBC` |
+| Supporting | Wet stone path, slate | `0.412 0.008 78` | `#4D4A46` |
+| Supporting | Bamboo wet green, grove | `0.448 0.046 138` | `#485B42` |
+| Supporting | River haze, Taihu | `0.668 0.010 215` | `#8E9698` |
+| Accent | Zisha clay, fired teapot red | `0.382 0.108 38` | `#712911` |
+| Accent | Fired clay rim, kiln-mark grey | `0.612 0.012 80` | `#88837C` |
 
 **System colors (relative)**
 
@@ -1479,12 +1479,12 @@ The Baltic at the deepest cold of the year, with the dacha shutters mint-green a
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Snow on pine bough | `0.862 0.004 138` | `#D8DAD6` |
-| Supporting | Baltic Sea grey-blue, ice-edged | `0.508 0.022 248` | `#6E7484` |
-| Supporting | Sauna birch, fresh-cut bench | `0.798 0.044 78` | `#D4C0A0` |
-| Supporting | Dacha mint-green shutter | `0.658 0.040 152` | `#8CA890` |
-| Accent | Kvass amber, glass | `0.488 0.132 42` | `#944C22` |
-| Accent | Lantern yellow, pier light | `0.682 0.122 78` | `#C89432` |
+| Dominant | Snow on pine bough | `0.862 0.004 138` | `#D0D2D0` |
+| Supporting | Baltic Sea grey-blue, ice-edged | `0.508 0.022 248` | `#5C6772` |
+| Supporting | Sauna birch, fresh-cut bench | `0.798 0.044 78` | `#CDBA9E` |
+| Supporting | Dacha mint-green shutter | `0.658 0.040 152` | `#809986` |
+| Accent | Kvass amber, glass | `0.488 0.132 42` | `#9B4017` |
+| Accent | Lantern yellow, pier light | `0.682 0.122 78` | `#C28E33` |
 
 **System colors (relative)**
 
@@ -1510,12 +1510,12 @@ The hour the eye-wall is two hundred kilometres out and the shutters are nailed,
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Typhoon cloud green-grey | `0.518 0.014 168` | `#6E7A76` |
-| Supporting | Wet asphalt, road glare | `0.412 0.004 80` | `#4E4A48` |
-| Supporting | Banyan dark canopy, wind-tossed | `0.328 0.030 138` | `#2E3A2E` |
-| Supporting | Sugarcane field, pre-harvest | `0.628 0.080 100` | `#948A4A` |
-| Accent | Ryukyuan tile-red, roof | `0.522 0.158 38` | `#A84A32` |
-| Accent | Plumeria washed pale, fallen blossom | `0.832 0.022 78` | `#D8C8B8` |
+| Dominant | Typhoon cloud green-grey | `0.518 0.014 168` | `#616B67` |
+| Supporting | Wet asphalt, road glare | `0.412 0.004 80` | `#4C4B48` |
+| Supporting | Banyan dark canopy, wind-tossed | `0.328 0.030 138` | `#2D392A` |
+| Supporting | Sugarcane field, pre-harvest | `0.628 0.080 100` | `#948A4F` |
+| Accent | Ryukyuan tile-red, roof | `0.522 0.158 38` | `#B13E15` |
+| Accent | Plumeria washed pale, fallen blossom | `0.832 0.022 78` | `#D0C7B8` |
 
 **System colors (relative)**
 
@@ -1541,12 +1541,12 @@ Coastal fog all the way to Tomales Bay, with the cypress wind-shaped and the aba
 
 | Role | Name | OKLCH | HEX |
 |---|---|---|---|
-| Dominant | Coastal fog white | `0.852 0.008 88` | `#D8D4CC` |
-| Supporting | Beach grass, salt-tolerant green | `0.668 0.052 122` | `#8CA878` |
-| Supporting | Weather-grey cypress, wind-shaped | `0.498 0.006 88` | `#6A6A64` |
-| Supporting | Sandstone bluff, low light | `0.668 0.058 60` | `#B88E6C` |
-| Accent | Abalone shell, iridescent inner | `0.768 0.042 78` | `#C8B89C` |
-| Accent | Kelp wrack brown, strandline | `0.342 0.042 62` | `#4A3826` |
+| Dominant | Coastal fog white | `0.852 0.008 88` | `#D0CEC9` |
+| Supporting | Beach grass, salt-tolerant green | `0.668 0.052 122` | `#8F9A77` |
+| Supporting | Weather-grey cypress, wind-shaped | `0.498 0.006 88` | `#64625F` |
+| Supporting | Sandstone bluff, low light | `0.668 0.058 60` | `#B08D71` |
+| Accent | Abalone shell, iridescent inner | `0.768 0.042 78` | `#C3B196` |
+| Accent | Kelp wrack brown, strandline | `0.342 0.042 62` | `#483421` |
 
 **System colors (relative)**
 

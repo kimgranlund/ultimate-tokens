@@ -537,9 +537,13 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
 //    and ~12 at -40. The generator now SOLVES the inverse, and this gate is what keeps it solved: it
 //    re-derives each built palette's target from the spec and checks the stored integer reproduces it.
 //    Joined on the palette's stored colorName + key-color OKLCH back to the spec's HEX, because the
-//    HEX is what the generator fits against. OKLCH alone is NOT a unique key: 7 travel swatches share
-//    an oklch string with a different hex, and joining on it alone picks the wrong target and reports
-//    a generator fault that isn't there. Name + oklch is unique in all 8 specs.
+//    HEX is what the generator fits against. OKLCH alone is NOT a unique key — a curated colour gets
+//    reused across places, so 49 travel swatches share an oklch string with another swatch. Since #656
+//    repaired travel, every such duplicate carries the SAME hex in every spec, so an oklch-only join
+//    would land the right target today; the composite key is what stops a future divergence from
+//    silently picking the wrong one. Name + oklch still collides in architecture/cuisine/music (5, 5
+//    and 7 keys shared by two swatches each), but never onto a DIFFERENT hex, so the join is
+//    deterministic there too.
 {
   const TOL = 1.5;                                   // L* the review fixed as "anchored"
   const LIFT_MIN = DOMAINS.palette.lift.min, LIFT_MAX = DOMAINS.palette.lift.max; // persist.js's own domain, imported
@@ -557,7 +561,10 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
   // total had two holes: sub-tolerance drift in a clean spec went unseen, and "travel repaired while
   // another spec drifts" still summed to one. Named per-spec counts fail in BOTH directions — a new
   // drifted spec raises its own entry, a repaired travel lowers travel's — and each says which spec.
-  // travel is tracked as #656; repairing it must bring its entry to 0 in the same change.
+  // travel WAS the drifted spec (#656): 287 of its 288 swatches disagreed, worst 7.42 L*, because its
+  // `hex` column was authored independently of its `oklch` instead of being oklchToRgb()'s render of it.
+  // #656 re-rendered every travel hex from its authoritative oklch, so travel now sits at 0 like the
+  // six other sourced specs — a rise off 0 here is a fresh data regression, not the old carve-out.
   const DRIFT_EPS = 0.01;        // below this is 8-bit/rounding noise, not authored disagreement
   const EXPECTED_DRIFT = {
     architecture: { count: 0, max: 0 },
@@ -568,8 +575,8 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
     nature:       { count: 0, max: 0 },
     // authored 2-decimal oklch; immaterial to the fit (worst 0.88 L*, well inside TOL) but real
     brands:       { count: 7, max: 1.0 },
-    // #656: hex and oklch describe different colors across nearly the whole spec
-    travel:       { count: 287, max: 7.5 },
+    // repaired at #656: every hex is now the exact oklchToRgb() render of its oklch
+    travel:       { count: 0, max: 0 },
   };
   for (const slug of CATS) if (!EXPECTED_DRIFT[slug]) FAIL("lift-anchor", `spec "${slug}" has no EXPECTED_DRIFT entry — a new category must declare whether its hex and oklch agree`);
   for (const slug of CATS) {

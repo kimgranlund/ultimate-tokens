@@ -149,16 +149,16 @@ Use this to evaluate or repair any palette. A healthy palette answers "yes" to a
 
 | Token | Color | OKLCH | HEX | Reasoning |
 |---|---|---|---|---|
-| **secondary** | Frozen birch forest, silver | `0.918 0.005 215` | `#E3E6E7` | The ground — the whole trip read from the window. |
-| **secondary-muted** | Window condensation | `0.857 0.011 80` | `#DAD3C4` | Same near-neutral lightness, faint warm shift — the base's quiet partner. |
-| **tertiary** | Samovar brass | `0.620 0.068 78` | `#A08361` | The most distinct working surface; furnishes the field with warmth. |
-| **tertiary-muted** | Birch bark | `0.778 0.012 75` | `#C5BCB1` | Brass's lower-chroma relative — same family, recedes. |
-| **primary** | Kupé maroon velour | `0.322 0.045 28` | `#4B2F2C` | Dark, saturated, rare — punctuation against the silver. |
-| **primary-muted** | 3 p.m. dusk, ultramarine | `0.303 0.048 268` | `#343C54` | The second loud read, hue thrown to the cool side. |
+| **secondary** | Frozen birch forest, silver | `0.918 0.005 215` | `#E0E5E6` | The ground — the whole trip read from the window. |
+| **secondary-muted** | Window condensation | `0.857 0.011 80` | `#D4CFC8` | Same near-neutral lightness, faint warm shift — the base's quiet partner. |
+| **tertiary** | Samovar brass | `0.620 0.068 78` | `#9D8157` | The most distinct working surface; furnishes the field with warmth. |
+| **tertiary-muted** | Birch bark | `0.778 0.012 75` | `#BBB6AE` | Brass's lower-chroma relative — same family, recedes. |
+| **primary** | Kupé maroon velour | `0.322 0.045 28` | `#482A26` | Dark, saturated, rare — punctuation against the silver. |
+| **primary-muted** | 3 p.m. dusk, ultramarine | `0.303 0.048 268` | `#242D47` | The second loud read, hue thrown to the cool side. |
 | **functional-error** | *derived* | `0.535 0.110 28` | `#A35248` | Hue 28°, chroma pulled to this palette's quiet accent register. |
 | **functional-warning** | *derived* | `0.760 0.100 88` | `#CCAE63` | Reads as caution without breaking the muted mood. |
 | **functional-success** | *derived* | `0.560 0.090 150` | `#4B8358` | Green that belongs to a silver-and-brass world. |
-| **on-secondary** | → primary | — | `#4B2F2C` | Dark type on the light silver ground. |
+| **on-secondary** | → primary | — | `#482A26` | Dark type on the light silver ground. |
 
 Field share: secondary ~55%, tertiary ~35%, primary ~10% — and the palette still **refuses** the Soviet-flag red it would otherwise default to.
 
