@@ -238,7 +238,7 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
     if (!(Math.abs(sum - 100) < 1e-6)) msgs.push(`${label}: widths sum to 100 (got ${sum.toFixed(6)})`);
     for (const [b, { cap, floor }] of bounds) {
       if (!(b.width / sum <= cap / 100 + 1e-9)) msgs.push(`${label}: band ${b.name} (${b.colorRole}) rendered share <= its effective cap (cap ${cap.toFixed(4)}${capScale !== 1 ? ` scaled x${capScale.toFixed(4)}` : ""}, got ${(100 * b.width / sum).toFixed(4)})`);
-      if (b.colorRole === "accent" && !(b.width / sum >= floor / 100 - 1e-9)) msgs.push(`${label}: accent ${b.name} rendered share >= its effective floor (floor ${floor.toFixed(4)}${floorScale !== 1 ? ` scaled x${floorScale.toFixed(4)}` : ""}, got ${(100 * b.width / sum).toFixed(4)})`);
+      if (!(b.width / sum >= floor / 100 - 1e-9)) msgs.push(`${label}: ${b.colorRole || "untagged"} ${b.name} rendered share >= its effective floor (floor ${floor.toFixed(4)}${floorScale !== 1 ? ` scaled x${floorScale.toFixed(4)}` : ""}, got ${(100 * b.width / sum).toFixed(4)})`);
     }
     return msgs;
   };
@@ -303,9 +303,39 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
     }
   }
 
-  // fuzz: random cohorts over role mix (0-1 neutral, 1 dominant, 0-4 supporting, 0-4 accents),
-  // random pct splits, random hex keys (so chroma weighting and the dominant cap vary). Fixed
-  // seed, so a failure reproduces; the first 8 failures are reported with their cohort.
+  // case D (review round 1 of #650): neutral + dominant + one supporting + two accents + "Info", a
+  // colorRole-less TOP-UP band (posterStripSelect fills free slots from untagged palettes; Maison/
+  // Adia/BZZR ship them), at d50/s49/a1. Info's base width is the 5 fallback, the accents start at
+  // 0.46 each: the two accent floors take ~19 from the pool, more than Info + the pinned bands can
+  // give, so the redistribution pushes Info NEGATIVE. The pre-review fit truncated it at 0 with
+  // Math.max, silently dropping the shortfall: sum 103.559582, both accents rendered 9.6563 (under
+  // the 10 floor). A top-up band is a flexible band with lower bound 0: it may go to 0, but the
+  // deficit it cannot absorb is carried to the remaining flexible bands, never truncated.
+  {
+    const A2 = { name: "accent-1", on: true, key: "#1F4E8C", colorRole: "accent" };
+    const INFO = { name: "Info", on: true, key: "#3A7BD5" }; // no colorRole: a top-up band
+    const r = runFit("case D", [N, D, S, A, A2, INFO], [{ hier: "d", pct: 50 }, { hier: "s", pct: 49 }, { hier: "a", pct: 1 }]);
+    if (r.error) fails.push(r.error);
+    else {
+      for (const m of checkFit("case D", r.bands)) fails.push(m);
+      const sum = sumOf(r.bands);
+      const info = r.bands.find((b) => b.name === "Info");
+      ok(Math.abs(sum - 100) < 1e-6, `case D: an untagged top-up band never truncates the net, widths sum to 100 (got ${sum.toFixed(6)})`);
+      ok(info && info.width >= 0, `case D: the top-up band stays >= 0 (got ${info && info.width})`);
+      const { bounds } = effectiveBounds(r.bands);
+      for (const b of r.bands.filter((x) => x.colorRole === "accent")) {
+        const { floor } = bounds.get(b);
+        ok(100 * b.width / sum >= floor - 1e-9, `case D: accent ${b.name} rendered share >= its effective floor ${floor.toFixed(4)} (got ${(100 * b.width / sum).toFixed(4)})`);
+      }
+    }
+  }
+
+  // fuzz: random cohorts over role mix (0-1 neutral, 1 dominant, 0-4 supporting, 0-4 accents,
+  // 0-2 UNTAGGED top-up bands such as Info/Success/Data-N, which carry no colorRole and take the
+  // 5 fallback width), random pct splits, random hex keys (so chroma weighting and the dominant
+  // cap vary). Fixed seed, so a failure reproduces; the first 8 failures are reported with their
+  // cohort. The untagged bands were added at review round 1 of #650: without them the fuzz never
+  // exercised the negative-net truncation that case D pins.
   const FUZZ_CASES = 4000, FUZZ_SEED = 0x650;
   const rng = (() => { let a = FUZZ_SEED >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })();
   const randInt = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
@@ -318,6 +348,7 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
     enabled.push({ name: "dominant", on: true, key: randHex(), colorRole: "dominant" });
     for (let i = 0, k = randInt(0, 4); i < k; i++) enabled.push({ name: `supporting-${i}`, on: true, key: randHex(), colorRole: "supporting" });
     for (let i = 0, k = randInt(0, 4); i < k; i++) enabled.push({ name: `accent-${i}`, on: true, key: randHex(), colorRole: "accent" });
+    for (let i = 0, k = randInt(0, 2); i < k; i++) enabled.push({ name: `untagged-${i}`, on: true, key: randHex() });
     // a random split; a group may be 0 (an authored preset can drop a tier), the three sum to 100.
     // A cohort whose SHOWN tiers all have pct 0 has no pool at all: posterStripNormalize (kept as
     // is, out of this fit's remit) returns that vector unchanged, so such cohorts are re-rolled.

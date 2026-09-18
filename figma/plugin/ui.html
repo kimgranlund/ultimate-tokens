@@ -12738,8 +12738,12 @@ const field = (labelText, control, { labelTitle } = {}) => {
 // swatch. Four fixes over the original inline computation:
 //  1. The dominant band is capped at a chroma-scaled share (posterStripDominantCap, 35%..45%), any
 //     other band at POSTER_STRIP_MAX_BAND_PCT (35%), and any accent band is floored at
-//     POSTER_STRIP_ACCENT_FLOOR_PCT (~10%); the resulting surplus/deficit is redistributed
-//     proportionally across the remaining flexible (uncapped, unfloored, non-neutral) bands.
+//     POSTER_STRIP_ACCENT_FLOOR_PCT (~10%); a colorRole-less top-up band is flexible with floor 0.
+//     The caps/floors are RENDERED shares, held by a converging fit (#650, posterStripClampAndFloor):
+//     each round clamps/floors every crossing band and hands the net proportionally to the bands
+//     with no active bound, to a fixed point where the sum is exactly what came in. Caps scale UP
+//     (floors scale DOWN) by one common factor only when the bound set is infeasible at the
+//     incoming sum; every curated preset is feasible and is untouched by that pre-step.
 //  2. Band SELECTION (not just width) changes: neutral + the dominant swatch + BOTH accent
 //     swatches (up to 2) are always kept; only a SUPPORTING sliver gets dropped when the
 //     hierarchy overflows the 6-band cap — never the 2nd accent.
@@ -12845,7 +12849,8 @@ function posterStripWeightByChroma(shown, widths) {
 // fix 1 — clamp the max band + floor accent bands, redistributing the surplus/deficit
 // proportionally across the remaining flexible bands (neutral is always locked), as a CONVERGING
 // fit (#650). The bands render as flex grow factors, so a cap is only meaningful as a RENDERED
-// share (width / sum); the fit therefore preserves the incoming sum exactly and never drops a net.
+// share (width / sum); the fit therefore preserves the incoming sum exactly and never drops a net,
+// including the part of a negative net that a top-up band (no colorRole, floor 0) cannot absorb.
 //
 // Owner ruling (#650): the caps and floors are rendered shares, so when the constraint set cannot
 // hold at the incoming sum it is made feasible first, by one common factor:
@@ -12911,9 +12916,14 @@ function posterStripClampAndFloor(shown, widths) {
       }
     }
     if (!pool.length) throw new Error(`posterStripClampAndFloor: infeasible bounds, net ${net} with no band to absorb it (widths ${JSON.stringify(w)})`);
+    // The net is handed over WITHOUT truncation (review round 1 of #650): a band a negative net
+    // pushes below its floor (a colorRole-less top-up band's floor is 0) crosses it in the next
+    // round, is pinned there, and the part of the net it could not absorb is carried to the bands
+    // still free. Truncating at 0 here dropped that shortfall on the floor, and the next round saw
+    // nothing crossing and returned with the sum over 100 and the accents under their floor.
     const poolTotal = pool.reduce((s, i) => s + w[i], 0);
-    if (poolTotal > 0) for (const i of pool) w[i] = Math.max(0, w[i] + net * (w[i] / poolTotal));
-    else for (const i of pool) w[i] = Math.max(0, w[i] + net / pool.length);
+    if (poolTotal > 0) for (const i of pool) w[i] += net * (w[i] / poolTotal);
+    else for (const i of pool) w[i] += net / pool.length;
   }
   return w;
 }
