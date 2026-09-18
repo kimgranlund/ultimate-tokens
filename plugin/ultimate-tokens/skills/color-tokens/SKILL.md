@@ -52,7 +52,7 @@ library's series-color source, and the data palettes' own roles for everything e
    `gray`, `error`, `fg`, `canvas`, `border`, `bg`) is exported under `<slug>-palette` instead. A kit
    may hand you either of two Radix files: the values form (`{s}.preset.mjs`, baked `oklch(...)`
    colors, self-contained) or the reference form (`{s}.refs.preset.mjs`, every numbered step a
-   `var(--c-*)` link) — the reference form only resolves once the kit's CSS or OKLCH export is also
+   `var(--c-*)` link); the reference form only resolves once the kit's CSS or OKLCH export is also
    loaded, since its step values are links into that layer, not colors of their own.
 2. **Enumerate the palettes.** Every `--c-<slug>-050` line marks a palette. The default kit ships
    a neutral, a brand accent plus its own supporting accents, the four intents, and an eight-hue

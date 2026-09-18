@@ -11,7 +11,7 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 ### 2026-09-18
 
 #### Added
-- **A reference form of the Radix color export** (#638) — `exportRadix(state, { refs: true })` emits
+- **A reference form of the Radix color export** (#638): `exportRadix(state, { refs: true })` emits
   the same Radix preset shape, with every numbered step leaf's `base`/`_dark` a `var(--{pfx}-{n}-*)`
   link into the kit's own CSS custom-property layer instead of a baked `oklch(...)` value. One format
   with two forms, not an eleventh: the drawer's Radix tab gains a "Values · References" file picker,
@@ -24,7 +24,7 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 #### Fixed
 - **A palette named after a Radix alias key (`accent`, `gray`, `error`, `fg`, `canvas`, `border`,
-  `bg`) no longer loses its ladder** (#630) — `exportRadix` wrote one group per palette slug and then
+  `bg`) no longer loses its ladder** (#630): `exportRadix` wrote one group per palette slug and then
   overwrote it with the seven Park UI alias keys, so a palette literally named `accent` lost its own
   12-step ladder and a palette named `error` turned `colors.error` into a dangling self-reference.
   `radixPaletteKey` now emits a colliding palette under `<slug>-palette` (suffixed again if that key

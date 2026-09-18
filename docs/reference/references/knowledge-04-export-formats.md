@@ -343,7 +343,7 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
 - **Not emitted in v1** (non-goals): Park UI text styles, size ramp, insets, gaps, focus, recipes,
   patterns, `globalCss`, or conditions of our own (`.dark` is Park UI's).
 - **Reference form** (`exportRadix(state, { refs: true })`, ticket #638): the same preset shape as
-  above — one format, not an eleventh — with every numbered step leaf's `base`/`_dark` a
+  above (one format, not an eleventh) with every numbered step leaf's `base`/`_dark` a
   `var(--{pfx}-{n}-{frag})` LINK into this kit's own CSS custom-property layer instead of a baked
   `oklch(...)` value. Steps 1..8 link the ratified raw stop; 9..12 link the driving role's own
   `lightRef`/`darkRef`; `prime` links the `prime-prime` primitive; alpha steps `a1..a12` stay

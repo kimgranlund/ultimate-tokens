@@ -63,11 +63,11 @@ either by spilling all roles in.
 **A variant of an existing format is a flag, not a new format (ticket #638).** `exportRadix(state, {
 refs: true })` is the worked example: it emits the SAME keys, group names, and internal aliases as the
 default (values) form, only swapping each numbered leaf's baked `oklch(...)` for a `var(--{pfx}-{n}-
-{frag})` link into this kit's own CSS custom-property layer — `radixRefLeaves` vs the default
+{frag})` link into this kit's own CSS custom-property layer: `radixRefLeaves` vs the default
 `RADIX_VALUE_LEAVES` in `exports.js`, both passed into the same `radixColorGroup`. Wiring a variant
 like this touches the same three sites as a new format, but narrower: an `opts` flag on the existing
 `exportX`, a second `view.exports` key (`radixRef` beside `radix`) instead of a new drawer format
-entry, and a second zip file beside the first — never a new `FORMAT_GROUPS` row, never a new format id.
+entry, and a second zip file beside the first, never a new `FORMAT_GROUPS` row, never a new format id.
 `radixRef` is `exportAll`'s key for it (see `nonempty` below); the color-format count stays at 10.
 
 **The shared naming rules** (don't reinvent): `pad3` (3-digit stop padding, ADR-006), `slug` (palette → token
@@ -116,7 +116,7 @@ fragment — emitters use it to build a NAME, never to re-resolve a ref to a col
    older export means version 1 (the pre-#503 shape, retroactive). Worked example: ticket #638's
    `exportRadix` reference-form variant bumped 2 → 3, because a `var()`-link leaf is a new value SHAPE
    for a leaf that was always a baked string. That bump moves `MCP_BRAND_KIT_VERSION`
-   (`scripts/gen-mcp-assets.mjs`) too, since it is generated from the same server's `SERVER.version` —
+   (`scripts/gen-mcp-assets.mjs`) too, since it is generated from the same server's `SERVER.version`.
    `test/mcp/brand-kit.mjs` pins the zip's `package.json` version against `SERVER.version` so the pair
    cannot split apart again, the gate a #638 review round added after the first bump landed without it.
    The `hpg-export-schema-stamp` gate in
