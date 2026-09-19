@@ -270,6 +270,20 @@ export function chromaEnvelope(stop, anchorStop, lift, controls) {
   return Math.max(0, 1 + shoulder - (controls.damp / 100) * sideW * uG);
 }
 
+// anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue) -> the BASIS chromaEnvelope's
+// shoulder/damp multiplier gets applied to (Q-U2-5 ruling, addendum 2, u2-p2-brief.md, 2026-09-18):
+// the anchor's own measured chroma/saturation exactly AT the pivot (w=0), blending to the group's
+// resolved ramp target (`groupValue`, `rampChroma`-derived) at each side's true endpoint (w=1), BY
+// THE LIFTSTOP POSITION — the SAME `sd` chromaEnvelope itself keys on, not `anchorWarp`'s skew-warped
+// `w` (a local construction this ruling retires: tying the chroma BLEND to skew was never asked for,
+// and it re-threaded `anchorLiftPos` back into the chroma path chromaEnvelope's own liftStop routing
+// was built to replace). One small helper, called from both anchored branches, no other construction.
+export function anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue) {
+  const sd = Math.abs(liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450;
+  const w = Math.min(1, sd);
+  return anchorValue + (groupValue - anchorValue) * w;
+}
+
 // toneAt — L* for a stop given per-palette skew/lift and the tone controls.
 // Strictly monotonic non-increasing 050->950 for ANY lift, not just lift 0:
 // liftStop is strictly increasing in stop (see LIFT_SHIFT_MAX above), p rises,
@@ -445,15 +459,16 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   // the window get the verbatim, byte-exact stop-500 special case below.
   const clamped = anchor.lstar < RAMP_L_MIN || anchor.lstar > RAMP_L_MAX;
   const pivotTone = Math.min(RAMP_L_MAX, Math.max(RAMP_L_MIN, anchor.lstar));
-  // Chroma basis (re-diagnosis Finding 1, Q-U2-5 ruled — see this function's own header comment):
-  // routed through the shared envelope function (copied from U3, see its own comment above `liftStop`),
-  // keyed on `liftStop` like the non-anchored path. The envelope, called below with an anchor stop of
-  // 500, is exactly 1 at stop 500 for any lift, so at the pivot `evenChroma` reduces to the BASIS's own
-  // pivot value exactly — no notch, by construction. The basis itself is the blend Q-U2-5 ruled: the
-  // anchor's own measured CAM16 chroma at the pivot (`anchorIntended`, w=0), shading to the group's
-  // resolved ramp target (`groupIntended`, `palette.chroma`-derived, mirroring `paletteStops`'s own
-  // `target`/relChroma formulas exactly) at each side's endpoint (w=1) — never the anchor's value read
-  // unconditionally at every stop, and never `palette.chroma` alone either.
+  // Chroma basis (re-diagnosis Finding 1, Q-U2-5 ruled — see `anchorChromaBasis`'s own header
+  // comment): routed through the shared envelope function (copied from U3, see its own comment above
+  // `liftStop`), keyed on `liftStop` like the non-anchored path. The envelope, called below with an
+  // anchor stop of 500, is exactly 1 at stop 500 for any lift, so at the pivot `evenChroma` reduces to
+  // the BASIS's own pivot value exactly — no notch, by construction. The basis itself is
+  // `anchorChromaBasis`'s blend: the anchor's own measured CAM16 chroma at the pivot (`anchorIntended`,
+  // liftStop position 0), shading to the group's resolved ramp target (`groupIntended`,
+  // `palette.chroma`-derived, mirroring `paletteStops`'s own `target`/relChroma formulas exactly) at
+  // each side's endpoint (liftStop position 1) — never the anchor's value read unconditionally at
+  // every stop, and never `palette.chroma` alone either.
   const maxc500 = maxChromaInGamut(baseHue, anchor.lstar);
   const anchorRelFrac = maxc500 > 0 ? Math.min(1, anchor.cam.chroma / maxc500) : 0;
   const pk = peakC(baseHue).c; // the BASE hue's max chroma in sRGB — same basis paletteStops's own `target` uses
@@ -472,10 +487,9 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     const hue = (((baseHue + shift * dir) % 360) + 360) % 360;
     const maxc = maxChromaInGamut(hue, tone);
     const env = chromaEnvelope(stop, 500, lift, controls);
-    const { w } = anchorWarp(stop, palette.skew ?? 0, lift);
     const anchorIntended = controls.relChroma ? anchorRelFrac * maxc : anchor.cam.chroma;
     const groupIntended = controls.relChroma ? (palette.chroma / 100) * maxc : groupTarget;
-    const intended = anchorIntended + (groupIntended - anchorIntended) * w;
+    const intended = anchorChromaBasis(stop, 500, lift, anchorIntended, groupIntended);
     const chroma = evenChroma(maxc, intended, env, controls.chromaFloor);
     const out = hctToRgb(hue, chroma, tone);
     const hex =
@@ -686,16 +700,17 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     // `chromaEnvelope`, keyed on `liftStop` (dropping `anchorLiftPos`'s own separate lift-position/
     // damping math entirely — the envelope's own `sd = (liftStop(stop,lift) - liftStop(anchorStop,
     // lift))/450` already IS that computation, parametrized so env(500)=1 exactly for any lift). The
-    // BASIS multiplied by that envelope is the SAME blend `paletteStopsAnchored` uses (see its own
-    // header comment): the anchor's own OKHSL `s` at the pivot (w=0), shading to `palette.chroma/100`
-    // — the group's resolved ramp target, mirroring `okhslStops`'s own `s = (palette.chroma/100)*m`
-    // formula exactly — at each side's endpoint (w=1). No notch by construction: env(500)=1 and w=0 at
-    // the pivot, so `s` reduces to `anchor.okhsl.s` exactly as a stop approaches 500.
+    // BASIS multiplied by that envelope is `anchorChromaBasis` (see its own header comment, shared
+    // verbatim with `paletteStopsAnchored`): the anchor's own OKHSL `s` at the pivot (liftStop position
+    // 0), shading to `palette.chroma/100` — the group's resolved ramp target, mirroring `okhslStops`'s
+    // own `s = (palette.chroma/100)*m` formula exactly — at each side's endpoint (liftStop position 1),
+    // by the SAME liftStop position the envelope itself keys on, never `anchorWarp`'s skew-warped `w`.
+    // No notch by construction: env(500)=1 and the basis's own liftStop position is 0 at the pivot, so
+    // `s` reduces to `anchor.okhsl.s` exactly as a stop approaches 500.
     const env = chromaEnvelope(stop, 500, palette.lift ?? 0, controls);
-    const { w } = anchorWarp(stop, palette.skew ?? 0, palette.lift ?? 0);
     const anchorIntendedS = anchor.okhsl.s;
     const groupIntendedS = Math.min(1, Math.max(0, palette.chroma / 100));
-    const intendedS = anchorIntendedS + (groupIntendedS - anchorIntendedS) * w;
+    const intendedS = anchorChromaBasis(stop, 500, palette.lift ?? 0, anchorIntendedS, groupIntendedS);
     const s = Math.min(1, Math.max(0, intendedS * env));
     const rgb = okhslToRgb(hue, s, l);
     const tone = lstarFromRgb(rgb);

@@ -209,6 +209,11 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    measurement above (this blend and the F2 blend it replaces target the same group value at the
 //    ramp's ends, just reached through chromaEnvelope's own shape now).
 //
+//    Re-measured a SIXTH time (addendum 2, u2-p2-brief.md): the blend's own weight now keys on
+//    `liftStop` (`anchorChromaBasis`), never `anchorWarp`'s skew-warped `w` (a local construction the
+//    ruling retired). Only the skewed default families (Neutral/Primary/Tertiary/Info/Success/Danger
+//    skew -20, Warning skew 40) moved, and only slightly; every family still stayed >= AA 4.5.
+//
 //    The PARK leg (#636) checks the same pairing through the OTHER derivation — exports.js's
 //    derivedAll, which is what radixColorGroup reads for Park's `solid.bg` (step 9 = the bare accent
 //    role) and `solid.fg` (`on-accent` = the `-on-{n}` role) — on the default document AND on the
@@ -221,11 +226,11 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   const FLOORS = {
     perceptual: [
       ["Neutral", 7.3, 5.1],   // measured 7.40 / 5.15
-      ["Primary", 7.5, 5.2],   // measured 7.57 / 5.29
+      ["Primary", 7.5, 5.2],   // measured 7.56 / 5.28
       ["Secondary", 5.2, 5.2],   // measured 5.25 / 5.22
-      ["Tertiary", 8.3, 5.9],   // measured 8.37 / 5.95
+      ["Tertiary", 8.3, 5.9],   // measured 8.37 / 5.91
       ["Info", 7.3, 5.0],   // measured 7.30 / 5.04
-      ["Success", 7.7, 5.3],   // measured 7.72 / 5.34
+      ["Success", 7.7, 5.3],   // measured 7.71 / 5.34
       ["Warning", 8.0, 4.7],   // measured 8.06 / 4.73
       ["Danger", 8.7, 6.2],   // measured 8.73 / 6.22
       ["Data 1", 6.0, 4.6],   // measured 6.00 / 4.68
@@ -238,14 +243,14 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       ["Data 8", 5.4, 5.0],   // measured 5.44 / 5.00
     ],
     even: [
-      ["Neutral", 6.9, 5.3],   // measured 6.98 / 5.38
-      ["Primary", 7.2, 5.6],   // measured 7.20 / 5.60
+      ["Neutral", 6.9, 5.3],   // measured 6.97 / 5.39
+      ["Primary", 7.2, 5.5],   // measured 7.20 / 5.60
       ["Secondary", 4.9, 4.8],   // measured 4.96 / 4.88
-      ["Tertiary", 7.9, 6.1],   // measured 7.93 / 6.19
+      ["Tertiary", 7.9, 6.2],   // measured 7.93 / 6.21
       ["Info", 6.8, 5.3],   // measured 6.89 / 5.32
-      ["Success", 7.3, 5.6],   // measured 7.34 / 5.69
-      ["Warning", 7.9, 5.3],   // measured 7.90 / 5.33
-      ["Danger", 8.3, 6.5],   // measured 8.35 / 6.55
+      ["Success", 7.3, 5.6],   // measured 7.32 / 5.66
+      ["Warning", 7.9, 5.3],   // measured 7.90 / 5.32
+      ["Danger", 8.3, 6.5],   // measured 8.34 / 6.55
       ["Data 1", 5.6, 4.7],   // measured 5.64 / 4.80
       ["Data 2", 5.9, 4.6],   // measured 5.99 / 4.67
       ["Data 3", 5.8, 4.5],   // measured 5.82 / 4.54
@@ -257,13 +262,13 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
     ],
     peak: [
       ["Neutral", 6.8, 5.3],   // measured 6.87 / 5.38
-      ["Primary", 7.0, 5.5],   // measured 7.09 / 5.60
+      ["Primary", 7.0, 5.6],   // measured 7.09 / 5.60
       ["Secondary", 4.9, 4.8],   // measured 4.92 / 4.86
-      ["Tertiary", 7.8, 6.2],   // measured 7.85 / 6.22
+      ["Tertiary", 7.8, 6.2],   // measured 7.87 / 6.23
       ["Info", 6.7, 5.3],   // measured 6.80 / 5.32
-      ["Success", 7.2, 5.7],   // measured 7.20 / 5.71
+      ["Success", 7.2, 5.7],   // measured 7.30 / 5.71
       ["Warning", 7.8, 5.3],   // measured 7.86 / 5.36
-      ["Danger", 8.2, 6.5],   // measured 8.24 / 6.58
+      ["Danger", 8.2, 6.5],   // measured 8.21 / 6.55
       ["Data 1", 5.6, 4.8],   // measured 5.67 / 4.85
       ["Data 2", 5.9, 4.7],   // measured 5.98 / 4.75
       ["Data 3", 5.7, 4.5],   // measured 5.76 / 4.55

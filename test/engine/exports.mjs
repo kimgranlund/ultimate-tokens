@@ -480,6 +480,12 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // this lands back at (or very near) the F2-blend values two re-captures above, since both blend
   // toward the same group target — only primary.DEFAULT/.hover (550/450) and data-1.DEFAULT moved;
   // EX-1's raw ramp literals and on-primary/on-surface are UNCHANGED — independently re-verified.
+  //
+  // #681 re-capture (U2 repair pass, addendum 2, u2-p2-brief.md): the blend's own weight now keys on
+  // `liftStop` (`anchorChromaBasis`, see its own header comment above `chromaEnvelope`), never
+  // `anchorWarp`'s skew-warped `w` — a local construction the ruling retired. Primary carries skew -20,
+  // so its own DEFAULT literal (stop 550) moved a hair from the anchorWarp-keyed capture immediately
+  // above; every other literal is unchanged — independently re-verified.
   const ddState = stateOf(defaultDocument());
   const ddPreset = X.exportPanda(ddState);
   const ddRaw = ddPreset.theme.extend.tokens.colors;
@@ -494,7 +500,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2575 0.0972 259.02)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.452 0.1631 258.92)", _dark: "oklch(0.5363 0.1884 258.99)" }))
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4522 0.163 259.02)", _dark: "oklch(0.5369 0.1899 259)" }))
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
   if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3775 0.1183 258.74)", _dark: "oklch(0.6322 0.1585 258.9)" }))
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);

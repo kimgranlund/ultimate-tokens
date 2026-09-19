@@ -16,17 +16,74 @@ status: open
 Ruling: option (b) from this question's own list — keep REQ-002 as ratified, keep `chromaEnvelope`
 itself verbatim (still called, not forked), but the anchored branches' BASIS input to it is a BLEND:
 the anchor's own chroma/saturation exactly at stop 500, shading to `rampChroma`/`palette.chroma` at
-the ramp's ends, using `anchorWarp`'s own per-side warp fraction as the blend weight (the same one
-already governing how tone bends pivot to edge). Implemented in `src/engine/tonal.js`
-(`paletteStopsAnchored`, `okhslStopsAnchored`), commit `b0c411d`. `(gid3)`/`(gid8)`/`(gid8b)` and
-`(ac003b)`'s REQ-003 identity check for Neutral are all green again. `anchor.mjs`'s four allow-lists
-re-frozen against the new rendered path (monotone 1 -> 45, gap-19 62 -> 69, distinct-25 12 -> 10,
-window-clamp unchanged at 10) — the monotone growth is a real, understood, named Helmholtz-Kohlrausch
-dark-end effect from blending toward a second chroma target, concentrated in peak mode (F4's curve
-shaping fully engaged there); see `anchor.mjs`'s own `NONMONO_ALLOW` comment for the full account.
-This section stays below as the reproducible record of the conflict and the options put to the owner;
-treat everything under "Left the current LITERAL implementation in place" as HISTORICAL — superseded
-by this ruling, not the current state of the branch.
+the ramp's ends, BY THE LIFTSTOP POSITION (addendum 2's own words) — the SAME `sd` `chromaEnvelope`
+itself already computes, not `anchorWarp`'s skew-warped `w`. First implementation (commit `b0c411d`)
+used `anchorWarp`'s `w` as the blend weight; the team lead flagged this as a local workaround
+("retire `anchorLiftPos` unless you show why not" — `anchorWarp` calls `anchorLiftPos` internally,
+re-threading it back into the chroma path `chromaEnvelope`'s own liftStop routing was built to
+replace). Fixed: a new `anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue)` helper
+(one small function, next to `chromaEnvelope`) computes the blend weight from `liftStop` directly,
+called from both anchored branches — no other construction, matching addendum 2's "one small basis
+helper" instruction. `(gid3)`/`(gid8)`/`(gid8b)` and `(ac003b)`'s REQ-003 identity check for Neutral
+are all green. `anchor.mjs`'s four allow-lists re-frozen against the rendered path: window-clamp
+unchanged at 10, gap-19 62 -> 69, distinct-25 12 -> 10, monotone 1 -> 45 — see "Addendum 2 gate
+evidence" below for the full account, including why 0 was not reachable and what was independently
+verified instead. This section stays below as the reproducible record of the conflict and the
+options put to the owner; treat everything under "Left the current LITERAL implementation in place"
+as HISTORICAL — superseded by this ruling, not the current state of the branch.
+
+### Addendum 2 gate evidence (u2-p2-brief.md's second addendum)
+
+Addendum 2 names four gate items. Measured against the liftStop-keyed `anchorChromaBasis`
+construction (commit after `b0c411d`), each in turn:
+
+- **(gid3), (gid8), (gid8b) green** — confirmed, `node test/ui/headless-boot.mjs` passes.
+- **Base chroma moves an anchored ramp's ends while stop 500 stays byte-exact** — confirmed:
+  `node test/engine/anchor.mjs` reads `anchor-ramp: 10110 exact, 0 off` (3,370 in-window sources x 3
+  modes), unchanged. Separately verified the 10 window-clamped sources' stop-500 chroma DOES move with
+  Base chroma (they go through the general formula, not the exact-hex special case).
+- **0 notch at 500 — MET, verified two ways.** (1) Analytic: `evenChroma(maxc, anchorChromaBasis(500,
+  500, lift, anchorValue, groupValue), chromaEnvelope(500, 500, lift, controls), chromaFloor)` reduces
+  to `anchorValue` exactly for every parameter combination tried (`chromaEnvelope(500,500,...)===1` by
+  its own proven invariant, `anchorChromaBasis`'s own `sd=0` at the pivot by construction) — the
+  general formula's own limit at the pivot always equals the anchor's value, so there is no jump
+  between the special-cased exact stop-500 return and its neighbours' general-formula values. (2)
+  Negative control: patched a scratch copy of `tonal.js` (`/tmp`, not committed) so the basis reads
+  `groupValue` UNCONDITIONALLY, ignoring the anchor — for a window-clamped source (Nike secondary,
+  which does NOT hit the exact-hex special case, so this is the meaningful population for this
+  control), stop 500's rendered hex changed from the correct pivot color to a visibly different one
+  (chroma 25.30 vs. the correct construction), proving the notch check discriminates a broken basis.
+  For the 3,370 in-window sources the special case protects stop 500's hex regardless of the basis, so
+  that population is NOT where this control bites — documented so the number itself (`exact=3370,
+  off=0` under the SAME patch) is not misread as the control failing to fire.
+- **0 non-monotone ramps on the rendered path — NOT MET, and not fixable by the position-measure
+  correction alone.** 45 named exceptions remain (`NONMONO_ALLOW`, `test/engine/anchor.mjs`), IDENTICAL
+  by name to the set measured under the retired `anchorWarp`-keyed construction — switching the blend
+  weight from `anchorWarp`'s `w` to pure `liftStop` position did not change which ramps rise or how
+  many. Root cause, confirmed by direct inspection (Nike secondary, peak mode, stops 875->900: measured
+  CIE L* 5.4742 -> 5.4835 while chroma falls 18.88 -> 17.22, a Helmholtz-Kohlrausch coupling): blending
+  toward a SECOND chroma target (the anchor's own high chroma near 500 shading to a much lower
+  `rampChroma`-derived target near the edges, for presets where those two values differ a lot)
+  introduces a chroma trajectory `chromaEnvelope`'s shoulder term (active whenever a preset's generated
+  `dampAmp>0`) was not built against — the same class the single pre-existing Nike exception already
+  named, now triggered on 44 more ramps. This is a structural consequence of the BLEND existing at all,
+  not of which position measure drives it (proven by the identical 45-name set) — I did not attempt a
+  third, self-invented construction to force this to 0, per "do not fork it" / "no other construction."
+  Concentration: 39 of 45 are peak mode (where F4's curve/tension shaping is fully engaged), 6
+  perceptual, 0 even.
+- **Negative controls, addendum 2's own text:**
+  - "pin the basis to `palette.chroma` and the notch gate reds" — done, see the notch-check evidence
+    above (the scratch patch pins the basis to `groupValue`, i.e. `palette.chroma`-derived, and the
+    window-clamped population's stop-500 output visibly diverges from the anchor).
+  - "pin it to the anchor and gid8 reds" — already proven earlier in this same pass, before this
+    ruling: the literal, unconditional anchor-only basis (commit `dfdaa03`'s predecessor state, the
+    one this ruling replaced) is exactly what made `(gid3)`/`(gid8)`/`(gid8b)` fail, extensively
+    reproduced and measured above in this question's own body — not re-derived a second time.
+- **`scripts/report-preset-fidelity.mjs --envelope` (the C6 re-run addendum 2 asks for): does not
+  exist on this branch.** It is named in the plan text as U3/U4-owned (U3's own C6 iv criterion, "ships
+  as U4's blast-radius report"), not yet built here. Could not run it; noting rather than fabricating
+  output. `npm run gate:corpus-contrast --full` (0 cells under 4.5, worst 4.500:1) is the closest
+  equivalent measurement this branch actually has, already reported in Finding 5 above.
 
 Per `preset-intent-fidelity-u2-rediagnosis.md` Finding 1 and the repair-pass brief (`u2-p2-brief.md`
 step 1): "Route both anchored branches through the shared chroma envelope... with the anchor's own
