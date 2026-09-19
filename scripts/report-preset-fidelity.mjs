@@ -70,13 +70,14 @@ const results = {};
 const aboveWitnesses = { perceptual: [], peak: [], even: [] };
 let aboveTotal = { perceptual: 0, peak: 0, even: 0 };
 let adiaAboveTotal = { perceptual: 0, peak: 0, even: 0 };
-// CUSP_RUN_BOUND — perceptual's owner-ruled bound (#681 U3 pass 6, ruling (f)): 189.31% of stop 500's
-// own chroma, the corpus's fresh-measured worst cusp-stop excess (89.3005pp, cuisine "Sushi & sashimi
-// · the cypress counter"/primary-muted, cusp stop 650) rounded UP to 2 decimal places. Even and peak
-// keep the literal "0 above 100%" reading; perceptual is reported under its own ruled clause instead
-// (one contiguous above-anchor run, every stop in it at or under this bound) — see test/engine/tonal.mjs's
-// gating copy (C6 iii-b) for the enforced version; this script's copy is for REPORTING only.
-const CUSP_RUN_BOUND = 1.8931;
+// CUSP_RUN_BOUND — perceptual's owner-ruled bound (#681 U3 pass 6, ruling (f), plan revision 20):
+// 189.3005% of stop 500's own chroma, EXACT — the corpus's fresh-measured worst cusp-stop excess
+// (89.3005pp, cuisine "Sushi & sashimi · the cypress counter"/primary-muted, cusp stop 650), frozen at
+// this precise value, not rounded. Even and peak keep the literal "0 above 100%" reading; perceptual is
+// reported under its own ruled clause instead (one contiguous above-anchor run, every stop in it at or
+// under this bound) — see test/engine/tonal.mjs's gating copy (C6 iii-b) for the enforced version; this
+// script's copy is for REPORTING only.
+const CUSP_RUN_BOUND = 1.893005;
 const perceptualRunFails = { runs: [], bound: [] }; // witnesses, non-Adia only
 
 for (const mode of MODES) {
@@ -214,7 +215,7 @@ for (const mode of MODES) {
   if (!aboveOk) anyFail = true;
   if (mode === "perceptual") {
     const witnesses = [...perceptualRunFails.runs, ...perceptualRunFails.bound].slice(0, 3);
-    console.log(`  clause: one cusp run, at or under ${(CUSP_RUN_BOUND * 100).toFixed(2)}% of stop 500 (#55 cusp-pull ships unchanged; ruling (f))`);
+    console.log(`  clause: one cusp run, at or under ${(CUSP_RUN_BOUND * 100).toFixed(4)}% of stop 500 (#55 cusp-pull ships unchanged; ruling (f))`);
     console.log(`  rule violations (second run or past-bound stop): ${aboveTotal[mode]} ${aboveOk ? "OK" : "FAIL"}${witnesses.length ? ` (e.g. ${witnesses.join(", ")})` : ""}`);
     console.log(`  (${adiaAboveTotal[mode]} additional instance(s) from the named Adia carve-out, exempt from this clause)`);
   } else {

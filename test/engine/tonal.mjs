@@ -1232,11 +1232,11 @@ for (const mode of ["perceptual", "peak"]) {
     }
     return { runs, worstRatio };
   };
-  // CUSP_RUN_BOUND — 189.31% of stop 500's own chroma: the corpus's fresh-measured worst cusp-stop
-  // excess (89.3005pp, cuisine "Sushi & sashimi · the cypress counter"/primary-muted, cusp stop 650 —
-  // measured pass 5, reconfirmed pass 6, Q7) rounded UP to 2 decimal places so the witness itself
-  // clears the bound with margin, never truncated toward it.
-  const CUSP_RUN_BOUND = 1.8931;
+  // CUSP_RUN_BOUND — 189.3005% of stop 500's own chroma, EXACT: the corpus's fresh-measured worst
+  // cusp-stop excess (89.3005pp, cuisine "Sushi & sashimi · the cypress counter"/primary-muted, cusp
+  // stop 650 — measured pass 5, reconfirmed pass 6, frozen at this exact value by the owner's ruling
+  // (f), plan revision 20). Not rounded up: the plan's own frozen figure is this precise value.
+  const CUSP_RUN_BOUND = 1.893005;
   const cuspRunFor = (doc, pal) => {
     const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "perceptual" };
     const chroma = rampChromaOf(pal, doc);
@@ -1257,7 +1257,7 @@ for (const mode of ["perceptual", "peak"]) {
       }
     }
     if (unlistedRuns.length) FAIL("chroma-envelope", `(C6 iii-b) perceptual: ${unlistedRuns.length} palette(s) with a SECOND separate above-anchor run (not the named Adia carve-out), e.g. ${unlistedRuns[0]}`);
-    if (unlistedExcess.length) FAIL("chroma-envelope", `(C6 iii-b) perceptual: ${unlistedExcess.length} palette(s) with a stop past the frozen CUSP_RUN_BOUND ${(CUSP_RUN_BOUND * 100).toFixed(2)}% (not the named Adia carve-out), e.g. ${unlistedExcess[0]}`);
+    if (unlistedExcess.length) FAIL("chroma-envelope", `(C6 iii-b) perceptual: ${unlistedExcess.length} palette(s) with a stop past the frozen CUSP_RUN_BOUND ${(CUSP_RUN_BOUND * 100).toFixed(4)}% (not the named Adia carve-out), e.g. ${unlistedExcess[0]}`);
 
     // adiaHit: the named carve-out must actually be doing work here too (Adia's dampAmp:70 boost is
     // what created the original need for a carve-out on even/peak; confirm it also produces a second
@@ -1286,7 +1286,7 @@ for (const mode of ["perceptual", "peak"]) {
       const ramp = T.STOPS.map((stop) => ({ stop, chroma: stop === 650 ? c500 * (CUSP_RUN_BOUND + 0.01) : c500 * 0.8 }));
       ramp[ramp.findIndex((r) => r.stop === 500)] = { stop: 500, chroma: c500 };
       const res = analyzeCuspRuns(ramp, c500);
-      if (!(res.worstRatio > CUSP_RUN_BOUND + 1e-6)) FAIL("chroma-envelope", `(C6 iii-b negative control) synthetic bound+1% ramp read worstRatio ${(res.worstRatio * 100).toFixed(2)}%, expected > ${(CUSP_RUN_BOUND * 100).toFixed(2)}% — check analyzeCuspRuns`);
+      if (!(res.worstRatio > CUSP_RUN_BOUND + 1e-6)) FAIL("chroma-envelope", `(C6 iii-b negative control) synthetic bound+1% ramp read worstRatio ${(res.worstRatio * 100).toFixed(2)}%, expected > ${(CUSP_RUN_BOUND * 100).toFixed(4)}% — check analyzeCuspRuns`);
     }
   }
 }
