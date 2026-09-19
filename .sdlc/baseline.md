@@ -3,7 +3,7 @@ kind: baseline
 repo: ultimate-tokens
 ran: 2026-09-19
 ref: origin/main @ d814500
-host: local macOS, Node 22, local Chrome for smoke; load 8.91 6.03 5.77 on 10 cores at run start
+host: local macOS, Node 22, local Chrome for smoke; load 3.13 6.16 6.24 on 10 cores at run start (the test timings' own set, the uncontaminated rerun)
 supersedes: the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md)
 ---
 
