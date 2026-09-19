@@ -35,10 +35,11 @@
 // control (one mutated chroma) proves the comparison loop itself can fail before trusting its "0 off".
 import { primeSwatches, primeSteps, PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, lstarFromRgb } from "../../src/engine/hct.js";
-import { effHue, paletteStops, EXPORT_STOPS, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX } from "../../src/engine/tonal.js";
+import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX } from "../../src/engine/tonal.js";
 import { rgbToOkhsl, okhslToRgb } from "../../src/engine/okhsl.js";
 import { derivedAll, oklchStr } from "../../src/engine/exports.js";
-import { defaultDocument } from "../../src/ui/model.mjs";
+import { defaultDocument, projectView } from "../../src/ui/model.mjs";
+import { hydrate } from "../../src/ui/persist.js";
 
 const CATS = ["architecture", "cuisine", "film", "literature", "music", "nature", "travel", "brands"];
 
@@ -111,9 +112,11 @@ function referenceNonAnchored(palette, controls) {
 
 // ── load the regenerated corpus + the default kit ──────────────────────────────────────────────────
 const corpus = []; // { slug, presetName, palette }
+const presetsByCat = []; // { slug, preset } — the whole preset object, for the RENDERED-path sweep below
 for (const slug of CATS) {
   const { PRESETS } = await import(`../../src/ui/categories/${slug}.js`);
   for (const preset of PRESETS) {
+    presetsByCat.push({ slug, preset });
     for (const p of preset.palettes) corpus.push({ slug, presetName: preset.name, hueSpace: preset.hueSpace, palette: p });
   }
 }
@@ -331,25 +334,29 @@ const RAMP_WINDOW_ALLOW = [
 // C5: over the 25-stop export ramp, measured CIELAB tone must be non-increasing 050→950 in every
 // mode (0 exceptions, including the 10 window-clamped sources above — the clamp fix makes those
 // CONTINUOUS with their neighbours, not merely "allowed to be wrong"), and every ramp should keep a
-// >=0.55 L* gap between neighbours with no duplicate hex. Measured on this branch (after the lift:0
-// regeneration below and the #668-class damping-position fix — see tonal.js `anchorLiftPos`), 118
-// sources (all low-to-moderate chroma, <=29%, concentrated at the window's own dark/light corners)
-// miss the gap/no-dup bar in at least one mode — OKHSL `l` is not uniform in measured L* at the
-// gamut's near-black/near-white corners, so a linear-in-l ladder compresses unevenly there even
-// though every OKHSL-l STEP is itself perfectly regular (see .sdlc/questions/pif-u2.md Q-U2-3 for
-// the fuller writeup and the one alternative construction tried and rejected). Named, frozen, sorted
-// — compared by name, not count (N1's own lesson, applied here too).
+// >=0.55 L* gap between neighbours with no duplicate hex. Measured on the RENDERED path (F1 fix,
+// review pif-u2-review-1.md: `projectView(hydrate(preset)).palettes[i].fullRamp`, each preset's OWN
+// controls resolved — not a raw `paletteStops` proxy call under DEFAULT_CONTROLS, which undercounted),
+// after the saturation-basis fix (F2: every stop's chroma/`s` now LERPS from the anchor's OWN measured
+// value at the pivot (w=0, no notch) toward the group's resolved ramp target at that side's endpoint
+// (w=1) — a pure "anchor value everywhere" basis broke REQ-002 (spec-muted-base-key-spikes 0.3.0,
+// (gid6)/(gid8)/(gid8b): Base chroma is an absolute per-group target for every ramp, anchored ones
+// included), so the blend was needed to fix F2's notch without breaking that ratified requirement),
+// **119** sources (all low-to-moderate chroma, <=29%) miss the gap/no-dup bar in at least one mode.
+// Named, frozen, sorted — compared by name, not count (N1's own lesson, applied here too). The
+// root-cause narrative for WHY sources in this population miss the bar (an OKHSL-l vs CIE-L*
+// non-uniformity claim) was reviewed and found only partly right (review finding F5, not fixed in this
+// pass) — the count and names below are re-measured and correct for the blended basis; the causal
+// story in .sdlc/questions/pif-u2.md Q-U2-3 needs its own follow-up.
 const RAMP_GAP_ALLOW = [
   `architecture "Andalusian patio · Moorish-Spanish vernacular · Córdoba" secondary #DFDEDC`,
   `architecture "Bauhaus Dessau · 1926 · Walter Gropius" primary-muted #272A2C`,
   `architecture "Boston City Hall · 1968 · Kallmann McKinnell & Knowles" tertiary-muted #2F2E2B`,
-  `architecture "Cologne Cathedral · 1880 (completed) · the dark nave" tertiary-muted #302E2A`,
   `architecture "Himeji Castle · 1609 · 'White Heron' keep · Japan" secondary #E0DEDA`,
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322`,
   `architecture "Lancashire cotton mill · 19th c · northern England" secondary-muted #262A2D`,
   `architecture "Oia · Cyclades vernacular · Santorini, Greece" secondary #E3E2DF`,
   `architecture "SoHo cast-iron loft · 1880s · New York" primary #2C2F31`,
-  `architecture "Trulli of Alberobello · vernacular · Puglia, Italy" secondary #E0DEDC`,
   `architecture "Villa Savoye · 1931 · Le Corbusier · Poissy" primary-muted #272A2C`,
   `architecture "Villa Savoye · 1931 · Le Corbusier · Poissy" secondary #DFDEDC`,
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
@@ -361,6 +368,8 @@ const RAMP_GAP_ALLOW = [
   `cuisine "Kaiseki · the seasonal course" tertiary-muted #2B2624`,
   `cuisine "Macarons · the display case" tertiary-muted #E0DEDA`,
   `cuisine "Matcha & wagashi · the tea room" tertiary-muted #2B2624`,
+  `cuisine "The cold sea · raw shellfish & ice" tertiary #D6DCE0`,
+  `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" secondary #D5D9DA`,
   `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
   `film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`,
   `film "Arrival · 2016 · dir. Villeneuve · the shell interior" primary-muted #232427`,
@@ -376,8 +385,8 @@ const RAMP_GAP_ALLOW = [
   `film "Spider-Man: Into the Spider-Verse · 2018 · the comic-book city" primary #232429`,
   `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
+  `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" tertiary-muted #D3DDE1`,
   `film "Taxi Driver · 1976 · dir. Scorsese · the neon city through a windshield" secondary #262A2D`,
-  `film "The Godfather · 1972 · dir. Coppola · cin. Gordon Willis · the don's study" secondary #302721`,
   `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
@@ -391,7 +400,9 @@ const RAMP_GAP_ALLOW = [
   `literature "Bleak House · Dickens · 1853 · a November fog over the city" tertiary-muted #2C2925`,
   `literature "Dracula · Bram Stoker · 1897 · the Carpathian castle at night" secondary #28292D`,
   `literature "Fahrenheit 451 · Bradbury · 1953 · the fireman's city" tertiary-muted #282320`,
+  `literature "Snow Country · Kawabata · 1948 · the hot-spring town in winter" secondary #D3D9DC`,
   `literature "The Bell Jar · Sylvia Plath · 1963 · New York & the suburb" primary #242427`,
+  `literature "The House of the Spirits · Isabel Allende · 1982 · the big house" primary #D3D9DC`,
   `literature "The Road · Cormac McCarthy · 2006 · the ash-grey wasteland" tertiary-muted #2C2926`,
   `literature "The Tale of Genji · Murasaki Shikibu · c.1010 · the Heian court" secondary-muted #292321`,
   `music "Acid house · the smiley flyer" tertiary-muted #26241F`,
@@ -408,18 +419,16 @@ const RAMP_GAP_ALLOW = [
   `music "Mod & British Invasion · the op-art club" tertiary #242428`,
   `music "Motown · the glamour stage" tertiary-muted #26272B`,
   `music "Neon MV · the night-set choreography" tertiary-muted #26232C`,
-  `music "Outlaw country · the desert-highway sleeve" tertiary-muted #2D2E34`,
   `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
   `music "Pop-punk · the skate-park sleeve" secondary #26272B`,
   `music "Rasta tricolour · the roots sleeve" tertiary-muted #282320`,
   `music "Riot grrrl · the zine collage" tertiary-muted #242427`,
-  `music "Soul Train · the TV stage" primary-muted #2D2E34`,
   `music "Southern trap · the night-drive cover" tertiary-muted #26222F`,
   `music "Studio 54 · the dancefloor" secondary #2B2734`,
   `music "Symphonic & gothic metal · the cathedral set" tertiary-muted #272328`,
   `music "The late-night club · the smoky set" primary-muted #1F1F23`,
-  `music "The late-night club · the smoky set" secondary #2F2823`,
   `music "The orchestra · the concert platform" secondary #242428`,
+  `music "The rave · the laser tent" primary #D4DDE2`,
   `music "The rave · the laser tent" secondary #212228`,
   `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
   `nature "19° N · April · 18:00 · Kīlauea, Hawai'i, at dusk" secondary #28292E`,
@@ -428,7 +437,7 @@ const RAMP_GAP_ALLOW = [
   `nature "25° N · January · 08:00 · Everglades sawgrass prairie, Florida" primary-muted #2B2F33`,
   `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
   `nature "40° S · December · 14:00 · Valdivian rainforest, Los Ríos, southern Chile" tertiary-muted #302820`,
-  `nature "51° S · November · 07:00 · Torres del Paine, Patagonian Andes, Chile" primary-muted #2D2E35`,
+  `nature "49° N · October · 15:00 · Boreal shield, northern Ontario, Canada" primary #312E24`,
   `nature "64° N · July · 13:00 · Landmannalaugar, Icelandic highlands" tertiary-muted #262A2D`,
   `nature "64° N · March · inside · Vatnajökull glacier cave, Iceland" tertiary-muted #2C2F31`,
   `nature "64° S · January · 18:00 · Antarctic Peninsula, austral summer evening" tertiary-muted #2C2E32`,
@@ -442,17 +451,18 @@ const RAMP_GAP_ALLOW = [
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" tertiary-muted #31241A`,
   `travel "31° S · September · 14:00 · The Indian Pacific between Cook and Adelaide, mid-Nullarbor" tertiary #E2DDD0`,
+  `travel "33° N · April · 10:30 · ONCF Al Boraq high-speed train, Tangier-bound from Casablanca" secondary-muted #D4DDE2`,
   `travel "34° S · March · 22:00 · San Telmo, Buenos Aires, a Sunday after the antiques fair has closed" secondary-muted #22242B`,
   `travel "35° N · February · 23:48 · Yamanote line, last loop, between Shinjuku and Ikebukuro" secondary #DDE5EB`,
   `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`,
   `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary #2E2B37`,
   `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary-muted #E1F5DA`,
+  `travel "41° N · April · 09:00 · La Boqueria, Barcelona, just past opening on a Tuesday" secondary-muted #DADECE`,
   `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
   `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" primary-muted #282724`,
   `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`,
   `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
   `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" primary-muted #24221F`,
-  `travel "59° N · January · 14:00 · Lake Baikal corridor" primary-muted #242D47`,
   `travel "59° N · January · 14:00 · Lake Baikal corridor" secondary #E0E5E6`,
   `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
   `travel "63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland" secondary #242427`,
@@ -505,25 +515,41 @@ function gapOk(stops) {
   }
 }
 
+// RENDERED-path sweep (F1 fix, review pif-u2-review-1.md): a raw `paletteStops(p, {...DEFAULT_CONTROLS,
+// toneMode, hueSpace}, EXPORT_STOPS)` proxy call is NOT what the product renders — the product renders
+// `projectView(hydrate(preset))`, which resolves EACH preset's OWN controls (damp/dampCurve/dampAmp/
+// dampBias/relChroma/chromaFloor/lmin/lmax/curve/tension, all preset-authored, not DEFAULT_CONTROLS'
+// values) via `rampChromaOf`. The proxy measured "0 non-monotone" while the rendered path had 16 real
+// non-monotone ramps (F1/F2's own fix; test/engine/curated-contrast.mjs already uses the right entry
+// point for this exact reason). Iterated by PRESET x MODE (343 x 3 = 1,029 renders, not 10,140 lean
+// calls) so each hydrate+projectView computes every palette in that preset's document at once, exactly
+// once per mode — the SAME cost shape as the product's own render.
 let rampExact = 0, rampOff = 0;
 const windowNames = new Set(), nonMonoNames = new Set(), gapNames = new Set();
-for (const { slug, presetName, hueSpace, palette: p } of anchored) {
-  const srcL = lstarFromRgb(hexToRgb(p.anchor));
-  const outsideWindow = srcL < RAMP_L_MIN || srcL > RAMP_L_MAX;
-  const label = `${slug} "${presetName}" ${p.name} ${p.anchor}`;
-  if (outsideWindow) windowNames.add(label);
+for (const { slug, preset } of presetsByCat) {
   for (const mode of MODES) {
-    const controls = { ...DEFAULT_CONTROLS, toneMode: mode, hueSpace: hueSpace ?? "oklch" };
-    const stops = paletteStops(p, controls, EXPORT_STOPS);
-    const s500 = stops.find((s) => s.stop === 500);
-    if (!outsideWindow) {
-      if (s500 && s500.hex === p.anchor) rampExact++;
-      else { rampOff++; FAIL("anchor-ramp", `${slug} "${presetName}" ${p.name} (${mode}): stop 500 ${s500 && s500.hex} !== anchor ${p.anchor}, and this source is INSIDE the ramp window — it should be exact`); }
+    const doc = hydrate({ ...preset, toneMode: mode });
+    const view = projectView(doc);
+    for (const p of doc.palettes) {
+      if (typeof p.anchor !== "string") continue;
+      const srcL = lstarFromRgb(hexToRgb(p.anchor));
+      const outsideWindow = srcL < RAMP_L_MIN || srcL > RAMP_L_MAX;
+      const label = `${slug} "${preset.name}" ${p.name} ${p.anchor}`;
+      if (outsideWindow) windowNames.add(label);
+      const vp = view.palettes.find((v) => v.name === p.name);
+      const stops = vp ? vp.fullRamp : null;
+      const s500 = stops && stops.find((s) => s.stop === 500);
+      if (!outsideWindow) {
+        if (s500 && s500.hex === p.anchor) rampExact++;
+        else { rampOff++; FAIL("anchor-ramp", `${slug} "${preset.name}" ${p.name} (${mode}, rendered): stop 500 ${s500 && s500.hex} !== anchor ${p.anchor}, and this source is INSIDE the ramp window — it should be exact`); }
+      }
+      if (!stops) { FAIL("anchor-ramp", `${slug} "${preset.name}" ${p.name} (${mode}): projectView produced no matching palette — the render path changed shape`); continue; }
+      if (!monotoneOk(stops)) nonMonoNames.add(label);
+      if (!gapOk(stops)) gapNames.add(label);
     }
-    if (!monotoneOk(stops)) nonMonoNames.add(label);
-    if (!gapOk(stops)) gapNames.add(label);
   }
 }
+// `anchored` (declared above, from `corpus`) is reused below only as the summary line's denominator.
 const windowSorted = [...windowNames].sort();
 const gapSorted = [...gapNames].sort();
 console.log(`  ${rampOff === 0 ? "pass" : "FAIL"}  anchor-ramp: ${rampExact} exact, ${rampOff} off (in-window sources only, ${anchored.length - windowNames.size} of ${anchored.length})`);

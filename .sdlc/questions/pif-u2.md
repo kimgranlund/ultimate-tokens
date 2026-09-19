@@ -46,12 +46,12 @@ scope to do that suppression, and C3's checked count (3,380) already includes al
 accordingly: the default kit's ramp DOES move under U2 alone (measured — Success/Warning/Danger's
 existing non-zero lift now warps around their own anchor's L* instead of a cusp construction).
 
-## Q-U2-3: 118 corpus sources need a named allow-list for the ramp's OWN monotone/distinct gate, not just the 10-name window list
+## Q-U2-3: 119 corpus sources need a named allow-list for the ramp's OWN monotone/distinct gate, not just the 10-name window list
 
 C5's stated allow-list (10 names) covers only the stop-500-clamp population. Measuring the FULL
 25-stop export ramp's own monotone/≥0.55-L*-gap/no-duplicate-hex requirement over all 3,380 × 3
 modes (10,140 ramps), after the lift:0 regeneration and the #668-class damping fix (both landed in
-this unit — see handoff), **118 sources** (all low-to-moderate chroma, max 29%, concentrated at the
+this unit — see handoff), **119 sources** (all low-to-moderate chroma, max 29%, concentrated at the
 window's own dark/light edges) fail the ≥0.55 L* neighbour-gap and/or produce a duplicate hex
 somewhere in the 25-stop ramp, in at least one of the three modes — none of them non-monotone (that
 count is 0, matching the 10-name clamp population exactly). Root cause: OKHSL's own `l` is not
@@ -63,10 +63,36 @@ better) because that conversion assumes zero saturation and these are colored ra
 
 This is the same class of "hex inequality is the bar, not channel distance" finding U1's own review
 recorded for the prime ladder (53 near-duplicate-but-not-identical rungs, accepted). I built
-`test/engine/anchor.mjs`'s `anchor-ramp` gate to name these 118 by source (frozen, sorted, compared
+`test/engine/anchor.mjs`'s `anchor-ramp` gate to name these sources by source (frozen, sorted, compared
 by name not count, same discipline as U1's `ORDER_ALLOW`/`DUPE_ALLOW`), rather than either silently
 passing them or blocking the unit on a construction change with no clear win. Full frozen list is in
 the gate file itself.
+
+**2026-09-18 update, independent review `pif-u2-review-1.md` (F1/F2/F5):** the review found this
+gate (C5) was measuring a raw `paletteStops(...)` proxy under `DEFAULT_CONTROLS`, not the rendered
+product path — on the real path (`projectView(hydrate(preset))`), 16 anchored ramps were
+non-monotone where the proxy read 0, caused by the anchored branches' chroma/`s` basis being
+`palette.chroma` (the group's resolved ramp target, usually 100) instead of the anchor's own
+measured value, which put a chroma notch/spike at stop 500 in 4,962 of 10,140 rendered cells (F2).
+Fixed both: the gate now sweeps `hydrate(preset)` × `projectView(...).palettes[i].fullRamp` per mode
+(F1), and the anchored branches' chroma/`s` now LERPS from the anchor's own measured value at the
+pivot (no notch) toward the group-driven target at each side's endpoint (F2) — a pure "anchor value
+everywhere" basis, which is what the review's fix text describes literally, would have broken a
+RATIFIED requirement (REQ-002, spec-muted-base-key-spikes 0.3.0, test/ui/headless-boot.mjs's
+(gid6)/(gid8)/(gid8b): the group's Base chroma is an absolute per-group ramp target for every
+palette including anchored ones) — the blend was needed to satisfy both. Re-measuring the gap/
+distinct allow-list on the corrected rendered path moved the count from 118 to **119** (the figure
+in this question's heading is now current); 0 non-monotone remains 0. The review's F5 finding (the
+OKHSL-l-non-uniformity root-cause narrative above is "mostly wrong," explains at most 56 of the
+population) was not re-investigated in this pass — still open, tracked here.
+
+Review findings F3 (U2/U3 merge semantics), F4 (peak/perceptual collapse and Curve/Tension/Vibrancy/
+hueSpace becoming no-ops for anchored palettes — Base chroma joins this list under the blended F2
+design: it moves an anchored ramp LESS than a non-anchored one, by construction, never zero, but the
+degree needs an owner ruling the same way F4's other four controls do), F6-F9 (default-kit movement
+after Reset, floor drops, hue failures near-black/white) and F10 (records) were reviewed but are
+NOT in this fix-first pass's scope (dispatch: "Fix the basis, rebuild the gate... tell me what the
+merge needs") — still open, per-finding, for the owner.
 
 Sequence risk if any of these three readings is wrong: U3 (chroma envelope) and U6 (prime ladder,
 independent) both build on this branch's tone/lightness construction; U4's blast-radius report and

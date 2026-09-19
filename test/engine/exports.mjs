@@ -458,6 +458,13 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // the black constant. on-surface/backdrop/prime.brightest/prime.dimmest (no accent role reads them)
   // did not move. Every literal below independently re-verified against exports.mjs's own resolution
   // ladder output (this file's normal spot-check discipline — not re-derived by hand).
+  //
+  // #681 re-capture (U2, review pif-u2-review-1.md F2): the anchored branches' saturation basis now
+  // lerps from the anchor's own measured chroma toward the group-driven ramp target as a stop moves
+  // away from 500 (see okhslStopsAnchored's own comment), so every OFF-pivot stop's chroma moved a
+  // second time — primary.DEFAULT/.hover (stops 550/450) and data-1.DEFAULT (also off-pivot). EX-1's
+  // raw ramp literals (500/50/950/scrim.300, all either the verbatim anchor or undamped by chroma)
+  // and on-primary/on-surface (no chroma dependence) are UNCHANGED — independently re-verified.
   const ddState = stateOf(defaultDocument());
   const ddPreset = X.exportPanda(ddState);
   const ddRaw = ddPreset.theme.extend.tokens.colors;
@@ -472,9 +479,9 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2575 0.0972 259.02)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4517 0.169 259.12)", _dark: "oklch(0.5367 0.1973 258.98)" }))
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.452 0.1631 258.92)", _dark: "oklch(0.5363 0.1884 258.99)" }))
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.378 0.12 258.69)", _dark: "oklch(0.6305 0.1629 259.14)" }))
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3775 0.1183 258.74)", _dark: "oklch(0.6322 0.1585 258.9)" }))
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
   if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);
@@ -482,7 +489,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     FAIL("panda", `EX-2 colors.neutral.on-surface = ${JSON.stringify(ddSem.neutral["on-surface"].value)}`);
   if (Object.keys(ddSem.primary).length !== 53) FAIL("panda", `EX-2 expected 53 keys under semanticTokens.colors.primary, got ${Object.keys(ddSem.primary).length}`);
   if (Object.keys(ddSem).length !== 16) FAIL("panda", `EX-2 expected 16 palette groups, got ${Object.keys(ddSem).length}`);
-  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5198 0.2489 272.21)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
+  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5194 0.2328 272.25)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
 
   // disabled palette absent from both trees.
   const disabledPanda = X.exportPanda(oneOff);

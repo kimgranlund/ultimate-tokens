@@ -389,13 +389,35 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   // the window get the verbatim, byte-exact stop-500 special case below.
   const clamped = anchor.lstar < RAMP_L_MIN || anchor.lstar > RAMP_L_MAX;
   const pivotTone = Math.min(RAMP_L_MAX, Math.max(RAMP_L_MIN, anchor.lstar));
+  // Chroma basis (F2 fix, review pif-u2-review-1.md): stop 500 must approach the ANCHOR's own
+  // measured CAM16 chroma as a stop nears it, or 500 sits as a chroma notch/spike against neighbours
+  // damped toward a foreign target — `palette.chroma` (the group's resolved ramp target, usually 100)
+  // has no reason to agree with what the anchor itself measures. But `palette.chroma` cannot simply be
+  // dropped: REQ-002 (spec-muted-base-key-spikes 0.3.0, test/ui/headless-boot.mjs's (gid6)/(gid8)/
+  // (gid8b)) ratifies the group's Base chroma as an ABSOLUTE ramp-chroma target for EVERY palette in
+  // the group, anchored ones included — "every ramp in the group is a chroma peer", no carve-out. So
+  // `intended` LERPS from the anchor's own chroma AT the pivot (w=0, exact — matches the verbatim
+  // stop-500 branch below, no notch) toward the group-driven target at that side's endpoint (w=1, full
+  // Base-chroma responsiveness) — `w` is the SAME warped position `anchorLerp` uses for tone, so both
+  // channels agree on where the pivot's influence ends. `relChroma` mode is the anchor's own chroma
+  // expressed as a fraction of the anchor's OWN local gamut ceiling (not the base-hue peak `pk`), so
+  // it continues the same way at stop 500.
+  const maxc500 = maxChromaInGamut(baseHue, anchor.lstar);
+  const anchorRelFrac = maxc500 > 0 ? Math.min(1, anchor.cam.chroma / maxc500) : 0;
   const pk = peakC(baseHue).c;
-  const target = (palette.chroma / 100) * pk;
+  const groupTarget = (palette.chroma / 100) * pk;
+  // Damping normalized to 1 AT the pivot (F2): the un-anchored `m` formula deliberately evaluates to
+  // `1 + dampAmp/100` at its own center (dampAmp amplifies a computed, undamped target there) — but
+  // an anchored ramp's "center" is the literal anchor pixel, already fixed, never dampAmp-boosted.
+  // Dividing by that same center value keeps the REST of the curve's shape (how damp/dampAmp/dampBias
+  // taper toward the edges) while pinning `m` to exactly 1 at stop 500, so `evenChroma` continuously
+  // approaches the anchor's own chroma as a stop approaches 500.
+  const m0 = 1 + (controls.dampAmp ?? 0) / 100;
   return stops.map((stop) => {
     if (stop === 500 && !clamped) {
       return {
         stop, tone: anchor.lstar, chroma: anchor.cam.chroma,
-        maxc: maxChromaInGamut(baseHue, anchor.lstar), rgb: anchor.rgb, hex: anchor.hex, inGamut: true,
+        maxc: maxc500, rgb: anchor.rgb, hex: anchor.hex, inGamut: true,
       };
     }
     const tone = anchorLerp(pivotTone, controls.lmax ?? 100, controls.lmin ?? 5, stop, palette.skew ?? 0, palette.lift ?? 0);
@@ -405,11 +427,15 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     const maxc = maxChromaInGamut(hue, tone);
     const uG = Math.abs(s) ** (controls.dampCurve ?? 1.5);
     const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(s));
-    const m = Math.max(
+    const mRaw = Math.max(
       0,
       1 + ((controls.dampAmp ?? 0) / 100) * (1 - uG) - (controls.damp / 100) * sideW * uG,
     );
-    const intended = controls.relChroma ? (palette.chroma / 100) * maxc : target;
+    const m = m0 > 0 ? mRaw / m0 : 0;
+    const { w } = anchorWarp(stop, palette.skew ?? 0, palette.lift ?? 0);
+    const anchorIntended = controls.relChroma ? anchorRelFrac * maxc : anchor.cam.chroma;
+    const groupIntended = controls.relChroma ? (palette.chroma / 100) * maxc : groupTarget;
+    const intended = lerp(anchorIntended, groupIntended, w);
     const chroma = evenChroma(maxc, intended, m, controls.chromaFloor);
     const out = hctToRgb(hue, chroma, tone);
     const hex =
@@ -586,8 +612,23 @@ function okhslStopsAnchored(palette, controls, stops, anchor) {
     const sd = anchorLiftPos(stop, palette.lift ?? 0);
     const uG = Math.abs(sd) ** (controls.dampCurve ?? 1.5);
     const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(sd));
-    const m = Math.max(0, 1 + ((controls.dampAmp ?? 0) / 100) * (1 - uG) - (controls.damp / 100) * sideW * uG);
-    const s = Math.min(1, Math.max(0, (palette.chroma / 100) * m));
+    // Saturation basis + normalized damping (F2 fix, review pif-u2-review-1.md): `s` must approach
+    // `anchor.okhsl.s` (never `palette.chroma/100`, the group's resolved ramp target) as a stop nears
+    // 500, or 500 sits as a chroma notch/spike against neighbours damped toward a foreign value. But
+    // REQ-002 (spec-muted-base-key-spikes 0.3.0, (gid6)/(gid8)/(gid8b)) ratifies Base chroma as an
+    // ABSOLUTE per-group ramp target for every palette including anchored ones — see
+    // paletteStopsAnchored's matching comment — so the basis LERPS from the anchor's own `okhsl.s` at
+    // the pivot (w=0, matches the verbatim stop-500 branch, no notch) toward the group-driven
+    // `palette.chroma/100` at that side's endpoint (w=1, full Base-chroma responsiveness), using the
+    // SAME warped `w` the tone ladder (`anchorLerp`) reads. `m0` normalizes `mRaw` to exactly 1 at the
+    // pivot (uG=0), the same reasoning as the even path: an anchored ramp's center is the fixed anchor
+    // pixel, never dampAmp-boosted.
+    const mRaw = Math.max(0, 1 + ((controls.dampAmp ?? 0) / 100) * (1 - uG) - (controls.damp / 100) * sideW * uG);
+    const m0 = 1 + (controls.dampAmp ?? 0) / 100;
+    const m = m0 > 0 ? mRaw / m0 : 0;
+    const { w } = anchorWarp(stop, palette.skew ?? 0, palette.lift ?? 0);
+    const sBasis = lerp(anchor.okhsl.s, palette.chroma / 100, w);
+    const s = Math.min(1, Math.max(0, sBasis * m));
     const rgb = okhslToRgb(hue, s, l);
     const tone = lstarFromRgb(rgb);
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
