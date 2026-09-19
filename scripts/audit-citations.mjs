@@ -294,7 +294,22 @@ export function anchorsOf(docLine) {
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export const hasToken = (line, anchor) => {
   if (anchor.startsWith(LIT)) return line.includes(anchor.slice(LIT.length)); // literal fragment
-  const t = esc(anchor.replace(/^[.#]/, ""));
+  const bare = anchor.replace(/^[.#]/, "");
+  const isSelector = /^[.#]/.test(anchor);
+  // A selector whose bare form is an English stopword ("on", "then", ...) must keep its
+  // punctuation to count -- stripping it before matching is exactly the F1 class of hole
+  // (#672 round 3): `.on` would otherwise match a plain "on" sitting in unrelated prose, e.g.
+  // a comment 144 lines off ("...on open ... on close"). Real sites carry a mark: CSS always
+  // compounds the selector (`.chip.on {`, never a bare `.on {` rule), and this codebase's
+  // JS/hyperscript sites always quote the class name (`classList.contains("on")`,
+  // `class: on ? "on" : ""`) rather than writing a literal `.on`. So a selector-shaped anchor
+  // whose bare form is a stopword is accepted only with its dot/hash present, or as a quoted
+  // string literal -- never as a bare unquoted word.
+  if (isSelector && STOPWORDS.has(bare.toLowerCase())) {
+    const b = esc(bare);
+    return new RegExp(`\\.${b}\\b|["']${b}["']`).test(line);
+  }
+  const t = esc(bare);
   return new RegExp(`(?<![A-Za-z0-9_$])${t}(?![A-Za-z0-9_$-])`).test(line);
 };
 
@@ -343,20 +358,25 @@ export function judgeLine(lines, i, implied, resolveAndRead) {
   const cites = parseCitations(raw, implied);
   if (!cites.length) return [];
 
-  // Anchors come from the WHOLE enclosing prose paragraph, not just the citing line: a
-  // citation's subject can sit in the previous (wrapped) sentence, e.g. app-shell.md:143 /
-  // :219, and a line with two citations can need a different adjacent anchor for each (#672
-  // round 2: component-inventory.md:44's `app-helpers.mjs:370` citation needs `switchControl`
-  // from the PREVIOUS line, even though the citing line itself already anchors its OTHER
-  // citation on `segmented`) -- so this always unions the paragraph rather than widening only
-  // when the citing line is completely empty. Safe per the same invariant that justified the
-  // original widen: a wider anchor set can only make a verdict MORE forgiving, never falsely
-  // stale, since STALE requires the absence of a match, not its presence.
-  const para = [];
-  for (let j = i; j >= 0 && lines[j].trim() !== ""; j--) para.push(lines[j]);
-  for (let j = i + 1; j < lines.length && lines[j].trim() !== ""; j++) para.push(lines[j]);
-  const anchors = [...new Set(para.flatMap(anchorsOf))];
-  const anchorScope = para.length > 1 ? "paragraph" : "line";
+  // Anchors normally come from just the citing line. Only when that line carries NO anchor of
+  // its own do we widen to the enclosing prose paragraph -- a citation's subject can sit in the
+  // previous (wrapped) sentence, e.g. app-shell.md:143 / :219, or component-inventory.md:44's
+  // `app-helpers.mjs:370` citation, whose subject `switchControl` is named one line up (#672
+  // round 3 owner ruling: unioning the WHOLE paragraph unconditionally, as round 2 did, was a
+  // loosening the brief never asked for -- it let a citation's OWN unrelated anchors be diluted
+  // by an adjacent bullet's anchors, e.g. a `.on` sitting in a different list item, and it made
+  // anchorScope meaningless by mislabeling most single-line citations "paragraph"). Conditional
+  // widening keeps the same "wider can only be more forgiving" invariant for the genuine
+  // wrapped-sentence case while no longer touching a line that already stands on its own.
+  let anchors = anchorsOf(raw);
+  let anchorScope = "line";
+  if (!anchors.length) {
+    const para = [];
+    for (let j = i; j >= 0 && lines[j].trim() !== ""; j--) para.push(lines[j]);
+    for (let j = i + 1; j < lines.length && lines[j].trim() !== ""; j++) para.push(lines[j]);
+    anchors = [...new Set(para.flatMap(anchorsOf))];
+    if (anchors.length) anchorScope = "paragraph";
+  }
   const rows = [];
   for (const c of cites) {
     // a bare `:N` in a doc with no declared implied file: nothing to resolve against, and
@@ -525,10 +545,26 @@ export function selftest() {
     if (!ok) failed++;
   }
 
-  // (b) the cited symbol sits on the PREVIOUS doc line (a wrapped sentence), with an earlier,
-  // wrong decoy anchor (`.toggle`) also in that paragraph; the citing line itself carries no
-  // anchor at all (only the citation form), so judgeLine() must widen to the enclosing paragraph
-  // AND try every anchor there, not just the first (`.toggle`) or none at all.
+  // (b) the cited symbol sits on the PREVIOUS doc line (a wrapped sentence), and the citing line
+  // itself carries no anchor at all (only the citation form), so judgeLine() must widen to the
+  // enclosing paragraph and pick up `switchControl` from the line above.
+  {
+    const docLines = [
+      "(`.toggle`) are built on real buttons with ARIA roles (`switchControl`,",
+      "`fixture-target.js:1`), so they keep focus.",
+    ];
+    const fixtureSource = ["export const switchControl = ({ on, onToggle, label, ariaLabel }) =>"];
+    const rows = judgeLine(docLines, 1, null, (cited) => [cited, fixtureSource]);
+    const verdict = rows[0]?.verdict;
+    console.log(`  ${verdict === "OK" ? "✓" : "✗"} judgeLine() widens to the paragraph when the citing line has NO anchor of its own (got ${verdict})`);
+    if (verdict !== "OK") failed++;
+  }
+
+  // (b2) #672 round 3 owner ruling: the widen must be CONDITIONAL, not unconditional. Same shape
+  // as (b), but the citing line now carries its OWN anchor (`segmented`, from the adjacent
+  // `app.js:1587` citation) -- so it must judge on ONLY that anchor and must NOT reach across to
+  // the previous line's `switchControl` just because the paragraph happens to contain it. A
+  // wrong-line citation whose correct symbol sits only on the previous line must read STALE.
   {
     const docLines = [
       "(`.toggle`, `segmented()`) are built on real buttons with ARIA roles (`switchControl`,",
@@ -537,8 +573,8 @@ export function selftest() {
     const fixtureSource = ["export const switchControl = ({ on, onToggle, label, ariaLabel }) =>"];
     const rows = judgeLine(docLines, 1, null, (cited) => [cited, fixtureSource]);
     const verdict = rows[0]?.verdict;
-    console.log(`  ${verdict === "OK" ? "✓" : "✗"} judgeLine() widens to the paragraph and matches \`switchControl\`, not just the first (decoy) anchor there (got ${verdict})`);
-    if (verdict !== "OK") failed++;
+    console.log(`  ${verdict === "STALE-WRONG-LINE" ? "✓" : "✗"} judgeLine() does NOT widen when the citing line already has its own anchor (got ${verdict})`);
+    if (verdict !== "STALE-WRONG-LINE") failed++;
   }
 
   // (c) a comma-separated symbol list: same shape as (a), the other separator the ticket named.
@@ -566,6 +602,31 @@ export function selftest() {
     const stillRejectsBareProse = !anchorsOf("this text is aimed at :200 for no reason").includes("at");
     console.log(`  ${stillRejectsBareProse ? "✓" : "✗"} a bare (non-backticked) generic word still does not anchor`);
     if (!stillRejectsBareProse) failed++;
+  }
+
+  // #672 round 3: a selector anchor whose bare form is an English stopword must not match a
+  // bare, unquoted occurrence of that word -- component-inventory.md:181's exact exploit shape,
+  // reproduced by the reviewer: `.on` matching a focus-trap comment ("...on open ... on close")
+  // 144 lines off the real target. hasToken() stripping the leading `.` before matching is what
+  // let this through; the fix requires the dot (a real CSS compound selector) or a quoted string
+  // (this codebase's JS/hyperscript class-name shape) to be literally present.
+  {
+    const docLine = "active = `.on` (`fixture-target.js:1`).";
+    const anchors = anchorsOf(docLine);
+    const wrongLineProse = ["// showModal() moves focus into the dialog on open and the browser traps Tab there; on close"];
+    const exploitVerdict = judgeLine([docLine], 0, null, (cited) => [cited, wrongLineProse])[0]?.verdict;
+    console.log(`  ${exploitVerdict !== "OK" ? "✓" : "✗"} a selector anchor's stopword bare form does not match bare unquoted prose (got ${exploitVerdict}, anchors: ${JSON.stringify(anchors)})`);
+    if (exploitVerdict === "OK") failed++;
+
+    const cssSite = ["  .segmented button.on {"];
+    const cssVerdict = judgeLine([docLine], 0, null, (cited) => [cited, cssSite])[0]?.verdict;
+    console.log(`  ${cssVerdict === "OK" ? "✓" : "✗"} the same selector anchor still matches a real CSS compound selector (got ${cssVerdict})`);
+    if (cssVerdict !== "OK") failed++;
+
+    const jsSite = ['          class: on ? "on" : "",'];
+    const jsVerdict = judgeLine([docLine], 0, null, (cited) => [cited, jsSite])[0]?.verdict;
+    console.log(`  ${jsVerdict === "OK" ? "✓" : "✗"} the same selector anchor still matches a quoted JS class-name site (got ${jsVerdict})`);
+    if (jsVerdict !== "OK") failed++;
   }
 
   // #672 negative control 2: a NOFILE verdict must fail the gate (exit 1) unless the doc itself
