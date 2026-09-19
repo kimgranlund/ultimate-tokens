@@ -167,6 +167,14 @@ for (const p of DEFAULTS) {
   //     than the anchor despite an equal-or-smaller envelope multiplier). `anchorWant` re-derives that
   //     cap independently (evenChroma's own 3-line formula, at uLeg=0 by construction) rather than
   //     calling the engine's private `evenChroma`, keeping this an independent check of the BEHAVIOUR.
+  //     #681 U3 pass 7: CTL's toneMode is "even", and the even path now reads a MAPPED damp/dampCurve
+  //     (T.EVEN_DAMP_FACTOR compresses damp's headroom and scales dampCurve by the same factor — see
+  //     chromaEnvelope's own comment) — dampCurve alone could not close the even median/p90 targets
+  //     (u3fix/retune-even-only.mjs swept dampCurve x0.001..x1 at fixed damp and stop 100/900 never
+  //     moved; T.EVEN_DAMP_FACTOR is the ratified, exported constant this independent re-derivation
+  //     reads, not a re-derivation of chromaEnvelope's own code path).
+  const evenDamp = 100 - (100 - CTL.damp) * T.EVEN_DAMP_FACTOR;
+  const evenDampCurve = (CTL.dampCurve ?? 1.5) * T.EVEN_DAMP_FACTOR;
   for (const p of SAT) {
     const tgt = tgtOf(p);
     const maxc500 = at(ramp(p, {}), 500).maxc;
@@ -174,7 +182,7 @@ for (const p of DEFAULTS) {
     const anchorWant = Math.min(maxc500, Math.max(tgt, floor500));
     for (const r of ramp(p, {})) {
       const uLeg = Math.abs(T.liftStop(r.stop, p.lift) - T.liftStop(500, p.lift)) / 450;
-      const legacyWant = Math.min(tgt * Math.max(0, 1 - (CTL.damp / 100) * uLeg ** 1.5), r.maxc);
+      const legacyWant = Math.min(tgt * Math.max(0, 1 - (evenDamp / 100) * uLeg ** evenDampCurve), r.maxc);
       const want = Math.min(legacyWant, anchorWant);
       if (Math.abs(r.chroma - want) > 1e-6) FAIL("damping-curve", `${p.name} default != legacy at stop ${r.stop}: ${r.chroma.toFixed(4)} vs ${want.toFixed(4)}`);
     }
@@ -332,8 +340,23 @@ for (const mode of ["perceptual", "peak"]) {
   const n0 = ramp(267, 0, 0), nF = ramp(267, 0, 40);
   for (let i = 0; i < n0.length; i++) if (n0[i].hex !== nF[i].hex) FAIL("chroma-floor", `neutral stop ${n0[i].stop}: floor tinted a chroma-0 palette (${n0[i].hex}->${nF[i].hex})`);
   // (d) SATURATED is untouched — a high-chroma ramp already clamps to the gamut, so the floor never binds.
+  //     #681 U3 pass 7 CARVE-OUT: this holds everywhere except the 11 EXPORT_STOPS nearest the extreme
+  //     ends (100/125/150/175/200/250/300 and 875/900/925/950), named and bounded, verified both
+  //     directions below — even a chroma-100 probe at this hue still lands there (checked by hand,
+  //     u3fix scratch), so it is not a probe artifact. The even path's retuned damping (chromaEnvelope,
+  //     EVEN_DAMP_FACTOR) now starves those stops enough that NO input chroma keeps them gamut-clamped,
+  //     so the floor legitimately starts to matter there too — an expansion of what the floor rescues,
+  //     not a mistuned probe.
+  const SAT_FLOOR_EXCEPT = new Set([100, 125, 150, 175, 200, 250, 300, 875, 900, 925, 950]);
   const s0 = ramp(145, 99, 0), sF = ramp(145, 99, 40);
-  for (let i = 0; i < s0.length; i++) if (s0[i].hex !== sF[i].hex) FAIL("chroma-floor", `saturated stop ${s0[i].stop}: floor changed a vibrant ramp (${s0[i].hex}->${sF[i].hex})`);
+  let satExceptSeen = new Set();
+  for (let i = 0; i < s0.length; i++) {
+    if (s0[i].hex !== sF[i].hex) {
+      if (SAT_FLOOR_EXCEPT.has(s0[i].stop)) { satExceptSeen.add(s0[i].stop); continue; }
+      FAIL("chroma-floor", `saturated stop ${s0[i].stop}: floor changed a vibrant ramp (${s0[i].hex}->${sF[i].hex})`);
+    }
+  }
+  if (satExceptSeen.size !== SAT_FLOOR_EXCEPT.size) FAIL("chroma-floor", `saturated exception list stale: named ${[...SAT_FLOOR_EXCEPT].join(",")}, actually diverging ${[...satExceptSeen].join(",")}`);
 }
 
 // ── hpg-tonal-vibrancy (perceptual `vibrancy` pulls the center toward the hue's cusp) ───────
@@ -552,8 +575,20 @@ for (const mode of ["perceptual", "peak"]) {
 //     ALREADY carved (#648, lift != 0) and picks up more moved cells here too, not a new entry.
 //   Carved total after #681 U3 pass 3: 25 of 32 (10 even + 15 perceptual). The remaining 7 — Neutral,
 //   Primary, Tertiary, Info, Data 2, Data 3 (even) and Secondary (perceptual) — are byte-for-byte what
-//   83756bb emitted, and that is what each regeneration of this file was verified against. Do NOT
-//   regenerate it to make an unexplained red go green. ─────────────────────────────────────────────
+//   83756bb emitted, and that is what each regeneration of this file was verified against.
+//   #681 U3 pass 7 CARVE-OUT (all 16 even, none newly carved on the perceptual side): step 1 closes the
+//   even path's own C6 median/p90 misses (100/300/900) by reading a MAPPED damp/dampCurve for toneMode
+//   "even" inside chromaEnvelope (EVEN_DAMP_FACTOR, exported) — dampCurve alone cannot close them (a
+//   synthetic sweep down to dampCurve x0.001 at fixed damp left stop 100/900 unmoved; see the
+//   chromaEnvelope comment and .sdlc/handoffs/pif-u3-retune.md). This is a formula-wide change to the
+//   even path's damping, not a localized cusp fix, so it moves nearly every non-anchor, non-50/950 stop
+//   of EVERY even ramp — the remaining 6 un-carved even defaults (Neutral, Primary, Tertiary, Info,
+//   Data 2, Data 3) join the other 10 already carved, so even mode is now 16 of 16 carved. Perceptual is
+//   untouched (0 hex diffs over the full corpus + default kit, u3fix/hexdiff-perceptual-peak.mjs), so
+//   Secondary stays the one perceptual ramp still pre-0.2.0-identical.
+//   Carved total after #681 U3 pass 7: 31 of 32 (16 even + 15 perceptual). Only perceptual/Secondary
+//   remains byte-for-byte what 83756bb emitted. Do NOT regenerate this file to make an unexplained red
+//   go green — every regeneration must be preceded by a citation like this one. ────────────────────
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};

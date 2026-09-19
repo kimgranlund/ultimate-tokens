@@ -231,12 +231,28 @@ const ANCHOR_STOP = 500;
 // instead of 1 at the anchor when the raw formula's own floor clips there) are in
 // .sdlc/questions/pif-u3.md Q1 (superseded first read kept for the record) and the U3 review this
 // revision answers.
+// EVEN_DAMP_FACTOR (#681 U3 pass 7 step 1): the even path's own C6 median/p90 misses (100/300/900)
+// cannot be closed by remapping dampCurve alone. uG = |sd|^dampCurve rises toward 1 as dampCurve falls
+// toward 0 for ANY off-anchor stop (x^e -> 1 as e -> 0+, for x in (0,1)), so at dampCurve -> 0 the
+// envelope's floor is 1-damp/100 everywhere off the anchor, set by damp alone; a synthetic K sweep down
+// to dampCurve x 0.001 (u3fix/retune-even-only.mjs) confirms stop 100/900 sit exactly at that
+// damp-only floor and do not move for ANY dampCurve, no matter how extreme. Reaching the target median/
+// p90 therefore needs `damp` to move too, not only `dampCurve`. To keep BOTH sliders live in every mode
+// (the F4 principle — no dead controls, no new control), the even path compresses damp's headroom
+// (100-damp) and scales dampCurve by the SAME factor, both DERIVED from the shared sliders rather than
+// a hardcoded absolute: a user who raises damp or lowers dampCurve still visibly changes the even ramp.
+// perceptual/peak are untouched — this only fires when controls.toneMode === "even" (paletteStops's own
+// dispatch guarantees that string exactly, never a default fallthrough — see paletteStops above).
+export const EVEN_DAMP_FACTOR = 0.25;
 export function chromaEnvelope(stop, anchorStop, lift, controls) {
   const sd = (liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450; // position vs the anchor's OWN lifted reading (R2)
-  const uG = Math.abs(sd) ** (controls.dampCurve ?? 1.5);
+  const isEven = controls.toneMode === "even";
+  const damp = isEven ? 100 - (100 - controls.damp) * EVEN_DAMP_FACTOR : controls.damp;
+  const dampCurve = (isEven ? EVEN_DAMP_FACTOR : 1) * (controls.dampCurve ?? 1.5);
+  const uG = Math.abs(sd) ** dampCurve;
   const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(sd));
   const shoulder = ((controls.dampAmp ?? 0) / 100) * 4 * uG * (1 - uG); // 0 at sd=0 AND |sd|=1 — shoulders only
-  return Math.max(0, 1 + shoulder - (controls.damp / 100) * sideW * uG);
+  return Math.max(0, 1 + shoulder - (damp / 100) * sideW * uG);
 }
 
 // shape — remap normalized position p∈[0,1] (0=light end, 1=dark end) to q∈[0,1].
