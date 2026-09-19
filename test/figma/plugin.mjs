@@ -576,6 +576,46 @@ if (applyFloatPlans) {
   FAIL("floatapply", "code.js exported no applyFloatPlans");
 }
 
+// ── floatlibrary (#687): "published library" mode covers applyFloatPlans' OWN breakpoint-mode prune
+//    too, mirroring applyFontPrimitivesModes' Type Primitives mode guard and applyBundle's Color Roles
+//    theme-mode guard (#673): #629's ruling Q2 already settled that a mode prune must be guarded like
+//    a variable prune, because a consumer file pinned to a mode loses its binding exactly as it would
+//    lose a removed variable. This was the one remaining gap. libraryMode:true must keep a dropped
+//    breakpoint mode standing and report it in the collection's libraryReports staleModes; the SAME
+//    drop with the flag off must still remove it (the classic prune, unchanged).
+if (applyFloatPlans) {
+  try {
+    const synthVarL = (name, value) => ({ name, type: "FLOAT", values: [{ mode: "Base", value }] });
+    const twoModePlan = () => [{ collection: "Synth", modes: ["Base", "Mobile"], defaultMode: "Base", addModes: ["Mobile"], variables: [synthVarL("a", 1)] }];
+    const oneModePlan = () => [{ collection: "Synth", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVarL("a", 1)] }];
+
+    // ── LEG 1: libraryMode:true keeps the dropped 'Mobile' mode standing and reports it. ──
+    const FL = mockFigma();
+    const al = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FL.figma, "<html>", undefined).applyFloatPlans;
+    await al(twoModePlan());
+    const synthL = FL.collections.find((c) => c.name === "Synth");
+    if (!synthL || synthL.modes.map((m) => m.name).join() !== "Base,Mobile") FAIL("floatlibrary", "fixture: expected Base,Mobile modes before the library-mode apply");
+    else {
+      const resLib = await al(oneModePlan(), { libraryMode: true });
+      if (!synthL.modes.some((m) => m.name === "Mobile")) FAIL("floatlibrary", "libraryMode:true removed the stale 'Mobile' breakpoint mode: a published collection's mode must survive, every consumer file pinned it");
+      const repLib = (resLib.libraryReports || []).find((r) => r.collection === "Synth");
+      if (!repLib || !(repLib.staleModes || []).includes("Mobile")) FAIL("floatlibrary", "libraryMode:true did not report 'Mobile' in staleModes: a kept mode must be disclosed, or it reads as a prune that silently failed");
+    }
+
+    // ── LEG 2: the SAME drop with the flag off still removes the mode, unchanged. ──
+    const FL2 = mockFigma();
+    const al2 = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FL2.figma, "<html>", undefined).applyFloatPlans;
+    await al2(twoModePlan());
+    const synthL2 = FL2.collections.find((c) => c.name === "Synth");
+    const resCla = await al2(oneModePlan(), { libraryMode: false });
+    if (synthL2 && synthL2.modes.some((m) => m.name === "Mobile")) FAIL("floatlibrary", "libraryMode:false left the stale 'Mobile' breakpoint mode standing: the classic mode prune must be unchanged");
+    const repCla = (resCla.libraryReports || []).find((r) => r.collection === "Synth");
+    if (repCla && (repCla.staleModes || []).length) FAIL("floatlibrary", `libraryMode:false reported ${repCla.staleModes.length} staleModes: the classic path keeps none`);
+  } catch (e) { FAIL("floatlibrary", "applyFloatPlans (library-mode breakpoint leg) threw: " + e.message); }
+} else {
+  FAIL("floatlibrary", "code.js exported no applyFloatPlans");
+}
+
 // ── TKT-0012: the id-preserving RENAME capability — the migration channel every renaming ticket uses.
 //    Proven on the mock: (a) a plan.renames var rename keeps the SAME variable id (no prune+recreate),
 //    (b) a plan.renameFrom collection rename adopts the registry-tracked collection by id, renames it
@@ -1185,7 +1225,7 @@ if (sweepCandidates) {
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────
-for (const g of ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "renamecap", "colorprov", "colorlibrary", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep"]) {
+for (const g of ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

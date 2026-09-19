@@ -10,6 +10,15 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ### 2026-09-18
 
+#### Fixed
+- **"Published library" mode now covers `applyFloatPlans`' own breakpoint-mode prune too** (#687). The
+  last unguarded prune on the apply path: dropping a Type or Geometry breakpoint from a published
+  library re-apply removed its mode from the file even with the box ticked, breaking every consumer
+  file pinned to it. The mode guard reads the same resolved library-mode decision the function's
+  variable prune already computes, so the two halves of one apply can never disagree on an old bundle;
+  a kept mode is reported as `staleModes`, the same field name the color and Type Primitives mode
+  guards already use, and the apply notice logs it the same way. Unticked, the prune is unchanged.
+
 #### Changed
 - **"Published library" mode now covers the color-variable prune too** (#673). The toggle #629 added
   to the apply gate guarded the type, geometry, style and font-mode prunes, but `applyBundle`'s color
