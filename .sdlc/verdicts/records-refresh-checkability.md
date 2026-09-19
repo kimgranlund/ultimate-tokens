@@ -23,3 +23,26 @@ Method: I ran 11 of the 14 stated commands verbatim at `8919292` and compared th
 | U1-9 | 🟢 | the eleven-part staleness-note command. Printed `0 0 0 0` for the note and rule counts, `0`, `0`, `1` for the quote counts, `ancestor 1`, `10`, `0`, `0`. Expected after the unit is `1 1 1 1`, `1`, `1`, `1`, `ancestor 1`, `10`, `0`, `0`. Checked the two awk traps: neither `architecture.md` nor `debt.md` has a `## ` heading before its insertion point (first heading at line 16 in both), so the `/^## /{exit}` scan does reach the note. Note: the last two values count deleted lines only, so a stray added line elsewhere in either file would slip through; the reviewer's read of the diff is what covers that. The phrase "quotes the verdict faithfully" is carried by the two number greps against `.sdlc/verdicts/survey.md`, which do match my own C15 line; the rest of that clause is a reading judgment, which is what the l1 reviewer and verifier are for |
 
 Two notes for the Orchestrator, neither blocking. U1-1's expected `stale total: 0` also requires the adapter's three time ranges to equal the rounded minimum and maximum of the new baseline timings, so step 1's quiet-slot rule is load bearing: an inflated run does not just look odd, it sets the adapter ranges. And the plan's own head line is stale by two commits, which is the exact failure mode the plan exists to fix.
+
+## U2 · 🟢 mobilize
+
+Reviewed by sdlc-verifier on 2026-09-18 on `plan/records-refresh` @ `2c82ff2` (amendment for U2 under owner rulings Q7 and Q8). Scope is U2-1 to U2-8 only; U1 and P1 to P5 stand as graded above.
+All 8 criteria are 🟢 checkable: 🟢 8 · 🔴 0. Nothing goes back to the planner.
+
+Method: I ran all 8 stated commands verbatim at `2c82ff2`, with table-escaped pipes removed. All 8 reproduced the planner's cfd0ff4 pre-state exactly. Then I planted the post-state shapes in a throwaway `--shared` clone, which showed that every command can print its failing value and also the expected value.
+
+| # | Checkable | The check I would run, and what it printed |
+|---|---|---|
+| U2-1 | 🟢 | the three-part section command. At `2c82ff2`: `0`, nothing, `5`. In the clone, after I appended a `## 8. Doc drift` it printed `1`. After I also appended `## 9. Notes`, it printed `NOT LAST`. `6` is the ceiling while §1 keeps its name, and the plan records that substitution |
+| U2-2 | 🟢 | the five-line sha command. At `2c82ff2`: `841e185`, `7faf3aa`, then three empty lines. The baseline `ref` is still `7faf3aa` because U1 is not merged. So line 2 turns green only after U1 lands, which matches U2 step 1's gate. Lines 3 to 5 extract the sha from fixed phrases, so a wrong sha prints a different line |
+| U2-3 | 🟢 | I extracted the `sh doc-drift` fence (exactly one in the plan, 27 lines) and ran it. At `2c82ff2`: `rows 0 drifted 0 holds 0 undetermined 0 bad 0`, `exit 1`, seeds `0`. I planted six rows in the clone: a quote one line off (`QUOTE DD1 ... CLAUDE.md:22`), an untracked `src/engine/nope.mjs:3` (`PATH DD3`), a changed character (`QUOTE DD4`) and a blank state (`STATE DD5`). The correct row, `README.md:11` "derives a **53-role semantic layer**", printed nothing. Totals were `bad 4`, `exit 1`. My plant differs from the planner's six rows, so its counts differ; each failure class fired as described |
+| U2-4 | 🟢 | the fence-vs-file `diff`. At `2c82ff2`, `diff` errors on the missing file. In the clone, the extracted copy printed `same`. After I changed one token (`bad = 0` to `bad = 1`) it printed a hunk. The awk pattern does not collide with U1-2's bare `sh` fence (one of each) |
+| U2-5 | 🟢 | the five-part note, deletions and pointer command. At `2c82ff2`: `0 0 0 0 0`. Values 1, 2 and 5 are presence counts and move on the unit. Values 3 and 4 are zero-deletion guards that read `0` either way, which is their job |
+| U2-6 | 🟢 | the three-part handoff command. At `2c82ff2` the file is absent: `0`, `0`, grep warns. I planted 18 K rows with K7's last cell blank and one `measured at 841e185` line: `18`, `1`, `1` |
+| U2-7 | 🟢 | the five-part pass 5 command. At `2c82ff2`: `0 0 0 0 0`. I planted pass 5 with 18 K rows, K9's emoji replaced and K3's control cell blanked: `1`, `18`, `1`, `1`, `1`. Each defect moved its own line |
+| U2-8 | 🟢 | C31's block with the recorded substitutions. At `2c82ff2`: `5`, `18 18`, `0`, `1`, `17 18`, the planner's figures. Line 3 is scoped to pass 5, so it is `0` now and must reach `18`. The mutation, moved to the K1 row, bites (`17`) |
+
+Three notes, none blocking.
+- U2-3's seed count greps the whole §8 block. A seed phrase that appears only in a code or state cell would count, so whether each seed has its own row is a reading check for the U2 verifier.
+- U2-6 and U2-7 expect exactly `1` for the `measured at` or `at <sha>` line. A handoff or pass 5 that repeats the sha on a second line reads `2`. Builder and verifier should write the sha phrase once.
+- U2-2 depends on U1's merge. A U2 cut before U1 fails line 2, not only step 1.
