@@ -4,9 +4,9 @@ plan: preset-intent-fidelity
 unit: U3
 branch: unit/pif-u3-envelope
 base: 690b0a1a395cee0bad122443c3441d5f35412030
-head: 8160d33c79da95603a460ec10492c7775428dcd4
+head: bbf3ff8f923cc38e141fbb84652fcbb59f6497ca
 written: 2026-09-19
-pass: 5
+pass: 6
 ---
 
 # U3 handoff — anchor-centred chroma envelope, all modes, grade l4 (pass 3, root-cause fix)
@@ -232,6 +232,34 @@ Full histogram, both examples' per-stop tables, and options for the owner are in
 retuning damp/dampCurve now risks needing to redo its own C7/C8 sweep once perceptual's shape is
 decided.
 
+## Pass 6: perceptual's cusp-run gate shipped (step 1); the retune reverted twice (step 2, blocked)
+
+Owner ruling (f) on Q7 pass-5 (conductor lane-A-routing-6.md, 2026-09-19): perceptual ships exactly as
+today (no ramp change), gated instead with a one-contiguous-run, <=189.31% clause; the median/p90
+retune goes ahead after.
+
+**Step 1, done, shipped at `f45f9b2`.** `test/engine/tonal.mjs`'s (C6 iii-b) gates a generated
+(dampAmp 0) perceptual palette to at most one contiguous above-anchor run, every stop in it at or under
+189.31% (the fresh cusp-stop bound, confirmed twice — Q7 pass-5 and pass-6 addenda). Measured against
+the CURRENT, unchanged engine: 0 violations (the natural cusp shoulder is always already one contiguous
+run; smooth unimodal curves don't produce disjoint humps), confirming ruling (f)'s design matches the
+data shape ruling (e)'s one-stop design fought. `src/engine/tonal.js` untouched, byte-identical to
+`d5c09c3`. `scripts/report-preset-fidelity.mjs --envelope` now reports each mode under its own ruled
+clause with Adia's own instances named separately (both readings a and b, pass 6's second commit).
+
+**Step 2, blocked, reverted twice.** Two damp/dampCurve retune candidates (`92/0.5` and `98/0.65`, both
+matching `VIVID_MIDS`/`DEFAULT_CONTROLS`/`DOMAINS` and both closing the FULL `--envelope` median/p90
+table with real margin in a fast harness) each produced a genuine, DIFFERENT C6(i) CIELAB-L* uptick
+when checked against the real corpus (`test/engine/tonal.mjs`'s own exit code): the default kit's
+Neutral palette in perceptual mode (skew -20), then a travel-hued palette in peak mode (lift 22). Lowering
+`dampCurve` well below 1.5 is what's needed to close `even|300`'s p90 (stuck at exactly 100%, the even
+path's own anchor cap, regardless of `damp`) — the same departure reintroduces the #668-class "damping
+travelling to where the lightness is not" mechanism this whole unit otherwise fixed. Per "if a second
+workaround is needed, stop," not attempted a third time; reverted byte-for-byte to `f45f9b2` (step 1's
+head). `npm test` 47/47, tree clean, citations STALE 0, `gate:corpus-contrast` green at the reverted
+head. Full diagnosis, both witnesses, and 3 options for the owner in Q7's pass-6 addendum.
+`.sdlc/handoffs/pif-u3-retune.md` is NOT written — step 2 did not land.
+
 ## Risks for U2 / U4 (unchanged from pass 1, plus one addition)
 
 - **U2:** the near-white duplicate-hex class this pass closed to 0 and the peak-mode OKHSL/CAM16 cusp
@@ -273,16 +301,16 @@ for the record), Q3 (RESOLVED — the "21 baseline duplicates" story was a proxy
 0/0 before/after), Q4 (Panda/shadcn spec literal drift, needs a docs-owning seat, unchanged), Q5 (2
 docs/ exception paths, unchanged in shape), Q6 (RESOLVED — owner accepted the C8 re-pin conditioned on
 a re-measure after U1 and U6 land, carried as an OBLIGATION in this handoff's Risks section above, now
-4 cells after pass 3's re-measurement), Q7 (STILL OPEN, pass-5 addendum added — even AND peak now both
-close "0 above 100%" to exactly the named Adia carve-out, each gated with its own negative control,
-per the owner's ruling that peak is not in tension with the cap the way perceptual is. Perceptual keeps
-#55's cusp-pull richness untouched, per the same ruling; its own ruled-in bounded one-stop cusp
-exemption was measured FIRST as instructed and does not survive contact with the corpus — 76% of
-violating perceptual palettes have 2-5 adjacent above-anchor stops around the cusp shoulder, not one, so
-capping all but one would create a lone chroma spike rather than a graceful exemption. Per the brief's
-own stop condition for this exact scenario, NOT built; measured and reported instead, with a worked
-worst-case example and 3 options for the owner. A SEPARATE, pre-existing set of median/p90 misses —
-proven via a bf2aaf6 baseline comparison to predate this unit entirely, and NOT lift-driven — also stays
-open; step 3 (the ruled-in retune) has not started, held pending the owner's read of step 2's finding so
-its own regression sweep isn't done twice. Owner ruling needed on perceptual's exemption shape and the
-median/p90 retune before C6 can be called fully met).
+4 cells after pass 3's re-measurement), Q7 (STILL OPEN, pass-6 addendum added — even AND peak both close
+"0 above 100%" to exactly the named Adia carve-out (peak since pass 5), each gated with its own negative
+control. Perceptual keeps #55's cusp-pull richness fully untouched, per the owner's ruling (f): a
+one-contiguous-cusp-run, <=189.31%-per-stop clause replaces "0 above 100%" for that mode only, gated and
+measuring 0 violations against the shipped (unchanged) engine — ruling (f)'s design matches the data
+shape (the natural cusp is always one contiguous run) where ruling (e)'s one-stop design did not. The
+median/p90 retune (step 2/3) is BLOCKED, not closed: two different damp/dampCurve candidates that both
+cleared the full numeric table each produced a genuine, different C6(i) CIELAB-L* uptick against the
+real corpus — the #668-class mechanism this unit otherwise fixed, reintroduced by lowering dampCurve far
+enough to close even|300's stuck-at-100% p90 ceiling. Both reverted byte-for-byte per the brief's own
+stop condition; not attempted a third time. Owner ruling needed on how (or whether) to close the
+median/p90 gap without reopening #668 before C6's numeric table can be called fully met; the ramp-shape
+and "0 above 100%"/cusp-run clauses are unconditionally shipped and correct as of this head).
