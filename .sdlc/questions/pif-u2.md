@@ -188,7 +188,10 @@ caught before it compounds into U3/U4/U6.
 
 ## Finding 5: `hpg-role-contrast` floor re-measurement + curated thin-margin cells, before/after step 1+1b
 
-**Status: recorded for the owner, not a blocking question - AA 4.5 holds everywhere in both measurements.**
+**Status: RULED (owner, via team-lead, Q-B, 2026-09-18) - AA 4.5 holds everywhere in both measurements.**
+The 41 lowered floors below (R7's re-measurement, unchanged this pass) are pinned by name as "pending
+U4" so nothing widens silently before the owner rules on the integrated numbers - `test/engine/
+semantic.mjs`'s FLOORS table now carries the same old/new note inline on each of the 41 rows.
 
 Per the repair-pass brief's Finding 5: re-measure after step 1 (chromaEnvelope routing) and step 1b
 (F4, toneAt composition) land, record before/after, list any floor that dropped below its PRE-#681
@@ -492,9 +495,16 @@ The dampAmp-0 conditionality table this question used to carry is moot - the fix
 of `dampAmp`, so there is nothing left for U3's own `dampAmp` fix to be a precondition for on this
 specific residual.
 
-## Q-U2-7: near-grey notch residual after the R2 smoothstep easing fix (review pass 2, R2)
+## Q-U2-7: near-grey notch residual after the R2 smoothstep easing fix (review pass 2, R2) - RULED Q-C
 
-**Status: recorded for the owner, not blocking - the notch definition itself was NOT loosened.**
+**Status: RULED (owner, via team-lead, Q-C, 2026-09-18).** The gate is now the 70%-ratio definition AND
+an absolute dip of at least 3 CAM16 C versus both neighbours (`notchOk` in `test/engine/anchor.mjs`).
+Under that variant the residual drops from 459 to 76 (perceptual 15, peak 9, even 52) - named by hand
+in `NOTCH_ALLOW`, labeled "pending U4" in the gate's own output line so nothing widens silently before
+the owner rules on the integrated numbers. The negative control (a synthetic near-grey pivot between
+two chromatic neighbours, and a smoothly-declining no-dip triple) is unchanged and still discriminates
+under the new AND predicate (verified: the synthetic notched triple clears both the ratio and the
+abs-dip clause; the flat triple fails the ratio clause alone, so the AND result is unaffected).
 
 R2 added a rendered-path notch gate to `test/engine/anchor.mjs` using review 1's own definition (stop
 500's CAM16 chroma under 70% of BOTH its 450 and 550 neighbours) and eased `anchorChromaBasis`'s blend
@@ -511,9 +521,19 @@ ramp; `chromaEnvelope` itself stays verbatim).
 | **total** | **1,811** | **459** |
 
 Default kit: 0 notched cells in every mode, both before and after. The smoothstep fix closed
-roughly three quarters of the population (1,811 -> 459) but did not reach 0. The full by-name list is
-in `test/engine/anchor.mjs`'s `NOTCH_ALLOW` constant, labeled "PENDING OWNER RULING" in the gate's own
-output line.
+roughly three quarters of the population (1,811 -> 459) but did not reach 0.
+
+**Q-C variant, ruled (ratio AND abs dip >= 3 CAM16 C both sides):**
+
+| mode | ratio-only (459) | ratio AND abs dip >=3 C (76, ruled) |
+|---|---|---|
+| perceptual | 117 | 15 |
+| peak | 106 | 9 |
+| even | 236 | 52 |
+| **total** | **459** | **76** |
+
+The full by-name list under the ruled variant is in `test/engine/anchor.mjs`'s `NOTCH_ALLOW` constant,
+labeled "pending U4" in the gate's own output line.
 
 **Residual cause, unchanged in kind from review 2's own finding:** every remaining entry is a
 near-grey (or very low-chroma) anchor inside a group whose resolved `rampChroma` target is well above
@@ -521,11 +541,15 @@ it. Easing the blend's own slope to zero at the pivot removes the LINEAR compone
 near-zero anchor chroma blending toward a chroma-100 group target over just one 450-liftStop-unit step
 still produces a small, real local dip relative to its immediate neighbours - the smoothstep's own
 curvature is not the limiting factor here, the ABSOLUTE gap between the anchor's chroma and the
-group's target is. Two worst examples, this head (perceptual mode):
-- travel "30 deg N * March * 16:00 * Wadi Rum, the Jebel Khazali wall in late afternoon" primary
-  `#1E1D1B`: CAM16 chroma 4.0 / 1.6 / 3.0 at stops 450/500/550.
-- film "Double Indemnity * 1944 * dir. Billy Wilder * the venetian-blind living room" primary
-  `#1B1B1D`: CAM16 chroma 6.1 / 2.6 / 4.6 at stops 450/500/550.
+group's target is. The abs-dip clause drops the marginal, imperceptible ratio-only cases (a 70%-under
+ratio on a chroma-2 pivot) while keeping the ones with a real, visible chroma drop - the two examples
+this section used to cite (Wadi Rum primary, Double Indemnity primary) are exactly that marginal
+category and are no longer in the 76 under the ruled variant. Two examples that ARE still in the 76,
+this head (even mode):
+- architecture "Charleston single house · antebellum vernacular · South Carolina" primary `#DDDBD7`:
+  CAM16 chroma 5.7 / 2.2 / 5.7 at stops 450/500/550.
+- architecture "Katsura Imperial Villa · 17th c · Kyoto" primary `#282322`: CAM16 chroma 6.9 / 2.9 / 6.8
+  at stops 450/500/550.
 
 Per the brief's own instruction ("do not loosen the definition yourself"), the 70%-of-both-neighbours
 bar is unchanged from review 1's own wording. Closing the remaining 459 would need either a materially
