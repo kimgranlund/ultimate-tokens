@@ -3614,15 +3614,13 @@ flushRaf();
 // ── (rst) Reset re-attaches a detached anchored palette (ticket #681, U2's C12; Q6) ─────────────
 // Opens a REAL curated preset (openConfigAsSet — the same entry point the gallery tile's onclick
 // uses, per the (hh) group's own comment above; that group already covers the tile's OWN wiring, so
-// a direct call here is enough) rather than the default kit: a curated preset's sampled palettes'
-// hue/chroma are exactly `seedFromKeyColor`-derivable from their own anchor (scripts/gen-
-// categories.mjs's `palette()` uses the SAME formula), so Reset's round trip is byte-exact. The
-// default kit's 16 hand-tuned palettes are NOT a safe target for this — several of them (Primary
-// included) carry a deliberately hand-picked chroma that is NOT what a fresh CAM16 measurement of
-// their own anchor hex would recompute, by design (the anchor pins the identity color; the family's
-// overall chroma is an independent aesthetic choice), so Reset's re-derivation would legitimately
-// NOT round-trip for those — that is correct behavior, not a bug, but it makes them a bad fixture
-// for asserting an EXACT pre/post match.
+// a direct call here is enough) rather than the default kit, purely to stay independent of (hh)'s own
+// state — NOT because the default kit is unsafe for this assertion (R8, review pass 2, 2026-09-18: the
+// OLD reasoning here, that the default kit's hand-tuned chroma would not round-trip a RE-DERIVATION,
+// is stale — Finding 3/F7's fix made Reset restore an EXACT pre-detach SNAPSHOT, never re-derive, so it
+// round-trips ANY palette's hue/chroma/lift byte-exactly, hand-tuned or not; see resetAnchor's own
+// comment in src/ui/sections/color.js). (rst-corpus) below now exercises the default kit directly
+// (R9), so this single-palette test's own fixture choice does not need to change to prove that.
 {
   const { projectView: pvRST, seedFromKeyColor, hexToOklch } = await import("../../src/ui/model.mjs");
   const rstPreset = TP[1]; // a different preset than (hh)'s TP[0], independent of that group's state
@@ -3732,17 +3730,31 @@ flushRaf();
   }
 }
 
-// (rst-corpus) extend C12's coverage from one sample palette to the FULL anchored corpus across four
-// already-loaded categories (re-diagnosis Finding 3 / review F7) — programmatic, not via real slider
-// drags (over a thousand real DOM interactions would blow the suite's time budget): for every
-// anchored palette in travel/literature/film/brands, detach via the REAL `detachSnapshot` method at a
-// DETUNED pre-detach hue/chroma/lift (never the anchor's own seedFromKeyColor-derivable values, so a
-// passing round trip can only be the snapshot restoring exactly, never re-derivation coincidentally
-// matching), call the REAL `resetAnchor`, and assert exact restoration. Runs against the live `app`
-// instance's own methods, swapping only `app.doc.palettes` per palette under test.
+// (rst-corpus) extend C12's coverage from one sample palette to the FULL anchored corpus across ALL
+// EIGHT categories plus the default kit (R9, review pass 2, 2026-09-18 — the prior pass covered 4 of 8
+// categories and checked fields only, never a rendered ramp; review 2 flagged both gaps) —
+// programmatic, not via real slider drags (thousands of real DOM interactions would blow the suite's
+// time budget): for every anchored palette, detach via the REAL `detachSnapshot` method at a DETUNED
+// pre-detach hue/chroma/lift (never the anchor's own seedFromKeyColor-derivable values, so a passing
+// round trip can only be the snapshot restoring exactly, never re-derivation coincidentally matching),
+// call the REAL `resetAnchor`, and assert exact restoration — both at the FIELD level (anchor/hue/
+// chroma/lift) and, per R9, by comparing the FULL `projectView` 25-stop ramp rendered from the
+// restored palette against a reference ramp captured from the SAME palette before it was ever
+// detuned/detached (same doc-level controls both times — only `app.doc.palettes` is swapped, matching
+// the rest of this block's own pattern). A field match with a ramp mismatch would mean some other
+// state (a cache, a second copy) diverged from the fields Reset itself writes — the ramp comparison is
+// a strictly stronger claim than the field-only check the prior pass shipped.
 {
   const corpusPresets = [...TPm.PRESETS, ...LITm, ...FILMm, ...BRANDSm];
-  let corpusChecked = 0, corpusFails = 0;
+  for (const slug of ["architecture", "cuisine", "music", "nature"]) {
+    const { PRESETS } = await LS(slug);
+    corpusPresets.push(...PRESETS);
+  }
+  const { defaultDocument: defaultDocumentRSTC, projectView: pvRSTC } = await import("../../src/ui/model.mjs");
+  const { hydrate: hydrateRSTC } = await import("../../src/ui/persist.js");
+  const dkDoc = defaultDocumentRSTC();
+  corpusPresets.push({ name: "default kit", palettes: dkDoc.palettes, ...dkDoc });
+  let corpusChecked = 0, corpusFails = 0, rampChecked = 0, rampFails = 0;
   for (const preset of corpusPresets) {
     for (const pal of preset.palettes) {
       if (typeof pal.anchor !== "string") continue;
@@ -3750,6 +3762,16 @@ flushRaf();
       const detunedChroma = Math.max(0, Math.min(100, pal.chroma - 13));
       const detunedLift = -17;
       const pBeforeDetach = { ...pal, hue: detunedHue, chroma: detunedChroma, lift: detunedLift };
+      // Reference ramp: rendered from `pBeforeDetach` itself, the EXACT state `detachSnapshot` stamps
+      // and `resetAnchor` must restore -- NOT from the original, undetuned `pal` (hue does not even
+      // reach the render for an anchored palette, since the anchored branches read the ANCHOR's own
+      // hue, not `palette.hue` -- but chroma and lift do, via `groupTarget`/`chromaEnvelope`, so a
+      // reference rendered from `pal` would legitimately differ from the correctly-restored ramp,
+      // which is what a first pass at this comparison got wrong). Hydrated first (raw category
+      // PRESETS entries lack some resolved default fields projectView expects, e.g. dampCurve/
+      // relChroma/vibrancy; `hydrate` is the SAME entry point openConfigAsSet uses, via
+      // hydrateStoredDoc, and anchor.mjs's own corpus sweep uses directly).
+      const refRamp = pvRSTC(hydrateRSTC({ ...preset, palettes: [pBeforeDetach] })).palettes[0].fullRamp.map((s) => s.hex);
       app.doc.palettes = [pBeforeDetach];
       app.detachSnapshot(app.doc, 0, pBeforeDetach);
       delete app.doc.palettes[0].anchor;
@@ -3760,10 +3782,17 @@ flushRaf();
         corpusFails++;
         if (corpusFails <= 3) ok(false, `(rst-corpus) ${preset.name} ${pal.name}: Reset did not restore the exact pre-detach snapshot (got anchor=${after.anchor} hue=${after.hue} chroma=${after.chroma} lift=${after.lift}, want anchor=${pal.anchor} hue=${detunedHue} chroma=${detunedChroma} lift=${detunedLift})`);
       }
+      const afterRamp = pvRSTC(hydrateRSTC({ ...preset, palettes: [after] })).palettes[0].fullRamp.map((s) => s.hex);
+      rampChecked++;
+      if (JSON.stringify(afterRamp) !== JSON.stringify(refRamp)) {
+        rampFails++;
+        if (rampFails <= 3) ok(false, `(rst-corpus-ramp) ${preset.name} ${pal.name}: the restored palette's rendered ramp does not deep-equal the reference ramp captured before detach/detune`);
+      }
     }
   }
-  ok(corpusChecked > 1000, `(rst-corpus-setup) exercised Reset over a substantial slice of the anchored corpus (${corpusChecked} palettes, want > 1000)`);
-  ok(corpusFails === 0, `(rst-corpus) ${corpusFails} of ${corpusChecked} anchored palettes failed the exact-snapshot round trip`);
+  ok(corpusChecked > 3000, `(rst-corpus-setup) exercised Reset over the FULL anchored corpus, all 8 categories plus the default kit (${corpusChecked} palettes, want > 3000)`);
+  ok(corpusFails === 0, `(rst-corpus) ${corpusFails} of ${corpusChecked} anchored palettes failed the exact-snapshot field round trip`);
+  ok(rampFails === 0, `(rst-corpus-ramp) ${rampFails} of ${rampChecked} anchored palettes failed the full projectView ramp round trip`);
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────

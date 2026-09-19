@@ -15540,16 +15540,19 @@ class ColorSectionImpl {
       // per-group rows on the Global tab). No "Intensity" slider exists any more, in any group.
       this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].chroma = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
       // Reset — re-attach a detached palette (Q6, U2's C12): restores `anchor = sourceAnchor` and
-      // re-derives hue/chroma/lift from it (resetAnchor below). Visible ONLY when there is something
-      // to restore (`sourceAnchor` present) and the palette is actually detached (`anchor` absent) —
-      // an already-anchored palette has nothing to reset, and one with no `sourceAnchor` at all (never
-      // generator-written, e.g. a hand-built palette) has nothing to restore TO.
+      // restores hue/chroma/lift EXACTLY from the pre-detach snapshot (resetAnchor below, R8/R9 review
+      // pass 2 - the tooltip used to say "re-derive", which was true before the Finding 3/F7 fix landed
+      // and is stale now: resetAnchor restores a snapshot, it only re-derives as a last-resort fallback
+      // when no snapshot exists at all). Visible ONLY when there is something to restore (`sourceAnchor`
+      // present) and the palette is actually detached (`anchor` absent) - an already-anchored palette
+      // has nothing to reset, and one with no `sourceAnchor` at all (never generator-written, e.g. a
+      // hand-built palette) has nothing to restore TO.
       p.sourceAnchor && !p.anchor
         ? h(
             "div",
             { class: "field" },
             btn([icon("arrow-counter-clockwise"), "Reset to source color"], {
-              title: "Restore the anchor this palette was generated from, and re-derive hue/chroma/lift from it",
+              title: "Restore the anchor this palette was generated from, and its hue/chroma/lift snapshot from just before it was detached",
               onclick: () => this.resetAnchor(i),
             }),
           )
