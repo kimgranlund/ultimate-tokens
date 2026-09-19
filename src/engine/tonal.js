@@ -103,15 +103,15 @@ export function effHue(hue, hueSpace, chromaFrac = 1) {
   return hueSpace === "oklch" ? oklchToCam16Hue(hue, chromaFrac) : hue;
 }
 
-// hueAnchorFrac — the chroma fraction the ramp's VIVID CENTER stop (500) actually reaches: the palette's
-// own nominal chroma, capped at the gamut peak. Anchoring effHue here — not at the raw un-anchored hue —
+// hueAnchorFrac  -  the chroma fraction the ramp's VIVID CENTER stop (500) actually reaches: the palette's
+// own nominal chroma, capped at the gamut peak. Anchoring effHue here  -  not at the raw un-anchored hue  - 
 // puts the OKLCH-hue calibration on the saturated swatches the user reads, so they land on the SET hue.
 // REQ-005 (0.3.0): `palette.chroma` is the resolved value paletteStops was called with — the absolute
 // group target on the group-resolution callers, the palette's own chroma on a direct engine call — so
 // the anchor always follows the SAME chroma the ramp itself is built from; no separate factor needed.
 //
 // No longer amplified by dampAmp (#681 U3, Q7): chromaEnvelope is exactly 1 at the anchor stop for EVERY
-// dampAmp value when lift is 0 (the anchor's own rendered chroma no longer moves with dampAmp — that
+// dampAmp value when lift is 0 (the anchor's own rendered chroma no longer moves with dampAmp  -  that
 // "mid-tone boost landing on the centre itself" was the 144%-of-source defect C6 exists to close), so the
 // chroma fraction the anchor ACTUALLY reaches is simply the nominal chroma, full stop. `controls` stays
 // in the signature for call-site compatibility.
@@ -170,9 +170,9 @@ function solveCam16Hue(targetOklchHue, chroma, tone) {
 // evenChroma — the even path's per-stop chroma from the gamut ceiling + a pre-computed intended target and
 // the chromaEnvelope value `env` at this stop: damp toward intended·env, floor toward chromaFloor% of the
 // gamut but NEVER past intended (an envelope floor: intended is exactly the anchor's own chroma, env=1
-// there, so the floor can never lift a stop past the anchor — #681 U3), clamp in-gamut. A high-chroma
+// there, so the floor can never lift a stop past the anchor  -  #681 U3), clamp in-gamut. A high-chroma
 // palette's `intended` is itself large relative to any stop's shrinking gamut ceiling, so
-// chromaFloor%·maxc stays well under `damped` there and the floor never binds — it only rescues the
+// chromaFloor%·maxc stays well under `damped` there and the floor never binds  -  it only rescues the
 // LOW-chroma ramps chromaFloor exists for. Factored so the per-stop map AND the stop-500 hue anchor share
 // ONE formula and can't drift (the oklch-hue-anchor gate reads the exported hue, so any drift here trips
 // it).
@@ -183,37 +183,37 @@ function evenChroma(maxc, intended, env, chromaFloor) {
 }
 
 // The ramp's centre stop, prime.DEFAULT's home. 500 for every palette today; U2 threads a palette's own
-// `anchor` stop through paletteStops/okhslStops's callers into chromaEnvelope's `anchorStop` parameter —
+// `anchor` stop through paletteStops/okhslStops's callers into chromaEnvelope's `anchorStop` parameter  - 
 // this module stays unaware of where that value comes from (U3 is built behind the parameter).
 const ANCHOR_STOP = 500;
 
-// chromaEnvelope — the single per-stop chroma multiplier shared by the "even" path (evenChroma) and the
+// chromaEnvelope  -  the single per-stop chroma multiplier shared by the "even" path (evenChroma) and the
 // OKHSL path (okhslStops): one function replaces what used to be two separately-typed copies of the same
-// damping formula ("m" in each, #647/#668). Position is read at the LIFTED stop (liftStop, #668) — never
+// damping formula ("m" in each, #647/#668). Position is read at the LIFTED stop (liftStop, #668)  -  never
 // the nominal stop, and never a separately re-derived "effective" stop (effStop, which additionally
-// composes skew's gamma): keying on effStop additionally moves every skew-only palette — including the
-// shipped Primary and Neutral, both skew -20 lift 0 — for a defect they do not have, moves the normative
+// composes skew's gamma): keying on effStop additionally moves every skew-only palette  -  including the
+// shipped Primary and Neutral, both skew -20 lift 0  -  for a defect they do not have, moves the normative
 // Panda/shadcn spec literals derived from them, and is measurably worse at its own job (4 of 10,080
-// synthetic grid cells still rise under it, worst +0.006 L* — 668-report.md §4).
+// synthetic grid cells still rise under it, worst +0.006 L*  -  668-report.md §4).
 //
-// sd is measured against `liftStop(anchorStop, lift)` — the anchor's OWN lifted reading, not the raw
-// numeric anchorStop (e.g. 500) — so env(anchorStop) === 1 EXACTLY for EVERY damp/dampCurve/dampAmp/
+// sd is measured against `liftStop(anchorStop, lift)`  -  the anchor's OWN lifted reading, not the raw
+// numeric anchorStop (e.g. 500)  -  so env(anchorStop) === 1 EXACTLY for EVERY damp/dampCurve/dampAmp/
 // dampBias/lift combination, unconditionally, not only at lift 0 (R2, revised from the first draft below).
 // sd is 0 at the anchor by construction, so uG is 0, the shoulder term vanishes (its own factor is uG),
-// and the edge-damp term vanishes too (its factor is uG) — no branch needed, and nothing here can
+// and the edge-damp term vanishes too (its factor is uG)  -  no branch needed, and nothing here can
 // accidentally lift the anchor off 1 the way the old dampAmp term did (Q7: the old form's mid-tone
 // "boost" landed ON the centre itself, the 144%-of-source defect C6 exists to close).
 //
 // R1 (reverted) measured sd against the RAW numeric anchorStop instead: exact only at lift 0, and NOT
 // at lift != 0 (liftStop(anchorStop, lift) != anchorStop whenever the lift bump's weight there isn't
-// zero, and it peaks — not vanishes — at the ramp's own centre). That form avoided all 10,080 cells of
+// zero, and it peaks  -  not vanishes  -  at the ramp's own centre). That form avoided all 10,080 cells of
 // a synthetic curve x skew x hue x vibrancy x mode grid probe (test/engine/tonal.mjs "skew-lift-okhsl"
 // (iii c), chroma pinned at 95) rising, at the cost of the inexact anchor under lift AND, measured
 // against the corpus the product actually renders (`rampChromaOf`'s resolved chroma through
-// `src/ui/model.mjs`'s `projectView`, not a palette's raw stored `chroma` — the two differ for 3,777 of
+// `src/ui/model.mjs`'s `projectView`, not a palette's raw stored `chroma`  -  the two differ for 3,777 of
 // 3,780 curated palettes), TWO duplicate-hex ramps on the 25-stop export ramp, peak mode, near white:
 // nature "Varanger / Finnmark tundra" tertiary and nature "English oak woodland" primary, both stops
-// 150&175, both #FDFDFB. Neither ramp was named or gated under R1 — its own gate scanned raw `chroma`,
+// 150&175, both #FDFDFB. Neither ramp was named or gated under R1  -  its own gate scanned raw `chroma`,
 // which is a different ramp than either one renders.
 //
 // R2 (shipped) re-centres sd on the anchor's own lifted reading. On the corpus the product renders, this
@@ -221,7 +221,7 @@ const ANCHOR_STOP = 500;
 // the #668 uptick class already at zero, and gives the exact-anchor property Q1 originally wanted. The
 // cost is real and disclosed, not free: 21 of the SAME 10,080 synthetic grid cells rise under R2, worst
 // +0.1314 L* (20 near-white, measured tone 90.9-99.5, plus one near-black at tone 7.55, hue 287
-// skew -100 lift -40) — about 1/6 the +0.83 L* #668 defect this unit repairs, at a skew/lift/vibrancy/
+// skew -100 lift -40)  -  about 1/6 the +0.83 L* #668 defect this unit repairs, at a skew/lift/vibrancy/
 // hue combination within the user-settable ranges (chroma pinned at the grid's own probe value, 95;
 // skew as extreme as ±100) but unused by any shipped preset or role default. test/engine/tonal.mjs
 // "skew-lift-okhsl" (iii c) names and cites all 21 as a bounded, verified-both-directions exception
@@ -238,11 +238,11 @@ const ANCHOR_STOP = 500;
 // to dampCurve x 0.001 (u3fix/retune-even-only.mjs) confirms stop 100/900 sit exactly at that
 // damp-only floor and do not move for ANY dampCurve, no matter how extreme. Reaching the target median/
 // p90 therefore needs `damp` to move too, not only `dampCurve`. To keep BOTH sliders live in every mode
-// (the F4 principle — no dead controls, no new control), the even path compresses damp's headroom
+// (the F4 principle  -  no dead controls, no new control), the even path compresses damp's headroom
 // (100-damp) and scales dampCurve by the SAME factor, both DERIVED from the shared sliders rather than
 // a hardcoded absolute: a user who raises damp or lowers dampCurve still visibly changes the even ramp.
-// perceptual/peak are untouched — this only fires when controls.toneMode === "even" (paletteStops's own
-// dispatch guarantees that string exactly, never a default fallthrough — see paletteStops above).
+// perceptual/peak are untouched  -  this only fires when controls.toneMode === "even" (paletteStops's own
+// dispatch guarantees that string exactly, never a default fallthrough  -  see paletteStops above).
 export const EVEN_DAMP_FACTOR = 0.25;
 export function chromaEnvelope(stop, anchorStop, lift, controls) {
   const sd = (liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450; // position vs the anchor's OWN lifted reading (R2)
@@ -251,7 +251,7 @@ export function chromaEnvelope(stop, anchorStop, lift, controls) {
   const dampCurve = (isEven ? EVEN_DAMP_FACTOR : 1) * (controls.dampCurve ?? 1.5);
   const uG = Math.abs(sd) ** dampCurve;
   const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(sd));
-  const shoulder = ((controls.dampAmp ?? 0) / 100) * 4 * uG * (1 - uG); // 0 at sd=0 AND |sd|=1 — shoulders only
+  const shoulder = ((controls.dampAmp ?? 0) / 100) * 4 * uG * (1 - uG); // 0 at sd=0 AND |sd|=1  -  shoulders only
   return Math.max(0, 1 + shoulder - (damp / 100) * sideW * uG);
 }
 
@@ -375,7 +375,7 @@ export function paletteStops(palette, controls, stops) {
     tension: controls.tension,
   };
   const lift = palette.lift ?? 0;
-  // chromaEnvelope per stop, computed ONCE (C7: exactly one call site) — the anchor stop is guaranteed
+  // chromaEnvelope per stop, computed ONCE (C7: exactly one call site)  -  the anchor stop is guaranteed
   // present so the stop-500 hue/chroma SEED below and the per-stop map read the SAME value, never a
   // second, independently-typed derivation (the "can't drift" property the old evenChroma comment named).
   const envStops = stops.includes(ANCHOR_STOP) ? stops : [...stops, ANCHOR_STOP];
@@ -398,10 +398,10 @@ export function paletteStops(palette, controls, stops) {
   }
   const pk = peakC(baseHue).c; // the BASE hue's max chroma in sRGB
   const target = (palette.chroma / 100) * pk; // control is % of the BASE-hue peak
-  // anchorChroma — the anchor stop's OWN emitted chroma, by the SAME formula the per-stop map below
-  // uses at stop 500 (relChroma-aware, and tone/hue-aware via toneAt/baseHue — lift- and skew-displaced,
+  // anchorChroma  -  the anchor stop's OWN emitted chroma, by the SAME formula the per-stop map below
+  // uses at stop 500 (relChroma-aware, and tone/hue-aware via toneAt/baseHue  -  lift- and skew-displaced,
   // never the hue's independent cusp). #681 U3 pass 3: this is the root-cause fix for the lift-sign x
-  // hue-cusp-tone mechanism Q7 measured — `target`/`pk` are calibrated against the hue's OWN theoretical
+  // hue-cusp-tone mechanism Q7 measured  -  `target`/`pk` are calibrated against the hue's OWN theoretical
   // peak (peakC), which lift can displace the anchor away from while leaving some OTHER real stop
   // closer to it; that other stop's bigger local gamut ceiling (maxc) let it clamp to MORE absolute
   // chroma than the (now off-cusp) anchor even though chromaEnvelope's own multiplier never exceeds 1
@@ -423,14 +423,14 @@ export function paletteStops(palette, controls, stops) {
     const hue = (((baseHue + shift * dir) % 360) + 360) % 360;
     const maxc = maxChromaInGamut(hue, tone); // gamut ceiling at the (rotated) hue
     // Chroma basis (controls.relChroma): default scales the base-hue PEAK target by chromaEnvelope's
-    // multiplier and caps at the per-stop ceiling — the chroma is a constant target shaped by the
+    // multiplier and caps at the per-stop ceiling  -  the chroma is a constant target shaped by the
     // envelope, then clamped. Relative mode scales EACH stop by its OWN gamut ceiling, so every hue
     // fills the same fraction of its gamut envelope and palettes read as equally saturated regardless
     // of hue. min(·, maxc) keeps it in-gamut either way.
     const intended = controls.relChroma ? (palette.chroma / 100) * maxc : target; // un-damped chroma for this stop
     // evenChroma: scale intended by chromaEnvelope's multiplier (exactly 1 at ANCHOR_STOP, by
-    // construction — the edge damping starves the light/dark ends, never the anchor), then apply the
-    // chroma FLOOR on the envelope itself — for a LOW-chroma palette the light stops collapse to near-
+    // construction  -  the edge damping starves the light/dark ends, never the anchor), then apply the
+    // chroma FLOOR on the envelope itself  -  for a LOW-chroma palette the light stops collapse to near-
     // white (the "dead zone"); the floor lifts each stop's envelope back toward 1, up to chromaFloor%,
     // NEVER past the anchor's own envelope of 1 (a muted palette stays muted, a neutral stays neutral,
     // saturated stops already clamp at/near maxc so the floor never binds). Shared with the stop-500 hue
@@ -505,16 +505,16 @@ function okhslStops(palette, controls, stops, mode) {
     const peakL = se <= 500 ? lerp(lLight, cuspL, (se - 50) / 450) : lerp(cuspL, lDark, (se - 500) / 450);
     return lerp(evenL, peakL, t);
   };
-  // keyS — REQ-052, the same "key colour" prime.mjs reads (src/engine/prime.mjs): the palette's own
+  // keyS  -  REQ-052, the same "key colour" prime.mjs reads (src/engine/prime.mjs): the palette's own
   // chroma/hue rendered at the hue's CUSP tone (baseHue, keyChroma, pk.tone), measured back through
   // OKHSL. This is the ramp's saturation BASIS at the anchor stop now, in place of the old "chroma% of
-  // the sRGB gamut" fraction (palette.chroma/100 read as if it were already an OKHSL saturation — two
+  // the sRGB gamut" fraction (palette.chroma/100 read as if it were already an OKHSL saturation  -  two
   // quantities that don't coincide, e.g. Info: chroma% 0.400 vs key.s 0.289). Every other stop scales
   // this by chromaEnvelope below, which is exactly 1 at the anchor, so the anchor stop always renders at
-  // 100% of the key colour's own saturation — never "chroma% of gamut" damped toward a multiplier.
+  // 100% of the key colour's own saturation  -  never "chroma% of gamut" damped toward a multiplier.
   const keyChroma = ((palette.chroma ?? 0) / 100) * pk.c;
   const keyS = rgbToOkhsl(hctToRgb(baseHue, keyChroma, pk.tone).rgb).s;
-  // chromaEnvelope per stop, computed ONCE (C7: exactly one call site) — shared by the stop-500 hue seed
+  // chromaEnvelope per stop, computed ONCE (C7: exactly one call site)  -  shared by the stop-500 hue seed
   // below and the per-stop map, so the two can never drift apart (#647's original reason for factoring
   // the stop-500 read out of the per-stop formula in the first place).
   const lift = palette.lift ?? 0;
@@ -534,19 +534,19 @@ function okhslStops(palette, controls, stops, mode) {
   } else {
     hOk = rgbToOkhsl(hctToRgb(baseHue, pk.c, pk.tone).rgb).h;
   }
-  // anchorChroma — the anchor's own emitted CAM16 chroma, rendered the SAME way every other stop is
+  // anchorChroma  -  the anchor's own emitted CAM16 chroma, rendered the SAME way every other stop is
   // below (#681 U3 pass 5, restoring pass 4's OKHSL-path anchor cap but SCOPED TO PEAK ONLY per the
   // owner's ruling on Q7: perceptual keeps #55's cusp-pull richness untouched, with its own bounded,
   // named exemption applied separately below; peak is already SUPPOSED to center richness at 500
   // (hpg-tonal-okhsl-modes), so capping there is consistent with peak's own definition, not in tension
   // with it the way it was for perceptual. At stop === ANCHOR_STOP the cap below is a proven no-op
   // (same formula, same inputs).
-  const anchorT = 1; // peak mode always pins t=1 (see `t` below) — anchorChroma must match that basis
+  const anchorT = 1; // peak mode always pins t=1 (see `t` below)  -  anchorChroma must match that basis
   const anchorL = lightnessAt(ANCHOR_STOP, anchorT);
   const anchorS = Math.min(1, Math.max(0, keyS * envelopeAt.get(ANCHOR_STOP)));
   const anchorChroma = cam16FromRgb(okhslToRgb(hOk, anchorS, anchorL)).chroma;
   const dampAmp = controls.dampAmp ?? 0;
-  // solveLForTone — the OKHSL lightness l in [0,1] that renders CIE L* == targetTone at a FIXED hue/s
+  // solveLForTone  -  the OKHSL lightness l in [0,1] that renders CIE L* == targetTone at a FIXED hue/s
   // (#681 U3 pass 4/5). L* is monotone non-decreasing in l at fixed hue/s (OKHSL's own construction),
   // so bisection converges reliably; 30 halvings of [0,1] resolve to ~1e-9, well inside the 0.01 L* bar.
   const solveLForTone = (hue, s, targetTone) => {
@@ -557,32 +557,32 @@ function okhslStops(palette, controls, stops, mode) {
     }
     return (lo + hi) / 2;
   };
-  // refineNearestRgb — a final 8-bit-quantization-aware polish (#681 U3 pass 4/5). Measuring chroma/tone
+  // refineNearestRgb  -  a final 8-bit-quantization-aware polish (#681 U3 pass 4/5). Measuring chroma/tone
   // back from ROUNDED 8-bit RGB introduces noise the continuous joint solve above can't predict (up to
   // ~0.15 L*, ~0.1-0.2 chroma). Sweeps a few nearby continuous tone offsets through the validated HCT
   // engine (exploring different rounding cells) plus a +-2-per-channel integer RGB neighbor search, both
   // bounded by the TRUE chromaCeiling (never the margin-reduced target), picking whichever candidate
   // minimizes |measuredTone - targetTone|.
   // chromaFloor (#681 U3 review 2, F1): the OLD version optimized ONLY for tone error, with no lower
-  // bound on chroma at all — a dTone candidate that happened to round to a slightly better tone match
+  // bound on chroma at all  -  a dTone candidate that happened to round to a slightly better tone match
   // could win even if it collapsed chroma several points below what the joint solve had already
   // converged to, silently undoing the solve's own accuracy and creating the chroma dips F1 found (14
   // remained after fixing the solve's own overshoot bug, ALL of them traced to this: the solve landed
   // within ~0.1 of the target, then this polish walked it away in the name of a sub-0.05-L* tone gain).
-  // Rejecting any candidate below `chromaFloor` keeps the polish to what it was named for — quantization
-  // noise (~0.1-0.2 C) — not a second, uncontrolled chroma search.
+  // Rejecting any candidate below `chromaFloor` keeps the polish to what it was named for  -  quantization
+  // noise (~0.1-0.2 C)  -  not a second, uncontrolled chroma search.
   //
   // A hue-aware variant was tried and reverted (#681 U3 review 2, F1): rejecting +-2-neighbour candidates
   // more than a few degrees off the stop's pre-cap OKLCH hue improved the worst-case hue residual (max
   // 24.6 degrees down to 4.0 at a 4-degree tolerance) but did so by blocking tone-favourable candidates,
   // and that tone-accuracy loss pushed 3 cells of the skew-lift-okhsl synthetic grid (C6 iii c) into a
-  // genuine CIELAB-L* uptick beyond its named exceptions — confirmed at BOTH a 2-degree and a 4-degree
+  // genuine CIELAB-L* uptick beyond its named exceptions  -  confirmed at BOTH a 2-degree and a 4-degree
   // tolerance, and confirmed to clear with the hue constraint removed entirely, isolating it as the
   // cause (chromaFloor alone is not: it passes on its own). The reviewer rated the hue-blindness here
-  // 🟡, "acceptable... once the hue residual is reported", not a blocker — so per "if a second
+  // 🟡, "acceptable... once the hue residual is reported", not a blocker  -  so per "if a second
   // workaround is needed, stop", this stays hue-blind and the residual is reported honestly instead
   // (.sdlc/handoffs/pif-u3-retune.md): still bounded (median ~1 degree, worst case, per the measured
-  // table, larger than before this pass at the tail — see the addendum for the full numbers).
+  // table, larger than before this pass at the tail  -  see the addendum for the full numbers).
   const refineNearestRgb = (rgb, hueCam16, targetTone, chromaCeiling, chromaFloor = 0) => {
     let best = rgb, bestErr = Math.abs(lstarFromRgb(rgb) - targetTone);
     const consider = (cand) => {
@@ -617,38 +617,38 @@ function okhslStops(palette, controls, stops, mode) {
     const sp = (stop - 500) / 450;
     const dir = sameDir ? -Math.abs(sp) : sp;
     const hue = (((hOk + shift * dir) % 360) + 360) % 360;
-    // saturation = the key colour's own OKHSL s (keyS), shaped by chromaEnvelope — the SAME envelope the
+    // saturation = the key colour's own OKHSL s (keyS), shaped by chromaEnvelope  -  the SAME envelope the
     // even path uses (so damp/dampCurve/dampAmp/dampBias stay meaningful here too), clamped to [0,1].
     const s0 = Math.min(1, Math.max(0, keyS * envelopeAt.get(stop)));
     let s = s0, l1 = l;
     let rgb = okhslToRgb(hue, s, l1);
     let chroma = cam16FromRgb(rgb).chroma;
     // Generated PEAK palettes (dampAmp 0) never emit more chroma than the anchor (#681 U3 pass 5, C6's
-    // "0 above 100%" clause, peak only — perceptual keeps #55's cusp-pull richness, see below). Holds
+    // "0 above 100%" clause, peak only  -  perceptual keeps #55's cusp-pull richness, see below). Holds
     // tone FIXED at its pre-cap value by solving JOINTLY for (s, l): shrink s toward the target chroma,
     // then re-solve l for the held tone, iterating until both hold. Hue stays hOk-derived throughout (no
     // engine switch, no new Abney residual). At stop === ANCHOR_STOP this never fires: same formula as
     // anchorChroma above.
     if (mode === "peak" && dampAmp === 0 && chroma > anchorChroma + 1e-6) {
-      const targetTone = lstarFromRgb(rgb); // the pre-cap (natural) tone — held fixed below
-      // preCapOklchHue: THIS stop's own OKLCH hue before capping — the invariant the fallback/polish
+      const targetTone = lstarFromRgb(rgb); // the pre-cap (natural) tone  -  held fixed below
+      // preCapOklchHue: THIS stop's own OKLCH hue before capping  -  the invariant the fallback/polish
       // below must reproduce (#681 U3 review 2, F1). `hue` is already hOk-derived (Abney-corrected for
       // an OKLCH-hue palette via solveOkhslHue at the stop-500 basis, see `hOk` above), so reading it
-      // back here — rather than re-deriving from `palette.hue` — is correct even under a non-zero
+      // back here  -  rather than re-deriving from `palette.hue`  -  is correct even under a non-zero
       // hueShift, where a non-center stop's hue differs from the nominal set hue by the rotation.
       const preCapOklchHue = rgbToOklchHue(rgb);
       const hueCam16 = (((baseHue + shift * dir) % 360) + 360) % 360; // CAM16-space hue (hueSpace "cam16" only)
-      // chroma here is measured back from 8-bit-quantized OKHSL-rendered rgb, same as anchorChroma —
+      // chroma here is measured back from 8-bit-quantized OKHSL-rendered rgb, same as anchorChroma  - 
       // independently-quantized measurements can differ by a few hundredths after the solve below lands
       // exactly at the target, so this margin keeps the final measured value strictly under the ceiling.
       const CAP_MARGIN = 0.5;
       const target = anchorChroma - CAP_MARGIN;
       // Bisect s toward the EXACT target chroma, re-solving l for the held tone at every step (#681 U3
       // review 2, F1). The old single multiplicative step (`s *= target/chroma`) assumed chroma scales
-      // linearly with s at fixed l — but l is ALSO re-solved each time to hold tone, so that assumption
+      // linearly with s at fixed l  -  but l is ALSO re-solved each time to hold tone, so that assumption
       // is false, and one overshooting step could satisfy the loop's own naive "chroma <= ceiling" exit
       // test while landing far below the target (measured witness: nature "Monument Valley" secondary-
-      // muted, peak, stop 550 — one iteration took chroma from 81.89 to 29.75 against a 57.04 target,
+      // muted, peak, stop 550  -  one iteration took chroma from 81.89 to 29.75 against a 57.04 target,
       // and the loop stopped there because 29.75 already cleared the ceiling). Bisection always halves
       // its bracket regardless of overshoot direction, and this loop tracks the BEST candidate seen
       // across every step, so a later worse step can never lose a better earlier one.
@@ -665,10 +665,10 @@ function okhslStops(palette, controls, stops, mode) {
       }
       s = bestS; l1 = bestL; rgb = bestRgb; chroma = bestChroma;
       // polishHue: the CAM16 hue that reproduces THIS stop's preCapOklchHue at whatever chroma/tone is
-      // about to be rendered through hctToRgb below (fallback and/or the 8-bit polish) — solved fresh
+      // about to be rendered through hctToRgb below (fallback and/or the 8-bit polish)  -  solved fresh
       // rather than reusing the plain CAM16 proxy (`hueCam16`), which is what brought back the Abney
       // drift `solveOkhslHue` exists to remove on an OKLCH-hue palette (F1). A CAM16-hue palette has no
-      // OKLCH-hue promise to keep, so `hueCam16` is already correct there — no solve needed.
+      // OKLCH-hue promise to keep, so `hueCam16` is already correct there  -  no solve needed.
       const polishHue = controls.hueSpace === "oklch" ? solveCam16Hue(preCapOklchHue, Math.max(chroma, 1), targetTone) : hueCam16;
       if (chroma > anchorChroma + 1e-6 || Math.abs(lstarFromRgb(rgb) - targetTone) > 0.01) {
         // Fallback (#681 U3 review 3, N3: corrected from an earlier "rare" claim): this fires on 93.5%

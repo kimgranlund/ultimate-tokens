@@ -192,7 +192,7 @@ function deriveNeutralPalette(palettes) {
 
 // dampAmp 55 -> 0 (#681 U3, Q7 ruled): chromaEnvelope normalises at the anchor stop, so a non-zero
 // dampAmp can no longer lift the anchor above the palette's own intent the way the old, un-normalised
-// "m" formula did — it can only reshape the shoulders, which C6 forbids raising above 75%/90% of the
+// "m" formula did  -  it can only reshape the shoulders, which C6 forbids raising above 75%/90% of the
 // anchor's own chroma at 300/700. 55 was tuned for that now-retired boost; 0 is the shipped value the
 // corpus regenerates with (see .sdlc/handoffs/pif-u3.md for the before/after C6 table).
 const VIVID_MIDS = { damp: 70, dampCurve: 1.5, dampAmp: 0, dampBias: 0 };

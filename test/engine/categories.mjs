@@ -653,7 +653,7 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
 // tolerance, because the corpus is what the defect was reported against.
 //
 // Two guards keep it from going vacuous. Every named cell must still RESOLVE (a renamed preset or palette
-// would otherwise silently check nothing), and every named cell's stored lift must still be <= -34 — the
+// would otherwise silently check nothing), and every named cell's stored lift must still be <= -34  -  the
 // condition the mechanism needs. If a re-fit lifts one of these out of that band the cell stops being a
 // witness, and the gate says so instead of passing on a palette that could no longer fail.
 {
@@ -676,14 +676,14 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
   for (const [slug, needle, palName] of WITNESSES) {
     const { PRESETS } = await import(`../../src/ui/categories/${slug}.js`);
     const hits = PRESETS.filter((x) => x.name.includes(needle));
-    if (hits.length !== 1) { FAIL("ramp-monotone", `${slug} "${needle}": ${hits.length} presets match that name — the #668 witness cannot be resolved, repoint it`); continue; }
+    if (hits.length !== 1) { FAIL("ramp-monotone", `${slug} "${needle}": ${hits.length} presets match that name  -  the #668 witness cannot be resolved, repoint it`); continue; }
     const doc = hydrate({ ...hits[0] });
     const view = projectView(doc);
     const idx = view.palettes.findIndex((q) => q.name === palName);
-    if (idx < 0) { FAIL("ramp-monotone", `${slug} "${needle}": no palette named "${palName}" — the #668 witness cannot be resolved, repoint it`); continue; }
+    if (idx < 0) { FAIL("ramp-monotone", `${slug} "${needle}": no palette named "${palName}"  -  the #668 witness cannot be resolved, repoint it`); continue; }
     const lift = doc.palettes[idx]?.lift ?? 0;
-    if (lift > LIFT_BAND) { FAIL("ramp-monotone", `${slug} "${needle}" ${palName}: lift is now ${lift}, outside the <= ${LIFT_BAND} band the uptick needs — this cell no longer witnesses #668, pick one that does`); continue; }
-    if ((doc.toneMode || "perceptual") !== "perceptual") { FAIL("ramp-monotone", `${slug} "${needle}": toneMode is "${doc.toneMode}", not perceptual — the witness no longer exercises the OKHSL path`); continue; }
+    if (lift > LIFT_BAND) { FAIL("ramp-monotone", `${slug} "${needle}" ${palName}: lift is now ${lift}, outside the <= ${LIFT_BAND} band the uptick needs  -  this cell no longer witnesses #668, pick one that does`); continue; }
+    if ((doc.toneMode || "perceptual") !== "perceptual") { FAIL("ramp-monotone", `${slug} "${needle}": toneMode is "${doc.toneMode}", not perceptual  -  the witness no longer exercises the OKHSL path`); continue; }
     witnessed++;
     const ramp = view.palettes[idx].fullRamp || view.palettes[idx].ramp;
     for (let i = 1; i < ramp.length; i++) if (ramp[i].tone > ramp[i - 1].tone) {
@@ -692,8 +692,8 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
     }
   }
   if (rose.length)
-    FAIL("ramp-monotone", `measured L* ROSE on ${rose.length} of ${WITNESSES.length} #668 witnesses — the damping is travelling where the lightness is not: ${rose.join("; ")}`);
-  if (witnessed !== WITNESSES.length) FAIL("ramp-monotone", `only ${witnessed} of ${WITNESSES.length} #668 witnesses resolved into the band — the gate is no longer proving what it claims`);
+    FAIL("ramp-monotone", `measured L* ROSE on ${rose.length} of ${WITNESSES.length} #668 witnesses  -  the damping is travelling where the lightness is not: ${rose.join("; ")}`);
+  if (witnessed !== WITNESSES.length) FAIL("ramp-monotone", `only ${witnessed} of ${WITNESSES.length} #668 witnesses resolved into the band  -  the gate is no longer proving what it claims`);
   if (!fails.some((f) => f.startsWith("ramp-monotone:")))
     console.log(`  (ramp-monotone: ${witnessed} lift <= ${LIFT_BAND} curated witnesses hold measured L* non-increasing across all ${25} export stops)`);
 }

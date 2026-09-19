@@ -157,19 +157,19 @@ for (const p of DEFAULTS) {
   // (a) DEFAULTS REPRODUCE LEGACY EXACTLY — vs the INDEPENDENT legacy formula
   //     min(target·(1−damp·u^1.5), ceiling), over EVERY saturated hue, every stop, |dC|<=1e-6. `u` is
   //     read at the LIFTED stop, relative to the anchor's OWN lifted reading (#668/#681 U3 R2,
-  //     chromaEnvelope) — every SAT default, lifted or not, reduces to this same form: liftStop(500, 0)
+  //     chromaEnvelope)  -  every SAT default, lifted or not, reduces to this same form: liftStop(500, 0)
   //     === 500 at lift 0, so the 9 lift-0 defaults collapse to the pre-#668 raw-stop legacy formula
   //     exactly, and the 3 lifted ones (Success, Warning, Danger) read both sides of the subtraction
   //     through the SAME liftStop, which is what makes env(anchor)=1 exact at every lift, not only 0.
   //     #681 U3 pass 3: for a GENERATED palette (dampAmp 0, true of every default here), the shipped
-  //     engine additionally caps every stop at the anchor's OWN legacy value (the lift x hue-cusp fix —
+  //     engine additionally caps every stop at the anchor's OWN legacy value (the lift x hue-cusp fix  - 
   //     Q7 measured stops whose local gamut ceiling exceeds the anchor's rendering MORE absolute chroma
   //     than the anchor despite an equal-or-smaller envelope multiplier). `anchorWant` re-derives that
   //     cap independently (evenChroma's own 3-line formula, at uLeg=0 by construction) rather than
   //     calling the engine's private `evenChroma`, keeping this an independent check of the BEHAVIOUR.
   //     #681 U3 pass 7: CTL's toneMode is "even", and the even path now reads a MAPPED damp/dampCurve
-  //     (T.EVEN_DAMP_FACTOR compresses damp's headroom and scales dampCurve by the same factor — see
-  //     chromaEnvelope's own comment) — dampCurve alone could not close the even median/p90 targets
+  //     (T.EVEN_DAMP_FACTOR compresses damp's headroom and scales dampCurve by the same factor  -  see
+  //     chromaEnvelope's own comment)  -  dampCurve alone could not close the even median/p90 targets
   //     (u3fix/retune-even-only.mjs swept dampCurve x0.001..x1 at fixed damp and stop 100/900 never
   //     moved; T.EVEN_DAMP_FACTOR is the ratified, exported constant this independent re-derivation
   //     reads, not a re-derivation of chromaEnvelope's own code path).
@@ -249,7 +249,7 @@ for (const p of DEFAULTS) {
   // (b) HARMONIZED ACROSS HUE — at the same chroma%, every hue uses the SAME fraction of its own
   //     per-stop ceiling (chroma/maxc = min(frac·m, 1), hue-independent). Blue 264° vs yellow 90°.
   //     #681 U3 pass 3: EXCEPT where the anchor cap fires (dampAmp 0: no stop may emit more chroma than
-  //     the anchor's OWN chroma) — that bound is keyed on EACH hue's own maxc500, a different absolute
+  //     the anchor's OWN chroma)  -  that bound is keyed on EACH hue's own maxc500, a different absolute
   //     ceiling per hue even at the identical chroma%, so it can bind at different stops for the two
   //     probe hues and locally break the cross-hue match on purpose (C6's per-palette anchor bound is
   //     the plan-ruled priority here, not this harmonization property). Skip those stops rather than
@@ -268,7 +268,7 @@ for (const p of DEFAULTS) {
     const fa = A[i].chroma / A[i].maxc, fb = B[i].chroma / B[i].maxc;
     if (Math.abs(fa - fb) > 0.02) FAIL("rel-chroma", `gamut fraction differs by hue at stop ${STOPS[i]}: 264°=${fa.toFixed(3)} vs 90°=${fb.toFixed(3)} (not harmonized)`);
   }
-  if (compared === 0) FAIL("rel-chroma", `(b) every stop was anchor-capped for at least one hue — pick different probe hues`);
+  if (compared === 0) FAIL("rel-chroma", `(b) every stop was anchor-capped for at least one hue  -  pick different probe hues`);
   // (c) OFF == DEFAULT (no regression) and (d) ON actually changes the output (not a no-op).
   const p = DEFAULTS.find((d) => d.chroma >= 50) || DEFAULTS[0];
   const def = rampOf(p), off = withRel(p, false), on = withRel(p, true);
@@ -342,10 +342,10 @@ for (const mode of ["perceptual", "peak"]) {
   // (d) SATURATED is untouched — a high-chroma ramp already clamps to the gamut, so the floor never binds.
   //     #681 U3 pass 7 CARVE-OUT: this holds everywhere except the 11 EXPORT_STOPS nearest the extreme
   //     ends (100/125/150/175/200/250/300 and 875/900/925/950), named and bounded, verified both
-  //     directions below — even a chroma-100 probe at this hue still lands there (checked by hand,
+  //     directions below  -  even a chroma-100 probe at this hue still lands there (checked by hand,
   //     u3fix scratch), so it is not a probe artifact. The even path's retuned damping (chromaEnvelope,
   //     EVEN_DAMP_FACTOR) now starves those stops enough that NO input chroma keeps them gamut-clamped,
-  //     so the floor legitimately starts to matter there too — an expansion of what the floor rescues,
+  //     so the floor legitimately starts to matter there too  -  an expansion of what the floor rescues,
   //     not a mistuned probe.
   const SAT_FLOOR_EXCEPT = new Set([100, 125, 150, 175, 200, 250, 300, 875, 900, 925, 950]);
   const s0 = ramp(145, 99, 0), sF = ramp(145, 99, 40);
@@ -383,7 +383,7 @@ for (const mode of ["perceptual", "peak"]) {
 {
   // (a) hueAnchorFrac: nominal chroma, capped at 1, dampAmp-INDEPENDENT (#681 U3, Q7: chromaEnvelope is
   // exactly 1 at the anchor for any dampAmp at lift 0, so the anchor's own rendered chroma no longer
-  // scales with dampAmp — a deterministic lock (still seeds the even/CAM16 ramp's gamut basis + cusp seed).
+  // scales with dampAmp  -  a deterministic lock (still seeds the even/CAM16 ramp's gamut basis + cusp seed).
   const near = (a, b) => Math.abs(a - b) < 1e-3;
   if (!near(T.hueAnchorFrac({ chroma: 76 }, { dampAmp: 66 }), 0.76)) FAIL("oklch-hue-anchor", `hueAnchorFrac(76%,amp66)=${T.hueAnchorFrac({ chroma: 76 }, { dampAmp: 66 })}, want 0.76`);
   if (!near(T.hueAnchorFrac({ chroma: 25 }, { dampAmp: 66 }), 0.25)) FAIL("oklch-hue-anchor", `hueAnchorFrac(25%,amp66)=${T.hueAnchorFrac({ chroma: 25 }, { dampAmp: 66 })}, want 0.25`);
@@ -464,7 +464,7 @@ for (const mode of ["perceptual", "peak"]) {
                                                                     // the SAME pixel, so the update
                                                                     // runs away instead of oscillating
     // Repinned for #681 U3 (chromaEnvelope + keyS saturation basis moved every default's own s500,
-    // except Data 7's l500 — l500 never depended on saturation, so it lands on its pre-U3 value exactly).
+    // except Data 7's l500  -  l500 never depended on saturation, so it lands on its pre-U3 value exactly).
     [268, 0.2362053680324055, 0.47259849593539127, ["Neutral", "perceptual"]],  // the worst real default, low chroma
     [195, 0.9999999007688885, 0.5399970062712544, ["Data 7", "perceptual"]],    // saturated, the default tone mode
     [259, 0.9999999532281996, 0.4556174494320429, ["Primary", "peak"]],
@@ -563,32 +563,32 @@ for (const mode of ["perceptual", "peak"]) {
 //     little to cross a quantisation boundary at any stop, so it is the one perceptual ramp still
 //     pre-0.2.0-identical. The 16 EVEN ramps are untouched by #657 — that path solves through
 //     solveCam16Hue, which #657 did not change — so the #648 even carve-out above stands as written.
-//   #681 U3 pass 3 CARVE-OUT (7 MORE even ramps, none newly carved on the perceptual side — this pass
+//   #681 U3 pass 3 CARVE-OUT (7 MORE even ramps, none newly carved on the perceptual side  -  this pass
 //     only touched the even path): even/Secondary, /Data 1, /Data 4, /Data 5, /Data 6, /Data 7, /Data 8
-//     — all skew 0, lift 0 (so this is the hue-cusp half of "lift sign x hue-cusp tone" standing alone,
+//      -  all skew 0, lift 0 (so this is the hue-cusp half of "lift sign x hue-cusp tone" standing alone,
 //     not lift: toneAt(500,...) is a fixed midpoint independent of the hue picked, but a hue's OWN
-//     peak-chroma tone (peakC(hue).tone) is hue-specific and need not sit there — a non-anchor stop
+//     peak-chroma tone (peakC(hue).tone) is hue-specific and need not sit there  -  a non-anchor stop
 //     can then have MORE local gamut headroom than the anchor even at skew=lift=0). Generated palettes
 //     (dampAmp 0) now cap every stop's chroma at the anchor's own (Q7's "0 above 100%" fix), so these
-//     7 ramps' stops nearest the hue's true cusp — indices vary by hue, 2 to 4 of 25 stops each — moved
+//     7 ramps' stops nearest the hue's true cusp  -  indices vary by hue, 2 to 4 of 25 stops each  -  moved
 //     down to the anchor's ceiling instead of the legacy formula's uncapped value. even/Warning was
 //     ALREADY carved (#648, lift != 0) and picks up more moved cells here too, not a new entry.
-//   Carved total after #681 U3 pass 3: 25 of 32 (10 even + 15 perceptual). The remaining 7 — Neutral,
-//   Primary, Tertiary, Info, Data 2, Data 3 (even) and Secondary (perceptual) — are byte-for-byte what
+//   Carved total after #681 U3 pass 3: 25 of 32 (10 even + 15 perceptual). The remaining 7  -  Neutral,
+//   Primary, Tertiary, Info, Data 2, Data 3 (even) and Secondary (perceptual)  -  are byte-for-byte what
 //   83756bb emitted, and that is what each regeneration of this file was verified against.
 //   #681 U3 pass 7 CARVE-OUT (all 16 even, none newly carved on the perceptual side): step 1 closes the
 //   even path's own C6 median/p90 misses (100/300/900) by reading a MAPPED damp/dampCurve for toneMode
-//   "even" inside chromaEnvelope (EVEN_DAMP_FACTOR, exported) — dampCurve alone cannot close them (a
+//   "even" inside chromaEnvelope (EVEN_DAMP_FACTOR, exported)  -  dampCurve alone cannot close them (a
 //   synthetic sweep down to dampCurve x0.001 at fixed damp left stop 100/900 unmoved; see the
 //   chromaEnvelope comment and .sdlc/handoffs/pif-u3-retune.md). This is a formula-wide change to the
 //   even path's damping, not a localized cusp fix, so it moves nearly every non-anchor, non-50/950 stop
-//   of EVERY even ramp — the remaining 6 un-carved even defaults (Neutral, Primary, Tertiary, Info,
+//   of EVERY even ramp  -  the remaining 6 un-carved even defaults (Neutral, Primary, Tertiary, Info,
 //   Data 2, Data 3) join the other 10 already carved, so even mode is now 16 of 16 carved. Perceptual is
 //   untouched (0 hex diffs over the full corpus + default kit, u3fix/hexdiff-perceptual-peak.mjs), so
 //   Secondary stays the one perceptual ramp still pre-0.2.0-identical.
 //   Carved total after #681 U3 pass 7: 31 of 32 (16 even + 15 perceptual). Only perceptual/Secondary
 //   remains byte-for-byte what 83756bb emitted. Do NOT regenerate this file to make an unexplained red
-//   go green — every regeneration must be preceded by a citation like this one. ────────────────────
+//   go green  -  every regeneration must be preceded by a citation like this one. ────────────────────
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};
@@ -826,7 +826,7 @@ for (const mode of ["perceptual", "peak"]) {
   const okl = (rgb) => rgbToOkhsl(rgb).l;
   const LQ = 3e-3;
   // CAP_L_EXCEPTIONS (#681 U3 pass 5): the peak-mode anchor cap (below, mode "peak" only) holds CIE L*
-  // fixed at these stops, not OKHSL l — a deliberate, disclosed divergence from this check's own
+  // fixed at these stops, not OKHSL l  -  a deliberate, disclosed divergence from this check's own
   // independent-OKHSL-l derivation, only where the cap actually binds (dampAmp 0, chroma > anchorChroma).
   // Bidirectionally verified: every cited key must be observed AND every observed mismatch must be cited.
   const CAP_L_EXCEPTIONS = new Set([
@@ -858,7 +858,7 @@ for (const mode of ["perceptual", "peak"]) {
   }
   if (seenCapLExceptions.size !== CAP_L_EXCEPTIONS.size) {
     const missing = [...CAP_L_EXCEPTIONS].filter((k) => !seenCapLExceptions.has(k));
-    FAIL("skew-lift-okhsl", `(i) ${missing.length} of the ${CAP_L_EXCEPTIONS.size} cited CAP_L_EXCEPTIONS were not observed this run (${missing.join(", ")}) — either fixed (remove from the list) or the corpus changed under it`);
+    FAIL("skew-lift-okhsl", `(i) ${missing.length} of the ${CAP_L_EXCEPTIONS.size} cited CAP_L_EXCEPTIONS were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list) or the corpus changed under it`);
   }
 
   // (ii) a NON-ZERO skew or lift must MOVE the perceptual/peak ramp, and move it the documented way:
@@ -890,7 +890,7 @@ for (const mode of ["perceptual", "peak"]) {
   //       here from the EXPORTED liftStop plus the documented gamma 3^(skew/100) — never from okhslStops.
   //   (b) RENDERED: the emitted pixels' OKHSL lightness never RISES across the grid, to within the 3e-3
   //       read-back budget of (i).
-  //   (c) MEASURED: the reported `tone` — the CIELAB L* of the 8-bit triple the ramp actually emits —
+  //   (c) MEASURED: the reported `tone`  -  the CIELAB L* of the 8-bit triple the ramp actually emits  - 
   //       never rises, over the same grid, beyond a NAMED, CITED exception list (GRID_R2_EXCEPTIONS
   //       below). This used to carry a 0.152 L* allowance: L* moves with CHROMA as well as lightness,
   //       the damping was positioned on the RAW stop while the lightness was read at the LIFTED one, and
@@ -899,10 +899,10 @@ for (const mode of ["perceptual", "peak"]) {
   //       here, +0.51 L* on the curated corpus, 11 presets). #668 positions the damping on liftStop,
   //       which closes that class to exactly 0. #681 U3's R2 (chromaEnvelope re-centred on the anchor's
   //       OWN lifted reading, closing the exact-env(anchor)=1-at-every-lift gap and the two rendered-path
-  //       duplicate-hex ramps R1 left — see chromaEnvelope's own comment) reopens 21 of these 10,080
-  //       SYNTHETIC cells (chroma pinned at 95, skew as extreme as ±100 — within the user-settable
+  //       duplicate-hex ramps R1 left  -  see chromaEnvelope's own comment) reopens 21 of these 10,080
+  //       SYNTHETIC cells (chroma pinned at 95, skew as extreme as ±100  -  within the user-settable
   //       ranges, but unused by any shipped preset or role default), 20 near-white (tone 90.9-99.5) and
-  //       one near-black (tone 7.55, hue 287 skew -100 lift -40), worst +0.1314 L* — about a sixth of
+  //       one near-black (tone 7.55, hue 287 skew -100 lift -40), worst +0.1314 L*  -  about a sixth of
   //       the defect this unit repairs, and, measured on the corpus the product actually
   //       renders, a strictly better trade: 0 duplicate-hex ramps instead of 2. The list is verified
   //       load-bearing both directions, same shape as C6(ii)'s KNOWN_BASELINE_DUP: deleting an entry
@@ -925,7 +925,7 @@ for (const mode of ["perceptual", "peak"]) {
     if (se[0] !== 50 || Math.abs(se[se.length - 1] - 950) > 1e-9)
       FAIL("skew-lift-okhsl", `(iii a) skew ${skew} lift ${lift}: the endpoints moved (050 -> ${se[0]}, 950 -> ${se[se.length - 1]})`);
   }
-  // GRID_R2_EXCEPTIONS — the 21 synthetic grid cells #681 U3's R2 chromaEnvelope (anchor re-centred on
+  // GRID_R2_EXCEPTIONS  -  the 21 synthetic grid cells #681 U3's R2 chromaEnvelope (anchor re-centred on
   // its own lifted reading, tonal.js's chromaEnvelope comment) measurably reopens, out of the 10,080
   // cells probed. 20 near-white (tone 90.9-99.5), one near-black (tone 7.55, hue 287 skew -100
   // lift -40, perceptual/cam16, stop 700->750); all lift 40 or -40; all a skew/hue/vibrancy/hueSpace
@@ -978,13 +978,13 @@ for (const mode of ["perceptual", "peak"]) {
   if (gridCells < 2 * 2 * 3 * SKEW_G.length * LIFT_G.length * HUES_G.length)
     FAIL("skew-lift-okhsl", `(iii b) grid only covered ${gridCells} cells`);
   if (measuredUpticks)
-    FAIL("skew-lift-okhsl", `(iii c) measured CIELAB L* ROSE on ${measuredUpticks} of ${gridCells} grid cells beyond the ${GRID_R2_EXCEPTIONS.size} cited exceptions, worst +${worstRise.toFixed(4)} L* at ${worstCell} — the damping is travelling where the lightness is not (#668)`);
+    FAIL("skew-lift-okhsl", `(iii c) measured CIELAB L* ROSE on ${measuredUpticks} of ${gridCells} grid cells beyond the ${GRID_R2_EXCEPTIONS.size} cited exceptions, worst +${worstRise.toFixed(4)} L* at ${worstCell}  -  the damping is travelling where the lightness is not (#668)`);
   if (seenGridException.size !== GRID_R2_EXCEPTIONS.size) {
     const missing = [...GRID_R2_EXCEPTIONS].filter((k) => !seenGridException.has(k));
-    FAIL("skew-lift-okhsl", `(iii c) ${missing.length} of the ${GRID_R2_EXCEPTIONS.size} cited R2 grid exceptions were not observed this run (${missing.join(", ")}) — either fixed (remove from the list) or the grid changed under it (re-diagnose before loosening further)`);
+    FAIL("skew-lift-okhsl", `(iii c) ${missing.length} of the ${GRID_R2_EXCEPTIONS.size} cited R2 grid exceptions were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list) or the grid changed under it (re-diagnose before loosening further)`);
   }
   if (zeroLiftUpticks)
-    FAIL("skew-lift-okhsl", `(iii c) ${zeroLiftUpticks} of the upticks are at lift 0 — the skew gamma now produces them too, so positioning the damping on liftStop alone no longer covers the mechanism (#668)`);
+    FAIL("skew-lift-okhsl", `(iii c) ${zeroLiftUpticks} of the upticks are at lift 0  -  the skew gamma now produces them too, so positioning the damping on liftStop alone no longer covers the mechanism (#668)`);
 
   // (iv) the 16 SHIPPED defaults keep a clean ladder in both OKHSL modes now that their controls bite:
   //      strictly descending measured L*, every swatch distinct, endpoints untouched.
@@ -1018,7 +1018,7 @@ for (const mode of ["perceptual", "peak"]) {
   //
   //     #668 WIDENED the hue probe rather than lowering the floor. Positioning the damping on the LIFTED
   //     stop makes a lifted stop 500 as muted as the lightness it now carries, so fewer warped cells clear
-  //     chroma 50 than before — 27 on the original 7 hues, under the 30 this check needs to mean anything.
+  //     chroma 50 than before  -  27 on the original 7 hues, under the 30 this check needs to mean anything.
   //     Lowering the floor would have bought the count by measuring the 8-bit grid instead of the anchor,
   //     which is the one thing the floor exists to prevent; five more hues buy it with saturated cells.
   {
@@ -1054,20 +1054,20 @@ for (const mode of ["perceptual", "peak"]) {
 }
 
 // ── hpg-tonal-chroma-envelope (#681 U3, C6/C7, ramp-shape gates per plan rev7/rev8): the single
-//    chromaEnvelope shared by the "even" path (evenChroma) and the OKHSL path (okhslStops) — the two
+//    chromaEnvelope shared by the "even" path (evenChroma) and the OKHSL path (okhslStops)  -  the two
 //    separately-typed damping copies ("m") the plan set out to unify (#647/#668). C7 is mechanical
 //    (grep-shaped, read from source so a refactor that moves the call sites trips it rather than a stale
 //    hardcoded count). C6 replaced its original sub-pixel magnitude bar (rev7: "a chroma cliff repair
 //    moves more than one 8-bit channel, so a sub-pixel bar is unsatisfiable") with ramp-shape gates:
 //    (i) zero measured-L* upticks, (ii) zero duplicate hexes, both over the FULL 3,780-palette corpus
-//    (343 presets + the 16 role-table defaults, no chroma floor — an earlier draft of this gate filtered
+//    (343 presets + the 16 role-table defaults, no chroma floor  -  an earlier draft of this gate filtered
 //    to chroma >= 10, inherited from the retired magnitude bar's own corpus definition, which hid the
 //    named Varanger witness at chroma 6 and 6 more of the same class), on BOTH the 19-stop display ramp
 //    and the 25-stop export ramp, in all three tone modes.
 //
 //    RENDERED PATH, not a raw-chroma proxy (fixed after review pass 1): each ramp is built through
-//    `rampChromaOf(pal, doc)` — the SAME resolved-chroma call `src/ui/model.mjs`'s `projectView` makes
-//    at line ~913, after `resolvePaletteGroups` — plus the palette's own `hueShift`/`hueSameDir`/
+//    `rampChromaOf(pal, doc)`  -  the SAME resolved-chroma call `src/ui/model.mjs`'s `projectView` makes
+//    at line ~913, after `resolvePaletteGroups`  -  plus the palette's own `hueShift`/`hueSameDir`/
 //    `cuspPull`. A palette's raw stored `chroma` is NOT what most ramps render at: 3,777 of the 3,780
 //    corpus palettes differ between the two, and the gap is not noise (architecture "The Barbican
 //    Estate · 1976 · C" primary: raw chroma 33, resolved ramp chroma 100). Proof this matters: pointed
@@ -1075,12 +1075,12 @@ for (const mode of ["perceptual", "peak"]) {
 //    method on the same base reports 11 perceptual (worst +0.5105 L*) and 46 peak (worst +0.8312 L*)
 //    AFFECTED PALETTES on the 25-stop export ramp (43 peak on the 19-stop display ramp), reproducing
 //    the plan's own #668 figures exactly, named witnesses included. The gate's own `upticks` counters
-//    below sum BOTH stop sets, so they print 22 perceptual and 89 peak (GATECOUNTER), not 11/46 — the
+//    below sum BOTH stop sets, so they print 22 perceptual and 89 peak (GATECOUNTER), not 11/46  -  the
 //    two figures answer different questions (palettes-affected-on-one-ramp vs. total-ramps-flagged
 //    across both) and are not a typo of one another. Only the rendered method is a real gate; keep it
 //    that way.
 {
-  // C7 — mechanical. One definition, three total appearances (the definition itself plus its two call
+  // C7  -  mechanical. One definition, three total appearances (the definition itself plus its two call
   // sites, one per path's precomputed envelopeAt map), zero of the old two-argument dampAmp expression.
   const src = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
   const defCount = (src.match(/export function chromaEnvelope\(/g) || []).length;
@@ -1090,9 +1090,9 @@ for (const mode of ["perceptual", "peak"]) {
   if (callCount !== 3) FAIL("chroma-envelope", `(C7) chromaEnvelope must appear exactly 3 times total (1 definition + 2 call sites), found ${callCount}`);
   if (staleCount !== 0) FAIL("chroma-envelope", `(C7) the old two-copy "1 + ((controls.dampAmp" expression must be fully gone, found ${staleCount}`);
 
-  // C6 — env(anchor)=1 for EVERY damp/dampCurve/dampAmp/dampBias/lift combination, not only lift 0
+  // C6  -  env(anchor)=1 for EVERY damp/dampCurve/dampAmp/dampBias/lift combination, not only lift 0
   // (R2: sd measured against `liftStop(anchorStop, lift)`, the anchor's own lifted reading, closes the
-  // gap the first draft left — Q1 in .sdlc/questions/pif-u3.md, superseded first read kept for the
+  // gap the first draft left  -  Q1 in .sdlc/questions/pif-u3.md, superseded first read kept for the
   // record). This is the property the old dampAmp term broke (Q7: a mid-tone "boost" that landed ON the
   // anchor itself, the 144%-of-source defect C6 exists to close).
   for (const damp of [0, 40, 70, 80, 100]) for (const dampCurve of [0.5, 1.5, 3]) for (const dampAmp of [0, 55, 100]) for (const dampBias of [-50, 0, 50]) for (const lift of [-40, -20, 0, 20, 40]) {
@@ -1102,7 +1102,7 @@ for (const mode of ["perceptual", "peak"]) {
   }
 
   // C6 (i)/(ii), measured over the curated corpus (343 presets, all 3,780 palettes, no chroma floor)
-  // plus the 16 role-table defaults — not the synthetic grid above, which proves the MECHANISM; this
+  // plus the 16 role-table defaults  -  not the synthetic grid above, which proves the MECHANISM; this
   // proves the SHIPPED content, on both the 19-stop display ramp and the 25-stop export ramp per rev8.
   const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
   const docs = [];
@@ -1119,18 +1119,18 @@ for (const mode of ["perceptual", "peak"]) {
   const dupCount = { perceptual: 0, peak: 0, even: 0 };
   const dupWitness = { perceptual: [], peak: [], even: [] };
 
-  // KNOWN_BASELINE_DUP — a named, cited exception list for a duplicate-hex ramp the shipped engine
+  // KNOWN_BASELINE_DUP  -  a named, cited exception list for a duplicate-hex ramp the shipped engine
   // cannot yet avoid, keyed by mode|hue|chroma|skew|lift|stop-set|stopA&stopB (chroma and the stop-set
   // label both added after review pass 1: a key without them lets palettes sharing a hue/skew/lift
   // signature but a DIFFERENT chroma silently share one exception). Measured on the RENDERED path
-  // (rampChromaOf, not raw palette.chroma — see this gate's own header comment), #681 U3's shipped R2
+  // (rampChromaOf, not raw palette.chroma  -  see this gate's own header comment), #681 U3's shipped R2
   // chromaEnvelope (anchor re-centred on its own lifted reading) carries ZERO such ramps across all
   // three tone modes and both stop sets, over the full corpus: the pre-U3 base (362cc48, rendered) also
-  // measures 0 — this class does not exist on the rendered corpus at all, before or after this unit.
+  // measures 0  -  this class does not exist on the rendered corpus at all, before or after this unit.
   // (R1, the first draft that measured sd against the raw numeric anchor and was reverted for the
-  // exact-anchor-under-lift gap Q1 describes, DID carry 2 such ramps on the rendered path — nature
+  // exact-anchor-under-lift gap Q1 describes, DID carry 2 such ramps on the rendered path  -  nature
   // "Varanger / Finnmark tundra" tertiary and nature "English oak woodland" primary, both 25-stop peak
-  // stops 150&175 #FDFDFB — neither named nor gated at the time because R1's own gate scanned raw
+  // stops 150&175 #FDFDFB  -  neither named nor gated at the time because R1's own gate scanned raw
   // `chroma`, a different ramp than either preset actually renders; R2 closes both.) The list stays
   // empty rather than deleted: the mechanism (and the C6(ii) load-bearing negative control below) is
   // proven, and any future engine change that reopens a bounded, pre-existing collision has a place to
@@ -1178,18 +1178,18 @@ for (const mode of ["perceptual", "peak"]) {
       check(p, roleDoc, mode, T.EXPORT_STOPS, "25-stop");
     }
   }
-  // (i) perceptual, peak, even — zero measured CIELAB L* upticks, whole corpus, both stop sets, on the
+  // (i) perceptual, peak, even  -  zero measured CIELAB L* upticks, whole corpus, both stop sets, on the
   // RENDERED chroma (see this gate's header comment for why raw palette.chroma is not the shipped ramp).
   if (upticks.perceptual) FAIL("chroma-envelope", `(C6 i) perceptual: ${upticks.perceptual} rise(s), e.g. ${upWitness.perceptual}`);
   if (upticks.peak) FAIL("chroma-envelope", `(C6 i) peak: ${upticks.peak} rise(s), e.g. ${upWitness.peak}`);
   if (upticks.even) FAIL("chroma-envelope", `(C6 i) even: ${upticks.even} rise(s), e.g. ${upWitness.even}`);
-  // (ii) no duplicate hex beyond KNOWN_BASELINE_DUP (currently empty — see that Set's own comment).
+  // (ii) no duplicate hex beyond KNOWN_BASELINE_DUP (currently empty  -  see that Set's own comment).
   if (dupCount.perceptual) FAIL("chroma-envelope", `(C6 ii) perceptual: ${dupCount.perceptual} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.perceptual[0]}`);
   if (dupCount.peak) FAIL("chroma-envelope", `(C6 ii) peak: ${dupCount.peak} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.peak[0]}`);
   if (dupCount.even) FAIL("chroma-envelope", `(C6 ii) even: ${dupCount.even} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.even[0]}`);
   if (seenBaselineDup.size !== KNOWN_BASELINE_DUP.size) {
     const missing = [...KNOWN_BASELINE_DUP].filter((k) => !seenBaselineDup.has(k));
-    FAIL("chroma-envelope", `(C6 ii) ${missing.length} of the ${KNOWN_BASELINE_DUP.size} cited baseline duplicates were not observed this run (${missing.join(", ")}) — either fixed (remove from the list, tighten C6 ii toward 0) or the corpus changed under it (re-diagnose before loosening further)`);
+    FAIL("chroma-envelope", `(C6 ii) ${missing.length} of the ${KNOWN_BASELINE_DUP.size} cited baseline duplicates were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list, tighten C6 ii toward 0) or the corpus changed under it (re-diagnose before loosening further)`);
   }
 
   // (iii) C6 "0 above 100%" (Q7 reading a: emitted CAM16 chroma at ANY stop over stop 500's own), for
@@ -1197,23 +1197,23 @@ for (const mode of ["perceptual", "peak"]) {
   // chroma at the anchor's own); pass 5 restores the OKHSL-path fix for PEAK ONLY, per the owner's
   // ruling on Q7 pass-4: peak is already defined to center richness at 500 (hpg-tonal-okhsl-modes), so
   // capping it there is consistent, not in tension. Perceptual is DELIBERATELY left off this exact-zero
-  // check — it keeps #55's cusp-pull richness untouched, per the owner's ruling (f) on Q7 pass-5 (below,
+  // check  -  it keeps #55's cusp-pull richness untouched, per the owner's ruling (f) on Q7 pass-5 (below,
   // (iii-b)): NO ramp change for perceptual, a different, bounded clause instead.
   //
-  // ADIA_CARVEOUT — the ONE named, owner-ruled exception (2026-09-18): an AUTHORED dampAmp>0 override is
+  // ADIA_CARVEOUT  -  the ONE named, owner-ruled exception (2026-09-18): an AUTHORED dampAmp>0 override is
   // exempt from "0 above 100%" by NAME, not by "any dampAmp>0" (that would silently exempt a future
   // second override too) and not by count (a NEW violator under this exact name would still fail the
-  // gate below unless the count is re-verified) — the negative control proves an UNLISTED dampAmp>0
+  // gate below unless the count is re-verified)  -  the negative control proves an UNLISTED dampAmp>0
   // preset is still caught.
   const ADIA_CARVEOUT = new Set(["Adia · The product's own design system"]);
   // `engine` (#681 U3 review 3, N4): defaults to the real, imported `T`, but takes any module with the
-  // SAME `paletteStops`/`STOPS` shape — so a negative control can run this EXACT check function against
+  // SAME `paletteStops`/`STOPS` shape  -  so a negative control can run this EXACT check function against
   // a patched copy of the engine, instead of reimplementing the check inline (which would drift from
   // this function's own logic and stop testing it at all).
   const above100Violators = (doc, toneMode, engine = T) => {
     const out = [];
-    // U3 review 2 (F2): this used to return [] early for EVERY generated (dampAmp 0) doc — exactly the
-    // population "0 above 100%" is FOR — so the gate below only ever saw Adia and the scratch negative
+    // U3 review 2 (F2): this used to return [] early for EVERY generated (dampAmp 0) doc  -  exactly the
+    // population "0 above 100%" is FOR  -  so the gate below only ever saw Adia and the scratch negative
     // control, and could never fail on a real cap regression (the reviewer scoped the peak cap to
     // `lift === 0` in a scratch copy and reproduced 1,487 violators while this gate still exited 0).
     // Removing the early return: measured 0 generated violators on the shipped engine (even and peak,
@@ -1237,30 +1237,30 @@ for (const mode of ["perceptual", "peak"]) {
     }
     if (unlisted.length) FAIL("chroma-envelope", `(C6 iii) ${toneMode}: ${unlisted.length} above-100% instance(s) from an UNLISTED preset (not the named Adia carve-out), e.g. ${unlisted[0]}`);
     const adiaHit = docs.some((doc) => ADIA_CARVEOUT.has(doc.__presetName) && above100Violators(doc, toneMode).length > 0);
-    if (!adiaHit) FAIL("chroma-envelope", `(C6 iii) ${toneMode}: the named Adia carve-out produced ZERO above-100% instances — either the carve-out is stale (Adia's own dampAmp no longer needs it, tighten toward 0) or the corpus dropped that preset; re-diagnose before touching ADIA_CARVEOUT`);
+    if (!adiaHit) FAIL("chroma-envelope", `(C6 iii) ${toneMode}: the named Adia carve-out produced ZERO above-100% instances  -  either the carve-out is stale (Adia's own dampAmp no longer needs it, tighten toward 0) or the corpus dropped that preset; re-diagnose before touching ADIA_CARVEOUT`);
 
     // Negative control: a SCRATCH copy of a NON-Adia doc with dampAmp forced to 70 (an authored-style
-    // override, matching Adia's own magnitude) must be caught as UNLISTED by the SAME check above —
+    // override, matching Adia's own magnitude) must be caught as UNLISTED by the SAME check above  - 
     // proves the carve-out really is keyed on the one named preset, not on "any dampAmp>0". In-memory
     // only, built from the already-loaded corpus; never reads origin/main at runtime.
     const scratchDoc = { ...docs[0], dampAmp: 70, __presetName: "Scratch · not a real preset (negative control)" };
     const v = above100Violators(scratchDoc, toneMode);
-    if (v.length === 0) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch dampAmp:70 preset (based on ${docs[0].__presetName}) produced no above-100% instance to catch — pick a different probe doc`);
-    else if (ADIA_CARVEOUT.has(scratchDoc.__presetName)) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch preset name collided with ADIA_CARVEOUT — rename the probe`);
+    if (v.length === 0) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch dampAmp:70 preset (based on ${docs[0].__presetName}) produced no above-100% instance to catch  -  pick a different probe doc`);
+    else if (ADIA_CARVEOUT.has(scratchDoc.__presetName)) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch preset name collided with ADIA_CARVEOUT  -  rename the probe`);
     // else: correctly NOT in ADIA_CARVEOUT, so the same logic that built `unlisted` above would catch
-    // it — this control doesn't re-run that loop, it just confirms the scratch doc IS a live violator
+    // it  -  this control doesn't re-run that loop, it just confirms the scratch doc IS a live violator
     // (checked above) that ISN'T named in the carve-out (checked here), which is what "reds as unlisted"
     // requires of it.
   }
 
   // Negative control for F2 itself (U3 review 2, wiring fixed U3 review 3 N4): proves the
-  // CHROMA-ENVELOPE CLAUSE ITSELF — not a hand-rolled reimplementation of it — reds on a real peak-cap
+  // CHROMA-ENVELOPE CLAUSE ITSELF  -  not a hand-rolled reimplementation of it  -  reds on a real peak-cap
   // regression. Dynamically imports a PATCHED copy of the real engine (relative imports rewritten to
   // absolute file:// so a data: URL module can resolve them; nothing on disk, nothing committed) with
   // the peak cap's condition narrowed to `palette.lift === 0`, the reviewer's own repro shape. Runs the
   // SAME `above100Violators` function this gate itself calls (passed the patched module as `engine`,
   // not a second, independently-written check that could silently drift from the real one and stop
-  // proving anything about it) — on the shipped engine every generated peak palette is checked (F2's
+  // proving anything about it)  -  on the shipped engine every generated peak palette is checked (F2's
   // fix); on this patched copy every lift != 0 generated peak palette loses its cap, so this must find
   // real, unlisted violators.
   {
@@ -1274,7 +1274,7 @@ for (const mode of ["perceptual", "peak"]) {
         'if (mode === "peak" && dampAmp === 0 && chroma > anchorChroma + 1e-6) {',
         'if (mode === "peak" && dampAmp === 0 && palette.lift === 0 && chroma > anchorChroma + 1e-6) {'
       );
-    if (patched === realSrc) FAIL("chroma-envelope", "(C6 iii negative control, peak cap) the patch target string was not found — the peak cap's condition text moved, update this control");
+    if (patched === realSrc) FAIL("chroma-envelope", "(C6 iii negative control, peak cap) the patch target string was not found  -  the peak cap's condition text moved, update this control");
     const PatchedT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
     let lifted = 0;
     for (const doc of docs) {
@@ -1282,7 +1282,7 @@ for (const mode of ["perceptual", "peak"]) {
       if (!doc.palettes.some((p) => p.lift)) continue; // the patch only strips the cap for lift != 0
       if (above100Violators(doc, "peak", PatchedT).length > 0) { lifted++; break; }
     }
-    if (lifted === 0) FAIL("chroma-envelope", "(C6 iii negative control, peak cap) the lift-scoped patched engine produced ZERO above-100% instances — this control no longer exercises the cap, pick a different probe");
+    if (lifted === 0) FAIL("chroma-envelope", "(C6 iii negative control, peak cap) the lift-scoped patched engine produced ZERO above-100% instances  -  this control no longer exercises the cap, pick a different probe");
   }
 
   // (iv) Dip gate (#681 U3 review 2, F1; extended to even U3 review 3, N1): the peak cap's pre-fix bugs
@@ -1428,7 +1428,7 @@ for (const mode of ["perceptual", "peak"]) {
     if (unlisted.length) FAIL("chroma-envelope", `(iv dip gate) ${toneMode}: ${unlisted.length} dip instance(s) beyond the cited baseline, e.g. ${unlisted[0]}`);
     if (baseline && seenBaseline.size !== baseline.size) {
       const missing = [...baseline].filter((n) => !seenBaseline.has(n));
-      FAIL("chroma-envelope", `(iv dip gate) ${toneMode}: ${missing.length} of the ${baseline.size} cited baseline dips were not observed this run (${missing.join(", ")}) — either fixed (remove from the list, tighten toward 0) or the corpus changed under it (re-diagnose before loosening further)`);
+      FAIL("chroma-envelope", `(iv dip gate) ${toneMode}: ${missing.length} of the ${baseline.size} cited baseline dips were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list, tighten toward 0) or the corpus changed under it (re-diagnose before loosening further)`);
     }
   }
   // #681 U3 review 4, R4 (the "assert" alternative, in addition to the wiring fix on both negative
@@ -1441,9 +1441,9 @@ for (const mode of ["perceptual", "peak"]) {
   }
 
   // Negative control (peak): a patched copy that reintroduces F1's exact pre-fix bugs (a 1-step
-  // bisection — reproducing the old single overshooting multiplicative step's effect of exiting far from
-  // target — and the old Math.min(chroma, target) fallback that locked in that undershoot) must produce
-  // FAR more dips than DIP_BASELINE — proves this gate is live, not just re-counting the same 6 forever.
+  // bisection  -  reproducing the old single overshooting multiplicative step's effect of exiting far from
+  // target  -  and the old Math.min(chroma, target) fallback that locked in that undershoot) must produce
+  // FAR more dips than DIP_BASELINE  -  proves this gate is live, not just re-counting the same 6 forever.
   {
     const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
     const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
@@ -1453,7 +1453,7 @@ for (const mode of ["perceptual", "peak"]) {
       .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
       .replace("for (let i = 0; i < 24; i++) {", "for (let i = 0; i < 1; i++) {")
       .replace("const capped = hctToRgb(polishHue, target, targetTone);", "const capped = hctToRgb(polishHue, Math.min(chroma, target), targetTone);");
-    if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found — the bisection/fallback text moved, update this control");
+    if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found  -  the bisection/fallback text moved, update this control");
     const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
     // #681 U3 review 4, R3/R4: calls the real findDips against the patched engine, over both stop sets,
     // instead of reimplementing the loop inline.
@@ -1465,7 +1465,7 @@ for (const mode of ["perceptual", "peak"]) {
       }
     }
     const buggyDips = buggyDipSet.size;
-    if (buggyDips <= DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control, peak) the pre-fix-bug patched engine produced only ${buggyDips} dip(s), not clearly more than the ${DIP_BASELINE.size}-witness baseline — this control no longer exercises the F1 regression, pick a different probe`);
+    if (buggyDips <= DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control, peak) the pre-fix-bug patched engine produced only ${buggyDips} dip(s), not clearly more than the ${DIP_BASELINE.size}-witness baseline  -  this control no longer exercises the F1 regression, pick a different probe`);
   }
 
   // Negative control (even, #681 U3 review 3, N1): a patched copy with `chromaFloor` amplified 1.6x
@@ -1483,7 +1483,7 @@ for (const mode of ["perceptual", "peak"]) {
         "const floorC = Math.min(((chromaFloor ?? 0) / 100) * maxc, intended);",
         "const floorC = Math.min((((chromaFloor ?? 0) * 1.6) / 100) * maxc, intended);"
       );
-    if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control, even) a patch target string was not found — evenChroma's floor text moved, update this control");
+    if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control, even) a patch target string was not found  -  evenChroma's floor text moved, update this control");
     const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
     // #681 U3 review 4, R4: calls the real findDips against the patched engine (the same shape N4 already
     // fixed for above100Violators), instead of reimplementing the loop inline; also over both stop sets
@@ -1496,18 +1496,18 @@ for (const mode of ["perceptual", "peak"]) {
       }
     }
     const buggyEvenDips = buggyEvenDipSet.size;
-    if (buggyEvenDips <= EVEN_DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control, even) the amplified-floor patched engine produced only ${buggyEvenDips} dip(s), not clearly more than the ${EVEN_DIP_BASELINE.size}-witness baseline — this control no longer exercises the mechanism, pick a different probe`);
+    if (buggyEvenDips <= EVEN_DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control, even) the amplified-floor patched engine produced only ${buggyEvenDips} dip(s), not clearly more than the ${EVEN_DIP_BASELINE.size}-witness baseline  -  this control no longer exercises the mechanism, pick a different probe`);
   }
 
   // (iii-b) perceptual's bounded CUSP-RUN exemption (#681 U3 pass 6, owner ruling (f), conductor
-  // lane-A-routing-6.md, 2026-09-19): NO ramp change for perceptual — #55's cusp-pull ships exactly as
+  // lane-A-routing-6.md, 2026-09-19): NO ramp change for perceptual  -  #55's cusp-pull ships exactly as
   // today (pass 5's measurement showed a one-STOP exemption spikes for 76% of the corpus, because a
-  // cusp is a natural SHOULDER spanning several adjacent stops, not a point — see Q7's pass-5 addendum).
+  // cusp is a natural SHOULDER spanning several adjacent stops, not a point  -  see Q7's pass-5 addendum).
   // Instead: a generated (dampAmp 0) perceptual palette may have AT MOST ONE CONTIGUOUS RUN of stops
   // above stop 500's own emitted chroma (the whole shoulder counts as one unit), and every stop in that
   // run must be at or under the frozen bound. A SECOND, separate run, or any stop past the bound, reds.
   //
-  // analyzeCuspRuns — pure: given a rendered ramp (in T.STOPS order) and its own anchor chroma, counts
+  // analyzeCuspRuns  -  pure: given a rendered ramp (in T.STOPS order) and its own anchor chroma, counts
   // the number of separate CONTIGUOUS above-anchor runs and the worst (chroma/c500) ratio among them.
   // Pure and synthetic-input-friendly so the negative controls below hand-craft an input rather than
   // depend on the corpus happening to contain the exact shape under test.
@@ -1523,9 +1523,9 @@ for (const mode of ["perceptual", "peak"]) {
     }
     return { runs, worstRatio };
   };
-  // CUSP_RUN_BOUND — 189.3005% of stop 500's own chroma, EXACT: the corpus's fresh-measured worst
+  // CUSP_RUN_BOUND  -  189.3005% of stop 500's own chroma, EXACT: the corpus's fresh-measured worst
   // cusp-stop excess (89.3005pp, cuisine "Sushi & sashimi · the cypress counter"/primary-muted, cusp
-  // stop 650 — measured pass 5, reconfirmed pass 6, frozen at this exact value by the owner's ruling
+  // stop 650  -  measured pass 5, reconfirmed pass 6, frozen at this exact value by the owner's ruling
   // (f), plan revision 20). Not rounded up: the plan's own frozen figure is this precise value.
   const CUSP_RUN_BOUND = 1.893005;
   const cuspRunFor = (doc, pal) => {
@@ -1561,7 +1561,7 @@ for (const mode of ["perceptual", "peak"]) {
         if (res && (res.runs > 1 || res.worstRatio > CUSP_RUN_BOUND + 1e-6)) adiaHit = true;
       }
     }
-    if (!adiaHit) FAIL("chroma-envelope", "(C6 iii-b) perceptual: the named Adia carve-out produced no second-run or bound-excess instance — either stale or the corpus dropped it; re-diagnose before touching ADIA_CARVEOUT");
+    if (!adiaHit) FAIL("chroma-envelope", "(C6 iii-b) perceptual: the named Adia carve-out produced no second-run or bound-excess instance  -  either stale or the corpus dropped it; re-diagnose before touching ADIA_CARVEOUT");
 
     // Negative control 1: a SCRATCH ramp with two SEPARATE above-anchor runs must read runs > 1.
     {
@@ -1569,7 +1569,7 @@ for (const mode of ["perceptual", "peak"]) {
       const ramp = T.STOPS.map((stop) => ({ stop, chroma: (stop === 200 || stop === 800) ? c500 * 1.2 : c500 * 0.8 }));
       ramp[ramp.findIndex((r) => r.stop === 500)] = { stop: 500, chroma: c500 };
       const res = analyzeCuspRuns(ramp, c500);
-      if (res.runs < 2) FAIL("chroma-envelope", `(C6 iii-b negative control) synthetic two-run ramp read ${res.runs} run(s), expected >=2 — check analyzeCuspRuns`);
+      if (res.runs < 2) FAIL("chroma-envelope", `(C6 iii-b negative control) synthetic two-run ramp read ${res.runs} run(s), expected >=2  -  check analyzeCuspRuns`);
     }
     // Negative control 2: a SCRATCH excess of CUSP_RUN_BOUND + 1% must read worstRatio past the bound.
     {
@@ -1577,7 +1577,7 @@ for (const mode of ["perceptual", "peak"]) {
       const ramp = T.STOPS.map((stop) => ({ stop, chroma: stop === 650 ? c500 * (CUSP_RUN_BOUND + 0.01) : c500 * 0.8 }));
       ramp[ramp.findIndex((r) => r.stop === 500)] = { stop: 500, chroma: c500 };
       const res = analyzeCuspRuns(ramp, c500);
-      if (!(res.worstRatio > CUSP_RUN_BOUND + 1e-6)) FAIL("chroma-envelope", `(C6 iii-b negative control) synthetic bound+1% ramp read worstRatio ${(res.worstRatio * 100).toFixed(2)}%, expected > ${(CUSP_RUN_BOUND * 100).toFixed(4)}% — check analyzeCuspRuns`);
+      if (!(res.worstRatio > CUSP_RUN_BOUND + 1e-6)) FAIL("chroma-envelope", `(C6 iii-b negative control) synthetic bound+1% ramp read worstRatio ${(res.worstRatio * 100).toFixed(2)}%, expected > ${(CUSP_RUN_BOUND * 100).toFixed(4)}%  -  check analyzeCuspRuns`);
     }
   }
 }

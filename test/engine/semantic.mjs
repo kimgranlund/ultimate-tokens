@@ -190,7 +190,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   // damp/dampCurve for "even" specifically, moving nearly every even family's numbers below (re-measured
   // post-pass-7; the "even" comments in this block are the CURRENT figures, not the R2-landing ones this
   // paragraph otherwise describes). "Perceptual" and "peak" both hold every PINNED (1-decimal) floor
-  // except perceptual Neutral dark, 4.9 -> 4.5 (measured 4.9841 -> 4.5327) — but several families move by
+  // except perceptual Neutral dark, 4.9 -> 4.5 (measured 4.9841 -> 4.5327)  -  but several families move by
   // a fraction of a percent WITHOUT crossing a floor digit in either direction: perceptual Warning dark
   // (4.6457->4.6452), perceptual Danger dark and peak Danger dark (5.1324->5.1315, identical in both
   // modes since Danger's accent/on-color pair coincides at the same pixel in perceptual and peak here),
@@ -201,20 +201,20 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   // moves; no PINNED floor moves except the one named below (Success light's floor digit does not move,
   // 6.1 -> 6.1, but its margin is thin enough to record here per the same disclosure standard).
   // The Neutral dark move is NOT an R1-vs-R2 artifact: Neutral carries lift 0, so chromaEnvelope's sd
-  // is identical under every design tried (liftStop(stop, 0) === stop always) — the move is REQ-052
+  // is identical under every design tried (liftStop(stop, 0) === stop always)  -  the move is REQ-052
   // itself (this unit's mandated saturation-basis change, chroma% of gamut -> the key colour's own
   // OKHSL s), which the plan's own mechanism (2) text names as a foreseeable risk ("the accent's own
   // L* shift... which the 16-family ratchet... both catch"). Still clears the ruled AA floor 4.5 (0.03
-  // of headroom) via #662's contrast policy, which guarantees AA rather than a rising ratchet — but
+  // of headroom) via #662's contrast policy, which guarantees AA rather than a rising ratchet  -  but
   // per "re-pin only upward, or hand any downward move to #662's policy," this one specific PINNED-
   // floor move is surfaced, not silently re-pinned: see .sdlc/questions/pif-u3.md Q6 (owner-ruled) for
   // the acceptance, now widened to the true set of thin cells (see the handoff's Risks section) since
-  // perceptual Neutral dark is not actually the thinnest cell in the 96 — four pre-existing "even"
+  // perceptual Neutral dark is not actually the thinnest cell in the 96  -  four pre-existing "even"
   // family/dark cells (Neutral, Primary, Tertiary, Info, all pinned at the 4.5 AA minimum) sit closer
   // to AA and are unaffected by any unit's work (corrected from "three," U3 review 3, minor item 6).
   const FLOORS = {
     perceptual: [
-      ["Neutral", 5.9, 4.5],   // measured 5.9007 / 4.5327 — light UP, dark DOWN from bf2aaf6's 5.8/4.9 (5.89/4.98) — REQ-052, not R1-vs-R2 (lift 0) — see comment above, Q3
+      ["Neutral", 5.9, 4.5],   // measured 5.9007 / 4.5327  -  light UP, dark DOWN from bf2aaf6's 5.8/4.9 (5.89/4.98)  -  REQ-052, not R1-vs-R2 (lift 0)  -  see comment above, Q3
       ["Primary", 6.0, 4.8],   // measured 6.0811 / 4.8678
       ["Secondary", 4.7, 6.1],   // measured 4.7692 / 6.1745
       ["Tertiary", 6.7, 4.8],   // measured 6.7956 / 4.8641
@@ -250,13 +250,13 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       ["Data 8", 5.2, 5.8],   // measured 5.2489 / 5.8451
     ],
     peak: [
-      ["Neutral", 6.2, 4.6],   // measured 6.2782 / 4.6977 — dark UP from bf2aaf6's 4.5 (4.51)
+      ["Neutral", 6.2, 4.6],   // measured 6.2782 / 4.6977  -  dark UP from bf2aaf6's 4.5 (4.51)
       ["Primary", 6.4, 4.6],   // measured 6.4444 / 4.6257
       ["Secondary", 11.5, 15.1],   // measured 11.5603 / 15.1950
       ["Tertiary", 7.5, 5.5],   // measured 7.5699 / 5.5767
       ["Info", 5.0, 7.7],   // measured 5.0696 / 7.7186
-      ["Success", 7.2, 11.9],   // measured 7.2142 / 11.9037 — dark UP from bf2aaf6's 11.8 (11.87)
-      ["Warning", 4.8, 7.5],   // measured 4.8392 / 7.5065 — dark UP from bf2aaf6's 7.4 (7.49)
+      ["Success", 7.2, 11.9],   // measured 7.2142 / 11.9037  -  dark UP from bf2aaf6's 11.8 (11.87)
+      ["Warning", 4.8, 7.5],   // measured 4.8392 / 7.5065  -  dark UP from bf2aaf6's 7.4 (7.49)
       ["Danger", 7.1, 5.1],   // measured 7.1662 / 5.1315
       ["Data 1", 10.0, 6.7],   // measured 10.0035 / 6.7813
       ["Data 2", 4.7, 5.5],   // measured 4.7957 / 5.5797

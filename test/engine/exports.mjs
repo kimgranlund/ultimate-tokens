@@ -417,10 +417,10 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // value derived from their ramp shifted. Re-pinned here AND in the SPEC's own Examples section in the
   // same change, so the normative text and this mirror cannot drift apart. The prime ladder, on-colors,
   // data-1 and constant.backdrop did not move.
-  // #681 U3 re-capture (this mirror only — docs/spec/spec-panda-park-ui-exports.md's EX-1/EX-2 are
+  // #681 U3 re-capture (this mirror only  -  docs/spec/spec-panda-park-ui-exports.md's EX-1/EX-2 are
   // NORMATIVE and out of this unit's lane; the drift is reported in .sdlc/handoffs/pif-u3.md and
   // .sdlc/questions/pif-u3.md for a docs-owning seat to move in lockstep): chromaEnvelope's saturation
-  // basis is now the key colour's own OKHSL `s` (REQ-052) rather than "chroma% of gamut" — bit-identical
+  // basis is now the key colour's own OKHSL `s` (REQ-052) rather than "chroma% of gamut"  -  bit-identical
   // for Primary (both bases already clamp to the same in-gamut ceiling) but NOT for Neutral (key.s
   // 0.221 vs chroma% 0.290, well under the ceiling), so colors.neutral["500"] (and its scrim mirror,
   // unchecked here) moves from oklch(0.5443 0.059 267.96) to oklch(0.5458 0.0462 266.73).

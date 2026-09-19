@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// report-preset-fidelity.mjs — C6's Q4-ruled envelope-shape table (`--envelope`), the plan's own named
+// report-preset-fidelity.mjs  -  C6's Q4-ruled envelope-shape table (`--envelope`), the plan's own named
 // command (preset-intent-fidelity.md, C6). Reports the median/p90 of emitted CAM16 chroma at stops
 // 100/300/700/900 as a percentage of stop 500's own CAM16 chroma, over the corpus C6 names (curated
-// palettes at source chroma >= 10, plus the 8 default-kit semantic families — Neutral through Danger,
-// not Data 1-8), on the RENDERED path (rampChromaOf, matching src/ui/model.mjs's projectView — never a
+// palettes at source chroma >= 10, plus the 8 default-kit semantic families  -  Neutral through Danger,
+// not Data 1-8), on the RENDERED path (rampChromaOf, matching src/ui/model.mjs's projectView  -  never a
 // palette's raw stored `chroma`, per the C6(i)/(ii) rendered-path fix this same unit made), in all
 // three tone modes.
 //
-// `--movement` (U4's own criterion, C6-iv/C9) is NOT built here — out of this unit's lane. This file
+// `--movement` (U4's own criterion, C6-iv/C9) is NOT built here  -  out of this unit's lane. This file
 // exists so U4 can add that mode to it rather than invent a second script.
 //
 //   node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N]
@@ -35,7 +35,7 @@ const RT = JSON.parse(readFileSync(new URL("../docs/reference/data/role-table.js
 const DEFAULT_KIT_NAMES = new Set(RT.defaults.filter((d) => !/^Data \d+$/.test(d.name)).map((d) => d.name)); // the 8 semantic families, not Data 1-8
 
 // The C6 corpus: curated palettes at source chroma >= 10, plus the 8 default-kit semantic families.
-// ADIA_CARVEOUT — the one named, owner-ruled AUTHORED (dampAmp>0) exception (test/engine/tonal.mjs
+// ADIA_CARVEOUT  -  the one named, owner-ruled AUTHORED (dampAmp>0) exception (test/engine/tonal.mjs
 // carries the gating copy of this set; this script's is for REPORTING only, so a FAIL/OK line reads
 // true rather than perpetually flagging the allowed Adia population).
 const ADIA_CARVEOUT = new Set(["Adia · The product's own design system"]);
@@ -70,12 +70,12 @@ const results = {};
 const aboveWitnesses = { perceptual: [], peak: [], even: [] };
 let aboveTotal = { perceptual: 0, peak: 0, even: 0 };
 let adiaAboveTotal = { perceptual: 0, peak: 0, even: 0 };
-// CUSP_RUN_BOUND — perceptual's owner-ruled bound (#681 U3 pass 6, ruling (f), plan revision 20):
-// 189.3005% of stop 500's own chroma, EXACT — the corpus's fresh-measured worst cusp-stop excess
+// CUSP_RUN_BOUND  -  perceptual's owner-ruled bound (#681 U3 pass 6, ruling (f), plan revision 20):
+// 189.3005% of stop 500's own chroma, EXACT  -  the corpus's fresh-measured worst cusp-stop excess
 // (89.3005pp, cuisine "Sushi & sashimi · the cypress counter"/primary-muted, cusp stop 650), frozen at
 // this precise value, not rounded. Even and peak keep the literal "0 above 100%" reading; perceptual is
 // reported under its own ruled clause instead (one contiguous above-anchor run, every stop in it at or
-// under this bound) — see test/engine/tonal.mjs's gating copy (C6 iii-b) for the enforced version; this
+// under this bound)  -  see test/engine/tonal.mjs's gating copy (C6 iii-b) for the enforced version; this
 // script's copy is for REPORTING only.
 const CUSP_RUN_BOUND = 1.893005;
 const perceptualRunFails = { runs: [], bound: [] }; // witnesses, non-Adia only
@@ -105,7 +105,7 @@ for (const mode of MODES) {
     }
     const isAdia = ADIA_CARVEOUT.has(presetName);
     if (mode === "perceptual") {
-      // Ruling (f): report by RUN, not by raw stop count — a palette's natural cusp shoulder can span
+      // Ruling (f): report by RUN, not by raw stop count  -  a palette's natural cusp shoulder can span
       // several adjacent stops; only a SECOND separate run, or any stop past CUSP_RUN_BOUND, is a fail.
       let runs = 0, inRun = false, worstRatio = 0;
       for (const s of T.STOPS) {
@@ -153,7 +153,7 @@ for (const damp of [0, 40, 70, 80, 100]) for (const dampCurve of [0.5, 1.5, 3]) 
   if (Math.abs(v - 1) > 1e-9) envFails++;
 }
 
-// SECOND READING (Q4's other name, "envelope numbers" — the chromaEnvelope multiplier itself, not the
+// SECOND READING (Q4's other name, "envelope numbers"  -  the chromaEnvelope multiplier itself, not the
 // emitted pixel chroma): env(500) is always exactly 1 by construction (the sweep above), so this is
 // just each palette's own env(stop) at 100/300/700/900, and "above 100%" here means env(stop) > 1 at
 // ANY stop for that palette, which only a non-zero dampAmp's shoulder term can cause
@@ -182,7 +182,7 @@ for (const mode of MODES) {
     }
     if (roseAboveHere) {
       // Only a non-zero dampAmp's shoulder term can trigger this (see the reading's own comment above),
-      // so in practice only the named Adia carve-out (dampAmp 70) ever does — same carve-out as reading
+      // so in practice only the named Adia carve-out (dampAmp 70) ever does  -  same carve-out as reading
       // (a), applied here too so this line doesn't perpetually misreport an allowed population as FAIL.
       if (ADIA_CARVEOUT.has(presetName)) envAdiaAboveTotal[mode]++;
       else {
@@ -233,7 +233,7 @@ for (const mode of MODES) {
 console.log("");
 console.log("=== READING (b): the chromaEnvelope MULTIPLIER itself, as % (Q4's other name, \"envelope numbers\") ===");
 console.log("(env(500) is always exactly 1 by construction, so \"above 100%\" here means the shoulder term,");
-console.log(" (dampAmp/100)*4*uG*(1-uG), pushed a stop's own multiplier above the anchor's — only a");
+console.log(" (dampAmp/100)*4*uG*(1-uG), pushed a stop's own multiplier above the anchor's  -  only a");
 console.log(" non-zero dampAmp can do this)");
 let envAnyFail = false;
 for (const mode of MODES) {

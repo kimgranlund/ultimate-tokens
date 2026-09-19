@@ -13,13 +13,13 @@
    that clears WCAG AA, or the white/black constant when neither ramp end does. Twelve lines moved,
    all of them a `*-foreground`: --primary-foreground, --secondary-foreground and
    --sidebar-primary-foreground across the three fixtures. No ramp stop, token NAME, block or
-   ordering changed — every other line is byte-for-byte the #647 capture.
+   ordering changed  -  every other line is byte-for-byte the #647 capture.
    #681 U3 CARVE-OUT (re-captured by script from the engine, never typed; R2): the OKHSL path's
    chroma damping now reads chromaEnvelope, keyed on the LIFTED stop and re-centred on the anchor's
-   OWN lifted reading (#668, #681 U3 R2 — env(anchor)=1 exact at every lift, not only lift 0), with
+   OWN lifted reading (#668, #681 U3 R2  -  env(anchor)=1 exact at every lift, not only lift 0), with
    the saturation basis now the key colour's own OKHSL `s` (REQ-052) rather than "chroma% of gamut".
-   Only the three role-table defaults carrying a non-zero lift move here — Success (skew -20,
-   lift -5), Warning (skew 40, lift -36), Danger (skew -20, lift -5) — each by a few hundredths in
+   Only the three role-table defaults carrying a non-zero lift move here  -  Success (skew -20,
+   lift -5), Warning (skew 40, lift -36), Danger (skew -20, lift -5)  -  each by a few hundredths in
    L/C and under a degree of hue: `--chart-2`/`--chart-3`/`--destructive`+`--chart-4` across the
    three fixtures. Every zero-lift default (including Primary, whose keyS and chroma% both clamp to
    the same in-gamut ceiling regardless of basis, and regardless of R1 vs R2 centring since sd=0 at
