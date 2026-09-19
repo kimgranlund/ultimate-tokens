@@ -91,3 +91,11 @@ Options:
 - Skip U3, land with d814500 figures labelled
 - Send back
 Chosen: Approve (Recommended)
+
+## Q10 (2026-09-19)
+Question: Heads-up from the plugin repo: a pre-commit check landing in a few hours will refuse any commit touching a file that defines criterion ids outside their owning plan. Our .sdlc/adapter.md defines C1 to C13 (its conflict table), and records-refresh U1 already edits that file. Once the check is live, pre-land fixes to adapter.md would be blocked until those ids are renamed. When do we do the rename?
+Options:
+- Add as U3 of records-refresh (Recommended)
+- Separate S plan later
+- Not now
+Chosen: Add as U3 of records-refresh (Recommended)
