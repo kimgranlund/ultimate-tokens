@@ -164,28 +164,117 @@ export function solveOkhslHue(targetOklchHue, s, l) {
 // `{}`, so both prior calls, including review 3's own `gamutClamp=true` anchored call, are unaffected
 // unless a caller opts in): when provided, `chromaAt(h)` returns the chroma that will ACTUALLY render
 // at candidate hue `h` - the caller's own `evenChroma(maxChromaInGamut(h, tone), ...)` formula,
-// evaluated fresh on every iteration, so hue and rendered chroma converge TOGETHER instead of the solve
+// evaluated fresh on every candidate, so hue and rendered chroma converge TOGETHER instead of the solve
 // chasing a chroma the render then discards (measured before this fix: Nike tertiary stop 150 and 48°
 // N secondary-muted stop 100 both landed on a hue found by a converged-looking solve whose real chroma
 // then read back 12-33 degrees off - see this function's own anchored caller in `paletteStopsAnchored`
-// and the handoff's review-pass-4 section for the residual). `seedHue` (also inside that options object,
-// defaulting to `targetOklchHue`): if 16 iterations pass without converging (|err| > 1e-3), the loop's
-// own accumulating `h` is not trustworthy near a gamut cusp where `chromaAt`'s dependence on `h` can
-// break Newton's linear-slope assumption - return `seedHue` (the "cam16" mode's own always-well-defined
-// fixed hue) instead of a possibly wild non-converged value. Gated on `chromaAt` being passed, so the
-// non-anchored path (which has no such fallback today and must stay byte-identical, C4) is unaffected.
-function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chromaAt = null, seedHue = targetOklchHue } = {}) {
-  let h = targetOklchHue; // seed: CAM16 hue ≈ OKLCH hue to first order
-  let err = 0;
-  for (let i = 0; i < 16; i++) {
-    const c = chromaAt ? chromaAt(h) : gamutClamp ? Math.min(chroma, maxChromaInGamut(h, tone)) : chroma;
-    const got = hctToOklch(h, c, tone)[2];
-    err = (((got - targetOklchHue) % 360) + 540) % 360 - 180;
-    if (Math.abs(err) < 1e-3) return h;
-    h = (((h - err) % 360) + 360) % 360;
+// and the handoff's review-pass-4 section for the residual).
+// Review pass 5, Finding 1 (2026-09-19): the FIRST `chromaAt` fix kept the old fixed-point step
+// `h <- h - err`, which assumes d(OKLCH hue)/dh ~= 1 - a Newton-style linear-slope guess. That fails
+// near a gamut cusp, where `chromaAt(h)` (and so the OKLCH hue it renders) can swing sharply with h;
+// measured: 865 stops where a real root existed and the fixed-point step walked past it without ever
+// evaluating it. Its "did not converge -> return seedHue" fallback then made things worse: seedHue is
+// the CAM16 hue, which is exactly the Abney-drifted value `hueSpace: "oklch"` exists to correct away
+// from - for a near-grey anchor, CAM16 and OKLCH hue can disagree by 20-50 degrees, so seedHue is the
+// WORST available hue there, not a safe one (measured: 152 stops in 79 ramps regressed by more than 5
+// degrees versus the pre-`chromaAt` render, one a lone OKLCH-C-0.13 spike, 48 N secondary-muted merely
+// swapped its drift for cam16's own). Replaced with a bracketed root-find when `chromaAt` is passed:
+// scan h on a `SCAN_STEP` grid over `targetOklchHue +/- SCAN_RANGE`, evaluated at `chromaAt(h)`, find
+// every sign change in the wrapped error, bisect the one whose bracket sits nearest the target down to
+// `BISECT_TOL`, and return that (evaluated) root.
+// ACHROMATIC candidates (own fix, found while building the above): `hctToOklch`'s underlying
+// `_hctToLinRGB` forces flat GRAY whenever chroma < 0.4 (its own "near-neutral, CAM16 inversion is
+// noisy" branch) - a render that dim has no real dependence on h, so its returned "hue" is an
+// artifact, not a function of h. Scanning across a wide near-white stop's hue range, `chromaAt(h)`
+// is BELOW 0.4 for most of it (correctly - the stop IS meant to render near-gray there) and only
+// exceeds 0.4 once h swings into a hue whose gamut is wide even at that lightness (yellow, near
+// white). Treating the achromatic zone's constant, meaningless "err" as informative invents a FAKE
+// sign change exactly at that boundary - bisecting it lands the solve just past the 0.4 line, on a
+// newly-VISIBLE, unintended tint, instead of anywhere in the large, harmless achromatic zone the true
+// construction renders gray throughout (measured: a coarse scan step alone, without this fix, reliably
+// found this exact false bracket on a near-white ramp; the review's own worst case, a C-0.13 lemon
+// spike, is a different instance of the same shape - a candidate whose OWN chroma differs sharply from
+// its neighbours', not a real hue root). Fix: candidates at or under the 0.4 floor are excluded from
+// both bracket detection and the argmin-|err| fallback; if NO real bracket is found AND any scanned
+// candidate was achromatic, return `targetOklchHue` unchanged in preference to the least-bad chromatic
+// candidate (an achromatic render is EXACT - any hue there is bit-identical gray - while the least-bad
+// chromatic candidate never actually reached the target and would introduce an avoidable new tint).
+// Only when NO candidate anywhere in the window was achromatic does the least-|err| chromatic
+// candidate apply.
+// SCAN_STEP is 12, not 1: profiled cost (each `chromaAt` call is a full gamut-boundary binary search,
+// ~46us cache-cold, and `projectView` re-derives each anchored ramp roughly 10x per document across
+// its export formats) makes a literal 1-degree grid over the full 3,396-ramp corpus take 15+ minutes
+// in `npm test` (measured; a single even-mode corpus sweep did not finish in that time). A 12-degree
+// grid plus the achromatic fix above and this same bisection resolves the review's own named cases
+// (Great Salt Lake secondary-muted stop 125, 48 N secondary-muted stops 75-125) identically to a
+// literal 1-degree grid, and the full corpus sweep in `test/engine/anchor.mjs` completes in well under
+// a minute; see the handoff's review-pass-5 section for the re-measured timing and residual counts.
+// The earlier false-positive root this coarser grid appeared to reintroduce (Great Salt Lake stop 75)
+// was actually the achromatic-boundary bug above, not a genuinely missed narrow root - fixing that bug
+// made the coarse grid safe again; see the handoff for how this was verified.
+// The non-`chromaAt` branch below (the non-anchored path's own call, and any future `gamutClamp=true`
+// caller) is UNTOUCHED - still the original fixed-point loop, byte-identical (C4).
+function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chromaAt = null } = {}) {
+  if (!chromaAt) {
+    let h = targetOklchHue; // seed: CAM16 hue ≈ OKLCH hue to first order
+    for (let i = 0; i < 16; i++) {
+      const c = gamutClamp ? Math.min(chroma, maxChromaInGamut(h, tone)) : chroma;
+      const got = hctToOklch(h, c, tone)[2];
+      const err = (((got - targetOklchHue) % 360) + 540) % 360 - 180;
+      if (Math.abs(err) < 1e-3) return h;
+      h = (((h - err) % 360) + 360) % 360;
+    }
+    return h;
   }
-  if (chromaAt && Math.abs(err) > 1) return seedHue; // did not converge - the fixed cam16 hue is safer than trusting this
-  return h;
+  const SCAN_RANGE = 60, SCAN_STEP = 12, BISECT_TOL = 1e-4, BISECT_STEPS = 40, CHROMA_ACHROMATIC = 0.4;
+  // errAt returns null for an achromatic candidate (chroma below the render's own gray floor) - not a
+  // real function value, so callers must skip it rather than treat it as a normal (possibly zero) err.
+  const errAt = (offset) => {
+    const h = (((targetOklchHue + offset) % 360) + 360) % 360;
+    const c = chromaAt(h);
+    if (c < CHROMA_ACHROMATIC) return null;
+    const got = hctToOklch(h, c, tone)[2];
+    return (((got - targetOklchHue) % 360) + 540) % 360 - 180;
+  };
+  let bestOffset = null, bestErr = 0, bestAbs = Infinity;
+  let bracket = null; // the sign-change bracket whose midpoint is nearest offset 0 (the target)
+  let prevOffset = null, prevErr = null; // last NON-achromatic sample seen
+  let sawAchromatic = false;
+  for (let offset = -SCAN_RANGE; offset <= SCAN_RANGE; offset += SCAN_STEP) {
+    const err = errAt(offset);
+    if (err === null) { sawAchromatic = true; continue; } // no signal, and no bracket can start/end here
+    const absErr = Math.abs(err);
+    if (absErr < bestAbs) { bestAbs = absErr; bestOffset = offset; bestErr = err; }
+    if (prevErr !== null && ((prevErr > 0 && err < 0) || (prevErr < 0 && err > 0))) {
+      const mid = Math.abs((prevOffset + offset) / 2);
+      if (!bracket || mid < bracket.mid) bracket = { loOffset: prevOffset, loErr: prevErr, hiOffset: offset, hiErr: err, mid };
+    }
+    prevOffset = offset; prevErr = err;
+  }
+  if (bracket) {
+    let { loOffset, loErr, hiOffset, hiErr } = bracket;
+    for (let i = 0; i < BISECT_STEPS && hiOffset - loOffset > BISECT_TOL; i++) {
+      const midOffset = (loOffset + hiOffset) / 2;
+      const midErr = errAt(midOffset);
+      // An achromatic midpoint mid-bisection is rare (the bracket's own endpoints are both
+      // non-achromatic) but not impossible if the achromatic/chromatic boundary sits inside it;
+      // treat it as "same side as lo" so bisection still narrows (and still terminates on the
+      // BISECT_STEPS/BISECT_TOL bounds either way) rather than reading a null err as a sign.
+      if (midErr === null || (loErr > 0) === (midErr > 0)) { loOffset = midOffset; loErr = midErr ?? loErr; }
+      else { hiOffset = midOffset; hiErr = midErr; }
+    }
+    return (((targetOklchHue + (loOffset + hiOffset) / 2) % 360) + 360) % 360;
+  }
+  // No real root (no sign change) among the non-achromatic candidates. If the window ALSO contains
+  // achromatic hues, prefer staying there over the "least-bad" chromatic candidate: an achromatic
+  // render is EXACT (any hue there is bit-identical gray, so it can't be a visible artifact), while
+  // the least-bad chromatic candidate is only an approximation that never actually reached the target
+  // - choosing it over an available gray would introduce a new, avoidable tint (this is what the
+  // achromatic-boundary bug above did before this fallback existed). Only when NO candidate anywhere
+  // in the window was achromatic does the least-|err| chromatic candidate apply (never seedHue - see
+  // this function's header comment).
+  if (sawAchromatic) return targetOklchHue;
+  return bestOffset === null ? targetOklchHue : (((targetOklchHue + bestOffset) % 360) + 360) % 360;
 }
 
 // evenChroma — the even path's per-stop chroma from the gamut ceiling + a pre-computed intended target and
@@ -578,10 +667,11 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     let resolvedHue = seedHue;
     if (oklchSpace) {
       // R3 (review pass 2) solves per stop, at THIS STOP'S OWN tone, not once at the anchor's own
-      // point (the degenerate solve that made hueSpace measure as dead). Review pass 4 Finding 2:
-      // solve hue and the REAL render chroma jointly via chromaAt above, falling back to seedHue
-      // ("cam16" mode's own fixed hue) if the solve does not converge within 16 iterations.
-      resolvedHue = solveCam16Hue(targetOklchHue, 0, tone, false, { chromaAt, seedHue });
+      // point (the degenerate solve that made hueSpace measure as dead). Review pass 4 Finding 2
+      // solves hue and the REAL render chroma jointly via chromaAt above; review pass 5 Finding 1
+      // replaced the fixed-point step inside solveCam16Hue with a bracketed root-find (see its own
+      // header comment) - seedHue is no longer passed or used as a fallback there.
+      resolvedHue = solveCam16Hue(targetOklchHue, 0, tone, false, { chromaAt });
     }
     const hue = (((resolvedHue + shift * dir) % 360) + 360) % 360;
     const maxc = maxChromaInGamut(hue, tone);

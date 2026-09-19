@@ -270,7 +270,7 @@ R8-R10.
 | R5 | Run U3's `report-preset-fidelity.mjs --envelope` from a scratch copy, record "U2 basis, pre-integration" | **Done** - see below. FAILs both readings (C6's own criteria), matching the expectation that U3's own `VIVID_MIDS.dampAmp` 55->0 fix has not landed in U2's tree yet |
 | R6 | Replace `anchorLerp`'s per-side double-S with a piecewise-affine `toneAt` remap | **Done** - `anchorWarp`/`anchorLiftPos` (and their ANCHOR_LIFT_* constants) are now dead code and removed, R4's own ask once R6 dropped their last caller. Gap-19 allow-list moved 69 -> 91 (commit `31627a3`, R6+R3+the smoothstep easing landed together) -> 90 (R1's rounding-aware fix) -> 93 (review-pass-3 Finding 2, gap-19 reads pixel L*, not the target `tone` field) -> **91** (review-pass-4 Finding 2: the joint hue/rendered-chroma solve incidentally closed 2 of the 93 gaps back over 0.55 - see the Review pass 4 section below). **Attribution corrected (review pass 3, Finding 6): the 69 -> 91 (this row's OWN intermediate step, not the final 91 above - same number, different cause) move is NOT R6 alone** - measured single-factor, from the `0849f67` baseline, R6 alone takes 69 to 76 (the largest single factor), the R3 hue solve alone to 71, the smoothstep easing alone to 72; the three interact rather than summing. Distinct-25 10 -> 14 -> **13** (review-pass-4, same cause) (expected - "that is the point") |
 | R7 | Re-measure FLOORS and thin cells after R1-R6; record by name against `bf2aaf6`, do not re-pin as final | **Done** - AA 4.5 holds in every cell; 41 of 96 (was 46) sit below their pre-#681 value. Table and thin-cell three-way comparison in `.sdlc/questions/pif-u2.md` Finding 5. The `test/engine/semantic.mjs` FLOORS table itself WAS re-pinned (to keep `npm test` green, matching every prior pass's own convention) - "not re-pinned as final" is honored by taking the by-name comparison to the owner as a question, not by leaving the gate red. Later ruled Q-B: each of the 41 rows now carries an inline "pending U4" old/new note |
-| R8 | Fix stale/contradictory lines (handoff, questions, code comments, Reset tooltip, `(rst)` header); remove em dashes; record final head sha | **Done, corrected again (review pass 4, Finding 3, 2026-09-19): the five shas this row cited after review pass 3's own rebase are ALSO off-branch now** - a second rebase (onto `56a7f9c`, then a third onto `0e04e12`... see this handoff's own rebase history below) changes commit identity every time. Cited by SUBJECT LINE as well as sha this time, so the NEXT rebase breaking the sha does not also break the pointer: `test(color-engine): re-measure every fixture the anchor-forwarding fix moved` (4 em dashes, currently `0c962bf5`), `fix(color-engine): forward a palette's anchor into the ramp's own paletteStops calls` (2, currently `e6765a9c`), `feat(color-engine): ramp passes through the anchor at stop 500` (2, currently `1b912e8d`), `docs(handoff): record repair pass 2's per-finding status and rendered-path numbers` (1, currently `1a1955d7`), `fix(engine,test,docs): citations, EX-2/shadcn/ramp fixture re-pins, Finding 5 floors` (3, currently `892fd352`); all predate `0849f67` and are historical, kept as-is per this brief's own rule ("history is not rewritten"). Every commit from `0849f67` onward is clean. Re-verify with `git merge-base --is-ancestor <sha> HEAD` per commit before trusting any of these shas again |
+| R8 | Fix stale/contradictory lines (handoff, questions, code comments, Reset tooltip, `(rst)` header); remove em dashes; record final head sha | **Done, corrected twice more (review pass 4 Finding 3, then review pass 5 Finding 3, 2026-09-19): every rebase changes commit identity, so a sha inlined in prose goes stale again on the NEXT one** - this branch has rebased onto the plan tip three times since these five commits landed: `0e04e12` first, then `56a7f9c` (see this handoff's own rebase history below), then `3c9630bf` (review pass 5). Cited by SUBJECT LINE only from here on, per review pass 5's own instruction - no sha inlined in this row again: `test(color-engine): re-measure every fixture the anchor-forwarding fix moved` (4 em dashes), `fix(color-engine): forward a palette's anchor into the ramp's own paletteStops calls` (2), `feat(color-engine): ramp passes through the anchor at stop 500` (2), `docs(handoff): record repair pass 2's per-finding status and rendered-path numbers` (1), `fix(engine,test,docs): citations, EX-2/shadcn/ramp fixture re-pins, Finding 5 floors` (3); all predate `0849f67` and are historical, kept as-is per this brief's own rule ("history is not rewritten"). Every commit from `0849f67` onward is clean. The one current sha table for this doc is at its very end ("Live sha table") - refreshed in the final records commit of each pass; re-verify any sha there with `git merge-base --is-ancestor <sha> HEAD` before trusting it, since a further rebase can move it again |
 | R9 | Extend `(rst-corpus)` to all 8 categories + the default kit; compare full `projectView` ramps, not only fields | **Done** - 3,396 anchored palettes (was 1,460, 4 categories), both a field-level check and a full 25-stop rendered-ramp deep-equal against a reference captured from the pre-detach snapshot state |
 | R10 | Replace the tautological swap control (`anchor.mjs:630-644`); print `r` lines for every allow-list; name the gate's own final-line criteria | **Done** - the negative controls now call `allowListMatches`, the SAME comparator the real gates use, against real measured data with a name dropped or swapped (drop+swap, at this pass five allow-lists; after R1's later fix, four - monotone has no allow-list left to test, `r` lines print for window-clamp, gap, distinct and notch); the final `PASS` line names C2/C3/C4/C5/C6/F4/gap-19/distinct-25/notch |
 
@@ -454,11 +454,11 @@ scripts/audit-citations.mjs` STALE 0, `node test/repo/branding.mjs` clean. Stop 
 4.5 holds everywhere, stop 500 exact in every mode, monotone stays a true 0, `(gid3)`/`(gid8)`/`(gid8b)`
 green - none fired. No second workaround: Finding 3's fix is additive to the existing `solveCam16Hue`,
 not a new mechanism; the 2-stop residual above is named, not chased with a second construction. Head
-sha `d8cd49c` at the time (`fix(anchor,tonal): review pass 3 fixes - pixel-L* gap, gamut-safe even hue
-solve, hueSpace check moved to even, tautology removed, Q-B gate`; this fix, rebased cleanly onto
-`6c55f25`/rev 20 beforehand as `45136d7f`, then this commit made on top - no further rebase needed at
-that point). **Off-branch after later rebases; on the current branch this commit is `b43da7a6`**
-(review pass 4, Finding 3). Superseded by the Q-D addendum below, which starts from this sha.
+commit at the time: `fix(anchor,tonal): review pass 3 fixes - pixel-L* gap, gamut-safe even hue solve,
+hueSpace check moved to even, tautology removed, Q-B gate` (rebased cleanly onto rev 20 beforehand, no
+further rebase needed at that point - cited by subject only from review pass 5 onward, per Finding 3;
+its current sha is in the "Live sha table" at the end of this doc if still on the branch). Superseded
+by the Q-D addendum below, which starts from this commit.
 
 ## Q-D addendum (ruled, held, then unheld + verified, 2026-09-18)
 
@@ -522,15 +522,12 @@ not the text that coincidentally still reads at the doc's stale `2446`/`2478`).
 4.500:1, literature "Nineteen Eighty-Four"), `node scripts/audit-citations.mjs` STALE 0. Stop
 conditions checked: AA 4.5 holds, stop 500 exact, monotone a true 0, `(gid3)`/`(gid8)`/`(gid8b)` green -
 none fired. No second workaround. Rebased onto the plan tip after it moved twice more during this
-addendum (`0e04e12` then `56a7f9c`, both clean, no conflicts). Commits at the time: `554f49f`
-(`wip(color,anchor): Q-D UI - disable hueSpace for anchored perceptual/peak`, WIP-tagged since the
-citation gate was still red when it landed), `c6870b8` (`fix(docs): repair 25 stale citation line
-numbers after Q-D's UI edit`, the citation fix - and, since it was the last commit made before this
-rebase, also the head at the time). **Head sha: `37f99f4f`.** **Off-branch after later rebases**
-(review pass 4, Finding 3): `554f49f` is now `6cbf2b32`; `c6870b8`/the recorded head `37f99f4f` are the
-SAME commit and both now sit at `37f99f4f` still - this row was already correct and needed no fix, per
-the reviewer's own check. Re-verify with `git merge-base --is-ancestor` before trusting any of these
-shas again, since a further rebase can move them at any time.
+addendum (`0e04e12` then `56a7f9c`, both clean, no conflicts). Two commits at the time, cited by
+subject only from review pass 5 onward (a sha inlined here has gone stale on every later rebase so
+far): `wip(color,anchor): Q-D UI - disable hueSpace for anchored perceptual/peak` (WIP-tagged since the
+citation gate was still red when it landed) and `fix(docs): repair 25 stale citation line numbers
+after Q-D's UI edit` (the citation fix, and the head commit at the time this addendum finished). See
+the "Live sha table" at the end of this doc for either commit's current sha, if still on the branch.
 
 ## Review pass 4 (`pif-u2-review-4.md`, FIX-FIRST, small, briefed as `u2-fixfirst-4.md`, 2026-09-19)
 
@@ -607,9 +604,15 @@ commit:
    Inspector`'s `d.palettes.every((p) => p.anchor)`) stays ENABLED (not every palette is anchored),
    palette 0's per-palette note (`renderPaletteInspector`'s own `p.anchor`, independent of siblings)
    shows, and palette 1's note is absent - proving the two predicates are genuinely separate, which
-   hs1-hs7 (all-anchored or all-but-one-detached-via-undo) could not show. Negative control: a hand-
-   written copy of the per-palette rule swapped for the doc-level "every palette anchored" test
-   evaluates to `false` for palette 0 in this exact mixed doc, proving that swap would red `(hs9)`.
+   hs1-hs7 (all-anchored or all-but-one-detached-via-undo) could not show. The in-suite negative
+   control is a hand-written copy of the per-palette rule (evaluates to `false` for palette 0 in this
+   exact mixed doc), not a real-render check - the same shape as `(hs8)` (review pass 5, Finding 4).
+   **Real-render control (run by the review-5 reviewer, recorded here per their own note)**: with
+   `src/ui/sections/color.js:1795` switched from `p.anchor && this.doc.toneMode !== "even"` to
+   `p.anchor && this.doc.toneMode !== "even" && this.doc.palettes.every((q) => q.anchor)` (the
+   doc-level rule, wrongly copied onto the per-palette one), the real render reds: `(hs9) palette 0
+   (anchored) still shows the hueSpace note in perceptual` fails (and the same in peak), exit 1 -
+   proving the real per-palette rule, not a copy of the doc-level one, is what actually gates the note.
 
 ### Final state, review pass 4 + addendum 2
 
@@ -624,3 +627,82 @@ of this pass, per the ruling above. **Head sha of the fix commit: `b7752ae1`** (
 anchor): review pass 4 - convergent even hue solve, Q-D bound ruled final, hs9`); this paragraph itself
 lands in a small follow-up docs-only commit on top of it. Re-verify both with `git merge-base
 --is-ancestor` before trusting them, since a further rebase can move either at any time.
+
+## Review pass 5 (`pif-u2-review-5.md`, FIX-FIRST, briefed as `u2-fixfirst-5.md`, 2026-09-19)
+
+Review 5 measured `d8ea8771`. Verdict FIX-FIRST: the review-4 `chromaAt` fix solved the RIGHT problem
+(converge hue against the rendered chroma) with the WRONG root-finder. Its fixed-point step `h <- h -
+err` assumes the render's OKLCH hue moves smoothly with h (slope ~= 1) - false near a gamut cusp,
+where `chromaAt(h)` itself can swing sharply. Measured: 865 stops had a real root the fixed-point step
+walked past without ever evaluating; its "did not converge -> seedHue" fallback then rendered those
+stops at the CAM16 hue - exactly the Abney drift `hueSpace: "oklch"` exists to remove - regressing 152
+stops in 79 ramps by more than 5 degrees, one a lone OKLCH-C-0.13 lemon spike.
+
+### Per-finding status
+
+| Finding | What | Status |
+|---|---|---|
+| 1 | Fixed-point step + seedHue fallback missed 865 roots, regressed 152 stops | **Fixed**: `solveCam16Hue`'s `chromaAt` branch is now a bracketed root-find - scan `targetOklchHue +/- 60deg`, find every sign change in the wrapped error, bisect the one nearest the target. Own finding while building this: `hctToOklch`'s underlying gray floor (chroma < 0.4) makes a wide near-white stop's "hue" meaningless across most of the window, and treating its flat, meaningless err as informative invented a FAKE sign change exactly where chroma crosses that floor - fixed by excluding achromatic candidates from both bracket detection and the argmin fallback, and preferring `targetOklchHue` (an exact, bit-identical gray) over the least-bad chromatic candidate whenever no real root exists but some part of the window is achromatic. The grid step is 12 degrees, not the brief's literal 1: a 1-degree grid over the full corpus did not finish in 15+ minutes (`chromaAt` is a full gamut-boundary binary search, and `projectView` re-derives each anchored ramp roughly 10x per document across its export formats - both true of the shipped 1-degree attempt too, this was not a new cost). The achromatic fix, not grid resolution, was the actual cause of an early 12-degree attempt's own regression (Great Salt Lake stop 75); once fixed, 12 degrees reproduces the review's own named cases identically to 1 degree (see re-measured numbers) |
+| 2 | Handoff claims wrong (42.36 deg stop mislabeled, no >10deg column); `tonal.js:169/172` comments stale | **Fixed**: the false claims are superseded by this section's own numbers below; `tonal.js`'s header comment is fully rewritten (this pass) and no longer contains the flagged text |
+| 3 | Sha citations went stale again after this branch's later rebases | **Fixed for this pass's own findings** (R8 row, the review-pass-3 "Final state" paragraph, the Q-D addendum "Final state" paragraph): all now cite by subject line only, pointing to the new "Live sha table" below rather than inlining a sha that the next rebase can break. Older inline shas elsewhere in this doc are not exhaustively swept this pass (scope: what review 5 flagged) |
+| 4 | `(hs9)`'s in-suite negative control is a hand-written predicate copy, same shape as `(hs8)` | **Recorded, not changed**: the reviewer's own real-render run is now recorded next to the `(hs9)` description above (color.js:1795 switched to the doc-level "every anchored" rule reds `(hs9)` on the real render, exit 1) |
+
+### Re-measured numbers
+
+**Regression vs `a079fab3` (pre-review-4), even mode, full corpus + default kit** (`node
+p5-regress.mjs`, anchor C >= 0.005, stop excluded when both sides read C < 0.02):
+
+| Metric | Measured at head |
+|---|---|
+| stops compared | 71,592 |
+| head worse than `a079fab3` by > 5 deg | **0 stops in 0 ramps** (brief's own target) |
+| head better than `a079fab3` by > 5 deg | 206 |
+| stops > 10 deg from the anchor hue (C >= 0.02) | head **0**, `a079fab3` 66 (brief's target: at or below 66 - met, fully eliminated) |
+| head byte-identical to cam16 where `a079fab3` differed | 79 stops (0 of them > 10 deg - the coincidental equalities are all harmless) |
+
+Both named regressions read near-neutral again: Nike tertiary stops 150/175 and 48 N secondary-muted
+stops 75/100/125 all render identically to the review-4 fix's own intended target (`#FDFDFD`-class
+near-white / within a few degrees of the anchor hue - see the ramp probes in the review-5 evidence).
+Perceptual and peak are unaffected: `chromaAt` is only ever passed from `paletteStopsAnchored`, the
+even-mode-only anchored path (`paletteStops` routes perceptual/peak to `okhslStopsAnchored` instead,
+untouched this pass) - the Q-D bound gate above, which covers perceptual/peak in full, is unchanged.
+
+**Timing** (`node test/engine/anchor.mjs`, standalone, real time): **~250s** at the 12-degree grid.
+A literal 1-degree grid did not complete a single even-mode corpus sweep within 15 minutes and was
+abandoned before finishing (background process killed) - not measured to completion. This is a real
+regression from the pre-review-4 baseline (`anchor.mjs` was seconds, part of `npm test`'s overall
+~60-90s), traded for correctness; flagged to team-lead in the completion report rather than silently
+absorbed, since it changes the letter (not the intent) of the brief's "1-degree grid" instruction.
+
+**New gate - lone-spike** (`test/engine/anchor.mjs`, even mode, 25-stop export ramp, full corpus +
+default kit): a stop whose OKLCH C exceeds BOTH immediate neighbours' by more than 0.03, where both
+neighbours ALSO read at or under 0.05 C (the achromatic-region qualifier - see the gate's own header
+comment for why the brief's literal, unqualified version false-positived on 168 ordinary ramp peaks,
+e.g. architecture "Bankside / Tate Modern" secondary stop 300, C 0.153 between neighbours at C
+0.108/0.117, an intended cusp, not a defect). Measured at head: **0** (pass, no allow-list - a real hit
+is the bug this pass exists to prevent). **Negative control**: the old (review-4, commit `d8ea8771`)
+`tonal.js` engine, run against this pass's own new gate in a scratch copy, reds at **10** lone spikes -
+proving the gate bites the actual bug class, not just a synthetic shape.
+
+**Allow-list fallout**: `RAMP_DISTINCT_ALLOW` 13 -> **14** - travel "23 S / Salar de Atacama, 2,305 m"
+secondary's 25-stop ramp is duplicate-hex again, matching `a079fab3`'s ORIGINAL 14-count exactly (the
+same entry review 4 had removed is back - not a new regression, a reversion of review 4's own
+incidental de-duplication, now that the achromatic-boundary bug that caused it is fixed).
+`RAMP_GAP_ALLOW` (91) and `NOTCH_ALLOW` (78, same 78 names) are UNCHANGED this pass.
+
+### Final state, review pass 5
+
+`npm test` 48/48 green, `git status --short` empty, `npm run gate:corpus-contrast` PASS,
+`node scripts/audit-citations.mjs` STALE 0, `node test/repo/branding.mjs` clean. Stop conditions
+checked: AA 4.5 holds everywhere, stop 500 exact in every mode, the monotone count stays a true 0,
+`(gid3)`/`(gid8)`/`(gid8b)` green - none fired. No second workaround: the bracketed root-find is a
+replacement for the fixed-point step INSIDE the same `chromaAt` mechanism review pass 4 introduced,
+not a new one; the achromatic-candidate fix is a correctness fix to that same mechanism, found and
+fixed within this pass rather than shipped and caught by a review pass 6. Rebased onto the plan tip
+current at the end of this pass (see the Live sha table below for the tip sha at that time).
+
+### Live sha table (subject line -> sha, as of this pass's own final commit)
+
+| Subject | Sha |
+|---|---|
+| _filled in by the final records commit of this pass_ | |

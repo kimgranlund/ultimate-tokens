@@ -463,6 +463,11 @@ const RAMP_GAP_ALLOW = [
 // Review pass 4, Finding 2 (2026-09-19): same fix, same fallout as RAMP_GAP_ALLOW above - the joint
 // hue/rendered-chroma solve incidentally de-duplicated travel "23° S / Salar de Atacama, 2,305 m"
 // secondary's 25-stop ramp. 14 -> 13.
+// Review pass 5, Finding 1 (2026-09-19): the review-4 solve's fixed-point step (now replaced by a
+// bracketed root-find, see solveCam16Hue's own header comment) also missed the achromatic-boundary
+// case this same Salar de Atacama ramp sits in - the fix restores it to duplicate-hex, matching
+// a079fab3's original (pre-review-4) construction. 13 -> 14 - back to the original count, not a new
+// regression.
 const RAMP_DISTINCT_ALLOW = [
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
@@ -471,6 +476,7 @@ const RAMP_DISTINCT_ALLOW = [
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
+  `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6`,
   `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
   `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
@@ -705,6 +711,34 @@ function distinctOk25(stops) {
 
 let rampExact = 0, rampOff = 0;
 const windowNames = new Set(), nonMonoNames = new Set(), gapNames = new Set(), distinctNames = new Set(), notchNames = new Set();
+// loneSpikeStop (review pass 5, Finding 1): a stop whose rendered OKLCH C exceeds BOTH its immediate
+// neighbours' by more than LONE_SPIKE_BOUND is a visible artifact regardless of cause - the class the
+// review's own worst case (a lone C-0.13 lemon spike, from the pre-fix seedHue fallback) belongs to.
+// The review's own "exceeds both neighbours by > 0.03" test, taken literally over EVERY interior stop,
+// also fires on a ramp's own intended chroma PEAK (a smooth cusp near stop 500's neighbourhood, where
+// consecutive 25/50-wide stops naturally differ by well over 0.03 as part of the designed curve -
+// measured: 168 hits, nearly all ordinary peaks, e.g. architecture "Bankside / Tate Modern" secondary
+// stop 300, C 0.153 between neighbours 250/350 at C 0.108/0.117 - not remotely achromatic, a normal
+// cusp). The bug class this gate targets is narrower: an isolated excursion out of an otherwise
+// NEAR-ACHROMATIC region (both neighbours themselves under LONE_SPIKE_ACHROMATIC), which a real ramp
+// peak never is. Requiring that keeps the gate sensitive to the actual bug (the review's own examples'
+// neighbours read 0.016-0.034, comfortably under this bound) while clearing every legitimate cusp.
+// Gated in EVEN mode only (the only mode `chromaAt`'s bracketed solve touches) on the 25-stop export
+// ramp, a true 0 - no allow-list, since a real hit here is exactly the bug this whole pass exists to
+// prevent, not expected churn. Negative control: restoring the old seedHue fallback in a scratch copy
+// reds this exact gate (recorded in the handoff, since it needs a source patch this file does not
+// carry).
+const LONE_SPIKE_BOUND = 0.03, LONE_SPIKE_ACHROMATIC = 0.05;
+function loneSpikeStop(ramp25) {
+  for (let i = 1; i < ramp25.length - 1; i++) {
+    const c0 = rgbToOklchIndep(hexToRgb(ramp25[i - 1].hex))[1];
+    const c1 = rgbToOklchIndep(hexToRgb(ramp25[i].hex))[1];
+    const c2 = rgbToOklchIndep(hexToRgb(ramp25[i + 1].hex))[1];
+    if (c0 <= LONE_SPIKE_ACHROMATIC && c2 <= LONE_SPIKE_ACHROMATIC && c1 - c0 > LONE_SPIKE_BOUND && c1 - c2 > LONE_SPIKE_BOUND) return ramp25[i].stop;
+  }
+  return null;
+}
+const loneSpikeNames = new Set();
 // F4 gate data (R3, review pass 2): collected FOR FREE inside this same sweep — one hex fingerprint per
 // (label, mode) — so "peak differs from perceptual for every anchored palette" costs no extra renders.
 const modeHex = new Map(); // label -> { perceptual, peak, even } each a joined-hex fingerprint string
@@ -737,6 +771,11 @@ for (const { slug, preset } of presetsByCat) {
       if (!distinctOk25(ramp25)) distinctNames.add(label);
       // Notch (R2): rendered CAM16 chroma at 450/500/550, both stop sets share the same three values.
       if (!notchOk(ramp25)) notchNames.add(`${label} [${mode}]`);
+      // Lone-spike (review pass 5, Finding 1): even mode only, on the 25-stop export ramp.
+      if (mode === "even") {
+        const spikeStop = loneSpikeStop(ramp25);
+        if (spikeStop !== null) loneSpikeNames.add(`${label} stop ${spikeStop}`);
+      }
       // F4: fingerprint this (label, mode)'s full 25-stop hex ramp for the peak-vs-perceptual compare below.
       let m = modeHex.get(label); if (!m) { m = {}; modeHex.set(label, m); }
       m[mode] = ramp25.map((s) => s.hex).join(" ");
@@ -790,6 +829,9 @@ if (!allowListMatches(notchSorted, NOTCH_ALLOW)) {
   for (const n of notchSorted) if (!NOTCH_ALLOW.includes(n)) FAIL("anchor-ramp", `notch allow-list: unexpected member (stop 500's chroma both ratio-dipped and dipped >=3 C below both neighbours) - ${n}`);
 }
 for (const n of NOTCH_ALLOW) console.log(`    r ${n}`);
+const loneSpikeSorted = [...loneSpikeNames].sort();
+console.log(`  ${loneSpikeSorted.length === 0 ? "pass" : "FAIL"}  anchor-ramp lone-spike (even, near-achromatic neighbours <= ${LONE_SPIKE_ACHROMATIC}, OKLCH C > both by > ${LONE_SPIKE_BOUND}): ${loneSpikeSorted.length} (expected 0, no allow-list - a real hit is the bug this pass exists to prevent)`);
+for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: stop's OKLCH C exceeds both neighbours by > ${LONE_SPIKE_BOUND} - ${n}`);
 
 // R10 (review pass 2): the OLD "N1-style" control compared two hardcoded arrays with its own duplicate
 // of allowListMatches's logic — a tautology, since that comparison can never pass regardless of whether
@@ -999,8 +1041,8 @@ if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); pr
 // rendered), C4 (non-anchored prime path untouched), C3 (stop 500 exact + lift-40 negative control),
 // C5 (monotone, pixel L*, a true 0, no list), C6/F4 (peak != perceptual, Curve/Tension/Vibrancy each
 // live for every anchored ramp, hueSpace live in even mode + bounded to rounding in perceptual/peak
-// per Q-D, stop 500 exact under every toggle). Window-clamp (10), gap-19 (91), distinct-25 (13) and
+// per Q-D, stop 500 exact under every toggle). Window-clamp (10), gap-19 (91), distinct-25 (14) and
 // notch (78, Q-C variant) are all named allow-lists compared by name with a biting negative control,
 // not settled zeros.
-console.log("\nPASS: C2, C3, C4, C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (91), distinct-25 (13) and notch (78, pending U4) are named allow-lists, compared by name, each with a biting negative control");
+console.log("\nPASS: C2, C3, C4, C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (91), distinct-25 (14) and notch (78, pending U4) are named allow-lists, compared by name, each with a biting negative control");
 process.exit(0);
