@@ -154,23 +154,37 @@ export function solveOkhslHue(targetOklchHue, s, l) {
 // `gamutClamp` (review pass 3, Finding 3, 2026-09-18, ADDITIVE - an optional 4th param, default false,
 // so the non-anchored path's own call (paletteStops, untouched per C4's byte-identity contract) keeps
 // evaluating the exact same expression it always has): when true, re-clamps `chroma` to the CURRENT
-// candidate hue's own gamut ceiling on EVERY iteration, not just once at the seed hue. Without this,
-// a caller that seeds `chroma` at one hue's gamut (e.g. the anchored branch's `chromaSeed`, computed at
-// `seedHue`) can walk the solve toward a DIFFERENT hue whose gamut is much smaller, making `hctToOklch`
-// evaluate an IMAGINARY (out-of-gamut) color there - its OKLCH hue reads back meaningless, so the solve
-// could converge to a hue up to 36 degrees off (measured before this fix: 363 stops in 166 even-mode
-// anchored ramps landed more than 5 degrees WORSE than "cam16"; after, 2 stops in 2 ramps, both at a
-// near-achromatic chroma floor where OKLCH hue is inherently unstable - see this function's own
-// anchored caller in `paletteStopsAnchored`, and the handoff's review-pass-3 section for the residual).
-function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false) {
+// candidate hue's own gamut ceiling on EVERY iteration, not just once at the seed hue. This fixed the
+// original 363-stop/166-ramp regression (a fixed seed chroma could be wildly out of gamut at a hue the
+// solve wandered to), but left a NARROWER mismatch: the re-clamped chroma inside the loop still was not
+// the chroma the caller would actually RENDER afterward (the caller's `evenChroma` also damps toward an
+// `intended` target and applies a chroma floor, both themselves functions of the gamut ceiling) - so a
+// converged solve could still read back tens of degrees off once the real chroma was substituted in.
+// `chromaAt` (review pass 4, Finding 2, 2026-09-19, ADDITIVE - an optional 5th param object, default
+// `{}`, so both prior calls, including review 3's own `gamutClamp=true` anchored call, are unaffected
+// unless a caller opts in): when provided, `chromaAt(h)` returns the chroma that will ACTUALLY render
+// at candidate hue `h` - the caller's own `evenChroma(maxChromaInGamut(h, tone), ...)` formula,
+// evaluated fresh on every iteration, so hue and rendered chroma converge TOGETHER instead of the solve
+// chasing a chroma the render then discards (measured before this fix: Nike tertiary stop 150 and 48°
+// N secondary-muted stop 100 both landed on a hue found by a converged-looking solve whose real chroma
+// then read back 12-33 degrees off - see this function's own anchored caller in `paletteStopsAnchored`
+// and the handoff's review-pass-4 section for the residual). `seedHue` (also inside that options object,
+// defaulting to `targetOklchHue`): if 16 iterations pass without converging (|err| > 1e-3), the loop's
+// own accumulating `h` is not trustworthy near a gamut cusp where `chromaAt`'s dependence on `h` can
+// break Newton's linear-slope assumption - return `seedHue` (the "cam16" mode's own always-well-defined
+// fixed hue) instead of a possibly wild non-converged value. Gated on `chromaAt` being passed, so the
+// non-anchored path (which has no such fallback today and must stay byte-identical, C4) is unaffected.
+function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chromaAt = null, seedHue = targetOklchHue } = {}) {
   let h = targetOklchHue; // seed: CAM16 hue ≈ OKLCH hue to first order
+  let err = 0;
   for (let i = 0; i < 16; i++) {
-    const c = gamutClamp ? Math.min(chroma, maxChromaInGamut(h, tone)) : chroma;
+    const c = chromaAt ? chromaAt(h) : gamutClamp ? Math.min(chroma, maxChromaInGamut(h, tone)) : chroma;
     const got = hctToOklch(h, c, tone)[2];
-    const err = (((got - targetOklchHue) % 360) + 540) % 360 - 180;
-    if (Math.abs(err) < 1e-3) break;
+    err = (((got - targetOklchHue) % 360) + 540) % 360 - 180;
+    if (Math.abs(err) < 1e-3) return h;
     h = (((h - err) % 360) + 360) % 360;
   }
+  if (chromaAt && Math.abs(err) > 1) return seedHue; // did not converge - the fixed cam16 hue is safer than trusting this
   return h;
 }
 
@@ -550,27 +564,28 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     const s = (stop - 500) / 450;
     const dir = sameDir ? -Math.abs(s) : s;
     const env = chromaEnvelope(stop, 500, lift, controls);
+    // chromaAt(h) - the chroma THIS stop will actually render at candidate hue h: the exact formula
+    // the final chroma line below evaluates, factored out so the hue solve (review pass 4, Finding 2)
+    // can converge against the real render, not a stand-in seed chroma that the render then discards -
+    // see solveCam16Hue's own header comment for why that mismatch mattered.
+    const chromaAt = (h) => {
+      const mc = maxChromaInGamut(h, tone);
+      const anchorIntendedH = controls.relChroma ? anchorRelFrac * mc : anchor.cam.chroma;
+      const groupIntendedH = controls.relChroma ? (palette.chroma / 100) * mc : groupTarget;
+      const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH);
+      return evenChroma(mc, intendedH, env, controls.chromaFloor);
+    };
     let resolvedHue = seedHue;
     if (oklchSpace) {
-      // R3: solve AT THIS STOP'S OWN tone (and an estimated chroma there, seeded by `seedHue`'s own
-      // gamut), not once at the anchor's own point — the degenerate solve that made hueSpace measure
-      // as dead. A second pass below recomputes chroma at the SOLVED hue's own gamut ceiling.
-      const maxcSeed = maxChromaInGamut(seedHue, tone);
-      const anchorIntendedSeed = controls.relChroma ? anchorRelFrac * maxcSeed : anchor.cam.chroma;
-      const groupIntendedSeed = controls.relChroma ? (palette.chroma / 100) * maxcSeed : groupTarget;
-      const intendedSeed = anchorChromaBasis(stop, 500, lift, anchorIntendedSeed, groupIntendedSeed);
-      const chromaSeed = evenChroma(maxcSeed, intendedSeed, env, controls.chromaFloor);
-      // gamutClamp=true (review pass 3, Finding 3): chromaSeed is only in gamut at seedHue, not
-      // necessarily at the hue the solve converges to - re-clamp on every iteration (this function's
-      // own header comment).
-      resolvedHue = solveCam16Hue(targetOklchHue, Math.max(chromaSeed, 8), tone, true);
+      // R3 (review pass 2) solves per stop, at THIS STOP'S OWN tone, not once at the anchor's own
+      // point (the degenerate solve that made hueSpace measure as dead). Review pass 4 Finding 2:
+      // solve hue and the REAL render chroma jointly via chromaAt above, falling back to seedHue
+      // ("cam16" mode's own fixed hue) if the solve does not converge within 16 iterations.
+      resolvedHue = solveCam16Hue(targetOklchHue, 0, tone, false, { chromaAt, seedHue });
     }
     const hue = (((resolvedHue + shift * dir) % 360) + 360) % 360;
     const maxc = maxChromaInGamut(hue, tone);
-    const anchorIntended = controls.relChroma ? anchorRelFrac * maxc : anchor.cam.chroma;
-    const groupIntended = controls.relChroma ? (palette.chroma / 100) * maxc : groupTarget;
-    const intended = anchorChromaBasis(stop, 500, lift, anchorIntended, groupIntended);
-    const chroma = evenChroma(maxc, intended, env, controls.chromaFloor);
+    const chroma = chromaAt(hue);
     const out = hctToRgb(hue, chroma, tone);
     const hex =
       "#" +

@@ -557,7 +557,7 @@ export const MODE_WIDTH_PRESETS = [476, 768, 992, 1280, 1540];
 // Q-D (ticket #681, U2, ruled + verified): in the OKHSL modes (perceptual/peak), an anchored
 // palette's hue is read straight from its anchor color (hOk), so the Hue space control (OKLCH vs
 // CAM16) has no effect on it there - only in "even" mode does hueSpace change what the palette
-// renders (color.js's per-stop even-mode hue solve). This is the shared reason string for both the
+// renders (tonal.js's per-stop even-mode hue solve, paletteStopsAnchored). This is the shared reason string for both the
 // doc-level Hue space control (renderGlobalInspector, disabled only when every palette is anchored)
 // and the per-palette inspector's note (renderPaletteInspector, shown for any anchored palette).
 export const HUE_SPACE_ANCHOR_REASON = "Hue follows the anchor; OKHSL and OKLCH hue coincide here.";

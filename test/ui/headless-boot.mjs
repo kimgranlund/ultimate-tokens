@@ -1925,6 +1925,43 @@ ok(isDisabledBtn(segForcedOff) === true && isDisabledBtn(segForcedOn) === false,
 app.sets = app.sets.filter((s) => s.id !== "hs-test-set");
 app.openSet(app.sets[0].id); flushRaf();
 
+// (hs9) review pass 4, addendum 2: a MIXED doc - palette 0 anchored, palette 1 detached. The
+// doc-level rule (`d.palettes.every((p) => p.anchor)`, renderGlobalInspector) and the per-palette
+// note's rule (`p.anchor`, renderPaletteInspector, independent of its siblings) are separate
+// predicates; hs1-hs7 only ever exercised a doc where every palette shared one state (all-anchored,
+// or all-detached-by-one via undo), so they cannot tell the two rules apart. This mixed doc can.
+app.sets.push({ id: "hs9-test-set", name: "hs9-test", doc: defaultDocumentHS(), updated: Date.now() });
+app.openSet("hs9-test-set");
+app.commit((doc) => { delete doc.palettes[1].anchor; }); flushRaf();
+for (const mode of ["perceptual", "peak"]) {
+  app.setSegment("global"); flushRaf();
+  app.commit((doc) => (doc.toneMode = mode)); flushRaf();
+  ok(
+    !hueSpaceDocDisabled(),
+    `(hs9) doc-level Hue space stays ENABLED in ${mode} for a mixed doc (palette 0 anchored, palette 1 detached) - not every palette is anchored`,
+  );
+  app.setSegment("palette"); app.selectPalette(0); flushRaf();
+  ok(
+    !!findByFk(app, "huespace-palette-reason"),
+    `(hs9) palette 0 (anchored) still shows the hueSpace note in ${mode}, even though the doc-level control is enabled`,
+  );
+  app.setSegment("palette"); app.selectPalette(1); flushRaf();
+  ok(!findByFk(app, "huespace-palette-reason"), `(hs9) palette 1 (detached) shows no hueSpace note in ${mode}`);
+}
+// negative control: if the per-palette rule were swapped for the doc-level "every palette anchored"
+// rule, palette 0's own note would wrongly vanish in this exact mixed doc (not every palette is
+// anchored) - proving (hs9) above actually exercises the real per-palette-only predicate, not a copy
+// of the doc-level one. app.doc.toneMode is "peak" here (the loop's last iteration), so this matches
+// the real predicate's own "!== even" guard.
+const wrongPerPaletteRule = (p, doc) =>
+  p.anchor && doc.toneMode !== "even" && doc.palettes.length > 0 && doc.palettes.every((pp) => pp.anchor);
+ok(
+  wrongPerPaletteRule(app.doc.palettes[0], app.doc) === false,
+  "(hs9) negative control: swapping the per-palette rule for the doc-level 'every palette anchored' rule reds here - palette 0's note would wrongly vanish in this mixed doc, proving (hs9) exercises the real per-palette predicate, not the doc-level one",
+);
+app.sets = app.sets.filter((s) => s.id !== "hs9-test-set");
+app.openSet(app.sets[0].id); flushRaf();
+
 // ── (px) primitive a11y contracts — the refactor's guarantees (component-inventory.md) ──
 app.openSet(app.sets[0].id); app.commit((doc) => (doc.toneMode = "even")); app.setSegment("global"); flushRaf();
 

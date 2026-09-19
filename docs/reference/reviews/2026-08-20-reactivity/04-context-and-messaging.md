@@ -37,7 +37,7 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 
 | Type | Sandbox origin | Bridge line | UI handler | State mutated | Re-renders? |
 |---|---|---|---|---|---|
-| `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2266 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2261`) |
+| `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2266 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2272`) |
 | `config-loaded` | `code.js:196` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2337 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
 | `variables-read` | `code.js:207` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2392 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
 | `float-variables-read` | `code.js:211` (`type: "float-variables-read"`) | `gen-figma-ui.mjs:39` | `apply-gate.js:299 receiveLiveFloatVariables` | `this._liveFloatVars` | yes |
@@ -58,7 +58,7 @@ Refresh discipline is consistent — every inbound handler calls `this.render()`
 |---|---|---|---|
 | `_applyBusy` (`app.js:134`) | `apply-gate.js:135` (`applyToFigma`) | `onApplyDone` (`apply-gate.js:155`) or `onApplyError` (`apply-gate.js:172`) | **Covered on the Figma-side throw** (code.js always answers `apply` either way). **Not covered** if the reply never arrives at all — no timeout, so a UI reload/detach of the plugin frame mid-apply wedges it forever (session-scoped only; a fresh open resets the constructor default). Documented intent (TKT-0004) is "belt-and-suspenders re-entry guard," not "impossible to wedge." |
 | `sweepBusy` (`app.js:82`) | `apply-gate.js:217` (scan), `apply-gate.js:244` (delete) | `receiveSweepScan` (`apply-gate.js:225`), `onSweepDone` (`apply-gate.js:251`), or the local `catch` if `postMessage` itself throws (`apply-gate.js:219`, `apply-gate.js:246`) | **NOT covered** if the sandbox's OWN handler throws after receipt — see the asymmetry in (A). A throwing `sweep-scan`/`sweep-delete` sets `sweepBusy=true`, the sandbox only `figma.notify`s, no reply ever posts, and the Cleanup panel's Scan/Delete buttons (`disabled: busy`, `settings.js:352,367-370`) stay disabled **permanently** for the rest of the session. Real bug — worth a ticket (either code.js posts `sweep-scanned:{texts:[],paints:[]}`/`sweep-done:{removed:0}` from its own catch, mirroring the apply carve-out, or the UI needs a timeout fallback). |
-| `_loadRequested` (`app.js:87`) | `loadFromProject` (`app.js:2331`) | `applyLoadedConfig` (`app.js:2344`) on any exit path, or the local `catch`/no-raw branches (`app.js:2334,2339,2340`) | Fully covered — every path resets it. No wedge. |
+| `_loadRequested` (`app.js:87`) | `loadFromProject` (`app.js:2331`) | `applyLoadedConfig` (`app.js:2348`) on any exit path, or the local `catch`/no-raw branches (`app.js:2334,2339,2340`) | Fully covered — every path resets it. No wedge. |
 | `_figmaProbed` (`app.js:88`) | `probeFigmaProject` (`app.js:1004`), immediately | never reset (one-shot by design — "probe once when the gallery opens") | Not a wedge — a fire-once latch, correctly documented as such. |
 | `_figmaFontsRequested` (`app.js:79`) | `typography.js:807`, immediately | never reset | Same shape — deliberate one-shot per the adjacent comment. Not a wedge. |
 
@@ -68,7 +68,7 @@ Two more request/reply pairs have no busy flag at all, and don't need one: `read
 
 - `_categoryData` (`app.js:76`, `{}` → `slug → module`) — lazy `import()` cache, populated in `openCategory` (`app.js:831-839`). Invalidation: never (categories are static generated modules, correctly never invalidated). Race safety: **good** — the `.then` callback re-checks `this.category === slug` (`app.js:837`) before rendering, and the promise closure captures its own `slug`, so navigating away mid-import can't cause a stale render.
 - `_faceCache` (`app.js:83`, `Map`, family → renders-here boolean) — invalidated on font-family change (`typography.js:898,955`) and on `document.fonts.ready` firing once per hook (`typography.js:872-874`, guarded by `_fontsReadyHooked`). Correctly per-instance.
-- `_okL` (`src/engine/tonal.js:669`, module-level `Map`, `L*.toFixed(2) → OKHSL lightness`) — the **only actual module-scope mutable state** found anywhere in `engine/*` or `model.mjs`/`app-helpers.mjs`/`sections/*`. A pure memoization with a naturally bounded domain (≤10,001 keys), never invalidated, never needs to be — not a leak, but the one spot where "pure, no module state" isn't literally true.
+- `_okL` (`src/engine/tonal.js:684`, module-level `Map`, `L*.toFixed(2) → OKHSL lightness`) — the **only actual module-scope mutable state** found anywhere in `engine/*` or `model.mjs`/`app-helpers.mjs`/`sections/*`. A pure memoization with a naturally bounded domain (≤10,001 keys), never invalidated, never needs to be — not a leak, but the one spot where "pure, no module state" isn't literally true.
 - Everything else checked in `model.mjs`, `app-helpers.mjs`, `sections/*.js`, and every `engine/*` file has zero top-level `let`/`var` — every apparent hit was function-local (confirmed by grep + spot read).
 
 ## C — Implicit-context coupling (via the flattened `this`)
@@ -93,7 +93,7 @@ Not cleaned up:
 - `_liveRaf` (`app.js:284-289`): never cancelled; a post-disconnect rAF still runs `_liveRefreshNow` against a detached subtree (harmless, wasted work, unguarded).
 - `_dragTimer` (`app.js:161,363`): a settled-drag commit up to 250ms after disconnect still mutates `this.history`/`this.future` on a dead instance.
 - `_toastT` (`app.js:2545-2546`): same shape, ≤1800ms tail.
-- The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2232`, 1500ms) and the code.js-download timer (`download()`, `app.js:2536`, 150ms): both harmless, also uncleaned.
+- The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2243`, 1500ms) and the code.js-download timer (`download()`, `app.js:2536`, 150ms): both harmless, also uncleaned.
 
 None exploitable today because `<ultimate-tokens>` is a true page-lifetime singleton — `disconnectedCallback` in practice never fires outside tests. That's exactly why it's worth flagging: the two things that DO get cleaned up were fixed reactively; the rest were never audited as a set. Nothing in `test/ui/headless-boot.mjs` exercises disconnect/reconnect at all.
 

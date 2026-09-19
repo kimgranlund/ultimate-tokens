@@ -348,7 +348,7 @@ const RAMP_WINDOW_ALLOW = [
 // "expect the gap list ... to move; that is the point") and again for review pass 3's Finding 2
 // (2026-09-18, `gapOk19` now reads PIXEL L*, not the `tone` field - see its own header comment above -
 // surfacing 3 more names invisible to the old tone-based check): the combined population splits into
-// **93** names failing the 19-stop gap bar (RAMP_GAP_ALLOW below) and **14** names failing 25-stop
+// **91** names failing the 19-stop gap bar (RAMP_GAP_ALLOW below) and **13** names failing 25-stop
 // distinctness (RAMP_DISTINCT_ALLOW, below that) - a source can appear on both. Named, frozen, sorted
 // - compared by name, not count (N1's own lesson, applied here too). Q-U2-5's own REQ-002 chroma-basis
 // tension is RULED (the anchor's own value at the pivot, blending to `rampChroma` at the ends by
@@ -358,6 +358,11 @@ const RAMP_WINDOW_ALLOW = [
 // the single largest factor), the R3 hue solve alone +2, the smoothstep chroma-basis easing (R2) alone
 // +3 - all three interact rather than summing linearly to the observed 90 (pre-Finding-2) / 93
 // (pixel-corrected) total. Do not credit R6 alone for the full 69 -> 93 move, as an earlier record did.
+// Review pass 4, Finding 2 (2026-09-19): the joint hue/rendered-chroma solve (solveCam16Hue's own
+// header comment) incidentally tightened two even-mode ramps' pixel gaps back over the 0.55 bar -
+// music "Detroit techno" secondary and music "Kingston street" secondary, both previously in this
+// list, both removed here - 93 -> 91. The gap-19 negative control below (the real Kingston-street
+// hex pair) still bites regardless: it tests `gapOk19()`'s own discrimination, not this list's size.
 const RAMP_GAP_ALLOW = [
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322`,
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
@@ -395,11 +400,9 @@ const RAMP_GAP_ALLOW = [
   `literature "The Tale of Genji · Murasaki Shikibu · c.1010 · the Heian court" secondary-muted #292321`,
   `music "Acid house · the smiley flyer" tertiary-muted #26241F`,
   `music "Black metal · the forest at night" secondary #1E2024`,
-  `music "Detroit techno · the chrome sleeve" secondary #24272B`,
   `music "Doom & stoner · the amp-fuzz haze" secondary-muted #28262C`,
   `music "Golden-age NYC · the boom-bap sleeve" primary #242428`,
   `music "Graffiti · the subway-car piece" primary #242428`,
-  `music "Kingston street · the sound-system yard" secondary #24272B`,
   `music "Leather & studs · the club night" secondary #242428`,
   `music "Liquid light show · the projected oil-wheel" tertiary-muted #26232C`,
   `music "Lovers rock · the blue-light basement" primary #242428`,
@@ -457,6 +460,9 @@ const RAMP_GAP_ALLOW = [
 // RAMP_DISTINCT_ALLOW (Finding 6 fix): the 25-stop export ramp's own duplicate-hex population,
 // gated separately from RAMP_GAP_ALLOW's 19-stop gap population — see the comment above
 // RAMP_GAP_ALLOW. A source can appear on both lists.
+// Review pass 4, Finding 2 (2026-09-19): same fix, same fallout as RAMP_GAP_ALLOW above - the joint
+// hue/rendered-chroma solve incidentally de-duplicated travel "23° S / Salar de Atacama, 2,305 m"
+// secondary's 25-stop ramp. 14 -> 13.
 const RAMP_DISTINCT_ALLOW = [
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
@@ -465,7 +471,6 @@ const RAMP_DISTINCT_ALLOW = [
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
-  `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6`,
   `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
   `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
@@ -476,14 +481,20 @@ const RAMP_DISTINCT_ALLOW = [
 
 // NOTCH_ALLOW (ruling Q-C, 2026-09-18): the owner ruled the notch gate is the 70%-ratio definition AND
 // an absolute dip of at least 3 CAM16 C versus both neighbours (see notchOk's own header comment). This
-// is the by-name list under that variant, measured on the rendered path: 76 entries (perceptual 15,
-// peak 9, even 52), replacing the prior 459-entry ratio-only list. Every entry is a near-grey anchor
+// is the by-name list under that variant, measured on the rendered path: 78 entries (perceptual 15,
+// peak 9, even 54), replacing the prior 459-entry ratio-only list. Every entry is a near-grey anchor
 // inside a group whose resolved `rampChroma` target is well above it, still visibly notched under the
 // smoothstep easing fix (see `anchorChromaBasis`'s own header comment in tonal.js) even after the
 // absolute-dip clause drops the marginal, imperceptible ratio-only cases. Named "pending U4": accepted
 // here so nothing widens silently, re-verified on the integrated tree, not a final owner acceptance of
 // the count. Recorded in Q-U2-7.
+// Review pass 4, Finding 2 (2026-09-19): the joint hue/rendered-chroma solve re-measured every even-
+// mode ramp's 450/500/550 chroma triple, moving the even population 52 -> 54 (9 names added, 7
+// removed - not a pure superset/subset move) while perceptual/peak (untouched, OKHSL) stay 15/9.
+// Re-verified against `notchOk` on the current rendered path; no change to notchOk itself.
 const NOTCH_ALLOW = [
+  `architecture "Bankside / Tate Modern · 1947, conv. 2000 · London" tertiary #888781 [even]`,
+  `architecture "Boston City Hall · 1968 · Kallmann McKinnell & Knowles" secondary #888781 [even]`,
   `architecture "Charleston single house · antebellum vernacular · South Carolina" primary #DDDBD7 [even]`,
   `architecture "Falu-red farmstead · Swedish vernacular · Dalarna" tertiary-muted #DDDBD7 [even]`,
   `architecture "Habitat 67 · 1967 · Moshe Safdie · Montreal" tertiary-muted #D6D5D0 [even]`,
@@ -491,6 +502,7 @@ const NOTCH_ALLOW = [
   `architecture "Icelandic turf house · vernacular · Skógar / Glaumbær" tertiary-muted #D9D8D4 [even]`,
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322 [even]`,
   `architecture "Lancashire cotton mill · 19th c · northern England" primary-muted #8C9094 [perceptual]`,
+  `architecture "Narkomfin Building · 1930 · Ginzburg · Moscow" secondary #8E8D87 [even]`,
   `architecture "New England saltbox · colonial vernacular · coastal Massachusetts" secondary-muted #83878B [peak]`,
   `architecture "New England saltbox · colonial vernacular · coastal Massachusetts" tertiary-muted #DDDBD7 [even]`,
   `architecture "Sydney Opera House · 1973 · Jørn Utzon" tertiary-muted #9A8C88 [even]`,
@@ -502,10 +514,11 @@ const NOTCH_ALLOW = [
   `cuisine "Espresso · the café counter" tertiary-muted #DDDBD6 [even]`,
   `cuisine "Fresh pasta · the marble work-bench" tertiary-muted #E0DEDA [even]`,
   `cuisine "Macarons · the display case" tertiary-muted #E0DEDA [even]`,
+  `cuisine "Sushi & sashimi · the cypress counter" secondary #DAD8D2 [even]`,
+  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" primary #DAD8D2 [even]`,
   `film "Raise the Red Lantern · 1991 · dir. Zhang Yimou · the courtyard at night" secondary #83878B [peak]`,
-  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618 [even]`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" secondary-muted #9FA2A6 [perceptual]`,
-  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary-muted #D6D5D2 [even]`,
+  `film "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet" primary #DAD8D2 [even]`,
   `film "The Third Man · 1949 · dir. Carol Reed · the wet Vienna cobbles at night" tertiary-muted #8C9093 [peak]`,
   `film "The Third Man · 1949 · dir. Carol Reed · the wet Vienna cobbles at night" tertiary-muted #8C9093 [perceptual]`,
   `film "The Witch · 2015 · dir. Eggers · the farm at the wood's edge" secondary #8B9194 [perceptual]`,
@@ -514,12 +527,11 @@ const NOTCH_ALLOW = [
   `literature "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865" tertiary #DDDBD7 [even]`,
   `literature "Death of a Salesman · Arthur Miller · 1949 · the Loman house" tertiary-muted #777B81 [peak]`,
   `literature "Death of a Salesman · Arthur Miller · 1949 · the Loman house" tertiary-muted #777B81 [perceptual]`,
-  `literature "Dracula · Bram Stoker · 1897 · the Carpathian castle at night" secondary-muted #85847E [even]`,
   `literature "Mistborn · Brandon Sanderson · 2006 · the ash-fall Final Empire" secondary #82817D [even]`,
   `literature "Mrs Dalloway · Virginia Woolf · 1925 · a June morning in Westminster" secondary-muted #8C9095 [peak]`,
-  `literature "My Brilliant Friend · Ferrante · 2011 · a poor Naples neighbourhood" tertiary-muted #D3D1CC [even]`,
   `literature "The Catcher in the Rye · Salinger · 1951 · winter New York" secondary #777B80 [peak]`,
   `literature "The Catcher in the Rye · Salinger · 1951 · winter New York" secondary #777B80 [perceptual]`,
+  `literature "The Handmaid's Tale · Atwood · 1985 · Gilead" primary #DAD8D2 [even]`,
   `literature "The Handmaid's Tale · Atwood · 1985 · Gilead" secondary-muted #74797E [perceptual]`,
   `literature "The Makioka Sisters · Tanizaki · 1948 · the Kyoto cherry-viewing" primary-muted #A6A5A0 [even]`,
   `literature "The Road · Cormac McCarthy · 2006 · the ash-grey wasteland" secondary #7C7B77 [even]`,
@@ -530,18 +542,18 @@ const NOTCH_ALLOW = [
   `music "Golden-age NYC · the boom-bap sleeve" secondary #777B80 [perceptual]`,
   `music "Gospel · the church choir" primary-muted #DDDBD7 [even]`,
   `music "Mod & British Invasion · the op-art club" tertiary-muted #DDDBD7 [even]`,
+  `music "New Orleans brass · the street parade" secondary-muted #DAD8D2 [even]`,
   `music "Pop-punk · the skate-park sleeve" tertiary-muted #D9D8D4 [even]`,
   `music "Riot grrrl · the zine collage" tertiary #D0CEC9 [even]`,
   `music "The orchestra · the concert platform" tertiary-muted #DDDBD7 [even]`,
   `music "UK '77 · the ransom-note sleeve" secondary-muted #707276 [perceptual]`,
+  `music "UK '77 · the ransom-note sleeve" tertiary-muted #C3C1BC [even]`,
   `nature "0° · June · 11:00 · Congo Basin lowland forest, Odzala, Republic of the Congo" tertiary-muted #5C5E63 [perceptual]`,
   `nature "23° S · December · 13:00 · Salar de Atacama edge, Atacama Desert, Chile" secondary #E0DEDA [even]`,
-  `nature "35° N · November · 16:00 · Kyoto temple maple, late autumn" primary #B3B2AC [even]`,
   `nature "43° S · February · 18:00 · Aoraki / Mount Cook, Southern Alps, New Zealand" tertiary-muted #7F848A [perceptual]`,
   `nature "49° N · October · 15:00 · Boreal shield, northern Ontario, Canada" secondary-muted #988984 [even]`,
   `nature "51° N · May · 09:00 · English oak woodland, Sussex, bluebell season" primary #D8D9D0 [even]`,
   `nature "51° S · November · 07:00 · Torres del Paine, Patagonian Andes, Chile" secondary-muted #978985 [even]`,
-  `nature "57° N · August · 14:00 · Rannoch Moor blanket bog, Scottish Highlands" primary #D7D5CE [even]`,
   `nature "78° N · July · 14:00 · Spitsbergen interior, Svalbard" secondary #83878B [peak]`,
   `travel "17° N · November · 22:00 · An Oaxacan village cemetery on the first night of Día de los Muertos" tertiary-muted #636665 [peak]`,
   `travel "17° N · November · 22:00 · An Oaxacan village cemetery on the first night of Día de los Muertos" tertiary-muted #636665 [perceptual]`,
@@ -557,7 +569,6 @@ const NOTCH_ALLOW = [
   `travel "41° N · July · 20:30 · The Great Salt Lake at sunset, near Antelope Island causeway" tertiary-muted #413538 [even]`,
   `travel "41° N · October · 23:00 · Tbilisi viewed from the Mtatsminda funicular at the upper station" secondary #71716E [even]`,
   `travel "47° N · June · 10:00 · St. John's harbour, dense Atlantic fog" secondary #D0CEC9 [even]`,
-  `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" tertiary-muted #CFCECB [even]`,
   `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" secondary-muted #CBCAC5 [even]`,
   `travel "55° N · July · 13:00 · Lowland Kamchatkan taiga in heavy mosquito season, near the Avacha river" tertiary-muted #ABAAA7 [even]`,
 ].sort();
@@ -889,44 +900,79 @@ for (const n of NOTCH_ALLOW) console.log(`    r ${n}`);
     }
     if (moved === 0) FAIL("anchor-f4", `${key}: moved 0 of the default kit's anchored ramps — this control is dead for anchored palettes`);
     if (magnitudeFloor !== undefined && maxDeltaE <= magnitudeFloor) FAIL("anchor-f4", `${key}: max OKLab delta-E ${maxDeltaE.toFixed(4)} does not clear the ${magnitudeFloor} magnitude floor - a rounding-only move would also report "moved >= 1"`);
-    const floorNote = magnitudeFloor !== undefined ? `, max OKLab dE ${maxDeltaE.toFixed(4)} (want > ${magnitudeFloor}), asserted in even only - the JND Q-D's UI gate relies on` : "";
+    const floorNote = magnitudeFloor !== undefined ? `, max OKLab dE ${maxDeltaE.toFixed(4)} (want > ${magnitudeFloor}, a magnitude floor - below the commonly used OKLab JND of about 0.02, not itself a JND), asserted in even only` : "";
     console.log(`  ${moved > 0 && s500moved === 0 && (magnitudeFloor === undefined || maxDeltaE > magnitudeFloor) ? "pass" : "FAIL"}  anchor-f4 ${key}: moved ${moved} default-kit anchored ramps, stop 500 moved ${s500moved} (want >=1, 0)${floorNote}`);
   }
 
-  // Q-D (ruled + verified, 2026-09-18): the engine-side half of the ruling - flipping hueSpace on an
-  // ANCHORED palette in perceptual or peak never moves any RGB channel by more than 2 (8-bit), on the
-  // same default-kit sweep as F4_CASES above. This is the bound the UI's "disabled, rounding only"
-  // claim rests on (src/ui/sections/color.js's renderGlobalInspector/renderPaletteInspector; gated in
-  // test/ui/headless-boot.mjs's (hs) block). Unlike F4_CASES's hueSpace entry (which asserts a REAL
-  // effect exists, in even mode), this asserts the OPPOSITE direction for perceptual/peak - that
-  // whatever effect exists stays inside a rounding-sized bound - so it is a separate block, not
-  // folded into that loop's shared "moved === 0 -> FAIL" liveness check.
+  // Q-D (ruled + verified, 2026-09-18; scope corrected + re-ruled, review pass 4 Finding 1, plan rev
+  // 23, 2026-09-19): the engine-side half of the ruling - flipping hueSpace on an ANCHORED palette in
+  // perceptual or peak has NO VISIBLE effect. Review 3's own in-suite sample (the 16-palette default
+  // kit only) measured a max 8-bit per-channel diff of 1 and stated a "<= 2 codes" bound as if it held
+  // for every anchored palette; review 4 measured the full 3,396-ramp curated corpus and found 39
+  // perceptual / 17 peak ramps exceed 2 codes (max 10 / 12) - the default-kit sample was too small to
+  // see this. The perceptual magnitude stays invisible throughout: 0 of 3,396 ramps in either mode
+  // clear a 0.01 OKLab delta-E (max 0.0047 perceptual, 0.0053 peak). RULED: the gate is max OKLab
+  // delta-E <= 0.01 over the full anchored corpus, per mode - the corpus data supports that bound, not
+  // a codes bound. "<= 2 codes" STAYS as its own gate, scoped to the DEFAULT KIT ONLY (tracked below as
+  // `dkMaxDiff`, separately from the corpus-wide `maxDiff`, which is reported for visibility only and
+  // is not, and will not be, gated). This is a final ruling, not an open question any more.
+  // This is the bound the UI's "disabled,
+  // rounding only" claim rests on (src/ui/sections/color.js's renderGlobalInspector/
+  // renderPaletteInspector; gated in test/ui/headless-boot.mjs's (hs) block). Unlike F4_CASES's
+  // hueSpace entry (which asserts a REAL effect exists, in even mode), this asserts the OPPOSITE
+  // direction for perceptual/peak - that whatever effect exists stays invisible - so it is a separate
+  // block, not folded into that loop's shared "moved === 0 -> FAIL" liveness check.
+  //
+  // Negative control (run by the review-4 reviewer, recorded here since it needs a source patch this
+  // file does not carry): substituting the anchor's own CAM16 hue for the OKHSL hue candidate at every
+  // iteration (i.e. solving nothing - always rendering at the "cam16" hue while hueSpace claims
+  // "oklch") reds this exact gate at a max per-channel diff of 33 (perceptual) / 34 (peak) - proving
+  // the predicate below can tell a real hue divergence from the actual rounding-only behavior.
   const maxChannelDiff = (hexA, hexB) => {
     const a = hexToRgb(hexA), b = hexToRgb(hexB);
     return Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
   };
-  const peakBaseDoc = hydrate({ ...dkBase, toneMode: "peak" });
-  const HUE_SPACE_CHANNEL_BOUND = 2;
-  for (const [modeName, base] of [["perceptual", baseDoc], ["peak", peakBaseDoc]]) {
-    const altDoc = hydrate({ ...base, hueSpace: base.hueSpace === "cam16" ? "oklch" : "cam16" });
-    const baseV = projectView(base), altV = projectView(altDoc);
-    let maxDiff = 0, worst = "n/a";
-    for (const p of base.palettes) {
-      if (typeof p.anchor !== "string") continue;
-      const a = baseV.palettes.find((v) => v.name === p.name).fullRamp;
-      const b = altV.palettes.find((v) => v.name === p.name).fullRamp;
-      for (let i = 0; i < a.length; i++) {
-        const d = maxChannelDiff(a[i].hex, b[i].hex);
-        if (d > maxDiff) { maxDiff = d; worst = `${p.name} stop ${a[i].stop}`; }
+  const HUE_SPACE_DELTA_E_BOUND = 0.01;
+  const HUE_SPACE_CODES_BOUND = 2;
+  const hueSpaceBoundSubjects = [...presetsByCat, { slug: "default kit", preset: dkBase }];
+  for (const modeName of ["perceptual", "peak"]) {
+    let maxDiff = 0, worstCodes = "n/a", maxDeltaE = 0, worstDeltaE = "n/a", overBoundRamps = 0;
+    let dkMaxDiff = 0, dkWorstCodes = "n/a";
+    const overBoundNames = new Set();
+    for (const { slug, preset } of hueSpaceBoundSubjects) {
+      const base = hydrate({ ...preset, toneMode: modeName });
+      const alt = hydrate({ ...base, hueSpace: base.hueSpace === "cam16" ? "oklch" : "cam16" });
+      const baseV = projectView(base), altV = projectView(alt);
+      for (const p of base.palettes) {
+        if (typeof p.anchor !== "string") continue;
+        const a = baseV.palettes.find((v) => v.name === p.name).fullRamp;
+        const b = altV.palettes.find((v) => v.name === p.name).fullRamp;
+        let rampOverBound = false;
+        for (let i = 0; i < a.length; i++) {
+          const d = maxChannelDiff(a[i].hex, b[i].hex);
+          if (d > maxDiff) { maxDiff = d; worstCodes = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`; }
+          if (slug === "default kit" && d > dkMaxDiff) { dkMaxDiff = d; dkWorstCodes = `${preset.name} ${p.name} stop ${a[i].stop}`; }
+          const de = deltaEOk(a[i].hex, b[i].hex);
+          if (de > maxDeltaE) { maxDeltaE = de; worstDeltaE = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`; }
+          if (de > HUE_SPACE_DELTA_E_BOUND) rampOverBound = true;
+        }
+        if (rampOverBound) { overBoundRamps++; overBoundNames.add(`${slug}|${preset.name}|${p.name}`); }
       }
     }
-    if (maxDiff > HUE_SPACE_CHANNEL_BOUND) {
+    if (maxDeltaE > HUE_SPACE_DELTA_E_BOUND) {
       FAIL(
         "anchor-f4",
-        `hueSpace ${modeName}: max per-channel diff ${maxDiff} exceeds the Q-D rounding bound of ${HUE_SPACE_CHANNEL_BOUND} (worst: ${worst}) - the UI's "disabled, rounding only" claim for anchored ${modeName} palettes is now false`,
+        `hueSpace ${modeName}: ${overBoundRamps} anchored ramp(s) clear a ${HUE_SPACE_DELTA_E_BOUND} OKLab delta-E when hueSpace flips (max ${maxDeltaE.toFixed(4)}, worst ${worstDeltaE}) - the UI's "disabled, rounding only" claim for anchored ${modeName} palettes is now false`,
       );
     }
-    console.log(`  ${maxDiff <= HUE_SPACE_CHANNEL_BOUND ? "pass" : "FAIL"}  anchor-f4 hueSpace-${modeName}-bound: max per-channel diff ${maxDiff} (want <= ${HUE_SPACE_CHANNEL_BOUND}, worst ${worst}) - Q-D's "disabled, rounding only" bound for anchored palettes`);
+    if (dkMaxDiff > HUE_SPACE_CODES_BOUND) {
+      FAIL(
+        "anchor-f4",
+        `hueSpace ${modeName}: default-kit codes bound broken, ${dkMaxDiff} > ${HUE_SPACE_CODES_BOUND} (worst ${dkWorstCodes})`,
+      );
+    }
+    const codesNote = maxDiff > HUE_SPACE_CODES_BOUND ? `full-corpus codes reach ${maxDiff} (worst ${worstCodes}) - reported only, not gated; default kit's own codes bound held (max ${dkMaxDiff}, want <= ${HUE_SPACE_CODES_BOUND})` : `codes bound held everywhere (max ${maxDiff})`;
+    console.log(`  ${maxDeltaE <= HUE_SPACE_DELTA_E_BOUND && dkMaxDiff <= HUE_SPACE_CODES_BOUND ? "pass" : "FAIL"}  anchor-f4 hueSpace-${modeName}-bound: full corpus + default kit, max OKLab dE ${maxDeltaE.toFixed(4)} (want <= ${HUE_SPACE_DELTA_E_BOUND}, worst ${worstDeltaE}); ${codesNote}`);
   }
 
   // Negative control (review pass 3, Finding 4, 2026-09-18): the prior in-suite "reference lerp"
@@ -953,8 +999,8 @@ if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); pr
 // rendered), C4 (non-anchored prime path untouched), C3 (stop 500 exact + lift-40 negative control),
 // C5 (monotone, pixel L*, a true 0, no list), C6/F4 (peak != perceptual, Curve/Tension/Vibrancy each
 // live for every anchored ramp, hueSpace live in even mode + bounded to rounding in perceptual/peak
-// per Q-D, stop 500 exact under every toggle). Window-clamp (10), gap-19 (93), distinct-25 (14) and
-// notch (76, Q-C variant) are all named allow-lists compared by name with a biting negative control,
+// per Q-D, stop 500 exact under every toggle). Window-clamp (10), gap-19 (91), distinct-25 (13) and
+// notch (78, Q-C variant) are all named allow-lists compared by name with a biting negative control,
 // not settled zeros.
-console.log("\nPASS: C2, C3, C4, C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (93), distinct-25 (14) and notch (76, pending U4) are named allow-lists, compared by name, each with a biting negative control");
+console.log("\nPASS: C2, C3, C4, C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (91), distinct-25 (13) and notch (78, pending U4) are named allow-lists, compared by name, each with a biting negative control");
 process.exit(0);
