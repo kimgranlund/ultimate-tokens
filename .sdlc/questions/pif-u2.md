@@ -586,8 +586,13 @@ head with `node scratchpad/p5-notch2.mjs <abs head> <abs d7d6b04f tree>`.
 threshold the entry was already sitting against, and each moved neighbour sits closer to the anchor hue
 than before, which is the converged solve doing its job. No visible change; the notch each name
 describes was already present at a 2.7 to 3.0 dip. The set is identical to the one review 5 diffed, so
-the pass-5 solve rework, the fast path and the export threading moved nothing here. Still **pending
-conductor** on 78 vs 76, or a hold.
+the pass-5 solve rework, the fast path and the export threading moved nothing here.
+
+**RULED (owner, 2026-09-19): NOTCH_ALLOW stands at 78 = 15 perceptual / 9 peak / 54 even.** The ruled
+76 is superseded. The owner saw the by-name diff above (9 added, 7 removed, all even, net +2, a cause
+per name) before ruling; the same tables are in review pass 6, section 9, of
+`pif-u2-review-6.md`. The gate asserts 78 by name, so an unexpected name still reds. Relayed by the
+conductor; the "pending U4" label on the constant can come off at U4.
 
 **Residual cause, unchanged in kind from review 2's own finding:** every remaining entry is a
 near-grey (or very low-chroma) anchor inside a group whose resolved `rampChroma` target is well above
