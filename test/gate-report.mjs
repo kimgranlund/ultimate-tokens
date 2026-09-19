@@ -20,9 +20,31 @@
 // evaluator -- it does not verify the binding and the FAIL(...) call share a lexical scope -- but
 // it is enough to clear every non-literal case actually present in this repo (documented above),
 // and a false "site exists" from it is far cheaper than a real gate wrongly declared dead.
+//
+// What report-static still cannot see (both statically absent, so undeclared-and-unseen): a
+// template-literal name (FAIL(`zz-${k}`, ...)) and a wrapper that forwards a caller-supplied name
+// (function chk(n, m) { FAIL(n, m); }) resolve to nothing at the FAIL(...) site itself. Neither
+// shape exists in this repo today (checked by hand across all 12 converted files). The runtime
+// half of the printed REPORT block still covers both: a gate that actually fires prints its own
+// row and the "!!!" flag regardless of how its name was spelled at the call site, so the failure
+// mode here is a silent dead DECLARED entry or a silently-undeclared name, never a firing gate
+// that goes completely unprinted.
+//
+// What report-static sees when it should not (fail-closed, not fail-open): this is a source-text
+// regex, not a parser, so it does not strip comments or nested string literals first. A code
+// comment that happens to spell out a call to this file's own FAIL helper with a quoted, no-longer-
+// real gate name reds report-static for a gate that does not exist, and a gate name quoted inside
+// another gate's own failure message (one FAIL(...) call's second argument mentioning a different
+// gate's call, by name, in its own text) reds report-static naming that quoted gate too. Both are a
+// spurious FAIL, never a spurious pass, so the direction is safe; deliberately not fixed with
+// comment/string stripping, which would trade a known-safe false red for a parser this module does
+// not otherwise need.
 import { readFileSync } from "node:fs";
 
-const LITERAL_CALL = /FAIL\(\s*"([^"]+)"/g;
+// Matches a double- or single-quoted first argument; a template-literal name or a wrapper that
+// forwards a caller-supplied name is not matched here (see the file header) -- covered at runtime
+// instead, by the union print in gateReport() below, if that gate ever actually fires.
+const LITERAL_CALL = /FAIL\(\s*["']([^"']+)["']/g;
 const VAR_CALL = /FAIL\(\s*([A-Za-z_$][\w$]*)\s*,/g;
 const VAR_ASSIGN = /\b(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*"([^"]+)"/g;
 
