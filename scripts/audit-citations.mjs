@@ -274,8 +274,8 @@ export function anchorsOf(docLine) {
   }
   // The `(` form now takes the EXACT SAME floor as the `:N` form above: a fully bare, unbacked
   // `name(` must itself be camelCase/PascalCase/snake_case (`/[A-Z_]/`), OR the name must be
-  // backtick-HUGGED immediately before the `(` (`` `carve-out` (`figma/plugin/code.js:262`) ``,
-  // `` `segmented` (`styles.css:869-870`) ``) -- and STOPWORDS is checked first, unconditionally,
+  // backtick-HUGGED immediately before the `(` (`` `segmented` (`styles.css:869-870`) ``,
+  // `` `disabled` (`styles.css:188`) ``) -- and STOPWORDS is checked first, unconditionally,
   // same as the `:N` form (PR #694 critic review item 2, owner-ruled 2026-09-19: fix in this PR).
   //
   // The PRIOR rule instead exempted a fully bare, unshaped word whenever its OWN parenthetical
@@ -287,10 +287,15 @@ export function anchorsOf(docLine) {
   // `anchorsOf("guarantee (\`src/engine/tonal.js:216\`)")` returned `["guarantee"]` -- both readable
   // as OK against `tonal.js:216`, a comment naming neither word, purely because their parenthetical
   // held a real citation. No live citation depended on this hole (the ~64 plain-lowercase `word (
-  // cite)` rows in the corpus were all already backtick-hugged), but two DID depend on it and were
-  // repinned/backticked in the same commit as this fix: `component-inventory.md` (`segmented
-  // (styles.css:869-870)`) and `04-context-and-messaging.md` (`` `apply` carve-out
-  // (`figma/plugin/code.js:262`) ``) -- see their doc diffs, not this comment, for the reasoning.
+  // cite)` rows in the corpus were all already backtick-hugged), but eleven DID depend on it and
+  // were repinned/backticked in the same commit as this fix (each read at its cited line first) --
+  // see the doc diffs, not this comment, for the per-citation reasoning. One of those,
+  // `04-context-and-messaging.md`'s `` `apply` `carve-out` `` line, was NEVER driven to OK by any
+  // of this: `carve-out` names the comment two lines above the real branch, so the citation was
+  // NEAR before this fix (via the same word through the old exemption) and stays NEAR after (via
+  // the same word through the hug rule, once the doc's range was widened to include that comment
+  // line) -- the anchor-selection artifact tracked as #693's KNOWN LIMIT, not something this fix
+  // claims to have resolved.
   //
   // The lookbehind/character-class cover hyphens (not just letters/digits/dot), so a hyphenated
   // compound (`carve-out(`) matches as ONE token instead of splitting at the hyphen into an
