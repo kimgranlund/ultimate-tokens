@@ -620,4 +620,7 @@ count stays a true 0, `(gid3)`/`(gid8)`/`(gid8b)` green - none fired. No second 
 fix is a continuation of the same `solveCam16Hue` mechanism review pass 3 started (converging hue
 against the REAL render input), not a new one; the default-kit codes gate is a restoration of review
 pass 3's original bound, not a new mechanism. Rebased onto the plan tip `3c9630bf` (rev 23) at the end
-of this pass, per the ruling above.
+of this pass, per the ruling above. **Head sha of the fix commit: `b7752ae1`** (subject: `fix(tonal,
+anchor): review pass 4 - convergent even hue solve, Q-D bound ruled final, hs9`); this paragraph itself
+lands in a small follow-up docs-only commit on top of it. Re-verify both with `git merge-base
+--is-ancestor` before trusting them, since a further rebase can move either at any time.
