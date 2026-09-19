@@ -10,7 +10,7 @@
 //   hctToRgb(hue, chroma, tone) -> { rgb:[r,g,b] (0-255 ints), inGamut, lstar }
 //   maxChromaInGamut(hue, tone) -> number   peakC(hue) -> { c, tone }
 //   oklchToCam16Hue(h)          -> CAM16 hue (degrees)
-import { hctToRgb, hctToOklch, maxChromaInGamut, peakC, oklchToCam16Hue, lstarFromRgb, cam16FromRgb } from "./hct.js";
+import { hctToRgb, hctToOklch, maxChromaInGamut, peakC, oklchToCam16Hue, lstarFromRgb, cam16FromRgb, boundedCache } from "./hct.js";
 import { okhslToRgb, rgbToOkhsl, rgbToOklchHue } from "./okhsl.js";
 
 // ── Stop sets ────────────────────────────────────────────────────────────────
@@ -715,11 +715,40 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
 // paletteStops — full per-stop pipeline for one palette.
 // palette: { hue, chroma, skew, lift }; controls: DEFAULT_CONTROLS-shaped.
 // Returns [{ stop, tone, chroma, maxc, rgb, hex, inGamut }] for each stop.
+// _pmemo (performance, review pass 5, team-lead instruction, 2026-09-19): `projectView` (model.mjs)
+// re-derives every anchored palette's full ramp roughly 10x per document - once for the live canvas,
+// then again once per export format via `derivePalette` (exports.js), each an INDEPENDENT, otherwise
+// identical call into `paletteStopsAnchored` with the SAME palette/controls/stops. Combined with the
+// review-5 hue solve (a full gamut-boundary binary search per stop, `chromaAt`'s own `maxChromaInGamut`
+// call), that redundancy alone accounted for most of a measured 6-7 minute `npm test` - a document's
+// anchored ramps were being solved ~10 times over for byte-identical output. `paletteStopsAnchored` is
+// PURE (same palette/controls/stops/anchor -> same result), so memoizing its full output is safe. The
+// key lists every field `paletteStopsAnchored` (and the `chromaEnvelope`/`anchorLerp` helpers it
+// calls) actually reads off `controls` BY NAME (chromaFloor, curve, hueSpace, lmax, lmin, relChroma,
+// tension, damp, dampAmp, dampBias, dampCurve) rather than serializing the whole (larger, partly
+// irrelevant) controls object - cheaper per call, and still collision-free since it is built from
+// every input that can change the output, never a coincidental proxy.
+const _pmemo = boundedCache(2000);
+function paletteStopsAnchoredMemo(palette, controls, stops, anchor) {
+  const key = [
+    palette.hue, palette.chroma, palette.skew, palette.lift, palette.hueShift, palette.hueSameDir,
+    palette.cuspPull, palette.anchor, stops.length,
+    controls.chromaFloor, controls.curve, controls.hueSpace, controls.lmax, controls.lmin,
+    controls.relChroma, controls.tension, controls.damp, controls.dampAmp, controls.dampBias,
+    controls.dampCurve,
+  ].join("|");
+  const hit = _pmemo.get(key);
+  if (hit !== undefined) return hit;
+  const result = paletteStopsAnchored(palette, controls, stops, anchor);
+  _pmemo.set(key, result);
+  return result;
+}
+
 export function paletteStops(palette, controls, stops) {
   const mode = controls.toneMode || "perceptual";
   if (mode === "perceptual" || mode === "peak") return okhslStops(palette, controls, stops, mode);
   const anchor = resolveAnchor(palette);
-  if (anchor) return paletteStopsAnchored(palette, controls, stops, anchor);
+  if (anchor) return paletteStopsAnchoredMemo(palette, controls, stops, anchor);
   const shift = palette.hueShift ?? 0; // edge hue rotation: ±deg at the ends
   const sameDir = palette.hueSameDir === true; // true = both ends bend the SAME way (|s|), else opposite (s)
   const ctl = {
