@@ -9,6 +9,7 @@ import { primeSwatches, primeSteps, PRIME_STEPS, PRIME_STEP, PRIME_L_MIN, PRIME_
 import { peakC, hctToRgb } from "../../src/engine/hct.js";
 import { effHue, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
 import { rgbToOklchHue, rgbToOkhsl } from "../../src/engine/okhsl.js";
+import { gateReport } from "../gate-report.mjs";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const DEFAULTS = RT.defaults; // the 16 default palettes {name,hue,chroma,skew,lift,on}
@@ -354,10 +355,11 @@ for (const p of DEFAULTS) {
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["a", "b", "c", "d1", "d2a", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+const DECLARED = ["a", "b", "c", "d1", "d2a", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: prime-system clears all AC-050 gates");
 process.exit(0);
