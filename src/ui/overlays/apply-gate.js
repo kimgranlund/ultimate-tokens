@@ -96,13 +96,13 @@ export class ApplyGateMixinImpl {
       // undefined as "nobody decided" and fall through to classic prune, which reads identically to a
       // deliberate false: so an explicit false is what makes the unchecked box a real, auditable
       // answer. Read from the persisted preference (not the transient gate field) because a consented
-      // apply skips the gate entirely and must still carry the user's last choice. SCOPE (#673): one
-      // checkbox, read by every executor this message reaches. It guards the color variable reconcile
+      // apply skips the gate entirely and must still carry the user's last choice. SCOPE (#673, #687):
+      // one checkbox, read by every prune this message reaches. It guards the color variable reconcile
       // and the Color Roles theme-mode prune in msg.dtcg's applyBundle, the type/geometry variable
-      // prune, the Type Primitives variable and mode prunes, and the paint/text style prunes. The one
-      // destructive site it does NOT reach is applyFloatPlans' breakpoint-mode removeMode (#687), unguarded on
-      // main and out of #673's scope. #629's ruling Q1 exempted color entirely; #673 retired that
-      // exemption, because a published library that renames a role still lost the variable.
+      // prune AND its own breakpoint-mode prune in applyFloatPlans, the Type Primitives variable and
+      // mode prunes, and the paint/text style prunes. #629's ruling Q1 exempted color entirely; #673
+      // retired that exemption, because a published library that renames a role still lost the
+      // variable; #687 closed the last gap, applyFloatPlans' own breakpoint-mode removeMode.
       const msg = { type: "apply", config: serialize(this.doc), rebuildSemantic: !!rebuild, libraryMode: this._libraryMode(), floatPlans: this._figmaFloatPlans(), collections: figmaCollectionNames(this.doc), renames: { color: { ...kebabWaveColorRenames(_colorSlugs), collections: FIGMA_MIGRATIONS.color.collections } } };
       if (sys.color !== false) msg.dtcg = this.figmaBundle();
       // STYLES (opt-out): the swatch layer bound to the variables — paint styles per semantic role
@@ -372,7 +372,13 @@ export class ApplyGateMixinImpl {
         "div",
         { class: "apply-gate-body" },
         h("p", { class: "apply-gate-lede" }, rebuild
-          ? "Regroup deletes and re-creates the Color Roles variables so they adopt the grouped order. Any layers or styles bound to them will detach and need reconnecting — the Ultimate Tokens style swatches are re-bound automatically on this same apply. (Color Primitives are untouched.)"
+          // #688: Published library does NOT cover Regroup. figma/plugin/code.js's applyBundle
+          // deletes and re-creates the whole Color Roles collection under rebuildSemantic before it
+          // ever consults libraryMode, so every role's variable id changes and every bound consumer
+          // breaks regardless of that checkbox. Shown unconditionally here (not only when the box is
+          // ticked): Regroup is always this destructive, and the checkbox sits below this text in
+          // reading order, so a user who ticks it later has already read the disclosure either way.
+          ? "Regroup deletes and re-creates the Color Roles variables so they adopt the grouped order. Any layers or styles bound to them will detach and need reconnecting — the Ultimate Tokens style swatches are re-bound automatically on this same apply. (Color Primitives are untouched.) Published library does not cover Regroup: every Color Roles variable is replaced either way, so bound consumer files break regardless of that checkbox."
           : (() => {
               // #496/P1: the lede must name only the systems this apply will actually write —
               // both non-rebuild branches were previously keyed ONLY on exportSystems.styles, so a

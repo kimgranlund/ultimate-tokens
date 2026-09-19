@@ -73,6 +73,7 @@
 import { derivedAll, isDataPalette } from "../../src/engine/exports.js";
 import { contrastRatio } from "../../src/ui/model.mjs";
 import { hydrate, DOMAINS } from "../../src/ui/persist.js";
+import { gateReport } from "../gate-report.mjs";
 
 const FULL = process.argv.includes("--full");
 const SAMPLE_SEED = 0;                 // bump to rotate every category's sampled volume
@@ -232,10 +233,11 @@ if (!FULL && Object.keys(sampled).length !== CATS.length - 1)
   FAIL("vacuity", `sampled ${Object.keys(sampled).length} gallery categories, expected ${CATS.length - 1} — a category was skipped, not measured`);
 
 // ── REPORT ────────────────────────────────────────────────────────────────────────────────────
-for (const g of ["corpus", "sample", "modes", "pair", "identity", "gallery", "vacuity"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+const DECLARED = ["corpus", "sample", "modes", "pair", "identity", "gallery", "vacuity", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${FULL ? "FULL" : `SAMPLED seed ${SAMPLE_SEED}, volumes ` + CATS.filter((c) => c !== IDENTITY).map((c) => `${c} ${sampled[c]}`).join(", ")})`);
 console.log(`  (${docsMeasured} curated documents, ${palettes} palettes (${liftSkew} carrying a non-zero lift or skew), ${cellsMeasured} accent/on-color cells; ${identityCells} named per cell, ${Object.keys(EXPECTED_BELOW).length} carried below ${AA})`);
 for (const m of MODES) {
