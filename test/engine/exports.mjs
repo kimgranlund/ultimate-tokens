@@ -465,6 +465,15 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // second time — primary.DEFAULT/.hover (stops 550/450) and data-1.DEFAULT (also off-pivot). EX-1's
   // raw ramp literals (500/50/950/scrim.300, all either the verbatim anchor or undamped by chroma)
   // and on-primary/on-surface (no chroma dependence) are UNCHANGED — independently re-verified.
+  //
+  // #681 re-capture (U2 repair pass, re-diagnosis Findings 1+2): the anchored branches' chroma now
+  // routes through U3's own chromaEnvelope (verbatim copy, keyed on liftStop, the anchor's own
+  // OKHSL s / CAM16 chroma as the pivot basis) instead of the interim group-target lerp above, and
+  // the anchored tone construction now composes toneAt's curve/tension/vibrancy/hueSpace with the
+  // pivot instead of a straight lerp (F4). Both only move OFF-pivot stops (envelope(500)=1 exactly,
+  // and vibrancy=0's default perceptual-mode construction reduces to the prior linear-curve build),
+  // so only primary.DEFAULT/.hover (550/450) and data-1.DEFAULT moved again; EX-1's raw ramp
+  // literals and on-primary/on-surface are UNCHANGED — independently re-verified.
   const ddState = stateOf(defaultDocument());
   const ddPreset = X.exportPanda(ddState);
   const ddRaw = ddPreset.theme.extend.tokens.colors;
@@ -479,9 +488,9 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2575 0.0972 259.02)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.452 0.1631 258.92)", _dark: "oklch(0.5363 0.1884 258.99)" }))
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4514 0.1617 258.89)", _dark: "oklch(0.5363 0.1884 258.99)" }))
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3775 0.1183 258.74)", _dark: "oklch(0.6322 0.1585 258.9)" }))
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3778 0.118 259.01)", _dark: "oklch(0.632 0.1568 258.98)" }))
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
   if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);
@@ -489,7 +498,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     FAIL("panda", `EX-2 colors.neutral.on-surface = ${JSON.stringify(ddSem.neutral["on-surface"].value)}`);
   if (Object.keys(ddSem.primary).length !== 53) FAIL("panda", `EX-2 expected 53 keys under semanticTokens.colors.primary, got ${Object.keys(ddSem.primary).length}`);
   if (Object.keys(ddSem).length !== 16) FAIL("panda", `EX-2 expected 16 palette groups, got ${Object.keys(ddSem).length}`);
-  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5194 0.2328 272.25)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
+  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5184 0.2316 272.29)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
 
   // disabled palette absent from both trees.
   const disabledPanda = X.exportPanda(oneOff);

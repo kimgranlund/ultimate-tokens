@@ -80,10 +80,121 @@ in the Finding 0+6+7 gate rebuild rather than block on it, the same discipline U
 comment uses for its 21-cell synthetic exception — flag here in case the owner wants it treated as
 blocking instead, since unlike U3's synthetic cells this one is a real shipped preset.
 
+**Addendum, findings 0+6+7 gate rebuild + fixture re-pin:** the SAME symptom surfaced a third time,
+in a gate step 1 had not touched: `test/ui/shell.mjs`'s `(ac003b)` REQ-003 identity check (live, not
+fixture-pinned) now fails for "Neutral" — `rampChromaOf(Neutral, doc) = 30` (the group's resolved
+Base chroma) but `Neutral.chroma = 29` (its own key-color chroma), so the check expects the ramp to
+DIFFER from a direct chroma-29 call; instead it is byte-identical, because Neutral is anchored and
+its chroma now reads the anchor's own value unconditionally, same as `(gid3)`/`(gid8)`/`(gid8b)`. No
+new workaround attempted here either — left red, named here as a fourth reproducible instance of the
+same REQ-002 conflict, resolved together with Q-U2-5 whichever way the owner rules. (The
+`test/ui/fixtures/default-doc-ramps.json` byte-match half of `(ac003b)` was regenerated and passes —
+only the REQ-003 identity assertion is affected.)
+
+**Update:** proceeded past step 1b (F4, ruled — controls stay live) and into Findings 0+6+7's gate
+rebuild and the mechanical re-pins (citations, panda EX-2, shadcn-baseline, default-doc-ramps) per
+the repair-pass brief's own sequence, since those do not depend on this basis being final. Moving on
+to Finding 5's floor re-measurement next using the CURRENT (as-briefed) chroma basis — recording it
+as provisional, not final, since a ruling on Q-U2-5 could move it again.
+
 Three points where the plan text disagrees with itself or with what the built-and-measured tree
 shows. Re-measured on this unit's own branch, not assumed from the plan's older figures. I picked a
 reading for each and kept building rather than block, per instruction; flagging so a wrong guess is
 caught before it compounds into U3/U4/U6.
+
+## Finding 5: `hpg-role-contrast` floor re-measurement + curated thin-margin cells, before/after step 1+1b
+
+**Status: recorded for the owner, not a blocking question — AA 4.5 holds everywhere in both measurements.**
+
+Per the repair-pass brief's Finding 5: re-measure after step 1 (chromaEnvelope routing) and step 1b
+(F4, toneAt composition) land, record before/after, list any floor that dropped below its PRE-#681
+(origin/main, `bf2aaf6`) value by name, never silently re-pin.
+
+**`hpg-role-contrast` (`test/engine/semantic.mjs`, 96 entries = 16 families x 3 modes x 2 schemes).**
+Re-measured fresh against the current tree (this repair pass's step 1+1b landed) and re-pinned in
+place. Consequence of F4 (controls stay live): perceptual and peak are no longer byte-identical for
+anchored palettes, which is the gate this ticket's F4 required — even/peak now differ from perceptual
+by up to ~0.5:1 per family, where they used to be identical (peak) or a flat +0.1 (even). Every one
+of the 96 re-measured entries clears the ruled floor AA 4.5:1, both schemes, all three modes — `npm
+run gate:corpus-contrast` and `node test/engine/semantic.mjs` both green on this head.
+
+46 of the 96 entries now sit below their PRE-#681 (origin/main, `bf2aaf6`, before this ticket touched
+this file at all) value. None drop below 4.5. Listed by name, old (pre-#681) -> new (this head):
+
+| mode | family | side | old | new |
+|---|---|---|---|---|
+| perceptual | Secondary | dark | 6.1 | 5.2 |
+| perceptual | Data 1 | dark | 5.5 | 4.6 |
+| perceptual | Data 2 | dark | 4.9 | 4.7 |
+| perceptual | Data 3 | dark | 5.1 | 4.9 |
+| perceptual | Data 4 | dark | 5.5 | 4.7 |
+| perceptual | Data 5 | dark | 5.8 | 5.0 |
+| perceptual | Data 6 | dark | 6.2 | 5.2 |
+| perceptual | Data 7 | dark | 6.0 | 5.1 |
+| perceptual | Data 8 | dark | 5.8 | 5.0 |
+| even | Neutral | light | 7.0 | 6.9 |
+| even | Secondary | light | 5.2 | 4.9 |
+| even | Secondary | dark | 5.8 | 4.8 |
+| even | Info | light | 7.1 | 6.8 |
+| even | Success | light | 8.0 | 7.3 |
+| even | Warning | light | 9.4 | 7.9 |
+| even | Data 1 | dark | 5.8 | 4.7 |
+| even | Data 2 | dark | 5.8 | 4.6 |
+| even | Data 3 | dark | 5.8 | 4.5 |
+| even | Data 4 | dark | 5.8 | 4.9 |
+| even | Data 5 | light | 5.2 | 5.1 |
+| even | Data 5 | dark | 5.8 | 4.6 |
+| even | Data 6 | light | 5.2 | 4.8 |
+| even | Data 6 | dark | 5.8 | 4.9 |
+| even | Data 7 | light | 5.2 | 5.0 |
+| even | Data 7 | dark | 5.8 | 4.8 |
+| even | Data 8 | light | 5.2 | 5.1 |
+| even | Data 8 | dark | 5.8 | 4.6 |
+| peak | Secondary | light | 11.5 | 4.9 |
+| peak | Secondary | dark | 15.1 | 4.8 |
+| peak | Info | dark | 7.7 | 5.3 |
+| peak | Success | dark | 11.8 | 5.7 |
+| peak | Warning | dark | 7.4 | 5.3 |
+| peak | Data 1 | light | 10.0 | 5.6 |
+| peak | Data 1 | dark | 6.7 | 4.8 |
+| peak | Data 2 | dark | 5.5 | 4.7 |
+| peak | Data 3 | dark | 5.1 | 4.5 |
+| peak | Data 4 | light | 6.3 | 5.3 |
+| peak | Data 4 | dark | 8.7 | 4.9 |
+| peak | Data 5 | light | 12.8 | 5.1 |
+| peak | Data 5 | dark | 16.7 | 4.7 |
+| peak | Data 6 | light | 11.6 | 4.9 |
+| peak | Data 6 | dark | 15.0 | 4.9 |
+| peak | Data 7 | light | 11.8 | 5.0 |
+| peak | Data 7 | dark | 15.5 | 4.7 |
+| peak | Data 8 | light | 6.3 | 5.1 |
+| peak | Data 8 | dark | 8.8 | 4.6 |
+
+Most of the peak-mode drops are the ticket's own inherent effect, not a defect: pre-#681 peak mode
+pinned the ramp at the hue's own gamut cusp (values like 11.5-16.7:1 come from an unrelated,
+un-anchored cusp color), and this ticket replaces that with the anchor as the pivot everywhere, which
+is a fundamentally more moderate, controlled contrast by design (Q2(b), the ticket's own premise).
+The perceptual/even drops are smaller and plausibly downstream of the SAME anchor-pivot change. None
+were re-verified against a THIRD, non-anchored baseline to separate "inherent to Q2(b)" from "could
+still be tightened" — flagging for the owner rather than asserting either.
+
+**Curated corpus thin-margin cells, [4.50, 4.55) per mode.** The re-diagnosis's own Finding 5 text
+cites pre-fix figures of "77->400 perceptual, 44->392 peak" as the F2-defect inflation. I could not
+reproduce those specific numbers with my own methodology (343 curated documents in full, `derivedAll`,
+toneMode forced per mode, `[4.50,4.55)` band on the light+dark accent/on-color cells) — measuring the
+SAME pre-repair-pass commit (`7e3de30`, my own prior blend fix, extracted via `git archive` into a
+scratch checkout, not this worktree) gives 89 perceptual / 81 peak, not 400/392. Flagging this
+discrepancy rather than asserting either figure; my own before/after pair below is internally
+consistent (same script, same commit pair) even if it does not match the re-diagnosis's cited numbers:
+
+| mode | before (`7e3de30`) | after (this head) |
+|---|---|---|
+| perceptual | 89 | 93 |
+| peak | 81 | 66 |
+
+Both counts stayed in the same order of magnitude; perceptual rose slightly, peak fell. 0 cells under
+4.5 in either measurement (`gate:corpus-contrast --full`: 343 docs, 7560 cells, 0 under 4.5, worst
+4.500:1). AA holds regardless of how the thin-margin count itself is read.
 
 ## Q-U2-1: does the RAMP's stop 500 stay exact for the 10 out-of-window sources, or clamp?
 
