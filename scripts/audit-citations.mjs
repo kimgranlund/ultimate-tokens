@@ -291,13 +291,16 @@ export function anchorsOf(docLine) {
   // were repinned/backticked in the same commit as this fix (each read at its cited line first) --
   // see the doc diffs, not this comment, for the per-citation reasoning. One of those,
   // `04-context-and-messaging.md`'s `` `apply` `carve-out` `` line, is worth a callout: `carve-out`
-  // names a COMMENT two lines above the real `apply` branch (`figma/plugin/code.js:262`), so
-  // citing `:262` alone left it NEAR (`carve-out` found at `:260`, outside the cited line) both
-  // before this fix (via the same word through the old exemption) and immediately after (via the
-  // same word through the new hug rule) -- the anchor-selection artifact tracked as #693's KNOWN
-  // LIMIT. It reads OK now only because the doc's citation was WIDENED to `:260-262`, which brings
-  // that comment line inside the cited range -- a doc repin, not something this predicate change
-  // itself resolved.
+  // names a COMMENT naming the real `apply` branch, sitting a few lines above it (line numbers
+  // move as figma/plugin/code.js changes; #689 last pinned the branch itself at `:279-281` and the
+  // comment naming `carve-out` at `:277`). Citing only the branch lines leaves this NEAR
+  // (`carve-out` found outside the cited range), both before this fix (via the old exemption) and
+  // after (via the new hug rule) -- the anchor-selection artifact tracked as #693's KNOWN LIMIT.
+  // Backticking `carve-out` is necessary for it to anchor AT ALL under this fix's shape-or-hug
+  // floor (an unbacked bare `carve-out (` no longer anchors on shape alone), but it does not by
+  // itself turn NEAR into OK -- that would need the citation to also widen to include the comment
+  // line, which a later ruling on this same doc line declined to do (keeping the citation's own
+  // range accurate to the code it names, not padded to satisfy this predicate).
   //
   // The lookbehind/character-class cover hyphens (not just letters/digits/dot), so a hyphenated
   // compound (`carve-out(`) matches as ONE token instead of splitting at the hyphen into an
