@@ -40,7 +40,9 @@ different amounts.
 
 Two named witnesses, same mechanism, different corpus cells (`.sdlc/questions/pif-u3.md` pass-6
 addendum):
-- `damp:92, dampCurve:0.5`: default-kit "Neutral" (hue 267, chroma 100, skew −20, lift 0), perceptual
+- `damp:92, dampCurve:0.5`: BZZR "Primary" (`docs/reference/colors/categories/brands.json:814`: hue 267,
+  chroma 98, skew −20, lift 0; earlier named as default-kit Neutral, copied from Q7's error, corrected
+  at U3 review 2 F4; the mechanism conclusion is unaffected), perceptual
   mode, stop 500 → 550: CIELAB L* rises 26.4403 → 26.6493.
 - `damp:98, dampCurve:0.65`: peak mode, hue 110, chroma 100, skew 0, lift 22, stop 450 → 500: CIELAB
   L* rises 97.6484 → 97.7490.
