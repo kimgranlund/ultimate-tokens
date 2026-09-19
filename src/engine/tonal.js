@@ -505,6 +505,54 @@ function okhslStops(palette, controls, stops, mode) {
   } else {
     hOk = rgbToOkhsl(hctToRgb(baseHue, pk.c, pk.tone).rgb).h;
   }
+  // anchorChroma — the anchor's own emitted CAM16 chroma, rendered the SAME way every other stop is
+  // below (#681 U3 pass 5, restoring pass 4's OKHSL-path anchor cap but SCOPED TO PEAK ONLY per the
+  // owner's ruling on Q7: perceptual keeps #55's cusp-pull richness untouched, with its own bounded,
+  // named exemption applied separately below; peak is already SUPPOSED to center richness at 500
+  // (hpg-tonal-okhsl-modes), so capping there is consistent with peak's own definition, not in tension
+  // with it the way it was for perceptual. At stop === ANCHOR_STOP the cap below is a proven no-op
+  // (same formula, same inputs).
+  const anchorT = 1; // peak mode always pins t=1 (see `t` below) — anchorChroma must match that basis
+  const anchorL = lightnessAt(ANCHOR_STOP, anchorT);
+  const anchorS = Math.min(1, Math.max(0, keyS * envelopeAt.get(ANCHOR_STOP)));
+  const anchorChroma = cam16FromRgb(okhslToRgb(hOk, anchorS, anchorL)).chroma;
+  const dampAmp = controls.dampAmp ?? 0;
+  // solveLForTone — the OKHSL lightness l in [0,1] that renders CIE L* == targetTone at a FIXED hue/s
+  // (#681 U3 pass 4/5). L* is monotone non-decreasing in l at fixed hue/s (OKHSL's own construction),
+  // so bisection converges reliably; 30 halvings of [0,1] resolve to ~1e-9, well inside the 0.01 L* bar.
+  const solveLForTone = (hue, s, targetTone) => {
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 30; i++) {
+      const mid = (lo + hi) / 2;
+      if (lstarFromRgb(okhslToRgb(hue, s, mid)) < targetTone) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  };
+  // refineNearestRgb — a final 8-bit-quantization-aware polish (#681 U3 pass 4/5). Measuring chroma/tone
+  // back from ROUNDED 8-bit RGB introduces noise the continuous joint solve above can't predict (up to
+  // ~0.15 L*, ~0.1-0.2 chroma). Sweeps a few nearby continuous tone offsets through the validated HCT
+  // engine (exploring different rounding cells) plus a +-2-per-channel integer RGB neighbor search, both
+  // bounded by the TRUE chromaCeiling (never the margin-reduced target), picking whichever candidate
+  // minimizes |measuredTone - targetTone|.
+  const refineNearestRgb = (rgb, hueCam16, targetTone, chromaCeiling) => {
+    let best = rgb, bestErr = Math.abs(lstarFromRgb(rgb) - targetTone);
+    const consider = (cand) => {
+      if (cand.some((v) => v < 0 || v > 255)) return;
+      if (cam16FromRgb(cand).chroma > chromaCeiling + 1e-6) return;
+      const err = Math.abs(lstarFromRgb(cand) - targetTone);
+      if (err < bestErr) { bestErr = err; best = cand; }
+    };
+    for (const dTone of [-0.4, -0.3, -0.2, -0.1, -0.05, 0.05, 0.1, 0.2, 0.3, 0.4]) {
+      const reqChroma = Math.min(cam16FromRgb(rgb).chroma, chromaCeiling);
+      if (reqChroma <= 1e-9) continue;
+      consider(hctToRgb(hueCam16, reqChroma, targetTone + dTone).rgb);
+    }
+    for (let dr = -2; dr <= 2; dr++) for (let dg = -2; dg <= 2; dg++) for (let db = -2; db <= 2; db++) {
+      if (dr === 0 && dg === 0 && db === 0) continue;
+      consider([best[0] + dr, best[1] + dg, best[2] + db]);
+    }
+    return best;
+  };
   return stops.map((stop) => {
     // lightness per stop — STOP-based so the display(19) and export(25) ramps agree at a given stop.
     // Blend the EVEN-perceptual distribution toward the CUSP-anchored ("peak") one by `vibrancy`:
@@ -520,11 +568,48 @@ function okhslStops(palette, controls, stops, mode) {
     const hue = (((hOk + shift * dir) % 360) + 360) % 360;
     // saturation = the key colour's own OKHSL s (keyS), shaped by chromaEnvelope — the SAME envelope the
     // even path uses (so damp/dampCurve/dampAmp/dampBias stay meaningful here too), clamped to [0,1].
-    const s = Math.min(1, Math.max(0, keyS * envelopeAt.get(stop)));
-    const rgb = okhslToRgb(hue, s, l);
+    const s0 = Math.min(1, Math.max(0, keyS * envelopeAt.get(stop)));
+    let s = s0, l1 = l;
+    let rgb = okhslToRgb(hue, s, l1);
+    let chroma = cam16FromRgb(rgb).chroma;
+    // Generated PEAK palettes (dampAmp 0) never emit more chroma than the anchor (#681 U3 pass 5, C6's
+    // "0 above 100%" clause, peak only — perceptual keeps #55's cusp-pull richness, see below). Holds
+    // tone FIXED at its pre-cap value by solving JOINTLY for (s, l): shrink s toward the target chroma,
+    // then re-solve l for the held tone, iterating until both hold. Hue stays hOk-derived throughout (no
+    // engine switch, no new Abney residual). At stop === ANCHOR_STOP this never fires: same formula as
+    // anchorChroma above.
+    if (mode === "peak" && dampAmp === 0 && chroma > anchorChroma + 1e-6) {
+      const targetTone = lstarFromRgb(rgb); // the pre-cap (natural) tone — held fixed below
+      const hueCam16 = (((baseHue + shift * dir) % 360) + 360) % 360; // for the fallback and the polish
+      // chroma here is measured back from 8-bit-quantized OKHSL-rendered rgb, same as anchorChroma —
+      // independently-quantized measurements can differ by a few hundredths after the loop below lands
+      // exactly at the target, so this margin keeps the final measured value strictly under the ceiling.
+      const CAP_MARGIN = 0.5;
+      const target = anchorChroma - CAP_MARGIN;
+      for (let i = 0; i < 12 && chroma > anchorChroma + 1e-6 && chroma > 1e-9; i++) {
+        s = Math.max(0, s * (target / chroma));
+        l1 = solveLForTone(hue, s, targetTone);
+        rgb = okhslToRgb(hue, s, l1);
+        chroma = cam16FromRgb(rgb).chroma;
+      }
+      if (chroma > anchorChroma + 1e-6 || Math.abs(lstarFromRgb(rgb) - targetTone) > 0.01) {
+        // Fallback: the joint OKHSL solve didn't converge within tolerance on this cell — cap via the
+        // validated HCT engine directly at the anchor's chroma and the held tone, using the SAME rotated
+        // CAM16 hue the even path renders with. Guarantees the bound exactly but can reintroduce a small
+        // Abney hue residual at THIS stop only (measured in Q7).
+        const capped = hctToRgb(hueCam16, Math.min(chroma, target), targetTone);
+        rgb = capped.rgb;
+        chroma = cam16FromRgb(rgb).chroma;
+      }
+      // Polish against the 8-bit quantization floor: never past the TRUE anchorChroma (not the
+      // margin-reduced target), minimizing the residual tone error the rounding introduces.
+      rgb = refineNearestRgb(rgb, hueCam16, targetTone, anchorChroma);
+      chroma = cam16FromRgb(rgb).chroma;
+    }
     const tone = lstarFromRgb(rgb);                                 // report ACTUAL L* (for graphs / roles)
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    // chroma/maxc reported (measured) for the analysis graphs; OKHSL is in-gamut by construction.
-    return { stop, tone, chroma: cam16FromRgb(rgb).chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true };
+    // chroma/maxc reported (measured) for the analysis graphs; OKHSL is in-gamut by construction (the
+    // HCT fallback above is validated in-gamut too, per its own engine contract).
+    return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true };
   });
 }

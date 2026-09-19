@@ -790,6 +790,16 @@ for (const mode of ["perceptual", "peak"]) {
   //     2.0e-3 of OKHSL l, an order of magnitude under the ~0.02 gap between neighbouring stops.
   const okl = (rgb) => rgbToOkhsl(rgb).l;
   const LQ = 3e-3;
+  // CAP_L_EXCEPTIONS (#681 U3 pass 5): the peak-mode anchor cap (below, mode "peak" only) holds CIE L*
+  // fixed at these stops, not OKHSL l — a deliberate, disclosed divergence from this check's own
+  // independent-OKHSL-l derivation, only where the cap actually binds (dampAmp 0, chroma > anchorChroma).
+  // Bidirectionally verified: every cited key must be observed AND every observed mismatch must be cited.
+  const CAP_L_EXCEPTIONS = new Set([
+    "peak|oklch|Data 6|550",
+    "peak|cam16|Secondary|550",
+    "peak|cam16|Data 6|550",
+  ]);
+  const seenCapLExceptions = new Set();
   for (const mode of ["perceptual", "peak"]) {
     for (const hueSpace of ["oklch", "cam16"]) {
       for (const p of zeroDefaults) {
@@ -802,12 +812,18 @@ for (const mode of ["perceptual", "peak"]) {
             ? (r.stop <= 500 ? lLight + (cuspL - lLight) * ((r.stop - 50) / 450) : cuspL + (lDark - cuspL) * ((r.stop - 500) / 450))
             : lLight + (lDark - lLight) * ((r.stop - 50) / 900);
           if (Math.abs(okl(r.rgb) - want) > LQ) {
+            const key = `${mode}|${hueSpace}|${p.name}|${r.stop}`;
+            if (CAP_L_EXCEPTIONS.has(key)) { seenCapLExceptions.add(key); continue; }
             FAIL("skew-lift-okhsl", `(i) ${mode}/${hueSpace} ${p.name} stop ${r.stop}: skew 0 + lift 0 is not the unwarped distribution — emitted OKHSL l ${okl(r.rgb).toFixed(5)} vs independent ${want.toFixed(5)}`);
             break;
           }
         }
       }
     }
+  }
+  if (seenCapLExceptions.size !== CAP_L_EXCEPTIONS.size) {
+    const missing = [...CAP_L_EXCEPTIONS].filter((k) => !seenCapLExceptions.has(k));
+    FAIL("skew-lift-okhsl", `(i) ${missing.length} of the ${CAP_L_EXCEPTIONS.size} cited CAP_L_EXCEPTIONS were not observed this run (${missing.join(", ")}) — either fixed (remove from the list) or the corpus changed under it`);
   }
 
   // (ii) a NON-ZERO skew or lift must MOVE the perceptual/peak ramp, and move it the documented way:
@@ -1142,13 +1158,14 @@ for (const mode of ["perceptual", "peak"]) {
   }
 
   // (iii) C6 "0 above 100%" (Q7 reading a: emitted CAM16 chroma at ANY stop over stop 500's own), for
-  // GENERATED palettes (dampAmp 0) — #681 U3 pass 3's root-cause fix (paletteStops's even path caps
-  // every stop's chroma at the anchor's own). Scoped to EVEN MODE ONLY: the same fix attempted on the
-  // OKHSL path (perceptual/peak, via a saturation rescale) caused two disallowed regressions — a pinned
-  // hpg-role-contrast floor dropping below its old value, and 18 NEW skew-lift-okhsl grid upticks — and
-  // was reverted rather than shipped broken. perceptual/peak's "0 above 100%" clause stays open, tracked
-  // in .sdlc/questions/pif-u3.md Q7 and measured (not gated) by scripts/report-preset-fidelity.mjs
-  // --envelope.
+  // GENERATED palettes (dampAmp 0). #681 U3 pass 3 fixed the even path (paletteStops caps every stop's
+  // chroma at the anchor's own); pass 5 restores the OKHSL-path fix for PEAK ONLY, per the owner's
+  // ruling on Q7 pass-4: peak is already defined to center richness at 500 (hpg-tonal-okhsl-modes), so
+  // capping it there is consistent, not in tension. Perceptual is DELIBERATELY left off this exact-zero
+  // check — it keeps #55's cusp-pull richness untouched. The owner's ruling on Q7 pass-4 allowed a
+  // bounded, named, one-stop cusp exemption for perceptual instead of "0 above 100%", but measuring
+  // first (below, (iii-b)) showed that premise doesn't hold for most of the corpus, so it is NOT built;
+  // see Q7's pass-5 addendum.
   //
   // ADIA_CARVEOUT — the ONE named, owner-ruled exception (2026-09-18): an AUTHORED dampAmp>0 override is
   // exempt from "0 above 100%" by NAME, not by "any dampAmp>0" (that would silently exempt a future
@@ -1156,11 +1173,11 @@ for (const mode of ["perceptual", "peak"]) {
   // gate below unless the count is re-verified) — the negative control proves an UNLISTED dampAmp>0
   // preset is still caught.
   const ADIA_CARVEOUT = new Set(["Adia · The product's own design system"]);
-  const above100Violators = (doc) => {
+  const above100Violators = (doc, toneMode) => {
     const out = [];
     if ((doc.dampAmp ?? 0) === 0) return out; // the cap already guarantees this can't fire
     for (const pal of doc.palettes) {
-      const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "even" };
+      const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode };
       const chroma = rampChromaOf(pal, doc);
       const ramp = T.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, T.STOPS);
       const c500 = ramp.find((r) => r.stop === 500).chroma;
@@ -1169,29 +1186,39 @@ for (const mode of ["perceptual", "peak"]) {
     }
     return out;
   };
-  const unlisted = [];
-  for (const doc of docs) {
-    const v = above100Violators(doc);
-    if (v.length && !ADIA_CARVEOUT.has(doc.__presetName)) unlisted.push(`${doc.__presetName}/${v[0]}`);
-  }
-  if (unlisted.length) FAIL("chroma-envelope", `(C6 iii) even: ${unlisted.length} above-100% instance(s) from an UNLISTED preset (not the named Adia carve-out), e.g. ${unlisted[0]}`);
-  const adiaHit = docs.some((doc) => ADIA_CARVEOUT.has(doc.__presetName) && above100Violators(doc).length > 0);
-  if (!adiaHit) FAIL("chroma-envelope", `(C6 iii) the named Adia carve-out produced ZERO above-100% instances — either the carve-out is stale (Adia's own dampAmp no longer needs it, tighten toward 0) or the corpus dropped that preset; re-diagnose before touching ADIA_CARVEOUT`);
+  for (const toneMode of ["even", "peak"]) {
+    const unlisted = [];
+    for (const doc of docs) {
+      const v = above100Violators(doc, toneMode);
+      if (v.length && !ADIA_CARVEOUT.has(doc.__presetName)) unlisted.push(`${doc.__presetName}/${v[0]}`);
+    }
+    if (unlisted.length) FAIL("chroma-envelope", `(C6 iii) ${toneMode}: ${unlisted.length} above-100% instance(s) from an UNLISTED preset (not the named Adia carve-out), e.g. ${unlisted[0]}`);
+    const adiaHit = docs.some((doc) => ADIA_CARVEOUT.has(doc.__presetName) && above100Violators(doc, toneMode).length > 0);
+    if (!adiaHit) FAIL("chroma-envelope", `(C6 iii) ${toneMode}: the named Adia carve-out produced ZERO above-100% instances — either the carve-out is stale (Adia's own dampAmp no longer needs it, tighten toward 0) or the corpus dropped that preset; re-diagnose before touching ADIA_CARVEOUT`);
 
-  // Negative control: a SCRATCH copy of a NON-Adia doc with dampAmp forced to 70 (an authored-style
-  // override, matching Adia's own magnitude) must be caught as UNLISTED by the SAME check above — proves
-  // the carve-out really is keyed on the one named preset, not on "any dampAmp>0". In-memory only, built
-  // from the already-loaded corpus; never reads origin/main at runtime.
-  {
+    // Negative control: a SCRATCH copy of a NON-Adia doc with dampAmp forced to 70 (an authored-style
+    // override, matching Adia's own magnitude) must be caught as UNLISTED by the SAME check above —
+    // proves the carve-out really is keyed on the one named preset, not on "any dampAmp>0". In-memory
+    // only, built from the already-loaded corpus; never reads origin/main at runtime.
     const scratchDoc = { ...docs[0], dampAmp: 70, __presetName: "Scratch · not a real preset (negative control)" };
-    const v = above100Violators(scratchDoc);
-    if (v.length === 0) FAIL("chroma-envelope", `(C6 iii negative control) scratch dampAmp:70 preset (based on ${docs[0].__presetName}) produced no above-100% instance to catch — pick a different probe doc`);
-    else if (ADIA_CARVEOUT.has(scratchDoc.__presetName)) FAIL("chroma-envelope", `(C6 iii negative control) scratch preset name collided with ADIA_CARVEOUT — rename the probe`);
+    const v = above100Violators(scratchDoc, toneMode);
+    if (v.length === 0) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch dampAmp:70 preset (based on ${docs[0].__presetName}) produced no above-100% instance to catch — pick a different probe doc`);
+    else if (ADIA_CARVEOUT.has(scratchDoc.__presetName)) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch preset name collided with ADIA_CARVEOUT — rename the probe`);
     // else: correctly NOT in ADIA_CARVEOUT, so the same logic that built `unlisted` above would catch
     // it — this control doesn't re-run that loop, it just confirms the scratch doc IS a live violator
     // (checked above) that ISN'T named in the carve-out (checked here), which is what "reds as unlisted"
     // requires of it.
   }
+
+  // (iii-b) perceptual's bounded, named, ONE-STOP cusp exemption was RULED IN (Q7 pass-4 owner ruling)
+  // but is NOT BUILT here: measuring first (as the pass-5 brief required before writing any gate) shows
+  // the one-stop premise does not hold for most of the corpus's violating palettes. Of 2,226 generated
+  // (dampAmp 0) perceptual palettes with at least one above-anchor stop, only 538 have exactly one; 1,669
+  // (75%) have 2-5 adjacent above-anchor stops clustered around the cusp (histogram and examples in Q7's
+  // pass-5 addendum). Capping every non-cusp stop to the anchor while exempting only one would turn that
+  // whole cluster into a single unnatural spike for most of the corpus, not a graceful one-stop
+  // exception — a shape defect, not a pass, per the brief's own stop condition for exactly this
+  // scenario. Not gated; not patched with a different (uninstructed) mechanism. Reported to the owner.
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
