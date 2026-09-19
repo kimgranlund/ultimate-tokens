@@ -842,8 +842,9 @@ artifact (corrected from "all 6," review 4 R2; re-measured: Katsura tertiary @60
 45.35 with the cap on, 56.65 at stop 650 with caps off). Perceptual has no cap mechanism and measured 0
 dips (matching baseline). Both are now gated permanently (`test/engine/tonal.mjs`, "(iv) Dip gate"), with a
 named baseline list and a negative control that reintroduces the exact pre-fix bug pattern (a 1-step
-bisection plus the old `Math.min` fallback) and reproduces 174 dips, well past the baseline, proving the
-gate is live.
+bisection plus the old `Math.min` fallback) and reproduces 173 dips (unique keys, both stop sets; counted
+as 174 instances before review 4 rewired this control to dedupe by key across both stop sets, U3 review 5
+S3), well past the baseline, proving the gate is live.
 
 **Tone drift and hue residual, full corpus, capped stops only (n=5814):**
 
@@ -872,8 +873,9 @@ satisfies F1's stated primary requirement (0 new dips, at or below the reviewer'
 own. The reviewer's own reading of the underlying hue-blindness issue was 🟡 non-blocking ("acceptable...
 once reported"): this is that report, not a further fix attempt.
 
-**Honesty correction (U3 review 3, N3):** the HCT fallback (`tonal.js:667-679`, moved from `:661` when
-this comment block grew, review 4 R5) fires on 93.5% of capped
+**Honesty correction (U3 review 3, N3):** the HCT fallback (the `hctToRgb(polishHue, target, targetTone)`
+call inside `okhslStops`, `src/engine/tonal.js`, cited by symbol after review 5 S1 found this section's
+own line citations had gone stale twice from the file's own comment growth) fires on 93.5% of capped
 stops, not rarely as an earlier comment claimed. The 24-step bisection DOES converge on chroma reliably
 (that half of the exit condition rarely trips); it is the 0.01 L* tone tolerance that almost always trips
 instead, because that bar is tighter than an 8-bit RGB round-trip can usually hold at a fixed hue/chroma,
@@ -884,14 +886,19 @@ Set against this, the dip count dropped from 221 to 6. The claim "better in ever
 previously summarized this tradeoff is withdrawn: it minimized the fallback-rate and tone-drift costs
 just named, which are real and should weigh in any owner decision, not just the dip-count improvement.
 
-**Effective margin below the anchor, stated once as one number (corrected, U3 review 4 R5):** the DESIGNED
-bound is not `CAP_MARGIN`'s flat 0.5 C alone. `refineNearestRgb`'s own polish step may drop the chroma up
-to 1 C further below whatever the solve already reached (`Math.max(0, chroma - 1)`, `tonal.js:688`), so
-the designed bound is about 1.5 C below `anchorChroma`, not 0.5 C. The measured maximum, 1.82 C, sits
-above even that 1.5 C bound, because the fallback can land under target before the polish runs, so the
-two reductions stack rather than one bounding the other. The corpus's median gap, 0.70 C (p90 1.26, full
-table above), is supporting data describing where capped stops typically land, not the bound itself
-(previously stated as "the one number," which understated the true worst case).
+**Effective margin below the anchor, stated once as one number (corrected, U3 review 5 S2, was
+under-corrected at review 4 R5):** the code only bounds two of the three terms that make up this gap.
+`CAP_MARGIN` is a flat 0.5 C below `target`, fixed in code. `refineNearestRgb`'s own polish step may then
+drop the chroma up to 1 C further below whatever the solve already reached (`Math.max(0, chroma - 1)` at
+its call site inside `okhslStops`), also fixed in code. Those two terms alone sum to 1.5 C, which review 4
+wrongly called the "designed bound". The THIRD term is the fallback's own rounding miss (`target -
+chroma` after the `hctToRgb` render, an 8-bit round-trip), and it is NOT bounded in code: measured across
+54,270 fallbacks it ranges -0.496 to +0.505 C. Adding that measured (not designed) term, the EFFECTIVE
+bound is about 2.0 C, not 1.5 C. The measured maximum gap is 1.8178 C (0.5 margin + 0.34 fallback miss =
+0.8389 pre-polish, plus 0.9789 more from the polish), and 960 of the 58,050 measured cap solves (1.7%)
+exceed 1.5 C, so 1.5 C was never actually a bound, only two-thirds of one. The corpus's median gap, 0.70 C
+(p90 1.26, full table above), is supporting data describing where capped stops typically land, not the
+bound itself.
 
 **What the owner rules on:** whether the dip fix ships as built, carrying the fallback-rate and
 tone-drift costs above as a disclosed tradeoff against the pre-fix state's 221 dips, or whether a

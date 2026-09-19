@@ -88,19 +88,24 @@ this one rather than reuse it.
 ## F1's peak-cap fallback rate and margin (U3 review 3 N3, corrected U3 review 4 R5)
 
 Context for why F1's own single-stop accuracy fix did not, by itself, close `peak|700`: the peak cap's
-HCT fallback (`src/engine/tonal.js:667-679`, moved from `:661` when this comment block grew) fires on
-93.5% of capped stops, not "rarely" as an earlier comment claimed (now corrected there). The bisection's
-own 24 steps do converge on CHROMA reliably; it is the 0.01 L* TONE tolerance that almost always trips,
-since that is tighter than an 8-bit RGB round-trip usually holds at a fixed hue/chroma, so nearly every
-capped stop goes through `hctToRgb` rather than keeping the bisection's own continuous render.
+HCT fallback (the `hctToRgb(polishHue, target, targetTone)` call inside `okhslStops`, `src/engine/
+tonal.js`, cited by symbol rather than a line range after review 5 S1 found the review-3/4 line citations
+here had already gone stale from this file's own comment growth) fires on 93.5% of capped stops, not
+"rarely" as an earlier comment claimed (now corrected there). The bisection's own 24 steps do converge on
+CHROMA reliably; it is the 0.01 L* TONE tolerance that almost always trips, since that is tighter than an
+8-bit RGB round-trip usually holds at a fixed hue/chroma, so nearly every capped stop goes through
+`hctToRgb` rather than keeping the bisection's own continuous render.
 
-The margin below the anchor is a DESIGNED BOUND, not the measured median: the code applies `CAP_MARGIN`
-(0.5 C) below `target`, and `refineNearestRgb`'s own polish may then drop the chroma up to 1 C further
-(`Math.max(0, chroma - 1)`, `tonal.js:688`), so the designed bound is about 1.5 C below the anchor, not
-0.5 C alone. The measured maximum, 1.82 C, is above even that 1.5 C bound, because the fallback can land
-under target before the polish step runs, stacking rather than double-counting. The measured median gap,
-0.70 C, is supporting data, not the bound itself (corrected from stating the median as "the one number,"
-review 4 R5).
+**The effective margin below the anchor is about 2.0 C, not 1.5 C (corrected, U3 review 5 S2).** The code
+only BOUNDS two of the three terms: `CAP_MARGIN` (0.5 C, fixed) below `target`, and `refineNearestRgb`'s
+own polish, which may drop the chroma up to 1 C further (`Math.max(0, chroma - 1)` at its call site inside
+`okhslStops`). The THIRD term, the fallback's own rounding miss (`target - chroma` after `hctToRgb`, an
+8-bit HCT render round-trip), is NOT bounded in code: measured across 54,270 fallbacks it ranges -0.496 to
++0.505 C. Summed, the code's two bounded terms give 1.5 C, but the unbounded third term adds up to about
+another 0.5 C measured, so the EFFECTIVE bound is about 2.0 C, not 1.5 C. The measured maximum gap is
+1.8178 C (the worst row: 0.5 margin + 0.34 fallback miss = 0.8389 pre-polish, plus 0.9789 more from the
+polish), and 960 of the 58,050 measured cap solves (1.7%) exceed 1.5 C. The measured median gap, 0.70 C,
+is supporting data, not a bound (corrected from stating the median as "the one number," review 4 R5).
 
 Tone drift: 34.5% of capped stops exceed 0.01 L* from target, maximum 0.1009 L*. Hue residual: maximum
 24.62 degrees. 0 stops have a chroma gap over 3 C. These figures hold under two independent measurement
