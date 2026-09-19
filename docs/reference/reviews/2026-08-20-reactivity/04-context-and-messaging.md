@@ -22,13 +22,13 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 
 | Type | Call site | Sandbox handler | Reply |
 |---|---|---|---|
-| `load-config` | `app.js:1007` (probe), `app.js:2324` (explicit load), posting `type: "load-config"` | `code.js:210-213` (`msg.type === "load-config"`) | `config-loaded` |
-| `read-variables` | `app.js:1008` (probe), `app.js:2378` (manual re-read), posting `type: "read-variables"` | `code.js:221-224` (`msg.type === "read-variables"`) | `variables-read` |
-| `load-sets` | `app.js:1009` (probe), posting `type: "load-sets"` | `code.js:228-231` (`msg.type === "load-sets"`) | `sets-loaded` |
-| `read-float-variables` | `apply-gate.js:45` (gate open), posting `type: "read-float-variables"` | `code.js:225-227` (`msg.type === "read-float-variables"`) | `float-variables-read` |
-| `list-fonts` | `typography.js:808` (one-shot), posting `type: "list-fonts"` | `code.js:215-221` (`msg.type === "list-fonts"`) | `fonts-listed` |
-| `save-sets` | `app.js:1158` (`persistSets`), posting `type: "save-sets"` | `code.js:232-234` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
-| `save-config` | `app.js:2311`, posting `type: "save-config"` | `code.js:207-209` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
+| `load-config` | `app.js:1007` (probe), `app.js:2324` (explicit load), posting `type: "load-config"` | `code.js:215-218` (`msg.type === "load-config"`) | `config-loaded` |
+| `read-variables` | `app.js:1008` (probe), `app.js:2378` (manual re-read), posting `type: "read-variables"` | `code.js:226-229` (`msg.type === "read-variables"`) | `variables-read` |
+| `load-sets` | `app.js:1009` (probe), posting `type: "load-sets"` | `code.js:233-236` (`msg.type === "load-sets"`) | `sets-loaded` |
+| `read-float-variables` | `apply-gate.js:45` (gate open), posting `type: "read-float-variables"` | `code.js:230-232` (`msg.type === "read-float-variables"`) | `float-variables-read` |
+| `list-fonts` | `typography.js:808` (one-shot), posting `type: "list-fonts"` | `code.js:219-225` (`msg.type === "list-fonts"`) | `fonts-listed` |
+| `save-sets` | `app.js:1158` (`persistSets`), posting `type: "save-sets"` | `code.js:237-239` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
+| `save-config` | `app.js:2311`, posting `type: "save-config"` | `code.js:212-214` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
 | `apply` | `apply-gate.js:106`, posting `type: "apply"` | `code.js:133-207` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
 | `sweep-scan` | `apply-gate.js:221`, posting `type: "sweep-scan"` | `code.js:236-242` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
 | `sweep-delete` | `apply-gate.js:248`, posting `type: "sweep-delete"` | `code.js:243-251` (`msg.type === "sweep-delete"`) | `sweep-done` |
@@ -50,7 +50,7 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 
 Refresh discipline is consistent — every inbound handler calls `this.render()` (or delegates to one that does). The one intentional exception: `receiveStoredSets` (`app.js:1166`) no-ops if `this.view !== "gallery"` — a deliberate anti-clobber guard, not a bug (a probe reply landing after the user already opened an editor mustn't overwrite `this.sets`).
 
-**Asymmetry (the one real design gap):** `apply` is the only inbound request with a guaranteed reply on failure — `code.js`'s outer `catch` (`code.js:253-266`) explicitly special-cases `msg.type === "apply"` to post `apply-error`. `sweep-scan` and `sweep-delete` get NO such carve-out [since fixed: `code.js:262-263` now post empty `sweep-scanned`/`sweep-done` from the same catch]: if `figma.getLocalTextStylesAsync()`/`sweepCandidates`/the delete loop throws, the catch only calls `figma.notify(...)` — no `sweep-scanned`/`sweep-done` is ever posted. See (B) below — this is a real wedge, not theoretical.
+**Asymmetry (the one real design gap):** `apply` is the only inbound request with a guaranteed reply on failure — `code.js`'s outer `catch` (`code.js:257-266`) explicitly special-cases `msg.type === "apply"` to post `apply-error`. `sweep-scan` and `sweep-delete` get NO such carve-out [since fixed: `code.js:267-268` now post empty `sweep-scanned`/`sweep-done` from the same catch]: if `figma.getLocalTextStylesAsync()`/`sweepCandidates`/the delete loop throws, the catch only calls `figma.notify(...)` — no `sweep-scanned`/`sweep-done` is ever posted. See (B) below — this is a real wedge, not theoretical.
 
 ## B — In-flight flags + cache inventory
 
