@@ -15,6 +15,8 @@ Recovered from code at f9e20c5. Every claim (A-, T-, P-, X-, L- ids) cites two e
 
 Staleness note (graded 2026-09-18). This map was recovered at `f9e20c5`, the head of `sdlc/adopt`. That commit is not in `main`'s history: the branch landed squashed as `180eca0` (PR #653), and the object is reachable only through `origin/sdlc/adopt`. The survey verdict of 2026-09-18 (`.sdlc/verdicts/survey.md` C15, graded at `cf8e61a`) found 18 of the 72 paths this file cites edited in `180eca0..cf8e61a`, and `main` has moved again since, so a line-anchored citation into an edited path is unverified at any later head. The map was not re-derived (owner ruling, `.sdlc/questions/survey-2026-09-18-approval.md` Q2). Rule: a plan that touches a path this file cites, or relies on a claim or a K control here, re-checks each citation it relies on at its own head and records the result in the plan. `git diff --stat f9e20c5 HEAD -- <path>` prints nothing when the cited file is unchanged since this map was written. Where the `f9e20c5` object is absent, `git log --oneline 180eca0..HEAD -- <path>` is the fallback, and a weaker one: `180eca0` already differs from `f9e20c5` in ten files under `src/`, `test/` and `figma/`.
 
+Rerun note (U2 of plan records-refresh, 2026-09-19). The 18 controls of §6 and §6.1 were rerun at `d814500` (the `origin/main` head `.sdlc/baseline.md` cites) and graded one row each in `.sdlc/verdicts/architecture.md` pass 5; §8 was measured at the same head. The claims of §1 to §5 and the recorded HEAD and bite cells of §6 stay as written at `f9e20c5`. Where a pass 5 result differs from a §6 cell, pass 5 is the current reading and the cell is history.
+
 ## 1. Layering and dependency direction
 
 ```
@@ -151,3 +153,18 @@ grep -qE "schema-rename v${CUR}\b" test/ui/persist.mjs || echo "no test/ui/persi
 - Conventions: 18. Each has a control run at HEAD and a recorded plant that the control caught.
 - Conventions with exceptions: K9, K11, K14, K17, K18.
 - Controls with a stated mechanical limit (the rest is a manual trace): K10, K13, K14, K18.
+- Doc drift (§8, measured at `d814500`): 7 rows, 0 drifted, 7 hold, 0 undetermined.
+
+## 8. Doc drift
+
+Measured at `d814500` by U2 of plan records-refresh (#691). Claims in `README.md` and `.claude/CLAUDE.md` checked against the code at that head; `AGENTS.md` does not exist (`git ls-files AGENTS.md` is empty). Records-vs-code drift (ADRs, specs, LLDs, plans) is a different table and stays in `.sdlc/debt.md` §Records drift. Each doc cell quotes the doc line verbatim with its line number; each code cell cites the file, with a line where one applies, that confirms or contradicts it; `undetermined` names what was looked at.
+
+| id | doc claim | code | state |
+|---|---|---|---|
+| DD1 | `.claude/CLAUDE.md:22` "run all but `gen:type-fonts`" | `package.json:27,29` neither the `test` nor the `build` script runs `gen:type-fonts` | holds: confirmed by direct read of both script strings |
+| DD2 | `.claude/CLAUDE.md:35` "type-fonts.js` (do not hand-edit)" | K9 control (§6.1) rerun at this head: regenerating the watched files reproduces them byte for byte, 0 changed | holds: own K9 run at `d814500` printed no `CHANGED BY REGEN` line and `git status --short` empty |
+| DD3 | `.claude/CLAUDE.md:58` "Engines stay DOM-free + pure." | K1 control (§6): `grep` over `src/engine/*` for DOM/browser globals | holds: own K1 run at `d814500` printed 0 hits |
+| DD4 | `.claude/CLAUDE.md:68` "SVG-chart exception: 12 live attributes" | `git grep -cE "html:" src/ui/app.js src/ui/sections src/ui/overlays`: color.js 6, geometry.js 3, typography.js 3 | holds: 6+3+3 = 12 at `d814500`, matching K11's recorded exception |
+| DD5 | `.claude/CLAUDE.md:111` "(local-only, ignored via `.git/info/exclude`) never reaches a commit" | `.gitignore` (U1's rerun, this plan) carries no `.claude/docs/other/` line; `.git/info/exclude:3` carries it (per-checkout, not tracked) | holds: the mechanism named is exactly what is present. `git ls-files .claude/docs/other` is empty and the `git-precommit-privatedocs-guard` hook is the real enforcement (K15), the sentence is not claiming `.gitignore` coverage |
+| DD6 | `README.md:56` "interchange-only, not a native Figma format" | `src/engine/exports.js:26` "ADR-007  UI3 is interchange-only (not a native Figma import path)." | holds: engine comment and README agree at `d814500` |
+| DD7 | `README.md:11` "derives a **53-role semantic layer**" | `docs/reference/data/role-table.json` `roleTable.length` 53; `src/engine/semantic.js:114 semanticRoles` | holds: K8 rerun at `d814500` prints `PASS` for `refs-canonical` and `parity`, both tables 53 |
