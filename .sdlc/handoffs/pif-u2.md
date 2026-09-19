@@ -744,8 +744,67 @@ ancestor of HEAD, no further rebase needed). See the Live sha table below for th
 | `wip(tonal,anchor): review pass 5 fix in progress - bracketed root-find, achromatic fix, lone-spike gate` | `13cee2f2` |
 | `wip(tonal): perf fix - try the cheap fixed-point step before the bracketed scan` | `954675c6` |
 | `perf(tonal): memoize paletteStopsAnchored against projectView's ~10x redundant export derivation` | `fba53077` |
+| `wip(tonal,exports,model): checkpoint, halted for re-diagnosis` (removes `_pmemo`, threads `derived` into the 9 exporters) | `98081cc2` |
 
 Re-verify any of these with `git merge-base --is-ancestor <sha> HEAD` before trusting it as "on the
 branch" - a further rebase can move all of them again. This pass's own final records commit (this
 table's own edit) is the branch tip at the time this row was written; find it with `git log --oneline
 -1` on the branch rather than trusting a sha frozen here.
+
+## Review pass 6 (owner pass-cap, two briefs: an initial split proposal then a superseding addendum,
+2026-09-19)
+
+The re-diagnosis (`.sdlc/plans/preset-intent-fidelity-u2-rediagnosis-2.md`, then its Addendum,
+`a0fa8d13`) traced the perf regression and review 5's hue-solve fallback to one root cause: an exact
+per-stop numerical hue solve run over the full curated corpus, redundantly, inside `npm test`'s
+default budget. Its first recommendation (split `anchor.mjs` into a sampled `npm test` leg and a full
+`gate:corpus-anchor` script, mirroring `gate:corpus-contrast`) was superseded before this pass acted on
+it - a second message from team-lead arrived with the addendum's real fix already checkpointed
+(`a75733d4`, now `98081cc2` after rebase): thread the already-derived export data into the canvas loop
+too, instead of adding a test-harness split. **No `anchor.mjs` split was implemented in this pass** -
+a brief WIP toward it (package.json's `gate:corpus-anchor` script line) was reverted before commit, per
+team-lead's explicit "if you already started it, revert" instruction.
+
+**Parity re-baseline (Finding 3 of the addendum's own open question).** `4c2831ab` cannot be the parity
+reference: it inherits the pre-checkpoint `_pmemo` cache's own collision bug (keyed on `stops.length`,
+not the actual stop values), which makes ITS OWN corpus sweep order-dependent - re-deriving one witness
+in isolation on the `4c2831ab` tree gives one hex, the same witness inside `4c2831ab`'s own full-corpus
+sweep gives a different one. Re-baselined against `954675c6` (the last pre-`_pmemo` commit) instead, in
+both directions:
+- **Isolated**: one witness (architecture "Falu-red farmstead" primary-muted, even mode, stop 100)
+  re-derived standalone on the `954675c6` tree matches HEAD exactly (`#FFF9EC`).
+- **Full-corpus sweep**: every enabled palette in all 343 curated presets plus the 16-palette default
+  kit, all 3 modes, the full 25-stop export ramp (284,700 cells) - **0 changed cells**.
+
+**Canvas threading: stop rule fired, not implemented.** `projectView`'s canvas-scene loop builds its
+`fullStops` from a direct `paletteStops(...)` call, independent of the `derived` value already threaded
+into the 9 exporters, mapping each stop to `{ stop, hex, rgb, chroma, maxc, inGamut, tone }` - an
+ordered array, one entry per `EXPORT_STOPS` value, used directly by the plot (`ceiling: s.maxc`) and by
+role resolution. `exports.js`'s `derivePalette` computes the SAME underlying `paletteStops(...)` call
+internally, but only retains `{ rgb, hex, tone, chroma }` per stop, keyed by the zero-padded stop
+STRING ("050".."950"), not stop number, and drops `maxc`/`inGamut` entirely (no export format reads
+either field) - `byStop` on the derived object carries `rgb` only, same reason. Reusing `derived` for
+the canvas would need `derivePalette` to expose a shape it currently does not: an ordered array with
+every field the canvas reads, not the trimmed dict the 9 exporters share today. That is a reshape of
+`derivedAll`'s own contract, which the brief's stop rule explicitly bars ("Do not reshape `derivedAll`
+to fit"). Per that rule, U2 stops here: the missing fields are named, no attempt was made to add them,
+and `98081cc2` (export-side threading only, `_pmemo` removed) is the landing point for this pass.
+
+**Timing.** `npm test`, foreground, timed fresh this pass (unchanged code from the last checkpoint,
+now rebased): 48/48 green, **144.70s** (152.71s user / 3.23s system / 107% cpu / 2:24.70 wall) - under
+the review-5-era baseline's earlier 166.08s measurement (both readings are of the SAME code; the
+difference is host-load variance, not a construction change), and comfortably under the owner's 175s
+hard ceiling. Still over the 100s soft target named in the original perf brief - reported as the known
+gap, per the addendum's own stop-rule language, not chased further this pass.
+
+**NOTCH_ALLOW.** Confirmed at 78 (15/9/54) at this pass's own head (`node test/engine/anchor.mjs`):
+`pass  anchor-ramp notch allow-list (ruled Q-C, named pending U4): 78 (expected 78)`. Unchanged from
+review pass 5 - this pass touched no hue-solve code, only the export/canvas derivation plumbing, so no
+notch-list drift was expected and none was found.
+
+**Final state, review pass 6.** `npm test` 48/48 green (144.70s), `git status --short` empty,
+`node scripts/audit-citations.mjs` STALE 0, `npm run gate:corpus-contrast` PASS (worst cell 4.500:1,
+literature "Nineteen Eighty-Four"), `node test/repo/branding.mjs` clean (450 files). Rebased onto the
+plan tip `552eafcd` (the addendum's own parity-baseline note) - head `98081cc2` before this records
+commit. No second workaround: the stop rule fired once, cleanly, and this pass stopped rather than
+reshaping `derivedAll`'s contract to force the canvas threading through.
