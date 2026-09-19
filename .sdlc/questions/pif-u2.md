@@ -546,6 +546,49 @@ head passes at "78 (expected 78)" against the SAME `NOTCH_ALLOW` names, with no 
 Changed since the original 76 ruling, still pending conductor on the integrated number; unchanged since
 review pass 4's own re-measurement.
 
+**Addendum (review pass 6, 2026-09-19): by-name diff against the owner-ruled 76, with causes.** Head is
+**78 = 15 perceptual / 9 peak / 54 even**; the owner ruled **76 = 15 / 9 / 52**. Perceptual and peak are
+untouched; all 16 moves are in even mode. The rendered set equals the list by name (`notch allow-list
+...: 78 (expected 78)`), so this is a real measurement of the product, not of a constant. Baseline for
+the diff: `NOTCH_ALLOW` at `d7d6b04f` (the rebased `a079fab3`), which carries the ruled 76. The gate is
+a 70% ratio plus a CAM16 chroma dip of at least 3 on BOTH sides of stop 500. In every one of the 16
+moves, stop 500 itself is unchanged and one neighbour (450 or 550) moved by exactly one 8-bit code onto
+the anchor hue, carrying a dip that sat at 2.7 to 2.98 across the 3.0 bar, or the mirror. Measured at
+head with `node scratchpad/p5-notch2.mjs <abs head> <abs d7d6b04f tree>`.
+
+**Added (9, all even):**
+
+| Name | Cause at head |
+|---|---|
+| architecture "Bankside / Tate Modern" tertiary `#888781` | 550 `#777468` to `#767468`, its CAM16 C 6.45 to 6.54, dip 2.98 to 3.08 |
+| architecture "Boston City Hall" secondary `#888781` | same rendered ramp as Bankside, same one-code move |
+| architecture "Narkomfin Building" secondary `#8E8D87` | 450 `#A09D90` to `#9F9D90` and 550 `#7C796D` to `#7B796D`, dips 3.04/2.94 to 3.15/3.04 |
+| cuisine "Sushi and sashimi" secondary `#DAD8D2` | 450 `#E3DDD0` to `#E2DED0`, C 5.77 to 6.31, dip 2.71 to 3.25 |
+| film "Hero" primary `#DAD8D2` | same rendered ramp as Sushi |
+| film "The Red Shoes" primary `#DAD8D2` | same rendered ramp as Sushi |
+| literature "The Handmaid's Tale" primary `#DAD8D2` | same rendered ramp as Sushi |
+| music "New Orleans brass" secondary-muted `#DAD8D2` | same rendered ramp as Sushi |
+| music "UK '77" tertiary-muted `#C3C1BC` | 450 `#CFC9BD` to `#CFCABD`, C 5.49 to 5.95, dip 2.86 to 3.32 |
+
+**Removed (7, all even):**
+
+| Name | Cause at head |
+|---|---|
+| film "The Night of the Hunter" primary `#161618` | 450/550 each one code, C 5.90/6.38 to 5.20/5.56, dips 3.42/3.90 to 2.56/2.91 |
+| film "The Night of the Hunter" tertiary-muted `#D6D5D2` | 450 `#E0DBCF` to `#DFDBD0`, dip 3.20 to 2.82 |
+| literature "Dracula" secondary-muted `#85847E` | 450 `#989588` to `#979589`, dip 3.09 to 2.71 |
+| literature "My Brilliant Friend" tertiary-muted `#D3D1CC` | 450 `#DDD7CA` to `#DDD7CB`, dip 3.20 to 2.76 |
+| nature "35 deg N November, Kyoto temple maple" primary `#B3B2AC` | 450 `#C0BDAF` to `#BFBDB0`, dip 3.30 to 2.97 |
+| nature "57 deg N August, Rannoch Moor" primary `#D7D5CE` | 450 `#E0DBCC` to `#DFDBCD`, dip 3.18 to 2.82 |
+| travel "48 deg N February, Saint-Malo quay" tertiary-muted `#CFCECB` | 450 `#DAD5C9` to `#D9D5CA`, dip 3.27 to 2.89 |
+
+**Reading for the owner.** Net +2. Every move is one 8-bit code on a neighbour of stop 500, at a
+threshold the entry was already sitting against, and each moved neighbour sits closer to the anchor hue
+than before, which is the converged solve doing its job. No visible change; the notch each name
+describes was already present at a 2.7 to 3.0 dip. The set is identical to the one review 5 diffed, so
+the pass-5 solve rework, the fast path and the export threading moved nothing here. Still **pending
+conductor** on 78 vs 76, or a hold.
+
 **Residual cause, unchanged in kind from review 2's own finding:** every remaining entry is a
 near-grey (or very low-chroma) anchor inside a group whose resolved `rampChroma` target is well above
 it. Easing the blend's own slope to zero at the pivot removes the LINEAR component of the notch, but a
