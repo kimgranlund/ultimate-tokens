@@ -1975,6 +1975,76 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
   } catch (e) { FAIL("librarygrammar", "the grammar-bridge e2e threw: " + e.message); }
 }
 
+// ── fontprimslibrary (#696): the Type Primitives MODE prune must read the SAME resolved `useLibrary`
+//    the VARIABLE prune below it already reads (explicit opts.libraryMode, else the interactive
+//    confirmLibraryMode ask, else #635's priorLibraryUpliftVM fallback over the variable evidence),
+//    not `opts.libraryMode === true` taken raw at collection time. Before #696, an old pre-#629
+//    ui.html bundle (opts.libraryMode undefined) applying to a file that already carries prior-uplift
+//    evidence (a "_deprecated/font/..." variable) kept the variables (library) but PRUNED the stale
+//    mode (classic): a published library losing a mode every consumer pinned.
+if (applyFontPrimitivesModes) {
+  const OLD_VOICES_FPL = ["heading", "ui", "caption", "legal", "code", "body", "display", "lead", "kicker", "sub-heading", "quote"];
+  // buildUpliftedMock: brings a fresh mock to "already library-uplifted", an old-era single-"Value"-mode
+  // collection healed into Premium+Google Fonts, then a real libraryMode:true apply of planFP so a real
+  // "_deprecated/font/quote" variable (and several live aliases) sit in the collection as genuine
+  // prior-uplift evidence, never a fabricated fixture.
+  async function buildUpliftedMockFPL() {
+    const F = mockFigma();
+    const loaded = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(F.figma, "<html>", undefined);
+    const eraOnePlan = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: OLD_VOICES_FPL.map((v) => ({ name: "font/" + v, type: "STRING", values: [{ mode: "Value", value: "Old Font " + v }] })) };
+    await loaded.applyFontPrimitivesModes(eraOnePlan);
+    const scaleFP = TYPE.typeScale({ treatment: "product", bodyBase: 16 });
+    const planFP = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scaleFP));
+    await loaded.applyFontPrimitivesModes(planFP, { libraryMode: true });
+    return { F, loaded, planFP };
+  }
+  try {
+    // ── LEG (a): opts.libraryMode undefined (an old pre-#629 ui.html bundle) + prior-uplift evidence +
+    //    a plan dropping the "Google Fonts" mode. The mode must survive AND be reported in staleModes,
+    //    the SAME decision the variable half already makes off the priorLibraryUpliftVM fallback.
+    {
+      const { F: Fa, loaded: la, planFP: planA } = await buildUpliftedMockFPL();
+      const beforeA = Fa.collections.find((c) => c.name === "Type Primitives");
+      if (!beforeA || beforeA.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("fontprimslibrary", `fixture: expected Premium,Google Fonts before the narrow apply, got ${beforeA && beforeA.modes.map((m) => m.name)}`);
+      const deprecatedBefore = Fa.variables.some((v) => v.variableCollectionId === beforeA.id && v.name === "_deprecated/font/quote");
+      if (!deprecatedBefore) FAIL("fontprimslibrary", "fixture: no '_deprecated/font/quote' prior-uplift evidence before the narrow apply, the leg would prove nothing");
+      const narrowA = Object.assign({}, planA, { modes: ["Premium"], addModes: [] });
+      const resA = await la.applyFontPrimitivesModes(narrowA); // opts omitted entirely, undefined
+      const afterA = Fa.collections.find((c) => c.name === "Type Primitives");
+      const modeNamesA = afterA.modes.map((m) => m.name);
+      const staleA = (resA && resA.libraryReport && resA.libraryReport.staleModes) || [];
+      if (!modeNamesA.includes("Google Fonts")) FAIL("fontprimslibrary", `#696 an undefined libraryMode with prior-uplift evidence removed the stale 'Google Fonts' mode (modes=${JSON.stringify(modeNamesA)}): a published library must never lose a mode a consumer pinned`);
+      if (!staleA.includes("Google Fonts")) FAIL("fontprimslibrary", `#696 an undefined libraryMode with prior-uplift evidence did not REPORT the kept 'Google Fonts' mode (staleModes=${JSON.stringify(staleA)})`);
+      if (!resA || !resA.libraryReport || resA.libraryReport.libraryMode !== true) FAIL("fontprimslibrary", `#696 the variable half resolved libraryMode=${resA && resA.libraryReport && resA.libraryReport.libraryMode}, want true (prior-uplift evidence): the mode half must read the SAME decision`);
+      const deprecatedAfter = Fa.variables.some((v) => v.variableCollectionId === afterA.id && v.name === "_deprecated/font/quote");
+      if (!deprecatedAfter) FAIL("fontprimslibrary", "#696 the preserved '_deprecated/font/quote' variable did not survive the narrow apply, the variable half must stay preserved too");
+    }
+    // ── LEG (b): explicit libraryMode:false, the stale mode IS removed, classic prune unchanged.
+    {
+      const { F: Fb, loaded: lb, planFP: planB } = await buildUpliftedMockFPL();
+      const narrowB = Object.assign({}, planB, { modes: ["Premium"], addModes: [] });
+      const resB = await lb.applyFontPrimitivesModes(narrowB, { libraryMode: false });
+      const afterB = Fb.collections.find((c) => c.name === "Type Primitives");
+      const modeNamesB = afterB.modes.map((m) => m.name);
+      const staleB = (resB && resB.libraryReport && resB.libraryReport.staleModes) || [];
+      if (modeNamesB.includes("Google Fonts")) FAIL("fontprimslibrary", `#696 libraryMode:false left the stale 'Google Fonts' mode behind (modes=${JSON.stringify(modeNamesB)}): classic prune regressed`);
+      if (staleB.length) FAIL("fontprimslibrary", `#696 libraryMode:false reported staleModes ${JSON.stringify(staleB)} instead of removing them`);
+    }
+    // ── LEG (c): explicit libraryMode:true, already covered by shape, kept here as the third point on
+    //    the SAME decision channel (undefined/false/true all agreeing between the two prune sites).
+    {
+      const { F: Fc, loaded: lc, planFP: planC } = await buildUpliftedMockFPL();
+      const narrowC = Object.assign({}, planC, { modes: ["Premium"], addModes: [] });
+      const resC = await lc.applyFontPrimitivesModes(narrowC, { libraryMode: true });
+      const afterC = Fc.collections.find((c) => c.name === "Type Primitives");
+      const modeNamesC = afterC.modes.map((m) => m.name);
+      const staleC = (resC && resC.libraryReport && resC.libraryReport.staleModes) || [];
+      if (!modeNamesC.includes("Google Fonts")) FAIL("fontprimslibrary", `#696 libraryMode:true removed the stale 'Google Fonts' mode (modes=${JSON.stringify(modeNamesC)}): a published collection's mode must survive`);
+      if (!staleC.includes("Google Fonts")) FAIL("fontprimslibrary", `#696 libraryMode:true did not REPORT the kept 'Google Fonts' mode (staleModes=${JSON.stringify(staleC)})`);
+    }
+  } catch (e) { FAIL("fontprimslibrary", "the font-primitives mode/variable timing e2e threw: " + e.message); }
+}
+
 // ── READ-FLOAT-VARIABLES (TKT-0020, Geometry/Type drift reference): the live Geometry + Type
 // Primitives values come back in a shape comparable to a modeApplyPlan/primitivesModesApplyPlan entry — the
 // apply gate's pre-overwrite diff (collections-arch review C2). Runs on the SAME mock F: by this point
@@ -2039,6 +2109,10 @@ if (applyFloatPlans) {
 {
   const f = fails.find((x) => x.startsWith("librarygrammar:"));
   console.log(`  ${f ? "FAIL" : "pass"}  librarygrammar${f ? "  — " + f.slice(15) : ""}`);
+}
+{
+  const f = fails.find((x) => x.startsWith("fontprimslibrary:"));
+  console.log(`  ${f ? "FAIL" : "pass"}  fontprimslibrary${f ? "  — " + f.slice(17) : ""}`);
 }
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("\nPASS: figma-plugin-app — manifest + offline code.js + bridged ui.html + the figmaBundle→variables cascade + the Type/Geometry breakpoint-mode apply + the styles apply (bound paints/texts, registry prune)");

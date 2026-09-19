@@ -229,7 +229,15 @@ further gate-only control, ask the same question.
 
 What the flag actually changes lives in `figma/plugin/code.js`: `applyStylePlans(sp, opts)` keeps the
 style and its registry slot and counts `out.preserved` instead of `out.pruned`;
-`applyFontPrimitivesModes` keeps stale MODES and reports them as `libraryReport.staleModes`;
+`applyFontPrimitivesModes` keeps stale MODES and reports them as `libraryReport.staleModes`,
+collected as `{name, modeId}` CANDIDATES before its variable pass builds `report`, then decided (#696)
+off the SAME resolved `useLibrary` the variable prune a few lines below it already uses: an explicit
+`opts.libraryMode`, else the interactive `confirmLibraryMode` ask, else #635's `priorLibraryUpliftVM`
+fallback over the variable evidence (an existing, unwanted name that already carries a live alias, or
+sits under `_deprecated/`). Before #696 the mode prune tested `opts.libraryMode === true` directly at
+collection time, so an old `ui.html` bundle (`opts.libraryMode` undefined) applying to a file the
+`priorLibraryUpliftVM` fallback would otherwise judge "already uplifted" kept the variables but pruned
+the mode anyway, a published library losing a mode every consumer pinned;
 `applyFloatPlans` takes the alias/deprecate branch. `applyBundle` (#673) deprecates a stale color
 variable under `_deprecated/` instead of removing it, at all THREE of its variable prune sites (Color Roles,
 Color Primitives, Color Prime), and reports `preserved` plus a per-collection `colorReports` entry. It
@@ -241,18 +249,12 @@ already uses) rather than `removeMode`d, because a consumer file pins a mode exa
 variable. #629's ruling Q1 left color on the classic prune under either setting; #673 retired that
 exemption.
 
-**Every prune on the apply path now reads the flag, with one known timing asymmetry.** #687 closed the last unguarded prune, `applyFloatPlans`' own
+**Every prune on the apply path now reads the flag.** #687 closed the last unguarded prune, `applyFloatPlans`' own
 breakpoint-`removeMode`: it reads the SAME resolved `useLibrary` the function's variable prune already
 computes (not a raw `opts.libraryMode` read at collection time, which would disagree with that variable
 prune on an old bundle whose flag is `undefined` and resolves through the #635 `priorLibraryUpliftVM`
 fallback), and reports the kept modes as `libraryReports[].staleModes`, the same field name
 `applyFontPrimitivesModes` and `applyBundle` use.
-
-Known asymmetry, tracked as #696: `applyFontPrimitivesModes` still decides its Type Primitives MODE
-prune on the RAW `opts.libraryMode === true` (at collection time), while its variable prune reads the
-resolved `useLibrary`. So on an old bundle (flag `undefined`) applied to a file with prior-uplift
-evidence, that function preserves the variables and prunes the modes. `applyFloatPlans` no longer has
-this split; `applyFontPrimitivesModes` should get the same #687 treatment.
 
 Destructive sites outside the flag's scope, by design: Regroup's rebuild-drop (`applyBundle`'s
 `old.remove()` under `rebuildSemantic`, gated by its own always-warn consent, #688), and
