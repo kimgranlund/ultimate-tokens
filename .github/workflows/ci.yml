@@ -19,10 +19,10 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22   # the browser smoke uses node's global WebSocket (stable in 22)
+          node-version: 24   # the browser smoke uses node's global WebSocket (stable since 22, current LTS is 24)
       # npm ci, not install: the committed lockfile IS the toolchain that produces the committed
       # generated artifacts — reproducibility of that chain is the point (TKT-0011).
       - run: npm ci
@@ -41,7 +41,7 @@ jobs:
       - run: npm run smoke
       - name: Upload smoke screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: smoke-screenshots
           path: smoke-out/
@@ -58,9 +58,9 @@ jobs:
           cp dist/ultimate-tokens.html _site/index.html
           cp -R dist/icons _site/icons
           cp -R dist/favicon _site/favicon
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           path: _site
@@ -75,10 +75,10 @@ jobs:
   panda-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       - run: node scripts/smoke-panda.mjs
 
   # ── FULL curated-corpus contrast sweep (#674, test/engine/curated-contrast.mjs --full) ──
@@ -93,10 +93,10 @@ jobs:
   corpus-contrast:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       - run: npm run gate:corpus-contrast
 
   # ── Pages deploy (#489) — push-to-main only, consumes the artifact build-test already uploaded
@@ -121,4 +121,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
