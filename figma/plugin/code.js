@@ -952,21 +952,22 @@ async function applyFontPrimitivesModes(plan, opts) {
   const modeId = {};
   modeId[plan.defaultMode] = defaultId;
   for (const nm of plan.addModes) { const ex = findMode(nm); modeId[nm] = ex ? ex.modeId : coll.addMode(nm); }
-  // prune stale modes (e.g. a returning file's old single "Value" mode, once renamed away — never the
-  // default, never the last remaining mode).
-  // #629 Q2: "published library" mode guards THIS prune too, not just the variable prune below.
-  // Removing a mode from a PUBLISHED collection breaks every consumer file that pinned it, so
-  // opts.libraryMode === true only REPORTS the stale modes (returned as libraryReport.staleModes) and
-  // leaves them in place. Anything else (false, or the undefined an old pre-#629 ui.html bundle
-  // posts) prunes exactly as before. The decision has to be taken HERE, before the variable pass builds its
-  // report, so it reads opts.libraryMode directly rather than the resolved `useLibrary` further down.
+  // stale mode candidates (e.g. a returning file's old single "Value" mode, once renamed away, never
+  // the default, never the last remaining mode). #696: this collection's mode prune now reads the SAME
+  // resolved `useLibrary` flag as the variable prune below (explicit opts.libraryMode, else the
+  // interactive confirmLibraryMode ask, else #635's priorLibraryUpliftVM fallback over the variable
+  // evidence). Before #696, an old pre-#629 ui.html bundle (opts.libraryMode undefined) applying to a
+  // file with prior-uplift evidence could keep the mode's own variables but prune the mode itself out
+  // from under a published library's consumers, because this site tested the raw flag directly instead
+  // of the resolved one the variable half already used. Only candidates are collected here, before the
+  // variable pass builds `report`; the actual decision (report-only, never remove, vs. remove) happens
+  // once `useLibrary` is resolved, alongside the variable prune.
   const wanted = new Set(plan.modes.map((m) => String(m).toLowerCase()));
-  const staleModes = [];
+  const staleModeCandidates = [];
   for (const m of coll.modes.slice()) {
     if (m.modeId === defaultId) continue;
     if (wanted.has(m.name.toLowerCase())) continue;
-    if (opts.libraryMode === true) { staleModes.push(m.name); continue; }
-    if (coll.modes.length > 1) coll.removeMode(m.modeId);
+    staleModeCandidates.push({ name: m.name, modeId: m.modeId });
   }
   const byName = await varsByName(coll.id);
   // #495 "published library" mode: snapshot LIVE values + build the Type-voice alias map BEFORE the
@@ -1087,6 +1088,15 @@ async function applyFontPrimitivesModes(plan, opts) {
     // earlier library-mode apply preserved. Evidence is scoped to names the plan does NOT want: a
     // never-touched collection (whose plan-level ALIAS variables also read as live aliases) has none: prune as before.
     else useLibrary = priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets);
+  }
+  // #696: decide the stale-mode candidates collected above off the SAME resolved `useLibrary` the
+  // variable pass below uses: report-only (never remove) in library mode, classic prune (respecting
+  // the last-mode floor) otherwise.
+  const staleModes = [];
+  if (useLibrary) {
+    for (const m of staleModeCandidates) staleModes.push(m.name);
+  } else {
+    for (const m of staleModeCandidates) { if (coll.modes.length > 1) coll.removeMode(m.modeId); }
   }
   if (useLibrary) {
     for (const r of report.aliases) {

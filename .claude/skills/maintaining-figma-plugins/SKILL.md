@@ -71,7 +71,8 @@ in `figma.root` pluginData. **`libraryMode` (#629) is ALWAYS an explicit boolean
 means "this file is a PUBLISHED library", so the apply aliases and deprecates names it no longer produces
 instead of removing them. Guarded sites, exactly: `applyBundle`'s three-collection color VARIABLE
 reconcile and its Color Roles theme-MODE prune (#673); `applyFloatPlans`' type/geometry variable prune and
-`applyFontPrimitivesModes`' variable + Type Primitives MODE prunes (#629); `applyStylePlans`' paint and
+`applyFontPrimitivesModes`' variable + Type Primitives MODE prunes (#629; the mode prune reads the SAME
+resolved decision as the variable prune since #696, see below). `applyStylePlans`' paint and
 text prunes (#629). One destructive site is still UNGUARDED: `applyFloatPlans`' own breakpoint-`removeMode` (#687),
 which predates #629 and which #673 deliberately did not widen into. #629 shipped the flag with color
 exempt by ruling Q1; #673 retired that exemption. Two surfaces, one persisted key
@@ -79,8 +80,13 @@ exempt by ruling Q1; #673 retired that exemption. Two surfaces, one persisted ke
 because unchecked is a real answer): the gate's "Published library" checkbox, and Settings › Token
 mapping › "Figma apply", which exists because "don't show again" makes the gate unreachable and
 nothing in the app clears that consent. An `undefined` reaching `code.js` now means only an OLD
-`ui.html` bundle; it resolves to classic prune, never to `confirmLibraryMode` (only the standalone
-binder's own `main()` passes `askIfUndecided`). **The two collection NAMES are per-doc overridable (#255)** — Settings ›
+`ui.html` bundle; on the flagship it never reaches `confirmLibraryMode` (only the standalone binder's
+own `main()` passes `askIfUndecided`); instead `applyFloatPlans`/`applyFontPrimitivesModes` fall back
+to #635's `priorLibraryUpliftVM`, which reads TRUE when the collection already carries prior-uplift
+evidence (an unwanted existing name with a live alias, or a `_deprecated/` name), false otherwise. #696:
+`applyFontPrimitivesModes`' Type Primitives MODE prune decides off that SAME resolved flag, not a raw
+`opts.libraryMode === true` taken at collection time: before #696 an old bundle applying to an
+already-uplifted file kept the variables but pruned the mode out from under it. **The two collection NAMES are per-doc overridable (#255)** — Settings ›
 Token mapping › "Figma collections" writes `doc.figmaCollections {raw, semantic}` (persisted, absent =
 defaults); `figmaCollectionNames(doc)` (model.mjs) resolves, rides the bundle's aliasData
 `targetVariableSetName` AND `msg.collections`; code.js `setCollectionNames()` adopts it with constant
