@@ -4,7 +4,7 @@ plan: preset-intent-fidelity
 unit: U3
 branch: unit/pif-u3-envelope
 base: 4576123a
-head: cd9ad504
+head: 9bfd9b54
 written: 2026-09-19
 pass: 7
 ---
