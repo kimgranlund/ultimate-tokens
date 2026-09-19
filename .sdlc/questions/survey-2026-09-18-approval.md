@@ -100,3 +100,11 @@ Options:
 - Not now
 Chosen: Add as U3 of records-refresh (Recommended)
 Note: the unit landed as U4 of records-refresh because U3 (re-measure at 20298cc, Q10) already held that slot; renumbered at 265b8706.
+
+## Q12 (2026-09-19)
+Question: Two drivers are on records-refresh. The orchestrator seat says U1 to U3 ran without it: its builder idled 19 h and committed nothing, while something else built, reviewed, verified and merged U1 and U2, added U3, asked you Q10 directly and put U3 in review, all with proper board rows and verdicts. session.sh lists only my seat and that one orchestrator (no verifier), so the driver is most likely one of your interactive ultimate-tokens sessions, the same one running #681. Who drives the rest of records-refresh (U3 in review, U4 drafted)?
+Options:
+- The session already driving it (Recommended): the orchestrator seat stands down on this plan and cleans its idle builder and stale worktree; the conductor keeps approvals, the roadmap and the cross-repo landing message
+- Our orchestrator seat takes over
+- I drive single-agent from here
+Chosen: The session already driving it (Recommended)
