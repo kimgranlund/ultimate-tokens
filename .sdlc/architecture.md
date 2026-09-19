@@ -153,7 +153,7 @@ grep -qE "schema-rename v${CUR}\b" test/ui/persist.mjs || echo "no test/ui/persi
 - Conventions: 18. Each has a control run at HEAD and a recorded plant that the control caught.
 - Conventions with exceptions: K9, K11, K14, K17, K18.
 - Controls with a stated mechanical limit (the rest is a manual trace): K10, K13, K14, K18.
-- Doc drift (§8, measured at `d814500`): 47 rows, 9 drifted, 38 hold, 0 undetermined.
+- Doc drift (§8, measured at `d814500`): 56 rows, 11 drifted, 45 hold, 0 undetermined.
 
 ## 8. Doc drift
 
@@ -208,3 +208,12 @@ Measured at `d814500` by U2 of plan records-refresh (#691). Claims in `README.md
 | DD45 | `.claude/CLAUDE.md:32` "`overlays/` (`drawer`/`settings`/`apply-gate`)" | `src/ui/overlays/drawer.js`, `src/ui/overlays/settings.js`, `src/ui/overlays/apply-gate.js` all exist at `d814500` | holds: all three named overlay files are tracked |
 | DD46 | `.claude/CLAUDE.md:40` "the MCP server. `plugin/ultimate-tokens/`" | `plugin/ultimate-tokens/` exists (`agents`, `README.md`, `skills`) | holds: the directory is tracked and shaped as described |
 | DD47 | `.claude/CLAUDE.md:17` "runs `npm run build` first (never trust a stale `dist/`, #564)" | `gh issue view 564`: "npm run smoke can silently pass against a stale dist/, hiding real regressions" | holds: issue #564 exists and matches the claim it is cited for |
+| DD48 | `README.md:118` "plugin/   code.js · manifest.json · ui.html" | `figma/plugin/` at `d814500`: exactly 3 entries, matching all 3 named | holds: this subtree list is complete, unlike its sibling on the next line |
+| DD49 | `README.md:119` "binder/   bind-plan.mjs · figma-semantic-binder/" | `figma/binder/` at `d814500` has 7 entries (bind-plan.mjs, figma-semantic-binder, plus 5 more not named on this line) | drifted: only 2 of 7 entries are named; the 5 unnamed ones are `live-diff.mjs`, `migrations.mjs`, `mode-apply-plan.mjs`, `splice-utils.mjs`, and `style-plan.mjs`, the same under-listing pattern as DD19-DD22 |
+| DD50 | `.claude/CLAUDE.md:114` "PreToolUse hook (.claude/hooks/git-precommit-privatedocs-guard.mjs, registered in" | `.claude/hooks/git-precommit-privatedocs-guard.mjs` is tracked; `.claude/settings.json:12` runs `node .claude/hooks/git-precommit-privatedocs-guard.mjs` | holds: the hook file exists and is registered exactly where the comment says |
+| DD51 | `.claude/CLAUDE.md:114` "the test gates (test/engine/type.mjs's luxury quoting assert," | `test/engine/type.mjs:181`: an assert on the CSS quoting the font family `'Source Serif 4'`; `test/engine/categories.mjs:307`: compares a generated preset's `lmin`/`lmax` against the spec's expected values | holds: both named checks exist and do what the comment says |
+| DD52 | `.claude/CLAUDE.md:115` "Audited via /check-entry-file 2026-07-31 (90" | one commit touched this file on 2026-07-31 (`97bc505f`); its parent's `.claude/CLAUDE.md` is 90 lines, its own is 85 | drifted: the measured drop that day is 90 to 85, not 90 to "~70"; even read loosely, 85 is not close to 70 |
+| DD53 | `README.md:19` "regenerate with `npm run gen:preview`" | `package.json:21` `"gen:preview": "node scripts/gen-preview.mjs"`; `scripts/gen-preview.mjs:15,24-25` imports `projectView` and sets `doc.toneMode = "perceptual"` before rendering | holds: the script exists and does exactly what the comment claims (projectView, perceptual distribution) |
+| DD54 | `README.md:25` "Regenerate any time with `npm run gen:preview`." | same script as DD53 | holds: the second mention of the same real script |
+| DD55 | `.claude/CLAUDE.md:46` "`project-docs` skill. `docs/site/`, `docs/lld/`, `docs/img/`" | `docs/site/`, `docs/lld/`, `docs/img/` all exist and are non-empty at `d814500` | holds: all three named directories are tracked |
+| DD56 | `.claude/CLAUDE.md:50` "(`gh issue create`), not new `docs/tickets/*.md` files" | `docs/tickets/*.md` exists as an archive (tkt-0001.md et seq.); ADR-017 (decision-records.md) rules new tickets go through `gh issue create` | holds: the convention and the archive both match what the line describes |
