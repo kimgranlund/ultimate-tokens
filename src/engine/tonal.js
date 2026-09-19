@@ -473,31 +473,16 @@ export function liftStop(stop, lift) {
   return stop - a * w; // lift>0 -> read a LIGHTER stop -> lighter mids
 }
 
-// chromaEnvelope — shared with U3 (copied verbatim from U3's own tonal.js at fa8f072, same export name
-// and signature, per the U2 re-diagnosis's Finding 1/9 seam fix: U3's version wins at U4 integration,
-// this copy exists only so U2 can route its own anchored branches through the SAME formula rather than
-// keep a second, independently-typed damping copy). The single per-stop chroma multiplier shared by the
-// "even" path (evenChroma) and the OKHSL path: one function replaces what used to be two separately-typed
-// copies of the same damping formula ("m" in each, #647/#668). Position is read at the LIFTED stop
-// (liftStop, #668) — never the nominal stop, and never a separately re-derived "effective" stop (effStop,
-// which additionally composes skew's gamma): keying on effStop additionally moves every skew-only
-// palette — including the shipped Primary and Neutral, both skew -20 lift 0 — for a defect they do not
-// have, moves the normative Panda/shadcn spec literals derived from them, and is measurably worse at its
-// own job (4 of 10,080 synthetic grid cells still rise under it, worst +0.006 L* — 668-report.md §4).
+// chromaEnvelope — U2 used to carry its own verbatim copy of this function here (copied from U3's own
+// tonal.js at fa8f072, per the U2 re-diagnosis's Finding 1/9 seam fix) so U2's anchored branches could
+// route through the same formula while U2 and U3 were still built in parallel on separate branches.
+// At U4 integration the two definitions collided (both exported the same name from the same module —
+// C7's "one envelope" gate exists precisely so this can't ship silently forked) and U3's own version,
+// which additionally composes EVEN_DAMP_FACTOR for the even path (pass 7 step 1, defined above), is the
+// one that wins: it is a strict superset of what this copy did (isEven=false reduces to the same
+// formula this copy computed). U2's anchored branches (okhslStopsAnchored/paletteStopsAnchored, below
+// and in the anchored branch of okhslStops) call the single export above; this second copy is deleted.
 //
-// sd is measured against `liftStop(anchorStop, lift)` — the anchor's OWN lifted reading, not the raw
-// numeric anchorStop (e.g. 500) — so env(anchorStop) === 1 EXACTLY for EVERY damp/dampCurve/dampAmp/
-// dampBias/lift combination, unconditionally, not only at lift 0. sd is 0 at the anchor by construction,
-// so uG is 0, the shoulder term vanishes (its own factor is uG), and the edge-damp term vanishes too
-// (its factor is uG) — no branch needed, and nothing here can accidentally lift the anchor off 1.
-export function chromaEnvelope(stop, anchorStop, lift, controls) {
-  const sd = (liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450; // position vs the anchor's OWN lifted reading (R2)
-  const uG = Math.abs(sd) ** (controls.dampCurve ?? 1.5);
-  const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(sd));
-  const shoulder = ((controls.dampAmp ?? 0) / 100) * 4 * uG * (1 - uG); // 0 at sd=0 AND |sd|=1 — shoulders only
-  return Math.max(0, 1 + shoulder - (controls.damp / 100) * sideW * uG);
-}
-
 // anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue) -> the BASIS chromaEnvelope's
 // shoulder/damp multiplier gets applied to (Q-U2-5 ruling, addendum 2, u2-p2-brief.md, 2026-09-18):
 // the anchor's own measured chroma/saturation exactly AT the pivot (w=0), blending to the group's
