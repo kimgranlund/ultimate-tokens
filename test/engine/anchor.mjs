@@ -331,143 +331,108 @@ const RAMP_WINDOW_ALLOW = [
   `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
 ].sort();
 
-// C5: over the 25-stop export ramp, measured CIELAB tone must be non-increasing 050→950 in every
-// mode (0 exceptions, including the 10 window-clamped sources above — the clamp fix makes those
-// CONTINUOUS with their neighbours, not merely "allowed to be wrong"), and every ramp should keep a
-// >=0.55 L* gap between neighbours with no duplicate hex. Measured on the RENDERED path (F1 fix,
-// review pif-u2-review-1.md: `projectView(hydrate(preset)).palettes[i].fullRamp`, each preset's OWN
-// controls resolved — not a raw `paletteStops` proxy call under DEFAULT_CONTROLS, which undercounted),
-// after the saturation-basis fix (F2: every stop's chroma/`s` now LERPS from the anchor's OWN measured
-// value at the pivot (w=0, no notch) toward the group's resolved ramp target at that side's endpoint
-// (w=1) — a pure "anchor value everywhere" basis broke REQ-002 (spec-muted-base-key-spikes 0.3.0,
-// (gid6)/(gid8)/(gid8b): Base chroma is an absolute per-group target for every ramp, anchored ones
-// included), so the blend was needed to fix F2's notch without breaking that ratified requirement),
-// **119** sources (all low-to-moderate chroma, <=29%) miss the gap/no-dup bar in at least one mode.
-// Named, frozen, sorted — compared by name, not count (N1's own lesson, applied here too). The
-// root-cause narrative for WHY sources in this population miss the bar (an OKHSL-l vs CIE-L*
-// non-uniformity claim) was reviewed and found only partly right (review finding F5, not fixed in this
-// pass) — the count and names below are re-measured and correct for the blended basis; the causal
-// story in .sdlc/questions/pif-u2.md Q-U2-3 needs its own follow-up.
+// C5: over both stop sets, measured CIELAB tone must be non-increasing 050→950 in every mode (see
+// NONMONO_ALLOW above the sweep loop — 1 named, bounded, shipped-preset exception, not 0, pending
+// Q-U2-5's dampAmp/chroma-basis ruling — including the 10 window-clamped sources above, whose clamp
+// fix makes them CONTINUOUS with their neighbours, not merely "allowed to be wrong"). Every ramp
+// should also keep a >=0.55 L* gap between neighbours on the 19-stop DISPLAY ramp, and no duplicate
+// hex anywhere on the 25-stop EXPORT ramp — GATED SEPARATELY on their own matching stop sets
+// (re-diagnosis Finding 6, review F5): RAMP_L_MIN/MAX [9.95, 95.05] was derived for the 19-stop
+// ramp's own 0.55 L* gap requirement (5 + 9x0.55); checking it against the FINER 25-stop export
+// ramp's half-steps (the shipped U2 gate's own original mistake) was a stop-set mismatch, not an
+// OKHSL-l-vs-CIE-L* non-uniformity problem as U2's own Q-U2-3 first guessed (that explains at most
+// 56 of the population, and only where Finding 1's chroma-basis fix also contributes). Measured on
+// the RENDERED path (Finding 0/F1: `projectView(hydrate(preset))`, each preset's OWN controls
+// resolved via `rampChromaOf`, never a raw `paletteStops` proxy under `DEFAULT_CONTROLS`), after
+// Finding 1's chroma-basis fix (the anchored branches route through the shared `chromaEnvelope`, the
+// anchor's own measured chroma/`s` as the pivot basis — see Q-U2-5 for the REQ-002 tension this
+// creates, not yet resolved) and Finding 7's clamp-pivot fix (`okhslLAtChromatic`, landing the
+// window-clamped stop's RENDERED L* at the window bound instead of up to 2.26 L* short of it): the
+// combined 119-name list splits into **62** names failing the 19-stop gap bar (RAMP_GAP_ALLOW below)
+// and **12** names failing 25-stop distinctness (RAMP_DISTINCT_ALLOW, below that) — a source can
+// appear on both. Named, frozen, sorted — compared by name, not count (N1's own lesson, applied here
+// too).
 const RAMP_GAP_ALLOW = [
-  `architecture "Andalusian patio · Moorish-Spanish vernacular · Córdoba" secondary #DFDEDC`,
-  `architecture "Bauhaus Dessau · 1926 · Walter Gropius" primary-muted #272A2C`,
-  `architecture "Boston City Hall · 1968 · Kallmann McKinnell & Knowles" tertiary-muted #2F2E2B`,
-  `architecture "Himeji Castle · 1609 · 'White Heron' keep · Japan" secondary #E0DEDA`,
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322`,
-  `architecture "Lancashire cotton mill · 19th c · northern England" secondary-muted #262A2D`,
-  `architecture "Oia · Cyclades vernacular · Santorini, Greece" secondary #E3E2DF`,
-  `architecture "SoHo cast-iron loft · 1880s · New York" primary #2C2F31`,
-  `architecture "Villa Savoye · 1931 · Le Corbusier · Poissy" primary-muted #272A2C`,
-  `architecture "Villa Savoye · 1931 · Le Corbusier · Poissy" secondary #DFDEDC`,
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
-  `brands "Nike · The Swoosh · Since 1971" tertiary #E4E0D2`,
   `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
-  `cuisine "Chocolate · the chocolatier's bench" primary #312722`,
-  `cuisine "Fresh pasta · the marble work-bench" tertiary-muted #E0DEDA`,
   `cuisine "Kaiseki · the seasonal course" tertiary-muted #2B2624`,
-  `cuisine "Macarons · the display case" tertiary-muted #E0DEDA`,
   `cuisine "Matcha & wagashi · the tea room" tertiary-muted #2B2624`,
-  `cuisine "The cold sea · raw shellfish & ice" tertiary #D6DCE0`,
-  `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" secondary #D5D9DA`,
   `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
   `film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`,
   `film "Arrival · 2016 · dir. Villeneuve · the shell interior" primary-muted #232427`,
-  `film "Blade Runner · 1982 · dir. Ridley Scott · the rainy LA street" secondary #27292F`,
   `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
-  `film "Dune · 2021 · dir. Villeneuve · Arrakis at high sun" tertiary-muted #262A2D`,
   `film "Enter the Void · 2009 · dir. Gaspar Noé · the Tokyo nightlife" secondary #212129`,
   `film "Hereditary · 2018 · dir. Aster · the dollhouse home" tertiary-muted #29231F`,
   `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" tertiary-muted #282421`,
   `film "John Wick · 2014 · dir. Stahelski · the Red Circle club" tertiary-muted #232428`,
-  `film "Once Upon a Time in the West · 1968 · dir. Leone · the railhead town" tertiary-muted #312721`,
-  `film "Singin' in the Rain · 1952 · the 'Broadway Melody' set" primary-muted #272A2C`,
   `film "Spider-Man: Into the Spider-Verse · 2018 · the comic-book city" primary #232429`,
   `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
-  `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" tertiary-muted #D3DDE1`,
-  `film "Taxi Driver · 1976 · dir. Scorsese · the neon city through a windshield" secondary #262A2D`,
   `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
-  `film "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet" primary-muted #392737`,
-  `film "The Third Man · 1949 · dir. Carol Reed · the wet Vienna cobbles at night" secondary #2C2F31`,
   `film "The Third Man · 1949 · dir. Carol Reed · the wet Vienna cobbles at night" secondary-muted #252422`,
   `film "There Will Be Blood · 2007 · dir. P.T. Anderson · the oil derrick fire" tertiary-muted #282320`,
   `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" secondary #232428`,
-  `literature "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865" tertiary-muted #2C2926`,
   `literature "Anna Karenina · Tolstoy · 1877 · the Moscow station in snow" tertiary-muted #252428`,
-  `literature "Bleak House · Dickens · 1853 · a November fog over the city" tertiary-muted #2C2925`,
-  `literature "Dracula · Bram Stoker · 1897 · the Carpathian castle at night" secondary #28292D`,
   `literature "Fahrenheit 451 · Bradbury · 1953 · the fireman's city" tertiary-muted #282320`,
-  `literature "Snow Country · Kawabata · 1948 · the hot-spring town in winter" secondary #D3D9DC`,
   `literature "The Bell Jar · Sylvia Plath · 1963 · New York & the suburb" primary #242427`,
-  `literature "The House of the Spirits · Isabel Allende · 1982 · the big house" primary #D3D9DC`,
-  `literature "The Road · Cormac McCarthy · 2006 · the ash-grey wasteland" tertiary-muted #2C2926`,
   `literature "The Tale of Genji · Murasaki Shikibu · c.1010 · the Heian court" secondary-muted #292321`,
   `music "Acid house · the smiley flyer" tertiary-muted #26241F`,
   `music "Black metal · the forest at night" secondary #1E2024`,
-  `music "Detroit techno · the chrome sleeve" secondary #24272B`,
-  `music "Doom & stoner · the amp-fuzz haze" secondary-muted #28262C`,
-  `music "Dub studio · the mixing desk" secondary #272A2C`,
   `music "Golden-age NYC · the boom-bap sleeve" primary #242428`,
   `music "Graffiti · the subway-car piece" primary #242428`,
-  `music "Kingston street · the sound-system yard" secondary #24272B`,
   `music "Leather & studs · the club night" secondary #242428`,
   `music "Liquid light show · the projected oil-wheel" tertiary-muted #26232C`,
   `music "Lovers rock · the blue-light basement" primary #242428`,
   `music "Mod & British Invasion · the op-art club" tertiary #242428`,
-  `music "Motown · the glamour stage" tertiary-muted #26272B`,
   `music "Neon MV · the night-set choreography" tertiary-muted #26232C`,
   `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
-  `music "Pop-punk · the skate-park sleeve" secondary #26272B`,
   `music "Rasta tricolour · the roots sleeve" tertiary-muted #282320`,
   `music "Riot grrrl · the zine collage" tertiary-muted #242427`,
   `music "Southern trap · the night-drive cover" tertiary-muted #26222F`,
-  `music "Studio 54 · the dancefloor" secondary #2B2734`,
   `music "Symphonic & gothic metal · the cathedral set" tertiary-muted #272328`,
   `music "The late-night club · the smoky set" primary-muted #1F1F23`,
   `music "The orchestra · the concert platform" secondary #242428`,
-  `music "The rave · the laser tent" primary #D4DDE2`,
   `music "The rave · the laser tent" secondary #212228`,
   `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
-  `nature "19° N · April · 18:00 · Kīlauea, Hawai'i, at dusk" secondary #28292E`,
-  `nature "23° S · December · 13:00 · Salar de Atacama edge, Atacama Desert, Chile" secondary #E0DEDA`,
-  `nature "24° S · June · 07:00 · Sossusvlei, Namib Desert, Namibia" tertiary-muted #2B2621`,
-  `nature "25° N · January · 08:00 · Everglades sawgrass prairie, Florida" primary-muted #2B2F33`,
   `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
-  `nature "40° S · December · 14:00 · Valdivian rainforest, Los Ríos, southern Chile" tertiary-muted #302820`,
-  `nature "49° N · October · 15:00 · Boreal shield, northern Ontario, Canada" primary #312E24`,
-  `nature "64° N · July · 13:00 · Landmannalaugar, Icelandic highlands" tertiary-muted #262A2D`,
-  `nature "64° N · March · inside · Vatnajökull glacier cave, Iceland" tertiary-muted #2C2F31`,
-  `nature "64° S · January · 18:00 · Antarctic Peninsula, austral summer evening" tertiary-muted #2C2E32`,
-  `travel "19° N · December · 06:20 · Worli koliwada, Mumbai, just before sunrise" tertiary-muted #24234B`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
   `travel "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog" secondary #042546`,
   `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6`,
-  `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" secondary #E0E5E6`,
   `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
   `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
-  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" tertiary-muted #31241A`,
-  `travel "31° S · September · 14:00 · The Indian Pacific between Cook and Adelaide, mid-Nullarbor" tertiary #E2DDD0`,
-  `travel "33° N · April · 10:30 · ONCF Al Boraq high-speed train, Tangier-bound from Casablanca" secondary-muted #D4DDE2`,
   `travel "34° S · March · 22:00 · San Telmo, Buenos Aires, a Sunday after the antiques fair has closed" secondary-muted #22242B`,
-  `travel "35° N · February · 23:48 · Yamanote line, last loop, between Shinjuku and Ikebukuro" secondary #DDE5EB`,
   `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`,
-  `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary #2E2B37`,
   `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary-muted #E1F5DA`,
-  `travel "41° N · April · 09:00 · La Boqueria, Barcelona, just past opening on a Tuesday" secondary-muted #DADECE`,
   `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
-  `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" primary-muted #282724`,
   `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`,
   `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
   `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" primary-muted #24221F`,
-  `travel "59° N · January · 14:00 · Lake Baikal corridor" secondary #E0E5E6`,
   `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
   `travel "63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland" secondary #242427`,
-  `travel "63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland" tertiary-muted #E2DDD0`,
   `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" tertiary-muted #20263A`,
+].sort();
+
+// RAMP_DISTINCT_ALLOW (Finding 6 fix): the 25-stop export ramp's own duplicate-hex population,
+// gated separately from RAMP_GAP_ALLOW's 19-stop gap population — see the comment above
+// RAMP_GAP_ALLOW. A source can appear on both lists.
+const RAMP_DISTINCT_ALLOW = [
+  `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
+  `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
+  `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
+  `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
+  `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
+  `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
+  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
+  `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
+  `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
+  `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
 ].sort();
 
 const MODES = ["perceptual", "peak", "even"];
@@ -475,20 +440,30 @@ function monotoneOk(stops) {
   for (let i = 1; i < stops.length; i++) if (stops[i].tone > stops[i - 1].tone + 1e-9) return false;
   return true;
 }
-function gapOk(stops) {
+// gapOk19 / distinctOk25 (re-diagnosis Finding 6, review F5): RAMP_L_MIN/MAX [9.95, 95.05] was
+// derived for the 19-stop DISPLAY ramp's 0.55 L* gap requirement (5 + 9x0.55) — checking it against
+// the 25-stop EXPORT ramp instead (finer half-steps) was a stop-set mismatch, not an OKHSL-uniformity
+// problem (U2's own original Q-U2-3 diagnosis, corrected here): gating the two requirements on their
+// OWN matching stop sets shrinks the combined 119-name allow-list to 62 (gap, 19-stop) + 12 (distinct,
+// 25-stop), and the causal story lines up with the window's own derivation again.
+function gapOk19(stops) {
   let minGap = Infinity;
   for (let i = 1; i < stops.length; i++) minGap = Math.min(minGap, stops[i - 1].tone - stops[i].tone);
-  const distinct = new Set(stops.map((s) => s.hex)).size === stops.length;
-  return minGap >= 0.55 - 1e-9 && distinct;
+  return minGap >= 0.55 - 1e-9;
+}
+function distinctOk25(stops) {
+  return new Set(stops.map((s) => s.hex)).size === stops.length;
 }
 
-// negative control, run BEFORE the real sweep (checks-that-bite): the two predicates above must
+// negative control, run BEFORE the real sweep (checks-that-bite): the three predicates above must
 // discriminate a synthetic violation before the corpus is trusted against them.
 {
   const bad = [{ stop: 50, tone: 50, hex: "#111111" }, { stop: 100, tone: 51, hex: "#111111" }];
   if (monotoneOk(bad)) FAIL("anchor-ramp", "negative control DID NOT bite: monotoneOk() passed a synthetic rising-tone pair");
-  const dup = [{ stop: 50, tone: 60, hex: "#222222" }, { stop: 100, tone: 59.99, hex: "#222222" }];
-  if (gapOk(dup)) FAIL("anchor-ramp", "negative control DID NOT bite: gapOk() passed a synthetic sub-0.55-gap duplicate-hex pair");
+  const thin = [{ stop: 50, tone: 60, hex: "#222222" }, { stop: 100, tone: 59.99, hex: "#222223" }];
+  if (gapOk19(thin)) FAIL("anchor-ramp", "negative control DID NOT bite: gapOk19() passed a synthetic sub-0.55-gap pair");
+  const dup = [{ stop: 50, tone: 60, hex: "#222222" }, { stop: 100, tone: 55, hex: "#222222" }];
+  if (distinctOk25(dup)) FAIL("anchor-ramp", "negative control DID NOT bite: distinctOk25() passed a synthetic duplicate-hex pair");
 }
 
 // C3's own named negative control (per the plan): lift 40 on an anchored palette leaves stop 500
@@ -524,8 +499,22 @@ function gapOk(stops) {
 // point for this exact reason). Iterated by PRESET x MODE (343 x 3 = 1,029 renders, not 10,140 lean
 // calls) so each hydrate+projectView computes every palette in that preset's document at once, exactly
 // once per mode — the SAME cost shape as the product's own render.
+// NONMONO_ALLOW (re-diagnosis Finding 1/1b addendum, Q-U2-5): ONE real, shipped (not synthetic)
+// corpus ramp still rises, brands "Nike... Since 1971" secondary, peak mode, tone 5.9827->6.0070 at
+// stops 825/850 (chroma 10.74->9.70, a Helmholtz-Kohlrausch coupling, #668's own mechanism). Root
+// cause: this preset's GENERATED `dampAmp` is 55 (scripts/gen-categories.mjs's pre-U3 `VIVID_MIDS`
+// default — U3's own fix, `VIVID_MIDS.dampAmp` 55 -> 0, is not on this branch), which makes
+// `chromaEnvelope`'s shoulder term hump chroma non-monotonically; F4's curve/tension-shaped `l`
+// (peak mode pins full shaping) is the proximate trigger — the straight-lerp construction (same
+// chromaEnvelope/dampAmp) did not trigger it. Named, not silently dropped; expected to close once
+// U3's dampAmp fix lands (Q-U2-5 addendum, .sdlc/questions/pif-u2.md, flagged as an owner-visible
+// open question since unlike U3's own synthetic-grid exceptions this one is a real shipped preset).
+const NONMONO_ALLOW = [
+  `brands "Nike · The Swoosh · Since 1971" secondary #101820 [peak, 25-stop]`,
+].sort();
+
 let rampExact = 0, rampOff = 0;
-const windowNames = new Set(), nonMonoNames = new Set(), gapNames = new Set();
+const windowNames = new Set(), nonMonoNames = new Set(), gapNames = new Set(), distinctNames = new Set();
 for (const { slug, preset } of presetsByCat) {
   for (const mode of MODES) {
     const doc = hydrate({ ...preset, toneMode: mode });
@@ -537,45 +526,66 @@ for (const { slug, preset } of presetsByCat) {
       const label = `${slug} "${preset.name}" ${p.name} ${p.anchor}`;
       if (outsideWindow) windowNames.add(label);
       const vp = view.palettes.find((v) => v.name === p.name);
-      const stops = vp ? vp.fullRamp : null;
-      const s500 = stops && stops.find((s) => s.stop === 500);
+      const ramp19 = vp ? vp.ramp : null, ramp25 = vp ? vp.fullRamp : null;
+      const s500 = ramp25 && ramp25.find((s) => s.stop === 500);
       if (!outsideWindow) {
         if (s500 && s500.hex === p.anchor) rampExact++;
         else { rampOff++; FAIL("anchor-ramp", `${slug} "${preset.name}" ${p.name} (${mode}, rendered): stop 500 ${s500 && s500.hex} !== anchor ${p.anchor}, and this source is INSIDE the ramp window — it should be exact`); }
       }
-      if (!stops) { FAIL("anchor-ramp", `${slug} "${preset.name}" ${p.name} (${mode}): projectView produced no matching palette — the render path changed shape`); continue; }
-      if (!monotoneOk(stops)) nonMonoNames.add(label);
-      if (!gapOk(stops)) gapNames.add(label);
+      if (!ramp19 || !ramp25) { FAIL("anchor-ramp", `${slug} "${preset.name}" ${p.name} (${mode}): projectView produced no matching palette — the render path changed shape`); continue; }
+      // Monotone (Finding 6): gated on BOTH stop sets independently, matching C5's own "43 on the
+      // 19-stop, 11/46 on the 25-stop" reporting shape — a ramp that only rises on the finer 25-stop
+      // export ramp is a real, distinct finding from one that rises on the coarser 19-stop display ramp.
+      if (!monotoneOk(ramp19)) nonMonoNames.add(`${label} [${mode}, 19-stop]`);
+      if (!monotoneOk(ramp25)) nonMonoNames.add(`${label} [${mode}, 25-stop]`);
+      // Gap (0.55 L*, 19-stop display ramp) and distinctness (no duplicate hex, 25-stop export ramp)
+      // gated SEPARATELY on their own matching stop sets (Finding 6 fix — see gapOk19/distinctOk25).
+      if (!gapOk19(ramp19)) gapNames.add(label);
+      if (!distinctOk25(ramp25)) distinctNames.add(label);
     }
   }
 }
 // `anchored` (declared above, from `corpus`) is reused below only as the summary line's denominator.
 const windowSorted = [...windowNames].sort();
 const gapSorted = [...gapNames].sort();
+const distinctSorted = [...distinctNames].sort();
+const nonMonoSorted = [...nonMonoNames].sort();
 console.log(`  ${rampOff === 0 ? "pass" : "FAIL"}  anchor-ramp: ${rampExact} exact, ${rampOff} off (in-window sources only, ${anchored.length - windowNames.size} of ${anchored.length})`);
-console.log(`  ${windowSorted.length === RAMP_WINDOW_ALLOW.length && windowSorted.every((n, i) => n === RAMP_WINDOW_ALLOW[i]) ? "pass" : "FAIL"}  anchor-ramp window-clamp allow-list: ${windowSorted.length} (expected ${RAMP_WINDOW_ALLOW.length})`);
+console.log(`  ${windowSorted.length === RAMP_WINDOW_ALLOW.length && windowSorted.every((n, i) => n === RAMP_WINDOW_ALLOW[i]) ? "pass" : "FAIL"}  anchor-ramp allow-list: ${windowSorted.length} (expected ${RAMP_WINDOW_ALLOW.length})`);
 if (windowSorted.length !== RAMP_WINDOW_ALLOW.length || windowSorted.some((n, i) => n !== RAMP_WINDOW_ALLOW[i])) {
   for (const n of RAMP_WINDOW_ALLOW) if (!windowSorted.includes(n)) FAIL("anchor-ramp", `window-clamp allow-list: expected member missing — ${n}`);
   for (const n of windowSorted) if (!RAMP_WINDOW_ALLOW.includes(n)) FAIL("anchor-ramp", `window-clamp allow-list: unexpected member — ${n}`);
 }
-console.log(`  ${nonMonoNames.size === 0 ? "pass" : "FAIL"}  anchor-ramp monotone: ${nonMonoNames.size} non-monotone ramp(s) (expected 0, all three modes, all 3,380 sources including the window-clamped ones)`);
-for (const n of nonMonoNames) FAIL("anchor-ramp", `${n}: measured tone rises somewhere on the 25-stop export ramp`);
-console.log(`  ${gapSorted.length === RAMP_GAP_ALLOW.length && gapSorted.every((n, i) => n === RAMP_GAP_ALLOW[i]) ? "pass" : "FAIL"}  anchor-ramp gap/distinct allow-list: ${gapSorted.length} (expected ${RAMP_GAP_ALLOW.length})`);
+for (const n of RAMP_WINDOW_ALLOW) console.log(`    r ${n}`);
+console.log(`  ${nonMonoSorted.length === NONMONO_ALLOW.length && nonMonoSorted.every((n, i) => n === NONMONO_ALLOW[i]) ? "pass" : "FAIL"}  anchor-ramp monotone allow-list: ${nonMonoSorted.length} (expected ${NONMONO_ALLOW.length}, all three modes, both stop sets, all 3,380 sources including the window-clamped ones)`);
+if (nonMonoSorted.length !== NONMONO_ALLOW.length || nonMonoSorted.some((n, i) => n !== NONMONO_ALLOW[i])) {
+  for (const n of NONMONO_ALLOW) if (!nonMonoSorted.includes(n)) FAIL("anchor-ramp", `monotone allow-list: expected member missing — ${n}`);
+  for (const n of nonMonoSorted) if (!NONMONO_ALLOW.includes(n)) FAIL("anchor-ramp", `monotone allow-list: unexpected member (a real rise) — ${n}: measured tone rises somewhere on this ramp`);
+}
+console.log(`  ${gapSorted.length === RAMP_GAP_ALLOW.length && gapSorted.every((n, i) => n === RAMP_GAP_ALLOW[i]) ? "pass" : "FAIL"}  anchor-ramp gap (19-stop) allow-list: ${gapSorted.length} (expected ${RAMP_GAP_ALLOW.length})`);
 if (gapSorted.length !== RAMP_GAP_ALLOW.length || gapSorted.some((n, i) => n !== RAMP_GAP_ALLOW[i])) {
-  for (const n of RAMP_GAP_ALLOW) if (!gapSorted.includes(n)) FAIL("anchor-ramp", `gap/distinct allow-list: expected member missing — ${n}`);
-  for (const n of gapSorted) if (!RAMP_GAP_ALLOW.includes(n)) FAIL("anchor-ramp", `gap/distinct allow-list: unexpected member — ${n}`);
+  for (const n of RAMP_GAP_ALLOW) if (!gapSorted.includes(n)) FAIL("anchor-ramp", `gap allow-list: expected member missing — ${n}`);
+  for (const n of gapSorted) if (!RAMP_GAP_ALLOW.includes(n)) FAIL("anchor-ramp", `gap allow-list: unexpected member — ${n}`);
+}
+console.log(`  ${distinctSorted.length === RAMP_DISTINCT_ALLOW.length && distinctSorted.every((n, i) => n === RAMP_DISTINCT_ALLOW[i]) ? "pass" : "FAIL"}  anchor-ramp distinct (25-stop) allow-list: ${distinctSorted.length} (expected ${RAMP_DISTINCT_ALLOW.length})`);
+if (distinctSorted.length !== RAMP_DISTINCT_ALLOW.length || distinctSorted.some((n, i) => n !== RAMP_DISTINCT_ALLOW[i])) {
+  for (const n of RAMP_DISTINCT_ALLOW) if (!distinctSorted.includes(n)) FAIL("anchor-ramp", `distinct allow-list: expected member missing — ${n}`);
+  for (const n of distinctSorted) if (!RAMP_DISTINCT_ALLOW.includes(n)) FAIL("anchor-ramp", `distinct allow-list: unexpected member — ${n}`);
 }
 
 // N1-style negative control: a same-length, one-member-swapped copy of each allow-list must fail the
-// sorted-array comparison (proves a same-count substitution cannot slip through silently).
+// sorted-array comparison (proves a same-count substitution cannot slip through silently). Covers all
+// FOUR allow-lists this gate now freezes (window-clamp, monotone, gap-19, distinct-25).
 {
-  const swappedWindow = RAMP_WINDOW_ALLOW.slice(0, -1).concat(`film "A Made-Up Title" primary #000001`).sort();
-  const realWindow = [...RAMP_WINDOW_ALLOW].sort();
-  const sameLen = swappedWindow.length === realWindow.length;
-  if (!sameLen || swappedWindow.every((n, i) => n === realWindow[i])) FAIL("anchor-ramp", "negative control DID NOT bite: a swapped window-clamp allow-list compared equal to the real one");
-  const swappedGap = RAMP_GAP_ALLOW.slice(0, -1).concat(`film "A Made-Up Title" primary #000002`).sort();
-  const realGap = [...RAMP_GAP_ALLOW].sort();
-  if (swappedGap.length !== realGap.length || swappedGap.every((n, i) => n === realGap[i])) FAIL("anchor-ramp", "negative control DID NOT bite: a swapped gap/distinct allow-list compared equal to the real one");
+  const check = (name, list, fakeMember) => {
+    const swapped = list.slice(0, -1).concat(fakeMember).sort();
+    const real = [...list].sort();
+    if (swapped.length !== real.length || swapped.every((n, i) => n === real[i])) FAIL("anchor-ramp", `negative control DID NOT bite: a swapped ${name} allow-list compared equal to the real one`);
+  };
+  check("window-clamp", RAMP_WINDOW_ALLOW, `film "A Made-Up Title" primary #000001`);
+  check("monotone", NONMONO_ALLOW, `film "A Made-Up Title" primary #000002 [peak, 25-stop]`);
+  check("gap", RAMP_GAP_ALLOW, `film "A Made-Up Title" primary #000003`);
+  check("distinct", RAMP_DISTINCT_ALLOW, `film "A Made-Up Title" primary #000004`);
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────

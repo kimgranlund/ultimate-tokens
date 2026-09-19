@@ -565,6 +565,26 @@ export function okhslLAt(lstar) {
   return v;
 }
 
+// okhslLAtChromatic(targetLstar, hue, s) -> the OKHSL l whose (hue, s, l) renders at measured CIE L*
+// `targetLstar`, for a GIVEN (possibly non-zero) saturation — re-diagnosis Finding 7 (review F9): the
+// anchored OKHSL branch's window-clamp pivot used `okhslLAt`'s own achromatic (s=0) lookup even though
+// the clamped stop renders at the anchor's REAL saturation (chromaEnvelope's own env=1 there), and
+// OKHSL l is only a proxy for CIE L* at s=0 — the SAME lightness-vs-saturation coupling #668 names
+// elsewhere, which put 9 of the 10 named window-clamp sources 0.18-2.26 L* short of the window bound
+// instead of landing exactly on it. Bisection (not a Newton step guessing a slope): for a fixed
+// hue/s, measured CIE L* is monotone non-decreasing in OKHSL l (a brighter HSL-style lightness
+// parameter never measures darker at fixed hue/saturation), so 24 steps converge to within 2^-24 of
+// the true root — negligible cost, called only for the handful of window-clamped sources.
+function okhslLAtChromatic(targetLstar, hue, s) {
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    const got = lstarFromRgb(okhslToRgb(hue, s, mid));
+    if (got < targetLstar) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
 // effStop — the OKHSL path's EFFECTIVE stop (#647): the stop whose position the LIGHTNESS is read at
 // once the palette's own `skew` and `lift` have warped it. Both controls were persisted, threaded and
 // sliders-exposed, but only the "even" path (toneAt) ever read them, so in the shipped DEFAULT tone mode
@@ -627,8 +647,12 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   // so interpolating in l — where the saturation the ramp actually renders at is a constant multiplier
   // and does not re-enter the lightness computation — is the more faithful ladder.
   const clamped = anchor.lstar < RAMP_L_MIN || anchor.lstar > RAMP_L_MAX;
-  const pivotL = anchor.lstar < RAMP_L_MIN ? okhslLAt(RAMP_L_MIN)
-    : anchor.lstar > RAMP_L_MAX ? okhslLAt(RAMP_L_MAX)
+  // Clamp pivot (Finding 7 fix): solved at the anchor's OWN saturation via `okhslLAtChromatic`, never
+  // the achromatic `okhslLAt` — the clamped stop renders at `anchor.okhsl.s` (chromaEnvelope's env=1
+  // at the pivot, unconditionally, clamped or not), so the achromatic lookup was solving for the
+  // WRONG color and landing short of the window bound. See okhslLAtChromatic's own comment.
+  const pivotL = anchor.lstar < RAMP_L_MIN ? okhslLAtChromatic(RAMP_L_MIN, hOk, anchor.okhsl.s)
+    : anchor.lstar > RAMP_L_MAX ? okhslLAtChromatic(RAMP_L_MAX, hOk, anchor.okhsl.s)
     : anchor.okhsl.l;
   return stops.map((stop) => {
     if (stop === 500 && !clamped) {
