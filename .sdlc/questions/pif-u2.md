@@ -535,6 +535,17 @@ roughly three quarters of the population (1,811 -> 459) but did not reach 0.
 The full by-name list under the ruled variant is in `test/engine/anchor.mjs`'s `NOTCH_ALLOW` constant,
 labeled "pending U4" in the gate's own output line.
 
+**Addendum (review pass 5, 2026-09-19):** the even-mode hue solve's own fix (bracketed root-find plus
+the achromatic-candidate fix, both in `tonal.js`'s `solveCam16Hue`) moved this count from the 76 ruled
+above to 78 (perceptual 15 / peak 9 unchanged - OKHSL untouched; even 52 -> 54, 9 names added and 7
+removed) - that move is review pass 4's own, already named and diffed in `.sdlc/handoffs/pif-u2.md`'s
+"Review pass 4" section (Allow-list fallout). Review pass 5's own fix (the bracketed solve replacing
+review 4's fixed-point step, plus the achromatic fix, plus the later hybrid fast-path and memoization
+performance work) did **not** move it again: `test/engine/anchor.mjs`'s notch check at review-5's own
+head passes at "78 (expected 78)" against the SAME `NOTCH_ALLOW` names, with no unexpected-name FAILs.
+Changed since the original 76 ruling, still pending conductor on the integrated number; unchanged since
+review pass 4's own re-measurement.
+
 **Residual cause, unchanged in kind from review 2's own finding:** every remaining entry is a
 near-grey (or very low-chroma) anchor inside a group whose resolved `rampChroma` target is well above
 it. Easing the blend's own slope to zero at the pivot removes the LINEAR component of the notch, but a

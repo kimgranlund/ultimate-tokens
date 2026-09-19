@@ -667,12 +667,34 @@ Perceptual and peak are unaffected: `chromaAt` is only ever passed from `palette
 even-mode-only anchored path (`paletteStops` routes perceptual/peak to `okhslStopsAnchored` instead,
 untouched this pass) - the Q-D bound gate above, which covers perceptual/peak in full, is unchanged.
 
-**Timing** (`node test/engine/anchor.mjs`, standalone, real time): **~250s** at the 12-degree grid.
-A literal 1-degree grid did not complete a single even-mode corpus sweep within 15 minutes and was
-abandoned before finishing (background process killed) - not measured to completion. This is a real
-regression from the pre-review-4 baseline (`anchor.mjs` was seconds, part of `npm test`'s overall
-~60-90s), traded for correctness; flagged to team-lead in the completion report rather than silently
-absorbed, since it changes the letter (not the intent) of the brief's "1-degree grid" instruction.
+**Timing, superseded by a team-lead performance intervention mid-pass**: the 12-degree, always-scan
+design above measured `npm test` at ~1196s (full corpus, not just `anchor.mjs` standalone) - far past
+the owner's stated 90-175s gate budget. Root cause: `chromaAt` is a full gamut-boundary binary search
+(~46.2us/call), run on every grid point of every stop, for every stop in the corpus. Fixed in two
+further steps, both requested directly by team-lead rather than in the review brief:
+- **Hybrid fast-path** (`solveCam16Hue`): try the original cheap fixed-point step first (converges for
+  the large majority of stops - only ~865/72,000 ever needed the scan); fall through to a bracketed
+  scan only when the fast path fails to converge within 16 iterations, now on a coarser 5-degree grid
+  (safe because the achromatic-candidate fix above, not grid resolution, was the actual correctness
+  fix). `npm test`: **398.83s**.
+- **Memoize the redundant export-derivation calls** (`paletteStopsAnchoredMemo` in `tonal.js`, wrapping
+  `paletteStopsAnchored` with `hct.js`'s existing `boundedCache`): `projectView` renders the canvas
+  from one `paletteStops` call, then `exports.js`'s `derivePalette` independently re-derives the SAME
+  anchored ramp once per export format (measured ~10x redundancy: 100 `paletteStopsAnchored` calls for
+  a 10-anchored-palette document). Safe because `paletteStopsAnchored` is a pure function of its actual
+  inputs and the cache key covers every field that reaches it. `npm test`: **200.3s** (two consecutive
+  foreground `time npm test` runs, both 48/48 green: 209.50s user / 3.88s system / 106% cpu / 3:20.30
+  wall).
+
+**200.3s is still above the stated 90-175s budget** (roughly 1.14-2.2x over), not chased further this
+pass: a diagnostic profile (temporary instrumentation, removed before commit) showed the memo cache
+hits ~90% of calls and the hue-solve itself is only ~90ms of a ~238ms per-document render in an
+isolated single-preset benchmark - the remaining per-document cost is not attributable to this pass's
+own code path and was not investigated further given the time already spent; flagged to team-lead
+rather than silently accepted as done. A literal 1-degree always-scan grid (the brief's own wording)
+did not complete a single even-mode corpus sweep within 15 minutes and was abandoned unmeasured; the
+hybrid design above is a different shape, not a coarser version of that attempt, and was requested by
+team-lead in place of it.
 
 **New gate - lone-spike** (`test/engine/anchor.mjs`, even mode, 25-stop export ramp, full corpus +
 default kit): a stop whose OKLCH C exceeds BOTH immediate neighbours' by more than 0.03, where both
@@ -692,17 +714,38 @@ incidental de-duplication, now that the achromatic-boundary bug that caused it i
 
 ### Final state, review pass 5
 
-`npm test` 48/48 green, `git status --short` empty, `npm run gate:corpus-contrast` PASS,
-`node scripts/audit-citations.mjs` STALE 0, `node test/repo/branding.mjs` clean. Stop conditions
+`npm test` 48/48 green at **200.3s** (two consecutive foreground runs, see Timing above - still above
+the 90-175s budget, flagged not silently absorbed), `git status --short` empty, `npm run
+gate:corpus-contrast` PASS (worst cell 4.500:1, literature "Nineteen Eighty-Four"), `node
+scripts/audit-citations.mjs` STALE 0, `node test/repo/branding.mjs` clean (450 files). Stop conditions
 checked: AA 4.5 holds everywhere, stop 500 exact in every mode, the monotone count stays a true 0,
-`(gid3)`/`(gid8)`/`(gid8b)` green - none fired. No second workaround: the bracketed root-find is a
-replacement for the fixed-point step INSIDE the same `chromaAt` mechanism review pass 4 introduced,
-not a new one; the achromatic-candidate fix is a correctness fix to that same mechanism, found and
-fixed within this pass rather than shipped and caught by a review pass 6. Rebased onto the plan tip
-current at the end of this pass (see the Live sha table below for the tip sha at that time).
+`(gid3)`/`(gid8)`/`(gid8b)` green - none fired. `test/engine/anchor.mjs`'s own lone-spike gate: 0 (pass).
+Allow-lists confirmed by name at head: `RAMP_GAP_ALLOW` 91, `RAMP_DISTINCT_ALLOW` 14,
+`NOTCH_ALLOW` 78 - all unchanged by the hybrid fast-path and memoization work (both are behavior-
+preserving: the fast path converges to the same root the scan would find, and the memo cache returns
+the same value `paletteStopsAnchored` would compute uncached), confirmed by a clean `anchor.mjs` run
+with no unexpected-name FAILs on any of the three lists. No second workaround: the bracketed root-find
+is a replacement for the fixed-point step INSIDE the same `chromaAt` mechanism review pass 4
+introduced, not a new one; the achromatic-candidate fix is a correctness fix to that same mechanism,
+found and fixed within this pass rather than shipped and caught by a review pass 6; the two performance
+fixes are additive optimizations around the same solve, not a second attempt at the solve itself.
+Rebased onto the plan tip current at the end of this pass (`3c9630bf`, rev 23 - confirmed still an
+ancestor of HEAD, no further rebase needed). See the Live sha table below for the tip sha at that time.
 
 ### Live sha table (subject line -> sha, as of this pass's own final commit)
 
 | Subject | Sha |
 |---|---|
-| _filled in by the final records commit of this pass_ | |
+| `fix(anchor,tonal): review pass 3 fixes - pixel-L* gap, gamut-safe even hue solve, hueSpace check moved to even, tautology removed, Q-B gate` | `f9c58109` |
+| `wip(color,anchor): Q-D UI - disable hueSpace for anchored perceptual/peak` | `74f5c94c` |
+| `fix(docs): repair 25 stale citation line numbers after Q-D's UI edit` | `06b35a49` |
+| `fix(tonal,anchor): review pass 4 - convergent even hue solve, Q-D bound ruled final, hs9` | `b7752ae1` |
+| `docs(handoff): record review-pass-4 addendum-2's final sha and rebase` | `d8ea8771` |
+| `wip(tonal,anchor): review pass 5 fix in progress - bracketed root-find, achromatic fix, lone-spike gate` | `13cee2f2` |
+| `wip(tonal): perf fix - try the cheap fixed-point step before the bracketed scan` | `954675c6` |
+| `perf(tonal): memoize paletteStopsAnchored against projectView's ~10x redundant export derivation` | `fba53077` |
+
+Re-verify any of these with `git merge-base --is-ancestor <sha> HEAD` before trusting it as "on the
+branch" - a further rebase can move all of them again. This pass's own final records commit (this
+table's own edit) is the branch tip at the time this row was written; find it with `git log --oneline
+-1` on the branch rather than trusting a sha frozen here.
