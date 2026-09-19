@@ -565,8 +565,8 @@ export function judgeLine(lines, i, implied, resolveAndRead) {
     // used to fail this gate outright, which emptied `subj` and switched the whole recurrence
     // narrowing OFF, so a recurring NON-subject anchor elsewhere on the line (`.on`) could rescue
     // a wrong line purely because the real subject vanished: `` `nonexistentthing`
-    // (`styles.css:405`) `` next to `.on` read OK at :405 (a comment mentioning `.on`, 20 lines
-    // from the real subject's would-be site) with no subject ever checked. To even REACH `subj`,
+    // (`styles.css:N`) `` next to `.on` read OK at :N (a comment mentioning `.on`, well off the
+    // real subject's would-be site) with no subject ever checked. To even REACH `subj`,
     // an anchor must already have passed `anchorsOf`'s own code-signal test (backtick-hugged,
     // camelCase/PascalCase/snake_case, a call, or a `.class`/`#id` selector) -- so its being ENTIRELY
     // absent from the cited file is itself real evidence the doc named a specific symbol that moved
@@ -924,7 +924,7 @@ export function selftest() {
     console.log(`  ${recurring === "OK" ? "✓" : "✗"} #693 positive control: a correct cite whose subject legitimately recurs (\`.on\`, 6 lines) still reads OK (got ${recurring})`);
     if (recurring !== "OK") failed++;
   }
-  // PR #705 critic review item 1: the definesAt escape in `hit` (~:551, KNOWN LIMIT (5)) had no
+  // PR #705 critic review item 1: the definesAt escape in `hit` (:N, KNOWN LIMIT (5)) had no
   // selftest that pinned it POSITIVELY -- every existing case here demoted a WRONG line (the
   // escape not firing) or matched via `rare()`/the subject itself, so nothing exercised the escape
   // actually rescuing a CORRECT citation. This fixture isolates it: `.warn` recurs on 4 lines
