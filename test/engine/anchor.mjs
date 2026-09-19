@@ -357,48 +357,55 @@ const RAMP_GAP_ALLOW = [
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
   `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
-  `cuisine "Kaiseki · the seasonal course" tertiary-muted #2B2624`,
-  `cuisine "Matcha & wagashi · the tea room" tertiary-muted #2B2624`,
+  `cuisine "Chocolate · the chocolatier's bench" primary #312722`,
   `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
   `film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`,
   `film "Arrival · 2016 · dir. Villeneuve · the shell interior" primary-muted #232427`,
+  `film "Blade Runner · 1982 · dir. Ridley Scott · the rainy LA street" secondary #27292F`,
   `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
   `film "Enter the Void · 2009 · dir. Gaspar Noé · the Tokyo nightlife" secondary #212129`,
   `film "Hereditary · 2018 · dir. Aster · the dollhouse home" tertiary-muted #29231F`,
-  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" tertiary-muted #282421`,
   `film "John Wick · 2014 · dir. Stahelski · the Red Circle club" tertiary-muted #232428`,
+  `film "Once Upon a Time in the West · 1968 · dir. Leone · the railhead town" tertiary-muted #312721`,
   `film "Spider-Man: Into the Spider-Verse · 2018 · the comic-book city" primary #232429`,
   `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
   `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
+  `film "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet" primary-muted #392737`,
   `film "The Third Man · 1949 · dir. Carol Reed · the wet Vienna cobbles at night" secondary-muted #252422`,
   `film "There Will Be Blood · 2007 · dir. P.T. Anderson · the oil derrick fire" tertiary-muted #282320`,
   `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" secondary #232428`,
   `literature "Anna Karenina · Tolstoy · 1877 · the Moscow station in snow" tertiary-muted #252428`,
+  `literature "Dracula · Bram Stoker · 1897 · the Carpathian castle at night" secondary #28292D`,
   `literature "Fahrenheit 451 · Bradbury · 1953 · the fireman's city" tertiary-muted #282320`,
   `literature "The Bell Jar · Sylvia Plath · 1963 · New York & the suburb" primary #242427`,
   `literature "The Tale of Genji · Murasaki Shikibu · c.1010 · the Heian court" secondary-muted #292321`,
   `music "Acid house · the smiley flyer" tertiary-muted #26241F`,
   `music "Black metal · the forest at night" secondary #1E2024`,
+  `music "Doom & stoner · the amp-fuzz haze" secondary-muted #28262C`,
   `music "Golden-age NYC · the boom-bap sleeve" primary #242428`,
   `music "Graffiti · the subway-car piece" primary #242428`,
   `music "Leather & studs · the club night" secondary #242428`,
   `music "Liquid light show · the projected oil-wheel" tertiary-muted #26232C`,
   `music "Lovers rock · the blue-light basement" primary #242428`,
   `music "Mod & British Invasion · the op-art club" tertiary #242428`,
+  `music "Motown · the glamour stage" tertiary-muted #26272B`,
   `music "Neon MV · the night-set choreography" tertiary-muted #26232C`,
   `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
+  `music "Pop-punk · the skate-park sleeve" secondary #26272B`,
   `music "Rasta tricolour · the roots sleeve" tertiary-muted #282320`,
   `music "Riot grrrl · the zine collage" tertiary-muted #242427`,
   `music "Southern trap · the night-drive cover" tertiary-muted #26222F`,
+  `music "Studio 54 · the dancefloor" secondary #2B2734`,
   `music "Symphonic & gothic metal · the cathedral set" tertiary-muted #272328`,
   `music "The late-night club · the smoky set" primary-muted #1F1F23`,
   `music "The orchestra · the concert platform" secondary #242428`,
   `music "The rave · the laser tent" secondary #212228`,
   `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
   `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
+  `travel "19° N · December · 06:20 · Worli koliwada, Mumbai, just before sunrise" tertiary-muted #24234B`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
   `travel "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog" secondary #042546`,
   `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6`,
@@ -407,11 +414,11 @@ const RAMP_GAP_ALLOW = [
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
   `travel "34° S · March · 22:00 · San Telmo, Buenos Aires, a Sunday after the antiques fair has closed" secondary-muted #22242B`,
   `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`,
+  `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary #2E2B37`,
   `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary-muted #E1F5DA`,
   `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
   `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`,
   `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
-  `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" primary-muted #24221F`,
   `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
   `travel "63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland" secondary #242427`,
   `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" tertiary-muted #20263A`,
@@ -423,14 +430,12 @@ const RAMP_GAP_ALLOW = [
 const RAMP_DISTINCT_ALLOW = [
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
   `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
-  `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
-  `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
-  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
+  `film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
-  `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
+  `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
+  `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
   `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
-  `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
   `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
   `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
 ].sort();
@@ -499,18 +504,67 @@ function distinctOk25(stops) {
 // point for this exact reason). Iterated by PRESET x MODE (343 x 3 = 1,029 renders, not 10,140 lean
 // calls) so each hydrate+projectView computes every palette in that preset's document at once, exactly
 // once per mode — the SAME cost shape as the product's own render.
-// NONMONO_ALLOW (re-diagnosis Finding 1/1b addendum, Q-U2-5): ONE real, shipped (not synthetic)
-// corpus ramp still rises, brands "Nike... Since 1971" secondary, peak mode, tone 5.9827->6.0070 at
-// stops 825/850 (chroma 10.74->9.70, a Helmholtz-Kohlrausch coupling, #668's own mechanism). Root
-// cause: this preset's GENERATED `dampAmp` is 55 (scripts/gen-categories.mjs's pre-U3 `VIVID_MIDS`
-// default — U3's own fix, `VIVID_MIDS.dampAmp` 55 -> 0, is not on this branch), which makes
-// `chromaEnvelope`'s shoulder term hump chroma non-monotonically; F4's curve/tension-shaped `l`
-// (peak mode pins full shaping) is the proximate trigger — the straight-lerp construction (same
-// chromaEnvelope/dampAmp) did not trigger it. Named, not silently dropped; expected to close once
-// U3's dampAmp fix lands (Q-U2-5 addendum, .sdlc/questions/pif-u2.md, flagged as an owner-visible
-// open question since unlike U3's own synthetic-grid exceptions this one is a real shipped preset).
+// NONMONO_ALLOW (re-diagnosis Finding 1/1b addendum, Q-U2-5 ruled — revision 17): re-measured after
+// the ruled chroma/saturation BLEND (the anchor's own value at the pivot, shading to `rampChroma` at
+// the ramp's ends — see paletteStopsAnchored/okhslStopsAnchored's own header comments) replaced the
+// literal, unconditional anchor basis. Grew from 1 named exception to 45: blending toward a SECOND,
+// independent chroma target introduces a chroma trajectory `chromaEnvelope`'s shoulder/damp shaping
+// was not built against, so more dark-end (mostly stop 900-950, mostly peak mode, where F4 pins full
+// curve/tension shaping) sources cross into the SAME Helmholtz-Kohlrausch coupling #668's own
+// mechanism names — measured CIE L* rising slightly while OKHSL l and chroma both fall. Every entry
+// re-verified individually against the rendered path, not assumed from the count. 39 of 45 are
+// peak mode, 6 perceptual, 0 even; the concentration in peak mode matches F4's own curve-shaping
+// being fully engaged there. Named, not silently dropped; expected to shrink once
+// U3's own `VIVID_MIDS.dampAmp` 55->0 fix lands (most named sources carry a non-zero generated
+// `dampAmp`) — flagged in `.sdlc/questions/pif-u2.md` Q-U2-5's addendum as an owner-visible open
+// question, since unlike U3's own synthetic-grid exceptions every one of these is a real shipped
+// preset the growth from 1 to 45 needs the owner to see, not just the mechanism.
 const NONMONO_ALLOW = [
   `brands "Nike · The Swoosh · Since 1971" secondary #101820 [peak, 25-stop]`,
+  `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E [peak, 25-stop]`,
+  `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E [perceptual, 25-stop]`,
+  `film "Arrival · 2016 · dir. Villeneuve · the shell interior" primary-muted #232427 [peak, 25-stop]`,
+  `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D [peak, 19-stop]`,
+  `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D [peak, 25-stop]`,
+  `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D [perceptual, 25-stop]`,
+  `film "Enter the Void · 2009 · dir. Gaspar Noé · the Tokyo nightlife" secondary #212129 [peak, 25-stop]`,
+  `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24 [peak, 19-stop]`,
+  `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24 [peak, 25-stop]`,
+  `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24 [perceptual, 25-stop]`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618 [peak, 19-stop]`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618 [peak, 25-stop]`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618 [perceptual, 25-stop]`,
+  `literature "The Bell Jar · Sylvia Plath · 1963 · New York & the suburb" primary #242427 [peak, 25-stop]`,
+  `music "Golden-age NYC · the boom-bap sleeve" primary #242428 [peak, 25-stop]`,
+  `music "Graffiti · the subway-car piece" primary #242428 [peak, 25-stop]`,
+  `music "Leather & studs · the club night" secondary #242428 [peak, 25-stop]`,
+  `music "Liquid light show · the projected oil-wheel" tertiary-muted #26232C [peak, 19-stop]`,
+  `music "Liquid light show · the projected oil-wheel" tertiary-muted #26232C [peak, 25-stop]`,
+  `music "Lovers rock · the blue-light basement" primary #242428 [peak, 25-stop]`,
+  `music "Mod & British Invasion · the op-art club" tertiary #242428 [peak, 25-stop]`,
+  `music "Neon MV · the night-set choreography" tertiary-muted #26232C [peak, 19-stop]`,
+  `music "Neon MV · the night-set choreography" tertiary-muted #26232C [peak, 25-stop]`,
+  `music "P-Funk · the cosmic album art" secondary-muted #211E27 [peak, 19-stop]`,
+  `music "P-Funk · the cosmic album art" secondary-muted #211E27 [peak, 25-stop]`,
+  `music "P-Funk · the cosmic album art" secondary-muted #211E27 [perceptual, 25-stop]`,
+  `music "Riot grrrl · the zine collage" tertiary-muted #242427 [peak, 25-stop]`,
+  `music "Symphonic & gothic metal · the cathedral set" tertiary-muted #272328 [peak, 19-stop]`,
+  `music "Symphonic & gothic metal · the cathedral set" tertiary-muted #272328 [peak, 25-stop]`,
+  `music "The late-night club · the smoky set" primary-muted #1F1F23 [peak, 19-stop]`,
+  `music "The late-night club · the smoky set" primary-muted #1F1F23 [peak, 25-stop]`,
+  `music "The orchestra · the concert platform" secondary #242428 [peak, 25-stop]`,
+  `music "UK '77 · the ransom-note sleeve" secondary #1F1F23 [peak, 19-stop]`,
+  `music "UK '77 · the ransom-note sleeve" secondary #1F1F23 [peak, 25-stop]`,
+  `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20 [peak, 19-stop]`,
+  `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20 [peak, 25-stop]`,
+  `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20 [perceptual, 25-stop]`,
+  `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16 [peak, 25-stop]`,
+  `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16 [peak, 25-stop]`,
+  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913 [peak, 25-stop]`,
+  `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary-muted #E1F5DA [peak, 25-stop]`,
+  `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12 [peak, 25-stop]`,
+  `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913 [peak, 25-stop]`,
+  `travel "63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland" secondary #242427 [peak, 25-stop]`,
 ].sort();
 
 let rampExact = 0, rampOff = 0;
