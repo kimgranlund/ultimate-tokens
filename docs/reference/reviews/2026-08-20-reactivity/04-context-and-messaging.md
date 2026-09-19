@@ -44,7 +44,7 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 | `sets-loaded` | `code.js:236` (`type: "sets-loaded"`) | `gen-figma-ui.mjs:42` | `app.js:1166 receiveStoredSets` | `this.sets` (guarded) | yes |
 | `fonts-listed` | `code.js:225` (`type: "fonts-listed"`) | `gen-figma-ui.mjs:45` | `typography.js:811 receiveFigmaFonts` | `this._figmaFonts` | yes |
 | `apply-done` | `code.js:211` (`type: "apply-done"`) | `gen-figma-ui.mjs:48` | `apply-gate.js:150 onApplyDone` | `this._applyBusy=false`, `this.applyGateOpen=false` | yes |
-| `apply-error` | `code.js:261` (`type: "apply-error"`) (catch-all, apply only) | `gen-figma-ui.mjs:49` | `apply-gate.js:173 onApplyError` | `this._applyBusy=false` | yes |
+| `apply-error` | `code.js:266` (`type: "apply-error"`) (catch-all, apply only) | `gen-figma-ui.mjs:49` | `apply-gate.js:173 onApplyError` | `this._applyBusy=false` | yes |
 | `sweep-scanned` | `code.js:246` (`type: "sweep-scanned"`) | `gen-figma-ui.mjs:52` | `apply-gate.js:225 receiveSweepScan` | `this.sweepResults`, `this.sweepBusy=false` | yes |
 | `sweep-done` | `code.js:255` (`type: "sweep-done"`) | `gen-figma-ui.mjs:53` | `apply-gate.js:252 onSweepDone` | `this.sweepBusy=false`, clears results | yes |
 

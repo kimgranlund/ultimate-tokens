@@ -73,7 +73,10 @@ instead of removing them. Every prune on the apply path is now guarded: `applyBu
 color VARIABLE reconcile and its Color Roles theme-MODE prune (#673); `applyFloatPlans`' type/geometry
 variable prune AND its own breakpoint-MODE prune (#629, #687); `applyFontPrimitivesModes`' variable +
 Type Primitives MODE prunes (#629); `applyStylePlans`' paint and text prunes (#629). #629 shipped the
-flag with color exempt by ruling Q1; #673 retired that exemption; #687 closed the last gap. Two surfaces, one persisted key
+flag with color exempt by ruling Q1; #673 retired that exemption; #687 closed the last unguarded prune.
+Two caveats, detailed in `references/foundations.md` section 6: `applyFontPrimitivesModes` still reads the raw
+flag for its mode prune but the resolved one for its variables (#696), and Regroup (#688) and `plan.retire`
+are destructive sites outside the flag by design. Two surfaces, one persisted key
 (`ultimate-tokens-library-mode-v1`, the `_applyConsentKey` precedent, storing both `"1"` and `"0"`
 because unchecked is a real answer): the gate's "Published library" checkbox, and Settings › Token
 mapping › "Figma apply", which exists because "don't show again" makes the gate unreachable and
