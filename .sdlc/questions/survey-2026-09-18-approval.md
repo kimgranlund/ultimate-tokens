@@ -108,3 +108,10 @@ Options:
 - Our orchestrator seat takes over
 - I drive single-agent from here
 Chosen: The session already driving it (Recommended)
+
+## Q13 (2026-09-19)
+Question: U4 (rename adapter.md conflict ids C1 to C13 to X1 to X13, plus the 10 adapter lines and 3 debt notes that cite them) passed its checkability review 7/7. Only adapter.md trips the plugin's check today; the check is not live yet, so U4 runs now rather than waiting. Meanwhile U3 verified 13/13 and merged, and the driving session has already started U4's build. Approve U4?
+Options:
+- Approve (Recommended)
+- Hold
+Chosen: Approve (Recommended)
