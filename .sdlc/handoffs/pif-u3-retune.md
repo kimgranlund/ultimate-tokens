@@ -2,7 +2,7 @@
 plan: preset-intent-fidelity
 unit: U3 (chroma envelope), pass 7 retune record
 base: 3c9630b
-head: 05bf4cf6
+head: 647f8a3e
 ---
 
 # U3 pass 7 retune: damp/dampCurve mapping, corpus movement, C8 before/after
