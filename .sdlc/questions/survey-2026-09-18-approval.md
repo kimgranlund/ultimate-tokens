@@ -116,3 +116,10 @@ Options:
 - Hold
 Chosen: Approve (Recommended)
 Note: asked and answered in the owner's other conductor session; the driving conductor confirmed with the owner on 2026-09-19 that the answer is genuine (9145db45 had marked it as not asked in error).
+
+## Q14 (2026-09-19)
+Question: records-refresh has all four units verified and merged, but the pre-land review (reviewer-l3 and verifier-l3 against main, then the #691 PR) has not started in two hours. The driving session is idle on it. Who runs the pre-land and landing?
+Options:
+- Our orchestrator seat (Recommended): runs pre-land-review, opens the #691 PR, watches CI, squashes, closes the plan; the driving session leaves the plan branch alone
+- Nudge the driving session
+Chosen: Our orchestrator seat (Recommended)
