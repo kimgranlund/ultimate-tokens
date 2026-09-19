@@ -82,3 +82,12 @@ Options:
 - Approve (Recommended)
 - Hold
 Chosen: Approve (Recommended)
+
+## Q10
+Date: 2026-09-19
+Question: Approve the records-refresh amendment U3 (0e85638, M, l2), re-measure at 20298cc after #706: #706 changed the toolchain the baseline describes (Node 24, vite 8.3), so every figure measured at d814500 is stale on arrival. U3 reruns the three gate triples with loads recorded, re-checks §8 row by row and redoes the Counts bullet at the head, re-derives the adapter's time ranges, reruns the 18 controls, corrects K17's exception list (pass 5's one red), and keeps the d814500 figures as a labelled prior set. Checkability review 10/0/0 at 0e85638.
+Options:
+- Approve (Recommended)
+- Skip U3, land with d814500 figures labelled
+- Send back
+Chosen: Approve (Recommended)
