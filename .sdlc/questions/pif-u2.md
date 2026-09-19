@@ -8,6 +8,61 @@ status: open
 
 # U2 open questions (owner via the conductor)
 
+## Q-U2-5: re-diagnosis Finding 1's literal chroma basis (anchor value via `chromaEnvelope`, no
+`palette.chroma`) breaks REQ-002, a ratified spec predating this ticket — stop, per "second workaround"
+
+**Status: blocking, not decided unilaterally. Implemented literally as briefed, measured, evidence below.**
+
+Per `preset-intent-fidelity-u2-rediagnosis.md` Finding 1 and the repair-pass brief (`u2-p2-brief.md`
+step 1): "Route both anchored branches through the shared chroma envelope... with the anchor's own
+OKHSL s / CAM16 chroma as the pivot basis, not palette.chroma... Call it; do not fork it." Implemented
+exactly this in `src/engine/tonal.js`: `paletteStopsAnchored` now computes
+`chroma = evenChroma(maxc, anchor.cam.chroma, chromaEnvelope(stop, 500, lift, controls), chromaFloor)`;
+`okhslStopsAnchored` computes `s = anchor.okhsl.s * chromaEnvelope(stop, 500, lift, controls)`. Neither
+reads `palette.chroma` anywhere. `chromaEnvelope` is copied verbatim from U3 (`fa8f072`), one definition,
+called once per path (3 total `chromaEnvelope(` matches, `grep -c "1 + ((controls.dampAmp"` reduced
+from 2 anchored-branch occurrences to 0 — the remaining 2 matches are the UNTOUCHED non-anchored path,
+expected per C4).
+
+**This is a real conflict, not my own design choice.** `docs/spec/spec-muted-base-key-spikes.md`
+REQ-002 (ratified 2026-09-11, #556/#559, predates ticket #681 by a week): "There is no per-palette
+ramp override in any group" — a group's `baseChroma` is an ABSOLUTE ramp-chroma target for EVERY
+palette in the group, applied "on BOTH ramp paths exactly as `palette.chroma` did in 0.2.0." Three
+tests assert this directly, ALL pre-existing and unrelated to this ticket:
+`test/ui/headless-boot.mjs`'s `(gid3)` ("a fresh doc's Neutral ramp differs from the legacy chroma-100
+ramp — visibly muted, not a no-op"), `(gid8)`/`(gid8b)` ("moving Brand's base chroma changes the
+first/second Brand palette's ramp — every ramp in the group is a chroma peer"). With the literal
+chroma-envelope-only basis, all three now FAIL: Neutral and Brand are both anchored (all 16 default
+palettes carry `anchor`), and an anchored ramp's chroma no longer reads `palette.chroma`/`rampChroma`
+at all — Base chroma becomes a no-op for every anchored ramp, group-wide, which REQ-002 forbids.
+
+I did NOT build a third workaround to silence this myself (the brief's own "do not fork it" instruction
+reads as a direct response to my own prior pass, which DID fork chromaEnvelope's design into a custom
+anchor-to-group lerp specifically to satisfy REQ-002 — that fork is exactly what step 1 retracts). Per
+"Done means: if a second workaround appears for the same symptom, stop and write the measurement as a
+question" — this is that: the SAME symptom (REQ-002 break) recurring against a SECOND literal-anchor-
+basis design, after my own blend already proved one way to avoid it. Options as I see them, decision is
+the owner's:
+(a) Amend REQ-002 with a named carve-out for anchored palettes (mirroring Data's own `locked` carve-out
+    in the same REQ-001 table) — anchored ramps intentionally stop tracking group Base chroma, since the
+    anchor already fixes the group's "true" source chroma; `(gid3)`/`(gid8)`/`(gid8b)` gain a named
+    exception or get rewritten for the anchored case.
+(b) Keep REQ-002 as ruled and amend Finding 1 the same way my own reverted pass did: `chromaEnvelope`'s
+    OWN pivot-basis argument is not `anchor.cam.chroma`/`anchor.okhsl.s` unconditionally, but a value
+    that still equals the anchor's own measured chroma exactly at stop 500 (satisfying the notch fix)
+    while remaining responsive to `rampChroma`/`palette.chroma` away from the pivot (satisfying REQ-002)
+    — this is architecturally a bigger change than "call it, do not fork it" describes, so needs the
+    owner to say whether it is back in scope.
+(c) Something else the owner rules that I have not construed.
+
+Left the current LITERAL implementation in place (matches the brief's explicit instruction) rather than
+reverting to my own prior blend, since re-deciding unilaterally a second time is exactly what this rule
+exists to prevent — `(gid3)`/`(gid8)`/`(gid8b)` are RED on this head, named here as the reproducible
+evidence, `npm test` is NOT green until this is resolved. Continuing with the rest of the repair-pass
+sequence (step 1b onward) where it does not depend on this specific basis being final; NOT proceeding
+to Finding 5's floor re-measurement (which needs a stable final chroma basis to be worth measuring once,
+not twice) until this is ruled.
+
 Three points where the plan text disagrees with itself or with what the built-and-measured tree
 shows. Re-measured on this unit's own branch, not assumed from the plan's older figures. I picked a
 reading for each and kept building rather than block, per instruction; flagging so a wrong guess is
