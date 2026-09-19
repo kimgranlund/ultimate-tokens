@@ -16,3 +16,7 @@ test/plugin/.hosted-pack-scratch/
 .sdlc/.fake-tickets/
 .sdlc/.fake-releases/
 .worktrees/
+
+# local-only files that must never reach a commit: per-user Claude Code settings, the sdlc launcher environment
+.claude/settings.local.json
+.sdlc/launcher.env

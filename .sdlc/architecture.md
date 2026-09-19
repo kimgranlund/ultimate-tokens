@@ -13,6 +13,8 @@ status: pass 2 (reworked per .sdlc/verdicts/architecture.md)
 
 Recovered from code at f9e20c5. Every claim (A-, T-, P-, X-, L- ids) cites two evidence files. Every convention (K- ids) carries a negative control that was actually run, with its command, result, and exceptions. Mutation controls ran in a `git archive HEAD` copy under the job tmp dir, never in the root checkout.
 
+Staleness note (graded 2026-09-18). This map was recovered at `f9e20c5`, the head of `sdlc/adopt`. That commit is not in `main`'s history: the branch landed squashed as `180eca0` (PR #653), and the object is reachable only through `origin/sdlc/adopt`. The survey verdict of 2026-09-18 (`.sdlc/verdicts/survey.md` C15, graded at `cf8e61a`) found 18 of the 72 paths this file cites edited in `180eca0..cf8e61a`, and `main` has moved again since, so a line-anchored citation into an edited path is unverified at any later head. The map was not re-derived (owner ruling, `.sdlc/questions/survey-2026-09-18-approval.md` Q2). Rule: a plan that touches a path this file cites, or relies on a claim or a K control here, re-checks each citation it relies on at its own head and records the result in the plan. `git diff --stat f9e20c5 HEAD -- <path>` prints nothing when the cited file is unchanged since this map was written. Where the `f9e20c5` object is absent, `git log --oneline 180eca0..HEAD -- <path>` is the fallback, and a weaker one: `180eca0` already differs from `f9e20c5` in ten files under `src/`, `test/` and `figma/`.
+
 ## 1. Layering and dependency direction
 
 ```
