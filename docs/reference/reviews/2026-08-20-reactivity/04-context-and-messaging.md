@@ -30,8 +30,8 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 | `save-sets` | `app.js:1158` (`persistSets`), posting `type: "save-sets"` | `code.js:237-239` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
 | `save-config` | `app.js:2311`, posting `type: "save-config"` | `code.js:212-214` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
 | `apply` | `apply-gate.js:106`, posting `type: "apply"` | `code.js:133-211` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
-| `sweep-scan` | `apply-gate.js:221`, posting `type: "sweep-scan"` | `code.js:240-246` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
-| `sweep-delete` | `apply-gate.js:248`, posting `type: "sweep-delete"` | `code.js:247-255` (`msg.type === "sweep-delete"`) | `sweep-done` |
+| `sweep-scan` | `apply-gate.js:223`, posting `type: "sweep-scan"` | `code.js:240-246` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
+| `sweep-delete` | `apply-gate.js:250`, posting `type: "sweep-delete"` | `code.js:247-255` (`msg.type === "sweep-delete"`) | `sweep-done` |
 
 **Sandbox → UI** (`figma.ui.postMessage`, all dispatched by the bridge):
 
@@ -40,13 +40,13 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 | `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2256 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2261`) |
 | `config-loaded` | `code.js:217` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2338 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
 | `variables-read` | `code.js:228` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2382 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
-| `float-variables-read` | `code.js:232` (`type: "float-variables-read"`) | `gen-figma-ui.mjs:39` | `apply-gate.js:299 receiveLiveFloatVariables` | `this._liveFloatVars` | yes |
+| `float-variables-read` | `code.js:232` (`type: "float-variables-read"`) | `gen-figma-ui.mjs:39` | `apply-gate.js:304 receiveLiveFloatVariables` | `this._liveFloatVars` | yes |
 | `sets-loaded` | `code.js:236` (`type: "sets-loaded"`) | `gen-figma-ui.mjs:42` | `app.js:1166 receiveStoredSets` | `this.sets` (guarded) | yes |
 | `fonts-listed` | `code.js:225` (`type: "fonts-listed"`) | `gen-figma-ui.mjs:45` | `typography.js:811 receiveFigmaFonts` | `this._figmaFonts` | yes |
-| `apply-done` | `code.js:211` (`type: "apply-done"`) | `gen-figma-ui.mjs:48` | `apply-gate.js:150 onApplyDone` | `this._applyBusy=false`, `this.applyGateOpen=false` | yes |
-| `apply-error` | `code.js:266` (`type: "apply-error"`) (catch-all, apply only) | `gen-figma-ui.mjs:49` | `apply-gate.js:173 onApplyError` | `this._applyBusy=false` | yes |
-| `sweep-scanned` | `code.js:246` (`type: "sweep-scanned"`) | `gen-figma-ui.mjs:52` | `apply-gate.js:225 receiveSweepScan` | `this.sweepResults`, `this.sweepBusy=false` | yes |
-| `sweep-done` | `code.js:255` (`type: "sweep-done"`) | `gen-figma-ui.mjs:53` | `apply-gate.js:252 onSweepDone` | `this.sweepBusy=false`, clears results | yes |
+| `apply-done` | `code.js:211` (`type: "apply-done"`) | `gen-figma-ui.mjs:48` | `apply-gate.js:155 onApplyDone` | `this._applyBusy=false`, `this.applyGateOpen=false` | yes |
+| `apply-error` | `code.js:266` (`type: "apply-error"`) (catch-all, apply only) | `gen-figma-ui.mjs:49` | `apply-gate.js:175 onApplyError` | `this._applyBusy=false` | yes |
+| `sweep-scanned` | `code.js:246` (`type: "sweep-scanned"`) | `gen-figma-ui.mjs:52` | `apply-gate.js:227 receiveSweepScan` | `this.sweepResults`, `this.sweepBusy=false` | yes |
+| `sweep-done` | `code.js:255` (`type: "sweep-done"`) | `gen-figma-ui.mjs:53` | `apply-gate.js:254 onSweepDone` | `this.sweepBusy=false`, clears results | yes |
 
 Refresh discipline is consistent — every inbound handler calls `this.render()` (or delegates to one that does). The one intentional exception: `receiveStoredSets` (`app.js:1166`) no-ops if `this.view !== "gallery"` — a deliberate anti-clobber guard, not a bug (a probe reply landing after the user already opened an editor mustn't overwrite `this.sets`).
 

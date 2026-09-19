@@ -117,7 +117,7 @@ incrementally.
 - **States** default · `hover` (`button:hover` `styles.css:170`) · `focus-visible` (`styles.css:179`) ·
   `disabled` (`styles.css:188`) · toggle-pressed (`.on` + `aria-pressed`, 7 sites in `src/ui/`: the `btn()` and
   `chip()` primitives plus five inline buttons:
-  `aria-pressed` at `app-helpers.mjs:421/548`, `app.js:1466/1602`, `sections/color.js:527/1021/1231`).
+  `aria-pressed` at `app-helpers.mjs:421/548`, `app.js:1466/1603`, `sections/color.js:527/1021/1231`).
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:854`). ✗ no `forced_colors`.
 - **Geometry** `padding:4px 9px; border-radius:5px; gap:6px` — ad-hoc, not a ramp.
@@ -203,7 +203,7 @@ incrementally.
 - **Surface** S1. **Sites** one helper `slider(label,value,min,max,step,fmtFn,onInput)`
   (`app.js:2053-2078`), ~14 instances: Hue/Chroma/Skew/Lift/Edge-hue `sections/color.js:1785-1812`;
   Tension/L*min/L*max/Damp/Chroma-floor/Falloff/Amplify/Bias `sections/color.js:2025-2047`.
-- **Anatomy** `.field` `[ label · readout(<b>) · input[type=range] ]`; track + custom thumb
+- **Anatomy** `.field` `[ label · readout(<b>) · input[type=range] ]`; track + custom `thumb`
   (`styles.css:936-950`).
 - **API** clean function signature; `fmtFn` for the live readout, `onInput` callback; `data-fk`
   carries a focus key so re-render preserves focus, `app.js:2062`.
