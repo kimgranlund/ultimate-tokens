@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24   # the browser smoke uses node's global WebSocket (stable since 22, current LTS is 24)
+          node-version: 24   # the browser smoke uses node's global WebSocket (stable since 22)
       # npm ci, not install: the committed lockfile IS the toolchain that produces the committed
       # generated artifacts — reproducibility of that chain is the point (TKT-0011).
       - run: npm ci
