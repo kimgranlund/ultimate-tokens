@@ -171,14 +171,21 @@ figma.ui.onmessage = async (msg) => {
       // in its OWN try so a float-apply failure can't mask the color apply that already succeeded above — the
       // user still gets the color result (+ a console error), and a re-apply (idempotent) converges the rest.
       let fr = null;
+      let floatStaleModes = [];
+      let floatSkipped = [];
       if (Array.isArray(msg.floatPlans) && msg.floatPlans.length) {
         try { fr = await applyFloatPlans(msg.floatPlans, { libraryMode: msg.libraryMode }); }
         catch (e) { console.error("[Ultimate Tokens] type/geometry apply failed:", e); }
         // #687: under "published library" mode a stale Type/Geometry breakpoint mode is kept, not
         // removed. Say so, or a kept mode looks like the prune silently failed: the same disclosure
         // applyFontPrimitivesModes' and applyBundle's own staleModes get above/below.
-        const floatStaleModes = (fr && fr.libraryReports ? fr.libraryReports : []).reduce((acc, lr) => acc.concat(lr.staleModes || []), []);
+        floatStaleModes = (fr && fr.libraryReports ? fr.libraryReports : []).reduce((acc, lr) => acc.concat(lr.staleModes || []), []);
         if (floatStaleModes.length) console.warn("[Ultimate Tokens] published-library mode: kept", floatStaleModes.length, "stale Type/Geometry breakpoint mode(s) instead of removing them:", floatStaleModes.join(", "));
+        // #689: a stale name whose "_deprecated/" target was already taken is skipped and left LIVE. Say
+        // so, or it stays live and unpublicized indefinitely (the same disclosure applyBundle's color
+        // reconcile gets below).
+        floatSkipped = (fr && fr.skipped) || [];
+        if (floatSkipped.length) console.warn("[Ultimate Tokens] published-library mode: skipped", floatSkipped.length, "stale Type/Geometry name(s), left live because their deprecated slot was already taken:", floatSkipped.join(", "));
       }
       // STYLES (opt-out): paint + text styles bound to the variables just applied. Own try — a styles
       // failure never masks the variable apply that already succeeded.
@@ -191,6 +198,9 @@ figma.ui.onmessage = async (msg) => {
             // removed: say so, or a kept mode looks like the prune silently failed.
             const staleModes = (fpr && fpr.libraryReport && fpr.libraryReport.staleModes) || [];
             if (staleModes.length) console.warn("[Ultimate Tokens] published-library mode: kept", staleModes.length, "stale Type Primitives mode(s) instead of removing them:", staleModes.join(", "));
+            // #689: same skip disclosure as the float/color paths, for the Type Primitives name collision.
+            const fpSkipped = (fpr && fpr.libraryReport && fpr.libraryReport.skipped) || [];
+            if (fpSkipped.length) console.warn("[Ultimate Tokens] published-library mode: skipped", fpSkipped.length, "stale Type Primitives name(s), left live because their deprecated slot was already taken:", fpSkipped.join(", "));
           }
           sr = await applyStylePlans(msg.stylePlans, { libraryMode: msg.libraryMode });
         } catch (e) { console.error("[Ultimate Tokens] styles apply failed:", e); }
@@ -200,8 +210,8 @@ figma.ui.onmessage = async (msg) => {
       // own staleModes gets above.
       if (r && r.staleModes && r.staleModes.length) console.warn("[Ultimate Tokens] published-library mode: kept", r.staleModes.length, "stale Color Roles theme mode(s) instead of removing them:", r.staleModes.join(", "));
       const parts = [];
-      if (r) parts.push(`${r.raw} primitives + ${r.prime} prime + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : "") + (r.preserved ? `, ${r.preserved} stale kept (published library)` : ""));
-      if (fr && fr.collections) parts.push(`${fr.variables} type/geometry variable${fr.variables === 1 ? "" : "s"} across ${fr.collections} collection${fr.collections === 1 ? "" : "s"}`);
+      if (r) parts.push(`${r.raw} primitives + ${r.prime} prime + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : "") + (r.preserved ? `, ${r.preserved} stale kept (published library)` : "") + (r.skipped && r.skipped.length ? `, ${r.skipped.length} stale skipped (rename target taken)` : ""));
+      if (fr && fr.collections) parts.push(`${fr.variables} type/geometry variable${fr.variables === 1 ? "" : "s"} across ${fr.collections} collection${fr.collections === 1 ? "" : "s"}` + (floatStaleModes.length ? `, ${floatStaleModes.length} stale kept (published library)` : "") + (floatSkipped.length ? `, ${floatSkipped.length} stale skipped (rename target taken)` : ""));
       if (sr && (sr.paints || sr.texts)) parts.push(`${sr.paints + sr.texts} style${sr.paints + sr.texts === 1 ? "" : "s"} (${sr.paints} color · ${sr.texts} text)` + (sr.pruned ? `, ${sr.pruned} stale pruned` : "") + (sr.preserved ? `, ${sr.preserved} stale kept (published library)` : ""));
       if (sr && sr.substitutedFonts && sr.substitutedFonts.length) figma.notify(`${sr.substituted} text style(s) use a placeholder face — install to see them as designed: ${sr.substitutedFonts.slice(0, 3).join(", ")}${sr.substitutedFonts.length > 3 ? "…" : ""}`, { timeout: 6000 });
       if (sr && sr.missingFonts && sr.missingFonts.length) figma.notify(`Some text styles were skipped — no usable font: ${sr.missingFonts.slice(0, 3).join(", ")}${sr.missingFonts.length > 3 ? "…" : ""}`, { timeout: 6000 });
@@ -1102,6 +1112,11 @@ async function applyFontPrimitivesModes(plan, opts) {
   } else {
     for (const m of staleModeCandidates) { if (coll.modes.length > 1) coll.removeMode(m.modeId); }
   }
+  // #689: a stale name whose "_deprecated/" target is already LIVE (a prior library-mode apply
+  // already claimed it, e.g. drop, re-add, drop) must not be silently left under its ORIGINAL name.
+  // Report it in `skipped`, or it stays live and unpublicized forever, exactly like the two sibling
+  // sites below (applyBundle's color reconcile, applyFloatPlans' own deprecates loop).
+  const skippedFP = [];
   if (useLibrary) {
     for (const r of report.aliases) {
       const vr = byName[r.from];
@@ -1114,14 +1129,16 @@ async function applyFontPrimitivesModes(plan, opts) {
     }
     for (const r of report.deprecates) {
       const vr = byName[r.from];
-      if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
+      if (!vr) continue;
+      if (byName[r.to]) { skippedFP.push(r.from); continue; } // "_deprecated/" name already taken: leave the live one alone
+      vr.name = r.to; byName[r.to] = vr; delete byName[r.from];
     }
   } else {
     // #659: never a "_deprecated/" name — pruneCandidatesVM keeps the prune monotonic over them.
     for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
   }
   writeFloatRegistry(reg);
-  return { variables: count, libraryReport: { collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes } };
+  return { variables: count, libraryReport: { collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes, skipped: useLibrary ? skippedFP : [] } };
 }
 
 // resolveFace — pick a REAL face for {family, weight, styleName?} from Figma's actual font list
@@ -1605,6 +1622,7 @@ async function applyBundle(dtcg, opts) {
   let pruned = 0;
   let preserved = 0;
   const colorReports = [];
+  const skippedAll = []; // #689: stale names left LIVE because their "_deprecated/" slot was already taken
   // reconcileColorCollection(collectionName, byName, current): one collection's stale-name decision.
   // CLASSIC: remove every unwanted name, minus the "_deprecated/" carve-out pruneCandidatesVM applies at
   // the other two library-mode gates (#659/#666: the classic prune must stay MONOTONIC over a name a
@@ -1619,28 +1637,33 @@ async function applyBundle(dtcg, opts) {
     if (!libraryMode) {
       const removed = pruneCandidatesVM(existing, Array.from(current));
       for (const name of removed) { byName[name].remove(); pruned++; }
-      colorReports.push({ collection: collectionName, libraryMode: false, aliases: [], deprecates: [], removed: removed, staleModes: modes });
+      colorReports.push({ collection: collectionName, libraryMode: false, aliases: [], deprecates: [], removed: removed, staleModes: modes, skipped: [] });
       return;
     }
     const rec = libraryReconcile(existing, Array.from(current), {}, {});
     const deprecates = [];
+    const skipped = [];
     for (const r of rec.toDeprecate) {
       const vr = byName[r.from];
-      if (!vr || byName[r.to]) continue; // a "_deprecated/" name already taken: leave the live one alone
+      if (!vr) continue;
+      // #689: a "_deprecated/" name already taken (e.g. drop, re-add, drop): the rename is skipped and
+      // the stale name is left LIVE. Report it, or it stays live and unpublicized indefinitely.
+      if (byName[r.to]) { skipped.push(r.from); continue; }
       vr.name = r.to;
       byName[r.to] = vr;
       delete byName[r.from];
       preserved++;
       deprecates.push(r);
     }
-    colorReports.push({ collection: collectionName, libraryMode: true, aliases: [], deprecates: deprecates, removed: [], staleModes: modes });
+    colorReports.push({ collection: collectionName, libraryMode: true, aliases: [], deprecates: deprecates, removed: [], staleModes: modes, skipped: skipped });
+    if (skipped.length) skippedAll.push(...skipped);
   };
   reconcileColorCollection(sem.name, semByName, currentSem, staleThemeModes);
   reconcileColorCollection(raw.name, rawByName, currentRaw);
   reconcileColorCollection(prime.name, primeByName, currentPrime);
 
   writeColorRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { raw: rawCount, semantic: semCount, prime: primeCount, pruned: pruned, preserved: preserved, libraryMode: libraryMode, colorReports: colorReports, staleModes: staleThemeModes, rebuilt: rebuilt, themeNames: themeNames };
+  return { raw: rawCount, semantic: semCount, prime: primeCount, pruned: pruned, preserved: preserved, libraryMode: libraryMode, colorReports: colorReports, staleModes: staleThemeModes, skipped: skippedAll, rebuilt: rebuilt, themeNames: themeNames };
 }
 
 // ── the breakpoint-moded FLOAT apply (Type / Geometry) ────────────────────────────
@@ -1656,6 +1679,7 @@ async function applyFloatPlans(plans, opts) {
   opts = opts || {};
   let collections = 0, variables = 0;
   const libraryReports = [];
+  const skippedAll = []; // #689: stale names left LIVE because their "_deprecated/" slot was already taken
   const reg = readFloatRegistry(); // provenance: only ever touch a collection this plugin created (see ensureFloatCollection)
   for (const plan of (Array.isArray(plans) ? plans : [])) {
     if (!plan || !plan.collection || !Array.isArray(plan.modes) || !plan.modes.length) continue;
@@ -1765,6 +1789,7 @@ async function applyFloatPlans(plans, opts) {
     } else {
       for (const m of staleModeCandidates) { if (coll.modes.length > 1) coll.removeMode(m.modeId); }
     }
+    const skippedFloat = []; // #689: stale names left LIVE because their "_deprecated/" slot was already taken
     if (useLibrary) {
       for (const r of report.aliases) {
         const vr = byName[r.from];
@@ -1774,13 +1799,18 @@ async function applyFloatPlans(plans, opts) {
       }
       for (const r of report.deprecates) {
         const vr = byName[r.from];
-        if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
+        if (!vr) continue;
+        // #689: a "_deprecated/" name already taken (e.g. drop, re-add, drop): the rename is skipped
+        // and the stale name is left LIVE. Report it, or it stays live and unpublicized indefinitely.
+        if (byName[r.to]) { skippedFloat.push(r.from); continue; }
+        vr.name = r.to; byName[r.to] = vr; delete byName[r.from];
       }
     } else {
       // #659: never a "_deprecated/" name — pruneCandidatesVM keeps the prune monotonic over them.
       for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
     }
-    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes });
+    if (skippedFloat.length) skippedAll.push(...skippedFloat);
+    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes, skipped: skippedFloat });
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles
@@ -1797,7 +1827,7 @@ async function applyFloatPlans(plans, opts) {
     collections++;
   }
   writeFloatRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { collections: collections, variables: variables, libraryReports: libraryReports };
+  return { collections: collections, variables: variables, libraryReports: libraryReports, skipped: skippedAll };
 }
 
 // Exposed for the headless verifier (a no-op inside Figma's VM).

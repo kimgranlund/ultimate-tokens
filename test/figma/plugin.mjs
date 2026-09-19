@@ -105,7 +105,10 @@ function mockFigma() {
         if (this.ui.onmessage) this.ui.onmessage({ type: "adopt-confirm", adopt: answer });
       });
     },
-    notify() {},
+    // #689: record every notify() call (message + opts) so a leg can assert the completion notice's
+    // TEXT, not just that a variable/report changed: every prior test only needed the no-op.
+    _notified: [],
+    notify(msg, opts) { this._notified.push(msg); },
     closePlugin() {},
     // the document root carries the embedded config (setPluginData is a synchronous string store).
     root: { _pd: {}, setPluginData(k, v) { this._pd[k] = String(v); }, getPluginData(k) { return this._pd[k] || ""; } },
@@ -931,6 +934,124 @@ if (applyBundle) {
   } catch (e) { FAIL("colorlibrary", "the color library-mode legs threw: " + e.message); }
 }
 
+// ── staleskip (#689): a stale name whose "_deprecated/" slot is ALREADY TAKEN is skipped by the
+//    dedupe guard (`byName[r.to]`) and left LIVE, reported nowhere. Minimal repro (the #673
+//    reviewer's own sequence on Color Prime): full, cut (deprecates the family), full (re-adds it
+//    FRESH; the deprecated copy is untouched), cut again (the fresh copy wants the SAME
+//    "_deprecated/" slot the first drop already took: collision. Same class exists at THREE sites:
+//    applyBundle's color reconcile, applyFloatPlans' deprecates loop, applyFontPrimitivesModes'
+//    deprecates loop, each covered on its own below.
+if (applyBundle) {
+  try {
+    const docFull = defaultDocument();
+    const docCut = { ...docFull, palettes: docFull.palettes.slice(0, -1) };
+    const bundleFull = figmaBundle(docFull);
+    const bundleCut = figmaBundle(docCut);
+    const FS = mockFigma();
+    const ls = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FS.figma, "<html>", undefined);
+    await ls.applyBundle(bundleFull, { libraryMode: true }); // 1: full
+    await ls.applyBundle(bundleCut, { libraryMode: true }); // 2: drop, family deprecated
+    await ls.applyBundle(bundleFull, { libraryMode: true }); // 3: re-add, a FRESH family is created
+    const res4 = await ls.applyBundle(bundleCut, { libraryMode: true }); // 4: drop again, collision
+    if (!res4.skipped || !res4.skipped.length) FAIL("staleskip", `a fourth color apply (drop, re-add, drop) reported no skipped names (res4.skipped=${JSON.stringify(res4.skipped)}): the "_deprecated/" collision must be reported, not silently left live`);
+    else {
+      const liveNames = FS.variables.map((v) => v.name);
+      const stillLive = res4.skipped.filter((n) => liveNames.indexOf(n) >= 0);
+      if (!stillLive.length) FAIL("staleskip", `res4.skipped named ${JSON.stringify(res4.skipped)}, none of which are actually live in the mock (fixture mismatch)`);
+      // the per-collection colorReports entry must ALSO carry the skip (not just the top-level rollup).
+      const anyRepSkipped = (res4.colorReports || []).some((r) => (r.skipped || []).length);
+      if (!anyRepSkipped) FAIL("staleskip", "no colorReports entry carries a non-empty skipped array");
+    }
+  } catch (e) { FAIL("staleskip", "the color stale-skip leg threw: " + e.message); }
+} else {
+  FAIL("staleskip", "code.js exported no applyBundle");
+}
+
+// ── staleskip float (#689): the SAME collision, in applyFloatPlans' own deprecates loop, on a
+//    synthetic collection (drop/re-add/drop a variable, not a real breakpoint mode). ──
+if (applyFloatPlans) {
+  try {
+    const synthVarSK = (name, value) => ({ name, type: "FLOAT", values: [{ mode: "Base", value }] });
+    const twoVarPlanSK = () => [{ collection: "SynthSkip", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVarSK("a", 1), synthVarSK("b", 2)] }];
+    const oneVarPlanSK = () => [{ collection: "SynthSkip", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVarSK("a", 1)] }];
+    const FSF = mockFigma();
+    const asf = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FSF.figma, "<html>", undefined).applyFloatPlans;
+    await asf(twoVarPlanSK(), { libraryMode: true }); // 1: a, b
+    await asf(oneVarPlanSK(), { libraryMode: true }); // 2: b -> _deprecated/b
+    await asf(twoVarPlanSK(), { libraryMode: true }); // 3: fresh b created
+    const res4f = await asf(oneVarPlanSK(), { libraryMode: true }); // 4: collision
+    if (!res4f.skipped || !res4f.skipped.length) FAIL("staleskipfloat", `a fourth float apply (drop, re-add, drop) reported no skipped names (res4f.skipped=${JSON.stringify(res4f.skipped)}): the "_deprecated/" collision must be reported`);
+    else {
+      const liveNamesF = FSF.variables.map((v) => v.name);
+      if (!res4f.skipped.some((n) => liveNamesF.indexOf(n) >= 0)) FAIL("staleskipfloat", `res4f.skipped named ${JSON.stringify(res4f.skipped)}, none of which are actually live in the mock (fixture mismatch)`);
+      const anyRepSkippedF = (res4f.libraryReports || []).some((r) => (r.skipped || []).length);
+      if (!anyRepSkippedF) FAIL("staleskipfloat", "no libraryReports entry carries a non-empty skipped array");
+    }
+  } catch (e) { FAIL("staleskipfloat", "the float stale-skip leg threw: " + e.message); }
+} else {
+  FAIL("staleskipfloat", "code.js exported no applyFloatPlans");
+}
+
+// ── staleskip font primitives (#689): the SAME collision, in applyFontPrimitivesModes' deprecates
+//    loop (a similar guard at code.js's Type Primitives site, not just the float/color sites above). ──
+if (applyFontPrimitivesModes) {
+  try {
+    const planSK = (names) => ({ collection: "TypePrimSkip", modes: ["Value"], defaultMode: "Value", addModes: [], variables: names.map((n) => ({ name: n, type: "STRING", values: [{ mode: "Value", value: "x" }] })) });
+    const FSP = mockFigma();
+    const asp = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(FSP.figma, "<html>", undefined).applyFontPrimitivesModes;
+    await asp(planSK(["font/a", "font/b"]), { libraryMode: true }); // 1: a, b
+    await asp(planSK(["font/a"]), { libraryMode: true }); // 2: font/b -> _deprecated/font/b
+    await asp(planSK(["font/a", "font/b"]), { libraryMode: true }); // 3: fresh font/b created
+    const res4p = await asp(planSK(["font/a"]), { libraryMode: true }); // 4: collision
+    const skippedP = (res4p && res4p.libraryReport && res4p.libraryReport.skipped) || [];
+    if (!skippedP.length) FAIL("staleskipfontprim", `a fourth Font Primitives apply (drop, re-add, drop) reported no skipped names (libraryReport.skipped=${JSON.stringify(skippedP)}): the "_deprecated/" collision must be reported`);
+    else {
+      const liveNamesP = FSP.variables.map((v) => v.name);
+      if (!skippedP.some((n) => liveNamesP.indexOf(n) >= 0)) FAIL("staleskipfontprim", `libraryReport.skipped named ${JSON.stringify(skippedP)}, none of which are actually live in the mock (fixture mismatch)`);
+    }
+  } catch (e) { FAIL("staleskipfontprim", "the Font Primitives stale-skip leg threw: " + e.message); }
+} else {
+  FAIL("staleskipfontprim", "code.js exported no applyFontPrimitivesModes");
+}
+
+// ── staleskip notice (#689 + folded #687 review finding 4): the completion notice (figma.notify)
+//    must NAME both counts: a kept stale Type/Geometry breakpoint MODE (the float "stale kept"
+//    counter #687 left off) and a skipped stale NAME (this ticket's own gap), driven through the
+//    REAL message handler, exactly like "applysys"/"colorlibrary" LEG 4 above. ──
+{
+  // D1: a kept breakpoint mode (float) must be named in the notice, with its count.
+  const FD1 = mockFigma();
+  new Function("figma", "__html__", "module", code)(FD1.figma, "<html>", undefined);
+  const synthVarD = (name, value) => ({ name, type: "FLOAT", values: [{ mode: "Base", value }] });
+  const twoModePlanD = [{ collection: "SynthNotice", modes: ["Base", "Mobile"], defaultMode: "Base", addModes: ["Mobile"], variables: [synthVarD("a", 1)] }];
+  const oneModePlanD = [{ collection: "SynthNotice", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVarD("a", 1)] }];
+  await FD1.figma.ui._h({ type: "apply", floatPlans: twoModePlanD });
+  FD1.figma._notified.length = 0; // only the SECOND apply's notice is under test
+  await FD1.figma.ui._h({ type: "apply", floatPlans: oneModePlanD, libraryMode: true });
+  const noticeD1 = FD1.figma._notified.find((m) => typeof m === "string" && m.indexOf("Applied") === 0);
+  if (!noticeD1) FAIL("staleskipnotice", `no "Applied…" completion notice was posted; got ${JSON.stringify(FD1.figma._notified)}`);
+  else if (!/1 stale kept \(published library\)/.test(noticeD1)) FAIL("staleskipnotice", `a kept stale Type/Geometry breakpoint mode under libraryMode:true produced no "N stale kept" notice: "${noticeD1}"`);
+
+  // D2: a skipped stale NAME (this ticket) must be named in the notice, with its count, driven by
+  // the SAME 4-apply drop/re-add/drop color sequence above, through the real message handler.
+  if (applyBundle) {
+    const docFullD = defaultDocument();
+    const docCutD = { ...docFullD, palettes: docFullD.palettes.slice(0, -1) };
+    const bundleFullD = figmaBundle(docFullD);
+    const bundleCutD = figmaBundle(docCutD);
+    const FD2 = mockFigma();
+    new Function("figma", "__html__", "module", code)(FD2.figma, "<html>", undefined);
+    await FD2.figma.ui._h({ type: "apply", dtcg: bundleFullD, libraryMode: true }); // 1
+    await FD2.figma.ui._h({ type: "apply", dtcg: bundleCutD, libraryMode: true }); // 2
+    await FD2.figma.ui._h({ type: "apply", dtcg: bundleFullD, libraryMode: true }); // 3
+    FD2.figma._notified.length = 0; // only the FOURTH apply's notice is under test
+    await FD2.figma.ui._h({ type: "apply", dtcg: bundleCutD, libraryMode: true }); // 4: collision
+    const noticeD2 = FD2.figma._notified.find((m) => typeof m === "string" && m.indexOf("Applied") === 0);
+    if (!noticeD2) FAIL("staleskipnotice", `no "Applied…" completion notice was posted for the 4th apply; got ${JSON.stringify(FD2.figma._notified)}`);
+    else if (!/\d+ stale skipped \(rename target taken\)/.test(noticeD2)) FAIL("staleskipnotice", `a skipped stale name under libraryMode:true produced no "N stale skipped" notice: "${noticeD2}"`);
+  }
+}
+
 // ── adoptconsent (#632): a live collection matching a target name that ISN'T registry-tracked (a file
 //    applied to under the pre-rename plugin id, or a hand-made collection) is now OFFERED for adoption
 //    through a real modal, once, BEFORE any write. Confirmed => the apply upserts INTO that collection
@@ -1253,7 +1374,7 @@ if (sweepCandidates) {
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────
-for (const g of ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep"]) {
+for (const g of ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "staleskip", "staleskipfloat", "staleskipfontprim", "staleskipnotice", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
 }

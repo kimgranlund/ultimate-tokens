@@ -256,6 +256,20 @@ prune on an old bundle whose flag is `undefined` and resolves through the #635 `
 fallback), and reports the kept modes as `libraryReports[].staleModes`, the same field name
 `applyFontPrimitivesModes` and `applyBundle` use.
 
+**#689 closed a further gap: the "_deprecated/" collision.** Each of the three deprecate-loop sites
+above renames a stale name to `_deprecated/<name>` guarded by `byName[r.to]` (the target slot must be
+free). Reachable in four ordinary applies under `libraryMode:true`: drop a palette family (deprecated),
+re-add it (a FRESH copy is created; the deprecated one is untouched), drop it again (the fresh copy wants
+the SAME `_deprecated/` slot the first drop already claimed). Before #689 the guard silently skipped the
+rename on collision, leaving the stale name LIVE and reported nowhere. Now every site
+(`applyBundle`'s `reconcileColorCollection`, `applyFloatPlans`, `applyFontPrimitivesModes`) collects the
+skipped name(s) into a `skipped` array on its own report (`colorReports[].skipped`,
+`libraryReports[].skipped`, `libraryReport.skipped`), plus a top-level rollup (`applyBundle`'s and
+`applyFloatPlans`' own `skipped`), and the completion notice names the count ("N stale skipped (rename
+target taken)") the same way it already names `preserved`/"stale kept". The same change also gave the
+float half its own "N stale kept (published library)" notice segment (from `libraryReports[].staleModes`);
+the color and styles halves already had one, the float half (#687) did not.
+
 Destructive sites outside the flag's scope, by design: Regroup's rebuild-drop (`applyBundle`'s
 `old.remove()` under `rebuildSemantic`, gated by its own always-warn consent, #688), and
 `plan.retire`'s collection retire (`applyFloatPlans` removes a whole registry-tracked collection and
