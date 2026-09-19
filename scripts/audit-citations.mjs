@@ -30,13 +30,18 @@
 //               enclosing prose paragraph -- a citing sentence commonly wraps onto the
 //               previous doc line) specific enough to look for in the CITED line: a
 //               camelCase/PascalCase identifier, a `.class`/`#id`, any identifier the doc
-//               writes as a call (`name(`), or the citation's own subject written as
-//               `name :N` -- backticked (`` `render` :570 ``) or, if fully bare with no
-//               backtick anywhere before the number, required to itself be
-//               camelCase/PascalCase/snake_case (#672). A FULLY BARE lowercase English
-//               word is NOT an anchor -- that restriction, not "which one anchor wins", is
-//               #672's actual fix: a `tonal.js:335` cite for `_okL` no longer passes on a
-//               same-line prose word like "domain".
+//               writes as a call inside backticks (`` `name()` ``), or the citation's own
+//               subject written bare as `name :N` or `name (` -- backtick-HUGGED
+//               (`` `render` :570 ``, `` `carve-out` (`file.js:9`) ``) or, with no backtick
+//               anywhere before the `:N`/`(`, required to itself be camelCase/PascalCase/
+//               snake_case (#672; the `name(` form joined this floor at PR #694 critic
+//               review item 2 -- it used to also pass on ANY bare word whose own
+//               parenthetical merely contained a citation, which reopened #672's exact bug
+//               for that one shape). A FULLY BARE lowercase English word is NOT an anchor
+//               -- that restriction, not "which one anchor wins", is #672's actual fix: a
+//               `tonal.js:335` cite for `_okL` no longer passes on a same-line prose word
+//               like "domain", and a `tonal.js:216` cite for a comment no longer passes on
+//               a same-line prose word like "guarantee" sitting next to `(tonal.js:216)`.
 //               A citation is judged against EVERY anchor in scope, and passes if ANY of
 //               them occurs at/near the cited line (#672 correction, PR review by the
 //               lead): an earlier draft narrowed this to the ONE anchor nearest the
@@ -171,7 +176,6 @@ const LIT = "~~LIT~~"; // sentinel prefix marking a literal code fragment rather
 // A citation-shaped run, for detecting "this token sits directly next to an actual citation" --
 // distinct from the parser's own reExplicit/reBare (which extract citations to resolve), this is
 // used only to test adjacency when deciding whether a NEIGHBORING bare word gets to anchor.
-const reCiteLike = new RegExp(`:\\d{2,4}|[A-Za-z0-9_@./-]+\\.(?:${EXT}):\\d+`);
 const reCiteStart = new RegExp(`^(?::\\d{2,4}|[A-Za-z0-9_@./-]+\\.(?:${EXT}):\\d+)`);
 const reCiteEnd = new RegExp(`(?::\\d{2,4}(?:[-–]\\d{2,4})?|[A-Za-z0-9_@./-]+\\.(?:${EXT}):\\d+(?:[-–]\\d+)?)\\s*$`);
 
@@ -268,25 +272,36 @@ export function anchorsOf(docLine) {
     const hugged = docLine[m.index - 1] === "`" && m[2].startsWith("`");
     if (hugged || /[A-Z_]/.test(name)) add(name);
   }
-  // The `(` form's backtick-hug equivalent is the span rule above (`` `render()` `` or a
-  // citation-adjacent whole span); a fully bare, unbacked `name(` must be shape-restricted, OR
-  // its own parenthetical must itself contain a real citation (`segmented (styles.css:869-870)`,
-  // the doc's own component-inventory convention) -- otherwise a parenthetical aside
-  // ("carve-out (the old path)", "not to (singleton) worry") contaminates the anchor set on the
-  // strength of an ordinary word sitting next to an open paren (#672 round 2, F1.2: live
-  // contaminants included "out", "to", "path", "grid", "inside", "only"). The citation-inside
-  // exemption is still stopword-gated: "only (test/…:246-264 …)" must not anchor on "only".
-  // The lookbehind/character-class also cover hyphens (not just letters/digits/dot), so a
-  // hyphenated compound (`carve-out (`) matches as ONE token instead of splitting at the hyphen
-  // into an orphaned `out` -- the whole compound is what actually appears verbatim at a cited
-  // line ("Add a carve-out below for...", "margin-bottom: 16px"), and the citation-inside
-  // exemption below is what lets a shapeless compound like this still anchor.
-  for (const m of docLine.matchAll(/(?<![A-Za-z0-9_$.-])([A-Za-z_$][A-Za-z0-9_$-]*)\s*\(/g)) {
+  // The `(` form now takes the EXACT SAME floor as the `:N` form above: a fully bare, unbacked
+  // `name(` must itself be camelCase/PascalCase/snake_case (`/[A-Z_]/`), OR the name must be
+  // backtick-HUGGED immediately before the `(` (`` `carve-out` (`figma/plugin/code.js:262`) ``,
+  // `` `segmented` (`styles.css:869-870`) ``) -- and STOPWORDS is checked first, unconditionally,
+  // same as the `:N` form (PR #694 critic review item 2, owner-ruled 2026-09-19: fix in this PR).
+  //
+  // The PRIOR rule instead exempted a fully bare, unshaped word whenever its OWN parenthetical
+  // happened to contain a citation-shaped run ("its own parenthetical must itself contain a real
+  // citation"). That is precisely #672's own class of bug reopened for this one shape: a prose
+  // word validates a citation merely because it sits next to one, not because it is the citation's
+  // real subject. Live exploit (critic review, PR #694): `anchorsOf("the \`_okL\` memo covers the
+  // lift domain (\`src/engine/tonal.js:216\`)")` returned `["_okL","domain"]`, and
+  // `anchorsOf("guarantee (\`src/engine/tonal.js:216\`)")` returned `["guarantee"]` -- both readable
+  // as OK against `tonal.js:216`, a comment naming neither word, purely because their parenthetical
+  // held a real citation. No live citation depended on this hole (the ~64 plain-lowercase `word (
+  // cite)` rows in the corpus were all already backtick-hugged), but two DID depend on it and were
+  // repinned/backticked in the same commit as this fix: `component-inventory.md` (`segmented
+  // (styles.css:869-870)`) and `04-context-and-messaging.md` (`` `apply` carve-out
+  // (`figma/plugin/code.js:262`) ``) -- see their doc diffs, not this comment, for the reasoning.
+  //
+  // The lookbehind/character-class cover hyphens (not just letters/digits/dot), so a hyphenated
+  // compound (`carve-out(`) matches as ONE token instead of splitting at the hyphen into an
+  // orphaned `out` -- the whole compound is what actually appears verbatim at a cited line ("Add a
+  // carve-out below for...", "margin-bottom: 16px"), and the hug rule below is what lets a
+  // shapeless compound like this still anchor once its author backticks it.
+  for (const m of docLine.matchAll(/(?<![A-Za-z0-9_$.-])([A-Za-z_$][A-Za-z0-9_$-]*)([\s`]*)\(/g)) {
     const name = m[1];
     if (STOPWORDS.has(name.toLowerCase())) continue;
-    const closeIdx = docLine.indexOf(")", m.index + m[0].length);
-    const inside = docLine.slice(m.index + m[0].length, closeIdx === -1 ? undefined : closeIdx);
-    if (/[A-Z_]/.test(name) || reCiteLike.test(inside)) add(name);
+    const hugged = docLine[m.index - 1] === "`" && m[2].startsWith("`");
+    if (hugged || /[A-Z_]/.test(name)) add(name);
   }
   return [...out];
 }
@@ -656,21 +671,59 @@ export function selftest() {
     // pins M5 on the `name :N` site: "the" IS a stopword, but it is backtick-hugged
     // (`` `the`:200 ``), which alone satisfies the shape check's OR branch. With STOPWORDS
     // intact, "the" is rejected before the shape/hug check ever runs, so M1 alone cannot reopen
-    // this case -- only dropping STOPWORDS (M5) can.
+    // this case -- only dropping STOPWORDS (M5) can. Asserts the EXACT anchor set, not just
+    // includes/excludes, so a mutant that added some OTHER stray anchor alongside "the" would
+    // still be caught.
     const hugLine = "the subject is `_okL` here, though `the`:200 is not it";
     const hugAnchors = anchorsOf(hugLine);
-    const hugOk = hugAnchors.includes("_okL") && !hugAnchors.includes("the");
+    const hugOk = JSON.stringify(hugAnchors) === JSON.stringify(["_okL"]);
     console.log(`  ${hugOk ? "✓" : "✗"} a hugged stopword before \`:N\` (\`the\`:200) does not anchor -- pins M5's \`name :N\` site (got ${JSON.stringify(hugAnchors)})`);
     if (!hugOk) failed++;
 
-    // pins M5 on the `name(` site: "only" IS a stopword, but its own parenthetical holds a real
-    // citation-shaped run, which alone satisfies the `reCiteLike.test(inside)` OR branch
-    // regardless of shape. With STOPWORDS intact, "only" is rejected before that check runs.
-    const parenLine = "explanation only (test/engine/tonal.mjs:246-264 for details), plus `_okL` details";
+    // pins M5 on the `name(` site: "only" IS a stopword, and it is backtick-hugged immediately
+    // before the `(` (`` `only` (`test/…:246-264` for details) ``), which alone satisfies the
+    // `(` form's shape-or-hug OR branch (PR #694 item 2 closed the OLD hole here -- a bare,
+    // unhugged, unshaped word whose own parenthetical merely contained a citation -- so a plain
+    // "only (test/…)" no longer even reaches the hug check; it must be hugged to test M5 at all).
+    // With STOPWORDS intact, "only" is rejected before the hug check ever runs, so the #672
+    // item-2 shape-or-hug floor alone cannot reopen this case -- only dropping STOPWORDS (M5) can.
+    // Asserts the exact anchor set, same reasoning as hugOk above.
+    const parenLine = "explanation `only` (`test/engine/tonal.mjs:246-264` for details), plus `_okL` details";
     const parenAnchors = anchorsOf(parenLine);
-    const parenOk = parenAnchors.includes("_okL") && !parenAnchors.includes("only");
-    console.log(`  ${parenOk ? "✓" : "✗"} a stopword before \`(\` whose parenthetical holds a citation (\`only (test/…:246-264…)\`) does not anchor -- pins M5's \`name(\` site (got ${JSON.stringify(parenAnchors)})`);
+    const parenOk = JSON.stringify(parenAnchors) === JSON.stringify(["_okL"]);
+    console.log(`  ${parenOk ? "✓" : "✗"} a hugged stopword before \`(\` (\`\`only\`\` (\`test/…:246-264\`…)) does not anchor -- pins M5's \`name(\` site (got ${JSON.stringify(parenAnchors)})`);
     if (!parenOk) failed++;
+  }
+
+  // PR #694 critic review item 2 (owner-ruled 2026-09-19: fix in this PR): a plain word before a
+  // parenthesised citation must not anchor merely because its OWN parenthetical happens to hold a
+  // citation -- #672's exact bug, reopened for the `word (cite)` shape. Reproduces the critic's
+  // two live exploit strings verbatim, plus a positive control proving the real convention
+  // (`segmented (styles.css:869-870)`, kept working by backtick-hugging the subject in the doc,
+  // see the same-commit doc diff) still anchors once hugged.
+  {
+    // exploit 1: "domain" sits next to a citation-bearing paren but is neither shaped nor hugged.
+    const docLine = "the `_okL` memo covers the lift domain (`src/engine/tonal.js:216`)";
+    const anchors = anchorsOf(docLine);
+    const ok = JSON.stringify(anchors) === JSON.stringify(["_okL"]);
+    console.log(`  ${ok ? "✓" : "✗"} a plain word before a citation-bearing paren does not anchor merely because its parenthetical holds a citation (got ${JSON.stringify(anchors)})`);
+    if (!ok) failed++;
+
+    // exploit 2: the critic's minimal reproduction -- no OTHER anchor on the line at all, so the
+    // old rule's only path to "OK" was the bare word itself; the fixed set must be empty.
+    const bareLine = "guarantee (`src/engine/tonal.js:216`)";
+    const bareAnchors = anchorsOf(bareLine);
+    const bareOk = bareAnchors.length === 0;
+    console.log(`  ${bareOk ? "✓" : "✗"} \`anchorsOf("guarantee (\`src/engine/tonal.js:216\`)")\` yields no anchor at all (got ${JSON.stringify(bareAnchors)})`);
+    if (!bareOk) failed++;
+
+    // positive control: the same shape, backtick-hugged, still anchors -- the fix is a floor, not
+    // a ban on this citation form.
+    const huggedLine = "no self-margin, the parent owns spacing: `segmented` (`styles.css:869-870`)";
+    const huggedAnchors = anchorsOf(huggedLine);
+    const huggedOk = huggedAnchors.includes("segmented");
+    console.log(`  ${huggedOk ? "✓" : "✗"} a backtick-hugged word before the same shape still anchors (got ${JSON.stringify(huggedAnchors)})`);
+    if (!huggedOk) failed++;
   }
 
   // #672 negative control 2: a NOFILE verdict must fail the gate (exit 1) unless the doc itself

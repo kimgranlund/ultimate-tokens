@@ -85,7 +85,7 @@ incrementally.
 | 4 | **Slider / range** | component | native `<input type=range>` | 1 (via `slider()` helper) | 1 helper, ~14 instances | `input[type=range]`, `.field` | partial — `aria-label` set (label sibling NOT associated, noted in code `app.js:2059-2062`); no forced-colors | custom thumb only; consistent — the model primitive |
 | 5 | **Select** | component | native `<select>` | 1 + `.map-raw-select` | 3 | `select`, `.map-raw-select` | ✓ `.map-raw-select` has `aria-label`; Distribution/Curve are `field()` rows (label[for] + fallback aria-label) | two naming paths |
 | 6 | **Text input** | component | native `<input type=text>` | 2 (`.field` name · `.map-raw-input`) | 2 | `input[type=text]`, `.map-raw-input` | ✓ map-raw-input has `aria-label`; Name is a `field()` row (label[for] + fallback aria-label) | two naming paths |
-| 7 | **Search input** | component | native `<input type=search>` | 1 | 1 (singleton, reused) | `input[type=search]` | good — `aria-label` + placeholder | reused node to preserve focus (`app.js:863-867`) |
+| 7 | **Search input** | component | native `<input type=search>` | 1 | 1 (singleton, reused) | `input[type=search]` | good — `aria-label` + placeholder | reused node to preserve `focus` (`app.js:863-867`) |
 | 8 | **Checkbox** | component | native `<input type=checkbox>` | 1 | 1 | `.mini-check` | good — label-wrapped (associated), `accent-color` | only one instance |
 | 9 | **Chip / pill** | component | custom span/button | 3 (tile-tag · preset · drift-sum) | ~6 | `.tile-tag`, `.damp-presets .preset`, `.map-drift-sum` | n/a (status) / preset is a clickable `<button>` | 3 unrelated "pill" stylings |
 | 10 | **Field wrapper** | primitive (layout) | custom `<div>` | 1 | ~7 | `.field`, `.field > label` | n/a — wraps label + control | the only true layout primitive |
@@ -114,8 +114,8 @@ incrementally.
   `.ex-btn` (preview, `cursor:default` — non-interactive, `styles.css:900-903`), `.copy-float` (`styles.css:1100`),
   `.map-reset` (borderless icon, `styles.css:731`), `.pane-toggle` (`styles.css:406`),
   `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1402/1402`).
-- **States** default · hover (`button:hover` `styles.css:170`) · focus-visible (`styles.css:179`) ·
-  disabled (`styles.css:188`) · toggle-pressed (`.on` + `aria-pressed`, 7 sites in `src/ui/`: the `btn()` and
+- **States** default · `hover` (`button:hover` `styles.css:170`) · `focus-visible` (`styles.css:179`) ·
+  `disabled` (`styles.css:188`) · toggle-pressed (`.on` + `aria-pressed`, 7 sites in `src/ui/`: the `btn()` and
   `chip()` primitives plus five inline buttons:
   `aria-pressed` at `app-helpers.mjs:421/548`, `app.js:1466/1602`, `sections/color.js:527/1021/1231`).
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
@@ -195,7 +195,7 @@ incrementally.
 { "component":"segmented","layer":"component","role":"tablist|group","replaces_native":false,
   "parts":["track","segment"],"states":["on"],"keyboard":["ArrowLeft","ArrowRight"],
   "forced_colors":true,"owns_outer_margin":false,
-  "flags":["2 base stylings (.segmented, .figma-files) + 4 modifiers (.canvas-seg, .segmented.seg-sm, .newpal-seg, .settings-seg)","one segmented() helper backs every site (15 static call sites); drawer format is a native select now","no self-margin, the parent owns spacing: segmented (styles.css:869-870)"] }
+  "flags":["2 base stylings (.segmented, .figma-files) + 4 modifiers (.canvas-seg, .segmented.seg-sm, .newpal-seg, .settings-seg)","one segmented() helper backs every site (15 static call sites); drawer format is a native select now","no self-margin, the parent owns spacing: `segmented` (`styles.css:869-870`)"] }
 ```
 
 ### 4 · Slider / range  ★ the model primitive
@@ -252,7 +252,7 @@ incrementally.
 { "component":"text-input","layer":"component","role":"textbox(native)","replaces_native":false,
   "parts":["input"],"states":["focus","ov(map only)"],"keyboard":["native"],
   "forced_colors":"native","owns_outer_margin":false,
-  "flags":["input (styles.css:192) shares its base style with select, across text/search variants"] }
+  "flags":["`input` (`styles.css:192`) shares its base style with select, across text/search variants"] }
 ```
 
 ### 7 · Search input
@@ -261,7 +261,7 @@ incrementally.
   reused** across renders so typing never loses focus (the documented bug-fix at `app.js:864-865`).
 - **a11y** ✓ `aria-label` "Search palette sets" + placeholder. Native clear/keyboard.
 - **Style** shares the `input[type="text"], input[type="search"], select` base (`styles.css:192`); width pinned in the
-  gallery title (`styles.css:262`).
+  gallery `title` (`styles.css:262`).
 
 ```json
 { "component":"search-input","layer":"component","role":"searchbox(native)","replaces_native":false,
@@ -317,7 +317,7 @@ Three unrelated "pill" stylings — a naming/coherence drift, not one primitive:
 ```json
 { "component":"field","layer":"primitive","role":null,"replaces_native":false,
   "parts":["label","readout","control(slot)"],"states":[],"keyboard":[],"forced_colors":"n/a",
-  "owns_outer_margin":false,"flags":["no self-owned margin, margin: 0 on field (styles.css:928); only .newpal-custom .field sets margin-bottom (styles.css:1191)"] }
+  "owns_outer_margin":false,"flags":["no self-owned margin, margin: 0 on `field` (`styles.css:928`); only .newpal-custom .field sets `margin-bottom` (`styles.css:1191`)"] }
 ```
 
 ---

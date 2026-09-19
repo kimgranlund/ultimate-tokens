@@ -10,7 +10,7 @@
 > **Source of record:** `src/ui/app.js` (the `HctApp` custom element: state, render dispatch, header,
 > footers, inspector shell, i.e. the frame) · `src/ui/sections/{color,typography,geometry}.js` (the per-section
 > pane bodies) · `src/ui/overlays/{drawer,settings,apply-gate}.js` (the overlays); both sets are mixed
-> onto the `HctApp` prototype (`mixinInto`, `app.js:2569`) ·
+> onto the `HctApp` prototype (`mixinInto`, `app.js:2570`) ·
 > `src/ui/app-helpers.mjs` (`h` + the shared primitives) · `src/ui/styles.css` (the grid) ·
 > `src/ui/model.mjs` (`projectView` — the read-model each render consumes).
 > **Scope:** the shell — the frame, its regions, the render pipeline, and the state that routes them.
