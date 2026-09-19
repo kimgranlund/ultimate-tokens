@@ -305,6 +305,12 @@ export const hasToken = (line, anchor) => {
   // `class: on ? "on" : ""`) rather than writing a literal `.on`. So a selector-shaped anchor
   // whose bare form is a stopword is accepted only with its dot/hash present, or as a quoted
   // string literal -- never as a bare unquoted word.
+  // KNOWN LIMIT: this makes a stopword selector PROSE-safe, not RECURRENCE-safe. A code token
+  // that recurs elsewhere in the cited file still validates a line that is not its subject:
+  // a comment reading "accented via .on" one line above a `.pane-toggle.on` rule lets a cite
+  // 217 lines off read OK. That is the generic repeated-anchor limit every short symbol has
+  // (about a 10% miss rate on synthetic drift), not the F1 prose class, and closing it needs a
+  // different mechanism (definition-site or highest-specificity anchor). Tracked as #693.
   if (isSelector && STOPWORDS.has(bare.toLowerCase())) {
     const b = esc(bare);
     return new RegExp(`\\.${b}\\b|["']${b}["']`).test(line);
