@@ -123,3 +123,10 @@ Options:
 - Our orchestrator seat (Recommended): runs pre-land-review, opens the #691 PR, watches CI, squashes, closes the plan; the driving session leaves the plan branch alone
 - Nudge the driving session
 Chosen: Our orchestrator seat (Recommended)
+
+## Q15 (2026-09-19)
+Question: The orchestrator seat has dropped again (session.sh lists only my seat; third time today), so it cannot take the pre-land. How do I proceed?
+Options:
+- I run it single-agent (Recommended): the conductor seat dispatches reviewer-l3 and verifier-l3 workers for the pre-land review, writes the record, runs adapter.py land with the gate, opens the #691 PR, watches CI, squashes, closes the plan
+- Restart the seats again
+Chosen: I run it single-agent (Recommended)
