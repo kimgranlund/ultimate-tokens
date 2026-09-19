@@ -75,3 +75,10 @@ Options:
 - Append pass 5, record the substitution (Recommended)
 - One live table, move passes 1 to 4 out
 Chosen: Append pass 5, record the substitution (Recommended)
+
+## Q9
+Question: U2's eight criteria passed the checkability review (8/8). In short: 1 Doc drift section present and last; 2 map, note and baseline name the same head; 3 every drift row quotes its doc line at HEAD, with a check script; 4 the script matches the plan text; 5 U1's note untouched, zero deletions; 6 builder's 18-convention evidence table; 7 verifier's pass 5 with 18 graded rows; 8 the drill's own C31 block passes with the recorded substitution. Approve U2 for dispatch after U1 verifies?
+Options:
+- Approve (Recommended)
+- Hold
+Chosen: Approve (Recommended)
