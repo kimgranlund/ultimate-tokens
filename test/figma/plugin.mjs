@@ -108,7 +108,7 @@ function mockFigma() {
     // #689: record every notify() call (message + opts) so a leg can assert the completion notice's
     // TEXT, not just that a variable/report changed: every prior test only needed the no-op.
     _notified: [],
-    notify(msg, opts) { this._notified.push(msg); },
+    notify(msg) { this._notified.push(msg); },
     closePlugin() {},
     // the document root carries the embedded config (setPluginData is a synchronous string store).
     root: { _pd: {}, setPluginData(k, v) { this._pd[k] = String(v); }, getPluginData(k) { return this._pd[k] || ""; } },
@@ -1045,7 +1045,15 @@ if (applyFontPrimitivesModes) {
     await FD2.figma.ui._h({ type: "apply", dtcg: bundleCutD, libraryMode: true }); // 2
     await FD2.figma.ui._h({ type: "apply", dtcg: bundleFullD, libraryMode: true }); // 3
     FD2.figma._notified.length = 0; // only the FOURTH apply's notice is under test
-    await FD2.figma.ui._h({ type: "apply", dtcg: bundleCutD, libraryMode: true }); // 4: collision
+    const warned = [];
+    const realWarn = console.warn;
+    console.warn = (...a) => { warned.push(a.join(" ")); };
+    try { await FD2.figma.ui._h({ type: "apply", dtcg: bundleCutD, libraryMode: true }); } // 4: collision
+    finally { console.warn = realWarn; }
+    // #689 review F1: the notice carries only a count, so the NAMES must reach the console.
+    const skipWarn = warned.find((w) => w.indexOf("stale color name(s), left live") >= 0);
+    if (!skipWarn) FAIL("staleskipnotice", `the 4th color apply skipped names but no console.warn named them; warns: ${JSON.stringify(warned)}`);
+    else if (!/taken: \S/.test(skipWarn)) FAIL("staleskipnotice", `the color skip warn lists no names: "${skipWarn}"`);
     const noticeD2 = FD2.figma._notified.find((m) => typeof m === "string" && m.indexOf("Applied") === 0);
     if (!noticeD2) FAIL("staleskipnotice", `no "Applied…" completion notice was posted for the 4th apply; got ${JSON.stringify(FD2.figma._notified)}`);
     else if (!/\d+ stale skipped \(rename target taken\)/.test(noticeD2)) FAIL("staleskipnotice", `a skipped stale name under libraryMode:true produced no "N stale skipped" notice: "${noticeD2}"`);

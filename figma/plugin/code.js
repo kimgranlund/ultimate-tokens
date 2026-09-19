@@ -209,6 +209,9 @@ figma.ui.onmessage = async (msg) => {
       // mode looks like the prune silently failed. It is the same disclosure applyFontPrimitivesModes'
       // own staleModes gets above.
       if (r && r.staleModes && r.staleModes.length) console.warn("[Ultimate Tokens] published-library mode: kept", r.staleModes.length, "stale Color Roles theme mode(s) instead of removing them:", r.staleModes.join(", "));
+      // #689: name the color names left LIVE because their "_deprecated/" slot was already taken, the
+      // same disclosure the float and Type Primitives paths give above. The notice carries only a count.
+      if (r && r.skipped && r.skipped.length) console.warn("[Ultimate Tokens] published-library mode: skipped", r.skipped.length, "stale color name(s), left live because their deprecated slot was already taken:", r.skipped.join(", "));
       const parts = [];
       if (r) parts.push(`${r.raw} primitives + ${r.prime} prime + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : "") + (r.preserved ? `, ${r.preserved} stale kept (published library)` : "") + (r.skipped && r.skipped.length ? `, ${r.skipped.length} stale skipped (rename target taken)` : ""));
       if (fr && fr.collections) parts.push(`${fr.variables} type/geometry variable${fr.variables === 1 ? "" : "s"} across ${fr.collections} collection${fr.collections === 1 ? "" : "s"}` + (floatStaleModes.length ? `, ${floatStaleModes.length} stale kept (published library)` : "") + (floatSkipped.length ? `, ${floatSkipped.length} stale skipped (rename target taken)` : ""));
