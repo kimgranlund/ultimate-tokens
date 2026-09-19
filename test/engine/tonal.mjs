@@ -1285,6 +1285,89 @@ for (const mode of ["perceptual", "peak"]) {
     if (lifted === 0) FAIL("chroma-envelope", "(C6 iii negative control, peak cap) the lift-scoped patched engine produced ZERO above-100% instances — this control no longer exercises the cap, pick a different probe");
   }
 
+  // (iv) Dip gate (#681 U3 review 2, F1): the peak cap's pre-fix bugs (an undershooting bisection exit,
+  // a fallback that locked in that undershoot via Math.min(chroma, target), and an Abney-drifted
+  // fallback/polish hue) produced 221 "dip" ramps across the generated corpus — an interior stop at
+  // least 3 CAM16 C below BOTH neighbours, a visible notch in an otherwise smooth ramp. F1's fix
+  // (24-step bisection tracking the best-seen candidate, a target-direct fallback, solveCam16Hue-
+  // corrected polish hue) reduced this to 6, at or under the reviewer's own cited cap-OFF baseline of 7.
+  //
+  // DIP_BASELINE — the 6 named, NATURAL peak-mode dip witnesses left after F1's fix. "Natural" means:
+  // every stop in the dip's own 3-stop window renders identically whether the peak cap fires at all
+  // (checked against a cap-disabled patched copy, scratchpad/r2fix/check-natural.mjs) — so these are a
+  // ramp-shape property of the underlying curve/skew/lift math, not a capping artifact, and this list is
+  // closed under a real regression: any NEW dip witness (a different palette, or a different stop triple
+  // on a listed one) reds as unlisted below. Perceptual has no cap mechanism and measured 0 dips, so it
+  // gets no baseline — any perceptual dip reds.
+  const DIP_BASELINE = new Set([
+    "Katsura Imperial Villa · 17th c · Kyoto/tertiary",
+    "Frankenstein · Mary Shelley · 1818 · the Arctic & the laboratory/secondary-muted",
+    "19° S · July · 17:00 · Okavango Delta, Botswana, dry-season flood/secondary",
+    "36° N · February · 16:30 · The high-desert road between Taos and Chama/secondary-muted",
+    "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog/secondary-muted",
+    "41° N · July · 20:30 · The Great Salt Lake at sunset, near Antelope Island causeway/tertiary",
+  ]);
+  const findDips = (doc, toneMode) => {
+    const out = [];
+    for (const pal of doc.palettes) {
+      const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode };
+      const chroma = rampChromaOf(pal, doc);
+      const ramp = T.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, T.EXPORT_STOPS);
+      for (let i = 1; i < ramp.length - 1; i++) {
+        const a = ramp[i - 1].chroma, b = ramp[i].chroma, c = ramp[i + 1].chroma;
+        if (b <= a - 3 && b <= c - 3) out.push(`${doc.__presetName}/${pal.name}`);
+      }
+    }
+    return out;
+  };
+  for (const toneMode of ["peak", "perceptual"]) {
+    const seenBaseline = new Set();
+    const unlisted = [];
+    for (const doc of docs) {
+      if ((doc.dampAmp ?? 0) !== 0) continue; // generated palettes only, matching (iii)'s own scope
+      for (const name of findDips(doc, toneMode)) {
+        if (toneMode === "peak" && DIP_BASELINE.has(name)) seenBaseline.add(name);
+        else unlisted.push(name);
+      }
+    }
+    if (unlisted.length) FAIL("chroma-envelope", `(iv dip gate) ${toneMode}: ${unlisted.length} dip instance(s) beyond the cited baseline, e.g. ${unlisted[0]}`);
+    if (toneMode === "peak" && seenBaseline.size !== DIP_BASELINE.size) {
+      const missing = [...DIP_BASELINE].filter((n) => !seenBaseline.has(n));
+      FAIL("chroma-envelope", `(iv dip gate) peak: ${missing.length} of the ${DIP_BASELINE.size} cited baseline dips were not observed this run (${missing.join(", ")}) — either fixed (remove from the list, tighten toward 0) or the corpus changed under it (re-diagnose before loosening further)`);
+    }
+  }
+
+  // Negative control: a patched copy that reintroduces F1's exact pre-fix bugs (a 1-step bisection —
+  // reproducing the old single overshooting multiplicative step's effect of exiting far from target —
+  // and the old Math.min(chroma, target) fallback that locked in that undershoot) must produce FAR more
+  // dips than DIP_BASELINE — proves this gate is live, not just re-counting the same 6 forever.
+  {
+    const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
+    const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
+    const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
+    const patched = realSrc
+      .replace('from "./hct.js"', `from "${hctUrl}"`)
+      .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
+      .replace("for (let i = 0; i < 24; i++) {", "for (let i = 0; i < 1; i++) {")
+      .replace("const capped = hctToRgb(polishHue, target, targetTone);", "const capped = hctToRgb(polishHue, Math.min(chroma, target), targetTone);");
+    if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control) a patch target string was not found — the bisection/fallback text moved, update this control");
+    const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
+    let buggyDips = 0;
+    for (const doc of docs) {
+      if ((doc.dampAmp ?? 0) !== 0) continue;
+      for (const pal of doc.palettes) {
+        const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "peak" };
+        const chroma = rampChromaOf(pal, doc);
+        const ramp = BuggyT.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, T.EXPORT_STOPS);
+        for (let i = 1; i < ramp.length - 1; i++) {
+          const a = ramp[i - 1].chroma, b = ramp[i].chroma, c = ramp[i + 1].chroma;
+          if (b <= a - 3 && b <= c - 3) buggyDips++;
+        }
+      }
+    }
+    if (buggyDips <= DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control) the pre-fix-bug patched engine produced only ${buggyDips} dip(s), not clearly more than the ${DIP_BASELINE.size}-witness baseline — this control no longer exercises the F1 regression, pick a different probe`);
+  }
+
   // (iii-b) perceptual's bounded CUSP-RUN exemption (#681 U3 pass 6, owner ruling (f), conductor
   // lane-A-routing-6.md, 2026-09-19): NO ramp change for perceptual — #55's cusp-pull ships exactly as
   // today (pass 5's measurement showed a one-STOP exemption spikes for 76% of the corpus, because a
