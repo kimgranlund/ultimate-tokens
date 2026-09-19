@@ -12,7 +12,7 @@ The reviewer withdrew the 92 figure: it came from multiplying the 25-stop peak c
 sets instead of summing the true per-stop-set counts (43 on 19-stop + 46 on 25-stop = 89). Re-measured
 against this unit's shipped head with the actual gate code (GATECOUNTER): `perceptual=22 peak=89
 even=0`, matching every figure below. The gate comments and handoff were left correctly stating 22/89
-throughout (no change needed there); the follow-up fix was a QUALIFIER, not a number change — see
+throughout (no change needed there); the follow-up fix was a QUALIFIER, not a number change, see
 `test/engine/tonal.mjs`'s `chroma-envelope` header comment and `.sdlc/handoffs/pif-u3.md`'s C6-i row,
 both now spelling out that "11 perceptual / 46 peak" is a 25-stop-ramp AFFECTED-PALETTE count while the
 gate's own `upticks` counters sum both stop sets to 22/89.

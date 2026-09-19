@@ -1,13 +1,13 @@
 ---
 plan: preset-intent-fidelity
-unit: U3 (chroma envelope) — pass 7 retune record
+unit: U3 (chroma envelope), pass 7 retune record
 head: 6a4821e
 ---
 
 # U3 pass 7 retune: damp/dampCurve mapping, corpus movement, C8 before/after
 
 This is the record `.sdlc/handoffs/pif-u3-retune.md` the pass-7 brief requires. It covers step 1 (shipped,
-`6a4821e`) only — step 2 was tried once and reverted; see `.sdlc/questions/pif-u3.md`'s "Q7 pass-7
+`6a4821e`) only, step 2 was tried once and reverted; see `.sdlc/questions/pif-u3.md`'s "Q7 pass-7
 addendum" for that construction, its uptick witnesses, and the two p90 figures it could not close
 without one. U4's blast report reads this doc for the retune's own contribution, separate from U1-U2's
 anchor/envelope movement already covered in `.sdlc/handoffs/pif-u3.md`.
@@ -30,13 +30,13 @@ EVEN_DAMP_FACTOR = 0.25 (exported, ratified against the corpus + full gate suite
 ```
 
 At the curated corpus's own default (`damp: 70, dampCurve: 1.5`), even mode now renders as if
-`damp: 92.5, dampCurve: 0.375` — but only for the even path; the two sliders still visibly move the even
+`damp: 92.5, dampCurve: 0.375`, but only for the even path; the two sliders still visibly move the even
 ramp (a user who raises `damp` or lowers `dampCurve` sees the effect, just compressed).
 
 Why not `dampCurve` alone (the brief's own first framing): `uG = |sd|^dampCurve` rises toward 1 as
 `dampCurve` falls toward 0 at ANY off-anchor stop, so the envelope's floor there is `1-damp/100`,
 set by `damp` alone. A synthetic sweep down to `dampCurve x0.001` at the corpus's own `damp` left
-`even|100`'s p90 at exactly 39.0% and `even|900`'s median at exactly 34.5-34.7% throughout — proof this
+`even|100`'s p90 at exactly 39.0% and `even|900`'s median at exactly 34.5-34.7% throughout, proof this
 population's ceiling does not respond to `dampCurve` at all when `damp` is held fixed
 (`u3fix/retune-even-only.mjs`, kept in the session scratchpad, not committed).
 
@@ -61,10 +61,10 @@ Cells shown as `median / p90`.
 
 Targets: stop 100/900 median <=25, p90 <=35; stop 300/700 median <=75, p90 <=90. perceptual and peak are
 IDENTICAL at 4362180 and 6a4821e (step 1 never touches those paths; the 4362180->bf2aaf6 differences in
-those two modes are pass 4-6's already-documented, already-ruled work — the anchor cap and the cusp-run
-gate — not this pass's). Only even mode moves between 4362180 and 6a4821e, and it now clears all four
+those two modes are pass 4-6's already-documented, already-ruled work, the anchor cap and the cusp-run
+gate, not this pass's). Only even mode moves between 4362180 and 6a4821e, and it now clears all four
 cells (bold above) for the first time since U3 began. The two remaining misses this pass does not close,
-`perceptual|300` (p90 93.7) and `peak|700` (p90 96.1), are unchanged from 4362180 — see the Q7 pass-7
+`perceptual|300` (p90 93.7) and `peak|700` (p90 96.1), are unchanged from 4362180, see the Q7 pass-7
 addendum for the one step-2 attempt and why it was reverted.
 
 ## Default-kit emitted movement: 16 palettes x 3 modes, bf2aaf6 -> new head
@@ -109,17 +109,17 @@ within 8-bit rounding noise).
 | even | Data 8 | 25.87 | 12.17 |
 
 perceptual: 4 of 16 moved (all pre-existing, pass 4-6 work). peak: 12 of 16 moved (all pre-existing, the
-pass-5 anchor cap). even: 16 of 16 moved — expected, since step 1 is a formula-wide reshape of the even
+pass-5 anchor cap). even: 16 of 16 moved, expected, since step 1 is a formula-wide reshape of the even
 path's damping, not a localized fix. The large even deltas (up to 64.38, Data 1) are the intended,
 measured consequence of closing the median/p90 targets: those families were the ones sitting furthest
 above the ceiling.
 
 ## C8 (hpg-role-contrast): before/after, all 96 cells
 
-`node test/engine/semantic.mjs` passes at the new head (`role-contrast` green) — no PINNED floor in
+`node test/engine/semantic.mjs` passes at the new head (`role-contrast` green), no PINNED floor in
 `test/engine/semantic.mjs`'s `FLOORS` table dropped, and AA 4.5:1 holds in all three modes, both schemes,
 every one of the 16 families. 44 of the 96 cells move by more than 0.0005 versus `bf2aaf6` (up from the
-41 team-lead named "pending U4" at plan revision 20 — the 3 new movers are `even` cells step 1 itself
+41 team-lead named "pending U4" at plan revision 20, the 3 new movers are `even` cells step 1 itself
 touches; the other 41 are pre-existing, already-named). Per the U4 integration note in the plan (C8), no
 re-pin happens this pass; the table below is the record U4 re-measures against.
 
@@ -157,7 +157,7 @@ Only cells that moved by more than 0.0005 are listed (27 of 96 rows; the rest ar
 | peak | Data 6 | 11.6401 | 11.6392 | -0.0009 | 15.0969 | 15.0969 | +0.0000 |
 
 `perceptual Neutral dark` (-0.4514) and `peak Neutral dark` (+0.1899) are pre-existing moves from earlier
-passes (R2, the pass-5 peak cap), not step 1's — step 1 touches only `even`, and the `even` deltas above
+passes (R2, the pass-5 peak cap), not step 1's, step 1 touches only `even`, and the `even` deltas above
 (max +0.0500, `Data 7` light) are all small fractional moves; none cross a pinned floor digit.
 
 ## Thin cells [4.50, 4.55) per mode, at the new head
@@ -173,7 +173,7 @@ passes (R2, the pass-5 peak cap), not step 1's — step 1 touches only `even`, a
 All five clear the ruled AA floor (4.5:1); none is below it. `peak` has no cell in this band. `perceptual
 Neutral dark` is pre-existing (the R2 re-pin, `.sdlc/questions/pif-u3.md` Q6); the four `even` entries are
 new this pass (step 1's retune moved them closer to, not below, the floor) and are named here per the
-brief's "no floor drops without old/new values" gate — none of the four is a PINNED-floor drop (the
+brief's "no floor drops without old/new values" gate, none of the four is a PINNED-floor drop (the
 `FLOORS` table's own even-mode entries for Primary/Tertiary/Info are 4.5 already, at their AA minimum,
 and `Neutral` at 4.5), so this is a report line, not a gate change.
 
