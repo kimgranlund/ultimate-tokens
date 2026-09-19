@@ -1386,12 +1386,19 @@ for (const mode of ["perceptual", "peak"]) {
     "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat|primary|350",
     "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat|tertiary-muted|350",
   ]);
-  const findDips = (doc, toneMode) => {
+  // findDips takes BOTH the stop set and the engine as parameters (#681 U3 review 4, R3/R4): R3 because
+  // the 19-stop display ramp and the 25-stop export ramp share every window from 200 to 800 but differ
+  // at the ends (19-stop 100/150/200 vs 25-stop 125/150/175, same at 850/900), so a dip only visible in
+  // one set's end window would pass a 25-stop-only gate; R4 because a negative control that reimplements
+  // this loop inline (rather than calling the real gate's own function against a patched engine) is the
+  // same unguarded shape N4 already fixed for `above100Violators`; passing `engine` in as a parameter
+  // (default the real `T`) lets both negative controls below reuse this exact function instead.
+  const findDips = (doc, toneMode, stops, engine = T) => {
     const out = [];
     for (const pal of doc.palettes) {
       const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode };
       const chroma = rampChromaOf(pal, doc);
-      const ramp = T.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, T.EXPORT_STOPS);
+      const ramp = engine.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, stops);
       for (let i = 1; i < ramp.length - 1; i++) {
         const a = ramp[i - 1].chroma, b = ramp[i].chroma, c = ramp[i + 1].chroma;
         if (b <= a - 3 && b <= c - 3) out.push(`${doc.__presetName}|${pal.name}|${ramp[i].stop}`);
@@ -1400,22 +1407,37 @@ for (const mode of ["perceptual", "peak"]) {
     return out;
   };
   const BASELINE_BY_MODE = { peak: DIP_BASELINE, even: EVEN_DIP_BASELINE };
+  const seenModes = new Set();
   for (const toneMode of ["peak", "even", "perceptual"]) {
+    seenModes.add(toneMode);
     const baseline = BASELINE_BY_MODE[toneMode];
     const seenBaseline = new Set();
-    const unlisted = [];
+    const unlistedSet = new Set();
     for (const doc of docs) {
       if ((doc.dampAmp ?? 0) !== 0) continue; // generated palettes only, matching (iii)'s own scope
-      for (const name of findDips(doc, toneMode)) {
+      const found = new Set();
+      for (const stops of [T.STOPS, T.EXPORT_STOPS]) {
+        for (const name of findDips(doc, toneMode, stops)) found.add(name);
+      }
+      for (const name of found) {
         if (baseline && baseline.has(name)) seenBaseline.add(name);
-        else unlisted.push(name);
+        else unlistedSet.add(name);
       }
     }
+    const unlisted = [...unlistedSet];
     if (unlisted.length) FAIL("chroma-envelope", `(iv dip gate) ${toneMode}: ${unlisted.length} dip instance(s) beyond the cited baseline, e.g. ${unlisted[0]}`);
     if (baseline && seenBaseline.size !== baseline.size) {
       const missing = [...baseline].filter((n) => !seenBaseline.has(n));
       FAIL("chroma-envelope", `(iv dip gate) ${toneMode}: ${missing.length} of the ${baseline.size} cited baseline dips were not observed this run (${missing.join(", ")}) — either fixed (remove from the list, tighten toward 0) or the corpus changed under it (re-diagnose before loosening further)`);
     }
+  }
+  // #681 U3 review 4, R4 (the "assert" alternative, in addition to the wiring fix on both negative
+  // controls below): ties each named baseline to the loop that is supposed to check it. Without this, a
+  // toneMode simply dropped from the array two lines up above would silently skip its own baseline's
+  // seenBaseline check (that check never runs for a mode the loop never visits), not fail it, exactly the
+  // probe the reviewer used to demonstrate the gap.
+  for (const mode of Object.keys(BASELINE_BY_MODE)) {
+    if (!seenModes.has(mode)) FAIL("chroma-envelope", `(iv dip gate) ${mode} has a named baseline (${BASELINE_BY_MODE[mode].size} entries) but was not in the toneMode loop above, so it went silently unchecked`);
   }
 
   // Negative control (peak): a patched copy that reintroduces F1's exact pre-fix bugs (a 1-step
@@ -1433,19 +1455,16 @@ for (const mode of ["perceptual", "peak"]) {
       .replace("const capped = hctToRgb(polishHue, target, targetTone);", "const capped = hctToRgb(polishHue, Math.min(chroma, target), targetTone);");
     if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found — the bisection/fallback text moved, update this control");
     const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
-    let buggyDips = 0;
+    // #681 U3 review 4, R3/R4: calls the real findDips against the patched engine, over both stop sets,
+    // instead of reimplementing the loop inline.
+    const buggyDipSet = new Set();
     for (const doc of docs) {
       if ((doc.dampAmp ?? 0) !== 0) continue;
-      for (const pal of doc.palettes) {
-        const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "peak" };
-        const chroma = rampChromaOf(pal, doc);
-        const ramp = BuggyT.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, T.EXPORT_STOPS);
-        for (let i = 1; i < ramp.length - 1; i++) {
-          const a = ramp[i - 1].chroma, b = ramp[i].chroma, c = ramp[i + 1].chroma;
-          if (b <= a - 3 && b <= c - 3) buggyDips++;
-        }
+      for (const stops of [T.STOPS, T.EXPORT_STOPS]) {
+        for (const name of findDips(doc, "peak", stops, BuggyT)) buggyDipSet.add(name);
       }
     }
+    const buggyDips = buggyDipSet.size;
     if (buggyDips <= DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control, peak) the pre-fix-bug patched engine produced only ${buggyDips} dip(s), not clearly more than the ${DIP_BASELINE.size}-witness baseline — this control no longer exercises the F1 regression, pick a different probe`);
   }
 
@@ -1466,19 +1485,17 @@ for (const mode of ["perceptual", "peak"]) {
       );
     if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control, even) a patch target string was not found — evenChroma's floor text moved, update this control");
     const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
-    let buggyEvenDips = 0;
+    // #681 U3 review 4, R4: calls the real findDips against the patched engine (the same shape N4 already
+    // fixed for above100Violators), instead of reimplementing the loop inline; also over both stop sets
+    // per R3.
+    const buggyEvenDipSet = new Set();
     for (const doc of docs) {
       if ((doc.dampAmp ?? 0) !== 0) continue;
-      for (const pal of doc.palettes) {
-        const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "even" };
-        const chroma = rampChromaOf(pal, doc);
-        const ramp = BuggyT.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, T.EXPORT_STOPS);
-        for (let i = 1; i < ramp.length - 1; i++) {
-          const a = ramp[i - 1].chroma, b = ramp[i].chroma, c = ramp[i + 1].chroma;
-          if (b <= a - 3 && b <= c - 3) buggyEvenDips++;
-        }
+      for (const stops of [T.STOPS, T.EXPORT_STOPS]) {
+        for (const name of findDips(doc, "even", stops, BuggyT)) buggyEvenDipSet.add(name);
       }
     }
+    const buggyEvenDips = buggyEvenDipSet.size;
     if (buggyEvenDips <= EVEN_DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control, even) the amplified-floor patched engine produced only ${buggyEvenDips} dip(s), not clearly more than the ${EVEN_DIP_BASELINE.size}-witness baseline — this control no longer exercises the mechanism, pick a different probe`);
   }
 

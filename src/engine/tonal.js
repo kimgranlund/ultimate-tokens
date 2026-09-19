@@ -351,14 +351,19 @@ export function toneAt(stop, skew, lift, { curve, lmin, lmax, tension }) {
 // palette: { hue, chroma, skew, lift }; controls: DEFAULT_CONTROLS-shaped.
 // Returns [{ stop, tone, chroma, maxc, rgb, hex, inGamut }] for each stop.
 export function paletteStops(palette, controls, stops) {
-  // Note (#681 U3 review 3, minor item: the unknown-toneMode note): any string here OTHER than exactly
-  // "perceptual" or "peak", including an unrecognized value from a typo or a stale caller, falls through
-  // to the branch below and is rendered on the "even" family path, not flagged as an error. This is the
-  // same silent-default shape that caused N6 (report-preset-fidelity.mjs's --envelope reading (b) and
-  // the env(500) sweep omitted toneMode, so chromaEnvelope's OWN internal `controls.toneMode === "even"`
-  // check read undefined and silently took the non-even branch); here the direction of the silent
-  // default is the opposite (unset/unknown -> even-family, not -> perceptual), so a caller cannot assume
-  // "missing toneMode" degrades the same way at every call site in this file.
+  // Note (#681 U3 review 3, minor item: the unknown-toneMode note; corrected U3 review 4 R6, the first
+  // version of this comment had the unset case backwards). UNSET `controls.toneMode` (undefined, "", 0,
+  // etc.) goes to "perceptual" via the `|| "perceptual"` default below, not to the even path. An UNKNOWN
+  // non-empty string that is not exactly "perceptual" or "peak" (a typo such as "evn", or a stale caller)
+  // DOES fall through to the branch below and render on the "even" family path structurally, but it
+  // renders DIFFERENTLY from a real "even": `chromaEnvelope` (this file) checks `controls.toneMode ===
+  // "even"` literally to decide whether to apply `EVEN_DAMP_FACTOR` (pass 7 step 1's even-only mapping),
+  // so an unrecognized string takes the even STRUCTURE without that mapping, a third rendering that is
+  // neither perceptual/peak nor true even. This is the same silent-default shape N6 fixed one level up
+  // (report-preset-fidelity.mjs's --envelope reading (b) and the env(500) sweep omitted toneMode
+  // entirely, so `chromaEnvelope`'s own `=== "even"` check read undefined and silently took the
+  // non-even branch): a caller cannot assume "missing or wrong toneMode" degrades the same way at every
+  // call site in this file.
   const mode = controls.toneMode || "perceptual";
   if (mode === "perceptual" || mode === "peak") return okhslStops(palette, controls, stops, mode);
   const shift = palette.hueShift ?? 0; // edge hue rotation: ±deg at the ends
@@ -667,12 +672,14 @@ function okhslStops(palette, controls, stops, mode) {
       const polishHue = controls.hueSpace === "oklch" ? solveCam16Hue(preCapOklchHue, Math.max(chroma, 1), targetTone) : hueCam16;
       if (chroma > anchorChroma + 1e-6 || Math.abs(lstarFromRgb(rgb) - targetTone) > 0.01) {
         // Fallback (#681 U3 review 3, N3: corrected from an earlier "rare" claim): this fires on 93.5%
-        // of capped stops measured, not rarely. The bisection's own 24 steps DO converge on chroma (that
-        // is what the dip gate below verifies), but 0.01 L* is tighter than an 8-bit RGB round-trip can
-        // usually reach at a fixed hue/chroma, so the tone-tolerance half of this condition is the one
-        // that almost always trips, sending nearly every capped stop through `hctToRgb` here rather than
-        // keeping the bisection's own continuous render. Caps via the validated HCT engine directly AT
-        // the target chroma (never the solve's own possibly-off value: the old `Math.min(chroma, target)`
+        // of capped stops measured, not rarely. The bisection's own 24 steps DO converge on chroma
+        // reliably (review 4 R5: this is a property measured directly on the bisection's own output, NOT
+        // what the ramp-shape dip gate below checks, which is unrelated), but 0.01 L* is tighter than an
+        // 8-bit RGB round-trip can usually reach at a fixed hue/chroma, so the tone-tolerance half of
+        // this condition is the one that almost always trips, sending nearly every capped stop through
+        // `hctToRgb` here rather than keeping the bisection's own continuous render. Caps via the
+        // validated HCT engine directly AT the target chroma (never the solve's own possibly-off value:
+        // the old `Math.min(chroma, target)`
         // here is what let an overshot loop result lock in below target instead of correcting to it, F1)
         // and the held tone, at polishHue.
         const capped = hctToRgb(polishHue, target, targetTone);

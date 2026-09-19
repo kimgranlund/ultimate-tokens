@@ -16,7 +16,7 @@ anchor/envelope movement already covered in `.sdlc/handoffs/pif-u3.md`.
 ## damp/dampCurve: before/after, and the per-mode mapping
 
 Nothing changed for `perceptual`/`peak`: both still read `controls.damp`/`controls.dampCurve` directly,
-byte-identical to before this pass (confirmed by a full corpus + default-kit hex-diff, 333,344 cells, 0
+byte-identical to before this pass (confirmed by a full corpus + default-kit hex-diff, 334,048 cells, 0
 changed, both `STOPS` and `EXPORT_STOPS`). `DEFAULT_CONTROLS.damp` (80), `DEFAULT_CONTROLS.dampCurve`
 (1.5), `VIVID_MIDS`'s curated-corpus defaults (`damp: 70, dampCurve: 1.5`), and the UI's `DOMAINS.damp`/
 `DOMAINS.dampCurve` are all unchanged.
@@ -74,6 +74,22 @@ cells (bold above) for the first time since U3 began. The two remaining misses t
 Re-measured fresh at the new head for U3 review 3 (N2): `peak|700`'s p90 moved from 96.1 to 96.8 after
 F1's peak-cap solver fix (a rendering-precision fix at capped stops, not a retune), the only cell in
 either table that changed since 6a4821e. Every other perceptual/peak/even cell above is unchanged.
+
+## Reading (b), the `chromaEnvelope` multiplier itself, at head (U3 review 4 R7)
+
+Added per U3 review 4 (R7): step 1's `EVEN_DAMP_FACTOR` mapping is internal to `chromaEnvelope`'s
+`toneMode === "even"` branch, so it moves reading (b) too, not only reading (a) above, but no record
+carried the new numbers and Q `:205`'s table still read (accurately, AT THE TIME) "perceptual/peak/even
+identical". At head (`node scripts/report-preset-fidelity.mjs --envelope`, N6's `toneMode` fix applied):
+
+| mode | stop 100 median/p90 | stop 300 median/p90 | stop 700 median/p90 | stop 900 median/p90 | above 100% |
+|---|---|---|---|---|---|
+| perceptual/peak (still identical to each other and to Q's pass-3 table) | 42.6% / 72.2% FAIL | 79.6% / 89.1% FAIL/OK | 78.9% / 84.4% FAIL/OK | 40.1% / 57.7% FAIL | 0 OK (16 Adia carve-out) |
+| even (own numbers since pass 7 step 1; ALL 8 CELLS PASS) | 12.0% / 26.6% OK | 32.1% / 41.9% OK | 31.4% / 36.5% OK | 11.0% / 18.2% OK | 0 OK (16 Adia carve-out) |
+
+Reading (b) overall verdict is unchanged (still FAIL, since perceptual/peak still miss every median
+target), but describing it as one line ("mostly-passing", commit `60b8c6de`'s message) undersells it:
+`even`'s reading (b) is not "mostly" passing, it passes outright, all 8 cells.
 
 ## Default-kit emitted movement: 16 palettes x 3 modes, bf2aaf6 -> new head
 

@@ -204,6 +204,13 @@ term, `(dampAmp/100)*4*uG*(1-uG)`, which needs a non-zero `dampAmp`):**
 |---|---|---|---|---|---|
 | perceptual/peak/even (identical, the multiplier doesn't depend on tone mode) | **42.6% / 72.2%** ❌ | **79.6%** / 89.1% ❌/✅ | **78.9%** / 84.4% ❌/✅ | **40.1% / 57.7%** ❌ | **16** ❌ |
 
+(Dated note, U3 review 4 R7: "identical... doesn't depend on tone mode" was true at pass 3, when this
+table was written, but has been false since pass 7 step 1 shipped the even-only `EVEN_DAMP_FACTOR`
+mapping. At head, `even`'s reading (b) is its own separate, smaller set of numbers and ALL 8 of its
+cells pass: stop 100 12.0%/26.6%, stop 300 32.1%/41.9%, stop 700 31.4%/36.5%, stop 900 11.0%/18.2%, 0
+above 100%. `perceptual`/`peak` remain identical to each other and to the row above. See
+`.sdlc/handoffs/pif-u3-retune.md`'s reading (b) table for the full record.)
+
 Both readings FAIL against the plan's numeric targets, not only on "above 100%", reading (a) misses
 two p90 targets outright (perceptual/peak stop 300/700) plus all of even mode; reading (b) misses the
 median target at every single stop, in every mode, because the shoulder-and-damp shape is inherently
@@ -634,8 +641,10 @@ shoulder before building anything.
 
 ### Q7 pass-6 addendum: step 2 (median/p90 retune) blocked, two configurations both produced a C7 uptick
 
-Step 1 (peak's cusp-run gate, ruling (f)) shipped clean at `f45f9b2` (no engine change, `src/engine/
-tonal.js` byte-identical to `d5c09c3`). Step 2 (retune `damp`/`dampCurve` until every median/p90 cell of
+Step 1 (perceptual's cusp-run gate, ruling (f); corrected from "peak's," wrongly stated here and flagged
+three times, review 2 F4, review 3 N2, review 4 R2) shipped clean at `f45f9b2` (no engine change,
+`src/engine/tonal.js` byte-identical to `d5c09c3`). Step 2 (retune `damp`/`dampCurve` until every
+median/p90 cell of
 `--envelope` passes in all three modes) is NOT shipped: two different candidate retunes both produced a
 genuine C6(i) CIELAB-L* uptick, a named stop condition, and per the brief ("if one fires, revert that
 step byte-for-byte, keep step 1, record it in Q7 and report") this is reverted rather than patched a
@@ -734,7 +743,7 @@ median at exactly 34.5-34.7% (u3fix/retune-even-only.mjs). `damp` needed to move
 sliders live in every mode (no dead controls, no new control), the even path now compresses `damp`'s
 headroom and scales `dampCurve` by the SAME derived factor (`EVEN_DAMP_FACTOR = 0.25`, exported), inside
 `chromaEnvelope` itself, gated on `controls.toneMode === "even"`, signature unchanged, perceptual/peak
-untouched (0 hex diffs over 333,344 rendered cells, both stop sets, full corpus + default kit). This
+untouched (0 hex diffs over 334,048 rendered cells, both stop sets, full corpus + default kit). This
 moved nearly every non-anchor stop of every even default ramp, so three fixture-style gates needed real
 updates, not workarounds: `damping-curve`'s independent formula now applies the same even mapping;
 `chroma-floor` gets a named, bounded exception (11 EXPORT_STOPS nearest the extremes, where the floor
@@ -821,11 +830,17 @@ solve's own accuracy for a marginal tone gain.
 
 **Dip count.** Reviewer's count pre-fix: 221 dip ramps (interior stop >=3 CAM16 C below both neighbours).
 Measured post-fix, full generated corpus (peak mode, `dampAmp` 0): 6, at or under the reviewer's own cited
-cap-off baseline of 7. All 6 confirmed natural: every stop in each dip's own 3-stop window renders
-identically with the cap patched off entirely (`scratchpad/r2fix/check-natural.mjs`, a `data:` URL import
-of the real engine with the cap condition replaced by `false`), a ramp-shape property of the underlying
-curve/skew/lift math, not a capping artifact. Perceptual has no cap mechanism and measured 0 dips
-(matching baseline). Both are now gated permanently (`test/engine/tonal.mjs`, "(iv) Dip gate"), with a
+cap-off baseline of 7. 4 of 6 confirmed natural, byte-identical whether the cap fires or not: every stop
+in each of those 4 dips' own 3-stop window renders identically with the cap patched off entirely
+(`scratchpad/r2fix/check-natural.mjs`, a `data:` URL import of the real engine with the cap condition
+replaced by `false`), a ramp-shape property of the underlying curve/skew/lift math, not a capping
+artifact. The other 2 (Katsura and Sapa) are NOT fully identical: their far neighbor (stop 650, outside
+the 3-stop dip window itself) IS affected by the cap, but capping only LOWERS that neighbor's chroma
+(natural is higher than capped), which makes those two dips MILDER under the cap, not a capping-created
+artifact (corrected from "all 6," review 4 R2; re-measured: Katsura tertiary @600 renders 36.07 / 29.04 /
+42.44 with the cap on, 54.49 at stop 650 with caps off; Sapa secondary-muted @600 renders 38.66 / 30.18 /
+45.35 with the cap on, 56.65 at stop 650 with caps off). Perceptual has no cap mechanism and measured 0
+dips (matching baseline). Both are now gated permanently (`test/engine/tonal.mjs`, "(iv) Dip gate"), with a
 named baseline list and a negative control that reintroduces the exact pre-fix bug pattern (a 1-step
 bisection plus the old `Math.min` fallback) and reproduces 174 dips, well past the baseline, proving the
 gate is live.
@@ -857,7 +872,8 @@ satisfies F1's stated primary requirement (0 new dips, at or below the reviewer'
 own. The reviewer's own reading of the underlying hue-blindness issue was 🟡 non-blocking ("acceptable...
 once reported"): this is that report, not a further fix attempt.
 
-**Honesty correction (U3 review 3, N3):** the HCT fallback (`tonal.js:661`) fires on 93.5% of capped
+**Honesty correction (U3 review 3, N3):** the HCT fallback (`tonal.js:667-679`, moved from `:661` when
+this comment block grew, review 4 R5) fires on 93.5% of capped
 stops, not rarely as an earlier comment claimed. The 24-step bisection DOES converge on chroma reliably
 (that half of the exit condition rarely trips); it is the 0.01 L* tone tolerance that almost always trips
 instead, because that bar is tighter than an 8-bit RGB round-trip can usually hold at a fixed hue/chroma,
@@ -868,11 +884,14 @@ Set against this, the dip count dropped from 221 to 6. The claim "better in ever
 previously summarized this tradeoff is withdrawn: it minimized the fallback-rate and tone-drift costs
 just named, which are real and should weigh in any owner decision, not just the dip-count improvement.
 
-**Effective margin below the anchor, stated once as one number:** `CAP_MARGIN` is coded as a flat 0.5 C
-below `anchorChroma`, but the corpus's actual median gap between a capped stop's rendered chroma and its
-anchor is 0.70 C, not 0.5 (p90 1.26, max 1.82, full table above). The coded margin is a target the solve
-aims for; the measured 0.70 C is what capped stops actually land at once 8-bit quantization and the
-fallback's own rounding are included.
+**Effective margin below the anchor, stated once as one number (corrected, U3 review 4 R5):** the DESIGNED
+bound is not `CAP_MARGIN`'s flat 0.5 C alone. `refineNearestRgb`'s own polish step may drop the chroma up
+to 1 C further below whatever the solve already reached (`Math.max(0, chroma - 1)`, `tonal.js:688`), so
+the designed bound is about 1.5 C below `anchorChroma`, not 0.5 C. The measured maximum, 1.82 C, sits
+above even that 1.5 C bound, because the fallback can land under target before the polish runs, so the
+two reductions stack rather than one bounding the other. The corpus's median gap, 0.70 C (p90 1.26, full
+table above), is supporting data describing where capped stops typically land, not the bound itself
+(previously stated as "the one number," which understated the true worst case).
 
 **What the owner rules on:** whether the dip fix ships as built, carrying the fallback-rate and
 tone-drift costs above as a disclosed tradeoff against the pre-fix state's 221 dips, or whether a

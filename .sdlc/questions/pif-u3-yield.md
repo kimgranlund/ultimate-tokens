@@ -85,6 +85,29 @@ inter-stop ordering constraint), not of the solver it calls. A future constructi
 ordering explicitly, or solves the whole ramp jointly rather than stop-by-stop, would need to replace
 this one rather than reuse it.
 
+## F1's peak-cap fallback rate and margin (U3 review 3 N3, corrected U3 review 4 R5)
+
+Context for why F1's own single-stop accuracy fix did not, by itself, close `peak|700`: the peak cap's
+HCT fallback (`src/engine/tonal.js:667-679`, moved from `:661` when this comment block grew) fires on
+93.5% of capped stops, not "rarely" as an earlier comment claimed (now corrected there). The bisection's
+own 24 steps do converge on CHROMA reliably; it is the 0.01 L* TONE tolerance that almost always trips,
+since that is tighter than an 8-bit RGB round-trip usually holds at a fixed hue/chroma, so nearly every
+capped stop goes through `hctToRgb` rather than keeping the bisection's own continuous render.
+
+The margin below the anchor is a DESIGNED BOUND, not the measured median: the code applies `CAP_MARGIN`
+(0.5 C) below `target`, and `refineNearestRgb`'s own polish may then drop the chroma up to 1 C further
+(`Math.max(0, chroma - 1)`, `tonal.js:688`), so the designed bound is about 1.5 C below the anchor, not
+0.5 C alone. The measured maximum, 1.82 C, is above even that 1.5 C bound, because the fallback can land
+under target before the polish step runs, stacking rather than double-counting. The measured median gap,
+0.70 C, is supporting data, not the bound itself (corrected from stating the median as "the one number,"
+review 4 R5).
+
+Tone drift: 34.5% of capped stops exceed 0.01 L* from target, maximum 0.1009 L*. Hue residual: maximum
+24.62 degrees. 0 stops have a chroma gap over 3 C. These figures hold under two independent measurement
+methods (the full generated corpus, 58,050 cap solves / 54,270 fallbacks; and the same corpus deduped to
+2,440 unique capped stops), both giving 93.5%. "Better in every other respect" no longer appears in the
+record; the fallback comment no longer calls this "rare".
+
 ## Recommendation
 
 **Revert; keep step 1 only.** `chroma-envelope` (C6 i)'s "0 upticks, full corpus, both stop sets,
