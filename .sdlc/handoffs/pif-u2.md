@@ -1,5 +1,9 @@
 # Handoff U2 · builder → reviewer
 
+**Current state: see "Review pass 2" near the end of this document for the latest head, per-R
+status, and re-measured counts. The header table and earlier sections below are each a snapshot at
+the pass named in their own heading, not the current state.**
+
 | Field | Value |
 |---|---|
 | Unit | U2 (l4) - the ramp passes through the anchor at stop 500 in all three modes, with the Reset action, plan `preset-intent-fidelity` (ticket #681) |
@@ -44,7 +48,7 @@
 ## Re-measured figures vs the plan's
 
 - **C3**: plan says 0 misses over "3,380 checks" per mode; true in-window population is **3,370** (10 named sources window-clamp instead) - see Q-U2-1.
-- **Role-contrast pinned floors** (`test/engine/semantic.mjs`): every entry across all three tone modes re-measured whole; perceptual and peak now measure IDENTICALLY for anchored families (the anchored ladder is mode-independent by construction - documented at `tonal.js`'s `okhslStopsAnchored`).
+- **Role-contrast pinned floors** (`test/engine/semantic.mjs`): every entry across all three tone modes re-measured whole. This was true only through repair pass 1: since F4 landed (Finding 2, and again in review pass 2's R3/R6), perceptual and peak are DELIBERATELY no longer identical for anchored families - the F4 gate this ticket requires is that they differ. See "Review pass 2" below for the current state.
 - **Panda EX-1/EX-2, shadcn-baseline**: re-captured from the live exporter, dated CARVE-OUT comments added matching each file's own existing convention (#647/#662's pattern).
 - **118-source gap/distinct allow-list**: a NEW finding not named anywhere in the plan text (Q-U2-3) - confined to low-to-moderate chroma (max 29%) sources near the window's own edges.
 
@@ -57,7 +61,7 @@
 
 ## Open questions
 
-See `.sdlc/questions/pif-u2.md` - Q-U2-1 (C3 vs C5 stop-500 exactness, resolved as: token exact, ramp clamps), Q-U2-2 (default kit ramps move under U2 alone, resolved as: no suppression mechanism exists, built accordingly), Q-U2-3 (gap/distinct allow-list finding, now 119, updated below), Q-U2-4 (spec-panda-park-ui-exports.md now stale, out of lane, routed the same way as U1's `690b0a1`).
+See `.sdlc/questions/pif-u2.md` - Q-U2-1 (C3 vs C5 stop-500 exactness, resolved as: token exact, ramp clamps), Q-U2-2 (default kit ramps move under U2 alone, resolved as: no suppression mechanism exists, built accordingly), Q-U2-3 (gap/distinct allow-list finding - the count moved several times since; see "Review pass 2" below for the current gap-19/distinct-25 numbers rather than trusting a number here), Q-U2-4 (spec-panda-park-ui-exports.md now stale, out of lane, routed the same way as U1's `690b0a1`), Q-U2-5 (RULED, see below), Q-U2-6 and Q-U2-7 (review pass 2, R1/R2 residuals, both pending owner ruling).
 
 ## Review response (`pif-u2-review-1.md`, FIX-FIRST, 2026-09-18)
 
@@ -148,9 +152,11 @@ discipline. Those figures were measured BEFORE Q-U2-5's ruling landed (chromaEnv
 the literal, unconditional anchor basis); the ruled blend (below) moved the floors again by a small
 amount - every entry still clears AA 4.5, all three modes, both schemes (verified at `b0c411d`).
 Curated thin-margin `[4.50,4.55)` cells: 89->93 perceptual, 81->66 peak (before = `7e3de30`, my own
-prior blend fix; after = the literal-basis measurement, itself now superseded by the ruled blend  - 
+prior blend fix; after = the literal-basis measurement, itself now superseded by the ruled blend - 
 not re-measured a third time, since `gate:corpus-contrast --full` at `b0c411d` already confirms 0
-cells under 4.5 regardless of exactly where in `[4.50,4.55)` they land).
+cells under 4.5 regardless of exactly where in `[4.50,4.55)` they land). Superseded again by review
+pass 2's R7 remeasurement - see "Review pass 2" below and `.sdlc/questions/pif-u2.md`'s Finding 5 for
+the current thin-cell counts (all three modes, three-way before/after against bf2aaf6 and this pass).
 
 ### Q-U2-5: ruled and implemented, then corrected per addendum 2
 
@@ -233,8 +239,80 @@ Either way, note for whoever does this work:
   `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`, `test/engine/{semantic,exports,categories}.mjs`,
   `test/engine/fixtures/shadcn-baseline.css`, `test/ui/fixtures/default-doc-ramps.json`, plus whatever
   citation lines the merge shifts.
-- **Review findings F4/F6-F9** (peak/perceptual collapse and Curve/Tension/Vibrancy/hueSpace/now Base
-  chroma becoming reduced-or-no-ops for anchored palettes; default-kit movement after Reset; lowered
-  contrast floors; hue failures at near-black/white anchors) are real, reviewed, and NOT fixed in this
-  pass - they are owner-ruling questions, tracked in `.sdlc/questions/pif-u2.md`, that the U2/U3 merge
-  decision should account for rather than resolve unilaterally.
+- **Review findings F6/F7/F9** (default-kit movement after Reset; lowered contrast floors; hue
+  failures at near-black/white anchors) are real, reviewed, and mostly fixed (F6/F7 fully; F9 mostly,
+  white still tinted at the clamp) - owner-ruling questions remain open on the lowered floors (F8/R7,
+  `.sdlc/questions/pif-u2.md` Finding 5) that the U2/U3 merge decision should account for rather than
+  resolve unilaterally. **F4 (peak/perceptual collapse, Curve/Tension/Vibrancy/hueSpace as no-ops) is
+  now FIXED** (review pass 2's R3/R6 below - this line was stale, R8's own finding) - update to F3's
+  merge-risk section: U3's own merge now also needs to account for U2's per-stop hueSpace solve (R3)
+  and the toneAt piecewise-affine tone construction (R6), neither of which existed when this F3 section
+  was first written.
+
+## Review pass 2 (`pif-u2-review-2.md`, FIX-FIRST, briefed as `u2-fixfirst-2.md`, 2026-09-18)
+
+Review 2 measured `53d067d` (this branch mid-repair-pass-2, since rebased) and found three ruled gates
+not yet built or not yet met: 0 non-monotone (46 measured, 45 allow-listed, 1 invisible to the gate),
+0 notch at 500 (1,811 cells), and hueSpace moving an anchored ramp (0 of 3,396). R4 (the blend keyed on
+`anchorWarp` instead of `liftStop`) was already fixed by the time review 2 closed (`0849f67`). Order
+worked: R6, R3 (hueSpace, then the F4 gate), R2 (notch gate + easing), R1 (pixel-L* monotone), R5, R7,
+R8-R10.
+
+### Per-R status
+
+| R | What | Status |
+|---|---|---|
+| R1 | `monotoneOk` reads pixel L*, not the ramp's own `tone` field; residual not frozen as final | **Done** - 66 named exceptions (13 perceptual, 53 peak, 0 even), labeled "PENDING OWNER RULING" in the gate's own output line. Measured twice (as-is and with U3's ruled `dampAmp` 0 patch: drops to 16). Recorded in Q-U2-6 |
+| R2 | Notch gate (review 1's 70%-of-both-neighbours definition) + its negative control; ease the chroma-basis blend weight | **Done** - gate added to `anchor.mjs`; `anchorChromaBasis`'s weight eased to a smoothstep of the liftStop position. 1,811 -> 459 rendered cells (default kit stays 0 throughout). Residual recorded in Q-U2-7, definition not loosened |
+| R3 | hueSpace "oklch" solves per stop, not once at the anchor's own degenerate point; F4 gate in-suite | **Done** - moves 16/16 default-kit ramps, 3,392-3,396/3,396 curated ramps (all three modes); the `tonal.js:416`-area false comment fixed. F4 gate added: peak != perceptual for 3,380/3,380 anchored sources; Curve/Tension/Vibrancy/hueSpace each move the default kit; stop 500 exact under every toggle; a non-tautological negative control |
+| R4 | Blend weight keyed on `liftStop`, not `anchorWarp` | **Already done** at `0849f67` (before this review), confirmed still true |
+| R5 | Run U3's `report-preset-fidelity.mjs --envelope` from a scratch copy, record "U2 basis, pre-integration" | **Done** - see below. FAILs both readings (C6's own criteria), matching the expectation that U3's own `VIVID_MIDS.dampAmp` 55->0 fix has not landed in U2's tree yet |
+| R6 | Replace `anchorLerp`'s per-side double-S with a piecewise-affine `toneAt` remap | **Done** - `anchorWarp`/`anchorLiftPos` (and their ANCHOR_LIFT_* constants) are now dead code and removed, R4's own ask once R6 dropped their last caller. Gap-19 allow-list moved 69 -> 91, distinct-25 10 -> 14 (expected - "that is the point") |
+| R7 | Re-measure FLOORS and thin cells after R1-R6; record by name against `bf2aaf6`, do not re-pin as final | **Done** - AA 4.5 holds in every cell; 41 of 96 (was 46) sit below their pre-#681 value. Table and thin-cell three-way comparison in `.sdlc/questions/pif-u2.md` Finding 5. The `test/engine/semantic.mjs` FLOORS table itself WAS re-pinned (to keep `npm test` green, matching every prior pass's own convention) - "not re-pinned as final" is honored by taking the by-name comparison to the owner as a question, not by leaving the gate red |
+| R8 | Fix stale/contradictory lines (handoff, questions, code comments, Reset tooltip, `(rst)` header); remove em dashes; record final head sha | **Done** - this document, `.sdlc/questions/pif-u2.md`, `color.js`'s Reset tooltip/comment, `headless-boot.mjs`'s `(rst)` header comment, `anchor.mjs`'s two stale gap-allow-list comments. Em dashes removed from both `.sdlc` files (132 total); two already-committed historical commit messages (`442d6c3`, `b1e4518`) keep theirs, noted here rather than rewritten |
+| R9 | Extend `(rst-corpus)` to all 8 categories + the default kit; compare full `projectView` ramps, not only fields | **Done** - 3,396 anchored palettes (was 1,460, 4 categories), both a field-level check and a full 25-stop rendered-ramp deep-equal against a reference captured from the pre-detach snapshot state |
+| R10 | Replace the tautological swap control (`anchor.mjs:630-644`); print `r` lines for every allow-list; name the gate's own final-line criteria | **Done** - the negative controls now call `allowListMatches`, the SAME comparator the real gates use, against real measured data with a name dropped or swapped (drop+swap, five allow-lists); `r` lines print for window-clamp, monotone, gap, distinct and notch; the final `PASS` line names C2/C3/C4/C5/C6/F4/gap-19/distinct-25/notch |
+
+### Re-measured counts, this head
+
+- **Monotone (pixel L*)**: 66 total - perceptual 13, peak 53, even 0 (19-stop and 25-stop combined, by
+  name in `anchor.mjs`'s `NONMONO_ALLOW`). PENDING OWNER RULING (Q-U2-6).
+- **Notch** (review 1's 70%-of-both-neighbours definition): 459 total - perceptual 117, peak 106,
+  even 236. Default kit 0 in every mode. PENDING OWNER RULING (Q-U2-7).
+- **Gap-19 allow-list**: 91 (was 69). **Distinct-25 allow-list**: 14 (was 10). Both moved by R6, as
+  expected ("expect the gap list and part of the 45 to move; that is the point").
+- **F4 controls table** (default kit, perceptual mode unless noted): peak-vs-perceptual differ for
+  3,380/3,380 anchored sources on the full corpus sweep; Curve/Tension/Vibrancy/hueSpace each move all
+  16 default-kit anchored ramps with stop 500 exact in every case; the full-corpus toggle sweep (a
+  standalone probe, not part of `npm test`) showed hueSpace moving 3,394/3,392/3,396 of 3,396 curated
+  ramps across perceptual/peak/even.
+- **Floors**: all 96 cells >= AA 4.5; 41 below their `bf2aaf6` value (was 46). Full table in the
+  questions file.
+- **Thin cells [4.50,4.55), curated corpus**: perceptual 75 (was 87 at `0849f67`, 77 at `bf2aaf6`);
+  peak 58 (was 71, 44); even 52 (was 65, 73). 0 under 4.5 in any measurement.
+
+### R5: U3's `report-preset-fidelity.mjs --envelope`, run from a scratch copy (U2 basis, pre-integration)
+
+Copied verbatim from U3's branch at `fa8f072` into a `git worktree add` scratch copy of this tree at
+this pass's head (never committed to `unit/pif-u2-ramp`), run with `--envelope`, then the scratch
+worktree was removed. The script measures the NON-anchored corpus only (it constructs `paletteStops`
+calls without an `anchor` field, by U3's own design) - so this is a compatibility/regression check that
+U2's own tonal.js changes have not broken the shared `chromaEnvelope`/`toneAt` functions U3's report
+depends on, not a measurement of U2's anchored branches specifically.
+
+```
+env(500) = 1 sweep: PASS
+READING (a) emitted CAM16 chroma, perceptual: stop 300 median 109.8% (<=75 FAIL), stop 900 median
+  26.2% (<=25 FAIL); above 100% of stop 500: 2022 of 2920 FAIL
+READING (a) peak: all four stops OK; above 100%: 1376 of 2920 FAIL
+READING (a) even: stop 100 p90 39.6% FAIL, stop 300 median 84.0% FAIL, stop 900 median 40.6% FAIL;
+  above 100%: 1905 of 2920 FAIL
+READING (b) envelope multiplier, all three modes: every stop FAIL, above 100%: 2912 of 2920 FAIL
+READING (a) FAIL, READING (b) FAIL - the envelope table does not clear the plan's ruled targets
+```
+
+Both readings FAIL under every preset's own current `dampAmp` (mostly 55). This is the expected,
+pre-integration state: U3's own ruled fix (`VIVID_MIDS.dampAmp` 55 -> 0) has not landed on this branch,
+and Q-U2-6's own dampAmp-0 patch measurement (66 -> 16 non-monotone) shows the SAME dampAmp dependency
+from a different angle. U4 should expect this table to look very different once U3's fix integrates -
+this is "U2 basis, pre-integration," not a U2 defect.
