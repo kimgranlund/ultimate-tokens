@@ -621,3 +621,69 @@ whose natural cusp SHOULDER spans 2-5 adjacent stops, not one" — capping all-b
 the anchor still produces the spike measured in the prior addendum regardless of which single number
 bounds the one stop left exempt. Reported to team-lead; still awaiting a ruling on the multi-stop
 shoulder before building anything.
+
+### Q7 pass-6 addendum: step 2 (median/p90 retune) blocked, two configurations both produced a C7 uptick
+
+Step 1 (peak's cusp-run gate, ruling (f)) shipped clean at `f45f9b2` (no engine change, `src/engine/
+tonal.js` byte-identical to `d5c09c3`). Step 2 (retune `damp`/`dampCurve` until every median/p90 cell of
+`--envelope` passes in all three modes) is NOT shipped: two different candidate retunes both produced a
+genuine C6(i) CIELAB-L* uptick — a named stop condition — and per the brief ("if one fires, revert that
+step byte-for-byte, keep step 1, record it in Q7 and report") this is reverted rather than patched a
+third time.
+
+**Diagnosis, why a retune is needed at all:** at the shipped `damp:70/dampCurve:1.5` (VIVID_MIDS,
+`scripts/gen-categories.mjs`, matching `DEFAULT_CONTROLS`/`DOMAINS`), 5 cells fail: perceptual|300 p90
+93.7% (target <=90), peak|700 p90 96.1% (<=90), even|100 p90 39.0% (<=35), even|300 p90 100.0% (<=90),
+even|900 median 40.2%/p90 48.0% (<=25/<=35). even|300's p90 is STUCK at exactly 100.0% across every
+`damp` value tried at `dampCurve` held at 1.5 (75 through 100): it is the even path's own anchor cap
+(pass 3) itself, a hard population of stops landing AT the cap regardless of how much the *old* curve
+shape damps elsewhere — only lowering `dampCurve` (concentrating damping closer to the anchor: `uG =
+|sd|^dampCurve` rises far faster for small `|sd|` at a lower exponent) pulls enough of that population
+under the cap to move p90 off 100%.
+
+**Attempt 1: `damp:92, dampCurve:0.5` (the domain floor), `dampBias:0`.** Closed the full `--envelope`
+table cleanly in a fast iteration harness (rendered-path only, matching the gate's own math) with real
+margin on every cell (worst: even|900 p90 32.4% vs the 35% target) and a comfortable perceptual cusp
+excess (0%, well under the 189.31% frozen bound). Applied to the real generator + engine defaults,
+regenerated, and ran `test/engine/tonal.mjs` directly (its own exit code, since the `hpg-tonal-cusp-pull`
+gate's name is missing from this file's print list, #695): FAIL, `(C6 i) perceptual: 2 rise(s), e.g.
+19-stop hue 267 chroma 100.00 skew -20 lift 0: stop 500->550 (26.4403 -> 26.6493)` — the default kit's
+own "Neutral" palette (hue 267, skew -20, lift 0), a genuine CIELAB-L* RISE between stops 500 and 550 in
+perceptual mode. This is the same class of defect #668/R1/R2 exists to prevent ("damping travelling to
+where the lightness is not"): `dampCurve` at its domain floor is a substantial departure from 1.5, which
+the removed comment on `DEFAULT_CONTROLS` noted was chosen to "reproduce the legacy edge damp exactly" —
+a safety property this abandons.
+
+**Attempt 2: `damp:98, dampCurve:0.65, dampBias:0`, a milder departure from 1.5.** Also cleared the fast
+harness with margin (worst: even|900 p90 31.7%). Applied and regenerated: `test/engine/tonal.mjs` again
+FAILs, this time `(C6 i) peak: 12 rise(s), e.g. 19-stop hue 110 chroma 100.00 skew 0 lift 22: stop
+450->500 (97.6484 -> 97.7490)` — a DIFFERENT witness, different mode (peak, not perceptual), different
+mechanism trigger (lift 22, not skew -20), but the same C7 class of defect. (Separately, at this
+configuration `--envelope` reading (b)'s stop-100 p90 also missed by 0.5pp — a real but far smaller
+problem than the uptick, not itself the reason this was reverted.)
+
+**Two different, otherwise-passing configurations from the SAME sanctioned parameter family (damp +
+lowered dampCurve) both reintroduced a real, different C7 uptick.** This reads as a structural property
+of that family, not a one-off tuning miss: `dampCurve` needs to drop well below 1.5 to close even|300's
+p90 ceiling, and that same drop is what makes the damping curve steep enough, close enough to the
+anchor, to fight skew's/lift's own gamma warping somewhere in the corpus's lift/skew range — the
+literal #668 mechanism. Per "if a second workaround is needed, stop," this was not attempted a third
+time. Reverted `scripts/gen-categories.mjs`, `src/engine/tonal.js`, `src/ui/persist.js` and the 8
+regenerated `src/ui/categories/*.js` files byte-for-byte to `f45f9b2` (step 1's head); kept a genuinely
+independent fix (the reading (b) Adia carve-out in `scripts/report-preset-fidelity.mjs`, a reporting-only
+change unrelated to the retune). `npm test` 47/47, tree clean, citations STALE 0, `gate:corpus-contrast`
+green at the reverted head.
+
+**Options for the owner:**
+- Rule the median/p90 misses (proven pre-existing at `bf2aaf6`, not lift-driven — Q7's pass-3 addendum)
+  as accepted, closing C6's numeric table with only step 1's ramp-shape/cusp-run clauses enforced, and
+  route the retune to a follow-up unit with its own #668-style diagnosis budget (a NEW damping mechanism,
+  not a parameter retune of the current one, may be needed to close even|300/900 without an upticks
+  trade-off).
+- Direct a narrower retune SCOPED to exclude whichever `dampCurve` range triggers the uptick — this
+  needs the uptick's own root cause understood (which corpus lift/skew combinations are unsafe at low
+  `dampCurve`, and why), not just avoided by trial; real diagnosis work, not attempted this pass.
+- Accept a PARTIAL retune that only touches even mode's `dampCurve` (the mode whose p90 ceiling is the
+  actual driver) while leaving perceptual/peak on the current shape, if that narrower change can be
+  shown not to trigger the same uptick class — not measured this pass, since VIVID_MIDS/DEFAULT_CONTROLS
+  apply one damp/dampCurve pair across all three modes together, not per-mode.
