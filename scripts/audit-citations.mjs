@@ -56,7 +56,11 @@
 //               #693 narrows "any" for RECURRING tokens: when the doc binds a citation to a
 //               credible SUBJECT by adjacency (`disabled (styles.css:N)`), another anchor
 //               validates the line only if it is rare in the cited file (<= RARE lines) or the
-//               line is its definition site. The subject itself always counts.
+//               line is its definition site. The subject itself always counts. A bound subject
+//               stays credible even when it is ABSENT from the cited file (renamed or removed),
+//               so the narrowing stays on; only a subject that IS present but common or
+//               comment-only still fails credibility (PR #705 critic review item 2 -- see
+//               `credible`).
 //   KNOWN LIMIT (#693, what remains): recurrence is still undetectable when (1) the recurring
 //               token IS the subject (`` `render` :N `` repointed onto one of 68 `render`
 //               lines, or `active = .on (styles.css:N)` onto any `.on` rule), (2) the citing
@@ -64,14 +68,19 @@
 //               (no subject binding is attempted there; a rarity rule on paragraph anchors
 //               flagged 18 correct `this.segmented(` call-site cites and was rejected), (3) the
 //               subject is a plain word that is common in the file or appears only in comments,
-//               (4) the wrong line sits inside the subject's own body, or (5) the wrong line
-//               is the recurring NON-subject anchor's own definition site (the definesAt
-//               escape: a decoy rule head written `.on.pane-toggle {` still reads OK on `.on`;
-//               the escape stays because removing it flags 4 correct live cites). Measured on
-//               +37-line drifts of every OK citation, the catch rate went from 80.6% to 82.7%;
-//               the named exploit (a component-inventory.md cite repointed 217 lines) now
-//               reads STALE. Shapes in this file's comments write line numbers as `:N`: this
-//               file is not under the audit, so a live number here could go stale ungated.
+//               (4) the wrong line sits inside the subject's own body, (5) the wrong line is the
+//               recurring NON-subject anchor's own definition site (the definesAt escape: a decoy
+//               rule head written `.on.pane-toggle {` still reads OK on `.on`; kept as sound
+//               behavior -- a definition site is real evidence of the anchor however often it
+//               recurs -- not because a live cite currently needs it: measured against the live
+//               audit now (PR #705 critic review item 1), removing it changes 0 citations'
+//               verdicts), or (6) that same regex has no comment-line exclusion, so a decoy rule
+//               head written INSIDE a comment (`` /* decoy: .on { */ `` at the wrong line) still
+//               reads OK (PR #705 critic review item 3). Measured on +37-line drifts of every OK
+//               citation, the catch rate went from 80.6% to 82.7%; the named exploit (a
+//               component-inventory.md cite repointed 217 lines) now reads STALE. Shapes in this
+//               file's comments write line numbers as `:N`: this file is not under the audit, so
+//               a live number here could go stale ungated.
 //   VERDICTS  STALE-PAST-EOF   cited line number exceeds the cited file's length
 //             STALE-WRONG-LINE no anchor occurs at the cited line or within WINDOW
 //             NEAR             an anchor occurs within WINDOW of the cited line
@@ -479,7 +488,14 @@ function freqIn(tl, a) {
 // A plain lowercase word bound as subject (`explicit (persist.js:N)`, `scope (model.mjs:N)`)
 // is often English, not a symbol; it is only CREDIBLE when it is rare in the cited file and
 // occurs on at least one code (non-comment) line there. `disabled` in styles.css passes (3 lines,
-// `button:disabled`); `explicit` (comments only) and `map` (12 lines) do not.
+// `button:disabled`); `explicit` (comments only) and `map` (12 lines) do not. A subject that is
+// ABSENT from the cited file (freqIn 0) is credible regardless of shape: reaching `subj` at all
+// already means `anchorsOf` recognized it as code (backtick-hugged, camelCase/PascalCase/
+// snake_case, a call, or a `.class`/`#id` selector), so being entirely missing is real evidence
+// the doc named a specific symbol that moved or was deleted -- the recurrence narrowing must not
+// switch off just because the target moved. The `soft`/rare/non-comment gate below is for the
+// opposite problem -- a subject that IS present but is common or comment-only, where a real
+// occurrence exists yet isn't trustworthy (#693 PR #705 critic review item 2).
 const isComment = (l) => /^\s*(?:\/\/|\/\*|\*)/.test(l);
 const indent = (l) => (l.trim() ? l.match(/^\s*/)[0].length : Infinity);
 // The cited line plus each less-indented line above it: the chain of blocks enclosing the cited
@@ -544,7 +560,22 @@ export function judgeLine(lines, i, implied, resolveAndRead) {
     const w = WINDOW(target);
     const rare = (a) => freqIn(tl, a) <= RARE;
     const soft = (a) => /^[a-z][a-z0-9-]*$/.test(a);
-    const credible = (a) => freqIn(tl, a) > 0 && (!soft(a) || (rare(a) && tl.some((l) => !isComment(l) && hasToken(l, a))));
+    // #693 PR #705 critic review item 2 (owner-confirmed): a subject that is not in the cited file
+    // AT ALL (freqIn 0 -- the ordinary shape of a stale cite: the symbol was renamed or removed)
+    // used to fail this gate outright, which emptied `subj` and switched the whole recurrence
+    // narrowing OFF, so a recurring NON-subject anchor elsewhere on the line (`.on`) could rescue
+    // a wrong line purely because the real subject vanished: `` `nonexistentthing`
+    // (`styles.css:405`) `` next to `.on` read OK at :405 (a comment mentioning `.on`, 20 lines
+    // from the real subject's would-be site) with no subject ever checked. To even REACH `subj`,
+    // an anchor must already have passed `anchorsOf`'s own code-signal test (backtick-hugged,
+    // camelCase/PascalCase/snake_case, a call, or a `.class`/`#id` selector) -- so its being ENTIRELY
+    // absent from the cited file is itself real evidence the doc named a specific symbol that moved
+    // or was deleted, not that the sentence was never about code. Absence alone therefore keeps a
+    // bound subject credible and the narrowing on, regardless of its own shape. Only a PRESENT but
+    // common/comment-only plain word (`soft`, e.g. `map` on 12 lines, or `explicit` in comments
+    // only) still fails this gate -- that is the one case a real occurrence exists but isn't
+    // trustworthy, which absence can never be confused with.
+    const credible = (a) => freqIn(tl, a) === 0 || !soft(a) || (rare(a) && tl.some((l) => !isComment(l) && hasToken(l, a)));
     let subj = subjectsOf(raw, c.list ?? c.form, anchors).filter(credible);
     if (subj.length && c.n <= tl.length && enclosingChain(tl, c.n).some((l) => subj.some((a) => definesAt(target, l, a)))) subj = [];
     const hit = subj.length
@@ -892,6 +923,44 @@ export function selftest() {
     const recurring = judgeLine(["active = `.on` (`fixture.css:32`)"], 0, null, cssRead)[0]?.verdict;
     console.log(`  ${recurring === "OK" ? "✓" : "✗"} #693 positive control: a correct cite whose subject legitimately recurs (\`.on\`, 6 lines) still reads OK (got ${recurring})`);
     if (recurring !== "OK") failed++;
+  }
+  // PR #705 critic review item 1: the definesAt escape in `hit` (~:551, KNOWN LIMIT (5)) had no
+  // selftest that pinned it POSITIVELY -- every existing case here demoted a WRONG line (the
+  // escape not firing) or matched via `rare()`/the subject itself, so nothing exercised the escape
+  // actually rescuing a CORRECT citation. This fixture isolates it: `.warn` recurs on 4 lines
+  // (> RARE), three of them `.banner.warn { ... }` (a mere mention -- `.warn` TRAILS the compound,
+  // not its own definesAt site) and one `.warn.banner { ... }` (`.warn` LEADS the compound, which
+  // IS its own rule-head per definesAt's CSS regex). The cited line is that last one: the subject
+  // `disabled` is credible but not present there, so only the escape (definesAt, not rare()) can
+  // read this correct citation as OK.
+  {
+    const warnCss = Array.from({ length: 20 }, () => "/* filler */");
+    warnCss[1] = "button:disabled { opacity: .4; }";
+    for (const k of [5, 8, 11]) warnCss[k] = ".banner.warn { color: orange; }";
+    warnCss[14] = ".warn.banner { color: red; }";
+    const warnRead = (cited) => [cited, warnCss];
+    const escaped = judgeLine(["`disabled` (`fixture-warn.css:15`) also flags `.warn` state"], 0, null, warnRead)[0]?.verdict;
+    console.log(`  ${escaped === "OK" ? "✓" : "✗"} #693/PR#705 item 1: a correct cite reads OK via the definesAt escape, where the recurring non-subject anchor's OWN definition site is the cited line (got ${escaped})`);
+    if (escaped !== "OK") failed++;
+  }
+  // PR #705 critic review item 2 (owner-confirmed): a subject entirely ABSENT from the cited file
+  // (renamed/removed -- the ordinary shape of a stale cite) used to fail `credible()` outright,
+  // emptying `subj` and switching recurrence narrowing off, so any recurring non-subject anchor
+  // (`.on`) rescued the wrong line regardless of the vanished subject. Reproduces the critic's live
+  // exploit shape verbatim (`nonexistentthing` next to `.on` in styles.css's real pane-toggle
+  // comment, 20 `.on` occurrences in that file) plus a positive control on the same line with the
+  // real, present subject.
+  {
+    const disabledCss = Array.from({ length: 20 }, () => "/* filler */");
+    disabledCss[1] = "button:disabled { opacity: .4; }";
+    for (const k of [5, 8, 11, 14]) disabledCss[k] = "/* toggle accented via .on */";
+    const disabledRead = (cited) => [cited, disabledCss];
+    const absentSubject = judgeLine(["`nonexistentthing` (`fixture-absent.css:6`) toggle-pressed (`.on` + `aria-pressed`)"], 0, null, disabledRead)[0]?.verdict;
+    console.log(`  ${absentSubject === "STALE-WRONG-LINE" ? "✓" : "✗"} #693/PR#705 item 2: a subject absent from the cited file does not let a recurring non-subject anchor (\`.on\`) rescue the wrong line (got ${absentSubject})`);
+    if (absentSubject !== "STALE-WRONG-LINE") failed++;
+    const realSubject = judgeLine(["`disabled` (`fixture-absent.css:2`) toggle-pressed (`.on` + `aria-pressed`)"], 0, null, disabledRead)[0]?.verdict;
+    console.log(`  ${realSubject === "OK" ? "✓" : "✗"} #693/PR#705 item 2 positive control: the same shape with a real, present subject still reads OK (got ${realSubject})`);
+    if (realSubject !== "OK") failed++;
   }
   // The four live shapes a first #693 draft misread as STALE (all correct citations, read by hand
   // in 02-sections-and-resolvers.md:N, 04-context-and-messaging.md:N, 03-stores-and-persistence.md:N,
