@@ -29,15 +29,23 @@ Load before first run: `8.91 6.03 5.77` on 10 cores (`uptime`, `sysctl -n hw.ncp
 
 No run dropped or retried. No red run.
 
-Rerun (conductor ruling, after the first commit `55f1d4b0`): runs 1 to 3 above overlapped other builders' concurrent gates and are contaminated; the conductor ruled they are superseded, kept here as history, never dropped.
+Rerun set 2 (conductor ruling, after the first commit `55f1d4b0`): runs 1 to 3 above overlapped other builders' concurrent gates and are contaminated; the conductor ruled they are superseded, kept here as history, never dropped.
 
 | # | command | load (1 min) before | exit | wall (s) | last line | git status lines |
 |---|---|---|---|---|---|---|
-| 1b | `npm test` | 4.83 | 0 | 108.96 | `all 47 test files passed` | 0 |
-| 2b | `npm test` | 7.58 | 0 | 93.81 | `all 47 test files passed` | 0 |
-| 3b | `npm test` | 6.27 | 0 | 90.72 | `all 47 test files passed` | 0 |
+| 1b | `npm test` (contaminated, superseded, conductor ruling: overlapped other builders' gates again, a sequencing error on the conductor's side) | 4.83 | 0 | 108.96 | `all 47 test files passed` | 0 |
+| 2b | `npm test` (contaminated, superseded, conductor ruling: overlapped other builders' gates again, a sequencing error on the conductor's side) | 7.58 | 0 | 93.81 | `all 47 test files passed` | 0 |
+| 3b | `npm test` (contaminated, superseded, conductor ruling: overlapped other builders' gates again, a sequencing error on the conductor's side) | 6.27 | 0 | 90.72 | `all 47 test files passed` | 0 |
 
-The Pass table of `.sdlc/baseline.md` and the adapter test Time cell now use runs 1b to 3b (108.96 · 93.81 · 90.72, rounded 91 to 109 s). Build and smoke timings are unchanged from the first pass.
+Rerun set 3 (conductor ruling, after the second commit `28b1cf6`): the conductor stopped all Lane B builders first, so this set is uncontaminated.
+
+| # | command | load (1 min) before | exit | wall (s) | last line | git status lines |
+|---|---|---|---|---|---|---|
+| 1c | `npm test` | 3.13 | 0 | 63.54 | `all 47 test files passed` | 0 |
+| 2c | `npm test` | 6.16 | 0 | 65.90 | `all 47 test files passed` | 0 |
+| 3c | `npm test` | 6.24 | 0 | 59.17 | `all 47 test files passed` | 0 |
+
+The Pass table of `.sdlc/baseline.md` and the adapter test Time cell now use runs 1c to 3c (63.54 · 65.90 · 59.17, rounded 59 to 66 s). Build and smoke timings are unchanged from the first pass. All nine `npm test` timing runs (1 to 3, 1b to 3b, 1c to 3c) are kept above; sets 1 and 2 are marked contaminated and superseded, never dropped.
 
 ## CI (step 5)
 

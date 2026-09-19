@@ -15,7 +15,7 @@ Each command run three times in sequence in the unit worktree at the rebased pla
 
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
-| `npm test` | 3/3 | 0 | 108.96 · 93.81 · 90.72 | all 47 test files passed |
+| `npm test` | 3/3 | 0 | 63.54 · 65.90 · 59.17 | all 47 test files passed |
 | `npm run build` | 3/3 | 0 | 2.96 · 1.87 · 2.48 | wrote figma/plugin/ui.html 3777.8 KB |
 | `npm run smoke` | 3/3 | 0 | 19.96 · 20.23 · 20.45 | SMOKE PASS: gallery · category · editor · export dialog render in real Chrome |
 
