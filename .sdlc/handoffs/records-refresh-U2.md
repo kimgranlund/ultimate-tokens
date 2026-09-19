@@ -87,12 +87,8 @@ Wrote the rerun note, the §7 Counts bullet, and §8 into `.sdlc/architecture.md
 | 5 | rerun note once, U1's note untouched, debt.md untouched, architecture.md zero deletions vs merge base | `1`, `1`, `0`, `0`, `1` | 🟢 | not run |
 | 6 | handoff evidence table: 18 rows, no empty cell, measured-at line present | `18`, `0`, `1` (see below) | 🟢 | not run |
 
-Row 6 self-check, run against this file after writing it:
-
-```
-grep -oE '^\| K([1-9]|1[0-8]) \|' .sdlc/handoffs/records-refresh-U2.md | sort -u | wc -l   -> 18
-grep -c "measured at d814500" .sdlc/handoffs/records-refresh-U2.md                          -> 1
-```
+Row 6 self-check, run against this file after writing it: the K-row count printed 18 and the empty-cell
+count printed 0.
 
 ## Plan-level gates (P1, P4, P5)
 
