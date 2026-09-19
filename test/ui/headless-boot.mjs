@@ -3624,7 +3624,7 @@ flushRaf();
 // NOT round-trip for those — that is correct behavior, not a bug, but it makes them a bad fixture
 // for asserting an EXACT pre/post match.
 {
-  const { projectView: pvRST } = await import("../../src/ui/model.mjs");
+  const { projectView: pvRST, seedFromKeyColor, hexToOklch } = await import("../../src/ui/model.mjs");
   const rstPreset = TP[1]; // a different preset than (hh)'s TP[0], independent of that group's state
   app.openConfigAsSet(rstPreset, null, { mintData: false });
   app.setSection("color"); app.colorMode = "light";
@@ -3634,12 +3634,20 @@ flushRaf();
   const p0 = app.doc.palettes[idx];
   ok(p0.name === "primary", `(rst-setup) test setup: palettes[1] is "primary" (got ${p0.name})`);
   ok(!!p0.anchor && !!p0.sourceAnchor, "(rst0) the opened preset's primary palette starts anchored, with a sourceAnchor to restore from");
-  const anchorBefore = p0.anchor, sourceAnchorBefore = p0.sourceAnchor, hueBefore = p0.hue, chromaBefore = p0.chroma;
+  // Stamp a NON-ZERO lift before detaching (re-diagnosis Finding 3 / review F7): the OLD re-derivation
+  // bug always reset lift to 0 regardless of what it held before, so a fixture at lift 0 could pass
+  // BOTH the old buggy code and the new snapshot-based fix — proving nothing about which one is
+  // running. A non-zero pre-detach lift only round-trips under the NEW exact-snapshot restoration.
+  app.commit((d) => (d.palettes[idx].lift = -15));
+  const p0b = app.doc.palettes[idx];
+  const anchorBefore = p0b.anchor, sourceAnchorBefore = p0b.sourceAnchor, hueBefore = p0b.hue, chromaBefore = p0b.chroma, liftBefore = p0b.lift;
+  ok(liftBefore === -15, `(rst0b) test setup: lift stamped to a non-zero value before detach (got ${liftBefore})`);
   const viewBefore = pvRST(app.doc).palettes[idx];
   const rampBefore = viewBefore.ramp.map((s) => s.hex);
   const primeBefore = JSON.stringify(viewBefore.prime);
 
-  // drag Hue by +10 — the detach trigger.
+  // drag Hue by +10 — the detach trigger, through the REAL slider (findFk + a dispatched input event),
+  // never app.commit called directly — the (gid)/(rst1)-(rst4) discipline throughout this group.
   const hueInput = findFk("slider:Hue");
   const newHue = (hueBefore + 10) % 360;
   hueInput.value = String(newHue);
@@ -3648,6 +3656,8 @@ flushRaf();
   ok(app.doc.palettes[idx].anchor === undefined, "(rst1) a Hue edit drops `anchor`");
   ok(app.doc.palettes[idx].sourceAnchor === sourceAnchorBefore, "(rst1b) `sourceAnchor` survives the edit untouched");
   ok(app.doc.palettes[idx].hue === newHue, `(rst1c) the Hue slider still writes palettes[i].hue (got ${app.doc.palettes[idx].hue}, want ${newHue})`);
+  ok(app.doc.palettes[idx].preDetachHue === hueBefore && app.doc.palettes[idx].preDetachChroma === chromaBefore && app.doc.palettes[idx].preDetachLift === liftBefore,
+    `(rst1e) the Hue drag stamps the exact pre-detach snapshot (got hue=${app.doc.palettes[idx].preDetachHue}/chroma=${app.doc.palettes[idx].preDetachChroma}/lift=${app.doc.palettes[idx].preDetachLift}, want ${hueBefore}/${chromaBefore}/${liftBefore})`);
   const primeAfterEdit = JSON.stringify(pvRST(app.doc).palettes[idx].prime);
   ok(primeAfterEdit !== primeBefore, "(rst1d) the prime strip actually moved (a real detach, not a no-op)");
 
@@ -3660,33 +3670,100 @@ flushRaf();
   flushRaf();
   const afterReset = app.doc.palettes[idx];
   ok(afterReset.anchor === anchorBefore, `(rst3) Reset restores anchor (got ${afterReset.anchor}, want ${anchorBefore})`);
-  ok(afterReset.hue === hueBefore && afterReset.chroma === chromaBefore, `(rst3b) Reset re-derives hue/chroma back to the anchor's own values (got hue=${afterReset.hue}/chroma=${afterReset.chroma}, want hue=${hueBefore}/chroma=${chromaBefore})`);
-  ok(afterReset.lift === 0, `(rst3c) Reset re-derives lift to 0 (got ${afterReset.lift})`);
+  ok(afterReset.hue === hueBefore && afterReset.chroma === chromaBefore, `(rst3b) Reset restores the EXACT pre-detach hue/chroma snapshot, never re-derived (got hue=${afterReset.hue}/chroma=${afterReset.chroma}, want hue=${hueBefore}/chroma=${chromaBefore})`);
+  ok(afterReset.lift === liftBefore, `(rst3c) Reset restores the EXACT pre-detach lift snapshot, -15, never re-derived to 0 (got ${afterReset.lift})`);
+  ok(afterReset.preDetachHue === undefined && afterReset.preDetachChroma === undefined && afterReset.preDetachLift === undefined, "(rst3d) the snapshot fields are cleared once restored — nothing left to restore");
   const viewAfterReset = pvRST(app.doc).palettes[idx];
   ok(JSON.stringify(viewAfterReset.ramp.map((s) => s.hex)) === JSON.stringify(rampBefore), "(rst4) all 19 ramp hexes deep-equal the pre-edit capture after Reset");
   ok(JSON.stringify(viewAfterReset.prime) === primeBefore, "(rst4b) all 7 prime rungs deep-equal the pre-edit capture after Reset");
 
-  // skew/lift edits do NOT detach — the anchor stays through both.
-  app.commit((d) => (d.palettes[idx].skew = ((d.palettes[idx].skew || 0) + 20 + 100) % 200 - 100));
-  ok(app.doc.palettes[idx].anchor === anchorBefore, "(rst5) a Skew edit keeps `anchor`");
-  app.commit((d) => (d.palettes[idx].lift = ((d.palettes[idx].lift || 0) + 5)));
-  ok(app.doc.palettes[idx].anchor === anchorBefore, "(rst5b) a Lift edit keeps `anchor`");
+  // skew/lift edits do NOT detach — driven through the REAL Skew/Lift sliders (re-diagnosis Finding 4
+  // / review F6: (rst5)/(rst5b) previously called app.commit directly, never through the sliders
+  // themselves — proven vacuous, since the sliders render only in EVEN mode and the assertions never
+  // switched to it). Switch to even mode first (direct set, no undo step — the same pattern this
+  // file's own Tension/global-tab groups use to expose an even-mode-only control).
+  app.doc.toneMode = "even"; app.render(); flushRaf();
+  const skewInput = findFk("slider:Skew");
+  ok(!!skewInput, "(rst5-setup) the Skew slider renders in even mode");
+  const skewBefore = app.doc.palettes[idx].skew || 0;
+  skewInput.value = String(((skewBefore + 20 + 100) % 200) - 100);
+  skewInput.dispatch("input", {});
+  app.commitDrag();
+  ok(app.doc.palettes[idx].anchor === anchorBefore, "(rst5) a REAL Skew slider drag keeps `anchor`");
+  const liftInput = findFk("slider:Lift");
+  ok(!!liftInput, "(rst5b-setup) the Lift slider renders in even mode");
+  const liftBefore2 = app.doc.palettes[idx].lift || 0;
+  liftInput.value = String(Math.max(-40, Math.min(40, liftBefore2 + 5)));
+  liftInput.dispatch("input", {});
+  app.commitDrag();
+  ok(app.doc.palettes[idx].anchor === anchorBefore, "(rst5b) a REAL Lift slider drag keeps `anchor`");
+  app.doc.toneMode = "perceptual"; app.render(); flushRaf();
 
-  // negative control: stub resetAnchor to a no-op, redo the detach, "click" the stub, and confirm the
-  // restoration check above WOULD have failed — proving (rst3)/(rst4) actually discriminate a broken
-  // Reset rather than passing by construction. Runs as an ordinary assertion in THIS suite (it asserts
-  // the stub correctly leaves the palette detached), never disabled or skipped.
+  // negative control (re-diagnosis Finding 4 / review F6): a total no-op stub is TAUTOLOGICAL — no
+  // function can fail to set `anchor` when it does literally nothing, so it never demonstrated
+  // (rst3)'s own predicates have real discriminating power. Stub `resetAnchor` with the OLD, PRE-FIX
+  // re-derivation behavior instead (restores `anchor`, but re-derives hue/chroma via seedFromKeyColor
+  // and always zeros lift) and confirm it does NOT satisfy (rst3b)/(rst3c)'s exact-match predicates —
+  // this is the REAL regression class Finding 3 fixes, so the control now proves those two assertions
+  // would have caught the actual bug, not just an impossible one.
   {
     const realResetAnchor = app.resetAnchor;
-    app.resetAnchor = () => {}; // no-op stub — simulates a broken Reset handler
-    app.commit((d) => { d.palettes[idx].hue = (d.palettes[idx].hue + 10) % 360; if (d.palettes[idx].anchor) delete d.palettes[idx].anchor; });
+    app.resetAnchor = function oldStyleResetAnchor(i) {
+      const p = this.doc.palettes[i];
+      if (!p || !p.sourceAnchor || p.anchor) return;
+      const s = seedFromKeyColor(hexToOklch(p.sourceAnchor), this.doc.hueSpace);
+      if (!s) return;
+      this.commit((d) => {
+        d.palettes[i].anchor = p.sourceAnchor;
+        d.palettes[i].hue = s.hue;
+        d.palettes[i].chroma = s.chroma;
+        d.palettes[i].lift = 0;
+      });
+    };
+    app.commit((d) => { d.palettes[idx].lift = -15; d.palettes[idx].hue = (d.palettes[idx].hue + 10) % 360; if (d.palettes[idx].anchor) delete d.palettes[idx].anchor; });
     ok(app.doc.palettes[idx].anchor === undefined, "(rst6) setup: the stub scenario starts detached, same as (rst1)");
-    app.resetAnchor(idx); // the stub — does nothing
-    const stubRestored = app.doc.palettes[idx].anchor === anchorBefore;
-    ok(stubRestored === false, "(rst6b) negative control: with Reset stubbed to a no-op, the palette stays detached — (rst3)'s own restoration check would correctly FAIL against this stub, proving it has teeth");
+    app.resetAnchor(idx); // the OLD-style stub — restores anchor, but re-derives hue/chroma and zeros lift
+    const stubAfter = app.doc.palettes[idx];
+    ok(stubAfter.anchor === anchorBefore, "(rst6a) the old-style stub DOES restore anchor (proving this alone is not enough to catch the regression)");
+    const stubMatchesSnapshot = stubAfter.lift === -15 && stubAfter.hue === hueBefore && stubAfter.chroma === chromaBefore;
+    ok(stubMatchesSnapshot === false, "(rst6b) negative control: the OLD-style stub (re-derive + zero lift) does NOT satisfy (rst3b)/(rst3c)'s exact-snapshot predicates — proving they have real teeth against the actual pre-fix regression, not just an impossible no-op");
     app.resetAnchor = realResetAnchor; // restore the real method
     app.resetAnchor(idx); // leave the doc clean for whatever runs after this block
   }
+}
+
+// (rst-corpus) extend C12's coverage from one sample palette to the FULL anchored corpus across four
+// already-loaded categories (re-diagnosis Finding 3 / review F7) — programmatic, not via real slider
+// drags (over a thousand real DOM interactions would blow the suite's time budget): for every
+// anchored palette in travel/literature/film/brands, detach via the REAL `detachSnapshot` method at a
+// DETUNED pre-detach hue/chroma/lift (never the anchor's own seedFromKeyColor-derivable values, so a
+// passing round trip can only be the snapshot restoring exactly, never re-derivation coincidentally
+// matching), call the REAL `resetAnchor`, and assert exact restoration. Runs against the live `app`
+// instance's own methods, swapping only `app.doc.palettes` per palette under test.
+{
+  const corpusPresets = [...TPm.PRESETS, ...LITm, ...FILMm, ...BRANDSm];
+  let corpusChecked = 0, corpusFails = 0;
+  for (const preset of corpusPresets) {
+    for (const pal of preset.palettes) {
+      if (typeof pal.anchor !== "string") continue;
+      const detunedHue = (pal.hue + 37) % 360;
+      const detunedChroma = Math.max(0, Math.min(100, pal.chroma - 13));
+      const detunedLift = -17;
+      const pBeforeDetach = { ...pal, hue: detunedHue, chroma: detunedChroma, lift: detunedLift };
+      app.doc.palettes = [pBeforeDetach];
+      app.detachSnapshot(app.doc, 0, pBeforeDetach);
+      delete app.doc.palettes[0].anchor;
+      app.resetAnchor(0);
+      const after = app.doc.palettes[0];
+      corpusChecked++;
+      if (after.anchor !== pal.anchor || after.hue !== detunedHue || after.chroma !== detunedChroma || after.lift !== detunedLift) {
+        corpusFails++;
+        if (corpusFails <= 3) ok(false, `(rst-corpus) ${preset.name} ${pal.name}: Reset did not restore the exact pre-detach snapshot (got anchor=${after.anchor} hue=${after.hue} chroma=${after.chroma} lift=${after.lift}, want anchor=${pal.anchor} hue=${detunedHue} chroma=${detunedChroma} lift=${detunedLift})`);
+      }
+    }
+  }
+  ok(corpusChecked > 1000, `(rst-corpus-setup) exercised Reset over a substantial slice of the anchored corpus (${corpusChecked} palettes, want > 1000)`);
+  ok(corpusFails === 0, `(rst-corpus) ${corpusFails} of ${corpusChecked} anchored palettes failed the exact-snapshot round trip`);
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────

@@ -161,6 +161,19 @@ export const DOMAINS = {
     // file only carries the two fields through serialize/hydrate).
     anchor: { kind: "hex" },
     sourceAnchor: { kind: "hex" },
+    // preDetachHue/Chroma/Lift (ticket #681, U2 re-diagnosis Finding 3 / review F7) — a snapshot of
+    // `hue`/`chroma`/`lift` taken at the MOMENT a Hue or Chroma edit detaches an anchored palette
+    // (color.js's slider handlers, alongside the `delete anchor` that already happens there), so
+    // Reset (resetAnchor, color.js) can restore the EXACT pre-detach state instead of RE-DERIVING a
+    // new one via `seedFromKeyColor` — re-deriving is lossy (seedFromKeyColor reads the anchor's own
+    // hue, not whatever `hue` the palette held before the edit) and does not round-trip the default
+    // kit's hand-tuned `lift` (e.g. Warning's -36) at all, since it always resets lift to 0. Same
+    // absent-stays-absent shape as `anchor`/`sourceAnchor`: only present on a palette that has been
+    // detached at least once; a Reset clears all three back off (nothing left to restore once
+    // restored) the same way it restores `anchor` and clears nothing else.
+    preDetachHue: { kind: "number", min: 0, max: 360 },
+    preDetachChroma: { kind: "number", min: 0, max: 100 },
+    preDetachLift: { kind: "number", min: -40, max: 40 },
   },
 };
 
@@ -268,6 +281,11 @@ export function clampPalette(p) {
   if (anchor) out.anchor = anchor;
   const sourceAnchor = clampHex(src.sourceAnchor);
   if (sourceAnchor) out.sourceAnchor = sourceAnchor;
+  // preDetachHue/Chroma/Lift (ticket #681, U2 re-diagnosis Finding 3) — see DOMAINS.palette above.
+  // OPTIONAL, same absent-stays-absent shape: present only on a palette Reset can restore exactly.
+  if (Number.isFinite(src.preDetachHue)) out.preDetachHue = clampNumber(src.preDetachHue, 0, 360);
+  if (Number.isFinite(src.preDetachChroma)) out.preDetachChroma = clampNumber(src.preDetachChroma, 0, 100);
+  if (Number.isFinite(src.preDetachLift)) out.preDetachLift = clampNumber(src.preDetachLift, -40, 40);
   return out;
 }
 
@@ -361,7 +379,11 @@ function clampOverrides(o) {
 // correct absent-stays-absent behavior with no version gate required. The bump exists only so
 // `serialize()` stamps v5 forward (TKT-0016's standing convention: every schema-affecting change
 // bumps CURRENT_SCHEMA_VERSION in the same change, whether or not it needs a translation entry).
-export const CURRENT_SCHEMA_VERSION = 5;
+//
+// v6 (ticket #681, U2 re-diagnosis Finding 3): palette.preDetachHue/Chroma/Lift ADDED — same shape
+// as v5, brand-new optional fields, no RENAME_MAPS entry needed. A pre-v6 doc simply has none of the
+// three, which is already clampPalette's correct absent-stays-absent behavior.
+export const CURRENT_SCHEMA_VERSION = 6;
 
 // DROPPED_KEYS (TKT-0455) — the loud-fail accounting channel. hydrate() attaches the report of every
 // unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
