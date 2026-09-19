@@ -611,6 +611,34 @@ if (applyFloatPlans) {
     if (synthL2 && synthL2.modes.some((m) => m.name === "Mobile")) FAIL("floatlibrary", "libraryMode:false left the stale 'Mobile' breakpoint mode standing: the classic mode prune must be unchanged");
     const repCla = (resCla.libraryReports || []).find((r) => r.collection === "Synth");
     if (repCla && (repCla.staleModes || []).length) FAIL("floatlibrary", `libraryMode:false reported ${repCla.staleModes.length} staleModes: the classic path keeps none`);
+
+    // ── LEG 3 (#687 critic, mirrors #696's fontprimslibrary): opts.libraryMode UNDEFINED (an old
+    //    pre-#629 ui.html bundle) with GENUINE prior-uplift evidence already in the collection — a
+    //    "_deprecated/" variable a REAL earlier libraryMode:true apply produced, never a fabricated
+    //    fixture — must still resolve useLibrary=true off #635's priorLibraryUpliftVM fallback and keep
+    //    the dropped 'Mobile' breakpoint standing, reported in staleModes, with the deprecated variable
+    //    surviving too. Mutant M3 (deciding the mode prune off the raw `opts.libraryMode === true`
+    //    instead of this SAME resolved flag) passes LEG 1/2 above but goes red here.
+    const FL3 = mockFigma();
+    const al3 = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FL3.figma, "<html>", undefined).applyFloatPlans;
+    // seed: two modes, two variables — classic first apply (no opts, no evidence yet).
+    await al3([{ collection: "Synth", modes: ["Base", "Mobile"], defaultMode: "Base", addModes: ["Mobile"], variables: [synthVarL("a", 1), synthVarL("oldvar", 2)] }]);
+    // a REAL libraryMode:true apply drops 'oldvar' from the wanted set: it gets deprecated under
+    // "_deprecated/oldvar" — genuine prior-uplift evidence.
+    await al3([{ collection: "Synth", modes: ["Base", "Mobile"], defaultMode: "Base", addModes: [], variables: [synthVarL("a", 1)] }], { libraryMode: true });
+    const synthL3 = FL3.collections.find((c) => c.name === "Synth");
+    if (!synthL3 || synthL3.modes.map((m) => m.name).join() !== "Base,Mobile") FAIL("floatlibrary", `fixture: expected Base,Mobile modes before the narrow apply, got ${synthL3 && synthL3.modes.map((m) => m.name)}`);
+    const deprecatedBefore = FL3.variables.some((v) => v.variableCollectionId === synthL3.id && v.name === "_deprecated/oldvar");
+    if (!deprecatedBefore) FAIL("floatlibrary", "fixture: no '_deprecated/oldvar' prior-uplift evidence before the narrow apply, the leg would prove nothing");
+    const resL3 = await al3([{ collection: "Synth", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVarL("a", 1)] }]); // opts omitted entirely, undefined
+    const modeNamesL3 = synthL3.modes.map((m) => m.name);
+    const repL3 = (resL3.libraryReports || []).find((r) => r.collection === "Synth");
+    const staleL3 = (repL3 && repL3.staleModes) || [];
+    if (!modeNamesL3.includes("Mobile")) FAIL("floatlibrary", `#687 an undefined libraryMode with prior-uplift evidence removed the stale 'Mobile' mode (modes=${JSON.stringify(modeNamesL3)}): a published library must never lose a mode a consumer pinned`);
+    if (!staleL3.includes("Mobile")) FAIL("floatlibrary", `#687 an undefined libraryMode with prior-uplift evidence did not REPORT the kept 'Mobile' mode (staleModes=${JSON.stringify(staleL3)})`);
+    if (!repL3 || repL3.libraryMode !== true) FAIL("floatlibrary", `#687 the variable half resolved libraryMode=${repL3 && repL3.libraryMode}, want true (prior-uplift evidence): the mode half must read the SAME decision`);
+    const deprecatedAfter = FL3.variables.some((v) => v.variableCollectionId === synthL3.id && v.name === "_deprecated/oldvar");
+    if (!deprecatedAfter) FAIL("floatlibrary", "#687 the preserved '_deprecated/oldvar' variable did not survive the narrow apply, the variable half must stay preserved too");
   } catch (e) { FAIL("floatlibrary", "applyFloatPlans (library-mode breakpoint leg) threw: " + e.message); }
 } else {
   FAIL("floatlibrary", "code.js exported no applyFloatPlans");
