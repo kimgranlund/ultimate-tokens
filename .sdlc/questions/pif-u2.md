@@ -63,6 +63,23 @@ sequence (step 1b onward) where it does not depend on this specific basis being 
 to Finding 5's floor re-measurement (which needs a stable final chroma basis to be worth measuring once,
 not twice) until this is ruled.
 
+**Addendum, step 1b (F4):** the curve/tension composition (see the F4 addendum below) surfaced one
+further, related symptom on top of the SAME chroma basis: `brands "Nike · The Swoosh · Since 1971"
+secondary` (one of C5's own 10 named window-clamp sources, anchor `#101820`), peak mode, DEFAULT
+controls (skew 0, lift 0), rises 5.9827 -> 6.0070 measured CIELAB L* at stops 825 -> 850 (chroma
+10.74 -> 9.70, a Helmholtz-Kohlrausch coupling, the same class #668 fixed). Root cause: this preset's
+GENERATED `dampAmp` is 55, not 0 — `scripts/gen-categories.mjs`'s pre-U3 `VIVID_MIDS.dampAmp` default,
+which the plan text names as U3's OWN fix ("`VIVID_MIDS.dampAmp` 55 → 0, Q7 ruled"), not landed on this
+branch. `chromaEnvelope`'s shoulder term humps chroma non-monotonically at `dampAmp > 0`, and my new
+curve/tension-shaped `l` (peak mode pins full shaping, t=1) changes shape fast enough in this exact
+near-black clamped corner for the two to interact into one measured-L* uptick — confirmed the straight-
+lerp construction (pre-F4, same chromaEnvelope/dampAmp=55) did NOT trigger this for the same preset,
+so F4's own composition is the proximate cause, not chroma alone. 1 of 10,140 rendered ramps. Left the
+composition in place (never a silent lerp, per instruction); will name this ramp as a bounded exception
+in the Finding 0+6+7 gate rebuild rather than block on it, the same discipline U3's own chromaEnvelope
+comment uses for its 21-cell synthetic exception — flag here in case the owner wants it treated as
+blocking instead, since unlike U3's synthetic cells this one is a real shipped preset.
+
 Three points where the plan text disagrees with itself or with what the built-and-measured tree
 shows. Re-measured on this unit's own branch, not assumed from the plan's older figures. I picked a
 reading for each and kept building rather than block, per instruction; flagging so a wrong guess is
