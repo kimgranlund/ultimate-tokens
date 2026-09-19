@@ -29,9 +29,9 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 | `list-fonts` | `typography.js:808` (one-shot), posting `type: "list-fonts"` | `code.js:219-225` (`msg.type === "list-fonts"`) | `fonts-listed` |
 | `save-sets` | `app.js:1158` (`persistSets`), posting `type: "save-sets"` | `code.js:237-239` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
 | `save-config` | `app.js:2311`, posting `type: "save-config"` | `code.js:212-214` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
-| `apply` | `apply-gate.js:106`, posting `type: "apply"` | `code.js:133-207` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
-| `sweep-scan` | `apply-gate.js:221`, posting `type: "sweep-scan"` | `code.js:236-242` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
-| `sweep-delete` | `apply-gate.js:248`, posting `type: "sweep-delete"` | `code.js:243-251` (`msg.type === "sweep-delete"`) | `sweep-done` |
+| `apply` | `apply-gate.js:106`, posting `type: "apply"` | `code.js:133-211` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
+| `sweep-scan` | `apply-gate.js:221`, posting `type: "sweep-scan"` | `code.js:240-246` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
+| `sweep-delete` | `apply-gate.js:248`, posting `type: "sweep-delete"` | `code.js:247-255` (`msg.type === "sweep-delete"`) | `sweep-done` |
 
 **Sandbox → UI** (`figma.ui.postMessage`, all dispatched by the bridge):
 
