@@ -54,19 +54,24 @@
 //               "any anchor" bug on BARE ENGLISH WORDS, because bare words were never
 //               anchors to begin with.
 //               #693 narrows "any" for RECURRING tokens: when the doc binds a citation to a
-//               credible SUBJECT by adjacency (`disabled (styles.css:188)`), another anchor
+//               credible SUBJECT by adjacency (`disabled (styles.css:N)`), another anchor
 //               validates the line only if it is rare in the cited file (<= RARE lines) or the
 //               line is its definition site. The subject itself always counts.
 //   KNOWN LIMIT (#693, what remains): recurrence is still undetectable when (1) the recurring
-//               token IS the subject (`` `render` :570 `` repointed onto one of 68 `render`
-//               lines, or `active = .on (styles.css:879)` onto any `.on` rule), (2) the citing
+//               token IS the subject (`` `render` :N `` repointed onto one of 68 `render`
+//               lines, or `active = .on (styles.css:N)` onto any `.on` rule), (2) the citing
 //               line has no anchor of its own and the anchors come from the paragraph widen
 //               (no subject binding is attempted there; a rarity rule on paragraph anchors
 //               flagged 18 correct `this.segmented(` call-site cites and was rejected), (3) the
 //               subject is a plain word that is common in the file or appears only in comments,
-//               or (4) the wrong line sits inside the subject's own body. Measured on +37-line
-//               drifts of every OK citation, the catch rate went from 80.6% to 82.7%; the
-//               named exploit (component-inventory.md:118 repointed 217 lines) now reads STALE.
+//               (4) the wrong line sits inside the subject's own body, or (5) the wrong line
+//               is the recurring NON-subject anchor's own definition site (the definesAt
+//               escape: a decoy rule head written `.on.pane-toggle {` still reads OK on `.on`;
+//               the escape stays because removing it flags 4 correct live cites). Measured on
+//               +37-line drifts of every OK citation, the catch rate went from 80.6% to 82.7%;
+//               the named exploit (a component-inventory.md cite repointed 217 lines) now
+//               reads STALE. Shapes in this file's comments write line numbers as `:N`: this
+//               file is not under the audit, so a live number here could go stale ungated.
 //   VERDICTS  STALE-PAST-EOF   cited line number exceeds the cited file's length
 //             STALE-WRONG-LINE no anchor occurs at the cited line or within WINDOW
 //             NEAR             an anchor occurs within WINDOW of the cited line
@@ -399,8 +404,8 @@ function homesOf(anchor) {
 // strings (which passed unchanged under a mutant that broke either one).
 // ---------- #693: recurrence -- the citation's SUBJECT, and how rare an anchor is in the cited file ----------
 // "Any anchor anywhere on the cited line" (#672) lets a code token that RECURS in the cited file
-// validate a line that is not the citation's subject: component-inventory.md:118 cites
-// `disabled (styles.css:188)` and later names `.on` for another clause, so a repoint 217 lines off
+// validate a line that is not the citation's subject: component-inventory.md:N cites
+// `disabled (styles.css:N)` and later names `.on` for another clause, so a repoint 217 lines off
 // onto a `.pane-toggle.on` rule read OK on `.on`. The fix binds each citation to its SUBJECT (the
 // anchor the doc writes right against it) and, when a credible subject exists, stops a DIFFERENT
 // anchor from validating the line on recurrence alone: that anchor must be RARE in the cited file
@@ -414,13 +419,13 @@ const RARE = 3;
 
 // The anchors a doc line binds to ONE citation (`form`, as written), by adjacency only:
 //   - the anchor ending right before it, past `(`, backticks, commas, a call's own `(...)`, and
-//     one connector (at/in/on): `disabled (styles.css:188)`, `` `render` :570 ``, `zoomBy()`, …;
+//     one connector (at/in/on): `disabled (styles.css:N)`, `` `render` :N ``, `zoomBy()`, …;
 //     then every anchor chained ahead of that one by `/` or `,`
-//     (`` `_typeScaleFor("base")` / `_typeModeScales()` (drawer.js:47) ``: both are subjects);
+//     (`` `_typeScaleFor("base")` / `_typeModeScales()` (drawer.js:N) ``: both are subjects);
 //   - every anchor inside the citation's OWN parenthetical, which the doc uses to describe the
-//     cited site (`` (`sections/color.js:1344`, `.ov` override state) ``);
+//     cited site (`` (`sections/color.js:N`, `.ov` override state) ``);
 //   - failing both, an anchor right after it across backticks/whitespace only
-//     (`` `test/engine/tonal.mjs:246-264` `okhsl-modes` ``). A `)`, `,` or `;` ends the
+//     (`` `test/engine/tonal.mjs:N` `okhsl-modes` ``). A `)`, `,` or `;` ends the
 //     citation's clause, so the next list item's anchor is never its subject.
 // No subject => the citation keeps #672's any-anchor rule unchanged.
 function subjectsOf(raw, form, anchors) {
@@ -438,7 +443,7 @@ function subjectsOf(raw, form, anchors) {
       if (!sep) break;
       before = rest.slice(0, rest.length - sep[0].length);
     }
-    // the citation's own parenthetical (`(`sections/color.js:1344`, `.ov` override state)`): every
+    // the citation's own parenthetical (`(`sections/color.js:N`, `.ov` override state)`): every
     // anchor written inside the same group describes the same site, so it is a co-subject
     let open = -1;
     for (let j = at - 1, depth = 0; j >= 0; j--) {
@@ -471,14 +476,14 @@ function freqIn(tl, a) {
   if (!m.has(a)) m.set(a, tl.reduce((k, l) => k + (hasToken(l, a) ? 1 : 0), 0));
   return m.get(a);
 }
-// A plain lowercase word bound as subject (`explicit (persist.js:291)`, `scope (model.mjs:57)`)
+// A plain lowercase word bound as subject (`explicit (persist.js:N)`, `scope (model.mjs:N)`)
 // is often English, not a symbol; it is only CREDIBLE when it is rare in the cited file and
 // occurs on at least one code (non-comment) line there. `disabled` in styles.css passes (3 lines,
 // `button:disabled`); `explicit` (comments only) and `map` (12 lines) do not.
 const isComment = (l) => /^\s*(?:\/\/|\/\*|\*)/.test(l);
 const indent = (l) => (l.trim() ? l.match(/^\s*/)[0].length : Infinity);
 // The cited line plus each less-indented line above it: the chain of blocks enclosing the cited
-// line. A citation INTO the body of its subject (`applyLoadedConfig (app.js:2345)`, eight lines
+// line. A citation INTO the body of its subject (`applyLoadedConfig (app.js:N)`, eight lines
 // under the method head) is a correct cite of a line that need not name the subject, so when a
 // subject's definition is on this chain the citation falls back to the any-anchor rule.
 function enclosingChain(tl, k) {
@@ -859,8 +864,8 @@ export function selftest() {
   }
 
   // #693: a code token that RECURS in the cited file must not validate a line that is not the
-  // citation's subject. The review's exploit, in miniature: component-inventory.md:118 cites
-  // `disabled (styles.css:188)`, and the same doc line names `.on` for a later clause. Repointed
+  // citation's subject. The review's exploit, in miniature: component-inventory.md:N cites
+  // `disabled (styles.css:N)`, and the same doc line names `.on` for a later clause. Repointed
   // 41 lines off (the live one was 217), the cite lands on a `.pane-toggle.on` rule under a comment
   // reading "accented via .on", and the pre-#693 any-anchor matcher read it OK on `.on`. `.on`
   // occurs on 6 lines of the fixture (> RARE) and is not the citation's subject, so it is demoted;
@@ -889,8 +894,8 @@ export function selftest() {
     if (recurring !== "OK") failed++;
   }
   // The four live shapes a first #693 draft misread as STALE (all correct citations, read by hand
-  // in 02-sections-and-resolvers.md:27, 04-context-and-messaging.md:61, 03-stores-and-persistence.md:38,
-  // component-inventory.md:244): a slash-joined subject pair, a cite INSIDE the subject's own body, a
+  // in 02-sections-and-resolvers.md:N, 04-context-and-messaging.md:N, 03-stores-and-persistence.md:N,
+  // component-inventory.md:N): a slash-joined subject pair, a cite INSIDE the subject's own body, a
   // prose word bound as the subject by the `word (cite)` shape, and a descriptor written inside the
   // citation's own parenthetical. Each is pinned so that removing its rule reds this selftest.
   {
