@@ -486,6 +486,13 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // `anchorWarp`'s skew-warped `w` — a local construction the ruling retired. Primary carries skew -20,
   // so its own DEFAULT literal (stop 550) moved a hair from the anchorWarp-keyed capture immediately
   // above; every other literal is unchanged — independently re-verified.
+  //
+  // #681 re-capture (U2 review pass 2, R6 -- toneAt piecewise-affine remap replacing anchorLerp's
+  // per-side double-S, tonal.js's own header comment): stop 550/450 sit closer to toneAt's own
+  // steepest point now, not the double-S's flattest part, so Primary's own DEFAULT and hover literals
+  // (skew -20, stops 550/450) moved again. on-primary, on-surface and data-1.DEFAULT are unchanged --
+  // independently re-verified. R2's smoothstep easing on the chroma blend weight did not move any of
+  // these four fields at default vibrancy/damp (near-pivot chroma stays within rounding here).
   const ddState = stateOf(defaultDocument());
   const ddPreset = X.exportPanda(ddState);
   const ddRaw = ddPreset.theme.extend.tokens.colors;
@@ -500,9 +507,9 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2575 0.0972 259.02)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4522 0.163 259.02)", _dark: "oklch(0.5369 0.1899 259)" }))
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5504 0.1924 258.96)" }))
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3775 0.1183 258.74)", _dark: "oklch(0.6322 0.1585 258.9)" }))
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3971 0.1239 258.91)", _dark: "oklch(0.6419 0.1561 259.24)" }))
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
   if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);

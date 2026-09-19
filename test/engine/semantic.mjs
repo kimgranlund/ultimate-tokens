@@ -214,6 +214,15 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    ruling retired). Only the skewed default families (Neutral/Primary/Tertiary/Info/Success/Danger
 //    skew -20, Warning skew 40) moved, and only slightly; every family still stayed >= AA 4.5.
 //
+//    Re-measured a SEVENTH time (review pass 2, fix-first-2, R7, 2026-09-18) after R6 (toneAt
+//    piecewise-affine remap replacing anchorLerp's per-side double-S) and R2 (chroma-basis blend
+//    weight eased to zero slope at the pivot). Every family still stayed >= AA 4.5 in every mode, both
+//    schemes (0 cells under the floor). 41 of the 96 entries now sit below their PRE-#681 (origin/main,
+//    `bf2aaf6`) value (was 46 last pass; R6's construction change moved several back above their
+//    bf2aaf6 value too). The full by-name old/new list against `bf2aaf6` is recorded in
+//    `.sdlc/questions/pif-u2.md` (Q-U2-5's Finding 5 section) for the owner — not re-pinned as final,
+//    per the brief: "the conductor is asking the policy question now."
+//
 //    The PARK leg (#636) checks the same pairing through the OTHER derivation — exports.js's
 //    derivedAll, which is what radixColorGroup reads for Park's `solid.bg` (step 9 = the bare accent
 //    role) and `solid.fg` (`on-accent` = the `-on-{n}` role) — on the default document AND on the
@@ -225,58 +234,58 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   // [family, light floor, dark floor] — max(AA, own measured ratio floored to 1 decimal)
   const FLOORS = {
     perceptual: [
-      ["Neutral", 7.3, 5.1],   // measured 7.40 / 5.15
-      ["Primary", 7.5, 5.2],   // measured 7.56 / 5.28
-      ["Secondary", 5.2, 5.2],   // measured 5.25 / 5.22
-      ["Tertiary", 8.3, 5.9],   // measured 8.37 / 5.91
-      ["Info", 7.3, 5.0],   // measured 7.30 / 5.04
-      ["Success", 7.7, 5.3],   // measured 7.71 / 5.34
-      ["Warning", 8.0, 4.7],   // measured 8.06 / 4.73
-      ["Danger", 8.7, 6.2],   // measured 8.73 / 6.22
+      ["Neutral", 6.8, 4.8],   // measured 6.87 / 4.86
+      ["Primary", 7.1, 4.9],   // measured 7.10 / 4.98
+      ["Secondary", 5.2, 5.2],   // measured 5.24 / 5.22
+      ["Tertiary", 7.8, 5.6],   // measured 7.83 / 5.64
+      ["Info", 6.7, 4.7],   // measured 6.80 / 4.76
+      ["Success", 7.1, 5.0],   // measured 7.19 / 5.07
+      ["Warning", 9.1, 5.6],   // measured 9.17 / 5.64
+      ["Danger", 8.2, 5.9],   // measured 8.21 / 5.94
       ["Data 1", 6.0, 4.6],   // measured 6.00 / 4.68
       ["Data 2", 6.3, 4.7],   // measured 6.33 / 4.75
-      ["Data 3", 6.1, 4.9],   // measured 6.12 / 4.95
+      ["Data 3", 6.1, 4.9],   // measured 6.10 / 4.92
       ["Data 4", 5.6, 4.7],   // measured 5.67 / 4.80
-      ["Data 5", 5.4, 5.0],   // measured 5.43 / 5.05
+      ["Data 5", 5.4, 5.0],   // measured 5.45 / 5.06
       ["Data 6", 5.1, 5.2],   // measured 5.16 / 5.28
       ["Data 7", 5.2, 5.1],   // measured 5.29 / 5.15
-      ["Data 8", 5.4, 5.0],   // measured 5.44 / 5.00
+      ["Data 8", 5.4, 4.9],   // measured 5.44 / 4.99
     ],
     even: [
-      ["Neutral", 6.9, 5.3],   // measured 6.97 / 5.39
-      ["Primary", 7.2, 5.5],   // measured 7.20 / 5.60
-      ["Secondary", 4.9, 4.8],   // measured 4.96 / 4.88
-      ["Tertiary", 7.9, 6.2],   // measured 7.93 / 6.21
-      ["Info", 6.8, 5.3],   // measured 6.89 / 5.32
-      ["Success", 7.3, 5.6],   // measured 7.32 / 5.66
-      ["Warning", 7.9, 5.3],   // measured 7.90 / 5.32
-      ["Danger", 8.3, 6.5],   // measured 8.34 / 6.55
-      ["Data 1", 5.6, 4.7],   // measured 5.64 / 4.80
-      ["Data 2", 5.9, 4.6],   // measured 5.99 / 4.67
-      ["Data 3", 5.8, 4.5],   // measured 5.82 / 4.54
-      ["Data 4", 5.4, 4.9],   // measured 5.41 / 4.97
-      ["Data 5", 5.1, 4.6],   // measured 5.14 / 4.68
-      ["Data 6", 4.9, 4.9],   // measured 4.93 / 4.93
-      ["Data 7", 5.0, 4.8],   // measured 5.03 / 4.84
-      ["Data 8", 5.1, 4.6],   // measured 5.15 / 4.66
+      ["Neutral", 7.2, 4.6],   // measured 7.29 / 4.65
+      ["Primary", 7.5, 4.8],   // measured 7.54 / 4.80
+      ["Secondary", 5.5, 5.5],   // measured 5.58 / 5.52
+      ["Tertiary", 8.2, 5.2],   // measured 8.28 / 5.26
+      ["Info", 7.2, 4.6],   // measured 7.22 / 4.61
+      ["Success", 7.6, 4.9],   // measured 7.68 / 4.94
+      ["Warning", 9.9, 5.2],   // measured 9.94 / 5.29
+      ["Danger", 8.7, 5.6],   // measured 8.74 / 5.63
+      ["Data 1", 6.2, 4.9],   // measured 6.30 / 4.93
+      ["Data 2", 6.6, 4.6],   // measured 6.69 / 4.66
+      ["Data 3", 6.4, 4.8],   // measured 6.50 / 4.81
+      ["Data 4", 6.0, 5.1],   // measured 6.04 / 5.12
+      ["Data 5", 5.7, 5.3],   // measured 5.78 / 5.34
+      ["Data 6", 5.5, 5.5],   // measured 5.55 / 5.57
+      ["Data 7", 5.6, 5.4],   // measured 5.68 / 5.48
+      ["Data 8", 5.8, 5.3],   // measured 5.84 / 5.30
     ],
     peak: [
-      ["Neutral", 6.8, 5.3],   // measured 6.87 / 5.38
-      ["Primary", 7.0, 5.6],   // measured 7.09 / 5.60
-      ["Secondary", 4.9, 4.8],   // measured 4.92 / 4.86
-      ["Tertiary", 7.8, 6.2],   // measured 7.87 / 6.23
-      ["Info", 6.7, 5.3],   // measured 6.80 / 5.32
-      ["Success", 7.2, 5.7],   // measured 7.30 / 5.71
-      ["Warning", 7.8, 5.3],   // measured 7.86 / 5.36
-      ["Danger", 8.2, 6.5],   // measured 8.21 / 6.55
-      ["Data 1", 5.6, 4.8],   // measured 5.67 / 4.85
-      ["Data 2", 5.9, 4.7],   // measured 5.98 / 4.75
-      ["Data 3", 5.7, 4.5],   // measured 5.76 / 4.55
-      ["Data 4", 5.3, 4.9],   // measured 5.39 / 4.95
-      ["Data 5", 5.1, 4.7],   // measured 5.13 / 4.72
-      ["Data 6", 4.9, 4.9],   // measured 4.90 / 4.92
-      ["Data 7", 5.0, 4.7],   // measured 5.01 / 4.79
-      ["Data 8", 5.1, 4.6],   // measured 5.14 / 4.68
+      ["Neutral", 7.2, 4.6],   // measured 7.21 / 4.66
+      ["Primary", 7.4, 4.7],   // measured 7.44 / 4.77
+      ["Secondary", 5.5, 5.6],   // measured 5.53 / 5.60
+      ["Tertiary", 8.2, 5.3],   // measured 8.20 / 5.39
+      ["Info", 7.0, 4.5],   // measured 7.10 / 4.57
+      ["Success", 7.6, 4.8],   // measured 7.60 / 4.88
+      ["Warning", 9.6, 5.2],   // measured 9.69 / 5.28
+      ["Danger", 8.6, 5.6],   // measured 8.63 / 5.68
+      ["Data 1", 6.3, 4.9],   // measured 6.34 / 4.99
+      ["Data 2", 6.6, 4.5],   // measured 6.63 / 4.55
+      ["Data 3", 6.4, 4.7],   // measured 6.43 / 4.72
+      ["Data 4", 5.9, 5.0],   // measured 5.98 / 5.09
+      ["Data 5", 5.6, 5.3],   // measured 5.69 / 5.33
+      ["Data 6", 5.4, 5.5],   // measured 5.44 / 5.60
+      ["Data 7", 5.5, 5.4],   // measured 5.58 / 5.48
+      ["Data 8", 5.7, 5.3],   // measured 5.75 / 5.32
     ],
   };
   let checked = 0;
