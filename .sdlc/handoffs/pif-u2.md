@@ -194,8 +194,11 @@ identity check for "Neutral" are all GREEN. Addendum 2's four named gate items, 
 
 ### Rebase onto `plan/preset-intent-fidelity`
 
-Per the team lead's instruction: rebased `unit/pif-u2-ramp` onto the plan branch's current head after
-this pass's last commit. Result recorded at the end of this document once run.
+Rebased `unit/pif-u2-ramp` onto the plan branch's head (`4ff086c`, revision 19 — a U3-only paragraph
+change, the C6 cusp exemption for perceptual mode; does not touch U2's own paragraph or scope) after
+this pass's last commit (`ae7a512`). Clean rebase, no conflicts, 25 commits replayed. **Post-rebase
+head: `8d3a5fd`.** Re-ran `npm test` (48/48 green), `npm run gate:corpus-contrast` and
+`node scripts/audit-citations.mjs` (both clean) on the rebased tree; `git status --short` empty.
 
 ### F3 — what the U2/U3 merge needs (advisory only; U3's branch/worktree not touched)
 
