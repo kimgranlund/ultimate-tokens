@@ -76,7 +76,9 @@ Type Primitives MODE prunes (#629; the mode prune reads the SAME resolved decisi
 prune since #696, see below). `applyStylePlans`' paint and text prunes (#629). #629 shipped the
 flag with color exempt by ruling Q1; #673 retired that exemption; #687 closed the last gap. One
 caveat, detailed in `references/foundations.md` section 6: Regroup (#688) and `plan.retire` are
-destructive sites outside the flag by design. Two surfaces, one persisted key
+destructive sites outside the flag by design. Regroup drops every Color Roles variable id regardless
+of `libraryMode`, so the always-warn Regroup gate now says explicitly that Published library does not
+cover it (#688) rather than making the two controls mutually exclusive. Two surfaces, one persisted key
 (`ultimate-tokens-library-mode-v1`, the `_applyConsentKey` precedent, storing both `"1"` and `"0"`
 because unchecked is a real answer): the gate's "Published library" checkbox, and Settings › Token
 mapping › "Figma apply", which exists because "don't show again" makes the gate unreachable and

@@ -1091,6 +1091,24 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   app.applyGateLibraryMode = true; posted = null; app.confirmApplyGate();
   ok(posted && posted.pluginMessage.libraryMode === true && posted.pluginMessage.rebuildSemantic === true, "(629) a Regroup apply carries libraryMode alongside rebuildSemantic");
 
+  // ── (688) Regroup deletes the whole Color Roles collection under rebuildSemantic regardless of
+  // libraryMode (figma/plugin/code.js's applyBundle old.remove()). The checkbox does not protect
+  // it. Rather than making the two controls mutually exclusive, the gate's Regroup lede now names
+  // the exemption explicitly. Shown unconditionally on Regroup (not only when the box is ticked):
+  // the checkbox sits BELOW the lede in reading order, so a user who ticks it after reading has
+  // already seen the disclosure either way, and the checkbox's onchange never re-renders the gate
+  // (nothing would make a checkbox-conditioned sentence appear/disappear live).
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.requestApplyToFigma(true);
+  app.applyGateLibraryMode = true; app.render(); flushRaf();
+  ok(/does not cover Regroup/.test(txtOf(app.querySelector(".apply-gate"))), "(688) Regroup + Published library ticked: the dialog names the exemption");
+  app.applyGateLibraryMode = false; app.render(); flushRaf();
+  ok(/does not cover Regroup/.test(txtOf(app.querySelector(".apply-gate"))), "(688) Regroup + Published library UNticked: the dialog still names the exemption (shown unconditionally on Regroup)");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.requestApplyToFigma(false);
+  ok(!/does not cover Regroup/.test(txtOf(app.querySelector(".apply-gate"))), "(688) a normal (non-Regroup) apply does NOT show the Regroup exemption");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+
   // SETTINGS ROW (review M2): "Don't show this again" hides the gate on the normal apply path and
   // nothing in the app clears that consent, so the toggle must also live somewhere consent cannot
   // hide. Settings > Token mapping > Figma apply carries the SAME persisted key, and flipping it

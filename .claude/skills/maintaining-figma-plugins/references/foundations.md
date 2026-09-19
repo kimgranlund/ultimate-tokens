@@ -257,9 +257,15 @@ fallback), and reports the kept modes as `libraryReports[].staleModes`, the same
 `applyFontPrimitivesModes` and `applyBundle` use.
 
 Destructive sites outside the flag's scope, by design: Regroup's rebuild-drop (`applyBundle`'s
-`old.remove()` under `rebuildSemantic`, gated by its own always-warn consent, #688), and
-`plan.retire`'s collection retire (`applyFloatPlans` removes a whole registry-tracked collection and
-its variables when a plan retires it). Neither is a prune in the flag's sense, and neither reads it.
+`old.remove()` under `rebuildSemantic`, gated by its own always-warn consent), and `plan.retire`'s
+collection retire (`applyFloatPlans` removes a whole registry-tracked collection and its variables
+when a plan retires it). Neither is a prune in the flag's sense, and neither reads it. Regroup's
+rebuild-drop hits EVERY Color Roles variable id regardless of `libraryMode`; the checkbox does not
+protect it (#688). Rather than make the two controls mutually exclusive, the always-warn Regroup
+lede (`renderApplyGate`, `src/ui/overlays/apply-gate.js`) now says so explicitly: "Published library
+does not cover Regroup...", shown unconditionally on Regroup (both checkbox states), never only when
+the box is ticked. The checkbox renders below this text, so ticking it later never skips the
+disclosure.
 
 ### 7. The config round-trip OUT of variables
 
