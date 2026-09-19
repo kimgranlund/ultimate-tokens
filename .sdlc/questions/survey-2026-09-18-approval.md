@@ -114,4 +114,4 @@ Question: U4 (rename adapter.md conflict ids C1 to C13 to X1 to X13, plus the 10
 Options:
 - Approve (Recommended)
 - Hold
-Chosen: Approve (Recommended)
+Chosen: not asked. The owner was never put this question; U4 was approved at Q11 and the Conductor mobilized it on the 7/7 checkability record (e1231a13). Corrected by the Conductor on 2026-09-19.
