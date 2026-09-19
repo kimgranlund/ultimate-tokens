@@ -11,7 +11,15 @@ import { effHue, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
 import { rgbToOklchHue, rgbToOkhsl } from "../../src/engine/okhsl.js";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
-const DEFAULTS = RT.defaults; // the 16 default palettes {name,hue,chroma,skew,lift,on}
+// the 16 default palettes {name,hue,chroma,skew,lift,on} — `anchor` STRIPPED (ticket #681, U1 added
+// it to role-table.json's defaults per Q2 (b)). This file's gates (d1..j) are AC-050's verification of
+// prime.mjs's ORIGINAL, non-anchored deriveKeyColor construction; U6 (depends on U1, "Depends on U1
+// (anchor = prime)") is the unit that rewrites these gates for the anchored case — d5's frozen
+// snapshot, d6's clipped-wall assertions, and g's chroma-ratio check all assume the cusp identity.
+// Until U6 lands, this file keeps testing that construction, which C4's non-anchored identity control
+// requires stay byte-identical anyway — so stripping the field here is the correct fixture for BOTH
+// units, not a workaround for one.
+const DEFAULTS = RT.defaults.map(({ anchor, ...d }) => d);
 // hueSpace "cam16": role-table.json's hue numbers ARE CAM16 hues (the raw, un-converted seeds
 // defaultDocument() maps through camHueToOklch before storing) — `CTL` pins cam16 so effHue passes
 // them straight through, exactly as test/engine/tonal.mjs's own DEFAULTS convention does, and so

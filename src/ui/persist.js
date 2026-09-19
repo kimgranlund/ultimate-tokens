@@ -147,6 +147,20 @@ export const DOMAINS = {
     // is left absent (NOT stamped with a computed default here) — model.mjs's paletteGroup()
     // is the single place the default-by-name rule is computed, at every read site.
     group: { kind: "enum", values: PALETTE_GROUPS },
+    // anchor / sourceAnchor (ticket #681, U1) — a palette's stored SOURCE color, byte-for-byte, as
+    // "#" + 6 hex digits in either case, normalized to the SAME canonical uppercase shape
+    // scripts/gen-categories.mjs, defaultDocument() and src/engine/prime.mjs's own ANCHOR_HEX all
+    // emit/accept (case-folding fixed per the U1 review's F3, 2026-09-18) — never a number to clamp
+    // toward a bound, so "kind: hex" is its own domain: a well-formed value normalizes, anything else
+    // is DROPPED (like an unknown enum member). Both OPTIONAL, same absent-stays-absent shape as
+    // `group` above. `anchor` is the
+    // LIVE anchor prime.mjs's `prime` step (and, from U2, the ramp's stop 500) renders verbatim;
+    // `sourceAnchor` is the GENERATOR's own copy — written only by scripts/gen-categories.mjs and by
+    // defaultDocument(), never by the UI — so a Reset action (Q6, U2's C12) has something to
+    // re-derive `anchor` from after a hue/chroma edit detaches it (U2 wires that detach/reset; this
+    // file only carries the two fields through serialize/hydrate).
+    anchor: { kind: "hex" },
+    sourceAnchor: { kind: "hex" },
   },
 };
 
@@ -166,6 +180,22 @@ function clampNumber(v, min, max) {
 // default. An in-set value is returned by reference, so it is preserved exactly.
 function clampEnum(v, values, dflt) {
   return values.includes(v) ? v : dflt;
+}
+
+// Hex clamp (ticket #681, U1; case-folding fixed per the U1 review's F3, 2026-09-18): keep the value
+// iff it is "#" + 6 hex digits in EITHER case, normalized to the canonical uppercase form the
+// generator, defaultDocument() and src/engine/prime.mjs's own ANCHOR_HEX all emit/accept — else
+// undefined. The caller only attaches the field when this returns non-undefined, same absent-stays-
+// absent shape every other optional palette field (cuspPull, primeChroma, group) uses. Lowercase was
+// DROPPED before the fix: an authored Q5 spec JSON or a hand-edited import spelling a valid hex in
+// lowercase rendered correctly for the live session (prime.mjs accepts+normalizes it) but silently
+// lost the anchor on the next save/reload, with no DROPPED_KEYS report — persist.js and prime.mjs now
+// agree on the same domain, a case-insensitive "#RRGGBB". Still not a "nearest bound" clamp — a
+// malformed hex (wrong length, non-hex characters) has no well-defined nearest valid hex, so it is
+// simply dropped rather than coerced, same as an unrecognized enum member.
+const HEX6 = /^#[0-9A-Fa-f]{6}$/;
+function clampHex(v) {
+  return typeof v === "string" && HEX6.test(v) ? v.toUpperCase() : undefined;
 }
 
 // Per-palette clamp. Builds a fresh object so the result is a clean State, but copies
@@ -231,6 +261,13 @@ export function clampPalette(p) {
   // under. Absent/invalid stays absent (round-trip preserved); the effective group for a
   // palette with none is computed on demand by model.mjs's paletteGroup(), never here.
   if (DOMAINS.palette.group.values.includes(src.group)) out.group = src.group;
+  // anchor / sourceAnchor (ticket #681, U1) — see DOMAINS.palette.anchor above. OPTIONAL, same
+  // absent-stays-absent shape as `group`: a present, well-formed hex round-trips as-is; a malformed
+  // one is dropped rather than clamped (clampHex has no "nearest valid hex" to fall back to).
+  const anchor = clampHex(src.anchor);
+  if (anchor) out.anchor = anchor;
+  const sourceAnchor = clampHex(src.sourceAnchor);
+  if (sourceAnchor) out.sourceAnchor = sourceAnchor;
   return out;
 }
 
@@ -317,7 +354,14 @@ function clampOverrides(o) {
 // paletteGroups' own default-fill (clampPaletteGroups) both already run UNCONDITIONALLY, on every
 // snapshot regardless of schemaVersion — the bump exists to stamp v4 forward on `serialize()`, not
 // to gate a value translation the way v1/v2/v3 each needed to.
-export const CURRENT_SCHEMA_VERSION = 4;
+//
+// v5 (ticket #681, U1): palette.anchor/sourceAnchor ADDED — same "no RENAME_MAPS entry needed" shape
+// as v4, for the same reason: this is a brand-new optional field, not a rename, so there is no old
+// name to translate FROM. A pre-v5 doc simply has neither field, which is already clampPalette's
+// correct absent-stays-absent behavior with no version gate required. The bump exists only so
+// `serialize()` stamps v5 forward (TKT-0016's standing convention: every schema-affecting change
+// bumps CURRENT_SCHEMA_VERSION in the same change, whether or not it needs a translation entry).
+export const CURRENT_SCHEMA_VERSION = 5;
 
 // DROPPED_KEYS (TKT-0455) — the loud-fail accounting channel. hydrate() attaches the report of every
 // unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
