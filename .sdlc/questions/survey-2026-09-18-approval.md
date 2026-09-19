@@ -99,3 +99,4 @@ Options:
 - Separate S plan later
 - Not now
 Chosen: Add as U3 of records-refresh (Recommended)
+Note: the unit landed as U4 of records-refresh because U3 (re-measure at 20298cc, Q10) already held that slot; renumbered at 265b8706.
