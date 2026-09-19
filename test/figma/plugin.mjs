@@ -613,18 +613,18 @@ if (applyFloatPlans) {
     if (repCla && (repCla.staleModes || []).length) FAIL("floatlibrary", `libraryMode:false reported ${repCla.staleModes.length} staleModes: the classic path keeps none`);
 
     // ── LEG 3 (#687 critic, mirrors #696's fontprimslibrary): opts.libraryMode UNDEFINED (an old
-    //    pre-#629 ui.html bundle) with GENUINE prior-uplift evidence already in the collection — a
-    //    "_deprecated/" variable a REAL earlier libraryMode:true apply produced, never a fabricated
-    //    fixture — must still resolve useLibrary=true off #635's priorLibraryUpliftVM fallback and keep
+    //    pre-#629 ui.html bundle) with GENUINE prior-uplift evidence already in the collection, namely
+    //    a "_deprecated/" variable a REAL earlier libraryMode:true apply produced (never a fabricated
+    //    fixture), must still resolve useLibrary=true off #635's priorLibraryUpliftVM fallback and keep
     //    the dropped 'Mobile' breakpoint standing, reported in staleModes, with the deprecated variable
     //    surviving too. Mutant M3 (deciding the mode prune off the raw `opts.libraryMode === true`
     //    instead of this SAME resolved flag) passes LEG 1/2 above but goes red here.
     const FL3 = mockFigma();
     const al3 = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FL3.figma, "<html>", undefined).applyFloatPlans;
-    // seed: two modes, two variables — classic first apply (no opts, no evidence yet).
+    // seed: two modes, two variables; classic first apply (no opts, no evidence yet).
     await al3([{ collection: "Synth", modes: ["Base", "Mobile"], defaultMode: "Base", addModes: ["Mobile"], variables: [synthVarL("a", 1), synthVarL("oldvar", 2)] }]);
     // a REAL libraryMode:true apply drops 'oldvar' from the wanted set: it gets deprecated under
-    // "_deprecated/oldvar" — genuine prior-uplift evidence.
+    // "_deprecated/oldvar", genuine prior-uplift evidence.
     await al3([{ collection: "Synth", modes: ["Base", "Mobile"], defaultMode: "Base", addModes: [], variables: [synthVarL("a", 1)] }], { libraryMode: true });
     const synthL3 = FL3.collections.find((c) => c.name === "Synth");
     if (!synthL3 || synthL3.modes.map((m) => m.name).join() !== "Base,Mobile") FAIL("floatlibrary", `fixture: expected Base,Mobile modes before the narrow apply, got ${synthL3 && synthL3.modes.map((m) => m.name)}`);
