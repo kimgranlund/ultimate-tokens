@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Unit | U2 (l4) — the ramp passes through the anchor at stop 500 in all three modes, with the Reset action, plan `preset-intent-fidelity` (ticket #681) |
-| Branch | unit/pif-u2-ramp @ b0c411d (pre-rebase head at close of repair pass 2 — see "Rebase" section below for the post-rebase sha) |
+| Branch | unit/pif-u2-ramp @ eae434d (pre-rebase head at close of repair pass 2 — see "Rebase" section below for the post-rebase sha) |
 | Base | ab9eaa6 (U1's last commit on this branch before U2's own work; `git merge-base HEAD origin/main` = bf2aaf659fde4db3bddaed8dfa23e2f485ab2c46, unchanged from U1's handoff) |
 | Grade | l4 |
-| Ran (repair pass 2, `b0c411d`) | `npm test` 🟢 (48/48, Q-U2-5 ruled and implemented) · `npm run build` ✅ · `node scripts/audit-citations.mjs` ✅ (STALE 0) · `npm run gate:corpus-contrast` ✅ (0 under 4.5, worst 4.500:1) · `git status --short` ✅ empty after every commit. |
+| Ran (repair pass 2, `eae434d`) | `npm test` 🟢 (48/48, Q-U2-5 ruled, implemented, then corrected per addendum 2) · `npm run build` ✅ · `node scripts/audit-citations.mjs` ✅ (STALE 0) · `npm run gate:corpus-contrast` ✅ (0 under 4.5, worst 4.500:1) · `git status --short` ✅ empty after every commit. |
 | Left out | `src/engine/prime.mjs` / `test/engine/prime.mjs` (U6), the chroma envelope in tonal.js (U3, keyed on `liftStop`), `src/engine/hct.js` (U6's #686 cache fix), `docs/` except this handoff + `.sdlc/questions/pif-u2.md` — none touched |
 
 ## Criteria
@@ -114,7 +114,7 @@ findings against it. Per-finding status:
 | 5 (F8) | Re-measure `hpg-role-contrast`'s 96 floors + curated thin-margin cells, before/after, AA 4.5 regardless | **Done** — `a82a66c`, recorded in `.sdlc/questions/pif-u2.md` |
 | 8 (F10) | Fix the false `0b2e8a0` #668 claim (note, not amend); `anchor.mjs`'s r-tagged print lines; `gen-tonal-fixture.mjs`'s deliberate narrowing, documented | **Done** — the false claim is corrected below; r-tagged lines were added as part of Finding 0+6+7's rewrite; `gen-tonal-fixture.mjs` comment added in `a82a66c` |
 | 9 (F3) | U2/U3 merge needs an explicit integration step | **Not this unit's to fix** — a plan-level (rev 14+) change; see "F3" section below, unchanged from the prior pass |
-| Q-U2-5 | Finding 1's literal basis broke REQ-002 — owner-ruling needed | **Ruled (revision 17, `85d5c00`, team-lead) and implemented (`b0c411d`)** — a blend, not the literal anchor value; see below |
+| Q-U2-5 | Finding 1's literal basis broke REQ-002 — owner-ruling needed | **Ruled (revision 17, `85d5c00`, team-lead), implemented (`b0c411d`), corrected per addendum 2 (`eae434d`)** — a liftStop-keyed blend, not the literal anchor value or an `anchorWarp`-keyed one; see below |
 
 ### Correction to commit `0b2e8a0`'s message (not a git-history rewrite)
 
@@ -127,7 +127,7 @@ idea `anchorLiftPos` applies to the anchored branch; #668 itself did not land he
 the re-diagnosis's Finding 8, deliberately as a correction note rather than a `git commit --amend`,
 since the commit is already shared history on this branch.
 
-### Rendered-path numbers (`node test/engine/anchor.mjs`, `b0c411d`, final — post Q-U2-5's ruled blend)
+### Rendered-path numbers (`node test/engine/anchor.mjs`, `eae434d`, final — post Q-U2-5 + addendum 2)
 
 - Stop-500 exactness: 10,110 exact, 0 off (3,370 of 3,380 in-window sources x 3 modes)
 - Window-clamp allow-list: 10 named sources (unchanged throughout this pass); clamped stop's rendered
@@ -152,7 +152,7 @@ prior blend fix; after = the literal-basis measurement, itself now superseded by
 not re-measured a third time, since `gate:corpus-contrast --full` at `b0c411d` already confirms 0
 cells under 4.5 regardless of exactly where in `[4.50,4.55)` they land).
 
-### Q-U2-5: ruled and implemented
+### Q-U2-5: ruled and implemented, then corrected per addendum 2
 
 Finding 1's literal instruction ("the anchor's own OKHSL s / CAM16 chroma as the pivot basis, not
 `palette.chroma`... call it, do not fork it") reopened the REQ-002 conflict F2's earlier fork was
@@ -160,16 +160,37 @@ built to avoid: a group's Base chroma went dead for every anchored ramp. Impleme
 per instruction, rather than building a third undirected workaround, and reported it as blocking.
 Team-lead ruled (plan revision 17, `85d5c00`, not the owner): keep REQ-002 as ratified, keep
 `chromaEnvelope` itself verbatim, but its basis input is a BLEND — the anchor's own chroma/saturation
-at the pivot, shading to `rampChroma`/`palette.chroma` at the ramp's ends, via `anchorWarp`'s own
-per-side warp fraction. Implemented in `b0c411d`. `test/ui/headless-boot.mjs`'s
-`(gid3)`/`(gid8)`/`(gid8b)` and `test/ui/shell.mjs`'s `(ac003b)` REQ-003 identity check for "Neutral"
-are all GREEN again. The blend's own cost: `anchor.mjs`'s monotone allow-list grew from 1 to 45 named
-exceptions — blending toward a second chroma target introduces a chroma trajectory the damping shape
-was not built against, tripping the SAME Helmholtz-Kohlrausch dark-end mechanism the one prior Nike
-exception already named, concentrated in peak mode (39 of 45) where F4's curve shaping is fully
-engaged. Every one of the 45 independently re-verified against the rendered path; expected to shrink
-once U3's own `VIVID_MIDS.dampAmp` 55->0 fix lands. Full account in `anchor.mjs`'s own `NONMONO_ALLOW`
-comment and `.sdlc/questions/pif-u2.md` Q-U2-5. `npm test` is 48/48 green with this landed.
+at the pivot, shading to `rampChroma`/`palette.chroma` at the ramp's ends. First implementation
+(`b0c411d`) keyed the blend weight on `anchorWarp`'s own per-side warp fraction; addendum 2 flagged
+this as a local workaround (it re-threads `anchorLiftPos` back into the chroma path `chromaEnvelope`
+was built to bypass) and specified the weight must come from `liftStop` directly instead. Fixed in
+`eae434d` with a small helper, `anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue)`,
+next to `chromaEnvelope`. For skew-0 presets the two weightings classify identically (verified:
+`anchor.mjs`'s three allow-lists are byte-identical by name under both); the skewed default families
+(Primary etc.) moved a hair, re-measured and re-pinned (EX-2, shadcn-baseline, role-contrast floors).
+
+`test/ui/headless-boot.mjs`'s `(gid3)`/`(gid8)`/`(gid8b)` and `test/ui/shell.mjs`'s `(ac003b)` REQ-003
+identity check for "Neutral" are all GREEN. Addendum 2's four named gate items, measured against
+`eae434d` (full account in `.sdlc/questions/pif-u2.md` Q-U2-5's "Addendum 2 gate evidence"):
+- Base chroma moves an anchored ramp's ends while stop 500 stays byte-exact — MET (10,110 exact, 0 off).
+- 0 notch at 500 — MET, verified analytically (the general formula's own limit at the pivot always
+  equals the anchor's value) and with a negative control (pinning the basis to the group value alone
+  visibly changes a window-clamped source's stop-500 output).
+- 0 non-monotone ramps on the rendered path — **NOT MET**: 45 named exceptions remain in
+  `anchor.mjs`'s `NONMONO_ALLOW`, IDENTICAL by name whether the blend weight is `anchorWarp`- or
+  `liftStop`-keyed — proving the growth (from 1 pre-blend) is a structural consequence of blending
+  toward a second chroma target under `dampAmp>0` presets (a real Helmholtz-Kohlrausch effect, root-
+  caused by direct inspection: Nike secondary, peak, stops 875->900, L* rises 5.4742->5.4835 while
+  chroma falls 18.88->17.22), not of which position measure drives the blend. Did not attempt a third,
+  self-invented construction to force this to 0. 39 of 45 are peak mode (F4's curve shaping fully
+  engaged there), 6 perceptual, 0 even; expected to shrink once U3's own `VIVID_MIDS.dampAmp` 55->0
+  fix lands.
+- Negative controls (pin to `palette.chroma`, notch reds; pin to the anchor, gid8 reds) — both
+  demonstrated, the second already proven earlier in this same pass before the ruling landed.
+- `scripts/report-preset-fidelity.mjs --envelope` (the addendum's C6 re-run ask) does not exist on
+  this branch — it is U3/U4-owned, not yet built here. Noted rather than fabricated.
+
+`npm test` is 48/48 green with this landed.
 
 ### Rebase onto `plan/preset-intent-fidelity`
 
