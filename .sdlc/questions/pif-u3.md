@@ -896,7 +896,8 @@ chroma` after the `hctToRgb` render, an 8-bit round-trip), and it is NOT bounded
 54,270 fallbacks it ranges -0.496 to +0.505 C. Adding that measured (not designed) term, the EFFECTIVE
 bound is about 2.0 C, not 1.5 C. The measured maximum gap is 1.8178 C (0.5 margin + 0.34 fallback miss =
 0.8389 pre-polish, plus 0.9789 more from the polish), and 960 of the 58,050 measured cap solves (1.7%)
-exceed 1.5 C, so 1.5 C was never actually a bound, only two-thirds of one. The corpus's median gap, 0.70 C
+exceed 1.5 C, so 1.5 C was never actually a bound, only three-quarters of one (corrected from
+"two-thirds," a post-review-5 nit). The corpus's median gap, 0.70 C
 (p90 1.26, full table above), is supporting data describing where capped stops typically land, not the
 bound itself.
 
