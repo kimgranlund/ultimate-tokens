@@ -212,6 +212,17 @@ export function solveOkhslHue(targetOklchHue, s, l) {
 // The earlier false-positive root this coarser grid appeared to reintroduce (Great Salt Lake stop 75)
 // was actually the achromatic-boundary bug above, not a genuinely missed narrow root - fixing that bug
 // made the coarse grid safe again; see the handoff for how this was verified.
+// PERFORMANCE (team-lead instruction, 2026-09-19): running the bracketed scan below for EVERY stop
+// made a single `npm test` take 10+ minutes against a ~60s baseline / 90-175s gate budget - `chromaAt`
+// is a full gamut-boundary binary search (~46us cache-cold), and `projectView` re-derives each
+// anchored ramp roughly 10x per document across its export formats, so a per-stop grid scan is paid
+// far more often than the stop count alone suggests. Fix: try the cheap fixed-point step FIRST (same
+// shape as the non-`chromaAt` branch below, but with `chromaAt(h)` evaluated fresh each iteration, so
+// a "converged" result is verified against the REAL render, not a stand-in chroma). It converges
+// correctly for the vast majority of stops - only the 865 (of ~72,000 measured) stops near a gamut
+// cusp actually need the expensive scan. Falling to the scan ONLY when the fixed-point step does not
+// converge (or wanders into an achromatic candidate, where its linear-slope assumption is meaningless
+// anyway) keeps the expensive path rare instead of universal.
 // The non-`chromaAt` branch below (the non-anchored path's own call, and any future `gamutClamp=true`
 // caller) is UNTOUCHED - still the original fixed-point loop, byte-identical (C4).
 function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chromaAt = null } = {}) {
@@ -226,7 +237,22 @@ function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chrom
     }
     return h;
   }
-  const SCAN_RANGE = 60, SCAN_STEP = 12, BISECT_TOL = 1e-4, BISECT_STEPS = 40, CHROMA_ACHROMATIC = 0.4;
+  // Fast path: the cheap fixed-point step, tried first. Bails to the scan below (not a spurious
+  // "converged" answer) the moment it meets an achromatic candidate, since err there is meaningless.
+  {
+    let h = targetOklchHue;
+    let converged = false;
+    for (let i = 0; i < 16; i++) {
+      const c = chromaAt(h);
+      if (c < 0.4) break; // achromatic - let the scan below apply the achromatic-safe fallback
+      const got = hctToOklch(h, c, tone)[2];
+      const err = (((got - targetOklchHue) % 360) + 540) % 360 - 180;
+      if (Math.abs(err) < 1e-3) { converged = true; h = (((h) % 360) + 360) % 360; break; }
+      h = (((h - err) % 360) + 360) % 360;
+    }
+    if (converged) return h; // a REAL root, verified against the true render at this exact h
+  }
+  const SCAN_RANGE = 60, SCAN_STEP = 5, BISECT_TOL = 1e-4, BISECT_STEPS = 40, CHROMA_ACHROMATIC = 0.4;
   // errAt returns null for an achromatic candidate (chroma below the render's own gray floor) - not a
   // real function value, so callers must skip it rather than treat it as a normal (possibly zero) err.
   const errAt = (offset) => {
