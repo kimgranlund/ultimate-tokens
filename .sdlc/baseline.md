@@ -3,7 +3,7 @@ kind: baseline
 repo: ultimate-tokens
 ran: 2026-09-16
 ref: origin/main @ 7faf3aa
-host: local macOS, Node 22, local Chrome for smoke
+host: local macOS, Node 24, local Chrome for smoke
 ---
 
 # Baseline
