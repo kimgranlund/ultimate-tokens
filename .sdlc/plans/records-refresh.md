@@ -45,7 +45,7 @@ Every negative control that edits a file runs in a throwaway clone (`git clone -
 ## Units
 
 - [x] U1 (S) rerun the baseline, remove the copied numbers, add the two ignore rules, state C11's scope, add the two staleness notes · grade l2 · reviewer-l1 · verifier-l1
-- [ ] U2 (S) the C31 shape: `## 8. Doc drift` measured at the head, a rerun note, the 18 controls rerun by the builder (handoff table) and graded one row each by the verifier (`verdicts/architecture.md` pass 5) · grade l2 · reviewer-l1 · verifier-l1 · after U1 merges
+- [~] U2 (S) the C31 shape: `## 8. Doc drift` measured at the head, a rerun note, the 18 controls rerun by the builder (handoff table) and graded one row each by the verifier (`verdicts/architecture.md` pass 5) · grade l2 · reviewer-l1 · verifier-l1 · after U1 merges
 
 Grade. The Orchestrator's table puts docs and config at l1, and `debt.md` grades every docs row L1. This unit goes one up, on the table's own evidence rule: it touches six files, its core job is transcribing nine measured runs without error, and three of the four l1 records units in adopt-hygiene needed a second pass. l2 keeps the l1 checker pair (reviewer-l1, verifier-l1). The reviewer dispatch names `.claude/agents/change-reviewer-agent.md` §What to check (adapter C2).
 
