@@ -91,7 +91,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 ## Deliberately fine — do not "fix"
 
 - The mixin-flattened `this` (file organization, not encapsulation) — an explicit, documented
-  trade-off (`mixinInto`, app.js:2540-2544); H2's collision guard is the cheap insurance, not a redesign.
+  trade-off (`mixinInto`, app.js:2551-2555); H2's collision guard is the cheap insurance, not a redesign.
 - Color-only `liveRefresh` / the Type-Geom drag freeze until settle — canon (foundations §3),
   self-documented, intended UX.
 - The one-shot latches `_figmaProbed`/`_figmaFontsRequested` — documented fire-once by design.

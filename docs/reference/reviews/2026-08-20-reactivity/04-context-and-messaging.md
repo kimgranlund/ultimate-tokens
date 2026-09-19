@@ -22,13 +22,13 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 
 | Type | Call site | Sandbox handler | Reply |
 |---|---|---|---|
-| `load-config` | `app.js:1006` (probe), `app.js:2323` (explicit load), posting `type: "load-config"` | `code.js:194-197` (`msg.type === "load-config"`) | `config-loaded` |
-| `read-variables` | `app.js:1007` (probe), `app.js:2377` (manual re-read), posting `type: "read-variables"` | `code.js:205-208` (`msg.type === "read-variables"`) | `variables-read` |
+| `load-config` | `app.js:1006` (probe), `app.js:2334` (explicit load), posting `type: "load-config"` | `code.js:194-197` (`msg.type === "load-config"`) | `config-loaded` |
+| `read-variables` | `app.js:1007` (probe), `app.js:2388` (manual re-read), posting `type: "read-variables"` | `code.js:205-208` (`msg.type === "read-variables"`) | `variables-read` |
 | `load-sets` | `app.js:1008` (probe), posting `type: "load-sets"` | `code.js:212-215` (`msg.type === "load-sets"`) | `sets-loaded` |
 | `read-float-variables` | `apply-gate.js:45` (gate open), posting `type: "read-float-variables"` | `code.js:209-211` (`msg.type === "read-float-variables"`) | `float-variables-read` |
 | `list-fonts` | `typography.js:808` (one-shot), posting `type: "list-fonts"` | `code.js:198-204` (`msg.type === "list-fonts"`) | `fonts-listed` |
 | `save-sets` | `app.js:1157` (`persistSets`), posting `type: "save-sets"` | `code.js:216-218` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
-| `save-config` | `app.js:2310`, posting `type: "save-config"` | `code.js:191-193` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
+| `save-config` | `app.js:2321`, posting `type: "save-config"` | `code.js:191-193` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
 | `apply` | `apply-gate.js:101`, posting `type: "apply"` | `code.js:125-190` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
 | `sweep-scan` | `apply-gate.js:218`, posting `type: "sweep-scan"` | `code.js:219-225` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
 | `sweep-delete` | `apply-gate.js:245`, posting `type: "sweep-delete"` | `code.js:226-234` (`msg.type === "sweep-delete"`) | `sweep-done` |
@@ -37,9 +37,9 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 
 | Type | Sandbox origin | Bridge line | UI handler | State mutated | Re-renders? |
 |---|---|---|---|---|---|
-| `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2255 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2261`) |
+| `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2266 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2261`) |
 | `config-loaded` | `code.js:196` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2337 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
-| `variables-read` | `code.js:207` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2381 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
+| `variables-read` | `code.js:207` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2392 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
 | `float-variables-read` | `code.js:211` (`type: "float-variables-read"`) | `gen-figma-ui.mjs:39` | `apply-gate.js:299 receiveLiveFloatVariables` | `this._liveFloatVars` | yes |
 | `sets-loaded` | `code.js:215` (`type: "sets-loaded"`) | `gen-figma-ui.mjs:42` | `app.js:1165 receiveStoredSets` | `this.sets` (guarded) | yes |
 | `fonts-listed` | `code.js:204` (`type: "fonts-listed"`) | `gen-figma-ui.mjs:45` | `typography.js:811 receiveFigmaFonts` | `this._figmaFonts` | yes |
@@ -58,7 +58,7 @@ Refresh discipline is consistent — every inbound handler calls `this.render()`
 |---|---|---|---|
 | `_applyBusy` (`app.js:134`) | `apply-gate.js:135` (`applyToFigma`) | `onApplyDone` (`apply-gate.js:155`) or `onApplyError` (`apply-gate.js:172`) | **Covered on the Figma-side throw** (code.js always answers `apply` either way). **Not covered** if the reply never arrives at all — no timeout, so a UI reload/detach of the plugin frame mid-apply wedges it forever (session-scoped only; a fresh open resets the constructor default). Documented intent (TKT-0004) is "belt-and-suspenders re-entry guard," not "impossible to wedge." |
 | `sweepBusy` (`app.js:82`) | `apply-gate.js:217` (scan), `apply-gate.js:244` (delete) | `receiveSweepScan` (`apply-gate.js:225`), `onSweepDone` (`apply-gate.js:251`), or the local `catch` if `postMessage` itself throws (`apply-gate.js:219`, `apply-gate.js:246`) | **NOT covered** if the sandbox's OWN handler throws after receipt — see the asymmetry in (A). A throwing `sweep-scan`/`sweep-delete` sets `sweepBusy=true`, the sandbox only `figma.notify`s, no reply ever posts, and the Cleanup panel's Scan/Delete buttons (`disabled: busy`, `settings.js:352,367-370`) stay disabled **permanently** for the rest of the session. Real bug — worth a ticket (either code.js posts `sweep-scanned:{texts:[],paints:[]}`/`sweep-done:{removed:0}` from its own catch, mirroring the apply carve-out, or the UI needs a timeout fallback). |
-| `_loadRequested` (`app.js:87`) | `loadFromProject` (`app.js:2321`) | `applyLoadedConfig` (`app.js:2344`) on any exit path, or the local `catch`/no-raw branches (`app.js:2323,2328,2329`) | Fully covered — every path resets it. No wedge. |
+| `_loadRequested` (`app.js:87`) | `loadFromProject` (`app.js:2331`) | `applyLoadedConfig` (`app.js:2344`) on any exit path, or the local `catch`/no-raw branches (`app.js:2334,2339,2340`) | Fully covered — every path resets it. No wedge. |
 | `_figmaProbed` (`app.js:88`) | `probeFigmaProject` (`app.js:1004`), immediately | never reset (one-shot by design — "probe once when the gallery opens") | Not a wedge — a fire-once latch, correctly documented as such. |
 | `_figmaFontsRequested` (`app.js:79`) | `typography.js:807`, immediately | never reset | Same shape — deliberate one-shot per the adjacent comment. Not a wedge. |
 
@@ -80,7 +80,7 @@ Two more request/reply pairs have no busy flag at all, and don't need one: `read
 - `overlays/settings.js` (`_cleanupPanel`, `settings.js:345-382`) reads `this.sweepResults`/`this.sweepBusy` (owned by ApplyGateMixin) and calls `this.scanForLegacyStyles()`/`this.deleteSelectedSweep()` (also ApplyGateMixin) directly — a Settings panel driving another mixin's state machine with no boundary.
 - `sections/typography.js` reads `this.inFigma`, `this.fontMode` (core) and is the sole owner of `_figmaFonts`/`_figmaFontsRequested`/`_faceCache`/`_fontsReadyHooked`, which drawer.js and apply-gate.js depend on transitively through `_typeScaleFor`.
 
-Net effect: the module boundary (`src/ui/sections/*`, `src/ui/overlays/*`) is a **file-organization** boundary, not an **encapsulation** boundary — explicitly documented that way in the `app.js:2564-2568` comment. A deliberate, acknowledged trade-off (TKT-0023), not an accident, but there is no way to know from reading `drawer.js` alone which of its ~15 `this.*` dependencies are guaranteed to exist without also reading typography.js, geometry.js, and app.js in full.
+Net effect: the module boundary (`src/ui/sections/*`, `src/ui/overlays/*`) is a **file-organization** boundary, not an **encapsulation** boundary — explicitly documented that way in the `app.js:2575-2579` comment. A deliberate, acknowledged trade-off (TKT-0023), not an accident, but there is no way to know from reading `drawer.js` alone which of its ~15 `this.*` dependencies are guaranteed to exist without also reading typography.js, geometry.js, and app.js in full.
 
 ## D — Cleanup / leak findings
 
@@ -92,8 +92,8 @@ Not cleaned up:
 - `_bindRangeDrag` (`app.js:2096-2142`): a `pointerdown` listener on `this` (dies with the element) that, on drag-start, adds `pointermove`/`pointerup`/`pointercancel` on `window` — cleaned by its own `end()` on pointerup/cancel (`app.js:2132-2136`), **but not if the element disconnects mid-drag**: those three window-level listeners, and the closure holding the whole app instance, live on indefinitely.
 - `_liveRaf` (`app.js:284-289`): never cancelled; a post-disconnect rAF still runs `_liveRefreshNow` against a detached subtree (harmless, wasted work, unguarded).
 - `_dragTimer` (`app.js:161,363`): a settled-drag commit up to 250ms after disconnect still mutates `this.history`/`this.future` on a dead instance.
-- `_toastT` (`app.js:2534-2535`): same shape, ≤1800ms tail.
-- The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2232`, 1500ms) and the code.js-download timer (`download()`, `app.js:2438`, 150ms): both harmless, also uncleaned.
+- `_toastT` (`app.js:2545-2546`): same shape, ≤1800ms tail.
+- The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2232`, 1500ms) and the code.js-download timer (`download()`, `app.js:2536`, 150ms): both harmless, also uncleaned.
 
 None exploitable today because `<ultimate-tokens>` is a true page-lifetime singleton — `disconnectedCallback` in practice never fires outside tests. That's exactly why it's worth flagging: the two things that DO get cleaned up were fixed reactively; the rest were never audited as a set. Nothing in `test/ui/headless-boot.mjs` exercises disconnect/reconnect at all.
 
