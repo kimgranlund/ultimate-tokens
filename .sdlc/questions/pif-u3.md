@@ -695,3 +695,75 @@ Plan revision 20 (`6c55f25`) froze ruling (f)'s bound at the fresh cusp-stop mea
 gate and `scripts/report-preset-fidelity.mjs`'s reporting copy both updated to `1.893005`; the witness
 (measured ratio `1.8930048002074109`) still clears the exact bound. All references to "189.31%" earlier
 in this record and in the handoff are corrected to the exact figure.
+
+### Q7 pass-7 addendum: step 1 shipped; step 2 (tone-held OKHSL damping) tried once, reverted — "which target yields"
+
+Brief: `u3-p7-brief.md`, following the re-diagnosis at `046044a`. Start `b759273`.
+
+**Step 1 (even-only damping curve): shipped, `27cc162`.** `dampCurve` alone cannot close
+`even|100`/`even|300`/`even|900`: `chromaEnvelope`'s `uG = |sd|^dampCurve` rises toward 1 as `dampCurve`
+falls toward 0 at ANY off-anchor stop, so at `dampCurve -> 0` the envelope's floor is `1-damp/100`
+everywhere off the anchor, set by `damp` alone — a synthetic sweep down to `dampCurve x0.001` at the
+corpus's own `damp` (70/80/89) left `even|100`'s p90 at exactly 39.0% throughout, and `even|900`'s
+median at exactly 34.5-34.7% (u3fix/retune-even-only.mjs). `damp` needed to move too. To keep both
+sliders live in every mode (no dead controls, no new control), the even path now compresses `damp`'s
+headroom and scales `dampCurve` by the SAME derived factor (`EVEN_DAMP_FACTOR = 0.25`, exported), inside
+`chromaEnvelope` itself, gated on `controls.toneMode === "even"` — signature unchanged, perceptual/peak
+untouched (0 hex diffs over 333,344 rendered cells, both stop sets, full corpus + default kit). This
+moved nearly every non-anchor stop of every even default ramp, so three fixture-style gates needed real
+updates, not workarounds: `damping-curve`'s independent formula now applies the same even mapping;
+`chroma-floor` gets a named, bounded exception (11 EXPORT_STOPS nearest the extremes, where the floor
+now legitimately binds for even a chroma-100 probe); `intensity-legacy`'s fixture is regenerated with all
+16 even defaults now carved (up from 10), perceptual untouched. `node test/engine/tonal.mjs` exits 0.
+
+**Step 2 (tone-held OKHSL damping): tried once, reverted.** Construction: reuse the pass-4/5 joint (s, l)
+technique, but for the DAMPING itself rather than the anchor cap. Per stop (perceptual/peak,
+`dampAmp === 0`), hold `targetTone = lstarFromRgb(rgb)` at TODAY's (pre-step-2) tone, then compress `s`
+further via `sExtra = keyS * envelopeAt.get(stop) ** OKHSL_EXTRA_DAMP_POWER` (a power transform on the
+ALREADY-COMPUTED envelope value — exactly 1 at the anchor, so `chromaEnvelope` is not called a second
+time and (C7)'s 3-call-site count gate stays intact), re-solve `l` via `solveLForTone`, then
+`refineNearestRgb` polish, mirroring the cap's own fallback-to-`hctToRgb` path.
+
+At `OKHSL_EXTRA_DAMP_POWER = 1.8` (the only value tried), `--envelope` reading (a) PASSED in full:
+
+| cell | median | p90 | target p90 |
+|---|---|---|---|
+| perceptual\|300 | 58.3% | 76.1% | <=90 |
+| peak\|700 | 56.5% | 77.0% | <=90 |
+
+Both target cells closed with real margin, and every other cell (perceptual/peak/even 100/300/700/900)
+stayed passing. But `node test/engine/tonal.mjs` FAILed: `(C6 i) peak: 6 rise(s)` (the gate's own first
+witness; an independent full-corpus scan for this record found 7, all in peak mode, all within 1e-6 of
+the gate's own threshold):
+
+| mode | preset | hue | chroma | skew/lift | stops | tone before -> after | delta L\* |
+|---|---|---|---|---|---|---|---|
+| peak | architecture/Marine Drive · 1930s · Art Deco ensemble · Mumbai | 106 | 30.00 | 0/0 | 75->100 | 99.6298 -> 99.6543 | +0.0245 |
+| peak | cuisine/Mango sticky rice · the dessert cart | 108 | 30.00 | 0/0 | 75->100 | 99.6298 -> 99.6301 | +0.0002 |
+| peak | cuisine/Mango sticky rice · the dessert cart | 108 | 30.00 | 0/0 | 125->150 | 99.2599 -> 99.3099 | +0.0500 |
+| peak | nature/19° S · July · 17:00 · Okavango Delta, Botswana, dry-season flood | 108 | 100.00 | 0/22 | 75->100 | 99.5813 -> 99.6055 | +0.0242 |
+| peak | nature/43° N · May · 18:00 · Camargue salt marsh, Rhône Delta, France | 112 | 100.00 | 0/1 | 75->100 | 99.6298 -> 99.6301 | +0.0002 |
+| peak | travel/42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season | 105 | 30.00 | 0/0 | 75->100 | 99.6298 -> 99.6543 | +0.0245 |
+| peak | default-kit | 106 | 100.00 | 0/0 | 125->150 | 98.7920 -> 98.8407 | +0.0487 |
+
+Every witness sits in the same narrow band: peak mode, hue 105-112 (yellow-green), near-white stops
+(75->100 or 125->150), tiny magnitude (+0.0002 to +0.0500 L*). The construction holds EACH stop's own
+tone independently to its own pre-step-2 target within 0.01 L* (refined), but does not enforce ordering
+BETWEEN adjacent stops — when two neighbouring stops' pre-step-2 tones are already nearly tied (as they
+are near white, where the tone curve flattens), the independent residual solve/quantization error on
+each stop can be large enough, relative to the gap between them, to flip which one reads lighter. Two
+OTHER gates also failed at this configuration (`skew-lift-okhsl`, `intensity-legacy`), each needing a
+carve-out-style update of the kind step 1 needed — not examined further once the uptick itself was found,
+since the uptick alone already trips the stop rule.
+
+Per the brief's stop rule ("if step 2 cannot close both cells with 0 upticks... revert step 2
+byte-for-byte and keep step 1... The owner rules from that. No further attempts") and "if a second
+workaround is needed, stop": this was the one construction tried. Reverted `src/engine/tonal.js`
+byte-for-byte to `27cc162` (`git checkout HEAD -- src/engine/tonal.js`); `node test/engine/tonal.mjs`
+exits 0 at that head. No second value of `OKHSL_EXTRA_DAMP_POWER`, and no alternative construction, was
+attempted.
+
+**What the owner rules on:** step 1 ships as-is. `perceptual|300` and `peak|700` stay at their pre-pass-7
+figures (p90 93.7% and 96.1% respectively, per the pass-6 addendum) — the two pre-existing misses this
+unit does not close. The `--envelope` table lists exactly these two cells as the yielded exception under
+the stop rule; everything else in reading (a) passes.

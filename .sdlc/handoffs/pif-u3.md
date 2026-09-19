@@ -4,9 +4,9 @@ plan: preset-intent-fidelity
 unit: U3
 branch: unit/pif-u3-envelope
 base: 690b0a1a395cee0bad122443c3441d5f35412030
-head: fe10dafb5a1802180724f96a3c366f8204f3aaf1
+head: 27cc162
 written: 2026-09-19
-pass: 6
+pass: 7
 ---
 
 # U3 handoff — anchor-centred chroma envelope, all modes, grade l4 (pass 3, root-cause fix)
@@ -260,6 +260,48 @@ head). `npm test` 47/47, tree clean, citations STALE 0, `gate:corpus-contrast` g
 head. Full diagnosis, both witnesses, and 3 options for the owner in Q7's pass-6 addendum.
 `.sdlc/handoffs/pif-u3-retune.md` is NOT written — step 2 did not land.
 
+## Pass 7 (last pass): even-only damping mapping shipped (step 1); tone-held OKHSL damping tried once, reverted (step 2)
+
+Brief: `u3-p7-brief.md`, following the re-diagnosis at `046044a` (Helmholtz-Kohlrausch: CIELAB L* rises
+when OKHSL `s` falls at fixed `l`, which fires only in the OKHSL-domain modes since `even` sets L*
+directly). Owner approved both halves; this is the last pass, no pass 8.
+
+**Step 1, done, shipped at `27cc162`.** `chromaEnvelope` now reads a mapped `damp`/`dampCurve` for
+`toneMode === "even"` only (`EVEN_DAMP_FACTOR = 0.25`, exported): `damp`'s headroom is compressed and
+`dampCurve` is scaled by the same factor, both derived from the two shared sliders so neither goes dead.
+`dampCurve` alone cannot close `even|100`/`even|300`/`even|900`: a synthetic sweep to `dampCurve x0.001`
+at the corpus's own `damp` left `even|100`'s p90 fixed at exactly 39.0% throughout — proof the ceiling
+there is set by `damp` alone once `dampCurve` is low enough, not by the curve's shape. `perceptual`/
+`peak` are untouched (0 hex diffs, 333,344 rendered cells, both stop sets). This reshapes nearly every
+non-anchor stop of every even default ramp, so three fixture-style gates needed real updates, not
+patches: `damping-curve`'s independent reference formula now applies the same even mapping; `chroma-
+floor` gets a named, bounded, both-directions-verified exception (11 EXPORT_STOPS nearest the extremes,
+where the floor now legitimately binds even for a chroma-100 probe); `intensity-legacy`'s fixture is
+regenerated, all 16 even defaults now carved (was 10), perceptual untouched at 15 of 16. `node
+test/engine/tonal.mjs` exits 0. `even|100`, `even|300` and `even|900` all clear their median/p90 targets
+for the first time since U3 began (p90 19.8% / 51.7% / 27.1%, targets 35% / 90% / 35%).
+
+**Step 2, tried once, reverted.** Reused the pass-4/5 joint (s, l) technique for the DAMPING itself in
+`perceptual`/`peak`: per stop, hold `targetTone` at today's (pre-step-2) tone, compress OKHSL `s` further
+via a power transform on the already-computed envelope value (`OKHSL_EXTRA_DAMP_POWER`, no second call
+to `chromaEnvelope` — (C7)'s 3-call-site count gate stays intact), re-solve `l`, `refineNearestRgb`
+polish. At the one value tried (1.8), `--envelope` reading (a) fully PASSED: `perceptual|300` p90 76.1%,
+`peak|700` p90 77.0% (both well under the 90% target), every other cell still passing. But `node
+test/engine/tonal.mjs` FAILed a real `(C6 i)` uptick: 7 instances, all `peak` mode, near-white stops
+(75->100 or 125->150), hue band 105-112, tiny magnitude (+0.0002 to +0.0500 L*) — holding each stop's
+own tone independently does not guarantee ORDER between adjacent stops whose pre-step-2 tones were
+already nearly tied, which happens near white where the tone curve flattens. Per the brief's own stop
+rule and "if a second workaround is needed, stop": reverted `src/engine/tonal.js` byte-for-byte to
+`27cc162` (`git checkout HEAD -- src/engine/tonal.js`); `node test/engine/tonal.mjs` exits 0 there. No
+second value and no alternative construction attempted. Full witness table and the two p90 figures in
+Q7's pass-7 addendum ("which target yields").
+
+`perceptual|300` (p90 93.7%) and `peak|700` (p90 96.1%) stay at their pre-pass-7 figures — the two
+misses this unit does not close. `.sdlc/handoffs/pif-u3-retune.md` is written (step 1 landed): damp/
+dampCurve before/after and the mapping, median/p90 at `bf2aaf6`/`4362180`/`27cc162`, default-kit
+movement (16 palettes x 3 modes, max/median deltaE76), the C8 96-cell before/after, and the thin-cell
+band `[4.50,4.55)` per mode.
+
 ## Risks for U2 / U4 (unchanged from pass 1, plus one addition)
 
 - **U2:** the near-white duplicate-hex class this pass closed to 0 and the peak-mode OKHSL/CAM16 cusp
@@ -281,12 +323,16 @@ head. Full diagnosis, both witnesses, and 3 options for the owner in Q7's pass-6
   own fix, still the same pinned floor digit), `even|Primary|dark` 4.5215 (+0.0215, was 4.5104 — moved
   UP by this pass), `even|Neutral|dark` 4.5280 (+0.0280, unchanged by this pass), `perceptual|Neutral|
   dark` 4.5327 (+0.0327, unchanged by this pass — the one cell this unit's Q6 re-pin moved).
-  `even|Info|dark` graduated OUT of this band this pass (4.5225 -> 4.6780) and is no longer in the
-  obligation set. Whoever integrates the plan (U4 or the Orchestrator) MUST re-run
-  `test/engine/semantic.mjs`'s `hpg-role-contrast` after U1 and U6 both land and confirm ALL FOUR cells
+  `even|Info|dark` graduated OUT of this band by pass 3 (4.5225 -> 4.6780) and back IN by pass 7's
+  even-only retune (4.6780 -> 4.5072, per `.sdlc/handoffs/pif-u3-retune.md`'s thin-cell table) — the
+  obligation set as of THIS pass's head (`27cc162`) is five cells, not four: `perceptual|Neutral|dark`
+  4.5327, `even|Neutral|dark` 4.5280, `even|Primary|dark` 4.5308, `even|Tertiary|dark` 4.5071,
+  `even|Info|dark` 4.5072. All five clear AA (`role-contrast` green at this head); none is a pinned-floor
+  drop. Whoever integrates the plan (U4 or the Orchestrator) MUST re-run
+  `test/engine/semantic.mjs`'s `hpg-role-contrast` after U1 and U6 both land and confirm ALL FIVE cells
   above still clear 4.5 before the plan ships — U1's anchor move and U6's ladder change can each move
-  Neutral's AND Primary's/Tertiary's accent lightness. This is not optional cleanup; it is the condition
-  the owner's Q6 acceptance rests on, restated for its current true scope.
+  Neutral's AND Primary's/Tertiary's/Info's accent lightness. This is not optional cleanup; it is the
+  condition the owner's Q6 acceptance rests on, restated for its current true scope.
 - **U4 / whoever picks up the OKHSL-path fix:** perceptual/peak's "0 above 100%" clause is still open
   (Q7 pass-3 addendum). The even-path technique (an absolute `Math.min(chroma, anchorChroma)` cap) does
   NOT transfer safely to the OKHSL path — an iterative saturation rescale was tried and caused a pinned
@@ -301,16 +347,17 @@ for the record), Q3 (RESOLVED — the "21 baseline duplicates" story was a proxy
 0/0 before/after), Q4 (Panda/shadcn spec literal drift, needs a docs-owning seat, unchanged), Q5 (2
 docs/ exception paths, unchanged in shape), Q6 (RESOLVED — owner accepted the C8 re-pin conditioned on
 a re-measure after U1 and U6 land, carried as an OBLIGATION in this handoff's Risks section above, now
-4 cells after pass 3's re-measurement), Q7 (STILL OPEN, pass-6 addendum added — even AND peak both close
-"0 above 100%" to exactly the named Adia carve-out (peak since pass 5), each gated with its own negative
-control. Perceptual keeps #55's cusp-pull richness fully untouched, per the owner's ruling (f): a
-one-contiguous-cusp-run, <=189.3005%-per-stop clause replaces "0 above 100%" for that mode only, gated and
-measuring 0 violations against the shipped (unchanged) engine — ruling (f)'s design matches the data
-shape (the natural cusp is always one contiguous run) where ruling (e)'s one-stop design did not. The
-median/p90 retune (step 2/3) is BLOCKED, not closed: two different damp/dampCurve candidates that both
-cleared the full numeric table each produced a genuine, different C6(i) CIELAB-L* uptick against the
-real corpus — the #668-class mechanism this unit otherwise fixed, reintroduced by lowering dampCurve far
-enough to close even|300's stuck-at-100% p90 ceiling. Both reverted byte-for-byte per the brief's own
-stop condition; not attempted a third time. Owner ruling needed on how (or whether) to close the
-median/p90 gap without reopening #668 before C6's numeric table can be called fully met; the ramp-shape
-and "0 above 100%"/cusp-run clauses are unconditionally shipped and correct as of this head).
+5 cells after pass 7's even-only retune moved `even|Info|dark` back into the thin band), Q7 (mostly
+CLOSED as of pass 7, one gap remains open — see the pass-7 addendum, "which target yields": even AND
+peak both close "0 above 100%" to exactly the named Adia carve-out (peak since pass 5), each gated with
+its own negative control. Perceptual keeps #55's cusp-pull richness fully untouched, per the owner's
+ruling (f): a one-contiguous-cusp-run, <=189.3005%-per-stop clause replaces "0 above 100%" for that mode
+only, gated and measuring 0 violations against the shipped (unchanged) engine. The median/p90 retune is
+now MOSTLY CLOSED: pass 7 step 1 closed `even|100`/`even|300`/`even|900` with a per-mode damp/dampCurve
+mapping (no upticks, full gate suite green). Step 2 (a tone-held OKHSL damping construction, closing the
+remaining `perceptual|300`/`peak|700` misses) was tried once and produced 7 real, tiny C6(i) upticks,
+all peak mode, near-white, hue 105-112; reverted byte-for-byte per the brief's own stop rule and "if a
+second workaround is needed, stop" — not attempted a second time. `perceptual|300` (p90 93.7%) and
+`peak|700` (p90 96.1%) are the two cells that remain open; the plan's own `--envelope` table lists them
+as the yielded exception. This is the LAST pass on U3 per the brief; any further attempt at these two
+cells is a follow-up unit's scope, not this one's).
