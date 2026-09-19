@@ -12,6 +12,7 @@
 //   oklchToCam16Hue(h)        -> number (CAM16 hue degrees)
 import * as E from "../../src/engine/hct.js";
 import { oklchToRgb } from "../../src/engine/okhsl.js";
+import { gateReport } from "../gate-report.mjs";
 
 // ── deterministic PRNG (LCG) — pristine: the worker never sees this seed stream ──────────
 let _s = 0x9e3779b1 >>> 0;
@@ -158,11 +159,11 @@ if (E.hctToOklch(120, 0, 50)[1] > 0.02) FAIL("hct-oklch", `near-neutral not achr
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-const GATES = ["anchor-roundtrip", "random-roundtrip", "gamut-ceiling", "branches", "oklch-deterministic", "hct-oklch", "hct-oklch-inverse", "cache-bound"];
-for (const g of GATES) {
-  const gf = fails.filter((f) => f.startsWith(g + ":"));
-  console.log(`  ${gf.length ? "FAIL" : "pass"}  ${g}${gf.length ? "  — " + gf[0].slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+const DECLARED = ["anchor-roundtrip", "random-roundtrip", "gamut-ceiling", "branches", "oklch-deterministic", "hct-oklch", "hct-oklch-inverse", "cache-bound", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (random roundtrip max channel Δ = ${rtMax})`);
 console.log("  defer  hpg-engine-parity — differential, needs the 2nd impl (gen.js); validated at integration");
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }

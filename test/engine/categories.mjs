@@ -18,6 +18,7 @@ import { paletteStops, STOPS, toneAt, DEFAULT_CONTROLS } from "../../src/engine/
 import { lstarFromRgb } from "../../src/engine/hct.js";
 import { oklchToRgb } from "../../src/engine/okhsl.js";
 import { buildCategory } from "../../scripts/gen-categories.mjs";
+import { gateReport } from "../gate-report.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SPECDIR = join(HERE, "..", "..", "docs", "reference", "colors", "categories");
@@ -643,10 +644,11 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
 }
 
 // ── REPORT ──
-for (const g of ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback", "lift-anchor"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+const DECLARED = ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback", "lift-anchor", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${totalTyped}/${totalPresets} presets carry a per-palette type across ${CATS.length} categories)`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: per-palette typography flows spec → preset → apply → scale");

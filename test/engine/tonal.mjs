@@ -894,23 +894,16 @@ for (const mode of ["perceptual", "peak"]) {
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#695), so a gate missing from the list below still shows up, loudly, instead of a real
-// failure hiding behind a neighbouring gate's "pass" row. The static check right after makes sure
-// the list and the real FAIL(...) call sites in this file agree: a declared name with no call
-// site, or a call site whose name is not declared, fails loudly on its own (report-static).
+// failure hiding behind a neighbouring gate's "pass" row. gateReport() (#699, test/gate-report.mjs
+// -- factored out of the block this file originally introduced) also runs the static self-check:
+// a declared name with no call site, or a call site whose name is not declared, fails loudly on
+// its own (report-static). The import lives here, immediately above its one call site, rather
+// than with the top-of-file imports -- ESM imports hoist regardless of textual position, and this
+// keeps every doc citation into the gates above from drifting by a line (same convention as
+// test/ui/persist.mjs's mid-file gate-report.mjs import).
+import { gateReport } from "../gate-report.mjs";
 const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "report-static"];
-{
-  const src = readFileSync(new URL(import.meta.url), "utf8");
-  const siteNames = new Set([...src.matchAll(/FAIL\(\s*"([^"]+)"/g)].map((m) => m[1]));
-  for (const name of DECLARED) if (!siteNames.has(name)) FAIL("report-static", `declared gate "${name}" has no matching FAIL(...) call site in this file (dead entry or a typo)`);
-  for (const name of siteNames) if (!DECLARED.includes(name)) FAIL("report-static", `a FAIL(...) call site uses gate name "${name}", which is not in the REPORT block's declared list`);
-}
-const failedNames = [...new Set(fails.map((f) => f.slice(0, f.indexOf(":"))))];
-const PRINTED = [...DECLARED, ...failedNames.filter((g) => !DECLARED.includes(g))];
-for (const g of PRINTED) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-  if (f && !DECLARED.includes(g)) console.log(`  !!! "${g}" is not in the REPORT block's declared list above; add it, this gate's failures were invisible until now !!!`);
-}
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: tonal-generation clears all [gate] predicates");
 process.exit(0);

@@ -13,6 +13,7 @@ import { typeScale, DEFAULT_TYPE } from "../../src/engine/type.mjs";
 import { geomScale, LADDER_MD_STEP, sizeAnchor } from "../../src/engine/geometry.mjs";
 import { PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { oklchToRgb } from "../../src/engine/okhsl.js"; // radix gate's own oklch()->rgb inverse (anti-tautology, never X's forward path)
+import { gateReport } from "../gate-report.mjs";
 import { paletteGroup, brandKit, defaultDocument, stateOf } from "../../src/ui/model.mjs"; // paletteGroup is the SINGLE
 // group resolver (ticket #556/#572) — the group-metadata gate below asserts every emitted surface
 // matches THIS, never a second hand-kept copy; brandKit/defaultDocument prove the MCP-facing kit too.
@@ -2294,10 +2295,17 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "oncolors", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "radix-refs-values-unchanged", "radix-refs-shape", "radix-refs-raw-pin", "radix-refs-role-pin", "radix-refs-parity", "radix-refs-alpha", "radix-refs-extras", "radix-refs-clones", "radix-refs-collision", "radix-refs-prefix", "radix-refs-module", "radix-refs-sentinel", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+// "prefix" was the live hole (#699 correction): it had 8 real call sites but was never declared.
+// The 12 "radix-refs-*" gates, "design-system-catalog" and "hpg-export-schema-stamp" call FAIL
+// through a per-block const named G bound to the gate name, rather than a literal string directly
+// in the call, which is why an earlier naive grep over this file mistook all 14 for dead declared
+// names with no call site at all, when they are in fact real, live gates. gateReport()'s
+// self-check resolves that indirection (see gate-report.mjs).
+const DECLARED = ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "oncolors", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "radix-refs-values-unchanged", "radix-refs-shape", "radix-refs-raw-pin", "radix-refs-role-pin", "radix-refs-parity", "radix-refs-alpha", "radix-refs-extras", "radix-refs-clones", "radix-refs-collision", "radix-refs-prefix", "radix-refs-module", "radix-refs-sentinel", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp", "prefix", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: export-formats clears all [gate] predicates");
 process.exit(0);

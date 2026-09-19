@@ -16,6 +16,7 @@ import { modeApplyPlan, mergeModeInterchanges, libraryModeReconcile, libraryMode
 import { stylePlans, primitivesModesApplyPlan } from "../../figma/binder/style-plan.mjs";
 import { LIBRARY_TYPE_VOICE_MAP, GEOMETRY_FIELD_RENAME_MAP } from "../../figma/binder/migrations.mjs";
 import { googleSafeFontFor } from "../../src/engine/font-fallbacks.mjs";
+import { gateReport } from "../gate-report.mjs";
 
 // stateOfDefault — a minimal engine State over role-table.json's default palettes, for building a
 // custom-themes DTCG bundle directly (figmaBundle() itself takes no themes option — TKT-0021
@@ -1381,11 +1382,10 @@ if (sweepCandidates) {
   if (!doneErrMsg) FAIL("sweep", "a throwing sweep-delete must still post {sweep-done} from the catch, or sweepBusy wedges the Cleanup panel forever (#454)");
 }
 
-// ── REPORT ───────────────────────────────────────────────────────────────────────
-for (const g of ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "staleskip", "staleskipfloat", "staleskipfontprim", "staleskipnotice", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The REPORT block prints once, at the very end of the file (see bottom), after every gate above
+// and below this point has had the chance to FAIL: a mid-file print here used to run before the
+// STYLES/fontmodes/library/readfloat legs further down had even executed, which is how three of
+// this file's own gates (compliance, regroup, primevalue) went unprinted for so long (#699).
 // ── STYLES apply: paint styles bound to Color Roles vars; text styles set + bound; registry prune ──
 // Runs on the SAME mock F: applyBundle already created Color Roles, the float e2e already created the
 // merged Geometry collection with its type/ half (base "product/16" scale) — exactly the state a real
@@ -2239,38 +2239,17 @@ if (applyFloatPlans) {
   } catch (e) { FAIL("readfloat", "read-float-variables threw: " + e.message); }
 }
 
-{
-  const f = fails.find((x) => x.startsWith("readfloat:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  readfloat${f ? "  — " + f.slice(11) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("styles:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  styles${f ? "  — " + f.slice(8) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("fontmodes:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  fontmodes${f ? "  — " + f.slice(10) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("libraryparity:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  libraryparity${f ? "  — " + f.slice(14) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("librarymode:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  librarymode${f ? "  — " + f.slice(12) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("adoptconsent:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  adoptconsent${f ? "  — " + f.slice(14) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("librarygrammar:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  librarygrammar${f ? "  — " + f.slice(15) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("fontprimslibrary:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  fontprimslibrary${f ? "  — " + f.slice(17) : ""}`);
-}
+// ── REPORT ───────────────────────────────────────────────────────────────────────
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row. This
+// used to be a mid-file list (26 names) plus 8 hand-written per-leg print blocks further down
+// (the 8th, fontprimslibrary, arrived in #696 after this conversion started), folded into one
+// declared list here so there is a single printed set. gateReport() also runs the report-static
+// self-check: a declared name with no FAIL(...) call site, or a call site whose name is not
+// declared, fails loudly on its own (report-static).
+const DECLARED = ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "staleskip", "staleskipfloat", "staleskipfontprim", "staleskipnotice", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep", "compliance", "regroup", "primevalue", "readfloat", "styles", "fontmodes", "libraryparity", "librarymode", "adoptconsent", "librarygrammar", "fontprimslibrary", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("\nPASS: figma-plugin-app — manifest + offline code.js + bridged ui.html + the figmaBundle→variables cascade + the Type/Geometry breakpoint-mode apply + the styles apply (bound paints/texts, registry prune)");
 process.exit(0);
