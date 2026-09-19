@@ -3,11 +3,13 @@ kind: roadmap
 repo: ultimate-tokens
 status: draft (planner proposal; the Conductor owns this file and the owner ranks it)
 written: 2026-09-18
-head: bf2aaf6 (origin/main)
+head: bf2aaf6 (origin/main); revised 2026-09-19 at 20298cc for row 1 only, see the note under Roadmap
 inputs: gh issue list --state open (11 issues), gh pr list --state open (3 PRs), git worktree list, .sdlc/board.md, .sdlc/debt.md, .sdlc/plans/records-refresh.md, origin/plan/preset-intent-fidelity @ d547a7a, .sdlc/questions/survey-2026-09-18-approval.md (Q0 to Q4)
 ---
 
 # Roadmap
+
+Revision 2026-09-19: row 1 updated on landing of records-refresh (#691, four units 🟢). Every other row is the 2026-09-18 snapshot; the board and the other session's PRs have moved since and this file is re-ranked at the next planning round.
 
 The only place plans and tickets are ranked. One row per item, ordered P0 to P3, then by rank inside a priority.
 
@@ -28,7 +30,7 @@ Count: P0 0 · P1 3 · P2 8 · P3 2 · total 13. Of those, 6 belong to the other
 
 | Rank | Ticket | Plan | Title | Kind | Pri | Size | Lane | Owner | Status | Blocked by | Target |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | none; `ticket: pending`, minted on approval | `records-refresh`, `.sdlc/plans/records-refresh.md` (`status: draft`, committed as 8919292 on `plan/records-refresh`) | Small records unit: rerun the baseline, fix the stale test-count lines, add the two ignore rules, land with the refreshed survey as one PR | chore | P1 (plan draft frontmatter; not yet ranked by the owner) | S | docs | sdlc | claimed (d): plan drafted, awaiting approval | nothing | one PR this cycle |
+| 1 | #691 | `records-refresh`, `.sdlc/plans/records-refresh.md` (four units U1 to U4, all verified 🟢, landing via the pre-land record) | Small records unit: rerun the baseline, fix the stale test-count lines, add the two ignore rules, land with the refreshed survey as one PR | chore | P1 (plan draft frontmatter; not yet ranked by the owner) | S | docs | sdlc | claimed (d): plan drafted, awaiting approval | nothing | one PR this cycle |
 | 2 | #681 | `preset-intent-fidelity`, `.sdlc/plans/preset-intent-fidelity.md` on `origin/plan/preset-intent-fidelity` @ d547a7a (not on main), `status: approved` 2026-09-18, 6 units | Preset intent fidelity: exact prime anchors, muted chroma envelope, perceived-lightness prime ladder | feature | P1 | L | color-engine | other session | in flight outside sdlc (d): U1 committed on `unit/pif-u1-anchor` (first seen as 7a317e0, since rebased onto 362cc48; the unit commit is now a6324da, tip ed6ac8e, 5 ahead of main, clean); U3 and U6 trees open. Label still reads `status:backlog` | per its plan, #668 (#662 landed as 1ea2f80, #674 as bf2aaf6); the other session's call | theirs |
 | 3 | #674 (closed 2026-09-18 by PR #683, squash bf2aaf6) | none | Adia brands.json Warning accent/on-color contrast regressed 3.22 to 2.19 after #647 | defect | P1 (p) | S (legacy) | color-engine | other session | in flight outside sdlc (d): follow-up PR #685 open (widen the corpus AA floor to all three tone modes), mergeable, `panda-smoke` and `corpus-contrast` green, `build-test` not finished when read | nothing | theirs |
 | 4 | #668 | none | Perceptual ramp: measured L* rises at stop 800 on nine presets with lift <= -34 | defect | P2 | S (legacy) | color-engine | other session | in flight outside sdlc (d): one commit c4b8962 on local `fix/668-stop800-uptick`, not pushed, no PR | nothing | theirs; gates #681 U3 |
@@ -46,7 +48,7 @@ Count: P0 0 · P1 3 · P2 8 · P3 2 · total 13. Of those, 6 belong to the other
 
 | Order | Item | Why |
 |---|---|---|
-| 1 | `records-refresh` (S, docs) | owner approved it (Q2); plan drafted, checkability review 🟢 14/14, needs approval and a ticket |
+| 1 | `records-refresh` (#691, S+S+M+S, docs) | approved Q2, Q5, Q9, Q13; four units verified; landing |
 
 The planner's original #2 and #3 (`#673` with `#676` riding, then `#672`) are withdrawn: the conductor found both already in flight from the other session while assembling this roadmap for approval (`#673` has an unpushed unit commit plus a handoff doc, `#672` is mid-edit uncommitted). Nothing else on this list is currently free for our seats; #676 loses its ride since #673 is not ours to plan.
 

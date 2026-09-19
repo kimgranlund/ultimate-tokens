@@ -18,3 +18,5 @@ Unit `unit/rr-U4` at `d04b68244c42cdbdacb41364ce2fca0dde0ad63c`. Criteria: `.sdl
 - Row 5's first value is `0` now, so Note A in the handoff (written before `aed0caee` excluded the board from the sweep) is resolved and needs no Orchestrator action.
 - The handoff records rows 1 and 2 in summary form (`(nothing), exit 0` and `same`) rather than the verbatim output step 3 asks for. Cosmetic, outside rows 1 to 7.
 - Action for the Orchestrator, not for the builder: row 5's sixth sub-check needs `$BASE` back, or a per-unit base, before pre-land reads it, otherwise it stays unsatisfiable for every unit after U1.
+
+Close-out 2026-09-19 (conductor, pre-land): `$BASE` was restored in fc118ef6, so row 5's sixth sub-check is satisfiable again; the pre-land pass re-grades row 5 at the plan head and `.sdlc/verdicts/records-refresh-prepr.md` carries that grade. The 🟡 above is the unit-pass record and stays as history.
