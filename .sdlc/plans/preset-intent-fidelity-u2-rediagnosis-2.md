@@ -170,3 +170,5 @@ criterion needs to move. What the owner rules on if the bounded pass stops short
 (already under the hard ceiling) is an acceptable landing point for this ticket, with the residual gap
 to the soft target reported and deferred, the same shape as every other "pending U4" deferral already
 in this plan.
+
+**Parity baseline amendment (conductor, 2026-09-19, on Lane A's pass-6 finding).** The parity gate names `4c2831ab`, but that tree still carries the `_pmemo` cache, so its full-corpus sweep is order-dependent (the #686 class): 7 cells differ by one 8-bit code, all even mode at stop 100, traced to the cache's own key collision, with `a75733d4` the more correct side. The gate therefore reads: full-corpus hex parity against `954675c6`, the last pre-`_pmemo` commit, expected 0 differing cells; the 7 cells against `4c2831ab` are recorded as a cache artifact, not a regression.
