@@ -161,11 +161,21 @@ for (const p of DEFAULTS) {
   //     === 500 at lift 0, so the 9 lift-0 defaults collapse to the pre-#668 raw-stop legacy formula
   //     exactly, and the 3 lifted ones (Success, Warning, Danger) read both sides of the subtraction
   //     through the SAME liftStop, which is what makes env(anchor)=1 exact at every lift, not only 0.
+  //     #681 U3 pass 3: for a GENERATED palette (dampAmp 0, true of every default here), the shipped
+  //     engine additionally caps every stop at the anchor's OWN legacy value (the lift x hue-cusp fix —
+  //     Q7 measured stops whose local gamut ceiling exceeds the anchor's rendering MORE absolute chroma
+  //     than the anchor despite an equal-or-smaller envelope multiplier). `anchorWant` re-derives that
+  //     cap independently (evenChroma's own 3-line formula, at uLeg=0 by construction) rather than
+  //     calling the engine's private `evenChroma`, keeping this an independent check of the BEHAVIOUR.
   for (const p of SAT) {
     const tgt = tgtOf(p);
+    const maxc500 = at(ramp(p, {}), 500).maxc;
+    const floor500 = Math.min((CTL.chromaFloor / 100) * maxc500, tgt);
+    const anchorWant = Math.min(maxc500, Math.max(tgt, floor500));
     for (const r of ramp(p, {})) {
       const uLeg = Math.abs(T.liftStop(r.stop, p.lift) - T.liftStop(500, p.lift)) / 450;
-      const want = Math.min(tgt * Math.max(0, 1 - (CTL.damp / 100) * uLeg ** 1.5), r.maxc);
+      const legacyWant = Math.min(tgt * Math.max(0, 1 - (CTL.damp / 100) * uLeg ** 1.5), r.maxc);
+      const want = Math.min(legacyWant, anchorWant);
       if (Math.abs(r.chroma - want) > 1e-6) FAIL("damping-curve", `${p.name} default != legacy at stop ${r.stop}: ${r.chroma.toFixed(4)} vs ${want.toFixed(4)}`);
     }
   }
@@ -230,13 +240,27 @@ for (const p of DEFAULTS) {
   }
   // (b) HARMONIZED ACROSS HUE — at the same chroma%, every hue uses the SAME fraction of its own
   //     per-stop ceiling (chroma/maxc = min(frac·m, 1), hue-independent). Blue 264° vs yellow 90°.
+  //     #681 U3 pass 3: EXCEPT where the anchor cap fires (dampAmp 0: no stop may emit more chroma than
+  //     the anchor's OWN chroma) — that bound is keyed on EACH hue's own maxc500, a different absolute
+  //     ceiling per hue even at the identical chroma%, so it can bind at different stops for the two
+  //     probe hues and locally break the cross-hue match on purpose (C6's per-palette anchor bound is
+  //     the plan-ruled priority here, not this harmonization property). Skip those stops rather than
+  //     mask the divergence; chromaFloor is 0 in CTL so the un-capped fraction is exactly 0.70 either way.
   const A = T.paletteStops({ hue: 264, chroma: 70, skew: 0, lift: 0 }, { ...CTL, relChroma: true }, STOPS);
   const B = T.paletteStops({ hue: 90, chroma: 70, skew: 0, lift: 0 }, { ...CTL, relChroma: true }, STOPS);
+  const maxc500A = A.find((r) => r.stop === 500).maxc, maxc500B = B.find((r) => r.stop === 500).maxc;
+  let compared = 0;
   for (let i = 0; i < STOPS.length; i++) {
     if (A[i].maxc < 1 || B[i].maxc < 1) continue;                  // skip near-neutral tone extremes
+    const env = T.chromaEnvelope(STOPS[i], 500, 0, CTL);
+    const cappedA = 0.70 * env * A[i].maxc > 0.70 * maxc500A + 1e-9;
+    const cappedB = 0.70 * env * B[i].maxc > 0.70 * maxc500B + 1e-9;
+    if (cappedA || cappedB) continue;                              // anchor cap fired for >=1 hue here
+    compared++;
     const fa = A[i].chroma / A[i].maxc, fb = B[i].chroma / B[i].maxc;
     if (Math.abs(fa - fb) > 0.02) FAIL("rel-chroma", `gamut fraction differs by hue at stop ${STOPS[i]}: 264°=${fa.toFixed(3)} vs 90°=${fb.toFixed(3)} (not harmonized)`);
   }
+  if (compared === 0) FAIL("rel-chroma", `(b) every stop was anchor-capped for at least one hue — pick different probe hues`);
   // (c) OFF == DEFAULT (no regression) and (d) ON actually changes the output (not a no-op).
   const p = DEFAULTS.find((d) => d.chroma >= 50) || DEFAULTS[0];
   const def = rampOf(p), off = withRel(p, false), on = withRel(p, true);
@@ -516,10 +540,20 @@ for (const mode of ["perceptual", "peak"]) {
 //     little to cross a quantisation boundary at any stop, so it is the one perceptual ramp still
 //     pre-0.2.0-identical. The 16 EVEN ramps are untouched by #657 — that path solves through
 //     solveCam16Hue, which #657 did not change — so the #648 even carve-out above stands as written.
-//   Carved total after #657: 18 of 32 (3 even + 15 perceptual). The remaining 14 — the 13 even ramps
-//   whose lift is 0, and perceptual/Secondary — are byte-for-byte what 83756bb emitted, and that is
-//   what each regeneration of this file was verified against. Do NOT regenerate it to make an
-//   unexplained red go green. ──────────────────────────────────────────────────────────────────────
+//   #681 U3 pass 3 CARVE-OUT (7 MORE even ramps, none newly carved on the perceptual side — this pass
+//     only touched the even path): even/Secondary, /Data 1, /Data 4, /Data 5, /Data 6, /Data 7, /Data 8
+//     — all skew 0, lift 0 (so this is the hue-cusp half of "lift sign x hue-cusp tone" standing alone,
+//     not lift: toneAt(500,...) is a fixed midpoint independent of the hue picked, but a hue's OWN
+//     peak-chroma tone (peakC(hue).tone) is hue-specific and need not sit there — a non-anchor stop
+//     can then have MORE local gamut headroom than the anchor even at skew=lift=0). Generated palettes
+//     (dampAmp 0) now cap every stop's chroma at the anchor's own (Q7's "0 above 100%" fix), so these
+//     7 ramps' stops nearest the hue's true cusp — indices vary by hue, 2 to 4 of 25 stops each — moved
+//     down to the anchor's ceiling instead of the legacy formula's uncapped value. even/Warning was
+//     ALREADY carved (#648, lift != 0) and picks up more moved cells here too, not a new entry.
+//   Carved total after #681 U3 pass 3: 25 of 32 (10 even + 15 perceptual). The remaining 7 — Neutral,
+//   Primary, Tertiary, Info, Data 2, Data 3 (even) and Secondary (perceptual) — are byte-for-byte what
+//   83756bb emitted, and that is what each regeneration of this file was verified against. Do NOT
+//   regenerate it to make an unexplained red go green. ─────────────────────────────────────────────
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};
@@ -1023,7 +1057,11 @@ for (const mode of ["perceptual", "peak"]) {
   const docs = [];
   for (const slug of CATS) {
     const { PRESETS } = await import(`../../src/ui/categories/${slug}.js`);
-    for (const preset of PRESETS) docs.push(hydrate({ ...preset }));
+    for (const preset of PRESETS) {
+      const d = hydrate({ ...preset });
+      d.__presetName = preset.name; // C6 "0 above 100%" carve-out below needs the preset's own name
+      docs.push(d);
+    }
   }
   const upticks = { perceptual: 0, peak: 0, even: 0 };
   const upWitness = { perceptual: "", peak: "", even: "" };
@@ -1101,6 +1139,58 @@ for (const mode of ["perceptual", "peak"]) {
   if (seenBaselineDup.size !== KNOWN_BASELINE_DUP.size) {
     const missing = [...KNOWN_BASELINE_DUP].filter((k) => !seenBaselineDup.has(k));
     FAIL("chroma-envelope", `(C6 ii) ${missing.length} of the ${KNOWN_BASELINE_DUP.size} cited baseline duplicates were not observed this run (${missing.join(", ")}) — either fixed (remove from the list, tighten C6 ii toward 0) or the corpus changed under it (re-diagnose before loosening further)`);
+  }
+
+  // (iii) C6 "0 above 100%" (Q7 reading a: emitted CAM16 chroma at ANY stop over stop 500's own), for
+  // GENERATED palettes (dampAmp 0) — #681 U3 pass 3's root-cause fix (paletteStops's even path caps
+  // every stop's chroma at the anchor's own). Scoped to EVEN MODE ONLY: the same fix attempted on the
+  // OKHSL path (perceptual/peak, via a saturation rescale) caused two disallowed regressions — a pinned
+  // hpg-role-contrast floor dropping below its old value, and 18 NEW skew-lift-okhsl grid upticks — and
+  // was reverted rather than shipped broken. perceptual/peak's "0 above 100%" clause stays open, tracked
+  // in .sdlc/questions/pif-u3.md Q7 and measured (not gated) by scripts/report-preset-fidelity.mjs
+  // --envelope.
+  //
+  // ADIA_CARVEOUT — the ONE named, owner-ruled exception (2026-09-18): an AUTHORED dampAmp>0 override is
+  // exempt from "0 above 100%" by NAME, not by "any dampAmp>0" (that would silently exempt a future
+  // second override too) and not by count (a NEW violator under this exact name would still fail the
+  // gate below unless the count is re-verified) — the negative control proves an UNLISTED dampAmp>0
+  // preset is still caught.
+  const ADIA_CARVEOUT = new Set(["Adia · The product's own design system"]);
+  const above100Violators = (doc) => {
+    const out = [];
+    if ((doc.dampAmp ?? 0) === 0) return out; // the cap already guarantees this can't fire
+    for (const pal of doc.palettes) {
+      const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "even" };
+      const chroma = rampChromaOf(pal, doc);
+      const ramp = T.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, T.STOPS);
+      const c500 = ramp.find((r) => r.stop === 500).chroma;
+      if (c500 <= 1e-9) continue;
+      if (ramp.some((r) => r.chroma > c500 + 1e-6)) out.push(pal.name);
+    }
+    return out;
+  };
+  const unlisted = [];
+  for (const doc of docs) {
+    const v = above100Violators(doc);
+    if (v.length && !ADIA_CARVEOUT.has(doc.__presetName)) unlisted.push(`${doc.__presetName}/${v[0]}`);
+  }
+  if (unlisted.length) FAIL("chroma-envelope", `(C6 iii) even: ${unlisted.length} above-100% instance(s) from an UNLISTED preset (not the named Adia carve-out), e.g. ${unlisted[0]}`);
+  const adiaHit = docs.some((doc) => ADIA_CARVEOUT.has(doc.__presetName) && above100Violators(doc).length > 0);
+  if (!adiaHit) FAIL("chroma-envelope", `(C6 iii) the named Adia carve-out produced ZERO above-100% instances — either the carve-out is stale (Adia's own dampAmp no longer needs it, tighten toward 0) or the corpus dropped that preset; re-diagnose before touching ADIA_CARVEOUT`);
+
+  // Negative control: a SCRATCH copy of a NON-Adia doc with dampAmp forced to 70 (an authored-style
+  // override, matching Adia's own magnitude) must be caught as UNLISTED by the SAME check above — proves
+  // the carve-out really is keyed on the one named preset, not on "any dampAmp>0". In-memory only, built
+  // from the already-loaded corpus; never reads origin/main at runtime.
+  {
+    const scratchDoc = { ...docs[0], dampAmp: 70, __presetName: "Scratch · not a real preset (negative control)" };
+    const v = above100Violators(scratchDoc);
+    if (v.length === 0) FAIL("chroma-envelope", `(C6 iii negative control) scratch dampAmp:70 preset (based on ${docs[0].__presetName}) produced no above-100% instance to catch — pick a different probe doc`);
+    else if (ADIA_CARVEOUT.has(scratchDoc.__presetName)) FAIL("chroma-envelope", `(C6 iii negative control) scratch preset name collided with ADIA_CARVEOUT — rename the probe`);
+    // else: correctly NOT in ADIA_CARVEOUT, so the same logic that built `unlisted` above would catch
+    // it — this control doesn't re-run that loop, it just confirms the scratch doc IS a live violator
+    // (checked above) that ISN'T named in the carve-out (checked here), which is what "reds as unlisted"
+    // requires of it.
   }
 }
 

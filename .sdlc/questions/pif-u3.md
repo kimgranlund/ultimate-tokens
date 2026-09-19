@@ -292,3 +292,119 @@ this predates Design B (this unit's own change) was not measured this pass — e
 has `dampAmp: 0`, which is consistent with it being pre-existing, but that is an inference from this
 data, not a direct baseline (bf2aaf6) re-measurement; flagging as a gap if the owner wants it closed
 before ruling.
+
+### Q7 pass-3 addendum — the root cause fixed for even mode; OKHSL path reverted; median/p90 gaps proven pre-existing
+
+The owner held the C6 bar (no rescope of median/p90/"0 above 100%") and asked for the named root cause
+— lift sign x hue-cusp tone — fixed, with a named Adia carve-out on "0 above 100%" specifically.
+
+**The fix (even toneMode path, shipped):** `paletteStops` computes `anchorChroma` — the anchor stop's
+own emitted chroma, by the exact same formula the per-stop map uses at stop 500 (relChroma-aware,
+tone/hue-aware via `toneAt`/`baseHue`, so it reflects the anchor's OWN lift-displaced position, never
+the hue's independent theoretical cusp) — and caps every stop's chroma at it for generated (`dampAmp`
+0) palettes: `chroma = Math.min(chroma, anchorChroma)`. At stop 500 itself this is a proven no-op (same
+formula, same inputs). `chromaEnvelope`'s own `liftStop`-keyed position math is untouched, as required.
+Measured result: `report-preset-fidelity.mjs --envelope`'s even-mode "above 100%" count drops from 2,301
+to exactly 16, and every one of the 16 is a named Adia palette — matching reading (b)'s count exactly,
+confirming the two readings now agree once the anchor-cap closes the gap reading (a) alone exposed.
+
+Root cause, precisely: even at skew=lift=0, `toneAt(500,...)` is a FIXED midpoint tone independent of
+which hue is picked, while a hue's own peak-chroma tone (`peakC(hue).tone`) is hue-specific and need not
+sit there — so a non-anchor stop, whose own tone happens to sit closer to that hue's cusp, can have MORE
+local gamut headroom (`maxChromaInGamut`) than the anchor even with no lift or skew at all. Confirmed via
+the `intensity-legacy` fixture: 7 lift=0/skew=0 default palettes (Secondary, Data 1/4/5/6/7/8) moved
+under this fix — the hue-cusp half of "lift sign x hue-cusp tone" standing entirely alone. Lift then
+compounds it (the majority of the corpus carries nonzero lift, per the earlier addendum's breakdown).
+
+**The same technique on the OKHSL path (perceptual/peak) — implemented, measured, REVERTED:** an
+iterative proportional saturation rescale (`s *= anchorChroma/chroma`, re-measure, repeat up to 8 times,
+converges because chroma is locally near-linear in `s` at fixed hue/lightness) closed the SAME gap on
+perceptual/peak too (measured before reverting: above-100% count also dropped to 16-all-Adia in those
+modes). But it caused two regressions the brief named as explicit stop conditions:
+- `hpg-role-contrast`: `perceptual Secondary DARK` dropped to 5.74:1, below its pinned 6.1:1 floor.
+- `skew-lift-okhsl` (iii c): 18 NEW synthetic grid cells rose beyond the 21 cited `GRID_R2_EXCEPTIONS`
+  (worst +1.5280 L*, well past the shipped R2's own worst of +0.1314 L*).
+
+Both traced to the SAME cause: OKHSL saturation isn't chroma-uniform across lightness (a saturation
+value that renders one CAM16 chroma at one lightness can render a different chroma at another), so
+rescaling `s` to hit a target chroma is really an implicit tone perturbation too — `tone = lstarFromRgb(
+rgb)` shifts slightly at every rescaled stop, which is exactly what both C7's uptick gate and the
+contrast floor are sensitive to. Verified by isolating the two fixes (`if (false)` guarding only the
+OKHSL rescale, even-path cap left active): the contrast-floor and grid-uptick failures disappear
+entirely; only fixture/formula-comparison gates remain (all legitimately re-pinnable, see below). This
+is a genuine "second workaround" in the sense the brief warned about — a DIFFERENT technique is needed.
+Two candidates were considered and set aside rather than attempted: (1) switching capped stops to the
+validated HCT engine directly at the anchor's own chroma+tone instead of staying in OKHSL space — this
+would guarantee the bound exactly, but risks reintroducing the Abney hue residual `solveOkhslHue` exists
+to close (a few degrees, at the capped stops specifically); (2) recalibrating the OKHSL path's `keyS`
+basis at the anchor's own rendered tone instead of the hue's independent cusp tone (the direct OKHSL
+analog of the even-path fix) — this reduces the gap's size and likely its frequency, but does not by
+itself PROVE the "0 above 100%" bound the way an explicit cap does, since OKHSL saturation still isn't
+chroma-uniform across lightness. Reverted byte-for-byte (diffed
+against `fa8f072:src/engine/tonal.js`'s `okhslStops` to confirm identity) rather than shipped broken.
+Consequence: perceptual/peak's "0 above 100%" clause stays open — 1793/1521 above-100% instances,
+unchanged from the pre-pass-3 measurement.
+
+**Collateral fixture/formula-comparison drift from the even-path fix (all re-pinned this pass, none a
+floor or uptick regression):** `test/engine/tonal.mjs`'s `damping-curve` (a) independent legacy-formula
+check now also caps at the anchor (re-derived independently); `rel-chroma` (b)'s cross-hue harmonization
+check now skips stops where the anchor cap fires for either probe hue (a real, expected, disclosed
+divergence — the cap is keyed on EACH hue's own `maxc500`, a different absolute number per hue even at
+identical chroma%, so it can bind at different stops for two different hues); `intensity-legacy`'s named
+carve-out list gained 7 even-mode entries (Secondary, Data 1/4/5/6/7/8) with `tonal-legacy.json`
+regenerated to match; two citation lines moved with comment growth. Full diffs in the handoff's pass-3
+file list.
+
+**C8 contrast, precise before/after (fa8f072 vs this pass's head, all 96 cells, non-floor-truncated):**
+only "even" mode moved (perceptual/peak untouched, as expected — this pass didn't touch those paths);
+no cell crossed below 4.5; worst overall ratio after is 4.5130 (even/Tertiary/dark).
+
+| cell | before | after | delta |
+|---|---|---|---|
+| even/Primary/dark | 4.5104 | 4.5215 | +0.0111 |
+| even/Secondary/dark | 5.8367 | 5.8699 | +0.0332 |
+| even/Tertiary/dark | 4.5145 | 4.5130 | -0.0014 |
+| even/Info/dark | 4.5225 | 4.6780 | +0.1554 |
+| even/Success/dark | 5.1852 | 5.1684 | -0.0169 |
+| even/Warning/dark | 5.0231 | 5.0314 | +0.0083 |
+| even/Danger/dark | 5.1543 | 5.1570 | +0.0027 |
+| even/Data 1/light | 5.2342 | 5.2467 | +0.0126 |
+| even/Data 2/dark | 5.8765 | 5.8458 | -0.0307 |
+| even/Data 4/dark | 5.8562 | 5.8531 | -0.0032 |
+| even/Data 5/dark | 5.8518 | 5.8484 | -0.0034 |
+| even/Data 6/dark | 5.8526 | 5.8849 | +0.0323 |
+| even/Data 7/dark | 5.8380 | 5.8564 | +0.0183 |
+| even/Data 8/dark | 5.8757 | 5.8475 | -0.0281 |
+
+The thin-cell ([4.50,4.55)) obligation set (Q6/handoff Risks) is now 4 cells, down from 5: `even|
+Tertiary|dark` 4.5130, `even|Primary|dark` 4.5215, `even|Neutral|dark` 4.5280 (unchanged),
+`perceptual|Neutral|dark` 4.5327 (unchanged). `even|Info|dark` graduated out (4.5225 -> 4.6780).
+
+**The median/p90 gaps are separately proven PRE-EXISTING, not part of this mechanism:** even after the
+anchor-cap fix, several cells still miss their numeric target — `perceptual|300` p90 93.7% (target 90),
+`peak|700` p90 97.3% (target 90), `even|100` p90 39.0% (target 35), `even|300` p90 100.0% (target 90),
+`even|900` median 40.2%/p90 48.0% (target 25/35). A fresh bf2aaf6 (true pre-U3 baseline) re-measurement,
+using the same `--envelope` methodology, shows these are NOT new: `even|900` measured median 40.6%/p90
+49.6% at bf2aaf6, essentially identical to today; `even|100` p90 was ALREADY 39.0% at bf2aaf6, an exact
+match. Design A/B already substantially IMPROVED some of these (`perceptual|300` p90 122.4% -> 93.7%;
+`peak|700` p90 149.9% -> 97.3%) without fully closing them. A lift=0 vs lift!=0 split on `even|900`
+shows lift=0's median (43.6%, n=54) is HIGHER than lift!=0's (40.2%, n=2866) — ruling lift out as the
+driver for this specific miss. These targets look like they were never actually achievable under the
+shipped default `damp`/`dampCurve` controls, for reasons unrelated to lift x hue-cusp; fixing them would
+mean retuning the damping curve's own defaults or shape, a different, broader change this pass's brief
+did not scope and that risks its own collateral (as the OKHSL-path attempt just demonstrated). Left
+open, not patched.
+
+**Options for the owner:**
+- Rule the OKHSL-path "0 above 100%" gap and the pre-existing median/p90 gaps as follow-up work (a new
+  unit or ticket), and accept even mode's clean fix plus the Adia-carve-out gate as this unit's C6
+  contribution — the four ramp-shape gates (C6 i-iii, C7) and the anchor-exactness property are
+  unconditionally correct and shipped; only the numeric table's full pass/fail status is still open.
+- Direct a further pass at the OKHSL path with a specifically different technique (HCT-engine fallback
+  or anchor-tone keyS recalibration, both named above but not attempted) — real effort, not a quick
+  patch, given the Abney-drift and unproven-bound concerns already surfaced.
+- Direct a further pass at the median/p90 shape itself (damp/dampCurve retuning) — separate scope from
+  lift x hue-cusp entirely, would need its own negative controls and its own C7/C8 regression sweep.
+- Re-scope C6's numeric table to drop the median/p90 clauses that are proven pre-existing and keep only
+  "0 above 100%" (with the Adia carve-out) as the enforced bar — the option this pass's brief explicitly
+  ruled out ("no rescope"), listed here only for completeness.

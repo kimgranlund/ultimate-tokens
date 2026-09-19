@@ -369,6 +369,20 @@ export function paletteStops(palette, controls, stops) {
   }
   const pk = peakC(baseHue).c; // the BASE hue's max chroma in sRGB
   const target = (palette.chroma / 100) * pk; // control is % of the BASE-hue peak
+  // anchorChroma — the anchor stop's OWN emitted chroma, by the SAME formula the per-stop map below
+  // uses at stop 500 (relChroma-aware, and tone/hue-aware via toneAt/baseHue — lift- and skew-displaced,
+  // never the hue's independent cusp). #681 U3 pass 3: this is the root-cause fix for the lift-sign x
+  // hue-cusp-tone mechanism Q7 measured — `target`/`pk` are calibrated against the hue's OWN theoretical
+  // peak (peakC), which lift can displace the anchor away from while leaving some OTHER real stop
+  // closer to it; that other stop's bigger local gamut ceiling (maxc) let it clamp to MORE absolute
+  // chroma than the (now off-cusp) anchor even though chromaEnvelope's own multiplier never exceeds 1
+  // for a zero dampAmp. The anchor's emitted value, not the hue's independent peak, is what "0 above
+  // 100%" is measured against, so it is what every other stop gets held to below.
+  const tone500 = toneAt(500, palette.skew, palette.lift, ctl);
+  const maxc500 = maxChromaInGamut(baseHue, tone500);
+  const intended500 = controls.relChroma ? (palette.chroma / 100) * maxc500 : target;
+  const anchorChroma = evenChroma(maxc500, intended500, envelopeAt.get(ANCHOR_STOP), controls.chromaFloor);
+  const dampAmp = controls.dampAmp ?? 0;
   return stops.map((stop) => {
     const tone = toneAt(stop, palette.skew, palette.lift, ctl);
     const s = (stop - 500) / 450; // signed position: <0 light · 0 mid · >0 dark
@@ -392,7 +406,12 @@ export function paletteStops(palette, controls, stops) {
     // NEVER past the anchor's own envelope of 1 (a muted palette stays muted, a neutral stays neutral,
     // saturated stops already clamp at/near maxc so the floor never binds). Shared with the stop-500 hue
     // anchor so they can't drift.
-    const chroma = evenChroma(maxc, intended, envelopeAt.get(stop), controls.chromaFloor);
+    let chroma = evenChroma(maxc, intended, envelopeAt.get(stop), controls.chromaFloor);
+    // Generated palettes (dampAmp 0) never emit more chroma than the anchor itself (#681 U3 pass 3, the
+    // C6 "0 above 100%" clause). At stop === ANCHOR_STOP this is an exact no-op (same formula, same
+    // inputs, chroma === anchorChroma already). Authored dampAmp>0 overrides (Adia, C6's named carve-out)
+    // skip this cap; chromaEnvelope's own liftStop-keyed position math above is untouched.
+    if (dampAmp === 0) chroma = Math.min(chroma, anchorChroma);
     // Emit via the engine at the per-stop (hue, chroma, tone): in-gamut, hits the
     // tone, holds the SPECIFIED hue (constant when hueShift=0, else edge-rotated).
     const out = hctToRgb(hue, chroma, tone);

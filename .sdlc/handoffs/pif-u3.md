@@ -6,10 +6,10 @@ branch: unit/pif-u3-envelope
 base: 690b0a1a395cee0bad122443c3441d5f35412030
 head: c5a5be39eb4186b3895ffe67e00c0bdde73c56fd
 written: 2026-09-18
-pass: 2
+pass: 3
 ---
 
-# U3 handoff — anchor-centred chroma envelope, all modes, grade l4 (pass 2, review response)
+# U3 handoff — anchor-centred chroma envelope, all modes, grade l4 (pass 3, root-cause fix)
 
 Ticket #681, priority P1. Pass 1 shipped a `chromaEnvelope` unifying the even path's and the OKHSL
 path's per-stop chroma damping, keyed on `liftStop` (#668's R1c fix), with the OKHSL path's saturation
@@ -30,7 +30,27 @@ unrelated #668 magnitude bar. `scripts/report-preset-fidelity.mjs --envelope` is
 the first time (Q7, new), and it fails the numeric table under both readings of C6's ambiguous prose —
 reported honestly with real numbers, not silently made to pass. Q1, Q3 and Q6 are resolved (Q6 by
 owner ruling, widened this pass to its true scope per a second verifier finding); Q4 and Q5 are
-unchanged from pass 1; Q7 is new and needs an owner ruling before C6 can be called fully met.
+unchanged from pass 1.
+
+**Pass 3 (this pass): the owner held the C6 bar (no rescope of median/p90/"0 above 100%") and asked for
+the named root cause — lift sign x hue-cusp tone — fixed, with a named Adia carve-out.** Fixed the
+"even" toneMode path cleanly: `paletteStops` now caps every stop's chroma at the anchor's own emitted
+value for generated (`dampAmp` 0) palettes, closing "0 above 100%" from 2,285 violating instances to
+exactly the 16 named Adia ones, with zero collateral damage (verified: `npm test` 47/47, `gate:corpus-
+contrast` green, no pinned floor drops, no new `skew-lift-okhsl` grid upticks). The identical technique
+on the OKHSL path (perceptual/peak — an iterative saturation rescale, since OKHSL saturation isn't
+chroma-uniform across lightness) was implemented, measured, and **reverted**: it closed the same gap
+there too, but caused two disallowed regressions the brief explicitly named as stop conditions — a
+pinned `hpg-role-contrast` floor dropping below its old value, and 18 new `skew-lift-okhsl` synthetic
+grid cells rising beyond the cited 21. Per "if a second workaround is needed, stop", perceptual/peak's
+"0 above 100%" stays open, written up in Q7 rather than patched further. Separately, and NOT part of
+the lift x hue-cusp mechanism: several C6 median/p90 targets (even/900 median+p90, even/100 p90,
+even/300 p90, perceptual/300 p90, peak/700 p90) were proven, via a fresh bf2aaf6 baseline re-measurement,
+to be PRE-EXISTING — unrelated to lift (a lift=0 subset shows a HIGHER, not lower, even/900 median) and
+unmoved by Design A, Design B, or this pass's own fix. These also stay open in Q7. A new C6(iii) gate
+(the named Adia carve-out plus a negative control that reds on an unlisted `dampAmp>0` preset) is now
+wired into `npm test`, scoped to even mode only pending the OKHSL-path fix. Q7 needs the owner's ruling
+on: (a) the OKHSL-path scope, (b) the pre-existing median/p90 gaps.
 
 ## Criteria table
 
@@ -44,8 +64,9 @@ unchanged from pass 1; Q7 is new and needs an owner ruling before C6 can be call
 | C6-ii | 0 duplicate hex, full corpus, both stop sets, RENDERED path | same file, (C6 ii) | **0** duplicate-hex ramps in every mode, both stop sets — `KNOWN_BASELINE_DUP` is an empty Set; no exception needed | the pre-U3 base also measures 0 on the rendered path (Q3); pass 1's Design A measured 2 (both named in Q1's table) — Design B's own negative control: patching back to Design A's `sd` formula in a scratch copy reproduces both |
 | iii-c | measured CIELAB L* never rises beyond a NAMED exception list, 10,080-cell synthetic grid | `test/engine/tonal.mjs` "skew-lift-okhsl" | 21 of 10,080 rise under Design B (worst +0.1314 L*; 20 near-white, one near-black at tone 7.55); all 21 named and cited in `GRID_R2_EXCEPTIONS`, verified both directions | deleting one cited cell reproduces a FAIL naming it; an unlisted 22nd cell also fails |
 | C6-iii | no docs/ literal moves without a named exception | `git diff --stat 690b0a1 -- docs/` | 4 paths: 2 expected `adia-*` regen files, 2 citation-line fixes (this pass moved the SAME two lines again, `:404`->`:410`, not repeated from pass 1's `:395`->`:404`) — Q5 | n/a |
-| C6-envelope | Q4-ruled median/p90 chroma-envelope table, NEWLY BUILT this pass (verifier caught this unit's own gate suite never asserted it — see Q7) | `node scripts/report-preset-fidelity.mjs --envelope` | Built, run, reported honestly: FAILS the plan's numeric targets under both plausible readings of C6's prose. Full tables in Q7. Owner ruling needed; script is standalone, not wired into `npm test` | `--damp-amp 55` (the plan's own named control): above-100% count jumps 16->2920 (reading b) and ~1500-2300->2400-2900 (reading a) across modes — the mechanism discriminates correctly |
-| C8 | `hpg-role-contrast` floors re-pinned vs the TRUE pre-U3 baseline (bf2aaf6, not pass 1's own numbers), re-measured PRECISELY this pass (not floor-truncated) | `test/engine/semantic.mjs` | Exactly ONE pinned floor moves down: perceptual Neutral dark 4.9->4.5 (Q6, owner-ruled). Several unpinned fractional moves exist beyond that (peak Data 2/Danger dark, perceptual Warning/Danger dark all drop by hundredths without crossing a floor digit) — "holds or improves at every family" was an overclaim, corrected in-line | restoring Neutral dark to 4.9 in a scratch copy reds at measured 4.5327 |
+| C6-envelope | Q4-ruled median/p90 chroma-envelope table (reading a is the ruled bar) | `node scripts/report-preset-fidelity.mjs --envelope` | STILL FAILS overall: even mode's "0 above 100%" now closes to exactly 16 (all Adia); perceptual/peak's "0 above 100%" stays open (1793/1521, unfixed this pass, root cause the same but the fix attempted there was reverted — see pass 3 note above and Q7); 5 median/p90 cells fail in all 3 modes, proven PRE-EXISTING via a bf2aaf6 baseline re-measurement (unrelated to lift x hue-cusp). Script remains standalone, not wired into `npm test` | `--damp-amp 55`: above-100% count jumps 16->2920 (reading b) and ~1500-2300->2400-2900 (reading a) — the mechanism discriminates correctly |
+| C6-iii-new | "0 above 100%" (reading a), GENERATED palettes (dampAmp 0), even mode, with the named Adia carve-out | `test/engine/tonal.mjs` "chroma-envelope" (C6 iii, new this pass) | pass — 0 non-Adia above-100% instances; Adia's own 16 confirmed still present (the carve-out isn't stale) | a scratch copy of a non-Adia doc with `dampAmp` forced to 70 produces an above-100% instance NOT in `ADIA_CARVEOUT`, caught as unlisted; renaming `ADIA_CARVEOUT` to a wrong string reproduces a real FAIL naming an actual Adia palette |
+| C8 | `hpg-role-contrast` floors re-pinned vs the TRUE pre-U3 baseline (bf2aaf6, not pass 1's own numbers), re-measured PRECISELY (not floor-truncated) | `test/engine/semantic.mjs` | Exactly ONE pinned floor moves down, still: perceptual Neutral dark 4.9->4.5 (Q6, owner-ruled). Several unpinned fractional moves exist beyond that (peak Data 2/Danger dark, perceptual Warning/Danger dark from pass 2; even Primary/Tertiary/Info/Secondary/Success/Data 1/2/4-8 dark or light from pass 3's own anchor-cap fix) — none crosses a floor digit, worst move is even/Tertiary/dark -0.0014 (4.5145->4.5130, still floors to 4.5). Full precise before/after for every moved cell is in `.sdlc/questions/pif-u3.md` Q7 pass-3 addendum | restoring Neutral dark to 4.9 in a scratch copy reds at measured 4.5327; reverting pass 3's even-path cap in a scratch copy reproduces the pre-pass-3 values exactly |
 | gate:corpus-contrast | 0 of 7,560 cells under 4.5 | `npm run gate:corpus-contrast` | `168 named per cell, 0 carried below 4.5`, worst cell 4.503:1 | n/a |
 | contrastLint | 0/0/0 across modes | `contrastLint(brandKit(defaultDocument()))` per mode | `0 0 0` | n/a |
 | Q4 | Panda literal | `test/engine/exports.mjs` | unchanged from pass 1 — `oklch(0.5458 0.0462 266.73)`, confirmed design-invariant (Neutral/Primary both lift 0) | n/a |
@@ -106,6 +127,32 @@ role default. Full rationale and the rejected third draft are in `src/engine/ton
   Adia `dampAmp` carve-out question). Q6's re-measure obligation's scope corrected.
 - `.sdlc/handoffs/pif-u3.md` — this file, updated in place.
 
+## Files changed, pass 3 (root-cause fix, on top of `b0ef117`/`fa8f072`)
+
+- `src/engine/tonal.js` — `paletteStops` (even toneMode path) gained `anchorChroma` (the anchor's own
+  emitted chroma, by the SAME per-stop formula the map uses at stop 500) and caps every stop's chroma
+  at it for generated (`dampAmp` 0) palettes. `chromaEnvelope`'s own `liftStop`-keyed position math is
+  untouched, as the brief required. `okhslStops` (perceptual/peak) was ALSO given an analogous fix (an
+  iterative saturation rescale) this pass, measured, found to cause a pinned contrast-floor drop and 18
+  new `skew-lift-okhsl` grid upticks, and reverted byte-for-byte back to its pre-pass-3 form (diffed
+  against `fa8f072:src/engine/tonal.js` to confirm) rather than shipped broken.
+- `test/engine/tonal.mjs` — `damping-curve` (a)'s independent legacy formula now also caps at the
+  anchor's own value (re-derived independently, not by calling the engine's private `evenChroma`);
+  `rel-chroma` (b)'s cross-hue harmonization check now skips stops where the anchor cap fires for
+  either probe hue (a disclosed, expected divergence, not a silently loosened tolerance); the big
+  `intensity-legacy` carve-out comment gained a new "#681 U3 pass 3" entry naming the 7 even-mode
+  ramps that moved (Secondary, Data 1/4/5/6/7/8 — all skew 0 lift 0, so this is the hue-cusp half of
+  the mechanism standing alone, not lift); a NEW C6(iii) sub-check in the `chroma-envelope` gate asserts
+  "0 above 100%" for even mode with the named `ADIA_CARVEOUT` and a negative control (see criteria
+  table). Two citation-line fixes for comment growth (`SKILL.md:95`'s `246-264`->`275-293`,
+  `tonal.js:410`->`:430` in two review docs).
+- `test/engine/fixtures/tonal-legacy.json` — regenerated (`node scripts/gen-tonal-fixture.mjs "<label>"`)
+  to capture the 7 newly-moved even-mode ramps; the other 25 of 32 fixture ramps are byte-identical to
+  before, confirmed by a structural diff before committing.
+- `.sdlc/questions/pif-u3.md` — Q7 gained a pass-3 addendum: the fix, its OKHSL-path revert and why, the
+  pre-existing (bf2aaf6-proven) median/p90 gaps, and the precise C8 before/after table.
+- `.sdlc/handoffs/pif-u3.md` — this file.
+
 ## Regenerated artifacts (committed)
 
 - `test/engine/fixtures/tonal-legacy.json` (CARVE-OUT header updated for R2), `test/engine/fixtures/
@@ -142,20 +189,27 @@ in `.sdlc/questions/preset-intent-fidelity-u3-movement.md` (C6 iv).
   per-palette anchor stop, the seed's saturation will follow it while the seed's lightness stays at 500.
 - **U4:** the movement-table report (C6 iv) should measure against the SAME full-corpus, rendered,
   both-stop-set scope this unit's gate now uses.
-- **U1 / U6, OBLIGATION (Q6, owner-ruled 2026-09-18, WIDENED per verifier re-review):** the owner
-  accepted this unit's C8 re-pin (perceptual Neutral dark, 4.9 -> 4.5, measured 4.5327) ON THE CONDITION
-  that the cell is re-measured once U1 and U6 both land. The verifier's independent 96-pair measurement
-  found perceptual Neutral dark is not the thinnest cell in the corpus — re-verified here directly, the
-  full set of cells under 4.55 (headroom under 0.05 over the ruled AA 4.5 floor), sorted thinnest first:
-  `even|Primary|dark` 4.5104 (+0.0104), `even|Tertiary|dark` 4.5145 (+0.0145), `even|Info|dark` 4.5225
-  (+0.0225), `even|Neutral|dark` 4.5280 (+0.0280, present in both the verifier's and my own sweep but
-  not named in either's prose list), and `perceptual|Neutral|dark` 4.5327 (+0.0327, the only one this
-  unit's own re-pin moved — the other four are unchanged, pre-existing values from `bf2aaf6`). Whoever
-  integrates the plan (U4 or the Orchestrator) MUST re-run `test/engine/semantic.mjs`'s
-  `hpg-role-contrast` after U1 and U6 both land and confirm ALL FIVE cells above still clear 4.5 before
-  the plan ships — U1's anchor move and U6's ladder change can each move Neutral's AND Primary's/
-  Tertiary's/Info's accent lightness. This is not optional cleanup; it is the condition the owner's Q6
-  acceptance rests on, now stated for its true scope rather than the one cell this unit happened to move.
+- **U1 / U6, OBLIGATION (Q6, owner-ruled 2026-09-18, WIDENED per verifier re-review, RE-MEASURED pass
+  3):** the owner accepted this unit's C8 re-pin (perceptual Neutral dark, 4.9 -> 4.5, measured 4.5327)
+  ON THE CONDITION that the cell is re-measured once U1 and U6 both land. The full set of cells under
+  4.55 (headroom under 0.05 over the ruled AA 4.5 floor), sorted thinnest first, AS OF THIS PASS'S HEAD
+  (pass 3's own even-path fix moved several of these — see the full precise before/after table in Q7):
+  `even|Tertiary|dark` 4.5130 (+0.0130, was 4.5145 before pass 3 — moved DOWN slightly by this pass's
+  own fix, still the same pinned floor digit), `even|Primary|dark` 4.5215 (+0.0215, was 4.5104 — moved
+  UP by this pass), `even|Neutral|dark` 4.5280 (+0.0280, unchanged by this pass), `perceptual|Neutral|
+  dark` 4.5327 (+0.0327, unchanged by this pass — the one cell this unit's Q6 re-pin moved).
+  `even|Info|dark` graduated OUT of this band this pass (4.5225 -> 4.6780) and is no longer in the
+  obligation set. Whoever integrates the plan (U4 or the Orchestrator) MUST re-run
+  `test/engine/semantic.mjs`'s `hpg-role-contrast` after U1 and U6 both land and confirm ALL FOUR cells
+  above still clear 4.5 before the plan ships — U1's anchor move and U6's ladder change can each move
+  Neutral's AND Primary's/Tertiary's accent lightness. This is not optional cleanup; it is the condition
+  the owner's Q6 acceptance rests on, restated for its current true scope.
+- **U4 / whoever picks up the OKHSL-path fix:** perceptual/peak's "0 above 100%" clause is still open
+  (Q7 pass-3 addendum). The even-path technique (an absolute `Math.min(chroma, anchorChroma)` cap) does
+  NOT transfer safely to the OKHSL path — an iterative saturation rescale was tried and caused a pinned
+  contrast-floor drop plus new `skew-lift-okhsl` grid upticks (both reproduced, both reverted). A
+  DIFFERENT technique is needed there (candidates and the measured failure modes are in Q7); do not
+  re-attempt the same saturation-rescale approach without addressing why it perturbs tone.
 
 ## Open questions
 
@@ -163,8 +217,10 @@ See `.sdlc/questions/pif-u3.md`: Q1 (RESOLVED — Design B shipped, both tables 
 for the record), Q3 (RESOLVED — the "21 baseline duplicates" story was a proxy artefact; true count is
 0/0 before/after), Q4 (Panda/shadcn spec literal drift, needs a docs-owning seat, unchanged), Q5 (2
 docs/ exception paths, unchanged in shape), Q6 (RESOLVED — owner accepted the C8 re-pin conditioned on
-a re-measure after U1 and U6 land, carried as an OBLIGATION in this handoff's Risks section above,
-WIDENED to 5 cells per a second verifier finding), Q7 (NEW — C6's primary envelope-shape table was
-never built or measured; now built and run, fails the plan's numeric targets under both readings of
-C6's prose; real numbers for both readings plus the Adia `dampAmp` carve-out question are in Q7 itself;
-owner ruling needed before C6 can be called fully met).
+a re-measure after U1 and U6 land, carried as an OBLIGATION in this handoff's Risks section above, now
+4 cells after pass 3's re-measurement), Q7 (STILL OPEN, pass-3 addendum added — the named lift x
+hue-cusp root cause is fixed cleanly for even mode, closing "0 above 100%" to exactly the named Adia
+carve-out, now gated with a negative control; the same fix on the OKHSL path caused disallowed
+regressions and was reverted, so perceptual/peak's "0 above 100%" stays open; a SEPARATE, pre-existing
+set of median/p90 misses — proven via a bf2aaf6 baseline comparison to predate this unit entirely, and
+NOT lift-driven — also stays open. Owner ruling needed on both before C6 can be called fully met).
