@@ -1,13 +1,13 @@
 ---
 plan: preset-intent-fidelity
 unit: U3 (chroma envelope) — pass 7 retune record
-head: 27cc162
+head: 6a4821e
 ---
 
 # U3 pass 7 retune: damp/dampCurve mapping, corpus movement, C8 before/after
 
 This is the record `.sdlc/handoffs/pif-u3-retune.md` the pass-7 brief requires. It covers step 1 (shipped,
-`27cc162`) only — step 2 was tried once and reverted; see `.sdlc/questions/pif-u3.md`'s "Q7 pass-7
+`6a4821e`) only — step 2 was tried once and reverted; see `.sdlc/questions/pif-u3.md`'s "Q7 pass-7
 addendum" for that construction, its uptick witnesses, and the two p90 figures it could not close
 without one. U4's blast report reads this doc for the retune's own contribution, separate from U1-U2's
 anchor/envelope movement already covered in `.sdlc/handoffs/pif-u3.md`.
@@ -55,14 +55,14 @@ Cells shown as `median / p90`.
 | 4362180 (U3 pass 3, even cap) | perceptual | 11.1 / 19.7 | 68.9 / 93.7 | 59.6 / 68.5 | 19.2 / 30.3 |
 | 4362180 (U3 pass 3, even cap) | peak | 6.6 / 13.5 | 46.4 / 58.0 | 65.5 / 105.5 | 19.0 / 28.8 |
 | 4362180 (U3 pass 3, even cap) | even | 8.8 / 39.0 | 61.1 / 100.0 | 66.9 / 72.7 | 40.2 / 48.0 |
-| 27cc162 (this pass's head) | perceptual | 11.1 / 19.7 | 68.9 / 93.7 | 59.6 / 68.5 | 19.2 / 30.3 |
-| 27cc162 (this pass's head) | peak | 6.6 / 13.5 | 46.4 / 58.0 | 65.5 / **96.1** | 19.0 / 28.8 |
-| 27cc162 (this pass's head) | even | 8.8 / **19.8** | 40.3 / **51.7** | 36.5 / **50.6** | 16.3 / **27.1** |
+| 6a4821e (this pass's head) | perceptual | 11.1 / 19.7 | 68.9 / 93.7 | 59.6 / 68.5 | 19.2 / 30.3 |
+| 6a4821e (this pass's head) | peak | 6.6 / 13.5 | 46.4 / 58.0 | 65.5 / **96.1** | 19.0 / 28.8 |
+| 6a4821e (this pass's head) | even | 8.8 / **19.8** | 40.3 / **51.7** | 36.5 / **50.6** | 16.3 / **27.1** |
 
 Targets: stop 100/900 median <=25, p90 <=35; stop 300/700 median <=75, p90 <=90. perceptual and peak are
-IDENTICAL at 4362180 and 27cc162 (step 1 never touches those paths; the 4362180->bf2aaf6 differences in
+IDENTICAL at 4362180 and 6a4821e (step 1 never touches those paths; the 4362180->bf2aaf6 differences in
 those two modes are pass 4-6's already-documented, already-ruled work — the anchor cap and the cusp-run
-gate — not this pass's). Only even mode moves between 4362180 and 27cc162, and it now clears all four
+gate — not this pass's). Only even mode moves between 4362180 and 6a4821e, and it now clears all four
 cells (bold above) for the first time since U3 began. The two remaining misses this pass does not close,
 `perceptual|300` (p90 93.7) and `peak|700` (p90 96.1), are unchanged from 4362180 — see the Q7 pass-7
 addendum for the one step-2 attempt and why it was reverted.

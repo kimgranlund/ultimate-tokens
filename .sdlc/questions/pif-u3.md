@@ -700,7 +700,7 @@ in this record and in the handoff are corrected to the exact figure.
 
 Brief: `u3-p7-brief.md`, following the re-diagnosis at `046044a`. Start `b759273`.
 
-**Step 1 (even-only damping curve): shipped, `27cc162`.** `dampCurve` alone cannot close
+**Step 1 (even-only damping curve): shipped, `6a4821e`.** `dampCurve` alone cannot close
 `even|100`/`even|300`/`even|900`: `chromaEnvelope`'s `uG = |sd|^dampCurve` rises toward 1 as `dampCurve`
 falls toward 0 at ANY off-anchor stop, so at `dampCurve -> 0` the envelope's floor is `1-damp/100`
 everywhere off the anchor, set by `damp` alone — a synthetic sweep down to `dampCurve x0.001` at the
@@ -759,7 +759,7 @@ since the uptick alone already trips the stop rule.
 Per the brief's stop rule ("if step 2 cannot close both cells with 0 upticks... revert step 2
 byte-for-byte and keep step 1... The owner rules from that. No further attempts") and "if a second
 workaround is needed, stop": this was the one construction tried. Reverted `src/engine/tonal.js`
-byte-for-byte to `27cc162` (`git checkout HEAD -- src/engine/tonal.js`); `node test/engine/tonal.mjs`
+byte-for-byte to `6a4821e` (`git checkout HEAD -- src/engine/tonal.js`); `node test/engine/tonal.mjs`
 exits 0 at that head. No second value of `OKHSL_EXTRA_DAMP_POWER`, and no alternative construction, was
 attempted.
 

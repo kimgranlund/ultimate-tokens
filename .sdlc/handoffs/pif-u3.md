@@ -4,7 +4,7 @@ plan: preset-intent-fidelity
 unit: U3
 branch: unit/pif-u3-envelope
 base: 690b0a1a395cee0bad122443c3441d5f35412030
-head: 27cc162
+head: 6a4821e
 written: 2026-09-19
 pass: 7
 ---
@@ -266,7 +266,7 @@ Brief: `u3-p7-brief.md`, following the re-diagnosis at `046044a` (Helmholtz-Kohl
 when OKHSL `s` falls at fixed `l`, which fires only in the OKHSL-domain modes since `even` sets L*
 directly). Owner approved both halves; this is the last pass, no pass 8.
 
-**Step 1, done, shipped at `27cc162`.** `chromaEnvelope` now reads a mapped `damp`/`dampCurve` for
+**Step 1, done, shipped at `6a4821e`.** `chromaEnvelope` now reads a mapped `damp`/`dampCurve` for
 `toneMode === "even"` only (`EVEN_DAMP_FACTOR = 0.25`, exported): `damp`'s headroom is compressed and
 `dampCurve` is scaled by the same factor, both derived from the two shared sliders so neither goes dead.
 `dampCurve` alone cannot close `even|100`/`even|300`/`even|900`: a synthetic sweep to `dampCurve x0.001`
@@ -292,13 +292,13 @@ test/engine/tonal.mjs` FAILed a real `(C6 i)` uptick: 7 instances, all `peak` mo
 own tone independently does not guarantee ORDER between adjacent stops whose pre-step-2 tones were
 already nearly tied, which happens near white where the tone curve flattens. Per the brief's own stop
 rule and "if a second workaround is needed, stop": reverted `src/engine/tonal.js` byte-for-byte to
-`27cc162` (`git checkout HEAD -- src/engine/tonal.js`); `node test/engine/tonal.mjs` exits 0 there. No
+`6a4821e` (`git checkout HEAD -- src/engine/tonal.js`); `node test/engine/tonal.mjs` exits 0 there. No
 second value and no alternative construction attempted. Full witness table and the two p90 figures in
 Q7's pass-7 addendum ("which target yields").
 
 `perceptual|300` (p90 93.7%) and `peak|700` (p90 96.1%) stay at their pre-pass-7 figures — the two
 misses this unit does not close. `.sdlc/handoffs/pif-u3-retune.md` is written (step 1 landed): damp/
-dampCurve before/after and the mapping, median/p90 at `bf2aaf6`/`4362180`/`27cc162`, default-kit
+dampCurve before/after and the mapping, median/p90 at `bf2aaf6`/`4362180`/`6a4821e`, default-kit
 movement (16 palettes x 3 modes, max/median deltaE76), the C8 96-cell before/after, and the thin-cell
 band `[4.50,4.55)` per mode.
 
@@ -325,7 +325,7 @@ band `[4.50,4.55)` per mode.
   dark` 4.5327 (+0.0327, unchanged by this pass — the one cell this unit's Q6 re-pin moved).
   `even|Info|dark` graduated OUT of this band by pass 3 (4.5225 -> 4.6780) and back IN by pass 7's
   even-only retune (4.6780 -> 4.5072, per `.sdlc/handoffs/pif-u3-retune.md`'s thin-cell table) — the
-  obligation set as of THIS pass's head (`27cc162`) is five cells, not four: `perceptual|Neutral|dark`
+  obligation set as of THIS pass's head (`6a4821e`) is five cells, not four: `perceptual|Neutral|dark`
   4.5327, `even|Neutral|dark` 4.5280, `even|Primary|dark` 4.5308, `even|Tertiary|dark` 4.5071,
   `even|Info|dark` 4.5072. All five clear AA (`role-contrast` green at this head); none is a pinned-floor
   drop. Whoever integrates the plan (U4 or the Orchestrator) MUST re-run
