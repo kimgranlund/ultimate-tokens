@@ -595,3 +595,29 @@ so it is held pending the owner's read of this addendum, rather than run and pos
   a known, explained, unfixable-without-a-spike gap.
 - Direct the fundamentally different mechanism named in the pass-4 addendum (a per-stop ceiling keyed to
   gamut headroom relative to the cusp, not an absolute anchor-chroma ceiling) — real new design work.
+
+### Q7 pass-5 note: the cusp-stop bound, measured explicitly and fresh (team-lead follow-up)
+
+Team-lead flagged that the 89.3pp/93.8pp/241.6pp figures already in the plan's U3 paragraph predate
+rev 19's cusp-stop-only scoping and must not be copied in as the frozen bound without a fresh,
+cusp-stop-scoped measurement. Re-measured explicitly: CUSP STOP := the richest (max chroma) stop of
+each generated (dampAmp 0) perceptual palette's rendered ramp (rendered path, `T.STOPS`, current head
+`a28fa18`); cusp-stop excess := `cuspChroma/c500 - 1`, counted only where the cusp stop itself exceeds
+the anchor. Since chroma is monotonic in excess ratio at a fixed `c500`, the richest stop always carries
+the MAX excess among that palette's own above-anchor stops, so this is the same quantity as "this
+palette's worst above-anchor exceedance," just scoped and named per the ruling's own language rather
+than the general population.
+
+2,207 palettes are cusp-exempt-eligible (their cusp stop exceeds the anchor); the corpus-wide max is
+**89.3005pp**, at the same witness as before (`cuisine/Sushi & sashimi · the cypress counter/
+primary-muted`, cusp stop 650, 67.88 vs anchor 35.86). This CONFIRMS the earlier 89.3pp figure fresh,
+on the current rendered path, under the explicit cusp-stop-only definition — it was not stale after
+all, just under-labeled. If a bound is frozen into a gate, 89.3005pp (perceptual) is the correct,
+freshly-verified number.
+
+**This does not by itself resolve step 2's blocker.** The bound answers "how far over may the cusp
+stop go"; it does not answer "what happens to the 1,669 palettes (76% of the violating population)
+whose natural cusp SHOULDER spans 2-5 adjacent stops, not one" — capping all-but-one of those down to
+the anchor still produces the spike measured in the prior addendum regardless of which single number
+bounds the one stop left exempt. Reported to team-lead; still awaiting a ruling on the multi-stop
+shoulder before building anything.
