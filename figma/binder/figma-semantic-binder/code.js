@@ -132,6 +132,7 @@ async function applyFloatPlans(plans, opts) {
   opts = opts || {};
   let collections = 0, variables = 0;
   const libraryReports = [];
+  const skippedAll = []; // #689: stale names left LIVE because their "_deprecated/" slot was already taken
   const reg = readFloatRegistry(); // provenance: only ever touch a collection this plugin created (see ensureFloatCollection)
   for (const plan of (Array.isArray(plans) ? plans : [])) {
     if (!plan || !plan.collection || !Array.isArray(plan.modes) || !plan.modes.length) continue;
@@ -241,6 +242,7 @@ async function applyFloatPlans(plans, opts) {
     } else {
       for (const m of staleModeCandidates) { if (coll.modes.length > 1) coll.removeMode(m.modeId); }
     }
+    const skippedFloat = []; // #689: stale names left LIVE because their "_deprecated/" slot was already taken
     if (useLibrary) {
       for (const r of report.aliases) {
         const vr = byName[r.from];
@@ -250,13 +252,18 @@ async function applyFloatPlans(plans, opts) {
       }
       for (const r of report.deprecates) {
         const vr = byName[r.from];
-        if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
+        if (!vr) continue;
+        // #689: a "_deprecated/" name already taken (e.g. drop, re-add, drop): the rename is skipped
+        // and the stale name is left LIVE. Report it, or it stays live and unpublicized indefinitely.
+        if (byName[r.to]) { skippedFloat.push(r.from); continue; }
+        vr.name = r.to; byName[r.to] = vr; delete byName[r.from];
       }
     } else {
       // #659: never a "_deprecated/" name — pruneCandidatesVM keeps the prune monotonic over them.
       for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
     }
-    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes });
+    if (skippedFloat.length) skippedAll.push(...skippedFloat);
+    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes, skipped: skippedFloat });
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles
@@ -273,7 +280,7 @@ async function applyFloatPlans(plans, opts) {
     collections++;
   }
   writeFloatRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { collections: collections, variables: variables, libraryReports: libraryReports };
+  return { collections: collections, variables: variables, libraryReports: libraryReports, skipped: skippedAll };
 }
 
 function substituteSegment(name, oldSeg, newSeg) {
