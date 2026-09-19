@@ -56,3 +56,8 @@ loads, or say which set each figure belongs to. Recommended before the PR, not a
 | em dash in files this unit authored | 🟢 | added lines in all six changed files plus the handoff: 0 matches each |
 | tree clean after `npm test` | 🟢 | `git status --short \| wc -l` = 0 |
 | scratch worktree removed | 🟢 | removed after grading |
+
+## Missed rows (added 2026-09-19, conductor ruling, no re-verify)
+
+- `.sdlc/baseline.md:6` `host:` says Node 22, but U1's runs were on Node 24.18.0. The verdict graded the load figures on that line and not the Node version. Corrected in U2's fold on `unit/rr-U2`.
+- `.sdlc/adapter.md` gate table, test and corpus-contrast rows, name "Node 22" as the prerequisite. True for CI at U1's head, false once #706 moves CI to Node 24. Changed inside #706's own PR, the change that invalidates them.
