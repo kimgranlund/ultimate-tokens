@@ -987,16 +987,21 @@ if (applyBundle) {
   //     doesn't assert. Without the guard, this message would prompt for and seed a Type Primitives
   //     registry entry for a collection this apply never touches, cashing that consent on a later
   //     apply that prunes it without asking again.
-  try {
-    const FJ = mockFigma();
-    new Function("figma", "__html__", "module", code)(FJ.figma, "<html>", undefined);
-    FJ.figma._adoptAnswer = true; // would adopt if ever asked
-    FJ.figma.variables.createVariableCollection("Type Primitives"); // live, untracked, by name not registry
-    const bareFontPrimitivesModes = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [] };
-    await FJ.figma.ui._h({ type: "apply", fontPrimitivesModes: bareFontPrimitivesModes }); // no stylePlans at all
-    if (FJ.figma._showUICalls !== 0) FAIL("adoptconsent", `fontPrimitivesModes-without-stylePlans leg: expected ZERO consent prompts, got ${FJ.figma._showUICalls}`);
-    if (regOf(FJ, FLOAT_REG)["Type Primitives"] !== undefined) FAIL("adoptconsent", "fontPrimitivesModes-without-stylePlans leg: the float registry was seeded for a collection this apply never touches");
-  } catch (e) { FAIL("adoptconsent", "the fontPrimitivesModes-without-stylePlans leg threw: " + e.message); }
+  //     Run over BOTH shapes of "no style work": stylePlans absent, and stylePlans PRESENT but empty.
+  //     The second is the predicate's own boundary: `!!msg.stylePlans` would pass the first and fail
+  //     it, so without it a broadened predicate survives the whole suite (#676 review, I-2).
+  for (const [shape, extra] of [["absent", {}], ["present-but-empty", { stylePlans: { paints: [], texts: [] } }]]) {
+    try {
+      const FJ = mockFigma();
+      new Function("figma", "__html__", "module", code)(FJ.figma, "<html>", undefined);
+      FJ.figma._adoptAnswer = true; // would adopt if ever asked
+      FJ.figma.variables.createVariableCollection("Type Primitives"); // live, untracked, by name not registry
+      const bareFontPrimitivesModes = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [] };
+      await FJ.figma.ui._h({ type: "apply", fontPrimitivesModes: bareFontPrimitivesModes, ...extra });
+      if (FJ.figma._showUICalls !== 0) FAIL("adoptconsent", `fontPrimitivesModes-without-stylePlans leg (stylePlans ${shape}): expected ZERO consent prompts, got ${FJ.figma._showUICalls}`);
+      if (regOf(FJ, FLOAT_REG)["Type Primitives"] !== undefined) FAIL("adoptconsent", `fontPrimitivesModes-without-stylePlans leg (stylePlans ${shape}): the float registry was seeded for a collection this apply never touches`);
+    } catch (e) { FAIL("adoptconsent", `the fontPrimitivesModes-without-stylePlans leg (stylePlans ${shape}) threw: ` + e.message); }
+  }
   // (h) POSITIVE CONTROL for (g): the identical fontPrimitivesModes plan, but WITH a non-empty
   //     stylePlans riding the same message, must still prompt for Type Primitives exactly as before
   //     #676: the guard adds a condition to the concat, it does not remove the legitimate consent path.
