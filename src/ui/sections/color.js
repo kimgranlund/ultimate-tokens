@@ -1,7 +1,7 @@
 import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
-import { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
+import { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -1787,6 +1787,14 @@ export class ColorSectionImpl {
         ),
         { labelTitle: "Which canvas group this palette is organized under — Material, Brand, System, or Data." },
       ),
+      // Q-D (ticket #681, U2, ruled + verified): this palette's own hueSpace applicability note - the
+      // doc-level Hue space control (renderGlobalInspector) only moves THIS palette in "even" mode;
+      // in perceptual/peak an anchored palette's hue comes straight from its anchor, so the control
+      // has no effect on it here even when it stays enabled for other, non-anchored palettes in the
+      // same doc. Informational only - this is not a second control, it explains the one control.
+      p.anchor && this.doc.toneMode !== "even"
+        ? h("div", { class: "field" }, h("small", { class: "insp-sub", "data-fk": "huespace-palette-reason" }, "Hue space: " + HUE_SPACE_ANCHOR_REASON))
+        : false,
       // Hue/Chroma edits DETACH an anchored palette (ticket #681, U2/Q6): they drop the live `anchor`
       // (the generator-written `sourceAnchor` copy stays, so Reset below can restore it) — a hue or
       // chroma slider drag makes an anchor-carrying palette ordinary again, since the ramp's stop 500
@@ -2134,32 +2142,52 @@ export class ColorSectionImpl {
       // Hue space + On-color policy — two 2-option choices as side-by-side segmented controls (both
       // options visible, vs a toggle that hid the OFF label). On-colors: "fixed" = the light tint in both
       // modes (ADR-003); "contrast" flips on{N}/on{N}Variant to the better-contrasting end vs the accent fill.
-      h(
-        "div",
-        { class: "global-seg-row" },
-        h(
+      //
+      // Q-D (ticket #681, U2, ruled + verified): hueSpace only moves an anchored palette's rendered
+      // hue in "even" mode (the per-stop even-mode hue solve) - in perceptual/peak, an anchored
+      // palette's hue is read straight from its anchor (hOk), so the control is structurally dead
+      // for it there. Disabling this DOC-level control outright would also hide it from any
+      // NON-anchored palette in the same doc, where it still works - so it is only disabled when
+      // EVERY palette is anchored (nothing in the doc could possibly move), and only in
+      // perceptual/peak. The per-palette inspector (renderPaletteInspector) carries the matching
+      // note for one anchored palette at a time regardless of the other palettes in the doc.
+      (() => {
+        const hueSpaceForced = d.toneMode !== "even" && d.palettes.length > 0 && d.palettes.every((p) => p.anchor);
+        return h(
           "div",
-          { class: "field" },
-          h("label", { title: "OKLCH: perceptual hue (the default). CAM16: the legacy hue model." }, "Hue space"),
-          this.segmented(
-            [{ id: "oklch", label: "OKLCH" }, { id: "cam16", label: "CAM16" }],
-            d.hueSpace === "oklch" ? "oklch" : "cam16",
-            (id) => this.commit((doc) => (doc.hueSpace = id)),
-            { ariaLabel: "Hue space", role: "group", idPrefix: "huespace", cls: "seg-sm" },
+          { class: "global-seg-row" },
+          h(
+            "div",
+            { class: "field" },
+            h("label", { title: hueSpaceForced ? HUE_SPACE_ANCHOR_REASON : "OKLCH: perceptual hue (the default). CAM16: the legacy hue model." }, "Hue space"),
+            this.segmented(
+              [{ id: "oklch", label: "OKLCH" }, { id: "cam16", label: "CAM16" }],
+              d.hueSpace === "oklch" ? "oklch" : "cam16",
+              (id) => this.commit((doc) => (doc.hueSpace = id)),
+              {
+                ariaLabel: "Hue space",
+                role: "group",
+                idPrefix: "huespace",
+                cls: "seg-sm",
+                disabled: hueSpaceForced,
+                disabledReason: HUE_SPACE_ANCHOR_REASON,
+              },
+            ),
+            hueSpaceForced ? h("small", { class: "insp-sub", "data-fk": "huespace-doc-reason" }, HUE_SPACE_ANCHOR_REASON) : false,
           ),
-        ),
-        h(
-          "div",
-          { class: "field" },
-          h("label", { title: "Fixed: on-colors are the light tint in both modes (ADR-003). Contrast: on{N}/on{N}Variant flip to the end with the best WCAG contrast vs the accent fill, per mode — accessible, but no longer uniform." }, "On-colors"),
-          this.segmented(
-            [{ id: "fixed", label: "Fixed" }, { id: "contrast", label: "Contrast" }],
-            d.onColorMode === "contrast" ? "contrast" : "fixed",
-            (id) => this.commit((doc) => (doc.onColorMode = id)),
-            { ariaLabel: "On-colors", role: "group", idPrefix: "oncolor", cls: "seg-sm" },
+          h(
+            "div",
+            { class: "field" },
+            h("label", { title: "Fixed: on-colors are the light tint in both modes (ADR-003). Contrast: on{N}/on{N}Variant flip to the end with the best WCAG contrast vs the accent fill, per mode — accessible, but no longer uniform." }, "On-colors"),
+            this.segmented(
+              [{ id: "fixed", label: "Fixed" }, { id: "contrast", label: "Contrast" }],
+              d.onColorMode === "contrast" ? "contrast" : "fixed",
+              (id) => this.commit((doc) => (doc.onColorMode = id)),
+              { ariaLabel: "On-colors", role: "group", idPrefix: "oncolor", cls: "seg-sm" },
+            ),
           ),
-        ),
-      ),
+        );
+      })(),
       d.toneMode === "even"
         ? field(
             "Chroma basis",

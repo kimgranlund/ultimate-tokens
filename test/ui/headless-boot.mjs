@@ -1857,6 +1857,74 @@ const onFks = []; const walkOn = (n) => { if (n.classList && n.classList.contain
 ok(onFks.includes("huespace:cam16") && onFks.includes("oncolor:contrast"), `(gc) the active segment reflects the doc (cam16 / contrast) (got ${onFks.join()})`);
 app.doc.hueSpace = "oklch"; app.doc.onColorMode = "fixed"; app.render(); flushRaf(); // restore
 
+// ── (hs) Q-D (ticket #681, U2, ruled + verified): hueSpace's doc-level control disables itself,
+// with a reason, when EVERY palette is anchored and toneMode is perceptual/peak - an anchored
+// palette's hue there is read straight off its anchor, so the control moves it only by 8-bit
+// rounding (anchor.mjs's hueSpace-perceptual/peak-bound gates that same claim on the engine side).
+// It stays live in "even" (a real Abney correction there, Finding 1), and live whenever at least
+// one palette is detached - a NON-anchored palette DOES read hueSpace in every mode (tonal.js's
+// okhslStops, non-anchored, calls effHue/solveOkhslHue against controls.hueSpace directly).
+// The shim's querySelector supports only a single class (see this file's own header note), so
+// data-fk lookups walk the tree by hand, matching the existing (gc) hueSpace block just above.
+const findByFk = (root, fk) => {
+  let found = null;
+  const walk = (n) => { if (found || !n) return; if (n.attrs && n.attrs["data-fk"] === fk) { found = n; return; } (n.children || []).forEach(walk); };
+  walk(root);
+  return found;
+};
+// A FRESH defaultDocument(), in its OWN throwaway set — many earlier groups in this shared-`app`
+// file detach a palette's anchor (Q6/resetAnchor tests) and app.sets[0]'s SAVED doc can carry that
+// forward, so hs1/hs2 need a known "every palette anchored" starting point. A dedicated set (rather
+// than `app.doc = defaultDocumentHS()` in place) matters here specifically because THIS block calls
+// commit() several times, and commit()'s save() writes into `this.sets.find(s => s.id ===
+// this.activeId)` — reusing app.sets[0]'s slot while activeId still pointed at it would silently
+// overwrite it with this block's own throwaway mutations, corrupting state every later block that
+// re-opens app.sets[0] depends on (this broke (bpc5d) downstream before this fix).
+const { defaultDocument: defaultDocumentHS } = await import("../../src/ui/model.mjs");
+app.sets.push({ id: "hs-test-set", name: "hs-test", doc: defaultDocumentHS(), updated: Date.now() });
+app.openSet("hs-test-set");
+app.setSegment("global"); flushRaf();
+const hueSpaceDocDisabled = () => { const b = findByFk(app, "huespace:oklch"); return !!b && b.disabled === true && b.getAttribute("aria-disabled") === "true"; };
+app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
+ok(hueSpaceDocDisabled(), "(hs1) doc-level Hue space disables in perceptual mode when every palette is anchored (untouched default kit)");
+ok(/Hue follows the anchor/.test(gcText()), "(hs1b) the disabled reason is visible in the panel");
+app.commit((doc) => (doc.toneMode = "peak")); flushRaf();
+ok(hueSpaceDocDisabled(), "(hs2) doc-level Hue space ALSO disables in peak mode when every palette is anchored");
+app.commit((doc) => (doc.toneMode = "even")); flushRaf();
+ok(!hueSpaceDocDisabled(), "(hs3) doc-level Hue space stays enabled in even mode regardless of anchoring");
+app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
+app.commit((doc) => { delete doc.palettes[0].anchor; }); flushRaf();
+ok(!hueSpaceDocDisabled(), "(hs4) detaching one palette (Q6) re-enables the doc-level control in perceptual - it is no longer true that every palette is anchored");
+app.undo(); flushRaf(); // restore palette 0's anchor
+
+// per-palette inspector note: anchored + perceptual/peak shows the reason; even, or a detached
+// palette, shows nothing (informational only - it never becomes a second, live control).
+app.setSegment("palette"); app.selectPalette(0); flushRaf();
+app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
+ok(!!findByFk(app, "huespace-palette-reason"), "(hs5) the per-palette inspector shows the hueSpace note for an anchored palette in perceptual");
+app.commit((doc) => (doc.toneMode = "even")); flushRaf();
+ok(!findByFk(app, "huespace-palette-reason"), "(hs6) the note is absent in even mode (hueSpace is live there)");
+app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
+app.commit((doc) => { delete doc.palettes[0].anchor; }); flushRaf();
+ok(!findByFk(app, "huespace-palette-reason"), "(hs7) the note is absent for a detached (non-anchored) palette even in perceptual");
+app.undo(); flushRaf();
+
+// negative control (Q-D): the disabled-predicate above must actually tell a disabled render apart
+// from an enabled one, or (hs1)/(hs2) could pass vacuously on a rendering bug that left the control
+// enabled. Call the SAME this.segmented() the app itself uses - once forced disabled (the shipped
+// path for anchored perceptual/peak) and once forced enabled (the pre-fix shape, the one the
+// inspector test must red on) - and prove the predicate reads them apart, the same checks-that-bite
+// pattern as the engine-side gates (anchor.mjs's checkFloors/notchOk negative controls).
+const segForcedOff = app.segmented([{ id: "oklch", label: "OKLCH" }], "oklch", () => {}, { idPrefix: "huespace", role: "group", disabled: true, disabledReason: "test" });
+const segForcedOn = app.segmented([{ id: "oklch", label: "OKLCH" }], "oklch", () => {}, { idPrefix: "huespace", role: "group", disabled: false });
+const isDisabledBtn = (seg) => { const b = seg.children[0]; return !!b && b.disabled === true && b.getAttribute("aria-disabled") === "true"; };
+ok(isDisabledBtn(segForcedOff) === true && isDisabledBtn(segForcedOn) === false, "(hs8) negative control: the disabled-predicate DOES tell a disabled segmented control apart from an enabled one - rendering the doc-level control enabled for anchored perceptual/peak would red (hs1)/(hs2), not pass silently");
+
+// tear down the throwaway set — app.sets[0] was never touched (this block only ever wrote into its
+// own "hs-test-set" slot), so reopening it hands every later block back exactly what it expected.
+app.sets = app.sets.filter((s) => s.id !== "hs-test-set");
+app.openSet(app.sets[0].id); flushRaf();
+
 // ── (px) primitive a11y contracts — the refactor's guarantees (component-inventory.md) ──
 app.openSet(app.sets[0].id); app.commit((doc) => (doc.toneMode = "even")); app.setSegment("global"); flushRaf();
 

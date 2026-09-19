@@ -836,9 +836,16 @@ for (const n of NOTCH_ALLOW) console.log(`    r ${n}`);
   // 3,390 anchored ramps clear ΔE_OK > 0.01), because OKHSL already holds the anchor's own OKLCH hue
   // constant under "cam16" - "moved >= 1 hex" alone passes on a single-code rounding flip there, not a
   // real hueSpace effect. In EVEN mode the two hueSpace settings ARE a real Abney correction (1,060 of
-  // 3,396 anchored ramps clear ΔE_OK > 0.01). hueSpace's real effect in the OKHSL modes is an open
-  // question for the owner (Q-D) - this gate does NOT assert it there, and does not change that
-  // construction (`okhslStopsAnchored`'s own per-stop OKHSL hue solve is untouched this pass).
+  // 3,396 anchored ramps clear ΔE_OK > 0.01).
+  //
+  // Q-D (ruled + verified, superseding the "open question" this comment used to record): the OKHSL
+  // (perceptual/peak) construction stays UNCHANGED - `okhslStopsAnchored`'s own per-stop OKHSL hue
+  // solve is untouched by this pass, same as review pass 3 left it. Instead the UI now disables the
+  // doc-level Hue space control for an anchored palette in perceptual/peak (src/ui/sections/color.js's
+  // renderGlobalInspector + renderPaletteInspector, gated in test/ui/headless-boot.mjs's (hs) block),
+  // on the strength of this file's OWN bound below: flipping hueSpace on an anchored perceptual/peak
+  // ramp never moves any channel by more than 2 (8-bit). This is the engine-side half of that ruling -
+  // it does not just re-assert Finding 1's magnitude-floor miss, it bounds the miss.
   const evenBaseDoc = hydrate({ ...dkBase, toneMode: "even" });
   const F4_CASES = {
     curve: { base: vibrantCurveDoc, altPatch: { curve: "sine" } },
@@ -882,8 +889,44 @@ for (const n of NOTCH_ALLOW) console.log(`    r ${n}`);
     }
     if (moved === 0) FAIL("anchor-f4", `${key}: moved 0 of the default kit's anchored ramps — this control is dead for anchored palettes`);
     if (magnitudeFloor !== undefined && maxDeltaE <= magnitudeFloor) FAIL("anchor-f4", `${key}: max OKLab delta-E ${maxDeltaE.toFixed(4)} does not clear the ${magnitudeFloor} magnitude floor - a rounding-only move would also report "moved >= 1"`);
-    const floorNote = magnitudeFloor !== undefined ? `, max OKLab dE ${maxDeltaE.toFixed(4)} (want > ${magnitudeFloor}), asserted in even only, pending Q-D` : "";
+    const floorNote = magnitudeFloor !== undefined ? `, max OKLab dE ${maxDeltaE.toFixed(4)} (want > ${magnitudeFloor}), asserted in even only - the JND Q-D's UI gate relies on` : "";
     console.log(`  ${moved > 0 && s500moved === 0 && (magnitudeFloor === undefined || maxDeltaE > magnitudeFloor) ? "pass" : "FAIL"}  anchor-f4 ${key}: moved ${moved} default-kit anchored ramps, stop 500 moved ${s500moved} (want >=1, 0)${floorNote}`);
+  }
+
+  // Q-D (ruled + verified, 2026-09-18): the engine-side half of the ruling - flipping hueSpace on an
+  // ANCHORED palette in perceptual or peak never moves any RGB channel by more than 2 (8-bit), on the
+  // same default-kit sweep as F4_CASES above. This is the bound the UI's "disabled, rounding only"
+  // claim rests on (src/ui/sections/color.js's renderGlobalInspector/renderPaletteInspector; gated in
+  // test/ui/headless-boot.mjs's (hs) block). Unlike F4_CASES's hueSpace entry (which asserts a REAL
+  // effect exists, in even mode), this asserts the OPPOSITE direction for perceptual/peak - that
+  // whatever effect exists stays inside a rounding-sized bound - so it is a separate block, not
+  // folded into that loop's shared "moved === 0 -> FAIL" liveness check.
+  const maxChannelDiff = (hexA, hexB) => {
+    const a = hexToRgb(hexA), b = hexToRgb(hexB);
+    return Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
+  };
+  const peakBaseDoc = hydrate({ ...dkBase, toneMode: "peak" });
+  const HUE_SPACE_CHANNEL_BOUND = 2;
+  for (const [modeName, base] of [["perceptual", baseDoc], ["peak", peakBaseDoc]]) {
+    const altDoc = hydrate({ ...base, hueSpace: base.hueSpace === "cam16" ? "oklch" : "cam16" });
+    const baseV = projectView(base), altV = projectView(altDoc);
+    let maxDiff = 0, worst = "n/a";
+    for (const p of base.palettes) {
+      if (typeof p.anchor !== "string") continue;
+      const a = baseV.palettes.find((v) => v.name === p.name).fullRamp;
+      const b = altV.palettes.find((v) => v.name === p.name).fullRamp;
+      for (let i = 0; i < a.length; i++) {
+        const d = maxChannelDiff(a[i].hex, b[i].hex);
+        if (d > maxDiff) { maxDiff = d; worst = `${p.name} stop ${a[i].stop}`; }
+      }
+    }
+    if (maxDiff > HUE_SPACE_CHANNEL_BOUND) {
+      FAIL(
+        "anchor-f4",
+        `hueSpace ${modeName}: max per-channel diff ${maxDiff} exceeds the Q-D rounding bound of ${HUE_SPACE_CHANNEL_BOUND} (worst: ${worst}) - the UI's "disabled, rounding only" claim for anchored ${modeName} palettes is now false`,
+      );
+    }
+    console.log(`  ${maxDiff <= HUE_SPACE_CHANNEL_BOUND ? "pass" : "FAIL"}  anchor-f4 hueSpace-${modeName}-bound: max per-channel diff ${maxDiff} (want <= ${HUE_SPACE_CHANNEL_BOUND}, worst ${worst}) - Q-D's "disabled, rounding only" bound for anchored palettes`);
   }
 
   // Negative control (review pass 3, Finding 4, 2026-09-18): the prior in-suite "reference lerp"
@@ -909,8 +952,9 @@ if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); pr
 // specific criteria this file clears, not a generic pass line - C2 (anchor identity, direct +
 // rendered), C4 (non-anchored prime path untouched), C3 (stop 500 exact + lift-40 negative control),
 // C5 (monotone, pixel L*, a true 0, no list), C6/F4 (peak != perceptual, Curve/Tension/Vibrancy each
-// live for every anchored ramp, hueSpace live in even mode only pending Q-D, stop 500 exact under
-// every toggle). Window-clamp (10), gap-19 (93), distinct-25 (14) and notch (76, Q-C variant) are all
-// named allow-lists compared by name with a biting negative control, not settled zeros.
+// live for every anchored ramp, hueSpace live in even mode + bounded to rounding in perceptual/peak
+// per Q-D, stop 500 exact under every toggle). Window-clamp (10), gap-19 (93), distinct-25 (14) and
+// notch (76, Q-C variant) are all named allow-lists compared by name with a biting negative control,
+// not settled zeros.
 console.log("\nPASS: C2, C3, C4, C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (93), distinct-25 (14) and notch (76, pending U4) are named allow-lists, compared by name, each with a biting negative control");
 process.exit(0);
