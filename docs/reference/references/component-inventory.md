@@ -40,8 +40,8 @@ It builds every control inline with a single hyperscript helper `h(tag, attrs, .
 - **No native-replacement layer + no FACE.** Controls are a mix of *native* elements (`<input
   type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets* — none are
   form-associated custom elements. The native ones inherit native a11y for free; the custom ones
-  (`.toggle`, `segmented()`) are built on real `<button>`s with ARIA roles (`switchControl`,
-  `app-helpers.mjs:370`; `segmented`, `app.js:1587`), so they keep focus and keyboard.
+  (`.toggle`, `segmented()`) are built on real `<button>`s with ARIA roles (`switchControl`, `app-helpers.mjs:370`;
+  `segmented`, `app.js:1587`), so they keep focus and keyboard.
 - **Forced-colors support is one pass**, the `@media (forced-colors: active)` block at
   `styles.css:1582`; custom-painted controls outside it still flatten in Windows High Contrast.
 - **Geometry is ad-hoc, off any ramp.** Buttons are `padding: 4px 9px` (`styles.css:164`), the range
@@ -177,8 +177,8 @@ incrementally.
   - **Settings rows** `.settings-seg` `role=group`, one live instance per row, `overlays/settings.js:30`,
     `styles.css:1304`.
   - **Drawer format picker**: the as-found `.drawer-tabs` segmented row no longer exists in `src/`; the
-    format is chosen with a native labelled `<select>` (`.drawer-format`, `label[for=export-format]` +
-    `aria-label`, `overlays/drawer.js:165-186`, `styles.css:1077-1079`), so it is a select (card 5), not a
+    format is chosen with a native labelled `<select>` (`label[for=export-format]` + `aria-label`,
+    `overlays/drawer.js:177-186`; `.drawer-format`, `styles.css:1077-1079`), so it is a select (card 5), not a
     segmented control.
   - **Figma files** `.figma-files`, now a `segmented()` call with `baseClass: "figma-files"` and
     `role=group` (`overlays/drawer.js:202-209`, `styles.css:1083-1085`), so it carries the same roving
