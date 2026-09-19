@@ -203,8 +203,7 @@ incrementally.
 - **Surface** S1. **Sites** one helper `slider(label,value,min,max,step,fmtFn,onInput)`
   (`app.js:2053-2078`), ~14 instances: Hue/Chroma/Skew/Lift/Edge-hue `sections/color.js:1785-1812`;
   Tension/L*min/L*max/Damp/Chroma-floor/Falloff/Amplify/Bias `sections/color.js:2025-2047`.
-- **Anatomy** `.field` `[ label · readout(<b>) · input[type=range] ]`; track + custom `thumb`
-  (`styles.css:936-950`).
+- **Anatomy** `.field` `[ label · readout(<b>) · input[type=range] ]`; track + custom `thumb` (`styles.css:936-950`).
 - **API** clean function signature; `fmtFn` for the live readout, `onInput` callback; `data-fk`
   carries a focus key so re-render preserves focus, `app.js:2062`.
 - **a11y** ✓ `aria-label` on the input (the sibling `<label>` is deliberately *not* associated —
