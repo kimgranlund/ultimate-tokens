@@ -980,6 +980,41 @@ if (applyBundle) {
     if (regOf(FH, FLOAT_REG)["Geometry"] !== orphanGeo.id) FAIL("adoptconsent", "float leg: the float registry was not seeded with the adopted collection id");
     if (!FH.variables.some((v) => v.variableCollectionId === orphanGeo.id)) FAIL("adoptconsent", "float leg: the apply wrote no variables into the adopted collection");
   } catch (e) { FAIL("adoptconsent", "the float adoption leg threw: " + e.message); }
+  // (g) #676: fontPrimitivesModes riding WITHOUT stylePlans, unreachable from today's UI
+  //     (apply-gate.js only ever sets fontPrimitivesModes inside the paints/texts branch), but the
+  //     message handler only calls applyFontPrimitivesModes when msg.stylePlans has paints or texts,
+  //     so the consent pass must mirror that guard exactly instead of depending on an invariant it
+  //     doesn't assert. Without the guard, this message would prompt for and seed a Type Primitives
+  //     registry entry for a collection this apply never touches, cashing that consent on a later
+  //     apply that prunes it without asking again.
+  //     Run over BOTH shapes of "no style work": stylePlans absent, and stylePlans PRESENT but empty.
+  //     The second is the predicate's own boundary: `!!msg.stylePlans` would pass the first and fail
+  //     it, so without it a broadened predicate survives the whole suite (#676 review, I-2).
+  for (const [shape, extra] of [["absent", {}], ["present-but-empty", { stylePlans: { paints: [], texts: [] } }]]) {
+    try {
+      const FJ = mockFigma();
+      new Function("figma", "__html__", "module", code)(FJ.figma, "<html>", undefined);
+      FJ.figma._adoptAnswer = true; // would adopt if ever asked
+      FJ.figma.variables.createVariableCollection("Type Primitives"); // live, untracked, by name not registry
+      const bareFontPrimitivesModes = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [] };
+      await FJ.figma.ui._h({ type: "apply", fontPrimitivesModes: bareFontPrimitivesModes, ...extra });
+      if (FJ.figma._showUICalls !== 0) FAIL("adoptconsent", `fontPrimitivesModes-without-stylePlans leg (stylePlans ${shape}): expected ZERO consent prompts, got ${FJ.figma._showUICalls}`);
+      if (regOf(FJ, FLOAT_REG)["Type Primitives"] !== undefined) FAIL("adoptconsent", `fontPrimitivesModes-without-stylePlans leg (stylePlans ${shape}): the float registry was seeded for a collection this apply never touches`);
+    } catch (e) { FAIL("adoptconsent", `the fontPrimitivesModes-without-stylePlans leg (stylePlans ${shape}) threw: ` + e.message); }
+  }
+  // (h) POSITIVE CONTROL for (g): the identical fontPrimitivesModes plan, but WITH a non-empty
+  //     stylePlans riding the same message, must still prompt for Type Primitives exactly as before
+  //     #676: the guard adds a condition to the concat, it does not remove the legitimate consent path.
+  try {
+    const FK = mockFigma();
+    new Function("figma", "__html__", "module", code)(FK.figma, "<html>", undefined);
+    FK.figma._adoptAnswer = true;
+    const orphanPrim = FK.figma.variables.createVariableCollection("Type Primitives"); // live, untracked
+    const fpPlan = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [] };
+    await FK.figma.ui._h({ type: "apply", fontPrimitivesModes: fpPlan, stylePlans: { paints: [{ name: "x", role: "x", value: { r: 0, g: 0, b: 0, a: 1 } }], texts: [] } });
+    if (FK.figma._showUICalls !== 1) FAIL("adoptconsent", `fontPrimitivesModes-with-stylePlans leg: expected exactly 1 consent prompt, got ${FK.figma._showUICalls}`);
+    if (regOf(FK, FLOAT_REG)["Type Primitives"] !== orphanPrim.id) FAIL("adoptconsent", "fontPrimitivesModes-with-stylePlans leg: the float registry was not seeded with the adopted Type Primitives collection id");
+  } catch (e) { FAIL("adoptconsent", "the fontPrimitivesModes-with-stylePlans leg threw: " + e.message); }
 }
 
 // ── TKT-0024: the color collections' id-preserving RENAME capability still works once ensureCollection

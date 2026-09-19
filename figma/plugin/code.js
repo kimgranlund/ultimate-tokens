@@ -119,6 +119,14 @@ const ACTIONS = {
   "sweep-delete": "remove the selected legacy styles",
 };
 
+// hasStylePlans: the single predicate for "this apply actually touches paint/text styles",
+// shared by the message handler's own dispatch condition below and adoptExistingCollections'
+// consent-list concat, so the two can never drift apart (#676): a message carrying
+// fontPrimitivesModes with no stylePlans must neither run applyFontPrimitivesModes nor seed a
+// Type Primitives registry entry for a collection this apply never touches.
+function hasStylePlans(msg) {
+  return !!(msg && msg.stylePlans && ((msg.stylePlans.paints || []).length || (msg.stylePlans.texts || []).length));
+}
 figma.ui.onmessage = async (msg) => {
   if (!msg) return;
   try {
@@ -171,7 +179,7 @@ figma.ui.onmessage = async (msg) => {
       // STYLES (opt-out): paint + text styles bound to the variables just applied. Own try — a styles
       // failure never masks the variable apply that already succeeded.
       let sr = null;
-      if (msg.stylePlans && ((msg.stylePlans.paints || []).length || (msg.stylePlans.texts || []).length)) {
+      if (hasStylePlans(msg)) {
         try {
           if (msg.fontPrimitivesModes) {
             const fpr = await applyFontPrimitivesModes(msg.fontPrimitivesModes, { libraryMode: msg.libraryMode });
@@ -891,7 +899,7 @@ async function adoptExistingCollections(msg) {
   }
   // Type/Geometry: one ask per DISTINCT plan collection, across both float call sites (applyFloatPlans
   // and applyFontPrimitivesModes share FLOAT_REGISTRY_KEY, so they share this pass).
-  const plans = (Array.isArray(msg && msg.floatPlans) ? msg.floatPlans : []).concat(msg && msg.fontPrimitivesModes ? [msg.fontPrimitivesModes] : []);
+  const plans = (Array.isArray(msg && msg.floatPlans) ? msg.floatPlans : []).concat(hasStylePlans(msg) && msg.fontPrimitivesModes ? [msg.fontPrimitivesModes] : []);
   if (plans.length) {
     const reg = readFloatRegistry();
     const asked = new Set();
