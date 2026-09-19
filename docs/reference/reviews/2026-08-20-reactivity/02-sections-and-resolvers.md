@@ -54,7 +54,7 @@ Both independently rebuild "the type scale for a synthesized tier" inside `_type
 
 **C3 [verified clean]** — no leakage between app.js (routing) and section files (bodies); mixin composition (app.js:2545-2569: `mixinInto(HctApp, ColorSection, TypeSection, GeomSection, DrawerMixin, ApplyGateMixin, SettingsMixin)`) matches the documented "sections/overlays live in per-file mixins, flattened onto one prototype" contract.
 
-**C4 [non-issue]** — `_pickTypeTreatment`/`_pickGeomTreatment` (app.js:1261-1270) are the only type/geom-named methods living in app.js proper, but they're the shared paywall-gate-then-commit pattern (`_treatmentBlocked`), not resolution logic — defensible placement.
+**C4 [non-issue]** — `_pickTypeTreatment`/`_pickGeomTreatment` (app.js:1280-1289) are the only type/geom-named methods living in app.js proper, but they're the shared paywall-gate-then-commit pattern (`_treatmentBlocked`), not resolution logic — defensible placement.
 
 ## Mode/override channel trace + compare overrides
 

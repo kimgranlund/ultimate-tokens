@@ -225,7 +225,7 @@ render():
 There is no mid-edit guard: `render` (`app.js:570`) always rebuilds and instead snapshots the focused
 control before the swap and puts it back after (`_captureFocus` `app.js:635`, `_restoreFocus` `app.js:653`).
 A full render mounts a *fresh, closed* `<dialog>` for each overlay; an open export drawer is
-re-`showModal()`'d after mount so a render mid-drawer doesn't dismiss it (`_syncDrawer`, `app.js:609`).
+re-`showModal()`'d after mount so a render mid-drawer doesn't dismiss it (`_syncDrawer`, `app.js:610`).
 `paintCanvasFooter` (`app.js:1880`) is not on the full-render path: the canvas footer mounts with its
 static hint (`renderCanvasFooter`, `app.js:1875`) and is painted by `applyTransform` (`app.js:1685`), the
 canvas pointer handlers and `_liveRefreshNow` (`app.js:293`); each calls
