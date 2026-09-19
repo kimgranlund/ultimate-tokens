@@ -372,7 +372,13 @@ export class ApplyGateMixinImpl {
         "div",
         { class: "apply-gate-body" },
         h("p", { class: "apply-gate-lede" }, rebuild
-          ? "Regroup deletes and re-creates the Color Roles variables so they adopt the grouped order. Any layers or styles bound to them will detach and need reconnecting — the Ultimate Tokens style swatches are re-bound automatically on this same apply. (Color Primitives are untouched.)"
+          // #688: Published library does NOT cover Regroup. figma/plugin/code.js's applyBundle
+          // deletes and re-creates the whole Color Roles collection under rebuildSemantic before it
+          // ever consults libraryMode, so every role's variable id changes and every bound consumer
+          // breaks regardless of that checkbox. Shown unconditionally here (not only when the box is
+          // ticked): Regroup is always this destructive, and the checkbox sits below this text in
+          // reading order, so a user who ticks it later has already read the disclosure either way.
+          ? "Regroup deletes and re-creates the Color Roles variables so they adopt the grouped order. Any layers or styles bound to them will detach and need reconnecting — the Ultimate Tokens style swatches are re-bound automatically on this same apply. (Color Primitives are untouched.) Published library does not cover Regroup: every Color Roles variable is replaced either way, so bound consumer files break regardless of that checkbox."
           : (() => {
               // #496/P1: the lede must name only the systems this apply will actually write —
               // both non-rebuild branches were previously keyed ONLY on exportSystems.styles, so a
