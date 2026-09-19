@@ -61,7 +61,8 @@ the pass named in their own heading, not the current state.**
 
 ## Open questions
 
-See `.sdlc/questions/pif-u2.md` - Q-U2-1 (C3 vs C5 stop-500 exactness, resolved as: token exact, ramp clamps), Q-U2-2 (default kit ramps move under U2 alone, resolved as: no suppression mechanism exists, built accordingly), Q-U2-3 (gap/distinct allow-list finding - the count moved several times since; see "Review pass 2" below for the current gap-19/distinct-25 numbers rather than trusting a number here), Q-U2-4 (spec-panda-park-ui-exports.md now stale, out of lane, routed the same way as U1's `690b0a1`), Q-U2-5 (RULED, see below), Q-U2-6 and Q-U2-7 (review pass 2, R1/R2 residuals, both pending owner ruling).
+See `.sdlc/questions/pif-u2.md` - Q-U2-1 (C3 vs C5 stop-500 exactness, resolved as: token exact, ramp clamps), Q-U2-2 (default kit ramps move under U2 alone, resolved as: no suppression mechanism exists, built accordingly), Q-U2-3 (gap/distinct allow-list finding - the count moved several times since; see "Review pass 2" below for the current gap-19/distinct-25 numbers rather than trusting a number here), Q-U2-4 (spec-panda-park-ui-exports.md now stale, out of lane, routed the same way as U1's `690b0a1`), Q-U2-5 (RULED, see below), Q-U2-6 (review pass 2, R1 residual, RESOLVED - see the correction section
+below) and Q-U2-7 (review pass 2, R2 residual, pending owner ruling).
 
 ## Review response (`pif-u2-review-1.md`, FIX-FIRST, 2026-09-18)
 
@@ -182,15 +183,15 @@ identity check for "Neutral" are all GREEN. Addendum 2's four named gate items, 
 - 0 notch at 500 - MET, verified analytically (the general formula's own limit at the pivot always
   equals the anchor's value) and with a negative control (pinning the basis to the group value alone
   visibly changes a window-clamped source's stop-500 output).
-- 0 non-monotone ramps on the rendered path - **NOT MET**: 45 named exceptions remain in
-  `anchor.mjs`'s `NONMONO_ALLOW`, IDENTICAL by name whether the blend weight is `anchorWarp`- or
-  `liftStop`-keyed - proving the growth (from 1 pre-blend) is a structural consequence of blending
-  toward a second chroma target under `dampAmp>0` presets (a real Helmholtz-Kohlrausch effect, root-
-  caused by direct inspection: Nike secondary, peak, stops 875->900, L* rises 5.4742->5.4835 while
-  chroma falls 18.88->17.22), not of which position measure drives the blend. Did not attempt a third,
-  self-invented construction to force this to 0. 39 of 45 are peak mode (F4's curve shaping fully
-  engaged there), 6 perceptual, 0 even; expected to shrink once U3's own `VIVID_MIDS.dampAmp` 55->0
-  fix lands.
+- 0 non-monotone ramps on the rendered path - **NOT MET at this pass** (since fixed, see "Review pass
+  2" below): 45 named exceptions remained in `anchor.mjs`'s `NONMONO_ALLOW`, IDENTICAL by name whether
+  the blend weight was `anchorWarp`- or `liftStop`-keyed. At the time I read this as proof the growth
+  was structural regardless of which position measure drove it, and attributed the example (Nike
+  secondary, peak, stops 875->900, L* rises 5.4742->5.4835 while chroma falls 18.88->17.22) to a
+  Helmholtz-Kohlrausch effect. Both readings are corrected below: every corpus anchor at this pass had
+  `skew=0`/`lift=0`, so `anchorWarp`'s `w` and `liftStop` position are mathematically identical there -
+  the identical-name-set proved nothing. And H-K is a chroma perceived-brightness effect CIE L* cannot
+  model, so it cannot cause a measured CIE L* rise; the real cause was 8-bit RGB rounding.
 - Negative controls (pin to `palette.chroma`, notch reds; pin to the anchor, gid8 reds) - both
   demonstrated, the second already proven earlier in this same pass before the ruling landed.
 - `scripts/report-preset-fidelity.mjs --envelope` (the addendum's C6 re-run ask) does not exist on
@@ -262,25 +263,26 @@ R8-R10.
 
 | R | What | Status |
 |---|---|---|
-| R1 | `monotoneOk` reads pixel L*, not the ramp's own `tone` field; residual not frozen as final | **Done** - 66 named exceptions (13 perceptual, 53 peak, 0 even), labeled "PENDING OWNER RULING" in the gate's own output line. Measured twice (as-is and with U3's ruled `dampAmp` 0 patch: drops to 16). Recorded in Q-U2-6 |
+| R1 | `monotoneOk` reads pixel L*, not the ramp's own `tone` field; residual not frozen as final | **Done, then corrected (team-lead, second review-2 pass)**: the reviewer re-ran on `0849f67` and proved the 45/66-entry residual was 8-bit RGB rounding, not Helmholtz-Kohlrausch (continuous L* is monotone in 6,760/6,760 corpus ramps). Fixed at construction: `enforceMonotonePixelL` (`tonal.js`), a rounding-aware nearest-in-gamut-RGB refinement adapted from U3's `refineNearestRgb`, wired into both anchored branches. `NONMONO_ALLOW` removed; the gate now asserts a true 0, no allow-list. Q-U2-6 resolved |
 | R2 | Notch gate (review 1's 70%-of-both-neighbours definition) + its negative control; ease the chroma-basis blend weight | **Done** - gate added to `anchor.mjs`; `anchorChromaBasis`'s weight eased to a smoothstep of the liftStop position. 1,811 -> 459 rendered cells (default kit stays 0 throughout). Residual recorded in Q-U2-7, definition not loosened |
 | R3 | hueSpace "oklch" solves per stop, not once at the anchor's own degenerate point; F4 gate in-suite | **Done** - moves 16/16 default-kit ramps, 3,392-3,396/3,396 curated ramps (all three modes); the `tonal.js:416`-area false comment fixed. F4 gate added: peak != perceptual for 3,380/3,380 anchored sources; Curve/Tension/Vibrancy/hueSpace each move the default kit; stop 500 exact under every toggle; a non-tautological negative control |
 | R4 | Blend weight keyed on `liftStop`, not `anchorWarp` | **Already done** at `0849f67` (before this review), confirmed still true |
 | R5 | Run U3's `report-preset-fidelity.mjs --envelope` from a scratch copy, record "U2 basis, pre-integration" | **Done** - see below. FAILs both readings (C6's own criteria), matching the expectation that U3's own `VIVID_MIDS.dampAmp` 55->0 fix has not landed in U2's tree yet |
-| R6 | Replace `anchorLerp`'s per-side double-S with a piecewise-affine `toneAt` remap | **Done** - `anchorWarp`/`anchorLiftPos` (and their ANCHOR_LIFT_* constants) are now dead code and removed, R4's own ask once R6 dropped their last caller. Gap-19 allow-list moved 69 -> 91, distinct-25 10 -> 14 (expected - "that is the point") |
+| R6 | Replace `anchorLerp`'s per-side double-S with a piecewise-affine `toneAt` remap | **Done** - `anchorWarp`/`anchorLiftPos` (and their ANCHOR_LIFT_* constants) are now dead code and removed, R4's own ask once R6 dropped their last caller. Gap-19 allow-list moved 69 -> 91 -> 90 (the last step from R1's rounding-aware fix, see below), distinct-25 10 -> 14 (expected - "that is the point") |
 | R7 | Re-measure FLOORS and thin cells after R1-R6; record by name against `bf2aaf6`, do not re-pin as final | **Done** - AA 4.5 holds in every cell; 41 of 96 (was 46) sit below their pre-#681 value. Table and thin-cell three-way comparison in `.sdlc/questions/pif-u2.md` Finding 5. The `test/engine/semantic.mjs` FLOORS table itself WAS re-pinned (to keep `npm test` green, matching every prior pass's own convention) - "not re-pinned as final" is honored by taking the by-name comparison to the owner as a question, not by leaving the gate red |
 | R8 | Fix stale/contradictory lines (handoff, questions, code comments, Reset tooltip, `(rst)` header); remove em dashes; record final head sha | **Done** - this document, `.sdlc/questions/pif-u2.md`, `color.js`'s Reset tooltip/comment, `headless-boot.mjs`'s `(rst)` header comment, `anchor.mjs`'s two stale gap-allow-list comments. Em dashes removed from both `.sdlc` files (132 total); two already-committed historical commit messages (`442d6c3`, `b1e4518`) keep theirs, noted here rather than rewritten |
 | R9 | Extend `(rst-corpus)` to all 8 categories + the default kit; compare full `projectView` ramps, not only fields | **Done** - 3,396 anchored palettes (was 1,460, 4 categories), both a field-level check and a full 25-stop rendered-ramp deep-equal against a reference captured from the pre-detach snapshot state |
-| R10 | Replace the tautological swap control (`anchor.mjs:630-644`); print `r` lines for every allow-list; name the gate's own final-line criteria | **Done** - the negative controls now call `allowListMatches`, the SAME comparator the real gates use, against real measured data with a name dropped or swapped (drop+swap, five allow-lists); `r` lines print for window-clamp, monotone, gap, distinct and notch; the final `PASS` line names C2/C3/C4/C5/C6/F4/gap-19/distinct-25/notch |
+| R10 | Replace the tautological swap control (`anchor.mjs:630-644`); print `r` lines for every allow-list; name the gate's own final-line criteria | **Done** - the negative controls now call `allowListMatches`, the SAME comparator the real gates use, against real measured data with a name dropped or swapped (drop+swap, at this pass five allow-lists; after R1's later fix, four - monotone has no allow-list left to test, `r` lines print for window-clamp, gap, distinct and notch); the final `PASS` line names C2/C3/C4/C5/C6/F4/gap-19/distinct-25/notch |
 
 ### Re-measured counts, this head
 
-- **Monotone (pixel L*)**: 66 total - perceptual 13, peak 53, even 0 (19-stop and 25-stop combined, by
-  name in `anchor.mjs`'s `NONMONO_ALLOW`). PENDING OWNER RULING (Q-U2-6).
+- **Monotone (pixel L*)**: 0, no allow-list (was 66 - perceptual 13, peak 53, even 0 - before the
+  rounding-aware `enforceMonotonePixelL` construction fix). Q-U2-6 resolved.
 - **Notch** (review 1's 70%-of-both-neighbours definition): 459 total - perceptual 117, peak 106,
   even 236. Default kit 0 in every mode. PENDING OWNER RULING (Q-U2-7).
-- **Gap-19 allow-list**: 91 (was 69). **Distinct-25 allow-list**: 14 (was 10). Both moved by R6, as
-  expected ("expect the gap list and part of the 45 to move; that is the point").
+- **Gap-19 allow-list**: 90 (69 before R6, 91 after R6, 90 after R1's rounding-aware fix nudged one
+  ramp's RGB enough to clear its own gap). **Distinct-25 allow-list**: 14 (was 10, unaffected by R1).
+  Moved by R6, as expected ("expect the gap list and part of the 45 to move; that is the point").
 - **F4 controls table** (default kit, perceptual mode unless noted): peak-vs-perceptual differ for
   3,380/3,380 anchored sources on the full corpus sweep; Curve/Tension/Vibrancy/hueSpace each move all
   16 default-kit anchored ramps with stop 500 exact in every case; the full-corpus toggle sweep (a
@@ -312,18 +314,43 @@ READING (a) FAIL, READING (b) FAIL - the envelope table does not clear the plan'
 ```
 
 Both readings FAIL under every preset's own current `dampAmp` (mostly 55). This is the expected,
-pre-integration state: U3's own ruled fix (`VIVID_MIDS.dampAmp` 55 -> 0) has not landed on this branch,
-and Q-U2-6's own dampAmp-0 patch measurement (66 -> 16 non-monotone) shows the SAME dampAmp dependency
-from a different angle. U4 should expect this table to look very different once U3's fix integrates -
-this is "U2 basis, pre-integration," not a U2 defect.
+pre-integration state: U3's own ruled fix (`VIVID_MIDS.dampAmp` 55 -> 0) has not landed on this branch.
+(The R1 monotone residual this section used to cross-reference here as evidence of the same dampAmp
+dependency is now fixed unconditionally, see the correction below - it is no longer evidence for or
+against dampAmp's own integration state.) U4 should expect this table to look very different once
+U3's fix integrates - this is "U2 basis, pre-integration," not a U2 defect.
+
+### Correction, second review-2 pass (team-lead, 2026-09-18)
+
+After this pass's own report, the reviewer re-ran R1's measurement on `0849f67` and found the 45/66
+residual was misdiagnosed: it attributed to Helmholtz-Kohlrausch, a chroma perceived-brightness effect
+CIE L* cannot model and so cannot cause a measured CIE L* rise. An instrumented probe proved
+continuous (pre-rounding) CIE L* is monotone in all 6,760 measured perceptual+peak anchored corpus
+ramps; every rise was an 8-bit RGB rounding artifact (a continuous L* step shrinking below one 8-bit
+code, flipped in sign by which channel's byte value rounds up or down). Also withdrawn: the "identical
+by name whichever blend weight drives it" argument (see R1's own row above and Q-U2-5's addendum),
+since every corpus anchor at that pass had `skew=0`/`lift=0`, making `anchorWarp`'s `w` and `liftStop`
+position mathematically identical there - the identical set proved nothing about the blend's structure.
+
+Fixed at construction: `enforceMonotonePixelL` (`src/engine/tonal.js`), wired into both
+`paletteStopsAnchored` and `okhslStopsAnchored`, walks each rendered ramp light-to-dark and swaps a
+stop whose rounded pixel L* would rise for the nearest in-gamut integer-RGB neighbour that keeps pixel
+L* non-increasing, adapted from U3's `refineNearestRgb` pattern. Never touches stop 500. `NONMONO_ALLOW`
+is removed from `test/engine/anchor.mjs`; the gate now asserts a true, unconditional 0 non-monotone
+ramps, no allow-list, across all three modes and both stop sets. Side effects re-measured: the gap-19
+allow-list dropped one entry (91 -> 90, one nudged ramp cleared its own 0.55 L* gap); window-clamp (10),
+distinct-25 (14) and notch (459) allow-lists are byte-identical by name, unaffected. `npm test` 48/48
+green, `gate:corpus-contrast` green, `audit-citations` STALE 0 (two citations pointing at `_okL`'s
+now-shifted line number fixed), `branding.mjs` clean. Q-U2-6 is resolved; every Helmholtz-Kohlrausch
+mention this ticket's own record carried for this residual (`anchor.mjs`, `tonal.js`,
+`.sdlc/questions/pif-u2.md`, this handoff) is corrected to 8-bit rounding.
 
 ### Final state, this pass
 
-**Head at close of this pass, before this documentation commit: `6cf9fea`.** Plan tip
-(`plan/preset-intent-fidelity`, `4ff086c`, revision 19) is already an
-ancestor of this head - no rebase was needed this pass, confirmed via `git merge-base --is-ancestor`.
-`npm test` 48/48 green, `git status --short` empty. `npm run gate:corpus-contrast` PASS (343 docs,
-7,560 cells, 0 under 4.5, worst 4.500:1). `node scripts/audit-citations.mjs` STALE 0. `node
-test/repo/branding.mjs` clean (449 files). Open items for the owner: Q-U2-6 (monotone residual),
-Q-U2-7 (notch residual), Finding 5's R7 floor table (41 of 96 below `bf2aaf6`) - none blocking, all
-recorded rather than silently re-pinned as final.
+**Head after the correction above, before this documentation commit: see the report to team-lead for
+the exact sha.** Plan tip (`plan/preset-intent-fidelity`, `4ff086c`, revision 19) is still an ancestor
+of this head - no rebase needed, confirmed via `git merge-base --is-ancestor`. `npm test` 48/48 green,
+`git status --short` empty. `npm run gate:corpus-contrast` PASS (343 docs, 7,560 cells, 0 under 4.5,
+worst 4.500:1). `node scripts/audit-citations.mjs` STALE 0. `node test/repo/branding.mjs` clean (449
+files). Open items for the owner: Q-U2-7 (notch residual), Finding 5's R7 floor table (41 of 96 below
+`bf2aaf6`) - neither blocking, both recorded rather than silently re-pinned as final. Q-U2-6 is closed.

@@ -56,21 +56,30 @@ construction (commit after `b0c411d`), each in turn:
   For the 3,370 in-window sources the special case protects stop 500's hex regardless of the basis, so
   that population is NOT where this control bites - documented so the number itself (`exact=3370,
   off=0` under the SAME patch) is not misread as the control failing to fire.
-- **0 non-monotone ramps on the rendered path - NOT MET, and not fixable by the position-measure
-  correction alone.** 45 named exceptions remain (`NONMONO_ALLOW`, `test/engine/anchor.mjs`), IDENTICAL
-  by name to the set measured under the retired `anchorWarp`-keyed construction - switching the blend
-  weight from `anchorWarp`'s `w` to pure `liftStop` position did not change which ramps rise or how
-  many. Root cause, confirmed by direct inspection (Nike secondary, peak mode, stops 875->900: measured
-  CIE L* 5.4742 -> 5.4835 while chroma falls 18.88 -> 17.22, a Helmholtz-Kohlrausch coupling): blending
-  toward a SECOND chroma target (the anchor's own high chroma near 500 shading to a much lower
-  `rampChroma`-derived target near the edges, for presets where those two values differ a lot)
-  introduces a chroma trajectory `chromaEnvelope`'s shoulder term (active whenever a preset's generated
-  `dampAmp>0`) was not built against - the same class the single pre-existing Nike exception already
-  named, now triggered on 44 more ramps. This is a structural consequence of the BLEND existing at all,
-  not of which position measure drives it (proven by the identical 45-name set) - I did not attempt a
-  third, self-invented construction to force this to 0, per "do not fork it" / "no other construction."
-  Concentration: 39 of 45 are peak mode (where F4's curve/tension shaping is fully engaged), 6
-  perceptual, 0 even.
+- **0 non-monotone ramps on the rendered path - NOT MET AT THE TIME, since fixed (review pass 2, R1;
+  see the "Correction, review pass 2" note below).** At this ruling's own pass, 45 named exceptions
+  remained (`NONMONO_ALLOW`, `test/engine/anchor.mjs`), IDENTICAL by name to the set measured under the
+  retired `anchorWarp`-keyed construction - switching the blend weight from `anchorWarp`'s `w` to pure
+  `liftStop` position did not change which ramps rise or how many. I had read this as proof the growth
+  was "structural" regardless of which position measure drove it; that reading is WRONG and is
+  withdrawn (review pass 2 correction) - every corpus anchor at this pass has `skew=0`/`lift=0`, so
+  `anchorWarp`'s `w` and pure `liftStop` position are mathematically identical there, and the corpus
+  cannot distinguish the two constructions at all. The identical-45-name-set proves nothing about the
+  BLEND's structure. The measured example at the time (Nike secondary, peak mode, stops 875->900:
+  PIXEL L* 5.4742 -> 5.4835 while chroma falls 18.88 -> 17.22) was also misattributed as a
+  Helmholtz-Kohlrausch coupling; H-K is a perceived-brightness effect of chroma that CIE L* cannot
+  model, so it cannot cause a measured CIE L* rise - see the correction note. Concentration at the
+  time: 39 of 45 peak mode, 6 perceptual, 0 even.
+
+  **Correction, review pass 2 (2026-09-18):** the reviewer's instrumented probe proved continuous
+  (pre-rounding) CIE L* is monotone in all 6,760 measured perceptual+peak anchored corpus ramps; every
+  rise (46 at that measurement, growing from this pass's 45 as R6's toneAt remap moved the set) was an
+  8-bit RGB rounding artifact - a continuous L* step shrinking below one 8-bit code, flipped in sign by
+  which channel's byte value rounds up or down. Fixed at construction, not gated around:
+  `enforceMonotonePixelL` (`tonal.js`) walks each rendered ramp light-to-dark and swaps a rising stop
+  for the nearest in-gamut integer-RGB neighbour that keeps pixel L* non-increasing, adapted from U3's
+  `refineNearestRgb`. The gate now measures a true, unconditional 0, no allow-list. Q-U2-6 (below) is
+  resolved.
 - **Negative controls, addendum 2's own text:**
   - "pin the basis to `palette.chroma` and the notch gate reds" - done, see the notch-check evidence
     above (the scratch patch pins the basis to `groupValue`, i.e. `palette.chroma`-derived, and the
@@ -138,8 +147,11 @@ not twice) until this is ruled.
 **Addendum, step 1b (F4):** the curve/tension composition (see the F4 addendum below) surfaced one
 further, related symptom on top of the SAME chroma basis: `brands "Nike · The Swoosh · Since 1971"
 secondary` (one of C5's own 10 named window-clamp sources, anchor `#101820`), peak mode, DEFAULT
-controls (skew 0, lift 0), rises 5.9827 -> 6.0070 measured CIELAB L* at stops 825 -> 850 (chroma
-10.74 -> 9.70, a Helmholtz-Kohlrausch coupling, the same class #668 fixed). Root cause: this preset's
+controls (skew 0, lift 0), rises 5.9827 -> 6.0070 measured PIXEL L* at stops 825 -> 850 (chroma
+10.74 -> 9.70). Correction, review pass 2: this was misattributed as a Helmholtz-Kohlrausch coupling;
+H-K is a chroma perceived-brightness effect CIE L* cannot model, so it cannot cause a measured CIE L*
+rise - the real mechanism is 8-bit RGB rounding of an otherwise-monotone continuous ramp (see Q-U2-6's
+resolution). Root cause: this preset's
 GENERATED `dampAmp` is 55, not 0 - `scripts/gen-categories.mjs`'s pre-U3 `VIVID_MIDS.dampAmp` default,
 which the plan text names as U3's OWN fix ("`VIVID_MIDS.dampAmp` 55 → 0, Q7 ruled"), not landed on this
 branch. `chromaEnvelope`'s shoulder term humps chroma non-monotonically at `dampAmp > 0`, and my new
@@ -448,55 +460,37 @@ prime-ladder literal, routed to U5's revision-9 SPEC batch) - except mine touche
 (every ramp-derived EX-1/EX-2/EX-4 literal), not three fields. Recommend routing this the same way:
 to U5's SPEC-doc pass, or a dedicated follow-up ticket if U5's scope doesn't already cover EX-4.
 
-## Q-U2-6: pixel-L* monotone residual after R1/R6, and its dampAmp-0 conditionality (review pass 2, R1)
+## Q-U2-6: pixel-L* monotone residual after R1/R6 - RESOLVED (review pass 2, second pass, 2026-09-18)
 
-**Status: recorded for the owner, not blocking - REQ-002's gid3/gid8/gid8b stay green, AA holds.**
+**Status: RESOLVED. `test/engine/anchor.mjs` measures a true, unconditional 0 non-monotone ramps, no
+allow-list, all three modes, both stop sets. No owner ruling needed.**
 
-R1 (fix-first-2) changed `test/engine/anchor.mjs`'s `monotoneOk` to read PIXEL L* (`lstarFromRgb` of
-the rendered hex) instead of the ramp's own `tone` target field - closing a proxy gap review 2 found
-on the even path (a real pixel rise can sit invisible to a check that trusts the reported target).
-R6 replaced `anchorLerp`'s per-side double-S with a piecewise-affine `toneAt` remap in the same pass.
+This question originally recorded a 66-entry residual (perceptual 13, peak 53, even 0) and asked the
+owner to rule whether it was acceptable as-is, conditional on U3's `dampAmp` 0 fix, or needed a fourth
+construction pass. It also attributed the cause to "the same Helmholtz-Kohlrausch coupling #668
+names elsewhere."
 
-**Measured (rendered path, 3,380 anchored sources, both 19-stop and 25-stop, all three modes), as-is:**
+**Both were wrong, corrected by the reviewer's re-measurement on `0849f67`:**
+- **Mechanism.** Helmholtz-Kohlrausch is a perceived-brightness effect of CHROMA; CIE L* does not
+  model it at all, so it cannot cause a measured CIE L* rise. An instrumented probe rebuilding each
+  stop's continuous (pre-rounding) color proved CIE L* is monotone in all 6,760 measured
+  perceptual+peak anchored corpus ramps. Every rise happened only at the 8-bit RGB rounding step: a
+  continuous L* step shrinking below one 8-bit code gets its sign flipped by which channel's byte
+  value happens to round up or down (example: stops 925->950, `#100E23` to `#10101B` - blue drops 8
+  codes, green rises 2; green carries more luminance weight, so pixel L* reads lighter despite
+  continuous L* falling). 34 of 35 measured rises sat at the dark end (mostly 925->950), on dark
+  anchors (L* < 15) in `rampChroma`-100 groups, all carrying `dampAmp 55`.
+- **Fix.** Not a ruling to accept a residual, but a construction fix: `enforceMonotonePixelL`
+  (`src/engine/tonal.js`), wired into both `paletteStopsAnchored` and `okhslStopsAnchored`, walks each
+  rendered ramp light-to-dark and, wherever a stop's rounded pixel L* would rise above the preceding
+  stop's, swaps it for the nearest in-gamut integer-RGB neighbour (a small search around the rounded
+  RGB, not the continuous one) that keeps pixel L* non-increasing - adapted from U3's `refineNearestRgb`
+  pattern. Stop 500, the anchor pivot, is never touched. `NONMONO_ALLOW` is removed from
+  `test/engine/anchor.mjs`; the gate now asserts `nonMonoSorted.length === 0` directly.
 
-| mode | count |
-|---|---|
-| perceptual | 13 |
-| peak | 53 |
-| even | 0 |
-| **total** | **66** |
-
-The full by-name list is in `test/engine/anchor.mjs`'s `NONMONO_ALLOW` constant (printed with its own
-`r` lines by `node test/engine/anchor.mjs`), labeled in the gate's own output as "PENDING OWNER
-RULING" rather than a settled 0 - per R1's own brief: "do not ship a frozen allow list in place of a
-ruled 0." The gate still catches a NEW rise (an unexpected member reds it); it does not claim the
-current 66 are acceptable.
-
-**Cause, unchanged from the prior pass's finding:** the same Helmholtz-Kohlrausch coupling #668 names
-elsewhere - measured CIE L* can rise slightly even as OKHSL l and chroma both fall, since CIE L*
-depends on saturation too at fixed OKHSL l. R6's construction change moved which sources trip this
-(some of the prior 45 no longer do; some new ones do, mostly in peak mode where the toneAt remap now
-composes curve/tension shaping through the pivot at its own steepest point rather than the double-S's
-flattest).
-
-**dampAmp 0 patch (`r2-nm-damp.mjs`'s own pattern - U3's ruled `VIVID_MIDS.dampAmp` 55->0 fix,
-whether the residual is conditional on it landing):**
-
-| mode | as-is (dampAmp per-preset, mostly 55) | dampAmp forced to 0 |
-|---|---|---|
-| perceptual | 13 | 4 |
-| peak | 53 | 8 |
-| even | 0 | 4 |
-
-Forcing every preset's `dampAmp` to 0 drops the total from 66 to 16 (perceptual 13->4, peak 53->8) but
-does NOT reach 0, and even mode goes from 0 to 4 (rises under the patch - dampAmp isn't the even path's
-own driver). So the residual is PARTIALLY, not fully, conditional on U3's dampAmp fix: most of it
-(50 of 66) tracks dampAmp, a smaller remainder (16, including all 4 even-mode entries) does not and
-would need a separate mechanism at U4 integration time. The owner should rule whether to accept the
-as-is 66 as final, wait for U3's own fix and re-gate then (dropping to ~16), or ask for a fourth
-construction pass targeting the residual directly. Reproduce: `node test/engine/anchor.mjs` (as-is);
-`PATCH='{"dampAmp":0}' node scratchpad/r2-nm-damp.mjs <worktree>` (patched, using review 2's own probe
-script, not re-derived).
+The dampAmp-0 conditionality table this question used to carry is moot - the fix reaches 0 regardless
+of `dampAmp`, so there is nothing left for U3's own `dampAmp` fix to be a precondition for on this
+specific residual.
 
 ## Q-U2-7: near-grey notch residual after the R2 smoothstep easing fix (review pass 2, R2)
 

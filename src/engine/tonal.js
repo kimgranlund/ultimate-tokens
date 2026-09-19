@@ -411,6 +411,57 @@ function anchorLerp(pivot, edgeLight, edgeDark, stop, skew, lift, curve, tension
 // remap, R6) — the two are no longer tied to a single shared `w`, which is intentional: R4 retired the
 // skew-warped `w` from the chroma path specifically because tying the chroma blend to skew was never
 // asked for.
+// enforceMonotonePixelL (R1, review pass 2, 2026-09-18, team-lead correction on top of the fix-first-2
+// pass): the residual pixel-L* rises measured by `monotoneOk` are NOT a Helmholtz-Kohlrausch effect (H-K
+// is a perceived-brightness effect of CHROMA that CIE L* cannot model at all, so it structurally cannot
+// cause a measured CIE L* rise; that attribution, carried in an earlier pass, was wrong). The review's
+// own instrumented probe proved continuous (pre-rounding) CIE L* is monotone in all 6,760 measured
+// perceptual+peak anchored corpus ramps; every rise appears only at the 8-bit RGB rounding step, where a
+// continuous L* step that shrinks below one 8-bit code gets its sign flipped by which channel's byte
+// value happens to round up or down (example: stops 925->950, #100E23 to #10101B, blue drops 8 codes,
+// green rises 2; green carries more luminance weight, so pixel L* reads lighter despite continuous L*
+// falling). Fix at construction, not the gate: walk the emitted stops in ascending-stop (light-to-dark,
+// 050 light / 950 dark per the STOPS comment above) order and, wherever a stop's rounded pixel L* rises
+// above the immediately preceding (already-finalized) stop's pixel L*, replace it with the nearest
+// in-gamut integer-RGB neighbour that keeps pixel L* non-increasing, a small integer search around the
+// ROUNDED rgb (not the continuous one), adapted from U3's `refineNearestRgb` pattern. Never touches stop
+// 500, the anchor pivot, which stays byte-exact by contract; a dark-side neighbour may still use its
+// exact L* as its bound. If no in-gamut neighbour within the search radius satisfies the bound, the stop
+// is left unchanged so a genuinely larger defect surfaces as a real gate failure instead of being forced.
+function enforceMonotonePixelL(stopsOut) {
+  const EPS = 1e-9;
+  const RADIUS = 3;
+  for (let i = 1; i < stopsOut.length; i++) {
+    const cur = stopsOut[i];
+    if (cur.stop === 500) continue;
+    const bound = lstarFromRgb(stopsOut[i - 1].rgb);
+    if (lstarFromRgb(cur.rgb) <= bound + EPS) continue;
+    const [r0, g0, b0] = cur.rgb;
+    let best = null;
+    let bestDist = Infinity;
+    for (let dr = -RADIUS; dr <= RADIUS; dr++) {
+      const r = r0 + dr;
+      if (r < 0 || r > 255) continue;
+      for (let dg = -RADIUS; dg <= RADIUS; dg++) {
+        const g = g0 + dg;
+        if (g < 0 || g > 255) continue;
+        for (let db = -RADIUS; db <= RADIUS; db++) {
+          const b = b0 + db;
+          if (b < 0 || b > 255) continue;
+          if (dr === 0 && dg === 0 && db === 0) continue;
+          if (lstarFromRgb([r, g, b]) > bound + EPS) continue;
+          const dist = dr * dr + dg * dg + db * db;
+          if (dist < bestDist) { bestDist = dist; best = [r, g, b]; }
+        }
+      }
+    }
+    if (!best) continue;
+    cur.rgb = best;
+    cur.hex = "#" + best.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+    cur.tone = lstarFromRgb(best);
+  }
+}
+
 function paletteStopsAnchored(palette, controls, stops, anchor) {
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;
@@ -452,7 +503,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   const groupTarget = (palette.chroma / 100) * pk;
   const lift = palette.lift ?? 0;
   const oklchSpace = controls.hueSpace === "oklch";
-  return stops.map((stop) => {
+  const built = stops.map((stop) => {
     if (stop === 500 && !clamped) {
       return {
         stop, tone: anchor.lstar, chroma: anchor.cam.chroma,
@@ -487,6 +538,8 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
       out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
     return { stop, tone, chroma, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
   });
+  enforceMonotonePixelL(built);
+  return built;
 }
 
 // paletteStops — full per-stop pipeline for one palette.
@@ -674,7 +727,7 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   const pivotL = anchor.lstar < RAMP_L_MIN ? okhslLAtChromatic(RAMP_L_MIN, hOkSeed, anchor.okhsl.s)
     : anchor.lstar > RAMP_L_MAX ? okhslLAtChromatic(RAMP_L_MAX, hOkSeed, anchor.okhsl.s)
     : anchor.okhsl.l;
-  return stops.map((stop) => {
+  const built = stops.map((stop) => {
     if (stop === 500 && !clamped) {
       return {
         stop, tone: anchor.lstar, chroma: anchor.cam.chroma,
@@ -715,6 +768,8 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
     return { stop, tone, chroma: cam16FromRgb(rgb).chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true };
   });
+  enforceMonotonePixelL(built);
+  return built;
 }
 
 function okhslStops(palette, controls, stops, mode) {
