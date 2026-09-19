@@ -1162,10 +1162,8 @@ for (const mode of ["perceptual", "peak"]) {
   // chroma at the anchor's own); pass 5 restores the OKHSL-path fix for PEAK ONLY, per the owner's
   // ruling on Q7 pass-4: peak is already defined to center richness at 500 (hpg-tonal-okhsl-modes), so
   // capping it there is consistent, not in tension. Perceptual is DELIBERATELY left off this exact-zero
-  // check — it keeps #55's cusp-pull richness untouched. The owner's ruling on Q7 pass-4 allowed a
-  // bounded, named, one-stop cusp exemption for perceptual instead of "0 above 100%", but measuring
-  // first (below, (iii-b)) showed that premise doesn't hold for most of the corpus, so it is NOT built;
-  // see Q7's pass-5 addendum.
+  // check — it keeps #55's cusp-pull richness untouched, per the owner's ruling (f) on Q7 pass-5 (below,
+  // (iii-b)): NO ramp change for perceptual, a different, bounded clause instead.
   //
   // ADIA_CARVEOUT — the ONE named, owner-ruled exception (2026-09-18): an AUTHORED dampAmp>0 override is
   // exempt from "0 above 100%" by NAME, not by "any dampAmp>0" (that would silently exempt a future
@@ -1210,15 +1208,87 @@ for (const mode of ["perceptual", "peak"]) {
     // requires of it.
   }
 
-  // (iii-b) perceptual's bounded, named, ONE-STOP cusp exemption was RULED IN (Q7 pass-4 owner ruling)
-  // but is NOT BUILT here: measuring first (as the pass-5 brief required before writing any gate) shows
-  // the one-stop premise does not hold for most of the corpus's violating palettes. Of 2,226 generated
-  // (dampAmp 0) perceptual palettes with at least one above-anchor stop, only 538 have exactly one; 1,669
-  // (75%) have 2-5 adjacent above-anchor stops clustered around the cusp (histogram and examples in Q7's
-  // pass-5 addendum). Capping every non-cusp stop to the anchor while exempting only one would turn that
-  // whole cluster into a single unnatural spike for most of the corpus, not a graceful one-stop
-  // exception — a shape defect, not a pass, per the brief's own stop condition for exactly this
-  // scenario. Not gated; not patched with a different (uninstructed) mechanism. Reported to the owner.
+  // (iii-b) perceptual's bounded CUSP-RUN exemption (#681 U3 pass 6, owner ruling (f), conductor
+  // lane-A-routing-6.md, 2026-09-19): NO ramp change for perceptual — #55's cusp-pull ships exactly as
+  // today (pass 5's measurement showed a one-STOP exemption spikes for 76% of the corpus, because a
+  // cusp is a natural SHOULDER spanning several adjacent stops, not a point — see Q7's pass-5 addendum).
+  // Instead: a generated (dampAmp 0) perceptual palette may have AT MOST ONE CONTIGUOUS RUN of stops
+  // above stop 500's own emitted chroma (the whole shoulder counts as one unit), and every stop in that
+  // run must be at or under the frozen bound. A SECOND, separate run, or any stop past the bound, reds.
+  //
+  // analyzeCuspRuns — pure: given a rendered ramp (in T.STOPS order) and its own anchor chroma, counts
+  // the number of separate CONTIGUOUS above-anchor runs and the worst (chroma/c500) ratio among them.
+  // Pure and synthetic-input-friendly so the negative controls below hand-craft an input rather than
+  // depend on the corpus happening to contain the exact shape under test.
+  const analyzeCuspRuns = (ramp, c500) => {
+    let runs = 0, inRun = false, worstRatio = 0;
+    for (const r of ramp) {
+      const over = r.chroma > c500 + 1e-6;
+      if (over) {
+        if (!inRun) runs++;
+        inRun = true;
+        worstRatio = Math.max(worstRatio, r.chroma / c500);
+      } else inRun = false;
+    }
+    return { runs, worstRatio };
+  };
+  // CUSP_RUN_BOUND — 189.31% of stop 500's own chroma: the corpus's fresh-measured worst cusp-stop
+  // excess (89.3005pp, cuisine "Sushi & sashimi · the cypress counter"/primary-muted, cusp stop 650 —
+  // measured pass 5, reconfirmed pass 6, Q7) rounded UP to 2 decimal places so the witness itself
+  // clears the bound with margin, never truncated toward it.
+  const CUSP_RUN_BOUND = 1.8931;
+  const cuspRunFor = (doc, pal) => {
+    const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "perceptual" };
+    const chroma = rampChromaOf(pal, doc);
+    const ramp = T.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, T.STOPS);
+    const c500 = ramp.find((r) => r.stop === 500).chroma;
+    if (c500 <= 1e-9) return null;
+    return analyzeCuspRuns(ramp, c500);
+  };
+  {
+    const unlistedRuns = [], unlistedExcess = [];
+    for (const doc of docs) {
+      if (ADIA_CARVEOUT.has(doc.__presetName)) continue; // exempt by name, both clauses (as even/peak)
+      for (const pal of doc.palettes) {
+        const res = cuspRunFor(doc, pal);
+        if (!res) continue;
+        if (res.runs > 1) unlistedRuns.push(`${doc.__presetName}/${pal.name} (${res.runs} runs)`);
+        if (res.worstRatio > CUSP_RUN_BOUND + 1e-6) unlistedExcess.push(`${doc.__presetName}/${pal.name} (${(res.worstRatio * 100).toFixed(2)}%)`);
+      }
+    }
+    if (unlistedRuns.length) FAIL("chroma-envelope", `(C6 iii-b) perceptual: ${unlistedRuns.length} palette(s) with a SECOND separate above-anchor run (not the named Adia carve-out), e.g. ${unlistedRuns[0]}`);
+    if (unlistedExcess.length) FAIL("chroma-envelope", `(C6 iii-b) perceptual: ${unlistedExcess.length} palette(s) with a stop past the frozen CUSP_RUN_BOUND ${(CUSP_RUN_BOUND * 100).toFixed(2)}% (not the named Adia carve-out), e.g. ${unlistedExcess[0]}`);
+
+    // adiaHit: the named carve-out must actually be doing work here too (Adia's dampAmp:70 boost is
+    // what created the original need for a carve-out on even/peak; confirm it also produces a second
+    // run or a past-bound stop in perceptual mode, or the carve-out is stale here).
+    let adiaHit = false;
+    for (const doc of docs) {
+      if (!ADIA_CARVEOUT.has(doc.__presetName)) continue;
+      for (const pal of doc.palettes) {
+        const res = cuspRunFor(doc, pal);
+        if (res && (res.runs > 1 || res.worstRatio > CUSP_RUN_BOUND + 1e-6)) adiaHit = true;
+      }
+    }
+    if (!adiaHit) FAIL("chroma-envelope", "(C6 iii-b) perceptual: the named Adia carve-out produced no second-run or bound-excess instance — either stale or the corpus dropped it; re-diagnose before touching ADIA_CARVEOUT");
+
+    // Negative control 1: a SCRATCH ramp with two SEPARATE above-anchor runs must read runs > 1.
+    {
+      const c500 = 50;
+      const ramp = T.STOPS.map((stop) => ({ stop, chroma: (stop === 200 || stop === 800) ? c500 * 1.2 : c500 * 0.8 }));
+      ramp[ramp.findIndex((r) => r.stop === 500)] = { stop: 500, chroma: c500 };
+      const res = analyzeCuspRuns(ramp, c500);
+      if (res.runs < 2) FAIL("chroma-envelope", `(C6 iii-b negative control) synthetic two-run ramp read ${res.runs} run(s), expected >=2 — check analyzeCuspRuns`);
+    }
+    // Negative control 2: a SCRATCH excess of CUSP_RUN_BOUND + 1% must read worstRatio past the bound.
+    {
+      const c500 = 50;
+      const ramp = T.STOPS.map((stop) => ({ stop, chroma: stop === 650 ? c500 * (CUSP_RUN_BOUND + 0.01) : c500 * 0.8 }));
+      ramp[ramp.findIndex((r) => r.stop === 500)] = { stop: 500, chroma: c500 };
+      const res = analyzeCuspRuns(ramp, c500);
+      if (!(res.worstRatio > CUSP_RUN_BOUND + 1e-6)) FAIL("chroma-envelope", `(C6 iii-b negative control) synthetic bound+1% ramp read worstRatio ${(res.worstRatio * 100).toFixed(2)}%, expected > ${(CUSP_RUN_BOUND * 100).toFixed(2)}% — check analyzeCuspRuns`);
+    }
+  }
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────

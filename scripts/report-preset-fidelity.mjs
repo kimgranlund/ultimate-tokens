@@ -35,7 +35,11 @@ const RT = JSON.parse(readFileSync(new URL("../docs/reference/data/role-table.js
 const DEFAULT_KIT_NAMES = new Set(RT.defaults.filter((d) => !/^Data \d+$/.test(d.name)).map((d) => d.name)); // the 8 semantic families, not Data 1-8
 
 // The C6 corpus: curated palettes at source chroma >= 10, plus the 8 default-kit semantic families.
-const instances = []; // { label, pal, doc }
+// ADIA_CARVEOUT — the one named, owner-ruled AUTHORED (dampAmp>0) exception (test/engine/tonal.mjs
+// carries the gating copy of this set; this script's is for REPORTING only, so a FAIL/OK line reads
+// true rather than perpetually flagging the allowed Adia population).
+const ADIA_CARVEOUT = new Set(["Adia · The product's own design system"]);
+const instances = []; // { label, presetName, pal, doc }
 let totalCurated = 0;
 for (const slug of CATS) {
   const { PRESETS } = await import(`../src/ui/categories/${slug}.js`);
@@ -43,13 +47,13 @@ for (const slug of CATS) {
     const doc = hydrate({ ...preset });
     for (const pal of doc.palettes) {
       totalCurated++;
-      if (pal.chroma >= 10) instances.push({ label: `${slug}/${preset.name}/${pal.name}`, pal, doc });
+      if (pal.chroma >= 10) instances.push({ label: `${slug}/${preset.name}/${pal.name}`, presetName: preset.name, pal, doc });
     }
   }
 }
 const roleDoc = defaultDocument();
 for (const p of roleDoc.palettes) {
-  if (DEFAULT_KIT_NAMES.has(p.name)) instances.push({ label: `default/${p.name}`, pal: p, doc: roleDoc });
+  if (DEFAULT_KIT_NAMES.has(p.name)) instances.push({ label: `default/${p.name}`, presetName: null, pal: p, doc: roleDoc });
 }
 
 function percentile(sorted, p) {
@@ -65,10 +69,19 @@ const MODES = ["perceptual", "peak", "even"];
 const results = {};
 const aboveWitnesses = { perceptual: [], peak: [], even: [] };
 let aboveTotal = { perceptual: 0, peak: 0, even: 0 };
+let adiaAboveTotal = { perceptual: 0, peak: 0, even: 0 };
+// CUSP_RUN_BOUND — perceptual's owner-ruled bound (#681 U3 pass 6, ruling (f)): 189.31% of stop 500's
+// own chroma, the corpus's fresh-measured worst cusp-stop excess (89.3005pp, cuisine "Sushi & sashimi
+// · the cypress counter"/primary-muted, cusp stop 650) rounded UP to 2 decimal places. Even and peak
+// keep the literal "0 above 100%" reading; perceptual is reported under its own ruled clause instead
+// (one contiguous above-anchor run, every stop in it at or under this bound) — see test/engine/tonal.mjs's
+// gating copy (C6 iii-b) for the enforced version; this script's copy is for REPORTING only.
+const CUSP_RUN_BOUND = 1.8931;
+const perceptualRunFails = { runs: [], bound: [] }; // witnesses, non-Adia only
 
 for (const mode of MODES) {
   const ratios = { 100: [], 300: [], 700: [], 900: [] };
-  for (const { label, pal, doc } of instances) {
+  for (const { label, presetName, pal, doc } of instances) {
     const controls = {
       curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax,
       damp: doc.damp, dampCurve: doc.dampCurve,
@@ -85,18 +98,40 @@ for (const mode of MODES) {
     const at = (s) => ramp.find((r) => r.stop === s);
     const c500 = at(500).chroma;
     if (c500 <= 1e-9) continue; // undefined ratio at a near-zero anchor; excluded rather than divide-by-zero
-    let roseAboveHere = false;
     for (const s of REPORT_STOPS) {
       const pct = (at(s).chroma / c500) * 100;
       ratios[s].push(pct);
     }
-    for (const s of T.STOPS) {
-      const pct = (at(s).chroma / c500) * 100;
-      if (pct > 100 + 1e-6) roseAboveHere = true;
-    }
-    if (roseAboveHere) {
-      aboveTotal[mode]++;
-      if (aboveWitnesses[mode].length < 3) aboveWitnesses[mode].push(label);
+    const isAdia = ADIA_CARVEOUT.has(presetName);
+    if (mode === "perceptual") {
+      // Ruling (f): report by RUN, not by raw stop count — a palette's natural cusp shoulder can span
+      // several adjacent stops; only a SECOND separate run, or any stop past CUSP_RUN_BOUND, is a fail.
+      let runs = 0, inRun = false, worstRatio = 0;
+      for (const s of T.STOPS) {
+        const pct = at(s).chroma / c500;
+        if (pct > 1 + 1e-6) { if (!inRun) runs++; inRun = true; worstRatio = Math.max(worstRatio, pct); }
+        else inRun = false;
+      }
+      if (runs > 0 && isAdia) adiaAboveTotal[mode]++;
+      if (!isAdia) {
+        let bad = false;
+        if (runs > 1) { bad = true; if (perceptualRunFails.runs.length < 3) perceptualRunFails.runs.push(`${label} (${runs} runs)`); }
+        if (worstRatio > CUSP_RUN_BOUND + 1e-6) { bad = true; if (perceptualRunFails.bound.length < 3) perceptualRunFails.bound.push(`${label} (${(worstRatio * 100).toFixed(2)}%)`); }
+        if (bad) aboveTotal[mode]++;
+      }
+    } else {
+      let roseAboveHere = false;
+      for (const s of T.STOPS) {
+        const pct = (at(s).chroma / c500) * 100;
+        if (pct > 100 + 1e-6) roseAboveHere = true;
+      }
+      if (roseAboveHere) {
+        if (isAdia) adiaAboveTotal[mode]++;
+        else {
+          aboveTotal[mode]++;
+          if (aboveWitnesses[mode].length < 3) aboveWitnesses[mode].push(label);
+        }
+      }
     }
   }
   results[mode] = {};
@@ -170,7 +205,16 @@ for (const mode of MODES) {
   }
   const aboveOk = aboveTotal[mode] === 0;
   if (!aboveOk) anyFail = true;
-  console.log(`  above 100% of stop 500: ${aboveTotal[mode]} ${aboveOk ? "OK" : "FAIL"}${aboveWitnesses[mode].length ? ` (e.g. ${aboveWitnesses[mode].join(", ")})` : ""}`);
+  if (mode === "perceptual") {
+    const witnesses = [...perceptualRunFails.runs, ...perceptualRunFails.bound].slice(0, 3);
+    console.log(`  clause: one cusp run, at or under ${(CUSP_RUN_BOUND * 100).toFixed(2)}% of stop 500 (#55 cusp-pull ships unchanged; ruling (f))`);
+    console.log(`  rule violations (second run or past-bound stop): ${aboveTotal[mode]} ${aboveOk ? "OK" : "FAIL"}${witnesses.length ? ` (e.g. ${witnesses.join(", ")})` : ""}`);
+    console.log(`  (${adiaAboveTotal[mode]} additional instance(s) from the named Adia carve-out, exempt from this clause)`);
+  } else {
+    console.log(`  clause: 0 above 100% of stop 500 (generated palettes, dampAmp 0)`);
+    console.log(`  above 100% of stop 500: ${aboveTotal[mode]} ${aboveOk ? "OK" : "FAIL"}${aboveWitnesses[mode].length ? ` (e.g. ${aboveWitnesses[mode].join(", ")})` : ""}`);
+    console.log(`  (${adiaAboveTotal[mode]} additional instance(s) from the named Adia carve-out, exempt from this clause)`);
+  }
 }
 
 console.log("");
