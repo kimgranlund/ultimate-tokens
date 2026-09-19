@@ -635,6 +635,44 @@ export function selftest() {
     if (jsVerdict !== "OK") failed++;
   }
 
+  // #694 critic review item 1: the identifier-shape floor on the two BARE forms (`name :N`,
+  // `name(`) had no selftest that bit ALONE -- every existing bare-word control used a STOPWORD
+  // (`at`), so a mutant that broke only the shape check (M1: `add(name)` unconditionally instead
+  // of `hugged || /[A-Z_]/.test(name)`) or only the STOPWORDS check (M5: drop
+  // `if (STOPWORDS.has(...)) continue;` on both bare-form loops) still passed every prior case --
+  // a STOPWORDS hit and a failed shape check produce the same "not added" result when both guards
+  // are intact, so no case told the two apart. These three cases use a NON-stopword plain English
+  // word to isolate M1, and a stopword deliberately shaped/hugged to slip past a dropped STOPWORDS
+  // check to isolate M5, one per bare-form site.
+  {
+    // pins M1 alone: "domain" is not a stopword, so STOPWORDS never rejects it -- only the shape
+    // check (identifier-shaped or hugged) does. M1's unconditional `add(name)` would add it.
+    const docLine = "the `_okL` memo is aimed at domain :216";
+    const anchors = anchorsOf(docLine);
+    const ok = JSON.stringify(anchors) === JSON.stringify(["_okL"]);
+    console.log(`  ${ok ? "✓" : "✗"} a non-stopword bare word ahead of \`:N\` (\`domain\`) does not anchor -- pins M1 (got ${JSON.stringify(anchors)})`);
+    if (!ok) failed++;
+
+    // pins M5 on the `name :N` site: "the" IS a stopword, but it is backtick-hugged
+    // (`` `the`:200 ``), which alone satisfies the shape check's OR branch. With STOPWORDS
+    // intact, "the" is rejected before the shape/hug check ever runs, so M1 alone cannot reopen
+    // this case -- only dropping STOPWORDS (M5) can.
+    const hugLine = "the subject is `_okL` here, though `the`:200 is not it";
+    const hugAnchors = anchorsOf(hugLine);
+    const hugOk = hugAnchors.includes("_okL") && !hugAnchors.includes("the");
+    console.log(`  ${hugOk ? "✓" : "✗"} a hugged stopword before \`:N\` (\`the\`:200) does not anchor -- pins M5's \`name :N\` site (got ${JSON.stringify(hugAnchors)})`);
+    if (!hugOk) failed++;
+
+    // pins M5 on the `name(` site: "only" IS a stopword, but its own parenthetical holds a real
+    // citation-shaped run, which alone satisfies the `reCiteLike.test(inside)` OR branch
+    // regardless of shape. With STOPWORDS intact, "only" is rejected before that check runs.
+    const parenLine = "explanation only (test/engine/tonal.mjs:246-264 for details), plus `_okL` details";
+    const parenAnchors = anchorsOf(parenLine);
+    const parenOk = parenAnchors.includes("_okL") && !parenAnchors.includes("only");
+    console.log(`  ${parenOk ? "✓" : "✗"} a stopword before \`(\` whose parenthetical holds a citation (\`only (test/…:246-264…)\`) does not anchor -- pins M5's \`name(\` site (got ${JSON.stringify(parenAnchors)})`);
+    if (!parenOk) failed++;
+  }
+
   // #672 negative control 2: a NOFILE verdict must fail the gate (exit 1) unless the doc itself
   // is exempt -- checked directly against staleLines(), the single choke point both this
   // script's own exit code and test/repo/citations.mjs's FAIL loop read.
