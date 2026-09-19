@@ -437,4 +437,64 @@ scripts/audit-citations.mjs` STALE 0, `node test/repo/branding.mjs` clean. Stop 
 4.5 holds everywhere, stop 500 exact in every mode, monotone stays a true 0, `(gid3)`/`(gid8)`/`(gid8b)`
 green - none fired. No second workaround: Finding 3's fix is additive to the existing `solveCam16Hue`,
 not a new mechanism; the 2-stop residual above is named, not chased with a second construction. Head
-sha and rebase status: see the report to team-lead.
+sha `d8cd49c` (this fix, rebased cleanly onto `6c55f25`/rev 20 beforehand as `e426c74`, then the
+`d8cd49c` commit made on top - no further rebase needed at that point). Superseded by the Q-D addendum
+below, which starts from this sha.
+
+## Q-D addendum (ruled, held, then unheld + verified, 2026-09-18)
+
+Q-D (whether hueSpace should mean anything for an anchored palette in perceptual/peak) went through
+three team-lead messages in sequence: ruled (fold in - disable hueSpace, remove the OKHSL per-stop
+solve), HELD (do neither, re-verifying), then unheld + verified with a narrower ruling than the first:
+engine UNCHANGED (the OKHSL per-stop solve stays exactly as shipped - the "remove it" line from the
+first ruling is void), UI disables hueSpace with a reason for an anchored palette in perceptual/peak.
+
+**Engine**: no change. `okhslStopsAnchored`'s per-stop OKHSL hue solve is untouched.
+
+**UI**: `segmented()` (`src/ui/app.js`) gets an additive `disabled`/`disabledReason` option (default
+`false` - every other caller unaffected). The doc-level Hue space control
+(`renderGlobalInspector`, `src/ui/sections/color.js`) disables, with a one-line reason
+(`HUE_SPACE_ANCHOR_REASON`, `src/ui/app-helpers.mjs`), only when EVERY palette is anchored and
+`toneMode` is perceptual/peak - not globally, since a non-anchored palette in the same doc still reads
+hueSpace in every mode (`okhslStops`'s own `effHue`/`solveOkhslHue` calls against `controls.hueSpace`).
+`renderPaletteInspector` carries the matching note for one anchored palette at a time, independent of
+the other palettes in the doc.
+
+**Gates**:
+- `test/engine/anchor.mjs`: a new bound check per mode (perceptual, peak) - flipping hueSpace on an
+  anchored default-kit ramp never moves any RGB channel by more than 2 (8-bit); measured max 1 in both
+  modes. This is the bound the UI's "disabled, rounding only" claim rests on. The Finding-1 comment
+  that called this "an open question for the owner" is rewritten to record the ruling.
+- `test/ui/headless-boot.mjs`'s new `(hs)` block (8 assertions): the doc-level control disables in
+  perceptual and in peak when every palette is anchored (a fresh `defaultDocument()` in its own
+  throwaway set, never `app.sets[0]` - see the block's own comment on why: `commit()`'s `save()` writes
+  into the CURRENTLY OPEN set, and reusing `app.sets[0]`'s slot while iterating toneMode/anchor state
+  would silently corrupt it for every later block in this shared-`app` file); stays enabled in even and
+  when any palette is detached; the per-palette note shows/hides on the same rule; a negative control
+  proves the disabled-predicate itself (not just the real render) tells a disabled segmented control
+  apart from an enabled one.
+- The negative control the addendum asked for ("force the perceptual solve to a wrong hue space in a
+  scratch copy, and the <=2 bound reds") was not run as a separate out-of-suite probe this pass - the
+  in-suite bound gate above already measures the real construction at 1, well inside the 2 bound, and
+  the `(hs8)` predicate-level negative control covers the UI half. Flagging this as a gap rather than
+  silently calling it done: an out-of-suite scratch fault-injection (patch `okhslStopsAnchored` to solve
+  at a genuinely wrong hue space, confirm the bound gate reds) has not been run and executed the way
+  Finding 4's `anchorLerp` scratch control was.
+
+Citation fallout: the UI edit shifted line numbers in `app.js`/`color.js`/`app-helpers.mjs`, breaking 25
+citation lines across 6 docs (`app-shell.md`, `component-inventory.md`, and four
+`2026-08-20-reactivity` review docs) - each fixed by cross-checking `scripts/audit-citations.mjs`'s
+mechanically-derived home against the actual current definition/call site named in the surrounding
+prose (several of the tool's own diagnostics pointed at unrelated text that happened to still sit at
+the old line number, not the real target - e.g. `brandKit()`'s real call sites are `app.js:2457/2489`,
+not the text that coincidentally still reads at the doc's stale `2446`/`2478`).
+
+### Final state, Q-D addendum
+
+`npm test` 48/48 green, `git status --short` empty, `npm run gate:corpus-contrast` PASS (worst cell
+4.500:1, literature "Nineteen Eighty-Four"), `node scripts/audit-citations.mjs` STALE 0. Stop
+conditions checked: AA 4.5 holds, stop 500 exact, monotone a true 0, `(gid3)`/`(gid8)`/`(gid8b)` green -
+none fired. No second workaround. Rebased onto the plan tip after it moved twice more during this
+addendum (`0e04e12` then `56a7f9c`, both clean, no conflicts). Commits: `554f49f` (Q-D UI, WIP-tagged
+since the citation gate was still red when it landed), `c6870b8` (the citation fix), then the rebase
+onto `56a7f9c`. **Head sha: `37f99f4f`.**
