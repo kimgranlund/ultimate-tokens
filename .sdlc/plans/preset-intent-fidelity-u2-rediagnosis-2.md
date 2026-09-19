@@ -11,6 +11,8 @@ inputs: unit worktree `.git-worktrees/pif-u2-ramp` (branch `unit/pif-u2-ramp`, h
   (`pif-u2-review-1.md` through `pif-u2-review-5.md`), revision 21/23 (the Q-D hueSpace ruling)
 status: feeds a future plan revision, pending the owner's pass cap ruling on the bounded pass and
   the descoping proposal below
+addendum: 2026-09-19, on Lane A's inputs doc and the a75733d4 checkpoint (see "Addendum" section below);
+  supersedes this doc's original "one bounded construction" section
 ---
 
 # U2 second re-diagnosis: one construction explains both the perf regression and the hue-solve fallback
@@ -19,18 +21,12 @@ status: feeds a future plan revision, pending the owner's pass cap ruling on the
 
 The owner capped U2 at one more bounded builder pass after this diagnosis, then a descoping proposal
 if that pass fails, per the pass-cap ruling (AskUserQuestion, 2026-09-19). Two symptoms are named as
-possibly one problem: `npm test` at 200.3s against a stated 77s reference, and the even-mode hue-solve
-fallback that copied cam16's tint on 152 stops before review 5's fix. This doc traces both to the same
-root: an expensive, exact, per-stop numerical hue solve is run over the FULL curated corpus, redundantly,
-inside `npm test`'s default budget, instead of following this repo's own established pattern of
-sampling in `npm test` and running the full corpus in a separate `gate:corpus-*` script.
-
-A note on the "77s" figure: I could not independently verify it against any doc in the U2 worktree or
-the plan. The closest verified figures are `.sdlc/baseline.md`'s repo-wide `npm test` baseline
-(58.4/62.4/60.8s, 44 test files, `origin/main` at `7faf3aa`, 2026-09-16) and the handoff's own reported
-times at 48 test files (1196s, then 398.83s, then 200.3s). I am treating 77s as team-lead's own stated
-reference and not asserting it as independently confirmed; the diagnosis below stands on the verified
-1196/398.83/200.3s sequence and the 90-175s budget the handoff itself cites as the owner's stated gate.
+possibly one problem: `npm test` at 200.3s against a 76.7s baseline (confirmed by team-lead directly,
+`/usr/bin/time -p npm test` on a clean scratch worktree at `3c9630bf`; my original draft below flagged
+this figure as unverified before that measurement arrived), and the even-mode hue-solve fallback that
+copied cam16's tint on 152 stops before review 5's fix. This doc traces both to the same root: an
+expensive, exact, per-stop numerical hue solve is run over the FULL curated corpus, redundantly, inside
+`npm test`'s default budget.
 
 ## Mechanism: one root cause, two symptoms
 
@@ -92,33 +88,85 @@ team-lead, per the plan's existing "pending U4" pattern for other moving allow-l
 (15/9/54) as the current, accepted count, the same way every other named allow-list in this plan is
 confirmed by name and count once a construction change lands.
 
-## The one bounded construction for the next pass
+## The one bounded construction for the next pass (superseded, see Addendum)
 
 Split `test/engine/anchor.mjs`'s full-corpus checks into a sampled population for `npm test` and a
 full-corpus leg in a new `gate:corpus-anchor` npm script, mirroring `gate:corpus-contrast`'s already-
-ratified shape exactly: the same sample set (the default kit / `brands.json` in full, plus one
-deterministic volume per gallery category) runs inside `npm test`; the full 3,780-palette sweep
-(monotone, `RAMP_GAP_ALLOW`, `RAMP_DISTINCT_ALLOW`, `NOTCH_ALLOW`, the lone-spike gate, and the
-hue-solve regression check) moves to the new script, run in CI's corpus job alongside
-`gate:corpus-contrast` and by U4's report before U3 lands. No engine change: the bracketed solve, the
-achromatic fix, the fast-path, and the memoization all stay exactly as shipped. Confirm `NOTCH_ALLOW`
-at 78 (15/9/54) as the current count in the same pass, per the reading above.
+ratified shape exactly. This was my first draft's recommendation, written before Lane A's fix-at-the-
+source checkpoint (`a75733d4`) reached me; the Addendum below replaces it as the primary recommendation.
+It stays here, kept rather than deleted, as a secondary hardening worth doing later regardless: even
+once the redundant derivation is fixed at its source, a full 3,780-palette corpus sweep inside `npm
+test`'s default budget is still more than every other full-corpus gate in this repo does by convention.
 
-**Stop rule.** This is a test-harness placement change, not a numerical retune, so it either closes
-`npm test` under the 90-175s budget by removing the full-corpus multiplication, or it does not. If the
-sampled `npm test` run still exceeds budget once the full-corpus checks are moved out, the remaining
-cost is not attributable to corpus size and U2 stops there: no further sampling-granularity trial passes,
-report the sampled-run numbers and the profile to the owner, and treat it as the descoping case below.
+## Addendum: diagnosis at checkpoint a75733d4, the real fix is already underway
+
+Lane A's inputs doc and a following message gave two things my original draft did not have: a
+confirmed 76.7s baseline (above), and a checkpoint (`a75733d4`, tree clean, `npm test` 48/48 green at
+166.08s) that fixes the redundant derivation AT ITS SOURCE rather than around it. This changes the
+recommended construction.
+
+**A second real defect, found and already fixed at this checkpoint.** The `fba53077` memoization
+(`_pmemo`, module-level) that took `npm test` from 398.83s to 200.3s was itself unsafe: keyed on
+`stops.length` instead of the actual stop values, returning a shared mutable array, module-level scope
+outliving any one render, exactly the `#686` class of cache defect this ticket's own U6 unit fixed
+elsewhere in the engine. `a75733d4` removes `_pmemo` entirely.
+
+**The redundancy is fixed at its source instead.** `src/engine/exports.js`'s `derivedAll(state)` (the
+function every one of the 9 export formats calls to re-derive each enabled palette's ramp) now takes
+an optional trailing `derived` argument on all 9 exporters plus `exportAll`, defaulting to `derived ||
+derivedAll(state)` so every existing caller (tests, the MCP server, `figmaBundle`) is unaffected.
+`src/ui/model.mjs`'s `projectView` computes `derivedAll(state)` ONCE, as a local value (no
+module-level cache, so no `#686`-class risk), and threads it through all 9 export calls. This is a
+correct diagnosis of the actual duplication Lane A's hypothesis named (`chromaAt`'s cost multiplied by
+`projectView` re-deriving each ramp about 10 times, once per export format) and it removes the
+multiplication rather than hiding it from `npm test`'s measurement. Wall time: 200.3s to 166.08s,
+which is UNDER the owner's 175s hard ceiling for the first time, though still over the 100s soft
+target (about 1.3x the 76.7s baseline) named in the perf brief.
+
+**One redundancy remains, named by the checkpoint itself.** `projectView`'s own canvas-scene loop
+(building `palettes[i].fullRamp`/`ramp` for the UI) calls `paletteStops(...)` directly, independent of
+`derivedAll`; it does not consume the `derived` value threaded into the exporters. So each anchored
+ramp is still derived about twice (once for the canvas, once for every export format combined), down
+from about ten times, not down to one. This is a real, named next step, not a new defect.
+
+**Open question the checkpoint itself flags, not yet answered:** hex-parity between `a75733d4` and its
+parent `4c2831ab` has not been re-verified. Threading a shared `derived` value into 9 previously-
+independent call sites is exactly the kind of change that can silently alter output for one exporter
+if any of the 9 read something from `state` that `derivedAll` resolves differently than that exporter
+used to resolve it alone (an opts-dependent field, an ordering assumption, a stale default). This must
+be gated, not assumed.
+
+**Revised bounded construction:** complete the source-level fix by threading the SAME already-derived
+ramp data into the canvas-scene loop too, eliminating the remaining ~2x duplication, instead of (or in
+addition to, as a later hardening) the test-harness sampling split above. Mandatory correctness gate,
+answering the checkpoint's own open question: full-corpus hex-parity, every one of the 9 export
+formats plus the canvas's own `ramp`/`fullRamp`, byte-for-byte identical before (`4c2831ab`, pre-dedup)
+and after (this pass's head), over the full 3,780-palette corpus plus the 16-palette default kit, in
+all three tone modes, not a spot check. `NOTCH_ALLOW` confirmed at 78 (15/9/54) in the same pass, per
+the reading above; the dedup work does not change the hue-solve algorithm, so it should not move this
+count again, and the parity gate would catch it if it somehow did.
+
+**Stop rule (revised).** If threading `derived` into the canvas loop is straightforward and parity
+holds everywhere, ship it; wall time should improve further toward the 100s target, re-measured, not
+projected. If the canvas genuinely needs data `derivedAll` does not compute (richer per-stop fields:
+`rgb`, `maxc`, `inGamut`, `tone`, used by the plot and role-resolution steps but not by any export
+format) such that unifying the two call sites is real new engine work rather than a threading change,
+U2 stops there: report which fields differ and why, and treat the current a75733d4 state (166.08s,
+under the 175s hard ceiling, over the 100s soft target) as the descoping case below rather than forcing
+a deeper unification under pass-cap pressure.
 
 ## Descoping proposal, if the bounded pass fails
 
-What ships regardless: the bracketed root-find, the achromatic-candidate fix, and the lone-spike gate
-(review 5's correctness work is sound on its own evidence and is not in question here). What defers:
-bringing `npm test`'s own wall time under the stated budget becomes a follow-up ticket scoped to the
-test-harness's own architecture in general, not to U2's engine work, since other units' gates may carry
-the same full-corpus-inside-npm-test shape and a proper fix likely wants one pass across all of them,
-not a second one-off inside this ticket. Which criteria yield: none of C1 to C12; this problem sits
-entirely in build and test infrastructure, not in product fidelity, so no plan criterion needs to move.
-The only thing the owner rules on on failure is whether to accept `npm test`'s wall time above the
-90-175s budget as a known, reported gap for this ticket to land against, the same shape as every other
-"pending U4" deferral already in this plan.
+What ships regardless: the bracketed root-find, the achromatic-candidate fix, the lone-spike gate
+(review 5's correctness work), and the already-checkpointed `_pmemo` removal plus export-side
+`derivedAll` threading (`a75733d4`, 166.08s, under the 175s hard ceiling) once its own hex-parity
+question is answered. What defers: eliminating the canvas's remaining ~2x duplication, and closing the
+gap from 166.08s to the 100s soft target, becomes a follow-up unit or ticket if it turns out to need
+real engine unification rather than a threading change; the test-harness sampling split (the original
+section above) is an available, independent, lower-risk fallback for that follow-up if the owner wants
+`npm test` closer to budget sooner without further engine changes. Which criteria yield: none of C1 to
+C12; this problem sits entirely in build and test infrastructure, not in product fidelity, so no plan
+criterion needs to move. What the owner rules on if the bounded pass stops short: whether 166.08s
+(already under the hard ceiling) is an acceptable landing point for this ticket, with the residual gap
+to the soft target reported and deferred, the same shape as every other "pending U4" deferral already
+in this plan.
