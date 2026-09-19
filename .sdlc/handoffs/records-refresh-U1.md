@@ -69,7 +69,7 @@ The Pass table of `.sdlc/baseline.md` and the adapter test Time cell now use run
 | 8 | both ignore rules resolve via `.gitignore`, untracked | `.gitignore` x2, `0` | 🟢 | not run |
 | 9 | staleness notes present, quote survey verdict, rule included, no other diff | four `1`s, `1`, `1`, `1`, `ancestor 1`, `10`, `0`, `0` | 🟢 | not run |
 | P1 | `npm test` green, tree byte-stable | `all 47 test files passed`, `0` (rerun after this unit's own edits were committed; see note below) | 🟢 | not run in this worktree per the branch's own rule; would run in a throwaway clone |
-| P4 | branding gate clean | `branding: clean (447 files scanned)`, exit 0 | 🟢 | not run |
+| P4 | branding gate clean | `branding: clean (448 files scanned)`, exit 0 | 🟢 | not run |
 | P5 | scope wall: nothing outside `.sdlc/` and `.gitignore` differs from merge base | `0` | 🟢 | not run |
 
 Note on P1: the first P1 run (before this unit's own §Texts edits were committed) printed `6` uncommitted lines, all this unit's own pending edits, not test-caused drift. P1 was rerun after committing and printed `0` (see Ran section of this handoff's final line).
