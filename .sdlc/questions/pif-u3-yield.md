@@ -56,6 +56,16 @@ gate's own first-witness report):
   (emitted 0.90099 vs independent 0.89778), `stop 200/250/300/850`, `perceptual/oklch Data 1 stop
   600/650/700`, and more across the 9 skew-0/lift-0 default palettes. This means the construction shifts
   `l1` measurably even at the ramp's OWN neutral (unwarped) baseline, not only where skew/lift warp it.
+  Reconciled against `.sdlc/questions/pif-u3.md`'s own record of this same retry (U3 review 3, minor
+  item 6): its Q7 addendum reports the gate's own live FAIL message for this exact cell as 0.90142, not
+  0.90099. The independent target (0.89778) is identical in both, so the two records agree on what the
+  ramp SHOULD emit; they disagree on what it DID emit, by 0.00043. The gate's own live message is the
+  authoritative figure for that single run (it reads `r.rgb` straight off the actual construction under
+  test); this doc's number comes from a separate full-corpus scan script run afterward, whose own job is
+  the FAILURE COUNT (103 of however many stops), not a byte-exact re-derivation of the gate's one
+  first-witness value, so a few ten-thousandths of drift between the two scripts is expected and does
+  not change the count or the revert recommendation. Left as two honestly-differing numbers rather than
+  silently picked to agree.
 - `intensity-legacy`: 1 named fixture mismatch (perceptual Neutral stop 125, `#DADBDD` vs the committed
   `#D9DBE0`), expected and would need a fixture regen if shipped, not itself a defect.
 

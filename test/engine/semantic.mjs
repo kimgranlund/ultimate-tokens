@@ -209,8 +209,9 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   // per "re-pin only upward, or hand any downward move to #662's policy," this one specific PINNED-
   // floor move is surfaced, not silently re-pinned: see .sdlc/questions/pif-u3.md Q6 (owner-ruled) for
   // the acceptance, now widened to the true set of thin cells (see the handoff's Risks section) since
-  // perceptual Neutral dark is not actually the thinnest cell in the 96 — three pre-existing "even"
-  // family/dark cells sit closer to AA and were unaffected by any unit's work.
+  // perceptual Neutral dark is not actually the thinnest cell in the 96 — four pre-existing "even"
+  // family/dark cells (Neutral, Primary, Tertiary, Info, all pinned at the 4.5 AA minimum) sit closer
+  // to AA and are unaffected by any unit's work (corrected from "three," U3 review 3, minor item 6).
   const FLOORS = {
     perceptual: [
       ["Neutral", 5.9, 4.5],   // measured 5.9007 / 4.5327 — light UP, dark DOWN from bf2aaf6's 5.8/4.9 (5.89/4.98) — REQ-052, not R1-vs-R2 (lift 0) — see comment above, Q3

@@ -351,6 +351,14 @@ export function toneAt(stop, skew, lift, { curve, lmin, lmax, tension }) {
 // palette: { hue, chroma, skew, lift }; controls: DEFAULT_CONTROLS-shaped.
 // Returns [{ stop, tone, chroma, maxc, rgb, hex, inGamut }] for each stop.
 export function paletteStops(palette, controls, stops) {
+  // Note (#681 U3 review 3, minor item: the unknown-toneMode note): any string here OTHER than exactly
+  // "perceptual" or "peak", including an unrecognized value from a typo or a stale caller, falls through
+  // to the branch below and is rendered on the "even" family path, not flagged as an error. This is the
+  // same silent-default shape that caused N6 (report-preset-fidelity.mjs's --envelope reading (b) and
+  // the env(500) sweep omitted toneMode, so chromaEnvelope's OWN internal `controls.toneMode === "even"`
+  // check read undefined and silently took the non-even branch); here the direction of the silent
+  // default is the opposite (unset/unknown -> even-family, not -> perceptual), so a caller cannot assume
+  // "missing toneMode" degrades the same way at every call site in this file.
   const mode = controls.toneMode || "perceptual";
   if (mode === "perceptual" || mode === "peak") return okhslStops(palette, controls, stops, mode);
   const shift = palette.hueShift ?? 0; // edge hue rotation: ±deg at the ends

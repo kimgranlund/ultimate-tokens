@@ -644,7 +644,9 @@ third time.
 **Diagnosis, why a retune is needed at all:** at the shipped `damp:70/dampCurve:1.5` (VIVID_MIDS,
 `scripts/gen-categories.mjs`, matching `DEFAULT_CONTROLS`/`DOMAINS`), 5 cells fail: perceptual|300 p90
 93.7% (target <=90), peak|700 p90 96.1% (<=90), even|100 p90 39.0% (<=35), even|300 p90 100.0% (<=90),
-even|900 median 40.2%/p90 48.0% (<=25/<=35). even|300's p90 is STUCK at exactly 100.0% across every
+even|900 median 40.2%/p90 48.0% (<=25/<=35). (Correction, U3 review 3, N2: `peak|700`'s p90 is stated
+here at its pass-6 value, before F1's peak-cap fix; the current figure is 96.8%, see the correction note
+in the pass-7 addendum below.) even|300's p90 is STUCK at exactly 100.0% across every
 `damp` value tried at `dampCurve` held at 1.5 (75 through 100): it is the even path's own anchor cap
 (pass 3) itself, a hard population of stops landing AT the cap regardless of how much the *old* curve
 shape damps elsewhere, only lowering `dampCurve` (concentrating damping closer to the anchor: `uG =
@@ -791,6 +793,10 @@ figures (p90 93.7% and 96.1% respectively, per the pass-6 addendum), the two pre
 unit does not close. The `--envelope` table lists exactly these two cells as the yielded exception under
 the stop rule; everything else in reading (a) passes.
 
+(Correction, U3 review 3, N2: `peak|700`'s p90 has since moved to 96.8%, not 96.1%, after F1's
+peak-cap fix in the review-2 addendum below; the 96.1% figure above is accurate as of THIS pass, before
+F1 landed, and is left as the historical record of what pass 7 measured.)
+
 ### Q7 review-2 addendum: F1, the peak-cap solver (dip fix kept; a hue-awareness sub-attempt tried and reverted)
 
 Brief: `u3-p7-addendum-review2.md`. Commit `17e73c85`, on top of the F2 fix (`9a5c8753`).
@@ -917,4 +923,4 @@ Reverted `src/engine/tonal.js` byte-for-byte to `17e73c85` (`git checkout HEAD -
 `node test/engine/tonal.mjs` exits 0 at that head, tree clean. Per "there is no pass 8" and "if a second
 workaround is needed, stop": this was the one retry the addendum called for, and it reproduces the same
 class of failure the original stop rule already covered. No further step-2 attempt is planned. The
-`perceptual|300`/`peak|700` figures stand as the pass-6 addendum reported them (p90 93.7% and 96.1%).
+`perceptual|300`/`peak|700` figures stand as the pass-6 addendum reported them (p90 93.7% and 96.1%). (`peak|700`'s current figure is 96.8%, per F1's fix; see the correction note above.)

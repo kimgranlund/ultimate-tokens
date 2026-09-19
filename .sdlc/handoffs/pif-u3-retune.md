@@ -56,16 +56,23 @@ Cells shown as `median / p90`.
 | 4362180 (U3 pass 3, even cap) | peak | 6.6 / 13.5 | 46.4 / 58.0 | 65.5 / 105.5 | 19.0 / 28.8 |
 | 4362180 (U3 pass 3, even cap) | even | 8.8 / 39.0 | 61.1 / 100.0 | 66.9 / 72.7 | 40.2 / 48.0 |
 | 6a4821e (this pass's head) | perceptual | 11.1 / 19.7 | 68.9 / 93.7 | 59.6 / 68.5 | 19.2 / 30.3 |
-| 6a4821e (this pass's head) | peak | 6.6 / 13.5 | 46.4 / 58.0 | 65.5 / **96.1** | 19.0 / 28.8 |
+| 6a4821e (this pass's head) | peak | 6.6 / 13.5 | 46.4 / 58.0 | 65.5 / 96.1 | 19.0 / 28.8 |
 | 6a4821e (this pass's head) | even | 8.8 / **19.8** | 40.3 / **51.7** | 36.5 / **50.6** | 16.3 / **27.1** |
+| new head (U3 review 3, N2) | perceptual | 11.1 / 19.7 | 68.9 / 93.7 | 59.6 / 68.5 | 19.2 / 30.3 |
+| new head (U3 review 3, N2) | peak | 6.6 / 13.5 | 46.4 / 58.0 | 65.5 / **96.8** | 19.0 / 28.8 |
+| new head (U3 review 3, N2) | even | 8.8 / 19.8 | 40.3 / 51.7 | 36.5 / 50.6 | 16.3 / 27.1 |
 
 Targets: stop 100/900 median <=25, p90 <=35; stop 300/700 median <=75, p90 <=90. perceptual and peak are
 IDENTICAL at 4362180 and 6a4821e (step 1 never touches those paths; the 4362180->bf2aaf6 differences in
 those two modes are pass 4-6's already-documented, already-ruled work, the anchor cap and the cusp-run
 gate, not this pass's). Only even mode moves between 4362180 and 6a4821e, and it now clears all four
 cells (bold above) for the first time since U3 began. The two remaining misses this pass does not close,
-`perceptual|300` (p90 93.7) and `peak|700` (p90 96.1), are unchanged from 4362180, see the Q7 pass-7
-addendum for the one step-2 attempt and why it was reverted.
+`perceptual|300` (p90 93.7) and `peak|700` (p90 96.1 at this pass's own head), are unchanged from
+4362180 as of this pass, see the Q7 pass-7 addendum for the one step-2 attempt and why it was reverted.
+
+Re-measured fresh at the new head for U3 review 3 (N2): `peak|700`'s p90 moved from 96.1 to 96.8 after
+F1's peak-cap solver fix (a rendering-precision fix at capped stops, not a retune), the only cell in
+either table that changed since 6a4821e. Every other perceptual/peak/even cell above is unchanged.
 
 ## Default-kit emitted movement: 16 palettes x 3 modes, bf2aaf6 -> new head
 
@@ -80,17 +87,17 @@ within 8-bit rounding noise).
 | perceptual | Warning | 14.19 | 4.44 |
 | perceptual | Danger | 2.39 | 1.36 |
 | peak | Neutral | 4.73 | 2.72 |
-| peak | Primary | 4.17 | 0.00 |
+| peak | Primary | 3.09 | 0.00 |
 | peak | Secondary | 3.44 | 0.00 |
-| peak | Tertiary | 4.14 | 0.00 |
-| peak | Info | 3.36 | 0.00 |
+| peak | Tertiary | 5.14 | 0.00 |
+| peak | Info | 2.80 | 0.00 |
 | peak | Success | 2.56 | 0.67 |
 | peak | Warning | 12.95 | 5.26 |
 | peak | Danger | 2.39 | 1.40 |
 | peak | Data 2 | 0.60 | 0.00 |
 | peak | Data 5 | 5.85 | 0.00 |
-| peak | Data 6 | 15.98 | 0.00 |
-| peak | Data 7 | 0.54 | 0.00 |
+| peak | Data 6 | 13.48 | 0.00 |
+| peak | Data 7 | 1.08 | 0.00 |
 | even | Neutral | 1.58 | 0.00 |
 | even | Primary | 41.09 | 25.61 |
 | even | Secondary | 35.85 | 11.90 |
@@ -108,23 +115,31 @@ within 8-bit rounding noise).
 | even | Data 7 | 25.94 | 8.30 |
 | even | Data 8 | 25.87 | 12.17 |
 
-perceptual: 4 of 16 moved (all pre-existing, pass 4-6 work). peak: 12 of 16 moved (all pre-existing, the
-pass-5 anchor cap). even: 16 of 16 moved, expected, since step 1 is a formula-wide reshape of the even
-path's damping, not a localized fix. The large even deltas (up to 64.38, Data 1) are the intended,
-measured consequence of closing the median/p90 targets: those families were the ones sitting furthest
-above the ceiling.
+perceptual: 4 of 16 moved (all pre-existing, pass 4-6 work). peak: 12 of 16 moved (the pass-5 anchor cap
+construction; re-measured fresh at the new head for U3 review 3, N2, 5 of those 12 magnitudes shifted
+again, Primary 4.17->3.09, Tertiary 4.14->5.14, Info 3.36->2.80, Data 6 15.98->13.48, Data 7 0.54->1.08,
+since F1's peak-cap solver fix changed capped-stop rendering precision; the same 12 families still move,
+none newly crosses the 0.05 listing threshold or drops out of it). even: 16 of 16 moved, expected, since
+step 1 is a formula-wide reshape of the even path's damping, not a localized fix. The large even deltas
+(up to 64.38, Data 1) are the intended, measured consequence of closing the median/p90 targets: those
+families were the ones sitting furthest above the ceiling.
 
 ## C8 (hpg-role-contrast): before/after, all 96 cells
 
 `node test/engine/semantic.mjs` passes at the new head (`role-contrast` green), no PINNED floor in
 `test/engine/semantic.mjs`'s `FLOORS` table dropped, and AA 4.5:1 holds in all three modes, both schemes,
-every one of the 16 families. 44 of the 96 cells move by more than 0.0005 versus `bf2aaf6` (up from the
-41 team-lead named "pending U4" at plan revision 20, the 3 new movers are `even` cells step 1 itself
-touches; the other 41 are pre-existing, already-named). Per the U4 integration note in the plan (C8), no
-re-pin happens this pass; the table below is the record U4 re-measures against.
+every one of the 16 families. Re-measured fresh at the new head for U3 review 3 (N2): 43 of the 96 cells
+move by more than 0.0005 versus `bf2aaf6` (was reported as 44 at `6a4821e`; F1's peak-cap solver fix
+moved two `peak` cells, Primary dark and Info dark, to just under the 0.0005 listing threshold, dropping
+them out of the table, so the net count is one lower even though nothing was reverted). The `even` cells
+are step 1's own; the `perceptual` and most `peak` cells are pre-existing, already-named (the 41 team-lead
+named "pending U4" at plan revision 20). Per the U4 integration note in the plan (C8), no re-pin happens
+this pass; the table below is the record U4 re-measures against.
 
-Only cells that moved by more than 0.0005 are listed (27 of 96 rows; the rest are byte-identical to
-`bf2aaf6`):
+Only cells that moved by more than 0.0005 are listed (26 of 96 rows; the rest are byte-identical to
+`bf2aaf6` or move by 0.0005 or less, see `test/engine/semantic.mjs`'s `FLOORS` comments for those
+sub-threshold drifts, e.g. peak Primary dark 4.6253->4.6257, peak Info dark 7.7182->7.7186, peak
+Tertiary dark 5.5770->5.5767):
 
 | mode | family | light before | light after | delta | dark before | dark after | delta |
 |---|---|---|---|---|---|---|---|
@@ -147,18 +162,25 @@ Only cells that moved by more than 0.0005 are listed (27 of 96 rows; the rest ar
 | even | Data 7 | 5.2355 | 5.2855 | +0.0500 | 5.8380 | 5.8234 | -0.0146 |
 | even | Data 8 | 5.2365 | 5.2489 | +0.0123 | 5.8757 | 5.8451 | -0.0305 |
 | peak | Neutral | 6.2637 | 6.2782 | +0.0145 | 4.5077 | 4.6977 | +0.1899 |
-| peak | Primary | 6.4444 | 6.4444 | +0.0000 | 4.6253 | 4.6275 | +0.0022 |
 | peak | Secondary | 11.5512 | 11.5603 | +0.0091 | 15.1950 | 15.1950 | +0.0000 |
-| peak | Info | 5.0696 | 5.0696 | +0.0000 | 7.7182 | 7.7164 | -0.0018 |
 | peak | Success | 7.2072 | 7.2142 | +0.0070 | 11.8740 | 11.9037 | +0.0297 |
-| peak | Warning | 4.8188 | 4.8392 | +0.0204 | 7.4923 | 7.5150 | +0.0228 |
+| peak | Warning | 4.8188 | 4.8392 | +0.0204 | 7.4923 | 7.5065 | +0.0142 |
 | peak | Danger | 7.1662 | 7.1662 | +0.0000 | 5.1324 | 5.1315 | -0.0009 |
 | peak | Data 2 | 4.7957 | 4.7957 | +0.0000 | 5.5943 | 5.5797 | -0.0146 |
-| peak | Data 6 | 11.6401 | 11.6392 | -0.0009 | 15.0969 | 15.0969 | +0.0000 |
+| peak | Data 6 | 11.6401 | 11.6430 | +0.0029 | 15.0969 | 15.0969 | +0.0000 |
+| peak | Data 7 | 11.8825 | 11.8835 | +0.0010 | 15.5544 | 15.5544 | +0.0000 |
 
 `perceptual Neutral dark` (-0.4514) and `peak Neutral dark` (+0.1899) are pre-existing moves from earlier
 passes (R2, the pass-5 peak cap), not step 1's, step 1 touches only `even`, and the `even` deltas above
 (max +0.0500, `Data 7` light) are all small fractional moves; none cross a pinned floor digit.
+
+Re-measured fresh for U3 review 3 (N2), after F1's peak-cap solver fix: `peak Primary dark` and
+`peak Info dark` dropped out of this table (both now move by 0.0004, under the 0.0005 listing
+threshold, see `test/engine/semantic.mjs`'s `FLOORS` comments), `peak Warning dark`'s delta corrected
+from +0.0228 to +0.0142 (the `6a4821e`-era figure of 7.5150 was pre-F1; the current value is 7.5065),
+`peak Data 6 light`'s delta flipped sign, -0.0009 to +0.0029 (F1 moved this cell's direction, not just
+its magnitude), and `peak Data 7 light` newly crosses the threshold (+0.0010, was untracked before).
+No other row in this table changed from its `6a4821e` figure.
 
 ## Thin cells [4.50, 4.55) per mode, at the new head
 
@@ -185,3 +207,10 @@ All figures measured fresh for this record via scratch scripts under
 `git archive` checkout for `bf2aaf6`/`4362180`, the live worktree for the new head) so each ref is
 measured with its OWN code, not a mix of versions. The C8 measurements reuse `model.mjs`'s own
 `brandKit`/`contrastRatio`/`slug`, identical to `test/engine/semantic.mjs`'s own gate.
+
+Re-run again for U3 review 3 (N2), against the live worktree at its current head (after F1, F2, F3, and
+this review's own N1/N4/N5/N6 fixes), reusing the same three scripts and the same `bf2aaf6` archive
+checkout unchanged. F1 (the peak-cap solver fix) is the only landed change between `6a4821e` and the
+current head that touches rendered output, so the only tables above with a real re-measured delta are
+the ones with a `peak`-mode cell reachable through a capped stop; `perceptual` and `even` are confirmed
+byte-identical to their `6a4821e` figures throughout.
