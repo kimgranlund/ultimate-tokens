@@ -851,13 +851,29 @@ satisfies F1's stated primary requirement (0 new dips, at or below the reviewer'
 own. The reviewer's own reading of the underlying hue-blindness issue was 🟡 non-blocking ("acceptable...
 once reported"): this is that report, not a further fix attempt.
 
-**What the owner rules on:** the dip fix ships (bisection + target-direct fallback + Abney-corrected
-polish hue + `chromaFloor`). The hue residual tail is a disclosed tradeoff versus the pre-fix state: worse
-at p99/max (12.22°/24.62° vs the reviewer's 17.26° single max, though the PRE-fix distribution's own
-median/p90 were not separately measured by the reviewer, so only the max is directly comparable), better
-in every other respect (dips 221->6, tone accuracy the bisection was built to hold). No further hue-
-awareness attempt is planned under this unit; a future unit could revisit it with a construction that
-weighs hue and tone jointly inside the bisection itself, rather than as a post-hoc polish constraint.
+**Honesty correction (U3 review 3, N3):** the HCT fallback (`tonal.js:661`) fires on 93.5% of capped
+stops, not rarely as an earlier comment claimed. The 24-step bisection DOES converge on chroma reliably
+(that half of the exit condition rarely trips); it is the 0.01 L* tone tolerance that almost always trips
+instead, because that bar is tighter than an 8-bit RGB round-trip can usually hold at a fixed hue/chroma,
+so nearly every capped stop routes through `hctToRgb` rather than keeping the bisection's own continuous
+render. Tone drift is worse than the review-2 figures reported above: 34.5% of capped stops exceed
+0.01 L* (max 0.1009), not the near-zero rate "converges reliably" implied. The hue residual max is 24.62°.
+Set against this, the dip count dropped from 221 to 6. The claim "better in every other respect" that
+previously summarized this tradeoff is withdrawn: it minimized the fallback-rate and tone-drift costs
+just named, which are real and should weigh in any owner decision, not just the dip-count improvement.
+
+**Effective margin below the anchor, stated once as one number:** `CAP_MARGIN` is coded as a flat 0.5 C
+below `anchorChroma`, but the corpus's actual median gap between a capped stop's rendered chroma and its
+anchor is 0.70 C, not 0.5 (p90 1.26, max 1.82, full table above). The coded margin is a target the solve
+aims for; the measured 0.70 C is what capped stops actually land at once 8-bit quantization and the
+fallback's own rounding are included.
+
+**What the owner rules on:** whether the dip fix ships as built, carrying the fallback-rate and
+tone-drift costs above as a disclosed tradeoff against the pre-fix state's 221 dips, or whether a
+different construction is warranted given how much of the render path (93.5% of capped stops) now runs
+through the fallback rather than the continuous solve. No further hue-awareness attempt is planned under
+this unit; a future unit could revisit it with a construction that weighs hue and tone jointly inside the
+bisection itself, rather than as a post-hoc polish constraint.
 
 ### Q7 pass-7 step 2, second attempt: retried on the fixed solver, reverted again, "which target yields"
 

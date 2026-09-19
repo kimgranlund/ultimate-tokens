@@ -658,10 +658,15 @@ function okhslStops(palette, controls, stops, mode) {
       // OKLCH-hue promise to keep, so `hueCam16` is already correct there — no solve needed.
       const polishHue = controls.hueSpace === "oklch" ? solveCam16Hue(preCapOklchHue, Math.max(chroma, 1), targetTone) : hueCam16;
       if (chroma > anchorChroma + 1e-6 || Math.abs(lstarFromRgb(rgb) - targetTone) > 0.01) {
-        // Fallback: the bisection didn't converge within tolerance on this cell (rare — see the dip gate
-        // below) — cap via the validated HCT engine directly AT the target chroma (never the solve's own
-        // possibly-off value — the old `Math.min(chroma, target)` here is what let an overshot loop
-        // result lock in below target instead of correcting to it, F1) and the held tone, at polishHue.
+        // Fallback (#681 U3 review 3, N3: corrected from an earlier "rare" claim): this fires on 93.5%
+        // of capped stops measured, not rarely. The bisection's own 24 steps DO converge on chroma (that
+        // is what the dip gate below verifies), but 0.01 L* is tighter than an 8-bit RGB round-trip can
+        // usually reach at a fixed hue/chroma, so the tone-tolerance half of this condition is the one
+        // that almost always trips, sending nearly every capped stop through `hctToRgb` here rather than
+        // keeping the bisection's own continuous render. Caps via the validated HCT engine directly AT
+        // the target chroma (never the solve's own possibly-off value: the old `Math.min(chroma, target)`
+        // here is what let an overshot loop result lock in below target instead of correcting to it, F1)
+        // and the held tone, at polishHue.
         const capped = hctToRgb(polishHue, target, targetTone);
         rgb = capped.rgb;
         chroma = cam16FromRgb(rgb).chroma;
