@@ -122,6 +122,19 @@ clears the ruled AA floor, and the cell is re-measured once U1 and U6 land, per 
 The re-measure obligation is carried in `.sdlc/handoffs/pif-u3.md`'s Risks section so U4 or whoever
 integrates the plan cannot miss it. No further action from U3.
 
+**Addendum (U3 review 2, F3):** re-measuring `test/engine/semantic.mjs`'s `FLOORS` block against the
+CURRENT engine surfaces a second thin-margin cell, not previously named: perceptual Success light, whose
+raw measured ratio dropped from 6.1815 (at the bf2aaf6 baseline this whole block compares against) to
+6.1018, only 0.0018 above its OWN pinned floor (6.1: `floor(6.1018*10)/10 = 6.1`, so the pinned digit
+does not move, unlike Neutral dark). This is a thinner margin than Neutral dark's own 0.0327, and by the
+same standard that surfaced Neutral dark (any drop deserves disclosure even when the pinned floor digit
+holds), it is recorded here rather than left implicit in the FLOORS comment alone. Unlike Neutral dark's
+risk (proximity to the RULED 4.5 AA floor), this is proximity to its OWN pinned floor value: a further
+tiny drop from U1/U6 or a future OKHSL-path change would not risk AA (6.1 is well clear of 4.5) but would
+require lowering Success light's pinned floor from 6.1, which is worth the same re-measure discipline.
+Whoever re-measures the Q6 obligation set after U1/U6 land should check this cell alongside the five
+already named in the handoff's Risks section.
+
 ### (original text, kept for the record)
 
 perceptual Neutral dark's contrast floor drops for real, 4.9 -> 4.5 (0.03 headroom over AA)

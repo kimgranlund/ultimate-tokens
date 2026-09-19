@@ -184,15 +184,22 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   // Re-measured whole for #681 U3 R2 (chromaEnvelope re-centred on the anchor's own lifted reading,
   // shared by both paths + the keyS saturation basis) against the TRUE pre-U3 landed floors (bf2aaf6),
   // not against R1's own (lower, undisclosed) numbers, per the U3 review this revision answers.
-  // Compared PRECISELY (not floor-truncated) against bf2aaf6: "even" is byte-identical. "Perceptual"
-  // and "peak" both hold every PINNED (1-decimal) floor except perceptual Neutral dark, 4.9 -> 4.5
-  // (measured 4.9841 -> 4.5327) — but several families move by a fraction of a percent WITHOUT
-  // crossing a floor digit in either direction: perceptual Warning dark (4.6457->4.6452), perceptual
-  // Danger dark and peak Danger dark (5.1324->5.1315, identical in both modes since Danger's
-  // accent/on-color pair coincides at the same pixel in perceptual and peak here), and peak
-  // Data 2 dark (5.5943->5.5797) all drop slightly; peak Neutral/Success/Warning (light and dark) and
-  // perceptual Neutral light/Success dark all rise. "Holds or improves at every family" is therefore an
-  // overclaim for a few hundredths-of-a-point moves; no PINNED floor moves except the one named below.
+  // Compared PRECISELY (not floor-truncated) against bf2aaf6, AT THE R2 LANDING (before U3 pass 7's
+  // even-only retune below moved every even number again, see that pass's own addendum): "even" was
+  // byte-identical then. It is NOT byte-identical now: pass 7 step 1 (EVEN_DAMP_FACTOR) compresses
+  // damp/dampCurve for "even" specifically, moving nearly every even family's numbers below (re-measured
+  // post-pass-7; the "even" comments in this block are the CURRENT figures, not the R2-landing ones this
+  // paragraph otherwise describes). "Perceptual" and "peak" both hold every PINNED (1-decimal) floor
+  // except perceptual Neutral dark, 4.9 -> 4.5 (measured 4.9841 -> 4.5327) — but several families move by
+  // a fraction of a percent WITHOUT crossing a floor digit in either direction: perceptual Warning dark
+  // (4.6457->4.6452), perceptual Danger dark and peak Danger dark (5.1324->5.1315, identical in both
+  // modes since Danger's accent/on-color pair coincides at the same pixel in perceptual and peak here),
+  // peak Data 2 dark (5.5943->5.5797), and perceptual Success light (6.1815->6.1018, the thinnest margin
+  // of any of these at 0.0018 over its own 6.1 floor, closer than Neutral dark's 0.0327) all drop
+  // slightly; peak Neutral/Success/Warning (light and dark) and perceptual Neutral light/Success dark all
+  // rise. "Holds or improves at every family" is therefore an overclaim for a few hundredths-of-a-point
+  // moves; no PINNED floor moves except the one named below (Success light's floor digit does not move,
+  // 6.1 -> 6.1, but its margin is thin enough to record here per the same disclosure standard).
   // The Neutral dark move is NOT an R1-vs-R2 artifact: Neutral carries lift 0, so chromaEnvelope's sd
   // is identical under every design tried (liftStop(stop, 0) === stop always) — the move is REQ-052
   // itself (this unit's mandated saturation-basis change, chroma% of gamut -> the key colour's own
@@ -225,38 +232,38 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
     ],
     even: [
       ["Neutral", 7.0, 4.5],   // measured 7.0970 / 4.5280
-      ["Primary", 7.1, 4.5],   // measured 7.1597 / 4.5104
-      ["Secondary", 5.2, 5.8],   // measured 5.2314 / 5.8367
-      ["Tertiary", 7.1, 4.5],   // measured 7.1043 / 4.5145
-      ["Info", 7.1, 4.5],   // measured 7.1164 / 4.5225
-      ["Success", 8.0, 5.1],   // measured 8.0496 / 5.1852
-      ["Warning", 9.4, 5.0],   // measured 9.4559 / 5.0231
-      ["Danger", 8.0, 5.1],   // measured 8.0463 / 5.1543
-      ["Data 1", 5.2, 5.8],   // measured 5.2342 / 5.8396
-      ["Data 2", 5.2, 5.8],   // measured 5.2436 / 5.8765
-      ["Data 3", 5.2, 5.8],   // measured 5.2402 / 5.8614
-      ["Data 4", 5.2, 5.8],   // measured 5.2616 / 5.8562
-      ["Data 5", 5.2, 5.8],   // measured 5.2857 / 5.8518
-      ["Data 6", 5.2, 5.8],   // measured 5.2624 / 5.8526
-      ["Data 7", 5.2, 5.8],   // measured 5.2355 / 5.8380
-      ["Data 8", 5.2, 5.8],   // measured 5.2365 / 5.8757
+      ["Primary", 7.1, 4.5],   // measured 7.1593 / 4.5308
+      ["Secondary", 5.2, 5.8],   // measured 5.2550 / 5.8375
+      ["Tertiary", 7.1, 4.5],   // measured 7.1366 / 4.5071
+      ["Info", 7.1, 4.5],   // measured 7.1291 / 4.5072
+      ["Success", 8.0, 5.1],   // measured 8.0496 / 5.1987
+      ["Warning", 9.4, 5.0],   // measured 9.4559 / 5.0587
+      ["Danger", 8.0, 5.1],   // measured 8.0763 / 5.1694
+      ["Data 1", 5.2, 5.8],   // measured 5.2562 / 5.8662
+      ["Data 2", 5.2, 5.8],   // measured 5.2623 / 5.8548
+      ["Data 3", 5.2, 5.8],   // measured 5.2581 / 5.8520
+      ["Data 4", 5.2, 5.8],   // measured 5.2754 / 5.8833
+      ["Data 5", 5.2, 5.8],   // measured 5.2773 / 5.8501
+      ["Data 6", 5.2, 5.8],   // measured 5.2887 / 5.8247
+      ["Data 7", 5.2, 5.8],   // measured 5.2855 / 5.8234
+      ["Data 8", 5.2, 5.8],   // measured 5.2489 / 5.8451
     ],
     peak: [
       ["Neutral", 6.2, 4.6],   // measured 6.2782 / 4.6977 — dark UP from bf2aaf6's 4.5 (4.51)
-      ["Primary", 6.4, 4.6],   // measured 6.4444 / 4.6253
-      ["Secondary", 11.5, 15.1],   // measured 11.5512 / 15.1950
-      ["Tertiary", 7.5, 5.5],   // measured 7.5699 / 5.5770
-      ["Info", 5.0, 7.7],   // measured 5.0696 / 7.7182
+      ["Primary", 6.4, 4.6],   // measured 6.4444 / 4.6257
+      ["Secondary", 11.5, 15.1],   // measured 11.5603 / 15.1950
+      ["Tertiary", 7.5, 5.5],   // measured 7.5699 / 5.5767
+      ["Info", 5.0, 7.7],   // measured 5.0696 / 7.7186
       ["Success", 7.2, 11.9],   // measured 7.2142 / 11.9037 — dark UP from bf2aaf6's 11.8 (11.87)
-      ["Warning", 4.8, 7.5],   // measured 4.8392 / 7.5156 — dark UP from bf2aaf6's 7.4 (7.49)
+      ["Warning", 4.8, 7.5],   // measured 4.8392 / 7.5065 — dark UP from bf2aaf6's 7.4 (7.49)
       ["Danger", 7.1, 5.1],   // measured 7.1662 / 5.1315
       ["Data 1", 10.0, 6.7],   // measured 10.0035 / 6.7813
       ["Data 2", 4.7, 5.5],   // measured 4.7957 / 5.5797
       ["Data 3", 5.2, 5.1],   // measured 5.2532 / 5.1571
       ["Data 4", 6.3, 8.7],   // measured 6.3489 / 8.7609
-      ["Data 5", 12.8, 16.7],   // measured 12.8163 / 16.7900
-      ["Data 6", 11.6, 15.0],   // measured 11.6401 / 15.0969
-      ["Data 7", 11.8, 15.5],   // measured 11.8825 / 15.5544
+      ["Data 5", 12.8, 16.7],   // measured 12.8165 / 16.7900
+      ["Data 6", 11.6, 15.0],   // measured 11.6430 / 15.0969
+      ["Data 7", 11.8, 15.5],   // measured 11.8835 / 15.5544
       ["Data 8", 6.3, 8.8],   // measured 6.3796 / 8.8369
     ],
   };
