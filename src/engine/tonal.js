@@ -505,26 +505,6 @@ function okhslStops(palette, controls, stops, mode) {
   } else {
     hOk = rgbToOkhsl(hctToRgb(baseHue, pk.c, pk.tone).rgb).h;
   }
-  // anchorChroma — the anchor's own emitted CAM16 chroma, rendered the SAME way every other stop is
-  // below (#681 U3 pass 4, the OKHSL-path twin of paletteStops's even-mode anchor cap). At stop ===
-  // ANCHOR_STOP the cap below is a proven no-op (same formula, same inputs).
-  const anchorV = palette.cuspPull ?? controls.vibrancy ?? 0;
-  const anchorT = mode === "peak" ? 1 : Math.max(0, Math.min(1, anchorV / 100));
-  const anchorL = lightnessAt(ANCHOR_STOP, anchorT);
-  const anchorS = Math.min(1, Math.max(0, keyS * envelopeAt.get(ANCHOR_STOP)));
-  const anchorChroma = cam16FromRgb(okhslToRgb(hOk, anchorS, anchorL)).chroma;
-  const dampAmp = controls.dampAmp ?? 0;
-  // solveLForTone — the OKHSL lightness l in [0,1] that renders CIE L* == targetTone at a FIXED hue/s
-  // (#681 U3 pass 4). L* is monotone non-decreasing in l at fixed hue/s (OKHSL's own construction), so
-  // bisection converges reliably; 30 halvings of [0,1] resolve to ~1e-9, well inside the 0.01 L* bar.
-  const solveLForTone = (hue, s, targetTone) => {
-    let lo = 0, hi = 1;
-    for (let i = 0; i < 30; i++) {
-      const mid = (lo + hi) / 2;
-      if (lstarFromRgb(okhslToRgb(hue, s, mid)) < targetTone) lo = mid; else hi = mid;
-    }
-    return (lo + hi) / 2;
-  };
   return stops.map((stop) => {
     // lightness per stop — STOP-based so the display(19) and export(25) ramps agree at a given stop.
     // Blend the EVEN-perceptual distribution toward the CUSP-anchored ("peak") one by `vibrancy`:
@@ -534,46 +514,17 @@ function okhslStops(palette, controls, stops, mode) {
     // (e.g. yellow Warning, cusp at high L*) nudge its richest stop toward 500 without touching the rest.
     const v = palette.cuspPull ?? controls.vibrancy ?? 0;
     const t = mode === "peak" ? 1 : Math.max(0, Math.min(1, v / 100));
-    const l0 = lightnessAt(stop, t); // skew/lift warp the position read (effStop); see lightnessAt above
+    const l = lightnessAt(stop, t); // skew/lift warp the position read (effStop); see lightnessAt above
     const sp = (stop - 500) / 450;
     const dir = sameDir ? -Math.abs(sp) : sp;
     const hue = (((hOk + shift * dir) % 360) + 360) % 360;
     // saturation = the key colour's own OKHSL s (keyS), shaped by chromaEnvelope — the SAME envelope the
     // even path uses (so damp/dampCurve/dampAmp/dampBias stay meaningful here too), clamped to [0,1].
-    const s0 = Math.min(1, Math.max(0, keyS * envelopeAt.get(stop)));
-    let s = s0, l = l0;
-    let rgb = okhslToRgb(hue, s, l);
-    let chroma = cam16FromRgb(rgb).chroma;
-    // Generated palettes (dampAmp 0) never emit more chroma than the anchor (#681 U3 pass 4, the C6 "0
-    // above 100%" clause — the OKHSL-path close). Pass 3's plain saturation rescale moved the rendered
-    // L* along with chroma (OKHSL saturation isn't chroma-uniform across lightness), which is what
-    // tripped the contrast floor and the grid upticks; this holds tone FIXED at its pre-cap value by
-    // solving JOINTLY for (s, l): shrink s toward the target chroma, then re-solve l for the held tone,
-    // iterating until both hold. Hue stays hOk-derived throughout (no engine switch, no new Abney
-    // residual). At stop === ANCHOR_STOP this never fires: same formula as anchorChroma above.
-    if (dampAmp === 0 && chroma > anchorChroma + 1e-6) {
-      const targetTone = lstarFromRgb(rgb); // the pre-cap (natural) tone — held fixed below
-      for (let i = 0; i < 12 && chroma > anchorChroma + 1e-6 && chroma > 1e-9; i++) {
-        s = Math.max(0, s * (anchorChroma / chroma));
-        l = solveLForTone(hue, s, targetTone);
-        rgb = okhslToRgb(hue, s, l);
-        chroma = cam16FromRgb(rgb).chroma;
-      }
-      if (chroma > anchorChroma + 1e-6 || Math.abs(lstarFromRgb(rgb) - targetTone) > 0.01) {
-        // Fallback (brief-sanctioned): the joint OKHSL solve didn't converge within tolerance on this
-        // cell — cap via the validated HCT engine directly at the anchor's chroma and the held tone,
-        // using the SAME rotated CAM16 hue the even path renders with. This guarantees the bound exactly
-        // but can reintroduce a small Abney hue residual at THIS stop only (measured in Q7).
-        const hueCam16 = (((baseHue + shift * dir) % 360) + 360) % 360;
-        const capped = hctToRgb(hueCam16, Math.min(chroma, anchorChroma), targetTone);
-        rgb = capped.rgb;
-        chroma = cam16FromRgb(rgb).chroma;
-      }
-    }
+    const s = Math.min(1, Math.max(0, keyS * envelopeAt.get(stop)));
+    const rgb = okhslToRgb(hue, s, l);
     const tone = lstarFromRgb(rgb);                                 // report ACTUAL L* (for graphs / roles)
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    // chroma/maxc reported (measured) for the analysis graphs; OKHSL is in-gamut by construction (the
-    // HCT fallback above is validated in-gamut too, per its own engine contract).
-    return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true };
+    // chroma/maxc reported (measured) for the analysis graphs; OKHSL is in-gamut by construction.
+    return { stop, tone, chroma: cam16FromRgb(rgb).chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true };
   });
 }
