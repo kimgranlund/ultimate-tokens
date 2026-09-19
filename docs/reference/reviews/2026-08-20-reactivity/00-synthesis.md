@@ -53,7 +53,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 
 | # | Finding | Evidence | Fix shape |
 |---|---|---|---|
-| D1 | `sweep-scan`/`sweep-delete` failures never reply → `sweepBusy` wedges; Cleanup panel disabled for the session | 04 §B; the `postMessage` catch at figma/plugin/code.js:256-258 special-cased only `apply` (fixed in #459) | code.js catch posts `sweep-scanned {texts:[],paints:[]}` / `sweep-done {removed:0}`, mirroring the apply carve-out |
+| D1 | `sweep-scan`/`sweep-delete` failures never reply → `sweepBusy` wedges; Cleanup panel disabled for the session | 04 §B; the `postMessage` catch at figma/plugin/code.js:270-284 special-cased only the `apply` case at :279 (fixed in #459) | code.js catch posts `sweep-scanned {texts:[],paints:[]}` / `sweep-done {removed:0}`, mirroring the apply carve-out |
 | D2 | `selectPalette()` mutates `doc.selected`, renders, never saves → false "unsaved" badge | 01 §B1; sections/color.js:255-260 | add `this.save()` (or route through `edit()`) |
 
 ### Fix soon (performance)
