@@ -644,7 +644,7 @@ under the cap to move p90 off 100%.
 **Attempt 1: `damp:92, dampCurve:0.5` (the domain floor), `dampBias:0`.** Closed the full `--envelope`
 table cleanly in a fast iteration harness (rendered-path only, matching the gate's own math) with real
 margin on every cell (worst: even|900 p90 32.4% vs the 35% target) and a comfortable perceptual cusp
-excess (0%, well under the 189.31% frozen bound). Applied to the real generator + engine defaults,
+excess (0%, well under the 189.3005% frozen bound). Applied to the real generator + engine defaults,
 regenerated, and ran `test/engine/tonal.mjs` directly (its own exit code, since the `hpg-tonal-cusp-pull`
 gate's name is missing from this file's print list, #695): FAIL, `(C6 i) perceptual: 2 rise(s), e.g.
 19-stop hue 267 chroma 100.00 skew -20 lift 0: stop 500->550 (26.4403 -> 26.6493)` — the default kit's
@@ -687,3 +687,11 @@ green at the reverted head.
   actual driver) while leaving perceptual/peak on the current shape, if that narrower change can be
   shown not to trigger the same uptick class — not measured this pass, since VIVID_MIDS/DEFAULT_CONTROLS
   apply one damp/dampCurve pair across all three modes together, not per-mode.
+
+### Q7 pass-6 note: the cusp-run bound is frozen at the exact 189.3005%, not rounded (team-lead follow-up)
+
+Plan revision 20 (`6c55f25`) froze ruling (f)'s bound at the fresh cusp-stop measurement itself,
+189.3005% exactly, not a rounded-up 189.31%. `CUSP_RUN_BOUND` in `test/engine/tonal.mjs`'s (C6 iii-b)
+gate and `scripts/report-preset-fidelity.mjs`'s reporting copy both updated to `1.893005`; the witness
+(measured ratio `1.8930048002074109`) still clears the exact bound. All references to "189.31%" earlier
+in this record and in the handoff are corrected to the exact figure.

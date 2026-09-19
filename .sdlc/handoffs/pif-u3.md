@@ -235,12 +235,12 @@ decided.
 ## Pass 6: perceptual's cusp-run gate shipped (step 1); the retune reverted twice (step 2, blocked)
 
 Owner ruling (f) on Q7 pass-5 (conductor lane-A-routing-6.md, 2026-09-19): perceptual ships exactly as
-today (no ramp change), gated instead with a one-contiguous-run, <=189.31% clause; the median/p90
+today (no ramp change), gated instead with a one-contiguous-run, <=189.3005% clause; the median/p90
 retune goes ahead after.
 
 **Step 1, done, shipped at `f45f9b2`.** `test/engine/tonal.mjs`'s (C6 iii-b) gates a generated
 (dampAmp 0) perceptual palette to at most one contiguous above-anchor run, every stop in it at or under
-189.31% (the fresh cusp-stop bound, confirmed twice — Q7 pass-5 and pass-6 addenda). Measured against
+189.3005% (the fresh cusp-stop bound, confirmed twice — Q7 pass-5 and pass-6 addenda). Measured against
 the CURRENT, unchanged engine: 0 violations (the natural cusp shoulder is always already one contiguous
 run; smooth unimodal curves don't produce disjoint humps), confirming ruling (f)'s design matches the
 data shape ruling (e)'s one-stop design fought. `src/engine/tonal.js` untouched, byte-identical to
@@ -304,7 +304,7 @@ a re-measure after U1 and U6 land, carried as an OBLIGATION in this handoff's Ri
 4 cells after pass 3's re-measurement), Q7 (STILL OPEN, pass-6 addendum added — even AND peak both close
 "0 above 100%" to exactly the named Adia carve-out (peak since pass 5), each gated with its own negative
 control. Perceptual keeps #55's cusp-pull richness fully untouched, per the owner's ruling (f): a
-one-contiguous-cusp-run, <=189.31%-per-stop clause replaces "0 above 100%" for that mode only, gated and
+one-contiguous-cusp-run, <=189.3005%-per-stop clause replaces "0 above 100%" for that mode only, gated and
 measuring 0 violations against the shipped (unchanged) engine — ruling (f)'s design matches the data
 shape (the natural cusp is always one contiguous run) where ruling (e)'s one-stop design did not. The
 median/p90 retune (step 2/3) is BLOCKED, not closed: two different damp/dampCurve candidates that both
