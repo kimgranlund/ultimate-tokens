@@ -156,9 +156,10 @@ for (const damp of [0, 40, 70, 80, 100]) for (const dampCurve of [0.5, 1.5, 3]) 
 const envResults = {};
 const envAboveTotal = { perceptual: 0, peak: 0, even: 0 };
 const envAboveWitnesses = { perceptual: [], peak: [], even: [] };
+const envAdiaAboveTotal = { perceptual: 0, peak: 0, even: 0 };
 for (const mode of MODES) {
   const ratios = { 100: [], 300: [], 700: [], 900: [] };
-  for (const { label, pal, doc } of instances) {
+  for (const { label, presetName, pal, doc } of instances) {
     const controls = {
       damp: doc.damp, dampCurve: doc.dampCurve,
       dampAmp: dampAmpOverride !== null ? dampAmpOverride : doc.dampAmp,
@@ -174,8 +175,14 @@ for (const mode of MODES) {
       if (v > 1 + 1e-9) roseAboveHere = true;
     }
     if (roseAboveHere) {
-      envAboveTotal[mode]++;
-      if (envAboveWitnesses[mode].length < 5) envAboveWitnesses[mode].push(label);
+      // Only a non-zero dampAmp's shoulder term can trigger this (see the reading's own comment above),
+      // so in practice only the named Adia carve-out (dampAmp 70) ever does — same carve-out as reading
+      // (a), applied here too so this line doesn't perpetually misreport an allowed population as FAIL.
+      if (ADIA_CARVEOUT.has(presetName)) envAdiaAboveTotal[mode]++;
+      else {
+        envAboveTotal[mode]++;
+        if (envAboveWitnesses[mode].length < 5) envAboveWitnesses[mode].push(label);
+      }
     }
   }
   envResults[mode] = {};
@@ -235,6 +242,7 @@ for (const mode of MODES) {
   const aboveOk = envAboveTotal[mode] === 0;
   if (!aboveOk) envAnyFail = true;
   console.log(`  above 100% of stop 500: ${envAboveTotal[mode]} ${aboveOk ? "OK" : "FAIL"}${envAboveWitnesses[mode].length ? ` (e.g. ${envAboveWitnesses[mode].join(", ")})` : ""}`);
+  console.log(`  (${envAdiaAboveTotal[mode]} additional instance(s) from the named Adia carve-out, exempt from this clause)`);
 }
 console.log("");
 console.log(`READING (a) (emitted chroma): ${anyFail ? "FAIL" : "PASS"}`);
