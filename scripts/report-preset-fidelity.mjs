@@ -142,10 +142,14 @@ for (const mode of MODES) {
   }
 }
 
-// env(500) = 1 exactly, swept over damp/dampCurve/dampAmp/dampBias/lift — the C6 anchor property.
+// env(500) = 1 exactly, swept over damp/dampCurve/dampAmp/dampBias/lift/toneMode: the C6 anchor
+// property. toneMode is swept explicitly (#681 U3 review 3, N6): chromaEnvelope branches internally on
+// `controls.toneMode === "even"` to apply EVEN_DAMP_FACTOR, so omitting it here silently tested only the
+// non-even branch, even for a doc whose OWN toneMode is "even". This sweep is toneMode-independent
+// reporting, not tied to any one document, so it covers both branches directly.
 let envFails = 0;
-for (const damp of [0, 40, 70, 80, 100]) for (const dampCurve of [0.5, 1.5, 3]) for (const dampAmp of [0, 55, 100]) for (const dampBias of [-50, 0, 50]) for (const lift of [-40, -20, 0, 20, 40]) {
-  const v = T.chromaEnvelope(500, 500, lift, { damp, dampCurve, dampAmp, dampBias });
+for (const damp of [0, 40, 70, 80, 100]) for (const dampCurve of [0.5, 1.5, 3]) for (const dampAmp of [0, 55, 100]) for (const dampBias of [-50, 0, 50]) for (const lift of [-40, -20, 0, 20, 40]) for (const toneMode of ["perceptual", "peak", "even"]) {
+  const v = T.chromaEnvelope(500, 500, lift, { damp, dampCurve, dampAmp, dampBias, toneMode });
   if (Math.abs(v - 1) > 1e-9) envFails++;
 }
 
@@ -164,7 +168,8 @@ for (const mode of MODES) {
     const controls = {
       damp: doc.damp, dampCurve: doc.dampCurve,
       dampAmp: dampAmpOverride !== null ? dampAmpOverride : doc.dampAmp,
-      dampBias: doc.dampBias,
+      dampBias: doc.dampBias, toneMode: mode, // #681 U3 review 3, N6: was missing, so this loop always
+      // read the non-even branch of chromaEnvelope, even when mode === "even"
     };
     let roseAboveHere = false;
     for (const s of REPORT_STOPS) {
