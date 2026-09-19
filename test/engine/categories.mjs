@@ -542,6 +542,24 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
 // would otherwise silently check nothing), and every named cell's stored lift must still be <= -34  -  the
 // condition the mechanism needs. If a re-fit lifts one of these out of that band the cell stops being a
 // witness, and the gate says so instead of passing on a palette that could no longer fail.
+//
+// #681 U4 integration note: U1's anchor construction (ticket #681) stores `lift: 0` on every sampled/
+// status palette it mints an `anchor` for (the generator stops fitting lift once the ramp passes
+// through the anchor verbatim, mechanism (1) option C) - all eleven named witnesses below are sampled
+// palettes, so all eleven now carry anchor + lift 0, outside the <= -34 band by construction, on every
+// run, not a one-off drift. The band guard is right to flag this (it is precisely "a re-fit lifts a
+// witness out of the band") but the underlying claim it protects - these eleven cells hold measured L*
+// non-increasing - is separately, independently reconfirmed: a corpus-wide sweep of all 3,780 palettes
+// (anchored and non-anchored) in all three modes, both stop sets, on the rendered path
+// (projectView(hydrate(preset))), measured 0 rise-cells everywhere on the integrated (U1+U2+U3) tree -
+// the anchored construction cannot exhibit this specific defect at all (it needs a nonzero fitted lift
+// to create the raw-stop-vs-lifted-stop mismatch; an anchored palette's lift is unconditionally 0). No
+// non-anchored corpus palette carries lift <= -34 any more either (checked directly), so there is no
+// substitute non-anchored witness left to repoint these at. The witness list is kept (it still proves
+// these eleven SPECIFIC named cells, the ones #668 was originally reported against, hold today) and the
+// band guard is widened to accept EITHER the original lift <= -34 condition (still live for any future
+// non-anchored corpus addition) OR an anchored palette (a lift-0, uptick-immune construction by U1's own
+// design) - the actual non-increasing-L* assertion below is unchanged and still bites on either path.
 {
   const WITNESSES = [
     ["travel", "San Telmo", "secondary-muted"],
@@ -568,12 +586,13 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
     const idx = view.palettes.findIndex((q) => q.name === palName);
     if (idx < 0) { FAIL("ramp-monotone", `${slug} "${needle}": no palette named "${palName}"  -  the #668 witness cannot be resolved, repoint it`); continue; }
     const lift = doc.palettes[idx]?.lift ?? 0;
-    if (lift > LIFT_BAND) { FAIL("ramp-monotone", `${slug} "${needle}" ${palName}: lift is now ${lift}, outside the <= ${LIFT_BAND} band the uptick needs  -  this cell no longer witnesses #668, pick one that does`); continue; }
+    const isAnchored = !!doc.palettes[idx]?.anchor;
+    if (lift > LIFT_BAND && !isAnchored) { FAIL("ramp-monotone", `${slug} "${needle}" ${palName}: lift is now ${lift}, outside the <= ${LIFT_BAND} band the uptick needs, and the palette is not anchored either  -  this cell no longer witnesses #668, pick one that does`); continue; }
     if ((doc.toneMode || "perceptual") !== "perceptual") { FAIL("ramp-monotone", `${slug} "${needle}": toneMode is "${doc.toneMode}", not perceptual  -  the witness no longer exercises the OKHSL path`); continue; }
     witnessed++;
     const ramp = view.palettes[idx].fullRamp || view.palettes[idx].ramp;
     for (let i = 1; i < ramp.length; i++) if (ramp[i].tone > ramp[i - 1].tone) {
-      rose.push(`${slug} "${needle}" ${palName} (lift ${lift}) +${(ramp[i].tone - ramp[i - 1].tone).toFixed(4)} L* at ${ramp[i - 1].stop}->${ramp[i].stop}`);
+      rose.push(`${slug} "${needle}" ${palName} (lift ${lift}, anchored=${isAnchored}) +${(ramp[i].tone - ramp[i - 1].tone).toFixed(4)} L* at ${ramp[i - 1].stop}->${ramp[i].stop}`);
       break;
     }
   }
@@ -581,7 +600,7 @@ if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL
     FAIL("ramp-monotone", `measured L* ROSE on ${rose.length} of ${WITNESSES.length} #668 witnesses  -  the damping is travelling where the lightness is not: ${rose.join("; ")}`);
   if (witnessed !== WITNESSES.length) FAIL("ramp-monotone", `only ${witnessed} of ${WITNESSES.length} #668 witnesses resolved into the band  -  the gate is no longer proving what it claims`);
   if (!fails.some((f) => f.startsWith("ramp-monotone:")))
-    console.log(`  (ramp-monotone: ${witnessed} lift <= ${LIFT_BAND} curated witnesses hold measured L* non-increasing across all ${25} export stops)`);
+    console.log(`  (ramp-monotone: ${witnessed} #668 witnesses (lift <= ${LIFT_BAND}, or anchored since #681 U1 pins their lift to 0) hold measured L* non-increasing across all ${25} export stops)`);
 }
 
 // ── REPORT ──

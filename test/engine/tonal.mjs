@@ -1080,14 +1080,21 @@ for (const mode of ["perceptual", "peak"]) {
 //    across both) and are not a typo of one another. Only the rendered method is a real gate; keep it
 //    that way.
 {
-  // C7  -  mechanical. One definition, three total appearances (the definition itself plus its two call
-  // sites, one per path's precomputed envelopeAt map), zero of the old two-argument dampAmp expression.
+  // C7  -  mechanical. One definition, five total appearances (#681 U4 integration: U3 alone shipped 2
+  // call sites, one per NON-anchored path's precomputed envelopeAt map (paletteStops, okhslStops); U2's
+  // anchored branches (paletteStopsAnchored, okhslStopsAnchored) now route through the SAME shared
+  // function too (the re-diagnosis's Finding 1/9 seam fix), adding 2 more call sites - one per anchored
+  // path, same "computed once" shape, same function - so the true integrated total is 1 def + 4 calls,
+  // not U3-alone's 1 + 2. Still exactly one shared function, still zero forked copies: that is what C7's
+  // "both paths share one envelope" actually asserts, and it now reads as four paths (anchored/
+  // non-anchored x CIE-L*/OKHSL), all four the same function. Zero of the old two-argument dampAmp
+  // expression, unchanged.
   const src = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
   const defCount = (src.match(/export function chromaEnvelope\(/g) || []).length;
   const callCount = (src.match(/chromaEnvelope\(/g) || []).length;
   const staleCount = (src.match(/1 \+ \(\(controls\.dampAmp/g) || []).length;
   if (defCount !== 1) FAIL("chroma-envelope", `(C7) chromaEnvelope must be defined exactly once, found ${defCount}`);
-  if (callCount !== 3) FAIL("chroma-envelope", `(C7) chromaEnvelope must appear exactly 3 times total (1 definition + 2 call sites), found ${callCount}`);
+  if (callCount !== 5) FAIL("chroma-envelope", `(C7) chromaEnvelope must appear exactly 5 times total (1 definition + 4 call sites: paletteStopsAnchored, paletteStops, okhslStopsAnchored, okhslStops), found ${callCount}`);
   if (staleCount !== 0) FAIL("chroma-envelope", `(C7) the old two-copy "1 + ((controls.dampAmp" expression must be fully gone, found ${staleCount}`);
 
   // C6  -  env(anchor)=1 for EVERY damp/dampCurve/dampAmp/dampBias/lift combination, not only lift 0
