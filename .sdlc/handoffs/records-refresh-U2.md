@@ -65,31 +65,39 @@ delta cell above is either "none" or a cosmetic difference already covered by an
 
 ## Step 5: Doc drift sweep
 
-`.sdlc/architecture.md` §8 (12 rows, DD1-DD12: the seven required seeds plus five more checkable
-claims named by the coordinator's review pass: 10 formats, `~60 s`, Issues #325 to #342,
-`smoke-out/` gitignored, `.worktrees/<unit>`). `AGENTS.md` is absent (`git ls-files AGENTS.md`
-empty), stated in the section's lead sentence. `sh .sdlc/checks/doc-drift-rows-check.sh` ->
-`rows 12 drifted 1 holds 10 undetermined 1 bad 0`, exit 0.
+`.sdlc/architecture.md` §8 (17 rows, DD1-DD17: the seven required seeds, five more `.claude/CLAUDE.md`
+claims from the coordinator's first review pass, and five `README.md` claims from the second).
+`AGENTS.md` is absent (`git ls-files AGENTS.md` empty), stated in the section's lead sentence.
+`sh .sdlc/checks/doc-drift-rows-check.sh` -> `rows 17 drifted 2 holds 15 undetermined 0 bad 0`,
+exit 0.
 
-Two findings from the wider sweep:
+Findings from the wider sweep:
 
-- **DD5, corrected to `drifted`.** The first pass graded this `holds` by reading `.git/info/exclude`
-  in this worktree, which does carry the line. A fresh `git clone` of the branch at `d814500`
+- **DD5, `drifted`.** The first pass graded this `holds` by reading `.git/info/exclude` in this
+  worktree, which does carry the line. A fresh `git clone` of the branch at `d814500`
   (`/private/tmp/.../scratchpad/job691u2/freshclone2`) shows `git check-ignore -v
   .claude/docs/other/anything.md` exits 1: `.git/info/exclude` is per-checkout and is never cloned,
   so the sentence's named mechanism protects nothing in a fresh clone. The real enforcement is the
   `git-precommit-privatedocs-guard` hook (K15), which the same sentence also names; only the
   ignore-rule half of the claim is drifted.
-- **DD8, `undetermined`.** `.claude/CLAUDE.md:28` says "10 documented color formats" but
-  `src/engine/exports.js` defines nine single-purpose emitters (`exportCSS`, `exportOKLCH`,
-  `exportJSON`, `exportDTCG`, `exportUI3`, `exportTailwind`, `exportShadcn`, `exportPanda`,
-  `exportRadix`) plus the `exportAll` aggregator. The file's own header comment lists the same nine
-  names "plus the exportAll aggregator", phrased as if the aggregator sits outside the count. Whether
-  `exportAll` is meant to be the tenth "format" is not resolvable from the code alone.
+- **DD8, `holds` (revised).** The first pass called this `undetermined` from `exports.js`'s own
+  nine named emitters alone. The coordinator's second pass pointed at the actual user-facing
+  surface: `src/ui/overlays/drawer.js:39`, the export dialog's "Colors" `<select>` group, which
+  lists exactly 10 entries (`css`, `oklch`, `tailwind`, `shadcn`, `panda`, `radix`, `figma`, `ui3`,
+  `dtcg`, `json`). The 10th is `figma` (Figma variables), which ships through the binder/apply path
+  rather than an `exports.js` function, which is why `exports.js`'s own count reads 9. `#638`'s
+  second Radix export (`exportRadixModule` producing a raw form and a `refs: true`
+  token-referencing form, `src/ui/model.mjs:1020-1036`) ships as two files under the single `radix`
+  dropdown entry, so it does not push the count to 11. Holds.
+- **DD15, `drifted`.** `README.md:51` says "a curated hub of **7 categories**" and names them. Code:
+  `src/ui/categories/index.js`'s `CATEGORY_INDEX` carries 8 entries, an 8th `Brands` category (7
+  palettes, not the other seven's 48-per-category shape) that the README's list omits;
+  `src/ui/app.js:943` renders `CATEGORY_INDEX.length` directly as the hub's own displayed count, so
+  a live user sees 8, not 7.
 
-The other three added rows (DD9 `~60 s`, DD10 Issues #325 to #342, DD11 `smoke-out/`, DD12
-`.worktrees/<unit>`) all `hold`; DD10 was checked live against GitHub (`gh issue view 325`/`342`),
-both boundary issues carry the ADR-017 migration labels.
+DD9, DD10, DD11, DD12 (the four other `.claude/CLAUDE.md` additions) and DD13, DD14, DD16, DD17 (four
+of the five `README.md` additions) all `hold`. DD10 was checked live against GitHub (`gh issue view
+325`/`342`), both boundary issues carry the ADR-017 migration labels.
 
 ## Step 6: Texts and criteria
 
@@ -103,7 +111,7 @@ Wrote the rerun note, the §7 Counts bullet, and §8 into `.sdlc/architecture.md
 |---|---|---|---|---|
 | 1 | §8 present once, last, section grep counts 6 | `1`, no `NOT LAST` line, `6` | 🟢 | not run (would require a second copy of §8) |
 | 2 | §8, rerun note, Counts bullet all name the merge-base/`ref` sha | `d814500` x5 | 🟢 | not run |
-| 3 | every §8 row well-formed, quotes verbatim, paths tracked, seven seeds present (more rows expected) | `rows 12 drifted 1 holds 10 undetermined 1 bad 0`, exit 0; seed grep `7` | 🟢 | not run (would corrupt the committed section) |
+| 3 | every §8 row well-formed, quotes verbatim, paths tracked, seven seeds present (more rows expected) | `rows 17 drifted 2 holds 15 undetermined 0 bad 0`, exit 0; seed grep `7` | 🟢 | not run (would corrupt the committed section) |
 | 4 | check script is the plan's text byte for byte | `diff` empty, `same` | 🟢 | not run; extraction command matches the plan's `sh doc-drift` fence exactly |
 | 5 | rerun note once, U1's note untouched, debt.md untouched, architecture.md zero deletions vs merge base | `1`, `1`, `0`, `0`, `1` | 🟢 | not run |
 | 6 | handoff evidence table: 18 rows, no empty cell, measured-at line present | `18`, `0`, `1` (see below) | 🟢 | not run |
