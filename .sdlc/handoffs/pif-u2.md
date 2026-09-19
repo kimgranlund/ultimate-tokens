@@ -316,3 +316,14 @@ pre-integration state: U3's own ruled fix (`VIVID_MIDS.dampAmp` 55 -> 0) has not
 and Q-U2-6's own dampAmp-0 patch measurement (66 -> 16 non-monotone) shows the SAME dampAmp dependency
 from a different angle. U4 should expect this table to look very different once U3's fix integrates -
 this is "U2 basis, pre-integration," not a U2 defect.
+
+### Final state, this pass
+
+**Head at close of this pass, before this documentation commit: `6cf9fea`.** Plan tip
+(`plan/preset-intent-fidelity`, `4ff086c`, revision 19) is already an
+ancestor of this head - no rebase was needed this pass, confirmed via `git merge-base --is-ancestor`.
+`npm test` 48/48 green, `git status --short` empty. `npm run gate:corpus-contrast` PASS (343 docs,
+7,560 cells, 0 under 4.5, worst 4.500:1). `node scripts/audit-citations.mjs` STALE 0. `node
+test/repo/branding.mjs` clean (449 files). Open items for the owner: Q-U2-6 (monotone residual),
+Q-U2-7 (notch residual), Finding 5's R7 floor table (41 of 96 below `bf2aaf6`) - none blocking, all
+recorded rather than silently re-pinned as final.
