@@ -76,7 +76,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 | H1 | `_onReorderUp()` hand-rolls the commit ladder | 01 §B2; color.js:1593-1642 (fixed in #462) | route through `this.commit(fn)` |
 | H2 | `mixinInto` has no method-collision guard (zero collisions today, verified; nothing catches the first one) | 01 §B3, 04 §C; app.js:2545-2563 (guard added in #462) | throw on duplicate own-property name during composition |
 | H3 | Gallery crash vector: set records never shape-validated; `buildTiles` search does `s.name.toLowerCase()` unguarded | 03 §C; app.js:673-675, `sanitizeSetRecords` app-helpers.mjs:104-109 (fixed in #468) | per-record shape check in `loadSets`/`receiveStoredSets` (or a `String(s.name||"")` guard) |
-| H4 | `tokenOverrides` keys never validated against voice/step domains → typo'd/retired keys accumulate as permanent inert orphans | 03 §B5; persist.js:637-647 (`validLead`, fixed in #461) | drop unknown-voice/step keys in `clampTokenOverrides` (RENAME_MAPS already translates legitimate renames) |
+| H4 | `tokenOverrides` keys never validated against voice/step domains → typo'd/retired keys accumulate as permanent inert orphans | 03 §B5; persist.js:664-675 (`validLead`, fixed in #461) | drop unknown-voice/step keys in `clampTokenOverrides` (RENAME_MAPS already translates legitimate renames) |
 | H5 | `clampProfile` has no rename-forward story (a FLAG_KEYS rename silently drops overrides); app-prefs/apply-consent sit outside `migrateStorageKeys()` undocumented at that site | 03 §B3–B4 | add a one-line comment at `migrateStorageKeys()` naming the exclusion as deliberate; add a rename-map seam to clampProfile only if flags ever rename |
 | H6 | `_applyBusy` has no timeout (a lost reply wedges apply for the session — narrower than D1 since code.js always answers `apply`) | 04 §B | decide: accept (document) or add a timeout fallback consistent with D1's fix |
 
@@ -86,12 +86,12 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 - `this.view` (route string) vs local `view` (`projectView` result) one underscore apart at app.js:295 (documented at app.js:594-596) — rename the route field (e.g. `this.route`) or the locals.
 - `disconnectedCallback` teardown set asymmetric with what connectedCallback registers (`_liveRaf`, `_dragTimer`, `_toastT`, window-level drag listeners) — inert for a page-lifetime singleton; either complete the inventory or comment why it's deliberately partial (01 §B6, 04 §D).
 - Stale copy in `graphGeomComposition` (geometry.js:683) contradicts its own card title — font DOES still compose from Type's UI-control voice (02 §B6).
-- `_okL` (`src/engine/tonal.js:347`) module-level memo Map is the one true exception to "engines are pure, no module state" — bounded and harmless; worth one comment acknowledging it (04 §B).
+- `_okL` (`src/engine/tonal.js:829`) module-level memo Map is the one true exception to "engines are pure, no module state" — bounded and harmless; worth one comment acknowledging it (04 §B).
 
 ## Deliberately fine — do not "fix"
 
 - The mixin-flattened `this` (file organization, not encapsulation) — an explicit, documented
-  trade-off (`mixinInto`, app.js:2540-2544); H2's collision guard is the cheap insurance, not a redesign.
+  trade-off (`mixinInto`, app.js:2551-2555); H2's collision guard is the cheap insurance, not a redesign.
 - Color-only `liveRefresh` / the Type-Geom drag freeze until settle — canon (foundations §3),
   self-documented, intended UX.
 - The one-shot latches `_figmaProbed`/`_figmaFontsRequested` — documented fire-once by design.

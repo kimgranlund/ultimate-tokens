@@ -41,9 +41,20 @@ else if (!v.plot[0].points || !v.plot[0].points[0] || !("applied" in v.plot[0].p
 if (!Array.isArray(v.contrast) || v.contrast.length === 0) FAIL("model", "no contrast data");
 
 // ── live edit re-projects (no stored derived state) ──────────────────────────────────────
-const edited = JSON.parse(JSON.stringify(doc)); edited.palettes[1].hue = (edited.palettes[1].hue + 90) % 360;
+// Mutates BOTH `hue` and `skew`, reused below (line ~72) as the shared "live edit" fixture for two
+// DIFFERENT probes with different sensitivities. Every DEFAULT_PALETTES entry carries `anchor`
+// (ticket #681, U1/Q2 (b)); an anchored ramp deliberately ignores `hue`/`chroma` (tonal.js's
+// anchored branch — those two fields are the UI-level detach trigger, Q6/U2's C12, never read by
+// the engine while `anchor` is present), so `hue` ALONE no longer moves projectView's ramp — `skew`
+// still warps an anchored ramp on both sides of its fixed pivot. Conversely, paletteKeyColors's
+// identity swatch (deriveKeyColor, model.mjs:874) is plain hue/chroma-derived and knows nothing of
+// `anchor` at all, so `skew` ALONE would leave IT unchanged. Mutating both keeps one fixture valid
+// for both downstream assertions.
+const edited = JSON.parse(JSON.stringify(doc));
+edited.palettes[1].skew = ((edited.palettes[1].skew + 130 + 100) % 200) - 100;
+edited.palettes[1].hue = (edited.palettes[1].hue + 60) % 360;
 const v2 = M.projectView(edited);
-if (v2.palettes[1].ramp[12] && v.palettes[1].ramp[12] && v2.palettes[1].ramp[12].hex === v.palettes[1].ramp[12].hex) FAIL("model", "editing hue did not change the projected ramp (stale/stored derived state?)");
+if (v2.palettes[1].ramp[12] && v.palettes[1].ramp[12] && v2.palettes[1].ramp[12].hex === v.palettes[1].ramp[12].hex) FAIL("model", "editing skew did not change the projected ramp (stale/stored derived state?)");
 
 // ── paletteKeyColors: the cheap tile-only alternative to projectView (gallery/list rendering —
 // presetTile, buildTiles). Must stay identity-matched to projectView's own .key/.name/.on/.colorRole,
@@ -182,7 +193,7 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
       if (!row) { FAIL("ac003b", `fixture missing palette "${p.name}"`); continue; }
       if (JSON.stringify(row) !== JSON.stringify(got)) FAIL("ac003b", `projectView(defaultDocument()) has drifted from the pinned fixture at palette "${p.name}" — regenerate with scripts/gen-ramp-fixture.mjs only if the drift is intentional`);
       const rc = M.rampChromaOf(p, dd);
-      const direct = paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, ctl, EXPORT_STOPS).map((s) => s.hex);
+      const direct = paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift, anchor: p.anchor }, ctl, EXPORT_STOPS).map((s) => s.hex);
       if (rc === p.chroma) {
         if (JSON.stringify(row) !== JSON.stringify(direct)) FAIL("ac003b", `REQ-003 identity: "${p.name}" has chroma === rampChroma (${p.chroma}) but its fixture row differs from the direct chroma-${p.chroma} call`);
       } else if (JSON.stringify(row) === JSON.stringify(direct)) {
@@ -204,13 +215,13 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
   const ctl = { ...M.DEFAULT_CONTROLS, toneMode: dd.toneMode, hueSpace: dd.hueSpace, lmin: dd.lmin, lmax: dd.lmax, damp: dd.damp, dampCurve: dd.dampCurve, dampAmp: dd.dampAmp, dampBias: dd.dampBias, curve: dd.curve, tension: dd.tension, relChroma: dd.relChroma, chromaFloor: dd.chromaFloor, vibrancy: dd.vibrancy };
   const neutral = dd.palettes.find((p) => p.name === "Neutral");
   const neutralGot = dv.palettes.find((p) => p.name === "Neutral").fullRamp.map((s) => s.hex);
-  const neutralWant = paletteStops({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift }, ctl, EXPORT_STOPS).map((s) => s.hex);
+  const neutralWant = paletteStops({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift, anchor: neutral.anchor }, ctl, EXPORT_STOPS).map((s) => s.hex);
   if (JSON.stringify(neutralGot) !== JSON.stringify(neutralWant)) FAIL("ac007", "Neutral's ramp does not equal its own chroma-30 ramp (Material's default)");
   for (let i = 1; i <= 8; i++) {
     const name = `Data ${i}`;
     const dp = dd.palettes.find((p) => p.name === name);
     const got = dv.palettes.find((p) => p.name === name).fullRamp.map((s) => s.hex);
-    const want = paletteStops({ hue: dp.hue, chroma: 100, skew: dp.skew, lift: dp.lift }, ctl, EXPORT_STOPS).map((s) => s.hex);
+    const want = paletteStops({ hue: dp.hue, chroma: 100, skew: dp.skew, lift: dp.lift, anchor: dp.anchor }, ctl, EXPORT_STOPS).map((s) => s.hex);
     if (JSON.stringify(got) !== JSON.stringify(want)) { FAIL("ac007", `${name}'s ramp does not equal its own chroma-100 ramp (Data's default)`); break; }
   }
 }

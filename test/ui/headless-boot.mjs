@@ -1430,13 +1430,17 @@ for (const c of SI) {
       `(hh) category "${c.slug}" loads ${CATEGORY_PRESETS} presets × ${CATEGORY_PRESET_PALETTES} palettes`);
   }
 }
-// lift-anchoring (EVEN mode): a LIGHT dominant must open LIGHT, not the old mid-dark L*≈46 grey.
-// This is the "colors look really wrong" fix. Keyed on any preset whose primary source is light.
+// anchoring (EVEN mode): a LIGHT dominant must open LIGHT, not the old mid-dark L*≈46 grey. This was
+// the "colors look really wrong" fix, originally a lift fit to stop 550; ticket #681 U2 retired that
+// fit (stop 550 was never the ruled anchor token) in favor of pinning the ramp's stop 500 to the
+// palette's own stored `anchor` exactly (Q1 ruled) — so the assertion now reads stop 500 directly,
+// the stop the anchor guarantees byte-exact, rather than 550's own approximate neighbourhood.
+// Keyed on any preset whose primary source is light.
 const { projectView: _pvHH } = await import("../../src/ui/model.mjs");
 const { hydrate: _hydHH } = await import("../../src/ui/persist.js");
 const _light = TP.find((p) => p.palettes[1].keyColors[0].oklch[0] > 0.85); // primary (after the neutral at [0])
-const _lightPrime = _pvHH(_hydHH({ ..._light, toneMode: "even" })).palettes[1].ramp.find((s) => s.stop === 550);
-ok(_lightPrime.tone > 72, `(hh) [even] lift anchors the prime to source lightness — a light dominant opens LIGHT (550 L*=${_lightPrime.tone.toFixed(0)})`);
+const _lightAnchor = _pvHH(_hydHH({ ..._light, toneMode: "even" })).palettes[1].ramp.find((s) => s.stop === 500);
+ok(_lightAnchor.tone > 72, `(hh) [even] the anchor pins the ramp to source lightness at stop 500 — a light dominant opens LIGHT (500 L*=${_lightAnchor.tone.toFixed(0)})`);
 app.toGallery(); flushRaf();
 // the HUB shows a category card per category (not the presets directly)
 ok(app.querySelectorAll(".category-card").length === CATEGORIES, `(hh) the gallery hub renders a category card per category (got ${app.querySelectorAll(".category-card").length})`);
@@ -1852,6 +1856,111 @@ ok(!!segRow && /OKLCH/.test(segTxt) && /CAM16/.test(segTxt) && /Fixed/.test(segT
 const onFks = []; const walkOn = (n) => { if (n.classList && n.classList.contains("on") && n.attrs && n.attrs["data-fk"]) onFks.push(n.attrs["data-fk"]); (n.children || []).forEach(walkOn); }; if (segRow) walkOn(segRow);
 ok(onFks.includes("huespace:cam16") && onFks.includes("oncolor:contrast"), `(gc) the active segment reflects the doc (cam16 / contrast) (got ${onFks.join()})`);
 app.doc.hueSpace = "oklch"; app.doc.onColorMode = "fixed"; app.render(); flushRaf(); // restore
+
+// ── (hs) Q-D (ticket #681, U2, ruled + verified): hueSpace's doc-level control disables itself,
+// with a reason, when EVERY palette is anchored and toneMode is perceptual/peak - an anchored
+// palette's hue there is read straight off its anchor, so the control moves it only by 8-bit
+// rounding (anchor.mjs's hueSpace-perceptual/peak-bound gates that same claim on the engine side).
+// It stays live in "even" (a real Abney correction there, Finding 1), and live whenever at least
+// one palette is detached - a NON-anchored palette DOES read hueSpace in every mode (tonal.js's
+// okhslStops, non-anchored, calls effHue/solveOkhslHue against controls.hueSpace directly).
+// The shim's querySelector supports only a single class (see this file's own header note), so
+// data-fk lookups walk the tree by hand, matching the existing (gc) hueSpace block just above.
+const findByFk = (root, fk) => {
+  let found = null;
+  const walk = (n) => { if (found || !n) return; if (n.attrs && n.attrs["data-fk"] === fk) { found = n; return; } (n.children || []).forEach(walk); };
+  walk(root);
+  return found;
+};
+// A FRESH defaultDocument(), in its OWN throwaway set — many earlier groups in this shared-`app`
+// file detach a palette's anchor (Q6/resetAnchor tests) and app.sets[0]'s SAVED doc can carry that
+// forward, so hs1/hs2 need a known "every palette anchored" starting point. A dedicated set (rather
+// than `app.doc = defaultDocumentHS()` in place) matters here specifically because THIS block calls
+// commit() several times, and commit()'s save() writes into `this.sets.find(s => s.id ===
+// this.activeId)` — reusing app.sets[0]'s slot while activeId still pointed at it would silently
+// overwrite it with this block's own throwaway mutations, corrupting state every later block that
+// re-opens app.sets[0] depends on (this broke (bpc5d) downstream before this fix).
+const { defaultDocument: defaultDocumentHS } = await import("../../src/ui/model.mjs");
+app.sets.push({ id: "hs-test-set", name: "hs-test", doc: defaultDocumentHS(), updated: Date.now() });
+app.openSet("hs-test-set");
+app.setSegment("global"); flushRaf();
+const hueSpaceDocDisabled = () => { const b = findByFk(app, "huespace:oklch"); return !!b && b.disabled === true && b.getAttribute("aria-disabled") === "true"; };
+app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
+ok(hueSpaceDocDisabled(), "(hs1) doc-level Hue space disables in perceptual mode when every palette is anchored (untouched default kit)");
+ok(/Hue follows the anchor/.test(gcText()), "(hs1b) the disabled reason is visible in the panel");
+app.commit((doc) => (doc.toneMode = "peak")); flushRaf();
+ok(hueSpaceDocDisabled(), "(hs2) doc-level Hue space ALSO disables in peak mode when every palette is anchored");
+app.commit((doc) => (doc.toneMode = "even")); flushRaf();
+ok(!hueSpaceDocDisabled(), "(hs3) doc-level Hue space stays enabled in even mode regardless of anchoring");
+app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
+app.commit((doc) => { delete doc.palettes[0].anchor; }); flushRaf();
+ok(!hueSpaceDocDisabled(), "(hs4) detaching one palette (Q6) re-enables the doc-level control in perceptual - it is no longer true that every palette is anchored");
+app.undo(); flushRaf(); // restore palette 0's anchor
+
+// per-palette inspector note: anchored + perceptual/peak shows the reason; even, or a detached
+// palette, shows nothing (informational only - it never becomes a second, live control).
+app.setSegment("palette"); app.selectPalette(0); flushRaf();
+app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
+ok(!!findByFk(app, "huespace-palette-reason"), "(hs5) the per-palette inspector shows the hueSpace note for an anchored palette in perceptual");
+app.commit((doc) => (doc.toneMode = "even")); flushRaf();
+ok(!findByFk(app, "huespace-palette-reason"), "(hs6) the note is absent in even mode (hueSpace is live there)");
+app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
+app.commit((doc) => { delete doc.palettes[0].anchor; }); flushRaf();
+ok(!findByFk(app, "huespace-palette-reason"), "(hs7) the note is absent for a detached (non-anchored) palette even in perceptual");
+app.undo(); flushRaf();
+
+// negative control (Q-D): the disabled-predicate above must actually tell a disabled render apart
+// from an enabled one, or (hs1)/(hs2) could pass vacuously on a rendering bug that left the control
+// enabled. Call the SAME this.segmented() the app itself uses - once forced disabled (the shipped
+// path for anchored perceptual/peak) and once forced enabled (the pre-fix shape, the one the
+// inspector test must red on) - and prove the predicate reads them apart, the same checks-that-bite
+// pattern as the engine-side gates (anchor.mjs's checkFloors/notchOk negative controls).
+const segForcedOff = app.segmented([{ id: "oklch", label: "OKLCH" }], "oklch", () => {}, { idPrefix: "huespace", role: "group", disabled: true, disabledReason: "test" });
+const segForcedOn = app.segmented([{ id: "oklch", label: "OKLCH" }], "oklch", () => {}, { idPrefix: "huespace", role: "group", disabled: false });
+const isDisabledBtn = (seg) => { const b = seg.children[0]; return !!b && b.disabled === true && b.getAttribute("aria-disabled") === "true"; };
+ok(isDisabledBtn(segForcedOff) === true && isDisabledBtn(segForcedOn) === false, "(hs8) negative control: the disabled-predicate DOES tell a disabled segmented control apart from an enabled one - rendering the doc-level control enabled for anchored perceptual/peak would red (hs1)/(hs2), not pass silently");
+
+// tear down the throwaway set — app.sets[0] was never touched (this block only ever wrote into its
+// own "hs-test-set" slot), so reopening it hands every later block back exactly what it expected.
+app.sets = app.sets.filter((s) => s.id !== "hs-test-set");
+app.openSet(app.sets[0].id); flushRaf();
+
+// (hs9) review pass 4, addendum 2: a MIXED doc - palette 0 anchored, palette 1 detached. The
+// doc-level rule (`d.palettes.every((p) => p.anchor)`, renderGlobalInspector) and the per-palette
+// note's rule (`p.anchor`, renderPaletteInspector, independent of its siblings) are separate
+// predicates; hs1-hs7 only ever exercised a doc where every palette shared one state (all-anchored,
+// or all-detached-by-one via undo), so they cannot tell the two rules apart. This mixed doc can.
+app.sets.push({ id: "hs9-test-set", name: "hs9-test", doc: defaultDocumentHS(), updated: Date.now() });
+app.openSet("hs9-test-set");
+app.commit((doc) => { delete doc.palettes[1].anchor; }); flushRaf();
+for (const mode of ["perceptual", "peak"]) {
+  app.setSegment("global"); flushRaf();
+  app.commit((doc) => (doc.toneMode = mode)); flushRaf();
+  ok(
+    !hueSpaceDocDisabled(),
+    `(hs9) doc-level Hue space stays ENABLED in ${mode} for a mixed doc (palette 0 anchored, palette 1 detached) - not every palette is anchored`,
+  );
+  app.setSegment("palette"); app.selectPalette(0); flushRaf();
+  ok(
+    !!findByFk(app, "huespace-palette-reason"),
+    `(hs9) palette 0 (anchored) still shows the hueSpace note in ${mode}, even though the doc-level control is enabled`,
+  );
+  app.setSegment("palette"); app.selectPalette(1); flushRaf();
+  ok(!findByFk(app, "huespace-palette-reason"), `(hs9) palette 1 (detached) shows no hueSpace note in ${mode}`);
+}
+// negative control: if the per-palette rule were swapped for the doc-level "every palette anchored"
+// rule, palette 0's own note would wrongly vanish in this exact mixed doc (not every palette is
+// anchored) - proving (hs9) above actually exercises the real per-palette-only predicate, not a copy
+// of the doc-level one. app.doc.toneMode is "peak" here (the loop's last iteration), so this matches
+// the real predicate's own "!== even" guard.
+const wrongPerPaletteRule = (p, doc) =>
+  p.anchor && doc.toneMode !== "even" && doc.palettes.length > 0 && doc.palettes.every((pp) => pp.anchor);
+ok(
+  wrongPerPaletteRule(app.doc.palettes[0], app.doc) === false,
+  "(hs9) negative control: swapping the per-palette rule for the doc-level 'every palette anchored' rule reds here - palette 0's note would wrongly vanish in this mixed doc, proving (hs9) exercises the real per-palette predicate, not the doc-level one",
+);
+app.sets = app.sets.filter((s) => s.id !== "hs9-test-set");
+app.openSet(app.sets[0].id); flushRaf();
 
 // ── (px) primitive a11y contracts — the refactor's guarantees (component-inventory.md) ──
 app.openSet(app.sets[0].id); app.commit((doc) => (doc.toneMode = "even")); app.setSegment("global"); flushRaf();
@@ -3266,8 +3375,8 @@ flushRaf();
   ok(pgGID(neutral) === "material", "(gid1) Neutral defaults to the Material group");
   ok(rcGID(neutral, freshDoc) === 30, `(gid1b) rampChromaOf(Neutral) resolves to Material's default 30 (got ${rcGID(neutral, freshDoc)})`);
   const ctlGID = { toneMode: freshDoc.toneMode, hueSpace: freshDoc.hueSpace, lmin: freshDoc.lmin, lmax: freshDoc.lmax, damp: freshDoc.damp, dampCurve: freshDoc.dampCurve, dampAmp: freshDoc.dampAmp, dampBias: freshDoc.dampBias, curve: freshDoc.curve, tension: freshDoc.tension, relChroma: freshDoc.relChroma, chromaFloor: freshDoc.chromaFloor, vibrancy: freshDoc.vibrancy };
-  const direct30 = psGID({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir }, ctlGID, esGID);
-  const direct100 = psGID({ hue: neutral.hue, chroma: 100, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir }, ctlGID, esGID);
+  const direct30 = psGID({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
+  const direct100 = psGID({ hue: neutral.hue, chroma: 100, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
   ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) === JSON.stringify(direct30.map((s) => s.hex)), "(gid2) a fresh doc's Neutral ramp equals a direct engine call at chroma 30 (Material's default)");
   ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) !== JSON.stringify(direct100.map((s) => s.hex)), "(gid3) a fresh doc's Neutral ramp differs from the legacy chroma-100 ramp — visibly muted, not a no-op");
 
@@ -3605,6 +3714,190 @@ flushRaf();
   app.setCanvasView("radix"); flushRaf();
 
   app.canvasView = rxpView0; app.colorMode = rxpMode0; app.render(); flushRaf();
+}
+
+// ── (rst) Reset re-attaches a detached anchored palette (ticket #681, U2's C12; Q6) ─────────────
+// Opens a REAL curated preset (openConfigAsSet — the same entry point the gallery tile's onclick
+// uses, per the (hh) group's own comment above; that group already covers the tile's OWN wiring, so
+// a direct call here is enough) rather than the default kit, purely to stay independent of (hh)'s own
+// state — NOT because the default kit is unsafe for this assertion (R8, review pass 2, 2026-09-18: the
+// OLD reasoning here, that the default kit's hand-tuned chroma would not round-trip a RE-DERIVATION,
+// is stale — Finding 3/F7's fix made Reset restore an EXACT pre-detach SNAPSHOT, never re-derive, so it
+// round-trips ANY palette's hue/chroma/lift byte-exactly, hand-tuned or not; see resetAnchor's own
+// comment in src/ui/sections/color.js). (rst-corpus) below now exercises the default kit directly
+// (R9), so this single-palette test's own fixture choice does not need to change to prove that.
+{
+  const { projectView: pvRST, seedFromKeyColor, hexToOklch } = await import("../../src/ui/model.mjs");
+  const rstPreset = TP[1]; // a different preset than (hh)'s TP[0], independent of that group's state
+  app.openConfigAsSet(rstPreset, null, { mintData: false });
+  app.setSection("color"); app.colorMode = "light";
+  app.selectPalette(1); app.render(); flushRaf(); // palettes[1] = "primary" (palettes[0] = "neutral")
+
+  const idx = 1;
+  const p0 = app.doc.palettes[idx];
+  ok(p0.name === "primary", `(rst-setup) test setup: palettes[1] is "primary" (got ${p0.name})`);
+  ok(!!p0.anchor && !!p0.sourceAnchor, "(rst0) the opened preset's primary palette starts anchored, with a sourceAnchor to restore from");
+  // Stamp a NON-ZERO lift before detaching (re-diagnosis Finding 3 / review F7): the OLD re-derivation
+  // bug always reset lift to 0 regardless of what it held before, so a fixture at lift 0 could pass
+  // BOTH the old buggy code and the new snapshot-based fix — proving nothing about which one is
+  // running. A non-zero pre-detach lift only round-trips under the NEW exact-snapshot restoration.
+  app.commit((d) => (d.palettes[idx].lift = -15));
+  const p0b = app.doc.palettes[idx];
+  const anchorBefore = p0b.anchor, sourceAnchorBefore = p0b.sourceAnchor, hueBefore = p0b.hue, chromaBefore = p0b.chroma, liftBefore = p0b.lift;
+  ok(liftBefore === -15, `(rst0b) test setup: lift stamped to a non-zero value before detach (got ${liftBefore})`);
+  const viewBefore = pvRST(app.doc).palettes[idx];
+  const rampBefore = viewBefore.ramp.map((s) => s.hex);
+  const primeBefore = JSON.stringify(viewBefore.prime);
+
+  // drag Hue by +10 — the detach trigger, through the REAL slider (findFk + a dispatched input event),
+  // never app.commit called directly — the (gid)/(rst1)-(rst4) discipline throughout this group.
+  const hueInput = findFk("slider:Hue");
+  const newHue = (hueBefore + 10) % 360;
+  hueInput.value = String(newHue);
+  hueInput.dispatch("input", {});
+  app.commitDrag();
+  ok(app.doc.palettes[idx].anchor === undefined, "(rst1) a Hue edit drops `anchor`");
+  ok(app.doc.palettes[idx].sourceAnchor === sourceAnchorBefore, "(rst1b) `sourceAnchor` survives the edit untouched");
+  ok(app.doc.palettes[idx].hue === newHue, `(rst1c) the Hue slider still writes palettes[i].hue (got ${app.doc.palettes[idx].hue}, want ${newHue})`);
+  ok(app.doc.palettes[idx].preDetachHue === hueBefore && app.doc.palettes[idx].preDetachChroma === chromaBefore && app.doc.palettes[idx].preDetachLift === liftBefore,
+    `(rst1e) the Hue drag stamps the exact pre-detach snapshot (got hue=${app.doc.palettes[idx].preDetachHue}/chroma=${app.doc.palettes[idx].preDetachChroma}/lift=${app.doc.palettes[idx].preDetachLift}, want ${hueBefore}/${chromaBefore}/${liftBefore})`);
+  const primeAfterEdit = JSON.stringify(pvRST(app.doc).palettes[idx].prime);
+  ok(primeAfterEdit !== primeBefore, "(rst1d) the prime strip actually moved (a real detach, not a no-op)");
+
+  // click Reset — the button itself, rendered only while sourceAnchor is present and anchor absent.
+  app.render(); flushRaf();
+  const resetBtnText = (e) => (e._text || "") + (e.children || []).map(resetBtnText).join("");
+  const resetBtn = walk(app.querySelector(".right-pane") || app, (e) => e.tagName === "BUTTON" && /Reset to source color/.test(resetBtnText(e)))[0];
+  ok(!!resetBtn, "(rst2) the Reset button renders once the palette is detached");
+  if (resetBtn) resetBtn.click();
+  flushRaf();
+  const afterReset = app.doc.palettes[idx];
+  ok(afterReset.anchor === anchorBefore, `(rst3) Reset restores anchor (got ${afterReset.anchor}, want ${anchorBefore})`);
+  ok(afterReset.hue === hueBefore && afterReset.chroma === chromaBefore, `(rst3b) Reset restores the EXACT pre-detach hue/chroma snapshot, never re-derived (got hue=${afterReset.hue}/chroma=${afterReset.chroma}, want hue=${hueBefore}/chroma=${chromaBefore})`);
+  ok(afterReset.lift === liftBefore, `(rst3c) Reset restores the EXACT pre-detach lift snapshot, -15, never re-derived to 0 (got ${afterReset.lift})`);
+  ok(afterReset.preDetachHue === undefined && afterReset.preDetachChroma === undefined && afterReset.preDetachLift === undefined, "(rst3d) the snapshot fields are cleared once restored — nothing left to restore");
+  const viewAfterReset = pvRST(app.doc).palettes[idx];
+  ok(JSON.stringify(viewAfterReset.ramp.map((s) => s.hex)) === JSON.stringify(rampBefore), "(rst4) all 19 ramp hexes deep-equal the pre-edit capture after Reset");
+  ok(JSON.stringify(viewAfterReset.prime) === primeBefore, "(rst4b) all 7 prime rungs deep-equal the pre-edit capture after Reset");
+
+  // skew/lift edits do NOT detach — driven through the REAL Skew/Lift sliders (re-diagnosis Finding 4
+  // / review F6: (rst5)/(rst5b) previously called app.commit directly, never through the sliders
+  // themselves — proven vacuous, since the sliders render only in EVEN mode and the assertions never
+  // switched to it). Switch to even mode first (direct set, no undo step — the same pattern this
+  // file's own Tension/global-tab groups use to expose an even-mode-only control).
+  app.doc.toneMode = "even"; app.render(); flushRaf();
+  const skewInput = findFk("slider:Skew");
+  ok(!!skewInput, "(rst5-setup) the Skew slider renders in even mode");
+  const skewBefore = app.doc.palettes[idx].skew || 0;
+  skewInput.value = String(((skewBefore + 20 + 100) % 200) - 100);
+  skewInput.dispatch("input", {});
+  app.commitDrag();
+  ok(app.doc.palettes[idx].anchor === anchorBefore, "(rst5) a REAL Skew slider drag keeps `anchor`");
+  const liftInput = findFk("slider:Lift");
+  ok(!!liftInput, "(rst5b-setup) the Lift slider renders in even mode");
+  const liftBefore2 = app.doc.palettes[idx].lift || 0;
+  liftInput.value = String(Math.max(-40, Math.min(40, liftBefore2 + 5)));
+  liftInput.dispatch("input", {});
+  app.commitDrag();
+  ok(app.doc.palettes[idx].anchor === anchorBefore, "(rst5b) a REAL Lift slider drag keeps `anchor`");
+  app.doc.toneMode = "perceptual"; app.render(); flushRaf();
+
+  // negative control (re-diagnosis Finding 4 / review F6): a total no-op stub is TAUTOLOGICAL — no
+  // function can fail to set `anchor` when it does literally nothing, so it never demonstrated
+  // (rst3)'s own predicates have real discriminating power. Stub `resetAnchor` with the OLD, PRE-FIX
+  // re-derivation behavior instead (restores `anchor`, but re-derives hue/chroma via seedFromKeyColor
+  // and always zeros lift) and confirm it does NOT satisfy (rst3b)/(rst3c)'s exact-match predicates —
+  // this is the REAL regression class Finding 3 fixes, so the control now proves those two assertions
+  // would have caught the actual bug, not just an impossible one.
+  {
+    const realResetAnchor = app.resetAnchor;
+    app.resetAnchor = function oldStyleResetAnchor(i) {
+      const p = this.doc.palettes[i];
+      if (!p || !p.sourceAnchor || p.anchor) return;
+      const s = seedFromKeyColor(hexToOklch(p.sourceAnchor), this.doc.hueSpace);
+      if (!s) return;
+      this.commit((d) => {
+        d.palettes[i].anchor = p.sourceAnchor;
+        d.palettes[i].hue = s.hue;
+        d.palettes[i].chroma = s.chroma;
+        d.palettes[i].lift = 0;
+      });
+    };
+    app.commit((d) => { d.palettes[idx].lift = -15; d.palettes[idx].hue = (d.palettes[idx].hue + 10) % 360; if (d.palettes[idx].anchor) delete d.palettes[idx].anchor; });
+    ok(app.doc.palettes[idx].anchor === undefined, "(rst6) setup: the stub scenario starts detached, same as (rst1)");
+    app.resetAnchor(idx); // the OLD-style stub — restores anchor, but re-derives hue/chroma and zeros lift
+    const stubAfter = app.doc.palettes[idx];
+    ok(stubAfter.anchor === anchorBefore, "(rst6a) the old-style stub DOES restore anchor (proving this alone is not enough to catch the regression)");
+    const stubMatchesSnapshot = stubAfter.lift === -15 && stubAfter.hue === hueBefore && stubAfter.chroma === chromaBefore;
+    ok(stubMatchesSnapshot === false, "(rst6b) negative control: the OLD-style stub (re-derive + zero lift) does NOT satisfy (rst3b)/(rst3c)'s exact-snapshot predicates — proving they have real teeth against the actual pre-fix regression, not just an impossible no-op");
+    app.resetAnchor = realResetAnchor; // restore the real method
+    app.resetAnchor(idx); // leave the doc clean for whatever runs after this block
+  }
+}
+
+// (rst-corpus) extend C12's coverage from one sample palette to the FULL anchored corpus across ALL
+// EIGHT categories plus the default kit (R9, review pass 2, 2026-09-18 — the prior pass covered 4 of 8
+// categories and checked fields only, never a rendered ramp; review 2 flagged both gaps) —
+// programmatic, not via real slider drags (thousands of real DOM interactions would blow the suite's
+// time budget): for every anchored palette, detach via the REAL `detachSnapshot` method at a DETUNED
+// pre-detach hue/chroma/lift (never the anchor's own seedFromKeyColor-derivable values, so a passing
+// round trip can only be the snapshot restoring exactly, never re-derivation coincidentally matching),
+// call the REAL `resetAnchor`, and assert exact restoration — both at the FIELD level (anchor/hue/
+// chroma/lift) and, per R9, by comparing the FULL `projectView` 25-stop ramp rendered from the
+// restored palette against a reference ramp captured from the SAME palette before it was ever
+// detuned/detached (same doc-level controls both times — only `app.doc.palettes` is swapped, matching
+// the rest of this block's own pattern). A field match with a ramp mismatch would mean some other
+// state (a cache, a second copy) diverged from the fields Reset itself writes — the ramp comparison is
+// a strictly stronger claim than the field-only check the prior pass shipped.
+{
+  const corpusPresets = [...TPm.PRESETS, ...LITm, ...FILMm, ...BRANDSm];
+  for (const slug of ["architecture", "cuisine", "music", "nature"]) {
+    const { PRESETS } = await LS(slug);
+    corpusPresets.push(...PRESETS);
+  }
+  const { defaultDocument: defaultDocumentRSTC, projectView: pvRSTC } = await import("../../src/ui/model.mjs");
+  const { hydrate: hydrateRSTC } = await import("../../src/ui/persist.js");
+  const dkDoc = defaultDocumentRSTC();
+  corpusPresets.push({ name: "default kit", palettes: dkDoc.palettes, ...dkDoc });
+  let corpusChecked = 0, corpusFails = 0, rampChecked = 0, rampFails = 0;
+  for (const preset of corpusPresets) {
+    for (const pal of preset.palettes) {
+      if (typeof pal.anchor !== "string") continue;
+      const detunedHue = (pal.hue + 37) % 360;
+      const detunedChroma = Math.max(0, Math.min(100, pal.chroma - 13));
+      const detunedLift = -17;
+      const pBeforeDetach = { ...pal, hue: detunedHue, chroma: detunedChroma, lift: detunedLift };
+      // Reference ramp: rendered from `pBeforeDetach` itself, the EXACT state `detachSnapshot` stamps
+      // and `resetAnchor` must restore -- NOT from the original, undetuned `pal` (hue does not even
+      // reach the render for an anchored palette, since the anchored branches read the ANCHOR's own
+      // hue, not `palette.hue` -- but chroma and lift do, via `groupTarget`/`chromaEnvelope`, so a
+      // reference rendered from `pal` would legitimately differ from the correctly-restored ramp,
+      // which is what a first pass at this comparison got wrong). Hydrated first (raw category
+      // PRESETS entries lack some resolved default fields projectView expects, e.g. dampCurve/
+      // relChroma/vibrancy; `hydrate` is the SAME entry point openConfigAsSet uses, via
+      // hydrateStoredDoc, and anchor.mjs's own corpus sweep uses directly).
+      const refRamp = pvRSTC(hydrateRSTC({ ...preset, palettes: [pBeforeDetach] })).palettes[0].fullRamp.map((s) => s.hex);
+      app.doc.palettes = [pBeforeDetach];
+      app.detachSnapshot(app.doc, 0, pBeforeDetach);
+      delete app.doc.palettes[0].anchor;
+      app.resetAnchor(0);
+      const after = app.doc.palettes[0];
+      corpusChecked++;
+      if (after.anchor !== pal.anchor || after.hue !== detunedHue || after.chroma !== detunedChroma || after.lift !== detunedLift) {
+        corpusFails++;
+        if (corpusFails <= 3) ok(false, `(rst-corpus) ${preset.name} ${pal.name}: Reset did not restore the exact pre-detach snapshot (got anchor=${after.anchor} hue=${after.hue} chroma=${after.chroma} lift=${after.lift}, want anchor=${pal.anchor} hue=${detunedHue} chroma=${detunedChroma} lift=${detunedLift})`);
+      }
+      const afterRamp = pvRSTC(hydrateRSTC({ ...preset, palettes: [after] })).palettes[0].fullRamp.map((s) => s.hex);
+      rampChecked++;
+      if (JSON.stringify(afterRamp) !== JSON.stringify(refRamp)) {
+        rampFails++;
+        if (rampFails <= 3) ok(false, `(rst-corpus-ramp) ${preset.name} ${pal.name}: the restored palette's rendered ramp does not deep-equal the reference ramp captured before detach/detune`);
+      }
+    }
+  }
+  ok(corpusChecked > 3000, `(rst-corpus-setup) exercised Reset over the FULL anchored corpus, all 8 categories plus the default kit (${corpusChecked} palettes, want > 3000)`);
+  ok(corpusFails === 0, `(rst-corpus) ${corpusFails} of ${corpusChecked} anchored palettes failed the exact-snapshot field round trip`);
+  ok(rampFails === 0, `(rst-corpus-ramp) ${rampFails} of ${rampChecked} anchored palettes failed the full projectView ramp round trip`);
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────

@@ -34,7 +34,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, basename } from "node:path";
 import { cam16FromRgb, lstarFromRgb } from "../src/engine/hct.js";
-import { toneAt, DEFAULT_CONTROLS } from "../src/engine/tonal.js";
+import { DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX } from "../src/engine/tonal.js";
 import { deriveNeutral } from "../src/engine/derive.mjs";
 import { seedFromKeyColor } from "../src/ui/model.mjs";
 import { siblingWeightDefaults, bodyClassSiblingDefaults, BODY_CLASS_VOICES } from "../src/engine/type.mjs";
@@ -89,43 +89,33 @@ function tidyVolumeTitle(s) {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-// The prime role is stop 550; anchor each prime to its SOURCE lightness via `lift`.
-// `lift` is a DISPLACEMENT OF THE STOP (#648), not an additive L* offset, so the inverse is no longer
-// the algebraic `sourceL* - PRIME_TONE` this used to be — under the displacement mechanism that
-// expression misses by up to ~12 L* at the domain edges. Solve it instead: toneAt(550, 0, ·) is
-// STRICTLY INCREASING in lift (liftStop is monotone in lift, and the base curve is monotone in stop),
-// so a fixed-iteration bisection converges deterministically — no tuning, same answer on every host,
-// which matters because this output is a committed artifact under CI's drift gate. The stored value is
-// the INTEGER the schema keeps (persist.js owns the bounds, imported below), chosen as whichever of the two
-// neighbouring integers lands closer to the target rather than by blind rounding.
-// The lift domain is persist.js's, not a second copy of it: the generator, the gate and the slider
-// must clamp to the SAME range or a re-fit can store a value the app then clamps away. persist.js
-// imports in plain node (no DOM), so this is a real import rather than a restated constant.
-const LIFT_MIN = DOMAINS.palette.lift.min, LIFT_MAX = DOMAINS.palette.lift.max;
-const primeTone = (lift) => toneAt(550, 0, lift, DEFAULT_CONTROLS);
-const PRIME_TONE_MIN = primeTone(LIFT_MIN), PRIME_TONE_MAX = primeTone(LIFT_MAX);
-let liftUnreachable = 0; // sources whose lightness lies outside what the lift domain can reach
-function liftForTone(targetL) {
-  if (targetL <= PRIME_TONE_MIN) { if (targetL < PRIME_TONE_MIN) liftUnreachable++; return LIFT_MIN; }
-  if (targetL >= PRIME_TONE_MAX) { if (targetL > PRIME_TONE_MAX) liftUnreachable++; return LIFT_MAX; }
-  let lo = LIFT_MIN, hi = LIFT_MAX;
-  for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (primeTone(mid) < targetL) lo = mid; else hi = mid; }
-  const a = Math.max(LIFT_MIN, Math.min(LIFT_MAX, Math.floor(lo)));
-  const b = Math.min(LIFT_MAX, a + 1);
-  return Math.abs(primeTone(a) - targetL) <= Math.abs(primeTone(b) - targetL) ? a : b;
-}
+// The ramp now passes through the anchor at stop 500 by construction (ticket #681, U2 — src/engine/
+// tonal.js's anchored branch), so a preset no longer needs `lift` to FIT the source's lightness the
+// way it used to (the retired `liftForTone` below solved `toneAt(550, 0, lift)` for the pre-#681,
+// unanchored ramp, whose prime accent — stop 550 — was the closest thing to a "source-lightness"
+// target it had). Every anchored (sampled + status) palette stores `lift: 0`: skew/lift stay
+// available as a per-preset aesthetic warp around the now-fixed anchor (U2's per-side warp, anchored
+// at (500, the anchor's own lightness)), never as a fitted value this generator computes. Sources
+// whose OWN lightness falls outside the ramp's workable window ([RAMP_L_MIN, RAMP_L_MAX], Q3 (b))
+// are counted below and reported by name in test/engine/anchor.mjs's `anchor-ramp` allow-list — the
+// token (prime.DEFAULT) still stores that source byte-for-byte regardless; only the RAMP's own
+// stop 500 clamps to the window edge for those.
+let anchoredCount = 0, outsideWindow = 0;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const palette = (name, hex, oklch, sw) => {
   const rgb = hexToRgb(hex);
   // chroma is a %-of-peak (hue-space-agnostic) recovered from CAM16; the HUE is now the SOURCE OKLCH
   // hue (oklch[2]) so the baked-in hueSpace:"oklch" renders the curated family at its true OKLCH hue.
   const { chroma } = cam16FromRgb(rgb);
+  anchoredCount++;
+  const srcL = lstarFromRgb(rgb);
+  if (srcL < RAMP_L_MIN || srcL > RAMP_L_MAX) outsideWindow++;
   return {
     name,
     hue: ((Math.round(Number(oklch[2])) % 360) + 360) % 360, // round THEN wrap so 359.7 → 0, not 360
     chroma: Math.round(Math.min(100, Math.max(0, chroma))),
     skew: 0,
-    lift: liftForTone(lstarFromRgb(rgb)),
+    lift: 0,
     hueShift: 0,
     hueSameDir: false,
     // anchor / sourceAnchor (ticket #681, U1) — the SOURCE color, stored byte-for-byte (never
@@ -517,5 +507,5 @@ const idx =
   "export const loadCategory = (slug) => (LOADERS[slug] ? LOADERS[slug]() : Promise.resolve(null));\n";
 writeFileSync(resolve(OUTDIR, "index.js"), idx);
 console.log(`wrote ${OUTDIR}/index.js  (${index.length} categories · ${index.reduce((a, c) => a + c.count, 0)} palettes total)`);
-console.log(`prime-anchor lift: reachable range ${PRIME_TONE_MIN.toFixed(2)}..${PRIME_TONE_MAX.toFixed(2)} L* at stop 550 · ${liftUnreachable} source color(s) outside it (clamped to the domain edge)`);
+console.log(`anchor: ${anchoredCount} sampled/status palette(s) carry a byte-exact source anchor · ${outsideWindow} outside the ramp's [${RAMP_L_MIN}, ${RAMP_L_MAX}] L* window (prime.DEFAULT still exact; the ramp's own stop 500 clamps to the window edge, named in test/engine/anchor.mjs's anchor-ramp allow-list)`);
 }

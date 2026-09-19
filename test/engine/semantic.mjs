@@ -172,6 +172,63 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    OKHSL hue solver returns its best iterate and shifts a few perceptual accents by one 8-bit step;
 //    that change is folded into these numbers rather than tracked separately.
 //
+//    Re-measured whole again on top of #681 U2: every default palette now carries `anchor`, and
+//    model.mjs's projectView + exports.js's derivePalette were fixed to actually forward it into
+//    paletteStops (a "subset-object gap" — they were building narrowed object literals for the
+//    engine call that silently dropped the new `anchor` field, so the live app/exports had been
+//    silently rendering the OLD, un-anchored ramp all along). With that fixed, every family's real
+//    accent/on-color pair moved. Perceptual and peak now measure IDENTICAL ratios: the anchored
+//    branch's ladder (tonal.js's `okhslStopsAnchored`) is mode-independent by design — the anchor
+//    IS the ramp's vivid identity point already, so the even/cusp vibrancy blend that used to tell
+//    "perceptual" and "peak" apart plays no role here (see the comment above `okhslStopsAnchored`).
+//
+//    Re-measured a THIRD time (review pif-u2-review-1.md, F2): the anchored branches' saturation basis
+//    now lerps from the anchor's own measured chroma/`s` at stop 500 toward the group's resolved ramp
+//    chroma at each side's endpoint (see okhslStopsAnchored's own comment), replacing the earlier
+//    single-target basis that put a chroma notch at the pivot. Every family stayed >= AA in every
+//    mode; perceptual/peak stayed identical (the blend still keys off `anchorWarp`'s `w`, which does
+//    not depend on toneMode).
+//
+//    Re-measured a FOURTH time (U2 repair pass, re-diagnosis Findings 1+2): the F2 blend above was
+//    itself a fork (per re-diagnosis Finding 1) and is retracted; anchored chroma now routes through
+//    U3's own chromaEnvelope, keyed on liftStop, the anchor's own OKHSL s / CAM16 chroma as the pivot
+//    basis (Finding 1). The anchored tone construction also now composes toneAt's curve, tension,
+//    vibrancy and hueSpace with the pivot instead of a straight lerp (Finding 2/F4, ruled 2026-09-18:
+//    controls stay live). Both changes only move OFF-pivot stops. Consequence of F4: perceptual and
+//    peak are NO LONGER identical for anchored palettes (the gate this ticket's F4 required) — every
+//    family stayed >= the ruled AA 4.5 floor in every mode, both schemes; 46 of the 96 entries moved
+//    below their PRE-#681 (origin/main, bf2aaf6) value, none below 4.5. Recorded by name in
+//    `.sdlc/questions/pif-u2.md` Q-U2-5 (Finding 5) rather than re-pinned silently, since the F2 defect
+//    this repair pass retracts was itself downstream of that same forked blend.
+//
+//    Re-measured a FIFTH time (Q-U2-5 ruled, revision 17): Finding 1's literal, unconditional anchor
+//    basis (immediately above) broke REQ-002 — re-ruled to a BLEND, chromaEnvelope itself verbatim,
+//    its basis input shading from the anchor's own chroma/`s` at the pivot to `rampChroma` at the
+//    ramp's ends (see paletteStopsAnchored/okhslStopsAnchored's own header comments). Every family
+//    stayed >= AA 4.5 in every mode, both schemes; the numbers move only slightly from the fourth
+//    measurement above (this blend and the F2 blend it replaces target the same group value at the
+//    ramp's ends, just reached through chromaEnvelope's own shape now).
+//
+//    Re-measured a SIXTH time (addendum 2, u2-p2-brief.md): the blend's own weight now keys on
+//    `liftStop` (`anchorChromaBasis`), never `anchorWarp`'s skew-warped `w` (a local construction the
+//    ruling retired). Only the skewed default families (Neutral/Primary/Tertiary/Info/Success/Danger
+//    skew -20, Warning skew 40) moved, and only slightly; every family still stayed >= AA 4.5.
+//
+//    Re-measured a SEVENTH time (review pass 2, fix-first-2, R7, 2026-09-18) after R6 (toneAt
+//    piecewise-affine remap replacing anchorLerp's per-side double-S) and R2 (chroma-basis blend
+//    weight eased to zero slope at the pivot). Every family still stayed >= AA 4.5 in every mode, both
+//    schemes (0 cells under the floor). 41 of the 96 entries now sit below their PRE-#681 (origin/main,
+//    `bf2aaf6`) value (was 46 last pass; R6's construction change moved several back above their
+//    bf2aaf6 value too).
+//
+//    Ruled (owner, via team-lead, Q-B, 2026-09-18): pin these 41 by name as "pending U4" so nothing
+//    widens silently before the owner rules on the integrated numbers - each lowered row below carries
+//    its own inline `pending U4: <side> was <old> at bf2aaf6` note. The full by-name old/new table
+//    against `bf2aaf6` is also recorded in `.sdlc/questions/pif-u2.md` (Q-U2-5's Finding 5 section).
+//    Made a machine gate, not just a comment (review pass 3, Q-B machine check, 2026-09-18):
+//    FLOORS_BF2AAF6/PENDING_U4/checkFloors below the 96-cell sweep enforce it - reds on a 42nd
+//    unlisted drop, or on any of these 41 eroding further than its value at this commit.
+//
 //    The PARK leg (#636) checks the same pairing through the OTHER derivation — exports.js's
 //    derivedAll, which is what radixColorGroup reads for Park's `solid.bg` (step 9 = the bare accent
 //    role) and `solid.fg` (`on-accent` = the `-on-{n}` role) — on the default document AND on the
@@ -183,58 +240,58 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   // [family, light floor, dark floor] — max(AA, own measured ratio floored to 1 decimal)
   const FLOORS = {
     perceptual: [
-      ["Neutral", 5.8, 4.9],   // measured 5.89 / 4.98
-      ["Primary", 6.0, 4.8],   // measured 6.08 / 4.87
-      ["Secondary", 4.7, 6.1],   // measured 4.77 / 6.17
-      ["Tertiary", 6.7, 4.8],   // measured 6.80 / 4.86
-      ["Info", 5.7, 4.6],   // measured 5.80 / 4.64
-      ["Success", 6.1, 4.8],   // measured 6.18 / 4.87
-      ["Warning", 7.6, 4.6],   // measured 7.67 / 4.65
-      ["Danger", 7.1, 5.1],   // measured 7.17 / 5.13
-      ["Data 1", 5.0, 5.5],   // measured 5.05 / 5.58
-      ["Data 2", 5.4, 4.9],   // measured 5.40 / 4.99
-      ["Data 3", 5.2, 5.1],   // measured 5.21 / 5.17
-      ["Data 4", 4.8, 5.5],   // measured 4.84 / 5.55
-      ["Data 5", 4.5, 5.8],   // measured 4.59 / 5.90
-      ["Data 6", 4.8, 6.2],   // measured 4.82 / 6.21
-      ["Data 7", 4.7, 6.0],   // measured 4.70 / 6.07
-      ["Data 8", 4.6, 5.8],   // measured 4.61 / 5.87
+      ["Neutral", 6.8, 4.8],   // measured 6.87 / 4.86 - pending U4: dark was 4.9 at bf2aaf6
+      ["Primary", 7.1, 4.9],   // measured 7.10 / 4.98
+      ["Secondary", 5.2, 5.2],   // measured 5.24 / 5.22 - pending U4: dark was 6.1 at bf2aaf6
+      ["Tertiary", 7.8, 5.6],   // measured 7.83 / 5.64
+      ["Info", 6.7, 4.7],   // measured 6.80 / 4.76
+      ["Success", 7.1, 5.0],   // measured 7.19 / 5.07
+      ["Warning", 9.1, 5.6],   // measured 9.17 / 5.64
+      ["Danger", 8.2, 5.9],   // measured 8.21 / 5.94
+      ["Data 1", 6.0, 4.6],   // measured 6.00 / 4.68 - pending U4: dark was 5.5 at bf2aaf6
+      ["Data 2", 6.3, 4.7],   // measured 6.33 / 4.75 - pending U4: dark was 4.9 at bf2aaf6
+      ["Data 3", 6.1, 4.9],   // measured 6.10 / 4.92 - pending U4: dark was 5.1 at bf2aaf6
+      ["Data 4", 5.6, 4.7],   // measured 5.67 / 4.80 - pending U4: dark was 5.5 at bf2aaf6
+      ["Data 5", 5.4, 5.0],   // measured 5.45 / 5.06 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 6", 5.1, 5.2],   // measured 5.16 / 5.28 - pending U4: dark was 6.2 at bf2aaf6
+      ["Data 7", 5.2, 5.1],   // measured 5.29 / 5.15 - pending U4: dark was 6.0 at bf2aaf6
+      ["Data 8", 5.4, 4.9],   // measured 5.44 / 4.99 - pending U4: dark was 5.8 at bf2aaf6
     ],
     even: [
-      ["Neutral", 7.0, 4.5],   // measured 7.10 / 4.53
-      ["Primary", 7.1, 4.5],   // measured 7.16 / 4.51
-      ["Secondary", 5.2, 5.8],   // measured 5.23 / 5.84
-      ["Tertiary", 7.1, 4.5],   // measured 7.10 / 4.51
-      ["Info", 7.1, 4.5],   // measured 7.12 / 4.52
-      ["Success", 8.0, 5.1],   // measured 8.05 / 5.19
-      ["Warning", 9.4, 5.0],   // measured 9.46 / 5.02
-      ["Danger", 8.0, 5.1],   // measured 8.05 / 5.15
-      ["Data 1", 5.2, 5.8],   // measured 5.23 / 5.84
-      ["Data 2", 5.2, 5.8],   // measured 5.24 / 5.88
-      ["Data 3", 5.2, 5.8],   // measured 5.24 / 5.86
-      ["Data 4", 5.2, 5.8],   // measured 5.26 / 5.86
-      ["Data 5", 5.2, 5.8],   // measured 5.29 / 5.85
-      ["Data 6", 5.2, 5.8],   // measured 5.26 / 5.85
-      ["Data 7", 5.2, 5.8],   // measured 5.24 / 5.84
-      ["Data 8", 5.2, 5.8],   // measured 5.24 / 5.88
+      ["Neutral", 7.2, 4.6],   // measured 7.29 / 4.65
+      ["Primary", 7.5, 4.8],   // measured 7.54 / 4.80
+      ["Secondary", 5.5, 5.5],   // measured 5.58 / 5.52 - pending U4: dark was 5.8 at bf2aaf6
+      ["Tertiary", 8.2, 5.2],   // measured 8.28 / 5.26
+      ["Info", 7.2, 4.6],   // measured 7.22 / 4.61
+      ["Success", 7.6, 4.9],   // measured 7.68 / 4.94 - pending U4: light was 8.0 at bf2aaf6, dark was 5.1 at bf2aaf6
+      ["Warning", 9.9, 5.2],   // measured 9.94 / 5.29
+      ["Danger", 8.7, 5.6],   // measured 8.74 / 5.63
+      ["Data 1", 6.2, 4.9],   // measured 6.30 / 4.93 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 2", 6.6, 4.6],   // measured 6.69 / 4.66 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 3", 6.4, 4.8],   // measured 6.50 / 4.81 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 4", 6.0, 5.1],   // measured 6.04 / 5.12 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 5", 5.7, 5.3],   // measured 5.78 / 5.34 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 6", 5.5, 5.5],   // measured 5.55 / 5.57 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 7", 5.6, 5.4],   // measured 5.68 / 5.48 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 8", 5.8, 5.3],   // measured 5.84 / 5.30 - pending U4: dark was 5.8 at bf2aaf6
     ],
     peak: [
-      ["Neutral", 6.2, 4.5],   // measured 6.26 / 4.51
-      ["Primary", 6.4, 4.6],   // measured 6.44 / 4.63
-      ["Secondary", 11.5, 15.1],   // measured 11.55 / 15.20
-      ["Tertiary", 7.5, 5.5],   // measured 7.57 / 5.58
-      ["Info", 5.0, 7.7],   // measured 5.07 / 7.72
-      ["Success", 7.2, 11.8],   // measured 7.21 / 11.87
-      ["Warning", 4.8, 7.4],   // measured 4.82 / 7.49
-      ["Danger", 7.1, 5.1],   // measured 7.17 / 5.13
-      ["Data 1", 10.0, 6.7],   // measured 10.00 / 6.78
-      ["Data 2", 4.7, 5.5],   // measured 4.80 / 5.59
-      ["Data 3", 5.2, 5.1],   // measured 5.25 / 5.16
-      ["Data 4", 6.3, 8.7],   // measured 6.35 / 8.76
-      ["Data 5", 12.8, 16.7],   // measured 12.82 / 16.79
-      ["Data 6", 11.6, 15.0],   // measured 11.64 / 15.10
-      ["Data 7", 11.8, 15.5],   // measured 11.88 / 15.55
-      ["Data 8", 6.3, 8.8],   // measured 6.38 / 8.84
+      ["Neutral", 7.2, 4.6],   // measured 7.21 / 4.66
+      ["Primary", 7.4, 4.7],   // measured 7.44 / 4.77
+      ["Secondary", 5.5, 5.6],   // measured 5.53 / 5.60 - pending U4: light was 11.5 at bf2aaf6, dark was 15.1 at bf2aaf6
+      ["Tertiary", 8.2, 5.3],   // measured 8.20 / 5.39 - pending U4: dark was 5.5 at bf2aaf6
+      ["Info", 7.0, 4.5],   // measured 7.10 / 4.57 - pending U4: dark was 7.7 at bf2aaf6
+      ["Success", 7.6, 4.8],   // measured 7.60 / 4.88 - pending U4: dark was 11.8 at bf2aaf6
+      ["Warning", 9.6, 5.2],   // measured 9.69 / 5.28 - pending U4: dark was 7.4 at bf2aaf6
+      ["Danger", 8.6, 5.6],   // measured 8.63 / 5.68
+      ["Data 1", 6.3, 4.9],   // measured 6.34 / 4.99 - pending U4: light was 10.0 at bf2aaf6, dark was 6.7 at bf2aaf6
+      ["Data 2", 6.6, 4.5],   // measured 6.63 / 4.55 - pending U4: dark was 5.5 at bf2aaf6
+      ["Data 3", 6.4, 4.7],   // measured 6.43 / 4.72 - pending U4: dark was 5.1 at bf2aaf6
+      ["Data 4", 5.9, 5.0],   // measured 5.98 / 5.09 - pending U4: light was 6.3 at bf2aaf6, dark was 8.7 at bf2aaf6
+      ["Data 5", 5.6, 5.3],   // measured 5.69 / 5.33 - pending U4: light was 12.8 at bf2aaf6, dark was 16.7 at bf2aaf6
+      ["Data 6", 5.4, 5.5],   // measured 5.44 / 5.60 - pending U4: light was 11.6 at bf2aaf6, dark was 15.0 at bf2aaf6
+      ["Data 7", 5.5, 5.4],   // measured 5.58 / 5.48 - pending U4: light was 11.8 at bf2aaf6, dark was 15.5 at bf2aaf6
+      ["Data 8", 5.7, 5.3],   // measured 5.75 / 5.32 - pending U4: light was 6.3 at bf2aaf6, dark was 8.8 at bf2aaf6
     ],
   };
   let checked = 0;
@@ -259,6 +316,95 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
     }
   }
   if (checked !== 96) FAIL("role-contrast", `compared ${checked} accent/on-color pairs, want 96 (16 families x 3 tone modes x 2 schemes)`);
+
+  // Q-B machine check (review pass 3, 2026-09-18): the 41 "pending U4" notes above were comments, not a
+  // gate - nothing enforced that they stayed the ONLY drops, or that an accepted drop couldn't erode
+  // further. FLOORS_BF2AAF6 is the frozen pre-#681 (origin/main, `bf2aaf6`) floor for all 96 cells
+  // (`git show bf2aaf6:test/engine/semantic.mjs`, transcribed verbatim). PENDING_U4 names the 41 cells
+  // that ARE below their bf2aaf6 value, each pinned to its floor AT THIS COMMIT (frozen here,
+  // independent of the live FLOORS above, so a FUTURE edit to FLOORS is checked against this snapshot,
+  // not against itself). checkFloors is the real predicate; both the live check and its own negative
+  // controls (below) call it, never a synthetic duplicate.
+  const FLOORS_BF2AAF6 = {
+    perceptual: {
+      "Neutral": [5.8, 4.9], "Primary": [6.0, 4.8], "Secondary": [4.7, 6.1], "Tertiary": [6.7, 4.8],
+      "Info": [5.7, 4.6], "Success": [6.1, 4.8], "Warning": [7.6, 4.6], "Danger": [7.1, 5.1],
+      "Data 1": [5.0, 5.5], "Data 2": [5.4, 4.9], "Data 3": [5.2, 5.1], "Data 4": [4.8, 5.5],
+      "Data 5": [4.5, 5.8], "Data 6": [4.8, 6.2], "Data 7": [4.7, 6.0], "Data 8": [4.6, 5.8],
+    },
+    even: {
+      "Neutral": [7.0, 4.5], "Primary": [7.1, 4.5], "Secondary": [5.2, 5.8], "Tertiary": [7.1, 4.5],
+      "Info": [7.1, 4.5], "Success": [8.0, 5.1], "Warning": [9.4, 5.0], "Danger": [8.0, 5.1],
+      "Data 1": [5.2, 5.8], "Data 2": [5.2, 5.8], "Data 3": [5.2, 5.8], "Data 4": [5.2, 5.8],
+      "Data 5": [5.2, 5.8], "Data 6": [5.2, 5.8], "Data 7": [5.2, 5.8], "Data 8": [5.2, 5.8],
+    },
+    peak: {
+      "Neutral": [6.2, 4.5], "Primary": [6.4, 4.6], "Secondary": [11.5, 15.1], "Tertiary": [7.5, 5.5],
+      "Info": [5.0, 7.7], "Success": [7.2, 11.8], "Warning": [4.8, 7.4], "Danger": [7.1, 5.1],
+      "Data 1": [10.0, 6.7], "Data 2": [4.7, 5.5], "Data 3": [5.2, 5.1], "Data 4": [6.3, 8.7],
+      "Data 5": [12.8, 16.7], "Data 6": [11.6, 15.0], "Data 7": [11.8, 15.5], "Data 8": [6.3, 8.8],
+    },
+  };
+  const PENDING_U4 = [
+    // [mode, family, side, floor pinned at this commit]
+    ["perceptual", "Neutral", "dark", 4.8], ["perceptual", "Secondary", "dark", 5.2],
+    ["perceptual", "Data 1", "dark", 4.6], ["perceptual", "Data 2", "dark", 4.7],
+    ["perceptual", "Data 3", "dark", 4.9], ["perceptual", "Data 4", "dark", 4.7],
+    ["perceptual", "Data 5", "dark", 5.0], ["perceptual", "Data 6", "dark", 5.2],
+    ["perceptual", "Data 7", "dark", 5.1], ["perceptual", "Data 8", "dark", 4.9],
+    ["even", "Secondary", "dark", 5.5], ["even", "Success", "light", 7.6],
+    ["even", "Success", "dark", 4.9], ["even", "Data 1", "dark", 4.9],
+    ["even", "Data 2", "dark", 4.6], ["even", "Data 3", "dark", 4.8],
+    ["even", "Data 4", "dark", 5.1], ["even", "Data 5", "dark", 5.3],
+    ["even", "Data 6", "dark", 5.5], ["even", "Data 7", "dark", 5.4],
+    ["even", "Data 8", "dark", 5.3], ["peak", "Secondary", "light", 5.5],
+    ["peak", "Secondary", "dark", 5.6], ["peak", "Tertiary", "dark", 5.3],
+    ["peak", "Info", "dark", 4.5], ["peak", "Success", "dark", 4.8],
+    ["peak", "Warning", "dark", 5.2], ["peak", "Data 1", "light", 6.3],
+    ["peak", "Data 1", "dark", 4.9], ["peak", "Data 2", "dark", 4.5],
+    ["peak", "Data 3", "dark", 4.7], ["peak", "Data 4", "light", 5.9],
+    ["peak", "Data 4", "dark", 5.0], ["peak", "Data 5", "light", 5.6],
+    ["peak", "Data 5", "dark", 5.3], ["peak", "Data 6", "light", 5.4],
+    ["peak", "Data 6", "dark", 5.5], ["peak", "Data 7", "light", 5.5],
+    ["peak", "Data 7", "dark", 5.4], ["peak", "Data 8", "light", 5.7],
+    ["peak", "Data 8", "dark", 5.3],
+  ];
+  // checkFloors(floors, baseline, pending) -> violation strings. A cell below baseline that is not in
+  // `pending` is a NEW, unlisted drop (a 42nd). A `pending`-listed cell whose live floor is below its
+  // OWN pinned value has eroded further since this commit.
+  function checkFloors(floors, baseline, pending) {
+    const violations = [];
+    const pendingMap = new Map(pending.map(([m, f, s, v]) => [`${m}|${f}|${s}`, v]));
+    for (const mode of ["perceptual", "even", "peak"]) {
+      for (const [family, light, dark] of floors[mode]) {
+        for (const [side, val] of [["light", light], ["dark", dark]]) {
+          const base = baseline[mode][family][side === "light" ? 0 : 1];
+          const key = `${mode}|${family}|${side}`;
+          const pinned = pendingMap.get(key);
+          if (val < base - 1e-9 && pinned === undefined) {
+            violations.push(`${mode} ${family} ${side}: ${val} is below its bf2aaf6 floor ${base} and is NOT in PENDING_U4 - a new, unlisted drop`);
+          }
+          if (pinned !== undefined && val < pinned - 1e-9) {
+            violations.push(`${mode} ${family} ${side}: ${val} is below its PENDING_U4 pinned floor ${pinned} - an already-accepted drop eroded further`);
+          }
+        }
+      }
+    }
+    return violations;
+  }
+  // negative controls (checks-that-bite): the SAME `checkFloors` predicate, run against a mutated
+  // scratch copy of FLOORS, never a second hand-written comparison.
+  {
+    const scratchUnlisted = JSON.parse(JSON.stringify(FLOORS));
+    scratchUnlisted.perceptual.find((r) => r[0] === "Primary")[1] = FLOORS_BF2AAF6.perceptual["Primary"][0] - 0.5; // Primary/light is not in PENDING_U4
+    if (checkFloors(scratchUnlisted, FLOORS_BF2AAF6, PENDING_U4).length === 0) FAIL("role-contrast", "Q-B negative control DID NOT bite: lowering an unlisted floor below its bf2aaf6 value passed checkFloors()");
+    const scratchListed = JSON.parse(JSON.stringify(FLOORS));
+    scratchListed.perceptual.find((r) => r[0] === "Neutral")[2] = 4.0; // Neutral/dark IS in PENDING_U4, pinned at 4.8
+    if (checkFloors(scratchListed, FLOORS_BF2AAF6, PENDING_U4).length === 0) FAIL("role-contrast", "Q-B negative control DID NOT bite: eroding a PENDING_U4-listed floor further passed checkFloors()");
+  }
+  const floorViolations = checkFloors(FLOORS, FLOORS_BF2AAF6, PENDING_U4);
+  for (const v of floorViolations) FAIL("role-contrast", `Q-B: ${v}`);
+  console.log(`  ${floorViolations.length === 0 ? "pass" : "FAIL"}  role-contrast Q-B floor gate: 0 unlisted drops, 0 further erosion (${PENDING_U4.length} cells named "pending U4")`);
 
   // ── the PARK leg (#636): the SAME pairing through exports.js's own derivation. Park's `solid.fg`
   //    sits on `solid.bg`; radixColorGroup builds step 9 from the bare accent role and `on-accent`

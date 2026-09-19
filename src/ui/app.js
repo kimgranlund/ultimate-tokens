@@ -1583,8 +1583,15 @@ class HctApp extends HTMLElement {
   // single-select button group — buttons get aria-pressed). onSelect re-renders; we
   // then re-focus the newly-active button by its stable id, because the fk-restore
   // path (see _restoreFocus) would otherwise return focus to the OLD button.
+  //
+  // disabled/disabledReason (Q-D, ticket #681 U2): additive - default disabled:false
+  // reproduces the control exactly as before. When disabled, every button gets the
+  // native `disabled` attribute (no click, no focus, no arrow-key handler) plus
+  // aria-disabled, and disabledReason replaces each button's title and becomes the
+  // group's own title, so the reason surfaces on hover over the whole control, not
+  // just one segment.
   segmented(items, value, onSelect, opts = {}) {
-    const { baseClass = "segmented", cls = "", ariaLabel, role = "tablist", controls, idPrefix = "seg" } = opts;
+    const { baseClass = "segmented", cls = "", ariaLabel, role = "tablist", controls, idPrefix = "seg", disabled = false, disabledReason } = opts;
     const tabs = role === "tablist";
     const ids = items.map((it) => it.id);
     const bid = (id) => idPrefix + "-" + id;
@@ -1594,32 +1601,36 @@ class HctApp extends HTMLElement {
         "button",
         {
           type: "button",
-          class: on ? "on" : "",
+          class: (on ? "on" : "") + (disabled ? " is-disabled" : ""),
           id: bid(it.id),
           "data-fk": idPrefix + ":" + it.id,
           role: tabs ? "tab" : undefined,
           "aria-selected": tabs ? (on ? "true" : "false") : undefined,
           "aria-pressed": tabs ? undefined : on ? "true" : "false",
           "aria-controls": tabs ? controls : undefined,
-          tabindex: on ? "0" : "-1",
-          title: it.title,
-          onclick: () => onSelect(it.id),
-          onkeydown: (e) => {
-            if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-            e.preventDefault();
-            const cur = ids.indexOf(value);
-            const next = ids[(cur + (e.key === "ArrowRight" ? 1 : ids.length - 1)) % ids.length];
-            onSelect(next); // re-renders
-            const el = this.querySelector("#" + bid(next));
-            if (el && el.focus) el.focus();
-          },
+          "aria-disabled": disabled ? "true" : undefined,
+          disabled: disabled || undefined,
+          tabindex: disabled ? "-1" : on ? "0" : "-1",
+          title: disabled ? disabledReason : it.title,
+          onclick: disabled ? undefined : () => onSelect(it.id),
+          onkeydown: disabled
+            ? undefined
+            : (e) => {
+                if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+                e.preventDefault();
+                const cur = ids.indexOf(value);
+                const next = ids[(cur + (e.key === "ArrowRight" ? 1 : ids.length - 1)) % ids.length];
+                onSelect(next); // re-renders
+                const el = this.querySelector("#" + bid(next));
+                if (el && el.focus) el.focus();
+              },
         },
         it.label,
       );
     };
     return h(
       "div",
-      { class: (baseClass + " " + cls).trim(), role, "aria-label": ariaLabel },
+      { class: (baseClass + " " + cls).trim(), role, "aria-label": ariaLabel, "aria-disabled": disabled ? "true" : undefined, title: disabled ? disabledReason : undefined },
       ...items.map(mk),
     );
   }

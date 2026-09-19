@@ -254,6 +254,7 @@ import {
   whiteOklch,
   blackHex,
   blackOklch,
+  derivedAll,
 } from "../engine/exports.js";
 // The Claude Design / Google Stitch / Figma Make "DS bundle" authoring subsystem — split into its
 // own module (TKT-0015); see src/engine/ds-export.js's header for why it's a different file.
@@ -931,7 +932,7 @@ export function projectView(doc) {
     // half-steps (75/125/175/825/875/925) resolve — they are absent from the 19 display STOPS,
     // and a miss used to fall back to #000000 (the black swatches in the Roles panel).
     const fullStops = paletteStops(
-      { hue: p.hue, chroma: rampChroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift, hueSameDir: p.hueSameDir, cuspPull: p.cuspPull },
+      { hue: p.hue, chroma: rampChroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift, hueSameDir: p.hueSameDir, cuspPull: p.cuspPull, anchor: p.anchor },
       controls,
       EXPORT_STOPS,
     ).map((s) => ({
@@ -1023,10 +1024,19 @@ export function projectView(doc) {
   // The five export formats, all over the SAME doc (enabled palettes only —
   // the exporters filter on !== false). theme is never read here (AC-U3).
   const state = stateOf(doc);
+  // derived (performance, review pass 5 then a review-6 perf/memo-safety pass, 2026-09-19):
+  // `derivedAll(state)` re-derives every enabled palette's full ramp + roles + prime; each of the 9
+  // export calls below used to call it independently, re-solving the SAME anchored ramps ~9x over for
+  // byte-identical output. Computed ONCE here (a local value, no global/module-level cache - the
+  // #686-class defect a first attempt at this fix had) and threaded through as each exporter's
+  // optional trailing `derived` argument; every exporter still derives its own copy when called
+  // WITHOUT it (every other caller - tests, the MCP server, figmaBundle/brandKit's own state - is
+  // unaffected).
+  const derived = derivedAll(state);
   // exportDTCG already splits the tokens into the three Figma mode files; compute it
   // once and surface those files INDIVIDUALLY so the UI can download Light_tokens.json
   // and Dark_tokens.json as separate files (one per Figma variable-collection mode).
-  const dtcgObj = exportDTCG(state);
+  const dtcgObj = exportDTCG(state, undefined, derived);
   // the resolved type + geometry scales — so the shadcn theme carries the brand fonts (--font-*) + a
   // geometry-derived --radius, not just colours. Fonts/radii come from the treatment (size overrides don't
   // affect them), so the base scales are correct here.
@@ -1035,16 +1045,16 @@ export function projectView(doc) {
   // radixPreset (U3, #637, OQ-1) — hoisted so the radix canvas scene can read the engine's own
   // preset OBJECT directly (never re-deriving it, never reading radix-projection.json). The
   // `{ geometry: shadGeom }` opt MUST travel with the hoist — it is what emits `tokens.radii`.
-  const radixPreset = exportRadix(state, { geometry: shadGeom });
+  const radixPreset = exportRadix(state, { geometry: shadGeom }, derived);
   const exports = {
-    css: exportCSS(state),
-    oklch: exportOKLCH(state),
-    json: JSON.stringify(exportJSON(state), null, 2),
+    css: exportCSS(state, derived),
+    oklch: exportOKLCH(state, derived),
+    json: JSON.stringify(exportJSON(state, derived), null, 2),
     dtcg: JSON.stringify(dtcgObj, null, 2),
-    ui3: JSON.stringify(exportUI3(state), null, 2),
-    tailwind: exportTailwind(state),
-    shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.radii }),
-    panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom })),
+    ui3: JSON.stringify(exportUI3(state, derived), null, 2),
+    tailwind: exportTailwind(state, derived),
+    shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.radii }, derived),
+    panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom }, derived)),
     radix: exportRadixModule(radixPreset),
     figma: {
       light: JSON.stringify(dtcgObj["Light_tokens.json"], null, 2),
