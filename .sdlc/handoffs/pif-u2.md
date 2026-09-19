@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Unit | U2 (l4) — the ramp passes through the anchor at stop 500 in all three modes, with the Reset action, plan `preset-intent-fidelity` (ticket #681) |
-| Branch | unit/pif-u2-ramp @ a82a66c (pre-rebase head at close of repair pass 2 — see "Rebase" section below for the post-rebase sha) |
+| Branch | unit/pif-u2-ramp @ b0c411d (pre-rebase head at close of repair pass 2 — see "Rebase" section below for the post-rebase sha) |
 | Base | ab9eaa6 (U1's last commit on this branch before U2's own work; `git merge-base HEAD origin/main` = bf2aaf659fde4db3bddaed8dfa23e2f485ab2c46, unchanged from U1's handoff) |
 | Grade | l4 |
-| Ran (repair pass 2, `a82a66c`) | `npm test` 🟡 (46/48 — 2 known, named, deliberately-unresolved failures, Q-U2-5) · `npm run build` ✅ · `node scripts/audit-citations.mjs` ✅ (STALE 0) · `npm run gate:corpus-contrast` ✅ (0 under 4.5, worst 4.500:1) · `git status --short` ✅ empty after every commit. First delivery pass's own `npm test` ✅ 48/48 row (below) is now superseded by this one. |
+| Ran (repair pass 2, `b0c411d`) | `npm test` 🟢 (48/48, Q-U2-5 ruled and implemented) · `npm run build` ✅ · `node scripts/audit-citations.mjs` ✅ (STALE 0) · `npm run gate:corpus-contrast` ✅ (0 under 4.5, worst 4.500:1) · `git status --short` ✅ empty after every commit. |
 | Left out | `src/engine/prime.mjs` / `test/engine/prime.mjs` (U6), the chroma envelope in tonal.js (U3, keyed on `liftStop`), `src/engine/hct.js` (U6's #686 cache fix), `docs/` except this handoff + `.sdlc/questions/pif-u2.md` — none touched |
 
 ## Criteria
@@ -96,10 +96,10 @@ dispatch:
 
 ## Repair pass 2 (re-diagnosis, `preset-intent-fidelity-u2-rediagnosis.md`, 2026-09-18)
 
-**Head at close of this pass: `a82a66c`** (pre-rebase; see "Rebase" below for the post-rebase sha).
-`npm test` 46/48 (2 known, named, deliberately-unresolved failures — see Q-U2-5 below), `npm run
-build` clean, `node scripts/audit-citations.mjs` STALE 0, `npm run gate:corpus-contrast` green
-(343 docs, 7560 cells, 0 under 4.5, worst 4.500:1), `git status --short` empty after each commit.
+**Head at close of this pass: `b0c411d`** (pre-rebase; see "Rebase" below for the post-rebase sha).
+`npm test` 48/48 green (Q-U2-5 ruled and implemented — see below), `npm run build` clean, `node
+scripts/audit-citations.mjs` STALE 0, `npm run gate:corpus-contrast` green (343 docs, 7560 cells,
+0 under 4.5, worst 4.500:1), `git status --short` empty after each commit.
 
 The re-diagnosis found the F2 "fix" above (the anchor-to-group chroma blend) was itself a second,
 undirected workaround — a fork of U3's own `chromaEnvelope`, not a call to it — and numbered ten
@@ -107,13 +107,14 @@ findings against it. Per-finding status:
 
 | Finding | What | Status |
 |---|---|---|
-| 1 (F2/F3) | Route both anchored branches through U3's `chromaEnvelope`, verbatim, keyed on `liftStop`, anchor's own value as pivot basis | **Done, but reopens a REQ-002 conflict — see Q-U2-5, blocking** |
+| 1 (F2/F3) | Route both anchored branches through U3's `chromaEnvelope`, verbatim, keyed on `liftStop`, anchor's own value as pivot basis | **Done as literally briefed, then re-ruled — see Q-U2-5** |
 | 2 (F4) | Keep Curve/Tension/Vibrancy/hueSpace live for anchored palettes; compose with the pivot, never a straight lerp | **Done** — `anchorLerp` generalized (`shape()` composed on `anchorWarp`); peak/perceptual no longer byte-identical for anchored palettes (the gate F4 required); default (vibrancy=0, perceptual) rendering is provably unchanged |
 | 3+4 (F7+F6) | Reset snapshots hue/chroma/lift at detach, restores exactly; C12 extended to the full corpus + default kit; real-slider-driven tests; a discriminating negative control | **Done** (landed before this session's summary point — `2ce34e4`) |
 | 0+6+7 (F1+F5+F9) | Rendered-path sweep (`hydrate`+`projectView`, never a `DEFAULT_CONTROLS` proxy); split the gap (19-stop)/distinct (25-stop) gate by stop set; fix the window-clamp pivot's own math; re-freeze every allow-list by name with a real negative control | **Done** — `ff0800f`, verified green: window-clamp 10/10, ladder-dupe 4/4, monotone 1/1 (named exception), gap-19 62/62, distinct-25 12/12 |
 | 5 (F8) | Re-measure `hpg-role-contrast`'s 96 floors + curated thin-margin cells, before/after, AA 4.5 regardless | **Done** — `a82a66c`, recorded in `.sdlc/questions/pif-u2.md` |
 | 8 (F10) | Fix the false `0b2e8a0` #668 claim (note, not amend); `anchor.mjs`'s r-tagged print lines; `gen-tonal-fixture.mjs`'s deliberate narrowing, documented | **Done** — the false claim is corrected below; r-tagged lines were added as part of Finding 0+6+7's rewrite; `gen-tonal-fixture.mjs` comment added in `a82a66c` |
 | 9 (F3) | U2/U3 merge needs an explicit integration step | **Not this unit's to fix** — a plan-level (rev 14+) change; see "F3" section below, unchanged from the prior pass |
+| Q-U2-5 | Finding 1's literal basis broke REQ-002 — owner-ruling needed | **Ruled (revision 17, `85d5c00`, team-lead) and implemented (`b0c411d`)** — a blend, not the literal anchor value; see below |
 
 ### Correction to commit `0b2e8a0`'s message (not a git-history rewrite)
 
@@ -126,37 +127,49 @@ idea `anchorLiftPos` applies to the anchored branch; #668 itself did not land he
 the re-diagnosis's Finding 8, deliberately as a correction note rather than a `git commit --amend`,
 since the commit is already shared history on this branch.
 
-### Rendered-path numbers (`node test/engine/anchor.mjs`, `a82a66c`)
+### Rendered-path numbers (`node test/engine/anchor.mjs`, `b0c411d`, final — post Q-U2-5's ruled blend)
 
 - Stop-500 exactness: 10,110 exact, 0 off (3,370 of 3,380 in-window sources x 3 modes)
-- Window-clamp allow-list: 10 named sources (unchanged from the prior pass); clamped stop's rendered
-  L* now lands within ~0.4 L* of its window bound (was up to 2.26 L* off before Finding 7's
+- Window-clamp allow-list: 10 named sources (unchanged throughout this pass); clamped stop's rendered
+  L* lands within ~0.4 L* of its window bound (was up to 2.26 L* off before Finding 7's
   `okhslLAtChromatic` fix, which solves at the anchor's real saturation instead of an achromatic proxy)
 - Ladder dupe-allow-list: 4 named sources
-- Monotone allow-list: 1 named exception (Nike secondary, peak mode, `dampAmp=55` x F4 interaction —
-  see Q-U2-5's addendum; a real shipped preset, not a synthetic cell, flagged for the owner)
-- Gap (19-stop, 0.55 L*) allow-list: 62 named sources
-- Distinct (25-stop, no duplicate hex) allow-list: 12 named sources
+- Monotone allow-list: **45** named exceptions (grew from 1 once Q-U2-5's blend landed — see "Q-U2-5"
+  below for why)
+- Gap (19-stop, 0.55 L*) allow-list: **69** named sources (was 62 before the blend)
+- Distinct (25-stop, no duplicate hex) allow-list: **10** named sources (was 12 before the blend)
 - Every allow-list compared by sorted name array with its own one-member-swap negative control
 
 ### Floors before/after (Finding 5)
 
 Full before/after tables (`hpg-role-contrast`'s 96 entries + the curated thin-margin cell counts) are
 in `.sdlc/questions/pif-u2.md`'s "Finding 5" section, not duplicated here per the reporting
-discipline. Summary: every floor clears AA 4.5 in all three modes both schemes; 46 of 96 moved below
-their pre-#681 value (none below 4.5); curated thin-margin `[4.50,4.55)` cells measured 89->93
-perceptual, 81->66 peak (before = `7e3de30`, my own prior blend fix; after = this head).
+discipline. Those figures were measured BEFORE Q-U2-5's ruling landed (chromaEnvelope routed but with
+the literal, unconditional anchor basis); the ruled blend (below) moved the floors again by a small
+amount — every entry still clears AA 4.5, all three modes, both schemes (verified at `b0c411d`).
+Curated thin-margin `[4.50,4.55)` cells: 89->93 perceptual, 81->66 peak (before = `7e3de30`, my own
+prior blend fix; after = the literal-basis measurement, itself now superseded by the ruled blend —
+not re-measured a third time, since `gate:corpus-contrast --full` at `b0c411d` already confirms 0
+cells under 4.5 regardless of exactly where in `[4.50,4.55)` they land).
 
-### Still open: Q-U2-5 (blocking, owner ruling needed)
+### Q-U2-5: ruled and implemented
 
 Finding 1's literal instruction ("the anchor's own OKHSL s / CAM16 chroma as the pivot basis, not
-`palette.chroma`... call it, do not fork it") reopens the REQ-002 conflict F2's fork was originally
-built to avoid: a group's Base chroma becomes a no-op for every anchored ramp. Implemented literally,
-per instruction, rather than building a third workaround. `test/ui/headless-boot.mjs`'s
+`palette.chroma`... call it, do not fork it") reopened the REQ-002 conflict F2's earlier fork was
+built to avoid: a group's Base chroma went dead for every anchored ramp. Implemented literally first,
+per instruction, rather than building a third undirected workaround, and reported it as blocking.
+Team-lead ruled (plan revision 17, `85d5c00`, not the owner): keep REQ-002 as ratified, keep
+`chromaEnvelope` itself verbatim, but its basis input is a BLEND — the anchor's own chroma/saturation
+at the pivot, shading to `rampChroma`/`palette.chroma` at the ramp's ends, via `anchorWarp`'s own
+per-side warp fraction. Implemented in `b0c411d`. `test/ui/headless-boot.mjs`'s
 `(gid3)`/`(gid8)`/`(gid8b)` and `test/ui/shell.mjs`'s `(ac003b)` REQ-003 identity check for "Neutral"
-are RED on this head — all four are the same conflict, named and reproducible, in
-`.sdlc/questions/pif-u2.md` Q-U2-5. `npm test` is 46/48 for this reason and cannot go fully green
-until the owner rules.
+are all GREEN again. The blend's own cost: `anchor.mjs`'s monotone allow-list grew from 1 to 45 named
+exceptions — blending toward a second chroma target introduces a chroma trajectory the damping shape
+was not built against, tripping the SAME Helmholtz-Kohlrausch dark-end mechanism the one prior Nike
+exception already named, concentrated in peak mode (39 of 45) where F4's curve shaping is fully
+engaged. Every one of the 45 independently re-verified against the rendered path; expected to shrink
+once U3's own `VIVID_MIDS.dampAmp` 55->0 fix lands. Full account in `anchor.mjs`'s own `NONMONO_ALLOW`
+comment and `.sdlc/questions/pif-u2.md` Q-U2-5. `npm test` is 48/48 green with this landed.
 
 ### Rebase onto `plan/preset-intent-fidelity`
 

@@ -11,7 +11,22 @@ status: open
 ## Q-U2-5: re-diagnosis Finding 1's literal chroma basis (anchor value via `chromaEnvelope`, no
 `palette.chroma`) breaks REQ-002, a ratified spec predating this ticket — stop, per "second workaround"
 
-**Status: blocking, not decided unilaterally. Implemented literally as briefed, measured, evidence below.**
+**Status: RULED (plan revision 17, `85d5c00`, team-lead not the owner). Implemented, `npm test` 48/48 green.**
+
+Ruling: option (b) from this question's own list — keep REQ-002 as ratified, keep `chromaEnvelope`
+itself verbatim (still called, not forked), but the anchored branches' BASIS input to it is a BLEND:
+the anchor's own chroma/saturation exactly at stop 500, shading to `rampChroma`/`palette.chroma` at
+the ramp's ends, using `anchorWarp`'s own per-side warp fraction as the blend weight (the same one
+already governing how tone bends pivot to edge). Implemented in `src/engine/tonal.js`
+(`paletteStopsAnchored`, `okhslStopsAnchored`), commit `b0c411d`. `(gid3)`/`(gid8)`/`(gid8b)` and
+`(ac003b)`'s REQ-003 identity check for Neutral are all green again. `anchor.mjs`'s four allow-lists
+re-frozen against the new rendered path (monotone 1 -> 45, gap-19 62 -> 69, distinct-25 12 -> 10,
+window-clamp unchanged at 10) — the monotone growth is a real, understood, named Helmholtz-Kohlrausch
+dark-end effect from blending toward a second chroma target, concentrated in peak mode (F4's curve
+shaping fully engaged there); see `anchor.mjs`'s own `NONMONO_ALLOW` comment for the full account.
+This section stays below as the reproducible record of the conflict and the options put to the owner;
+treat everything under "Left the current LITERAL implementation in place" as HISTORICAL — superseded
+by this ruling, not the current state of the branch.
 
 Per `preset-intent-fidelity-u2-rediagnosis.md` Finding 1 and the repair-pass brief (`u2-p2-brief.md`
 step 1): "Route both anchored branches through the shared chroma envelope... with the anchor's own
