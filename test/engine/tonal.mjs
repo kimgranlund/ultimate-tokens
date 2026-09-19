@@ -1208,7 +1208,13 @@ for (const mode of ["perceptual", "peak"]) {
   const ADIA_CARVEOUT = new Set(["Adia · The product's own design system"]);
   const above100Violators = (doc, toneMode) => {
     const out = [];
-    if ((doc.dampAmp ?? 0) === 0) return out; // the cap already guarantees this can't fire
+    // U3 review 2 (F2): this used to return [] early for EVERY generated (dampAmp 0) doc — exactly the
+    // population "0 above 100%" is FOR — so the gate below only ever saw Adia and the scratch negative
+    // control, and could never fail on a real cap regression (the reviewer scoped the peak cap to
+    // `lift === 0` in a scratch copy and reproduced 1,487 violators while this gate still exited 0).
+    // Removing the early return: measured 0 generated violators on the shipped engine (even and peak,
+    // both stop sets), so the gate stays green here; the lift-scoped regression is now this line's own
+    // negative control, added below.
     for (const pal of doc.palettes) {
       const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode };
       const chroma = rampChromaOf(pal, doc);
@@ -1241,6 +1247,42 @@ for (const mode of ["perceptual", "peak"]) {
     // it — this control doesn't re-run that loop, it just confirms the scratch doc IS a live violator
     // (checked above) that ISN'T named in the carve-out (checked here), which is what "reds as unlisted"
     // requires of it.
+  }
+
+  // Negative control for F2 itself (U3 review 2): proves the CHROMA-ENVELOPE CLAUSE — not a scratch
+  // manual edit — reds on a real peak-cap regression. Dynamically imports a PATCHED copy of the real
+  // engine (relative imports rewritten to absolute file:// so a data: URL module can resolve them;
+  // nothing on disk, nothing committed) with the peak cap's condition narrowed to `palette.lift === 0`
+  // — the reviewer's own repro shape. On the shipped engine every generated peak palette is checked
+  // (F2's fix); on this patched copy every lift != 0 generated peak palette loses its cap, so running
+  // the SAME `above100Violators`-shaped check against it must find real, unlisted violators.
+  {
+    const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
+    const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
+    const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
+    const patched = realSrc
+      .replace('from "./hct.js"', `from "${hctUrl}"`)
+      .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
+      .replace(
+        'if (mode === "peak" && dampAmp === 0 && chroma > anchorChroma + 1e-6) {',
+        'if (mode === "peak" && dampAmp === 0 && palette.lift === 0 && chroma > anchorChroma + 1e-6) {'
+      );
+    if (patched === realSrc) FAIL("chroma-envelope", "(C6 iii negative control, peak cap) the patch target string was not found — the peak cap's condition text moved, update this control");
+    const PatchedT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
+    let lifted = 0;
+    for (const doc of docs) {
+      if ((doc.dampAmp ?? 0) !== 0) continue; // generated palettes only, matching (iii)'s own scope
+      for (const pal of doc.palettes) {
+        if (!pal.lift) continue; // the patch only strips the cap for lift != 0
+        const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "peak" };
+        const chroma = rampChromaOf(pal, doc);
+        const ramp = PatchedT.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, T.STOPS);
+        const c500 = ramp.find((r) => r.stop === 500).chroma;
+        if (c500 > 1e-9 && ramp.some((r) => r.chroma > c500 + 1e-6)) { lifted++; break; }
+      }
+      if (lifted) break;
+    }
+    if (lifted === 0) FAIL("chroma-envelope", "(C6 iii negative control, peak cap) the lift-scoped patched engine produced ZERO above-100% instances — this control no longer exercises the cap, pick a different probe");
   }
 
   // (iii-b) perceptual's bounded CUSP-RUN exemption (#681 U3 pass 6, owner ruling (f), conductor
