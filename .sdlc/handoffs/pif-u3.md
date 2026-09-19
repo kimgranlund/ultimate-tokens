@@ -4,9 +4,9 @@ plan: preset-intent-fidelity
 unit: U3
 branch: unit/pif-u3-envelope
 base: 690b0a1a395cee0bad122443c3441d5f35412030
-head: 103920c9e554f5096d10e8fa8b33a853e0b2ef63
-written: 2026-09-18
-pass: 4
+head: 8160d33c79da95603a460ec10492c7775428dcd4
+written: 2026-09-19
+pass: 5
 ---
 
 # U3 handoff — anchor-centred chroma envelope, all modes, grade l4 (pass 3, root-cause fix)
@@ -205,6 +205,33 @@ gated); perceptual/peak's is still open, now with a documented structural reason
 unexplored gap. Step 2 (median/p90 retune) was not started — it depends on step 1's shape, which is
 blocked pending the owner's ruling on Q7.
 
+## Pass 5: peak capped and gated (step 1, done); perceptual's one-stop exemption measured, not built (step 2)
+
+Owner ruling on Q7 pass-4 (via team-lead, 2026-09-19): cap even (shipped) and peak at the anchor's
+chroma for generated palettes; perceptual keeps #55's cusp-pull untouched with a named, bounded
+one-stop cusp exemption instead; median/p90 applies to all three modes.
+
+**Step 1, peak cap:** restored pass 4's joint (s, l) solve, this time scoped to `toneMode === "peak"`
+only (peak is already defined to center richness at 500, so the cap doesn't fight peak's own design the
+way it did perceptual's). Peak's "0 above 100%" closes to exactly the 16 named Adia palettes. The C6
+(iii) gate now covers even + peak, each with its own Adia carve-out and negative control. C8: 8/96 cells
+moved, all peak, max `|delta|` 0.0091, no floor crossed, peak has zero thin cells. Committed at
+`8160d33`. Full C8 table and the `skew-lift-okhsl` `CAP_L_EXCEPTIONS` detail are in Q7's pass-5
+addendum.
+
+**Step 2, perceptual's one-stop exemption:** measured first, per the brief. Of 2,207 generated
+perceptual palettes with at least one above-anchor stop, only 538 (24%) have exactly one; 1,669 (76%)
+have 2-5 ADJACENT above-anchor stops clustered around the cusp shoulder. Worst example (Sushi & sashimi
+/ primary-muted, lift 40): stops 550-700 all read 136%-189% of the anchor, peaking at stop 650. Capping
+every stop but one to the anchor would leave that one stop nearly double its now-flattened neighbours —
+a lone spike, not a graceful exemption, exactly the failure mode the brief pre-authorized stopping for.
+Per that instruction, step 2 is measured and reported, NOT built; no gate, no cap, no third mechanism.
+Full histogram, both examples' per-stop tables, and options for the owner are in Q7's pass-5 addendum.
+
+**Step 3, median/p90 retune: not started.** Held pending the owner's read of step 2's finding, since
+retuning damp/dampCurve now risks needing to redo its own C7/C8 sweep once perceptual's shape is
+decided.
+
 ## Risks for U2 / U4 (unchanged from pass 1, plus one addition)
 
 - **U2:** the near-white duplicate-hex class this pass closed to 0 and the peak-mode OKHSL/CAM16 cusp
@@ -246,15 +273,16 @@ for the record), Q3 (RESOLVED — the "21 baseline duplicates" story was a proxy
 0/0 before/after), Q4 (Panda/shadcn spec literal drift, needs a docs-owning seat, unchanged), Q5 (2
 docs/ exception paths, unchanged in shape), Q6 (RESOLVED — owner accepted the C8 re-pin conditioned on
 a re-measure after U1 and U6 land, carried as an OBLIGATION in this handoff's Risks section above, now
-4 cells after pass 3's re-measurement), Q7 (STILL OPEN, pass-4 addendum added — the named lift x
-hue-cusp root cause is fixed cleanly for even mode, closing "0 above 100%" to exactly the named Adia
-carve-out, now gated with a negative control; TWO separate OKHSL-path fix attempts have now failed for
-two DIFFERENT reasons (pass 3: a plain saturation rescale drifted tone and broke a contrast floor plus
-`skew-lift-okhsl`; pass 4: a tone-held joint solve closed the numeric gap but collapses perceptual
-mode's hue-cusp-following richness to the anchor for the whole default kit, breaking the pre-existing
-`hpg-tonal-cusp-pull` gate from #55) — both reverted, both documented with measured evidence and options
-in Q7. This is now a ratified-vs-ratified conflict (C6's anchor ceiling vs #55's cusp-pull richness),
-not an implementation gap, and needs an owner ruling before a third OKHSL attempt. A SEPARATE,
-pre-existing set of median/p90 misses — proven via a bf2aaf6 baseline comparison to predate this unit
-entirely, and NOT lift-driven — also stays open, and step 2 (the ruled-in retune) has not started since
-it depends on step 1's still-open shape. Owner ruling needed on both before C6 can be called fully met).
+4 cells after pass 3's re-measurement), Q7 (STILL OPEN, pass-5 addendum added — even AND peak now both
+close "0 above 100%" to exactly the named Adia carve-out, each gated with its own negative control,
+per the owner's ruling that peak is not in tension with the cap the way perceptual is. Perceptual keeps
+#55's cusp-pull richness untouched, per the same ruling; its own ruled-in bounded one-stop cusp
+exemption was measured FIRST as instructed and does not survive contact with the corpus — 76% of
+violating perceptual palettes have 2-5 adjacent above-anchor stops around the cusp shoulder, not one, so
+capping all but one would create a lone chroma spike rather than a graceful exemption. Per the brief's
+own stop condition for this exact scenario, NOT built; measured and reported instead, with a worked
+worst-case example and 3 options for the owner. A SEPARATE, pre-existing set of median/p90 misses —
+proven via a bf2aaf6 baseline comparison to predate this unit entirely, and NOT lift-driven — also stays
+open; step 3 (the ruled-in retune) has not started, held pending the owner's read of step 2's finding so
+its own regression sweep isn't done twice. Owner ruling needed on perceptual's exemption shape and the
+median/p90 retune before C6 can be called fully met).

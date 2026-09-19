@@ -493,3 +493,105 @@ richness (#55). Options:
   to the anchor's OWN emitted value, a ceiling keyed to each stop's OWN gamut headroom RELATIVE to the
   hue's cusp — closer to how `relChroma` mode already normalizes per-stop, but this has not been designed
   or measured and is real new work, not a quick fix.
+
+### Q7 pass-5 addendum: peak capped and gated (step 1, done); perceptual's one-stop exemption measured and NOT built (step 2, stop condition fired as the brief predicted)
+
+**Ruling received (owner, via team-lead, 2026-09-19):** cap even (already shipped, pass 3) and peak at
+the anchor's own chroma for generated palettes (dampAmp 0); perceptual keeps `hpg-tonal-cusp-pull`'s
+(#55) richness untouched, with a named, bounded, ONE-STOP exemption for the cusp stop only, gated with
+a frozen bound and a negative control; median/p90 still applies to all three modes.
+
+**Step 1 (peak cap): done, gated, measured, committed at `8160d33`.** Restored pass 4's joint (s, l)
+solve (tone held fixed, `CAP_MARGIN`, `refineNearestRgb`, `CAP_L_EXCEPTIONS`) exactly as built, scoped
+to `mode === "peak"` only this time. Peak's "0 above 100%" count closes to exactly the 16 named Adia
+palettes (confirmed via `report-preset-fidelity.mjs --envelope`). Perceptual is untouched: its
+per-hue richest-stop distribution across the full 16-palette default kit is byte-identical to pass 3's
+head (986c032) — `hpg-tonal-cusp-pull` and `hpg-tonal-okhsl-modes` both stay green. The `chroma-envelope`
+gate's (C6 iii) above-100%/Adia-carve-out/negative-control check now runs for both even and peak.
+C8, full 96 cells: 8 moved, all in peak mode, max `|delta|` 0.0091:
+
+| cell | before (b49b47f) | after (8160d33) | delta |
+|---|---|---|---|
+| peak/Primary/dark | 4.6253 | 4.6275 | +0.0022 |
+| peak/Secondary/light | 11.5512 | 11.5603 | +0.0091 |
+| peak/Tertiary/dark | 5.5770 | 5.5765 | -0.0005 |
+| peak/Info/dark | 7.7182 | 7.7164 | -0.0018 |
+| peak/Warning/dark | 7.5156 | 7.5150 | -0.0006 |
+| peak/Data 5/light | 12.8163 | 12.8165 | +0.0001 |
+| peak/Data 6/light | 11.6401 | 11.6392 | -0.0009 |
+| peak/Data 7/light | 11.8825 | 11.8823 | -0.0002 |
+
+No cell crossed the 4.5 floor. Worst cell overall is unchanged: `even/Tertiary/dark` 4.5130 (a pass-3
+figure, not touched by this pass). Thin `[4.50, 4.55)` cells: perceptual `Neutral/dark` 4.5327; even
+`Neutral/dark` 4.5280, `Primary/dark` 4.5215, `Tertiary/dark` 4.5130; peak has none.
+
+**Step 2 (perceptual's one-stop cusp exemption): measured first, as the brief required, and the
+one-stop premise does not survive contact with the corpus.** Scanning all generated (dampAmp 0)
+perceptual palettes across the full curated corpus (343 presets), counting stops whose emitted chroma
+exceeds stop 500's own:
+
+| stops over anchor | palette count |
+|---|---|
+| 0 | 1557 |
+| 1 | 538 |
+| 2 | 778 |
+| 3 | 695 |
+| 4 | 171 |
+| 5 | 25 |
+
+Of the 2,207 palettes with at least one above-anchor stop, only 538 (24.4%) have exactly one — the
+scenario the ruling's "one exempted cusp stop" describes cleanly. The other 1,669 (75.6%) have 2-5
+ADJACENT stops clustered around the cusp, because the cusp isn't a single point, it's a shoulder: the
+hue's true peak-chroma tone sits between two stops, and both (often several) read above the anchor
+together.
+
+**Worst example (max measured excess in the corpus):** "Sushi & sashimi (the cypress counter)" /
+primary-muted, hue 16, lift 40 (perceptual, dampAmp 0). The rendered ramp's chroma as % of stop 500's
+35.86:
+
+| stop | chroma | % of 500 |
+|---|---|---|
+| 500 (anchor) | 35.86 | 100.0% |
+| 550 | 48.80 | 136.1% OVER |
+| 600 | 64.45 | 179.7% OVER |
+| **650 (true cusp)** | **67.88** | **189.3% OVER** |
+| 700 | 50.19 | 140.0% OVER |
+| 750 | 30.43 | 84.9% |
+
+If every non-cusp stop were capped to the anchor (35.86) and only stop 650 exempted, the ramp would
+read 35.86 (500) -> 35.86 (550, was 48.80) -> 35.86 (600, was 64.45) -> **67.88 (650, exempted, nearly
+double its capped neighbours)** -> 35.86 (700, was 50.19) -> 30.43 (750, untouched, already under). That
+is a lone chroma spike by construction, not a graceful one-stop exception — exactly the shape defect the
+brief's own stop condition named in advance ("likely when the cusp sits at 350-450" — this example's
+cusp sits even further out, at 650, making the spike worse, not better).
+
+**A second, milder example for contrast** (The Barbican Estate / warning, hue 73, lift 5): stops 350/
+400/450 read 101.2%/105.7%/104.2% of stop 500 (49.32). Even here, with only ~2-6% excess and 3 adjacent
+over-anchor stops, there is no principled way to pick ONE "the cusp stop" among three nearly-equal
+candidates without an arbitrary tie-break, and whichever is picked, its immediate neighbours still drop
+by several units while it alone stays elevated.
+
+**Per the brief's own instruction for this exact scenario ("stop... write the measurement... report...
+do not invent a third mechanism"), step 2 is NOT built.** No gate, no cap, no third technique attempted.
+The (C6 iii) even/peak gate is unchanged in shape; a comment in its place documents why perceptual has
+no equivalent check this pass. `npm test` stays green at `8160d33` with perceptual completely untouched
+from pass 3.
+
+**Step 3 (median/p90 retune) not started.** It is nominally independent of step 2's outcome, but
+retuning `damp`/`dampCurve` now, before the owner decides how (or whether) to close perceptual's "0
+above 100%" clause, risks the retune's own C7/C8 sweep needing to be redone once that decision lands —
+so it is held pending the owner's read of this addendum, rather than run and possibly discarded.
+
+**Options for the owner, now that the one-stop premise has failed measurement:**
+- Rule perceptual's C6 clause as "no NEW above-100% instances beyond what the corpus already has" (a
+  no-regression bar) rather than "0 above 100% minus one cusp stop" — matches what's actually
+  achievable without a spike, but is a real rescope of the numeric target, not the shape gates.
+  Widening the exemption from "1 stop" to "the natural cusp cluster, however wide" (i.e. exempt every
+  CONSECUTIVE run of above-anchor stops as one unit, not each stop individually) instead of a strict
+  one-stop count — this preserves cusp-pull's natural shoulder shape without a spike, but needs its own
+  gate design and negative controls (new work, not attempted).
+- Accept perceptual's "0 above 100%" as permanently open for generated palettes and scope C6's held bar
+  to even + peak only, with perceptual's count (1793, unchanged since Q7's first breakdown) reported as
+  a known, explained, unfixable-without-a-spike gap.
+- Direct the fundamentally different mechanism named in the pass-4 addendum (a per-stop ceiling keyed to
+  gamut headroom relative to the cusp, not an absolute anchor-chroma ceiling) — real new design work.
