@@ -290,12 +290,14 @@ export function anchorsOf(docLine) {
   // cite)` rows in the corpus were all already backtick-hugged), but eleven DID depend on it and
   // were repinned/backticked in the same commit as this fix (each read at its cited line first) --
   // see the doc diffs, not this comment, for the per-citation reasoning. One of those,
-  // `04-context-and-messaging.md`'s `` `apply` `carve-out` `` line, was NEVER driven to OK by any
-  // of this: `carve-out` names the comment two lines above the real branch, so the citation was
-  // NEAR before this fix (via the same word through the old exemption) and stays NEAR after (via
-  // the same word through the hug rule, once the doc's range was widened to include that comment
-  // line) -- the anchor-selection artifact tracked as #693's KNOWN LIMIT, not something this fix
-  // claims to have resolved.
+  // `04-context-and-messaging.md`'s `` `apply` `carve-out` `` line, is worth a callout: `carve-out`
+  // names a COMMENT two lines above the real `apply` branch (`figma/plugin/code.js:262`), so
+  // citing `:262` alone left it NEAR (`carve-out` found at `:260`, outside the cited line) both
+  // before this fix (via the same word through the old exemption) and immediately after (via the
+  // same word through the new hug rule) -- the anchor-selection artifact tracked as #693's KNOWN
+  // LIMIT. It reads OK now only because the doc's citation was WIDENED to `:260-262`, which brings
+  // that comment line inside the cited range -- a doc repin, not something this predicate change
+  // itself resolved.
   //
   // The lookbehind/character-class cover hyphens (not just letters/digits/dot), so a hyphenated
   // compound (`carve-out(`) matches as ONE token instead of splitting at the hyphen into an
