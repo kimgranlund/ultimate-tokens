@@ -3,13 +3,13 @@ kind: handoff
 plan: preset-intent-fidelity
 unit: U3
 branch: unit/pif-u3-envelope
-base: 690b0a1a395cee0bad122443c3441d5f35412030
-head: 6a4821e
+base: 4576123a
+head: cd9ad504
 written: 2026-09-19
 pass: 7
 ---
 
-# U3 handoff — anchor-centred chroma envelope, all modes, grade l4 (pass 3, root-cause fix)
+# U3 handoff — anchor-centred chroma envelope, all modes, grade l4 (pass 7 + review 2)
 
 Ticket #681, priority P1. Pass 1 shipped a `chromaEnvelope` unifying the even path's and the OKHSL
 path's per-stop chroma damping, keyed on `liftStop` (#668's R1c fix), with the OKHSL path's saturation
@@ -64,8 +64,8 @@ on: (a) the OKHSL-path scope, (b) the pre-existing median/p90 gaps.
 | C6-ii | 0 duplicate hex, full corpus, both stop sets, RENDERED path | same file, (C6 ii) | **0** duplicate-hex ramps in every mode, both stop sets — `KNOWN_BASELINE_DUP` is an empty Set; no exception needed | the pre-U3 base also measures 0 on the rendered path (Q3); pass 1's Design A measured 2 (both named in Q1's table) — Design B's own negative control: patching back to Design A's `sd` formula in a scratch copy reproduces both |
 | iii-c | measured CIELAB L* never rises beyond a NAMED exception list, 10,080-cell synthetic grid | `test/engine/tonal.mjs` "skew-lift-okhsl" | 21 of 10,080 rise under Design B (worst +0.1314 L*; 20 near-white, one near-black at tone 7.55); all 21 named and cited in `GRID_R2_EXCEPTIONS`, verified both directions | deleting one cited cell reproduces a FAIL naming it; an unlisted 22nd cell also fails |
 | C6-iii | no docs/ literal moves without a named exception | `git diff --stat 690b0a1 -- docs/` | 4 paths: 2 expected `adia-*` regen files, 2 citation-line fixes (this pass moved the SAME two lines again, `:404`->`:410`, not repeated from pass 1's `:395`->`:404`) — Q5 | n/a |
-| C6-envelope | Q4-ruled median/p90 chroma-envelope table (reading a is the ruled bar) | `node scripts/report-preset-fidelity.mjs --envelope` | STILL FAILS overall: even mode's "0 above 100%" now closes to exactly 16 (all Adia); perceptual/peak's "0 above 100%" stays open (1793/1521, unfixed this pass, root cause the same but the fix attempted there was reverted — see pass 3 note above and Q7); 5 median/p90 cells fail in all 3 modes, proven PRE-EXISTING via a bf2aaf6 baseline re-measurement (unrelated to lift x hue-cusp). Script remains standalone, not wired into `npm test` | `--damp-amp 55`: above-100% count jumps 16->2920 (reading b) and ~1500-2300->2400-2900 (reading a) — the mechanism discriminates correctly |
-| C6-iii-new | "0 above 100%" (reading a), GENERATED palettes (dampAmp 0), even mode, with the named Adia carve-out | `test/engine/tonal.mjs` "chroma-envelope" (C6 iii, new this pass) | pass — 0 non-Adia above-100% instances; Adia's own 16 confirmed still present (the carve-out isn't stale) | a scratch copy of a non-Adia doc with `dampAmp` forced to 70 produces an above-100% instance NOT in `ADIA_CARVEOUT`, caught as unlisted; renaming `ADIA_CARVEOUT` to a wrong string reproduces a real FAIL naming an actual Adia palette |
+| C6-envelope | Q4-ruled median/p90 chroma-envelope table (reading a is the ruled bar) | `node scripts/report-preset-fidelity.mjs --envelope` | AS OF PASS 7 + review 2: even AND peak's "0 above 100%" close to exactly the named Adia carve-out (peak since pass 5, F1's dip fix this review); perceptual keeps a separate one-cusp-run <=189.3005% clause instead (iii-b, ruling (f)), measuring 0 violations. Median/p90: pass 7 step 1 closed `even|100`/`even|300`/`even|900`; `perceptual|300` (p90 93.7%) and `peak|700` (p90 96.1%) remain open after two step-2 attempts, both reverted (Q7's pass-7 and review-2-retry addenda). Script remains standalone, not wired into `npm test` | `--damp-amp 55`: above-100% count jumps toward the full corpus (reading b), the mechanism discriminates correctly |
+| C6-iii-new | "0 above 100%" (reading a), GENERATED palettes (dampAmp 0), even and peak modes (iii), plus perceptual's bounded cusp-run clause (iii-b), each with the named Adia carve-out | `test/engine/tonal.mjs` "chroma-envelope" (C6 iii / iii-b) | pass, all three modes: 0 non-Adia above-100%/over-bound instances; Adia's own instances confirmed still present in each (the carve-out isn't stale). A permanent dip gate (iv, review 2 F1) also passes: 6 natural peak-mode dips at or under the reviewer's 7-dip cap-off baseline, 0 perceptual dips | a scratch copy of a non-Adia doc with `dampAmp` forced to 70 produces an above-100%/over-bound instance NOT in `ADIA_CARVEOUT`, caught as unlisted in every mode; the dip gate's own negative control (a patched engine reproducing F1's pre-fix bug pattern) produces 174 dips, well past baseline |
 | C8 | `hpg-role-contrast` floors re-pinned vs the TRUE pre-U3 baseline (bf2aaf6, not pass 1's own numbers), re-measured PRECISELY (not floor-truncated) | `test/engine/semantic.mjs` | Exactly ONE pinned floor moves down, still: perceptual Neutral dark 4.9->4.5 (Q6, owner-ruled). Several unpinned fractional moves exist beyond that (peak Data 2/Danger dark, perceptual Warning/Danger dark from pass 2; even Primary/Tertiary/Info/Secondary/Success/Data 1/2/4-8 dark or light from pass 3's own anchor-cap fix) — none crosses a floor digit, worst move is even/Tertiary/dark -0.0014 (4.5145->4.5130, still floors to 4.5). Full precise before/after for every moved cell is in `.sdlc/questions/pif-u3.md` Q7 pass-3 addendum | restoring Neutral dark to 4.9 in a scratch copy reds at measured 4.5327; reverting pass 3's even-path cap in a scratch copy reproduces the pre-pass-3 values exactly |
 | gate:corpus-contrast | 0 of 7,560 cells under 4.5 | `npm run gate:corpus-contrast` | `168 named per cell, 0 carried below 4.5`, worst cell 4.503:1 | n/a |
 | contrastLint | 0/0/0 across modes | `contrastLint(brandKit(defaultDocument()))` per mode | `0 0 0` | n/a |
@@ -310,8 +310,11 @@ band `[4.50,4.55)` per mode.
 - **U2:** review finding 8 (latent hazard): `chromaEnvelope(stop, anchorStop, lift, controls)` genuinely
   takes `anchorStop` as a parameter and both call sites pass the module constant, so U3 composes behind
   the parameter as specified — but the surrounding code still hardcodes 500 in `tone500`/`maxc500`/
-  `intended500` (`paletteStops`) and `lightnessAt(500, t500)` (`okhslStops`). If U2 threads a
-  per-palette anchor stop, the seed's saturation will follow it while the seed's lightness stays at 500.
+  `intended500` (`paletteStops`) and `lightnessAt(500, t500)` (`okhslStops`). A third site, `tonal.js:381`
+  (`evenChroma(maxc500, intended500, envelopeAt.get(ANCHOR_STOP), controls.chromaFloor)`'s own `c500`
+  computation on the seed-hue-solving branch), carries the same hardcoded-500 shape (U3 review 2, F7). If
+  U2 threads a per-palette anchor stop, the seed's saturation will follow it while the seed's lightness
+  stays at 500, at all three sites.
 - **U4:** the movement-table report (C6 iv) should measure against the SAME full-corpus, rendered,
   both-stop-set scope this unit's gate now uses.
 - **U1 / U6, OBLIGATION (Q6, owner-ruled 2026-09-18, WIDENED per verifier re-review, RE-MEASURED pass
@@ -357,7 +360,22 @@ now MOSTLY CLOSED: pass 7 step 1 closed `even|100`/`even|300`/`even|900` with a 
 mapping (no upticks, full gate suite green). Step 2 (a tone-held OKHSL damping construction, closing the
 remaining `perceptual|300`/`peak|700` misses) was tried once and produced 7 real, tiny C6(i) upticks,
 all peak mode, near-white, hue 105-112; reverted byte-for-byte per the brief's own stop rule and "if a
-second workaround is needed, stop" — not attempted a second time. `perceptual|300` (p90 93.7%) and
-`peak|700` (p90 96.1%) are the two cells that remain open; the plan's own `--envelope` table lists them
-as the yielded exception. This is the LAST pass on U3 per the brief; any further attempt at these two
-cells is a follow-up unit's scope, not this one's).
+second workaround is needed, stop". U3 review 2 then separately authorized ONE retry of step 2 on top of
+its own F1 fix (below), since step 2 reuses `solveLForTone`/`refineNearestRgb`; the retry closed the same
+two cells in reading (a) again but reproduced the same C6(i) uptick class plus a new `skew-lift-okhsl`
+(i) regression, confirming the failure is a cross-stop tone-ordering issue F1's single-stop accuracy
+fixes do not touch, and was reverted a second time (Q7's review-2 step-2-retry addendum). `perceptual|300`
+(p90 93.7%) and `peak|700` (p90 96.1%) are the two cells that remain open; the plan's own `--envelope`
+table lists them as the yielded exception. This is the LAST pass on U3 per the brief; any further attempt
+at these two cells is a follow-up unit's scope, not this one's.
+
+U3 review 2 also shipped, on top of pass 7: F2 (the C6 iii gate's `above100Violators` had an early return
+that skipped every generated palette, so it could never fail; removed, with a lift-scoped negative
+control), F1 (the peak cap's HCT fallback undershot the anchor via an overshooting single-step exit plus
+a `Math.min(chroma, target)` fallback that locked the undershoot in, and used an Abney-drifted proxy hue;
+fixed via a 24-iteration bisection, a target-direct fallback, an Abney-corrected polish hue, and a
+`chromaFloor` guard on the 8-bit polish; dips 221 -> 6, all confirmed natural, now gated permanently with
+a named baseline and negative control), and F3 (23 stale `hpg-role-contrast` comments re-measured; the
+"even is byte-identical" claim scoped to the R2 landing, before pass 7 moved even mode again; perceptual
+Success light's undisclosed drop, 6.1815 -> 6.1018, recorded in Q6's obligation set). Full detail in
+`.sdlc/questions/pif-u3.md`'s review-2 addenda.

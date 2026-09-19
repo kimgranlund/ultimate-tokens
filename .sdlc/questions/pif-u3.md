@@ -660,9 +660,23 @@ margin on every cell (worst: even|900 p90 32.4% vs the 35% target) and a comfort
 excess (0%, well under the 189.3005% frozen bound). Applied to the real generator + engine defaults,
 regenerated, and ran `test/engine/tonal.mjs` directly (its own exit code, since the `hpg-tonal-cusp-pull`
 gate's name is missing from this file's print list, #695): FAIL, `(C6 i) perceptual: 2 rise(s), e.g.
-19-stop hue 267 chroma 100.00 skew -20 lift 0: stop 500->550 (26.4403 -> 26.6493)` — the default kit's
-own "Neutral" palette (hue 267, skew -20, lift 0), a genuine CIELAB-L* RISE between stops 500 and 550 in
-perceptual mode. This is the same class of defect #668/R1/R2 exists to prevent ("damping travelling to
+19-stop hue 267 chroma 100.00 skew -20 lift 0: stop 500->550 (26.4403 -> 26.6493)` — corrected attribution
+(U3 review 2, F4): this is `brands.js`'s BZZR preset's own "Primary" palette (hue 267, skew -20, lift 0,
+`colorRole: "dominant"`, resolving to chroma 100), NOT the default kit's "Neutral" as first written; the
+default kit's own Neutral sits at hue 268/chroma 29 and its Primary at hue 259/chroma 95, matching
+neither the witness's hue nor its chroma. A genuine CIELAB-L* RISE between stops 500 and 550 in
+perceptual mode.
+
+**Also recorded (U3 review 2, F4), never disclosed at the time:** the same attempt-1 configuration
+produces peak-mode rises too, at a scale the perceptual FAIL alone did not convey. An independent
+full-corpus scan (both stop sets, no early exit) at `damp:92, dampCurve:0.5, dampBias:0` measures
+**38 peak rises** (perceptual stays at 2, even at 0), witness: 19-stop hue 142 chroma 100.00 skew 0
+lift 4, stop 450->500 (90.9756 -> 90.9874). This is the same class of defect the reported perceptual
+witness already ruled attempt 1 out for; it does not change the outcome (attempt 1 was reverted
+regardless), but the magnitude belongs in the record since attempt 2's own comparable count (12 peak
+rises, below) was disclosed at the time and attempt 1's larger one was not.
+
+This is the same class of defect #668/R1/R2 exists to prevent ("damping travelling to
 where the lightness is not"): `dampCurve` at its domain floor is a substantial departure from 1.5, which
 the removed comment on `DEFAULT_CONTROLS` noted was chosen to "reproduce the legacy edge damp exactly" —
 a safety property this abandons.
