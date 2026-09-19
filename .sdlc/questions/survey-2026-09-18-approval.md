@@ -60,3 +60,18 @@ Options:
 - Take an owner-tracked item (#602, #519, #514, #496)
 - Something else
 Chosen: Stand by (Recommended)
+
+## Q7
+Question: The sdlc-orchestration conductor is waiting on a C31 unit from this repo: the A2 map gains a Doc drift section and the A2 verdict grades all 18 conventions one row each, landed by PR. That instruction was lost when the seats churned; nothing here has started it. How do I take it?
+Options:
+- Add as U2 of records-refresh (Recommended)
+- Separate S plan after records-refresh
+- Not now
+Chosen: Add as U2 of records-refresh (Recommended)
+
+## Q8
+Question: U2 is drafted (criteria U2-1 to U2-8). One shape question is yours: the other repo's C31 check counts graded rows across the whole verdict file, and appending a pass 5 with 18 rows leaves the old passes 1 to 4 in the file too, so the literal count is higher than 18 and passes only with a recorded substitution. How should the A2 verdict be shaped?
+Options:
+- Append pass 5, record the substitution (Recommended)
+- One live table, move passes 1 to 4 out
+Chosen: Append pass 5, record the substitution (Recommended)
