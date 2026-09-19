@@ -835,3 +835,47 @@ median/p90 were not separately measured by the reviewer, so only the max is dire
 in every other respect (dips 221->6, tone accuracy the bisection was built to hold). No further hue-
 awareness attempt is planned under this unit; a future unit could revisit it with a construction that
 weighs hue and tone jointly inside the bisection itself, rather than as a post-hoc polish constraint.
+
+### Q7 pass-7 step 2, second attempt: retried on the fixed solver, reverted again, "which target yields"
+
+Per the review-2 addendum's ordering, step 2 (tone-held OKHSL damping for `perceptual|300` and
+`peak|700`) was retried once the F1 fix above landed, since step 2's construction reuses `solveLForTone`
+and `refineNearestRgb` (now chromaFloor-protected and Abney-corrected). Same construction as the first
+attempt (pass-7 addendum above): per stop, perceptual/peak, `dampAmp === 0`, hold
+`targetTone = lstarFromRgb(rgb)` at today's (pre-extra-damping) value, compress `s` further via
+`sExtra = keyS * envelopeAt.get(stop) ** OKHSL_EXTRA_DAMP_POWER` (envelope-based power transform, still a
+no-op at the anchor, still only 1 `chromaEnvelope` call site), re-solve `l`, then fall back to `hctToRgb`
+and polish through the now-fixed `refineNearestRgb` (target-direct fallback, Abney-corrected polish hue
+via `solveCam16Hue`, `chromaFloor` set to the pre-extra-damping chroma minus 1).
+
+At the same `OKHSL_EXTRA_DAMP_POWER = 1.8`, `--envelope` reading (a) PASSED in full again:
+
+| cell | median | p90 | target p90 |
+|---|---|---|---|
+| perceptual\|300 | 60.6% | 76.6% | <=90 |
+| peak\|700 | 59.0% | 80.1% | <=90 |
+
+`node test/engine/tonal.mjs` FAILed on 3 gates, one more than the first attempt:
+
+- `(C6 i) peak: 4 rise(s)`, e.g. 25-stop hue 106 chroma 30.00 skew 0 lift 0, stop 75->100
+  (99.6298 -> 99.6301): the SAME near-white ordering issue as the first attempt (yellow-green hues, tiny
+  magnitude, independent per-stop tone-hold flips which of two already-near-tied stops reads lighter).
+- `(i) skew-lift-okhsl`, a NEW failure this attempt did not produce before: at skew 0 lift 0 (the
+  unwarped baseline), perceptual/oklch Secondary stop 150 emitted OKHSL l 0.90142 against an
+  independently computed 0.89778, meaning the extra-damping construction now measurably shifts `l1` away
+  from `lightnessAt`'s own value even at the ramp's neutral configuration, not just under skew/lift.
+- `intensity-legacy`: perceptual Neutral stop 125, `#DADBDD` against the fixture's `#D9DBE0` (expected,
+  matching the first attempt: the damping formula moved, so the fixture would need regenerating IF this
+  shipped).
+
+The fixed solver closes reading (a) identically to the first attempt but does not touch the failing
+mechanism: the uptick is an ordering property between ADJACENT stops' independently tone-held solves near
+white, where F1's fixes (bisection accuracy, `chromaFloor`, Abney-corrected hue) all operate on a SINGLE
+stop's own chroma/hue accuracy and have no bearing on cross-stop tone ordering. This confirms the first
+attempt's diagnosis rather than changing it.
+
+Reverted `src/engine/tonal.js` byte-for-byte to `17e73c85` (`git checkout HEAD -- src/engine/tonal.js`);
+`node test/engine/tonal.mjs` exits 0 at that head, tree clean. Per "there is no pass 8" and "if a second
+workaround is needed, stop": this was the one retry the addendum called for, and it reproduces the same
+class of failure the original stop rule already covered. No further step-2 attempt is planned. The
+`perceptual|300`/`peak|700` figures stand as the pass-6 addendum reported them (p90 93.7% and 96.1%).
