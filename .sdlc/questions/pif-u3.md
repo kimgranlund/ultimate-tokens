@@ -408,3 +408,88 @@ open, not patched.
 - Re-scope C6's numeric table to drop the median/p90 clauses that are proven pre-existing and keep only
   "0 above 100%" (with the Adia carve-out) as the enforced bar — the option this pass's brief explicitly
   ruled out ("no rescope"), listed here only for completeness.
+
+### Q7 pass-4 addendum: the OKHSL anchor cap conflicts with perceptual mode's own design, reverted
+
+Pass 4's brief asked for the OKHSL-path twin of pass 3's even-path anchor cap: for a generated palette
+(dampAmp 0) whose emitted chroma at some stop exceeds `anchorChroma` (the anchor's own emitted chroma),
+solve jointly for (s, l) holding CIE L* fixed so the capped chroma never exceeds the anchor, falling
+back to the HCT engine when the joint solve can't converge. Built across three iterations (plain joint
+solve; `CAP_MARGIN` for 8-bit quantization noise; `refineNearestRgb` for a tone-drift-caused contrast
+regression), this closed reading (a)'s "0 above 100%" count to exactly 16 (Adia-only) in all three
+modes, and cleared `role-contrast`, `skew-lift-okhsl` (with a new named `CAP_L_EXCEPTIONS`),
+`shadcn-baseline`, `ac003b`, and `intensity-legacy`. Committed as WIP at `8cfee15`.
+
+**Then a routine full `npm test` run surfaced `engine/tonal.mjs` failing with no visible reason** — all
+19 gates this file's own REPORT loop prints showed `pass`, yet the file still exited 1. Tracing it: the
+file defines a 20th gate, `hpg-tonal-cusp-pull` (from ticket #55, long predates this plan), whose FAIL
+calls are real but whose name was never added to the REPORT loop's printed list — a pre-existing,
+unrelated bug, not introduced this pass, that has apparently hidden this gate's status from every
+`npm test` run's output since #55. (Separately reportable; not fixed here, since fixing only the print
+would not fix the underlying failure, and this addendum is about the failure itself.)
+
+**The underlying failure is real, and it is not a bug in the cap's arithmetic — it is a direct conflict
+between C6's "0 above 100%" and perceptual mode's own defining behavior.** `hpg-tonal-cusp-pull` checks
+that yellow (hue 75), with `cuspPull` absent/0 (global vibrancy 0, no pull), has its richest (max-chroma)
+stop sit LIGHT — away from 500 — because that is where yellow's own gamut cusp is, and perceptual mode
+(unlike "peak") is specifically designed to follow each hue's own cusp rather than pin richness to the
+anchor. The cap forces every stop's chroma `<= anchorChroma`, so wherever a hue's true cusp differs from
+stop 500's own achievable chroma, the cap flattens the ramp down to the anchor and that variation is
+gone. This is not a narrow edge case: scanning perceptual mode, dampAmp 0, across the full 16-palette
+default kit (role-table.json's 8 core roles plus 8 Data series) shows EVERY SINGLE ONE moves its richest
+stop to exactly 500 under the cap, where at pass 3's head (986c032, before this pass's OKHSL change) they
+were naturally spread across 350-550 by hue:
+
+| palette | richest stop, 986c032 | richest stop, pass-4 WIP (8cfee15) |
+|---|---|---|
+| Neutral | 500 | 500 |
+| Primary | 450 | 500 |
+| Secondary | 400 | 500 |
+| Tertiary | 500 | 500 |
+| Info | 450 | 500 |
+| Success | 400 | 500 |
+| Warning | 400 | 500 |
+| Danger | 500 | 500 |
+| Data 1 | 550 | 500 |
+| Data 2 | 500 | 500 |
+| Data 3 | 500 | 500 |
+| Data 4 | 450 | 500 |
+| Data 5 | 400 | 500 |
+| Data 6 | 450 | 500 |
+| Data 7 | 350 | 500 |
+| Data 8 | 450 | 500 |
+
+12 of 16 move; the 4 that stay at 500 (Neutral, Tertiary, Danger, Data 2/3) simply already had their
+natural cusp there. Confirmed at bf2aaf6/fa8f072/986c032 all three (pre-U3, and pass 3, agree with each
+other; only the pass-4 OKHSL change moves it) via fresh git-archive extractions, not just the worktree.
+
+This is the same lift-sign x hue-cusp-tone mechanism pass 3 diagnosed for the even path, but for
+perceptual/peak it collides with a second, older, ratified requirement instead of resolving cleanly:
+"peak" mode is SUPPOSED to always center richness at 500 (a pre-existing gate, `okhsl-modes`, confirms
+this and still passes), but "perceptual" mode is SUPPOSED to let it float with the hue's own cusp when
+cuspPull is low — that is its entire distinction from "peak." Capping every generated stop to the
+anchor's own chroma makes perceptual mode behave like peak mode for every hue whose cusp isn't already
+at 500, for the WHOLE default kit, not an isolated cell.
+
+**Per the operating rule that a second workaround means the model is wrong: reverted `src/engine/tonal.js`
+byte-for-byte to 986c032 (commit `103920c`), dropping the OKHSL anchor cap entirely.** `npm test` is
+green again (all 47 files) at the reverted state. This does not touch the even-path cap (986c032, kept,
+owner-approved) or anything else from pass 3.
+
+**This needs an owner ruling before any further OKHSL-path "0 above 100%" work, not another patch
+attempt**, because the two things in tension are both ratified: C6's anchor ceiling for generated
+palettes "in all three tone modes," and perceptual mode's pre-existing, gated, hue-cusp-following
+richness (#55). Options:
+- Narrow C6's "0 above 100%" ruling to exclude perceptual/peak's cusp-following stops specifically (a
+  rescope the brief said not to do, but the conflict is structural, not a numeric near-miss).
+- Rule that `hpg-tonal-cusp-pull` is superseded by C6 for generated palettes and update/retire that gate
+  (a product-visible loss: perceptual mode's richness-follows-hue-cusp behavior goes away for every
+  dampAmp-0 palette, not just yellow).
+- Scope "0 above 100%" to the even path only (already shipped, pass 3) and treat perceptual/peak's count
+  (currently ~1793/1521, all pre-existing per the earlier breakdown) as a separate, explicitly descoped
+  finding for this unit, closing U3's OKHSL obligation as "not achievable without breaking a second
+  ratified gate," reported rather than patched.
+- Direct a fundamentally different mechanism (not attempted): instead of an absolute chroma ceiling keyed
+  to the anchor's OWN emitted value, a ceiling keyed to each stop's OWN gamut headroom RELATIVE to the
+  hue's cusp — closer to how `relChroma` mode already normalizes per-stop, but this has not been designed
+  or measured and is real new work, not a quick fix.

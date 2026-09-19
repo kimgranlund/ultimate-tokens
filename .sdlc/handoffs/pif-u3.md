@@ -4,9 +4,9 @@ plan: preset-intent-fidelity
 unit: U3
 branch: unit/pif-u3-envelope
 base: 690b0a1a395cee0bad122443c3441d5f35412030
-head: c5a5be39eb4186b3895ffe67e00c0bdde73c56fd
+head: 103920c9e554f5096d10e8fa8b33a853e0b2ef63
 written: 2026-09-18
-pass: 3
+pass: 4
 ---
 
 # U3 handoff — anchor-centred chroma envelope, all modes, grade l4 (pass 3, root-cause fix)
@@ -177,6 +177,34 @@ Unchanged from pass 1: per the plan text, U3 merges into the plan branch only af
 `scripts/report-preset-fidelity.mjs --movement` report exists and the plan owner records 🟢 acceptance
 in `.sdlc/questions/preset-intent-fidelity-u3-movement.md` (C6 iv).
 
+## Pass 4: OKHSL ceiling attempted, then reverted (blocked on an owner ruling, C6 status unchanged)
+
+Pass 4's brief asked for the OKHSL-path twin of pass 3's even-path anchor cap, holding CIE L* fixed via
+a joint (s, l) solve. Built and measured across three iterations (plain joint solve; `CAP_MARGIN` for
+8-bit quantization noise; `refineNearestRgb` for a tone-drift contrast regression), this DID close
+reading (a)'s "0 above 100%" count to exactly 16 (Adia-only) in all three modes, and cleared
+`role-contrast`, `skew-lift-okhsl`, `shadcn-baseline`, `ac003b`, and `intensity-legacy` (WIP commit
+`8cfee15`). A subsequent full `npm test` run then surfaced `engine/tonal.mjs` failing on a 20th gate,
+`hpg-tonal-cusp-pull` (#55, pre-existing, unrelated to this plan), whose name has apparently never been
+in this file's own REPORT print list — a separate, pre-existing bug that hid its status, not fixed here.
+
+That gate's failure is real, not cosmetic: the OKHSL anchor cap collides with perceptual mode's own
+defining behavior. Scanned against the full 16-palette default kit (dampAmp 0, perceptual, cuspPull
+absent), pass 3's head (986c032) shows each hue's richest stop naturally spread 350-550 by its own
+gamut cusp; the pass-4 OKHSL cap collapses ALL 16 to exactly stop 500, making perceptual mode behave
+like "peak" mode for every generated palette. Full table and the ratified-vs-ratified conflict this
+exposes (C6's anchor ceiling vs the pre-existing, gated, hue-cusp-following richness `hpg-tonal-
+cusp-pull` depends on) are in `.sdlc/questions/pif-u3.md`'s Q7 pass-4 addendum, with 4 options for the
+owner.
+
+Per "a second workaround needed means the model is wrong," reverted `src/engine/tonal.js` byte-for-byte
+to 986c032 (commit `103920c`) rather than patch further. `npm test` (47/47), `audit-citations` (STALE
+0), `branding`, and `gate:corpus-contrast` are all green at this head. **C6's status is therefore
+UNCHANGED from pass 3**: even mode's "0 above 100%" is closed (Adia carve-out named, negative-control
+gated); perceptual/peak's is still open, now with a documented structural reason rather than an
+unexplored gap. Step 2 (median/p90 retune) was not started — it depends on step 1's shape, which is
+blocked pending the owner's ruling on Q7.
+
 ## Risks for U2 / U4 (unchanged from pass 1, plus one addition)
 
 - **U2:** the near-white duplicate-hex class this pass closed to 0 and the peak-mode OKHSL/CAM16 cusp
@@ -218,9 +246,15 @@ for the record), Q3 (RESOLVED — the "21 baseline duplicates" story was a proxy
 0/0 before/after), Q4 (Panda/shadcn spec literal drift, needs a docs-owning seat, unchanged), Q5 (2
 docs/ exception paths, unchanged in shape), Q6 (RESOLVED — owner accepted the C8 re-pin conditioned on
 a re-measure after U1 and U6 land, carried as an OBLIGATION in this handoff's Risks section above, now
-4 cells after pass 3's re-measurement), Q7 (STILL OPEN, pass-3 addendum added — the named lift x
+4 cells after pass 3's re-measurement), Q7 (STILL OPEN, pass-4 addendum added — the named lift x
 hue-cusp root cause is fixed cleanly for even mode, closing "0 above 100%" to exactly the named Adia
-carve-out, now gated with a negative control; the same fix on the OKHSL path caused disallowed
-regressions and was reverted, so perceptual/peak's "0 above 100%" stays open; a SEPARATE, pre-existing
-set of median/p90 misses — proven via a bf2aaf6 baseline comparison to predate this unit entirely, and
-NOT lift-driven — also stays open. Owner ruling needed on both before C6 can be called fully met).
+carve-out, now gated with a negative control; TWO separate OKHSL-path fix attempts have now failed for
+two DIFFERENT reasons (pass 3: a plain saturation rescale drifted tone and broke a contrast floor plus
+`skew-lift-okhsl`; pass 4: a tone-held joint solve closed the numeric gap but collapses perceptual
+mode's hue-cusp-following richness to the anchor for the whole default kit, breaking the pre-existing
+`hpg-tonal-cusp-pull` gate from #55) — both reverted, both documented with measured evidence and options
+in Q7. This is now a ratified-vs-ratified conflict (C6's anchor ceiling vs #55's cusp-pull richness),
+not an implementation gap, and needs an owner ruling before a third OKHSL attempt. A SEPARATE,
+pre-existing set of median/p90 misses — proven via a bf2aaf6 baseline comparison to predate this unit
+entirely, and NOT lift-driven — also stays open, and step 2 (the ruled-in retune) has not started since
+it depends on step 1's still-open shape. Owner ruling needed on both before C6 can be called fully met).
