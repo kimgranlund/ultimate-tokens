@@ -17,7 +17,7 @@ Each command run three times in sequence in the unit worktree at `plan/records-r
 |---|---|---|---|---|
 | `npm test` | 3/3 | 0 | 56.27 · 56.43 · 59.83 | all 48 test files passed |
 | `npm run build` | 3/3 | 0 | 3.06 · 1.34 · 1.36 | wrote figma/plugin/ui.html 3780.5 KB |
-| `npm run smoke` | 3/3 | 0 | 18.20 · 18.28 · 18.25 | SMOKE PASS — gallery · category · editor · export dialog all render in a real browser |
+| `npm run smoke` | 3/3 | 0 | 18.20 · 18.28 · 18.25 | SMOKE PASS: gallery · category · editor · export dialog all render in a real browser |
 
 `git status --short` empty after every run: every committed asset that `npm test` and `npm run build` regenerate is byte-stable at this head. `src/ui/type-fonts.js` is not in that set. Neither chain runs `gen:type-fonts`, so a clean status says nothing about that file (survey verdict C11 of 2026-09-18, debt G1).
 
