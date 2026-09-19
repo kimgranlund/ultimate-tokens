@@ -336,21 +336,28 @@ const RAMP_WINDOW_ALLOW = [
 // window-clamped sources above, whose clamp fix makes them CONTINUOUS with their neighbours, not
 // merely "allowed to be wrong". Every ramp
 // should also keep a >=0.55 L* gap between neighbours on the 19-stop DISPLAY ramp, and no duplicate
-// hex anywhere on the 25-stop EXPORT ramp — GATED SEPARATELY on their own matching stop sets
+// hex anywhere on the 25-stop EXPORT ramp - GATED SEPARATELY on their own matching stop sets
 // (re-diagnosis Finding 6, review F5): RAMP_L_MIN/MAX [9.95, 95.05] was derived for the 19-stop
 // ramp's own 0.55 L* gap requirement (5 + 9x0.55); checking it against the FINER 25-stop export
 // ramp's half-steps (the shipped U2 gate's own original mistake) was a stop-set mismatch, not an
 // OKHSL-l-vs-CIE-L* non-uniformity problem as U2's own Q-U2-3 first guessed. Measured on the RENDERED
 // path (Finding 0/F1: `projectView(hydrate(preset))`, each preset's OWN controls resolved via
 // `rampChromaOf`, never a raw `paletteStops` proxy under `DEFAULT_CONTROLS`), re-measured again for
-// R6 (review pass 2, 2026-09-18 — the toneAt-affine-remap that replaced `anchorLerp`'s per-side
+// R6 (review pass 2, 2026-09-18, the toneAt-affine-remap that replaced `anchorLerp`'s per-side
 // double-S changed the tone construction this population is measured against; the brief's own words:
-// "expect the gap list ... to move; that is the point"): the combined population splits into **91**
-// names failing the 19-stop gap bar (RAMP_GAP_ALLOW below) and **14** names failing 25-stop
-// distinctness (RAMP_DISTINCT_ALLOW, below that) — a source can appear on both. Named, frozen, sorted
-// — compared by name, not count (N1's own lesson, applied here too). Q-U2-5's own REQ-002 chroma-basis
+// "expect the gap list ... to move; that is the point") and again for review pass 3's Finding 2
+// (2026-09-18, `gapOk19` now reads PIXEL L*, not the `tone` field - see its own header comment above -
+// surfacing 3 more names invisible to the old tone-based check): the combined population splits into
+// **93** names failing the 19-stop gap bar (RAMP_GAP_ALLOW below) and **14** names failing 25-stop
+// distinctness (RAMP_DISTINCT_ALLOW, below that) - a source can appear on both. Named, frozen, sorted
+// - compared by name, not count (N1's own lesson, applied here too). Q-U2-5's own REQ-002 chroma-basis
 // tension is RULED (the anchor's own value at the pivot, blending to `rampChroma` at the ends by
-// liftStop — see `anchorChromaBasis`'s own header comment in tonal.js), not an open question any more.
+// liftStop - see `anchorChromaBasis`'s own header comment in tonal.js), not an open question any more.
+// Gap growth attribution, corrected (review pass 3, Finding 6): from `0849f67`'s own 69, each of the
+// three review-pass-2 changes measured ALONE (not combined) moves the count: R6 alone 69 -> 76 (+7,
+// the single largest factor), the R3 hue solve alone +2, the smoothstep chroma-basis easing (R2) alone
+// +3 - all three interact rather than summing linearly to the observed 90 (pre-Finding-2) / 93
+// (pixel-corrected) total. Do not credit R6 alone for the full 69 -> 93 move, as an earlier record did.
 const RAMP_GAP_ALLOW = [
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322`,
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
@@ -386,10 +393,13 @@ const RAMP_GAP_ALLOW = [
   `literature "Fahrenheit 451 · Bradbury · 1953 · the fireman's city" tertiary-muted #282320`,
   `literature "The Bell Jar · Sylvia Plath · 1963 · New York & the suburb" primary #242427`,
   `literature "The Tale of Genji · Murasaki Shikibu · c.1010 · the Heian court" secondary-muted #292321`,
+  `music "Acid house · the smiley flyer" tertiary-muted #26241F`,
   `music "Black metal · the forest at night" secondary #1E2024`,
+  `music "Detroit techno · the chrome sleeve" secondary #24272B`,
   `music "Doom & stoner · the amp-fuzz haze" secondary-muted #28262C`,
   `music "Golden-age NYC · the boom-bap sleeve" primary #242428`,
   `music "Graffiti · the subway-car piece" primary #242428`,
+  `music "Kingston street · the sound-system yard" secondary #24272B`,
   `music "Leather & studs · the club night" secondary #242428`,
   `music "Liquid light show · the projected oil-wheel" tertiary-muted #26232C`,
   `music "Lovers rock · the blue-light basement" primary #242428`,
@@ -588,14 +598,23 @@ function notchOk(ramp25) {
   return !(ratioHit && dipHit);
 }
 // gapOk19 / distinctOk25 (re-diagnosis Finding 6, review F5): RAMP_L_MIN/MAX [9.95, 95.05] was
-// derived for the 19-stop DISPLAY ramp's 0.55 L* gap requirement (5 + 9x0.55) — checking it against
+// derived for the 19-stop DISPLAY ramp's 0.55 L* gap requirement (5 + 9x0.55) - checking it against
 // the 25-stop EXPORT ramp instead (finer half-steps) was a stop-set mismatch, not an OKHSL-uniformity
 // problem (U2's own original Q-U2-3 diagnosis, corrected here): gating the two requirements on their
-// OWN matching stop sets is what RAMP_GAP_ALLOW (19-stop) and RAMP_DISTINCT_ALLOW (25-stop) measure —
+// OWN matching stop sets is what RAMP_GAP_ALLOW (19-stop) and RAMP_DISTINCT_ALLOW (25-stop) measure -
 // see their own header comments for the current counts, re-measured after R6's tone construction fix.
+// gapOk19 reads PIXEL L* (`lstarFromRgb` of the emitted hex), not the `tone` field (review pass 3,
+// Finding 2, 2026-09-18) - the same proxy gap review 2 found and fixed for monotone (R1): the even
+// path returns `tone` as `anchorLerp`'s TARGET L*, not the rendered pixel, and `enforceMonotonePixelL`
+// only rewrites `tone` on the stops it actually refines, so a real sub-0.55 pixel gap between two
+// UNrefined even-mode stops sat invisible to a check that trusted the target field.
 function gapOk19(stops) {
   let minGap = Infinity;
-  for (let i = 1; i < stops.length; i++) minGap = Math.min(minGap, stops[i - 1].tone - stops[i].tone);
+  for (let i = 1; i < stops.length; i++) {
+    const l0 = lstarFromRgb(hexToRgb(stops[i - 1].hex));
+    const l1 = lstarFromRgb(hexToRgb(stops[i].hex));
+    minGap = Math.min(minGap, l0 - l1);
+  }
   return minGap >= 0.55 - 1e-9;
 }
 function distinctOk25(stops) {
@@ -612,6 +631,13 @@ function distinctOk25(stops) {
   if (monotoneOk(bad)) FAIL("anchor-ramp", "negative control DID NOT bite: monotoneOk() passed a synthetic rising-pixel-L* pair");
   const thin = [{ stop: 50, tone: 60, hex: "#222222" }, { stop: 100, tone: 59.99, hex: "#222223" }];
   if (gapOk19(thin)) FAIL("anchor-ramp", "negative control DID NOT bite: gapOk19() passed a synthetic sub-0.55-gap pair");
+  // gapOk19 (review pass 3, Finding 2): reads PIXEL L*, not the `tone` field - proven with the REAL
+  // pixel pair review 3 found invisible to the old tone-based check (music "Kingston street" secondary,
+  // even mode, stops 850->900, #00142F -> #00132C). The stops below carry the SAME real hex pair but
+  // the target `tone` values the ramp actually reported there (6.517 -> 5.699, gap 0.818, would have
+  // PASSED a tone-based check) - gapOk19 must still fail it, because the rendered PIXEL gap is 0.523.
+  const gapHidden = [{ stop: 850, tone: 6.517, hex: "#00142F" }, { stop: 900, tone: 5.699, hex: "#00132C" }];
+  if (gapOk19(gapHidden)) FAIL("anchor-ramp", "negative control DID NOT bite: gapOk19() passed a real pixel-sub-0.55 pair whose target tone gap reads healthy (0.818)");
   const dup = [{ stop: 50, tone: 60, hex: "#222222" }, { stop: 100, tone: 55, hex: "#222222" }];
   if (distinctOk25(dup)) FAIL("anchor-ramp", "negative control DID NOT bite: distinctOk25() passed a synthetic duplicate-hex pair");
   // notchOk (R2, ruling Q-C): a synthetic 450/500/550 triple with a near-grey pivot between two
@@ -805,51 +831,70 @@ for (const n of NOTCH_ALLOW) console.log(`    r ${n}`);
   const baseDoc = hydrate({ ...dkBase, toneMode: "perceptual" });
   const vibrantCurveDoc = hydrate({ ...dkBase, toneMode: "perceptual", vibrancy: 60, curve: "cubic", tension: 0 });
   const vibrantTensionDoc = hydrate({ ...dkBase, toneMode: "perceptual", vibrancy: 60, curve: "logistic", tension: 0 });
+  // hueSpace (review pass 3, Finding 1, 2026-09-18): moved from perceptual to EVEN mode. Review 3 proved
+  // the perceptual/peak (OKHSL) per-stop hue solve moves a ramp only by 8-bit re-picking (0 of 3,393/
+  // 3,390 anchored ramps clear ΔE_OK > 0.01), because OKHSL already holds the anchor's own OKLCH hue
+  // constant under "cam16" - "moved >= 1 hex" alone passes on a single-code rounding flip there, not a
+  // real hueSpace effect. In EVEN mode the two hueSpace settings ARE a real Abney correction (1,060 of
+  // 3,396 anchored ramps clear ΔE_OK > 0.01). hueSpace's real effect in the OKHSL modes is an open
+  // question for the owner (Q-D) - this gate does NOT assert it there, and does not change that
+  // construction (`okhslStopsAnchored`'s own per-stop OKHSL hue solve is untouched this pass).
+  const evenBaseDoc = hydrate({ ...dkBase, toneMode: "even" });
   const F4_CASES = {
     curve: { base: vibrantCurveDoc, altPatch: { curve: "sine" } },
     tension: { base: vibrantTensionDoc, altPatch: { tension: 80 } },
     vibrancy: { base: baseDoc, altPatch: { vibrancy: 60 } },
-    hueSpace: { base: baseDoc, altPatch: { hueSpace: baseDoc.hueSpace === "cam16" ? "oklch" : "cam16" } },
+    hueSpace: {
+      base: evenBaseDoc, altPatch: { hueSpace: evenBaseDoc.hueSpace === "cam16" ? "oklch" : "cam16" },
+      // magnitude floor (Finding 1's fix): "moved >= 1 hex" alone cannot tell a real hue effect from a
+      // 1-code rounding flip. Require at least one anchored ramp with a stop whose OKLab ΔE (Euclidean,
+      // independent conversion, never the engine's own) between the two hueSpace settings exceeds 0.01 -
+      // a magnitude no single 8-bit rounding step reaches in practice (review 3's own measured floor).
+      magnitudeFloor: 0.01,
+    },
+  };
+  const deltaEOk = (hexA, hexB) => {
+    const [la, ca, ha] = rgbToOklchIndep(hexToRgb(hexA));
+    const [lb, cb, hb] = rgbToOklchIndep(hexToRgb(hexB));
+    const rad = Math.PI / 180;
+    const ax = ca * Math.cos(ha * rad), ay = ca * Math.sin(ha * rad);
+    const bx = cb * Math.cos(hb * rad), by = cb * Math.sin(hb * rad);
+    return Math.hypot(la - lb, ax - bx, ay - by);
   };
   for (const key in F4_CASES) {
-    const { base, altPatch } = F4_CASES[key];
+    const { base, altPatch, magnitudeFloor } = F4_CASES[key];
     const baseV = projectView(base);
     const altDoc = hydrate({ ...base, ...altPatch });
     const altView = projectView(altDoc);
-    let moved = 0, s500moved = 0;
+    let moved = 0, s500moved = 0, maxDeltaE = 0;
     for (const p of base.palettes) {
       if (typeof p.anchor !== "string") continue;
       const a = baseV.palettes.find((v) => v.name === p.name).fullRamp;
       const b = altView.palettes.find((v) => v.name === p.name).fullRamp;
       if (a.some((s, i) => s.hex !== b[i].hex)) moved++;
+      if (magnitudeFloor !== undefined) {
+        for (let i = 0; i < a.length; i++) maxDeltaE = Math.max(maxDeltaE, deltaEOk(a[i].hex, b[i].hex));
+      }
       const srcL = lstarFromRgb(hexToRgb(p.anchor));
       const inWin = srcL >= RAMP_L_MIN && srcL <= RAMP_L_MAX;
       const a500 = a.find((s) => s.stop === 500).hex, b500 = b.find((s) => s.stop === 500).hex;
       if (inWin && a500 !== b500) { s500moved++; FAIL("anchor-f4", `${key}: stop 500 moved on the default kit — ${p.name} ${a500} !== ${b500}`); }
     }
     if (moved === 0) FAIL("anchor-f4", `${key}: moved 0 of the default kit's anchored ramps — this control is dead for anchored palettes`);
-    console.log(`  ${moved > 0 && s500moved === 0 ? "pass" : "FAIL"}  anchor-f4 ${key}: moved ${moved} default-kit anchored ramps, stop 500 moved ${s500moved} (want >=1, 0)`);
+    if (magnitudeFloor !== undefined && maxDeltaE <= magnitudeFloor) FAIL("anchor-f4", `${key}: max OKLab delta-E ${maxDeltaE.toFixed(4)} does not clear the ${magnitudeFloor} magnitude floor - a rounding-only move would also report "moved >= 1"`);
+    const floorNote = magnitudeFloor !== undefined ? `, max OKLab dE ${maxDeltaE.toFixed(4)} (want > ${magnitudeFloor}), asserted in even only, pending Q-D` : "";
+    console.log(`  ${moved > 0 && s500moved === 0 && (magnitudeFloor === undefined || maxDeltaE > magnitudeFloor) ? "pass" : "FAIL"}  anchor-f4 ${key}: moved ${moved} default-kit anchored ramps, stop 500 moved ${s500moved} (want >=1, 0)${floorNote}`);
   }
 
-  // Negative control: an in-suite reference reimplementation of the pre-F4 "lerp" (position-only, no
-  // curve/tension/skew) pivot-to-edge construction — mirrors this file's own established pattern
-  // (referenceNonAnchored, rgbToOklchIndep) rather than spinning up a scratch git worktree inside
-  // `npm test`'s ~60s budget. Proves the METHODOLOGY discriminates: under a construction that truly
-  // ignores curve/tension (what review 2 calls "the lerp"), the SAME "moved >= 1" check this gate just
-  // ran for the real construction would correctly red.
-  const refLerp = (pivot, edgeLight, edgeDark, stop) => {
-    const q = Math.min(1, Math.abs(stop - 500) / 450);
-    return stop <= 500 ? pivot + (edgeLight - pivot) * q : pivot - (pivot - edgeDark) * q;
-  };
-  const t1 = refLerp(50, 100, 5, 300), t2 = refLerp(50, 100, 5, 300); // same stop, construction never reads curve/tension at all
-  if (t1 !== t2) FAIL("anchor-f4", "reference lerp construction is not deterministic — cannot serve as a negative control");
-  // A construction with NO curve/tension term by definition cannot move under a curve/tension toggle:
-  // confirm the reference gives the SAME two outputs for what would be two different curve settings —
-  // proving that if the real code were this reference, the "curve moved >=1" clause above would have
-  // measured 0 and correctly reported anchor-f4 FAIL, not silently passed.
-  const underCurveA = refLerp(50, 100, 5, 300), underCurveB = refLerp(50, 100, 5, 300);
-  if (underCurveA !== underCurveB) FAIL("anchor-f4", "negative control construction error");
-  console.log(`  pass  anchor-f4 negative control: a curve/tension-blind reference construction gives identical output regardless of curve/tension — proves the "moved >= 1" clause above would have reported FAIL under a true dead control`);
+  // Negative control (review pass 3, Finding 4, 2026-09-18): the prior in-suite "reference lerp"
+  // control called the SAME reference function twice with IDENTICAL arguments and compared the two
+  // results - a tautology (R10-class), it could never fail regardless of whether the REAL predicate
+  // above is correct, and was deleted rather than patched. The real control is a SCRATCH construction
+  // swap (`anchorLerp` replaced by a position-only pivot-to-edge lerp, the same one review 2 calls "the
+  // lerp"), run out-of-suite since it needs a second tree, not a spare few seconds inside `npm test`'s
+  // budget: under that construction, `anchor-f4 peak-vs-perceptual: 0 of 3380 differ (0 identical
+  // required)` and curve/tension/vibrancy each read "moved 0" - a real FAIL on the predicates above, not
+  // allow-list churn. Documented, with its output, in `.sdlc/handoffs/pif-u2.md`'s F4 section.
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
@@ -859,10 +904,13 @@ for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "
   console.error(`    — ${f.slice(g.length + 2)}`);
 }
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
-// R10 (review pass 2): name the specific criteria this file clears, not a generic pass line — C2
-// (anchor identity, direct + rendered), C4 (non-anchored prime path untouched), C3 (stop 500 exact +
-// lift-40 negative control), C5 (monotone, pixel L*), C6/F4 (peak != perceptual, Curve/Tension/
-// Vibrancy/hueSpace each live, stop 500 exact under every toggle), the 0.55 L* gap and 25-stop
-// distinctness bars, and the notch bar (stop 500's chroma vs both neighbours, ratio + Q-C's abs-dip).
-console.log("\nPASS: C2, C3, C4, C5, C6/F4, gap-19, distinct-25 and the notch bar all clear on the rendered path");
+// R10 (review pass 2; corrected review pass 3, Finding 6 - the old line said "all clear", which
+// overstated gap-19 and notch: both are named, frozen allow-lists, not settled zeros): name the
+// specific criteria this file clears, not a generic pass line - C2 (anchor identity, direct +
+// rendered), C4 (non-anchored prime path untouched), C3 (stop 500 exact + lift-40 negative control),
+// C5 (monotone, pixel L*, a true 0, no list), C6/F4 (peak != perceptual, Curve/Tension/Vibrancy each
+// live for every anchored ramp, hueSpace live in even mode only pending Q-D, stop 500 exact under
+// every toggle). Window-clamp (10), gap-19 (93), distinct-25 (14) and notch (76, Q-C variant) are all
+// named allow-lists compared by name with a biting negative control, not settled zeros.
+console.log("\nPASS: C2, C3, C4, C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (93), distinct-25 (14) and notch (76, pending U4) are named allow-lists, compared by name, each with a biting negative control");
 process.exit(0);

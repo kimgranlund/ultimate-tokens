@@ -151,10 +151,22 @@ export function solveOkhslHue(targetOklchHue, s, l) {
 // RENDER space at its ACTUAL chroma + tone lands it on the set OKLCH hue for any damping. f(h)≈h (slope ≈1)
 // → Newton converges in a few steps. (This is the same "anchor in the space the ramp renders" fix #202 gave
 // the OKHSL path — now applied to the even/CAM16 path for parity.)
-function solveCam16Hue(targetOklchHue, chroma, tone) {
+// `gamutClamp` (review pass 3, Finding 3, 2026-09-18, ADDITIVE - an optional 4th param, default false,
+// so the non-anchored path's own call (paletteStops, untouched per C4's byte-identity contract) keeps
+// evaluating the exact same expression it always has): when true, re-clamps `chroma` to the CURRENT
+// candidate hue's own gamut ceiling on EVERY iteration, not just once at the seed hue. Without this,
+// a caller that seeds `chroma` at one hue's gamut (e.g. the anchored branch's `chromaSeed`, computed at
+// `seedHue`) can walk the solve toward a DIFFERENT hue whose gamut is much smaller, making `hctToOklch`
+// evaluate an IMAGINARY (out-of-gamut) color there - its OKLCH hue reads back meaningless, so the solve
+// could converge to a hue up to 36 degrees off (measured before this fix: 363 stops in 166 even-mode
+// anchored ramps landed more than 5 degrees WORSE than "cam16"; after, 2 stops in 2 ramps, both at a
+// near-achromatic chroma floor where OKLCH hue is inherently unstable - see this function's own
+// anchored caller in `paletteStopsAnchored`, and the handoff's review-pass-3 section for the residual).
+function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false) {
   let h = targetOklchHue; // seed: CAM16 hue ≈ OKLCH hue to first order
   for (let i = 0; i < 16; i++) {
-    const got = hctToOklch(h, chroma, tone)[2];
+    const c = gamutClamp ? Math.min(chroma, maxChromaInGamut(h, tone)) : chroma;
+    const got = hctToOklch(h, c, tone)[2];
     const err = (((got - targetOklchHue) % 360) + 540) % 360 - 180;
     if (Math.abs(err) < 1e-3) break;
     h = (((h - err) % 360) + 360) % 360;
@@ -235,6 +247,10 @@ export const LIFT_GAIN = 6;
 // value (no neighbour lookup, no whole-ramp state), so the 19-stop display ramp
 // and the 25-stop EXPORT_STOPS ramp agree at every shared stop. w is 0 at 050
 // and 950, so both endpoints are fixed exactly and the ends keep their lmax/lmin.
+// NOTE (review pass 3, Finding 5): this purity is necessary but no longer SUFFICIENT for stop-set
+// agreement at the final rendered output - `enforceMonotonePixelL`'s post-pass (its own header
+// comment) compares each stop to its immediate PREDECESSOR IN WHATEVER ARRAY IT IS GIVEN, which is
+// not stop-set-pure, and can refine a shared stop differently between a 19-stop and a 25-stop call.
 // Factored out rather than inlined so that #647, which wires skew/lift into the
 // OKHSL path (okhslStops is also keyed off the stop NUMBER), reuses THIS helper
 // instead of growing a second copy of the bump.
@@ -428,6 +444,22 @@ function anchorLerp(pivot, edgeLight, edgeDark, stop, skew, lift, curve, tension
 // 500, the anchor pivot, which stays byte-exact by contract; a dark-side neighbour may still use its
 // exact L* as its bound. If no in-gamut neighbour within the search radius satisfies the bound, the stop
 // is left unchanged so a genuinely larger defect surfaces as a real gate failure instead of being forced.
+// STOP-SET DEPENDENT (review pass 3, Finding 5, 2026-09-18, documented not fixed): unlike `liftStop`/
+// `effStop` above (pure in the single stop value, so the 19-stop display ramp and the 25-stop export
+// ramp "agree at every shared stop" by construction), this function compares each stop to its
+// IMMEDIATE PREDECESSOR IN WHATEVER ARRAY IT IS GIVEN - a stop's neighbour differs between the 19-stop
+// and 25-stop calls (the 25-stop set has extra half-steps between some pairs), so a stop identical in
+// both calls can be refined by one and not the other. Measured: 27 of 11,340 ramps differ at a shared
+// stop between a direct `paletteStops(p, c, STOPS)` call and the 19-stop display ramp of a
+// `paletteStops(p, c, EXPORT_STOPS)` call. Every SHIPPED caller renders via `EXPORT_STOPS` once and
+// projects the 19-stop subset from that SAME array (`model.mjs`'s `projectView`, `exports.js`,
+// `scripts/gen-tonal-fixture.mjs`) - see this file's own top to bottom flow - so nothing visible moves
+// today; a caller that renders `STOPS` and `EXPORT_STOPS` separately for the SAME palette would see the
+// difference. Also updates `chroma`/`maxc` on a refined stop (they used to stay at their pre-refinement
+// values - a real staleness, since `.chroma` is read by the UI's swatch inspector): `chroma` is the
+// swapped RGB's own CAM16 chroma, `maxc` is the gamut ceiling at that RGB's own hue and pixel tone.
+// `inGamut` needs no update - the search only ever considers `[0,255]^3` candidates, so it was, and
+// stays, `true`.
 function enforceMonotonePixelL(stopsOut) {
   const EPS = 1e-9;
   const RADIUS = 3;
@@ -459,6 +491,10 @@ function enforceMonotonePixelL(stopsOut) {
     cur.rgb = best;
     cur.hex = "#" + best.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
     cur.tone = lstarFromRgb(best);
+    const cam = cam16FromRgb(best);
+    cur.chroma = cam.chroma;
+    cur.maxc = maxChromaInGamut(cam.hue, cur.tone);
+    // cur.inGamut stays true - the search above only ever considers in-gamut [0,255]^3 candidates.
   }
 }
 
@@ -524,7 +560,10 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
       const groupIntendedSeed = controls.relChroma ? (palette.chroma / 100) * maxcSeed : groupTarget;
       const intendedSeed = anchorChromaBasis(stop, 500, lift, anchorIntendedSeed, groupIntendedSeed);
       const chromaSeed = evenChroma(maxcSeed, intendedSeed, env, controls.chromaFloor);
-      resolvedHue = solveCam16Hue(targetOklchHue, Math.max(chromaSeed, 8), tone);
+      // gamutClamp=true (review pass 3, Finding 3): chromaSeed is only in gamut at seedHue, not
+      // necessarily at the hue the solve converges to - re-clamp on every iteration (this function's
+      // own header comment).
+      resolvedHue = solveCam16Hue(targetOklchHue, Math.max(chromaSeed, 8), tone, true);
     }
     const hue = (((resolvedHue + shift * dir) % 360) + 360) % 360;
     const maxc = maxChromaInGamut(hue, tone);
@@ -668,7 +707,10 @@ function okhslLAtChromatic(targetLstar, hue, s) {
 // order for any g>0, and both lightness formulas below are non-increasing in the effective stop. The
 // endpoints are fixed exactly — liftStop is the identity at 050/950 and the gamma fixes p=0 and p=1.
 // Pure in the single stop value (no neighbour lookup, no whole-ramp state), so the 19-stop display ramp
-// and the 25-stop export ramp still agree at every shared stop.
+// and the 25-stop export ramp still agree at every shared stop. Same caveat as `liftStop`'s own header
+// comment: this is about the TONE/CHROMA CONSTRUCTION, not the final rendered output -
+// `enforceMonotonePixelL`'s post-pass is neighbour-dependent on whatever array it is given, so it can
+// still refine a shared stop differently between a 19-stop and a 25-stop call (its own header comment).
 function effStop(stop, palette) {
   const sLift = liftStop(stop, palette.lift ?? 0);
   const p = Math.min(1, Math.max(0, (sLift - 50) / 900)) ** (3 ** ((palette.skew ?? 0) / 100)); // skew>0 -> gamma>1 -> lighter mids

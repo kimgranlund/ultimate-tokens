@@ -1,13 +1,13 @@
 # Handoff U2 · builder → reviewer
 
-**Current state: see "Review pass 2" near the end of this document for the latest head, per-R
-status, and re-measured counts. The header table and earlier sections below are each a snapshot at
-the pass named in their own heading, not the current state.**
+**Current state: see "Review pass 3" near the end of this document for the latest head, per-finding
+status, and re-measured counts. The header table and earlier sections below (including "Review pass
+2") are each a snapshot at the pass named in their own heading, not the current state.**
 
 | Field | Value |
 |---|---|
 | Unit | U2 (l4) - the ramp passes through the anchor at stop 500 in all three modes, with the Reset action, plan `preset-intent-fidelity` (ticket #681) |
-| Branch | unit/pif-u2-ramp @ eae434d (pre-rebase head at close of repair pass 2 - see "Rebase" section below for the post-rebase sha) |
+| Branch | unit/pif-u2-ramp @ eae434d (pre-rebase head at close of repair pass 2; `eae434d` is not reachable on the branch after later rebases, kept here only as the historical row this pass's own commits were built on - see "Final state" near the end of this document for the actual current head) |
 | Base | ab9eaa6 (U1's last commit on this branch before U2's own work; `git merge-base HEAD origin/main` = bf2aaf659fde4db3bddaed8dfa23e2f485ab2c46, unchanged from U1's handoff) |
 | Grade | l4 |
 | Ran (repair pass 2, `eae434d`) | `npm test` 🟢 (48/48, Q-U2-5 ruled, implemented, then corrected per addendum 2) · `npm run build` ✅ · `node scripts/audit-citations.mjs` ✅ (STALE 0) · `npm run gate:corpus-contrast` ✅ (0 under 4.5, worst 4.500:1) · `git status --short` ✅ empty after every commit. |
@@ -265,12 +265,12 @@ R8-R10.
 |---|---|---|
 | R1 | `monotoneOk` reads pixel L*, not the ramp's own `tone` field; residual not frozen as final | **Done, then corrected (team-lead, second review-2 pass)**: the reviewer re-ran on `0849f67` and proved the 45/66-entry residual was 8-bit RGB rounding, not Helmholtz-Kohlrausch (continuous L* is monotone in 6,760/6,760 corpus ramps). Fixed at construction: `enforceMonotonePixelL` (`tonal.js`), a rounding-aware nearest-in-gamut-RGB refinement adapted from U3's `refineNearestRgb`, wired into both anchored branches. `NONMONO_ALLOW` removed; the gate now asserts a true 0, no allow-list. Q-U2-6 resolved |
 | R2 | Notch gate (review 1's 70%-of-both-neighbours definition) + its negative control; ease the chroma-basis blend weight | **Done** - gate added to `anchor.mjs`; `anchorChromaBasis`'s weight eased to a smoothstep of the liftStop position. 1,811 -> 459 rendered cells (default kit stays 0 throughout). Residual recorded in Q-U2-7; later ruled Q-C (ratio AND abs dip >=3 C), 459 -> 76, see the rulings section below |
-| R3 | hueSpace "oklch" solves per stop, not once at the anchor's own degenerate point; F4 gate in-suite | **Done** - moves 16/16 default-kit ramps, 3,392-3,396/3,396 curated ramps (all three modes); the `tonal.js:416`-area false comment fixed. F4 gate added: peak != perceptual for 3,380/3,380 anchored sources; Curve/Tension/Vibrancy/hueSpace each move the default kit; stop 500 exact under every toggle; a non-tautological negative control |
+| R3 | hueSpace "oklch" solves per stop, not once at the anchor's own degenerate point; F4 gate in-suite | **Done, then corrected (review pass 3)** - moves 16/16 default-kit ramps, 3,393/3,390/3,396 of 3,396 curated ramps in perceptual/peak/even (correcting an earlier 3,394/3,392/3,396 miscount). F4 gate added: peak != perceptual for 3,380/3,380 anchored sources; Curve/Tension/Vibrancy move the default kit; stop 500 exact under every toggle. Review 3 found the perceptual/peak movement is 8-bit rounding, not a real hueSpace effect (0 of 3,393/3,390 ramps clear a 0.01 OKLab dE floor) - hueSpace in the OKHSL modes is now an open owner question (Q-D); the in-suite F4 hueSpace check moved to even mode with a magnitude floor, see the review-pass-3 section below. The negative control was a tautology (Finding 4); replaced with a documented scratch-run control, also below |
 | R4 | Blend weight keyed on `liftStop`, not `anchorWarp` | **Already done** at `0849f67` (before this review), confirmed still true |
 | R5 | Run U3's `report-preset-fidelity.mjs --envelope` from a scratch copy, record "U2 basis, pre-integration" | **Done** - see below. FAILs both readings (C6's own criteria), matching the expectation that U3's own `VIVID_MIDS.dampAmp` 55->0 fix has not landed in U2's tree yet |
-| R6 | Replace `anchorLerp`'s per-side double-S with a piecewise-affine `toneAt` remap | **Done** - `anchorWarp`/`anchorLiftPos` (and their ANCHOR_LIFT_* constants) are now dead code and removed, R4's own ask once R6 dropped their last caller. Gap-19 allow-list moved 69 -> 91 -> 90 (the last step from R1's rounding-aware fix, see below), distinct-25 10 -> 14 (expected - "that is the point") |
+| R6 | Replace `anchorLerp`'s per-side double-S with a piecewise-affine `toneAt` remap | **Done** - `anchorWarp`/`anchorLiftPos` (and their ANCHOR_LIFT_* constants) are now dead code and removed, R4's own ask once R6 dropped their last caller. Gap-19 allow-list moved 69 -> 91 (commit `31627a3`, R6+R3+the smoothstep easing landed together) -> 90 (R1's rounding-aware fix) -> 93 (review-pass-3 Finding 2, gap-19 reads pixel L*, not the target `tone` field). **Attribution corrected (review pass 3, Finding 6): the 69 -> 91 move is NOT R6 alone** - measured single-factor, from the `0849f67` baseline, R6 alone takes 69 to 76 (the largest single factor), the R3 hue solve alone to 71, the smoothstep easing alone to 72; the three interact rather than summing. Distinct-25 10 -> 14 (expected - "that is the point") |
 | R7 | Re-measure FLOORS and thin cells after R1-R6; record by name against `bf2aaf6`, do not re-pin as final | **Done** - AA 4.5 holds in every cell; 41 of 96 (was 46) sit below their pre-#681 value. Table and thin-cell three-way comparison in `.sdlc/questions/pif-u2.md` Finding 5. The `test/engine/semantic.mjs` FLOORS table itself WAS re-pinned (to keep `npm test` green, matching every prior pass's own convention) - "not re-pinned as final" is honored by taking the by-name comparison to the owner as a question, not by leaving the gate red. Later ruled Q-B: each of the 41 rows now carries an inline "pending U4" old/new note |
-| R8 | Fix stale/contradictory lines (handoff, questions, code comments, Reset tooltip, `(rst)` header); remove em dashes; record final head sha | **Done** - this document, `.sdlc/questions/pif-u2.md`, `color.js`'s Reset tooltip/comment, `headless-boot.mjs`'s `(rst)` header comment, `anchor.mjs`'s two stale gap-allow-list comments. Em dashes removed from both `.sdlc` files (132 total); two already-committed historical commit messages (`442d6c3`, `b1e4518`) keep theirs, noted here rather than rewritten |
+| R8 | Fix stale/contradictory lines (handoff, questions, code comments, Reset tooltip, `(rst)` header); remove em dashes; record final head sha | **Done, corrected (review pass 3, Finding 6): the two pre-rebase shas this row used to cite (`442d6c3`, `b1e4518`) are not on the branch** - rebases change commit identity. The five ON-BRANCH commits still carrying em dashes in their own message are `0775f7c` (3), `c7a4c36` (1), `1e280f4` (2), `3296faa` (2) and `ff01051` (4); all predate `0849f67` and are historical, kept as-is per this brief's own rule ("history is not rewritten"). Every commit from `0849f67` onward is clean |
 | R9 | Extend `(rst-corpus)` to all 8 categories + the default kit; compare full `projectView` ramps, not only fields | **Done** - 3,396 anchored palettes (was 1,460, 4 categories), both a field-level check and a full 25-stop rendered-ramp deep-equal against a reference captured from the pre-detach snapshot state |
 | R10 | Replace the tautological swap control (`anchor.mjs:630-644`); print `r` lines for every allow-list; name the gate's own final-line criteria | **Done** - the negative controls now call `allowListMatches`, the SAME comparator the real gates use, against real measured data with a name dropped or swapped (drop+swap, at this pass five allow-lists; after R1's later fix, four - monotone has no allow-list left to test, `r` lines print for window-clamp, gap, distinct and notch); the final `PASS` line names C2/C3/C4/C5/C6/F4/gap-19/distinct-25/notch |
 
@@ -281,14 +281,17 @@ R8-R10.
 - **Notch**: 459 under the ratio-only definition (perceptual 117, peak 106, even 236); 76 under the
   ruled Q-C variant (ratio AND abs dip >=3 CAM16 C both sides) - perceptual 15, peak 9, even 52. Default
   kit 0 in every mode, both definitions. Named "pending U4" in `NOTCH_ALLOW`. Q-U2-7 ruled (Q-C).
-- **Gap-19 allow-list**: 90 (69 before R6, 91 after R6, 90 after R1's rounding-aware fix nudged one
-  ramp's RGB enough to clear its own gap). **Distinct-25 allow-list**: 14 (was 10, unaffected by R1).
-  Moved by R6, as expected ("expect the gap list and part of the 45 to move; that is the point").
+- **Gap-19 allow-list**: 93 (69 before R6/R3/smoothstep, 91 after those three land together, 90 after
+  R1's rounding-aware fix nudged one ramp's RGB enough to clear its own gap, 93 after review pass 3's
+  Finding 2 made `gapOk19` read pixel L* instead of the target `tone` field - see the review-pass-3
+  section below for the 3 names that fix surfaced and the corrected single-factor attribution).
+  **Distinct-25 allow-list**: 14 (was 10, unaffected by R1 or Finding 2).
 - **F4 controls table** (default kit, perceptual mode unless noted): peak-vs-perceptual differ for
   3,380/3,380 anchored sources on the full corpus sweep; Curve/Tension/Vibrancy/hueSpace each move all
   16 default-kit anchored ramps with stop 500 exact in every case; the full-corpus toggle sweep (a
-  standalone probe, not part of `npm test`) showed hueSpace moving 3,394/3,392/3,396 of 3,396 curated
-  ramps across perceptual/peak/even.
+  standalone probe, not part of `npm test`) showed hueSpace moving 3,393/3,390/3,396 of 3,396 curated
+  ramps across perceptual/peak/even (correcting this pass's own earlier 3,394/3,392/3,396 miscount) -
+  but review 3 proved that movement is 8-bit rounding in perceptual/peak, see the review-pass-3 section.
 - **Floors**: all 96 cells >= AA 4.5; 41 below their `bf2aaf6` value (was 46). Full table in the
   questions file.
 - **Thin cells [4.50,4.55), curated corpus**: perceptual 75 (was 87 at `0849f67`, 77 at `bf2aaf6`);
@@ -366,11 +369,72 @@ Both rulings are measurement-preserving, no construction change: `npm test` 48/4
 
 ### Final state, this pass
 
-**Head after the corrections above, before this documentation commit: see the report to team-lead for
-the exact sha.** Plan tip (`plan/preset-intent-fidelity`, `4ff086c`, revision 19) is still an ancestor
-of this head - no rebase needed, confirmed via `git merge-base --is-ancestor`. `npm test` 48/48 green,
-`git status --short` empty. `npm run gate:corpus-contrast` PASS (343 docs, 7,560 cells, 0 under 4.5,
-worst 4.500:1). `node scripts/audit-citations.mjs` STALE 0. `node test/repo/branding.mjs` clean (449
-files). Q-U2-6, Q-U2-7 and Finding 5 (Q-B) are all ruled/closed - nothing open for the owner from this
-unit at this head; both the notch and floor allow-lists are named "pending U4" for the integrated
-re-verification, not final acceptance.
+**Head after the corrections above, before this documentation commit: `784e9ca`.** Plan tip
+(`plan/preset-intent-fidelity`, `4ff086c`, revision 19) was still an ancestor at that point - no
+rebase needed then. `npm test` 48/48 green, `git status --short` empty. `npm run gate:corpus-contrast`
+PASS (343 docs, 7,560 cells, 0 under 4.5, worst 4.500:1). `node scripts/audit-citations.mjs` STALE 0.
+`node test/repo/branding.mjs` clean (449 files). Q-U2-6, Q-U2-7 and Finding 5 (Q-B) were ruled/closed
+at this point - both the notch and floor allow-lists named "pending U4" for the integrated
+re-verification, not final acceptance. **Superseded**: the plan tip moved to `6c55f25` (revision 20)
+immediately after; `784e9ca` was rebased onto it, post-rebase head `e426c74` - see "Review pass 3"
+below for everything that changed after that rebase.
+
+## Review pass 3 (`pif-u2-review-3.md`, FIX-FIRST, briefed as `u2-fixfirst-3.md`, 2026-09-18)
+
+Review 3 measured `d5d7119` (full U2 diff `3898b2c..d5d7119`) and held `e426c74`'s own engine findings
+(no `src/` change between the two). Verdict FIX-FIRST on three findings: hueSpace in perceptual/peak
+moves ramps by 8-bit rounding only (Finding 1); `gapOk19` reads the target `tone` field, not pixel L*,
+hiding 3 names (Finding 2); the even-mode per-stop oklch hue solve regresses 166 ramps by solving at an
+out-of-gamut chroma (Finding 3). Two low/medium records findings (4, a tautological F4 control; 6,
+stale counts and shas) and one low documentation finding (5, `enforceMonotonePixelL`'s stop-set
+dependence).
+
+### Per-finding status
+
+| Finding | What | Status |
+|---|---|---|
+| 1 | hueSpace real in even, rounding-only in perceptual/peak; F4 check passes on rounding | **Addressed as scoped**: left the OKHSL-mode construction untouched (owner question Q-D, not to be pre-empted); moved the in-suite F4 hueSpace check from perceptual to even mode, added a magnitude floor (max OKLab dE > 0.01) so a 1-code flip cannot pass. Gate output states "asserted in even only, pending Q-D" |
+| 2 | `gapOk19` reads `tone`, not pixel L*; 3 names invisible | **Fixed** - `gapOk19` now reads `lstarFromRgb(hexToRgb(...))`, matching `monotoneOk`. Re-froze `RAMP_GAP_ALLOW` at 93 (was 90), the exact 3 names review 3 found: music "Acid house" tertiary-muted, music "Detroit techno" secondary, music "Kingston street" secondary. New negative control added: a synthetic stops pair carrying the REAL Kingston-street hex pair (`#00142F`/`#00132C`) with the target `tone` values that would have read a healthy 0.818 gap, proving `gapOk19` still fails it on the real 0.523 pixel gap |
+| 3 | even-mode oklch hue solve regresses 166 ramps, solves at out-of-gamut chroma | **Fixed** - `solveCam16Hue` gets an additive 4th param `gamutClamp` (default `false`, so the non-anchored path's own call, untouched per C4, evaluates the identical expression it always has), which re-clamps `chroma` to `maxChromaInGamut(h, tone)` on every iteration when `true`. The anchored branch's per-stop solve now passes `true`. Measured: 363 stops in 166 ramps worse than "cam16" by >5 degrees drops to 2 stops in 2 ramps, both near-achromatic (chroma 0.029 and 0.063, barely over the C>=0.02 filter) where OKLCH hue is inherently unstable - see the residual table below |
+| 4 | in-suite F4 "negative control" a tautology (called the same function twice with identical args) | **Fixed** - deleted. The real control is a scratch construction swap (`anchorLerp` replaced by a position-only pivot-to-edge lerp), run out-of-suite since it needs a second tree; its own output is recorded below as the documented negative control |
+| 5 | `enforceMonotonePixelL` is stop-set dependent; refined stops keep stale `chroma`/`maxc` | **Documented + partially fixed** - `enforceMonotonePixelL`'s own header, and the "agree at every shared stop" comments on `liftStop` and `effStop`, now name the dependence (27 of 11,340 ramps differ between a direct `STOPS` call and the 19-stop projection of an `EXPORT_STOPS` call - invisible today since every shipped caller renders `EXPORT_STOPS` once and projects). `chroma`/`maxc` are now recomputed from the refined stop's own RGB (`cam16FromRgb`/`maxChromaInGamut`); `inGamut` needs no update since the search only considers in-gamut candidates |
+| 6 | stale records: the "91" comment, the final "all clear" line, gap growth attribution, hueSpace counts, `eae434d`, em-dash shas | **Fixed** - `RAMP_GAP_ALLOW`'s header now says 93 and states the corrected single-factor attribution (R6 alone 69->76, R3 alone +2, smoothstep alone +3, interacting rather than summing to 90/93); the final gate line names the 4 allow-lists (window-clamp 10, gap-19 93, distinct-25 14, notch 76) instead of claiming "all clear"; the R3/F4 table's hueSpace counts corrected to 3,393/3,390/3,396; the header table's `eae434d` row notes it is unreachable post-rebase; the R8 row now names all five on-branch em-dash commits (`0775f7c`, `c7a4c36`, `1e280f4`, `3296faa`, `ff01051`), all before `0849f67`, all historical, per this brief's own "history is not rewritten" |
+
+### Re-measured numbers
+
+**Gap-19, pixel L*, 93 names** (was 90 under the tone-field proxy): the 3 newly-visible names are all
+even-mode, all `music` category (see Finding 2's table above). `RAMP_DISTINCT_ALLOW` (14), `NOTCH_ALLOW`
+(76, Q-C variant) and `RAMP_WINDOW_ALLOW` (10) are unchanged from `e426c74` - re-measured, byte-identical
+by name.
+
+**Even-mode oklch hue residual, before -> after Finding 3's gamut-clamp fix** (anchor C>=0.005, both
+stops C>=0.02, hueShift 0, `node scratchpad/p3-abney2.mjs`, the reviewer's own script):
+
+| Mode | oklch median/p90/p99/max | worse than cam16 by >5 deg |
+|---|---|---|
+| even, before | 0.36 / 1.56 / 8.34 / 36.4 deg | 363 stops in 166 ramps |
+| even, after | 0.32 / 0.99 / 2.39 / 33.34 deg | **2 stops in 2 ramps** |
+| perceptual (unchanged, OKHSL untouched) | 0.15 / 0.70 / 1.58 / 5.47 deg | 0 |
+| peak (unchanged, OKHSL untouched) | 0.19 / 0.76 / 1.78 / 5.55 deg | 0 |
+
+The 2 remaining even-mode stops are both at a near-achromatic chroma floor (0.029 and 0.063 OKLab
+chroma, barely inside the C>=0.02 filter) where OKLCH hue reading is inherently noisy under 8-bit
+rounding, independent of the gamut-clamp fix - not chased further, since a construction targeting this
+specific residual would be a SECOND, different mechanism for a different symptom (low-chroma hue
+instability, not the out-of-gamut solve Finding 3 named), not a continuation of this fix. Target was 0;
+measured 2, named here rather than forced.
+
+**F4 negative control, scratch run** (`anchorLerp` replaced by review 2's straight position-only lerp,
+in a throwaway `git worktree`, removed after): `curve: moved 0`, `tension: moved 0`, `vibrancy: moved
+0` default-kit anchored ramps (each would FAIL the real gate's "moved >= 1" clause), `peak-vs-perceptual:
+0 of 16 differ` (would FAIL the real gate's "0 identical required" clause). Confirms the same numbers
+review 3 measured on the full 3,380-source corpus (0 of 3,380 differ).
+
+### Final state, review pass 3
+
+`npm test` 48/48 green, `git status --short` empty, `npm run gate:corpus-contrast` PASS, `node
+scripts/audit-citations.mjs` STALE 0, `node test/repo/branding.mjs` clean. Stop conditions checked: AA
+4.5 holds everywhere, stop 500 exact in every mode, monotone stays a true 0, `(gid3)`/`(gid8)`/`(gid8b)`
+green - none fired. No second workaround: Finding 3's fix is additive to the existing `solveCam16Hue`,
+not a new mechanism; the 2-stop residual above is named, not chased with a second construction. Head
+sha and rebase status: see the report to team-lead.

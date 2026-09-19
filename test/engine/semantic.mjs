@@ -225,6 +225,9 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    widens silently before the owner rules on the integrated numbers - each lowered row below carries
 //    its own inline `pending U4: <side> was <old> at bf2aaf6` note. The full by-name old/new table
 //    against `bf2aaf6` is also recorded in `.sdlc/questions/pif-u2.md` (Q-U2-5's Finding 5 section).
+//    Made a machine gate, not just a comment (review pass 3, Q-B machine check, 2026-09-18):
+//    FLOORS_BF2AAF6/PENDING_U4/checkFloors below the 96-cell sweep enforce it - reds on a 42nd
+//    unlisted drop, or on any of these 41 eroding further than its value at this commit.
 //
 //    The PARK leg (#636) checks the same pairing through the OTHER derivation — exports.js's
 //    derivedAll, which is what radixColorGroup reads for Park's `solid.bg` (step 9 = the bare accent
@@ -313,6 +316,95 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
     }
   }
   if (checked !== 96) FAIL("role-contrast", `compared ${checked} accent/on-color pairs, want 96 (16 families x 3 tone modes x 2 schemes)`);
+
+  // Q-B machine check (review pass 3, 2026-09-18): the 41 "pending U4" notes above were comments, not a
+  // gate - nothing enforced that they stayed the ONLY drops, or that an accepted drop couldn't erode
+  // further. FLOORS_BF2AAF6 is the frozen pre-#681 (origin/main, `bf2aaf6`) floor for all 96 cells
+  // (`git show bf2aaf6:test/engine/semantic.mjs`, transcribed verbatim). PENDING_U4 names the 41 cells
+  // that ARE below their bf2aaf6 value, each pinned to its floor AT THIS COMMIT (frozen here,
+  // independent of the live FLOORS above, so a FUTURE edit to FLOORS is checked against this snapshot,
+  // not against itself). checkFloors is the real predicate; both the live check and its own negative
+  // controls (below) call it, never a synthetic duplicate.
+  const FLOORS_BF2AAF6 = {
+    perceptual: {
+      "Neutral": [5.8, 4.9], "Primary": [6.0, 4.8], "Secondary": [4.7, 6.1], "Tertiary": [6.7, 4.8],
+      "Info": [5.7, 4.6], "Success": [6.1, 4.8], "Warning": [7.6, 4.6], "Danger": [7.1, 5.1],
+      "Data 1": [5.0, 5.5], "Data 2": [5.4, 4.9], "Data 3": [5.2, 5.1], "Data 4": [4.8, 5.5],
+      "Data 5": [4.5, 5.8], "Data 6": [4.8, 6.2], "Data 7": [4.7, 6.0], "Data 8": [4.6, 5.8],
+    },
+    even: {
+      "Neutral": [7.0, 4.5], "Primary": [7.1, 4.5], "Secondary": [5.2, 5.8], "Tertiary": [7.1, 4.5],
+      "Info": [7.1, 4.5], "Success": [8.0, 5.1], "Warning": [9.4, 5.0], "Danger": [8.0, 5.1],
+      "Data 1": [5.2, 5.8], "Data 2": [5.2, 5.8], "Data 3": [5.2, 5.8], "Data 4": [5.2, 5.8],
+      "Data 5": [5.2, 5.8], "Data 6": [5.2, 5.8], "Data 7": [5.2, 5.8], "Data 8": [5.2, 5.8],
+    },
+    peak: {
+      "Neutral": [6.2, 4.5], "Primary": [6.4, 4.6], "Secondary": [11.5, 15.1], "Tertiary": [7.5, 5.5],
+      "Info": [5.0, 7.7], "Success": [7.2, 11.8], "Warning": [4.8, 7.4], "Danger": [7.1, 5.1],
+      "Data 1": [10.0, 6.7], "Data 2": [4.7, 5.5], "Data 3": [5.2, 5.1], "Data 4": [6.3, 8.7],
+      "Data 5": [12.8, 16.7], "Data 6": [11.6, 15.0], "Data 7": [11.8, 15.5], "Data 8": [6.3, 8.8],
+    },
+  };
+  const PENDING_U4 = [
+    // [mode, family, side, floor pinned at this commit]
+    ["perceptual", "Neutral", "dark", 4.8], ["perceptual", "Secondary", "dark", 5.2],
+    ["perceptual", "Data 1", "dark", 4.6], ["perceptual", "Data 2", "dark", 4.7],
+    ["perceptual", "Data 3", "dark", 4.9], ["perceptual", "Data 4", "dark", 4.7],
+    ["perceptual", "Data 5", "dark", 5.0], ["perceptual", "Data 6", "dark", 5.2],
+    ["perceptual", "Data 7", "dark", 5.1], ["perceptual", "Data 8", "dark", 4.9],
+    ["even", "Secondary", "dark", 5.5], ["even", "Success", "light", 7.6],
+    ["even", "Success", "dark", 4.9], ["even", "Data 1", "dark", 4.9],
+    ["even", "Data 2", "dark", 4.6], ["even", "Data 3", "dark", 4.8],
+    ["even", "Data 4", "dark", 5.1], ["even", "Data 5", "dark", 5.3],
+    ["even", "Data 6", "dark", 5.5], ["even", "Data 7", "dark", 5.4],
+    ["even", "Data 8", "dark", 5.3], ["peak", "Secondary", "light", 5.5],
+    ["peak", "Secondary", "dark", 5.6], ["peak", "Tertiary", "dark", 5.3],
+    ["peak", "Info", "dark", 4.5], ["peak", "Success", "dark", 4.8],
+    ["peak", "Warning", "dark", 5.2], ["peak", "Data 1", "light", 6.3],
+    ["peak", "Data 1", "dark", 4.9], ["peak", "Data 2", "dark", 4.5],
+    ["peak", "Data 3", "dark", 4.7], ["peak", "Data 4", "light", 5.9],
+    ["peak", "Data 4", "dark", 5.0], ["peak", "Data 5", "light", 5.6],
+    ["peak", "Data 5", "dark", 5.3], ["peak", "Data 6", "light", 5.4],
+    ["peak", "Data 6", "dark", 5.5], ["peak", "Data 7", "light", 5.5],
+    ["peak", "Data 7", "dark", 5.4], ["peak", "Data 8", "light", 5.7],
+    ["peak", "Data 8", "dark", 5.3],
+  ];
+  // checkFloors(floors, baseline, pending) -> violation strings. A cell below baseline that is not in
+  // `pending` is a NEW, unlisted drop (a 42nd). A `pending`-listed cell whose live floor is below its
+  // OWN pinned value has eroded further since this commit.
+  function checkFloors(floors, baseline, pending) {
+    const violations = [];
+    const pendingMap = new Map(pending.map(([m, f, s, v]) => [`${m}|${f}|${s}`, v]));
+    for (const mode of ["perceptual", "even", "peak"]) {
+      for (const [family, light, dark] of floors[mode]) {
+        for (const [side, val] of [["light", light], ["dark", dark]]) {
+          const base = baseline[mode][family][side === "light" ? 0 : 1];
+          const key = `${mode}|${family}|${side}`;
+          const pinned = pendingMap.get(key);
+          if (val < base - 1e-9 && pinned === undefined) {
+            violations.push(`${mode} ${family} ${side}: ${val} is below its bf2aaf6 floor ${base} and is NOT in PENDING_U4 - a new, unlisted drop`);
+          }
+          if (pinned !== undefined && val < pinned - 1e-9) {
+            violations.push(`${mode} ${family} ${side}: ${val} is below its PENDING_U4 pinned floor ${pinned} - an already-accepted drop eroded further`);
+          }
+        }
+      }
+    }
+    return violations;
+  }
+  // negative controls (checks-that-bite): the SAME `checkFloors` predicate, run against a mutated
+  // scratch copy of FLOORS, never a second hand-written comparison.
+  {
+    const scratchUnlisted = JSON.parse(JSON.stringify(FLOORS));
+    scratchUnlisted.perceptual.find((r) => r[0] === "Primary")[1] = FLOORS_BF2AAF6.perceptual["Primary"][0] - 0.5; // Primary/light is not in PENDING_U4
+    if (checkFloors(scratchUnlisted, FLOORS_BF2AAF6, PENDING_U4).length === 0) FAIL("role-contrast", "Q-B negative control DID NOT bite: lowering an unlisted floor below its bf2aaf6 value passed checkFloors()");
+    const scratchListed = JSON.parse(JSON.stringify(FLOORS));
+    scratchListed.perceptual.find((r) => r[0] === "Neutral")[2] = 4.0; // Neutral/dark IS in PENDING_U4, pinned at 4.8
+    if (checkFloors(scratchListed, FLOORS_BF2AAF6, PENDING_U4).length === 0) FAIL("role-contrast", "Q-B negative control DID NOT bite: eroding a PENDING_U4-listed floor further passed checkFloors()");
+  }
+  const floorViolations = checkFloors(FLOORS, FLOORS_BF2AAF6, PENDING_U4);
+  for (const v of floorViolations) FAIL("role-contrast", `Q-B: ${v}`);
+  console.log(`  ${floorViolations.length === 0 ? "pass" : "FAIL"}  role-contrast Q-B floor gate: 0 unlisted drops, 0 further erosion (${PENDING_U4.length} cells named "pending U4")`);
 
   // ── the PARK leg (#636): the SAME pairing through exports.js's own derivation. Park's `solid.fg`
   //    sits on `solid.bg`; radixColorGroup builds step 9 from the bare accent role and `on-accent`
