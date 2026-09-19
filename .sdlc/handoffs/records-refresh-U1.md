@@ -16,9 +16,9 @@ Load before first run: `8.91 6.03 5.77` on 10 cores (`uptime`, `sysctl -n hw.ncp
 
 | # | command | load (1 min) before | exit | wall (s) | last line | git status lines |
 |---|---|---|---|---|---|---|
-| 1 | `npm test` | 8.91 | 0 | 89.82 | `all 47 test files passed` | 0 |
-| 2 | `npm test` | (post-run, not re-checked; still below threshold) | 0 | 101.61 | `all 47 test files passed` | 0 |
-| 3 | `npm test` | 7.65 | 0 | 82.02 | `all 47 test files passed` | 0 |
+| 1 | `npm test` (contaminated, superseded, conductor ruling) | 8.91 | 0 | 89.82 | `all 47 test files passed` | 0 |
+| 2 | `npm test` (contaminated, superseded, conductor ruling) | (post-run, not re-checked; still below threshold) | 0 | 101.61 | `all 47 test files passed` | 0 |
+| 3 | `npm test` (contaminated, superseded, conductor ruling) | 7.65 | 0 | 82.02 | `all 47 test files passed` | 0 |
 | 4 | `npm ci` | 7.10 | 0 | 0.68 | `added 17 packages, and audited 18 packages` | n/a |
 | 5 | `npm run build` | 6.78 | 0 | 2.96 | `wrote figma/plugin/ui.html 3777.8 KB` | 0 |
 | 6 | `npm run build` | (below threshold) | 0 | 1.87 | `wrote figma/plugin/ui.html 3777.8 KB` | 0 |
@@ -28,6 +28,16 @@ Load before first run: `8.91 6.03 5.77` on 10 cores (`uptime`, `sysctl -n hw.ncp
 | 10 | `npm run smoke` | 6.13 | 0 | 20.45 | same SMOKE PASS line | 0 |
 
 No run dropped or retried. No red run.
+
+Rerun (conductor ruling, after the first commit `55f1d4b0`): runs 1 to 3 above overlapped other builders' concurrent gates and are contaminated; the conductor ruled they are superseded, kept here as history, never dropped.
+
+| # | command | load (1 min) before | exit | wall (s) | last line | git status lines |
+|---|---|---|---|---|---|---|
+| 1b | `npm test` | 4.83 | 0 | 108.96 | `all 47 test files passed` | 0 |
+| 2b | `npm test` | 7.58 | 0 | 93.81 | `all 47 test files passed` | 0 |
+| 3b | `npm test` | 6.27 | 0 | 90.72 | `all 47 test files passed` | 0 |
+
+The Pass table of `.sdlc/baseline.md` and the adapter test Time cell now use runs 1b to 3b (108.96 · 93.81 · 90.72, rounded 91 to 109 s). Build and smoke timings are unchanged from the first pass.
 
 ## CI (step 5)
 
