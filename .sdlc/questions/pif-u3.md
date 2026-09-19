@@ -767,3 +767,71 @@ attempted.
 figures (p90 93.7% and 96.1% respectively, per the pass-6 addendum) — the two pre-existing misses this
 unit does not close. The `--envelope` table lists exactly these two cells as the yielded exception under
 the stop rule; everything else in reading (a) passes.
+
+### Q7 review-2 addendum: F1, the peak-cap solver (dip fix kept; a hue-awareness sub-attempt tried and reverted)
+
+Brief: `u3-p7-addendum-review2.md`. Commit `17e73c85`, on top of the F2 fix (`9a5c8753`).
+
+**Root cause, three bugs.** The peak cap's exit condition assumed chroma scales linearly with `s` at
+fixed `l`, which is false, since `l` is re-solved every iteration (`solveLForTone`) to hold tone, making
+the `s`->chroma relation nonlinear. One overshooting step could satisfy the loop's own naive
+`chroma <= ceiling` exit test while landing far below the target (witness: nature "Monument Valley"
+secondary-muted, peak, stop 550: one iteration took chroma from 81.89 to 29.75 against a 57.04 target,
+and the loop stopped there because 29.75 already cleared the ceiling). The HCT fallback then compounded
+this via `Math.min(chroma, target)`, which locked in whatever the loop's own undershoot happened to be
+instead of aiming at `target` directly, and used a plain CAM16-proxy hue (`hueCam16`) rather than
+Abney-corrected, reintroducing the drift `solveOkhslHue` exists to remove on an OKLCH-hue palette.
+
+**Fix.** Replaced the multiplicative step with a 24-iteration bisection on `s` that tracks the
+best-(lowest-error) candidate seen across every step, so a later worse step can never discard an earlier
+better one. Fixed the fallback to target `target` directly. Added `polishHue = solveCam16Hue(preCapOklchHue,
+..., targetTone)` for the fallback and the 8-bit polish on an OKLCH-hue palette (CAM16-hue palettes keep
+`hueCam16`, which was already correct there). Added a `chromaFloor` parameter to `refineNearestRgb`
+(floored at `chroma - 1`), since it had no lower chroma bound before, so the 8-bit polish could undo the
+solve's own accuracy for a marginal tone gain.
+
+**Dip count.** Reviewer's count pre-fix: 221 dip ramps (interior stop >=3 CAM16 C below both neighbours).
+Measured post-fix, full generated corpus (peak mode, `dampAmp` 0): 6, at or under the reviewer's own cited
+cap-off baseline of 7. All 6 confirmed natural: every stop in each dip's own 3-stop window renders
+identically with the cap patched off entirely (`scratchpad/r2fix/check-natural.mjs`, a `data:` URL import
+of the real engine with the cap condition replaced by `false`), a ramp-shape property of the underlying
+curve/skew/lift math, not a capping artifact. Perceptual has no cap mechanism and measured 0 dips
+(matching baseline). Both are now gated permanently (`test/engine/tonal.mjs`, "(iv) Dip gate"), with a
+named baseline list and a negative control that reintroduces the exact pre-fix bug pattern (a 1-step
+bisection plus the old `Math.min` fallback) and reproduces 174 dips, well past the baseline, proving the
+gate is live.
+
+**Tone drift and hue residual, full corpus, capped stops only (n=5814):**
+
+| metric | median | p90 | p99 | max |
+|---|---|---|---|---|
+| tone error (L\*) | 0.0062 | 0.0209 | 0.0425 | 0.1009 |
+| hue residual (OKLCH deg) | 1.11 | 4.99 | 12.22 | 24.62 |
+| gap below anchor (CAM16 C) | 0.70 | 1.26 | n/a | 1.82 |
+
+Tone error exceeds 0.01 L* on 2008 stops (34.5%); 0 stops exceed a 3 C gap below the anchor.
+
+**Hue-awareness sub-attempt: tried and reverted.** Added a `hueTarget`/`HUE_TOLERANCE` mechanism to
+`refineNearestRgb` so the 8-bit polish would also weigh hue error, not just tone error, aiming to bring
+the max hue residual down from the reviewer's own cited pre-fix figure of 17.26° (the bisection fix alone
+does not improve this: the residual above is *worse* at the tail, 24.62° vs 17.26°, because more stops
+now reach the fallback/polish path reliably instead of silently under-converging earlier). Tried at
+`HUE_TOLERANCE = 2` and `4`: both improved the measured residual substantially (max down to 7.44° and
+4.00° respectively) but both caused a real, confirmed C6(iii-c) uptick regression in the `skew-lift-okhsl`
+synthetic grid gate, at the same witness in both runs: "peak/oklch hue 107 skew 100 lift 40 vibrancy 0
+stop 500->550 (99.9013 -> 99.9258)". Isolated via four combinations (`chromaFloor` on/off x `hueTarget`
+on/off) to confirm hue-awareness specifically, not `chromaFloor`, was the cause (`chromaFloor` alone
+passes cleanly on its own). Per "if a second workaround is needed, stop", the second tolerance value
+failing the same way as the first is a second workaround on the same technique, not a first attempt, so
+reverted the hue-awareness addition entirely, keeping the bisection/fallback/chromaFloor fix, which
+satisfies F1's stated primary requirement (0 new dips, at or below the reviewer's own baseline) on its
+own. The reviewer's own reading of the underlying hue-blindness issue was 🟡 non-blocking ("acceptable...
+once reported"): this is that report, not a further fix attempt.
+
+**What the owner rules on:** the dip fix ships (bisection + target-direct fallback + Abney-corrected
+polish hue + `chromaFloor`). The hue residual tail is a disclosed tradeoff versus the pre-fix state: worse
+at p99/max (12.22°/24.62° vs the reviewer's 17.26° single max, though the PRE-fix distribution's own
+median/p90 were not separately measured by the reviewer, so only the max is directly comparable), better
+in every other respect (dips 221->6, tone accuracy the bisection was built to hold). No further hue-
+awareness attempt is planned under this unit; a future unit could revisit it with a construction that
+weighs hue and tone jointly inside the bisection itself, rather than as a post-hoc polish constraint.
