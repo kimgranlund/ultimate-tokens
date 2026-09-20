@@ -36,6 +36,10 @@ exactly the move this plan exists to stop, so it is not the Orchestrator's to ma
 | 2 | U5-6 counts roadmap-only commits rather than commits, so the refresh is admitted by the rule itself | changes a criterion after a unit was graded against it; the verifier re-runs it |
 | 3 | no refresh: #718 is left out and U5-4's red at pre-land is accepted with a recorded reason | the roadmap lands knowingly stale on the one fact this unit exists to make live |
 
-## Default if unanswered
+## Answer
 
-None taken. The draft PR opens without the refresh and the plan does not land until this is ruled.
+Asked of the owner by the Conductor on 2026-09-20, ruling R5. Options offered: "U5-6 counts roadmap-only commits (Recommended)", "Grade U5-6 at the unit head", "No refresh". Chosen: **U5-6 counts roadmap-only commits**, which is option 2 above.
+
+Effect, in the owner's terms: the criterion is reworded in a plan revision row (revision 14), the verifier re-runs it, and the refresh then adds the #718 row. The rule admits the refresh instead of exempting it, so U5-6 is still graded at the branch head and its negative control still bites: a second file staged beside the roadmap still fails it.
+
+Sequencing note from the Orchestrator: the ruling names the re-run before the refresh, but U5-4 cannot be green until the #718 row exists. The reword and the refresh therefore land first, and the verifier re-runs U5-6 and U5-4 together at the resulting head, which is the only order in which both can be true.
