@@ -30,7 +30,7 @@ that catches all four. Everything below was measured in `.worktrees/rf-U11`. `BA
 | review 1a, the `cited:` span shape | 🟢 | marker moved beside the quote span, and leg B's strip widened to that form in the same commit |
 | review 7, two loose cells in the R1 fix | 🟢 | dispatch target re-derived as `plan/gate-split` @ `ebddc55d`; six started, not six under way |
 | review 1b, 2, 3, 6 | carried | the Orchestrator's, per its ruling; recorded below and in the review |
-| The assertions criterion | 🟢 | two legs, run at the fix head; run unchanged at the graded head it reds all four |
+| The assertions criterion | retired | proposed as U5-8, not adopted; owner ruling R14 sends the class to #723. Its runs stay as the evidence the ruling rests on |
 | U5-1, U5-2, U5-3, U5-5, U5-6, U5-7 | 🟢 | reran at the fix head |
 | U5-4 | 🟢 | #722 ranked at row 14; the exemption was anchored on the wrong commit in pass 1 and does not apply |
 | P1, P4, P5, P6, P7 | 🟢 | `npm test` green in the foreground, 163.8 s wall |
@@ -162,15 +162,36 @@ commit, because the two are one change: under the old strip the precedent form i
 leg B flags U11's own row at `line 116 commit 1fe53f5a ... reach 4% instant 2026-09-20T22:00Z`. The
 measured behaviour of the two strips is in the probe table below.
 
-## The assertions criterion, proposed for the plan
+## The assertions criterion, proposed and retired
 
-Root cause it closes. U5's rows 1 to 7 grade the roadmap's shape: one head sha, the worktree set and
+Retired, not adopted. Owner ruling R14 lands U11 on R1 to R4 alone; U5-8 is not folded into the plan,
+and the defect class it was written for is ticket #723, `records under .sdlc/ can assert facts about
+other work that nothing re-derives`. The re-diagnosis is
+`.sdlc/plans/records-followup-U11-rediagnosis.md`. Nothing in this section is a live proposal, and a
+reader should take no row here as pending adoption.
+
+Why it was retired, short. It machine-checks prose against no machine-readable source. Leg A's tally
+has to infer a unit's state from whatever a record happens to say: a `[x]` tick records that the
+Orchestrator merged a unit, not that anyone graded it, and re-derived at `origin/main` 38 of the 55
+files under `.sdlc/verdicts/` carry no `verdict:` field at all, so the state has to be scraped from a
+headline or a table row in three different shapes. Leg B has the matching problem from the other
+side: a fixed needle list, recorded below as a known limit. A check built on that footing is a
+reporter that can be reworded past, which is why the class needs a data shape rather than a
+criterion, and why it is a ticket.
+
+What stays. Every measurement below is left exactly as it was taken, because it is the evidence the
+ruling rests on: the run at the graded head where both legs red all four findings, NC1 to NC8, the
+strip probe table, and the stated limits. NC7 in particular is why the tick-versus-verdict problem is
+stated as measured fact rather than as an opinion about record hygiene.
+
+Root cause it was written for. U5's rows 1 to 7 grade the roadmap's shape: one head sha, the worktree set and
 its count, the open-issue set, no leftover prompt, the debt ids, the alone rule. Not one of them
 reads a number the roadmap states against the table that number counts, opens another plan's branch
 to check a claim the roadmap makes about it, compares the file to itself, or grades a stated method
 against the diff of the commit that states it. R1 to R4 each live in exactly that gap.
 
-Proposed row, plan-ready, table cells escaped as the plan escapes them:
+The row as it was proposed, kept as a record of what was measured and not as a row to adopt. Table
+cells are escaped as the plan escapes them:
 
 | # | Criterion | Command | Expected | Negative control |
 |---|---|---|---|---|
@@ -356,7 +377,7 @@ from a three-row patch, so the check discriminates rather than always firing.
 | U5-5 | leftover prompt and unanswered question sweep | `0`, then `0` | 🟢 |
 | U5-6 | the alone rule, under bash | `nonempty 0`; `.sdlc/roadmap.md`; the four-file branch list; `branding: clean (508 files scanned)`; `exit 0`; `0` | 🟢 |
 | U5-7 | debt ids as `debt.md` defines them | `0`, then `1` | 🟢 |
-| U5-8 | the new assertions criterion, both legs | above | 🟢 |
+| U5-8 | the assertions criterion, both legs, run although the row is retired | above | 🟢 as a run, retired as a row |
 
 U5-6 was rerun at the final head. It printed `nonempty 0`, then `.sdlc/roadmap.md` alone as the whole
 file list of every roadmap-touching commit in `BASE..HEAD` (four of them: U5's regeneration, the
@@ -417,7 +438,7 @@ own file and is gitignored, so it enters no commit and no diff leg.
 
 | Item | Ask |
 |---|---|
-| U5-8 | fold the criterion above into the plan as written, or renumber it; both legs, their expected output, six controls, the strip probe table and the run at the graded head are all here. Its Expected should also state that the plan branches must be fetched, or leg A degrades silently to `noplan` and loses half of R1 |
+| U5-8 | nothing to fold. Ruling R14 retires the row and opens #723 for the class; the section above is marked retired at its head, and its runs stay as evidence. The fetch precondition and the needle-list and reach limits recorded here are inputs to #723, not open asks against this unit |
 | the tally source | pass 1's leg derived unit tallies from `[x]` ticks and certified the verdict's R3 rather than catching it. Leg A now reads `.sdlc/verdicts/` and compares a 🟢-marked tally against the green tally. NC7 is the control; it reds U11's own retired text |
 | `.sdlc/board.md` | its U5 row shows 🟢 while its own notes cell reads `11 🟢 1 🟡 0 🔴`. The board contradicts itself and the adapter makes the verdict authoritative. Out of this unit's scope; nothing here touched it |
 | a stray untracked record | `.sdlc/verdicts/records-followup-U11.md`, the verifier's own file, sits untracked in `.worktrees/rf-U11` and is not gitignored, so `git status --short` prints `1`. Every commit here stages explicit paths, so it never entered one, but a landing that stages with `git add -A` would put it on this branch and break U5-6's file count |
