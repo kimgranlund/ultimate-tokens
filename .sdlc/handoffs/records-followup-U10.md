@@ -81,16 +81,18 @@ Of the 28, three held program output and are edits 1, 2 and 3 above. The other 2
 
 ## Criteria, measured against the committed tree
 
-Filled in by the measurement commit that follows this one. Every command was run from a script file in the scratchpad, never nested one-line quoting.
+Measured at `6b5e20be`, the commit before this one, with every command run from a script file in the scratchpad, never nested one-line quoting.
 
 | # | Criterion | Printed | Expected | Match |
 |---|---|---|---|---|
-| 1 | the handoff enumerates every edited line with a reprint command | the table above, 19 rows | same | pending |
-| 2 | the fence sweep prints 0 at the head, the review's count before | pending | `0`, and `2` or `3` before | pending |
-| 3 | U4-1, U4-3, U4-5, U3-10 re-run green | pending | pending | pending |
-| 4 | `baseline-agrees-check.sh` exit 0, branding clean, `npm test` green | pending | pending | pending |
-| 5 | no file outside `.sdlc/` moves | pending | `0` | pending |
+| 1 | the handoff enumerates every edited line, and for each quoted program line gives the command that reprints it | §Every edited line, 19 rows, with a reprint command on each of the six quoted program lines | same | yes |
+| 2 | the fence sweep prints 0 at the head, the review's count before | `fences 25` at the head and `fences 28` at `7b5ebd71`, of which the program-output ones are `0` and `3` | `0` at the head; `2` by the review's own naming, `3` by the sweep | yes, with the count delta stated above |
+| 3 | U4-1, U4-3, U4-5, U3-10 re-run green | U4-1 `.sdlc/adapter.md`, `1`, `1`. U3-10 `1`, `1`, `1`. U4-3 `1`, then `.sdlc/baseline.md:1`, `.sdlc/handoffs/records-refresh-U1.md:1`, `.sdlc/handoffs/records-refresh-U3.md:4`, `.sdlc/verdicts/records-refresh-U3.md:1`, `.sdlc/verdicts/survey.md:1`, then `0`. U4-5 `0`, then `15` occurrences on `14` lines against U4's own `UB` `07ecb44c`, then `branding: clean (502 files scanned)`, `exit 0` | U4-1, U3-10, U4-3 exactly as recorded. U4-5's first and third legs as recorded; its second leg was `9` when U4 measured it | yes on U4-1, U3-10, U4-3 and on U4-5's first and third legs. 🟡 U4-5's second leg reads `15`, not `9` |
+| 4 | `baseline-agrees-check.sh` exit 0, branding clean, `npm test` green | seven counted `ok` lines, one `note  head:`, one `ok    head:`, `stale total: 0`, `exit 0`; `branding: clean (502 files scanned)`, `exit 0`; `npm test` `exit 0`, `✓ all 48 test files passed`, `TESTS` `48`, `git status --short` `0` lines, no `node_modules` in the worktree | same | yes |
+| 5 | no file outside `.sdlc/` moves | `0` files outside `.sdlc/` in `git diff --name-only 215351b6`, and the twelve-path list is all `.sdlc/`. P5 against `BASE` prints `0`, `0`, `1	1` | `0`; P5 as the plan states it | yes |
+
+🟡 Criterion 3, U4-5's second leg. The command counts every dash added to `.sdlc` since `07ecb44c`, U4's own merge base, so its value grows with every unit that has landed on the branch since: it covers U6, U3, U8, U9 and U10 now, not U4 alone. Measured at this head it is `15` occurrences on `14` lines. This unit adds none of them: `git diff -U0 215351b6 -- .sdlc | grep '^+' | LC_ALL=C grep -o "$EM" | wc -l` prints `0`, with and without this handoff excluded. The `9` in U4's own handoff is the reading at U4's own head and is not restated anywhere. Reported per the brief, not repaired.
 
 ## Scope
 
-`git diff --name-only $UB` is eleven paths under `.sdlc/` plus this handoff. No file outside `.sdlc/` is touched. `.claude/docs/other/` is absent from the worktree and from every commit; `git ls-files | grep -c node_modules` prints `0`. The board was never staged.
+`git diff --name-only 215351b6` is twelve paths, every one under `.sdlc/`, this handoff among them. No file outside `.sdlc/` is touched. `.claude/docs/other/` is absent from the worktree and from every commit; `git ls-files | grep -c node_modules` prints `0`. The board was never staged.
