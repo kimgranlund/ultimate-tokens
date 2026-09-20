@@ -1550,6 +1550,17 @@ for (const mode of ["perceptual", "peak"]) {
     }
     return out;
   };
+  // F2 (review pass 2, 2026-09-19): addendum 2 said the default kit is IN the sweep. It was added to
+  // the lone-spike sweep (test/engine/anchor.mjs) but this dip gate kept iterating `docs` (the 8
+  // curated categories only) - not excluded on purpose, just never extended when the ruling landed.
+  // Fixed here with a SEPARATE array (`dipDocs`), not by pushing the kit into `docs` itself: `docs` is
+  // also read directly by (iii)/(iii-b) above, whose own anchor-aware-vs-not scope is Q7, an open owner
+  // question this pass does not touch - widening `docs` itself would silently change (iii)/(iii-b)'s
+  // measured population too. `__presetName` is set the same way the corpus loop above sets it, so this
+  // finding's names print the same shape ("default kit"|palette|stop) as everywhere else in this file.
+  const defaultKitDoc = defaultDocument();
+  defaultKitDoc.__presetName = "default kit";
+  const dipDocs = [...docs, defaultKitDoc];
   const BASELINE_BY_MODE = { peak: DIP_BASELINE, even: EVEN_DIP_BASELINE };
   const seenModes = new Set();
   for (const toneMode of ["peak", "even", "perceptual"]) {
@@ -1557,7 +1568,7 @@ for (const mode of ["perceptual", "peak"]) {
     const baseline = BASELINE_BY_MODE[toneMode];
     const seenBaseline = new Set();
     const unlistedSet = new Set();
-    for (const doc of docs) {
+    for (const doc of dipDocs) {
       if ((doc.dampAmp ?? 0) !== 0) continue; // generated palettes only, matching (iii)'s own scope
       const found = new Set();
       for (const stops of [T.STOPS, T.EXPORT_STOPS]) {
@@ -1739,6 +1750,84 @@ for (const mode of ["perceptual", "peak"]) {
       ramp[ramp.findIndex((r) => r.stop === 500)] = { stop: 500, chroma: c500 };
       const res = analyzeCuspRuns(ramp, c500);
       if (!(res.worstRatio > CUSP_RUN_BOUND + 1e-6)) FAIL("chroma-envelope", `(C6 iii-b negative control) synthetic bound+1% ramp read worstRatio ${(res.worstRatio * 100).toFixed(2)}%, expected > ${(CUSP_RUN_BOUND * 100).toFixed(4)}%  -  check analyzeCuspRuns`);
+    }
+  }
+
+  // (v) Q7 ratchet (owner's ruling, 2026-09-20): C6 (iii) above keeps ANSWER (a) unchanged - the 0-of-384
+  // bar stays on the NON-anchored construction only, where stop 500 is the ramp's own designed peak by
+  // construction. On the ANCHORED construction, stop 500 is instead the user's own pinned sample
+  // (paletteStopsAnchored's/okhslStopsAnchored's stop===500 && !clamped special case returns the anchor's
+  // own chroma verbatim, not a value the ramp designed toward), so most anchored palettes legitimately
+  // carry some stop above it - that is not a defect this gate can zero out, and #701's plan already treats
+  // these rendered cells as report-only. The 90%+ hole is not accepted silently either: this is a RATCHET,
+  // not a pass/fail bar on the population. It pins TODAY's measured violator count and max overshoot ratio
+  // on the anchored PEAK path (re-measured this pass against this file's own paletteStops, not copied from
+  // review pass 2's cited figures - this reading reproduces them to the precision cited) and reds ONLY if a
+  // future run's measurement RISES past either pinned number. A silent improvement still passes; the pin
+  // exists to catch a regression that widens the hole further, not to freeze today's number as a target.
+  {
+    const measureAnchoredOvershoot = (engine, mode) => {
+      let violators = 0, maxRatio = 0, witness = "";
+      for (const doc of docs) {
+        if ((doc.dampAmp ?? 0) !== 0) continue; // generated palettes only, matching (iii)'s own scope
+        if (ADIA_CARVEOUT.has(doc.__presetName)) continue; // exempt by name, same carve-out as (iii)/(iii-b)
+        const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode };
+        for (const pal of doc.palettes) {
+          const chroma = rampChromaOf(pal, doc);
+          const ramp = engine.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor }, controls, T.STOPS);
+          const c500row = ramp.find((r) => r.stop === 500);
+          if (!c500row) continue;
+          const c500 = c500row.chroma;
+          if (c500 <= 1e-9) continue;
+          let localMax = 0;
+          for (const row of ramp) localMax = Math.max(localMax, row.chroma / c500);
+          if (localMax > 1 + 1e-6) {
+            violators++;
+            if (localMax > maxRatio) { maxRatio = localMax; witness = `${doc.__presetName}/${pal.name}`; }
+          }
+        }
+      }
+      return { violators, maxRatio, witness };
+    };
+
+    // Pinned this pass (2026-09-20). Anchored PEAK, generated palettes, Adia excluded by name, 19-stop
+    // display set, 3,764 total palettes measured.
+    const PEAK_VIOLATOR_PIN = 3119;
+    const PEAK_MAX_RATIO_PIN = 15.132599;
+    const peakResult = measureAnchoredOvershoot(T, "peak");
+    if (peakResult.violators > PEAK_VIOLATOR_PIN)
+      FAIL("chroma-envelope", `(C6 v ratchet, monitor not bar) anchored peak violator count rose to ${peakResult.violators}, pinned at ${PEAK_VIOLATOR_PIN}, e.g. ${peakResult.witness}`);
+    if (peakResult.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6)
+      FAIL("chroma-envelope", `(C6 v ratchet, monitor not bar) anchored peak max overshoot rose to ${peakResult.maxRatio.toFixed(6)}x stop 500, pinned at ${PEAK_MAX_RATIO_PIN}x, e.g. ${peakResult.witness}`);
+    console.log(`  [monitor] C6 (v) anchored peak overshoot: ${peakResult.violators}/3,764 violator(s) (pinned <= ${PEAK_VIOLATOR_PIN}), max ${peakResult.maxRatio.toFixed(6)}x stop 500's own chroma (pinned <= ${PEAK_MAX_RATIO_PIN}x)  -  a RATCHET, NOT a pass/fail bar on the population: stop 500 is the anchor's own pinned sample on this construction, not the ramp's designed peak, so most anchored palettes legitimately carry some stop above it (#701 treats these rendered cells as report-only)`);
+
+    // Report-only companion figure (even mode): NOT gated, per the owner's ruling ("for the report only").
+    // Printed for the blast-radius report row; a rise here does not fail the suite.
+    const evenResult = measureAnchoredOvershoot(T, "even");
+    console.log(`  [report only, not gated] C6 (v) anchored even overshoot: ${evenResult.violators}/3,764 violator(s), max ${evenResult.maxRatio.toFixed(6)}x stop 500's own chroma  -  companion figure only, per the owner's ruling; the peak figure above is the gated ratchet`);
+
+    // Negative control: a SCRATCH copy of the real engine, patched at okhslStopsAnchored's own
+    // `intendedS * env` saturation line (src/engine/tonal.js - the anchored PEAK/perceptual OKHSL-domain
+    // path's saturation build) to amplify every stop's saturation by 1.6x, must raise the measured
+    // violator count or max ratio (or both) past the pins above - proving the ratchet actually reds on a
+    // real regression, not merely comparing a number to itself.
+    {
+      const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
+      const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
+      const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
+      const NEEDLE = "const s = Math.min(1, Math.max(0, intendedS * env));";
+      if (!realSrc.includes(NEEDLE)) {
+        FAIL("chroma-envelope", "(C6 v negative control) okhslStopsAnchored's saturation line text has moved  -  update the negative control's string match");
+      } else {
+        const patched = realSrc
+          .replace('from "./hct.js"', `from "${hctUrl}"`)
+          .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
+          .replace(NEEDLE, "const s = Math.min(1, Math.max(0, intendedS * env * 1.6));");
+        const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
+        const buggyResult = measureAnchoredOvershoot(BuggyT, "peak");
+        if (!(buggyResult.violators > PEAK_VIOLATOR_PIN || buggyResult.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6))
+          FAIL("chroma-envelope", `(C6 v negative control) a 1.6x-amplified okhslStopsAnchored saturation read violators ${buggyResult.violators}, maxRatio ${buggyResult.maxRatio.toFixed(6)}  -  expected at least one to exceed the pin (${PEAK_VIOLATOR_PIN}, ${PEAK_MAX_RATIO_PIN})  -  check measureAnchoredOvershoot or the patch target`);
+      }
     }
   }
 }

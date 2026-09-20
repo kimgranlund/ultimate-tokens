@@ -277,9 +277,32 @@ console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "F
 //       in `l` — Q3 (b) ruled the token stays exact regardless of the window, so a source whose true
 //       CIE L* sits at or past [PRIME_L_MIN, PRIME_L_MAX] can only get a real six-rung ladder by
 //       letting `prime` sit outside it; those sources are a named, counted allow-list (mirroring C5's
-//       "print the list, fail on any other count" shape), not a silent carve-out. A handful sit close
-//       enough to the window floor that even the F1 widening search's full STEP_L of reserve cannot
-//       keep `prime` distinct from the rung it ends up beside - a stricter subset of (b).
+//       "print the list, fail on any other count" shape), not a silent carve-out.
+//       TWO DISTINCT MECHANISMS land a source on this list (review pass 2, F1, 2026-09-20 - the
+//       original comment named only the first and mis-described all 26 by it):
+//       (i) OUT-OF-WINDOW (21 of 26): the source's own CIE L* sits at or past [PRIME_L_MIN,
+//           PRIME_L_MAX], so `prime` is clamped to the window edge while the six ladder rungs spread
+//           around it - `prime` sits outside [bright, dim] by construction, not by a defect.
+//       (ii) IN-WINDOW, widening-pivot lift (5 of 26): the source's own CIE L* IS inside the window,
+//           but sits within one reserve step (`3 * STEP_L`) of `PRIME_L_MIN`. The F1-style widening
+//           search (Finding A, ported at U4 review pass 1) picks the ladder's pivot as
+//           `min(hi, max(PRIME_L_MIN + 3*STEP_L, lPrime))` - for a source this close to the floor,
+//           that pivot sits ABOVE the source's own `lPrime`, so `prime` (still rendered at the
+//           source's real `lPrime`) no longer sits between the ladder's `bright`/`dim` rungs, which
+//           are built around the LIFTED pivot instead. The widening trades a duplicate-hex rung for
+//           an order violation on exactly this population - a real, derived consequence of the
+//           widening, not an error. These 5: film "Enter the Void · 2009 · dir. Gaspar Noé · the
+//           Tokyo nightlife" secondary #212129 (new this pass), film "The Night of the Hunter · 1955
+//           · dir. Charles Laughton · the river drift" tertiary #1E211E, music "The rave · the laser
+//           tent" secondary #212228 (new this pass), travel "37° N · May · 00:00 · A Patmos Greek
+//           Orthodox church, Easter Saturday at midnight" tertiary-muted #232220, travel "42° N ·
+//           July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season"
+//           tertiary-muted #252215 (new this pass). Confirmed by disabling the widening in a scratch
+//           copy: these 5 drop OUT of ORDER_ALLOW (21 measured, not 26) while `DUPE_ALLOW` grows to
+//           absorb them (26, not 3) - the exact trade the mechanism predicts.
+//       All other members are mechanism (i). A handful of THOSE also sit close enough to the window
+//       floor that even the widening search's full `STEP_L` of reserve cannot keep `prime` distinct
+//       from the rung it ends up beside - a stricter subset of (i), landing them on `DUPE_ALLOW` too.
 // N1 (U1 re-review, 2026-09-18): a count alone lets one corpus source swap for another — one moving
 // in across the window bound, another moving out — and stay green at the same length. Both lists are
 // frozen BY NAME (sorted), mirroring C5's own "fail on any other count or any other name" shape, and
@@ -929,10 +952,19 @@ for (const n of NOTCH_ALLOW) console.log(`    r ${n}`);
 // same `loneSpikeStop` function, so it costs 16 extra renders instead of re-opening six unrelated
 // gates' scope. It found exactly one hit: default kit "Default" Data 7 #088585 stop 500 (even, 25-stop) -
 // a near-achromatic teal anchor sitting as a lone spike between two near-grey neighbours, the same
-// mechanism as the curated corpus's 64. Per addendum 2, this is its OWN finding, not folded into
-// LONE_SPIKE_ALLOW: folding it in would also fold in the plan's separate "0 notched cells in the
-// default kit" style invariant this preset carries, which is a different, larger claim than "this one
-// gate's allow-list grew by one" and needs its own owner sign-off before the allow-list absorbs it.
+// mechanism as the curated corpus's 64: `dampAmp` 0 leaves stops 450/550 achromatic beside the anchor
+// pass-through at stop 500, the fix joins #701 (not this unit). Per addendum 2, this is its OWN
+// finding, not folded into LONE_SPIKE_ALLOW: LONE_SPIKE_ALLOW's own count gate is scoped to the 8
+// curated categories, so folding the kit in would silently widen what that number means.
+//
+// Q8 RULED (owner, via the conductor, 2026-09-20, review pass 2 confirmed the measurement): the
+// rendered-path ruling puts the default kit in the sweep, so the plan's "0 notched cells in the
+// default kit" invariant is RESTATED, not broken. `notchOk`'s own predicate (the ratio+absolute-dip
+// notch check above, NOTCH_ALLOW) measures the default kit at 0 in all three modes - verified directly,
+// re-confirmed by review pass 2 independently. The lone-spike predicate here is a DIFFERENT check (a
+// single stop's OKLCH C spiking above two near-achromatic neighbours, not a chroma dip at the pivot),
+// so Data 7's one named hit does not breach the notch invariant; it is a separate, correctly-scoped
+// finding under its own name, gated below.
 const dkBaseForSpike = defaultDocument(); // .name is read BEFORE hydrate - hydrate does not carry it
 const dkSpikeDoc = hydrate({ ...dkBaseForSpike, toneMode: "even" });
 const dkSpikeView = projectView(dkSpikeDoc);
@@ -947,7 +979,7 @@ for (const p of dkSpikeDoc.palettes) {
 }
 const DEFAULT_KIT_SPIKE_FINDING = new Set([`default kit "Default" Data 7 #088585 stop 500`]);
 const dkSpikeSorted = [...defaultKitSpikeNames].sort();
-console.log(`  ${allowListMatches(dkSpikeSorted, [...DEFAULT_KIT_SPIKE_FINDING]) ? "pass" : "FAIL"}  anchor-ramp default-kit lone-spike (addendum 2, own finding, NOT part of LONE_SPIKE_ALLOW - pending owner ruling on the default kit's "0 notched cells" invariant): ${dkSpikeSorted.length} (expected ${DEFAULT_KIT_SPIKE_FINDING.size})`);
+console.log(`  ${allowListMatches(dkSpikeSorted, [...DEFAULT_KIT_SPIKE_FINDING]) ? "pass" : "FAIL"}  anchor-ramp default-kit lone-spike (addendum 2, own finding, NOT part of LONE_SPIKE_ALLOW - Q8 ruled: the "0 notched cells" invariant is restated, not broken, notch itself reads 0 for the kit): ${dkSpikeSorted.length} (expected ${DEFAULT_KIT_SPIKE_FINDING.size})`);
 if (!allowListMatches(dkSpikeSorted, [...DEFAULT_KIT_SPIKE_FINDING])) {
   for (const n of DEFAULT_KIT_SPIKE_FINDING) if (!dkSpikeSorted.includes(n)) FAIL("anchor-ramp", `default-kit lone-spike: expected member missing - ${n}`);
   for (const n of dkSpikeSorted) if (!DEFAULT_KIT_SPIKE_FINDING.has(n)) FAIL("anchor-ramp", `default-kit lone-spike: unexpected member - ${n}`);

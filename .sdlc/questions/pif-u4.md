@@ -228,7 +228,24 @@ detail: handoff §7.6.
 
 ## Q7 (NEW, addendum 2) - `above100Violators`/`cuspRunFor`: do their invariants apply to anchored palettes at all
 
-**Finding, not yet ruled.** Addendum 2's general ruling ("every #681 allow-list gate reads the rendered
+**RESOLVED, ruled by the owner (2026-09-20): option 3, with a mechanical follow-through.** Review pass 2
+confirmed the builder's non-anchored measurement and escalation were correct behaviour (this section's
+own numbers below, unchanged). The ruling: `above100Violators`/`cuspRunFor` (C6 (iii)/(iii-b)) keep their
+existing non-anchored-only reading and the 0-of-384 bar stays exactly as it was - not silently widened,
+not silently carved out. The anchored-palette population is not left unmonitored either: a NEW ratchet
+gate, C6 (v) in `test/engine/tonal.mjs`, pins today's own re-measured anchored-PEAK violator count and
+max overshoot ratio and reds only if either number rises on a future run (a monitor, not a pass/fail
+bar - "the rendered cells are report-only per #701"). Re-measured this round, directly against this
+file's own `paletteStops`, generated palettes, Adia excluded by name, 19-stop set, 3,764 palettes:
+**peak 3,119 violators, max 15.132599x stop 500's own chroma** (gated by the ratchet); **even 1,205
+violators, max 17.183605x** (printed as a companion figure, explicitly NOT gated - "for the report
+only"). Both reproduce review pass 2's own cited figures (3,119/15.133, 1,205/17.184) to the precision
+cited - an independent re-measurement, not a copy. The ratchet's negative control (a scratch copy with
+`okhslStopsAnchored`'s `intendedS * env` saturation amplified 1.6x) reads 3,378 violators / 25.863456x,
+clearly past both pins, proving it reds on a real regression. Both figures are their own row in the
+handoff's blast-radius report (§9). No engine change: this is a records-and-gates-only resolution.
+
+**Finding, as originally measured (unchanged by the ruling).** Addendum 2's general ruling ("every #681 allow-list gate reads the rendered
 path with the anchor") was applied to these two C6 checks and immediately surfaced that "0 above the
 anchor's own chroma at any stop" (iii) and "one above-anchor cusp run" (iii-b) do not hold, at massive
 scale, for an anchored palette:
@@ -265,13 +282,24 @@ real change to what a ratified #681 invariant means, not a mechanical re-measure
 3. Leave both checks measuring the non-anchored path only (current state), documented as a known,
    accepted scope limit, and track the anchored-palette question as its own follow-up ticket.
 
+**Ruled: option 3, plus the mechanical follow-through above** (a ratchet gate, not silence) - see the
+resolution paragraph at the top of this section.
+
 `scripts/report-preset-fidelity.mjs --envelope` DOES render the full anchor-aware path (per addendum
 2's explicit instruction for that script) and reports this same population as FAIL under both readings
 - expected and correct, since it is a diagnostic report, not an `npm test` gate.
 
 ## Q8 (NEW, addendum 2) - default-kit lone-spike (Data 7): allow-list or fix, and the "0 notched cells" invariant
 
-**Finding, not yet ruled.** Per addendum 2's instruction, the default kit is now in the lone-spike sweep
+**RESOLVED, ruled by the owner (accepted as measured): allow-listed, same as the curated corpus's 64,
+with the invariant RESTATED rather than broken.** Applied in `test/engine/anchor.mjs`'s
+`DEFAULT_KIT_SPIKE_FINDING`: the mechanism is `dampAmp` 0 at the anchor, the same mechanism as the
+curated corpus's 64 named departures; the fix (the even-mode neighbourhood-chroma root fix already
+tracked for the 64) joins #701, not this unit. The default kit's "0 notched cells" invariant itself
+still reads 0 in every mode (`notchOk`'s own predicate) - Data 7's lone spike is a DIFFERENT predicate
+(spike, not notch), so the plan's stated invariant is restated precisely, not silently loosened.
+
+**Finding, as originally measured (unchanged by the ruling).** Per addendum 2's instruction, the default kit is now in the lone-spike sweep
 (a small, separate sweep in `test/engine/anchor.mjs`, not folded into the shared C5/notch loop). It
 found exactly one hit, matching addendum 2's own prediction: `default kit "Default" Data 7 #088585 stop
 500` (even mode, 25-stop export ramp) - the same near-achromatic-neighbours-either-side-of-a-spike

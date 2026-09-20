@@ -705,7 +705,7 @@ for (const p of DEFAULTS) {
 //        not OKHSL saturation — REQ-052 still scales the key colour's own chroma directly, so the
 //        relation is EXACT, not merely close, on an unclamped probe): ratio of measured s at 50 vs 100
 //        == 0.5 (Primary, chroma 95 < 100, so cPrime never saturates against maxChromaInGamut).
-//        #681 U4 integration: this relation only applies to the NON-anchored path — U1's anchor
+//        #681 U4 integration: this relation only applies to the NON-anchored path - U1's anchor
 //        branch emits the anchor's own measured chroma verbatim at the prime rung regardless of
 //        `primeChroma` (prime.mjs:143-150, "prime == anchor" per the plan's Blast-radius table), so
 //        `primeChroma` is a no-op on the prime rung for an anchored palette by design. Since all 16
@@ -738,14 +738,14 @@ for (const p of DEFAULTS) {
 //        for a real regression — tightened to zero. Also widened to run BOTH hue spaces: the prior
 //        version hardcoded `CTL` (cam16 only), so it could never have caught N8, which was specifically
 //        an OKLCH-path divergence (`effHue`'s oklch branch is the one that calls `oklchToCam16Hue`).
-//        #681 U4 integration: same anchor branch as (e) above — for an anchored palette the byte-
+//        #681 U4 integration: same anchor branch as (e) above - for an anchored palette the byte-
 //        identity target is the anchor itself, not `deriveKeyColor` (plan Blast-radius table, "e, h
 //        prime pixel identity"). Trivially exact (`primeSwatches` returns `rgb: anchorRgb` verbatim
 //        at the prime rung), but asserted rather than assumed. Its residual value is NOT "catching a
 //        regression that made the anchor branch re-derive its rgb": all 16 default anchors round-trip
 //        `hctToRgb(cam16FromRgb(rgb), lstarFromRgb(rgb))` byte-exactly (0 of 16 off, measured), so a
 //        mutation that swapped the verbatim pass-through for that round trip would NOT be caught on
-//        these 16 subjects alone (U4 review pass 1, F2) — the real coverage for a re-derived anchor
+//        these 16 subjects alone (U4 review pass 1, F2) - the real coverage for a re-derived anchor
 //        branch is `test/engine/anchor.mjs`'s `anchor-identity` gate over the full 3,380-anchor
 //        corpus, where round-trip byte-exactness is not universal. What THIS loop's anchored arm
 //        actually guards is narrower and still real: that the pass-through wiring itself (the literal

@@ -93,7 +93,12 @@ now this). Both are now resolved:
    render - `DIP_BASELINE` retired to empty, not left stale); **even now reads 90** (was invisible at 0
    under the bug), all at stops 450 (57) / 500 (32) / 550 (1), the anchor pivot and its immediate
    neighbours - mechanism and the full 90-name list are in `EVEN_DIP_BASELINE`'s own header comment in
-   `test/engine/tonal.mjs`. The peak-mode negative control (F1's old bisection-bug patch) was dead on
+   `test/engine/tonal.mjs`. **Scope qualifier (review pass 2, F2):** this 90 is the gate's OWN scope -
+   3,764 generated palettes (`dampAmp === 0`), the Adia kit's 16 excluded by that filter (pre-existing
+   U3 scope, not this pass's doing). The full rendered corpus (Adia included) reads 106 even-mode dip
+   instances at the identical stop split (450/500/550) plus 16 - all 16 additional hits are Adia's own,
+   at stop 500. 106 - 16 = the pinned 90 exactly; not stated as "90" without this qualifier again below.
+   The peak-mode negative control (F1's old bisection-bug patch) was dead on
    the corrected path (0 buggy dips - `okhslStops` routes every anchored palette through
    `okhslStopsAnchored`, which has no bisection at all) and is replaced with a patch to the shared
    `anchorChromaBasis` smoothstep weight (3,987 buggy dips, clearly live). `test/engine/tonal.mjs`'s own
@@ -167,6 +172,62 @@ After items 9-14, `test/engine/tonal.mjs` and `test/engine/anchor.mjs` both run 
 all - confirmed by direct runs, not just the group-deduped summary). §7.1, 7.2, 7.3, 7.4-7.5 below are
 pass-1/pass-2-first-round text, kept for the record; each is superseded by the corresponding item above.
 
+### Pass 2, round 3 (2026-09-20): review pass 2's three narrow FIX-FIRST items
+
+Review pass 2 (`scratchpad/pif-u4-review-2.md`) reproduced every pin round 2 moved on its own
+independent sweeps and reds nine gates by hand, including F2's proof obligation - verdict FIX-FIRST on
+a narrow, three-item list, none requiring re-measurement. Q7 was ruled (a): the builder's non-anchored
+measurement and escalation are correct behaviour. Applied:
+
+15. **F1 - `ORDER_ALLOW`'s header corrected.** The header stated only ONE mechanism (out-of-window
+    clamping) for all 26 members; 5 are actually in-window and land on the list via a SECOND mechanism
+    the header never named - the widening search's pivot can lift above the source's own `lPrime` for
+    an anchor within one reserve step of `PRIME_L_MIN`, so `prime` (rendered at the real `lPrime`) no
+    longer sits between the lifted-pivot ladder's `bright`/`dim` rungs. `test/engine/anchor.mjs`'s
+    `ORDER_ALLOW` header now states both mechanisms and names all 5 in-window members (3 new this
+    pass: "Enter the Void" secondary, "The rave" secondary, "Hidaka coast" tertiary-muted), citing the
+    reviewer's own confirmation (disabling the widening drops these 5 out of `ORDER_ALLOW` and into
+    `DUPE_ALLOW`). No count moved; the fix is the comment, not the numbers.
+16. **F2 - the default kit added to the (iv) dip sweep; Adia scope qualifier added to the "90" figure.**
+    Addendum 2 said the default kit is IN the sweep; round 2 applied that to the lone-spike sweep
+    (`test/engine/anchor.mjs`) but the dip gate (`test/engine/tonal.mjs`) kept iterating the 8 curated
+    categories only - not excluded on purpose, just never extended. Fixed with a SEPARATE array
+    (`dipDocs = [...docs, defaultKitDoc]`), not by widening `docs` itself: `docs` is also read directly
+    by `above100Violators`/`cuspRunFor` (Q7's open scope question), and widening it would have silently
+    changed their measured population too, which is explicitly not this round's job. Measured impact:
+    **zero** - the default kit reads 0 dips in all three modes (verified directly), so `EVEN_DIP_BASELINE`
+    (90) and `DIP_BASELINE` (0) are unchanged. Item 9's "90" is also now qualified: it is the gate's own
+    scope, 3,764 generated (`dampAmp === 0`) palettes with Adia's 16 excluded by that pre-existing
+    filter - the full corpus including Adia reads 106 even-mode dips at the identical stop split plus
+    16 Adia-only hits at stop 500 (106 - 16 = 90, reconciled exactly).
+17. **Q8 ruled (owner, via the conductor) - applied.** The default kit's "0 notched cells" invariant is
+    RESTATED, not broken: `notchOk`'s own predicate reads 0 for the kit in all three modes (verified
+    directly, and independently by review pass 2). Data 7's lone spike is a DIFFERENT predicate. Cited
+    in `DEFAULT_KIT_SPIKE_FINDING`'s own comment in `test/engine/anchor.mjs`: mechanism is `dampAmp` 0
+    at the anchor (the same mechanism as the curated corpus's 64), fix joins #701, not this unit.
+18. **F5, F6 - records.** 3 remaining em dashes in this pass's own new comments in `test/engine/prime.mjs`
+    (the F2 gate-(e)/(h) companion annotations the earlier cleanup commit missed) removed. §4 and the
+    first "Pass 2 final numbers" block marked SUPERSEDED, pointing at the current, accurate sections.
+19. **Q7 ratchet gate added (owner's addendum, 2026-09-20).** Q7 keeps its ruling (a): C6 (iii)'s 0-of-384
+    bar stays on the non-anchored construction only, unchanged. The anchored-peak population is not left
+    unmonitored either - `test/engine/tonal.mjs`'s new C6 (v) is a RATCHET, not a pass/fail bar: it pins
+    today's own re-measured (not the reviewer's cited) anchored-peak violator count and max overshoot
+    ratio and reds only if either number rises on a future run. Re-measured this pass, directly against
+    this file's own `paletteStops` call (19-stop display set, generated palettes, Adia excluded by name,
+    3,764 palettes): **peak 3,119 violators, max 15.132599x stop 500's own chroma** (gated); **even 1,205
+    violators, max 17.183605x** (companion figure, printed, explicitly NOT gated per the ruling - "for
+    the report only"). Both figures reproduce review pass 2's own cited numbers (3,119/15.133,
+    1,205/17.184) to the precision cited, confirming an independent re-measurement rather than a copy.
+    Negative control: a scratch copy of `okhslStopsAnchored`'s `intendedS * env` saturation line
+    (`src/engine/tonal.js:1040`) amplified 1.6x reads 3,378 violators / 25.863456x max, clearly past both
+    pins, proving the ratchet reds on a real regression. Both numbers are also their own row in the
+    blast-radius report below (§9).
+
+F4 (the widening's visible blast radius on 26 shipped palettes) is a review finding for the owner, per
+the round-3 brief's own instruction not to act on it - already recorded plainly in §8/the blast-radius
+table and not softened here. F3 (Q7) is no longer open: item 19 above is this round's mechanical
+follow-through on the owner's ruling.
+
 ## 1. Per-merge integration result
 
 | Merge | Commit | Result |
@@ -226,6 +287,11 @@ codes are recorded per-gate below rather than re-derived as a top-3-slowest-file
 addendum reprioritises timing analysis as non-actionable under the present host load.
 
 ## 4. `npm test` exit status and the reds that remain
+
+**SUPERSEDED (review pass 2, F6) - this section describes the round-1 state. At the current head
+(`fa0264fa`/round 2, then round 3's fix-first commit), `npm test` exits 0, all 48 files pass, 0 gate
+failures in either `tonal.mjs` or `anchor.mjs`. See "Pass 2 final numbers, second round" near the end of
+this document for the current, accurate numbers. Kept below for the record.**
 
 `npm test` exits 1. Of 48 registered test files, 2 fail after the fixes in §5-6 below:
 
@@ -564,6 +630,8 @@ Checked every row I could locate a clear expected direction for against the meas
 | #668: 0 upticks at stop 800/mirror, all three modes, both stop sets | | Measured 0/0/0/0/0/0 at integration head; negative control re-run against `bf2aaf6`'s OWN corpus (pass 2, F4) reproduces the stated 11/46/11/43 baseline exactly (§10) | **Yes, CLOSED** |
 | U3's F1 peak-cap trade: dips resolve | | 0 of 6 named dips observed (§7.3) | Yes, with the caveat that the gate's own negative control needs replacing |
 | C7: exactly 3 chromaEnvelope call sites | 3 (pre-U2-landing reading) | 5 (§2) | **Miss, flagged and explained** - a reading change, not a regression |
+| Q7 ratchet, anchored PEAK overshoot beyond stop 500 (owner's addendum, round 3; not a plan row - a new monitor added this round) | N/A - no plan-stated direction; C6 (iii)'s bar stays non-anchored only, per the ruling | 3,119/3,764 violators, max 15.132599x stop 500's own chroma (both re-measured this pass, `test/engine/tonal.mjs` C6 (v)) | Gated ratchet, pinned this pass - reds only on a rise |
+| Q7 ratchet, anchored EVEN overshoot beyond stop 500 (companion figure, owner's addendum: "for the report only") | N/A - explicitly not gated | 1,205/3,764 violators, max 17.183605x stop 500's own chroma (re-measured this pass, `test/engine/tonal.mjs` C6 (v)) | Report only, not gated |
 
 Two misses/flags remain as of pass 2 (down from three): C4's non-anchored identity control (a real,
 unreconciled cross-unit scope gap, §7.5, now an owner question Q1 rather than an open bug - the
@@ -633,6 +701,10 @@ CLOSED.** The PR body line below is corrected to match.
 closes #686, closes #668."**
 
 ## Pass 2 final numbers
+
+**SUPERSEDED (review pass 2, F6) - this block describes round 1's state (head `4125d965`/`f38d09a2`,
+`npm test` exit 1). At the current head, `npm test` exits 0. See "Pass 2 final numbers, second round"
+near the end of this document for the current, accurate numbers. Kept below for the record.**
 
 **Head:** `4125d965` for the fix itself (`git -C .git-worktrees/pif-u4-integration log -1
 --format='%H %s'`); all numbers below were measured at that commit. Three trailing, non-functional
