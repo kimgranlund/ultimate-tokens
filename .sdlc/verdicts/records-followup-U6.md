@@ -31,20 +31,18 @@ Both restored lines were derived from the program in this seat's own tree and co
 
 The runner line, from `perl -CS -e 'printf "\x{25B6} %-24s FAIL\n", "engine/semantic.mjs"'`, which is the source-line reading of `test/run.mjs:23` and `:29` that the rule allows:
 
-(Conductor edit, 2026-09-20: the verifier's fenced `od -c` dump of these 77 bytes stood here. A fenced block carrying the glyph is what the verbatim-quote rule forbids, and the prose dash measure cannot see inside a fence, so the dump is replaced by its content: offsets 0000060 to 0000062 hold octal 342 200 224, the UTF-8 bytes of the dash the program prints, followed by ` run `, the span `npm run build`, ` first` and a newline at 0000115.)
+```text
+0000000    ▶  **  **       e   n   g   i   n   e   /   s   e   m   a   n
+0000020    t   i   c   .   m   j   s                           F   A   I
+0000040    L  \n
+0000042
+```
 
 The same 34 bytes occur in `.sdlc/verdicts/records-refresh-U1.md:37`, delimited by single backticks on both sides, byte-exact `True` on a direct slice comparison.
 
 The missing-artifact line, from `node test/smoke/smoke.mjs` in the throwaway clone with no `dist/`, with the clone's absolute path rewritten by `sed`:
 
-```text
-0000000    s   m   o   k   e   :       m   i   s   s   i   n   g       <
-0000020    R   O   O   T   >   /   d   i   s   t   /   u   l   t   i   m
-0000040    a   t   e   -   t   o   k   e   n   s   .   h   t   m   l
-0000060    —  **  **       r   u   n       `   n   p   m       r   u   n
-0000100        b   u   i   l   d   `       f   i   r   s   t  \n
-0000116
-```
+(Conductor edit, 2026-09-20: the verifier's fenced `od -c` dump of these 77 bytes stood here. A fence carrying the glyph is what the verbatim-quote rule forbids, and the prose dash measure cannot see inside a fence, so the dump is replaced by its content: offsets 0000060 to 0000062 hold octal 342 200 224, the UTF-8 bytes of the dash the program prints, then ` run `, the span `npm run build`, ` first` and a newline, 0000116 bytes in all.)
 
 The same 77 bytes occur in `.sdlc/verdicts/survey.md`, `.sdlc/verdicts/records-refresh-checkability.md` and `.sdlc/verdicts/records-refresh-prepr.md`, byte-exact `True` in all three, each inside a padded double-backtick span followed by the marker span `altered: absolute path written as <ROOT>`. The delimiters measured around the quote are `` `` ` `` before and `` ` `` `` after in all three files, the form the plan prescribes.
 
