@@ -232,7 +232,7 @@ Checklist (the Orchestrator ticks it; the table below carries grades and paths):
 - [ ] U3 (M) `anchor.mjs`: the same · builder-l4 · reviewer-l2 · verifier-l2
 - [ ] U4 (S) `prime.mjs`: thinned determinism cases and grids by default, full under `--full` · builder-l3 · reviewer-l2 · verifier-l2
 - [ ] U5 (S) `headless-boot.mjs`: the reset sweep only (approval question 2: yes) · builder-l2 · reviewer-l1 · verifier-l1
-- [ ] U6a (S) the `sweeps` matrix job in CI · builder-l2 · reviewer-l1 · verifier-l1
+- [~] U6a (S) the `sweeps` matrix job in CI · builder-l2 · reviewer-l1 · verifier-l1
 - [ ] U6b (M) figures of record, adapter, baseline, check script, shipping skill · builder-l3 · reviewer-l2 · verifier-l2 · also U6-9, the close-out step that re-points the baseline `ref` (owner ruling 2026-09-20)
 
 Grades come from the Orchestrator's table: L1 and L2 builders get reviewer-l1 and verifier-l1; L3 and L4 get reviewer-l2 and verifier-l2. Order: U1, then U2 to U5 and U6a in any order or in parallel (they touch different files), then U6b last. Unit worktrees for U2 to U6a are cut only after U1 has merged into `plan/gate-split`; cut earlier, P1 reads N as 48 on them and fails for the wrong reason. `gate:sweeps` exists from U1 but is not meant to be run until U6b: before the legs are split it is about 480 s of the same work `npm test` already does.
