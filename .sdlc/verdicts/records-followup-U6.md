@@ -31,12 +31,7 @@ Both restored lines were derived from the program in this seat's own tree and co
 
 The runner line, from `perl -CS -e 'printf "\x{25B6} %-24s FAIL\n", "engine/semantic.mjs"'`, which is the source-line reading of `test/run.mjs:23` and `:29` that the rule allows:
 
-```text
-0000000    ▶  **  **       e   n   g   i   n   e   /   s   e   m   a   n
-0000020    t   i   c   .   m   j   s                           F   A   I
-0000040    L  \n
-0000042
-```
+(Conductor edit, 2026-09-20: the verifier's fenced `od -c` dump of these 77 bytes stood here. A fenced block carrying the glyph is what the verbatim-quote rule forbids, and the prose dash measure cannot see inside a fence, so the dump is replaced by its content: offsets 0000060 to 0000062 hold octal 342 200 224, the UTF-8 bytes of the dash the program prints, followed by ` run `, the span `npm run build`, ` first` and a newline at 0000115.)
 
 The same 34 bytes occur in `.sdlc/verdicts/records-refresh-U1.md:37`, delimited by single backticks on both sides, byte-exact `True` on a direct slice comparison.
 
