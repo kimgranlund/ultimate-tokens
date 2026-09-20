@@ -257,7 +257,7 @@ Leg A, one span per line of output: `rows 14` · `partsum 14 total 14` · `pri (
 
 Leg B, one span per line of output:
 `line 12 commit 7dde8cb1 at 2026-09-20T14:36:16-07:00 added 54 deleted 52 hunks 18 filelines 125 reach 41% instant none` ·
-`line 114 commit 7dde8cb1 at 2026-09-20T14:36:16-07:00 added 54 deleted 52 hunks 18 filelines 125 reach 41% instant none`
+`line 115 commit 7dde8cb1 at 2026-09-20T14:36:16-07:00 added 54 deleted 52 hunks 18 filelines 125 reach 41% instant none`
 
 Read: the three counts agree at `14`; the worktree pair agrees at `7`; no gating claim survives while
 `gate-split` shows `started=6`; each of the two stated tallies equals the right derived one, the
@@ -314,9 +314,9 @@ that move. Both strips were run against the fixed file in a throwaway clone. The
 
 | Case | Old strip | New strip |
 |---|---|---|
-| U11's revision row in the precedent form (a genuine citation) | flagged: `line 116 commit 1fe53f5a at 2026-09-20T15:16:57-07:00 added 7 deleted 6 hunks 6 filelines 130 reach 4% instant 2026-09-20T22:00Z` | exempt, correctly |
-| a planted claim in a plain span, no marker | flagged | flagged: `line 131 commit none claim "Every cell below was \`Read at one instan"` |
-| a planted claim with the marker INSIDE the span, the review's probe 3 | exempt, the hole finding 1 measured | flagged: `line 131 commit none claim "This file was \`cited: Read at one instan"` |
+| U11's revision row in the precedent form (a genuine citation) | flagged: `line 116 commit 1fe53f5a at 2026-09-20T15:16:57-07:00 added 7 deleted 6 hunks 6 filelines 130 reach 4% instant 2026-09-20T22:00Z`, measured when that row was line 116 | exempt, correctly |
+| a planted claim in a plain span, no marker | flagged | flagged: `line 131 commit none claim "Every cell below was \`Read at one instan"`, the plant being the file's last line at the time |
+| a planted claim with the marker INSIDE the span, the review's probe 3 | exempt, the hole finding 1 measured | flagged: `line 132 commit none claim "This file was \`cited: Read at one instan"` at the current head |
 | a planted claim with the marker in an adjacent span | flagged | exempt, correctly |
 
 The strip was re-aimed, not narrowed. Rows 1 and 3 move in opposite directions, so the two exempt
@@ -326,8 +326,9 @@ handoff called the change strictly narrower, which the reviewer re-ran and measu
 here. The commit message of `1405ee77` carries that retired phrasing and cannot be corrected without
 rewriting a sha the review already graded, so the correction lives here and in `b0003592`'s message
 instead; a reader of that commit message should read this section beside it. Re-measured on the fixed file, the needle survey prints three matching lines under the old
-strip (`12`, `114`, `116`) and two under the new (`12`, `114`), and with the probe-3 plant added the
-old still prints three while the new prints three of which one is the plant at `131`.
+strip (`12`, `115`, `117`) and two under the new (`12`, `115`), and with the probe-3 plant added the
+old still prints three while the new prints three of which one is the plant at `132`. Re-measured at
+the current head, after #722's row shifted the revision log down by two lines.
 
 The trade is the right one even though it is not a reduction. The precedent form is what
 `.sdlc/adapter.md` §3 ratifies and what all four existing instances in `.sdlc/verdicts/` use, so it is
