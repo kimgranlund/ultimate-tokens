@@ -39,6 +39,8 @@ Port 9333 was clear before both smoke runs that did happen, so the reap is holdi
 
 Either 1 or 2 still needs one `npm run smoke` run, about 26 s, to complete the set: the check script requires three figures per cell.
 
+Whichever is chosen, the tightening is prospective in option 2 and retrospective in option 1. Every one of the fourteen runs in hand started between 6.31 and 7.76, and the two smoke runs at 6.78 and 6.67, so a threshold of 5 applied to the figures already taken discards all fourteen: option 1 is a re-take of the whole set, not of run 15 alone. Option 2 keeps the fourteen, takes the one missing smoke run under the old rule so the set is internally consistent, and applies the new threshold only to sets taken later.
+
 ## Answer
 
 (pending)
