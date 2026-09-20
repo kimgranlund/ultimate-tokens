@@ -74,11 +74,11 @@ something else.
 Team-lead's next ask: the 11.8 s from the ratchet gate cannot explain 294 s against U2's 144.70 s
 baseline, so profile every test file individually. Every file in `test/run.mjs`'s own `TESTS` array run
 sequentially, foreground, each timed with `date +%s.%N` before/after (not `npm test`'s own aggregate,
-so no gen:/bundle/figma-ui regen overhead included here - this isolates `test/run.mjs`'s own 47 files).
+so no gen:/bundle/figma-ui regen overhead included here - this isolates `test/run.mjs`'s own 48 files).
 
 `uptime` at start: 5.16 / 5.05 / 4.80. `uptime` at end: 5.66 / 5.09 / 4.85.
 
-Slowest 4 of 47 files (all others under 10 s, most under 2 s):
+Slowest 4 of 48 files (all others under 10 s, most under 2 s):
 
 | file | wall time |
 |---|---|
@@ -89,7 +89,7 @@ Slowest 4 of 47 files (all others under 10 s, most under 2 s):
 | `ui/poster-strip.mjs` (5th, for scale) | 9.039 s |
 
 Sum of just these 4: **296.065 s**, on its own already bracketing the observed ~294 s whole-suite
-figure. Sum of all 47 files run sequentially: 324.918 s (higher than npm test's own 293.68 s reading
+figure. Sum of all 48 files run sequentially: 324.918 s (higher than npm test's own 293.68 s reading
 because this run sat at a higher load, 5.16-5.66 vs 4.77, and npm test's 293.68 s also included the
 gen:/bundle steps happening BEFORE test/run.mjs starts, offset by not needing a fresh `node` process
 startup per file the same way - the two totals are not directly comparable, both are real, honest

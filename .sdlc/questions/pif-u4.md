@@ -313,3 +313,20 @@ spirit the plan's phrase gestures at, so allow-listing this one instance is itse
 from that stated invariant and may be worth a line in the plan's own record, not just a test-file
 allow-list. The even-mode neighbourhood-chroma root fix already tracked for the 64 (joins #701) would
 also fix Data 7, if and when it lands.
+
+## Gate time, ruled by the owner, 2026-09-20 (recorded pass 5, per the queued instruction)
+
+Verbatim ruling: "Interim ceiling now, split sweeps into gate scripts as a new ticket (Recommended)."
+Ticket: #713.
+
+Per-file table this ruling is against (head `bf62ee30`, load 5.16/5.05/4.80, sequential foreground):
+`engine/tonal.mjs` 100.2 s, `engine/anchor.mjs` 80.0 s, `ui/headless-boot.mjs` 61.0 s, `engine/prime.mjs`
+54.9 s, all other 44 files under 10 s each. Full-suite readings observed: 284 s and 344 s. This is a
+DISTRIBUTED cost across four files, not one heavy file - `tonal.mjs` is the single largest at ~31% of
+the four-file sum, and two of the four (`headless-boot.mjs`, `prime.mjs`) carry cost pre-existing from
+earlier units (U1-U3), not from this unit's own U4 work. Full detail and reasoning:
+`.sdlc/handoffs/pif-u4-q7-ratchet-profile.md`.
+
+U5 (records) writes the interim ceiling into the plan's C1 and into `.sdlc/baseline.md` at landing,
+marked interim, with this per-file table and the load average, citing #713 - not this unit's job to
+write into either of those documents.

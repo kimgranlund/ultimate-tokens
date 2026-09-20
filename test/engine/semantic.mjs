@@ -224,10 +224,10 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    Re-measured an EIGHTH time (#681 U4 integration, 2026-09-19) on the fully integrated tree (U1 +
 //    U2 + U3 + U6, after U3's own damp/dampCurve retune and U6's prime-ladder rebuild both landed).
 //    The 41-cell Q-B population against bf2aaf6 is UNCHANGED (same 41 names, same set, checked by
-//    name below) — U3's retune and U6's ladder rebuild move ramp/prime construction, not which cells
+//    name below) - U3's retune and U6's ladder rebuild move ramp/prime construction, not which cells
 //    sit below their pre-#681 value. Four cells (even Primary light+dark, even Info dark, even Danger
 //    light) moved fractionally below their SEVENTH-pass pinned floor (captured on U2's own branch,
-//    before U3's retune landed) while staying comfortably above both AA and their bf2aaf6 baseline —
+//    before U3's retune landed) while staying comfortably above both AA and their bf2aaf6 baseline -
 //    re-pinned in place below per this table's own ratchet rule ("an intentional default change has
 //    to move a number here deliberately"); U3's retune is exactly that, already ratified in the plan.
 //
@@ -268,22 +268,29 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       ["Data 8", 5.4, 4.9],   // measured 5.44 / 4.99 - pending U4: dark was 5.8 at bf2aaf6
     ],
     even: [
-      ["Neutral", 7.2, 4.6],   // measured 7.29 / 4.65
-      ["Primary", 7.4, 4.7],   // measured 7.4983 / 4.7966 (4dp - both genuinely below the old 7.5/4.8 pin; a 2dp round misleadingly reads as at-or-above it) - re-pinned U4 integration (was 7.5/4.8): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
-      ["Secondary", 5.5, 5.5],   // measured 5.58 / 5.52 - pending U4: dark was 5.8 at bf2aaf6
-      ["Tertiary", 8.2, 5.2],   // measured 8.28 / 5.26
-      ["Info", 7.2, 4.5],   // measured 7.23 / 4.58 - re-pinned U4 integration (was 7.2/4.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
-      ["Success", 7.6, 4.9],   // measured 7.68 / 4.94 - pending U4: light was 8.0 at bf2aaf6, dark was 5.1 at bf2aaf6
-      ["Warning", 9.9, 5.2],   // measured 9.94 / 5.29
-      ["Danger", 8.6, 5.6],   // measured 8.6973 / 5.6465 (4dp - light is genuinely below the old 8.7 pin; a 2dp round misleadingly reads as at-or-above it) - re-pinned U4 integration (was 8.7/5.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
-      ["Data 1", 6.2, 4.9],   // measured 6.30 / 4.93 - pending U4: dark was 5.8 at bf2aaf6
-      ["Data 2", 6.6, 4.6],   // measured 6.69 / 4.66 - pending U4: dark was 5.8 at bf2aaf6
-      ["Data 3", 6.4, 4.8],   // measured 6.50 / 4.81 - pending U4: dark was 5.8 at bf2aaf6
-      ["Data 4", 6.0, 5.1],   // measured 6.04 / 5.12 - pending U4: dark was 5.8 at bf2aaf6
-      ["Data 5", 5.7, 5.3],   // measured 5.78 / 5.34 - pending U4: dark was 5.8 at bf2aaf6
-      ["Data 6", 5.5, 5.5],   // measured 5.55 / 5.57 - pending U4: dark was 5.8 at bf2aaf6
-      ["Data 7", 5.6, 5.4],   // measured 5.68 / 5.48 - pending U4: dark was 5.8 at bf2aaf6
-      ["Data 8", 5.8, 5.3],   // measured 5.84 / 5.30 - pending U4: dark was 5.8 at bf2aaf6
+      // Refreshed to 4dp, pass 5 (verifier's Records section: 10 of 16 comments were stale by more
+      // than 0.01). 6 floors sat ONE DECIMAL under floor(measured) per this table's own stated rule
+      // (line above: "floored to one decimal") - safe direction (no gate ever read below AA or its own
+      // pin), but not what the rule says. Re-pinned those 6 to floor(measured) this pass: Secondary
+      // light 5.5->5.6, Success light 7.6->7.7, Warning dark 5.2->5.3, Data 1 light 6.2->6.3, Data 3
+      // light 6.4->6.5, Data 5 light 5.7->5.8 - each marked "re-pinned pass 5" below, in place of the
+      // "pending U4" note the re-measurement supersedes for that one side.
+      ["Neutral", 7.2, 4.6],   // measured 7.2938 / 4.6509
+      ["Primary", 7.4, 4.7],   // measured 7.4983 / 4.7966 - re-pinned U4 integration (was 7.5/4.8): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
+      ["Secondary", 5.6, 5.5],   // measured 5.6078 / 5.5335 - light re-pinned pass 5 (was 5.5, floor(measured) is 5.6); dark pending U4: was 5.8 at bf2aaf6
+      ["Tertiary", 8.2, 5.2],   // measured 8.2782 / 5.2571
+      ["Info", 7.2, 4.5],   // measured 7.2338 / 4.5768 - re-pinned U4 integration (was 7.2/4.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
+      ["Success", 7.7, 4.9],   // measured 7.7219 / 4.9081 - light re-pinned pass 5 (was 7.6, floor(measured) is 7.7); dark pending U4: light was 8.0 at bf2aaf6, dark was 5.1 at bf2aaf6
+      ["Warning", 9.9, 5.3],   // measured 9.9148 / 5.3334 - dark re-pinned pass 5 (was 5.2, floor(measured) is 5.3)
+      ["Danger", 8.6, 5.6],   // measured 8.6973 / 5.6465 - re-pinned U4 integration (was 8.7/5.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
+      ["Data 1", 6.3, 4.9],   // measured 6.3149 / 4.9736 - light re-pinned pass 5 (was 6.2, floor(measured) is 6.3); dark pending U4: was 5.8 at bf2aaf6
+      ["Data 2", 6.6, 4.6],   // measured 6.6726 / 4.6487 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 3", 6.5, 4.8],   // measured 6.5224 / 4.8271 - light re-pinned pass 5 (was 6.4, floor(measured) is 6.5); dark pending U4: was 5.8 at bf2aaf6
+      ["Data 4", 6.0, 5.1],   // measured 6.0537 / 5.1407 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 5", 5.8, 5.3],   // measured 5.8350 / 5.3561 - light re-pinned pass 5 (was 5.7, floor(measured) is 5.8); dark pending U4: was 5.8 at bf2aaf6
+      ["Data 6", 5.5, 5.5],   // measured 5.5494 / 5.5467 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 7", 5.6, 5.4],   // measured 5.6846 / 5.4779 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 8", 5.8, 5.3],   // measured 5.8570 / 5.3269 - pending U4: dark was 5.8 at bf2aaf6
     ],
     peak: [
       ["Neutral", 7.2, 4.6],   // measured 7.21 / 4.66

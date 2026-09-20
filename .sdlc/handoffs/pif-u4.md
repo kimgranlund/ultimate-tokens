@@ -2,10 +2,12 @@
 kind: handoff
 unit: pif-u4-integration (plan preset-intent-fidelity, ticket #681, unit U4)
 written: 2026-09-19
-updated: 2026-09-20 (pass 2 round 2, addenda 1+2 applied)
+updated: 2026-09-20 (pass 5, records-only, verifier verdict pif-u4)
 branch: unit/pif-u4-integration
 base: 834a4d8d (plan/preset-intent-fidelity)
-head: fa0264fa (pass 2 round 2; round 1's fix was 4125d965, pass 1's head was 7d659ae5)
+head: 36ce7777 (round 4, pre-pass-5; round 3 was bf62ee30, round 2 was fa0264fa, round 1's fix was
+  4125d965, pass 1's head was 7d659ae5) - CORRECTED pass 5 (verifier row: frontmatter previously still
+  said fa0264fa, two fix commits stale)
 ---
 
 # U4: integration, blast-radius report, pending-U4 re-measurements
@@ -234,11 +236,14 @@ measurement and escalation are correct behaviour. Applied:
       reproduces 1,205/3,764 violators, max 17.183605x exactly) - the diagnostic script Q7's own ruling
       already routes report-only, anchor-aware measurements through. A figure that is never asserted does
       not belong in the test suite.
-    - The negative control now runs on a 50-doc sample (the known witness doc plus the next 49 in corpus
-      order) instead of the full 3,764-palette corpus, checking only the max-ratio metric (the violator
-      COUNT is scale-dependent and cannot be compared against the corpus-wide pin at reduced scale; max
-      ratio is a single-witness property and stays valid at any sample size) - a control proves
-      discrimination, not coverage.
+    - The negative control now runs on a 50-doc sample **(SUPERSEDED by item 21 below, review pass 3,
+      R3-2's companion gap: the sample was "witness doc plus the next 49 in corpus order" here, a
+      positional slice that drifts silently if the corpus is reordered - item 21 reseeds it
+      deterministically by sorted preset name instead; do not cite "next 49 in corpus order" as the
+      current mechanism)** instead of the full 3,764-palette corpus, checking only the max-ratio metric
+      (the violator COUNT is scale-dependent and cannot be compared against the corpus-wide pin at
+      reduced scale; max ratio is a single-witness property and stays valid at any sample size) - a
+      control proves discrimination, not coverage.
     **Justification is not a suite-level wall-clock delta** - team-lead's own framing, and the correct
     one: the gate no longer computes a figure it never asserts. The even sweep's own cost was measured
     directly, within a single run, against its own `Date.now()` markers: **9.4s** (9,449ms). The
@@ -286,6 +291,73 @@ the round-3 brief's own instruction not to act on it - already recorded plainly 
 table and not softened here. F3 (Q7) is no longer open: item 19 above is this round's mechanical
 follow-through on the owner's ruling.
 
+### Pass 5 (2026-09-20): records only, verifier verdict pif-u4 (22 green, 3 yellow, 3 red - every red a record)
+
+The engine is green: every allow-list, Finding A, #668, #686 and `npm test` passed independently on the
+verifier's own re-derivation. No source change is in scope except the em dashes fixed above (row 28: 2
+in `.sdlc/handoffs/pif-u2.md`, 2 in `test/engine/semantic.mjs`, both now 0). Rows 21 and 22 (the wrong-
+quantity yielded cells and the missing C6 median/p90 table) are fixed above in §7.3/§7.6. This section
+covers the three yellow rows and the gate-time ruling.
+
+**Row 13 (yellow): the C4 ramp half has no gate and no `--identity-control` mode, and the migration
+size was never written down.** `prime-identity-control` (item 12 above) covers the PRIME half only. The
+ramp construction also fully migrated off the retired pre-#681 reference at U6 (not just the anchor
+branch), the same finding Q1 already settled for prime - but nothing measures or records it for the
+ramp. Re-measured independently this pass (own dump/diff tooling, not the verifier's script, though it
+reproduces the verifier's own cited figures to the precision cited): head's engine rendering `bf2aaf65`'s
+own anchor-free corpus (`anchor`/`sourceAnchor` stripped before hydration - the pre-#681 shape) against
+`bf2aaf65`'s own engine on its own corpus, export25 stop set, n=94,500 cells/mode:
+
+| mode | palettes moved | cells moved | median \|dL*\| | max \|dL*\| |
+|---|---|---|---|---|
+| perceptual | 3,780/3,780 | 52,980/94,500 | 0.0261 | 2.5961 |
+| peak | 3,780/3,780 | 52,950/94,500 | 0.0338 | 4.3634 |
+| even | 3,780/3,780 | 37,144/94,500 | 0.0000 | 0.4289 |
+
+Every palette moves in every mode. This is EXPECTED, not a regression: U3's own retune and #668's fix
+(both landing on the ramp construction after `bf2aaf65`) are exactly the kind of change that moves
+every rendered cell by design. It was measured before (informally, in earlier passes' own witness
+checks) but never written down as a corpus-wide number with a gate or a report mode behind it. No gate
+is added here (out of this pass's records-only scope; a `--identity-control` mode for the ramp half, or
+a dedicated gate, is a real follow-up, not a records fix) - the number itself is now on the record.
+
+**Row 20 (yellow): the F1 peak-cap trade's tone-drift and hue-residual figures, carried to U4 by
+revision 24, were never re-measured in the U4 records.** The plan states (revision 24, ruling 3): "F1's
+peak-cap trade (dips 221 to 6; tone drift 35% > 0.01 L*, max 0.10; hue residual <= 24.6 deg) accepted
+for U3, ruled at U4 with final numbers." Dips reproduce at row 9 (0 of 6 named baseline dips observed).
+The tone-drift/hue-residual figures themselves do not appear anywhere in this unit's own records.
+
+Traced the exact methodology (`.sdlc/questions/pif-u3.md:849-857`): "tone error" is the gap between
+`okhslStops`'s internal `targetTone` (the pre-cap intended L*) and the achieved pixel's rendered L*,
+measured ONLY at "capped" stops (n=5,814 at U3's own head) - the ones that actually routed through the
+HCT fallback (`src/engine/tonal.js:1255`, `hctToRgb(polishHue, target, targetTone)`). "Hue residual" is
+the same idea for `preCapOklchHue` versus the achieved pixel's OKLCH hue. Both `targetTone` and
+`preCapOklchHue` are LOCAL to `okhslStops` (confirmed by reading the function, `tonal.js:1130-1263`) -
+neither is returned by `paletteStops`, the public API this unit's own tooling (and every gate in this
+file) reads. Reproducing these two figures from outside the engine would mean either instrumenting
+`okhslStops` to expose its own internal target values (a real engine change - this pass's own brief:
+"if you believe an engine change is needed, stop and tell me instead"), or approximating against a
+DIFFERENT reference (e.g. the pre-peak-cap construction's own tone/hue), which is not the quantity U3
+measured and would not reconcile against revision 24's own cited figures. Recorded here as a genuine
+gap, not silently closed or manufactured: the owner needs either a real instrumentation change (a small,
+named follow-up, not a records fix) or an explicit decision to accept U3's own last-measured figures
+(34.5%/0.1009/24.62deg, `pif-u3.md:849-857`) as final before revision 24's ruling 3 can be called fully
+reconciled at U4.
+
+**Row 25 (yellow): the default kit is swept for lone-spike and dips only; "0 notched kit cells" is
+asserted in a comment, not gated.** `window`/`gap`/`distinct`/`notch`/`monotone`/`order`/`dupe` all
+iterate the 8 curated categories only. Measured directly this pass (same sweep shape as the existing
+lone-spike/dip kit sweeps in `test/engine/anchor.mjs`, applied to the remaining checks): the default kit
+reads `window: 0, gap: 0, distinct: 0, notch: 0, order: 0, dupe: 0` on every one of these checks, in
+every tone mode - nothing is hidden today, the kit genuinely clears all of them. Recorded as a real gap
+regardless, per the verifier's own framing: the plan's invariant is asserted by comment, not enforced by
+a gate, so a FUTURE kit regression on any of these axes would pass silently. Extending the sweeps to
+cover the kit is real gate-authoring work, out of a records-only pass's scope; the gap and today's clean
+measurement are both now on the record for whoever picks this up.
+
+`npm test`, `gate:corpus-contrast`, citations, branding all re-run green after this pass's changes
+(numbers in the final section below).
+
 ## 1. Per-merge integration result
 
 | Merge | Commit | Result |
@@ -328,21 +400,38 @@ covered by this control or claimed to be.
 
 ## 3. `npm test` timing
 
-**Wall time: 692.42 s.** Load average at the time (`uptime`): **220.00 / 83.00 / 68.17** (1/5/15-minute).
-Per the addendum's standing rule, any wall time over the 175 s ceiling right now is contention, not a
-regression, and the ceiling is not re-measured until the 1-minute load reads under 10 (it read 23.88 at
-last check, still over 10 - not re-measured). `git status --short` was empty after the run once the
-regenerated assets from that run were committed (§8). The known, documented, non-contention cost floor
-is real and separate from contention: `.sdlc/adapter.md`'s own U6-review note records a measured
-**+21% CPU** from `hct.js`'s cache-key-exactness fix (#686) closing a real order-dependence defect,
-corroborated independently at +26%/+32% corpus-scale by a fresh-context reviewer - so even a quiet host
-should now read somewhat above the pre-#681 58-62 s baseline, a cost this unit did not attempt to
-recover (brief: do not optimise on your own initiative).
+**CORRECTED, pass 5 (verifier's Records section): this section previously led with the stale 692.42 s
+/ load 220 reading from pass 1. Leading with the current reading below; the 692.42 s figure is kept
+further down as historical context, not the number a reader should cite.**
 
-`test/engine/tonal.mjs`, `test/engine/anchor.mjs`, and `test/engine/semantic.mjs` (now fixed, §5) were
-run directly outside the full `npm test` harness for the measurements in this report; their own exit
-codes are recorded per-gate below rather than re-derived as a top-3-slowest-files table, since the
-addendum reprioritises timing analysis as non-actionable under the present host load.
+**Current: 293.09 s wall (round 4's own head, 36ce7777), load at start 9.42 / 6.59 / 5.30.** Per-file
+timing (sequential foreground, 48 files, load 5.16/5.05/4.80 at that reading): `engine/tonal.mjs`
+100.2 s, `engine/anchor.mjs` 80.0 s, `ui/headless-boot.mjs` 61.0 s, `engine/prime.mjs` 54.9 s, all other
+44 files under 10 s each (most under 2 s). Full suite readings observed across this round's own runs
+ranged 284-344 s at loads in the 3.9-9.4 band, all well above the 175 s ceiling this plan originally
+carried.
+
+**Gate-time ruled by the owner, 2026-09-20 (verbatim, dated, per ticket #713):** "Interim ceiling now,
+split sweeps into gate scripts as a new ticket (Recommended)." See `.sdlc/questions/pif-u4.md` for the
+full citation. U5 (records) writes the interim ceiling into the plan's C1 and into `.sdlc/baseline.md`
+at landing, marked interim, citing #713 - not this unit's job.
+
+Full distributed per-file profiling, the perf follow-up on the Q7 ratchet gate's own added cost (9.4 s
+even sweep, 2.2 s control, both since removed from the suite - round 4's own commit), and the
+reasoning behind the interim-ceiling recommendation are all in
+`.sdlc/handoffs/pif-u4-q7-ratchet-profile.md`.
+
+**Historical, pass 1 reading (superseded by the above, kept for the record only): wall time 692.42 s.**
+Load average at the time (`uptime`): **220.00 / 83.00 / 68.17** (1/5/15-minute). Per the addendum's
+standing rule, any wall time over the 175 s ceiling at that reading was contention, not a regression.
+`git status --short` was empty after the run once the regenerated assets from that run were committed
+(§8). The known, documented, non-contention cost floor is real and separate from contention:
+`.sdlc/adapter.md`'s own U6-review note records a measured **+21% CPU** from `hct.js`'s
+cache-key-exactness fix (#686) closing a real order-dependence defect, corroborated independently at
++26%/+32% corpus-scale by a fresh-context reviewer - so even a quiet host reads somewhat above the
+pre-#681 58-62 s baseline, a cost this unit did not attempt to recover at pass 1 (brief: do not
+optimise on your own initiative) - the distributed, multi-file nature of the CURRENT cost (above) shows
+that floor alone does not explain the present total either; the gate-time ruling covers the gap.
 
 ## 4. `npm test` exit status and the reds that remain
 
@@ -490,13 +579,76 @@ finding for the owner, not a failure to hide**: the F1 peak-cap trade's dip popu
 genuinely, fully resolved on the integrated tree; what is missing is a REPLACEMENT negative control that
 would let the gate keep discriminating a future regression, which is design work, not integration work.
 
-Revision-24's yielded `perceptual|300`/`peak|700` p90 figures, re-measured on the integrated tree
-(corpus-wide, export25 stop set, |dL*| vs bf2aaf6, n=3,780 each):
+**Correction (pass 5, verifier row 21): the table below was the WRONG QUANTITY and did not reproduce.**
+Revision 24 yielded on the C6 p90 CHROMA RATIO (a stop's emitted chroma as a percentage of stop 500's
+own emitted chroma - `scripts/report-preset-fidelity.mjs --envelope`'s READING (a), the literal text of
+C6), not `|dL*|` against a reference tree. The dL* table below was measured on a stale (pass-1, later
+retracted) position and is the wrong metric besides; it stays here struck through for the record, not
+as a citable figure:
 
-| cell | median \|dL*\| | p90 \|dL*\| | max \|dL*\| |
-|---|---|---|---|
-| perceptual \| stop 300 | 3.9930 | 5.2989 | 9.1015 |
-| peak \| stop 700 | 16.5499 | 32.1079 | 45.1899 |
+~~| cell | median \|dL*\| | p90 \|dL*\| | max \|dL*\| |~~
+~~|---|---|---|---|~~
+~~| perceptual \| stop 300 | 3.9930 | 5.2989 | 9.1015 |~~
+~~| peak \| stop 700 | 16.5499 | 32.1079 | 45.1899 |~~
+
+**Re-measured, correct quantity, pass 5** (`node scripts/report-preset-fidelity.mjs --envelope`, C6's
+own corpus - curated palettes at source chroma >= 10 plus the 8 default-kit semantic families, n=2,920
+per stop per mode, rendered path with `anchor: pal.anchor`):
+
+| cell | yielded p90 (revision 24) | measured p90 (pass 5) |
+|---|---|---|
+| perceptual \| stop 300 | 93.7% | **146.2%** |
+| peak \| stop 700 | 96.8% | **111.1%** |
+
+Both cells now read well past the 90% bar revision 24 yielded them against, and past what was yielded:
++52.5pp at perceptual|300, +14.3pp at peak|700. This reconciles exactly with the verifier's own row 21
+figures (146.2 and 111.1 percent). The cause is the same Q7 mechanism §7.2/item 19/row 22 all name: on
+the anchored construction, stop 500 is the user's own pinned sample, not the ramp's designed peak, so
+the denominator these percentages divide by is not what it was when revision 24 measured against the
+non-anchored construction. See row 22's full table below for the complete picture across all stops and
+modes, not just these two cells.
+
+### 7.6 The C6 median/p90 table (pass 5, verifier row 22: absent from the record; STATED PLAINLY here)
+
+The unit text requires the full per-mode median/p90 table, all stops, all three modes, before and
+after. It was never written down. Both tables below are `node scripts/report-preset-fidelity.mjs
+--envelope`'s own READING (a) output (C6's own corpus: curated palettes at source chroma >= 10 plus the
+8 default-kit semantic families, n=2,920 per stop per mode) - "before" strips `anchor: pal.anchor` from
+the `paletteStops` call in a scratch copy of the script (the non-anchored construction C6's 90% bar was
+originally written against); "after" is the real, rendered, anchor-aware path that ships. Target: median
+<= 25%/75%/75%/25%, p90 <= 35%/90%/90%/35% at stops 100/300/700/900 respectively.
+
+**Before (non-anchored construction, `anchor: undefined`):**
+
+| mode | stop 100 med/p90 | stop 300 med/p90 | stop 700 med/p90 | stop 900 med/p90 | cells failing |
+|---|---|---|---|---|---|
+| perceptual | 9.5% / 17.4% OK | **79.9% / 97.9% FAIL** | 62.6% / 66.5% OK | 22.6% / 26.0% OK | 1 of 8 |
+| peak | 4.2% / 11.8% OK | 41.1% / 58.1% OK | 61.3% / 69.3% OK | 19.4% / 25.2% OK | 0 of 8 |
+| even | 10.9% / 16.2% OK | 39.1% / 52.2% OK | 39.0% / 44.6% OK | 16.3% / 16.5% OK | 0 of 8 |
+
+**After (anchored construction, `anchor: pal.anchor`, the rendered path that ships):**
+
+| mode | stop 100 med/p90 | stop 300 med/p90 | stop 700 med/p90 | stop 900 med/p90 | cells failing |
+|---|---|---|---|---|---|
+| perceptual | 17.4% / **35.1% FAIL** | **94.0% / 146.2% FAIL** | 74.5% / **119.3% FAIL** | **31.7% / 66.5% FAIL** | 7 of 8 |
+| peak | 11.7% / 23.6% OK | **84.0% / 137.7% FAIL** | 68.8% / **111.1% FAIL** | **29.3% / 62.1% FAIL** | 3 of 8 |
+| even | 15.6% / **37.0% FAIL** | 48.4% / **113.7% FAIL** | 42.5% / 80.2% OK | 22.9% / **52.0% FAIL** | 3 of 8 |
+
+24 individual readings total (3 modes x 4 stops x 2 statistics: median, p90 - the table above marks a
+FAIL row when either its median or its p90 misses, so a stop-row can carry 1 or 2 of the 24). Before:
+2 of 24 individual readings fail (both at perceptual|stop 300, the same cell C6 was already imperfect
+against non-anchored). After: **14 of 24 individual readings fail**, matching the verifier's own count
+exactly.
+
+**Stated plainly, per the round-4/pass-5 brief's own instruction not to soften or bury this: on the
+rendered path that ships, the C6 median and p90 bars the owner held at revision 14 are missed in most
+of the 24 checks. The mechanism is Q7's: on the anchored construction, stop 500 is the user's own
+pinned sample (`paletteStopsAnchored`'s/`okhslStopsAnchored`'s `stop===500 && !clamped` special case),
+not the ramp's designed peak, so the percentage-of-stop-500 denominator these bars divide by is not the
+quantity it was when the bars were set against the non-anchored construction. Q7 and #701 cover ONLY
+the above-100%-of-stop-500 clause (C6 (iii)/(v)) - they do not cover these median/p90 bars, and nothing
+in this unit's own work brings them back into target. This is an owner item, not a fix made here: the
+brief for this unit is records, not an engine or threshold change.**
 
 ### 7.4-7.5 anchor.mjs `anchor-ladder` (order/dupe-allow-list) and `prime-identity-control` - Finding A fixed pass 2, Finding B still an owner question
 

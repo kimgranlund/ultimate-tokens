@@ -1207,13 +1207,18 @@ for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "
 }
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 // R10 (review pass 2; corrected review pass 3, Finding 6 - the old line said "all clear", which
-// overstated gap-19 and notch: both are named, frozen allow-lists, not settled zeros): name the
-// specific criteria this file clears, not a generic pass line - C2 (anchor identity, direct +
-// rendered), C4 (non-anchored prime path untouched), C3 (stop 500 exact + lift-40 negative control),
-// C5 (monotone, pixel L*, a true 0, no list), C6/F4 (peak != perceptual, Curve/Tension/Vibrancy each
-// live for every anchored ramp, hueSpace live in even mode + bounded to rounding in perceptual/peak
-// per Q-D, stop 500 exact under every toggle). Window-clamp (10), gap-19 (72, U4 re-freeze), distinct-25
-// (16, U4 re-freeze) and notch (15, Q-C variant, U4-remeasured, still pending owner acceptance) are all
-// named allow-lists compared by name with a biting negative control, not settled zeros.
-console.log("\nPASS: C2, C3, C4, C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, pending U4 owner acceptance) are named allow-lists, compared by name, each with a biting negative control");
+// overstated gap-19 and notch: both are named, frozen allow-lists, not settled zeros; corrected again
+// pass 5 records, per Q1/Q3's own standing-rule resolutions - "C4 untouched" and "notch pending" are
+// both overtaken): name the specific criteria this file clears, not a generic pass line - C2 (anchor
+// identity, direct + rendered), C4 (non-anchored construction TOTALLY migrated off the retired
+// pre-#681 reference - Q1's own resolution, not "untouched": U6 replaced the base ladder outright, so
+// `prime-identity-control` now asserts every one of 3,796 subjects differs from that reference), C3
+// (stop 500 exact + lift-40 negative control), C5 (monotone, pixel L*, a true 0, no list), C6/F4 (peak
+// != perceptual, Curve/Tension/Vibrancy each live for every anchored ramp, hueSpace live in even mode
+// + bounded to rounding in perceptual/peak per Q-D, stop 500 exact under every toggle). Window-clamp
+// (10), gap-19 (72, U4 re-freeze), distinct-25 (16, U4 re-freeze) and notch (15, Q-C variant,
+// RESOLVED by standing rule at Q3 - a clean subset of the old 78, every departure named with cause,
+// not pending) are all named allow-lists compared by name with a biting negative control, not settled
+// zeros.
+console.log("\nPASS: C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control");
 process.exit(0);
