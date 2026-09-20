@@ -28,29 +28,29 @@ this acceptance:
     (brands "Nike" primary-muted, stop 600)
   - peak: max |dL*| 50.75 (cuisine "Cocktails" tertiary-muted, stop 650), max dChroma 43.85 (brands
     "Burger King" primary, stop 500)
-- Full per-mode median/p90 table, both stop sets, all stops (corpus |dL*| vs `bf2aaf6`) — six rows,
+- Full per-mode median/p90 table, both stop sets, all stops (corpus |dL*| vs `bf2aaf6`) - six rows,
   perceptual/even/peak x display19/export25, median 1.35-6.04, p90 5.82-26.14.
 - `damp`/`dampCurve` before/after: `DEFAULT_CONTROLS`' raw values unchanged (80/1.5/0/0, both); U3's
   retune is a new even-mode-only multiplier, `EVEN_DAMP_FACTOR = 0.25`, absent from `bf2aaf6` entirely.
 - Default-kit peak-vs-perceptual ratio: byte-identical at stop 500 for all 16 families on the integrated
   tree (was substantially different per family at `bf2aaf6`, e.g. a 40-point L* spread for Data 5).
 
-This document does not re-grade any of those magnitudes — per C6(iv)'s own text, that is not this
+This document does not re-grade any of those magnitudes - per C6(iv)'s own text, that is not this
 record's job. It exists to carry the owner's 🟢/🔴 on having seen them.
 
 ## What this acceptance is NOT
 
-This acceptance is scoped to C6(iv) — the per-preset movement magnitude, as a record that the owner has
+This acceptance is scoped to C6(iv) - the per-preset movement magnitude, as a record that the owner has
 seen real numbers rather than a pass/fail line. It is separate from, and does not resolve, the open
-questions in `.sdlc/questions/pif-u4.md` (Q1-Q6), several of which touch the SAME report — in particular
+questions in `.sdlc/questions/pif-u4.md` (Q1-Q6), several of which touch the SAME report - in particular
 Q4 (#668's non-reproducing negative control) and Q2 (the F1-widening-search gap) are live findings inside
 the very numbers this record asks the owner to accept the existence of. Accepting C6(iv) is not a ruling
 on those.
 
 ## Owner's acceptance
 
-_(to be filled in by the owner, relayed through team-lead per the brief — "the owner's answer comes back
+_(to be filled in by the owner, relayed through team-lead per the brief - "the owner's answer comes back
 through me")_
 
-- [ ] 🟢 Accepted — the movement table exists, names the report's sha above, and has been seen.
-- [ ] 🔴 Not accepted — reason:
+- [ ] 🟢 Accepted - the movement table exists, names the report's sha above, and has been seen.
+- [ ] 🔴 Not accepted - reason:

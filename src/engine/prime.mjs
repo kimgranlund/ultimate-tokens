@@ -168,6 +168,22 @@ export function primeSwatches(palette, controls) {
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;
 
+  // rungHex(i, lLadderArg, up, down) — the SAME l/hue/chroma/hex a real ladder rung (i !== 3) would
+  // render, used both by the widening search below and by the final PRIME_STEPS.map so the two can
+  // never disagree (same discipline as U1's own pre-U6 widening search, ported below).
+  function rungHex(i, lLadderArg, up, down) {
+    const t = (i - 3) / 3;
+    const absT = Math.abs(t);
+    const w = i < 3 ? absT ** (1 / g) : absT ** g;
+    const l = i < 3 ? lLadderArg + 3 * up * w : lLadderArg - 3 * down * w;
+    const dir = sameDir ? -absT : t;
+    const hue = (((hOk + shift * dir) % 360) + 360) % 360;
+    const cap = maxChromaInGamut(hue, l);
+    const chroma = Math.min(cPrime, cap);
+    const { rgb } = hctToRgb(hue, chroma, l);
+    return "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+  }
+
   // Q3 (b), ruled: the `prime` step is exact regardless of the ladder window; the six OTHER steps
   // clamp their ladder anchor into [PRIME_L_MIN, PRIME_L_MAX] so a source outside that window (e.g. a
   // near-white or very dark sampled swatch) still gets a real six-rung ladder rather than `primeSteps`
@@ -175,15 +191,51 @@ export function primeSwatches(palette, controls) {
   // never an lPrime past BOTH bounds at once — a case the cusp construction can't produce, REQ-051's
   // own comment, but a stored anchor CAN). Non-anchored: identical to `lPrime` (a no-op), so
   // `primeSteps` sees exactly what it always did.
-  const lLadder = anchorHex ? Math.min(PRIME_L_MAX, Math.max(PRIME_L_MIN, lPrime)) : lPrime;
-  const { up, down } = primeSteps(lLadder); // Q9 equal-compress: up === down by construction
+  let lLadder = anchorHex ? Math.min(PRIME_L_MAX, Math.max(PRIME_L_MIN, lPrime)) : lPrime;
+  let { up, down } = primeSteps(lLadder); // Q9 equal-compress: up === down by construction
 
-  // A handful of anchors sit close enough to a window bound that the equal-compress ladder still
-  // renders two rungs (or a rung and the anchor) at the same byte-identical hex — named, counted and
-  // accepted by test/engine/anchor.mjs's `anchor-ladder dupe-allow-list` gate rather than a runtime
-  // widening search (U1's own provisional OKHSL widening loop is retired here; U6's construction has
-  // no equivalent mechanism and does not need one — hex-inequality is the goal, not reachable for a
-  // few named cases given the window geometry, per the owner's hex-inequality ruling).
+  // F1-style widening (U4 integration review pass 1, Finding A; ports U1's own pre-U6 OKHSL widening
+  // search, commit 7bda1d7e, into this L*-domain construction). At the exact window bound, equal-
+  // compress's own `min(STEP_L, roomUp, roomDown)` reads 0 on BOTH sides at once (roomDown === 0 pins
+  // `step` to 0 for roomUp too, unlike the old per-side redistribute rule) — collapsing all six
+  // non-prime rungs onto the single clamped `lLadder` value. Q3 (b) still holds (`prime` never moves:
+  // `lPrime`/`anchorHex` are untouched below); this loop only widens the LADDER's own pivot away from
+  // the bound, by the same amount on both sides (equal-compress's own invariant is preserved, unlike
+  // the old redistribute search), until the six ladder rungs plus the anchor are all distinct hexes —
+  // capped at a full STEP_L of reserve on each side (the ladder's own nominal per-side step; beyond
+  // that the window is offering less room than the ladder was ever designed to need). RESERVE_UNIT is
+  // the old search's 0.001 (of a 0..1 OKHSL domain) scaled by the ~100x L*-domain factor the rest of
+  // this file already uses for PRIME_L_MIN/MAX (header note) — same step count (90), same search. A
+  // handful of sampled sources sit close enough to a bound that even a full STEP_L of reserve cannot
+  // separate `dimmest`/`brightest` from `prime` or from each other — those are named, counted and
+  // accepted by test/engine/anchor.mjs's `anchor-ladder` order/dupe allow-lists rather than silently
+  // passed here.
+  if (anchorHex) {
+    const RESERVE_UNIT = 0.1;
+    const distinct = (lLadderArg, up, down) => {
+      const seen = new Set([anchorHex]);
+      for (let i = 0; i < 7; i++) {
+        if (i === 3) continue;
+        const hx = rungHex(i, lLadderArg, up, down);
+        if (seen.has(hx)) return false;
+        seen.add(hx);
+      }
+      return true;
+    };
+    if (!distinct(lLadder, up, down)) {
+      for (let reserve = RESERVE_UNIT; reserve <= STEP_L + 1e-9; reserve += RESERVE_UNIT) {
+        const lo = PRIME_L_MIN + 3 * reserve, hi = PRIME_L_MAX - 3 * reserve;
+        if (lo > hi) break; // the window has nothing left to reserve from either side
+        const candidate = Math.min(hi, Math.max(lo, lPrime));
+        const steps = primeSteps(candidate);
+        lLadder = candidate;
+        up = steps.up;
+        down = steps.down;
+        if (distinct(lLadder, up, down)) break; // keep the LAST (most-widened) attempt otherwise
+      }
+    }
+  }
+
   return PRIME_STEPS.map((step, i) => {
     // The anchor branch's `prime` step (i===3) renders the STORED hex verbatim — unconditionally,
     // never scaled by `primeChroma` (unlike the other six rungs' chroma below): the ticket's "never

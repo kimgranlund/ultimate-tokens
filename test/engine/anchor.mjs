@@ -33,7 +33,7 @@
 // validated primitives — never a call back into primeSwatches's own internals — mirroring
 // test/engine/prime.mjs's own "Agent verification" anti-tautology note for this exact file. A negative
 // control (one mutated chroma) proves the comparison loop itself can fail before trusting its "0 off".
-import { primeSwatches, primeSteps, PRIME_STEPS } from "../../src/engine/prime.mjs";
+import { primeSwatches, PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, lstarFromRgb, cam16FromRgb } from "../../src/engine/hct.js";
 import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX } from "../../src/engine/tonal.js";
 import { rgbToOkhsl, okhslToRgb } from "../../src/engine/okhsl.js";
@@ -79,10 +79,37 @@ function stateFor(p) {
   };
 }
 
+// referencePrimeSteps(lPrime) — repaired U4 review pass 1, Finding F1 (2026-09-20). A PRIVATE,
+// OKHSL-domain copy of prime.mjs's own pre-#681 `primeSteps` (origin/main commit 91957732, before
+// U1's anchor field and U6's CIE-L*/equal-compress rebuild), ported verbatim rather than reused from
+// the shared import: the shared `primeSteps` (src/engine/prime.mjs) was rebuilt by U6 to take CIE L*
+// in [0, 100], so feeding it an OKHSL `l` in [0, 1] (as this file did before the fix) silently read
+// every lPrime as "essentially at PRIME_L_MIN", returning {up:0, down:0} and collapsing all seven
+// reference rungs onto the key colour's own hex — the exact fault pattern of the duplicate
+// `chromaEnvelope` export this same integration unit caught elsewhere: two units editing one shared
+// symbol with a consumer neither updated. `PRIME_STEP`/`PRIME_L_MIN`/`PRIME_L_MAX` below are this
+// reference's OWN, unit-correct constants (0.09 / 0.14 / 0.97, the pre-#681 OKHSL-domain values),
+// never prime.mjs's post-#681 CIE-L* ones — deliberately different names so the two can't be
+// confused again.
+const REF_PRIME_STEP = 0.09;
+const REF_PRIME_L_MIN = 0.14;
+const REF_PRIME_L_MAX = 0.97;
+function referencePrimeSteps(lPrime) {
+  const roomUp = Math.max(0, (REF_PRIME_L_MAX - lPrime) / 3);
+  const roomDown = Math.max(0, (lPrime - REF_PRIME_L_MIN) / 3);
+  let up = Math.min(REF_PRIME_STEP, roomUp);
+  let down = Math.min(REF_PRIME_STEP, roomDown);
+  const short = (REF_PRIME_STEP - up) + (REF_PRIME_STEP - down); // travel lost to clipping, 0 if neither clips
+  if (up >= REF_PRIME_STEP) up = Math.min(roomUp, up + short); // only an UNCLIPPED side absorbs (#641 redistribute)
+  if (down >= REF_PRIME_STEP) down = Math.min(roomDown, down + short);
+  return { up, down };
+}
+
 // referenceNonAnchored(palette, controls) — a FRESH copy of prime.mjs's pre-#681 (deriveKeyColor cusp)
 // construction, built directly against hct.js/okhsl.js/tonal.js's validated primitives, never calling
-// primeSwatches. `primeSteps`/`PRIME_STEPS` are reused (test/engine/prime.mjs's own precedent: they are
-// pre-existing, unchanged-by-#681 exports, not the branching logic under test here).
+// primeSwatches. `PRIME_STEPS` is reused (test/engine/prime.mjs's own precedent: it is a pre-existing,
+// unchanged-by-#681 export, not the branching logic under test here); `primeSteps` itself is NOT
+// reused — see `referencePrimeSteps` above.
 function referenceNonAnchored(palette, controls) {
   const baseHue = effHue(palette.hue, controls.hueSpace, (palette.chroma ?? 0) / 100);
   const pk = peakC(baseHue);
@@ -90,7 +117,7 @@ function referenceNonAnchored(palette, controls) {
   const keyRgb = hctToRgb(baseHue, keyChroma, pk.tone).rgb;
   const key = rgbToOkhsl(keyRgb);
   const lPrime = key.l;
-  const { up, down } = primeSteps(lPrime);
+  const { up, down } = referencePrimeSteps(lPrime);
   const g = 3 ** ((palette.skew ?? 0) / 100);
   const pc = (palette.primeChroma ?? controls.primeChroma ?? 100) / 100;
   const s = Math.min(1, Math.max(0, key.s * pc));
@@ -186,6 +213,23 @@ if (controlSubjects.length !== 3796) FAIL("prime-identity-control", `${controlSu
   if (real[3].hex === ref[3].hex) FAIL("prime-identity-control", "negative control DID NOT bite: mutating chroma by 37 left primeSwatches[3].hex unchanged vs the reference — the comparison cannot discriminate");
 }
 
+{
+  // second negative control (U4 review pass 1, F1 point 3): the control above only ever mutates the
+  // PRIME rung (index 3, `real[3].hex`) — the one rung `w(prime) = 0` makes immune to `skew`/`hueShift`,
+  // so it says nothing about whether the loop below actually discriminates the SIX LADDER rungs, which
+  // is where the whole 3,796-off reading came from. Mutate `skew` instead (it only bends `w` on the six
+  // ladder rungs; `real[3]`/`ref[3]` are provably identical to their unmutated selves regardless of
+  // skew) and confirm at least one non-prime step differs.
+  const s = controlSubjects[0];
+  const ctl = { hueSpace: s.hueSpace, primeChroma: 100 };
+  const mutated = { ...s.palette, anchor: undefined, skew: ((s.palette.skew ?? 0) + 80) % 100 };
+  const real = primeSwatches(mutated, ctl);
+  const ref = referenceNonAnchored(s.palette, ctl); // reference uses the UN-mutated skew on purpose
+  const ladderIdx = [0, 1, 2, 4, 5, 6];
+  const bites = ladderIdx.some((i) => real[i].hex !== ref[i].hex);
+  if (!bites) FAIL("prime-identity-control", "negative control DID NOT bite: mutating skew by 80 left all six non-prime ladder rungs unchanged vs the reference — the six-rung comparison cannot discriminate");
+}
+
 let ctrlExact = 0, ctrlOff = 0;
 for (const { label, hueSpace, palette: p } of controlSubjects) {
   const ctl = { hueSpace, primeChroma: 100 };
@@ -203,19 +247,21 @@ for (const { label, hueSpace, palette: p } of controlSubjects) {
 }
 console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "FAIL" : "pass"}  prime-identity-control: ${ctrlExact} exact, ${ctrlOff} off (non-anchored primeSwatches unchanged by #681)`);
 
-// ── anchor-ladder (F1, U1 review 2026-09-18) ────────────────────────────────────────────────────
+// ── anchor-ladder (F1, U1 review 2026-09-18; re-derived U4 review pass 1, Finding A, 2026-09-20) ──
 // The anchored ladder's own well-formedness at primeChroma 100 (the same evaluation point C2/C4
 // use), over all 3,380 anchored corpus palettes, two invariants:
-//   (a) the SIX ladder rungs (every step but `prime`) are strictly decreasing in OKHSL `l` — this
-//       comes only from `primeSteps`' redistribution and prime.mjs's F1 widening search, never from
-//       the anchor's own position, so it holds unconditionally: 0 exceptions anywhere in the corpus.
+//   (a) the SIX ladder rungs (every step but `prime`) are strictly decreasing in CIE L* — this comes
+//       only from `primeSteps`' equal-compress and prime.mjs's F1-style widening search (ported onto
+//       equal-compress at U4, review pass 1 Finding A — U1's original OKHSL widening loop is retired,
+//       but the mechanism it names is real again), never from the anchor's own position, so it holds
+//       UNCONDITIONALLY: 0 exceptions anywhere in the corpus (no allow-list, by design).
 //   (b) all SEVEN rungs render distinct hexes, and `prime` sits strictly between `bright` and `dim`
 //       in `l` — Q3 (b) ruled the token stays exact regardless of the window, so a source whose true
-//       OKHSL `l` sits at or past [PRIME_L_MIN, PRIME_L_MAX] can only get a real six-rung ladder by
+//       CIE L* sits at or past [PRIME_L_MIN, PRIME_L_MAX] can only get a real six-rung ladder by
 //       letting `prime` sit outside it; those sources are a named, counted allow-list (mirroring C5's
 //       "print the list, fail on any other count" shape), not a silent carve-out. A handful sit close
-//       enough to the window floor that even the F1 widening search's full PRIME_STEP of reserve
-//       cannot keep `prime` distinct from the rung it ends up beside — a stricter subset of (b).
+//       enough to the window floor that even the F1 widening search's full STEP_L of reserve cannot
+//       keep `prime` distinct from the rung it ends up beside — a stricter subset of (b).
 // N1 (U1 re-review, 2026-09-18): a count alone lets one corpus source swap for another — one moving
 // in across the window bound, another moving out — and stay green at the same length. Both lists are
 // frozen BY NAME (sorted), mirroring C5's own "fail on any other count or any other name" shape, and
@@ -227,6 +273,7 @@ const ORDER_ALLOW = [
   `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
   `film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`,
   `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
+  `film "Enter the Void · 2009 · dir. Gaspar Noé · the Tokyo nightlife" secondary #212129`,
   `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
   `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24`,
@@ -235,6 +282,7 @@ const ORDER_ALLOW = [
   `music "Black metal · the forest at night" secondary #1E2024`,
   `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
   `music "The late-night club · the smoky set" primary-muted #1F1F23`,
+  `music "The rave · the laser tent" secondary #212228`,
   `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
   `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
@@ -243,6 +291,7 @@ const ORDER_ALLOW = [
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
   `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`,
   `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
+  `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`,
   `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
   `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
 ];
@@ -250,7 +299,6 @@ const DUPE_ALLOW = [
   `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
   `music "Black metal · the forest at night" secondary #1E2024`,
-  `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
 ];
 {
   const orderNames = [], dupeNames = [];
@@ -299,14 +347,14 @@ const DUPE_ALLOW = [
   if (!sameLength || identical) FAIL("anchor-ladder", "negative control DID NOT bite: a same-length, one-member-swapped allow-list compared equal to the real one — the sorted-array comparison cannot discriminate a substitution");
 }
 
-// negative control: a synthetic anchor pinned at OKHSL l=0 (pure black, unambiguously past
+// negative control: a synthetic anchor pinned at CIE L* 0 (pure black, unambiguously past
 // PRIME_L_MIN) must be caught by the SAME predicate the corpus loop above counts with — proving the
 // predicate itself discriminates rather than the corpus happening to already contain 23/4.
 {
   const synthetic = { anchor: "#000000" };
   const sw = primeSwatches(synthetic, { hueSpace: "oklch", primeChroma: 100 });
   const orderViolation = !(sw[2].l > sw[3].l && sw[3].l > sw[4].l);
-  if (!orderViolation) FAIL("anchor-ladder", "negative control DID NOT bite: a synthetic #000000 anchor (OKHSL l=0, unambiguously outside [PRIME_L_MIN, PRIME_L_MAX]) passed the prime-between-bright-and-dim check — the predicate cannot discriminate an out-of-window anchor");
+  if (!orderViolation) FAIL("anchor-ladder", "negative control DID NOT bite: a synthetic #000000 anchor (CIE L* 0, unambiguously outside [PRIME_L_MIN, PRIME_L_MAX]) passed the prime-between-bright-and-dim check — the predicate cannot discriminate an out-of-window anchor");
 }
 
 // ── anchor-ramp (U2, ticket #681): C3 ramp pass-through + C5 monotone/distinct ─────────────────────
@@ -728,11 +776,90 @@ const windowNames = new Set(), nonMonoNames = new Set(), gapNames = new Set(), d
 // peak never is. Requiring that keeps the gate sensitive to the actual bug (the review's own examples'
 // neighbours read 0.016-0.034, comfortably under this bound) while clearing every legitimate cusp.
 // Gated in EVEN mode only (the only mode `chromaAt`'s bracketed solve touches) on the 25-stop export
-// ramp, a true 0 - no allow-list, since a real hit here is exactly the bug this whole pass exists to
-// prevent, not expected churn. Negative control: restoring the old seedHue fallback in a scratch copy
-// reds this exact gate (recorded in the handoff, since it needs a source patch this file does not
-// carry).
+// ramp. Negative control: restoring the old seedHue fallback in a scratch copy reds this exact gate
+// (recorded in the handoff, since it needs a source patch this file does not carry).
+//
+// LONE_SPIKE_ALLOW (owner ruling, U4 review pass 1 / pass 2, 2026-09-20; same treatment as
+// NOTCH_ALLOW above, named-by-value not just counted). Root-caused, not an integration defect: all 64
+// hits sit at stop 500 (the anchor pass-through point, U2) and the spiking hex is the palette's own
+// stored `anchor` in every case. U3's ruled `dampAmp` 55 -> 0 (ticket #681 U3, Q7) removes even mode's
+// chroma-envelope shoulder term, so at `dampAmp` 0 stops 450/550 fall to OKLCH C 0.036-0.049 (under
+// this gate's own 0.05 achromatic bound) while U2's pass-through holds stop 500 at the anchor's own
+// full chroma, C 0.072-0.093 - a genuine one-stop chroma spike exactly at the pass-through point.
+// Witness: architecture "Komsomolskaya Station" tertiary `#346190`: `#5F768F` (C 0.0475) ->
+// `#346190` (C 0.0911) -> `#3E546C` (C 0.0482). Neither `unit/pif-u2-ramp` (carries this gate, but
+// `dampAmp: 55`: 0 hits) nor `unit/pif-u3-envelope` (carries `dampAmp: 0`, but not this gate) could
+// see the combination alone - the gate and the corpus change first meet on this integration branch.
+// Owner ruling: name the 64 by value and gate the count here; the real fix (an even-mode neighbourhood
+// chroma term at the anchor stop, so 450/550 are not left achromatic beside a saturated 500) joins
+// ticket #701, not this unit. Printed by the gate itself, so a real drift is copy-pasteable back in.
 const LONE_SPIKE_BOUND = 0.03, LONE_SPIKE_ACHROMATIC = 0.05;
+const LONE_SPIKE_ALLOW = [
+  `architecture "Komsomolskaya Station · 1952 · Moscow Metro" tertiary #346190 stop 500`,
+  `architecture "Marine Drive · 1930s · Art Deco ensemble · Mumbai" tertiary #3C819E stop 500`,
+  `architecture "Napier · rebuilt 1931–33 · Art Deco town, New Zealand" primary-muted #458FA7 stop 500`,
+  `architecture "Ocean Drive · 1930s · Miami Beach Art Deco Historic District" primary-muted #6BABCD stop 500`,
+  `architecture "Ocean Drive · 1930s · Miami Beach Art Deco Historic District" tertiary #78C0C4 stop 500`,
+  `architecture "Oia · Cyclades vernacular · Santorini, Greece" tertiary #136689 stop 500`,
+  `architecture "Piazza d'Italia · 1978 · Charles Moore · New Orleans" tertiary #399091 stop 500`,
+  `architecture "Piazza d'Italia · 1978 · Charles Moore · New Orleans" tertiary-muted #5893AC stop 500`,
+  `architecture "Sagrada Família · Gaudí, begun 1882 · Barcelona · the nave" tertiary-muted #2C9498 stop 500`,
+  `architecture "Shah Mosque · 1629 · Isfahan, Iran · the dome and iwan" secondary #3CA1A2 stop 500`,
+  `architecture "Sydney Opera House · 1973 · Jørn Utzon" primary #6BABCD stop 500`,
+  `architecture "Sydney Opera House · 1973 · Jørn Utzon" tertiary #206F92 stop 500`,
+  `architecture "Taos Pueblo · adobe vernacular · New Mexico" secondary-muted #4A9FA3 stop 500`,
+  `architecture "Taos Pueblo · adobe vernacular · New Mexico" tertiary #5F97BD stop 500`,
+  `architecture "The Alhambra · 14th c · Granada · the Court of the Lions" tertiary #28817E stop 500`,
+  `architecture "The Chrysler Building · 1930 · William Van Alen · New York" primary-muted #6595BF stop 500`,
+  `architecture "The Portland Building · 1982 · Michael Graves" primary #4875A6 stop 500`,
+  `architecture "Trellick Tower · 1972 · Ernő Goldfinger · London" primary-muted #40888A stop 500`,
+  `architecture "VDNKh · 1939–54 · exhibition pavilions · Moscow" tertiary-muted #528DA6 stop 500`,
+  `cuisine "Mole poblano · the festival plate" secondary-muted #346190 stop 500`,
+  `cuisine "Sicilian table · the southern feast" primary-muted #3D699A stop 500`,
+  `film "Blade Runner 2049 · 2017 · dir. Villeneuve · cin. Deakins · the Vegas ruins" primary #409EB2 stop 500`,
+  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" primary-muted #2C5887 stop 500`,
+  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" tertiary #3B8269 stop 500`,
+  `film "John Wick · 2014 · dir. Stahelski · the Red Circle club" primary #2C9498 stop 500`,
+  `film "John Wick · 2014 · dir. Stahelski · the Red Circle club" secondary #244979 stop 500`,
+  `film "La La Land · 2016 · dir. Chazelle · the Griffith Park dusk" secondary-muted #264B7C stop 500`,
+  `film "Mad Max: Fury Road · 2015 · dir. Miller · the desert chase" tertiary #005567 stop 500`,
+  `film "My Neighbour Totoro · 1988 · Studio Ghibli · the rural summer" secondary-muted #82BAD8 stop 500`,
+  `film "Once Upon a Time in the West · 1968 · dir. Leone · the railhead town" primary #40888A stop 500`,
+  `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary-muted #4376A5 stop 500`,
+  `film "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet" tertiary-muted #0A8285 stop 500`,
+  `film "The Wizard of Oz · 1939 · the gates of the Emerald City" primary-muted #729DCA stop 500`,
+  `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" primary #418792 stop 500`,
+  `film "Vertigo · 1958 · dir. Alfred Hitchcock · the green neon hotel" primary #274D76 stop 500`,
+  `literature "Don Quixote · Cervantes · 1605 · the plains of La Mancha" tertiary-muted #6292BC stop 500`,
+  `literature "The Little Prince · Saint-Exupéry · 1943 · the desert & the asteroid" tertiary #2E4E7A stop 500`,
+  `literature "The Picture of Dorian Gray · Wilde · 1890 · the aesthete's drawing room" secondary #006366 stop 500`,
+  `music "City pop · the '80s Tokyo-night sleeve" secondary-muted #279196 stop 500`,
+  `music "Cool jazz · the mid-century record sleeve" secondary #265986 stop 500`,
+  `music "Gospel · the church choir" secondary-muted #346190 stop 500`,
+  `music "Mod & British Invasion · the op-art club" secondary-muted #264B7C stop 500`,
+  `music "Modal jazz · the cool-blue session" secondary #23436E stop 500`,
+  `music "Motown · the glamour stage" primary #1E8B8F stop 500`,
+  `music "Nashville rhinestone · the Opry stage" secondary #30979D stop 500`,
+  `music "Outlaw country · the desert-highway sleeve" primary #399092 stop 500`,
+  `music "Power metal · the fantasy album art" secondary #2C5887 stop 500`,
+  `music "Stax · the Southern-soul sleeve" primary #289195 stop 500`,
+  `music "Vaporwave · the digital-pastel aesthetic" tertiary-muted #75C7D3 stop 500`,
+  `nature "0° · June · 11:00 · Congo Basin lowland forest, Odzala, Republic of the Congo" primary #116264 stop 500`,
+  `nature "18° S · November · 11:00 · Ribbon Reefs, Great Barrier Reef, Australia" secondary #6CBBBB stop 500`,
+  `nature "18° S · November · 11:00 · Ribbon Reefs, Great Barrier Reef, Australia" tertiary #29638E stop 500`,
+  `nature "19° S · July · 17:00 · Okavango Delta, Botswana, dry-season flood" primary-muted #1E8B90 stop 500`,
+  `nature "20° N · January · 11:00 · Cenote Ik Kil, Yucatán, Mexico" secondary #569DA0 stop 500`,
+  `nature "23° S · December · 13:00 · Salar de Atacama edge, Atacama Desert, Chile" secondary-muted #5DA4A1 stop 500`,
+  `nature "37° N · October · 16:00 · Monument Valley, Colorado Plateau, Arizona–Utah" primary #4E79A4 stop 500`,
+  `nature "51° N · July · 08:00 · Moraine Lake, Valley of the Ten Peaks, Canadian Rockies" secondary-muted #56AAAD stop 500`,
+  `nature "64° N · March · inside · Vatnajökull glacier cave, Iceland" secondary #2F7B9F stop 500`,
+  `travel "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog" secondary #042546 stop 500`,
+  `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" primary-muted #588AB9 stop 500`,
+  `travel "26° N · June · 18:30 · The shrine of Lal Shahbaz Qalandar, Sehwan, at the evening dhamaal" secondary #397554 stop 500`,
+  `travel "41° N · April · 09:00 · La Boqueria, Barcelona, just past opening on a Tuesday" tertiary #1C486F stop 500`,
+  `travel "41° N · April · 10:00 · Bolhão Market, Porto, Saturday opening hour" primary #4F80A8 stop 500`,
+  `travel "47° N · October · 05:55 · Ger camp at Övörkhangai, the moment before sunrise" primary-muted #5485AE stop 500`,
+];
 function loneSpikeStop(ramp25) {
   for (let i = 1; i < ramp25.length - 1; i++) {
     const c0 = rgbToOklchIndep(hexToRgb(ramp25[i - 1].hex))[1];
@@ -834,8 +961,12 @@ if (!allowListMatches(notchSorted, NOTCH_ALLOW)) {
 }
 for (const n of NOTCH_ALLOW) console.log(`    r ${n}`);
 const loneSpikeSorted = [...loneSpikeNames].sort();
-console.log(`  ${loneSpikeSorted.length === 0 ? "pass" : "FAIL"}  anchor-ramp lone-spike (even, near-achromatic neighbours <= ${LONE_SPIKE_ACHROMATIC}, OKLCH C > both by > ${LONE_SPIKE_BOUND}): ${loneSpikeSorted.length} (expected 0, no allow-list - a real hit is the bug this pass exists to prevent)`);
-for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: stop's OKLCH C exceeds both neighbours by > ${LONE_SPIKE_BOUND} - ${n}`);
+console.log(`  ${allowListMatches(loneSpikeSorted, LONE_SPIKE_ALLOW) ? "pass" : "FAIL"}  anchor-ramp lone-spike allow-list (even, near-achromatic neighbours <= ${LONE_SPIKE_ACHROMATIC}, OKLCH C > both by > ${LONE_SPIKE_BOUND}; owner-ruled dampAmp-0/anchor-pass-through carve-out, fix joins #701): ${loneSpikeSorted.length} (expected ${LONE_SPIKE_ALLOW.length})`);
+if (!allowListMatches(loneSpikeSorted, LONE_SPIKE_ALLOW)) {
+  for (const n of LONE_SPIKE_ALLOW) if (!loneSpikeSorted.includes(n)) FAIL("anchor-ramp", `lone-spike allow-list: expected member missing - ${n}`);
+  for (const n of loneSpikeSorted) if (!LONE_SPIKE_ALLOW.includes(n)) FAIL("anchor-ramp", `lone-spike allow-list: unexpected member (stop's OKLCH C exceeds both neighbours by > ${LONE_SPIKE_BOUND}) - ${n}`);
+}
+for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
 
 // R10 (review pass 2): the OLD "N1-style" control compared two hardcoded arrays with its own duplicate
 // of allowListMatches's logic — a tautology, since that comparison can never pass regardless of whether
@@ -850,6 +981,7 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: stop's OKLCH C
   dropCheck("gap", gapSorted, RAMP_GAP_ALLOW);
   dropCheck("distinct", distinctSorted, RAMP_DISTINCT_ALLOW);
   dropCheck("notch", notchSorted, NOTCH_ALLOW);
+  dropCheck("lone-spike", loneSpikeSorted, LONE_SPIKE_ALLOW);
   // A same-length swap must ALSO be caught (a name substitution, not just a shrink).
   const swapCheck = (name, measuredSorted, allow, fakeMember) => {
     const swapped = [...allow.slice(0, -1), fakeMember].sort();
@@ -859,6 +991,7 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: stop's OKLCH C
   swapCheck("gap", gapSorted, RAMP_GAP_ALLOW, `film "A Made-Up Title" primary #000003`);
   swapCheck("distinct", distinctSorted, RAMP_DISTINCT_ALLOW, `film "A Made-Up Title" primary #000004`);
   swapCheck("notch", notchSorted, NOTCH_ALLOW, `film "A Made-Up Title" primary #000005 [peak]`);
+  swapCheck("lone-spike", loneSpikeSorted, LONE_SPIKE_ALLOW, `film "A Made-Up Title" primary #000006 stop 500`);
 }
 
 // ── F4 gate (R3, review pass 2, 2026-09-18): the owner's F4 principle — "no control goes dead" for an

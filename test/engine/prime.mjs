@@ -666,6 +666,23 @@ for (const p of DEFAULTS) {
     if (angDiff(h, primeHue) > tol) FAIL("e", `${p.name} ${s.step}: CAM16 hue ${h.toFixed(3)} vs prime pixel CAM16 hue ${primeHue.toFixed(3)} (> ${tol.toFixed(3)}°)`);
   }
 }
+// #681 U4 review pass 1, Finding F2: all 16 DEFAULTS carry an anchor (role-table.json), so the loop
+// above compares `primeSwatches`'s verbatim pass-through of a hex literal against this FILE's own
+// parse of that SAME literal (`hexToRgb(p.anchor)`) — `deriveKeyRgb` is never called, so a
+// non-anchored construction regression passes unnoticed (measured: scaling the non-anchored
+// `keyChroma` by 0.95 at prime.mjs:156 moves 58 of 112 rungs across the 16 defaults and still clears
+// every gate in this file before this companion). Same pattern as (g): strip `anchor` so the probe
+// keeps exercising the real (still non-anchor-aware) `deriveKeyRgb` comparison target, keeping the
+// anchored loop above as a companion assertion rather than the whole gate.
+for (const p of DEFAULTS) {
+  const stripped = { ...p, anchor: undefined, hueShift: 0 };
+  const sw = primeSwatches(stripped, CTL);
+  const keyRgb = deriveKeyRgb(stripped, CTL.hueSpace);
+  const primeHue = cam16FromRgb(sw[3].rgb).hue;
+  const keyHue = cam16FromRgb(keyRgb).hue;
+  const tolPrime = hueTol(sw[3].rgb);
+  if (angDiff(primeHue, keyHue) > tolPrime) FAIL("e", `${p.name} (anchor stripped): prime pixel CAM16 hue ${primeHue.toFixed(3)} vs deriveKeyColor pixel CAM16 hue ${keyHue.toFixed(3)} (> ${tolPrime.toFixed(3)}°)`);
+}
 
 // ── (f) hueShift 20: brightest/dimmest move -20°/+20° from their own hueShift-0 CAM16 hue (within the
 //        same adaptive budget); prime stays invariant (hueShift's dir is 0 at t=0, never touches it) ──
@@ -724,8 +741,15 @@ for (const p of DEFAULTS) {
 //        #681 U4 integration: same anchor branch as (e) above — for an anchored palette the byte-
 //        identity target is the anchor itself, not `deriveKeyColor` (plan Blast-radius table, "e, h
 //        prime pixel identity"). Trivially exact (`primeSwatches` returns `rgb: anchorRgb` verbatim
-//        at the prime rung), but asserted rather than assumed so a regression that made the anchor
-//        branch re-derive its rgb (instead of passing the stored hex through byte-exact) is caught. ──
+//        at the prime rung), but asserted rather than assumed. Its residual value is NOT "catching a
+//        regression that made the anchor branch re-derive its rgb": all 16 default anchors round-trip
+//        `hctToRgb(cam16FromRgb(rgb), lstarFromRgb(rgb))` byte-exactly (0 of 16 off, measured), so a
+//        mutation that swapped the verbatim pass-through for that round trip would NOT be caught on
+//        these 16 subjects alone (U4 review pass 1, F2) — the real coverage for a re-derived anchor
+//        branch is `test/engine/anchor.mjs`'s `anchor-identity` gate over the full 3,380-anchor
+//        corpus, where round-trip byte-exactness is not universal. What THIS loop's anchored arm
+//        actually guards is narrower and still real: that the pass-through wiring itself (the literal
+//        `rgb: anchorRgb` line) hasn't been deleted or swapped for a different field. ──────────────
 for (const hueSpace of SPACES) {
   for (const p of DEFAULTS) {
     const sw = primeSwatches(p, { hueSpace, primeChroma: 100 });
@@ -734,6 +758,20 @@ for (const hueSpace of SPACES) {
     const keyRgb = anchored ? hexToRgb(p.anchor) : deriveKeyRgb(p, hueSpace);
     const diff = [0, 1, 2].map((i) => Math.abs(primeRgb[i] - keyRgb[i]));
     if (diff.some((d) => d > 0)) FAIL("h", `${p.name}/${hueSpace}: prime rgb [${primeRgb}] vs ${anchored ? "anchor" : "deriveKeyColor"} rgb [${keyRgb}] (diff [${diff}])`);
+  }
+}
+// #681 U4 review pass 1, Finding F2: the loop above compares every DEFAULT's verbatim anchor
+// pass-through against this file's own parse of the SAME literal — `deriveKeyRgb` (the actual REQ-056
+// non-anchored construction) is never exercised, since all 16 defaults are anchored. Companion probe,
+// same anchor-stripping pattern as (e)/(g): restores the non-anchored arm REQ-056 was written for.
+for (const hueSpace of SPACES) {
+  for (const p of DEFAULTS) {
+    const stripped = { ...p, anchor: undefined };
+    const sw = primeSwatches(stripped, { hueSpace, primeChroma: 100 });
+    const primeRgb = sw[3].rgb;
+    const keyRgb = deriveKeyRgb(stripped, hueSpace);
+    const diff = [0, 1, 2].map((i) => Math.abs(primeRgb[i] - keyRgb[i]));
+    if (diff.some((d) => d > 0)) FAIL("h", `${p.name}/${hueSpace} (anchor stripped): prime rgb [${primeRgb}] vs deriveKeyColor rgb [${keyRgb}] (diff [${diff}])`);
   }
 }
 
