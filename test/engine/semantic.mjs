@@ -20,6 +20,7 @@ import { defaultDocument, brandKit, contrastRatio, slug, stateOf, projectView } 
 import { derivedAll } from "../../src/engine/exports.js";
 import { PRESETS } from "../../src/ui/categories/brands.js";
 import { hydrate } from "../../src/ui/persist.js";
+import { gateReport } from "../gate-report.mjs";
 // The Adia preset's name is READ OUT of the generator's source rather than imported: importing
 // gen-adia-derived-exports.mjs would run it (it writes its artifacts at module scope), and a
 // hand-copied literal here would silently stop pointing at the shipped document the day the
@@ -514,10 +515,11 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["roles", "oncolors", "refs-canonical", "surface-mode", "identity-stops", "role-contrast"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+const DECLARED = ["roles", "oncolors", "refs-canonical", "surface-mode", "identity-stops", "role-contrast", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log("  defer  hpg-parity-roletable — engine<->Figma-binder roleTable full-object identity is verified by test/figma/binder.mjs's `parity` gate; role-table.json<->semantic.js identity is the refs-canonical gate above (both already full-object)");
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: semantic-mapping clears its checkable [gate] predicates (parity deferred)");

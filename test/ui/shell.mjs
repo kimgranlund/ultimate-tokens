@@ -10,6 +10,7 @@ import { paletteStops, STOPS, EXPORT_STOPS } from "../../src/engine/tonal.js";
 import { derivedAll } from "../../src/engine/exports.js";
 import { PRESETS as NATURE_PRESETS } from "../../src/ui/categories/nature.js";
 import { DEFAULT_PALETTES } from "./counts.mjs";
+import { gateReport } from "../gate-report.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const UI = join(HERE, "..", "..", "src", "ui"); // the shell files live in src/ui/
@@ -276,10 +277,11 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["model", "exports", "shell", "oklch-native", "ac002", "ac003b", "ac007", "ac008", "resolver-agree"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+const DECLARED = ["model", "exports", "shell", "oklch-native", "ac002", "ac003b", "ac007", "ac008", "resolver-agree", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (projectView: ${DEFAULT_PALETTES} palettes · ${v.palettes ? v.palettes.reduce((n, p) => n + (p.roles ? p.roles.length : 0), 0) : 0} role tokens · css ${v.exports && v.exports.css ? v.exports.css.length : 0} B)`);
 console.log("  note  visual/interaction layer verified by serve + headless boot, not this adapter");
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }

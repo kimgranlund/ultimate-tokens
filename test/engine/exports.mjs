@@ -13,6 +13,7 @@ import { typeScale, DEFAULT_TYPE } from "../../src/engine/type.mjs";
 import { geomScale, LADDER_MD_STEP, sizeAnchor } from "../../src/engine/geometry.mjs";
 import { PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { oklchToRgb } from "../../src/engine/okhsl.js"; // radix gate's own oklch()->rgb inverse (anti-tautology, never X's forward path)
+import { gateReport } from "../gate-report.mjs";
 import { paletteGroup, brandKit, defaultDocument, stateOf } from "../../src/ui/model.mjs"; // paletteGroup is the SINGLE
 // group resolver (ticket #556/#572) — the group-metadata gate below asserts every emitted surface
 // matches THIS, never a second hand-kept copy; brandKit/defaultDocument prove the MCP-facing kit too.
@@ -35,6 +36,14 @@ const BRAND_ONLY = ALL.filter((p) => !X.isDataPalette(p));
 const PRIMARY_CHROMA = BRAND_ONLY.find((p) => p.name === "Primary").chroma; // REQ-022: data chroma follows primary's
 const DATA_8 = [30, 75, 120, 165, 210, 255, 300, 345].map((hue, i) => dataPalette(i + 1, hue, PRIMARY_CHROMA));
 const ALL_WITH_DATA = [...BRAND_ONLY, ...DATA_8];
+
+// RADIX_COLLIDING (#630, reused by #638's reference-form gates) — the reserved-alias-key collision
+// document: stock "Danger" dropped so pickDrivers' danger regex lands on the "Error" palette, plus
+// palettes whose slugs ARE reserved alias keys ("accent", "error"), so both are emitted under a
+// `<slug>-palette` key. Declared once here because radix-alias-collision and radix-refs-collision
+// must exercise the SAME document; a second hand-built copy could drift from it.
+const RADIX_MK = (name, hue) => ({ name, hue, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true });
+const RADIX_COLLIDING = [...BRAND_ONLY.filter((p) => p.name !== "Danger"), RADIX_MK("Accent", 40), RADIX_MK("Error", 350)];
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 
@@ -211,7 +220,7 @@ try {
 
 // ── hpg-export-nonempty (5 formats non-empty; JSON has stops/scrims/semantic) ─────────────
 const all = X.exportAll(C(ALL), {});
-for (const k of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn", "panda", "radix"]) {
+for (const k of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn", "panda", "radix", "radixRef"]) {
   const v = all[k];
   if (v == null || (typeof v === "string" && v.length < 10) || (typeof v === "object" && Object.keys(v).length === 0)) FAIL("nonempty", `${k} empty`);
 }
@@ -861,6 +870,293 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     // as "Neutral" emits the identical group).
     const onlyLast = X.exportRadix(C([...BRAND_ONLY.filter((p) => p.name !== "Neutral"), mk("Neutral", 250)])).theme.extend.semanticTokens.colors.neutral;
     if (JSON.stringify(dupColors.neutral) !== JSON.stringify(onlyLast)) FAIL("radix-collision", "duplicate-name document: colors.neutral must be the last 'Neutral' palette's ladder (last-write-wins, as pre-fix)");
+  }
+}
+
+// ── radix-refs-values-unchanged (#638 U1.1) — the REFERENCE form is purely additive: the VALUES
+//    form exportRadix(state) must stay byte-identical to the output captured at 2805f40, BEFORE
+//    the opts.refs branch existed. The REQ-062 pattern (hpg-export-shadcn-baseline above): a
+//    committed fixture, not a self-derived expectation, so a leaf builder that quietly changed the
+//    values path — or a refs branch that leaked into the default — goes red here and nowhere else.
+//    The preset object carries no schema stamp, so the 2 -> 3 bump does not touch this fixture.
+//    #681 U4 integration re-capture (2026-09-20, by script from the engine, never typed): this
+//    fixture landed on main before #681's anchor/chroma-envelope/prime-ladder engine changes, so
+//    every ramp-derived value in all three sections moved once, the same way shadcn-baseline.css's
+//    #681 CARVE-OUTs above document. No leaf shape, key, or ordering changed — only the underlying
+//    OKLCH values, matching what src/engine/tonal.js/prime.mjs now emit on the merged tree.
+{
+  const G = "radix-refs-values-unchanged";
+  const fixture = JSON.parse(readFileSync(new URL("./fixtures/radix-baseline.json", import.meta.url), "utf8"));
+  for (const [marker, st] of [["ALL", C(ALL)], ["BRAND_ONLY", C(BRAND_ONLY)], ["COLLIDING", C(RADIX_COLLIDING)]]) {
+    const got = JSON.stringify(X.exportRadix(st));
+    const want = JSON.stringify(fixture[marker]);
+    if (!want) { FAIL(G, `fixture section ${marker} missing from radix-baseline.json`); continue; }
+    if (got !== want) FAIL(G, `exportRadix(${marker}) drifted from the pre-#638 values-form baseline`);
+  }
+}
+
+// ── radix-refs-* (#638 U1.2..U1.12) — the REFERENCE form of the Radix preset: the same preset with
+//    every numbered leaf replaced by a var() LINK into the kit's own CSS custom-property layer
+//    (owner rulings a1/c1/d1/e1, 2026-09-18). Each criterion is its own gate name so a red says
+//    WHICH property broke. Every expectation below is derived from this test's own tables
+//    (RATIFIED_RAW_STEPS, derivedAll's lightRef/darkRef, exportCSS's emitted text) and never from
+//    exports.js's RADIX_RAW_STEPS or its leaf builders, so a gate cannot degrade with the code.
+{
+  const state = C(ALL);
+  const refPreset = X.exportRadix(state, { refs: true });
+  const valPreset = X.exportRadix(state);
+  const refColors = refPreset.theme.extend.semanticTokens.colors;
+  const valColors = valPreset.theme.extend.semanticTokens.colors;
+  const derived = X.derivedAll(state);
+  const drivers = X.pickDrivers(derived);
+  const parseOklch = (s) => {
+    if (s === "transparent") return { rgb: null, a: 0 };
+    const m = /^oklch\(([-\d.]+) ([-\d.]+) ([-\d.]+)(?: \/ ([-\d.]+)%)?\)$/.exec(s);
+    if (!m) return null;
+    const [, L, Ch, H, a] = m;
+    return { rgb: oklchToRgb(Number(L), Number(Ch), Number(H)), a: a !== undefined ? Number(a) / 100 : 1 };
+  };
+  // redeclared independently of exports.js's own RADIX_RAW_STEPS (same reasoning as the radix gate).
+  const RATIFIED_RAW_STEPS = [
+    { step: 1, light: 100, dark: 900 },
+    { step: 2, light: 125, dark: 875 },
+    { step: 3, light: 150, dark: 850 },
+    { step: 4, light: 175, dark: 825 },
+    { step: 5, light: 200, dark: 800 },
+    { step: 6, light: 250, dark: 750 },
+    { step: 7, light: 300, dark: 700 },
+    { step: 8, light: 350, dark: 650 },
+  ];
+  const ROLE_STEPS = [{ step: 9, suffix: "" }, { step: 10, suffix: "-hover" }, { step: 11, suffix: "-on-surface-variant" }, { step: 12, suffix: "-on-surface" }];
+  // the test's OWN ref -> var-name-fragment rule (semantic.js's refSlug re-derived here): a bare
+  // stop pads to 3 digits; a scrim "{base}-{step}" becomes "scrim-{step}" on the emitted hyphen
+  // surface (ADR-016) — pinned against exportCSS's real text by radix-refs-parity below.
+  const fragOf = (ref) => {
+    const s = String(ref);
+    const dash = s.indexOf("-");
+    if (dash === -1) return s.padStart(3, "0");
+    return `scrim-${s.slice(dash + 1).padStart(3, "0")}`;
+  };
+
+  // the test's OWN link rule. A ref is normally a fragment inside its palette's own block, but an
+  // ACHROMATIC ref (white/black) is a document-level constant: exportCSS declares it once as
+  // `--c-{ref}` and links it with no palette segment. #662's contrast on-color policy makes that
+  // reachable by default, so a link built the naive way would name `--c-{n}-black`, which nothing
+  // declares. Re-derived here rather than imported, so the gate cannot agree with the engine by
+  // construction; radix-refs-collision checks every emitted link against exportCSS's real text.
+  const ACHROMATIC = ["white", "black"];
+  const wantLink = (n, ref) => (ACHROMATIC.includes(String(ref)) ? `var(--c-${ref})` : `var(--c-${n}-${fragOf(ref)})`);
+
+  // U1.2 — every numbered leaf 1..12 of every palette is a var() link in BOTH modes.
+  {
+    const G = "radix-refs-shape";
+    const RE = /^var\(--c-(?:white|black|[a-z0-9-]+-(?:\d{3}|scrim-\d{3}|prime-[a-z]+))\)$/;
+    for (const p of derived) {
+      const g = refColors[p.n];
+      if (!g) { FAIL(G, `colors.${p.n} missing from the reference form`); continue; }
+      for (let k = 1; k <= 12; k++) {
+        const v = g[String(k)] && g[String(k)].value;
+        if (!v || typeof v.base !== "string" || typeof v._dark !== "string") { FAIL(G, `colors.${p.n}.${k} is not a {base,_dark} leaf`); continue; }
+        if (!RE.test(v.base)) FAIL(G, `colors.${p.n}.${k}.base = ${JSON.stringify(v.base)} is not a var(--c-…) link`);
+        if (!RE.test(v._dark)) FAIL(G, `colors.${p.n}.${k}._dark = ${JSON.stringify(v._dark)} is not a var(--c-…) link`);
+      }
+    }
+    // the values form must NOT have become links (the flag is opt-in, not a global switch).
+    const v1 = valColors[drivers.primary.n]["1"].value.base;
+    if (v1.startsWith("var(")) FAIL(G, `the DEFAULT (values) form emitted a link: ${JSON.stringify(v1)}`);
+  }
+
+  // U1.3 — steps 1..8 link the exact ratified raw stop, per palette, both modes (c1 identity map).
+  {
+    const G = "radix-refs-raw-pin";
+    for (const p of derived) {
+      const g = refColors[p.n];
+      if (!g) continue;
+      for (const { step, light, dark } of RATIFIED_RAW_STEPS) {
+        const wantBase = `var(--c-${p.n}-${String(light).padStart(3, "0")})`;
+        const wantDark = `var(--c-${p.n}-${String(dark).padStart(3, "0")})`;
+        if (g[String(step)].value.base !== wantBase) FAIL(G, `colors.${p.n}.${step}.base = ${JSON.stringify(g[String(step)].value.base)}, want ${JSON.stringify(wantBase)}`);
+        if (g[String(step)].value._dark !== wantDark) FAIL(G, `colors.${p.n}.${step}._dark = ${JSON.stringify(g[String(step)].value._dark)}, want ${JSON.stringify(wantDark)}`);
+      }
+    }
+  }
+
+  // U1.4 — steps 9..12 link the DRIVING ROLE's own lightRef/darkRef, so overrides, accentRef and
+  //        the on-color policy travel with the link instead of being frozen into a stop number.
+  {
+    const G = "radix-refs-role-pin";
+    for (const p of derived) {
+      const g = refColors[p.n];
+      if (!g) continue;
+      for (const { step, suffix } of ROLE_STEPS) {
+        const r = p.roles.find((x) => x.suffix === suffix);
+        if (!r) { FAIL(G, `${p.n} has no role with suffix ${JSON.stringify(suffix)}`); continue; }
+        const wantBase = wantLink(p.n, r.lightRef);
+        const wantDark = wantLink(p.n, r.darkRef);
+        if (g[String(step)].value.base !== wantBase) FAIL(G, `colors.${p.n}.${step}.base = ${JSON.stringify(g[String(step)].value.base)}, want ${JSON.stringify(wantBase)} (role ${JSON.stringify(suffix)} lightRef ${r.lightRef})`);
+        if (g[String(step)].value._dark !== wantDark) FAIL(G, `colors.${p.n}.${step}._dark = ${JSON.stringify(g[String(step)].value._dark)}, want ${JSON.stringify(wantDark)} (role ${JSON.stringify(suffix)} darkRef ${r.darkRef})`);
+      }
+    }
+    // an override moves the link: the anti-freeze control. Re-derive with a role override on the
+    // primary's -hover role and confirm step 10's link followed it.
+    const ovKey = derived.find((p) => p.n === drivers.primary.n).roles.find((r) => r.suffix === "-hover").key;
+    const ovState = { ...state, roleOverrides: { [ovKey]: { light: "150", dark: "850" } } };
+    const ovLink = X.exportRadix(ovState, { refs: true }).theme.extend.semanticTokens.colors[drivers.primary.n]["10"].value;
+    if (ovLink.base !== `var(--c-${drivers.primary.n}-150)` || ovLink._dark !== `var(--c-${drivers.primary.n}-850)`) {
+      FAIL(G, `a -hover role override did not move step 10's link: ${JSON.stringify(ovLink)}`);
+    }
+  }
+
+  // U1.5 — REF PARITY, the load-bearing gate: resolve each link through exportCSS's OWN emitted
+  //        declarations (the real custom-property layer a consumer loads) and compare the rgb to
+  //        the values form's leaf, within 1/255 per channel. A link pointing one stop off, or at
+  //        the light ref for the _dark mode, is red here even though it is a legal var() name.
+  {
+    const G = "radix-refs-parity";
+    const cssText = X.exportOKLCH(state);
+    const declared = new Map();
+    for (const m of cssText.matchAll(/^\s*--([a-z0-9-]+):\s*(oklch\([^;]+\));$/gm)) declared.set(m[1], m[2]);
+    let checked = 0;
+    for (const p of derived) {
+      const refG = refColors[p.n], valG = valColors[p.n];
+      if (!refG || !valG) continue;
+      for (let k = 1; k <= 12; k++) {
+        for (const mode of ["base", "_dark"]) {
+          const link = refG[String(k)].value[mode];
+          const name = /^var\(--(.+)\)$/.exec(link);
+          if (!name) { FAIL(G, `colors.${p.n}.${k}.${mode} is not a var() link: ${JSON.stringify(link)}`); continue; }
+          const decl = declared.get(name[1]);
+          if (!decl) { FAIL(G, `colors.${p.n}.${k}.${mode} links --${name[1]}, which exportOKLCH never declares`); continue; }
+          const got = parseOklch(decl), want = parseOklch(valG[String(k)].value[mode]);
+          if (!got || !want) { FAIL(G, `colors.${p.n}.${k}.${mode}: unparseable (${decl} / ${valG[String(k)].value[mode]})`); continue; }
+          if (got.rgb.some((c, i) => Math.abs(c - want.rgb[i]) > 1)) FAIL(G, `colors.${p.n}.${k}.${mode} links --${name[1]} = ${got.rgb}, but the values form says ${want.rgb} (>1/255 apart)`);
+          checked++;
+        }
+      }
+    }
+    if (checked < 12 * 2 * derived.length) FAIL(G, `only ${checked} of ${12 * 2 * derived.length} link/value pairs were actually compared`);
+  }
+
+  // U1.6 — a1..a12 are COMPUTED projections in both forms (no primitive exists for them), so the
+  //        two files' alpha leaves are string-equal.
+  {
+    const G = "radix-refs-alpha";
+    for (const p of derived) {
+      const refG = refColors[p.n], valG = valColors[p.n];
+      if (!refG || !valG) continue;
+      for (let k = 1; k <= 12; k++) {
+        if (JSON.stringify(refG[`a${k}`]) !== JSON.stringify(valG[`a${k}`])) FAIL(G, `colors.${p.n}.a${k} differs between the two forms: ${JSON.stringify(refG[`a${k}`])} vs ${JSON.stringify(valG[`a${k}`])}`);
+      }
+      // and they must NOT have turned into links.
+      if (String(refG.a1.value.base).startsWith("var(")) FAIL(G, `colors.${p.n}.a1 became a link; no alpha primitive exists to link`);
+    }
+  }
+
+  // U1.7 — the two additive leaves: on-accent follows the `-on-{n}` role's own refs; prime links the
+  //        mode-independent prime-prime identity primitive and stays base-only (REQ-024).
+  {
+    const G = "radix-refs-extras";
+    for (const p of derived) {
+      const g = refColors[p.n];
+      if (!g) continue;
+      const onRole = p.roles.find((x) => x.suffix === `-on-${p.n}`);
+      const wantOn = { base: wantLink(p.n, onRole.lightRef), _dark: wantLink(p.n, onRole.darkRef) };
+      if (JSON.stringify(g["on-accent"].value) !== JSON.stringify(wantOn)) FAIL(G, `colors.${p.n}.on-accent = ${JSON.stringify(g["on-accent"].value)}, want ${JSON.stringify(wantOn)}`);
+      if (g.prime.value.base !== `var(--c-${p.n}-prime-prime)`) FAIL(G, `colors.${p.n}.prime.base = ${JSON.stringify(g.prime.value.base)}, want var(--c-${p.n}-prime-prime)`);
+      if (g.prime.value._dark !== undefined) FAIL(G, `colors.${p.n}.prime must stay mode-independent (base only), got ${JSON.stringify(g.prime.value)}`);
+    }
+  }
+
+  // U1.8 — the accent/gray driver clones (REQ-025) link the PRIMARY/NEUTRAL palette's own custom
+  //        properties, never a `var(--c-accent-…)` name that no surface emits: rewriteRefs only
+  //        rewrites `{colors.{n}.` Panda paths, which cannot occur inside a var() string. The
+  //        internal appearance aliases still re-point at the clone's own group name.
+  {
+    const G = "radix-refs-clones";
+    for (const [alias, driver] of [["accent", drivers.primary], ["gray", drivers.neutral]]) {
+      const clone = refColors[alias], src = refColors[driver.n];
+      if (!clone || !src) { FAIL(G, `colors.${alias} or its driver colors.${driver.n} missing`); continue; }
+      for (let k = 1; k <= 12; k++) {
+        if (clone[String(k)].value.base !== src[String(k)].value.base || clone[String(k)].value._dark !== src[String(k)].value._dark) {
+          FAIL(G, `colors.${alias}.${k} = ${JSON.stringify(clone[String(k)].value)} but its driver colors.${driver.n}.${k} = ${JSON.stringify(src[String(k)].value)}`);
+        }
+        if (clone[String(k)].value.base.includes(`--c-${alias}-`)) FAIL(G, `colors.${alias}.${k}.base was rewritten to a non-existent primitive: ${clone[String(k)].value.base}`);
+      }
+      if (clone.solid.bg.DEFAULT.value !== `{colors.${alias}.9}`) FAIL(G, `colors.${alias}.solid.bg.DEFAULT = ${JSON.stringify(clone.solid.bg.DEFAULT.value)}, want {colors.${alias}.9}`);
+      if (clone.prime.value.base !== src.prime.value.base) FAIL(G, `colors.${alias}.prime = ${JSON.stringify(clone.prime.value.base)} but the driver's is ${JSON.stringify(src.prime.value.base)}`);
+    }
+  }
+
+  // U1.9 — #630 collision (ruling d1): the GROUP key stays `<slug>-palette`, but its links use the
+  //        RAW slug, because the primitive surfaces only ever emit `--c-{raw slug}-…`. The Panda
+  //        `{colors.…}` aliases are unchanged from the values form.
+  {
+    const G = "radix-refs-collision";
+    const cSt = C(RADIX_COLLIDING);
+    const cRef = X.exportRadix(cSt, { refs: true }).theme.extend.semanticTokens.colors;
+    const cVal = X.exportRadix(cSt).theme.extend.semanticTokens.colors;
+    if (!cRef["accent-palette"]) FAIL(G, `colors["accent-palette"] missing from the reference form (keys: ${JSON.stringify(Object.keys(cRef).filter((k) => k.startsWith("accent")))})`);
+    else {
+      if (cRef["accent-palette"]["1"].value.base !== "var(--c-accent-100)") FAIL(G, `colors["accent-palette"].1.base = ${JSON.stringify(cRef["accent-palette"]["1"].value.base)}, want var(--c-accent-100) (the RAW slug, not the renamed key)`);
+      if (cRef["accent-palette"].solid.bg.DEFAULT.value !== "{colors.accent-palette.9}") FAIL(G, `colors["accent-palette"].solid.bg.DEFAULT = ${JSON.stringify(cRef["accent-palette"].solid.bg.DEFAULT.value)}, want {colors.accent-palette.9}`);
+    }
+    if (cRef.error && cRef.error.value !== "{colors.error-palette.9}") FAIL(G, `colors.error = ${JSON.stringify(cRef.error.value)}, want {colors.error-palette.9} (unchanged from the values form)`);
+    // every link the colliding document emits names a property exportOKLCH really declares.
+    const declared = new Set([...X.exportOKLCH(cSt).matchAll(/^\s*--([a-z0-9-]+):/gm)].map((m) => m[1]));
+    const dangling = [];
+    const walk = (node, path) => {
+      if (typeof node === "string") { const m = /^var\(--(.+)\)$/.exec(node); if (m && !declared.has(m[1])) dangling.push(`${path} -> ${node}`); return; }
+      if (node && typeof node === "object") for (const k of Object.keys(node)) walk(node[k], `${path}.${k}`);
+    };
+    walk(cRef, "colors");
+    if (dangling.length) FAIL(G, `${dangling.length} link(s) name a custom property no CSS export declares: ${dangling.slice(0, 3).join("; ")}`);
+    // the Panda alias skeleton is identical between the two forms of the same document.
+    const skeleton = (colors) => JSON.stringify(colors).replace(/"(var\(--[^"]*\)|oklch\([^"]*\)|transparent)"/g, '"<leaf>"');
+    if (skeleton(cRef) !== skeleton(cVal)) FAIL(G, "the reference form's key/alias skeleton differs from the values form's");
+  }
+
+  // U1.10 — the links follow cssPrefixOf: a Material-flavoured prefix renames both surfaces in
+  //         lockstep, so the pair still resolves.
+  {
+    const G = "radix-refs-prefix";
+    const mdState = { ...state, export: { colorPrefix: "md-sys-color" } };
+    const mdColors = X.exportRadix(mdState, { refs: true }).theme.extend.semanticTokens.colors;
+    const want = `var(--md-sys-color-${drivers.primary.n}-100)`;
+    const got = mdColors[drivers.primary.n]["1"].value.base;
+    if (got !== want) FAIL(G, `prefixed link = ${JSON.stringify(got)}, want ${JSON.stringify(want)}`);
+    const mdCss = X.exportCSS(mdState);
+    if (!mdCss.includes(`--md-sys-color-${drivers.primary.n}-100:`)) FAIL(G, `exportCSS on the same state never declares --md-sys-color-${drivers.primary.n}-100`);
+    if (mdCss.includes(`--c-${drivers.primary.n}-100:`)) FAIL(G, "exportCSS still declares the default-prefixed name under a custom prefix");
+  }
+
+  // U1.11 — the module wrapper names the link contract on its own header line, and only there.
+  {
+    const G = "radix-refs-module";
+    const refMod = X.exportRadixModule(refPreset);
+    const valMod = X.exportRadixModule(valPreset);
+    const lines = refMod.split("\n");
+    if (lines[0] !== `/* ultimate-tokens export schema ${3} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
+    if (!lines[1].startsWith("/* Radix preset")) FAIL(G, `reference module header does not open with the Radix preset comment: ${JSON.stringify(lines[1])}`);
+    if (!lines[2].includes("LINKS")) FAIL(G, `the header's second comment line must name the link form, got ${JSON.stringify(lines[2])}`);
+    if (!/css-hex|css-oklch/.test(refMod)) FAIL(G, "the reference header never tells the consumer which export to load first");
+    if (valMod.includes("LINKS")) FAIL(G, "the VALUES module header must not claim its values are links");
+    const body = refMod.slice(refMod.indexOf("export default ") + "export default ".length, refMod.lastIndexOf(";"));
+    let parsed = null;
+    try { parsed = JSON.parse(body); } catch (e) { FAIL(G, `reference module body is not valid JSON: ${e.message}`); }
+    if (parsed && JSON.stringify(parsed) !== JSON.stringify(refPreset)) FAIL(G, "reference module JSON does not deep-equal exportRadix(state, { refs: true })");
+    // exportAll carries the second form under its own key.
+    const bundle = X.exportAll(state, {});
+    if (!bundle.radixRef || typeof bundle.radixRef !== "object") FAIL(G, `exportAll(state).radixRef = ${JSON.stringify(bundle.radixRef)}, want the reference preset object`);
+    else if (JSON.stringify(bundle.radixRef) !== JSON.stringify(refPreset)) FAIL(G, "exportAll(state).radixRef is not exportRadix(state, { refs: true })");
+  }
+
+  // U1.12 — the no-driver sentinel is a property of the document, not of the form.
+  {
+    const G = "radix-refs-sentinel";
+    const s = X.exportRadix(C([]), { refs: true });
+    if (typeof s !== "string" || !s.startsWith("/* Radix export needs")) FAIL(G, `reference-form sentinel wrong: ${JSON.stringify(s)}`);
+    if (s !== X.exportRadix(C([]))) FAIL(G, "the two forms disagree on the no-driver sentinel string");
+    if (X.exportRadixModule(s, { refs: true }) !== s) FAIL(G, "exportRadixModule must pass the sentinel through unwrapped in the reference form too");
   }
 }
 
@@ -2045,7 +2341,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 // `v` is bumped alongside it in the same PR — that IS the bump-rule contract, not a bug in the gate.
 {
   const G = "hpg-export-schema-stamp";
-  const v = 2;
+  const v = 3;
   const doc = defaultDocument();
   const state = stateOf(doc);
   const tsc = typeScale({});
@@ -2093,10 +2389,17 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "oncolors", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+// "prefix" was the live hole (#699 correction): it had 8 real call sites but was never declared.
+// The 12 "radix-refs-*" gates, "design-system-catalog" and "hpg-export-schema-stamp" call FAIL
+// through a per-block const named G bound to the gate name, rather than a literal string directly
+// in the call, which is why an earlier naive grep over this file mistook all 14 for dead declared
+// names with no call site at all, when they are in fact real, live gates. gateReport()'s
+// self-check resolves that indirection (see gate-report.mjs).
+const DECLARED = ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "oncolors", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "radix-refs-values-unchanged", "radix-refs-shape", "radix-refs-raw-pin", "radix-refs-role-pin", "radix-refs-parity", "radix-refs-alpha", "radix-refs-extras", "radix-refs-clones", "radix-refs-collision", "radix-refs-prefix", "radix-refs-module", "radix-refs-sentinel", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp", "prefix", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: export-formats clears all [gate] predicates");
 process.exit(0);

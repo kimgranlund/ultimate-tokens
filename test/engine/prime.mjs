@@ -31,6 +31,7 @@ import { fileURLToPath } from "node:url";
 import { primeSwatches, primeSteps, PRIME_STEPS, PRIME_L_MIN, PRIME_L_MAX, STEP_L } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, maxChromaInGamut, cam16FromRgb, lstarFromRgb } from "../../src/engine/hct.js";
 import { effHue, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
+import { gateReport } from "../gate-report.mjs";
 
 // #681 U4 integration: U6 was dispatched standalone (team-lead, 2026-09-18) and its own SCOPE NOTE
 // above predates U1 landing, so its DEFAULTS read `RT.defaults` unstripped — now the correct fixture,
@@ -965,10 +966,11 @@ let LADDER_WINDOW_ALLOWLIST;
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["a", "b", "c", "gamut-ceiling", "d1", "d2a", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j", "k", "ladder-window", "symmetry"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+const DECLARED = ["a", "b", "c", "gamut-ceiling", "d1", "d2a", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j", "k", "ladder-window", "symmetry", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: prime-system clears all AC-050 gates");
 process.exit(0);

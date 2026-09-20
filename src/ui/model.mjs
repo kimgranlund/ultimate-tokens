@@ -1046,6 +1046,11 @@ export function projectView(doc) {
   // preset OBJECT directly (never re-deriving it, never reading radix-projection.json). The
   // `{ geometry: shadGeom }` opt MUST travel with the hoist — it is what emits `tokens.radii`.
   const radixPreset = exportRadix(state, { geometry: shadGeom }, derived);
+  // radixRefPreset (#638): the SAME document in the reference form. Every numbered step leaf is a
+  // `var(--{pfx}-*)` link into the kit's own CSS custom-property layer instead of a baked value.
+  // The `{ geometry: shadGeom }` opt MUST travel here too: it is what emits `tokens.radii`, so
+  // dropping it silently leaves the reference file short of a block the values file carries.
+  const radixRefPreset = exportRadix(state, { geometry: shadGeom, refs: true }, derived);
   const exports = {
     css: exportCSS(state, derived),
     oklch: exportOKLCH(state, derived),
@@ -1056,6 +1061,7 @@ export function projectView(doc) {
     shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.radii }, derived),
     panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom }, derived)),
     radix: exportRadixModule(radixPreset),
+    radixRef: exportRadixModule(radixRefPreset),
     figma: {
       light: JSON.stringify(dtcgObj["Light_tokens.json"], null, 2),
       dark: JSON.stringify(dtcgObj["Dark_tokens.json"], null, 2),

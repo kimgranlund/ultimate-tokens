@@ -1030,3 +1030,59 @@ Left both on the non-anchored measurement, numbers and mechanism cited in each f
 above were measured at this commit. This doc-update commit follows it; no trailing asset-regen commit is
 expected (this round's source comments already avoid em dashes, verified directly against the diff, not
 just the file as a whole - see the branding/em-dash check below).
+
+## Main merge (2026-09-20): origin/main (3ce50daa) merged onto `unit/pif-u4-integration` at 3921f140
+
+A prior builder session was killed by a host restart mid-merge. Picked up with `MERGE_HEAD` present,
+conflicts already resolved and staged, nothing committed. Verified the conflict resolution already in
+the tree (`.sdlc/adapter.md`'s X1-X13 ids, zero `C1[123]` rows, U6's `npm test` budget bullet) was
+correct and left it untouched, per instruction.
+
+**Repairs beyond the mechanical merge** (all inherited from the prior builder's unstaged work, verified
+rather than trusted, then staged):
+
+1. Four `docs/reference/` citation line-number re-pins, forced by the merge shifting line numbers in
+   `src/ui/app.js` and `test/engine/tonal.mjs`: `docs/reference/references/component-inventory.md`
+   (`app.js:1587`->`1594`, `app.js:1603`->`1610`), `docs/reference/reviews/2026-08-20-reactivity/
+   03-stores-and-persistence.md` (`app.js:2290-2313`->`2319-2341`, `app.js:2320-2345`->`2349-2378`),
+   `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md` (`app.js:2096-2142`->
+   `2108-2154`, `app.js:2132-2136`->`2144-2147`), `docs/reference/rubrics/acceptance-criteria.md`
+   (`tonal.mjs:246-264`->`283-301`, `tonal.mjs:577-601`->`687-708`). Checked every one against the
+   merged tree directly (`sed -n` on the cited ranges) before staging - all eight citations land exactly
+   on the content they describe. `node test/repo/citations.mjs` (part of the full `npm test` run below)
+   confirms STALE 0 / NOFILE 0 across the corpus, so these were load-bearing, not cosmetic.
+2. `figma/plugin/ui.html` - the generated app bundle, regenerated fresh by `npm test`'s own
+   `gen:figma-ui` step rather than trusted from the prior builder's tree.
+3. `test/engine/exports.mjs` - a comment above the `radix-refs-values-unchanged` gate, recording why the
+   fixture's values legitimately moved once (item 4 below) and that the re-capture was by script.
+4. `test/engine/fixtures/radix-baseline.json` (the `radix-refs-values-unchanged` gate's fixture,
+   `test/engine/exports.mjs:889`) - re-captured by script, never by hand. `origin/main` landed this
+   fixture (#638) before `#681`'s engine changes (anchor field, chroma envelope, prime-ladder rebuild),
+   so every ramp-derived value in it legitimately moves once on the merged tree; the gate itself asserts
+   the VALUES-form output is byte-identical to this committed fixture, so a stale fixture reds regardless
+   of correctness. Capture command (repo root as arg 1):
+   `node <scratchpad>/capture-radix-baseline.mjs /Users/kimba/Projects/nonoun/ultimate-tokens/.git-worktrees/pif-u4-integration`
+   - a small script that imports `src/engine/exports.js`+`ds-export.js` directly and reconstructs
+   `C`/`ALL`/`BRAND_ONLY`/`RADIX_COLLIDING` verbatim from `test/engine/exports.mjs`'s own top-of-file
+   definitions (never a second, drifting copy), then calls `X.exportRadix` for the `ALL`/`BRAND_ONLY`/
+   `COLLIDING` sections the gate reads and writes the JSON fixture. Verified before staging: a
+   structural walk (keys + array lengths at every node, 3,526 nodes) is byte-identical between the old
+   (prior builder's) and freshly re-captured fixture - 0 key/shape/ordering diffs - and the fresh
+   capture is byte-for-byte identical to what the prior builder had already produced, so their
+   unverified work turns out to have been correct; this re-capture is what makes it reproducible.
+   Leaf-level diff against the pre-recapture (main's original, pre-#681-values) committed fixture: 1,724
+   of 2,763 leaves moved, 1,039 unchanged - consistent with "ramp-derived values moved, structure did
+   not."
+
+**`npm test`: exit 0, 49 of 49 test files pass** (main added `test/repo/gate-report.mjs` since this unit
+branched, so the runner count moved from 48 to 49, as expected). Wall time **430.46 s** (`/usr/bin/time
+-p`, `user 441.25s sys 5.33s`), load average at start **5.18 / 4.98 / 3.98** (1/5/15-minute, `uptime`).
+Two zombie `node` processes (`prime-determinism-worker.mjs`, `prime.mjs`) from an earlier run of this
+same command that had auto-backgrounded past its tool timeout were reaped (`kill -9`) before this timed
+run, so the reading is not inflated by a leftover contender in this worktree. `test/repo/citations.mjs`
+(STALE 0), `test/engine/curated-contrast.mjs` (the corpus-contrast gate), and `test/repo/branding.mjs`
+all pass as part of this same run. Tree clean after: everything the merge plus the repairs above touched
+is staged, nothing left unstaged.
+
+**Head after this commit:** see `git log -1 --format=%H unit/pif-u4-integration` (this doc's own
+frontmatter note applies: a literal sha here goes stale the moment it's written).

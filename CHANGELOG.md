@@ -8,7 +8,49 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-09-18
+
+#### Fixed
+- **"Published library" mode now covers `applyFloatPlans`' own breakpoint-mode prune too** (#687). The
+  last unguarded prune on the apply path: dropping a Type or Geometry breakpoint from a published
+  library re-apply removed its mode from the file even with the box ticked, breaking every consumer
+  file pinned to it. The mode guard reads the same resolved library-mode decision the function's
+  variable prune already computes, so the two halves of one apply can never disagree on an old bundle;
+  a kept mode is reported as `staleModes`, the same field name the color and Type Primitives mode
+  guards already use, and the apply notice logs it the same way. Unticked, the prune is unchanged.
+
+#### Changed
+- **"Published library" mode now covers the color-variable prune too** (#673). The toggle #629 added
+  to the apply gate guarded the type, geometry, style and font-mode prunes, but `applyBundle`'s color
+  reconcile stayed on the classic prune whatever the box said, so a published library that renamed or
+  dropped a color role still deleted the variable consumer files were bound to. With the box ticked,
+  a stale color name is now renamed under `_deprecated/` at all three generated collections (Color
+  Roles, Color Primitives, Color Prime), keeping its id and every binding; the apply notice reports
+  the kept count. The Color Roles theme-MODE prune is guarded the same way: a mode for a theme the doc
+  no longer carries is kept and reported instead of removed, because a consumer file pins a mode
+  exactly as it binds a variable. Unticked, both prunes are unchanged. The gate checkbox and the
+  Settings row say so.
+
+#### Added
+- **A reference form of the Radix color export** (#638): `exportRadix(state, { refs: true })` emits
+  the same Radix preset shape, with every numbered step leaf's `base`/`_dark` a `var(--{pfx}-{n}-*)`
+  link into the kit's own CSS custom-property layer instead of a baked `oklch(...)` value. One format
+  with two forms, not an eleventh: the drawer's Radix tab gains a "Values · References" file picker,
+  and both `radix/{s}.preset.mjs` and `radix/{s}.refs.preset.mjs` ship in the Download-All zip under
+  the existing Pro gate. `EXPORT_SCHEMA_VERSION` moves 2 → 3 (the link leaf is a new value shape), and
+  the brand-kit MCP's zip `package.json` version is now generated from the server's own
+  `SERVER.version` rather than a hand-kept sibling literal, closing the drift the bump surfaced.
+
 ### 2026-09-17
+
+#### Fixed
+- **A palette named after a Radix alias key (`accent`, `gray`, `error`, `fg`, `canvas`, `border`,
+  `bg`) no longer loses its ladder** (#630): `exportRadix` wrote one group per palette slug and then
+  overwrote it with the seven Park UI alias keys, so a palette literally named `accent` lost its own
+  12-step ladder and a palette named `error` turned `colors.error` into a dangling self-reference.
+  `radixPaletteKey` now emits a colliding palette under `<slug>-palette` (suffixed again if that key
+  is also taken) and points the driver clones and `error` at the renamed key; a non-colliding slug is
+  untouched.
 
 #### Changed
 - **Classic prune is monotonic over `_deprecated/` names, at both library-mode gates** (#659, #666).

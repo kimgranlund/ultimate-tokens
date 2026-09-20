@@ -4,6 +4,7 @@
 // matched 0/255 over 1008 samples); these gates lock the contract WITHOUT the external reference:
 // round-trip identity, gamut bijection (s=1 ⇒ on the sRGB boundary), neutrals, and a canonical anchor.
 import { okhslToRgb, rgbToOkhsl } from "../../src/engine/okhsl.js";
+import { gateReport } from "../gate-report.mjs";
 
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
@@ -55,10 +56,11 @@ for (let hd = 0; hd < 360; hd += 45) {
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["roundtrip", "boundary", "monotone-s", "neutral", "anchor"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+const DECLARED = ["roundtrip", "boundary", "monotone-s", "neutral", "anchor", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: okhsl ⇄ sRGB clears all [gate] predicates");
 process.exit(0);

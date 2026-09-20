@@ -19,7 +19,7 @@ a pure engine/UI-logic change, `npm test` is sufficient locally and CI runs the 
 ## 2. CI is the smoke gate — and it is Chrome-only
 
 `.github/workflows/ci.yml` runs `npm ci` → `npm run build` → `npm test` → **`npm run smoke`** on
-`ubuntu-latest`, node 22 (smoke uses node's global WebSocket, stable in 22). Smoke boots the built
+`ubuntu-latest`, node 24 (smoke uses node's global WebSocket, stable since 22). Smoke boots the built
 single-file in the runner's **headless Chrome over CDP** and drives gallery → category → editor → export
 dialog; it catches UI regressions the DOM shim can't. Screenshots land in `smoke-out/` (gitignored) and
 upload as the `smoke-screenshots` artifact (`if: always()`).

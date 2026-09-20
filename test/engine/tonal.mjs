@@ -1882,10 +1882,18 @@ for (const mode of ["perceptual", "peak"]) {
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#695), so a gate missing from the list below still shows up, loudly, instead of a real
+// failure hiding behind a neighbouring gate's "pass" row. gateReport() (#699, test/gate-report.mjs
+// -- factored out of the block this file originally introduced) also runs the static self-check:
+// a declared name with no call site, or a call site whose name is not declared, fails loudly on
+// its own (report-static). The import lives here, immediately above its one call site, rather
+// than with the top-of-file imports -- ESM imports hoist regardless of textual position, and this
+// keeps every doc citation into the gates above from drifting by a line (same convention as
+// test/ui/persist.mjs's mid-file gate-report.mjs import).
+import { gateReport } from "../gate-report.mjs";
+const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: tonal-generation clears all [gate] predicates");
 process.exit(0);

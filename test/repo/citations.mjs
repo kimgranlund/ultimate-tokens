@@ -4,8 +4,8 @@
 // Docs under docs/ cite `file:line` into src/ (and test/, scripts/, mcp/). Every edit that moves
 // a cited line silently falsifies the record; #646 moved src/ui/app.js and 26 repaired citations
 // went stale again in the same week. So the audit (scripts/audit-citations.mjs) runs here: first
-// its parser self-test, then the audit itself, and any STALE line in any audited doc fails the
-// build. NEAR / UNDECIDABLE / NOFILE stay reports.
+// its parser self-test, then the audit itself, and any STALE or NOFILE line in any audited doc
+// fails the build (#672: NOFILE joins STALE). NEAR / UNDECIDABLE stay reports.
 //
 // The audited set is DISCOVERED (#664): every tracked docs/**/*.md with at least one recognized
 // citation, minus the reason-carrying DOCS_EXEMPT allow-list. A hand-listed 2-doc set left every
@@ -31,15 +31,17 @@ const { runAudit, staleLines, selftest, discoverDocs, DOCS_EXEMPT } = await impo
 const selfFailed = selftest();
 if (selfFailed) FAIL("scripts/audit-citations.mjs", `${selfFailed} parseCitations self-test case(s) failed`);
 
-// (2) the audit: STALE 0 for every audited doc
+// (2) the audit: STALE 0 and NOFILE 0 for every audited doc (staleLines()'s FAILS predicate is
+// STALE ∪ NOFILE; a cite to an untracked path is exactly the drift the STALE verdicts exist to
+// catch, so it fails the gate the same way, #672)
 let report;
 try { report = runAudit(); }
 catch (e) { FAIL("scripts/audit-citations.mjs", `audit threw: ${e.message}`); }
 if (report) {
   for (const [doc, lines] of Object.entries(staleLines(report))) {
     if (!lines.length) continue;
-    FAIL(doc, `${lines.length} STALE citation line(s): ${lines.join(",")} (run \`node scripts/audit-citations.mjs\` for the mechanically-derived homes)`);
-    for (const c of report.docs[doc].citations) if (c.verdict.startsWith("STALE")) console.log(`      ${doc}:${c.line} cites ${c.form} -> ${c.detail}`);
+    FAIL(doc, `${lines.length} STALE/NOFILE citation line(s): ${lines.join(",")} (run \`node scripts/audit-citations.mjs\` for the mechanically-derived homes)`);
+    for (const c of report.docs[doc].citations) if (c.verdict.startsWith("STALE") || c.verdict === "NOFILE") console.log(`      ${doc}:${c.line} cites ${c.form} -> ${c.detail}`);
   }
 }
 

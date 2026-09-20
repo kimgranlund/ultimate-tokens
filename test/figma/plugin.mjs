@@ -16,6 +16,7 @@ import { modeApplyPlan, mergeModeInterchanges, libraryModeReconcile, libraryMode
 import { stylePlans, primitivesModesApplyPlan } from "../../figma/binder/style-plan.mjs";
 import { LIBRARY_TYPE_VOICE_MAP, GEOMETRY_FIELD_RENAME_MAP } from "../../figma/binder/migrations.mjs";
 import { googleSafeFontFor } from "../../src/engine/font-fallbacks.mjs";
+import { gateReport } from "../gate-report.mjs";
 
 // stateOfDefault — a minimal engine State over role-table.json's default palettes, for building a
 // custom-themes DTCG bundle directly (figmaBundle() itself takes no themes option — TKT-0021
@@ -105,7 +106,10 @@ function mockFigma() {
         if (this.ui.onmessage) this.ui.onmessage({ type: "adopt-confirm", adopt: answer });
       });
     },
-    notify() {},
+    // #689: record every notify() call (message + opts) so a leg can assert the completion notice's
+    // TEXT, not just that a variable/report changed: every prior test only needed the no-op.
+    _notified: [],
+    notify(msg) { this._notified.push(msg); },
     closePlugin() {},
     // the document root carries the embedded config (setPluginData is a synchronous string store).
     root: { _pd: {}, setPluginData(k, v) { this._pd[k] = String(v); }, getPluginData(k) { return this._pd[k] || ""; } },
@@ -221,7 +225,7 @@ if (applyBundle) {
   // root key, so the stamp is inert to the reader — this proves that, rather than assuming it).
   for (const file of ["palette.tokens.json", "Light_tokens.json", "Dark_tokens.json"]) {
     const ext = bundle[file].$extensions && bundle[file].$extensions["com.ultimate-tokens"];
-    if (!ext || ext.schemaVersion !== 2) FAIL("apply", `bundle["${file}"] missing root $extensions["com.ultimate-tokens"].schemaVersion=2 (got ${JSON.stringify(ext)})`);
+    if (!ext || ext.schemaVersion !== 3) FAIL("apply", `bundle["${file}"] missing root $extensions["com.ultimate-tokens"].schemaVersion=3 (got ${JSON.stringify(ext)})`);
   }
 
   try {
@@ -576,6 +580,74 @@ if (applyFloatPlans) {
   FAIL("floatapply", "code.js exported no applyFloatPlans");
 }
 
+// ── floatlibrary (#687): "published library" mode covers applyFloatPlans' OWN breakpoint-mode prune
+//    too, mirroring applyFontPrimitivesModes' Type Primitives mode guard and applyBundle's Color Roles
+//    theme-mode guard (#673): #629's ruling Q2 already settled that a mode prune must be guarded like
+//    a variable prune, because a consumer file pinned to a mode loses its binding exactly as it would
+//    lose a removed variable. This was the one remaining gap. libraryMode:true must keep a dropped
+//    breakpoint mode standing and report it in the collection's libraryReports staleModes; the SAME
+//    drop with the flag off must still remove it (the classic prune, unchanged).
+if (applyFloatPlans) {
+  try {
+    const synthVarL = (name, value) => ({ name, type: "FLOAT", values: [{ mode: "Base", value }] });
+    const twoModePlan = () => [{ collection: "Synth", modes: ["Base", "Mobile"], defaultMode: "Base", addModes: ["Mobile"], variables: [synthVarL("a", 1)] }];
+    const oneModePlan = () => [{ collection: "Synth", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVarL("a", 1)] }];
+
+    // ── LEG 1: libraryMode:true keeps the dropped 'Mobile' mode standing and reports it. ──
+    const FL = mockFigma();
+    const al = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FL.figma, "<html>", undefined).applyFloatPlans;
+    await al(twoModePlan());
+    const synthL = FL.collections.find((c) => c.name === "Synth");
+    if (!synthL || synthL.modes.map((m) => m.name).join() !== "Base,Mobile") FAIL("floatlibrary", "fixture: expected Base,Mobile modes before the library-mode apply");
+    else {
+      const resLib = await al(oneModePlan(), { libraryMode: true });
+      if (!synthL.modes.some((m) => m.name === "Mobile")) FAIL("floatlibrary", "libraryMode:true removed the stale 'Mobile' breakpoint mode: a published collection's mode must survive, every consumer file pinned it");
+      const repLib = (resLib.libraryReports || []).find((r) => r.collection === "Synth");
+      if (!repLib || !(repLib.staleModes || []).includes("Mobile")) FAIL("floatlibrary", "libraryMode:true did not report 'Mobile' in staleModes: a kept mode must be disclosed, or it reads as a prune that silently failed");
+    }
+
+    // ── LEG 2: the SAME drop with the flag off still removes the mode, unchanged. ──
+    const FL2 = mockFigma();
+    const al2 = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FL2.figma, "<html>", undefined).applyFloatPlans;
+    await al2(twoModePlan());
+    const synthL2 = FL2.collections.find((c) => c.name === "Synth");
+    const resCla = await al2(oneModePlan(), { libraryMode: false });
+    if (synthL2 && synthL2.modes.some((m) => m.name === "Mobile")) FAIL("floatlibrary", "libraryMode:false left the stale 'Mobile' breakpoint mode standing: the classic mode prune must be unchanged");
+    const repCla = (resCla.libraryReports || []).find((r) => r.collection === "Synth");
+    if (repCla && (repCla.staleModes || []).length) FAIL("floatlibrary", `libraryMode:false reported ${repCla.staleModes.length} staleModes: the classic path keeps none`);
+
+    // ── LEG 3 (#687 critic, mirrors #696's fontprimslibrary): opts.libraryMode UNDEFINED (an old
+    //    pre-#629 ui.html bundle) with GENUINE prior-uplift evidence already in the collection, namely
+    //    a "_deprecated/" variable a REAL earlier libraryMode:true apply produced (never a fabricated
+    //    fixture), must still resolve useLibrary=true off #635's priorLibraryUpliftVM fallback and keep
+    //    the dropped 'Mobile' breakpoint standing, reported in staleModes, with the deprecated variable
+    //    surviving too. Mutant M3 (deciding the mode prune off the raw `opts.libraryMode === true`
+    //    instead of this SAME resolved flag) passes LEG 1/2 above but goes red here.
+    const FL3 = mockFigma();
+    const al3 = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FL3.figma, "<html>", undefined).applyFloatPlans;
+    // seed: two modes, two variables; classic first apply (no opts, no evidence yet).
+    await al3([{ collection: "Synth", modes: ["Base", "Mobile"], defaultMode: "Base", addModes: ["Mobile"], variables: [synthVarL("a", 1), synthVarL("oldvar", 2)] }]);
+    // a REAL libraryMode:true apply drops 'oldvar' from the wanted set: it gets deprecated under
+    // "_deprecated/oldvar", genuine prior-uplift evidence.
+    await al3([{ collection: "Synth", modes: ["Base", "Mobile"], defaultMode: "Base", addModes: [], variables: [synthVarL("a", 1)] }], { libraryMode: true });
+    const synthL3 = FL3.collections.find((c) => c.name === "Synth");
+    if (!synthL3 || synthL3.modes.map((m) => m.name).join() !== "Base,Mobile") FAIL("floatlibrary", `fixture: expected Base,Mobile modes before the narrow apply, got ${synthL3 && synthL3.modes.map((m) => m.name)}`);
+    const deprecatedBefore = FL3.variables.some((v) => v.variableCollectionId === synthL3.id && v.name === "_deprecated/oldvar");
+    if (!deprecatedBefore) FAIL("floatlibrary", "fixture: no '_deprecated/oldvar' prior-uplift evidence before the narrow apply, the leg would prove nothing");
+    const resL3 = await al3([{ collection: "Synth", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVarL("a", 1)] }]); // opts omitted entirely, undefined
+    const modeNamesL3 = synthL3.modes.map((m) => m.name);
+    const repL3 = (resL3.libraryReports || []).find((r) => r.collection === "Synth");
+    const staleL3 = (repL3 && repL3.staleModes) || [];
+    if (!modeNamesL3.includes("Mobile")) FAIL("floatlibrary", `#687 an undefined libraryMode with prior-uplift evidence removed the stale 'Mobile' mode (modes=${JSON.stringify(modeNamesL3)}): a published library must never lose a mode a consumer pinned`);
+    if (!staleL3.includes("Mobile")) FAIL("floatlibrary", `#687 an undefined libraryMode with prior-uplift evidence did not REPORT the kept 'Mobile' mode (staleModes=${JSON.stringify(staleL3)})`);
+    if (!repL3 || repL3.libraryMode !== true) FAIL("floatlibrary", `#687 the variable half resolved libraryMode=${repL3 && repL3.libraryMode}, want true (prior-uplift evidence): the mode half must read the SAME decision`);
+    const deprecatedAfter = FL3.variables.some((v) => v.variableCollectionId === synthL3.id && v.name === "_deprecated/oldvar");
+    if (!deprecatedAfter) FAIL("floatlibrary", "#687 the preserved '_deprecated/oldvar' variable did not survive the narrow apply, the variable half must stay preserved too");
+  } catch (e) { FAIL("floatlibrary", "applyFloatPlans (library-mode breakpoint leg) threw: " + e.message); }
+} else {
+  FAIL("floatlibrary", "code.js exported no applyFloatPlans");
+}
+
 // ── TKT-0012: the id-preserving RENAME capability — the migration channel every renaming ticket uses.
 //    Proven on the mock: (a) a plan.renames var rename keeps the SAME variable id (no prune+recreate),
 //    (b) a plan.renameFrom collection rename adopts the registry-tracked collection by id, renames it
@@ -681,6 +753,312 @@ if (applyBundle) {
     if (FC.collections.filter((c) => c.name === "Color Primitives").length !== 2) FAIL("colorprov", "re-apply made a 3rd Color Primitives (provenance registry not persisted to root pluginData)");
     if (FC.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("colorprov", "re-apply made a 3rd Color Roles (provenance registry not persisted to root pluginData)");
   } catch (e) { FAIL("colorprov", "provenance guard threw: " + e.message); }
+}
+
+// ── colorlibrary (#673): "published library" mode covers applyBundle's COLOR reconcile too. #629
+//    threaded the flag into the float, font-mode and style prunes and left color on the classic prune
+//    by ruling Q1; #673 retired that exemption. libraryMode:true must remove NOTHING from any of the
+//    three generated color collections: a stale name is renamed under "_deprecated/" instead, keeping
+//    its id and every consumer binding. libraryMode:false must prune exactly as before.
+//
+//    THREE SITES, THREE LEGS. applyBundle prunes Color Roles, Color Primitives AND Color Prime. #629's
+//    own PR review found a style guard that read correct at both its sites but was only ever exercised
+//    at one, because the fixture never made a name stale at the other. So each collection is asserted
+//    on its own: a guard applied to only one or two of the three reds on the collections it missed.
+//
+//    THE FIXTURE drops a whole PALETTE FAMILY from the doc between two applies. Every one of that
+//    family's names goes stale at once, in all three collections, which is exactly the published-library
+//    accident this ticket exists to prevent. ──
+if (applyBundle) {
+  try {
+    const docFull = defaultDocument();
+    const docCut = { ...docFull, palettes: docFull.palettes.slice(0, -1) };
+    const dropped = docFull.palettes[docFull.palettes.length - 1];
+    const bundleFull = figmaBundle(docFull);
+    const bundleCut = figmaBundle(docCut);
+    // the names the FULL bundle wants and the CUT one does not, per collection, computed from the
+    // bundles themselves, not from the apply's own report, so the assertions have an independent count.
+    const leaves = (node, prefix) => {
+      const out = [];
+      for (const k of Object.keys(node).filter((x) => x[0] !== "$")) {
+        const c = node[k]; const path = prefix ? prefix + "/" + k : k;
+        if (c && typeof c === "object" && "$value" in c) out.push(path);
+        else if (c && typeof c === "object") out.push(...leaves(c, path));
+      }
+      return out;
+    };
+    const PRIME_RE = /^([^/]+)\/prime\/([^/]+)$/;
+    const splitRaw = (b) => {
+      const raw = [], prime = [];
+      for (const n of leaves(b["palette.tokens.json"], "")) {
+        const m = PRIME_RE.exec(n);
+        if (m) prime.push(m[1] + "/" + m[2]); else raw.push(n);
+      }
+      return { raw, prime };
+    };
+    const semNames = (b) => leaves(b["Light_tokens.json"], "");
+    const staleOf = (full, cut) => full.filter((n) => cut.indexOf(n) < 0);
+    const fullRaw = splitRaw(bundleFull), cutRaw = splitRaw(bundleCut);
+    const stale = {
+      "Color Roles": staleOf(semNames(bundleFull), semNames(bundleCut)),
+      "Color Primitives": staleOf(fullRaw.raw, cutRaw.raw),
+      "Color Prime": staleOf(fullRaw.prime, cutRaw.prime),
+    };
+    const COLLS = Object.keys(stale);
+    for (const cn of COLLS) if (!stale[cn].length) FAIL("colorlibrary", `fixture: dropping the '${dropped && dropped.name}' palette left NO stale name in ${cn}: the leg would be vacuous`);
+
+    // ── LEG 1: libraryMode:true prunes nothing, anywhere ──
+    const FL = mockFigma();
+    const ll = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FL.figma, "<html>", undefined);
+    await ll.applyBundle(bundleFull, {});
+    const idsBefore = {};
+    for (const cn of COLLS) {
+      const coll = FL.collections.find((c) => c.name === cn);
+      if (!coll) { FAIL("colorlibrary", `no ${cn} collection after the first apply`); continue; }
+      idsBefore[cn] = {};
+      for (const n of stale[cn]) {
+        const v = FL.variables.find((x) => x.variableCollectionId === coll.id && x.name === n);
+        if (v) idsBefore[cn][n] = v.id;
+      }
+      if (Object.keys(idsBefore[cn]).length !== stale[cn].length) FAIL("colorlibrary", `fixture: ${cn} is missing ${stale[cn].length - Object.keys(idsBefore[cn]).length} of the names the full bundle should have created`);
+    }
+    const resLib = await ll.applyBundle(bundleCut, { libraryMode: true });
+    if (resLib.pruned !== 0) FAIL("colorlibrary", `libraryMode:true pruned ${resLib.pruned} color variable(s): a published library must never remove a name a consumer file is bound to`);
+    const totalStale = COLLS.reduce((a, cn) => a + stale[cn].length, 0);
+    if (resLib.preserved !== totalStale) FAIL("colorlibrary", `libraryMode:true reported ${resLib.preserved} preserved, want ${totalStale} (every stale name in all three collections)`);
+    for (const cn of COLLS) {
+      const coll = FL.collections.find((c) => c.name === cn);
+      if (!coll) continue;
+      const live = FL.variables.filter((v) => v.variableCollectionId === coll.id);
+      const missing = stale[cn].filter((n) => !live.some((v) => v.id === idsBefore[cn][n]));
+      if (missing.length) FAIL("colorlibrary", `libraryMode:true removed ${missing.length} stale variable(s) from ${cn} (e.g. ${missing[0]}): the guard is missing at this prune site`);
+      const notDeprecated = stale[cn].filter((n) => { const v = live.find((x) => x.id === idsBefore[cn][n]); return v && v.name !== "_deprecated/" + n; });
+      if (notDeprecated.length) FAIL("colorlibrary", `libraryMode:true kept ${notDeprecated.length} stale ${cn} variable(s) under the ORIGINAL name (e.g. ${notDeprecated[0]}): a preserved name must be renamed under _deprecated/`);
+      const rep = (resLib.colorReports || []).find((x) => x.collection === cn);
+      if (!rep) FAIL("colorlibrary", `no colorReports entry for ${cn}`);
+      else {
+        if (rep.removed.length) FAIL("colorlibrary", `${cn}'s library-mode report lists ${rep.removed.length} removed name(s); it must be empty`);
+        if (rep.deprecates.length !== stale[cn].length) FAIL("colorlibrary", `${cn}'s library-mode report lists ${rep.deprecates.length} deprecates, want ${stale[cn].length}`);
+      }
+    }
+    // idempotent: a SECOND library-mode apply of the same cut bundle must not re-deprecate or remove.
+    const resLib2 = await ll.applyBundle(bundleCut, { libraryMode: true });
+    if (resLib2.pruned !== 0 || resLib2.preserved !== 0) FAIL("colorlibrary", `a repeat libraryMode:true apply reported pruned=${resLib2.pruned} preserved=${resLib2.preserved}: an already-deprecated name must be a no-op`);
+
+    // ── LEG 2: libraryMode:false reproduces today's prune, on a fresh file ──
+    const FC2 = mockFigma();
+    const lc2 = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FC2.figma, "<html>", undefined);
+    await lc2.applyBundle(bundleFull, {});
+    const resCla = await lc2.applyBundle(bundleCut, { libraryMode: false });
+    if (resCla.pruned !== totalStale) FAIL("colorlibrary", `libraryMode:false pruned ${resCla.pruned}, want ${totalStale}: the classic prune must be unchanged`);
+    if (resCla.preserved !== 0) FAIL("colorlibrary", `libraryMode:false preserved ${resCla.preserved}: the classic prune keeps nothing`);
+    for (const cn of COLLS) {
+      const coll = FC2.collections.find((c) => c.name === cn);
+      if (!coll) continue;
+      const live = FC2.variables.filter((v) => v.variableCollectionId === coll.id).map((v) => v.name);
+      const left = stale[cn].filter((n) => live.indexOf(n) >= 0 || live.indexOf("_deprecated/" + n) >= 0);
+      if (left.length) FAIL("colorlibrary", `libraryMode:false left ${left.length} stale variable(s) in ${cn} (e.g. ${left[0]}): the classic prune must still remove them`);
+      const rep = (resCla.colorReports || []).find((x) => x.collection === cn);
+      if (!rep) FAIL("colorlibrary", `no classic-mode colorReports entry for ${cn}`);
+      else if (rep.removed.length !== stale[cn].length) FAIL("colorlibrary", `${cn}'s classic report lists ${rep.removed.length} removed, want ${stale[cn].length}`);
+    }
+    // an OMITTED libraryMode (an old pre-#629 ui.html bundle) resolves to the classic prune, never to a
+    // dialog and never to preservation, the same legacy resolution the float executors give it.
+    const FC3 = mockFigma();
+    const lc3 = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FC3.figma, "<html>", undefined);
+    await lc3.applyBundle(bundleFull, {});
+    const resUndef = await lc3.applyBundle(bundleCut, {});
+    if (resUndef.pruned !== totalStale || resUndef.preserved !== 0) FAIL("colorlibrary", `an omitted libraryMode pruned ${resUndef.pruned}/preserved ${resUndef.preserved}, want ${totalStale}/0: undefined must resolve to the classic prune`);
+
+    // ── LEG 3: the theme-MODE prune. applyBundle has a SECOND destructive site: Color Roles carries
+    // one MODE per theme, and a theme the doc no longer carries is removeMode'd. A consumer file pinned
+    // to that mode loses its binding exactly as it would lose a removed variable, which is why #629's
+    // ruling Q2 already settled that a mode prune is guarded like a variable prune. The variables are
+    // NOT stale on this leg (every theme shares one name set), so it measures the mode axis alone.
+    const bundleOneTheme = { ...bundleFull };
+    delete bundleOneTheme["Dark_tokens.json"];
+    const droppedTheme = bundleFull["Dark_tokens.json"] && bundleFull["Dark_tokens.json"].$extensions;
+    const droppedMode = droppedTheme && droppedTheme["com.figma.modeName"];
+    if (!droppedMode || Object.keys(bundleOneTheme).filter((k) => k !== "palette.tokens.json").length !== 1) {
+      FAIL("colorlibrary", "fixture: dropping Dark_tokens.json did not leave a single-theme bundle with a named mode to lose");
+    } else {
+      const FM = mockFigma();
+      const lm = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FM.figma, "<html>", undefined);
+      await lm.applyBundle(bundleFull, { libraryMode: true });
+      const semM = FM.collections.find((c) => c.name === "Color Roles");
+      if (!semM || !semM.modes.some((m) => m.name === droppedMode)) FAIL("colorlibrary", `fixture: Color Roles has no '${droppedMode}' mode after the full apply`);
+      else {
+        const resM = await lm.applyBundle(bundleOneTheme, { libraryMode: true });
+        if (!semM.modes.some((m) => m.name === droppedMode)) FAIL("colorlibrary", `libraryMode:true removed the stale '${droppedMode}' theme mode from Color Roles: a published collection's mode must survive, every consumer file pinned it`);
+        if (!(resM.staleModes || []).includes(droppedMode)) FAIL("colorlibrary", `libraryMode:true did not report '${droppedMode}' in staleModes: a kept mode must be disclosed, or it reads as a prune that silently failed`);
+        const repM = (resM.colorReports || []).find((x) => x.collection === "Color Roles");
+        if (!repM || !(repM.staleModes || []).includes(droppedMode)) FAIL("colorlibrary", `the Color Roles colorReports entry does not carry '${droppedMode}' in staleModes`);
+      }
+      // the SAME theme drop with the flag off still removes the mode, unchanged.
+      const FM2 = mockFigma();
+      const lm2 = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FM2.figma, "<html>", undefined);
+      await lm2.applyBundle(bundleFull, { libraryMode: false });
+      const resM2 = await lm2.applyBundle(bundleOneTheme, { libraryMode: false });
+      const semM2 = FM2.collections.find((c) => c.name === "Color Roles");
+      if (semM2 && semM2.modes.some((m) => m.name === droppedMode)) FAIL("colorlibrary", `libraryMode:false left the stale '${droppedMode}' theme mode standing: the classic mode prune must be unchanged`);
+      if ((resM2.staleModes || []).length) FAIL("colorlibrary", `libraryMode:false reported ${resM2.staleModes.length} staleModes: the classic path keeps none`);
+    }
+
+    // ── LEG 4: the MESSAGE HANDLER threads msg.libraryMode into applyBundle. The two legs above call
+    // applyBundle directly, so they stay green even if the handler never passes the flag, which is
+    // exactly the shape of the gap #673 closes. This leg drives the real "apply" message instead.
+    const FH = mockFigma();
+    new Function("figma", "__html__", "module", code)(FH.figma, "<html>", undefined);
+    if (typeof FH.figma.ui._h !== "function") FAIL("colorlibrary", "the plugin never registered a ui.onmessage handler");
+    else {
+      await FH.figma.ui._h({ type: "apply", dtcg: bundleFull, libraryMode: true });
+      await FH.figma.ui._h({ type: "apply", dtcg: bundleCut, libraryMode: true });
+      for (const cn of COLLS) {
+        const coll = FH.collections.find((c) => c.name === cn);
+        if (!coll) { FAIL("colorlibrary", `no ${cn} collection after the handler-driven apply`); continue; }
+        const live = FH.variables.filter((v) => v.variableCollectionId === coll.id).map((v) => v.name);
+        const lost = stale[cn].filter((n) => live.indexOf("_deprecated/" + n) < 0);
+        if (lost.length) FAIL("colorlibrary", `the apply MESSAGE with libraryMode:true lost ${lost.length} stale ${cn} variable(s) (e.g. ${lost[0]}): the handler is not threading the flag into applyBundle`);
+      }
+      const FH2 = mockFigma();
+      new Function("figma", "__html__", "module", code)(FH2.figma, "<html>", undefined);
+      await FH2.figma.ui._h({ type: "apply", dtcg: bundleFull, libraryMode: false });
+      await FH2.figma.ui._h({ type: "apply", dtcg: bundleCut, libraryMode: false });
+      for (const cn of COLLS) {
+        const coll = FH2.collections.find((c) => c.name === cn);
+        if (!coll) continue;
+        const live = FH2.variables.filter((v) => v.variableCollectionId === coll.id).map((v) => v.name);
+        const kept = stale[cn].filter((n) => live.indexOf(n) >= 0 || live.indexOf("_deprecated/" + n) >= 0);
+        if (kept.length) FAIL("colorlibrary", `the apply MESSAGE with libraryMode:false kept ${kept.length} stale ${cn} variable(s) (e.g. ${kept[0]}): an unchecked box must still take the classic prune`);
+      }
+    }
+  } catch (e) { FAIL("colorlibrary", "the color library-mode legs threw: " + e.message); }
+}
+
+// ── staleskip (#689): a stale name whose "_deprecated/" slot is ALREADY TAKEN is skipped by the
+//    dedupe guard (`byName[r.to]`) and left LIVE, reported nowhere. Minimal repro (the #673
+//    reviewer's own sequence on Color Prime): full, cut (deprecates the family), full (re-adds it
+//    FRESH; the deprecated copy is untouched), cut again (the fresh copy wants the SAME
+//    "_deprecated/" slot the first drop already took: collision. Same class exists at THREE sites:
+//    applyBundle's color reconcile, applyFloatPlans' deprecates loop, applyFontPrimitivesModes'
+//    deprecates loop, each covered on its own below.
+if (applyBundle) {
+  try {
+    const docFull = defaultDocument();
+    const docCut = { ...docFull, palettes: docFull.palettes.slice(0, -1) };
+    const bundleFull = figmaBundle(docFull);
+    const bundleCut = figmaBundle(docCut);
+    const FS = mockFigma();
+    const ls = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle };")(FS.figma, "<html>", undefined);
+    await ls.applyBundle(bundleFull, { libraryMode: true }); // 1: full
+    await ls.applyBundle(bundleCut, { libraryMode: true }); // 2: drop, family deprecated
+    await ls.applyBundle(bundleFull, { libraryMode: true }); // 3: re-add, a FRESH family is created
+    const res4 = await ls.applyBundle(bundleCut, { libraryMode: true }); // 4: drop again, collision
+    if (!res4.skipped || !res4.skipped.length) FAIL("staleskip", `a fourth color apply (drop, re-add, drop) reported no skipped names (res4.skipped=${JSON.stringify(res4.skipped)}): the "_deprecated/" collision must be reported, not silently left live`);
+    else {
+      const liveNames = FS.variables.map((v) => v.name);
+      const stillLive = res4.skipped.filter((n) => liveNames.indexOf(n) >= 0);
+      if (!stillLive.length) FAIL("staleskip", `res4.skipped named ${JSON.stringify(res4.skipped)}, none of which are actually live in the mock (fixture mismatch)`);
+      // the per-collection colorReports entry must ALSO carry the skip (not just the top-level rollup).
+      const anyRepSkipped = (res4.colorReports || []).some((r) => (r.skipped || []).length);
+      if (!anyRepSkipped) FAIL("staleskip", "no colorReports entry carries a non-empty skipped array");
+    }
+  } catch (e) { FAIL("staleskip", "the color stale-skip leg threw: " + e.message); }
+} else {
+  FAIL("staleskip", "code.js exported no applyBundle");
+}
+
+// ── staleskip float (#689): the SAME collision, in applyFloatPlans' own deprecates loop, on a
+//    synthetic collection (drop/re-add/drop a variable, not a real breakpoint mode). ──
+if (applyFloatPlans) {
+  try {
+    const synthVarSK = (name, value) => ({ name, type: "FLOAT", values: [{ mode: "Base", value }] });
+    const twoVarPlanSK = () => [{ collection: "SynthSkip", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVarSK("a", 1), synthVarSK("b", 2)] }];
+    const oneVarPlanSK = () => [{ collection: "SynthSkip", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVarSK("a", 1)] }];
+    const FSF = mockFigma();
+    const asf = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FSF.figma, "<html>", undefined).applyFloatPlans;
+    await asf(twoVarPlanSK(), { libraryMode: true }); // 1: a, b
+    await asf(oneVarPlanSK(), { libraryMode: true }); // 2: b -> _deprecated/b
+    await asf(twoVarPlanSK(), { libraryMode: true }); // 3: fresh b created
+    const res4f = await asf(oneVarPlanSK(), { libraryMode: true }); // 4: collision
+    if (!res4f.skipped || !res4f.skipped.length) FAIL("staleskipfloat", `a fourth float apply (drop, re-add, drop) reported no skipped names (res4f.skipped=${JSON.stringify(res4f.skipped)}): the "_deprecated/" collision must be reported`);
+    else {
+      const liveNamesF = FSF.variables.map((v) => v.name);
+      if (!res4f.skipped.some((n) => liveNamesF.indexOf(n) >= 0)) FAIL("staleskipfloat", `res4f.skipped named ${JSON.stringify(res4f.skipped)}, none of which are actually live in the mock (fixture mismatch)`);
+      const anyRepSkippedF = (res4f.libraryReports || []).some((r) => (r.skipped || []).length);
+      if (!anyRepSkippedF) FAIL("staleskipfloat", "no libraryReports entry carries a non-empty skipped array");
+    }
+  } catch (e) { FAIL("staleskipfloat", "the float stale-skip leg threw: " + e.message); }
+} else {
+  FAIL("staleskipfloat", "code.js exported no applyFloatPlans");
+}
+
+// ── staleskip font primitives (#689): the SAME collision, in applyFontPrimitivesModes' deprecates
+//    loop (a similar guard at code.js's Type Primitives site, not just the float/color sites above). ──
+if (applyFontPrimitivesModes) {
+  try {
+    const planSK = (names) => ({ collection: "TypePrimSkip", modes: ["Value"], defaultMode: "Value", addModes: [], variables: names.map((n) => ({ name: n, type: "STRING", values: [{ mode: "Value", value: "x" }] })) });
+    const FSP = mockFigma();
+    const asp = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(FSP.figma, "<html>", undefined).applyFontPrimitivesModes;
+    await asp(planSK(["font/a", "font/b"]), { libraryMode: true }); // 1: a, b
+    await asp(planSK(["font/a"]), { libraryMode: true }); // 2: font/b -> _deprecated/font/b
+    await asp(planSK(["font/a", "font/b"]), { libraryMode: true }); // 3: fresh font/b created
+    const res4p = await asp(planSK(["font/a"]), { libraryMode: true }); // 4: collision
+    const skippedP = (res4p && res4p.libraryReport && res4p.libraryReport.skipped) || [];
+    if (!skippedP.length) FAIL("staleskipfontprim", `a fourth Font Primitives apply (drop, re-add, drop) reported no skipped names (libraryReport.skipped=${JSON.stringify(skippedP)}): the "_deprecated/" collision must be reported`);
+    else {
+      const liveNamesP = FSP.variables.map((v) => v.name);
+      if (!skippedP.some((n) => liveNamesP.indexOf(n) >= 0)) FAIL("staleskipfontprim", `libraryReport.skipped named ${JSON.stringify(skippedP)}, none of which are actually live in the mock (fixture mismatch)`);
+    }
+  } catch (e) { FAIL("staleskipfontprim", "the Font Primitives stale-skip leg threw: " + e.message); }
+} else {
+  FAIL("staleskipfontprim", "code.js exported no applyFontPrimitivesModes");
+}
+
+// ── staleskip notice (#689 + folded #687 review finding 4): the completion notice (figma.notify)
+//    must NAME both counts: a kept stale Type/Geometry breakpoint MODE (the float "stale kept"
+//    counter #687 left off) and a skipped stale NAME (this ticket's own gap), driven through the
+//    REAL message handler, exactly like "applysys"/"colorlibrary" LEG 4 above. ──
+{
+  // D1: a kept breakpoint mode (float) must be named in the notice, with its count.
+  const FD1 = mockFigma();
+  new Function("figma", "__html__", "module", code)(FD1.figma, "<html>", undefined);
+  const synthVarD = (name, value) => ({ name, type: "FLOAT", values: [{ mode: "Base", value }] });
+  const twoModePlanD = [{ collection: "SynthNotice", modes: ["Base", "Mobile"], defaultMode: "Base", addModes: ["Mobile"], variables: [synthVarD("a", 1)] }];
+  const oneModePlanD = [{ collection: "SynthNotice", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVarD("a", 1)] }];
+  await FD1.figma.ui._h({ type: "apply", floatPlans: twoModePlanD });
+  FD1.figma._notified.length = 0; // only the SECOND apply's notice is under test
+  await FD1.figma.ui._h({ type: "apply", floatPlans: oneModePlanD, libraryMode: true });
+  const noticeD1 = FD1.figma._notified.find((m) => typeof m === "string" && m.indexOf("Applied") === 0);
+  if (!noticeD1) FAIL("staleskipnotice", `no "Applied…" completion notice was posted; got ${JSON.stringify(FD1.figma._notified)}`);
+  else if (!/1 stale kept \(published library\)/.test(noticeD1)) FAIL("staleskipnotice", `a kept stale Type/Geometry breakpoint mode under libraryMode:true produced no "N stale kept" notice: "${noticeD1}"`);
+
+  // D2: a skipped stale NAME (this ticket) must be named in the notice, with its count, driven by
+  // the SAME 4-apply drop/re-add/drop color sequence above, through the real message handler.
+  if (applyBundle) {
+    const docFullD = defaultDocument();
+    const docCutD = { ...docFullD, palettes: docFullD.palettes.slice(0, -1) };
+    const bundleFullD = figmaBundle(docFullD);
+    const bundleCutD = figmaBundle(docCutD);
+    const FD2 = mockFigma();
+    new Function("figma", "__html__", "module", code)(FD2.figma, "<html>", undefined);
+    await FD2.figma.ui._h({ type: "apply", dtcg: bundleFullD, libraryMode: true }); // 1
+    await FD2.figma.ui._h({ type: "apply", dtcg: bundleCutD, libraryMode: true }); // 2
+    await FD2.figma.ui._h({ type: "apply", dtcg: bundleFullD, libraryMode: true }); // 3
+    FD2.figma._notified.length = 0; // only the FOURTH apply's notice is under test
+    const warned = [];
+    const realWarn = console.warn;
+    console.warn = (...a) => { warned.push(a.join(" ")); };
+    try { await FD2.figma.ui._h({ type: "apply", dtcg: bundleCutD, libraryMode: true }); } // 4: collision
+    finally { console.warn = realWarn; }
+    // #689 review F1: the notice carries only a count, so the NAMES must reach the console.
+    const skipWarn = warned.find((w) => w.indexOf("stale color name(s), left live") >= 0);
+    if (!skipWarn) FAIL("staleskipnotice", `the 4th color apply skipped names but no console.warn named them; warns: ${JSON.stringify(warned)}`);
+    else if (!/taken: \S/.test(skipWarn)) FAIL("staleskipnotice", `the color skip warn lists no names: "${skipWarn}"`);
+    const noticeD2 = FD2.figma._notified.find((m) => typeof m === "string" && m.indexOf("Applied") === 0);
+    if (!noticeD2) FAIL("staleskipnotice", `no "Applied…" completion notice was posted for the 4th apply; got ${JSON.stringify(FD2.figma._notified)}`);
+    else if (!/\d+ stale skipped \(rename target taken\)/.test(noticeD2)) FAIL("staleskipnotice", `a skipped stale name under libraryMode:true produced no "N stale skipped" notice: "${noticeD2}"`);
+  }
 }
 
 // ── adoptconsent (#632): a live collection matching a target name that ISN'T registry-tracked (a file
@@ -800,6 +1178,41 @@ if (applyBundle) {
     if (regOf(FH, FLOAT_REG)["Geometry"] !== orphanGeo.id) FAIL("adoptconsent", "float leg: the float registry was not seeded with the adopted collection id");
     if (!FH.variables.some((v) => v.variableCollectionId === orphanGeo.id)) FAIL("adoptconsent", "float leg: the apply wrote no variables into the adopted collection");
   } catch (e) { FAIL("adoptconsent", "the float adoption leg threw: " + e.message); }
+  // (g) #676: fontPrimitivesModes riding WITHOUT stylePlans, unreachable from today's UI
+  //     (apply-gate.js only ever sets fontPrimitivesModes inside the paints/texts branch), but the
+  //     message handler only calls applyFontPrimitivesModes when msg.stylePlans has paints or texts,
+  //     so the consent pass must mirror that guard exactly instead of depending on an invariant it
+  //     doesn't assert. Without the guard, this message would prompt for and seed a Type Primitives
+  //     registry entry for a collection this apply never touches, cashing that consent on a later
+  //     apply that prunes it without asking again.
+  //     Run over BOTH shapes of "no style work": stylePlans absent, and stylePlans PRESENT but empty.
+  //     The second is the predicate's own boundary: `!!msg.stylePlans` would pass the first and fail
+  //     it, so without it a broadened predicate survives the whole suite (#676 review, I-2).
+  for (const [shape, extra] of [["absent", {}], ["present-but-empty", { stylePlans: { paints: [], texts: [] } }]]) {
+    try {
+      const FJ = mockFigma();
+      new Function("figma", "__html__", "module", code)(FJ.figma, "<html>", undefined);
+      FJ.figma._adoptAnswer = true; // would adopt if ever asked
+      FJ.figma.variables.createVariableCollection("Type Primitives"); // live, untracked, by name not registry
+      const bareFontPrimitivesModes = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [] };
+      await FJ.figma.ui._h({ type: "apply", fontPrimitivesModes: bareFontPrimitivesModes, ...extra });
+      if (FJ.figma._showUICalls !== 0) FAIL("adoptconsent", `fontPrimitivesModes-without-stylePlans leg (stylePlans ${shape}): expected ZERO consent prompts, got ${FJ.figma._showUICalls}`);
+      if (regOf(FJ, FLOAT_REG)["Type Primitives"] !== undefined) FAIL("adoptconsent", `fontPrimitivesModes-without-stylePlans leg (stylePlans ${shape}): the float registry was seeded for a collection this apply never touches`);
+    } catch (e) { FAIL("adoptconsent", `the fontPrimitivesModes-without-stylePlans leg (stylePlans ${shape}) threw: ` + e.message); }
+  }
+  // (h) POSITIVE CONTROL for (g): the identical fontPrimitivesModes plan, but WITH a non-empty
+  //     stylePlans riding the same message, must still prompt for Type Primitives exactly as before
+  //     #676: the guard adds a condition to the concat, it does not remove the legitimate consent path.
+  try {
+    const FK = mockFigma();
+    new Function("figma", "__html__", "module", code)(FK.figma, "<html>", undefined);
+    FK.figma._adoptAnswer = true;
+    const orphanPrim = FK.figma.variables.createVariableCollection("Type Primitives"); // live, untracked
+    const fpPlan = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [] };
+    await FK.figma.ui._h({ type: "apply", fontPrimitivesModes: fpPlan, stylePlans: { paints: [{ name: "x", role: "x", value: { r: 0, g: 0, b: 0, a: 1 } }], texts: [] } });
+    if (FK.figma._showUICalls !== 1) FAIL("adoptconsent", `fontPrimitivesModes-with-stylePlans leg: expected exactly 1 consent prompt, got ${FK.figma._showUICalls}`);
+    if (regOf(FK, FLOAT_REG)["Type Primitives"] !== orphanPrim.id) FAIL("adoptconsent", "fontPrimitivesModes-with-stylePlans leg: the float registry was not seeded with the adopted Type Primitives collection id");
+  } catch (e) { FAIL("adoptconsent", "the fontPrimitivesModes-with-stylePlans leg threw: " + e.message); }
 }
 
 // ── TKT-0024: the color collections' id-preserving RENAME capability still works once ensureCollection
@@ -969,11 +1382,10 @@ if (sweepCandidates) {
   if (!doneErrMsg) FAIL("sweep", "a throwing sweep-delete must still post {sweep-done} from the catch, or sweepBusy wedges the Cleanup panel forever (#454)");
 }
 
-// ── REPORT ───────────────────────────────────────────────────────────────────────
-for (const g of ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "renamecap", "colorprov", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The REPORT block prints once, at the very end of the file (see bottom), after every gate above
+// and below this point has had the chance to FAIL: a mid-file print here used to run before the
+// STYLES/fontmodes/library/readfloat legs further down had even executed, which is how three of
+// this file's own gates (compliance, regroup, primevalue) went unprinted for so long (#699).
 // ── STYLES apply: paint styles bound to Color Roles vars; text styles set + bound; registry prune ──
 // Runs on the SAME mock F: applyBundle already created Color Roles, the float e2e already created the
 // merged Geometry collection with its type/ half (base "product/16" scale) — exactly the state a real
@@ -1720,6 +2132,76 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
   } catch (e) { FAIL("librarygrammar", "the grammar-bridge e2e threw: " + e.message); }
 }
 
+// ── fontprimslibrary (#696): the Type Primitives MODE prune must read the SAME resolved `useLibrary`
+//    the VARIABLE prune below it already reads (explicit opts.libraryMode, else the interactive
+//    confirmLibraryMode ask, else #635's priorLibraryUpliftVM fallback over the variable evidence),
+//    not `opts.libraryMode === true` taken raw at collection time. Before #696, an old pre-#629
+//    ui.html bundle (opts.libraryMode undefined) applying to a file that already carries prior-uplift
+//    evidence (a "_deprecated/font/..." variable) kept the variables (library) but PRUNED the stale
+//    mode (classic): a published library losing a mode every consumer pinned.
+if (applyFontPrimitivesModes) {
+  const OLD_VOICES_FPL = ["heading", "ui", "caption", "legal", "code", "body", "display", "lead", "kicker", "sub-heading", "quote"];
+  // buildUpliftedMock: brings a fresh mock to "already library-uplifted", an old-era single-"Value"-mode
+  // collection healed into Premium+Google Fonts, then a real libraryMode:true apply of planFP so a real
+  // "_deprecated/font/quote" variable (and several live aliases) sit in the collection as genuine
+  // prior-uplift evidence, never a fabricated fixture.
+  async function buildUpliftedMockFPL() {
+    const F = mockFigma();
+    const loaded = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(F.figma, "<html>", undefined);
+    const eraOnePlan = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: OLD_VOICES_FPL.map((v) => ({ name: "font/" + v, type: "STRING", values: [{ mode: "Value", value: "Old Font " + v }] })) };
+    await loaded.applyFontPrimitivesModes(eraOnePlan);
+    const scaleFP = TYPE.typeScale({ treatment: "product", bodyBase: 16 });
+    const planFP = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scaleFP));
+    await loaded.applyFontPrimitivesModes(planFP, { libraryMode: true });
+    return { F, loaded, planFP };
+  }
+  try {
+    // ── LEG (a): opts.libraryMode undefined (an old pre-#629 ui.html bundle) + prior-uplift evidence +
+    //    a plan dropping the "Google Fonts" mode. The mode must survive AND be reported in staleModes,
+    //    the SAME decision the variable half already makes off the priorLibraryUpliftVM fallback.
+    {
+      const { F: Fa, loaded: la, planFP: planA } = await buildUpliftedMockFPL();
+      const beforeA = Fa.collections.find((c) => c.name === "Type Primitives");
+      if (!beforeA || beforeA.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("fontprimslibrary", `fixture: expected Premium,Google Fonts before the narrow apply, got ${beforeA && beforeA.modes.map((m) => m.name)}`);
+      const deprecatedBefore = Fa.variables.some((v) => v.variableCollectionId === beforeA.id && v.name === "_deprecated/font/quote");
+      if (!deprecatedBefore) FAIL("fontprimslibrary", "fixture: no '_deprecated/font/quote' prior-uplift evidence before the narrow apply, the leg would prove nothing");
+      const narrowA = Object.assign({}, planA, { modes: ["Premium"], addModes: [] });
+      const resA = await la.applyFontPrimitivesModes(narrowA); // opts omitted entirely, undefined
+      const afterA = Fa.collections.find((c) => c.name === "Type Primitives");
+      const modeNamesA = afterA.modes.map((m) => m.name);
+      const staleA = (resA && resA.libraryReport && resA.libraryReport.staleModes) || [];
+      if (!modeNamesA.includes("Google Fonts")) FAIL("fontprimslibrary", `#696 an undefined libraryMode with prior-uplift evidence removed the stale 'Google Fonts' mode (modes=${JSON.stringify(modeNamesA)}): a published library must never lose a mode a consumer pinned`);
+      if (!staleA.includes("Google Fonts")) FAIL("fontprimslibrary", `#696 an undefined libraryMode with prior-uplift evidence did not REPORT the kept 'Google Fonts' mode (staleModes=${JSON.stringify(staleA)})`);
+      if (!resA || !resA.libraryReport || resA.libraryReport.libraryMode !== true) FAIL("fontprimslibrary", `#696 the variable half resolved libraryMode=${resA && resA.libraryReport && resA.libraryReport.libraryMode}, want true (prior-uplift evidence): the mode half must read the SAME decision`);
+      const deprecatedAfter = Fa.variables.some((v) => v.variableCollectionId === afterA.id && v.name === "_deprecated/font/quote");
+      if (!deprecatedAfter) FAIL("fontprimslibrary", "#696 the preserved '_deprecated/font/quote' variable did not survive the narrow apply, the variable half must stay preserved too");
+    }
+    // ── LEG (b): explicit libraryMode:false, the stale mode IS removed, classic prune unchanged.
+    {
+      const { F: Fb, loaded: lb, planFP: planB } = await buildUpliftedMockFPL();
+      const narrowB = Object.assign({}, planB, { modes: ["Premium"], addModes: [] });
+      const resB = await lb.applyFontPrimitivesModes(narrowB, { libraryMode: false });
+      const afterB = Fb.collections.find((c) => c.name === "Type Primitives");
+      const modeNamesB = afterB.modes.map((m) => m.name);
+      const staleB = (resB && resB.libraryReport && resB.libraryReport.staleModes) || [];
+      if (modeNamesB.includes("Google Fonts")) FAIL("fontprimslibrary", `#696 libraryMode:false left the stale 'Google Fonts' mode behind (modes=${JSON.stringify(modeNamesB)}): classic prune regressed`);
+      if (staleB.length) FAIL("fontprimslibrary", `#696 libraryMode:false reported staleModes ${JSON.stringify(staleB)} instead of removing them`);
+    }
+    // ── LEG (c): explicit libraryMode:true, already covered by shape, kept here as the third point on
+    //    the SAME decision channel (undefined/false/true all agreeing between the two prune sites).
+    {
+      const { F: Fc, loaded: lc, planFP: planC } = await buildUpliftedMockFPL();
+      const narrowC = Object.assign({}, planC, { modes: ["Premium"], addModes: [] });
+      const resC = await lc.applyFontPrimitivesModes(narrowC, { libraryMode: true });
+      const afterC = Fc.collections.find((c) => c.name === "Type Primitives");
+      const modeNamesC = afterC.modes.map((m) => m.name);
+      const staleC = (resC && resC.libraryReport && resC.libraryReport.staleModes) || [];
+      if (!modeNamesC.includes("Google Fonts")) FAIL("fontprimslibrary", `#696 libraryMode:true removed the stale 'Google Fonts' mode (modes=${JSON.stringify(modeNamesC)}): a published collection's mode must survive`);
+      if (!staleC.includes("Google Fonts")) FAIL("fontprimslibrary", `#696 libraryMode:true did not REPORT the kept 'Google Fonts' mode (staleModes=${JSON.stringify(staleC)})`);
+    }
+  } catch (e) { FAIL("fontprimslibrary", "the font-primitives mode/variable timing e2e threw: " + e.message); }
+}
+
 // ── READ-FLOAT-VARIABLES (TKT-0020, Geometry/Type drift reference): the live Geometry + Type
 // Primitives values come back in a shape comparable to a modeApplyPlan/primitivesModesApplyPlan entry — the
 // apply gate's pre-overwrite diff (collections-arch review C2). Runs on the SAME mock F: by this point
@@ -1757,34 +2239,17 @@ if (applyFloatPlans) {
   } catch (e) { FAIL("readfloat", "read-float-variables threw: " + e.message); }
 }
 
-{
-  const f = fails.find((x) => x.startsWith("readfloat:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  readfloat${f ? "  — " + f.slice(11) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("styles:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  styles${f ? "  — " + f.slice(8) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("fontmodes:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  fontmodes${f ? "  — " + f.slice(10) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("libraryparity:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  libraryparity${f ? "  — " + f.slice(14) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("librarymode:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  librarymode${f ? "  — " + f.slice(12) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("adoptconsent:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  adoptconsent${f ? "  — " + f.slice(14) : ""}`);
-}
-{
-  const f = fails.find((x) => x.startsWith("librarygrammar:"));
-  console.log(`  ${f ? "FAIL" : "pass"}  librarygrammar${f ? "  — " + f.slice(15) : ""}`);
-}
+// ── REPORT ───────────────────────────────────────────────────────────────────────
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row. This
+// used to be a mid-file list (26 names) plus 8 hand-written per-leg print blocks further down
+// (the 8th, fontprimslibrary, arrived in #696 after this conversion started), folded into one
+// declared list here so there is a single printed set. gateReport() also runs the report-static
+// self-check: a declared name with no FAIL(...) call site, or a call site whose name is not
+// declared, fails loudly on its own (report-static).
+const DECLARED = ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "staleskip", "staleskipfloat", "staleskipfontprim", "staleskipnotice", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep", "compliance", "regroup", "primevalue", "readfloat", "styles", "fontmodes", "libraryparity", "librarymode", "adoptconsent", "librarygrammar", "fontprimslibrary", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("\nPASS: figma-plugin-app — manifest + offline code.js + bridged ui.html + the figmaBundle→variables cascade + the Type/Geometry breakpoint-mode apply + the styles apply (bound paints/texts, registry prune)");
 process.exit(0);

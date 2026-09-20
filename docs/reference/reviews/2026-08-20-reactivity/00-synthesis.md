@@ -53,7 +53,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 
 | # | Finding | Evidence | Fix shape |
 |---|---|---|---|
-| D1 | `sweep-scan`/`sweep-delete` failures never reply → `sweepBusy` wedges; Cleanup panel disabled for the session | 04 §B; the `postMessage` catch at figma/plugin/code.js:245-247 special-cased only `apply` (fixed in #459) | code.js catch posts `sweep-scanned {texts:[],paints:[]}` / `sweep-done {removed:0}`, mirroring the apply carve-out |
+| D1 | `sweep-scan`/`sweep-delete` failures never reply → `sweepBusy` wedges; Cleanup panel disabled for the session | 04 §B; the `postMessage` catch at figma/plugin/code.js:270-284 special-cased only the `apply` case at :279 (fixed in #459) | code.js catch posts `sweep-scanned {texts:[],paints:[]}` / `sweep-done {removed:0}`, mirroring the apply carve-out |
 | D2 | `selectPalette()` mutates `doc.selected`, renders, never saves → false "unsaved" badge | 01 §B1; sections/color.js:255-260 | add `this.save()` (or route through `edit()`) |
 
 ### Fix soon (performance)
@@ -83,10 +83,10 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 ### Hygiene (cosmetic, batchable)
 
 - `_schemeOverride` never declared in the constructor while its two mirrors are (02; color.js:950 vs app.js:104,144; declared at app.js:103 since #467) — declare it.
-- `this.view` (route string) vs local `view` (`projectView` result) one underscore apart at app.js:295 (documented at app.js:594-596) — rename the route field (e.g. `this.route`) or the locals.
+- `this.view` (route string) vs local `view` (`projectView` result) one underscore apart at app.js:296 (documented at app.js:594-596) — rename the route field (e.g. `this.route`) or the locals.
 - `disconnectedCallback` teardown set asymmetric with what connectedCallback registers (`_liveRaf`, `_dragTimer`, `_toastT`, window-level drag listeners) — inert for a page-lifetime singleton; either complete the inventory or comment why it's deliberately partial (01 §B6, 04 §D).
 - Stale copy in `graphGeomComposition` (geometry.js:683) contradicts its own card title — font DOES still compose from Type's UI-control voice (02 §B6).
-- `_okL` (`src/engine/tonal.js:922`) module-level memo Map is the one true exception to "engines are pure, no module state" — bounded and harmless; worth one comment acknowledging it (04 §B).
+- `_okL` (`src/engine/tonal.js:907`) module-level memo Map is the one true exception to "engines are pure, no module state" — bounded and harmless; worth one comment acknowledging it (04 §B).
 
 ## Deliberately fine — do not "fix"
 

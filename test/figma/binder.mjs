@@ -8,6 +8,7 @@ import * as P from "../../figma/binder/bind-plan.mjs";
 import * as MAP from "../../figma/binder/mode-apply-plan.mjs";
 import * as TYPE from "../../src/engine/type.mjs";
 import * as GEOM from "../../src/engine/geometry.mjs";
+import { gateReport } from "../gate-report.mjs";
 import { semanticRoles } from "../../src/engine/semantic.js";
 import { COLLECTIONS } from "../../src/engine/collections.js";
 import { extractFunctionSource } from "../../figma/binder/splice-utils.mjs";
@@ -806,10 +807,15 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "primereport", "adoptconsent", "librarygeom", "libraryidem", "prunemono", "colorparity", "collparity", "floatparity"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+// gateReport() also runs the report-static self-check: a declared name with no FAIL(...) call
+// site, or a call site whose name is not declared, fails loudly on its own (report-static).
+// "compliance" was the live hole (#699 correction): it had a real call site above but was never
+// declared, so a compliance FAIL used to exit 1 with no named row.
+const DECLARED = ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "primereport", "adoptconsent", "librarygeom", "libraryidem", "prunemono", "colorparity", "collparity", "floatparity", "compliance", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (checked ${targets ? targets.length : 0} binding targets vs ${CANON.size} canonical raw-colors names)`);
 console.log("  defer  hpg-parity-roletable — this file's `parity` gate above verifies the engine<->Figma-binder leg (full role objects, in order, per default palette); the canonical role-table.json<->semantic.js leg is verified by semantic-mapping's own refs-canonical gate");
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
