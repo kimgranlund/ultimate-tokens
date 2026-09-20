@@ -77,7 +77,7 @@ Every control that edits a file runs in a throwaway clone (`git clone -q --share
 
 | # | Criterion | Command | Expected | Negative control |
 |---|---|---|---|---|
-| P1 | `npm test` green with no `node_modules`, tree byte-stable | block P1 | `✓ all 48 test files passed`, then `0` | in the clone: `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json`, rerun: exit 1, a non-zero FAIL count (3 in the records-refresh verdicts) |
+| P1 | `npm test` green with no `node_modules`, tree byte-stable | block P1 | `✓ all 48 test files passed`, then `0` | in the clone: `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json`, rerun: exit 1, a non-zero FAIL count (measured 1 failing file, `FAIL refs-canonical`, at 3600ad6e; the expected value is non-zero, not a fixed number) |
 | P4 | branding gate clean | block P4 | `branding: clean (N files scanned)`, `exit 0` (N is not pinned: it grows with every record this branch adds) | in the clone: `cp docs/reference/references/decision-records.md docs/x.md`, rerun: FAIL (the records exemption is by path) |
 | P5 | scope wall: only the wall's paths differ from the merge base, tracked or untracked. The wall admits the A2 verdict, the board, this plan, and any record under `verdicts/`, `handoffs/` or `questions/` whose name starts `k17-rerun-` (checkability, unit verdict, pre-land record, handoff, approval), so a record the loop adds later needs no plan edit | block P5 | `0` | measured 2026-09-20 at 9b2d82dc (bf4ea457 plus the review's amendment, same three changed paths: this plan, the approval, the checkability record): `0`, where the first draft's regex prints `1` for the checkability record. In a shared clone of that head: one byte on `.sdlc/architecture.md` `1`; a new `.sdlc/checks/new.sh` `1`; `.sdlc/verdicts/records-refresh-k17-rerun.md` (the slug not at the start of the name) `1`; a second plan file `.sdlc/plans/k17-rerun-extra.md` `1`; and the loop's own later records together (`verdicts/k17-rerun-U1-p2.md`, `handoffs/k17-rerun-U1.md`, a board line) `0` |
 
@@ -97,7 +97,7 @@ MB=$(git merge-base origin/main HEAD); { git diff --name-only $MB; git ls-files 
 
 ## Units
 
-- [~] U1 (S) the A2 verdict's title states the newest pass and its count; the verifier appends pass 6, K17 only, its own run of the map's control at the head and its own plant · grade l1 · reviewer-l1 · verifier-l1
+- [x] U1 (S) the A2 verdict's title states the newest pass and its count; the verifier appends pass 6, K17 only, its own run of the map's control at the head and its own plant · grade l1 · reviewer-l1 · verifier-l1
 
 Grade. Docs, l1 by the Orchestrator's table, and it stays l1. The builder has almost nothing to build: one title line, plus a handoff that records its own run of one control as the claim under test. The failure mode the l2 bump exists for (a transcription error nobody can see) has a mechanical catch here: U1-2 lifts the filter from the map and U1-4 computes the title's numbers from the file. The verifier is l1 too: one control, one plant, expected values measured above, and it is opus, so it does not share a family with the sonnet builder. The reason to go higher would be judgment; there is none in this row. Pre-land is the adapter §2.1 pair (reviewer-l3, verifier-l3) as for every plan, and it grades the rows the unit verifier wrote.
 
@@ -142,7 +142,11 @@ Pass 6, appended at the end of the file by the verifier. Fixed parts are the hea
 ```
 ## Pass 6 (U1 of plan k17-rerun, K17 only)
 
-Graded <date> at `<sha>` (branch `unit/k17-U1`). <where the control ran, where the plant ran, that both are this verifier's own>. Pass 5 graded K17 at `d46ae48` against the three-name filter; `28c2e8cc` widened the filter in the map and no pass here graded the new text. Rule from this pass on: a change to a §6 control cell lands with a pass in this file grading the new text.
+Graded <date> at `<sha>` (branch `unit/k17-U1`). <where the control ran, where the plant ran, that both are this verifier's own>.
+
+<a second paragraph, so the first line carrying a sha carries exactly one>: pass 5 graded K17 at `d46ae48` against the three-name filter; `28c2e8cc` widened the filter in the map and no pass here graded the new text. Rule from this pass on: a change to a §6 control cell lands with a pass in this file grading the new text.
+
+Revision 2: this intro is two paragraphs, not one. U1-3's `grep -m1 -oE` caps the first matching LINE, not the first match, so a one-paragraph intro naming both shas makes `$S` two lines and `git diff` exit `fatal: bad revision`. Pre-land keeps the shas on separate lines.
 
 | # | Convention | State | Evidence | Negative control |
 |---|---|---|---|---|
@@ -165,7 +169,7 @@ U1-4 to U1-7 are graded by the unit verifier; U1-1, U1-2, U1-3 and U1-5 by pre-l
 | U1-4 | the title names the highest `## Pass N` in the file and the count of conventions whose newest row is 🟢, both computed | block U1-4 | `1`, `6 18` | at d34b4fb1: `0`, `5 17` (the defect, measured). Fixture with pass 6 present and the old title: `0`. Fixture with pass 6's state 🔴: `0`, `6 17` |
 | U1-5 | the counts the plugin's C31 regrade reads: pass 5 table 18 rows, unique K ids from pass 5 on 18, raw K rows from pass 5 on 19, whole-file rows 31, exception fold 1, then the plugin pass 2 worker's own three counts: the unfolded exception count 7, K rows naming an own run 19, K rows naming an own plant 19 | block U1-5 | `18`, `18`, `19`, `31`, `1`, `7`, `19 19` | before the unit (measured at 9b2d82dc): `18`, `18`, `18`, `30`, `1`, `7`, `18 18`. A fixture with one pass 5 K row deleted prints `17` first. A fixture whose pass 6 uses the word the sixth line counts, once, prints `8` there while the fold still prints `1` |
 | U1-6 | passes 1 to 5 are untouched: the only deleted line against the merge base is the old title | block U1-6 | `1`, `0` | at d34b4fb1: `0`, `0`. Fixture with pass 5's K17 state flipped in place: `2`, `1` |
-| U1-7 | the builder's handoff is a claim with numbers: measured at a head whose `test/` and map equal this head's, 7 before, 0 after, a plant with its hit count recorded (a line matching `plant ... N hits`, not the bare word) | block U1-7 | `0`, `1`, `1`, `1` | before the unit the file is absent and `grep` errors. A copy with the `measured at` line removed leaves the sha empty and `git diff` errors instead of printing `0`; a copy naming `d814500` prints `22`. Measured on a scratch handoff: `plant mentioned, nothing recorded` prints `0` on the last line, `own plant: ..., 2 hits` prints `1` |
+| U1-7 | the builder's handoff is a claim with numbers: measured at a head whose `test/` and map equal this head's, 7 before, 0 after, a plant with its hit count recorded (a line matching `plant ... N hits`, not the bare word) | block U1-7 | `0`, `1`, `1`, `1` | before the unit the file is absent and `grep` errors. A copy with the `measured at` line removed prints `no sha` (revision 2: the unguarded first leg printed `0` on stdout with `fatal: bad revision` on stderr, so `0` could not tell a good handoff from one with no sha at all; U1-7 graded 🟢 at 3600ad6e on the verifier's own diff, not on that leg); a copy naming `d814500` prints `22`. Measured on a scratch handoff: `plant mentioned, nothing recorded` prints `0` on the last line, `own plant: ..., 2 hits` prints `1` |
 
 ```sh U1-1
 grep -c '^## Pass 6' $V
@@ -206,7 +210,8 @@ MB=$(git merge-base origin/main HEAD); git diff $MB -- $V | grep -cE '^-[^-]'; g
 ```
 
 ```sh U1-7
-HF=.sdlc/handoffs/k17-rerun-U1.md; S=$(grep -m1 -oE 'measured at .?[0-9a-f]{7,40}' $HF | grep -oE '[0-9a-f]{7,40}$'); git diff --name-only "$S" HEAD -- test .sdlc/architecture.md | wc -l
+HF=.sdlc/handoffs/k17-rerun-U1.md; S=$(grep -m1 -oE 'measured at .?[0-9a-f]{7,40}' $HF | grep -oE '[0-9a-f]{7,40}$')
+if [ -n "$S" ]; then git diff --name-only "$S" HEAD -- test .sdlc/architecture.md | wc -l; else echo "no sha"; fi
 grep -c '7 before' $HF; grep -c '0 after' $HF; grep -ciE 'plant.*[0-9]+ hits?' $HF | sed 's/^[1-9][0-9]*$/1/'
 ```
 
@@ -247,3 +252,4 @@ One PR from `plan/k17-rerun` to `main`, carrying the approval doc, this plan, U1
 |---|---|---|
 | 2026-09-19 | plan written (draft). Planner measured the K17 control and its plant at d34b4fb1, and every U1 command both at d34b4fb1 and on a fixture verdict (title plus pass 6) in a throwaway shared clone, including each negative control quoted above | inbox ask from the plugin repo's Conductor; approval Q1 |
 | 2026-09-20 | revised on the criteria review (`.sdlc/verdicts/k17-rerun-checkability.md` @ 9b2d82dc, P5 🔴, 9 of 10 checkable). P5 and the scope wall now admit every record the loop writes by name prefix (`.sdlc/(verdicts\|handoffs\|questions)/k17-rerun-*.md`) instead of a closed list, re-measured at 9b2d82dc with five controls. All eight gaps taken, each a one-line fix: G1 and G8 add three lines to block U1-5 (own run 19, own plant 19, unfolded count 7) and §Texts bars the counted word from pass 6; G2 scopes U1-3's phrase legs to the pass 6 section; G3 prints `no sha` instead of erroring; G4 makes U1-7 read a recorded hit count; G5 states the plant and its hits per half; G6 rewords Q-A (the checks directory exists, four scripts); G7 unpins P4's N. None left | Conductor relay of the criteria review; a closed allow-list failed on the first record nobody had listed, so the wall is now a naming rule |
+| 2026-09-20 | revision 2, on the U1 verdict's three findings (`.sdlc/verdicts/k17-rerun-U1.md`, 5 🟢 2 🟡 0 🔴 at 3600ad6e, the two 🟡 cleared by the Orchestrator's rerun after Pass 6 was committed: U1-4 `1` / `6 18`, U1-5 `18 18 19 31 1 7 19 19`). F1: §Texts' intro is now two paragraphs so U1-3's `grep -m1 -oE` sees one sha per line. F2: U1-7's first leg carries U1-3's `no sha` guard, since unguarded it printed the pass value `0` for a handoff with no sha at all. F3: P1's negative control no longer names a stale FAIL count from a different plant; measured 1 here, and the expected value is non-zero | U1 verdict findings; none of the three changed a graded result |
