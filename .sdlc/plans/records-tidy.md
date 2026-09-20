@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: <minted by the Orchestrator at step 1>
 priority: P1
 lane: docs

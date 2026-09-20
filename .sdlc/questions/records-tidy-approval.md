@@ -12,3 +12,10 @@ Options:
 - Leave them, note only
 - The other session takes them
 Chosen: One more exception: a single S plan (Recommended)
+
+## Q2
+Question: Plan records-tidy passed the checkability review on pass 2 (8 of 8). One S unit, builder-l1, reviewer-l1, verifier-l1: architecture.md line 18 points K17's current reading at pass 6; debt.md line 92 quotes the map's current 7-file filter; adapter.md section 2.1 gets a dated amendment stating the pre-land reviewer is l4 (fable, cross-family) and why. Criteria: each line replaced exactly and the old text gone; zero other deletions per file; npm test green; branding; scope wall by naming rule; the A2 verdict's seven C31 counts unchanged. Approve for mobilization?
+Options:
+- Approve (Recommended)
+- Hold
+Chosen: Approve (Recommended)
