@@ -19,10 +19,10 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22   # the browser smoke uses node's global WebSocket (stable in 22)
+          node-version: 24   # the browser smoke uses node's global WebSocket (stable since 22)
       # npm ci, not install: the committed lockfile IS the toolchain that produces the committed
       # generated artifacts — reproducibility of that chain is the point (TKT-0011).
       - run: npm ci
@@ -41,7 +41,7 @@ jobs:
       - run: npm run smoke
       - name: Upload smoke screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: smoke-screenshots
           path: smoke-out/
@@ -58,9 +58,9 @@ jobs:
           cp dist/ultimate-tokens.html _site/index.html
           cp -R dist/icons _site/icons
           cp -R dist/favicon _site/favicon
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           path: _site
@@ -75,25 +75,28 @@ jobs:
   panda-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       - run: node scripts/smoke-panda.mjs
 
   # ── FULL curated-corpus contrast sweep (#674, test/engine/curated-contrast.mjs --full) ──
   # `npm test` runs the same gate SAMPLED (brands.json in full + one deterministic volume per gallery
-  # category, 2.5 s) so the suite stays fast; the full 343-document / 7560-cell sweep is 12 s and runs
-  # here instead. Own runner, no `needs:` — it is a data gate over committed generated mirrors
-  # (src/ui/categories/*.js), so it never blocks `deploy` and needs no `npm ci`: zero dependencies,
+  # category) so the suite stays fast; the full sweep — 343 documents x 3 tone modes = 22680
+  # accent/on-color cells — runs here instead. It measured 17-27 s on a dev host, but that is
+  # host-sensitive (mirror parsing dominates, not the derivation); this job's own time is the one to
+  # read. Own runner, no `needs:` — it is a data gate
+  # over committed generated mirrors (src/ui/categories/*.js), so it never blocks `deploy` and needs
+  # no `npm ci`: zero dependencies,
   # this repo's own ESM only. The build-test job's drift gate is what proves those mirrors are current.
   corpus-contrast:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       - run: npm run gate:corpus-contrast
 
   # ── Pages deploy (#489) — push-to-main only, consumes the artifact build-test already uploaded
@@ -118,4 +121,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

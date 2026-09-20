@@ -563,11 +563,21 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   }
 }
 
+// gate-report.mjs is imported here, immediately before its one use, rather than with the top-of-
+// file imports: this file is cited by line number from docs/reference/reviews/2026-08-20-reactivity/
+// 03-stores-and-persistence.md (lines 11-12, 448-484), and ES module imports hoist regardless of
+// textual position, so adding it here keeps those citations pinned instead of shifting them by one.
+import { gateReport } from "../gate-report.mjs";
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "ramp", "dropped-keys"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+// "export", "type-fonts", "type-voices", "icons", "voice-style" and "ramp-contrast" were live
+// holes (#699): all 6 had real call sites above but were never declared, so a FAIL under any of
+// them used to exit 1 with no named row.
+const DECLARED = ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "ramp", "dropped-keys", "export", "type-fonts", "type-voices", "icons", "voice-style", "ramp-contrast", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: ui-persistence clears all [gate] predicates");
 process.exit(0);

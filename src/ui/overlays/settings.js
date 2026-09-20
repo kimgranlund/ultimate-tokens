@@ -312,7 +312,7 @@ export class SettingsMixinImpl {
         this._settingsGroup("Figma apply", [
           this._settingRow(
             "Published library",
-            "On: an apply aliases and deprecates type, geometry and style names it no longer produces, instead of removing them, so files subscribed to this library stay bound. Off is the ordinary unpublished-file behavior. Color variables are unaffected either way.",
+            "On: an apply aliases and deprecates color, type, geometry and style names it no longer produces, instead of removing them, so files subscribed to this library stay bound. Off is the ordinary unpublished-file behavior.",
             [{ id: "off", label: "Off" }, { id: "on", label: "On" }],
             this._libraryMode() ? "on" : "off",
             (id) => { this._setLibraryMode(id === "on"); this.applyGateLibraryMode = id === "on"; this.render(); },

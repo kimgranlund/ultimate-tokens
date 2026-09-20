@@ -132,6 +132,7 @@ async function applyFloatPlans(plans, opts) {
   opts = opts || {};
   let collections = 0, variables = 0;
   const libraryReports = [];
+  const skippedAll = []; // #689: stale names left LIVE because their "_deprecated/" slot was already taken
   const reg = readFloatRegistry(); // provenance: only ever touch a collection this plugin created (see ensureFloatCollection)
   for (const plan of (Array.isArray(plans) ? plans : [])) {
     if (!plan || !plan.collection || !Array.isArray(plan.modes) || !plan.modes.length) continue;
@@ -146,11 +147,19 @@ async function applyFloatPlans(plans, opts) {
     const modeId = {};
     modeId[plan.defaultMode] = defaultId;
     for (const nm of plan.addModes) { const ex = findMode(nm); modeId[nm] = ex ? ex.modeId : coll.addMode(nm); }
-    // prune stale modes (a breakpoint the user removed) — never the default, never the last remaining mode.
+    // prune stale modes (a breakpoint the user removed) — never the default, never the last remaining
+    // mode. #687: removing a mode from a PUBLISHED collection breaks every consumer file pinned to it,
+    // exactly like the variable prune below: #629's ruling Q2 already settled that a mode prune must
+    // be guarded, the same ruling applyFontPrimitivesModes' and applyBundle's own mode guards cite. The
+    // actual prune-vs-report decision happens further down, once `useLibrary` is resolved for this
+    // plan: the mode guard reads that SAME resolved value (not a raw opts.libraryMode read here), or an
+    // old bundle (opts.libraryMode undefined, resolved by the #635 priorLibraryUpliftVM fallback below)
+    // would prune the modes while the variable half of this very function preserves them.
     const wanted = new Set(plan.modes.map((m) => String(m).toLowerCase()));
+    const staleModeCandidates = [];
     for (const m of coll.modes.slice()) {
       if (m.modeId === defaultId) continue;
-      if (!wanted.has(m.name.toLowerCase()) && coll.modes.length > 1) coll.removeMode(m.modeId);
+      if (!wanted.has(m.name.toLowerCase())) staleModeCandidates.push(m);
     }
     // variables: create-or-reuse by name; write every mode's value; prune orphans scoped to THIS collection.
     const byName = await varsByName(coll.id);
@@ -223,6 +232,17 @@ async function applyFloatPlans(plans, opts) {
       // prune. See applyFontPrimitivesModes' matching block above.
       else useLibrary = priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets);
     }
+    // #687: apply that SAME resolved `useLibrary` to the stale breakpoint modes collected above:
+    // report under library mode (never removed), remove otherwise. Mirrors applyBundle's Color Roles
+    // theme-mode guard (#673) and applyFontPrimitivesModes' Type Primitives mode guard (#629), the two
+    // other sites this flag already covers.
+    const staleModes = [];
+    if (useLibrary) {
+      for (const m of staleModeCandidates) staleModes.push(m.name);
+    } else {
+      for (const m of staleModeCandidates) { if (coll.modes.length > 1) coll.removeMode(m.modeId); }
+    }
+    const skippedFloat = []; // #689: stale names left LIVE because their "_deprecated/" slot was already taken
     if (useLibrary) {
       for (const r of report.aliases) {
         const vr = byName[r.from];
@@ -232,13 +252,18 @@ async function applyFloatPlans(plans, opts) {
       }
       for (const r of report.deprecates) {
         const vr = byName[r.from];
-        if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
+        if (!vr) continue;
+        // #689: a "_deprecated/" name already taken (e.g. drop, re-add, drop): the rename is skipped
+        // and the stale name is left LIVE. Report it, or it stays live and unpublicized indefinitely.
+        if (byName[r.to]) { skippedFloat.push(r.from); continue; }
+        vr.name = r.to; byName[r.to] = vr; delete byName[r.from];
       }
     } else {
       // #659: never a "_deprecated/" name — pruneCandidatesVM keeps the prune monotonic over them.
       for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
     }
-    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []) });
+    if (skippedFloat.length) skippedAll.push(...skippedFloat);
+    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes, skipped: skippedFloat });
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles
@@ -255,7 +280,7 @@ async function applyFloatPlans(plans, opts) {
     collections++;
   }
   writeFloatRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { collections: collections, variables: variables, libraryReports: libraryReports };
+  return { collections: collections, variables: variables, libraryReports: libraryReports, skipped: skippedAll };
 }
 
 function substituteSegment(name, oldSeg, newSeg) {

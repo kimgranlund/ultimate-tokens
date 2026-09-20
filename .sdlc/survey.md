@@ -1,28 +1,29 @@
 ---
 kind: survey
 repo: ultimate-tokens
-surveyed_at: 2026-09-16
-head: f9e20c52f5b73a2358be4bf17a63d79dbbc63c16
-branch: sdlc/adopt
+surveyed_at: 2026-09-18
+head: cf8e61a26b2e97ea68dd7e8c5a21a682106a4b88
+branch: main
 status: graded
 verdict: .sdlc/verdicts/survey.md
-corrected: 2026-09-16 (C7, C8, C9, C10, C12 facts fixed per verdict)
+supersedes: survey of 2026-09-16 at f9e20c5 (graded, corrected)
+corrected: 2026-09-18 (C9, C11, C14, C15 facts fixed per verdict c1c0a32)
 ---
 
 # Survey: ultimate-tokens
 
-Facts as returned by nine scouts. No interpretation. Grading lands in `.sdlc/verdicts/survey.md`.
+Facts as returned by nine scouts on 2026-09-18 at `cf8e61a`. No interpretation. Grading lands in `.sdlc/verdicts/survey.md`. Rows marked (conductor) were re-measured by the Conductor where a scout's return was thin or wrong; the scout's original figure is kept beside it.
 
 ## Languages
 
-Tracked files only (`git ls-files`), 357 total.
+Tracked files only (`git ls-files`), 460 total.
 
 | extension | count |
 |---|---|
-| md | 174 |
-| mjs | 99 |
+| md | 271 |
+| mjs | 103 |
 | js | 34 |
-| json | 28 |
+| json | 27 |
 | png | 5 |
 | yml | 4 |
 | html | 3 |
@@ -32,12 +33,12 @@ Tracked files only (`git ls-files`), 357 total.
 
 | path | kind | notes |
 |---|---|---|
-| `package.json` | package | Root ESM module; exports .engine, .tonal, .semantic, .model |
-| `package-lock.json` | lock | typescript ~6.0.2, vite ^8.0.12 |
-| `tsconfig.json` | build config | ES2023 target, bundler resolution, strict unused-locals/params |
-| `.claude/naming.manifest.json` | naming manifest | Estate vocab for skills/agents; seeded 2026-08-14 |
-| `figma/binder/figma-semantic-binder/manifest.json` | Figma manifest | id color-tokens-semantic-binder, main code.js |
-| `figma/plugin/manifest.json` | Figma manifest | id ultimate-tokens, ui ui.html, main code.js |
+| `package.json` | package | 15 scripts, table below |
+| `package-lock.json` | lock | undetermined |
+| `tsconfig.json` | build config | undetermined |
+| `vite.config.js` | build config | undetermined |
+| `figma/plugin/manifest.json` | Figma manifest | undetermined |
+| `figma/binder/figma-semantic-binder/manifest.json` | Figma manifest | undetermined |
 
 | script | command |
 |---|---|
@@ -59,147 +60,168 @@ Tracked files only (`git ls-files`), 357 total.
 
 ## Tests
 
-- runner: `node test/run.mjs` (custom harness, no framework); runs 44 files. Other entrypoints: `test/smoke/smoke.mjs` (`npm run smoke`), `scripts/smoke-panda.mjs` and `mcp/describe-eval-runner.mjs` (CI only); `test/ui/counts.mjs` is a helper
-- test files: 50 tracked under `test/` (47 .mjs, 2 .json, 1 .css)
-- ci command: `npm test`
+- runner: custom Node runner, `node test/run.mjs`
+- test files: 52 tracked under `test/` (engine 17, ui 8, mcp 11, figma 6, plugin 5, repo 3, smoke 1, `run.mjs` 1), 3 of them fixtures; the scout's 49 was the non-fixture count. `test/run.mjs` registers 46 tests; `test/ui/counts.mjs` is tracked and registered nowhere
+- test command: `npm test` (`package.json:29`, the six generators then `node test/run.mjs`); CI runs `npm test` at `.github/workflows/ci.yml:30`
 
 ## CI
 
-| file | job | trigger | key commands |
-|---|---|---|---|
-| `.github/workflows/ci.yml` | build-test | push main + pull_request | `npm ci` → `npm run build` → `npm test` → `npm run smoke` |
-| `.github/workflows/ci.yml` | panda-smoke | push main + pull_request | `node scripts/smoke-panda.mjs` |
-| `.github/workflows/ci.yml` | deploy | push main (needs build-test) | `actions/deploy-pages@v4` |
-| `.github/workflows/pages.yml` | deploy | workflow_dispatch only | `npm install` → `npm run build` → deploy-pages |
-| `.github/workflows/publish-plugin.yml` | publish | push main (paths plugin/**, scripts/gen-plugin-pack.mjs, the workflow) + workflow_dispatch | version compare → `npm test` → `node scripts/gen-plugin-pack.mjs` → `npm publish` |
-| `.github/workflows/describe-eval.yml` | describe-eval | workflow_dispatch + schedule Mon 06:00 UTC | `npm ci` → `node mcp/describe-eval-runner.mjs` |
+| file | job | trigger |
+|---|---|---|
+| `.github/workflows/ci.yml` | build-test | push main + pull_request |
+| `.github/workflows/ci.yml` | panda-smoke | push main + pull_request |
+| `.github/workflows/ci.yml` | deploy | push main (needs build-test) |
+| `.github/workflows/describe-eval.yml` | describe-eval | workflow_dispatch + schedule Mon 06:00 UTC |
+| `.github/workflows/pages.yml` | deploy | workflow_dispatch only |
+| `.github/workflows/publish-plugin.yml` | publish | push main (paths plugin/**, scripts/gen-plugin-pack.mjs, the workflow) + workflow_dispatch |
 
-Node 22 in ci.yml, publish-plugin.yml, describe-eval.yml; Node 20 in pages.yml. ci.yml and describe-eval.yml use `npm ci`; pages.yml uses `npm install`.
+Last five `CI` runs on main (`gh run list --branch main --limit 5`):
+
+| workflow | conclusion | head | created |
+|---|---|---|---|
+| CI | success | cf8e61a | 2026-09-18T11:35:16Z |
+| CI | success | 279dc74 | 2026-09-18T11:30:59Z |
+| CI | success | e3ef1d6 | 2026-09-18T11:24:14Z |
+| CI | success | bda9584 | 2026-09-18T10:48:51Z |
+| CI | success | b332be4 | 2026-09-18T10:46:17Z |
 
 ## Branches
 
 | item | value |
 |---|---|
 | default branch | main |
-| current branch | sdlc/adopt |
-| remote branches | 42 |
-| local branches | 43 |
-| naming prefixes (top) | chore 22, docs 3, fix 2, feat 2, defect 2, agent 2 |
-| protection hints in docs | squash-merge mentioned in docs/tickets/tkt-0009.md, tkt-0010.md, docs/plan/ |
-| main branch protection (GitHub API) | not configured (404) |
+| current branch (root checkout) | main |
+| local branches | 33 |
+| remote prefixes | chore 22, fix 3, docs 3, feat 2, defect 2, feature 1, plan 1, sdlc 1, bare numbered 5 to 6 (scout's count and its example list disagree) |
+| main branch protection (GitHub API) | not configured (HTTP 404) |
+| merge settings | squash-merge only since 2026-09-17 (`.sdlc/adapter.md` §2.1 amendment; not re-measured by the scout) |
+| branch rules in docs | `.sdlc/adapter.md` §2: base main, `plan/<slug>` one per plan from `origin/main`, unit worktrees branch from it, never commit to main; `shipping-changes/SKILL.md:40-42`: branch from freshest main, PR title is the squash subject |
+
+Worktrees at survey time (`git worktree list`):
+
+| path | head | branch |
+|---|---|---|
+| root | cf8e61a | main |
+| `.git-worktrees/638-dual-radix` | c269dbf | feat/638-dual-radix |
+| `.git-worktrees/662-contrast-policy` | ae7f75d | fix/662-oncolor-contrast-policy |
+| `.git-worktrees/668-stop800-uptick` | cf8e61a | fix/668-stop800-uptick |
+| `.git-worktrees/674-adia-warning` | dd97b98 | fix/674-adia-warning-lift |
+| `.git-worktrees/pif-u1-anchor` | fb3ad33 | unit/pif-u1-anchor |
+| `/private/tmp/pr682-main-critic` | cf8e61a | detached |
+| `/private/tmp/pr682-review-critic` | ae7f75d | detached |
+
+The 638 and 674 heads moved between two reads a few minutes apart (ed229a8 to c269dbf, df87682 to dd97b98): another session is committing in them. None of the five `.git-worktrees/` rows has a board row. The table is a snapshot: during grading the two `/private/tmp/pr682-*` entries went away, `fix/674-adia-warning-lift` moved to `9667ac3`, and `origin/main` advanced to `1ea2f80`.
 
 ## Harnesses
 
-No AGENTS.md, .cursor*, .github/copilot*, or .codex/ present.
+No AGENTS.md, `.cursor*`, `.github/copilot*`, `.codex/`, `.husky/`, or `.githooks/` present. `core.hooksPath` points at the sdlc plugin cache (`~/.claude/plugins/cache/nonoun/sdlc/0.1.0/githooks`).
 
-| path | kind | size (bytes) | last commit |
-|---|---|---|---|
-| `.claude/CLAUDE.md` | file | 7056 | 2026-09-12 (no root CLAUDE.md; moved under .claude/ in d4f5e80, 2026-07-29) |
-| `.claude/settings.json` | file | 1104 | 2026-09-16 (working tree modified, `6 +++---`) |
-| `.claude/settings.local.json` | file | 1725 | untracked |
-| `.claude/workflow.json` | file | 298 | 2026-09-11 |
-| `.claude/agents/change-reviewer-agent.md` | agent | 5063 | 2026-08-14 |
-| `.claude/agents/marketing-manager-agent.md` | agent | 3446 | 2026-08-14 |
-| `.claude/agents/palette-researcher-agent.md` | agent | 5232 | 2026-08-14 |
-| `.claude/skills/adding-export-formats/SKILL.md` | skill | 12097 | 2026-09-12 |
-| `.claude/skills/adding-semantic-roles/SKILL.md` | skill | 8482 | 2026-08-14 |
-| `.claude/skills/building-editor-sections/SKILL.md` | skill | 8455 | 2026-07-11 |
-| `.claude/skills/color-math/SKILL.md` | skill | 11127 | 2026-07-12 |
-| `.claude/skills/figma-file-migration/SKILL.md` | skill | 10280 | 2026-08-14 |
-| `.claude/skills/geometry-system/SKILL.md` | skill | 17034 | 2026-09-02 |
-| `.claude/skills/lemon-squeezy-api/SKILL.md` | skill | 3682 | 2026-07-11 |
-| `.claude/skills/lemon-squeezy-schemas/SKILL.md` | skill | 3368 | 2026-07-11 |
-| `.claude/skills/maintaining-brand-kit-mcp/SKILL.md` | skill | 12530 | 2026-09-11 |
-| `.claude/skills/maintaining-figma-plugins/SKILL.md` | skill | 11944 | 2026-09-02 |
-| `.claude/skills/project-docs/SKILL.md` | skill | 4814 | 2026-08-14 |
-| `.claude/skills/shipping-changes/SKILL.md` | skill | 8806 | 2026-09-11 |
-| `.claude/skills/type-scale/SKILL.md` | skill | 16180 | 2026-09-02 |
-| `.claude/skills/ultimate-tokens-brand-voice/SKILL.md` | skill | 5256 | 2026-08-14 |
-| `.claude/hooks/git-precommit-privatedocs-guard.mjs` | hook | 3389 | 2026-07-31 |
-| `.claude/ops/plan.md` | ops | 7274 | 2026-07-29 |
-| `.claude/ops/held-items.md` | ops | 381 | 2026-07-25 |
-| `.claude/ops/friendlies.json` | ops | 1795 | 2026-07-25 |
-| `.claude/ops/watch-checkpoint.json` | ops | 234 | 2026-07-25 |
-| `.claude/docs/reports/reactivity-2026-08-20/` | dir | 61901 | 2026-08-20 |
-| `.claude/overhaul-plan-2026-08-14.md` | file | 6914 | 2026-08-14 |
-| `.claude/naming.manifest.json` | file | 2352 | 2026-08-14 |
+Scout return: `.claude/CLAUDE.md` 9419 B (2026-09-17), `.claude/settings.json` 1183 B (2026-09-17), `.claude/agents` 3 files, `.claude/skills` 50 files, `.claude/hooks` 1 file, `.sdlc` 106 files. Per-file rows below are (conductor); skill `references/`, `evals/`, `scripts/` files are counted, not listed. `.claude/` tracks 57 files; `.sdlc/` tracks 104 (the scout's 106 included its own and a sibling's two stray untracked files, since removed).
 
-Also tracked: 3 files under `.claude/ops/reports/` (7 ops files tracked in total). Untracked: `.claude/docs/other/` (~1.7 MB: output-examples/, type revision JSONs, working notes, font primitives); `.claude/ops/` transient state (session-identity, dispatch-heartbeats, review-queue, conductor-state, lanes). Note: `.gitignore` lists `.claude/ops/` yet 7 ops files are tracked.
+| path | size (bytes) | last commit |
+|---|---|---|
+| `.claude/CLAUDE.md` | 9419 | 2026-09-17 |
+| `.claude/agents/change-reviewer-agent.md` | 5063 | 2026-08-14 |
+| `.claude/agents/marketing-manager-agent.md` | 3446 | 2026-08-14 |
+| `.claude/agents/palette-researcher-agent.md` | 5232 | 2026-08-14 |
+| `.claude/hooks/git-precommit-privatedocs-guard.mjs` | 3389 | 2026-07-31 |
+| `.claude/naming.manifest.json` | 2352 | 2026-08-14 |
+| `.claude/settings.json` | 1183 | 2026-09-17 |
+| `.claude/skills/adding-export-formats/SKILL.md` | 12097 | 2026-09-12 |
+| `.claude/skills/adding-semantic-roles/SKILL.md` | 8482 | 2026-08-14 |
+| `.claude/skills/building-editor-sections/SKILL.md` | 8455 | 2026-07-11 |
+| `.claude/skills/color-math/SKILL.md` | 11127 | 2026-07-12 |
+| `.claude/skills/figma-file-migration/SKILL.md` | 10280 | 2026-08-14 |
+| `.claude/skills/geometry-system/SKILL.md` | 17034 | 2026-09-02 |
+| `.claude/skills/lemon-squeezy-api/SKILL.md` | 3682 | 2026-07-11 |
+| `.claude/skills/lemon-squeezy-schemas/SKILL.md` | 3368 | 2026-07-11 |
+| `.claude/skills/maintaining-brand-kit-mcp/SKILL.md` | 12530 | 2026-09-11 |
+| `.claude/skills/maintaining-figma-plugins/SKILL.md` | 12940 | 2026-09-18 |
+| `.claude/skills/project-docs/SKILL.md` | 4938 | 2026-09-17 |
+| `.claude/skills/shipping-changes/SKILL.md` | 9021 | 2026-09-17 |
+| `.claude/skills/type-scale/SKILL.md` | 16180 | 2026-09-02 |
+| `.claude/skills/ultimate-tokens-brand-voice/SKILL.md` | 5256 | 2026-08-14 |
+| `.claude/workflow.json` | 333 | 2026-09-17 |
+
+`.sdlc/` tracked, by top-level entry: adapter.md, architecture.md, baseline.md, board.md, config.json, debt.md, survey.md (1 each), checks 2, handoffs 11, plans 6, questions 12, records 40, tickets 1, verdicts 25. No `.sdlc/roadmap.md`.
+
+Gone since the last survey: `.claude/ops/*`, `.claude/overhaul-plan-2026-08-14.md`, `.claude/docs/reports/` are no longer tracked.
 
 ## Docs
 
-| location | kind | count | newest commit |
+| location | count | newest commit | note |
 |---|---|---|---|
-| `README.md` | root | 1 | 2026-09-12 |
-| `CHANGELOG.md` | root | 1 | 2026-09-12 |
-| `docs/reference` | reference | 51 (4 top-level; colors/ 3, colors/categories/ 8, data/ 6, geometry/ 2, references/ 14, reviews/ 6, rubrics/ 4, typography/ 4) | 2026-09-12 |
-| `docs/marketing` | marketing | 3 | 2026-09-12 |
-| `docs/tickets` | ticket archive | 31 | 2026-07-17 |
-| `docs/site` | site specs | 5 | 2026-09-11 |
-| `docs/lld` | LLD | 2 | 2026-09-13 |
-| `docs/plan` | plans | 2 | 2026-09-12 |
-| `docs/spec` | spec | 2 | 2026-09-12 |
-| `docs/img` | images | 1 | 2026-09-11 |
-| `docs/brand-assets` | assets | 1 | 2026-07-12 |
+| README files | 4 | 2026-09-17 | root, `mcp/README.md`, `mcp/README-describe.md`, `plugin/ultimate-tokens/README.md` |
+| `CHANGELOG.md` | 1 | 2026-09-18 | newest entry heading 2026-09-17 |
+| `docs/reference` | 59 | 2026-09-18 | |
+| `docs/marketing` | 11 | 2026-09-12 | |
+| `docs/tickets` | 31 | 2026-07-17 | archive only |
+| `docs/site` | 5 | 2026-09-17 | |
+| `docs/plan` | 3 | 2026-09-17 | all 3 in `archive/` |
+| `docs/lld` | 2 | 2026-09-18 | |
+| `docs/spec` | 2 | 2026-09-18 | |
+| `docs/prd` | 1 | 2026-09-17 | |
+| `docs/img` | 1 | 2026-09-11 | |
+| `docs/brand-assets` | 2 | 2026-07-12 | |
+| `.sdlc/plans` | 6 | 2026-09-17 | 1 in `archive/` |
 
-SPEC-type files: 7 (2 in docs/spec, 4 in docs/site, 1 `docs/reference/spec-draft.md`). ADRs: 22 (`## ADR-001` through `## ADR-022`) as sections of one file, `docs/reference/references/decision-records.md`; no per-ADR files.
+ADRs: 24 sections in `docs/reference/references/decision-records.md`, highest ADR-024.
 
 ## Authorship
 
-Last 50 commits on `sdlc/adopt`.
+Last 50 commits on `main`, `cf8e61a` back to `bef0bfd` (2026-09-11 (conductor); the scout reported 2024-03-19, which `git log -50 --format=%cs | tail -1` does not reproduce).
 
 | signal | count |
 |---|---|
-| Claude/Anthropic Co-Authored-By trailer | 21 |
-| other Co-Authored-By | 0 |
-| bot author or 🤖 body | 0 |
-| no agent signal | 29 |
-| subject ends `(#NNN)` (squash-merge) | 48 |
-| merge commits | 0 |
-| neither | 2 |
+| author Kim Granlund | 50 |
+| subject ends `(#NNN)` (squash-merge) | 49 (conductor re-run agrees) |
+| merge commits | 1 (conductor re-run agrees) |
+| `Seat: orchestrator` trailer | 2 |
+| `Co-Authored-By` trailer lines, all 50 bodies | 166: Opus 5 63, Fable 5.1 54, Sonnet 5 33, Opus 5 (1M context) 16 |
 
-| author | commits |
-|---|---|
-| Kim Granlund | 50 |
+The scout's category table sums to 51 (49 + 1 + 1), so one commit is counted twice; which one is undetermined. Commits carrying at least one agent trailer: undetermined (the scout counted lines, not commits).
 
 | prefix | count |
 |---|---|
-| feat | 13 |
-| docs | 10 |
-| fix | 7 |
-| gen-categories | 3 |
-| Add | 2 |
+| fix | 13 |
+| docs | 9 |
+| feat | 8 |
+| chore | 2 |
+| sdlc | 1 |
+| none | 17 |
 
 ## Hygiene
 
 | item | value |
 |---|---|
-| .env* files | none present, none tracked |
-| secrets patterns (`sk-`, `AKIA`, `ghp_`) | 0 files |
-| `api_key =` / `token =` | 12 files, scout reports all as prose or variable names |
-| largest tracked | `figma/plugin/ui.html` 3.6 MB (generated), `src/ui/describe-mcp-assets.js` 681 KB, `test/ui/headless-boot.mjs` 274 KB, `docs/reference/colors/categories/travel.json` 252 KB, `src/ui/categories/travel.js` 235 KB, `src/ui/type-fonts.js` 229 KB |
-| `dist/` | ignored |
-| `smoke-out/` | ignored |
-| `figma/plugin/ui.html` | tracked, generated |
-| `src/ui/mcp-assets.js`, `src/ui/type-fonts.js`, `src/ui/categories/*.js` | tracked, generated |
-| `.gitignore` | node_modules, dist/, _site/, smoke-out/, .DS_Store, .git-worktrees/, test/plugin/.hosted-pack-scratch/, .claude/ops/ |
-| `.git/info/exclude` | .claude/docs/other/ plus claude-code runtime state globs (scheduled_tasks, routines/.state, worktrees, checkpoints, mailbox, agent-registry.json, agent-memory-local, first-run, assistant-daemon-state.json) |
+| `.env*` files tracked | 0 |
+| secret patterns (`AKIA`, `ghp_`, `sk-`, private-key header, `api_key =` literal) | 0 secrets; `AKIA` appears as a pattern name in `.sdlc/survey.md` and `.sdlc/verdicts/survey.md` only |
+| largest tracked | `figma/plugin/ui.html` 3.7 MB, `src/ui/describe-mcp-assets.js` 697 KB, `test/ui/headless-boot.mjs` 302 KB, `docs/reference/colors/categories/travel.json` 252 KB, `src/ui/categories/travel.js` 235 KB, `src/ui/type-fonts.js` 229 KB, `src/ui/categories/nature.js` 224 KB, `docs/reference/colors/categories/music.json` 222 KB, `film.json` 220 KB, `literature.json` 220 KB |
+| `.gitattributes` `linguist-generated` | `figma/plugin/ui.html`, `src/ui/figma-plugin-assets.js`, `src/ui/mcp-assets.js`, `src/ui/describe-mcp-assets.js`, `src/ui/type-fonts.js`, `src/ui/categories/*.js`, `docs/reference/data/adia-oklch-export.css`, `docs/reference/data/adia-radix-export.mjs`, `figma/binder/figma-semantic-binder/code.js` |
+| `dist/`, `build/` tracked | no |
+| `node_modules` tracked | no (`git ls-files node_modules` empty) |
+| `.sdlc/runtime`, `.worktrees`, `.git-worktrees`, `smoke-out` | in `.gitignore` |
+| `.sdlc/launcher.env`, `.claude/docs/other/` | in `.git/info/exclude` |
+| `.claude/settings.local.json` | ignored only by the user-global `~/.config/git/ignore` (conductor, `git check-ignore -v`); the scout reported "not present in repo" |
+
+Process note: the hygiene and authorship scouts each wrote an untracked report file under `.sdlc/` against a read-only brief. Both were folded in here and deleted; the root tree was clean afterwards.
 
 ## Claims to verify
 
 | id | claim | source | how to check |
 |---|---|---|---|
-| C1 | `npm test` runs without `node_modules` and exits 0 on HEAD | CLAUDE.md, package.json | run it in a checkout without node_modules |
-| C2 | `npm run build` needs `node_modules` and exits 0 on HEAD | CLAUDE.md | `npm ci && npm run build` |
-| C3 | `npm run smoke` boots headless Chrome and exits 0 on HEAD | CLAUDE.md, ci.yml | run it; requires Chrome |
-| C4 | CI `build-test` job is green on latest `main` | ci.yml | `gh run list --branch main --workflow ci.yml -L 1` |
+| C1 | `npm test` runs without `node_modules` and exits 0 on `cf8e61a`, last line `all N test files passed` | CLAUDE.md, adapter §1 | run it in a checkout without node_modules; report N |
+| C2 | `npm run build` exits 0 on `cf8e61a` after `npm ci` | CLAUDE.md | `npm ci && npm run build` |
+| C3 | `npm run smoke` exits 0 on `cf8e61a` | CLAUDE.md, ci.yml | run it; requires Chrome |
+| C4 | CI `build-test` and `panda-smoke` are both green on `cf8e61a` | ci scout (workflow-level only) | `gh run view` the cf8e61a run, per job |
 | C5 | main has no branch protection | branches scout | `gh api repos/{owner}/{repo}/branches/main/protection` |
-| C6 | PRs land by squash-merge (48/50 subjects carry `(#NNN)`) | authorship scout | `git log -50 --format=%s` |
-| C7 | `.claude/CLAUDE.md` and root `CLAUDE.md` are identical (both 7056 bytes) | harness scout | `diff` |
-| C8 | `.gitignore` ignores `.claude/ops/` while 4 ops files are tracked | harness + hygiene scouts | `git ls-files .claude/ops` |
-| C9 | `docs/reference` holds 5 files (docs scout) vs many `docs/reference/colors/categories/*.json` (hygiene scout lists 4) | docs + hygiene scouts | `git ls-files docs/reference \| wc -l` |
-| C10 | No ADR files exist although CLAUDE.md cites ADR-017 | docs scout | grep `ADR-017` across repo |
-| C11 | The 3 agents, 14 skills, 1 hook listed are the complete `.claude/` harness | harness scout | `git ls-files .claude` |
-| C12 | `test/run.mjs` is the sole test entrypoint; 47 test .mjs files | tests scout | `find test -name '*.mjs' \| wc -l` |
-| C13 | Generated files `figma/plugin/ui.html`, `src/ui/*-assets.js`, `src/ui/type-fonts.js`, `src/ui/categories/*.js` are byte-identical after `npm test` regenerates them on HEAD | CLAUDE.md "regenerates committed assets" | `npm test && git status --short` |
-| C14 | No secrets in tracked files | hygiene scout | rerun the greps |
+| C6 | The repo allows squash-merge only | adapter §2.1 amendment | `gh api repos/{owner}/{repo} -q '.allow_squash_merge,.allow_merge_commit,.allow_rebase_merge'` |
+| C7 | 49 of the last 50 subjects end `(#NNN)`, 1 merge commit, oldest of the 50 is `bef0bfd` dated 2026-09-11 | authorship scout + conductor | `git log -50 --format='%h %cs %s'` |
+| C8 | `.claude/` tracks 57 files: 3 agents, 14 skills, 1 hook, CLAUDE.md, settings.json, workflow.json, naming.manifest.json, the rest skill support files | conductor | `git ls-files .claude` |
+| C9 | 52 tracked files under `test/`; `test/run.mjs` registers N = 46, so `.sdlc/adapter.md:24` and `.sdlc/baseline.md:17` are stale at 44 (corrected per verdict) | tests scout, adapter §1 | `git ls-files test \| wc -l`; count TESTS in `test/run.mjs` |
+| C10 | 24 ADRs, highest ADR-024; the approved plan preset-intent-fidelity reserves ADR-025 and nothing on main has taken it | docs scout, plan C10 | grep `^## ADR-` in decision-records.md |
+| C11 | Every asset `npm test` regenerates is byte-identical on `cf8e61a` (`git status --short` empty); `src/ui/type-fonts.js` is outside that set because `gen:type-fonts` is not in the chain (corrected per verdict) | CLAUDE.md, adapter §1 | run with C1 |
+| C12 | No secrets in tracked files | hygiene scout | rerun the greps |
+| C13 | `.claude/settings.local.json` and `.sdlc/launcher.env` cannot reach a commit from this checkout | hygiene scout + conductor | `git check-ignore -v` both paths |
+| C14 | Five `.git-worktrees/` worktrees exist with no board row, and `unit/pif-u1-anchor` equals `origin/plan/preset-intent-fidelity` at `fb3ad33` | branches scout, orchestrator reconcile note | `git worktree list`; `git rev-parse` both refs |
+| C15 | `.sdlc/baseline.md`, `.sdlc/architecture.md`, `.sdlc/debt.md` cite a head older than `cf8e61a`; list which of their facts the 16 commits since `180eca0` touch (corrected per verdict: `baseline.md` test count 44 to 46, `ui.html` 3695.6 to 3753.6 KB, CI run id superseded; 18 of 72 architecture paths and 16 of 96 debt paths edited in range) | conductor | `git diff --stat 180eca0..cf8e61a` against each file's cited paths |

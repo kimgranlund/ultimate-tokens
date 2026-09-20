@@ -229,9 +229,57 @@ further gate-only control, ask the same question.
 
 What the flag actually changes lives in `figma/plugin/code.js`: `applyStylePlans(sp, opts)` keeps the
 style and its registry slot and counts `out.preserved` instead of `out.pruned`;
-`applyFontPrimitivesModes` keeps stale MODES and reports them as `libraryReport.staleModes`;
-`applyFloatPlans` takes the alias/deprecate branch. `applyBundle`'s color reconcile is NOT threaded
-(ruling Q1 on #629), so a color-variable prune happens under either setting.
+`applyFontPrimitivesModes` keeps stale MODES and reports them as `libraryReport.staleModes`,
+collected as `{name, modeId}` CANDIDATES before its variable pass builds `report`, then decided (#696)
+off the SAME resolved `useLibrary` the variable prune a few lines below it already uses: an explicit
+`opts.libraryMode`, else the interactive `confirmLibraryMode` ask, else #635's `priorLibraryUpliftVM`
+fallback over the variable evidence (an existing, unwanted name that already carries a live alias, or
+sits under `_deprecated/`). Before #696 the mode prune tested `opts.libraryMode === true` directly at
+collection time, so an old `ui.html` bundle (`opts.libraryMode` undefined) applying to a file the
+`priorLibraryUpliftVM` fallback would otherwise judge "already uplifted" kept the variables but pruned
+the mode anyway, a published library losing a mode every consumer pinned;
+`applyFloatPlans` takes the alias/deprecate branch. `applyBundle` (#673) deprecates a stale color
+variable under `_deprecated/` instead of removing it, at all THREE of its variable prune sites (Color Roles,
+Color Primitives, Color Prime), and reports `preserved` plus a per-collection `colorReports` entry. It
+reports no aliases: a color rename rides `opts.renames` and is executed id-preservingly by `renameInPool`
+before the reconcile runs, so there is no value-redirect channel to build an alias map from. #673 also
+guards `applyBundle`'s FOURTH destructive site, the Color Roles theme-MODE prune: a mode for a theme the
+doc no longer carries is kept and reported as `staleModes` (the field name `applyFontPrimitivesModes`
+already uses) rather than `removeMode`d, because a consumer file pins a mode exactly as it binds a
+variable. #629's ruling Q1 left color on the classic prune under either setting; #673 retired that
+exemption.
+
+**Every prune on the apply path now reads the flag.** #687 closed the last unguarded prune, `applyFloatPlans`' own
+breakpoint-`removeMode`: it reads the SAME resolved `useLibrary` the function's variable prune already
+computes (not a raw `opts.libraryMode` read at collection time, which would disagree with that variable
+prune on an old bundle whose flag is `undefined` and resolves through the #635 `priorLibraryUpliftVM`
+fallback), and reports the kept modes as `libraryReports[].staleModes`, the same field name
+`applyFontPrimitivesModes` and `applyBundle` use.
+
+**#689 closed a further gap: the "_deprecated/" collision.** Each of the three deprecate-loop sites
+above renames a stale name to `_deprecated/<name>` guarded by `byName[r.to]` (the target slot must be
+free). Reachable in four ordinary applies under `libraryMode:true`: drop a palette family (deprecated),
+re-add it (a FRESH copy is created; the deprecated one is untouched), drop it again (the fresh copy wants
+the SAME `_deprecated/` slot the first drop already claimed). Before #689 the guard silently skipped the
+rename on collision, leaving the stale name LIVE and reported nowhere. Now every site
+(`applyBundle`'s `reconcileColorCollection`, `applyFloatPlans`, `applyFontPrimitivesModes`) collects the
+skipped name(s) into a `skipped` array on its own report (`colorReports[].skipped`,
+`libraryReports[].skipped`, `libraryReport.skipped`), plus a top-level rollup (`applyBundle`'s and
+`applyFloatPlans`' own `skipped`), and the completion notice names the count ("N stale skipped (rename
+target taken)") the same way it already names `preserved`/"stale kept". The same change also gave the
+float half its own "N stale kept (published library)" notice segment (from `libraryReports[].staleModes`);
+the color and styles halves already had one, the float half (#687) did not.
+
+Destructive sites outside the flag's scope, by design: Regroup's rebuild-drop (`applyBundle`'s
+`old.remove()` under `rebuildSemantic`, gated by its own always-warn consent), and `plan.retire`'s
+collection retire (`applyFloatPlans` removes a whole registry-tracked collection and its variables
+when a plan retires it). Neither is a prune in the flag's sense, and neither reads it. Regroup's
+rebuild-drop hits EVERY Color Roles variable id regardless of `libraryMode`; the checkbox does not
+protect it (#688). Rather than make the two controls mutually exclusive, the always-warn Regroup
+lede (`renderApplyGate`, `src/ui/overlays/apply-gate.js`) now says so explicitly: "Published library
+does not cover Regroup...", shown unconditionally on Regroup (both checkbox states), never only when
+the box is ticked. The checkbox renders below this text, so ticking it later never skips the
+disclosure.
 
 ### 7. The config round-trip OUT of variables
 

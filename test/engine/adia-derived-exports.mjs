@@ -40,6 +40,7 @@ import {
   paletteSlugs,
   buildArtifacts,
 } from "../../scripts/gen-adia-derived-exports.mjs";
+import { gateReport } from "../gate-report.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATADIR = join(HERE, "..", "..", "docs", "reference", "data");
@@ -130,10 +131,11 @@ try {
 }
 
 // ── REPORT ──
-for (const g of ["bytes", "schema", "provenance", "radix-keys", "esm-import"]) {
-  const f = fails.find((x) => x.startsWith(g + ":"));
-  console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
-}
+// The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
+// call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
+// below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
+const DECLARED = ["bytes", "schema", "provenance", "radix-keys", "esm-import", "report-static"];
+gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${ARTIFACTS.map((a) => `${a.name}@${a.version}`).join(" · ")} · ${slugs.length} palette slugs + ${RESERVED_ALIAS_KEYS.length} alias keys)`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: the pinned Adia derived-export artifacts are generated, provenanced and complete");

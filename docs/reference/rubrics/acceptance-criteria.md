@@ -69,4 +69,4 @@
 ## How to run (reference)
 Extract the artifact `<script>` to a file and `node --check` it; replicate the engine via the
 `gen.js` reference generator against `hct.js`; validate JSON leaf shape and cross-check ref
-targets against the role table and `Color Primitives` names; `unzip -t` zips. Node v22.
+targets against the role table and `Color Primitives` names; `unzip -t` zips. Node v24.

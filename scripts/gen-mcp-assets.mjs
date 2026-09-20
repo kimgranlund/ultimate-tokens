@@ -6,6 +6,11 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
+// The server's OWN version constant, imported rather than re-typed: the downloaded zip's
+// package.json used to carry a hand-kept copy of this string in src/ui/app.js, which silently
+// drifted when EXPORT_SCHEMA_VERSION bumped (#638 review F1). Deriving it here means the package
+// and the server it packages report one version by construction.
+import { SERVER } from "../mcp/brand-kit-core.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MDIR = `${HERE}/../mcp`;
@@ -22,6 +27,9 @@ export const MCP_BRAND_KIT = {
   core: ${JSON.stringify(core)},
   readme: ${JSON.stringify(readme)},
 };
+// The version the downloaded package.json declares, read from mcp/brand-kit-core.mjs's own SERVER
+// constant at generation time (#638 F1), never a second literal to keep in step by hand.
+export const MCP_BRAND_KIT_VERSION = ${JSON.stringify(SERVER.version)};
 `;
 writeFileSync(`${HERE}/../src/ui/mcp-assets.js`, out);
 console.log("wrote src/ui/mcp-assets.js", (out.length / 1024).toFixed(1) + " KB");

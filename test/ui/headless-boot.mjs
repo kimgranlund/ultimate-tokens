@@ -1053,8 +1053,8 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   const box = app.querySelector(".apply-gate-librarymode-box");
   ok(!!box, "(629) the apply gate renders a real 'Published library' checkbox");
   ok(/Published library/.test(txtOf(app.querySelector(".apply-gate"))), "(629) the checkbox is labelled 'Published library'");
-  ok(/type, geometry and style/i.test(txtOf(app.querySelector(".apply-gate"))), "(629) the label names what the flag covers (type, geometry, styles, and NOT color)");
-  ok(!/color/i.test(txtOf(app.querySelector(".apply-gate-librarymode") || {})), "(629) the label does not claim the flag covers color (ruling Q1: color prune is out of scope)");
+  ok(/color, type, geometry and style/i.test(txtOf(app.querySelector(".apply-gate"))), "(673) the label names all four systems the flag covers (color, type, geometry, styles)");
+  ok(/color/i.test(txtOf(app.querySelector(".apply-gate-librarymode") || {})), "(673) the label names COLOR: #673 threaded applyBundle's color reconcile, retiring #629's ruling-Q1 exemption");
   ok(app.applyGateLibraryMode === false, "(629) the checkbox defaults OFF with no stored preference (classic prune, today's behavior)");
 
   // UNCHECKED -> an explicit false, never undefined.
@@ -1090,6 +1090,24 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   ok(!!app.querySelector(".apply-gate-librarymode-box"), "(629) the Regroup gate shows the toggle too (it posts the same prune-bearing plans)");
   app.applyGateLibraryMode = true; posted = null; app.confirmApplyGate();
   ok(posted && posted.pluginMessage.libraryMode === true && posted.pluginMessage.rebuildSemantic === true, "(629) a Regroup apply carries libraryMode alongside rebuildSemantic");
+
+  // ── (688) Regroup deletes the whole Color Roles collection under rebuildSemantic regardless of
+  // libraryMode (figma/plugin/code.js's applyBundle old.remove()). The checkbox does not protect
+  // it. Rather than making the two controls mutually exclusive, the gate's Regroup lede now names
+  // the exemption explicitly. Shown unconditionally on Regroup (not only when the box is ticked):
+  // the checkbox sits BELOW the lede in reading order, so a user who ticks it after reading has
+  // already seen the disclosure either way, and the checkbox's onchange never re-renders the gate
+  // (nothing would make a checkbox-conditioned sentence appear/disappear live).
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.requestApplyToFigma(true);
+  app.applyGateLibraryMode = true; app.render(); flushRaf();
+  ok(/does not cover Regroup/.test(txtOf(app.querySelector(".apply-gate"))), "(688) Regroup + Published library ticked: the dialog names the exemption");
+  app.applyGateLibraryMode = false; app.render(); flushRaf();
+  ok(/does not cover Regroup/.test(txtOf(app.querySelector(".apply-gate"))), "(688) Regroup + Published library UNticked: the dialog still names the exemption (shown unconditionally on Regroup)");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  app.requestApplyToFigma(false);
+  ok(!/does not cover Regroup/.test(txtOf(app.querySelector(".apply-gate"))), "(688) a normal (non-Regroup) apply does NOT show the Regroup exemption");
+  app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
 
   // SETTINGS ROW (review M2): "Don't show this again" hides the gate on the normal apply path and
   // nothing in the app clears that consent, so the toggle must also live somewhere consent cannot
@@ -1632,13 +1650,16 @@ ok(zb[0] === 0x50 && zb[1] === 0x4b && zb[2] === 0x03 && zb[3] === 0x04, "(ee) t
 const eocd = zb.length - 22; // EOCD has no trailing comment → it's the final 22 bytes
 const eocdSig = zb[eocd] === 0x50 && zb[eocd + 1] === 0x4b && zb[eocd + 2] === 0x05 && zb[eocd + 3] === 0x06;
 const entries = zb[eocd + 10] | (zb[eocd + 11] << 8);
-// default opt-in = all three systems on: 29 colour files (BOTH css-hex/ + css-oklch/ folders + the full
+// default opt-in = all three systems on: 38 colour files (BOTH css-hex/ + css-oklch/ folders, the two
+// radix/ preset files [#638: {s}.preset.mjs + {s}.refs.preset.mjs] + the full
 // design-system-for-claude-code/ bundle: DESIGN.md + tokens.json + 11 components/*.html + README.md (14, #473),
 // design-system-for-google-stitch/ bundle: DESIGN.md + README.md (2, the byte-identical spine + Stitch receipt),
 // design-system-for-figma-make/ bundle: guidelines/{Guidelines.md, setup.md, styles.css,
 // foundations/{color,typography,spacing}.md, components/{overview,button}.md} + README.md (9, a routed tree),
-// all riding systems.color) + 4 figma-aliased + 5 typography (incl. figma/ + figma/ moded + figma/ primitives) + 4 geometry + config = 45.
-ok(eocdSig && entries === 69, `(ee) the EOCD reports 69 entries — colour (37, incl. panda/{s}.preset.mjs [#586 K1] + radix/{s}.preset.mjs [#588 K3] + the design-system-for-claude-code/ bundle of 14 [#473: the @dsCard catalog grew from 7 to 11 previews] + design-system-for-google-stitch/ of 2 + design-system-for-figma-make/ of 9) + figma-aliased (4) + typography (12: type.css + type.tokens.json + 4 breakpoint CSS bolt-ons [desktop-lg/-xl 2026-07-15, tablet/mobile #264] + 4 per-mode DTCG [type.1728/2560/992/476] + 2 figma/* type-tokens+primitives files) + geometry (12: geometry.css + geometry-sizes.css [#487, the size-only sibling] + geometry.tokens.json + 4 breakpoint CSS bolt-ons + 4 per-mode DTCG [geometry.1728/2560/992/476] + 1 figma/* raw-variables file) + the MERGED moded-variables file figma/tokens.modes.variables.json (1, TKT-0009 — was typography.modes + dimension.modes) + figma/styles.plan.json (1) + config + the root README (got ${entries})`);
+// all riding systems.color) + 4 figma-aliased + 12 typography + 12 geometry + the merged moded-variables
+// file (1) + figma/styles.plan.json (1) + config + the root README = 70. (The per-folder breakdown in the
+// assertion message below is the authoritative one; this paragraph tracks it.)
+ok(eocdSig && entries === 70, `(ee) the EOCD reports 70 entries — colour (38, incl. panda/{s}.preset.mjs [#586 K1] + BOTH radix/{s}.preset.mjs and radix/{s}.refs.preset.mjs [#588 K3, #638 the reference form] + the design-system-for-claude-code/ bundle of 14 [#473: the @dsCard catalog grew from 7 to 11 previews] + design-system-for-google-stitch/ of 2 + design-system-for-figma-make/ of 9) + figma-aliased (4) + typography (12: type.css + type.tokens.json + 4 breakpoint CSS bolt-ons [desktop-lg/-xl 2026-07-15, tablet/mobile #264] + 4 per-mode DTCG [type.1728/2560/992/476] + 2 figma/* type-tokens+primitives files) + geometry (12: geometry.css + geometry-sizes.css [#487, the size-only sibling] + geometry.tokens.json + 4 breakpoint CSS bolt-ons + 4 per-mode DTCG [geometry.1728/2560/992/476] + 1 figma/* raw-variables file) + the MERGED moded-variables file figma/tokens.modes.variables.json (1, TKT-0009 — was typography.modes + dimension.modes) + figma/styles.plan.json (1) + config + the root README (got ${entries})`);
 const zipText = Buffer.from(zb).toString("latin1");
 // the root README makes the zip self-describing: the folder map, the consumption-plugin install
 // commands (the skills layer deliberately NOT bundled — it updates via the marketplace), the MCP
@@ -1656,7 +1677,7 @@ app.downloadBytes = realDB;
 const zipText2 = Buffer.from(zipCap2.bytes).toString("latin1");
 ok(/renamed in Settings/.test(zipText2) && /Token mapping/.test(zipText2) && /Brand Primitives/.test(zipText2) && /Brand Modes/.test(zipText2), `(ee) a renamed Figma collection surfaces its real name in the README's figma-aliased/ row`);
 app.commit((d) => { delete d.figmaCollections; }); flushRaf(); // restore default names for later legs
-const wantPaths = ["css-hex/", "css-oklch/", "json/", "dtcg/", "figma/Light_tokens.json", "figma/Dark_tokens.json", "figma/palette.tokens.json", "ui3/", "tailwind/", "shadcn/", "panda/", "radix/", "design-system-for-claude-code/DESIGN.md", "design-system-for-claude-code/tokens.json", "design-system-for-claude-code/components/colors.html", "design-system-for-claude-code/README.md", "design-system-for-google-stitch/DESIGN.md", "design-system-for-google-stitch/README.md", "design-system-for-figma-make/guidelines/Guidelines.md", "design-system-for-figma-make/guidelines/setup.md", "design-system-for-figma-make/guidelines/styles.css", "design-system-for-figma-make/guidelines/foundations/color.md", "design-system-for-figma-make/guidelines/foundations/typography.md", "design-system-for-figma-make/guidelines/foundations/spacing.md", "design-system-for-figma-make/guidelines/components/overview.md", "design-system-for-figma-make/guidelines/components/button.md", "design-system-for-figma-make/README.md", "ultimate-tokens-my-set-config.json",
+const wantPaths = ["css-hex/", "css-oklch/", "json/", "dtcg/", "figma/Light_tokens.json", "figma/Dark_tokens.json", "figma/palette.tokens.json", "ui3/", "tailwind/", "shadcn/", "panda/", "radix/my-set.preset.mjs", "radix/my-set.refs.preset.mjs", "design-system-for-claude-code/DESIGN.md", "design-system-for-claude-code/tokens.json", "design-system-for-claude-code/components/colors.html", "design-system-for-claude-code/README.md", "design-system-for-google-stitch/DESIGN.md", "design-system-for-google-stitch/README.md", "design-system-for-figma-make/guidelines/Guidelines.md", "design-system-for-figma-make/guidelines/setup.md", "design-system-for-figma-make/guidelines/styles.css", "design-system-for-figma-make/guidelines/foundations/color.md", "design-system-for-figma-make/guidelines/foundations/typography.md", "design-system-for-figma-make/guidelines/foundations/spacing.md", "design-system-for-figma-make/guidelines/components/overview.md", "design-system-for-figma-make/guidelines/components/button.md", "design-system-for-figma-make/README.md", "ultimate-tokens-my-set-config.json",
   "figma-aliased/Light_tokens.json", "figma-aliased/Dark_tokens.json", "figma-aliased/palette.tokens.json", "figma-aliased/README.txt",
   "typography/type.css", "typography/type.tokens.json", "figma/type.tokens.json", "figma/tokens.modes.variables.json", "figma/typography.primitives.variables.json", "geometry/geometry.css", "geometry/geometry-sizes.css", "geometry/geometry.tokens.json", "figma/dimension.variables.json"];
 ok(wantPaths.every((p) => zipText.includes(p)), "(ee) every colour format + typography/ + geometry/ + the moded Figma-variable files + the config + the figma-aliased/ cascade variant is present in the archive");
@@ -1695,20 +1716,106 @@ app.exportTab = "radix"; app.render(); flushRaf();
   const t = txtOf(app.querySelector(".drawer-pre")) || "";
   ok(/^\/\* ultimate-tokens export schema \d+ \*\/\n\/\* Radix preset, generated by Ultimate Tokens\./.test(t), "(pe) proExport unlocked → the Radix tab renders code starting with the schema stamp then the header comment");
 }
+// #638: the SECOND Radix file (References) is gated by the same id, so it must show code too.
+app.radixFile = "refs"; app.render(); flushRaf();
+{
+  const t = txtOf(app.querySelector(".drawer-pre")) || "";
+  ok(/^\/\* ultimate-tokens export schema \d+ \*\/\n\/\* Radix preset \(reference form\), generated by Ultimate Tokens\./.test(t), "(pe) proExport unlocked → the Radix References file renders its own reference-form header");
+}
+app.radixFile = "values"; app.render(); flushRaf();
 app.setProfile({ flagOverrides: { proExport: false } }); app.render(); flushRaf();
 ok(!app.querySelector(".drawer-pre") && !!app.querySelector(".pro-upsell"), "(pe) Free → a Pro format (Panda CSS) shows the upsell instead of its code");
 app.exportTab = "dtcg"; app.render(); flushRaf();
 ok(!app.querySelector(".drawer-pre") && !!app.querySelector(".pro-upsell"), "(pe) Free → a Pro format (DTCG) shows the upsell instead of its code");
+// #638: the Radix tab gates BOTH of its files, so neither Values nor References leaks code at Free.
+app.exportTab = "radix"; app.radixFile = "values"; app.render(); flushRaf();
+ok(!app.querySelector(".drawer-pre") && !!app.querySelector(".pro-upsell"), "(pe) Free → the Radix Values file shows the upsell instead of its code");
+app.radixFile = "refs"; app.render(); flushRaf();
+ok(!app.querySelector(".drawer-pre") && !!app.querySelector(".pro-upsell"), "(pe) Free → the Radix References file shows the upsell instead of its code");
+ok(!!app.querySelector(".radix-files"), "(pe) Free → the Values/References bar still renders, so the upsell is reachable from either file");
+app.radixFile = "values"; app.render(); flushRaf();
 app.exportTab = "css"; app.render(); flushRaf();
 ok(!!app.querySelector(".drawer-pre") && !app.querySelector(".pro-upsell"), "(pe) CSS (free) still shows its code at Free");
 app.exportOpen = false; app.render(); flushRaf();
 const dlZipText = () => { let z = null; const real = app.downloadBytes.bind(app); app.downloadBytes = (b) => { z = b; }; app.downloadAllZip(projectViewZ(app.doc)); app.downloadBytes = real; return z ? Buffer.from(z).toString("latin1") : ""; };
 const peFreeZip = dlZipText();
 ok(!/tailwind\//.test(peFreeZip) && !/shadcn\//.test(peFreeZip) && !/dtcg\//.test(peFreeZip) && !/panda\//.test(peFreeZip) && !/radix\//.test(peFreeZip), "(pe) Download-All at Free omits the dtcg/tailwind/shadcn/panda/radix folders");
+ok(!/refs\.preset\.mjs/.test(peFreeZip), "(pe) Download-All at Free omits the Radix reference-form file too (#638: both files ride the one proExport gate)");
 ok(/css-hex\//.test(peFreeZip) && /css-oklch\//.test(peFreeZip), "(pe) Download-All at Free still includes both free CSS folders (hex + oklch)");
 app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlocked
 const peProZip = dlZipText();
 ok(/tailwind\//.test(peProZip) && /shadcn\//.test(peProZip) && /dtcg\//.test(peProZip) && /panda\//.test(peProZip) && /radix\//.test(peProZip), "(pe) Download-All unlocked includes the dtcg/tailwind/shadcn/panda/radix folders");
+ok(/\.refs\.preset\.mjs/.test(peProZip), "(pe) Download-All unlocked includes the Radix reference-form file beside the values file (#638)");
+
+// ── (rxr) #638 the Radix export's REFERENCE form: a second file on the one `radix` format id.
+// (rxr1) the model surfaces it beside the values module while view.radixPreset stays the values
+// OBJECT the canvas scene reads; (rxr2) the drawer's Values/References bar switches the preview;
+// (rxr3) the zip README names both files and the previously-missing panda/ · radix/ row. ─────────
+{
+  const rxrView = projectViewZ(app.doc);
+  // every read below is guarded: a MISSING radixRef must REPORT its own assertion red, not throw
+  // before the report prints (a crashed run is red for the wrong reason).
+  const rxrRefMod = typeof rxrView.exports.radixRef === "string" ? rxrView.exports.radixRef : "";
+  const rxrValMod = typeof rxrView.exports.radix === "string" ? rxrView.exports.radix : "";
+  const rxrPreset = (mod) => { try { return JSON.parse(mod.slice(mod.indexOf("export default ") + "export default ".length, mod.lastIndexOf(";"))); } catch { return null; } };
+  ok(/^\/\* ultimate-tokens export schema \d+ \*\//.test(rxrRefMod), "(rxr1) projectView exposes exports.radixRef as a module string starting with the schema stamp");
+  ok(/\/\* Radix preset \(reference form\)/.test(rxrRefMod), "(rxr1) exports.radixRef carries the reference-form header, not the values header");
+  ok(rxrRefMod !== rxrValMod && rxrRefMod.includes("var(--c-"), "(rxr1) exports.radixRef differs from exports.radix and its leaves are var(--c-*) links");
+  ok(rxrView.radixPreset && typeof rxrView.radixPreset === "object" && !JSON.stringify(rxrView.radixPreset).includes("var(--"), "(rxr1) view.radixPreset is STILL the values OBJECT the radix canvas scene reads (no links leaked into it)");
+  const rxrV = rxrPreset(rxrValMod), rxrR = rxrPreset(rxrRefMod);
+  // the geometry opt must travel with the SECOND exportRadix call: it is the only thing that emits
+  // theme.extend.tokens.radii, so dropping it silently ships a reference file short of a whole block.
+  ok(!!(rxrR && rxrR.theme.extend.tokens && rxrR.theme.extend.tokens.radii), "(rxr1) the reference preset carries theme.extend.tokens.radii, so the geometry opt travelled with the second exportRadix call");
+  ok(!!rxrR && !!rxrV && JSON.stringify(rxrR.theme.extend.tokens) === JSON.stringify(rxrV.theme.extend.tokens), "(rxr1) control: the two forms' non-color tokens block (radii) is identical, only the color leaves differ");
+}
+app.setProfile({ flagOverrides: {} }); flushRaf(); // proExport unlocked, so the bar previews real code
+app.exportOpen = true; app.exportTab = "radix"; app.radixFile = "values"; app.render(); flushRaf();
+{
+  const rxrBar = app.querySelector(".radix-files");
+  const rxrBtns = rxrBar ? rxrBar.children.filter((c) => c.tagName === "BUTTON") : [];
+  ok(rxrBar && rxrBar.getAttribute("aria-label") === "Radix preset file", `(rxr2) the Radix tab shows a segmented bar labelled "Radix preset file" (got ${rxrBar && rxrBar.getAttribute("aria-label")})`);
+  ok(rxrBtns.length === 2, `(rxr2) the bar has exactly 2 preset-file buttons (got ${rxrBtns.length})`);
+  // guarded reads: a bar rendered short must REPORT the count failure, not crash the run before the
+  // report prints (a crash is red, but it is not this assertion's own red).
+  const rxrTxt = (i) => (rxrBtns[i] ? txtOf(rxrBtns[i]) : "(missing)");
+  const rxrOn = (i) => !!(rxrBtns[i] && rxrBtns[i].classList.contains("on"));
+  ok(rxrTxt(0) === "Values" && rxrTxt(1) === "References", `(rxr2) the two buttons are Values and References (got ${rxrTxt(0)}/${rxrTxt(1)})`);
+  ok(rxrOn(0) && !rxrOn(1), "(rxr2) Values is the default selection");
+  const rxrValues = txtOf(app.querySelector(".drawer-pre")) || "";
+  if (rxrBtns[1]) rxrBtns[1].click();
+  flushRaf();
+  const rxrRefs = txtOf(app.querySelector(".drawer-pre")) || "";
+  ok(app.radixFile === "refs", "(rxr2) clicking References switches the previewed file");
+  ok(rxrRefs !== rxrValues && /\/\* Radix preset \(reference form\)/.test(rxrRefs) && rxrRefs.includes("var(--c-"), "(rxr2) the <pre> text really switched to the reference-form module");
+  ok(!/\(reference form\)/.test(rxrValues) && !rxrValues.includes("var(--c-"), "(rxr2) control: the Values text was the baked-value module, never the reference one");
+  // the sub-bar must NOT have grown the Colors format list: #638 stays one format id, ten options.
+  // the shim has no id/descendant selectors, so find the optgroup by its own attribute (walk, not querySelector).
+  const rxrColors = walk(app, (e) => e.tagName === "OPTGROUP" && e.getAttribute("label") === "Colors")[0];
+  const rxrOpts = rxrColors ? rxrColors.children.filter((c) => c.tagName === "OPTION").length : -1;
+  ok(rxrOpts === 10, `(rxr2) the format select still offers exactly 10 Colors options: #638 is a flag, not an 11th format (got ${rxrOpts})`);
+  app.radixFile = "values"; app.exportOpen = false; app.render(); flushRaf();
+}
+// (rxr4) the CSS prefix is a persisted Settings control, so BOTH pieces of Radix copy have to name
+// the properties this kit really emits. A kit on the Material naming scheme reads --md-sys-color-*.
+{
+  app._setNamingScheme("material"); flushRaf();
+  app.exportOpen = true; app.exportTab = "radix"; app.render(); flushRaf();
+  const rxrNote = txtOf(app.querySelector(".radix-note")) || "";
+  ok(rxrNote.includes("--md-sys-color-*") && !rxrNote.includes("--c-*"), `(rxr4) the sub-bar note names the kit's OWN prefix, not the default --c-* (got ${rxrNote.slice(0, 140)})`);
+  const rxrMdReadme = app._zipReadme("my-set", { color: true, type: true, geometry: true });
+  ok(rxrMdReadme.includes("var(--md-sys-color-*)") && !rxrMdReadme.includes("var(--c-*)"), "(rxr4) the zip README's radix row names the kit's OWN prefix too");
+  app._setNamingScheme("ultimate"); flushRaf();
+  app.render(); flushRaf();
+  const rxrDefNote = txtOf(app.querySelector(".radix-note")) || "";
+  ok(rxrDefNote.includes("--c-*"), "(rxr4) control: back on the default scheme the copy reads --c-* again");
+  app.exportOpen = false; app.render(); flushRaf();
+}
+{
+  const rxrReadme = app._zipReadme("my-set", { color: true, type: true, geometry: true });
+  ok(rxrReadme.includes("`panda/` · `radix/`"), "(rxr3) the zip README's folder map carries the previously-missing panda/ · radix/ row");
+  ok(rxrReadme.includes("`my-set.preset.mjs`") && rxrReadme.includes("`my-set.refs.preset.mjs`"), "(rxr3) that row names BOTH radix files by their real zipped names");
+  ok(/load one of those first/.test(rxrReadme), "(rxr3) the row says the reference file needs a CSS export loaded first");
+}
 
 // ── (exu) CSS export unit (Settings › Export): _setExportUnit writes doc.export.unit; type/geom CSS+DTCG
 // honor it (px→rem), the figma/ folder + Figma variables stay px; the choice persists. ──

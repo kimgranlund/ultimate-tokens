@@ -119,6 +119,14 @@ const ACTIONS = {
   "sweep-delete": "remove the selected legacy styles",
 };
 
+// hasStylePlans: the single predicate for "this apply actually touches paint/text styles",
+// shared by the message handler's own dispatch condition below and adoptExistingCollections'
+// consent-list concat, so the two can never drift apart (#676): a message carrying
+// fontPrimitivesModes with no stylePlans must neither run applyFontPrimitivesModes nor seed a
+// Type Primitives registry entry for a collection this apply never touches.
+function hasStylePlans(msg) {
+  return !!(msg && msg.stylePlans && ((msg.stylePlans.paints || []).length || (msg.stylePlans.texts || []).length));
+}
 figma.ui.onmessage = async (msg) => {
   if (!msg) return;
   try {
@@ -139,34 +147,50 @@ figma.ui.onmessage = async (msg) => {
       // name but isn't registry-tracked (a file applied to under the pre-rename plugin id, or a hand-made
       // collection). Nothing is adopted without explicit consent; declining is today's behaviour, unchanged.
       await adoptExistingCollections(msg);
-      // `dtcg` is OMITTED when the Color system is toggled off in the UI — skip the color collections
-      // entirely (the existing ones are left untouched, not pruned). Type/Geometry filtering happens UI-side.
-      const r = msg.dtcg ? await applyBundle(msg.dtcg, { rebuildSemantic: !!msg.rebuildSemantic, renames: msg.renames && msg.renames.color }) : null;
-      // Type + Geometry breakpoint-moded FLOAT collections (UI-computed, pre-validated apply plans). Isolated
-      // in its OWN try so a float-apply failure can't mask the color apply that already succeeded above — the
-      // user still gets the color result (+ a console error), and a re-apply (idempotent) converges the rest.
-      // #629 "published library" mode: msg.libraryMode is now ALWAYS an explicit boolean: the
+      // #629/#673 "published library" mode: msg.libraryMode is ALWAYS an explicit boolean: the
       // apply-gate's "Published library" checkbox sets it on every apply (true = alias/deprecate,
-      // false = classic prune), so the undefined branch below is only ever reached by an OLD ui.html
-      // bundle posting a pre-#629 message. That undefined does NOT reach applyFloatPlans/
+      // false = classic prune), so the undefined branch in the executors below is only ever reached by
+      // an OLD ui.html bundle posting a pre-#629 message. That undefined does NOT reach applyFloatPlans/
       // applyFontPrimitivesModes' confirmLibraryMode() dialog: with no askIfUndecided passed (only the
       // standalone binder's own main() passes it), undefined resolves straight to false, i.e. classic
       // prune, which is exactly the legacy behavior an old bundle expects.
-      // SCOPE (#629 ruling Q1): the flag covers TYPE, GEOMETRY and STYLES only. applyBundle's color
-      // reconcile is deliberately NOT threaded, and the two surfaces that SET the flag say so: the
-      // gate checkbox is labelled "...type, geometry and style names", and the Settings row's help
-      // line says "Color variables are unaffected either way". The gate LEDE says nothing about the
-      // flag at all (it describes what the apply writes, not how it prunes), so do not read a scope
-      // claim into it. PR #675 review: this comment used to name the lede, which was an overclaim.
+      // SCOPE, stated exactly. The flag guards every prune on the apply path: applyBundle's color
+      // VARIABLE reconcile and its Color Roles theme-MODE prune (both #673); applyFloatPlans' type/
+      // geometry VARIABLE prune AND its own breakpoint-MODE prune (#629 and #687); applyFontPrimitivesModes'
+      // variable prune AND its Type Primitives mode prune (both #629); and applyStylePlans' paint and
+      // text prunes (#629). #629's ruling Q1 kept color out entirely; #673 retired that exemption, and
+      // #687 closed the one remaining gap (applyFloatPlans' own mode prune). The gate checkbox
+      // is labelled "...color, type, geometry and style names" and the Settings row's help line names
+      // color first. The gate LEDE says nothing about the flag at all (it describes what the apply
+      // writes, not how it prunes), so do not read a scope claim into it. PR #675 review: an earlier
+      // comment named the lede, which was an overclaim.
+      // `dtcg` is OMITTED when the Color system is toggled off in the UI — skip the color collections
+      // entirely (the existing ones are left untouched, not pruned). Type/Geometry filtering happens UI-side.
+      const r = msg.dtcg ? await applyBundle(msg.dtcg, { rebuildSemantic: !!msg.rebuildSemantic, renames: msg.renames && msg.renames.color, libraryMode: msg.libraryMode }) : null;
+      // Type + Geometry breakpoint-moded FLOAT collections (UI-computed, pre-validated apply plans). Isolated
+      // in its OWN try so a float-apply failure can't mask the color apply that already succeeded above — the
+      // user still gets the color result (+ a console error), and a re-apply (idempotent) converges the rest.
       let fr = null;
+      let floatStaleModes = [];
+      let floatSkipped = [];
       if (Array.isArray(msg.floatPlans) && msg.floatPlans.length) {
         try { fr = await applyFloatPlans(msg.floatPlans, { libraryMode: msg.libraryMode }); }
         catch (e) { console.error("[Ultimate Tokens] type/geometry apply failed:", e); }
+        // #687: under "published library" mode a stale Type/Geometry breakpoint mode is kept, not
+        // removed. Say so, or a kept mode looks like the prune silently failed: the same disclosure
+        // applyFontPrimitivesModes' and applyBundle's own staleModes get above/below.
+        floatStaleModes = (fr && fr.libraryReports ? fr.libraryReports : []).reduce((acc, lr) => acc.concat(lr.staleModes || []), []);
+        if (floatStaleModes.length) console.warn("[Ultimate Tokens] published-library mode: kept", floatStaleModes.length, "stale Type/Geometry breakpoint mode(s) instead of removing them:", floatStaleModes.join(", "));
+        // #689: a stale name whose "_deprecated/" target was already taken is skipped and left LIVE. Say
+        // so, or it stays live and unpublicized indefinitely (the same disclosure applyBundle's color
+        // reconcile gets below).
+        floatSkipped = (fr && fr.skipped) || [];
+        if (floatSkipped.length) console.warn("[Ultimate Tokens] published-library mode: skipped", floatSkipped.length, "stale Type/Geometry name(s), left live because their deprecated slot was already taken:", floatSkipped.join(", "));
       }
       // STYLES (opt-out): paint + text styles bound to the variables just applied. Own try — a styles
       // failure never masks the variable apply that already succeeded.
       let sr = null;
-      if (msg.stylePlans && ((msg.stylePlans.paints || []).length || (msg.stylePlans.texts || []).length)) {
+      if (hasStylePlans(msg)) {
         try {
           if (msg.fontPrimitivesModes) {
             const fpr = await applyFontPrimitivesModes(msg.fontPrimitivesModes, { libraryMode: msg.libraryMode });
@@ -174,13 +198,23 @@ figma.ui.onmessage = async (msg) => {
             // removed: say so, or a kept mode looks like the prune silently failed.
             const staleModes = (fpr && fpr.libraryReport && fpr.libraryReport.staleModes) || [];
             if (staleModes.length) console.warn("[Ultimate Tokens] published-library mode: kept", staleModes.length, "stale Type Primitives mode(s) instead of removing them:", staleModes.join(", "));
+            // #689: same skip disclosure as the float/color paths, for the Type Primitives name collision.
+            const fpSkipped = (fpr && fpr.libraryReport && fpr.libraryReport.skipped) || [];
+            if (fpSkipped.length) console.warn("[Ultimate Tokens] published-library mode: skipped", fpSkipped.length, "stale Type Primitives name(s), left live because their deprecated slot was already taken:", fpSkipped.join(", "));
           }
           sr = await applyStylePlans(msg.stylePlans, { libraryMode: msg.libraryMode });
         } catch (e) { console.error("[Ultimate Tokens] styles apply failed:", e); }
       }
+      // #673: under "published library" mode a stale THEME mode is kept, not removed. Say so, or a kept
+      // mode looks like the prune silently failed. It is the same disclosure applyFontPrimitivesModes'
+      // own staleModes gets above.
+      if (r && r.staleModes && r.staleModes.length) console.warn("[Ultimate Tokens] published-library mode: kept", r.staleModes.length, "stale Color Roles theme mode(s) instead of removing them:", r.staleModes.join(", "));
+      // #689: name the color names left LIVE because their "_deprecated/" slot was already taken, the
+      // same disclosure the float and Type Primitives paths give above. The notice carries only a count.
+      if (r && r.skipped && r.skipped.length) console.warn("[Ultimate Tokens] published-library mode: skipped", r.skipped.length, "stale color name(s), left live because their deprecated slot was already taken:", r.skipped.join(", "));
       const parts = [];
-      if (r) parts.push(`${r.raw} primitives + ${r.prime} prime + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : ""));
-      if (fr && fr.collections) parts.push(`${fr.variables} type/geometry variable${fr.variables === 1 ? "" : "s"} across ${fr.collections} collection${fr.collections === 1 ? "" : "s"}`);
+      if (r) parts.push(`${r.raw} primitives + ${r.prime} prime + ${r.semantic} semantic variables (${(r.themeNames || []).join(" / ")})` + (r.rebuilt ? ", regrouped" : "") + (r.pruned ? `, ${r.pruned} stale pruned` : "") + (r.preserved ? `, ${r.preserved} stale kept (published library)` : "") + (r.skipped && r.skipped.length ? `, ${r.skipped.length} stale skipped (rename target taken)` : ""));
+      if (fr && fr.collections) parts.push(`${fr.variables} type/geometry variable${fr.variables === 1 ? "" : "s"} across ${fr.collections} collection${fr.collections === 1 ? "" : "s"}` + (floatStaleModes.length ? `, ${floatStaleModes.length} stale kept (published library)` : "") + (floatSkipped.length ? `, ${floatSkipped.length} stale skipped (rename target taken)` : ""));
       if (sr && (sr.paints || sr.texts)) parts.push(`${sr.paints + sr.texts} style${sr.paints + sr.texts === 1 ? "" : "s"} (${sr.paints} color · ${sr.texts} text)` + (sr.pruned ? `, ${sr.pruned} stale pruned` : "") + (sr.preserved ? `, ${sr.preserved} stale kept (published library)` : ""));
       if (sr && sr.substitutedFonts && sr.substitutedFonts.length) figma.notify(`${sr.substituted} text style(s) use a placeholder face — install to see them as designed: ${sr.substitutedFonts.slice(0, 3).join(", ")}${sr.substitutedFonts.length > 3 ? "…" : ""}`, { timeout: 6000 });
       if (sr && sr.missingFonts && sr.missingFonts.length) figma.notify(`Some text styles were skipped — no usable font: ${sr.missingFonts.slice(0, 3).join(", ")}${sr.missingFonts.length > 3 ? "…" : ""}`, { timeout: 6000 });
@@ -882,7 +916,7 @@ async function adoptExistingCollections(msg) {
   }
   // Type/Geometry: one ask per DISTINCT plan collection, across both float call sites (applyFloatPlans
   // and applyFontPrimitivesModes share FLOAT_REGISTRY_KEY, so they share this pass).
-  const plans = (Array.isArray(msg && msg.floatPlans) ? msg.floatPlans : []).concat(msg && msg.fontPrimitivesModes ? [msg.fontPrimitivesModes] : []);
+  const plans = (Array.isArray(msg && msg.floatPlans) ? msg.floatPlans : []).concat(hasStylePlans(msg) && msg.fontPrimitivesModes ? [msg.fontPrimitivesModes] : []);
   if (plans.length) {
     const reg = readFloatRegistry();
     const asked = new Set();
@@ -935,21 +969,22 @@ async function applyFontPrimitivesModes(plan, opts) {
   const modeId = {};
   modeId[plan.defaultMode] = defaultId;
   for (const nm of plan.addModes) { const ex = findMode(nm); modeId[nm] = ex ? ex.modeId : coll.addMode(nm); }
-  // prune stale modes (e.g. a returning file's old single "Value" mode, once renamed away — never the
-  // default, never the last remaining mode).
-  // #629 Q2: "published library" mode guards THIS prune too, not just the variable prune below.
-  // Removing a mode from a PUBLISHED collection breaks every consumer file that pinned it, so
-  // opts.libraryMode === true only REPORTS the stale modes (returned as libraryReport.staleModes) and
-  // leaves them in place. Anything else (false, or the undefined an old pre-#629 ui.html bundle
-  // posts) prunes exactly as before. The decision has to be taken HERE, before the variable pass builds its
-  // report, so it reads opts.libraryMode directly rather than the resolved `useLibrary` further down.
+  // stale mode candidates (e.g. a returning file's old single "Value" mode, once renamed away, never
+  // the default, never the last remaining mode). #696: this collection's mode prune now reads the SAME
+  // resolved `useLibrary` flag as the variable prune below (explicit opts.libraryMode, else the
+  // interactive confirmLibraryMode ask, else #635's priorLibraryUpliftVM fallback over the variable
+  // evidence). Before #696, an old pre-#629 ui.html bundle (opts.libraryMode undefined) applying to a
+  // file with prior-uplift evidence could keep the mode's own variables but prune the mode itself out
+  // from under a published library's consumers, because this site tested the raw flag directly instead
+  // of the resolved one the variable half already used. Only candidates are collected here, before the
+  // variable pass builds `report`; the actual decision (report-only, never remove, vs. remove) happens
+  // once `useLibrary` is resolved, alongside the variable prune.
   const wanted = new Set(plan.modes.map((m) => String(m).toLowerCase()));
-  const staleModes = [];
+  const staleModeCandidates = [];
   for (const m of coll.modes.slice()) {
     if (m.modeId === defaultId) continue;
     if (wanted.has(m.name.toLowerCase())) continue;
-    if (opts.libraryMode === true) { staleModes.push(m.name); continue; }
-    if (coll.modes.length > 1) coll.removeMode(m.modeId);
+    staleModeCandidates.push({ name: m.name, modeId: m.modeId });
   }
   const byName = await varsByName(coll.id);
   // #495 "published library" mode: snapshot LIVE values + build the Type-voice alias map BEFORE the
@@ -1071,6 +1106,20 @@ async function applyFontPrimitivesModes(plan, opts) {
     // never-touched collection (whose plan-level ALIAS variables also read as live aliases) has none: prune as before.
     else useLibrary = priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets);
   }
+  // #696: decide the stale-mode candidates collected above off the SAME resolved `useLibrary` the
+  // variable pass below uses: report-only (never remove) in library mode, classic prune (respecting
+  // the last-mode floor) otherwise.
+  const staleModes = [];
+  if (useLibrary) {
+    for (const m of staleModeCandidates) staleModes.push(m.name);
+  } else {
+    for (const m of staleModeCandidates) { if (coll.modes.length > 1) coll.removeMode(m.modeId); }
+  }
+  // #689: a stale name whose "_deprecated/" target is already LIVE (a prior library-mode apply
+  // already claimed it, e.g. drop, re-add, drop) must not be silently left under its ORIGINAL name.
+  // Report it in `skipped`, or it stays live and unpublicized forever, exactly like the two sibling
+  // sites below (applyBundle's color reconcile, applyFloatPlans' own deprecates loop).
+  const skippedFP = [];
   if (useLibrary) {
     for (const r of report.aliases) {
       const vr = byName[r.from];
@@ -1083,14 +1132,16 @@ async function applyFontPrimitivesModes(plan, opts) {
     }
     for (const r of report.deprecates) {
       const vr = byName[r.from];
-      if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
+      if (!vr) continue;
+      if (byName[r.to]) { skippedFP.push(r.from); continue; } // "_deprecated/" name already taken: leave the live one alone
+      vr.name = r.to; byName[r.to] = vr; delete byName[r.from];
     }
   } else {
     // #659: never a "_deprecated/" name — pruneCandidatesVM keeps the prune monotonic over them.
     for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
   }
   writeFloatRegistry(reg);
-  return { variables: count, libraryReport: { collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes } };
+  return { variables: count, libraryReport: { collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes, skipped: useLibrary ? skippedFP : [] } };
 }
 
 // resolveFace — pick a REAL face for {family, weight, styleName?} from Figma's actual font list
@@ -1405,6 +1456,12 @@ function leafEntries(node, prefix) {
 }
 async function applyBundle(dtcg, opts) {
   opts = opts || {};
+  // #673: read the "published library" flag ONCE, here, because applyBundle has TWO destructive sites
+  // and the first of them (the theme-MODE prune below) runs long before the variable reconcile at the
+  // bottom of this function. Same resolution as every other gate: an explicit true is the only thing
+  // that turns preservation on; false, and the undefined an old pre-#629 ui.html bundle posts, take the
+  // classic prune. This function never asks interactively (no askIfUndecided channel reaches it).
+  const libraryMode = opts.libraryMode === true;
   const renames = opts.renames || {};
   const collectionRenames = renames.collections || {};
   const rawTree = dtcg && dtcg["palette.tokens.json"];
@@ -1501,10 +1558,19 @@ async function applyBundle(dtcg, opts) {
   }
   // prune stale theme modes (a theme the doc no longer carries) — never the collection's default
   // mode (just renamed above, always in wantedModes), never the last remaining mode.
+  // #673 (PR review on 8dac051), mirroring applyFontPrimitivesModes' own guard above: "published
+  // library" mode covers THIS prune too. Removing a theme MODE from a PUBLISHED Color Roles collection
+  // breaks every consumer file that pinned it, exactly as removing a variable does, and #629's ruling Q2
+  // already settled that a mode prune must be guarded. Under libraryMode the stale theme modes are only
+  // REPORTED (staleThemeModes below, surfaced as the Color Roles colorReports entry's `staleModes`, the
+  // same field name applyFontPrimitivesModes uses) and left standing. Classic path unchanged.
   const wantedModes = new Set(themeNames);
+  const staleThemeModes = [];
   for (const m of sem.modes.slice()) {
     if (m.modeId === firstModeId) continue;
-    if (!wantedModes.has(m.name) && sem.modes.length > 1) sem.removeMode(m.modeId);
+    if (wantedModes.has(m.name)) continue;
+    if (libraryMode) { staleThemeModes.push(m.name); continue; }
+    if (sem.modes.length > 1) sem.removeMode(m.modeId);
   }
 
   const semByName = await varsByName(sem.id);
@@ -1541,19 +1607,66 @@ async function applyBundle(dtcg, opts) {
   // alias a stale raw var we then remove, whereas every CURRENT semantic var aliases a CURRENT (kept)
   // raw var, so no live alias is broken. Prime carries no aliases in or out, so its prune order
   // relative to raw/semantic doesn't matter.
+  // #673: "published library" mode covers THIS prune too. opts.libraryMode === true means the file is
+  // a PUBLISHED library, so a color variable this bundle no longer produces is DEPRECATED (id-preserving
+  // rename under "_deprecated/") instead of removed, and every consumer file stays bound. false, and the
+  // undefined an old pre-#629 ui.html bundle posts, prune exactly as before. #629 ruling Q1 kept color
+  // out; #673 closes that gap, so the flag now covers color, type, geometry and styles alike.
+  //
+  // WHY THERE ARE NO ALIASES HERE, unlike applyFloatPlans' branch: a color rename arrives as
+  // opts.renames and is executed id-preservingly by renameInPool ABOVE, before the reconcile ever runs,
+  // so a renamed name is never stale by the time we get here. There is no second, value-redirect channel
+  // to build an alias map from, and libraryReconcile with an empty map therefore reports deprecates only.
+  // The empty `aliases` array is kept in the report for shape-parity with the float path's libraryReport.
+  //
+  // THREE prune sites, one per generated collection (Color Roles, Color Primitives, Color Prime), each
+  // taking the guard on its own: the style path's own review (#629, PR #675) found a guard that read
+  // correct at two sites but was only ever exercised at one, so each site is asserted separately.
   let pruned = 0;
-  for (const name of Object.keys(semByName)) {
-    if (!currentSem.has(name)) { semByName[name].remove(); pruned++; }
-  }
-  for (const name of Object.keys(rawByName)) {
-    if (!currentRaw.has(name)) { rawByName[name].remove(); pruned++; }
-  }
-  for (const name of Object.keys(primeByName)) {
-    if (!currentPrime.has(name)) { primeByName[name].remove(); pruned++; }
-  }
+  let preserved = 0;
+  const colorReports = [];
+  const skippedAll = []; // #689: stale names left LIVE because their "_deprecated/" slot was already taken
+  // reconcileColorCollection(collectionName, byName, current): one collection's stale-name decision.
+  // CLASSIC: remove every unwanted name, minus the "_deprecated/" carve-out pruneCandidatesVM applies at
+  // the other two library-mode gates (#659/#666: the classic prune must stay MONOTONIC over a name a
+  // prior library-mode apply deliberately kept, or library mode defeats itself on the next ordinary
+  // apply). No color "_deprecated/" name can exist before this ticket, so the carve-out subtracts nothing
+  // from today's behavior for any state a live file can currently be in.
+  // `staleModes` (optional) is the collection's kept-mode list, empty everywhere but Color Roles, which
+  // is the only one of the three that carries a mode axis at all.
+  const reconcileColorCollection = (collectionName, byName, current, staleModes) => {
+    const existing = Object.keys(byName);
+    const modes = staleModes || [];
+    if (!libraryMode) {
+      const removed = pruneCandidatesVM(existing, Array.from(current));
+      for (const name of removed) { byName[name].remove(); pruned++; }
+      colorReports.push({ collection: collectionName, libraryMode: false, aliases: [], deprecates: [], removed: removed, staleModes: modes, skipped: [] });
+      return;
+    }
+    const rec = libraryReconcile(existing, Array.from(current), {}, {});
+    const deprecates = [];
+    const skipped = [];
+    for (const r of rec.toDeprecate) {
+      const vr = byName[r.from];
+      if (!vr) continue;
+      // #689: a "_deprecated/" name already taken (e.g. drop, re-add, drop): the rename is skipped and
+      // the stale name is left LIVE. Report it, or it stays live and unpublicized indefinitely.
+      if (byName[r.to]) { skipped.push(r.from); continue; }
+      vr.name = r.to;
+      byName[r.to] = vr;
+      delete byName[r.from];
+      preserved++;
+      deprecates.push(r);
+    }
+    colorReports.push({ collection: collectionName, libraryMode: true, aliases: [], deprecates: deprecates, removed: [], staleModes: modes, skipped: skipped });
+    if (skipped.length) skippedAll.push(...skipped);
+  };
+  reconcileColorCollection(sem.name, semByName, currentSem, staleThemeModes);
+  reconcileColorCollection(raw.name, rawByName, currentRaw);
+  reconcileColorCollection(prime.name, primeByName, currentPrime);
 
   writeColorRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { raw: rawCount, semantic: semCount, prime: primeCount, pruned: pruned, rebuilt: rebuilt, themeNames: themeNames };
+  return { raw: rawCount, semantic: semCount, prime: primeCount, pruned: pruned, preserved: preserved, libraryMode: libraryMode, colorReports: colorReports, staleModes: staleThemeModes, skipped: skippedAll, rebuilt: rebuilt, themeNames: themeNames };
 }
 
 // ── the breakpoint-moded FLOAT apply (Type / Geometry) ────────────────────────────
@@ -1569,6 +1682,7 @@ async function applyFloatPlans(plans, opts) {
   opts = opts || {};
   let collections = 0, variables = 0;
   const libraryReports = [];
+  const skippedAll = []; // #689: stale names left LIVE because their "_deprecated/" slot was already taken
   const reg = readFloatRegistry(); // provenance: only ever touch a collection this plugin created (see ensureFloatCollection)
   for (const plan of (Array.isArray(plans) ? plans : [])) {
     if (!plan || !plan.collection || !Array.isArray(plan.modes) || !plan.modes.length) continue;
@@ -1583,11 +1697,19 @@ async function applyFloatPlans(plans, opts) {
     const modeId = {};
     modeId[plan.defaultMode] = defaultId;
     for (const nm of plan.addModes) { const ex = findMode(nm); modeId[nm] = ex ? ex.modeId : coll.addMode(nm); }
-    // prune stale modes (a breakpoint the user removed) — never the default, never the last remaining mode.
+    // prune stale modes (a breakpoint the user removed) — never the default, never the last remaining
+    // mode. #687: removing a mode from a PUBLISHED collection breaks every consumer file pinned to it,
+    // exactly like the variable prune below: #629's ruling Q2 already settled that a mode prune must
+    // be guarded, the same ruling applyFontPrimitivesModes' and applyBundle's own mode guards cite. The
+    // actual prune-vs-report decision happens further down, once `useLibrary` is resolved for this
+    // plan: the mode guard reads that SAME resolved value (not a raw opts.libraryMode read here), or an
+    // old bundle (opts.libraryMode undefined, resolved by the #635 priorLibraryUpliftVM fallback below)
+    // would prune the modes while the variable half of this very function preserves them.
     const wanted = new Set(plan.modes.map((m) => String(m).toLowerCase()));
+    const staleModeCandidates = [];
     for (const m of coll.modes.slice()) {
       if (m.modeId === defaultId) continue;
-      if (!wanted.has(m.name.toLowerCase()) && coll.modes.length > 1) coll.removeMode(m.modeId);
+      if (!wanted.has(m.name.toLowerCase())) staleModeCandidates.push(m);
     }
     // variables: create-or-reuse by name; write every mode's value; prune orphans scoped to THIS collection.
     const byName = await varsByName(coll.id);
@@ -1660,6 +1782,17 @@ async function applyFloatPlans(plans, opts) {
       // prune. See applyFontPrimitivesModes' matching block above.
       else useLibrary = priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets);
     }
+    // #687: apply that SAME resolved `useLibrary` to the stale breakpoint modes collected above:
+    // report under library mode (never removed), remove otherwise. Mirrors applyBundle's Color Roles
+    // theme-mode guard (#673) and applyFontPrimitivesModes' Type Primitives mode guard (#629), the two
+    // other sites this flag already covers.
+    const staleModes = [];
+    if (useLibrary) {
+      for (const m of staleModeCandidates) staleModes.push(m.name);
+    } else {
+      for (const m of staleModeCandidates) { if (coll.modes.length > 1) coll.removeMode(m.modeId); }
+    }
+    const skippedFloat = []; // #689: stale names left LIVE because their "_deprecated/" slot was already taken
     if (useLibrary) {
       for (const r of report.aliases) {
         const vr = byName[r.from];
@@ -1669,13 +1802,18 @@ async function applyFloatPlans(plans, opts) {
       }
       for (const r of report.deprecates) {
         const vr = byName[r.from];
-        if (vr && !byName[r.to]) { vr.name = r.to; byName[r.to] = vr; delete byName[r.from]; }
+        if (!vr) continue;
+        // #689: a "_deprecated/" name already taken (e.g. drop, re-add, drop): the rename is skipped
+        // and the stale name is left LIVE. Report it, or it stays live and unpublicized indefinitely.
+        if (byName[r.to]) { skippedFloat.push(r.from); continue; }
+        vr.name = r.to; byName[r.to] = vr; delete byName[r.from];
       }
     } else {
       // #659: never a "_deprecated/" name — pruneCandidatesVM keeps the prune monotonic over them.
       for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
     }
-    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []) });
+    if (skippedFloat.length) skippedAll.push(...skippedFloat);
+    libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes, skipped: skippedFloat });
     // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
     // (provenance — never a user's own same-named collection), removed with their variables. Styles
@@ -1692,7 +1830,7 @@ async function applyFloatPlans(plans, opts) {
     collections++;
   }
   writeFloatRegistry(reg); // persist the name→id provenance map (any newly-created collections)
-  return { collections: collections, variables: variables, libraryReports: libraryReports };
+  return { collections: collections, variables: variables, libraryReports: libraryReports, skipped: skippedAll };
 }
 
 // Exposed for the headless verifier (a no-op inside Figma's VM).
