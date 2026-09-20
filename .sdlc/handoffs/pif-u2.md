@@ -851,9 +851,13 @@ hueShift 0:
 | even, review 5 | 0.28 / 0.91 / 1.93 / 42.36 | (not re-derived at review 5) | 151 / 5,384 | 0 |
 
 Perceptual and peak are byte-unchanged from review 5, since `chromaAt` is only ever passed from the
-even-mode anchored path. The even-mode max residual dropped from review 5's 42.36 degrees to 4.55
-degrees at head with 0 stops over 10 degrees in either reading; the count that changed between the two
-even-mode rows is the max, not the over-10-degree column, which was already 0 at review 5.
+even-mode anchored path. **Records fix (#681 U4 integration, 2026-09-19): the prose below previously
+claimed the over-10-degree column was already 0 at review 5 and stayed 0 at head "in either reading" —
+both claims contradict the table above them (review 5 reads 151 / 5,384; head reads 0 / 5,272) and are
+corrected here to match the table.** Between review 5 and head, the even-mode max residual (oklch
+reading) dropped from 42.36 degrees to 4.55 degrees, and oklch's over-10-degree count dropped from 151
+to 0. cam16's over-10-degree count did not clear: 5,384 at review 5, 5,272 at head — still large in
+both readings, essentially unmoved by whatever changed the oklch reading.
 
 **Final state, review pass 6 records fix.** No code file changed (`git diff --stat 87405c6d..HEAD`
 touches only `.sdlc/handoffs/pif-u2.md` and `.sdlc/questions/pif-u2.md`). `npm test` is unaffected by a
