@@ -69,6 +69,27 @@ if (!fails.length) {
     FAIL(`the default kit is not importable, or does not carry 16 palettes (${kit && kit.palettes ? kit.palettes.length : "n/a"})`);
 
   if (forward.length < 30) FAIL(`sample is ${forward.length} documents, expected at least 30`);
+
+  // the sampler's order is total because its KEYS are unique, not because of a tiebreak: the real
+  // corpus has zero (category, name) collisions, and this checks that directly rather than trusting
+  // sampleCorpus not to have thrown.
+  const keys = forward.map((d) => `${d.category}/${d.name}`);
+  if (keys.length !== new Set(keys).size)
+    FAIL(`the sample carries ${keys.length} documents but only ${new Set(keys).size} distinct (category, name) keys`);
+  else console.log(`  (${keys.length} document keys, all distinct)`);
+
+  // synthetic duplicate-name leg (#686, U1-6 revision 5): a category holding two documents under one
+  // name must throw before any sort runs, never fall through to a silently reordered or duplicated
+  // result. This is the only place that guarantee has coverage inside npm test.
+  const dup = { brands: [
+    { name: "Dup", vol: "I", palettes: [{ name: "A" }] },
+    { name: "Dup", vol: "I", palettes: [{ name: "B" }] },
+  ] };
+  let dupThrew = false, dupMessage = "";
+  try { sampleCorpus(dup); } catch (e) { dupThrew = true; dupMessage = e.message; }
+  if (!dupThrew) FAIL(`sampleCorpus accepted a synthetic corpus with two "brands" documents named "Dup" instead of throwing`);
+  else if (!/Dup/.test(dupMessage)) FAIL(`sampleCorpus threw on the duplicate-name fixture, but its message did not name "Dup": ${dupMessage}`);
+  else console.log(`  (duplicate-name leg: sampleCorpus threw as expected: ${dupMessage})`);
 }
 
 if (fails.length) {

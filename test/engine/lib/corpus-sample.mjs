@@ -31,23 +31,15 @@ export function pickVolume(cat, presets, seed = SAMPLE_SEED) {
 
 const docKey = (doc) => `${doc.category}/${doc.name}`;
 
-// contentKey(doc) -> a canonical string built from the document's OWN fields, used only to break a
-// sort tie between two documents that already share both `category` and `name`. Sort ties are
-// otherwise resolved by Array#sort's stability, which is INPUT ORDER: the exact thing #686 exists to
-// remove. Comparing by content instead means the order stays the same no matter which position
-// either document arrived at, so it is a real tiebreak rather than a second name for "whatever order
-// the array happened to be in."
-const contentKey = (doc) => JSON.stringify({ vol: doc.vol, curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, palettes: doc.palettes });
-
 // sampleCorpus(byCategory, seed = SAMPLE_SEED) -> curated documents only, each tagged with its own
-// `category`, sorted by category then by document name then by content, so the RESULT is a pure
-// function of the set of documents each category exposes and the seed, never of the order any
-// mirror loaded in and never of Array#sort's own stability. `brands` (the identity tier) always
-// ships in full; every other category contributes only the one volume `pickVolume` names for it.
+// `category`, sorted by category then by document name. `brands` (the identity tier) always ships
+// in full; every other category contributes only the one volume `pickVolume` names for it.
 //
-// Throws if a category ever holds two documents with the same name: `docKey` is how this module and
-// its callers tell documents apart, and a collision there is a corpus defect, not something a sort
-// order can paper over.
+// Throws if a category ever holds two documents with the same name, BEFORE the sort runs: `docKey`
+// is how this module and its callers tell documents apart, so a collision there is a corpus defect
+// to report, not an order to make deterministic. Because this check runs first, the sort itself
+// never sees two entries sharing a category and name, and needs no tiebreak beyond name: there is
+// nothing left for one to break a tie on (#686, U1-6 revision 5).
 export function sampleCorpus(byCategory, seed = SAMPLE_SEED) {
   const docs = [];
   for (const cat of Object.keys(byCategory).sort()) {
@@ -68,9 +60,7 @@ export function sampleCorpus(byCategory, seed = SAMPLE_SEED) {
   }
   docs.sort((a, b) => {
     if (a.category !== b.category) return a.category < b.category ? -1 : 1;
-    if (a.name !== b.name) return a.name < b.name ? -1 : 1;
-    const ka = contentKey(a), kb = contentKey(b);
-    return ka < kb ? -1 : ka > kb ? 1 : 0;
+    return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
   });
   return docs;
 }
