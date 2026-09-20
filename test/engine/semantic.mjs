@@ -221,6 +221,16 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    `bf2aaf6`) value (was 46 last pass; R6's construction change moved several back above their
 //    bf2aaf6 value too).
 //
+//    Re-measured an EIGHTH time (#681 U4 integration, 2026-09-19) on the fully integrated tree (U1 +
+//    U2 + U3 + U6, after U3's own damp/dampCurve retune and U6's prime-ladder rebuild both landed).
+//    The 41-cell Q-B population against bf2aaf6 is UNCHANGED (same 41 names, same set, checked by
+//    name below) — U3's retune and U6's ladder rebuild move ramp/prime construction, not which cells
+//    sit below their pre-#681 value. Four cells (even Primary light+dark, even Info dark, even Danger
+//    light) moved fractionally below their SEVENTH-pass pinned floor (captured on U2's own branch,
+//    before U3's retune landed) while staying comfortably above both AA and their bf2aaf6 baseline —
+//    re-pinned in place below per this table's own ratchet rule ("an intentional default change has
+//    to move a number here deliberately"); U3's retune is exactly that, already ratified in the plan.
+//
 //    Ruled (owner, via team-lead, Q-B, 2026-09-18): pin these 41 by name as "pending U4" so nothing
 //    widens silently before the owner rules on the integrated numbers - each lowered row below carries
 //    its own inline `pending U4: <side> was <old> at bf2aaf6` note. The full by-name old/new table
@@ -259,13 +269,13 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
     ],
     even: [
       ["Neutral", 7.2, 4.6],   // measured 7.29 / 4.65
-      ["Primary", 7.5, 4.8],   // measured 7.54 / 4.80
+      ["Primary", 7.4, 4.7],   // measured 7.50 / 4.80 - re-pinned U4 integration (was 7.5/4.8): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
       ["Secondary", 5.5, 5.5],   // measured 5.58 / 5.52 - pending U4: dark was 5.8 at bf2aaf6
       ["Tertiary", 8.2, 5.2],   // measured 8.28 / 5.26
-      ["Info", 7.2, 4.6],   // measured 7.22 / 4.61
+      ["Info", 7.2, 4.5],   // measured 7.23 / 4.58 - re-pinned U4 integration (was 7.2/4.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
       ["Success", 7.6, 4.9],   // measured 7.68 / 4.94 - pending U4: light was 8.0 at bf2aaf6, dark was 5.1 at bf2aaf6
       ["Warning", 9.9, 5.2],   // measured 9.94 / 5.29
-      ["Danger", 8.7, 5.6],   // measured 8.74 / 5.63
+      ["Danger", 8.6, 5.6],   // measured 8.70 / 5.65 - re-pinned U4 integration (was 8.7/5.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
       ["Data 1", 6.2, 4.9],   // measured 6.30 / 4.93 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 2", 6.6, 4.6],   // measured 6.69 / 4.66 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 3", 6.4, 4.8],   // measured 6.50 / 4.81 - pending U4: dark was 5.8 at bf2aaf6
