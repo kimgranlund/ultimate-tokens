@@ -5,9 +5,9 @@ written: 2026-09-19
 updated: 2026-09-20 (pass 5, records-only, verifier verdict pif-u4)
 branch: unit/pif-u4-integration
 base: 834a4d8d (plan/preset-intent-fidelity)
-head: 36ce7777 (round 4, pre-pass-5; round 3 was bf62ee30, round 2 was fa0264fa, round 1's fix was
-  4125d965, pass 1's head was 7d659ae5) - CORRECTED pass 5 (verifier row: frontmatter previously still
-  said fa0264fa, two fix commits stale)
+head: 9e1c9fab (pass 5, this pass's own records commit; round 4 was 36ce7777, round 3 was bf62ee30,
+  round 2 was fa0264fa, round 1's fix was 4125d965, pass 1's head was 7d659ae5) - CORRECTED pass 5
+  (verifier row: frontmatter previously still said fa0264fa, two fix commits stale)
 ---
 
 # U4: integration, blast-radius report, pending-U4 re-measurements
