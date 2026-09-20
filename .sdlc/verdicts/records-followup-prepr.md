@@ -1,6 +1,6 @@
-# Pre-PR · records-followup · 3c755098
+# Pre-PR · records-followup · 37a49077
 verdict: 🟢
-sha: 3c755098dd9ff00b45b89d245b378c4e76a0faf5
+sha: 37a490771e5340f352e080f6186960858bdc4df8
 plan: .sdlc/plans/records-followup.md (ticket #709, revision 13), PR 1 of 2, base and merge base origin/main @ 3ce50daa346820d48593885cdc57120d844b5403
 written: 2026-09-20 by records-followup-prepr-verifier (fresh context, read-only on the repo; built none of the units). Third pass: the first graded 887e3eb2, the second graded U10 at 23a206b4, this one grades the merged head
 counts: 20 rows, 18 🟢, 1 🟡, 0 🔴, 1 ⚪ (P3, not applicable on U3's short path)
@@ -25,7 +25,7 @@ Every row is this seat's own run at this head, 2026-09-20 11:40 to 11:46, in thr
 | U7-4 | every debt P cite moved | 🟢 | `.sdlc/adapter.md:2`, `.sdlc/debt.md:5`; `0`; `22,52,95,`, which the plan's Expected now states (revision 11) | at `d34b4fb1`: `5` bare debt `P` lines |
 | U3-1 | the script reads five gates and everything agrees | 🟢 | as P7, among the lines `ok    time corpus-contrast: baseline 20 to 23 s, adapter 20 to 23 s` and `ok    time fonts: baseline 1 to 1 s, adapter 1 to 1 s`; numstat `3	3` | as P7 |
 | U3-8 | the approved `CLAUDE.md` line names the PR jobs | 🟢 | `build-test,corpus-contrast,panda-smoke`, `1`, `1	1`, `rows 56 drifted 11 holds 45 undetermined 0 bad 0` | `origin/main:.claude/CLAUDE.md`: phrase count `0` |
-| U4-2 | the U1 verdict quotes the gate line as my control prints it | 🟢 | `line.txt` has `1` line, `FAIL  refs-canonical  — ordered key set != canonical`; match count `1`; old form `0` | `origin/main` copy of that verdict: match `0` |
+| U4-2 | the U1 verdict quotes the gate line as my control prints it | 🟢 | `line.txt` has `1` line, `FAIL  refs-canonical  — ordered key set != canonical` altered: two leading spaces dropped (the file is `grep -o` output, which starts at `FAIL`; the program prints two spaces before it); match count `1`; old form `0` | `origin/main` copy of that verdict: match `0` |
 | U9-1 | main is merged in, no conflict marker left | 🟢 | `git merge-base --is-ancestor origin/main HEAD` exits `0`; marker grep prints nothing; `git diff --name-status origin/main HEAD` has `0` rows other than `A` or `M` | pre-merge head `8cf8eb57` exits `1` (run at the first pass) |
 | Pinned copies | both copied reviews still hash to their stated values | 🟢 | followup review body `e30720eb197f324c...`, equal to its `body-sha256:`; records-refresh review `6a3a285e91555f7b...`, equal to the plan's front matter | one appended space changes either hash (run at passes 1 and 2: `e955d2988108`, `772046263b97`) |
 | Records | board, checklist and verdict files agree for U1 to U10 | 🟢 | the plugin's `board.py check`: ten rows, all `Agree` 🟢, exit `0`; `board.py ids .sdlc` exit `0`; nine `[x]` and one `[ ]` (U5); every 8-hex sha on the plan's board rows and every `sha:` in the unit verdicts is an ancestor of the head, `0` lines of `NOT` | a plan-branch sha tested against `origin/main` reads `1`, so the ancestor test tells the two apart |
@@ -50,6 +50,6 @@ Must fix before landing: none. Any new commit on the branch voids this record's 
 
 Written by the conductor seat, which dispatched the verifier and built no unit; the Orchestrator lane that wants to land did not write it. The pre-land reviewer (reviewer-l4, fresh context, dispatched by the lane) graded `887e3eb2` against `origin/main` and returned FIX-FIRST with every gate green: one small blocking finding (records this PR adds broke the verbatim-quote rule it writes) and eight notes. Its record is copied byte for byte into `.sdlc/verdicts/` by U10 under the byte-pinned copy clause. Findings 1, 2 and 4 were repaired by U10 (verdict `.sdlc/verdicts/records-followup-U10.md`, graded at `23a206b4`); findings 3 and 5 by plan revisions 10 to 13, which also removed a session resume note from the branch. Findings 6 to 9 are notes and stay open: finding 9 is U5's, the roadmap PR.
 
-Gate note: the commit that adds this record is the only commit after `3c755098` and its whole delta is this file, as the records-refresh record did at `e60a4286`.
+Gate note: the verifier graded `3c755098`. The critic's review at `458f0195` (CHANGES, two quote markers) moved the pin: the delta from `3c755098` to the `sha` above is this record as first committed at `458f0195` plus one marker in one cell of `.sdlc/verdicts/records-followup-U10.md`, and the commit that re-pins this record is the only commit after that `sha`, its whole delta being this file (the new `sha`, the same marker in row U4-2, this note). No gate reads either cell, so no row was rerun; the conductor re-ran branding and the adapter's dry-run gate at the new head.
 
 Close-out nits the verifier named, left for the plan-closing commit on main because any commit here voids the `sha`: the plan's `amended:` line says revision 10 while the table reaches 13, and the U10 board row names no merge sha.
