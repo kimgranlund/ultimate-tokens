@@ -74,11 +74,11 @@ U3-3's awk counts any row of this file that starts with a pipe and a number. In 
 
 ## Criteria
 
-Measured by this builder against the committed tree at 486d124a, every command run from a script file under the seat's own scratchpad. `BASE` is `acfd7298`, the plan-branch head this unit was cut from, which is also `UB`; the `d34b4fb1` figures are given where the two differ.
+Measured by this builder against the committed tree at 27ae857d, every command run from a script file under the seat's own scratchpad. `BASE` is `acfd7298`, the plan-branch head this unit was cut from, which is also `UB`; the `d34b4fb1` figures are given where the two differ.
 
 | # | Expected | Evidence measured | State | Negative control |
 |---|---|---|---|---|
-| U3-1 | nine `ok` lines, among them `time corpus-contrast:` and `time fonts:`, `stale total: 0`, `exit 0`, then `2	2	.sdlc/checks/baseline-agrees-check.sh` | eight `ok` lines, among them `ok    time corpus-contrast: baseline 20 to 23 s, adapter 20 to 23 s` and `ok    time fonts: baseline 1 to 1 s, adapter 1 to 1 s`, plus `note  head: baseline ref 20298cc has the same tree as HEAD outside .sdlc/ and .gitignore`; `stale total: 0`; `exit 0`; `2	2	.sdlc/checks/baseline-agrees-check.sh` against `acfd7298` and against `d34b4fb1` alike | 🟡 nine counted rows, eight of them `ok` and one a `note`, which is Fix A working; see Disagreement | the pass 1 form of the script printed `STALE head:`, `stale total: 1`, `exit 1` on this same tree; a baseline `ref` off `origin/main` still reds the ancestry row, which Fix A left counting |
+| U3-1 | eight `ok` lines plus one `note head:` line when the tree moved outside `.sdlc/` since the baseline ran (nine `ok` when it has not), among them `time corpus-contrast:` and `time fonts:`, `stale total: 0`, `exit 0`, then `3	3	.sdlc/checks/baseline-agrees-check.sh` | eight `ok` lines by count, among them `ok    time corpus-contrast: baseline 20 to 23 s, adapter 20 to 23 s` and `ok    time fonts: baseline 1 to 1 s, adapter 1 to 1 s`, and one `note  head: baseline ref 20298cc has the same tree as HEAD outside .sdlc/ and .gitignore`; `stale total: 0`; `exit 0`; `3	3	.sdlc/checks/baseline-agrees-check.sh` against `acfd7298` and against `d34b4fb1` alike | 🟢 | the pass 1 form of the script printed `STALE head:`, `stale total: 1`, `exit 1` on this same tree; a baseline `ref` off `origin/main` still reds the ancestry row, which Fix A left counting |
 | U3-2 | no diff lines, `diff 0` | no lines, `diff 0` | 🟢 | at d34b4fb1 the same command printed two `<` lines and `diff 1` |
 | U3-3 | `6 0 0` | `6 0 0`, the awk reading the Runs table's six rows (`row 1 lb 3.97 la 4.84 exit 0` through `row 6 lb 6.16 la 6.16 exit 0`) | 🟢 | one load-before cell edited to `11.46` in a copy prints `6 1 0`, so the hot leg bites. At 1c1cfc69 the same `6 0 0` came from the Steps table with the load columns never read, which is the Correction above |
 | U3-4 | `1`, `1`, `3`, `0` | `1`, `1`, `3`, `0` | 🟢 | at d34b4fb1 the same four commands print `1`, `0`, `0`, `1` |
@@ -93,10 +93,4 @@ Plan-level rows this builder also ran at the same head: P1 `✓ all 48 test file
 
 ## Disagreement
 
-🟡 One wording mismatch, nothing adjusted on either side.
-
-U3-1 at the merged head expects `nine `ok` lines`, and its own parenthetical rules that the head same-tree row prints as `note head:`. On this tree those two cannot both be literally true: the tree does differ outside `.sdlc/` (step 9's one approved `.claude/CLAUDE.md` line), so that row prints `note  head:` and the count of `ok` lines is eight, out of nine counted rows. `stale total: 0`, `exit 0` and `2	2` all measure exactly as written.
-
-The script prints `ok` on that row when the trees do agree and `note` when they do not, which is the only reading of the ruling that leaves the row informative. P7's text at the merged head already says it this way: `every counted line `ok``, with a `note head:` line that `may appear when the tree moved outside `.sdlc/` since the baseline ran`. U3-1's `nine `ok` lines` is the older phrasing carried over, and the honest measured value is eight `ok` plus one `note`.
-
-Nothing to decide before landing: the gate passes, and both figures this unit added print `ok`. If the Orchestrator wants the two rows to read alike, U3-1's expected value becomes `eight `ok` lines and one `note head:` line, nine counted rows` at the next revision. I did not edit the plan, and I did not make the script print `ok` on a tree that has moved.
+None open. The one 🟡 of rework 1, U3-1's `nine `ok` lines` against a measured eight plus one `note`, was closed by the plan at `31b53ea9`: the row's expected value now names both cases and the numstat leg is `3	3`, which is what the header repair of note 3 costs. Every figure below was measured after that merge, and nothing on either side was adjusted to fit.
