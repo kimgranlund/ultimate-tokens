@@ -52,3 +52,9 @@ Effect: the interactive conductor and Lanes A and B do not touch #709 U5, PR #72
 Question: Which holds for #718, its own small plan after #681 lands (a ruling made in the other channel) or R9 (no new records tickets)?
 Options: #718 keeps its own small plan; R9 applies from here on (Recommended); R9 wins: fold #718 into #713 U6b; I never ruled on #718.
 Chosen: #718 keeps its own small plan; R9 applies from here on (Recommended).
+
+## R13 The interim npm test ceiling for #681 (first asked by the background conductor, confirmed here)
+Question: Lane A measured runs above the 280 to 550 s interim ceiling at load near 8.7; did you rule a quiet-host re-measure, and is it what you want?
+Options: Yes: re-measure on a quiet host, then set the ceiling (Recommended); Yes, but do not block #681 on a quiet run; No, I did not rule that.
+Chosen: Yes: re-measure on a quiet host, then set the ceiling (Recommended).
+Effect: the ceiling stays 280 to 550 s as written in plan preset-intent-fidelity C1. Nothing widens before a reading taken with every run started at load under 5. A run at load 5 or above is recorded with its load and not graded. #681's pre-land needs one such quiet run. The figures first relayed with this question (a band top 40 to 170 s low) were retracted by Lane A the same hour: run 1 of the series read 518.66 s, and sorted by CPU share the series is near monotone, which is contention.
