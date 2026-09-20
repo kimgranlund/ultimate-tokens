@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Branch | unit/rf-U7 @ 8611ea98ed70bcbb01b094c8c66b50416bf46c54 |
+| Branch | unit/rf-U7 @ ec3f067c, merged into plan/records-followup as e48e2d92 |
 | Files | .sdlc/debt.md, .sdlc/adapter.md, .sdlc/handoffs/records-followup-U7.md |
 | Ran | criteria 1-6 below, host load recorded |
 | Left out | none |
@@ -35,7 +35,7 @@ Backward (architecture's own P1-P7 series must be untouched): `git diff --stat $
 
 ## PLUGIN substitution for criterion 6 (finding)
 
-`core.hooksPath` resolves to `/Users/kimba/Projects/nonoun/sdlc-orchestration/plugins/sdlc/githooks`, so `PLUGIN=/Users/kimba/Projects/nonoun/sdlc-orchestration`, matching U2-6's convention. The plan's criterion 6 command names `plan/drill-findings` as the ref to read `board.py` from. That branch label does not exist in `PLUGIN` any more: `git branch -a` and `git for-each-ref` show no such ref. `git log --all --oneline | grep drill` shows the merge commit `0242462` has two parents (a real merge, not a squash), and the commit the plan cites, `08f3e1b`, is still reachable and an ancestor of `main`, with `board.py` byte-identical to `main`'s. Only the branch label was deleted; nothing was lost. I substituted `main` for `plan/drill-findings` and ran the check: `python3 "$F/board.py" ids .sdlc` printed nothing and `exit 0`. I could have run the check against `08f3e1b` directly instead of substituting `main`, since that commit is still reachable and would have proved the check against the literal ref the plan cites; I did not think to look for it before writing this file.
+`core.hooksPath` resolves to `/Users/kimba/Projects/nonoun/sdlc-orchestration/plugins/sdlc/githooks`, so `PLUGIN=/Users/kimba/Projects/nonoun/sdlc-orchestration`, matching U2-6's convention. The plan's criterion 6 command named `plan/drill-findings` as the ref to read `board.py` from; the plan has since been corrected to pin the plugin commit `08f3e1b` instead, so this paragraph records what was true when the unit was built. That branch label does not exist in `PLUGIN` any more: `git branch -a` and `git for-each-ref` show no such ref. `git log --all --oneline | grep drill` shows the merge commit `0242462` has two parents (a real merge, not a squash), and the commit the plan cites, `08f3e1b`, is still reachable and an ancestor of `main`, with `board.py` byte-identical to `main`'s. Only the branch label was deleted; nothing was lost. I substituted `main` for `plan/drill-findings` and ran the check: `python3 "$F/board.py" ids .sdlc` printed nothing and `exit 0`. I could have run the check against `08f3e1b` directly instead of substituting `main`, since that commit is still reachable and would have proved the check against the literal ref the plan cites; I did not think to look for it before writing this file.
 
 ## Scratch clones
 
