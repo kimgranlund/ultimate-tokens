@@ -64,3 +64,9 @@ Question: U11 of records-followup hit three passes; re-diagnosis at `.sdlc/plans
 Options: Split (Recommended); Hold #720 until the check exists; Let me read the re-diagnosis first.
 Chosen: Split (Recommended).
 Effect: U11 lands the four clean repairs with #720, U5-8 is not adopted, one chore ticket for the class; the Conductor still asks before #720 lands.
+
+## R15 How U11's four remaining roadmap edits get made (#709)
+Question: U11 second re-diagnosis (`.sdlc/plans/records-followup-U11-rediagnosis.md` §6.3, main `ba7f398c`): how do the four remaining roadmap edits get made?
+Options: A, the Orchestrator's landing refresh (Recommended); B, a fourth builder pass; C, land as is.
+Chosen: A, the Orchestrator's landing refresh (Recommended).
+Effect: one roadmap-only commit with the four edits, no ticket minted until the squash, then a verifier-only pass 4 on R2 and R4 graded against live `gh` and `git` rather than against the file. Made as `f615f573` on `unit/rf-U11`. The Conductor still asks the owner before #720 lands.
