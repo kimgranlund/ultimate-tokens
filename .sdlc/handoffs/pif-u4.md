@@ -2,9 +2,10 @@
 kind: handoff
 unit: pif-u4-integration (plan preset-intent-fidelity, ticket #681, unit U4)
 written: 2026-09-19
+updated: 2026-09-20 (pass 2, against review pass 1 pif-u4-review-1.md)
 branch: unit/pif-u4-integration
 base: 834a4d8d (plan/preset-intent-fidelity)
-head: 7d659ae5
+head: 4125d965 (pass 2; pass 1's head was 7d659ae5)
 ---
 
 # U4: integration, blast-radius report, pending-U4 re-measurements
@@ -523,3 +524,62 @@ CLOSED.** The PR body line below is corrected to match.
 
 **Corrected pass 2 (F4): both addendum measurements are green.** The PR body reads **"Closes #681,
 closes #686, closes #668."**
+
+## Pass 2 final numbers
+
+**Head:** `4125d965` (`git -C .git-worktrees/pif-u4-integration log -1 --format='%H %s'`).
+
+**`npm test`:** exit 1, **2/48** test files red - `engine/tonal.mjs`, `engine/anchor.mjs`, both
+matching the owner questions this pass leaves open (Q1/prime-identity-control, Q3/notch allow-list,
+Q5/the two witness re-pins) and no others; every other file, including `engine/prime.mjs` and
+`engine/semantic.mjs`, is green. Wall time **391.70 s** (`time npm test`, user+sys ~400s/6:31.70
+total). `uptime` immediately before the run: **6.24 / 10.26 / 10.02** (1/5/15-minute). Per the
+addendum's standing rule this reads as ordinary contention on a shared host, not a regression - the
+run is well under the 692 s pass-1 figure taken at load 220/83/68. `git status --porcelain` empty
+after the run (once this pass's own regenerated `figma/plugin/ui.html`/`src/ui/describe-mcp-assets.js`
+were committed alongside the source fix, §Pass 2 commit).
+
+**The prime-gate mutation FAIL line** (proof obligation for F2 - scratch copy, `prime.mjs:156`
+`keyChroma = ... * pk.c * 0.95`, `node test/engine/prime.mjs`):
+
+```
+FAIL  h  - Neutral/cam16 (anchor stripped): prime rgb [114,124,150] vs deriveKeyColor rgb [113,124,151] (diff [1,0,1])
+```
+
+Exit 1, `FAIL: 1 gate failure(s)`. Gate (e)'s companion did not red on this particular mutation (a 5%
+chroma reduction stays within its hue tolerance); gate (h)'s byte-identity companion does, which is the
+proof obligation the brief specified.
+
+**Finding A's outcome:** fixed at the construction (§Pass 2, item 3 above), not stopped/costed. Ported
+U1's own pre-U6 F1 widening search into the CIE-L*/equal-compress domain, preserving equal-compress's
+own "up === down" invariant. Verified: `sixMono` 0/3,380 exceptions (unconditional again, no allow-
+list, as originally documented); `ORDER_ALLOW` 26 (was 23 pre-#681, 21 before this pass's fix, since
+the pre-fix construction couldn't widen the ladder for the 21 fully-collapsed sources at all);
+`DUPE_ALLOW` 3 (was 4 pre-#681, 26 before this pass's fix, for the same reason). Both re-frozen by name
+in `test/engine/anchor.mjs`, machine-checked against the file's own N1 sorted-array comparator, not
+just a count.
+
+**The re-derived blast-radius headline table** (export25, 343 presets matched by name between head and
+`bf2aaf6`'s own category files, 3,780 palette/mode pairs, n=94,500 stop-cells/mode, independent
+sRGB->CIE-L*/OKLCH conversion; reproduces the review's own independent figures to 4 significant
+figures):
+
+| mode | median \|dL*\| | p90 \|dL*\| | max \|dL*\| | at |
+|---|---|---|---|---|
+| perceptual | 2.1569 | 6.2239 | 19.3325 | film "TRON: Legacy" secondary, stop 500 |
+| even | 1.3098 | 5.8063 | 12.3579 | travel "27° N Khumbu teahouse" tertiary-muted, stop 500 |
+| peak | 4.3907 | 23.2925 | 50.7611 | nature "43° N Camargue salt marsh" tertiary-muted, stop 500 |
+
+| mode | max \|dChroma\| (OKLCH) | at |
+|---|---|---|
+| perceptual | 0.2909 | literature "A Game of Thrones" secondary-muted, stop 500 |
+| even | 0.2955 | travel "63° N Reynisfjara" primary-muted, stop 450 |
+| peak | 0.2765 | nature "0° Congo Basin" tertiary-muted, stop 450 |
+
+**Supporting gates, all re-run directly on this pass's head:** `node test/repo/citations.mjs` -
+`citations: parser self-test + STALE 0 across 10 discovered docs`, exit 0. `npm run gate:corpus-contrast`
+- PASS, worst cell 4.503:1, exit 0. `node test/repo/branding.mjs` - `branding: clean (469 files
+scanned)`, exit 0. `node test/engine/tonal.mjs` - exit 1, 3 gate failures (§7.1-7.3, unchanged, owner
+questions Q5 and the already-known F1 dip-gate finding). `node test/engine/anchor.mjs` - exit 1, 2 gate
+groups failing (`prime-identity-control`, `anchor-ramp notch allow-list`; down from 4 groups pass 1).
+`node test/engine/prime.mjs` - exit 0, all 20 gates pass.
