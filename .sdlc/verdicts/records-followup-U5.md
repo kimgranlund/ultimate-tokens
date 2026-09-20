@@ -2,68 +2,104 @@
 kind: verdict
 plan: records-followup
 unit: U5
-branch: unit/rf-U5
-sha: ee28fff6
+branch: plan/records-followup-roadmap
+sha: 3ee3c72b
 verdict: 🟡
 written: 2026-09-20
 seat: verifier
 ---
 
-# Verdict records-followup U5 · 🟡 11 🟢, 1 🟡, 0 🔴
+# Verdict records-followup U5 · 🟡 11 🟢, 1 🟡, 0 🔴, 1 ⚪
 
 | Field | Value |
 |---|---|
 | Unit | U5, F5, the roadmap regenerated from live facts |
-| Branch | `unit/rf-U5` @ ee28fff6, BASE 1f991877 |
-| Graded | 2026-09-20, verifier seat, grade l1 |
-| Scope | U5-1 to U5-7 and P1, P4, P5, P6, P7. P2 and P3 are pre-land only |
-| Evidence | three independent runs at this head: this seat's own and two dispatched `verifier-l1` workers in fresh context. They agree on every figure |
-| Blocks landing | no. The one 🟡 is the plan's own live-facts case and the Orchestrator refreshes that row at landing |
-| Not done | I did not commit. This record is untracked in the worktree, inside the wall, and does not move U5-6 or P5 |
+| Graded at | `plan/records-followup-roadmap` @ 3ee3c72b (pass 2). Pass 1 graded the unit head ee28fff6 |
+| BASE | 1f991877 |
+| Evidence | three independent runs at the unit head and this seat's own at the refreshed head, all in fresh context. They agree on every figure |
+| Blocks landing | no |
+| Not done | I did not commit. This record is untracked, inside the wall, and moves neither U5-6 nor P5 |
 
-An earlier head, 5c09855a, was graded and then superseded when the owner retired roadmap Q2 as moot. I
-refused to carry any row forward from it: U5-6, P4, P5 and P6 are whole-branch measures whose inputs a
-new commit moves, `npm test` reads `.sdlc/` through `repo/branding.mjs` which is in the `TESTS` list, and
-U5-2 to U5-4 read live facts that move on their own. Every row below was rerun here.
+## Pass 1, at the unit head ee28fff6
 
-## Criteria
+Graded 11 🟢, 1 🟡, 0 🔴. The 🟡 was U5-4: issue #718 opened 2026-09-20T21:45:38Z, nine minutes and
+twenty-two seconds after the roadmap commit 7dde8cb1 at 21:36:16Z, so the roadmap carried no row for it.
+The plan's live-facts rule makes an item created after the unit's commit time a 🟡 the Orchestrator
+refreshes at landing, not a 🔴. Everything else read its expected value with a control that bit.
 
-| # | Criterion | State | Evidence, measured at ee28fff6 | Negative control |
+I refused to carry any row forward from the earlier head 5c09855a, which the owner's retirement of
+roadmap Q2 superseded: U5-6, P4, P5 and P6 are whole-branch measures, `npm test` reads `.sdlc/` through
+`repo/branding.mjs` which is in the `TESTS` list, and U5-2 to U5-4 read live facts that move on their own.
+
+## Pass 2, at the refreshed head 3ee3c72b
+
+The refresh added ranked rows for three issues, not one, and U5-6 was reworded under owner ruling R5
+(plan revision 14) so that it counts roadmap-only commits rather than exactly one commit.
+
+I read the rewording before regrading. It resolves a genuine conflict: U5-4 wanted a row for #718 while
+U5-6 as written demanded exactly one roadmap commit, so at the branch head one of the two had to fail.
+The ruling records the options offered, including grading U5-6 at the unit head and taking no refresh.
+The substance is preserved, every commit touching the roadmap must touch only the roadmap, and the
+control still bites. I accept it.
+
+| # | Criterion | State | Evidence at 3ee3c72b | Negative control |
 |---|---|---|---|---|
-| U5-1 | one head sha, and it is on main | 🟢 | `1`, `anc 0`. The head line reads one sha, `5f2c3787` | the BASE roadmap's head line names two: `2`, then `fatal: --is-ancestor takes exactly two commits`, `anc 128` |
-| U5-2 | the worktree table is the live set | 🟢 | `diff 0`, seven names matching `git worktree list` exactly. Run four times across three seats over eight minutes, `diff 0` every time | live set against the BASE roadmap: four `>` and three `<`, `diff 1` |
-| U5-3 | the stated count is the row count | 🟢 | `7`, `7` | the BASE roadmap: an empty first line, because its count is a word, then `8` |
-| U5-4 | one ranked row per open issue, none for a closed one | 🟡 | `diff 0` at 14:39, and again on my own run. At 14:47 one `<` line, `718`, `diff 1`. See below | live issues against the BASE roadmap: nine `>` and six `<`, `diff 1` |
-| U5-5 | no unanswered prompt is left in the file | 🟢 | `0`, `0`. Exactly one numbered line remains, Q1 go-live, carrying its pointer; Q2 carries none | the BASE roadmap: `1`, `2` |
-| U5-6 | alone: one commit touches the roadmap and touches only it | 🟢 | `nonempty 0`; `1`; the commit's only file is `.sdlc/roadmap.md`; the branch's three paths are the roadmap, the handoff and the questions file; `branding: clean (508 files scanned)`, `exit 0`; `0` raw dashes | leg A, a range with no roadmap commit: `nonempty 1` while `wc -l` still prints `1`, which is what reds the row. Leg B, a clone commit staging the roadmap together with `.sdlc/debt.md`: the file list prints two paths |
-| U5-7 | debt ids cited as `debt.md` defines them after U7 | 🟢 | `0`, `1`. The counted line is the Process row citing `DP3` | the BASE roadmap: `1`, `0` |
-| P1 | `npm test` green, `TESTS` equal to the reported count, tree byte-stable | 🟢 | `✓ all 48 test files passed`; `48`; `0`. Wall 336 s with load going 54 to 238 on 10 cores, and 188 s at load 13 on the superseded head. Slow, not red; no triage needed | role table key renamed in a clone: `exit 1`, three `FAIL` lines, `✗ 1/48 test file(s) failed` |
-| P4 | branding gate clean | 🟢 | `branding: clean (508 files scanned)`, `exit 0` | records doc copied to `.sdlc/verdicts/x.md` in a clone: `FAIL: 3 branding violation(s)` |
-| P5 | scope wall | 🟢 | `0`; `1`; the third leg prints nothing, which is this branch's stated shape | a probe appended to `src/engine/motion.mjs` in a clone: first leg `1`. Two edited lines in `.claude/CLAUDE.md`: third leg `2	2` |
-| P6 | no em dash added in prose | 🟢 | `0` | the plan's own fixture: a prose dash `1`, the same dash inside a backtick span `0`, two prose dashes on one line `2`, all three lines `3`, and `4` without the strip |
-| P7 | the baseline's test-file figure equals `TESTS.length` | 🟢 | every counted line `ok`, one `note head:` line printed and not counted, `stale total: 0`, `exit 0` | the baseline figure moved 48 to 47 in a clone: `STALE tests: baseline 47, test/run.mjs TESTS 48`, `stale total: 1`, script exit `1`. I first misread this as exit `0` by capturing a pipeline's status instead of the script's, and remeasured |
+| U5-1 | one head sha, and it is on main | 🟢 | `1`, `anc 0` | the BASE roadmap names two shas: `2`, then the ancestor test errors, `anc 128` |
+| U5-2 | the worktree table is the live set | 🟢 | `diff 0`, seven names | live set against the BASE roadmap: four `>` and three `<`, `diff 1` |
+| U5-3 | the stated count is the row count | 🟢 | `7`, `7` | the BASE roadmap: an empty first line, then `8` |
+| U5-4 | one ranked row per open issue, none for a closed one | 🟢 | `diff 0`. The refresh cleared pass 1's 🟡 | live issues against the BASE roadmap: nine `>` and six `<`, `diff 1` |
+| U5-5 | no unanswered prompt is left in the file | 🟢 | `0`, `0` | the BASE roadmap: `1`, `2` |
+| U5-6 | alone: every roadmap-touching commit touches only the roadmap | 🟡 | met: under bash the middle leg prints `.sdlc/roadmap.md` and nothing else across both roadmap commits, 7dde8cb1 and 3ee3c72b; the branch's three paths are the roadmap, the handoff and the questions file; `branding: clean (507 files scanned)`, `exit 0`; `0` raw dashes. See the concern below | a clone commit staging `.sdlc/debt.md` with the roadmap prints `.sdlc/debt.md,.sdlc/roadmap.md`, so the reworded form still bites. With no roadmap commit, `nonempty 1` reds the row |
+| U5-7 | debt ids cited as `debt.md` defines them after U7 | 🟢 | `0`, `1` | the BASE roadmap: `1`, `0` |
+| P4 | branding gate clean | 🟢 | `branding: clean (507 files scanned)`, `exit 0` | records doc copied into `.sdlc/verdicts/` in a clone: `FAIL: 3 branding violation(s)` |
+| P5 | scope wall | 🟢 | `0`; `1`; the third leg prints nothing | a probe appended under `src/` in a clone: first leg `1` |
+| P6 | no em dash added in prose | 🟢 | `0` | the plan's own fixture: `1`, `0`, `2`, and `4` without the strip |
+| P7 | the baseline's test-file figure equals `TESTS.length` | 🟢 | every counted line `ok`, `stale total: 0`, `exit 0` | baseline figure moved 48 to 47 in a clone: `STALE tests: baseline 47, test/run.mjs TESTS 48`, script exit `1` |
+| P1 | `npm test` green, tree byte-stable | ⚪ | not required here. The plan's PR 2 landing rule lists the gates as U5-1 to U5-7, P4, P5, P6 and P7 and says `npm test` is not rerun for a one-file `.sdlc/` change unless the branding gate reds. Branding is clean, measured above, and the only coupling from a records edit to `npm test` is `repo/branding.mjs`. Measured green at the unit head ee28fff6: `all 48 test files passed`, `TESTS` `48`, tree `0`, 336 s at load 54 to 238 | the role table key renamed in a clone: `exit 1`, three `FAIL` lines, `1/48 test file(s) failed` |
 
-## The one 🟡
+Tree clean at this head: `git status --short` prints `0`.
 
-Issue #718 was opened while the unit sat in verification, and the roadmap has no row for it.
+## The 🟡 on U5-6
+
+The reworded command is shell-dependent, and in the seat's default shell the decisive leg silently
+prints nothing.
+
+| Shell | Middle leg output |
+|---|---|
+| bash | `.sdlc/roadmap.md` |
+| zsh, the seat default, `/bin/zsh` | nothing on stdout, and `fatal: ambiguous argument` on stderr |
+
+`for c in $C` word-splits in bash but not in zsh, so `$c` becomes both shas joined and git rejects them.
+Criterion row 2 carries the annotation `(bash, from the root checkout)` for exactly this reason; the
+rewording introduced the same dependence into row 6 without carrying the annotation across. A grader
+running row 6 in the default shell sees a blank where it expects a path, and a blank is not obviously a
+failure. The criterion is met, so this is a concern and not a red. Naming the gap only; the repair is
+the Orchestrator's.
+
+## The live-facts question the Orchestrator asked
+
+It asked whether an issue opened after the refresh instant is the live-facts rule again rather than a
+third refresh. I agree, and the rule's own words settle it. Verified independently:
 
 | Fact | Value |
 |---|---|
-| roadmap commit `7dde8cb1` | 2026-09-20T21:36:16Z |
-| issue #718 created | 2026-09-20T21:45:38Z |
-| gap | 9 minutes 22 seconds after the commit |
+| regeneration commit 7dde8cb1 | 2026-09-20T21:36:16Z |
+| #718 | created 21:45:38Z |
+| #719 | created 21:53:29Z |
+| #721 | created 21:57:04Z |
+| open issues created after the recorded instant 22:00Z | none |
 
-The plan's live-facts rule says a difference is 🔴 unless the differing item was created after the unit's
-commit time, and then it is a 🟡 note the Orchestrator refreshes at landing. This is that case exactly,
-measured, not assumed. Nothing the builder did is wrong: the roadmap was true when it was written.
+All three postdate the regeneration commit, so the refresh was admitted by the rule. The recorded
+instant is still accurate as I write.
 
 ## Notes, none of them a criterion
 
 | # | Note |
 |---|---|
-| N1 | §Texts asks that a revision row record the regeneration, its sha, and ticket #709. The row records the regeneration and `#709` but not `5f2c3787`. The sha is in the front matter's `head:` and in the body's revision sentence, and no numbered criterion covers the row, so this is a wording gap rather than a failed row |
-| N2 | two lines in the handoff's own "Notable facts" section do not reproduce now: it says PR #158 is `CONFLICTING`, which reads `UNKNOWN` on three `gh` polls and `null` from the REST API; and that `.git-worktrees/pif-u5-records` carries four uncommitted paths, which reads six. The handoff marks the section as not a criterion, but it lands in the PR |
-| N3 | `test/repo/branding.mjs` scans the gitignored `.sdlc/runtime/`: the count is 508 with the local review file present and 507 with it moved aside, and its `SKIP_DIRS` lists `.git`, `node_modules`, `dist`, `other`, `worktrees`, `.git-worktrees` and `.worktrees` but not that path. The gate therefore reads local ignored files CI never sees, and it is in the `TESTS` list. Pre-existing and not this unit's; it explains the 506, 507 and 508 figures in three records |
-| N4 | issue #718 says the P7 script's time check cannot fail. Measured, it can: a wrong first range prints `STALE time test` and exits `1`. The real gap is narrower. The script matches without the global flag, so it compares only the FIRST range in a gate cell and a second range in the same cell goes unchecked. Worth knowing before pre-land leans on P7's time rows |
+| N1 | pass 1's verdict record is lost. It was untracked in `.worktrees/rf-U5`, as the unit convention has it, and that worktree was reaped before the record was committed. This file restates it. A verdict is what "done" means here, so it should be committed before its worktree is removed |
+| N2 | §Texts asks that a revision row record the regeneration, its sha, and ticket #709. The row records the regeneration and `#709` but not `5f2c3787`, which appears in the front matter and the body's revision sentence instead. No numbered criterion covers the row |
+| N3 | two lines in the handoff's "Notable facts" section did not reproduce at pass 1: PR #158 read `UNKNOWN` on three polls and `null` from the REST API against the handoff's `CONFLICTING`, and `.git-worktrees/pif-u5-records` read six uncommitted paths against four. The handoff marks the section as not a criterion, but it lands in the PR |
+| N4 | `test/repo/branding.mjs` scans the gitignored `.sdlc/runtime/`, so its count reads 507 here, 507 in a clean clone and 508 in a worktree holding a local review file. Its `SKIP_DIRS` omits that path. The gate therefore reads local files CI never sees, and it is in the `TESTS` list. Pre-existing, and it explains the 506, 507 and 508 figures across three records |
+| N5 | issue #718 says the P7 script's time check cannot fail. Measured, it can: a wrong first range prints `STALE time test` and exits `1`. The real gap is narrower, that the match is not global so only the first range in a gate cell is compared. The roadmap's own row 11 states it in the narrower form, which is the accurate one |
 
 Nothing here is a fix. The next pass is the Orchestrator's to own.
