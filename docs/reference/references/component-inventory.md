@@ -25,9 +25,9 @@
 ## The architecture finding (read first)
 
 There is **no component library**. The entire UI is one autonomous web component,
-`ultimate-tokens` (`customElements.define` at `app.js:2576`), whose class is assembled from
+`ultimate-tokens` (`customElements.define` at `app.js:2587`), whose class is assembled from
 `src/ui/app.js` (~2,580 lines: state, render dispatch, the frame) plus the section and overlay
-mixins in `src/ui/sections/` and `src/ui/overlays/` (~5,600 lines, `mixinInto` at `app.js:2570`).
+mixins in `src/ui/sections/` and `src/ui/overlays/` (~5,600 lines, `mixinInto` at `app.js:2581`).
 It builds every control inline with a single hyperscript helper `h(tag, attrs, ...kids)`
 (`app-helpers.mjs:318`), across ~39 `render*()` methods. Styling is ~705 class-led selector lines in
 `src/ui/styles.css` (~1,600 lines; count: `grep -cE '^\s*\.' src/ui/styles.css`, 544 unique class names). Consequences that recur in every card below:
@@ -41,7 +41,7 @@ It builds every control inline with a single hyperscript helper `h(tag, attrs, .
   type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets* — none are
   form-associated custom elements. The native ones inherit native a11y for free; the custom ones
   (`.toggle`, `segmented()`) are built on real `<button>`s with ARIA roles (`switchControl`, `app-helpers.mjs:370`;
-  `segmented`, `app.js:1587`), so they keep focus and keyboard.
+  `segmented`, `app.js:1594`), so they keep focus and keyboard.
 - **Forced-colors support is one pass**, the `@media (forced-colors: active)` block at
   `styles.css:1582`; custom-painted controls outside it still flatten in Windows High Contrast.
 - **Geometry is ad-hoc, off any ramp.** Buttons are `padding: 4px 9px` (`styles.css:164`), the range
@@ -117,7 +117,7 @@ incrementally.
 - **States** default · `hover` (`button:hover` `styles.css:170`) · `focus-visible` (`styles.css:179`) ·
   `disabled` (`styles.css:188`) · toggle-pressed (`.on` + `aria-pressed`, 7 sites in `src/ui/`: the `btn()` and
   `chip()` primitives plus five inline buttons:
-  `aria-pressed` at `app-helpers.mjs:421/548`, `app.js:1466/1603`, `sections/color.js:527/1021/1231`).
+  `aria-pressed` at `app-helpers.mjs:421/548`, `app.js:1466/1610`, `sections/color.js:527/1021/1231`).
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:854`). ✗ no `forced_colors`.
 - **Geometry** `padding:4px 9px; border-radius:5px; gap:6px` — ad-hoc, not a ramp.
@@ -133,9 +133,9 @@ incrementally.
 ### 2 · Toggle / switch  (was the worst card; now `switchControl()`)
 
 - **Surface** S1. **Sites** 2: palette Enabled/Disabled (`switchControl`, `sections/color.js:1771`) and
-  Chroma basis peak/gamut (`switchControl`, `sections/color.js:2087`). Hue space OKLCH/CAM16 is **not** a toggle any more:
-  it is a `segmented()` `role=group` (`sections/color.js:2065`, card 3), as is its On-colors sibling
-  (`sections/color.js:2076`).
+  Chroma basis peak/gamut (`switchControl`, `sections/color.js:2194`). Hue space OKLCH/CAM16 is **not** a toggle any more:
+  it is a `segmented()` `role=group` (`sections/color.js:2163`, card 3), as is its On-colors sibling
+  (`sections/color.js:2182`).
 - **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:955-971`; the `.track`
   is 34×19 with a 15px ::after thumb that translates on `.on`.
 - **API** `switchControl({ on, onToggle, label, ariaLabel })` (`app-helpers.mjs:370`), a
@@ -161,7 +161,7 @@ incrementally.
 - **Surface** S1. **Sites** 15 static `segmented()` calls: section switcher `app.js:1416`; inspector
   tabs `app.js:1937`, `sections/typography.js:613`, `sections/geometry.js:716`; new-palette mode
   `sections/color.js:537`; canvas view `sections/color.js:814`; canvas stops `sections/color.js:829`;
-  hue space `sections/color.js:2065`; on-colors `sections/color.js:2076`; breakpoint mode
+  hue space `sections/color.js:2163`; on-colors `sections/color.js:2182`; breakpoint mode
   `sections/typography.js:177`, `sections/geometry.js:230`; specimen mode `sections/typography.js:308`,
   `sections/geometry.js:381`; Figma files `overlays/drawer.js:214`; and one settings-row call
   `overlays/settings.js:30` inside the settingRow helper, one live instance per settings row, called
@@ -220,12 +220,12 @@ incrementally.
 
 ### 5 · Select (native)
 
-- **Surface** S1. **Sites** 3 — Distribution (`field()`, `sections/color.js:1975`), Curve (`sections/color.js:2020`),
+- **Surface** S1. **Sites** 3 — Distribution (`field()`, `sections/color.js:2062`), Curve (`sections/color.js:2106`),
   `.map-raw-select` raw token (`sections/color.js:1354`, with `.ov` override state).
 - **Anatomy** native `<select>` + `<option>[]`; `.map-raw-select` is a compact mono variant
   (`styles.css:723-729`).
 - **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1354-1356`);
-  ✓ Distribution/Curve are built through `field()` (`sections/color.js:1975/2020`), which stamps an `id`
+  ✓ Distribution/Curve are built through `field()` (`sections/color.js:2062/2106`), which stamps an `id`
   on the `<select>`, associates the `<label for>` with it and adds a fallback `aria-label`
   (`app-helpers.mjs:563-571`) → the visible label is the accessible name.
 - **Flag** none; the two naming paths (`field()` vs inline `aria-label`) both yield a name.
@@ -270,7 +270,7 @@ incrementally.
 
 ### 8 · Checkbox
 
-- **Surface** S1. **Sites** 1 — "ends bend same way" (`sections/color.js:1830-1832`, native `type=checkbox`).
+- **Surface** S1. **Sites** 1 — "ends bend same way" (`sections/color.js:1867-1875`, native `type=checkbox`).
 - **Anatomy** `.mini-check` `<label>` **wrapping** the native input + text (`styles.css:817-818`) →
   label *is* associated (the correct pattern, unlike the sliders/Name input).
 - **a11y** ✓ associated label, ✓ `accent-color: var(--accent)`, native keyboard (Space).
