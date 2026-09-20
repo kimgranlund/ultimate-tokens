@@ -13,7 +13,7 @@ const FAIL = (m) => fails.push(m);
 const byCategory = {};
 for (const cat of CATS) {
   const { PRESETS } = await import(`../../src/ui/categories/${cat}.js`);
-  if (!Array.isArray(PRESETS) || !PRESETS.length) { FAIL(`category "${cat}" exposed no PRESETS — gen:categories did not run, or the mirror moved`); continue; }
+  if (!Array.isArray(PRESETS) || !PRESETS.length) { FAIL(`category "${cat}" exposed no PRESETS: gen:categories did not run, or the mirror moved`); continue; }
   byCategory[cat] = PRESETS;
 }
 
@@ -33,7 +33,9 @@ const forwardBy = byCategory;
 const reversedBy = Object.fromEntries(CATS.map((c) => [c, (byCategory[c] || []).slice().reverse()]));
 const shuffledBy = Object.fromEntries(CATS.map((c) => [c, lcgShuffle(byCategory[c] || [], 0x5eed0000 + c.length)]));
 
-const sampleKey = (docs) => docs.map((d) => `${d.category}/${d.name}`).join("|");
+// includes each document's own content (not just category/name) so a content-order flip between two
+// documents sharing a category and name is visible here too, not just to a human reading a diff.
+const sampleKey = (docs) => docs.map((d) => `${d.category}/${d.name}/${JSON.stringify(d.palettes)}`).join("|");
 const paletteCount = (docs) => docs.reduce((a, d) => a + (d.palettes ? d.palettes.length : 0), 0);
 
 if (!fails.length) {
@@ -49,18 +51,18 @@ if (!fails.length) {
       const vs = pickVolume(cat, shuffledBy[cat]);
       return vf !== vr || vf !== vs;
     });
-    FAIL(`the pick moved with load order in categor${moved.length === 1 ? "y" : "ies"} ${moved.join(", ") || "(none named — the document set itself differs)"}`);
+    FAIL(`the pick moved with load order in categor${moved.length === 1 ? "y" : "ies"} ${moved.join(", ") || "(none named: the document set itself differs)"}`);
   } else {
     console.log(`  (forward = reversed = shuffled: ${forward.length} documents, ${paletteCount(forward)} palettes)`);
   }
 
   const seed1 = sampleCorpus(forwardBy, 1);
-  if (sampleKey(seed1) === kf) FAIL(`seed 1 picked the identical sample as seed ${SAMPLE_SEED} — the seed is not wired into the pick`);
+  if (sampleKey(seed1) === kf) FAIL(`seed 1 picked the identical sample as seed ${SAMPLE_SEED}: the seed is not wired into the pick`);
   else console.log(`  (seed ${SAMPLE_SEED} != seed 1: ${seed1.length} documents)`);
 
   const brandsDoc = forward.filter((d) => d.category === "brands");
   const brandsTotal = (byCategory.brands || []).length;
-  if (brandsDoc.length !== brandsTotal) FAIL(`brands sampled ${brandsDoc.length} of ${brandsTotal} — the identity tier must ship in full`);
+  if (brandsDoc.length !== brandsTotal) FAIL(`brands sampled ${brandsDoc.length} of ${brandsTotal}: the identity tier must ship in full`);
 
   const kit = defaultDocument();
   if (!kit || !Array.isArray(kit.palettes) || kit.palettes.length !== 16)

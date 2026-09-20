@@ -29,11 +29,25 @@ export function pickVolume(cat, presets, seed = SAMPLE_SEED) {
   return vols[fnv1a(`${cat}#${seed}`) % vols.length];
 }
 
+const docKey = (doc) => `${doc.category}/${doc.name}`;
+
+// contentKey(doc) -> a canonical string built from the document's OWN fields, used only to break a
+// sort tie between two documents that already share both `category` and `name`. Sort ties are
+// otherwise resolved by Array#sort's stability, which is INPUT ORDER: the exact thing #686 exists to
+// remove. Comparing by content instead means the order stays the same no matter which position
+// either document arrived at, so it is a real tiebreak rather than a second name for "whatever order
+// the array happened to be in."
+const contentKey = (doc) => JSON.stringify({ vol: doc.vol, curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, palettes: doc.palettes });
+
 // sampleCorpus(byCategory, seed = SAMPLE_SEED) -> curated documents only, each tagged with its own
-// `category`, sorted by category then by document name, so the RESULT is a pure function of the
-// set of documents each category exposes and the seed, never of the order any mirror loaded in.
-// `brands` (the identity tier) always ships in full; every other category contributes only the one
-// volume `pickVolume` names for it.
+// `category`, sorted by category then by document name then by content, so the RESULT is a pure
+// function of the set of documents each category exposes and the seed, never of the order any
+// mirror loaded in and never of Array#sort's own stability. `brands` (the identity tier) always
+// ships in full; every other category contributes only the one volume `pickVolume` names for it.
+//
+// Throws if a category ever holds two documents with the same name: `docKey` is how this module and
+// its callers tell documents apart, and a collision there is a corpus defect, not something a sort
+// order can paper over.
 export function sampleCorpus(byCategory, seed = SAMPLE_SEED) {
   const docs = [];
   for (const cat of Object.keys(byCategory).sort()) {
@@ -46,9 +60,17 @@ export function sampleCorpus(byCategory, seed = SAMPLE_SEED) {
     if (vol === undefined) continue;
     for (const p of presets) if (p.vol === vol) docs.push({ ...p, category: cat });
   }
+  const seen = new Set();
+  for (const d of docs) {
+    const k = docKey(d);
+    if (seen.has(k)) throw new Error(`corpus-sample: category "${d.category}" holds two documents named "${d.name}", so docKey is not unique`);
+    seen.add(k);
+  }
   docs.sort((a, b) => {
     if (a.category !== b.category) return a.category < b.category ? -1 : 1;
-    return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+    if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+    const ka = contentKey(a), kb = contentKey(b);
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
   });
   return docs;
 }
