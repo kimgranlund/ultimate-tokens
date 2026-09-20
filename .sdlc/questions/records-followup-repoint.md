@@ -3,7 +3,7 @@
 date: 2026-09-20
 from: orchestrator (Lane B), raised by the stood-down close-709-builder-l5
 about: the deferred baseline re-point to main 850f7fb1 (owner ruling 6 on `plan/gate-split` approval Q6)
-status: open
+status: answered
 
 ## Context
 
@@ -24,4 +24,6 @@ Either way the re-point stays a separate dispatch under a quiet host (load under
 
 ## Answer
 
-(pending)
+Asked by the Conductor through AskUserQuestion on 2026-09-20. Options offered: "Reap all, file the leak as a bug (Recommended)" · "Keep them for now". Chosen: "Reap all, file the leak as a bug (Recommended)".
+
+Effect: reap every orphan on port 9333 before the re-point's smoke triple; record the new smoke seconds as not comparable with the `20298cc` set, the reap being the reason, beside the smoke rows. The leak is ticket #717 (`smoke.mjs` leaves its Chrome behind and pins one port); the re-point does not fix it. The re-point still waits for a load window under 10.
