@@ -18,3 +18,11 @@ Mobilization waits on #681 landing (the plan's start gate G0 decides by command)
 | 5 | Start #713's first unit now instead of waiting for #681 to land? U1 only builds the shared sorted sampler and the gate scripts and moves curated-contrast.mjs onto it; it does not touch the heavy test files #681 is changing. | Yes, U1 only, now (Recommended) · No, keep the wait | "Yes, U1 only, now (Recommended)" |
 
 Effect: the start gate G0 is waived for U1 only. U2 onward still wait on #681 landing.
+
+## Follow-up, 2026-09-20 (sweep of open questions)
+
+| # | Question | Options | Chosen |
+|---|---|---|---|
+| 6 | The baseline `ref`: after any code PR squashes, .sdlc/baseline.md's numbers are unproven at the new main until someone re-points `ref`. Who owns the re-point? | The plan-closing commit on main re-points it (Recommended) · Keep today's pattern: the next records plan does it · Decide after #681 lands | "The plan-closing commit on main re-points it (Recommended)" |
+
+Effect: U6b gains criterion U6-9, the adapter §5 step. Until #713 lands, close-outs follow the ruling by hand.
