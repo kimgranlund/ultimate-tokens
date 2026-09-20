@@ -96,10 +96,12 @@ The five K controls in `.sdlc/architecture.md` §6 that carry an exceptions cell
 
 | id | item | where | source | size | grade | why that grade |
 |---|---|---|---|---|---|---|
-| P1 | squash is practice, not policy: 48/50 subjects carry `(#NNN)`, 2 direct commits on `sdlc/adopt`, all three merge styles allowed | `git log -50 --format=%s`; `gh api` merge settings | verdicts/survey.md C6 🟡 | S | human | the same admin switch as C4; enforce squash and delete-branch-on-merge together. Squash is policy since U3; delete-branch-on-merge stays open with C4 |
-| P2 | 15 local branches whose remote is gone, 41 remote branches, and ops plan item 1 (delete 58 merged remote branches) never finished | `git branch -vv` (15 `: gone]`); `git branch -r` (41); `.claude/ops/plan.md` Queue 1 | survey Branches; ops plan | S | L1 (local) + human (remote) | local prune is reversible; remote deletes are outward-facing and stay a human sweep. Closed by U3 (local half; the remote sweep stays human) in plan adopt-hygiene (#643) |
-| P3 | `npm test` runs every `TESTS` entry serially as child processes, about a minute per run | `test/run.mjs:23-25`; count and timings in `.sdlc/baseline.md` Pass | baseline.md Pass | M | L3 | parallel children must respect the regenerated-asset precondition (`run.mjs:5-6`); not needed for adoption |
-| P4 | no rule names who closes a plan (G5), which is why R4 exists | `docs/plan/*.md`; decisions.md G5 | Human answers row 4 | S | L1 | lands in A5's `adapter.md` (the Orchestrator closes); this row is done when that rule is written. Closed by A5: adapter.md §5 names the Orchestrator |
+| DP1 | squash is practice, not policy: 48/50 subjects carry `(#NNN)`, 2 direct commits on `sdlc/adopt`, all three merge styles allowed | `git log -50 --format=%s`; `gh api` merge settings | verdicts/survey.md C6 🟡 | S | human | the same admin switch as C4; enforce squash and delete-branch-on-merge together. Squash is policy since U3; delete-branch-on-merge stays open with C4 |
+| DP2 | 15 local branches whose remote is gone, 41 remote branches, and ops plan item 1 (delete 58 merged remote branches) never finished | `git branch -vv` (15 `: gone]`); `git branch -r` (41); `.claude/ops/plan.md` Queue 1 | survey Branches; ops plan | S | L1 (local) + human (remote) | local prune is reversible; remote deletes are outward-facing and stay a human sweep. Closed by U3 (local half; the remote sweep stays human) in plan adopt-hygiene (#643) |
+| DP3 | `npm test` runs every `TESTS` entry serially as child processes, about a minute per run | `test/run.mjs:23-25`; count and timings in `.sdlc/baseline.md` Pass | baseline.md Pass | M | L3 | parallel children must respect the regenerated-asset precondition (`run.mjs:5-6`); not needed for adoption |
+| DP4 | no rule names who closes a plan (G5), which is why R4 exists | `docs/plan/*.md`; decisions.md G5 | Human answers row 4 | S | L1 | lands in A5's `adapter.md` (the Orchestrator closes); this row is done when that rule is written. Closed by A5: adapter.md §5 names the Orchestrator |
+
+Renamed 2026-09-19 (plan records-followup U7, #709): these rows were P1 to P4 until this date, same numbers, same rows. `.sdlc/architecture.md` §3 also defines P1 to P7, so P1 to P4 named two things in two live records. A record written before this date that cites debt P<n> (the archived plans, `.sdlc/tickets/T-0001.md`, the adopt-hygiene verdicts) means DP<n>; those files were not rewritten. The `P3` on the R12 and G2 rows above is criterion P3 of the archived adopt-hygiene plan, not a debt id.
 
 Row count: Hot untested 9 · Records drift 12 · Config smells 7 · Generated artifacts 4 · Dead agent artifacts 4 · Architecture exceptions 5 · Process 4 · total 45.
 
@@ -122,6 +124,6 @@ S items a `builder-l1` can do in one unit without touching engine code, in order
 13. K11 ratify the `html:` SVG exception in CLAUDE.md Conventions
 14. K18 reword the §6.1 K18 control to require the `persist.mjs` snapshot case
 15. G4 add `gen-font-test.mjs` to the README scripts line or delete it
-16. P2 prune the 15 gone local branches (`git fetch -p`, `git branch -d`)
+16. DP2 prune the 15 gone local branches (`git fetch -p`, `git branch -d`)
 
 Excluded from A7 on purpose: R2 and R9 (engine files, L2), G1, K17 (test gates, L2), K14 (L3), every H row, C2, C3, R5, R10 (M or L).

@@ -49,7 +49,7 @@ Rules the gates imply:
 | Commit trailers | `Co-Authored-By: <the running model's attribution line>` on every commit (see conflict X8 for which string). A commit that stages `.sdlc/board.md` also carries `Seat: orchestrator` (section 3) | harness attribution reminder; sdlc `commit-msg` hook |
 | After merge | `git switch main && git fetch origin && git merge --ff-only origin/main`; delete the plan branch locally with `-D` (a squash leaves it "unmerged") and remotely with `gh api -X DELETE repos/:owner/:repo/git/refs/heads/<branch>` (`--delete-branch` fails when `main` is checked out in the primary worktree) | `shipping-changes` step 8, §gh quirks |
 
-**Amendment (2026-09-17).** U3 set the repository to squash-merge only (`allow_merge_commit` and `allow_rebase_merge` false, ruling P1), so the Merge row's "not enforced" no longer holds; `main` still has no branch protection.
+**Amendment (2026-09-17).** U3 set the repository to squash-merge only (`allow_merge_commit` and `allow_rebase_merge` false, ruling DP1, debt P1 until records-followup U7), so the Merge row's "not enforced" no longer holds; `main` still has no branch protection.
 
 ### 2.1 Landing: `shipping-changes` and `adapter.py land` composed
 
@@ -88,7 +88,7 @@ Tokens stay in `gh auth`; a `token` key is refused by the adapter.
 | `.worktrees/` | `worktrees.py add` creates `.worktrees/<unit>` inside the repo root; not in `.gitignore` (only `.git-worktrees/` is) and not in the branding gate's skip list (only `worktrees` and `.git-worktrees`) | A unit worktree is a full nested copy of the repo | Until A7 adds `.worktrees/` to `.gitignore` and to `SKIP_DIRS` in `test/repo/branding.mjs`, an `npm test` in the root checkout walks every nested worktree, and `git status` in the root shows `.worktrees/` as untracked. Either fix lands in A7; a seat that sees `?? .worktrees/` in `git status` leaves it unstaged |
 | `.claude/ops/` | `.gitignore` line 14 ignores the dir; 7 files under it are tracked (C8 🟡) | Ops-family (harness plugin) coordination state from July, plus live lock files | Conflict X6 |
 
-**Amendment (2026-09-17).** U2 added `.worktrees/` to `.gitignore` and to `SKIP_DIRS` in `test/repo/branding.mjs`, so a root-checkout `npm test` no longer walks nested unit worktrees; U3 untracked the seven `.claude/ops/` files (X6) and set the GitHub repo to squash-merge only (P1).
+**Amendment (2026-09-17).** U2 added `.worktrees/` to `.gitignore` and to `SKIP_DIRS` in `test/repo/branding.mjs`, so a root-checkout `npm test` no longer walks nested unit worktrees; U3 untracked the seven `.claude/ops/` files (X6) and set the GitHub repo to squash-merge only (DP1, debt P1 until records-followup U7).
 
 **Amendment (2026-09-17, second).** U2 also added `.sdlc/runtime/`, `.sdlc/.fake-tickets/`, and `.sdlc/.fake-releases/` to `.gitignore`, closing the `.sdlc/runtime/` row above.
 
