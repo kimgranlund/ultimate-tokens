@@ -210,7 +210,8 @@ the refresh, so any threshold in that gap works and none had to be invented to f
 immediately followed by a `cited:` marker span, which is how `.sdlc/adapter.md` §3 and all four
 existing instances in `.sdlc/verdicts/` write a cited quote, so a record that quotes a retired claim
 as the subject of a finding is not read as making it. The strip is keyed on the adjacent marker and
-not on marker text inside the span, which is strictly narrower than the form U11's first pass used.
+not on marker text inside the span. That is a different exempt set from the one U11's first pass
+used, not a subset of it: the two exempt disjoint forms.
 
 ### What it printed at the fix head
 
@@ -270,17 +271,28 @@ that move. Both strips were run against the fixed file in a throwaway clone. The
 
 | Case | Old strip | New strip |
 |---|---|---|
-| U11's revision row in the precedent form (a genuine citation) | flagged: `line 116 commit 1fe53f5a at 2026-09-20T15:16:57-07:00 added 7 deleted 6 hunks 6 filelines 130 reach 4% instant 2026-09-20T22:00Z` | silent, correctly |
+| U11's revision row in the precedent form (a genuine citation) | flagged: `line 116 commit 1fe53f5a at 2026-09-20T15:16:57-07:00 added 7 deleted 6 hunks 6 filelines 130 reach 4% instant 2026-09-20T22:00Z` | exempt, correctly |
 | a planted claim in a plain span, no marker | flagged | flagged: `line 131 commit none claim "Every cell below was \`Read at one instan"` |
-| a planted claim with the marker INSIDE the span, the review's probe 3 | silent, the hole finding 1 measured | flagged: `line 131 commit none claim "This file was \`cited: Read at one instan"` |
-| a planted claim with the marker in an adjacent span | silent | silent, correctly |
+| a planted claim with the marker INSIDE the span, the review's probe 3 | exempt, the hole finding 1 measured | flagged: `line 131 commit none claim "This file was \`cited: Read at one instan"` |
+| a planted claim with the marker in an adjacent span | flagged | exempt, correctly |
 
-The new strip is strictly narrower than the old one. It keys on an adjacent marker span, which a
-record cannot produce by accident and which matches the ratified form, and it closes the inline-marker
-hole the review found rather than widening the exemption. It does not close finding 1b itself: a
-future false claim written in the full precedent form is still hidden, and that is the Orchestrator's
-to carry, since it is a question about whether a cited-quote exemption should exist at all and not
-about this unit's line.
+The strip was re-aimed, not narrowed. Rows 1 and 3 move in opposite directions, so the two exempt
+sets are disjoint and neither contains the other: the old strip exempts a marker written inside the
+quote span and flags the precedent form, the new strip does the reverse. An earlier draft of this
+handoff called the change strictly narrower, which the reviewer re-ran and measured false; corrected
+here. The commit message of `1405ee77` carries that retired phrasing and cannot be corrected without
+rewriting a sha the review already graded, so the correction lives here and in `b0003592`'s message
+instead; a reader of that commit message should read this section beside it. Re-measured on the fixed file, the needle survey prints three matching lines under the old
+strip (`12`, `114`, `116`) and two under the new (`12`, `114`), and with the probe-3 plant added the
+old still prints three while the new prints three of which one is the plant at `131`.
+
+The trade is the right one even though it is not a reduction. The precedent form is what
+`.sdlc/adapter.md` §3 ratifies and what all four existing instances in `.sdlc/verdicts/` use, so it is
+the form a real citation will take; the inline form is not written anywhere in this repo. Aiming the
+exemption at the ratified shape keeps genuine citations exempt and stops exempting a shape no record
+uses. It does not close finding 1b itself: a false claim written in the full precedent form is still
+exempt, and that is the Orchestrator's to carry, since it is a question about whether a cited-quote
+exemption should exist at all and not about this unit's line.
 
 Two of the four rows print `commit none`, which review finding 6 records as having no stated verdict
 in the Expected column. That clause is the Orchestrator's to add; U11 did not invent one.
@@ -356,7 +368,7 @@ own file and is gitignored, so it enters no commit and no diff leg.
 | Item | Ask |
 |---|---|
 | U5-8 | fold the criterion above into the plan as written, or renumber it; both legs, their expected output, six controls, the strip probe table and the run at the graded head are all here. Its Expected should also state that the plan branches must be fetched, or leg A degrades silently to `noplan` and loses half of R1 |
-| review 1b | leg B's strip is narrower than it was and closes the inline-marker hole, but a false claim written in the full precedent form is still exempt. Whether a cited-quote exemption should exist in a machine check at all is yours |
+| review 1b | leg B's strip was re-aimed, not narrowed: it closes the inline-marker hole and opens a precedent-form one the old strip lacked, which is the right trade because the precedent form is the ratified one, but a false claim written in that form is still exempt. Whether a cited-quote exemption should exist in a machine check at all is yours |
 | review 2 | leg A's arithmetic has no reason to stop at `## Revisions`; only leg B's needles do. U11's own two rows live in the unread region, which is the sharpest argument for closing it |
 | review 3 and 6 | the needle list and the `commit none` verdict both need widening before U5-8 is folded in; the needle-list limit is stated in this handoff already |
 | review 4 and 5 | recorded as known limits: neither leg asserts, and `reach` measures edit volume rather than reading, so a whole-file write done as a create or a pure append scores `0%` |
