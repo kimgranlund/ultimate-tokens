@@ -102,9 +102,13 @@ moved from 48 to 49 test files: `#681` registers `test/engine/anchor.mjs` in `te
 `.git-worktrees/pif-u5-records` (exit 0, 518.66 s wall, load 6.56 / 14.82 / 20.43 at start,
 9.85 / 10.04 / 15.18 at end, `git status --short` carrying only this unit's own record edits
 afterwards). `npm run build`'s ui.html figure moved from 3780.5 KB to 4111.1 KB: the bundle grew when
-`origin/main` was merged into this plan, and the figure is confirmed twice over, by the verifier's own
-`npm run build` at the U4 head (`wrote figma/plugin/ui.html 4111.1 KB`) and by measuring the committed
-`figma/plugin/ui.html` in this tree the same way `baseline-agrees-check.sh` measures it. The three
+`origin/main` was merged into this plan. The span is this unit's own program output, not a copy from
+another record: `npm test`'s final step is `gen:figma-ui`, the same generator `npm run build` ends
+with, and that step printed `wrote figma/plugin/ui.html 4111.1 KB` in the run above, with no leading
+whitespace. Measuring the committed `figma/plugin/ui.html` in this tree the way
+`baseline-agrees-check.sh` measures it gives the same 4111.1, and the verifier's own `npm run build`
+at the U4 head reported the same figure, so the number has three independent confirmations while the
+quote itself has exactly one source. The three
 `seconds` columns are NOT re-measured and still belong to the `20298cc` runs; the script's own
 `note head:` line is the standing statement that every timing here is unproven at a later head.
 

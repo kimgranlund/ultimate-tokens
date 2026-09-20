@@ -1139,7 +1139,12 @@ unit parent `3921f140` and at the main parent `3ce50daa` with the repo's OWN par
 (`scripts/audit-citations.mjs`'s `parseCitations`, so slash lists and comma lists expand exactly as
 the gate expands them), and keep every citation whose value at head appears in neither parent's set
 for that file. Old values are read from the parent line the head line aligns to, by difflib opcode
-alignment, and the `anchor at head` column is a direct read of the cited line in this tree.
+alignment, and the `anchor at head` column is a direct read of the cited line in this tree. That
+column obeys `.sdlc/adapter.md` §3's Verbatim-quote rule: each span is the whole source line copied
+byte for byte from the file, leading indentation kept, nothing cut. Two rows (27 and 39) quote a
+line containing a `|`, which would end the table cell, so those two escape it and say so next to the
+span; one row (46) quotes a line containing a backtick and uses a double-backtick span for it, which
+changes the fence, not the bytes.
 
 Per document: `04-context-and-messaging.md` 16, `app-shell.md` 12, `02-sections-and-resolvers.md` 5,
 `component-inventory.md` 4, `03-stores-and-persistence.md` 4, `SKILL.md` 2,
@@ -1157,52 +1162,52 @@ which is the verifier's own figure. Every row below reproduces at head either wa
 
 | # | citing doc:line | old at unit parent 3921f140 | old at main parent 3ce50daa | new at head | anchor at head |
 |---|---|---|---|---|---|
-| 1 | `docs/lld/app-shell.md:130` | `:1640` | `:1630` | `:1641` | `src/ui/app.js:1641` = `renderCenter(view) {` |
-| 2 | `docs/lld/app-shell.md:133` | `:1885` | `:1875` | `:1886` | `src/ui/app.js:1886` = `renderCanvasFooter() {` |
-| 3 | `docs/lld/app-shell.md:133` | `:1890` | `:1880` | `:1891` | `src/ui/app.js:1891` = `paintCanvasFooter() {` |
-| 4 | `docs/lld/app-shell.md:134` | `:1926` | `:1916` | `:1927` | `src/ui/app.js:1927` = `renderRightPane(view) {` |
-| 5 | `docs/lld/app-shell.md:135` | `:2161` | `:2151` | `:2162` | `src/ui/app.js:2162` = `renderAppFooter() {` |
-| 6 | `docs/lld/app-shell.md:135` | `:2181` | `:2171` | `:2182` | `src/ui/app.js:2182` = `paintAppFooter(view) {` |
-| 7 | `docs/lld/app-shell.md:229` | `app.js:1890` | `app.js:1880` | `app.js:1891` | `src/ui/app.js:1891` = `paintCanvasFooter() {` |
-| 8 | `docs/lld/app-shell.md:230` | `app.js:1885` | `app.js:1875` | `app.js:1886` | `src/ui/app.js:1886` = `renderCanvasFooter() {` |
-| 9 | `docs/lld/app-shell.md:230` | `app.js:1695` | `app.js:1685` | `app.js:1696` | `src/ui/app.js:1696` = `applyTransform() {` |
-| 10 | `docs/lld/app-shell.md:232` | `app.js:1703` | `app.js:1693` | `app.js:1704` | `src/ui/app.js:1704` = `this.paintCanvasFooter();` |
-| 11 | `docs/lld/app-shell.md:232` | `app.js:1836` | `app.js:1826` | `app.js:1837` | `src/ui/app.js:1837` = `this.paintCanvasFooter();` |
-| 12 | `docs/lld/app-shell.md:271` | `app.js:1931` | `app.js:1921` | `app.js:1932` | `src/ui/app.js:1932` = `const hasStory = !!view.story;` |
-| 13 | `docs/reference/SKILL.md:95` | `test/engine/tonal.mjs:275-293` | `test/engine/tonal.mjs:246-264` | `test/engine/tonal.mjs:283-301` | `test/engine/tonal.mjs:283` = `// ── hpg-tonal-okhsl-modes: the perceptual & peak distributions (OKHSL ` |
-| 14 | `docs/reference/SKILL.md:95` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:687-708` | `test/engine/tonal.mjs:687` = `// ── hpg-tonal-lift-monotonic (#648): `lift` must not flatten or revers` |
+| 1 | `docs/lld/app-shell.md:130` | `:1640` | `:1630` | `:1641` | `src/ui/app.js:1641` = `  renderCenter(view) {` |
+| 2 | `docs/lld/app-shell.md:133` | `:1885` | `:1875` | `:1886` | `src/ui/app.js:1886` = `  renderCanvasFooter() {` |
+| 3 | `docs/lld/app-shell.md:133` | `:1890` | `:1880` | `:1891` | `src/ui/app.js:1891` = `  paintCanvasFooter() {` |
+| 4 | `docs/lld/app-shell.md:134` | `:1926` | `:1916` | `:1927` | `src/ui/app.js:1927` = `  renderRightPane(view) {` |
+| 5 | `docs/lld/app-shell.md:135` | `:2161` | `:2151` | `:2162` | `src/ui/app.js:2162` = `  renderAppFooter() {` |
+| 6 | `docs/lld/app-shell.md:135` | `:2181` | `:2171` | `:2182` | `src/ui/app.js:2182` = `  paintAppFooter(view) {` |
+| 7 | `docs/lld/app-shell.md:229` | `app.js:1890` | `app.js:1880` | `app.js:1891` | `src/ui/app.js:1891` = `  paintCanvasFooter() {` |
+| 8 | `docs/lld/app-shell.md:230` | `app.js:1885` | `app.js:1875` | `app.js:1886` | `src/ui/app.js:1886` = `  renderCanvasFooter() {` |
+| 9 | `docs/lld/app-shell.md:230` | `app.js:1695` | `app.js:1685` | `app.js:1696` | `src/ui/app.js:1696` = `  applyTransform() {` |
+| 10 | `docs/lld/app-shell.md:232` | `app.js:1703` | `app.js:1693` | `app.js:1704` | `src/ui/app.js:1704` = `    this.paintCanvasFooter();` |
+| 11 | `docs/lld/app-shell.md:232` | `app.js:1836` | `app.js:1826` | `app.js:1837` | `src/ui/app.js:1837` = `      this.paintCanvasFooter();` |
+| 12 | `docs/lld/app-shell.md:271` | `app.js:1931` | `app.js:1921` | `app.js:1932` | `src/ui/app.js:1932` = `    const hasStory = !!view.story;` |
+| 13 | `docs/reference/SKILL.md:95` | `test/engine/tonal.mjs:275-293` | `test/engine/tonal.mjs:246-264` | `test/engine/tonal.mjs:283-301` | `test/engine/tonal.mjs:283` = `// ── hpg-tonal-okhsl-modes: the perceptual & peak distributions (OKHSL path) — in-gamut, every stop` |
+| 14 | `docs/reference/SKILL.md:95` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:687-708` | `test/engine/tonal.mjs:687` = ``// ── hpg-tonal-lift-monotonic (#648): `lift` must not flatten or reverse the ramp. The bump used to be`` |
 | 15 | `docs/reference/references/component-inventory.md:28` | `app.js:2586` | `app.js:2576` | `app.js:2587` | `src/ui/app.js:2587` = `customElements.define("ultimate-tokens", HctApp);` |
-| 16 | `docs/reference/references/component-inventory.md:30` | `app.js:2556` | `app.js:2570` | `app.js:2581` | `src/ui/app.js:2581` = `mixinInto(HctApp, ColorSection, TypeSection, GeomSection, DrawerMixin, A` |
-| 17 | `docs/reference/references/component-inventory.md:44` | `app-helpers.mjs:370` | `app.js:1587` | `app.js:1594` | `src/ui/app.js:1594` = `segmented(items, value, onSelect, opts = {}) {` |
-| 18 | `docs/reference/references/component-inventory.md:120` | `app.js:1466/1602` | `app.js:1466/1603` | `app.js:1610` | `src/ui/app.js:1610` = `"aria-pressed": tabs ? undefined : on ? "true" : "false",` |
-| 19 | `docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md:89` | `src/engine/tonal.js:922` | `src/engine/tonal.js:350` | `src/engine/tonal.js:907` | `src/engine/tonal.js:907` = `const _okL = new Map(); // L* -> OKHSL lightness (via a neutral gray at ` |
-| 20 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:31` | `app.js:1640,1530,1926` | `app.js:1630,1530,1915` | `app.js:1641` | `src/ui/app.js:1641` = `renderCenter(view) {` |
-| 21 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:41` | `app.js:2457/2489` | `app.js:2447/2479` | `app.js:2458` | `src/ui/app.js:2458` = `const kit = brandKit(this.doc, this.exportSystems);` |
-| 22 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:41` | `app.js:2457/2489` | `app.js:2447/2479` | `app.js:2490` | `src/ui/app.js:2490` = `const kit = brandKit(this.doc, this.exportSystems);` |
-| 23 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:41` | `model.mjs:1031` | `model.mjs:1033` | `model.mjs:1061` | `src/ui/model.mjs:1061` = `shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.rad` |
-| 24 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:51` | `app.js:1777` | `app.js:1767` | `app.js:1778` | `src/ui/app.js:1778` = `_modeTierNudge(modeFactor) {` |
-| 25 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:18` | `app.js:2290-2313` | `app.js:2290-2313` | `app.js:2319-2341` | `src/ui/app.js:2319` = `saveToProject() {` |
-| 26 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:18` | `app.js:2320-2345` | `app.js:2320-2345` | `app.js:2349-2378` | `src/ui/app.js:2349` = `applyLoadedConfig(config) {` |
-| 27 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:25` | `persist.js:647` | `persist.js:581` | `persist.js:646` | `src/ui/persist.js:646` = `const gp = clean(e.geomPrefix, "g"); const geomPrefix = gp || null;` |
-| 28 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:29` | `app.js:2275-2279` | `app.js:2265-2269` | `app.js:2276-2280` | `src/ui/app.js:2276` = `// ── persisted APP prefs (theme · canvas preview · motion · font mode) ` |
-| 29 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:25` | `app.js:2334` | `app.js:2324` | `app.js:2335` | `src/ui/app.js:2335` = `try { parent.postMessage({ pluginMessage: { type: "load-config" } }, "*"` |
-| 30 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:26` | `app.js:2388` | `app.js:2378` | `app.js:2389` | `src/ui/app.js:2389` = `try { parent.postMessage({ pluginMessage: { type: "read-variables" } }, ` |
-| 31 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:31` | `app.js:2321` | `app.js:2311` | `app.js:2322` | `src/ui/app.js:2322` = `try { parent.postMessage({ pluginMessage: { type: "save-config", config ` |
-| 32 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:40` | `app.js:2266` | `app.js:2256` | `app.js:2267` | `src/ui/app.js:2267` = `setInFigma(on) {` |
-| 33 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:40` | `app.js:2272` | `app.js:2261` | `app.js:2273` | `src/ui/app.js:2273` = `this.render();` |
-| 34 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:41` | `app.js:2337` | `app.js:2338` | `app.js:2349` | `src/ui/app.js:2349` = `applyLoadedConfig(config) {` |
-| 35 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:42` | `app.js:2392` | `app.js:2382` | `app.js:2393` | `src/ui/app.js:2393` = `receiveLiveVariables(payload) {` |
-| 36 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:61` | `app.js:2331` | `app.js:2321` | `app.js:2332` | `src/ui/app.js:2332` = `loadFromProject() {` |
-| 37 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:61` | `app.js:2348` | `app.js:2345` | `app.js:2356` | `src/ui/app.js:2356` = `this._loadRequested = false;` |
-| 38 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:61` | `app.js:2334,2339,2340` | `app.js:2324,2329,2330` | `app.js:2335` | `src/ui/app.js:2335` = `try { parent.postMessage({ pluginMessage: { type: "load-config" } }, "*"` |
-| 39 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:83` | `app.js:2575-2579` | `app.js:2565-2569` | `app.js:2576-2581` | `src/ui/app.js:2576` = `// The section seam (this.section: color|typography|geometry) is a real ` |
-| 40 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:92` | `app.js:2096-2142` | `app.js:2096-2142` | `app.js:2108-2154` | `src/ui/app.js:2108` = `_bindRangeDrag() {` |
-| 41 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:92` | `app.js:2132-2136` | `app.js:2132-2136` | `app.js:2144-2147` | `src/ui/app.js:2144` = `const end = () => {` |
-| 42 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:95` | `app.js:2545-2546` | `app.js:2534-2535` | `app.js:2546-2547` | `src/ui/app.js:2546` = `clearTimeout(this._toastT);` |
-| 43 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:96` | `app.js:2243` | `app.js:2233` | `app.js:2244` | `src/ui/app.js:2244` = `setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1500);` |
-| 44 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:96` | `app.js:2536` | `app.js:2438` | `app.js:2450` | `src/ui/app.js:2450` = `setTimeout(() => this.download(injected, "code.js"), 150);` |
-| 45 | `docs/reference/rubrics/acceptance-criteria.md:25` | `test/engine/tonal.mjs:246-264` | `test/engine/tonal.mjs:246-264` | `test/engine/tonal.mjs:283-301` | `test/engine/tonal.mjs:283` = `// ── hpg-tonal-okhsl-modes: the perceptual & peak distributions (OKHSL ` |
-| 46 | `docs/reference/rubrics/acceptance-criteria.md:25` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:687-708` | `test/engine/tonal.mjs:687` = `// ── hpg-tonal-lift-monotonic (#648): `lift` must not flatten or revers` |
+| 16 | `docs/reference/references/component-inventory.md:30` | `app.js:2556` | `app.js:2570` | `app.js:2581` | `src/ui/app.js:2581` = `mixinInto(HctApp, ColorSection, TypeSection, GeomSection, DrawerMixin, ApplyGateMixin, SettingsMixin);` |
+| 17 | `docs/reference/references/component-inventory.md:44` | `app-helpers.mjs:370` | `app.js:1587` | `app.js:1594` | `src/ui/app.js:1594` = `  segmented(items, value, onSelect, opts = {}) {` |
+| 18 | `docs/reference/references/component-inventory.md:120` | `app.js:1466/1602` | `app.js:1466/1603` | `app.js:1610` | `src/ui/app.js:1610` = `          "aria-pressed": tabs ? undefined : on ? "true" : "false",` |
+| 19 | `docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md:89` | `src/engine/tonal.js:922` | `src/engine/tonal.js:350` | `src/engine/tonal.js:907` | `src/engine/tonal.js:907` = `const _okL = new Map(); // L* -> OKHSL lightness (via a neutral gray at that L*); memoized` |
+| 20 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:31` | `app.js:1640,1530,1926` | `app.js:1630,1530,1915` | `app.js:1641` | `src/ui/app.js:1641` = `  renderCenter(view) {` |
+| 21 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:41` | `app.js:2457/2489` | `app.js:2447/2479` | `app.js:2458` | `src/ui/app.js:2458` = `    const kit = brandKit(this.doc, this.exportSystems);` |
+| 22 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:41` | `app.js:2457/2489` | `app.js:2447/2479` | `app.js:2490` | `src/ui/app.js:2490` = `    const kit = brandKit(this.doc, this.exportSystems);` |
+| 23 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:41` | `model.mjs:1031` | `model.mjs:1033` | `model.mjs:1061` | `src/ui/model.mjs:1061` = `    shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.radii }, derived),` |
+| 24 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:51` | `app.js:1777` | `app.js:1767` | `app.js:1778` | `src/ui/app.js:1778` = `  _modeTierNudge(modeFactor) {` |
+| 25 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:18` | `app.js:2290-2313` | `app.js:2290-2313` | `app.js:2319-2341` | `src/ui/app.js:2319` = `  saveToProject() {` |
+| 26 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:18` | `app.js:2320-2345` | `app.js:2320-2345` | `app.js:2349-2378` | `src/ui/app.js:2349` = `  applyLoadedConfig(config) {` |
+| 27 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:25` | `persist.js:647` | `persist.js:581` | `persist.js:646` | `src/ui/persist.js:646` = `  const gp = clean(e.geomPrefix, "g"); const geomPrefix = gp \|\| null;` `altered: 2 table pipe(s) escaped as \|` |
+| 28 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:29` | `app.js:2275-2279` | `app.js:2265-2269` | `app.js:2276-2280` | `src/ui/app.js:2276` = `  // ── persisted APP prefs (theme · canvas preview · motion · font mode) — per-USER, not doc-bound →` |
+| 29 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:25` | `app.js:2334` | `app.js:2324` | `app.js:2335` | `src/ui/app.js:2335` = `      try { parent.postMessage({ pluginMessage: { type: "load-config" } }, "*"); } catch { this._loadRequested = false; }` |
+| 30 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:26` | `app.js:2388` | `app.js:2378` | `app.js:2389` | `src/ui/app.js:2389` = `    try { parent.postMessage({ pluginMessage: { type: "read-variables" } }, "*"); } catch { /* no frame */ }` |
+| 31 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:31` | `app.js:2321` | `app.js:2311` | `app.js:2322` | `src/ui/app.js:2322` = `      try { parent.postMessage({ pluginMessage: { type: "save-config", config } }, "*"); this.toast("Saved to the Figma file"); } catch { /* no frame */ }` |
+| 32 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:40` | `app.js:2266` | `app.js:2256` | `app.js:2267` | `src/ui/app.js:2267` = `  setInFigma(on) {` |
+| 33 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:40` | `app.js:2272` | `app.js:2261` | `app.js:2273` | `src/ui/app.js:2273` = `    this.render();` |
+| 34 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:41` | `app.js:2337` | `app.js:2338` | `app.js:2349` | `src/ui/app.js:2349` = `  applyLoadedConfig(config) {` |
+| 35 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:42` | `app.js:2392` | `app.js:2382` | `app.js:2393` | `src/ui/app.js:2393` = `  receiveLiveVariables(payload) {` |
+| 36 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:61` | `app.js:2331` | `app.js:2321` | `app.js:2332` | `src/ui/app.js:2332` = `  loadFromProject() {` |
+| 37 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:61` | `app.js:2348` | `app.js:2345` | `app.js:2356` | `src/ui/app.js:2356` = `    this._loadRequested = false;` |
+| 38 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:61` | `app.js:2334,2339,2340` | `app.js:2324,2329,2330` | `app.js:2335` | `src/ui/app.js:2335` = `      try { parent.postMessage({ pluginMessage: { type: "load-config" } }, "*"); } catch { this._loadRequested = false; }` |
+| 39 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:83` | `app.js:2575-2579` | `app.js:2565-2569` | `app.js:2576-2581` | `src/ui/app.js:2576` = `// The section seam (this.section: color\|typography\|geometry) is a real module boundary: each` `altered: 2 table pipe(s) escaped as \|` |
+| 40 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:92` | `app.js:2096-2142` | `app.js:2096-2142` | `app.js:2108-2154` | `src/ui/app.js:2108` = `  _bindRangeDrag() {` |
+| 41 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:92` | `app.js:2132-2136` | `app.js:2132-2136` | `app.js:2144-2147` | `src/ui/app.js:2144` = `      const end = () => {` |
+| 42 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:95` | `app.js:2545-2546` | `app.js:2534-2535` | `app.js:2546-2547` | `src/ui/app.js:2546` = `    clearTimeout(this._toastT);` |
+| 43 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:96` | `app.js:2243` | `app.js:2233` | `app.js:2244` | `src/ui/app.js:2244` = `      setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1500);` |
+| 44 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:96` | `app.js:2536` | `app.js:2438` | `app.js:2450` | `src/ui/app.js:2450` = `    setTimeout(() => this.download(injected, "code.js"), 150);` |
+| 45 | `docs/reference/rubrics/acceptance-criteria.md:25` | `test/engine/tonal.mjs:246-264` | `test/engine/tonal.mjs:246-264` | `test/engine/tonal.mjs:283-301` | `test/engine/tonal.mjs:283` = `// ── hpg-tonal-okhsl-modes: the perceptual & peak distributions (OKHSL path) — in-gamut, every stop` |
+| 46 | `docs/reference/rubrics/acceptance-criteria.md:25` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:687-708` | `test/engine/tonal.mjs:687` = ``// ── hpg-tonal-lift-monotonic (#648): `lift` must not flatten or reverse the ramp. The bump used to be`` |
 
 Mechanism, all 46, and it is one mechanism: `src/ui/app.js`, `test/engine/tonal.mjs`,
 `src/engine/tonal.js`, `src/ui/model.mjs` and `src/ui/persist.js` each grew by a DIFFERENT amount on
@@ -1223,8 +1228,10 @@ support. And re-pin 8's `Verify: sed -n '691p'` names 691 where the citation's r
 table above carries it.
 
 **Fixture re-pin (2), not 1: `test/engine/fixtures/shadcn-baseline.css`'s schema stamp** (added
-2026-09-20, #681 U5, from the pass-7 verifier's row 8). Old value: `/* ultimate-tokens export schema
-2 */`, three times. New value: `schema 3`, three times; `grep -c "export schema 2"` on that fixture
+2026-09-20, #681 U5, from the pass-7 verifier's row 8). Old value, the whole line as `3921f140` holds
+it, three times: `/* ultimate-tokens export schema 2 */`. New value, the whole line as this tree holds
+it, three times: `/* ultimate-tokens export schema 3 */`. Neither carries leading whitespace.
+`grep -c "export schema 2"` on that fixture
 reads 0 at this head. Mechanism: `EXPORT_SCHEMA_VERSION` is 2 at the unit parent `3921f140` and 3 at
 main and at head, so main's own #638 bump is the cause, exactly as for the radix fixture below. The
 whole-file delta across the merge is +6 -4, and filtering out the three stamp lines plus the new

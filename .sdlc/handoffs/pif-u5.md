@@ -193,16 +193,20 @@ outright false against the tree rather than merely dated.
 
 ## 8. Gates
 
-All run in this worktree, in the foreground, blocking, with load recorded.
+All run in this worktree, in the foreground, blocking, with load recorded. Every span below that
+holds program output is copied from that program's own output in this worktree, never from another
+record, and keeps the leading whitespace the program printed; where a quote is cut, the cell says
+so next to it (`.sdlc/adapter.md` §3, Verbatim-quote rule).
 
 | Gate | Result |
 |---|---|
-| `npm test`, run 1 (mid-unit) | `✓ all 49 test files passed`, 0 FAIL lines. Wall **518.66 s** (`8:38.66 total`, user 524.72 s). Load `6.56 / 14.82 / 20.43` at start, `9.85 / 10.04 / 15.18` at end |
+| `npm test`, run 1 (mid-unit) | `✓ all 49 test files passed`, 0 FAIL lines. Wall **518.66 s** (`time`'s own line, `npm test >  2>&1  524.72s user 6.70s system 102% cpu 8:38.66 total`). Load 6.56 / 14.82 / 20.43 at start, 9.85 / 10.04 / 15.18 at end |
 | `npm test`, run 2 (final tree) | **exit 0**, `✓ all 49 test files passed`. Wall **649 s**. Load `9.42 / 10.69 / 13.38` at start, `33.98 / 19.23 / 15.70` at end. Above the proposed band, and reported as such: the host's 1-minute load more than tripled during the run, so it was never under 10 throughout. Recorded in the baseline's own reading series rather than dropped |
-| `sh .sdlc/checks/baseline-agrees-check.sh` | **exit 0**, `stale total: 0`. Seven `ok` rows, one expected `note head:` line, and `ok head: baseline ref 20298cc is in origin/main's history` |
-| `node test/repo/citations.mjs` | exit 0, `STALE 0 across 10 discovered docs` |
-| `node scripts/audit-citations.mjs` | `STALE 0` in every audited doc |
-| `node test/repo/branding.mjs` | exit 0, `branding: clean (535 files scanned)` |
+| `sh .sdlc/checks/baseline-agrees-check.sh` | **exit 0**. Seven `ok` rows, one `note` row, one total row; the two that carry the verdict, byte for byte including their column padding: `ok    head: baseline ref 20298cc is in origin/main's history` and `stale total: 0`. The expected non-counting row: `note  head: baseline ref 20298cc, the tree moved outside .sdlc/ and .gitignore since the baseline ran, so the numbers are unproven at this head` |
+| `node test/repo/citations.mjs` | exit 0, last line `✓ citations: parser self-test + STALE 0 across 10 discovered docs (HEAD ac7af748)` |
+| `node scripts/audit-citations.mjs` | `STALE 0` in every audited doc. `altered:` that is the recurring leading token of each per-doc summary line, not a whole line; a whole one reads `    STALE 0 | NEAR 1 | UNDECIDABLE 0 | OK 19 | NOFILE 0  (line counts, deduped)`, four leading spaces kept |
+| `node test/repo/branding.mjs` | exit 0, `branding: clean (536 files scanned)` |
+| `node test/repo/doc-mutation-lane.mjs` | exit 0, `doc-mutation-lane: clean (7 files scanned)` |
 | C10's three uncollided greps | ADR heading precedes `## Quick map`; `^| \*\*Anchor\*\*` in the glossary = 1; `^## 9\. Anchored palettes` = 1; `anchor` in `color-math/SKILL.md` well past 3; `anchored palette` present in both rubrics |
 | em dashes in added prose | 0 in every file this unit added lines to, including the subagent-authored spec and LLD amendments |
 
