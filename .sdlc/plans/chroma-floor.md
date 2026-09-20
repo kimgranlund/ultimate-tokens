@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: approved
 ticket: "#701"
 priority: P1
 lane: color-engine
@@ -54,7 +54,7 @@ Two readings exist for every even-mode number, and they disagree. The gate path 
 | lone spikes, rendered path (`loneSpikeStop` predicate, 25-stop, even) | 64, all at stop 500, all the palette's own anchor hex; plus 1 in the default kit, Data 7 stop 500 (`#669291` `#088585` `#436E6E`, OKLCH C 0.0480 0.0940 0.0478), ungated today because the gate sweeps `presetsByCat` only |
 | even palettes whose 450 or 550 CAM16 C is under 50% of stop 500 | 0 (the spike is a 60% shoulder, not a collapse) |
 | `report-preset-fidelity.mjs --envelope`, even, reading (a), gate path | 100: 10.9% / 16.2%, 300: 39.1% / 52.2%, 700: 39.0% / 44.6%, 900: 16.3% / 16.5% (median / p90, bars 25/35 and 75/90), above 100%: 0, `env(500) = 1` sweep PASS. Perceptual 300 reads 79.9% / 97.9% FAIL (the yielded cell, #681 revision 24, not this plan's) |
-| the same four cells on the rendered path (anchored, source CAM16 C at least 10, 25-stop) | 100: 15.6% / 36.9%, 300: 48.0% / 113.2%, 700: 42.5% / 79.8%, 900: 22.9% / 51.1%. No gate reads this today; C5 reports it, does not bar it (open question Q1) |
+| the same four cells on the rendered path (anchored, source CAM16 C at least 10, 25-stop) | 100: 15.6% / 36.9%, 300: 48.0% / 113.2%, 700: 42.5% / 79.8%, 900: 22.9% / 51.1%. No gate reads this today; C5 reports it, does not bar it (ruled Q2) |
 | perceptual fingerprint (sha256 over the sorted `label + 25 hexes` lines of all 3,780 `projectView` ramps, first 16 hex digits) | `f4ed35e36edd6b9b` |
 | peak fingerprint, same method | `6e6d81e23ab10661` |
 | `NOTCH_ALLOW` (Q-C, all modes) | 78 names at `test/engine/anchor.mjs:505`, "pending U4"; the gate observes 15 at this head and reds `15 (expected 78)`; at e2df6a42 (U4 pass 2) the list holds 142 names (entries starting with a backtick; revision 3's 165 also counted comment lines carrying one). #681's to settle |
@@ -143,9 +143,9 @@ Records-refresh (#691) landed at 28c2e8cc and its rule stands for every later pl
 |---|---|---|
 | the yielded perceptual 300 / peak 700 p90 cells (79.9 / 97.9 today on perceptual 300) | ruled yielded, #681 revision 24 ruling 1; C6 here makes perceptual and peak byte-identical, so they cannot move | #681's blast-radius table; a new ticket if the owner wants them |
 | the 32 even dips AT stop 500 (anchor renders under a group basis above it) | a different mechanism (`anchorChromaBasis` blending to a higher group target), ruled under Q-C with `NOTCH_ALLOW` "pending U4"; #681 R2 settles by rule | #681 U4 |
-| above-anchor stops on the anchored even path (14,979 stop cells) | the "0 above 100%" clause is gated on the gate path only; no ruling covers the anchored path; C5 reports it | open question Q1 |
+| above-anchor stops on the anchored even path (14,979 stop cells) | the "0 above 100%" clause is gated on the gate path only; C5 reports the anchored path | ruled Q2: report only |
 | the peak-mode `DIP_BASELINE` (6 names, 0 observed on the integrated tree) and its negative control | F1's peak-cap trade, ruling 3 of `pif-u3-yield-answer.md`, settled at U4 by rule | #681 U4 |
-| the rendered-path C6 cells as a bar (300 p90 113.2%, 900 p90 51.1% on the anchored path) | never a ruled target; the ruled targets were measured and held on the gate path | open question Q1 |
+| the rendered-path C6 cells as a bar (300 p90 113.2%, 900 p90 51.1% on the anchored path) | never a ruled target; the ruled targets were measured and held on the gate path | ruled Q2: report only; a bar would be its own ticket |
 | `dampAmp` semantics, the Adia carve-out, `EVEN_DAMP_FACTOR`'s value | Q7 ruled; a shoulder term is added beside the retune, the retune itself is not revisited | none |
 | the `hueSpace` even-mode hue solve and Q-D's inspector rule | unchanged by construction; C9 proves it | #681 U2 |
 | `prime.mjs`, the ladder, `EVEN_DAMP_FACTOR` in perceptual or peak | untouched | none |
@@ -163,12 +163,13 @@ Records-refresh (#691) landed at 28c2e8cc and its rule stands for every later pl
 | another plan on `lane:color-engine` (an #681 follow-up) touches `tonal.js` at the same time | one active plan per lane (plan-rules); the Orchestrator sequences |
 | the dip gate's replacement negative control is vacuous on the new floor | C3 requires a control that produces a non-zero count on the rendered reading, and C4 names today's engine as exactly that control |
 
-## Open questions for the owner
+## Owner rulings (2026-09-19, via the Conductor, `.sdlc/questions/chroma-floor-approval.md`)
 
-| Q | Question | Plan's recommendation |
-|---|---|---|
-| Q1 | The four C6 even cells were ruled and measured on the gate path (palette without its anchor). On the path the product renders for 3,380 anchored palettes the same cells read 48.0/113.2 at 300 and 22.9/51.1 at 900, and 14,979 stop cells sit above the anchor's chroma. Does #701 bar the rendered path too, or report it (C5 as written)? | Report only in #701; if the owner wants the rendered cells barred, that is an envelope question for a ticket of its own, since it moves every anchored even ramp's basis blend, not the floor |
-| Q2 | The 32 even dips AT stop 500 (the anchor under its group basis) are printed, named, and left to Q-C. Confirm they stay outside #701. | Yes; they are the notch class #681 already rules on |
+| Q | Question | Ruled | Where it lands |
+|---|---|---|---|
+| Q1 | Approve the plan: three units, twelve criteria, no unit before #681 lands | Approved | this plan, `status: approved` |
+| Q2 | The four even envelope cells were ruled and measured on the gate path; on the rendered path they read 48.0/113.2 at 300 and 22.9/51.1 at 900, with 14,979 stop cells above the anchor's chroma. Bar the rendered path in #701, or report it? | Report only in #701 | C5's `--rendered` table under `REPORTED, NOT BARRED`; the Not-in-scope rows for the rendered-path cells and the above-anchor stops; a bar, if ever wanted, is an envelope ticket of its own |
+| Q3 | The 32 even dips exactly at stop 500 (the anchor under its group basis) are the notch class #681 rules on under Q-C. Stay outside #701? | Yes, they stay with #681's notch ruling | C4 prints the stop-500 count K and never asserts it; the Not-in-scope row |
 
 ## Revisions
 
@@ -178,3 +179,4 @@ Records-refresh (#691) landed at 28c2e8cc and its rule stands for every later pl
 | 2026-09-19 | revision 2: the nine checkability yellows folded (`chroma-floor-checkability.md`): C2's default-kit check scoped to the predicate block (the to-end-of-file awk was vacuous), C3/C4 print an unconditional count line under their own gate name (the shared `chroma-envelope` name masks a second message), C5 names READING (a) and pins the perceptual/peak blocks by md5 against the landed head, C7 states the hard-asserted call-count literal (5) and drops the vacuous `dampAmp` grep and names the `shoulder` identifier clash, C8 makes the upward re-pin readable from the FLOORS diff, C10 fixes the `docs/` list to six named paths, C11 names the count assertions that actually hold the line and one file per grep, C12 states `exit 3` as the pass value. Pre-state corrected: `NOTCH_ALLOW` holds 78 names (15 is what the gate observes), and every `dampAmp`-0 gate sweeps 3,764 palettes, not 3,780 (the Adia kit's 16 are skipped), so C2, C3 and C4 carry the real figure with the default kit counted separately. `depends:` now defines the landed head (the `origin/main` commit whose squash subject carries #681's PR number, recorded here at rebase time) and states that it and the lone-spike identifier are undeterminable until #681 has a PR. Labels row notes the issue's intake `size:small` beside the plan's `size:M` | team-lead, checkability review at 7eb7238b (3 green, 9 yellow, 0 red) |
 | 2026-09-19 | revision 3: C8's FLOORS diff regex (rejected as an empty subexpression by both greps, and aimed at a key shape the table does not have) replaced by a node comparator over the actual array-literal entries of both files, verified today on the 326592d2 tables and on a scratch copy with one even entry lowered and one raised (`changed 2, down 1`, exit 1); C11's pre-state re-measured with the system grep at both heads (exact string 0, loose phrase on 4 lines at 326592d2) and the lone-spike identifier named as `LONE_SPIKE_ALLOW` from `unit/pif-u4-integration` @ e2df6a42, where U4 pass 2 replaced the `=== 0` assertion with an allow-list comparison that U1 reverses (the fourth grep proves it); C2 carries the same identifier note; the corpus row narrows the default-kit claim to the dip and spike sweeps; the `NOTCH_ALLOW` row records the e2df6a42 count | team-lead, re-check at 66c2ae6f (7 green, C11 yellow, C8 red) |
 | 2026-09-19 | revision 4: two literals at e2df6a42 corrected and re-measured: `LONE_SPIKE_ALLOW` is on 9 lines of `test/engine/anchor.mjs`, not 5; `NOTCH_ALLOW` holds 142 entries, not 165 (the earlier count included comment lines that carry a backtick) | team-lead, re-check at ceb1b65c (C8 green, C11 yellow on one literal) |
+| 2026-09-19 | revision 5: owner approved the plan through the Conductor (`.sdlc/questions/chroma-floor-approval.md`, copied byte for byte); the two open questions become the rulings table (Q2 report only, Q3 the stop-500 dips stay with #681's notch ruling) and the three rows that cited them now cite the ruling; `status: approved` | owner, via the Conductor |
