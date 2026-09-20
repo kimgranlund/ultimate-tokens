@@ -7,7 +7,8 @@ plan-revision: 17
 branch: plan/records-followup-roadmap
 unit-branch: unit/rf-U11
 base: 1f9918776f0e54e5dfd88c1b23f494f6d6cff6ce
-roadmap-commits: 1fe53f5a2e52ced8bd23c6c841cf27d7ca7b3557, 354c2d7f6dde5ce37656bc58831f14ada43766ca
+roadmap-commits: 1fe53f5a2e52ced8bd23c6c841cf27d7ca7b3557, 354c2d7f6dde5ce37656bc58831f14ada43766ca, 1405ee7749dca47b5a0b5e4dd0d4b1e0b1d1a3d0
+review: .sdlc/runtime/rf-U11-review.md (findings 1a and 7 fixed here; 1b, 2, 3 and 6 carried by the Orchestrator)
 written: 2026-09-20
 ---
 
@@ -25,6 +26,9 @@ that catches all four. Everything below was measured in `.worktrees/rf-U11`. `BA
 | R2, the header counts | 🟢 | front matter and Count line recomputed from the table; the breakdown now sums to the total |
 | R3, this plan's unit tallies | 🟢 | the two rows agreed on nothing and one counted U5 green before U5 was graded; both re-derived |
 | R4, the refresh's stated method | 🟢 | the line now states what that commit did; the wording is not softened and the claim is not kept |
+| review 1a, the `cited:` span shape | 🟢 | marker moved beside the quote span, and leg B's strip widened to that form in the same commit |
+| review 7, two loose cells in the R1 fix | 🟢 | dispatch target re-derived as `plan/gate-split` @ `ebddc55d`; six started, not six under way |
+| review 1b, 2, 3, 6 | carried | the Orchestrator's, per its ruling; recorded below and in the review |
 | The assertions criterion | 🟢 | two legs, run at the fix head; run unchanged at the graded head it reds all four |
 | U5-1, U5-2, U5-3, U5-5, U5-6, U5-7 | 🟢 | reran at the fix head |
 | U5-4 | 🟡 | one live-facts difference, #722, opened after the refresh commit; no row added |
@@ -64,11 +68,20 @@ Command: `git show plan/gate-split:.sdlc/board.md | grep -iE 'gs-U|gate-split'`.
 four 🔵 each with a builder seat and a live `.worktrees/gs-U*` path, one ⚪ reading
 `waits on #681 landing (start gate G0)` for `U6b` alone.
 
-The status cell now says the gate is waived, six of seven units are under way, `U1` merged
-`34ebbae6` and `U6a` merged `50898d58`, `U2` to `U5` were dispatched at `21:35:09Z` off
-`plan/preset-intent-fidelity` @ `a2bb3c84`, and `U6b` is not dispatched. `Blocked by` reads `U6b`
-only. The `Ours to take next` row says the same in one sentence instead of the retired claim that
-nothing else was ready to start.
+The status cell now says the gate is waived, six of seven units are started with two merged and four
+in flight, `U1` merged `34ebbae6` and `U6a` merged `50898d58`, `U2` to `U5` were dispatched at
+`21:35:09Z` into worktrees cut off `plan/gate-split` @ `ebddc55d`, and `U6b` is not dispatched.
+`Blocked by` reads `U6b` only. The `Ours to take next` row says the same in one sentence instead of
+the retired claim that nothing else was ready to start.
+
+Two corrections to U11's own first pass of that cell, both from review finding 7, both re-derived
+here. The dispatch target is the branch the worktrees were cut off, not the tree the waiver
+conditions on: `git show 7d811172 --format=` prints four board rows each reading
+`unit/gs-U2 off plan/gate-split @ ebddc55d` and its siblings, and `ebddc55d` is itself
+`sdlc(gate-split): merge plan/preset-intent-fidelity @ a2bb3c84, the #681 tree U2 to U5 build on (#713)`.
+Approval question 8's Effect line names `a2bb3c84` as the condition, which is what the first pass
+echoed. And six started is not six under way, since two of the six are merged; the cell now says so,
+as its `Blocked by` cell already did.
 
 ## R2: the header counts, recomputed from the table
 
@@ -128,11 +141,13 @@ The live-facts consequence is kept and anchored to the commit rather than to an 
 happened: an issue opened after `3ee3c72b` is the live-facts rule's case, a note for the verifier,
 not a second refresh. The wording was not softened and the claim was not kept.
 
-The retired instant is quoted in U11's own revision row inside a span marked `cited:`, under the
-cited-quote clause of the verbatim-quote rule in `.sdlc/adapter.md` §3, so no sweep reads U11's
-citation of it as a carrier. The criterion's second leg strips `cited:` spans for exactly that
-reason; without the strip it flagged U11's own row, which is a false positive the ratified clause
-already knows how to answer.
+The retired instant is quoted in U11's own revision row as the record held it, with a `cited:` marker
+in a separate span beside it, which is the form `.sdlc/adapter.md` §3 states and the form all four
+existing instances in `.sdlc/verdicts/` use. U11's first pass put the marker inside the quote span;
+review finding 1a moved it, on the Orchestrator's ruling. Leg B's strip moved with it in the same
+commit, because the two are one change: under the old strip the precedent form is not stripped and
+leg B flags U11's own row at `line 116 commit 1fe53f5a ... reach 4% instant 2026-09-20T22:00Z`. The
+measured behaviour of the two strips is in the probe table below.
 
 ## The assertions criterion, proposed for the plan
 
@@ -170,7 +185,7 @@ Leg B, the claims the file makes about how it was read:
 
 ```sh
 B="$F/body2.md"
-perl -pe 's/\x60cited:[^\x60]*\x60//g' .sdlc/roadmap.md > "$B"
+perl -pe 's/\x60[^\x60]*\x60\s*\x60cited:[^\x60]*\x60//g' .sdlc/roadmap.md > "$B"
 grep -nE 'Read at one instant|regenerated from live facts|full regeneration from live|read fresh' "$B" | while IFS=: read -r ln rest; do
   key=$(printf '%s' "$rest" | sed 's/^[^|]*| *//' | cut -c1-40)
   c=$(git log -1 --format=%H -S"$key" -- .sdlc/roadmap.md)
@@ -191,9 +206,11 @@ the ten-unit copy and hidden R3. The number words are spelled out because the ro
 in words, so the derivation is compared in the roadmap's own spelling rather than by parsing prose
 into digits. Leg B's `reach` is deleted lines as a percentage of the file, which is what separates a
 whole-file read from a patch: the two measured points are `41%` for the regeneration and `0%` for
-the refresh, so any threshold in that gap works and none had to be invented to fit. Leg B strips
-`cited:` spans first, under the cited-quote clause, so a record that quotes a retired claim as the
-subject of a finding is not read as making it.
+the refresh, so any threshold in that gap works and none had to be invented to fit. Leg B strips a quote span that is
+immediately followed by a `cited:` marker span, which is how `.sdlc/adapter.md` §3 and all four
+existing instances in `.sdlc/verdicts/` write a cited quote, so a record that quotes a retired claim
+as the subject of a finding is not read as making it. The strip is keyed on the adjacent marker and
+not on marker text inside the span, which is strictly narrower than the form U11's first pass used.
 
 ### What it printed at the fix head
 
@@ -244,6 +261,29 @@ controls. Never in the unit worktree.
 | NC4 | `ten of eleven units` back to `ten of ten units` | `stated ten of ten units` against derived `ten of eleven units` and `eleven of eleven units` | 🟢 R3, reproduced |
 | NC5 | `open (13 issues)` back to `open (10 issues)` | `rows 13` against `inputs 10` | 🟢 R2's front-matter half, reproduced |
 | NC6 | leg B at the graded head, nothing mutated | the R4 line in the table above | 🟢 R4, on the real commit |
+
+### The `cited:` strip, measured both ways
+
+Review finding 1a moved the marker to the precedent form and finding 1b coupled leg B's strip to
+that move. Both strips were run against the fixed file in a throwaway clone. The old strip is
+`s/\x60cited:[^\x60]*\x60//g`; the new one is `s/\x60[^\x60]*\x60\s*\x60cited:[^\x60]*\x60//g`.
+
+| Case | Old strip | New strip |
+|---|---|---|
+| U11's revision row in the precedent form (a genuine citation) | flagged: `line 116 commit 1fe53f5a at 2026-09-20T15:16:57-07:00 added 7 deleted 6 hunks 6 filelines 130 reach 4% instant 2026-09-20T22:00Z` | silent, correctly |
+| a planted claim in a plain span, no marker | flagged | flagged: `line 131 commit none claim "Every cell below was \`Read at one instan"` |
+| a planted claim with the marker INSIDE the span, the review's probe 3 | silent, the hole finding 1 measured | flagged: `line 131 commit none claim "This file was \`cited: Read at one instan"` |
+| a planted claim with the marker in an adjacent span | silent | silent, correctly |
+
+The new strip is strictly narrower than the old one. It keys on an adjacent marker span, which a
+record cannot produce by accident and which matches the ratified form, and it closes the inline-marker
+hole the review found rather than widening the exemption. It does not close finding 1b itself: a
+future false claim written in the full precedent form is still hidden, and that is the Orchestrator's
+to carry, since it is a question about whether a cited-quote exemption should exist at all and not
+about this unit's line.
+
+Two of the four rows print `commit none`, which review finding 6 records as having no stated verdict
+in the Expected column. That clause is the Orchestrator's to add; U11 did not invent one.
 
 Leg B's pass case is measured in the same run and not assumed: at the same head, the regeneration
 commit's own read claim prints `reach 41%` and is accepted. Diff reach separates a whole-file read
@@ -305,15 +345,19 @@ piped to `grep -c node_modules` prints `0`.
 
 ## Scope
 
-Four commits, two of them roadmap-only and each touching that file alone: `1fe53f5a` (R1, R2, R3;
-7 insertions, 6 deletions) and `354c2d7f` (R4 and U11's own revision row; 2 insertions, 2 deletions).
-The other two are this handoff. Nothing outside `.sdlc/` moved. The board, the plan file,
-`.sdlc/verdicts/`, the U5 handoff and the U5 question file were not touched.
+Six commits, three of them roadmap-only and each touching that file alone: `1fe53f5a` (R1, R2, R3),
+`354c2d7f` (R4 and U11's own revision row) and `1405ee77` (review findings 1a and 7). The other three
+are this handoff. Nothing outside `.sdlc/` moved. The board, the plan file, `.sdlc/verdicts/`, the U5
+handoff and the U5 question file were not touched. `.sdlc/runtime/rf-U11-review.md` is the reviewer's
+own file and is gitignored, so it enters no commit and no diff leg.
 
 ## For the Orchestrator
 
 | Item | Ask |
 |---|---|
-| U5-8 | fold the criterion above into the plan as written, or renumber it; both legs, their expected output, six controls and the run at the graded head are all here |
-| #722 | the live-facts call is yours: a further landing refresh, or a 🟡 the verifier records and the next roadmap revision absorbs |
-| R4's fix shape | the retired instant is preserved in a `cited:` span rather than deleted, so the record of what was claimed survives the repair; if the plan would rather the claim vanish entirely, say so and leg B's strip becomes unnecessary |
+| U5-8 | fold the criterion above into the plan as written, or renumber it; both legs, their expected output, six controls, the strip probe table and the run at the graded head are all here. Its Expected should also state that the plan branches must be fetched, or leg A degrades silently to `noplan` and loses half of R1 |
+| review 1b | leg B's strip is narrower than it was and closes the inline-marker hole, but a false claim written in the full precedent form is still exempt. Whether a cited-quote exemption should exist in a machine check at all is yours |
+| review 2 | leg A's arithmetic has no reason to stop at `## Revisions`; only leg B's needles do. U11's own two rows live in the unread region, which is the sharpest argument for closing it |
+| review 3 and 6 | the needle list and the `commit none` verdict both need widening before U5-8 is folded in; the needle-list limit is stated in this handoff already |
+| review 4 and 5 | recorded as known limits: neither leg asserts, and `reach` measures edit volume rather than reading, so a whole-file write done as a create or a pure append scores `0%` |
+| #722 | the live-facts call is yours. The Orchestrator has ruled no refresh: the rule makes it a note, and a refresh would itself be the patch-claiming-a-read shape leg B exists to catch |
