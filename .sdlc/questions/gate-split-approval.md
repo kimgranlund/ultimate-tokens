@@ -26,3 +26,6 @@ Effect: the start gate G0 is waived for U1 only. U2 onward still wait on #681 la
 | 6 | The baseline `ref`: after any code PR squashes, .sdlc/baseline.md's numbers are unproven at the new main until someone re-points `ref`. Who owns the re-point? | The plan-closing commit on main re-points it (Recommended) · Keep today's pattern: the next records plan does it · Decide after #681 lands | "The plan-closing commit on main re-points it (Recommended)" |
 
 Effect: U6b gains criterion U6-9, the adapter §5 step. Until #713 lands, close-outs follow the ruling by hand.
+| 7 | Waive #713's start gate for U6a too? U6a is the CI matrix job that runs the gate scripts U1 merged; it touches only .github/workflows/ci.yml. | Yes, U6a now (Recommended) · No, Lane B idles until #716 lands | "Yes, U6a now (Recommended)" |
+
+Effect: G0 is waived for U1 and U6a. U2 to U5 and U6b still wait on #681 landing.
