@@ -882,7 +882,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
 //    #681 U4 integration re-capture (2026-09-20, by script from the engine, never typed): this
 //    fixture landed on main before #681's anchor/chroma-envelope/prime-ladder engine changes, so
 //    every ramp-derived value in all three sections moved once, the same way shadcn-baseline.css's
-//    #681 CARVE-OUTs above document. No leaf shape, key, or ordering changed — only the underlying
+//    #681 CARVE-OUTs above document. No leaf shape, key, or ordering changed: only the underlying
 //    OKLCH values, matching what src/engine/tonal.js/prime.mjs now emit on the merged tree.
 {
   const G = "radix-refs-values-unchanged";
