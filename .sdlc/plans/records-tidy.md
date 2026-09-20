@@ -137,9 +137,9 @@ Every "measured" value below is the planner's, 2026-09-20, at 730ff941 or on a f
 |---|---|---|---|---|
 | U1-1 | the rerun note no longer says the U3 verdict grades the K17 rerun, names the newest pass of the A2 verdict as the current reading, and the pass number it names is the highest `## Pass N` heading in that file; line 18 is the only deleted line of the map | block U1-1 | `0`, `1`, `1`, `1`, `1` | at 730ff941: `1`, `0`, `0`, `0`, `0`. Fixture with §Texts pasted but `pass 6 of` retyped as `pass 5 of`: third line `0`. Fixture with a second map line edited: fourth line `2` |
 | U1-2 | the K17 debt row quotes the map's K17 filter byte for byte, no longer says 3 files, and line 92 is the only deleted line of debt.md | block U1-2 | `1`, `0`, `1`, `1` | at 730ff941: `0`, `1`, `0`, `0`. In the clone, `ui/counts.mjs` dropped from the map's cell with the debt row unchanged: first line `0`, so either file moving alone fails |
-| U1-3 | adapter §2.1 item 1 says `reviewer-l4`, no `reviewer-l3` remains in the adapter, one dated amendment paragraph names the change and the skill, line 58 is the only deleted line and the two added non-blank lines are item 1 and the amendment | block U1-3 | `0`, `2`, `1`, `1`, `2`, `1` | at 730ff941: `1`, `0`, `0`, `0`, `0`, `0`. Fixture with the amendment added and line 58 untouched: `2`, `1`, `1`, `0`, `1`, `0` (the amendment itself carries the old word once). Fixture whose amendment omits the skill name: third line `0` |
+| U1-3 | adapter §2.1 item 1 says `reviewer-l4`, no `reviewer-l3` remains in the adapter outside the amendment paragraph that records the rename, one dated amendment paragraph names the change and the skill, line 58 is the only deleted line and the two added non-blank lines are item 1 and the amendment | block U1-3 | `0`, `2`, `1`, `1`, `2`, `1` | at 730ff941: `1`, `0`, `0`, `0`, `0`, `0`. Fixture with the amendment added and line 58 untouched: `1`, `1`, `1`, `0`, `1`, `0`. Fixture whose amendment omits the skill name: third line `0`. Fixture with a second `reviewer-l3` sentence added outside the amendment: first line `1` |
 | U1-4 | the A2 verdict is untouched and the seven C31 counts the plugin repo reads hold | block U1-4 | empty line, then `18`, `18`, `19`, `31`, `1`, `7`, `19 19` | fixture with one pass 5 K row deleted: a non-empty first line and `17` second. The block is k17-rerun's U1-5 verbatim, whose controls stand |
-| U1-5 | no other record under `.sdlc/` gained or lost a `reviewer-l3`: the hit list against the merge base is unchanged outside the adapter | block U1-5 | `0` | a history file rewritten in the clone (`sed -i '' 's/reviewer-l3/reviewer-l4/' .sdlc/plans/archive/k17-rerun.md`): `1` |
+| U1-5 | no other tracked record under `.sdlc/` gained or lost a `reviewer-l3`: the per-file hit list in the working tree equals the merge base's outside the adapter | block U1-5 | `0` | a history file rewritten in the clone's working tree, uncommitted (`sed -i '' 's/reviewer-l3/reviewer-l4/' .sdlc/plans/archive/k17-rerun.md`): `1`, and `1` again once committed. A staged `.sdlc/verdicts/records-tidy-x.md` saying `reviewer-l3`: `0` (excluded by name, and inside the wall) |
 
 ```sh U1-1
 grep -c 'the U3 verdict grades it' $A
@@ -157,7 +157,7 @@ git diff $MB -- $D | grep -E '^-[^-]' | grep -c 'the control filters 3 files by 
 ```
 
 ```sh U1-3
-grep -c 'reviewer-l3' $AD
+grep -v '^\*\*Amendment (' $AD | grep -c 'reviewer-l3'
 grep -c 'reviewer-l4' $AD
 grep -cE '^\*\*Amendment \(20[0-9]{2}-[0-9]{2}-[0-9]{2}\)\.\*\* Item 1 said .reviewer-l3. until this date and says .reviewer-l4. now.*pre-land-review' $AD
 git diff $MB -- $AD | grep -cE '^-[^-]'
@@ -177,10 +177,10 @@ echo "$(sed -n '/^## Pass 5/,$p' $V | grep '^| K[0-9]' | grep -c 'own run') $(se
 ```
 
 ```sh U1-5
-diff <(git grep -c 'reviewer-l3' $MB -- .sdlc | sed "s/^$MB://" | grep -v '^\.sdlc/adapter\.md') <(git grep -c 'reviewer-l3' HEAD -- .sdlc | sed 's/^HEAD://' | grep -v '^\.sdlc/adapter\.md' | grep -v '^\.sdlc/\(verdicts\|handoffs\|questions\)/records-tidy-' | grep -v '^\.sdlc/plans/\(archive/\)\?records-tidy\.md') | grep -c '^[<>]'
+diff <(git grep -c 'reviewer-l3' $MB -- .sdlc | sed "s/^$MB://" | grep -v '^\.sdlc/adapter\.md') <(git grep -c 'reviewer-l3' -- .sdlc | grep -v '^\.sdlc/adapter\.md' | grep -v '^\.sdlc/\(verdicts\|handoffs\|questions\)/records-tidy-' | grep -v '^\.sdlc/plans/\(archive/\)\?records-tidy\.md') | grep -c '^[<>]'
 ```
 
-U1-5 reads committed content only (`git grep` at two revisions), so an untracked pre-land record is not counted; this plan's own loop records are excluded by name because the plan and the pre-land review may name the old grade when they describe the change.
+U1-5's second side is `git grep` with no revision: the working tree of tracked files, so an uncommitted edit counts and the control fires before any commit. An untracked file is not read (it is not yet a record; P5 owns untracked paths). This plan's own loop records are excluded by name because the plan and the pre-land review may name the old grade when they describe the change.
 
 ## Risks and assumptions
 
@@ -210,3 +210,4 @@ One PR from `plan/records-tidy` to `main`, carrying the approval doc, this plan,
 | Date | Change | Why |
 |---|---|---|
 | 2026-09-20 | plan written (draft). Planner measured the three lines, the map's K17 filter, the verdict's highest pass, the adapter's grade words, every other `reviewer-l3` under `.sdlc/`, the C31 counts and the wall at 730ff941, and each U1 block on fixtures in a throwaway shared clone | k17-rerun pre-land concerns 2, 4, 6; approval Q1 |
+| 2026-09-20 | revised on the criteria review (`.sdlc/verdicts/records-tidy-checkability.md` @ 8916482f, 6 of 8, U1-3 and U1-5 🔴). U1-3's first leg now counts `reviewer-l3` outside the amendment paragraph, since the amendment names the old grade and made `0` unreachable; re-measured `0 2 1 1 2 1` after, `1 0 0 0 0 0` before, `1 1 1 0 1 0` with line 58 untouched. U1-5's second side reads the working tree instead of `HEAD`, so its control fires uncommitted; re-measured `0` after and `1` on the rewritten history file, committed or not | criteria review findings; neither changed the texts or the wall |
