@@ -4,14 +4,14 @@ plan: records-followup
 unit: U11
 seat: verifier
 grade: verifier-l2
-pass: 1
+pass: 2
 written: 2026-09-20
 ---
 
-# Verdict records-followup U11 · 🔴 9 🟢, 1 🟡, 2 🔴
+# Verdict records-followup U11 · 🔴 pass 2 · 17 🟢, 0 🟡, 1 🔴 (pass 1: 9 🟢, 1 🟡, 2 🔴)
 
 verdict: 🔴
-sha: 089e0e4418dd7db7219d25cb45e834dff82f34db
+sha: ddfedb70098cd968782fab4d9e9a24f91477458b
 
 | Graded at | `unit/rf-U11` @ 089e0e44, BASE 1f991877, plan text from `origin/main` at revision 17 |
 |---|---|
@@ -64,3 +64,45 @@ refresh rather than on this unit's own commits is what turns the row 🟡. Every
 Nothing. Every row above has a measurement this seat ran and a control this seat ran. The builder's
 handoff and the reviewer's record were read as claims throughout; where they agree with my runs I say
 so, and the two places they do not are the two 🔴.
+
+## Pass 2, at `ddfedb70`
+
+Regraded the two 🔴 of pass 1 and everything the three new commits move. Both pass 1 reds are
+repaired. One new 🔴 replaces them, in the criterion rather than in the roadmap.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| R3 | the tally reads the verdicts, not the ticks | 🟢 repaired | `:31` and `:48` both read `nine of eleven units 🟢, U5 🟡`, with U11 named in progress. That is the record: nine units carry a 🟢 verdict (U1, U2, U3, U4, U6, U7, U8 as `green-with-one-note`, U9, U10), U5 carries `verdict: 🟡`. I counted both sources myself | deriving from ticks instead gives ten, which is the pass 1 defect. The two sources differ by exactly U5, so the row now names the source that makes it true |
+| U5-4 | one ranked row per open issue | 🟢 repaired | `#722` is ranked at row 14; `diff` against live `gh` prints nothing, exit 0. Counts moved together: `inputs 14`, `total 14`, `rows 14`, and the breakdown `0 + 4 + 2 + 2 + 6` sums to 14 | pass 1's run of the same command printed `14d13` with `< 722`, exit 1. The anchor error was the Orchestrator's, not the builder's, and is withdrawn |
+| U5-8 | the assertions criterion | 🔴 | the new verdict classifier counts a 🔴 verdict as 🟢. It selects the first line matching either the title or the `verdict:` field, then tests 🟢 before 🟡 and 🔴, so any verdict whose title precedes its `verdict:` field and carries a state breakdown classifies green. My own U11 verdict is exactly that shape: title `# Verdict records-followup U11 · 🔴 9 🟢, 1 🟡, 2 🔴`, selected, matched on the 🟢 inside the breakdown, counted green. So leg A prints `green=10 yellow=1 red=0 ungraded=0` for this plan when the truth is nine green, one yellow, one red | the same file with `verdict:` moved above the title classifies `RED`; unmoved it classifies `GREEN`. Identical content, opposite grade, decided only by line order. Run as an isolated function on two copies, touching no checkout |
+| U5-8 consequence 1 | the criterion reds a true statement | 🔴 same row | `green-tally=ten of eleven units` against the roadmap's true `stated nine of eleven units 🟢`. By the row's own Expected every stated tally must equal a derived one, so the criterion fails at its own fix head | the builder measured `green=9 ... ungraded=1` at 16:02 to 16:05, which was correct then: my verdict reached main at 16:08:42, after. The drift is live facts; the misclassification that followed is not |
+| U5-8 consequence 2 | NC7, the control named for this pass, stops biting | 🔴 same row | I reverted the tally to `ten of eleven units 🟢`, the exact text U11 shipped at `089e0e44` and that pass 1 graded 🔴, and reran leg A in a clone. It printed `stated ten of eleven units 🟢` against `green-tally=ten of eleven units`: equal, so the control passes the defect it exists to catch | with the classifier correct the same mutation gives `green-tally=nine of eleven units` and bites, which is what the handoff records from its own earlier run |
+| U5-1 | one head sha, on main | 🟢 | one sha, `anc 0` | pass 1's `d34b4fb1` fixture gives two shas and a git fatal |
+| U5-2 | worktree table is the live set | 🟢 | `diff` prints nothing | the `d34b4fb1` copy diffs with stale entries |
+| U5-3 | stated worktree count is the row count | 🟢 | `7`, `7` | the `d34b4fb1` copy states `8` with no matching rows |
+| U5-5 | no unanswered prompt | 🟢 | `0` | the `d34b4fb1` copy prints `1` |
+| U5-6 | the alone rule, under bash | 🟢 | roadmap-touching commits unite to `.sdlc/roadmap.md` alone; branch is four paths, all under `.sdlc/` | in zsh the loop dies with an ambiguous-argument error, revision 15's case |
+| U5-7 | debt ids as `debt.md` defines them | 🟢 | `0`, then `1` | the `d34b4fb1` copy gives the exact inverse |
+| leg B | the read claims | 🟢 | two lines, both the regeneration commit, `reach 41%`, no instant. No patch-claiming-a-read survives | at `3ee3c72b` the same leg prints the `reach 0%` line with the 22:00Z instant |
+| `ddfedb70` | quoted line numbers re-measured | 🟢 | `114` to `115`, `116` to `117`, `131` to `132`. My own leg B run prints `line 12` and `line 115`, which matches | the pre-#722 numbers no longer resolve, since the row shifted the revision log by two lines |
+| housekeeping | the pass 1 verdict is off the branch | 🟢 | only `.sdlc/handoffs/records-followup-U11.md` matches that name on the branch; `.sdlc/verdicts/records-followup-U11.md` is not in the tree at `ddfedb70`. Branch is four files | `git add -A` now cannot pull a main-only record onto the branch |
+| housekeeping | the U5 board row | 🟢 | the notes cell now says the row's 🟢 is the checklist state and states `verdict 🟡 overall`. Its claim that the board has no 🟡 mark holds for state cells: I censused them and found only 🟢, 🔵 and the header. The file does carry 🟡 seven times, all in notes | the state cell is still 🟢 where the verdict is 🟡, now disambiguated in prose rather than by the mark. That is the Orchestrator's file and its call |
+| P1 | `npm test`, no `node_modules`, tree stable | 🟢 | clean clone at `ddfedb70`: `✓ all 48 test files passed`, exit 0, `TESTS` 48, status 0 after | the P4 plant reds the same run |
+| P4 | branding | 🟢 | `branding: clean (508 files scanned)`, exit 0 | plant inside `.sdlc/`: `FAIL: 3 branding violation(s) across 509 files`, exit 1 |
+| P5 | scope wall | 🟢 | zero paths outside `.sdlc/`, four total | U5-6 is the same measure from the other side |
+| P6 | no em dash added | 🟢 | `0` | one appended: `1` |
+| P7 | baseline agrees | 🟢 | `stale total: 0`, exit 0 | figure bent to 47: `STALE tests`, exit 1 |
+
+### The one 🔴, stated once
+
+The unit exists so the roadmap cannot call a unit 🟢 that no verdict graded 🟢. Pass 2 moved the
+tally to the verdicts, which is the right source. The reader it added then classifies a 🔴 verdict
+as 🟢, on the first record it was handed that has a state breakdown in its title: the verdict on
+this very unit. Two things follow and both are worse than the miscount. The criterion now reds the
+roadmap's true sentence, and NC7 passes the false one. A check that grades a red as green is the
+defect the check was written to prevent, and it is in the check rather than in the artifact.
+
+The artifact is clean. R1, R2, R3 and R4 are all repaired and all four hold under my own runs.
+Nothing in `.sdlc/roadmap.md` at `ddfedb70` is false as far as I can measure it.
+
+One last measurement, on this record. Its own title line precedes its `verdict:` field and carries a state breakdown, so the criterion as written at `ddfedb70` classifies this 🔴 verdict as GREEN. I ran it to check. The check cannot read the verdict that fails it.
