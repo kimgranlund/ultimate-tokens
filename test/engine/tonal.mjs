@@ -465,7 +465,23 @@ for (const mode of ["perceptual", "peak"]) {
                                                                     // runs away instead of oscillating
     // Repinned for #681 U3 (chromaEnvelope + keyS saturation basis moved every default's own s500,
     // except Data 7's l500  -  l500 never depended on saturation, so it lands on its pre-U3 value exactly).
-    [268, 0.2362053680324055, 0.47259849593539127, ["Neutral", "perceptual"]],  // the worst real default, low chroma
+    // Re-pinned again, Q5 (2026-09-19, addendum 1, standing rule at
+    // .sdlc/questions/standing-rulings-2026-09-20.md): Neutral/perceptual's stop-500 (s, l) moved AGAIN
+    // on this integration head (0.2362053680324055 -> 0.22920645126228487, l500 unchanged - keyS moved,
+    // l500 never depends on saturation, same shape as the U3 note above) and the new (s, l) no longer
+    // discriminates: the old buggy rule's last iterate and solveOkhslHue's best iterate now COINCIDE at
+    // this exact cell (both read hue 268 back, error 0.4287 deg), so Neutral/perceptual stopped being a
+    // useful "old rule is worse" witness, not because the solver regressed but because this particular
+    // staircase tread happens to land on the same value both ways now. Verified directly (derivation
+    // reproducible: instrument `okhslStops`'s own `hOk = solveOkhslHue(...)` call to read back s500/
+    // l500, then run both rules against it - scratchpad probe, U4 pass 2). A full scan of the default
+    // kit's own 16 palettes x {perceptual, peak} for a REAL, currently-discriminating stop-500 staircase
+    // case (same method) found Data 2/peak: oldErr 0.2603 deg vs solved 0.0269 deg, a wide, robust
+    // margin (Info/perceptual and Data 8/perceptual also still discriminate post-fix but by under 0.011
+    // deg, too thin to trust against future float drift). Data 2/peak replaces Neutral/perceptual below;
+    // Data 7/perceptual and Primary/peak are UNCHANGED (re-verified, still discriminate, still their
+    // original pinned (s, l) exactly - only Neutral moved).
+    [326, 1, 0.5782463229408346, ["Data 2", "peak"]],                           // wide margin, chroma-100 default
     [195, 0.9999999007688885, 0.5399970062712544, ["Data 7", "perceptual"]],    // saturated, the default tone mode
     [259, 0.9999999532281996, 0.4556174494320429, ["Primary", "peak"]],
   ];
@@ -588,7 +604,23 @@ for (const mode of ["perceptual", "peak"]) {
 //   Secondary stays the one perceptual ramp still pre-0.2.0-identical.
 //   Carved total after #681 U3 pass 7: 31 of 32 (16 even + 15 perceptual). Only perceptual/Secondary
 //   remains byte-for-byte what 83756bb emitted. Do NOT regenerate this file to make an unexplained red
-//   go green  -  every regeneration must be preceded by a citation like this one. ────────────────────
+//   go green  -  every regeneration must be preceded by a citation like this one.
+//   Q5 single-cell re-pin (2026-09-19, addendum 1, standing rule at
+//   .sdlc/questions/standing-rulings-2026-09-20.md): perceptual/Data 1 (already carved by #657 above,
+//   so its fixture cells hold POST-#657 values, not 83756bb's) drifted by exactly one 8-bit LSB at a
+//   SINGLE cell, stop 400: #9789FB -> #9789FA. Verified isolated - re-ran the full 25-stop perceptual
+//   Data 1 ramp directly (hue 287, chroma 95, skew 0, lift 0, role-table.json's raw CAM16 hue, matching
+//   this block's own construction below) and every other of the 25 cells, including stop 500 the hue
+//   solve pivots on, is still byte-identical to the fixture; only stop 400 moved. Cause: `okhslStops`
+//   resolves ONE hue (`hOk`, at stop 500) for the whole non-anchored ramp and reuses it at every other
+//   stop (hueShift=0 for Data 1, so `hue === hOk` constant throughout) - a later solveOkhslHue
+//   refinement in this same integration head's own review-pass chain (the #657 carve-out above already
+//   documents several such refinements) moved `hOk` by under one float ULP at the solved precision,
+//   too small to move stop 500's OWN rounded pixel but just large enough to tip stop 400's blue channel
+//   across its 8-bit rounding boundary at that stop's different chroma/tone - the same "adjacent tread"
+//   sensitivity this file's own STAIRCASE comment (hue-solver-best, above) names for the identical
+//   reason. Fixture cell patched by hand (single line, `test/engine/fixtures/tonal-legacy.json`), not
+//   regenerated wholesale, to keep this diff reviewable and to avoid disturbing any other cell. ──────
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};
@@ -1065,10 +1097,18 @@ for (const mode of ["perceptual", "peak"]) {
 //    named Varanger witness at chroma 6 and 6 more of the same class), on BOTH the 19-stop display ramp
 //    and the 25-stop export ramp, in all three tone modes.
 //
-//    RENDERED PATH, not a raw-chroma proxy (fixed after review pass 1): each ramp is built through
-//    `rampChromaOf(pal, doc)`  -  the SAME resolved-chroma call `src/ui/model.mjs`'s `projectView` makes
-//    at line ~913, after `resolvePaletteGroups`  -  plus the palette's own `hueShift`/`hueSameDir`/
-//    `cuspPull`. A palette's raw stored `chroma` is NOT what most ramps render at: 3,777 of the 3,780
+//    RENDERED PATH, not a raw-chroma proxy (fixed after review pass 1; the anchor field fixed U4 pass 2
+//    addendum 2, below): each ramp is built through `rampChromaOf(pal, doc)`  -  the SAME resolved-chroma
+//    call `src/ui/model.mjs`'s `projectView` makes at line ~913, after `resolvePaletteGroups`  -  plus the
+//    palette's own `hueShift`/`hueSameDir`/`cuspPull`/`anchor`. The `anchor` field was MISSING from all
+//    four of this section's `paletteStops` calls until U4 pass 2 (addendum 2): every one of them built a
+//    fresh palette object from `pal.hue`/`chroma`/`skew`/`lift`/... but never copied `pal.anchor`, so
+//    every ramp here rendered on the non-anchored construction regardless of whether the source preset is
+//    anchored - a silent version of the SAME fault class the duplicate `chromaEnvelope` export and the
+//    OKHSL/CIE-L* `referenceNonAnchored` mismatch already caught elsewhere in this ticket: the RENDERED
+//    PATH claim above was true of `rampChromaOf` but false of `anchor`, and this file asserted the whole
+//    claim on the strength of the one field it actually checked. See the U4 pass 2 handoff for the
+//    corrected counts. A palette's raw stored `chroma` is NOT what most ramps render at: 3,777 of the 3,780
 //    corpus palettes differ between the two, and the gap is not noise (architecture "The Barbican
 //    Estate · 1976 · C" primary: raw chroma 33, resolved ramp chroma 100). Proof this matters: pointed
 //    at the pre-U3 base (362cc48) the RAW-chroma method reports 0 upticks in every mode; the RENDERED
@@ -1147,26 +1187,51 @@ for (const mode of ["perceptual", "peak"]) {
   // cannot yet avoid, keyed by mode|hue|chroma|skew|lift|stop-set|stopA&stopB (chroma and the stop-set
   // label both added after review pass 1: a key without them lets palettes sharing a hue/skew/lift
   // signature but a DIFFERENT chroma silently share one exception). Measured on the RENDERED path
-  // (rampChromaOf, not raw palette.chroma  -  see this gate's own header comment), #681 U3's shipped R2
-  // chromaEnvelope (anchor re-centred on its own lifted reading) carries ZERO such ramps across all
-  // three tone modes and both stop sets, over the full corpus: the pre-U3 base (362cc48, rendered) also
-  // measures 0  -  this class does not exist on the rendered corpus at all, before or after this unit.
-  // (R1, the first draft that measured sd against the raw numeric anchor and was reverted for the
-  // exact-anchor-under-lift gap Q1 describes, DID carry 2 such ramps on the rendered path  -  nature
-  // "Varanger / Finnmark tundra" tertiary and nature "English oak woodland" primary, both 25-stop peak
-  // stops 150&175 #FDFDFB  -  neither named nor gated at the time because R1's own gate scanned raw
-  // `chroma`, a different ramp than either preset actually renders; R2 closes both.) The list stays
-  // empty rather than deleted: the mechanism (and the C6(ii) load-bearing negative control below) is
-  // proven, and any future engine change that reopens a bounded, pre-existing collision has a place to
-  // cite it rather than reaching for a magnitude bar or silently loosening this gate to a count.
-  const KNOWN_BASELINE_DUP = new Set([]);
+  // (rampChromaOf, not raw palette.chroma  -  see this gate's own header comment).
+  //
+  // Addendum-2 correction (2026-09-19): the previous "0 across all three tone modes" claim recorded
+  // here was measured with `check()` omitting `anchor: pal.anchor` from the constructed palette  -  the
+  // same missing-anchor bug addendum 2 found in `findDips`  -  so it never actually rendered an anchored
+  // palette's real ramp. With the anchor field restored, the rendered path carries exactly 23 such pairs
+  // (3 perceptual, 7 peak, 13 even), all on the 25-stop export set only (0 on the 19-stop display set),
+  // all at the near-white (stops 50-200) or near-black (stops 800-925) extreme: an adjacent half-step
+  // pair (e.g. 900&925, 50&75) rounds to the identical 8-bit hex once the anchored ramp is already at
+  // the sRGB gamut boundary there, the same class of rounding collision `enforceMonotonePixelL`'s own
+  // header comment describes for pixel-L* rises, just landing on an exact hex match instead of a sign
+  // flip. 21 unique keys named below (23 physical instances: two keys are each hit by two different
+  // presets that happen to share the identical mode/hue/chroma/skew/lift/stop-pair signature, so the
+  // Set naturally collapses them to one entry each  -  `seenBaselineDup` still marks the key seen either
+  // way). The negative control right after this gate still proves an UNLISTED collision is caught.
+  const KNOWN_BASELINE_DUP = new Set([
+    "peak|240|100.00|0|0|25-stop|825&850",
+    "even|240|100.00|0|0|25-stop|900&925",
+    "even|0|100.00|0|0|25-stop|50&75",
+    "even|0|100.00|0|0|25-stop|100&125",
+    "even|0|100.00|0|0|25-stop|175&200",
+    "even|79|100.00|0|0|25-stop|75&100",
+    "even|280|100.00|0|0|25-stop|850&875",
+    "peak|280|100.00|0|0|25-stop|800&825",
+    "peak|150|100.00|0|0|25-stop|825&850",
+    "perceptual|270|100.00|0|0|25-stop|800&825",
+    "peak|270|100.00|0|0|25-stop|800&825",
+    "even|250|100.00|0|0|25-stop|900&925",
+    "even|92|100.00|0|0|25-stop|75&100",
+    "peak|78|100.00|0|0|25-stop|850&875",
+    "even|100|100.00|0|0|25-stop|900&925",
+    "even|60|100.00|0|0|25-stop|900&925",
+    "perceptual|65|100.00|0|0|25-stop|800&825",
+    "even|65|100.00|0|0|25-stop|900&925",
+    "peak|80|100.00|0|0|25-stop|875&900",
+    "perceptual|80|100.00|0|0|25-stop|800&825",
+    "peak|80|100.00|0|0|25-stop|800&825",
+  ]);
   const seenBaselineDup = new Set();
 
   const check = (pal, doc, mode, stops, setLabel) => {
     const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode };
     const chroma = rampChromaOf(pal, doc); // the RESOLVED chroma the product renders with, not pal.chroma
     const ramp = T.paletteStops(
-      { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull },
+      { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor },
       controls,
       stops,
     );
@@ -1246,6 +1311,17 @@ for (const mode of ["perceptual", "peak"]) {
     for (const pal of doc.palettes) {
       const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode };
       const chroma = rampChromaOf(pal, doc);
+      // NOT anchor: pal.anchor here (addendum-2 investigation, 2026-09-19) - adding it measures the
+      // real rendered path, but that surfaces that "0 above the anchor's own chroma" essentially never
+      // holds for an anchored palette: 1,205/3,380 anchored generated palettes violate it on even,
+      // 3,119/3,380 (92%) on peak, versus 0/384 non-anchored violators on either mode. The anchor's raw
+      // chroma (stop 500's pinned value in paletteStopsAnchored) has no designed relationship to the
+      // rest of the ramp - unlike the non-anchored construction this invariant was built and owner-ruled
+      // against (Q7 pass 4/5), where stop 500 IS the ramp's own peak by construction. This is reported as
+      // its own finding pending a scope ruling (most likely resolution: carve out anchored palettes here
+      // the same way perceptual is already carved out above, for the analogous reason) - see the pass 2
+      // handoff and questions docs. Left on the non-anchored measurement until that ruling lands, so this
+      // gate keeps testing the invariant it was actually built and reviewed for.
       const ramp = engine.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, engine.STOPS);
       const c500 = ramp.find((r) => r.stop === 500).chroma;
       if (c500 <= 1e-9) continue;
@@ -1321,94 +1397,138 @@ for (const mode of ["perceptual", "peak"]) {
   // NEW dip at a DIFFERENT stop on an already-listed palette still reds as unlisted, rather than being
   // silently absorbed by a name-only match.
   //
-  // DIP_BASELINE: the 6 named peak-mode dip witnesses left after F1's fix. 4 of 6 (Frankenstein,
-  // Okavango Delta, Taos, Great Salt Lake) have a dip window (the 3 stops the dip check reads) that
-  // renders BYTE-IDENTICAL whether the peak cap fires at all (checked against a cap-disabled patched
-  // copy, scratchpad/r2fix/check-natural.mjs): a ramp-shape property of the underlying curve/skew/lift
-  // math, not a capping artifact. Katsura and Sapa are NOT byte-identical in their full window: their
-  // dip stop and its NEAR neighbour are unaffected by the cap, but their FAR neighbour (stop 650) IS
-  // itself capped, and capping only LOWERS it (natural 650 is higher than capped 650 in both cases), so
-  // the cap makes these two dips MILDER, not more pronounced, than they would be uncapped; the dip
-  // itself is not a capping artifact even though one neighbour's own value is cap-affected (corrected
-  // from an earlier "all 6 identical" overclaim, U3 review 3, N5). This list is closed under a real
-  // regression: any NEW dip witness reds as unlisted below. Perceptual has no cap mechanism and measured
-  // 0 dips, so it gets no baseline: any perceptual dip reds.
-  const DIP_BASELINE = new Set([
-    "Katsura Imperial Villa · 17th c · Kyoto|tertiary|600",
-    "Frankenstein · Mary Shelley · 1818 · the Arctic & the laboratory|secondary-muted|550",
-    "19° S · July · 17:00 · Okavango Delta, Botswana, dry-season flood|secondary|600",
-    "36° N · February · 16:30 · The high-desert road between Taos and Chama|secondary-muted|550",
-    "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog|secondary-muted|600",
-    "41° N · July · 20:30 · The Great Salt Lake at sunset, near Antelope Island causeway|tertiary|550",
-  ]);
-  // EVEN_DIP_BASELINE: 53 named even-mode dip witnesses (#681 U3 review 3, N1), all pending owner. Pass
-  // 7 step 1's steeper even envelope (EVEN_DAMP_FACTOR) let `chromaFloor`'s per-stop gamut-relative floor
-  // (`chromaFloor% * maxc(stop)`) cross the monotonically-rising damped value in a narrow band where the
-  // floor, itself shaped by `maxc(stop)`'s own non-monotonic, hue-cusp-driven ceiling curve, had already
-  // passed its local peak but the damped value had not yet caught up (measured witness: architecture
-  // "Katsura Imperial Villa" primary, hue 40, lift -40: stop 300's floor 33.48 fell to stop 350's floor
-  // 29.63 while the damped value was still only 25.97 there, then damped overtook at stop 400, 35.99).
-  // ONE fix attempt was tried (moving the floor into envelope space, `max(env, chromaFloor/100)` before
-  // multiplying by `intended`, decoupling it from `maxc`'s own shape): it eliminated all 53 dips cleanly,
-  // but regressed the even|100 and even|900 median/p90 cells step 1 was built to close (p90 100: 19.8% ->
-  // 39.0%, over the 35% bar; median/p90 900: 16.3%/27.1% -> 40.5%/48.4%, both over their 25%/35% bars):
-  // the OLD gamut-relative floor shape was load-bearing for keeping near-white/near-black chroma
-  // proportionally low, which is exactly what those cells require. Reverted per the stop rule; see
-  // `.sdlc/questions/pif-u3-yield.md`'s second item for the full before/after and the recommendation.
+  // Addendum-2 correction (2026-09-19): the "6 named peak-mode witnesses left after F1's fix" and the
+  // pass-1 "genuinely, fully resolved" reading of this population were both measured with `findDips`
+  // omitting `anchor: pal.anchor`  -  never rendering an anchored palette's real ramp, the same bug
+  // addendum 2 found here. All 6 named witnesses below carry a real anchor. Re-run through the corrected,
+  // anchor-aware `paletteStops` call: NONE of the 6 dip any more (checked directly, both stop sets -
+  // e.g. Katsura tertiary stop 600 now reads 20.04/21.30/21.53, rising, not a dip), and a full peak-mode
+  // sweep of the generated corpus finds ZERO dip instances anywhere, not just at these 6 names. This is
+  // a genuinely different, better-supported result than pass 1's claim (which measured a ramp the
+  // product never renders), but the mechanism is not the same as F1's bisection fix alone: these
+  // specific presets' REAL anchored ramps (their own picked anchor color driving `paletteStopsAnchored`)
+  // do not reproduce the dip the old non-anchored measurement saw. DIP_BASELINE is retired to empty
+  // rather than kept with stale names now unreachable by any real corpus ramp; any peak dip that
+  // reappears on a future engine change reds immediately (baseline size 0, so every instance is
+  // unlisted). Perceptual has no cap mechanism and measures 0 dips too, so it also gets no baseline.
+  const DIP_BASELINE = new Set([]);
+  // EVEN_DIP_BASELINE: addendum-2 correction (2026-09-19). The 53 names previously here (#681 U3
+  // review 3, N1, all at stop 350, all pending owner - the `chromaFloor`-vs-damped-value crossing
+  // described below, kept for its own record) were measured with `findDips` omitting
+  // `anchor: pal.anchor`, the same bug addendum 2 found and fixed. On the corrected, anchor-aware
+  // path NONE of those 53 still dip (checked directly - e.g. "Katsura Imperial Villa" primary no
+  // longer dips at 350: stop 300 30.93 -> 350 28.77 -> 400 15.48, and 28.77 is not <= 30.93-3, so the
+  // OLD predicate no longer fires there either), so that population is superseded, not merely renamed.
+  // The chromaFloor/maxc crossing mechanism that produced it is still real engineering history (see
+  // `.sdlc/questions/pif-u3-yield.md`'s second item) but is not what the rendered corpus shows today.
+  //
+  // The corrected sweep instead finds 90 dip instances, all clustered at stops 450 (57), 500 (32), and
+  // 550 (1) - i.e. at or immediately beside the anchor pivot (`ANCHOR_STOP = 500`). Mechanism: at stop
+  // 500, `paletteStopsAnchored` (src/engine/tonal.js) pins chroma to the anchor's own byte-exact
+  // measured CAM16 chroma unconditionally (the Q3(b) "ramp clamps" special case, not fit to any smooth
+  // curve); every OTHER stop, including its immediate neighbours 450/550, is built from
+  // `anchorChromaBasis`'s blend of the anchor's OWN relative chroma fraction against the group's
+  // resolved target, evaluated at THAT stop's own gamut ceiling (`maxChromaInGamut`). Because the
+  // gamut ceiling's shape does not track the anchor's raw chroma 1:1 between stops, a sufficiently
+  // dark or desaturated anchor produces a real local minimum either AT the pivot (32 instances - the
+  // anchor's raw chroma reads lower than both neighbours' blended values, a "notch" at the pivot
+  // itself - same family as `NOTCH_ALLOW` in anchor.mjs, different gate/predicate) or at the stop
+  // immediately below it (57 instances at 450 - the blend is still heavily weighted toward the
+  // anchor's own low relative fraction there, undershooting stop 400's higher, less anchor-weighted
+  // value), confirmed directly on "Katsura Imperial Villa" primary (anchor #282322, near-black): stops
+  // 450/500/550 read 6.30/2.88/6.30, a symmetric pivot notch. All 90 named below; the negative control
+  // right after this gate still proves an amplified-floor regression is caught.
   const EVEN_DIP_BASELINE = new Set([
-    "Katsura Imperial Villa · 17th c · Kyoto|primary|350",
-    "Kyō-machiya townhouse · Edo–Meiji · Kyoto|secondary|350",
-    "Villa Savoye · 1931 · Le Corbusier · Poissy|primary-muted|350",
-    "Bauhaus Dessau · 1926 · Walter Gropius|primary-muted|350",
-    "Borgund Stave Church · c.1180 · Norway|primary|350",
-    "Borgund Stave Church · c.1180 · Norway|secondary|350",
-    "Lancashire cotton mill · 19th c · northern England|secondary-muted|350",
-    "Matcha & wagashi · the tea room|tertiary-muted|350",
-    "Kaiseki · the seasonal course|tertiary-muted|350",
-    "Pizza Napoletana · the wood-fired oven|primary|350",
-    "Tandoor · the clay oven|tertiary-muted|350",
-    "Chocolate · the chocolatier's bench|primary|350",
-    "Espresso · the café counter|tertiary|350",
-    "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet|primary-muted|350",
-    "Singin' in the Rain · 1952 · the 'Broadway Melody' set|primary-muted|350",
-    "The Godfather · 1972 · dir. Coppola · cin. Gordon Willis · the don's study|secondary|350",
-    "Taxi Driver · 1976 · dir. Scorsese · the neon city through a windshield|secondary|350",
-    "Apocalypse Now · 1979 · dir. Coppola · the river at dusk|primary|350",
-    "TRON: Legacy · 2010 · dir. Kosinski · the Grid|secondary|350",
-    "Hereditary · 2018 · dir. Aster · the dollhouse home|tertiary-muted|350",
-    "There Will Be Blood · 2007 · dir. P.T. Anderson · the oil derrick fire|tertiary-muted|350",
-    "Once Upon a Time in the West · 1968 · dir. Leone · the railhead town|tertiary-muted|350",
-    "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel|tertiary-muted|350",
-    "Snowpiercer · 2013 · dir. Bong Joon-ho · the train cars|primary-muted|350",
-    "Dune · 2021 · dir. Villeneuve · Arrakis at high sun|tertiary-muted|350",
-    "Rebecca · Daphne du Maurier · 1938 · Manderley|tertiary-muted|350",
-    "Ulysses · James Joyce · 1922 · Dublin, 16 June 1904|tertiary-muted|350",
-    "The Tale of Genji · Murasaki Shikibu · c.1010 · the Heian court|secondary-muted|350",
-    "A Streetcar Named Desire · Tennessee Williams · 1947 · the French Quarter flat|secondary-muted|350",
-    "The Sound and the Fury · Faulkner · 1929 · the Compson place|tertiary|350",
-    "Fahrenheit 451 · Bradbury · 1953 · the fireman's city|tertiary-muted|350",
-    "The Road · Cormac McCarthy · 2006 · the ash-grey wasteland|tertiary-muted|350",
-    "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865|tertiary-muted|350",
-    "The late-night club · the smoky set|secondary|350",
-    "Rasta tricolour · the roots sleeve|tertiary-muted|350",
-    "Kingston street · the sound-system yard|secondary|350",
-    "Dub studio · the mixing desk|secondary|350",
-    "Detroit techno · the chrome sleeve|secondary|350",
-    "Romantic era · the candlelit recital|primary-muted|350",
-    "Pastel idol concept · the debut MV|secondary-muted|650",
-    "40° S · December · 14:00 · Valdivian rainforest, Los Ríos, southern Chile|tertiary-muted|350",
-    "24° S · June · 07:00 · Sossusvlei, Namib Desert, Namibia|tertiary-muted|350",
-    "0° · June · 11:00 · Congo Basin lowland forest, Odzala, Republic of the Congo|tertiary|350",
-    "64° N · July · 13:00 · Landmannalaugar, Icelandic highlands|tertiary-muted|350",
-    "23° S · December · 16:20 · Salar de Atacama, 2,305 m|primary|650",
-    "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog|tertiary|350",
-    "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog|tertiary-muted|350",
-    "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide|primary-muted|350",
-    "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche|tertiary-muted|350",
-    "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in|tertiary-muted|350",
-    "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border|primary-muted|350",
-    "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat|primary|350",
-    "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat|tertiary-muted|350",
+    "10° N · August · 16:00 · Fort Kochi, the hour between two squalls|secondary|450",
+    "13° S · June · 09:00 · Plaza de Armas, Cuzco, in dry-season winter|primary|450",
+    "16° N · March · 17:00 · Bogyoke Aung San Market, Yangon, last hour before closing|primary|450",
+    "16° N · March · 17:00 · Bogyoke Aung San Market, Yangon, last hour before closing|secondary|450",
+    "20° S · July · 10:00 · The Skeleton Coast in dense Atlantic fog, near Cape Cross|primary|450",
+    "21° N · May · 02:00 · Hanoi Old Quarter, the hour after the pho stalls close|tertiary|450",
+    "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog|primary|500",
+    "23° S · December · 13:00 · Salar de Atacama edge, Atacama Desert, Chile|secondary|500",
+    "23° S · December · 16:20 · Salar de Atacama, 2,305 m|secondary|500",
+    "26° N · June · 18:30 · The shrine of Lal Shahbaz Qalandar, Sehwan, at the evening dhamaal|tertiary-muted|500",
+    "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche|primary-muted|450",
+    "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon|primary-muted|450",
+    "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat|secondary-muted|500",
+    "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat|tertiary|500",
+    "31° N · June · 15:00 · Yixing teapot district during the plum-rain season|primary|450",
+    "34° N · May · 04:30 · The corridor of torii at Fushimi Inari before opening hour|tertiary-muted|500",
+    "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight|secondary-muted|500",
+    "41° N · April · 09:00 · La Boqueria, Barcelona, just past opening on a Tuesday|primary|450",
+    "41° N · July · 20:30 · The Great Salt Lake at sunset, near Antelope Island causeway|tertiary-muted|500",
+    "41° N · October · 23:00 · Tbilisi viewed from the Mtatsminda funicular at the upper station|secondary|500",
+    "44° N · September · 12:00 · Grand Prismatic Spring, Yellowstone, Wyoming|secondary-muted|450",
+    "48° N · November · 11:30 · The Schwarzwald between St. Märgen and Hinterzarten, low cloud through the spruce|primary|450",
+    "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf|secondary-muted|500",
+    "4° N · April · 13:00 · Dipterocarp forest, Danum Valley, Borneo|primary|450",
+    "51° N · May · 09:00 · English oak woodland, Sussex, bluebell season|primary|500",
+    "51° S · November · 07:00 · Torres del Paine, Patagonian Andes, Chile|primary|450",
+    "55° N · July · 13:00 · Lowland Kamchatkan taiga in heavy mosquito season, near the Avacha river|tertiary-muted|500",
+    "59° N · January · 14:00 · Lake Baikal corridor|primary|500",
+    "A Streetcar Named Desire · Tennessee Williams · 1947 · the French Quarter flat|primary|450",
+    "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865|tertiary|500",
+    "Anna Karenina · Tolstoy · 1877 · the Moscow station in snow|primary|450",
+    "Baroque · the candlelit chamber|tertiary|450",
+    "Black metal · the forest at night|primary|450",
+    "Bleak House · Dickens · 1853 · a November fog over the city|primary|450",
+    "Burger King · The Flame Identity · 2021 rebrand|tertiary|450",
+    "Charleston single house · antebellum vernacular · South Carolina|primary|500",
+    "Chartres Cathedral · c.1220 · the nave at midday|tertiary|450",
+    "Cologne Cathedral · 1880 (completed) · the dark nave|tertiary|450",
+    "Crime and Punishment · Dostoevsky · 1866 · the Petersburg slums in July heat|primary|450",
+    "Doctor Zhivago · Pasternak · 1957 · the ice-bound house at Varykino|primary|450",
+    "Don Quixote · Cervantes · 1605 · the plains of La Mancha|primary-muted|450",
+    "Donuts & sprinkles · the bakery case|secondary|550",
+    "Dracula · Bram Stoker · 1897 · the Carpathian castle at night|primary|450",
+    "Drive · 2011 · dir. Refn · the LA night drive|primary|450",
+    "Falu-red farmstead · Swedish vernacular · Dalarna|tertiary-muted|500",
+    "Frankenstein · Mary Shelley · 1818 · the Arctic & the laboratory|primary-muted|450",
+    "Fresh pasta · the marble work-bench|tertiary-muted|500",
+    "Gospel · the church choir|primary-muted|500",
+    "Habitat 67 · 1967 · Moshe Safdie · Montreal|tertiary-muted|500",
+    "Himeji Castle · 1609 · 'White Heron' keep · Japan|secondary|500",
+    "Icelandic turf house · vernacular · Skógar / Glaumbær|tertiary-muted|500",
+    "In the Mood for Love · 2000 · dir. Wong Kar-wai · the noodle-stall corridor|tertiary|450",
+    "Katsura Imperial Villa · 17th c · Kyoto|primary|500",
+    "Kyō-machiya townhouse · Edo–Meiji · Kyoto|secondary-muted|450",
+    "Like Water for Chocolate · Laura Esquivel · 1989 · the ranch kitchen|secondary|450",
+    "Lovers rock · the blue-light basement|tertiary-muted|450",
+    "Low-and-slow BBQ · the smokehouse tray|primary|450",
+    "Macarons · the display case|tertiary-muted|500",
+    "Mod & British Invasion · the op-art club|tertiary-muted|500",
+    "Motown · the glamour stage|tertiary|450",
+    "Nashville rhinestone · the Opry stage|tertiary|450",
+    "New England saltbox · colonial vernacular · coastal Massachusetts|tertiary-muted|500",
+    "Pop-punk · the skate-park sleeve|tertiary-muted|500",
+    "Red wine · the tasting flight|primary|450",
+    "Red wine · the tasting flight|secondary|450",
+    "Romantic era · the candlelit recital|tertiary|450",
+    "Sainte-Chapelle · 1248 · Paris · the upper chapel|tertiary|450",
+    "Sichuan hot pot · the bubbling cauldron|secondary|450",
+    "Smørrebrød · the open sandwich|primary|450",
+    "Snow Country · Kawabata · 1948 · the hot-spring town in winter|primary|450",
+    "Symphonic & gothic metal · the cathedral set|secondary|450",
+    "Symphonic & gothic metal · the cathedral set|tertiary-muted|500",
+    "The Adventures of Sherlock Holmes · Doyle · 1892 · 221B Baker Street|primary|450",
+    "The Godfather · 1972 · dir. Coppola · cin. Gordon Willis · the don's study|primary-muted|450",
+    "The Good, the Bad and the Ugly · 1966 · dir. Leone · the desert duel|primary|450",
+    "The Grand Budapest Hotel · 1932 era · dir. Wes Anderson · the lobby & funicular|tertiary|450",
+    "The Handmaid's Tale · Atwood · 1985 · Gilead|secondary|450",
+    "The Leopard · Lampedusa · 1958 · Sicily in the 1860s|primary|450",
+    "The Makioka Sisters · Tanizaki · 1948 · the Kyoto cherry-viewing|tertiary|450",
+    "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet|primary-muted|500",
+    "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet|secondary-muted|450",
+    "The Shining · 1980 · dir. Kubrick · the Overlook Hotel|tertiary|450",
+    "The Witch · 2015 · dir. Eggers · the farm at the wood's edge|primary|450",
+    "The opera house · the gilded auditorium|secondary|450",
+    "The orchestra · the concert platform|tertiary-muted|500",
+    "There Will Be Blood · 2007 · dir. P.T. Anderson · the oil derrick fire|primary-muted|450",
+    "Touch of Evil · 1958 · dir. Orson Welles · the border-town night|tertiary-muted|500",
+    "Trulli of Alberobello · vernacular · Puglia, Italy|primary|500",
+    "War and Peace · Tolstoy · 1869 · the winter ballroom & the retreat|primary|450",
+    "Whisky & spirits · the back bar|tertiary|450",
   ]);
   // findDips takes BOTH the stop set and the engine as parameters (#681 U3 review 4, R3/R4): R3 because
   // the 19-stop display ramp and the 25-stop export ramp share every window from 200 to 800 but differ
@@ -1422,7 +1542,7 @@ for (const mode of ["perceptual", "peak"]) {
     for (const pal of doc.palettes) {
       const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode };
       const chroma = rampChromaOf(pal, doc);
-      const ramp = engine.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, stops);
+      const ramp = engine.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor }, controls, stops);
       for (let i = 1; i < ramp.length - 1; i++) {
         const a = ramp[i - 1].chroma, b = ramp[i].chroma, c = ramp[i + 1].chroma;
         if (b <= a - 3 && b <= c - 3) out.push(`${doc.__presetName}|${pal.name}|${ramp[i].stop}`);
@@ -1464,10 +1584,20 @@ for (const mode of ["perceptual", "peak"]) {
     if (!seenModes.has(mode)) FAIL("chroma-envelope", `(iv dip gate) ${mode} has a named baseline (${BASELINE_BY_MODE[mode].size} entries) but was not in the toneMode loop above, so it went silently unchecked`);
   }
 
-  // Negative control (peak): a patched copy that reintroduces F1's exact pre-fix bugs (a 1-step
-  // bisection  -  reproducing the old single overshooting multiplicative step's effect of exiting far from
-  // target  -  and the old Math.min(chroma, target) fallback that locked in that undershoot) must produce
-  // FAR more dips than DIP_BASELINE  -  proves this gate is live, not just re-counting the same 6 forever.
+  // Negative control (peak). Addendum-2 correction (2026-09-19): this used to patch F1's exact pre-fix
+  // bisection bugs (a 1-step bisection, an undershoot-locking `Math.min(chroma, target)` fallback) in
+  // `okhslStops`'s NON-anchored branch. On the corrected, anchor-aware measurement that branch is dead
+  // for this control's purpose: `okhslStops` dispatches to `okhslStopsAnchored` whenever the palette
+  // carries an anchor (nearly all of the generated corpus, see `above100Violators`' own comment above),
+  // and `okhslStopsAnchored` has no bisection at all - its saturation is `anchorChromaBasis(...) * env`,
+  // a closed-form blend, never solved iteratively - so the old patch text still matches (the FAIL-if-
+  // missing check still passes) but produces 0 buggy dips, not "far more": checked directly, confirmed
+  // dead. The control now patches `anchorChromaBasis` (src/engine/tonal.js, shared verbatim by both
+  // `paletteStopsAnchored` and `okhslStopsAnchored`) instead: forcing its smoothstep weight negative for
+  // any stop within the inner 15% of the pivot's own liftStop window drives that stop's blended value
+  // BELOW the anchor's own pivot value whenever the group target exceeds it, reproducing the same
+  // "interior stop >= 3 CAM16 C below both neighbours" shape the real F1 regression had, on the
+  // construction the real corpus actually renders through. Measured: 3,987 buggy peak dips (vs. 0 real).
   {
     const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
     const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
@@ -1475,9 +1605,11 @@ for (const mode of ["perceptual", "peak"]) {
     const patched = realSrc
       .replace('from "./hct.js"', `from "${hctUrl}"`)
       .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
-      .replace("for (let i = 0; i < 24; i++) {", "for (let i = 0; i < 1; i++) {")
-      .replace("const capped = hctToRgb(polishHue, target, targetTone);", "const capped = hctToRgb(polishHue, Math.min(chroma, target), targetTone);");
-    if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found  -  the bisection/fallback text moved, update this control");
+      .replace(
+        "const w = t * t * (3 - 2 * t); // smoothstep: w(0)=0, w(1)=1, w'(0)=w'(1)=0",
+        "const w = t < 0.15 ? -0.6 : t * t * (3 - 2 * t); // smoothstep: w(0)=0, w(1)=1, w'(0)=w'(1)=0"
+      );
+    if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found  -  the anchorChromaBasis weight text moved, update this control");
     const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
     // #681 U3 review 4, R3/R4: calls the real findDips against the patched engine, over both stop sets,
     // instead of reimplementing the loop inline.
@@ -1489,7 +1621,7 @@ for (const mode of ["perceptual", "peak"]) {
       }
     }
     const buggyDips = buggyDipSet.size;
-    if (buggyDips <= DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control, peak) the pre-fix-bug patched engine produced only ${buggyDips} dip(s), not clearly more than the ${DIP_BASELINE.size}-witness baseline  -  this control no longer exercises the F1 regression, pick a different probe`);
+    if (buggyDips <= DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control, peak) the patched engine produced only ${buggyDips} dip(s), not clearly more than the ${DIP_BASELINE.size}-witness baseline  -  this control no longer exercises a real regression, pick a different probe`);
   }
 
   // Negative control (even, #681 U3 review 3, N1): a patched copy with `chromaFloor` amplified 1.6x
@@ -1555,6 +1687,11 @@ for (const mode of ["perceptual", "peak"]) {
   const cuspRunFor = (doc, pal) => {
     const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "perceptual" };
     const chroma = rampChromaOf(pal, doc);
+    // NOT anchor: pal.anchor here - same addendum-2 finding as above100Violators' own comment: on the
+    // rendered anchored path this measured 958 multi-run and 712 bound-excess instances (perceptual,
+    // generated palettes), overwhelmingly on anchor-bearing palettes, the same structural mismatch (stop
+    // 500 is the anchor's real chroma, not the ramp's designed peak). Left on the non-anchored
+    // measurement pending the same scope ruling; see above100Violators' comment and the pass 2 handoff.
     const ramp = T.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull }, controls, T.STOPS);
     const c500 = ramp.find((r) => r.stop === 500).chroma;
     if (c500 <= 1e-9) return null;

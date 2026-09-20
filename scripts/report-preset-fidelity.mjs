@@ -91,8 +91,12 @@ for (const mode of MODES) {
       chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode,
     };
     const chroma = rampChromaOf(pal, doc);
+    // anchor: pal.anchor (U4 pass 2, addendum 2): this call omitted the anchor field, so every ramp it
+    // reported rendered on the NON-anchored construction regardless of whether the source preset is
+    // anchored - the same fault the dip gate had. Passing anchor through matches projectView's own call
+    // shape (src/ui/model.mjs, "the SAME resolved-chroma call" this file's own header already claimed).
     const ramp = T.paletteStops(
-      { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull },
+      { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor },
       controls,
       T.STOPS,
     );

@@ -230,6 +230,23 @@ if (controlSubjects.length !== 3796) FAIL("prime-identity-control", `${controlSu
   if (!bites) FAIL("prime-identity-control", "negative control DID NOT bite: mutating skew by 80 left all six non-prime ladder rungs unchanged vs the reference - the six-rung comparison cannot discriminate");
 }
 
+// Addendum-1 reconciliation (Q1, 2026-09-19, standing rule at
+// .sdlc/questions/standing-rulings-2026-09-20.md): this used to assert ctrlOff===0 (primeSwatches with
+// the anchor stripped byte-identical to the pre-#681 reference), and FAILed per mismatch. That assumed
+// U6's rebuild touched ONLY the anchored path. It did not: U6 replaced the non-anchored ladder itself
+// (CIE-L*/equal-compress, `referencePrimeSteps`' own header comment names it "U6's CIE-L*/equal-compress
+// rebuild" vs. the retired pre-#681 OKHSL-domain "redistribute" ladder this reference still
+// deliberately reimplements), and U4 review pass 1 Finding A then ported F1's best-iterate widening
+// search onto that NEW equal-compress domain (src/engine/prime.mjs) - a further, correct fix to the
+// CURRENT construction, not a partial migration. So EVERY non-anchored subject now legitimately
+// differs from the retired reference: measured 3,796 of 3,796 off, 0 exact, confirmed stable across
+// this pass's own prime.mjs fixes. That total-and-uniform divergence is itself the useful invariant a
+// migration this deliberate should show - a PARTIAL divergence (some subjects still byte-identical to
+// the retired ladder, most not) would mean the rebuild missed a code path, which is what this gate
+// still catches. The independent, CURRENT-construction correctness check lives in test/engine/prime.mjs
+// (20 gates, including this pass's own Finding A mutation proof) - this file's job is narrower: prove
+// the migration away from the pre-#681 reference is total, not spot-check the new construction's own
+// correctness a second time.
 let ctrlExact = 0, ctrlOff = 0;
 for (const { label, hueSpace, palette: p } of controlSubjects) {
   const ctl = { hueSpace, primeChroma: 100 };
@@ -240,12 +257,13 @@ for (const { label, hueSpace, palette: p } of controlSubjects) {
   for (let i = 0; i < PRIME_STEPS.length; i++) if (real[i].hex !== ref[i].hex) { mismatch = i; break; }
   if (mismatch != null) {
     ctrlOff++;
-    FAIL("prime-identity-control", `${label} step ${PRIME_STEPS[mismatch]}: primeSwatches (anchor stripped) ${real[mismatch].hex} !== the pre-#681 reference ${ref[mismatch].hex}`);
   } else {
     ctrlExact++;
+    FAIL("prime-identity-control", `${label}: primeSwatches (anchor stripped) is BYTE-IDENTICAL to the retired pre-#681 reference - U6's rebuild should have replaced this subject's construction too; a still-exact match after the rebuild means an unmigrated code path, not a clean result`);
   }
 }
-console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "FAIL" : "pass"}  prime-identity-control: ${ctrlExact} exact, ${ctrlOff} off (non-anchored primeSwatches unchanged by #681)`);
+if (ctrlOff !== controlSubjects.length) FAIL("prime-identity-control", `${ctrlOff} of ${controlSubjects.length} subjects differ from the retired reference, not all of them - a partial migration (some non-anchored ramps still built the old way) is a real defect, re-diagnose rather than accepting a number between 0 and ${controlSubjects.length}`);
+console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "FAIL" : "pass"}  prime-identity-control: ${ctrlExact} exact, ${ctrlOff} off (want 0 exact, ${controlSubjects.length} off - U6's rebuild replaced the non-anchored ladder too, see Q1)`);
 
 // ── anchor-ladder (F1, U1 review 2026-09-18; re-derived U4 review pass 1, Finding A, 2026-09-20) ──
 // The anchored ladder's own well-formedness at primeChroma 100 (the same evaluation point C2/C4
@@ -539,94 +557,36 @@ const RAMP_DISTINCT_ALLOW = [
 
 // NOTCH_ALLOW (ruling Q-C, 2026-09-18): the owner ruled the notch gate is the 70%-ratio definition AND
 // an absolute dip of at least 3 CAM16 C versus both neighbours (see notchOk's own header comment). This
-// is the by-name list under that variant, measured on the rendered path: 78 entries (perceptual 15,
-// peak 9, even 54), replacing the prior 459-entry ratio-only list. Every entry is a near-grey anchor
-// inside a group whose resolved `rampChroma` target is well above it, still visibly notched under the
-// smoothstep easing fix (see `anchorChromaBasis`'s own header comment in tonal.js) even after the
-// absolute-dip clause drops the marginal, imperceptible ratio-only cases. Named "pending U4": accepted
-// here so nothing widens silently, re-verified on the integrated tree, not a final owner acceptance of
-// the count. Recorded in Q-U2-7.
-// Review pass 4, Finding 2 (2026-09-19): the joint hue/rendered-chroma solve re-measured every even-
-// mode ramp's 450/500/550 chroma triple, moving the even population 52 -> 54 (9 names added, 7
-// removed - not a pure superset/subset move) while perceptual/peak (untouched, OKHSL) stay 15/9.
-// Re-verified against `notchOk` on the current rendered path; no change to notchOk itself.
+// is the by-name list under that variant, measured on the rendered path.
+//
+// Addendum-1 reconciliation (Q3, 2026-09-19, standing rule at .sdlc/questions/standing-rulings-2026-09-20.md):
+// this list previously carried 78 entries (perceptual 15, peak 9, even 54), measured BEFORE this tree
+// integrated U3's own work. On the current integration head it measures 15 (all even mode) - a clean
+// SUBSET of the old 78 (0 new/unexpected members, all 63 departures are removals, verified directly).
+// Cited mechanism: commit 2573208c "re-centre chromaEnvelope on the anchor's own lifted reading" (#681
+// U3 review pass 2, R2) - the same fix this file's `anchorChromaBasis` import and the tonal.mjs
+// KNOWN_BASELINE_DUP/EVEN_DIP_BASELINE comments already cite as U3's shipped chromaEnvelope shape. R2
+// keyed the envelope's position on `liftStop(stop,lift) - liftStop(anchorStop,lift)`, the anchor's own
+// LIFTED reading, instead of the raw numeric anchor stop - env(anchorStop)=1 exactly under any lift,
+// where the pre-U3 construction this 78-count was measured against could sit off-pivot under a nonzero
+// lift and read a visible ratio+absolute notch there. All 63 departed names are the near-grey anchors
+// whose notch was an artifact of that pre-R2 off-pivot reading, not a real construction defect - every
+// one was ALREADY gone before this U4 pass started (inherited from the U3 merge, ed14832b), not a
+// side effect of any U4 fix. Full 63-name departure list recorded in .sdlc/questions/pif-u4.md (Q3).
 const NOTCH_ALLOW = [
-  `architecture "Bankside / Tate Modern · 1947, conv. 2000 · London" tertiary #888781 [even]`,
-  `architecture "Boston City Hall · 1968 · Kallmann McKinnell & Knowles" secondary #888781 [even]`,
-  `architecture "Charleston single house · antebellum vernacular · South Carolina" primary #DDDBD7 [even]`,
-  `architecture "Falu-red farmstead · Swedish vernacular · Dalarna" tertiary-muted #DDDBD7 [even]`,
   `architecture "Habitat 67 · 1967 · Moshe Safdie · Montreal" tertiary-muted #D6D5D0 [even]`,
   `architecture "Himeji Castle · 1609 · 'White Heron' keep · Japan" secondary #E0DEDA [even]`,
   `architecture "Icelandic turf house · vernacular · Skógar / Glaumbær" tertiary-muted #D9D8D4 [even]`,
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322 [even]`,
-  `architecture "Lancashire cotton mill · 19th c · northern England" primary-muted #8C9094 [perceptual]`,
-  `architecture "Narkomfin Building · 1930 · Ginzburg · Moscow" secondary #8E8D87 [even]`,
-  `architecture "New England saltbox · colonial vernacular · coastal Massachusetts" secondary-muted #83878B [peak]`,
-  `architecture "New England saltbox · colonial vernacular · coastal Massachusetts" tertiary-muted #DDDBD7 [even]`,
-  `architecture "Sydney Opera House · 1973 · Jørn Utzon" tertiary-muted #9A8C88 [even]`,
-  `architecture "The Taj Mahal · 1648 · Agra · at dawn" secondary #DDCECA [even]`,
   `architecture "Trulli of Alberobello · vernacular · Puglia, Italy" primary #CCCBC7 [even]`,
-  `architecture "Zollverein Coal Mine · 1932 · Schupp & Kremmer · Essen, Germany" primary-muted #8C9094 [perceptual]`,
-  `cuisine "Caramel & toffee · the confection pan" primary #DDDBD6 [even]`,
-  `cuisine "Día de Muertos table · the ofrenda" tertiary-muted #DDDBD6 [even]`,
-  `cuisine "Espresso · the café counter" tertiary-muted #DDDBD6 [even]`,
   `cuisine "Fresh pasta · the marble work-bench" tertiary-muted #E0DEDA [even]`,
   `cuisine "Macarons · the display case" tertiary-muted #E0DEDA [even]`,
-  `cuisine "Sushi & sashimi · the cypress counter" secondary #DAD8D2 [even]`,
-  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" primary #DAD8D2 [even]`,
-  `film "Raise the Red Lantern · 1991 · dir. Zhang Yimou · the courtyard at night" secondary #83878B [peak]`,
-  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" secondary-muted #9FA2A6 [perceptual]`,
-  `film "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet" primary #DAD8D2 [even]`,
-  `film "The Third Man · 1949 · dir. Carol Reed · the wet Vienna cobbles at night" tertiary-muted #8C9093 [peak]`,
-  `film "The Third Man · 1949 · dir. Carol Reed · the wet Vienna cobbles at night" tertiary-muted #8C9093 [perceptual]`,
-  `film "The Witch · 2015 · dir. Eggers · the farm at the wood's edge" secondary #8B9194 [perceptual]`,
-  `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" tertiary #707276 [perceptual]`,
-  `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" tertiary-muted #DDDBD7 [even]`,
-  `literature "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865" tertiary #DDDBD7 [even]`,
-  `literature "Death of a Salesman · Arthur Miller · 1949 · the Loman house" tertiary-muted #777B81 [peak]`,
-  `literature "Death of a Salesman · Arthur Miller · 1949 · the Loman house" tertiary-muted #777B81 [perceptual]`,
-  `literature "Mistborn · Brandon Sanderson · 2006 · the ash-fall Final Empire" secondary #82817D [even]`,
-  `literature "Mrs Dalloway · Virginia Woolf · 1925 · a June morning in Westminster" secondary-muted #8C9095 [peak]`,
-  `literature "The Catcher in the Rye · Salinger · 1951 · winter New York" secondary #777B80 [peak]`,
-  `literature "The Catcher in the Rye · Salinger · 1951 · winter New York" secondary #777B80 [perceptual]`,
-  `literature "The Handmaid's Tale · Atwood · 1985 · Gilead" primary #DAD8D2 [even]`,
-  `literature "The Handmaid's Tale · Atwood · 1985 · Gilead" secondary-muted #74797E [perceptual]`,
-  `literature "The Makioka Sisters · Tanizaki · 1948 · the Kyoto cherry-viewing" primary-muted #A6A5A0 [even]`,
-  `literature "The Road · Cormac McCarthy · 2006 · the ash-grey wasteland" secondary #7C7B77 [even]`,
-  `literature "War and Peace · Tolstoy · 1869 · the winter ballroom & the retreat" secondary-muted #8C9094 [perceptual]`,
-  `music "Doom & stoner · the amp-fuzz haze" secondary-muted #28262C [even]`,
-  `music "Doom & stoner · the amp-fuzz haze" tertiary-muted #7C7982 [even]`,
-  `music "Golden-age NYC · the boom-bap sleeve" secondary #777B80 [peak]`,
-  `music "Golden-age NYC · the boom-bap sleeve" secondary #777B80 [perceptual]`,
-  `music "Gospel · the church choir" primary-muted #DDDBD7 [even]`,
-  `music "Mod & British Invasion · the op-art club" tertiary-muted #DDDBD7 [even]`,
-  `music "New Orleans brass · the street parade" secondary-muted #DAD8D2 [even]`,
   `music "Pop-punk · the skate-park sleeve" tertiary-muted #D9D8D4 [even]`,
-  `music "Riot grrrl · the zine collage" tertiary #D0CEC9 [even]`,
-  `music "The orchestra · the concert platform" tertiary-muted #DDDBD7 [even]`,
-  `music "UK '77 · the ransom-note sleeve" secondary-muted #707276 [perceptual]`,
-  `music "UK '77 · the ransom-note sleeve" tertiary-muted #C3C1BC [even]`,
-  `nature "0° · June · 11:00 · Congo Basin lowland forest, Odzala, Republic of the Congo" tertiary-muted #5C5E63 [perceptual]`,
   `nature "23° S · December · 13:00 · Salar de Atacama edge, Atacama Desert, Chile" secondary #E0DEDA [even]`,
-  `nature "43° S · February · 18:00 · Aoraki / Mount Cook, Southern Alps, New Zealand" tertiary-muted #7F848A [perceptual]`,
-  `nature "49° N · October · 15:00 · Boreal shield, northern Ontario, Canada" secondary-muted #988984 [even]`,
   `nature "51° N · May · 09:00 · English oak woodland, Sussex, bluebell season" primary #D8D9D0 [even]`,
-  `nature "51° S · November · 07:00 · Torres del Paine, Patagonian Andes, Chile" secondary-muted #978985 [even]`,
-  `nature "78° N · July · 14:00 · Spitsbergen interior, Svalbard" secondary #83878B [peak]`,
-  `travel "17° N · November · 22:00 · An Oaxacan village cemetery on the first night of Día de los Muertos" tertiary-muted #636665 [peak]`,
-  `travel "17° N · November · 22:00 · An Oaxacan village cemetery on the first night of Día de los Muertos" tertiary-muted #636665 [perceptual]`,
-  `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6 [even]`,
-  `travel "26° N · June · 18:30 · The shrine of Lal Shahbaz Qalandar, Sehwan, at the evening dhamaal" tertiary-muted #BCBBB8 [even]`,
-  `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" tertiary-muted #AC9D99 [even]`,
-  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary-muted #D0CEC9 [even]`,
-  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" secondary-muted #82817E [even]`,
-  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" tertiary #C4ABA7 [even]`,
   `travel "34° N · May · 04:30 · The corridor of torii at Fushimi Inari before opening hour" tertiary-muted #A2A19E [even]`,
   `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" secondary-muted #B9B8B4 [even]`,
-  `travel "38° N · July · 11:00 · Point Reyes peninsula, California, the marine layer locked in for the third week" secondary #D0CEC9 [even]`,
-  `travel "41° N · July · 20:30 · The Great Salt Lake at sunset, near Antelope Island causeway" tertiary-muted #413538 [even]`,
   `travel "41° N · October · 23:00 · Tbilisi viewed from the Mtatsminda funicular at the upper station" secondary #71716E [even]`,
-  `travel "47° N · June · 10:00 · St. John's harbour, dense Atlantic fog" secondary #D0CEC9 [even]`,
   `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" secondary-muted #CBCAC5 [even]`,
   `travel "55° N · July · 13:00 · Lowland Kamchatkan taiga in heavy mosquito season, near the Avacha river" tertiary-muted #ABAAA7 [even]`,
 ].sort();
@@ -960,6 +920,39 @@ if (!allowListMatches(notchSorted, NOTCH_ALLOW)) {
   for (const n of notchSorted) if (!NOTCH_ALLOW.includes(n)) FAIL("anchor-ramp", `notch allow-list: unexpected member (stop 500's chroma both ratio-dipped and dipped >=3 C below both neighbours) - ${n}`);
 }
 for (const n of NOTCH_ALLOW) console.log(`    r ${n}`);
+// Addendum-2 (2026-09-19): the lone-spike sweep above only ever walked `presetsByCat` (the 8 curated
+// categories), never the 16-palette default kit - "excluded" is the wrong word (nothing filtered it
+// out), it was simply never in this loop's own subject list. Ruling: the default kit must be IN the
+// sweep. Rather than fold it into the big shared loop above (which also drives six OTHER allow-lists -
+// window-clamp, monotone, gap, distinct, notch - none of them named by addendum 2 and none
+// re-measured against the default kit yet), this is a small, separate, lone-spike-only sweep over the
+// same `loneSpikeStop` function, so it costs 16 extra renders instead of re-opening six unrelated
+// gates' scope. It found exactly one hit: default kit "Default" Data 7 #088585 stop 500 (even, 25-stop) -
+// a near-achromatic teal anchor sitting as a lone spike between two near-grey neighbours, the same
+// mechanism as the curated corpus's 64. Per addendum 2, this is its OWN finding, not folded into
+// LONE_SPIKE_ALLOW: folding it in would also fold in the plan's separate "0 notched cells in the
+// default kit" style invariant this preset carries, which is a different, larger claim than "this one
+// gate's allow-list grew by one" and needs its own owner sign-off before the allow-list absorbs it.
+const dkBaseForSpike = defaultDocument(); // .name is read BEFORE hydrate - hydrate does not carry it
+const dkSpikeDoc = hydrate({ ...dkBaseForSpike, toneMode: "even" });
+const dkSpikeView = projectView(dkSpikeDoc);
+const defaultKitSpikeNames = new Set();
+for (const p of dkSpikeDoc.palettes) {
+  if (typeof p.anchor !== "string") continue;
+  const vp = dkSpikeView.palettes.find((v) => v.name === p.name);
+  const ramp25 = vp ? vp.fullRamp : null;
+  if (!ramp25) continue;
+  const spikeStop = loneSpikeStop(ramp25);
+  if (spikeStop !== null) defaultKitSpikeNames.add(`default kit "${dkBaseForSpike.name}" ${p.name} ${p.anchor} stop ${spikeStop}`);
+}
+const DEFAULT_KIT_SPIKE_FINDING = new Set([`default kit "Default" Data 7 #088585 stop 500`]);
+const dkSpikeSorted = [...defaultKitSpikeNames].sort();
+console.log(`  ${allowListMatches(dkSpikeSorted, [...DEFAULT_KIT_SPIKE_FINDING]) ? "pass" : "FAIL"}  anchor-ramp default-kit lone-spike (addendum 2, own finding, NOT part of LONE_SPIKE_ALLOW - pending owner ruling on the default kit's "0 notched cells" invariant): ${dkSpikeSorted.length} (expected ${DEFAULT_KIT_SPIKE_FINDING.size})`);
+if (!allowListMatches(dkSpikeSorted, [...DEFAULT_KIT_SPIKE_FINDING])) {
+  for (const n of DEFAULT_KIT_SPIKE_FINDING) if (!dkSpikeSorted.includes(n)) FAIL("anchor-ramp", `default-kit lone-spike: expected member missing - ${n}`);
+  for (const n of dkSpikeSorted) if (!DEFAULT_KIT_SPIKE_FINDING.has(n)) FAIL("anchor-ramp", `default-kit lone-spike: unexpected member - ${n}`);
+}
+for (const n of DEFAULT_KIT_SPIKE_FINDING) console.log(`    r ${n}`);
 const loneSpikeSorted = [...loneSpikeNames].sort();
 console.log(`  ${allowListMatches(loneSpikeSorted, LONE_SPIKE_ALLOW) ? "pass" : "FAIL"}  anchor-ramp lone-spike allow-list (even, near-achromatic neighbours <= ${LONE_SPIKE_ACHROMATIC}, OKLCH C > both by > ${LONE_SPIKE_BOUND}; owner-ruled dampAmp-0/anchor-pass-through carve-out, fix joins #701): ${loneSpikeSorted.length} (expected ${LONE_SPIKE_ALLOW.length})`);
 if (!allowListMatches(loneSpikeSorted, LONE_SPIKE_ALLOW)) {
