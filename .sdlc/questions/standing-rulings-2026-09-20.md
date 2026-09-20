@@ -28,3 +28,14 @@ Chosen: I will restart this session in bypass mode (Recommended).
 - Lone spike (#681 U4): Name the 64 and gate the count; fix joins #701 (Recommended).
 - #377: Keep open, labelled blocked. #496: Park it, the owner does the Figma steps later.
 - The other conductor session no longer touches this repo's plans (owner, in chat).
+
+## R5 to R7 Speed levers (asked after the owner's "why is this so slow?", same day)
+Question: Which of these do you want? Each trades some rigor or convenience for speed.
+Options (multi-select): Pause the other project's Playwright runs until #681 lands; Light process for records-only changes; No new records tickets: findings ride the next code PR; Criteria stop pinning line numbers and exact prose.
+Chosen: Criteria stop pinning line numbers and exact prose; No new records tickets: findings ride the next code PR; Light process for records-only changes. Not chosen: pausing the other project.
+
+- R5 Light process for records-only changes. A change touching only `.sdlc/` gets one unit, one reviewer, no separate verifier pass and no pre-land pair; the critic's ACCEPT at the head sha and green CI stay. Risk the owner accepted: a wrong record lands and is fixed in the next PR.
+- R6 No new records tickets. A review finding about a file under `.sdlc/` is fixed inside whatever PR is open, never minted as its own ticket or plan.
+- R7 Criteria needles are function names, ids and counts; never a line number, never exact prose. Planners are briefed so from now on; existing plans are not rewritten for it.
+
+These amend `.sdlc/adapter.md` §2.1. Per R6 the amendment is not its own plan: it rides gate-split U6b, which already owns that file. Until it lands, this document is the ruling of record.
