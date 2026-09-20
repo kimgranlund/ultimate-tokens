@@ -2,20 +2,28 @@
 kind: handoff
 unit: pif-u4-integration (plan preset-intent-fidelity, ticket #681, unit U4)
 written: 2026-09-19
-updated: 2026-09-20 (pass 5, records-only, verifier verdict pif-u4)
+updated: 2026-09-20 (main merge, then #681 U5's record repairs; the round history below runs past pass 5)
 branch: unit/pif-u4-integration
 base: 834a4d8d (plan/preset-intent-fidelity)
 head: the tip of `unit/pif-u4-integration` - a commit cannot name its own sha, so a literal value here
   goes stale the moment it is written (the same trap U2's live sha table hit); resolve it with
-  `git log -1 --format=%H unit/pif-u4-integration` instead of trusting a number in this file. This
-  record's own commit is the LAST one in the round history below - nothing here is pending. Round
+  `git log -1 --format=%H unit/pif-u4-integration` instead of trusting a number in this file. The
+  round history below is complete as of this edit; it is NOT a claim that this record's own commit is
+  the last on the branch, which is the false self-description the pass-7 verifier found (row 18: three
+  commits sat after pass 5 and none was listed). A later commit on this unit or on the plan branch is
+  expected and does not make this record stale by itself; a later commit that CHANGES a figure here
+  does, and the correction blocks in the body are how such a change is recorded. Round
   history, by commit subject (not sha, for the same reason): pass 1 "chore(assets): regenerate
   committed artifacts for the integrated engine"; round 1 fix "fix(color-engine): U4 pass 2, fold
   review pass 1 fix-first findings"; round 2 "fix(color-engine): U4 pass 2 round 2, apply both
   team-lead addenda"; round 3 "fix(color-engine): U4 pass 2 round 3, review-2 fix-first items + Q7
   ratchet gate"; round 4 "fix(color-engine): U4 pass 2 round 4, ratchet perf follow-up + review-3
-  comment fixes"; pass 5 "docs(sdlc): U4 pass 5, records-only, verifier verdict pif-u4" (this round,
-  the tip as of this commit).
+  comment fixes"; pass 5 "docs(sdlc): U4 pass 5, records-only, verifier verdict pif-u4"; then the
+  three the pass-7 verifier found missing from this list: "merge(color-engine): U4 integration, main
+  sync onto unit/pif-u4-integration" (the 3ce50daa merge), the `bf2955f4` ledger commit that added the
+  Main merge section below, and the one-character follow-up at `67d4df96`, which is the head the
+  pass-7 verdict graded; and finally #681 U5's own record repairs, made on `unit/pif-u5-records`
+  rather than on this branch and marked as dated correction blocks in the body.
 ---
 
 # U4: integration, blast-radius report, pending-U4 re-measurements
@@ -302,8 +310,17 @@ follow-through on the owner's ruling.
 ### Pass 5 (2026-09-20): records only, verifier verdict pif-u4 (22 green, 3 yellow, 3 red - every red a record)
 
 The engine is green: every allow-list, Finding A, #668, #686 and `npm test` passed independently on the
-verifier's own re-derivation. No source change is in scope except the em dashes fixed above (row 28: 2
-in `.sdlc/handoffs/pif-u2.md`, 2 in `test/engine/semantic.mjs`, both now 0). Rows 21 and 22 (the wrong-
+verifier's own re-derivation. No `src/` change is in scope. Two kinds of TEST-file change are: the em
+dashes fixed above (row 28: 2 in `.sdlc/handoffs/pif-u2.md`, 2 in `test/engine/semantic.mjs`, both now
+0), and **six `FLOORS.even` pins in `test/engine/semantic.mjs`**, which this section originally failed
+to list at all while its own commit subject said records-only (verifier pass-5 Records row "Handoff
+pass 5 scope sentence"; corrected here 2026-09-20 by #681 U5). The six, each moved from one decimal
+UNDER `floor(measured)` to `floor(measured)`, per the table's own stated rule, with the measured value
+this pass read: Secondary light 5.5 to **5.6** (5.6078), Success light 7.6 to **7.7** (7.7219), Warning
+dark 5.2 to **5.3** (5.3334), Data 1 light 6.2 to **6.3** (6.3149), Data 3 light 6.4 to **6.5**
+(6.5224), Data 5 light 5.7 to **5.8** (5.8350). All six move the pin UP, none was ever read below AA
+or below its own prior pin, and each is marked "re-pinned pass 5" in `FLOORS.even`'s own comment in
+place of the "pending U4" note the re-measurement supersedes for that side. Rows 21 and 22 (the wrong-
 quantity yielded cells and the missing C6 median/p90 table) are fixed above in §7.3/§7.6. This section
 covers the three yellow rows and the gate-time ruling.
 
@@ -328,6 +345,9 @@ every rendered cell by design. It was measured before (informally, in earlier pa
 checks) but never written down as a corpus-wide number with a gate or a report mode behind it. No gate
 is added here (out of this pass's records-only scope; a `--identity-control` mode for the ramp half, or
 a dedicated gate, is a real follow-up, not a records fix) - the number itself is now on the record.
+**Follow-up ticket: #715** (2026-09-20, #681 U5, closing the verifier's "the follow-up the record names
+has no ticket number"). #715 carries both this C4 ramp identity control and row 25's default-kit sweep,
+and is NOT claimed by #681's PR: it survives this plan deliberately.
 
 **Row 20 (yellow): the F1 peak-cap trade's tone-drift and hue-residual figures, carried to U4 by
 revision 24, were never re-measured in the U4 records.** The plan states (revision 24, ruling 3): "F1's
@@ -342,15 +362,25 @@ HCT fallback (`src/engine/tonal.js:1255`, `hctToRgb(polishHue, target, targetTon
 the same idea for `preCapOklchHue` versus the achieved pixel's OKLCH hue. Both `targetTone` and
 `preCapOklchHue` are LOCAL to `okhslStops` (confirmed by reading the function, `tonal.js:1130-1263`) -
 neither is returned by `paletteStops`, the public API this unit's own tooling (and every gate in this
-file) reads. Reproducing these two figures from outside the engine would mean either instrumenting
-`okhslStops` to expose its own internal target values (a real engine change - this pass's own brief:
-"if you believe an engine change is needed, stop and tell me instead"), or approximating against a
-DIFFERENT reference (e.g. the pre-peak-cap construction's own tone/hue), which is not the quantity U3
-measured and would not reconcile against revision 24's own cited figures. Recorded here as a genuine
-gap, not silently closed or manufactured: the owner needs either a real instrumentation change (a small,
-named follow-up, not a records fix) or an explicit decision to accept U3's own last-measured figures
-(34.5%/0.1009/24.62deg, `pif-u3.md:849-857`) as final before revision 24's ruling 3 can be called fully
-reconciled at U4.
+file) reads.
+
+**Correction (2026-09-20, #681 U5, verifier pass-7 row 20 "Row 20 wording").** The paragraph that
+stood here concluded that reproducing these two figures "would mean either instrumenting `okhslStops`
+... (a real engine change)" or approximating against a different reference. The facts it rested on are
+right: `targetTone` and `preCapOklchHue` ARE locals of `okhslStops` (`tonal.js:1203`, `:1209`) and
+`paletteStops` does not return them. The CONCLUSION was too strong. No engine change is needed to
+grade it: the verifier hooked a SCRATCH copy of `src/` (one push after the polish at `tonal.js:1264`,
+the branch worktree untouched) and measured it directly. Shipped path, peak, 3,780 palettes:
+`capped n 702`, tone error over 0.01 L\* on **249 (35.5%)**, max **0.0848**, hue residual max
+**24.6211 deg**, gap below the anchor max **1.6578 C**. Anchors stripped, same probe: n 1,412,
+**23.6%**, max 0.0945, 24.6211 deg. Revision 24's carried figures (35% over 0.01 L\*, max 0.10, hue
+residual at or under 24.6 deg) therefore HOLD at U4 on the shipped path. Two scope notes the owner
+needs with them: the anchored path has no cap at all, so the trade applies only to non-anchored
+palettes; and the verifier's n (702 capped) differs from U3's own 5,814, whose scope is not recorded,
+so this is a fresh measurement rather than a digit reconciliation against U3's. What remains open is
+not the measurement but the decision: whether to accept these as revision 24 ruling 3's final numbers,
+or to fund a named follow-up that exposes the two internals so a GATE can hold them. Tracked as
+**#715** together with row 25 and row 13's C4 ramp identity control; #715 is not claimed by #681's PR.
 
 **Row 25 (yellow): the default kit is swept for lone-spike and dips only; "0 notched kit cells" is
 asserted in a comment, not gated.** `window`/`gap`/`distinct`/`notch`/`monotone`/`order`/`dupe` all
@@ -362,6 +392,9 @@ regardless, per the verifier's own framing: the plan's invariant is asserted by 
 a gate, so a FUTURE kit regression on any of these axes would pass silently. Extending the sweeps to
 cover the kit is real gate-authoring work, out of a records-only pass's scope; the gap and today's clean
 measurement are both now on the record for whoever picks this up.
+**Follow-up ticket: #715** (2026-09-20, #681 U5, closing the verifier's "still asserted by comment, not
+by a gate; no ticket named"). #715 covers the default kit in every sweep together with row 13's C4 ramp
+identity control, and is NOT claimed by #681's PR.
 
 `npm test`, `gate:corpus-contrast`, citations, branding all re-run green after this pass's changes
 (numbers in the final section below).
@@ -508,7 +541,7 @@ Full 41-cell before/after (bf2aaf6 -> integrated-tree, all still >= AA):
 | perceptual | Data 7 | dark | 6.0 | 5.1 | peak | Secondary | dark | 15.1 | 5.6 |
 | perceptual | Data 8 | dark | 5.8 | 4.9 | peak | Tertiary | dark | 5.5 | 5.3 |
 | even | Secondary | dark | 5.8 | 5.5 | peak | Info | dark | 7.7 | 4.5 |
-| even | Success | light | 8.0 | 7.6 | peak | Success | dark | 11.8 | 4.8 |
+| even | Success | light | 8.0 | 7.7 | peak | Success | dark | 11.8 | 4.8 |
 | even | Success | dark | 5.1 | 4.9 | peak | Warning | dark | 7.4 | 5.2 |
 | even | Data 1 | dark | 5.8 | 4.9 | peak | Data 1 | light | 10.0 | 6.3 |
 | | | | | | peak | Data 1 | dark | 6.7 | 4.9 |
@@ -630,7 +663,7 @@ originally written against); "after" is the real, rendered, anchor-aware path th
 
 | mode | stop 100 med/p90 | stop 300 med/p90 | stop 700 med/p90 | stop 900 med/p90 | cells failing |
 |---|---|---|---|---|---|
-| perceptual | 9.5% / 17.4% OK | **79.9% / 97.9% FAIL** | 62.6% / 66.5% OK | 22.6% / 26.0% OK | 1 of 8 |
+| perceptual | 9.5% / 17.4% OK | **79.9% / 97.9% FAIL** | 62.6% / 66.5% OK | 22.6% / 26.0% OK | 2 of 8 |
 | peak | 4.2% / 11.8% OK | 41.1% / 58.1% OK | 61.3% / 69.3% OK | 19.4% / 25.2% OK | 0 of 8 |
 | even | 10.9% / 16.2% OK | 39.1% / 52.2% OK | 39.0% / 44.6% OK | 16.3% / 16.5% OK | 0 of 8 |
 
@@ -638,8 +671,8 @@ originally written against); "after" is the real, rendered, anchor-aware path th
 
 | mode | stop 100 med/p90 | stop 300 med/p90 | stop 700 med/p90 | stop 900 med/p90 | cells failing |
 |---|---|---|---|---|---|
-| perceptual | 17.4% / **35.1% FAIL** | **94.0% / 146.2% FAIL** | 74.5% / **119.3% FAIL** | **31.7% / 66.5% FAIL** | 7 of 8 |
-| peak | 11.7% / 23.6% OK | **84.0% / 137.7% FAIL** | 68.8% / **111.1% FAIL** | **29.3% / 62.1% FAIL** | 3 of 8 |
+| perceptual | 17.4% / **35.1% FAIL** | **94.0% / 146.2% FAIL** | 74.5% / **119.3% FAIL** | **31.7% / 66.5% FAIL** | 6 of 8 |
+| peak | 11.7% / 23.6% OK | **84.0% / 137.7% FAIL** | 68.8% / **111.1% FAIL** | **29.3% / 62.1% FAIL** | 5 of 8 |
 | even | 15.6% / **37.0% FAIL** | 48.4% / **113.7% FAIL** | 42.5% / 80.2% OK | 22.9% / **52.0% FAIL** | 3 of 8 |
 
 24 individual readings total (3 modes x 4 stops x 2 statistics: median, p90 - the table above marks a
@@ -647,6 +680,15 @@ FAIL row when either its median or its p90 misses, so a stop-row can carry 1 or 
 2 of 24 individual readings fail (both at perceptual|stop 300, the same cell C6 was already imperfect
 against non-anchored). After: **14 of 24 individual readings fail**, matching the verifier's own count
 exactly.
+
+**Correction (2026-09-20, #681 U5, verifier pass-5 Records row "Handoff 7.6 cells failing column"):**
+the `cells failing` column counted rows, not readings, in three of the six cells, while the prose
+underneath counted readings. The column now counts READINGS throughout, which is what "of 8" means
+(4 stops x median and p90). Re-derived from this section's own two tables, cell by cell: after,
+perceptual 1 + 2 + 1 + 2 = **6** (was written 7), peak 0 + 2 + 1 + 2 = **5** (was written 3), even
+1 + 1 + 0 + 1 = 3 (already right), total 6 + 5 + 3 = 14, which is the prose's own 14 of 24; before,
+perceptual 0 + 2 + 0 + 0 = **2** (was written 1), peak 0, even 0, total 2, which is the prose's own
+2 of 24. No measured percentage moved; only the three miscounted column cells.
 
 **Stated plainly, per the round-4/pass-5 brief's own instruction not to soften or bury this: on the
 rendered path that ships, the C6 median and p90 bars the owner held at revision 14 are missed in most
@@ -1045,7 +1087,15 @@ pass). None of these were textual merge conflicts (git's 3-way merge kept every 
 byte-identical on both parents, no conflict marker); each went stale because the CONTENT it points at
 moved, which a text-diff merge cannot detect.
 
-**Citation re-pins (8), `docs/reference/` line-number citations into `src/ui/app.js` /
+**Citation re-pins: 46, not 8 (corrected 2026-09-20, #681 U5).** The list of eight below was the
+subset the merging builder enumerated, under an opening sentence that claimed "Every re-pin below is
+listed individually". The pass-7 verifier found that claim false: counting every `file:line` citation
+whose value at head is present in NEITHER parent gives far more than eight, most of them inside the
+merge's own conflict resolutions, which this record had classed as verified-and-left-untouched rather
+than enumerated. The complete ledger is the table further down; the eight are kept below because each
+carries a `Verify:` command worth keeping, and they are rows 17, 18, 27 to 30, 45 and 46 of it.
+
+The original eight, `docs/reference/` line-number citations into `src/ui/app.js` /
 `test/engine/tonal.mjs`.** Mechanism, all eight: `app.js` and `tonal.mjs` each grew a different amount
 on the two merge parents before this point (unit `3921f140` had already grown `test/engine/tonal.mjs`
 to 1,891 lines from #681's own test additions - main `3ce50daa`'s copy is 909 lines; `app.js` differs by
@@ -1080,6 +1130,107 @@ confirms STALE 0 / NOFILE 0 across the corpus after these eight land.
 8. `docs/reference/rubrics/acceptance-criteria.md:25` - `hpg-tonal-lift-monotonic` citation -
    `tonal.mjs:577-601` -> `tonal.mjs:687-708`. Verify: `sed -n '691p' test/engine/tonal.mjs` -> the
    `// -- hpg-tonal-lift-monotonic (#648): ...` header block.
+
+### The complete re-pin ledger: 46 citations, one per line
+
+Derived independently (2026-09-20, #681 U5), not read off the list above. Method, so it can be
+re-run rather than trusted: for each of the 8 citing documents, parse every citation at head, at the
+unit parent `3921f140` and at the main parent `3ce50daa` with the repo's OWN parser
+(`scripts/audit-citations.mjs`'s `parseCitations`, so slash lists and comma lists expand exactly as
+the gate expands them), and keep every citation whose value at head appears in neither parent's set
+for that file. Old values are read from the parent line the head line aligns to, by difflib opcode
+alignment, and the `anchor at head` column is a direct read of the cited line in this tree.
+
+Per document: `04-context-and-messaging.md` 16, `app-shell.md` 12, `02-sections-and-resolvers.md` 5,
+`component-inventory.md` 4, `03-stores-and-persistence.md` 4, `SKILL.md` 2,
+`acceptance-criteria.md` 2, `00-synthesis.md` 1.
+
+**Why 46 and not the verifier's 40.** The two counters differ in two named, reproducible ways, and
+both are stated rather than reconciled away. (1) `app-shell.md` carries six BARE citations of the
+form `:1641`, whose file is implied by the document's own context; the repo's parser resolves them to
+`src/ui/app.js` and the citations gate audits them, so they are re-pins by the same definition as the
+rest. A counter requiring an explicit filename sees 6 of this document's 12 and reports 6. (2) Inside
+a slash or comma list such as `app.js:2458/2490`, the repo's parser yields one citation per member;
+counting the list as a single citation gives one fewer in `02-sections-and-resolvers.md` and one more
+in `04-context-and-messaging.md` than the verifier recorded there. 46 minus those 6 bare forms is 40,
+which is the verifier's own figure. Every row below reproduces at head either way.
+
+| # | citing doc:line | old at unit parent 3921f140 | old at main parent 3ce50daa | new at head | anchor at head |
+|---|---|---|---|---|---|
+| 1 | `docs/lld/app-shell.md:130` | `:1640` | `:1630` | `:1641` | `src/ui/app.js:1641` = `renderCenter(view) {` |
+| 2 | `docs/lld/app-shell.md:133` | `:1885` | `:1875` | `:1886` | `src/ui/app.js:1886` = `renderCanvasFooter() {` |
+| 3 | `docs/lld/app-shell.md:133` | `:1890` | `:1880` | `:1891` | `src/ui/app.js:1891` = `paintCanvasFooter() {` |
+| 4 | `docs/lld/app-shell.md:134` | `:1926` | `:1916` | `:1927` | `src/ui/app.js:1927` = `renderRightPane(view) {` |
+| 5 | `docs/lld/app-shell.md:135` | `:2161` | `:2151` | `:2162` | `src/ui/app.js:2162` = `renderAppFooter() {` |
+| 6 | `docs/lld/app-shell.md:135` | `:2181` | `:2171` | `:2182` | `src/ui/app.js:2182` = `paintAppFooter(view) {` |
+| 7 | `docs/lld/app-shell.md:229` | `app.js:1890` | `app.js:1880` | `app.js:1891` | `src/ui/app.js:1891` = `paintCanvasFooter() {` |
+| 8 | `docs/lld/app-shell.md:230` | `app.js:1885` | `app.js:1875` | `app.js:1886` | `src/ui/app.js:1886` = `renderCanvasFooter() {` |
+| 9 | `docs/lld/app-shell.md:230` | `app.js:1695` | `app.js:1685` | `app.js:1696` | `src/ui/app.js:1696` = `applyTransform() {` |
+| 10 | `docs/lld/app-shell.md:232` | `app.js:1703` | `app.js:1693` | `app.js:1704` | `src/ui/app.js:1704` = `this.paintCanvasFooter();` |
+| 11 | `docs/lld/app-shell.md:232` | `app.js:1836` | `app.js:1826` | `app.js:1837` | `src/ui/app.js:1837` = `this.paintCanvasFooter();` |
+| 12 | `docs/lld/app-shell.md:271` | `app.js:1931` | `app.js:1921` | `app.js:1932` | `src/ui/app.js:1932` = `const hasStory = !!view.story;` |
+| 13 | `docs/reference/SKILL.md:95` | `test/engine/tonal.mjs:275-293` | `test/engine/tonal.mjs:246-264` | `test/engine/tonal.mjs:283-301` | `test/engine/tonal.mjs:283` = `// ── hpg-tonal-okhsl-modes: the perceptual & peak distributions (OKHSL ` |
+| 14 | `docs/reference/SKILL.md:95` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:687-708` | `test/engine/tonal.mjs:687` = `// ── hpg-tonal-lift-monotonic (#648): `lift` must not flatten or revers` |
+| 15 | `docs/reference/references/component-inventory.md:28` | `app.js:2586` | `app.js:2576` | `app.js:2587` | `src/ui/app.js:2587` = `customElements.define("ultimate-tokens", HctApp);` |
+| 16 | `docs/reference/references/component-inventory.md:30` | `app.js:2556` | `app.js:2570` | `app.js:2581` | `src/ui/app.js:2581` = `mixinInto(HctApp, ColorSection, TypeSection, GeomSection, DrawerMixin, A` |
+| 17 | `docs/reference/references/component-inventory.md:44` | `app-helpers.mjs:370` | `app.js:1587` | `app.js:1594` | `src/ui/app.js:1594` = `segmented(items, value, onSelect, opts = {}) {` |
+| 18 | `docs/reference/references/component-inventory.md:120` | `app.js:1466/1602` | `app.js:1466/1603` | `app.js:1610` | `src/ui/app.js:1610` = `"aria-pressed": tabs ? undefined : on ? "true" : "false",` |
+| 19 | `docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md:89` | `src/engine/tonal.js:922` | `src/engine/tonal.js:350` | `src/engine/tonal.js:907` | `src/engine/tonal.js:907` = `const _okL = new Map(); // L* -> OKHSL lightness (via a neutral gray at ` |
+| 20 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:31` | `app.js:1640,1530,1926` | `app.js:1630,1530,1915` | `app.js:1641` | `src/ui/app.js:1641` = `renderCenter(view) {` |
+| 21 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:41` | `app.js:2457/2489` | `app.js:2447/2479` | `app.js:2458` | `src/ui/app.js:2458` = `const kit = brandKit(this.doc, this.exportSystems);` |
+| 22 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:41` | `app.js:2457/2489` | `app.js:2447/2479` | `app.js:2490` | `src/ui/app.js:2490` = `const kit = brandKit(this.doc, this.exportSystems);` |
+| 23 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:41` | `model.mjs:1031` | `model.mjs:1033` | `model.mjs:1061` | `src/ui/model.mjs:1061` = `shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.rad` |
+| 24 | `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md:51` | `app.js:1777` | `app.js:1767` | `app.js:1778` | `src/ui/app.js:1778` = `_modeTierNudge(modeFactor) {` |
+| 25 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:18` | `app.js:2290-2313` | `app.js:2290-2313` | `app.js:2319-2341` | `src/ui/app.js:2319` = `saveToProject() {` |
+| 26 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:18` | `app.js:2320-2345` | `app.js:2320-2345` | `app.js:2349-2378` | `src/ui/app.js:2349` = `applyLoadedConfig(config) {` |
+| 27 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:25` | `persist.js:647` | `persist.js:581` | `persist.js:646` | `src/ui/persist.js:646` = `const gp = clean(e.geomPrefix, "g"); const geomPrefix = gp || null;` |
+| 28 | `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:29` | `app.js:2275-2279` | `app.js:2265-2269` | `app.js:2276-2280` | `src/ui/app.js:2276` = `// ── persisted APP prefs (theme · canvas preview · motion · font mode) ` |
+| 29 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:25` | `app.js:2334` | `app.js:2324` | `app.js:2335` | `src/ui/app.js:2335` = `try { parent.postMessage({ pluginMessage: { type: "load-config" } }, "*"` |
+| 30 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:26` | `app.js:2388` | `app.js:2378` | `app.js:2389` | `src/ui/app.js:2389` = `try { parent.postMessage({ pluginMessage: { type: "read-variables" } }, ` |
+| 31 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:31` | `app.js:2321` | `app.js:2311` | `app.js:2322` | `src/ui/app.js:2322` = `try { parent.postMessage({ pluginMessage: { type: "save-config", config ` |
+| 32 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:40` | `app.js:2266` | `app.js:2256` | `app.js:2267` | `src/ui/app.js:2267` = `setInFigma(on) {` |
+| 33 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:40` | `app.js:2272` | `app.js:2261` | `app.js:2273` | `src/ui/app.js:2273` = `this.render();` |
+| 34 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:41` | `app.js:2337` | `app.js:2338` | `app.js:2349` | `src/ui/app.js:2349` = `applyLoadedConfig(config) {` |
+| 35 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:42` | `app.js:2392` | `app.js:2382` | `app.js:2393` | `src/ui/app.js:2393` = `receiveLiveVariables(payload) {` |
+| 36 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:61` | `app.js:2331` | `app.js:2321` | `app.js:2332` | `src/ui/app.js:2332` = `loadFromProject() {` |
+| 37 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:61` | `app.js:2348` | `app.js:2345` | `app.js:2356` | `src/ui/app.js:2356` = `this._loadRequested = false;` |
+| 38 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:61` | `app.js:2334,2339,2340` | `app.js:2324,2329,2330` | `app.js:2335` | `src/ui/app.js:2335` = `try { parent.postMessage({ pluginMessage: { type: "load-config" } }, "*"` |
+| 39 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:83` | `app.js:2575-2579` | `app.js:2565-2569` | `app.js:2576-2581` | `src/ui/app.js:2576` = `// The section seam (this.section: color|typography|geometry) is a real ` |
+| 40 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:92` | `app.js:2096-2142` | `app.js:2096-2142` | `app.js:2108-2154` | `src/ui/app.js:2108` = `_bindRangeDrag() {` |
+| 41 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:92` | `app.js:2132-2136` | `app.js:2132-2136` | `app.js:2144-2147` | `src/ui/app.js:2144` = `const end = () => {` |
+| 42 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:95` | `app.js:2545-2546` | `app.js:2534-2535` | `app.js:2546-2547` | `src/ui/app.js:2546` = `clearTimeout(this._toastT);` |
+| 43 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:96` | `app.js:2243` | `app.js:2233` | `app.js:2244` | `src/ui/app.js:2244` = `setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1500);` |
+| 44 | `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:96` | `app.js:2536` | `app.js:2438` | `app.js:2450` | `src/ui/app.js:2450` = `setTimeout(() => this.download(injected, "code.js"), 150);` |
+| 45 | `docs/reference/rubrics/acceptance-criteria.md:25` | `test/engine/tonal.mjs:246-264` | `test/engine/tonal.mjs:246-264` | `test/engine/tonal.mjs:283-301` | `test/engine/tonal.mjs:283` = `// ── hpg-tonal-okhsl-modes: the perceptual & peak distributions (OKHSL ` |
+| 46 | `docs/reference/rubrics/acceptance-criteria.md:25` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:577-601` | `test/engine/tonal.mjs:687-708` | `test/engine/tonal.mjs:687` = `// ── hpg-tonal-lift-monotonic (#648): `lift` must not flatten or revers` |
+
+Mechanism, all 46, and it is one mechanism: `src/ui/app.js`, `test/engine/tonal.mjs`,
+`src/engine/tonal.js`, `src/ui/model.mjs` and `src/ui/persist.js` each grew by a DIFFERENT amount on
+the two merge parents, so a citation's own line moved independently on each side. `src/ui/app.js` is
+2,589 lines at `3921f140`, 2,579 at main and 2,590 at head; `test/engine/tonal.mjs` is 1,891, 909 and
+1,899. None of the 8 documents was edited by either parent's history since these citations were
+written, so the citation TEXT is untouched by the merge and only the cited numbers moved underneath
+it, which a text-diff merge cannot see. That is why none of these produced a conflict marker.
+Mechanical gate: `node test/repo/citations.mjs`, which reads `STALE 0` across the 10 discovered docs
+at this head.
+
+**Two record nits the verifier also raised, both recorded rather than repaired.** The re-capture of
+`test/engine/fixtures/radix-baseline.json` dropped main's trailing newline (main 1, head 0); the
+structural account above does not mention it, and it is stated here instead of being changed, because
+the fixture is script-captured and a hand edit would break the byte-compare the capture exists to
+support. And re-pin 8's `Verify: sed -n '691p'` names 691 where the citation's range opens at 687;
+`sed -n '687p' test/engine/tonal.mjs` is the read that lands on the gate header, and row 46 of the
+table above carries it.
+
+**Fixture re-pin (2), not 1: `test/engine/fixtures/shadcn-baseline.css`'s schema stamp** (added
+2026-09-20, #681 U5, from the pass-7 verifier's row 8). Old value: `/* ultimate-tokens export schema
+2 */`, three times. New value: `schema 3`, three times; `grep -c "export schema 2"` on that fixture
+reads 0 at this head. Mechanism: `EXPORT_SCHEMA_VERSION` is 2 at the unit parent `3921f140` and 3 at
+main and at head, so main's own #638 bump is the cause, exactly as for the radix fixture below. The
+whole-file delta across the merge is +6 -4, and filtering out the three stamp lines plus the new
+`#638:` carve-out comment leaves 0 other changed lines. It is documented inline in the fixture
+itself; what was missing was this ledger entry. Gated by `shadcn-baseline` in
+`test/engine/exports.mjs`, which reds on reverting a single stamp.
 
 **`figma/plugin/ui.html`** - not a re-pin, the generated app bundle. Regenerated fresh by `npm test`'s
 own `gen:figma-ui` step rather than trusted from the prior builder's tree.

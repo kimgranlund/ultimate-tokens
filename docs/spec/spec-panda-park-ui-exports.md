@@ -2,7 +2,7 @@
 doc-type: spec
 id: spec-panda-park-ui-exports
 status: approved        # draft | approved | superseded  (0.1.0 approved 2026-09-11: H-1..H-4, P-1, N-1..N-3 ratified by the owner via team-lead)
-version: 0.3.0          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw ramp stops (issue #588 ruling); EX-4 regenerated. Data correction to an approved SPEC, not a new draft round.
+version: 0.3.1          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw ramp stops (issue #588 ruling); EX-4 regenerated. Data correction to an approved SPEC, not a new draft round.
                         # 0.2.0 2026-09-12: ticket #614 renamed the "Park UI" format to "Radix" everywhere in
                         # the live surfaces (exportParkUi/exportParkUiModule -> exportRadix/exportRadixModule,
                         # format id parkui -> radix, drawer label/zip folder park-ui/ -> radix/) — a rename
@@ -14,6 +14,13 @@ version: 0.3.0          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw r
                         # under R-B, a new gate row REQ-065 under R-E), one format with two forms, not an
                         # eleventh format. Owner rulings on Q(a)..Q(f) (below, dated 2026-09-18) and the U0
                         # spike result are the record of the decision; existing REQ text is unchanged.
+                        # 0.3.1 2026-09-20: ticket #681 unit U5 (records) regenerates EX-1's three
+                        # tokens.colors.primary.prime.* literals from the shipped engine. U6 rebuilt the
+                        # prime ladder in CIE L* (equal-compress, held CAM16 chroma) and U4 integrated it
+                        # onto U1's anchor branch and re-pinned test/engine/exports.mjs, but this SPEC's
+                        # mirror of those literals was left behind. A stale-literal correction to an
+                        # approved SPEC, not a mechanical-regeneration exception of the #657/#662 class and
+                        # not a new draft round; no REQ text changes.
 date: 2026-09-11
 owner: Kim Granlund
 prd: none               # GitHub issue #570 is the intent record (ADR-017 git-native tickets)
@@ -454,29 +461,40 @@ iterate instead of an unread last one, moving Primary's accent by one 8-bit step
 and every semantic literal that is not an accent on-color is byte-for-byte the #657 capture); and
 2026-09-18 at #681 (U1), which minted Primary's DEFAULT_PALETTES entry an `anchor: "#0C5DCC"`
 (today's stop-550 hex, Q2 (b)) — the `prime` step now renders that hex verbatim instead of
-deriveKeyColor's cusp identity, moving Primary's prime.prime/.brightest/.dimmest. The RAMP stops
-(500/050/950/scrim) and every other default family's prime are untouched by #681, and #681 moves no
-on-color, so #662's own capture stands for every semantic literal. Type, geometry and park values
+deriveKeyColor's cusp identity, moving Primary's prime.prime/.brightest/.dimmest. That sentence
+once continued "the RAMP stops (500/050/950/scrim) and every other default family's prime are
+untouched by #681, and #681 moves no on-color": corrected 2026-09-20 by #681 U5, because it
+described U1 alone. On the integrated tree U2's anchored ramp and U3's chroma envelope move every
+ramp stop, U6 rebuilds every family's prime, and the contrast on-color policy resolves
+`primary["on-primary"]._dark` to white rather than black on the moved ramp. Every EX-1 and EX-2
+literal below is re-pinned to what the engine emits at this head. Type, geometry and park values
 are untouched by all four.)
 (the drawer's path; calling `derivedAll` on the raw document skips the group resolver and renders
 Neutral at full chroma, the emitters must be fed the resolved state, as the drawer already does).
 
-- **EX-1 (NORMATIVE, panda raw).** `tokens.colors.primary["500"].value === "oklch(0.546 0.2114
-  258.97)"`, `["50"] === "oklch(1 0 0)"`, `["950"] === "oklch(0.1763 0.014 258.36)"`;
-  `tokens.colors.neutral["500"].value === "oklch(0.5443 0.059 267.96)"` (material group ramp at
-  30). `tokens.colors.primary.scrim["300"].value === "oklch(0.546 0.2114 258.97 / 30%)"`.
+- **EX-1 (NORMATIVE, panda raw).** `tokens.colors.primary["500"].value === "oklch(0.504 0.1867
+  258.99)"`, `["50"] === "oklch(1 0 0)"`, `["950"] === "oklch(0.1763 0.014 258.36)"`;
+  `tokens.colors.neutral["500"].value === "oklch(0.5056 0.0552 267.76)"` (material group ramp at
+  30). `tokens.colors.primary.scrim["300"].value === "oklch(0.504 0.1867 258.99 / 30%)"`.
   `tokens.colors.primary.prime.prime.value === "oklch(0.504 0.1867 258.99)"` (Primary's stored
-  `anchor` `#0C5DCC`, rendered verbatim — #681 U1),
-  `.brightest === "oklch(0.7391 0.1335 259.07)"`, `.dimmest === "oklch(0.2575 0.0972 259.02)"`,
+  `anchor` `#0C5DCC`, rendered verbatim, #681 U1),
+  `.brightest === "oklch(0.733 0.1374 264.49)"`, `.dimmest === "oklch(0.2669 0.1023 258.76)"`,
   `.DEFAULT` equals `.prime`. `tokens.colors.constant.backdrop.value === "oklch(0 0 0 / 80%)"`.
+  The three `prime` literals were regenerated 2026-09-20 (#681 U6 rebuilt the ladder in CIE L* with
+  equal-compress and held CAM16 chroma; U4 integrated it onto U1's anchor branch and re-pinned
+  `test/engine/exports.mjs` but left this mirror stale) by `scratchpad/gen-ex1-panda.mjs`, which
+  imports this worktree's own `src/engine/exports.js` and prints
+  `exportPanda(stateOf(defaultDocument())).theme.extend.tokens.colors.primary.prime`. `.prime` itself
+  did not move, since REQ-056's verbatim-anchor identity holds whatever the ladder does; `.brightest`
+  and `.dimmest` did.
 - **EX-2 (NORMATIVE, panda semantic).** `semanticTokens.colors.primary.DEFAULT.value` deep-equals
-  `{ base: "oklch(0.504 0.1867 258.99)", _dark: "oklch(0.586 0.2114 258.97)" }`;
-  `primary.hover` `{ base: "oklch(0.4253 0.1357 259.04)", _dark: "oklch(0.672 0.1504 258.98)" }`;
-  `primary["on-primary"]` `{ base: "oklch(1 0 0)", _dark: "oklch(0 0 0)" }`;
+  `{ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5504 0.1924 258.96)" }`;
+  `primary.hover` `{ base: "oklch(0.3971 0.1239 258.91)", _dark: "oklch(0.6419 0.1561 259.24)" }`;
+  `primary["on-primary"]` `{ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }`;
   `neutral["on-surface"]` `{ base: "oklch(0.1774 0.0044 264.46)", _dark: "oklch(1 0 0)" }`;
-  `neutral.scrim` (the role) `{ base: "oklch(0.5443 0.059 267.96 / 30%)", _dark: same }` next to
+  `neutral.scrim` (the role) `{ base: "oklch(0.5056 0.0552 267.76 / 30%)", _dark: same }` next to
   the raw group `neutral.scrim["300"]`. 53 keys under `semanticTokens.colors.primary`, 16 palette
-  groups, `data-1.DEFAULT.base === "oklch(0.5584 0.2312 272.17)"`.
+  groups, `data-1.DEFAULT.base === "oklch(0.5194 0.2328 272.25)"`.
 - **EX-3 (NORMATIVE, panda type + geometry, after H-1).** `tokens.fonts.body.value === "'Inter',
   sans-serif"`, `tokens.fonts.display.value === "'Inter Tight', sans-serif"`;
   `textStyles.body.md.value` deep-equals `{ fontFamily: "{fonts.body}", fontSize: "16px", lineHeight:
