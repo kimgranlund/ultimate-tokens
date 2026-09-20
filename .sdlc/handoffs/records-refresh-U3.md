@@ -167,4 +167,4 @@ Two of criterion U3-2 and U3-3's own commands, as written, interact badly with t
 
 Both interactions are new since U1-4 and the row-2 check were authored (neither existed before this plan's own Prior Set text was required), so neither is this builder's error to silently work around; both are recorded as findings for whoever next revises the plan's criterion text.
 
-Correction (2026-09-19, plan records-followup U4, #709): a quotation of program output in this file had been reworded to avoid an em dash. It now reads as the program prints it. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule.
+Correction (2026-09-19, plan records-followup U4, #709): four quotations of program output in this file had been reworded to avoid an em dash. It now reads as the program prints it. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule.

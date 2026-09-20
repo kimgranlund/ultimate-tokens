@@ -49,3 +49,5 @@ Eight files touched from UB, matching the plan's list exactly: `.sdlc/adapter.md
 ## Left out
 
 Nothing. All six criteria matched the plan's expected values on the first measurement taken after this handoff existed and the tree was committed. No number disagreed with the plan's stated expectation, so nothing was adjusted on either side.
+
+Correction (2026-09-19, plan records-followup U6, #709): the P1 row above is not P1 evidence, since `node_modules` was present and the tree carried five modified files during that run. P1 was measured by review pass 2 at b9e70950 in a clean detached worktree with no `node_modules`: `✓ all 48 test files passed`, 48 in `TESTS`, tree clean.
