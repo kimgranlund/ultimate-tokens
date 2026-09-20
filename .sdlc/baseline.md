@@ -35,7 +35,7 @@ No `lint` script in `package.json`. `tsc` runs inside `npm run build` (strict un
 
 ## Not run here
 
-`scripts/smoke-panda.mjs` and `mcp/describe-eval-runner.mjs` (CI-only jobs); CI run 35455937943 on 20298cc reports both build-test and panda-smoke green.
+`scripts/smoke-panda.mjs` and `mcp/describe-eval-runner.mjs` (CI-only jobs); CI run 35455937943 on 20298cc reports four jobs, all `success`: `build-test`, `corpus-contrast`, `deploy`, `panda-smoke`.
 
 ## Prior set (d814500, superseded 2026-09-19)
 

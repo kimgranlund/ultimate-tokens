@@ -16,7 +16,7 @@ say(!!bn && +bn[1] === tests, `tests: baseline ${bn ? bn[1] : "none"}, test/run.
 const kb = (read("figma/plugin/ui.html").length / 1024).toFixed(1);
 const bs = (row(b, "| `npm run build` |")[5] || "").match(/ui\.html ([\d.]+) KB/);
 say(!!bs && bs[1] === kb, `ui.html: baseline ${bs ? bs[1] : "none"} KB, tree ${kb} KB`);
-for (const [cmd, gate] of [["npm test", "test"], ["npm run build", "build"], ["npm run smoke", "smoke"]]) {
+for (const [cmd, gate] of [["npm test", "test"], ["npm run build", "build"], ["npm run smoke", "smoke"], ["npm run gate:corpus-contrast", "corpus-contrast"], ["npm run gen:type-fonts", "fonts"]]) {
   const t = (row(b, "| `" + cmd + "` |")[4] || "").split("·").map(Number);
   const m = (row(a, "| " + gate + " |")[5] || "").match(/(\d+) to (\d+) s/);
   const lo = Math.round(Math.min(...t)), hi = Math.round(Math.max(...t));
