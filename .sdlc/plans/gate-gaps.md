@@ -6,9 +6,10 @@ lane: color-engine
 size: S + M (U1 S = 1 point, U2 M = 2; 3 points)
 labels: kind:chore · size:small · lane:color-engine · P2 (as minted on #715)
 written: 2026-09-20
-depends: #681 landed on `origin/main` (gate G0 below decides it by command; no unit starts before it prints green)
+amended: 2026-09-20 (revision 2: the checkability review of 97222c91 folded, 9 green, 7 yellow, 1 red; see Revisions)
+depends: #681 and then #713 landed on `origin/main`, in that order (gate G0 below decides both by command; no unit starts before it prints green). #713's U6b owns the baseline refresh after #681; this plan adds only its own delta
 head: 3ce50daa (`origin/main`; `plan/gate-gaps` is cut from it, local only, never pushed by the planner)
-measured-at: 3921f140 (`unit/pif-u4-integration`, the head that lands as #681), in one detached scratch worktree, 2026-09-20
+measured-at: 3921f140 (`unit/pif-u4-integration`), in one detached scratch worktree, 2026-09-20. The review reran the cheap figures at the branch's later head 67d4df96 and they held, except `TESTS`, which reads 49 there
 branch: plan/gate-gaps
 inputs: ticket #715; `.sdlc/verdicts/pif-u4.md` rows 13 and 25 on `plan/preset-intent-fidelity` (aee16e2e); `.sdlc/handoffs/pif-u4.md` at 3921f140 (the two yellow-row sections); criterion C4 of `.sdlc/plans/preset-intent-fidelity.md`; `.sdlc/plans/gate-split.md` on `plan/gate-split` (#713); `.sdlc/plans/chroma-floor.md` on `plan/chroma-floor` (#701); `.sdlc/adapter.md` §1; `.sdlc/baseline.md`; `.sdlc/checks/baseline-agrees-check.sh`
 ---
@@ -25,7 +26,7 @@ Two units. U1 adds the kit to the seven checks inside `anchor.mjs`. U2 builds th
 Three things the measurement found that the ticket did not know.
 
 1. The kit sweep is nearly free: 48 rendered ramps and 16 ladders against the corpus's 10,140 and 3,380. So it does not need a home in a CI gate script. It runs wherever `anchor.mjs` runs, in both legs of #713's split.
-2. The identity control as C4 words it (anchors stripped) is blind to the anchored path. An anchored-only mutation moves 0 of 3,780 palettes on the stripped corpus and 3,023 on the authored one. All 3,380 curated sources and the whole kit are anchored, so the mode takes an `--authored` flag. That leg costs about five times more, so it is opt-in.
+2. The identity control as C4 words it (anchors stripped) is blind to the anchored path. An anchored-only mutation moves 0 of 3,780 palettes on the stripped corpus and 3,023 on the authored one. All 3,380 curated sources and the whole kit are anchored, so the mode takes an `--authored` flag. The flag is part of this plan, not a question: U2-4 and the adapter row depend on it. That leg costs about five times more, so it is opt-in per run.
 3. Disabling the monotone post-pass also moves 0 stripped palettes. The perturbation this plan uses for the stripped leg is a constant on the non-anchored path, measured to move 3,710.
 
 Scope wall. Paths this plan may change: `test/engine/anchor.mjs` (U1), `scripts/report-preset-fidelity.mjs`, `test/engine/ramp-identity.mjs` (new), `test/run.mjs` (one entry), `.sdlc/adapter.md`, `.sdlc/baseline.md` (U2), this plan, its handoffs, verdicts and questions. `src/` is untouched: no engine change, no kit retune. If a kit check reads anything but 0 at G0, the builder stops and reports; it does not add an allow-list.
@@ -101,9 +102,10 @@ Each must leave `1 file changed, 1 insertion(+), 1 deletion(-)` (verified on 392
 |---|---|
 | `node test/engine/anchor.mjs` at 3921f140 | exit 0, 19 `pass` lines, 0 lines matching the U1-1 needle, 5 lines naming `default-kit` (all lone-spike) |
 | `node scripts/report-preset-fidelity.mjs --identity-control` at 3921f140 | the usage line, `exit 2` |
-| `TESTS` length | 48 at 3921f140 and at 3ce50daa |
+| `TESTS` length | 48 at 3ce50daa (`origin/main`), 49 at 67d4df96 (#681 adds `repo/gate-report.mjs`). No later count in this plan is a literal: each derives from the `N0` that G0 prints |
+| `sh .sdlc/checks/baseline-agrees-check.sh` | `stale total: 0` on `origin/main`. Three stale lines at 67d4df96 (`tests` 48 against 49, `ui.html` 3780.5 against 4111.1 KB, `head`), exit 1. #713's U6b clears them, which is why this plan starts after #713 |
 | The script in `npm test`, `package.json` or CI | not referenced. Nothing runs it, which is why U2 registers a thin test |
-| G0 today | `128`, `128`, `OPEN`, `128` |
+| G0 today | `128`, `128`, `OPEN`, `0`, `OPEN`, `128` |
 
 ## Where each new sweep runs and what it costs
 
@@ -114,39 +116,45 @@ Each must leave `1 file changed, 1 insertion(+), 1 deletion(-)` (verified on 392
 | U2 full differ, stripped | not `npm test`, not CI (Q1). The adapter row names who runs it: builder and verifier of any unit that touches the ramp path, and pre-land always | 24 to 32 s loud | on a plan that means to move ramps, exit 1 is the expected reading, so an always-on CI leg would need a waiver mechanism. The reading goes in the verdict and is compared with what the plan declared |
 | U2 full differ, `--authored` | same seats, when the unit touches the anchored construction | 145 to 155 s loud | five times the stripped cost, so never a default |
 
-## G0: has #681 landed (every unit's step 1, and the Orchestrator's before it cuts any unit worktree)
+## G0: have #681 and #713 landed (every unit's step 1, and the Orchestrator's before it cuts any unit worktree)
 
 ```sh
 git fetch -q origin
 git cat-file -e origin/main:test/engine/anchor.mjs; echo $?
 git cat-file -e origin/main:scripts/report-preset-fidelity.mjs; echo $?
 gh issue view 681 --json state --jq .state
+git show origin/main:package.json | grep -c '"gate:corpus-anchor"'
+gh issue view 713 --json state --jq .state
 git cat-file -e plan/gate-gaps:test/engine/anchor.mjs; echo $?
 ```
 
-Expected `0`, `0`, `CLOSED`, `0`. Today `128`, `128` (each with git's `fatal:` line), `OPEN`, `128`. Both files this plan edits arrive with #681, so the first two lines cannot go green early. The last line is the Orchestrator's own step: once the first three are green it rebases the one-commit plan branch onto the new `origin/main` (local and unpushed, so nothing shared is rewritten) and only then cuts unit worktrees. A builder that sees any other value stops and reports `G0 red`; it does not build against `unit/pif-u4-integration`.
+Expected `0`, `0`, `CLOSED`, `1`, `CLOSED`, `0`. Today `128`, `128` (each with git's `fatal:` line), `OPEN`, `0`, `OPEN`, `128`. Both files this plan edits arrive with #681, so the first two lines cannot go green early, and the gate script arrives with #713. The last line is the Orchestrator's own step: once the first five are green it rebases the one-commit plan branch onto the new `origin/main` (local and unpushed, so nothing shared is rewritten) and only then cuts unit worktrees. A builder that sees any other value stops and reports `G0 red`; it does not build against `unit/pif-u4-integration`.
 
 At G0 the builder also observes, on the rebased branch before it edits, and cites in its handoff:
 
 ```sh
 N0=$(perl -0ne 'my ($b) = /const TESTS = \[(.*?)\];/s; my @m = $b =~ /"[^"]+\.mjs"/g; print scalar(@m)' test/run.mjs); echo "N0 $N0"
 node test/engine/anchor.mjs | grep -c '^  pass  '
-grep -c -e '--full' test/engine/anchor.mjs
+npm run -s gate:corpus-anchor | grep -c '^  pass  '
+npm run -s gate:corpus-anchor | grep 'gap-19 ('
+sh .sdlc/checks/baseline-agrees-check.sh; echo "exit $?"
 ```
 
-`N0` is 48 today and 49 if #713 landed first. The pass count is 19 today. The third figure says whether #713's split is in the file (`0` today). This plan works in either order with #713 and #701: the kit block is its own block and reads no allow-list, and whichever plan lands second rebases.
+`N0` is whatever the command prints, and every later count derives from it; this plan states no literal for it. The two pass counts (sampled leg, FULL leg) were 19 on the unsplit file. The fourth command prints the FULL leg's summary line that carries the allow-list populations: the builder cites it verbatim, and its text up to the notch count is the needle `ALLOW_NEEDLE` of U1-4, because #701 re-freezes exactly those lists and may land first. The last command must print `stale total: 0` and `exit 0`: #713's U6b refreshed the baseline after #681. If it prints anything else the builder stops and reports `G0 red: baseline stale before this plan`, naming the stale lines; this plan does not repair a baseline it did not move. With #701 this plan works in either order: the kit block is its own block and reads no allow-list, and whichever lands second rebases.
 
 ## Criteria (plan-level: each builder runs them, each verifier reruns them, pre-land runs them all)
 
-Every negative control that edits a file runs in a throwaway clone (`git clone -q --shared . "$F/neg"`), never in a unit worktree. `F` is a directory the seat makes under its own scratchpad with a name no other seat would pick, and removes by that exact name.
+Every negative control that edits a file runs in a throwaway clone (`git clone -q --shared . "$F/neg"`), never in a unit worktree. A clone carries committed work only, so the builder commits its unit work before it runs any control; a control run against a clone that lacks the feature reads a clean pass and proves nothing. `F` is a directory the seat makes under its own scratchpad with a name no other seat would pick, and removes by that exact name. A timing is called quiet only under gate-split's quiet-host rule, read from adapter §1 (#713 lands it there): 1-minute load under the core count, zero processes at 50 percent CPU or more, no matching `pgrep`, read before and after the run.
+
+Control budget. `node test/engine/anchor.mjs` unsplit took 174 s at load 22. After #713 the sampled leg is about a tenth of that and the FULL leg is not. U1-1 and U1-4 run both legs once; U1-2 and U1-3 run the sampled leg five times, which is enough because the kit is in every sample. Budget about 10 minutes loud for U1's controls and about 15 for U2's (seven full differ runs, one of them `--authored`).
 
 | # | Criterion | Expected | Negative control | Today |
 |---|---|---|---|---|
-| P1 | `npm test` green with no `node_modules`, the count agrees, the tree is byte-stable | the runner's pass line naming N files, then N, then `0`. N is `N0` after U1 and `N0 + 1` after U2 | in the clone, the role-table edit below prints `exit 1` | 48 |
-| P2 | the landing rule for every plan after #691: the baseline's test-file figure equals `TESTS.length`, by script, at the pre-land head | every line `ok`, `stale total: 0`, `exit 0` | in the clone, lower the baseline's test-file figure by one: `STALE tests:` and `exit 1` | green on main at 48. Goes `STALE` when U2 registers its file and stays so until U2's last step; expected on the unit branch, a blocker at pre-land |
+| P1 | `npm test` green with no `node_modules`, the count agrees, the tree is byte-stable | the runner's pass line naming N files, then N, then `0`. N is `N0` after U1 and `N0 + 1` after U2 | in the clone, the role-table edit below prints `exit 1` | `N0`, read at G0 |
+| P2 | the landing rule for every plan after #691: the baseline's test-file figure equals `TESTS.length`, by script, at the pre-land head | every line `ok`, `stale total: 0`, `exit 0` | in the clone, lower the baseline's test-file figure by one: `STALE tests:` and `exit 1` | `stale total: 0` at G0, or no unit starts. Goes `STALE` when U1 first edits a file outside `.sdlc/` (the `head` line) and again when U2 registers its file (the `tests` line), and stays so until U2's last step; expected on the unit branches, a blocker at pre-land |
 | P3 | branding clean, and no added line carries an em dash (U+2014) outside a backtick span | `branding: clean (N files scanned)`, then `0` | in the clone, one added line with the dash: `1` | clean, `0` |
 | P4 | scope wall | `0`, `0` | a fixture of three names (`.sdlc/x.md`, `test/engine/anchor.mjs`, `src/engine/hct.js`) piped through the same filter prints `1` | `0`, `0` on the plan branch |
-| P5 | this plan moves no ramp, read by the tool it builds (pre-land only) | `exit 0`, `1` | U2-3 | the flag does not exist: `exit 2` |
+| P5 | the mode runs end to end at the pre-land head against the merge-base and reads clean (pre-land only). It cannot red on ramps here, because P4 already proves no `src/` file moved; what it proves is that the shipped mode works on the landing tree. The stripped leg suffices for the same reason, so the 150 s `--authored` leg is not run here; U2-4 exercises it | `exit 0`, `1` | U2-3 | the flag does not exist: `exit 2` |
 
 ```sh
 # P1
@@ -181,7 +189,13 @@ U1 is L3, not L2, because `anchor.mjs` has a history of proxy gates that measure
 
 ### U1: the kit in the seven checks
 
-Steps. (1) G0. (2) One new block in `anchor.mjs`, after the curated sweeps have printed. It builds the kit the way the file's lone-spike kit block does (`defaultDocument()`, `hydrate` with each of `MODES`, `projectView`), and for every anchored kit palette applies the file's own `monotoneOk` (both stop sets), `gapOk19`, `distinctOk25`, `notchOk`, the window test against `RAMP_L_MIN` and `RAMP_L_MAX`, and the order and dupe expressions the `anchor-ladder` gate uses on `primeSwatches`. No predicate is copied or rewritten; if one is scoped inside a block, the builder hoists it and says so. (3) Expected is a true 0 for each, with no allow-list. A hit is a `FAIL` that names the kit palette, its anchor and the mode. (4) Seven lines, one per check, in this shape, the count computed and never typed in:
+Steps. (1) G0. (2) One new block in `anchor.mjs`, after the curated sweeps have printed. It builds the kit the way the file's lone-spike kit block does (`defaultDocument()`, `hydrate` with each of `MODES`, `projectView`), and for every anchored kit palette applies the file's own `monotoneOk` (both stop sets), `gapOk19`, `distinctOk25`, `notchOk`, the window test against `RAMP_L_MIN` and `RAMP_L_MAX`, and the order and dupe expressions the `anchor-ladder` gate uses on `primeSwatches`. No predicate is copied or rewritten (all of them, and `MODES`, `RAMP_L_MIN` and `RAMP_L_MAX`, are top level in the file today). (3) Expected is a true 0 for each, with no allow-list. A hit prints a `FAIL` line whose message opens with the same `default-kit <check>:` token the pass line carries, then the palette, its anchor and the mode, so U1-1's pass needle and U1-2's fail needle are one token:
+
+```
+  FAIL  anchor-ramp default-kit window: Neutral #050505 [perceptual] L* 1.37 outside [9.95, 95.05]
+```
+
+If the file's `FAIL()` helper prints a different prefix, the builder keeps the helper and still opens the message with `default-kit <check>:`; U1-2 greps only that token on a line containing `FAIL`. (4) Seven lines, one per check, in this shape, the count computed and never typed in:
 
 ```
   pass  anchor-ramp default-kit window: 0 (expected 0; 16 palettes, 3 modes)
@@ -195,7 +209,7 @@ Steps. (1) G0. (2) One new block in `anchor.mjs`, after the curated sweeps have 
 | U1-1 | the seven kit lines print, each 0, and the file is green | `exit 0`, `7`, `0` | U1-2 | `exit 0`, `0`, `0` |
 | U1-2 | a planted kit defect reds each of the seven, by name | K1: `exit 1`, then `1` or more for each of `window`, `gap`, `distinct`, `order`. K2: `exit 1`, `1` or more for `dupe`. K3: `exit 1`, `1` or more for `notch`, and `0` for each of the other six. K4: `exit 1`, `1` or more for `monotone` | the unplanted run is U1-1. Each plant's `git diff --stat` line is checked first | the kit lines do not exist: every count `0`. The planner's probe read the table above |
 | U1-3 | the vacuity check bites | `exit 1`, `1` or more | the edit is the control; U1-1 is its clean half | no block |
-| U1-4 | the curated gates did not move | the G0 pass count plus 7, then `1` | in the clone, delete one name from `RAMP_GAP_ALLOW`: the second figure prints `0` and the file exits 1 | `19`, `1` |
+| U1-4 | the curated gates did not move, in both legs | per leg: that leg's G0 pass count plus 7, then `1` for the FULL leg's `ALLOW_NEEDLE` | in the clone, delete one name from `RAMP_GAP_ALLOW` (check the diff-stat line): the FULL leg's needle count prints `0` and the leg exits 1 | `19`, and `1` for the unsplit file's needle `gap-19 (72), distinct-25 (16) and notch (15` |
 
 ```sh
 # U1-1
@@ -204,17 +218,20 @@ grep -cE '^  pass  anchor-(ramp|ladder) default-kit (window|monotone|gap|distinc
 grep -c '^  FAIL' "$F/a.log"
 # U1-2, once per plant K1 to K4, each in its own clone, after the plant's edit and its diff-stat check
 node test/engine/anchor.mjs > "$F/k.log" 2>&1; echo "exit $?"
-for c in window monotone gap distinct notch order dupe; do printf "$c "; grep 'FAIL' "$F/k.log" | grep -c "default-kit $c"; done
+for c in window monotone gap distinct notch order dupe; do printf '%s ' "$c"; grep 'FAIL' "$F/k.log" | grep -c "default-kit $c:"; done
 # U1-3, in the clone: make the kit block iterate an empty list (the builder cites the one-line edit
 # and its diff-stat line in the handoff), then
 node test/engine/anchor.mjs > "$F/v.log" 2>&1; echo "exit $?"
 grep 'FAIL' "$F/v.log" | grep -c 'default-kit'
-# U1-4
+# U1-4, ALLOW_NEEDLE set by the builder to the text it cited at G0, as a fixed string
 grep -c '^  pass  ' "$F/a.log"
-grep -c 'gap-19 (72), distinct-25 (16) and notch (15' "$F/a.log"
+npm run -s gate:corpus-anchor > "$F/af.log" 2>&1; echo "exit $?"
+grep -c '^  pass  ' "$F/af.log"
+grep -cF "$ALLOW_NEEDLE" "$F/af.log"
+grep -E '^  pass  anchor-(ramp|ladder) default-kit ' "$F/a.log" > "$F/kit-s.txt"; grep -E '^  pass  anchor-(ramp|ladder) default-kit ' "$F/af.log" > "$F/kit-f.txt"; cmp "$F/kit-s.txt" "$F/kit-f.txt"; echo "cmp $?"
 ```
 
-If #713 landed first, U1-1 and U1-4 run twice, once as printed and once as `npm run -s gate:corpus-anchor`, and the needle in U1-4 is the one the builder observed at G0 in each mode. The kit lines must be identical in both legs.
+U1-1 also runs once as `npm run -s gate:corpus-anchor`, same three figures. The last line of U1-4 prints `cmp 0`: the seven kit lines are identical in the sampled and the FULL leg.
 
 ### U2: the identity control
 
@@ -224,7 +241,7 @@ Steps. (1) G0, and U1 merged. (2) `scripts/report-preset-fidelity.mjs` takes a s
 node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>) [--authored] [--only <category>|default-kit] [--perturb]
 ```
 
-`--base <rev>` unpacks `git archive <rev> src` into a fresh directory under `os.tmpdir()` whose name starts `ramp-identity-`, and removes it on every exit path. `--base-dir` reads an existing tree and needs no git. The mode imports `persist.js`, `model.mjs` and `tonal.js` from both trees. The subjects are the base tree's 8 category files plus its default kit, with `anchor` and `sourceAnchor` stripped unless `--authored`. Each palette renders in all three modes on `EXPORT_STOPS` through `paletteStops` with `rampChromaOf`, the call shape `--envelope` already uses, once per tree. A cell differs when the hex strings differ; dL* is `lstarFromRgb` of the two. A base that lacks one of those modules or exports is a usage error, exit 2, naming what is missing. (3) Output, one line per mode for the corpus and one for the kit, then the total, all computed:
+`--base <rev>` unpacks `git archive <rev> src` into a fresh `fs.mkdtempSync` directory under `os.tmpdir()` whose name starts `ramp-identity-`, and removes it on every exit path. `os.tmpdir()` honours `TMPDIR`, which is how U2-6 gives the run a directory no other seat shares. `--base-dir` reads an existing tree and needs no git. The mode imports `persist.js`, `model.mjs` and `tonal.js` from both trees. The subjects are the base tree's 8 category files plus its default kit, with `anchor` and `sourceAnchor` stripped unless `--authored`. Each palette renders in all three modes on `EXPORT_STOPS` through `paletteStops` with `rampChromaOf`, the call shape `--envelope` already uses, once per tree. A cell differs when the hex strings differ; dL* is `lstarFromRgb` of the two. A base that lacks one of those modules or exports is a usage error, exit 2, naming what is missing. (3) Output, one line per mode for the corpus and one for the kit, then the total, all computed:
 
 ```
 identity perceptual: 0/3780 palettes, 0/94500 cells differ, max dL* 0.00
@@ -232,7 +249,7 @@ identity perceptual default kit: 0/16 palettes, 0/400 cells differ, max dL* 0.00
 0 differing cells
 ```
 
-Exit 0 only when the total is 0; otherwise 1, after up to three named witnesses per mode. The mode FAILs its own vacuity check when a full run (no `--only`) reads fewer than 3780 palettes. (4) `--perturb` flips the last hex digit of the first rendered cell on the head side before the compare. It is the script's own negative control, the same pattern as `--damp-amp`. (5) `test/engine/ramp-identity.mjs`, registered in `TESTS` (K17): runs the script three times as a child with `--base-dir .` and `--only default-kit`. Plain: exit 0 and `0 differing cells`. With `--perturb`: exit 1 and `1 differing cells`. With no base: exit 2. It prints one `PASS:` line and says in a comment that it proves the mode runs and compares, not engine identity. (6) Adapter §1 gains one gate row, `ramp-identity`: the P5 command; needs git and no `node_modules`; green is `0 differing cells`, and on a plan that declares ramp movement the per-mode lines are copied into the verdict and compared with the declaration; time stated as measured, marked loud if it was; run by the builder and verifier of any unit touching `src/engine/`, `src/ui/model.mjs`, `src/ui/persist.js` or `src/ui/categories/`, with `--authored` when the unit touches the anchored construction, and at pre-land always. (7) Last, on the tree with everything above merged: rerun `npm test` three times under the quiet-host rule and rewrite the baseline's `npm test` row and `ref`, moving the old row to a labelled prior set as the file's history section does. The quiet-host rule is gate-split's: read it from the adapter if #713 has landed, else from `.sdlc/plans/gate-split.md` on `plan/gate-split`. If no quiet slot arrives the builder says so and the step waits; it does not record a loud figure. If the three figures leave the adapter's test time range, the adapter row moves with them, because the check script compares the two.
+Exit 0 only when the total is 0; otherwise 1, after up to three named witnesses per mode. The mode counts the palettes it loaded from the base tree's category files and FAILs its own vacuity check when the number it rendered differs from the number it loaded, or when a full run (no `--only`) loaded none. It carries no corpus literal: `3780` in the criteria below is today's value, not a constant in shipped code. (4) `--perturb` flips the last hex digit of the first rendered cell on the head side before the compare. It is the script's own negative control, the same pattern as `--damp-amp`. (5) `test/engine/ramp-identity.mjs`, registered in `TESTS` (K17): runs the script three times as a child with `--base-dir .` and `--only default-kit`. Plain: exit 0 and `0 differing cells`. With `--perturb`: exit 1 and `1 differing cells`. With no base: exit 2. It prints one `PASS:` line on success; on any miss it prints a line that opens with `FAIL` and says which of the three runs missed, and exits 1. A comment says it proves the mode runs and compares, not engine identity. (6) Adapter §1 gains one gate row, `ramp-identity`: the P5 command; needs git and no `node_modules`; green is `0 differing cells`, and on a plan that declares ramp movement the per-mode lines are copied into the verdict and compared with the declaration; time stated as measured, marked loud if it was; run by the builder and verifier of any unit touching `src/engine/`, `src/ui/model.mjs`, `src/ui/persist.js` or `src/ui/categories/`, with `--authored` when the unit touches the anchored construction, and at pre-land always. (7) Last, on the tree with everything above merged, this plan's own baseline delta and nothing more, since G0 proved the baseline clean before the plan started: rerun `npm test` three times under the quiet-host rule (under #713's 120 s ceiling that is about 5 minutes of quiet host), rewrite the baseline's `npm test` row (three figures, N) and `ref`, and re-read the `ui.html` KB figure from the tree at that head (a no-op if the check already prints `ok` for it). The old row moves to a labelled prior set as the file's history section does. The gate-script rows are not rerun: this plan adds under a second to `gate:corpus-anchor` and touches no other gate. If no quiet slot arrives the builder says so and the step waits; it does not record a loud figure. If the three figures leave the adapter's test time range, the adapter row moves with them, because the check script compares the two.
 
 | # | Criterion | Expected | Negative control | Today |
 |---|---|---|---|---|
@@ -240,8 +257,8 @@ Exit 0 only when the total is 0; otherwise 1, after up to three named witnesses 
 | U2-2 | the differ reproduces the record it was asked to gate, so it is not echoing constants | `exit 1`, `3`, then the three max figures `2.60`, `4.36`, `0.43` | U2-1: the same command against the head prints `0/3780` three times | the verifier's hand figures 2.60, 4.36, 0.43; the planner's prototype 2.5973, 4.3631, 0.4290 |
 | U2-3 | a perturbed ramp fails the control, and the differ says where | `exit 1`; the even line reads `1` or more palettes (3710 by the prototype); the perceptual and peak lines read `0/3780` | the unperturbed run is U2-1 | prototype: `0/3780`, `0/3780`, `3710/3780` |
 | U2-4 | the stripped leg's blind spot is on the record, and `--authored` covers it | stripped: `exit 0`. Authored: `exit 1`, three lines with `1` or more palettes (3023, 3023, 3379 by the prototype) | the unmutated authored run prints `0 differing cells`, `exit 0` | prototype, as the table above |
-| U2-5 | the thin test is registered, green, fast, and cannot pass with a dead compare | `exit 0`, one `PASS:` line, `1`; wall time recorded with the load, graded 🟡 if over 6 s quiet | in the clone, the rename below makes the script ignore the flag: `exit 1`, `1` or more | the file does not exist |
-| U2-6 | the mode leaves nothing behind | `0`, `0` | in the clone, remove the cleanup call (the builder cites the edit): the first figure prints `1` | not applicable |
+| U2-5 | the thin test is registered, green, fast, and cannot pass with a dead compare | `exit 0`, one `PASS:` line, `1`; wall time recorded with the quiet-host readings before and after, graded 🟡 if over 6 s on a run that meets the rule, and recorded without a grade on a loud one | in the clone, the rename below makes the script ignore the flag. Its diff-stat line must read `1 file changed` with at least one insertion and one deletion; if it prints nothing, the builder's quote style differs, the control is void, and the builder adapts the needle and cites it. Then `exit 1`, `1` or more | the file does not exist |
+| U2-6 | the mode leaves nothing behind, read in a temp directory only this seat uses | `exit 0` then `0`, `exit 1` then `0`, then `0` | in the clone, remove the cleanup call (the builder cites the edit and its diff-stat line): the first count prints `1` | not applicable |
 | U2-7 | the records agree | one `ramp-identity` row; then P2 green | P2's control | `0`; P2 green at 48 |
 
 ```sh
@@ -266,10 +283,13 @@ grep -E '^identity (perceptual|peak|even): ' "$F/mb.log"
 /usr/bin/time -p node test/engine/ramp-identity.mjs > "$F/t.log" 2> "$F/t.time"; echo "exit $?"
 grep '^PASS:' "$F/t.log"; grep -c '"engine/ramp-identity.mjs"' test/run.mjs; grep real "$F/t.time"
 # U2-5 control, in the clone
-perl -pi -e 's/"--perturb"/"--perturbX"/' scripts/report-preset-fidelity.mjs
-node test/engine/ramp-identity.mjs > "$F/tn.log" 2>&1; echo "exit $?"; grep -c 'FAIL' "$F/tn.log"
-# U2-6, straight after U2-1 and again after U2-3's red run
-ls "$(node -p 'require("os").tmpdir()')" | grep -c '^ramp-identity-'
+perl -pi -e 's/"--perturb"/"--perturbX"/' scripts/report-preset-fidelity.mjs; git diff --stat | tail -1
+node test/engine/ramp-identity.mjs > "$F/tn.log" 2>&1; echo "exit $?"; grep -c '^FAIL' "$F/tn.log"
+# U2-6: a green run in the unit worktree, then a red run in the M-F clone, each with a private TMPDIR
+mkdir -p "$F/tmp"
+TMPDIR="$F/tmp" node scripts/report-preset-fidelity.mjs --identity-control --base HEAD > /dev/null 2>&1; echo "exit $?"
+ls "$F/tmp" | grep -c '^ramp-identity-'
+# (the same two lines in the M-F clone)
 git status --short | wc -l
 # U2-7
 grep -c '^| ramp-identity | ' .sdlc/adapter.md
@@ -293,7 +313,7 @@ In U2-3 the base is `HEAD` and the mutation is uncommitted, so the head side rea
 | Risk | What this plan does about it |
 |---|---|
 | The kit block is written against a proxy path and reads 0 for ever | it must call the file's own predicates on `projectView` output; U1-2 plants a real defect in the kit data for each of the seven, and the reviewer checks that no predicate was copied |
-| #701 or #713 lands first and the same region of `anchor.mjs` moved | the kit block is its own block with no allow-list. G0 re-observes every count, every needle is text, and each plant checks its own diff-stat line |
+| #701 lands first, or #713 moved the same region of `anchor.mjs` | the kit block is its own block with no allow-list. G0 re-observes every count, every needle is text, and each plant checks its own diff-stat line |
 | #681 lands with kit anchors other than `#576485` and `#088585` | the plant prints no diff-stat line, the control is void, and the builder picks the landed anchor of the same palette and cites it |
 | People read the stripped identity run as proof that nothing moved | U2-4 puts the blind spot in the record, and the adapter row says when `--authored` is required |
 | The thin test is taken for an engine gate | its comment and its `PASS:` line say what it proves. The adapter row is the gate |
@@ -309,5 +329,11 @@ One PR from `plan/gate-gaps` to `main`, title `test(color-engine): default kit i
 | # | Question | Default if unanswered |
 |---|---|---|
 | Q1 | Should the full identity control run in CI on every PR (one more leg, about 45 s on the runner, `fetch-depth: 0`)? | no. It is a pre-land and verifier command named in the adapter. A ramp-moving PR would red it by design |
-| Q2 | Keep the `--authored` flag (one branch in the subject loader, 145 to 155 s a run)? | yes. Without it the control cannot see the anchored path, which is what every curated source and the whole kit render on |
-| Q3 | Register the thin test? It raises the test-file count by one and forces a three-run baseline refresh on a quiet host | yes. Nothing else runs the script, so without it the mode can rot unseen |
+| Q2 | Should `--authored` ever be the default, or a second pre-land leg on every plan, given 145 to 155 s a run? (The flag itself is not in question: U2-4 and the adapter row depend on it.) | no. Opt-in, required by the adapter row only when a unit touches the anchored construction |
+| Q3 | Register the thin test? It raises the test-file count by one, which costs a three-run `npm test` refresh of the baseline on a quiet host, about 5 minutes after #713 | yes. Nothing else runs the script, so without it the mode can rot unseen. Sequencing after #713 already took the expensive half of that refresh out of this plan |
+
+## Revisions
+
+| date | what changed |
+|---|---|
+| 2026-09-20 | revision 2, on the checkability review of 97222c91 (9 🟢, 7 🟡, 1 🔴). Red fixed: U1-2 (the FAIL line must open with the pass line's `default-kit <check>:` token, so both needles are one token; `printf '%s '`; commit before cloning, stated once in the criteria preamble). Yellows folded: G0 (no literal `N0`; the baseline check is a G0 line; #713 is now a start condition, because the baseline reads three stale lines at the #681 head and #713's U6b owns that refresh), P2 and U2 step 7 (this plan's own delta only, including the `ui.html` figure), P5 (reworded to what it proves, and why the stripped leg suffices there), U1-4 (#713 or #701; the needle is re-observed at G0 and cited; both legs; the kit lines compared across legs), U2-1 (the vacuity floor derives from the loaded count, no corpus literal in shipped code), U2-5 (a `FAIL` line mandated, the quiet-host rule cited, a diff-stat gate on the flag rename), U2-6 (a private `TMPDIR` per run). Q2 retired as asked and reframed: `--authored` is part of the plan. Control budget stated. Changed rows: G0, P1, P2, P5, U1-2, U1-4, U2-1, U2-5, U2-6, Q2, Q3 |
