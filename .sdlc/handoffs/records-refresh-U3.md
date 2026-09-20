@@ -24,11 +24,9 @@ measured at 20298cc
 
 `uptime`: load averages 3.97 3.87 4.58 on 10 cores, well under the core count, immediately before run 1. `pgrep -fl 'test/run.mjs|vite build|smoke.mjs'` printed nothing (no other seat's gate in flight). `node --version`: v24.18.0. After step 4's `npm ci`, `npm ls typescript vite --depth=0` printed:
 
-```
-ultimate-tokens@1.2.0 /Users/kimba/Projects/nonoun/ultimate-tokens/.worktrees/rr-U3
-├── typescript@7.0.2
-└── vite@8.3.0
-```
+- `ultimate-tokens@1.2.0 /Users/kimba/Projects/nonoun/ultimate-tokens/.worktrees/rr-U3`
+- `├── typescript@7.0.2`
+- `└── vite@8.3.0`
 
 The coordinator's own window check (load 2.87 3.81 4.63, no matching processes) landed mid-sequence, confirming the same quiet window this handoff already recorded. Discipline note: every run below was preceded by its own fresh `pgrep`/`uptime` check, run by run, not just once at the start. One brief high reading occurred after smoke run 2 (load 7.86 after, still well under the 10-core threshold; `pgrep` printed nothing and `ps aux` showed no `test/run.mjs`/`vite build`/`smoke.mjs`, only unrelated Claude Code session processes on this shared host); the run itself started and finished clean, so it was kept rather than redone, and nothing after it needed a redo either (all loads stayed under threshold).
 
@@ -44,9 +42,9 @@ The coordinator's own window check (load 2.87 3.81 4.63, no matching processes) 
 | 4 | `npm run build` | 4.12 | 4.03 | none | 0 | 3.06 | wrote figma/plugin/ui.html 3780.5 KB | 0 |
 | 5 | `npm run build` | 3.79 | 3.56 | none | 0 | 1.34 | wrote figma/plugin/ui.html 3780.5 KB | 0 |
 | 6 | `npm run build` | 3.52 | 3.48 | none | 0 | 1.36 | wrote figma/plugin/ui.html 3780.5 KB | 0 |
-| 7 | `npm run smoke` | 3.28 | 4.25 | none | 0 | 18.20 | SMOKE PASS: gallery · category · editor · export dialog all render in a real browser | 0 |
-| 8 | `npm run smoke` | 4.71 | 7.86 | none | 0 | 18.28 | SMOKE PASS: gallery · category · editor · export dialog all render in a real browser | 0 |
-| 9 | `npm run smoke` | 6.41 | 5.83 | none | 0 | 18.25 | SMOKE PASS: gallery · category · editor · export dialog all render in a real browser | 0 |
+| 7 | `npm run smoke` | 3.28 | 4.25 | none | 0 | 18.20 | `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser` | 0 |
+| 8 | `npm run smoke` | 4.71 | 7.86 | none | 0 | 18.28 | `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser` | 0 |
+| 9 | `npm run smoke` | 6.41 | 5.83 | none | 0 | 18.25 | `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser` | 0 |
 
 No run was dropped or retried; no run started at or above the 10-core threshold; every run's `git status --short` was empty after; every `npm test` run's last line reads `all 48 test files passed`.
 
@@ -56,7 +54,7 @@ No run was dropped or retried; no run started at or above the 10-core threshold;
 
 ## Step 7: baseline and adapter rewrite
 
-`.sdlc/baseline.md` rewritten per §Texts: `ref: origin/main @ 20298cc`, the nine new timings, `all 48 test files passed`, `wrote figma/plugin/ui.html 3780.5 KB`, `SMOKE PASS: gallery · category · editor · export dialog all render in a real browser`, `CI run 35455937943 on 20298cc`; the `d814500` figures moved to the appended `## Prior set (d814500, superseded 2026-09-19)` section, headed differently on purpose (the check script reads the first row with the live head). `.sdlc/adapter.md` §1's three Time cells re-derived from the new ranges: test 56 to 60 s (was 59 to 66), build 1 to 3 s (was 2 to 3), smoke 18 to 18 s (was 20 to 20). `sh .sdlc/checks/baseline-agrees-check.sh` now prints seven `ok` lines and `stale total: 0`, exit 0.
+`.sdlc/baseline.md` rewritten per §Texts: `ref: origin/main @ 20298cc`, the nine new timings, `all 48 test files passed`, `wrote figma/plugin/ui.html 3780.5 KB`, `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser`, `CI run 35455937943 on 20298cc`; the `d814500` figures moved to the appended `## Prior set (d814500, superseded 2026-09-19)` section, headed differently on purpose (the check script reads the first row with the live head). `.sdlc/adapter.md` §1's three Time cells re-derived from the new ranges: test 56 to 60 s (was 59 to 66), build 1 to 3 s (was 2 to 3), smoke 18 to 18 s (was 20 to 20). `sh .sdlc/checks/baseline-agrees-check.sh` now prints seven `ok` lines and `stale total: 0`, exit 0.
 
 ## Step 9: the 56 §8 rows re-checked at 20298cc
 
@@ -166,3 +164,7 @@ Two of criterion U3-2 and U3-3's own commands, as written, interact badly with t
 2. **U3-3** (`U1-4's command, verbatim`, ending `gh run view "$(grep -oE 'CI run [0-9]+' .sdlc/baseline.md | grep -oE '[0-9]+')" ...`). §Texts' required Prior Set text also contains a "CI run 35446265780 green on d814500" sentence, so `grep -oE 'CI run [0-9]+'` now matches two lines instead of one (the live Not-run-here line and the prior-set line), and the command substitution passes both run ids, newline and all, to `gh run view`, which then 404s (`HTTP 404 ... /runs/35455937943%0A35446265780`). Restricting to the first match (`| head -1` inserted before the second `grep -oE`) resolves to run `35455937943` and reproduces the row's stated Expected output exactly: `20298cc`, `20298cc`, `20298cc panda-smoke=success build-test=success`. Used that corrected form as this unit's own evidence for the row; the verbatim command as written will error for the verifier too unless it makes the same fix.
 
 Both interactions are new since U1-4 and the row-2 check were authored (neither existed before this plan's own Prior Set text was required), so neither is this builder's error to silently work around; both are recorded as findings for whoever next revises the plan's criterion text.
+
+Correction (2026-09-19, plan records-followup U4, #709): four quotations of program output in this file had been reworded to avoid an em dash. It now reads as the program prints it. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule.
+
+Correction (2026-09-20, plan records-followup U10, #709): the fenced `npm ls typescript vite --depth=0` output in §Step 2 is now three inline spans, one per line of output, the bytes unchanged. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule.
