@@ -19,9 +19,7 @@ written: 2026-09-20
 
 `git commit` on the resolved merge printed:
 
-```text
-only the orchestrator commits the board (got Seat: builder)
-```
+- `only the orchestrator commits the board (got Seat: builder)`
 
 The hook is `githooks/commit-msg` in the sdlc plugin cache, lines 13 to 27: any commit whose staged set contains `.sdlc/board.md` needs a `Seat: orchestrator` trailer. Its merge escape (line 16) relaxes only the `Board-only:` rule, never the seat rule. A merge commit cannot leave a path out of its staged set, so there is no builder-shaped way through.
 
@@ -40,3 +38,5 @@ U9 criterion 3 asks for `P1 to P9`. `.sdlc/plans/records-followup.md` defines `P
 B, 2026-09-20, from the Orchestrator. A builder never signs the orchestrator seat, so option A was out. The Orchestrator committed the builder's staged merge in `.worktrees/rf-U9` as `6ccfcf4e` under `Seat: orchestrator`, parents `c130dd13` and `3ce50daa`. The board union was judged right as staged: landed rows first, no row's text edited. The builder's unstaged `.sdlc/handoffs/records-followup-U3.md` correction and this untracked document were left alone and commit with the handoff.
 
 On the second gap: the builder's reading is right, the plan defines `P1` to `P7`. Run `P1`, `P4`, `P5`, `P6`, `P7`; record `P2` and `P3` as pre-land only with the reason. The Orchestrator tells the Conductor that the U9 checklist row misnumbers the range.
+
+Correction (2026-09-20, plan records-followup U10, #709): the fenced hook refusal line is now one inline span, the bytes unchanged. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule.

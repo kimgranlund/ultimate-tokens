@@ -59,7 +59,7 @@ Grade key. 🟢 a verifier runs the stated command and compares to the stated Ex
 | # | Criterion | Grade | Why |
 |---|---|---|---|
 | 1 | the rule is written once, in the adapter, and says three things | 🟢 | Ran: nothing, `0`, `0`. The third pattern is an ordered conjunction over one line, so it discriminates a partial rule. |
-| 2 | the U1 verdict quotes the gate line as the control prints it | 🟢 | Pre-state ran: `refs-canonical, ordered` appears once, on line 37. The template at `test/gate-report.mjs:82` is two spaces, FAIL, two spaces, the gate name, two spaces, a U+2014 dash, so `grep -o 'FAIL  refs-canonical.*'` captures the whole line, and the `wc -l` guard closes the empty-fixture vacuity. |
+| 2 | the U1 verdict quotes the gate line as the control prints it | 🟢 | Pre-state ran: `refs-canonical, ordered` `cited:` appears once, on line 37. The template at `test/gate-report.mjs:82` is two spaces, FAIL, two spaces, the gate name, two spaces, a U+2014 dash, so `grep -o 'FAIL  refs-canonical.*'` captures the whole line, and the `wc -l` guard closes the empty-fixture vacuity. |
 | 3 | every smoke quote outside plans/ is what the source prints | 🟢 | Ran all three sub-checks: `1`; no verbatim hit in any of the three files; and `3` files carrying an altered form, at counts baseline 1, handoff 4, verdict 1. Character-for-character the plan's pre-state. |
 | 4 | each corrected history file says it was corrected | 🟢 | Ran: `0` on each of the three lines. |
 | 5 | the dash measure exempts the restored quotes and nothing else | 🟡 | The first and third parts are exact (P6 verified, P4 verified). The second is a floor, "6 or more", with no ceiling, so an extra reworded dash inside a backtick span is invisible to it. Give the number the restoration implies (seven lines by my count of the five targets) or make it an equality. |
@@ -173,3 +173,5 @@ Both cross-cutting notes of revision 1 are closed in the criteria preamble: `F` 
 Coverage is unchanged for the ten findings of #709, with two additions from the approval: approval Q3 is covered by U7-1 to U7-6 and U5-7, and approval Q4 by U3-8 and P5.
 
 Two notes that change no grade. The `DP` prefix collides with nothing live anywhere in the repo, `architecture.md` included. And U3's criteria table lists its rows in the order 1, 2, 3, 4, 5, 6, 8, 7, so row 8 sits above row 7; worth reordering before a verifier reads down the table.
+
+Correction (2026-09-20, plan records-followup U10, #709): the defective quotation this verdict's U4 row 2 names as its subject now carries the `cited:` marker beside it. Only the mechanical change the rule dictates was made; no grade and no finding's wording moves. Rule: `.sdlc/adapter.md` §3, the cited-quote clause under the Verbatim-quote rule.
