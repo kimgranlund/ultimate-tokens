@@ -1,6 +1,6 @@
 # Board
 
-Orchestrator-only. Rows edited in place. adopt-hygiene landed as PR #653 (squash `180eca0`); its plan is archived at `.sdlc/plans/archive/adopt-hygiene.md` and the root checkout is back on `main`.
+Orchestrator-only. Rows edited in place. adopt-hygiene landed as PR #653 (squash `180eca0`); its plan is archived at `.sdlc/plans/archive/adopt-hygiene.md` and the root checkout is back on `main`. records-refresh (#691) is in flight on `plan/records-refresh`.
 
 | Unit | Ticket | Size | State | Pass | Owner | Worker | Branch | Worktree | Doc | Next |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -14,3 +14,7 @@ Orchestrator-only. Rows edited in place. adopt-hygiene landed as PR #653 (squash
 | adopt-hygiene U8 staleness and wording sweep | #643 | S | 🟢 | 2 | verifier | sdlc-verifier (verifier-l3) | unit/hygiene-U8 @ 266d13e merged a9ffe6e | removed | .sdlc/verdicts/adopt-hygiene-U8.md | landed in PR #653, squash 180eca0 |
 | adopt-hygiene U9 pre-land fixes round 4 | #643 | S | 🟢 | 1 | verifier | sdlc-verifier (verifier-l3) | unit/hygiene-U9 @ 10072b4 merged 1ee2a40 | removed | .sdlc/verdicts/adopt-hygiene-U9.md | landed in PR #653, squash 180eca0 |
 | adopt-hygiene U10 card and index lineage | #643 | S | 🟢 | 1 | verifier | sdlc-verifier (verifier-l3) | unit/hygiene-U10 @ a6e32b2 merged d79360e | removed | .sdlc/verdicts/adopt-hygiene-U10.md | landed in PR #653, squash 180eca0 |
+| records-refresh U1 rerun baseline, drop copied numbers, ignore rules, staleness notes | #691 | S | 🟢 | 1 | verifier | build-691-U1 (builder-l2; reviewer-l1, verifier-l1) | plan/records-refresh @ b89f185 (built on the plan branch, no unit branch) | .worktrees/survey-refresh | .sdlc/verdicts/records-refresh-U1.md | 12/12; host-load fold in b89f185; U2 next |
+| records-refresh U2 the C31 shape: §8 Doc drift, rerun note, 18 controls rerun | #691 | S | 🟢 | 1 | verifier | build-691-U2 (builder-l2; reviewer-l1, verifier-l1) | unit/rr-U2 @ 341be2a merged e9ebf2b (rebased onto 20298cc) | removed | .sdlc/verdicts/records-refresh-U2.md | 9/9 rows 🟢; pass 5's 18 K rows graded at c3aea0e0, controls rerun by U3 |
+| records-refresh U3 re-measure at 20298cc after #706 | #691 | M | 🟢 | 1 | verifier | build-691-U3 (builder-l2; reviewer-l1, verifier-l1) | unit/rr-U3 @ 1604f77 merged faf44ba2 | removed | .sdlc/verdicts/records-refresh-U3.md | 13/13; the two criterion cells were patched in the plan, not worked around |
+| records-refresh U4 rename the adapter's conflict ids C1 to C13 to X1 to X13 | #691 | S | 🟢 | 1 | verifier | build-691-U4 (builder-l2, one grade above the plan's l1, the dispatcher's call; reviewer-l1, verifier-l1) | unit/rr-U4 @ d04b6824 merged 92f977f6 | removed | .sdlc/verdicts/records-refresh-U4.md | 7/7; pre-land next |
