@@ -130,3 +130,11 @@ Options:
 - I run it single-agent (Recommended): the conductor seat dispatches reviewer-l3 and verifier-l3 workers for the pre-land review, writes the record, runs adapter.py land with the gate, opens the #691 PR, watches CI, squashes, closes the plan
 - Restart the seats again
 Chosen: I run it single-agent (Recommended)
+
+## Q16 (2026-09-19)
+Question: Pre-land record for records-refresh is 🟢 at e60a4286 and the adapter gate accepts it (dry run). Verifier: 42 rows, 38 🟢, 4 🟡, 0 🔴 (three stale criterion wordings, one npm test timing under load 23 to 32; substance holds everywhere). Reviewer: 0 🔴, five 🟡 record cells already fixed. Gates at head: npm test 48/48, build ui.html 3780.5 KB = baseline, smoke PASS, branding clean, scope .sdlc/ + .gitignore only. Open the #691 PR and squash-merge it once CI is green?
+Options:
+- Land it (Recommended)
+- Open the PR, I merge myself
+- Hold
+Chosen: Land it (Recommended)
