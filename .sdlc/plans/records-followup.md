@@ -73,7 +73,7 @@ Every negative control that edits a file runs in a throwaway clone (`git clone -
 
 ## Units
 
-- [ ] U1 (S) the five one-cell repairs: F1 `debt.md` K17 note, F2 `architecture.md` rerun note, F3 `adapter.md` negative-control line, F6 and F10 `baseline.md` · grade l1 · reviewer-l1 · verifier-l1
+- [~] U1 (S) the five one-cell repairs: F1 `debt.md` K17 note, F2 `architecture.md` rerun note, F3 `adapter.md` negative-control line, F6 and F10 `baseline.md` · grade l1 · reviewer-l1 · verifier-l1
 - [ ] U2 (S) the id collision F4: `architecture.md` §4 rows X1 to X6 become XC1 to XC6, one dated note carries the map, the three `debt.md` notes say what is true · grade l1 · reviewer-l1 · verifier-l1 · after U1 merges
 - [ ] U7 (S) the second id collision (approval Q3): `debt.md` §Process rows P1 to P4 become DP1 to DP4, the three live cites follow, one dated note carries the map; `architecture.md` keeps P1 to P7 · grade l1 · reviewer-l1 · verifier-l1 · after U2 merges (same file, `debt.md`)
 - [ ] U4 (S) the verbatim-quote rule F11, written once in `adapter.md` §3, and the five altered quotes restored from program output · grade l2 · reviewer-l1 · verifier-l1 · after U7 merges
