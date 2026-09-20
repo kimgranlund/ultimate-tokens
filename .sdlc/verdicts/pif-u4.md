@@ -1,0 +1,39 @@
+# Verdict U4 pass 5 (delta) · 🟡
+
+Plan preset-intent-fidelity (#681), unit U4, head `3921f14059ccf8730521c6cffdb9bf1ac3a65da0` on `unit/pif-u4-integration`. Prior verdict at `36ce7777`: `scratchpad/verdict-pif-u4.md`. Verified 2026-09-20, read-only, worktree `.git-worktrees/pif-u4-integration`.
+
+Next action for the Orchestrator: no red remains. Three yellows stay open as owner or follow-up items (rows 13, 20, 25), and three small record lines are stale (Records table). None blocks the unit; row 22 is an owner item by the report-only ruling.
+
+Scope finding: the pass is NOT records-only. `git diff --stat 36ce7777 3921f140` shows 6 files, 4 under `.sdlc/` and 2 tests. `test/engine/semantic.mjs` moves six `FLOORS.even` pins up one decimal (test logic). `test/engine/anchor.mjs` changes a comment and the final PASS string only. No `src/` change, so the engine rows carry forward. I re-ran row 18 fully and ran `npm test` once.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| 1, 4 to 12, 14 to 17, 19, 23, 24, 26, 27 | Unchanged rows | 🟢 | Carried forward by reference from `verdict-pif-u4.md`; `git diff 36ce7777 3921f140 -- src scripts figma mcp` is empty, so every engine measurement stands | As recorded in the prior verdict, row by row |
+| 2 | C1 `npm test` exit 0, tree clean | 🟢 | Re-run at `3921f140`: `✓ all 48 test files passed`, `exit 0`, `git status --short` 0 lines after | Prior role table mutant (exit 1) still applies; this pass the floor mutant in row 18 reds the same file |
+| 3 | Gate wall time and load | 🟢 | `real 345.89`, load at start `3.14 4.02 4.95`, at end `3.18 4.47 4.93`, with my own envelope, floors and cap sweeps running beside it, so this is an upper reading. A pid at 0% CPU does not hold timings; these loads are from `uptime` at start and end. Handoff section 3 now leads with 293.09 s and keeps 692.42 s as historical | Prior control (load 8.59, about 9 min) shows wall time tracks load |
+| 18 | 41 floors and the re-pins, re-run in full because six pins moved | 🟢 | Own 96 cell sweep at `3921f140` is byte identical to the `36ce7777` sweep (`cmp` same). All 16 `FLOORS.even` rows: comment matches my 4dp measure within 0.0005 and floor equals floor(measured, 1dp): `even rows 16 mismatch 0`. Six new pins confirmed: Secondary light 5.6 (5.6078), Success light 7.7 (7.7219), Warning dark 5.3 (5.3334), Data 1 light 6.3 (6.3149), Data 3 light 6.5 (6.5224), Data 5 light 5.8 (5.8350). Gate line: `0 unlisted drops, 0 further erosion (41 cells named "pending U4")` | Secondary light pin raised to 5.7 in a scratch copy: `FAIL  role-contrast  ... even Secondary LIGHT: accent #42715B on #FFFFFF = 5.61:1, below its pinned floor 5.7:1`, exit 1; clean copy exit 0 |
+| 21 | Yielded cells report the C6 p90 chroma ratio and reproduce | 🟢 | Handoff 7.3 now strikes the dL* table and reports 146.2% (perceptual 300) and 111.1% (peak 700) against the yielded 93.7 and 96.8. Mine, own pixel path (`projectView(hydrate(preset))`, own CAM16 ratio, n 2,920): perceptual `300: med 94.0 p90 146.2`, peak `700: med 68.8 p90 111.1`. The script agrees to the digit | Anchors stripped on the same head: perceptual 300 p90 97.9, peak 700 p90 69.3, so the probe moves when the construction moves |
+| 22 | C6 median and p90 table, before and after, 14 of 24 stated with mechanism | 🟢 | Handoff 7.6 has both tables and says plainly that the rendered path misses 14 of 24, mechanism named (anchored stop 500 is the pinned sample, not the designed peak; Q7 and #701 cover only the above 100% clause), marked an owner item. Reproduced: `node scripts/report-preset-fidelity.mjs --envelope` exit 1, READING (a) FAIL tokens on median and p90 lines: perceptual 6, peak 5, even 3, total 14. Every after cell matches the script output to 0.1. Before table reproduced from my own scratch copy with `anchor: pal.anchor` removed at line 99: all 12 cells match to 0.1, 2 of 24 fail | The stripped copy reads 2 of 24 where the shipped path reads 14 of 24, so the count discriminates |
+| 28 | Zero em dashes added in prose | 🟢 | Unit diff `31939051..3921f140`, added lines only, inline backtick spans stripped, occurrences counted with perl: 0. Without the strip: 0. Commit messages in the range: 0. The 4 prior sites are replaced with hyphens | Same counter on `31939051..36ce7777` prints 4, the prior finding |
+| 13 | C4 ramp half | 🟡 | Now written down in handoff pass 5 section: 3,780 of 3,780 palettes per mode, max dL* 2.5961, 4.3634, 0.4289, matching my 2.60, 4.36, 0.43. Still no gate and no `--identity-control` ramp mode, and the follow-up the record names has no ticket number | My row 17 blast figures differ from these, so the differ is not echoing constants |
+| 20 | Peak-cap trade figures at U4 | 🟡 | The builder's gap statement is honest on the facts: `targetTone` and `preCapOklchHue` are locals in `okhslStops` (`tonal.js:1203`, `1209`) and `paletteStops` does not return them. The conclusion is too strong: no engine change is needed to grade it. I hooked a scratch copy of `src/` (one push after the polish at `tonal.js:1264`, worktree untouched). Shipped path, peak, 3,780 palettes: `capped n 702`, tone error over 0.01 L* on `249 35.5%`, max `0.0848`, hue residual max `24.6211` deg, gap below anchor max `1.6578` C. Anchors stripped: n 1,412, `23.6%`, max 0.0945, 24.6211 deg. The plan's carried 35%, 0.10 and 24.6 deg hold at U4; the anchored path has no cap, so the trade applies only to non anchored palettes. My n differs from U3's 5,814 (scope of that script unknown to me), so this is not a digit reconciliation. Yellow because the U4 record still carries no final numbers | Hook count with anchors kept (702) against stripped (1,412) differs, and an earlier run with a mis-passed flag gave three identical outputs, which I caught and re-ran |
+| 25 | Default kit in every sweep | 🟡 | Recorded in `.sdlc/handoffs/adopt-hygiene-U4.md` with today's clean measure (0 on window, gap, distinct, notch, order, dupe), matching my prior sweep. Still asserted by comment, not by a gate; no ticket named | Prior sweep finds the kit's Data 7 spike, so it visits the kit |
+
+Counts: 25 🟢, 3 🟡, 0 🔴.
+
+## Records
+
+| Record | Matches head? | Detail |
+|---|---|---|
+| Handoff frontmatter `head:` | 🟢 | Now says to resolve from git; `git log -1 --format=%H unit/pif-u4-integration` prints `3921f140...`, the head |
+| Gate-time ruling | 🟢 | Verbatim owner ruling dated 2026-09-20 in `.sdlc/questions/pif-u4.md` and handoff section 3, citing #713; `gh issue view 713` is OPEN, title on the 296 s split. U5 is named as the writer of the interim ceiling |
+| `FLOORS` even comments | 🟢 | Row 18: 16 of 16 reproduce |
+| Timing lead line, profile file count | 🟢 | Leads with 293.09 s; profile record says 48 files in all three places |
+| `anchor.mjs` closing lines | 🟢 | Now `C4 (non-anchored construction totally migrated, Q1)` and `notch (15, Q3-resolved)` |
+| Item 20 sample wording | 🟢 | Marked superseded by item 21 |
+| Handoff pass 5 scope sentence | 🟡 | Says no source change is in scope except the em dashes, and the commit subject says records-only, but six `FLOORS.even` pins moved in `test/engine/semantic.mjs`. The handoff never lists the six re-pins |
+| Handoff 41 cell table, `even Success light` | 🟡 | Still `8.0 \| 7.6`; the pin is now 7.7 (measured 7.7219) |
+| Handoff 7.6 `cells failing` column | 🟡 | After table says perceptual 7 of 8 and peak 3 of 8; the readings are 6 and 5 (even 3 is right). Before table says 1 of 8 where 2 readings fail. The 14 of 24 and 2 of 24 totals in the prose are correct |
+| Row 20 wording | 🟡 | Says reproduction needs an engine change; a scratch copy hook does it (row 20) |
+
+Evidence files: `scratchpad/vu4-p5-npmtest.log`, `scratchpad/vu4/` (envelope-p5.log, rpf-strip.mjs, floors-p5.json, capdrift.mjs, inst/, t/clean.log, t/mut.log).
