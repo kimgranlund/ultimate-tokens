@@ -19,3 +19,10 @@ Options:
 - Approve (Recommended)
 - Hold
 Chosen: Approve (Recommended)
+
+## Q3 (2026-09-20)
+Question: records-tidy pre-land is 🟢 at 1884b5ef and the adapter gate accepts the record. Verifier-l3: 14 rows, 12 🟢, 2 🟡, 0 🔴 (npm test ran 101 s under load 12 on 10 cores, exit 0, 48/48, tree clean; the head moved once for an em dash fix and the affected rows were re-run). Reviewer-l4: 0 🔴, its one 🟡 fixed. CI was green at the previous head and re-runs on 1884b5ef once pushed. Squash-merge PR #714 when CI is green on that head?
+Options:
+- Land it (Recommended)
+- Hold until after the restart
+Chosen: Land it (Recommended)

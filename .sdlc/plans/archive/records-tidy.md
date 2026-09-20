@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: #712
 priority: P1
 lane: docs
@@ -211,3 +211,4 @@ One PR from `plan/records-tidy` to `main`, carrying the approval doc, this plan,
 |---|---|---|
 | 2026-09-20 | plan written (draft). Planner measured the three lines, the map's K17 filter, the verdict's highest pass, the adapter's grade words, every other `reviewer-l3` under `.sdlc/`, the C31 counts and the wall at 730ff941, and each U1 block on fixtures in a throwaway shared clone | k17-rerun pre-land concerns 2, 4, 6; approval Q1 |
 | 2026-09-20 | revised on the criteria review (`.sdlc/verdicts/records-tidy-checkability.md` @ 8916482f, 6 of 8, U1-3 and U1-5 🔴). U1-3's first leg now counts `reviewer-l3` outside the amendment paragraph, since the amendment names the old grade and made `0` unreachable; re-measured `0 2 1 1 2 1` after, `1 0 0 0 0 0` before, `1 1 1 0 1 0` with line 58 untouched. U1-5's second side reads the working tree instead of `HEAD`, so its control fires uncommitted; re-measured `0` after and `1` on the rewritten history file, committed or not | criteria review findings; neither changed the texts or the wall |
+| 2026-09-20 | landed as PR #714, squash `aa197cbe`, ticket #712 closed, plan archived. Pre-land 🟢 at `1884b5ef` on fable workers, CI success on every job at that sha, owner approved the squash (approval Q3). Two reds on the way were the Orchestrator's, both in the imported U1 review record and neither in the unit work: the banned strings quoted while reporting their absence (fixed 16f65d94) and 14 em dashes (fixed 1884b5ef). U1 itself was graded 9 of 9 by a conductor-dispatched verifier-l1 worker while the Verifier seat was down, per `.sdlc/questions/records-tidy-U1-verification.md` | landing and close-out |
