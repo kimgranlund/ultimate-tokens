@@ -1,3 +1,21 @@
+---
+kind: verdict
+plan: records-followup
+unit: pre-land review, copied
+copied: 2026-09-20 by plan records-followup U10 (#709)
+source: reviewer-l4, graded at 887e3eb2
+body-sha256: e30720eb197f324c739cb2536d2de91f8d6037c4aad2a5ac877a80de9040c3b2
+---
+
+Byte-pinned copy. Everything from the marker line below to the end of the file is the reviewer's
+record byte for byte. It is never swept for fenced program output, never restored and never marked,
+per the byte-pinned sentence of `.sdlc/adapter.md` §3: it cannot both keep the hash that proves it
+faithful and be rewritten. `body-sha256` covers the body alone, not the whole file, because a
+whole-file hash cannot be stated inside the file it describes. Recompute it with
+`awk 'f{print} /^<!-- body begins, byte-pinned -->$/{f=1}' .sdlc/verdicts/records-followup-prepr-review.md | shasum -a 256`,
+which prints the value above and the source hash the U10 brief states.
+
+<!-- body begins, byte-pinned -->
 # Pre-land review · plan records-followup (#709) · head 887e3eb2 vs origin/main 3ce50daa
 
 Reviewer `reviewer-l4`, fresh context, throwaway clones. Verdict FIX-FIRST: the mechanics hold, one blocking finding.
