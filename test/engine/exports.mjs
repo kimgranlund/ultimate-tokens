@@ -179,9 +179,26 @@ if (!fixedOn.every((r) => /:050\/050$/.test(r))) FAIL("oncolors", `fixed mode: o
 if (JSON.stringify(fixedOn) === JSON.stringify(contrastOn)) FAIL("oncolors", "contrast mode changed no on-color — onColorMode not threaded to exports");
 // #662: the achromatic fall-through reaches the CSS emitter, and it aliases the emitted document
 // constant rather than a per-palette var that would not resolve.
-const contrastCss = X.exportCSS({ ...C(ALL), onColorMode: "contrast" });
-if (!contrastOn.some((r) => /white|black/.test(r)))
-  FAIL("oncolors", "contrast mode produced no white/black on-color — the achromatic fall-through (#662) is not wired to the exporters");
+//
+// This needs a palette whose accent (550 light / 450 dark) misses AA against BOTH of its own ramp
+// ends (050 and 950) — the only case `applyOnColorContrast`'s `pick()` falls through to white/black.
+// RT.defaults no longer supplies one: ticket #681 U2 fixed model.mjs's projectView and exports.js's
+// derivePalette to actually forward `anchor` into paletteStops (a "subset-object gap" — they built
+// narrowed object literals for the engine call that silently dropped the new field), and RT.defaults'
+// families now carry `anchor` (mirroring DEFAULT_PALETTES). With the anchor honoured, every family's
+// own 050/950 clears AA against its accent comfortably (see test/engine/semantic.mjs's re-measured
+// role-contrast floors) — none of them exercise the fallback path any more. A dedicated synthetic
+// probe, unrelated to any default family, keeps this gate meaningful: hue 150 (a green/cyan) at full
+// chroma, with damping OFF (damp/dampAmp/dampBias: 0, so the ramp keeps full saturation all the way
+// to its own 050/950 instead of fading toward white/black) is measured to land its light-scheme
+// accent between its own washed-out ends, missing AA on both — the exact "no” a ramp fixture chases.
+const FALLBACK_PROBE = { name: "Probe", hue: 150, chroma: 100, skew: 0, lift: 0, on: true };
+const probeCtl = { ...C([...ALL, FALLBACK_PROBE]), onColorMode: "contrast", damp: 0, dampAmp: 0, dampBias: 0 };
+const contrastCss = X.exportCSS(probeCtl);
+const probeOn = onRefs(contrastCss).filter((r) => r.startsWith("probe:"));
+if (probeOn.length === 0) FAIL("oncolors", "fallback probe palette produced no on-color ref — the resolution ladder changed shape");
+else if (!probeOn.some((r) => /white|black/.test(r)))
+  FAIL("oncolors", `contrast mode produced no white/black on-color for the fallback probe (got ${probeOn.join(",")}) — the achromatic fall-through (#662) is not wired to the exporters`);
 for (const which of ["white", "black"]) {
   if (contrastCss.includes(`var(--c-${which})`) && !contrastCss.includes(`--c-${which}: `))
     FAIL("oncolors", `an on-color aliases var(--c-${which}) but --c-${which} is not emitted in :root (ADR-005)`);
@@ -426,31 +443,103 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // value derived from their ramp shifted. Re-pinned here AND in the SPEC's own Examples section in the
   // same change, so the normative text and this mirror cannot drift apart. The prime ladder, on-colors,
   // data-1 and constant.backdrop did not move.
+  // #681 re-capture (U1, Q2 (b)): Primary's prime.prime/.brightest/.dimmest moved AGAIN — Primary's
+  // DEFAULT_PALETTES entry now carries `anchor: "#0C5DCC"` (today's stop-550 hex), so its `prime` step
+  // renders that hex verbatim instead of deriveKeyColor's cusp identity, and the other six ladder
+  // rungs bend around the anchor's own OKHSL l/s/h instead of the cusp's. Re-pinned to the anchor's
+  // own oklch (independently verified: hexToRgb("#0C5DCC") -> oklch(0.504 0.1867 258.99) by a
+  // from-scratch sRGB->OKLab->OKLCH conversion, not by reading this pipeline's own output back). The
+  // ramp stops (500/050/950/scrim) and every OTHER default family's prime are untouched by U1 — only
+  // Primary's row happens to be this file's literal spot check.
+  //
+  // #681 re-capture (U2): the RAMP's own stop 500 moved too — model.mjs's projectView and exports.js's
+  // derivePalette were fixed to actually forward `anchor` into paletteStops (a "subset-object gap":
+  // they built narrowed object literals for the engine call that silently dropped the new field, so
+  // the ramp itself had been silently ignoring `anchor` all along, unlike prime.mjs which U1 already
+  // wired correctly). With that fixed, colors.primary.500 now equals colors.primary.prime.prime
+  // exactly (both read the SAME verbatim anchor hex #0C5DCC, in-window per RAMP_L_MIN/MAX so it is
+  // never clamped) — the two were coincidentally different literals before this fix, now the SAME by
+  // construction (C3's own claim). scrim.300 tracks 500. neutral.500 moved (Neutral also carries an
+  // anchor). The accent-role semantic tokens (DEFAULT/hover, at ramp stops 550/450/650/350 — NOT 500,
+  // so still genuinely distinct from the anchor) and data-1's own accent moved with the ramp shape.
+  // on-primary._dark ALSO moved (black -> white): #662's achromatic-fallback `pick()` now finds
+  // Primary's own dark ramp end clears AA against the anchor-pinned 450 fill, so it no longer needs
+  // the black constant. on-surface/backdrop/prime.brightest/prime.dimmest (no accent role reads them)
+  // did not move. Every literal below independently re-verified against exports.mjs's own resolution
+  // ladder output (this file's normal spot-check discipline — not re-derived by hand).
+  //
+  // #681 re-capture (U2, review pif-u2-review-1.md F2): the anchored branches' saturation basis now
+  // lerps from the anchor's own measured chroma toward the group-driven ramp target as a stop moves
+  // away from 500 (see okhslStopsAnchored's own comment), so every OFF-pivot stop's chroma moved a
+  // second time — primary.DEFAULT/.hover (stops 550/450) and data-1.DEFAULT (also off-pivot). EX-1's
+  // raw ramp literals (500/50/950/scrim.300, all either the verbatim anchor or undamped by chroma)
+  // and on-primary/on-surface (no chroma dependence) are UNCHANGED — independently re-verified.
+  //
+  // #681 re-capture (U2 repair pass, re-diagnosis Findings 1+2): the anchored branches' chroma now
+  // routes through U3's own chromaEnvelope (verbatim copy, keyed on liftStop) instead of the interim
+  // group-target lerp above, and the anchored tone construction now composes toneAt's curve/tension/
+  // vibrancy/hueSpace with the pivot instead of a straight lerp (F4). Both only move OFF-pivot stops
+  // (envelope(500)=1 exactly, and vibrancy=0's default perceptual-mode construction reduces to the
+  // prior linear-curve build).
+  //
+  // #681 re-capture (U2 repair pass, Q-U2-5 ruled, revision 17): Finding 1's literal, unconditional
+  // anchor-value basis (immediately above) broke REQ-002 — re-ruled to a BLEND (chromaEnvelope stays
+  // verbatim, but its basis input shades from the anchor's own chroma at the pivot to `rampChroma` at
+  // the ramp's ends, see paletteStopsAnchored/okhslStopsAnchored's own header comments). Numerically
+  // this lands back at (or very near) the F2-blend values two re-captures above, since both blend
+  // toward the same group target — only primary.DEFAULT/.hover (550/450) and data-1.DEFAULT moved;
+  // EX-1's raw ramp literals and on-primary/on-surface are UNCHANGED — independently re-verified.
+  //
+  // #681 re-capture (U2 repair pass, addendum 2, u2-p2-brief.md): the blend's own weight now keys on
+  // `liftStop` (`anchorChromaBasis`, see its own header comment above `chromaEnvelope`), never
+  // `anchorWarp`'s skew-warped `w` — a local construction the ruling retired. Primary carries skew -20,
+  // so its own DEFAULT literal (stop 550) moved a hair from the anchorWarp-keyed capture immediately
+  // above; every other literal is unchanged — independently re-verified.
+  //
+  // #681 re-capture (U2 review pass 2, R6 -- toneAt piecewise-affine remap replacing anchorLerp's
+  // per-side double-S, tonal.js's own header comment): stop 550/450 sit closer to toneAt's own
+  // steepest point now, not the double-S's flattest part, so Primary's own DEFAULT and hover literals
+  // (skew -20, stops 550/450) moved again. on-primary, on-surface and data-1.DEFAULT are unchanged --
+  // independently re-verified. R2's smoothstep easing on the chroma blend weight did not move any of
+  // these four fields at default vibrancy/damp (near-pivot chroma stays within rounding here).
+  //
+  // #681 U4 re-capture (integration of U6 onto U1's anchor branch, prime.mjs rewritten per U1's own
+  // "provisional OKHSL fix; U6's L*-domain equal-compress rewrite replaces this whole mechanism"):
+  // `prime.brightest`/`.dimmest` moved again — the ladder now builds in CIE L* around the anchor's own
+  // measured L*/CAM16 hue/chroma (not the anchor's OKHSL l/s/h U1's provisional construction read),
+  // equal-compress at the window bound (Primary's anchor sits well inside [PRIME_L_MIN, PRIME_L_MAX],
+  // so this ladder is NOT window-clamped). `.prime` itself is unchanged (REQ-056's verbatim-anchor
+  // identity holds regardless of ladder construction). Every ramp stop (500/50/950/scrim/neutral.500)
+  // and `.prime` are independently re-verified UNCHANGED from the U3 merge — U6 touches only
+  // src/engine/prime.mjs, never tonal.js/the ramp. Values independently re-verified against
+  // exports.mjs's own resolution ladder output (this file's normal spot-check discipline — not
+  // re-derived by hand), out-of-lane reporting on the SPEC's own stale EX-1 mirror carried over from
+  // U6's own paragraph (`docs/spec/spec-panda-park-ui-exports.md:419-424`, see `.sdlc/handoffs/pif-u6.md`).
   const ddState = stateOf(defaultDocument());
   const ddPreset = X.exportPanda(ddState);
   const ddRaw = ddPreset.theme.extend.tokens.colors;
   const ddSem = ddPreset.theme.extend.semanticTokens.colors;
-  if (ddRaw.primary["500"].value !== "oklch(0.546 0.2114 258.97)") FAIL("panda", `EX-1 colors.primary.500 = ${ddRaw.primary["500"].value}`);
+  if (ddRaw.primary["500"].value !== "oklch(0.504 0.1867 258.99)") FAIL("panda", `EX-1 colors.primary.500 = ${ddRaw.primary["500"].value}`);
   if (ddRaw.primary["50"].value !== "oklch(1 0 0)") FAIL("panda", `EX-1 colors.primary.50 = ${ddRaw.primary["50"].value}`);
   if (ddRaw.primary["950"].value !== "oklch(0.1763 0.014 258.36)") FAIL("panda", `EX-1 colors.primary.950 = ${ddRaw.primary["950"].value}`);
-  if (ddRaw.neutral["500"].value !== "oklch(0.5443 0.059 267.96)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
-  if (ddRaw.primary.scrim["300"].value !== "oklch(0.546 0.2114 258.97 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
-  if (ddRaw.primary.prime.prime.value !== "oklch(0.5929 0.2052 259)") FAIL("panda", `EX-1 colors.primary.prime.prime = ${ddRaw.primary.prime.prime.value}`);
-  if (ddRaw.primary.prime.brightest.value !== "oklch(0.8266 0.0853 258.93)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`);
-  if (ddRaw.primary.prime.dimmest.value !== "oklch(0.3543 0.1307 258.84)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
+  if (ddRaw.neutral["500"].value !== "oklch(0.5056 0.0552 267.76)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
+  if (ddRaw.primary.scrim["300"].value !== "oklch(0.504 0.1867 258.99 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
+  if (ddRaw.primary.prime.prime.value !== "oklch(0.504 0.1867 258.99)") FAIL("panda", `EX-1 colors.primary.prime.prime = ${ddRaw.primary.prime.prime.value}`);
+  if (ddRaw.primary.prime.brightest.value !== "oklch(0.733 0.1374 264.49)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`);
+  if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2669 0.1023 258.76)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.504 0.1867 258.99)", _dark: "oklch(0.586 0.2114 258.97)" }))
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5504 0.1924 258.96)" }))
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.4253 0.1357 259.04)", _dark: "oklch(0.672 0.1504 258.98)" }))
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3971 0.1239 258.91)", _dark: "oklch(0.6419 0.1561 259.24)" }))
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
-  if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(0 0 0)" }))
+  if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);
   if (JSON.stringify(ddSem.neutral["on-surface"].value) !== JSON.stringify({ base: "oklch(0.1774 0.0044 264.46)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.neutral.on-surface = ${JSON.stringify(ddSem.neutral["on-surface"].value)}`);
   if (Object.keys(ddSem.primary).length !== 53) FAIL("panda", `EX-2 expected 53 keys under semanticTokens.colors.primary, got ${Object.keys(ddSem.primary).length}`);
   if (Object.keys(ddSem).length !== 16) FAIL("panda", `EX-2 expected 16 palette groups, got ${Object.keys(ddSem).length}`);
-  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5584 0.2312 272.17)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
+  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5194 0.2328 272.25)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
 
   // disabled palette absent from both trees.
   const disabledPanda = X.exportPanda(oneOff);
@@ -790,6 +879,11 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
 //    committed fixture, not a self-derived expectation, so a leaf builder that quietly changed the
 //    values path — or a refs branch that leaked into the default — goes red here and nowhere else.
 //    The preset object carries no schema stamp, so the 2 -> 3 bump does not touch this fixture.
+//    #681 U4 integration re-capture (2026-09-20, by script from the engine, never typed): this
+//    fixture landed on main before #681's anchor/chroma-envelope/prime-ladder engine changes, so
+//    every ramp-derived value in all three sections moved once, the same way shadcn-baseline.css's
+//    #681 CARVE-OUTs above document. No leaf shape, key, or ordering changed: only the underlying
+//    OKLCH values, matching what src/engine/tonal.js/prime.mjs now emit on the merged tree.
 {
   const G = "radix-refs-values-unchanged";
   const fixture = JSON.parse(readFileSync(new URL("./fixtures/radix-baseline.json", import.meta.url), "utf8"));

@@ -23,7 +23,7 @@ Every builder runs the gates in its unit worktree, never in the root checkout: `
 
 | Gate | Command | Needs | Green means | Time (rounded from `.sdlc/baseline.md`) | Who runs it |
 |---|---|---|---|---|---|
-| test | `npm test` | Node 24. No `node_modules`, no browser (survey C1 🟢) | exit 0 and the runner's last line reads `all N test files passed`, where N is the length of `TESTS` in `test/run.mjs` (the last measured N is in `.sdlc/baseline.md`; a unit that adds a test file raises N and must register it in TESTS, K17). Then `git status --short` is empty: every asset `npm test` regenerates is byte-stable (survey C11 of 2026-09-18, CI drift gate). `src/ui/type-fonts.js` is outside that set, because `npm test` never runs `gen:type-fonts`; the fonts row below is its gate | 56 to 60 s | builder every pass; verifier every verdict; CI |
+| test | `npm test` | Node 24. No `node_modules`, no browser (survey C1 🟢) | exit 0 and the runner's last line reads `all N test files passed`, where N is the length of `TESTS` in `test/run.mjs` (the last measured N is in `.sdlc/baseline.md`; a unit that adds a test file raises N and must register it in TESTS, K17). Then `git status --short` is empty: every asset `npm test` regenerates is byte-stable (survey C11 of 2026-09-18, CI drift gate). `src/ui/type-fonts.js` is outside that set, because `npm test` never runs `gen:type-fonts`; the fonts row below is its gate | 56 to 60 s baseline; **revised #681 U6 (review pass 6 N9)**: 90 to 175 s wall observed, host-contention-sensitive - see the note below the table | builder every pass; verifier every verdict; CI |
 | build | `npm run build` | `node_modules` from `npm ci` (C2 🟢); without it `tsc: command not found`, exit 127 | exit 0, `tsc` strict passes (the only static check; there is no lint script, baseline §Lint), `figma/plugin/ui.html` written, tree clean after | 1 to 3 s warm | builder when the unit touches TypeScript, `vite.config.js`, `scripts/`, bundled fonts, or `package*.json`; verifier at pre-land always; CI |
 | smoke | `npm run smoke` | `node_modules` plus a Chrome binary (runs `npm run build` first, #564) | exit 0 and `SMOKE PASS` printed; screenshots in `smoke-out/` (gitignored) | 18 to 18 s | verifier for any unit touching `src/ui/`, `src/main.ts`, `scripts/bundle.mjs`, `scripts/gen-figma-ui.mjs`; CI always. Local Chrome exists on this Mac (C3 🟢); a host without Chrome lets CI be the smoke gate |
 | corpus-contrast | `npm run gate:corpus-contrast` | Node 24. No `node_modules`, no browser; reads the committed `src/ui/categories/*.js` mirrors, so run it after `npm test` has regenerated them | exit 0 and the last line reads `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color`, over all 343 curated documents x 3 tone modes = 22680 accent-on-color cells (#674). `npm test` already runs the same gate SAMPLED (brands.json in full plus one deterministic volume per gallery category), so this is the full-corpus leg only | ~20 s (host-sensitive; 17-27 s observed, mirror parsing dominates) | CI (`corpus-contrast` job); builder or verifier when a unit touches the tonal ramp, `src/engine/semantic.js`, an on-color policy, or a category spec |
@@ -31,6 +31,18 @@ Every builder runs the gates in its unit worktree, never in the root checkout: `
 
 Rules the gates imply:
 
+- **`npm test`'s budget moved, #681 U6 (review pass 6, N9).** `src/engine/hct.js`'s `maxChromaInGamut`/
+  `peakC`/`oklchToCam16Hue` cache keys went from truncated (`.toFixed(2)`) to exact, closing a real
+  order-dependence defect (#686) at the cost of fewer cache hits. Measured at corpus scale (343
+  documents, 3,780 palettes, 3 tone modes, fresh cold process per measurement, CPU time, engine
+  variants differing ONLY in the three keys): a real, repeatable **+21% CPU**, four clean pairs, no
+  inversions — corroborating an independent reviewer's own +26%/+32% corpus-scale finding. Raising
+  `CACHE_CAP` (5,000 to 60,000) did not help. `npm test`'s own total moved with it, but the WALL-CLOCK
+  figure is additionally, and heavily, host-contention-sensitive on this dev machine (many concurrent
+  unit worktrees/agents): repeated post-fix runs measured 1:34 to 2:51 total, 97.99s to 173.89s user
+  CPU. This is the repo's own rule in practice — a change invalidating a record repairs that record in
+  the same change — and the 58-62s figure at `7faf3aa` no longer holds once #686 is fixed; a clean,
+  quiet-host re-measurement on `main` after this unit lands would tighten the range above.
 - A red `npm test` in a unit worktree is the unit's own red until proven otherwise; `flaky-gates` is the triage skill when several agents run gates at once (three baseline runs showed no flake).
 - The verifier's criterion 1 on every unit is `npm test` green on the branch head, with the negative control the baseline verdict used (corrupt `docs/reference/data/role-table.json`, expect 17 FAIL).
 - `npm run build` in a unit worktree needs `node_modules`: symlink the root checkout's `node_modules` into `.worktrees/<unit>` (the `shipping-changes` worktree practice) or run `npm ci` there. Never commit it (K15).
