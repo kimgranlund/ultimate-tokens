@@ -79,17 +79,17 @@ function stateFor(p) {
   };
 }
 
-// referencePrimeSteps(lPrime) — repaired U4 review pass 1, Finding F1 (2026-09-20). A PRIVATE,
+// referencePrimeSteps(lPrime) - repaired U4 review pass 1, Finding F1 (2026-09-20). A PRIVATE,
 // OKHSL-domain copy of prime.mjs's own pre-#681 `primeSteps` (origin/main commit 91957732, before
 // U1's anchor field and U6's CIE-L*/equal-compress rebuild), ported verbatim rather than reused from
 // the shared import: the shared `primeSteps` (src/engine/prime.mjs) was rebuilt by U6 to take CIE L*
 // in [0, 100], so feeding it an OKHSL `l` in [0, 1] (as this file did before the fix) silently read
 // every lPrime as "essentially at PRIME_L_MIN", returning {up:0, down:0} and collapsing all seven
-// reference rungs onto the key colour's own hex — the exact fault pattern of the duplicate
+// reference rungs onto the key colour's own hex - the exact fault pattern of the duplicate
 // `chromaEnvelope` export this same integration unit caught elsewhere: two units editing one shared
 // symbol with a consumer neither updated. `PRIME_STEP`/`PRIME_L_MIN`/`PRIME_L_MAX` below are this
 // reference's OWN, unit-correct constants (0.09 / 0.14 / 0.97, the pre-#681 OKHSL-domain values),
-// never prime.mjs's post-#681 CIE-L* ones — deliberately different names so the two can't be
+// never prime.mjs's post-#681 CIE-L* ones - deliberately different names so the two can't be
 // confused again.
 const REF_PRIME_STEP = 0.09;
 const REF_PRIME_L_MIN = 0.14;
@@ -109,7 +109,7 @@ function referencePrimeSteps(lPrime) {
 // construction, built directly against hct.js/okhsl.js/tonal.js's validated primitives, never calling
 // primeSwatches. `PRIME_STEPS` is reused (test/engine/prime.mjs's own precedent: it is a pre-existing,
 // unchanged-by-#681 export, not the branching logic under test here); `primeSteps` itself is NOT
-// reused — see `referencePrimeSteps` above.
+// reused - see `referencePrimeSteps` above.
 function referenceNonAnchored(palette, controls) {
   const baseHue = effHue(palette.hue, controls.hueSpace, (palette.chroma ?? 0) / 100);
   const pk = peakC(baseHue);
@@ -215,7 +215,7 @@ if (controlSubjects.length !== 3796) FAIL("prime-identity-control", `${controlSu
 
 {
   // second negative control (U4 review pass 1, F1 point 3): the control above only ever mutates the
-  // PRIME rung (index 3, `real[3].hex`) — the one rung `w(prime) = 0` makes immune to `skew`/`hueShift`,
+  // PRIME rung (index 3, `real[3].hex`) - the one rung `w(prime) = 0` makes immune to `skew`/`hueShift`,
   // so it says nothing about whether the loop below actually discriminates the SIX LADDER rungs, which
   // is where the whole 3,796-off reading came from. Mutate `skew` instead (it only bends `w` on the six
   // ladder rungs; `real[3]`/`ref[3]` are provably identical to their unmutated selves regardless of
@@ -227,7 +227,7 @@ if (controlSubjects.length !== 3796) FAIL("prime-identity-control", `${controlSu
   const ref = referenceNonAnchored(s.palette, ctl); // reference uses the UN-mutated skew on purpose
   const ladderIdx = [0, 1, 2, 4, 5, 6];
   const bites = ladderIdx.some((i) => real[i].hex !== ref[i].hex);
-  if (!bites) FAIL("prime-identity-control", "negative control DID NOT bite: mutating skew by 80 left all six non-prime ladder rungs unchanged vs the reference — the six-rung comparison cannot discriminate");
+  if (!bites) FAIL("prime-identity-control", "negative control DID NOT bite: mutating skew by 80 left all six non-prime ladder rungs unchanged vs the reference - the six-rung comparison cannot discriminate");
 }
 
 let ctrlExact = 0, ctrlOff = 0;
@@ -250,9 +250,9 @@ console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "F
 // ── anchor-ladder (F1, U1 review 2026-09-18; re-derived U4 review pass 1, Finding A, 2026-09-20) ──
 // The anchored ladder's own well-formedness at primeChroma 100 (the same evaluation point C2/C4
 // use), over all 3,380 anchored corpus palettes, two invariants:
-//   (a) the SIX ladder rungs (every step but `prime`) are strictly decreasing in CIE L* — this comes
+//   (a) the SIX ladder rungs (every step but `prime`) are strictly decreasing in CIE L* - this comes
 //       only from `primeSteps`' equal-compress and prime.mjs's F1-style widening search (ported onto
-//       equal-compress at U4, review pass 1 Finding A — U1's original OKHSL widening loop is retired,
+//       equal-compress at U4, review pass 1 Finding A - U1's original OKHSL widening loop is retired,
 //       but the mechanism it names is real again), never from the anchor's own position, so it holds
 //       UNCONDITIONALLY: 0 exceptions anywhere in the corpus (no allow-list, by design).
 //   (b) all SEVEN rungs render distinct hexes, and `prime` sits strictly between `bright` and `dim`
@@ -261,7 +261,7 @@ console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "F
 //       letting `prime` sit outside it; those sources are a named, counted allow-list (mirroring C5's
 //       "print the list, fail on any other count" shape), not a silent carve-out. A handful sit close
 //       enough to the window floor that even the F1 widening search's full STEP_L of reserve cannot
-//       keep `prime` distinct from the rung it ends up beside — a stricter subset of (b).
+//       keep `prime` distinct from the rung it ends up beside - a stricter subset of (b).
 // N1 (U1 re-review, 2026-09-18): a count alone lets one corpus source swap for another — one moving
 // in across the window bound, another moving out — and stay green at the same length. Both lists are
 // frozen BY NAME (sorted), mirroring C5's own "fail on any other count or any other name" shape, and
@@ -354,7 +354,7 @@ const DUPE_ALLOW = [
   const synthetic = { anchor: "#000000" };
   const sw = primeSwatches(synthetic, { hueSpace: "oklch", primeChroma: 100 });
   const orderViolation = !(sw[2].l > sw[3].l && sw[3].l > sw[4].l);
-  if (!orderViolation) FAIL("anchor-ladder", "negative control DID NOT bite: a synthetic #000000 anchor (CIE L* 0, unambiguously outside [PRIME_L_MIN, PRIME_L_MAX]) passed the prime-between-bright-and-dim check — the predicate cannot discriminate an out-of-window anchor");
+  if (!orderViolation) FAIL("anchor-ladder", "negative control DID NOT bite: a synthetic #000000 anchor (CIE L* 0, unambiguously outside [PRIME_L_MIN, PRIME_L_MAX]) passed the prime-between-bright-and-dim check - the predicate cannot discriminate an out-of-window anchor");
 }
 
 // ── anchor-ramp (U2, ticket #681): C3 ramp pass-through + C5 monotone/distinct ─────────────────────

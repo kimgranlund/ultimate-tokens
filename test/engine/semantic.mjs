@@ -269,13 +269,13 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
     ],
     even: [
       ["Neutral", 7.2, 4.6],   // measured 7.29 / 4.65
-      ["Primary", 7.4, 4.7],   // measured 7.4983 / 4.7966 (4dp — both genuinely below the old 7.5/4.8 pin; a 2dp round misleadingly reads as at-or-above it) - re-pinned U4 integration (was 7.5/4.8): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
+      ["Primary", 7.4, 4.7],   // measured 7.4983 / 4.7966 (4dp - both genuinely below the old 7.5/4.8 pin; a 2dp round misleadingly reads as at-or-above it) - re-pinned U4 integration (was 7.5/4.8): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
       ["Secondary", 5.5, 5.5],   // measured 5.58 / 5.52 - pending U4: dark was 5.8 at bf2aaf6
       ["Tertiary", 8.2, 5.2],   // measured 8.28 / 5.26
       ["Info", 7.2, 4.5],   // measured 7.23 / 4.58 - re-pinned U4 integration (was 7.2/4.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
       ["Success", 7.6, 4.9],   // measured 7.68 / 4.94 - pending U4: light was 8.0 at bf2aaf6, dark was 5.1 at bf2aaf6
       ["Warning", 9.9, 5.2],   // measured 9.94 / 5.29
-      ["Danger", 8.6, 5.6],   // measured 8.6973 / 5.6465 (4dp — light is genuinely below the old 8.7 pin; a 2dp round misleadingly reads as at-or-above it) - re-pinned U4 integration (was 8.7/5.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
+      ["Danger", 8.6, 5.6],   // measured 8.6973 / 5.6465 (4dp - light is genuinely below the old 8.7 pin; a 2dp round misleadingly reads as at-or-above it) - re-pinned U4 integration (was 8.7/5.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
       ["Data 1", 6.2, 4.9],   // measured 6.30 / 4.93 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 2", 6.6, 4.6],   // measured 6.69 / 4.66 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 3", 6.4, 4.8],   // measured 6.50 / 4.81 - pending U4: dark was 5.8 at bf2aaf6

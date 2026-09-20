@@ -168,7 +168,7 @@ export function primeSwatches(palette, controls) {
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;
 
-  // rungHex(i, lLadderArg, up, down) — the SAME l/hue/chroma/hex a real ladder rung (i !== 3) would
+  // rungHex(i, lLadderArg, up, down) - the SAME l/hue/chroma/hex a real ladder rung (i !== 3) would
   // render, used both by the widening search below and by the final PRIME_STEPS.map so the two can
   // never disagree (same discipline as U1's own pre-U6 widening search, ported below).
   function rungHex(i, lLadderArg, up, down) {
@@ -197,17 +197,17 @@ export function primeSwatches(palette, controls) {
   // F1-style widening (U4 integration review pass 1, Finding A; ports U1's own pre-U6 OKHSL widening
   // search, commit 7bda1d7e, into this L*-domain construction). At the exact window bound, equal-
   // compress's own `min(STEP_L, roomUp, roomDown)` reads 0 on BOTH sides at once (roomDown === 0 pins
-  // `step` to 0 for roomUp too, unlike the old per-side redistribute rule) — collapsing all six
+  // `step` to 0 for roomUp too, unlike the old per-side redistribute rule) - collapsing all six
   // non-prime rungs onto the single clamped `lLadder` value. Q3 (b) still holds (`prime` never moves:
   // `lPrime`/`anchorHex` are untouched below); this loop only widens the LADDER's own pivot away from
   // the bound, by the same amount on both sides (equal-compress's own invariant is preserved, unlike
-  // the old redistribute search), until the six ladder rungs plus the anchor are all distinct hexes —
+  // the old redistribute search), until the six ladder rungs plus the anchor are all distinct hexes -
   // capped at a full STEP_L of reserve on each side (the ladder's own nominal per-side step; beyond
   // that the window is offering less room than the ladder was ever designed to need). RESERVE_UNIT is
   // the old search's 0.001 (of a 0..1 OKHSL domain) scaled by the ~100x L*-domain factor the rest of
-  // this file already uses for PRIME_L_MIN/MAX (header note) — same step count (90), same search. A
+  // this file already uses for PRIME_L_MIN/MAX (header note) - same step count (90), same search. A
   // handful of sampled sources sit close enough to a bound that even a full STEP_L of reserve cannot
-  // separate `dimmest`/`brightest` from `prime` or from each other — those are named, counted and
+  // separate `dimmest`/`brightest` from `prime` or from each other - those are named, counted and
   // accepted by test/engine/anchor.mjs's `anchor-ladder` order/dupe allow-lists rather than silently
   // passed here.
   if (anchorHex) {

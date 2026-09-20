@@ -1098,20 +1098,20 @@ for (const mode of ["perceptual", "peak"]) {
   if (staleCount !== 0) FAIL("chroma-envelope", `(C7) the old two-copy "1 + ((controls.dampAmp" expression must be fully gone, found ${staleCount}`);
 
   // C7 negative control (U4 review pass 1, F5: the handoff claimed this control existed; it did not
-  // — this is the real thing). Deletes ONE call site's text from a SCRATCH COPY of the source string
-  // (never written to disk, never re-imported — this is a text-level check of the grep itself, not a
+  // - this is the real thing). Deletes ONE call site's text from a SCRATCH COPY of the source string
+  // (never written to disk, never re-imported - this is a text-level check of the grep itself, not a
   // behavioural one) and re-runs the SAME two regexes the real gate above uses. Proves the count-5
   // assertion actually reds when a real call site goes missing, not merely that today's source happens
   // to contain 5. This does NOT prove the grep would catch a differently-shaped regression (e.g. a
   // second copy of the envelope formula inlined under another name, which no text-count of the literal
-  // identifier `chromaEnvelope(` can ever see) — that limitation is real and is not what this control
+  // identifier `chromaEnvelope(` can ever see) - that limitation is real and is not what this control
   // claims to cover.
   {
     const target = "chromaEnvelope(stop, 500, lift, controls)"; // paletteStops's own non-anchored call site text (tonal.js:749)
     const scratchSrc = src.replace(target, "1 /* call site removed for negative control */");
-    if (scratchSrc === src) FAIL("chroma-envelope", "(C7 negative control) the patch target string was not found — paletteStopsAnchored's call site text moved, update this control");
+    if (scratchSrc === src) FAIL("chroma-envelope", "(C7 negative control) the patch target string was not found - paletteStopsAnchored's call site text moved, update this control");
     const scratchCallCount = (scratchSrc.match(/chromaEnvelope\(/g) || []).length;
-    if (scratchCallCount >= 5) FAIL("chroma-envelope", `(C7 negative control) DID NOT bite: deleting one call site's text left the count at ${scratchCallCount} (want < 5) — the grep cannot discriminate a missing call site`);
+    if (scratchCallCount >= 5) FAIL("chroma-envelope", `(C7 negative control) DID NOT bite: deleting one call site's text left the count at ${scratchCallCount} (want < 5) - the grep cannot discriminate a missing call site`);
   }
 
   // C6  -  env(anchor)=1 for EVERY damp/dampCurve/dampAmp/dampBias/lift combination, not only lift 0
