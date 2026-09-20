@@ -228,10 +228,10 @@ Needle 2, 5 and 7 appear on a `pass` line in an unmutated run as well as on a `F
 Checklist (the Orchestrator ticks it; the table below carries grades and paths):
 
 - [x] U1 (S) shared seeded sampler, gate scripts, `curated-contrast` moved onto it · builder-l2 · reviewer-l1 · verifier-l1 · verified at 7d51ba07, merged as 34ebbae6
-- [ ] U2 (M) `tonal.mjs`: sampled by default, full under `--full`, grid thinned · builder-l4 · reviewer-l2 · verifier-l2
-- [ ] U3 (M) `anchor.mjs`: the same · builder-l4 · reviewer-l2 · verifier-l2
-- [ ] U4 (S) `prime.mjs`: thinned determinism cases and grids by default, full under `--full` · builder-l3 · reviewer-l2 · verifier-l2
-- [ ] U5 (S) `headless-boot.mjs`: the reset sweep only (approval question 2: yes) · builder-l2 · reviewer-l1 · verifier-l1
+- [~] U2 (M) `tonal.mjs`: sampled by default, full under `--full`, grid thinned · builder-l4 · reviewer-l2 · verifier-l2
+- [~] U3 (M) `anchor.mjs`: the same · builder-l4 · reviewer-l2 · verifier-l2
+- [~] U4 (S) `prime.mjs`: thinned determinism cases and grids by default, full under `--full` · builder-l3 · reviewer-l2 · verifier-l2
+- [~] U5 (S) `headless-boot.mjs`: the reset sweep only (approval question 2: yes) · builder-l2 · reviewer-l1 · verifier-l1
 - [x] U6a (S) the `sweeps` matrix job in CI · builder-l2 · reviewer-l1 · verifier-l1 · verified at 166b0ec6, merged as 50898d58
 - [ ] U6b (M) figures of record, adapter, baseline, check script, shipping skill · builder-l3 · reviewer-l2 · verifier-l2 · also U6-9, the close-out step that re-points the baseline `ref` (owner ruling 2026-09-20)
 
