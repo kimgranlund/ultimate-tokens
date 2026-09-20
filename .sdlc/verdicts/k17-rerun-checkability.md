@@ -7,6 +7,7 @@
 | Asked by | conductor, 2026-09-19 |
 | Grade | L1 seat, ran the blocks itself |
 | Where measured | the plan worktree read-only, plus a throwaway shared clone of it for every writing control |
+| Amended | 2026-09-20, G8 added and the C31 table given its unfolded exception row, after reading the plugin's pass 2 evidence cell |
 
 Checkable means a command or observation exists now that prints one value before the unit and a different
 value after it. Every row below was run in both states: at the plan head, and on a fixture of the A2
@@ -50,6 +51,7 @@ actually written (`sdlc-orchestration` `.sdlc/plans/readiness.md` lines 629 to 6
 | unique K ids from `## Pass 5` to end of file | plan U1-5 line 2 | `18` | `18` |
 | whole-file verdict rows, `vr-1` | C31 block line 3 | `30` | `31` |
 | `grep -c 'exception'` folded | C31 block line 4 | `1` | `1` |
+| `grep -c 'exception'` unfolded, the `7 exceptions` the pass 2 evidence reports | C31 block line 4 before the fold | `7` | `7` with the plan's own §Texts wording, `8` if the pass 6 author uses the word once |
 | seven-section loop | C31 block line 1 | `6` | `6` |
 | convention rows and control commands | C31 block line 2 | `18 18` | `18 18` |
 
@@ -58,8 +60,11 @@ is correct: the from-pass-5-to-end-of-file raw count, and the whole-file row cou
 
 ## Gaps in the criteria set, measured, none of them a 🔴 row
 
+G8 first, because it is the one a reader of the plan would not guess.
+
 | # | What no criterion covers | What I measured |
 |---|---|---|
+| G8 | the pass 2 evidence cell reports `7 exceptions`. That is `grep -c 'exception'` on the whole file before the fold. U1-5 pins only the folded form, which is blind to 7 against 8, so it cannot see this drift at all | `7` at the plan head and `7` on my fixture, because the plan's §Texts wording happens not to use the word. A fixture whose pass 6 says `before the exception filter` once prints `8`, and the folded pin still prints `1`. The plan's own prose says `exception filter` repeatedly, and §Texts leaves that sentence to the author's free wording, so this is one word away |
 | G1 | the plugin's pass 2 evidence also counts K rows naming an own run and K rows naming a plant, from `## Pass 5` to end of file. Those are the pass 2 worker's own formulas, not in the C31 block, and U1-5 does not pin them | `18` and `18` at the plan head, `19` and `19` after a one-row pass 6. The regrade will read 19 twice. Worth one more line in U1-5 so the reply can quote it |
 | G2 | U1-3's `own plant` leg does not discriminate: pass 5's K17 row already carries the phrase, so the leg prints `1` before the unit exists. The discriminating legs are the intro sha and the `7 before the filter, 0 after` phrase, both measured `0` before | measured `1` at the plan head |
 | G3 | U1-3's second leg runs `git diff --name-only "$S" HEAD` with `$S` empty when no pass 6 exists. It errors rather than printing a count, so a grader reading only stdout sees nothing, not a `0` | reproduced |
