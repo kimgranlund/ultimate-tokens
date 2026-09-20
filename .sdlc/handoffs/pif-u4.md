@@ -205,9 +205,12 @@ measurement and escalation are correct behaviour. Applied:
     directly, and independently by review pass 2). Data 7's lone spike is a DIFFERENT predicate. Cited
     in `DEFAULT_KIT_SPIKE_FINDING`'s own comment in `test/engine/anchor.mjs`: mechanism is `dampAmp` 0
     at the anchor (the same mechanism as the curated corpus's 64), fix joins #701, not this unit.
-18. **F5, F6 - records.** 3 remaining em dashes in this pass's own new comments in `test/engine/prime.mjs`
-    (the F2 gate-(e)/(h) companion annotations the earlier cleanup commit missed) removed. §4 and the
-    first "Pass 2 final numbers" block marked SUPERSEDED, pointing at the current, accurate sections.
+18. **F5, F6 - records.** Em dashes in this pass's own new comments in `test/engine/prime.mjs` (the F2
+    gate-(e)/(h) companion annotations the earlier cleanup commit missed) removed. **Correction, review
+    pass 3 (R3-2): this item originally claimed "3 remaining... removed"; the true figure was 3 of 5 -
+    two more (lines 671 and 764) were still there. Both fixed this round (item 21 below); the count in
+    `test/engine/prime.mjs` at this pass's own new comment lines is now 0.** §4 and the first "Pass 2
+    final numbers" block marked SUPERSEDED, pointing at the current, accurate sections.
 19. **Q7 ratchet gate added (owner's addendum, 2026-09-20).** Q7 keeps its ruling (a): C6 (iii)'s 0-of-384
     bar stays on the non-anchored construction only, unchanged. The anchored-peak population is not left
     unmonitored either - `test/engine/tonal.mjs`'s new C6 (v) is a RATCHET, not a pass/fail bar: it pins
@@ -222,6 +225,61 @@ measurement and escalation are correct behaviour. Applied:
     (`src/engine/tonal.js:1040`) amplified 1.6x reads 3,378 violators / 25.863456x max, clearly past both
     pins, proving the ratchet reds on a real regression. Both numbers are also their own row in the
     blast-radius report below (§9).
+20. **Perf fix, same round (team-lead's direction, after per-file profiling).** Item 19's gate added
+    ~11.8s to `test/engine/tonal.mjs` (measured: 84.17s before, 95.98s average after, 3 runs). Per-sweep
+    profiling isolated the cost: peak 2.2s (gated), even 9.4s (report-only, the dominant share), negative
+    control 2.2s (corpus-wide at the time). Two changes, no other logic touched:
+    - The anchored-EVEN companion figure moved OUT of the test suite entirely, into
+      `scripts/report-preset-fidelity.mjs --envelope` (a new section, same corpus scope, same metric,
+      reproduces 1,205/3,764 violators, max 17.183605x exactly) - the diagnostic script Q7's own ruling
+      already routes report-only, anchor-aware measurements through. A figure that is never asserted does
+      not belong in the test suite.
+    - The negative control now runs on a 50-doc sample (the known witness doc plus the next 49 in corpus
+      order) instead of the full 3,764-palette corpus, checking only the max-ratio metric (the violator
+      COUNT is scale-dependent and cannot be compared against the corpus-wide pin at reduced scale; max
+      ratio is a single-witness property and stays valid at any sample size) - a control proves
+      discrimination, not coverage.
+    **Justification is not a suite-level wall-clock delta** - team-lead's own framing, and the correct
+    one: the gate no longer computes a figure it never asserts. The even sweep's own cost was measured
+    directly, within a single run, against its own `Date.now()` markers: **9.4s** (9,449ms). The
+    negative control's own cost, same method: **2.2s** (2,242ms) at full-corpus scope, now sampled.
+    Both numbers are real, isolated, cross-run-noise-immune measurements, and both are now gone from
+    `npm test` (the even sweep entirely; the control cut to a 50-doc sample). Code inspection confirms
+    the even-mode call is structurally gone; `scripts/report-preset-fidelity.mjs --envelope` reproduces
+    the identical figures where it now lives (peak 3,119/15.132599x, even 1,205/17.183605x, 24.3s of
+    its own wall time, not part of `npm test`). The suite-level effect of this fix sits inside this
+    host's own run-to-run variance: 4 post-fix standalone `tonal.mjs` readings ran 84.74s / 88.89s /
+    99.91s / 103.16s, and 4 pre-fix readings ran 84.17s / 95.49s / 95.57s / 96.89s - roughly 89-103s
+    either way, a noise band wide enough to swallow an 11.6s change. The ceiling question itself (a
+    distributed, largely pre-existing cost across `anchor.mjs`/`headless-boot.mjs`/`prime.mjs`, see
+    "Follow-up: per-file wall time" in `.sdlc/handoffs/pif-u4-q7-ratchet-profile.md`) is with the owner,
+    not this unit's to chase further.
+21. **Round 4 (review pass 3: PASS on the substance, two comment items, one gate-arm gap).** Review 3
+    confirmed the C6 (v) ratchet meets every clause the owner set and that its ratio-arm control bit
+    under four mutations the reviewer ran independently; nothing review 2 established regressed.
+    - **R3-1**: `ORDER_ALLOW` clause (ii)'s header quoted `3 * STEP_L` as both the threshold and the
+      pivot constant - a 27 L* band holding 532 anchored palettes, which does not discriminate the 5
+      members it is meant to explain. The real bound is `PRIME_L_MIN + 3 * reserve`, using whatever
+      reserve the widening search stops at (only the ONE member that never separates reaches the full
+      `STEP_L` cap). Corrected in `test/engine/anchor.mjs`'s `ORDER_ALLOW` header. Re-verified, not
+      copied: each of the 5 members' own CIE L* (from its anchor hex directly, independent of the
+      search's internals) sits within 1.11 L* of `PRIME_L_MIN` (12.2500): 12.3351 to 13.3550, matching
+      the review's own figures.
+    - **R3-2**: item 18's "3 remaining... removed" claim was wrong; the true count was 3 of 5. The
+      other 2 (`test/engine/prime.mjs:671` and `:764`) fixed this round; corrected in item 18 above.
+    - **Gate-arm gap**: the sampled ratio-arm control (item 20) only ever exercised the ratio half of
+      "reds if EITHER the violator count or the max ratio rises." A count-only regression is a real,
+      distinct failure mode (the worst witness's own OKHSL saturation is already clamped to 1 at its
+      peak stop, so a broad amplification that also tips OTHER, previously-unclamped near-1.0 palettes
+      over could raise the count while leaving that clamped witness's ratio flat) - not something that
+      can honestly be ruled out. Closed with a SEPARATE, synthetic control: a stub engine and a
+      purely synthetic doc list (not the corpus, not the real engine) where every entry overshoots by
+      the same fixed 1.005x, so a count past the pin cannot also carry the ratio past it - the two FAIL
+      conditions are now exercised independently. Also seeded the ratio-arm control's sample
+      deterministically (sorted by `__presetName`, not "next 49 in corpus order," which would have
+      drifted silently if `CATS` or a category's `PRESETS` array were reordered).
+    `npm test`, `gate:corpus-contrast`, citations, branding all re-run green after these changes
+    (numbers below, this section's own final run).
 
 F4 (the widening's visible blast radius on 26 shipped palettes) is a review finding for the owner, per
 the round-3 brief's own instruction not to act on it - already recorded plainly in §8/the blast-radius
@@ -631,7 +689,7 @@ Checked every row I could locate a clear expected direction for against the meas
 | U3's F1 peak-cap trade: dips resolve | | 0 of 6 named dips observed (§7.3) | Yes, with the caveat that the gate's own negative control needs replacing |
 | C7: exactly 3 chromaEnvelope call sites | 3 (pre-U2-landing reading) | 5 (§2) | **Miss, flagged and explained** - a reading change, not a regression |
 | Q7 ratchet, anchored PEAK overshoot beyond stop 500 (owner's addendum, round 3; not a plan row - a new monitor added this round) | N/A - no plan-stated direction; C6 (iii)'s bar stays non-anchored only, per the ruling | 3,119/3,764 violators, max 15.132599x stop 500's own chroma (both re-measured this pass, `test/engine/tonal.mjs` C6 (v)) | Gated ratchet, pinned this pass - reds only on a rise |
-| Q7 ratchet, anchored EVEN overshoot beyond stop 500 (companion figure, owner's addendum: "for the report only") | N/A - explicitly not gated | 1,205/3,764 violators, max 17.183605x stop 500's own chroma (re-measured this pass, `test/engine/tonal.mjs` C6 (v)) | Report only, not gated |
+| Q7 ratchet, anchored EVEN overshoot beyond stop 500 (companion figure, owner's addendum: "for the report only") | N/A - explicitly not gated | 1,205/3,764 violators, max 17.183605x stop 500's own chroma (re-measured this pass; moved to `scripts/report-preset-fidelity.mjs --envelope` this same round, perf fix item 20 - the test suite no longer computes it) | Report only, not gated, not in `npm test` |
 
 Two misses/flags remain as of pass 2 (down from three): C4's non-anchored identity control (a real,
 unreconciled cross-unit scope gap, §7.5, now an owner question Q1 rather than an open bug - the

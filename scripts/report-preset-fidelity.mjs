@@ -254,6 +254,62 @@ for (const mode of MODES) {
   console.log(`  above 100% of stop 500: ${envAboveTotal[mode]} ${aboveOk ? "OK" : "FAIL"}${envAboveWitnesses[mode].length ? ` (e.g. ${envAboveWitnesses[mode].join(", ")})` : ""}`);
   console.log(`  (${envAdiaAboveTotal[mode]} additional instance(s) from the named Adia carve-out, exempt from this clause)`);
 }
+// C6 (v): Q7 ratchet companion (owner's addendum, 2026-09-20). test/engine/tonal.mjs's C6 (v) gates the
+// anchored PEAK violator count and max overshoot ratio corpus-wide (19-stop set, generated palettes,
+// Adia excluded by name) and pins today's measured figures as a ratchet, not a bar - the rendered cells
+// are report-only per #701. The anchored-EVEN companion figure used to be measured in that same gate too
+// (also report-only, never gated) at a corpus-wide cost of ~9.4s, the dominant share of that gate's own
+// perf regression this round; it moved HERE per team-lead's direction ("a figure that is never asserted
+// does not belong in the test suite... let the blast-radius report carry it"). This uses the gate's OWN
+// corpus scope (full 8-category sweep, dampAmp 0, Adia excluded by name), NOT the chroma>=10 `instances`
+// scope above READING (a)/(b) use - the two are different populations and must not be conflated. Prints
+// both peak (an independent cross-check of the gated pin) and even (the authoritative, report-only
+// figure); neither affects this script's own exit code, matching Q7's ruling that this population is
+// diagnostic, not enforced.
+console.log("");
+console.log("=== C6 (v): anchored-construction overshoot beyond stop 500 (Q7 ratchet companion) ===");
+console.log("(full 8-category corpus, generated palettes (dampAmp 0), Adia excluded by name, 19-stop set -");
+console.log(" the SAME scope test/engine/tonal.mjs's C6 (v) gates for peak; even is report-only, per the ruling)");
+{
+  const v5Docs = [];
+  for (const slug of CATS) {
+    const { PRESETS } = await import(`../src/ui/categories/${slug}.js`);
+    for (const preset of PRESETS) {
+      const d = hydrate({ ...preset });
+      d.__presetName = preset.name;
+      v5Docs.push(d);
+    }
+  }
+  const measureAnchoredOvershoot = (mode) => {
+    let violators = 0, maxRatio = 0, witness = "", total = 0;
+    for (const doc of v5Docs) {
+      if ((doc.dampAmp ?? 0) !== 0) continue;
+      if (ADIA_CARVEOUT.has(doc.__presetName)) continue;
+      const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode };
+      for (const pal of doc.palettes) {
+        total++;
+        const chroma = rampChromaOf(pal, doc);
+        const ramp = T.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor }, controls, T.STOPS);
+        const c500row = ramp.find((r) => r.stop === 500);
+        if (!c500row) continue;
+        const c500 = c500row.chroma;
+        if (c500 <= 1e-9) continue;
+        let localMax = 0;
+        for (const row of ramp) localMax = Math.max(localMax, row.chroma / c500);
+        if (localMax > 1 + 1e-6) {
+          violators++;
+          if (localMax > maxRatio) { maxRatio = localMax; witness = `${doc.__presetName}/${pal.name}`; }
+        }
+      }
+    }
+    return { violators, maxRatio, witness, total };
+  };
+  const peak = measureAnchoredOvershoot("peak");
+  const even = measureAnchoredOvershoot("even");
+  console.log(`  peak (gated in test/engine/tonal.mjs C6 (v)): ${peak.violators}/${peak.total} violator(s), max ${peak.maxRatio.toFixed(6)}x stop 500's own chroma, e.g. ${peak.witness}`);
+  console.log(`  even (report-only, not gated anywhere): ${even.violators}/${even.total} violator(s), max ${even.maxRatio.toFixed(6)}x stop 500's own chroma, e.g. ${even.witness}`);
+}
+
 console.log("");
 console.log(`READING (a) (emitted chroma): ${anyFail ? "FAIL" : "PASS"}`);
 console.log(`READING (b) (envelope multiplier): ${envAnyFail ? "FAIL" : "PASS"}`);

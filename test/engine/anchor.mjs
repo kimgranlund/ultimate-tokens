@@ -283,10 +283,16 @@ console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "F
 //       (i) OUT-OF-WINDOW (21 of 26): the source's own CIE L* sits at or past [PRIME_L_MIN,
 //           PRIME_L_MAX], so `prime` is clamped to the window edge while the six ladder rungs spread
 //           around it - `prime` sits outside [bright, dim] by construction, not by a defect.
-//       (ii) IN-WINDOW, widening-pivot lift (5 of 26): the source's own CIE L* IS inside the window,
-//           but sits within one reserve step (`3 * STEP_L`) of `PRIME_L_MIN`. The F1-style widening
-//           search (Finding A, ported at U4 review pass 1) picks the ladder's pivot as
-//           `min(hi, max(PRIME_L_MIN + 3*STEP_L, lPrime))` - for a source this close to the floor,
+//       (ii) IN-WINDOW, widening-pivot lift (5 of 26; corrected review pass 3, R3-1, 2026-09-20 - the
+//           prior comment quoted `3 * STEP_L` as the threshold and the pivot constant, a 27 L* band
+//           holding 532 anchored palettes that does not discriminate the 5 from the rest; the real
+//           bound is `PRIME_L_MIN + 3 * reserve`, using the reserve the search stops at, not the cap):
+//           the source's own CIE L* IS inside the window, but sits close enough to `PRIME_L_MIN` that
+//           the F1-style widening search (Finding A, ported at U4 review pass 1) lifts the pivot above
+//           it before the ladder's six rungs come out distinct. The search tries `reserve` from
+//           `RESERVE_UNIT` (0.1) up in 0.1 steps, capped at `STEP_L` (9), stopping at the FIRST
+//           reserve whose rungs separate, and picks the ladder's pivot as
+//           `min(hi, max(PRIME_L_MIN + 3 * reserve, lPrime))` - for a source this close to the floor,
 //           that pivot sits ABOVE the source's own `lPrime`, so `prime` (still rendered at the
 //           source's real `lPrime`) no longer sits between the ladder's `bright`/`dim` rungs, which
 //           are built around the LIFTED pivot instead. The widening trades a duplicate-hex rung for
@@ -297,9 +303,12 @@ console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "F
 //           tent" secondary #212228 (new this pass), travel "37° N · May · 00:00 · A Patmos Greek
 //           Orthodox church, Easter Saturday at midnight" tertiary-muted #232220, travel "42° N ·
 //           July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season"
-//           tertiary-muted #252215 (new this pass). Confirmed by disabling the widening in a scratch
-//           copy: these 5 drop OUT of ORDER_ALLOW (21 measured, not 26) while `DUPE_ALLOW` grows to
-//           absorb them (26, not 3) - the exact trade the mechanism predicts.
+//           tertiary-muted #252215 (new this pass). All 5 sources' own CIE L* (re-measured directly
+//           from each anchor hex, review pass 3) sit within 1.11 L* of `PRIME_L_MIN` (12.2500): 12.3351
+//           to 13.3550 - a real, tight band, unlike the false 27 L* one the old comment named. Confirmed
+//           by disabling the widening in a scratch copy: these 5 drop OUT of ORDER_ALLOW (21 measured,
+//           not 26) while `DUPE_ALLOW` grows to absorb them (26, not 3) - the exact trade the mechanism
+//           predicts.
 //       All other members are mechanism (i). A handful of THOSE also sit close enough to the window
 //       floor that even the widening search's full `STEP_L` of reserve cannot keep `prime` distinct
 //       from the rung it ends up beside - a stricter subset of (i), landing them on `DUPE_ALLOW` too.

@@ -1765,10 +1765,18 @@ for (const mode of ["perceptual", "peak"]) {
   // review pass 2's cited figures - this reading reproduces them to the precision cited) and reds ONLY if a
   // future run's measurement RISES past either pinned number. A silent improvement still passes; the pin
   // exists to catch a regression that widens the hole further, not to freeze today's number as a target.
+  //
+  // Perf note (team-lead, same round): the anchored-EVEN companion figure used to be measured here too
+  // (report-only, never gated) at a corpus-wide cost of ~9.4s - the dominant share of this file's own
+  // ~11.8s regression from this gate. A figure that is never asserted does not belong in the test suite:
+  // it is now produced by `scripts/report-preset-fidelity.mjs --envelope` instead, the diagnostic script
+  // Q7's own ruling already routes anchor-aware, report-only measurements through (see that script's own
+  // new section for the identical scope/metric). This gate keeps only what it actually gates: the peak
+  // count and max overshoot.
   {
-    const measureAnchoredOvershoot = (engine, mode) => {
+    const measureAnchoredOvershoot = (engine, mode, docsList = docs) => {
       let violators = 0, maxRatio = 0, witness = "";
-      for (const doc of docs) {
+      for (const doc of docsList) {
         if ((doc.dampAmp ?? 0) !== 0) continue; // generated palettes only, matching (iii)'s own scope
         if (ADIA_CARVEOUT.has(doc.__presetName)) continue; // exempt by name, same carve-out as (iii)/(iii-b)
         const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode };
@@ -1799,18 +1807,25 @@ for (const mode of ["perceptual", "peak"]) {
       FAIL("chroma-envelope", `(C6 v ratchet, monitor not bar) anchored peak violator count rose to ${peakResult.violators}, pinned at ${PEAK_VIOLATOR_PIN}, e.g. ${peakResult.witness}`);
     if (peakResult.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6)
       FAIL("chroma-envelope", `(C6 v ratchet, monitor not bar) anchored peak max overshoot rose to ${peakResult.maxRatio.toFixed(6)}x stop 500, pinned at ${PEAK_MAX_RATIO_PIN}x, e.g. ${peakResult.witness}`);
-    console.log(`  [monitor] C6 (v) anchored peak overshoot: ${peakResult.violators}/3,764 violator(s) (pinned <= ${PEAK_VIOLATOR_PIN}), max ${peakResult.maxRatio.toFixed(6)}x stop 500's own chroma (pinned <= ${PEAK_MAX_RATIO_PIN}x)  -  a RATCHET, NOT a pass/fail bar on the population: stop 500 is the anchor's own pinned sample on this construction, not the ramp's designed peak, so most anchored palettes legitimately carry some stop above it (#701 treats these rendered cells as report-only)`);
-
-    // Report-only companion figure (even mode): NOT gated, per the owner's ruling ("for the report only").
-    // Printed for the blast-radius report row; a rise here does not fail the suite.
-    const evenResult = measureAnchoredOvershoot(T, "even");
-    console.log(`  [report only, not gated] C6 (v) anchored even overshoot: ${evenResult.violators}/3,764 violator(s), max ${evenResult.maxRatio.toFixed(6)}x stop 500's own chroma  -  companion figure only, per the owner's ruling; the peak figure above is the gated ratchet`);
+    console.log(`  [monitor] C6 (v) anchored peak overshoot: ${peakResult.violators}/3,764 violator(s) (pinned <= ${PEAK_VIOLATOR_PIN}), max ${peakResult.maxRatio.toFixed(6)}x stop 500's own chroma (pinned <= ${PEAK_MAX_RATIO_PIN}x)  -  a RATCHET, NOT a pass/fail bar on the population: stop 500 is the anchor's own pinned sample on this construction, not the ramp's designed peak, so most anchored palettes legitimately carry some stop above it (#701 treats these rendered cells as report-only). The anchored-EVEN companion figure is reported by scripts/report-preset-fidelity.mjs --envelope, not here.`);
 
     // Negative control: a SCRATCH copy of the real engine, patched at okhslStopsAnchored's own
     // `intendedS * env` saturation line (src/engine/tonal.js - the anchored PEAK/perceptual OKHSL-domain
-    // path's saturation build) to amplify every stop's saturation by 1.6x, must raise the measured
-    // violator count or max ratio (or both) past the pins above - proving the ratchet actually reds on a
-    // real regression, not merely comparing a number to itself.
+    // path's saturation build) to amplify every stop's saturation by 1.6x, must raise the measured max
+    // overshoot ratio past the pin - proving the ratchet actually reds on a real regression, not merely
+    // comparing a number to itself.
+    //
+    // SAMPLED, not corpus-wide (team-lead, same round: "a control proves discrimination, not coverage").
+    // SEEDED, not "corpus order" (review pass 3, R3-2's own companion note in the round-4 brief: a
+    // positional slice silently drifts if `CATS` or a category's own `PRESETS` array is reordered). The
+    // sample is the known full-corpus witness doc (34S/secondary, the palette carrying today's pinned max
+    // ratio) plus the 49 OTHER docs whose `__presetName` sorts lexicographically first - a deterministic
+    // seed independent of corpus array order, reproducible by re-running the same sort, not tied to any
+    // particular build's iteration order. Big enough to be a real, non-trivial exercise of the mechanism,
+    // small enough to be cheap (measured ~0.3-0.8s here vs ~2.2s corpus-wide). Only the MAX RATIO
+    // comparison is meaningful at this reduced scale - the violator COUNT is scale-dependent (a ~50-doc
+    // sample cannot rationally be compared against a 3,764-palette corpus-wide pin), so this control
+    // checks maxRatio alone, which is a single-witness property and stays valid at any sample size.
     {
       const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
       const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
@@ -1824,10 +1839,44 @@ for (const mode of ["perceptual", "peak"]) {
           .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
           .replace(NEEDLE, "const s = Math.min(1, Math.max(0, intendedS * env * 1.6));");
         const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
-        const buggyResult = measureAnchoredOvershoot(BuggyT, "peak");
-        if (!(buggyResult.violators > PEAK_VIOLATOR_PIN || buggyResult.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6))
-          FAIL("chroma-envelope", `(C6 v negative control) a 1.6x-amplified okhslStopsAnchored saturation read violators ${buggyResult.violators}, maxRatio ${buggyResult.maxRatio.toFixed(6)}  -  expected at least one to exceed the pin (${PEAK_VIOLATOR_PIN}, ${PEAK_MAX_RATIO_PIN})  -  check measureAnchoredOvershoot or the patch target`);
+        // peakResult.witness is `${doc.__presetName}/${pal.name}` (this function's own return shape).
+        const witnessDoc = docs.find((d) => peakResult.witness.startsWith(d.__presetName + "/"));
+        const others = docs.filter((d) => d !== witnessDoc).sort((a, b) => a.__presetName.localeCompare(b.__presetName)).slice(0, 49);
+        const sampleDocs = witnessDoc ? [witnessDoc, ...others] : docs.slice(0, 50);
+        const buggySample = measureAnchoredOvershoot(BuggyT, "peak", sampleDocs);
+        if (!(buggySample.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6))
+          FAIL("chroma-envelope", `(C6 v negative control, sampled, ratio arm) a 1.6x-amplified okhslStopsAnchored saturation, on a ${sampleDocs.length}-doc sample, read maxRatio ${buggySample.maxRatio.toFixed(6)}  -  expected it to exceed the pin (${PEAK_MAX_RATIO_PIN}x)  -  check measureAnchoredOvershoot, the sample, or the patch target`);
       }
+    }
+
+    // Negative control, COUNT arm (review pass 3, round 4: the ratio-arm control above does not exercise
+    // the COUNT half of "reds if EITHER... rises" - a gate arm with nothing behind it is a pattern this
+    // plan has already caught). A count-only regression is a real, distinct failure mode from a ratio-only
+    // one: the worst witness's own OKHSL saturation is already clamped to 1 at its peak stop (`Math.min(1,
+    // ...)` in the real source), so a broad amplification that ALSO touches other, previously-unclamped
+    // near-1.0 palettes can tip many of THEM over the threshold (raising the count) without moving the
+    // already-clamped worst witness at all (leaving the max ratio flat) - the two arms are not coupled by
+    // construction, and must each be exercised on their own. A real corpus-wide reproduction of that exact
+    // scenario is not needed to prove the COUNT arm's own trigger fires: a STUB engine (not the real one)
+    // over a purely SYNTHETIC doc list (not the corpus) isolates it cleanly and cheaply, the same way the
+    // (iii-b) cusp-run controls above use synthetic ramps rather than corpus sweeps to test pure logic.
+    // Every synthetic palette's stub ramp overshoots by the SAME small, fixed margin (1.005x, far under
+    // the ratio pin), so a count past the pin here cannot also carry the ratio past it - the two FAIL
+    // conditions are exercised independently, matching what a genuine count-only regression looks like.
+    {
+      const stubEngine = { paletteStops: () => [{ stop: 500, chroma: 100 }, { stop: 600, chroma: 100.5 }] };
+      const syntheticCount = PEAK_VIOLATOR_PIN + 50;
+      const syntheticDocs = Array.from({ length: syntheticCount }, (_, i) => ({
+        dampAmp: 0,
+        __presetName: `synthetic-count-control-${i}`,
+        palettes: [{ hue: 0, chroma: 50, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, cuspPull: 0, anchor: undefined, name: "synthetic" }],
+        curve: 1, tension: 1, lmin: 0, lmax: 100, damp: 0, dampCurve: 1, dampBias: 0, hueSpace: "oklch", relChroma: 1, chromaFloor: 0, vibrancy: 1,
+      }));
+      const countProbe = measureAnchoredOvershoot(stubEngine, "peak", syntheticDocs);
+      if (!(countProbe.violators > PEAK_VIOLATOR_PIN))
+        FAIL("chroma-envelope", `(C6 v negative control, count arm) a synthetic ${syntheticCount}-doc list, each overshooting a fixed 1.005x, read violators ${countProbe.violators}  -  expected > ${PEAK_VIOLATOR_PIN}  -  check measureAnchoredOvershoot or the synthetic list`);
+      if (countProbe.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6)
+        FAIL("chroma-envelope", `(C6 v negative control, count arm) the synthetic list's own maxRatio (${countProbe.maxRatio.toFixed(6)}x) unexpectedly exceeded the ratio pin  -  this control is meant to isolate the count arm from the ratio arm; check the synthetic overshoot margin`);
     }
   }
 }

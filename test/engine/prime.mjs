@@ -668,7 +668,7 @@ for (const p of DEFAULTS) {
 }
 // #681 U4 review pass 1, Finding F2: all 16 DEFAULTS carry an anchor (role-table.json), so the loop
 // above compares `primeSwatches`'s verbatim pass-through of a hex literal against this FILE's own
-// parse of that SAME literal (`hexToRgb(p.anchor)`) — `deriveKeyRgb` is never called, so a
+// parse of that SAME literal (`hexToRgb(p.anchor)`) - `deriveKeyRgb` is never called, so a
 // non-anchored construction regression passes unnoticed (measured: scaling the non-anchored
 // `keyChroma` by 0.95 at prime.mjs:156 moves 58 of 112 rungs across the 16 defaults and still clears
 // every gate in this file before this companion). Same pattern as (g): strip `anchor` so the probe
@@ -761,7 +761,7 @@ for (const hueSpace of SPACES) {
   }
 }
 // #681 U4 review pass 1, Finding F2: the loop above compares every DEFAULT's verbatim anchor
-// pass-through against this file's own parse of the SAME literal — `deriveKeyRgb` (the actual REQ-056
+// pass-through against this file's own parse of the SAME literal - `deriveKeyRgb` (the actual REQ-056
 // non-anchored construction) is never exercised, since all 16 defaults are anchored. Companion probe,
 // same anchor-stripping pattern as (e)/(g): restores the non-anchored arm REQ-056 was written for.
 for (const hueSpace of SPACES) {
