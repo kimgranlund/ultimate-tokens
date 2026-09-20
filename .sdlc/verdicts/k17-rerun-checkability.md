@@ -78,3 +78,64 @@ G8 first, because it is the one a reader of the plan would not guess.
 9 of 10 criteria are checkable with a measured value in each direction. P5 is 🔴 on its allow-list, so by
 the mobilization rule this plan is not mobilized until that row is repaired. Everything else in the plan
 reproduced exactly as the planner measured it, including every negative control I reran.
+
+## Pass 2 · the revised plan at 67b1ee60 · 🟢 10 of 10 checkable, mobilizable
+
+| Field | Value |
+|---|---|
+| Asked by | conductor, re-review P5 and the rows G1 to G8 touched |
+| Plan | `.sdlc/plans/k17-rerun.md` @ 67b1ee60, revision row 1 |
+| Where measured | a throwaway shared clone of the revised branch, 2026-09-20. Every fixture built to the revised §Texts, which no longer uses the counted word |
+| Read first | the plan diff 9b2d82dc to 67b1ee60, so this pass grades the change, not the plan again |
+
+### P5, the pass 1 🔴, now 🟢
+
+The closed allow-list became a naming rule: any `.sdlc/(verdicts|handoffs|questions)/k17-rerun-*.md`.
+Run at the revised head, where the three changed paths are this plan, the approval and this record.
+
+| Leg | Expected | Measured |
+|---|---|---|
+| at the branch head, this record present | `0` | `0` |
+| one byte on the map | `1` | `1` |
+| a new `.sdlc/checks/new.sh` | `1` | `1` |
+| `verdicts/records-refresh-k17-rerun.md`, the slug not at the start | `1` | `1` |
+| a second plan file `plans/k17-rerun-extra.md` | `1` | `1` |
+| the loop's own later records together, `verdicts/k17-rerun-U1-p2.md` plus `handoffs/k17-rerun-U1.md` plus a board line | `0` | `0` |
+| my own leg: a stray `.sdlc/k17-rerun-x.md`, no subdirectory | not stated | `1`, the wall holds |
+| my own leg: an edit under `src/` | not stated | `1` |
+
+So the rule admits what the loop writes and refuses the four shapes that look like it. 🟢.
+
+### The rows the gaps touched
+
+| # | Gap | State | Measured before the unit | Measured on the revised fixture |
+|---|---|---|---|---|
+| U1-3 | G2, G3, G5 | 🟢 | blank line, `no sha`, `0`, `0`. The `own plant` leg now reads `0`, where in pass 1 pass 5's own row made it `1`, so it discriminates | sha, `0`, `1`, `1`. Wrong intro sha `d814500`: `22` files differ. G5 answered in the row: the plant is 1 hit per half, 2 in total |
+| U1-5 | G1, G8 | 🟢 | `18`, `18`, `18`, `30`, `1`, `7`, `18 18` | `18`, `18`, `19`, `31`, `1`, `7`, `19 19`. A fixture whose pass 6 uses the counted word once: line 6 `8` while the fold still prints `1`, which is exactly the blindness G8 named, now visible on its own line |
+| U1-7 | G4 | 🟢 | file absent | good handoff `0`, `1`, `1`, `1`. A handoff saying only `I also ran a plant, it was fine`: last line `0`, where the pass 1 wording folded it to `1`. Wrong sha: first line `22` |
+| P4 | G7 | 🟢 | `branding: clean (464 files scanned)`, `exit 0`. N is now declared unpinned, and 464 is the third different N this branch has shown | unchanged by the unit |
+
+### The rows the revision did not touch, re-run on the revised fixture
+
+Re-run because the fixture text changed, not because the blocks did.
+
+| # | State | Measured |
+|---|---|---|
+| U1-1 | 🟢 | `1`, nothing, `1`, `1`, `0` on a single pass 6 |
+| U1-2 | 🟢 | `1`, the filter still lifts from the map and matches byte for byte under the revised wording |
+| U1-4 | 🟢 | `1`, `6 18` |
+| U1-6 | 🟢 | `1`, `0` |
+| P1 | 🟢 | unchanged by the revision, graded in pass 1 with its own negative control |
+
+### Two notes, neither a gap
+
+| # | Note |
+|---|---|
+| N1 | U1-1's second leg, the awk that prints `NOT LAST`, cannot see a duplicated `## Pass 6`: the heading rule runs `next`, so a second copy never reaches the test. Observed while building a stacked fixture, which printed `3` on leg 1 and nothing on leg 2. Leg 1 covers the case, so the criterion is whole. Worth knowing before anyone trusts leg 2 alone |
+| N2 | the wall's character class bars the underscore, so a record named `verdicts/k17-rerun-U1_p2.md` prints `1`. Measured. The naming convention for graded workers uses hyphens, so nothing in the loop trips it |
+
+### Verdict
+
+10 of 10 checkable. Every value the revision claims reproduced in a clone I made myself, in both
+directions, including the five P5 legs and the three controls that were blind in pass 1. The plan is
+mobilizable. Nothing here grades the unit; that is a separate verdict after it is built.
