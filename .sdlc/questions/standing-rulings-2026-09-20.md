@@ -58,3 +58,9 @@ Question: Lane A measured runs above the 280 to 550 s interim ceiling at load ne
 Options: Yes: re-measure on a quiet host, then set the ceiling (Recommended); Yes, but do not block #681 on a quiet run; No, I did not rule that.
 Chosen: Yes: re-measure on a quiet host, then set the ceiling (Recommended).
 Effect: the ceiling stays 280 to 550 s as written in plan preset-intent-fidelity C1. Nothing widens before a reading taken with every run started at load under 5. A run at load 5 or above is recorded with its load and not graded. #681's pre-land needs one such quiet run. The figures first relayed with this question (a band top 40 to 170 s low) were retracted by Lane A the same hour: run 1 of the series read 518.66 s, and sorted by CPU share the series is near monotone, which is contention.
+
+## R14 The U11 split of records-followup (#709)
+Question: U11 of records-followup hit three passes; re-diagnosis at `.sdlc/plans/records-followup-U11-rediagnosis.md` (main `6a25c6b0`) recommends a split. Adopt it?
+Options: Split (Recommended); Hold #720 until the check exists; Let me read the re-diagnosis first.
+Chosen: Split (Recommended).
+Effect: U11 lands the four clean repairs with #720, U5-8 is not adopted, one chore ticket for the class; the Conductor still asks before #720 lands.
