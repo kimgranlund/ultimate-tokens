@@ -1,6 +1,6 @@
 ---
 status: approved
-ticket: <minted by the Orchestrator at step 1>
+ticket: #712
 priority: P1
 lane: docs
 size: S (U1 S = 1 point)
@@ -82,7 +82,7 @@ bash -c 'set -o pipefail; node test/repo/branding.mjs | tail -1; echo "exit $?"'
 
 ## Units
 
-- [ ] U1 (S) the rerun note points at the newest pass, the K17 debt row quotes the map's seven-name filter, adapter §2.1 says reviewer-l4 with an amendment saying why · grade l1 · reviewer-l1 · verifier-l1
+- [~] U1 (S) the rerun note points at the newest pass, the K17 debt row quotes the map's seven-name filter, adapter §2.1 says reviewer-l4 with an amendment saying why · grade l1 · reviewer-l1 · verifier-l1
 
 Grade. Docs, l1 by the Orchestrator's table, and it stays l1: three lines whose exact replacement text is in §Texts, each with a grep that reads 0 before and 1 after and a deletion count against the merge base. The transcription failure l2 exists for is caught mechanically (U1-2 lifts the filter from the map, U1-1 computes the pass number from the verdict). The verifier is l1 (opus), so it shares no family with the sonnet builder. Pre-land is the adapter §2.1 pair as this very branch amends it: `reviewer-l4` and `verifier-l3`, both fable, the pair the plugin skill names and the pair that ran on records-refresh and k17-rerun, so the record and the run agree from this landing on.
 
