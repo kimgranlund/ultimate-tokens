@@ -1,6 +1,6 @@
 ---
 status: approved
-ticket: (minted by the Orchestrator at mobilize, `adapter.py create`, labels below)
+ticket: #710
 priority: P1
 lane: docs
 size: S (U1 S = 1 point)
@@ -97,7 +97,7 @@ MB=$(git merge-base origin/main HEAD); { git diff --name-only $MB; git ls-files 
 
 ## Units
 
-- [ ] U1 (S) the A2 verdict's title states the newest pass and its count; the verifier appends pass 6, K17 only, its own run of the map's control at the head and its own plant · grade l1 · reviewer-l1 · verifier-l1
+- [~] U1 (S) the A2 verdict's title states the newest pass and its count; the verifier appends pass 6, K17 only, its own run of the map's control at the head and its own plant · grade l1 · reviewer-l1 · verifier-l1
 
 Grade. Docs, l1 by the Orchestrator's table, and it stays l1. The builder has almost nothing to build: one title line, plus a handoff that records its own run of one control as the claim under test. The failure mode the l2 bump exists for (a transcription error nobody can see) has a mechanical catch here: U1-2 lifts the filter from the map and U1-4 computes the title's numbers from the file. The verifier is l1 too: one control, one plant, expected values measured above, and it is opus, so it does not share a family with the sonnet builder. The reason to go higher would be judgment; there is none in this row. Pre-land is the adapter §2.1 pair (reviewer-l3, verifier-l3) as for every plan, and it grades the rows the unit verifier wrote.
 
