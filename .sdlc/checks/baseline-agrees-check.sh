@@ -29,7 +29,7 @@ if (ref) {
   try { cp.execSync(`git diff --quiet ${ref} HEAD -- . ":(exclude).sdlc" ":(exclude).gitignore"`, { stdio: "ignore" }); same = true; } catch (e) {}
   try { cp.execSync(`git merge-base --is-ancestor ${ref} origin/main`, { stdio: "ignore" }); onMain = true; } catch (e) {}
 }
-console.log((same ? "ok    " : "note  ") + `head: baseline ref ${ref || "none"} has the same tree as HEAD outside .sdlc/ and .gitignore`);
+console.log(same ? `ok    head: baseline ref ${ref || "none"} has the same tree as HEAD outside .sdlc/ and .gitignore` : `note  head: baseline ref ${ref || "none"}, the tree moved outside .sdlc/ and .gitignore since the baseline ran, so the numbers are unproven at this head`);
 say(onMain, `head: baseline ref ${ref || "none"} is in origin/main's history`);
 console.log(`stale total: ${stale}`);
 process.exit(stale ? 1 : 0);
