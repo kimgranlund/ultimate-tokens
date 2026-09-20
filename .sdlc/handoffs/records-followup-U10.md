@@ -110,11 +110,11 @@ Pass 2, measured against the committed tree, with every command run from a scrip
 
 | # | Criterion | Printed | Expected | Match |
 |---|---|---|---|---|
-| 1 | except for byte-pinned copies, the handoff enumerates every edited line, and for each quoted program line gives the command that reprints it | pending | pending | pending |
-| 2 | the fence sweep prints 0 at the head, the review's count before | pending | pending | pending |
-| 3 | U4-1, U4-3, U4-5, U3-10 re-run green | pending | pending | pending |
-| 4 | `baseline-agrees-check.sh` exit 0, branding clean, `npm test` green | pending | pending | pending |
-| 5 | no file outside `.sdlc/` moves | pending | pending | pending |
+| 1 | except for byte-pinned copies, the handoff enumerates every edited line, and for each quoted program line gives the command that reprints it | §Every edited line, 26 rows, with a reprint command on each quoted program line. The one byte-pinned copy is row 20, whose reprint command is the hash recompute; its body is under the §3 exemption and is not enumerated line by line | same | yes |
+| 2 | the fence sweep prints 0 at the head, the review's count before | `fences 25` at the head and `fences 28` at `7b5ebd71`, of which the program-output ones are `0` and `3` | `0` at the head; `2` by the review's own naming, `3` by the sweep | yes, with the count delta stated above |
+| 3 | U4-1, U4-3, U4-5, U3-10 re-run green | U4-1 `.sdlc/adapter.md`, `1`, `1`. U3-10 `1`, `1`, `1`. U4-3 `1`, then `.sdlc/baseline.md:1`, `.sdlc/handoffs/records-refresh-U1.md:1`, `.sdlc/handoffs/records-refresh-U3.md:4`, `.sdlc/verdicts/records-refresh-U3.md:1`, `.sdlc/verdicts/survey.md:1`, then `0`. U4-5 `0`, then `9` occurrences on `9` lines over the frozen span `07ecb44c b9e70950`, then `branding: clean (502 files scanned)`, `exit 0` | exactly these | yes, all four. U4-5's second leg reads `9` again now that revision 12 freezes it at U4's graded span |
+| 4 | `baseline-agrees-check.sh` exit 0, branding clean, `npm test` green | seven counted `ok` lines, one `note  head:`, one `ok    head:`, `stale total: 0`, `exit 0`, with the three prior-set rows now spanned; `branding: clean (502 files scanned)`, `exit 0`; `npm test` `exit 0`, `✓ all 48 test files passed`, `TESTS` `48`, `git status --short` `0` lines, no `node_modules` in the worktree, at load `7.93 14.94 31.34` on 10 cores | same | yes |
+| 5 | no file outside `.sdlc/` moves | `0` files outside `.sdlc/` in `git diff --name-only 17f344a2`, and the thirteen-path list is all `.sdlc/`. P5 against `BASE` prints `0`, `0`, `1	1` | `0`; P5 as the plan states it | yes |
 
 🟡 Criterion 3, U4-5's second leg. The command counts every dash added to `.sdlc` since `07ecb44c`, U4's own merge base, so its value grows with every unit that has landed on the branch since: it covers U6, U3, U8, U9 and U10 now, not U4 alone. Measured at this head it is `15` occurrences on `14` lines. This unit adds none of them: `git diff -U0 215351b6 -- .sdlc | grep '^+' | LC_ALL=C grep -o "$EM" | wc -l` prints `0`, with and without this handoff excluded. The `9` in U4's own handoff is the reading at U4's own head and is not restated anywhere. Reported per the brief, not repaired.
 
