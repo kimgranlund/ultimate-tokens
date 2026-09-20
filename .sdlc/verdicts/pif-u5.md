@@ -80,7 +80,7 @@ grep -rn "293\.09" .sdlc/                  # row 24: every source gives 9.42, ne
   permission system**, both the `git worktree remove` sweep and `rm -rf /tmp/pif-u5-verify`, so that
   directory is still on disk and someone with the right to delete it should. It is self-contained:
   every worktree was registered in the scratch clone's own `.git`, never the parent's, and the
-  parent checkout at `/Users/kimba/Projects/nonoun/ultimate-tokens` is clean, still on `main`, and
+  parent checkout at the primary checkout is clean, still on `main`, and
   registers `0` worktrees under that path.
 - This seat never wrote to the repo, the unit branch or the unit worktree. Every run was in the
   scratch clone or a detached worktree of it.
