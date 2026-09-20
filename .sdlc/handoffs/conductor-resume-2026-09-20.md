@@ -25,3 +25,12 @@ Conductor scratchpad (survives on disk): /private/tmp/claude-501/-Users-kimba-Pr
 ## Housekeeping owed
 
 Stale scratch worktrees (r2v/base, r2v/head, wt-bf2aaf6, revU3) and throwaway clones rf-plan-rev3-tmp to rev6-tmp in the Conductor scratchpad: rm was denied in this session; remove after a bypass restart. Plan and unit branches are local only, never pushed.
+
+## Update 08:45 PDT
+
+| Item | State | Resume action |
+|---|---|---|
+| #681 U4 | verifier-l3 verdict RED at 36ce7777, records only: 22 green, 3 yellow, 3 red of 28. Engine, allow-lists, Finding A, #668, #686, npm test (318.52 s, load 5.45) all green. Reds: row 21 yielded-cell numbers, row 22 missing C6 median and p90 table (the envelope report FAILs 14 of 24 on the rendered path; state it under the report-only ruling), row 28 four added dashes. Verdict: scratch verdict-pif-u4.md. Lane A has it | Lane A runs one records-only pass; Conductor re-verifies the delta with verifier-l3 (rows 13, 20, 21, 22, 25, 28 and the Records section), then records the verdict |
+| #709 U3 | unit/rf-U3 @ ceb471b0, delta review PASS, plan 31b53ea9 (Fix A: head same-tree row is a note; U3-1 numstat 3 3); verifier-l1 running, writes scratch verdict-rf-u3.md row by row | if the verdict is partial, re-dispatch verifier-l1 for the ungraded rows only |
+| #713 | planner still writing plan/gate-split | as above |
+| Gate time | owner ruled: interim ceiling for #681, split is #713 | U5 of #681 records the interim ceiling with the per-file table |
