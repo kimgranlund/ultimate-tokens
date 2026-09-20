@@ -75,8 +75,9 @@ recorded: the Prior set section the plan itself requires makes a pre-existing co
    and the prior set's `3777.8`, so P2 as literally written prints the size string three times
    rather than the stated "same string twice". My built size is `3780.5`, equal to the live row, so
    the criterion's substance holds. The fix is the same shape as U1-4's: `head -1` after the grep.
-2. `npm run smoke` prints its summary with an em dash, `SMOKE PASS (em dash) gallery · category · editor ·
-   export dialog all render in a real browser`. The baseline row and the handoff write it with a
+2. `npm run smoke` prints its summary with an em dash, `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser`. The baseline row and the handoff write it with a
    colon instead. That is the plan's own no-em-dash branding rule doing its job, but §Texts asks for
    the line "as printed", so the two instructions conflict on this one character. Recording it so
    nobody later reads the colon as a transcription error.
+
+Correction (2026-09-19, plan records-followup U4, #709): a quotation of program output in this file had been reworded to avoid an em dash. It now reads as the program prints it. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule. Note 2 above describes the colon form; the baseline and the handoff were restored on the same date.
