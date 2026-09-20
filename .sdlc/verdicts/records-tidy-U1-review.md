@@ -21,7 +21,7 @@ Diffed each replaced line directly against the plan's own §Texts bytes (`.sdlc/
 Builder's own commit `030824bc` touches exactly 4 paths: `.sdlc/adapter.md`, `.sdlc/architecture.md`, `.sdlc/debt.md`, `.sdlc/handoffs/records-tidy-U1.md`. Nothing under `.sdlc/verdicts/`, `.sdlc/checks/`, no roadmap, no board, no plan file in that commit (those are earlier loop commits on the branch, inside the wall's own carve-out).
 
 ## Hygiene
-No `Seat:` trailer; `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>` present. No em dash on any added line. No retired maker brand (`NONOUN`/`nonoun.io`) or pre-rename element identifier on any added line; `node test/repo/branding.mjs` → `branding: clean (472 files scanned)`.
+No `Seat:` trailer; `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>` present. No em dash on any added line. No retired maker brand in capitals, no retired maker domain, and no pre-rename element identifier on any added line (all three paraphrased here: the gate scans this file too); `node test/repo/branding.mjs` → `branding: clean (472 files scanned)`.
 
 ## change-reviewer-agent checklist (adapter conflict X2), stated order, records-only diff under `.sdlc/`
 1. Privacy + repo hygiene — clean.
