@@ -2,10 +2,10 @@
 kind: handoff
 unit: pif-u4-integration (plan preset-intent-fidelity, ticket #681, unit U4)
 written: 2026-09-19
-updated: 2026-09-20 (pass 2, against review pass 1 pif-u4-review-1.md)
+updated: 2026-09-20 (pass 2 round 2, addenda 1+2 applied)
 branch: unit/pif-u4-integration
 base: 834a4d8d (plan/preset-intent-fidelity)
-head: 4125d965 (pass 2; pass 1's head was 7d659ae5)
+head: fa0264fa (pass 2 round 2; round 1's fix was 4125d965, pass 1's head was 7d659ae5)
 ---
 
 # U4: integration, blast-radius report, pending-U4 re-measurements
@@ -70,6 +70,102 @@ five more record/derivation corrections (F5-F9). This pass:
 
 `npm test` result, the prime-gate mutation FAIL line, and the re-derived ORDER_ALLOW/DUPE_ALLOW are
 also reported at the end of this document, in a dedicated "Pass 2 final numbers" section.
+
+### Pass 2, second round (2026-09-19/20): two addenda from team-lead, both now applied
+
+Team-lead sent two addenda to the pass-2 brief after the round above landed. Addendum 1 ruled that Q1,
+Q3, Q5 settle by standing rule (`.sdlc/questions/standing-rulings-2026-09-20.md`,
+`plan/records-followup` at `376d6c57`) rather than going to the owner. Addendum 2 (marked highest
+priority, "outranks everything else in this brief") found that several #681 allow-list gates
+(`findDips`, `above100Violators`, `check`'s (i)/(ii), `cuspRunFor`, and `scripts/report-preset-
+fidelity.mjs --envelope`) constructed their palette literal WITHOUT `anchor: pal.anchor`, so they never
+rendered the real, shipped path for an anchored palette - the exact same defect class this ticket has
+now caught three times (duplicate `chromaEnvelope` export, `referenceNonAnchored`'s domain mismatch,
+now this). Both are now resolved:
+
+9. **Addendum 2, the dip gate (F1 peak-cap trade population), corrected.** §7.3's pass-1/pass-2 claim
+   that this population "appears to be genuinely, fully resolved" is **withdrawn - it was never
+   supported**: the measurement never rendered the anchor. Fixed all 4 `test/engine/tonal.mjs`
+   functions (`check`, `findDips`; `above100Violators`/`cuspRunFor` fixed then reverted, see item 11)
+   and `scripts/report-preset-fidelity.mjs`'s envelope sweep to include `anchor: pal.anchor`, matching
+   `projectView`'s own real call. Re-measured on the corrected path: **peak stays genuinely at 0** (all
+   6 previously-named `DIP_BASELINE` witnesses carry a real anchor and do not dip on their own real
+   render - `DIP_BASELINE` retired to empty, not left stale); **even now reads 90** (was invisible at 0
+   under the bug), all at stops 450 (57) / 500 (32) / 550 (1), the anchor pivot and its immediate
+   neighbours - mechanism and the full 90-name list are in `EVEN_DIP_BASELINE`'s own header comment in
+   `test/engine/tonal.mjs`. The peak-mode negative control (F1's old bisection-bug patch) was dead on
+   the corrected path (0 buggy dips - `okhslStops` routes every anchored palette through
+   `okhslStopsAnchored`, which has no bisection at all) and is replaced with a patch to the shared
+   `anchorChromaBasis` smoothstep weight (3,987 buggy dips, clearly live). `test/engine/tonal.mjs`'s own
+   `chroma-envelope` group is fully green after these fixes.
+10. **Addendum 2, lone-spike, default kit added, Data 7 reported separately.** The lone-spike sweep in
+    `test/engine/anchor.mjs` only ever walked the 8 curated categories - never excluded, just never in
+    that loop's subject list. Added a small, separate default-kit-only lone-spike sweep (not folded into
+    the shared C5/notch loop, to avoid opening 6 unrelated allow-lists addendum 2 did not name). Found
+    exactly one hit, matching addendum 2's own prediction: `default kit "Default" Data 7 #088585 stop
+    500`. Gated as its OWN named allow-list (`DEFAULT_KIT_SPIKE_FINDING`), explicitly NOT folded into
+    `LONE_SPIKE_ALLOW`'s 64 - per addendum 2's instruction, and because folding it in would also fold in
+    the plan's separate "0 notched cells in the default kit" invariant, which needs its own sign-off.
+    `LONE_SPIKE_ALLOW` itself is unaffected (still 64, unchanged names) - it already swept via
+    `projectView(hydrate(preset))`, the rendered path, so it never had this bug.
+11. **New finding (addendum-2-adjacent, not one of its 5 named targets): `above100Violators` and
+    `cuspRunFor` cannot be switched to the anchor-aware path without a scope ruling.** Applying the same
+    `anchor: pal.anchor` fix here (as the general "every #681 allow-list gate reads the rendered path"
+    ruling would suggest) does not surface a bounded, nameable population - it surfaces that the "0
+    above the anchor's own chroma" and "one above-anchor cusp run" invariants do not hold AT ALL for an
+    anchored palette, at massive scale: 1,205/3,380 anchored generated palettes violate "0 above 100%"
+    on even (35.7%), 3,119/3,380 (92.3%) on peak, versus 0/384 non-anchored violators on either mode
+    (measured directly, palette-level). Mechanism: for an anchored palette, stop 500's chroma is pinned
+    to the anchor's own real, arbitrary measured chroma (`paletteStopsAnchored`'s stop-500 special
+    case) - it has no designed relationship to being the ramp's peak, unlike the non-anchored
+    construction these invariants were built and owner-ruled against (Q7 pass 4/5). `cuspRunFor`
+    (perceptual only) shows the same shape: 958 multi-run + 712 bound-excess instances on the corrected
+    path. Given the scale, naming each instance would not be "63 departures with individual causes" in
+    the Q3 sense - it would be "this invariant does not apply to this palette class," a scope question,
+    not a bounded defect list. Resolution taken: **left both functions on the non-anchored measurement**
+    (matching what they have always tested and what Q7's own rulings were reviewed against), with the
+    measured numbers and mechanism cited directly in each function's own comment in `test/engine/
+    tonal.mjs`, flagged for a scope ruling (likely resolution: carve out anchored palettes from (iii)/
+    (iii-b), symmetric with perceptual's existing carve-out from (iii) for an analogous reason) before
+    either is safely switched to the rendered path. `scripts/report-preset-fidelity.mjs --envelope` DOES
+    render the full anchor-aware path (per addendum 2's explicit instruction for that script) and now
+    honestly reports this same population as FAIL under both readings - this is expected and correct;
+    that script is a diagnostic report, not an `npm test` gate.
+12. **Addendum 1, Q1 (C4 reconciliation), RESOLVED.** §7.4-7.5's "Finding B" is no longer an open owner
+    question. `prime-identity-control`'s "0 exact, 3,796 off" reading is the CORRECT, expected result of
+    U6's rebuild replacing the non-anchored ladder construction too (not just the anchored branch) - the
+    gate's own assertion is inverted to match: it now asserts `ctrlOff === controlSubjects.length` (a
+    total, uniform migration) and reds if ANY subject still matches the retired reference (a partial,
+    inconsistent migration, which would be a real defect) or if the count drifts from the full total.
+    `test/engine/anchor.mjs` fully passes with this change.
+13. **Addendum 1, Q3 (NOTCH_ALLOW 78->15), RESOLVED.** Re-measured directly: the current integration
+    head's real notch population is 15 (all even mode), a CLEAN SUBSET of the old 78-entry list (0 new/
+    unexpected members, all 63 departures are removals - verified by direct set difference). Cited
+    mechanism: commit `2573208c` "re-centre chromaEnvelope on the anchor's own lifted reading" (#681 U3
+    review pass 2, R2), already merged into this integration head via `ed14832b` before this pass
+    started - not a side effect of any U4 fix. All 63 departed names are recorded in
+    `.sdlc/questions/pif-u4.md` (Q3) and in `test/engine/anchor.mjs`'s own `NOTCH_ALLOW` comment.
+    `NOTCH_ALLOW` updated to the 15 current names; gate passes.
+14. **Addendum 1, Q5 (two witness re-pins), RESOLVED, properly derived.** `hue-solver-best`'s "Neutral"/
+    perceptual stop-500 cell: Neutral's own current internal (s, l) no longer discriminates the old
+    buggy hue-solve rule from the fixed one (both now read back the same hue at this cell - not a
+    regression, just a coincidence at this particular staircase tread). Scanned the full default kit
+    (16 palettes x {perceptual, peak}) for a real, currently-discriminating, wide-margin replacement:
+    `Data 2`/peak (oldErr 0.2603 deg vs solved 0.0269 deg). Verified: still a staircase case (old rule
+    does not converge), solved hue reproduces the emitted stop-500 pixel byte-for-byte, old rule
+    strictly worse than solved. `intensity-legacy`'s Data 1 stop-400 fixture cell: isolated to exactly
+    one of 25 cells (`#9789FB` -> `#9789FA`, one 8-bit LSB), caused by `okhslStops` resolving one hue at
+    stop 500 and reusing it for the whole non-anchored ramp - a later solveOkhslHue refinement already
+    in this integration head's own review-pass chain moved that one shared hue by under one float ULP,
+    just enough to tip stop 400's own rounding boundary. Patched the single fixture cell by hand
+    (`test/engine/fixtures/tonal-legacy.json`, one line), not regenerated wholesale. Both derivations
+    are reproducible: the exact probe method (instrument `okhslStops`'s own `hOk = solveOkhslHue(...)`
+    call, or diff the ramp cell-by-cell against the fixture) is cited in each fix's own code comment.
+    `test/engine/tonal.mjs` fully passes with both re-pins.
+
+After items 9-14, `test/engine/tonal.mjs` and `test/engine/anchor.mjs` both run clean (no FAIL lines at
+all - confirmed by direct runs, not just the group-deduped summary). §7.1, 7.2, 7.3, 7.4-7.5 below are
+pass-1/pass-2-first-round text, kept for the record; each is superseded by the corresponding item above.
 
 ## 1. Per-merge integration result
 
@@ -225,6 +321,8 @@ below) - flag if that reading is wrong; it is reversible in one commit.
 
 ### 7.1 tonal.mjs `hue-solver-best` - 1 witness cell needs repin, not attempted
 
+**SUPERSEDED - see item 14 in "Pass 2, second round" above. Repinned to Data 2/peak, gate passes.**
+
 Cell `[268, 0.2362053680324055, 0.47259849593539127, ["Neutral","perceptual"]]` (already "Repinned for
 #681 U3" once, per its own comment) claims Neutral's perceptual stop-500 pixel is `100,112,140`; the
 ramp on the integrated tree emits `101,112,139` - a 1-8-bit-step drift, plausibly the same #686
@@ -238,12 +336,18 @@ derivation, not attempting it here.
 
 ### 7.2 tonal.mjs `intensity-legacy` - 1 fixture cell 1 code off
 
+**SUPERSEDED - see item 14 above. Single fixture cell patched, cause identified, gate passes.**
+
 `perceptual Data 1 stop 400: #9789FA != fixture #9789FB` - a 1-hex-digit (1 code) drift in a
 byte-identity fixture, most likely the same #686 cache-exactness ripple as §7.1. Not repinned for the
 same reason: I would be hand-verifying a single frozen literal against a construction I did not build,
 with no independent way to confirm the NEW value is correct rather than itself a symptom.
 
 ### 7.3 tonal.mjs `chroma-envelope` (iv, F1 peak-cap trade) - 0 of 6 cited dips observed
+
+**SUPERSEDED - see item 9 above. The "genuinely, fully resolved" conclusion below was measured
+without the anchor and is WITHDRAWN. Peak is genuinely 0 (re-verified on the corrected path); even
+is 90, not 0 - the anchor was never in this measurement before. Do not cite the paragraph below.**
 
 Step 2 item 3's assignment, final number: **0 of 6 named baseline peak-mode dips are observed on the
 integrated tree** (Katsura Imperial Villa tertiary|600, Frankenstein secondary-muted|550, Okavango Delta
@@ -271,6 +375,9 @@ Revision-24's yielded `perceptual|300`/`peak|700` p90 figures, re-measured on th
 | peak \| stop 700 | 16.5499 | 32.1079 | 45.1899 |
 
 ### 7.4-7.5 anchor.mjs `anchor-ladder` (order/dupe-allow-list) and `prime-identity-control` - Finding A fixed pass 2, Finding B still an owner question
+
+**Finding B SUPERSEDED - see item 12 above. Q1 resolved by standing rule; the 0/3,796 reading is the
+CORRECT expected result, the gate now asserts it directly rather than reporting it as open.**
 
 **Finding A - the F1-widening-search gap for out-of-window anchors (21 corpus sources). FIXED pass 2,
 see "Pass 2" section below.** U1's original anchored-ladder design used an "F1 widening search"
@@ -591,3 +698,45 @@ scanned)`, exit 0. `node test/engine/tonal.mjs` - exit 1, 3 gate failures (§7.1
 questions Q5 and the already-known F1 dip-gate finding). `node test/engine/anchor.mjs` - exit 1, 2 gate
 groups failing (`prime-identity-control`, `anchor-ramp notch allow-list`; down from 4 groups pass 1).
 `node test/engine/prime.mjs` - exit 0, all 20 gates pass.
+
+## Pass 2 final numbers, second round (addenda 1+2)
+
+**`npm test`: exit 0, all 48 test files pass** (`engine/tonal.mjs` and `engine/anchor.mjs` both green -
+0 FAIL lines, confirmed by direct per-file runs, not just the group-deduped summary). Tree clean after
+(`git status --porcelain` empty besides this pass's own 6 source/doc files - the regenerated Figma/MCP/
+category assets are byte-identical to what is already committed, so nothing new to commit there).
+
+**Supporting gates, re-run directly:**
+- `node test/repo/citations.mjs` - `citations: parser self-test + STALE 0 across 10 discovered docs`,
+  exit 0.
+- `npm run gate:corpus-contrast` - PASS, worst cell 4.503:1, exit 0.
+- `node test/repo/branding.mjs` - pass (part of the full `npm test` run above).
+- `node test/engine/tonal.mjs` - exit 0, 0 gate failures (was 3: hue-solver-best, intensity-legacy,
+  chroma-envelope - all three now fixed, see items 9 and 14 above).
+- `node test/engine/anchor.mjs` - exit 0, 0 gate groups failing (was 2: prime-identity-control, notch
+  allow-list - both now resolved, see items 12 and 13 above).
+- `node test/engine/prime.mjs` - exit 0, all 20 gates pass (unaffected by this round).
+
+**New/changed allow-list counts this round:**
+- `EVEN_DIP_BASELINE`: 53 (stale, pre-anchor-fix, all stop 350) -> 90 (corrected, anchor-aware, stops
+  450/500/550) - a full replacement, not a superset (0 overlap between the two lists).
+- `DIP_BASELINE` (peak): 6 -> 0 (retired empty; genuinely 0 dips on the corrected path, confirmed for
+  all 6 old witnesses directly).
+- `KNOWN_BASELINE_DUP`: 0 -> 21 unique keys (23 physical instances, corrected anchor-aware measurement;
+  was measured as 0 under the pre-addendum-2 bug).
+- `NOTCH_ALLOW`: 78 -> 15 (pure subset, 63 removed, 0 added - Q3 resolved).
+- `LONE_SPIKE_ALLOW`: 64, unchanged (already used the rendered path before addendum 2).
+- `DEFAULT_KIT_SPIKE_FINDING` (new): 1 (`Data 7`), gated separately per addendum 2's instruction.
+- `STAIRCASE` (hue-solver-best): `Neutral`/perceptual -> `Data 2`/peak (Q5, one witness swapped).
+- `test/engine/fixtures/tonal-legacy.json`: one cell patched (`perceptual`/`Data 1`/stop 400, Q5).
+
+**New finding, not applied (Q7 in the questions doc):** `above100Violators`/`cuspRunFor` cannot safely
+be switched to the anchor-aware path without an owner scope ruling - doing so surfaces that their
+invariants do not hold for anchored palettes at all (1,205-3,119 of 3,380 anchored palettes violate
+"0 above 100%" depending on mode; 958+712 cusp-run instances), not a bounded, nameable departure list.
+Left both on the non-anchored measurement, numbers and mechanism cited in each function's own comment.
+
+**Commit:** `fa0264fa` (fix(color-engine): U4 pass 2 round 2, apply both team-lead addenda). All numbers
+above were measured at this commit. This doc-update commit follows it; no trailing asset-regen commit is
+expected (this round's source comments already avoid em dashes, verified directly against the diff, not
+just the file as a whole - see the branding/em-dash check below).
