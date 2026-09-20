@@ -3,7 +3,7 @@
 date: 2026-09-20
 from: orchestrator (Lane B), raised by close-709-repoint-builder-l5
 about: the baseline re-point to `origin/main @ e9850935` (owner ruling 6 on `plan/gate-split` approval Q6)
-status: open
+status: answered
 
 ## What was measured
 
@@ -44,3 +44,8 @@ Whichever is chosen, the tightening is prospective in option 2 and retrospective
 ## Answer
 
 (pending)
+
+Asked by the Conductor through AskUserQuestion on 2026-09-20, after the 902923bd amendment's cost (every one of the fourteen runs started between 6.31 and 7.76) was in the question: "14 of 15 runs are in hand. What do we do with them?". Options offered: "Drop the runs, tighten the rule to load under 5, let #713 U6b re-point (Recommended)" · "Commit as measured, marked not comparable, then tighten to under 5" · "Re-take all fifteen under load 5". Chosen: "Drop the runs, tighten the rule to load under 5, let #713 U6b re-point (Recommended)".
+
+Effect: the fourteen runs are recorded in the builder's handoff with their loads and not used; `ref` stays `20298cc` and the check keeps printing its uncounted `note  head:` line; the quiet-host rule becomes load under 5 at the start of every run of a set of record, written into `.sdlc/adapter.md` by gate-split U6b, which already owns the full re-measure (50 test files after #681 and #713) and the `ref` re-point (U6-9). Reason given to the owner: a 110 s figure of record on an unchanged tree would be a baseline built from contention, and it would be superseded within a day. The rf-close builder stands down; nothing waits on the re-point.
+
