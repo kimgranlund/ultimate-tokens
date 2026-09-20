@@ -75,3 +75,39 @@ Two observations on the replacement text, neither a defect.
 fail. Both are one-line repairs and neither touches the change itself. By the mobilization rule this
 plan is not mobilized until those two rows are repaired. Everything else reproduced exactly as the
 planner measured it, including every other negative control.
+
+## Pass 2 · the revised plan at 20869d1b · 🟢 8 of 8 checkable, mobilizable
+
+| Field | Value |
+|---|---|
+| Asked by | conductor, re-review U1-3 and U1-5 only |
+| Plan | `.sdlc/plans/records-tidy.md` @ 20869d1b, revision row 2 |
+| Read first | the plan diff 8916482f to 20869d1b. Revision 2 touches two command lines and two criterion sentences. §Texts, the wall and the other six rows are unchanged, so pass 1's grades for them stand |
+| Where measured | a fresh throwaway clone of the revised branch, §Texts extracted from the plan and applied, never retyped |
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| U1-3 | adapter §2.1 item 1 says reviewer-l4, no reviewer-l3 outside the amendment that records the rename | 🟢 | leg 1 now counts outside amendment paragraphs and reads `0` after §Texts, where pass 1 measured `1`. All six legs: `0`, `2`, `1`, `1`, `2`, `1`, exactly as the plan states | a stray `reviewer-l3` sentence added outside any amendment: leg 1 `1`, so the leg bites. Amendment added with line 58 untouched: `1`, `1`, `1`, `0`, `1`, `0`, the revised figures. Amendment omitting the skill name: leg 3 `0` |
+| U1-5 | no other tracked record gained or lost a reviewer-l3 | 🟢 | the second side now reads the working tree, and the block reads `0` after the edits | the history file rewritten and left uncommitted: `1`, where pass 1 measured `0` and could not fail. The same edit committed: `1`. A staged `.sdlc/verdicts/records-tidy-x.md` carrying the word: `0`, excluded by name and inside the wall |
+
+Both repairs do what they claim, and both were measured failing before and passing after.
+
+### One note, not a gap
+
+`grep -v '^\*\*Amendment ('` excludes every amendment paragraph in the adapter, not only the one that
+records this rename. The adapter carries nine. The criterion's own sentence says "outside the amendment
+paragraph that records the rename", singular, so the command is broader than the words.
+
+Measured: none of the other eight mentions the word today, so the exclusion costs nothing at this
+landing. Measured also: a `reviewer-l3` claim planted inside a different amendment paragraph reads `0`
+on U1-3 leg 1 and `0` on U1-5, which excludes the adapter by design, while a plain count reads `2`. So
+a future amendment could reintroduce the word as a live claim and no criterion here would see it.
+
+That is a future-facing blind spot in a row that is otherwise sound at this landing, so it does not
+change the grade. It is worth a sentence in the amendment or a narrower exclusion if a later plan
+touches this row.
+
+### Verdict
+
+8 of 8 checkable. The plan is mobilizable. Nothing here grades the unit; that is a separate verdict
+after it is built.
