@@ -10,3 +10,11 @@ Asked by the Conductor through AskUserQuestion on 2026-09-20, against plan revis
 | 4 | Shared derived ramps across test files: own ticket or drop? | Drop it (Recommended) · File a ticket | "Drop it (Recommended)" |
 
 Mobilization waits on #681 landing (the plan's start gate G0 decides by command).
+
+## Follow-up, 2026-09-20 (after the restart)
+
+| # | Question | Options | Chosen |
+|---|---|---|---|
+| 5 | Start #713's first unit now instead of waiting for #681 to land? U1 only builds the shared sorted sampler and the gate scripts and moves curated-contrast.mjs onto it; it does not touch the heavy test files #681 is changing. | Yes, U1 only, now (Recommended) · No, keep the wait | "Yes, U1 only, now (Recommended)" |
+
+Effect: the start gate G0 is waived for U1 only. U2 onward still wait on #681 landing.
