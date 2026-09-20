@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: approved
 ticket: #713
 priority: P1
 lane: tooling
