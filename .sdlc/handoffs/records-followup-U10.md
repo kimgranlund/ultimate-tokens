@@ -29,7 +29,9 @@ The row does not say whether the verifier recomputes over the whole file or over
 
 - `awk 'f{print} /^<!-- body begins, byte-pinned -->$/{f=1}' .sdlc/verdicts/records-followup-prepr-review.md | shasum -a 256` prints `e30720eb197f324c739cb2536d2de91f8d6037c4aad2a5ac877a80de9040c3b2  -`
 
-File and stated hash agree. See Questions if the Conductor wants the pin taken differently.
+File and stated hash agree.
+
+The header also carries `source: reviewer-l4, graded at 887e3eb2`, which is what the rework 2 clause of the `.sdlc/adapter.md` §3 sentence requires: the seat whose record it is and the head that seat graded at, beside the hash. It satisfies the new wording as it stands, so nothing in the header moved for it. See Questions if the Conductor wants the pin taken differently.
 
 ## Every edited line
 
@@ -55,7 +57,7 @@ Line numbers are the committed ones. Each quoted program line names the command 
 | 16 | `.sdlc/baseline.md:13` | re-measured: only the three live-table rows ran three times in sequence in records-refresh's U3 worktree. The two `extended:` rows are six runs in `.worktrees/rf-U3`, the U3 worktree of plan records-followup on branch `unit/rf-U3`, the two gates alternating | `.sdlc/handoffs/records-followup-U3.md` §Runs, rows 1 to 6, and its `| Worktree | .worktrees/rf-U3 |` field |
 | 17 | `.sdlc/baseline.md:32` | re-measured: the sentence still says what the two chains do not cover, and now says what the fonts row does cover, three runs each followed by an empty status | `.sdlc/handoffs/records-followup-U3.md` §Runs, rows 2, 4, 6, status column `0` |
 | 18 | `.sdlc/baseline.md:52` | re-measured: #706 (PR #707, `20298cca`) moved the toolchain and touched no file under `test/`; #699 (PR #702, `9a44f685`) touched only files under `test/` and no toolchain file. The re-attribution finding F6 removed is gone | `git show --stat 20298cca` and `git show --stat 9a44f685`; `git show 9a44f685 -- test/run.mjs` shows the one added `TESTS` entry |
-| 19 | `.sdlc/adapter.md:103` | revision 12's exemption, one sentence appended to the cited-quote amendment: a byte-pinned verbatim copy of another seat's record, pinned by a hash its own header states and covers, is exempt from the sweep and from every restoration and marking | n/a |
+| 19 | `.sdlc/adapter.md:103` | revision 12's exemption, one sentence appended to the cited-quote amendment: a byte-pinned verbatim copy of another seat's record, pinned by a hash its own header states and covers, is exempt from the sweep and from every restoration and marking. Rework 2, Conductor ruling: the same sentence now also requires the header to name the seat whose record it is and the head that seat graded at, so a pin is traceable to its author and self-certifying is closed off | n/a |
 | 20 | `.sdlc/verdicts/records-followup-prepr-review.md:1-19` | the byte-pinned header, above an untouched body; see §The review copy and its hash | `awk 'f{print} /^<!-- body begins, byte-pinned -->$/{f=1}' .sdlc/verdicts/records-followup-prepr-review.md \| shasum -a 256` |
 | 21 | `.sdlc/baseline.md:56` | rework 1 fix 1: the prior-set `npm test` summary cell now sits in a span as it stands, with `altered: leading check mark dropped` next to it. The glyph itself needs a `d814500` run and was not invented | n/a, wrapping bytes already in the file changes none of them |
 | 22 | `.sdlc/baseline.md:57` | rework 1 fix 1: the prior-set `npm run build` summary cell now sits in a span as it stands | n/a, same |
@@ -96,6 +98,8 @@ Of the 28, three held program output and are edits 1, 2 and 3 above. The other 2
 | the copied review's own unmarked quotations of defective forms | ruled out of scope by plan revision 12 and by the `.sdlc/adapter.md` §3 sentence this unit writes. Not swept, not restored, not marked |
 
 ## Rework 1, one finding measured rather than applied
+
+Rework 2 (delta review at `a0faa7bc`): the span counts below stand, but the Correction line this unit wrote into `.sdlc/handoffs/records-followup-U4.md:55` restated them wrongly, as twelve spans with the marker thirteenth. Twelve spans is right and the marker is the fifth of them; thirteen is row 2 above it. A permanent Correction line must not carry a measurement that does not reproduce, so the clause now names both rows, recounted: `perl -ne 'printf "line %d: %d backticks, %d spans\n", $., scalar(()=/\x60/g), scalar(()=/\x60/g)/2 if $. == 39 || $. == 40' .sdlc/handoffs/records-followup-U4.md` prints `line 39: 26 backticks, 13 spans` and `line 40: 24 backticks, 12 spans`. Nothing else was touched.
 
 🟡 Rework 1 fix 3 asked for two `cited:` markers to be moved beside the span they govern. Measured, both already are. The premise was that `\|` ends a backtick span inside a table cell; it does not, it is an escaped pipe within the span. `node` over the two lines prints the spans in order:
 
