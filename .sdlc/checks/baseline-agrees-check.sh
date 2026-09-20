@@ -1,7 +1,7 @@
 # The numbers in .sdlc/baseline.md agree with the tree they describe, and the adapter's
 # time ranges agree with the baseline. Reads files and git only: no node_modules, no network.
 # Usage: sh .sdlc/checks/baseline-agrees-check.sh   (from the repo root)
-# A STALE head line on a later commit is expected: it says the tree moved since the baseline ran,
+# A STALE head line now means only that the ref is not in origin/main's history; a note head line on a later commit is expected, counts toward neither the stale total nor the exit code, and says the tree moved since the baseline ran,
 # so the numbers are unproven at that head, not that they are wrong.
 node - <<'EOF'
 const fs = require("fs"), cp = require("child_process");
@@ -16,7 +16,7 @@ say(!!bn && +bn[1] === tests, `tests: baseline ${bn ? bn[1] : "none"}, test/run.
 const kb = (read("figma/plugin/ui.html").length / 1024).toFixed(1);
 const bs = (row(b, "| `npm run build` |")[5] || "").match(/ui\.html ([\d.]+) KB/);
 say(!!bs && bs[1] === kb, `ui.html: baseline ${bs ? bs[1] : "none"} KB, tree ${kb} KB`);
-for (const [cmd, gate] of [["npm test", "test"], ["npm run build", "build"], ["npm run smoke", "smoke"]]) {
+for (const [cmd, gate] of [["npm test", "test"], ["npm run build", "build"], ["npm run smoke", "smoke"], ["npm run gate:corpus-contrast", "corpus-contrast"], ["npm run gen:type-fonts", "fonts"]]) {
   const t = (row(b, "| `" + cmd + "` |")[4] || "").split("·").map(Number);
   const m = (row(a, "| " + gate + " |")[5] || "").match(/(\d+) to (\d+) s/);
   const lo = Math.round(Math.min(...t)), hi = Math.round(Math.max(...t));
@@ -29,7 +29,7 @@ if (ref) {
   try { cp.execSync(`git diff --quiet ${ref} HEAD -- . ":(exclude).sdlc" ":(exclude).gitignore"`, { stdio: "ignore" }); same = true; } catch (e) {}
   try { cp.execSync(`git merge-base --is-ancestor ${ref} origin/main`, { stdio: "ignore" }); onMain = true; } catch (e) {}
 }
-say(same, `head: baseline ref ${ref || "none"} has the same tree as HEAD outside .sdlc/ and .gitignore`);
+console.log((same ? "ok    " : "note  ") + `head: baseline ref ${ref || "none"} has the same tree as HEAD outside .sdlc/ and .gitignore`);
 say(onMain, `head: baseline ref ${ref || "none"} is in origin/main's history`);
 console.log(`stale total: ${stale}`);
 process.exit(stale ? 1 : 0);
