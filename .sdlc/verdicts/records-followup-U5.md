@@ -103,3 +103,5 @@ instant is still accurate as I write.
 | N5 | issue #718 says the P7 script's time check cannot fail. Measured, it can: a wrong first range prints `STALE time test` and exits `1`. The real gap is narrower, that the match is not global so only the first range in a gate cell is compared. The roadmap's own row 11 states it in the narrower form, which is the accurate one |
 
 Nothing here is a fix. The next pass is the Orchestrator's to own.
+
+Correction (2026-09-20, plan records-followup U5, #709, written by the Orchestrator because the Verifier seat does not commit): note N1 above is false as written. Pass 1's verdict record was not lost. It was copied out of `.worktrees/rf-U5` before that worktree was removed and committed to `main` at `34173dd6`, where it remains in the history; this file supersedes it at `0a0f0034`. The Verifier inferred the loss from the reaped worktree without checking `main`, and confirmed the record intact when asked. The practice N1 argues for is kept even so: a verdict is committed before its worktree is removed, which is what happened here.
