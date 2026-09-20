@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: approved
 ticket: #715
 priority: P2
 lane: color-engine
