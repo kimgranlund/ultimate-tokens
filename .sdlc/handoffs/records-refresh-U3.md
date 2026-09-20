@@ -24,11 +24,9 @@ measured at 20298cc
 
 `uptime`: load averages 3.97 3.87 4.58 on 10 cores, well under the core count, immediately before run 1. `pgrep -fl 'test/run.mjs|vite build|smoke.mjs'` printed nothing (no other seat's gate in flight). `node --version`: v24.18.0. After step 4's `npm ci`, `npm ls typescript vite --depth=0` printed:
 
-```
-ultimate-tokens@1.2.0 /Users/kimba/Projects/nonoun/ultimate-tokens/.worktrees/rr-U3
-├── typescript@7.0.2
-└── vite@8.3.0
-```
+- `ultimate-tokens@1.2.0 /Users/kimba/Projects/nonoun/ultimate-tokens/.worktrees/rr-U3`
+- `├── typescript@7.0.2`
+- `└── vite@8.3.0`
 
 The coordinator's own window check (load 2.87 3.81 4.63, no matching processes) landed mid-sequence, confirming the same quiet window this handoff already recorded. Discipline note: every run below was preceded by its own fresh `pgrep`/`uptime` check, run by run, not just once at the start. One brief high reading occurred after smoke run 2 (load 7.86 after, still well under the 10-core threshold; `pgrep` printed nothing and `ps aux` showed no `test/run.mjs`/`vite build`/`smoke.mjs`, only unrelated Claude Code session processes on this shared host); the run itself started and finished clean, so it was kept rather than redone, and nothing after it needed a redo either (all loads stayed under threshold).
 
@@ -168,3 +166,5 @@ Two of criterion U3-2 and U3-3's own commands, as written, interact badly with t
 Both interactions are new since U1-4 and the row-2 check were authored (neither existed before this plan's own Prior Set text was required), so neither is this builder's error to silently work around; both are recorded as findings for whoever next revises the plan's criterion text.
 
 Correction (2026-09-19, plan records-followup U4, #709): four quotations of program output in this file had been reworded to avoid an em dash. It now reads as the program prints it. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule.
+
+Correction (2026-09-20, plan records-followup U10, #709): the fenced `npm ls typescript vite --depth=0` output in §Step 2 is now three inline spans, one per line of output, the bytes unchanged. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule.

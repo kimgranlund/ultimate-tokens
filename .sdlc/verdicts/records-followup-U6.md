@@ -31,12 +31,10 @@ Both restored lines were derived from the program in this seat's own tree and co
 
 The runner line, from `perl -CS -e 'printf "\x{25B6} %-24s FAIL\n", "engine/semantic.mjs"'`, which is the source-line reading of `test/run.mjs:23` and `:29` that the rule allows:
 
-```text
-0000000    ▶  **  **       e   n   g   i   n   e   /   s   e   m   a   n
-0000020    t   i   c   .   m   j   s                           F   A   I
-0000040    L  \n
-0000042
-```
+- `0000000    ▶  **  **       e   n   g   i   n   e   /   s   e   m   a   n`
+- `0000020    t   i   c   .   m   j   s                           F   A   I`
+- `0000040    L  \n`
+- `0000042`
 
 The same 34 bytes occur in `.sdlc/verdicts/records-refresh-U1.md:37`, delimited by single backticks on both sides, byte-exact `True` on a direct slice comparison.
 
@@ -77,3 +75,5 @@ Criterion U6-8's expected value is written as `4` in revision 4 and reads as a l
 ## Verdict
 
 🟢 U6 passes. Thirteen of the fourteen graded rows are green on this seat's own evidence, every green row with a control that discriminated at `e0e5b551` or under a planted mutation in a throwaway clone. U6-6 is 🟡 on one sub-value whose cause is a contradiction between criteria 6 and 9 of the plan, outside what the unit was told to change. No build defect was found. The two rule amendments and the two criterion corrections belong to a follow-up unit on this plan.
+
+Correction (2026-09-20, plan records-followup U10, #709): the fenced `od -c` dump above is now four inline spans, one per line of output, the bytes unchanged. Only the mechanical change the rule dictates was made; no grade and no finding's wording moves. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule.
