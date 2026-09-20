@@ -80,4 +80,4 @@ recorded: the Prior set section the plan itself requires makes a pre-existing co
    the line "as printed", so the two instructions conflict on this one character. Recording it so
    nobody later reads the colon as a transcription error.
 
-Correction (2026-09-19, plan records-followup U4, #709): a quotation of program output in this file had been reworded to avoid an em dash. It now reads as the program prints it. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule. Note 2 above describes the colon form; the baseline and the handoff were restored on the same date.
+Correction (2026-09-19, plan records-followup U4, #709): a quotation of program output in this file had been reworded to avoid an em dash. It now reads as the program prints it. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule. Note 2 above no longer holds on its face: the baseline row and the handoff were restored to the printed line on the same date, and the rule it names is the owner's prose rule, which the amendment separates from the branding gate.
