@@ -65,6 +65,8 @@ Result: 17 of 18 🟢, 0 🟡, 1 🔴 (K17). No 🟡 row was needed: every other
 
 One further observation for the Orchestrator, outside the per-convention grading: `.sdlc/architecture.md` §8, the rerun note and the §7 Counts bullet all name `d814500`, while the merge base of this head with `origin/main` is at `20298cc`. That is criterion 2's subject, not a K row, and is left to whoever grades the unit's criteria.
 
+Note (2026-09-19, plan records-followup U6, #709): the closing observation of pass 5 above was resolved by U3 of plan records-refresh on 2026-09-19, which re-measured §8, the rerun note and the Counts bullet at `20298cc`. It is not an open finding.
+
 ## Pass 6 (U1 of plan k17-rerun, K17 only)
 
 Graded 2026-09-20 at `3600ad6e` (branch `unit/k17-U1`). The control ran read-only in the unit worktree at the graded head; the plant ran in a throwaway shared clone of it, reset afterwards. Both runs are this verifier's own, and the builder's handoff was read as the claim under test, never as evidence.
