@@ -1,4 +1,4 @@
-# Verdict A2 architecture · pass 4 · 🟢
+# Verdict A2 architecture · pass 6 · 🟢 18 of 18 (pass 5: 17 of 18, K17 🔴; pass 6 reruns K17)
 
 Graded by sdlc-verifier on 2026-09-16 against `.sdlc/architecture.md` (152 lines) at `sdlc/adopt` @ f9e20c5. Every control rerun in a throwaway git worktree of HEAD (since removed), plants reset between runs. Pass 1 gaps listed at the bottom with their disposition.
 
@@ -64,3 +64,15 @@ Graded 2026-09-19 at `d46ae48` (branch `plan/records-refresh`), whose merge base
 Result: 17 of 18 🟢, 0 🟡, 1 🔴 (K17). No 🟡 row was needed: every other own-run number either equals its map cell or differs only in a way the convention does not assert (bundle byte size under K7, line-number drift under K10 and K12), and each of those is quoted in its row.
 
 One further observation for the Orchestrator, outside the per-convention grading: `.sdlc/architecture.md` §8, the rerun note and the §7 Counts bullet all name `d814500`, while the merge base of this head with `origin/main` is at `20298cc`. That is criterion 2's subject, not a K row, and is left to whoever grades the unit's criteria.
+
+## Pass 6 (U1 of plan k17-rerun, K17 only)
+
+Graded 2026-09-20 at `3600ad6e` (branch `unit/k17-U1`). The control ran read-only in the unit worktree at the graded head; the plant ran in a throwaway shared clone of it, reset afterwards. Both runs are this verifier's own, and the builder's handoff was read as the claim under test, never as evidence.
+
+Why this pass exists: pass 5 graded K17 at `d46ae48` against the three-name filter, and `28c2e8cc` widened that filter in the map without any pass here grading the new text. Rule from this pass on: a change to a section 6 control cell lands with a pass in this file grading the new text.
+
+| # | Convention | State | Evidence | Negative control |
+|---|---|---|---|---|
+| K17 | Tests use no framework and every test file is in `run.mjs` TESTS | 🟢 | own run at `3600ad6e` of the control as the map's K17 cell states it, filter `grep -vxE "run.mjs\|smoke/smoke.mjs\|ui/counts.mjs\|gate-report.mjs\|repo/fixtures/gate-report-(clean\|mismatch\|singlequote).mjs"` lifted from that cell and not retyped: framework half 0 hits; registration half 7 before the filter, 0 after; the seven are `gate-report.mjs`, `repo/fixtures/gate-report-clean.mjs`, `repo/fixtures/gate-report-mismatch.mjs`, `repo/fixtures/gate-report-singlequote.mjs`, `run.mjs`, `smoke/smoke.mjs`, `ui/counts.mjs`. The builder's handoff claims the same figures and they agree with mine | own plant in a throwaway shared clone, as the map's bite cell writes it: the framework import appended to `test/engine/hct.mjs` plus a new tracked `test/engine/zzz.mjs` carrying no such import. 2 hits in total, 1 per half: `test/engine/hct.mjs:172` on the framework half and `engine/zzz.mjs` on the registration half. The same clone clean before the plant: 0 and 0. Clone reset after, `git status --short` 0 lines |
+
+Result: 18 of 18 🟢, with K1 to K16 and K18 read from pass 5 at `d46ae48` and K17 from this pass. The title now names this pass and its count.
