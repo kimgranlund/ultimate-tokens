@@ -1039,40 +1039,104 @@ the tree (`.sdlc/adapter.md`'s X1-X13 ids, zero `C1[123]` rows, U6's `npm test` 
 correct and left it untouched, per instruction.
 
 **Repairs beyond the mechanical merge** (all inherited from the prior builder's unstaged work, verified
-rather than trusted, then staged):
+rather than trusted, then staged). Every re-pin below is listed individually - name, old value, new
+value, mechanism - because a re-pin without a reproducible mechanism is refused (owner ruling, this
+pass). None of these were textual merge conflicts (git's 3-way merge kept every one of these lines
+byte-identical on both parents, no conflict marker); each went stale because the CONTENT it points at
+moved, which a text-diff merge cannot detect.
 
-1. Four `docs/reference/` citation line-number re-pins, forced by the merge shifting line numbers in
-   `src/ui/app.js` and `test/engine/tonal.mjs`: `docs/reference/references/component-inventory.md`
-   (`app.js:1587`->`1594`, `app.js:1603`->`1610`), `docs/reference/reviews/2026-08-20-reactivity/
-   03-stores-and-persistence.md` (`app.js:2290-2313`->`2319-2341`, `app.js:2320-2345`->`2349-2378`),
-   `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md` (`app.js:2096-2142`->
-   `2108-2154`, `app.js:2132-2136`->`2144-2147`), `docs/reference/rubrics/acceptance-criteria.md`
-   (`tonal.mjs:246-264`->`283-301`, `tonal.mjs:577-601`->`687-708`). Checked every one against the
-   merged tree directly (`sed -n` on the cited ranges) before staging - all eight citations land exactly
-   on the content they describe. `node test/repo/citations.mjs` (part of the full `npm test` run below)
-   confirms STALE 0 / NOFILE 0 across the corpus, so these were load-bearing, not cosmetic.
-2. `figma/plugin/ui.html` - the generated app bundle, regenerated fresh by `npm test`'s own
-   `gen:figma-ui` step rather than trusted from the prior builder's tree.
-3. `test/engine/exports.mjs` - a comment above the `radix-refs-values-unchanged` gate, recording why the
-   fixture's values legitimately moved once (item 4 below) and that the re-capture was by script.
-4. `test/engine/fixtures/radix-baseline.json` (the `radix-refs-values-unchanged` gate's fixture,
-   `test/engine/exports.mjs:889`) - re-captured by script, never by hand. `origin/main` landed this
-   fixture (#638) before `#681`'s engine changes (anchor field, chroma envelope, prime-ladder rebuild),
-   so every ramp-derived value in it legitimately moves once on the merged tree; the gate itself asserts
-   the VALUES-form output is byte-identical to this committed fixture, so a stale fixture reds regardless
-   of correctness. Capture command (repo root as arg 1):
-   `node <scratchpad>/capture-radix-baseline.mjs /Users/kimba/Projects/nonoun/ultimate-tokens/.git-worktrees/pif-u4-integration`
-   - a small script that imports `src/engine/exports.js`+`ds-export.js` directly and reconstructs
-   `C`/`ALL`/`BRAND_ONLY`/`RADIX_COLLIDING` verbatim from `test/engine/exports.mjs`'s own top-of-file
-   definitions (never a second, drifting copy), then calls `X.exportRadix` for the `ALL`/`BRAND_ONLY`/
-   `COLLIDING` sections the gate reads and writes the JSON fixture. Verified before staging: a
-   structural walk (keys + array lengths at every node, 3,526 nodes) is byte-identical between the old
-   (prior builder's) and freshly re-captured fixture - 0 key/shape/ordering diffs - and the fresh
-   capture is byte-for-byte identical to what the prior builder had already produced, so their
-   unverified work turns out to have been correct; this re-capture is what makes it reproducible.
-   Leaf-level diff against the pre-recapture (main's original, pre-#681-values) committed fixture: 1,724
-   of 2,763 leaves moved, 1,039 unchanged - consistent with "ramp-derived values moved, structure did
-   not."
+**Citation re-pins (8), `docs/reference/` line-number citations into `src/ui/app.js` /
+`test/engine/tonal.mjs`.** Mechanism, all eight: `app.js` and `tonal.mjs` each grew a different amount
+on the two merge parents before this point (unit `3921f140` had already grown `test/engine/tonal.mjs`
+to 1,891 lines from #681's own test additions - main `3ce50daa`'s copy is 909 lines; `app.js` differs by
+only 10 lines net between the parents, merging to +1 over unit's own pre-merge state). None of the four
+docs were edited by either parent's own #681/main history since these citations were first written, so
+the citation strings themselves are untouched by the merge - only the CITED line numbers moved
+underneath them, independently on each side, and the merge inherits whichever line count wins after
+combining both files. Verify: `sed -n '<new range>p' <file>` on the merged tree shows the exact anchor
+each citation names. `node test/repo/citations.mjs` (part of `npm test` below) is the mechanical gate;
+confirms STALE 0 / NOFILE 0 across the corpus after these eight land.
+
+1. `docs/reference/references/component-inventory.md:44` - `segmented` ARIA-role citation -
+   `app.js:1587` -> `app.js:1594`. Verify: `sed -n '1594p' src/ui/app.js` -> `segmented(items, value, onSelect, opts = {}) {`.
+2. `docs/reference/references/component-inventory.md:120` - `aria-pressed` toggle-button citation -
+   `app.js:1603` (of the `1466/1603` pair) -> `app.js:1610`. Verify: `sed -n '1610p' src/ui/app.js` ->
+   the `"aria-pressed": tabs ? undefined : on ? "true" : "false",` line.
+3. `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:18` - `saveToProject`/
+   `loadFromProject` citation - `app.js:2290-2313` -> `app.js:2319-2341`. Verify: `sed -n '2319p'
+   src/ui/app.js` -> `saveToProject() {`.
+4. `docs/reference/reviews/2026-08-20-reactivity/03-stores-and-persistence.md:18` - `applyLoadedConfig`/
+   `openConfigAsSet` citation - `app.js:2320-2345` -> `app.js:2349-2378`. Verify: `sed -n '2349p'
+   src/ui/app.js` -> `applyLoadedConfig(config) {`.
+5. `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:92` - `_bindRangeDrag`
+   citation - `app.js:2096-2142` -> `app.js:2108-2154`. Verify: `sed -n '2108p' src/ui/app.js` ->
+   `_bindRangeDrag() {`.
+6. `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:92` - the drag `end()`
+   cleanup citation - `app.js:2132-2136` -> `app.js:2144-2147`. Verify: `sed -n '2144,2147p' src/ui/app.js`
+   -> the `const end = () => { ... };` block.
+7. `docs/reference/rubrics/acceptance-criteria.md:25` - `hpg-tonal-okhsl-modes` citation -
+   `tonal.mjs:246-264` -> `tonal.mjs:283-301`. Verify: `sed -n '283p' test/engine/tonal.mjs` -> the
+   `// -- hpg-tonal-okhsl-modes: ...` header.
+8. `docs/reference/rubrics/acceptance-criteria.md:25` - `hpg-tonal-lift-monotonic` citation -
+   `tonal.mjs:577-601` -> `tonal.mjs:687-708`. Verify: `sed -n '691p' test/engine/tonal.mjs` -> the
+   `// -- hpg-tonal-lift-monotonic (#648): ...` header block.
+
+**`figma/plugin/ui.html`** - not a re-pin, the generated app bundle. Regenerated fresh by `npm test`'s
+own `gen:figma-ui` step rather than trusted from the prior builder's tree.
+
+**`test/engine/exports.mjs`** - not a re-pin, a comment added above the `radix-refs-values-unchanged`
+gate recording why the fixture's values legitimately moved once (next item) and that the re-capture was
+by script.
+
+**Fixture re-pin (1): `test/engine/fixtures/radix-baseline.json`**, the `radix-refs-values-unchanged`
+gate's fixture (`test/engine/exports.mjs:889`) - old value: the pre-#681 `exportRadix` output `origin/
+main` committed at #638. New value: `exportRadix` re-run on the merged (post-#681) engine. Mechanism:
+`origin/main` landed this fixture before #681's engine changes (anchor field, chroma envelope,
+prime-ladder rebuild), so every ramp-derived OKLCH value the fixture pins legitimately moves once on
+the merged tree; the gate asserts the VALUES-form output is byte-identical to the committed fixture, so
+a fixture pinned to the pre-#681 engine reds regardless of correctness post-merge. Re-captured by
+script, never by hand - script content and exact run command below, so an independent verifier can
+reproduce it byte-for-byte rather than trust this record:
+
+```js
+// capture-radix-baseline.mjs -- run: node capture-radix-baseline.mjs <repo-root>
+// Mirrors test/engine/exports.mjs's own C/ALL/BRAND_ONLY/RADIX_COLLIDING construction verbatim
+// (that file's own lines 24-46 as of this merge) so the captured fixture is exactly what the
+// radix-refs-values-unchanged gate compares against - never a second, hand-typed copy of the values.
+import { readFileSync, writeFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
+import path from "node:path";
+
+const repoRoot = process.argv[2];
+const Xcolor = await import(pathToFileURL(path.join(repoRoot, "src/engine/exports.js")));
+const Xds = await import(pathToFileURL(path.join(repoRoot, "src/engine/ds-export.js")));
+const X = { ...Xcolor, ...Xds };
+
+const RT = JSON.parse(readFileSync(path.join(repoRoot, "docs/reference/data/role-table.json"), "utf8"));
+const C = (palettes) => ({ palettes, curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, hueSpace: "cam16", theme: "auto" });
+const ALL = RT.defaults.map((p) => ({ ...p, on: true }));
+const BRAND_ONLY = ALL.filter((p) => !X.isDataPalette(p));
+const RADIX_MK = (name, hue) => ({ name, hue, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true });
+const RADIX_COLLIDING = [...BRAND_ONLY.filter((p) => p.name !== "Danger"), RADIX_MK("Accent", 40), RADIX_MK("Error", 350)];
+
+const fixture = {
+  ALL: X.exportRadix(C(ALL)),
+  BRAND_ONLY: X.exportRadix(C(BRAND_ONLY)),
+  COLLIDING: X.exportRadix(C(RADIX_COLLIDING)),
+};
+writeFileSync(path.join(repoRoot, "test/engine/fixtures/radix-baseline.json"), JSON.stringify(fixture), "utf8");
+```
+
+Run: `node capture-radix-baseline.mjs /Users/kimba/Projects/nonoun/ultimate-tokens/.git-worktrees/pif-u4-integration`
+(save the block above to `capture-radix-baseline.mjs` first). Not committed to the repo - kept out of
+scope per "keep the delta to the merge plus the repairs it forces" - the script text above IS the
+reproduction artifact. Verified before staging: a structural walk (keys + array lengths at every node,
+3,526 nodes) is byte-identical between the old (prior builder's) and freshly re-captured fixture - 0
+key/shape/ordering diffs - and the fresh capture is byte-for-byte identical to what the prior builder had
+already produced, so their unverified work turns out to have been correct; this re-capture is what makes
+it reproducible. Leaf-level diff against the pre-recapture (main's original, pre-#681-values) committed
+fixture: 1,724 of 2,763 leaves moved, 1,039 unchanged - consistent with "ramp-derived values moved,
+structure did not."
 
 **`npm test`: exit 0, 49 of 49 test files pass** (main added `test/repo/gate-report.mjs` since this unit
 branched, so the runner count moved from 48 to 49, as expected). Wall time **430.46 s** (`/usr/bin/time
@@ -1084,5 +1148,8 @@ run, so the reading is not inflated by a leftover contender in this worktree. `t
 all pass as part of this same run. Tree clean after: everything the merge plus the repairs above touched
 is staged, nothing left unstaged.
 
-**Head after this commit:** see `git log -1 --format=%H unit/pif-u4-integration` (this doc's own
-frontmatter note applies: a literal sha here goes stale the moment it's written).
+**Head after this commit: `9f6783fda17df4dbc62cba6a952a8ddceb6a342e`** (40-char sha, `merge(color-engine):
+U4 integration, main sync onto unit/pif-u4-integration`, parents `3921f140...` and `3ce50daa...`).
+Verify with `git log -1 --format=%H unit/pif-u4-integration` - this doc's own frontmatter note about a
+sha going stale the moment it's written applies to any LATER commit on this branch, not to this one,
+which is the tip as of this merge section.
