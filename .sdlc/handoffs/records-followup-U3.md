@@ -11,15 +11,16 @@ pass: 2
 
 | Field | Value |
 |---|---|
-| Branch | unit/rf-U3, the plan tip `bc34b5fb` merged at 79983fd8, then this handoff commit and the measurement commit that fills the Criteria table |
+| Branch | unit/rf-U3, the plan tip `bc34b5fb` merged at 79983fd8 and `31b53ea9` at a129843c, then this handoff commit and the measurement commit that fills the Criteria table |
 | Worktree | .worktrees/rf-U3 |
 | Files | .sdlc/baseline.md, .sdlc/adapter.md, .sdlc/checks/baseline-agrees-check.sh, .claude/CLAUDE.md, this handoff |
-| Commits | ab5cd472 (steps 5, 6, 7 half, 8, 9), 7fba70b7 (steps 10, 11), 9465cda5 (steps 1 to 4, 7 rest), 1c1cfc69 (pass 1 criteria), then the rework pair |
+| Commits | ab5cd472 (steps 5, 6, 7 half, 8, 9), 7fba70b7 (steps 10, 11), 9465cda5 (steps 1 to 4, 7 rest), 1c1cfc69 (pass 1 criteria), 486d124a and fbeaf56f (rework 1), then the rework 2 pair |
 | Ran | npm test green, 48 files, no `node_modules`, tree clean after - branding clean - six timed gate runs in pass 1, all exit 0 |
 | Path taken | short path (step 2): both `head:` lines printed `ok` when the first builder ran the script at the unit's start, so the three measured rows stand and only two gates were timed |
 | Left out | nothing in the eleven steps. Three notes for the Orchestrator are below, none of them acted on |
 | Pass 1 | first builder lost to a rate limit after ab5cd472; second builder measured every figure from scratch. Reviewed FIX-FIRST at 1c1cfc69: nine rows green, U3-1 and P7 red on one cause |
-| Pass 2 | this pass. Plan tip merged, Fix A applied to the check script, the discarded-runs disclosure completed, and one defect of my own found and fixed (see Correction) |
+| Pass 2 | plan tip merged, Fix A applied to the check script, the discarded-runs disclosure completed, and one defect of my own found and fixed (see Correction). Delta review PASS, all three notes judged correct |
+| Pass 3 | this pass. Note 3 ruled in scope: the script's header comment is repaired to describe what the two head rows now mean. U3-1's numstat leg is `3	3` |
 
 ## Runs
 
@@ -54,7 +55,7 @@ From run 5. One list item per line of output, each in its own backtick span, lea
 | S3 | every run of the measured set recorded, no red run | the Runs table, six rows, all exit 0 |
 | S4 | the corpus row's summary is the gate's PASS line, the four counts lines are under the baseline table | `.sdlc/baseline.md` Pass table and the list under it |
 | S5 | the CI sentence names all four jobs of run 35455937943 | `.sdlc/baseline.md` Not run here (committed at ab5cd472) |
-| S6 | the check script's gate list gains the corpus-contrast and fonts pairs, and the head same-tree row prints as a note | `.sdlc/checks/baseline-agrees-check.sh`, two lines changed (rework 1, Fix A) |
+| S6 | the check script's gate list gains the corpus-contrast and fonts pairs, the head same-tree row prints as a note, and the header comment says what the two head rows mean | `.sdlc/checks/baseline-agrees-check.sh`, three lines changed (Fix A at rework 1, the header at rework 2) |
 | S7 | adapter Time cells become `20 to 23 s` and `1 to 1 s`, the corpus count arithmetic leaves the Green-means cell | `.sdlc/adapter.md` section 1 |
 | S8 | section 2 amendment: a PR runs three jobs since #674 | `.sdlc/adapter.md` section 2 |
 | S9 | the approved `.claude/CLAUDE.md` line names the three PR jobs | one line, one changed |
@@ -69,7 +70,7 @@ U3-3's awk counts any row of this file that starts with a pipe and a number. In 
 
 1. 🟡 `adapter.md:29`, the corpus-contrast variance, raised as review finding 5 and routed back to me as an argument to write down rather than an edit to make. The old cell said `~20 s (host-sensitive; 17-27 s observed, mirror parsing dominates)`; step 7 mandates `A to B s` and leaves no room for the second clause. On this host on one day the gate ran 16.28 to 22.89 s across twelve runs, a spread of 40 percent of the low figure, and the cause is named in the old cell: mirror parsing, which competes with whatever else the host is doing. `A to B s` from three runs cannot carry that, and the script only ever compares the two extremes, so a variance clause after the range would not break it. My argument is for one sentence in the Green-means cell rather than the Time cell, where the script never reads: the Time cell stays the measured range the script compares, the Green-means cell says the gate is host-sensitive and mirror parsing dominates. That is a plan change, not mine to make.
 2. 🟡 `adapter.md:54`, review finding 6: step 8's last sentence, a directive about keeping the old Two jobs row, sits inside the amendment text where `The "Two jobs" row above it` now points at the amendment's own neighbours. The plan at the merged head still gives step 8 that text verbatim, so the rework brief's condition for fixing it is not met and I left it.
-3. 🟡 `baseline-agrees-check.sh` lines 4 and 5 still say `A STALE head line on a later commit is expected`, and after Fix A that row prints `note  head:` and never prints STALE. The header is now stale about its own output. Repairing it is a third changed line and U3-1 measures `2	2`, so I left the header alone rather than red my own criterion. It wants one line in a later pass or a widened U3-1.
+3. 🟢 Closed at rework 2, on the Orchestrator's ruling. `baseline-agrees-check.sh` line 4 described a `STALE head` line the script can no longer print for a moved tree. It now reads `# A STALE head line now means only that the ref is not in origin/main's history; a note head line on a later commit is expected, counts toward neither the stale total nor the exit code, and says the tree moved since the baseline ran,`, with line 5 unchanged so the sentence still closes on `# so the numbers are unproven at that head, not that they are wrong.`. One header line changed, which is why the plan re-derived U3-1's numstat leg to `3	3` rather than `4	4`; nothing else in the header or the script moved.
 
 ## Criteria
 

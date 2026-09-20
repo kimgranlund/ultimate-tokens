@@ -1,7 +1,7 @@
 # The numbers in .sdlc/baseline.md agree with the tree they describe, and the adapter's
 # time ranges agree with the baseline. Reads files and git only: no node_modules, no network.
 # Usage: sh .sdlc/checks/baseline-agrees-check.sh   (from the repo root)
-# A STALE head line on a later commit is expected: it says the tree moved since the baseline ran,
+# A STALE head line now means only that the ref is not in origin/main's history; a note head line on a later commit is expected, counts toward neither the stale total nor the exit code, and says the tree moved since the baseline ran,
 # so the numbers are unproven at that head, not that they are wrong.
 node - <<'EOF'
 const fs = require("fs"), cp = require("child_process");
