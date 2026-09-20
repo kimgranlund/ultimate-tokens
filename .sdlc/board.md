@@ -1,6 +1,6 @@
 # Board
 
-Orchestrator-only. Rows edited in place. adopt-hygiene landed as PR #653 (squash `180eca0`); its plan is archived at `.sdlc/plans/archive/adopt-hygiene.md` and the root checkout is back on `main`. records-refresh landed as PR #708 (squash `28c2e8cc`), archived at `.sdlc/plans/archive/records-refresh.md`. k17-rerun landed as PR #711 (squash `41b2877e`), archived at `.sdlc/plans/archive/k17-rerun.md`. records-tidy landed as PR #714 (squash `aa197cbe`), archived at `.sdlc/plans/archive/records-tidy.md`.
+Orchestrator-only. Rows edited in place. The five loose `adopt-hygiene-*` fragments in `.sdlc/plans/` are not this seat's: the owner ruled 2026-09-20 that the interactive session owning the roadmap archives them, so no status line offers to. adopt-hygiene landed as PR #653 (squash `180eca0`); its plan is archived at `.sdlc/plans/archive/adopt-hygiene.md` and the root checkout is back on `main`. records-refresh landed as PR #708 (squash `28c2e8cc`), archived at `.sdlc/plans/archive/records-refresh.md`. k17-rerun landed as PR #711 (squash `41b2877e`), archived at `.sdlc/plans/archive/k17-rerun.md`. records-tidy landed as PR #714 (squash `aa197cbe`), archived at `.sdlc/plans/archive/records-tidy.md`.
 
 | Unit | Ticket | Size | State | Pass | Owner | Worker | Branch | Worktree | Doc | Next |
 |---|---|---|---|---|---|---|---|---|---|---|
