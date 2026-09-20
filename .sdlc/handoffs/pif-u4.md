@@ -5,9 +5,17 @@ written: 2026-09-19
 updated: 2026-09-20 (pass 5, records-only, verifier verdict pif-u4)
 branch: unit/pif-u4-integration
 base: 834a4d8d (plan/preset-intent-fidelity)
-head: 9e1c9fab (pass 5, this pass's own records commit; round 4 was 36ce7777, round 3 was bf62ee30,
-  round 2 was fa0264fa, round 1's fix was 4125d965, pass 1's head was 7d659ae5) - CORRECTED pass 5
-  (verifier row: frontmatter previously still said fa0264fa, two fix commits stale)
+head: the tip of `unit/pif-u4-integration` - a commit cannot name its own sha, so a literal value here
+  goes stale the moment it is written (the same trap U2's live sha table hit); resolve it with
+  `git log -1 --format=%H unit/pif-u4-integration` instead of trusting a number in this file. This
+  record's own commit is the LAST one in the round history below - nothing here is pending. Round
+  history, by commit subject (not sha, for the same reason): pass 1 "chore(assets): regenerate
+  committed artifacts for the integrated engine"; round 1 fix "fix(color-engine): U4 pass 2, fold
+  review pass 1 fix-first findings"; round 2 "fix(color-engine): U4 pass 2 round 2, apply both
+  team-lead addenda"; round 3 "fix(color-engine): U4 pass 2 round 3, review-2 fix-first items + Q7
+  ratchet gate"; round 4 "fix(color-engine): U4 pass 2 round 4, ratchet perf follow-up + review-3
+  comment fixes"; pass 5 "docs(sdlc): U4 pass 5, records-only, verifier verdict pif-u4" (this round,
+  the tip as of this commit).
 ---
 
 # U4: integration, blast-radius report, pending-U4 re-measurements
