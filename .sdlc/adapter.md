@@ -32,7 +32,7 @@ Every builder runs the gates in its unit worktree, never in the root checkout: `
 Rules the gates imply:
 
 - A red `npm test` in a unit worktree is the unit's own red until proven otherwise; `flaky-gates` is the triage skill when several agents run gates at once (three baseline runs showed no flake).
-- The verifier's criterion 1 on every unit is `npm test` green on the branch head, with the negative control the baseline verdict used (corrupt `docs/reference/data/role-table.json`, expect 17 FAIL).
+- The verifier's criterion 1 on every unit is `npm test` green on the branch head, with the negative control the baseline verdict used (in a throwaway clone: `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json`, then `npm test`. It exits 1, `engine/semantic.mjs` is the one failing file, and the `refs-canonical` gate is the one failing gate. `grep -c FAIL` printed 3 for this corruption at `d34b4fb1`; a different corruption or a different grep gives a different count, so grade on the exit, the file and the gate, and record the count you measured).
 - `npm run build` in a unit worktree needs `node_modules`: symlink the root checkout's `node_modules` into `.worktrees/<unit>` (the `shipping-changes` worktree practice) or run `npm ci` there. Never commit it (K15).
 
 ## 2. Branch and PR

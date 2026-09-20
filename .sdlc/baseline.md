@@ -9,7 +9,7 @@ supersedes: the 2026-09-19 baseline at d814500 (kept below as the prior set) and
 
 # Baseline
 
-Each command run three times in sequence in the unit worktree at `plan/records-refresh` @ `b50a4b9b`, whose tree equals `ref` outside `.sdlc/` and `.gitignore` (U1-1 proves it). `npm test` ran with no `node_modules` present; build and smoke after one `npm ci` (exit 0, 17.74 s; resolves typescript 7.0.2 and vite 8.3.0, `npm ls --depth=0`).
+Each command run three times in sequence in the U3 unit worktree of plan records-refresh, whose tree equals `ref` outside `.sdlc/` and `.gitignore` (U1-1 proves it). `npm test` ran with no `node_modules` present; build and smoke after one `npm ci` (exit 0, 17.74 s; resolves typescript 7.0.2 and vite 8.3.0, `npm ls --depth=0`).
 
 ## Pass
 
@@ -39,7 +39,7 @@ No `lint` script in `package.json`. `tsc` runs inside `npm run build` (strict un
 
 ## Prior set (d814500, superseded 2026-09-19)
 
-The figures of the 2026-09-19 run at `origin/main @ d814500` (U1 of plan records-refresh; load 3.13 6.16 6.24 on 10 cores at run start; CI run 35446265780 green on d814500). Kept because #706 (`d814500..20298cc`: TypeScript 6 to 7, vite 8.0 to 8.3, Node 24 in CI, one test file added to `TESTS`) changed the toolchain the live table describes, so these are history to compare against, not a range to grade against. The rows are headed differently from the live table on purpose: `baseline-agrees-check.sh` reads the first row that starts with the live head.
+The figures of the 2026-09-19 run at `origin/main @ d814500` (U1 of plan records-refresh; load 3.13 6.16 6.24 on 10 cores at run start; CI run 35446265780 green on d814500). Kept because the seven commits of `d814500..20298cc` changed what the live table describes: #706 moved the toolchain (TypeScript 6 to 7, vite 8.0 to 8.3, Node 24 in CI) and #699 (PR #702, 9a44f685) added one test file to `TESTS`. They changed the toolchain the live table describes, so these are history to compare against, not a range to grade against. The rows are headed differently from the live table on purpose: `baseline-agrees-check.sh` reads the first row that starts with the live head.
 
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
