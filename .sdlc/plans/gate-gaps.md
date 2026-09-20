@@ -185,6 +185,11 @@ grep -c '^0 differing cells$' "$F/p5.log"
 
 ## Units
 
+Checklist (the Orchestrator ticks it; the sections below carry the detail):
+
+- [ ] U1 (S) the default kit joins the seven `anchor.mjs` checks · builder-l3 · reviewer-l2 · verifier-l2
+- [ ] U2 (M) `--identity-control` and `--authored` in `report-preset-fidelity.mjs`, the thin registered test, the adapter row · builder-l3 · reviewer-l2 · verifier-l2
+
 Grades come from the Orchestrator's table: L3 builders get reviewer-l2 and verifier-l2. Order: U1, then U2. They touch different files, but U2's last step measures the baseline on the tree with U1 merged, so U2's worktree is cut after U1 merges into `plan/gate-gaps`.
 
 | Unit | Size | Builder | Reviewer | Verifier | Touches |
