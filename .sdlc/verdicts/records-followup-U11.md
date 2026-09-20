@@ -4,14 +4,14 @@ plan: records-followup
 unit: U11
 seat: verifier
 grade: verifier-l2
-pass: 2
+pass: 3
 written: 2026-09-20
 ---
 
-# Verdict records-followup U11 · 🔴 pass 2 · 17 🟢, 0 🟡, 1 🔴 (pass 1: 9 🟢, 1 🟡, 2 🔴)
+# Verdict records-followup U11 · 🔴 pass 3 · 7 🟢, 0 🟡, 2 🔴 (pass 2: 17 🟢, 1 🔴; pass 1: 9 🟢, 1 🟡, 2 🔴)
 
 verdict: 🔴
-sha: ddfedb70098cd968782fab4d9e9a24f91477458b
+sha: 698e89162d4f56c9d76bc669b7130f6300b99e85
 
 | Graded at | `unit/rf-U11` @ 089e0e44, BASE 1f991877, plan text from `origin/main` at revision 17 |
 |---|---|
@@ -106,3 +106,56 @@ The artifact is clean. R1, R2, R3 and R4 are all repaired and all four hold unde
 Nothing in `.sdlc/roadmap.md` at `ddfedb70` is false as far as I can measure it.
 
 One last measurement, on this record. Its own title line precedes its `verdict:` field and carries a state breakdown, so the criterion as written at `ddfedb70` classifies this 🔴 verdict as GREEN. I ran it to check. The check cannot read the verdict that fails it.
+
+## Pass 3, at `698e8916`, grade verifier-l3
+
+Scope reduced by owner ruling R14, which I verified rather than took on the message: owner-chosen in
+the tracked `.sdlc/questions/standing-rulings-2026-09-20.md` at `13f46583`, recorded as plan revision
+19, ticket #723 open. U5-8 is not adopted and is not graded here. Only R1 to R4 and the gates.
+
+Two legs: this seat's own runs, and a `verifier-l3` worker dispatched in fresh context, fable, a
+different model family from this seat and from the builder. Its tables are at
+`/Users/kimba/.claude/jobs/05defd58/tmp/u11-verifier-p3/verdict.md`. We disagreed on two rows. It was
+right on one and I have adopted it; on the other I grade harder than it did and say why.
+
+`698e8916` changes the handoff only. `.sdlc/roadmap.md` is byte-identical to `ddfedb70`.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| R1 | the `#713` gating claims match that plan's own state | 🟢 | `:50` reads `already building, not waiting: six of its seven units are merged or in flight ... only U6b still needs #681 on main`. `plan/gate-split`'s own checklist is `[x] U1 [~] U2 [~] U3 [~] U4 [~] U5 [x] U6a [ ] U6b`: six started, two merged, U6b alone waiting. The `#681` cell on the same table says `six units deep on .git-worktrees/pif-u*`, and six such worktrees are live | at `ebddc55d`, 65 s before the dispatch, the same read gives two of seven started and none in flight, where the retired claim would have held. Both legs agree |
+| R2 | every count the file states is true of what it names | 🔴 | the internal arithmetic is sound: `rows 14`, `total 14`, `partsum 14`, `inputs 14` all agree, which is what I checked first and wrongly stopped at. The line does not only state a count, it names the commands it came from: `gh issue list --state open (14 issues), gh pr list --state open (1 PR)`. Both figures are false. Open issues are 15: `#723` has no ranked row, created `23:24:11Z`, four minutes before the unit's last commit `698e8916` at `23:28:12Z`, a commit whose own text cites `#723` three times, so the unit knew of it and did not rank it. Open PRs are 2, `#720` and `#158`; `#158` has been open since `2026-06-30`, so `(1 PR)` was already false when the roadmap was last written at `66d40f70` and at every U11 commit | the worker's run and mine agree on 15 and 2. The exemption is not vacuous: `#718`, `#719`, `#721` and `#722` all have rows, and `#723` is the only open issue without one. The PR half needs no rule at all, since `#158` predates the whole plan |
+| R3 | the unit tally is read from the verdicts | 🟢 | `:31` and `:48` read `nine of eleven units 🟢, U5 🟡`, with U11 named in progress and never called green. Derived independently: nine green (U1, U2, U3, U4, U6, U7 by headline, U8 `green-with-one-note`, U9, U10), U5 `verdict: 🟡`, U11 `verdict: 🔴`. Eleven accounted for | deriving from `[x]` ticks instead gives ten of eleven, which is pass 1's graded defect. The two sources differ by exactly U5. Both legs agree, and the worker resolved the six field-less records the same way I did |
+| R4 | the revision line states what its commit did | 🔴 | the three headline figures are right and I verified each: `4 0` on `git show --numstat`, two hunks at `--unified=0`, committed `21:59:23Z`. Two further assertions in the same line are false. It says the first hunk carries the stale `Count:` line `as untouched context directly above the three rows`: at `--unified=0` the hunk has zero context lines, and `Count:` is at line 25 while the rows land at 39, so it is neither context nor directly above; it is git's section-heading text in the `@@` header. It then says the three defects were `all of them repaired by U11 at 1fe53f5a`: the tally was still wrong at `1fe53f5a`, which is the `ten of eleven` text pass 1 graded 🔴, and was not repaired until `66d40f70` | `git log -S'nine of eleven units'` names `66d40f70`, not `1fe53f5a`. The same line's figures fail against `7dde8cb1` (54 added, 52 deleted, 18 hunks), so the check discriminates between commits rather than always passing. The worker graded this 🟡 on the same two findings; I grade it 🔴 because the false clause is a provenance claim, and a line whose whole purpose is to state accurately what a commit did now misstates which commit repaired what, erasing a graded failure from the record |
+| P1 | `npm test`, no `node_modules`, tree stable | 🟢 | clean clone at `698e8916`: `✓ all 48 test files passed`, exit 0 captured directly, 105 s wall, TESTS 48, status 0 after. Load 10.53 before, 9.41 after. The worker measured the same at 103 s | the P4 plant reds the same run, since `repo/branding.mjs` is one of the 48 |
+| P4 | branding, which scans `.sdlc/` | 🟢 | `branding: clean (508 files scanned)`, exit 0 under pipefail | a records doc planted inside `.sdlc/`: `FAIL: 3 branding violation(s) across 509 files`, exit 1. Both legs planted inside `.sdlc/`, so the gate is shown to reach this branch's own directory |
+| P5 | scope wall | 🟢 | zero paths outside `.sdlc/`, four in total, `node_modules` untracked | I planted a file under `src/ui/` and the outside count went to 1. The worker ran three probes, in `motion.mjs`, the roadmap and `CLAUDE.md`, each biting |
+| P6 | no em dash added in prose | 🟢 | `0` | one appended to the roadmap in a clone: `1`. The worker also ran a fixture separating the stripped and unstripped counts, `3` against `4` |
+| P7 | baseline agrees with the tree | 🟢 | `stale total: 0`, exit 0, with the `note head:` line printed and not counted | the baseline test figure bent to 47: `STALE tests: baseline 47, test/run.mjs TESTS 48`, exit 1 |
+
+### The two 🔴, and a correction to my own grading
+
+R2 is the one I got wrong first. I checked that the file's counts agree with each other, found `14`
+four times, and called it repaired. The line does not only state a count, it names the two commands
+it came from. Neither figure is what those commands return, and the PR figure was false before U11
+began. Testing a file's internal arithmetic instead of the claim it makes about the world is exactly
+the shape-not-assertions error this unit exists to repair, and I made it while grading the repair.
+The worker caught it. Its anchor is also better than mine: I measured against the roadmap's
+last-touched commit, it measured against the unit's last commit, and the plan's rule says the unit's.
+That the commit in question cites `#723` itself settles the point.
+
+R4 keeps a true headline and two false details. Both are about provenance, which is the one thing
+that line exists to get right. The hunk-shape clause is loose. The repair-attribution clause is not
+loose, it is wrong, and it is wrong in the direction that makes the record look cleaner than the
+history: it credits `1fe53f5a` with a repair that commit did not make and that a verdict graded 🔴.
+
+R1 and R3 are sound, and the gates are green on both legs with controls that fired on both.
+
+### One trap worth recording
+
+Local `main` is two commits ahead of `origin/main` here (`27ec4606` against `13f46583`), because
+these records are committed locally and not pushed. Every derivation above reads `main`. I first read
+`origin/main`, where this very verdict file is 9887 bytes and carries pass 1 only, and would have
+written pass 3 on top of a copy with pass 2 missing. The unit tally comes out nine either way, so no
+row changes, but a seat that grades records from `origin/main` on this machine is reading a stale
+tree. That belongs with ticket #723, since it is the same class: a record asserting something about
+other work, checked against the wrong source.
