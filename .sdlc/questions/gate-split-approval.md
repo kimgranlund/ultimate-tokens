@@ -29,3 +29,11 @@ Effect: U6b gains criterion U6-9, the adapter §5 step. Until #713 lands, close-
 | 7 | Waive #713's start gate for U6a too? U6a is the CI matrix job that runs the gate scripts U1 merged; it touches only .github/workflows/ci.yml. | Yes, U6a now (Recommended) · No, Lane B idles until #716 lands | "Yes, U6a now (Recommended)" |
 
 Effect: G0 is waived for U1 and U6a. U2 to U5 and U6b still wait on #681 landing.
+
+## Follow-up, 2026-09-20 (owner: speed up, we work 24/7)
+
+| # | Question | Options | Chosen |
+|---|---|---|---|
+| 8 | Start now off #681's plan branch (a2bb3c84, U4 merged, engine final) instead of waiting for #681 to land on main, merging main once after the squash? | #713 U2 to U5 off #681's tree now, Lane B (Recommended) · None, keep the gates | "#713 U2 to U5 off #681's tree now, Lane B (Recommended)" |
+
+Effect: G0 is waived for U2 to U5 as well, when built off `plan/preset-intent-fidelity` @ a2bb3c84 or later; U6b still waits for #681 on main. Each unit merges `origin/main` once after #681 squashes.
