@@ -81,18 +81,120 @@ Whole-suite readings, stated as the range they are rather than the flattering en
 | 518.66 s | 6.56 / 14.82 / 20.43 | U5's own first run, 49 files, this worktree, 2026-09-20 |
 | 649 s | 9.42 / 10.69 / 13.38 at start, 33.98 / 19.23 / 15.70 at end | U5's own second run, same worktree, same day, same 49 files: the host's 1-minute load more than tripled during the run |
 | 780.23 s | 9.37 / 15.12 / 14.88, peaking near 63 mid-run | the verifier's pass-7 run, reported as contention-dominated |
+| 889.89 s | 79.53 / 120.51 / 112.94 at start, 24.79 / 37.01 / 60.62 at end | U5's own round-2 run, same worktree, same day, same 49 files. Taken FAR outside the ruling's conditions and recorded as such: it does not test the ceiling in either direction. The host was carrying five other heavy runs, including another worktree's `test/engine/anchor.mjs --full` and a second project's headless Chrome, and the process held 90% of one CPU over a 14:49.89 wall. Kept rather than dropped because a series that silently excludes its own bad conditions stops being a series |
+| 705.01 s | 5.42 / 19.69 / 47.04 at start, 14.67 / 20.63 / 32.21 at end | U5's own round-2 re-run, same worktree and same 49 files, taken in the first window all day with the 1-minute load under 10 at the start and no other suite running. It held **98% of one CPU**, against the **90%** `time` printed for the 889.89 s run above it. The other run above, the verifier's 780.23 s, printed no percentage at all; its own record gives `real 780.23` with `user 665.63 sys 15.74`, which COMPUTES to **87.3%**, marked as computed rather than printed. An earlier draft of this cell said 76% for that run: it was unsourced and no record anywhere carries it. The same draft called this the least contended reading, which is also false against this unit's own records, where §8 logs run 1 at `102% cpu`. It is still above the band. It does not refute the ceiling. Under **R13** (owner, main @ `4e315376`) it is not even eligible to: R13 grades only a run set STARTED at load under 5, and this one started at 5.42. It is recorded, not graded, like every other reading here |
+| 647.42 s | 7.70 / 14.75 / 27.35 at start, 11.82 / 12.27 / 18.96 at end | U5's own final run, same worktree and same 49 files. The CLEANEST reading in this series: 1-minute load 7.70 at the start and 11.82 at the end, **99% of one CPU**, and no other suite on the host, confirmed with `pgrep` before starting and by waiting for the reviewer's run to finish first. Still 97 s above the band. This is the reading to re-measure against, ahead of the 705.01 s one |
+| 592.17 s | 7.94 / 10.73 / 15.56 at start, 13.79 / 12.06 / 13.48 at end | U5's round-3 run, same worktree and same 49 files, started only after waiting out another seat's suite. **101% of CPU**, the only reading in the series to exceed one core. The fastest of the three clean readings and still 42 s above the band |
+| 747.27 s | 16.81 / 13.92 / 13.75 at start, 26.00 / 20.09 / 17.79 at end | U5's round-3 fold-in run, same worktree and same 49 files. No competing suite, but the host's own load was already 16.81, so not a clean-conditions reading. **95% of CPU**, and it lands where the CPU-share trend predicts, which is the point of recording it |
+| 795.49 s | 17.27 / 20.56 / 18.53 at start, 23.58 / 34.77 / 34.36 at end | U5's final fold-in run. Started at load 17.27, so recorded and not graded under R13, and recorded only because a run this unit made should not be missing from its own series. **93% of CPU** |
+| 716.04 s | 16.36 / 13.43 / 21.96 at start, 8.72 / 11.01 / 15.74 at end | A reviewer's run at U5's head. Restored after being dropped for want of a source: its evidence lived only in `/tmp` and no record carried it, which is why the verifier could not trace it. Source now citable, `scratchpad/p1-gate-evidence/`, and its own two lines quoted rather than retyped: `npm test > /tmp/r3test.log 2>&1  671.56s user 14.35s system 95% cpu 11:56.04 total` (`11:56.04` is 716.04 s) and `LOAD-START: 15:34  up 12 days, 21:31, 14 users, load averages: 16.36 13.43 21.96`. The load first reported for it, 8.66, was the run's END figure; it STARTED at 16.36, so R13 records and does not grade it |
+| 1119.57 s | 194.52 / 112.51 / 106.18 at start, 287.46 / 307.63 / 265.97 at end | U5's R8 gate over the final tree, started only after the pre-land run and two other seats' suites had finished. Recorded and not graded, obviously: load 194.52. Its own two lines, per the evidence rule: `npm test  821.74s user 25.47s system 75% cpu 18:39.57 total` and `UPTIME BEFORE: 17:36  up 12 days, 23:32, 15 users, load averages: 194.52 112.51 106.18`. The **lowest CPU share and the slowest wall in the series**, at the highest start load. What that supports is narrow and is stated narrowly: contention accounts for the SLOW TAIL. It says nothing about the divergence among the quiet runs, which is the part that matters and is unexplained. One row at load 194.52 does not restore the monotone-in-load argument that a row at load 5.42 broke |
+| 1670.43 s | 44.47 / 46.02 / 87.46 at start, 44.89 / 52.33 / 59.27 at end | U5's final gate over the committed tree, taken when `ps` showed no other suite running at all. Recorded and not graded: start load 44.47. Its own two lines: `npm test  734.54s user 92.87s system 49% cpu 27:50.43 total` and `UPTIME BEFORE: 18:40  up 13 days, 37 mins, 11 users, load averages: 44.47 46.02 87.46`. **49% of CPU**, now the lowest share and slowest wall in the series, taking over both from the 1119.57 s row |
+| **326 s** | **4.88** / 6.14 / 14.62 at start, 4.90 / 4.96 / 11.29 at end | **GRADED under R13.** Taken on the sync tree `8f037dd2`, which is U5 at `21a0e35d` merged with main, not on this unit branch; the delta from that tree to U5's head is records-only, under `.sdlc/`, and touches no runtime file. Source committed with this unit at `.sdlc/records/pif-u5-gate-logs/r13-326s-sync-tree-8f037dd2.txt`, because a graded reading whose log lives only on a scratch branch is the phantom problem again. Quoted from it rather than retyped: `pre-run uptime: 16:46  up 12 days, 22:43, 16 users, load averages: 4.88 6.14 14.62`, `npm test exit code: 0`, `wall time seconds: 326`. Comfortably INSIDE the band |
+| **553.45 s** | **4.63** / 4.88 / 10.76 at start, 17.66 / 14.32 / 12.86 at end | U5's R8 pass. The FIRST reading in this series that started at a load under 5, so the first that R13 grades rather than merely records. 101% of CPU. Evidence, per the evidence rule, both lines from the run's own output: `npm test  553.58s user 9.44s system 101% cpu 9:13.45 total` and `UPTIME BEFORE: 16:53  up 12 days, 22:50, 16 users, load averages: 4.63 4.88 10.76`, both from its committed log at `.sdlc/records/pif-u5-gate-logs/r13-553s-unit-branch.log`. Taken unintentionally: the check before starting read 5.17 and the load fell in the seconds before the run began, which is why the rule to read `uptime` INSIDE the run is the one that counts. It cost no one the window, which was the first worry and turned out to be unfounded: the graded `326 s` run above had already finished, `post-run date: Sun Sep 20 16:52:04 PDT 2026`, before this one sampled `16:53` |
 
 Interim ceiling: **`npm test` is expected between 280 and 550 s on a host at load under about 10.**
 A reading above that is a contention question first, per the flaky-gates order (reap CPU-holding
 processes, then compare red-under-load against green-in-isolation), and only then a regression
-question. Two readings sit above the band and neither is evidence against it, because neither was
-taken at a load under 10 throughout: the 649 s run began at 9.42 and ended at 33.98, and the 780 s
-run peaked near 63. The series 293 s at load 3.1, 430 s at load 5.2, 519 s at load 6.6, 649 s at
-load 9.4-to-34 and 780 s at load 9.4-to-63 is monotone in load, which is what contention looks like
-and what a fixed regression would not. The honest reading of the two U5 runs together is that this
+question. The series holds **19 readings**: **12** above the band's 550 s top
+(553.45, 592.17, 647.42, 649, 705.01, 716.04, 747.27, 780.23, 795.49, 889.89, 1119.57, 1670.43) and **7** inside it (284, 293.09, 318.52, 326, 344, 430.46, 518.66).
+Counted off the rows themselves, not off the CPU table below, which is a subset.
+
+**Two** of the readings are graded under R13, and they are best read as a pair.
+`326 s` started at **4.88** on the sync tree `8f037dd2`, and
+`553.45 s` started at **4.63** on this unit branch. Of the other 17: **fourteen** record an explicit
+start load and every one is **5.18 or above**, so R13 records and does not grade them; the remaining
+**three** cannot support a claim in either direction, because `284 s` and `344 s` give a band,
+`3.9 to 9.4`, which OPENS BELOW 5 without saying which reading sat where, and `318.52 s` reads
+`not recorded with the figure`. An earlier sentence in this place said flatly that every reading
+started at 5.18 or above, and then that none was gradeable; the two 3.9 rows contradicted the first
+claim, the unrecorded row could not support it, and both graded readings falsify the second.
+
+**What the graded pair says, and the spread is the finding.** `326 s` sits comfortably inside the
+band. `553.45 s` sits **3.45 s over** its 550 s top, **0.63%**. Two runs, both started under R13's threshold,
+**227 s apart**, and each now has a log committed under `.sdlc/records/pif-u5-gate-logs/` so neither rests on a path outside this branch. They are not averaged and neither is preferred: they are different trees and
+different moments, and the honest reading of them together is that the interim band is about right
+with the suite running near its top, and that load at start is a WEAK control for reproducibility,
+since two runs that both satisfied it diverged by more than 40% of the band's whole width. That
+weakness is a fact about the control, not about the ceiling. What the pair does settle is the
+direction: the widening case earlier drafts of this section built, first at about 100 s and then at
+40 to 100 s, is not supported by either graded reading. The band stands untouched.
+
+What this section does NOT claim, because the evidence for it was withdrawn: that contention
+explains the gap. That was the monotone-in-load argument, and it is gone. The two claims have to be kept apart, because one is
+supported and the other is not. **Contention accounts for the slow tail**: the `1670.43 s` and `1119.57 s` rows sit
+at the lowest CPU shares in the series, and the readings at high load
+behave as contention would predict. **The divergence among the quiet runs is unexplained**: the two
+graded readings are 227 s apart with both start loads under 5, and **nothing in this record explains
+that spread**. The second is the finding. A single row at load 194.52 supports the first and does
+nothing for the second, and it does not restore the monotone-in-load argument, which a row at load
+5.42 broke. Until something does, the
+cause of the variation is open, and the only conclusion carried here is the narrow one: the band
+stands and neither graded reading supports widening it.
+
+A subset of the readings also records the CPU share `time` printed. It is
+tabulated below as an observation and NOT as the metric anything is judged by: R13 rules on load at
+start, and that is the control this section answers to. The `649 s` and `326 s` readings are absent
+below because no CPU share was recorded for either: the 649 s run began at 9.42 and ended at 33.98, and the 780 s
+run peaked near 63.
+
+**A monotone-in-load claim stood here and is WITHDRAWN.** It read the series as rising in wall time
+with rising start load, citing `293 s at load 3.1`. That 3.1 is not this reading's load: the
+293.09 s row of the series above gives `9.42 / 6.59 / 5.30`, and `3.14 4.02 4.95` belongs to the
+verifier's 345.89 s run, a different wall this sentence never used. Against the loads the rows
+actually carry, walls of 518.66, 592.17, 647.42, 705.01, 747.27, 780.23, 795.49 and 889.89 sit at
+start loads of 6.56, 7.94, 7.70, 5.42, 16.81, 9.37, 17.27 and 79.53. That is not monotone, and the
+705.01 s reading at load 5.42 breaks it outright. The claim was this section's central argument that
+the overshoot is contention rather than regression, so removing it removes that argument in its
+load-based form; what is left of it is the CPU-share reading below, with its own caveat. The honest reading of the two U5 runs together is that this
 host rarely stays under 10 for the nine minutes the suite needs, which is itself an argument for
-#713 rather than for a wider ceiling. Nothing here is proposed as the permanent figure; #713 owns
-that.
+#713 rather than for a wider ceiling. Sorted by CPU share rather than by date, the whole series lines up
+almost monotonically, and that ordering is the honest summary of what these numbers say:
+
+| CPU share | wall | inside the 280 to 550 band |
+|---|---|---|
+| 102% (printed) | 518.66 s | **yes** |
+| 101% (printed) | 553.45 s | no, by 3.45 s |
+| 101% (printed) | 592.17 s | no, by 42 s |
+| 99% (printed) | 647.42 s | no, by 97 s |
+| 98% (printed) | 705.01 s | no, by 155 s |
+| 95% (printed) | 716.04 s | no, by 166 s |
+| 95% (printed) | 747.27 s | no, by 197 s |
+| 93% (printed) | 795.49 s | no |
+| 90% (printed) | 889.89 s | no |
+| 75% (printed) | 1119.57 s | no |
+| 49% (printed) | 1670.43 s | no |
+| 87.3% (computed) | 780.23 s | no |
+
+12 rows, one per reading whose CPU share is recorded, of which one is
+inside the band and 11 are above it. The ordering is close to monotone in share but is not
+monotone, breaking in three places now: 101% carries both 553.45 s and 592.17 s, 95% carries both
+716.04 s and 747.27 s, and at the bottom 87.3% reads 780.23 s against 90%'s 889.89 s.
+
+This table must not be turned into an argument that share is the right control instead of load.
+Two reasons, both fatal to that move. Average share is work divided by elapsed time, so it falls by
+construction when a run waits longer, which makes any slope read off these rows partly definitional
+rather than measured. And R13 rules on load at start, so share has no standing here whatever it
+shows. Run 1 at **102%, inside the band at 518.66 s**, is consistent with the band
+being right, which is also what the graded pair says on the control that does count. It is this
+unit's
+fastest and most CPU-efficient reading, and two earlier drafts of this paragraph, both this unit's,
+overlooked it. The first read the high-share readings as proving a fixed overshoot near 100 s; the
+second softened that to a 40 to 100 s range. Both were wrong in the same direction, and the same
+records contained the counter-example throughout.
+
+The ordering itself must NOT be read as a measured rate, and the caveat belongs here rather than
+waiting to be found. CPU share and wall time are not independent quantities: average share is work
+divided by elapsed time, so a run that waits longer for the same work has a lower share by
+construction. "About 20 s per point of share" is therefore partly definitional and is recorded as a
+description of the shape of the table, never as a coefficient anyone should extrapolate from. What
+is not circular is run 1 on its own: highest share, and inside the band.
+
+How these readings are to be treated, per **R13** (owner ruling, main @ `4e315376`): the 280 to 550
+band stands, and nothing widens it before a run set STARTED at load under 5. Which readings that
+admits is settled above, against the rows, and is not restated here. Nothing in this section is
+proposed as the permanent figure; #713 owns that, and #718 is ruled to give this script its own
+labelled figure to check against.
 
 Correction (2026-09-20, plan preset-intent-fidelity U5, #681): two cells of the live `Pass` table
 were re-measured because this plan changed what they describe, and both re-measurements are marked

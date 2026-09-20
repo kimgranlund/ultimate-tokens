@@ -1154,11 +1154,16 @@ Per document: `04-context-and-messaging.md` 16, `app-shell.md` 12, `02-sections-
 both are stated rather than reconciled away. (1) `app-shell.md` carries six BARE citations of the
 form `:1641`, whose file is implied by the document's own context; the repo's parser resolves them to
 `src/ui/app.js` and the citations gate audits them, so they are re-pins by the same definition as the
-rest. A counter requiring an explicit filename sees 6 of this document's 12 and reports 6. (2) Inside
-a slash or comma list such as `app.js:2458/2490`, the repo's parser yields one citation per member;
-counting the list as a single citation gives one fewer in `02-sections-and-resolvers.md` and one more
-in `04-context-and-messaging.md` than the verifier recorded there. 46 minus those 6 bare forms is 40,
-which is the verifier's own figure. Every row below reproduces at head either way.
+rest. A counter requiring an explicit filename sees 6 of this document's 12 and reports 6. (2) Two
+further differences of one each, pointing in OPPOSITE directions, so they cancel and leave the total
+where it was. Inside a slash or comma list such as `app.js:2458/2490` the repo's parser yields one
+citation per member, so the expanded count reads 5 in `02-sections-and-resolvers.md` against the
+verifier's 4: one MORE, and collapsing that list is what closes it. The other goes the other way:
+`04-context-and-messaging.md` reads 16 against the verifier's 17, one FEWER, which list collapsing
+cannot cause, since collapsing can only lower a count; that one is a difference in the other counter,
+not in this one. Net across the three documents, `app-shell.md` +6, `02-sections-and-resolvers.md`
++1, `04-context-and-messaging.md` -1, which is +6. So 46 minus those 6 bare forms is 40, which is the
+verifier's own figure. Every row below reproduces at head either way.
 
 | # | citing doc:line | old at unit parent 3921f140 | old at main parent 3ce50daa | new at head | anchor at head |
 |---|---|---|---|---|---|

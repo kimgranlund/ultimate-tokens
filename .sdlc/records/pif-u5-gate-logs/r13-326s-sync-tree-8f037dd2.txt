@@ -1,0 +1,52 @@
+poll #1 at Sun Sep 20 16:43:37 PDT 2026: load1=4.08 load_ok=yes node_test_procs=present
+poll #2 at Sun Sep 20 16:44:37 PDT 2026: load1=4.39 load_ok=yes node_test_procs=present
+poll #3 at Sun Sep 20 16:45:38 PDT 2026: load1=5.05 load_ok=no node_test_procs=present
+WINDOW OPENED at poll #4
+pre-run uptime: 16:46  up 12 days, 22:43, 16 users, load averages: 4.88 6.14 14.62
+pre-run load1: 4.88
+pre-run date: Sun Sep 20 16:46:38 PDT 2026
+npm test exit code: 0
+wall time seconds: 326
+post-run uptime: 16:52  up 12 days, 22:49, 16 users, load averages: 4.90 4.96 11.29
+post-run date: Sun Sep 20 16:52:04 PDT 2026
+npm test log tail:
+▶ engine/geometry.mjs      pass
+▶ engine/flags.mjs         pass
+▶ engine/ds-gates.mjs      pass
+▶ engine/categories.mjs    pass
+▶ engine/adia-derived-exports.mjs pass
+▶ engine/curated-contrast.mjs pass
+▶ ui/model.mjs             pass
+▶ ui/persist.mjs           pass
+▶ ui/shell.mjs             pass
+▶ ui/zip.mjs               pass
+▶ ui/poster-strip.mjs      pass
+▶ ui/headless-boot.mjs     pass
+▶ figma/plugin.mjs         pass
+▶ figma/binder.mjs         pass
+▶ figma/mode-apply.mjs     pass
+▶ figma/style-plan.mjs     pass
+▶ figma/migrations.mjs     pass
+▶ figma/live-diff.mjs      pass
+▶ mcp/core.mjs             pass
+▶ mcp/brand-kit.mjs        pass
+▶ mcp/describe-kit-core.mjs pass
+▶ mcp/describe-rubric.mjs  pass
+▶ mcp/png-swatch-board.mjs pass
+▶ mcp/describe-mcp-core.mjs pass
+▶ mcp/describe-mcp.mjs     pass
+▶ mcp/brand-kit-merged-core.mjs pass
+▶ mcp/brand-kit-merged.mjs pass
+▶ mcp/describe-eval.mjs    pass
+▶ mcp/describe-mcp-package.mjs pass
+▶ plugin/manifest.mjs      pass
+▶ plugin/color-tokens.mjs  pass
+▶ plugin/typography-tokens.mjs pass
+▶ plugin/geometry-tokens.mjs pass
+▶ plugin/hosted-pack.mjs   pass
+▶ repo/branding.mjs        pass
+▶ repo/doc-mutation-lane.mjs pass
+▶ repo/citations.mjs       pass
+▶ repo/gate-report.mjs     pass
+
+✓ all 49 test files passed
