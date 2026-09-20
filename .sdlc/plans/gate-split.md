@@ -225,6 +225,16 @@ Needle 2, 5 and 7 appear on a `pass` line in an unmutated run as well as on a `F
 
 ## Units
 
+Checklist (the Orchestrator ticks it; the table below carries grades and paths):
+
+- [x] U1 (S) shared seeded sampler, gate scripts, `curated-contrast` moved onto it · builder-l2 · reviewer-l1 · verifier-l1 · verified at 7d51ba07, merged as 34ebbae6
+- [ ] U2 (M) `tonal.mjs`: sampled by default, full under `--full`, grid thinned · builder-l4 · reviewer-l2 · verifier-l2
+- [ ] U3 (M) `anchor.mjs`: the same · builder-l4 · reviewer-l2 · verifier-l2
+- [ ] U4 (S) `prime.mjs`: thinned determinism cases and grids by default, full under `--full` · builder-l3 · reviewer-l2 · verifier-l2
+- [ ] U5 (S) `headless-boot.mjs`: the reset sweep only (approval question 2: yes) · builder-l2 · reviewer-l1 · verifier-l1
+- [ ] U6a (S) the `sweeps` matrix job in CI · builder-l2 · reviewer-l1 · verifier-l1
+- [ ] U6b (M) figures of record, adapter, baseline, check script, shipping skill · builder-l3 · reviewer-l2 · verifier-l2
+
 Grades come from the Orchestrator's table: L1 and L2 builders get reviewer-l1 and verifier-l1; L3 and L4 get reviewer-l2 and verifier-l2. Order: U1, then U2 to U5 and U6a in any order or in parallel (they touch different files), then U6b last. Unit worktrees for U2 to U6a are cut only after U1 has merged into `plan/gate-split`; cut earlier, P1 reads N as 48 on them and fails for the wrong reason. `gate:sweeps` exists from U1 but is not meant to be run until U6b: before the legs are split it is about 480 s of the same work `npm test` already does.
 
 | Unit | Size | Builder | Reviewer | Verifier | Touches |
@@ -364,3 +374,4 @@ What blocks a merge. `main` has no branch protection, so a red `sweeps` leg stop
 | 2026-09-20 | revision 4, conductor rulings on the U1 review at fbd4efd4: U1-6 (total order and uniqueness) and U1-7 (K17 exception entry in U1, `debt.md` count deferred to U6b after #709 lands); scope wall gains one `architecture.md` line. |
 | 2026-09-20 | revision 5, from the U1 delta review at 98f26418: U1-6 keeps the uniqueness assertion alone, since it throws before the sort and the tiebreak ruled in revision 4 was dead code whose control could not fail; the registered test gains a synthetic duplicate-name leg so the guarantee has coverage in `npm test`. |
 | 2026-09-20 | note from the U1 verdict for U2 onward: `sampleCorpus` silently drops a category whose presets lose `vol` (35 documents become 31), and the 30-document floor does not catch it; the first unit that consumes the sampler adds a per-category presence assertion with a control that fails. |
+| 2026-09-20 | checklist added under Units, U1 ticked: the plan had only the grades table, so `board.py` and `progress.py` saw no units. |
