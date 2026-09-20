@@ -527,7 +527,15 @@ closes #686, closes #668."**
 
 ## Pass 2 final numbers
 
-**Head:** `4125d965` (`git -C .git-worktrees/pif-u4-integration log -1 --format='%H %s'`).
+**Head:** `4125d965` for the fix itself (`git -C .git-worktrees/pif-u4-integration log -1
+--format='%H %s'`); all numbers below were measured at that commit. Three trailing, non-functional
+commits follow it: a documentation-only commit adding this section (`f5e27e9`), a comment/string-only
+em-dash cleanup in this pass's own new source comments (`9537c5b`), and the asset regeneration that
+comment cleanup mechanically triggers (`f38d09a`, the true final head - the generated Figma bundle
+embeds source comment text, so removing em dashes from a comment shifted a few output bytes; no logic
+changed). `npm test` re-run in full at `f38d09a`: still exit 1, still exactly the same 2/48 files red
+(`engine/tonal.mjs`, `engine/anchor.mjs`), tree clean after. Wall time **441.73 s**, `uptime`
+immediately before: **7.89 / 11.92 / 13.69**.
 
 **`npm test`:** exit 1, **2/48** test files red - `engine/tonal.mjs`, `engine/anchor.mjs`, both
 matching the owner questions this pass leaves open (Q1/prime-identity-control, Q3/notch allow-list,
