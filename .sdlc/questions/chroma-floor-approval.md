@@ -22,3 +22,11 @@ Options:
 - Yes, they stay with #681's notch ruling (Recommended)
 - No, #701 takes them too
 Chosen: Yes, they stay with #681's notch ruling (Recommended)
+
+## Follow-up, 2026-09-20 (owner: speed up, we work 24/7)
+
+| # | Question | Options | Chosen |
+|---|---|---|---|
+| 3 | Start now off #681's plan branch (a2bb3c84, U4 merged, engine final) instead of waiting for #681 to land on main, merging main once after the squash? | #701 off #681's tree now, a third lane · None, keep the gates | "#701 off #681's tree now, a third lane" |
+
+Effect: the dependency on #681 landing is satisfied by building off `plan/preset-intent-fidelity` @ a2bb3c84 or later; each unit merges `origin/main` once after #681 squashes.
