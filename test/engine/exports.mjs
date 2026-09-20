@@ -493,6 +493,19 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // (skew -20, stops 550/450) moved again. on-primary, on-surface and data-1.DEFAULT are unchanged --
   // independently re-verified. R2's smoothstep easing on the chroma blend weight did not move any of
   // these four fields at default vibrancy/damp (near-pivot chroma stays within rounding here).
+  //
+  // #681 U4 re-capture (integration of U6 onto U1's anchor branch, prime.mjs rewritten per U1's own
+  // "provisional OKHSL fix; U6's L*-domain equal-compress rewrite replaces this whole mechanism"):
+  // `prime.brightest`/`.dimmest` moved again — the ladder now builds in CIE L* around the anchor's own
+  // measured L*/CAM16 hue/chroma (not the anchor's OKHSL l/s/h U1's provisional construction read),
+  // equal-compress at the window bound (Primary's anchor sits well inside [PRIME_L_MIN, PRIME_L_MAX],
+  // so this ladder is NOT window-clamped). `.prime` itself is unchanged (REQ-056's verbatim-anchor
+  // identity holds regardless of ladder construction). Every ramp stop (500/50/950/scrim/neutral.500)
+  // and `.prime` are independently re-verified UNCHANGED from the U3 merge — U6 touches only
+  // src/engine/prime.mjs, never tonal.js/the ramp. Values independently re-verified against
+  // exports.mjs's own resolution ladder output (this file's normal spot-check discipline — not
+  // re-derived by hand), out-of-lane reporting on the SPEC's own stale EX-1 mirror carried over from
+  // U6's own paragraph (`docs/spec/spec-panda-park-ui-exports.md:419-424`, see `.sdlc/handoffs/pif-u6.md`).
   const ddState = stateOf(defaultDocument());
   const ddPreset = X.exportPanda(ddState);
   const ddRaw = ddPreset.theme.extend.tokens.colors;
@@ -503,8 +516,8 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.neutral["500"].value !== "oklch(0.5056 0.0552 267.76)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
   if (ddRaw.primary.scrim["300"].value !== "oklch(0.504 0.1867 258.99 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
   if (ddRaw.primary.prime.prime.value !== "oklch(0.504 0.1867 258.99)") FAIL("panda", `EX-1 colors.primary.prime.prime = ${ddRaw.primary.prime.prime.value}`);
-  if (ddRaw.primary.prime.brightest.value !== "oklch(0.7391 0.1335 259.07)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`);
-  if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2575 0.0972 259.02)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
+  if (ddRaw.primary.prime.brightest.value !== "oklch(0.733 0.1374 264.49)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`);
+  if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2669 0.1023 258.76)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
   if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5504 0.1924 258.96)" }))

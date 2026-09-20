@@ -504,7 +504,7 @@ export default {
             },
             "prime": {
               "value": {
-                "base": "oklch(0.7357 0.1532 234.73)"
+                "base": "oklch(0.7334 0.1538 235.26)"
               }
             }
           },
@@ -4224,7 +4224,7 @@ export default {
             },
             "prime": {
               "value": {
-                "base": "oklch(0.7357 0.1532 234.73)"
+                "base": "oklch(0.7334 0.1538 235.26)"
               }
             }
           },
