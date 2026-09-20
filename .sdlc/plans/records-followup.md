@@ -6,7 +6,7 @@ lane: docs
 size: S + S + M + S + S + S + S + S + S (U1 S = 1 point, U2 S = 1, U3 M = 2, U4 S = 1, U5 S = 1, U6 S = 1, U7 S = 1, U8 S = 1, U9 S = 1; 10 points; a U10 for the pre-land review's findings is sized in its checklist row)
 labels: kind:chore · size:big · lane:docs · P1 (as minted on #709)
 written: 2026-09-19
-amended: 2026-09-20 (revision 10: the plan file made true against itself after the pre-land review at 887e3eb2; see Revisions)
+amended: 2026-09-20 (revision 13, the newest; revision 10: the plan file made true against itself after the pre-land review at 887e3eb2; see Revisions)
 approval: .sdlc/questions/records-followup-approval.md (Q1 to Q4)
 head: d34b4fb1 (`origin/main` when the branch was cut; since U9 merged `origin/main` 3ce50daa in, `BASE` = `git merge-base origin/main HEAD` reads 3ce50daa; the branch is local only, not pushed)
 branch: plan/records-followup
@@ -357,3 +357,4 @@ Close per adapter §5 after PR 2: status `done`, revision row, file moved to `.s
 | 2026-09-20 | revision 11: U7-4's expected third figure is `22,52,95,` (it was 91 until U3 appended its adapter amendments, four lines above the cite); `head:` says what `BASE` reads since U9; U6-6's marker leg prints `1,1,1,1` at the head because revision 9's cited span adds a fourth match, the fact it grades holds | pre-land verifier-l3 at 887e3eb2, findings 1 and 2 |
 | 2026-09-20 | revision 12: U4-5's second leg is frozen at U4's graded span, 07ecb44c to b9e70950; U10 writes one §3 sentence exempting a byte-pinned verbatim copy of another seat's record from the sweep, and criterion 1 excepts such copies with the hash recomputed | U10 review 1 at 702356e7: `$UB` on a later head reads 15 and can never read 9 again; the copied pre-land review is sha-pinned and quotes defective forms, so it cannot obey the rule and keep its hash |
 | 2026-09-20 | revision 13: U1-4's third needle follows U10's reworded baseline sentence (`#699 (PR #702, 9a44f685) touched only files under`), still expecting `1`; noted that since revision 12 U4-5's second leg compares two fixed shas and is a record of U4's grade, not a live control: the live dash control is P6 | U10 verdict at 23a206b4: U3-7 names U1-4 as a regression row and its third leg printed `0`; U10 made the sentence true (finding 4), so the needle moves with it |
+| 2026-09-20 | PR 1 landed: #716, squash `e9850935` on `main`, under standing ruling R1 (pre-land 🟢 at 3c755098, CI green and critic ACCEPT at 2430fd43). U5 is still open, so the plan stays active and closes per adapter §5 after PR 2 | Orchestrator close-out, board rows to landed |
