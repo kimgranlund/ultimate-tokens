@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: (minted by the Orchestrator at mobilize, `adapter.py create`, labels below)
 priority: P1
 lane: docs
