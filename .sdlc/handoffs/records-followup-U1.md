@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Branch | unit/rf-U1 @ (see commit below) |
+| Branch | unit/rf-U1 @ 78f1c3e5, merged into plan/records-followup as 5361bc79 |
 | Files | .sdlc/debt.md, .sdlc/architecture.md, .sdlc/adapter.md, .sdlc/baseline.md, .sdlc/handoffs/records-followup-U1.md |
 | F3 measured count | 3, at d34b4fb1, matches the plan's number: throwaway clone, `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json`, `npm test` exit 1, `engine/semantic.mjs` FAIL, `refs-canonical` FAIL, `grep -c FAIL` = 3 |
 | Ran | criterion 1-5 greps ✅ all match expected · `sh .sdlc/checks/baseline-agrees-check.sh` tail: `stale total: 0` ✅ |
