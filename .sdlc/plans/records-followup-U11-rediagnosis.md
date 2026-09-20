@@ -115,3 +115,67 @@ Not recommended. If ruled otherwise, the shape that would not be a fourth failur
 | Prerequisite ticket | `verdict:` front matter mandatory and enforced; that alone would have made pass 2 impossible |
 
 Branding gate, run in the root checkout after this file was written, exit code read directly from `node test/repo/branding.mjs`: `branding: clean (581 files scanned)`, `exit 0`. Em dashes in this file: `0`. The file is untracked; nothing else in the tree moved.
+
+## 6. Second re-diagnosis: pass 3 reds R2 and R4 at `698e8916`
+
+Read: the Pass 3 section of `.sdlc/verdicts/records-followup-U11.md` on local `main` at `27ec4606`; the roadmap at `7dde8cb1`, `3ee3c72b`, `66d40f70` and the worktree head; `gh pr list` and `gh issue view 723` live; the commit times of `66d40f70..698e8916`.
+
+### Verdict
+
+| Item | State | One line |
+|---|---|---|
+| One fault or two slips | 🔴 one fault, the same fault as §1, now on the verifier's side and on the plan's rule | both reds are claims about the world that only the world can check, and until pass 3 every seat checked the file against itself |
+| Another builder pass | 🔴 not the right move | the edit is four lines and mechanical; the mechanism that reds it is still running, so a pass 4 lands into the same drift |
+| The Orchestrator's own action redding R2 | 🟡 true, and it is the rule's fault more than the action's | the rule anchors on "the unit's commit time"; the only commit after #723 is handoff-only, and the roadmap was last written twenty minutes before the ticket |
+
+### 6.1 What the two reds are made of
+
+| Red | Clause | Since when false | Who checked it before pass 3 | Nature |
+|---|---|---|---|---|
+| R2 | `gh pr list --state open (1 PR)` | `7dde8cb1`, U5's own regeneration. `#158` has been open since 2026-06-30. Same text at `3ee3c72b` and `66d40f70` | U5 verifier (🟡 verdict), roadmap pre-land review, U11 reviewer, U11 verifier passes 1 and 2: five seats, none ran the command the line names | a stale copy of program output, the plan's own root-cause shape at `records-followup.md:24` |
+| R2 | `gh issue list --state open (14 issues)`, no row for `#723` | `23:24:11Z`, when the Orchestrator minted #723. The roadmap's last commit `66d40f70` is at `23:04:32Z`; the one later commit `698e8916` at `23:28:12Z` changes the handoff only | nobody could have: it was true when the roadmap was last written | live drift; red only under the anchor "unit's last commit" rather than "roadmap's last commit" |
+| R4 | `Count:` line "as untouched context directly above the three rows" | `354c2d7f`, when the line was written | reviewer and both verifier passes graded R4 🟢 on the three headline figures | a loose description of a diff nobody re-read at `--unified=0` |
+| R4 | "all of them repaired by U11 at `1fe53f5a`" | `66d40f70` or earlier; the tally repair the clause credits to `1fe53f5a` was made at `66d40f70`, after pass 1 graded `1fe53f5a`'s text 🔴 | pass 2 graded R4 🟢 with the clause present | a provenance claim about this unit's own history, checked by nobody |
+
+Four clauses, four ages, one shape: each is a sentence that names something outside the file (a command's output, a diff's shape, a commit's content), and the check that graded it 🟢 read the file's arithmetic or its headline figures instead of the thing named. Pass 3's own correction paragraph says so for R2 in the verifier's words. That is §1's fault (assertions with no re-derivation) with the seat swapped: at passes 1 and 2 the criterion certified the file against itself, at pass 3 the verifier admits doing the same for R2 and R4 while grading the unit that exists to stop it.
+
+Two slips it is not. A slip is a builder writing a wrong number once. Here the PR count outlived five graded reads and three plan revisions, the provenance clause outlived two verifier passes, and the drift red comes from the Orchestrator running the process (minting the ticket this document's §3 asked for) while the process's rule counts that as the unit's failure. Nothing here is a builder error that a better builder avoids.
+
+### 6.2 The rule that turned the Orchestrator's action into a red
+
+`records-followup.md:292`: a difference is 🔴 unless the issue was created after the unit's commit time. Written for U5, where the unit had one roadmap commit and "the unit's commit" and "the roadmap's commit" were the same instant. U11 has four roadmap commits and five handoff commits; the two readings diverge, and pass 1 and pass 3 each chose a different one (pass 1 the roadmap's, pass 3 the unit's). The verifier says the unit's is what the plan says; on the letter that is right. On the mechanics it is wrong, because a roadmap is a snapshot and the honest instant of a snapshot is the commit that wrote it. Anchoring on a handoff-only commit makes the roadmap answerable for tickets minted while the builder was writing prose about it.
+
+Whichever anchor is chosen, the structural point stands: the roadmap is a hand-written copy of `gh` output, `gh` moves while the copy is graded, and the Orchestrator is one of the things moving it. Every refresh is itself a patch of the kind R4 exists to describe. There is no anchor under which this converges while tickets are minted during the unit, unless the mint and the refresh are the same act.
+
+### 6.3 Is another build pass the right move at all
+
+No, and not because of the grade rule. The four edits are: rank `#723` (one row plus the count moves 14 to 15), `(1 PR)` to `(2 PRs)`, strike the "context directly above" clause, and re-attribute the tally repair to `66d40f70`. A builder-l1 writes that in one commit. What a pass 4 cannot do is stop the next mint from redding R2 again, or stop the next verifier from grading R4's restated provenance against the file instead of `git log -S`. The reds would be honest and the pass would be the fifth time the same fault is met one clause further along.
+
+Three options, with the recommendation first:
+
+| Option | What happens | Why, or why not |
+|---|---|---|
+| A, recommended: Orchestrator's landing refresh, verifier-only pass 4 | the Orchestrator makes the four edits as one roadmap-only commit under revision 14's rule (a landing refresh is admitted, not exempted), with a revision row that states its kind (patch), its instant, and the two commands it re-ran with their output. Freeze: no ticket is minted between that commit and the squash. Pass 4 is the verifier alone, grading R2 by running both commands and R4 by `git log -S` against every sha the line names, nothing else regraded | it is what `3ee3c72b` should have been. The Orchestrator already owns landing refreshes; the U5-6 rule was reworded at revision 14 to admit them; the anchor question dissolves because the refresh commit is both the roadmap's and the unit's last commit. The freeze is the only thing that makes R2 stable, and it is a ruling, not a check |
+| B: builder pass 4 at l1 | same four edits by a builder, reviewer skipped, verifier pass 4 | breaks the Orchestrator's own grade rule for a four-line patch, and any mint during the pass reds it again. Only if the Orchestrator may not touch a unit branch by adapter rule |
+| C: land as is, note the four clauses in the pre-land record | the roadmap lands with `(1 PR)` and the false attribution, listed as known-false with the true values beside them | not acceptable. It lands the exact shape this plan exists to remove (a record asserting something nothing re-derived), one PR after landing nine repairs of it |
+
+### 6.4 What has to change so this stops recurring, none of it in U11
+
+| Change | Owner | Ticket |
+|---|---|---|
+| The live-facts rule names its anchor: the last commit that touches the roadmap, and states that a landing refresh resets it | plan revision, Orchestrator | #709, revision 20 |
+| R2's criterion text says "re-run the commands the `inputs:` line names and compare", not "recompute from the table" (`records-followup.md:86` says the latter, and pass 2 graded the letter of it) | plan revision | #709 |
+| The `inputs:` line stops carrying counts in prose and carries the commands with the instant they were run; the counts are what the verifier re-runs | roadmap Texts, U5's | #723 |
+| Verdict pass sections are graded against the world by construction: every criterion that names a command has the command's rerun in its Evidence cell, which `verdict.py check` could refuse when absent | plugin | #723 |
+| Records are read from local `main`, not `origin/main`, while records are committed unpushed; pass 3's own trap | adapter note | #723 |
+
+### 6.5 For the Orchestrator
+
+| Item | Ask |
+|---|---|
+| Rule on §6.3 | option A is the recommendation: your landing refresh, the freeze, a verifier-only pass 4 on R2 and R4 |
+| If A | the refresh commit's revision row states kind, instant, and the two command outputs; then mint nothing until the squash |
+| Plan revision 20 | the anchor of the live-facts rule, and R2's criterion text |
+| #723 | add §6.4's three rows that are the ticket's |
+
+Branding gate rerun after this section, exit code read directly from `node test/repo/branding.mjs`: `branding: clean (581 files scanned)`, `exit 0`. Em dashes in this file: `0`.
