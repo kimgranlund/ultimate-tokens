@@ -4,7 +4,7 @@ plan: records-followup
 unit: U3
 branch: unit/rf-U3
 written: 2026-09-20
-pass: 2
+pass: 3
 ---
 
 # Handoff U3 records-followup - builder -> reviewer
@@ -74,7 +74,7 @@ U3-3's awk counts any row of this file that starts with a pipe and a number. In 
 
 ## Criteria
 
-Measured by this builder against the committed tree at 27ae857d, every command run from a script file under the seat's own scratchpad. `BASE` is `acfd7298`, the plan-branch head this unit was cut from, which is also `UB`; the `d34b4fb1` figures are given where the two differ.
+Measured by this builder against the committed tree at 27ae857d, every command run from a script file under the seat's own scratchpad. `BASE` is `acfd7298`, the plan-branch head this unit was cut from; `UB` at the graded head is `31b53ea9`, the plan tip merged in during this unit; the `d34b4fb1` figures are given where the two differ.
 
 | # | Expected | Evidence measured | State | Negative control |
 |---|---|---|---|---|
@@ -94,3 +94,5 @@ Plan-level rows this builder also ran at the same head: P1 `✓ all 48 test file
 ## Disagreement
 
 None open. The one 🟡 of rework 1, U3-1's `nine `ok` lines` against a measured eight plus one `note`, was closed by the plan at `31b53ea9`: the row's expected value now names both cases and the numstat leg is `3	3`, which is what the header repair of note 3 costs. Every figure below was measured after that merge, and nothing on either side was adjusted to fit.
+
+Correction (2026-09-20, plan records-followup U8, #709): two stale statements in this file, both raised as 🟡 notes 3 and 4 of `.sdlc/verdicts/records-followup-U3.md`. The frontmatter read `pass: 2` while the body's own row reads `| Pass 3 | this pass.`; it now reads `pass: 3`. The Criteria paragraph said `BASE` is `acfd7298` `which is also UB`; after the plan tip was merged in at a129843c, `UB` at the graded head `ceb471b0` is `31b53ea9`, and the sentence now says so. No measured figure moves: the verdict records U3-6 printing `0` under both readings.
