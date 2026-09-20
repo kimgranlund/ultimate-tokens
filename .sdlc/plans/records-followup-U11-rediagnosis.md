@@ -179,3 +179,28 @@ Three options, with the recommendation first:
 | #723 | add §6.4's three rows that are the ticket's |
 
 Branding gate rerun after this section, exit code read directly from `node test/repo/branding.mjs`: `branding: clean (581 files scanned)`, `exit 0`. Em dashes in this file: `0`.
+
+## 7. Addendum input: the stated head ages
+
+Read: the pass 3 addendum at `5ac38205`; the roadmap front matter (`head: 5f2c3787 (origin/main)`), its revision line ("regenerated from live facts at `origin/main` @ 5f2c3787"), and `git rev-list --count 5f2c3787..main`, which prints `25` on local `main` at `ba7f398c`.
+
+| Question | Answer | One line |
+|---|---|---|
+| Is an ageing head the same fault as R2 | 🟢 no, a different thing, and mostly not a fault | R2 is a figure that was false at its own head. An ageing head is a true statement of when the snapshot was taken; it is the pin that makes every other claim gradeable |
+| Where it becomes a fault | 🟡 in the four patches since, none of which states its own instant | the head says "regenerated at 5f2c3787"; `3ee3c72b`, `1fe53f5a`, `354c2d7f` and `66d40f70` each read the world later and wrote cells under that same head. That is R4's shape (a patch carried under a regeneration's claim), not R2's |
+
+Why it is not R2. R2's clause named a command and a figure the command never returned. The head names a commit that exists, is an ancestor of `main`, and is the instant U5 read at; `git show 5f2c3787` still lets anyone re-derive every regenerated cell. A snapshot that says when it was taken is the opposite of the fault this plan repairs: it is the one claim in the file that carries its own re-derivation. Ageing is what a snapshot does. The verifier's pass 3 trap (grading from `origin/main` rather than `main`) and §6.2's anchor confusion both come from the head being the only pinned instant in the file while the checks ignore it and read live state instead.
+
+Why it is a little of R4. Since `5f2c3787` the file has been patched four times and each patch read something (the open-issue list, `plan/gate-split`, the verdict files) at a later instant it does not record. The front matter still reads as if every cell were read at `5f2c3787`. So a reader cannot tell which cells hold at the head and which hold at some later, unstated instant. That is the same defect R4 named on `3ee3c72b`, one level up: the file-level claim of one read instant is now a claim about four.
+
+What follows, and what does not:
+
+| Do | Do not |
+|---|---|
+| keep `head:` as the regeneration's instant and never move it on a patch; moving it would make the "regenerated at" line false | do not add a staleness rule to U5-1 (an age in commits is not a defect; the owner decides when a roadmap is regenerated) |
+| every revision row that patches states the instant and the sha it read at, which option A's refresh row does by construction (§6.3) | do not treat the 25-commit gap as a finding against U11; U11 patched four cells and was asked to, under revision 14 |
+| the checks read at the instant a row states, not at verify time; a claim with no stated instant is graded at `head:` | do not regenerate to refresh the head; a regeneration now is a fifth roadmap commit that reopens R1 to R4 and lands into the same drift |
+
+For #723: the roadmap's contract should say that `head:` is the regeneration instant, that a patch row carries its own read instant, and that a cell is graded at the newest instant that touched it. That is the whole rule, and it is what would have made pass 1's and pass 3's anchor choice the same.
+
+Branding gate rerun after this section, exit code read directly from `node test/repo/branding.mjs`: `branding: clean (581 files scanned)`, `exit 0`. Em dashes in this file: `0`.
