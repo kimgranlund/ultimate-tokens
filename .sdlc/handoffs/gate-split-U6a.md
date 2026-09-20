@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Branch | unit/gs-U6a @ (see Head sha below, after commit) |
+| Branch | unit/gs-U6a @ 98b23c8a |
 | Files | .github/workflows/ci.yml |
 | G0 | waived for U6a per question 7 (`.sdlc/questions/gate-split-approval.md`). Ran anyway: `128`, `0`, `OPEN`, `128`, matching the plan's recorded "Today" row exactly |
 
@@ -56,13 +56,13 @@ No third non-zero exit occurred; only `gate:corpus-anchor` did, contrary to the 
 
 `git status --short` / `git diff --stat` after the edit: only `.github/workflows/ci.yml` changed, 27 insertions, 0 deletions.
 
-## Measure after (commands run against the committed tree, post-commit)
+## Measure after (commands run against the committed tree at 98b23c8a)
 
-- P4 full command: as above, all values matched.
-- U6-2: `same 5`, control `DIFFER 1`.
-- Scope wall: `.github/workflows/ci.yml` only.
-- `npm test`: see result below.
-- `node test/repo/branding.mjs`: see result below.
+- P4 full command: re-ran, all values matched (gates `1 1 1 1`, then `2`, `1`, `0`, `1`, `1`).
+- U6-2: `same 5`, control `DIFFER 1` (fired in a throwaway clone under the scratchpad, removed after).
+- Scope wall: `git status --short` / `git diff --stat` against the branch base show only `.github/workflows/ci.yml` changed (plus the new handoff file itself, which the plan's paths list permits under `.sdlc/`).
+- `npm test`: `no node_modules` confirmed (`ls node_modules` -> No such file or directory), `✓ all 49 test files passed`, `git status --short` empty after.
+- `node test/repo/branding.mjs`: `branding: clean (483 files scanned)`.
 
 ## Left out / not built
 
