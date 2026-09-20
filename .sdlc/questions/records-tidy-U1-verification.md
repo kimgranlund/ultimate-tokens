@@ -34,3 +34,13 @@ head, where the expected `0` is the value that means anything.
 ## Default if unanswered
 
 None. Nothing in this unit can be graded by the seats that remain, and no default advances it.
+
+## Answer (owner, 2026-09-20, asked by the conductor through AskUserQuestion)
+
+Question: records-tidy U1 is built (030824bc) and reviewed clean, but it is blocked at verification: the verifier seat is down and the orchestrator cannot dispatch a verifier itself. How do we grade it?
+Options:
+- I dispatch verifier workers (Recommended): the conductor seat dispatches a verifier-l1 worker for U1 now and, after the merge, reviewer-l4 plus verifier-l3 for the pre-land, as it did for records-refresh; the owner still approves the landing
+- I run session.sh up
+Chosen: I dispatch verifier workers (Recommended)
+
+Effect: the conductor dispatches `records-tidy-U1-verifier-l1-p1`, writes its rows to `.sdlc/verdicts/records-tidy-U1.md` on this branch, and tells the Orchestrator the path. The Orchestrator merges on 🟢 and then hands the pre-land back to the conductor's workers.
