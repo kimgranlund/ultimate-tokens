@@ -18,8 +18,20 @@ import { readFileSync } from "node:fs";
 const BAND_TOP = 550;
 const WORDS = { eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16 };
 
-const baseline = readFileSync(".sdlc/baseline.md", "utf8");
+const baselineFile = readFileSync(".sdlc/baseline.md", "utf8");
 const adapter = readFileSync(".sdlc/adapter.md", "utf8");
+
+// Scope every parse to the ceiling section. Reading the whole file would let any future table
+// elsewhere in baseline.md break this check for a reason that has nothing to do with the ceiling,
+// which is its own kind of false red.
+const SECTION = "## Interim gate-time ceiling";
+const start = baselineFile.indexOf(SECTION);
+if (start === -1) {
+  console.log(`FAIL  ceiling section not found  (looked for "${SECTION}")`);
+  process.exit(1);
+}
+const after = baselineFile.indexOf("\n## ", start + SECTION.length);
+const baseline = baselineFile.slice(start, after === -1 ? undefined : after);
 
 // Every reading row: "| <wall> s | <load column> | <note> |", bold markers tolerated.
 const rows = [];

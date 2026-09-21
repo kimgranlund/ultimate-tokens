@@ -1,3 +1,5 @@
+# altered: the generator printed one absolute path rooted in a home directory; the worktree
+# prefix is replaced by <worktree> on that line. No other byte of this log is changed.
 UPTIME BEFORE: 16:53  up 12 days, 22:50, 16 users, load averages: 4.63 4.88 10.76
 
 > ultimate-tokens@1.2.0 test
@@ -27,7 +29,7 @@ wrote src/ui/describe-mcp-assets.js 783.4 KB (26 files)
   categories/music.js  (48 palettes · 12 volumes)
   categories/nature.js  (48 palettes · 12 volumes)
   categories/travel.js  (48 palettes · 12 volumes)
-wrote /Users/kimba/Projects/nonoun/ultimate-tokens/.git-worktrees/pif-u5-records/src/ui/categories/index.js  (8 categories · 343 palettes total)
+wrote <worktree>/src/ui/categories/index.js  (8 categories · 343 palettes total)
 anchor: 3380 sampled/status palette(s) carry a byte-exact source anchor · 10 outside the ramp's [9.95, 95.05] L* window (prime.DEFAULT still exact; the ramp's own stop 500 clamps to the window edge, named in test/engine/anchor.mjs's anchor-ramp allow-list)
 
 > ultimate-tokens@1.2.0 gen:adia-exports
