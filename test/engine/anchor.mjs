@@ -1097,12 +1097,12 @@ if (FULL) {
 
 // ── U1 (#715 row 25): the default kit joins all seven named checks ────────────────────────────────
 // #681's own gates walked the 8 curated categories only for window (the clamp population above),
-// gap-19, distinct-25, notch, monotone (anchor-ramp) and order/dupe (anchor-ladder) — addendum 2
+// gap-19, distinct-25, notch, monotone (anchor-ramp) and order/dupe (anchor-ladder); addendum 2
 // put the kit in the lone-spike sweep alone. The kit read a true 0 on all seven, but by never
-// being visited, not by being clean — a kit regression on any of them would have passed in
+// being visited, not by being clean, so a kit regression on any of them would have passed in
 // silence. This block runs the kit through the SAME predicates the curated sweeps already call
 // (monotoneOk, gapOk19, distinctOk25, notchOk, the RAMP_L_MIN/MAX window, and the anchor-ladder
-// order/dupe expressions on primeSwatches, all top level in this file) — no predicate is copied
+// order/dupe expressions on primeSwatches, all top level in this file), so no predicate is copied
 // or rewritten. It runs unconditionally in both legs: 48 rendered ramps (16 palettes x 3 modes)
 // plus 16 ladders, free next to the corpus's 10,140 and 3,380. No allow-list: the plan's own four
 // planted defects (K1-K4) found the kit clean today, so a hit here is a real regression, not
@@ -1118,7 +1118,7 @@ for (const mode of MODES) {
     kitRampVisited.add(p.name);
     const vp = view.palettes.find((v) => v.name === p.name);
     const ramp19 = vp ? vp.ramp : null, ramp25 = vp ? vp.fullRamp : null;
-    if (!ramp19 || !ramp25) { kitWindow.push(`${p.name} ${p.anchor} [${mode}]: projectView produced no matching palette — the render path changed shape`); continue; }
+    if (!ramp19 || !ramp25) { kitWindow.push(`${p.name} ${p.anchor} [${mode}]: projectView produced no matching palette, the render path changed shape`); continue; }
     const srcL = lstarFromRgb(hexToRgb(p.anchor));
     if (srcL < RAMP_L_MIN || srcL > RAMP_L_MAX) kitWindow.push(`${p.name} ${p.anchor} [${mode}] L* ${srcL.toFixed(2)} outside [${RAMP_L_MIN}, ${RAMP_L_MAX}]`);
     if (!monotoneOk(ramp19)) kitMonotone.push(`${p.name} ${p.anchor} [${mode}, 19-stop]: pixel L* rose between two stops`);
@@ -1129,7 +1129,7 @@ for (const mode of MODES) {
   }
 }
 // order/dupe (anchor-ladder): the SAME two expressions the curated anchor-ladder loop above uses on
-// primeSwatches at primeChroma 100 (lines defining orderNames/dupeNames) — copied verbatim, not
+// primeSwatches at primeChroma 100 (lines defining orderNames/dupeNames), copied verbatim, not
 // re-derived, since neither is factored into its own top-level function in this file.
 const kitOrder = [], kitDupe = [];
 const kitLadderVisited = new Set();
@@ -1141,10 +1141,10 @@ for (const p of kitPalettes) {
   if (new Set(sw.map((x) => x.hex)).size < 7) kitDupe.push(`${p.name} ${p.anchor}: two ladder rungs share a hex`);
 }
 // vacuity (U1-3): a check that can pass without looking at anything is worse than no check. Read at
-// runtime — a Set filled inside each loop body, never `kitPalettes.length` computed outside it — so
+// runtime, a Set filled inside each loop body, never `kitPalettes.length` computed outside it, so
 // emptying either loop's own iterable, not just shrinking the kit itself, still bites. Silent on the
 // clean path (U1-1's own "0 FAIL lines" already proves this side), same as the file's other
-// negative controls above, which print nothing when they correctly stay quiet — this keeps the
+// negative controls above, which print nothing when they correctly stay quiet: this keeps the
 // pass-line count exactly the seven named checks below, per leg, no separate line to grep.
 const kitVacuityFloor = Math.max(kitDoc.palettes.length, 16);
 const kitVacuityOk = kitRampVisited.size >= kitVacuityFloor && kitLadderVisited.size >= kitVacuityFloor;
