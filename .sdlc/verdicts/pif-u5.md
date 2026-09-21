@@ -227,3 +227,96 @@ git ls-tree -r --name-only HEAD .sdlc/records/pif-u5-gate-logs/          # both 
 grep -rn "/Users/" .sdlc/records/pif-u5-gate-logs/                       # 1 hit, the 553 log
 grep -c "716.04" .sdlc/baseline.md; ls -d scratchpad/p1-gate-evidence    # 4 hits, path absent
 ```
+
+
+# Pass 3 re-run at 971d59b9 (adds the ceiling-counts check row), same verifier
+
+---
+kind: verdict
+seat: verifier (independent, read-only), round 3
+unit: U5 (records and release notes), plan `.sdlc/plans/preset-intent-fidelity.md`, ticket #681
+graded at: `971d59b9` (re-target; the earlier draft of this verdict graded `fdceb246`, which this
+  commit replaces by amend)
+previous round: `8918342c`, verdict 2 (`pif-u5-verify-verdict-2.md`)
+scope: rows-only re-verify of the pass-2 red and yellow criteria, plus the new counts check
+host rule honored: no `--full` sweep, no `npm test`, no timing run. Greps, git, reads, and the
+  single-file node checks the brief names
+written: 2026-09-20
+---
+
+# Verdict pif-U5 pass 3 · 🟡 at 971d59b9
+
+Row 23, the pass-2 red, is **fixed**. Both retracted sentences are gone under a wrapped-line search,
+the partition sums exactly, both graded logs are committed, every honesty claim the brief lists
+checks against the rows, and the new counts check is real: exit 0 with the expected partition line,
+and nine independently constructed mutations each drive it to exit 1. Three yellows remain, all
+provenance or hygiene, none touching a figure or a claim.
+
+`.sdlc/baseline.md` and `.sdlc/adapter.md` are **byte-identical** between `fdceb246` and this head
+(`git diff --name-only fdceb246 971d59b9 -- .sdlc/baseline.md .sdlc/adapter.md` is empty), so the
+partition fix was already in at the earlier head and the re-target adds only
+`.sdlc/checks/ceiling-counts-check.mjs` and 32 lines of `.sdlc/handoffs/pif-u5.md`. Every derivation
+below was nonetheless re-run at `971d59b9` rather than carried.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| 1 | Row 23: §Interim gate-time ceiling no longer contradicts itself; the partition sums | 🟢 | Wrapped-line search at this head, `tr '\n' ' ' < .sdlc/baseline.md \| grep -c "Every reading in this  *series started at 5.18 or above"` → `0`, and the same flattened stream `grep -c "none of these is it"` → `0`. A `perl -0777` scan for every sentence containing `5.18 or above` returns exactly two and both are true: the scoped `Of the other 16: **thirteen** record an explicit start load and every one is **5.18 or above**`, and the narration `An earlier sentence in this place said flatly that every reading started at 5.18 or above`, now accurate because the sentence it describes is in fact gone. Partition derived by my own parse of the table, written before reading their script: `series rows: 18`, `rows marked graded: 2` (326, 553.45), `explicit start load >=5.18: 13`, `no explicit single load: [(318.52, 'not recorded with the figure')]` plus the two `3.9`-band rows 284 and 344 → **2 + 13 + 3 = 18**. Wall split likewise: `above 550: 11`, `inside: 7`, matching `**11** above the band's 550 s top` and `**7** inside it`, both printed lists member for member | The identical two commands against `git show 8918342c:.sdlc/baseline.md` DO print the retracted sentence (`Every reading in this series started at 5.18 or above, so under R13 all of them are RECORDED and none is GRADED.`) and DO return `1` for `none of these is it`. The flattening detector fires on the state that was red and is silent here, so the `0` is a property of the file, not of a pattern that never matched |
+| 2 | R13 provenance: both graded logs committed, figures and tree agreeing with baseline.md | 🟡 | Both logs are **tracked** at this head, not merely on disk: `git ls-tree -r --name-only HEAD .sdlc/records/pif-u5-gate-logs/` prints `r13-326s-sync-tree-8f037dd2.txt` and `r13-553s-unit-branch.log`. The 553 log's own lines carry `UPTIME BEFORE: ... load averages: 4.63 4.88 10.76` and `npm test  553.58s user 9.44s system 101% cpu 9:13.45 total`, so start load `4.63` and wall `553.45` are quoted, not retyped. The 326 log carries `pre-run load1: 4.88`, `npm test exit code: 0`, `wall time seconds: 326` and `✓ all 49 test files passed`. On the tree: `git merge-base --is-ancestor 8f037dd2 971d59b9` → **NO**, so the brief's fallback applies and it holds. Baseline states it in the row itself, `Taken on the sync tree 8f037dd2, which is U5 at 21a0e35d merged with main, not on this unit branch`, and that merge is real: `git log -1 --format='%P' 8f037dd2` gives parents `21a0e35d` (U5) and `13f46583` (main). `git diff --name-only 8f037dd2 971d59b9` is **17 paths, all under `.sdlc/`**, `grep -cv '^\.sdlc/'` → `0`, stronger than the brief's `.sdlc/ and docs` bar. **The yellow:** the `553.45 s` reading names no tree sha anywhere. Its log carries none (`grep -niE "tree\|commit\|HEAD\|sha"` over it returns only an unrelated `ui/headless-boot.mjs` line), and baseline and `.sdlc/handoffs/pif-u5.md:306` both locate it only as `the committed tree, R8 pass` on this unit branch. One of the two graded readings therefore cannot have its tree checked at all | The ancestry check is not vacuous: `git cat-file -t 8f037dd2` returns `commit`, so `--is-ancestor` is answering about a real object rather than failing on an unknown ref. The path filter is not vacuous either: the unfiltered list is 17 rows, so `grep -v` removes real lines to reach `0` |
+| 3 | The claims made are the honest ones | 🟢 | Each re-derived from the rows. Band: `Interim ceiling: npm test is expected between 280 and 550 s`, unchanged, and `The band stands untouched`. Overshoot: `553.45 s sits **3.45 s over** its 550 s top, **0.63%**`, computed as `553.45 - 550 = 3.45` and `3.45/550 = 0.627%`. Inside: the `326 s` row ends `Comfortably INSIDE the band`, and my parse puts 326 in the `inside` list. Spread: `227 s apart`, computed as `553.45 - 326 = 227.45`, and marked unexplained in the record's own words, `**The divergence among the quiet runs is unexplained** ... **nothing in this record explains that spread**`. Nothing widens: `neither graded reading supports widening it`, with the earlier widening cases named and disowned (`first at about 100 s and then at 40 to 100 s, is not supported`). Every `no, by N s` cell of the CPU table re-derives from its own wall: 553.45→3.45, 592.17→42, 647.42→97, 705.01→155, 716.04→166, 747.27→197 | The `no, by N s` derivation recomputes `wall - 550` from the parsed wall and compares, so it is a check and not a restatement; it reported nothing only after passing six rows, and a drifted cell prints `MISMATCH`. The CPU table's 11 walls were also resolved back to the series: `cpu phantoms (not in series): NONE`, and `cpu inside: 1, above: 10` matches the prose `one is inside the band and 10 are above it` |
+| 4 | Rows 21, 22, 24, 25 still hold at this head | 🟡 | Re-derived, not assumed. **Row 22 🟢**: counts and lists as row 1. **Row 24 🟢**: `grep -c "is monotone in load, which is what contention"` → `0`; the withdrawal stands at line 140, `**A monotone-in-load claim stood here and is WITHDRAWN.**`; and the `1119.57 s` row explicitly declines to revive it, `One row at load 194.52 does not restore the monotone-in-load argument that a row at load 5.42 broke`. **Row 25 🟢**: the adapter's one line reads `a 18-reading series from 284 s to 1119.57 s`, and my parse gives 18 rows, min `284`, max `1119.57`, so the figures moved with the record instead of going stale, which is what row 25 grades. **Row 21 🟡**: `716.04` went from `0` hits at `8918342c` to `4` here, restored as a series row, and its cited source is `scratchpad/p1-gate-evidence/`, a path present neither in the working tree (`ls` → `No such file or directory`) nor in any commit (`git log --all --diff-filter=A --name-only \| grep -c "p1-gate-evidence"` → `0`). The reading is not a phantom: the row quotes its own two output lines and `95% cpu 11:56.04 total` resolves to `716.04` exactly. But the citation is uncheckable, which is the same `evidence lived only in /tmp` defect this section says the two committed logs exist to prevent. `1119.57`, restored in the same round, quotes its own two lines and claims no external path | The phantom detector that caught round 1's invented figure was re-run here and reports `cpu phantoms: NONE`, so row 21's mechanical property holds; the yellow is the narrower thing the detector cannot see, an unresolvable citation. The path search is not vacuous: the same `git log --all --name-only` pipeline does find `pif-u5-gate-logs` when asked for it |
+| 5 | Hygiene: delta scope, branding, em dashes, home paths | 🟡 | Scope 🟢: `git diff --name-only 8f037dd2 971d59b9` is 17 paths, all `.sdlc/`, none outside. Branding 🟢: `node test/repo/branding.mjs \| tail -1` → `branding: clean (538 files scanned)`, exit 0. Em dashes 🟢: `git diff 8f037dd2 971d59b9 \| grep "^+" \| grep -c "—"` → `0`, and the same over the `fdceb246..971d59b9` delta → `0`, so the backtick question never arises, no added line carries one anywhere. Two further doc gates run because the delta is doc-only: `✓ citations: parser self-test + STALE 0 across 10 discovered docs (HEAD 971d59b9)` and `doc-mutation-lane: clean (7 files scanned)`. **The yellow:** one home path survives in a new record. `.sdlc/records/pif-u5-gate-logs/r13-553s-unit-branch.log` line 30 prints the categories generator's absolute destination, a `$HOME`-rooted path beginning `/Users/<user>/` and running through `.git-worktrees/pif-u5-records/src/ui/categories/index.js`. It is the one hit across both logs (the 326 log reads `0`) and the one `/Users/` line in the whole delta. Being the generator's own output, deleting it would collide with the adapter's verbatim-quote rule; the fix is a relative-path generator or a scrub note in the log's header, not a silent edit | The em dash counter is live rather than silently zero: the same `grep -c "—"` is the measure that returned `3 -> 3` for the adapter in round 2, so it matches the character when present. The `/Users/` grep discriminates within one command, returning `1` for one log and `0` for the other, so it is not failing on both |
+| 6 | Note (confirm-only, filed as #724): the branding text filter never opens a committed gate log | ✅ confirmed | Lane A is right, and the mechanism is the extension allowlist at `test/repo/branding.mjs:52`, `const TEXT = /\.(js\|mjs\|ts\|json\|html\|css\|md\|yml\|yaml\|svg\|webmanifest)$/`, applied at line 66 as `if (!TEXT.test(rel) \|\| SKIP_FILES.has(rel) \|\| RECORDS.has(rel)) continue;`. Neither `.txt` nor `.log` appears in the alternation. Ran the regex directly against the real paths: `r13-553s-unit-branch.log → false`, `r13-326s-sync-tree-8f037dd2.txt → false`, `x.md → true`, so both logs are skipped before their bytes are read. What is in them: a case-insensitive scan finds the retired maker brand **once**, lowercase, as a directory segment of the `/Users/` path in the 553 log, and none in the 326 log; against the gate's three actual predicates (the upper-case maker name, the retired maker domain, the pre-rename package identifier) both files read `0`, so widening the filter today would still not red either | This head supplies a natural controlled comparison the earlier pass could not: the delta added one `.mjs` under `.sdlc/` and the scanned count moved `537 → 538`, while the two `.txt`/`.log` files added earlier moved it by zero. One scanned extension in, one file counted; two unscanned extensions in, nothing counted. The regex probe is likewise a real discrimination, returning `true` for `x.md` in the same run that returns `false` for both logs |
+| 7 | New: `.sdlc/checks/ceiling-counts-check.mjs` runs clean and is not a vacuous gate | 🟢 | `node .sdlc/checks/ceiling-counts-check.mjs` at `971d59b9`: **exit 0**, eleven `ok` lines (counted, `grep -cE "^(ok  \|FAIL)"` → `11`), and the expected line verbatim, `partition: 18 = 2 graded + 13 explicit + 3 unsupportable`, followed by `ceiling-counts: clean`. Its measured partition equals mine, derived independently before I read its source. Read its source too: the assertions that matter are real re-derivations from the parsed rows, not prose echoes, and the one the script exists for is explicit, `PARTITION graded + explicit + unsupportable == total`. It also checks the two adapter-pointer figures that went stale twice | **Nine mutations on a scratch copy outside the worktree** (copied `baseline.md`, `adapter.md` and the script into a clean directory; the untouched copy exits 0 there, so the harness itself is sound). Each drives exit 1 and names the right assertion: total `**18 readings**`→17 → `FAIL prose total == rows (prose 17, rows 18)`; `**11** above`→10 → `FAIL prose above == measured`; `**thirteen**`→`**twelve**` → `FAIL prose explicit count == measured (prose 12, measured 13)` **and** `FAIL prose partition parts sum to 'other N' (12 + 3 vs 16)`, which is the defect the script was written for and reproduces the handoff's own stated control exactly; `Of the other 16`→15 → two FAILs; adapter note `18`→15 → `FAIL adapter note count == rows`; adapter max `1119.57`→`889.89` → `FAIL adapter note max == series max`; deleting the `326 s` row → three FAILs and `partition: 17 = 1 graded + ...`; editing the 553.45 row's start load `4.63`→`6.63` → `partition: 18 = 1 graded + 14 explicit + 3`, so graded-set membership is measured from the load column and not hard-coded; and a stray `\| 42 s \|` row appended elsewhere in the file → three FAILs. Exit codes confirmed explicitly (`mutated exit=1`, `clean exit=0`), and the copy restores to exit 0 after every mutation |
+
+## Overall
+
+🟡. No reds. Row 23 is genuinely fixed and survives the wrapped-line search that caught it last
+round; the new check is the strongest artifact in the delta and bites on all nine mutations tried,
+including the one no total could see. The three yellows are all provenance at the edges of the
+figures, never the figures themselves: the `553.45 s` reading names no tree, the restored `716.04 s`
+row cites a path in no commit, and one committed log carries a home path. All three are one-line
+edits in this unit under R8.
+
+## Two notes on row 7, neither graded
+
+- **Nothing runs the new check.** `grep -rI "ceiling-counts"` over the tree finds it only in its own
+  source and in `.sdlc/handoffs/pif-u5.md`. `test/run.mjs` has no reference to `.sdlc` at all, so it
+  is not in `npm test`, and unlike `baseline-agrees-check.sh` it is named in no plan criteria row and
+  in no adapter gate list. It follows the existing hand-run convention of `.sdlc/checks/`, so this
+  is not a defect in the unit, but a check the ceiling section's next editor will only run if they
+  remember it exists. One line in a plan's criteria table or in `.sdlc/adapter.md` would close it.
+- **The row parse is file-scoped, not section-scoped.** It collects every `| <N> s |` line in the
+  whole of `.sdlc/baseline.md`, which is why the stray-row mutation reds it. That fails loud rather
+  than silent, so it is robustness rather than a hole, but a future table elsewhere in the file with
+  a seconds-first column would red this check for the wrong reason.
+
+## What this verdict does not claim
+
+- No timed run, no `npm test`, no `--full` sweep. The host rule forbade it and nothing graded here
+  needs one: every figure was re-derived from the committed rows and the two committed logs.
+- The `716.04 s` and `1119.57 s` readings, both new since `8918342c`, were checked for internal
+  consistency and against the CPU table only. Neither was independently reproduced.
+- Rows 1 to 20 and 26 to 32 of the earlier verdicts are carried by reference and were not re-graded.
+
+## Reproducing
+
+From a scratch worktree at `971d59b9`, no build needed:
+
+```
+node .sdlc/checks/ceiling-counts-check.mjs; echo $?      # 11 ok, partition line, clean, 0
+tr '\n' ' ' < .sdlc/baseline.md | grep -c "none of these is it"   # 0 here, 1 at 8918342c
+git merge-base --is-ancestor 8f037dd2 971d59b9; echo $?  # 1, and the fallback holds
+git diff --name-only 8f037dd2 971d59b9 | grep -cv '^\.sdlc/'      # 0
+git ls-tree -r --name-only HEAD .sdlc/records/pif-u5-gate-logs/   # both logs tracked
+grep -rn "/Users/" .sdlc/records/pif-u5-gate-logs/       # 1 hit, the 553 log
+grep -c "716.04" .sdlc/baseline.md; ls -d scratchpad/p1-gate-evidence   # 4 hits, path absent
+```
+
+The check's negative control, run on a copy outside any worktree so the branch is never touched:
+
+```
+mkdir -p /scratch/.sdlc/checks && cp .sdlc/baseline.md .sdlc/adapter.md /scratch/.sdlc/ \
+  && cp .sdlc/checks/ceiling-counts-check.mjs /scratch/.sdlc/checks/
+cd /scratch && perl -0777 -pi -e 's/\*\*thirteen\*\*/**twelve**/' .sdlc/baseline.md
+node .sdlc/checks/ceiling-counts-check.mjs; echo $?      # two FAIL lines, exit 1
+```
