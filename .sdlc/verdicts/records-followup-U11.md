@@ -4,14 +4,14 @@ plan: records-followup
 unit: U11
 seat: verifier
 grade: verifier-l2
-pass: 5
+pass: 6
 written: 2026-09-20
 ---
 
-# Verdict records-followup U11 · 🔴 pass 5 · 5 🟢, 0 🟡, 1 🔴 (pass 4: 7 🟢, 1 🔴; pass 3: 7 🟢, 2 🔴; pass 2: 17 🟢, 1 🔴; pass 1: 9 🟢, 1 🟡, 2 🔴)
+# Verdict records-followup U11 · 🟢 pass 6 · 6 🟢, 1 🟡, 0 🔴 (pass 5: 5 🟢, 1 🔴; pass 4: 7 🟢, 1 🔴; pass 3: 7 🟢, 2 🔴; pass 2: 17 🟢, 1 🔴; pass 1: 9 🟢, 1 🟡, 2 🔴)
 
-verdict: 🔴
-sha: 89d2057e503ae10a53770290035ae317ffd41d3b
+verdict: 🟢
+sha: 28426bf7370ae24239092f85c9e23f3d5a06cf74
 
 | Graded at | `unit/rf-U11` @ 089e0e44, BASE 1f991877, plan text from `origin/main` at revision 17 |
 |---|---|
@@ -242,3 +242,40 @@ read that caught the PR figure, by running the command, and the row now says no 
 The cheapest true form of that sentence is a bounded one naming the reads that did miss it, which is
 derivable from the records in `.sdlc/verdicts/`. I am not writing the fix; the gap is that the clause
 asserts a universal over graded reads without deriving it from them.
+
+## Pass 6, at `28426bf7`, verifier only, one clause
+
+Scope: the clause pass 5 red, plus a rerun of the gates. `28426bf7` touches `.sdlc/roadmap.md` only,
+one line, one hunk, four revision rows unchanged, no new row describing itself.
+
+This is the unit's first all-green pass. Before writing it I re-derived the whole artifact at this
+head rather than resting on the narrowed scope, because a 🟢 is what `done` means here.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| C1 | the PR clause | 🟢 | it now reads `Verdict pass 3 caught it, by running the command that line names`, and both halves hold in the committed record. Pass 3's R2 row reads `Open PRs are 2, #720 and #158`, so that pass caught the figure; its control cell reads `the worker's run and mine agree on 15 and 2`, so the command the `inputs:` line names was actually run, by both legs. The sentence is bounded to one read and asserts nothing about any other | the same test applied to each pass of this file: pass 1 and pass 2 contain zero mentions of the PR figure, pass 3 contains four, pass 4 six. The check separates a pass that caught it from passes that did not, and pass 3 is the earliest that did |
+| C2 | R1, R2, R3, R4 re-derived at this head | 🟢 | not regraded on the dispatch, re-measured anyway. R2: the line states 15 issues and 2 PRs, the two commands return 15 and 2, and the issue-set diff against the ranked rows exits 0. R1: `six of its seven units are merged or in flight ... only U6b` against a checklist of `[x] U1 [~] U2 [~] U3 [~] U4 [~] U5 [x] U6a [ ] U6b`, and six live `pif-u*` worktrees behind the `#681` cell. R4: `4 0`, two hunks, `21:59:23Z`. The worktree table diffs clean at 7 and 7 | each of these has a control recorded in the pass that first graded it; none was re-planted here, since the purpose was drift detection and not regrading |
+| P1 | `npm test`, no `node_modules`, tree stable | 🟢 | clean clone at `28426bf7`: `✓ all 48 test files passed`, exit 0 captured directly, TESTS 48, status 0 after. Host load was 29 at start, so the wall time is not offered as a figure | the P4 plant reds the same run |
+| P4 | branding, which scans `.sdlc/` | 🟢 | `branding: clean (508 files scanned)`, exit 0 under pipefail | a records doc planted inside `.sdlc/`: `FAIL: 3 branding violation(s) across 509 files`, exit 1 |
+| P5 | scope wall | 🟢 | zero paths outside `.sdlc/`, four in total | a planted file under `src/ui/` takes the outside count to 1 |
+| P6, P7 | em dashes, baseline agreement | 🟢 | `0`; and `stale total: 0`, exit 0 | one em dash appended gives `1`; the baseline figure bent to 47 gives `STALE tests`, exit 1 |
+| N1 | the tally this verdict invalidates | 🟡 | `:31` and `:48` read `nine of eleven units 🟢, U5 🟡`, with U11 in progress. That is true at this head, because U11's standing verdict is 🔴 and the nine excludes it. This verdict flips U11 to 🟢, which makes the derived count ten. The sentence is not wrong now and was not wrong when written; it goes stale the moment this record lands | derived both ways: with U11 at 🔴 the verdict-sourced count is nine, with U11 at 🟢 it is ten. Nothing else in the tally moves. It is inherent to a unit that reports on the plan containing it, not a defect in the edit |
+
+### The 🟡, which is a landing note and not a finding
+
+A unit whose artifact states how many units of its own plan are green cannot be graded green without
+changing the number it states. At `28426bf7` the roadmap is accurate. The moment this 🟢 is recorded,
+`nine of eleven units 🟢` should read `ten of eleven`, and `U11 (this unit) in progress` should go.
+That is one more count edit at the squash, and it belongs to whoever lands it.
+
+I am naming it rather than fixing it, and naming it now rather than discovering it after the landing
+refresh, because the last four passes were all a correcting edit introducing a new false statement.
+This one is predictable in advance.
+
+### On the shape of this unit
+
+Six verifier passes, each finding a defect the previous one had not reached, and only the first two in
+the artifact. Passes 3 to 6 each found a false statement inside the sentence describing the previous
+fix. The narrowing is real: a new false paragraph, then a wrong timestamp and an inverted cause, then
+one overreaching clause, then none. The two things that broke the cycle were bounding each edit to one
+line and dropping self-describing rows, both of which `28426bf7` does.
