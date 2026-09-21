@@ -791,9 +791,10 @@ function distinctOk25(stops) {
 // dampBias/relChroma/chromaFloor/lmin/lmax/curve/tension, all preset-authored, not DEFAULT_CONTROLS'
 // values) via `rampChromaOf`. The proxy measured "0 non-monotone" while the rendered path had 16 real
 // non-monotone ramps (F1/F2's own fix; test/engine/curated-contrast.mjs already uses the right entry
-// point for this exact reason). Iterated by PRESET x MODE (343 x 3 = 1,029 renders, not 10,140 lean
-// calls) so each hydrate+projectView computes every palette in that preset's document at once, exactly
-// once per mode — the SAME cost shape as the product's own render.
+// point for this exact reason). Iterated by PRESET x MODE (343 x 3 = 1,029 renders under FULL, not
+// 10,140 lean calls; SAMPLED iterates the sampled document count instead, #713 U3) so each
+// hydrate+projectView computes every palette in that preset's document at once, exactly
+// once per mode, the SAME cost shape as the product's own render.
 // NONMONO_ALLOW removed (R1, review pass 2, 2026-09-18, team-lead correction): the prior 66-entry
 // pending-ruling list attributed its residual to a "Helmholtz-Kohlrausch coupling", which is wrong: H-K
 // is a perceived-brightness effect of CHROMA that CIE L* cannot model, so it structurally cannot cause a
@@ -1250,7 +1251,7 @@ if (FULL) {
         `hueSpace ${modeName}: default-kit codes bound broken, ${dkMaxDiff} > ${HUE_SPACE_CODES_BOUND} (worst ${dkWorstCodes})`,
       );
     }
-    const codesNote = maxDiff > HUE_SPACE_CODES_BOUND ? `full-corpus codes reach ${maxDiff} (worst ${worstCodes}) - reported only, not gated; default kit's own codes bound held (max ${dkMaxDiff}, want <= ${HUE_SPACE_CODES_BOUND})` : `codes bound held everywhere (max ${maxDiff})`;
+    const codesNote = maxDiff > HUE_SPACE_CODES_BOUND ? `${FULL ? "full-corpus" : "SAMPLED-corpus"} codes reach ${maxDiff} (worst ${worstCodes}) - reported only, not gated; default kit's own codes bound held (max ${dkMaxDiff}, want <= ${HUE_SPACE_CODES_BOUND})` : `codes bound held everywhere (max ${maxDiff})`;
     console.log(`  ${maxDeltaE <= HUE_SPACE_DELTA_E_BOUND && dkMaxDiff <= HUE_SPACE_CODES_BOUND ? "pass" : "FAIL"}  anchor-f4 hueSpace-${modeName}-bound: ${FULL ? "full" : "SAMPLED"} corpus + default kit, max OKLab dE ${maxDeltaE.toFixed(4)} (want <= ${HUE_SPACE_DELTA_E_BOUND}, worst ${worstDeltaE}); ${codesNote}`);
   }
 
@@ -1286,10 +1287,18 @@ if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); pr
 // `prime-identity-control` now asserts every one of 3,796 subjects differs from that reference), C3
 // (stop 500 exact + lift-40 negative control), C5 (monotone, pixel L*, a true 0, no list), C6/F4 (peak
 // != perceptual, Curve/Tension/Vibrancy each live for every anchored ramp, hueSpace live in even mode
-// + bounded to rounding in perceptual/peak per Q-D, stop 500 exact under every toggle). Window-clamp
-// (10), gap-19 (72, U4 re-freeze), distinct-25 (16, U4 re-freeze) and notch (15, Q-C variant,
-// RESOLVED by standing rule at Q3 - a clean subset of the old 78, every departure named with cause,
-// not pending) are all named allow-lists compared by name with a biting negative control, not settled
-// zeros.
-console.log("\nPASS: C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control");
+// + bounded to rounding in perceptual/peak per Q-D, stop 500 exact under every toggle).
+//
+// Rework pass 2 (#713 U3, reviewer finding 1): this line used to print the FULL wording unconditionally,
+// so the SAMPLED leg signed off in the exact words of the gate of record after checking a tenth of the
+// corpus - the substitution this whole plan exists to prevent. FULL keeps its frozen counts and the
+// "biting negative control" claim verbatim (the R10 dropCheck/swapCheck above only run under FULL, so
+// only FULL may claim them). SAMPLED instead prints what it actually measured this run (the same
+// counts the allow-list gates above already computed) and says plainly that these are read as a
+// subset with no in-file negative control this run, the exact count and the control being the FULL
+// leg's own (U3-4 proves the subset half against a real clone mutation instead, both modes).
+const allowListTail = FULL
+  ? "window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control"
+  : `window-clamp (${windowSorted.length}), gap-19 (${gapSorted.length}), distinct-25 (${distinctSorted.length}) and notch (${notchSorted.length}) are the same named allow-lists read as a SAMPLED subset this run (upper bound only, no in-file negative control this run - the exact count and the biting control are the FULL leg's, gate:corpus-anchor, and U3-4 proves the subset half against a real clone mutation)`;
+console.log(`\nPASS (${FULL ? "FULL" : "SAMPLED"}): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; ${allowListTail}`);
 process.exit(0);
