@@ -276,6 +276,10 @@ for (let i = 0; i < DET_CASE_COUNT; i++) {
     hueSpace: i % 2 === 0 ? "cam16" : "oklch",
   });
 }
+// vacuity: FULL silently running the sampled-size case list is a defect this gate must name, not a
+// silent pass. This floor is a literal 2000, not read back off DET_CASE_COUNT above, so an edit to
+// that one substitution point cannot also move the number this check expects.
+if (FULL && DET_CASES.length < 2000) FAIL("c", `only ${DET_CASES.length} determinism cases built in FULL mode, expected 2000 — the FULL case list did not run`);
 const POISON_CASES = [];
 for (let i = 0; i < 1500; i++) {
   POISON_CASES.push({
