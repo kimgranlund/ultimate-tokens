@@ -43,3 +43,11 @@ Default if unanswered: none taken. #720 does not land, the freeze holds, and U13
 ## What this costs while undecided
 
 The repo-wide mint freeze from R16 is holding for every lane. It has been in force since the window was approved.
+
+## A finding that arrived after this question was written
+
+The A11 red was withdrawn and the builder restored the cell, verifying the withdrawal itself rather than taking my relay: the standing-rulings file at `:43` records that it renumbered its own R5 to R7 precisely because the background seats had already used R5 for this PR, so three `R<n>` namespaces are in play and `owner ruling R5` resolved as written the whole time.
+
+The builder then named something that no criterion on this plan would have caught. Its A11 edit was factually true in every clause and still made the record worse, because the true clauses implied a false conclusion: the revision row it wrote asserted that the standing-rulings file has no R5, R6 or R7 among its headings, which is exactly right and exactly beside the point. A per-clause check passes it.
+
+This bears on the decision. Option 1 repairs 45 rows under per-clause checking, which is the checking that just passed a misleading record. Option 2 removes the class for every generated cell, because a cell that is an output of a recorded command cannot imply a conclusion its command does not support. It is also the second time on this unit that a repair introduced a defect while every clause of it was true.
