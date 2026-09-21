@@ -51,3 +51,11 @@ The A11 red was withdrawn and the builder restored the cell, verifying the withd
 The builder then named something that no criterion on this plan would have caught. Its A11 edit was factually true in every clause and still made the record worse, because the true clauses implied a false conclusion: the revision row it wrote asserted that the standing-rulings file has no R5, R6 or R7 among its headings, which is exactly right and exactly beside the point. A per-clause check passes it.
 
 This bears on the decision. Option 1 repairs 45 rows under per-clause checking, which is the checking that just passed a misleading record. Option 2 removes the class for every generated cell, because a cell that is an output of a recorded command cannot imply a conclusion its command does not support. It is also the second time on this unit that a repair introduced a defect while every clause of it was true.
+
+## A measured re-open rate, added after the builder reviewed its own record
+
+Of roughly eleven rows dispatched to U13, three needed a second visit: A11 was withdrawn after it had been repaired, A14 was repaired against the branch head instead of the record's own commit and had to be re-derived, and A13 needed a second pass for a misreading the cell itself did not contain. One of the three was a repair whose every clause was true.
+
+That is the rate to scale option 1 by: about thirty rows never dispatched, at roughly one second visit in four, each visit needing its own derivation and control. A regeneration pays the legend contract once, where thirty cell edits never touch it at all.
+
+Work that is free under either outcome has been started meanwhile: every red that lives in the three handoff files survives a rebuild, so those are being repaired now.
