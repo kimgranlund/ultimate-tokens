@@ -48,7 +48,7 @@ Rules the gates imply:
   before U2, U3 and U6 integrated, and every reading since is well past it. The owner ruled, verbatim:
   "Interim ceiling now, split sweeps into gate scripts as a new ticket (Recommended)". The interim
   ceiling is 280 to 550 s at load under about 10, and its evidence (four files carrying almost the
-  whole suite, and a 19-reading series from 284 s to 1670.43 s) lives in
+  whole suite, and a 20-reading series from 284 s to 1670.43 s) lives in
   `.sdlc/baseline.md` §Interim gate-time ceiling. It is INTERIM by the ruling's own terms: #713 splits
   the corpus sweeps into gate scripts, and the ceiling is re-measured then, not renewed. The paragraph
   above stays as the record of WHY the budget moved in the first place.
