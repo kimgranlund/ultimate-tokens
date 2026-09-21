@@ -40,7 +40,7 @@ under R13.
 | U7-3 | 🟢 | the 26 equal `ORDER_ALLOW` member for member, read out of `test/engine/anchor.mjs`'s source. Control NC-3 bites and names the side that moved |
 | U7-4 | 🟢 | 364 from pixels, 363 constructed, 0 on the default kit, tolerance 0. Controls NC-4 and NC-2 bite |
 | U7-5 | 🟢 | C11 rewritten: 364 named as the gate's own, 373 ± 5 kept and labelled as the prototype's, Q3 (b) cited |
-| U7-6 | 🟢 | `#725` now 1 in the ADR file and 2 in the CHANGELOG; `#701` still 1 and 3. #725 reads OPEN |
+| U7-6 | 🟢 | `grep -c '#725'` reads 2 in the ADR file and 2 in the CHANGELOG (0 and 0 at UB); `grep -c '#701'` reads 2 and 3, both still at least 1. `gh issue view 725`: OPEN, title names perceptual and peak |
 | U7-7 | 🟢 | a C6 continuation bullet carries the owner's acceptance and cites the questions file |
 | U7-8 | 🟢 | `key-anchor corpus: 3380 of 3380` on both producers; rendered leg 46 of 46. Control NC-8 reads 3,380 off, exit 1 |
 | U7-9 | 🟢 | `brandKit(defaultDocument())` 16 of 16, MCP `list_palettes` 16 of 16 |
