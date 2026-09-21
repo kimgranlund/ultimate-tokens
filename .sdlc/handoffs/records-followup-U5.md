@@ -55,7 +55,7 @@ The Conductor asked the owner directly, twice. First pass: both questions still 
 ## Notable facts this regeneration found (for the Conductor, not a criterion)
 
 - Eight tickets from the 2026-09-18/19 roadmap closed since: `#638` (PR #684, squash `381b8d5c`), `#672` (PR #694, squash `92ad4274`), `#673` (PR #690, squash `841e1857`), `#674` (PR #683, squash `bf2aaf65`), `#676` (PR #692, squash `1abda155`), `#602`, `#519`, `#514` (closed as completed, no PR).
-- `#681`, `#668`, `#701`, `#686`, and the new `#713` (its own approved plan `gate-split`, gated on `#681` landing) all read as sdlc-owned now, not "other session", per standing ruling R4: the other conductor session no longer touches this repo's plans.
+- `#681`, `#668`, `#701`, `#686`, and the new `#713` (its own approved plan `gate-split`, gated on `#681` landing) all read as sdlc-owned now, not "other session", per the owner ruling recorded under `Earlier today, same channel` in `.sdlc/questions/standing-rulings-2026-09-20.md`: the other conductor session no longer touches this repo's plans.
 - `#496` reads as parked, not claimed: `plan/lane-b-tickets` (local, unpushed) shows units `au-U1` and `au-U3` built but marked `[!]` (paused), commit message "`#496` parked by the owner", matching the standing ruling to park it while the owner does the Figma steps by hand.
 - PR #158 (go-live, held) is now `CONFLICTING` against `main` (it read `UNKNOWN` in the prior draft); still no ticket, still held by its own body.
 - The `.git-worktrees/pif-u5-records` worktree (#681 U5) carries 4 uncommitted paths; the other six worktrees are clean.

@@ -24,7 +24,7 @@ Two citations in `.sdlc/roadmap.md`, both written by the regeneration commit `7d
 |---|---|---|---|
 | C1, the ownership move at `:116` | 🟢 | the `Earlier today, same channel` grep printed `1` at `7dde8cb1` and at `712e63db` | the same grep scoped to the `R4` section printed `0` at both shas; `grep -c '^## R11'` printed `0` at both |
 | C2, the re-check rule at `:90` | 🟢 | the survey Q2 grep printed `1` at `7dde8cb1` and at `712e63db` | the same needle against `records-followup-approval.md` Q2 printed `0` at both shas |
-| Criterion 2, no other cell touched | 🟢 | `git diff --stat` reads `1 file changed, 2 insertions(+), 2 deletions(-)` and the word diff shows eight spans, all inside the two sentences | `git diff --name-only 712e63db HEAD \| grep -vc '^\.sdlc/'` printed `0`; the same pipeline over `20298cca~1 20298cca` printed `8` |
+| Criterion 2, no other cell touched | 🟢 | `git diff --stat` reads `1 file changed, 2 insertions(+), 2 deletions(-)` and the word diff shows eleven spans, six removed and five added, all inside the two sentences: `git diff --word-diff=plain 712e63db ee854932^2 -- .sdlc/roadmap.md` counts 6 `[-` and 5 `{+`, three and three in the `:90` hunk and three and two in the `:116` hunk | `git diff --name-only 712e63db HEAD \| grep -vc '^\.sdlc/'` printed `0`; the same pipeline over `20298cca~1 20298cca` printed `8` |
 | Criterion 3, one roadmap-only commit | 🟢 | `git show --name-only --format= 15cd3121` printed `.sdlc/roadmap.md` and nothing else | the same command on `0a30f287`, this handoff's commit, printed a different path, so the command distinguishes the two |
 | Gate, test | 🟢 | `npm test` exit `0` twice, `all 48 test files passed`, tree clean after | the adapter's named corruption in a scratch clone: exit `1`, `engine/semantic.mjs      FAIL`, `FAIL  refs-canonical  ` the one failing gate, `grep -c FAIL` printed `3`, `1/48 test file(s) failed` |
 | Gate, branding | 🟢 | `node test/repo/branding.mjs` exit `0`, `branding: clean (509 files scanned)` | a planted file under `.sdlc/runtime/` carrying the retired uppercase run: exit `1` and the gate named that file; removed, exit `0` again |
@@ -135,3 +135,12 @@ the `56.27 · 56.43 · 59.83` test row of `.sdlc/baseline.md`, whose host line r
 `load 3.97 3.87 4.58 on 10 cores at run start`. The harness moves any command past its
 timeout ceiling to a background job on its own, which is what happened to both runs; nothing was
 dispatched with `&` or `run_in_background`. The second run took longer than the `600` s ceiling.
+
+## Correction, 2026-09-20, by records-followup U13
+
+One repair made in this file by U13 under pre-land record pass 3 addendum row A17. Nothing else in
+the file was read or re-worded.
+
+| id | Was | Is | Derived from | Negative control |
+|---|---|---|---|---|
+| A17 | criterion 2's evidence cell said `the word diff shows eight spans` | `eleven spans, six removed and five added`, with the command and the per-hunk split | `git diff --word-diff=plain 712e63db ee854932^2 -- .sdlc/roadmap.md` piped to `grep -o` counts 6 `[-` and 5 `{+`. `git diff --word-diff=porcelain` over the same range counts 7 lines starting `-` and 6 starting `+`, one more of each because the `--- a/` and `+++ b/` header lines match; subtracting them gives the same 6 and 5 | the `8` the cell carried is the figure the row's own control cell prints, and that figure is not a span count at all: it is `git diff --name-only 20298cca~1 20298cca` piped to `grep -vc '^\.sdlc/'`, the number of paths outside `.sdlc/` in an unrelated commit, which still prints `8` when run today. A number measured over a different range by a different command is how the copy is told from the measurement |
