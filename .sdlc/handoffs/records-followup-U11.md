@@ -37,8 +37,15 @@ that catches all four. Everything below was measured in `.worktrees/rf-U11`. `BA
 
 ## R1: the #713 gating claims were false when they were written
 
-The regeneration commit is `7dde8cb1` at `2026-09-20T21:36:16Z`. Every fact below precedes it, so
-this is not live drift that arrived later.
+The regeneration commit is `7dde8cb1` at `2026-09-20T21:36:16Z`. Every fact below was on
+`plan/gate-split` when it was made. Commit times cannot show that, because none of the branch's commits
+below is reachable from `7dde8cb1` or from `698e8916`; the branch's reflog can. `git rev-parse
+'plan/gate-split@{2026-09-20 14:36:16 -0700}'` prints `7d811172`, the last commit in the table below,
+which the reflog shows the branch holding from `14:35:09` to `14:40:03` local time. The one commit
+after it before these reads, `9276d4f0`, changes only `U6b`'s row text and adds a `U6-10` row, so
+every checklist, board and approval fact below reads the same at `7d811172`. This is not live drift
+that arrived later. The reflog is this clone's own and expires, so a reader elsewhere has only the
+commit times, which order the same way.
 
 Command: `git log --format='%H %cI %s' plan/gate-split`. What it printed, converted from the host's
 `-07:00` offset (these commits are local to this machine):
@@ -113,7 +120,10 @@ claimed instant, which cannot both hold, and the second counted `U5` green befor
 graded 🟢.
 
 Command: `git show origin/main:.sdlc/plans/records-followup.md | grep -cE '^- \['` prints `11`; the
-same pipe through `grep -cE '^- \[x\]'` prints `10`. Pass 1 made both rows read `ten of eleven
+same pipe through `grep -cE '^- \[x\]'` prints `10`. `origin/main` is a moving ref and none of its
+commits here is reachable from `698e8916`, so these reads are anchored by this repo's reflog:
+`origin/main` is `7b59a29b` at the commit time of `24620ec9`, which first recorded these two reads,
+and `b8c3be8f` at that of `5cac5623`, which added the verdict reads below. Both figures hold at both. Pass 1 made both rows read `ten of eleven
 units 🟢` naming U11 as the unit in progress, which is the tick-derived figure the paragraph below
 retires. At `698e8916` neither row reads that: both read `nine of eleven units 🟢`.
 
@@ -122,7 +132,8 @@ the predicate false. The verdict caught it. `ten` counts `[x]` ticks in the plan
 tick records that the Orchestrator merged the unit, not that anyone graded it. Reading the verdicts
 instead: `git show origin/main:.sdlc/verdicts/records-followup-U5.md | head -8` prints
 `verdict: 🟡`, and `.sdlc/verdicts/records-followup-U8.md` prints `verdict: green-with-one-note`,
-with the other seven of the ten merged units carrying a 🟢 headline. Nine of eleven are green, U5 is
+with the other eight of the ten merged units reading 🟢 at `b8c3be8f` (an earlier draft
+said seven, which does not sum to nine). Nine of eleven are green, U5 is
 🟡, and U11 has no green verdict. Both rows now say `nine of eleven units 🟢, U5 🟡`, with the `#709`
 row also naming U11 as in progress.
 
@@ -188,8 +199,9 @@ reader should take no row here as pending adoption.
 
 Why it was retired, short. It machine-checks prose against no machine-readable source. Leg A's tally
 has to infer a unit's state from whatever a record happens to say: a `[x]` tick records that the
-Orchestrator merged a unit, not that anyone graded it, and re-derived at `origin/main` 38 of the 55
-files under `.sdlc/verdicts/` carry no `verdict:` field at all, so the state has to be scraped from a
+Orchestrator merged a unit, not that anyone graded it, and re-derived at `origin/main`, which this
+repo's reflog puts at `13f46583` when this sentence was committed, 38 of the 55 files under
+`.sdlc/verdicts/` carry no `verdict:` field at all, so the state has to be scraped from a
 headline or a table row in three different shapes. Leg B has the matching problem from the other
 side: a fixed needle list, recorded below as a known limit. A check built on that footing is a
 reporter that can be reworded past, which is why the class needs a data shape rather than a
@@ -287,10 +299,15 @@ used, not a subset of it: the two exempt disjoint forms.
 Run at `66d40f70`, `2026-09-20T16:02:56-07:00`, this unit's last roadmap commit. Everything below is
 that run's output, not a claim about any later state. Its roadmap figures are re-derivable at that
 sha, `rows 14` and `inputs 14` both holding at `698e8916` as well. Its `plan records-followup` line
-reads `origin/main`, and that ref has moved since, so that line is a record of what the command
-printed then rather than something a reader can reproduce now. It went stale six minutes after the
-run, at `428f81ad`, `2026-09-20T16:08:42-07:00`, when this unit's pass-1 verdict reached main, which
-is 19 minutes 30 seconds before this handoff's last commit and was never re-measured here.
+reads `origin/main`, a moving ref, so it is anchored by this repo's reflog rather than by the ref's
+name: the output was first committed at `5cac5623`, and the reflog holds `origin/main` at `b8c3be8f`
+from `15:50:52` to `16:08:45` local time, a window covering `66d40f70` through `5cac5623`. At
+`b8c3be8f` the plan has 11 units, 10 ticked and 1 in progress, U5's verdict reads 🟡, U8's reads
+`green-with-one-note`, eight more read 🟢 and U11 has no verdict file: 11 units, 10 merged, 11
+started, nine green counting U8, one yellow and one ungraded, which are the line's figures. An earlier draft of this paragraph said the
+line went stale at `428f81ad` before this handoff's last commit. `428f81ad` is not reachable from
+`698e8916`, so it does not falsify a record graded at that commit; it moved `origin/main` later, which
+is why the ref's current state no longer reproduces the line and `b8c3be8f` does.
 
 Leg A, one span per line of output: `rows 14` · `partsum 14 total 14` · `pri (p) 6` · `pri P1 4` ·
 `pri P2 2` · `pri P3 2` · `inputs 14` · `wt 7 7` ·
@@ -493,7 +510,7 @@ not the same as reachable from here, and reachability is the test.
 | U5-8 | nothing to fold. Ruling R14 retires the row and opens #723 for the class; the section above is marked retired at its head, and its runs stay as evidence. The fetch precondition and the needle-list and reach limits recorded here are inputs to #723, not open asks against this unit |
 | the tally source | pass 1's leg derived unit tallies from `[x]` ticks and certified the verdict's R3 rather than catching it. Leg A now reads `.sdlc/verdicts/` and compares a 🟢-marked tally against the green tally. NC7 is the control; it reds U11's own retired text |
 | `.sdlc/board.md` | main's board read its U5 row 🟢 against a notes cell of `11 🟢 1 🟡 0 🔴` from `34173dd6` until `428f81ad` rewrote that cell; the R3 section above dates both and shows this branch's own board never carried it. The adapter makes the verdict authoritative. Out of this unit's scope; nothing here touched it |
-| a stray untracked record | `.sdlc/verdicts/records-followup-U11.md`, the verifier's own file, sat untracked in `.worktrees/rf-U11` and is not gitignored, so `git status --short` printed `1` once the verifier had written it. The P1 gate row above reports the same command printing `0` in the same worktree; the two cannot describe one instant, and nothing recoverable orders them, because that worktree was removed and no timestamp was recorded for either read. What is recoverable is that the verifier's file reached main at `428f81ad`, `2026-09-20T16:08:42-07:00`. Every commit here stages explicit paths, so it never entered one, but a landing that stages with `git add -A` would put it on this branch and break U5-6's file count |
+| a stray untracked record | `.sdlc/verdicts/records-followup-U11.md`, the verifier's own file, sat untracked in `.worktrees/rf-U11` and is not gitignored, so `git status --short` printed `1` once the verifier had written it. The P1 gate row above reports the same command printing `0` in the same worktree; the two cannot describe one instant, and nothing recoverable orders them, because that worktree was removed and no timestamp was recorded for either read. A file at that path is committed on main at `428f81ad`, `2026-09-20T16:08:42-07:00`; that commit is not reachable from `698e8916` and records nothing about the `rf-U11` worktree, so it does not order the two reads either. Every commit here stages explicit paths, so it never entered one, but a landing that stages with `git add -A` would put it on this branch and break U5-6's file count |
 | review 1b | leg B's strip was re-aimed, not narrowed: it closes the inline-marker hole and opens a precedent-form one the old strip lacked, which is the right trade because the precedent form is the ratified one, but a false claim written in that form is still exempt. Whether a cited-quote exemption should exist in a machine check at all is yours |
 | review 2 | leg A's arithmetic has no reason to stop at `## Revisions`; only leg B's needles do. U11's own two rows live in the unread region, which is the sharpest argument for closing it |
 | review 3 and 6 | the needle list and the `commit none` verdict both need widening before U5-8 is folded in; the needle-list limit is stated in this handoff already |
@@ -503,9 +520,10 @@ not the same as reachable from here, and reachability is the test.
 ## Correction, 2026-09-20, by records-followup U13
 
 Repairs made in this file by U13: A14 and A16 under pre-land record pass 3's addendum, C1 to C12 from
-the citation census, and the pass 2 rows C13 to C15 under the per-claim rule stated after this table.
-Outside this section, every hunk U13 made in this file carries a repair one of these rows records, or
-removes the one prose line pass 2 names below.
+the citation census, the pass 2 rows C13 to C15 under the per-claim rule stated after this table, and
+pass 3's sweep of claims resting on commits `698e8916` cannot reach. Outside this section, every hunk
+U13 made in this file carries a repair one of these rows or the pass 3 table records, or removes the
+one prose line pass 2 names below.
 
 | id | Was | Is | Derived from | Negative control |
 |---|---|---|---|---|
@@ -516,13 +534,13 @@ removes the one prose line pass 2 names below.
 | C3 | the board paragraph and the `For the Orchestrator` row said `board.md`'s U5 row shows 🟢 against a notes cell of `11 🟢 1 🟡 0 🔴`, present tense | both sites place the claim on `main`, from `34173dd6` until `428f81ad` rewrote the notes cell, and state that neither commit is reachable from `698e8916`, whose board lists U5 ⚪ because the row predates U5's build | `git log main -S'11 🟢 1 🟡 0 🔴' -- .sdlc/board.md` returns `428f81ad` and `34173dd6`; `git merge-base --is-ancestor` exits `1` for each against `698e8916`; `git log -1 --format=%h 698e8916 -- .sdlc/board.md` prints `850f7fb1`, where the U5 row reads ⚪ and `not dispatched` | `git show 428f81ad^:.sdlc/board.md` prints the 🟢 row with the `11 🟢` notes, so the grep finds the claim where it lives. `428f81ad`'s own U5 row still reads 🟢, which is why pass 1's wording, reading the ⚪ at `698e8916` as that commit's reconciliation, joined two true clauses into a false conclusion |
 | C4 | the R4 narration wrote `cited:` inside the quote span, the form this unit's own review finding 1a retired | the quote span followed by a separate `cited:` span, the precedent form | `.sdlc/adapter.md` §3 ratifies the adjacent-marker form, and `git grep -c -- '\x60 \x60cited:' 698e8916 -- .sdlc`, with `\x60` read as a backtick, returns six files using it | at `698e8916` the inline form appears in one file only, this one, with a count of `2`: the narration repaired here and the probe fixture below, which stays inline because the inline case is what it tests |
 | C5 | R4 said the stale `Count:` line sat in the refresh diff as untouched context directly above the three rows | it appears only as git's section-heading text in the first hunk's `@@` header, with no context lines at `--unified=0` and 14 lines between `Count:` at line 25 and the insertion point at line 39 | the hunk headers already quoted in the R4 table are `@@ -38,0 +39,3 @@ Count: ...` and `@@ -111,0 +115 @@ Ruled by the owner ...`, which is git's section heading, not content | a `--unified=3` read of the same commit does print `Count:` as a context line, which is how the wrong description was arrived at; the R4 table states `--unified=0`, so the two readings are told apart by the flag the table itself names |
-| C6 | the leg output block was headed `What it printed at the fix head`, naming no sha, and its `green=9` and tally-agreement lines read as current | headed with the run's sha and instant, `66d40f70` at `2026-09-20T16:02:56-07:00`, and stated as that run's output | its roadmap figures `rows 14` and `inputs 14` are re-derivable at `66d40f70` and still hold at `698e8916` | its `plan records-followup` line reads `origin/main`, which has moved, so that half is recorded as not reproducible now. It went stale at `428f81ad`, 6 minutes after the run and 19 minutes 30 seconds before this handoff's last commit, which is why naming the run's sha is the repair rather than new figures |
+| C6 | the leg output block was headed `What it printed at the fix head`, naming no sha, and its `green=9` and tally-agreement lines read as current | headed with the run's sha and instant, `66d40f70` at `2026-09-20T16:02:56-07:00`, and stated as that run's output | its roadmap figures `rows 14` and `inputs 14` are re-derivable at `66d40f70` and still hold at `698e8916` | its `plan records-followup` line reads `origin/main`, which the reflog puts at `b8c3be8f` across the run's window, and that commit's plan and verdict files give the line's figures. Pass 3 retired this cell's earlier `went stale at 428f81ad` wording: `git merge-base --is-ancestor 428f81ad 698e8916` exits `1`, so that commit cannot make the record stale at its own commit |
 | C7 | the correction to `strictly narrower` was credited to `b0003592`'s commit message | credited to `089e0e44`, whose subject is `docs(sdlc): the leg B strip was re-aimed, not narrowed (#709)` | `git log -S'strictly narrower' -- .sdlc/handoffs/records-followup-U11.md` returns `b0003592` as the commit that wrote the phrase and `089e0e44` as the one that removed it | `git log -1 --format=%B b0003592` contains `The new strip is strictly narrower`, so the commit the sentence credited repeats the retired claim rather than correcting it |
 | C8 | `#722`'s row `shifted the revision log down by two lines` | moved it down by one line | `git show --numstat --format= 66d40f70 -- .sdlc/roadmap.md` prints `6	5`, six added against five deleted, net one | the regeneration `7dde8cb1` on the same file prints `54	52`, so the measure distinguishes a patch from a rewrite and is not returning a constant |
 | C9 | `the inline form is not written anywhere in this repo` | written in exactly two places, both in this file, one of them repaired by C4 and one a fixture that must stay inline | `git grep -c -- '\x60cited: ' 698e8916`, with `\x60` read as a backtick, returns this file alone at `2` | the precedent form at the same sha returns six files, so the grep finds a form when one is there, and the claim's own file was the counter-example to it |
 | C10 | U5-4's row reported the open-issue diff clean, unqualified | 🟡 at this handoff's own commit, with the margin stated | `#723` was created `2026-09-20T16:24:11-07:00` and `698e8916` was committed `2026-09-20T16:28:12-07:00`, 4 minutes 1 second later, and `git show 698e8916:.sdlc/roadmap.md` has no `#723` row | the diff was genuinely clean when the row was run, so the repair is a qualification and not a reversal. A rule that convicts at four minutes has to acquit at wider margins the same way, which is why the margin is recorded rather than the verdict alone |
 | C11 | U5-6's rerun narration named `four` roadmap-touching commits in `BASE..HEAD` | six, each named | `git log --format=%h 1f991877..698e8916 -- .sdlc/roadmap.md` returns `66d40f70`, `1405ee77`, `354c2d7f`, `1fe53f5a`, `3ee3c72b`, `7dde8cb1` | the same command at `1fe53f5a` returns three, so the count tracks the sha. The four the sentence named are a subset missing `1405ee77` and `66d40f70`, both of them this unit's own later commits |
-| C12 | the stray-record note said `git status --short` prints `1` while the P1 gate row reports `0` for the same command in the same worktree | the note is put in the past tense, says the two cannot describe one instant, and says nothing recoverable orders them | `.worktrees/rf-U11` was removed, neither read carries a timestamp, and no artifact records either tree state. What is recoverable is that the verifier's file reached main at `428f81ad`, `2026-09-20T16:08:42-07:00` | the uncommitted-path class is structurally uncheckable after the fact, the same limit the census recorded for `roadmap.md`'s worktree row, so a stronger claim here would be unsupportable in either direction |
+| C12 | the stray-record note said `git status --short` prints `1` while the P1 gate row reports `0` for the same command in the same worktree | the note is put in the past tense, says the two cannot describe one instant, and says nothing recoverable orders them | `.worktrees/rf-U11` was removed, neither read carries a timestamp, and no artifact records either tree state. A file at that path is committed on main at `428f81ad`, `2026-09-20T16:08:42-07:00`; that commit is not reachable from `698e8916` and records nothing about the `rf-U11` worktree, so it does not order the two reads either | the uncommitted-path class is structurally uncheckable after the fact, the same limit the census recorded for `roadmap.md`'s worktree row, so a stronger claim here would be unsupportable in either direction |
 | A16 sharpened | the repair named only `main` @ `5c6a0c13` | it names `3f6f1ebf` at `2026-09-20T15:48:31-07:00` as the commit that tracked the report, 39 minutes 41 seconds before `698e8916`, and states that it is still not reachable from it | `git merge-base --is-ancestor 3f6f1ebf 698e8916` exits non-zero and `git cat-file -e 698e8916:.sdlc/verdicts/records-followup-U11-review.md` fails | the same two commands against `5c6a0c13` both succeed. Earlier in wall-clock time is not the same as reachable from here; reachability is the test, and the wall-clock reading is what graded this row `both halves false` |
 | C13 | the Verdict row for review 1a and the R4 section said the `cited:` marker move and leg B's strip widening shared one commit | each names its own commit: `1405ee77` moved the marker in the roadmap and `b0003592` widened the strip in this handoff | `git show --stat --format= 1405ee77` lists `.sdlc/roadmap.md` alone and `git show --stat --format= b0003592` lists this handoff alone; `b0003592`'s parent is `1405ee77` and both are ancestors of `698e8916` | `1405ee77`'s own message says the strip is widened `in the same change` and that the handoff carries the new command, which is how one commit came to be credited with both. The two file lists separate them at every anchor |
 | C14 | the front matter read `plan-revision: 17` while the body applies owner ruling R14 | the value is kept and named as main's revision 17 at `7b59a29b`, beside the revision the plan reachable from `698e8916` stops at, 13, and main's revision 19 at `13f46583`, which records R14. No revision number is chosen for the record | `git log main --reverse --format=%h -S'revision 17,' -- .sdlc/plans/records-followup.md \| head -1` prints `7b59a29b`, and `git merge-base --is-ancestor 7b59a29b 698e8916` exits `1`; the same pair for `revision 19,` gives `13f46583` and exit `1`; `git show 698e8916:.sdlc/plans/records-followup.md` names no revision past 13 | the same `-S` for `revision 13,` prints `850f7fb1`, and `--is-ancestor 850f7fb1 698e8916` exits `0`, so the reachability test tells a revision this record can see from one it cannot |
@@ -550,8 +568,9 @@ than at `698e8916`, the commit this handoff was written at. It read 14 and 7 and
 `roadmap-commits:` front matter to seven shas. The front matter was already right: at `698e8916` the
 four shas it named were exactly that sha's roadmap commits. This correction re-derives both figures
 at `698e8916` and restores the front matter. A record is graded at the commit it was written at,
-never at the head, and the three extra roadmap commits the head carries (`f615f573`, `89d2057e`,
-`28426bf7`) did not exist when this paragraph was written.
+never at the head, and the three extra roadmap commits the head carried (`f615f573`, `89d2057e`,
+`28426bf7`) are not reachable from `698e8916`, the commit the Scope paragraph was written at, which is
+what keeps them out of its count.
 
 ### Pass 2, per claim rather than per site
 
@@ -584,3 +603,26 @@ The coverage this section claims is that set and no wider: every claim in this t
 every hit its search returns or marked as a different claim. The census is complete over the claims
 it cites and not over every claim in the file, so it was the floor of this repair and not its scope, and nothing here
 says the rest of the file holds.
+
+### Pass 3, by dependency rather than by text
+
+Pass 2 searched for each claim's wording. Pass 3 searches for what each claim rests on: every commit
+this file cites that `698e8916` cannot reach, and every read of `origin/main`, a moving ref whose
+commits it cannot reach either. The sweep is `grep -oE '\b[0-9a-f]{8}\b'` over the file, each hit that
+is a commit tested with `git merge-base --is-ancestor <sha> 698e8916`, plus `grep -n 'origin/main'`. Line numbers are at `c442826b`,
+the head before this pass. Where a claim is about another ref at an instant, reachability cannot
+decide it and commit time is only a proxy, so the anchor used is this repo's reflog for that ref,
+which is local and expires.
+
+| rests on | lines | what it needed | done |
+|---|---|---|---|
+| `plan/gate-split`: `34ebbae6`, `0b02711b`, `50898d58`, `bf82ab11`, `7852ff12`, `7d811172`, `ebddc55d`, `a2bb3c84` | 31, 40, 48 to 53, 56, 57, 66, 73, 74, 80 to 83 | R1's `Every fact below precedes it` ordered another branch's commits against `7dde8cb1` by commit time | re-based on the reflog, `plan/gate-split@{2026-09-20 14:36:16 -0700}` = `7d811172`; the rest are what commands against the named branch printed, or quoted text, and name the ref they read |
+| `34173dd6`, `428f81ad` on main | 130, 131, 132, 135, 292, 495, 496, 516, 519, 525 | C6 said the leg output went stale at `428f81ad` before this handoff's last commit; C12 offered `428f81ad` as the recoverable fact beside two unordered reads | C6 anchored to `b8c3be8f` by reflog, its figures re-derived there, the staleness claim retired; C12 states the commit is unreachable and orders nothing. C3's lines already state both commits unreachable |
+| `3f6f1ebf`, `5c6a0c13` on main | 11, 483, 485, 513, 526 | nothing | A16 already states `3f6f1ebf` unreachable and names wall clock only as the contrast |
+| `7b59a29b`, `13f46583`, `0a0f0034` on main | 6, 528, 581 | nothing | C14 already states them unreachable; `0a0f0034` is cited for revision 15's content |
+| `f615f573`, `89d2057e`, `28426bf7` | 512, 548, 553, 554 | `did not exist when this paragraph was written` at 553 and 554, a wall-clock claim | restated as not reachable from `698e8916`; 512 and 548 already name `28426bf7` as the wrong clock |
+| `bb896a4e` | 561, 562 | nothing | pass 2's line-number anchor, a descendant, makes no claim about `698e8916` |
+| `origin/main`, no sha | 115, 123, 191, 290, 300, 519; 20, 227 and 263 define `BASE` and the leg's lookup order and claim no content | unanchored reads of a moving ref | anchored by reflog: `7b59a29b` and `b8c3be8f` for R3, `13f46583` for the `38 of the 55` figure, `b8c3be8f` for the leg line. Re-deriving R3 there found `the other seven` false, eight, and it is corrected |
+
+What the sweep does not cover: claims resting on an issue's creation time, such as C10 and C15 on
+`#723`, which no git ref records, and claims with neither a sha nor a ref named.
