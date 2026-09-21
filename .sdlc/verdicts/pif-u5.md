@@ -84,3 +84,85 @@ grep -rn "293\.09" .sdlc/                  # row 24: every source gives 9.42, ne
   registers `0` worktrees under that path.
 - This seat never wrote to the repo, the unit branch or the unit worktree. Every run was in the
   scratch clone or a detached worktree of it.
+
+
+# Pass 2 (delta 21a0e35d..8918342c), same verifier
+
+---
+kind: verdict
+seat: verifier (independent, read-only), round 2
+unit: U5 (records and release notes), plan `.sdlc/plans/preset-intent-fidelity.md`, ticket #681
+graded at: unit/pif-u5-records @ `8918342c`
+previous round: `21a0e35d`, verdict 1 (`pif-u5-verify-verdict.md`)
+delta re-graded: `21a0e35d..8918342c`, three files, all under `.sdlc/`
+rulings applied: R8, R9, R10, R12, R13
+written: 2026-09-20
+---
+
+# Verdict: 🔴
+
+Rows 21, 22, 24 and 25 are fixed and verified. **Row 23 is still red**, and in a sharper form than
+before: the false sentence was corrected in one place and left standing, verbatim, in another
+paragraph of the same section. Two new rows record what the brief asked about the graded readings.
+
+Rows 1 to 20 and 26 to 30 of verdict 1 are carried unchanged by reference. The delta touches
+`.sdlc/baseline.md`, `.sdlc/adapter.md` and `.sdlc/handoffs/pif-u5.md` only, so no criterion those
+rows grade can have moved; row 31 below re-runs the gates that read `.sdlc/` anyway.
+
+## Re-graded rows
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| 21 | No figure in §Interim gate-time ceiling that cannot be traced to a recorded run | 🟢 fixed | `grep -c "716\.04"` over `.sdlc/baseline.md` now reads `0`. Derived the stronger property with a script rather than grepping one string: parsed both tables and checked every CPU-table wall against the series. **`CPU walls with no series row (phantoms): NONE`**. The CPU table's nine walls (518.66, 553.45, 592.17, 647.42, 705.01, 747.27, 795.49, 889.89, 780.23) each resolve to a row above | Re-injected the exact retired row, `\| 95% (printed) \| 716.04 s \| no, by 166 s \|`, into a scratch copy and re-ran the same script: it printed `CPU walls with no series row (phantoms): 716.04`. The detector finds a phantom when one is there, and the file is clean |
+| 22 | Every counted sentence derives from the series table by a command | 🟢 fixed | Parsed the table and re-derived each claim. `The series holds **15 readings**` → `series rows: 15`. `**9** above the band's 550 s top` → `above 550 (9): 553.45, 592.17, 647.42, 649, 705.01, 747.27, 780.23, 795.49, 889.89`, the stated list element for element. `**6** inside it` → `inside (6): 284, 293.09, 318.52, 344, 430.46, 518.66`, likewise. CPU table: `cpu rows: 9 \| inside: 1 \| above: 8`, matching `Nine rows ... one is inside the band and eight are above it`. Every `no, by N s` cell checks: 553.45 → 3.45, 592.17 → 42.17, 647.42 → 97.42, 705.01 → 155.01, 747.27 → 197.27. The two declared breaks in the share ordering hold: `101%` carries both 553.45 and 592.17, and the bottom pair is `90% -> 889.89` then `87.3% -> 780.23` | Nudged `705.01 s`'s start load from 5.42 to 6.42 in a scratch copy and re-ran the pairing derivation: it printed `pairings that disagree with the table: 705.01`. The derivation reads the rows, not the prose, so a drifted figure surfaces |
+| 23 | The R13 eligibility claim holds against the series | 🔴 **still red** | Fixed in one place, left standing in another, and the two now contradict each other inside one section. At line 100: `Exactly **one** of the 15 is graded under R13, and it is the newest.` At line 166, under the heading `How these readings are to be treated`: `Every reading in this series started at 5.18 or above, so under R13 all of them are RECORDED and none is GRADED.` At line 170: `#681's pre-land needs one quiet run started under load 5; none of these is it.` The `553.45 s` row started at `4.63` and falsifies both of the later two. Line 107 makes it worse by narrating the sentence as already gone: `An earlier sentence in this place said flatly that every reading started at 5.18 or above, and then that none was gradeable`. It is not gone; it is 59 lines below. The surviving paragraph is the one a reader looking for the treatment rule lands on | Extracted all three sentences from the same file in one pass with a multi-line `perl -0777` match, so the contradiction is proven from the file rather than from reading order. The single-line `grep -c "Every reading in this series started at 5.18 or above"` returns `0` because the sentence wraps, which is exactly how a line-oriented check would have missed this and how the fix pass appears to have missed it |
+| 24 | The monotone-in-load argument rests on figures that trace to their own runs | 🟢 fixed | The claim is withdrawn in the file's own words, `**A monotone-in-load claim stood here and is WITHDRAWN.**`, with the mismatch stated: the 293.09 s row gives `9.42 / 6.59 / 5.30` and `3.14 4.02 4.95` belongs to the verifier's 345.89 s run. Checked every wall-and-load pair the withdrawal cites against the table: `pairings that disagree with the table: NONE`, all eight of 518.66→6.56, 592.17→7.94, 647.42→7.70, 705.01→5.42, 747.27→16.81, 780.23→9.37, 795.49→17.27, 889.89→79.53. `grep -c "is monotone in load, which is what contention"` reads `0`. The string `293 s at load 3.1` survives once, at line 123, inside the withdrawal and marked as the retracted claim, which is the correct use of it | Row 22's load-nudge control also covers this: change one load and the pairing check names the row. A withdrawal that quoted a pairing the table does not carry would fail the same script that passes here |
+| 25 | `.sdlc/adapter.md` agrees with the record it points at | 🟢 fixed | The one-line hunk now reads `a 15-reading series from 284 s to 889.89 s`, and the unsupported `that is monotone in host load` clause is dropped. Derived from the table: `readings: 15 min: 284 max: 889.89`. The delta is that single line; the machine-parsed `56 to 60 s` prefix and `:192` are untouched | The same derivation run against the pre-fix text yields 15/284/889.89 against a stated 7/284/780, which is how the stale count was caught in round 1. A figure typed rather than derived would not survive it |
+
+## New rows this round
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| 26 | Both graded R13 readings are on this branch | 🟡 | Only one is. `553.45 s` at `4.63` is in this series. The other, `326.00 s` at `4.88`, is on branch `scratch/pif-main-sync-exec-163400` @ `4705ab27`, taken on the sync tree `8f037dd2` (`unit/pif-u5-records` @ `21a0e35d` merged with `origin/main` @ `13f46583`). `git merge-base --is-ancestor` reports that branch is **NOT merged into `8918342c`**. So `Exactly **one** of the 15 is graded under R13` is honest about the series this file holds and wrong about what the plan now has, and the other baseline says the opposite of this one: `the 326.00 s reading is therefore the only` graded reading there. Two records will claim to be the R13 story at land | Searched every ref for a baseline mentioning the figure: exactly one hit, that scratch branch, and none in this unit's history. The reading is real and is simply not here, which is a different defect from the invented figure of round 1 and needs a different fix, an absorb rather than a delete |
+| 27 | Each graded reading checks against its log | 🟡 | Neither log exists. The `326.00 s` row names `scratchpad/r13-window-result.txt` and its `.npm-test.log` sibling; both are absent from disk and `git ls-tree` over that branch's `scratchpad` returns nothing, so they were never committed. Run 9's row offers two quoted lines and no log path at all. What is checkable is internal consistency, and it holds for both: `9:13.45` resolves to `553.45` s exactly; `(553.58 + 9.44) / 553.45 = 101.73%`, consistent with the printed `101% cpu`; `4.63` is the one-minute figure of `load averages: 4.63 4.88 10.76`; `553.45 - 550 = 3.45`, which is `0.63%`, matching the stated `0.6%`. The `326.00 s` row is candid that its wall is `date +%s` around the invocation rather than a `time` line, and declines to state a CPU share for that reason | Arithmetic is not provenance and this row does not pretend otherwise. A fabricated reading with self-consistent arithmetic would pass every check above, which is precisely what round 1's phantom nearly did; the only control that bites is a log, and there is none to run |
+| 28 | What the section may honestly claim | 🟡 | Stated because the brief asked. **May claim:** two readings are admissible under R13, `326.00 s` at `4.88` and `553.45 s` at `4.63`; one sits inside the band with 224 s of headroom and one sits `3.45 s`, or `0.63%`, over its 550 s top. On the only evidence R13 admits, the interim band is very close to right, and nothing supports widening it. **May not claim:** that none of the series is graded (row 23); that the overshoot is contention, since the monotone-in-load argument is withdrawn and the share ordering is stated in the file itself as neither monotone nor a rate; that the 13 recorded readings bear on the band in either direction; that two readings are a run SET, which is what R13 requires before anything moves. The honest sentence is that the band stands as written, with one graded reading 0.63% over its top, and that #713 re-measures it | The claim was built from the two loads and two walls, not from the prose, and each figure was re-derived above. A version of this row that leaned on the 13 recorded readings would contradict R13's own text, `A run at load 5 or above is recorded with its load and not graded`, read on origin/main |
+| 29 | No file outside `.sdlc/` moved | 🟢 | `git diff --name-only 21a0e35d 8918342c \| grep -v '^\.sdlc/' \| wc -l` prints `0`. The three paths are `.sdlc/baseline.md`, `.sdlc/adapter.md` and `.sdlc/handoffs/pif-u5.md` | The unfiltered list is non-empty at 3, so the filter is removing real rows and the `0` is a property of the delta, not of a broken pattern |
+| 30 | Branding clean | 🟢 | `node test/repo/branding.mjs` exit 0, `branding: clean (537 files scanned)` | Verdict 1 row 13 drove the gate to exit 1 on all three of its banned shapes, extracted from the gate's own source and never retyped. That control stands; the gate is the same file at this head. The retired maker brand is not written literally anywhere in this verdict |
+| 31 | The other `.sdlc/`-reading gates still green at this head | 🟢 | `node test/repo/citations.mjs` exit 0, `✓ citations: parser self-test + STALE 0 across 10 discovered docs (HEAD 8918342c)`; `node test/repo/doc-mutation-lane.mjs`, `doc-mutation-lane: clean (7 files scanned)`; `sh .sdlc/checks/baseline-agrees-check.sh` exit 0 with `ok    head: baseline ref 20298cc is in origin/main's history` and `stale total: 0` | Verdict 1's controls for each of these bite and are unchanged: a nudged citation line reds the citations gate, a nudged test-file figure prints `STALE tests: baseline 48, test/run.mjs TESTS 49` |
+| 32 | No em dash added in prose across the delta | 🟢 | Counted with the same span-stripping `perl` counter, per file, `21a0e35d` against `8918342c`: `.sdlc/baseline.md` `0 -> 0`, `.sdlc/adapter.md` `3 -> 3`, `.sdlc/handoffs/pif-u5.md` `0 -> 0`. No increase | The counter was proved in round 1 against `a — b`, a backticked line and `e — f — g`, returning `3`. The adapter's steady `3` are pre-existing and inside spans this strip does not reach, so a flat count here is a real read and not a silent zero |
+
+## The one fix owed
+
+One edit, in `.sdlc/baseline.md`, in the closing paragraph headed `How these readings are to be
+treated`: the two sentences at lines 166 and 170 must say what lines 100 to 113 already say, that
+one reading in the series is graded and it started at 4.63. Under **R8** this is fixed in place in
+this unit, and under **R9** it is not a ticket. Row 26's absorb of the `326.00 s` reading is the
+Conductor's call on which record carries the R13 story, and it should be settled before land rather
+than at it.
+
+## Reproducing
+
+From a scratch clone at `8918342c`, no build needed:
+
+```
+perl -0777 -ne 'print $& if /Every reading in this\s+series started at 5\.18 or above[^.]*\./s' .sdlc/baseline.md
+grep -n "Exactly \*\*one\*\* of the 15 is graded" .sdlc/baseline.md
+```
+
+The first still prints the retracted sentence; the second prints the paragraph that retracts it.
+
+## What this verdict does not claim
+
+- No timed `npm test` reading was taken this round. The host was at `load averages: 263.61 137.39
+  66.82` with another seat's suite live in `.worktrees/gs-U3`, so a timed run would have been
+  worthless under R13 and would have contended with theirs. Under the one-at-a-time convention this
+  seat did not start one.
+- The full suite was not re-run at this head. The delta is three prose files under `.sdlc/`; the
+  three suite members that read `.sdlc/` at all were run directly and are green (row 31), which is
+  the same reasoning the handoff's own new paragraph gives for its run 9.
+- The `326.00 s` reading is reported as it stands on its own branch. It was not re-derived, and its
+  named log does not exist.
+- Scratch worktrees and a clone live under `/tmp/pif-u5-verify2`. Round 1's `/tmp/pif-u5-verify`
+  could not be removed: the permission system denied both `git worktree remove` and the directory
+  delete. Both are self-contained, registered only in their own scratch clones, and the working
+  checkout registers none of them.
