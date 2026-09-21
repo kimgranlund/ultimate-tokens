@@ -27,6 +27,15 @@
   (`chroma <= maxc` for every stop).
 - **AC-T5** Edge damping reduces chroma toward 050/950 (chroma at 500 ≥ chroma at 050 and
   ≥ chroma at 950 for a saturated palette).
+- **AC-T6** For an **anchored palette** (one carrying a stored `palette.anchor`, ADR-026) the
+  predicate is EQUALITY, not a tolerance: `primeSwatches(palette, controls)[3].hex === anchor`
+  for every anchored palette, and `paletteStops(...)` stop 500's hex `=== anchor` in each of
+  `perceptual`, `peak` and `even` for every anchored palette whose source sits inside the ramp
+  window `[9.95, 95.05]` L\*. Sources outside that window keep the exact token and clamp only the
+  ramp's pivot to the nearest window edge; they are named and counted in the gate's own allow-list,
+  never absorbed into a tolerance. `skew` and `lift` do not move either value at any magnitude:
+  they warp the ramp around the pivot, not through it. Gated by `test/engine/anchor.mjs`
+  (`anchor-identity`, `anchor-ramp`).
 
 ## AC-S · Semantic system
 - **AC-S1** `semanticRoles(n)` returns exactly **53** roles for every palette.

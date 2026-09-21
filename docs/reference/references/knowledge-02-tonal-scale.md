@@ -12,6 +12,7 @@
 6. `paletteStops` — the per-stop pipeline
 7. Worked example
 8. Palette groups, base chroma, and the prime system (absolute per-group ramp chroma, seven prime swatches)
+9. Anchored palettes (a stored source colour, exact at `prime.DEFAULT` and at stop 500)
 
 ---
 
@@ -47,7 +48,13 @@
 | `hueSpace` | cam16 / oklch | oklch | how input hues are read (default flipped to OKLCH; cam16 stays selectable, and legacy cam16 docs carry `hueSpace:"cam16"` explicitly) |
 | `theme` | auto / light / dark | auto | UI appearance only (not exported) |
 
-Per-palette: `{ name, hue 0–360, chroma 0–100, skew -100..100, lift -40..40, hueShift -60..60, hueSameDir:bool, on:bool }`.
+Per-palette: `{ name, hue 0–360, chroma 0–100, skew -100..100, lift -40..40, hueShift -60..60, hueSameDir:bool, on:bool, anchor?, sourceAnchor? }`.
+`anchor` and `sourceAnchor` are the two fields #681 added (`src/ui/persist.js`, `DOMAINS.palette`): each is a
+6-digit hex string or absent, never a fitted value. `anchor` is the palette's **stored source colour**, and a
+palette that carries one renders through the anchored construction in §9 instead of the plain `toneAt`/envelope
+path in §4–§5. `sourceAnchor` is the generator's own copy of the same hex, written by `scripts/gen-categories.mjs`
+and by `defaultDocument()` and never edited by the UI, so the inspector's Reset action has something to restore
+after a hue or chroma edit detaches `anchor` (§9).
 `hueShift` is the **edge hue rotation** about stop 500: per-stop hue = baseHue + hueShift·s (s=(stop−500)/450), `hueSameDir=false` (default) torsions the two ends in OPPOSITE directions; `hueSameDir=true` makes BOTH ends bend the SAME way, matching the light end (per-stop hue = baseHue − hueShift·|s|, so light+20/dark−20 becomes light+20/dark+20). 0 = flat (the hue-stability default).
 
 ## 3. Tone curves (the five `shape` functions)
@@ -107,6 +114,15 @@ toneAt(stop, skew, lift):
   it is attenuated relative to the old additive bump. `skew` and `lift` apply in every tone
   mode: #647 wired them into the `perceptual`/`peak` OKHSL distributions through this same
   `liftStop` helper.
+- **The form above is pinned, and an anchored palette does not use it directly.** `toneAt` as written
+  is the exact shipped function (`src/engine/tonal.js`, `export function toneAt(stop, skew, lift,
+  { curve, lmin, lmax, tension })`), and its monotonicity is a property of the construction, not of the
+  trailing clamp: `liftStop` is strictly increasing in `stop`, `p^g` preserves order for any `g > 0`,
+  every `shape()` is non-decreasing, and `t = lmax - (lmax - lmin)·q` inverts `q`. The clamp is a safety
+  net that never fires. A palette carrying an `anchor` (§9) replaces this call with `anchorLerp`, which
+  evaluates `toneAt` on a normalised 0..1 control and re-maps each side so the curve passes through the
+  anchor's own L\* at stop 500. Curve, tension, skew and lift all stay live there: `anchorLerp` is
+  `toneAt` with a pivot, not a straight lerp to `lmin`/`lmax`.
 
 ## 5. Chroma targeting and edge damping
 
@@ -119,15 +135,38 @@ target = (palette.chroma / 100) * pk      // chroma control is % of the hue's pe
 for each stop:
   tone  = toneAt(stop, skew, lift)
   cm    = maxChromaInGamut(hue, tone)     // gamut ceiling at this tone
-  s     = (stop - 500) / 450              // signed pos: <0 light · 0 mid · >0 dark
-  uG    = |s| ^ dampCurve                 // falloff (γ); legacy was a fixed 1.5
-  sideW = max(0, 1 + (dampBias/100)*sign(s))           // light↔dark asymmetry
-  m     = max(0, 1 + (dampAmp/100)*(1-uG) - (damp/100)*sideW*uG)   // the multiplier
-  C     = min(target * m, cm)             // never exceed the gamut ceiling
+  env   = chromaEnvelope(stop, 500, lift, controls)    // the shared multiplier, below
+  C     = evenChroma(cm, target, env, chromaFloor)     // min(cm, max(min(target*env, cm), floorC))
   rgb   = hctToRgb(hue, C, tone).rgb
+
+chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, ONE definition
+  sd    = (liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450   // keyed on the LIFTED reading
+  isEven = toneMode == "even"
+  damp   = isEven ? 100 - (100 - damp) * 0.25 : damp   // EVEN_DAMP_FACTOR = 0.25
+  γ      = (isEven ? 0.25 : 1) * dampCurve
+  uG     = |sd| ^ γ
+  sideW  = max(0, 1 + (dampBias/100)*sign(sd))
+  shoulder = (dampAmp/100) * 4 * uG * (1 - uG)         // 0 at sd=0 AND |sd|=1: shoulders only
+  return max(0, 1 + shoulder - (damp/100)*sideW*uG)
 ```
 
-- **Differential damping curve.** `m(stop)` is a per-stop chroma multiplier. The defaults
+- **One envelope, four call sites (#681 U3).** `chromaEnvelope` replaced the two separately-typed copies
+  of the multiplier this section used to call `m`: one exported definition in `src/engine/tonal.js`,
+  called by the even path and the OKHSL path and, since U2's repair, by both anchored branches as well.
+  Three properties the callers rely on: it keys on `liftStop(stop, lift)` rather than the nominal stop
+  (the #648 displacement helper, the same call `effStop` makes before skew's gamma, so a lift can never
+  reopen the measured-L\* upticks of #668); `env(anchorStop) = 1` exactly, for any lift and any control
+  combination, so the pivot is continuous with its neighbours by construction; and `dampAmp` now enters
+  as a `4·uG·(1-uG)` SHOULDER term that is 0 both at the pivot and at each end, so it can only raise the
+  shoulders, never the pivot. That last shape is why `VIVID_MIDS.dampAmp` ships at 0 rather than 55
+  (Q7): the envelope is normalised at 500, so a non-zero `dampAmp` can only push a shoulder above the
+  pivot's own chroma, which C6 forbids.
+- **`even` mode damps differently, and that is deliberate.** `EVEN_DAMP_FACTOR` (0.25) both softens
+  `damp` toward 100 and cuts the falloff exponent to a quarter in `even` only. This is U3's even-only
+  retune: `even`'s `toneAt` sets CIELAB L\* directly, so chroma damping there cannot move measured L\*,
+  which makes it the one mode where the exponent can be retuned without reopening the
+  Helmholtz-Kohlrausch coupling that reds #668 in the OKHSL-domain modes.
+- **Differential damping curve.** The defaults
   `dampCurve 1.5, dampAmp 0, dampBias 0` reduce it to the legacy `1 - (damp/100)·u^1.5`
   edge damp **exactly** (backward-compatible — existing palettes/exports are unchanged).
   - **`damp`** sets the edge depth (amount); **`dampCurve` (γ)** shapes *where* damping
@@ -244,8 +283,8 @@ independent of `baseIntensity`.
 ### 8.3 The prime system (`src/engine/prime.mjs`)
 
 The **prime system** is a per-palette set of seven swatches, `brightest · brighter · bright · prime ·
-dim · dimmer · dimmest`, lightest first, computed from the palette's key colour on their OWN OKHSL
-lightness ladder. They are primitives-tier tokens, mode-independent (one set, the same in Light and
+dim · dimmer · dimmest`, lightest first, computed from the palette's key colour (or, for an anchored
+palette, from its stored source colour) on their OWN **CIE L\*** ladder. They are primitives-tier tokens, mode-independent (one set, the same in Light and
 Dark, REQ-055), emitted as the `prime` group (`--{n}-prime-{step}`, `{n}/prime/{step}`, Figma
 collection "Color Prime"; knowledge-04). They are NOT ramp stops and NOT roles: the 53-role table is
 unchanged and roles never alias prime tokens (knowledge-03 §3).
@@ -264,42 +303,76 @@ cleared and the already-resolved number rides in on `controls.primeChroma` inste
 `palette.primeChroma ?? controls.primeChroma` with no group knowledge of its own:
 
 ```
-key    = rgbToOkhsl(deriveKeyColor(palette).rgb)      // the REAL key colour: effHue, peakC chroma × chroma/100, cusp tone
-lPrime = key.l                                        // REQ-051: never a neutral grey at the cusp tone
-{ up, down } = primeSteps(lPrime)                     // PRIME_STEP 0.09, [PRIME_L_MIN, PRIME_L_MAX] = [0.14, 0.97]
-  roomUp = max(0, (PRIME_L_MAX - lPrime) / 3);  roomDown = max(0, (lPrime - PRIME_L_MIN) / 3)
-  up = min(PRIME_STEP, roomUp);  down = min(PRIME_STEP, roomDown)
-  short = (PRIME_STEP - up) + (PRIME_STEP - down)     // REQ-051 (#641): handed to the side that did NOT clip,
-  up |= min(roomUp, up + short) if unclipped;  down likewise   // capped by its own room, so the span is always 6·PRIME_STEP
-g      = 3 ** (skew / 100)                            // REQ-053a: the ramp's toneAt gamma, reused as the ladder bend
+// (a) where the ladder is pivoted - the anchored branch first (#681 U1, §9)
+if palette.anchor is a 6-hex string:
+  lPrime  = lstarFromRgb(anchor.rgb)        // the STORED source's own CIE L*, exact, no OKHSL round trip
+  cKey    = cam16FromRgb(anchor.rgb).chroma //   its own CAM16 chroma
+  hue     = cam16FromRgb(anchor.rgb).hue    //   its own CAM16 hue
+else:
+  pk      = peakC(effHue(hue, hueSpace, chroma/100))   // the SAME call deriveKeyColor makes
+  lPrime  = pk.tone                         // the key colour's own CIE L* by construction
+  cKey    = (chroma / 100) * pk.c
+  hue     = effHue(...)
+
+// (b) the ladder: CIE L*, equal-compress (#681 U6, Q8/Q9)
+STEP_L = 9                                            // CIE L* per rung; total span 6 · STEP_L = 54
+[PRIME_L_MIN, PRIME_L_MAX] = [12.25, 96.88]           // DERIVED from the two OKHSL greys, never retyped
+lLadder = anchored ? clamp(lPrime, PRIME_L_MIN, PRIME_L_MAX) : lPrime    // Q3 (b): the PRIME rung never moves
+{ up, down } = primeSteps(lLadder):
+  roomUp = max(0, (PRIME_L_MAX - lLadder) / 3);  roomDown = max(0, (lLadder - PRIME_L_MIN) / 3)
+  up = down = min(STEP_L, roomUp, roomDown)           // BOTH sides take the smaller room: equal-compress
+cPrime = max(0, cKey · primeChroma / 100)             // scales the six ladder rungs, never the prime rung
+
+// (c) the seven rungs
+g      = 3 ** (skew / 100)                            // the ramp's toneAt gamma, reused as the ladder bend
 t_i    = (i - 3) / 3;  w_i = i < 3 ? |t_i| ** (1 / g) : |t_i| ** g     // w(prime) = 0, w(ends) = 1
-l_i    = i < 3 ? lPrime + 3 · up · w_i : lPrime - 3 · down · w_i
-s      = clamp01(key.s · primeChroma / 100)           // REQ-052: the key colour's OWN OKHSL saturation, no damping
-hue_i  = key.h + hueShift · (hueSameDir ? -|t_i| : t_i)  // REQ-053: read, never re-solved
-rgb_i  = okhslToRgb(hue_i, s, l_i)                    // in gamut by OKHSL construction
+L_i    = i < 3 ? lLadder + 3 · up · w_i : lLadder - 3 · down · w_i
+hue_i  = hue + hueShift · (hueSameDir ? -|t_i| : t_i)
+C_i    = min(cPrime, maxChromaInGamut(hue_i, L_i))    // chroma HELD; only the gamut desaturates a rung
+rgb_i  = hctToRgb(hue_i, C_i, L_i)
+rgb_3  = anchored ? anchor.rgb verbatim : rgb_3       // the prime rung is the source byte for byte
 ```
 
-Why the key colour's own coordinates: a chromatic colour and a grey at the same CIELAB L* differ in
-OKHSL `l` by a Helmholtz-Kohlrausch gap that grows toward the gamut edge; a CAM16 chroma fraction is
-not an OKHSL saturation; and anchoring the hue at peak chroma carried an Abney drift into the muted
-swatches. Reading `(l, s, h)` off `deriveKeyColor`'s colour makes `prime` equal the gallery tile
-EXACTLY at `primeChroma 100` (REQ-056), not approximately. Steps are even in `l` WITHIN EACH SIDE of
-the anchor at `skew 0`, and the two sides differ by exactly the travel a clipped side hands over
-(REQ-051, amended #641) — so the span is always `6 * PRIME_STEP = 0.54`, at every hue and chroma;
-`skew > 0` pushes the light inner swatches away from `prime` and pulls the dark ones toward it (every
-inner swatch reads lighter, like the ramp), `skew < 0` the reverse, with `prime` and both ends fixed.
-`lift`, `damp*`, `vibrancy`, `cuspPull`, `toneMode` do not apply: they shape the ramp, not the prime
-system. The editor's Color canvas draws the seven as the `.prime-strip` ahead of each ramp row.
+**Equal-compress, not redistribution.** Up to #655 a side that hit the window handed its shortfall to
+the other side, so the total span stayed fixed and the ladder went lopsided. U6 replaced that: both
+sides take `min(STEP_L, roomUp, roomDown)`, so `up === down` always and a clipped ladder is SHORTER
+rather than asymmetric. `L*(brightest) - L*(prime)` equals `L*(prime) - L*(dimmest)` to 1e-9 by
+construction, and within 3 L\* measured from the emitted pixels. The three clipped defaults land at
+their compressed spans: Tertiary 52.7805, Danger 49.9212, Warning 46.2664 L\* (`test/engine/prime.mjs`
+asserts each at ±0.05).
 
-Worked example (engine-regenerated, #537; `hueSpace "cam16"`, `role-table.json`'s raw `hue 267,
-chroma 95`, `skew 0`, `primeChroma 100`): `lPrime = 0.528528`, `s = 0.965345`, `up = down = 0.09`;
-`l`/hex brightest→dimmest `0.798528 #A5C8FE · 0.708528 #7CAEFE · 0.618528 #5194FC · 0.528528 #2177F6
-· 0.438528 #0F60D2 · 0.348528 #084BA8 · 0.258528 #04377F`; `#2177F6` is `deriveKeyColor(Primary)`
-byte for byte. With the default `skew -20` the inner four become `0.691458 #74AAFD · 0.597234
-#468DFB · 0.416749 #0D5BC8 · 0.333539 #0748A2`, ends and prime unchanged. Warning (`hue 70, chroma
-100`) has `lPrime = 0.749941`, `s = 1`, a clipped light side at `up = 0.073353`, and the `0.016647` it
-loses handed down to `down = 0.106647`: `brightest = 0.97 #FFF5EA`, `dimmest = 0.43 #8D5800`, span
-`0.54`. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
+**Hold the chroma, let the gamut desaturate.** The rungs no longer share a flat OKHSL saturation.
+Each is rendered `hctToRgb(hue_i, min(cPrime, maxChromaInGamut(hue_i, L_i)), L_i)`, so a rung keeps
+the anchor's own CAM16 chroma wherever sRGB can hold it and only gives it up at the gamut ceiling.
+Every rung therefore keeps at least 70% of prime's CAM16 chroma or sits exactly at
+`maxChromaInGamut(hue, L)` within 0.5; the gate prints which of the two it is for each rung.
+
+**The widening search at the window bound** (#681 U4 pass 2). At the exact bound, equal-compress reads
+0 on BOTH sides at once, which would collapse all six non-prime rungs onto the clamped pivot. When
+that happens the LADDER's pivot widens away from the bound by the same amount on each side, in 0.1 L\*
+units, until the six rungs plus the anchor are all distinct hexes, capped at one full `STEP_L` of
+reserve per side. `up === down` is preserved throughout, and the prime rung never moves (Q3 (b)). A
+handful of sampled sources sit close enough to a bound that even a full `STEP_L` cannot separate every
+rung; those are named and counted by `test/engine/anchor.mjs`'s `anchor-ladder` order and dupe
+allow-lists (26 and 3 respectively at the integrated tree) rather than silently passed.
+
+`skew > 0` still pushes the light inner swatches away from `prime` and pulls the dark ones toward it,
+`skew < 0` the reverse, with `prime` and both ends fixed. `lift`, `damp*`, `vibrancy`, `cuspPull` and
+`toneMode` do not apply: they shape the ramp, not the prime system. The editor's Color canvas draws
+the seven as the `.prime-strip` ahead of each ramp row.
+
+Worked example (engine-regenerated 2026-09-20 from this tree's own `primeSwatches`; `hueSpace
+"cam16"`, `primeChroma 100`). Non-anchored, `role-table.json`'s raw `hue 267, chroma 95`, `skew 0`:
+`lPrime = 52`, `up = down = 9`; L\*/hex brightest→dimmest `79 #AAC3FF · 70 #82AAFF · 61 #5590FF ·
+52 #2177F6 · 43 #0061D3 · 34 #004CA9 · 25 #003880`; `#2177F6` is `deriveKeyColor(Primary)` byte for
+byte. With the default `skew -20` the inner four become `68.2930 #7AA5FF · 58.8707 #498AFF ·
+40.8221 #005BC9 · 32.5012 #0049A2`, ends and prime unchanged. Warning raw (`hue 70, chroma 100`,
+`skew 0`) clips its light side against `PRIME_L_MAX`, so equal-compress takes BOTH steps down to
+`up = down = 7.2983`: `brightest = 96.8849 #FFF4EC`, `dimmest = 51.1151 #AB6C00`, span 45.7698 rather
+than 54. Anchored, the shipped default-kit Primary (`anchor #0C5DCC`, `skew -20`): prime is
+`41.6366 #0C5DCC`, the stored hex verbatim, and the ladder around it reads `68.6366 #7DA6FF ·
+57.9296 #4D88F8 · 48.5072 #2E6FDE · [prime] · 30.4587 #00439B · 22.1378 #003276 · 14.6366 #002256`,
+span exactly 54. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
 
 ### 8.4 Migration (schema v4)
 
@@ -309,3 +382,60 @@ through `DROPPED_KEYS` (TKT-0455, loud not silent); the document's `paletteGroup
 default-filled from `GROUP_DEFAULTS` unconditionally on every hydrate, not gated by schema version.
 `palette.group` is never written by the migration itself: an old document stays byte-stable on
 reload apart from the dropped key, deriving its group by name on every read via `paletteGroup(p)`.
+
+## 9. Anchored palettes
+
+A palette that carries an `anchor` (§2) was **sampled from a real colour**, and #681 made the engine
+say so exactly rather than approximately. Before it, a curated preset stored `{hue, chroma, skew,
+lift}` fitted to its source and the engine re-derived a key colour from those four numbers, so the
+emitted `prime.DEFAULT` was close to the sampled colour but rarely equal to it. Now the source hex
+itself is stored and both of the places a user reads "the" colour reproduce it byte for byte.
+
+**The two exactness guarantees.**
+
+| Guarantee | Scope | Where |
+|---|---|---|
+| `prime.DEFAULT` equals `anchor` byte for byte | every palette carrying an `anchor`, 3,380 on the regenerated corpus, unconditionally | `primeSwatches(...)[3]` returns the anchor's own rgb verbatim (§8.3) |
+| ramp stop 500 equals `anchor` byte for byte, in all three tone modes | the 3,370 anchored palettes whose source sits INSIDE the ramp window `[9.95, 95.05]` L\* | `paletteStopsAnchored` / `okhslStopsAnchored`, the `stop === 500 && !clamped` case |
+
+The two scopes differ on purpose. The TOKEN is exact for all 3,380: a source outside the ramp window
+still exports its own hex at `prime.DEFAULT`. The RAMP clamps: for the 10 named out-of-window sources
+(9 dark ones between 7.32 and 9.84 L\*, plus one pure white) stop 500 lands at the window edge nearest
+the source, because forcing the verbatim pixel at a clamped pivot would jump away from the window edge
+its own neighbours are shaped around, which is the discontinuity that broke monotonicity before this
+branch existed. Both allow-lists are frozen by name and count in the gates, not by a threshold.
+
+**Skew and lift never move either one.** They warp the ramp around the pivot, not through it:
+`anchorLerp` (§4) fixes stop 500 and re-maps each side, so a lift of +40 on an in-window anchored
+palette leaves stop 500 unchanged while the same edit on a non-anchored copy moves it.
+
+**Chroma at the pivot is a blend, not a pin.** The anchored branches call the same `chromaEnvelope`
+(§5) as everything else; what differs is the BASIS fed to it. `anchorChromaBasis` blends the anchor's
+own measured chroma exactly at the pivot toward the group's resolved ramp target at each side's
+endpoint, weighted by a smoothstep on the `liftStop` position, so the weight and its derivative are
+both 0 at the pivot. That is what keeps a near-grey anchor inside a vivid group from reading as a
+notch against its own neighbours, and it is why a group's Base chroma still moves an anchored ramp's
+ends while stop 500 stays byte-exact.
+
+**Reset.** Editing `hue` or `chroma` on an anchored palette REMOVES `anchor`: the palette becomes an
+ordinary one and `prime.DEFAULT` reverts to the derived key colour. The generator-written
+`sourceAnchor` survives the edit, and the inspector shows a Reset action, visible only when
+`sourceAnchor` is present and `anchor` is absent, that restores `anchor = sourceAnchor` and re-derives
+hue, chroma and lift from it. After Reset the ramp and the prime ladder are byte-identical to the
+untouched preset. Skew and lift edits keep `anchor`.
+
+**What the anchored construction costs, stated plainly.** Pinning stop 500 to a sampled colour changes
+what "percentage of stop 500" means. C6's median and p90 chroma bars were set against the non-anchored
+construction, where stop 500 IS the ramp's designed peak; on the anchored construction it is the
+user's own sample, which has no designed relationship to being the peak. Measured on the rendered path
+that ships, those bars are **missed in 14 of the 24 checks** (3 modes x 4 stops x median and p90):
+6 of 8 in perceptual, 5 of 8 in peak, 3 of 8 in even, against 2 of 24 on the same corpus with the
+anchors stripped. This is the Q7 mechanism, and Q7 and #701 cover the above-100%-of-stop-500 clause
+ONLY. They do not cover these median and p90 bars, and nothing in #681 brings them back into target.
+It is an open owner item, recorded here rather than softened.
+
+For the same reason C6 (iii)'s "0 stops above 100% of stop 500" bar is scoped to the **384
+non-anchored** palettes of the 3,764 generated ones, where stop 500 is the designed peak. On the
+anchored peak path the equivalent figure is a **ratchet, not a bar**: `test/engine/tonal.mjs` pins
+today's violator count and max overshoot and reds only if a later run RISES past either, so a
+regression that widens the hole is caught while a silent improvement still passes.

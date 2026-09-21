@@ -29,7 +29,7 @@ engine safely. The conceptual *why* is owned by `docs/reference/references/knowl
 | `src/engine/tonal.js` | the ramp builder: stop sets, `DEFAULT_CONTROLS`, both ramp paths | `STOPS`(19)·`EXTRA_STOPS`·`EXPORT_STOPS`(25), `DEFAULT_CONTROLS`, `effHue`, `toneAt`, `paletteStops` |
 | `src/engine/derive.mjs` | New-Palette math (pure, OKLCH, no imports) | `weightedMeanHue`, `deriveNeutral`, `deriveRelative`, `RELATIONSHIPS` |
 
-## The one thing easy to miss — TWO ramp paths
+## The one thing easy to miss: TWO ramp paths, each with an ANCHORED branch
 
 `paletteStops(palette, controls, stops)` **branches on `controls.toneMode`** (the mode resolve at the top
 of `paletteStops`, which hands `perceptual`/`peak` to `okhslStops`):
@@ -46,6 +46,27 @@ of `paletteStops`, which hands `perceptual`/`peak` to `okhslStops`):
 > it states which control feeds which path. The tonal verifier pins `toneMode:"even", chromaFloor:0`
 > (the `CTL` pin in `test/engine/tonal.mjs`) for the CIELAB gates and tests the OKHSL paths separately
 > (`okhsl-modes`, `vibrancy`, `cusp-pull`). knowledge-02 §2 owns the same warning — cite it.
+
+**Each path forks again on `palette.anchor` (#681, ADR-026), so there are four ramp branches, not two.**
+A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted) takes
+`paletteStopsAnchored` or `okhslStopsAnchored`. The anchor rule, which no gate will let you break:
+
+- `primeSwatches(palette, controls)[3].hex === palette.anchor`, byte for byte, for EVERY anchored
+  palette. Ramp stop 500's hex `=== palette.anchor` too, in all three tone modes, for every anchored
+  palette whose source sits inside `[RAMP_L_MIN, RAMP_L_MAX] = [9.95, 95.05]` L\*. The 10 sources
+  outside that window keep the exact token and clamp only the ramp pivot; they are an allow-list BY
+  NAME with an expected count, never a tolerance.
+- `skew` and `lift` must not move either value at any magnitude. The anchored tone path is
+  `anchorLerp`, which is `toneAt` re-mapped per side through the pivot, NOT a straight lerp to
+  `lmin`/`lmax`. If you ever find yourself writing that straight lerp, it is the known regression:
+  it makes curve, tension and hue space inert and renders peak and perceptual byte-identical for
+  every anchored palette, which is exactly the tripwire `anchor-f4` watches.
+- Chroma at the pivot comes from `anchorChromaBasis`, a smoothstep blend from the anchor's own
+  measured chroma at stop 500 to the group's resolved ramp target at each end. Do not "simplify" it
+  to the anchor's value read unconditionally: that makes a group's Base chroma a no-op for every
+  anchored ramp and reds `(gid3)`/`(gid8)`/`(gid8b)` in the headless shim.
+- Gates: `test/engine/anchor.mjs` (`anchor-identity`, `anchor-ramp`, the window and ladder
+  allow-lists, `anchor-f4`). knowledge-02 §9 is the reference description; ADR-026 is the ruling.
 
 ## The hue model is OKLCH-native (easy to miss — changed #117; depth in `references/foundations.md` §4)
 
@@ -78,9 +99,14 @@ of `paletteStops`, which hands `perceptual`/`peak` to `okhslStops`):
    the matrices / the OKLab constants there. The CAM16 constants in `hct.js` and the Ottosson constants in
    `okhsl.js` are copied verbatim from their references — **do not "tidy" or re-derive them** (a wrong digit
    moves an anchor and the engine is broken). See `references/best-practices.md`.
-3. **Keep both ramp paths honest.** If you touch the damping multiplier `m`, note it is computed IDENTICALLY
-   in both paths (the even loop in `paletteStops` and in `okhslStops`) — change both or the modes diverge.
-   Damping must NEVER perturb tone (the `damping-curve (f)` gate, `|Δ| ≤ 1e-9`).
+3. **Keep the ramp paths honest: there is now exactly ONE damping multiplier.** Since #681 U3 the
+   per-stop multiplier is a single exported `chromaEnvelope(stop, anchorStop, lift, controls)` in
+   `tonal.js`, called by all four branches (even, OKHSL, and both anchored). The C7 gate greps for
+   exactly one definition and five total appearances, so a second copy under another name is a gate
+   failure, not a style question. Two properties it must keep: it keys on `liftStop(stop, lift)`, not
+   the nominal stop (re-deriving an effective stop reopens the #668 upticks), and `env(anchorStop)`
+   is exactly 1 for any lift, which is what makes the pivot continuous with its neighbours. Damping
+   must NEVER perturb tone (the `damping-curve (f)` gate, `|Δ| ≤ 1e-9`).
 4. **Mind the stop-vs-index trap.** OKHSL lightness is keyed off the **stop number**, not the array index, so
    stop 500 is the same color in the 19-stop display ramp and the 25-stop export ramp (the `okhsl-modes`
    stop-consistency check). Don't reintroduce index-based math.

@@ -727,11 +727,47 @@ Format: Context → Decision → Rationale → Consequences → Status.
   `test/engine/semantic.mjs` holds the floor for all 16 families, both schemes, all three tone modes,
   plus the Park `solid.fg`/`solid.bg` pairing on the default and Adia documents.
 
+## ADR-026 - A palette's anchor is STORED, not fitted: the sampled source colour is the record
+- **Context.** A curated preset was sampled from a real colour (a film frame, a brand mark, a place),
+  but the document only kept `{hue, chroma, skew, lift}` fitted to it. The engine then re-derived a
+  key colour from those four numbers, so what shipped as the palette's own colour was a reconstruction
+  of the sample, not the sample: measured before #681, `prime.DEFAULT` matched the source byte for
+  byte for essentially none of the 3,380 sampled palettes, with the worst stop-500 lightness error
+  around 23 L\*. Fitting harder was the obvious alternative and was rejected on mechanism: four
+  parameters cannot in general reproduce an arbitrary sRGB colour through a cusp-derived key colour,
+  so the residual is structural, not a tuning failure.
+- **Decision.** The source hex itself is stored on the palette, as `anchor`, and the engine reads it
+  rather than re-deriving it. A palette carrying a valid `anchor` emits it verbatim at
+  `prime.DEFAULT` (`primeSwatches(...)[3]`, unconditionally) and, when the source sits inside the ramp
+  window `[9.95, 95.05]` L\*, at ramp stop 500 in all three tone modes. A second field,
+  `sourceAnchor`, carries the generator's own copy: it is written only by `scripts/gen-categories.mjs`
+  and `defaultDocument()`, never by the UI. Editing `hue` or `chroma` DETACHES the palette (`anchor`
+  is removed, the palette becomes ordinary) while `sourceAnchor` survives, so the inspector can offer
+  a Reset that restores the sampled colour exactly. `skew` and `lift` never detach and never move the
+  anchor: they warp the ramp around the pivot, not through it.
+- **Rationale.** The sample is the intent; a fit is a lossy encoding of it. Storing the hex makes the
+  guarantee checkable by equality rather than by tolerance, which is what turned a "close enough"
+  claim into a gate (`anchor-identity`, 3,380 exact, 0 off). It also separates two questions that the
+  fitted form conflated: what colour the preset IS, and how its ramp is shaped around that colour.
+- **Consequences.** `prime.DEFAULT` moved for all 3,380 fitted palettes and for the 16 default
+  families, so every colour export moved once. Ten sampled sources sit outside the ramp window: their
+  token stays exact while their ramp's stop 500 lands at the nearest window edge, and both the ramp
+  and the ladder allow-lists are frozen by NAME and count, not by a threshold. Pinning stop 500 to a
+  sampled colour also changes what "percentage of stop 500" means, because the pivot is no longer the
+  ramp's designed peak: C6's median and p90 chroma bars miss in 14 of 24 checks on the rendered path,
+  and the "0 stops above 100% of stop 500" bar is scoped to the non-anchored construction with a
+  ratchet, not a bar, on the anchored peak path. That cost is recorded, not resolved, and is an open
+  owner item (#701).
+- **Status.** DECIDED 2026-09-20 (#681). Gated by `test/engine/anchor.mjs` (`anchor-identity`,
+  `anchor-ramp`, the window and ladder allow-lists) and by the schema fields in `src/ui/persist.js`
+  (`DOMAINS.palette.anchor` / `.sourceAnchor`). Knowledge-02 §9 is the reference description.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
 | ADR-003 | on-colors fail WCAG on Warning | the historical brand override; AMENDED by ADR-025 — contrast-aware on-colors are the default since #662 |
 | ADR-025 | on-colors jump to pure white/black on some accents | the ramp ends miss AA there and #662 forbids moving a stop; the achromatic constants are the only way to the floor |
+| ADR-026 | a curated palette stores a source hex that looks redundant beside its own `{hue, chroma, skew, lift}` | the four fitted numbers cannot reproduce an arbitrary sRGB colour through a cusp-derived key colour; the stored hex is the sample itself, and deleting it silently replaces every preset's own colour with a reconstruction of it |
 | ADR-004 | scrims unified onto one 500 ramp (SUPERSEDED) | scrims now a single 500 ramp; the former base-750-only decision is superseded |
 | ADR-002 | semantic could alias raw to cascade | native import errors on name-only aliasData; plugin does cascade |
 | ADR-011 | `role-table.json` still encodes cam16 hues though hueSpace is now OKLCH | role-table is the cam16 answer key for the parity gate; the OKLCH flip is at the doc/seed layer, not the role table |

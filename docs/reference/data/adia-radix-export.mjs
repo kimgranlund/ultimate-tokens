@@ -1,5 +1,5 @@
 /* ultimate-tokens export schema 3 */
-/* adia-radix-export 1.1.0
+/* adia-radix-export 1.2.0
    source: docs/reference/colors/categories/brands.json (adia-brand-document@1.0.0, 770297b)
    generator: scripts/gen-adia-derived-exports.mjs (projectView(hydrate(preset)).exports.radix)
    DO NOT EDIT: regenerate with `npm run gen:adia-exports`. */
