@@ -12,8 +12,10 @@ scope: three handoff records; `.sdlc/roadmap.md` is untouched under owner ruling
 
 # U13, the citation repairs in the three handoff records
 
-Six commits, each touching exactly one file: the five repair commits tabled below and the commit
-that adds this record. Under owner ruling R18 the roadmap is rebuilt rather
+Every commit on this branch past `ee854932` touches exactly one file: the repair commits tabled
+below, the commit that adds this record, and the commits that answer this unit's reviews. They are
+described rather than counted here because each review fix adds one, and a count in this sentence
+went stale with every fix; `git log --oneline ee854932..HEAD` gives the current list. Under owner ruling R18 the roadmap is rebuilt rather
 than repaired, so the four roadmap-only commits this unit had made were dropped and `.sdlc/roadmap.md`
 comes out of this branch byte for byte as it entered: `git diff ee854932 HEAD -- .sdlc/roadmap.md`
 prints nothing and `git rev-parse HEAD:.sdlc/roadmap.md` equals `git rev-parse
@@ -41,7 +43,7 @@ reachability is the test. `git merge-base --is-ancestor` answers it; comparing t
 |---|---|---|---|
 | `records-followup-U5.md` | 1 of 10 claims followed | A3, the `standing ruling R4` attribution | `HEAD` and `main`, where the cited section resolves at both |
 | `records-followup-U12.md` | 1 of its share of 60 | A17, `eight spans` against a measured 11 | `712e63db ee854932^2`, the range the claim itself names |
-| `records-followup-U11.md` | 22 of 123 | A14, A16 and C1 to C12: 17 claims graded, 16 repaired, 1 re-derived and left standing | `698e8916`, the file's own last commit |
+| `records-followup-U11.md` | 22, of the 123 claims the census's leg 5 prose reports following | A14 first, then C1 to C12 and the A16 sharpening in one pass, graded under the claim rule in the paragraph below | `698e8916`, the file's own last commit |
 
 Sixteen claims graded in the leg 5 pass, fifteen repaired and one re-derived and held, under the rule
 the U11 record now states: one claim is one figure or one sentence a single command returns, which
