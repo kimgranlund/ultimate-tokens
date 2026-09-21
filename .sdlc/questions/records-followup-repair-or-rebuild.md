@@ -65,3 +65,19 @@ Work that is free under either outcome has been started meanwhile: every red tha
 A16 lost one of its two halves after the builder checked reachability rather than wall clock: the commit that tracks the review is 40 minutes earlier in time but is not an ancestor of the handoff's own commit, so the handoff's claim that nothing entered a commit or a diff leg on this branch holds from its own anchor. Only the path stays false. The census seat recorded the correction as its sixth, and named it as its own anchor rule applied to time instead of to reachability.
 
 This does not change the decision. It is the sixth instance of the same thing the decision is about: a record asserting something about other work, checked against the wrong source, by the seat enforcing that very rule.
+
+## The handoff side is now repaired, which changes what each option costs
+
+The work that survives a rebuild has been done. U13 is at `107d2778`, nine commits, each touching exactly one file. Seventeen claims in `.sdlc/handoffs/records-followup-U11.md` were graded at that file's own last commit, sixteen repaired and one left alone because it re-derives and holds. Every red the census placed in the three handoff files is now closed.
+
+Its own count is seventeen rather than the census's twenty, and the difference is grouping, not disagreement: the census counted the R2 header as four failures where one of the four holds, and counted two contradictions at two sites each. The builder enumerated them rather than inheriting the arithmetic.
+
+One row could not be repaired and says so: two gate readings of the same command in the same worktree disagree, nothing recoverable orders them, and the cell now states that instead of picking a winner.
+
+So the remaining cost splits cleanly:
+
+| Option | What is left |
+|---|---|
+| 1, repair | about thirty roadmap rows, plus the legend contract, at a measured one second visit in four |
+| 2, rebuild | regenerate `.sdlc/roadmap.md`; the four roadmap commits drop, nothing else on the branch is touched |
+| 3, land the handoffs | nothing; the handoff files are already repaired and the roadmap leaves the PR |
