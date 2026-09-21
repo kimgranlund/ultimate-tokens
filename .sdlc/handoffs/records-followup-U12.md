@@ -20,13 +20,17 @@ Two citations in `.sdlc/roadmap.md`, both written by the regeneration commit `7d
 
 ## Verdict
 
-| Item | State | Note |
-|---|---|---|
-| C1, the ownership move at `:116` | 🟢 | `standing ruling R4` replaced by the section that carries the sentence; not replaced by `R11`, see below |
-| C2, the re-check rule at `:90` | 🟢 | credited to `survey-2026-09-18` approval Q2, whose option text carries the wording verbatim |
-| Criterion 2, no other cell touched | 🟢 | one file, two changed lines, and the word diff is confined to the two sentences |
-| Criterion 3, one roadmap-only commit | 🟢 | one commit whose `--name-only` lists `.sdlc/roadmap.md` alone |
-| The five gates | 🟢 | table below |
+| Item | State | Evidence | Control |
+|---|---|---|---|
+| C1, the ownership move at `:116` | 🟢 | the `Earlier today, same channel` grep printed `1` at `7dde8cb1` and at `712e63db` | the same grep scoped to the `R4` section printed `0` at both shas; `grep -c '^## R11'` printed `0` at both |
+| C2, the re-check rule at `:90` | 🟢 | the survey Q2 grep printed `1` at `7dde8cb1` and at `712e63db` | the same needle against `records-followup-approval.md` Q2 printed `0` at both shas |
+| Criterion 2, no other cell touched | 🟢 | `git diff --stat` reads `1 file changed, 2 insertions(+), 2 deletions(-)` and the word diff shows eight spans, all inside the two sentences | `git diff --name-only 712e63db HEAD \| grep -vc '^\.sdlc/'` printed `0`; the same pipeline over `20298cca~1 20298cca` printed `8` |
+| Criterion 3, one roadmap-only commit | 🟢 | `git show --name-only --format= 15cd3121` printed `.sdlc/roadmap.md` and nothing else | the same command on `0a30f287`, this handoff's commit, printed a different path, so the command distinguishes the two |
+| Gate, test | 🟢 | `npm test` exit `0` twice, `all 48 test files passed`, tree clean after | the adapter's named corruption in a scratch clone: exit `1`, `engine/semantic.mjs      FAIL`, `FAIL  refs-canonical  ` the one failing gate, `grep -c FAIL` printed `3`, `1/48 test file(s) failed` |
+| Gate, branding | 🟢 | `node test/repo/branding.mjs` exit `0`, `branding: clean (509 files scanned)` | a planted file under `.sdlc/runtime/` carrying the retired uppercase run: exit `1` and the gate named that file; removed, exit `0` again |
+| Gate, path scope | 🟢 | zero paths outside `.sdlc/` in `git diff --name-only 712e63db HEAD` | `20298cca~1 20298cca` through the same pipeline printed `8` |
+| Gate, em dashes | 🟢 | added-line dash count against `712e63db`, this handoff excluded, printed `0` | the same count over `e9850935~1 e9850935` under `.sdlc/` printed `17` |
+| Gate, baseline | 🟢 | `sh .sdlc/checks/baseline-agrees-check.sh` exit `0`, `stale total: 0` | `48` bumped to `49` in `.sdlc/baseline.md`: exit `1` and `STALE tests: baseline 49, test/run.mjs TESTS 48`; restored, the file's sha unchanged and exit `0` again |
 
 ## The unit's stated repair for C1 is itself unsupported, so the repair narrows instead
 
@@ -106,13 +110,13 @@ are the whole change.
 
 ## Gates
 
-| Gate | Command | Result |
-|---|---|---|
-| test | `npm test` | exit `0`, last line `all 48 test files passed`, `git status --short` shows only the roadmap edit |
-| branding | `node test/repo/branding.mjs` | exit `0`, `branding: clean (508 files scanned)` |
-| path scope | `git diff --name-only $BASE HEAD` | `.sdlc/` only |
-| em dashes | added-line dash count against `$BASE`, this handoff excluded | `0` |
-| baseline | `sh .sdlc/checks/baseline-agrees-check.sh` | exit `0`, `stale total: 0` |
+| Gate | Command | Result | Control |
+|---|---|---|---|
+| test | `npm test` | exit `0`, last line `all 48 test files passed`, `git status --short` shows only the roadmap edit | scratch clone of this branch, `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json` (7 matches), then `npm test`: exit `1`, `engine/semantic.mjs` the one failing file, `refs-canonical` the one failing gate, `grep -c FAIL` printed `3` |
+| branding | `node test/repo/branding.mjs` | exit `0`, `branding: clean (509 files scanned)` | planted file under `.sdlc/runtime/` with the retired uppercase run: exit `1`, that path named; removed, exit `0` |
+| path scope | `git diff --name-only 712e63db HEAD \| grep -vc '^\.sdlc/'` | `0` | `20298cca~1 20298cca` through the same pipeline: `8` |
+| em dashes | added-line dash count against `712e63db`, this handoff excluded | `0` | `e9850935~1 e9850935` under `.sdlc/`: `17` |
+| baseline | `sh .sdlc/checks/baseline-agrees-check.sh` | exit `0`, `stale total: 0` | `48` bumped to `49` in `.sdlc/baseline.md`: exit `1`, `STALE tests: baseline 49, test/run.mjs TESTS 48`; restored byte for byte, exit `0` |
 
 `npm test` was run twice, both times with the exit code read from `$?` and never through a pipe
 or `tail`, and both times exit `0`. Neither run completed inside the tool's foreground window:
