@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: #718
 priority: P1
 lane: docs
