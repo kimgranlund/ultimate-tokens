@@ -14,8 +14,8 @@ under R13.
   unit that made the figure stale repairs it. Repaired from a fresh generator run, last, after every
   other edit. §8b.
 
-- 🟡 **U7-P1 is not mine.** No `npm test` has been run by this unit. The host allows one at a time
-  and team-lead holds the window. Everything else below is single test files.
+- 🟢 **U7-P1 green, on this unit's own run, after a first run went RED on three files.** The red was
+  this unit's doing, all three were repaired, and each repair has a biting control. §8c.
 - 🟡 **One generated artifact sits outside U7-P4's enumerated list.** `src/ui/describe-mcp-assets.js`
   is rewritten by `npm test` as a consequence of S1. It satisfies the row's governing clause and not
   its parenthetical list. Asked team-lead to rule; committed meanwhile, because omitting it reds
@@ -30,10 +30,10 @@ under R13.
 
 | # | Status | Evidence |
 |---|---|---|
-| U7-P1 | 🔴 not run by me | no `npm test` from this unit; team-lead's window. Every single-file gate below is green and the tree is clean after the generators |
+| U7-P1 | 🟢 | `✓ all 49 test files passed`, exit 0, perl count 49, and `git status --short` empty once this unit's four pre-run edits are committed: `npm test` rewrote no file. First run was RED on 3 files, §8c |
 | U7-P2 | 🟢 | `branding: clean (552 files scanned)`, exit 0. Control NC-P2 bites |
 | U7-P3 | 🟢 | the em-dash diff predicate prints `0` over the hand-edited paths. Control NC-P3 prints `1` with `-CSD` and `0` without |
-| U7-P4 | 🟢 | the wall's hand-edited paths, plus 2 generated artifacts named with their generators, plus `.sdlc/baseline.md` under team-lead's repair ruling. §6 and §8b |
+| U7-P4 | 🟡 | the wall's hand-edited paths, 2 generated artifacts named with their generators (§6), `.sdlc/baseline.md` under the repair ruling (§8b), and four more files S1 made stale, repaired under the same ruling (§8c). Seven files in all sit outside the enumerated list; each is named with its cause |
 | U7-P5 | 🟢 | `stale total: 0` and `ceiling-counts: clean`, both exit 0, after repairing `.sdlc/baseline.md`'s ui.html figure. §8b |
 | U7-1 | 🟢 | 26 by-construction exceptions of 3,380, frozen by name. Controls NC-1a and NC-1b bite and name both sides |
 | U7-2 | 🟢 | 22 measured-pixel exceptions, max 54.2383 L*, frozen by name. Pre-#681 fixture control reads 1,816 at max 52.4868 L*. Control NC-2 bites |
@@ -412,9 +412,79 @@ Afterwards: `stale total: 0`, exit 0. Nothing else about the row moved at any po
 count agreed throughout (49 against 49), every adapter time range agreed, and the baseline ref stayed
 in `origin/main`'s history. No timing figure in that file was touched.
 
+## 8c. U7-P1: the first full run was RED, and why
+
+Taken once the corrected guard, `pgrep -f 'node .*test/(run|engine|ui)' | wc -l`, read 0.
+
+**Run 1, RED.** `588.00s user 9.22s system 99% cpu 9:59.12 total`, exit 1, start load 9.66, end
+load 8.63, guard 0 at both ends. `✗ 3/49 test file(s) failed`, and all three were this unit's
+doing:
+
+| file | what it said | cause |
+|---|---|---|
+| `test/ui/shell.mjs` | `paletteKeyColors did not change after editing hue (stale/cached state?)` | the fixture edits `hue` on an ANCHORED default palette without detaching, and its own comment said `deriveKeyColor` "knows nothing of `anchor` at all", which is the exact defect S1 fixed |
+| `test/ui/poster-strip.mjs` | `candle gold (chroma ~0.057) earns a cap near the low end (got 40.56)` | the same `wpCap < 39` pin as `(jj)`, fitted to the cusp reconstruction |
+| `test/repo/citations.mjs` | 8 STALE lines in two docs | my insertions shifted `src/ui/sections/color.js` by +14 lines after line 1942 and `src/ui/model.mjs` by +39 after line 870, staling every citation below them |
+
+None of the three files is in U7-P4's list. Proceeded under team-lead's two standing rulings (the
+unit whose change made a record stale repairs it; the owner-approved criterion is not amended) and
+told team-lead before starting, so the ruling could be withdrawn.
+
+**`test/ui/shell.mjs`, repaired.** The fixture now does what the PRODUCT does: Q6 rules a hue edit
+detaches, the Hue slider deletes `anchor` on the same gesture, so the fixture deletes it too. The
+false comment is corrected in place. And the coupling the fix removed is replaced by an explicit
+assertion of the new invariant, so coverage does not shrink: while `anchor` IS present, a raw hue
+edit must NOT move the identity swatch. **Control**, cusp branch restored in a throwaway clone:
+`FAIL model an ANCHORED palette's identity swatch moved on a raw hue edit: #D12AF7 != anchor
+#0C5DCC`.
+
+**`test/ui/poster-strip.mjs`, repaired** with the same derivation as `(jj)`, its own independent
+Ottosson chroma conversion (`ownChroma`), and the same three checks. **Control**, cusp branch
+restored in the clone, `poster-strip FAIL (2)`:
+
+```
+  test setup: the strip reads War and Peace's SAMPLED dominant, not its cusp reconstruction (got #D5BE98)
+  test setup: the documented chroma scaling PREDICTS candle gold's cap at 40.5596 from #C49F60 alone (chroma 0.057194, predicted 37.8611)
+```
+
+**Citations, repaired** by adding the measured shift to each cited line, never by searching for a
+nearby match: `docs/reference/references/component-inventory.md` lines 136, 137, 164, 205, 223 and
+228 (`sections/color.js` +14), and `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md`
+lines 20 (`color.js` +14) and 41 (`model.mjs` +39). `node test/repo/citations.mjs`: `✓ citations:
+parser self-test + STALE 0 across 10 discovered docs`.
+
+**One edit landed AFTER run 2, and it is punctuation only.** Changing a cited line number re-adds
+the whole line to the diff, and three of the lines I touched already carried an em dash, so U7-P3's
+predicate read `3`. Replaced with a colon or semicolon, meaning unchanged:
+`component-inventory.md:223` and `02-sections-and-resolvers.md:20` and `:41`. Neither file is
+bundled, so `figma/plugin/ui.html` cannot move; `node test/repo/citations.mjs` was re-run after the
+edit and still reads `STALE 0 across 10 discovered docs`, and U7-P3 reads `0`. I did not take a
+third full `npm test` for a punctuation change to two documents the suite only reads for citations.
+
+**Run 2, GREEN.** Guard 0 before, `UPTIME BEFORE: 23:06 ... load averages: 20.61 18.21 15.82`:
+
+```
+npm test > "$S/u7-npmtest2-out.txt" 2>&1  564.36s user 9.65s system 97% cpu 9:51.44 total
+EXIT: 0
+UPTIME AFTER: 23:16  up 13 days,  5:13, 11 users, load averages: 9.83 17.03 18.77
+```
+
+Last lines of the runner, verbatim: `▶ repo/citations.mjs       pass`, `▶ repo/gate-report.mjs
+pass`, `✓ all 49 test files passed`. The perl one-liner over `test/run.mjs` prints `49`.
+
+`git status --short` after the run listed exactly the four files I had edited BEFORE starting it,
+and nothing else: **`npm test` rewrote no generated artifact**, so `figma/plugin/ui.html` stayed at
+4117.5 KB and `baseline-agrees-check.sh` still reads `stale total: 0`. They are committed with this
+handoff, which empties the tree.
+
+**Not a timing reading.** Both runs started above R13's load 5 (9.66 and 20.61), the load was read
+just before the run in the same command rather than from inside it, and neither is added to
+`.sdlc/baseline.md`'s ceiling series. Recorded here because a run this unit made should not be
+missing from its own record.
+
 ## 9. What I did not do
 
-- No `npm test`, and no full sweep of any kind. U7-P1 is unmet by this unit.
+- No full sweep beyond the two `npm test` runs in §8c.
 - No `npm run build` and no `npm run smoke`.
 - No GitHub issue and no PR, per R16. Two items that would otherwise deserve one are written here
   instead: the poster-strip blast radius (§5) and the ~24 s this unit adds to
