@@ -4,14 +4,14 @@ plan: records-followup
 unit: U11
 seat: verifier
 grade: verifier-l2
-pass: 3
+pass: 4
 written: 2026-09-20
 ---
 
-# Verdict records-followup U11 · 🔴 pass 3 · 7 🟢, 0 🟡, 2 🔴 (pass 2: 17 🟢, 1 🔴; pass 1: 9 🟢, 1 🟡, 2 🔴)
+# Verdict records-followup U11 · 🔴 pass 4 · 7 🟢, 0 🟡, 1 🔴 (pass 3: 7 🟢, 2 🔴; pass 2: 17 🟢, 1 🔴; pass 1: 9 🟢, 1 🟡, 2 🔴)
 
 verdict: 🔴
-sha: 698e89162d4f56c9d76bc669b7130f6300b99e85
+sha: f615f5739ca7acd62e3b4fdb9cb29be0df40cc80
 
 | Graded at | `unit/rf-U11` @ 089e0e44, BASE 1f991877, plan text from `origin/main` at revision 17 |
 |---|---|
@@ -176,3 +176,39 @@ that commit is still an ancestor of both `origin/main` and `main`, so U5-1 would
 `unit/rf-U11` exists only on this machine: `git ls-remote --heads origin` returns no match for it
 while `plan/records-followup-roadmap` is on GitHub, so the unit's commits are unpushed and CI cannot
 see them.
+
+## Pass 4, at `f615f573`, verifier only under ruling R15
+
+R15 verified as R14 was, not taken from the message: owner-chosen in the tracked
+`.sdlc/questions/standing-rulings-2026-09-20.md`, plan revision 21, main `66f05005`. Its Effect makes
+this a verifier-only pass on R2 and R4 against live `gh` and `git` rather than against the file, with
+the four edits made as one roadmap-only commit. `f615f573` touches `.sdlc/roadmap.md` and nothing
+else, and the branch is still four files.
+
+R1 and R3 are not regraded, per the dispatch. Both were 🟢 in pass 3.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| R2 | the figures the `inputs:` line names are what those commands return | 🟢 | the line now reads `gh issue list --state open (15 issues), gh pr list --state open (2 PRs)`. I ran both: 15 and 2. The open-issue set diffs against the ranked rows with exit 0, no difference, so `#723` is ranked and nothing is orphaned. It sits at rank 7 and ranks 7 to 14 shifted to 8 to 15 exactly as claimed, which I checked row by row against `698e8916`. `Count:` reads `total 15` with `P2` 3, and `partsum 15 = total 15 = rows 15` | the same two checks against the previous head `698e8916`: it states `(14 issues)` and `(1 PR)`, and the issue diff exits 1 printing `15d14 < 723`. The check discriminates between the two heads |
+| R4 | the revision line describing the landing refresh states what commit `3ee3c72b` did | 🟢 | both clauses pass 3 red are gone and the replacements are right. The `Count:` line is now described as git's section-heading text in the `@@` header and not as content, with the blank line, header, separator and ten ranked rows named as the gap, which is what I measured. The repair credit now reads `across 1fe53f5a to 66d40f70, the tally not until 66d40f70`. `git log -S` confirms it: `ten of eleven units` first appears at `1fe53f5a`, `nine of eleven units` first appears at `66d40f70`, and `1fe53f5a` carries the `ten` text and none of the `nine`. The headline figures still hold: `4 0`, two hunks, `21:59:23Z` | the same figures fail against `7dde8cb1` (54 added, 52 deleted, 18 hunks), so the check distinguishes commits rather than always passing |
+| the refresh's own revision row | 🔴 | `f615f573` adds a row describing itself, which is the same kind of claim R4 exists to police, and two of its statements are false. It says the roadmap was last written at `66d40f70` (`23:04:32Z`): `66d40f70` is at `23:02:56Z`, and `23:04:32Z` is `5cac5623`, a commit that does not touch the roadmap. It says `(1 PR)` was false `from the regeneration 7dde8cb1 onward, since #158 has been open since 2026-06-30`: at `7dde8cb1` (`21:36:16Z`) exactly one PR was open, `#158`, so the line was true there. It became false at `21:56:01Z` when `#720` opened, which is refresh 1 `3ee3c72b` onward, not the regeneration. The cited reason is also inverted: `#158` being long open is why the figure was true then, not false | counted open PRs at each of the four roadmap writes, with `#158` forced into the set because it predates a 300-PR window: `7dde8cb1` 1, `3ee3c72b` 2, `66d40f70` 2, `f615f573` 2. The transition is at refresh 1. The row's other claims do hold and were checked the same way: the 15 issue numbers it lists match live exactly, the rank shift is exact, `four edits and no other cell re-read` matches its five hunks, which touch only `:7`, `:25`, the ranked block and the two revision rows, and reach is 11 deleted of 133 lines, 8 percent, consistent with `Kind: patch` |
+| P1 | `npm test`, no `node_modules`, tree stable | 🟢 | clean clone at `f615f573`: `✓ all 48 test files passed`, exit 0 captured directly, TESTS 48, status 0 after. Load 13.96 before, 8.77 after | the P4 plant reds the same run |
+| P4 | branding, which scans `.sdlc/` | 🟢 | `branding: clean (508 files scanned)`, exit 0 under pipefail | a records doc planted inside `.sdlc/`: `FAIL: 3 branding violation(s) across 509 files`, exit 1 |
+| P5 | scope wall | 🟢 | zero paths outside `.sdlc/`, four in total | a planted file under `src/ui/` takes the outside count to 1 |
+| P6 | no em dash added in prose | 🟢 | `0` | one appended to the roadmap in the clone: `1` |
+| P7 | baseline agrees with the tree | 🟢 | `stale total: 0`, exit 0 | the baseline figure bent to 47: `STALE tests: baseline 47, test/run.mjs TESTS 48`, exit 1 |
+
+### The 🔴, and a correction to my own pass 3 record
+
+R2 and R4 are both repaired and I grade them 🟢. The red is a new claim the repairing commit
+introduced about itself. That is the pattern this unit has produced four times now: the edit that
+fixes a false assertion adds a fresh one in the sentence describing the fix. It is not a reason to
+reopen R2 or R4, and it is one row, but the dispatch said to red anything that reds.
+
+The `(1 PR)` half is also a correction to me. My pass 3 record says `#158 has been open since
+2026-06-30, so that half was never true on this branch`. That is wrong in the same direction as the
+row I am reding. `(1 PR)` was true at the regeneration `7dde8cb1`, where `#158` was the only open PR,
+and became false when `#720` opened at `21:56:01Z`. What pass 3 established stands, since the figure
+was false at `66d40f70` and at every U11 commit, but my stated reason was the inverted one and the
+Orchestrator's row appears to have inherited it from my record. Both should be read with this
+paragraph.
