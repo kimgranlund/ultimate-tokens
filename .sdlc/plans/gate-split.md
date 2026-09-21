@@ -229,7 +229,7 @@ Checklist (the Orchestrator ticks it; the table below carries grades and paths):
 
 - [x] U1 (S) shared seeded sampler, gate scripts, `curated-contrast` moved onto it · builder-l2 · reviewer-l1 · verifier-l1 · verified at 7d51ba07, merged as 34ebbae6
 - [~] U2 (M) `tonal.mjs`: sampled by default, full under `--full`, grid thinned · builder-l4 · reviewer-l2 · verifier-l2
-- [r] U3 (M) `anchor.mjs`: the same · builder-l4 · reviewer-l2 · verifier-l2
+- [~] U3 (M) `anchor.mjs`: the same · builder-l4 · reviewer-l2 · verifier-l2
 - [~] U4 (S) `prime.mjs`: thinned determinism cases and grids by default, full under `--full` · builder-l3 · reviewer-l2 · verifier-l2
 - [~] U5 (S) `headless-boot.mjs`: the reset sweep only (approval question 2: yes) · builder-l2 · reviewer-l1 · verifier-l1
 - [x] U6a (S) the `sweeps` matrix job in CI · builder-l2 · reviewer-l1 · verifier-l1 · verified at 166b0ec6, merged as 50898d58
