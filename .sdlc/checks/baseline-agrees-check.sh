@@ -18,10 +18,10 @@ const bs = (row(b, "| `npm run build` |")[5] || "").match(/ui\.html ([\d.]+) KB/
 say(!!bs && bs[1] === kb, `ui.html: baseline ${bs ? bs[1] : "none"} KB, tree ${kb} KB`);
 for (const [cmd, gate] of [["npm test", "test"], ["npm run build", "build"], ["npm run smoke", "smoke"], ["npm run gate:corpus-contrast", "corpus-contrast"], ["npm run gen:type-fonts", "fonts"]]) {
   const t = (row(b, "| `" + cmd + "` |")[4] || "").split("·").map(Number);
-  const m = (row(a, "| " + gate + " |")[5] || "").match(/(\d+) to (\d+) s/);
+  const ms = [...(row(a, "| " + gate + " |")[5] || "").matchAll(/(\d+) to (\d+) s/g)];
   const lo = Math.round(Math.min(...t)), hi = Math.round(Math.max(...t));
-  say(t.length === 3 && t.every(Number.isFinite) && !!m && +m[1] === lo && +m[2] === hi,
-    `time ${gate}: baseline ${lo} to ${hi} s, adapter ${m ? m[1] + " to " + m[2] + " s" : "none"}`);
+  say(t.length === 3 && t.every(Number.isFinite) && ms.length > 0 && ms.every((m) => +m[1] === lo && +m[2] === hi),
+    `time ${gate}: baseline ${lo} to ${hi} s, adapter ${ms.length ? ms.map((m) => m[1] + " to " + m[2] + " s").join(", ") : "none"}`);
 }
 const ref = (b.match(/^ref: .*@ ([0-9a-f]{7,40})\b/m) || [])[1];
 let same = false, onMain = false;
