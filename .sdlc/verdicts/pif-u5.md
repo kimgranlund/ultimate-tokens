@@ -320,3 +320,69 @@ mkdir -p /scratch/.sdlc/checks && cp .sdlc/baseline.md .sdlc/adapter.md /scratch
 cd /scratch && perl -0777 -pi -e 's/\*\*thirteen\*\*/**twelve**/' .sdlc/baseline.md
 node .sdlc/checks/ceiling-counts-check.mjs; echo $?      # two FAIL lines, exit 1
 ```
+
+
+# Pass 4 (delta 971d59b9..6d0755b9), verifier-l2 p4
+
+kind: verdict
+seat: verifier (independent, read-only), round 4
+unit: U5 (records and release notes), plan `.sdlc/plans/preset-intent-fidelity.md`, ticket #681
+graded at: `6d0755b9`
+previous round: `971d59b9`, verdict 3 (`pif-u5-verify-verdict-3.md`), overall yellow with three
+  provenance yellows: the `553.45 s` row named no tree, the `716.04 s` row cited an uncommitted
+  path, and one committed log carried a home path
+scope: delta-only re-verify of the eight rows the brief named, `971d59b9..6d0755b9`
+host rule honored: no `--full` sweep, no `npm test`. Greps, git, and the one single-file node
+  gate the brief names; a negative control for every row ran on a scratch copy outside the
+  worktree
+written: 2026-09-20
+
+# Verdict pif-U5 pass 4 · 🟢 at 6d0755b9
+
+All three pass-3 yellows are fixed and every mechanical row the brief names holds. The `553.45 s`
+reading now names its tree in both directions (`21a0e35d`, `8918342c`), a third gate log is
+committed and the previously-leaked home path is scrubbed to `0`, the new ceiling-counts gate is
+wired into `.sdlc/adapter.md` §1 and reports the exact partition Lane A claims, and the delta stays
+inside `.sdlc/` with clean branding, no added em dash, and no home path in the new records.
+
+| # | Row | Expected | State | Evidence | Negative control |
+|---|---|---|---|---|---|
+| Y1 | The `553.45 s` row names its tree | Lane A says `21a0e35d` and `8918342c` | 🟢 | `.sdlc/baseline.md:94`, the same row, now carries `**Tree**, stated exactly rather than rounded to a convenient sha: it ran ... over this unit's WORKING tree, whose committed base was \`21a0e35d\` (HEAD from 16:31) and which was committed at 17:04 ... as \`8918342c\`.` Both shas are present verbatim, matched to the exact wording the brief quotes | Another reading in the same table, `592.17 s` at `.sdlc/baseline.md:87`, was grepped the same way (`grep -A2 "592.17" .sdlc/baseline.md \| grep -oE '[0-9a-f]{8}'`) and returns no sha at all, so the extraction is discriminating between a row that names a tree and one that does not, not matching on every row |
+| Y2 | The `716.04 s` row's log is committed under `.sdlc/records/pif-u5-gate-logs/` | three logs now | 🟢 | `git ls-tree -r --name-only HEAD .sdlc/records/pif-u5-gate-logs/` lists three files: `gate-716s-review-27b26330.txt` (new this delta), `r13-326s-sync-tree-8f037dd2.txt`, `r13-553s-unit-branch.log`. The new log's own two lines are present: `LOAD-START: 15:34 ... load averages: 16.36 13.43 21.96` and `npm test > /tmp/r3test.log 2>&1  671.56s user 14.35s system 95% cpu 11:56.04 total`, which resolves to `716.04` | `git ls-tree -r --name-only 971d59b9 .sdlc/records/pif-u5-gate-logs/ \| wc -l` returns `2` at the prior head, so the count is a real property of this delta and not always three |
+| Y3 | `grep -c /Users/` on the 553 log | `0` | 🟢 | `grep -c "/Users/" .sdlc/records/pif-u5-gate-logs/r13-553s-unit-branch.log` → `0`. The delta's own diff shows the fix: a header note, `# altered: the generator printed one absolute path rooted in a home directory; the worktree prefix is replaced by <worktree> on that line. No other byte of this log is changed`, and the line itself now reads `wrote <worktree>/src/ui/categories/index.js  (8 categories · 343 palettes total)` in place of the literal `/Users/...` path | `git show 971d59b9:.sdlc/records/pif-u5-gate-logs/r13-553s-unit-branch.log \| grep -c "/Users/"` → `1` at the prior head, so the same command is discriminating a real scrub, not reporting `0` on both sides |
+| Y4 | `.sdlc/adapter.md` §1 carries a gate row invoking `node .sdlc/checks/ceiling-counts-check.mjs`; the check runs clean at this head | Lane A reports `19 = 2 graded + 14 explicit + 3 unsupportable`; confirm the partition matches the table; one mutation as control | 🟢 | `.sdlc/adapter.md:31` is the gate row, naming the exact command and `exit 0 and the last line reads \`ceiling-counts: clean\``. Running it at this head: `node .sdlc/checks/ceiling-counts-check.mjs` prints eleven `ok` lines, `partition: 19 = 2 graded + 14 explicit + 3 unsupportable`, `ceiling-counts: clean`, exit `0`, matching Lane A's figure element for element | Ran on a scratch copy at `/tmp/pif-u5-ctl/.sdlc/{baseline.md,adapter.md,checks/ceiling-counts-check.mjs}`, outside the worktree. Clean copy: exit `0`. Mutated `**fourteen**` → `**thirteen**` in the scratch `baseline.md`: exit `1`, with `FAIL  prose explicit count == measured  (prose 13, measured 14)` and `FAIL  prose partition parts sum to 'other N'  (13 + 3 vs 17)`, the same defect class row 7 of pass 3 was written to catch. The untouched scratch copy restores clean before and after |
+| I1 | Adapter diff against `a9a36405` | exactly two hunks: the gate row and the budget note | 🟢 | `git diff a9a36405 6d0755b9 -- .sdlc/adapter.md \| grep -c "^@@"` → `2`. Read both hunks: the first adds the `ceiling-counts` gate row at line 31; the second rewrites the budget-note evidence clause from `a seven-reading series from 284 s to 780 s that is monotone in host load` to `a 19-reading series from 284 s to 1670.43 s`, no other line touched | The same diff one head earlier, `git diff a9a36405 971d59b9 -- .sdlc/adapter.md \| grep -c "^@@"` → `1` (the budget note alone, before the gate row existed), so the count is tracking a real second hunk added in this delta, not a fixed pattern |
+| I2 | The frozen two-jobs line | now at line 193, content unchanged | 🟢 | `sed -n '193p' .sdlc/adapter.md` at `6d0755b9` reads `` (\`.sdlc/verdicts/<plan>-prepr.md\`) and green CI (\`build-test\` + \`panda-smoke\`), then the ``. `git show 971d59b9:.sdlc/adapter.md \| sed -n '192p'` reads byte-identical text. The line moved from 192 to 193 because this delta's gate row inserted one line above it in §1, and its content is untouched | `diff <(sed -n '193p' .sdlc/adapter.md) <(git show 971d59b9:.sdlc/adapter.md \| sed -n '192p')` prints nothing, confirming byte equality rather than two different lines that happen to both read plausibly; the line-number shift by exactly one matches the one line the gate row added above it |
+| I3 | `git diff --name-only 8f037dd2 6d0755b9` | `.sdlc/` only | 🟢 | 18 paths listed, every one under `.sdlc/` (board, adapter, baseline, the new check, two handoffs, four plan/question/verdict files from the unrelated records-followup unit that landed on main in between, and the three gate logs). `grep -cv '^\.sdlc/'` → `0` | `git cat-file -t 8f037dd2` → `commit`, so the base object is real and the diff is answering about actual history, not a missing ref. The unfiltered list is `18` lines, so `grep -v` is removing zero real lines to reach `0`, not vacuously passing on an empty diff |
+| I4 | Branding clean, no em dash added in the delta, no home path in the new records | clean, `0`, `0` | 🟢 | `node test/repo/branding.mjs` → `branding: clean (538 files scanned)`, exit `0`. `git diff 971d59b9 6d0755b9 \| grep "^+" \| grep -c ", "` → `0`. `git diff 971d59b9 6d0755b9 -- .sdlc/records/ \| grep "^+" \| grep -c "/Users/"` → `0`, and a direct scan of all three record files under `.sdlc/records/pif-u5-gate-logs/` independently gives `0` each | The em dash grep is live, not silently zero: `printf 'a line with an em dash, right here\n' \| grep -c ", "` → `1` in the same shell, so the pattern matches the character when present. The `/Users/` grep is likewise live: Y3's own control above shows the identical pattern returning `1` against the prior head's copy of one of these same files |
+
+## Overall
+
+🟢. Every row the brief named is green. All three pass-3 yellows (the untraceable `553.45 s` tree,
+the uncommitted `716.04 s` citation, and the leaked home path) are resolved in this delta, and the
+new `ceiling-counts` gate is wired into `.sdlc/adapter.md` §1 exactly as Lane A describes, with a
+working negative control. The unit is 🟢.
+
+## What this verdict does not claim
+
+- No timed run, no `npm test`, no `--full` sweep was taken. The host rule forbade it and nothing
+  graded here needed one.
+- Rows outside the eight the brief named (the earlier passes' rows 1 to 25) are carried by
+  reference from pass 3 and were not re-graded here.
+- The `716.04 s` reading's own figures were checked for internal consistency against its own log
+  only, not independently reproduced.
+
+## Reproducing
+
+From a scratch worktree at `6d0755b9`, no build needed:
+
+```
+grep -A2 "553.45" .sdlc/baseline.md | grep -oE '21a0e35d|8918342c'   # both present
+git ls-tree -r --name-only HEAD .sdlc/records/pif-u5-gate-logs/     # three logs
+grep -c "/Users/" .sdlc/records/pif-u5-gate-logs/r13-553s-unit-branch.log   # 0
+node .sdlc/checks/ceiling-counts-check.mjs; echo $?                 # partition 19=2+14+3, exit 0
+git diff a9a36405 6d0755b9 -- .sdlc/adapter.md | grep -c "^@@"       # 2
+sed -n '193p' .sdlc/adapter.md                                       # frozen two-jobs line
+git diff --name-only 8f037dd2 6d0755b9 | grep -cv '^\.sdlc/'         # 0
+node test/repo/branding.mjs | tail -1                                 # branding: clean
+```
