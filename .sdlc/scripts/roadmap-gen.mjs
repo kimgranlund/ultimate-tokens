@@ -322,6 +322,8 @@ function render(snap) {
   L.push("Or all at once, which re-renders the whole file from its own Snapshot and compares byte for byte:");
   L.push("`node .sdlc/scripts/roadmap-gen.mjs --verify .sdlc/roadmap.md` (exit 0 when every cell reproduces).");
   L.push("");
+  L.push("What that proves, and what it cannot: exit 0 means every cell follows from the Snapshot and the Snapshot agrees with itself, each ref's quoted reflog entry naming the sha REFS and WORKTREES record. It cannot prove the Snapshot matched the world: a value changed in both the Snapshot and its cell still passes. The check against the world is the Verifier's grade of the read inside the freeze window it was taken in, the `gh` blocks against live `gh` and the git blocks against this repo's reflogs.");
+  L.push("");
   L.push("## Open issues");
   L.push("");
   L.push(`Count: ${s.COUNT}. The priority breakdown is its own command:`);
