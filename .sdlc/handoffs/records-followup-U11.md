@@ -683,3 +683,22 @@ The review's addendum lists fourteen sites resting on `428f81ad` or `34173dd6`, 
 Pass 3 listed sites the review does not: the `plan/gate-split` reflog for R1, the R3 `origin/main`
 reads, the A14 note, and the groups that already stated reachability. Neither list is complete by
 construction: both searched for a written sha or ref, and the six verdict sites carry neither.
+
+### Pass 5, the reflog as witness
+
+Passes 3 and 4 anchor four claims about a moving ref to its reflog, because reachability from
+`698e8916` cannot decide them. A reflog is local and expires, so each anchor is stated here in full:
+the entries quoted verbatim, the commits that fall inside the window, and a reading outside the window
+that differs. Every entry was read from this repo, whose common directory `git rev-parse
+--git-common-dir` prints as the root checkout's `.git`, which the `rf-U13` worktree shares; none was
+read from a clone.
+
+| anchor | reflog entries, verbatim | commits inside the window | outside the window |
+|---|---|---|---|
+| the leg line, `origin/main` = `b8c3be8f` | `b8c3be8f refs/remotes/origin/main@{2026-09-20 15:50:52 -0700}: update by push` and the next, `428f81ad refs/remotes/origin/main@{2026-09-20 16:08:45 -0700}: update by push` | `66d40f70` at `16:02:56`, the roadmap the run read, and `5cac5623` at `16:04:32`, which first recorded the output | leg A's plan loop, run unchanged with its ref set to `b8c3be8f`, prints `units=11 merged=10 started=11 green=9 yellow=1 red=0 ungraded=1`, the recorded line; set to `428f81ad` it prints `green=10` and `ungraded=0`, because U11's verdict first exists there |
+| R3's reads | `7b59a29b refs/remotes/origin/main@{2026-09-20 15:24:33 -0700}: update by push`, then `db718c18 refs/remotes/origin/main@{2026-09-20 15:47:45 -0700}: update by push`; and the `b8c3be8f` pair above | `24620ec9` at `15:25:08` inside the first; `5cac5623` inside the second | `62a21128 refs/remotes/origin/main@{2026-09-20 14:44:04 -0700}: update by push`, an earlier position: its plan has 10 units and 9 ticked, against 11 and 10 |
+| `38 of the 55` | `13f46583 refs/remotes/origin/main@{2026-09-20 16:23:55 -0700}: update by push`, then `49077c67 refs/remotes/origin/main@{2026-09-20 17:41:00 -0700}: update by push` | `698e8916` at `16:28:12`, which committed the sentence | at `7b59a29b`, the count is 37 of 53 |
+| R1, `plan/gate-split` = `7d811172` | `7d811172 plan/gate-split@{2026-09-20 14:35:09 -0700}: commit: sdlc(gate-split): U2 to U5 dispatched off the #681 tree at ebddc55d (#713)`, then `9276d4f0 plan/gate-split@{2026-09-20 14:40:03 -0700}: commit: sdlc(gate-split): U6-10, sets of record run at load under 5 (owner ruling) (#713)` | `7dde8cb1` at `14:36:16`, the regeneration R1 grades | `ebddc55d plan/gate-split@{2026-09-20 14:33:56 -0700}: commit (merge): sdlc(gate-split): merge plan/preset-intent-fidelity @ a2bb3c84, the #681 tree U2 to U5 build on (#713)`, the entry before: `plan/gate-split@{2026-09-20 14:35:00 -0700}` resolves to `ebddc55d`, where the four U2 to U5 board rows read ⚪ `not dispatched` against 🔵 with builder seats at `7d811172` |
+
+The witness is allowed to acquit here for the reason it was allowed to convict in A4 of pre-land record pass 3: a
+record of where a ref pointed is evidence in both directions or in neither.
