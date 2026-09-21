@@ -228,7 +228,7 @@ Needle 2, 5 and 7 appear on a `pass` line in an unmutated run as well as on a `F
 Checklist (the Orchestrator ticks it; the table below carries grades and paths):
 
 - [x] U1 (S) shared seeded sampler, gate scripts, `curated-contrast` moved onto it · builder-l2 · reviewer-l1 · verifier-l1 · verified at 7d51ba07, merged as 34ebbae6
-- [~] U2 (M) `tonal.mjs`: sampled by default, full under `--full`, grid thinned · builder-l4 · reviewer-l2 · verifier-l2
+- [x] U2 (M) `tonal.mjs`: sampled by default, full under `--full`, grid thinned · builder-l4 · reviewer-l2 · verifier-l2 · verified at cf024615, merged as 381e0f0c
 - [x] U3 (M) `anchor.mjs`: the same · builder-l4 · reviewer-l2 · verifier-l2 · verified at 27356468, merged as a9daea10
 - [x] U4 (S) `prime.mjs`: thinned determinism cases and grids by default, full under `--full` · builder-l3 · reviewer-l2 · verifier-l2 · verified at c8823976, merged as 2dd4444a
 - [~] U5 (S) `headless-boot.mjs`: the reset sweep only (approval question 2: yes) · builder-l2 · reviewer-l1 · verifier-l1
