@@ -7,7 +7,11 @@ under R13.
 
 ## 1. Verdict on my own work, before the table
 
-🟡 Two things are open and neither is a success story.
+🔴 One criterion is red, three things are open, and none of it is a success story.
+
+- 🔴 **U7-P5 went red because of this unit's own commit.** S1 grew `figma/plugin/ui.html`, so
+  `.sdlc/baseline.md`'s ui.html KB figure is stale and `baseline-agrees-check.sh` exits 1. The repair
+  is one number in a file outside the scope wall. §8b.
 
 - 🟡 **U7-P1 is not mine.** No `npm test` has been run by this unit. The host allows one at a time
   and team-lead holds the window. Everything else below is single test files.
@@ -29,7 +33,7 @@ under R13.
 | U7-P2 | 🟢 | `branding: clean (552 files scanned)`, exit 0. Control NC-P2 bites |
 | U7-P3 | 🟢 | the em-dash diff predicate prints `0` over the hand-edited paths. Control NC-P3 prints `1` with `-CSD` and `0` without |
 | U7-P4 | 🟡 | 12 hand-edited paths, exactly the wall's list; 2 generated artifacts moved, one of which the wall does not enumerate. §6 |
-| U7-P5 | 🟢 | `stale total: 0`, `ceiling-counts: clean`, both exit 0. Controls NC-P5 and A1 to A15 bite |
+| U7-P5 | 🔴 | `ceiling-counts: clean`, exit 0. `baseline-agrees-check.sh` reads `stale total: 1`, exit 1, AFTER this unit's commit: S1 grew `figma/plugin/ui.html` and the baseline's KB figure is now stale. The repair is outside the scope wall. §11 |
 | U7-1 | 🟢 | 26 by-construction exceptions of 3,380, frozen by name. Controls NC-1a and NC-1b bite and name both sides |
 | U7-2 | 🟢 | 22 measured-pixel exceptions, max 54.2383 L*, frozen by name. Pre-#681 fixture control reads 1,816 at max 52.4868 L*. Control NC-2 bites |
 | U7-3 | 🟢 | the 26 equal `ORDER_ALLOW` member for member, read out of `test/engine/anchor.mjs`'s source. Control NC-3 bites and names the side that moved |
@@ -326,6 +330,30 @@ verdict passes.
 Both readings are unchanged from the planner's measurement at `0391f045` and both are recorded as
 known and carried, not fixed by this unit. K2 and K3 are the named close-out candidates; K1, K4 and
 K5 are carried.
+
+## 8b. 🔴 U7-P5 is red after the commit, and the fix is outside the wall
+
+`node .sdlc/checks/ceiling-counts-check.mjs` is clean, exit 0. The other half of the row is not.
+
+```
+STALE ui.html: baseline 4111.1 KB, tree 4117.5 KB
+stale total: 1
+exit 1
+```
+
+It read `stale total: 0` before this unit's commit. The cause is S1: the comments added to
+`src/ui/model.mjs` and `src/ui/sections/color.js` grow `figma/plugin/ui.html` through
+`gen:figma-ui`, and `.sdlc/baseline.md`'s recorded `ui.html 4111.1 KB` no longer matches the tree
+the check measures.
+
+The repair is one number in `.sdlc/baseline.md`. That file is NOT in U7-P4's scope wall, and the
+brief says to stop and ask rather than edit outside it, so I stopped. Revision 25 of the plan
+already set the precedent for exactly this shape: the landing unit repairs the baseline figure in
+its own pre-land commit, with `baseline-agrees-check.sh` run as a pre-land gate. Team-lead asked to
+rule on whether U7-P4 extends to that file or whether the repair waits for the pre-land commit.
+
+Nothing else about the row moved: the test-file count still agrees (49 against 49), every adapter
+time range still agrees, and the baseline ref is still in `origin/main`'s history.
 
 ## 9. What I did not do
 
