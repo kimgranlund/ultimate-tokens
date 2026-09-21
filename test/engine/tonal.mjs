@@ -1189,7 +1189,7 @@ for (const mode of ["perceptual", "peak"]) {
   const byCategory = {};
   for (const slug of CATS) {
     const { PRESETS } = await import(`../../src/ui/categories/${slug}.js`);
-    if (!Array.isArray(PRESETS) || !PRESETS.length) FAIL("chroma-envelope", `category "${slug}" exposed no PRESETS — gen:categories did not run, or the mirror moved`);
+    if (!Array.isArray(PRESETS) || !PRESETS.length) FAIL("chroma-envelope", `category "${slug}" exposed no PRESETS, gen:categories did not run, or the mirror moved`);
     byCategory[slug] = PRESETS;
   }
   const all = CATS.flatMap((slug) => (byCategory[slug] || []).map((p) => ({ ...p, category: slug })));
@@ -1204,7 +1204,7 @@ for (const mode of ["perceptual", "peak"]) {
   // measured what it claims to (#713 design section).
   const docPalettes = docs.reduce((a, d) => a + (d.palettes ? d.palettes.length : 0), 0);
   if (FULL) {
-    if (docs.length < 343) FAIL("chroma-envelope", `(vacuity) FULL measured only ${docs.length} curated documents, expected at least 343 — the corpus shrank or an import failed silently`);
+    if (docs.length < 343) FAIL("chroma-envelope", `(vacuity) FULL measured only ${docs.length} curated documents, expected at least 343 (the corpus shrank or an import failed silently)`);
     if (docPalettes < 3780) FAIL("chroma-envelope", `(vacuity) FULL measured only ${docPalettes} palettes, expected at least 3780`);
   } else if (docs.length < 30) {
     FAIL("chroma-envelope", `(vacuity) SAMPLED measured only ${docs.length} curated documents, expected at least 30`);
