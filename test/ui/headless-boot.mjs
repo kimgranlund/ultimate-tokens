@@ -1517,7 +1517,21 @@ const colorOf = (i) => { const m = /background:\s*([^;]+)/.exec(i.getAttribute("
 const stripWidths = (preset) => [...app.presetTile(preset).querySelector(".strip").children].map(flexOf);
 const { paletteKeyColors: jjPaletteKeyColors, hexToOklch: jjHexToOklch } = await import("../../src/ui/model.mjs");
 const { hydrate: jjHydrate } = await import("../../src/ui/persist.js");
-const { posterStripBands: jjPosterStripBands, posterStripDominantCap: jjDominantCap, POSTER_STRIP_MAX_BAND_PCT_LOW: jjCapLow, POSTER_STRIP_MAX_BAND_PCT_HIGH: jjCapHigh } = await import("../../src/ui/app-helpers.mjs");
+const { posterStripBands: jjPosterStripBands, posterStripDominantCap: jjDominantCap, POSTER_STRIP_MAX_BAND_PCT_LOW: jjCapLow, POSTER_STRIP_MAX_BAND_PCT_HIGH: jjCapHigh, POSTER_STRIP_CAP_CHROMA_LOW: jjCapCLow, POSTER_STRIP_CAP_CHROMA_HIGH: jjCapCHigh } = await import("../../src/ui/app-helpers.mjs");
+// jjOwnChroma - this group's OWN sRGB(0..255) -> OKLCH chroma, on Bjorn Ottosson's matrices, so the
+// #681 S1 prediction below is derived from the sampled hex and the module's documented endpoints
+// rather than routed back through the same converter `posterStripChroma` uses. Independence is the
+// point: a shared bug in that conversion must not make the prediction agree with the engine.
+const jjOwnChroma = (hex) => {
+  const inv = (a) => (a <= 0.04045 ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4));
+  const [r, g, b] = [1, 3, 5].map((i) => inv(parseInt(hex.slice(i, i + 2), 16) / 255));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return Math.hypot(1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s);
+};
+// jjPredictCap - the documented chroma scaling, re-expressed from the module's exported endpoints.
+const jjPredictCap = (hex) => jjCapLow + Math.min(1, Math.max(0, (jjOwnChroma(hex) - jjCapCLow) / (jjCapCHigh - jjCapCLow))) * (jjCapHigh - jjCapLow);
 const jjEnabled = (preset) => jjPaletteKeyColors(jjHydrate(preset)).filter((p) => p.on);
 const jjChroma = (hex) => jjHexToOklch(hex)[1];
 // bands rendered by the REAL presetTile() DOM, annotated with each swatch's own name/colorRole
@@ -1562,18 +1576,30 @@ ok(jjWPBands.length === 6, `(jj) #646: War and Peace still shows 6 bands (got ${
 const jjWPDominant = jjWPBands.find((b) => b.colorRole === "dominant");
 const jjWPAccents = jjWPBands.filter((b) => b.colorRole === "accent");
 ok(jjWPAccents.length === 2, `(jj) #646 fix 2: War and Peace shows BOTH accent swatches (icon crimson + gilt gold), never just one (got ${jjWPAccents.length})`);
-// RE-PINNED at #681 pre-land S1, and the move is the point, not noise. This assertion read
+// RE-DERIVED at #681 pre-land S1, and the move is the point, not noise. This assertion read
 // `cap < 39` against a key colour of `#D5BE98`, the CUSP RECONSTRUCTION of candle gold off the
 // preset's fitted hue/chroma. S1 makes `paletteKeyColors` return the palette's stored `anchor`, the
-// real sampled `#C49F60`, which is MORE chromatic than its own reconstruction was: the cap moves
-// 37.86 -> 40.56. So the poster strip's chroma weighting now reads the sampled colour instead of a
-// desaturated approximation of it, which is what ADR-026 says the product does everywhere else, and
-// the strip's band widths move for every anchored curated preset. The old `< 39` described the
-// reconstruction, not candle gold, so "near the low end" is retired with it. The bound is re-pinned
-// to the measurement and tightened: the cap must be a genuine interpolation, strictly inside
-// (LOW, HIGH), not either endpoint, and it must equal the rendered width.
+// real sampled `#C49F60`, which is MORE chromatic than its own reconstruction was. So the poster
+// strip's chroma weighting now reads the sampled colour instead of a desaturated approximation of
+// it, which is what ADR-026 says the product does everywhere else, and the strip's band widths move
+// for every anchored curated preset. The old `< 39` described the reconstruction, not candle gold,
+// so "near the low end" is retired with it.
+//
+// The new expectation is DERIVED before it is read off a run, not fitted to one. `#C49F60`'s OKLCH
+// chroma is 0.092275 (this group's own Ottosson conversion, `jjOwnChroma`, never
+// `posterStripChroma`). The documented scaling puts that at
+// t = (0.092275 - 0.02) / (0.15 - 0.02) = 0.555958 of the way from `POSTER_STRIP_CAP_CHROMA_LOW` to
+// `POSTER_STRIP_CAP_CHROMA_HIGH`, so the cap is 35 + 0.555958 * (45 - 35) = 40.5596. That number
+// comes from the sampled hex and the module's own exported endpoints alone. The same arithmetic on
+// the retired cusp key `#D5BE98` (chroma 0.057194, t 0.286108) predicts 37.8611, which is exactly
+// the cap this assertion used to sit under, so the prediction reproduces BOTH sides of the move.
+// The three checks below are, in order: the prediction is 40.5596; the engine agrees with the
+// prediction; and the rendered band equals the engine, strictly inside (LOW, HIGH).
 const jjWPCap = jjDominantCap(jjWPDominant.key);
-ok(Math.abs(jjWPDominant.width - jjWPCap) < 0.01 && Math.abs(jjWPCap - 40.56) < 0.01 && jjWPCap > jjCapLow && jjWPCap < jjCapHigh, `(jj) #646 fix 1 + #681 S1: the candle-gold dominant (authored 50% -> ~46% uncapped) is clamped to the chroma-scaled cap of its SAMPLED colour, strictly between ${jjCapLow} and ${jjCapHigh} (want 40.56, cap ${jjWPCap.toFixed(2)}, rendered ${jjWPDominant.width.toFixed(2)})`);
+const jjWPPredicted = jjPredictCap(jjWPDominant.key);
+ok(jjWPDominant.key === "#C49F60" && Math.abs(jjWPPredicted - 40.5596) < 0.001, `(jj) #681 S1: the strip reads War and Peace's SAMPLED dominant #C49F60, and the documented chroma scaling PREDICTS its cap at 40.5596 from that hex alone (key ${jjWPDominant.key}, predicted ${jjWPPredicted.toFixed(4)})`);
+ok(Math.abs(jjWPCap - jjWPPredicted) < 1e-9, `(jj) #681 S1: posterStripDominantCap agrees with the independently derived prediction (engine ${jjWPCap.toFixed(4)}, derived ${jjWPPredicted.toFixed(4)})`);
+ok(Math.abs(jjWPDominant.width - jjWPCap) < 0.01 && jjWPCap > jjCapLow && jjWPCap < jjCapHigh, `(jj) #646 fix 1 + #681 S1: the candle-gold dominant (authored 50% -> ~46% uncapped) is clamped to the chroma-scaled cap of its sampled colour, strictly between ${jjCapLow} and ${jjCapHigh} (cap ${jjWPCap.toFixed(2)}, rendered ${jjWPDominant.width.toFixed(2)})`);
 ok(jjWPAccents.every((b) => b.width >= 10 - 0.01), `(jj) #646 fix 1: both accent bands are floored to >= ~10% each — no longer slivers (got ${jjWPAccents.map((b) => b.width.toFixed(2)).join(",")})`);
 // #646 fix 4 (owner ruling): neutral is pinned to the LEADING edge and the highest-chroma band
 // sits at the FAR edge, so the strip reads grounded-then-vivid instead of split around a mid-strip

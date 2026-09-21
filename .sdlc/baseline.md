@@ -17,7 +17,7 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
 | `npm test` | 3/3 | 0 | 56.27 · 56.43 · 59.83 | `✓ all 49 test files passed` `re-measured 2026-09-20, see the #681 correction below` |
-| `npm run build` | 3/3 | 0 | 3.06 · 1.34 · 1.36 | `wrote figma/plugin/ui.html 4111.1 KB` `re-measured 2026-09-20, see the #681 correction below` |
+| `npm run build` | 3/3 | 0 | 3.06 · 1.34 · 1.36 | `wrote figma/plugin/ui.html 4117.5 KB` `re-measured 2026-09-20 twice, see the #681 correction and the #681 U7 correction below` |
 | `npm run smoke` | 3/3 | 0 | 18.20 · 18.28 · 18.25 | `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser` |
 | `npm run gate:corpus-contrast` | 3/3 | 0 | 20.12 · 22.89 · 22.29 | `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color` |
 | `npm run gen:type-fonts` | 3/3 | 0 | 0.77 · 0.78 · 0.70 | `wrote src/ui/type-fonts.js  (229 KB · fonts 171 KB woff2)` |
@@ -213,5 +213,17 @@ at the U4 head reported the same figure, so the number has three independent con
 quote itself has exactly one source. The three
 `seconds` columns are NOT re-measured and still belong to the `20298cc` runs; the script's own
 `note head:` line is the standing statement that every timing here is unproven at a later head.
+
+Correction (2026-09-20, plan preset-intent-fidelity U7, #681): `npm run build`'s ui.html figure
+moves again, from 4111.1 KB to 4117.5 KB. The cause is named rather than left as a drift: U7's S1 adds explanatory comments to `src/ui/model.mjs` and
+`src/ui/sections/color.js`, both of which `scripts/gen-figma-ui.mjs` inlines into
+`figma/plugin/ui.html`, so the bundle grew by 6.4 KB and `baseline-agrees-check.sh` began reading
+`STALE ui.html: baseline 4111.1 KB, tree 4117.5 KB`. Team-lead ruled that the unit whose change made
+the figure stale repairs it in its own commit rather than leaving a red gate for a later one, on
+revision 25's standing precedent. The new figure is this unit's own program output, not a number
+copied out of the error line: `gen:figma-ui` printed `wrote figma/plugin/ui.html 4117.5 KB` in
+`.git-worktrees/pif-u7`, and measuring the committed file the way `baseline-agrees-check.sh`
+measures it gives the same 4117.5. The three `seconds` columns are NOT re-measured and still belong
+to the `20298cc` runs; only the KB cell moves.
 
 Correction (2026-09-20, plan records-followup U10, #709): the `npm test` and `npm run build` summary cells of the live table now sit in inline spans, taken byte for byte from a run in `.worktrees/rf-U10`; the `npm test` cell had dropped the check mark the runner prints. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule. Three sentences that the two `extended:` rows had made false were re-measured and rewritten: where those two rows ran, what the fonts row proves about `src/ui/type-fonts.js`, and which of the seven commits of `d814500..20298cc` changed what (`git show --stat`: 20298cca touched the toolchain and no file under `test/`, 9a44f685 touched only files under `test/`). The three prior-set summary cells now sit in spans as they stand, with the two that the program did not print whole marked `altered:` next to the span: the 47-file cell lost the runner's check mark and the smoke cell is cut before the dash, both at a `d814500` run that cannot be redone. No measured figure moves.

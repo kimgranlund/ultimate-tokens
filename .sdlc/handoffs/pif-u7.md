@@ -9,9 +9,10 @@ under R13.
 
 🔴 One criterion is red, three things are open, and none of it is a success story.
 
-- 🔴 **U7-P5 went red because of this unit's own commit.** S1 grew `figma/plugin/ui.html`, so
-  `.sdlc/baseline.md`'s ui.html KB figure is stale and `baseline-agrees-check.sh` exits 1. The repair
-  is one number in a file outside the scope wall. §8b.
+- 🟢 **U7-P5 went red because of this unit's own commit, and this unit repaired it.** S1 grew
+  `figma/plugin/ui.html`, so `.sdlc/baseline.md`'s ui.html KB figure went stale. Team-lead ruled the
+  unit that made the figure stale repairs it. Repaired from a fresh generator run, last, after every
+  other edit. §8b.
 
 - 🟡 **U7-P1 is not mine.** No `npm test` has been run by this unit. The host allows one at a time
   and team-lead holds the window. Everything else below is single test files.
@@ -32,8 +33,8 @@ under R13.
 | U7-P1 | 🔴 not run by me | no `npm test` from this unit; team-lead's window. Every single-file gate below is green and the tree is clean after the generators |
 | U7-P2 | 🟢 | `branding: clean (552 files scanned)`, exit 0. Control NC-P2 bites |
 | U7-P3 | 🟢 | the em-dash diff predicate prints `0` over the hand-edited paths. Control NC-P3 prints `1` with `-CSD` and `0` without |
-| U7-P4 | 🟡 | 12 hand-edited paths, exactly the wall's list; 2 generated artifacts moved, one of which the wall does not enumerate. §6 |
-| U7-P5 | 🔴 | `ceiling-counts: clean`, exit 0. `baseline-agrees-check.sh` reads `stale total: 1`, exit 1, AFTER this unit's commit: S1 grew `figma/plugin/ui.html` and the baseline's KB figure is now stale. The repair is outside the scope wall. §11 |
+| U7-P4 | 🟢 | the wall's hand-edited paths, plus 2 generated artifacts named with their generators, plus `.sdlc/baseline.md` under team-lead's repair ruling. §6 and §8b |
+| U7-P5 | 🟢 | `stale total: 0` and `ceiling-counts: clean`, both exit 0, after repairing `.sdlc/baseline.md`'s ui.html figure. §8b |
 | U7-1 | 🟢 | 26 by-construction exceptions of 3,380, frozen by name. Controls NC-1a and NC-1b bite and name both sides |
 | U7-2 | 🟢 | 22 measured-pixel exceptions, max 54.2383 L*, frozen by name. Pre-#681 fixture control reads 1,816 at max 52.4868 L*. Control NC-2 bites |
 | U7-3 | 🟢 | the 26 equal `ORDER_ALLOW` member for member, read out of `test/engine/anchor.mjs`'s source. Control NC-3 bites and names the side that moved |
@@ -235,19 +236,55 @@ answers the question the row is actually asking.
 palettes with `key` equal to `anchor`; the MCP `list_palettes` tool over `buildSurface(kit)` reports
 16 of 16. `src/ui/mcp-assets.js` did NOT move under `gen:mcp-assets`.
 
-### 🟡 Blast radius the plan does not record
+### Blast radius, now a row in the plan
 
 `src/ui/app-helpers.mjs`'s poster-strip chroma weighting reads `paletteKeyColors().key`, so S1 moves
-the preset-tile strip band widths for every anchored curated preset. Witness, measured: literature
-"War and Peace", dominant candle gold. The old key was `#D5BE98`, the cusp RECONSTRUCTION, giving a
-dominant cap of 37.86. The new key is `#C49F60`, the stored sample, giving 40.56. The sample is more
-chromatic than its own reconstruction, which is the ADR-026 defect surfacing in the gallery.
+the preset-tile strip band widths for every anchored curated preset. Witness: literature "War and
+Peace", dominant candle gold. The old key was `#D5BE98`, the cusp RECONSTRUCTION; the new key is
+`#C49F60`, the stored sample. The sample is more chromatic than its own reconstruction, which is the
+ADR-026 defect surfacing in the gallery. Team-lead ruled the row goes in the plan's Blast radius
+section, inside the scope wall; it is there.
 
-This red `(jj) #646 fix 1` in `test/ui/headless-boot.mjs`, whose bound `cap < 39` had been pinned to
-the reconstruction. I re-pinned it inside the scope wall to the measured 40.56 plus a strict
-`(35, 45)` interpolation check, which is tighter than what it replaced, and recorded the mechanism
-in the test's own comment. **`src/ui/app-helpers.mjs` is not in the scope wall and I did not touch
-it.** Raised with team-lead; the plan's blast-radius table has no poster-strip row.
+**The cap is DERIVED, not observed.** My first pin read 40.56 off a run, which team-lead correctly
+called a fitted number. The prediction now comes from the sampled hex and the module's own exported
+endpoints, before any run:
+
+- `#C49F60`'s OKLCH chroma is **0.092275**, computed with this test group's own Ottosson conversion
+  (`jjOwnChroma`), never through `posterStripChroma`, so a shared bug in that conversion cannot make
+  the prediction agree with the engine.
+- `POSTER_STRIP_CAP_CHROMA_LOW` is 0.02 and `POSTER_STRIP_CAP_CHROMA_HIGH` is 0.15, so
+  t = (0.092275 - 0.02) / 0.13 = **0.555958**.
+- `POSTER_STRIP_MAX_BAND_PCT_LOW` is 35 and `POSTER_STRIP_MAX_BAND_PCT_HIGH` is 45, so the cap is
+  35 + 0.555958 x 10 = **40.5596**.
+
+The same arithmetic on the retired cusp key `#D5BE98` (chroma **0.057194**, t **0.286108**) predicts
+**37.8611**, which is exactly the cap the assertion used to sit under. The derivation reproduces BOTH
+sides of the move, so it is a prediction rather than a description of one reading.
+
+The `(jj)` group now asserts three things in order: the strip reads `#C49F60` and the documented
+scaling predicts 40.5596 from that hex alone; `posterStripDominantCap` agrees with that prediction
+to 1e-9; and the rendered band equals the engine, strictly inside (35, 45). The last of these is
+what `#646` originally cared about and it is unchanged in intent.
+
+**Control, per team-lead: the cusp key restored in a throwaway clone.** `node
+test/ui/headless-boot.mjs`, exit 1:
+
+```
+  ✗ (jj) #681 S1: the strip reads War and Peace's SAMPLED dominant #C49F60, and the documented chroma scaling PREDICTS its cap at 40.5596 from that hex alone (key #D5BE98, predicted 37.8611)
+jj failures: 1
+```
+
+Worth reading carefully: exactly ONE of the three reds, and it is the right one. The other two stay
+green under the cusp key because the engine and the prediction move together to 37.86 and the
+rendered band follows, which is the whole point. The assertion that pins WHICH colour the strip
+reads is the one that bites, and the control prints the retired key and its predicted 37.8611 by
+name.
+
+Verification run in the worktree after the rewrite: `node test/ui/headless-boot.mjs`, exit 0,
+`HEADLESS BOOT PASS`, 0 failures, `real 2m26.794s / user 2m24.581s` started at load 6.65.
+
+**`src/ui/app-helpers.mjs` is not in the scope wall and I did not touch it.** No engine constant
+moved; only the colour fed into it.
 
 ## 6. S2, S4, S5, and the generated artifacts
 
@@ -294,12 +331,24 @@ Ran the full `npm test` generator chain by hand (`gen:figma-assets`, `gen:mcp-as
 `src/ui/figma-plugin-assets.js`, `src/ui/mcp-assets.js`, `src/ui/categories/*.js` and
 `test/ui/fixtures/default-doc-ramps.json` did NOT move.
 
-The second row is the open scope-wall item. It satisfies U7-P4's governing clause, "any committed
-generated artifact `npm test` itself rewrites as a consequence of S1", and is absent from that row's
-parenthetical list. Proof it is S1's and not pre-existing drift: in a throwaway clone checked out at
-UB `de1bafef`, `npm run gen:mcp-assets` leaves `git status --short` empty. Committed, because
-omitting it reds U7-P1's clean-tree check; team-lead asked to rule on whether the row's list is
-amended instead.
+The second row was raised as a scope-wall question and team-lead ruled on it (2026-09-20): commit it
+and name it, do not amend the criterion. U7-P4's governing clause covers any committed generated
+artifact `npm test` rewrites as a consequence of S1, each named here with its generator; the
+parenthetical list is illustrative, not closed; the criterion text is owner-approved and stays as
+written; and the conductor has been told so the verifier does not read the parenthetical as
+exhaustive.
+
+Naming the chain as asked: `npm test` runs `gen:mcp-assets`, which is
+`node scripts/gen-mcp-assets.mjs && node scripts/gen-describe-mcp-assets.mjs`, and it is the SECOND
+of those, `scripts/gen-describe-mcp-assets.mjs`, that rewrites `src/ui/describe-mcp-assets.js`.
+**`src/ui/mcp-assets.js`, written by the first, did NOT move.**
+
+Proof it is S1's consequence and not pre-existing drift, which is the control the clause asks for:
+in a throwaway clone checked out at UB `de1bafef`, `npm run gen:mcp-assets` exits 0 and leaves
+`git status --short` empty.
+
+The third generated artifact in this commit, `docs/img/palette-preview.svg`, is S5's own deliverable
+rather than a side effect, and it was already stale at `0391f045` before this unit existed.
 
 ## 7. Two findings against my own first draft
 
@@ -331,9 +380,9 @@ Both readings are unchanged from the planner's measurement at `0391f045` and bot
 known and carried, not fixed by this unit. K2 and K3 are the named close-out candidates; K1, K4 and
 K5 are carried.
 
-## 8b. 🔴 U7-P5 is red after the commit, and the fix is outside the wall
+## 8b. U7-P5: the baseline figure this unit made stale, and repaired
 
-`node .sdlc/checks/ceiling-counts-check.mjs` is clean, exit 0. The other half of the row is not.
+Immediately after this unit's first commit, `sh .sdlc/checks/baseline-agrees-check.sh` read:
 
 ```
 STALE ui.html: baseline 4111.1 KB, tree 4117.5 KB
@@ -341,19 +390,27 @@ stale total: 1
 exit 1
 ```
 
-It read `stale total: 0` before this unit's commit. The cause is S1: the comments added to
+It read `stale total: 0` before that commit. The cause is S1: the comments added to
 `src/ui/model.mjs` and `src/ui/sections/color.js` grow `figma/plugin/ui.html` through
-`gen:figma-ui`, and `.sdlc/baseline.md`'s recorded `ui.html 4111.1 KB` no longer matches the tree
-the check measures.
+`scripts/gen-figma-ui.mjs`, and `.sdlc/baseline.md`'s recorded `ui.html 4111.1 KB` stopped matching
+the tree the check measures.
 
-The repair is one number in `.sdlc/baseline.md`. That file is NOT in U7-P4's scope wall, and the
-brief says to stop and ask rather than edit outside it, so I stopped. Revision 25 of the plan
-already set the precedent for exactly this shape: the landing unit repairs the baseline figure in
-its own pre-land commit, with `baseline-agrees-check.sh` run as a pre-land gate. Team-lead asked to
-rule on whether U7-P4 extends to that file or whether the repair waits for the pre-land commit.
+`.sdlc/baseline.md` is not in U7-P4's enumerated list, so I stopped and asked rather than editing
+outside the wall. Team-lead ruled (2026-09-20): the unit whose change made the figure stale repairs
+it, leaving a red gate for a later commit is the defect rather than the tidy option, the
+owner-approved criterion text is NOT amended, and the conductor is told so the verifier does not red
+U7-P4 on the file. Revision 25 of the plan is the standing precedent for this shape: the landing
+unit repairs the baseline figure in its own commit with `baseline-agrees-check.sh` run as a gate.
 
-Nothing else about the row moved: the test-file count still agrees (49 against 49), every adapter
-time range still agrees, and the baseline ref is still in `origin/main`'s history.
+Done last, after every other edit, and re-measured rather than copied out of the error line. The
+figure comes from the generator's own output line in this worktree, `wrote figma/plugin/ui.html
+4117.5 KB`, confirmed independently by measuring the committed file the way the check measures it
+(`readFileSync(..., "utf8").length / 1024`), which also gives `4117.5`. The single edited cell says
+what moved it and why, rather than silently overwriting a run nobody redid.
+
+Afterwards: `stale total: 0`, exit 0. Nothing else about the row moved at any point: the test-file
+count agreed throughout (49 against 49), every adapter time range agreed, and the baseline ref stayed
+in `origin/main`'s history. No timing figure in that file was touched.
 
 ## 9. What I did not do
 
@@ -370,11 +427,10 @@ time range still agrees, and the baseline ref is still in `origin/main`'s histor
 
 ## 10. What I am unsure of
 
-- Whether `src/ui/describe-mcp-assets.js` belongs in this commit or in an amended U7-P4. §6.
-- Whether the `(jj)` re-pin is the right call or whether the owner would rather the poster strip
-  keep weighting by the cusp reconstruction. The re-pin makes the gallery follow the sampled colour,
-  which is what ADR-026 says everywhere else, but nobody has ruled on the gallery specifically.
-- Whether the plan wants a poster-strip row in its blast-radius table. I did not add one unasked.
+- Whether the owner would rather the poster strip keep weighting by the cusp reconstruction.
+  Team-lead ruled on the gate and the plan row; nobody has ruled on the product behaviour itself.
+  Following the sampled colour is what ADR-026 says the product does everywhere else, so I treated
+  it as the intended consequence rather than a regression, but that is my reading, not a ruling.
 - The `ladder-span` gate's expected counts are exact, tolerance 0, on my reading of "failing outside
   a stated tolerance". If the intent was a band, say so and I will widen it; I chose exact because
   both producers are deterministic functions of committed data and a band would only hide a move.
