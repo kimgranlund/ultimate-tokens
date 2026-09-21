@@ -458,3 +458,209 @@ sentence would hold better if each pattern were stated as the claim's content, n
 1. Repair `:501` and `:169` of the U11 handoff per R4-1, and add them to C15's row or a new row with
    a pattern that searches the claim's content.
 2. Re-run the hunk check with those two lines added to the edited-hit list.
+
+### Addendum: claims in the U11 handoff that rest on `428f81ad` or `34173dd6`
+
+Asked for after the Verifier's C6 finding. The list is derived independently of the builder, at
+`c442826b`, line numbers `:N` there. Neither commit is reachable from `698e8916` (both
+`--is-ancestor` exit `1`). `428f81ad` is the first commit to add `.sdlc/verdicts/records-followup-U11.md`
+(`--diff-filter=A` returns it alone, and `git cat-file -e 698e8916:` on that path fails), so every
+claim that cites the U11 verdict's content rests on it too, even where the sha is not written.
+No main commit touches `.sdlc/verdicts/` between `428f81ad` and `698e8916`, so an `origin/main`
+read of that directory made while this record was written reads `428f81ad`'s tree.
+
+| site | claim | rests on | how |
+|---|---|---|---|
+| `:129-137` | main's board carried the U5 contradiction from `34173dd6` until `428f81ad` rewrote the cell | both, by name | C3 pass 2. States unreachability explicitly; I re-derived it true |
+| `:495` | the same, in the `For the Orchestrator` row | both, by name | C3 pass 2; true, points at `:129` |
+| `:516` | C3's Correction row | both, by name | true as a record of the repair |
+| `:290-293` | the leg's `origin/main` line `went stale six minutes after the run, at 428f81ad ... 19 minutes 30 seconds before this handoff's last commit and was never re-measured here` | `428f81ad`, by name, with wall-clock ordering against `698e8916` | the Verifier's C6 finding. Earlier in time than `698e8916` does not make it visible from `698e8916`; the sentence places a main-only event on this record's timeline by clock, the pass 1 C3 fault |
+| `:519` | C6's Correction row, same `6 minutes after ... 19 minutes 30 seconds before this handoff's last commit` | `428f81ad`, by name | as above, second site of the same claim |
+| `:496` | the stray verifier file `reached main at 428f81ad` | `428f81ad`, by name | true on main, stated as main's. It is used to bound an unordered pair of worktree reads, so check it does not imply the file was visible to `698e8916` |
+| `:525` | C12's Correction row repeats `:496` | `428f81ad`, by name | as `:496` |
+| `:191` | `re-derived at origin/main 38 of the 55 files under .sdlc/verdicts/ carry no verdict: field` | `428f81ad`, unnamed | written at `698e8916` (blame). `.sdlc/verdicts/` has 55 `.md` files at `428f81ad`, 54 at `428f81ad^`, 52 at `698e8916`. The 55 is `428f81ad`'s tree read through a moving ref and not named |
+| `:12` | front matter `verdict: .sdlc/verdicts/records-followup-U11.md pass 1 (... fixed at 66d40f70)` | `428f81ad`, unnamed | the cited file does not exist at `698e8916`; it names no ref, unlike `:11`, which names `main @ 5c6a0c13` |
+| `:120-121` | `The verdict caught it.` | the U11 verdict file, so `428f81ad` | uncited; the verdict it names is not reachable |
+| `:271-273` | `That is the defect the U11 verdict found in pass 1` | the U11 verdict file, so `428f81ad` | uncited, same |
+| `:343` | NC7's state cell, `the verdict's R3` | the U11 verdict file, so `428f81ad` | uncited, same |
+| `:472` | Scope: `66d40f70` (`the verdict's R3 pass 2 and U5-4`) | the U11 verdict file, so `428f81ad` | uncited, same |
+| `:494` | `certified the verdict's R3 rather than catching it` | the U11 verdict file, so `428f81ad` | uncited, same |
+
+The first seven name a sha. The last seven name none: that is the #723 blind spot the §8.2
+re-diagnosis described. They are claims about the record's own history whose source reached main
+at `428f81ad` and is not reachable from `698e8916`. The first two groups need a repair or a stated
+reason. For the verdict-citing group, one front-matter or Correction line naming `428f81ad` as where
+the U11 verdict lives, and saying it is not reachable from `698e8916`, would cover all six if the
+builder states it once and references it. Checked against `c442826b` only; the head is moving.
+
+## Pass 5, re-check at `294f7937`
+
+> Model-independence label, owner ruling R17. Opus at high effort standing in for a fable reviewer
+> seat. The builder was opus at xhigh, and the Verifier who grades next is also opus. No cross-model
+> independence.
+
+Head `294f7937`: `1249ec77` touches the U11 handoff alone, `294f7937` the U13 handoff alone.
+Checked against my own Pass 4 lists, not the builder's. Line numbers are `:N` at `294f7937` in
+`.sdlc/handoffs/records-followup-U11.md`, with the `c442826b` number beside where it moved.
+
+### Verdict
+
+🔴 FIX-FIRST. The dependency sweep is correct in everything it touches, and R3's `eight` is right.
+But neither Pass 4 blocker has a hunk in `git diff -U0 c442826b 294f7937`, and neither do the four low
+notes or the six verdict-citing sites.
+
+| item | state | evidence |
+|---|---|---|
+| `:518` (was `:501`), `#722`: `the rule makes it a note` | 🔴 open | text unchanged at `294f7937`; still contradicts `:35` and the ranked row 14 |
+| `:180` (was `:169`), `an issue opened after 3ee3c72b is the live-facts rule's case, a note` | 🔴 open | unchanged; still the anchor the reruns section calls wrong |
+| C6, `:302-310` and `:537` | 🟢 repaired | reflog holds `origin/main` at `b8c3be8f` from `15:50:52` to `16:08:45`, which covers `66d40f70` (16:02:56) and `5cac5623` (16:04:32). At `b8c3be8f` the plan has 11 rows, 10 `[x]`, U11 `[~]`, no U11 verdict: the leg line's figures reproduce. The `went stale ... before this handoff's last commit` claim is retired |
+| C12, `:513` and `:543` | 🟢 repaired | now says `428f81ad` is unreachable from `698e8916` and orders nothing |
+| C3, `:129-137`, `:495`, `:516` | 🟢 unchanged, still true | as Pass 4 |
+| `:191` → `:202-204`, `38 of the 55` | 🟢 anchored | reflog puts `origin/main` at `13f46583` (16:23:55) when `698e8916` (16:28:12) committed it; 55 `.md` files there, which include `428f81ad`'s |
+| R3 `other seven` → `other eight`, `:135` | 🟢 verified | at `b8c3be8f` the ten merged units are U1 to U10: U5 `verdict: 🟡`, U8 `green-with-one-note`, and U1, U2, U3, U4, U6, U7, U9, U10 🟢, which is eight. Seven did not sum to nine; eight plus U8 does |
+| R1, `:40-48`, reflog for `plan/gate-split` | 🟢 holds | `plan/gate-split@{2026-09-20 14:36:16 -0700}` resolves to `7d811172`, held from `14:35:09` to `14:40:03`. `9276d4f0` changes U6b's checklist text and adds a U6-10 row and a revision log row. The sentence omits the revision row; no fact below it changes |
+| R3 `origin/main` reads `:123-126` | 🟢 holds | `7b59a29b` at `24620ec9`'s time (15:25:08) and `b8c3be8f` at `5cac5623`'s. At `7b59a29b`, 11 rows and 10 `[x]` |
+| verdict-citing sites `:12`, `:131`, `:283`, `:360`, `:489`, `:511` | 🟡 open | none names where the U11 verdict lives. The pass 3 table says it does not cover claims with no sha or ref, so this is stated, not hidden, but it is my list and it is unreached |
+| low `:12` U5-4 `fixed` | 🟡 open | unchanged |
+| low `:30`, `:545` `widened` | 🟡 open | unchanged |
+| low `:443` (was `:426`) `revision 15` | 🟡 open | unchanged; pass 3's table lists `0a0f0034` as `already` handled by C14, but `:443` itself names no ref |
+| low `:34`, `:420` `fix head` | 🟡 open | unchanged |
+
+### A note on the worktree
+
+`.worktrees/rf-U13` was not clean while I checked it. After my `npm test` run `git status --short`
+printed ` M .sdlc/handoffs/records-followup-U11.md`: 75 insertions and 18 deletions, uncommitted, file
+mtime `23:53:45`. That is the builder editing the next pass in place, and the draft touches `:12`,
+`:30`, `:34` and `:131`. I graded the commit, not the draft. Two consequences:
+
+| gate at `294f7937` | result | caveat |
+|---|---|---|
+| `npm test` | exit `0` from `$?`, `✓ all 48 test files passed` | ran on a tree whose only difference from the commit is that `.sdlc/` draft; no test reads that file |
+| `node test/repo/branding.mjs` | `branding: clean (510 files scanned)`, exit `0` | it scans `.sdlc/`, so it read the draft, not the committed file. A clean-tree rerun from an archive was denied by the permission layer, so it was not repeated |
+| paths outside `.sdlc/` | `0` from `1f991877` and from `ee854932` | committed diff |
+| em dashes added | `0` over `git diff -U0 ee854932 294f7937 -- .sdlc` | committed diff |
+| baseline check | `stale total: 0`, exit `0` read unpiped | |
+| roadmap | blob `b3825864f7a7c0219d946ac1131892e901f79a1b` | |
+
+A gate run in a tree another seat is editing breaks `.sdlc/adapter.md` §1. The Verifier should
+rerun the branding gate on the committed head once the builder's edit lands.
+
+### What must change before this lands
+
+1. `:518` and `:180`, per Pass 4 R4-1. These are the only 🔴s.
+2. The 🟡s above, or a line saying why each stays.
+
+## Pass 6, re-check at `acba1bdf`
+
+> Model-independence label, owner ruling R17. Opus at high effort standing in for a fable reviewer
+> seat. The builder was opus at xhigh, and the Verifier who grades next is also opus. No cross-model
+> independence.
+
+Head `acba1bdf`: `29ddb174` touches the U11 handoff alone, `acba1bdf` the U13 handoff alone. Line
+numbers are `:N` at `acba1bdf` in `.sdlc/handoffs/records-followup-U11.md`. Checked against my own
+Pass 4 and Pass 5 lists.
+
+### Verdict
+
+🟢 PASS at `acba1bdf`. Both blockers are repaired and true, all four low notes are taken, and all six
+verdict-citing sites now point to one front-matter statement of where the U11 verdict lives.
+
+The branch has moved past this grade. While my gates ran, `3bd3982c` (23:58:13) and `55672d46`
+(23:58:28) landed on `unit/rf-U13`. `git diff --stat acba1bdf 55672d46` shows 19 lines added to the
+U11 handoff and 30 changed in the U13 handoff. I have not reviewed them, and this PASS does not
+cover them.
+
+| item | state | evidence |
+|---|---|---|
+| `:526` (was `:518`), `#722` row | 🟢 | now `the live-facts rule does not exempt it ... 66d40f70 ranked it at row 14`, and the no-refresh ruling is kept. It agrees with `:35`, `:460` and the roadmap's row 14 at `698e8916` |
+| `:179-184` (was `:180`), the `3ee3c72b` anchor | 🟢 | attributed to `698e8916:.sdlc/roadmap.md`, where `grep -c "live-facts rule's case"` prints `1`, and named as contradicting that roadmap's row 14, with the roadmap side left to U14 under R18 |
+| my content search, `a note\|noted\|exempt\|live-facts\|opened after\|created after` over the body | 🟢 | the rest of the hits are the `cited:` strip's exempt sets (`:298-415`) or the U5-4 section, which is consistent. No statement of the `#722` exemption is left pointing the other way |
+| verdict-citing sites `:12`, `:131`, `:287`, `:364`, `:497`, `:519` | 🟢 | `:12` states the file is on main from `428f81ad`, first added there, and not reachable from `698e8916`. The other five name the U11 verdict and point to the front matter |
+| low `:12`, U5-4 `fixed` | 🟢 | now `fixed at 66d40f70 for #722; U5-4 is 🟡 at 698e8916 for #723` |
+| low `:30`, `:553`, `widened` | 🟢 | `re-aimed` at both sites |
+| low `:450-451` (was `:443`), revision 15 | 🟢 | names main's `0a0f0034` and says it is unreachable |
+| low `:34`, `:424-427`, `fix head` | 🟢 | blame at `698e8916` confirms it: rows U5-1, 2, 3, 5 and 7 at `24620ec9` (15:25:08), when the last roadmap commit was `1fe53f5a` (15:16:57); U5-6 at `7b84d698`; U5-4 at `5cac5623`; U5-8 at `698e8916` |
+| `:207-208`, `38 of the 55` tree | 🟢 | 38 of 55 without a `verdict:` line at `428f81ad`, and 37 of 52 at `698e8916`, by my own count |
+| C3, C6, C12 | 🟢 | unchanged since Pass 5 |
+
+### Low, not blocking
+
+| site | note |
+|---|---|
+| `:426` | `U5-4 at 5cac5623` is true as history at `698e8916`. The row's text today is U13's C10 wording, which the sentence does not mention |
+| R1, `:40-48` | my Pass 5 note stands: `9276d4f0` also adds a revision log row, which the sentence omits. No fact changes. `3bd3982c` touches this handoff and may address it; not checked |
+
+### Gates
+
+| gate | at | result |
+|---|---|---|
+| `node test/repo/branding.mjs` | `acba1bdf`, tree clean before and after (`git status --short` `0`) | `branding: clean (510 files scanned)`, exit `0` |
+| `npm test` | started at `acba1bdf`. Head moved to `55672d46` mid-run by `.sdlc/`-only commits, which no test reads | exit `0` from `$?`, `✓ all 48 test files passed`, `git status --short` `0` after |
+| paths outside `.sdlc/` | `ee854932..acba1bdf`, and `1f991877` or `ee854932` to `55672d46` | `0` in each |
+| em dashes added | `ee854932..acba1bdf` in `.sdlc` | `0` |
+| baseline check | worktree HEAD `55672d46` | exit `0`, read unpiped |
+| roadmap | `acba1bdf` and `55672d46` | blob `b3825864f7a7c0219d946ac1131892e901f79a1b` |
+| one file per commit | `29ddb174`, `acba1bdf` | U11 handoff alone; U13 handoff alone |
+
+## Pass 7, the two commits after `acba1bdf`, head `55672d46`
+
+> Model-independence label, owner ruling R17. Opus at high effort standing in for a fable reviewer
+> seat. The builder was opus at xhigh, and the Verifier who grades next is also opus. No cross-model
+> independence.
+
+Scope as dispatched: `3bd3982c`, which touches the U11 handoff alone and adds `### Pass 5, the reflog
+as witness`, and `55672d46`, which touches the U13 handoff alone and adds `## Review items by name`.
+Everything else in Pass 6 stands.
+
+### Verdict
+
+🟢 PASS at `55672d46`, with two 🟡 notes on the witness that change no figure.
+
+### The reflog witness against the Verifier's four conditions
+
+| condition | state | evidence |
+|---|---|---|
+| entries verbatim | 🟢 | I pulled the ten quoted entries from the section and matched each as a whole line (`grep -xF`) against `git reflog show --date=iso` for `origin/main` and `plan/gate-split`, read myself: `10` match, `0` miss. Each `then` or `the next` pair is adjacent in the reflog |
+| read from this repo | 🟢 | `git rev-parse --git-common-dir` prints `.git` in the root checkout and `/Users/kimba/Projects/nonoun/ultimate-tokens/.git` in `.worktrees/rf-U13`, so both use one reflog. My own reads came from the root checkout |
+| window bounded by commits | 🟢 leg line, `38 of the 55`, R1; 🟡 R3 | leg line: the run read `66d40f70` (16:02:56) and was recorded at `5cac5623` (16:04:32), both inside `b8c3be8f` 15:50:52 to 16:08:45, so the read itself is bounded. `38 of the 55`: every `origin/main` position from `428f81ad` to `49077c67` gives 38 of 55 by my count, so read time does not matter. R1: `7dde8cb1` at 14:36:16 is inside `7d811172` 14:35:09 to 14:40:03. R3: see 🟡 1 |
+| shown to discriminate | 🟢 | R3 outside: `62a21128` has 10 checklist rows and 9 `[x]`, against 11 and 10 at `7b59a29b` and `b8c3be8f`. `38 of the 55` outside: `7b59a29b` gives 37 of 53. R1 outside: at `ebddc55d` the U2 to U5 board rows read ⚪ `not dispatched`, and at `7d811172` 🔵 with builder seats. Leg line: at `428f81ad` the loop's U11 verdict file exists, so `ungraded` falls to `0`; see 🟡 2 |
+
+### 🟡 Notes, not blocking
+
+1. R3's first window is bounded by the recording commit, not the read. `:125` says `origin/main`
+   is `7b59a29b` at the commit time of `24620ec9` (15:25:08). That is true. But `24620ec9`'s author
+   time is 15:24:32, one second before `7b59a29b` reached `origin/main` (15:24:33). So the reads it
+   records were almost certainly made at `0e777d44` (15:12:27), the entry before. The figures do not
+   change: `0e777d44` also has 11 rows and 10 `[x]`, and it is the first position with 11 rows
+   (`e710fe17` and earlier have 10). So the witness should cite `0e777d44` to `db718c18` as the
+   window, or say the read preceded the commit. This is the true-clause, wrong-implication shape
+   again, with a harmless conclusion.
+2. The discriminating run at `428f81ad` quotes a green that is not a grade. `green=10` there
+   counts U11 as green because the loop's `case` tests 🟢 before 🔴, and U11's pass-1 headline is
+   `# Verdict records-followup U11 · 🔴 9 🟢, 1 🟡, 2 🔴`. The run does discriminate, since the output
+   differs. But a reader of `green=10 ... because U11's verdict first exists there` can conclude U11
+   was graded green. One clause saying the leg reads that 🔴 headline as green, a limit of the
+   retired leg, would close it.
+
+### The by-name answers in the U13 handoff
+
+| row | state |
+|---|---|
+| blocking `:501`, `:169` | 🟢 matches Pass 6 |
+| four low notes | 🟢 matches Pass 6 |
+| the six verdict sites | 🟢 matches Pass 6. The added sentence, that the file is a git object so reachability decides, is a framing, not a new fact |
+| the 14-site addendum | 🟢 matches the U11 record's `### Pass 4`, which Pass 6 read |
+| the reflog conditions | 🟢 new in this commit. Verified above, with the two 🟡 notes. The negative control it cites (one second changed in a copy reports `1 not verbatim`) is theirs, not reproduced; my own whole-line match covers the same ground |
+| `Refused: none` | 🟢 |
+
+No row claims anything Pass 6 did not verify, apart from the reflog row, which this pass verifies.
+
+### Gates at `55672d46`
+
+| gate | result |
+|---|---|
+| `node test/repo/branding.mjs` | `branding: clean (510 files scanned)`, exit `0`, tree clean before and after, HEAD `55672d46` |
+| em dashes added | `0` over `ee854932..55672d46` in `.sdlc`, `0` over `acba1bdf..55672d46` |
+| paths outside `.sdlc/` | `0` from `ee854932` |
+| one file per commit | `3bd3982c` U11 handoff alone, `55672d46` U13 handoff alone |
+| roadmap | blob `b3825864f7a7c0219d946ac1131892e901f79a1b` |
