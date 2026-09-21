@@ -12,7 +12,8 @@ scope: three handoff records; `.sdlc/roadmap.md` is untouched under owner ruling
 
 # U13, the citation repairs in the three handoff records
 
-Five commits, each touching exactly one file. Under owner ruling R18 the roadmap is rebuilt rather
+Six commits, each touching exactly one file: the five repair commits tabled below and the commit
+that adds this record. Under owner ruling R18 the roadmap is rebuilt rather
 than repaired, so the four roadmap-only commits this unit had made were dropped and `.sdlc/roadmap.md`
 comes out of this branch byte for byte as it entered: `git diff ee854932 HEAD -- .sdlc/roadmap.md`
 prints nothing and `git rev-parse HEAD:.sdlc/roadmap.md` equals `git rev-parse
@@ -42,10 +43,14 @@ reachability is the test. `git merge-base --is-ancestor` answers it; comparing t
 | `records-followup-U12.md` | 1 of its share of 60 | A17, `eight spans` against a measured 11 | `712e63db ee854932^2`, the range the claim itself names |
 | `records-followup-U11.md` | 22 of 123 | A14, A16 and C1 to C12: 17 claims graded, 16 repaired, 1 re-derived and left standing | `698e8916`, the file's own last commit |
 
-Seventeen graded in the leg 5 pass rather than the census's twenty. The difference is grouping, not
-disagreement, and the U11 record says so: the census counts the R2 header as four failures where one
-of the four still holds at `4, 2, 2`, and counts the board and the tally contradictions at two sites
-each.
+Sixteen claims graded in the leg 5 pass, fifteen repaired and one re-derived and held, under the rule
+the U11 record now states: one claim is one figure or one sentence a single command returns, which
+expands the thirteen rows of that Correction table to sixteen because C1 carries four figures. An
+earlier draft of both records said seventeen and sixteen under no stated rule. Against the census's
+twenty-two the honest position is that neither total reconstructs from its own enumeration, the
+census's `Stale before its own last commit, 12` bucket naming ten sites, so what carries is the map
+from each line-site the census names to the row that repairs it, which the U13 reviewer checked
+independently.
 
 ## The three rows worth reading before the rest
 
@@ -74,16 +79,27 @@ unsupportable, which is the same structural limit the census recorded for uncomm
 
 ## Gates at the final head
 
-Head graded: `d9667a67`. `BASE` = `git merge-base origin/main HEAD` = `1f991877`.
+`BASE` = `git merge-base origin/main HEAD` = `1f991877`. Every figure below was measured on the tree
+this commit records, with `git status --short` printing `0` immediately after the commit, which is
+what ties the runs to it: a record cannot name its own sha, so it names the tree it was measured on
+and leaves the sha to the reader's `git log`. The last ancestor these gates also ran at is
+`0d65d80d`, and `git diff --name-only 0d65d80d HEAD` returns two paths, this record and
+`.sdlc/handoffs/records-followup-U11.md`, both under `.sdlc/`.
+
+An earlier draft of this table named `d9667a67`. That commit was left behind when this record was
+remade rather than amended forward: it sits on no ref, `git merge-base --is-ancestor d9667a67
+0d65d80d` exits non-zero, and no reader could resolve it. The results transferred, the citation did
+not, and that is this unit's own reachability rule turned on its own record.
 
 | Gate | Result | How the exit code was read | Negative control |
 |---|---|---|---|
-| `npm test` | 🟢 `✓ all 48 test files passed`, exit `0`, `git status --short` `0` after. 120 s, `05:51:03Z` to `05:53:03Z`, load 7.29 on 10 cores at start, which is not a timing figure | foreground, exit code from `$?` on the next line, never through a pipe or `tail`. No `node_modules` in the worktree | in a throwaway `--shared` clone at `d9667a67`: `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json && npm test` gives exit `1`, `grep -c FAIL` `3`, `✗ 1/48 test file(s) failed` |
+| `npm test` | 🟢 `✓ all 48 test files passed`, exit `0`, `git status --short` `0` after. 131 s, `06:04:20Z` to `06:06:31Z`, load 20.10 on 10 cores at start, which is not a timing figure | foreground, exit code from `$?` on the next line, never through a pipe or `tail`. No `node_modules` in the worktree | in a throwaway `--shared` clone at this branch's head: `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json && npm test` gives exit `1`, `grep -c FAIL` `3`, `✗ 1/48 test file(s) failed` |
 | `node test/repo/branding.mjs` | 🟢 `branding: clean (510 files scanned)`, exit `0` | run once for its tail and once discarding output so `$?` is the node process's own | in the same clone with the decision-records file copied to `.sdlc/verdicts/x.md`: `FAIL: 3 branding violation(s) across 511 files`, exit `1`, a plant inside `.sdlc/` so the gate is proven to reach this branch's own directory |
-| scope wall | 🟢 `0` paths outside `.sdlc/`, three changed in all | `git diff --name-only $BASE \| grep -vc '^\.sdlc/'` | an untracked `src/probe.txt` in the clone takes the same count to `1` |
+| scope wall | 🟢 `0` paths outside `.sdlc/`. The path count the same command returns without `grep -v` is `6` from the declared `BASE` `1f991877` and `4` from the unit base `ee854932`, the four being the U5, U11, U12 and U13 handoff records; three is the number of records repaired, which is not a file count because this record is the fourth file | `git diff --name-only $BASE \| grep -vc '^\.sdlc/'` | an untracked `src/probe.txt` in the clone takes the same count to `1` |
 | em dashes added | 🟢 `0` stripped and `0` raw | the plan's P6 pipeline against `ee854932` over `.sdlc`, and the same without the backtick strip | one em dash appended to this handoff in the clone gives `1` |
 | `sh .sdlc/checks/baseline-agrees-check.sh` | 🟢 seven `ok` figure and time lines, one `note  head:` line, one `ok    head:` line, `stale total: 0`, exit `0` | exit code read directly from `$?` | with the baseline's test figure bent to 47: `STALE tests: baseline 47, test/run.mjs TESTS 48`, exit `1` |
-| the roadmap is untouched | 🟢 `git diff ee854932 HEAD -- .sdlc/roadmap.md` prints nothing, and both sides resolve to blob `b3825864f7a7c0219d946ac1131892e901f79a1b` | the blob ids are compared, not the text | at `eccef435`, the head this branch carried before the R18 rebuild and kept as `backup-rf-U13-preR18`, the same diff prints 76 lines across the four dropped roadmap commits, so the check can see a difference when one is there |
+| the roadmap is untouched | 🟢 `git diff ee854932 HEAD -- .sdlc/roadmap.md` prints nothing, and both sides resolve to blob `b3825864f7a7c0219d946ac1131892e901f79a1b` | the blob ids are compared, not the text | against `backup-rf-U13-preR18`, whose tip is `107d2778` and which carries `eccef435` as an ancestor, the same diff prints 76 lines across the four dropped roadmap commits, so the check can see a difference when one is there |
 
-`npm run build` and `npm run smoke` are not run: this branch changes three files, all under `.sdlc/`,
-and adapter §1 asks for them only when the build chain or `src/ui/` moves.
+`npm run build` and `npm run smoke` are not run: every path this branch changes is under `.sdlc/`,
+which `grep -vc '^\.sdlc/'` puts at `0` from either base, and adapter §1 asks for them only when the
+build chain or `src/ui/` moves.
