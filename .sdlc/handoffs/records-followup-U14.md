@@ -106,3 +106,7 @@ Controls for the new code, run on scratch copies:
 | RENDER names a different renderer blob | `--verify` exit 1, names both blobs |
 | writing `./.sdlc/../.sdlc/roadmap.md` without `--final` | refused, exit 1 |
 | a re-render to scratch before the commit | `--verify` exit 0. Its diff against `e147ae0b` is the typed strings only |
+
+## F5's limit stated in the file, rendered again
+
+The Orchestrator asked for F5's limit to be stated in the roadmap's own text, next to the `--verify` line. `--verify` exit 0 shows the file agrees with its Snapshot and the Snapshot agrees with itself. It cannot show the Snapshot matched the world. The check against the world is the Verifier's grade inside the freeze window. `6952f7a6` did not carry that text, so it went in a later generator-only commit. A later roadmap-only commit rendered `e147ae0b`'s snapshot again with it. Both commits are after `3710ad46` on this branch; I describe them rather than naming shas this file cannot see from its own commit. The snapshot blocks are unchanged, and `GENERATOR` still names `06837d22` as the blob that read.
