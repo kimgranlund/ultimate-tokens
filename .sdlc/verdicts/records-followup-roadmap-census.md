@@ -373,3 +373,73 @@ used `git log -1 -- <path>` where only `git log -S` answers the question.
 Four of the five are the same error: I chose the measurement that was easy to run over the one the
 sentence actually names. The fifth, A11, is its sibling: I stopped at the first register that failed
 to resolve a citation rather than asking which register the citation belongs to.
+
+## Correction 6, to leg 5's `:434-435` row and to A16's framing
+
+Raised by the builder against its own work and checked by the Orchestrator. I re-derived it and it is
+right.
+
+My leg 5 row said the U11 handoff's `:434-435` was false in both halves: that the review sits at a
+gitignored path and therefore enters no commit and no diff leg. I justified that with
+`.sdlc/verdicts/records-followup-U11-review.md` being tracked since `3f6f1ebf` at `15:48:31-07:00`,
+forty minutes before the handoff's last commit.
+
+Forty minutes earlier by wall clock, and not reachable. `git merge-base --is-ancestor 3f6f1ebf
+698e8916` returns false. `3f6f1ebf` is on `main`, `plan/preset-intent-fidelity` and two sync
+scratches, and on none of the unit branch. `git cat-file -e 698e8916:.sdlc/verdicts/records-followup-U11-review.md`
+fails, and so does the same read at `ee854932`.
+
+So from its own anchor the handoff was right: that review entered no commit and no diff leg of the
+branch it was describing. That half holds. What stays false is the path, `.sdlc/runtime/rf-U11-review.md`,
+which no commit on any ref has ever carried, and the implication that the report exists nowhere.
+
+| was | now |
+| --- | --- |
+| `:434-435` both halves false | one half false: the path. The no-commit half holds |
+| A16: the real record is at `.sdlc/verdicts/records-followup-U11-review.md` | still the real record, and also unreachable from this branch. A reader on `plan/records-followup-roadmap` can follow neither path |
+
+A16 survives and its point sharpens. The citation cannot be followed from the branch, and neither can
+the correction I offered for it. That is leg 2's closing note arriving from the other direction: the
+evidence for a branch's records is not on the branch.
+
+### What I actually got wrong
+
+I applied my own anchor rule to time and not to reachability. Having spent this census insisting that
+a record be graded at the commit that wrote it, I then reached for a fact that was earlier in wall
+clock and assumed the document could see it. Earlier is not reachable. Reachability is the test, and
+on a repo with concurrent unit branches the two come apart constantly.
+
+That is six corrections. Five of them were reaching for the easy measurement over the named one. This
+sixth is the same reflex wearing the disguise of the rule I had just finished enforcing on everyone
+else, which is the version worth remembering: a rule you are confident about is one you stop checking
+yourself against.
+
+## Corrections 7 to 9, surfaced by verifying U13
+
+Grading U13 against this census exposed three defects in it. All three are mine.
+
+**7. Leg 5's enumeration omits `:6` and `:30`.** The census seat reported both in its pre-`:55` rows
+and I confirmed both in a message to it, but neither made it into leg 5's written enumeration above.
+U13 repaired against that enumeration, so it could not repair what the enumeration dropped. Both stay
+false in the U11 handoff. `:30` is false at every anchor: `1405ee77` touched only the roadmap and
+`b0003592` only the handoff, and both are ancestors of `698e8916`. `:6` needs care. I confirmed it by
+wall clock, revision 19 landing four minutes before the handoff, which is the error correction 6
+names. Under reachability it is undecidable, because the plan is a main-only artifact and the plan
+reachable from `698e8916` stops at revision 13. It stands on a different ground: the file's own body
+applies R14, which is revision 19, while its front matter says 17. The conclusion survives; the
+reasoning I gave for it did not.
+
+**8. The `Stale before its own last commit, 12` headline does not reconstruct.** The sites that
+bucket names do not add to twelve under any grouping I can find. U13's handoff recorded this plainly.
+A headline count that its own enumeration cannot produce is the defect this census convicted in the
+U11 handoff's `Nine commits`, and I wrote one.
+
+**9. Leg 5 and leg 2 graded the same claim in opposite directions.** Leg 5 held the U11 handoff's `No
+ranked row was added or dropped by U11`. Leg 2 failed the roadmap's identical claim at `:118`. Leg 2 was
+right: `66d40f70`, a U11 commit and an ancestor of `698e8916`, added `#722`'s ranked row. I accepted
+both legs without checking them against each other. U13's builder removed the false sentence, which I
+graded correct in V7 of its verdict.
+
+Nine corrections to my own work in this plan. Correction 9 adds a new kind: two seats disagreeing on
+one claim, and me recording both verdicts without noticing. Parallel legs over overlapping claims need
+a reconciliation pass, and this census did not have one.
