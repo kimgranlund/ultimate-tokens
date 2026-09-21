@@ -1375,13 +1375,20 @@ for (const mode of ["perceptual", "peak"]) {
     if (!adiaHit) FAIL("chroma-envelope", `(C6 iii) ${toneMode}: the named Adia carve-out produced ZERO above-100% instances  -  either the carve-out is stale (Adia's own dampAmp no longer needs it, tighten toward 0) or the corpus dropped that preset; re-diagnose before touching ADIA_CARVEOUT`);
 
     // Negative control: a SCRATCH copy of a NON-Adia doc with dampAmp forced to 70 (an authored-style
-    // override, matching Adia's own magnitude) must be caught as UNLISTED by the SAME check above  - 
+    // override, matching Adia's own magnitude) must be caught as UNLISTED by the SAME check above  -
     // proves the carve-out really is keyed on the one named preset, not on "any dampAmp>0". In-memory
     // only, built from the already-loaded corpus; never reads origin/main at runtime.
-    const scratchDoc = { ...docs[0], dampAmp: 70, __presetName: "Scratch · not a real preset (negative control)" };
-    const v = above100Violators(scratchDoc, toneMode);
-    if (v.length === 0) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch dampAmp:70 preset (based on ${docs[0].__presetName}) produced no above-100% instance to catch  -  pick a different probe doc`);
-    else if (ADIA_CARVEOUT.has(scratchDoc.__presetName)) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch preset name collided with ADIA_CARVEOUT  -  rename the probe`);
+    // #713 U2: `docs` can be empty (a SAMPLED corpus with every category's `vol` stripped, or the
+    // vacuity guard's own probe) — guarded so the vacuity FAIL above stays the reported failure
+    // instead of an unhandled TypeError on `docs[0]` pre-empting it.
+    if (!docs.length) {
+      FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: docs is empty, no probe document available to patch`);
+    } else {
+      const scratchDoc = { ...docs[0], dampAmp: 70, __presetName: "Scratch · not a real preset (negative control)" };
+      const v = above100Violators(scratchDoc, toneMode);
+      if (v.length === 0) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch dampAmp:70 preset (based on ${docs[0].__presetName}) produced no above-100% instance to catch  -  pick a different probe doc`);
+      else if (ADIA_CARVEOUT.has(scratchDoc.__presetName)) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch preset name collided with ADIA_CARVEOUT  -  rename the probe`);
+    }
     // else: correctly NOT in ADIA_CARVEOUT, so the same logic that built `unlisted` above would catch
     // it  -  this control doesn't re-run that loop, it just confirms the scratch doc IS a live violator
     // (checked above) that ISN'T named in the carve-out (checked here), which is what "reds as unlisted"
