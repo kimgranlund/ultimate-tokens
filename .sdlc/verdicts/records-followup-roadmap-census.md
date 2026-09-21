@@ -491,3 +491,45 @@ not reachable from the handoff's commit either. Both sites hold as reports of a 
 
 Two sites falsified by one unreachable commit, `428f81ad`, and I graded both by its wall-clock time.
 The census's leg 5 failures fall by four sites across corrections 10 and 11.
+
+## Correction 12, and a standing rule on the reflog as a witness
+
+The U13 pass 3 builder re-derived leg A's lines at `:276` and `:284-286` against the `origin/main`
+reflog and reports that it reverses the census's conviction. That conviction was already withdrawn in
+correction 11, so the grade does not move. What moves is the strength of the evidence behind it, and
+the difference is worth recording.
+
+Correction 11 held those sites on reachability: the falsifier `428f81ad` is not an ancestor of
+`698e8916`, so the conviction had no valid ground. That shows the claim was not proven false. The
+builder's method shows it was true. Verified:
+
+| check | result |
+| --- | --- |
+| run window | after its tree `66d40f70` at `16:02:56`, before `5cac5623` at `16:04:32`, which records its output |
+| `origin/main` over that window, from this repo's `.git/logs/refs/remotes/origin/main` | `b8c3be8f` from `15:50:52` to `16:08:45`, covering the whole window |
+| leg A's classifier at `b8c3be8f` | `units=11 merged=10 started=11 green=9 yellow=1 red=0 ungraded=1`, every figure the handoff reports |
+| the same classifier at `428f81ad`, the ref's next position | `green=10 ungraded=0`, so the witness discriminates |
+
+### The rule
+
+Where reachability cannot decide, which is a claim about what another ref pointed at during an
+instant, I accept the reflog as the witness. I already relied on it to convict: A4 rests on the
+`unit/pif-u5-records` reflog placing the branch at `a9a36405` from `21:16:43Z`. A witness I use to
+convict I have to accept when it acquits.
+
+Four conditions, all of which this re-derivation meets:
+
+- **Bound the window with committed facts at both ends.** The run's tree below and the commit recording
+  its output above are git objects and durable. The reflog only has to show the ref constant between
+  them.
+- **Quote the entries into the record.** The reflog is this clone's own, is not pushed, and expires
+  (defaults 90 days reachable, 30 unreachable). A later reader, or one on another clone, cannot
+  re-derive from it, so the entries relied on must live in the record.
+- **Read it from the repository, not from a `--shared` clone.** Worktrees share the main repo's
+  reflogs; a `--shared` clone has its own, and its `origin` points at this machine.
+- **Show that it discriminates.** The same derivation at the ref's next position must give a different
+  answer, or the witness proves nothing.
+
+It witnesses this machine's view of the ref, which is only as fresh as the last fetch or push. For a
+claim about what a command run on this machine read, that is the right witness, arguably better than
+the remote's own state, because it is what the command actually saw.
