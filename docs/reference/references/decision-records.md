@@ -756,8 +756,13 @@ Format: Context → Decision → Rationale → Consequences → Status.
   sampled colour also changes what "percentage of stop 500" means, because the pivot is no longer the
   ramp's designed peak: C6's median and p90 chroma bars miss in 14 of 24 checks on the rendered path,
   and the "0 stops above 100% of stop 500" bar is scoped to the non-anchored construction with a
-  ratchet, not a bar, on the anchored peak path. That cost is recorded, not resolved, and is an open
-  owner item (#701).
+  ratchet, not a bar, on the anchored peak path. That cost is recorded, not resolved. The perceptual
+  and peak half of it is owned by **#725** ("Chroma envelope misses its muted targets in perceptual
+  and peak mode, and nothing gates the direction"), open at the time of writing, `kind:bug` /
+  `size:big`; #701 owns the even-mode `chromaFloor` side, a different defect in a different mode, and
+  an earlier draft of this Consequence pointed the whole miss at #701 alone. The owner accepted on
+  2026-09-20 that #681 closes with #725 open rather than holding the release for it, recorded in
+  `.sdlc/questions/preset-intent-fidelity-preland.md`.
 - **Status.** DECIDED 2026-09-20 (#681). Gated by `test/engine/anchor.mjs` (`anchor-identity`,
   `anchor-ramp`, the window and ladder allow-lists) and by the schema fields in `src/ui/persist.js`
   (`DOMAINS.palette.anchor` / `.sourceAnchor`). Knowledge-02 §9 is the reference description.

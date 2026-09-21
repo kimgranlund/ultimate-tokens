@@ -16,7 +16,11 @@
 import { readFileSync } from "node:fs";
 
 const BAND_TOP = 550;
-const WORDS = { eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16 };
+const WORDS = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16,
+  seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20,
+};
 
 const baselineFile = readFileSync(".sdlc/baseline.md", "utf8");
 const adapter = readFileSync(".sdlc/adapter.md", "utf8");
@@ -57,6 +61,22 @@ const claim = baseline.match(/\*\*(\d+) readings\*\*:\s*\*\*(\d+)\*\* above[\s\S
 const part = baseline.match(/Of the other (\d+):\s*\*\*(\w+)\*\*\s*\n?\s*record an explicit/);
 const note = adapter.match(/a (\d+)-reading series from 284 s to ([0-9.]+) s/);
 
+// The prose does not only COUNT the two halves of the series, it LISTS them, wall by wall, in the
+// parentheses after each count, and it states the graded count in its own sentence further down.
+// Those lists and that word are independent sources: the numbers in them were typed by a human and
+// can disagree with the rows in ways no count comparison sees (a wall that moved sides, a value
+// mistyped at an unchanged length). Two assertions used to stand here that read nothing new:
+// "above + inside == total" and "PARTITION graded + explicit + unsupportable == total". Both
+// re-partitioned the same `rows` array with complementary filters (`explicit` is literally defined
+// as the rows in neither of the other two parts), so both were true by construction and no edit to
+// .sdlc/baseline.md could red either one. They are replaced by the three below, which read the
+// prose's own lists and word and compare them against what the rows measure (#681 U7, S3).
+const listOf = (s) => (s ? s.split(",").map((x) => Number(x.trim())).filter((n) => Number.isFinite(n)) : null);
+const aboveList = listOf((baseline.match(/\*\*\d+\*\* above the band's \d+ s top\s*\n?\s*\(([^)]*)\)/) || [])[1]);
+const insideList = listOf((baseline.match(/\*\*\d+\*\* inside it \(([^)]*)\)/) || [])[1]);
+const gradedProse = baseline.match(/\*\*(\w+)\*\* of the readings are graded under R13/i);
+const sameSet = (a, b) => a.length === b.length && [...a].sort((x, y) => x - y).every((v, i) => v === [...b].sort((x, y) => x - y)[i]);
+
 const checks = [];
 const ok = (name, pass, detail) => checks.push({ name, pass, detail });
 
@@ -66,8 +86,16 @@ if (claim) {
   ok("prose above == measured", Number(claim[2]) === above.length, `prose ${claim[2]}, measured ${above.length}`);
   ok("prose inside == measured", Number(claim[3]) === inside.length, `prose ${claim[3]}, measured ${inside.length}`);
 } else ok("prose count sentence found", false, "no '**N readings**: **A** above ... **I** inside'");
-ok("above + inside == total", above.length + inside.length === rows.length,
-  `${above.length} + ${inside.length} vs ${rows.length}`);
+
+if (aboveList) {
+  ok("prose above LIST == measured above walls", sameSet(aboveList, above.map((r) => r.wall)),
+    `prose [${aboveList.join(", ")}] vs measured [${above.map((r) => r.wall).sort((a, b) => a - b).join(", ")}]`);
+} else ok("prose above list found", false, "no '**N** above the band's M s top (...)' list");
+
+if (insideList) {
+  ok("prose inside LIST == measured inside walls", sameSet(insideList, inside.map((r) => r.wall)),
+    `prose [${insideList.join(", ")}] vs measured [${inside.map((r) => r.wall).sort((a, b) => a - b).join(", ")}]`);
+} else ok("prose inside list found", false, "no '**N** inside it (...)' list");
 
 if (part) {
   const others = Number(part[1]);
@@ -75,13 +103,18 @@ if (part) {
   ok("prose 'other N' == total - graded", others === rows.length - graded.length,
     `prose ${others}, measured ${rows.length - graded.length}`);
   ok("prose explicit count == measured", stated === explicit.length, `prose ${stated}, measured ${explicit.length}`);
-  // The assertion the earlier defect needed: the parts must exhaust the whole.
-  ok("PARTITION graded + explicit + unsupportable == total",
-    graded.length + explicit.length + unsupportable.length === rows.length,
-    `${graded.length} + ${explicit.length} + ${unsupportable.length} vs ${rows.length}`);
   ok("prose partition parts sum to 'other N'", stated + unsupportable.length === others,
     `${stated} + ${unsupportable.length} vs ${others}`);
 } else ok("prose partition sentence found", false, "no 'Of the other N: **word** record an explicit'");
+
+// The graded count the prose states in its own sentence, against the rows R13 actually grades.
+// Nothing else in this script reads that word, and it is the part the old PARTITION line pretended
+// to cover.
+if (gradedProse) {
+  const statedGraded = WORDS[gradedProse[1].toLowerCase()] ?? Number(gradedProse[1]);
+  ok("prose graded count == measured graded", statedGraded === graded.length,
+    `prose ${gradedProse[1]} (${statedGraded}), measured ${graded.length}`);
+} else ok("prose graded sentence found", false, "no '**word** of the readings are graded under R13'");
 
 if (note) {
   ok("adapter note count == rows", Number(note[1]) === rows.length, `note ${note[1]}, rows ${rows.length}`);

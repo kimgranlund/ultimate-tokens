@@ -374,9 +374,17 @@ than 54. Anchored, the shipped default-kit Primary (`anchor #0C5DCC`, `skew -20`
 57.9296 #4D88F8 · 48.5072 #2E6FDE · [prime] · 30.4587 #00439B · 22.1378 #003276 · 14.6366 #002256`,
 span exactly 54. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
 
-### 8.4 Migration (schema v4)
+### 8.4 Migration (schema v6)
 
-`CURRENT_SCHEMA_VERSION` is 4 (`src/ui/persist.js`). Hydrating below v4 deletes `palette.intensity`
+`CURRENT_SCHEMA_VERSION` is 6 (`src/ui/persist.js`). Two bumps landed after v4, both adding
+brand-new optional palette fields rather than renaming anything, so neither needs a `RENAME_MAPS`
+entry: v5 added `palette.anchor`/`sourceAnchor` (#681 U1) and v6 added
+`palette.preDetachHue`/`preDetachChroma`/`preDetachLift` (#681 U2). A document predating either
+simply carries none of those fields, which is `clampPalette`'s correct absent-stays-absent
+behaviour with no version gate. The v4 migration below still runs, unconditionally, on every
+hydrate.
+
+Hydrating below v4 deletes `palette.intensity`
 from every palette — there is no per-palette ramp override in any group any more — and reports it
 through `DROPPED_KEYS` (TKT-0455, loud not silent); the document's `paletteGroups` facet is
 default-filled from `GROUP_DEFAULTS` unconditionally on every hydrate, not gated by schema version.

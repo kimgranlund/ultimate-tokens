@@ -1562,7 +1562,18 @@ ok(jjWPBands.length === 6, `(jj) #646: War and Peace still shows 6 bands (got ${
 const jjWPDominant = jjWPBands.find((b) => b.colorRole === "dominant");
 const jjWPAccents = jjWPBands.filter((b) => b.colorRole === "accent");
 ok(jjWPAccents.length === 2, `(jj) #646 fix 2: War and Peace shows BOTH accent swatches (icon crimson + gilt gold), never just one (got ${jjWPAccents.length})`);
-ok(Math.abs(jjWPDominant.width - jjDominantCap(jjWPDominant.key)) < 0.01 && jjDominantCap(jjWPDominant.key) < 39, `(jj) #646 fix 1: the candle-gold dominant (authored 50% -> ~46% uncapped) is clamped to its chroma-scaled cap near the low end (want ${jjDominantCap(jjWPDominant.key).toFixed(2)}, got ${jjWPDominant.width.toFixed(2)})`);
+// RE-PINNED at #681 pre-land S1, and the move is the point, not noise. This assertion read
+// `cap < 39` against a key colour of `#D5BE98`, the CUSP RECONSTRUCTION of candle gold off the
+// preset's fitted hue/chroma. S1 makes `paletteKeyColors` return the palette's stored `anchor`, the
+// real sampled `#C49F60`, which is MORE chromatic than its own reconstruction was: the cap moves
+// 37.86 -> 40.56. So the poster strip's chroma weighting now reads the sampled colour instead of a
+// desaturated approximation of it, which is what ADR-026 says the product does everywhere else, and
+// the strip's band widths move for every anchored curated preset. The old `< 39` described the
+// reconstruction, not candle gold, so "near the low end" is retired with it. The bound is re-pinned
+// to the measurement and tightened: the cap must be a genuine interpolation, strictly inside
+// (LOW, HIGH), not either endpoint, and it must equal the rendered width.
+const jjWPCap = jjDominantCap(jjWPDominant.key);
+ok(Math.abs(jjWPDominant.width - jjWPCap) < 0.01 && Math.abs(jjWPCap - 40.56) < 0.01 && jjWPCap > jjCapLow && jjWPCap < jjCapHigh, `(jj) #646 fix 1 + #681 S1: the candle-gold dominant (authored 50% -> ~46% uncapped) is clamped to the chroma-scaled cap of its SAMPLED colour, strictly between ${jjCapLow} and ${jjCapHigh} (want 40.56, cap ${jjWPCap.toFixed(2)}, rendered ${jjWPDominant.width.toFixed(2)})`);
 ok(jjWPAccents.every((b) => b.width >= 10 - 0.01), `(jj) #646 fix 1: both accent bands are floored to >= ~10% each — no longer slivers (got ${jjWPAccents.map((b) => b.width.toFixed(2)).join(",")})`);
 // #646 fix 4 (owner ruling): neutral is pinned to the LEADING edge and the highest-chroma band
 // sits at the FAR edge, so the strip reads grounded-then-vivid instead of split around a mid-strip
@@ -3943,6 +3954,70 @@ flushRaf();
     app.resetAnchor = realResetAnchor; // restore the real method
     app.resetAnchor(idx); // leave the doc clean for whatever runs after this block
   }
+}
+
+// ── (sfk) `seedFromKey` detaches exactly as the Hue and Chroma sliders do (ticket #681, Q6, C12;
+//        pre-land review at b4be472c, S2) ────────────────────────────────────────────────────────
+// The defect. `seedFromKey` writes the SAME two fields the Hue and Chroma sliders write, `hue` and
+// `chroma`, so under Q6 it is the same detach event. It committed those two alone: no
+// `detachSnapshot`, no `delete anchor`. The palette therefore kept rendering its stored source
+// colour while claiming the seeded family, and Reset had no snapshot to restore from.
+//
+// Why the suite did not already catch it. The (kc) group above calls `app.seedFromKey(0, "dominant")`
+// and has been green throughout, because its fixture is the NON-ANCHORED default kit set: with no
+// `anchor` on the palette there is nothing to drop and nothing to snapshot, so the bug cannot show.
+// This group runs the same method against an ANCHORED preset copy, the population it lives in, and
+// reopens (rst)'s own preset fresh rather than inheriting the state that group leaves behind.
+{
+  const { projectView: pvSFK } = await import("../../src/ui/model.mjs");
+  app.openConfigAsSet(TP[1], null, { mintData: false });
+  app.setSection("color"); app.colorMode = "light";
+  const sfkIdx = 1;
+  app.selectPalette(sfkIdx); app.render(); flushRaf();
+  ok(!!app.doc.palettes[sfkIdx].anchor && !!app.doc.palettes[sfkIdx].sourceAnchor,
+    "(sfk0) the reopened preset's primary palette starts anchored, with a sourceAnchor to restore from");
+  // A non-zero lift and a key color to seed from. The lift matters for the same reason it does in
+  // (rst): the pre-fix code path never wrote a snapshot at all, and a fixture at lift 0 would let a
+  // Reset that re-derives look identical to one that restores.
+  app.commit((d) => {
+    d.palettes[sfkIdx].lift = -12;
+    d.palettes[sfkIdx].keyColors = [{ role: "dominant", oklch: [0.32, 0.05, 150] }];
+  });
+  const sp = app.doc.palettes[sfkIdx];
+  const sfkAnchor = sp.anchor, sfkSource = sp.sourceAnchor, sfkHue = sp.hue, sfkChroma = sp.chroma, sfkLift = sp.lift;
+  const sfkViewBefore = pvSFK(app.doc).palettes[sfkIdx];
+  const sfkRampBefore = sfkViewBefore.ramp.map((s) => s.hex);
+  const sfkPrimeBefore = JSON.stringify(sfkViewBefore.prime);
+  ok(sfkRampBefore.length === 19 && sfkViewBefore.prime.length === 7,
+    `(sfk0b) test setup: the pre-seed capture holds 19 ramp hexes and 7 prime rungs (got ${sfkRampBefore.length}/${sfkViewBefore.prime.length})`);
+
+  app.seedFromKey(sfkIdx, "dominant"); flushRaf();
+  const sfkAfter = app.doc.palettes[sfkIdx];
+  ok(sfkAfter.hue !== sfkHue || sfkAfter.chroma !== sfkChroma,
+    `(sfk1a) test setup: the seed actually moved hue or chroma (got ${sfkAfter.hue}/${sfkAfter.chroma}, was ${sfkHue}/${sfkChroma})`);
+  ok(sfkAfter.anchor === undefined, "(sfk1) seedFromKey drops `anchor`, the same detach the Hue and Chroma sliders perform");
+  ok(sfkAfter.sourceAnchor === sfkSource, "(sfk2) `sourceAnchor` survives the seed untouched");
+  ok(sfkAfter.preDetachHue === sfkHue && sfkAfter.preDetachChroma === sfkChroma && sfkAfter.preDetachLift === sfkLift,
+    `(sfk3) seedFromKey stamps the exact pre-detach snapshot detachSnapshot writes (got hue=${sfkAfter.preDetachHue}/chroma=${sfkAfter.preDetachChroma}/lift=${sfkAfter.preDetachLift}, want ${sfkHue}/${sfkChroma}/${sfkLift})`);
+  ok(JSON.stringify(pvSFK(app.doc).palettes[sfkIdx].prime) !== sfkPrimeBefore,
+    "(sfk3b) the prime strip actually moved (a real detach, not a no-op)");
+
+  // Reset, through the button itself, which renders only while sourceAnchor is present and anchor absent.
+  app.render(); flushRaf();
+  const sfkText = (e) => (e._text || "") + (e.children || []).map(sfkText).join("");
+  const sfkBtn = walk(app.querySelector(".right-pane") || app, (e) => e.tagName === "BUTTON" && /Reset to source color/.test(sfkText(e)))[0];
+  ok(!!sfkBtn, "(sfk4) the Reset button renders after a seed-driven detach, exactly as it does after a slider detach");
+  if (sfkBtn) sfkBtn.click();
+  flushRaf();
+  const sfkReset = app.doc.palettes[sfkIdx];
+  ok(sfkReset.anchor === sfkAnchor, `(sfk4b) Reset restores anchor after a seed-driven detach (got ${sfkReset.anchor}, want ${sfkAnchor})`);
+  ok(sfkReset.hue === sfkHue && sfkReset.chroma === sfkChroma && sfkReset.lift === sfkLift,
+    `(sfk4c) Reset restores the EXACT pre-seed hue/chroma/lift snapshot (got ${sfkReset.hue}/${sfkReset.chroma}/${sfkReset.lift}, want ${sfkHue}/${sfkChroma}/${sfkLift})`);
+  const sfkViewAfter = pvSFK(app.doc).palettes[sfkIdx];
+  ok(JSON.stringify(sfkViewAfter.ramp.map((s) => s.hex)) === JSON.stringify(sfkRampBefore),
+    "(sfk5) all 19 ramp hexes are byte-identical to the pre-seed capture after Reset");
+  ok(JSON.stringify(sfkViewAfter.prime) === sfkPrimeBefore,
+    "(sfk6) all 7 prime rungs are byte-identical to the pre-seed capture after Reset");
 }
 
 // (rst-corpus) extend C12's coverage from one sample palette to the FULL anchored corpus across ALL
