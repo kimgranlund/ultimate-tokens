@@ -359,3 +359,102 @@ baseline check here: pass 2 ran both green at `66ea6b74`, and this commit differ
 this record. I did re-run the gates this edit could move, at `bb896a4e` in the unit worktree:
 `node test/repo/branding.mjs` gives `branding: clean (510 files scanned)`, exit `0`. `0` em dashes added over
 `ee854932..bb896a4e` in `.sdlc`, and `git status --short` returns `0` lines.
+
+## Pass 4, re-check of pass 2 at `c442826b`
+
+> Model-independence label, owner ruling R17. Opus at high effort standing in for a fable reviewer
+> seat. The builder of this pass was opus at xhigh, one effort step above this review, and the
+> Verifier who grades next is also opus. The cross-model independence a reviewer grade normally buys
+> is not present here.
+
+Head `c442826b`, pass 1 ended at `bb896a4e`. Line numbers are `:N` at `c442826b` in
+`.sdlc/handoffs/records-followup-U11.md` unless marked `bb:N`, which is `bb896a4e`.
+
+### Verdict
+
+🔴 FIX-FIRST, on one claim. Pass 2's method is sound and every site it lists is repaired and true
+under reachability. But one claim pass 2 restated at `:35` and `:428-442`, whether the live-facts
+rule exempts `#722`, is still stated the other way at `:501` and, in general form, at `:169`. That is
+V8's shape again: the pass 2 search for C15 was keyed on the row label (`U5-4|#723|alone failed`),
+not on the claim's content, so it could not return a site that says `#722` and `note`.
+
+| item | state | one line |
+|---|---|---|
+| 1. per-claim search, independent terms | 🔴 | two sites of the `#722` exemption claim unreached: `:501`, `:169` |
+| 2. newly found sites against sources | 🟢 | C3, C13, C14, C15 each re-derived by reachability; all hold |
+| 3. true clauses, false conclusion | 🔴 | the coverage sentence at the end of the U11 pass 2 table is true and implies more than it covers; same root as item 1 |
+| 4. roadmap blob, one file per commit | 🟢 | blob `b3825864` at `ee854932` and `c442826b`; `dc77acb4` touches the U11 handoff alone, `c442826b` the U13 handoff alone |
+| 5. gates at `c442826b` | 🟢 | all green, below |
+
+### Findings, hardest first
+
+#### 🔴 R4-1. The `#722` exemption claim is stated both ways
+
+Pass 2 wrote at `:35` `The #722 half holds: ranked at row 14, and the exemption was anchored on the
+wrong commit in pass 1 and does not apply`, and kept `:435-436` `the exemption does not apply, so
+#722 is ranked at row 14`. The same file says:
+
+| site | text | written at | true at `698e8916`? |
+|---|---|---|---|
+| `:501` (`bb:494`) | `#722`: `The Orchestrator has ruled no refresh: the rule makes it a note` | `b0003592`, 15:41:35-07:00, before `66d40f70` ranked `#722` | no. At `698e8916` the roadmap ranks `#722` (`grep -c '^\| 14 \| #722 '` prints `1`), its row 42 reads `the live-facts rule does not exempt it and U11 ranks it rather than noting it`, and `:435` says the exemption does not apply |
+| `:169` (`bb:165`) | `an issue opened after 3ee3c72b is the live-facts rule's case, a note for the verifier` | `7b84d698`, 15:30:38-07:00 | no. `:430` calls `3ee3c72b` the wrong anchor, and `#722`, opened `22:12:36Z`, after `3ee3c72b` at `21:59:23Z`, was not a note. The sentence reports the roadmap's own R4 line (`698e8916:.sdlc/roadmap.md:116`, `An issue opened after this commit is the live-facts rule's case`), which contradicts that roadmap's row 42. The roadmap side is U14's under R18; the handoff states it in its own voice without saying so |
+
+Neither site is census-listed and neither has a hunk in `git diff -U0 bb896a4e c442826b`. Both
+predate U13: U11's `66d40f70` fixed `:35` and `:424-436` and left these two, which is how the claim
+came to be split. They are in pass 2's reach because pass 2 re-asserted the claim at `:35` and C15's
+`Is` cell says it keeps the `#722` half. Under re-diagnosis §8.1 step 3, a site may stay only if
+the file stays self-consistent without it, and it does not.
+
+Repair, per claim: search the content (`#722|note for the verifier|makes it a note|live-facts rule's
+case|opened after`), edit `:501` to say the rule does not exempt `#722` and it is ranked (the
+no-refresh ruling can stay), date `:169` as the roadmap's pass-1 anchor that `:430` retires, and add
+both to C15's hits cell, or a C16 row.
+
+#### 🔴 R4-2. The coverage sentence is true in every clause and implies a completeness it lacks
+
+The U11 pass 2 section closes, and the U13 handoff's Pass 2 section repeats, that coverage is
+`every claim in this table, repaired at every hit its search returns`. That is true: every hits cell
+reproduces (I re-ran all sixteen patterns at `bb896a4e` by script and each matched its cell), and every
+edited hit has a hunk. But the search patterns are the builder's, and C15's does not match the claim
+it names. So the sentence certifies the pattern, not the claim. It is the §1 fault §8 named, one
+level in: the record checked against its own search terms. Fixing R4-1 fixes the instance; the
+sentence would hold better if each pattern were stated as the claim's content, not its row label.
+
+#### 🟢 Low, not blocking
+
+| site | note |
+|---|---|
+| `:12` | front matter says pass 1's U5-4 🔴 was `fixed at 66d40f70`; true of the `#722` half, but a front-matter reader concludes U5-4 is clear while `:35` has it 🟡. A clause naming `#723` would close it |
+| `:30`, `:527` | `leg B's strip widened` sits beside `:367` `re-aimed, not narrowed` and `neither contains the other`. `Widened` is `1405ee77`'s word and a reader can take it as a superset. `re-aimed` would match the file |
+| `:426` | `revision 15's case` names a plan revision not reachable from `698e8916` (`0a0f0034` is on main only; the reachable plan stops at 13). The content is true. C14 now names refs for exactly this shape at `:6`; this site does not |
+| `:34`, `:403` | `the fix head`, unnamed, the C6 shape. Pass 2 marks it a different measurement, which is its stated reason under step 3; naming the sha would be cheaper than the reason |
+
+### Newly found sites, re-derived by reachability
+
+| claim | check | result |
+|---|---|---|
+| C3 | `git log main -S'11 🟢 1 🟡 0 🔴' -- .sdlc/board.md` | `428f81ad`, `34173dd6`; `--is-ancestor` exits `1` for both against `698e8916`, and also against `plan/records-followup-roadmap`, `bb896a4e`, `c442826b`, so `:495`'s `this branch's own board never carried it` holds at every one |
+| C3 | `git log -1 --format=%h 698e8916 -- .sdlc/board.md`; its U5 row | `850f7fb1`; `⚪`, `not dispatched`; `grep -c '11 🟢'` `0`. `428f81ad`'s U5 row still `🟢` with `verdict 🟡 overall`, as `:135-136` says |
+| C13 | `git show --stat --format=` on `1405ee77`, `b0003592`; parent of `b0003592` | roadmap alone; U11 handoff alone; `1405ee77`. The strip regex change is in `git diff 7b84d698 b0003592`, and `1405ee77`'s message reads `widened in the same change` |
+| C14 | `-S'plan-revision: 17'` on the handoff at `698e8916`; `-S'revision 17,'`, `19,`, `13,` on main's plan | `7b84d698`; `7b59a29b` (exit `1`), `13f46583` (exit `1`), `850f7fb1` (exit `0`). Highest revision in the plan at `698e8916` is 13. `7b59a29b` at 15:24:31 precedes `7b84d698` at 15:30:38, so `naming main's plan` was possible when written |
+| C15 | `gh issue view 723 --json createdAt`; `git blame` at `bb896a4e` on `bb:35`, `bb:424`, `bb:435` | `2026-09-20T23:24:11Z`; all three `5cac5623` at 16:04:32-07:00, 19 min 39 s before `#723`; `ddfedb70` 16:05:13 is the unit's latest commit before `698e8916`, so `:441` holds |
+| C6, `:291-293` | main commits touching the plan or `.sdlc/verdicts/` between 15:55 and 16:10 -07:00 | `428f81ad` alone, which added the U11 verdict, so `went stale at 428f81ad` holds. The wall-clock gap there is about `origin/main` moving, where wall clock is the right measure |
+| diff coverage | old-side hunk ranges of `git diff -U0 bb896a4e c442826b` | hunks at 6, 30, 35, 129-134, 172-173, 424, 435, 488, 498-499, 507 reach all eleven listed hits. V8 control reproduces: `ee854932..bb896a4e` new-side ranges contain 129 and not 488. `git diff -U0 ee854932 c442826b` has `24` hunks |
+
+### Gates at `c442826b`, run by me in `.worktrees/rf-U13`
+
+| gate | result |
+|---|---|
+| `npm test` | foreground, output to a log, exit read from `$?`: `0`; `✓ all 48 test files passed`; `git status --short` `0` after; no `node_modules`. Load average about 19 |
+| `node test/repo/branding.mjs` | `branding: clean (510 files scanned)`, exit `0`, read directly |
+| paths outside `.sdlc/` | `0` from `BASE` `1f991877` and `0` from `ee854932` |
+| em dashes added, `ee854932..c442826b` in `.sdlc` | `0` stripped, `0` raw |
+| `sh .sdlc/checks/baseline-agrees-check.sh` | seven `ok`, one `note  head:`, one `ok    head:`, `stale total: 0`, exit `0` |
+| roadmap | blob `b3825864f7a7c0219d946ac1131892e901f79a1b` at both `ee854932` and `c442826b` |
+| commits since `bb896a4e` | `dc77acb4` `.sdlc/handoffs/records-followup-U11.md`; `c442826b` `.sdlc/handoffs/records-followup-U13.md`. One file each |
+
+### What must change before this lands
+
+1. Repair `:501` and `:169` of the U11 handoff per R4-1, and add them to C15's row or a new row with
+   a pattern that searches the claim's content.
+2. Re-run the hunk check with those two lines added to the edited-hit list.

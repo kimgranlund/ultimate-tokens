@@ -443,3 +443,51 @@ graded correct in V7 of its verdict.
 Nine corrections to my own work in this plan. Correction 9 adds a new kind: two seats disagreeing on
 one claim, and me recording both verdicts without noticing. Parallel legs over overlapping claims need
 a reconciliation pass, and this census did not have one.
+
+## Correction 10, the board claim, found by the U13 pass 2 builder
+
+Leg 5 graded the U11 handoff's board claim, at `:123-125` and `:443`, as stale before its own last
+commit: the board contradicted itself, `428f81ad` disambiguated it at `16:08:42-07:00`, and that was
+before `698e8916` at `16:28:12-07:00`. That is a wall-clock grade, and it is wrong.
+
+Measured, all three states of the board:
+
+| ref | what it is | U5 row | notes cell |
+| --- | --- | --- | --- |
+| `b8c3be8f` | `main` when the claim was written at `5cac5623`, `16:04:32-07:00` | 🟢 | `11 🟢 1 🟡 0 🔴`, the contradiction, word for word as the handoff quotes it |
+| `428f81ad` | `main` after the disambiguation | 🟢 | `the row's 🟢 is the checklist state`, reconciled |
+| `698e8916` | the board reachable from the handoff's own commit | ⚪ | no such notes; the branch copy never carried the contradiction |
+
+The claim was true when written. The commit that introduced the contradiction, `34173dd6`, and the one
+that removed it, `428f81ad`, are both not ancestors of `698e8916`, so the handoff could see neither. A
+falsifier the record cannot reach does not make it stale. Both sites hold. Leg 5's failure count
+drops by two sites.
+
+This is correction 6 again, the one I recorded an hour earlier for the review record's path, and I did
+not carry it back to the other wall-clock grades already in this census. I fixed the rule where it was
+pointed out to me and left every other application of the old rule standing.
+
+## Correction 11, the same error in one more place
+
+Having admitted in correction 10 that I left the other wall-clock grades standing, I tested every site
+in leg 5's stale bucket for the reachability of the commit that falsifies it, from `698e8916`, with a
+known ancestor and a known non-ancestor as controls. My first run of this reported every falsifier
+unreachable, because zsh does not word-split `set -- $pair` and every test ran against an empty sha. I
+discarded it and reran in Python.
+
+| site | falsifier | reachable from `698e8916` | grade |
+| --- | --- | --- | --- |
+| `:91-98` | `66d40f70` | yes | stale, stands |
+| `:276`, `:284-286` | `428f81ad` | no | **holds**; the leg 5 failure was a wall-clock grade |
+| `:123-125`, `:443` | `428f81ad` | no | holds; correction 10 |
+| `:382-385` | `1405ee77`, `66d40f70` | yes | stale, stands |
+| `:431-433` | `ddfedb70` | yes | stale, stands |
+| `:376` | `#723` | an issue, graded by creation time under the live-facts rule | stands |
+
+One more site flips. `:276` and `:284-286` report leg A's output from its run at `66d40f70`: `green=9`
+and each stated tally equal to its derived one. The census failed them because U11's pass-1 verdict
+reached `main` at `428f81ad`, after which leg A's classifier would read `green=10`. That verdict is
+not reachable from the handoff's commit either. Both sites hold as reports of a dated run.
+
+Two sites falsified by one unreachable commit, `428f81ad`, and I graded both by its wall-clock time.
+The census's leg 5 failures fall by four sites across corrections 10 and 11.

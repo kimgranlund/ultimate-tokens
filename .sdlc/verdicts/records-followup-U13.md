@@ -70,3 +70,25 @@ all mine: leg 5's enumeration omits `:6` and `:30`, which the census seat report
 unit's handoff recorded honestly; and leg 5 graded the handoff's `No ranked row was added or dropped by
 U11` as holding while leg 2 graded the roadmap's identical claim at `:118` as failing. Leg 2 was right
 and the builder's repair of it is correct. They go into the census record, not here.
+
+## Correction to V8, 2026-09-21, by the verifier
+
+V8's 🔴 detected a real defect and diagnosed it backwards. The U13 pass 2 builder found it; I
+re-derived it before recording.
+
+At `bb896a4e` the U11 handoff did contradict itself about the board, as V8 said. But V8 took C3's
+dated version at `:123` as the true one and blamed `:443` for not matching it. The opposite holds.
+When the claim was written at `5cac5623`, `16:04:32-07:00`, `main`'s board at `b8c3be8f` showed the U5
+row at 🟢 beside a notes cell of `11 🟢 1 🟡 0 🔴`, so `:443`'s present-tense sentence was true. The
+disambiguation `428f81ad` is not an ancestor of `698e8916`, so the handoff could not see it. C3 used
+wall clock to call the contradiction resolved before the handoff's last commit, and its evidence, `0`
+occurrences of `11 🟢` in the board at `698e8916`, measures the branch's copy, which never carried the
+contradiction at all. C3 was the false sentence, not `:443`.
+
+So V8 stays 🔴 at `bb896a4e`, since the file held a false claim the unit introduced, but the claim is
+C3's, not `:443`'s. Had a builder followed V8 as written, it would have edited `:443` to agree with
+C3 and spread the wall-clock error to the one sentence that was right. The right repair was to
+retract C3.
+
+I verified V8's detection and not its direction. I checked that the two sentences disagreed and
+assumed the one the unit had just repaired was the correct one. A repair is a claim like any other.
