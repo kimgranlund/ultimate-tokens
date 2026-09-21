@@ -42,8 +42,9 @@ else if (!v.plot[0].points || !v.plot[0].points[0] || !("applied" in v.plot[0].p
 if (!Array.isArray(v.contrast) || v.contrast.length === 0) FAIL("model", "no contrast data");
 
 // ── live edit re-projects (no stored derived state) ──────────────────────────────────────
-// Mutates BOTH `hue` and `skew`, reused below (line ~72) as the shared "live edit" fixture for two
-// DIFFERENT probes with different sensitivities. Every DEFAULT_PALETTES entry carries `anchor`
+// Two fixtures, one per probe (U7 review 1, F1 split them): `edited` carries the hue edit and the
+// detach, for the key probe below; `skewOnly` carries skew alone on the still-anchored copy, for
+// the ramp probe. They used to be one fixture mutating both fields. Every DEFAULT_PALETTES entry carries `anchor`
 // (ticket #681, U1/Q2 (b)); an anchored ramp deliberately ignores `hue`/`chroma` (tonal.js's
 // anchored branch — those two fields are the UI-level detach trigger, Q6/U2's C12, never read by
 // the engine while `anchor` is present), so `hue` ALONE no longer moves projectView's ramp — `skew`
@@ -67,11 +68,22 @@ if (!Array.isArray(v.contrast) || v.contrast.length === 0) FAIL("model", "no con
 // document edited outside the UI (a hand-edited import) can still reach it through hydrate(), and
 // what the engine does there is worth pinning; it is labelled as that, not presented as a UI path.
 const edited = JSON.parse(JSON.stringify(doc));
-edited.palettes[1].skew = ((edited.palettes[1].skew + 130 + 100) % 200) - 100;
 edited.palettes[1].hue = (edited.palettes[1].hue + 60) % 360;
 if (edited.palettes[1].anchor) delete edited.palettes[1].anchor; // the Q6 detach the Hue slider performs
-const v2 = M.projectView(edited);
-if (v2.palettes[1].ramp[12] && v.palettes[1].ramp[12] && v2.palettes[1].ramp[12].hex === v.palettes[1].ramp[12].hex) FAIL("model", "editing skew did not change the projected ramp (stale/stored derived state?)");
+// The skew probe runs on a STILL-ANCHORED copy with skew as its only edit (U7 review 1, F1). Once
+// `edited` detaches, detaching alone moves the ramp (measured ramp[12] #174488 -> #194B97 with no
+// skew and no hue edit), so comparing `projectView(edited)` against `v` passed with the skew line deleted: the same
+// vacuity the key probe at ~line 98 had, from the same fixture edit, found by the reviewer after I
+// had fixed only the one. Re-basing against a detached-but-unedited copy would not repair it either,
+// because `edited` also carries the hue edit and hue moves a detached ramp on its own; the probe
+// would then pass on hue alone. On an anchored copy the engine ignores hue and skew is the only
+// field that can move the ramp (#174488 -> #164183), which is the comparison this probe made
+// before the unit. `skew` never detaches (C12), so this is a C12-legal state.
+const skewOnly = JSON.parse(JSON.stringify(doc));
+skewOnly.palettes[1].skew = ((skewOnly.palettes[1].skew + 130 + 100) % 200) - 100;
+if (typeof skewOnly.palettes[1].anchor !== "string") FAIL("model", "test setup: default palette 1 no longer carries an anchor, so the anchored skew probe is not isolating skew");
+const vSkew = M.projectView(skewOnly);
+if (vSkew.palettes[1].ramp[12] && v.palettes[1].ramp[12] && vSkew.palettes[1].ramp[12].hex === v.palettes[1].ramp[12].hex) FAIL("model", `editing skew on a still-anchored palette did not change the projected ramp (stale/stored derived state?): ramp[12] ${v.palettes[1].ramp[12].hex} both before and after`);
 
 // ── paletteKeyColors: the cheap tile-only alternative to projectView (gallery/list rendering —
 // presetTile, buildTiles). Must stay identity-matched to projectView's own .key/.name/.on/.colorRole,

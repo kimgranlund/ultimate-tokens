@@ -1118,6 +1118,11 @@ let LADDER_WINDOW_ALLOWLIST;
   // are symmetric to 1e-9 cannot render pixels more than 3 L* apart, so a member here that is not
   // there would mean one of the two legs is reading the wrong swatch, not that the corpus moved.
   for (const n of pxNames) if (!bcNames.includes(n)) FAIL("symmetry", `corpus leg inconsistency: ${n} exceeds 3 L* measured but is symmetric by construction - one of the two legs is reading the wrong rung`);
+  // and the difference IS the four named in SYM_MEASURED_ALLOW's comment, asserted rather than stated
+  // (U7 review 1, F3: the mechanism as code, R2). Compared as sorted arrays against the frozen lists.
+  const bcMinusPx = SYM_BY_CONSTRUCTION_ALLOW.filter((n) => !SYM_MEASURED_ALLOW.includes(n)).sort();
+  const SYM_DIFF_EXPECTED = [`film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`, `music "The rave · the laser tent" secondary #212228`, `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`, `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`].sort();
+  if (JSON.stringify(bcMinusPx) !== JSON.stringify(SYM_DIFF_EXPECTED)) FAIL("symmetry", `by-construction minus measured is not the four named palettes: got [${bcMinusPx.join(" | ")}]`);
 
   // ── U7-3: the by-construction 26 are the SAME 26 as ORDER_ALLOW in test/engine/anchor.mjs ────────
   // Read out of that file's source text rather than imported, because anchor.mjs is a top-level test

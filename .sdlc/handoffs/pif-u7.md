@@ -546,7 +546,7 @@ The new anchored no-move probe DELIBERATELY constructs the forbidden state, beca
 edited outside the UI can still reach it through `hydrate()`, and the comment labels it as that
 rather than as a UI path.
 
-**No assertion was weakened, but my first repair did weaken one, and I caught it.** After the fixture
+**Two assertions were weakened by the same fixture edit. I caught one; the reviewer found the other.** After the fixture
 detaches, comparing the key against the ORIGINAL (`kc2 !== kc`) passes on the detach alone, because
 dropping `anchor` swaps the key from the anchor to the cusp colour whether or not the hue edit was
 re-projected. Measured: `old comparison kc2 !== kc on a detach with no hue edit: true (#0C5DCC ->
@@ -567,6 +567,54 @@ line and a verbatim quote is still an added line.
 `hue`/`chroma`" claim, true of `hue` only, since `chroma` still moves an anchored ramp. K4 is ruled
 carried, so that sentence is left as it stands and the new comment cites K4 rather than presenting
 the staleness as new. The sentence this unit corrected is the adjacent one about the identity swatch.
+
+## 8e. Round 3 (review 1 at `285f66ec`, FIX-FIRST): F1, F2, F3
+
+**F1, the skew probe I hollowed out.** The `delete anchor` I added to the shared fixture made TWO
+probes vacuous, not one. I re-based the key probe (line ~98) in round 2 and left the ramp probe at
+line ~69 as it was; the reviewer proved it with the skew edit line removed: FAIL at UB, PASS at
+`9ecd071e` and `285f66ec`. The mechanism is the reviewer's: detaching alone moves `ramp[12]`
+`#174488 -> #194B97`, so the probe was measuring the detach, not skew.
+
+Shape chosen: the skew probe runs on a STILL-ANCHORED copy with skew as its only edit, not against
+`projectView(detachedOnly)`. The brief offered both; only one survives the mandatory control. The
+shared fixture also carries the hue edit, and hue moves a detached ramp on its own, so a
+detached-but-unedited baseline would still pass with the skew line deleted. On an anchored copy the
+engine ignores hue and skew is the only field that can move the ramp (`#174488 -> #164183`), which
+is exactly the comparison this probe made before the unit. `skew` never detaches under C12, so the
+state is legal. The two probes now have separate fixtures (`skewOnly`, `edited`) so the skew edit
+has one home.
+
+Worktree: `node test/ui/shell.mjs` `PASS: ui-app pure core + shell clear the checkable predicates`.
+**The reviewer's control at this head**, skew edit line replaced with a comment in a clone:
+
+```
+  FAIL  model ... editing skew on a still-anchored palette did not change the projected ramp (stale/stored derived state?): ramp[12] #174488 both before and after
+FAIL: 1 gate failure(s)
+```
+
+The §8d sentence that said the opposite of what happened is rewritten above.
+
+**F2, the New-Palette consumers.** A second Blast radius row sits beside the poster-strip row in
+the plan, naming `_isNeutralPalette` (color.js:422), `_orderedContext` (430), `newPalSamples` (444)
+and `addKeyColor` (1935, the `vp.keyOklch` read), with the reviewer's figures and
+`scratchpad/u7rev/blast.mjs` as the source: 148 neutral flips, 14 primary-index changes, 339 of 344
+`deriveRelative("extend")` targets moved, default kit `[0.593, 0.206, 289.0]` to
+`[0.504, 0.187, 289.0]`. I verified the four line references against the file and did NOT
+re-measure the figures. The row carries a one-clause PENDING placeholder for the owner's ruling,
+which team-lead is seeking separately. It states the movement, not the ruling.
+
+**F3, taken.** One assertion in `test/engine/prime.mjs` after the subset check: the by-construction
+list minus the measured list, sorted, equals the four names the comment stated (Apocalypse Now,
+The rave, the Patmos church, the Hidaka coast), with its own FAIL message. Four lines including the
+comment; it did not grow. Worktree: `node test/engine/prime.mjs` exit 0, `PASS: prime-system clears
+all AC-050 gates`, corpus lines unchanged at 26 / 22 / 364 / 363. **Control**, one of the four
+expected names swapped for a real member of both lists (Nike secondary) in a clone: `FAIL symmetry
+... by-construction minus measured is not the four named palettes: got [Apocalypse Now ... | The rave
+... | Patmos ... | Hidaka ...]`, exit 1.
+
+**Not re-run:** `npm test`. The delta is `test/ui/shell.mjs`, one gate line in
+`test/engine/prime.mjs`, the plan and this handoff; the two test files were run singly on the guard.
 
 ## 9. What I did not do
 
