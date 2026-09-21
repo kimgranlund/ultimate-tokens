@@ -226,3 +226,136 @@ result.
    records repaired and drop the file figure.
 
 F3 to F6 are worth taking in the same pass and none of them blocks. F5 belongs in the census file.
+
+---
+
+# Pass 2, re-check at `66ea6b74`
+
+> **Model-independence label, owner ruling R17, unchanged.** Opus at high effort standing in for a
+> fable reviewer seat; the Verifier who grades next shares the model family. Opus checking opus.
+
+Head `66ea6b74a31a8211d020b990d2b2af855cb4129a`. Eight commits from `ee854932`, each touching one
+file. Two new since pass 1: `0a37f756` (U11 handoff) and `66ea6b74` (U13 handoff).
+`0d65d80d` is an ancestor of the head.
+
+## Verdict
+
+🔴 **FIX-FIRST.** F1 and F2 are properly repaired. The F4 repair is incomplete: the retired 17 and 16
+still stand in the summary table directly above the paragraph that retires them. One cell. The F3
+repair has also been overtaken by the commits that made it.
+
+## Pass 1 findings, re-graded
+
+| finding | state | evidence |
+|---|---|---|
+| F1 anchor | 🟢 repaired | `d9667a67` no longer anchors the gate table. U13 `:82-87` ties the figures to the committed tree, with `git status --short` `0` as the tie, and names `0d65d80d` as the last ancestor the gates also ran at. `git merge-base --is-ancestor 0d65d80d 66ea6b74` exits 0, and `git diff --name-only 0d65d80d 66ea6b74` returns exactly the two paths the record names. The `d9667a67` paragraph at `:89-92` cites the sha only to say it resolves nowhere, which is honest. That the tree tie was measured cannot be checked after the fact; it is the same class as C12 and the record states its method, which is what that class allows. My own runs at this head are green (table below), so the tree does pass |
+| F2 file count | 🟢 repaired | scope wall cell: `6` from `1f991877`, `4` from `ee854932`, named as the four handoffs, three called records and not files. Measured: 6, 4, the four paths as named, and `0` outside `.sdlc/` from both bases. The closing paragraph now says every path is under `.sdlc/`, `0` from either base, which holds |
+| F3 commit count | 🟡 re-opened | see P2-2 |
+| F4 reconciliation | 🔴 incomplete | see P2-1. The rule itself is sound and the arithmetic now reconstructs: 13 rows (C1 to C12 plus the A16 sharpening), C1 carrying four figures and the rest one each, is 16, with C1's `P0, P1, P2, P3` held and the other 15 repaired |
+| F5 census 123 vs 122 | 🟡 left in the census | as ruled; not this unit's record |
+| F6 backup ref | 🟢 repaired | `backup-rf-U13-preR18` tip is `107d2778`, `eccef435` is its ancestor, and the diff against it is 76 lines. All three as the cell now states |
+| Low, C4 and C9 commands | 🟢 repaired enough | the needles are now written `'\x60 \x60cited:'` and `'\x60cited: '`, with `\x60` read as a backtick. As printed that is still not pasteable, because single quotes pass `\x60` literally, but the notation is declared and unambiguous. I re-ran the reconstructed needles in pass 1: six files and `2` |
+
+## New findings
+
+### 🔴 P2-1. The retired figure survives in the table the new paragraph annotates
+
+`.sdlc/handoffs/records-followup-U13.md:44`, the per-record table row for the U11 record, still reads
+`A14, A16 and C1 to C12: 17 claims graded, 16 repaired, 1 re-derived and left standing`. Two lines
+below, `:46-49` says `Sixteen claims graded ... fifteen repaired and one re-derived and held` and that
+`An earlier draft of both records said seventeen and sixteen under no stated rule`.
+
+```
+git show 66ea6b74:.sdlc/handoffs/records-followup-U13.md | grep -n '17 claims\|Sixteen claims\|seventeen and sixteen'
+44:| `records-followup-U11.md` | 22 of 123 | A14, A16 and C1 to C12: 17 claims graded, 16 repaired, ...
+46:Sixteen claims graded in the leg 5 pass, fifteen repaired and one re-derived and held, under the rule
+49:earlier draft of both records said seventeen and sixteen under no stated rule. ...
+```
+
+The acceptance criterion's negative control is that the retired value, read the same way, does not
+hold. Here it is still printed, in the table a reader meets first, and contradicted by the paragraph
+under it. Repair the cell to the figures the paragraph states, and scope it the way the paragraph does:
+under the stated rule the cell's `A14, A16 and` prefix would add two claims the sixteen does not count.
+
+### 🟡 P2-2. `Six commits` is false at the commit that wrote it
+
+`:15` now reads `Six commits, each touching exactly one file: the five repair commits tabled below and
+the commit that adds this record`. `git rev-list --count ee854932..66ea6b74` returns `8`. The sentence
+was written at `66ea6b74`, so under the unit's own rule it is graded there, and there it is eight.
+The two it misses are the pass-2 repair commits, `0a37f756` and `66ea6b74`, the second of which is
+the commit that made this edit. Each of the eight does touch exactly one file.
+
+This is the third time a count this record gives of itself has been falsified by the act of recording
+it. A count that includes the commit carrying it cannot be right at that commit unless it counts that
+commit. The durable repair is to count what cannot move, for example `the five repair commits tabled
+below, and the commits that add and revise this record`, rather than a new number that the next
+revision falsifies again.
+
+### 🟢 Note, not a defect
+
+U11 `:524`, `the thirteen rows above`, sits above a table of fifteen rows. The preceding sentence at
+`:519` scopes it to C1 to C12 and the A16 sharpening, so it holds. Worth reading twice, nothing to
+change.
+
+## Gates, re-run by me at `66ea6b74`
+
+Worktree `/Users/kimba/Projects/nonoun/ultimate-tokens/.worktrees/rf-U13`, head confirmed
+`66ea6b74` before the runs, no `node_modules`.
+
+| gate | result | how |
+|---|---|---|
+| `npm test` | 🟢 `✓ all 48 test files passed`, exit `0` | `echo "NPMTEST_EXIT=$?"` on the line after, output to a log, no pipe. The harness backgrounded it; the exit is the process's own |
+| tree clean after | 🟢 `git status --short` `0` lines | appended to the same log after the suite |
+| `node test/repo/branding.mjs` | 🟢 `branding: clean (510 files scanned)`, exit `0` | `$?` on the next line |
+| scope wall | 🟢 `0` outside `.sdlc/` from `1f991877` and from `ee854932` | `git diff --name-only <base> 66ea6b74 \| grep -vc '^\.sdlc/'` |
+| em dashes added | 🟢 `0` stripped and `0` raw | added lines of `git diff ee854932 HEAD -- .sdlc`, with and without the backtick strip |
+| `sh .sdlc/checks/baseline-agrees-check.sh` | 🟢 eight `ok` lines, one `note  head:`, `stale total: 0`, exit `0` | exit read from a run with output sent to `/dev/null`, not through a pipe |
+| roadmap untouched | 🟢 blob `b3825864f7a7c0219d946ac1131892e901f79a1b` at `ee854932` and `66ea6b74`; `git log ee854932..66ea6b74 -- .sdlc/roadmap.md` empty | blob ids compared |
+
+They agree with the handoff's table. The handoff's own `npm test` timing (131 s, load 20.10) is its
+run, not mine, and is not a timing figure either way.
+
+## What must change before this lands
+
+1. `.sdlc/handoffs/records-followup-U13.md:44`: the U11 row's `17 claims graded, 16 repaired` to the
+   sixteen and fifteen the paragraph below it states, scoped to match.
+2. `:15`: a commit count that does not go stale on its own commit, per P2-2.
+
+Both are in one file and can land as one commit. Neither needs a gate re-run beyond the five, since
+nothing outside `.sdlc/` moves.
+
+---
+
+# Pass 3, re-check at `bb896a4e`
+
+> **Model-independence label, owner ruling R17, unchanged.** Opus at high effort standing in for a
+> fable reviewer seat; the Verifier who grades next shares the model family. Opus checking opus.
+
+Head `bb896a4e`, parent `66ea6b74`. Scope as dispatched: P2-1, P2-2, the `22 of 123` reword, and that
+the commit touched nothing else.
+
+## Verdict
+
+🟢 **PASS.**
+
+| item | state | evidence |
+|---|---|---|
+| one file only | 🟢 | `git show --stat bb896a4e`: `.sdlc/handoffs/records-followup-U13.md`, 5 insertions, 3 deletions. Roadmap blob still `b3825864f7a7c0219d946ac1131892e901f79a1b` |
+| P2-1, `:44` | 🟢 repaired | the U11 row carries no count and points at the rule paragraph below it. The retired 17 and 16 now appear nowhere except the paragraph's own statement that an earlier draft used them |
+| P2-2, `:15` | 🟢 repaired | the sentence describes the commits instead of counting them and names `git log --oneline ee854932..HEAD`. Its claim that every commit past `ee854932` touches exactly one file holds at this head: all nine do, measured per commit with `git show --name-only` |
+| `22 of 123` reword | 🟢 attribution, not a new claim | the cell now reads `22, of the 123 claims the census's leg 5 prose reports following`. Census `:210` reads `123 claims followed, 94 hold, 22 fail`. Naming the prose is accurate and fits F5, since the census's totals table says 122 |
+
+## Note, not blocking
+
+`:44`'s repaired-here cell now reads `A14 first, then C1 to C12 and the A16 sharpening`. The original A16
+repair, made with A14 in `75d3917b`, is no longer named in that cell. The U11 record's own Correction
+table carries the A16 row, so nothing is lost, but a reader of this cell alone could conclude A16 was
+only sharpened. It is worth a word if the file is touched again.
+
+## Gates
+
+This commit changes one `.sdlc/` handoff and nothing under test. I did not re-run `npm test` or the
+baseline check here: pass 2 ran both green at `66ea6b74`, and this commit differs from that tree only in
+this record. I did re-run the gates this edit could move, at `bb896a4e` in the unit worktree:
+`node test/repo/branding.mjs` gives `branding: clean (510 files scanned)`, exit `0`. `0` em dashes added over
+`ee854932..bb896a4e` in `.sdlc`, and `git status --short` returns `0` lines.
