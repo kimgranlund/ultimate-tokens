@@ -5,7 +5,7 @@ unit: U14
 ticket: "#709"
 branch: unit/rf-U14
 seat: builder-l6
-status: generator ready, final generation waiting for go
+status: generated; gates run at the roadmap commit
 ---
 
 # U14 handoff: the roadmap rebuilt by a generator (owner ruling R18)
@@ -49,3 +49,32 @@ U5 criteria on the last dry run: U5-1 `1`, `anc 0`; U5-2 `diff 0`; U5-3 `8` and 
 ## For the Orchestrator
 
 U5-7's second leg reads the range `## Unticketed debt` to `## Label`; the rebuild has neither heading, so it prints `0`. The DP ids are present (`grep -c 'DP[1-4]'` on the file `1`, `debt id` `0`). The section is not named "Unticketed debt" because nothing in the file measures that. Re-point U5-7 or rule otherwise.
+
+## The final generation
+
+Run once, on the Orchestrator's `go`, inside the re-freeze. Written by `--final` at `76993fa0` (the handoff commit above, which touched only this file) and committed alone as `e147ae0b`. This section is added after that commit and names it; it does not name its own.
+
+| Item | Value |
+|---|---|
+| read | `2026-09-21T12:35:49Z` to `2026-09-21T12:35:50Z` |
+| `head:` | `959b1bb7`, origin/main at the read |
+| `inputs:` | 20 issues, 3 PRs, 35 worktrees, 11 refs, 28 reflog entries |
+| commit | `e147ae0b`, `git show --stat` lists only `.sdlc/roadmap.md`; `git status --short` printed `0` right after it |
+
+## Gates at `e147ae0b`, each with its control
+
+The gates ran on the tree of `e147ae0b` with `git status --short` printing `0`. Controls ran in a `--shared` throwaway clone checked out at `e147ae0b`.
+
+| Gate | Result | Negative control |
+|---|---|---|
+| `--verify .sdlc/roadmap.md` | exit 0, reproduces 756 lines | one cell edited: exit 1 |
+| `npm test`, exit from `$?` | exit 0, `all 48 test files passed`, tree `0` after | role-table `scrim` renamed to `scrimX`: exit 1, `FAIL` counted `3` |
+| `node test/repo/branding.mjs`, exit read directly | exit 0, `clean (512 files scanned)` | decision-records copied into `.sdlc/verdicts/`: `FAIL: 3 branding violation(s)`, exit 1 |
+| scope: paths outside `.sdlc/` against `1f991877` | `0` | a probe line in `src/engine/motion.mjs`: `1` |
+| em dashes added (P6 measure) | `0`; raw count in the roadmap and generator `0` and `0` | one prose em dash appended to the roadmap: `1` |
+| roadmap alone (U5-6 leg) | commits touching the roadmap touch `.sdlc/roadmap.md` only | a commit touching the roadmap and a probe file: `.sdlc/probe.md,.sdlc/roadmap.md` |
+| baseline check | exit 0, `stale total: 0`, one printed `note head:` line (tree moved outside `.sdlc/` since the baseline ran) | not re-planted here; the plan's P7 records the measured plant |
+
+## What the snapshot's instants cover
+
+The snapshot has two timestamps: `date -u` before the first read (HEAD) and after the last (PRS), `12:35:49Z` and `12:35:50Z`. Individual commands do not get their own timestamps. The read order is fixed in the generator: HEAD, GENERATOR, REFS, WORKTREES, REFLOG, ISSUES, PRS. `--verify` proves the file matches its snapshot; it does not prove the snapshot matched the world. That needs a diff against live `gh` while the freeze holds.
