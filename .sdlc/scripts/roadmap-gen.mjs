@@ -13,13 +13,17 @@
 //
 //   node .sdlc/scripts/roadmap-gen.mjs --out <path> --ticket 709 --by "<plan unit>"   read now, write <path>
 //   node .sdlc/scripts/roadmap-gen.mjs --verify <path>                                re-render, compare
+//   node .sdlc/scripts/roadmap-gen.mjs --out <path> --rerender <commit>                render <commit>'s
+//        roadmap snapshot again, with no new read: the snapshot blocks are copied unchanged, so GENERATOR
+//        still names the blob that read, and the RENDER block names the blob that rendered
 //
 // Writing .sdlc/roadmap.md itself also needs --final, and --final refuses unless the running generator is
-// the one committed at HEAD, so the blob the file names is the code that produced it.
+// the one committed at HEAD, so the renderer blob the file names is the code that produced it.
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 const EM = "\u2014";
 const EM_TEXT = "<U+2014>";
@@ -64,14 +68,10 @@ const READS = [
 ];
 const INSTANT_CMD = "date -u +%Y-%m-%dT%H:%M:%SZ";
 
-function readLive() {
-  const snap = {};
-  const t0 = sh(INSTANT_CMD);
-  for (const [k, cmd] of READS) snap[k] = sh(cmd);
-  const t1 = sh(INSTANT_CMD);
-  snap.INSTANT = `${t0}\n${t1}`;
-  // The read must agree with itself: every ref's newest reflog entry names the sha the ref and worktree
-  // reads saw. If a ref moved between those commands, the snapshot is not one state, and nothing is written.
+// The read must agree with itself: every ref's newest reflog entry names the sha the ref and worktree reads
+// saw. If a ref moved between those commands, the snapshot is not one state. A live read writes nothing
+// then; --verify and --rerender refuse a snapshot that fails it.
+function checkAgreement(snap) {
   const top = new Map();
   for (const line of snap.REFLOG.split("\n")) {
     const m = /^([0-9a-f]{40}) (.+)@\{/.exec(line);
@@ -90,6 +90,15 @@ function readLive() {
       if (top.has(b) && top.get(b) !== head) die(3, `${b} moved during the read (${head} vs reflog ${top.get(b)})`);
     }
   }
+}
+
+function readLive() {
+  const snap = {};
+  const t0 = sh(INSTANT_CMD);
+  for (const [k, cmd] of READS) snap[k] = sh(cmd);
+  const t1 = sh(INSTANT_CMD);
+  snap.INSTANT = `${t0}\n${t1}`;
+  checkAgreement(snap);
   if (snap.ISSUES.split("\n").length >= LIMIT || snap.PRS.split("\n").length >= LIMIT) die(3, `gh returned ${LIMIT} rows; raise LIMIT`);
   return snap;
 }
@@ -132,8 +141,8 @@ const TABLES = {
       ["Status", `${LABELS} | sed -n 's/^status://p' | paste -sd, -`],
       ["Other labels", `${LABELS} | grep -vE '^(kind:|size:|lane:|status:|P[0-3]$)' | paste -sd, -`],
       ["Opened", `printf '%s\\n' "$ISSUES" | awk -F'\\t' -v n="$ROW" '$1==n {print $2}'`],
-      ["Plan files naming it, at any REFS tip", `printf '%s\\n' "$REFS" | while read -r s r; do git grep -l -E "^ticket: \\"?#$ROW\\"?( |$)" "$s" -- .sdlc/plans ':(exclude).sdlc/plans/archive'; done | sed 's/^[0-9a-f]*://' | sort -u | paste -sd' ' -`],
-      ["Open PRs naming it", `printf '%s\\n' "$PRS" | awk -F'\\t' -v n="$ROW" '{hit=0; k=split($6, c, ","); for (i=1; i<=k; i++) if (c[i]==n) hit=1; if ($7 ~ ("#" n "([^0-9]|$)")) hit=1; if (hit) print "#" $1}' | paste -sd' ' -`],
+      ["Plans whose ticket: line is it, at any REFS tip", `printf '%s\\n' "$REFS" | while read -r s r; do git grep -l -E "^ticket: \\"?#$ROW\\"?( |$)" "$s" -- .sdlc/plans ':(exclude).sdlc/plans/archive'; done | sed 's/^[0-9a-f]*://' | sort -u | paste -sd' ' -`],
+      ["Open PRs closing it, or naming it in the title", `printf '%s\\n' "$PRS" | awk -F'\\t' -v n="$ROW" '{hit=0; k=split($6, c, ","); for (i=1; i<=k; i++) if (c[i]==n) hit=1; if ($7 ~ ("#" n "([^0-9]|$)")) hit=1; if (hit) print "#" $1}' | paste -sd' ' -`],
     ],
   },
   missing: {
@@ -258,11 +267,13 @@ function renderTable(name, env) {
 }
 
 function render(snap) {
-  const blocks = ["HEAD", "GENERATOR", "REFS", "WORKTREES", "REFLOG", "ISSUES", "PRS", "INSTANT", "PARAMS"];
+  const blocks = ["HEAD", "GENERATOR", "REFS", "WORKTREES", "REFLOG", "ISSUES", "PRS", "INSTANT", "PARAMS", "RENDER"];
   const env = {};
   for (const k of blocks) env[k] = snap[k];
   const s = computeScalars(env);
   Object.assign(env, { HEADSHA: s.HEADSHA, SRCSHA: s.SRCSHA });
+  const kv = (block) => Object.fromEntries(block.split("\n").map((l) => [l.slice(0, l.indexOf(" ")), l.slice(l.indexOf(" ") + 1)]));
+  const render_ = kv(snap.RENDER);
   const params = Object.fromEntries(snap.PARAMS.split("\n").map((l) => [l.slice(0, l.indexOf(" ")), l.slice(l.indexOf(" ") + 1)]));
   const T = (n) => renderTable(n, env).text;
   const short = (x) => x.slice(0, 8);
@@ -271,11 +282,11 @@ function render(snap) {
   L.push("---");
   L.push("kind: roadmap");
   L.push("repo: ultimate-tokens");
-  L.push("status: generated (the Conductor owns this file; the owner's priority is each ticket's P label)");
+  L.push("status: generated (the Conductor owns this file)");
   L.push(`written: ${s.T0.slice(0, 10)}`);
-  L.push(`head: ${s.HEADSHA} (refs/remotes/origin/main as read at ${s.T0})`);
+  L.push(`head: ${s.HEADSHA} (refs/remotes/origin/main, read between ${s.T0} and ${s.T1})`);
   L.push(`instant: read from ${s.T0} to ${s.T1}, once; every figure below is computed from that read`);
-  L.push(`generator: .sdlc/scripts/roadmap-gen.mjs, blob ${snap.GENERATOR}`);
+  L.push(`generator: .sdlc/scripts/roadmap-gen.mjs, read by blob ${snap.GENERATOR}, rendered by blob ${render_.renderer}`);
   L.push(`inputs: gh issue list --state open (${s.N_ISSUES} issues), gh pr list --state open (${s.N_PRS} PRs), git worktree list (${s.N_WORKTREES} worktrees), git for-each-ref (${s.N_REFS} refs), git reflog (${s.N_REFLOG} entries); commands and output verbatim in Snapshot`);
   L.push(`generated-for: ${params.for}`);
   L.push("---");
@@ -289,7 +300,7 @@ function render(snap) {
   L.push("| Rule | What it means |");
   L.push("|---|---|");
   L.push("| one read | refs, worktrees, reflogs, open issues and open PRs were read once, between the two instants in `instant:`, by the commands in Snapshot. Nothing else the generation runs reads state that can change |");
-  L.push("| a cell is a command's output | every table cell is the stdout of the command listed for its column under the table, run with the Snapshot blocks as shell variables. Those commands name git objects by sha, never by branch, so they print the same thing whenever they are rerun |");
+  L.push("| a cell is a command's output | every table cell is the stdout of the command listed for its column under the table, run with the Snapshot blocks as shell variables. Those commands name git objects by sha, never by branch, so they print the same thing whenever they are rerun, while the objects they name remain in the clone |");
   L.push("| no marks | there is no proposed, derived or legacy mark, because no cell is proposed, mapped or ranked. A label column prints the label's text after its prefix, verbatim: `size:small` prints `small`, and `task`, which has no prefix, prints under Other labels |");
   L.push("| `none` | the column's command printed nothing |");
   L.push("| escapes | a `\\|` in a cell is a plain `|` escaped for the table. U+2014 is written `<U+2014>` everywhere in this file, Snapshot included |");
@@ -375,15 +386,16 @@ function render(snap) {
   L.push("");
   L.push("## Snapshot");
   L.push("");
-  L.push(`Every block is the stdout of the command above it, run at \`${short(s.SRCSHA)}\` between ${s.T0} and ${s.T1}, with \`LC_ALL=C\`, verbatim except U+2014, written \`<U+2014>\`. The generator refuses to write when any ref's newest reflog entry disagrees with the REFS or WORKTREES read, so the blocks describe one state. INSTANT is \`${INSTANT_CMD}\` run before the first command and after the last. PARAMS is the generator's arguments, not a read.`);
+  L.push(`Every block is the stdout of the command above it, run at \`${short(s.SRCSHA)}\` between ${s.T0} and ${s.T1}, with \`LC_ALL=C\`, verbatim except U+2014, written \`<U+2014>\`, and trailing newlines, which are dropped. The generator refuses to write when any ref's newest reflog entry disagrees with the REFS or WORKTREES read, so the blocks describe one state. INSTANT is \`${INSTANT_CMD}\` run before the first command and after the last. PARAMS is the generator's arguments and RENDER names the blob that rendered this file and where its snapshot came from; neither is a read.`);
   const cmds = Object.fromEntries(READS);
   cmds.INSTANT = `${INSTANT_CMD}  # before HEAD, and again after PRS`;
   cmds.PARAMS = "the --ticket and --by arguments";
-  for (const k of ["INSTANT", "HEAD", "GENERATOR", "REFS", "WORKTREES", "REFLOG", "ISSUES", "PRS", "PARAMS"]) {
+  cmds.RENDER = "not a read: the rendering generator's blob, and live read or the commit whose snapshot was rendered again";
+  for (const k of ["INSTANT", "HEAD", "GENERATOR", "REFS", "WORKTREES", "REFLOG", "ISSUES", "PRS", "PARAMS", "RENDER"]) {
     L.push("");
     L.push(`### ${k}`);
     L.push("");
-    L.push(k === "PARAMS" ? FENCE + "text" : FENCE + "sh");
+    L.push(k === "PARAMS" || k === "RENDER" ? FENCE + "text" : FENCE + "sh");
     L.push(cmds[k]);
     L.push(FENCE);
     L.push("");
@@ -413,35 +425,51 @@ function checkBlocks(snap) {
 
 // ---------------------------------------------------------------------------------------------------------
 
+const SELF = sh("git hash-object " + JSON.stringify(fileURLToPath(import.meta.url)));
+
 if (flag("--verify")) {
   const file = opt("--verify");
   const text = readFileSync(file, "utf8");
   const snap = parseSnapshot(text);
+  checkAgreement(snap);
+  const renderer = snap.RENDER ? (/^renderer (\S+)/m.exec(snap.RENDER) || [])[1] : snap.GENERATOR;
+  if (renderer !== SELF) { console.log(`verify: ${file} names renderer blob ${renderer}; this generator is blob ${SELF}. Run that blob: git cat-file blob ${renderer} > <tmp>.mjs`); process.exit(1); }
   const again = render(snap);
   if (again === text) { console.log(`verify: ${file} reproduces from its own Snapshot (${text.split("\n").length} lines)`); process.exit(0); }
   const a = text.split("\n"), b = again.split("\n");
   let i = 0; while (i < a.length && a[i] === b[i]) i++;
   console.log(`verify: ${file} differs from its re-render at line ${i + 1}\n  file:     ${a[i]}\n  rerender: ${b[i]}`);
-  const self = sh("git hash-object " + JSON.stringify(fileURLToPath(import.meta.url)));
-  if (snap.GENERATOR && self !== snap.GENERATOR) console.log(`  note: this generator is blob ${self}; the file names ${snap.GENERATOR}. Rerun with that blob: git cat-file blob ${snap.GENERATOR} > <tmp>.mjs`);
   process.exit(1);
 }
 
 const out = opt("--out");
 const ticket = opt("--ticket");
 const by = opt("--by");
-if (!out || !ticket || !by) die(1, "usage: --out <path> --ticket <n> --by <plan unit>, or --verify <path>");
-const target = out.replace(/^\.\//, "");
-if ((target === ".sdlc/roadmap.md" || out === `${TOP}/.sdlc/roadmap.md`) && !flag("--final")) die(1, "writing .sdlc/roadmap.md needs --final");
+const from = opt("--rerender");
+if (!out || (!from && (!ticket || !by))) die(1, "usage: --out <path> --ticket <n> --by <plan unit>, or --out <path> --rerender <commit>, or --verify <path>");
+if (resolve(TOP, out) === resolve(TOP, ".sdlc/roadmap.md") && !flag("--final")) die(1, "writing .sdlc/roadmap.md needs --final");
 if (flag("--final")) {
-  const self = sh("git hash-object .sdlc/scripts/roadmap-gen.mjs");
   const committed = sh("git rev-parse -q --verify HEAD:.sdlc/scripts/roadmap-gen.mjs || true");
-  if (self !== committed) die(1, "--final needs the generator committed at HEAD unchanged");
+  if (SELF !== committed) die(1, "--final needs the running generator to be the one committed at HEAD");
   if (sh("git status --porcelain") !== "") die(1, "--final needs a clean tree");
 }
-const snap = readLive();
-snap.PARAMS = `for plan ${by}, ticket #${ticket}`;
+let snap;
+if (from) {
+  const sha = sh(`git rev-parse --verify ${JSON.stringify(from + "^{commit}")}`);
+  snap = parseSnapshot(sh(`git show ${sha}:.sdlc/roadmap.md`) + "\n");
+  checkAgreement(snap);
+  snap.RENDER = `renderer ${SELF}\nsnapshot ${sha}:.sdlc/roadmap.md`;
+} else {
+  snap = readLive();
+  snap.PARAMS = `for plan ${by}, ticket #${ticket}`;
+  snap.RENDER = `renderer ${SELF}\nsnapshot live read`;
+}
 checkBlocks(snap);
 const text = render(snap);
+if (from) {
+  // the snapshot must come through byte for byte: every block but RENDER is the source's
+  const back = parseSnapshot(text);
+  for (const k of Object.keys(snap)) if (k !== "RENDER" && back[k] !== snap[k]) die(2, `block ${k} did not survive the re-render unchanged`);
+}
 writeFileSync(out, text);
-console.log(`wrote ${out}: ${text.split("\n").length} lines, read ${snap.INSTANT.split("\n").join(" to ")}`);
+console.log(`wrote ${out}: ${text.split("\n").length} lines, snapshot read ${snap.INSTANT.split("\n").join(" to ")}`);
