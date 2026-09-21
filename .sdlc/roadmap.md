@@ -5,7 +5,7 @@ status: generated (the Conductor owns this file)
 written: 2026-09-21
 head: 959b1bb7253f53e6c486988c41e1cd57d431cd4c (refs/remotes/origin/main, read between 2026-09-21T12:35:49Z and 2026-09-21T12:35:50Z)
 instant: read from 2026-09-21T12:35:49Z to 2026-09-21T12:35:50Z, once; every figure below is computed from that read
-generator: .sdlc/scripts/roadmap-gen.mjs, read by blob 06837d22816d05be53f2441d3bf274d1dd713ac9, rendered by blob 8c0dcb7f56c1901f17768e530be8bb243ee3e69b
+generator: .sdlc/scripts/roadmap-gen.mjs, read by blob 06837d22816d05be53f2441d3bf274d1dd713ac9, rendered by blob 1958a567ec3224e191bebe357b188c492e6265bb
 inputs: gh issue list --state open (20 issues), gh pr list --state open (3 PRs), git worktree list (35 worktrees), git for-each-ref (11 refs), git reflog (28 entries); commands and output verbatim in Snapshot
 generated-for: plan records-followup U14, ticket #709
 ---
@@ -40,6 +40,8 @@ export HEAD REFS WORKTREES ISSUES PRS HEADSHA SRCSHA LC_ALL=C
 
 Or all at once, which re-renders the whole file from its own Snapshot and compares byte for byte:
 `node .sdlc/scripts/roadmap-gen.mjs --verify .sdlc/roadmap.md` (exit 0 when every cell reproduces).
+
+What that proves, and what it cannot: exit 0 means every cell follows from the Snapshot and the Snapshot agrees with itself, each ref's quoted reflog entry naming the sha REFS and WORKTREES record. It cannot prove the Snapshot matched the world: a value changed in both the Snapshot and its cell still passes. The check against the world is the Verifier's grade of the read inside the freeze window it was taken in, the `gh` blocks against live `gh` and the git blocks against this repo's reflogs.
 
 ## Open issues
 
@@ -761,6 +763,6 @@ not a read: the rendering generator's blob, and live read or the commit whose sn
 ```
 
 ```snapshot RENDER
-renderer 8c0dcb7f56c1901f17768e530be8bb243ee3e69b
+renderer 1958a567ec3224e191bebe357b188c492e6265bb
 snapshot e147ae0b0eff68c68e37b18aedf4539789486e72:.sdlc/roadmap.md
 ```
