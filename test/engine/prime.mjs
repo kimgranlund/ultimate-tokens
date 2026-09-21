@@ -32,6 +32,23 @@ import { primeSwatches, primeSteps, PRIME_STEPS, PRIME_L_MIN, PRIME_L_MAX, STEP_
 import { peakC, hctToRgb, maxChromaInGamut, cam16FromRgb, lstarFromRgb } from "../../src/engine/hct.js";
 import { effHue, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
 import { gateReport } from "../gate-report.mjs";
+import { SAMPLE_SEED } from "./lib/corpus-sample.mjs";
+
+// FULL/SAMPLED (#713 U4): this file has no corpus to draw from (`ladder-window`'s own 8-file read
+// costs under 0.1s and is left untouched), so the split thins the two synthetic hue grids and the
+// determinism case list instead of sampling documents. hueRange(baseStep) keeps every hue FULL
+// walks when FULL, and one hue in five, rotated by SAMPLE_SEED, when SAMPLED — so the kept band
+// moves if the seed ever bumps rather than always starting at hue 0.
+const FULL = process.argv.includes("--full");
+const HUE_MULT = FULL ? 1 : 5;
+const HUE_OFFSET = SAMPLE_SEED % 5;
+function hueRange(baseStep) {
+  const step = baseStep * HUE_MULT;
+  const start = FULL ? 0 : HUE_OFFSET * baseStep;
+  const hues = [];
+  for (let hue = start; hue < 360; hue += step) hues.push(hue);
+  return hues;
+}
 
 // #681 U4 integration: U6 was dispatched standalone (team-lead, 2026-09-18) and its own SCOPE NOTE
 // above predates U1 landing, so its DEFAULTS read `RT.defaults` unstripped — now the correct fixture,
@@ -175,9 +192,10 @@ for (const p of DEFAULTS) {
 // premise was wrong (their sweep uses 4 hueShifts x 5 chromas, this one 5 x 4; the 302,400 totals
 // coincided by accident), so gate (c) reverts to its review-pass-1-approved, cheaper step-3 resolution;
 // `gamut-ceiling` below now runs its OWN separately-scaled sweep).
+const GAMUT_HUES = hueRange(3);
 const GAMUT_SWEEP = { checked: 0, violations: [] };
 for (const hueSpace of SPACES) {
-  for (let hue = 0; hue < 360; hue += 3) {
+  for (const hue of GAMUT_HUES) {
     for (const chroma of [0, 25, 50, 75, 100]) {
       for (const hueShift of [0, 10, -10, 20, -20]) {
         for (const skew of [0, 40, -40]) {
@@ -192,7 +210,10 @@ for (const hueSpace of SPACES) {
   }
 }
 {
-  if (GAMUT_SWEEP.checked < 15000) FAIL("c", `only ${GAMUT_SWEEP.checked} hueShift-sweep cases checked — the widened sweep did not run`);
+  // the floor is computed from GAMUT_HUES itself, not a hand-typed constant, so it is mode-aware by
+  // construction: FULL expects every hue the old file ever checked, SAMPLED expects the thinned count.
+  const expectedGamutChecked = GAMUT_HUES.length * 5 * 5 * 3 * SPACES.length;
+  if (GAMUT_SWEEP.checked < expectedGamutChecked) FAIL("c", `only ${GAMUT_SWEEP.checked} hueShift-sweep cases checked (expected ${expectedGamutChecked}) — the ${FULL ? "widened" : "thinned"} sweep did not run`);
   for (const v of GAMUT_SWEEP.violations.slice(0, 20)) FAIL("c", v);
 }
 
@@ -239,8 +260,13 @@ for (const hueSpace of SPACES) {
 //    truncated keys restored, to prove this methodology actually bites — was run standalone, not
 //    committed for cost, and is reported in the handoff (`.sdlc/handoffs/pif-u6.md`) and in this
 //    unit's own report.
+// DET_CASE_COUNT — SAMPLED thins to the first 400 of the 2000 (#713 U4): each case's fields are a
+// pure function of `i` alone, so a shorter loop IS the same prefix, not a different case list.
+// POISON_CASES stays 1500 in both modes: the file's own comment above says catch rate follows case
+// count, not poison density.
+const DET_CASE_COUNT = FULL ? 2000 : 400;
 const DET_CASES = [];
-for (let i = 0; i < 2000; i++) {
+for (let i = 0; i < DET_CASE_COUNT; i++) {
   DET_CASES.push({
     name: `d${i}`,
     hue: (i * 0.1381 + 13.7) % 360,
@@ -381,9 +407,10 @@ function vulnPrimeSwatches(palette, controls) {
     return { inGamut };
   });
 }
+const CEILING_HUES = hueRange(CEILING_PARAMS.hueStep);
 const CEILING = { checked: 0, realViolations: 0, vulnViolations: 0 };
 for (const hueSpace of SPACES) {
-  for (let hue = 0; hue < 360; hue += CEILING_PARAMS.hueStep) {
+  for (const hue of CEILING_HUES) {
     for (const chroma of CEILING_PARAMS.chromas) {
       for (const hueShift of CEILING_PARAMS.hueShifts) {
         for (const skew of CEILING_PARAMS.skews) {
@@ -971,6 +998,7 @@ let LADDER_WINDOW_ALLOWLIST;
 // below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
 const DECLARED = ["a", "b", "c", "gamut-ceiling", "d1", "d2a", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j", "k", "ladder-window", "symmetry", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
+console.log(`  (${FULL ? "FULL" : "SAMPLED"}: ${DET_CASE_COUNT} determinism cases, ${POISON_CASES.length} poison renders, hue step ${HUE_MULT})`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: prime-system clears all AC-050 gates");
 process.exit(0);
