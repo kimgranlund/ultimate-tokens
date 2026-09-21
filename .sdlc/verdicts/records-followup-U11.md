@@ -4,14 +4,14 @@ plan: records-followup
 unit: U11
 seat: verifier
 grade: verifier-l2
-pass: 4
+pass: 5
 written: 2026-09-20
 ---
 
-# Verdict records-followup U11 · 🔴 pass 4 · 7 🟢, 0 🟡, 1 🔴 (pass 3: 7 🟢, 2 🔴; pass 2: 17 🟢, 1 🔴; pass 1: 9 🟢, 1 🟡, 2 🔴)
+# Verdict records-followup U11 · 🔴 pass 5 · 5 🟢, 0 🟡, 1 🔴 (pass 4: 7 🟢, 1 🔴; pass 3: 7 🟢, 2 🔴; pass 2: 17 🟢, 1 🔴; pass 1: 9 🟢, 1 🟡, 2 🔴)
 
 verdict: 🔴
-sha: f615f5739ca7acd62e3b4fdb9cb29be0df40cc80
+sha: 89d2057e503ae10a53770290035ae317ffd41d3b
 
 | Graded at | `unit/rf-U11` @ 089e0e44, BASE 1f991877, plan text from `origin/main` at revision 17 |
 |---|---|
@@ -212,3 +212,33 @@ and became false when `#720` opened at `21:56:01Z`. What pass 3 established stan
 was false at `66d40f70` and at every U11 commit, but my stated reason was the inverted one and the
 Orchestrator's row appears to have inherited it from my record. Both should be read with this
 paragraph.
+
+## Pass 5, at `89d2057e`, verifier only, one row
+
+Scope: the landing-refresh revision row, plus a rerun of the gates. R1 to R4 stay 🟢 from passes 3 and
+4 and are not regraded. `89d2057e` touches `.sdlc/roadmap.md` only, one line, one hunk, and adds no
+new revision row about itself, which breaks the pattern of the two commits before it.
+
+Pass 4's two 🔴 clauses are both repaired and I verified each against the source rather than against
+the message that reported them. One clause of the same row is still false.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| the landing-refresh revision row | 🔴 | everything in the row verifies except one clause. It reads `Every graded read after that missed it, because none ran the command that line names`. Verdict pass 3 is a graded read after `3ee3c72b` and it did not miss it: the dispatched `verifier-l3` ran `gh pr list --state open`, reported 2 against the stated 1, and the pass 3 row in this file records `Open PRs are 2, #720 and #158`. So both halves are false, the universal and the reason. The previous wording put a number on it, five, which the Orchestrator withdrew for having no derivation; the replacement is stronger and wrong rather than unsupported | every other claim checked and held. Parent of `89d2057e` is `f615f573`, so `f615f573's successor` is right. The two corrected clauses are gone and their replacements present: `23:04:32Z` absent and `23:02:56Z` present, `false from the regeneration` absent and `true at the regeneration` present. `66d40f70` is `23:02:56Z` and is the last roadmap-touching commit before the refresh. `#723` minted `23:24:11Z`, ranked at 7. `Count:` reads `total 15` with `P2 3` over 15 rows. `#720` opened `21:56:01Z`, `3ee3c72b` at `21:59:23Z`, so `three minutes after` holds at 3 m 22 s. The 15 issue numbers match live exactly |
+| P1 | `npm test`, no `node_modules`, tree stable | 🟢 | clean clone at `89d2057e`: `✓ all 48 test files passed`, exit 0 captured directly, TESTS 48, status 0 after. The Orchestrator's own green run is its floor and was not used as evidence here | the P4 plant reds the same run |
+| P4 | branding, which scans `.sdlc/` | 🟢 | `branding: clean (508 files scanned)`, exit 0 under pipefail | a records doc planted inside `.sdlc/`: `FAIL: 3 branding violation(s) across 509 files`, exit 1 |
+| P5 | scope wall | 🟢 | zero paths outside `.sdlc/`, four in total | a planted file under `src/ui/` takes the outside count to 1 |
+| P6 | no em dash added in prose | 🟢 | `0` | one appended to the roadmap in the clone: `1` |
+| P7 | baseline agrees with the tree | 🟢 | `stale total: 0`, exit 0 | the baseline figure bent to 47: `STALE tests: baseline 47, test/run.mjs TESTS 48`, exit 1 |
+
+### The 🔴
+
+One clause, and it is the third time a correcting edit has introduced a new false statement in the
+sentence describing the correction. The direction of travel is right: this commit is one line, adds
+no self-describing row, and the two clauses pass 4 measured are properly fixed. What remains is a
+claim about the verification history that erases the one pass where the process worked. Pass 3 is the
+read that caught the PR figure, by running the command, and the row now says no read ran it.
+
+The cheapest true form of that sentence is a bounded one naming the reads that did miss it, which is
+derivable from the records in `.sdlc/verdicts/`. I am not writing the fix; the gap is that the clause
+asserts a universal over graded reads without deriving it from them.
