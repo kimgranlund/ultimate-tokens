@@ -996,7 +996,7 @@ for (const mode of ["perceptual", "peak"]) {
     "peak|cam16|165|0|40|100|250&300",
   ]);
   // this grid is synthetic, not a corpus sweep, but at an estimated 16s quiet it decides whether the
-  // 120s ceiling holds (#713 design section) — SAMPLED thins it to every fifth hue, offset by
+  // 120s ceiling holds (#713 design section); SAMPLED thins it to every fifth hue, offset by
   // SAMPLE_SEED % 5, the same thinning prime.mjs's own grids use.
   const GRID_HUES = FULL ? HUES_G : HUES_G.filter((_, i) => i % 5 === SAMPLE_SEED % 5);
   const seenGridException = new Set();
@@ -1183,7 +1183,7 @@ for (const mode of ["perceptual", "peak"]) {
   // proves the SHIPPED content, on both the 19-stop display ramp and the 25-stop export ramp per rev8.
   // ONE substitution point (#713 U2, design section): FULL sweeps every category's PRESETS in full;
   // SAMPLED draws the shared seeded canary (test/engine/lib/corpus-sample.mjs) instead. Every sweep and
-  // in-file control downstream of `docs` reads this one list — a sweep is never skipped when sampled,
+  // in-file control downstream of `docs` reads this one list  -  a sweep is never skipped when sampled,
   // it runs on fewer documents.
   const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
   const byCategory = {};
@@ -1379,7 +1379,7 @@ for (const mode of ["perceptual", "peak"]) {
     // proves the carve-out really is keyed on the one named preset, not on "any dampAmp>0". In-memory
     // only, built from the already-loaded corpus; never reads origin/main at runtime.
     // #713 U2: `docs` can be empty (a SAMPLED corpus with every category's `vol` stripped, or the
-    // vacuity guard's own probe) — guarded so the vacuity FAIL above stays the reported failure
+    // vacuity guard's own probe), guarded so the vacuity FAIL above stays the reported failure
     // instead of an unhandled TypeError on `docs[0]` pre-empting it.
     if (!docs.length) {
       FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: docs is empty, no probe document available to patch`);
@@ -1605,7 +1605,7 @@ for (const mode of ["perceptual", "peak"]) {
   const dipDocs = [...docs, defaultKitDoc];
   const BASELINE_BY_MODE = { peak: DIP_BASELINE, even: EVEN_DIP_BASELINE };
   const seenModes = new Set();
-  // this mode's OWN observed baseline count, in THIS run's scope — the negative controls below compare
+  // this mode's OWN observed baseline count, in THIS run's scope  -  the negative controls below compare
   // the patched engine's count against this, never against a full-corpus pin a SAMPLED run cannot reach
   // (#713 design section: "an in-file negative control compares the patched engine against the same
   // mode's own real count").
@@ -1904,7 +1904,7 @@ for (const mode of ["perceptual", "peak"]) {
         const sampleDocs = witnessDoc ? [witnessDoc, ...others] : docs.slice(0, 50);
         const buggySample = measureAnchoredOvershoot(BuggyT, "peak", sampleDocs);
         // FULL compares against the frozen pin; SAMPLED compares against this run's own unmutated max
-        // ratio, never the FULL-corpus pin — the sample's own worst witness need not be the full corpus's
+        // ratio, never the FULL-corpus pin: the sample's own worst witness need not be the full corpus's
         // worst, so amplifying it need not clear a pin measured on a witness this scope may not carry
         // (#713 design section, same principle as the dip-gate negative controls above).
         const ratioFloor = FULL ? PEAK_MAX_RATIO_PIN : peakResult.maxRatio;

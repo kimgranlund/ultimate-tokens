@@ -65,7 +65,7 @@ if (!fails.length) {
   if (brandsDoc.length !== brandsTotal) FAIL(`brands sampled ${brandsDoc.length} of ${brandsTotal}: the identity tier must ship in full`);
 
   // per-category presence (U2-6, from the U1 verdict note): the 30-document floor below does not catch
-  // a category silently DROPPED because its presets lost `vol` — sampleCorpus's own per-category loop
+  // a category silently DROPPED because its presets lost `vol`  -  sampleCorpus's own per-category loop
   // calls `continue` past a category whose pickVolume returns undefined, which shrinks the sample (35
   // documents becomes 31) without ever failing the floor. Assert every one of the eight categories
   // actually contributes at least one document (brands, asserted whole above, always does by construction).
