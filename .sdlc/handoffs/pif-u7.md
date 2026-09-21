@@ -477,8 +477,24 @@ and nothing else: **`npm test` rewrote no generated artifact**, so `figma/plugin
 4117.5 KB and `baseline-agrees-check.sh` still reads `stale total: 0`. They are committed with this
 handoff, which empties the tree.
 
-**Not a timing reading.** Both runs started above R13's load 5 (9.66 and 20.61), the load was read
-just before the run in the same command rather than from inside it, and neither is added to
+**Run 3, GREEN, the U7-P1 reading of record.** Taken at `1b1fb33a`, after the round-2 shell.mjs
+repair, because run 2 predates it. Guard 0 before; load read from INSIDE the run, five seconds in:
+
+```
+HEAD: 1b1fb33a  GUARD BEFORE: 0
+UPTIME INSIDE (t+5s): 23:22  up 13 days,  5:19, 11 users, load averages: 18.79 17.12 17.75
+npm test > "$S/u7-npmtest3-out.txt" 2>&1  525.68s user 9.00s system 99% cpu 8:54.78 total
+EXIT: 0
+UPTIME AFTER: 23:31  up 13 days,  5:28, 11 users, load averages: 31.90 22.25 18.90
+TREE AFTER: 0
+LAST: ✓ all 49 test files passed
+```
+
+`git status --short` reads 0 lines after the run: `npm test` rewrote nothing at this head. The only
+commit after it touches this handoff alone, which no test but `test/repo/branding.mjs` reads.
+
+**Not a timing reading.** All three runs started above R13's load 5 (9.66, 20.61 and 18.79), and
+none is added to
 `.sdlc/baseline.md`'s ceiling series. Recorded here because a run this unit made should not be
 missing from its own record.
 
