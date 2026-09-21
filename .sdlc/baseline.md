@@ -133,13 +133,14 @@ What this section does NOT claim, because the evidence for it was withdrawn: tha
 explains the gap. That was the monotone-in-load argument, and it is gone. The two claims have to be kept apart, because one is
 supported and the other is not. **Contention accounts for the slow tail**: the `1670.43 s` and `1119.57 s` rows sit
 at the lowest CPU shares in the series, and the readings at high load
-behave as contention would predict. **The divergence among the quiet runs is unexplained**: the two
-graded readings are 227 s apart with both start loads under 5, and **nothing in this record explains
-that spread**. The second is the finding. A single row at load 194.52 supports the first and does
+behave as contention would predict. **The divergence among the quiet runs is unexplained**: `553.45 s`
+sits 227 s from the other two graded readings, `326 s` and `309.34 s`, all three started at loads
+under 5, and **nothing in this record explains that spread**. The second is the finding. A single row
+at load 194.52 supports the first and does
 nothing for the second, and it does not restore the monotone-in-load argument, which a row at load
 5.42 broke. Until something does, the
 cause of the variation is open, and the only conclusion carried here is the narrow one: the band
-stands and neither graded reading supports widening it.
+stands and none of the three graded readings supports widening it.
 
 A subset of the readings also records the CPU share `time` printed. It is
 tabulated below as an observation and NOT as the metric anything is judged by: R13 rules on load at
@@ -162,6 +163,7 @@ almost monotonically, and that ordering is the honest summary of what these numb
 
 | CPU share | wall | inside the 280 to 550 band |
 |---|---|---|
+| 104% (printed) | 309.34 s | **yes** |
 | 102% (printed) | 518.66 s | **yes** |
 | 101% (printed) | 553.45 s | no, by 3.45 s |
 | 101% (printed) | 592.17 s | no, by 42 s |
@@ -175,7 +177,7 @@ almost monotonically, and that ordering is the honest summary of what these numb
 | 49% (printed) | 1670.43 s | no |
 | 87.3% (computed) | 780.23 s | no |
 
-12 rows, one per reading whose CPU share is recorded, of which one is
+13 rows, one per reading whose CPU share is recorded, of which two are
 inside the band and 11 are above it. The ordering is close to monotone in share but is not
 monotone, breaking in three places now: 101% carries both 553.45 s and 592.17 s, 95% carries both
 716.04 s and 747.27 s, and at the bottom 87.3% reads 780.23 s against 90%'s 889.89 s.
@@ -185,10 +187,12 @@ Two reasons, both fatal to that move. Average share is work divided by elapsed t
 construction when a run waits longer, which makes any slope read off these rows partly definitional
 rather than measured. And R13 rules on load at start, so share has no standing here whatever it
 shows. Run 1 at **102%, inside the band at 518.66 s**, is consistent with the band
-being right, which is also what the graded pair says on the control that does count. It is this
+being right, which is also what the graded readings say on the control that does count. It was this
 unit's
-fastest and most CPU-efficient reading, and two earlier drafts of this paragraph, both this unit's,
-overlooked it. The first read the high-share readings as proving a fixed overshoot near 100 s; the
+fastest and most CPU-efficient reading until the U7 quiet run at `309.34 s` joined the table: **104%
+of CPU**, now the highest share and the fastest wall of any reading with a recorded CPU share. Two
+earlier drafts of this paragraph, both this unit's, overlooked what Run 1 showed before this reading
+existed. The first read the high-share readings as proving a fixed overshoot near 100 s; the
 second softened that to a 40 to 100 s range. Both were wrong in the same direction, and the same
 records contained the counter-example throughout.
 
@@ -197,7 +201,8 @@ waiting to be found. CPU share and wall time are not independent quantities: ave
 divided by elapsed time, so a run that waits longer for the same work has a lower share by
 construction. "About 20 s per point of share" is therefore partly definitional and is recorded as a
 description of the shape of the table, never as a coefficient anyone should extrapolate from. What
-is not circular is run 1 on its own: highest share, and inside the band.
+is not circular is run 1 and the `309.34 s` reading on their own: the two highest CPU shares in the
+series, both inside the band.
 
 How these readings are to be treated, per **R13** (owner ruling, main @ `4e315376`): the 280 to 550
 band stands, and nothing widens it before a run set STARTED at load under 5. Which readings that
