@@ -533,3 +533,19 @@ Four conditions, all of which this re-derivation meets:
 It witnesses this machine's view of the ref, which is only as fresh as the last fetch or push. For a
 claim about what a command run on this machine read, that is the right witness, arguably better than
 the remote's own state, because it is what the command actually saw.
+
+## Correction 13, the control in correction 12
+
+Correction 12 said the reflog witness discriminates because leg A's classifier gives `green=10` at
+`428f81ad`. The U13 pass 2 reviewer pointed out that `green=10` is the classifier misreading U11's `🔴`
+pass-1 title as green, so the control I recorded rested on a known bug.
+
+The conclusion stands and the control moves. A correct classifier, reading the `verdict:` field first,
+agrees with leg A's exactly at `b8c3be8f` (`green=9 yellow=1 red=0 ungraded=1`), and at `428f81ad` gives
+`green=9 red=1 ungraded=0` against leg A's `green=10 ungraded=0`. Both drop `ungraded` from `1` to `0`,
+because U11's verdict file appears; the bug only decides the bucket. The field that shows the witness
+discriminates is `ungraded`, not `green`. The full comparison is in the U13 verdict, pass 2.
+
+Thirteen corrections. This one is correction 10's lesson one level up. There I aimed controls at what a
+checker skips; here I aimed one at a field that moved for the wrong reason. A control has to move
+because of the thing it is meant to detect.

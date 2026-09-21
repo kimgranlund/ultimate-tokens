@@ -92,3 +92,61 @@ retract C3.
 
 I verified V8's detection and not its direction. I checked that the two sentences disagreed and
 assumed the one the unit had just repaired was the correct one. A repair is a claim like any other.
+
+
+# Verdict records-followup U13 · 🟢 pass 2 · 16 🟢, 0 🟡, 0 🔴
+
+verdict: 🟢
+sha: 55672d460870dc4808dc9c56d839d99f1d1623f2
+
+> **Model-independence label, owner ruling R17.** Grade `verifier-l2`, opus at high effort, run by the
+> verifier seat itself, the same model and effort as the seat writing this record. No fable seat
+> checked this pass. Every row below is opus checking opus.
+
+Pass 2 at `55672d46`, eight commits past `bb896a4e`, frozen by the Orchestrator. Reviewer PASS at its
+pass 7 with two 🟡 left for me to grade; both resolve below. Graded, as in pass 1, at the commit each
+record was written at, with reachability deciding what a ref can see and the reflog as witness where
+reachability cannot decide, under the four conditions in census correction 12.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| V1 | R18: the roadmap leaves the branch as it entered | 🟢 | blob `b3825864f7a7c0219d946ac1131892e901f79a1b` at `55672d46`, the base's | no commit in `bb896a4e..55672d46` touches `.sdlc/roadmap.md`; only the two handoffs changed |
+| V2 | pass 1's V8: the board claim, and the file no longer contradicting itself | 🟢 | `:140-147` places the claim on main from `34173dd6`, states neither `34173dd6` nor `428f81ad` is reachable from `698e8916`, and says `grep -c '11 🟢'` prints `0` there `because the row predates U5's build, not because anything reconciled it`, which is C3's error named. `:520` agrees with it | main's board at `b8c3be8f`, when the claim was written at `5cac5623`, reads U5 `🟢` beside `11 🟢 1 🟡 0 🔴`; at `698e8916` the U5 row is `⚪` with no such notes, so the two readings are distinguishable and the handoff states the right one for each |
+| V3 | pass 1's V9, `:6` | 🟢 | C14 keeps `plan-revision: 17`, names it as main's revision 17 at `7b59a29b`, and states beside it that the plan reachable from `698e8916` stops at revision 13 and that the body applies R14 | the plan at `698e8916` returns revisions up to `13` only, so a claim of `17` or `19` as the reachable revision would be false; the handoff claims neither |
+| V4 | pass 1's V9, `:30` and its restatement at `:173` | 🟢 | `:30` names the marker move at `1405ee77` in the roadmap and the strip re-aim at `b0003592` in this handoff, `its child commit`; `:173` states the retired description as an earlier draft's | `git log -1 --format=%p b0003592` prints `1405ee77`, and the two commits touch `.sdlc/roadmap.md` and the handoff respectively, so `the same commit` would be false |
+| V5 | C6, the leg output's staleness | 🟢 | C6 quotes its old `went stale at 428f81ad` wording only to retract it with `git merge-base --is-ancestor 428f81ad 698e8916` exiting `1` | that ancestry test prints `0` for `5cac5623`, a known ancestor, so it can tell the two apart |
+| V6 | `:276`, `:284-286`, leg A's figures, anchored by the reflog | 🟢 | the reflog holds `origin/main` at `b8c3be8f` from `15:50:52` to `16:08:45`, covering the run window `66d40f70` to `5cac5623`; leg A's own classifier there prints `units=11 merged=10 started=11 green=9 yellow=1 red=0 ungraded=1`, every figure. The entries are quoted at `:698` | re-aimed, see below: at `428f81ad` both leg A's classifier and a correct one give `ungraded=0`, so the witness discriminates without relying on the classifier's bug |
+| V7 | C10, every statement of U5-4's grade | 🟢 | `:12`, `:35`, `:434`, C10 and C15 all read `🟡` at `698e8916` for `#723`; no line grades it `🟢` or clean | `#723` was created `2026-09-20T23:24:11Z`, 4m01s before `698e8916`, with no row at that sha, so a `🟢` would be false |
+| V8 | the reviewer's first 🟡: R3's reads and the one-second margin | 🟢 | `24620ec9` was committed at `15:25:08`, 35 seconds after `origin/main` moved `0e777d44` to `7b59a29b` at `15:24:33`, so `:125`'s sentence is true as written. The reads may have run a second before the move | both candidate refs give the same figures, `11` units and `10` ticked, so the margin cannot move any number the sentence reports |
+| V9 | revision 31: no record cites its own commit, and every cited commit is on a ref | 🟢 | `8` commit and file pairs, `0` self-citations; `85` cited commit shas, `84` contained in a ref by `git for-each-ref --contains`, and the 85th, `d9667a67`, cited at `:221` precisely as the abandoned sibling on no ref | a known dangling commit, `0d004768`, is contained in `0` refs, so the test sees an orphan when there is one; `git cat-file -e` alone would have passed all `85` |
+| V10 | scope | 🟢 | `2` files changed, each of the `8` commits touches exactly `1` | P5 below |
+| S2 | step 2 shape check, both changed records against the base | 🟢 | `verdict.py check --against` exits `0` with `0` new failures on the U11 and U13 handoffs | aimed at what it tests this time: a `🟢` row whose evidence cell has no backtick span exits `1` |
+| P1 | `npm test` | 🟢 | `✓ all 48 test files passed`, exit `0`, tree clean after, at load `8.73 12.23 14.90` | the adapter's control ran last pass at `bb896a4e` and bit; `test/run.mjs` and `role-table.json` are byte-identical at `55672d46` |
+| P4 | branding, on the clean head as asked | 🟢 | `branding: clean (510 files scanned)`, exit `0`, tree at `0` dirty paths before and after | last pass's plant of the retired uppercase run exited `1`; `test/repo/branding.mjs` is byte-identical here |
+| P5 | scope wall | 🟢 | `git diff --name-only ee854932 HEAD \| grep -vc '^\.sdlc/'` prints `0` | the same over `20298cca~1 20298cca` prints `8` |
+| P6 | em dashes added under `.sdlc/` | 🟢 | `0` | the same count over `e9850935~1 e9850935` prints `17` |
+| P7 | baseline agrees | 🟢 | `stale total: 0`, exit `0` | last pass's `48` to `49` bump exited `1`; the check script is byte-identical here |
+
+## The reviewer's second 🟡, weighed
+
+The reviewer's sharper point was aimed at me. My census correction 12 said the reflog witness
+discriminates because leg A's classifier gives `green=10` at `428f81ad`, and that `green=10` is the
+classifier misreading U11's `🔴` pass-1 title as green, the bug from U11's own history. So the control
+I recorded rested on a known misreading.
+
+I reran with a correct classifier beside leg A's, reading the `verdict:` field first:
+
+| ref | leg A's classifier | a correct classifier | U11's verdict file |
+| --- | --- | --- | --- |
+| `b8c3be8f` | `green=9 yellow=1 red=0 ungraded=1` | `green=9 yellow=1 red=0 ungraded=1` | absent |
+| `428f81ad` | `green=10 yellow=1 red=0 ungraded=0` | `green=9 yellow=1 red=1 ungraded=0` | present |
+
+Two things follow. At the witnessed ref the two classifiers agree exactly, so the acquittal does not
+depend on the instrument being right at all. And at the next ref both drop `ungraded` from `1` to `0`,
+because the file appears; the bug decides only which bucket U11 lands in. The discrimination is real
+and independent of the bug. My control cited the one field the bug controls. `ungraded` is the field
+to cite, and V6 cites it.
+
+So the reviewer's 🟡 was right about my control and the acquittal survives it. That is the same lesson
+as the checker in census correction 10, one level up: a control has to be aimed at what the check
+depends on, not at whichever field happens to move.
