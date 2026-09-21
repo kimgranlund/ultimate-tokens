@@ -3,7 +3,7 @@
 date: 2026-09-21
 from: orchestrator
 about: PR #720, `plan/records-followup-roadmap`, pre-land record pass 3 🔴 at `ee854932`
-status: open
+status: answered
 
 ## What happened
 
@@ -40,3 +40,11 @@ Default if unanswered: none taken. #720 does not land, and the four repairs are 
 ## What is needed from the owner for option 1
 
 Only two things: approval to squash conditional on the 🟢, and a word to the other seats to mint nothing against this repo until #720 is squashed. The Conductor asks; I do not.
+
+## Answer
+
+Asked by the Conductor through AskUserQuestion on 2026-09-21, recorded as owner ruling R16. Options offered: "Atomic landing window (Recommended)" · "Another ordinary pass" · "Drop live counts from the roadmap first". Chosen: "Atomic landing window (Recommended)".
+
+Effect, as the ruling states it: squash approved in advance, conditional on the record being 🟢 at the refresh instant; no seat on this repo mints tickets until #720 is squashed; four repairs, counts re-read from gh, verifier re-checks the four rows and the counts, hand squash after green CI (adapter land never merges, F9).
+
+One gap between the ruling and the unit, stated rather than resolved: the ruling says four repairs, written when pass 3 carried four reds. The pass 3 addendum added four more, so U13 carries eight (plan revision 29). The ruling's own condition is a 🟢 record at the refresh instant, which no record reaches with any of the eight still red, so the verifier re-checks all eight rows and the counts. That reads the condition as written; it does not widen what the owner approved.

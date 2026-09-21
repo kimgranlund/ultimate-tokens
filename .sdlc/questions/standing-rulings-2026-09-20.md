@@ -70,3 +70,9 @@ Question: U11 second re-diagnosis (`.sdlc/plans/records-followup-U11-rediagnosis
 Options: A, the Orchestrator's landing refresh (Recommended); B, a fourth builder pass; C, land as is.
 Chosen: A, the Orchestrator's landing refresh (Recommended).
 Effect: one roadmap-only commit with the four edits, no ticket minted until the squash, then a verifier-only pass 4 on R2 and R4 graded against live `gh` and `git` rather than against the file. Made as `f615f573` on `unit/rf-U11`. The Conductor still asks the owner before #720 lands.
+
+## R16 How PR #720 lands (#709)
+Question: PR #720 failed pre-land pass 3 on live counts that move mid-pass (`.sdlc/questions/records-followup-landing-window.md`). How does #720 land?
+Options: Atomic landing window (Recommended); Another ordinary pass; Drop live counts from the roadmap first.
+Chosen: Atomic landing window (Recommended).
+Effect: squash approved in advance, conditional on the record being 🟢 at the refresh instant; no seat on this repo mints tickets until #720 is squashed; four repairs, counts re-read from gh, verifier re-checks the four rows and the counts, hand squash after green CI (adapter land never merges, F9). U13 carries eight repairs since the pass 3 addendum; the verifier re-checks all eight, since the condition is a 🟢 record.
