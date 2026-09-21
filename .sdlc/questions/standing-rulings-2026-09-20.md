@@ -88,3 +88,9 @@ Question: the R16 mint freeze is holding the other lane's finished plans (#718, 
 Options: Lift now, re-freeze for the window (Recommended); Keep it until the squash; Lift for merges only.
 Chosen: Lift now, re-freeze for the window (Recommended).
 Effect: other lanes land and file again at once; the Conductor calls a fresh, short freeze only for the minutes when the rebuild reads counts and squashes, and both lanes must agree to it. The rebuild's `gh` read stays the last act before the squash, as R16 set.
+
+## R20 How long the R19 re-freeze holds (#709)
+Question: the R19 re-freeze ran about five hours; the rebuilt roadmap records the command and instant beside each count. How long should the freeze hold?
+Options: Lift after the snapshot check (Recommended); Hold until the squash; Lift now.
+Chosen: Lift after the snapshot check (Recommended).
+Effect: the verifier diffs the roadmap's `gh` snapshot against live `gh`; on a match the freeze lifts at once and pre-land grades the snapshot at its recorded instant, not live `gh` at the squash, which supersedes R16's wording that the `gh` read be the last act before the squash, for #720. The squash still waits on a 🟢 record. The snapshot matched 20 of 20 issues and 3 of 3 PRs at 12:36:51Z and 12:39:02Z (main `6eee94bf`), and the freeze is lifted. The five hours sat before `go`, while the freeze was being arranged, not in the build.

@@ -373,3 +373,179 @@ used `git log -1 -- <path>` where only `git log -S` answers the question.
 Four of the five are the same error: I chose the measurement that was easy to run over the one the
 sentence actually names. The fifth, A11, is its sibling: I stopped at the first register that failed
 to resolve a citation rather than asking which register the citation belongs to.
+
+## Correction 6, to leg 5's `:434-435` row and to A16's framing
+
+Raised by the builder against its own work and checked by the Orchestrator. I re-derived it and it is
+right.
+
+My leg 5 row said the U11 handoff's `:434-435` was false in both halves: that the review sits at a
+gitignored path and therefore enters no commit and no diff leg. I justified that with
+`.sdlc/verdicts/records-followup-U11-review.md` being tracked since `3f6f1ebf` at `15:48:31-07:00`,
+forty minutes before the handoff's last commit.
+
+Forty minutes earlier by wall clock, and not reachable. `git merge-base --is-ancestor 3f6f1ebf
+698e8916` returns false. `3f6f1ebf` is on `main`, `plan/preset-intent-fidelity` and two sync
+scratches, and on none of the unit branch. `git cat-file -e 698e8916:.sdlc/verdicts/records-followup-U11-review.md`
+fails, and so does the same read at `ee854932`.
+
+So from its own anchor the handoff was right: that review entered no commit and no diff leg of the
+branch it was describing. That half holds. What stays false is the path, `.sdlc/runtime/rf-U11-review.md`,
+which no commit on any ref has ever carried, and the implication that the report exists nowhere.
+
+| was | now |
+| --- | --- |
+| `:434-435` both halves false | one half false: the path. The no-commit half holds |
+| A16: the real record is at `.sdlc/verdicts/records-followup-U11-review.md` | still the real record, and also unreachable from this branch. A reader on `plan/records-followup-roadmap` can follow neither path |
+
+A16 survives and its point sharpens. The citation cannot be followed from the branch, and neither can
+the correction I offered for it. That is leg 2's closing note arriving from the other direction: the
+evidence for a branch's records is not on the branch.
+
+### What I actually got wrong
+
+I applied my own anchor rule to time and not to reachability. Having spent this census insisting that
+a record be graded at the commit that wrote it, I then reached for a fact that was earlier in wall
+clock and assumed the document could see it. Earlier is not reachable. Reachability is the test, and
+on a repo with concurrent unit branches the two come apart constantly.
+
+That is six corrections. Five of them were reaching for the easy measurement over the named one. This
+sixth is the same reflex wearing the disguise of the rule I had just finished enforcing on everyone
+else, which is the version worth remembering: a rule you are confident about is one you stop checking
+yourself against.
+
+## Corrections 7 to 9, surfaced by verifying U13
+
+Grading U13 against this census exposed three defects in it. All three are mine.
+
+**7. Leg 5's enumeration omits `:6` and `:30`.** The census seat reported both in its pre-`:55` rows
+and I confirmed both in a message to it, but neither made it into leg 5's written enumeration above.
+U13 repaired against that enumeration, so it could not repair what the enumeration dropped. Both stay
+false in the U11 handoff. `:30` is false at every anchor: `1405ee77` touched only the roadmap and
+`b0003592` only the handoff, and both are ancestors of `698e8916`. `:6` needs care. I confirmed it by
+wall clock, revision 19 landing four minutes before the handoff, which is the error correction 6
+names. Under reachability it is undecidable, because the plan is a main-only artifact and the plan
+reachable from `698e8916` stops at revision 13. It stands on a different ground: the file's own body
+applies R14, which is revision 19, while its front matter says 17. The conclusion survives; the
+reasoning I gave for it did not.
+
+**8. The `Stale before its own last commit, 12` headline does not reconstruct.** The sites that
+bucket names do not add to twelve under any grouping I can find. U13's handoff recorded this plainly.
+A headline count that its own enumeration cannot produce is the defect this census convicted in the
+U11 handoff's `Nine commits`, and I wrote one.
+
+**9. Leg 5 and leg 2 graded the same claim in opposite directions.** Leg 5 held the U11 handoff's `No
+ranked row was added or dropped by U11`. Leg 2 failed the roadmap's identical claim at `:118`. Leg 2 was
+right: `66d40f70`, a U11 commit and an ancestor of `698e8916`, added `#722`'s ranked row. I accepted
+both legs without checking them against each other. U13's builder removed the false sentence, which I
+graded correct in V7 of its verdict.
+
+Nine corrections to my own work in this plan. Correction 9 adds a new kind: two seats disagreeing on
+one claim, and me recording both verdicts without noticing. Parallel legs over overlapping claims need
+a reconciliation pass, and this census did not have one.
+
+## Correction 10, the board claim, found by the U13 pass 2 builder
+
+Leg 5 graded the U11 handoff's board claim, at `:123-125` and `:443`, as stale before its own last
+commit: the board contradicted itself, `428f81ad` disambiguated it at `16:08:42-07:00`, and that was
+before `698e8916` at `16:28:12-07:00`. That is a wall-clock grade, and it is wrong.
+
+Measured, all three states of the board:
+
+| ref | what it is | U5 row | notes cell |
+| --- | --- | --- | --- |
+| `b8c3be8f` | `main` when the claim was written at `5cac5623`, `16:04:32-07:00` | 🟢 | `11 🟢 1 🟡 0 🔴`, the contradiction, word for word as the handoff quotes it |
+| `428f81ad` | `main` after the disambiguation | 🟢 | `the row's 🟢 is the checklist state`, reconciled |
+| `698e8916` | the board reachable from the handoff's own commit | ⚪ | no such notes; the branch copy never carried the contradiction |
+
+The claim was true when written. The commit that introduced the contradiction, `34173dd6`, and the one
+that removed it, `428f81ad`, are both not ancestors of `698e8916`, so the handoff could see neither. A
+falsifier the record cannot reach does not make it stale. Both sites hold. Leg 5's failure count
+drops by two sites.
+
+This is correction 6 again, the one I recorded an hour earlier for the review record's path, and I did
+not carry it back to the other wall-clock grades already in this census. I fixed the rule where it was
+pointed out to me and left every other application of the old rule standing.
+
+## Correction 11, the same error in one more place
+
+Having admitted in correction 10 that I left the other wall-clock grades standing, I tested every site
+in leg 5's stale bucket for the reachability of the commit that falsifies it, from `698e8916`, with a
+known ancestor and a known non-ancestor as controls. My first run of this reported every falsifier
+unreachable, because zsh does not word-split `set -- $pair` and every test ran against an empty sha. I
+discarded it and reran in Python.
+
+| site | falsifier | reachable from `698e8916` | grade |
+| --- | --- | --- | --- |
+| `:91-98` | `66d40f70` | yes | stale, stands |
+| `:276`, `:284-286` | `428f81ad` | no | **holds**; the leg 5 failure was a wall-clock grade |
+| `:123-125`, `:443` | `428f81ad` | no | holds; correction 10 |
+| `:382-385` | `1405ee77`, `66d40f70` | yes | stale, stands |
+| `:431-433` | `ddfedb70` | yes | stale, stands |
+| `:376` | `#723` | an issue, graded by creation time under the live-facts rule | stands |
+
+One more site flips. `:276` and `:284-286` report leg A's output from its run at `66d40f70`: `green=9`
+and each stated tally equal to its derived one. The census failed them because U11's pass-1 verdict
+reached `main` at `428f81ad`, after which leg A's classifier would read `green=10`. That verdict is
+not reachable from the handoff's commit either. Both sites hold as reports of a dated run.
+
+Two sites falsified by one unreachable commit, `428f81ad`, and I graded both by its wall-clock time.
+The census's leg 5 failures fall by four sites across corrections 10 and 11.
+
+## Correction 12, and a standing rule on the reflog as a witness
+
+The U13 pass 3 builder re-derived leg A's lines at `:276` and `:284-286` against the `origin/main`
+reflog and reports that it reverses the census's conviction. That conviction was already withdrawn in
+correction 11, so the grade does not move. What moves is the strength of the evidence behind it, and
+the difference is worth recording.
+
+Correction 11 held those sites on reachability: the falsifier `428f81ad` is not an ancestor of
+`698e8916`, so the conviction had no valid ground. That shows the claim was not proven false. The
+builder's method shows it was true. Verified:
+
+| check | result |
+| --- | --- |
+| run window | after its tree `66d40f70` at `16:02:56`, before `5cac5623` at `16:04:32`, which records its output |
+| `origin/main` over that window, from this repo's `.git/logs/refs/remotes/origin/main` | `b8c3be8f` from `15:50:52` to `16:08:45`, covering the whole window |
+| leg A's classifier at `b8c3be8f` | `units=11 merged=10 started=11 green=9 yellow=1 red=0 ungraded=1`, every figure the handoff reports |
+| the same classifier at `428f81ad`, the ref's next position | `green=10 ungraded=0`, so the witness discriminates |
+
+### The rule
+
+Where reachability cannot decide, which is a claim about what another ref pointed at during an
+instant, I accept the reflog as the witness. I already relied on it to convict: A4 rests on the
+`unit/pif-u5-records` reflog placing the branch at `a9a36405` from `21:16:43Z`. A witness I use to
+convict I have to accept when it acquits.
+
+Four conditions, all of which this re-derivation meets:
+
+- **Bound the window with committed facts at both ends.** The run's tree below and the commit recording
+  its output above are git objects and durable. The reflog only has to show the ref constant between
+  them.
+- **Quote the entries into the record.** The reflog is this clone's own, is not pushed, and expires
+  (defaults 90 days reachable, 30 unreachable). A later reader, or one on another clone, cannot
+  re-derive from it, so the entries relied on must live in the record.
+- **Read it from the repository, not from a `--shared` clone.** Worktrees share the main repo's
+  reflogs; a `--shared` clone has its own, and its `origin` points at this machine.
+- **Show that it discriminates.** The same derivation at the ref's next position must give a different
+  answer, or the witness proves nothing.
+
+It witnesses this machine's view of the ref, which is only as fresh as the last fetch or push. For a
+claim about what a command run on this machine read, that is the right witness, arguably better than
+the remote's own state, because it is what the command actually saw.
+
+## Correction 13, the control in correction 12
+
+Correction 12 said the reflog witness discriminates because leg A's classifier gives `green=10` at
+`428f81ad`. The U13 pass 2 reviewer pointed out that `green=10` is the classifier misreading U11's `🔴`
+pass-1 title as green, so the control I recorded rested on a known bug.
+
+The conclusion stands and the control moves. A correct classifier, reading the `verdict:` field first,
+agrees with leg A's exactly at `b8c3be8f` (`green=9 yellow=1 red=0 ungraded=1`), and at `428f81ad` gives
+`green=9 red=1 ungraded=0` against leg A's `green=10 ungraded=0`. Both drop `ungraded` from `1` to `0`,
+because U11's verdict file appears; the bug only decides the bucket. The field that shows the witness
+discriminates is `ungraded`, not `green`. The full comparison is in the U13 verdict, pass 2.
+
+Thirteen corrections. This one is correction 10's lesson one level up. There I aimed controls at what a
+checker skips; here I aimed one at a field that moved for the wrong reason. A control has to move
+because of the thing it is meant to detect.

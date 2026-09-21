@@ -220,3 +220,25 @@ Three of these four reds are citations that fail when followed, which is now six
 branch: the two U12 repaired, A3, A11, A12 and A13. None of them is reachable by any criterion the
 plan carries. `#723` should be read as covering the class across every record a plan touches, not
 `roadmap.md` alone, because five of the six sit outside the file the criteria point at.
+
+### Correction to the note on the checker above
+
+The note above says `scripts/verdict.py check` reds only a path that does not exist, and that its
+green certifies file presence and nothing else. That is false. Read from its source, `check_file`
+tests, for every 🟢 or 🟡 row of every table that has both a `state` column and a control column, that
+the evidence cell contains at least one backtick span and that the control cell is not empty or
+`none`. A table with a state column but no control column is named on stderr and skipped. It does not
+read the `verdict:` line, the headline counts, or any prose.
+
+All three of my controls fell into what it skips. A one-line prose file has no table, so it passes
+vacuously. Deleting the `verdict:` line removes something it never reads. Stripping a row's id column
+left the evidence and control cells intact, so both tests still passed. None of the three exercised
+what the checker actually tests, and I concluded from that that it tests nothing. Every version of it
+on this machine reds a green row whose evidence cell has no backtick span; my own U13 verdict's V10
+row was exactly that, and the Orchestrator caught it before commit.
+
+So the checker is narrow, not a no-op. What I should have written: its green certifies that every
+graded row names a measurement in code formatting and states a control, which is a real property,
+and nothing about whether the measurement is right. That is still why every row above was
+re-derived by hand. A negative control has to be aimed at what a check tests; a control aimed at what
+it skips proves only that it skips it.
