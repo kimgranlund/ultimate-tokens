@@ -17,7 +17,7 @@ The census is closed and the set is bounded:
 | hold | 318 |
 | fail | 48 |
 | unresolvable | 16 |
-| blocking after withdrawals | 45 🔴, 1 🟡 |
+| blocking after withdrawals | 44 🔴, 1 🟡 |
 
 One claim in eight fails. The worst file is not the roadmap but `.sdlc/handoffs/records-followup-U11.md`: 123 claims, 22 failing, and six of the seven that were never true are the handoff describing its own evidence.
 
@@ -59,3 +59,9 @@ Of roughly eleven rows dispatched to U13, three needed a second visit: A11 was w
 That is the rate to scale option 1 by: about thirty rows never dispatched, at roughly one second visit in four, each visit needing its own derivation and control. A regeneration pays the legend contract once, where thirty cell edits never touch it at all.
 
 Work that is free under either outcome has been started meanwhile: every red that lives in the three handoff files survives a rebuild, so those are being repaired now.
+
+## Why the blocking figure moved from 45 to 44
+
+A16 lost one of its two halves after the builder checked reachability rather than wall clock: the commit that tracks the review is 40 minutes earlier in time but is not an ancestor of the handoff's own commit, so the handoff's claim that nothing entered a commit or a diff leg on this branch holds from its own anchor. Only the path stays false. The census seat recorded the correction as its sixth, and named it as its own anchor rule applied to time instead of to reachability.
+
+This does not change the decision. It is the sixth instance of the same thing the decision is about: a record asserting something about other work, checked against the wrong source, by the seat enforcing that very rule.
