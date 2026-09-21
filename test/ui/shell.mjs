@@ -52,13 +52,20 @@ if (!Array.isArray(v.contrast) || v.contrast.length === 0) FAIL("model", "no con
 // CORRECTED at #681 pre-land S1. The sentence that stood here said `deriveKeyColor` "is plain
 // hue/chroma-derived and knows nothing of `anchor` at all", and that is precisely the defect S1
 // fixed: the identity swatch now returns the stored `anchor` verbatim, so on an anchored palette it
-// no longer moves for a raw `hue` edit either. The fixture below therefore does what the PRODUCT
-// does rather than what the engine used to tolerate: Q6 rules that editing hue or chroma DETACHES
-// the palette, `src/ui/sections/color.js`'s Hue slider deletes `anchor` on the same gesture, so the
-// fixture deletes it too. Without that, the "no stale cache" probe at line ~85 was asserting that a
-// field the engine is ruled to ignore still moves a derived value, which is a demand the ruling
-// forbids rather than a cache check. The anchored no-move case is asserted separately, just below,
-// so removing the old coupling does not lose coverage.
+// no longer moves for a raw `hue` edit either. (The pre-land review already carried this comment
+// block as stale under K4, `.sdlc/handoffs/pif-prepr-review-p1.md`, for a DIFFERENT sentence of it:
+// the "ignores `hue`/`chroma`" claim above, which is true of `hue` only, since `chroma` still moves
+// an anchored ramp. K4 is ruled carried, so that sentence is left as it stands here; the one
+// corrected in this paragraph is the adjacent claim about the identity swatch.)
+//
+// Does this fixture drive a state C12 forbids? It USED to. An anchored palette whose `hue` has been
+// edited is a state the product cannot produce through its own UI: under C12 / Q6, editing hue or
+// chroma removes `anchor` in the same gesture. The old fixture edited `hue` and kept `anchor`, so it
+// exercised that forbidden state, and its key assertion only held because the pre-S1 key ignored
+// the anchor. The fixture now deletes `anchor` as the Hue slider does, so it drives a C12-legal
+// state. The anchored no-move probe below DELIBERATELY constructs the forbidden state, because a
+// document edited outside the UI (a hand-edited import) can still reach it through hydrate(), and
+// what the engine does there is worth pinning; it is labelled as that, not presented as a UI path.
 const edited = JSON.parse(JSON.stringify(doc));
 edited.palettes[1].skew = ((edited.palettes[1].skew + 130 + 100) % 200) - 100;
 edited.palettes[1].hue = (edited.palettes[1].hue + 60) % 360;
@@ -86,10 +93,20 @@ if (v2.palettes[1].ramp[12] && v.palettes[1].ramp[12] && v2.palettes[1].ramp[12]
   if (!withRole) FAIL("model", "paletteKeyColors dropped colorRole on a curated preset (none of its palettes carry one)");
   // live edit re-projects here too — no stale/cached derived state.
   const kc2 = M.paletteKeyColors(edited);
-  if (kc2[1].key === kc[1].key) FAIL("model", "paletteKeyColors did not change after a detaching hue edit (stale/cached state?)");
+  // Compared against the SAME palette detached with its hue UNCHANGED, never against `kc`. Detaching
+  // alone swaps the key from the anchor to the cusp colour, so `kc2 !== kc` would pass even if the
+  // hue edit were never re-projected: that comparison would measure the detach, not the cache. This
+  // one isolates the hue edit and is the same comparison the pre-S1 assertion made (cusp at hue
+  // against cusp at hue + 60), so the probe keeps its original strength.
+  const detachedOnly = JSON.parse(JSON.stringify(doc));
+  delete detachedOnly.palettes[1].anchor;
+  const kcDetached = M.paletteKeyColors(detachedOnly);
+  if (kc2[1].key === kcDetached[1].key) FAIL("model", `paletteKeyColors did not change after a hue edit on a detached palette (stale/cached state?): ${kc2[1].key} both before and after`);
   // #681 S1, the other half of the same invariant: while `anchor` IS present the identity swatch is
   // the anchor and a raw hue edit must NOT move it. Without this, the assertion above could be
-  // satisfied by a key that still ignores the anchor, which is the bug S1 fixed.
+  // satisfied by a key that still ignores the anchor, which is the bug S1 fixed. This is the
+  // C12-forbidden state named in the fixture comment above (anchored AND hue-edited), reachable only
+  // through a document edited outside the UI, and constructed here on purpose.
   {
     const stillAnchored = JSON.parse(JSON.stringify(doc));
     if (typeof stillAnchored.palettes[1].anchor !== "string") FAIL("model", "test setup: default palette 1 no longer carries an anchor, so the anchored no-move probe below is vacuous");

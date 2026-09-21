@@ -33,7 +33,7 @@ under R13.
 | U7-P1 | 🟢 | `✓ all 49 test files passed`, exit 0, perl count 49, and `git status --short` empty once this unit's four pre-run edits are committed: `npm test` rewrote no file. First run was RED on 3 files, §8c |
 | U7-P2 | 🟢 | `branding: clean (552 files scanned)`, exit 0. Control NC-P2 bites |
 | U7-P3 | 🟢 | the em-dash diff predicate prints `0` over the hand-edited paths. Control NC-P3 prints `1` with `-CSD` and `0` without |
-| U7-P4 | 🟡 | the wall's hand-edited paths, 2 generated artifacts named with their generators (§6), `.sdlc/baseline.md` under the repair ruling (§8b), and four more files S1 made stale, repaired under the same ruling (§8c). Seven files in all sit outside the enumerated list; each is named with its cause |
+| U7-P4 | 🟢 | read against revision 32's amended row (`git show 5951b160:.sdlc/plans/preset-intent-fidelity.md`). 12 declared paths, 2 generated artifacts with their generators, and 5 out-of-wall paths each repaired, named with its cause and carrying a control at UB `de1bafef` proving it was green before this unit. The row's full list is §8d |
 | U7-P5 | 🟢 | `stale total: 0` and `ceiling-counts: clean`, both exit 0, after repairing `.sdlc/baseline.md`'s ui.html figure. §8b |
 | U7-1 | 🟢 | 26 by-construction exceptions of 3,380, frozen by name. Controls NC-1a and NC-1b bite and name both sides |
 | U7-2 | 🟢 | 22 measured-pixel exceptions, max 54.2383 L*, frozen by name. Pre-#681 fixture control reads 1,816 at max 52.4868 L*. Control NC-2 bites |
@@ -481,6 +481,76 @@ handoff, which empties the tree.
 just before the run in the same command rather than from inside it, and neither is added to
 `.sdlc/baseline.md`'s ceiling series. Recorded here because a run this unit made should not be
 missing from its own record.
+
+## 8d. U7-P4 under revision 32: every path this unit touched, and why
+
+Revision 32 amended U7-P4 so that a file the unit's own edits red in `npm test` or in
+`baseline-agrees-check.sh` is in scope if it is repaired in the unit, named here with its cause, and
+carries a control at UB in a throwaway clone proving it was green before the unit's commit. Read
+from `git show 5951b160:.sdlc/plans/preset-intent-fidelity.md`; the plan branch was NOT merged into
+this unit. `git diff --name-only de1bafef` lists 19 paths, and this table is all of them.
+
+| path | half of the row | cause, or generator | control at UB `de1bafef` |
+|---|---|---|---|
+| `test/engine/prime.mjs` | declared | B1 | n/a |
+| `test/engine/anchor.mjs` | declared | S1 gate | n/a |
+| `src/ui/model.mjs` | declared | S1 | n/a |
+| `src/ui/sections/color.js` | declared | S2 | n/a |
+| `test/ui/headless-boot.mjs` | declared | S2 group, `(jj)` re-derivation | n/a |
+| `docs/reference/references/decision-records.md` | declared | B2 | n/a |
+| `docs/reference/CHANGELOG.md` | declared | B2 | n/a |
+| `docs/reference/references/knowledge-02-tonal-scale.md` | declared | S4 | n/a |
+| `docs/img/palette-preview.svg` | declared | S5 | n/a |
+| `.sdlc/checks/ceiling-counts-check.mjs` | declared | S3 | n/a |
+| `.sdlc/plans/preset-intent-fidelity.md` | declared | C11, C6, blast-radius row | n/a |
+| `.sdlc/handoffs/pif-u7.md` | declared | this record | n/a |
+| `figma/plugin/ui.html` | generated | `scripts/gen-figma-ui.mjs` (`gen:figma-ui`), S1 and S2 source inlined | n/a, listed generated artifact |
+| `src/ui/describe-mcp-assets.js` | generated | `gen:mcp-assets`, then `scripts/gen-describe-mcp-assets.mjs`; `src/ui/mcp-assets.js` did NOT move | `gen:mcp-assets` exits 0, `git status --short` empty |
+| `.sdlc/baseline.md` | red-in-check | S1's comments grew `ui.html` 4111.1 to 4117.5 KB, `baseline-agrees-check.sh` STALE | `ok ui.html: baseline 4111.1 KB, tree 4111.1 KB`, `stale total: 0`, exit 0 |
+| `test/ui/shell.mjs` | red-in-npm-test | S1 key follows anchor; fixture drove a C12-forbidden state | `PASS: ui-app pure core + shell clear the checkable predicates`, exit 0 |
+| `test/ui/poster-strip.mjs` | red-in-npm-test | S1 key follows anchor; `wpCap < 39` fitted to the cusp key | `poster-strip PASS: ...`, exit 0 |
+| `docs/reference/references/component-inventory.md` | red-in-npm-test via `test/repo/citations.mjs` | S1/S2 insertions shift `color.js` +14 after line 1942 | `citations: ... STALE 0 across 10 discovered docs (HEAD de1bafef)`, exit 0 |
+| `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md` | red-in-npm-test via `test/repo/citations.mjs` | same shift, plus `model.mjs` +39 after line 870 | same run as above |
+
+`test/repo/citations.mjs` itself is NOT in the diff: it went red, but the repair was in the two
+documents it reads, so the file is unchanged.
+
+**U7-P4's own control**, re-read against the amended row: appending `// probe` to
+`src/engine/tonal.js` in a clone adds `src/engine/tonal.js` to the name list (NC-P4, §3), a path
+in neither the declared list nor this table, so the row still reds on an unnamed path.
+
+### `test/ui/shell.mjs`: the C12 question, answered plainly
+
+**Yes, the old fixture drove a state C12 forbids.** It edited `hue` on an anchored palette and kept
+`anchor`. The product cannot produce that through its UI: under C12 and Q6, editing hue or chroma
+removes `anchor` in the same gesture. The old assertion held only because the pre-S1 key ignored
+the anchor. The fixture now deletes `anchor` the way the Hue slider does, so it drives a legal state.
+
+The new anchored no-move probe DELIBERATELY constructs the forbidden state, because a document
+edited outside the UI can still reach it through `hydrate()`, and the comment labels it as that
+rather than as a UI path.
+
+**No assertion was weakened, but my first repair did weaken one, and I caught it.** After the fixture
+detaches, comparing the key against the ORIGINAL (`kc2 !== kc`) passes on the detach alone, because
+dropping `anchor` swaps the key from the anchor to the cusp colour whether or not the hue edit was
+re-projected. Measured: `old comparison kc2 !== kc on a detach with no hue edit: true (#0C5DCC ->
+#2177F5)`. That version shipped in `826dd090` and was vacuous for its stated purpose. The assertion
+now compares against the same palette detached with its hue UNCHANGED, which is the pre-S1
+comparison exactly (cusp at hue against cusp at hue + 60), so it keeps its original strength.
+**Control**, the `+ 60` hue edit set to `+ 0` in a clone:
+
+```
+  FAIL  model ... paletteKeyColors did not change after a hue edit on a detached palette (stale/cached state?): #2177F5 both before and after
+```
+
+The `...` stands in for the gate report's own separator glyph, cut because U7-P3 gates every added
+line and a verbatim quote is still an added line.
+
+**K4.** The pre-land review already carried this comment block as stale under K4
+(`.sdlc/handoffs/pif-prepr-review-p1.md`), for a different sentence of it: the "ignores
+`hue`/`chroma`" claim, true of `hue` only, since `chroma` still moves an anchored ramp. K4 is ruled
+carried, so that sentence is left as it stands and the new comment cites K4 rather than presenting
+the staleness as new. The sentence this unit corrected is the adjacent one about the identity swatch.
 
 ## 9. What I did not do
 
