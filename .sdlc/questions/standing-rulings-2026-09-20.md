@@ -82,3 +82,9 @@ Question: the citation census closed at 383 claims, 48 fail, 45 blocking, plus a
 Options: Rebuild the roadmap (Recommended); Repair inside the window; Land the handoffs, ticket the roadmap.
 Chosen: Rebuild the roadmap (Recommended).
 Effect: regenerate so every cell is the output of a command recorded beside it, the legend holds by construction, the counts fall out of generation; handoff repairs already made are kept. The freeze holds until the squash and the squash still needs a 🟢 record.
+
+## R19 The R16 mint freeze while the roadmap is rebuilt (#709)
+Question: the R16 mint freeze is holding the other lane's finished plans (#718, #713) and three unfiled issues; the R18 rebuild makes counts an output of generation. Keep the freeze as is?
+Options: Lift now, re-freeze for the window (Recommended); Keep it until the squash; Lift for merges only.
+Chosen: Lift now, re-freeze for the window (Recommended).
+Effect: other lanes land and file again at once; the Conductor calls a fresh, short freeze only for the minutes when the rebuild reads counts and squashes, and both lanes must agree to it. The rebuild's `gh` read stays the last act before the squash, as R16 set.
