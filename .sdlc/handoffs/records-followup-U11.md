@@ -7,8 +7,8 @@ plan-revision: 17
 branch: plan/records-followup-roadmap
 unit-branch: unit/rf-U11
 base: 1f9918776f0e54e5dfd88c1b23f494f6d6cff6ce
-roadmap-commits: 1fe53f5a, 354c2d7f, 1405ee77, 66d40f70
-review: .sdlc/runtime/rf-U11-review.md (findings 1a and 7 fixed; 1b, 2, 3 and 6 carried by the Orchestrator)
+roadmap-commits: 1fe53f5a, 354c2d7f, 1405ee77, 66d40f70, f615f573, 89d2057e, 28426bf7
+review: .sdlc/verdicts/records-followup-U11-review.md on main @ 5c6a0c13, the committed copy of the reviewer's report (findings 1a and 7 fixed; 1b, 2, 3 and 6 carried by the Orchestrator)
 verdict: .sdlc/verdicts/records-followup-U11.md pass 1 (both 🔴 rows, R3 second pass and U5-4, fixed at 66d40f70)
 written: 2026-09-20
 ---
@@ -428,11 +428,20 @@ piped to `grep -c node_modules` prints `0`.
 
 ## Scope
 
-Nine commits, four of them roadmap-only and each touching that file alone: `1fe53f5a` (R1, R2, R3
-pass 1), `354c2d7f` (R4 and U11's own revision row), `1405ee77` (review findings 1a and 7) and
-`66d40f70` (the verdict's R3 pass 2 and U5-4). The other five are this handoff. Nothing outside `.sdlc/` moved. The board, the plan file, `.sdlc/verdicts/`, the U5
-handoff and the U5 question file were not touched. `.sdlc/runtime/rf-U11-review.md` is the reviewer's
-own file and is gitignored, so it enters no commit and no diff leg.
+Fourteen commits, seven of them roadmap-only and each touching that file alone: `1fe53f5a` (R1, R2, R3
+pass 1), `354c2d7f` (R4 and U11's own revision row), `1405ee77` (review findings 1a and 7),
+`66d40f70` (the verdict's R3 pass 2 and U5-4), `f615f573` (landing refresh 2), `89d2057e` (two
+clauses of the landing-refresh row corrected) and `28426bf7` (the PR clause names verdict pass 3 as
+the read that caught it). The other seven are this handoff. Both figures are measured over
+`3ee3c72b..unit/rf-U11`, the range this unit's own commits occupy, at `unit/rf-U11` @ `28426bf7`:
+`git log --format=%H 3ee3c72b..unit/rf-U11` counts 14 and the same command with `-- .sdlc/roadmap.md`
+counts 7. The figures nine and four were written before the last three roadmap commits existed and
+were never re-measured. Taking `1f991877` as the range start instead counts 18 and 9, because that
+range also holds U5's four commits, which are not this unit's. Nothing outside `.sdlc/` moved. The board, the plan file, `.sdlc/verdicts/`, the U5
+handoff and the U5 question file were not touched. The reviewer wrote its report under `.sdlc/runtime/`,
+which `.gitignore:15` ignores, so nothing it wrote enters a commit or a diff leg here; the committed
+copy of that report is `.sdlc/verdicts/records-followup-U11-review.md` on `main` @ `5c6a0c13`, which
+is on no ref this branch carries.
 
 ## For the Orchestrator
 
@@ -447,3 +456,13 @@ own file and is gitignored, so it enters no commit and no diff leg.
 | review 3 and 6 | the needle list and the `commit none` verdict both need widening before U5-8 is folded in; the needle-list limit is stated in this handoff already |
 | review 4 and 5 | recorded as known limits: neither leg asserts, and `reach` measures edit volume rather than reading, so a whole-file write done as a create or a pure append scores `0%` |
 | #722 | the live-facts call is yours. The Orchestrator has ruled no refresh: the rule makes it a note, and a refresh would itself be the patch-claiming-a-read shape leg B exists to catch |
+
+## Correction, 2026-09-20, by records-followup U13
+
+Two repairs made in this file by U13 under pre-land record pass 3 addendum rows A14 and A16. Nothing
+else in the file was read or re-worded.
+
+| id | Was | Is | Derived from | Negative control |
+|---|---|---|---|---|
+| A14 | `Nine commits, four of them roadmap-only`, and a `roadmap-commits:` front-matter line naming 4 shas | `Fourteen commits, seven of them roadmap-only`, the seven shas named in the Scope paragraph and in the front matter | `git log --format=%H 3ee3c72b..unit/rf-U11` counts 14, and the same command with `-- .sdlc/roadmap.md` counts 7. Listing each commit's paths shows 7 touching `.sdlc/roadmap.md` alone and 7 touching this handoff alone, so the split is measured and not inferred | the same two commands from `1f991877` count 18 and 9; the four extra commits are U5's (`7dde8cb1`, `ee28fff6`, `6ee0fd8a`, `3ee3c72b`), which is why that range is not the one the sentence names |
+| A16 | `review:` at the front matter and one sentence in Scope cited `.sdlc/runtime/rf-U11-review.md` | both name `.sdlc/verdicts/records-followup-U11-review.md` on `main` @ `5c6a0c13`, and the Scope sentence keeps the true fact that the reviewer wrote under a gitignored path | `git cat-file -e 5c6a0c13:.sdlc/verdicts/records-followup-U11-review.md` succeeds, and that file's own header reads `head: 7b84d698`, `seat: reviewer`, and says it sat under `.sdlc/runtime/`, which `.gitignore:15` ignores | the same `git cat-file -e` for `.sdlc/runtime/rf-U11-review.md` fails at `main` @ `5c6a0c13` and at this branch's head, `.sdlc/runtime/` does not exist on disk in this worktree, and `.gitignore:15` is `.sdlc/runtime/`, so the retired path resolves at no ref |
