@@ -37,7 +37,7 @@ import { SAMPLE_SEED } from "./lib/corpus-sample.mjs";
 // FULL/SAMPLED (#713 U4): this file has no corpus to draw from (`ladder-window`'s own 8-file read
 // costs under 0.1s and is left untouched), so the split thins the two synthetic hue grids and the
 // determinism case list instead of sampling documents. hueRange(baseStep) keeps every hue FULL
-// walks when FULL, and one hue in five, rotated by SAMPLE_SEED, when SAMPLED — so the kept band
+// walks when FULL, and one hue in five, rotated by SAMPLE_SEED, when SAMPLED, so the kept band
 // moves if the seed ever bumps rather than always starting at hue 0.
 const FULL = process.argv.includes("--full");
 const HUE_MULT = FULL ? 1 : 5;
@@ -260,7 +260,7 @@ for (const hueSpace of SPACES) {
 //    truncated keys restored, to prove this methodology actually bites — was run standalone, not
 //    committed for cost, and is reported in the handoff (`.sdlc/handoffs/pif-u6.md`) and in this
 //    unit's own report.
-// DET_CASE_COUNT — SAMPLED thins to the first 400 of the 2000 (#713 U4): each case's fields are a
+// DET_CASE_COUNT: SAMPLED thins to the first 400 of the 2000 (#713 U4). Each case's fields are a
 // pure function of `i` alone, so a shorter loop IS the same prefix, not a different case list.
 // POISON_CASES stays 1500 in both modes: the file's own comment above says catch rate follows case
 // count, not poison density.
