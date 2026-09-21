@@ -31,6 +31,7 @@ ee854932:.sdlc/roadmap.md` at `b3825864f7a7c0219d946ac1131892e901f79a1b`, the sa
 | `dc77acb4` | `.sdlc/handoffs/records-followup-U11.md` | pass 2 after verdict V8 and V9: C3 at both of its sites, C13 to C15, and the per-claim table |
 | `1249ec77` | `.sdlc/handoffs/records-followup-U11.md` | pass 3, the sweep by dependency: C6, C12, R1, R3 and the A14 note |
 | `29ddb174` | `.sdlc/handoffs/records-followup-U11.md` | pass 4, the search by content: C16, the U11 verdict's location, the four low notes |
+| `3bd3982c` | `.sdlc/handoffs/records-followup-U11.md` | pass 5, the reflog witness stated on the record's face |
 
 ## The anchor rule, which this unit exists to demonstrate as much as to apply
 
@@ -181,13 +182,38 @@ pass 3 in the U11 record's `### Pass 4`: pass 3 had eight of them and missed the
 because both its searches needed a written sha or ref and those sites carry neither. The review's
 C6 reading differs from the Verifier's; the Verifier's is applied, and the U11 record says so.
 
+## Review items by name
+
+Review passes 4 and 5 graded `c442826b` and `294f7937`, both before `29ddb174`, so each item is
+answered here with the commit that closes it. Line numbers are the review's, at `c442826b`.
+
+| item | answer | where |
+|---|---|---|
+| blocking, `:501`, the rule makes `#722` a note | done: the rule does not exempt `#722`, it is ranked, the no-refresh ruling stays | `29ddb174`, C16 |
+| blocking, `:169`, the exemption anchored on `3ee3c72b` | done: attributed to the roadmap line it reports and named as contradicting that roadmap's row 14, with `3ee3c72b` retired as the anchor | `29ddb174`, C16 |
+| note, `:12`, `fixed` against `:35`'s 🟡 | done: `fixed at 66d40f70 for #722; U5-4 is 🟡 at 698e8916 for #723` | `29ddb174` |
+| note, `:30` and `:527`, `widened` against `re-aimed` | done at both | `29ddb174` |
+| note, `:426`, revision 15 with no commit | done: names main's `0a0f0034` and states it unreachable from `698e8916` | `29ddb174` |
+| note, `:34` and `:403`, the fix head unnamed | done: `24620ec9`, after `1fe53f5a`, with U5-6, U5-4 and U5-8 rewritten at `7b84d698`, `5cac5623` and `698e8916` | `29ddb174` |
+| the six U11 verdict sites, `:12`, `:120-121`, `:271-273`, `:343`, `:472`, `:494` | done: the front matter states that the file is on main from `428f81ad` and unreachable from `698e8916`, and the other five point there. Pass 3's stated limit was wrong to cover them: the file is a git object, so reachability decides | `29ddb174` |
+| the 14-site addendum | reconciled in the U11 record's `### Pass 4`: pass 3 had eight, missed the six above | `29ddb174` |
+| the reflog conditions: window bounded by commits, entries verbatim, read from this repo, witness discriminates | done for all four anchors, with a script checking the ten quoted entries against the reflog | `3bd3982c`, the U11 record's `### Pass 5` |
+
+Refused: none.
+
+The verbatim check matches all ten quoted entries against `git reflog show --date=iso` for
+`origin/main` and `plan/gate-split`. Changing one second in one quoted entry in a copy of the file
+makes it report `1 not verbatim`. The discrimination for the leg line is leg A's own plan loop, run
+unchanged with its ref set to each commit: `green=9 ... ungraded=1` at `b8c3be8f`, `green=10 ...
+ungraded=0` at `428f81ad`.
+
 ## Gates at the final head
 
 `BASE` = `git merge-base origin/main HEAD` = `1f991877`. Every figure below was measured on the tree
 this commit records, with `git status --short` printing `0` immediately after the commit, which is
 what ties the runs to it: a record cannot name its own sha, so it names the tree it was measured on
-and leaves the sha to the reader's `git log`. This table is pass 4's. The last ancestor the same gates
-ran at is `294f7937`, pass 3's head, and `git diff --name-only 294f7937 HEAD` returns two paths, this
+and leaves the sha to the reader's `git log`. This table is pass 5's. The last ancestor the same gates
+ran at is `acba1bdf`, pass 4's head, and `git diff --name-only acba1bdf HEAD` returns two paths, this
 record and `.sdlc/handoffs/records-followup-U11.md`, both under `.sdlc/`. Timing and
 load figures are left out: the run that produced them was on the tree before this table's text was
 written, and only the tree-independent results below were re-read after the commit.
