@@ -70,3 +70,27 @@ Question: U11 second re-diagnosis (`.sdlc/plans/records-followup-U11-rediagnosis
 Options: A, the Orchestrator's landing refresh (Recommended); B, a fourth builder pass; C, land as is.
 Chosen: A, the Orchestrator's landing refresh (Recommended).
 Effect: one roadmap-only commit with the four edits, no ticket minted until the squash, then a verifier-only pass 4 on R2 and R4 graded against live `gh` and `git` rather than against the file. Made as `f615f573` on `unit/rf-U11`. The Conductor still asks the owner before #720 lands.
+
+## R16 How PR #720 lands (#709)
+Question: PR #720 failed pre-land pass 3 on live counts that move mid-pass (`.sdlc/questions/records-followup-landing-window.md`). How does #720 land?
+Options: Atomic landing window (Recommended); Another ordinary pass; Drop live counts from the roadmap first.
+Chosen: Atomic landing window (Recommended).
+Effect: squash approved in advance, conditional on the record being 🟢 at the refresh instant; no seat on this repo mints tickets until #720 is squashed; four repairs, counts re-read from gh, verifier re-checks the four rows and the counts, hand squash after green CI (adapter land never merges, F9). U13 carries eight repairs since the pass 3 addendum; the verifier re-checks all eight, since the condition is a 🟢 record.
+
+## R18 Repair or rebuild the roadmap (#709)
+Question: the citation census closed at 383 claims, 48 fail, 45 blocking, plus a legend contract broken across about 20 cells (`.sdlc/questions/records-followup-repair-or-rebuild.md`). Repair, rebuild, or land the handoffs and ticket the roadmap?
+Options: Rebuild the roadmap (Recommended); Repair inside the window; Land the handoffs, ticket the roadmap.
+Chosen: Rebuild the roadmap (Recommended).
+Effect: regenerate so every cell is the output of a command recorded beside it, the legend holds by construction, the counts fall out of generation; handoff repairs already made are kept. The freeze holds until the squash and the squash still needs a 🟢 record.
+
+## R19 The R16 mint freeze while the roadmap is rebuilt (#709)
+Question: the R16 mint freeze is holding the other lane's finished plans (#718, #713) and three unfiled issues; the R18 rebuild makes counts an output of generation. Keep the freeze as is?
+Options: Lift now, re-freeze for the window (Recommended); Keep it until the squash; Lift for merges only.
+Chosen: Lift now, re-freeze for the window (Recommended).
+Effect: other lanes land and file again at once; the Conductor calls a fresh, short freeze only for the minutes when the rebuild reads counts and squashes, and both lanes must agree to it. The rebuild's `gh` read stays the last act before the squash, as R16 set.
+
+## R20 How long the R19 re-freeze holds (#709)
+Question: the R19 re-freeze ran about five hours; the rebuilt roadmap records the command and instant beside each count. How long should the freeze hold?
+Options: Lift after the snapshot check (Recommended); Hold until the squash; Lift now.
+Chosen: Lift after the snapshot check (Recommended).
+Effect: the verifier diffs the roadmap's `gh` snapshot against live `gh`; on a match the freeze lifts at once and pre-land grades the snapshot at its recorded instant, not live `gh` at the squash, which supersedes R16's wording that the `gh` read be the last act before the squash, for #720. The squash still waits on a 🟢 record. The snapshot matched 20 of 20 issues and 3 of 3 PRs at 12:36:51Z and 12:39:02Z (main `6eee94bf`), and the freeze is lifted. The five hours sat before `go`, while the freeze was being arranged, not in the build.
