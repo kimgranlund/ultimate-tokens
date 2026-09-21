@@ -30,6 +30,7 @@ ee854932:.sdlc/roadmap.md` at `b3825864f7a7c0219d946ac1131892e901f79a1b`, the sa
 | `92d31d83` | `.sdlc/handoffs/records-followup-U11.md` | the census leg 5 rows, C1 to C12 and the A16 sharpening |
 | `dc77acb4` | `.sdlc/handoffs/records-followup-U11.md` | pass 2 after verdict V8 and V9: C3 at both of its sites, C13 to C15, and the per-claim table |
 | `1249ec77` | `.sdlc/handoffs/records-followup-U11.md` | pass 3, the sweep by dependency: C6, C12, R1, R3 and the A14 note |
+| `29ddb174` | `.sdlc/handoffs/records-followup-U11.md` | pass 4, the search by content: C16, the U11 verdict's location, the four low notes |
 
 ## The anchor rule, which this unit exists to demonstrate as much as to apply
 
@@ -117,7 +118,9 @@ or removes the one R2 prose line the pass 2 table names.
 What this unit now claims about coverage is that and no more: every claim the U11 record's pass 2
 table lists, repaired at every hit its search returns or marked as a different claim, and, since pass
 3, every claim resting on a commit `698e8916` cannot reach or on an `origin/main` read, as that
-record's pass 3 table lists them. The census is
+record's pass 3 table lists them. Review pass 4 showed that sentence certified the patterns rather
+than the claims: C15's pattern matched its row label and missed two sites. Pass 4 below replaces
+each pattern with one on the claim's content. The census is
 complete over the claims it cites and not over every claim in the file, so it was the floor of this
 repair and not its scope, and nothing here says the U11 record is now correct.
 
@@ -153,13 +156,38 @@ The sweep does not reach claims resting on an issue's creation time, such as C10
 which no ref records, or claims naming neither a sha nor a ref. Nor does it change the census record,
 whose leg 5 convicted the leg lines on `428f81ad` and now needs that correction beside its 7 to 9.
 
+## Pass 4, by content
+
+Review pass 4 was FIX-FIRST on one claim: whether the live-facts rule exempts `#722` was still stated
+both ways. Pass 2 had re-asserted at the Verdict row and the U5-4 section that it does not, and two
+older sites, written before `66d40f70` ranked `#722`, still said it does: the R4 section's `a note for
+the verifier` and the `For the Orchestrator` row's `makes it a note`. C15's pattern searched its row
+label, `U5-4|#723|alone failed`, so it could not return either. This is V8's shape a third time, and
+the fault is the same one: a search checked against the record's own terms.
+
+What pass 4 changed, all in the U11 record at `29ddb174`:
+
+| item | repair | Evidence | Negative control |
+|---|---|---|---|
+| C16, the `#722` exemption | the R4 sentence is attributed to the roadmap line it reports and named as contradicting that roadmap's row 14; the `#722` row says the rule does not exempt it and it is ranked, keeping the no-refresh ruling | `git show 698e8916:.sdlc/roadmap.md` row 14 reads `the live-facts rule does not exempt it and U11 ranks it rather than noting it` | the new-side ranges of `git diff -U0 bb896a4e 294f7937` contain neither site, so passes 2 and 3 never reached them |
+| every claim, searched by content | sixteen content patterns over the body at `294f7937`, each hits cell re-derived by script | all sixteen cells reproduce, exit `0` | the same script exits `1` when A14's cell `487, 495` is cut to `487` in a copy of the file |
+| the U11 verdict, cited with no ref at six sites | the front matter states once that the file is on main from `428f81ad` and is not reachable from `698e8916`; the other five sites name it and point there | `git log --diff-filter=A main -- .sdlc/verdicts/records-followup-U11.md` prints `428f81ad`; `--is-ancestor` exits `1` | `git cat-file -e 698e8916:.sdlc/verdicts/records-followup-U11.md` fails |
+| `38 of the 55` | names `428f81ad`'s tree and gives 37 of 52 at `698e8916` | `git log 428f81ad..13f46583 -- .sdlc/verdicts/` prints nothing; the counts at `428f81ad` and `698e8916` are 38 of 55 and 37 of 52 | the count differs at the two commits, so the anchor matters |
+| the four low notes | `#723` clause at `:12`; `re-aimed` for `widened` at `:30` and in C13; revision 15 names main's `0a0f0034` as unreachable; the fix head is named as `24620ec9` after `1fe53f5a`, with the rows rewritten later | `git blame` at `698e8916` on the reruns table gives `24620ec9` for most rows, `7b84d698` for U5-6, `5cac5623` for U5-4 and `698e8916` for U5-8 | the blame is not one sha, which is why the fix head could not be named as one |
+
+Every edited line has a hunk in `git diff -U0 294f7937 29ddb174` on that file; line `203` keeps its
+text and the added clause is on `204`. The review addendum's fourteen sites are reconciled against
+pass 3 in the U11 record's `### Pass 4`: pass 3 had eight of them and missed the six verdict sites,
+because both its searches needed a written sha or ref and those sites carry neither. The review's
+C6 reading differs from the Verifier's; the Verifier's is applied, and the U11 record says so.
+
 ## Gates at the final head
 
 `BASE` = `git merge-base origin/main HEAD` = `1f991877`. Every figure below was measured on the tree
 this commit records, with `git status --short` printing `0` immediately after the commit, which is
 what ties the runs to it: a record cannot name its own sha, so it names the tree it was measured on
-and leaves the sha to the reader's `git log`. This table is pass 3's. The last ancestor the same gates
-ran at is `c442826b`, pass 2's head, and `git diff --name-only c442826b HEAD` returns two paths, this
+and leaves the sha to the reader's `git log`. This table is pass 4's. The last ancestor the same gates
+ran at is `294f7937`, pass 3's head, and `git diff --name-only 294f7937 HEAD` returns two paths, this
 record and `.sdlc/handoffs/records-followup-U11.md`, both under `.sdlc/`. Timing and
 load figures are left out: the run that produced them was on the tree before this table's text was
 written, and only the tree-independent results below were re-read after the commit.
