@@ -29,6 +29,7 @@ ee854932:.sdlc/roadmap.md` at `b3825864f7a7c0219d946ac1131892e901f79a1b`, the sa
 | `f204e587` | `.sdlc/handoffs/records-followup-U11.md` | A14 re-derived at the record's own commit |
 | `92d31d83` | `.sdlc/handoffs/records-followup-U11.md` | the census leg 5 rows, C1 to C12 and the A16 sharpening |
 | `dc77acb4` | `.sdlc/handoffs/records-followup-U11.md` | pass 2 after verdict V8 and V9: C3 at both of its sites, C13 to C15, and the per-claim table |
+| `1249ec77` | `.sdlc/handoffs/records-followup-U11.md` | pass 3, the sweep by dependency: C6, C12, R1, R3 and the A14 note |
 
 ## The anchor rule, which this unit exists to demonstrate as much as to apply
 
@@ -114,18 +115,52 @@ twenty-four hunks, and outside the Correction section each carries a repair a Co
 or removes the one R2 prose line the pass 2 table names.
 
 What this unit now claims about coverage is that and no more: every claim the U11 record's pass 2
-table lists, repaired at every hit its search returns or marked as a different claim. The census is
+table lists, repaired at every hit its search returns or marked as a different claim, and, since pass
+3, every claim resting on a commit `698e8916` cannot reach or on an `origin/main` read, as that
+record's pass 3 table lists them. The census is
 complete over the claims it cites and not over every claim in the file, so it was the floor of this
 repair and not its scope, and nothing here says the U11 record is now correct.
+
+## Pass 3, by dependency
+
+Pass 2 found C3 resting on a commit `698e8916` cannot reach, and repaired C3. The verifier pushed the
+finding one step: the error is wall clock where reachability decides, so every claim resting on such a
+commit is suspect whatever its wording, and C6 still carried it. Pass 3 therefore sweeps by what a
+claim rests on, not by its text: every sha the U11 record cites, tested with `git merge-base
+--is-ancestor <sha> 698e8916`, and every `origin/main` read. At `c442826b` the record cited
+eighteen commits unreachable from `698e8916`, plus the pass 2 anchor `bb896a4e`. Pass 3 adds three
+more, each stated as what it is: `b8c3be8f` and `9276d4f0` as reflog-anchored reads, `c442826b` as its
+line-number anchor. The per-commit table is `### Pass 3, by
+dependency rather than by text` in the U11 record. Where a claim is about another ref at an instant,
+reachability cannot decide it and commit time is only a proxy, so the anchor is this repo's reflog for
+that ref.
+
+| claim | what it rested on | now | Evidence | Negative control |
+|---|---|---|---|---|
+| C6, the leg output | `went stale at 428f81ad` before the handoff's last commit, by wall clock | anchored to `b8c3be8f`, `origin/main` across the run's window, and re-derived there; the staleness claim is retired, which flips the census's conviction of the leg lines | `git merge-base --is-ancestor 428f81ad 698e8916` exits `1`; the reflog holds `origin/main` at `b8c3be8f` from `15:50:52` to `16:08:45` local, covering `66d40f70` to `5cac5623`; at `b8c3be8f` the plan has 11 units, 10 ticked, U5 🟡, U8 `green-with-one-note`, eight more 🟢, no U11 verdict | the same verdict reads at `428f81ad` find U11's verdict file present, so the anchor changes the answer |
+| C12, the stray record | `428f81ad` offered as the recoverable fact beside two unordered reads | states the commit is unreachable and orders nothing | as C6's first command | none needed beyond it: the repair removes an inference and adds no figure |
+| R1, `Every fact below precedes it` | `plan/gate-split` commits ordered against `7dde8cb1` by commit time | re-based on the branch's reflog | `git rev-parse 'plan/gate-split@{2026-09-20 14:36:16 -0700}'` prints `7d811172`; the only later commit before R1's reads, `9276d4f0`, changes `U6b`'s row text and adds a `U6-10` row | the same rev-parse at `14:35:00` prints `ebddc55d`, so the reflog resolves a different commit a minute earlier |
+| R3, the `origin/main` reads | an unnamed state of a moving ref | anchored: `7b59a29b` when first recorded at `24620ec9`, `b8c3be8f` when the verdict reads were added at `5cac5623`. Re-deriving there found `the other seven of the ten merged units` false: it is eight, eight 🟢 plus U8 making nine | at `b8c3be8f`, U1, U2, U3, U4, U6, U7, U9 and U10 read 🟢 | seven plus U8 is eight, not the nine the same sentence states |
+| `38 of the 55` | an unnamed `origin/main` | anchored to `13f46583`, `origin/main` when the sentence was committed | `git ls-tree` gives 55 blobs there, 38 without a `verdict:` line | at `7b59a29b` the same count is 53 and 37 |
+| the A14 note | `did not exist when this paragraph was written` | `not reachable from 698e8916` | `--is-ancestor` exits `1` for `f615f573`, `89d2057e` and `28426bf7` | `--is-ancestor 66d40f70 698e8916` exits `0` |
+
+Coverage from the diff: `git diff -U0 c442826b 1249ec77` on the U11 record has a hunk at each repaired
+line, `40`, `41`, `116`, `125`, `191`, `291` to `293`, `496`, `519`, `525`, `553` and `554` (line `115`
+keeps its text; the anchor is added on `116`). Control: the pass 2 diff, `bb896a4e` to `c442826b`,
+has no hunk at C6's `292` or `519`, which is the gap the verifier found.
+
+The sweep does not reach claims resting on an issue's creation time, such as C10 and C15 on `#723`,
+which no ref records, or claims naming neither a sha nor a ref. Nor does it change the census record,
+whose leg 5 convicted the leg lines on `428f81ad` and now needs that correction beside its 7 to 9.
 
 ## Gates at the final head
 
 `BASE` = `git merge-base origin/main HEAD` = `1f991877`. Every figure below was measured on the tree
 this commit records, with `git status --short` printing `0` immediately after the commit, which is
 what ties the runs to it: a record cannot name its own sha, so it names the tree it was measured on
-and leaves the sha to the reader's `git log`. This table is pass 2's. The last ancestor the same gates
-ran at is `bb896a4e`, where the U13 verdict ran them, and `git diff --name-only bb896a4e HEAD` returns
-two paths, this record and `.sdlc/handoffs/records-followup-U11.md`, both under `.sdlc/`. Timing and
+and leaves the sha to the reader's `git log`. This table is pass 3's. The last ancestor the same gates
+ran at is `c442826b`, pass 2's head, and `git diff --name-only c442826b HEAD` returns two paths, this
+record and `.sdlc/handoffs/records-followup-U11.md`, both under `.sdlc/`. Timing and
 load figures are left out: the run that produced them was on the tree before this table's text was
 written, and only the tree-independent results below were re-read after the commit.
 
