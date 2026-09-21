@@ -32,22 +32,30 @@ Two citations in `.sdlc/roadmap.md`, both written by the regeneration commit `7d
 | Gate, em dashes | 🟢 | added-line dash count against `712e63db`, this handoff excluded, printed `0` | the same count over `e9850935~1 e9850935` under `.sdlc/` printed `17` |
 | Gate, baseline | 🟢 | `sh .sdlc/checks/baseline-agrees-check.sh` exit `0`, `stale total: 0` | `48` bumped to `49` in `.sdlc/baseline.md`: exit `1` and `STALE tests: baseline 49, test/run.mjs TESTS 48`; restored, the file's sha unchanged and exit `0` again |
 
-## The unit's stated repair for C1 is itself unsupported, so the repair narrows instead
+## `R11` is not readable from this branch, and where it is readable it rules something else
 
-The unit row and the dispatch both say the ownership ruling is `R11`, `Who owns what`. There is
-no `R11` in `.sdlc/questions/standing-rulings-2026-09-20.md`, and no string `Who owns what`
-anywhere under `.sdlc/`. The file has four numbered rulings, `R1` to `R4`, at the regeneration
-sha and at this unit's base, and one unnumbered trailing section.
+The unit row and the dispatch both say the ownership ruling is `R11`, `Who owns what`. Every
+claim below names the ref it was read at, because the rulings file's content differs by ref.
 
-Measured, at both shas:
+Read at the regeneration sha `7dde8cb1` and at this unit's base `712e63db`, where
+`.sdlc/questions/standing-rulings-2026-09-20.md` is byte-identical (`shasum` `688f1a9b5631` at
+both):
 
-- `git show <sha>:.sdlc/questions/standing-rulings-2026-09-20.md | grep -c '^## R11'` prints `0`
-  at `7dde8cb1` and at `712e63db`.
-- `grep -rn 'Who owns what' .sdlc/` prints nothing.
+- `git show <ref>:.sdlc/questions/standing-rulings-2026-09-20.md | grep -c '^## R11'` prints `0`
+  at both. The file there carries `R1` to `R4` and one unnumbered trailing section.
+- `git grep -c 'Who owns what' 712e63db -- .sdlc/` prints nothing and exits `1`.
 
-Citing `R11` would have swapped one unverifiable id for another, which the dispatch forbids, so
-the citation narrows to the section that actually carries the sentence rather than gaining a
-number that does not exist.
+Read at `origin/main`, which is `0eba2eee` as this handoff is written, `R11` does exist. It was
+added by `b8c3be8f` at `2026-09-20T22:50:50Z`, after the regeneration commit `7dde8cb1`
+(`21:36:16Z`) that wrote the sentence, and its question is `Who owns #709's roadmap PR #720 from
+here?`, answered `The background seats finish #720; I stay off #709 (Recommended)`. That is
+which seat drives the PR, not the lane-ownership move the roadmap cell describes.
+`git grep -c 'Who owns what' origin/main -- .sdlc/` names four files there; at this branch's HEAD
+it names three lines, all of them in this handoff.
+
+So the citation does not move to `R11`: on this branch it is unreadable, and where it is
+readable it postdates the sentence and rules a different thing. It narrows to the section that
+carries the sentence instead.
 
 ## C1: the sentence, its real home, and the control
 
@@ -57,7 +65,9 @@ source is the third bullet of the unnumbered section `## Earlier today, same cha
 
 `- The other conductor session no longer touches this repo's plans (owner, in chat).`
 
-The file has exactly one commit, `e9850935` (`2026-09-20T19:31:48Z`), which is before the
+One commit touching that file is reachable from this branch's HEAD, `e9850935`
+(`2026-09-20T19:31:48Z`); `origin/main` reaches six and all refs together reach fifteen, and
+their contents differ. `e9850935` is before the
 regeneration `7dde8cb1` (`21:36:16Z`), and
 `git diff 7dde8cb1 712e63db -- .sdlc/questions/standing-rulings-2026-09-20.md` is empty, so the
 bytes read here are the bytes the roadmap's author could have read.
@@ -120,7 +130,8 @@ are the whole change.
 
 `npm test` was run twice, both times with the exit code read from `$?` and never through a pipe
 or `tail`, and both times exit `0`. Neither run completed inside the tool's foreground window:
-the host load average was above `300` for the whole unit (14 users, concurrent agents), against a
-baseline run measured at load `3.13` and `56` to `60` s. The harness moves any command past its
+the host load average was above `300` for the whole unit (14 users, concurrent agents), against
+the `56.27 · 56.43 · 59.83` test row of `.sdlc/baseline.md`, whose host line reads
+`load 3.97 3.87 4.58 on 10 cores at run start`. The harness moves any command past its
 timeout ceiling to a background job on its own, which is what happened to both runs; nothing was
 dispatched with `&` or `run_in_background`. The second run took longer than the `600` s ceiling.
