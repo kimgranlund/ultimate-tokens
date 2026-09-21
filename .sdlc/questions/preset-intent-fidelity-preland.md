@@ -14,3 +14,14 @@ exceptions in the shape `ORDER_ALLOW` already uses, and the span-under-30 count 
 the gate measures. Q2 is the owner's written acceptance that #681 closes with C6 open; a new issue
 owns the perceptual and peak median and p90 miss, and ADR-026 and CHANGELOG 1.64 cite it in place of
 #701. Q3: one fix unit, U7, carries B1's gate work and S1 to S5; the planner writes its criteria.
+
+## Q4, asked 2026-09-21 on the U7 review at `285f66ec` (F2)
+
+| # | Question | Options offered | Chosen (verbatim) |
+|---|---|---|---|
+| Q4 | U7's key-follows-anchor fix has a downstream effect nobody ruled on. The New Palette dialog's Relative derivation (`_isNeutralPalette`, `_orderedContext`, `newPalSamples`, `_newPalProposed`) reads the palette key, so it now pivots on the sampled anchor colour instead of the old cusp colour. Over 344 corpus documents: 148 palettes flip their neutral classification, the primary index moves for 14, and the derived target moves for 339. Is that intended? | Intended, the derivation follows the sampled colour (Recommended) · Hold the derivation to the old key · Hold U7 until I see examples | "Intended, the derivation follows the sampled colour (Recommended)" |
+
+Consequence. No code change. The plan's Blast radius section gains a row naming the New-Palette
+derivation consumers with those figures, and U7's handoff cites this answer. The anchor is the
+palette's identity everywhere, per ADR-026; two notions of a key would be the contradiction S1
+set out to remove.
