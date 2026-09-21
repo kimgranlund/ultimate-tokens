@@ -204,3 +204,57 @@ What follows, and what does not:
 For #723: the roadmap's contract should say that `head:` is the regeneration instant, that a patch row carries its own read instant, and that a cell is graded at the newest instant that touched it. That is the whole rule, and it is what would have made pass 1's and pass 3's anchor choice the same.
 
 Branding gate rerun after this section, exit code read directly from `node test/repo/branding.mjs`: `branding: clean (581 files scanned)`, `exit 0`. Em dashes in this file: `0`.
+
+## 8. Third re-diagnosis: U13 verdict rows V8 and V9
+
+Written by an opus planner standing in for the fable planner seat, whose allowance ran out (owner ruling R17). A recommendation for the Orchestrator, not a decision.
+
+Read: rows V8 and V9 and `## What blocks` of `.sdlc/verdicts/records-followup-U13.md` (untracked, root checkout); the `- [~] U13` row and revisions 30 and 31 of `.sdlc/plans/records-followup.md` on `main`; `.sdlc/handoffs/records-followup-U11.md` at `bb896a4e`; leg 5 of `.sdlc/verdicts/records-followup-roadmap-census.md` on `main`; §1 to §7 above. Line numbers below are at `bb896a4e`.
+
+### Verdict
+
+| Item | State | One line |
+|---|---|---|
+| V8, slip or model | 🔴 model, in how repairs are counted, not in how they are written | the census counted one claim at two sites; the repair counted sites; the coverage check counted repair rows |
+| V9, what the census is | 🟡 complete over citations, not over claims | both missed lines state a fact about the unit's own history without naming a citable target, so the census's enumeration could not see them |
+| Another builder pass | 🟢 yes, small, once the two rules below are in its dispatch | V8 is one cell; V9 is two lines the Orchestrator has to admit to scope first |
+
+### 8.1 V8 is a unit-of-repair mismatch
+
+The census did not miss `:488`. Leg 5 lists `the board self-contradiction at :123-125 and :443` as one stale item with two sites. C3 dated the claim at `:129-137` and left `:488` reading, present tense, that the board contradicts itself. The reviewer then mapped every census site to a C-row and found the map complete, because `:443` maps to C3. Three seats each counted a different thing: the census counted claims, the builder repaired sites, the reviewer checked rows. None of the three counts could see the other two.
+
+That is why it is not a slip. A better builder avoids it once; the next file with a claim stated twice reproduces it, and this handoff states several things twice (the `git status --short` pair at `:409` and `:444` in census numbering is the same shape). It is also the §1 fault one level further in: the U13 record's sentence `Every line-site leg 5 names has a row above` was certified against the repair table, which is the record describing itself, and not against the diff.
+
+Recommendation, per claim and not per site:
+
+| Step | What it is |
+|---|---|
+| 1. name the claim | each repair row states the claim in one line and the literal that identifies it (for C3, `11 🟢 1 🟡 0 🔴`, `contradicts itself`) |
+| 2. find every statement of it | `grep -n` the file for each literal before editing, and list every hit in the row's site column, census-listed or not |
+| 3. repair all or none | every listed site is edited, or the row says why a site stays and the file stays self-consistent without it |
+| 4. prove it from the diff | the evidence is the same grep after the edit, showing each old literal gone or dated, plus a hunk at each listed site in `git diff --unified=0`. A site with no hunk is a 🔴 regardless of the table |
+
+Step 4 is the control V8 asks for: the table records intent, only the diff records change. Its negative control is this unit: the grep for `contradicts itself` at `bb896a4e` returns `:488` with no C3 hunk there.
+
+### 8.2 V9 bounds what the census can be used for
+
+`:6` (`plan-revision: 17` over a body that applies R14) and `:30` (a marker move and a strip widening said to share a commit, when `1405ee77` and `b0003592` are two) cite nothing the census's existence half resolves, and neither sentence names the commit it makes a claim about. The census enumerated citation-shaped tokens and the sentences attributing something to them. A claim about the unit's own history that names no target is outside that set by construction. Its closing line `The set is bounded` is true of citations and was read as true of claims.
+
+So the census is a complete list of cited claims and a sample of uncited ones. It should be used as the floor of a repair, never as its scope proof. Two consequences:
+
+| Consequence | Recommendation |
+|---|---|
+| U13's record | the unit's closing claim names its scope exactly: every census-listed claim, repaired at every site the step 2 grep finds. It does not say or imply the file is now correct |
+| the two V9 lines | they are known false in a file this unit touches, and U13's row says `no other cell is re-read or re-worded`. Landing them as they are is option C of §6.3, already rejected. The Orchestrator admits `:6` and `:30` to U13 by a revision row, and the builder repairs them under §8.1. For `:6` the plan reachable from `698e8916` stops at revision 13, so the repair states which plan the value was read from and at what ref, rather than picking a number |
+| U14 and `#723` | uncited self-description is the census's blind spot and the category leg 5 called worst. U14's generated roadmap removes it by making every cell a command output; the handoffs are not generated, so `#723` should carry "a claim about this unit's own history names the commit it is about" as a rule |
+
+### 8.3 For the Orchestrator
+
+| Item | Ask |
+|---|---|
+| Pass 2 dispatch | §8.1's four steps as the repair procedure; C3 extended to `:488`; the census and V9 sites alike go through step 2 |
+| Scope | a revision row admitting `:6` and `:30` to U13, or a ruling that they land as known and where that is recorded |
+| U13's record | its coverage sentence is rewritten to the §8.2 scope and backed by the step 4 diff check |
+| `#723` | the per-claim rule and the uncited-self-description rule |
+
+Branding gate rerun after this section, exit code read directly from `node test/repo/branding.mjs`: `branding: clean (591 files scanned)`, `exit 0`. Em dashes in this file: `0`.
