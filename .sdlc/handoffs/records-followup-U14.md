@@ -5,12 +5,14 @@ unit: U14
 ticket: "#709"
 branch: unit/rf-U14
 seat: builder-l6
-status: generated; gates run at the roadmap commit
+status: generated, then rendered again after review FIX-FIRST; gates run at the unit head
 ---
 
 # U14 handoff: the roadmap rebuilt by a generator (owner ruling R18)
 
-## State at this commit
+## State at `76993fa0`, before the final generation
+
+True when `76993fa0` was committed. Not true at any later head: `e147ae0b` wrote the roadmap and `a6ee67ee` rendered it again.
 
 | Item | State |
 |---|---|
@@ -78,3 +80,29 @@ The gates ran on the tree of `e147ae0b` with `git status --short` printing `0`. 
 ## What the snapshot's instants cover
 
 The snapshot has two timestamps: `date -u` before the first read (HEAD) and after the last (PRS), `12:35:49Z` and `12:35:50Z`. Individual commands do not get their own timestamps. The read order is fixed in the generator: HEAD, GENERATOR, REFS, WORKTREES, REFLOG, ISSUES, PRS. `--verify` proves the file matches its snapshot; it does not prove the snapshot matched the world. That needs a diff against live `gh` while the freeze holds.
+
+## Review FIX-FIRST, rendered again from the graded snapshot
+
+Findings are in `.sdlc/verdicts/records-followup-U14-review.md`. F1 and F2 were two typed strings, so the fix changes rendering only. `--rerender e147ae0b` copies that commit's Snapshot blocks unchanged and renders them with the fixed generator. There is no new read and no second window. `GENERATOR` still names the blob that read (`06837d22`). A new `RENDER` block names the blob that rendered, and the commit whose snapshot it rendered. The front matter carries both blobs.
+
+| Commit | Touches | What |
+|---|---|---|
+| `6952f7a6` | `.sdlc/scripts/roadmap-gen.mjs` only | F1 headers, F2 clause dropped, F4 renderer hashed from the running file and `--final` compares resolved paths, F5 `--verify` repeats the reflog agreement check, F7 and F8 wording, `--rerender` |
+| `a6ee67ee` | `.sdlc/roadmap.md` only | `--rerender e147ae0b --final`. Against `e147ae0b` the diff is the typed strings and the new RENDER block; no cell changes |
+
+| Finding | Where it went |
+|---|---|
+| F1, F2, F4, F5, F7, F8 (head wording, trailing newlines) | `6952f7a6` |
+| F3 | this file: the opening table is titled with the commit it was true at |
+| F6, and U5-6's third Expected | plan revisions, the Orchestrator's |
+| F4's `GENERATOR` read command | left as it was. The re-rendered file must print the command that actually read, and at `e147ae0b` that was `git hash-object .sdlc/scripts/roadmap-gen.mjs`. The renderer blob is now read from the running file |
+| F8, the unused inputs on `backup-rf-U13-preR18` | unused on purpose: the rebuilt file carries none of the claims those inputs supported |
+
+Controls for the new code, run on scratch copies:
+
+| Control | Result |
+|---|---|
+| F5 probe: `plan/gate-split`'s REFLOG line given another sha | `--verify` exit 3, `moved during the read` |
+| RENDER names a different renderer blob | `--verify` exit 1, names both blobs |
+| writing `./.sdlc/../.sdlc/roadmap.md` without `--final` | refused, exit 1 |
+| a re-render to scratch before the commit | `--verify` exit 0. Its diff against `e147ae0b` is the typed strings only |
