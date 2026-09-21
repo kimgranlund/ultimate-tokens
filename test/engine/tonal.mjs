@@ -14,6 +14,7 @@ import { defaultDocument, rampChromaOf } from "../../src/ui/model.mjs";
 import * as T from "../../src/engine/tonal.js";
 import * as E from "../../src/engine/hct.js";
 import { rgbToOklchHue, rgbToOkhsl, okhslToRgb } from "../../src/engine/okhsl.js";
+import { sampleCorpus, SAMPLE_SEED } from "./lib/corpus-sample.mjs";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const DEFAULTS = RT.defaults;                       // 8 palettes {name,hue,chroma,skew,lift,on}
@@ -32,6 +33,13 @@ const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 const angDiff = (a, b) => { let d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
 const rampOf = (p) => T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, CTL, STOPS);
+
+// FULL sweeps every curated document; the default (SAMPLED) canaries one seeded volume per gallery
+// category plus brands in full, via the shared picker (#713 U1, test/engine/lib/corpus-sample.mjs).
+// `npm test` runs SAMPLED; `npm run gate:corpus-tonal` runs FULL and is the gate of record.
+const FULL = process.argv.includes("--full");
+// set once, inside the chroma-envelope block below, and read by this file's own mode line at the end.
+let CORPUS_DOC_COUNT = 0, CORPUS_PALETTE_COUNT = 0;
 
 // ── hpg-tonal-ingamut: every default palette × stop in gamut, applied chroma <= ceiling ──
 for (const p of DEFAULTS) for (const r of rampOf(p)) {
@@ -987,10 +995,14 @@ for (const mode of ["perceptual", "peak"]) {
     "peak|cam16|165|-100|40|100|175&200",
     "peak|cam16|165|0|40|100|250&300",
   ]);
+  // this grid is synthetic, not a corpus sweep, but at an estimated 16s quiet it decides whether the
+  // 120s ceiling holds (#713 design section); SAMPLED thins it to every fifth hue, offset by
+  // SAMPLE_SEED % 5, the same thinning prime.mjs's own grids use.
+  const GRID_HUES = FULL ? HUES_G : HUES_G.filter((_, i) => i % 5 === SAMPLE_SEED % 5);
   const seenGridException = new Set();
   let gridCells = 0, measuredUpticks = 0, zeroLiftUpticks = 0, worstRise = 0, worstCell = "";
   for (const mode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const vibrancy of [0, 50, 100])
-    for (const skew of SKEW_G) for (const lift of LIFT_G) for (const hue of HUES_G) {
+    for (const skew of SKEW_G) for (const lift of LIFT_G) for (const hue of GRID_HUES) {
       gridCells++;
       const rows = T.paletteStops({ hue, chroma: 95, skew, lift }, OK(mode, { hueSpace, vibrancy }), STOPS);
       const ls = rows.map((r) => okl(r.rgb));
@@ -1007,11 +1019,12 @@ for (const mode of ["perceptual", "peak"]) {
         break;
       }
     }
-  if (gridCells < 2 * 2 * 3 * SKEW_G.length * LIFT_G.length * HUES_G.length)
+  if (gridCells < 2 * 2 * 3 * SKEW_G.length * LIFT_G.length * GRID_HUES.length)
     FAIL("skew-lift-okhsl", `(iii b) grid only covered ${gridCells} cells`);
   if (measuredUpticks)
     FAIL("skew-lift-okhsl", `(iii c) measured CIELAB L* ROSE on ${measuredUpticks} of ${gridCells} grid cells beyond the ${GRID_R2_EXCEPTIONS.size} cited exceptions, worst +${worstRise.toFixed(4)} L* at ${worstCell}  -  the damping is travelling where the lightness is not (#668)`);
-  if (seenGridException.size !== GRID_R2_EXCEPTIONS.size) {
+  // exact under FULL; SAMPLED's thinned hue grid cannot reach every cited cell (#713 design section).
+  if (FULL && seenGridException.size !== GRID_R2_EXCEPTIONS.size) {
     const missing = [...GRID_R2_EXCEPTIONS].filter((k) => !seenGridException.has(k));
     FAIL("skew-lift-okhsl", `(iii c) ${missing.length} of the ${GRID_R2_EXCEPTIONS.size} cited R2 grid exceptions were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list) or the grid changed under it (re-diagnose before loosening further)`);
   }
@@ -1168,16 +1181,36 @@ for (const mode of ["perceptual", "peak"]) {
   // C6 (i)/(ii), measured over the curated corpus (343 presets, all 3,780 palettes, no chroma floor)
   // plus the 16 role-table defaults  -  not the synthetic grid above, which proves the MECHANISM; this
   // proves the SHIPPED content, on both the 19-stop display ramp and the 25-stop export ramp per rev8.
+  // ONE substitution point (#713 U2, design section): FULL sweeps every category's PRESETS in full;
+  // SAMPLED draws the shared seeded canary (test/engine/lib/corpus-sample.mjs) instead. Every sweep and
+  // in-file control downstream of `docs` reads this one list  -  a sweep is never skipped when sampled,
+  // it runs on fewer documents.
   const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
-  const docs = [];
+  const byCategory = {};
   for (const slug of CATS) {
     const { PRESETS } = await import(`../../src/ui/categories/${slug}.js`);
-    for (const preset of PRESETS) {
-      const d = hydrate({ ...preset });
-      d.__presetName = preset.name; // C6 "0 above 100%" carve-out below needs the preset's own name
-      docs.push(d);
-    }
+    if (!Array.isArray(PRESETS) || !PRESETS.length) FAIL("chroma-envelope", `category "${slug}" exposed no PRESETS, gen:categories did not run, or the mirror moved`);
+    byCategory[slug] = PRESETS;
   }
+  const all = CATS.flatMap((slug) => (byCategory[slug] || []).map((p) => ({ ...p, category: slug })));
+  const presets = FULL ? all : sampleCorpus(byCategory);
+  const docs = [];
+  for (const preset of presets) {
+    const d = hydrate({ ...preset });
+    d.__presetName = preset.name; // C6 "0 above 100%" carve-out below needs the preset's own name
+    docs.push(d);
+  }
+  // vacuity guard: this gate (and every sweep below reading `docs`) is only worth its runtime if it
+  // measured what it claims to (#713 design section).
+  const docPalettes = docs.reduce((a, d) => a + (d.palettes ? d.palettes.length : 0), 0);
+  if (FULL) {
+    if (docs.length < 343) FAIL("chroma-envelope", `(vacuity) FULL measured only ${docs.length} curated documents, expected at least 343 (the corpus shrank or an import failed silently)`);
+    if (docPalettes < 3780) FAIL("chroma-envelope", `(vacuity) FULL measured only ${docPalettes} palettes, expected at least 3780`);
+  } else if (docs.length < 30) {
+    FAIL("chroma-envelope", `(vacuity) SAMPLED measured only ${docs.length} curated documents, expected at least 30`);
+  }
+  CORPUS_DOC_COUNT = docs.length;
+  CORPUS_PALETTE_COUNT = docPalettes;
   const upticks = { perceptual: 0, peak: 0, even: 0 };
   const upWitness = { perceptual: "", peak: "", even: "" };
   const dupCount = { perceptual: 0, peak: 0, even: 0 };
@@ -1276,7 +1309,9 @@ for (const mode of ["perceptual", "peak"]) {
   if (dupCount.perceptual) FAIL("chroma-envelope", `(C6 ii) perceptual: ${dupCount.perceptual} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.perceptual[0]}`);
   if (dupCount.peak) FAIL("chroma-envelope", `(C6 ii) peak: ${dupCount.peak} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.peak[0]}`);
   if (dupCount.even) FAIL("chroma-envelope", `(C6 ii) even: ${dupCount.even} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.even[0]}`);
-  if (seenBaselineDup.size !== KNOWN_BASELINE_DUP.size) {
+  // exact both ways under FULL (a name it cannot still reach is stale); a SAMPLED run only sees a
+  // subset of the corpus, so a cited name it never visits is not a failure there (#713 design section).
+  if (FULL && seenBaselineDup.size !== KNOWN_BASELINE_DUP.size) {
     const missing = [...KNOWN_BASELINE_DUP].filter((k) => !seenBaselineDup.has(k));
     FAIL("chroma-envelope", `(C6 ii) ${missing.length} of the ${KNOWN_BASELINE_DUP.size} cited baseline duplicates were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list, tighten C6 ii toward 0) or the corpus changed under it (re-diagnose before loosening further)`);
   }
@@ -1340,13 +1375,20 @@ for (const mode of ["perceptual", "peak"]) {
     if (!adiaHit) FAIL("chroma-envelope", `(C6 iii) ${toneMode}: the named Adia carve-out produced ZERO above-100% instances  -  either the carve-out is stale (Adia's own dampAmp no longer needs it, tighten toward 0) or the corpus dropped that preset; re-diagnose before touching ADIA_CARVEOUT`);
 
     // Negative control: a SCRATCH copy of a NON-Adia doc with dampAmp forced to 70 (an authored-style
-    // override, matching Adia's own magnitude) must be caught as UNLISTED by the SAME check above  - 
+    // override, matching Adia's own magnitude) must be caught as UNLISTED by the SAME check above  -
     // proves the carve-out really is keyed on the one named preset, not on "any dampAmp>0". In-memory
     // only, built from the already-loaded corpus; never reads origin/main at runtime.
-    const scratchDoc = { ...docs[0], dampAmp: 70, __presetName: "Scratch · not a real preset (negative control)" };
-    const v = above100Violators(scratchDoc, toneMode);
-    if (v.length === 0) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch dampAmp:70 preset (based on ${docs[0].__presetName}) produced no above-100% instance to catch  -  pick a different probe doc`);
-    else if (ADIA_CARVEOUT.has(scratchDoc.__presetName)) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch preset name collided with ADIA_CARVEOUT  -  rename the probe`);
+    // #713 U2: `docs` can be empty (a SAMPLED corpus with every category's `vol` stripped, or the
+    // vacuity guard's own probe), guarded so the vacuity FAIL above stays the reported failure
+    // instead of an unhandled TypeError on `docs[0]` pre-empting it.
+    if (!docs.length) {
+      FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: docs is empty, no probe document available to patch`);
+    } else {
+      const scratchDoc = { ...docs[0], dampAmp: 70, __presetName: "Scratch · not a real preset (negative control)" };
+      const v = above100Violators(scratchDoc, toneMode);
+      if (v.length === 0) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch dampAmp:70 preset (based on ${docs[0].__presetName}) produced no above-100% instance to catch  -  pick a different probe doc`);
+      else if (ADIA_CARVEOUT.has(scratchDoc.__presetName)) FAIL("chroma-envelope", `(C6 iii negative control) ${toneMode}: scratch preset name collided with ADIA_CARVEOUT  -  rename the probe`);
+    }
     // else: correctly NOT in ADIA_CARVEOUT, so the same logic that built `unlisted` above would catch
     // it  -  this control doesn't re-run that loop, it just confirms the scratch doc IS a live violator
     // (checked above) that ISN'T named in the carve-out (checked here), which is what "reds as unlisted"
@@ -1563,6 +1605,11 @@ for (const mode of ["perceptual", "peak"]) {
   const dipDocs = [...docs, defaultKitDoc];
   const BASELINE_BY_MODE = { peak: DIP_BASELINE, even: EVEN_DIP_BASELINE };
   const seenModes = new Set();
+  // this mode's OWN observed baseline count, in THIS run's scope  -  the negative controls below compare
+  // the patched engine's count against this, never against a full-corpus pin a SAMPLED run cannot reach
+  // (#713 design section: "an in-file negative control compares the patched engine against the same
+  // mode's own real count").
+  const seenBaselineCountByMode = {};
   for (const toneMode of ["peak", "even", "perceptual"]) {
     seenModes.add(toneMode);
     const baseline = BASELINE_BY_MODE[toneMode];
@@ -1579,9 +1626,12 @@ for (const mode of ["perceptual", "peak"]) {
         else unlistedSet.add(name);
       }
     }
+    if (baseline) seenBaselineCountByMode[toneMode] = seenBaseline.size;
     const unlisted = [...unlistedSet];
     if (unlisted.length) FAIL("chroma-envelope", `(iv dip gate) ${toneMode}: ${unlisted.length} dip instance(s) beyond the cited baseline, e.g. ${unlisted[0]}`);
-    if (baseline && seenBaseline.size !== baseline.size) {
+    // exact under FULL; SAMPLED sees a subset of the corpus, so a cited name it never visits is not a
+    // failure there (#713 design section).
+    if (FULL && baseline && seenBaseline.size !== baseline.size) {
       const missing = [...baseline].filter((n) => !seenBaseline.has(n));
       FAIL("chroma-envelope", `(iv dip gate) ${toneMode}: ${missing.length} of the ${baseline.size} cited baseline dips were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list, tighten toward 0) or the corpus changed under it (re-diagnose before loosening further)`);
     }
@@ -1632,7 +1682,10 @@ for (const mode of ["perceptual", "peak"]) {
       }
     }
     const buggyDips = buggyDipSet.size;
-    if (buggyDips <= DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control, peak) the patched engine produced only ${buggyDips} dip(s), not clearly more than the ${DIP_BASELINE.size}-witness baseline  -  this control no longer exercises a real regression, pick a different probe`);
+    // FULL compares against the frozen pin; SAMPLED compares against what THIS run's own real sweep
+    // observed of it, never the full-corpus pin a sampled scope cannot reach (#713 design section).
+    const peakFloor = FULL ? DIP_BASELINE.size : (seenBaselineCountByMode.peak ?? 0);
+    if (buggyDips <= peakFloor) FAIL("chroma-envelope", `(iv dip gate negative control, peak) the patched engine produced only ${buggyDips} dip(s), not clearly more than the ${peakFloor}-witness baseline observed this run  -  this control no longer exercises a real regression, pick a different probe`);
   }
 
   // Negative control (even, #681 U3 review 3, N1): a patched copy with `chromaFloor` amplified 1.6x
@@ -1663,7 +1716,9 @@ for (const mode of ["perceptual", "peak"]) {
       }
     }
     const buggyEvenDips = buggyEvenDipSet.size;
-    if (buggyEvenDips <= EVEN_DIP_BASELINE.size) FAIL("chroma-envelope", `(iv dip gate negative control, even) the amplified-floor patched engine produced only ${buggyEvenDips} dip(s), not clearly more than the ${EVEN_DIP_BASELINE.size}-witness baseline  -  this control no longer exercises the mechanism, pick a different probe`);
+    // as the peak control above: FULL against the frozen pin, SAMPLED against this run's own count.
+    const evenFloor = FULL ? EVEN_DIP_BASELINE.size : (seenBaselineCountByMode.even ?? 0);
+    if (buggyEvenDips <= evenFloor) FAIL("chroma-envelope", `(iv dip gate negative control, even) the amplified-floor patched engine produced only ${buggyEvenDips} dip(s), not clearly more than the ${evenFloor}-witness baseline observed this run  -  this control no longer exercises the mechanism, pick a different probe`);
   }
 
   // (iii-b) perceptual's bounded CUSP-RUN exemption (#681 U3 pass 6, owner ruling (f), conductor
@@ -1775,12 +1830,13 @@ for (const mode of ["perceptual", "peak"]) {
   // count and max overshoot.
   {
     const measureAnchoredOvershoot = (engine, mode, docsList = docs) => {
-      let violators = 0, maxRatio = 0, witness = "";
+      let violators = 0, maxRatio = 0, witness = "", measured = 0;
       for (const doc of docsList) {
         if ((doc.dampAmp ?? 0) !== 0) continue; // generated palettes only, matching (iii)'s own scope
         if (ADIA_CARVEOUT.has(doc.__presetName)) continue; // exempt by name, same carve-out as (iii)/(iii-b)
         const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode };
         for (const pal of doc.palettes) {
+          measured++;
           const chroma = rampChromaOf(pal, doc);
           const ramp = engine.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor }, controls, T.STOPS);
           const c500row = ramp.find((r) => r.stop === 500);
@@ -1795,7 +1851,7 @@ for (const mode of ["perceptual", "peak"]) {
           }
         }
       }
-      return { violators, maxRatio, witness };
+      return { violators, maxRatio, witness, measured };
     };
 
     // Pinned this pass (2026-09-20). Anchored PEAK, generated palettes, Adia excluded by name, 19-stop
@@ -1807,7 +1863,10 @@ for (const mode of ["perceptual", "peak"]) {
       FAIL("chroma-envelope", `(C6 v ratchet, monitor not bar) anchored peak violator count rose to ${peakResult.violators}, pinned at ${PEAK_VIOLATOR_PIN}, e.g. ${peakResult.witness}`);
     if (peakResult.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6)
       FAIL("chroma-envelope", `(C6 v ratchet, monitor not bar) anchored peak max overshoot rose to ${peakResult.maxRatio.toFixed(6)}x stop 500, pinned at ${PEAK_MAX_RATIO_PIN}x, e.g. ${peakResult.witness}`);
-    console.log(`  [monitor] C6 (v) anchored peak overshoot: ${peakResult.violators}/3,764 violator(s) (pinned <= ${PEAK_VIOLATOR_PIN}), max ${peakResult.maxRatio.toFixed(6)}x stop 500's own chroma (pinned <= ${PEAK_MAX_RATIO_PIN}x)  -  a RATCHET, NOT a pass/fail bar on the population: stop 500 is the anchor's own pinned sample on this construction, not the ramp's designed peak, so most anchored palettes legitimately carry some stop above it (#701 treats these rendered cells as report-only). The anchored-EVEN companion figure is reported by scripts/report-preset-fidelity.mjs --envelope, not here.`);
+    // the denominator is MEASURED, not the FULL corpus's own fixed 3,764 (#713): SAMPLED measures a
+    // canary subset of the same population, whose violator count and max ratio can only ever undershoot
+    // the FULL-corpus pins below (a maximum, or a count, over a subset cannot exceed the superset's own).
+    console.log(`  [monitor] C6 (v) anchored peak overshoot: ${peakResult.violators}/${peakResult.measured} violator(s) (pinned <= ${PEAK_VIOLATOR_PIN} on FULL), max ${peakResult.maxRatio.toFixed(6)}x stop 500's own chroma (pinned <= ${PEAK_MAX_RATIO_PIN}x on FULL)  -  a RATCHET, NOT a pass/fail bar on the population: stop 500 is the anchor's own pinned sample on this construction, not the ramp's designed peak, so most anchored palettes legitimately carry some stop above it (#701 treats these rendered cells as report-only). The anchored-EVEN companion figure is reported by scripts/report-preset-fidelity.mjs --envelope, not here.`);
 
     // Negative control: a SCRATCH copy of the real engine, patched at okhslStopsAnchored's own
     // `intendedS * env` saturation line (src/engine/tonal.js - the anchored PEAK/perceptual OKHSL-domain
@@ -1844,8 +1903,13 @@ for (const mode of ["perceptual", "peak"]) {
         const others = docs.filter((d) => d !== witnessDoc).sort((a, b) => a.__presetName.localeCompare(b.__presetName)).slice(0, 49);
         const sampleDocs = witnessDoc ? [witnessDoc, ...others] : docs.slice(0, 50);
         const buggySample = measureAnchoredOvershoot(BuggyT, "peak", sampleDocs);
-        if (!(buggySample.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6))
-          FAIL("chroma-envelope", `(C6 v negative control, sampled, ratio arm) a 1.6x-amplified okhslStopsAnchored saturation, on a ${sampleDocs.length}-doc sample, read maxRatio ${buggySample.maxRatio.toFixed(6)}  -  expected it to exceed the pin (${PEAK_MAX_RATIO_PIN}x)  -  check measureAnchoredOvershoot, the sample, or the patch target`);
+        // FULL compares against the frozen pin; SAMPLED compares against this run's own unmutated max
+        // ratio, never the FULL-corpus pin: the sample's own worst witness need not be the full corpus's
+        // worst, so amplifying it need not clear a pin measured on a witness this scope may not carry
+        // (#713 design section, same principle as the dip-gate negative controls above).
+        const ratioFloor = FULL ? PEAK_MAX_RATIO_PIN : peakResult.maxRatio;
+        if (!(buggySample.maxRatio > ratioFloor + 1e-6))
+          FAIL("chroma-envelope", `(C6 v negative control, sampled, ratio arm) a 1.6x-amplified okhslStopsAnchored saturation, on a ${sampleDocs.length}-doc sample, read maxRatio ${buggySample.maxRatio.toFixed(6)}  -  expected it to exceed ${FULL ? "the pin" : "this run's own unmutated max ratio"} (${ratioFloor.toFixed(6)}x)  -  check measureAnchoredOvershoot, the sample, or the patch target`);
       }
     }
 
@@ -1894,6 +1958,7 @@ for (const mode of ["perceptual", "peak"]) {
 import { gateReport } from "../gate-report.mjs";
 const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
+console.log(`  (${FULL ? `FULL: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes`})`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: tonal-generation clears all [gate] predicates");
 process.exit(0);
