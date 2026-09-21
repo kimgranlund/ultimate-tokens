@@ -1142,11 +1142,17 @@ for (const p of kitPalettes) {
 }
 // vacuity (U1-3): a check that can pass without looking at anything is worse than no check. Read at
 // runtime — a Set filled inside each loop body, never `kitPalettes.length` computed outside it — so
-// emptying either loop's own iterable, not just shrinking the kit itself, still bites.
+// emptying either loop's own iterable, not just shrinking the kit itself, still bites. Silent on the
+// clean path (U1-1's own "0 FAIL lines" already proves this side), same as the file's other
+// negative controls above, which print nothing when they correctly stay quiet — this keeps the
+// pass-line count exactly the seven named checks below, per leg, no separate line to grep.
 const kitVacuityFloor = Math.max(kitDoc.palettes.length, 16);
 const kitVacuityOk = kitRampVisited.size >= kitVacuityFloor && kitLadderVisited.size >= kitVacuityFloor;
-console.log(`  ${kitVacuityOk ? "pass" : "FAIL"}  anchor-ramp default-kit vacuity: visited ${kitRampVisited.size} (ramp), ${kitLadderVisited.size} (ladder) of ${kitVacuityFloor} kit palettes`);
-if (!kitVacuityOk) FAIL("anchor-ramp", `default-kit vacuity: visited ${kitRampVisited.size} (ramp), ${kitLadderVisited.size} (ladder) of ${kitVacuityFloor} kit palettes — a check that never looked would otherwise pass in silence`);
+if (!kitVacuityOk) {
+  const detail = `visited ${kitRampVisited.size} (ramp), ${kitLadderVisited.size} (ladder) of ${kitVacuityFloor} kit palettes — a check that never looked would otherwise pass in silence`;
+  console.log(`  FAIL  anchor-ramp default-kit vacuity: ${detail}`);
+  FAIL("anchor-ramp", `default-kit vacuity: ${detail}`);
+}
 // one line per check, the count computed and never typed in; a hit prints the first violation in
 // place of the count, opening with the same `default-kit <check>:` token the pass line carries.
 const kitCheckLine = (group, check, violations, expectedSuffix) => {
