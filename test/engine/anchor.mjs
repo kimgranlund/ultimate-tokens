@@ -40,8 +40,10 @@ import { rgbToOkhsl, okhslToRgb } from "../../src/engine/okhsl.js";
 import { derivedAll, oklchStr } from "../../src/engine/exports.js";
 import { defaultDocument, projectView } from "../../src/ui/model.mjs";
 import { hydrate } from "../../src/ui/persist.js";
+import { sampleCorpus, SAMPLE_SEED } from "./lib/corpus-sample.mjs";
 
 const CATS = ["architecture", "cuisine", "film", "literature", "music", "nature", "travel", "brands"];
+const FULL = process.argv.includes("--full");
 
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
@@ -138,16 +140,52 @@ function referenceNonAnchored(palette, controls) {
 }
 
 // ── load the regenerated corpus + the default kit ──────────────────────────────────────────────────
-const corpus = []; // { slug, presetName, palette }
-const presetsByCat = []; // { slug, preset } — the whole preset object, for the RENDERED-path sweep below
+// FULL loads every category verbatim (byte-identical to the file before this split). SAMPLED draws
+// the ONE shared seeded sample (lib/corpus-sample.mjs, #713 U1) instead - every sweep and every
+// in-file negative control below reads `corpus`/`presetsByCat`, so nothing here is ever skipped in
+// SAMPLED mode, only run on fewer documents (design section, #713).
+const byCategory = {};
 for (const slug of CATS) {
   const { PRESETS } = await import(`../../src/ui/categories/${slug}.js`);
-  for (const preset of PRESETS) {
-    presetsByCat.push({ slug, preset });
-    for (const p of preset.palettes) corpus.push({ slug, presetName: preset.name, hueSpace: preset.hueSpace, palette: p });
+  byCategory[slug] = PRESETS;
+}
+const corpus = []; // { slug, presetName, palette }
+const presetsByCat = []; // { slug, preset } - the whole preset object, for the RENDERED-path sweep below
+if (FULL) {
+  for (const slug of CATS) {
+    for (const preset of byCategory[slug]) {
+      presetsByCat.push({ slug, preset });
+      for (const p of preset.palettes) corpus.push({ slug, presetName: preset.name, hueSpace: preset.hueSpace, palette: p });
+    }
+  }
+} else {
+  for (const doc of sampleCorpus(byCategory)) {
+    presetsByCat.push({ slug: doc.category, preset: doc });
+    for (const p of doc.palettes) corpus.push({ slug: doc.category, presetName: doc.name, hueSpace: doc.hueSpace, palette: p });
   }
 }
-if (corpus.length !== 3780) FAIL("anchor-identity", `corpus loaded ${corpus.length} palettes, want 3780 — a category file moved or a preset count changed`);
+
+// vacuity (design section, #713): FULL below 343 documents or 3780 palettes is a FAIL; SAMPLED below
+// 30 documents is a FAIL. SAMPLED also names any of the 7 gallery categories `sampleCorpus` dropped
+// entirely - note from the U1 verdict, 2026-09-20: a category whose presets lose `.vol` drops out of
+// `sampleCorpus` SILENTLY (`pickVolume` returns `undefined`, the category's loop iteration is skipped),
+// 35 documents becomes 31, and the bare 30-document floor alone cannot catch that swap. The negative
+// control below proves the drop mechanism is real and that the presence check would have caught it,
+// before the real corpus is trusted against it.
+if (FULL) {
+  if (presetsByCat.length !== 343) FAIL("anchor-identity", `FULL loaded ${presetsByCat.length} curated documents, want 343 — a category file moved or a preset count changed`);
+  if (corpus.length !== 3780) FAIL("anchor-identity", `corpus loaded ${corpus.length} palettes, want 3780 — a category file moved or a preset count changed`);
+} else {
+  if (presetsByCat.length < 30) FAIL("anchor-identity", `SAMPLED loaded only ${presetsByCat.length} curated documents, want at least 30`);
+  {
+    const synthetic = { keep: [{ name: "a", vol: "I", palettes: [] }], drop: [{ name: "b", palettes: [] }] };
+    const syntheticCats = new Set(sampleCorpus(synthetic, 0).map((d) => d.category));
+    if (syntheticCats.has("drop")) FAIL("anchor-identity", "negative control DID NOT bite: sampleCorpus did not drop a synthetic category whose presets carry no `.vol` - the per-category presence assertion has nothing to catch");
+    if (!syntheticCats.has("keep")) FAIL("anchor-identity", "negative control setup is broken: the synthetic category that DOES carry `.vol` was also dropped");
+  }
+  const seenCats = new Set(presetsByCat.map((d) => d.slug));
+  for (const slug of CATS) if (slug !== "brands" && !seenCats.has(slug)) FAIL("anchor-identity", `SAMPLED dropped category "${slug}" entirely — a preset there lost its \`.vol\`, so pickVolume returned undefined and sampleCorpus skipped the category silently`);
+}
 
 const anchored = corpus.filter((c) => typeof c.palette.anchor === "string");
 
@@ -192,7 +230,11 @@ for (const { slug, presetName, hueSpace, palette: p } of anchored) {
   }
   exact++;
 }
-if (anchored.length !== 3380) FAIL("anchor-identity", `counted ${anchored.length} anchored palettes (want 3380 — 2,028 sampled + 1,352 status per the plan's own measured baseline); report this line, do not force the number`);
+if (FULL) {
+  if (anchored.length !== 3380) FAIL("anchor-identity", `counted ${anchored.length} anchored palettes (want 3380 — 2,028 sampled + 1,352 status per the plan's own measured baseline); report this line, do not force the number`);
+} else if (anchored.length === 0) {
+  FAIL("anchor-identity", "SAMPLED counted 0 anchored palettes - the sample lost every anchor, C2 measured nothing");
+}
 console.log(`  ${fails.some((f) => f.startsWith("anchor-identity:")) ? "FAIL" : "pass"}  anchor-identity: ${exact} exact, ${off} off`);
 
 // ── C4 (prime half): non-anchored identity control, negative control first ─────────────────────────
@@ -200,7 +242,11 @@ const controlSubjects = [
   ...corpus.map((c) => ({ label: `${c.slug} "${c.presetName}" ${c.palette.name}`, hueSpace: c.hueSpace, palette: c.palette })),
   ...defaultDocument().palettes.map((p) => ({ label: `default kit ${p.name}`, hueSpace: "oklch", palette: p })),
 ];
-if (controlSubjects.length !== 3796) FAIL("prime-identity-control", `${controlSubjects.length} control subjects (want 3796 = 3780 corpus + 16 default kit)`);
+if (FULL) {
+  if (controlSubjects.length !== 3796) FAIL("prime-identity-control", `${controlSubjects.length} control subjects (want 3796 = 3780 corpus + 16 default kit)`);
+} else if (controlSubjects.length < 46) {
+  FAIL("prime-identity-control", `SAMPLED ${controlSubjects.length} control subjects, want at least 46 (the 30-document sample floor plus 16 default-kit palettes)`);
+}
 
 {
   // negative control: mutate one subject's chroma between the two derivations and confirm the loop
@@ -365,21 +411,26 @@ const DUPE_ALLOW = [
   }
   orderNames.sort();
   dupeNames.sort();
-  console.log(`  ${orderNames.length === ORDER_ALLOW.length ? "pass" : "FAIL"}  anchor-ladder order-allow-list: ${orderNames.length} (expected ${ORDER_ALLOW.length})`);
+  // ORDER_ALLOW/DUPE_ALLOW are pinned lists too (same shape as the five ramp allow-lists below, see
+  // `allowListOk`'s own header comment): exact under FULL, a subset under SAMPLED - a smaller `anchored`
+  // sample can only ever observe a SUBSET of these named sources, never a new one, so an unlisted member
+  // is still a real defect in both modes, but a listed member the sample does not reach is not.
+  console.log(`  ${allowListOk(orderNames, ORDER_ALLOW) ? "pass" : "FAIL"}  anchor-ladder order-allow-list: ${orderNames.length} (expected ${FULL ? ORDER_ALLOW.length : `at most ${ORDER_ALLOW.length} (SAMPLED reads the recorded count as an upper bound)`})`);
   for (const n of orderNames) console.log(`    r ${n}`);
-  console.log(`  ${dupeNames.length === DUPE_ALLOW.length ? "pass" : "FAIL"}  anchor-ladder dupe-allow-list: ${dupeNames.length} (expected ${DUPE_ALLOW.length})`);
+  console.log(`  ${allowListOk(dupeNames, DUPE_ALLOW) ? "pass" : "FAIL"}  anchor-ladder dupe-allow-list: ${dupeNames.length} (expected ${FULL ? DUPE_ALLOW.length : `at most ${DUPE_ALLOW.length} (SAMPLED reads the recorded count as an upper bound)`})`);
   for (const n of dupeNames) console.log(`    d ${n}`);
   // Compare the SORTED ARRAYS, not just their lengths (N1) — a swapped name at an unchanged count
-  // must still fail, naming both the entry that's missing and the one that showed up uninvited.
-  if (orderNames.length !== ORDER_ALLOW.length || orderNames.some((n, i) => n !== ORDER_ALLOW[i])) {
-    for (const n of ORDER_ALLOW) if (!orderNames.includes(n)) FAIL("anchor-ladder", `order-allow-list: expected member missing — ${n}`);
+  // must still fail, naming both the entry that's missing and the one that showed up uninvited. Under
+  // FULL, "missing" is graded; under SAMPLED, a listed member the sample never reaches is not a defect.
+  if (!allowListOk(orderNames, ORDER_ALLOW)) {
+    if (FULL) for (const n of ORDER_ALLOW) if (!orderNames.includes(n)) FAIL("anchor-ladder", `order-allow-list: expected member missing — ${n}`);
     for (const n of orderNames) if (!ORDER_ALLOW.includes(n)) FAIL("anchor-ladder", `order-allow-list: unexpected member — ${n}`);
-    if (!fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `order-allow-list count ${orderNames.length} !== expected ${ORDER_ALLOW.length} with no single-name diff found — investigate before trusting either count`);
+    if (FULL && !fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `order-allow-list count ${orderNames.length} !== expected ${ORDER_ALLOW.length} with no single-name diff found — investigate before trusting either count`);
   }
-  if (dupeNames.length !== DUPE_ALLOW.length || dupeNames.some((n, i) => n !== DUPE_ALLOW[i])) {
-    for (const n of DUPE_ALLOW) if (!dupeNames.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: expected member missing — ${n}`);
+  if (!allowListOk(dupeNames, DUPE_ALLOW)) {
+    if (FULL) for (const n of DUPE_ALLOW) if (!dupeNames.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: expected member missing — ${n}`);
     for (const n of dupeNames) if (!DUPE_ALLOW.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: unexpected member — ${n}`);
-    if (!fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `dupe-allow-list count ${dupeNames.length} !== expected ${DUPE_ALLOW.length} with no single-name diff found — investigate before trusting either count`);
+    if (FULL && !fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `dupe-allow-list count ${dupeNames.length} !== expected ${DUPE_ALLOW.length} with no single-name diff found — investigate before trusting either count`);
   }
   // every dupe MUST also be an order violation (the F1 widening search cannot fail (b) without also
   // failing (a): a collapsed rung is, by definition, not strictly between its neighbours in l).
@@ -913,32 +964,42 @@ for (const { slug, preset } of presetsByCat) {
 function allowListMatches(measuredSorted, allow) {
   return measuredSorted.length === allow.length && measuredSorted.every((n, i) => n === allow[i]);
 }
+// allowListOk - the FULL/SAMPLED-aware wrapper every pinned-list gate below calls (design section,
+// #713): FULL is exact (delegates to `allowListMatches`, unchanged); SAMPLED is a subset test - no
+// unlisted name, but a cited name the smaller sample does not reach is not a failure, so a pinned
+// count reads as an upper bound there. R10's own point (below) applies here too: the negative controls
+// must exercise this SAME function, not a second copy, so `dropCheck`/`swapCheck` call it as well.
+function allowListOk(measuredSorted, allow) {
+  if (FULL) return allowListMatches(measuredSorted, allow);
+  return measuredSorted.every((n) => allow.includes(n));
+}
 const windowSorted = [...windowNames].sort();
 const gapSorted = [...gapNames].sort();
 const distinctSorted = [...distinctNames].sort();
 const nonMonoSorted = [...nonMonoNames].sort();
 const notchSorted = [...notchNames].sort();
 console.log(`  ${rampOff === 0 ? "pass" : "FAIL"}  anchor-ramp: ${rampExact} exact, ${rampOff} off (in-window sources only, ${anchored.length - windowNames.size} of ${anchored.length})`);
-console.log(`  ${allowListMatches(windowSorted, RAMP_WINDOW_ALLOW) ? "pass" : "FAIL"}  anchor-ramp allow-list: ${windowSorted.length} (expected ${RAMP_WINDOW_ALLOW.length})`);
-if (!allowListMatches(windowSorted, RAMP_WINDOW_ALLOW)) {
-  for (const n of RAMP_WINDOW_ALLOW) if (!windowSorted.includes(n)) FAIL("anchor-ramp", `window-clamp allow-list: expected member missing — ${n}`);
+console.log(`  ${allowListOk(windowSorted, RAMP_WINDOW_ALLOW) ? "pass" : "FAIL"}  anchor-ramp allow-list: ${windowSorted.length} (expected ${FULL ? RAMP_WINDOW_ALLOW.length : `at most ${RAMP_WINDOW_ALLOW.length} (SAMPLED reads the recorded count as an upper bound; run --full for the exact check)`})`);
+if (!allowListOk(windowSorted, RAMP_WINDOW_ALLOW)) {
+  if (FULL) for (const n of RAMP_WINDOW_ALLOW) if (!windowSorted.includes(n)) FAIL("anchor-ramp", `window-clamp allow-list: expected member missing — ${n}`);
   for (const n of windowSorted) if (!RAMP_WINDOW_ALLOW.includes(n)) FAIL("anchor-ramp", `window-clamp allow-list: unexpected member — ${n}`);
 }
 for (const n of RAMP_WINDOW_ALLOW) console.log(`    r ${n}`);
 // R1 (review pass 2, 2026-09-18): monotone is measured on PIXEL L*, not the `tone` field, and the
 // construction fix (`enforceMonotonePixelL`) reaches a true, unconditional 0, no allow-list. An
-// unexpected member here is a real pixel-L* rise, not a churn artifact.
-console.log(`  ${nonMonoSorted.length === 0 ? "pass" : "FAIL"}  anchor-ramp monotone: ${nonMonoSorted.length} (expected 0, pixel L*, all three modes, both stop sets, all 3,380 sources including the window-clamped ones)`);
+// unexpected member here is a real pixel-L* rise, not a churn artifact. A true 0, not a pinned list -
+// SAMPLED and FULL read the same way, just over fewer sources.
+console.log(`  ${nonMonoSorted.length === 0 ? "pass" : "FAIL"}  anchor-ramp monotone: ${nonMonoSorted.length} (expected 0, pixel L*, all three modes, both stop sets, ${FULL ? "all 3,380 sources including the window-clamped ones" : "every SAMPLED source including the window-clamped ones"})`);
 for (const n of nonMonoSorted) FAIL("anchor-ramp", `monotone: unexpected pixel-L* rise - ${n}`);
-console.log(`  ${allowListMatches(gapSorted, RAMP_GAP_ALLOW) ? "pass" : "FAIL"}  anchor-ramp gap (19-stop) allow-list: ${gapSorted.length} (expected ${RAMP_GAP_ALLOW.length})`);
-if (!allowListMatches(gapSorted, RAMP_GAP_ALLOW)) {
-  for (const n of RAMP_GAP_ALLOW) if (!gapSorted.includes(n)) FAIL("anchor-ramp", `gap allow-list: expected member missing — ${n}`);
+console.log(`  ${allowListOk(gapSorted, RAMP_GAP_ALLOW) ? "pass" : "FAIL"}  anchor-ramp gap (19-stop) allow-list: ${gapSorted.length} (expected ${FULL ? RAMP_GAP_ALLOW.length : `at most ${RAMP_GAP_ALLOW.length} (SAMPLED reads the recorded count as an upper bound; run --full for the exact check)`})`);
+if (!allowListOk(gapSorted, RAMP_GAP_ALLOW)) {
+  if (FULL) for (const n of RAMP_GAP_ALLOW) if (!gapSorted.includes(n)) FAIL("anchor-ramp", `gap allow-list: expected member missing — ${n}`);
   for (const n of gapSorted) if (!RAMP_GAP_ALLOW.includes(n)) FAIL("anchor-ramp", `gap allow-list: unexpected member — ${n}`);
 }
 for (const n of RAMP_GAP_ALLOW) console.log(`    r ${n}`);
-console.log(`  ${allowListMatches(distinctSorted, RAMP_DISTINCT_ALLOW) ? "pass" : "FAIL"}  anchor-ramp distinct (25-stop) allow-list: ${distinctSorted.length} (expected ${RAMP_DISTINCT_ALLOW.length})`);
-if (!allowListMatches(distinctSorted, RAMP_DISTINCT_ALLOW)) {
-  for (const n of RAMP_DISTINCT_ALLOW) if (!distinctSorted.includes(n)) FAIL("anchor-ramp", `distinct allow-list: expected member missing — ${n}`);
+console.log(`  ${allowListOk(distinctSorted, RAMP_DISTINCT_ALLOW) ? "pass" : "FAIL"}  anchor-ramp distinct (25-stop) allow-list: ${distinctSorted.length} (expected ${FULL ? RAMP_DISTINCT_ALLOW.length : `at most ${RAMP_DISTINCT_ALLOW.length} (SAMPLED reads the recorded count as an upper bound; run --full for the exact check)`})`);
+if (!allowListOk(distinctSorted, RAMP_DISTINCT_ALLOW)) {
+  if (FULL) for (const n of RAMP_DISTINCT_ALLOW) if (!distinctSorted.includes(n)) FAIL("anchor-ramp", `distinct allow-list: expected member missing — ${n}`);
   for (const n of distinctSorted) if (!RAMP_DISTINCT_ALLOW.includes(n)) FAIL("anchor-ramp", `distinct allow-list: unexpected member — ${n}`);
 }
 for (const n of RAMP_DISTINCT_ALLOW) console.log(`    r ${n}`);
@@ -946,9 +1007,9 @@ for (const n of RAMP_DISTINCT_ALLOW) console.log(`    r ${n}`);
 // of at least 3 CAM16 C versus both (notchOk's own header comment). The residual under that ruled
 // definition is real (near-grey anchors inside a high-chroma group) and is named "pending U4" in
 // Q-U2-7, not loosened here.
-console.log(`  ${allowListMatches(notchSorted, NOTCH_ALLOW) ? "pass" : "FAIL"}  anchor-ramp notch allow-list (ruled Q-C, named pending U4): ${notchSorted.length} (expected ${NOTCH_ALLOW.length})`);
-if (!allowListMatches(notchSorted, NOTCH_ALLOW)) {
-  for (const n of NOTCH_ALLOW) if (!notchSorted.includes(n)) FAIL("anchor-ramp", `notch allow-list: expected member missing - ${n}`);
+console.log(`  ${allowListOk(notchSorted, NOTCH_ALLOW) ? "pass" : "FAIL"}  anchor-ramp notch allow-list (ruled Q-C, named pending U4): ${notchSorted.length} (expected ${FULL ? NOTCH_ALLOW.length : `at most ${NOTCH_ALLOW.length} (SAMPLED reads the recorded count as an upper bound; run --full for the exact check)`})`);
+if (!allowListOk(notchSorted, NOTCH_ALLOW)) {
+  if (FULL) for (const n of NOTCH_ALLOW) if (!notchSorted.includes(n)) FAIL("anchor-ramp", `notch allow-list: expected member missing - ${n}`);
   for (const n of notchSorted) if (!NOTCH_ALLOW.includes(n)) FAIL("anchor-ramp", `notch allow-list: unexpected member (stop 500's chroma both ratio-dipped and dipped >=3 C below both neighbours) - ${n}`);
 }
 for (const n of NOTCH_ALLOW) console.log(`    r ${n}`);
@@ -995,21 +1056,26 @@ if (!allowListMatches(dkSpikeSorted, [...DEFAULT_KIT_SPIKE_FINDING])) {
 }
 for (const n of DEFAULT_KIT_SPIKE_FINDING) console.log(`    r ${n}`);
 const loneSpikeSorted = [...loneSpikeNames].sort();
-console.log(`  ${allowListMatches(loneSpikeSorted, LONE_SPIKE_ALLOW) ? "pass" : "FAIL"}  anchor-ramp lone-spike allow-list (even, near-achromatic neighbours <= ${LONE_SPIKE_ACHROMATIC}, OKLCH C > both by > ${LONE_SPIKE_BOUND}; owner-ruled dampAmp-0/anchor-pass-through carve-out, fix joins #701): ${loneSpikeSorted.length} (expected ${LONE_SPIKE_ALLOW.length})`);
-if (!allowListMatches(loneSpikeSorted, LONE_SPIKE_ALLOW)) {
-  for (const n of LONE_SPIKE_ALLOW) if (!loneSpikeSorted.includes(n)) FAIL("anchor-ramp", `lone-spike allow-list: expected member missing - ${n}`);
+console.log(`  ${allowListOk(loneSpikeSorted, LONE_SPIKE_ALLOW) ? "pass" : "FAIL"}  anchor-ramp lone-spike allow-list (even, near-achromatic neighbours <= ${LONE_SPIKE_ACHROMATIC}, OKLCH C > both by > ${LONE_SPIKE_BOUND}; owner-ruled dampAmp-0/anchor-pass-through carve-out, fix joins #701): ${loneSpikeSorted.length} (expected ${FULL ? LONE_SPIKE_ALLOW.length : `at most ${LONE_SPIKE_ALLOW.length} (SAMPLED reads the recorded count as an upper bound; run --full for the exact check)`})`);
+if (!allowListOk(loneSpikeSorted, LONE_SPIKE_ALLOW)) {
+  if (FULL) for (const n of LONE_SPIKE_ALLOW) if (!loneSpikeSorted.includes(n)) FAIL("anchor-ramp", `lone-spike allow-list: expected member missing - ${n}`);
   for (const n of loneSpikeSorted) if (!LONE_SPIKE_ALLOW.includes(n)) FAIL("anchor-ramp", `lone-spike allow-list: unexpected member (stop's OKLCH C exceeds both neighbours by > ${LONE_SPIKE_BOUND}) - ${n}`);
 }
 for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
 
 // R10 (review pass 2): the OLD "N1-style" control compared two hardcoded arrays with its own duplicate
 // of allowListMatches's logic — a tautology, since that comparison can never pass regardless of whether
-// the REAL gates above are correct. The real controls below call `allowListMatches` ITSELF (the same
+// the REAL gates above are correct. The real controls below call `allowListOk` ITSELF (the same
 // function the real gates call) against the REAL measured data with one name dropped from the allow
 // list — proving the actual predicate, not a stand-in, reds on a real, silent narrowing.
-{
+//
+// FULL only (#713 U3): these controls prove the EXACT-match half discriminates a shrink or a
+// same-length swap, which is only what FULL asserts. Under SAMPLED, dropping or swapping the tail of a
+// list the sample mostly does not observe anyway proves nothing either way - the subset half is graded
+// by the plan's own U3-4 criterion instead, against a real clone mutation of the shipped list.
+if (FULL) {
   const dropCheck = (name, measuredSorted, allow) => {
-    if (allowListMatches(measuredSorted, allow.slice(0, -1))) FAIL("anchor-ramp", `negative control DID NOT bite: dropping one name from the ${name} allow list still matched the real measured data`);
+    if (allowListOk(measuredSorted, allow.slice(0, -1))) FAIL("anchor-ramp", `negative control DID NOT bite: dropping one name from the ${name} allow list still matched the real measured data`);
   };
   dropCheck("window-clamp", windowSorted, RAMP_WINDOW_ALLOW);
   dropCheck("gap", gapSorted, RAMP_GAP_ALLOW);
@@ -1019,7 +1085,7 @@ for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
   // A same-length swap must ALSO be caught (a name substitution, not just a shrink).
   const swapCheck = (name, measuredSorted, allow, fakeMember) => {
     const swapped = [...allow.slice(0, -1), fakeMember].sort();
-    if (allowListMatches(measuredSorted, swapped)) FAIL("anchor-ramp", `negative control DID NOT bite: a swapped ${name} allow list still matched the real measured data`);
+    if (allowListOk(measuredSorted, swapped)) FAIL("anchor-ramp", `negative control DID NOT bite: a swapped ${name} allow list still matched the real measured data`);
   };
   swapCheck("window-clamp", windowSorted, RAMP_WINDOW_ALLOW, `film "A Made-Up Title" primary #000001`);
   swapCheck("gap", gapSorted, RAMP_GAP_ALLOW, `film "A Made-Up Title" primary #000003`);
@@ -1185,7 +1251,7 @@ for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
       );
     }
     const codesNote = maxDiff > HUE_SPACE_CODES_BOUND ? `full-corpus codes reach ${maxDiff} (worst ${worstCodes}) - reported only, not gated; default kit's own codes bound held (max ${dkMaxDiff}, want <= ${HUE_SPACE_CODES_BOUND})` : `codes bound held everywhere (max ${maxDiff})`;
-    console.log(`  ${maxDeltaE <= HUE_SPACE_DELTA_E_BOUND && dkMaxDiff <= HUE_SPACE_CODES_BOUND ? "pass" : "FAIL"}  anchor-f4 hueSpace-${modeName}-bound: full corpus + default kit, max OKLab dE ${maxDeltaE.toFixed(4)} (want <= ${HUE_SPACE_DELTA_E_BOUND}, worst ${worstDeltaE}); ${codesNote}`);
+    console.log(`  ${maxDeltaE <= HUE_SPACE_DELTA_E_BOUND && dkMaxDiff <= HUE_SPACE_CODES_BOUND ? "pass" : "FAIL"}  anchor-f4 hueSpace-${modeName}-bound: ${FULL ? "full" : "SAMPLED"} corpus + default kit, max OKLab dE ${maxDeltaE.toFixed(4)} (want <= ${HUE_SPACE_DELTA_E_BOUND}, worst ${worstDeltaE}); ${codesNote}`);
   }
 
   // Negative control (review pass 3, Finding 4, 2026-09-18): the prior in-suite "reference lerp"
@@ -1205,6 +1271,11 @@ for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
   console.error(`    — ${f.slice(g.length + 2)}`);
 }
+// the mode line (#713): printed regardless of pass/fail, same as curated-contrast.mjs's own - the
+// contract the plan's criteria grep. Counts are computed from what this run actually measured, never
+// typed in; FULL below 343 documents or 3780 palettes and SAMPLED below 30 documents are the file's
+// own vacuity checks above, not re-derived here.
+console.log(`  (${FULL ? `FULL: ${presetsByCat.length} curated documents, ${corpus.length} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${presetsByCat.length} curated documents, ${corpus.length} palettes`})`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 // R10 (review pass 2; corrected review pass 3, Finding 6 - the old line said "all clear", which
 // overstated gap-19 and notch: both are named, frozen allow-lists, not settled zeros; corrected again
