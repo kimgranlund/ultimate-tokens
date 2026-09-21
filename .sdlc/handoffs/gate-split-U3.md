@@ -4,16 +4,16 @@ plan: gate-split
 unit: U3
 branch: unit/gs-U3
 written: 2026-09-20
-pass: 1
+pass: 2
 ---
 
 # Handoff U3 (`anchor.mjs`) . builder -> reviewer
 
 | Field | Value |
 |---|---|
-| Branch | unit/gs-U3 @ 4a58ae28710d0bd1cd5a1ead8c1e28c6bb62a717 |
-| Files | test/engine/anchor.mjs |
-| Ran | `npm test` 50/50 pass, exit 0, tree byte-stable after (re-run after the P8 fix below); `node test/engine/anchor.mjs` (SAMPLED) exit 0; `npm run -s gate:corpus-anchor` (FULL) exit 0 |
+| Branch | unit/gs-U3, pass 2 commit on top of 6db38ae0 |
+| Files | test/engine/anchor.mjs (pass 1) . .sdlc/handoffs/gate-split-U3.md (pass 1 and pass 2) |
+| Ran | `npm test` 50/50 pass, exit 0, tree byte-stable after (re-run after the P8 fix below); `node test/engine/anchor.mjs` (SAMPLED) exit 0; `npm run -s gate:corpus-anchor` (FULL) exit 0. Pass 2 re-ran all three once each, in order: SAMPLED, FULL, `npm test` (see the Pass 2 section below) |
 | Left out | none |
 
 ## Correction: P8/P9 diff base is `ebddc55d`, not `git merge-base origin/main HEAD`
@@ -80,9 +80,11 @@ All three run in their own throwaway clone (M-A / M-C / M-E applied to `src/engi
 
 Sampled run observed (instrumented once, in a throwaway clone, to find a real member; the printed allow-list dump is always the full canonical list, not what was measured): `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC` was one of the 8 gap-19 names this seed's SAMPLED run actually sees.
 
-(a) Deleted that one line from `RAMP_GAP_ALLOW` in a clone, ran `node test/engine/anchor.mjs`: `exit 1`, with `gap allow-list: unexpected member, brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC` in the log (quoted with its own punctuation, not the literal FAIL-line dash). 🟢 (matches the plan's "the deleted name in an unlisted-dip line," anchor's own wording is "unexpected member")
+(a) Deleted that one line from `RAMP_GAP_ALLOW` in a clone, ran `node test/engine/anchor.mjs`: `exit 1`, with this line in the log, quoted byte for byte: `    — gap allow-list: unexpected member — brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`. 🟢 (matches the plan's "the deleted name in an unlisted-dip line," anchor's own wording is "unexpected member")
 
-(b) Added the fictitious name `` `zz-not-in-corpus|primary|500` `` to `RAMP_GAP_ALLOW` in a fresh clone: SAMPLED `node test/engine/anchor.mjs` -> `exit 0`. FULL `npm run -s gate:corpus-anchor` -> `exit 1`, with `gap allow-list: expected member missing, zz-not-in-corpus|primary|500` in the log. 🟢 (plan's illustrative wording is "were not observed"; `anchor.mjs`'s own established allow-list phrasing across every gate in this file is "expected member missing," semantically the same claim, cited here since the literal string differs)
+(b) Added the fictitious name `` `zz-not-in-corpus|primary|500` `` to `RAMP_GAP_ALLOW` in a fresh clone: SAMPLED `node test/engine/anchor.mjs` -> `exit 0`. FULL `npm run -s gate:corpus-anchor` -> `exit 1`, with this line in the log, quoted byte for byte: `    — gap allow-list: expected member missing — zz-not-in-corpus|primary|500`. 🟢 (plan's illustrative wording is "were not observed"; `anchor.mjs`'s own established allow-list phrasing across every gate in this file is "expected member missing," semantically the same claim, cited here since the literal string differs)
+
+Pass 1 had swapped the em dash separator in both quoted lines above for a comma, on the mistaken belief that P8 required it. P8's own sweep strips a backtick span before it ever looks for U+2014, so quoting the actual bytes inside backticks was always available; the adapter's own §3 verbatim-quote rule asks for exactly that. Both lines above are now the literal program output.
 
 ## U3-5 (the file's own share), loud host, graded 🟡
 
@@ -132,3 +134,17 @@ P3 (own gate only, per the common brief): real leg `exit 0`, mode-line-or-determ
 ## npm test at head
 
 `all 50 test files passed`, exit 0, tree byte-stable (`git status --short` empty after). N = 50 (48 at 36ce7777, plus U1's `engine/corpus-sample.mjs` and `engine/anchor.mjs` itself, matching the common brief's N=50 note).
+
+## Pass 2 · three findings the team-lead sent back, none of the other three
+
+Base for every diff stays `ebddc55d`. The team-lead overrode three of the six pass-1 review findings as defects this unit introduced (a sampled leg signing off in the frozen, FULL-only words of the gate of record), and carried the other three to pre-land. Only the three below are this pass's work.
+
+| Finding | What changed | Evidence, quoted byte for byte |
+|---|---|---|
+| 1: the final PASS line named frozen FULL counts and the "biting negative control" claim in both modes, so SAMPLED signed off in FULL's own words after reading a tenth of the corpus | `anchor.mjs`'s closing `console.log` now branches on `FULL`: FULL keeps the frozen counts and the biting-control claim verbatim; SAMPLED prints `windowSorted.length`/`gapSorted.length`/`distinctSorted.length`/`notchSorted.length`, the same counts the allow-list gates above it already measured, and states plainly these are a subset read with no in-file negative control this run | SAMPLED: `PASS (SAMPLED): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (3), gap-19 (8), distinct-25 (3) and notch (2) are the same named allow-lists read as a SAMPLED subset this run (upper bound only, no in-file negative control this run - the exact count and the biting control are the FULL leg's, gate:corpus-anchor, and U3-4 proves the subset half against a real clone mutation)`. FULL: `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control` |
+| 2: `codesNote` said "full-corpus codes reach N" even under SAMPLED, so a SAMPLED FAIL line would describe a corpus it never read; the `343 x 3 = 1,029 renders` comment was FULL-only fact stated as if true of both modes | `codesNote`'s ternary now reads `${FULL ? "full-corpus" : "SAMPLED-corpus"} codes reach ...`. The comment at what is now line 794 gained the clause "under FULL, not 10,140 lean calls; SAMPLED iterates the sampled document count instead, #713 U3" | Neither run this pass crossed `HUE_SPACE_CODES_BOUND` so `codesNote`'s conditional text did not print; the always-printed line it feeds confirms the branch is live in both modes: SAMPLED `anchor-f4 hueSpace-perceptual-bound: SAMPLED corpus + default kit, max OKLab dE 0.0045 (want <= 0.01, worst travel "57° N · September · 14:00 · Tongass National Forest, old-growth Sitka spruce in steady rain" secondary-muted stop 900); codes bound held everywhere (max 1)`. FULL `anchor-f4 hueSpace-perceptual-bound: full corpus + default kit, max OKLab dE 0.0048 (want <= 0.01, worst film "Raise the Red Lantern · 1991 · dir. Zhang Yimou · the courtyard at night" primary stop 925); codes bound held everywhere (max 2)` |
+| 3: `.sdlc/handoffs/gate-split-U3.md:83` and `:85` quoted the program's output with a comma where the program prints an em dash separator, on the mistaken belief that P8 (branding, no em dash on an added line) required it | Both quoted lines restored to the program's literal bytes, em dash separator and all, inside backticks; P8 strips a backtick span before it ever looks for U+2014, so the verbatim quote was always available under the adapter's own §3 verbatim-quote rule. A new paragraph after (b) corrects the earlier attribution: the swap was pass 1's own mistaken belief about what P8 needed, not something P8 itself required | `:83`: `` `    — gap allow-list: unexpected member — brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC` ``. `:85`: `` `    — gap allow-list: expected member missing — zz-not-in-corpus|primary|500` `` |
+
+Re-run this pass, strictly one at a time, waited on: `node test/engine/anchor.mjs` (SAMPLED) exit 0, 19 pass lines, 0 FAIL, mode line `(SAMPLED seed 0: 35 curated documents, 392 palettes)`. `npm run -s gate:corpus-anchor` (FULL) exit 0, 19 pass lines, 0 FAIL, mode line `(FULL: 343 curated documents, 3780 palettes)`. `npm test` exit 0, `all 50 test files passed`, `git status --short` empty after. No timing re-run: U3-5 stays 🟡 per the plan clause.
+
+What I disagreed with in the pass-1 builder's own uncommitted edit: nothing. Its `test/engine/anchor.mjs` change (finding 1 and 2) and its `.sdlc/handoffs/gate-split-U3.md` fix (finding 3, including the corrected P8 attribution paragraph) were already correct and complete when I read them; I verified each against the file at rest and against a fresh run of both modes rather than redoing the work.
