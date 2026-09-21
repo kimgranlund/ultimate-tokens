@@ -49,11 +49,17 @@ the rendered path that ships, C6's median and p90 chroma bars are MISSED in 14 o
 (6 of 8 in perceptual, 5 of 8 in peak, 3 of 8 in even), against 2 of 24 on the same corpus with the
 anchors stripped. The mechanism is the anchored stop-500 denominator, and the rulings that cover this
 construction (Q7, follow-up #701) cover the above-100%-of-stop-500 clause ONLY, not these bars.
-Nothing in this release brings them back into target; it is an open owner item. For the same reason
+Nothing in this release brings them back into target. **The perceptual and peak half of that miss is
+owned by #725** ("Chroma envelope misses its muted targets in perceptual and peak mode, and nothing
+gates the direction"), open, `kind:bug` / `size:big`; #701 owns the even-mode `chromaFloor` side,
+which is a different defect in a different mode and is listed separately below. The owner accepted,
+2026-09-20, that #681 closes with this open rather than holding the release for it
+(`.sdlc/questions/preset-intent-fidelity-preland.md`). For the same reason
 the "0 stops above 100% of stop 500" bar is scoped to the 384 non-anchored palettes of the 3,764
 generated ones, and the anchored peak path carries a ratchet that reds only on a rise, not a bar.
 
-Follow-ups left open and ticketed: #695 (the cusp-pull gate never prints), #701 (the `chromaFloor`
+Follow-ups left open and ticketed: #695 (the cusp-pull gate never prints), #725 (the perceptual and
+peak envelope miss above, and the missing direction gate), #701 (the `chromaFloor`
 redesign, which also takes the even-envelope neighbourhood fix and retires the 64 named lone spikes
 plus the default kit's own Data 7 spike), #713 (split the corpus sweeps into gate scripts), #715 (the
 default kit in every sweep, and a gate for C4's ramp identity control).

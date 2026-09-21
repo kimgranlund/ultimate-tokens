@@ -38,7 +38,7 @@ import { peakC, hctToRgb, lstarFromRgb, cam16FromRgb } from "../../src/engine/hc
 import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX } from "../../src/engine/tonal.js";
 import { rgbToOkhsl, okhslToRgb } from "../../src/engine/okhsl.js";
 import { derivedAll, oklchStr } from "../../src/engine/exports.js";
-import { defaultDocument, projectView } from "../../src/ui/model.mjs";
+import { defaultDocument, projectView, paletteKeyColors } from "../../src/ui/model.mjs";
 import { hydrate } from "../../src/ui/persist.js";
 
 const CATS = ["architecture", "cuisine", "film", "literature", "music", "nature", "travel", "brands"];
@@ -1199,8 +1199,83 @@ for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
   // allow-list churn. Documented, with its output, in `.sdlc/handoffs/pif-u2.md`'s F4 section.
 }
 
+// ── key-anchor (S1, pre-land review at b4be472c, owner ruling Q3 of 2026-09-20) ──────────────────
+// The defect. `prime.DEFAULT` has emitted the stored anchor byte for byte since U1, but the swatch
+// the app LABELS as the palette's identity colour came from `deriveKeyColor`'s cusp search, off the
+// palette's FITTED hue/chroma. So the product showed one colour and exported another for every
+// anchored palette, which is the precise thing ADR-026 says it does not do. `src/ui/model.mjs` now
+// short-circuits on `anchor` and returns it.
+//
+// WHY THIS IS NOT A TAUTOLOGY. The gate compares the key swatch against TWO producers that do not
+// call each other: `paletteKeyColors` (model.mjs's cheap tile path, which reads the anchor field and
+// converts nothing) and `primeSwatches(...)[3].hex` (prime.mjs's own anchored rung, reached through a
+// widening search and a seven-rung ladder build). model.mjs is deliberately NOT implemented by
+// calling primeSwatches; if it were, the second comparison would be an identity and this gate would
+// measure nothing. The second leg then runs the FULL `projectView(hydrate(preset))` path, the one the
+// app actually renders, over the 16 default-kit palettes and 3 named corpus presets, because the
+// cheap path agreeing with itself would not prove the rendered path agrees too.
+{
+  // negative control FIRST, never skipped: a palette whose anchor is corrupted by one hex digit must
+  // move the key swatch with it. If the key came from anywhere but the anchor, this reads unchanged.
+  {
+    const s = anchored[0];
+    const corrupted = { ...s.palette, anchor: s.palette.anchor.slice(0, -1) + (s.palette.anchor.slice(-1) === "0" ? "1" : "0") };
+    const got = paletteKeyColors({ palettes: [corrupted], hueSpace: s.hueSpace ?? "oklch" })[0].key;
+    if (got === s.palette.anchor) FAIL("key-anchor", `negative control DID NOT bite: corrupting ${s.slug} "${s.presetName}" ${s.palette.name}'s anchor by one hex digit left the key swatch on the ORIGINAL anchor - the key is not being read from the anchor at all`);
+    else if (got !== corrupted.anchor) FAIL("key-anchor", `negative control gave an unexpected reading: key ${got} for corrupted anchor ${corrupted.anchor}`);
+  }
+
+  // Leg 1, the corpus. `paletteKeyColors` is model.mjs's own documented cheap path and calls the SAME
+  // `deriveKeyColor` `projectView` calls, so measuring it measures the rendered derivation.
+  let keyEq = 0, keyOff = 0, primeEq = 0, primeOff = 0;
+  let worst = null, worstDl = 0;
+  for (const { slug, presetName, hueSpace, palette: p } of anchored) {
+    const key = paletteKeyColors({ palettes: [p], hueSpace: hueSpace ?? "oklch" })[0].key;
+    const primeHex = primeSwatches(p, { hueSpace: hueSpace ?? "oklch", primeChroma: 100 })[3].hex;
+    const label = `${slug} "${presetName}" ${p.name}`;
+    if (key === p.anchor.toUpperCase()) keyEq++;
+    else {
+      keyOff++;
+      const dl = Math.abs(lstarFromRgb(hexToRgb(key)) - lstarFromRgb(hexToRgb(p.anchor)));
+      if (dl > worstDl) { worstDl = dl; worst = `${label}, key ${key} against anchor ${p.anchor}, ${dl.toFixed(1)} L* apart`; }
+      FAIL("key-anchor", `${label}: key swatch ${key} !== anchor ${p.anchor}`);
+    }
+    if (key === primeHex) primeEq++;
+    else { primeOff++; FAIL("key-anchor", `${label}: key swatch ${key} !== primeSwatches(...)[3].hex ${primeHex} - the two producers disagree`); }
+  }
+  console.log(`  ${keyOff === 0 && primeOff === 0 ? "pass" : "FAIL"}  key-anchor corpus: ${keyEq} of ${anchored.length} anchored palettes where the identity swatch equals the stored anchor, ${primeEq} of ${anchored.length} where it equals primeSwatches(...)[3].hex, ${keyOff}/${primeOff} off${worst ? `; worst ${worst}` : ""}`);
+
+  // Leg 2, the rendered path: projectView(hydrate(doc)), the projection the app renders from, over
+  // the 16 default-kit palettes and three named corpus presets. hydrate() is in the loop on purpose:
+  // it is the clamp every real document passes through, and a field it dropped would make the cheap
+  // path right and the app wrong.
+  const namedPresets = [];
+  for (const wanted of [["film", "The Matrix"], ["travel", "Hidaka coast"], ["music", "Black metal"]]) {
+    const hit = presetsByCat.find(({ slug, preset }) => slug === wanted[0] && preset.name.includes(wanted[1]));
+    if (!hit) FAIL("key-anchor", `rendered leg: no ${wanted[0]} preset matching "${wanted[1]}" in the corpus - the named subject moved, fix the name rather than dropping the subject`);
+    else namedPresets.push(hit);
+  }
+  const renderSubjects = [
+    { label: "default kit", doc: defaultDocument() },
+    ...namedPresets.map(({ slug, preset }) => ({ label: `${slug} "${preset.name}"`, doc: { ...defaultDocument(), palettes: preset.palettes, hueSpace: preset.hueSpace ?? "oklch" } })),
+  ];
+  let rEq = 0, rOff = 0, rSeen = 0;
+  for (const { label, doc } of renderSubjects) {
+    const view = projectView(hydrate(doc));
+    view.palettes.forEach((vp, k) => {
+      const src = (hydrate(doc).palettes ?? [])[k];
+      if (!src || typeof src.anchor !== "string") return; // only anchored palettes make a claim here
+      rSeen++;
+      if (vp.key === src.anchor.toUpperCase()) rEq++;
+      else { rOff++; FAIL("key-anchor", `rendered path ${label} ${vp.name}: projectView key ${vp.key} !== anchor ${src.anchor}`); }
+    });
+  }
+  if (rSeen < 16) FAIL("key-anchor", `rendered leg saw only ${rSeen} anchored palettes across ${renderSubjects.length} subjects (want at least the 16 default-kit families) - hydrate may be dropping the anchor field`);
+  console.log(`  ${rOff === 0 && rSeen >= 16 ? "pass" : "FAIL"}  key-anchor rendered path: ${rEq} of ${rSeen} anchored palettes over projectView(hydrate(doc)), ${renderSubjects.length} subjects (the 16 default-kit families plus ${namedPresets.length} named corpus presets), ${rOff} off`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4"]) {
+for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
   console.error(`    — ${f.slice(g.length + 2)}`);
