@@ -10,7 +10,9 @@
 // (querySelector takes a single class only, no `id`/`textContent`, etc).
 
 import { ROLES, DEFAULT_PALETTES, CATEGORIES, CATEGORY_PRESETS, BRAND_PRESETS, CATEGORY_PRESET_PALETTES, CATEGORY_VOLUMES, CORE_RAMP_STOPS, EXTENDED_RAMP_STOPS, VOICES, TYPE_STEPS, GEOM_SIZES } from "./counts.mjs";
+import { sampleCorpus, SAMPLE_SEED } from "../engine/lib/corpus-sample.mjs";
 
+const FULL = process.argv.includes("--full");
 const fails = [];
 const ok = (cond, msg) => { if (!cond) fails.push(msg); };
 
@@ -3960,15 +3962,16 @@ flushRaf();
 // state (a cache, a second copy) diverged from the fields Reset itself writes — the ramp comparison is
 // a strictly stronger claim than the field-only check the prior pass shipped.
 {
-  const corpusPresets = [...TPm.PRESETS, ...LITm, ...FILMm, ...BRANDSm];
+  const byCategory = { travel: TPm.PRESETS, literature: LITm, film: FILMm, brands: BRANDSm };
   for (const slug of ["architecture", "cuisine", "music", "nature"]) {
     const { PRESETS } = await LS(slug);
-    corpusPresets.push(...PRESETS);
+    byCategory[slug] = PRESETS;
   }
+  const corpusDocs = FULL ? Object.values(byCategory).flat() : sampleCorpus(byCategory);
   const { defaultDocument: defaultDocumentRSTC, projectView: pvRSTC } = await import("../../src/ui/model.mjs");
   const { hydrate: hydrateRSTC } = await import("../../src/ui/persist.js");
   const dkDoc = defaultDocumentRSTC();
-  corpusPresets.push({ name: "default kit", palettes: dkDoc.palettes, ...dkDoc });
+  const corpusPresets = [...corpusDocs, { name: "default kit", palettes: dkDoc.palettes, ...dkDoc }];
   let corpusChecked = 0, corpusFails = 0, rampChecked = 0, rampFails = 0;
   for (const preset of corpusPresets) {
     for (const pal of preset.palettes) {
@@ -4005,9 +4008,13 @@ flushRaf();
       }
     }
   }
-  ok(corpusChecked > 3000, `(rst-corpus-setup) exercised Reset over the FULL anchored corpus, all 8 categories plus the default kit (${corpusChecked} palettes, want > 3000)`);
+  const corpusFloor = FULL ? 3000 : 300;
+  ok(corpusChecked > corpusFloor, `(rst-corpus-setup) exercised Reset over the ${FULL ? "FULL" : "SAMPLED"} anchored corpus, all 8 categories plus the default kit (${corpusChecked} palettes, want > ${corpusFloor})`);
   ok(corpusFails === 0, `(rst-corpus) ${corpusFails} of ${corpusChecked} anchored palettes failed the exact-snapshot field round trip`);
   ok(rampFails === 0, `(rst-corpus-ramp) ${rampFails} of ${rampChecked} anchored palettes failed the full projectView ramp round trip`);
+  const docCount = corpusDocs.length;
+  const paletteCount = corpusDocs.reduce((n, p) => n + p.palettes.length, 0);
+  console.log(`  (${FULL ? `FULL: ${docCount} curated documents, ${paletteCount} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${docCount} curated documents, ${paletteCount} palettes`})`);
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────
