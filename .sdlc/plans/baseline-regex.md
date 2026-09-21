@@ -81,7 +81,7 @@ git diff -U0 $BASE -- .sdlc | grep '^+' | perl -pe 's/\x60[^\x60]*\x60//g' | LC_
 
 ## Units
 
-- [ ] U1 (S) the time loop reads every `N to M s` range in a gate's adapter cell and fails when any one disagrees with the baseline · grade l1 · reviewer-l1 · verifier-l1
+- [x] U1 (S) the time loop reads every `N to M s` range in a gate's adapter cell and fails when any one disagrees with the baseline · grade l1 · reviewer-l1 · verifier-l1
 
 Grade. Small and mechanical: a four-line diff inside one `for` loop, with every criterion a grep on the file's own bytes or a real run of the shipped script against a planted clone, computed above and reproduced in both directions (defect present, then absent). There is no design judgment left open by the owner's ruling for this unit; the reconciliation question (how a ruled ceiling gets its own figure) is explicitly out of scope. `l1` matches the two closest precedents for a single-file standing-check fix of this shape and size, `k17-rerun` U1 and `records-tidy` U1, both graded `l1` for the same reason: a transcription error is caught mechanically (U1-1 grep-checks the source bytes; U1-2 and U1-3 run the real script against a real plant), so there is nothing the l2 bump exists for. Pre-land is the adapter §2.1 pair as it now stands (reviewer-l4, verifier-l3, the 2026-09-20 amendment `records-tidy` landed).
 
