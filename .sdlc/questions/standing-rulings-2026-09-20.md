@@ -76,3 +76,9 @@ Question: PR #720 failed pre-land pass 3 on live counts that move mid-pass (`.sd
 Options: Atomic landing window (Recommended); Another ordinary pass; Drop live counts from the roadmap first.
 Chosen: Atomic landing window (Recommended).
 Effect: squash approved in advance, conditional on the record being 🟢 at the refresh instant; no seat on this repo mints tickets until #720 is squashed; four repairs, counts re-read from gh, verifier re-checks the four rows and the counts, hand squash after green CI (adapter land never merges, F9). U13 carries eight repairs since the pass 3 addendum; the verifier re-checks all eight, since the condition is a 🟢 record.
+
+## R18 Repair or rebuild the roadmap (#709)
+Question: the citation census closed at 383 claims, 48 fail, 45 blocking, plus a legend contract broken across about 20 cells (`.sdlc/questions/records-followup-repair-or-rebuild.md`). Repair, rebuild, or land the handoffs and ticket the roadmap?
+Options: Rebuild the roadmap (Recommended); Repair inside the window; Land the handoffs, ticket the roadmap.
+Chosen: Rebuild the roadmap (Recommended).
+Effect: regenerate so every cell is the output of a command recorded beside it, the legend holds by construction, the counts fall out of generation; handoff repairs already made are kept. The freeze holds until the squash and the squash still needs a 🟢 record.

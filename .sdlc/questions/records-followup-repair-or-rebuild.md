@@ -3,7 +3,7 @@
 date: 2026-09-21
 from: orchestrator
 about: PR #720, `plan/records-followup-roadmap`, after the citation census closed
-status: open
+status: answered
 
 ## The measurement that prompts this
 
@@ -81,3 +81,11 @@ So the remaining cost splits cleanly:
 | 1, repair | about thirty roadmap rows, plus the legend contract, at a measured one second visit in four |
 | 2, rebuild | regenerate `.sdlc/roadmap.md`; the four roadmap commits drop, nothing else on the branch is touched |
 | 3, land the handoffs | nothing; the handoff files are already repaired and the roadmap leaves the PR |
+
+## Answer
+
+Asked by the Conductor through AskUserQuestion on 2026-09-21, recorded as owner ruling R18. Options offered: "Rebuild the roadmap (Recommended)" · "Repair inside the window" · "Land the handoffs, ticket the roadmap". Chosen: "Rebuild the roadmap (Recommended)".
+
+Effect, as the ruling states it: regenerate so every cell is the output of a command recorded beside it, the legend holds by construction, the counts fall out of generation; handoff repairs already made are kept.
+
+As carried out: U13's four roadmap commits are dropped and its five handoff commits kept. The unrepairable gate row stays as written, since a cell that says two readings disagree and nothing orders them is honest where a chosen winner would not be. The freeze holds until the squash, and the squash still needs a 🟢 record.
