@@ -76,7 +76,7 @@ ok(typeOnly.TOOLS.map((t) => t.name).join() === "get_type" && !typeOnly.TOOLS.so
 const empty = buildSurface({});
 ok(empty.TOOLS.length === 0 && empty.RESOURCES.map((r) => r.uri).join() === "brand://kit,brand://guide" && empty.hasColor === false, "an empty kit → no tools, just brand://kit + brand://guide");
 
-// U6 (owner ruling Q3, 2026-09-22) — a kit with no system degrades to "n/a" in the guide's
+// U6 (owner ruling Q3, 2026-09-22): a kit with no system degrades to "n/a" in the guide's
 // summary line, not the glyph.
 const emptyReq = (method, params) => handle({ jsonrpc: "2.0", id: ++idc, method, params }, empty);
 const emptyGuide = emptyReq("resources/read", { uri: "brand://guide" }).result.contents[0].text;

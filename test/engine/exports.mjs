@@ -1951,7 +1951,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   for (const bad of ["spotlight", "beam", "mirror", "dancefloor", "studio 54"])
     if (allText.includes(bad)) FAIL("design-system-make", `hardcoded theme-specific name '${bad}' leaked into the theme-general emitter`);
 
-  // U6 (owner ruling Q3, 2026-09-22) — the empty-value placeholder is "n/a", not the glyph, on
+  // U6 (owner ruling Q3, 2026-09-22): the empty-value placeholder is "n/a", not the glyph, on
   // every Make export cell that carries no per-kit data: the muted-foreground "Use for" cell in
   // foundations/color.md, and the spacing + radius "Typical use" cells in foundations/spacing.md.
   const spacingMd = byName["guidelines/foundations/spacing.md"];
