@@ -79,7 +79,7 @@ Token rule for a verdict written in words, ruled under Q3 (owner, 2026-09-22): t
 
 ## Units
 
-- [ ] U1 (M) the 31 title-token files: the line added, token equal to the title's first emoji, the 31 names off the list · builder-l2 · reviewer-l1 · verifier-l1
+- [~] U1 (M) the 31 title-token files: the line added, token equal to the title's first emoji, the 31 names off the list · builder-l2 · reviewer-l1 · verifier-l1
 - [ ] U2 (M) the 16 derived files: the line added where the record's final state is, tokens re-derived by the verifier, the last 16 names off the list · builder-l3 · reviewer-l2 · verifier-l2 · after U1
 - [ ] U3 (S) the list and the pin retire: the check grades every file and needs no git, the adapter says so, N1 to N6 close by construction · builder-l3 · reviewer-l2 · verifier-l2 · after U2
 
