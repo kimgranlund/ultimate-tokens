@@ -3714,6 +3714,22 @@ flushRaf();
   app.canvasView = rxpView0; app.colorMode = rxpMode0; app.render(); flushRaf();
 }
 
+// ── (na) the empty-value placeholder reads "n/a", not the glyph (U6, owner ruling Q3) ────────
+{
+  // an inspector card with no data to plot: Color's tone/chroma graphs (a view with no palettes),
+  // Typography's modular-scale graph (an empty series), Geometry's power graph (an empty ramp) —
+  // three section files, one `.an-empty` div each, anchored to the surface's own text (not a bare
+  // "n/a" grep, which already hits an unrelated motion gate elsewhere).
+  const colorEmpty = app.graphTone({ palettes: [] }, 0);
+  ok(colorEmpty.classList.contains("an-empty") && colorEmpty.children[0] && colorEmpty.children[0].textContent === "n/a", `(na) color.js .an-empty reads "n/a" (got ${colorEmpty.children[0] && colorEmpty.children[0].textContent})`);
+
+  const typeEmpty = app.graphTypeScale([]);
+  ok(typeEmpty.classList.contains("an-empty") && typeEmpty.children[0] && typeEmpty.children[0].textContent === "n/a", `(na) typography.js .an-empty reads "n/a" (got ${typeEmpty.children[0] && typeEmpty.children[0].textContent})`);
+
+  const geomEmpty = app.graphGeomPower({ sizes: {} });
+  ok(geomEmpty.classList.contains("an-empty") && geomEmpty.children[0] && geomEmpty.children[0].textContent === "n/a", `(na) geometry.js .an-empty reads "n/a" (got ${geomEmpty.children[0] && geomEmpty.children[0].textContent})`);
+}
+
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
   console.error("HEADLESS BOOT FAIL:");

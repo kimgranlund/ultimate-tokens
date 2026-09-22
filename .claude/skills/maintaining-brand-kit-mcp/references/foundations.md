@@ -93,7 +93,7 @@ These three gates each appear **four times** and must stay in lockstep (1–3 in
 4. **The startup banner** (the server: `process.stderr.write` at file end, reading `surface.hasColor` /
    `palettes`) — names which systems are being served (`[N palettes · type · geometry]` or `empty`).
 
-`brand://kit`, `brand://guide`, and `apply_brand` are **always present** (the guide degrades to "—" when a
+`brand://kit`, `brand://guide`, and `apply_brand` are **always present** (the guide degrades to "n/a" when a
 kit is empty). The contract: a colour tool must never appear for a type-only kit, and vice-versa. The test
 asserts this on the projection directly via `brandKit({color:true})` / `{type:true}` / `{geometry:true}`.
 

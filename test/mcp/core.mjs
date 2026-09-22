@@ -76,6 +76,12 @@ ok(typeOnly.TOOLS.map((t) => t.name).join() === "get_type" && !typeOnly.TOOLS.so
 const empty = buildSurface({});
 ok(empty.TOOLS.length === 0 && empty.RESOURCES.map((r) => r.uri).join() === "brand://kit,brand://guide" && empty.hasColor === false, "an empty kit → no tools, just brand://kit + brand://guide");
 
+// U6 (owner ruling Q3, 2026-09-22) — a kit with no system degrades to "n/a" in the guide's
+// summary line, not the glyph.
+const emptyReq = (method, params) => handle({ jsonrpc: "2.0", id: ++idc, method, params }, empty);
+const emptyGuide = emptyReq("resources/read", { uri: "brand://guide" }).result.contents[0].text;
+ok(emptyGuide.includes("Systems in this kit: n/a."), `(U6) an empty kit's guide reads "Systems in this kit: n/a." (got: ${(emptyGuide.match(/Systems in this kit:.*/) || [])[0]})`);
+
 if (fails.length) { console.error(`brand-kit core FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("brand-kit core PASS — buildSurface (system-gated) + handle (initialize/tools/resources/prompts/errors), the surface shared by the stdio server + the hosted Worker");
 process.exit(0);
