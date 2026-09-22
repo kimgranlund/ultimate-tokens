@@ -43,3 +43,12 @@ Review (`scratchpad/rg-U6-review.md`) found an em dash in two comments I added: 
 - U6-2's affected tests, rerun in a fresh clone at `a7263e59299ab3eb6a8683a32362018f2fdd9218`: `node test/mcp/core.mjs` prints `brand-kit core PASS — buildSurface (system-gated) + handle (initialize/tools/resources/prompts/errors), the surface shared by the stdio server + the hosted Worker`; `node test/engine/exports.mjs` prints `PASS: export-formats clears all [gate] predicates`.
 - Full gate at the same head, same clone: `npm test` → `✓ all 48 test files passed`, tree clean (`0`) after; `node test/repo/branding.mjs` → `branding: clean (568 files scanned)`.
 - New unit head: `a7263e59299ab3eb6a8683a32362018f2fdd9218`.
+
+## Pass 2, continued (one more comment, missed by the first review pass)
+
+`test/ui/headless-boot.mjs:3720` also carried an em dash: `// Typography's modular-scale graph (an empty series), Geometry's power graph (an empty ramp) —`. Reworded with a colon, committed alone at `6982a1f3477dde155c67443dcce93f598220ef94`.
+
+- Sweep of the whole unit diff before committing further: `git diff b3961aa9 HEAD -- test src mcp .claude | grep -v '^+++ ' | grep '^+' | perl -CSD -ne 'print if /\x{2014}/'` (excluding generated files, since the diff scope is `test src mcp .claude`) printed one line, the assertion regex at `test/engine/exports.mjs:2047` (`/\|\s*—\s*\|/.test(colorMd) ...`), which carries the glyph as literal regex content, not prose; excluding that one line the count is `0`.
+- `node test/ui/headless-boot.mjs`, rerun in a fresh clone at `6982a1f3477dde155c67443dcce93f598220ef94`: `HEADLESS BOOT PASS — all Phase-3 interaction assertions hold`.
+- `node test/repo/branding.mjs`, same clone: `branding: clean (568 files scanned)`.
+- New unit head: `6982a1f3477dde155c67443dcce93f598220ef94`.
