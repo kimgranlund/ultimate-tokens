@@ -51,7 +51,7 @@ const RECORDS = new Set([
 
 // Skip binaries only: everything else is scanned by default, so a new text-ish extension (a .txt
 // note, a .log capture) is gated without anyone having to remember to add it here (#724).
-const BINARY = /\.(png|jpe?g|gif|webp|bmp|tiff?|ico|icns|pdf|zip|gz|tgz|tar|rar|7z|mp3|mp4|mov|avi|wav|ogg|woff2?|ttf|otf|eot|exe|dll|so|dylib|class|jar|wasm|db|sqlite)$/i;
+const BINARY = /\.(woff2|woff|ttf|otf|png|jpg|jpeg|gif|ico|webp|zip|pdf)$/;
 
 function* walk(dir) {
   for (const name of readdirSync(dir)) {
