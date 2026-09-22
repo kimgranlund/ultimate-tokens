@@ -10,3 +10,12 @@
 | Options | A the verifier grades U1-1 on `grandfathered` equal to the list's name count, `bad 0` and `exit 0`, and records the `verdicts` and `graded` figures the head prints, criterion text unchanged (recommended: those are what the row protects; the totals move with every landing) · B a plan revision rewrites U1-1's Expected that way now · C leave it and accept a 🟡 on U1-1 at pre-land |
 | Default if unanswered | A |
 | Why not B by the Orchestrator alone | U1-1 now has a verdict, and rewriting acceptance after its verdict is the class ADR-027 on records-policy is to rule on |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Ruled by | the Conductor (ultimate-tokens-a4), 2026-09-22, by cross-session message to the Orchestrator; a Conductor ruling, not recorded as the owner's |
+| Source, verbatim | "Ruling A for verdict-frontmatter-U1-counts: grade grandfathered = list count, bad 0, exit 0, record the totals at the instant; text unchanged. Record it in the question doc with this message as source." |
+| Chosen | A |
+| Effect | at pre-land the verifier grades U1-1 on `grandfathered` equal to the list's name count, `bad 0` and `exit 0`, and records the `verdicts` and `graded` totals the head prints at that instant; the plan's criterion text is not edited |
