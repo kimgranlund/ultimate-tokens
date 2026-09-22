@@ -1149,7 +1149,7 @@ for (const p of kitPalettes) {
 const kitVacuityFloor = Math.max(kitDoc.palettes.length, 16);
 const kitVacuityOk = kitRampVisited.size >= kitVacuityFloor && kitLadderVisited.size >= kitVacuityFloor;
 if (!kitVacuityOk) {
-  const detail = `visited ${kitRampVisited.size} (ramp), ${kitLadderVisited.size} (ladder) of ${kitVacuityFloor} kit palettes — a check that never looked would otherwise pass in silence`;
+  const detail = `visited ${kitRampVisited.size} (ramp), ${kitLadderVisited.size} (ladder) of ${kitVacuityFloor} kit palettes - a check that never looked would otherwise pass in silence`;
   console.log(`  FAIL  anchor-ramp default-kit vacuity: ${detail}`);
   FAIL("anchor-ramp", `default-kit vacuity: ${detail}`);
 }
