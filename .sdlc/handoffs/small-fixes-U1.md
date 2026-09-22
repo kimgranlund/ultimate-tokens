@@ -204,8 +204,8 @@ The `SMOKE PASS` line moved from `smoke.mjs:297` to `smoke.mjs:299` (two added l
 |---|---|---|---|---|
 | P1 | as the plan | `✓ all 48 test files passed`, `48`, `0` | clone at `aa7530ad`, `scrim` to `scrimX` in `role-table.json` (`7 insertions(+), 7 deletions(-)`): `exit 1`, `▶ engine/semantic.mjs      FAIL` | 🟢 |
 | P2 | as the plan | `exit 0`, `wrote figma/plugin/ui.html 3780.5 KB`, `0` | clone at `aa7530ad`, `node_modules` symlinked read only, `smoke` gains `node test/smoke/missing.mjs &&`: `exit 1`, `1` | 🟢 |
-| P3 | as the plan, at the commit carrying this section | see the closing P3 row below | as pass 2 | see below |
-| P4 | as the plan | see the closing P4 row below | as pass 2 | see below |
+| P3 | the plan's three commands at `bea996e8` | `branding: clean (563 files scanned)`, `0`, `1`. The one line is the review's own P5a row in `.sdlc/verdicts/small-fixes-U1-p2-review.md`, which quotes the `SMOKE PASS` line inside a backtick span, a program quote as the plan allows; this section adds no dash outside backticks | as pass 2: the commands are unchanged | 🟢 |
+| P4 | the plan's filter at `bea996e8` against `origin/main` `3e1483e4` | `12` paths, all main's own verdict-frontmatter and `.sdlc` records (`.sdlc/adapter.md`, `.sdlc/roadmap.md`, `.sdlc/checks/verdict-frontmatter-*`, `verdict-frontmatter` handoffs, plan and verdicts), none written by this unit; `package.json` ` 1 file changed, 1 insertion(+), 1 deletion(-)`; `git merge-base --is-ancestor origin/main HEAD` prints `behind` | the filter is unchanged since pass 1's four-name fixture printed `2` | 🟡 branch behind main, the Orchestrator's rebase; this rework's own files are `test/smoke/chrome.mjs`, `test/smoke/launcher.mjs` and this handoff |
 | P5a | as the plan | `exit 0`, `1`, `1`, `0`, `0`; `SMOKE PASS` still at `smoke.mjs:299` | U1-11's control: `3` of `20` green runs at `1e25556d` left the profile dir | 🟢 |
 | P5b | not run by this seat | none | none | ⚪ pre-land |
 | U1-1 | the plan's five greps | `test/smoke/smoke.mjs:0`, `test/smoke/chrome.mjs:0`, `1`, `4`, `5`, `1` | `origin/main` clone `3e1483e4`: first grep `1`, `test/smoke/chrome.mjs` absent | 🟢 |
