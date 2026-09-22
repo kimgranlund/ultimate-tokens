@@ -4,7 +4,7 @@ plan: rule-gates
 unit: U1
 branch: unit/rg-U1
 written: 2026-09-22
-pass: 2
+pass: 3
 ---
 
 # U1 handoff: `svg-rules.mjs`: the `html:` count and the `fill: none` gate
@@ -95,9 +95,7 @@ Matches expected (`2	2	src/ui/styles.css`, `1`, `1`, `0`, `0`, `4`).
 
 `npm ci` in the clone, then `npm run smoke | tail -1`:
 
-```
-SMOKE PASS — gallery · category · editor · export dialog all render in a real browser
-```
+`SMOKE PASS — gallery · category · editor · export dialog all render in a real browser`
 
 ### P1: full `npm test`, no `node_modules`, tree byte-stable, in a clone at HEAD `12897b98`
 
@@ -142,9 +140,51 @@ All five negative controls rerun in the same clone, byte for byte identical to p
 
 `git status --short | wc -l` after all five controls (each reverted): `0`.
 
+## Pass 3
+
+Review found two items:
+
+- F1: the U1-4 smoke line was quoted in a fenced block rather than an inline backtick span, and a
+  fence is not a span (adapter §3). Fixed above: `SMOKE PASS — gallery · category · editor ·
+  export dialog all render in a real browser` is now an inline span.
+- F2 (code): `findRule`'s `\b` boundary after the class name let `.an-svg .lc-applied-x` pass as a
+  match for `lc-applied`, since `\b` sits between a word character and a hyphen too, so a decoy
+  class with a hyphenated suffix satisfied the gate in place of the real rule, a false pass.
+  Swapped `\b` for a `(?![\w-])` lookahead, committed alone as `9a98e2be`.
+
+P5/P6 rerun at the new head `9a98e2be`, in a fresh clone (tree clean before the run):
+
+```
+svg-rules: 12 html: attributes (stated 12), 6 line classes qualified with fill: none, 1 area class
+exit 0
+```
+
+All five prior negative controls rerun in the same clone, byte for byte identical to pass 1 and
+pass 2:
+
+- P5(a): `FAIL html: 13 html: attributes, .claude/CLAUDE.md states 12` / `FAIL: 1` / `exit 1`
+- P5(b): `FAIL html: 12 html: attributes, .claude/CLAUDE.md states 13` / `FAIL: 1` / `exit 1`
+- P6(a): `FAIL ty-line: no qualified rule .an-svg .ty-line` / `FAIL: 1` / `exit 1`
+- P6(b): `FAIL gp-ref: rule lacks fill: none` / `FAIL: 1` / `exit 1`
+- P6(c): `FAIL zz-line: no qualified rule .an-svg .zz-line` / `FAIL: 1` / `exit 1`
+
+New F2 control, in the same clone: unqualify `.an-svg .lc-applied {` back to `.lc-applied {` and
+append a decoy `.an-svg .lc-applied-x { fill: none; }`:
+
+```
+FAIL lc-applied: no qualified rule .an-svg .lc-applied
+FAIL: 1
+exit 1
+```
+
+Before the fix this decoy would have matched `lc-applied` via the old `\b` boundary and passed
+falsely; after the fix it correctly FAILs, naming the real class with no qualified rule for it.
+
+`git status --short | wc -l` after all six controls (each reverted): `0`.
+
 ## Head
 
-`b7bd514a` on `unit/rg-U1`.
+`9a98e2be` on `unit/rg-U1`.
 
 ## Disagreed with the plan
 
