@@ -94,7 +94,7 @@ const CELL_RE = new RegExp(`\\|\\s*${DASH}\\s*\\|`);
 const HEADING_RE = /^#{1,6} /;
 // A bullet whose first token is a code span or a bold label, then the dash.
 const BULLET_LABEL_RE = new RegExp(`^\\s*[-*]\\s+(\`[^\`]*\`|\\*\\*[^*]+\\*\\*)\\s*${DASH}`);
-const WORD_END_RE = /[A-Za-z0-9)\]}"'”’]$/;
+const WORD_END_RE = /[A-Za-z0-9)\]}"'`”’]$/;
 const PUNCT_END_RE = /[.,;:!?]$/;
 
 function isMd(rel) { return rel.endsWith(".md"); }
