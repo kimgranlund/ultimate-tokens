@@ -30,3 +30,15 @@ Chosen: Yes, they stay with #681's notch ruling (Recommended)
 | 3 | Start now off #681's plan branch (a2bb3c84, U4 merged, engine final) instead of waiting for #681 to land on main, merging main once after the squash? | #701 off #681's tree now, a third lane · None, keep the gates | "#701 off #681's tree now, a third lane" |
 
 Effect: the dependency on #681 landing is satisfied by building off `plan/preset-intent-fidelity` @ a2bb3c84 or later; each unit merges `origin/main` once after #681 squashes.
+
+## Re-approval, 2026-09-22 (revision 9, `1b4cee69`)
+
+Asked by the Conductor (ultimate-tokens-a4) through AskUserQuestion. Checkability at the time: revision 8 had 13 green, 4 yellow, 0 red; revision 9 folds the four yellows.
+
+| # | Question | Options | Chosen |
+|---|---|---|---|
+| R1 | Re-approve the #701 chroma-floor plan (revision 9, 3 units, 12 criteria)? | Re-approve (Recommended) · Hold | "Re-approve (Recommended)" |
+| R2 | Start after #713 lands instead of off #681's tree (the 2026-09-20 ruling)? | Start after #713 lands (Recommended) · Keep my ruling: start off #681's tree | "Start after #713 lands (Recommended)" |
+| R3 | The even-mode rendered-path bar: file a ticket or accept it unowned? | Accept unowned for now (Recommended) · File a ticket | "Accept unowned for now (Recommended)" |
+
+R2 supersedes the 2026-09-20 start-off-#681 answer.

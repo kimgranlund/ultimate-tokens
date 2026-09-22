@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: "#701"
 priority: P1
 lane: color-engine
