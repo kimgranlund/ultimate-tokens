@@ -24,7 +24,8 @@ Its new source line in `test/smoke/smoke.mjs` is **297** as of the rework commit
 `.sdlc/plans/records-followup.md:43` and `.sdlc/questions/records-followup-repoint.md` get repointed
 before or after #720 lands, per the plan's Not in scope).
 
-**Everything below this line is the pass-1 record, left as filed.** See "Rework (pass 2)" at the end
+**Everything below this line is the pass-1 record, left as filed.** See "Rework (review round 2,
+builder pass 1)" at the end
 for the review finding, the fix, leg (f), and every row rerun fresh against the rework head.
 
 ## Plan-level criteria (P1-P5)
@@ -56,7 +57,7 @@ deliberately checked out to `origin/main`). Controls (1) and (3) for U1-2 disabl
 cleanup by design, so their fake-chrome fixture processes were orphaned on purpose; 6 were reaped with
 `pkill -9 -f 'fixtures/fake-chrome.mjs'` right after. None of this touched the unit worktree.
 
-## Rework (pass 2): review finding 1
+## Rework (review round 2, builder pass 1): review finding 1
 
 `.sdlc/verdicts/small-fixes-U1-review.md` (🔁 FIX-FIRST at `b8c204e4`): `smoke.mjs` wired
 `onExit(() => closeChrome())` before `launchChrome()` resolved, but `closeChrome` stayed a no-op
