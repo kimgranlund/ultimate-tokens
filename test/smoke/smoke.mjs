@@ -42,7 +42,7 @@ await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const url = `http://127.0.0.1:${server.address().port}/`;
 
 // launchChrome() returns close() SYNCHRONOUSLY (before discovery finishes), so onExit(close) is
-// wired in this same tick — a signal landing during the 45s CDP start-up wait below is cleaned up
+// wired in this same tick, so a signal landing during the 45s CDP start-up wait below is cleaned up
 // too, not just one after `ready` resolves; close() is idempotent, so the finally block's own call
 // is safe either way.
 const { close, ready } = launchChrome(CHROME, []);
