@@ -53,7 +53,7 @@ The 47 names at f685529f, so the builder's list can be checked by hash rather th
 ## Units
 
 - [x] U1 (M) the check, the grandfather list derived at the pinned sha, and the adapter amendment that makes the field mandatory · builder l3, reviewer l2, verifier l2
-- [~] U2 (S) the backfill ticket, minted with the 47 names and the removal rule, linked from the list file's first line · builder l1, reviewer l1, verifier l1
+- [x] U2 (S) the backfill ticket, minted with the 47 names and the removal rule, linked from the list file's first line · builder l1, reviewer l1, verifier l1
 
 Grades. U1 is a small script, but it is the class of work the re-diagnosis says failed three times on "a plausible heuristic nobody measured": the builder is l3 (sonnet, high) with the measured controls above as its floor, and the reviewer and verifier are opus (l2) so that neither shares a model with the builder. U2 is a `gh issue create` with a body this plan dictates.
 
