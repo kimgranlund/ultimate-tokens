@@ -231,7 +231,7 @@ Checklist (the Orchestrator ticks it; the table below carries grades and paths):
 - [x] U2 (M) `tonal.mjs`: sampled by default, full under `--full`, grid thinned · builder-l4 · reviewer-l2 · verifier-l2 · verified at cf024615, merged as 381e0f0c
 - [x] U3 (M) `anchor.mjs`: the same · builder-l4 · reviewer-l2 · verifier-l2 · verified at 27356468, merged as a9daea10
 - [x] U4 (S) `prime.mjs`: thinned determinism cases and grids by default, full under `--full` · builder-l3 · reviewer-l2 · verifier-l2 · verified at c8823976, merged as 2dd4444a
-- [~] U5 (S) `headless-boot.mjs`: the reset sweep only (approval question 2: yes) · builder-l2 · reviewer-l1 · verifier-l1
+- [x] U5 (S) `headless-boot.mjs`: the reset sweep only (approval question 2: yes) · builder-l2 · reviewer-l1 · verifier-l1
 - [x] U6a (S) the `sweeps` matrix job in CI · builder-l2 · reviewer-l1 · verifier-l1 · verified at 166b0ec6, merged as 50898d58
 - [ ] U6b (M) figures of record, adapter, baseline, check script, shipping skill · builder-l3 · reviewer-l2 · verifier-l2 · also U6-9, the close-out step that re-points the baseline `ref` (owner ruling 2026-09-20) · also U6-10, the load under 5 rule (owner ruling 2026-09-20); TESTS reads 50 on this tree, by command · also U6-11, the adapter amendment for R8 to R10
 
