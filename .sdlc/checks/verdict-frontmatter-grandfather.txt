@@ -1,4 +1,4 @@
-# grandfathered: failing (missing a verdict: line, or one whose last value is prose) at f685529f, before the #723 mandate; rerun: sh .sdlc/checks/verdict-frontmatter-check.sh (this file emptied) | awk '/^(MISSING|VALUE)/{print $2}' | tr -d ':' | LC_ALL=C sort, per .sdlc/plans/verdict-frontmatter.md; backfill ticket #TBD, U2 fills this
+# grandfathered: failing (missing a verdict: line, or one whose last value is prose) at f685529f, before the #723 mandate; rerun: sh .sdlc/checks/verdict-frontmatter-check.sh (this file emptied) | awk '/^(MISSING|VALUE)/{print $2}' | tr -d ':' | LC_ALL=C sort, per .sdlc/plans/verdict-frontmatter.md; backfill ticket #734, U2 fills this
 adopt-hygiene-U1.md
 adopt-hygiene-U10-review.md
 adopt-hygiene-U10.md
