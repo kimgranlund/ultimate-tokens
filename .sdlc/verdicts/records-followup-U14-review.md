@@ -9,6 +9,8 @@ base: f9725be9
 written: 2026-09-21
 verdict: FIX-FIRST
 verdict-pass-2: PASS
+verdict-pass-3: PASS
+head-pass-3: 79dc31ed
 head-pass-2: ede57b30
 ---
 
@@ -297,3 +299,66 @@ and neither blocks: the `--out` path guard resolves against the repo root while 
 to cwd (F4 residue), and the Revisions sentence now leaves out three commits while claiming one. The
 world check for this file remains the window grade of the `gh` blocks plus this review's check of the
 git blocks against this repo's reflogs.
+
+## Pass 3, at `79dc31ed`, narrow
+
+> **R17 label.** Reviewed by opus at high effort, standing in for a fable reviewer. The builder was
+> opus high (L6), and the Verifier who grades next is also opus. No cross-model independence.
+
+Verdict: **PASS.** Scope as dispatched: the two carried yellows, the snapshot carrying through, and
+branding and em dashes at the head. The rest of pass 2 stands. The unit worktree was read only, at
+`79dc31ed` with a clean tree; every probe ran in a `--shared` clone in my job tmp dir, and `--final`
+was never run.
+
+### The Revisions anchor, and the reasoning behind it
+
+The anchor is now `ANCHOR`, the `snapshot <sha>` line of the RENDER block, falling back to `SRCSHA`
+when RENDER says `live read` (`roadmap-gen.mjs:216`, printed with the table). At `79dc31ed` it is
+`e147ae0b`, so the Revisions table gains exactly one row, `e147ae0b`, and the prose no longer claims
+that one commit is left out.
+
+I judge the reasoning sound, not just the wording. A rendering could technically read the branch tip
+and count what came after its snapshot, but that would be a second read of mutable state, which is
+the one thing the file's contract forbids: every cell is a function of one recorded read. Anchoring on
+the rendered snapshot keeps that rule and still lists the generation's own first commit, which is what
+the pass 2 🟡 was about. The prose states plainly that later commits exist, that the commit adding the
+rendering is among them, and that their number is not stated because nothing in the file measures it.
+That is the honest form: it neither hides the gap nor invents a figure for it.
+
+Two limits, both acceptable and neither new. The anchor is derived from a block a hand-edit could
+repoint, so it inherits the consistent-tamper limit the file already states at `:44`. And chained
+re-renders anchor one level back at a time, so a rendering of a rendering would list the intermediate
+commit and not the one before it. Nothing in this unit chains them.
+
+| Check | Result |
+|---|---|
+| anchor discriminates | RENDER's `snapshot` line set to `live read` on a copy: `--verify` exits 1, the anchor falls back to `76993fa0` and the table loses the `e147ae0b` row. A live read to a scratch path (no `--final`) writes `snapshot live read` and anchors on the checkout `79dc31ed`, which is the fallback working as written |
+| the anchor row is real | `e147ae0b` is `chore(sdlc): the roadmap, generated once from one read (#709)`, the commit whose snapshot this file carries |
+
+### The `--out` guard
+
+`outAbs = resolve(process.cwd(), out)` now feeds both the `--final` check and `writeFileSync`
+(`roadmap-gen.mjs:453`, `:478`). My own pass 2 probe, rerun in the pass 3 clone:
+
+| Probe, run from `.sdlc/` with `--out roadmap.md --rerender e147ae0b` and no `--final` | Result |
+|---|---|
+| the blob at `79dc31ed` (`857c477a`) | refused, `writing .sdlc/roadmap.md needs --final`, exit 1, clone still clean |
+| the blob at `ede57b30` (`1958a567`), same call, same clone | wrote `.sdlc/roadmap.md`, exit 0. The bypass was real and is now closed |
+
+### The snapshot still carries through, and the gates
+
+| Check | Result |
+|---|---|
+| snapshot blocks at `79dc31ed` against `e147ae0b` | identical byte for byte, apart from the RENDER block (`renderer 857c477a`, `snapshot e147ae0b...`) |
+| rows against `e147ae0b` | the two pass 2 text rows (legend F7, issue header F1), plus the one new Revisions row `e147ae0b`. No other cell moved |
+| `--verify` | exit 0, 770 lines |
+| `--rerender e147ae0b` to a scratch path | `cmp`-identical to the committed file |
+| `node test/repo/branding.mjs` | exit 0, `clean (512 files scanned)` |
+| em dashes added (P6) against `f9725be9`; raw count in the roadmap, generator and handoff | `0`; `0` |
+| paths outside `.sdlc/` against `f9725be9` | `0` |
+
+`npm test` was not rerun: pass 2 measured it green at `ede57b30`, and this head differs from that one
+only in the same three `.sdlc/` files, none of which any test reads.
+
+**PASS at `79dc31ed`.** Both carried yellows are closed, and the derivation behind the anchor is the
+right one rather than a wording patch.
