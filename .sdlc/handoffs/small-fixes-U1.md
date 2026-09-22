@@ -111,3 +111,68 @@ with `pkill -9 -f 'fixtures/fake-chrome.mjs'` afterward. `npm test`, `npm run bu
 real-Chrome row ran in the foreground this pass (no `run_in_background`, no idle wait on a monitor),
 per the team lead's standing note; one earlier background launch of the U1-3 leg was stopped before
 it produced any output and left nothing behind (`pgrep` confirmed 0 before the foreground rerun).
+
+## Pass 2 (builder-l7)
+
+| Field | Value |
+|---|---|
+| Branch | `unit/sf-U1p2` off `plan/small-fixes` at `b57b4658`; code head `1d97d568` (two commits: `ff4d4999` the fix, `1d97d568` a rework of my own leg (f) change that a control exposed, below) |
+| Files | `test/smoke/launcher.mjs`, `test/smoke/chrome.mjs`, `test/smoke/smoke.mjs` |
+| npm test | 🟢 `✓ all 48 test files passed`, tree clean after |
+| npm run build | 🟢 `wrote figma/plugin/ui.html 3780.5 KB`, tree clean after |
+| branding | 🟢 see P3 |
+| Not claimed | P5b (CI on the graded sha), graded at pre-land |
+
+### What changed and why
+
+| # | Change | Where | Closes |
+|---|---|---|---|
+| X1 | `setEnv(vars)` sets env keys and returns a `restore()` that deletes every key that was unset and reassigns the rest. Leg (e) uses it for both `TMPDIR` and `FAKE_CHROME_MUTE`; it was the only save-and-restore of `process.env` in the launcher, the fixture, `chrome.mjs` and `smoke.mjs` (`grep -n 'process.env' test/smoke/*.mjs test/smoke/fixtures/*.mjs`: the rest are reads or a spread into a child's `env`). The pass-1 `delete` of `FAKE_CHROME_MUTE` also lost a value set by the caller; `restore()` keeps it | `launcher.mjs` `setEnv`, `legE` | RD1 to RD8, B1 |
+| X2 | signal legs collect the child's stderr; every FAIL line of a signal leg carries `child exit <code or signal>; child stderr: <first line naming an Error, else the last line>`. The 5 s timeout now kills the child it gave up on, and says whether the signal had already been sent | `launcher.mjs` `runSignalLeg`, `childStderr`, `legSignal` | 4.2, U1-9 |
+| X3 | not taken: `launchChrome` keeps its shape; X1 closes the leak between legs and the re-diagnosis leaves X3 to the owner | none | none |
+| 4.1 | leg (e)'s `pgrep` catch returns "no process" only on `e.status === 1`; `ENOENT` or exit 2/3 throws `pgrep could not check for a leftover process (...), so this leg cannot pass` | `launcher.mjs` `legE` | U1-10 |
+| 4.3 | leg (f) now refuses a run where discovery finished before the signal: the child writes `discovery finished` to stderr when `ready` resolves, the parent snapshots stderr when it sends `SIGTERM`, and a snapshot with that line is a FAIL (`discovery had already finished when SIGTERM was sent, so this leg proved nothing about the pending window`). My first version (`ff4d4999`) added a `SIGTERM` listener in the child instead; U1-2 control (2) showed that listener suppressed Node's default exit and turned a leaked fake into a 5 s timeout, so `1d97d568` replaced it with the stderr line and adds no signal listener | `launcher.mjs` `childBeforeDiscoveryMain`, `legF` | 4.3 |
+| 4.5 | `launchChrome` listens for the browser's `exit` and `error`; `ready` rejects at the next poll with `Chrome exited before CDP came up (<code, signal or spawn error>)` instead of waiting out the deadline, and rejects `Chrome was closed before CDP came up` once `close()` ran. The `error` listener also stops a failed spawn from crashing the caller as an unhandled `ChildProcess` error | `chrome.mjs` | pre-land N3 |
+| 4.6 | `smoke.mjs` awaits `ready` inside its `try`, so a start-up failure prints a `SMOKE FAIL` line and still runs `finally` | `smoke.mjs` | pre-land N2 |
+| 4.4 | not addressed: a real Linux Chrome's helpers outliving `SIGKILL` needs a Linux Chrome, which neither this host nor `node:24` has, and CI does not read the directory figures. Stays with the plan's Risk row 3 | none | carried |
+| 4.7 | closed by X1: no non-string is ever assigned to `process.env` now | none | DEP0104 |
+
+The `SMOKE PASS` line moved from `smoke.mjs:297` to `smoke.mjs:299` (two added lines above it, 4.6), for the #709 owner per Not in scope. Quoted from this pass's P5a run: `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser`
+
+### Criteria at `1d97d568`
+
+`S` and `F` are `/Users/kimba/.claude/jobs/8c58a81c/tmp/p3`. Every control ran in its own `git clone -q --shared` of the worktree checked out at `1d97d568` (or `b57b4658`, the pass-1 head, where the row names "pass 1"; or `origin/main` at `62ee7782`), each with the one-line diff stated; none ran in the worktree.
+
+| # | Command | Evidence | Negative control | State |
+|---|---|---|---|---|
+| P1 | `npm test 2>&1 \| tail -1; perl ... test/run.mjs; git status --short \| wc -l` | `✓ all 48 test files passed`, `48`, `0` | clone, `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json` (`1 file changed, 7 insertions(+), 7 deletions(-)`): `exit 1`, first FAIL `▶ engine/semantic.mjs      FAIL` | 🟢 |
+| P2 | `npm run build > "$F/b.log" 2>&1; echo "exit $?"; tail -1 "$F/b.log"; git status --short \| wc -l` | `exit 0`, `wrote figma/plugin/ui.html 3780.5 KB`, `0` | clone with `node_modules` symlinked from the root checkout (read only), `smoke` script gains `node test/smoke/missing.mjs &&` (`1 file changed, 1 insertion(+), 1 deletion(-)`): `exit 1`, `1` | 🟢 |
+| P3 | the plan's three commands | see the P3 row after the handoff commit, at the end of this section | as plan | see below |
+| P4 | the plan's filter; `git diff origin/main --stat -- package.json \| tail -1` | `0`, ` 1 file changed, 1 insertion(+), 1 deletion(-)` | not rerun: the filter is unchanged since pass 1's four-name fixture printed `2` | 🟢 |
+| P5a | `TMPDIR="$T" npm run smoke > "$F/sm.log" 2>&1; echo "exit $?"; grep -c '^SMOKE PASS'; grep -c '^PASS: launcher'; sleep 5; pgrep ... \| wc -l; ls -d ... \| wc -l` | `exit 0`, `1`, `1`, `0`, `0` | the plan gives a green run no control of its own; its discriminating control is U1-3's `origin/main` run: `11` Chrome processes left behind a signalled run | 🟢 |
+| P5b | not run by this seat | none | none | ⚪ pre-land |
+| U1-1 | the plan's five greps | `test/smoke/smoke.mjs:0`, `test/smoke/chrome.mjs:0`, `1`, `4`, `5`, `1` (the fourth is `5` now: `proc.once("exit", ...)` in 4.5 adds a line with `"exit"`) | the first grep on the `origin/main` clone `62ee7782`: `1`, and `ls test/smoke/chrome.mjs`: `No such file or directory` | 🟢 |
+| U1-2 | `node test/smoke/launcher.mjs > "$F/l.log" 2>&1; echo "exit $?"; grep -c '^  pass  '; grep -c '^  FAIL'; tail -1` | `exit 0`, `6`, `0`, `PASS: launcher discovers its port from DevToolsActivePort and leaves no process on close, SIGTERM, SIGINT or deadline` | each `1 file changed`, each `exit 1`: (1) `rmSync` line deleted: legs (b) (c) (d) (e) (f) FAIL on the dir, e.g. `profile dir .../ultimate-tokens-smoke-93xXpm still present after SIGTERM (child exit 143)`; (2) `"SIGTERM"` renamed `"SIGTERMX"` in `SIGNAL_CODES`: legs (c) and (f) FAIL, `fake pid 33352 still alive 2s after SIGTERM (child exit SIGTERM)`; (3) `proc.kill` line deleted: legs (b) (c) (d) (e) FAIL on the fake pid; (f-rev4) `onExit(close)` in `childBeforeDiscoveryMain` made `onExit(() => {})`: only leg (f), `fake pid 34148 still alive 2s after SIGTERM (child exit 143)` | 🟢 |
+| U1-3 | the plan's signalled run, after the guard `pgrep -f 'remote-debugging-port=9333' \| wc -l` printed `0` | `exit 143`, `0`, `0` | `origin/main` clone `62ee7782`, `dist/` copied from the worktree's fresh build (the old `smoke.mjs` reads only `dist/ultimate-tokens.html`): `exit 143`, `11` Chrome processes; `pkill -9 -f 'remote-debugging-port=9333'`, then `0` | 🟢 |
+| U1-4 | P5a's last two figures | `0`, `0` | U1-2 control (1) | 🟢 |
+| U1-5 | the plan's decoy run, guard `0` first | `exit 0`, `decoy requests: 0`, `1` | same `origin/main` clone: `exit 1`, `decoy requests: 113`, `0`, `  smoke threw: Chrome CDP did not come up within 45s (last: HTTP 404)`; `0` Chrome reaped after | 🟢 |
+| U1-6 | the plan's two greps | `1`, `1` | P2's control | 🟢 |
+| U1-7 | the plan's command, run under `bash` (zsh aborts the `ls` on an unmatched glob, which would print `0` for the wrong reason) | `exit 0`, `6`, `0`; the default root is `/tmp`, and `mkdir /tmp/launcher-legE-probe` then the same `ls` prints `1`, so the count can see a leftover | clone, `setEnv`'s restore made plain assignment for `TMPDIR` only (`if (v === undefined && k !== "TMPDIR") delete process.env[k];`, the pass-1 behaviour): `exit 1`, `5`, `  FAIL  leaves no process or directory after a signal while discovery is still pending: child never printed a pid/dir line (child exit 1; child stderr: Error: ENOENT: no such file or directory, mkdtemp 'undefined/ultimate-tokens-smoke-XXXXXX')` | 🟢 |
+| U1-8 | `docker info >/dev/null && echo up`; the plan's `docker run ... node:24` in a clone at `1d97d568` | `up`, `exit 0`, `6`; a second run printing the container's env first read `TMPDIR=<unset> Linux` | U1-7's clone under the same `docker run`: `exit 1`, `5`, the same FAIL line as U1-7's control | 🟢 |
+| U1-9 | clone at `1d97d568`, `legF`'s env gains `TMPDIR: "/nonexistent"`: `node test/smoke/launcher.mjs 2>&1 \| grep -c 'ENOENT'` | `1`, the line: `  FAIL  leaves no process or directory after a signal while discovery is still pending: child never printed a pid/dir line (child exit 1; child stderr: Error: ENOENT: no such file or directory, mkdtemp '/nonexistent/ultimate-tokens-smoke-XXXXXX')` | the same one-line edit on pass 1 `b57b4658`: `0`, `  FAIL  leaves no process or directory after a signal while discovery is still pending: child never printed a pid/dir line` | 🟢 |
+| U1-10 | the plan's `docker run ... mv /usr/bin/pgrep /usr/bin/pgrep.h ...` on a clone at `1d97d568` | `  FAIL  leaves no process or directory after a deadline with no DevToolsActivePort: pgrep could not check for a leftover process (ENOENT), so this leg cannot pass` | the same on pass 1 `b57b4658`: `  pass  leaves no process or directory after a deadline with no DevToolsActivePort` | 🟢 |
+
+### Checks for the extra fixes (not plan rows)
+
+| # | Command | Evidence | Negative control | State |
+|---|---|---|---|---|
+| 4.3 | clone, `legF`'s `FAKE_CHROME_DELAY_MS: "3000"` made `"0"` | `exit 1`, `  FAIL  leaves no process or directory after a signal while discovery is still pending: discovery had already finished when SIGTERM was sent, so this leg proved nothing about the pending window` | the head passes leg (f) on the Mac, with `TMPDIR` unset, and on Linux (U1-2, U1-7, U1-8) | 🟢 |
+| 4.5 | `node --input-type=module -e "$probe" <chrome.mjs>`: `launchChrome(process.execPath, ["-e","process.exit(3)"], { deadlineMs: 3000 })`, then `/nonexistent/chrome` | `406ms Chrome exited before CDP came up (code 9)` (Node exits 9 on the Chrome flags after `-e`: still an early exit, reported with its code), `813ms Chrome exited before CDP came up (spawn /nonexistent/chrome ENOENT)`; pre-land N3's grep `grep -c -E 'proc\.(on\|once)\("(exit\|error)"' test/smoke/chrome.mjs` prints `2` | the same probe on pass 1: `3218ms Chrome CDP did not come up within 3s (last: no response)`, then the process dies on `Error: spawn /nonexistent/chrome ENOENT` (unhandled) | 🟢 |
+| 4.6 | `TMPDIR="$T" CHROME_BIN=/usr/bin/false node test/smoke/smoke.mjs` | `exit 1 in 0s`, `SMOKE FAIL (1):`, `  smoke threw: Chrome exited before CDP came up (code 1)`; `0` dirs under `$T` | pass 1 with `dist/` copied in: `exit 1 in 46s`, `0` `SMOKE FAIL` lines, `Error: Chrome CDP did not come up within 45s (last: no response)` | 🟢 |
+
+### Hygiene
+
+- Clones: under `/Users/kimba/.claude/jobs/8c58a81c/tmp/p2` (at `ff4d4999`, superseded) and `p3` (at `1d97d568`, `b57b4658`, `62ee7782`); the worktree was never edited by a control
+- Fake-chrome fixtures leaked by controls on purpose: `16` reaped with `pkill -9 -f 'jobs/8c58a81c/tmp/p[23]/[a-z0-9]+/test/smoke/fixtures/fake-chrome.mjs'`, then `pgrep -f fake-chrome.mjs | wc -l` printed `0`
+- Profile dirs leaked by controls under the Mac `$TMPDIR`: `16` removed: 8 named in the control logs, 8 made during the control runs with no live process holding them. `8` older ones (14:30, before this pass started, fixture-shaped) were left alone as not mine
+- Real Chrome: U1-3 control `11` reaped by the plan's exact pattern, U1-5 control `0`; guard `0` before each Chrome row
