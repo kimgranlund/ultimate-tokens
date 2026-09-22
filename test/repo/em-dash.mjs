@@ -69,8 +69,38 @@ function shouldSkipFix(rel) {
 // swept like any other line. Markdown files only -- a template literal's backticks in a `.js`
 // file are code, not a quote, and are never masked (#730 revision-4 finding: masking backticks in
 // code hid 66 dashes in generated files and reds `test/engine/exports.mjs`).
-function maskMdSpans(line) {
-  return line.replace(/`[^`]*`/g, (span) => "`" + "\u0000".repeat(span.length - 2) + "`");
+//
+// A span can wrap across a line break (CommonMark: the backtick run that closes it need not be on
+// the line that opened it), which leaves a lone backtick sitting at the start of the CONTINUING
+// line. A single-line-only mask pairs that stray backtick with the next one it finds instead, and
+// mis-masks the real span (found in the wild during pass 2 review: `docs/tickets/tkt-0031.md:82`,
+// a wrapped span from a prior line left a lone backtick, which paired with the wrong neighbour and
+// let the dash inside `` `TKT-XXXX -- ...` `` get rewritten). So masking is STATEFUL across a
+// file's lines: `computeOpenAtStart()` walks every line once up front (backtick COUNT only, never
+// touched by any fix rule, so this is safe to compute before any edit and reuse throughout) and
+// records whether a span was already open entering each line; `maskMdSpansStateful()` then masks
+// one line given that flag, and reports whether a span is still open leaving it.
+function computeOpenAtStart(lines) {
+  const openAtStart = new Array(lines.length);
+  let open = false;
+  for (let i = 0; i < lines.length; i++) {
+    openAtStart[i] = open;
+    const backticks = (lines[i].match(/`/g) || []).length;
+    if (backticks % 2 === 1) open = !open;
+  }
+  return openAtStart;
+}
+function maskMdSpansStateful(line, openAtStart) {
+  const chars = line.split("");
+  let open = openAtStart;
+  let spanStart = open ? 0 : null;
+  for (let i = 0; i < chars.length; i++) {
+    if (chars[i] !== "`") continue;
+    if (!open) { open = true; spanStart = i + 1; }
+    else { for (let k = spanStart; k < i; k++) chars[k] = "\u0000"; open = false; spanStart = null; }
+  }
+  if (open) for (let k = spanStart; k < chars.length; k++) chars[k] = "\u0000";
+  return { masked: chars.join(""), openAtEnd: open };
 }
 
 function prevNonSpace(line, idx) {
@@ -188,17 +218,16 @@ function runGate() {
     scanned++;
     const md = isMd(rel);
     const lines = src.split("\n");
-    let prevLine = null;
+    const openAtStart = md ? computeOpenAtStart(lines) : null;
     for (let i = 0; i < lines.length; i++) {
       const raw = lines[i];
-      const masked = md ? maskMdSpans(raw) : raw;
+      const masked = md ? maskMdSpansStateful(raw, openAtStart[i]).masked : raw;
       const count = dashIndices(masked).length;
       if (count > 0) {
         total += count;
         filesWithHits.add(rel);
         hits.push(`${rel}:${i + 1}`);
       }
-      prevLine = raw;
     }
   }
   if (total) {
@@ -286,17 +315,22 @@ function applyRule(raw, masked, prevRaw, prevMasked, decision) {
 // stops the whole line (it is left in place and listed) without touching it.
 function fixLines(lines, md) {
   const out = lines.slice();
+  // Backtick COUNT per line never changes (no rule below ever adds or removes a backtick), so the
+  // open-span state entering every line is computed once, up front, from the untouched originals,
+  // and stays valid for every re-mask of that line as its content is edited.
+  const openAtStart = md ? computeOpenAtStart(lines) : null;
+  const maskOf = (i) => (md ? maskMdSpansStateful(out[i], openAtStart[i]).masked : out[i]);
   const edits = []; // { rule, construct?, lineIndex, text? | before, after }
   for (let i = 0; i < out.length; i++) {
     let structuralDone = false;
     let guard = 0;
     while (guard++ < 200) {
       const raw = out[i];
-      const masked = md ? maskMdSpans(raw) : raw;
+      const masked = maskOf(i);
       if (!dashIndices(masked).length) break;
 
       const prevRaw = i > 0 ? out[i - 1] : null;
-      const prevMasked = prevRaw !== null ? (md ? maskMdSpans(prevRaw) : prevRaw) : null;
+      const prevMasked = i > 0 ? maskOf(i - 1) : null;
       const decision = classifyLine({ line: masked, prevLine: prevMasked, md, skipStructural: structuralDone });
       if (!decision) break;
 
@@ -447,6 +481,18 @@ function selftest() {
   PINNED_PATHS.add(fakePinned);
   if (!shouldSkipFix(fakePinned)) FAIL("pinned-exemption", "adding a path to PINNED did not make shouldSkipFix() skip it");
   PINNED_PATHS.delete(fakePinned);
+
+  // A span that wraps across a line break (found in the wild in pass 2 review, docs/tickets/
+  // tkt-0031.md:82): the first line has an ODD backtick count, so its lone backtick opens a span
+  // that only closes on the NEXT line. The dash inside that continuation is still inside the span
+  // and must survive byte for byte, with zero edits.
+  const wrapped = [
+    "before `wrapped span starts here",
+    `continues ${DASH} and closes\` after the span`,
+  ];
+  const wrappedFixed = fixLines(wrapped, true);
+  if (wrappedFixed.edits.length !== 0) FAIL("wrapped-span-mask", `a dash inside a line-wrapping span was edited: ${JSON.stringify(wrappedFixed.edits[0])}`);
+  if (wrappedFixed.lines.join("\n") !== wrapped.join("\n")) FAIL("wrapped-span-mask", "the wrapped-span fixture changed even though no edit was recorded");
 
   // (4) Idempotence: a real, multi-rule, multi-line fixture run through `fixLines()` twice must
   // produce the SAME lines both times, with zero edits on the second pass (#730 review finding 5:
