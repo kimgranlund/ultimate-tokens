@@ -4,6 +4,8 @@
 // listens on an OS-chosen port, answers /json/version like a real DevTools endpoint, and writes
 // DevToolsActivePort into the profile directory the way real Chrome does. FAKE_CHROME_MUTE=1 skips
 // that write, simulating a browser that never comes up (the launcher's deadline path).
+// FAKE_CHROME_DELAY_MS=<ms> delays the write instead of skipping it, simulating a browser that is
+// still starting up (the launcher's signal-before-discovery path, leg (f)).
 import { createServer } from "node:http";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -30,8 +32,13 @@ const server = createServer((req, res) => {
 
 server.listen(0, "127.0.0.1", () => {
   const realPort = server.address().port;
-  if (!process.env.FAKE_CHROME_MUTE) {
-    writeFileSync(join(dir, "DevToolsActivePort"), `${realPort}\n/devtools/browser/fake\n`);
+  const writeActivePort = () => writeFileSync(join(dir, "DevToolsActivePort"), `${realPort}\n/devtools/browser/fake\n`);
+  if (process.env.FAKE_CHROME_MUTE) {
+    // never come up
+  } else if (process.env.FAKE_CHROME_DELAY_MS) {
+    setTimeout(writeActivePort, Number(process.env.FAKE_CHROME_DELAY_MS));
+  } else {
+    writeActivePort();
   }
   // stay alive until killed, the way a real headless Chrome does
 });

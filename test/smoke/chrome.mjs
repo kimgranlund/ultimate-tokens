@@ -2,10 +2,15 @@
 // (read back from Chrome's own DevToolsActivePort file, never a fixed port another run or another
 // stranger could be squatting), and one idempotent cleanup reachable from every exit path.
 //
-// Two exports, nothing else: launchChrome() spawns the browser and resolves once it has announced
-// its port; onExit() wires a cleanup function to every path a process can leave by (a normal
+// Two exports, nothing else: launchChrome() spawns the browser and returns close() reachable
+// SYNCHRONOUSLY, before discovery finishes, plus a `ready` promise that resolves once the port is
+// announced; onExit() wires a cleanup function to every path a process can leave by (a normal
 // finally, process "exit", and SIGINT/SIGTERM/SIGHUP), each reporting the exit code a shell would
 // have printed for an unhandled signal, so a CI `timeout` or a plain `kill` reads the same number.
+//
+// The synchronous return matters: a signal can land while `ready` is still pending (Chrome start-up
+// can take several seconds), and a caller that only gets `close` after awaiting `ready` would run a
+// no-op close() for that whole window, leaking the browser and its profile directory (see leg (f)).
 import { spawn } from "node:child_process";
 import { mkdtempSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -13,7 +18,9 @@ import { join } from "node:path";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// launchChrome(bin, extraArgs, { deadlineMs }) -> { proc, port, dir, close }
+// launchChrome(bin, extraArgs, { deadlineMs }) -> { proc, dir, close, ready }
+// `ready` resolves to { port } once DevToolsActivePort is discovered, or rejects (after calling
+// close() itself) if deadlineMs passes first.
 export function launchChrome(bin, extraArgs = [], { deadlineMs = 45000 } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "ultimate-tokens-smoke-"));
   const activePortFile = join(dir, "DevToolsActivePort");
@@ -26,7 +33,8 @@ export function launchChrome(bin, extraArgs = [], { deadlineMs = 45000 } = {}) {
   ], { stdio: "ignore" });
 
   // proc and dir are captured in this closure at spawn time, before the poll below, so close()
-  // reaches a browser that was spawned and not yet discovered if a signal lands during the wait.
+  // reaches a browser that was spawned and not yet discovered if a signal lands during the wait,
+  // and close is returned to the caller in the SAME synchronous call, not after `ready` settles.
   let closed = false;
   const close = () => {
     if (closed) return;
@@ -35,7 +43,7 @@ export function launchChrome(bin, extraArgs = [], { deadlineMs = 45000 } = {}) {
     try { rmSync(dir, { recursive: true, force: true }); } catch { /* already gone */ }
   };
 
-  return (async () => {
+  const ready = (async () => {
     const POLL_MS = 400;
     let lastReason = "no response";
     for (let waited = 0; waited < deadlineMs; waited += POLL_MS) {
@@ -43,7 +51,7 @@ export function launchChrome(bin, extraArgs = [], { deadlineMs = 45000 } = {}) {
         try {
           const lines = readFileSync(activePortFile, "utf8").split("\n");
           const port = Number(lines[0]);
-          if (Number.isInteger(port) && port > 0) return { proc, port, dir, close };
+          if (Number.isInteger(port) && port > 0) return { port };
           lastReason = `unparsed DevToolsActivePort line: ${lines[0]}`;
         } catch (e) { lastReason = e.message; }
       }
@@ -52,6 +60,8 @@ export function launchChrome(bin, extraArgs = [], { deadlineMs = 45000 } = {}) {
     close();
     throw new Error(`Chrome CDP did not come up within ${deadlineMs / 1000}s (last: ${lastReason})`);
   })();
+
+  return { proc, dir, close, ready };
 }
 
 // onExit(fn) runs fn() on a normal "exit" and on SIGINT/SIGTERM/SIGHUP; a signal handler runs

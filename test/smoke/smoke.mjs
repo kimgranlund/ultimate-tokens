@@ -41,12 +41,13 @@ const server = createServer((_req, res) => { res.writeHead(200, { "content-type"
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const url = `http://127.0.0.1:${server.address().port}/`;
 
-// onExit is installed before launchChrome so a signal landing during the 45s CDP start-up wait
-// below is still cleaned up; close() is idempotent, so the finally block's own call is safe too.
-let closeChrome = () => {};
-onExit(() => closeChrome());
-const { port: PORT, close } = await launchChrome(CHROME, []);
-closeChrome = close;
+// launchChrome() returns close() SYNCHRONOUSLY (before discovery finishes), so onExit(close) is
+// wired in this same tick — a signal landing during the 45s CDP start-up wait below is cleaned up
+// too, not just one after `ready` resolves; close() is idempotent, so the finally block's own call
+// is safe either way.
+const { close, ready } = launchChrome(CHROME, []);
+onExit(close);
+const { port: PORT } = await ready;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let ws, idc = 0; const pending = new Map();
@@ -288,7 +289,7 @@ try {
   fails.push("smoke threw: " + e.message);
 } finally {
   try { ws && ws.close(); } catch { /* */ }
-  closeChrome();
+  close();
   server.close();
 }
 
