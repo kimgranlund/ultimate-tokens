@@ -104,7 +104,7 @@ function isMd(rel) { return rel.endsWith(".md"); }
 // its first actionable dash, or `null` if the line carries none. Used by both the gate (to decide
 // whether a dash counts) and `--fix` (to decide the replacement). `refuse` covers every R0
 // construct; the caller is told which one, for the residual list.
-function classifyLine({ line, prevLine, md }) {
+function classifyLine({ line, prevLine, md, skipStructural = false }) {
   const idxs = dashIndices(line);
   if (!idxs.length) return null;
 
@@ -116,8 +116,8 @@ function classifyLine({ line, prevLine, md }) {
   // R0 (e): a lone-glyph string token in a non-Markdown file, plain or backslash-escaped.
   if (!md && LONE_TOKEN_RE.test(line)) return { rule: "R0", construct: "e" };
 
-  // R1: a Markdown table cell that is only the dash.
-  if (md && CELL_RE.test(line)) return { rule: "R1" };
+  // R1: a Markdown table cell that is only the dash. A SHAPE rule: fires once per line.
+  if (!skipStructural && md && CELL_RE.test(line)) return { rule: "R1" };
 
   for (const idx of idxs) {
     // R0 (a): a dash right after a full stop.
@@ -133,11 +133,12 @@ function classifyLine({ line, prevLine, md }) {
     }
   }
 
-  // R2: a Markdown heading, first dash on the line (fenced blocks included).
-  if (md && HEADING_RE.test(line)) return { rule: "R2" };
+  // R2: a Markdown heading, first dash on the line (fenced blocks included). A SHAPE rule: fires
+  // once per line, per the rule table ("a second dash on the same heading falls to R8").
+  if (!skipStructural && md && HEADING_RE.test(line)) return { rule: "R2" };
 
-  // R3: a bullet whose first token is a code span or a bold label, then the dash.
-  if (BULLET_LABEL_RE.test(line)) return { rule: "R3" };
+  // R3: a bullet whose first token is a code span or a bold label, then the dash. Also once.
+  if (!skipStructural && BULLET_LABEL_RE.test(line)) return { rule: "R3" };
 
   for (const idx of idxs) {
     const pv = prevNonSpace(line, idx);
@@ -269,34 +270,48 @@ function runFix({ sample }) {
     let changed = false;
 
     for (let i = 0; i < lines.length; i++) {
-      const raw = lines[i];
-      const masked = md ? maskMdSpans(raw) : raw;
-      if (!dashIndices(masked).length) continue;
+      // A line can carry more than one dash (a heading's second dash, a wrapped sentence with
+      // two parentheticals): loop until the line carries none, re-masking after every edit so
+      // positions stay correct. R1/R2/R3 are whole-line SHAPE rules (one table cell, one heading
+      // label, one bullet label) and fire at most once per line; a later dash on the same line
+      // falls through to R4-R8, per the rule table ("a second dash on the same heading falls to
+      // R8"). R0 stops the whole line (it is left in place and listed).
+      let structuralDone = false;
+      let guard = 0;
+      while (guard++ < 200) {
+        const raw = lines[i];
+        const masked = md ? maskMdSpans(raw) : raw;
+        if (!dashIndices(masked).length) break;
 
-      const prevRaw = i > 0 ? lines[i - 1] : null;
-      const prevMasked = prevRaw !== null ? (md ? maskMdSpans(prevRaw) : prevRaw) : null;
-      const decision = classifyLine({ line: masked, prevLine: prevMasked, md });
-      if (!decision) continue;
+        const prevRaw = i > 0 ? lines[i - 1] : null;
+        const prevMasked = prevRaw !== null ? (md ? maskMdSpans(prevRaw) : prevRaw) : null;
+        const decision = classifyLine({ line: masked, prevLine: prevMasked, md, skipStructural: structuralDone });
+        if (!decision) break;
 
-      if (decision.rule === "R0") {
-        perRule.R0++;
-        r0Lines.push({ rel, line: i + 1, construct: decision.construct, text: raw });
-        continue;
-      }
-      if (decision.rule === "R7") {
-        perRule.R7++;
-        const beforeLine = raw;
-        const idx = raw.indexOf(DASH);
-        const rest = raw.slice(idx + 1).replace(/^\s+/, "");
-        lines[i] = rest;
-        lines[i - 1] = lines[i - 1].replace(/\s+$/, "") + ",";
-        pushSample("R7", `${beforeLine}\n${prevRaw}`, `${lines[i]}\n${lines[i - 1]}`);
+        if (decision.rule === "R0") {
+          perRule.R0++;
+          r0Lines.push({ rel, line: i + 1, construct: decision.construct, text: raw });
+          break;
+        }
+        if (["R1", "R2", "R3"].includes(decision.rule)) structuralDone = true;
+        if (decision.rule === "R7") {
+          perRule.R7++;
+          const beforeLine = raw;
+          const idx = raw.indexOf(DASH);
+          const rest = raw.slice(idx + 1).replace(/^\s+/, "");
+          lines[i] = rest;
+          lines[i - 1] = lines[i - 1].replace(/\s+$/, "") + ",";
+          pushSample("R7", `${beforeLine}\n${prevRaw}`, `${lines[i]}\n${lines[i - 1]}`);
+          changed = true;
+          continue;
+        }
+        perRule[decision.rule] = (perRule[decision.rule] || 0) + 1;
+        const after = applyRule(raw, prevRaw, decision);
+        if (after === raw) break; // no forward progress; avoid an infinite loop
+        pushSample(decision.rule, raw, after);
+        lines[i] = after;
         changed = true;
-        continue;
       }
-      perRule[decision.rule] = (perRule[decision.rule] || 0) + 1;
-      const after = applyRule(raw, prevRaw, decision);
-      if (after !== raw) { pushSample(decision.rule, raw, after); lines[i] = after; changed = true; }
     }
 
     if (changed) {
