@@ -1100,7 +1100,7 @@ let LADDER_WINDOW_ALLOWLIST;
   const freeze = (got, want, leg) => {
     // The summary word reads the SAME predicate the failure branch below does (count AND membership),
     // not the count alone: a one-for-one name substitution keeps the length and must still headline
-    // FAIL, or the first line of the report contradicts the exit code (#718's defect).
+    // FAIL, or the first line of the report contradicts the exit code (the same defect class as #718).
     const ok = got.length === want.length && got.every((n, i) => n === want[i]);
     console.log(`  ${ok ? "pass" : "FAIL"}  symmetry corpus ${leg}: ${got.length} of ${anchoredCorpus.length} (expected ${want.length})`);
     for (const n of got) console.log(`    ${leg === "by-construction" ? "c" : "m"} ${n}`);

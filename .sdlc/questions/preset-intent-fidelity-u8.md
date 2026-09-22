@@ -12,7 +12,7 @@ Consequence. The diff moved byte for byte (`cmp` against `git diff --binary` of 
 
 ## Q6, asked 2026-09-22 by the previous Lane A driver (session 896c0b67), relayed by handover
 
-Source: `.git-worktrees/lane-a-notes/HANDOVER-681-to-e8.md`. The ruling was taken before #681 changed hands and was not yet in the tree. It is recorded here verbatim from that handover.
+Source: `.git-worktrees/lane-a-notes/HANDOVER-681-to-e8.md`, a local, gitignored note that resolves only from the root checkout on this host, not from the git tree or a clone. The ruling was taken before #681 changed hands and was not yet in the tree. It is recorded here verbatim from that handover.
 
 | # | Question | Options offered | Chosen (verbatim) |
 |---|---|---|---|

@@ -10,7 +10,9 @@ before every test process; one process at a time; `npm test` was never run. Host
 recovered; the figures quoted below are the record of them. The two control scripts those figures
 come from are committed at `.sdlc/records/pif-u7-blast/blast.mjs` and `ko.mjs`, with the command
 that regenerates each in that directory's `README.md` (re-run at pre-land pass 2, both reproduce
-the figures below). The `runner*.sh` shell wrappers around the test gates were not recovered.
+the figures below, `ko.mjs`'s head figure only: its cusp-restored comparison figure needs a source
+mutation the README does not describe). The `runner*.sh` shell wrappers around the test gates were
+not recovered.
 
 Criteria read from the unit tree, with U7-P4 read as amended at revision 32
 (`git show 5951b160:.sdlc/plans/preset-intent-fidelity.md`).

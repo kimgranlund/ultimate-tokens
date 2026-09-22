@@ -13,6 +13,9 @@
 #   P=$!; sleep 5; echo "t+5s  $(date '+%H:%M:%S')  $(uptime)"
 #   wait $P; ec=$?; echo "t-end $(date '+%H:%M:%S')  $(uptime)"; echo "exit=$ec"
 # shell: zsh, so the time line is zsh's format. Recorded verbatim; grading is the pre-land pair's, not mine.
+# ADDED 2026-09-22, U8 rework F1: the commit that followed this log never wrote
+#   .sdlc/handoffs/pif-preland-fixes.md; that file was never written. U8 wrote
+#   .sdlc/handoffs/pif-u8.md instead, and the branding re-run reading named above is there (U8-5 row).
 
 ## wrapper output (verbatim)
 guard-before=0
