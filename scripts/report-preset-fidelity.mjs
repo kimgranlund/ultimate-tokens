@@ -357,9 +357,9 @@ process.exit((anyFail || envAnyFail) ? 1 : 0);
 // C4's ramp half (the plan's own named command, #715 U2): loads a BASE tree (a git revision unpacked
 // to a scratch directory, or an existing directory) and this file's own working tree side by side,
 // renders the base tree's 8 category files plus its default kit on BOTH, and diffs every emitted
-// cell. This proves whether the CURRENT working tree moved a ramp against the named base -- it is
+// cell. This proves whether the CURRENT working tree moved a ramp against the named base, it is
 // blind to anything the base tree itself already carried (a stripped-anchor mutation on the
-// anchored path, for one -- see the adapter's `ramp-identity` row for when `--authored` is required).
+// anchored path, for one, see the adapter's `ramp-identity` row for when `--authored` is required).
 // (IDENTITY_CATS / IDENTITY_MODES are declared near the top of this file, ahead of the dispatch.)
 
 function identityRender(engine, pal, doc, mode) {
@@ -395,7 +395,7 @@ async function runIdentityControl(args) {
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
 
   if ((baseIdx < 0) === (baseDirIdx < 0)) {
-    // neither given, or both given -- exactly one is required
+    // neither given, or both given, exactly one is required
     console.error(USAGE);
     process.exit(2);
   }
@@ -484,7 +484,13 @@ async function runIdentityControl(args) {
       exitIdentity(2);
       return;
     }
-    const { PRESETS } = await import(pathToFileURL(catPath).href);
+    const catModule = await import(pathToFileURL(catPath).href);
+    if (!("PRESETS" in catModule)) {
+      console.error(`usage: base tree at ${baseDir} category ${slug} is missing the export PRESETS`);
+      exitIdentity(2);
+      return;
+    }
+    const { PRESETS } = catModule;
     for (const preset of PRESETS) {
       const doc = baseModule.persist.hydrate({ ...preset });
       for (const pal of doc.palettes) corpusSubjects.push({ label: `${slug}/${preset.name}/${pal.name}`, pal, doc });
@@ -496,11 +502,9 @@ async function runIdentityControl(args) {
     for (const pal of doc.palettes) kitSubjects.push({ label: `default-kit/${pal.name}`, pal, doc });
   }
 
-  if (only === null && corpusSubjects.length === 0 && kitSubjects.length === 0) {
-    console.error("usage: no palettes loaded from the base tree (a full run must load at least one)");
-    exitIdentity(2);
-    return;
-  }
+  // a full run (no --only) that loads no palettes at all is a vacuity FAIL, not a usage error, since
+  // it is the same shape as loading N and rendering fewer than N: nothing was actually compared
+  const noPalettesLoaded = only === null && corpusSubjects.length === 0 && kitSubjects.length === 0;
 
   let perturbDone = false;
   let renderedCount = 0;
@@ -564,12 +568,16 @@ async function runIdentityControl(args) {
   if (corpusAgg) printAgg(corpusAgg, "");
   if (kitAgg) printAgg(kitAgg, " default kit");
 
-  let vacuityFail = false;
-  if (renderedCount !== loadedCount) {
-    console.log(`FAIL: vacuity -- rendered ${renderedCount} of ${loadedCount} loaded palette(s)`);
-    vacuityFail = true;
+  const vacuityFail = noPalettesLoaded || renderedCount !== loadedCount;
+
+  if (vacuityFail) {
+    // the FAIL line prints last, and the total below is skipped, so a reader grepping only
+    // `^0 differing cells$` (the passing needle) can never read this run as green
+    console.log(`FAIL: vacuity, rendered ${renderedCount} of ${loadedCount} loaded palette(s)`);
+    exitIdentity(1);
+    return;
   }
 
   console.log(`${totalDiff} differing cells`);
-  exitIdentity((totalDiff > 0 || vacuityFail) ? 1 : 0);
+  exitIdentity(totalDiff > 0 ? 1 : 0);
 }
