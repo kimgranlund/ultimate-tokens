@@ -60,15 +60,13 @@ async function childMain() {
 
 // leg (f): onExit is installed in the SAME tick as the launch, using the close() launchChrome
 // returns synchronously, proving a signal that lands before `ready` settles still reaches the
-// browser it spawned, not a still-no-op cleanup. The child reports on stderr whether discovery was
-// still pending when the signal arrived (its listener is registered before onExit's, so it runs
-// first), so the parent can refuse a run where a slow host let discovery finish before the signal
-// and the leg would have proved nothing about the pending window.
+// browser it spawned, not a still-no-op cleanup. The child writes "discovery finished" on stderr
+// if `ready` resolves, so the parent can refuse a run where a slow host let discovery finish before
+// the signal and the leg would have proved nothing about the pending window. It adds no signal
+// listener of its own: one would stop Node's default exit on SIGTERM and mask a missing onExit.
 async function childBeforeDiscoveryMain() {
   const { proc, dir, close, ready } = launchChrome(process.execPath, [FIXTURE]);
-  let discovered = false;
-  ready.then(() => { discovered = true; }, () => {});
-  process.once("SIGTERM", () => { writeSync(2, `discovery ${discovered ? "finished" : "pending"} at signal\n`); });
+  ready.then(() => writeSync(2, "discovery finished\n"), () => {});
   onExit(close);
   console.log(`${proc.pid} ${dir}`);
   await new Promise(() => {}); // wait for the parent's signal, discovery never awaited here
@@ -115,12 +113,13 @@ async function legB() {
 function runSignalLeg(signal, { childFlag = "--child", env = process.env, delayMs = 200 } = {}) {
   return new Promise((settle, reject) => {
     const child = spawn(process.execPath, [SELF, childFlag], { stdio: ["ignore", "pipe", "pipe"], env });
-    let buf = "", stderr = "";
+    let buf = "", stderr = "", stderrAtSignal = null;
     let fakePid = null, dir = null, signalled = false;
     child.stderr.on("data", (d) => { stderr += d.toString(); });
     const timer = setTimeout(() => {
       child.kill("SIGKILL");
-      reject(new Error(`${childFlag} did not print "<pid> <dir>" within 5s${childStderr(stderr)}`));
+      const what = signalled ? `had not exited 5s after start, ${signal} sent at ${delayMs}ms` : `did not print "<pid> <dir>" within 5s`;
+      reject(new Error(`${childFlag} ${what}${childStderr(stderr)}`));
     }, 5000);
     child.stdout.on("data", (d) => {
       buf += d.toString();
@@ -128,13 +127,13 @@ function runSignalLeg(signal, { childFlag = "--child", env = process.env, delayM
       if (m && !signalled) {
         signalled = true;
         fakePid = Number(m[1]); dir = m[2];
-        setTimeout(() => child.kill(signal), delayMs);
+        setTimeout(() => { stderrAtSignal = stderr; child.kill(signal); }, delayMs);
       }
     });
     // "close", not "exit": it fires only after the child's stdio has drained, so `stderr` is whole.
-    child.on("close", (code) => {
+    child.on("close", (code, sig) => {
       clearTimeout(timer);
-      settle({ fakePid, dir, childExitCode: code, stderr });
+      settle({ fakePid, dir, childExitCode: code ?? sig, stderr, stderrAtSignal });
     });
   });
 }
@@ -149,13 +148,13 @@ function childStderr(stderr) {
 }
 
 async function legSignal(signal, opts) {
-  const { fakePid, dir, childExitCode, stderr } = await runSignalLeg(signal, opts);
+  const { fakePid, dir, childExitCode, stderr, stderrAtSignal } = await runSignalLeg(signal, opts);
   const why = `child exit ${childExitCode}${childStderr(stderr)}`;
   if (fakePid == null) throw new Error(`child never printed a pid/dir line (${why})`);
   const gone = await waitUntil(() => !isAlive(fakePid), 2000);
   if (!gone) throw new Error(`fake pid ${fakePid} still alive 2s after ${signal} (${why})`);
   if (existsSync(dir)) throw new Error(`profile dir ${dir} still present after ${signal} (${why})`);
-  return { stderr };
+  return { stderrAtSignal };
 }
 
 // leg (f): FAKE_CHROME_DELAY_MS=3000 makes the fixture write DevToolsActivePort only after 3s, so
@@ -163,13 +162,13 @@ async function legSignal(signal, opts) {
 // the exact window finding 1 of the U1 review identified as leaking. The child installs onExit
 // with the SAME-TICK close() (childBeforeDiscoveryMain), never awaiting `ready` itself.
 async function legF() {
-  const { stderr } = await legSignal("SIGTERM", {
+  const { stderrAtSignal } = await legSignal("SIGTERM", {
     childFlag: "--child-before-discovery",
     env: { ...process.env, FAKE_CHROME_DELAY_MS: "3000" },
     delayMs: 1000,
   });
-  if (!/^discovery pending at signal$/m.test(stderr)) {
-    throw new Error(`the signal did not land while discovery was pending, so this leg proved nothing (${childStderr(stderr).slice(2) || "child reported nothing"})`);
+  if (/^discovery finished$/m.test(stderrAtSignal)) {
+    throw new Error("discovery had already finished when SIGTERM was sent, so this leg proved nothing about the pending window");
   }
 }
 
