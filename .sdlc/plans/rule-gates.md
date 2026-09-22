@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: approved
 ticket: #730 (anchor; the plan also closes #727, #728, #724)
 priority: P1
 lane: tooling (test/repo, one styles.css edit; U4 touches the whole tree once, which is why it waits for G0)
