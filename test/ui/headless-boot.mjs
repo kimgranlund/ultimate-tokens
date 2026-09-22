@@ -3717,7 +3717,7 @@ flushRaf();
 // ── (na) the empty-value placeholder reads "n/a", not the glyph (U6, owner ruling Q3) ────────
 {
   // an inspector card with no data to plot: Color's tone/chroma graphs (a view with no palettes),
-  // Typography's modular-scale graph (an empty series), Geometry's power graph (an empty ramp) —
+  // Typography's modular-scale graph (an empty series), Geometry's power graph (an empty ramp):
   // three section files, one `.an-empty` div each, anchored to the surface's own text (not a bare
   // "n/a" grep, which already hits an unrelated motion gate elsewhere).
   const colorEmpty = app.graphTone({ palettes: [] }, 0);
