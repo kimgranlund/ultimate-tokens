@@ -72,7 +72,7 @@ const gradeOne = (f) => {
 const failedAtPin = (name) => {
   let content;
   try {
-    content = execFileSync("git", ["show", `${pin}:.sdlc/verdicts/${name}`], { encoding: "utf8" });
+    content = execFileSync("git", ["show", `${pin}:.sdlc/verdicts/${name}`], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
   } catch {
     return false;
   }
