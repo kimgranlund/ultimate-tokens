@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: approved
 ticket: #731
 priority: P3
 lane: ui (`src/ui/model.mjs`, `test/ui/model.mjs`, the bundle files `npm test` regenerates)
