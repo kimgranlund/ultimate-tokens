@@ -2,14 +2,22 @@
 kind: verdict
 plan: records-followup-roadmap
 seat: verifier
-pass: 2
+pass: 4
+passes: 1 at 3ee3c72b 🔴, 2 at 712e63db 🔴, 3 at ee854932 🔴, 4 at 5da61201 🟢
 written: 2026-09-20
+amended: 2026-09-22, pass 4 appended
 ---
 
-# Pre-PR · records-followup-roadmap · pass 2 · 712e63db277c52c3e1b96dbedb4c4e2b042c615b
+# Pre-PR · records-followup-roadmap · passes 1 to 4
+
+Current finding: 🟢 at `5da61201`, recorded in `## Pass 4` below, which is the block the adapter's
+`check_gate` reads. The three blocks above it are superseded and kept for the record: each names its
+own sha and neither describes this head. Read the last block, not this one, for the verdict.
+
+## Pass 1, at `3ee3c72b`
 
 verdict: 🔴
-sha: 712e63db277c52c3e1b96dbedb4c4e2b042c615b
+sha: 3ee3c72b
 
 Graded at `plan/records-followup-roadmap` @ 3ee3c72b, merge base `main` @ 1f991877, draft PR #720,
 ticket #709. Legs: this Verifier seat's own runs, a `reviewer-l4` and a `verifier-l3` dispatched in
@@ -72,6 +80,9 @@ its findings live only in its returned message. The `verifier-l3` leg's P1 negat
 run by that leg; this seat ran its own, which bit.
 
 ## Pass 2, at `712e63db`
+
+verdict: 🔴
+sha: 712e63db277c52c3e1b96dbedb4c4e2b042c615b
 
 Graded at `plan/records-followup-roadmap` @ `712e63db`, merge base `main` @ `1f991877`, draft PR #720
 pushed, ticket #709. Legs: this seat's own runs, a `reviewer-l4` and a `verifier-l3` dispatched fresh
@@ -242,3 +253,104 @@ graded row names a measurement in code formatting and states a control, which is
 and nothing about whether the measurement is right. That is still why every row above was
 re-derived by hand. A negative control has to be aimed at what a check tests; a control aimed at what
 it skips proves only that it skips it.
+
+## Pass 4, at `5da61201`
+
+Pair per `pre-land-review`, both fresh context, both labelled substitutes under owner ruling R17:
+the fable seats are exhausted, so `reviewer-l4` ran as `reviewer-l3` and `verifier-l3` as
+`verifier-l2`, each at opus high, each saying so in its own first line. Reports at
+`/tmp/v13/rf-prepr-p4-review.md` and `/tmp/v13/rf-prepr-p4-verify.md`. Per owner ruling R20 the
+snapshot is graded at its recorded instant and `.sdlc/verdicts/records-followup-U14-window.md`
+stands as the world check. Every row below that I did not run myself names the leg that ran it, and
+I re-derived A3, A14, A1, A2, A4 and the chain of custody independently before accepting them.
+
+All eight pass-3 blockers are closed. Six of them closed structurally rather than by edit: the
+rebuild removed the class of prose that carried them, so there is no sentence left in `roadmap.md`
+asserting anything about another record's state. Three closed by verified repair in records that
+ride the PR.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| A1 | the `ten of eleven units 🟢` tally | 🟢 | gone as a claim. The only occurrence at the head is `:443`, a Revisions cell whose column command is `git show -s --format=%s 712e63db`, a verbatim commit subject. The regenerated file carries no unit tally anywhere | mine: `grep -nE 'of eleven\|units 🟢'` over the file returns only generated-quote lines, and the same grep at `ee854932` returns the two prose sites pass 3 red. The search finds a tally when one is there |
+| A2 | every open issue ranked, and the `inputs:` and `Count:` figures | 🟢 | mine: parsed the `ISSUES` snapshot block and the ranked table out of the file itself: `20` issues, `20` rows, `in snapshot but not ranked: none`, `ranked but not in snapshot: none`. `Count: ... total 20` and `inputs: ... (20 issues)` agree. `#724`, the issue pass 3 found missing, is present | the same bijection test run against `ee854932`'s file returns `#724` in the unranked set, so the reconciliation does report a gap when one exists |
+| A3 | `records-followup-U5.md:58` attributing a sentence to standing ruling R4 | 🟢 | mine: `:58` now cites the heading `Earlier today, same channel` in `.sdlc/questions/standing-rulings-2026-09-20.md`, and I followed it: that heading is at `:27` and its body at `:30` reads `The other conductor session no longer touches this repo's plans (owner, in chat)`, which is the sentence the handoff attributes to it. The review leg followed the same citation into both the branch blob `db07b39b` and main's `bb2f10fd` | the same read at `ee854932` resolves R4 to `## R4 Conductor session mode`, whose body is about restarting a session in bypass and does not carry the sentence. The read distinguishes a citation that resolves from one that does not |
+| A4 | the `pif-u5-records` worktree row | 🟢 | mine: the row at `:220` reads `6d0755b9`, which is exactly the `HEAD` line of that worktree's entry in the file's own `WORKTREES` snapshot block, and the `REFLOG` block at `:702` puts the branch at `6d0755b9` from `2026-09-20T19:12:57-07:00`, before the read window. The stale `6e4d33f` is gone, and the `4 uncommitted paths` cell that was unfalsifiable at every ref has no column any more | the row's sha is compared against the snapshot block rather than against the row's own arithmetic, which is the measurement pass 3 faulted; reading the row alone reproduces pass 2's mistaken 🟡 |
+| A11 | `roadmap.md:117` citing `owner ruling R5` | 🟢 | withdrawn as a finding and moot as a fact. The review leg read `959b1bb7:.sdlc/questions/standing-rulings-2026-09-20.md:43`, which records that the id was renumbered `R5` to `R7` precisely because the background seats had already recorded an R5 for this PR, so the citation resolved as written. Independently moot: the only `R5` at the head is `:414`, a verbatim commit subject | I had already withdrawn this in the pass 3 addendum after finding three separate `R<n>` namespaces; the review leg reached the same withdrawal from the rulings file alone, without reading my retraction |
+| A12 | the `#719` row's claim about what `shipping-changes` names | 🟢 | mine: the `#719` row at `:68` is label data plus the issue's own title from the `ISSUES` snapshot. The editorial clause that pass 3 red does not exist at the head | `grep -n '719'` over the file returns only generated rows and one quoted commit subject; the clause is findable at `ee854932` by the same grep |
+| A13 | the `#686` row's `not itself blocked on #681` | 🟢 | mine: the `#686` row at `:57` is label data only. No gating claim survives regeneration | same grep method as A12, and it locates the clause in the pre-rebuild file |
+| A14 | the U11 handoff's `Nine commits, four of them roadmap-only` | 🟢 | mine, re-derived rather than read: the text now says `Eleven commits, four of them roadmap-only` and names its own range and instant. I ran `git rev-list --count 3ee3c72b..698e8916` = `11`, the same with `-- .sdlc/roadmap.md` = `4` and with `-- .sdlc/handoffs/records-followup-U11.md` = `7`, so `4 + 7 = 11` partitions with nothing left over, and the four shas printed are exactly the `roadmap-commits:` front matter list | the same commands over `1f991877..698e8916` return `15` and `6`, so the count is sensitive to the range, which is why naming the range is what repaired it. The old figure `nine` reproduces at no range I tested |
+| A15 | the `#718` row's `filed this session by` | 🟢 | mine: `grep -c 'filed this session'` over the file returns `0`; the `#718` row at `:67` is label data and the issue title | the phrase is present at `ee854932` under the same grep |
+| P1 | `npm test` green, tree clean after | 🟢 | verify leg, run in the plan worktree at the head: `✓ all 48 test files passed`, `EXIT=0`, and `git status --porcelain` afterwards prints only the two untracked records I own | it removed one of the 53 entries from `docs/reference/data/role-table.json` in a throwaway clone: `FAIL refs-canonical`, `✗ 1/48 test file(s) failed`, `EXIT=1`. A weaker probe, the same file merely re-indented, correctly passed |
+| P4 | branding clean on the intended tree | 🟢 | verify leg: `branding: clean (514 files scanned)`, `EXIT=0`, and it named the tree it scanned, which is the trap I flagged in the dispatch. I reran it myself from the same worktree and got the same count | it planted a file carrying the retired brand inside `.sdlc/` of the scanned tree: `FAIL: 2 branding violation(s) across 515 files`, `EXIT=1`, then removed it and reran clean. That also proves the walk reaches `.sdlc/` in this tree rather than another |
+| P5 | scope wall | 🟢 | mine and the verify leg's, agreeing: `git diff --name-only $BASE..5da61201` returns 8 paths and every one is under `.sdlc/`. Nothing in `src/`, no private docs path, no `node_modules` | the same pipeline over `625d0067~1..625d0067` returns 9 paths including `src/ui/figma-plugin-assets.js`, so the wall does report a breach |
+| P6 | no em dashes in any record the branch changed | 🟢 | mine: `grep -c` for U+2014 over each of the 8 changed files returns `0` for all 8. The verify leg ran the plan's own pipeline form and also got `0` | the plan's fixture through the same pipeline returns `3`, and a `/tmp` copy of `roadmap.md` with one dash appended reds at the appended line |
+| P7 | `.sdlc/checks/baseline-agrees-check.sh` | 🟢 | verify leg: seven `ok` lines, `stale total: 0`, `EXIT=0` | in a scratch tree it changed `all 48 test files passed` to `47` in `baseline.md` and the script printed `STALE tests: baseline 47, test/run.mjs TESTS 48` with the stale total moving to `2` |
+| C1 | the three required CI jobs, against this exact head | 🟢 | mine: `gh run list --branch plan/records-followup-roadmap` shows run `35771282866` on `5da61201` at `2026-09-22T19:03:29Z`, `success`; `gh pr view 720 --json statusCheckRollup` gives `build-test SUCCESS`, `panda-smoke SUCCESS`, `corpus-contrast SUCCESS`, `deploy SKIPPED`. The verify leg confirmed each `head_sha` equals the graded head | the verify leg ran the same check-runs call against the parent `79dc31ed` and got an empty set, so the three successes belong to this head and are not inherited; an all-zero sha returns HTTP 422 |
+| C2 | the pushed branch is the graded head | 🟢 | mine: `gh pr view 720 --json headRefOid` returns `5da6120182e612bd3afb3792ae11ee570e8cad04`, equal to the worktree HEAD and to `origin/plan/records-followup-roadmap` | the verify leg ran the same equality against the parent sha and got no match |
+| C3 | the merge does not revert anything main gained | 🟢 | mine: the branch changed 8 files since the merge base, main changed 31, and `comm -12` over the two sorted lists is EMPTY, so the sets are disjoint. `git merge-tree --write-tree origin/main 5da61201` exits `0` with no conflict reported, and `gh pr view` says `mergeable: MERGEABLE`, `mergeStateStatus: CLEAN` | I reran the overlap test against a pair of ranges known to share a path, which prints the shared path, so `comm -12` does report an intersection when one exists |
+| C4 | nothing unverified lands: every landing blob is one a 🟢 verdict graded | 🟢 | mine, and the check neither leg was asked for: for each of the 8 landing paths I compared the blob at `5da61201` against the blob at the two graded heads. All five records plus the question file are byte-identical to `55672d46`, the head my U13 verdict graded; `roadmap.md`, `roadmap-gen.mjs` and the U14 handoff are byte-identical to `79dc31ed`, the head my U14 verdict graded. Both graded commits are ancestors of the landing head | comparing the same paths against a non-graded commit in the range returns differing blobs, so the equality is not vacuous; and `git merge-base --is-ancestor` exits 1 for a commit off the branch |
+| C5 | the regenerated roadmap reproduces from its own snapshot | 🟢 | verify leg: `verify: .sdlc/roadmap.md reproduces from its own Snapshot (770 lines)`, `EXIT=0`, and the renderer blob the file names equals `git rev-parse 5da61201:.sdlc/scripts/roadmap-gen.mjs`, so the generator that rendered it is the one at the head. The review leg re-derived every stated count by hand from the snapshot blocks: `N_ISSUES 20`, `N_PRS 3`, `N_WORKTREES 35`, `N_REFS 11`, `N_REFLOG 28`, and all four derived tables reproduce against fresh git | verify leg mutated one data cell in a `/tmp` copy, the `#686` row's `Opened` value, and `--verify` red at line `57` with `EXIT=1`; the unmutated copy exits 0. I ran the same shape of control on four renders during the U14 verdict |
+
+### Eight concerns, none blocking
+
+| id | item | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| Y1 | the snapshot lands a day old, and its declared `head:` is unreachable from the branch | 🟡 | verify leg: `git rev-list --count 5da61201..origin/main` is `73`, and the roadmap's `head: 959b1bb7 ... read 2026-09-21T12:35:49Z` is in main's history but `git merge-base --is-ancestor 959b1bb7 5da61201` exits `1`. So the file describes a main its own branch cannot see. This is disclosed, not hidden: the instant and the read head are both printed in the front matter, and R20 rules it graded at that instant. Worth the owner's eye rather than mine, with one consequence named below | the reachability test discriminates: `--is-ancestor 959b1bb7 origin/main` exits `0` while the same against the branch head exits `1`. None of the 73 commits touches a file this branch changes, so the staleness costs correctness nothing at merge |
+| Y2 | 15 of 52 verdict records fail the shape checker | 🟡 | verify leg ran `verdict.py check` bare on each: 37 exit `0`, 15 exit `1`, complaints being a green row with no backtick span or a table with no control column. None of the 15 is touched by this branch. My own sweep of the same set passed everything because I ran it as my procedure requires, `--against` the merge-base copy, which grandfathers a row that already failed before the unit | the two runs disagreeing is itself the control: bare it reports 15, `--against` reports 0, and the merge-base copies of four of the 15 fail bare too, which is what grandfathering is for. Pre-existing debt, not a `#720` defect |
+| Y3 | main's plan ticks units done whose records are not 🟢 | 🟡 | verify leg, reading main's copy because that is the live plan: U5 is ticked `[x]` while `records-followup-U5.md` line 7 reads `verdict: 🟡`; U8's record reads `verdict: green-with-one-note`, not the glyph; and U1, U2, U3, U4, U6 and U7 carry no `verdict:` line at all, stating their grade in the H1 instead. Outside this PR's diff, which touches no plan file and no verdict file | the same extraction over U9 to U14 returns `verdict: 🟢` for each, so the command finds the line where one exists and the six blanks are the finding rather than a tooling miss |
+| Y4 | `roadmap.md:15` claims more than the file delivers | 🟡 | review leg: `:15` reads `Nothing below is typed by hand, and nothing is patched after generation`. The legend rows, the `How to read a cell` prose, the captions and the `What that proves, and what it cannot` paragraph are typed string literals pushed in `render()`, shown at `sed -n '297p;301,309p;326p' .sdlc/scripts/roadmap-gen.mjs`. The narrower true claim is one table lower at `:22`, `every table cell is the stdout of the command listed for its column` | no figure rests on the broad sentence: every count I and both legs re-derived came from a snapshot command, so the over-claim is about prose scope and not about data. Fixing it is a re-render, which the file's own rule requires and revision 37 now admits |
+| Y5 | a U11 table is captioned as a command's output but is a selection | 🟡 | review leg: `records-followup-U11.md:50` says `Command: git log --format='%H %cI %s' plan/gate-split. What it printed`, then six rows; over the span the table covers that command prints `210` commits (`git rev-list --count 34ebbae6..7d811172`), and one omitted commit `ebddc55d` is named by the same section at `:88` | every figure in the six rows is correct: the leg converted all six `%cI` values from `-07:00` and each matches the table. So the caption over-claims and the evidence holds, which is the opposite failure from a wrong figure |
+| Y6 | the U14 handoff's `gates run at the unit head` | 🟡 | review leg: the only gate record in the file is `## Gates at e147ae0b`, ten commits before the unit head, and the clause entered at `3710ad46` when the head had already moved four commits past it. I am grading this 🟡 rather than 🔴 and naming the line: pass 3 red A14 for a figure that was false under every reading, whereas this clause is true under the ordinary reading `run at a head of the unit branch`, and the substance is independently established, since `--verify` exits `0` at the plan head and I confirmed all four renders during the U14 verdict | the review leg re-ran the substance at the plan head rather than accepting the clause, and it holds. Had the gate claim been load-bearing and unverifiable, the same reading would red it |
+| Y7 | the U11 self-audit table's line numbers are anchored to a commit the record does not name | 🟡 | mine, found by neither leg. `records-followup-U13.md:174` states `sixteen content patterns over the body at 294f7937 ... all sixteen cells reproduce`. The audit table is sixteen rows. I reran the three rows whose hits cells parse as pure line lists against every version of the U11 handoff: all three reproduce exactly at `0a37f756` and `92d31d83` and at no other version, including `294f7937`, where A14's pattern returns `487, 489, 530, 585` against a recorded `463, 465, 503`, and including the head, where it returns `495, 497, 538, 594, 681`. So the figures were right when measured and the record names a different anchor than the one they were measured at | scope stated honestly: I tested 3 of 16, the other 13 mixing prose into the hits cell and defeating my parser, so I cannot say the whole table fails. The sweep over all 15 versions is the control, since it locates the one version where the cells do reproduce rather than merely showing they fail at the named one. Not blocking: the substance, that every claim was searched by content, the review leg re-derived independently in its section 4 |
+| Y8 | ten absolute scratch paths carrying a local account name land in a public repo | 🟡 | mine: `grep -c 'kimba' .sdlc/roadmap.md` returns `10`, all of them `worktree /private/tmp/claude-501/-Users-kimba-.../<session-uuid>/scratchpad/...` lines inside the `WORKTREES` snapshot, and `gh repo view` reports `"isPrivate":false`. The generator's `ROOT_SED` at `:59` rewrites only paths under the repo root to `<ROOT>`, so worktrees living outside it are recorded verbatim | `grep -c '/Users/'` returns `0` and `<ROOT>` appears `32` times, so the redaction works where it applies and the gap is precisely paths outside the root. Not blocking: nothing secret, and `origin/main` already publishes the same shape in two `.sdlc/` files, so this is neither new exposure nor introduced by this PR. It is a generator fix, which is new work |
+
+### What I make of it
+
+Pass 2 and pass 3 both red on the same class, a sentence asserting something a cited target does not
+say. Pass 4 closes all of it, and the reason is worth recording because it is not that eight edits
+landed. Six of the eight closed because U14 removed the kind of sentence that can carry the defect:
+a table cell that is the stdout of a printed command cannot assert anything about another record's
+state. The two structural repairs, A3 and A14, are the shape the rest of the estate should copy,
+since both were fixed by making the claim name its own measurement rather than by correcting a
+number.
+
+The eight concerns divide cleanly. Y2, Y3, Y5 and Y8 are pre-existing and sit outside this PR's
+diff. Y4, Y6 and Y7 are the same residual class, a record describing its own evidence more broadly
+than the run beneath it, which is what the census measured as the worst class in the worst file.
+None of the three makes a figure false, and each has had its substance re-derived by a leg that did
+not accept the sentence.
+
+Y1 deserves one line the plan should carry. Revision 37 now reads `one commit carrying the live
+generation and one per re-render of that same recorded read`. A refresh before landing would be a
+second live generation, which that text does not admit, so the criterion that moved to admit
+re-renders also fixes the file to a single read and makes landing a day-old snapshot the compliant
+outcome rather than a lapse. That is a consequence of the revision, not a defect in the unit, and
+naming it is cheaper than rediscovering it at the next rebuild.
+
+One landing note for the Orchestrator, not a criterion. `adapter.py` `check_gate` requires this
+record to carry `verdict: 🟢` and a `sha:` equal to the branch head at land time. Committing it to
+`plan/records-followup-roadmap` would move that head and invalidate the sha it names. Main already
+carries the pass-3 copy and the branch carries none, so committing the updated record to `main`
+keeps `5da61201` the head and the gate satisfied.
+
+### A correction to this record's own front matter
+
+The Orchestrator read the top of this file before committing it and found it announcing `pass: 2`,
+`verdict: 🔴`, `sha: 712e63db` above a 🟢 finding at `5da61201`. It was right to stop, and the defect
+is the one this plan exists to remove, sitting in the gate document: a reader who trusts the header
+got the opposite of the record's finding. `check_gate` was never at risk, since it takes the last
+`verdict:` and `sha:` in the file and those were pass 4's throughout, which is why no gate caught it.
+
+Repairing it surfaced a second, older fault I had not seen. The first block is graded at `3ee3c72b`
+and its text says so, but it carried `sha: 712e63db`, pass 2's head, because when I appended pass 2
+I updated the pair at the top instead of giving the new block its own. The real pass 2 section then
+had no pair at all. So the file had four passes and three pairs, misaligned by one.
+
+Fixed by giving every block its own `verdict:` and `sha:` naming the head it graded, with the pass
+list in the front matter and a pointer at the top to the last block. No graded row changed and no
+verdict moved: pass 1 was 🔴 at `3ee3c72b` when written and still reads 🔴. This is the same failure
+as Y7 in my own table above, a figure that was right somewhere carrying the wrong label, which I
+found in another record two hours before leaving it in mine.
+
+verdict: 🟢
+sha: 5da6120182e612bd3afb3792ae11ee570e8cad04
