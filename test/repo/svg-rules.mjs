@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// svg-rules.mjs — the entry file's two SVG-chart rules, gated (#727, #728).
+// svg-rules.mjs: the entry file's two SVG-chart rules, gated (#727, #728).
 //
 // (a) The `html:` count. src/ui/sections/{color,geometry,typography}.js pass raw SVG strings to
 // h("div", { html: svg }), the one documented place innerHTML is set (see .claude/CLAUDE.md).
