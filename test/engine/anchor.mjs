@@ -365,18 +365,22 @@ const DUPE_ALLOW = [
   }
   orderNames.sort();
   dupeNames.sort();
-  console.log(`  ${orderNames.length === ORDER_ALLOW.length ? "pass" : "FAIL"}  anchor-ladder order-allow-list: ${orderNames.length} (expected ${ORDER_ALLOW.length})`);
+  // Both summary words read the SAME predicate the failure branches below do (count AND membership),
+  // not the count alone: a one-for-one name substitution keeps the length and must still headline
+  // FAIL, or the first line of the report contradicts the exit code (#718's defect).
+  const listOk = (got, want) => got.length === want.length && got.every((n, i) => n === want[i]);
+  console.log(`  ${listOk(orderNames, ORDER_ALLOW) ? "pass" : "FAIL"}  anchor-ladder order-allow-list: ${orderNames.length} (expected ${ORDER_ALLOW.length})`);
   for (const n of orderNames) console.log(`    r ${n}`);
-  console.log(`  ${dupeNames.length === DUPE_ALLOW.length ? "pass" : "FAIL"}  anchor-ladder dupe-allow-list: ${dupeNames.length} (expected ${DUPE_ALLOW.length})`);
+  console.log(`  ${listOk(dupeNames, DUPE_ALLOW) ? "pass" : "FAIL"}  anchor-ladder dupe-allow-list: ${dupeNames.length} (expected ${DUPE_ALLOW.length})`);
   for (const n of dupeNames) console.log(`    d ${n}`);
   // Compare the SORTED ARRAYS, not just their lengths (N1) — a swapped name at an unchanged count
   // must still fail, naming both the entry that's missing and the one that showed up uninvited.
-  if (orderNames.length !== ORDER_ALLOW.length || orderNames.some((n, i) => n !== ORDER_ALLOW[i])) {
+  if (!listOk(orderNames, ORDER_ALLOW)) {
     for (const n of ORDER_ALLOW) if (!orderNames.includes(n)) FAIL("anchor-ladder", `order-allow-list: expected member missing — ${n}`);
     for (const n of orderNames) if (!ORDER_ALLOW.includes(n)) FAIL("anchor-ladder", `order-allow-list: unexpected member — ${n}`);
     if (!fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `order-allow-list count ${orderNames.length} !== expected ${ORDER_ALLOW.length} with no single-name diff found — investigate before trusting either count`);
   }
-  if (dupeNames.length !== DUPE_ALLOW.length || dupeNames.some((n, i) => n !== DUPE_ALLOW[i])) {
+  if (!listOk(dupeNames, DUPE_ALLOW)) {
     for (const n of DUPE_ALLOW) if (!dupeNames.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: expected member missing — ${n}`);
     for (const n of dupeNames) if (!DUPE_ALLOW.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: unexpected member — ${n}`);
     if (!fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `dupe-allow-list count ${dupeNames.length} !== expected ${DUPE_ALLOW.length} with no single-name diff found — investigate before trusting either count`);

@@ -598,7 +598,7 @@ The §8d sentence that said the opposite of what happened is rewritten above.
 **F2, the New-Palette consumers.** A second Blast radius row sits beside the poster-strip row in
 the plan, naming `_isNeutralPalette` (color.js:422), `_orderedContext` (430), `newPalSamples` (444)
 and `addKeyColor` (1935, the `vp.keyOklch` read), with the reviewer's figures and
-`scratchpad/u7rev/blast.mjs` as the source: 148 neutral flips, 14 primary-index changes, 339 of 344
+`.sdlc/records/pif-u7-blast/blast.mjs` as the source: 148 neutral flips, 14 primary-index changes, 339 of 344
 `deriveRelative("extend")` targets moved, default kit `[0.593, 0.206, 289.0]` to
 `[0.504, 0.187, 289.0]`. I verified the four line references against the file and did NOT
 re-measure the figures. The row carries a one-clause PENDING placeholder for the owner's ruling,

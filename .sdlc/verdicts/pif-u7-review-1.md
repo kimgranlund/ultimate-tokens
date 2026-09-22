@@ -6,9 +6,11 @@ Fresh-context reviewer, grade l3. Unit branch `unit/pif-u7`, UB `de1bafef`, grad
 Every mutation ran in a throwaway `git clone -q --shared` under my own scratch directory, never in
 the worktree. The host guard `pgrep -f 'node .*test/(run|engine|ui)' | wc -l` was polled to 0
 before every test process; one process at a time; `npm test` was never run. Host load sat between
-14 and 32 during the runs, so no timing here is a baseline figure. Raw outputs are in
-`scratchpad/u7rev/*.out`; the control scripts are `scratchpad/u7rev/runner*.sh`, `blast.mjs`,
-`ko.mjs`.
+14 and 32 during the runs, so no timing here is a baseline figure. Raw outputs went to a session scratch directory that does not survive the session and are not
+recovered; the figures quoted below are the record of them. The two control scripts those figures
+come from are committed at `.sdlc/records/pif-u7-blast/blast.mjs` and `ko.mjs`, with the command
+that regenerates each in that directory's `README.md` (re-run at pre-land pass 2, both reproduce
+the figures below). The `runner*.sh` shell wrappers around the test gates were not recovered.
 
 Criteria read from the unit tree, with U7-P4 read as amended at revision 32
 (`git show 5951b160:.sdlc/plans/preset-intent-fidelity.md`).
@@ -65,7 +67,7 @@ palettes summary) and the poster strip the builder found:
 | `addKeyColor`, stores `vp.keyOklch` | `src/ui/sections/color.js:1935` | `vp.keyOklch` | yes | pre-land review S1, one clause |
 | poster strip weighting | `src/ui/app-helpers.mjs:582` via `app.js:797` | `.key` | yes | handoff §5, plan Blast radius row |
 
-Measured with `scratchpad/u7rev/blast.mjs`: `projectView(hydrate(doc))` at UB against head over
+Measured with `blast.mjs`, committed at `.sdlc/records/pif-u7-blast/blast.mjs`: `projectView(hydrate(doc))` at UB against head over
 the default kit plus all 343 curated presets (344 documents), applying `_orderedContext`'s own
 ordering rule with the whole palette set as context, then `deriveRelative("extend", samples)`:
 
@@ -89,7 +91,7 @@ is intended, since nobody has ruled on the product behaviour (the builder says s
 strip in §10, and it applies equally here).
 
 Also checked, in the builder's favour: `keyOklch` and `key` agree under the new branch.
-`scratchpad/u7rev/ko.mjs` reads `max |keyOklch - hexToOklch(key)|` at `0.00e+0` over the 16
+`ko.mjs`, committed at `.sdlc/records/pif-u7-blast/ko.mjs`, reads `max |keyOklch - hexToOklch(key)|` at `0.00e+0` over the 16
 default-kit palettes at head, against `5.86e-1` with the cusp branch restored. So the triple
 `rgbToOklchLocal` returns is the anchor's, not a leftover cusp triple, and every consumer of
 `keyOklch` sees the same colour the swatch shows.
