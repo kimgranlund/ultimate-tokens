@@ -56,6 +56,12 @@ const PINNED = [
 ];
 const PINNED_PATHS = new Set(PINNED.map((p) => p.path));
 
+// The three reasons `--fix` never opens a file, in one seam so the self-test can exercise the
+// PINNED exemption directly (#730 review finding 5) without needing a real file on disk for it.
+function shouldSkipFix(rel) {
+  return BINARY.test(rel) || PINNED_PATHS.has(rel) || isGenerated(rel);
+}
+
 // -- Markdown inline-span masking -------------------------------------------------------------
 // Replaces the INTERIOR of every backtick span with a same-length run of a placeholder character
 // (never the dash), so positions outside the span line up unchanged and a dash inside the span is
@@ -89,6 +95,11 @@ const LONE_TOKEN_RE = new RegExp(`(?:\\\\)?(["'\`])${DASH}(?:\\\\)?\\1`);
 // A table cell whose whole content is the dash: `| \u2014 |`. In a `.md` file this is R1 (the
 // gate + fix); in any other file it is a table row a program prints (R0 (b)).
 const CELL_RE = new RegExp(`\\|\\s*${DASH}\\s*\\|`);
+// The R1 FIX form: global, and a lookahead on the closing `|` so it is never consumed, which is
+// what lets two empty cells on the same row (sharing one `|` between them) both match (#730
+// review finding 2: consuming the closing pipe left the next cell's opening pipe missing, and R8
+// then wrote a table-breaking `|, |` into it).
+const CELL_FIX_RE = new RegExp(`\\|(\\s*)${DASH}(\\s*)(?=\\|)`, "g");
 // A Markdown ATX heading, one to six `#` and a space, fenced blocks included (a `#` line inside a
 // fence reads as a shell comment, so the colon still fits).
 const HEADING_RE = /^#{1,6} /;
@@ -200,141 +211,173 @@ function runGate() {
 }
 
 // ---------------------------------------------------------------------------------------------
-function applyRule(line, prevLine, decision) {
+// Every index below is found on `masked` (so a dash inside a Markdown inline span is invisible to
+// every search, including R1's own cell scan) and then applied to `raw` at that SAME index (the
+// mask keeps every position outside a span byte-aligned with the raw line, since only a span's
+// interior characters are ever swapped for a same-length placeholder). Slicing `raw` at a masked
+// index is therefore always the real text, never the placeholder (#730 review finding 1: applying
+// `line.indexOf(DASH)` etc. straight to the raw line let a span's dash be hit first, and get
+// rewritten, whenever it sat before the outside dash that actually triggered the rule).
+function applyRule(raw, masked, prevRaw, prevMasked, decision) {
   switch (decision.rule) {
-    case "R1": return line.replace(CELL_RE, "| none |");
-    case "R2": {
-      const idx = line.indexOf(DASH);
-      // Collapse the surrounding spaces, then join with a colon.
-      return line.slice(0, idx).replace(/\s+$/, "") + ": " + line.slice(idx + 1).replace(/^\s+/, "");
+    case "R1": {
+      // Every empty cell on the row, not just the first (finding 2): CELL_FIX_RE never consumes
+      // the closing `|`, so two cells sharing one pipe both match.
+      let result = "", last = 0, any = false;
+      for (const m of masked.matchAll(CELL_FIX_RE)) {
+        any = true;
+        result += raw.slice(last, m.index) + "| none ";
+        last = m.index + m[0].length;
+      }
+      return any ? result + raw.slice(last) : raw;
     }
+    case "R2":
     case "R3": {
-      const idx = line.indexOf(DASH);
-      return line.slice(0, idx).replace(/\s+$/, "") + ": " + line.slice(idx + 1).replace(/^\s+/, "");
+      const idx = masked.indexOf(DASH);
+      const head = raw.slice(0, idx).replace(/\s+$/, "");
+      const rest = raw.slice(idx + 1).replace(/^\s+/, "");
+      // No trailing ": " when the dash was the last thing on the line (finding 6).
+      return rest === "" ? head + ":" : head + ": " + rest;
     }
     case "R4": {
-      const idxs = dashIndices(line);
+      const idxs = dashIndices(masked);
       for (const idx of idxs) {
-        const pv = prevNonSpace(line, idx);
-        if (pv >= 0 && ",;:(".includes(line[pv])) {
-          const nx = nextNonSpace(line, idx);
-          return line.slice(0, pv + 1) + " " + line.slice(nx);
+        const pv = prevNonSpace(masked, idx);
+        if (pv >= 0 && ",;:(".includes(masked[pv])) {
+          const nx = nextNonSpace(masked, idx);
+          return raw.slice(0, pv + 1) + " " + raw.slice(nx);
         }
       }
-      return line;
+      return raw;
     }
     case "R5": {
-      const idxs = dashIndices(line);
+      const idxs = dashIndices(masked);
       for (const idx of idxs) {
-        const nx = nextNonSpace(line, idx);
-        if (nx < line.length && ",.;:)".includes(line[nx]) && (nx + 1 >= line.length || line[nx + 1] === " ")) {
-          const pv = prevNonSpace(line, idx);
-          return line.slice(0, pv + 1) + line.slice(nx);
+        const nx = nextNonSpace(masked, idx);
+        if (nx < masked.length && ",.;:)".includes(masked[nx]) && (nx + 1 >= masked.length || masked[nx + 1] === " ")) {
+          const pv = prevNonSpace(masked, idx);
+          return raw.slice(0, pv + 1) + raw.slice(nx);
         }
       }
-      return line;
+      return raw;
     }
     case "R6": {
-      const idx = line.lastIndexOf(DASH);
-      return line.slice(0, idx).replace(/\s+$/, "") + ",";
+      const idx = masked.lastIndexOf(DASH);
+      return raw.slice(0, idx).replace(/\s+$/, "") + ",";
     }
     case "R8": {
-      const idx = line.indexOf(DASH);
-      const pv = prevNonSpace(line, idx);
-      const nx = nextNonSpace(line, idx);
-      return line.slice(0, pv + 1) + ", " + line.slice(nx);
+      const idx = masked.indexOf(DASH);
+      const pv = prevNonSpace(masked, idx);
+      const nx = nextNonSpace(masked, idx);
+      return raw.slice(0, pv + 1) + ", " + raw.slice(nx);
     }
-    default: return line;
+    default: return raw;
   }
+}
+
+// ---------------------------------------------------------------------------------------------
+// The one place that walks a line array and applies the rule table, shared by `runFix()` (a real
+// file's lines) and the self-test (a small in-memory fixture, including its own idempotence and
+// R7 checks). A line can carry more than one dash (a heading's second dash, a wrapped sentence
+// with two parentheticals): loop until the line carries none, re-masking after every edit so
+// positions stay correct. R1/R2/R3 are whole-line SHAPE rules (one table's cells, one heading
+// label, one bullet label) and fire at most once per line; a later dash on the same line falls
+// through to R4-R8, per the rule table ("a second dash on the same heading falls to R8"). R0
+// stops the whole line (it is left in place and listed) without touching it.
+function fixLines(lines, md) {
+  const out = lines.slice();
+  const edits = []; // { rule, construct?, lineIndex, text? | before, after }
+  for (let i = 0; i < out.length; i++) {
+    let structuralDone = false;
+    let guard = 0;
+    while (guard++ < 200) {
+      const raw = out[i];
+      const masked = md ? maskMdSpans(raw) : raw;
+      if (!dashIndices(masked).length) break;
+
+      const prevRaw = i > 0 ? out[i - 1] : null;
+      const prevMasked = prevRaw !== null ? (md ? maskMdSpans(prevRaw) : prevRaw) : null;
+      const decision = classifyLine({ line: masked, prevLine: prevMasked, md, skipStructural: structuralDone });
+      if (!decision) break;
+
+      if (decision.rule === "R0") {
+        edits.push({ rule: "R0", construct: decision.construct, lineIndex: i, text: raw });
+        break;
+      }
+      if (["R1", "R2", "R3"].includes(decision.rule)) structuralDone = true;
+      if (decision.rule === "R7") {
+        const idx = masked.indexOf(DASH);
+        const beforeLine = raw, beforePrev = prevRaw;
+        out[i] = raw.slice(idx + 1).replace(/^\s+/, "");
+        out[i - 1] = out[i - 1].replace(/\s+$/, "") + ",";
+        edits.push({ rule: "R7", lineIndex: i, before: `${beforeLine}\n${beforePrev}`, after: `${out[i]}\n${out[i - 1]}` });
+        continue;
+      }
+      const after = applyRule(raw, masked, prevRaw, prevMasked, decision);
+      if (after === raw) break; // no forward progress; avoid an infinite loop
+      edits.push({ rule: decision.rule, lineIndex: i, before: raw, after });
+      out[i] = after;
+    }
+  }
+  return { lines: out, edits };
 }
 
 function runFix({ sample }) {
   const files = walkTracked();
-  const perRule = { R1: 0, R2: 0, R3: 0, R4: 0, R5: 0, R6: 0, R7: 0, R8: 0 };
+  // Counted PER LINE, not per dash-edit (#730 review finding 3): a `Set` of `rel:lineIndex` per
+  // rule, so a line with two edits of the same rule (rare, but R8 can fire twice on one line)
+  // counts once, matching how the plan itself counted the rule table.
+  const linesByRule = { R1: new Set(), R2: new Set(), R3: new Set(), R4: new Set(), R5: new Set(), R6: new Set(), R7: new Set(), R8: new Set() };
   const r0ByConstruct = { a: 0, b: 0, c: 0, d: 0, e: 0 };
   const r0Lines = [];
-  const samples = {};
-  const pushSample = (rule, before, after) => {
-    if (!sample) return;
-    (samples[rule] ??= []).push({ before, after });
-  };
+  const samples = { R1: [], R2: [], R3: [], R4: [], R5: [], R6: [], R7: [], R8: [] };
 
   for (const rel of files) {
-    if (BINARY.test(rel)) continue;
-    if (PINNED_PATHS.has(rel)) continue;
-    if (isGenerated(rel)) continue;
+    if (shouldSkipFix(rel)) continue;
     const abs = join(ROOT, rel);
     const src = readText(abs);
     if (src === null) continue;
     const md = isMd(rel);
     const lines = src.split("\n");
-    const before = lines.length;
+    const { lines: fixed, edits } = fixLines(lines, md);
     let changed = false;
 
-    for (let i = 0; i < lines.length; i++) {
-      // A line can carry more than one dash (a heading's second dash, a wrapped sentence with
-      // two parentheticals): loop until the line carries none, re-masking after every edit so
-      // positions stay correct. R1/R2/R3 are whole-line SHAPE rules (one table cell, one heading
-      // label, one bullet label) and fire at most once per line; a later dash on the same line
-      // falls through to R4-R8, per the rule table ("a second dash on the same heading falls to
-      // R8"). R0 stops the whole line (it is left in place and listed).
-      let structuralDone = false;
-      let guard = 0;
-      while (guard++ < 200) {
-        const raw = lines[i];
-        const masked = md ? maskMdSpans(raw) : raw;
-        if (!dashIndices(masked).length) break;
-
-        const prevRaw = i > 0 ? lines[i - 1] : null;
-        const prevMasked = prevRaw !== null ? (md ? maskMdSpans(prevRaw) : prevRaw) : null;
-        const decision = classifyLine({ line: masked, prevLine: prevMasked, md, skipStructural: structuralDone });
-        if (!decision) break;
-
-        if (decision.rule === "R0") {
-          r0ByConstruct[decision.construct]++;
-          r0Lines.push({ rel, line: i + 1, construct: decision.construct, text: raw });
-          break;
-        }
-        if (["R1", "R2", "R3"].includes(decision.rule)) structuralDone = true;
-        if (decision.rule === "R7") {
-          perRule.R7++;
-          const beforeLine = raw;
-          const idx = raw.indexOf(DASH);
-          const rest = raw.slice(idx + 1).replace(/^\s+/, "");
-          lines[i] = rest;
-          lines[i - 1] = lines[i - 1].replace(/\s+$/, "") + ",";
-          pushSample("R7", `${beforeLine}\n${prevRaw}`, `${lines[i]}\n${lines[i - 1]}`);
-          changed = true;
-          continue;
-        }
-        perRule[decision.rule] = (perRule[decision.rule] || 0) + 1;
-        const after = applyRule(raw, prevRaw, decision);
-        if (after === raw) break; // no forward progress; avoid an infinite loop
-        pushSample(decision.rule, raw, after);
-        lines[i] = after;
-        changed = true;
+    for (const e of edits) {
+      if (e.rule === "R0") {
+        r0ByConstruct[e.construct]++;
+        r0Lines.push({ rel, line: e.lineIndex + 1, construct: e.construct, text: e.text });
+        continue;
       }
+      changed = true;
+      linesByRule[e.rule].add(`${rel}:${e.lineIndex}`);
+      if (sample) samples[e.rule].push({ rel, line: e.lineIndex + 1, before: e.before, after: e.after });
     }
 
     if (changed) {
-      if (lines.length !== before) throw new Error(`${rel}: line count changed (${before} -> ${lines.length})`);
-      writeFileSync(abs, lines.join("\n"));
+      if (fixed.length !== lines.length) throw new Error(`${rel}: line count changed (${lines.length} -> ${fixed.length})`);
+      writeFileSync(abs, fixed.join("\n"));
     }
   }
 
+  const counts = {};
   for (const c of ["a", "b", "c", "d", "e"]) console.log(`R0 ${c} ${r0ByConstruct[c]}`);
-  for (const r of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"]) console.log(`${r} ${perRule[r] || 0}`);
+  for (const r of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"]) {
+    counts[r] = linesByRule[r].size;
+    console.log(`${r} ${counts[r]}`);
+  }
   if (r0Lines.length) {
     console.log("\nresidual (left in place, fix by hand):");
     for (const r of r0Lines) console.log(`  ${r.rel}:${r.line} (${r.construct}) ${r.text}`);
   }
   if (sample) {
+    // P3: every rule under 50 hits lists every hit; a bigger rule gets four samples.
     console.log("\nsamples:");
-    for (const [rule, arr] of Object.entries(samples)) {
-      for (const s of arr.slice(0, 4)) console.log(`  ${rule} - ${s.before}\n  ${rule} + ${s.after}`);
+    for (const r of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"]) {
+      const arr = counts[r] < 50 ? samples[r] : samples[r].slice(0, 4);
+      for (const s of arr) console.log(`  ${r} ${s.rel}:${s.line} - ${s.before}\n  ${r} ${s.rel}:${s.line} + ${s.after}`);
     }
   }
-  return perRule;
+  return counts;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -354,9 +397,12 @@ function selftest() {
   if (utf8Count !== 1) FAIL("reader", `UTF-8 read found ${utf8Count} dashes, expected 1`);
   if (latin1Count === 1) FAIL("reader", "a latin1/byte-mode read also found the glyph -- the self-test cannot tell it apart from a real UTF-8 read");
 
-  // (2) One fixture per row of the rule table (plan `rule-gates.md`, U3 design), each an
-  // {line, prevLine, md, expectRule[, expectFix]} case. A row whose expected output is wrong
-  // fails here, before the tree scan, per the plan's own negative control (U3-1).
+  // (2) One fixture per row of the rule table (plan `rule-gates.md`, U3 design), each a
+  // {line, prevLine, md, expectRule[, expectFix]} case, run through `fixLines()` -- the SAME
+  // per-line loop `runFix()` uses on a real file, not a hand-rolled shortcut (#730 review finding
+  // 5: the old R7 check bypassed `runFix`'s own R7 code path and could not have caught a bug in
+  // it). A row whose expected output is wrong fails here, before the tree scan, per the plan's
+  // own negative control (U3-1).
   const cases = [
     { name: "R0(a) after a full stop", md: true, line: `etc. ${DASH} so`, expectRule: "R0" },
     { name: "R0(b) table cell in code", md: false, line: `\`| row | ${DASH} |\``, expectRule: "R0" },
@@ -365,38 +411,58 @@ function selftest() {
     { name: "R0(e) lone token, plain", md: false, line: `const s = "${DASH}";`, expectRule: "R0" },
     { name: "R0(e) lone token, escaped", md: false, line: `const j = "{\\"v\\": \\"${DASH}\\"}";`, expectRule: "R0" },
     { name: "R1 empty md cell", md: true, line: `| a | ${DASH} | b |`, expectRule: "R1", expectFix: "| a | none | b |" },
+    { name: "R1 two empty md cells share one row", md: true, line: `| a | ${DASH} | ${DASH} | b |`, expectRule: "R1", expectFix: "| a | none | none | b |" },
     { name: "R2 heading label", md: true, line: `## 1.63 ${DASH} 2026-09-18 - title`, expectRule: "R2", expectFix: "## 1.63: 2026-09-18 - title" },
+    { name: "R2 heading label, dash ends the line", md: true, line: `## title ${DASH}`, expectRule: "R2", expectFix: "## title:" },
     { name: "R3 bullet label", md: true, line: `- \`npm test\` ${DASH} the gate.`, expectRule: "R3", expectFix: "- \`npm test\`: the gate." },
     { name: "R4 after comma", md: true, line: `foo, ${DASH} bar`, expectRule: "R4", expectFix: "foo, bar" },
     { name: "R5 before period, space required", md: true, line: `(#477) ${DASH} .btn`, expectRule: "R8" },
     { name: "R5 before period, punctuation followed by a space", md: true, line: `keep the pause ${DASH} . Next sentence`, expectRule: "R5", expectFix: "keep the pause. Next sentence" },
     { name: "R6 line-end", md: true, line: `gen:type-fonts ${DASH}`, expectRule: "R6", expectFix: "gen:type-fonts," },
-    { name: "R7 line-start after a word", md: true, line: `${DASH} this file is only the mental model.`, prevLine: "assumes", expectRule: "R7" },
+    { name: "R7 line-start after a word", md: true, line: `${DASH} this file is only the mental model.`, prevLine: "assumes", expectRule: "R7", expectFix: "this file is only the mental model.\nassumes," },
     { name: "R8 default", md: true, line: `TKT-0015 ${DASH} undocumented elsewhere`, expectRule: "R8", expectFix: "TKT-0015, undocumented elsewhere" },
+    // Finding 1: a span dash sits BEFORE the outside dash that actually triggers a rule. The old
+    // code found `line.indexOf(DASH)` on the raw line and hit the span's dash first.
+    { name: "a span dash before the outside dash is never touched", md: true,
+      line: `\`gallery ${DASH} editor\` shipped today ${DASH} not someday.`,
+      expectRule: "R8", expectFix: `\`gallery ${DASH} editor\` shipped today, not someday.` },
   ];
   for (const c of cases) {
-    const masked = c.md ? maskMdSpans(c.line) : c.line;
-    const prevMasked = c.prevLine !== undefined ? (c.md ? maskMdSpans(c.prevLine) : c.prevLine) : null;
-    const decision = classifyLine({ line: masked, prevLine: prevMasked, md: c.md });
-    if (!decision) { FAIL(c.name, "no rule matched"); continue; }
-    if (decision.rule !== c.expectRule) { FAIL(c.name, `matched ${decision.rule}, expected ${c.expectRule}`); continue; }
+    const arr = c.prevLine !== undefined ? [c.prevLine, c.line] : [c.line];
+    const { edits } = fixLines(arr, c.md);
+    const edit = edits[0];
+    if (!edit) { FAIL(c.name, "no rule matched"); continue; }
+    if (edit.rule !== c.expectRule) { FAIL(c.name, `matched ${edit.rule}, expected ${c.expectRule}`); continue; }
     if (c.expectFix !== undefined) {
-      const got = decision.rule === "R7"
-        ? c.line.slice(c.line.indexOf(DASH) + 1).replace(/^\s+/, "")
-        : applyRule(c.line, c.prevLine ?? null, decision);
+      const got = edit.rule === "R0" ? edit.text : edit.after;
       if (got !== c.expectFix) FAIL(c.name, `fix produced "${got}", expected "${c.expectFix}"`);
     }
   }
 
-  // (3) The two exemptions. A Markdown inline span keeps its glyph byte for byte (the mask must
-  // not leak into the rewritten line), and a PINNED file is never opened by `--fix`.
-  const spanLine = "SMOKE PASS `gallery " + DASH + " editor` done";
-  if (dashIndices(maskMdSpans(spanLine)).length !== 0) FAIL("markdown-span-mask", "a dash inside an inline span was still counted");
-  if (!spanLine.includes(DASH)) FAIL("markdown-span-mask", "the fixture itself lost its glyph before masking");
+  // (3) The two exemptions. A Markdown inline span keeps its glyph byte for byte end to end
+  // through `fixLines()` (checked above, "a span dash before..."), and a PINNED path is never
+  // opened by `--fix` (`shouldSkipFix()` is the seam `runFix()`'s walk actually calls).
+  const fakePinned = "docs/reference/__selftest-pinned__.md";
+  if (shouldSkipFix(fakePinned)) FAIL("pinned-exemption", "an unpinned path was already skipped -- the fixture is not isolated");
+  PINNED_PATHS.add(fakePinned);
+  if (!shouldSkipFix(fakePinned)) FAIL("pinned-exemption", "adding a path to PINNED did not make shouldSkipFix() skip it");
+  PINNED_PATHS.delete(fakePinned);
 
-  // (4) Idempotence: fixing an already-fixed line is a no-op.
-  const already = "TKT-0015, undocumented elsewhere";
-  if (dashIndices(already).length !== 0) FAIL("idempotence", "the fixed fixture still carries the glyph");
+  // (4) Idempotence: a real, multi-rule, multi-line fixture run through `fixLines()` twice must
+  // produce the SAME lines both times, with zero edits on the second pass (#730 review finding 5:
+  // the old check only asserted a hand-written "already fixed" string had no dash in it, which
+  // cannot fail no matter what `fixLines()` does).
+  const idemSrc = [
+    `## 1.63 ${DASH} 2026-09-18 - title`,
+    `- \`npm test\` ${DASH} the gate.`,
+    `assumes`,
+    `${DASH} this file is only the mental model.`,
+    `plain sentence ${DASH} continues here.`,
+  ];
+  const pass1 = fixLines(idemSrc, true);
+  const pass2 = fixLines(pass1.lines, true);
+  if (pass2.edits.length !== 0) FAIL("idempotence", `a second --fix pass still made ${pass2.edits.length} edit(s): ${JSON.stringify(pass2.edits[0])}`);
+  if (pass2.lines.join("\n") !== pass1.lines.join("\n")) FAIL("idempotence", "a second --fix pass changed the text without recording an edit");
 
   if (fails.length) {
     console.log(`self-test: FAIL ${fails.length} case(s)`);
