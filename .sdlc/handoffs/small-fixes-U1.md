@@ -176,3 +176,55 @@ The `SMOKE PASS` line moved from `smoke.mjs:297` to `smoke.mjs:299` (two added l
 - Fake-chrome fixtures leaked by controls on purpose: `16` reaped with `pkill -9 -f 'jobs/8c58a81c/tmp/p[23]/[a-z0-9]+/test/smoke/fixtures/fake-chrome.mjs'`, then `pgrep -f fake-chrome.mjs | wc -l` printed `0`
 - Profile dirs leaked by controls under the Mac `$TMPDIR`: `16` removed: 8 named in the control logs, 8 made during the control runs with no live process holding them. `8` older ones (14:30, before this pass started, fixture-shaped) were left alone as not mine
 - Real Chrome: U1-3 control `11` reaped by the plan's exact pattern, U1-5 control `0`; guard `0` before each Chrome row
+
+## Rework (review round 2, builder pass 2)
+
+| Field | Value |
+|---|---|
+| Review | `.sdlc/verdicts/small-fixes-U1-p2-review.md` (🔴 FIX-FIRST at `1e25556d`), plan revision 7 (U1-11, U1-12) |
+| Code head | `aa7530ad` (`a5085966` F1 and F2, `aa7530ad` a gap in my own F2 found by a control) |
+| Files | `test/smoke/chrome.mjs`, `test/smoke/launcher.mjs` |
+| npm test | 🟢 `✓ all 48 test files passed`, tree clean after |
+| npm run build | 🟢 `wrote figma/plugin/ui.html 3780.5 KB`, tree clean after |
+| Not claimed | P5b, graded at pre-land |
+
+### What changed
+
+| # | Change | Where | Why this shape |
+|---|---|---|---|
+| F1a | the browser is spawned `detached: true`, so it leads its own process group, and `close()` sends `SIGKILL` to `-proc.pid` (falling back to `proc.kill` if that throws) | `chrome.mjs` `launchChrome`, `close` | a probe of Canary on this Mac listed 11 processes by the profile needle, all with the browser's pid as their `pgid`; `process.kill(-pid, "SIGKILL")` left `0` 500 ms later. The review's writer, the network service, is one of those helpers, so the group signal stops it instead of racing it |
+| F1b | `removeDir(dir)` deletes, then keeps checking every 50 ms, deleting again whenever the dir is back, until it has stayed gone for three checks in a row, bounded at 2 s. It stays synchronous (`Atomics.wait`), and a dir that survives the window is printed on stderr (`chrome.mjs: profile dir ... still present 2s after close(): <last error>`) instead of swallowed | `chrome.mjs` `removeDir` | covers a helper outside the group or not yet reaped by the kernel, which I cannot rule out for Linux Chrome (no Linux Chrome here). The fake legs pay about 150 ms per `close()` |
+| F2 | on a signal leg's 5 s timeout the parent kills the fake it was told about and removes that fake's dir, then sends the child `SIGTERM`, then `SIGKILL` 1 s later or when the launcher itself exits, whichever is first | `launcher.mjs` `runSignalLeg` | the child may be hung and never run its own `close()`, so the parent removes what it knows of first. `aa7530ad`: the 1 s `SIGKILL` was an unref'd timer, and `main()` ends in `process.exit`, which skips timers, so a timeout in the last leg orphaned the child. It now also runs from `process.once("exit")` |
+
+### Criteria at `aa7530ad`
+
+`F` and `S` are `/Users/kimba/.claude/jobs/8c58a81c/tmp/p5` (U1-11: `p4`). Every control ran in its own `git clone -q --shared` checked out at the sha named, with the one-line diff stated and `git diff --stat` reading `1 file changed`. None ran in the worktree. The 9333 guard printed `0` before every Chrome row.
+
+| # | Command | Evidence | Negative control | State |
+|---|---|---|---|---|
+| P1 | as the plan | `✓ all 48 test files passed`, `48`, `0` | clone at `aa7530ad`, `scrim` to `scrimX` in `role-table.json` (`7 insertions(+), 7 deletions(-)`): `exit 1`, `▶ engine/semantic.mjs      FAIL` | 🟢 |
+| P2 | as the plan | `exit 0`, `wrote figma/plugin/ui.html 3780.5 KB`, `0` | clone at `aa7530ad`, `node_modules` symlinked read only, `smoke` gains `node test/smoke/missing.mjs &&`: `exit 1`, `1` | 🟢 |
+| P3 | as the plan, at the commit carrying this section | see the closing P3 row below | as pass 2 | see below |
+| P4 | as the plan | see the closing P4 row below | as pass 2 | see below |
+| P5a | as the plan | `exit 0`, `1`, `1`, `0`, `0`; `SMOKE PASS` still at `smoke.mjs:299` | U1-11's control: `3` of `20` green runs at `1e25556d` left the profile dir | 🟢 |
+| P5b | not run by this seat | none | none | ⚪ pre-land |
+| U1-1 | the plan's five greps | `test/smoke/smoke.mjs:0`, `test/smoke/chrome.mjs:0`, `1`, `4`, `5`, `1` | `origin/main` clone `3e1483e4`: first grep `1`, `test/smoke/chrome.mjs` absent | 🟢 |
+| U1-2 | as the plan | `exit 0`, `6`, `0`, `PASS: launcher discovers its port from DevToolsActivePort and leaves no process on close, SIGTERM, SIGINT or deadline` | each `exit 1`: (1) `removeDir(dir);` deleted: legs (b) (c) (d) (e) (f) FAIL on the dir; (2) `"SIGTERM"` renamed `"SIGTERMX"`: legs (c) and (f), `fake pid 77825 still alive 2s after SIGTERM (child exit SIGTERM)`; (3) the group-kill `try` block deleted (`3 deletions(-)`, one statement): legs (b) (c) (d) (e) FAIL on the fake pid; (f-rev4) `onExit(close)` in `childBeforeDiscoveryMain` made `onExit(() => {})`: leg (f) alone, `fake pid 78672 still alive 2s after SIGTERM (child exit 143)`; (4.3) leg (f)'s delay `"3000"` made `"0"`: `discovery had already finished when SIGTERM was sent, so this leg proved nothing about the pending window` | 🟢 |
+| U1-3 | as the plan | `exit 143`, `0`, `0`; also repeated ten times: `143/0/0` ten times out of ten (exit/processes/dirs) | `origin/main` clone `3e1483e4`, `dist/` copied: `exit 143`, `11` by the old needle, `11` reaped by `pkill -9 -f 'remote-debugging-port=9333'`, `0` after. The ten-run repeat against `1e25556d` also read `143/0/0` ten times, so on this host at this hour the signalled path did not show the race; U1-11 is the row that discriminates it | 🟢 |
+| U1-4 | P5a's last two figures, and U1-11 | `0`, `0`; `0` of `20` | U1-11's control | 🟢 |
+| U1-5 | as the plan | `exit 0`, `decoy requests: 0`, `1` | `origin/main` clone: `exit 1`, `decoy requests: 113`, `0`, `  smoke threw: Chrome CDP did not come up within 45s (last: HTTP 404)`; `0` reaped | 🟢 |
+| U1-6 | as the plan | `1`, `1` | P2's control | 🟢 |
+| U1-7 | as the plan, under `bash` | `exit 0`, `6`, `0` | clone, `TMPDIR`-only plain restore (`if (v === undefined && k !== "TMPDIR") delete process.env[k];`): `exit 1`, `5`, `child never printed a pid/dir line (child exit 1; child stderr: Error: ENOENT: no such file or directory, mkdtemp 'undefined/ultimate-tokens-smoke-XXXXXX')` | 🟢 |
+| U1-8 | as the plan, `node:24` on a clone at `aa7530ad` | `up`, `TMPDIR=<unset> Linux`, `exit 0`, `6`. This is also the Linux run of the new `detached` spawn and group kill, against the fake | U1-7's clone under the same `docker run`: `exit 1`, `5` | 🟢 |
+| U1-9 | as the plan | `1`, `child stderr: Error: ENOENT: no such file or directory, mkdtemp '/nonexistent/ultimate-tokens-smoke-XXXXXX'` | the same edit on `b57b4658`: `0`, `child never printed a pid/dir line` | 🟢 |
+| U1-10 | as the plan | `  FAIL  leaves no process or directory after a deadline with no DevToolsActivePort: pgrep could not check for a leftover process (ENOENT), so this leg cannot pass` | `b57b4658`: `  pass  leaves no process or directory after a deadline with no DevToolsActivePort` | 🟢 |
+| U1-11 | after `npm run build`, twenty consecutive `TMPDIR="$T" node test/smoke/smoke.mjs` runs, each with its own `T`, then `sleep 5`, `pgrep` needle count and `ls -d "$T"/ultimate-tokens-smoke-*` count (script `p4/u111.sh`), at `a5085966`; `git diff --stat a5085966 aa7530ad -- test/smoke/chrome.mjs test/smoke/smoke.mjs` prints nothing, so the run covers the head's code | `0` of `20` left a dir; all `20` read `exit 0 procs 0`; `0` `still present 2s after close` lines in the twenty logs | the same twenty against `1e25556d` (`dist/` copied): `3` of `20`, each holding one `Default/.com.google.Chrome.canary.TransportSecurity.<suffix>`, the review's leftover | 🟢 |
+| U1-12 | clone at `aa7530ad`, `childMain`'s `onExit(close)` made `process.on("SIGTERM", () => {}); process.on("SIGINT", () => {});` so legs (c) and (d) hang past the timeout; `node test/smoke/launcher.mjs`, then `pgrep -f fake-chrome.mjs \| wc -l` | legs (c) and (d) FAIL `--child had not exited 5s after start, SIGTERM sent at 200ms` (and `SIGINT`), then `0` | the same edit at `1e25556d`: the same two FAIL lines, then `2` | 🟢 |
+| U1-12b | my own gap: clone, `childBeforeDiscoveryMain`'s `onExit(close)` made `process.on("SIGTERM", () => {}); setInterval(() => {}, 1000);`, so the last leg (f) hangs; count the clone's `launcher.mjs` children and fakes 2 s after exit | `aa7530ad`: `children: 0 fakes: 0` | `a5085966`: `children: 1 fakes: 0`. A first try without the `setInterval` read `0` at both shas: with its fake killed, the child had no handles left and exited on its own, so that version could not red | 🟢 |
+
+### Hygiene
+
+- Fake Chrome fixtures leaked by controls on purpose: `8` in `p5`, plus the U1-12 and U1-12b controls' `2` and `1`, reaped with `pkill -9 -f` on each clone's own `test/smoke/` path; `pgrep -f fake-chrome.mjs | wc -l` then `0`.
+- Profile dirs under the Mac `$TMPDIR`: `10` from these controls removed (made after 15:10, no live process holding them). `18` older fixture dirs remain, 14:30 to 15:08, from before this rework or from other seats; not mine to remove.
+- Real Chrome: U1-3 control `11` reaped by the plan's exact pattern, U1-5 control `0`.
+- The U1-11 control's `3` leftover dirs remain under `p4/tmp-*` as evidence.
