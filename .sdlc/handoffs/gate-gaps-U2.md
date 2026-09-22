@@ -15,7 +15,7 @@ pass: 2
 | Head | `252e525b20a57340e0553fe4cd4320c0c4faba1c` |
 | Files (pass 2) | scripts/report-preset-fidelity.mjs, test/engine/ramp-identity.mjs, .sdlc/adapter.md, .sdlc/handoffs/gate-gaps-U2.md (this file) |
 | Ran | `npm test` in a fresh clone at the pass-2 final head, `all 51 test files passed`, `git status --short` empty after; `node test/repo/branding.mjs` -> `branding: clean (527 files scanned)` in the same clone; every negative control below in its own throwaway clone, never in the unit worktree |
-| Left out | step 7 (the baseline `npm test` row rewrite) and U2-7's P2 half, per the brief's hold; both are quoted, not graded, below. F3 (the plan-level base-tree-only blind spot) is untouched pending the Conductor's ruling, per the rework brief |
+| Left out | step 7 (the baseline `npm test` row rewrite) and U2-7's P2 half, per the brief's hold; both are quoted, not graded, below |
 
 ## Scope for this pass
 
@@ -248,6 +248,33 @@ FAIL: vacuity, rendered 0 of 0 loaded palette(s)
 
 `exit 1`. The `FAIL` line is the last line, and no `differing cells` total prints on this path, so `grep -c '^0 differing cells$'` on this output is `0`, never a false green.
 
+### F3 ruling (a) . the identity control diffs the base's inputs only, confirmed against `brands.js`
+
+Conductor's ruling on F3, folded in per the rework brief: the identity control renders the base tree's inputs on both engines; a head-only change to an input file is not diffed. Demonstrated fresh, in a throwaway clone at pass 2's final head:
+
+Every `"hue"` field in `src/ui/categories/brands.js` shifted by +40 (mod 360):
+
+```
+node -e '... replace every "hue":N with "hue":(N+40)%360 ...' src/ui/categories/brands.js
+```
+
+`git diff --stat -- src/ui/categories/brands.js` -> `src/ui/categories/brands.js | Bin 33741 -> 33759 bytes` / `1 file changed, 0 insertions(+), 0 deletions(-)`. This file is `linguist-generated -diff` in `.gitattributes`, so git reports it as binary; that Bin line is git's own diff-stat for this path, not a paraphrase.
+
+```
+node scripts/report-preset-fidelity.mjs --identity-control --base HEAD --only brands
+```
+
+```
+identity perceptual: 0/84 palettes, 0/2100 cells differ, max dL* 0.0000
+identity peak: 0/84 palettes, 0/2100 cells differ, max dL* 0.0000
+identity even: 0/84 palettes, 0/2100 cells differ, max dL* 0.0000
+0 differing cells
+```
+
+`exit 0`, by design: the base tree (this clone's own HEAD) is read on both engine copies, so its own already-shifted hues are identical to themselves, not compared against the pre-shift head.
+
+Checked, not assumed, whether `test/engine/anchor.mjs`'s invariant sweeps catch the same mutation: both legs still `exit 0` and print `PASS` with no `FAIL` line. `node test/engine/anchor.mjs` (SAMPLED): `PASS (SAMPLED): ...`. `node test/engine/anchor.mjs --full` (FULL, the `gate:corpus-anchor` script): `PASS (FULL): ...`. Neither leg's checks (window, monotone, gap, distinct, notch, the anchor-f4 movement bounds) are keyed to a specific hue value, so a uniform hue shift passes both. No gate in this repo catches a head-only change to `src/ui/categories/*.js`, the default kit's palette list, or `src/ui/persist.js` as an identity check.
+
 ### PRESETS exit-2 case
 
 A base tree whose `src/ui/categories/architecture.js` renames its `PRESETS` export away, in a throwaway clone:
@@ -294,7 +321,7 @@ Review verdict: FIX-FIRST at `9a5b6599` (this unit's pass-1 code head, quoted `e
 |---|---|---|
 | F1 (adapter time cell not measured) | Timed a fresh stripped run (`real 14.63`, load 3.54/3.19) and a fresh authored run (`real 50.38`, load 3.18/3.36), both against the working tree itself, and restated the `.sdlc/adapter.md` `ramp-identity` row's time cell from these two measured `real` figures, each marked loud with its load reading. No CPU time, no prototype figures. | `252e525b` |
 | F2 (U2-6 cleanup-removal control missing) | Added the control to the U2-6 section: removing only `exitIdentity`'s `rmSync` leaves the count at `0` (the `process.on("exit")` backstop still cleans), both `rmSync` sites removed (diff-stat `1 file changed, 1 insertion(+), 2 deletions(-)`) leaves `1`. Both edits cited in the handoff. | `252e525b` (control run in a throwaway clone) |
-| F3 (plan-level: base-tree-only coverage) | Nothing added, per the brief; this is the Conductor's ruling to make, not a builder fix. Noted in the "Left out" row above. | n/a |
+| F3 (plan-level: base-tree-only coverage) | Conductor ruled (a): the identity control diffs the base's inputs only. Folded in: the adapter row no longer lists `src/ui/categories/`, the kit in `model.mjs`, or `persist.js` as covered, states plainly they are out of reach, and names that `test/engine/anchor.mjs` does not catch a head-only change to them either (checked directly, both SAMPLED and FULL legs, not assumed). New handoff row demonstrates the +40 `brands.js` hue shift: `exit 0`, `0/84` three times, `0 differing cells`, by design. | `252e525b` code (unchanged), demonstration run fresh in a throwaway clone at `6ad49920` |
 | F4 (U2-2/U2-4 quotes paraphrased) | U2-2's third command (the `sed` line) now quoted whole, all six lines, reconstructed from the pass-1 run's own archived log by piping that unchanged output through the same `sed` expression (no rerun of the render). U2-4's stripped run now quotes all six lines byte for byte from the same pass-1 log, rather than "all six lines `0/3780` or `0/16`". | `9a5b659` (the bytes), reconstructed at `252e525b` |
 | F5 (wall time labelled `user`) | U2-4's unmutated authored control now cites the fresh F1 authored timing (`real 50.38`, `user 50.74`, `sys 0.20`), correctly labelled, replacing the mislabelled pass-1 figure ("wall time 103.78s user"). | `252e525b` |
 | F6 (vacuity FAIL wording/exit code; PRESETS not in NEED) | `runIdentityControl`: a full run that loads no palettes now folds into the same vacuity path as a short render count (exit 1, a `FAIL`-opening line), not a usage exit 2. A base category missing its `PRESETS` export now exits 2 naming the category and the missing export, instead of an uncaught `TypeError`. Both demonstrated fresh in the "F6/F7 demonstration" and "PRESETS exit-2 case" sections above. | `252e525b` |
