@@ -10,7 +10,7 @@ pass: 2
 # U2 handoff: `branding.mjs` allow-list becomes a deny-list
 
 BASE (this unit's recorded base sha, the commit the worktree was cut from): `b3961aa9`.
-Head: `e22d00ff` (single commit, `sdlc(rule-gates): U2 pass 2, trim BINARY to the plan's 12-extension list (#724)`).
+Head: `e22d00ff` (the code commit of pass 2; the branch carries four commits from `b3961aa9`: `1867a050` and `e22d00ff` code, `aa31dc77` and `7308ffb5` handoff; code subject `sdlc(rule-gates): U2 pass 2, trim BINARY to the plan's 12-extension list (#724)`).
 
 ## Files
 
