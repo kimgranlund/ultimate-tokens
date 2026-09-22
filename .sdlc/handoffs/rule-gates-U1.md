@@ -145,8 +145,7 @@ All five negative controls rerun in the same clone, byte for byte identical to p
 Review found two items:
 
 - F1: the U1-4 smoke line was quoted in a fenced block rather than an inline backtick span, and a
-  fence is not a span (adapter §3). Fixed above: `SMOKE PASS — gallery · category · editor ·
-  export dialog all render in a real browser` is now an inline span.
+  fence is not a span (adapter §3). Fixed above: the SMOKE PASS line is now an inline span.
 - F2 (code): `findRule`'s `\b` boundary after the class name let `.an-svg .lc-applied-x` pass as a
   match for `lc-applied`, since `\b` sits between a word character and a hyphen too, so a decoy
   class with a hyphenated suffix satisfied the gate in place of the real rule, a false pass.
