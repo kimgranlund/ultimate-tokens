@@ -8,6 +8,8 @@ head: a01b611a
 base: f9725be9
 written: 2026-09-21
 verdict: FIX-FIRST
+verdict-pass-2: PASS
+head-pass-2: ede57b30
 ---
 
 # U14 review: the roadmap rebuilt by a generator
@@ -211,3 +213,87 @@ check script that runs `--verify` at pre-land.
 3. Builder: F3 in the handoff.
 4. Orchestrator: a plan revision for F6 (re-point or retire U5-5's second leg), and optionally
    refresh U5-6's third Expected.
+
+## Pass 2, at `ede57b30`
+
+> **R17 label.** Reviewed by opus at high effort, standing in for a fable reviewer. The builder was
+> opus high (L6), and the Verifier who grades next is also opus. No cross-model independence.
+
+Verdict: **PASS.**
+
+The first head I was sent, `3710ad46`, moved while I was reviewing it: the worktree carried an
+uncommitted generator edit. I told the lead and graded in a `--shared` clone. The lead then froze the
+head at `ede57b30`, three one-file commits later (`418a8ced` generator, `0deb2a54` roadmap, `ede57b30`
+handoff). The worktree was clean at `ede57b30` when I started. Everything below ran in a `--shared`
+clone of this repo, checked out at `ede57b30` in my job tmp dir. The unit worktree was only read,
+and `--final` was never run.
+
+### The re-render, checked hardest
+
+| Check | Result |
+|---|---|
+| snapshot blocks at `ede57b30` against `e147ae0b` | identical, byte for byte, apart from the new `RENDER` block (`renderer 1958a567`, `snapshot e147ae0b...:.sdlc/roadmap.md`) |
+| table rows at `ede57b30` against `e147ae0b` | every data row identical. The only row differences are the legend's `a cell is a command's output` rule (F7 wording) and the issue table's header row (F1) |
+| other lines changed against `e147ae0b` | `status:` (F2), `head:` wording (F8), `generator:` naming both blobs, the new "What that proves, and what it cannot" paragraph at `:44` (F5), the Snapshot prose (trailing newlines, RENDER) and the RENDER block. No count, sha or instant moved |
+| both blobs named | `generator: ... read by blob 06837d22..., rendered by blob 1958a567...`. `06837d22` is the blob committed at `5feddebb` that ran the read. `1958a567` is `ede57b30:.sdlc/scripts/roadmap-gen.mjs` (`git hash-object`) |
+| reproducible | `--verify` exits `0` (769 lines). `--rerender e147ae0b` to a scratch path is `cmp`-identical to the committed file |
+| the old file stays checkable | the new generator on `e147ae0b`'s file refuses with exit 1 and names blob `06837d22` to run instead. The old generator on the new file exits 1 at line 4. Each file only verifies under its own renderer |
+| does the old read hide anything | no live drift: at review time, U5-4 is `diff 0` against live `gh`, and the 3 open PRs have the snapshot's head shas (`3497b692`, `f9725be9`, `880b4a36`). By construction the file shows nothing after `12:35:50Z`, and `head:` and `instant:` say so |
+
+One 🟡 from the re-render, not blocking. `roadmap.md:437` says "The commit that adds this generation is
+not listed, because a file cannot name its own commit". Now three commits touch this generation
+(`e147ae0b`, `a6ee67ee`, `0deb2a54`), and the Revisions table stops at `76993fa0`, so none of them is
+listed. Only `e147ae0b` is named anywhere in the file, in the RENDER block, and `a6ee67ee` is named
+nowhere. Nothing false is stated, and the read is fully identified. But the sentence suggests exactly
+one commit is left out. Worth a clause the next time the generator changes. It is not worth another
+render.
+
+### F1 to F8
+
+| # | State | Evidence |
+|---|---|---|
+| F1 | 🟢 | headers now read `Plans whose ticket: line is it, at any REFS tip` and `Open PRs closing it, or naming it in the title`. The commands are unchanged, and so are the cells |
+| F2 | 🟢 | `status: generated (the Conductor owns this file)` |
+| F3 | 🟢 | the handoff's opening table is now `State at 76993fa0, before the final generation`, with a line saying it is not true at any later head |
+| F4 | 🟢, one residue | `SELF` hashes `import.meta.url`. A modified copy (blob `cb91fe48`) running `--verify` exits 1 and names both blobs. Its scratch re-render names `rendered by blob cb91fe48`, its own blob. `--final` compares `SELF` to `HEAD:`. Residue 🟡: the `--final` requirement resolves `--out` against the repo root, but the file is written relative to cwd. From `.sdlc/`, `node scripts/roadmap-gen.mjs --out roadmap.md --rerender e147ae0b` wrote `.sdlc/roadmap.md` without `--final` (probe in the `3710ad46` clone; the content was identical, so the clone stayed clean). Fix: `writeFileSync(resolve(TOP, out))`, or resolve against `process.cwd()` in both places |
+| F5 | 🟢 | `--verify` now runs `checkAgreement`, so the `plan/gate-split` REFLOG probe exits `3` (`moved during the read`). A consistent tamper still exits `0`, and `roadmap.md:44` now says so, naming the window grade as the check against the world |
+| F6 | 🟢 | revision 35 on main (`7c07ff0c`). The re-pointed leg prints `0` here and `2` at `d34b4fb1`, so it can see prompts again |
+| F7 | 🟢 | the legend adds "while the objects they name remain in the clone". Nothing gates `--verify` yet. That is a pre-land or check-script decision, not this unit's |
+| F8 | 🟢 | `head:` reads "read between T0 and T1". The Snapshot prose names the dropped trailing newlines. The backup inputs are explained in the handoff. U5-6's Expected is revision 36 |
+
+Handoff 🟡, not blocking: the front matter says `gates run at the unit head`, but the only gates
+table is headed `Gates at e147ae0b`, and nothing in the file records gates at `a6ee67ee`, `0deb2a54` or
+`ede57b30`. The table below covers that head.
+
+### U5 criteria and gates at `ede57b30`
+
+| Row or gate | Printed | State |
+|---|---|---|
+| U5-1 | `1`, `anc 0` | 🟢 |
+| U5-2 (bash, root checkout, against the clone's file) | `diff 0` | 🟢 |
+| U5-3 | `8`, `8` | 🟢 |
+| U5-4 | `diff 0` | 🟢 |
+| U5-5 (revision 35) | `0`, `0` | 🟢 |
+| U5-6 (bash) | `nonempty 0`; `.sdlc/roadmap.md`; the eight paths revision 36 lists | 🟢. The `e147ae0b` → `a6ee67ee` → `0deb2a54` roadmap commits each touch only the roadmap. That is three for one generation, which U5-6 admits and the squash folds |
+| U5-7 | `0`, `1` | 🟢 |
+| `npm test`, exit read from `$?` into a log | `exit=0`, `all 48 test files passed`, tree `0` after, HEAD still `ede57b30` | 🟢 |
+| `node test/repo/branding.mjs` | exit `0`, `clean (512 files scanned)` | 🟢 |
+| paths outside `.sdlc/` against `f9725be9` | `0` (three files changed on the branch: the handoff, the roadmap, the generator) | 🟢 |
+| em dashes added (P6) against `f9725be9`; raw count in the three files | `0`; `0` | 🟢 |
+| `sh .sdlc/checks/baseline-agrees-check.sh` | exit `0`, `stale total: 0` | 🟢 |
+
+`npm test` also passed at `3710ad46` (`exit=0`, 48 files, tree `0`). `ede57b30` differs from it only in
+three `.sdlc/` files.
+
+### Pass 2 closed
+
+`npm test` was rerun in the foreground at `ede57b30` on 2026-09-22, in a fresh `--shared` clone, with
+the exit code read from `$?` and never through a pipe: `exit=0`, `all 48 test files passed`, tree `0`
+after, HEAD still `ede57b30`. It agrees with the run recorded above.
+
+**PASS at `ede57b30`.** F1 to F8 are closed, the re-render carries `e147ae0b`'s graded snapshot
+through byte for byte with no data cell moved, and both blobs are named. Two 🟡 notes carry forward
+and neither blocks: the `--out` path guard resolves against the repo root while the write is relative
+to cwd (F4 residue), and the Revisions sentence now leaves out three commits while claiming one. The
+world check for this file remains the window grade of the `gh` blocks plus this review's check of the
+git blocks against this repo's reflogs.
