@@ -15,19 +15,55 @@
 // `--damp-amp N` is the plan's own negative control: forces every palette's `dampAmp` control to N
 // (overriding whatever the source document carries) before measuring, to prove the above-100% count
 // tracks the mechanism rather than being a static, uninspected number.
-import { readFileSync } from "node:fs";
+//
+// `--identity-control` (#715 U2, closing C4's other yellow row) is a SEPARATE mode: it renders the
+// base tree's 8 category files plus its default kit on TWO engine copies (the base tree named by
+// `--base <rev>` or `--base-dir <dir>`, and this file's own working tree) and diffs every emitted
+// cell, so a ramp move shows up cell by cell against any named base, not just as a hand measurement.
+//
+//   node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>)
+//     [--authored] [--only <category>|default-kit] [--perturb]
+//
+// `--authored` keeps each palette's `anchor`/`sourceAnchor` (the default strips both, since the
+// unanchored path is blind to a mutation on the anchored construction  -  see the adapter's
+// `ramp-identity` row). `--only` narrows the subjects to one category or `default-kit`. `--perturb`
+// is this mode's own negative control (the `--damp-amp` pattern above): it flips the last hex digit
+// of the first rendered cell on the HEAD side before the compare, so a green run can be told apart
+// from a compare that silently never ran.
+import { readFileSync, mkdtempSync, rmSync, existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { tmpdir } from "node:os";
+import { join as pathJoin, resolve as pathResolve, dirname } from "node:path";
 import { hydrate } from "../src/ui/persist.js";
-import { defaultDocument, rampChromaOf } from "../src/ui/model.mjs";
+import { defaultDocument, rampChromaOf, EXPORT_STOPS, lstarFromRgb } from "../src/ui/model.mjs";
 import * as T from "../src/engine/tonal.js";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = pathJoin(HERE, "..");
+// declared here, ahead of the identity-control dispatch below, because that dispatch runs (and can
+// call process.exit) before this module's own top-level `const` lines further down are reached
+const IDENTITY_CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
+const IDENTITY_MODES = ["perceptual", "peak", "even"];
 
 const args = process.argv.slice(2);
 const mode_envelope = args.includes("--envelope");
+const mode_identity = args.includes("--identity-control");
 const dampAmpIdx = args.indexOf("--damp-amp");
 const dampAmpOverride = dampAmpIdx >= 0 ? Number(args[dampAmpIdx + 1]) : null;
 
-if (!mode_envelope) {
-  console.error("usage: node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N]");
+const USAGE =
+  "usage: node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N]\n" +
+  "       node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>) [--authored] [--only <category>|default-kit] [--perturb]";
+
+if (!mode_envelope && !mode_identity) {
+  console.error(USAGE);
   process.exit(2);
+}
+
+if (mode_identity) {
+  await runIdentityControl(args);
+  // runIdentityControl always exits the process itself; nothing below this line runs for this mode.
 }
 
 const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
@@ -316,3 +352,224 @@ console.log(`READING (b) (envelope multiplier): ${envAnyFail ? "FAIL" : "PASS"}`
 console.log("");
 console.log((anyFail || envAnyFail) ? "FAIL: the envelope table does not clear the plan's ruled targets under at least one reading" : "PASS: envelope table clears the plan's ruled targets under both readings");
 process.exit((anyFail || envAnyFail) ? 1 : 0);
+
+// ── --identity-control ──────────────────────────────────────────────────────────────────────────
+// C4's ramp half (the plan's own named command, #715 U2): loads a BASE tree (a git revision unpacked
+// to a scratch directory, or an existing directory) and this file's own working tree side by side,
+// renders the base tree's 8 category files plus its default kit on BOTH, and diffs every emitted
+// cell. This proves whether the CURRENT working tree moved a ramp against the named base -- it is
+// blind to anything the base tree itself already carried (a stripped-anchor mutation on the
+// anchored path, for one -- see the adapter's `ramp-identity` row for when `--authored` is required).
+// (IDENTITY_CATS / IDENTITY_MODES are declared near the top of this file, ahead of the dispatch.)
+
+function identityRender(engine, pal, doc, mode) {
+  const controls = {
+    curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax,
+    damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias,
+    hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor,
+    vibrancy: doc.vibrancy, toneMode: mode,
+  };
+  const chroma = engine.rampChromaOf(pal, doc);
+  return engine.paletteStops(
+    { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor },
+    controls,
+    engine.EXPORT_STOPS,
+  );
+}
+
+function stripAnchor(pal) {
+  const { anchor, sourceAnchor, ...rest } = pal;
+  return rest;
+}
+
+function newIdentityAgg() {
+  return { palettesTotal: 0, palettesDiff: 0, cellsTotal: 0, cellsDiff: 0, maxDL: 0, witnesses: [] };
+}
+
+async function runIdentityControl(args) {
+  const baseIdx = args.indexOf("--base");
+  const baseDirIdx = args.indexOf("--base-dir");
+  const authored = args.includes("--authored");
+  const perturb = args.includes("--perturb");
+  const onlyIdx = args.indexOf("--only");
+  const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
+
+  if ((baseIdx < 0) === (baseDirIdx < 0)) {
+    // neither given, or both given -- exactly one is required
+    console.error(USAGE);
+    process.exit(2);
+  }
+  if (only !== null && only !== "default-kit" && !IDENTITY_CATS.includes(only)) {
+    console.error(`usage: --only must be one of ${IDENTITY_CATS.join(", ")} or default-kit, got "${only}"`);
+    process.exit(2);
+  }
+
+  let baseDir = null;
+  let scratch = null;
+  if (baseDirIdx >= 0) {
+    baseDir = pathResolve(process.cwd(), args[baseDirIdx + 1]);
+  } else {
+    const rev = args[baseIdx + 1];
+    if (!rev) {
+      console.error(USAGE);
+      process.exit(2);
+    }
+    scratch = mkdtempSync(pathJoin(tmpdir(), "ramp-identity-"));
+    // removed on every exit path below: the try/catch here, exitIdentity() everywhere else, and this
+    // process-exit backstop for any path that terminates without going through exitIdentity()
+    process.on("exit", () => { try { rmSync(scratch, { recursive: true, force: true }); } catch { /* best effort */ } });
+    try {
+      const archive = execFileSync("git", ["archive", rev, "src"], { cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 256 });
+      execFileSync("tar", ["-x", "-C", scratch], { input: archive });
+    } catch (e) {
+      console.error(`usage: --base ${rev} could not be archived: ${e.message}`);
+      process.exit(2);
+    }
+    baseDir = scratch;
+  }
+
+  function exitIdentity(code) {
+    if (scratch) { try { rmSync(scratch, { recursive: true, force: true }); } catch { /* best effort */ } }
+    process.exit(code);
+  }
+
+  const REQUIRED_FILES = ["src/ui/persist.js", "src/ui/model.mjs", "src/engine/tonal.js"];
+  for (const rel of REQUIRED_FILES) {
+    if (!existsSync(pathJoin(baseDir, rel))) {
+      console.error(`usage: base tree at ${baseDir} is missing ${rel}`);
+      exitIdentity(2);
+      return;
+    }
+  }
+
+  let baseModule;
+  try {
+    const [basePersist, baseModel, baseTonal] = await Promise.all([
+      import(pathToFileURL(pathJoin(baseDir, "src/ui/persist.js")).href),
+      import(pathToFileURL(pathJoin(baseDir, "src/ui/model.mjs")).href),
+      import(pathToFileURL(pathJoin(baseDir, "src/engine/tonal.js")).href),
+    ]);
+    baseModule = { persist: basePersist, model: baseModel, tonal: baseTonal };
+  } catch (e) {
+    console.error(`usage: base tree at ${baseDir} failed to load: ${e.message}`);
+    exitIdentity(2);
+    return;
+  }
+  const NEED = { persist: ["hydrate"], model: ["defaultDocument", "rampChromaOf", "EXPORT_STOPS"], tonal: ["paletteStops"] };
+  for (const [key, names] of Object.entries(NEED)) {
+    for (const name of names) {
+      if (!(name in baseModule[key])) {
+        console.error(`usage: base tree at ${baseDir} is missing the export ${name}`);
+        exitIdentity(2);
+        return;
+      }
+    }
+  }
+
+  const baseEngine = {
+    rampChromaOf: baseModule.model.rampChromaOf,
+    paletteStops: baseModule.tonal.paletteStops,
+    EXPORT_STOPS: baseModule.model.EXPORT_STOPS,
+  };
+  const headEngine = { rampChromaOf, paletteStops: T.paletteStops, EXPORT_STOPS };
+
+  const wantKit = only === null || only === "default-kit";
+  const wantCats = only === null ? IDENTITY_CATS : (only === "default-kit" ? [] : [only]);
+
+  const corpusSubjects = [];
+  for (const slug of wantCats) {
+    const catPath = pathJoin(baseDir, `src/ui/categories/${slug}.js`);
+    if (!existsSync(catPath)) {
+      console.error(`usage: base tree at ${baseDir} is missing category ${slug}`);
+      exitIdentity(2);
+      return;
+    }
+    const { PRESETS } = await import(pathToFileURL(catPath).href);
+    for (const preset of PRESETS) {
+      const doc = baseModule.persist.hydrate({ ...preset });
+      for (const pal of doc.palettes) corpusSubjects.push({ label: `${slug}/${preset.name}/${pal.name}`, pal, doc });
+    }
+  }
+  const kitSubjects = [];
+  if (wantKit) {
+    const doc = baseModule.model.defaultDocument();
+    for (const pal of doc.palettes) kitSubjects.push({ label: `default-kit/${pal.name}`, pal, doc });
+  }
+
+  if (only === null && corpusSubjects.length === 0 && kitSubjects.length === 0) {
+    console.error("usage: no palettes loaded from the base tree (a full run must load at least one)");
+    exitIdentity(2);
+    return;
+  }
+
+  let perturbDone = false;
+  let renderedCount = 0;
+  let loadedCount = corpusSubjects.length + kitSubjects.length;
+
+  function sweep(subjects) {
+    const agg = {};
+    for (const mode of IDENTITY_MODES) agg[mode] = newIdentityAgg();
+    for (const { label, pal, doc } of subjects) {
+      const palForRender = authored ? pal : stripAnchor(pal);
+      let renderedAllModes = true;
+      for (const mode of IDENTITY_MODES) {
+        let baseRamp, headRamp;
+        try {
+          baseRamp = identityRender(baseEngine, palForRender, doc, mode);
+          headRamp = identityRender(headEngine, palForRender, doc, mode);
+        } catch (e) {
+          renderedAllModes = false;
+          continue;
+        }
+        if (perturb && !perturbDone) {
+          const cell = headRamp[0];
+          const lastChar = cell.hex.slice(-1);
+          const flipped = lastChar === "0" ? "1" : (lastChar === "F" ? "E" : (parseInt(lastChar, 16) ^ 1).toString(16).toUpperCase());
+          cell.hex = cell.hex.slice(0, -1) + flipped;
+          perturbDone = true;
+        }
+        const a = agg[mode];
+        a.palettesTotal++;
+        let paletteDiffered = false;
+        const n = Math.min(baseRamp.length, headRamp.length);
+        for (let i = 0; i < n; i++) {
+          a.cellsTotal++;
+          if (baseRamp[i].hex !== headRamp[i].hex) {
+            a.cellsDiff++;
+            paletteDiffered = true;
+            const dL = Math.abs(lstarFromRgb(baseRamp[i].rgb) - lstarFromRgb(headRamp[i].rgb));
+            if (dL > a.maxDL) a.maxDL = dL;
+            if (a.witnesses.length < 3) a.witnesses.push(`${label} at stop ${baseRamp[i].stop}`);
+          }
+        }
+        if (paletteDiffered) a.palettesDiff++;
+      }
+      if (renderedAllModes) renderedCount++;
+    }
+    return agg;
+  }
+
+  const corpusAgg = wantCats.length ? sweep(corpusSubjects) : null;
+  const kitAgg = wantKit ? sweep(kitSubjects) : null;
+
+  let totalDiff = 0;
+  function printAgg(agg, suffix) {
+    for (const mode of IDENTITY_MODES) {
+      const a = agg[mode];
+      totalDiff += a.cellsDiff;
+      const witnessText = a.witnesses.length ? ` (e.g. ${a.witnesses.join(", ")})` : "";
+      console.log(`identity ${mode}${suffix}: ${a.palettesDiff}/${a.palettesTotal} palettes, ${a.cellsDiff}/${a.cellsTotal} cells differ, max dL* ${a.maxDL.toFixed(4)}${witnessText}`);
+    }
+  }
+  if (corpusAgg) printAgg(corpusAgg, "");
+  if (kitAgg) printAgg(kitAgg, " default kit");
+
+  let vacuityFail = false;
+  if (renderedCount !== loadedCount) {
+    console.log(`FAIL: vacuity -- rendered ${renderedCount} of ${loadedCount} loaded palette(s)`);
+    vacuityFail = true;
+  }
+
+  console.log(`${totalDiff} differing cells`);
+  exitIdentity((totalDiff > 0 || vacuityFail) ? 1 : 0);
+}
