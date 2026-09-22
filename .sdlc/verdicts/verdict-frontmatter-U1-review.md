@@ -70,3 +70,50 @@ No planted record that is wrong under the stated rule passes the check, except t
 ## Handoff accuracy
 
 Handoff quotes match the reviewer's runs; branding count differs by one file (546 vs 547) only because the handoff commit came after. The handoff's U1-6 and U1-8 controls were stated, not shown; both reproduced here.
+
+## Round 2 · rework at d3f4ef4b · 🟢 PASS
+
+verdict: 🟢 PASS
+sha: d3f4ef4bb1662b8f4be3b2c9dbd682c519b3c6e2
+
+| Field | Value |
+|---|---|
+| Delta read | `git diff 115b5791..d3f4ef4b`: check script (CLEARED, shared `gradeOne`), list header, §6 amendment reworded, plan revision 4 (row U1-9, R9), handoff rework block; the rest is main merged in (records-policy, small-fixes, board) |
+| Where run | fresh `git clone -q --shared` at d3f4ef4b, left clean; read-only commands in the worktree |
+| Findings 1, 2, 4 | 🟢 fixed. Finding 3 recorded only, as the plan's revision 4 says |
+
+| # | Criterion | State | Evidence (reviewer's run) | Negative control (reviewer's run) |
+|---|---|---|---|---|
+| U1-9 | listed file that gains the field reds | 🟢 | `survey.md` plus `verdict: 🟢`: `CLEARED survey.md: grandfathered but carries the field`, `verdicts 70 graded 23 grandfathered 47 bad 1`, exit 1; name also dropped from the list: no CLEARED, `verdicts 70 graded 24 grandfathered 46 bad 0`, exit 0 | same plant under the 8742b0ee script: `verdicts 70 graded 23 grandfathered 47 bad 0`, exit 0 (the silent pass) |
+| U1-0 | pin is an ancestor | 🟢 | `0` | not planted |
+| U1-1 | exit 0 with list, 1 with empty list | 🟢 | `verdicts 70 graded 23 grandfathered 47 bad 0` exit 0 (68/21 moved up by `records-policy-U1.md` and this review, both carrying the field) | empty list: `verdicts 70 graded 70 grandfathered 0 bad 47` exit 1 |
+| U1-2 | A, C, D, D2, E | 🟢 | A MISSING, C and D VALUE, all bad 1 exit 1; D2 bad 0 exit 0; E `STALE survey.md`, `verdicts 69 graded 23 grandfathered 46 bad 1` | B bad 0 exit 0 |
+| U1-3 | list hash | 🟢 | `29d0eff2...e3c7`, `#`, `1`; header is outside the hash | header recipe run as written (list emptied): hash `29d0eff2c1bccbc1` at the unit head |
+| U1-4 | `#` skipped, substituted list read | 🟢 | `0`, `1`; the fixture's `survey.md` still fails, so no CLEARED | second figure is the control |
+| U1-5 | no verdict modified; added ones carry the field | 🟢 | `0`; the one added file (this review) passes | not replanted |
+| U1-6 | adapter names mandate, last line, check | 🟢 | `2`, `1`, `1` | pass 1 control stands |
+| U1-7 | adapter edit additive vs plan tip 0dab3839 | 🟢 | numstat `3 0` | pass 1 control stands |
+| U1-8 | no em dash in script | 🟢 | `0` | pass 1 control stands |
+| P1 | `npm test`, tree clean | 🟢 | `✓ all 48 test files passed`, `0` | regression guard |
+| P2 | branding, em dash in added lines | 🟢 | `branding: clean (550 files scanned)`, `0` vs merge base 1bb720d9 | not planted |
+| P3 | scope wall | 🟢 | `0`, `0` vs 1bb720d9 (the merged-in records-policy and small-fixes files drop out at that base) | pass 1 fixture stands |
+| P4 | list equals failing set at main | 🟢 | derived in a clone at local `main` = `origin/main` 1bb720d9: `diff` `0` lines | pre-land reruns after `git fetch origin` |
+
+CLEARED against the pass 1 edge cases, each planted in a listed file (`survey.md`):
+
+| Plant | Result | Right? |
+|---|---|---|
+| last line 🟢, 🟡, 🔴, CRLF 🟢, no final newline | CLEARED, bad 1 | 🟢 each is a valid last line |
+| fenced `verdict: 🟢` last | CLEARED | 🟢 same rule as the adapter, as in pass 1 |
+| prose, 🟢 plus U+FE0F, 🟢 then an empty `verdict:` | no CLEARED, bad 0 | 🟢 still failing, so it stays listed |
+| the three prose files given `verdict: 🟡 FIX-FIRST`, names kept | three CLEARED, bad 3 | 🟢 |
+| CRLF list line `records.md` | trimmed, no false STALE | 🟢 |
+
+CLEARED and MISSING/VALUE call the same `gradeOne`, so a listed file is CLEARED exactly when an unlisted one would pass. No gap between them is possible.
+
+| # | Severity | Where | Finding |
+|---|---|---|---|
+| R2-1 | ⚪ info | `.sdlc/plans/verdict-frontmatter.md:92` | U1-9's Expected hard-codes `verdicts 68 graded 21`; the head prints 70/23. U1-1 carries the "moves up by added verdicts" note and U1-9 does not. Shape and exit codes hold. |
+| R2-2 | ⚪ info | `.sdlc/checks/verdict-frontmatter-check.sh:35-38` | A name listed twice (or once more with trailing spaces) prints CLEARED twice and counts bad 2. A listed name that is a directory now crashes `gradeOne` with EISDIR. Both still exit non-zero. |
+| R2-3 | ⚪ low | `.sdlc/handoffs/verdict-frontmatter-U1.md:53` | Head field reads `1439d285` (the merge); the rework commit is 4f65ba57 and the head is d3f4ef4b. |
+| 3 | ⚪ info | carried | U+2028 split mismatch with `read_gate`, recorded only per revision 4. |
