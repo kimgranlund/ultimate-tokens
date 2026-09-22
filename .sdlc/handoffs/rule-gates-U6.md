@@ -4,7 +4,7 @@ plan: rule-gates
 unit: U6
 branch: unit/rg-U6
 written: 2026-09-22
-pass: 1
+pass: 2
 ---
 
 # Handoff U6 · builder-l2 → reviewer-l1
@@ -33,3 +33,13 @@ Unit head after this pass: `b37b6518193e990fe08dedfa4a2640d293179f41`
 - `npm run smoke`: ran in a separate clone with `npm ci` (never in the worktree), `SMOKE PASS`.
 - Final `npm test` at the unit head, in a throwaway clone, no `node_modules`: `✓ all 48 test files passed`, tree clean (`0`) after.
 - `node test/repo/branding.mjs` at the unit head, same clone: `branding: clean (567 files scanned)`.
+
+## Pass 2 (fix-first: two test comments carried an em dash)
+
+Review (`scratchpad/rg-U6-review.md`) found an em dash in two comments I added: `test/mcp/core.mjs:79` and `test/engine/exports.mjs:1954`. Both reworded with a colon, committed alone at `a7263e59299ab3eb6a8683a32362018f2fdd9218`.
+
+- Line diff, `test/mcp/core.mjs:79`: was `// U6 (owner ruling Q3, 2026-09-22) — a kit with no system degrades to "n/a" in the guide's`, now `// U6 (owner ruling Q3, 2026-09-22): a kit with no system degrades to "n/a" in the guide's`.
+- Line diff, `test/engine/exports.mjs:1954`: was `  // U6 (owner ruling Q3, 2026-09-22) — the empty-value placeholder is "n/a", not the glyph, on`, now `  // U6 (owner ruling Q3, 2026-09-22): the empty-value placeholder is "n/a", not the glyph, on`.
+- U6-2's affected tests, rerun in a fresh clone at `a7263e59299ab3eb6a8683a32362018f2fdd9218`: `node test/mcp/core.mjs` prints `brand-kit core PASS — buildSurface (system-gated) + handle (initialize/tools/resources/prompts/errors), the surface shared by the stdio server + the hosted Worker`; `node test/engine/exports.mjs` prints `PASS: export-formats clears all [gate] predicates`.
+- Full gate at the same head, same clone: `npm test` → `✓ all 48 test files passed`, tree clean (`0`) after; `node test/repo/branding.mjs` → `branding: clean (568 files scanned)`.
+- New unit head: `a7263e59299ab3eb6a8683a32362018f2fdd9218`.
