@@ -5,7 +5,7 @@ status: generated (the Conductor owns this file)
 written: 2026-09-21
 head: 959b1bb7253f53e6c486988c41e1cd57d431cd4c (refs/remotes/origin/main, read between 2026-09-21T12:35:49Z and 2026-09-21T12:35:50Z)
 instant: read from 2026-09-21T12:35:49Z to 2026-09-21T12:35:50Z, once; every figure below is computed from that read
-generator: .sdlc/scripts/roadmap-gen.mjs, read by blob 06837d22816d05be53f2441d3bf274d1dd713ac9, rendered by blob 1958a567ec3224e191bebe357b188c492e6265bb
+generator: .sdlc/scripts/roadmap-gen.mjs, read by blob 06837d22816d05be53f2441d3bf274d1dd713ac9, rendered by blob 857c477ac6ca9934d6d1ae79be32c386273af071
 inputs: gh issue list --state open (20 issues), gh pr list --state open (3 PRs), git worktree list (35 worktrees), git for-each-ref (11 refs), git reflog (28 entries); commands and output verbatim in Snapshot
 generated-for: plan records-followup U14, ticket #709
 ---
@@ -434,10 +434,11 @@ git show -s --format=%s "$ROW"
 
 ## Revisions
 
-Commits that touched this file, reachable from `76993fa0`. The commit that adds this generation is not listed, because a file cannot name its own commit. Each earlier revision's prose is at `git show <commit>:.sdlc/roadmap.md`. This generation: plan records-followup U14, ticket #709, read at head `959b1bb7`.
+Commits that touched this file, reachable from `e147ae0b`, which is the commit whose Snapshot this file carries, or the checkout the read ran at when the Snapshot is a live read. Commits that touched it later, the one that adds this rendering among them, are not listed: a file cannot name its own commit, and it cannot see what came after the Snapshot it renders. How many those are is not stated here, because nothing in this file measures it. Each listed revision's prose is at `git show <commit>:.sdlc/roadmap.md`. This rendering: plan records-followup U14, ticket #709, snapshot read at head `959b1bb7`.
 
 | Commit | Date | Subject |
 |---|---|---|
+| e147ae0b | 2026-09-21 | chore(sdlc): the roadmap, generated once from one read (#709) |
 | 15cd3121 | 2026-09-20 | docs(sdlc): repair two false roadmap citations, the ownership ruling and the re-check rule (#709) |
 | 712e63db | 2026-09-20 | docs(sdlc): tally edit at the landing, ten of eleven units 🟢 after U11's pass 6 verdict (#709) |
 | 28426bf7 | 2026-09-20 | docs(sdlc): the PR clause names the read that caught it, verdict pass 3, not every read (#709) |
@@ -455,7 +456,7 @@ Commands for this table, the rows first and then one per column:
 
 ```sh
 # rows (ROW is each line; ROWS is all of them)
-git log --format=%H "$SRCSHA" -- .sdlc/roadmap.md
+git log --format=%H "$ANCHOR" -- .sdlc/roadmap.md
 # Commit
 printf '%s\n' "$ROW" | cut -c1-8
 # Date
@@ -763,6 +764,6 @@ not a read: the rendering generator's blob, and live read or the commit whose sn
 ```
 
 ```snapshot RENDER
-renderer 1958a567ec3224e191bebe357b188c492e6265bb
+renderer 857c477ac6ca9934d6d1ae79be32c386273af071
 snapshot e147ae0b0eff68c68e37b18aedf4539789486e72:.sdlc/roadmap.md
 ```
