@@ -204,7 +204,7 @@ const TABLES = {
     cols: COMMIT_COLS,
   },
   revisions: {
-    rows: `git log --format=%H "$SRCSHA" -- .sdlc/roadmap.md`,
+    rows: `git log --format=%H "$ANCHOR" -- .sdlc/roadmap.md`,
     cols: COMMIT_COLS,
   },
 };
@@ -213,6 +213,7 @@ const TABLES = {
 const SCALARS = {
   HEADSHA: `printf '%s\\n' "$REFS" | awk '$2=="refs/remotes/origin/main" {print $1}'`,
   SRCSHA: `printf '%s\\n' "$HEAD" | sed -n '$p'`,
+  ANCHOR: `printf '%s\\n' "$RENDER" | sed -n 's/^snapshot \\([0-9a-f]\\{40\\}\\):.*/\\1/p' | head -1 | grep . || printf '%s\\n' "$SRCSHA"`,
   SRCREF: `printf '%s\\n' "$HEAD" | sed -n '1{/^refs\\//p;}'`,
   T0: `printf '%s\\n' "$INSTANT" | sed -n 1p`,
   T1: `printf '%s\\n' "$INSTANT" | sed -n 2p`,
@@ -227,7 +228,7 @@ const SCALARS = {
   N_UNITWT: `printf '%s\\n' "$WORKTREES" | awk 'index($0, "worktree <ROOT>/.worktrees/")==1 {n++} END {print n+0}'`,
   N_OTHERWT: `printf '%s\\n' "$WORKTREES" | awk '/^worktree / && index($0, "worktree <ROOT>/.git-worktrees/")!=1 && index($0, "worktree <ROOT>/.worktrees/")!=1 {n++} END {print n+0}'`,
 };
-const SCALAR_ORDER = ["HEADSHA", "SRCSHA", "SRCREF", "T0", "T1", "PREV", "COUNT", "N_ISSUES", "N_PRS", "N_WORKTREES", "N_REFS", "N_REFLOG", "N_GITWT", "N_UNITWT", "N_OTHERWT"];
+const SCALAR_ORDER = ["HEADSHA", "SRCSHA", "ANCHOR", "SRCREF", "T0", "T1", "PREV", "COUNT", "N_ISSUES", "N_PRS", "N_WORKTREES", "N_REFS", "N_REFLOG", "N_GITWT", "N_UNITWT", "N_OTHERWT"];
 
 // ---------------------------------------------------------------------------------------------------------
 // Rendering.
@@ -271,7 +272,7 @@ function render(snap) {
   const env = {};
   for (const k of blocks) env[k] = snap[k];
   const s = computeScalars(env);
-  Object.assign(env, { HEADSHA: s.HEADSHA, SRCSHA: s.SRCSHA });
+  Object.assign(env, { HEADSHA: s.HEADSHA, SRCSHA: s.SRCSHA, ANCHOR: s.ANCHOR });
   const kv = (block) => Object.fromEntries(block.split("\n").map((l) => [l.slice(0, l.indexOf(" ")), l.slice(l.indexOf(" ") + 1)]));
   const render_ = kv(snap.RENDER);
   const params = Object.fromEntries(snap.PARAMS.split("\n").map((l) => [l.slice(0, l.indexOf(" ")), l.slice(l.indexOf(" ") + 1)]));
@@ -382,7 +383,7 @@ function render(snap) {
   L.push("");
   L.push("## Revisions");
   L.push("");
-  L.push(`Commits that touched this file, reachable from \`${short(s.SRCSHA)}\`. The commit that adds this generation is not listed, because a file cannot name its own commit. Each earlier revision's prose is at \`git show <commit>:.sdlc/roadmap.md\`. This generation: ${params.for}, read at head \`${short(s.HEADSHA)}\`.`);
+  L.push(`Commits that touched this file, reachable from \`${short(s.ANCHOR)}\`, which is the commit whose Snapshot this file carries, or the checkout the read ran at when the Snapshot is a live read. Commits that touched it later, the one that adds this rendering among them, are not listed: a file cannot name its own commit, and it cannot see what came after the Snapshot it renders. How many those are is not stated here, because nothing in this file measures it. Each listed revision's prose is at \`git show <commit>:.sdlc/roadmap.md\`. This rendering: ${params.for}, snapshot read at head \`${short(s.HEADSHA)}\`.`);
   L.push("");
   L.push(T("revisions"));
   L.push("");
@@ -449,7 +450,8 @@ const ticket = opt("--ticket");
 const by = opt("--by");
 const from = opt("--rerender");
 if (!out || (!from && (!ticket || !by))) die(1, "usage: --out <path> --ticket <n> --by <plan unit>, or --out <path> --rerender <commit>, or --verify <path>");
-if (resolve(TOP, out) === resolve(TOP, ".sdlc/roadmap.md") && !flag("--final")) die(1, "writing .sdlc/roadmap.md needs --final");
+const outAbs = resolve(process.cwd(), out);
+if (outAbs === resolve(TOP, ".sdlc/roadmap.md") && !flag("--final")) die(1, "writing .sdlc/roadmap.md needs --final");
 if (flag("--final")) {
   const committed = sh("git rev-parse -q --verify HEAD:.sdlc/scripts/roadmap-gen.mjs || true");
   if (SELF !== committed) die(1, "--final needs the running generator to be the one committed at HEAD");
@@ -473,5 +475,5 @@ if (from) {
   const back = parseSnapshot(text);
   for (const k of Object.keys(snap)) if (k !== "RENDER" && back[k] !== snap[k]) die(2, `block ${k} did not survive the re-render unchanged`);
 }
-writeFileSync(out, text);
-console.log(`wrote ${out}: ${text.split("\n").length} lines, snapshot read ${snap.INSTANT.split("\n").join(" to ")}`);
+writeFileSync(outAbs, text);
+console.log(`wrote ${outAbs}: ${text.split("\n").length} lines, snapshot read ${snap.INSTANT.split("\n").join(" to ")}`);
