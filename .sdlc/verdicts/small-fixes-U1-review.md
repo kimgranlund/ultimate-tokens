@@ -36,3 +36,38 @@ Controls that edited a file ran in a `git clone -q --shared` from `b8c204e4` (ve
 ## Verdict
 
 🔁 FIX-FIRST on finding 1. Every plan row as written passes, but the plan's own stated risk ("signal during the start-up wait") is not actually closed by this implementation: `smoke.mjs` needs `close` reachable before the `await` (e.g. `launchChrome` returning `{ close, ready }` synchronously, or `chrome.mjs` tracking spawned-but-undiscovered processes for `onExit` to reach directly) so a signal landing before discovery still kills the browser it spawned.
+
+## Round 2 · re-review at `85f6e1e5` · 🟢 PASS
+
+Reviewed the rework delta (`800b2c99..85f6e1e5`: `git diff 800b2c99..85f6e1e5 -- test/ package.json .sdlc/handoffs`), everything reproduced fresh, nothing trusted from the rework handoff's own quotes.
+
+### The fix for finding 1
+
+`launchChrome()` now returns `{ proc, dir, close, ready }` synchronously (`test/smoke/chrome.mjs`), not a `Promise` of the whole object; `close` is reachable in the same tick the function returns, before discovery even starts. `smoke.mjs` calls `onExit(close)` in that same tick, then `await ready` for the port. This closes the exact gap finding 1 named: `close` is no longer gated behind the promise that discovery itself determines.
+
+I re-ran my own finding-1 repro against the fixed code (a delayed fixture, 3s to discover `DevToolsActivePort`, `SIGTERM` sent at 1s, well inside the old vulnerable window): the parent died on the signal, and no fake-chrome process or `ultimate-tokens-smoke-*` profile directory survived. The leak is closed at the mechanism level, not just on the one criterion that happened to dodge it in pass 1.
+
+### Leg (f) and its controls, rerun fresh in throwaway clones off `85f6e1e5`
+
+| Check | Result | Matches handoff |
+|---|---|---|
+| `node test/smoke/launcher.mjs` (green) | `exit 0`, 6/6 pass, tail line unchanged | yes |
+| U1-2 control (1): delete `rmSync` in `close()` | `1 file changed`; `exit 1`, legs (b)(c)(d)(e)(f) FAIL on the dir | yes, leg (f) now among the failing legs |
+| U1-2 control (2): drop `SIGTERM` from `SIGNAL_CODES` | `1 file changed`; `exit 1`, legs (c) and (f) FAIL on the fake pid, nothing else | yes |
+| U1-2 control (3): skip `proc.kill` in `close()` | `1 file changed`; `exit 1`, legs (b)(c)(d)(e)(f) FAIL on the fake pid | yes |
+| leg (f)'s own control: `childBeforeDiscoveryMain` reverted to print the pid/dir line first, then `await ready`, then `onExit(close)` (mirroring the pass-1 bug shape) | `exit 1`, only leg (f) FAILs: `fake pid ... still alive 2s after SIGTERM` | yes, and this is the reproduction that matters: the same mutation that caused finding 1 now fails exactly one leg, the one built to catch it |
+
+### Other rows rerun fresh
+
+| Row | Result | Matches handoff |
+|---|---|---|
+| U1-1 greps | `0`, `0`, `1`, `4`, `4`, `1` (`DevToolsActivePort` now `4`, up from `3`: the new `ready`-shape comment/closure adds a line) | yes |
+| P3 branding + em-dash | `branding: clean (553 files scanned)`, added-line em-dash count `0` | yes |
+| U1-3 signalled real-browser run (guarded: `pgrep -f 'remote-debugging-port=9333'` printed `0` first) | `exit 143`, `0` processes, `0` directories 5s later | yes |
+| P4 scope wall vs `origin/main` | `1` (`.sdlc/plans/verdict-frontmatter.md` only), not the handoff's claimed `0` | see note below |
+
+P4 note: the rework's merge (`c215331a`, 2026-09-22T13:30) brought the branch level with `origin/main` at that moment, but `origin/main` moved again afterward (`40cf8567`, 13:42, a `verdict-frontmatter` revision) before I ran this check, so one file reappears. This is the same class of drift pass 1's P4 flagged as 🟡: a sibling unit landing on `main` between measurement and rerun, not a defect in this unit's own file set (`git diff --name-only origin/main..85f6e1e5` shows nothing else outside the scope wall). Informational for the Orchestrator's pre-land rebase, not a review blocker.
+
+### Verdict
+
+🟢 PASS. Finding 1 is fixed at the mechanism level (verified by reproduction, not just by the new leg), leg (f) and all three original controls discriminate correctly against `85f6e1e5`, and every other row I reran reproduces the rework handoff's account. No new findings.
