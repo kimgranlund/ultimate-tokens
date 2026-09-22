@@ -58,7 +58,7 @@ if (htmlCount !== stated)
 const stylesSrc = readFileSync(STYLES, "utf8");
 
 function findRule(cls) {
-  const re = new RegExp(`^\\.an-svg \\.${escapeRe(cls)}\\b[^\\n]*\\{[^}]*\\}`, "m");
+  const re = new RegExp(`^\\.an-svg \\.${escapeRe(cls)}(?![\\w-])[^\\n]*\\{[^}]*\\}`, "m");
   const m = stylesSrc.match(re);
   return m ? m[0] : null;
 }
