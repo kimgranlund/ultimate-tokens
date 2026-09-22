@@ -17,6 +17,27 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// A blocking pause: close() must stay synchronous, since the signal path calls process.exit() right
+// after it and an awaited timer would never fire.
+const pauseSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+// removeDir(dir) deletes the profile directory and keeps deleting it until it has stayed gone for
+// three checks 50 ms apart, for up to 2 s. One rmSync is not enough: a Chrome helper still dying
+// can write an atomic-save temp file into Default/ mid-deletion (ENOTEMPTY) or just after it.
+// A directory that survives the whole window is reported on stderr, never swallowed.
+function removeDir(dir) {
+  let lastErr = null, goneChecks = 0;
+  for (let waited = 0; waited <= 2000; waited += 50) {
+    if (existsSync(dir)) {
+      goneChecks = 0;
+      try { rmSync(dir, { recursive: true, force: true }); } catch (e) { lastErr = e; }
+    } else if (++goneChecks >= 3) {
+      return;
+    }
+    pauseSync(50);
+  }
+  if (existsSync(dir)) console.error(`chrome.mjs: profile dir ${dir} still present 2s after close()${lastErr ? `: ${lastErr.message}` : ""}`);
+}
 
 // launchChrome(bin, extraArgs, { deadlineMs }) -> { proc, dir, close, ready }
 // `ready` resolves to { port } once DevToolsActivePort is discovered, or rejects (after calling
@@ -30,17 +51,22 @@ export function launchChrome(bin, extraArgs = [], { deadlineMs = 45000 } = {}) {
     "--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
     "--remote-debugging-port=0", "--hide-scrollbars", "--window-size=1440,900",
     `--user-data-dir=${dir}`, "about:blank",
-  ], { stdio: "ignore" });
+  ], { stdio: "ignore", detached: true });
 
   // proc and dir are captured in this closure at spawn time, before the poll below, so close()
   // reaches a browser that was spawned and not yet discovered if a signal lands during the wait,
   // and close is returned to the caller in the SAME synchronous call, not after `ready` settles.
+  // `detached: true` makes the browser lead its own process group, so one SIGKILL to -pid reaches
+  // its helpers too (the network service that writes into the profile is not the process `proc`
+  // names); removeDir() then covers a helper that is not in the group or not yet dead.
   let closed = false;
   const close = () => {
     if (closed) return;
     closed = true;
-    try { proc.kill("SIGKILL"); } catch { /* already gone */ }
-    try { rmSync(dir, { recursive: true, force: true }); } catch { /* already gone */ }
+    try { process.kill(-proc.pid, "SIGKILL"); } catch {
+      try { proc.kill("SIGKILL"); } catch { /* already gone */ }
+    }
+    removeDir(dir);
   };
 
   // A browser that exits before announcing its port (a crash, a missing library on a CI runner, a
