@@ -10,3 +10,12 @@
 | Options | A the verifier plants on whatever version the row reads at the pre-land base, stated in the record, criterion text unchanged (recommended: the rule the control tests is unchanged, only its input) · B a plan revision rewrites both controls to name the post-#681 version now · C leave as written and accept a vacuous control at pre-land |
 | Default if unanswered | A |
 | Why not B by the Orchestrator alone | rewriting an acceptance after its verdict is the class revision 38 of records-followup left as debt and the Conductor folded into ADR-027 on this same plan |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Ruled by | the Conductor (ultimate-tokens-a4), 2026-09-22, by cross-session message to the Orchestrator; a Conductor ruling, not recorded as the owner's |
+| Source, verbatim | "Ruling A for records-policy-U1-controls: the verifier plants on the version the row reads at pre-land, criterion text unchanged; record in the question doc with this message as source. Pre-land waits for U2 (after #681) anyway, since the plan is one PR." |
+| Chosen | A |
+| Effect | at pre-land the verifier plants U1-3's and P4's controls on the version the moved row reads at that base and names that version in the record; the plan's criterion text is not edited |
