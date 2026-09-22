@@ -43,7 +43,7 @@ At 88905891 unless the row says otherwise.
 
 ## Units
 
-- [ ] U1 (S) the BUMP POLICY block gains the engine-moved re-export case, worded on the consumer's contract · builder l2, reviewer l1, verifier l1
+- [~] U1 (S) the BUMP POLICY block gains the engine-moved re-export case, worded on the consumer's contract · builder l2, reviewer l1, verifier l1
 - [ ] U2 (S) ADR-027 appended as PROPOSED after ADR-026, with cards and ledger rows for ADR-025, 026 and 027 · builder l5, reviewer l2, verifier l2 · blocked until G0 prints green
 
 Grades. U1 is one comment block with a one-line answer key (the 1.2.0 comment on the #681 branch), so l2 with the lightest reviewer. U2 is judgement work: the ADR text has to hold up as a rule every seat reads, and the failure mode #721 describes was committed by seats issuing standards, so the builder is opus (l5) and the reviewer and verifier are l2, the same pairing the records-followup re-diagnosis gave for "a plausible heuristic nobody measured".

@@ -88,7 +88,7 @@ Every negative control that edits a file runs in a throwaway clone (`git clone -
 
 Checklist (the Orchestrator ticks it; the table below carries grades and paths):
 
-- [ ] U1 (S) the smoke launcher: per-run profile and port, cleanup on every exit path, launcher test · builder-l2 · reviewer-l1 · verifier-l1
+- [~] U1 (S) the smoke launcher: per-run profile and port, cleanup on every exit path, launcher test · builder-l2 · reviewer-l1 · verifier-l1
 
 Grades follow the Orchestrator's rule: an L2 builder gets reviewer-l1 and verifier-l1. U1 is L2 because process lifecycle is easy to get subtly wrong (a handler that runs `close()` but forgets to exit hangs the run; an `exit` handler that awaits does nothing).
 
@@ -148,3 +148,4 @@ One PR from `plan/small-fixes` to `main`, title `fix(tooling): smoke owns its Ch
 |---|---|
 | 2026-09-22 | written, status proposed, two units (#717 now, #731 gated on #681). Every "today" value measured by the planner at 88905891 in a scratch worktree or read off 505416d7 with `git show` |
 | 2026-09-22 | revision 2, on the checkability review of adf9e5a9 (`policy-plans-checkability.md` Plan C; 9 🟢, 7 🟡, 0 🔴) and the owner ruling that #731 leaves this plan. Yellows folded: every diff reads `origin/main`, not a merge base that equals `HEAD` at the plan tip (P3, P4, U1-3, U1-5 controls); P3's third figure is no longer a number the handoff states about itself, the verifier lists the matched lines and each must be a program quote; P4 admits only this plan's own records and the board, with a four-name fixture that prints `2`; P5, U1-3 and U1-4 scope their process and directory counts to the run's own `TMPDIR`, since the host-global needle would count another seat's smoke; U1-2 control (2) and leg (c) read the fake pid and the directory, not the child's exit code, which is 143 with or without the handler; U1-5 runs only when 9333 is free. G0, U2-1 to U2-4 and Q2 removed with #731 (their fixes, `no shared full-triple` as the needle and `6` as the count, go with it to its own plan). Today values that the review re-measured are noted beside the planner's. The head line records `origin/main` at a4675242 |
+| 2026-09-22 | revision 3, activation. `origin/main` was brought in by a merge at activation (`2941e16a`), not by a rebase before the draft PR as the risk row says: the unit's sha will be cited by its handoff and verdict, and a rebase would orphan it. The risk row's intent holds, since every diff row still reads `origin/main`. U1 dispatched at builder-l2 in `.worktrees/sf-U1` |
