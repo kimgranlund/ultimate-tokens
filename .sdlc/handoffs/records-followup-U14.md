@@ -110,3 +110,17 @@ Controls for the new code, run on scratch copies:
 ## F5's limit stated in the file, rendered again
 
 The Orchestrator asked for F5's limit to be stated in the roadmap's own text, next to the `--verify` line. `--verify` exit 0 shows the file agrees with its Snapshot and the Snapshot agrees with itself. It cannot show the Snapshot matched the world. The check against the world is the Verifier's grade inside the freeze window. `6952f7a6` did not carry that text, so it went in a later generator-only commit. A later roadmap-only commit rendered `e147ae0b`'s snapshot again with it. Both commits are after `3710ad46` on this branch; I describe them rather than naming shas this file cannot see from its own commit. The snapshot blocks are unchanged, and `GENERATOR` still names `06837d22` as the blob that read.
+
+## The two carried yellows
+
+The Revisions anchor is derived, the count is not stated at all. The rows now start at the commit whose Snapshot the file carries, read from the RENDER block by a command printed with the table, so the anchor moves with the render instead of being typed. The count of later roadmap commits cannot be derived here: at the render the file can see its Snapshot's source commit and nothing after it, so a rendering cannot count the commits between that source and itself. The caption says commits after the Snapshot are unlisted and that the file does not measure how many, which is the narrow form. The earlier caption implied exactly one, and by this rendering the true number was more than one.
+
+The `--out` guard and the write share one base. Both resolve against the working directory. The old code resolved the guard against the repo root while writing relative to the working directory.
+
+| Control | Result |
+|---|---|
+| new code, run from `.sdlc/` with `--out roadmap.md` and no `--final` | refused, exit 1 |
+| the same call under the blob committed at `ede57b30`, in a throwaway clone | wrote the file, exit 0; the bypass the guard now closes |
+| RENDER's `snapshot` line set to `live read` on a copy | `--verify` exit 1; the anchor falls back to the checkout, `76993fa0` in place of `e147ae0b`, so the derivation discriminates |
+
+Order of this pass, each commit touching one file: the generator, then one `--rerender e147ae0b --final` for the roadmap, then this handoff. No live read.
