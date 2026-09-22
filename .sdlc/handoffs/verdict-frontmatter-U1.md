@@ -30,7 +30,7 @@ P4 (re-derive against `origin/main` at pre-land, after `git fetch origin`) is th
 | Ran | `npm test` (green, 48/48) · `node test/repo/branding.mjs` (clean) · every U1 row and its planted control above |
 | Left out | U2 (backfill ticket), Q1 (`npm test` wiring): not this unit's scope |
 
-## Rework (pass 2), from review `.sdlc/verdicts/verdict-frontmatter-U1-review.md` (PASS with four findings, graded at 8742b0ee)
+## Rework (review round 2, builder pass 1), from review `.sdlc/verdicts/verdict-frontmatter-U1-review.md` (PASS with four findings, graded at 8742b0ee)
 
 Merged `plan/verdict-frontmatter` into `unit/vf-U1` (revision 4 from the review, sha 0dab3839) at `1439d285`. The merge brings `.sdlc/verdicts/records-policy-U1.md` (carries `verdict: 🟢`) and the review's own `.sdlc/verdicts/verdict-frontmatter-U1-review.md` onto the branch, so the baseline the check reads moved: `verdicts 70 graded 23 grandfathered 47 bad 0` where it was `68 21 47 0` before. Every row below was rerun against that new baseline; none of the shapes changed, only the two totals that count all verdict files.
 
