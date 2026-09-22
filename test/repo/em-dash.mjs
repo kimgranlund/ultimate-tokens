@@ -93,7 +93,8 @@ const CELL_RE = new RegExp(`\\|\\s*${DASH}\\s*\\|`);
 // fence reads as a shell comment, so the colon still fits).
 const HEADING_RE = /^#{1,6} /;
 // A bullet whose first token is a code span or a bold label, then the dash.
-const BULLET_LABEL_RE = new RegExp(`^\\s*[-*]\\s+(\`[^\`]*\`|\\*\\*[^*]+\\*\\*)\\s*${DASH}`);
+// A "bullet" here is either an unordered marker (`-`/`*`) or a numbered-list marker (`1.`).
+const BULLET_LABEL_RE = new RegExp(`^\\s*(?:[-*]|\\d+\\.)\\s+(\`[^\`]*\`|\\*\\*[^*]+\\*\\*)\\s*${DASH}`);
 const WORD_END_RE = /[A-Za-z0-9)\]}"'`”’]$/;
 const PUNCT_END_RE = /[.,;:!?]$/;
 
