@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: approved
 ticket: #722, #721
 priority: P2
 lane: docs
