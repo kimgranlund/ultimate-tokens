@@ -81,3 +81,67 @@ Fix direction, for the builder (the plan's Risk row 3 already names the first ha
 | F3 | 🟡 | P4 reads `2` against `origin/main` `70c2d5e5`, both files main's own | branch behind main | Orchestrator rebase before pre-land |
 
 verdict: 🔴
+
+# Round 2 · rework at `73d5f6f4` · 🟢 PASS
+
+Graded the unit diff `git diff 975ef805..73d5f6f4`: `test/smoke/chrome.mjs`, `test/smoke/launcher.mjs`, the handoff. Code head `aa7530ad`. Clones under the same `S`: `H`, `BH` (built, `node_modules` symlinked read-only) and `m1` to `m43`, `m12`, `mp` at `73d5f6f4`; `c12`, `B`, `C` at `1e25556d`; `old` at `origin/main` `3e1483e4` (`dist/` copied from `BH`); `p1`, `np1` at `b57b4658`. The worktree stayed untouched (`git status --short` lists only this file). The 9333 guard printed `0` before every Chrome row; fake fixtures reaped by clone path before the U1-12 rows (`fakes zero 0`).
+
+## The questions asked
+
+| # | Question | State | Evidence |
+|---|---|---|---|
+| Q1 | Is the retry bounded, synchronous, unable to hang `close()` or an exit handler? | 🟢 | `removeDir` (`chrome.mjs:27-39`) is a `for` over `waited <= 2000` in steps of 50 with one `pauseSync(50)` per iteration: at most 41 iterations, about 2.05 s plus `rmSync` time, then it returns after printing on stderr; there is no branch that does not advance `waited`. `pauseSync` is `Atomics.wait` on a fresh `SharedArrayBuffer`, which Node permits on the main thread and which needs no event loop, so it runs inside `process.on("exit")` and the signal handlers `onExit` installs. The happy path costs three gone checks, 150 ms per `close()`: the launcher's six legs took `real 5.98` s at the head against about 5 s before. A `rmSync` that throws every time (a permanent `EACCES`) still exits the loop at 2 s. Nothing awaits, nothing is unref'd, so an exit handler cannot be skipped past it |
+| Q2 | Does the group kill hold when the spawn failed or the browser is already gone? | 🟢 | `process.kill(-proc.pid, ...)` with an undefined `pid` throws and falls back to `proc.kill`, then `removeDir`: the 4.5 probe on `H` prints `561ms Chrome exited before CDP came up (code 9)` and `1125ms Chrome exited before CDP came up (spawn /nonexistent/chrome ENOENT)`, no unhandled error, `git status` `0` after |
+| Q3 | Linux: `detached: true` plus `kill(-pid)` against the fake | 🟢 | U1-8 below runs both in `node:24`; the fake is the group leader and `pgrep -f` at leg (e) still prints nothing |
+
+## Criteria at `73d5f6f4`
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| P1 | `npm test` green, no `node_modules`, count, tree stable | 🟢 | `H`: `✓ all 48 test files passed`, `48`, `0`, `ls: node_modules: No such file or directory` | `mp` (`scrim` to `scrimX`, `7 insertions(+), 7 deletions(-)`): `exit 1`, `▶ engine/semantic.mjs      FAIL` |
+| P2 | `npm run build` green, tree clean | 🟢 | `BH`: `exit 0`, `wrote figma/plugin/ui.html 3780.5 KB`, `0` | `np2` at `73d5f6f4`, `smoke` gains `node test/smoke/missing.mjs &&` (`1 file changed, 1 insertion(+), 1 deletion(-)`): `exit 1`, `Cannot find module` count `1` |
+| P3 | branding clean, no added prose em dash | 🟢 | `branding: clean (563 files scanned)`, `0`, `1`; the one line listed by the third command is this review's own P5a cell in round 1, quoting `SMOKE PASS` inside a backtick span, the program quote the plan allows | the perl on `dash.txt` (one prose U+2014) prints `1`; on this file after the round-2 append, outside backticks, `0` |
+| P4 | scope wall | 🟡 as measured | against `origin/main` `3e1483e4`: `12` paths, every one a `verdict-frontmatter` record or `.sdlc/adapter.md`, `.sdlc/roadmap.md`, `.sdlc/checks/verdict-frontmatter-*`, main's own; `package.json` ` 1 file changed, 1 insertion(+), 1 deletion(-)`. The unit diff `git diff --name-only 975ef805..73d5f6f4` is exactly `.sdlc/handoffs/small-fixes-U1.md`, `test/smoke/chrome.mjs`, `test/smoke/launcher.mjs` | the plan's four-name fixture printed `2` at revision 2; the filter text is unchanged (compared by eye against the plan row); the `12` is the branch behind main, not a scope hit |
+| P5a | `npm run smoke` green locally, Chrome and profile gone | 🟢 | `BH`, `TMPDIR="$T2"`: `exit 0`, `1`, `1`, `0`, `0`; `SMOKE PASS` at `smoke.mjs:299`; tree `0` | U1-3's `origin/main` control: `11` Chrome processes after a signalled run |
+| P5b | CI on the graded sha | ⚪ | pre-land | none run: pre-land's row |
+| U1-1 | no fixed port, discovery, exit paths | 🟢 | `test/smoke/chrome.mjs:0`, `test/smoke/smoke.mjs:0`, `1`, `4`, `5`, `1` | `old` at `3e1483e4`: first grep `1`, `ls: test/smoke/chrome.mjs: No such file or directory` (round 1's `70c2d5e5` clone read the same) |
+| U1-2 | launcher green, every leg | 🟢 | `H`: `exit 0`, `6`, `0`, `PASS: launcher discovers its port from DevToolsActivePort and leaves no process on close, SIGTERM, SIGINT or deadline`, `real 5.98` | each `1 file changed`, each `exit 1`: `m1` (the `rmSync` line inside `removeDir` deleted): `5` FAIL on `profile dir ... still present`, and stderr carries `chrome.mjs: profile dir ... still present 2s after close()`, `real 18.17` (the 2 s bound paid five times, which shows the loop is bounded); `m2` (`"SIGTERMX"`): `2` FAIL `fake pid 3179 still alive 2s after SIGTERM (child exit SIGTERM)` (c, f); `m3` (group kill made `process.kill(-proc.pid, 0)`, so `close()` kills nothing): `4` FAIL on the fake pid (b, c, d, e); `m4` (`onExit(() => {})` in `childBeforeDiscoveryMain`): `1` FAIL `fake pid 4035 still alive 2s after SIGTERM (child exit 143)` (f only); `m43` (delay `"0"`): `discovery had already finished when SIGTERM was sent, so this leg proved nothing about the pending window` |
+| U1-3 | signalled real-browser run: no Chrome, no profile, no fixed port | 🟢 | `BH`: `exit 143`, `0`, `0` | `old` with `dist/` copied: `exit 143`, `11` by `pgrep -f 'remote-debugging-port=9333'`; reaped by `pkill -9 -f 'remote-debugging-port=9333'`, `after reap 0` |
+| U1-4 | green run: no Chrome, no profile | 🟢 | P5a's `0`, `0`; U1-11's `0` of `30` | U1-11's control, and `m1` at launcher level |
+| U1-5 | a stranger on 9333 is never consulted | 🟢 | `BH`: `exit 0`, `decoy requests: 0`, `1` | `old`: `exit 1`, `decoy requests: 113`, `0`, `  smoke threw: Chrome CDP did not come up within 45s (last: HTTP 404)`; `9333 after 0` |
+| U1-6 | CI runs the launcher before the browser | 🟢 | `1`, `1` | P2's control |
+| U1-7 | launcher green with `TMPDIR` unset | 🟢 | `H` under `bash`, `env -u TMPDIR`: `exit 0`, `6`, `0` under `/tmp` | `m7` (`TMPDIR`-only plain restore): `exit 1`, `5`, `child never printed a pid/dir line (child exit 1; child stderr: Error: ENOENT: no such file or directory, mkdtemp 'undefined/ultimate-tokens-smoke-XXXXXX')` |
+| U1-8 | launcher green on Linux, `TMPDIR` unset | 🟢 | `docker run ... node:24` on `H`: `TMPDIR=<unset> Linux v24.21.0`, `6` pass, `exit 0`, `0` dirs under `/tmp`, `0` `fake-chrome` processes; this is the `detached` spawn and `kill(-pid)` on Linux | `m7` under the same `docker run`: `exit 1`, `5` |
+| U1-9 | a signal-leg red names the child's error | 🟢 | `m9` (`TMPDIR: "/nonexistent"` in `legF`'s env): `grep -c 'ENOENT'` `1`, `child stderr: Error: ENOENT: no such file or directory, mkdtemp '/nonexistent/ultimate-tokens-smoke-XXXXXX'` | `np1` at `b57b4658`, same edit, rerun: `exit 1`, `0` |
+| U1-10 | leg (e) cannot pass by `pgrep` being absent | 🟢 | `docker run ... 'mv /usr/bin/pgrep /usr/bin/pgrep.h; ...'` on `H`: `  FAIL  leaves no process or directory after a deadline with no DevToolsActivePort: pgrep could not check for a leftover process (ENOENT), so this leg cannot pass` | `p1` at `b57b4658`, rerun: `  pass  leaves no process or directory after a deadline with no DevToolsActivePort` |
+| U1-11 | `close()` removes the profile dir every time | 🟢 head, 🟡 control | `BH`, twenty consecutive green runs, own `T` each: `HEAD LEAKS 0 of 20`, every run `exit 0 procs 0 dirs 0`, `0` `still present 2s after close` lines; then ten more interleaved with a background `npm run build` loop (load average `33`): `loaded head 0 of 10`. `0` of `30` dirs, `0` of `30` processes at 5 s | `B` at `1e25556d`, twenty runs: `CONTROL LEAKS 0 of 20` dirs, but `procs 3` on run 10 and `procs 4` on run 19 (Chrome helpers alive 5 s after a green run, reaped by `pkill -9 -f "user-data-dir=$S/u11c-"`); ten more under the same build load: `control 0 of 10` dirs, `procs 3` on run 1. The dir figure the plan's control names did not fire in this round's `30` (it fired `5` of `17` in round 1 and `3` of `20` for the builder), so as a control it is a chance event; the process figure fired `3` of `30` at `1e25556d` and `0` of `30` at the head, which is what separates the two shas here |
+| U1-12 | a timed-out signal leg leaves no fake Chrome | 🟢 | `m12`, `childMain`'s `onExit(close)` made `process.on("SIGTERM", () => {}); process.on("SIGINT", () => { close(); process.exit(130); });` so only leg (c) hangs: leg (c) `FAIL  --child had not exited 5s after start, SIGTERM sent at 200ms`, the other five pass, then `pgrep -f fake-chrome.mjs \| wc -l` `0`, launcher children `0` | `c12` at `1e25556d`, same edit, same FAIL line, then `1` (clone-scoped `1`); reaped. A first version of this edit that also dropped leg (d)'s handler read `1` at both shas, the surviving fake being leg (d)'s, so the edit above hangs one leg only |
+
+## Beyond the rows
+
+| # | Item | State | Evidence | Negative control |
+|---|---|---|---|---|
+| R1 | `runSignalLeg`'s timeout calls `rmSync(dir, ...)` bare (`launcher.mjs:126`); a throw there (an `ENOTEMPTY` race with the fake it just `SIGKILL`ed) is an uncaught exception inside a timer, exit `1` with a stack instead of the leg's own FAIL line | 🟡 minor, not blocking | the fake is a single Node process with no helpers, so the race `removeDir` guards against does not exist for it; `force: true` covers a missing dir. A `try` around it, or `removeDir` exported and reused, closes the gap for free | `m12` and `c12` both took this path with the fake already dead: no throw, the leg's own FAIL line printed |
+| R2 | `detached: true` moves the browser out of the launcher's terminal group, so a terminal `Ctrl-C` no longer reaches Chrome directly, only through `onExit` | 🟢 by design | U1-3 and legs (c), (d), (f) are exactly that path: `exit 143`, `0`, `0` | `m4` (no `onExit` in the pending-discovery child): the fake survives, which is the dependency stated |
+| R3 | 4.5 and 4.6 still hold after the `close()` change | 🟢 | 4.5 as Q2; 4.6 on `BH` with `CHROME_BIN=/usr/bin/false`: `exit 1`, `SMOKE FAIL (1):`, `  smoke threw: Chrome exited before CDP came up (code 1)`, `0` dirs | `p1` (round 1): `exit 1` after 45 s, `0` `SMOKE FAIL` lines |
+| R4 | Handoff figures | 🟢 | reproduced: U1-11 `0` of `20`, U1-12 `0` against `2` (mine `1`, one leg hung not two), `real` cost of `close()` about 150 ms, `SMOKE PASS` at `299` | the handoff's U1-11 control `3` of `20` versus my `0` of `30`: the same code, a different hour; the disagreement is the row's control, not the claim |
+
+## Hygiene (round 2)
+
+| Item | Value |
+|---|---|
+| Fakes | `8` reaped by `pkill -9 -f 'sfp2r/[a-z0-9]+/test/smoke/fixtures/fake-chrome.mjs'` after the U1-2 controls, then per clone after `m12`/`c12`; count `0` |
+| Chrome | U1-3 control `11` reaped by the plan's exact pattern; control-run helpers `3`, `4`, `3` reaped by `pkill -9 -f "user-data-dir=$S/u11c-"` and `u11cL-`; 9333 `0` after every row |
+| Profile dirs | none left by the head in this round; round 1's `5` remain under `$S/tmp-*` |
+
+## Findings (round 2)
+
+| # | Severity | Finding | Next |
+|---|---|---|---|
+| F1 | 🟢 closed | `close()` kills the process group and `removeDir` retries, bounded at 2 s, synchronous; `0` of `30` leaks at the head, `0` processes at 5 s | none |
+| F2 | 🟢 closed | a timed-out signal leg kills the fake it knows, `SIGTERM`s the child, `SIGKILL` at 1 s or at exit | none |
+| F4 | 🟡 | U1-11's control (a dir left at `1e25556d`) is a chance event: `0` of `30` this round; the process count at 5 s discriminated `3` of `30`. Suggest the plan's row read both figures | planner, at leisure; no code change |
+| F5 | 🟡 minor | bare `rmSync` inside the timeout handler (`launcher.mjs:126`) | builder's call, not blocking |
+| F3 | 🟡 | P4 `12` main-only paths | Orchestrator rebase before pre-land |
+
+verdict: 🟢
