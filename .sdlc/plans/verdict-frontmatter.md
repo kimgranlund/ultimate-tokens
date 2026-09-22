@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: approved
 ticket: #723
 priority: P2
 lane: docs (`.sdlc/checks/`, `.sdlc/adapter.md`, one new list file; no verdict file is edited)
