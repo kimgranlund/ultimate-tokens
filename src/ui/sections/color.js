@@ -1,7 +1,7 @@
 import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
-import { CURVES, DAMP_PRESETS, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
+import { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -1787,12 +1787,51 @@ export class ColorSectionImpl {
         ),
         { labelTitle: "Which canvas group this palette is organized under — Material, Brand, System, or Data." },
       ),
-      this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => (d.palettes[i].hue = v))),
+      // Q-D (ticket #681, U2, ruled + verified): this palette's own hueSpace applicability note - the
+      // doc-level Hue space control (renderGlobalInspector) only moves THIS palette in "even" mode;
+      // in perceptual/peak an anchored palette's hue comes straight from its anchor, so the control
+      // has no effect on it here even when it stays enabled for other, non-anchored palettes in the
+      // same doc. Informational only - this is not a second control, it explains the one control.
+      p.anchor && this.doc.toneMode !== "even"
+        ? h("div", { class: "field" }, h("small", { class: "insp-sub", "data-fk": "huespace-palette-reason" }, "Hue space: " + HUE_SPACE_ANCHOR_REASON))
+        : false,
+      // Hue/Chroma edits DETACH an anchored palette (ticket #681, U2/Q6): they drop the live `anchor`
+      // (the generator-written `sourceAnchor` copy stays, so Reset below can restore it) — a hue or
+      // chroma slider drag makes an anchor-carrying palette ordinary again, since the ramp's stop 500
+      // and prime.mjs's own anchor rung would otherwise keep rendering the OLD source color while the
+      // hue/chroma the user just set claims a different one. Skew/lift edits do NOT detach (their own
+      // sliders below are untouched) — they're aesthetic warps ABOUT the anchor's own fixed pivot, not
+      // a claim about a different source color.
+      //
+      // Snapshot hue/chroma/lift the MOMENT this drag detaches (re-diagnosis Finding 3 / review F7):
+      // `detachSnapshot` below stamps `preDetachHue`/`preDetachChroma`/`preDetachLift` from the
+      // PRE-edit palette, once, only on the transition from anchored to detached (an already-detached
+      // palette dragging Hue again must not overwrite its FIRST snapshot with an already-detached
+      // in-between value) — resetAnchor restores these exactly, never re-deriving.
+      this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].hue = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
       // Chroma (SPEC 0.3.0 REQ-002/032) — feeds the KEY COLOUR and the prime system only now (the
       // gallery tile, deriveKeyColor, and the seven prime swatches); the ramp no longer reads it at
       // all — a palette's group supplies the ramp's own absolute chroma target instead (the four
       // per-group rows on the Global tab). No "Intensity" slider exists any more, in any group.
-      this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => (d.palettes[i].chroma = v))),
+      this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].chroma = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
+      // Reset — re-attach a detached palette (Q6, U2's C12): restores `anchor = sourceAnchor` and
+      // restores hue/chroma/lift EXACTLY from the pre-detach snapshot (resetAnchor below, R8/R9 review
+      // pass 2 - the tooltip used to say "re-derive", which was true before the Finding 3/F7 fix landed
+      // and is stale now: resetAnchor restores a snapshot, it only re-derives as a last-resort fallback
+      // when no snapshot exists at all). Visible ONLY when there is something to restore (`sourceAnchor`
+      // present) and the palette is actually detached (`anchor` absent) - an already-anchored palette
+      // has nothing to reset, and one with no `sourceAnchor` at all (never generator-written, e.g. a
+      // hand-built palette) has nothing to restore TO.
+      p.sourceAnchor && !p.anchor
+        ? h(
+            "div",
+            { class: "field" },
+            btn([icon("arrow-counter-clockwise"), "Reset to source color"], {
+              title: "Restore the anchor this palette was generated from, and its hue/chroma/lift snapshot from just before it was detached",
+              onclick: () => this.resetAnchor(i),
+            }),
+          )
+        : false,
       isEven ? this.slider("Skew", p.skew, -100, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].skew = v))) : false,
       isEven ? this.slider("Lift", p.lift, -40, 40, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].lift = v))) : false,
       // Cusp pull (perceptual only) — this palette's override of the global Vibrancy: how far its
@@ -1906,6 +1945,54 @@ export class ColorSectionImpl {
     const s = kc && seedFromKeyColor(kc.oklch, this.doc.hueSpace);
     if (!s) return;
     this.commit((d) => { d.palettes[i].hue = s.hue; d.palettes[i].chroma = s.chroma; });
+  }
+
+
+  // detachSnapshot(d, i, p) — stamp `preDetachHue`/`preDetachChroma`/`preDetachLift` from `p` (the
+  // PRE-drag palette, captured by the caller before this drag gesture began) onto `d.palettes[i]`,
+  // ticket #681 U2 re-diagnosis Finding 3 (review F7): resetAnchor below restores these EXACTLY
+  // instead of re-deriving a new hue/chroma/lift via `seedFromKeyColor`, which is lossy (it reads the
+  // ANCHOR's own hue, never whatever `hue` the palette held before the edit — 1,902 of 3,380 corpus
+  // palettes measured with a DIFFERENT hue than before detach, worst case 90°) and never round-trips
+  // a hand-tuned `lift` (e.g. the default kit's Warning at -36) at all, since re-deriving always reset
+  // it to 0. Fires ONLY on the anchored->detached transition (`p.anchor` present): an already-detached
+  // palette dragging Hue or Chroma again must not overwrite its FIRST snapshot with an in-between,
+  // already-detached value — one detach, one snapshot, until the next Reset clears it.
+  detachSnapshot(d, i, p) {
+    if (!p || !p.anchor) return;
+    d.palettes[i].preDetachHue = p.hue;
+    d.palettes[i].preDetachChroma = p.chroma;
+    d.palettes[i].preDetachLift = p.lift ?? 0;
+  }
+
+  // resetAnchor — re-attach a detached palette (ticket #681, U2/Q6): restores `anchor = sourceAnchor`
+  // (the generator's never-user-written copy, unaffected by the hue/chroma edit that dropped `anchor`)
+  // and restores hue/chroma/lift EXACTLY from the `preDetachHue`/`preDetachChroma`/`preDetachLift`
+  // snapshot `detachSnapshot` stamped at the moment of detach (re-diagnosis Finding 3 / review F7) —
+  // never re-derived. Skew is left alone either way: only hue/chroma (the detach trigger) and lift
+  // (the field re-derivation used to reset to 0) are restored, not the user's own skew warp. Falls
+  // back to the ORIGINAL re-derivation (`seedFromKeyColor`, lift 0) only when no snapshot exists at
+  // all — a palette that carries `sourceAnchor` but was detached some other way than this inspector's
+  // own sliders (a hand-edited import, or a doc saved before this fix), so Reset still does SOMETHING
+  // reasonable rather than nothing. The restored fields are cleared afterward — nothing left to
+  // restore once restored, same as `anchor` itself being the thing that came back. Only reachable when
+  // `sourceAnchor` is present and `anchor` is absent (the inspector hides the button otherwise) — a
+  // no-op guard here too, so a stray call (e.g. a stubbed-out UI event) can never silently misfire.
+  resetAnchor(i) {
+    const p = this.doc.palettes[i];
+    if (!p || !p.sourceAnchor || p.anchor) return;
+    const hasSnapshot = Number.isFinite(p.preDetachHue) || Number.isFinite(p.preDetachChroma) || Number.isFinite(p.preDetachLift);
+    const fallback = !hasSnapshot ? seedFromKeyColor(hexToOklch(p.sourceAnchor), this.doc.hueSpace) : null;
+    if (!hasSnapshot && !fallback) return;
+    this.commit((d) => {
+      d.palettes[i].anchor = p.sourceAnchor;
+      d.palettes[i].hue = Number.isFinite(p.preDetachHue) ? p.preDetachHue : fallback.hue;
+      d.palettes[i].chroma = Number.isFinite(p.preDetachChroma) ? p.preDetachChroma : fallback.chroma;
+      d.palettes[i].lift = Number.isFinite(p.preDetachLift) ? p.preDetachLift : 0;
+      delete d.palettes[i].preDetachHue;
+      delete d.palettes[i].preDetachChroma;
+      delete d.palettes[i].preDetachLift;
+    });
   }
 
 
@@ -2055,32 +2142,52 @@ export class ColorSectionImpl {
       // Hue space + On-color policy — two 2-option choices as side-by-side segmented controls (both
       // options visible, vs a toggle that hid the OFF label). On-colors: "fixed" = the light tint in both
       // modes (ADR-003); "contrast" flips on{N}/on{N}Variant to the better-contrasting end vs the accent fill.
-      h(
-        "div",
-        { class: "global-seg-row" },
-        h(
+      //
+      // Q-D (ticket #681, U2, ruled + verified): hueSpace only moves an anchored palette's rendered
+      // hue in "even" mode (the per-stop even-mode hue solve) - in perceptual/peak, an anchored
+      // palette's hue is read straight from its anchor (hOk), so the control is structurally dead
+      // for it there. Disabling this DOC-level control outright would also hide it from any
+      // NON-anchored palette in the same doc, where it still works - so it is only disabled when
+      // EVERY palette is anchored (nothing in the doc could possibly move), and only in
+      // perceptual/peak. The per-palette inspector (renderPaletteInspector) carries the matching
+      // note for one anchored palette at a time regardless of the other palettes in the doc.
+      (() => {
+        const hueSpaceForced = d.toneMode !== "even" && d.palettes.length > 0 && d.palettes.every((p) => p.anchor);
+        return h(
           "div",
-          { class: "field" },
-          h("label", { title: "OKLCH: perceptual hue (the default). CAM16: the legacy hue model." }, "Hue space"),
-          this.segmented(
-            [{ id: "oklch", label: "OKLCH" }, { id: "cam16", label: "CAM16" }],
-            d.hueSpace === "oklch" ? "oklch" : "cam16",
-            (id) => this.commit((doc) => (doc.hueSpace = id)),
-            { ariaLabel: "Hue space", role: "group", idPrefix: "huespace", cls: "seg-sm" },
+          { class: "global-seg-row" },
+          h(
+            "div",
+            { class: "field" },
+            h("label", { title: hueSpaceForced ? HUE_SPACE_ANCHOR_REASON : "OKLCH: perceptual hue (the default). CAM16: the legacy hue model." }, "Hue space"),
+            this.segmented(
+              [{ id: "oklch", label: "OKLCH" }, { id: "cam16", label: "CAM16" }],
+              d.hueSpace === "oklch" ? "oklch" : "cam16",
+              (id) => this.commit((doc) => (doc.hueSpace = id)),
+              {
+                ariaLabel: "Hue space",
+                role: "group",
+                idPrefix: "huespace",
+                cls: "seg-sm",
+                disabled: hueSpaceForced,
+                disabledReason: HUE_SPACE_ANCHOR_REASON,
+              },
+            ),
+            hueSpaceForced ? h("small", { class: "insp-sub", "data-fk": "huespace-doc-reason" }, HUE_SPACE_ANCHOR_REASON) : false,
           ),
-        ),
-        h(
-          "div",
-          { class: "field" },
-          h("label", { title: "Fixed: on-colors are the light tint in both modes (ADR-003). Contrast: on{N}/on{N}Variant flip to the end with the best WCAG contrast vs the accent fill, per mode — accessible, but no longer uniform." }, "On-colors"),
-          this.segmented(
-            [{ id: "fixed", label: "Fixed" }, { id: "contrast", label: "Contrast" }],
-            d.onColorMode === "contrast" ? "contrast" : "fixed",
-            (id) => this.commit((doc) => (doc.onColorMode = id)),
-            { ariaLabel: "On-colors", role: "group", idPrefix: "oncolor", cls: "seg-sm" },
+          h(
+            "div",
+            { class: "field" },
+            h("label", { title: "Fixed: on-colors are the light tint in both modes (ADR-003). Contrast: on{N}/on{N}Variant flip to the end with the best WCAG contrast vs the accent fill, per mode — accessible, but no longer uniform." }, "On-colors"),
+            this.segmented(
+              [{ id: "fixed", label: "Fixed" }, { id: "contrast", label: "Contrast" }],
+              d.onColorMode === "contrast" ? "contrast" : "fixed",
+              (id) => this.commit((doc) => (doc.onColorMode = id)),
+              { ariaLabel: "On-colors", role: "group", idPrefix: "oncolor", cls: "seg-sm" },
+            ),
           ),
-        ),
-      ),
+        );
+      })(),
       d.toneMode === "even"
         ? field(
             "Chroma basis",

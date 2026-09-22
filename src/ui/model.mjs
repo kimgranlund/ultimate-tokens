@@ -254,6 +254,7 @@ import {
   whiteOklch,
   blackHex,
   blackOklch,
+  derivedAll,
 } from "../engine/exports.js";
 // The Claude Design / Google Stitch / Figma Make "DS bundle" authoring subsystem — split into its
 // own module (TKT-0015); see src/engine/ds-export.js's header for why it's a different file.
@@ -271,32 +272,41 @@ export { SCRIM_BASES, SCRIM_STEPS, exportDesignSystemTokens, exportDesignSystemS
 
 // The sixteen seed palettes — 8 brand + 8 Data (data/role-table.json `defaults`). Inlined so the
 // pure core has no file I/O and runs identically in node and the browser.
+//
+// `anchor` (ticket #681 U1, Q2 (b) ruled): each default family's own TODAY's stop-550 hex — measured
+// against this file's own `chroma`/`skew`/`lift` in "perceptual" mode (the shipped default toneMode),
+// with the ramp chroma resolved through each family's CANVAS GROUP (rampChromaOf: Neutral is
+// "material" baseChroma 30, every other default is "brand"/"system"/"data" baseChroma 100 — never
+// the raw `chroma` field above, which only feeds the prime/key-colour construction, REQ-002). Minted
+// so no default family's prime ladder collapses under U6's equal-compress wall rule (mechanism (3));
+// re-verified against this branch's own base before being typed in here (a stale value would fail
+// C2/test/engine/anchor.mjs loudly, not silently).
 const DEFAULT_PALETTES = [
-  { name: "Neutral", hue: 267, chroma: 29, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Primary", hue: 267, chroma: 95, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Secondary", hue: 165, chroma: 100, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Tertiary", hue: 315, chroma: 33, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Info", hue: 235, chroma: 40, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Success", hue: 145, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Neutral", hue: 267, chroma: 29, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#576485", on: true },
+  { name: "Primary", hue: 267, chroma: 95, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#0C5DCC", on: true },
+  { name: "Secondary", hue: 165, chroma: 100, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#108960", on: true },
+  { name: "Tertiary", hue: 315, chroma: 33, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#920CC6", on: true },
+  { name: "Info", hue: 235, chroma: 40, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#046C9B", on: true },
+  { name: "Success", hue: 145, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, anchor: "#21701A", on: true },
   // Warning lift retuned 15 -> -36 at #647: skew 40 + lift 15 put its accent (550 light / 450 dark)
   // at 1.90:1 against its pinned light on-color in "even" mode, and #647 carried that into the default
   // perceptual mode too (2.18:1). -36 is the smallest change from (40, 15) by |dskew| + |dlift| that
   // clears WCAG AA in BOTH ruled modes; skew is deliberately untouched. Gated by hpg-role-contrast.
-  { name: "Warning", hue: 70, chroma: 100, skew: 40, lift: -36, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Danger", hue: 27, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Warning", hue: 70, chroma: 100, skew: 40, lift: -36, hueShift: 0, hueSameDir: false, anchor: "#774902", on: true },
+  { name: "Danger", hue: 27, chroma: 55, skew: -20, lift: -5, hueShift: 0, hueSameDir: false, anchor: "#AD1A0D", on: true },
   // Data 1..8 (REQ-024): derived ONCE via deriveDataHues(primaryHue 267, the 8 brand hues above
   // filtered to chroma>=20, count 8) -> phi 20, hues [287,332,17,62,107,152,197,242]; chroma
   // follows Primary's own chroma (H4). Recorded here as literal CAM16 seeds, parity-mirrored in
   // role-table.json `defaults`, exactly like the 8 brand rows above (the build unit's own printed
   // derivation is the source of these numbers, not a hand guess).
-  { name: "Data 1", hue: 287, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 2", hue: 332, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 3", hue: 17, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 4", hue: 62, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 5", hue: 107, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 6", hue: 152, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 7", hue: 197, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
-  { name: "Data 8", hue: 242, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
+  { name: "Data 1", hue: 287, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#4C5BF8", on: true },
+  { name: "Data 2", hue: 332, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#B90CC1", on: true },
+  { name: "Data 3", hue: 17, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#D6153B", on: true },
+  { name: "Data 4", hue: 62, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#A86004", on: true },
+  { name: "Data 5", hue: 107, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#7E7806", on: true },
+  { name: "Data 6", hue: 152, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#1A8B43", on: true },
+  { name: "Data 7", hue: 197, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#088585", on: true },
+  { name: "Data 8", hue: 242, chroma: 95, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#067CB5", on: true },
 ];
 
 // configFromVariables — a best-effort PARAMETRIC seed from a Figma file's raw-colors variables,
@@ -473,7 +483,13 @@ export function camHueToOklch(camHue, chromaFrac = 1) {
 export function defaultDocument() {
   return {
     name: "Default",
-    palettes: DEFAULT_PALETTES.map((p) => ({ ...p, hue: camHueToOklch(p.hue, (p.chroma ?? 0) / 100) })),
+    // sourceAnchor (F2, U1 review 2026-09-18): the plan's own U1 line says this field is "written
+    // only by the generator and by defaultDocument()" so U2's Reset action (C12) has something to
+    // read after a hue/chroma edit detaches `anchor` (Q6). scripts/gen-categories.mjs's half was
+    // done at U1 landing; this is the other half — every default-kit palette starts with
+    // `sourceAnchor` equal to its own `anchor` (Q2 (b)'s stop-550 hex), never stored twice in
+    // DEFAULT_PALETTES itself (that array stays the single source, `anchor` alone).
+    palettes: DEFAULT_PALETTES.map((p) => ({ ...p, hue: camHueToOklch(p.hue, (p.chroma ?? 0) / 100), sourceAnchor: p.anchor })),
     curve: ENGINE_DEFAULT_CONTROLS.curve,
     tension: ENGINE_DEFAULT_CONTROLS.tension,
     lmin: ENGINE_DEFAULT_CONTROLS.lmin,
@@ -916,7 +932,7 @@ export function projectView(doc) {
     // half-steps (75/125/175/825/875/925) resolve — they are absent from the 19 display STOPS,
     // and a miss used to fall back to #000000 (the black swatches in the Roles panel).
     const fullStops = paletteStops(
-      { hue: p.hue, chroma: rampChroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift, hueSameDir: p.hueSameDir, cuspPull: p.cuspPull },
+      { hue: p.hue, chroma: rampChroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift, hueSameDir: p.hueSameDir, cuspPull: p.cuspPull, anchor: p.anchor },
       controls,
       EXPORT_STOPS,
     ).map((s) => ({
@@ -960,9 +976,12 @@ export function projectView(doc) {
 
     // prime = the seven per-palette identity swatches (REQ-050..057), on their own OKHSL ladder,
     // independent of the ramp above — the key strip (REQ-034) and brandKit()/tokenCount() (REQ-057)
-    // read this. Built from prime.mjs's own primeSwatches(), never reimplemented here.
+    // read this. Built from prime.mjs's own primeSwatches(), never reimplemented here. `anchor`
+    // (ticket #681, U1) forwards through the same way exports.js's derivePalette does — a no-op when
+    // absent, so the canvas and every export format render the SAME prime.DEFAULT for an anchored
+    // palette rather than the live UI staying cusp-derived while exports alone pick up the anchor.
     const primeTokens = primeSwatches(
-      { hue: p.hue, chroma: p.chroma, skew: p.skew, hueShift: p.hueShift, hueSameDir: p.hueSameDir, primeChroma: undefined },
+      { hue: p.hue, chroma: p.chroma, skew: p.skew, hueShift: p.hueShift, hueSameDir: p.hueSameDir, anchor: p.anchor, primeChroma: undefined },
       { ...controls, primeChroma: primeChromaResolved },
     );
 
@@ -1005,10 +1024,19 @@ export function projectView(doc) {
   // The five export formats, all over the SAME doc (enabled palettes only —
   // the exporters filter on !== false). theme is never read here (AC-U3).
   const state = stateOf(doc);
+  // derived (performance, review pass 5 then a review-6 perf/memo-safety pass, 2026-09-19):
+  // `derivedAll(state)` re-derives every enabled palette's full ramp + roles + prime; each of the 9
+  // export calls below used to call it independently, re-solving the SAME anchored ramps ~9x over for
+  // byte-identical output. Computed ONCE here (a local value, no global/module-level cache - the
+  // #686-class defect a first attempt at this fix had) and threaded through as each exporter's
+  // optional trailing `derived` argument; every exporter still derives its own copy when called
+  // WITHOUT it (every other caller - tests, the MCP server, figmaBundle/brandKit's own state - is
+  // unaffected).
+  const derived = derivedAll(state);
   // exportDTCG already splits the tokens into the three Figma mode files; compute it
   // once and surface those files INDIVIDUALLY so the UI can download Light_tokens.json
   // and Dark_tokens.json as separate files (one per Figma variable-collection mode).
-  const dtcgObj = exportDTCG(state);
+  const dtcgObj = exportDTCG(state, undefined, derived);
   // the resolved type + geometry scales — so the shadcn theme carries the brand fonts (--font-*) + a
   // geometry-derived --radius, not just colours. Fonts/radii come from the treatment (size overrides don't
   // affect them), so the base scales are correct here.
@@ -1017,21 +1045,21 @@ export function projectView(doc) {
   // radixPreset (U3, #637, OQ-1) — hoisted so the radix canvas scene can read the engine's own
   // preset OBJECT directly (never re-deriving it, never reading radix-projection.json). The
   // `{ geometry: shadGeom }` opt MUST travel with the hoist — it is what emits `tokens.radii`.
-  const radixPreset = exportRadix(state, { geometry: shadGeom });
+  const radixPreset = exportRadix(state, { geometry: shadGeom }, derived);
   // radixRefPreset (#638): the SAME document in the reference form. Every numbered step leaf is a
   // `var(--{pfx}-*)` link into the kit's own CSS custom-property layer instead of a baked value.
   // The `{ geometry: shadGeom }` opt MUST travel here too: it is what emits `tokens.radii`, so
   // dropping it silently leaves the reference file short of a block the values file carries.
-  const radixRefPreset = exportRadix(state, { geometry: shadGeom, refs: true });
+  const radixRefPreset = exportRadix(state, { geometry: shadGeom, refs: true }, derived);
   const exports = {
-    css: exportCSS(state),
-    oklch: exportOKLCH(state),
-    json: JSON.stringify(exportJSON(state), null, 2),
+    css: exportCSS(state, derived),
+    oklch: exportOKLCH(state, derived),
+    json: JSON.stringify(exportJSON(state, derived), null, 2),
     dtcg: JSON.stringify(dtcgObj, null, 2),
-    ui3: JSON.stringify(exportUI3(state), null, 2),
-    tailwind: exportTailwind(state),
-    shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.radii }),
-    panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom })),
+    ui3: JSON.stringify(exportUI3(state, derived), null, 2),
+    tailwind: exportTailwind(state, derived),
+    shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.radii }, derived),
+    panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom }, derived)),
     radix: exportRadixModule(radixPreset),
     radixRef: exportRadixModule(radixRefPreset),
     figma: {
