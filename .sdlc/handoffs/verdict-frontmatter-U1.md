@@ -29,3 +29,27 @@ P4 (re-derive against `origin/main` at pre-land, after `git fetch origin`) is th
 | Files | `.sdlc/checks/verdict-frontmatter-check.sh` (new), `.sdlc/checks/verdict-frontmatter-grandfather.txt` (new, 47 names derived at f685529f), `.sdlc/adapter.md` (additive: one line inside §2.1 after item 1, one amendment paragraph under §6) |
 | Ran | `npm test` (green, 48/48) · `node test/repo/branding.mjs` (clean) · every U1 row and its planted control above |
 | Left out | U2 (backfill ticket), Q1 (`npm test` wiring): not this unit's scope |
+
+## Rework (pass 2), from review `.sdlc/verdicts/verdict-frontmatter-U1-review.md` (PASS with four findings, graded at 8742b0ee)
+
+Merged `plan/verdict-frontmatter` into `unit/vf-U1` (revision 4 from the review, sha 0dab3839) at `1439d285`. The merge brings `.sdlc/verdicts/records-policy-U1.md` (carries `verdict: 🟢`) and the review's own `.sdlc/verdicts/verdict-frontmatter-U1-review.md` onto the branch, so the baseline the check reads moved: `verdicts 70 graded 23 grandfathered 47 bad 0` where it was `68 21 47 0` before. Every row below was rerun against that new baseline; none of the shapes changed, only the two totals that count all verdict files.
+
+Per owner ruling R9, findings 1, 2 and 4 are fixed in this unit; finding 3 (the U+2028 line-splitting mismatch with `adapter.py`'s `splitlines`) is recorded only, per the review and the plan's revision-4 note.
+
+| Finding | Fix |
+|---|---|
+| 1 (medium): a listed file is skipped without being read, so a backfill that adds the field but keeps the name on the list passes silently and leaves that file outside enforcement for good | Added the `CLEARED` rule: a listed name is still read; if its own last `verdict:` line is now valid, the check reds `CLEARED <name>: grandfathered but carries the field`. New row U1-9 |
+| 2 (low): the adapter amendment said "every file added from here on"; the script actually grades every unlisted top-level `.md` under `.sdlc/verdicts/` (including the 21/23 pre-mandate passing files) and reds `STALE` on a deleted listed file, neither of which the amendment stated | Reworded the §6 amendment paragraph to state scope and all four prefixes (`MISSING`/`VALUE`/`STALE`/`CLEARED`) it enforces; U1-6's three greps still pass unchanged |
+| 4 (low, info): the grandfather list's header called all 47 names field-less (three carry a prose value) and gave no way to rerun the derivation without the plan | Reworded line 1: "failing (missing a verdict: line, or one whose last value is prose)", plus the rerun command inline and a pointer to the plan. Line 1 is outside the hash (`grep -v '^#'`), so U1-3's hash is unchanged |
+
+| Id | Command | Evidence | Negative control | State |
+|---|---|---|---|---|
+| U1-9 | in a `git clone -q --shared` scratch copy of the merged head: `printf '\nverdict: 🟢\n' >> .sdlc/verdicts/survey.md; sh .sdlc/checks/verdict-frontmatter-check.sh; echo exit $?` | `CLEARED survey.md: grandfathered but carries the field`, `verdicts 70 graded 23 grandfathered 47 bad 1`, `exit 1`; with `survey.md` also dropped from the list (list path swapped for a copy with that line removed): no `CLEARED` line, `verdicts 70 graded 24 grandfathered 46 bad 0`, `exit 0` | the same plant run against the script as it stood at `8742b0ee` (before this rework): no `CLEARED` line, `bad 0` exit 0, the silent pass the review found | 🟢 |
+
+Rerun of every pass-1 row and control (A, B, C, D, D2, E, F, G, U1-0, U1-1, U1-3 through U1-8, P2, P3) against the new baseline, in a fresh scratch clone with the reworked script and list copied in: all match the shapes recorded in the pass-1 table above, with `68`/`21` read as `70`/`23` and `67`/`21`/`46` (control E) read as `69`/`23`/`46` throughout. `npm test` green (48/48), tree clean after; `node test/repo/branding.mjs` clean (550 files scanned, the merge added tracked files); no em dash in the script, the list, or this section.
+
+| Field | Value |
+|---|---|
+| Head | `1439d285...` (unit/vf-U1, after the merge and the rework commit) |
+| Ran | `npm test` (green, 48/48) · `node test/repo/branding.mjs` (clean, 550 files) · U1-9 and its control · every pass-1 row rerun at the new baseline |
+| Left out | finding 3 (recorded in the review and the plan's revision-4 note, not fixed here); U2, Q1 |
