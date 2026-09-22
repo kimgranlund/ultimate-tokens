@@ -1098,9 +1098,13 @@ let LADDER_WINDOW_ALLOWLIST;
   // frozen-by-name comparison, both legs. Same shape as anchor.mjs's: name the member that went
   // missing AND the one that showed up, so a same-length substitution cannot pass as a count match.
   const freeze = (got, want, leg) => {
-    console.log(`  ${got.length === want.length ? "pass" : "FAIL"}  symmetry corpus ${leg}: ${got.length} of ${anchoredCorpus.length} (expected ${want.length})`);
+    // The summary word reads the SAME predicate the failure branch below does (count AND membership),
+    // not the count alone: a one-for-one name substitution keeps the length and must still headline
+    // FAIL, or the first line of the report contradicts the exit code (the same defect class as #718).
+    const ok = got.length === want.length && got.every((n, i) => n === want[i]);
+    console.log(`  ${ok ? "pass" : "FAIL"}  symmetry corpus ${leg}: ${got.length} of ${anchoredCorpus.length} (expected ${want.length})`);
     for (const n of got) console.log(`    ${leg === "by-construction" ? "c" : "m"} ${n}`);
-    if (got.length !== want.length || got.some((n, i) => n !== want[i])) {
+    if (!ok) {
       // Printed as well as FAILed, on purpose. `FAIL` keeps only the FIRST message per gate name, so a
       // substitution (one missing, one uninvited, same count) would otherwise report half of itself and
       // the reader would be told a name went away with no idea what replaced it. Both sides go to stdout.

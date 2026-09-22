@@ -3,7 +3,8 @@
 Fresh-context reviewer, grade l3. Delta only; pass 1 (`pif-u7-review-1.md`) stands for everything
 else. Two commits, four files: `test/ui/shell.mjs`, `test/engine/prime.mjs`, the plan, the handoff.
 Every mutation in a throwaway `--shared` clone at `43033841` under my scratch dir; guard polled to
-0 before each run; host load 5 to 9 during the runs. Outputs in `scratchpad/u7rev/r3_*.out`.
+0 before each run; host load 5 to 9 during the runs. Outputs went to a session scratch directory and are not recovered; each figure below names the
+command that regenerates it.
 
 ## F1, the skew probe: 🟢 closed
 
@@ -40,7 +41,8 @@ The plan's Blast radius table gains a row naming `_isNeutralPalette`, `_orderedC
 344 documents, 148 neutral flips, primary index moves for 14 (the two architecture examples),
 `deriveRelative("extend")` target moves for 339, default kit `[0.593, 0.206, 289.0]` to
 `[0.504, 0.187, 289.0]`, and the `ko.mjs` agreement figure (0 against 0.586). Every number matches
-`scratchpad/u7rev/blast.mjs`'s and `ko.mjs`'s output as I recorded it in pass 1. The row says the
+`blast.mjs`'s and `ko.mjs`'s output as I recorded it in pass 1. Both are committed at
+`.sdlc/records/pif-u7-blast/`. The row says the
 figures are the reviewer's and not re-measured by the builder, which is honest and fine: the
 script is in the record and anyone can rerun it.
 
