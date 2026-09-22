@@ -63,9 +63,27 @@ as it stands, this would be 🔴. I will count the board rows on `plan/small-fix
   deadline now exits `1` with an uncaught error, not the `SMOKE FAIL` block. The message text
   survives, and `git grep` finds no consumer of `SMOKE FAIL` or `smoke threw` outside `smoke.mjs`.
   It is cosmetic for CI and no row grades it, though the design says the diagnosis path is unchanged.
-- A fault of mine. While the worker held the guard, my wait loop's own command text contained
-  `remote-debugging-port=9333`, so `pgrep -f` counted my shell. That held U1-5's first attempt at
-  `guard: 1`, and the worker waited correctly. It would also have made my shell a target of the
-  plan's `pkill -9 -f`, had the two overlapped. They did not. The plan's guard and reap both match
+- A fault of mine, twice. My wait loops' own command text contained `remote-debugging-port=9333`,
+  so `pgrep -f` counted my shell. The first loop (zsh pid `51649`) held both U1-3's and U1-5's
+  guards at `1`, and the worker ran the non-Chrome rows until it exited. A second loop (pid `87995`,
+  also waiting on the verdict-frontmatter U2 report) then held the last leg, U1-5's `origin/main`
+  control. The worker named both pids, waited, and killed nothing. Either shell would also have been
+  a target of the plan's `pkill -9 -f` had the timing overlapped; it did not. From the next dispatch
+  on, my waits test only for report files and carry no process pattern. The plan's guard and reap both match
   command text, so any process whose command line merely mentions the needle counts, including the
   seat watching the run.
+
+## Correction, pass 2, at the plan's pre-land
+
+Pass 1 graded P5 🟢 on the local run only. P5's text names a CI leg in the `build-test` smoke
+step, and I never evidenced it. This unit's branch had no CI run, and a criterion this seat cannot
+evidence is 🔴, not 🟢. The CI leg has since run on `a1a4ffc6`, whose smoke files are byte-identical
+to `9478d306`, and it is red: `FAIL  leaves no process or directory after a signal while discovery
+is still pending: child never printed a pid/dir line`. The cause is `test/smoke/launcher.mjs:153`,
+which restores an unset `TMPDIR` as the string `"undefined"`. It shows only where `TMPDIR` is unset,
+so no Mac run could see it. The evidence and controls are in `.sdlc/verdicts/small-fixes-prepr.md`,
+rows B1 and B2. U1-2 is red on Linux for the same reason. The board hazard in pass 1 is closed at the
+plan head (that file, row C2).
+
+verdict: 🔴
+sha: 9478d3067bd10e46bc32d7261e2f6ebb0e7bd3f1
