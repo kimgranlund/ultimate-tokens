@@ -118,14 +118,17 @@ function runSignalLeg(signal, { childFlag = "--child", env = process.env, delayM
     child.stderr.on("data", (d) => { stderr += d.toString(); });
     // On a timeout the child may be hung and never run its own close(), so the parent removes what
     // it knows of first: the fake it printed (if it printed one) and that fake's profile dir. Then
-    // SIGTERM lets a live child's onExit clean up anything else, and SIGKILL follows 1s later.
+    // SIGTERM lets a live child's onExit clean up anything else, and SIGKILL follows 1s later, or at
+    // this process's own exit if that comes first (main() ends in process.exit, which skips timers).
     const timer = setTimeout(() => {
       if (fakePid != null) {
         try { process.kill(fakePid, "SIGKILL"); } catch { /* already gone */ }
         rmSync(dir, { recursive: true, force: true });
       }
       child.kill("SIGTERM");
-      setTimeout(() => child.kill("SIGKILL"), 1000).unref();
+      const reap = () => { try { child.kill("SIGKILL"); } catch { /* already gone */ } };
+      process.once("exit", reap);
+      setTimeout(reap, 1000).unref();
       const what = signalled ? `had not exited 5s after start, ${signal} sent at ${delayMs}ms` : `did not print "<pid> <dir>" within 5s`;
       reject(new Error(`${childFlag} ${what}${childStderr(stderr)}`));
     }, 5000);
