@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: approved
 ticket: #734
 priority: P3
 lane: docs (`.sdlc/verdicts/` the 47 listed files, `.sdlc/checks/`, one adapter amendment; nothing under `src/`, `test/`, `scripts/`)
