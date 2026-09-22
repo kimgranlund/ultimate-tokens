@@ -57,3 +57,41 @@ Head `bc868dd3` on `unit/vf-U3`, base `plan/verdict-frontmatter` `563ee464`. Eve
 | 🟡 | F6 | Pin failure message blames the pin when git or the repo is missing | Say `PIN unreadable: cannot read commit ${PIN} (no git, no repo, or shallow clone)` |
 
 verdict: 🔴
+
+## Round 2 · head `9abce0c1` · PASS
+
+Diff read: `git diff da94e6aa..9abce0c1` (check script, adapter amendment, handoff). The check now grades each listed name's blob at the pin with the same `gradeText` rule and reds `GROWN` unless it failed there; it compares the list header's `at <sha>` to `PIN` (`PIN MISMATCH`); the unreadable-pin message names its causes. Every row rerun in `git clone -q --shared` copies; controls in separate clones at the named shas.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| U3-1 | clean run passes | 🟢 | `verdicts 77 graded 30 grandfathered 47 bad 0` `exit 0` | U3-2 plant, same head: `bad 1` `exit 1` |
+| U3-2 | grown name reds | 🟢 | `GROWN zz-grown-U1.md: not grandfathered at f685529f` `bad 1` `exit 1` | same plant at `fbb19aec`: `verdicts 74 graded 26 grandfathered 48 bad 0` `exit 0` |
+| U3-3 | unreadable pin fails loud | 🟢 | `PIN unreadable: cannot read commit 0000000f (no git, no repo, or shallow clone)` `exit 1`, no summary | unmodified script: `bad 0` `exit 0`; PATH without git also prints the line, `exit 1` |
+| U3-4 | adapter wording | 🟢 | `0`, `1`; the new sentence limits the rewrite claim to a pinned file that "already carried a valid `verdict:` line", which N1 below confirms is exactly what is enforced | `fbb19aec` adapter: `1`, `0` |
+| U3-5 | earlier rows hold | 🟡 | U1-0 `0`; U1-2 A `MISSING zz-c.md`, D `VALUE zz-c.md: last verdict: pass`, D2 `bad 0`, E `STALE survey.md`; U1-3 `29d0eff2c1bccbc1`; U1-5 `0` against merge base `68de4634`; U1-9 `CLEARED survey.md`; U1-1 empty-list run prints `bad 48`, not the row's `bad 47` (R1) | U1-5 against the stale base `563ee464` prints `1` (`small-fixes-U1.md`, from the main merge, not this unit); U1-1 clean run `bad 0` |
+| U3-6 | pinned field-bearing name cannot exempt a rewrite | 🟢 | `records-tidy-prepr.md` overwritten field-less and listed: `GROWN records-tidy-prepr.md: not grandfathered at f685529f` `bad 1` `exit 1` | same plant at `bc868dd3`: `verdicts 75 graded 27 grandfathered 48 bad 0` `exit 0` |
+| U3-7 | header pin and script pin agree | 🟢 | header sed to `deadbeef`: `PIN MISMATCH: header names deadbeef, script pin is f685529f` `exit 1` | unmodified clone: `bad 0` `exit 0` |
+| U1-4 | `^[A-Z]+ # x` and `GROWN zz-absent.md` (revision 10) | 🟢 | `0`, `1` | reader that does not skip `#`: first figure `1`; list path the sed misses: `0`, `0` |
+| G1 | `npm test` in the clone | 🟢 | `✓ all 48 test files passed`, `git status --short` `0` | not a discriminator; the check's reds are the rows above |
+| G2 | em dash | 🟢 | added lines `bc868dd3..9abce0c1` outside backticks `0`; script `0` | U1-8's planted glyph in round 1: `1` |
+
+### Round 2 attacks
+
+| # | Probe | State | Evidence | Negative control |
+|---|---|---|---|---|
+| N1 | a pinned-failing name (`survey.md`) overwritten with different field-less content | 🟡 | `bad 0` `exit 0`: a new record written over a grandfathered file passes; the adapter does not claim this closed | the same file given a valid field reds `CLEARED survey.md` (U1-9), so the file is read |
+| N2 | header pin and script `PIN=` both moved to a later sha where the new record is committed field-less, name listed | 🟡 | `verdicts 78 graded 30 grandfathered 48 bad 0` `exit 0`; this edits the check itself, so only review of `verdict-frontmatter-check.sh` catches it | header moved alone reds `PIN MISMATCH` (U3-7) |
+| N3 | a second `#` line naming another pin | 🟢 | `bad 0` `exit 0`: only the first `#` line is read, so a later line cannot move the pin | first line edited: `PIN MISMATCH` `exit 1` |
+| N4 | header pin as the full 40-char sha of the same commit | 🟢 | `bad 1` `exit 1`: the comparison is literal, strict in the safe direction | the 8-char form: `bad 0` |
+| N5 | name repeated with CR and a blank line | 🟢 | `exit 0`, no new name: `.trim()` and the `Set` collapse it | a new name the same way reds `GROWN` (round 1 handoff probe, U3-2 here) |
+| N6 | a pin-`VALUE` name (`records-followup-U8.md`) overwritten field-less | 🟡 | `bad 0` `exit 0`, same class as N1 | the file is read: a valid field there would red `CLEARED` |
+
+### Findings, round 2
+
+| Sev | Id | Finding | Fix |
+|---|---|---|---|
+| 🟡 | N1/N6 | A grandfathered file's content can be replaced by a new field-less record and stays exempt. Sibling of the delete-with-name case already on #734; not claimed closed by the adapter | Name it on #734, or red a listed file whose blob id differs from the pin's unless it carries the field (`git hash-object` against `git rev-parse ${pin}:<path>`) |
+| 🟡 | N2 | Moving both pins together passes; inherent to an in-repo check, so the guard is review of any diff to the check script | Note in the adapter that a `PIN=` change is a re-pin (P4) and needs its own revision row |
+| 🟡 | R1 | U1-1's empty-list control now prints `bad 48`: an empty list has no header, so `PIN MISMATCH: header names no pin` adds one. Still `exit 1`, still bites, but the row's text says `bad 47` | Same class as U1-4's revision 9: a plan revision moves U1-1's second figure, or ruling A covers it |
+
+verdict: 🟢
