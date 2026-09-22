@@ -20,7 +20,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // launchChrome(bin, extraArgs, { deadlineMs }) -> { proc, dir, close, ready }
 // `ready` resolves to { port } once DevToolsActivePort is discovered, or rejects (after calling
-// close() itself) if deadlineMs passes first.
+// close() itself) if deadlineMs passes first, if the browser exits first, or if close() ran first.
 export function launchChrome(bin, extraArgs = [], { deadlineMs = 45000 } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "ultimate-tokens-smoke-"));
   const activePortFile = join(dir, "DevToolsActivePort");
@@ -43,10 +43,20 @@ export function launchChrome(bin, extraArgs = [], { deadlineMs = 45000 } = {}) {
     try { rmSync(dir, { recursive: true, force: true }); } catch { /* already gone */ }
   };
 
+  // A browser that exits before announcing its port (a crash, a missing library on a CI runner, a
+  // binary that will not spawn) ends the wait at once with its exit status, instead of polling out
+  // the whole deadline and reporting "no response". The "error" listener also keeps a failed spawn
+  // from crashing the caller as an unhandled ChildProcess error.
+  let exited = null;
+  proc.once("exit", (code, signal) => { exited = signal ? `signal ${signal}` : `code ${code}`; });
+  proc.once("error", (e) => { exited = e.message; });
+
   const ready = (async () => {
     const POLL_MS = 400;
     let lastReason = "no response";
     for (let waited = 0; waited < deadlineMs; waited += POLL_MS) {
+      if (closed) throw new Error("Chrome was closed before CDP came up");
+      if (exited) { close(); throw new Error(`Chrome exited before CDP came up (${exited})`); }
       if (existsSync(activePortFile)) {
         try {
           const lines = readFileSync(activePortFile, "utf8").split("\n");

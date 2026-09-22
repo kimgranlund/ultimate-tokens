@@ -11,7 +11,7 @@
 // onExit and prints "<fake pid> <dir>" the moment the fixture is spawned, without waiting for
 // discovery, so the parent can signal it while the launch is still pending.
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -24,6 +24,20 @@ const FIXTURE = resolve(HERE, "fixtures/fake-chrome.mjs");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const isAlive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+// setEnv(vars) sets each key of `vars` on this process's env and returns a restore() that puts every
+// key back as it was, deleting the ones that were unset. A plain `process.env.X = prev` stores the
+// string "undefined" for an unset X (Node coerces non-strings, DEP0104), and every child spawned
+// afterwards inherits it: that is how leg (e) once broke leg (f) on Linux, where TMPDIR is unset.
+const setEnv = (vars) => {
+  const prev = Object.fromEntries(Object.keys(vars).map((k) => [k, process.env[k]]));
+  Object.assign(process.env, vars);
+  return () => {
+    for (const [k, v] of Object.entries(prev)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  };
+};
 const waitUntil = async (pred, deadlineMs) => {
   const step = 100;
   for (let waited = 0; waited < deadlineMs; waited += step) {
@@ -46,9 +60,15 @@ async function childMain() {
 
 // leg (f): onExit is installed in the SAME tick as the launch, using the close() launchChrome
 // returns synchronously, proving a signal that lands before `ready` settles still reaches the
-// browser it spawned, not a still-no-op cleanup.
+// browser it spawned, not a still-no-op cleanup. The child reports on stderr whether discovery was
+// still pending when the signal arrived (its listener is registered before onExit's, so it runs
+// first), so the parent can refuse a run where a slow host let discovery finish before the signal
+// and the leg would have proved nothing about the pending window.
 async function childBeforeDiscoveryMain() {
-  const { proc, dir, close } = launchChrome(process.execPath, [FIXTURE]);
+  const { proc, dir, close, ready } = launchChrome(process.execPath, [FIXTURE]);
+  let discovered = false;
+  ready.then(() => { discovered = true; }, () => {});
+  process.once("SIGTERM", () => { writeSync(2, `discovery ${discovered ? "finished" : "pending"} at signal\n`); });
   onExit(close);
   console.log(`${proc.pid} ${dir}`);
   await new Promise(() => {}); // wait for the parent's signal, discovery never awaited here
@@ -90,13 +110,18 @@ async function legB() {
 // legs (c), (d) and (f): spawn a `--child*`, read its "<pid> <dir>" line, wait `delayMs` then
 // signal the child, check the fake's pid and profile dir are gone. The child's own exit code is
 // printed, not asserted (an unhandled signal reports the same code as a handled one, so it proves
-// nothing on its own).
+// nothing on its own). The child's stderr is collected so a FAIL line names what the child died
+// of, not just the symptom the parent sees.
 function runSignalLeg(signal, { childFlag = "--child", env = process.env, delayMs = 200 } = {}) {
   return new Promise((settle, reject) => {
     const child = spawn(process.execPath, [SELF, childFlag], { stdio: ["ignore", "pipe", "pipe"], env });
-    let buf = "";
+    let buf = "", stderr = "";
     let fakePid = null, dir = null, signalled = false;
-    const timer = setTimeout(() => { reject(new Error(`${childFlag} did not print "<pid> <dir>" within 5s`)); }, 5000);
+    child.stderr.on("data", (d) => { stderr += d.toString(); });
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      reject(new Error(`${childFlag} did not print "<pid> <dir>" within 5s${childStderr(stderr)}`));
+    }, 5000);
     child.stdout.on("data", (d) => {
       buf += d.toString();
       const m = buf.match(/^(\d+) (.+)$/m);
@@ -106,19 +131,31 @@ function runSignalLeg(signal, { childFlag = "--child", env = process.env, delayM
         setTimeout(() => child.kill(signal), delayMs);
       }
     });
-    child.on("exit", (code) => {
+    // "close", not "exit": it fires only after the child's stdio has drained, so `stderr` is whole.
+    child.on("close", (code) => {
       clearTimeout(timer);
-      settle({ fakePid, dir, childExitCode: code });
+      settle({ fakePid, dir, childExitCode: code, stderr });
     });
   });
 }
 
+// The child's own error for a FAIL line: the first line naming an Error (Node's crash report puts
+// the source excerpt above it and the Node version below it), else the last non-empty line.
+function childStderr(stderr) {
+  const lines = stderr.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return "";
+  const line = lines.find((l) => /^[A-Za-z]*Error\b/.test(l)) ?? lines.at(-1);
+  return `; child stderr: ${line}`;
+}
+
 async function legSignal(signal, opts) {
-  const { fakePid, dir, childExitCode } = await runSignalLeg(signal, opts);
-  if (fakePid == null) throw new Error("child never printed a pid/dir line");
+  const { fakePid, dir, childExitCode, stderr } = await runSignalLeg(signal, opts);
+  const why = `child exit ${childExitCode}${childStderr(stderr)}`;
+  if (fakePid == null) throw new Error(`child never printed a pid/dir line (${why})`);
   const gone = await waitUntil(() => !isAlive(fakePid), 2000);
-  if (!gone) throw new Error(`fake pid ${fakePid} still alive 2s after ${signal} (child exit ${childExitCode})`);
-  if (existsSync(dir)) throw new Error(`profile dir ${dir} still present after ${signal} (child exit ${childExitCode})`);
+  if (!gone) throw new Error(`fake pid ${fakePid} still alive 2s after ${signal} (${why})`);
+  if (existsSync(dir)) throw new Error(`profile dir ${dir} still present after ${signal} (${why})`);
+  return { stderr };
 }
 
 // leg (f): FAKE_CHROME_DELAY_MS=3000 makes the fixture write DevToolsActivePort only after 3s, so
@@ -126,11 +163,14 @@ async function legSignal(signal, opts) {
 // the exact window finding 1 of the U1 review identified as leaking. The child installs onExit
 // with the SAME-TICK close() (childBeforeDiscoveryMain), never awaiting `ready` itself.
 async function legF() {
-  await legSignal("SIGTERM", {
+  const { stderr } = await legSignal("SIGTERM", {
     childFlag: "--child-before-discovery",
     env: { ...process.env, FAKE_CHROME_DELAY_MS: "3000" },
     delayMs: 1000,
   });
+  if (!/^discovery pending at signal$/m.test(stderr)) {
+    throw new Error(`the signal did not land while discovery was pending, so this leg proved nothing (${childStderr(stderr).slice(2) || "child reported nothing"})`);
+  }
 }
 
 // leg (e): FAKE_CHROME_MUTE=1 means the fixture never writes DevToolsActivePort, so launchChrome
@@ -139,9 +179,7 @@ async function legF() {
 // run's Chrome and needs no exact pid.
 async function legE() {
   const scratch = mkdtempSync(join(tmpdir(), "launcher-legE-"));
-  const prevTmpdir = process.env.TMPDIR;
-  process.env.TMPDIR = scratch;
-  process.env.FAKE_CHROME_MUTE = "1";
+  const restoreEnv = setEnv({ TMPDIR: scratch, FAKE_CHROME_MUTE: "1" });
   let threw = null;
   try {
     const { ready } = launchChrome(process.execPath, [FIXTURE], { deadlineMs: 1500 });
@@ -149,17 +187,21 @@ async function legE() {
   } catch (e) {
     threw = e;
   } finally {
-    delete process.env.FAKE_CHROME_MUTE;
-    process.env.TMPDIR = prevTmpdir;
+    restoreEnv();
   }
   try {
     if (!threw || !/^Chrome CDP did not come up within/.test(threw.message)) {
       throw new Error(`expected a deadline rejection, got ${threw ? threw.message : "no error"}`);
     }
     const needle = `user-data-dir=${scratch}/ultimate-tokens-smoke-`;
+    // pgrep exits 1 when nothing matches. Any other failure (pgrep missing, so ENOENT; or exit 2/3,
+    // a bad pattern or an internal error) is not "no process" and must not read as one.
     const noProc = await waitUntil(() => {
       try { execFileSync("pgrep", ["-f", needle], { stdio: "pipe" }); return false; }
-      catch { return true; } // pgrep exits 1 when nothing matches
+      catch (e) {
+        if (e.status === 1) return true;
+        throw new Error(`pgrep could not check for a leftover process (${e.code ?? `exit ${e.status}`}), so this leg cannot pass`);
+      }
     }, 2000);
     if (!noProc) throw new Error(`a fake-chrome process matching ${needle} is still alive 2s after the deadline`);
     const leftover = existsSync(scratch) ? readdirSync(scratch).filter((n) => n.startsWith("ultimate-tokens-smoke-")) : [];
