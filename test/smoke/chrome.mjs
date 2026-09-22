@@ -1,0 +1,66 @@
+// chrome.mjs owns one headless-Chrome run: its own profile directory, its own OS-chosen CDP port
+// (read back from Chrome's own DevToolsActivePort file, never a fixed port another run or another
+// stranger could be squatting), and one idempotent cleanup reachable from every exit path.
+//
+// Two exports, nothing else: launchChrome() spawns the browser and resolves once it has announced
+// its port; onExit() wires a cleanup function to every path a process can leave by (a normal
+// finally, process "exit", and SIGINT/SIGTERM/SIGHUP), each reporting the exit code a shell would
+// have printed for an unhandled signal, so a CI `timeout` or a plain `kill` reads the same number.
+import { spawn } from "node:child_process";
+import { mkdtempSync, existsSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// launchChrome(bin, extraArgs, { deadlineMs }) -> { proc, port, dir, close }
+export function launchChrome(bin, extraArgs = [], { deadlineMs = 45000 } = {}) {
+  const dir = mkdtempSync(join(tmpdir(), "ultimate-tokens-smoke-"));
+  const activePortFile = join(dir, "DevToolsActivePort");
+
+  const proc = spawn(bin, [
+    ...extraArgs,
+    "--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
+    "--remote-debugging-port=0", "--hide-scrollbars", "--window-size=1440,900",
+    `--user-data-dir=${dir}`, "about:blank",
+  ], { stdio: "ignore" });
+
+  // proc and dir are captured in this closure at spawn time, before the poll below, so close()
+  // reaches a browser that was spawned and not yet discovered if a signal lands during the wait.
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    try { proc.kill("SIGKILL"); } catch { /* already gone */ }
+    try { rmSync(dir, { recursive: true, force: true }); } catch { /* already gone */ }
+  };
+
+  return (async () => {
+    const POLL_MS = 400;
+    let lastReason = "no response";
+    for (let waited = 0; waited < deadlineMs; waited += POLL_MS) {
+      if (existsSync(activePortFile)) {
+        try {
+          const lines = readFileSync(activePortFile, "utf8").split("\n");
+          const port = Number(lines[0]);
+          if (Number.isInteger(port) && port > 0) return { proc, port, dir, close };
+          lastReason = `unparsed DevToolsActivePort line: ${lines[0]}`;
+        } catch (e) { lastReason = e.message; }
+      }
+      await sleep(POLL_MS);
+    }
+    close();
+    throw new Error(`Chrome CDP did not come up within ${deadlineMs / 1000}s (last: ${lastReason})`);
+  })();
+}
+
+// onExit(fn) runs fn() on a normal "exit" and on SIGINT/SIGTERM/SIGHUP; a signal handler runs
+// fn() then re-raises the shell exit code for that signal (128 + signal number: 130, 143, 129) so
+// a caller reading the process's own exit code sees what an unhandled signal would have reported.
+const SIGNAL_CODES = { "SIGHUP": 129, "SIGINT": 130, "SIGTERM": 143 };
+export function onExit(fn) {
+  process.on("exit", fn);
+  for (const sig of Object.keys(SIGNAL_CODES)) {
+    process.on(sig, () => { fn(); process.exit(SIGNAL_CODES[sig]); });
+  }
+}

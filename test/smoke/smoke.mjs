@@ -11,10 +11,10 @@
 // google-chrome. Screenshots land in smoke-out/ (gitignored).
 import { createServer } from "node:http";
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
-import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { CATEGORIES, CATEGORY_PRESETS, CATEGORY_VOLUMES, VOICES, TYPE_STEPS, CORE_RAMP_STOPS, GEOM_SIZES } from "../ui/counts.mjs";
+import { launchChrome, onExit } from "./chrome.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
@@ -41,9 +41,12 @@ const server = createServer((_req, res) => { res.writeHead(200, { "content-type"
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const url = `http://127.0.0.1:${server.address().port}/`;
 
-const PORT = 9333;
-const proc = spawn(CHROME, ["--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
-  `--remote-debugging-port=${PORT}`, "--hide-scrollbars", "--window-size=1440,900", "about:blank"], { stdio: "ignore" });
+// onExit is installed before launchChrome so a signal landing during the 45s CDP start-up wait
+// below is still cleaned up; close() is idempotent, so the finally block's own call is safe too.
+let closeChrome = () => {};
+onExit(() => closeChrome());
+const { port: PORT, close } = await launchChrome(CHROME, []);
+closeChrome = close;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let ws, idc = 0; const pending = new Map();
@@ -285,7 +288,7 @@ try {
   fails.push("smoke threw: " + e.message);
 } finally {
   try { ws && ws.close(); } catch { /* */ }
-  proc.kill("SIGKILL");
+  closeChrome();
   server.close();
 }
 
