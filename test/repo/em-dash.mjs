@@ -249,7 +249,8 @@ function applyRule(line, prevLine, decision) {
 
 function runFix({ sample }) {
   const files = walkTracked();
-  const perRule = { R0: 0, R1: 0, R2: 0, R3: 0, R4: 0, R5: 0, R6: 0, R7: 0, R8: 0 };
+  const perRule = { R1: 0, R2: 0, R3: 0, R4: 0, R5: 0, R6: 0, R7: 0, R8: 0 };
+  const r0ByConstruct = { a: 0, b: 0, c: 0, d: 0, e: 0 };
   const r0Lines = [];
   const samples = {};
   const pushSample = (rule, before, after) => {
@@ -289,7 +290,7 @@ function runFix({ sample }) {
         if (!decision) break;
 
         if (decision.rule === "R0") {
-          perRule.R0++;
+          r0ByConstruct[decision.construct]++;
           r0Lines.push({ rel, line: i + 1, construct: decision.construct, text: raw });
           break;
         }
@@ -320,10 +321,10 @@ function runFix({ sample }) {
     }
   }
 
-  console.log("R0 " + perRule.R0);
+  for (const c of ["a", "b", "c", "d", "e"]) console.log(`R0 ${c} ${r0ByConstruct[c]}`);
   for (const r of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"]) console.log(`${r} ${perRule[r] || 0}`);
   if (r0Lines.length) {
-    console.log("\nR0 residual (left in place, fix by hand):");
+    console.log("\nresidual (left in place, fix by hand):");
     for (const r of r0Lines) console.log(`  ${r.rel}:${r.line} (${r.construct}) ${r.text}`);
   }
   if (sample) {
