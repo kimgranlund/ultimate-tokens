@@ -110,7 +110,7 @@ export class GeomSectionImpl {
     const present = orderedSizeNames(base).reverse();
     const cell = (col, name) => {
       const s = col.scale.sizes[name];
-      if (!s) return h("td", { class: "tok-cell" }, h("span", { class: "tok-na" }, "—"));
+      if (!s) return h("td", { class: "tok-cell" }, h("span", { class: "tok-na" }, "n/a"));
       const overridden = (name + "|" + col.modeKey) in ov;
       return h(
         "td",
@@ -589,7 +589,7 @@ export class GeomSectionImpl {
   // names carry no "LG" key and a values-first fallback would land on step "0" (issue #483).
   graphGeomCentering(scale) {
     const { name, size: s } = mdAnchor(scale);
-    if (!s) return h("div", { class: "an-empty" }, "—");
+    if (!s) return h("div", { class: "an-empty" }, "n/a");
     const ladder = scale.ramp === RAMP_LADDER;
     const W = 244, H = 116, side = 80;
     const x0 = (W - side) / 2, y0 = (H - side) / 2;
@@ -622,7 +622,7 @@ export class GeomSectionImpl {
   // but the explicit form keeps this consistent with every other size-ordered loop (issue #483).
   graphGeomPower(scale) {
     const rows = orderedSizeNames(scale).map((n) => scale.sizes[n]);
-    if (!rows.length) return h("div", { class: "an-empty" }, "—");
+    if (!rows.length) return h("div", { class: "an-empty" }, "n/a");
     const W = 244, H = 132, pad = 26;
     const maxH = Math.max(...rows.map((s) => s.height)) * 1.05;
     const maxV = Math.max(...rows.map((s) => Math.max(s.icon, s.font, s.height))) * 1.05;
@@ -656,7 +656,7 @@ export class GeomSectionImpl {
   // of naming scheme, and skips the seam marker (meaningless off the default ramp's own 6-point shape).
   graphGeomBands(scale) {
     const rows = orderedSizeNames(scale).map((n) => ({ n, hh: scale.sizes[n].height }));
-    if (rows.length < 2) return h("div", { class: "an-empty" }, "—");
+    if (rows.length < 2) return h("div", { class: "an-empty" }, "n/a");
     const ladder = scale.ramp === RAMP_LADDER;
     const W = 244, H = 124, pad = 26;
     const maxH = Math.max(...rows.map((r) => r.hh)) * 1.05;

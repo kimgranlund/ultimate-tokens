@@ -32,7 +32,7 @@ export class TypeSectionImpl {
   // four-voice size series, X = step index within the voice (normalized so the geometric growth is
   // comparable across voices of different length), Y = size px.
   graphTypeScale(series) {
-    if (!series.length) return h("div", { class: "an-empty" }, "—");
+    if (!series.length) return h("div", { class: "an-empty" }, "n/a");
     const W = 244, H = 132, pad = 24;
     const maxSize = Math.max(8, ...series.flatMap((g) => g.steps.map((s) => s.size))) * 1.05;
     const X = (i, n) => pad + (n <= 1 ? 0 : i / (n - 1)) * (W - pad - 8);
@@ -57,7 +57,7 @@ export class TypeSectionImpl {
 
   // letter-spacing (px) vs size (px); a dashed unity line marks tracking = 0.
   graphTypeTracking(series) {
-    if (!series.length) return h("div", { class: "an-empty" }, "—");
+    if (!series.length) return h("div", { class: "an-empty" }, "n/a");
     const W = 244, H = 124, pad = 26;
     const all = series.flatMap((g) => g.steps);
     const maxSize = Math.max(8, ...all.map((s) => s.size)) * 1.05;
@@ -88,7 +88,7 @@ export class TypeSectionImpl {
 
   // leading ratio = lineHeight ÷ size per step (tight at display, loose at body). X = step index per voice.
   graphTypeLeading(series) {
-    if (!series.length) return h("div", { class: "an-empty" }, "—");
+    if (!series.length) return h("div", { class: "an-empty" }, "n/a");
     const W = 244, H = 124, pad = 26;
     const ratios = series.flatMap((g) => g.steps.map((s) => s.lineHeight / s.size));
     const rMax = Math.max(1.7, ...ratios) * 1.02, rMin = Math.min(0.95, ...ratios), rSpan = (rMax - rMin) || 1;
@@ -119,7 +119,7 @@ export class TypeSectionImpl {
       "div",
       { class: "ty-roles" },
       ...ROLES.map(([role, label]) => {
-        const fam = (this.fontMode === "google" ? googleSafeFontFor(scale.fonts[role]) : scale.fonts[role]) || "—";
+        const fam = (this.fontMode === "google" ? googleSafeFontFor(scale.fonts[role]) : scale.fonts[role]) || "n/a";
         const generic = genericFor(fam, role);
         return h("div", { class: "ty-role" }, h("span", { class: "ty-role-k" }, label), h("span", { class: "ty-role-fam", style: `font-family:'${fam}', ${generic}` }, fam));
       }),
@@ -472,7 +472,7 @@ export class TypeSectionImpl {
     // a single value cell: an editable SIZE input (px), w{weight} · {tracking} · line beneath, ↺ when overridden.
     const cell = (col, cat, step) => {
       const s = col.scale.categories[cat] && col.scale.categories[cat][step];
-      if (!s) return h("td", { class: "tok-cell" }, h("span", { class: "tok-na" }, "—"));
+      if (!s) return h("td", { class: "tok-cell" }, h("span", { class: "tok-na" }, "n/a"));
       const tr = `${s.letterSpacing >= 0 ? "+" : ""}${s.letterSpacing}`;
       const overridden = (cat + "|" + step + "|" + col.modeKey) in ov;
       return h(

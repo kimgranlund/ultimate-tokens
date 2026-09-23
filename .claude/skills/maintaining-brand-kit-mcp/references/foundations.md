@@ -84,7 +84,7 @@ The kit may carry Color, Typography, Geometry, or any subset (the drawer's **Inc
 These three gates each appear **four times** and must stay in lockstep (1–3 in `brand-kit-core.mjs`, 4 in
 `brand-kit-server.mjs`):
 1. **`usageGuide()`** — the markdown sections (`## Color` / `## Typography` / `## Geometry`) are each behind
-   the matching gate (it recomputes a local `hasColorG`); `Systems in this kit:` lists the present ones (or `—`).
+   the matching gate (it recomputes a local `hasColorG`); `Systems in this kit:` lists the present ones (or `n/a`).
 2. **`TOOLS`** pushes — `if (hasColor) TOOLS.push(…6 colour tools)`, `if (kit.type) … get_type`,
    `if (kit.geometry) … get_geometry`.
 3. **`RESOURCES`** pushes — `if (hasColor) … brand://palettes + semantic/{light,dark} + one
@@ -93,7 +93,7 @@ These three gates each appear **four times** and must stay in lockstep (1–3 in
 4. **The startup banner** (the server: `process.stderr.write` at file end, reading `surface.hasColor` /
    `palettes`) — names which systems are being served (`[N palettes · type · geometry]` or `empty`).
 
-`brand://kit`, `brand://guide`, and `apply_brand` are **always present** (the guide degrades to "—" when a
+`brand://kit`, `brand://guide`, and `apply_brand` are **always present** (the guide degrades to "n/a" when a
 kit is empty). The contract: a colour tool must never appear for a type-only kit, and vice-versa. The test
 asserts this on the projection directly via `brandKit({color:true})` / `{type:true}` / `{geometry:true}`.
 

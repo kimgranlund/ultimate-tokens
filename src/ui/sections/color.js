@@ -32,7 +32,7 @@ export class ColorSectionImpl {
   // L*×C plot (moved OUT of the canvas) — applied chroma vs gamut ceiling + tone line.
   graphLC(view, idx) {
     const target = view.plot[idx] || view.plot[0];
-    if (!target) return h("div", { class: "an-empty" }, "—");
+    if (!target) return h("div", { class: "an-empty" }, "n/a");
     const W = 244, H = 168, pad = 26;
     const pts = target.points;
     const maxC = Math.max(8, ...pts.map((p) => Math.max(p.ceiling, p.applied))) * 1.05;
@@ -71,7 +71,7 @@ export class ColorSectionImpl {
   // Tone curve — L* (tone) per stop across the ramp.
   graphTone(view, idx) {
     const vp = view.palettes[idx];
-    if (!vp) return h("div", { class: "an-empty" }, "—");
+    if (!vp) return h("div", { class: "an-empty" }, "n/a");
     const W = 244, H = 120, pad = 22;
     const pts = vp.ramp;
     const X = (i) => pad + (i / (pts.length - 1)) * (W - pad - 8);
@@ -93,7 +93,7 @@ export class ColorSectionImpl {
   // Chroma curve — applied chroma per stop vs the gamut ceiling (edge damping).
   graphChroma(view, idx) {
     const vp = view.palettes[idx];
-    if (!vp) return h("div", { class: "an-empty" }, "—");
+    if (!vp) return h("div", { class: "an-empty" }, "n/a");
     const W = 244, H = 120, pad = 22;
     const pts = vp.ramp;
     const maxC = Math.max(8, ...pts.map((s) => Math.max(s.maxc, s.chroma))) * 1.05;
@@ -127,7 +127,7 @@ export class ColorSectionImpl {
   graphContrast(view, idx) {
     const vp = view.palettes[idx];
     const cr = vp ? view.contrast.find((c) => c.palette === vp.name) : null;
-    if (!cr) return h("div", { class: "an-empty" }, "—");
+    if (!cr) return h("div", { class: "an-empty" }, "n/a");
     const bar = (label, ratio) => {
       const pass = ratio >= 4.5;
       const pct = Math.min(100, (ratio / 7) * 100);
@@ -604,7 +604,7 @@ export class ColorSectionImpl {
         "div",
         { class: "newpal-diagram" },
         h("div", { class: "newpal-diagram-title" }, "Chroma curve — applied vs ceiling"),
-        proposed ? this.graphChroma(proposed.view, 0) : h("div", { class: "an-empty" }, "—"),
+        proposed ? this.graphChroma(proposed.view, 0) : h("div", { class: "an-empty" }, "n/a"),
       ),
     ];
   }
@@ -1334,7 +1334,7 @@ export class ColorSectionImpl {
         || "Click Read live to compare with the file";
       const mark = st === "match" ? icon("check", { size: 12 })
         : st === "drift" ? icon("x", { size: 12 })
-        : st === "absent" ? "—" : "·";
+        : st === "absent" ? "n/a" : "·";
       return h("td", { class: "map-file" }, h("span", { class: "map-drift map-drift-" + (st || "none"), title }, mark));
     };
 
@@ -2146,7 +2146,7 @@ export class ColorSectionImpl {
                 "div",
                 { class: "rrow" },
                 h("span", { class: "k", title: "--c-" + ns + r.suffix }, r.key),
-                h("span", { class: "suf" }, r.suffix || "—"),
+                h("span", { class: "suf" }, r.suffix || "n/a"),
                 h(
                   "span",
                   { class: "sw-pair" },

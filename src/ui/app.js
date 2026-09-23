@@ -762,7 +762,7 @@ class HctApp extends HTMLElement {
     const visible = PRESETS.filter((p) => !q || p.name.toLowerCase().includes(q));
     // group by VOLUME (each category ships as 12 volumes of 4 palettes), in order.
     const byVol = new Map();
-    for (const p of visible) { const v = p.vol || "—"; if (!byVol.has(v)) byVol.set(v, []); byVol.get(v).push(p); }
+    for (const p of visible) { const v = p.vol || "n/a"; if (!byVol.has(v)) byVol.set(v, []); byVol.get(v).push(p); }
     if (byVol.size === 0) return [h("div", { class: "empty-note" }, `No palettes match “${this.search.trim()}”`)];
     return [...byVol.entries()].map(([vol, ps]) => {
       const vi = VOLUMES[vol];
