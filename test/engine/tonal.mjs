@@ -181,7 +181,9 @@ for (const p of DEFAULTS) {
     const floor500 = Math.min((CTL.chromaFloor / 100) * maxc500, tgt);
     const anchorWant = Math.min(maxc500, Math.max(tgt, floor500));
     for (const r of ramp(p, {})) {
-      const uLeg = Math.abs(T.liftStop(r.stop, p.lift) - T.liftStop(500, p.lift)) / 450;
+      // Capped at 1, as chromaEnvelope caps `sd` (#681 U10, pre-land F3): under a lift the raw lifted
+      // distance can pass 450, and the legacy form never read a position past the ramp end.
+      const uLeg = Math.min(1, Math.abs(T.liftStop(r.stop, p.lift) - T.liftStop(500, p.lift)) / 450);
       const legacyWant = Math.min(tgt * Math.max(0, 1 - (evenDamp / 100) * uLeg ** evenDampCurve), r.maxc);
       const want = Math.min(legacyWant, anchorWant);
       if (Math.abs(r.chroma - want) > 1e-6) FAIL("damping-curve", `${p.name} default != legacy at stop ${r.stop}: ${r.chroma.toFixed(4)} vs ${want.toFixed(4)}`);
@@ -621,6 +623,13 @@ for (const mode of ["perceptual", "peak"]) {
 //   sensitivity this file's own STAIRCASE comment (hue-solver-best, above) names for the identical
 //   reason. Fixture cell patched by hand (single line, `test/engine/fixtures/tonal-legacy.json`), not
 //   regenerated wholesale, to keep this diff reviewable and to avoid disturbing any other cell. ──────
+//   #681 U10 re-pin (pre-land F3, owner ruling R26): chromaEnvelope now caps `sd` at +/-1. Under
+//   Warning's lift -36 the raw distance from the lifted anchor to its lightest stops passed 450, so
+//   the envelope clipped to 0 and those stops rendered neutral grey. Eight cells moved, all Warning,
+//   all already carved above: perceptual stops 100/125/150/175/200 (#FBFBFB #F8F8F8 #F3F3F3 #EDECEB
+//   #EAE4DE -> #FCFBFA #F9F7F5 #F5F2EF #F0ECE6 #EBE4DC) and even stops 125/150/175 (#FBFBFB #FCF6F3
+//   #FAF2ED -> #FFFAF8 #FFF6F0 #FAF2EC). Every other cell of the 32 ramps is byte-identical before and
+//   after the cap. Patched by hand, cell by cell, not regenerated.
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};

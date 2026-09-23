@@ -245,7 +245,7 @@ Finding 0); this rule exists so a third unit does not repeat it.
 
 - [x] U9 (S) the two landing checks red after the sync to `3e1483e4` go green and nothing else moves: the interim ceiling gets its own labelled figure in the adapter's `test` time cell, `baseline-agrees-check.sh` reads that label and compares it to `.sdlc/baseline.md`'s ceiling sentence (owner ruling Q6, verbatim "Labelled figure, in #681 (Recommended)"), and the eleven `pif-*` verdict records under `.sdlc/verdicts/` each get the `verdict:` line #723 made mandatory, with a value derived from each record's own final graded state · grade l3 · reviewer-l3 · verifier-l2 (opus high, R17)
   Source: `.sdlc/questions/preset-intent-fidelity-u8.md` Q6 and its Consequence paragraph; PR #729's own out-of-scope note, quoted verbatim: `Out of scope, named because the issue raised it: giving a ruled ceiling such as #713's interim band its own labelled, machine-read figure rather than one inferred from the baseline.` So #718 (PR #729) made the check read every `N to M s` range in a time cell and left the ceiling's label to this plan. The adapter amendment of 2026-09-22 (#723) is the mandate on the second half; the grandfather list is pinned at `f685529f` and does not grow (`GROWN`), so the eleven files are fixed, not listed. Criteria in `## U9 criteria` below.
-- [~] U10 (S) pre-land fixes: a pure-black or pure-white anchor renders real colours, not `#NANNANNAN`, in every tone mode; the marketing fact sheet stops calling the ladder OKHSL and the ramps unchanged · grade l5 · reviewer-l4 · verifier-l3
+- [x] U10 (S) pre-land fixes: a pure-black or pure-white anchor renders real colours, not `#NANNANNAN`, in every tone mode; the marketing fact sheet stops calling the ladder OKHSL and the ramps unchanged · grade l5 · reviewer-l4 · verifier-l3
 
 ## U7 criteria (verifier-checkable)
 
@@ -332,6 +332,7 @@ The pre-land verify at `30bfaeeb` (G7) found ten changed paths that no unit's de
 | `test/ui/fixtures/default-doc-ramps.json` | U10's envelope cap, 6 cells | `pif-u10.md` |
 | `test/engine/fixtures/radix-baseline.json` (again) | U10's envelope cap, 30 Warning values | `pif-u10.md` |
 | `test/engine/tonal.mjs` | the independent legacy formula caps at 1 like the engine | `pif-u10.md` |
+| `test/engine/exports.mjs` | comment-only, cites the cap beside a pinned value | `pif-u10.md` (U10 verdict 🟡) |
 | `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`, `.sdlc/baseline.md` | generated assets and the size figure the cap and the F1 guard moved | `pif-u10.md` |
 
 ## Blast radius (what U4 must report; the per-preset movement table is what the owner accepts before U3 lands, C6 iv)
