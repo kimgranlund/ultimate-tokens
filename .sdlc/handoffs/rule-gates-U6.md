@@ -52,3 +52,15 @@ Review (`scratchpad/rg-U6-review.md`) found an em dash in two comments I added: 
 - `node test/ui/headless-boot.mjs`, rerun in a fresh clone at `6982a1f3477dde155c67443dcce93f598220ef94`: `HEADLESS BOOT PASS — all Phase-3 interaction assertions hold`.
 - `node test/repo/branding.mjs`, same clone: `branding: clean (568 files scanned)`.
 - New unit head: `6982a1f3477dde155c67443dcce93f598220ef94`.
+
+## Pass 3 (verifier red: two stale doc quotes, three unpinned surfaces, one literal-byte regex)
+
+The verifier's verdict (`verdict-rg-U6.md`) found three gaps, all fixed in one commit, `14efd2c5e8a8f4cfaa0a8ffd778bd5e5536945d5`.
+
+1. Two doc lines still quoted the old glyph as the placeholder text: `.claude/skills/maintaining-brand-kit-mcp/references/foundations.md:87` ("or `n/a`", was "or the glyph in a code span") and `docs/lld/app-shell.md:270` ("cards render `n/a` empties", was "cards render the glyph in a code span"). Both now read `n/a`.
+2. Three surfaces the earlier passes never pinned each got one test assertion, each shown red on revert in a fresh clone: `app.js:765` (`buildPresetTiles`' volume-label fallback, `test/ui/headless-boot.mjs`, calls the method directly with a preset carrying no `.vol` and reads `Vol n/a` off the rendered `.preset-vol-num` span; reverted to a placeholder token reds `got Vol __glyph__`); `app-helpers.mjs:275` (the `GENERIC_FONTS` sentinel, same file, imports the set directly and checks it carries `n/a` and not the glyph; reverted to the glyph reds the assertion); `ds-export.js:1433` (the `DS_MAKE_TYPE_USE[key]` fallback, `test/engine/exports.mjs`, a source-text pin rather than a behavioral one, since that branch is unreachable through any real type scale today: `DS_TYPE_LEVELS` and `DS_MAKE_TYPE_USE` carry the identical 12 keys, so no kit construction can force `!hit`; reverted to the glyph reds `ds-export.js:1433's DS_MAKE_TYPE_USE fallback reverted to the glyph`).
+3. `test/engine/exports.mjs`'s table-cell regression guard wrote the glyph as a literal byte inside a regex literal (`/\|\s*<glyph>\s*\|/`) instead of the `u2014` escape the rest of the codebase uses for this character. It now builds the pattern from `String.fromCharCode(0x2014)` via `new RegExp(...)`, so the source carries no literal glyph byte anywhere in this file.
+4. All three new assertions verified red on revert, in a fresh clone at `14efd2c5e8a8f4cfaa0a8ffd778bd5e5536945d5`: `node test/ui/headless-boot.mjs` reds `✗ (na) app.js buildPresetTiles falls back to "Vol n/a" (got Vol __glyph__)` and, separately, `✗ (na) app-helpers.mjs GENERIC_FONTS carries "n/a", not the glyph`; `node test/engine/exports.mjs` reds `FAIL design-system-make — ds-export.js:1433's DS_MAKE_TYPE_USE fallback reverted to the glyph`.
+5. Doc-line checks, same clone: `grep -c '`n/a`' .claude/skills/maintaining-brand-kit-mcp/references/foundations.md` and the same against `docs/lld/app-shell.md` both print `1`.
+6. Full gate, same clone: `npm test` → `✓ all 48 test files passed`, tree clean (`0`) after; `node test/repo/branding.mjs` → `branding: clean (568 files scanned)`.
+7. New unit head: `14efd2c5e8a8f4cfaa0a8ffd778bd5e5536945d5`.
