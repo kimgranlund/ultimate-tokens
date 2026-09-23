@@ -2,7 +2,8 @@
 // launcher.mjs is the unit test for chrome.mjs's process lifecycle. Runs without Chrome and without
 // a build: test/smoke/fixtures/fake-chrome.mjs stands in for the browser, so this proves discovery,
 // close(), and every signal/deadline exit path on any host. Six legs, each one pass/FAIL line;
-// the file exits 1 on any FAIL. Not registered in test/run.mjs (see the plan); it runs from the
+// the file exits 1 on any FAIL. Legs (b) to (f) also check the fixture's grandchild is gone, which
+// only a kill of the fake's whole process group achieves. Not registered in test/run.mjs (see the plan); it runs from the
 // `smoke` script and from `node test/smoke/launcher.mjs` directly.
 //
 // `--child` is a second entry point used by legs (c) and (d): a child process that awaits the
@@ -45,6 +46,35 @@ const waitUntil = async (pred, deadlineMs) => {
     await sleep(step);
   }
   return pred();
+};
+
+// The fixture spawns one grandchild in the fake's process group and writes its pid to this file in
+// the profile directory (fixtures/fake-chrome.mjs). close() removes that directory, so each leg reads
+// the pid before its cleanup. A missing or unreadable file, or a grandchild already dead before the
+// cleanup, is a FAIL, never a skip: the leg would have no grandchild to check and would prove nothing.
+const GRANDCHILD_PID_FILE = "fake-chrome-grandchild.pid";
+const readGrandchild = (leg, dir) => {
+  let text;
+  try { text = readFileSync(join(dir, GRANDCHILD_PID_FILE), "utf8"); }
+  catch (e) { throw new Error(`leg (${leg}): grandchild pid file missing in ${dir} (${e.code})`); }
+  const pid = Number(text.trim());
+  if (!Number.isInteger(pid) || pid <= 0) throw new Error(`leg (${leg}): grandchild pid file reads ${JSON.stringify(text)}`);
+  if (!isAlive(pid)) throw new Error(`leg (${leg}): grandchild pid ${pid} was already dead before the cleanup, so this leg proves nothing`);
+  return pid;
+};
+// The pid file is written at the fixture's startup, so a leg that has not awaited discovery (e, f)
+// polls for it first. It polls for a whole pid, not for the file: writeFileSync opens (creating the
+// file empty) before it writes, and a read in that gap gets "" on a healthy fixture.
+const grandchildWritten = (dir) => {
+  try { return /^\d+\s*$/.test(readFileSync(join(dir, GRANDCHILD_PID_FILE), "utf8")); } catch { return false; }
+};
+const waitForGrandchild = async (leg, dir, ms) => {
+  await waitUntil(() => grandchildWritten(dir), ms);
+  return readGrandchild(leg, dir);
+};
+const assertGrandchildGone = async (leg, pid, what) => {
+  const gone = await waitUntil(() => !isAlive(pid), 2000);
+  if (!gone) throw new Error(`leg (${leg}): grandchild pid ${pid} still alive 2s after ${what}`);
 };
 
 // --- child entry points --------------------------------------------------------------------
@@ -98,31 +128,38 @@ async function legA() {
 async function legB() {
   const { proc, dir, close, ready } = launchChrome(process.execPath, [FIXTURE]);
   await ready;
-  close();
+  let grandPid;
+  try { grandPid = readGrandchild("b", dir); } finally { close(); } // a FAIL here still closes the fake
   const gone = await waitUntil(() => !isAlive(proc.pid), 2000);
   if (!gone) throw new Error(`fake pid ${proc.pid} still alive 2s after close()`);
+  await assertGrandchildGone("b", grandPid, "close()");
   if (existsSync(dir)) throw new Error(`profile dir ${dir} still present after close()`);
   close(); // idempotent: a second call must not throw
 }
 
-// legs (c), (d) and (f): spawn a `--child*`, read its "<pid> <dir>" line, wait `delayMs` then
-// signal the child, check the fake's pid and profile dir are gone. The child's own exit code is
+// legs (c), (d) and (f): spawn a `--child*`, read its "<pid> <dir>" line and the grandchild's pid
+// file in that dir, wait `delayMs` then signal the child, check the fake's pid, the grandchild's pid
+// and the profile dir are gone. The child's own exit code is
 // printed, not asserted (an unhandled signal reports the same code as a handled one, so it proves
 // nothing on its own). The child's stderr is collected so a FAIL line names what the child died
 // of, not just the symptom the parent sees.
-function runSignalLeg(signal, { childFlag = "--child", env = process.env, delayMs = 200 } = {}) {
+function runSignalLeg(signal, { leg, childFlag = "--child", env = process.env, delayMs = 200 } = {}) {
   return new Promise((settle, reject) => {
     const child = spawn(process.execPath, [SELF, childFlag], { stdio: ["ignore", "pipe", "pipe"], env });
     let buf = "", stderr = "", stderrAtSignal = null;
-    let fakePid = null, dir = null, signalled = false;
+    let fakePid = null, dir = null, signalled = false, grandPid = null, grandError = null;
     child.stderr.on("data", (d) => { stderr += d.toString(); });
     // On a timeout the child may be hung and never run its own close(), so the parent removes what
     // it knows of first: the fake it printed (if it printed one) and that fake's profile dir. Then
     // SIGTERM lets a live child's onExit clean up anything else, and SIGKILL follows 1s later, or at
     // this process's own exit if that comes first (main() ends in process.exit, which skips timers).
+    // The fake is killed by its group, and the grandchild by its pid, so this path orphans neither.
     const timer = setTimeout(() => {
       if (fakePid != null) {
-        try { process.kill(fakePid, "SIGKILL"); } catch { /* already gone */ }
+        try { process.kill(-fakePid, "SIGKILL"); } catch {
+          try { process.kill(fakePid, "SIGKILL"); } catch { /* already gone */ }
+        }
+        if (grandPid != null) { try { process.kill(grandPid, "SIGKILL"); } catch { /* already gone */ } }
         rmSync(dir, { recursive: true, force: true });
       }
       child.kill("SIGTERM");
@@ -138,13 +175,17 @@ function runSignalLeg(signal, { childFlag = "--child", env = process.env, delayM
       if (m && !signalled) {
         signalled = true;
         fakePid = Number(m[1]); dir = m[2];
-        setTimeout(() => { stderrAtSignal = stderr; child.kill(signal); }, delayMs);
+        // The grandchild's pid is read before the signal, since the child's cleanup removes the dir.
+        // A read that fails still signals the child, so it cleans up, and the leg then FAILs on it.
+        waitForGrandchild(leg, dir, 3000)
+          .then((pid) => { grandPid = pid; }, (e) => { grandError = e; })
+          .then(() => setTimeout(() => { stderrAtSignal = stderr; child.kill(signal); }, delayMs));
       }
     });
     // "close", not "exit": it fires only after the child's stdio has drained, so `stderr` is whole.
     child.on("close", (code, sig) => {
       clearTimeout(timer);
-      settle({ fakePid, dir, childExitCode: code ?? sig, stderr, stderrAtSignal });
+      settle({ fakePid, dir, grandPid, grandError, childExitCode: code ?? sig, stderr, stderrAtSignal });
     });
   });
 }
@@ -159,11 +200,13 @@ function childStderr(stderr) {
 }
 
 async function legSignal(signal, opts) {
-  const { fakePid, dir, childExitCode, stderr, stderrAtSignal } = await runSignalLeg(signal, opts);
+  const { fakePid, dir, grandPid, grandError, childExitCode, stderr, stderrAtSignal } = await runSignalLeg(signal, opts);
   const why = `child exit ${childExitCode}${childStderr(stderr)}`;
   if (fakePid == null) throw new Error(`child never printed a pid/dir line (${why})`);
+  if (grandError) throw grandError;
   const gone = await waitUntil(() => !isAlive(fakePid), 2000);
   if (!gone) throw new Error(`fake pid ${fakePid} still alive 2s after ${signal} (${why})`);
+  await assertGrandchildGone(opts.leg, grandPid, signal);
   if (existsSync(dir)) throw new Error(`profile dir ${dir} still present after ${signal} (${why})`);
   return { stderrAtSignal };
 }
@@ -174,6 +217,7 @@ async function legSignal(signal, opts) {
 // with the SAME-TICK close() (childBeforeDiscoveryMain), never awaiting `ready` itself.
 async function legF() {
   const { stderrAtSignal } = await legSignal("SIGTERM", {
+    leg: "f",
     childFlag: "--child-before-discovery",
     env: { ...process.env, FAKE_CHROME_DELAY_MS: "3000" },
     delayMs: 1000,
@@ -190,9 +234,15 @@ async function legF() {
 async function legE() {
   const scratch = mkdtempSync(join(tmpdir(), "launcher-legE-"));
   const restoreEnv = setEnv({ TMPDIR: scratch, FAKE_CHROME_MUTE: "1" });
-  let threw = null;
+  let threw = null, grandPid = null, grandError = null;
   try {
-    const { ready } = launchChrome(process.execPath, [FIXTURE], { deadlineMs: 1500 });
+    const { dir, ready } = launchChrome(process.execPath, [FIXTURE], { deadlineMs: 1500 });
+    // Read the grandchild's pid while the launch is still pending: the deadline's close() removes
+    // the dir. Polling stops once `ready` settles, so a slow fixture reds here, never passes.
+    let settled = false;
+    ready.then(() => { settled = true; }, () => { settled = true; });
+    await waitUntil(() => settled || grandchildWritten(dir), 1500);
+    try { grandPid = readGrandchild("e", dir); } catch (e) { grandError = e; }
     await ready;
   } catch (e) {
     threw = e;
@@ -200,6 +250,7 @@ async function legE() {
     restoreEnv();
   }
   try {
+    if (grandError) throw grandError;
     if (!threw || !/^Chrome CDP did not come up within/.test(threw.message)) {
       throw new Error(`expected a deadline rejection, got ${threw ? threw.message : "no error"}`);
     }
@@ -214,6 +265,7 @@ async function legE() {
       }
     }, 2000);
     if (!noProc) throw new Error(`a fake-chrome process matching ${needle} is still alive 2s after the deadline`);
+    await assertGrandchildGone("e", grandPid, "the deadline");
     const leftover = existsSync(scratch) ? readdirSync(scratch).filter((n) => n.startsWith("ultimate-tokens-smoke-")) : [];
     if (leftover.length) throw new Error(`leftover profile dir(s) under ${scratch}: ${leftover.join(", ")}`);
   } finally {
@@ -226,8 +278,8 @@ async function main() {
   const legs = [
     ["discovers its port from DevToolsActivePort and answers /json/version", legA],
     ["leaves no process or directory after close()", legB],
-    ["leaves no process or directory after SIGTERM", () => legSignal("SIGTERM")],
-    ["leaves no process or directory after SIGINT", () => legSignal("SIGINT")],
+    ["leaves no process or directory after SIGTERM", () => legSignal("SIGTERM", { leg: "c" })],
+    ["leaves no process or directory after SIGINT", () => legSignal("SIGINT", { leg: "d" })],
     ["leaves no process or directory after a deadline with no DevToolsActivePort", legE],
     ["leaves no process or directory after a signal while discovery is still pending", legF],
   ];
