@@ -44,10 +44,11 @@ const url = `http://127.0.0.1:${server.address().port}/`;
 // launchChrome() returns close() SYNCHRONOUSLY (before discovery finishes), so onExit(close) is
 // wired in this same tick, so a signal landing during the 45s CDP start-up wait below is cleaned up
 // too, not just one after `ready` resolves; close() is idempotent, so the finally block's own call
-// is safe either way.
+// is safe either way. `ready` is awaited inside the try below, so a start-up failure (deadline or
+// early exit) reports as a SMOKE FAIL line, not an uncaught rejection.
 const { close, ready } = launchChrome(CHROME, []);
 onExit(close);
-const { port: PORT } = await ready;
+let PORT;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let ws, idc = 0; const pending = new Map();
@@ -59,6 +60,7 @@ const evalJS = async (expression, awaitPromise = false) => {
 };
 
 try {
+  ({ port: PORT } = await ready);
   // Wait for the CDP endpoint, then open the page target. Cold CI runners can take well over 15s to
   // start Chrome's debugger, so this is generous + two-phase: (1) poll /json/version until the debugger
   // is LISTENING, then (2) create the tab (/json/new can briefly lag the version endpoint). Both report
