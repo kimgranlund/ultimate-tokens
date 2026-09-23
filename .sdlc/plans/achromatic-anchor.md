@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: "#739"
 priority: P2
 lane: color-engine (`src/engine/tonal.js`, `src/engine/okhsl.js`, `test/engine/{anchor,okhsl,prime,tonal}.mjs`)
