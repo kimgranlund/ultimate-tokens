@@ -3728,6 +3728,18 @@ flushRaf();
 
   const geomEmpty = app.graphGeomPower({ sizes: {} });
   ok(geomEmpty.classList.contains("an-empty") && geomEmpty.children[0] && geomEmpty.children[0].textContent === "n/a", `(na) geometry.js .an-empty reads "n/a" (got ${geomEmpty.children[0] && geomEmpty.children[0].textContent})`);
+
+  // pin app.js:765: buildPresetTiles' volume label falls back to "n/a" for a preset with no
+  // `.vol` (rendered as "Vol n/a" in the .preset-vol-num span).
+  const volTiles = app.buildPresetTiles({ VOLUMES: {}, PRESETS: [{ name: "No-volume preset" }] });
+  const volNum = findIn({ children: volTiles }, (e) => e.classList.contains("preset-vol-num"));
+  ok(volNum && volNum.children[0] && volNum.children[0].textContent === "Vol n/a", `(na) app.js buildPresetTiles falls back to "Vol n/a" (got ${volNum && volNum.children[0] && volNum.children[0].textContent})`);
+
+  // pin app-helpers.mjs:275: the GENERIC_FONTS sentinel is "n/a" (typography.js:122 writes it
+  // into a family field when no font resolves, and this set must recognize that value as generic
+  // so the fallback doesn't also trip an "unknown font" warning).
+  const { GENERIC_FONTS: GENERIC_FONTS_NA } = await import("../../src/ui/app-helpers.mjs");
+  ok(GENERIC_FONTS_NA.has("n/a") && !GENERIC_FONTS_NA.has(String.fromCharCode(0x2014)), `(na) app-helpers.mjs GENERIC_FONTS carries "n/a", not the glyph`);
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────

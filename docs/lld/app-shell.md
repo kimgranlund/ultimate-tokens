@@ -267,7 +267,7 @@ the toggle relocates (see §6).
 | Case | Where | Handling |
 |------|-------|----------|
 | **No palette enabled / empty set** | LLD-C6, LLD-C8 | `projectView` yields an empty `view.palettes`; footer paints `0 palettes`; canvas renders an empty scene (no throw). Export of an all-disabled set yields tokens-only JSON with a `$note` (engine-side). |
-| **Selected index out of range** | LLD-C5, LLD-C7 | `selectedIndex()` + `view.palettes[idx]` guarded; name falls back to `""`, cards render `—` empties (`an-empty`). |
+| **Selected index out of range** | LLD-C5, LLD-C7 | `selectedIndex()` + `view.palettes[idx]` guarded; name falls back to `""`, cards render `n/a` empties (`an-empty`). |
 | **`Story` tab absent** | LLD-C7 | `hasStory=false` → the tab is not pushed and a `segment==="story"` selection falls back to `palette` (`hasStory`, `app.js:1921`). |
 | **Both/Compare + live drag** | LLD-C6b, §4.2 | `liveRefresh` bails to a full `render()` — the two scheme columns can't be patched in place. |
 | **Render mid-open-drawer** | LLD-C10, §4.1 | Fresh closed `<dialog>` each render; the open drawer is re-`showModal()`'d post-mount so it survives. |

@@ -1957,7 +1957,15 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   const spacingMd = byName["guidelines/foundations/spacing.md"];
   if (!colorMd.includes("| n/a |")) FAIL("design-system-make", "color.md's text-muted-foreground row lost its n/a placeholder");
   if ((spacingMd.match(/\| n\/a \|/g) || []).length < 2) FAIL("design-system-make", "spacing.md's space/radius rows lost their n/a placeholder (want 2, one per row)");
-  if (/\|\s*—\s*\|/.test(colorMd) || /\|\s*—\s*\|/.test(spacingMd) || /\|\s*—\s*\|/.test(makeTypo)) FAIL("design-system-make", "a Make export table reintroduced the glyph as a bare table cell in place of n/a");
+  const gapCellRe = new RegExp("\\|\\s*" + String.fromCharCode(0x2014) + "\\s*\\|");
+  if (gapCellRe.test(colorMd) || gapCellRe.test(spacingMd) || gapCellRe.test(makeTypo)) FAIL("design-system-make", "a Make export table reintroduced the glyph as a bare table cell in place of n/a");
+
+  // U6, pinning ds-export.js:1433's DS_MAKE_TYPE_USE[key] fallback (unreachable through any real
+  // type scale today, since DS_TYPE_LEVELS and DS_MAKE_TYPE_USE carry the identical 12 keys, so no
+  // kit construction can force it): a source-text pin, not a behavioral one, so a later edit that
+  // reintroduces the glyph there is still caught.
+  const dsExportSrcU6 = readFileSync(new URL("../../src/engine/ds-export.js", import.meta.url), "utf8");
+  if (!dsExportSrcU6.includes('DS_MAKE_TYPE_USE[key] || "n/a"')) FAIL("design-system-make", "ds-export.js:1433's DS_MAKE_TYPE_USE fallback reverted to the glyph");
 
   // disabled-palette: all-off → empty array (nothing to upload), like the Stitch bundle.
   const off = X.exportDesignSystemMakeBundle(C(RT.defaults.map((p) => ({ ...p, on: false }))), tsc, gsc);
