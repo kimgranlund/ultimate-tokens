@@ -4,11 +4,11 @@ plan: rule-gates
 unit: U3
 branch: unit/rg-U3
 written: 2026-09-22
-pass: 3
+pass: 4
 ---
 
 BASE: `b3961aa9`
-HEAD: `b9f159f2`
+HEAD: `96afaf70`
 
 # U3 handoff: `em-dash.mjs`, the gate, its self-test and `--fix`, unregistered
 
@@ -81,7 +81,7 @@ reproduces it and fixes it.
 
 | # | Criterion | Result |
 |---|---|---|
-| U3-1 | the gate reds on the unswept tree with the measured totals, and the self-test runs first | `node test/repo/em-dash.mjs > g.log 2>&1; echo "exit $?"; grep -c '^self-test: ' g.log; tail -1 g.log` on the unit worktree at HEAD gives `exit 1`, `1`, then `FAIL: 16713 em dashes outside inline code spans in 343 files`. Negative control (change R1's self-test expectation from `"| a | none | b |"` to `"| a | - | b |"`): `self-test: FAIL 1 case(s)`, `  ✗ R1 empty md cell: fix produced "| a | none | b |", expected "| a | - | b |"`, `exit 1`, and no `FAIL: N em dashes` line prints (the run stops before the tree scan) |
+| U3-1 | the gate reds on the unswept tree with the measured totals, and the self-test runs first | `node test/repo/em-dash.mjs > g.log 2>&1; echo "exit $?"; grep -c '^self-test: ' g.log; tail -1 g.log` on the unit worktree at HEAD gives `exit 1`, `1`, then `FAIL: 16746 em dashes outside inline code spans in 343 files`. Negative control (change R1's self-test expectation from `"| a | none | b |"` to `"| a | - | b |"`): `self-test: FAIL 1 case(s)`, `  ✗ R1 empty md cell: fix produced "| a | none | b |", expected "| a | - | b |"`, `exit 1`, and no `FAIL: N em dashes` line prints (the run stops before the tree scan) |
 | U3-2 | P2's controls (a) to (d) and P3, in a throwaway clone (`$F` under this seat's scratchpad) | see below |
 | U3-3 | not registered, and the plan branch stays green | `grep -c '"repo/em-dash.mjs"' test/run.mjs` gives `0`. `npm test` in the clone (no `node_modules`): `✓ all 48 test files passed`, tree clean after (`git status --short` empty), `node test/repo/branding.mjs` gives `branding: clean (569 files scanned)` |
 | U3-4 | `--fix` leaves a Markdown span with the glyph byte for byte | `grep -c "` SMOKE PASS [the glyph] gallery" .sdlc/verdicts/records-refresh-U3.md` (glyph built with `printf '\xe2\x80\x94'`, matched against the backtick-quoted span) gives `1` before `--fix` and `1` after: line 78's span keeps its glyph. Pass 2 also checked the two lines the review named directly: `docs/reference/reviews/2026-07-17-cto-core.md:36`'s span `` `defer hpg-parity-roletable [glyph] 3-impl identity ...` `` and `docs/tickets/tkt-0031.md:32`'s span `` `# TKT-XXXX [glyph] ...` `` both keep their glyph after `--fix`, while the outside dashes on those same lines become commas |
@@ -89,10 +89,10 @@ reproduces it and fixes it.
 ### P2, in the clone
 
 - Command run: `node test/repo/em-dash.mjs > g.log 2>&1; echo "exit $?"; grep -c '^self-test: ' g.log; tail -1 g.log; grep -c 'u2014' test/repo/em-dash.mjs; grep -c "[glyph]" test/repo/em-dash.mjs`
-- On the unit's own (unswept) tree: `exit 1`, `1`, `FAIL: 16713 em dashes outside inline code spans in 343 files`, `4`, `0`. The plan's own P2 "expected" column (`exit 0`, `em-dash: clean`) describes the tree AFTER U4's sweep; U3 does not sweep, so the honest report here is the unswept-tree figures.
-- Control (a), raw dash planted in `README.md`: total goes from `16713` to `16714` in the same `343` files (the new line is new content, not a new file). `exit 1` throughout, as expected.
-- Control (b), the same dash inside a backtick span (`` x `[glyph]` y ``): total stays `16713`, the Markdown inline span is exempt, delta zero.
-- Control (c), three non-exempt forms in `test/run.mjs`: a template literal (`` const s = `[glyph]`; ``), a lone token (`const e = "[glyph]";`), and the backslash-escaped form (`const j = "{\"v\": \"[glyph]\"}";`) each raise the total from `16713` to `16714` in turn (none is exempt). `--fix` on the tree carrying the escaped form leaves `test/run.mjs`'s added line byte for byte unchanged (`const j = "{\"v\": \"[glyph]\"}";`) and lists it under the R0 (e) residual.
+- On the unit's own (unswept) tree: `exit 1`, `1`, `FAIL: 16746 em dashes outside inline code spans in 343 files`, `4`, `0`. The plan's own P2 "expected" column (`exit 0`, `em-dash: clean`) describes the tree AFTER U4's sweep; U3 does not sweep, so the honest report here is the unswept-tree figures.
+- Control (a), raw dash planted in `README.md`: total goes from `16746` to `16747` in the same `343` files (the new line is new content, not a new file). `exit 1` throughout, as expected.
+- Control (b), the same dash inside a backtick span (`` x `[glyph]` y ``): total stays `16746`, the Markdown inline span is exempt, delta zero.
+- Control (c), three non-exempt forms in `test/run.mjs`: a template literal (`` const s = `[glyph]`; ``), a lone token (`const e = "[glyph]";`), and the backslash-escaped form (`const j = "{\"v\": \"[glyph]\"}";`) each raise the total from `16746` to `16747` in turn (none is exempt). `--fix` on the tree carrying the escaped form leaves `test/run.mjs`'s added line byte for byte unchanged (`const j = "{\"v\": \"[glyph]\"}";`) and lists it under the R0 (e) residual.
 - Control (d), byte-mode reader: with the self-test's own read changed from `"utf8"` to `"latin1"`, the run stops with `self-test: FAIL 1 case(s)`, `  ✗ reader: UTF-8 read found 0 dashes, expected 1`, `exit 1`, before any tree scan.
 
 ### P3, in the clone (`git diff --text` throughout; nine generated files carry `-diff`)
@@ -286,6 +286,58 @@ under the residual, never rewritten); the other counts unchanged from Pass 3's t
 table rows (one fewer than before, since `export-drift.md:212` is no longer rewritten), `0`
 pipe-count mismatches. `npm test` in a separate, unswept fresh clone: `✓ all 48 test files
 passed`, exit `0`, tree clean after.
+
+## Pass 4: the verifier's reds and yellows (`verdict-rg-U3.md`, rows 6, 16, 19, 24, 27)
+
+Verdict on `397e69ea` was 🔴 (2 reds, 3 yellows, 22 green of 27). Fixed at `96afaf70`.
+
+1. Row 6 🔴, P2 (d). The self-test's byte-mode fixture called its own `readFileSync(tmp, "utf8")`,
+   never the gate's own `readText()`. A `readText()` mutated to `"latin1"` (control d2) or a
+   `Buffer` read via `.toString("binary")` (control d3) both went `self-test: PASS` then
+   `em-dash: clean` -- vacuously green over all 16,746 real dashes. Fixed: the fixture now reads
+   the temp file through `readText(tmp)` itself. Verified in a fresh clone: both mutants now fail
+   `self-test` before the scan (`✗ reader: readText() found 0 dashes, expected 1`). A separate,
+   hand-rolled `latin1` read stays alongside only to prove the two disagree.
+2. Row 19 🔴, R0 (g) (plan revision 10). A dash whose only text before it on the line is a leading
+   `//`, `#` or `>` fell through to R8's generic `", "` right after the marker: the email sign-off
+   `docs/marketing/store-copy.md:486` (`> [dash] Ultimate Tokens`) became `>, Ultimate Tokens`, and
+   13 more lines opened with a stray comma. Fixed: `MARKER_PREFIX_RE` (the dash's line-prefix,
+   trimmed, is exactly `//`, one or more `#`, or `>`) is checked ahead of the existing line-start
+   check and refuses (R0 (g)), since there is no sentence above to join (R7) and no line-before to
+   check (R0 (d)). Self-test fixtures for a JS comment, a YAML/shell comment and the blockquote
+   sign-off, plus a `"r0g-refused"` byte-for-byte control. All 14 tree lines, one dash each:
+   `.github/workflows/pages.yml:12`, `docs/marketing/store-copy.md:486`,
+   `figma/binder/figma-semantic-binder/code.js:82`, `:719`,
+   `figma/binder/mode-apply-plan.mjs:361`, `:466`, `src/engine/exports.js:185`,
+   `src/engine/prime.mjs:12`, `src/engine/tonal.js:122`, `src/ui/model.mjs:709`,
+   `src/ui/sections/geometry.js:866`, `test/engine/exports.mjs:2107`,
+   `test/figma/binder.mjs:106`, `test/mcp/brand-kit-merged.mjs:4`. P3, run in a fresh clone at
+   `96afaf70`: `R0 g 14`, `15` rule lines total (matching plan revision 10's expectation exactly).
+3. Row 16 🟡, R7. `raw.slice(idx + 1).replace(/^\s+/, "")` dropped a continuation's leading
+   indentation along with the dash (`decision-records.md:235`, five spaces; `type-rubric.md:45`,
+   six). Fixed: the dash's own line-prefix (whitespace-only, per the line-start check that routed
+   here) is captured as `indent` and re-prepended, so only the dash and its one separating space
+   go. Fixture `"R7 keeps the continuation's indentation"`. Verified on the real line:
+   `decision-records.md:235` now reads `     editorial voices use ...` (indent kept).
+4. Row 24 🟡, mutant M5. Added `"R2 does not fire outside Markdown"` (a non-Markdown `# heading
+   [dash] x` expecting R8); the mutant that drops R2's `md` guard now fails self-test. M10
+   (backticks masked in non-Markdown files) does not need a dedicated fixture: it is already
+   caught at the tree level by P2 (c)'s real-tree run (a template literal's backticks are never
+   masked, so a mask regression there would drop the tree total, and P2 (c) checks that
+   directly) -- a hand-rolled M10 fixture would only duplicate that coverage.
+5. Row 27 🟡, this handoff's own header was stale (`HEAD: `b9f159f2`` while the branch had moved
+   to `397e69ea`, and the P2 section still cited the pre-pass-3 total `16713`). Fixed: the header
+   above now names `96afaf70`, and every `16713`/`16714` in the P2 section is corrected to the
+   current, verified `16746`/`16747`.
+
+Rechecked in a fresh clone at `96afaf70`: `self-test: PASS`, `FAIL: 16746 em dashes ... in 343
+files` (unchanged; none of the four fixes touches the gate's total, only its classification/fix
+behavior). Full-tree `--fix --sample` then `--fix` again: both `329 files changed, 9312
+insertions(+), 9312 deletions(-)`, byte-identical; numstat mismatches `0`; `15` rule lines
+(`R0 a 13, b 3, c 1, d 2, e 20, f 1, g 14`, `R1 27, R2 565, R3 441, R4 0, R5 0, R6 281, R7 29,
+R8 8246`). 359 changed table rows, `0` pipe-count mismatches.
+`docs/marketing/store-copy.md:486` is untouched (still `> [dash] Ultimate Tokens`). `npm test` in
+a separate, unswept fresh clone: `✓ all 48 test files passed`, exit `0`, tree clean after.
 
 ## Self-check
 
