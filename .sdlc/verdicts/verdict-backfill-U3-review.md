@@ -30,3 +30,17 @@ Diff `4fecc97d..c9c01d41`: four paths (`M .sdlc/adapter.md`, `M .sdlc/checks/ver
 The check does what the plan asks: no list, pin or git path, every top-level verdict graded, `MISSING` and `VALUE` bite on a new file and on a backfilled one, and it runs in a shallow clone and with no git at all. No `pif-*` or other lane's record is touched. One accuracy defect in the adapter sentence (F1), inherited from the plan's wording; worth a one-clause fix before the paragraph lands on main. F2 is cosmetic.
 
 verdict: 🟡
+
+## Round 2 · rework delta fb324a33..8abac909
+
+| Id | State | Evidence | Negative control |
+|---|---|---|---|
+| F1 adapter N3 clause | 🟢 closed | the sentence now reads `a plan's own scope-wall row is the guard where the plan writes one (a \`--diff-filter=DR\` guard on \`.sdlc/verdicts\`, as \`verdict-backfill\`'s P3 does; most plans carry none today)`; it matches plan revision 4 at `95f24a02` line 138; `grep -c 'diff-filter=DR'` finds the guard in 1 of 12 live plans, so `most plans carry none` is true | round 1's reading of the old sentence (`the scope wall each plan states`) against the same grep is what made it false |
+| U3-5 after rework | 🟢 | `git diff --numstat "$B" -- .sdlc/adapter.md \| cut -f2` printed `0` (`2 0` against `4fecc97d`), then `1`, `1`, `1` | an in-place edit of the #723 paragraph would print a nonzero deletions column; the delta rewrites only the #734 line, which is new to this plan |
+| F2 `Ran` row | 🟢 closed | the row is now two cells: `\| Ran \| see rows below; \`npm test\` ✅ 48/48 ... \|` | round 1's four-cell row |
+| F2 N2 row, now F3 | 🟡 not closed, the rewording is wrong | the new N2 text reads `A name re-pinned by editing the header alone, without moving the script's \`PIN=\` in lockstep, passed`. Run at `3e1483e4` in a `--shared` clone: header alone re-pinned printed `PIN MISMATCH: header names 3e1483e4, script pin is f685529f`, `bad 1` (the old script caught that case). Both pins moved together to a new commit that holds a new field-less `zz-n2.md`, with that name listed, printed `verdicts 80 graded 32 grandfathered 48 bad 0`, `exit 0` (the real hole, the plan's `moving both pins together passes`) | the two runs differ only in whether the script's `PIN=` moved, and they flip `bad 1` to `bad 0`. Fix: `N2 \| Moving both pins (the list header's and the script's \`PIN=\`) together to a later commit passed, so a new field-less file could be grandfathered`. The closure cell `No pin anywhere in the script; nothing to move` stays true |
+| Delta prose | 🟢 | added lines with an em dash: `git diff fb324a33..HEAD \| grep '^+' \| perl -CSD -ne 'print if /\x{2014}/' \| wc -l` printed `0`; `branding: clean (576 files scanned)`; check `verdicts 84 graded 84 bad 0` | one glyph in an added line prints `1` |
+
+Round 2: F1 closed, the `Ran` row closed, and the N2 row is now wrong in the opposite direction (it describes a case the old script caught). F3 is a one-cell handoff fix. Nothing else in the unit changed, so round 1's green rows stand.
+
+verdict: 🟡
