@@ -127,12 +127,12 @@ anchor. "Interface" is the method's contract, not its body.
 | **LLD-C3** | App-header | `renderAppHeader` :1365 | SPEC-R1, SPEC-R8, SPEC-R7 |
 | **LLD-C4** | Section switcher | `sectionSwitcher` :1415 / `setSection` :1435 | SPEC-R12 |
 | **LLD-C5** | Left pane (Analysis rail) | `renderLeftPane` :1531 | SPEC-R11, SPEC-R5, SPEC-R6 |
-| **LLD-C6** | Center (canvas) | `renderCenter` :1630 | SPEC-R11, SPEC-R2, SPEC-R3 |
+| **LLD-C6** | Center (canvas) | `renderCenter` :1641 | SPEC-R11, SPEC-R2, SPEC-R3 |
 | **LLD-C6a** | Canvas header | `renderCanvasHeader` `sections/color.js:807` | SPEC-R11, SPEC-R7 |
 | **LLD-C6b** | Canvas area / scene | `renderCanvasArea` `sections/color.js:866` | SPEC-R10 (pannable canvas), SPEC-R2 |
-| **LLD-C6c** | Canvas footer | `renderCanvasFooter` :1875 / `paintCanvasFooter` :1880 | SPEC-R5 |
-| **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :1916 | SPEC-R11, SPEC-R3, SPEC-R4 |
-| **LLD-C8** | App-footer | `renderAppFooter` :2151 / `paintAppFooter` :2171 | SPEC-R6, SPEC-R1 |
+| **LLD-C6c** | Canvas footer | `renderCanvasFooter` :1886 / `paintCanvasFooter` :1891 | SPEC-R5 |
+| **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :1927 | SPEC-R11, SPEC-R3, SPEC-R4 |
+| **LLD-C8** | App-footer | `renderAppFooter` :2162 / `paintAppFooter` :2182 | SPEC-R6, SPEC-R1 |
 | **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1448 / `paneToggle` :1458 | SPEC-R10 (density) |
 | **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:33` / `renderSettings` `overlays/settings.js:475` / `renderNewPalette` `sections/color.js:482` / `renderApplyGate` `overlays/apply-gate.js:353` | SPEC-R8, SPEC-R2, SPEC-R1 |
 
@@ -226,10 +226,10 @@ There is no mid-edit guard: `render` (`app.js:570`) always rebuilds and instead 
 control before the swap and puts it back after (`_captureFocus` `app.js:635`, `_restoreFocus` `app.js:653`).
 A full render mounts a *fresh, closed* `<dialog>` for each overlay; an open export drawer is
 re-`showModal()`'d after mount so a render mid-drawer doesn't dismiss it (`_syncDrawer`, `app.js:610`).
-`paintCanvasFooter` (`app.js:1880`) is not on the full-render path: the canvas footer mounts with its
-static hint (`renderCanvasFooter`, `app.js:1875`) and is painted by `applyTransform` (`app.js:1685`), the
+`paintCanvasFooter` (`app.js:1891`) is not on the full-render path: the canvas footer mounts with its
+static hint (`renderCanvasFooter`, `app.js:1886`) and is painted by `applyTransform` (`app.js:1696`), the
 canvas pointer handlers and `_liveRefreshNow` (`app.js:293`); each calls
-`paintCanvasFooter` (`app.js:1693`, `app.js:1826`, `app.js:326`).
+`paintCanvasFooter` (`app.js:1704`, `app.js:1837`, `app.js:326`).
 
 ### 4.2 Live refresh (partial — during a continuous drag, `liveRefresh` `app.js:278` → `_liveRefreshNow` `app.js:293`)
 A slider/swatch drag must not full-render (it would blow away the active control's focus/caret). Instead
@@ -268,7 +268,7 @@ the toggle relocates (see §6).
 |------|-------|----------|
 | **No palette enabled / empty set** | LLD-C6, LLD-C8 | `projectView` yields an empty `view.palettes`; footer paints `0 palettes`; canvas renders an empty scene (no throw). Export of an all-disabled set yields tokens-only JSON with a `$note` (engine-side). |
 | **Selected index out of range** | LLD-C5, LLD-C7 | `selectedIndex()` + `view.palettes[idx]` guarded; name falls back to `""`, cards render `n/a` empties (`an-empty`). |
-| **`Story` tab absent** | LLD-C7 | `hasStory=false` → the tab is not pushed and a `segment==="story"` selection falls back to `palette` (`hasStory`, `app.js:1921`). |
+| **`Story` tab absent** | LLD-C7 | `hasStory=false` → the tab is not pushed and a `segment==="story"` selection falls back to `palette` (`hasStory`, `app.js:1932`). |
 | **Both/Compare + live drag** | LLD-C6b, §4.2 | `liveRefresh` bails to a full `render()` — the two scheme columns can't be patched in place. |
 | **Render mid-open-drawer** | LLD-C10, §4.1 | Fresh closed `<dialog>` each render; the open drawer is re-`showModal()`'d post-mount so it survives. |
 | **Focus/caret during a drag** | LLD-C3, §4.2 | Partial `liveRefresh` never rebuilds the header or the active control; the doc-name `<input>` keeps focus + caret while typing (rename settles on `change`). |

@@ -22,11 +22,20 @@
   |skew| ≤ 100, and lift (a cosine displacement of the stop, `src/engine/tonal.js`'s
   `liftStop`) does not break monotonicity for |lift| ≤ 40 either, at any tension. Not claimed
   for `perceptual`/`peak` (`okhslStops`): gated at the default palettes only
-  (`test/engine/tonal.mjs:246-264` okhsl-modes, `test/engine/tonal.mjs:577-601` lift-monotonic), no grid-wide guarantee.
+  (`test/engine/tonal.mjs:283-301` okhsl-modes, `test/engine/tonal.mjs:687-708` lift-monotonic), no grid-wide guarantee.
 - **AC-T4** Applied chroma never exceeds the gamut ceiling at any stop
   (`chroma <= maxc` for every stop).
 - **AC-T5** Edge damping reduces chroma toward 050/950 (chroma at 500 ≥ chroma at 050 and
   ≥ chroma at 950 for a saturated palette).
+- **AC-T6** For an **anchored palette** (one carrying a stored `palette.anchor`, ADR-026) the
+  predicate is EQUALITY, not a tolerance: `primeSwatches(palette, controls)[3].hex === anchor`
+  for every anchored palette, and `paletteStops(...)` stop 500's hex `=== anchor` in each of
+  `perceptual`, `peak` and `even` for every anchored palette whose source sits inside the ramp
+  window `[9.95, 95.05]` L\*. Sources outside that window keep the exact token and clamp only the
+  ramp's pivot to the nearest window edge; they are named and counted in the gate's own allow-list,
+  never absorbed into a tolerance. `skew` and `lift` do not move either value at any magnitude:
+  they warp the ramp around the pivot, not through it. Gated by `test/engine/anchor.mjs`
+  (`anchor-identity`, `anchor-ramp`).
 
 ## AC-S · Semantic system
 - **AC-S1** `semanticRoles(n)` returns exactly **53** roles for every palette.
