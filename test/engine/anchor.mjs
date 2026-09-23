@@ -35,7 +35,7 @@
 // control (one mutated chroma) proves the comparison loop itself can fail before trusting its "0 off".
 import { primeSwatches, PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, lstarFromRgb, cam16FromRgb } from "../../src/engine/hct.js";
-import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX } from "../../src/engine/tonal.js";
+import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS } from "../../src/engine/tonal.js";
 import { rgbToOkhsl, okhslToRgb } from "../../src/engine/okhsl.js";
 import { derivedAll, oklchStr } from "../../src/engine/exports.js";
 import { defaultDocument, projectView, paletteKeyColors } from "../../src/ui/model.mjs";
@@ -1278,8 +1278,35 @@ for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
   console.log(`  ${rOff === 0 && rSeen >= 16 ? "pass" : "FAIL"}  key-anchor rendered path: ${rEq} of ${rSeen} anchored palettes over projectView(hydrate(doc)), ${renderSubjects.length} subjects (the 16 default-kit families plus ${namedPresets.length} named corpus presets), ${rOff} off`);
 }
 
+// ── anchor-achromatic (U10, pre-land F1): an achromatic anchor renders real colours ─────────
+// `rgbToOkhsl([0,0,0]).s` was NaN (0/0 at L = 0), and the anchored OKHSL branches carried it to
+// `#NANNANNAN` at every stop in perceptual and peak. Called on the ENGINE directly (never through
+// persist.js), since an imported kit reaches paletteStops with any 6-hex anchor. Every stop must be a
+// real 6-hex with a finite tone; stop 500 equals the anchor exactly when its L* sits inside the ramp
+// window (the #808080 row), and is clamped otherwise. The predicate is first proven to catch a planted
+// NaN stop, so a check that could never fail cannot pass here.
+{
+  const HEX6 = /^#[0-9A-F]{6}$/;
+  const badStops = (ramp) => ramp.filter((s) => !HEX6.test(s.hex) || !Number.isFinite(s.tone)).map((s) => `${s.stop}:${s.hex}`);
+  if (badStops([{ stop: 500, hex: "#NANNANNAN", tone: NaN }]).length !== 1) FAIL("anchor-achromatic", "negative control: a planted #NANNANNAN stop was not caught - the predicate is broken");
+  if (!Number.isFinite(rgbToOkhsl([0, 0, 0]).s)) FAIL("anchor-achromatic", `rgbToOkhsl([0,0,0]).s is ${rgbToOkhsl([0, 0, 0]).s}, want a finite saturation`);
+  let seen = 0, bad = 0;
+  for (const anchor of ["#000000", "#FFFFFF", "#010101", "#808080"]) {
+    const inWindow = (() => { const L = lstarFromRgb(hexToRgb(anchor)); return L >= RAMP_L_MIN && L <= RAMP_L_MAX; })();
+    for (const toneMode of ["perceptual", "peak", "even"]) for (const hueSpace of ["oklch", "cam16"]) {
+      const ramp = paletteStops({ hue: 30, chroma: 50, skew: 0, lift: 0, anchor }, { ...DEFAULT_CONTROLS, toneMode, hueSpace }, STOPS);
+      seen++;
+      const b = badStops(ramp);
+      if (b.length) { bad++; FAIL("anchor-achromatic", `${anchor} ${toneMode}/${hueSpace}: ${b.length} stops not a real hex (${b.slice(0, 3).join(" ")})`); }
+      const s500 = ramp.find((s) => s.stop === 500)?.hex;
+      if (inWindow && s500 !== anchor) { bad++; FAIL("anchor-achromatic", `${anchor} ${toneMode}/${hueSpace}: stop 500 ${s500} !== in-window anchor`); }
+    }
+  }
+  console.log(`  ${fails.some((f) => f.startsWith("anchor-achromatic:")) ? "FAIL" : "pass"}  anchor-achromatic: ${seen - bad} of ${seen} ramps real (#000000, #FFFFFF, #010101, #808080 x 3 tone modes x 2 hue spaces), planted-NaN control caught`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor"]) {
+for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-achromatic"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
   console.error(`    — ${f.slice(g.length + 2)}`);
