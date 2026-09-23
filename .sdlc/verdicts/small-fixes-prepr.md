@@ -2,13 +2,19 @@
 kind: verdict
 plan: small-fixes
 seat: verifier
-pass: 1
+pass: 2
+passes: 1 at a1a4ffc6 🔴, 2 at 434b5b58 🔴
 pr: 735
 ticket: "#717"
 written: 2026-09-22
 ---
 
-# Pre-PR · small-fixes · pass 1 · 🔴 at `a1a4ffc6`
+# Pre-PR · small-fixes · passes 1 to 2
+
+Current finding: 🔴 at `434b5b58`, in `## Pass 2` below, the block the adapter's `check_gate` reads.
+Pass 1 is history: it graded `a1a4ffc6`. For the verdict, read the last block, not this one.
+
+## Pass 1, at `a1a4ffc6`
 
 verdict: 🔴
 sha: a1a4ffc65ef20523982d0757feae360ee8a8c094
@@ -75,3 +81,70 @@ never evidenced; the unit branch had no CI run. By this seat's rule, a criterion
 evidenced is 🔴, not 🟢. The smoke files at this head are byte-identical to `9478d306` (C1), so the
 CI red is the unit's own content. The correction is appended to `.sdlc/verdicts/small-fixes-U1.md`
 as its own dated pass.
+
+## Pass 2, at `434b5b58`
+
+verdict: 🔴
+sha: 434b5b586acba1f87b9d15b3418d61e56e6f14f0
+
+`plan/small-fixes` at `434b5b58`, U1 pass 2 merged as `cb759265`, draft PR #735. A fresh pair ran,
+labelled under R17: `reviewer-l4` as `reviewer-l3` and `verifier-l3` as `verifier-l2`, both at opus
+high. Reports: `/tmp/v13/sf-prepr2-review.md` and `/tmp/v13/sf-prepr2-verify.md`. The Chrome legs ran
+behind the port-9333 guard. The code is fixed and green on Linux, but one pre-land row is red: the
+branch adds a record that fails the verdict-frontmatter check, so landing it would turn main's check red.
+
+### Blocker
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| B1 | every `.sdlc/checks/*.sh` green at the head (adapter §2.1 item 1) | 🔴 | verify leg, and mine in the plan worktree: `MISSING small-fixes-U1-review.md: no verdict: line`, `verdicts 82 graded 35 grandfathered 47 bad 1`, exit `1`. The file is the pass-1 FIX-FIRST review (`# Review small-fixes U1 · 🔁 FIX-FIRST`), added at `800b2c99` and absent at the pin `f685529f`, so it is graded, correctly. `origin/main` gives `bad 0`, and the squash tree equals the head tree, so the landing would carry `bad 1` to main | the verify leg's clone with one `verdict:` line added to that file: `bad 0`, exit `0`. So the one missing line is the whole of the red |
+
+What unblocks: that file gets a `verdict:` line that states its own grade, then pre-land reruns on the
+new head. The five code paths need not move, so the custody row should carry over.
+
+### Everything else at `434b5b58`
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| C1 | nothing ungraded lands | 🟢 | mine: the 5 code paths at `434b5b58` have the same blobs as at `a9c574da`, the unit head graded 🟢 in `small-fixes-U1-p2.md`; the diff vs `origin/main` is those 5 plus 3 records | the pass-1 head `a1a4ffc6` differs on `launcher.mjs`, so the equality is specific |
+| P1 | `npm test` | 🟢 | `✓ all 48 test files passed`, `48`, `0` | `scrim` to `scrimX`: `exit 1`, `FAIL  refs-canonical` |
+| P2 | `npm run build` | 🟢 | `exit 0`, `wrote figma/plugin/ui.html 3780.5 KB`, `0` | a missing smoke script: `exit 1`, `Cannot find module` `1` |
+| P3 | branding, no added prose dash | 🟢 | `branding: clean (575 files scanned)`, `0`; the one raw match is a backtick quote of the `SMOKE PASS` line | the plan's two plants each red |
+| P4 | scope wall | 🟢 | `0`; `package.json` `1 file changed, 1 insertion(+), 1 deletion(-)` | the four-name fixture prints `2` |
+| P5a | local smoke green, nothing left | 🟢 | `exit 0`, `SMOKE PASS` `1`, `PASS: launcher` `1`, procs `0`, dirs `0` | the plan gives a green run no control; U1-3's main run left `11` Chrome processes |
+| P5b | CI `build-test` green on this sha | 🟢 | run `35800544251`, headSha `434b5b58`: `build-test`, `panda-smoke`, `corpus-contrast` `success`; smoke step: launcher `pass` `6`, `PASS: launcher` `1`, `SMOKE PASS` `1`. Mine: the same three `completed success` at `434b5b58` | run `35785765215` at `a1a4ffc6`: `failure`, `FAIL: launcher (1/6 legs failed)`, `SMOKE PASS` `0` |
+| U1 | U1-1 to U1-12 | 🟢 | `12` rows, `12` 🟢, each rerun at the head; U1-11 at the full `20` per side: `0` of `20` leaking | each red on its plant; U1-11 at `1e25556d`: `2` of `20` leaking by processes |
+| X1 | PR state | 🟢 | `434b5b58`, draft, `MERGEABLE`, `CLEAN` | the head sha compared with the target: equal |
+| X2 | merge onto main | 🟢 | `git merge-tree --write-tree`: exit `0` | a planted conflict: exit `1` |
+| X3 | the four other checks | 🟢 | each prints its clean figure; `card-amendment` and `card-source-range` exit `0` even when stale, so the figure is the reading | each reds its figure on a planted fault |
+
+### Pass 1's findings, where they stand
+
+The review leg read each at the head. Finding 1, the Linux blocker, is fixed: `setEnv` at
+`launcher.mjs:31-40` deletes a variable that was unset, and CI above shows it. Findings 3, 4, 5 and 7
+are fixed. Finding 6 still holds, and finding 8 is unchanged and not a gate. Finding 2 still stands in
+the code (the fake's delayed write at `fake-chrome.mjs:35,39` has no `try`), and legs b to e still catch a missing kill.
+
+### Carried, none blocking
+
+| id | item | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| N1 | F5, the bare `rmSync` at `launcher.mjs:126` | 🟡 | neither leg found a path at the head that reaches a throw; forced in the U1 pass-2 run, it loses leg c's FAIL line and the child's SIGTERM, and `0` fakes leak | without the injected fault the hung-leg path takes line 126 and prints its FAIL line, `0` fakes |
+| N2 | the plan's Design text is stale | 🟡 | `small-fixes.md:56,59` still say `{ proc, port, dir, close }` and `onExit` before `launchChrome`, and `:136` names a single `rmSync`; the code returns `{ proc, dir, close, ready }` and calls `onExit(close)` after | the code at `chrome.mjs` matches neither sentence, read at the head |
+| N3 | the handoff's pass-1 claims are not retracted | 🟡 | `small-fixes-U1.md:101` still says control (3) reds leg (f), and `:12-16` give a "two lines total" count; both were shown false in pass 1 | pass 1's verify leg ran control (3) and leg (f) passed |
+
+### A correction to my small-fixes U1 pass 2 verdict
+
+`small-fixes-U1-p2.md` graded `a9c574da` 🟢 on the unit's contract rows, and every one of them holds.
+But that head already failed the verdict-frontmatter check: in the U1 run's clone at `a9c574da`
+it prints `MISSING small-fixes-U1-review.md: no verdict: line`, `verdicts 81 graded 34 grandfathered 47 bad 1`.
+The check was not a unit row, so the unit grade stands. I ran the check only against my own
+record's name, not across the tree, so I missed the file. From now on, every unit verdict runs the
+full check at the graded head.
+
+Housekeeping: the leg's clones `/tmp/sfp2p-1790122024` and `/tmp/sfp2p-1790122024-F` are still on
+disk because their delete was refused. The leg's final count: `0` smoke processes, `0` fakes, `0` on
+the 9333 guard.
+
+verdict: 🔴
+sha: 434b5b586acba1f87b9d15b3418d61e56e6f14f0
