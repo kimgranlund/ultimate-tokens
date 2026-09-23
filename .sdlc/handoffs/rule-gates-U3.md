@@ -4,11 +4,11 @@ plan: rule-gates
 unit: U3
 branch: unit/rg-U3
 written: 2026-09-22
-pass: 2
+pass: 3
 ---
 
 BASE: `b3961aa9`
-HEAD: `24521155`
+HEAD: `99f7efa4`
 
 # U3 handoff: `em-dash.mjs`, the gate, its self-test and `--fix`, unregistered
 
@@ -117,15 +117,16 @@ Command sequence run: `--fix --sample` once, diff stat; `--fix` again, diff stat
 
 There is no tree drift: `git diff --stat b3961aa9..HEAD -- . ':!.sdlc'` shows exactly one file
 outside `.sdlc/`, `test/repo/em-dash.mjs` itself (new, all insertions); every other tracked file is
-byte-identical to the plan's own measured head. So `R6` (`280`, one below the plan's `281`) and
-`R8` (`8230`, below the plan's `8256`, and below the review's own interim recount of `8260` lines,
-of which the review found 3 were the broken table rows from finding 2) are explained entirely by
-counting method and correctness, not drift: the review's own recount already moved to counting
-per line (matching the plan), and the pass-2 span-masking fixes (the wrapped-span fix and the
-stray-backtick cap, see above) correctly EXCLUDE more dashes that sit inside a span from the
-countable set at all, which a less correct mask would have wrongly counted and, for R6/R8, wrongly
-rewritten. Every rule ahead of R6/R8 in priority, and R6/R8's own residual behaviour on the two
-review-named lines, checked out by hand above.
+byte-identical to the plan's own measured head. **This explanation is superseded by Pass 3 below.**
+The pass-2 span state did not "correctly exclude more dashes"; it over-masked. The review's own
+Pass-2 section measured the drop directly (16,744 to 16,713, about 31 real dashes gone blind) and
+named the cause: a fence marker's own backtick run toggled the pass-2 "open" flag onto the fenced
+block's first content line (masking it whole, most of it real marketing prose), a lone unbalanced
+backtick masked the rest of its own line, and the one-line-open streak cap force-closed a second
+wrap that was genuinely still open, corrupting the line after it. `R6` (`280` against the plan's
+`281`) and `R8` (`8230` against the plan's `8256`) are that same over-masking, not a correctness
+gain and not drift. Pass 3 rebuilds the masker from the CommonMark definition instead of patching
+the streak cap again; see below for the measured, corrected totals.
 
 ## Disagreements with the plan
 
@@ -141,10 +142,113 @@ review-named lines, checked out by hand above.
   pass 2 (see the rule table above); the residual R6/R8 gaps are now explained by the span-masking
   fixes, not drift or a counting-unit mismatch.
 
+## Pass 3: rebuild the span masker from CommonMark 6.1
+
+This is the third span-masking patch in a row (finding 1's raw/masked mixup, the wrapped-span
+fix, the streak cap), and the streak cap itself over-masked (finding 1 of the Pass-2 review
+section above). Rebuilt from the definition instead of patching another case.
+
+`computeMdRoles(lines)` (`test/repo/em-dash.mjs`, the masking section) states the definition in
+its own header comment: a code span opens at a run of N backticks and closes at the next run of
+exactly N backticks (a different-length run inside does not close it); a span may cross a line
+break only inside one paragraph (a blank line, a fence line, a heading, or a table-row boundary
+ends the search, so an opener with no closer before that point is literal text, not a span); a
+fenced code block is never a span and its fence line never opens one. Implementation:
+`findBacktickRuns()` finds every backtick run per line; `matchSpansInScope()` flattens a
+paragraph's runs left to right and pairs each unmatched opener with the next same-length run
+ahead, wherever it falls (same line or a later one in scope); `computeMdRoles()` walks the file
+once, closing the scope at a blank line, a fence line (tracked in/out, content lines get no role
+at all -- see below), a heading, or a table row; `maskMdLine()` applies a line's precomputed role
+to its CURRENT text (safe after `--fix` edits a dash, since no fix rule ever touches a backtick,
+so a line's backtick run count/length/order is stable end to end).
+
+**Fenced content is swept like prose, per the plan.** The plan's design (`rule-gates.md`,
+adapter §3, quoted in the masking section's own header comment) is not silent here: "a fenced
+block is prose ... and is swept like any other line." So a fence line itself gets no role
+(never an opener) and content lines inside a fence get no role either (`computeMdRoles()` skips
+them entirely) -- unmasked, counted and fixed exactly like any other prose line. This is also
+what fixes the pass-2 bug's biggest single cause (the fence-first-line probe below).
+
+### Acceptance 1: the total
+
+`node test/repo/em-dash.mjs` on the unswept tree: `self-test: PASS`, then
+`FAIL: 16746 em dashes outside inline code spans in 343 files`, 2 over the plan's measured
+16,744. Compared the new masker against a naive, single-line-only mask (the shape of the
+method the plan's own 16,744 was measured with) across every tracked `.md` file: exactly 10
+lines differ, net delta +2. All 10 are the plan's naive method mishandling a real CommonMark
+cross-line span, in two directions:
+
+- 6 lines where the naive method mis-paired a cross-line span's CLOSING backtick with the next
+  backtick on the same line (treating it as a fresh opener) and swallowed a real, outside dash in
+  between: `.claude/skills/geometry-system/SKILL.md:58` and `:181`,
+  `.claude/skills/lemon-squeezy-api/references/endpoints.md:238`,
+  `.claude/skills/maintaining-brand-kit-mcp/references/foundations.md:114`,
+  `docs/reference/references/knowledge-02-tonal-scale.md:261`,
+  `docs/reference/reviews/2026-07-17-cto-app.md:165`. (+1 each, +6 total: the new masker
+  correctly finds the dash naive hid.)
+- 4 lines where the naive method, unable to see the cross-line span at all, left a dash counted
+  that is genuinely INSIDE a real span: `.claude/skills/geometry-system/SKILL.md:180`,
+  `.claude/skills/maintaining-figma-plugins/references/best-practices.md:19` (a verbatim-quoted
+  JS string literal, `figma.notify("Couldn't … — please try again.", ...)`, spanning two lines;
+  naive's blindness to the wrap would have had `--fix` REWRITE PART OF A QUOTED CODE STRING),
+  `docs/tickets/tkt-0031.md:37`, and `:82` (the line the plan's own P3 controls name; the new
+  masker correctly gives it 0, matching every prior pass's requirement). (-1 each, -4 total: the
+  new masker correctly protects the dash naive wrongly counted.)
+
+Net +6-4 = +2, exactly the gap. The plan's 16,744 is a naive-mask artifact on these 10 lines, not
+a target to match; the new, CommonMark-correct total is 16,746.
+
+### Acceptance 2: the reviewer probes
+
+Each probe fixture is verified to red (0 edits, the dash hidden) against the pass-2 code at HEAD
+`902d54b7` and pass (the dash found, fixed) against this pass's code, using both files' `fixLines`
+run side by side outside the repo (scratchpad `run-pass2.mjs`/`run-pass3.mjs`):
+
+| Probe | Pass-2 result | New result |
+|---|---|---|
+| Fenced-block first line | 0 edits (fence marker's 3 backticks toggled "open" onto the content line) | 1 edit, R8 |
+| Stray backtick, rest of line | 0 edits (lone backtick paired with an imaginary end-of-line closer) | 1 edit, R8 |
+| Back-to-back wraps | 0 edits (the streak cap force-closed a still-open second wrap) | 1 edit, R8 |
+| `export-drift.md:212` (dash right after an opening `\|`, cell has more content) | 1 edit, R8 -> `\|, (mapped indirectly) \|` (meaning-changing) | 1 edit, R4 -> `\| (mapped indirectly) \|` |
+
+The first three are new self-test fixtures (`fence-first-line`, `stray-backtick-rest-of-line`,
+`back-to-back-wraps`). The fourth (Pass-2 review finding 3, not a masking bug) is fixed by adding
+`\|` to R4's opening-punctuation set (`,;:(` becomes `,;:(\|`) in both `classifyLine` and
+`applyRule`: the pipe already marks the pause the same way `(` does, so the dash drops instead of
+falling through to R8's generic `", "`. Fixture `"R4 table cell opens with the dash"` covers it.
+This is a small, deliberate extension beyond the plan's literal R4 text (`, : ; (`); flagging it
+here for the plan owner rather than silently widening a ratified rule table.
+
+### Acceptance 3: full-tree `--fix`, fresh clone
+
+- `--fix --sample` then `--fix` again: both `329 files changed, 9325 insertions(+), 9325
+  deletions(-)`, byte-identical. `git diff --text --numstat` insertions != deletions: `0`.
+- Rule table: `13` lines (`R0 a 13`, `R0 b 3`, `R0 c 1`, `R0 d 2`, `R0 e 20`, `R1 27`, `R2 565`,
+  `R3 441`, `R4 1`, `R5 0`, `R6 281`, `R7 29`, `R8 8260`). `R6` and `R8` now match the plan's own
+  figures (`281`, and the review's own Pass-2-section recount of `8,260` R8 lines) exactly, with
+  `R4` at `1` (the export-drift fix) instead of `0`.
+- Table integrity, every changed `.md` line, tree-wide: 360 changed table rows, `0` pipe-count
+  mismatches (matches the review's own Pass-2 recheck of finding 2 exactly).
+- Named lines, all correct after `--fix`: `cto-core.md:36` and `tkt-0031.md:32`/`:82` keep their
+  span glyph verbatim, outside dashes on those same lines become commas; the Radio row
+  (`component-inventory.md`), the Color-scrims row (`export-drift.md`) and the canvas row
+  (`containers.md`) all read `\| none \| none \|` with no `\|, \|`; `export-drift.md`'s
+  Color-stops row reads `\| (mapped indirectly) \|` (R4, no leading comma);
+  `.sdlc/plans/rule-gates.md:236` is untouched (its one dash is genuinely inside the real,
+  balanced `` `"—"` `` span quoted there -- the new masker gets this right for the right reason,
+  not the old streak cap's one-line guess).
+- `npm test` in a separate fresh clone at this HEAD (before `--fix`, so the gate stays
+  unregistered and unswept as U3 requires): `✓ all 48 test files passed`, tree clean after.
+
+### Acceptance 4
+
+The R6/R8 explanation above (in the Pass 2 section) is replaced with the measured cause
+(over-masking, primarily the fence-first-line bug) rather than "correct exclusion."
+
 ## Self-check
 
 `node test/repo/em-dash.mjs` on this unit's own worktree at HEAD: `self-test: PASS`, then
-`FAIL: 16713 em dashes outside inline code spans in 343 files`, `exit 1` (expected: the tree is not
-swept, U4 does that). `node test/repo/branding.mjs` in the clone at HEAD: `branding: clean (569 files
-scanned)`. `npm test` in the clone (no `node_modules`): `✓ all 48 test files passed`, tree clean
+`FAIL: 16746 em dashes outside inline code spans in 343 files`, `exit 1` (expected: the tree is not
+swept, U4 does that). `node test/repo/branding.mjs` in a clone at HEAD: `branding: clean (569 files
+scanned)`. `npm test` in a clone (no `node_modules`): `✓ all 48 test files passed`, tree clean
 after.
