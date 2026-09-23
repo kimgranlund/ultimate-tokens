@@ -221,10 +221,24 @@ function computeFenceFlags(lines) {
   }
   return flags;
 }
-// A plain-English label for a refused line with no lettered sub-construct and no near-miss rule
-// (revision 11's refused list prints one per line): the Markdown block it sits in, or, in a
-// non-Markdown file, whether the dash is inside a string literal, a comment-only line, or a
-// trailing comment after real code.
+// Is the character at `idx` inside an open quote (`"`, `'`, or a backtick), counting each type's
+// occurrences before it independently? An odd count of one type means `idx` sits inside a string
+// of that kind. Escapes aren't tracked (good enough for a readable label, not a parser).
+function insideStringAt(raw, idx) {
+  const before = raw.slice(0, idx);
+  for (const q of ['"', "'", "`"]) {
+    let count = 0;
+    for (let i = 0; i < before.length; i++) if (before[i] === q) count++;
+    if (count % 2 === 1) return true;
+  }
+  return false;
+}
+// A plain-English label for a refused line with no lettered sub-construct (revision 11's refused
+// list prints one per line): the Markdown block it sits in, or, in a non-Markdown file, whether
+// the dash is inside a string literal, a comment-only line, or a trailing comment after real
+// code. Checks `insideStringAt` FIRST at the `//`/`#` marker itself (pass 5 review finding 4:
+// `## Which variant? [dash] decision tree` is a quoted string, not a real heading comment, and
+// `` `// GENERATED ... [dash] DO NOT EDIT.` `` is a template literal, not a real `//` comment).
 function habitatOf(rel, raw, md, inFence) {
   const trimmed = raw.trim();
   if (md) {
@@ -235,8 +249,9 @@ function habitatOf(rel, raw, md, inFence) {
     if (isHeadingLine(raw)) return "heading";
     return "paragraph";
   }
-  if (/^(\/\/|#|\/\*|\*)/.test(trimmed)) return "comment";
   const markerIdx = raw.search(/\/\/|#/);
+  if (markerIdx >= 0 && insideStringAt(raw, markerIdx)) return "string";
+  if (/^(\/\/|#|\/\*|\*)/.test(trimmed)) return "comment";
   if (markerIdx > 0 && raw.slice(0, markerIdx).trim() !== "") return "trailing comment";
   if (/["'`]/.test(raw)) return "string";
   return "comment";
@@ -290,8 +305,10 @@ const PUNCT_END_RE = /[.,;:!?]$/;
 // OPENING token (bracket, quote, backtick, `*`, `_`, `~`, `#`, `$`, `@`, `&`, `<`, `§`). Anything
 // that fails either side -- a slash before an emoji legend, a `?` before a question label, a `>`
 // or `/` from an aligned placeholder, no space at all -- is refused, whole line, no guess.
-const GUARD_BEFORE_CHARS = /[A-Za-z0-9)\]}"'`*_~°%…”’]/;
-const GUARD_AFTER_CHARS = /[A-Za-z0-9(\[{"'`*_~#$@&<§“‘]/;
+// `\p{L}`/`\p{N}` (Unicode letter/number, `u` flag), not `A-Za-z0-9`: a non-ASCII letter on either
+// side is still a word, not a symbol (pass 5 review: `cliché [dash]` and `γ [dash]` were wrongly refused).
+const GUARD_BEFORE_CHARS = /[\p{L}\p{N})\]}"'`*_~°%…”’]/u;
+const GUARD_AFTER_CHARS = /[\p{L}\p{N}(\[{"'`*_~#$@&<§“‘]/u;
 function guardHolds(line, idx) {
   if (line[idx - 1] !== " " || line[idx + 1] !== " ") return false;
   const pv = prevNonSpace(line, idx);
@@ -351,16 +368,17 @@ function classifyLine({ line, prevLine, md, skipStructural = false }) {
   // R2: a Markdown heading, first dash on the line (fenced blocks included), the guard's after
   // side holding. A SHAPE rule: fires once per line, per the rule table ("a second dash on the
   // same heading falls to R8"). A heading whose label-dash fails the after-guard (glued, or ends
-  // the line) is refused rather than guessed.
+  // the line) is refused rather than guessed -- a plain refusal (pass 5 review finding 4: a rule
+  // name is not a habitat; the caller tags it like any other refused line).
   if (!skipStructural && md && HEADING_RE.test(line)) {
-    return guardAfterHolds(line, idxs[0]) ? { rule: "R2" } : { rule: "R0", construct: "R2" };
+    return guardAfterHolds(line, idxs[0]) ? { rule: "R2" } : { rule: "R0" };
   }
 
   // R3: a bullet whose first token is a code span or a bold label, then the dash, the guard's
   // after side holding. Also once. (Revision 11 measured 2 refused here: a label whose dash ends
   // the line.)
   if (!skipStructural && BULLET_LABEL_RE.test(line)) {
-    return guardAfterHolds(line, idxs[0]) ? { rule: "R3" } : { rule: "R0", construct: "R3" };
+    return guardAfterHolds(line, idxs[0]) ? { rule: "R3" } : { rule: "R0" };
   }
 
   for (const idx of idxs) {
@@ -374,9 +392,9 @@ function classifyLine({ line, prevLine, md, skipStructural = false }) {
     if (nx < line.length && ",.;:)".includes(line[nx]) && (nx + 1 >= line.length || line[nx + 1] === " ") && guardBeforeHolds(line, idx))
       return { rule: "R5" };
     // R6: a dash that ends the line, the guard's before side holding (revision 11 measured 1
-    // refused here).
+    // refused here; a plain refusal, tagged by habitat like the rest -- pass 5 review finding 4).
     if (line.slice(idx + 1).trim() === "") {
-      return guardBeforeHolds(line, idx) ? { rule: "R6" } : { rule: "R0", construct: "R6" };
+      return guardBeforeHolds(line, idx) ? { rule: "R6" } : { rule: "R0" };
     }
   }
   // R8: every other dash that passes the guard on both sides; anything else is a plain refusal --
@@ -577,8 +595,10 @@ function runFix({ sample }) {
 
     for (const e of edits) {
       if (e.rule === "R0") {
-        // (b), (c), (e) and a near-miss rule name (R2/R3/R6) keep their own tag; everything else
-        // -- the guard's plain refusal -- gets a habitat computed from the line itself.
+        // (b), (c), (e) keep their own sub-label; every other refusal -- including a shape rule
+        // (R2/R3/R6) whose guard side failed -- gets a habitat computed from the line itself, per
+        // the plan ("every refused line carries its habitat", pass 5 review finding 4: a rule
+        // name printed there is not a habitat).
         const tag = e.construct || habitatOf(rel, e.text, md, fenceFlags ? fenceFlags[e.lineIndex] : false);
         r0Lines.push({ rel, line: e.lineIndex + 1, tag, text: e.text });
         continue;
@@ -683,12 +703,21 @@ function selftest() {
     { name: "guard: glued field name", md: false, line: `//   relTrackEm${DASH} tracking as em`, expectRule: "R0" },
     { name: "guard: question heading", md: false, line: `"## Which variant? ${DASH} decision tree"`, expectRule: "R0" },
     { name: "guard: aligned comment column", md: false, line: `//   weight/<voice>/<slug> ${DASH} MUTUALLY`, expectRule: "R0" },
+    // Pass 5 review finding 2: step 1b names a drawn chart line among the re-diagnosis's
+    // constructs, but no fixture pinned it (only the tree itself, `ui-plan.md:111`, caught a
+    // regression there). The bullet-plot glyph `●` before the dash fails the before-side guard.
+    { name: "guard: drawn chart line", md: true, line: `   …  ┤   ●●                      ${DASH} tone line`, expectRule: "R0" },
     // R5 needs a space (or the line end) right after the punctuation; a period glued to more text
     // (a CSS selector, `.btn`, not a sentence end) is not that, and under the guard a period is
     // not a valid after-token either, so this is now a plain refusal, not R8's blind ", ".
     { name: "R5 before period, space required", md: true, line: `(#477) ${DASH} .btn`, expectRule: "R0" },
     { name: "R5 before period, punctuation followed by a space", md: true, line: `keep the pause ${DASH} . Next sentence`, expectRule: "R5", expectFix: "keep the pause. Next sentence" },
     { name: "R6 line-end", md: true, line: `gen:type-fonts ${DASH}`, expectRule: "R6", expectFix: "gen:type-fonts," },
+    // Pass 5 review finding 3: `guardBeforeHolds` (R5/R6's before-side check) had no fixture --
+    // forcing it to always return `true` still passed the whole self-test, while on the tree
+    // `mode-apply-plan.mjs:289` (`<slug> [dash]` at the end of the line) moved from refused to R6. A
+    // placeholder's closing `>` fails the before-guard, so this line-end dash is refused too.
+    { name: "guard: R6 before-side (placeholder before a line-end dash)", md: false, line: `name <slug> ${DASH}`, expectRule: "R0" },
     // The line-before's trailing whitespace has to be trimmed BEFORE the comma is appended, and
     // this fixture's prevLine carries a trailing space so a mutant that appends `,` without
     // trimming (`out[i-1] + ","`) fails here, not just one that changes the comma itself.
@@ -697,6 +726,10 @@ function selftest() {
     // one separating space go (real instance: `decision-records.md:235`, five spaces).
     { name: "R7 keeps the continuation's indentation", md: true, line: `     ${DASH} editorial voices use ...`, prevLine: "assumes", expectRule: "R7", expectFix: "     editorial voices use ...\nassumes," },
     { name: "R8 default", md: true, line: `TKT-0015 ${DASH} undocumented elsewhere`, expectRule: "R8", expectFix: "TKT-0015, undocumented elsewhere" },
+    // Pass 5 review finding 1: a non-ASCII letter on either side of the dash is still a word, not
+    // a symbol -- `A-Za-z0-9` wrongly refused these; `\p{L}`/`\p{N}` fixes it.
+    { name: "guard: Unicode letter before the dash", md: true, line: `cliché ${DASH} the word survives`, expectRule: "R8", expectFix: "cliché, the word survives" },
+    { name: "guard: Unicode letter after the dash", md: true, line: `the ratio ${DASH} γ approaches zero`, expectRule: "R8", expectFix: "the ratio, γ approaches zero" },
     // Finding 1: a span dash sits BEFORE the outside dash that actually triggers a rule. The old
     // code found `line.indexOf(DASH)` on the raw line and hit the span's dash first.
     { name: "a span dash before the outside dash is never touched", md: true,
