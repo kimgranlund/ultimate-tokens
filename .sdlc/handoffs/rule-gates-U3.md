@@ -4,11 +4,11 @@ plan: rule-gates
 unit: U3
 branch: unit/rg-U3
 written: 2026-09-22
-pass: 4
+pass: 5
 ---
 
 BASE: `b3961aa9`
-HEAD: `96afaf70`
+HEAD: `743ca560`
 
 # U3 handoff: `em-dash.mjs`, the gate, its self-test and `--fix`, unregistered
 
@@ -338,6 +338,64 @@ insertions(+), 9312 deletions(-)`, byte-identical; numstat mismatches `0`; `15` 
 R8 8246`). 359 changed table rows, `0` pipe-count mismatches.
 `docs/marketing/store-copy.md:486` is untouched (still `> [dash] Ultimate Tokens`). `npm test` in
 a separate, unswept fresh clone: `✓ all 48 test files passed`, exit `0`, tree clean after.
+
+## Pass 5: the positive guard (owner ruling B, plan revision 11)
+
+Four re-review passes each found a new meaning-changing construct `--fix` rewrote (a legend, a
+chart line, an exported heading, a question label, a glued name, an aligned column, a status
+mark), because R0 was a NEGATIVE list -- open by construction, closed only by reading everything.
+The Conductor re-diagnosed and the owner ruled B (`.sdlc/questions/rule-gates-U3-rediagnosis.md`):
+flip the guard. A fixing rule now runs only where the dash is a genuine pause between two words --
+an actual space on each side, the guard's before/after character sets on the near sides
+(`guardHolds`/`guardBeforeHolds`/`guardAfterHolds`, `test/repo/em-dash.mjs`). Everything that fails
+is a plain R0 refusal. (b), (c), (e) keep their sub-labels (U6's own reintroduction cases); (a),
+(d), (f), (g) are retired as constructs since all four already fail the guard on their own.
+
+R2/R3 add the guard's after-side check (a label whose dash ends the line is now refused, matching
+the plan's own measured "2 refused" for R3); R6 adds the before-side check (measured "1 refused");
+R7 checks both, across the wrap, and still keeps the continuation's indentation from pass 4; R4,
+R5, R8 check both sides directly. Two pass-1-through-4 fixtures move to R0 under the new guard,
+their now-correct outcome: a heading label's dash ending the line (`## title —`, no text follows,
+guard-after fails), and a dash before a glued period (`(#477) — .btn`, no space after the period,
+so neither R5 nor the guard's after-side accepts it).
+
+The refused list drops its per-letter breakdown (`R0 <letter> <n>` x 5..7 lines across revisions
+5, 9, 10) for a single aggregate `R0 <n>` line, per revision 11's P3 (rule-line counting is no
+longer an expectation). Every refused line prints in full, no cap, tagged with its sub-label
+(b/c/e), a near-miss rule name (R3/R6, when a shape rule's structure matched but its guard side
+didn't), or a computed habitat (comment/string/table/quote/fence/paragraph/list/trailing comment)
+for everything else -- `habitatOf()`, using a per-file fence-flag pass (`computeFenceFlags()`) for
+the Markdown case.
+
+### Acceptance, in a fresh clone at `743ca560`
+
+1. Total: `16746`, unchanged (the guard decides what `--fix` rewrites, not what the gate counts).
+   Full-tree `--fix --sample`: `329 files changed, 9251 insertions(+), 9251 deletions(-)`, close to
+   the re-diagnosis's "about 9,255" (measured on the run's edit dump at a slightly different
+   commit, `397e69ea`; a handful of lines' exact byte diff size differs with the pass-4 fixes
+   folded in, not a guard defect).
+2. Refused list: `121` lines on this unit's own (pre-U6) base, all printed with a tag, no cap.
+   Breakdown: `e 20`, `b 3`, `c 1` (the kept sub-labels, `24` total), `R3 2`, `R6 1` (near-miss
+   tags, `3` total), and `94` generic habitats (`comment 31`, `string 24`, `paragraph 21`,
+   `list 7`, `trailing comment 4`, `quote 3`, `fence 2`, `table 2`). This is over the re-diagnosis's
+   "under 120", which is stated for the tree AFTER U6 merges (dropping R0 (e) from 20 lines to a
+   handful and folding the 14 marker lines into the same bucket); measured here, honestly, on the
+   unit's own pre-U6 base, per U3's scope (U3 does not sweep or wait on U6). U3's run is the
+   authority per the plan's own wording; the count should fall under 120 once U4 runs after U6.
+3. Fixtures added for the legend, the glued name, the question heading and the aligned comment
+   column, each expecting R0. A mutant that drops the guard (`guardHolds` forced to always return
+   `true`) reds 9 fixtures including the legend one: `self-test: FAIL`,
+   `✗ guard: legend naming the glyph: matched R8, expected R0`. Every earlier fixture still passes
+   (`self-test: PASS` on the unmutated code).
+4. All eight constructs (14 lines) the re-diagnosis named in section 1 are refused, not rewritten,
+   confirmed by reading each line after `--fix` in the clone: `app.js:2374`, `color.js:1330`,
+   `ui-plan.md:111`, `ds-export.js:1495`, `type-scale/SKILL.md:81` and `:82`, `type.mjs:526`,
+   `style-plan.mjs:42`, `README.md:119`, `component-inventory.md:461` to `:465` -- every one still
+   carries its glyph, byte for byte.
+5. Full-tree `--fix`: two runs give identical stats (`329 files changed, 9251 insertions(+), 9251
+   deletions(-)` both times); numstat mismatches `0`. Table integrity: 358 changed table rows, `0`
+   pipe-count mismatches. `npm test` in a separate, unswept fresh clone: `✓ all 48 test files
+   passed`, exit `0`, tree clean after.
 
 ## Self-check
 
