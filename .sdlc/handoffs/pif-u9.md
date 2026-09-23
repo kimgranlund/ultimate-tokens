@@ -172,3 +172,26 @@ file-editing control in a scratch clone, never the worktree) is followed through
 Every control above ran in the same kind of `git clone -q --shared` scratch clone rework 1 used
 (never this worktree), restored with the backup copy after the plant, `git status --short`
 confirmed empty on the touched file both times.
+
+### Fresh `npm test` on the rework 2 committed head
+
+R2-3 asked for a run on the committed head, not the working edits. Run in this worktree after
+committing R2-1/R2-3/R2-4 as `f8d5564c` (a second commit adds this quote, per the dispatch):
+
+```
+pre-run: Wed Sep 23 12:50:45 PDT 2026
+...
+▶ repo/branding.mjs        pass
+▶ repo/doc-mutation-lane.mjs pass
+▶ repo/citations.mjs       pass
+▶ repo/gate-report.mjs     pass
+
+✓ all 49 test files passed
+post-run: Wed Sep 23 12:55:57 PDT 2026
+git status --short after:
+?? .sdlc/handoffs/pif-u9-rework-1.md
+?? .sdlc/verdicts/pif-u9-review.md
+```
+
+`EXIT=0`. `git status --short` after the run shows only the two untracked review/brief files the
+dispatch says to leave untracked; no generator drift, no tracked file moved by the run.
