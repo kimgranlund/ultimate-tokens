@@ -94,3 +94,9 @@ Question: the R19 re-freeze ran about five hours; the rebuilt roadmap records th
 Options: Lift after the snapshot check (Recommended); Hold until the squash; Lift now.
 Chosen: Lift after the snapshot check (Recommended).
 Effect: the verifier diffs the roadmap's `gh` snapshot against live `gh`; on a match the freeze lifts at once and pre-land grades the snapshot at its recorded instant, not live `gh` at the squash, which supersedes R16's wording that the `gh` read be the last act before the squash, for #720. The squash still waits on a 🟢 record. The snapshot matched 20 of 20 issues and 3 of 3 PRs at 12:36:51Z and 12:39:02Z (main `6eee94bf`), and the freeze is lifted. The five hours sat before `go`, while the freeze was being arranged, not in the build.
+
+## R31 Who is Conductor after the 0.3.1 restart
+Question: after the 0.3.1 restart, who is Conductor? Asked by AskUserQuestion on 2026-09-23 16:50 PDT (options: a4 stays Conductor (Recommended) · This seat is Conductor again).
+Options: a4 stays Conductor (Recommended); This seat is Conductor again.
+Chosen: "a4 stays Conductor". Minutes later the owner typed directly to the seat: "be the conductor", a superseding instruction.
+Effect: sdlc-ultimate-tokens-conductor (bf44370f) is the L0 seat again; ultimate-tokens-a4 stands down. The seat's runtime notes call this R21, but R21 already names the 2026-09-22 ruling that extends R1 (`.sdlc/runtime/owner-rulings-2026-09-22.md`, with R22 to R30 after it), so it is filed here as R31.
