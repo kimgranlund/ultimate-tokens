@@ -63,54 +63,137 @@ function shouldSkipFix(rel) {
 }
 
 // -- Markdown inline-span masking -------------------------------------------------------------
-// Replaces the INTERIOR of every backtick span with a same-length run of a placeholder character
-// (never the dash), so positions outside the span line up unchanged and a dash inside the span is
-// invisible to every rule below. Only inline spans; a fenced block is prose (adapter §3) and is
-// swept like any other line. Markdown files only -- a template literal's backticks in a `.js`
-// file are code, not a quote, and are never masked (#730 revision-4 finding: masking backticks in
-// code hid 66 dashes in generated files and reds `test/engine/exports.mjs`).
+// Rebuilt from the CommonMark 6.1 code-span definition (pass 3, #730 review Pass 2: two prior
+// patches over-corrected and under-corrected in turn; this replaces both with the actual rule
+// instead of another heuristic).
 //
-// A span can wrap across a line break (CommonMark: the backtick run that closes it need not be on
-// the line that opened it), which leaves a lone backtick sitting at the start of the CONTINUING
-// line. A single-line-only mask pairs that stray backtick with the next one it finds instead, and
-// mis-masks the real span (found in the wild during pass 2 review: `docs/tickets/tkt-0031.md:82`,
-// a wrapped span from a prior line left a lone backtick, which paired with the wrong neighbour and
-// let the dash inside `` `TKT-XXXX -- ...` `` get rewritten). So masking carries an open/closed
-// flag ONE line ahead: `computeOpenAtStart()` walks every line once up front (backtick COUNT only,
-// never touched by any fix rule, so this is safe to compute before any edit and reuse throughout).
+//   - A code span OPENS at a run of N backtick characters and CLOSES at the next run of EXACTLY N
+//     backticks; a run of a different length inside is neither an opener nor a closer for THIS
+//     span (CommonMark 6.1). An opener with no same-length closer anywhere ahead is literal text,
+//     never a span, and scanning resumes right after it.
+//   - A span may cross a line break, but only within one paragraph: a blank line, a fence line, a
+//     heading, or a table row boundary ends the search (`computeMdRoles()`'s SCOPE). An opener
+//     with no closer before its scope ends is literal, per the rule above.
+//   - A fenced code block (a line whose trimmed text starts with three or more backticks or
+//     tildes, up to its matching fence) is not scanned for spans at all: the fence line itself
+//     never opens one, and its content is swept like ordinary prose (the plan: "Dashes inside
+//     Markdown fenced blocks ... swept like prose", `## Measured by the planner`). So a dash
+//     inside a fenced block counts normally; it is exempt from nothing.
+//   - A heading or a table row is its own one-line scope: it can hold a self-contained span, but
+//     a span never crosses INTO or OUT OF one (matches `HEADING_RE`/`CELL_RE`'s per-line rules,
+//     which already treat a heading/row as one unit).
+//   - Non-Markdown files are never masked here (a template literal's backticks are code, not a
+//     quote; #730 revision-4 finding: masking them hid dashes in generated files).
 //
-// It is capped at one line on purpose. A long line with many spans on it (a table row mixing
-// prose, code and shell snippets) can carry a genuinely unbalanced backtick from an authoring slip
-// with nothing to do with a real wrap; found in the wild in the SAME pass-2 review pass, two lines
-// apart from the fixture above: `.sdlc/plans/rule-gates.md:163` has an odd count from exactly this,
-// and trusting it indefinitely carried "open" through 73 unrelated lines and hid a real,
-// unrelated dash at line 236 from the gate entirely. Every genuine wrap seen closes on the very
-// next line, so "still open after one full extra line" is treated as that same kind of false
-// signal and dropped, not propagated further.
-function computeOpenAtStart(lines) {
-  const openAtStart = new Array(lines.length);
-  let open = false;
-  let openStreak = 0;
-  for (let i = 0; i < lines.length; i++) {
-    openAtStart[i] = open;
-    const backticks = (lines[i].match(/`/g) || []).length;
-    if (backticks % 2 === 1) open = !open;
-    openStreak = open ? openStreak + 1 : 0;
-    if (openStreak > 1) { open = false; openStreak = 0; }
-  }
-  return openAtStart;
+// `computeMdRoles(lines)` walks the ORIGINAL (pre-`--fix`) lines once and returns one role object
+// per line, from which `maskMdLine(currentText, role)` can mask that line's CURRENT text (already
+// edited or not): a fix rule only ever touches a dash and its immediate spacing/punctuation, never
+// a backtick, so a line's backtick run COUNT, LENGTHS and ORDER are identical before and after any
+// number of edits -- only their column positions shift -- which is what lets the role, computed
+// once, be replayed against edited text by re-finding that line's runs fresh each time.
+function isBlankLine(line) { return line.trim() === ""; }
+function isHeadingLine(line) { return /^#{1,6} /.test(line); }
+function isTableRowLine(line) { return /^\s*\|/.test(line); }
+function fenceMarkerOf(line) {
+  const m = line.trim().match(/^(`{3,}|~{3,})/);
+  return m ? m[1] : null;
 }
-function maskMdSpansStateful(line, openAtStart) {
-  const chars = line.split("");
-  let open = openAtStart;
-  let spanStart = open ? 0 : null;
-  for (let i = 0; i < chars.length; i++) {
-    if (chars[i] !== "`") continue;
-    if (!open) { open = true; spanStart = i + 1; }
-    else { for (let k = spanStart; k < i; k++) chars[k] = "\u0000"; open = false; spanStart = null; }
+function findBacktickRuns(text) {
+  const runs = [];
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] !== "`") { i++; continue; }
+    let j = i;
+    while (j < text.length && text[j] === "`") j++;
+    runs.push({ start: i, end: j, length: j - i });
+    i = j;
   }
-  if (open) for (let k = spanStart; k < chars.length; k++) chars[k] = "\u0000";
-  return { masked: chars.join(""), openAtEnd: open };
+  return runs;
+}
+// Matches spans within one SCOPE (a paragraph's original lines, or a single heading/table-row
+// line): CommonMark's run-length matching, left to right, across the whole scope at once.
+function matchSpansInScope(scopeLines) {
+  const perLineRuns = scopeLines.map(findBacktickRuns);
+  const flat = [];
+  perLineRuns.forEach((runs, li) => runs.forEach((_, ri) => flat.push({ li, ri })));
+  const role = scopeLines.map(() => ({ entersOpen: false, enterCloseAt: null, pairCloseIndex: new Map(), opensContinuing: null, fullyMasked: false }));
+  let k = 0;
+  while (k < flat.length) {
+    const opener = flat[k];
+    const openLen = perLineRuns[opener.li][opener.ri].length;
+    let m = k + 1, closer = null;
+    while (m < flat.length) {
+      if (perLineRuns[flat[m].li][flat[m].ri].length === openLen) { closer = flat[m]; break; }
+      m++;
+    }
+    if (!closer) { k++; continue; } // no same-length closer anywhere ahead: literal, try the next run
+    if (closer.li === opener.li) {
+      role[opener.li].pairCloseIndex.set(opener.ri, closer.ri);
+    } else {
+      role[opener.li].opensContinuing = opener.ri;
+      role[closer.li].entersOpen = true;
+      role[closer.li].enterCloseAt = closer.ri;
+      for (let li = opener.li + 1; li < closer.li; li++) role[li].fullyMasked = true;
+    }
+    k = m + 1; // resume scanning right after the matched closer
+  }
+  return role;
+}
+// One role object per line of the whole file, computed once from the ORIGINAL content. `null`
+// means "no role": a blank line, a fence marker, or fenced content -- never masked (unmasked text
+// passes straight through, i.e. counted like any other prose line).
+function computeMdRoles(lines) {
+  const roles = new Array(lines.length).fill(null);
+  let i = 0, inFence = false, fenceMarker = null;
+  while (i < lines.length) {
+    const raw = lines[i];
+    if (!inFence) {
+      const marker = fenceMarkerOf(raw);
+      if (marker) { inFence = true; fenceMarker = marker; i++; continue; }
+    } else {
+      const close = raw.trim().match(/^(`{3,}|~{3,})\s*$/);
+      if (close && close[1][0] === fenceMarker[0] && close[1].length >= fenceMarker.length) { inFence = false; fenceMarker = null; }
+      i++; continue;
+    }
+    if (isBlankLine(raw)) { i++; continue; }
+    if (isHeadingLine(raw) || isTableRowLine(raw)) { roles[i] = matchSpansInScope([raw])[0]; i++; continue; }
+    let j = i;
+    while (j < lines.length && !isBlankLine(lines[j]) && !isHeadingLine(lines[j]) && !isTableRowLine(lines[j]) && !fenceMarkerOf(lines[j])) j++;
+    const scopeRoles = matchSpansInScope(lines.slice(i, j));
+    for (let k = 0; k < scopeRoles.length; k++) roles[i + k] = scopeRoles[k];
+    i = j;
+  }
+  return roles;
+}
+// Applies one line's precomputed role to its CURRENT text (see the note above on why this is
+// safe after edits): masks every character inside a span with U+0000 (never a real newline, so
+// line-splitting elsewhere stays correct), and leaves everything else -- including the backticks
+// themselves and any literal, unmatched backtick run -- untouched.
+function maskMdLine(currentText, role) {
+  if (!role) return currentText;
+  const mask = (from, to, chars) => { for (let p = from; p < to; p++) if (chars[p] !== "\n") chars[p] = "\u0000"; };
+  if (role.fullyMasked) { const chars = currentText.split(""); mask(0, chars.length, chars); return chars.join(""); }
+  const runs = findBacktickRuns(currentText);
+  const chars = currentText.split("");
+  let idx = 0;
+  if (role.entersOpen) {
+    if (role.enterCloseAt === null || role.enterCloseAt >= runs.length) { mask(0, chars.length, chars); return chars.join(""); }
+    mask(0, runs[role.enterCloseAt].start, chars);
+    idx = role.enterCloseAt + 1;
+  }
+  while (idx < runs.length) {
+    if (role.pairCloseIndex.has(idx)) {
+      const closeIdx = role.pairCloseIndex.get(idx);
+      mask(runs[idx].end, runs[closeIdx].start, chars);
+      idx = closeIdx + 1;
+    } else if (role.opensContinuing === idx) {
+      mask(runs[idx].end, chars.length, chars);
+      idx = runs.length;
+    } else {
+      idx++;
+    }
+  }
+  return chars.join("");
 }
 
 function prevNonSpace(line, idx) {
@@ -194,7 +277,12 @@ function classifyLine({ line, prevLine, md, skipStructural = false }) {
 
   for (const idx of idxs) {
     const pv = prevNonSpace(line, idx);
-    if (pv >= 0 && ",;:(".includes(line[pv])) return { rule: "R4" };
+    // `|` joins the opening punctuation set: a dash right after a table cell's opening pipe
+    // (content follows, so R1's whole-cell check above did not fire) reads the same way a dash
+    // after `(` does -- the delimiter already marks the pause, so the dash drops (Pass 2 review
+    // finding 3, `export-drift.md:212`: R8's generic ", " put a leading comma right after the
+    // pipe and changed the row's meaning).
+    if (pv >= 0 && ",;:(|".includes(line[pv])) return { rule: "R4" };
     const nx = nextNonSpace(line, idx);
     if (nx < line.length && ",.;:)".includes(line[nx]) && (nx + 1 >= line.length || line[nx + 1] === " "))
       return { rule: "R5" };
@@ -228,10 +316,10 @@ function runGate() {
     scanned++;
     const md = isMd(rel);
     const lines = src.split("\n");
-    const openAtStart = md ? computeOpenAtStart(lines) : null;
+    const roles = md ? computeMdRoles(lines) : null;
     for (let i = 0; i < lines.length; i++) {
       const raw = lines[i];
-      const masked = md ? maskMdSpansStateful(raw, openAtStart[i]).masked : raw;
+      const masked = md ? maskMdLine(raw, roles[i]) : raw;
       const count = dashIndices(masked).length;
       if (count > 0) {
         total += count;
@@ -282,7 +370,7 @@ function applyRule(raw, masked, prevRaw, prevMasked, decision) {
       const idxs = dashIndices(masked);
       for (const idx of idxs) {
         const pv = prevNonSpace(masked, idx);
-        if (pv >= 0 && ",;:(".includes(masked[pv])) {
+        if (pv >= 0 && ",;:(|".includes(masked[pv])) {
           const nx = nextNonSpace(masked, idx);
           return raw.slice(0, pv + 1) + " " + raw.slice(nx);
         }
@@ -325,11 +413,11 @@ function applyRule(raw, masked, prevRaw, prevMasked, decision) {
 // stops the whole line (it is left in place and listed) without touching it.
 function fixLines(lines, md) {
   const out = lines.slice();
-  // Backtick COUNT per line never changes (no rule below ever adds or removes a backtick), so the
-  // open-span state entering every line is computed once, up front, from the untouched originals,
-  // and stays valid for every re-mask of that line as its content is edited.
-  const openAtStart = md ? computeOpenAtStart(lines) : null;
-  const maskOf = (i) => (md ? maskMdSpansStateful(out[i], openAtStart[i]).masked : out[i]);
+  // Roles are computed once from the untouched originals (a fix rule never adds or removes a
+  // backtick, so a line's runs stay the same in count, length and order through every edit) and
+  // stay valid for every re-mask of that line as its content changes.
+  const roles = md ? computeMdRoles(lines) : null;
+  const maskOf = (i) => (md ? maskMdLine(out[i], roles[i]) : out[i]);
   const edits = []; // { rule, construct?, lineIndex, text? | before, after }
   for (let i = 0; i < out.length; i++) {
     let structuralDone = false;
@@ -460,6 +548,12 @@ function selftest() {
     { name: "R2 heading label, dash ends the line", md: true, line: `## title ${DASH}`, expectRule: "R2", expectFix: "## title:" },
     { name: "R3 bullet label", md: true, line: `- \`npm test\` ${DASH} the gate.`, expectRule: "R3", expectFix: "- \`npm test\`: the gate." },
     { name: "R4 after comma", md: true, line: `foo, ${DASH} bar`, expectRule: "R4", expectFix: "foo, bar" },
+    // Pass 2 review finding 3: a table cell that OPENS with the dash but carries more content
+    // (R1's whole-cell check above does not fire) used to fall through to R8's generic ", " and
+    // put a leading comma right after the pipe, changing the row's meaning
+    // (`docs/reference/reviews/2026-07-17-export-drift.md:212`). The pipe already marks the
+    // pause, same as `(`, so R4 drops it.
+    { name: "R4 table cell opens with the dash", md: true, line: `| a | ${DASH} (mapped indirectly) | b |`, expectRule: "R4", expectFix: "| a | (mapped indirectly) | b |" },
     { name: "R5 before period, space required", md: true, line: `(#477) ${DASH} .btn`, expectRule: "R8" },
     { name: "R5 before period, punctuation followed by a space", md: true, line: `keep the pause ${DASH} . Next sentence`, expectRule: "R5", expectFix: "keep the pause. Next sentence" },
     { name: "R6 line-end", md: true, line: `gen:type-fonts ${DASH}`, expectRule: "R6", expectFix: "gen:type-fonts," },
@@ -520,6 +614,41 @@ function selftest() {
   const bogusFixed = fixLines(bogus, true);
   if (bogusFixed.edits.length !== 1 || bogusFixed.edits[0].lineIndex !== 2)
     FAIL("stray-backtick-cap", `expected exactly one edit on line 3, got ${JSON.stringify(bogusFixed.edits)}`);
+
+  // Pass 3, three reviewer probes the old (pass-2) stateful streak masker got wrong, all in the
+  // over-masking direction (a real dash hidden). Each one reds (0 edits) on the pass-2 code and
+  // passes (the dash found and fixed by R8) on the CommonMark-run-length rebuild.
+
+  // Probe: the first line of a fenced block. The pass-2 masker counted the fence marker's three
+  // backticks like any other run, toggling "open" onto the block's first content line and masking
+  // it whole. A fence never opens an inline span, and the plan's ruling is that fenced content is
+  // swept like prose (not exempt), so the dash here must be found and fixed.
+  const fenceFirstLine = ["```", `plain code line ${DASH} with a dash`, "```"];
+  const fenceFixed = fixLines(fenceFirstLine, true);
+  if (fenceFixed.edits.length !== 1 || fenceFixed.edits[0].lineIndex !== 1 || fenceFixed.edits[0].rule !== "R8")
+    FAIL("fence-first-line", `expected one R8 edit on line 2, got ${JSON.stringify(fenceFixed.edits)}`);
+
+  // Probe: a lone backtick with no closer anywhere in its paragraph. CommonMark says an opener
+  // with no closer is literal text, not a span, so nothing after it is masked. The pass-2 masker
+  // paired it with an imaginary closer at end of line and swallowed the rest of the line, dash
+  // included.
+  const strayRest = [`a stray \` backtick then a dash ${DASH} here`];
+  const strayRestFixed = fixLines(strayRest, true);
+  if (strayRestFixed.edits.length !== 1 || strayRestFixed.edits[0].lineIndex !== 0 || strayRestFixed.edits[0].rule !== "R8")
+    FAIL("stray-backtick-rest-of-line", `expected one R8 edit on line 1, got ${JSON.stringify(strayRestFixed.edits)}`);
+
+  // Probe: two genuine line-wrapping spans back to back. The pass-2 masker's one-line-open streak
+  // cap forced "closed" at the start of the third line even though the second wrap (opened on the
+  // middle line) was still genuinely open there, so its own lone closing backtick was read as a
+  // fresh opener and everything after it -- including the dash outside both spans -- was masked.
+  const backToBack = [
+    "before `wrap A starts",
+    "closes` and then `wrap B starts",
+    `wrap B closes\` and now plain text ${DASH} continues`,
+  ];
+  const backToBackFixed = fixLines(backToBack, true);
+  if (backToBackFixed.edits.length !== 1 || backToBackFixed.edits[0].lineIndex !== 2 || backToBackFixed.edits[0].rule !== "R8")
+    FAIL("back-to-back-wraps", `expected one R8 edit on line 3, got ${JSON.stringify(backToBackFixed.edits)}`);
 
   // (4) Idempotence: a real, multi-rule, multi-line fixture run through `fixLines()` twice must
   // produce the SAME lines both times, with zero edits on the second pass (#730 review finding 5:
