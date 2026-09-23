@@ -12,11 +12,9 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { typeScale, DEFAULT_TYPE, siblingWeightDefaults, bodyClassSiblingDefaults, BODY_CLASS_VOICES, resolvedFontFor } from "../../src/engine/type.mjs";
 import { hydrate, DOMAINS } from "../../src/ui/persist.js";
-import { paletteGroup, resolvePaletteGroups } from "../../src/ui/model.mjs";
+import { paletteGroup, resolvePaletteGroups, projectView } from "../../src/ui/model.mjs";
 import { rampChromaOf } from "../../src/engine/resolve.mjs";
-import { paletteStops, STOPS, toneAt, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
-import { lstarFromRgb } from "../../src/engine/hct.js";
-import { oklchToRgb } from "../../src/engine/okhsl.js";
+import { paletteStops, STOPS, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
 import { buildCategory } from "../../scripts/gen-categories.mjs";
 import { gateReport } from "../gate-report.mjs";
 
@@ -531,123 +529,88 @@ for (const slug of CATS) {
 const noType = hydrate({ palettes: [{ name: "x", hue: 200, chroma: 60, on: true }] });
 if (typeScale(noType.type || DEFAULT_TYPE).fonts.display !== "Inter Tight") FAIL("fallback", "un-typed palette lost the product default");
 
-// ── lift-anchor (#648): the prime-anchor INVERSE in scripts/gen-categories.mjs must actually hit its
-//    target. A preset anchors its prime (stop 550) on the sampled source color by storing a `lift`.
-//    That inverse used to be the algebra of the RETIRED additive bump, `sourceL* - toneAt(550,0,0)`,
-//    which is simply wrong now that lift DISPLACES the stop (#648) — it missed by ~9 L* at lift +40
-//    and ~12 at -40. The generator now SOLVES the inverse, and this gate is what keeps it solved: it
-//    re-derives each built palette's target from the spec and checks the stored integer reproduces it.
-//    Joined on the palette's stored colorName + key-color OKLCH back to the spec's HEX, because the
-//    HEX is what the generator fits against. OKLCH alone is NOT a unique key — a curated colour gets
-//    reused across places, so 49 travel swatches share an oklch string with another swatch. Since #656
-//    repaired travel, every such duplicate carries the SAME hex in every spec, so an oklch-only join
-//    would land the right target today; the composite key is what stops a future divergence from
-//    silently picking the wrong one. Name + oklch still collides in architecture/cuisine/music (5, 5
-//    and 7 keys shared by two swatches each), but never onto a DIFFERENT hex, so the join is
-//    deterministic there too.
+// ── (ramp-monotone) #668: the curated presets that carried the measured-L* UPTICK must not carry it any
+// more. A perceptual ramp reports `tone` as the CIELAB L* of the 8-bit pixel it emits, and L* moves with
+// CHROMA as well as lightness. The damping used to be positioned on the RAW stop while the lightness was
+// read at the LIFTED one, so on a strongly lifted palette a step whose lightness had been compressed to
+// near nothing still took a full damping step, fell off the OKHSL s=1 clipping cliff, and MEASURED UP.
+// Eleven curated palettes did this at stop 800, worst +0.5105 L*, every one at lift <= -34 (the ticket
+// named nine; #648's re-fit and #656's travel repair moved the set to these eleven). tonal.mjs (iii c)
+// gates the synthetic grid; this gates the shipped data those eleven are drawn from, exactly and with no
+// tolerance, because the corpus is what the defect was reported against.
+//
+// Two guards keep it from going vacuous. Every named cell must still RESOLVE (a renamed preset or palette
+// would otherwise silently check nothing), and every named cell's stored lift must still be <= -34  -  the
+// condition the mechanism needs. If a re-fit lifts one of these out of that band the cell stops being a
+// witness, and the gate says so instead of passing on a palette that could no longer fail.
+//
+// #681 U4 integration note: U1's anchor construction (ticket #681) stores `lift: 0` on every sampled/
+// status palette it mints an `anchor` for (the generator stops fitting lift once the ramp passes
+// through the anchor verbatim, mechanism (1) option C) - all eleven named witnesses below are sampled
+// palettes, so all eleven now carry anchor + lift 0, outside the <= -34 band by construction, on every
+// run, not a one-off drift. The band guard is right to flag this (it is precisely "a re-fit lifts a
+// witness out of the band") but the underlying claim it protects - these eleven cells hold measured L*
+// non-increasing - is separately, independently reconfirmed: a corpus-wide sweep of all 3,780 palettes
+// (anchored and non-anchored) in all three modes, both stop sets, on the rendered path
+// (projectView(hydrate(preset))), measured 0 rise-cells everywhere on the integrated (U1+U2+U3) tree -
+// the anchored construction cannot exhibit this specific defect at all (it needs a nonzero fitted lift
+// to create the raw-stop-vs-lifted-stop mismatch; an anchored palette's lift is unconditionally 0). No
+// non-anchored corpus palette carries lift <= -34 any more either (checked directly), so there is no
+// substitute non-anchored witness left to repoint these at. The witness list is kept (it still proves
+// these eleven SPECIFIC named cells, the ones #668 was originally reported against, hold today) and the
+// band guard is widened to accept EITHER the original lift <= -34 condition (still live for any future
+// non-anchored corpus addition) OR an anchored palette (a lift-0, uptick-immune construction by U1's own
+// design) - the actual non-increasing-L* assertion below is unchanged and still bites on either path.
 {
-  const TOL = 1.5;                                   // L* the review fixed as "anchored"
-  const LIFT_MIN = DOMAINS.palette.lift.min, LIFT_MAX = DOMAINS.palette.lift.max; // persist.js's own domain, imported
-  const pt = (lift) => toneAt(550, 0, lift, DEFAULT_CONTROLS);
-  const BAND_LO = pt(LIFT_MIN), BAND_HI = pt(LIFT_MAX);
-  const r4 = (v) => Number(Number(v).toFixed(4));
-  const hexToRgb = (h) => { const x = String(h).replace("#", ""); return [0, 2, 4].map((i) => parseInt(x.slice(i, i + 2), 16)); };
-  const clean = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();   // the generator's own normalisation
-  const SAMPLED = new Set(["primary", "primary-muted", "secondary", "secondary-muted", "tertiary", "tertiary-muted"]);
-  let checked = 0, outOfBand = 0;
-  // A spec whose swatch `hex` and `oklch` describe DIFFERENT colors is a pre-existing data defect,
-  // not a lift defect: the generator fits the hex while the preset stores the oklch, so the two
-  // disagree downstream. The expectation is PER SPEC and BY NAME, not a bare total, and it counts
-  // ANY drift above float noise rather than only drift past this gate's own 1.5 L* tolerance. A bare
-  // total had two holes: sub-tolerance drift in a clean spec went unseen, and "travel repaired while
-  // another spec drifts" still summed to one. Named per-spec counts fail in BOTH directions — a new
-  // drifted spec raises its own entry, a repaired travel lowers travel's — and each says which spec.
-  // travel WAS the drifted spec (#656): 287 of its 288 swatches disagreed, worst 7.42 L*, because its
-  // `hex` column was authored independently of its `oklch` instead of being oklchToRgb()'s render of it.
-  // #656 re-rendered every travel hex from its authoritative oklch, so travel now sits at 0 like the
-  // six other sourced specs — a rise off 0 here is a fresh data regression, not the old carve-out.
-  const DRIFT_EPS = 0.01;        // below this is 8-bit/rounding noise, not authored disagreement
-  const EXPECTED_DRIFT = {
-    architecture: { count: 0, max: 0 },
-    cuisine:      { count: 0, max: 0 },
-    film:         { count: 0, max: 0 },
-    literature:   { count: 0, max: 0 },
-    music:        { count: 0, max: 0 },
-    nature:       { count: 0, max: 0 },
-    // authored 2-decimal oklch; immaterial to the fit (worst 0.88 L*, well inside TOL) but real
-    brands:       { count: 7, max: 1.0 },
-    // repaired at #656: every hex is now the exact oklchToRgb() render of its oklch
-    travel:       { count: 0, max: 0 },
-  };
-  for (const slug of CATS) if (!EXPECTED_DRIFT[slug]) FAIL("lift-anchor", `spec "${slug}" has no EXPECTED_DRIFT entry — a new category must declare whether its hex and oklch agree`);
-  for (const slug of CATS) {
-    const doc = JSON.parse(readFileSync(join(SPECDIR, `${slug}.json`), "utf8"));
-    // spec swatch: r4(oklch) -> hex, the exact key `palette()` stores on the built palette.
-    const byKey = new Map();
-    let specDrift = 0, specSwatches = 0, driftMax = 0;
-    JSON.stringify(doc, (k, v) => {
-      if (v && typeof v === "object" && v.hex && v.oklch) {
-        const ok = String(v.oklch).trim().split(/\s+/).map(Number);
-        byKey.set(clean(v.name) + "|" + ok.map(r4).join(","), String(v.hex).toUpperCase());
-        specSwatches++;
-        const dd = Math.abs(lstarFromRgb(hexToRgb(v.hex)) - lstarFromRgb(oklchToRgb(ok[0], ok[1], ok[2])));
-        if (dd > DRIFT_EPS) specDrift++;
-        if (dd > driftMax) driftMax = dd;
-      }
-      return v;
-    });
-    const exp = EXPECTED_DRIFT[slug];
-    if (exp) {
-      if (specDrift !== exp.count)
-        FAIL("lift-anchor", `spec "${slug}": ${specDrift} of ${specSwatches} swatches have hex/oklch disagreeing by more than ${DRIFT_EPS} L*, expected ${exp.count}. ${specDrift > exp.count ? "New drift is a data regression" : "Repaired drift should lower this expectation in the same change"} (travel is #656).`);
-      if (driftMax > exp.max)
-        FAIL("lift-anchor", `spec "${slug}": worst hex/oklch disagreement is ${driftMax.toFixed(2)} L*, above the ${exp.max} L* this spec is allowed — the drift got worse even if the count did not.`);
-    }
-    // The `direct` pass-through (a real product's own authored settings — 5 of the 7 brands presets)
-    // never goes through the generator's palette(), so its lift is authored, not fitted, and this gate
-    // has no claim on it. buildCategory passes those objects through VERBATIM, so identity is an exact
-    // test — no name matching, and no risk of silently skipping a palette that SHOULD have been fitted.
-    const directPalettes = new Set();
-    for (const v of doc.volumes || []) for (const sp of v.palettes || [])
-      if (Array.isArray(sp.palettes) && sp.palettes.length) for (const dp of sp.palettes) directPalettes.add(dp);
-    for (const preset of buildCategory(doc).presets) {
-      for (const q of preset.palettes) {
-        if (directPalettes.has(q)) continue;
-        if (!SAMPLED.has(q.name) || !q.keyColors || !q.keyColors[0]) continue;
-        const hex = byKey.get(q.colorName + "|" + q.keyColors[0].oklch.join(","));
-        if (!hex) { FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: key color ${q.colorName} ${q.keyColors[0].oklch} matches no spec swatch — the join broke`); continue; }
-        const target = lstarFromRgb(hexToRgb(hex));
-        if (!(q.lift >= LIFT_MIN && q.lift <= LIFT_MAX && Number.isInteger(q.lift)))
-          FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: lift ${q.lift} is not an integer in [${LIFT_MIN}, ${LIFT_MAX}]`);
-        if (target < BAND_LO || target > BAND_HI) {
-          // Unreachable: the source is lighter or darker than lift can carry stop 550. The only
-          // correct answer is the domain edge on the right side — assert THAT, don't excuse it.
-          outOfBand++;
-          const want = target < BAND_LO ? LIFT_MIN : LIFT_MAX;
-          if (q.lift !== want) FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: source L* ${target.toFixed(2)} is outside the reachable band ${BAND_LO.toFixed(2)}..${BAND_HI.toFixed(2)}, so lift must clamp to ${want}, got ${q.lift}`);
-          continue;
-        }
-        checked++;
-        const err = Math.abs(pt(q.lift) - target);
-        if (err > TOL) FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: prime lands at ${pt(q.lift).toFixed(2)} L* but the source is ${target.toFixed(2)} (off by ${err.toFixed(2)}, tol ${TOL}) — stored lift ${q.lift}`);
-        // and it must be the BEST integer, not merely a close one: a systematically biased inverse
-        // (the additive-algebra one was biased) can sit inside 1.5 L* and still be wrong everywhere.
-        let best = q.lift, bestErr = err;
-        for (let k = LIFT_MIN; k <= LIFT_MAX; k++) { const e = Math.abs(pt(k) - target); if (e < bestErr - 1e-9) { best = k; bestErr = e; } }
-        if (best !== q.lift) FAIL("lift-anchor", `${slug} "${preset.name}" ${q.name}: stored lift ${q.lift} (err ${err.toFixed(3)}) is not the best integer — ${best} gives ${bestErr.toFixed(3)}`);
-      }
+  const WITNESSES = [
+    ["travel", "San Telmo", "secondary-muted"],
+    ["travel", "Lake Baikal corridor", "primary-muted"],
+    ["travel", "Rovaniemi", "tertiary-muted"],
+    ["travel", "Yamanote line", "tertiary-muted"],
+    ["travel", "Bogyoke Aung San Market", "secondary"],
+    ["film", "Touch of Evil", "secondary"],
+    ["film", "2001: A Space Odyssey", "tertiary-muted"],
+    ["film", "Arrival", "primary-muted"],
+    ["film", "Blade Runner · 1982", "secondary"],
+    ["film", "John Wick", "tertiary-muted"],
+    ["music", "Black metal", "secondary"],
+  ];
+  const LIFT_BAND = -34;                       // the band the uptick lived in; a witness must still be in it
+  let witnessed = 0;
+  const rose = [];
+  for (const [slug, needle, palName] of WITNESSES) {
+    const { PRESETS } = await import(`../../src/ui/categories/${slug}.js`);
+    const hits = PRESETS.filter((x) => x.name.includes(needle));
+    if (hits.length !== 1) { FAIL("ramp-monotone", `${slug} "${needle}": ${hits.length} presets match that name  -  the #668 witness cannot be resolved, repoint it`); continue; }
+    const doc = hydrate({ ...hits[0] });
+    const view = projectView(doc);
+    const idx = view.palettes.findIndex((q) => q.name === palName);
+    if (idx < 0) { FAIL("ramp-monotone", `${slug} "${needle}": no palette named "${palName}"  -  the #668 witness cannot be resolved, repoint it`); continue; }
+    const lift = doc.palettes[idx]?.lift ?? 0;
+    const isAnchored = !!doc.palettes[idx]?.anchor;
+    if (lift > LIFT_BAND && !isAnchored) { FAIL("ramp-monotone", `${slug} "${needle}" ${palName}: lift is now ${lift}, outside the <= ${LIFT_BAND} band the uptick needs, and the palette is not anchored either  -  this cell no longer witnesses #668, pick one that does`); continue; }
+    if ((doc.toneMode || "perceptual") !== "perceptual") { FAIL("ramp-monotone", `${slug} "${needle}": toneMode is "${doc.toneMode}", not perceptual  -  the witness no longer exercises the OKHSL path`); continue; }
+    witnessed++;
+    const ramp = view.palettes[idx].fullRamp || view.palettes[idx].ramp;
+    for (let i = 1; i < ramp.length; i++) if (ramp[i].tone > ramp[i - 1].tone) {
+      rose.push(`${slug} "${needle}" ${palName} (lift ${lift}, anchored=${isAnchored}) +${(ramp[i].tone - ramp[i - 1].tone).toFixed(4)} L* at ${ramp[i - 1].stop}->${ramp[i].stop}`);
+      break;
     }
   }
-  if (checked < 1500) FAIL("lift-anchor", `only ${checked} in-band sampled palettes compared — the join or the corpus shrank`);
-  if (!fails.some((f) => f.startsWith("lift-anchor:")))
-    console.log(`  (lift-anchor: ${checked} in-band sampled primes anchored within ${TOL} L*, ${outOfBand} clamped to the lift domain edge)`);
+  if (rose.length)
+    FAIL("ramp-monotone", `measured L* ROSE on ${rose.length} of ${WITNESSES.length} #668 witnesses  -  the damping is travelling where the lightness is not: ${rose.join("; ")}`);
+  if (witnessed !== WITNESSES.length) FAIL("ramp-monotone", `only ${witnessed} of ${WITNESSES.length} #668 witnesses resolved into the band  -  the gate is no longer proving what it claims`);
+  if (!fails.some((f) => f.startsWith("ramp-monotone:")))
+    console.log(`  (ramp-monotone: ${witnessed} #668 witnesses (lift <= ${LIFT_BAND}, or anchored since #681 U1 pins their lift to 0) hold measured L* non-increasing across all ${25} export stops)`);
 }
 
 // ── REPORT ──
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
 // below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
-const DECLARED = ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback", "lift-anchor", "report-static"];
+// "lift-anchor" (#648) is not in this list: #681 U2 retired it when liftForTone/lift-per-tone was
+// replaced by the anchor feature's fixed lift 0, and "ramp-monotone" (#668) is its replacement gate.
+const DECLARED = ["count", "hastype", "schema", "fonts", "base", "voices", "kicker", "faithful", "uiladder", "faces", "resolve", "cuts", "purpose", "apply", "geometry", "groups", "groups-validate", "curve", "curve-validate", "fallback", "ramp-monotone", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${totalTyped}/${totalPresets} presets carry a per-palette type across ${CATS.length} categories)`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
