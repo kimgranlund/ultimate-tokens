@@ -42,6 +42,17 @@ Also fixed in the same pass (cheap, same code touched by finding 1): review find
 trailing `": "` left when R2/R3 fires on a dash that ends the line (`"R2 heading label, dash ends
 the line"` fixture, `## title [dash]` now fixes to `## title:` not `## title: `).
 
+### Addendum from the team lead (a fresh check against the pass-2 code)
+
+- The R7 fixture's `prevLine` ("assumes") had no trailing whitespace, so a mutant that appends the
+  comma WITHOUT trimming it first (`out[i-1] + ","` instead of
+  `out[i-1].replace(/\s+$/, "") + ","`) produced the identical result and still passed. `prevLine`
+  now carries trailing spaces (`"assumes  "`); the mutant now fails: `fix produced "...\nassumes
+  ,", expected "...\nassumes,"`. Verified in a fresh clone (below).
+- Confirmed there is no tree drift at all: `git diff --stat b3961aa9..HEAD -- . ':!.sdlc'` shows
+  exactly one changed file outside `.sdlc/`, `test/repo/em-dash.mjs` itself. The R8 figure is
+  addressed in the P3 table's note below.
+
 ## Pass 2, a defect found during re-verification (not in the review, same defect class)
 
 Diffing the two files the review named (`docs/reference/reviews/2026-07-17-cto-core.md`,
@@ -102,13 +113,19 @@ Command sequence run: `--fix --sample` once, diff stat; `--fix` again, diff stat
 | row-count check, every changed `.md` file | `0` files where the count of lines starting `\|` differs before vs. after |
 
 `R0 a` through `R0 e`, `R1`, `R2`, `R3`, and `R7` match the plan's own measured figures exactly
-(`13`, `3`, `1`, `2`, `20`, `27`, `565`, `441`, `29`). `R6` (`280`) is one below the plan's `281`
-and `R8` (`8230`) is well below the plan's `8256`: both are downstream of the pass-2 span-masking
-fixes correctly EXCLUDING more dashes that sit inside a span (the wrapped-span fix and the
-stray-backtick cap both remove real dashes from the countable set that a less correct mask would
-have wrongly counted and, for R6/R8, wrongly rewritten). This is a change in which dashes are
-outside a span at all, not a rule-classification defect: every rule ahead of R6/R8 in priority,
-and R6/R8's own residual behaviour on the two review-named lines, checked out by hand above.
+(`13`, `3`, `1`, `2`, `20`, `27`, `565`, `441`, `29`).
+
+There is no tree drift: `git diff --stat b3961aa9..HEAD -- . ':!.sdlc'` shows exactly one file
+outside `.sdlc/`, `test/repo/em-dash.mjs` itself (new, all insertions); every other tracked file is
+byte-identical to the plan's own measured head. So `R6` (`280`, one below the plan's `281`) and
+`R8` (`8230`, below the plan's `8256`, and below the review's own interim recount of `8260` lines,
+of which the review found 3 were the broken table rows from finding 2) are explained entirely by
+counting method and correctness, not drift: the review's own recount already moved to counting
+per line (matching the plan), and the pass-2 span-masking fixes (the wrapped-span fix and the
+stray-backtick cap, see above) correctly EXCLUDE more dashes that sit inside a span from the
+countable set at all, which a less correct mask would have wrongly counted and, for R6/R8, wrongly
+rewritten. Every rule ahead of R6/R8 in priority, and R6/R8's own residual behaviour on the two
+review-named lines, checked out by hand above.
 
 ## Disagreements with the plan
 
