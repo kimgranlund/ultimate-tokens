@@ -35,7 +35,7 @@ The script lost `PIN=`, the `git cat-file` preflight, the list reader, and the `
 | Id | What it named | How U3 closes it |
 |---|---|---|
 | N1 | A pinned name could carry any field-less content; a delisted name re-appended with a field-less file passed | No list exists. A field-less rewrite of any file, including a formerly-listed one, now reds `MISSING` (run above: `survey.md` rewritten field-less in the clone reds where the old head passed it) |
-| N2 | A name re-pinned by editing the header alone, without moving the script's `PIN=` in lockstep, passed | No pin anywhere in the script; nothing to move |
+| N2 | Moving both pins (the list header's and the script's `PIN=`) together to a later commit passed, so a new field-less file could be grandfathered | No pin anywhere in the script; nothing to move |
 | N3 | A grandfathered file deleted along with its name from the list passed | This check was never the deletion guard and still is not; a plan's own scope-wall row is the guard where the plan writes one (`--diff-filter=DR` on `.sdlc/verdicts`, as this plan's P3 does; most plans carry none today), and the run above shows it: the check exits 0 on a deletion, the scope-wall command catches it (`1`) |
 | N4 | The re-pin recipe (rerunning the check with the list emptied, to compute the next pin) missed the script's own `PIN=` constant | No pin, no recipe; the archived `verdict-frontmatter.md` recipe is history, per the plan's own "not in scope" ruling, and is not edited |
 | N5 | The #723 adapter paragraph named the list's header as the pin's authority, when the script's `PIN=` was the actual gate | The whole paragraph is superseded by this amendment, which states the mechanism is gone; nothing about pin authority remains live |
