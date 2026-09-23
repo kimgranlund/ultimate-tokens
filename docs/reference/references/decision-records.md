@@ -780,8 +780,9 @@ Format: Context → Decision → Rationale → Consequences → Status.
   something else was recorded and obeyed and nobody asked why it existed. A reviewer correctly warned
   a builder not to cut a `56 to 60 s` prefix because the gate would exit 1; that warning and #718 (a
   time check that passes only while the superseded figure stays first in its cell) are one sentence
-  read from two ends. One control caught every instance: re-run the thing against the tree it
-  describes. For the second form: ask why a constraint exists before obeying it.
+  read from two ends. One control caught every instance:
+  re-run the thing against the tree it describes. For the second form: ask why a constraint exists
+  before obeying it.
 - **Decision.** Four rules, binding on every seat that writes a record under `.sdlc/` or a review,
   verdict, brief or handoff anywhere in the repo. (1) A seat that cites a figure or a state is the
   seat that measured it, at the ref the record names, by a command the record shows; a record that
@@ -789,9 +790,9 @@ Format: Context → Decision → Rationale → Consequences → Status.
   is a lead, never evidence: a handoff's `Ran` row, a recon's bullet, a review's blessing, a checklist
   tick or a board cell is where a seat starts, and the seat reruns before it relies. (3) A constraint
   inherited from another seat is interrogated before it is obeyed: the record that obeys it states
-  why the constraint exists, or files the question and says the constraint is unexplained. (4) An
-  acceptance criterion rewritten after its verdict must be re-graded by a verifier before the unit
-  closes: a rewrite is a new claim, and the seat being graded cannot be the one whose edit closes the
+  why the constraint exists, or files the question and says the constraint is unexplained.
+  (4) An acceptance criterion rewritten after its verdict must be re-graded by a verifier before the unit closes:
+  a rewrite is a new claim, and the seat being graded cannot be the one whose edit closes the
   unit (source: #709 revision 38, the debt the records-followup verifier recorded and revision 39
   carried forward unclosed, `.sdlc/plans/archive/records-followup.md` at a4675242).
 - **Rationale.** The six defects share no file and no seat; they share a shortcut, and every seat in
