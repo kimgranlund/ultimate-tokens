@@ -90,7 +90,7 @@ Every negative control that edits a file runs in a throwaway clone (`git clone -
 Checklist (the Orchestrator ticks it; the table below carries grades and paths):
 
 - [x] U1 (S) the smoke launcher: per-run profile and port, cleanup on every exit path, launcher test · builder-l2 · reviewer-l1 · verifier-l1
-- [~] U2 (S) the fake Chrome spawns a grandchild, and every launcher leg proves the whole process group dies · builder-l5 · reviewer-l4 · verifier-l3
+- [x] U2 (S) the fake Chrome spawns a grandchild, and every launcher leg proves the whole process group dies · builder-l5 · reviewer-l4 · verifier-l3
 
 Grades follow the Orchestrator's rule: an L2 builder gets reviewer-l1 and verifier-l1. U1 is L2 because process lifecycle is easy to get subtly wrong (a handler that runs `close()` but forgets to exit hangs the run; an `exit` handler that awaits does nothing).
 
