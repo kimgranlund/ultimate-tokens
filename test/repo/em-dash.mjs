@@ -224,6 +224,10 @@ const LONE_TOKEN_RE = new RegExp(`(?:\\\\)?(["'\`])${DASH}(?:\\\\)?\\1`);
 // A table cell whose whole content is the dash: `| \u2014 |`. In a `.md` file this is R1 (the
 // gate + fix); in any other file it is a table row a program prints (R0 (b)).
 const CELL_RE = new RegExp(`\\|\\s*${DASH}\\s*\\|`);
+// A table cell that OPENS with the dash but carries more text after it (not the whole-cell CELL_RE
+// case above): a presence matrix where the dash means "absent", never a pause -- R0 (f), plan
+// revision 9.
+const CELL_OPEN_DASH_RE = new RegExp(`\\|\\s*${DASH}(?!\\s*\\|)`);
 // The R1 FIX form: global, and a lookahead on the closing `|` so it is never consumed, which is
 // what lets two empty cells on the same row (sharing one `|` between them) both match (#730
 // review finding 2: consuming the closing pipe left the next cell's opening pipe missing, and R8
@@ -256,6 +260,11 @@ function classifyLine({ line, prevLine, md, skipStructural = false }) {
   if (md && new RegExp(`"${DASH}"`).test(line)) return { rule: "R0", construct: "c" };
   // R0 (e): a lone-glyph string token in a non-Markdown file, plain or backslash-escaped.
   if (!md && LONE_TOKEN_RE.test(line)) return { rule: "R0", construct: "e" };
+  // R0 (f): a Markdown table cell that opens with the dash and carries more text -- a presence
+  // matrix where the dash means "absent" (`| [dash] (mapped indirectly) |`), not a pause R4 can drop
+  // or an empty cell R1 can rename (plan revision 9, `export-drift.md:212`): refused and named,
+  // U4 rewrites it by hand as `| none (mapped indirectly) |`.
+  if (md && CELL_OPEN_DASH_RE.test(line)) return { rule: "R0", construct: "f" };
 
   // R1: a Markdown table cell that is only the dash. A SHAPE rule: fires once per line.
   if (!skipStructural && md && CELL_RE.test(line)) return { rule: "R1" };
@@ -283,12 +292,7 @@ function classifyLine({ line, prevLine, md, skipStructural = false }) {
 
   for (const idx of idxs) {
     const pv = prevNonSpace(line, idx);
-    // `|` joins the opening punctuation set: a dash right after a table cell's opening pipe
-    // (content follows, so R1's whole-cell check above did not fire) reads the same way a dash
-    // after `(` does -- the delimiter already marks the pause, so the dash drops (Pass 2 review
-    // finding 3, `export-drift.md:212`: R8's generic ", " put a leading comma right after the
-    // pipe and changed the row's meaning).
-    if (pv >= 0 && ",;:(|".includes(line[pv])) return { rule: "R4" };
+    if (pv >= 0 && ",;:(".includes(line[pv])) return { rule: "R4" };
     const nx = nextNonSpace(line, idx);
     if (nx < line.length && ",.;:)".includes(line[nx]) && (nx + 1 >= line.length || line[nx + 1] === " "))
       return { rule: "R5" };
@@ -376,7 +380,7 @@ function applyRule(raw, masked, prevRaw, prevMasked, decision) {
       const idxs = dashIndices(masked);
       for (const idx of idxs) {
         const pv = prevNonSpace(masked, idx);
-        if (pv >= 0 && ",;:(|".includes(masked[pv])) {
+        if (pv >= 0 && ",;:(".includes(masked[pv])) {
           const nx = nextNonSpace(masked, idx);
           return raw.slice(0, pv + 1) + " " + raw.slice(nx);
         }
@@ -466,7 +470,7 @@ function runFix({ sample }) {
   // rule, so a line with two edits of the same rule (rare, but R8 can fire twice on one line)
   // counts once, matching how the plan itself counted the rule table.
   const linesByRule = { R1: new Set(), R2: new Set(), R3: new Set(), R4: new Set(), R5: new Set(), R6: new Set(), R7: new Set(), R8: new Set() };
-  const r0ByConstruct = { a: 0, b: 0, c: 0, d: 0, e: 0 };
+  const r0ByConstruct = { a: 0, b: 0, c: 0, d: 0, e: 0, f: 0 };
   const r0Lines = [];
   const samples = { R1: [], R2: [], R3: [], R4: [], R5: [], R6: [], R7: [], R8: [] };
 
@@ -498,7 +502,7 @@ function runFix({ sample }) {
   }
 
   const counts = {};
-  for (const c of ["a", "b", "c", "d", "e"]) console.log(`R0 ${c} ${r0ByConstruct[c]}`);
+  for (const c of ["a", "b", "c", "d", "e", "f"]) console.log(`R0 ${c} ${r0ByConstruct[c]}`);
   for (const r of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"]) {
     counts[r] = linesByRule[r].size;
     console.log(`${r} ${counts[r]}`);
@@ -554,12 +558,12 @@ function selftest() {
     { name: "R2 heading label, dash ends the line", md: true, line: `## title ${DASH}`, expectRule: "R2", expectFix: "## title:" },
     { name: "R3 bullet label", md: true, line: `- \`npm test\` ${DASH} the gate.`, expectRule: "R3", expectFix: "- \`npm test\`: the gate." },
     { name: "R4 after comma", md: true, line: `foo, ${DASH} bar`, expectRule: "R4", expectFix: "foo, bar" },
-    // Pass 2 review finding 3: a table cell that OPENS with the dash but carries more content
-    // (R1's whole-cell check above does not fire) used to fall through to R8's generic ", " and
-    // put a leading comma right after the pipe, changing the row's meaning
-    // (`docs/reference/reviews/2026-07-17-export-drift.md:212`). The pipe already marks the
-    // pause, same as `(`, so R4 drops it.
-    { name: "R4 table cell opens with the dash", md: true, line: `| a | ${DASH} (mapped indirectly) | b |`, expectRule: "R4", expectFix: "| a | (mapped indirectly) | b |" },
+    // R0 (f), plan revision 9: a table cell that OPENS with the dash but carries more content
+    // (R1's whole-cell check above does not fire) is a presence matrix where the dash means
+    // "absent" (`docs/reference/reviews/2026-07-17-export-drift.md:212`), not a pause R4 can drop
+    // (R4's generic drop, and R8's generic ", ", both changed the row's meaning -- Pass 2 review
+    // finding 3 and the Pass 3 re-review). Refused and named; U4 rewrites it by hand.
+    { name: "R0(f) table cell opens with the dash", md: true, line: `| a | ${DASH} (mapped indirectly) | b |`, expectRule: "R0" },
     { name: "R5 before period, space required", md: true, line: `(#477) ${DASH} .btn`, expectRule: "R8" },
     { name: "R5 before period, punctuation followed by a space", md: true, line: `keep the pause ${DASH} . Next sentence`, expectRule: "R5", expectFix: "keep the pause. Next sentence" },
     { name: "R6 line-end", md: true, line: `gen:type-fonts ${DASH}`, expectRule: "R6", expectFix: "gen:type-fonts," },
@@ -594,6 +598,16 @@ function selftest() {
   PINNED_PATHS.add(fakePinned);
   if (!shouldSkipFix(fakePinned)) FAIL("pinned-exemption", "adding a path to PINNED did not make shouldSkipFix() skip it");
   PINNED_PATHS.delete(fakePinned);
+
+  // R0 (f) is refused, not rewritten: a table cell that opens with the dash and carries more text
+  // must survive `--fix` byte for byte, listed under construct "f", not turned into R4's drop or
+  // R8's ", " (plan revision 9, ruled after the Pass 3 re-review flagged the meaning change at
+  // `export-drift.md:212`).
+  const r0fLine = `| Color stops (raw) | ${DASH} (mapped indirectly) | ok |`;
+  const r0fFixed = fixLines([r0fLine], true);
+  if (r0fFixed.lines[0] !== r0fLine) FAIL("r0f-refused", `the line changed: "${r0fFixed.lines[0]}"`);
+  if (r0fFixed.edits.length !== 1 || r0fFixed.edits[0].rule !== "R0" || r0fFixed.edits[0].construct !== "f")
+    FAIL("r0f-refused", `expected one R0 (f) edit, got ${JSON.stringify(r0fFixed.edits)}`);
 
   // A span that wraps across a line break (found in the wild in pass 2 review, docs/tickets/
   // tkt-0031.md:82): the first line has an ODD backtick count, so its lone backtick opens a span
