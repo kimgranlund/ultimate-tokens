@@ -16,9 +16,17 @@ say(!!bn && +bn[1] === tests, `tests: baseline ${bn ? bn[1] : "none"}, test/run.
 const kb = (read("figma/plugin/ui.html").length / 1024).toFixed(1);
 const bs = (row(b, "| `npm run build` |")[5] || "").match(/ui\.html ([\d.]+) KB/);
 say(!!bs && bs[1] === kb, `ui.html: baseline ${bs ? bs[1] : "none"} KB, tree ${kb} KB`);
+const ceilBase = b.match(/expected between (\d+) and (\d+) s/);
 for (const [cmd, gate] of [["npm test", "test"], ["npm run build", "build"], ["npm run smoke", "smoke"], ["npm run gate:corpus-contrast", "corpus-contrast"], ["npm run gen:type-fonts", "fonts"]]) {
   const t = (row(b, "| `" + cmd + "` |")[4] || "").split("·").map(Number);
-  const ms = [...(row(a, "| " + gate + " |")[5] || "").matchAll(/(\d+) to (\d+) s/g)];
+  const cell = row(a, "| " + gate + " |")[5] || "";
+  const ceilCell = cell.match(/ceiling (\d+) to (\d+) s/);
+  if (ceilCell) {
+    say(!!ceilBase && ceilBase[1] === ceilCell[1] && ceilBase[2] === ceilCell[2],
+      `ceiling ${gate}: baseline ${ceilBase ? ceilBase[1] + " to " + ceilBase[2] + " s" : "none"}, adapter ${ceilCell[1]} to ${ceilCell[2]} s`);
+  }
+  const plain = cell.replace(/ceiling \d+ to \d+ s/g, "");
+  const ms = [...plain.matchAll(/(\d+) to (\d+) s/g)];
   const lo = Math.round(Math.min(...t)), hi = Math.round(Math.max(...t));
   say(t.length === 3 && t.every(Number.isFinite) && ms.length > 0 && ms.every((m) => +m[1] === lo && +m[2] === hi),
     `time ${gate}: baseline ${lo} to ${hi} s, adapter ${ms.length ? ms.map((m) => m[1] + " to " + m[2] + " s").join(", ") : "none"}`);

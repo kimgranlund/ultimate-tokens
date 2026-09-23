@@ -1,4 +1,5 @@
 # Verdict pif-u8 · #681 preset-intent-fidelity U8 at `14d9604d` (base `505416d7`)
+verdict: 🟢
 
 Seat: verifier, opus high under owner ruling R17 (Fable allowance spent). My own evidence, taken in throwaway `git clone --shared` clones in the session scratchpad (`v8` for gates, `v8b` for controls, `blastctl` for the blast pair). The worktree was not touched. Written to the scratchpad, not the worktree, per dispatch; the orchestrator copies it into `.sdlc/verdicts/` if it keeps it.
 

@@ -207,8 +207,9 @@ series, both inside the band.
 How these readings are to be treated, per **R13** (owner ruling, main @ `4e315376`): the 280 to 550
 band stands, and nothing widens it before a run set STARTED at load under 5. Which readings that
 admits is settled above, against the rows, and is not restated here. Nothing in this section is
-proposed as the permanent figure; #713 owns that, and #718 is ruled to give this script its own
-labelled figure to check against.
+proposed as the permanent figure; #713 owns that, and #681 U9 gives this script its own labelled
+figure to check against, per PR #729's out-of-scope note (#718 made the check read every range in
+a time cell, and left the label itself for this plan).
 
 Correction (2026-09-20, plan preset-intent-fidelity U5, #681): two cells of the live `Pass` table
 were re-measured because this plan changed what they describe, and both re-measurements are marked
