@@ -4,12 +4,12 @@
 |---|---|
 | Branch | `unit/bf-U3` @ `96a08bd6` |
 | Files | `.sdlc/checks/verdict-frontmatter-check.sh` (rewritten), `.sdlc/checks/verdict-frontmatter-grandfather.txt` (deleted), `.sdlc/adapter.md` (one additive amendment paragraph under §6) |
-| Ran | see rows below | `npm test` ✅ 48/48, tree clean after · `node test/repo/branding.mjs` ✅ clean (574 files) · em dash sweep on the script ✅ `0` |
+| Ran | see rows below; `npm test` ✅ 48/48, tree clean after · `node test/repo/branding.mjs` ✅ clean (574 files) · em dash sweep on the script ✅ `0` |
 | Left out | none |
 
 ## Build
 
-The script lost `PIN=`, the `git cat-file` preflight, the list reader, and the `GROWN`/`STALE`/`CLEARED`/`PIN MISMATCH` branches. It keeps `MISSING` and `VALUE` and the last-`verdict:`-line rule, reads files only (no `git`, no pin), and prints `verdicts <all> graded <all> bad <n>` as its last line. Its header comment says the #723 list was backfilled to empty and retired by #734. `.sdlc/checks/verdict-frontmatter-grandfather.txt` is deleted. `.sdlc/adapter.md` §6 gained one amendment paragraph after the #723 one, dated 2026-09-22, naming #734, that every sentence in the #723 paragraph naming the list/pin/`STALE`/`CLEARED`/`GROWN`/`PIN MISMATCH` is history, that the check needs no git and runs in a shallow clone, and that a deletion is the scope wall's `--diff-filter=DR` guard to catch, not this check's. No existing adapter line was changed (P3's `--numstat` deletions column on `.sdlc/adapter.md` is `0`).
+The script lost `PIN=`, the `git cat-file` preflight, the list reader, and the `GROWN`/`STALE`/`CLEARED`/`PIN MISMATCH` branches. It keeps `MISSING` and `VALUE` and the last-`verdict:`-line rule, reads files only (no `git`, no pin), and prints `verdicts <all> graded <all> bad <n>` as its last line. Its header comment says the #723 list was backfilled to empty and retired by #734. `.sdlc/checks/verdict-frontmatter-grandfather.txt` is deleted. `.sdlc/adapter.md` §6 gained one amendment paragraph after the #723 one, dated 2026-09-22, naming #734, that every sentence in the #723 paragraph naming the list/pin/`STALE`/`CLEARED`/`GROWN`/`PIN MISMATCH` is history, that the check needs no git and runs in a shallow clone, and that a deletion is a plan's own scope-wall row to catch where the plan writes one, not this check's. No existing adapter line was changed (P3's `--numstat` deletions column on `.sdlc/adapter.md` is `0`).
 
 ## Criteria, each row's actual output
 
@@ -35,8 +35,8 @@ The script lost `PIN=`, the `git cat-file` preflight, the list reader, and the `
 | Id | What it named | How U3 closes it |
 |---|---|---|
 | N1 | A pinned name could carry any field-less content; a delisted name re-appended with a field-less file passed | No list exists. A field-less rewrite of any file, including a formerly-listed one, now reds `MISSING` (run above: `survey.md` rewritten field-less in the clone reds where the old head passed it) |
-| N2 | Moving both pins (the header's and the script's `PIN=`) together, in lockstep, was easy to miss | No pin anywhere in the script; nothing to move |
-| N3 | A grandfathered file deleted along with its name from the list passed | This check was never the deletion guard and still is not; the scope wall's `--diff-filter=DR` command on `.sdlc/verdicts` is, and the run above shows it: the check exits 0 on a deletion, the scope-wall command catches it (`1`) |
+| N2 | A name re-pinned by editing the header alone, without moving the script's `PIN=` in lockstep, passed | No pin anywhere in the script; nothing to move |
+| N3 | A grandfathered file deleted along with its name from the list passed | This check was never the deletion guard and still is not; a plan's own scope-wall row is the guard where the plan writes one (`--diff-filter=DR` on `.sdlc/verdicts`, as this plan's P3 does; most plans carry none today), and the run above shows it: the check exits 0 on a deletion, the scope-wall command catches it (`1`) |
 | N4 | The re-pin recipe (rerunning the check with the list emptied, to compute the next pin) missed the script's own `PIN=` constant | No pin, no recipe; the archived `verdict-frontmatter.md` recipe is history, per the plan's own "not in scope" ruling, and is not edited |
 | N5 | The #723 adapter paragraph named the list's header as the pin's authority, when the script's `PIN=` was the actual gate | The whole paragraph is superseded by this amendment, which states the mechanism is gone; nothing about pin authority remains live |
 | N6 | `grep -c '#[0-9]'` (or similar) against the list's header could not go red once the header was hand-edited past emptying | The list file is deleted; no row of this plan, this check, or the adapter greps a header that no longer exists |
