@@ -100,3 +100,9 @@ Question: after the 0.3.1 restart, who is Conductor? Asked by AskUserQuestion on
 Options: a4 stays Conductor (Recommended); This seat is Conductor again.
 Chosen: "a4 stays Conductor". Minutes later the owner typed directly to the seat: "be the conductor", a superseding instruction.
 Effect: sdlc-ultimate-tokens-conductor (bf44370f) is the L0 seat again; ultimate-tokens-a4 stands down. The seat's runtime notes call this R21, but R21 already names the 2026-09-22 ruling that extends R1 (`.sdlc/runtime/owner-rulings-2026-09-22.md`, with R22 to R30 after it), so it is filed here as R31.
+
+## R33 Conductor after the 0.3.1 restart, final
+Question: who is the Conductor for ultimate-tokens? Asked by AskUserQuestion in session ef9dc581 (formerly ultimate-tokens-a4) on 2026-09-23, after R31's 16:50 message.
+Options: The background seat; This session (a4) stays.
+Chosen: "This session (a4) stays". The owner then approved stopping bf44370f and f708730d, and ef9dc581 is registered as the conductor seat (`session.sh claim conductor`).
+Effect: supersedes R31. Answer recorded in `.sdlc/questions/orchestrator-which-conductor.md`.

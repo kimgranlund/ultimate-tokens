@@ -10,3 +10,13 @@
 ## State at 2026-09-23, minutes after asking
 
 `ListAgents` no longer shows `sdlc-ultimate-tokens-conductor`; `sdlc:conductor (2)` is the only Conductor listed. The Orchestrator reports to `sdlc:conductor (2)` and keeps the question open for the owner's answer. The same listing shows a second `sdlc-ultimate-tokens-orchestrator` session, [d0eef0], started after this one [5d805e]; two Orchestrators on one board is a defect the Conductor resolves.
+
+## Answer (2026-09-23, from the owner through the Conductor)
+
+| Field | Value |
+|---|---|
+| Asked | By AskUserQuestion in session `sdlc:conductor (2)` (formerly ultimate-tokens-a4), after the 16:50 "be the conductor" message: "Who is the Conductor for ultimate-tokens?" |
+| Options | The background seat · This session (a4) stays |
+| Chosen | "This session (a4) stays" |
+| Follow-up | The owner then asked to work out the Conductor and close zombie sessions, and approved closing `sdlc-ultimate-tokens-conductor` (bf44370f) and `sdlc:conductor` (f708730d). Both were stopped with `claude stop`, and `session.sh claim conductor` registered ef9dc581 as the conductor seat |
+| Result | B: `sdlc:conductor (2)`, session ef9dc581, is the Conductor. Send state transitions only there. R31 in `standing-rulings-2026-09-20.md` is superseded by R33 |
