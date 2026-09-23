@@ -28,7 +28,7 @@
     "preview": "vite preview",
     "test": "npm run gen:figma-assets && npm run gen:mcp-assets && npm run gen:categories && npm run gen:adia-exports && npm run bundle && npm run gen:figma-ui && node test/run.mjs",
     "gate:corpus-contrast": "node test/engine/curated-contrast.mjs --full",
-    "smoke": "npm run build && node test/smoke/smoke.mjs"
+    "smoke": "npm run build && node test/smoke/launcher.mjs && node test/smoke/smoke.mjs"
   },
   "devDependencies": {
     "typescript": "~7.0.2",

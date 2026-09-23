@@ -13,6 +13,12 @@ for (const toneMode of ["perceptual", "even"]) {
   const ctl = { ...T.DEFAULT_CONTROLS, toneMode };
   out.paths[toneMode] = {};
   for (const p of RT.defaults) {
+    // `anchor` is deliberately OMITTED from this narrowed literal (#681 U2, re-diagnosis Finding 8):
+    // this fixture pins the LEGACY, pre-anchor ramp construction (first captured at 83756bb, before
+    // ticket #681 added the field) as a byte-diff regression check, so it must keep calling the
+    // un-anchored `paletteStops` path on purpose. This is NOT the same "subset-object gap" #681 U2
+    // fixed in model.mjs/exports.js, which silently dropped `anchor` from a call that SHOULD have
+    // forwarded it — this call never should.
     out.paths[toneMode][p.name] = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, ctl, T.EXPORT_STOPS).map((r) => r.hex);
   }
 }
