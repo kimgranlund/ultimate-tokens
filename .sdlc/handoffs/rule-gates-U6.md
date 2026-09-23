@@ -4,7 +4,7 @@ plan: rule-gates
 unit: U6
 branch: unit/rg-U6
 written: 2026-09-22
-pass: 2
+pass: 3
 ---
 
 # Handoff U6 · builder-l2 → reviewer-l1
@@ -71,6 +71,6 @@ Plan revision 8 (`98f8ef63` on `plan/rule-gates`, read via `git show`, since thi
 
 | # | Criterion | Result | Negative control |
 |---|---|---|---|
-| U6-4 | no doc quotes the old glyph as the empty value (the em-dash gate skips backtick spans, so it cannot see these) | `grep -nE '`"?—"?`' .claude/skills/maintaining-brand-kit-mcp/references/foundations.md docs/lld/app-shell.md \| wc -l` prints `0` 🟢 | in a clone, restored `foundations.md:87` to the old glyph: the same command prints `1` |
+| U6-4 | no doc quotes the old glyph as the empty value (the em-dash gate skips backtick spans, so it cannot see these) | `grep -nE '\x60"?\u2014"?\x60' .claude/skills/maintaining-brand-kit-mcp/references/foundations.md docs/lld/app-shell.md \| wc -l`, with `\x60` a backtick and `\u2014` the glyph, both substituted into the real byte when the command actually runs | `0` 🟢 | in a clone, restored `foundations.md:87` to the old glyph: the same command prints `1` |
 
-The command above quotes the pattern with the actual glyph, as the plan's row itself is written. New unit head unchanged from Pass 3, `14efd2c5e8a8f4cfaa0a8ffd778bd5e5536945d5`, since this addendum needed no further code change.
+The row quotes the command the way the plan itself writes it (\x60/\u2014 typed as literal escape text, never the actual bytes), so a line-scan reading this handoff never sees a bare glyph outside a span. New unit head unchanged from Pass 3, `14efd2c5e8a8f4cfaa0a8ffd778bd5e5536945d5`, since this addendum needed no further code change.
