@@ -75,18 +75,28 @@ function shouldSkipFix(rel) {
 // line. A single-line-only mask pairs that stray backtick with the next one it finds instead, and
 // mis-masks the real span (found in the wild during pass 2 review: `docs/tickets/tkt-0031.md:82`,
 // a wrapped span from a prior line left a lone backtick, which paired with the wrong neighbour and
-// let the dash inside `` `TKT-XXXX -- ...` `` get rewritten). So masking is STATEFUL across a
-// file's lines: `computeOpenAtStart()` walks every line once up front (backtick COUNT only, never
-// touched by any fix rule, so this is safe to compute before any edit and reuse throughout) and
-// records whether a span was already open entering each line; `maskMdSpansStateful()` then masks
-// one line given that flag, and reports whether a span is still open leaving it.
+// let the dash inside `` `TKT-XXXX -- ...` `` get rewritten). So masking carries an open/closed
+// flag ONE line ahead: `computeOpenAtStart()` walks every line once up front (backtick COUNT only,
+// never touched by any fix rule, so this is safe to compute before any edit and reuse throughout).
+//
+// It is capped at one line on purpose. A long line with many spans on it (a table row mixing
+// prose, code and shell snippets) can carry a genuinely unbalanced backtick from an authoring slip
+// with nothing to do with a real wrap; found in the wild in the SAME pass-2 review pass, two lines
+// apart from the fixture above: `.sdlc/plans/rule-gates.md:163` has an odd count from exactly this,
+// and trusting it indefinitely carried "open" through 73 unrelated lines and hid a real,
+// unrelated dash at line 236 from the gate entirely. Every genuine wrap seen closes on the very
+// next line, so "still open after one full extra line" is treated as that same kind of false
+// signal and dropped, not propagated further.
 function computeOpenAtStart(lines) {
   const openAtStart = new Array(lines.length);
   let open = false;
+  let openStreak = 0;
   for (let i = 0; i < lines.length; i++) {
     openAtStart[i] = open;
     const backticks = (lines[i].match(/`/g) || []).length;
     if (backticks % 2 === 1) open = !open;
+    openStreak = open ? openStreak + 1 : 0;
+    if (openStreak > 1) { open = false; openStreak = 0; }
   }
   return openAtStart;
 }
@@ -493,6 +503,20 @@ function selftest() {
   const wrappedFixed = fixLines(wrapped, true);
   if (wrappedFixed.edits.length !== 0) FAIL("wrapped-span-mask", `a dash inside a line-wrapping span was edited: ${JSON.stringify(wrappedFixed.edits[0])}`);
   if (wrappedFixed.lines.join("\n") !== wrapped.join("\n")) FAIL("wrapped-span-mask", "the wrapped-span fixture changed even though no edit was recorded");
+
+  // A stray, genuinely unbalanced backtick (an authoring slip, not a real wrap) must not carry
+  // "open" past one line and hide an unrelated dash three lines later (found in the wild in the
+  // same pass 2 review pass: .sdlc/plans/rule-gates.md:163 to :236). The middle line here neither
+  // closes the phantom span nor opens a new one (an even count), so the cap must have reset by the
+  // third line and the dash there must be fixed normally, not swallowed.
+  const bogus = [
+    "a line with one stray ` backtick, an authoring slip",
+    "an ordinary line with no backticks at all",
+    `an unrelated sentence ${DASH} that must still be fixed.`,
+  ];
+  const bogusFixed = fixLines(bogus, true);
+  if (bogusFixed.edits.length !== 1 || bogusFixed.edits[0].lineIndex !== 2)
+    FAIL("stray-backtick-cap", `expected exactly one edit on line 3, got ${JSON.stringify(bogusFixed.edits)}`);
 
   // (4) Idempotence: a real, multi-rule, multi-line fixture run through `fixLines()` twice must
   // produce the SAME lines both times, with zero edits on the second pass (#730 review finding 5:
