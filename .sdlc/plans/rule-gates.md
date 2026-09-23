@@ -168,7 +168,7 @@ Every negative control that edits a file runs in a throwaway clone (`git clone -
 
 Checklist (the Orchestrator ticks it; the table below carries grades and paths):
 
-- [~] U1 (S) `svg-rules.mjs`: the `html:` count and the `fill: none` gate, two `styles.css` rules qualified · builder-l2 · reviewer-l1 · verifier-l1
+- [x] U1 (S) `svg-rules.mjs`: the `html:` count and the `fill: none` gate, two `styles.css` rules qualified · builder-l2 · reviewer-l1 · verifier-l1
 - [x] U2 (S) `branding.mjs`: allow-list of text extensions becomes a deny-list of binary ones · builder-l1 · reviewer-l1 · verifier-l1
 - [~] U3 (S) `em-dash.mjs`: the gate, its self-test and `--fix`, unregistered until U4 · builder-l3 · reviewer-l2 · verifier-l2
 - [ ] U4 (M) the sweep of main after G0, the gate registered, the hand edits (R0 lines, `voice-check.mjs:89`, one entry-file line) · builder-l3 · reviewer-l2 · verifier-l2
