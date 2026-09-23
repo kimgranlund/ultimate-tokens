@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene U7 · 🟢 (pass 2)
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-17 (evidence run: adopt-hygiene-U7-verifier-l3-p2, grade l3, Fable 5.1). Replaces the pass 1 🔴 on ac52be8. Branch `unit/hygiene-U7` @ 3fbeb5c (base 65bbda3; `sdlc/adopt` now 4f735dd), worktree `.worktrees/hygiene-U7` left at status 0; controls in five scratch worktrees (removed). Graded against the revised §U7 committed on `sdlc/adopt` @ 4f735dd. The handoff, review, and re-diagnosis were not used as evidence.
 Tally: 10 rows. 🟢 9 · 🟡 1 · 🔴 0. Both pass 1 🔴 gaps are closed.

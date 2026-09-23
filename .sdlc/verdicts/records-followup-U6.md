@@ -1,4 +1,5 @@
 # Verdict U6 · 🟢
+verdict: 🟢
 
 plan records-followup (#709), unit U6. Head `unit/rf-U6` @ `3ff969512f71ab7f044a89524b12d6f801df8d90`, unit base `UB` = `e0e5b551a8aec3f1b0e0d53182ecc2d441af83f6`, plan base `BASE` = `git merge-base origin/main HEAD` = `d34b4fb1beefff11c9be53ec039d4265c925da4a`. Graded 2026-09-19 by verifier-l2 in its own detached scratch worktree plus two throwaway clones under this seat's scratchpad, all under one directory removed by exact name. Criteria read from `.sdlc/plans/records-followup.md` at `e0e5b551` (revision 4): U6 rows 1 to 9 and plan rows P1, P4, P5, P6, P7. P2 and P3 are pre-land only and are not graded here.
 

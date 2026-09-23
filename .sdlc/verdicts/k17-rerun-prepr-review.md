@@ -6,6 +6,7 @@ base: d34b4fb1
 pass: 1
 reviewed: 2026-09-19
 seat: prepr-reviewer
+verdict: 🟢
 ---
 
 # Verdict k17-rerun pre-land review · 🟢 land, 0 🔴, 3 🟡
