@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: "#681"
 priority: P1
 lane: color-engine
@@ -430,3 +430,4 @@ The pre-ruling option text for each question is kept in the plan's git history (
 | 2026-09-23 | revision 37, owner ruling R26 via the Conductor: U10 also takes F3 (cap the envelope's `sd` at plus or minus 1, row U10-5, controls matching `origin/main`'s tint), rewords `hct.js:276` to name only the `hct.js` caches and point to #738 (U10-6), and removes every em dash from comments the plan adds to `tonal.js` (U10-7). F5 (the `_okL` memo) is ticket #738 and PR #737 still closes #686; F4 is ticket #739. Stale comments, the dead `gamutClamp` and the adia `1.2.0` tags stay carried. | F3 renders whole bands neutral in shipped palettes, so it is fixed before landing; the #686 claim stays true once the comment says what it covers. |
 | 2026-09-23 | revision 38, from the pre-land verify at `30bfaeeb` (45 🟢, 7 🟡, 1 🔴): C5 now names the `gap (19-stop)` allow-list at 72 and the `distinct (25-stop)` allow-list at 16, both ruled in `pif-u2.md` and frozen at U4, which the bullet had read as unconditional; a new section lists the ten changed paths no unit declared, each traced to its handoff. The 🔴 G6 (a board conflict against main at `b0fc3c65`) is closed by syncing main again after U10. The 648 em-dash lines in pre-existing text ride the rule-gates U4 sweep. | Plan text caught up with what the gates already enforce; no criterion's command or figure changes. |
 | 2026-09-23 | revision 39, owner ruling R27 via the Conductor: U10-5's expected tint is origin/main's hue at about half its chroma, which U10 at `872e0b7a` delivers; matching the chroma needs the per-side normalization U3 rejected, and that follow-up is noted on #725. The files the cap moved outside the declared list join the off-list section. | The ruled cap is kept; the row now states what was accepted. |
+| 2026-09-23 | revision 40, landed. PR #737 squashed as `8ba4bee4` at `899173f5` under R1 and R21 (`.sdlc/verdicts/preset-intent-fidelity-authz.md`); pre-land pass 2 🟢 (`.sdlc/verdicts/preset-intent-fidelity-prepr.md`), CI green, critic ACCEPT `issuecomment-5804699215`. #681, #686 (the `hct.js` caches, R26) and #668 closed; the plan is archived. The critic's three notes ride in #681's status comment; #738 and #739 are their own plans. | Close-out. |
