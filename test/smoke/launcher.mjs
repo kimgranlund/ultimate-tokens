@@ -124,8 +124,8 @@ async function legA() {
 async function legB() {
   const { proc, dir, close, ready } = launchChrome(process.execPath, [FIXTURE]);
   await ready;
-  const grandPid = readGrandchild("b", dir);
-  close();
+  let grandPid;
+  try { grandPid = readGrandchild("b", dir); } finally { close(); } // a FAIL here still closes the fake
   const gone = await waitUntil(() => !isAlive(proc.pid), 2000);
   if (!gone) throw new Error(`fake pid ${proc.pid} still alive 2s after close()`);
   await assertGrandchildGone("b", grandPid, "close()");
