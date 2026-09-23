@@ -40,4 +40,22 @@
 
 `npm run smoke` (U2-6): needs `node_modules` and Chrome; `npm test` was rerun, see the row.
 
-verdict: 🟡
+Round 1 verdict was 🟡, FIX-FIRST on F1; superseded by Round 2 below.
+
+## Round 2 · e78efd73 (F1 fix at b5b8dc47)
+
+Delta reviewed: `git diff 4c6782d4..HEAD`, `launcher.mjs` only. `grandchildWritten(dir)` reads the pid file and tests `^\d+\s*$`; `waitForGrandchild` (legs c, d, f) and leg (e)'s pending-launch poll wait on it instead of `existsSync`. `readGrandchild` still throws on `ENOENT`, an unparseable pid, or a dead pid, so the bounded wait cannot turn a missing grandchild into a pass. Scratch: clones under `$TMPDIR/sfU2rev3-XZ53` (`gap`, `mut`, `nospawn`), removed after; `0` grandchildren, `0` fakes, `0` `ultimate-tokens-smoke-*`, `launcher-legE-*` or `probe-*` dirs left; worktree `git status --short` shows only this file.
+
+| Row | State | Evidence | Negative control |
+|---|---|---|---|
+| F1 closed | 🟢 | Clone `gap` at e78efd73 whose fixture creates the pid file empty and writes the pid 300 ms later (`1 file changed, 1 insertion(+), 1 deletion(-)`), the preempted-fixture case: new launcher `exit 0`, `pass=6 FAIL=0`, `0` grandchildren, `0` fakes, `0` dirs left. Tight probe (`pidfile-probe2.mjs`, same 150 spawns as round 1 but polling on the `^\d+\s*$` predicate): `ok=150 empty-or-unparseable=0 missing=0` | The 4c6782d4 launcher (`git show 4c6782d4:test/smoke/launcher.mjs`) against the same `gap` fixture: `exit 1`, `pass=4 FAIL=2`, `leg (e): grandchild pid file reads ""`, `leg (f): grandchild pid file reads ""`; round 1's probe on the existence predicate read `empty-or-unparseable=20` of 150 |
+| U2-1 | 🟢 | Worktree head, 3 sequential: each `exit 0 pass=6 FAIL=0`; `env -u TMPDIR`: `exit 0 pass=6 FAIL=0`; 8 concurrent head runs: all `exit 0 FAIL=0`; last line `PASS: launcher discovers its port from DevToolsActivePort and leaves no process on close, SIGTERM, SIGINT or deadline`, `diff` against the 262ae996 line empty | U2-2's mutant below: `exit 1`, `5` FAIL |
+| U2-2 | 🟢 | Clone `mut` at e78efd73, `chrome.mjs:66` parent-only (`1 file changed, 1 insertion(+), 1 deletion(-)`): `exit 1`, `pass=1 FAIL=5 grandchildFAIL=5`: `leg (b): grandchild pid 38948 still alive 2s after close()`, `leg (c): ... after SIGTERM`, `leg (d): ... after SIGINT`, `leg (e): ... after the deadline`, `leg (f): ... after SIGTERM` | Round 1's `old` clone, the same mutant at 262ae996: `exit 0`, `6` pass (not rerun in round 2; the base did not move) |
+| U2-3 | 🟢 | `pgrep -f fake-chrome-grandchild \| wc -l` right after the mutant run: `6`; after every head run: `0` | Clone `nospawn` at e78efd73 (`1 file changed, 1 deletion(-)`): `exit 1`, `5` FAIL, each `leg (<x>): grandchild pid file missing in <dir>`; `0` grandchildren, `0` fakes, `0` dirs left, so the whole-pid wait still ends in `ENOENT` and still cleans up |
+| U2-5 | 🟢 | `git diff --stat origin/plan/small-fixes...HEAD -- . ':!.sdlc'`: `2 files changed, 78 insertions(+), 14 deletions(-)`, names `test/smoke/fixtures/fake-chrome.mjs`, `test/smoke/launcher.mjs`; delta em dashes `0`, `**` `0` | Round 1's `mut` working tree listed `chrome.mjs` as a third file |
+| Leaks on the new path | 🟢 | `gap` with the old launcher (the red that F1 described): `0` grandchildren, `0` fakes, `0` dirs after the two FAILs, so even the pre-fix red leaked nothing; every round 2 run above ends with the same three zeros | The mutant run leaves `6` grandchildren by design (U2-3 reads them), reaped by `pkill` here and by the fixture's 60 s cap otherwise |
+| F2, F3 | 🟢 | Handoff Rework answers match round 1's evidence: F2 names the reaping PID 1 requirement with the three shapes that satisfy it (`sh -c`, `docker run --init`, a VM init), F3 keeps `deadlineMs: 1500` and says where to raise it; `git diff 4c6782d4..HEAD -- test/smoke/chrome.mjs test/smoke/fixtures/fake-chrome.mjs` is empty, so no code moved for either. None needed | Round 1's Docker rows: `node` as PID 1 `exit 1` at base and head, `sh -c` and `--init` `exit 0` |
+
+U2-4 (Docker) and U2-6 (`npm test`, `npm run smoke`) were not rerun in round 2: the delta is a poll predicate inside `launcher.mjs`, covered by the rows above on macOS with `TMPDIR` set and unset; the builder's Rework table records both green at b5b8dc47 and the verifier's grading runs them again.
+
+verdict: 🟢
