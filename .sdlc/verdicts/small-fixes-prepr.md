@@ -2,17 +2,17 @@
 kind: verdict
 plan: small-fixes
 seat: verifier
-pass: 2
-passes: 1 at a1a4ffc6 🔴, 2 at 434b5b58 🔴
+pass: 3
+passes: 1 at a1a4ffc6 🔴, 2 at 434b5b58 🔴, 3 at 262ae996 🟢
 pr: 735
 ticket: "#717"
 written: 2026-09-22
 ---
 
-# Pre-PR · small-fixes · passes 1 to 2
+# Pre-PR · small-fixes · passes 1 to 3
 
-Current finding: 🔴 at `434b5b58`, in `## Pass 2` below, the block the adapter's `check_gate` reads.
-Pass 1 is history: it graded `a1a4ffc6`. For the verdict, read the last block, not this one.
+Current finding: 🟢 at `262ae996`, in `## Pass 3` below, the block the adapter's `check_gate` reads.
+Passes 1 and 2 are history: they graded `a1a4ffc6` and `434b5b58`. For the verdict, read the last block, not this one.
 
 ## Pass 1, at `a1a4ffc6`
 
@@ -148,3 +148,38 @@ the 9333 guard.
 
 verdict: 🔴
 sha: 434b5b586acba1f87b9d15b3418d61e56e6f14f0
+
+## Pass 3, at `262ae996`
+
+verdict: 🟢
+sha: 262ae9966be8f89392d0e9a6eeb24d042980f8e6
+
+`plan/small-fixes` at `262ae996`, draft PR #735. The only change since pass 2 is one record:
+`git diff --numstat 434b5b58 262ae996` gives `2 0 .sdlc/verdicts/small-fixes-U1-review.md`. That is a
+two-line delta to a record with no code in it, so I ran this pass myself at grade L2, which matches
+my own model. I reran every row the delta could move, plus CI, in a clone at `262ae996`. Pass 2's
+Chrome and unit rows carry over on custody: the five code blobs are unchanged.
+
+The added line is `verdict: 🟢`, and it is truthful. The title reads `🔁 FIX-FIRST`, but the record's
+last block, `## Round 2 · re-review at 85f6e1e5 · 🟢 PASS`, closes on `🟢 PASS`, which re-grades the
+title. The record's own final grade is 🟢.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| B1 | pass 2's blocker: every `.sdlc/checks/*.sh` green | 🟢 | `verdicts 82 graded 35 grandfathered 47 bad 0`, exit `0`; the other four print `stale total: 0`, `stale total: 0`, `range mismatches: 0`, `bad 0`, each exit `0` | the added line deleted in a clone (`1 file changed, 1 deletion(-)`): `MISSING small-fixes-U1-review.md: no verdict: line`, `bad 1`, exit `1` |
+| C1 | nothing ungraded lands | 🟢 | the 5 code paths at `262ae996` have the same blobs as at `a9c574da` (`same` ×5); the delta since `434b5b58` is the one record | pass 2's: `a1a4ffc6` differs on `launcher.mjs` |
+| P1 | `npm test`, no `node_modules` | 🟢 | `✓ all 48 test files passed`, exit `0`, tree `0` | pass 2's `scrim` plant, same test path at the same code: `exit 1` |
+| P3 | branding | 🟢 | `branding: clean (575 files scanned)`; the delta adds no dash | pass 2's plant: `FAIL: 3` |
+| P4 | scope wall | 🟢 | `origin/main` moved to `24c22dd6` (2 records commits, `3e99fdca` and `24c22dd6`); against the merge base `b641c159` the filter prints `0` | the four-name fixture prints `2` (pass 2) |
+| P5b | CI green on this sha | 🟢 | run `35803212101`, headSha `262ae996`, `success`: `build-test`, `panda-smoke`, `corpus-contrast` `success`; build-test log: launcher `pass` `6`, `PASS: launcher` `1`, `SMOKE PASS` `1`, `FAIL: launcher` `0` | run `35785765215` at `a1a4ffc6`: `FAIL: launcher (1/6 legs failed)`, `SMOKE PASS` `0` |
+| X1 | PR state | 🟢 | `262ae996`, draft, `MERGEABLE`, `CLEAN` | the head sha compared with the target: equal |
+| X2 | merge onto the moved main | 🟢 | `git merge-tree --write-tree origin/main 262ae996`: exit `0`, tree `7f1f9292` | main plus a planted `const PORT = 9334` commit (`7ef89a10`): `CONFLICT` `1`, exit `1` |
+| X3 | the post-squash tree | 🟢 | tree `7f1f9292` read into a scratch worktree: `verdicts 83 graded 36 grandfathered 47 bad 0` | the B1 control shows the same check reds a missing line |
+| U1 | P2, P5a, U1-1 to U1-12 | 🟢 | carried from pass 2 on custody: `12` unit rows 🟢, U1-11 `0` of `20` | pass 2's controls, same blobs |
+
+Carried unchanged from pass 2, none blocking: N1 (F5, the bare `rmSync` at `launcher.mjs:126`), N2
+(the plan's stale Design text at `small-fixes.md:56,59,136`), N3 (the handoff's unretracted pass-1
+claims). They belong to the plan's close-out.
+
+verdict: 🟢
+sha: 262ae9966be8f89392d0e9a6eeb24d042980f8e6
