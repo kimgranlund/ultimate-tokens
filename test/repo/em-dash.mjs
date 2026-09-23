@@ -463,7 +463,10 @@ function selftest() {
     { name: "R5 before period, space required", md: true, line: `(#477) ${DASH} .btn`, expectRule: "R8" },
     { name: "R5 before period, punctuation followed by a space", md: true, line: `keep the pause ${DASH} . Next sentence`, expectRule: "R5", expectFix: "keep the pause. Next sentence" },
     { name: "R6 line-end", md: true, line: `gen:type-fonts ${DASH}`, expectRule: "R6", expectFix: "gen:type-fonts," },
-    { name: "R7 line-start after a word", md: true, line: `${DASH} this file is only the mental model.`, prevLine: "assumes", expectRule: "R7", expectFix: "this file is only the mental model.\nassumes," },
+    // The line-before's trailing whitespace has to be trimmed BEFORE the comma is appended, and
+    // this fixture's prevLine carries a trailing space so a mutant that appends `,` without
+    // trimming (`out[i-1] + ","`) fails here, not just one that changes the comma itself.
+    { name: "R7 line-start after a word", md: true, line: `${DASH} this file is only the mental model.`, prevLine: "assumes  ", expectRule: "R7", expectFix: "this file is only the mental model.\nassumes," },
     { name: "R8 default", md: true, line: `TKT-0015 ${DASH} undocumented elsewhere`, expectRule: "R8", expectFix: "TKT-0015, undocumented elsewhere" },
     // Finding 1: a span dash sits BEFORE the outside dash that actually triggers a rule. The old
     // code found `line.indexOf(DASH)` on the raw line and hit the span's dash first.
