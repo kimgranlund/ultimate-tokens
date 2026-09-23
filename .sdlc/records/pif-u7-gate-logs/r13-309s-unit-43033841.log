@@ -1,0 +1,118 @@
+# One redaction: the session scratchpad prefix on one 'wrote ...' line is replaced by <scratch>; nothing else edited.
+# npm test at unit/pif-u7 43033841, throwaway clone (git clone -q --shared <worktree> $F/neg), 2026-09-21
+# commands run (from $F/neg, HEAD 43033841, tree clean, guard pgrep -f 'node .*test/(run|engine|ui)' | wc -l = 0):
+#   echo "HEAD $(git rev-parse --short HEAD) GUARD $(pgrep -f 'node .*test/(run|engine|ui)' | wc -l | tr -d ' ') START $(date +%H:%M:%S)"
+#   ( sleep 5; echo "UPTIME INSIDE t+5s: $(uptime)" ) &
+#   { time npm test > $S/out/npmtest.txt 2>&1; echo "EXIT $?"; } 2>&1; wait
+#   echo "UPTIME AFTER: $(uptime)"; echo "TREE AFTER: $(git status --short | wc -l | tr -d ' ')"
+# shell: zsh, so the time line is zsh's format. Not a baseline figure; recorded verbatim.
+
+## wrapper output (verbatim)
+HEAD 43033841 GUARD 0 START 07:41:27
+UPTIME INSIDE t+5s:  7:41  up 13 days, 13:38, 11 users, load averages: 2.64 3.79 4.29
+npm test > $S/out/npmtest.txt 2>&1  319.59s user 3.83s system 104% cpu 5:09.34 total
+EXIT 0
+UPTIME AFTER:  7:46  up 13 days, 13:43, 11 users, load averages: 4.42 4.02 4.21
+TREE AFTER: 0
+✓ all 49 test files passed
+
+[exited with code 0]
+
+## npm test output (verbatim, $S/out/npmtest.txt)
+
+> ultimate-tokens@1.2.0 test
+> npm run gen:figma-assets && npm run gen:mcp-assets && npm run gen:categories && npm run gen:adia-exports && npm run bundle && npm run gen:figma-ui && node test/run.mjs
+
+
+> ultimate-tokens@1.2.0 gen:figma-assets
+> node scripts/gen-figma-binder-code.mjs && node scripts/gen-figma-assets.mjs
+
+wrote figma/binder/figma-semantic-binder/code.js (spliced FLOAT_EXECUTOR + COLOR_EXECUTOR + ROLE_TABLE from canonical sources)
+wrote src/ui/figma-plugin-assets.js 55.8 KB
+
+> ultimate-tokens@1.2.0 gen:mcp-assets
+> node scripts/gen-mcp-assets.mjs && node scripts/gen-describe-mcp-assets.mjs
+
+wrote src/ui/mcp-assets.js 20.2 KB
+wrote src/ui/describe-mcp-assets.js 786.3 KB (26 files)
+
+> ultimate-tokens@1.2.0 gen:categories
+> node scripts/gen-categories.mjs
+
+  categories/architecture.js  (48 palettes · 12 volumes)
+  categories/brands.js  (7 palettes · 1 volumes)
+  categories/cuisine.js  (48 palettes · 12 volumes)
+  categories/film.js  (48 palettes · 12 volumes)
+  categories/literature.js  (48 palettes · 12 volumes)
+  categories/music.js  (48 palettes · 12 volumes)
+  categories/nature.js  (48 palettes · 12 volumes)
+  categories/travel.js  (48 palettes · 12 volumes)
+wrote <scratch>/u7v/neg/src/ui/categories/index.js  (8 categories · 343 palettes total)
+anchor: 3380 sampled/status palette(s) carry a byte-exact source anchor · 10 outside the ramp's [9.95, 95.05] L* window (prime.DEFAULT still exact; the ramp's own stop 500 clamps to the window edge, named in test/engine/anchor.mjs's anchor-ramp allow-list)
+
+> ultimate-tokens@1.2.0 gen:adia-exports
+> node scripts/gen-adia-derived-exports.mjs
+
+wrote docs/reference/data/adia-oklch-export.css  (adia-oklch-export 1.2.0 · 111373 chars)
+wrote docs/reference/data/adia-radix-export.mjs  (adia-radix-export 1.2.0 · 135209 chars)
+
+> ultimate-tokens@1.2.0 bundle
+> node scripts/bundle.mjs
+
+wrote dist/ultimate-tokens.html 4114.5 KB
+
+> ultimate-tokens@1.2.0 gen:figma-ui
+> node scripts/gen-figma-ui.mjs
+
+wrote figma/plugin/ui.html 4117.5 KB
+▶ engine/hct.mjs           pass
+▶ engine/tonal.mjs         pass
+▶ engine/semantic.mjs      pass
+▶ engine/exports.mjs       pass
+▶ engine/okhsl.mjs         pass
+▶ engine/derive.mjs        pass
+▶ engine/data-hues.mjs     pass
+▶ engine/prime.mjs         pass
+▶ engine/anchor.mjs        pass
+▶ engine/type.mjs          pass
+▶ engine/font-fallbacks.mjs pass
+▶ engine/geometry.mjs      pass
+▶ engine/flags.mjs         pass
+▶ engine/ds-gates.mjs      pass
+▶ engine/categories.mjs    pass
+▶ engine/adia-derived-exports.mjs pass
+▶ engine/curated-contrast.mjs pass
+▶ ui/model.mjs             pass
+▶ ui/persist.mjs           pass
+▶ ui/shell.mjs             pass
+▶ ui/zip.mjs               pass
+▶ ui/poster-strip.mjs      pass
+▶ ui/headless-boot.mjs     pass
+▶ figma/plugin.mjs         pass
+▶ figma/binder.mjs         pass
+▶ figma/mode-apply.mjs     pass
+▶ figma/style-plan.mjs     pass
+▶ figma/migrations.mjs     pass
+▶ figma/live-diff.mjs      pass
+▶ mcp/core.mjs             pass
+▶ mcp/brand-kit.mjs        pass
+▶ mcp/describe-kit-core.mjs pass
+▶ mcp/describe-rubric.mjs  pass
+▶ mcp/png-swatch-board.mjs pass
+▶ mcp/describe-mcp-core.mjs pass
+▶ mcp/describe-mcp.mjs     pass
+▶ mcp/brand-kit-merged-core.mjs pass
+▶ mcp/brand-kit-merged.mjs pass
+▶ mcp/describe-eval.mjs    pass
+▶ mcp/describe-mcp-package.mjs pass
+▶ plugin/manifest.mjs      pass
+▶ plugin/color-tokens.mjs  pass
+▶ plugin/typography-tokens.mjs pass
+▶ plugin/geometry-tokens.mjs pass
+▶ plugin/hosted-pack.mjs   pass
+▶ repo/branding.mjs        pass
+▶ repo/doc-mutation-lane.mjs pass
+▶ repo/citations.mjs       pass
+▶ repo/gate-report.mjs     pass
+
+✓ all 49 test files passed

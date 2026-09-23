@@ -1,0 +1,9 @@
+LOAD-START: 15:34  up 12 days, 21:31, 14 users, load averages: 16.36 13.43 21.96
+EXIT=0
+LOAD-END: 15:46  up 12 days, 21:43, 16 users, load averages: 8.72 11.01 15.74
+npm test > /tmp/r3test.log 2>&1  671.56s user 14.35s system 95% cpu 11:56.04 total
+
+✓ all 49 test files passed
+FAIL: 0  tree:        0
+
+[exited with code 0]

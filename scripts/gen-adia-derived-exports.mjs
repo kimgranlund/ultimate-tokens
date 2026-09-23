@@ -62,8 +62,13 @@ export const ARTIFACTS = [
   // 1.1.0 (#638): both artifacts re-exported from the SAME tagged document under
   // EXPORT_SCHEMA_VERSION 3 — the bump policy's `minor` case. Only the schema stamp and this
   // provenance block moved; no token value, name or ordering changed.
-  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "1.1.0" },
-  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.1.0" },
+  // 1.2.0 (#681, plan revision 28): the #681 engine (stored anchor, shared chroma envelope, CIE-L*
+  // prime ladder) moved TOKEN VALUES in both artifacts from the same unchanged document at the same
+  // EXPORT_SCHEMA_VERSION 3, so `minor` again, since a consumer's byte-compare breaks while the shape
+  // it compares does not: no key, name or ordering moved. SOURCE_TAG stays `adia-brand-document@1.0.0`
+  // because `brands.json` is byte-identical to origin/main, so no document tag is cut (C9).
+  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "1.2.0" },
+  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.2.0" },
 ];
 
 // exportRadix's own reserved alias keys (I4, ticket #637): promoted into src/engine/exports.js as
