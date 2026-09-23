@@ -71,3 +71,5 @@ P4 note: the rework's merge (`c215331a`, 2026-09-22T13:30) brought the branch le
 ### Verdict
 
 🟢 PASS. Finding 1 is fixed at the mechanism level (verified by reproduction, not just by the new leg), leg (f) and all three original controls discriminate correctly against `85f6e1e5`, and every other row I reran reproduces the rework handoff's account. No new findings.
+
+verdict: 🟢
