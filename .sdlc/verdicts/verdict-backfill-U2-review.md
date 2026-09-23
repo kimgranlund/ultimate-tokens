@@ -51,7 +51,7 @@ The control column is the same file's last `verdict:` value at `357fcb39`, read 
 | U2-5 | list is its header alone, check still reads it | 🟢 | `0`, `1`, `verdicts 82 graded 82 grandfathered 0 bad 0`, `exit 0` | `echo survey.md >> $L`: `CLEARED survey.md: grandfathered but carries the field`, `bad 1`, exit 1 |
 | U2-6 | U1 rows hold at the U2 head | 🟢 | U1-1 `31`, no `MISMATCH`; U1-2 `28 1` and three `verdict: 🟢`; U1-4 stands since `git diff --name-only 357fcb39..HEAD` over the 31 prints `0` | `sed '2s/🟢/🟡/'` on `adopt-hygiene-U1.md`: `title=🟢 line=🟡`; the same loop run with the 16 U2 names instead prints 16 `MISMATCH` lines (e.g. `MISMATCH k17-rerun-checkability.md title=🔴 line=🟢`) |
 | P1 | `npm test` green, tree clean | 🟢 | `✓ all 48 test files passed`, `48`, `0`; regression guard only, nothing U2 touches is on the test path | `"scrim` to `"scrimX` in `role-table.json`: `neg exit 1`, `✗ 1/48 test file(s) failed` |
-| P2 | branding clean, no added em dash | 🔴 | `branding: clean (573 files scanned)`, then `2`, `0`. Both dashes are U2's, in `.sdlc/handoffs/verdict-backfill-U2.md:19` (the U11 row, the dash between its `## Verdict` span and its `🟡 pass with notes` span) and `:26` (the prepr row, `... blocking finding." — FIX-FIRST reads 🔴`) | the same command over `3e99fdca..357fcb39` (U1's head) prints `0`; `decision-records.md` copied to `.sdlc/verdicts/x.md`: branding exit `1` |
+| P2 | branding clean, no added em dash | 🔴 | `branding: clean (573 files scanned)`, then `2`, `0`. Both dashes are U2's, in `.sdlc/handoffs/verdict-backfill-U2.md:19` (the U11 row, the dash between its `## Verdict` span and its `🟡 pass with notes` span) and `:26` (the prepr row, the dash between `blocking finding."` and `FIX-FIRST reads 🔴`) | the same command over `3e99fdca..357fcb39` (U1's head) prints `0`; `decision-records.md` copied to `.sdlc/verdicts/x.md`: branding exit `1` |
 | P3 | scope wall | 🟢 | `0`, `0`, `0`; `357fcb39..2ffac52e` names 18 paths: the 16, the list, the handoff, nothing else, no `pif-*` | fixture `survey.md`, `pif-u2.md`, `roadmap.md` through the first filter: `2` |
 | P4 | check green, list holds no name | 🟢 | `verdicts 82 graded 82 grandfathered 0 bad 0`, `exit 0`, `0` | CLEARED as in U2-5; `records-tidy-U1-review.md` line 2 deleted: `MISSING records-tidy-U1-review.md: no verdict: line`, `bad 1`, exit 1 |
 | P5 | each file changed by its line only | 🟢 | `42 1 0`, `1 1 1`, `2 2 0`, `2 3 1`; summed `added 53 deleted 3 files 47`, the plan's reference | one extra line inserted in `baseline-regex-U1-review.md`: numstat `2 0` for a line-2 file, outside its allowed `1 0` |
@@ -70,3 +70,25 @@ The control column is the same file's last `verdict:` value at `357fcb39`, read 
 Verdict: FIX-FIRST. The 16 tokens, placements, pinned body, list and scope are right; the one red is two dashes in the handoff, a one-commit repair.
 
 verdict: 🔴
+
+# Round 2 · 🟢 PASS at `be3dd931`
+
+| Field | Value |
+|---|---|
+| Head | `be3dd931`, one handoff commit on top of `4f11c429` (this review, pass 1) |
+| Where | a fresh `git clone -q --shared` of `unit/bf-U2` at `be3dd931`; mutations there only |
+| Change | `git diff --stat 2ffac52e..be3dd931` names only the handoff and this review; the 16 records and the list are byte-identical to pass 1's graded head |
+
+| # | Criterion | State | Evidence | Negative control (run by me) |
+|---|---|---|---|---|
+| F1 | P2 at the head, all three legs | 🟢 | `branding: clean (574 files scanned)`, then `0`, `0` with this review's working copy in place. At the committed `be3dd931` alone the raw leg read `1`: the glyph was in this review's own pass 1 P2 row, inside a backtick quote of the handoff, which the stripped leg skips and the raw leg does not. That quote is reworded in this uncommitted copy, so the review's commit brings the raw leg to `0` | the pass 1 revision `2ffac52e` reads `2` on the stripped leg; one planted line holding U+2014, `printf 'x \xe2\x80\x94 y\n'` appended to the handoff, reads `1`; `decision-records.md` copied to `.sdlc/verdicts/x.md`: branding exit `1` |
+| F2 | the handoff no longer calls its table the verifier's | 🟢 | `grep -c "verifier's own derivation"` prints `0`; heading `10:## The builder's own derivation, independent of the plan's table` | the same grep on `2ffac52e:.sdlc/handoffs/verdict-backfill-U2.md` matched line `10` |
+| F3 | no en dash in the handoff | 🟢 | en dash line count `0`; the census row now reads `corrections (6 to 13)` | at `2ffac52e` the census row carried `(6–13)` |
+| C1 | the handoff's new Hygiene claims are true | 🟢 | the handoff's own lines, raw `0` and stripped `0`; the 16 records plus the list over `3e99fdca`, raw `0` | the pass 1 handoff read raw `2` by the same perl |
+| C2 | nothing but the handoff moved in the rework | 🟢 | check `verdicts 83 graded 83 grandfathered 0 bad 0`; numstat over the 16 from `357fcb39` sums `22 3 16`, as at pass 1 | at `4f11c429` the same `git diff --name-only 4f11c429..be3dd931` would list any record; it lists `.sdlc/handoffs/verdict-backfill-U2.md` alone |
+
+| # | Severity | Note |
+|---|---|---|
+| N2 | note | the handoff's `Ran` row and Hygiene line still say `572 files` for branding; that was the count when the builder ran it, and the head now scans `574` because two records were added since. Dated, not false |
+
+verdict: 🟢
