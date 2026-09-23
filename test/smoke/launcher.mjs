@@ -63,9 +63,13 @@ const readGrandchild = (leg, dir) => {
   return pid;
 };
 // The pid file is written at the fixture's startup, so a leg that has not awaited discovery (e, f)
-// polls for it first, for at most `ms`.
+// polls for it first. It polls for a whole pid, not for the file: writeFileSync opens (creating the
+// file empty) before it writes, and a read in that gap gets "" on a healthy fixture.
+const grandchildWritten = (dir) => {
+  try { return /^\d+\s*$/.test(readFileSync(join(dir, GRANDCHILD_PID_FILE), "utf8")); } catch { return false; }
+};
 const waitForGrandchild = async (leg, dir, ms) => {
-  await waitUntil(() => existsSync(join(dir, GRANDCHILD_PID_FILE)), ms);
+  await waitUntil(() => grandchildWritten(dir), ms);
   return readGrandchild(leg, dir);
 };
 const assertGrandchildGone = async (leg, pid, what) => {
@@ -237,7 +241,7 @@ async function legE() {
     // the dir. Polling stops once `ready` settles, so a slow fixture reds here, never passes.
     let settled = false;
     ready.then(() => { settled = true; }, () => { settled = true; });
-    await waitUntil(() => settled || existsSync(join(dir, GRANDCHILD_PID_FILE)), 1500);
+    await waitUntil(() => settled || grandchildWritten(dir), 1500);
     try { grandPid = readGrandchild("e", dir); } catch (e) { grandError = e; }
     await ready;
   } catch (e) {
