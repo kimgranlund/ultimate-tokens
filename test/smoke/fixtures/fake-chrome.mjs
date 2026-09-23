@@ -6,6 +6,14 @@
 // that write, simulating a browser that never comes up (the launcher's deadline path).
 // FAKE_CHROME_DELAY_MS=<ms> delays the write instead of skipping it, simulating a browser that is
 // still starting up (the launcher's signal-before-discovery path, leg (f)).
+//
+// Under every mode it first spawns one long-lived grandchild, not detached, so it shares this
+// process's group the way a real Chrome's renderer and GPU helpers share the browser's, and writes
+// the grandchild's pid to fake-chrome-grandchild.pid in the profile directory. A close() that kills
+// only this pid leaves the grandchild behind, and launcher.mjs legs (b) to (f) read that file to
+// catch it. The grandchild carries the marker `fake-chrome-grandchild` in its argv (for pgrep) and
+// exits on its own after 60 s, so a red run cannot leave it behind for good.
+import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -20,6 +28,10 @@ const dir = dirArg ? dirArg.slice("--user-data-dir=".length) : null;
 // tolerated it; refusing anything but "0" here makes that regression fail leg (a) outright.
 if (port !== "0") { console.error(`fake-chrome: expected --remote-debugging-port=0, got ${portArg}`); process.exit(2); }
 if (!dir) { console.error("fake-chrome: missing --user-data-dir"); process.exit(2); }
+
+// One statement on purpose: deleting it removes the grandchild and its pid file together, and the
+// legs must then red on the missing file rather than pass with no grandchild to check.
+writeFileSync(join(dir, "fake-chrome-grandchild.pid"), `${spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)", "fake-chrome-grandchild"], { stdio: "ignore" }).pid}\n`);
 
 const server = createServer((req, res) => {
   if (req.url === "/json/version") {
