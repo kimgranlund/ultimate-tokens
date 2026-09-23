@@ -202,6 +202,46 @@ function maskMdLine(currentText, role) {
   return chars.join("");
 }
 
+// One boolean per line of a `.md` file: true for a line INSIDE a fenced block (the fence markers
+// themselves are false). Reuses `fenceMarkerOf()`, independent of `computeMdRoles()`'s span work
+// -- only the refused list's "habitat" column needs it (revision 11).
+function computeFenceFlags(lines) {
+  const flags = new Array(lines.length).fill(false);
+  let inFence = false, fenceMarker = null;
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    if (!inFence) {
+      const marker = fenceMarkerOf(raw);
+      if (marker) { inFence = true; fenceMarker = marker; continue; }
+    } else {
+      flags[i] = true;
+      const close = raw.trim().match(/^(`{3,}|~{3,})\s*$/);
+      if (close && close[1][0] === fenceMarker[0] && close[1].length >= fenceMarker.length) { inFence = false; fenceMarker = null; }
+    }
+  }
+  return flags;
+}
+// A plain-English label for a refused line with no lettered sub-construct and no near-miss rule
+// (revision 11's refused list prints one per line): the Markdown block it sits in, or, in a
+// non-Markdown file, whether the dash is inside a string literal, a comment-only line, or a
+// trailing comment after real code.
+function habitatOf(rel, raw, md, inFence) {
+  const trimmed = raw.trim();
+  if (md) {
+    if (inFence) return "fence";
+    if (trimmed.startsWith(">")) return "quote";
+    if (isListItemLine(raw)) return "list";
+    if (isTableRowLine(raw)) return "table";
+    if (isHeadingLine(raw)) return "heading";
+    return "paragraph";
+  }
+  if (/^(\/\/|#|\/\*|\*)/.test(trimmed)) return "comment";
+  const markerIdx = raw.search(/\/\/|#/);
+  if (markerIdx > 0 && raw.slice(0, markerIdx).trim() !== "") return "trailing comment";
+  if (/["'`]/.test(raw)) return "string";
+  return "comment";
+}
+
 function prevNonSpace(line, idx) {
   let i = idx - 1;
   while (i >= 0 && line[i] === " ") i--;
@@ -224,13 +264,6 @@ const LONE_TOKEN_RE = new RegExp(`(?:\\\\)?(["'\`])${DASH}(?:\\\\)?\\1`);
 // A table cell whose whole content is the dash: `| \u2014 |`. In a `.md` file this is R1 (the
 // gate + fix); in any other file it is a table row a program prints (R0 (b)).
 const CELL_RE = new RegExp(`\\|\\s*${DASH}\\s*\\|`);
-// A table cell that OPENS with the dash but carries more text after it (not the whole-cell CELL_RE
-// case above): a presence matrix where the dash means "absent", never a pause -- R0 (f), plan
-// revision 9.
-const CELL_OPEN_DASH_RE = new RegExp(`\\|\\s*${DASH}(?!\\s*\\|)`);
-// A leading comment or quote marker with nothing else before the dash: `//`, one or more `#`, or
-// `>` (R0 (g), plan revision 10).
-const MARKER_PREFIX_RE = /^(\/\/|#+|>)$/;
 // The R1 FIX form: global, and a lookahead on the closing `|` so it is never consumed, which is
 // what lets two empty cells on the same row (sharing one `|` between them) both match (#730
 // review finding 2: consuming the closing pipe left the next cell's opening pipe missing, and R8
@@ -242,8 +275,41 @@ const HEADING_RE = /^#{1,6} /;
 // A bullet whose first token is a code span or a bold label, then the dash.
 // A "bullet" here is either an unordered marker (`-`/`*`) or a numbered-list marker (`1.`).
 const BULLET_LABEL_RE = new RegExp(`^\\s*(?:[-*]|\\d+\\.)\\s+(\`[^\`]*\`|\\*\\*[^*]+\\*\\*)\\s*${DASH}`);
-const WORD_END_RE = /[A-Za-z0-9)\]}"'`”’]$/;
 const PUNCT_END_RE = /[.,;:!?]$/;
+
+// -- The positive guard (plan revision 11) ----------------------------------------------------
+// Five passes grew R0 one lettered construct at a time, and the re-diagnosis
+// (`.sdlc/plans/rule-gates-U3-rediagnosis.md` §1) showed the list was still open: a legend
+// naming the glyph, a drawn chart line, a heading in an exported string, a question label, a
+// glued field name, an aligned comment column and a status mark all slipped through revision 10.
+// The owner ruled B: flip the guard from a negative list of what `--fix` must not touch to a
+// positive test of what it may. A dash may be rewritten only where it sits between two words: an
+// actual space on each side (never glued, `relTrackEm[dash] tracking`), the nearest character
+// before that space a letter, a digit or a CLOSING token (bracket, quote, backtick, a bold/strike
+// marker, `°`, `%`, `…`), and the nearest character after the other space a letter, a digit or an
+// OPENING token (bracket, quote, backtick, `*`, `_`, `~`, `#`, `$`, `@`, `&`, `<`, `§`). Anything
+// that fails either side -- a slash before an emoji legend, a `?` before a question label, a `>`
+// or `/` from an aligned placeholder, no space at all -- is refused, whole line, no guess.
+const GUARD_BEFORE_CHARS = /[A-Za-z0-9)\]}"'`*_~°%…”’]/;
+const GUARD_AFTER_CHARS = /[A-Za-z0-9(\[{"'`*_~#$@&<§“‘]/;
+function guardHolds(line, idx) {
+  if (line[idx - 1] !== " " || line[idx + 1] !== " ") return false;
+  const pv = prevNonSpace(line, idx);
+  const nx = nextNonSpace(line, idx);
+  if (pv < 0 || !GUARD_BEFORE_CHARS.test(line[pv])) return false;
+  if (nx >= line.length || !GUARD_AFTER_CHARS.test(line[nx])) return false;
+  return true;
+}
+function guardBeforeHolds(line, idx) {
+  if (line[idx - 1] !== " ") return false;
+  const pv = prevNonSpace(line, idx);
+  return pv >= 0 && GUARD_BEFORE_CHARS.test(line[pv]);
+}
+function guardAfterHolds(line, idx) {
+  if (line[idx + 1] !== " ") return false;
+  const nx = nextNonSpace(line, idx);
+  return nx < line.length && GUARD_AFTER_CHARS.test(line[nx]);
+}
 
 function isMd(rel) { return rel.endsWith(".md"); }
 
@@ -263,54 +329,61 @@ function classifyLine({ line, prevLine, md, skipStructural = false }) {
   if (md && new RegExp(`"${DASH}"`).test(line)) return { rule: "R0", construct: "c" };
   // R0 (e): a lone-glyph string token in a non-Markdown file, plain or backslash-escaped.
   if (!md && LONE_TOKEN_RE.test(line)) return { rule: "R0", construct: "e" };
-  // R0 (f): a Markdown table cell that opens with the dash and carries more text -- a presence
-  // matrix where the dash means "absent" (`| [dash] (mapped indirectly) |`), not a pause R4 can drop
-  // or an empty cell R1 can rename (plan revision 9, `export-drift.md:212`): refused and named,
-  // U4 rewrites it by hand as `| none (mapped indirectly) |`.
-  if (md && CELL_OPEN_DASH_RE.test(line)) return { rule: "R0", construct: "f" };
 
   // R1: a Markdown table cell that is only the dash. A SHAPE rule: fires once per line.
   if (!skipStructural && md && CELL_RE.test(line)) return { rule: "R1" };
 
+  // Line-start dash: R7 (join to the sentence above, the guard's before side read across the
+  // wrap, no punctuation there, and the guard's after side holding on this line) or a plain
+  // refusal (revision 11: what was R0 (a)/(d)/(f)/(g) all failed the guard anyway and need no
+  // letter; a full stop, a leading `//`/`#`/`>` marker, and a table cell's opening `|` are none
+  // of them a letter, digit or closing/opening token).
   for (const idx of idxs) {
-    // R0 (a): a dash right after a full stop.
-    const pv = prevNonSpace(line, idx);
-    if (pv >= 0 && line[pv] === ".") return { rule: "R0", construct: "a" };
-
-    // R0 (g): the only text before the dash on the line is a leading comment or quote marker
-    // (`//`, `#`, `>`) -- a JS/YAML comment, or a Markdown blockquote (an email sign-off in
-    // `store-copy.md:486`: `> [dash] Ultimate Tokens`). The plain line-start check just below
-    // (`line.slice(0, idx).trim() === ""`) does not see this: the marker itself is non-blank
-    // text before the dash, so it fell through to R8's generic ", " right after the marker
-    // (plan revision 10, verifier row 19). Neither R7's join nor R0 (d)'s "line before ends in
-    // punctuation" applies here -- there is no line before to join or check; refuse instead.
-    if (MARKER_PREFIX_RE.test(line.slice(0, idx).trim())) return { rule: "R0", construct: "g" };
-
-    // Line-start dash: R7 (join to the sentence above) or R0 (d) (the line before already ends
-    // in punctuation, so joining would double it up).
     if (line.slice(0, idx).trim() === "") {
       const prevTrim = (prevLine ?? "").trimEnd();
-      if (prevTrim && WORD_END_RE.test(prevTrim) && !PUNCT_END_RE.test(prevTrim)) return { rule: "R7" };
-      return { rule: "R0", construct: "d" };
+      if (prevTrim && GUARD_BEFORE_CHARS.test(prevTrim.slice(-1)) && !PUNCT_END_RE.test(prevTrim) && guardAfterHolds(line, idx)) {
+        return { rule: "R7" };
+      }
+      return { rule: "R0" };
     }
   }
 
-  // R2: a Markdown heading, first dash on the line (fenced blocks included). A SHAPE rule: fires
-  // once per line, per the rule table ("a second dash on the same heading falls to R8").
-  if (!skipStructural && md && HEADING_RE.test(line)) return { rule: "R2" };
+  // R2: a Markdown heading, first dash on the line (fenced blocks included), the guard's after
+  // side holding. A SHAPE rule: fires once per line, per the rule table ("a second dash on the
+  // same heading falls to R8"). A heading whose label-dash fails the after-guard (glued, or ends
+  // the line) is refused rather than guessed.
+  if (!skipStructural && md && HEADING_RE.test(line)) {
+    return guardAfterHolds(line, idxs[0]) ? { rule: "R2" } : { rule: "R0", construct: "R2" };
+  }
 
-  // R3: a bullet whose first token is a code span or a bold label, then the dash. Also once.
-  if (!skipStructural && BULLET_LABEL_RE.test(line)) return { rule: "R3" };
+  // R3: a bullet whose first token is a code span or a bold label, then the dash, the guard's
+  // after side holding. Also once. (Revision 11 measured 2 refused here: a label whose dash ends
+  // the line.)
+  if (!skipStructural && BULLET_LABEL_RE.test(line)) {
+    return guardAfterHolds(line, idxs[0]) ? { rule: "R3" } : { rule: "R0", construct: "R3" };
+  }
 
   for (const idx of idxs) {
     const pv = prevNonSpace(line, idx);
-    if (pv >= 0 && ",;:(".includes(line[pv])) return { rule: "R4" };
+    // R4: a dash right after `, : ; (`, the guard's after side holding (never after a full stop,
+    // never after a table pipe: both fail the guard and are plain refusals now).
+    if (pv >= 0 && ",;:(".includes(line[pv]) && guardAfterHolds(line, idx)) return { rule: "R4" };
     const nx = nextNonSpace(line, idx);
-    if (nx < line.length && ",.;:)".includes(line[nx]) && (nx + 1 >= line.length || line[nx + 1] === " "))
+    // R5: a dash right before `, . ; : )` followed by a space or the line end, the guard's before
+    // side holding.
+    if (nx < line.length && ",.;:)".includes(line[nx]) && (nx + 1 >= line.length || line[nx + 1] === " ") && guardBeforeHolds(line, idx))
       return { rule: "R5" };
-    if (line.slice(idx + 1).trim() === "") return { rule: "R6" };
+    // R6: a dash that ends the line, the guard's before side holding (revision 11 measured 1
+    // refused here).
+    if (line.slice(idx + 1).trim() === "") {
+      return guardBeforeHolds(line, idx) ? { rule: "R6" } : { rule: "R0", construct: "R6" };
+    }
   }
-  return { rule: "R8" };
+  // R8: every other dash that passes the guard on both sides; anything else is a plain refusal --
+  // the positive test the re-diagnosis recommended, replacing the open-ended R0 list (a legend
+  // naming the glyph, a drawn chart line, a heading in an exported string, a question label, a
+  // glued field name, an aligned comment column, a status mark: none of them flanked by two words).
+  return guardHolds(line, idxs[0]) ? { rule: "R8" } : { rule: "R0" };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -488,7 +561,6 @@ function runFix({ sample }) {
   // rule, so a line with two edits of the same rule (rare, but R8 can fire twice on one line)
   // counts once, matching how the plan itself counted the rule table.
   const linesByRule = { R1: new Set(), R2: new Set(), R3: new Set(), R4: new Set(), R5: new Set(), R6: new Set(), R7: new Set(), R8: new Set() };
-  const r0ByConstruct = { a: 0, b: 0, c: 0, d: 0, e: 0, f: 0, g: 0 };
   const r0Lines = [];
   const samples = { R1: [], R2: [], R3: [], R4: [], R5: [], R6: [], R7: [], R8: [] };
 
@@ -499,13 +571,16 @@ function runFix({ sample }) {
     if (src === null) continue;
     const md = isMd(rel);
     const lines = src.split("\n");
+    const fenceFlags = md ? computeFenceFlags(lines) : null;
     const { lines: fixed, edits } = fixLines(lines, md);
     let changed = false;
 
     for (const e of edits) {
       if (e.rule === "R0") {
-        r0ByConstruct[e.construct]++;
-        r0Lines.push({ rel, line: e.lineIndex + 1, construct: e.construct, text: e.text });
+        // (b), (c), (e) and a near-miss rule name (R2/R3/R6) keep their own tag; everything else
+        // -- the guard's plain refusal -- gets a habitat computed from the line itself.
+        const tag = e.construct || habitatOf(rel, e.text, md, fenceFlags ? fenceFlags[e.lineIndex] : false);
+        r0Lines.push({ rel, line: e.lineIndex + 1, tag, text: e.text });
         continue;
       }
       changed = true;
@@ -520,14 +595,17 @@ function runFix({ sample }) {
   }
 
   const counts = {};
-  for (const c of ["a", "b", "c", "d", "e", "f", "g"]) console.log(`R0 ${c} ${r0ByConstruct[c]}`);
+  // Revision 11: R0 collapses from seven lettered constructs to the guard's one refusal, so the
+  // rule table prints a single aggregate count; the refused list below (no cap, per P3) is where
+  // a reviewer reads every line, not a `R0 <letter> <n>` breakdown.
+  console.log(`R0 ${r0Lines.length}`);
   for (const r of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"]) {
     counts[r] = linesByRule[r].size;
     console.log(`${r} ${counts[r]}`);
   }
   if (r0Lines.length) {
     console.log("\nresidual (left in place, fix by hand):");
-    for (const r of r0Lines) console.log(`  ${r.rel}:${r.line} (${r.construct}) ${r.text}`);
+    for (const r of r0Lines) console.log(`  ${r.rel}:${r.line} (${r.tag}) ${r.text}`);
   }
   if (sample) {
     // P3: every rule under 50 hits lists every hit; a bigger rule gets four samples.
@@ -582,7 +660,10 @@ function selftest() {
     // Verifier row 24 (mutant M5): R2 must not fire outside a `.md` file (a `#` line in a `.py`
     // or `.sh` file is a comment, not a Markdown heading).
     { name: "R2 does not fire outside Markdown", md: false, line: `# heading ${DASH} x`, expectRule: "R8" },
-    { name: "R2 heading label, dash ends the line", md: true, line: `## title ${DASH}`, expectRule: "R2", expectFix: "## title:" },
+    // Revision 11: a heading label's dash ending the line fails the guard's after side (nothing
+    // follows it), so it is refused rather than guessed at -- the same outcome the plan measures
+    // for R3 ("2 refused, a label whose dash ends the line").
+    { name: "R2 heading label, dash ends the line", md: true, line: `## title ${DASH}`, expectRule: "R0" },
     { name: "R3 bullet label", md: true, line: `- \`npm test\` ${DASH} the gate.`, expectRule: "R3", expectFix: "- \`npm test\`: the gate." },
     { name: "R4 after comma", md: true, line: `foo, ${DASH} bar`, expectRule: "R4", expectFix: "foo, bar" },
     // R0 (f), plan revision 9: a table cell that OPENS with the dash but carries more content
@@ -596,7 +677,16 @@ function selftest() {
     { name: "R0(g) JS comment marker", md: false, line: `// ${DASH} see applyFloatPlans below`, expectRule: "R0" },
     { name: "R0(g) YAML/shell comment marker", md: false, line: `# ${DASH} an automatic deploy in flight.`, expectRule: "R0" },
     { name: "R0(g) blockquote sign-off", md: true, line: `> ${DASH} Ultimate Tokens`, expectRule: "R0" },
-    { name: "R5 before period, space required", md: true, line: `(#477) ${DASH} .btn`, expectRule: "R8" },
+    // Revision 11, the re-diagnosis's four further constructs (`.sdlc/plans/rule-gates-U3-rediagnosis.md`
+    // §1): none of them fail because of a lettered rule any pass named -- each fails the guard.
+    { name: "guard: legend naming the glyph", md: false, line: `// (✓ match / ✗ drifted / ${DASH} absent)`, expectRule: "R0" },
+    { name: "guard: glued field name", md: false, line: `//   relTrackEm${DASH} tracking as em`, expectRule: "R0" },
+    { name: "guard: question heading", md: false, line: `"## Which variant? ${DASH} decision tree"`, expectRule: "R0" },
+    { name: "guard: aligned comment column", md: false, line: `//   weight/<voice>/<slug> ${DASH} MUTUALLY`, expectRule: "R0" },
+    // R5 needs a space (or the line end) right after the punctuation; a period glued to more text
+    // (a CSS selector, `.btn`, not a sentence end) is not that, and under the guard a period is
+    // not a valid after-token either, so this is now a plain refusal, not R8's blind ", ".
+    { name: "R5 before period, space required", md: true, line: `(#477) ${DASH} .btn`, expectRule: "R0" },
     { name: "R5 before period, punctuation followed by a space", md: true, line: `keep the pause ${DASH} . Next sentence`, expectRule: "R5", expectFix: "keep the pause. Next sentence" },
     { name: "R6 line-end", md: true, line: `gen:type-fonts ${DASH}`, expectRule: "R6", expectFix: "gen:type-fonts," },
     // The line-before's trailing whitespace has to be trimmed BEFORE the comma is appended, and
@@ -634,24 +724,26 @@ function selftest() {
   if (!shouldSkipFix(fakePinned)) FAIL("pinned-exemption", "adding a path to PINNED did not make shouldSkipFix() skip it");
   PINNED_PATHS.delete(fakePinned);
 
-  // R0 (f) is refused, not rewritten: a table cell that opens with the dash and carries more text
-  // must survive `--fix` byte for byte, listed under construct "f", not turned into R4's drop or
-  // R8's ", " (plan revision 9, ruled after the Pass 3 re-review flagged the meaning change at
-  // `export-drift.md:212`).
+  // A table cell that opens with the dash and carries more text is refused, not rewritten, and
+  // must survive `--fix` byte for byte -- the `|` before it fails the guard's before side (not a
+  // letter, digit or closing token), so it needs no letter of its own any more (plan revision 9's
+  // R0 (f) is retired as a construct by revision 11; the outcome is unchanged).
   const r0fLine = `| Color stops (raw) | ${DASH} (mapped indirectly) | ok |`;
   const r0fFixed = fixLines([r0fLine], true);
   if (r0fFixed.lines[0] !== r0fLine) FAIL("r0f-refused", `the line changed: "${r0fFixed.lines[0]}"`);
-  if (r0fFixed.edits.length !== 1 || r0fFixed.edits[0].rule !== "R0" || r0fFixed.edits[0].construct !== "f")
-    FAIL("r0f-refused", `expected one R0 (f) edit, got ${JSON.stringify(r0fFixed.edits)}`);
+  if (r0fFixed.edits.length !== 1 || r0fFixed.edits[0].rule !== "R0")
+    FAIL("r0f-refused", `expected one R0 edit, got ${JSON.stringify(r0fFixed.edits)}`);
 
-  // R0 (g) is refused, not rewritten: a leading comment/quote marker with the dash right after it
+  // A leading comment/quote marker with the dash right after it is refused, not rewritten, and
   // must survive `--fix` byte for byte -- the sign-off in `store-copy.md:486` (`> [dash] Ultimate
-  // Tokens`) must keep its author, not become `>, Ultimate Tokens` (plan revision 10).
+  // Tokens`) must keep its author, not become `>, Ultimate Tokens` (revision 10's R0 (g) is
+  // retired as a construct by revision 11: the marker itself fails the guard's before side, so it
+  // needs no letter either).
   const r0gLine = `> ${DASH} Ultimate Tokens`;
   const r0gFixed = fixLines([r0gLine], true);
   if (r0gFixed.lines[0] !== r0gLine) FAIL("r0g-refused", `the line changed: "${r0gFixed.lines[0]}"`);
-  if (r0gFixed.edits.length !== 1 || r0gFixed.edits[0].rule !== "R0" || r0gFixed.edits[0].construct !== "g")
-    FAIL("r0g-refused", `expected one R0 (g) edit, got ${JSON.stringify(r0gFixed.edits)}`);
+  if (r0gFixed.edits.length !== 1 || r0gFixed.edits[0].rule !== "R0")
+    FAIL("r0g-refused", `expected one R0 edit, got ${JSON.stringify(r0gFixed.edits)}`);
 
   // A span that wraps across a line break (found in the wild in pass 2 review, docs/tickets/
   // tkt-0031.md:82): the first line has an ODD backtick count, so its lone backtick opens a span
