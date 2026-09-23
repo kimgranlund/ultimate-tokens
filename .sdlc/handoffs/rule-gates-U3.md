@@ -8,7 +8,7 @@ pass: 5
 ---
 
 BASE: `b3961aa9`
-HEAD: `2ebde63a`
+HEAD: `3068fc32`
 
 # U3 handoff: `em-dash.mjs`, the gate, its self-test and `--fix`, unregistered
 
@@ -431,6 +431,28 @@ files` (unchanged by the four fixes). Full-tree `--fix --sample` then `--fix` ag
 files changed, 9256 insertions(+), 9256 deletions(-)`, byte-identical; numstat mismatches `0`.
 `R0 92` (down from `97`: the 5 Unicode-letter lines are no longer refused). 359 changed table rows,
 `0` pipe-count mismatches. `npm test` in a separate, unswept fresh clone: `✓ all 49 test files
+passed`, exit `0`, tree clean after.
+
+## Two review details on the pass-5 fold
+
+The reviewer flagged two specifics after the fold-in: the `guardBeforeHolds` fixture used a
+generic placeholder line rather than `mode-apply-plan.mjs:289`'s own shape, and `habitatOf()`'s
+bare fallback (no `//` or `#` marker at all) printed "comment" for lines that are not comments --
+`voice-check.mjs:89`'s regex literal (`/ [dash] (?:not|never|no)\b/i`) among them.
+
+Fixed at `3068fc32`: the fixture now reads `// name this grammar could otherwise collide with
+(weight/<voice>/<slug>, weight-style/<voice>/<slug> [dash]`, `mode-apply-plan.mjs:289`'s own text;
+the guardBeforeHolds-dropped mutant still reds it. `habitatOf()`'s fallback now returns "string"
+instead of "comment" when no comment marker is present at all. `README.md:119` and
+`style-plan.mjs:42` stay refused -- the guard's before-set is untouched, so `/` and `>` still fail
+it.
+
+Rechecked in a fresh clone at `3068fc32`: `self-test: PASS`, `FAIL: 16688 em dashes ... in 343
+files` (unchanged). Full-tree `--fix --sample` then `--fix` again: both `329 files changed, 9256
+insertions(+), 9256 deletions(-)`, byte-identical; numstat mismatches `0`; `R0 92` (unchanged
+count, only retagging). `voice-check.mjs:89` now tagged `(string)`; `README.md:119` tagged
+`(fence)`, `style-plan.mjs:42` tagged `(comment)`, both still refused. 359 changed table rows, `0`
+pipe-count mismatches. `npm test` in a separate, unswept fresh clone: `✓ all 49 test files
 passed`, exit `0`, tree clean after.
 
 ## Self-check
