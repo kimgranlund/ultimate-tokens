@@ -64,3 +64,13 @@ The verifier's verdict (`verdict-rg-U6.md`) found three gaps, all fixed in one c
 5. Doc-line checks, same clone: `grep -c '`n/a`' .claude/skills/maintaining-brand-kit-mcp/references/foundations.md` and the same against `docs/lld/app-shell.md` both print `1`.
 6. Full gate, same clone: `npm test` → `✓ all 48 test files passed`, tree clean (`0`) after; `node test/repo/branding.mjs` → `branding: clean (568 files scanned)`.
 7. New unit head: `14efd2c5e8a8f4cfaa0a8ffd778bd5e5536945d5`.
+
+## Pass 3 addendum (plan revision 8, U6-4: no doc quotes the old glyph)
+
+Plan revision 8 (`98f8ef63` on `plan/rule-gates`, read via `git show`, since this worktree's copy predates it) adds `docs/lld/app-shell.md` to U6's Touches (already fixed in this pass) and a new criterion:
+
+| # | Criterion | Result | Negative control |
+|---|---|---|---|
+| U6-4 | no doc quotes the old glyph as the empty value (the em-dash gate skips backtick spans, so it cannot see these) | `grep -nE '`"?—"?`' .claude/skills/maintaining-brand-kit-mcp/references/foundations.md docs/lld/app-shell.md \| wc -l` prints `0` 🟢 | in a clone, restored `foundations.md:87` to the old glyph: the same command prints `1` |
+
+The command above quotes the pattern with the actual glyph, as the plan's row itself is written. New unit head unchanged from Pass 3, `14efd2c5e8a8f4cfaa0a8ffd778bd5e5536945d5`, since this addendum needed no further code change.
