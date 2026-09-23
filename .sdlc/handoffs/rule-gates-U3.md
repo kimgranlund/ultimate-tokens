@@ -8,7 +8,7 @@ pass: 3
 ---
 
 BASE: `b3961aa9`
-HEAD: `99f7efa4`
+HEAD: `b9f159f2`
 
 # U3 handoff: `em-dash.mjs`, the gate, its self-test and `--fix`, unregistered
 
@@ -244,6 +244,40 @@ here for the plan owner rather than silently widening a ratified rule table.
 
 The R6/R8 explanation above (in the Pass 2 section) is replaced with the measured cause
 (over-masking, primarily the fence-first-line bug) rather than "correct exclusion."
+
+## Pass 3 fold-in: the review's Pass 3 section, findings 1 and 2
+
+Two small FIX-FIRST items from the re-review of `99f7efa4`/`71ba7ca5`, code at `b9f159f2`:
+
+1. `computeMdRoles()`'s paragraph scope never ended at a list-item marker line. Under CommonMark
+   each list item is its own block, so a span cannot cross from one item into the next -- a stray
+   backtick in one bullet could pair with a stray backtick several bullets later and
+   `fullyMasked` every bullet in between, dash included. Nothing in the tracked tree hits this
+   today (the fresh-clone total is unchanged, `16746`); it is a guard against a later branch. Fix:
+   `isListItemLine()` (`` /^\s*([-*+]|\d+[.)])\s/ ``) now ends the scope the same way a blank
+   line, a fence line, a heading or a table row does, except on the scope's own first line.
+   Fixture `"list-item-scope-break"` (three bullets: a stray backtick in item 1, the dash in item
+   2, the phantom pair's closer in item 3) reds on `b9f159f2`'s parent (0 edits, the dash hidden)
+   and passes now (1 edit, R8).
+2. No fixture pinned CommonMark's run-length rule itself: a mutant changing the closer test from
+   "same length" to "any run closes" (`.length === openLen` to `.length >= 1`) still passed the
+   whole self-test, while the real tree total moved from `16746` to `16751` under that mutant.
+   Fixture `"run-length-mismatch"` (a 2-backtick opener, a 1-backtick run after it that must NOT
+   close it, so the whole thing is literal and the dash between them stays outside, countable)
+   reds under the mutant (0 edits, the dash wrongly masked) and passes against the real code (1
+   edit, R8). Verified directly: the mutant fails `self-test` with this fixture in place.
+
+Finding 4 (R4's extension to `\|` changes the plan's rule-table meaning: `\| — (mapped
+indirectly) \|` should read `none (mapped indirectly)`, matching R1's "none" for absent, not
+`(mapped indirectly)` alone) is a plan-table change, not a builder fix -- left for the
+Orchestrator/planner, per the review's own read. Untouched this pass.
+
+Rechecked in a fresh clone at `b9f159f2`: `self-test: PASS`, `FAIL: 16746 em dashes ... in 343
+files` (unchanged, confirming neither fix touches a real line today). Full-tree `--fix --sample`
+then `--fix` again: both `329 files changed, 9325 insertions(+), 9325 deletions(-)`,
+byte-identical; numstat mismatches `0`; `13` rule lines, same counts as Pass 3's table above
+(`R4 1`, `R6 281`, `R8 8260`); 360 changed table rows, `0` pipe-count mismatches. `npm test` in a
+separate, unswept fresh clone: `✓ all 48 test files passed`, exit `0`, tree clean after.
 
 ## Self-check
 
