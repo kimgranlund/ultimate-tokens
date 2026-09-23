@@ -1,4 +1,5 @@
 # Verdict U2 · 🟢
+verdict: 🟢
 
 | Field | Value |
 |---|---|

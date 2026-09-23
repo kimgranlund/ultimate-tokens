@@ -1,4 +1,5 @@
 # Independent verification: plan `preset-intent-fidelity` U6 (#681) + defect #686 root fix
+verdict: 🟢
 
 Verifier: independent seat, fresh context. Target `unit/pif-u6-ladder` head `3df582d`, fetched
 read-only into my own worktree `scratchpad/vfy-u6` (nothing run inside any `.git-worktrees/pif-*`).

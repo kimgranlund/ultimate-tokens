@@ -1,4 +1,5 @@
 # U7 review, pass 1: plan #681 preset-intent-fidelity, head `285f66ec`
+verdict: 🟡
 
 Fresh-context reviewer, grade l3. Unit branch `unit/pif-u7`, UB `de1bafef`, graded head `285f66ec`
 (the two commits past `9ecd071e` touch `test/ui/shell.mjs` and the handoff only). Written 2026-09-21.

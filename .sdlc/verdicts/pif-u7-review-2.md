@@ -1,4 +1,5 @@
 # U7 review, pass 2: delta `285f66ec` to `43033841`
+verdict: 🟢
 
 Fresh-context reviewer, grade l3. Delta only; pass 1 (`pif-u7-review-1.md`) stands for everything
 else. Two commits, four files: `test/ui/shell.mjs`, `test/engine/prime.mjs`, the plan, the handoff.
