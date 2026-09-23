@@ -9,6 +9,7 @@ code_sha: 872e0b7a100c333ffcc35f264ffdbff76e215750
 base: 8f0e08d65db288dd0e112b8152bca50d3d9bbd13
 date: 2026-09-23
 result: 🟢
+verdict: 🟢
 ---
 
 # Verdict pif-U10 · 🟢
@@ -40,3 +41,6 @@ Verified read-only in `git clone -q --shared` at `4bfd09d8` under the scratchpad
 - Leftover clones: `rm` was denied twice. `pif-u10-verify` (at `4bfd09d8`, tree clean) and `pif-u10-main` (at `dae67a3a`) remain under the scratchpad. Logs: `pif-u10-npmtest.log`, `pif-u10-anchor-head.log`, `pif-u10-nc-anchor.log`, `pif-u10-nc-exports.log`, `pif-u10-probe.mjs`.
 - `#739` (achromatic anchors take an arbitrary hue after the clamp) and `#738` (`_okL` memo) are `OPEN`; the U10 `#000000` ramps carry hue 30's tint at stops 100/150 (`#E9E1E3`), the #739 class, outside this unit.
 - `#725` `OPEN`, the chroma follow-up R27 names.
+
+verdict: 🟢
+sha: 3c2667a764d5e1e19b0000a3f7f4f4ef5fdbaf38
