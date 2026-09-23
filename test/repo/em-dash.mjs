@@ -228,6 +228,9 @@ const CELL_RE = new RegExp(`\\|\\s*${DASH}\\s*\\|`);
 // case above): a presence matrix where the dash means "absent", never a pause -- R0 (f), plan
 // revision 9.
 const CELL_OPEN_DASH_RE = new RegExp(`\\|\\s*${DASH}(?!\\s*\\|)`);
+// A leading comment or quote marker with nothing else before the dash: `//`, one or more `#`, or
+// `>` (R0 (g), plan revision 10).
+const MARKER_PREFIX_RE = /^(\/\/|#+|>)$/;
 // The R1 FIX form: global, and a lookahead on the closing `|` so it is never consumed, which is
 // what lets two empty cells on the same row (sharing one `|` between them) both match (#730
 // review finding 2: consuming the closing pipe left the next cell's opening pipe missing, and R8
@@ -273,6 +276,15 @@ function classifyLine({ line, prevLine, md, skipStructural = false }) {
     // R0 (a): a dash right after a full stop.
     const pv = prevNonSpace(line, idx);
     if (pv >= 0 && line[pv] === ".") return { rule: "R0", construct: "a" };
+
+    // R0 (g): the only text before the dash on the line is a leading comment or quote marker
+    // (`//`, `#`, `>`) -- a JS/YAML comment, or a Markdown blockquote (an email sign-off in
+    // `store-copy.md:486`: `> [dash] Ultimate Tokens`). The plain line-start check just below
+    // (`line.slice(0, idx).trim() === ""`) does not see this: the marker itself is non-blank
+    // text before the dash, so it fell through to R8's generic ", " right after the marker
+    // (plan revision 10, verifier row 19). Neither R7's join nor R0 (d)'s "line before ends in
+    // punctuation" applies here -- there is no line before to join or check; refuse instead.
+    if (MARKER_PREFIX_RE.test(line.slice(0, idx).trim())) return { rule: "R0", construct: "g" };
 
     // Line-start dash: R7 (join to the sentence above) or R0 (d) (the line before already ends
     // in punctuation, so joining would double it up).
@@ -450,7 +462,13 @@ function fixLines(lines, md) {
       if (decision.rule === "R7") {
         const idx = masked.indexOf(DASH);
         const beforeLine = raw, beforePrev = prevRaw;
-        out[i] = raw.slice(idx + 1).replace(/^\s+/, "");
+        // The dash and its own trailing space go; the line's leading indentation (everything
+        // before the dash -- a line-start dash's own classifyLine check already proved this
+        // prefix is whitespace-only) stays, so an indented continuation keeps its column
+        // (verifier row 16: `raw.slice(idx + 1)` alone dropped it, moving `decision-records.md:235`
+        // and `type-rubric.md:45` to column 0).
+        const indent = raw.slice(0, idx);
+        out[i] = indent + raw.slice(idx + 1).replace(/^\s+/, "");
         out[i - 1] = out[i - 1].replace(/\s+$/, "") + ",";
         edits.push({ rule: "R7", lineIndex: i, before: `${beforeLine}\n${beforePrev}`, after: `${out[i]}\n${out[i - 1]}` });
         continue;
@@ -470,7 +488,7 @@ function runFix({ sample }) {
   // rule, so a line with two edits of the same rule (rare, but R8 can fire twice on one line)
   // counts once, matching how the plan itself counted the rule table.
   const linesByRule = { R1: new Set(), R2: new Set(), R3: new Set(), R4: new Set(), R5: new Set(), R6: new Set(), R7: new Set(), R8: new Set() };
-  const r0ByConstruct = { a: 0, b: 0, c: 0, d: 0, e: 0, f: 0 };
+  const r0ByConstruct = { a: 0, b: 0, c: 0, d: 0, e: 0, f: 0, g: 0 };
   const r0Lines = [];
   const samples = { R1: [], R2: [], R3: [], R4: [], R5: [], R6: [], R7: [], R8: [] };
 
@@ -502,7 +520,7 @@ function runFix({ sample }) {
   }
 
   const counts = {};
-  for (const c of ["a", "b", "c", "d", "e", "f"]) console.log(`R0 ${c} ${r0ByConstruct[c]}`);
+  for (const c of ["a", "b", "c", "d", "e", "f", "g"]) console.log(`R0 ${c} ${r0ByConstruct[c]}`);
   for (const r of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"]) {
     counts[r] = linesByRule[r].size;
     console.log(`${r} ${counts[r]}`);
@@ -529,14 +547,20 @@ function selftest() {
   const fails = [];
   const FAIL = (name, msg) => fails.push(`${name}: ${msg}`);
 
-  // (1) The byte-mode trap (#730): a `latin1`/byte read of a file carrying the glyph must NOT
-  // agree with the UTF-8 read this gate actually uses.
+  // (1) The byte-mode trap (#730): the temp file is read back through `readText()` itself (the
+  // SAME function `runGate()`/`runFix()` call on every real file), not a hand-rolled read, so a
+  // mutant that turns `readText()` byte-mode (`"latin1"`, or a `Buffer` with `.toString("binary")`)
+  // is caught here, before it goes vacuously green over every real dash in the tree (verifier
+  // controls d2/d3: with `readText()` mutated, this fixture is the only thing standing between
+  // the mutant and a `self-test: PASS`). A SEPARATE, hand-rolled `latin1` read is kept alongside
+  // only to prove the two disagree -- i.e. that this fixture is capable of telling a byte-mode
+  // read apart from a real one at all.
   const tmp = join(tmpdir(), `em-dash-selftest-${process.pid}.txt`);
   writeFileSync(tmp, `x ${DASH} y\n`, "utf8");
-  const utf8Count = dashIndices(readFileSync(tmp, "utf8")).length;
+  const utf8Count = dashIndices(readText(tmp) ?? "").length;
   const latin1Count = dashIndices(readFileSync(tmp, "latin1")).length;
   unlinkSync(tmp);
-  if (utf8Count !== 1) FAIL("reader", `UTF-8 read found ${utf8Count} dashes, expected 1`);
+  if (utf8Count !== 1) FAIL("reader", `readText() found ${utf8Count} dashes, expected 1`);
   if (latin1Count === 1) FAIL("reader", "a latin1/byte-mode read also found the glyph -- the self-test cannot tell it apart from a real UTF-8 read");
 
   // (2) One fixture per row of the rule table (plan `rule-gates.md`, U3 design), each a
@@ -555,6 +579,9 @@ function selftest() {
     { name: "R1 empty md cell", md: true, line: `| a | ${DASH} | b |`, expectRule: "R1", expectFix: "| a | none | b |" },
     { name: "R1 two empty md cells share one row", md: true, line: `| a | ${DASH} | ${DASH} | b |`, expectRule: "R1", expectFix: "| a | none | none | b |" },
     { name: "R2 heading label", md: true, line: `## 1.63 ${DASH} 2026-09-18 - title`, expectRule: "R2", expectFix: "## 1.63: 2026-09-18 - title" },
+    // Verifier row 24 (mutant M5): R2 must not fire outside a `.md` file (a `#` line in a `.py`
+    // or `.sh` file is a comment, not a Markdown heading).
+    { name: "R2 does not fire outside Markdown", md: false, line: `# heading ${DASH} x`, expectRule: "R8" },
     { name: "R2 heading label, dash ends the line", md: true, line: `## title ${DASH}`, expectRule: "R2", expectFix: "## title:" },
     { name: "R3 bullet label", md: true, line: `- \`npm test\` ${DASH} the gate.`, expectRule: "R3", expectFix: "- \`npm test\`: the gate." },
     { name: "R4 after comma", md: true, line: `foo, ${DASH} bar`, expectRule: "R4", expectFix: "foo, bar" },
@@ -564,6 +591,11 @@ function selftest() {
     // (R4's generic drop, and R8's generic ", ", both changed the row's meaning -- Pass 2 review
     // finding 3 and the Pass 3 re-review). Refused and named; U4 rewrites it by hand.
     { name: "R0(f) table cell opens with the dash", md: true, line: `| a | ${DASH} (mapped indirectly) | b |`, expectRule: "R0" },
+    // R0 (g), plan revision 10: the only text before the dash is a leading comment or quote
+    // marker, so there is no sentence above to join (R7) and no line-before to check (R0 (d)).
+    { name: "R0(g) JS comment marker", md: false, line: `// ${DASH} see applyFloatPlans below`, expectRule: "R0" },
+    { name: "R0(g) YAML/shell comment marker", md: false, line: `# ${DASH} an automatic deploy in flight.`, expectRule: "R0" },
+    { name: "R0(g) blockquote sign-off", md: true, line: `> ${DASH} Ultimate Tokens`, expectRule: "R0" },
     { name: "R5 before period, space required", md: true, line: `(#477) ${DASH} .btn`, expectRule: "R8" },
     { name: "R5 before period, punctuation followed by a space", md: true, line: `keep the pause ${DASH} . Next sentence`, expectRule: "R5", expectFix: "keep the pause. Next sentence" },
     { name: "R6 line-end", md: true, line: `gen:type-fonts ${DASH}`, expectRule: "R6", expectFix: "gen:type-fonts," },
@@ -571,6 +603,9 @@ function selftest() {
     // this fixture's prevLine carries a trailing space so a mutant that appends `,` without
     // trimming (`out[i-1] + ","`) fails here, not just one that changes the comma itself.
     { name: "R7 line-start after a word", md: true, line: `${DASH} this file is only the mental model.`, prevLine: "assumes  ", expectRule: "R7", expectFix: "this file is only the mental model.\nassumes," },
+    // Verifier row 16: the continuation's leading indentation must survive; only the dash and its
+    // one separating space go (real instance: `decision-records.md:235`, five spaces).
+    { name: "R7 keeps the continuation's indentation", md: true, line: `     ${DASH} editorial voices use ...`, prevLine: "assumes", expectRule: "R7", expectFix: "     editorial voices use ...\nassumes," },
     { name: "R8 default", md: true, line: `TKT-0015 ${DASH} undocumented elsewhere`, expectRule: "R8", expectFix: "TKT-0015, undocumented elsewhere" },
     // Finding 1: a span dash sits BEFORE the outside dash that actually triggers a rule. The old
     // code found `line.indexOf(DASH)` on the raw line and hit the span's dash first.
@@ -608,6 +643,15 @@ function selftest() {
   if (r0fFixed.lines[0] !== r0fLine) FAIL("r0f-refused", `the line changed: "${r0fFixed.lines[0]}"`);
   if (r0fFixed.edits.length !== 1 || r0fFixed.edits[0].rule !== "R0" || r0fFixed.edits[0].construct !== "f")
     FAIL("r0f-refused", `expected one R0 (f) edit, got ${JSON.stringify(r0fFixed.edits)}`);
+
+  // R0 (g) is refused, not rewritten: a leading comment/quote marker with the dash right after it
+  // must survive `--fix` byte for byte -- the sign-off in `store-copy.md:486` (`> [dash] Ultimate
+  // Tokens`) must keep its author, not become `>, Ultimate Tokens` (plan revision 10).
+  const r0gLine = `> ${DASH} Ultimate Tokens`;
+  const r0gFixed = fixLines([r0gLine], true);
+  if (r0gFixed.lines[0] !== r0gLine) FAIL("r0g-refused", `the line changed: "${r0gFixed.lines[0]}"`);
+  if (r0gFixed.edits.length !== 1 || r0gFixed.edits[0].rule !== "R0" || r0gFixed.edits[0].construct !== "g")
+    FAIL("r0g-refused", `expected one R0 (g) edit, got ${JSON.stringify(r0gFixed.edits)}`);
 
   // A span that wraps across a line break (found in the wild in pass 2 review, docs/tickets/
   // tkt-0031.md:82): the first line has an ODD backtick count, so its lone backtick opens a span
