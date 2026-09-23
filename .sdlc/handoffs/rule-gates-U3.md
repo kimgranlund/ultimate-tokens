@@ -8,7 +8,7 @@ pass: 5
 ---
 
 BASE: `b3961aa9`
-HEAD: `743ca560`
+HEAD: `2ebde63a`
 
 # U3 handoff: `em-dash.mjs`, the gate, its self-test and `--fix`, unregistered
 
@@ -397,10 +397,46 @@ the Markdown case.
    pipe-count mismatches. `npm test` in a separate, unswept fresh clone: `✓ all 48 test files
    passed`, exit `0`, tree clean after.
 
+## Pass 5 fold-in: `plan/rule-gates` merged (U6 in), four review yellows
+
+`plan/rule-gates` merged into this unit at `40e21900` (before this fold-in), bringing U6 in. Every
+figure above this section (`16746`, `121` refused, and everything under "Pass 5") was measured on
+the PRE-merge base and is superseded here, not corrected in place -- it is what those passes
+actually ran against. At the merged head the same run gives `FAIL: 16688 em dashes outside inline
+code spans in 343 files` and `97` refused lines (U6 removes the 20 R0 (e) lines and most of the 14
+former (g) marker lines' surrounding noise). The review's own criteria table confirms both figures.
+
+Four small yellows from the Pass 5 review, folded in at `2ebde63a`:
+
+1. `GUARD_BEFORE_CHARS`/`GUARD_AFTER_CHARS` used `A-Za-z0-9`, so a non-ASCII letter on either side
+   of the dash (`cliché —`, `— γ`) was wrongly refused (5 real lines: `travel.json:932`,
+   `travel-palettes.md:234`, `describe-rubric.mjs:310`, `knowledge-02:44`, `tonal.mjs:202`). Now
+   `\p{L}`/`\p{N}` (the `u` flag). Two fixtures added; a mutant reverting to `A-Za-z0-9` reds both.
+2. Step 1b names a drawn chart line among the re-diagnosis's constructs, but only the tree
+   (`ui-plan.md:111`) pinned it, no fixture. Added (`` ●● ``  before the dash fails the
+   before-guard).
+3. `guardBeforeHolds` (R5/R6's before side) had no fixture: forcing it to always return `true`
+   still gave `self-test: PASS`, while on the tree `mode-apply-plan.mjs:289` (a placeholder's `>`
+   before a line-end dash) moved from refused to R6. Fixture added; the mutant now reds it.
+4. Three refused lines carried a rule name (`R3`, `R6`) instead of a habitat
+   (`adopt-hygiene-U1.md:52`, `cto-app.md:86`, `mode-apply-plan.mjs:289`). R2/R3/R6's guard-side
+   refusals no longer carry that tag; they fall through to `habitatOf()` like every other refused
+   line (now `list`, `list`, `comment`). `habitatOf()` also mistagged a quoted string's own `#`/`//`
+   as a real comment (`ds-export.js:1495`'s `"## Which variant? ..."` string, and the three
+   `gen-*-assets.mjs` template-literal header comments) as "trailing comment"; a new
+   `insideStringAt()` check at the marker itself fixes it to "string".
+
+Rechecked in a fresh clone at `2ebde63a`: `self-test: PASS`, `FAIL: 16688 em dashes ... in 343
+files` (unchanged by the four fixes). Full-tree `--fix --sample` then `--fix` again: both `329
+files changed, 9256 insertions(+), 9256 deletions(-)`, byte-identical; numstat mismatches `0`.
+`R0 92` (down from `97`: the 5 Unicode-letter lines are no longer refused). 359 changed table rows,
+`0` pipe-count mismatches. `npm test` in a separate, unswept fresh clone: `✓ all 49 test files
+passed`, exit `0`, tree clean after.
+
 ## Self-check
 
 `node test/repo/em-dash.mjs` on this unit's own worktree at HEAD: `self-test: PASS`, then
-`FAIL: 16746 em dashes outside inline code spans in 343 files`, `exit 1` (expected: the tree is not
-swept, U4 does that). `node test/repo/branding.mjs` in a clone at HEAD: `branding: clean (569 files
-scanned)`. `npm test` in a clone (no `node_modules`): `✓ all 48 test files passed`, tree clean
+`FAIL: 16688 em dashes outside inline code spans in 343 files`, `exit 1` (expected: the tree is not
+swept, U4 does that). `node test/repo/branding.mjs` in a clone at HEAD: `branding: clean (587 files
+scanned)`. `npm test` in a clone (no `node_modules`): `✓ all 49 test files passed`, tree clean
 after.
