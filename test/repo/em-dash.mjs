@@ -72,8 +72,9 @@ function shouldSkipFix(rel) {
 //     span (CommonMark 6.1). An opener with no same-length closer anywhere ahead is literal text,
 //     never a span, and scanning resumes right after it.
 //   - A span may cross a line break, but only within one paragraph: a blank line, a fence line, a
-//     heading, or a table row boundary ends the search (`computeMdRoles()`'s SCOPE). An opener
-//     with no closer before its scope ends is literal, per the rule above.
+//     heading, a table row, or a list-item marker line (each list item is its own block, so a
+//     span cannot cross from one item into the next) ends the search (`computeMdRoles()`'s
+//     SCOPE). An opener with no closer before its scope ends is literal, per the rule above.
 //   - A fenced code block (a line whose trimmed text starts with three or more backticks or
 //     tildes, up to its matching fence) is not scanned for spans at all: the fence line itself
 //     never opens one, and its content is swept like ordinary prose (the plan: "Dashes inside
@@ -94,6 +95,11 @@ function shouldSkipFix(rel) {
 function isBlankLine(line) { return line.trim() === ""; }
 function isHeadingLine(line) { return /^#{1,6} /.test(line); }
 function isTableRowLine(line) { return /^\s*\|/.test(line); }
+// A list-item marker line (CommonMark: `-`/`*`/`+`, or a numbered `1.`/`1)`). Each list item is
+// its own block, so a span cannot cross from one item into the next -- a scope that kept growing
+// across marker lines let a stray backtick in one bullet pair with the next single-backtick run
+// several bullets later and `fullyMasked` every line in between (pass 3 review, Pass 3 finding 1).
+function isListItemLine(line) { return /^\s*([-*+]|\d+[.)])\s/.test(line); }
 function fenceMarkerOf(line) {
   const m = line.trim().match(/^(`{3,}|~{3,})/);
   return m ? m[1] : null;
@@ -157,8 +163,8 @@ function computeMdRoles(lines) {
     }
     if (isBlankLine(raw)) { i++; continue; }
     if (isHeadingLine(raw) || isTableRowLine(raw)) { roles[i] = matchSpansInScope([raw])[0]; i++; continue; }
-    let j = i;
-    while (j < lines.length && !isBlankLine(lines[j]) && !isHeadingLine(lines[j]) && !isTableRowLine(lines[j]) && !fenceMarkerOf(lines[j])) j++;
+    let j = i + 1;
+    while (j < lines.length && !isBlankLine(lines[j]) && !isHeadingLine(lines[j]) && !isTableRowLine(lines[j]) && !fenceMarkerOf(lines[j]) && !isListItemLine(lines[j])) j++;
     const scopeRoles = matchSpansInScope(lines.slice(i, j));
     for (let k = 0; k < scopeRoles.length; k++) roles[i + k] = scopeRoles[k];
     i = j;
@@ -649,6 +655,25 @@ function selftest() {
   const backToBackFixed = fixLines(backToBack, true);
   if (backToBackFixed.edits.length !== 1 || backToBackFixed.edits[0].lineIndex !== 2 || backToBackFixed.edits[0].rule !== "R8")
     FAIL("back-to-back-wraps", `expected one R8 edit on line 3, got ${JSON.stringify(backToBackFixed.edits)}`);
+
+  // Probe: a list item is its own block (pass 3 review, Pass 3 finding 1). A stray backtick in
+  // one bullet used to pair with a stray backtick several bullets later (no list-item scope
+  // break existed), `fullyMasked`-ing every bullet in between, dash included.
+  const listScope = [
+    "- item one with a stray ` backtick",
+    `- item two has a dash ${DASH} here`,
+    "- item three closes the phantom pair `",
+  ];
+  const listScopeFixed = fixLines(listScope, true);
+  if (listScopeFixed.edits.length !== 1 || listScopeFixed.edits[0].lineIndex !== 1 || listScopeFixed.edits[0].rule !== "R8")
+    FAIL("list-item-scope-break", `expected one R8 edit on line 2, got ${JSON.stringify(listScopeFixed.edits)}`);
+
+  // Probe: CommonMark's run-length rule itself (pass 3 review, Pass 3 finding 2). A 2-backtick
+  // opener closes only at the next 2-backtick run, never at a shorter one; there is no true closer
+  // here, so the whole run is literal and the dash stays outside, countable.
+  const runLenFixed = fixLines([`\`\`span with the dash ${DASH} inside, wrongly closed by\` a single backtick after`], true);
+  if (runLenFixed.edits.length !== 1 || runLenFixed.edits[0].lineIndex !== 0 || runLenFixed.edits[0].rule !== "R8")
+    FAIL("run-length-mismatch", `expected one R8 edit on line 1, got ${JSON.stringify(runLenFixed.edits)}`);
 
   // (4) Idempotence: a real, multi-rule, multi-line fixture run through `fixLines()` twice must
   // produce the SAME lines both times, with zero edits on the second pass (#730 review finding 5:
