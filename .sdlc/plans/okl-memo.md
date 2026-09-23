@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: "#738"
 priority: P2
 lane: color-engine (`src/engine/tonal.js`, `test/engine/tonal.mjs`, `test/engine/prime-determinism-worker.mjs`, seven `color-math` skill lines, the bundle files `npm test` regenerates)
