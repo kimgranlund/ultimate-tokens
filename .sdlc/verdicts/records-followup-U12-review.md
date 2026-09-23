@@ -1,4 +1,5 @@
 # records-followup-U12 review, 712e63db..52341dcc
+verdict: 🟢
 
 Verdict: PASS. Roadmap change 🟢 on every criterion; two 🟡 handoff clauses, neither in the roadmap. Measured in `.worktrees/rf-U12` at `52341dcc`, base `712e63db`, 2026-09-20.
 
