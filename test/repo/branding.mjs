@@ -49,7 +49,9 @@ const RECORDS = new Set([
   "docs/reference/references/decision-records.md",
 ]);
 
-const TEXT = /\.(js|mjs|ts|json|html|css|md|yml|yaml|svg|webmanifest)$/;
+// Skip binaries only: everything else is scanned by default, so a new text-ish extension (a .txt
+// note, a .log capture) is gated without anyone having to remember to add it here (#724).
+const BINARY = /\.(woff2|woff|ttf|otf|png|jpg|jpeg|gif|ico|webp|zip|pdf)$/;
 
 function* walk(dir) {
   for (const name of readdirSync(dir)) {
@@ -63,7 +65,7 @@ function* walk(dir) {
 let scanned = 0;
 for (const abs of walk(ROOT)) {
   const rel = relative(ROOT, abs).split("\\").join("/");
-  if (!TEXT.test(rel) || SKIP_FILES.has(rel) || RECORDS.has(rel)) continue;
+  if (BINARY.test(rel) || SKIP_FILES.has(rel) || RECORDS.has(rel)) continue;
   let src;
   try { src = readFileSync(abs, "utf8"); } catch { continue; }
   scanned++;

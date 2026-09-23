@@ -1370,7 +1370,7 @@ function dsMakeColorMd(ds, pfx, shadcnCss) {
     "| `bg-background` / `text-foreground` | app canvas | the lowest, calmest surface |",
     "| `bg-card` / `text-card-foreground` | cards, panels | one step up from background |",
     "| `bg-popover` / `text-popover-foreground` | popovers, menus, sticky bars | the top surface |",
-    "| `text-muted-foreground` (on `bg-background`/`bg-card`) | secondary text, captions | — |",
+    "| `text-muted-foreground` (on `bg-background`/`bg-card`) | secondary text, captions | n/a |",
     "| `border-border` | hairlines, dividers, input outlines | translucent, same value both schemes |",
     "", "## Actions & brand", "",
     "| Class | Use for |",
@@ -1430,7 +1430,7 @@ function dsMakeTypographyMd(typeSc) {
     const factor = dsFactor(s.lineHeight, s.size);
     const track = s.letterSpacing && Math.abs(s.letterSpacing) >= 0.01
       ? `, ${Number((s.letterSpacing / s.size).toFixed(3))}em tracking` : "";
-    rows.push(`| \`${key}\` | ${fam} | ${s.size} / ${factor} | ${s.weight} | ${DS_MAKE_TYPE_USE[key] || "—"}${track} |`);
+    rows.push(`| \`${key}\` | ${fam} | ${s.size} / ${factor} | ${s.weight} | ${DS_MAKE_TYPE_USE[key] || "n/a"}${track} |`);
   }
   return [
     "# Typography", "",
@@ -1458,8 +1458,8 @@ function dsMakeTypographyMd(typeSc) {
 function dsMakeSpacingMd(geomSc) {
   const space = dsSpacing(geomSc);
   const radii = dsRadii(geomSc);
-  const spaceRows = space.map((v, i) => `| \`${DS_SPACE_NAMES[i] || `s${i}`}\` | ${v} | — |`);
-  const radiusRows = Object.entries(radii).map(([k, v]) => `| \`${k}\` | ${v} | — |`);
+  const spaceRows = space.map((v, i) => `| \`${DS_SPACE_NAMES[i] || `s${i}`}\` | ${v} | n/a |`);
+  const radiusRows = Object.entries(radii).map(([k, v]) => `| \`${k}\` | ${v} | n/a |`);
   return [
     "# Spacing & Radii", "",
     "## Spacing scale", "",

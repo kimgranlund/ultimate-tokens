@@ -272,7 +272,7 @@ export function ensureTypeFonts() {
 // typeface still renders; the browser synthesises the weight). A non-Google family 404s harmlessly and the
 // generic fallback holds.
 export const SELF_HOSTED_FONTS = new Set(["Inter", "Inter Tight", "Source Serif 4", "JetBrains Mono"]);
-export const GENERIC_FONTS = new Set(["serif", "sans-serif", "monospace", "system-ui", "ui-serif", "ui-sans-serif", "ui-monospace", "cursive", "fantasy", "inherit", "initial", "—"]);
+export const GENERIC_FONTS = new Set(["serif", "sans-serif", "monospace", "system-ui", "ui-serif", "ui-sans-serif", "ui-monospace", "cursive", "fantasy", "inherit", "initial", "n/a"]);
 export function ensureWebFont(fam) {
   const id = "ultimate-tokens-wf-" + fam.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   if (document.getElementById(id)) return; // load each family exactly once
