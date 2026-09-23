@@ -253,8 +253,10 @@ function habitatOf(rel, raw, md, inFence) {
   if (markerIdx >= 0 && insideStringAt(raw, markerIdx)) return "string";
   if (/^(\/\/|#|\/\*|\*)/.test(trimmed)) return "comment";
   if (markerIdx > 0 && raw.slice(0, markerIdx).trim() !== "") return "trailing comment";
-  if (/["'`]/.test(raw)) return "string";
-  return "comment";
+  // No `//` or `#` marker at all -- a quoted string, a regex literal (`voice-check.mjs:89`'s
+  // `/ [dash] (?:not|never|no)\b/i`), or other code with no comment habitat to name; "string" is
+  // the closer label, never the misleading "comment" a bare fallback used to print.
+  return "string";
 }
 
 function prevNonSpace(line, idx) {
@@ -717,7 +719,7 @@ function selftest() {
     // forcing it to always return `true` still passed the whole self-test, while on the tree
     // `mode-apply-plan.mjs:289` (`<slug> [dash]` at the end of the line) moved from refused to R6. A
     // placeholder's closing `>` fails the before-guard, so this line-end dash is refused too.
-    { name: "guard: R6 before-side (placeholder before a line-end dash)", md: false, line: `name <slug> ${DASH}`, expectRule: "R0" },
+    { name: "guard: R6 before-side (placeholder before a line-end dash)", md: false, line: `// name this grammar could otherwise collide with (weight/<voice>/<slug>, weight-style/<voice>/<slug> ${DASH}`, expectRule: "R0" },
     // The line-before's trailing whitespace has to be trimmed BEFORE the comma is appended, and
     // this fixture's prevLine carries a trailing space so a mutant that appends `,` without
     // trimming (`out[i-1] + ","`) fails here, not just one that changes the comma itself.
