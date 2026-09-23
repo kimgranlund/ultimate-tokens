@@ -29,7 +29,7 @@ for (const [cmd, gate] of [["npm test", "test"], ["npm run build", "build"], ["n
       say(allMatch, `ceiling ${gate}: baseline ${baseStr}, adapter ${adapterStr}`);
     }
   }
-  const plain = cell.replace(/ceiling \d+ to \d+ s/g, "");
+  const plain = gate === "test" ? cell.replace(/ceiling \d+ to \d+ s/g, "") : cell;
   const ms = [...plain.matchAll(/(\d+) to (\d+) s/g)];
   const lo = Math.round(Math.min(...t)), hi = Math.round(Math.max(...t));
   say(t.length === 3 && t.every(Number.isFinite) && ms.length > 0 && ms.every((m) => +m[1] === lo && +m[2] === hi),
