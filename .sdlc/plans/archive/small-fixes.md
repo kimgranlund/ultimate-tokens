@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: #717
 priority: P3
 lane: tooling
@@ -89,13 +89,15 @@ Every negative control that edits a file runs in a throwaway clone (`git clone -
 
 Checklist (the Orchestrator ticks it; the table below carries grades and paths):
 
-- [~] U1 (S) the smoke launcher: per-run profile and port, cleanup on every exit path, launcher test · builder-l2 · reviewer-l1 · verifier-l1
+- [x] U1 (S) the smoke launcher: per-run profile and port, cleanup on every exit path, launcher test · builder-l2 · reviewer-l1 · verifier-l1
+- [x] U2 (S) the fake Chrome spawns a grandchild, and every launcher leg proves the whole process group dies · builder-l5 · reviewer-l4 · verifier-l3
 
 Grades follow the Orchestrator's rule: an L2 builder gets reviewer-l1 and verifier-l1. U1 is L2 because process lifecycle is easy to get subtly wrong (a handler that runs `close()` but forgets to exit hangs the run; an `exit` handler that awaits does nothing).
 
 | Unit | Size | Builder | Reviewer | Verifier | Touches |
 |---|---|---|---|---|---|
 | U1 the smoke launcher | S | builder-l2 | reviewer-l1 | verifier-l1 | `test/smoke/smoke.mjs`, `test/smoke/chrome.mjs`, `test/smoke/launcher.mjs`, `test/smoke/fixtures/fake-chrome.mjs`, `package.json` (`scripts.smoke`) |
+| U2 the grandchild leg | S | builder-l5 | reviewer-l4 | verifier-l3 | `test/smoke/fixtures/fake-chrome.mjs`, `test/smoke/launcher.mjs` |
 
 ### U1: the smoke launcher (#717)
 
@@ -117,6 +119,21 @@ Rows U1-3 and U1-5 need a Chrome binary and run locally (this Mac has Canary at 
 | U1-10 | leg (e) cannot pass by `pgrep` being absent | `PATH=/usr/bin:/bin:/nonexistent` is not enough on a host that has `pgrep`; run in Docker: `docker run --rm -v "$PWD:/w" -w /w node:24 sh -c 'mv /usr/bin/pgrep /usr/bin/pgrep.h; node test/smoke/launcher.mjs 2>&1 \| grep -E "deadline"'` | a `FAIL` line naming leg (e) with `pgrep` in its text | the head prints `pass  leaves no process or directory after a deadline with no DevToolsActivePort` with `pgrep` hidden (4.1) | `pass` (vacuous) |
 | U1-11 | close() leaves no profile directory and no Chrome process, every time, not most times (revisions 7 and 8) | after `npm run build`, twenty consecutive real-Chrome runs of U1-4's green path, each with its own `T=$(mktemp -d "$F/tmp-XXXX")`: 5 s after each run, count the runs where `ls -d "$T"/ultimate-tokens-smoke-* 2>/dev/null \| wc -l` or `pgrep -f "user-data-dir=$T/ultimate-tokens-smoke-" \| wc -l` prints anything but `0` | `0` of `20` | the same twenty against the pass-2 head `1e25556d`: `1` or more of `20` on either count (the review measured `5` of `17` directories in round 1, and `0` of `30` directories but `3` of `30` processes in round 2) | `5` of `17` at `1e25556d` |
 | U1-12 | a signal leg that times out leaves no fake Chrome behind (revision 7) | in a clone with leg (c)'s child made to hang past its timeout, run the launcher, then `pgrep -f fake-chrome.mjs \| wc -l` | `0` | the same against `1e25556d`: `1` or more | `1` at `1e25556d` (review F2) |
+
+### U2: the fake Chrome spawns a grandchild (#717, critic CHANGES at 262ae996)
+
+The critic on PR #735 (issuecomment-5787113504) showed that no leg bites on the process-group kill at `chrome.mjs:66`: with `close()` changed to kill only the parent pid, `launcher.mjs` passes 6 of 6, because `fixtures/fake-chrome.mjs` spawns no child. On macOS real Chrome hides it too; on Linux, where CI runs smoke, a parent-only kill leaves renderer and GPU children behind. U2 changes the test, not the launcher.
+
+Steps. (1) At startup, before any `DevToolsActivePort` write and under every `FAKE_CHROME_*` mode, the fixture spawns one long-lived grandchild (not detached, so it stays in the fake's process group) and writes its pid to a file in the profile directory. (2) Every leg that ends in `close()`, a signal or the deadline (b, c, d, e, f) reads that pid before the cleanup and fails, naming the leg and the pid, if the grandchild is alive 2 s after it. The legs stay six and the last line of U1-2 stays byte for byte. (3) `chrome.mjs` and `smoke.mjs` are not edited. Grade L5: process-group lifetime is the concurrency case the grade rule names, and U1 needed a second pass on the same file.
+
+| # | Criterion | Command | Expected | Negative control | Today |
+|---|---|---|---|---|---|
+| U2-1 | the launcher stays green with the grandchild asserts | U1-2's command | `exit 0`, `6`, `0`, U1-2's `PASS:` line | the parent-only mutant of U2-2 | `exit 0`, `6`, `0` at 262ae996 |
+| U2-2 | the parent-only kill reds | in a clone, `chrome.mjs:66` `process.kill(-proc.pid, "SIGKILL")` replaced by `proc.kill("SIGKILL")`, `git diff --stat` `1 file changed`: `node test/smoke/launcher.mjs 2>&1 \| grep -c '^  FAIL'; ... \| grep -c grandchild` | `exit 1`; legs (b), (c), (d), (e) and (f) each FAIL with `grandchild` in the line (5 and 5) | the same mutant at 262ae996: `exit 0`, 6 passes (the critic's finding) | 6 of 6 pass under the mutant |
+| U2-3 | the grandchild is really spawned and really in the group | in the clone of U2-2, `pgrep -f` on the grandchild's own marker right after the launcher exits | `1` or more under the mutant, `0` at the U2 head | the fixture's spawn line deleted: U2-1 reds on the pid file missing, never passes vacuously | no grandchild |
+| U2-4 | U1-7 and U1-8 still hold (TMPDIR unset; Linux in Docker `node:24`) | U1-7's and U1-8's commands | `exit 0`, `6`, `0`; `exit 0`, `6` | U2-2's mutant in Docker: `exit 1` | `exit 0`, `6` |
+| U2-5 | scope | `git fetch -q origin; git diff --stat origin/plan/small-fixes...HEAD -- . ':!.sdlc'` | only `test/smoke/fixtures/fake-chrome.mjs` and `test/smoke/launcher.mjs` | a stray edit to `chrome.mjs` shows as a third file | no unit diff yet |
+| U2-6 | `npm test` and `npm run smoke` green on the unit head, tree clean after | `npm test; npm run smoke; git status --short \| wc -l` | exit 0, exit 0 with `SMOKE PASS`, `0` | P2's control | green at 262ae996 |
 
 ## Not in scope
 
@@ -161,3 +178,5 @@ One PR from `plan/small-fixes` to `main`, title `fix(tooling): smoke owns its Ch
 | 2026-09-22 | revision 6, U1 pass 2, from the planner's re-diagnosis (`.sdlc/plans/small-fixes-U1-rediagnosis.md`). Root cause reproduced on a Mac with `env -u TMPDIR` and on Linux in Docker `node:24`: `launcher.mjs:153` restores an unset `TMPDIR` as the string `"undefined"`, leg (f)'s child inherits it and dies in `mkdtemp` with its stderr unread. The criteria gap: every row ran on a Mac with `TMPDIR` set, and P5 named a CI leg that had no run, since `ci.yml` triggers only on pull requests and `main`. Rows U1-7 (`TMPDIR` unset), U1-8 (Linux in Docker), U1-9 (a signal-leg red carries the child's stderr) and U1-10 (leg (e) cannot pass with `pgrep` absent) are added, copied from the re-diagnosis. P5 splits: P5a is the local run as before; P5b, `build-test` green on the graded sha with its run id, is graded at pre-land on `plan/small-fixes` (PR #735), since the loop merges a unit only after its verdict and no unit branch triggers CI. The unit verdict carries Linux evidence through U1-8 instead. The re-diagnosis's option O1, merging before the verdict, is not taken. Its repro ids `R1` to `R8` are renamed `RD1` to `RD8` in both files, since `R<n>` belongs to the readiness namespace and `board.py ids` refuses them outside it |
 | 2026-09-22 | revision 7, from the U1 pass-2 review at `1e25556d` (FIX-FIRST, `.sdlc/verdicts/small-fixes-U1-p2-review.md`), before any pass-2 verdict. F1: `close()` runs `rmSync` right after `SIGKILL`, while Chrome's helper processes can still be writing, so the profile directory survives on `5` of `17` real-Chrome runs, at the pass-2 head and in pass 1 alike. U1-3, U1-4 and P5a each ran once and could not see a one-in-four leak. Row U1-11 runs the green path twenty times and requires zero leaks; the fix retries the removal, synchronously, while the directory exists, with a bounded wait. F2: a signal leg that times out kills its child with `SIGKILL` and leaves the child's fake Chrome alive; row U1-12. This is review rework inside builder pass 2, not a pass 3 |
 | 2026-09-22 | revision 8, from U1 pass-2 review round 2 at `73d5f6f4` (PASS, finding F4), before any pass-2 verdict. U1-11's control read directories only, and the race it targets did not leave one in thirty runs at `1e25556d` in round 2, while Chrome processes still alive 5 s after the run did show, in `3` of `30`. A control that fires on one round and not the next cannot carry the row alone, so U1-11 now counts a run as leaking on either a directory or a process. F5 (a bare `rmSync` in the launcher's timeout handler, `launcher.mjs:126`) is carried to the verifier as a non-blocking note |
+| 2026-09-22 | revision 9, from the critic on PR #735 at `262ae996` (CHANGES, issuecomment-5787113504), after pre-land pass 3 🟢. No leg bites on the process-group kill: a parent-only `close()` passes 6 of 6 because the fake spawns no child. U2 adds a grandchild to the fixture and a grandchild-dead assert to legs (b) to (f), graded at builder-l5, reviewer-l4, verifier-l3 on `unit/sf-U2` off `plan/small-fixes`. The pre-land record at `262ae996` is superseded by the U2 merge; pre-land reruns on the new head |
+| 2026-09-23 | revision 10, landed. PR #735 squashed as `79f7b5dc` at `f7b63f3e` under R1, R21 and R22 (`.sdlc/verdicts/small-fixes-authz.md`); pre-land pass 4 🟢, CI green, critic ACCEPT `issuecomment-5792424039`. #717 closed; the plan is archived. The critic's two notes and the pass 4 reviewer's six 🟡 ride in #717's closing comment |

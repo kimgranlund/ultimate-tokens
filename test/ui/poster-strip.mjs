@@ -9,7 +9,20 @@
 // low-chroma dominant, one already-vivid) so the fixes are proven against real data too — the
 // integration-level DOM assertions (presetTile() actually wiring through this function) live in
 // test/ui/headless-boot.mjs's (jj) group.
-import { POSTER_STRIP_ACCENT_FLOOR_PCT, POSTER_STRIP_MAX_BAND_PCT, POSTER_STRIP_MAX_BAND_PCT_HIGH, POSTER_STRIP_MAX_BAND_PCT_LOW, posterStripBands, posterStripDominantCap } from "../../src/ui/app-helpers.mjs";
+import { POSTER_STRIP_ACCENT_FLOOR_PCT, POSTER_STRIP_MAX_BAND_PCT, POSTER_STRIP_MAX_BAND_PCT_HIGH, POSTER_STRIP_MAX_BAND_PCT_LOW, posterStripBands, posterStripDominantCap, POSTER_STRIP_CAP_CHROMA_LOW, POSTER_STRIP_CAP_CHROMA_HIGH } from "../../src/ui/app-helpers.mjs";
+// ownChroma / predictCap (#681 pre-land S1) - an INDEPENDENT sRGB(0..255) -> OKLCH chroma on Bjorn
+// Ottosson's matrices, plus the documented dominant-cap scaling re-expressed from the module's own
+// exported endpoints. Used to DERIVE the expected cap from a sampled hex rather than pin a number
+// read off a run. Deliberately not `hexToOklch`, which is what `posterStripChroma` itself calls.
+const ownChroma = (hex) => {
+  const inv = (a) => (a <= 0.04045 ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4));
+  const [r, g, b] = [1, 3, 5].map((i) => inv(parseInt(hex.slice(i, i + 2), 16) / 255));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return Math.hypot(1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s);
+};
+const predictCap = (hex) => POSTER_STRIP_MAX_BAND_PCT_LOW + Math.min(1, Math.max(0, (ownChroma(hex) - POSTER_STRIP_CAP_CHROMA_LOW) / (POSTER_STRIP_CAP_CHROMA_HIGH - POSTER_STRIP_CAP_CHROMA_LOW))) * (POSTER_STRIP_MAX_BAND_PCT_HIGH - POSTER_STRIP_MAX_BAND_PCT_LOW);
 import { hexToOklch } from "../../src/ui/model.mjs";
 import { paletteKeyColors } from "../../src/ui/model.mjs";
 import { hydrate } from "../../src/ui/persist.js";
@@ -180,7 +193,18 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   const wpAccents = wpBands.filter((b) => b.colorRole === "accent");
   ok(wpAccents.length === 2, `War and Peace: both accent swatches (icon crimson + gilt gold) survive (got ${wpAccents.length})`);
   const wpCap = posterStripDominantCap(wpDominant.key);
-  ok(wpCap < 39, `test setup: candle gold (chroma ~0.057) earns a cap near the low end (got ${wpCap.toFixed(2)})`);
+  // RE-DERIVED at #681 pre-land S1. This read `wpCap < 39` against `#D5BE98`, the CUSP
+  // RECONSTRUCTION of candle gold off the preset's fitted hue/chroma, whose chroma is 0.057194. S1
+  // makes `paletteKeyColors` return the palette's stored `anchor`, the real sampled `#C49F60`, whose
+  // chroma is 0.092275, so the cap moves 37.8611 to 40.5596 and "near the low end" described the
+  // reconstruction rather than candle gold. The expectation below is DERIVED from the sampled hex
+  // and the module's own exported endpoints before it is read off a run, not fitted to one:
+  // t = (0.092275 - 0.02) / (0.15 - 0.02) = 0.555958, cap = 35 + 0.555958 * (45 - 35) = 40.5596.
+  // `ownChroma` is this file's own Ottosson conversion rather than the `hexToOklch` the engine's
+  // `posterStripChroma` uses, so a shared bug in that conversion cannot make the two agree.
+  ok(wpDominant.key === "#C49F60", `test setup: the strip reads War and Peace's SAMPLED dominant, not its cusp reconstruction (got ${wpDominant.key})`);
+  ok(Math.abs(predictCap(wpDominant.key) - 40.5596) < 0.001, `test setup: the documented chroma scaling PREDICTS candle gold's cap at 40.5596 from #C49F60 alone (chroma ${ownChroma(wpDominant.key).toFixed(6)}, predicted ${predictCap(wpDominant.key).toFixed(4)})`);
+  ok(Math.abs(wpCap - predictCap(wpDominant.key)) < 1e-9 && wpCap > POSTER_STRIP_MAX_BAND_PCT_LOW && wpCap < POSTER_STRIP_MAX_BAND_PCT_HIGH, `posterStripDominantCap agrees with the derivation and is a genuine interpolation, strictly inside (${POSTER_STRIP_MAX_BAND_PCT_LOW}, ${POSTER_STRIP_MAX_BAND_PCT_HIGH}) (engine ${wpCap.toFixed(4)}, derived ${predictCap(wpDominant.key).toFixed(4)})`);
   ok(near(wpDominant.width, wpCap), `War and Peace: the candle-gold dominant (authored 50%, ~46% uncapped) is clamped to its chroma-scaled cap (want ${wpCap.toFixed(2)}, got ${wpDominant.width.toFixed(2)})`);
   ok(wpBands[0].colorRole == null && wpBands[0].name === "neutral", `War and Peace: neutral is the leading band (got ${wpBands.map((b) => b.name).join(",")})`);
   const wpTop = wpBands.filter((b) => b.name !== "neutral").sort((a, b) => chroma(b.key) - chroma(a.key))[0];
