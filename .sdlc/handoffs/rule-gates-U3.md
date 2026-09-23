@@ -267,17 +267,25 @@ Two small FIX-FIRST items from the re-review of `99f7efa4`/`71ba7ca5`, code at `
    reds under the mutant (0 edits, the dash wrongly masked) and passes against the real code (1
    edit, R8). Verified directly: the mutant fails `self-test` with this fixture in place.
 
-Finding 4 (R4's extension to `\|` changes the plan's rule-table meaning: `\| — (mapped
-indirectly) \|` should read `none (mapped indirectly)`, matching R1's "none" for absent, not
-`(mapped indirectly)` alone) is a plan-table change, not a builder fix -- left for the
-Orchestrator/planner, per the review's own read. Untouched this pass.
+Finding 4 (R4's extension to `\|` changed the plan's rule-table meaning) was left for the
+Orchestrator/planner at `b9f159f2`. **Now ruled and applied** (plan revision 9, `7f916033` on
+`plan/rule-gates`): `\|` comes back out of R4 (reverted to `, : ; (`); a Markdown table cell that
+opens with the dash and carries more text is R0 (f), refused and named, never rewritten --
+`export-drift.md:212`'s `\| — (mapped indirectly) \|` stays as is, and U4 rewrites it by hand as
+`\| none (mapped indirectly) \|`. `CELL_OPEN_DASH_RE` (a `\|` then the dash, NOT immediately
+followed by the closing `\|`, which is R1's whole-cell case) drives it. Self-test control
+`"r0f-refused"` checks the line survives `fixLines()` byte for byte and is recorded as one R0 (f)
+edit.
 
-Rechecked in a fresh clone at `b9f159f2`: `self-test: PASS`, `FAIL: 16746 em dashes ... in 343
-files` (unchanged, confirming neither fix touches a real line today). Full-tree `--fix --sample`
-then `--fix` again: both `329 files changed, 9325 insertions(+), 9325 deletions(-)`,
-byte-identical; numstat mismatches `0`; `13` rule lines, same counts as Pass 3's table above
-(`R4 1`, `R6 281`, `R8 8260`); 360 changed table rows, `0` pipe-count mismatches. `npm test` in a
-separate, unswept fresh clone: `✓ all 48 test files passed`, exit `0`, tree clean after.
+Rechecked in a fresh clone at `899f2be0`: `self-test: PASS`, `FAIL: 16746 em dashes ... in 343
+files` (unchanged; the R0-vs-R4 reclassification does not change the gate's total -- masking, not
+rule assignment, decides what counts). Full-tree `--fix --sample` then `--fix` again: both `329
+files changed, 9324 insertions(+), 9324 deletions(-)`, byte-identical; numstat mismatches `0`;
+`13` rule lines with `R0 f 1` and `R4 0` (`export-drift.md:212` is the sole R0 (f) hit, listed
+under the residual, never rewritten); the other counts unchanged from Pass 3's table. 359 changed
+table rows (one fewer than before, since `export-drift.md:212` is no longer rewritten), `0`
+pipe-count mismatches. `npm test` in a separate, unswept fresh clone: `✓ all 48 test files
+passed`, exit `0`, tree clean after.
 
 ## Self-check
 
