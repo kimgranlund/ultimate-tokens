@@ -116,7 +116,7 @@ src/
   main.ts, Vite entry (imports the stylesheet + <ultimate-tokens>, mounts it)
 figma/
   plugin/   code.js · manifest.json · ui.html, the generator AS a Figma plugin
-  binder/   bind-plan.mjs · figma-semantic-binder/          , the standalone Semantic Binder plugin
+  binder/   bind-plan.mjs · figma-semantic-binder/, the standalone Semantic Binder plugin
 scripts/    bundle.mjs · gen-categories.mjs · gen-figma-ui.mjs · gen-figma-assets.mjs · gen-preview.mjs ·
             gen-font-test.mjs
 docs/reference/  the product specification, the canonical data/role-table.json (the answer key),

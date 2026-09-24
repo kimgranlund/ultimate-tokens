@@ -268,7 +268,7 @@ export class TypeSectionImpl {
           onchange: (e) => this.renameTypeMode(m.id, e.target.value.trim()) }),
         btn(icon("trash"), { ariaLabel: "Delete this breakpoint", title: "Delete this breakpoint mode", onclick: () => this.deleteTypeMode(m.id) }),
       ),
-      h("label", { class: "mode-editor-label", for: "fld-mode-mw" }, "Breakpoint width, @media min-width"),
+      h("label", { class: "mode-editor-label", for: "fld-mode-mw" }, "Breakpoint width: @media min-width"),
       h(
         "div",
         { class: "mode-editor-row" },

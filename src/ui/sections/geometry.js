@@ -343,7 +343,7 @@ export class GeomSectionImpl {
           onchange: (e) => this.renameGeomMode(m.id, e.target.value.trim()) }),
         btn(icon("trash"), { ariaLabel: "Delete this breakpoint", title: "Delete this breakpoint mode", onclick: () => this.deleteGeomMode(m.id) }),
       ),
-      h("label", { class: "mode-editor-label", for: "fld-gmode-mw" }, "Breakpoint width, @media min-width"),
+      h("label", { class: "mode-editor-label", for: "fld-gmode-mw" }, "Breakpoint width: @media min-width"),
       h(
         "div",
         { class: "mode-editor-row" },
