@@ -1,5 +1,4 @@
 # Verdict pif-u7 · #681 preset-intent-fidelity, the pre-land fix unit
-verdict: 🟢
 
 Verifier, grade l3. Graded `unit/pif-u7 @ 43033841` (frozen), UB `de1bafef`, on 2026-09-21.
 Criteria U7-P1 to U7-P5 and U7-1 to U7-14 from the plan's U7 section, U7-P4 as amended at
@@ -17,6 +16,7 @@ for every run below; no timing here enters `.sdlc/baseline.md`.
 ## Verdict
 
 🟢 **U7 is green.** 19 of 19 criteria 🟢, 0 🟡, 0 🔴; the two extra gates and the skew probe all bite.
+verdict: 🟢
 
 ## Per-criterion
 

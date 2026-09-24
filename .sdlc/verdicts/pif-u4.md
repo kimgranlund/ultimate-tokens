@@ -1,5 +1,4 @@
 # Verdict U4 pass 5 (delta) · 🟡
-verdict: 🟡
 
 Plan preset-intent-fidelity (#681), unit U4, head `3921f14059ccf8730521c6cffdb9bf1ac3a65da0` on `unit/pif-u4-integration`. Prior verdict at `36ce7777`: `scratchpad/verdict-pif-u4.md`. Verified 2026-09-20, read-only, worktree `.git-worktrees/pif-u4-integration`.
 
@@ -81,6 +80,7 @@ The merge was **replayed from scratch** rather than read: a detached worktree at
 **Counts this pass: 16 🟢, 5 🟡, 0 🔴** across 21 rows. Folding the carried groups out to the prior verdict's own granularity: **35 🟢, 5 🟡, 0 🔴** (prior: 25 🟢, 3 🟡, 0 🔴; the two new yellows are rows 7 and 18, and row 13 moved from 🟢 to 🟡 on the load reading while rows 19 and the prior three yellows account for the rest).
 
 **Re-pins reproduced: 10 of 10** named or found (8 citations, the radix fixture, the shadcn schema stamp), plus **32** further citation re-pins inside conflict resolutions that the ledger does not enumerate, of which 7 were spot-checked by hand and all 40 are covered green by `test/repo/citations.mjs`. **None could not be reproduced.**
+verdict: 🟡
 
 ## Evidence
 

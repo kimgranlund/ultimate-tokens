@@ -82,7 +82,7 @@ Token rule for a verdict written in words, ruled under Q3 (owner, 2026-09-22): t
 - [x] U1 (M) the 31 title-token files: the line added, token equal to the title's first emoji, the 31 names off the list · builder-l2 · reviewer-l1 · verifier-l1
 - [x] U2 (M) the 16 derived files: the line added where the record's final state is, tokens re-derived by the verifier, the last 16 names off the list · builder-l3 · reviewer-l2 · verifier-l2 · after U1
 - [x] U3 (S) the list and the pin retire: the check grades every file and needs no git, the adapter says so, N1 to N6 close by construction · builder-l3 · reviewer-l2 · verifier-l2 · after U2
-- [~] U4 (S) X5: the eleven `pif-*` records #681 U9 backfilled carry `verdict:` at their top; the line moves to where each record's final graded state is, value unchanged · builder-l2 · reviewer-l1 · verifier-l1 · after #681 landed
+- [x] U4 (S) X5: the eleven `pif-*` records #681 U9 backfilled carry `verdict:` at their top; the line moves to where each record's final graded state is, value unchanged · builder-l2 · reviewer-l1 · verifier-l1 · after #681 landed
 
 Grades. U1 is mechanical and its verifier's row is a command; sonnet at every seat. U2 is where a wrong token would be silent (the check accepts any legal token), so the builder is l3 and the reviewer and verifier are opus (l2), a different family, and the verifier derives before it reads. U3 edits the check itself; the same pair as #723's U3. Order: U1, U2, U3, each merged into `plan/verdict-backfill` after its verdict; U1 and U2 both delete lines from the list file, so they are sequential rather than parallel.
 
