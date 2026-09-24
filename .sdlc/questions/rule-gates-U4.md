@@ -4,7 +4,7 @@ plan: rule-gates
 unit: U4
 asked-by: orchestrator
 asked: 2026-09-24
-status: open
+status: answered
 ---
 
 # rule-gates U4: the store product names after the em dash sweep
@@ -30,4 +30,4 @@ What should the Pro and Studio product names be in the repo, and later in the st
 
 ## Answer
 
-(pending)
+Owner ruling R37, relayed by the Conductor on 2026-09-24: option 1. The names are `Ultimate Tokens Pro` and `Ultimate Tokens Studio`, with no punctuation, and the tagline probe is `derived, not guessed`. U4 pass 2 applies these in `store-drift-check.mjs` and `store-copy.md`. The closing comment on #730 notes that the owner re-pastes both store names at the next dashboard walk; until then the live drift check warns.
