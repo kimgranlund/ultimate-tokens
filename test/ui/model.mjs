@@ -365,7 +365,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
 }
 
 // ── U1 (#731): the anchored branch of deriveKeyColor, reached through projectView, must agree
-// byte-for-byte with hexToOklch(anchor) — the one hex-to-OKLCH conversion this file now keeps.
+// byte-for-byte with hexToOklch(anchor), the one hex-to-OKLCH conversion this file now keeps.
 // The default kit's 16 families all carry `anchor` (asserted below rather than assumed); if a
 // future default kit drops it, one anchored palette is built here from a corpus hex so the
 // subject count never silently falls to 0.
