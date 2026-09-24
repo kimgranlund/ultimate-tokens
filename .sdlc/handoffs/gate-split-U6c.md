@@ -50,8 +50,8 @@ Review verdict was FIX-FIRST (`gs-U6c-review.md`): every mechanical criterion an
 | U6c-4 | `node test/ui/headless-boot.mjs`, throwaway clone at 46dc9b77 | `exit 0`; `(SAMPLED seed 0: 35 curated documents, 392 palettes)` count `1`; `stride 4, 91 anchored palettes checked of 316, default kit whole` count `1`; `5 of 35 sampled documents contribute no anchored palette in either mode, 0 of the rest lost every anchored palette to the stride` count `1`; `HEADLESS BOOT PASS` count `1` | matches the plan exactly, no amendment needed (the plan's own 91-of-316 figure held, unlike its 79-of-79 probe artifact); F2(a)'s new line matches the reviewer's own probe |
 | U6c-5 | M-D mutation, same clone at 46dc9b77 (`color.js` reset-lift edit, `git diff --stat`: `1 file changed, 1 insertion(+), 1 deletion(-)`), `node test/ui/headless-boot.mjs` | `exit 1`; `(rst-corpus)` line count `4`; `(rst-corpus) 91 of 91 anchored palettes failed` count `1` | matches the plan exactly (`91 of 91`) |
 | U6c-6 | `npm run -s gate:corpus-reset`, throwaway clone at 46dc9b77 | `exit 0`; `(FULL: 343 curated documents, 3780 palettes)` count `1`; `stride` count `0`; `HEADLESS BOOT PASS` count `1`. U5-3's line-range clause (`A=4051, Z=4157`): outside-hunk count `0` against `unit/gs-U6b` (this unit's own hunks, `4075 4086 4144 4146 4150`, all fall inside `[A, Z]`, so U6c adds none); `3` against the `plan/gate-split` fork point `e035f841`, inherited from U6b's own main merge (M5), unchanged since pass 1 | matches the plan exactly, F2(b) added |
-| U6c-7 | not run, per brief: no timing runs for the record on this pass | deferred | deferred to the coordinated quiet window with U6c-8 |
-| U6c-8 | not run, per brief and per the plan's own design: rides the same coordinated quiet window as U6b's six owed gate-script rows | deferred | deferred |
+| U6c-7 | `/usr/bin/time -p node test/engine/prime.mjs`, then the same for `test/ui/headless-boot.mjs`, quiet-host window 2 (2026-09-24) | `real 17.11` (prime), `real 17.57` (headless-boot), both under U4-4/U5-4's ceilings (25 s, 30 s); one rejected prime.mjs attempt (load 4.04, hot 1, never ran) | comfortably under both ceilings; narrowing the SAMPLED draw cut prime from the design section's loud 43-69 s range to a 17 s quiet reading |
+| U6c-8 | the re-time: three `npm test` runs, quiet-host window 2, alongside U6b's six owed gate-script rows | `89.10 / 79.93 / 80.07 s`, replacing U6b's window-1 figures (`106.45 / 141.39 / 171.23 s`); P2 now prints `ok 89.1` | inside the 120 s ceiling on all three, resolving `.sdlc/questions/gate-split-U6b.md` per owner ruling R35 |
 
 Every clone used for a mutation or a re-observation was `git clone -q --shared` from the unit worktree, into this seat's scratchpad, removed after use; each is proven at the unit's own head before the mutation was applied (`git rev-parse HEAD` printed `8fc8abf5c0bb5217b1b9a3250fd9e038ed0b4ff7` for pass 1's clones, `46dc9b774f37adf379d3750da361ef709a5e7f0d` for pass 2's).
 
@@ -64,3 +64,19 @@ Every clone used for a mutation or a re-observation was `git clone -q --shared` 
 U6c-2's FULL pass count is `26`, not the plan's cited `21` (which the plan itself flagged as measured at an older head, c8823976, "re-observed on unit/gs-U6b before editing and cited"). Re-observed in a throwaway clone at this unit's own pre-edit head (d40cc5ce): also `26`. The FULL leg's other three counts (mode line, `0/2000`, `114/151200`) are unchanged, so this is drift in the pass-line count between plan-measurement time and this unit's cut point, not a regression this unit introduced.
 
 U6c-4's stride count (`91 of 316`) held exactly as the plan's own arithmetic predicted, unlike the planner's own probe run (which read `79` because its skip keyed on `preset.name` and struck the default kit too). No amendment was needed to the plan's stated needle.
+
+## Window 2: U6c-7 and U6c-8 (2026-09-24, added by the U6b builder per the coordinated quiet window)
+
+Taken in a fresh `git clone -q --shared` of `.worktrees/gs-U6b` at `c87d98fc` (HEAD proven: `git rev-parse HEAD` printed `c87d98fc87c200951e45c649c1c7b94ad462882f`), under the same quiet-host rule as U6b's own set: load under 5 at the start, heavy-run count 0, `pgrep` clean, read again after each run.
+
+U6c-7, one attempt each unless noted:
+
+| command | load before | hot before | load after | hot after | exit | real (s) | note |
+|---|---|---|---|---|---|---|---|
+| `node test/engine/prime.mjs` | 4.04 | 1 | not recorded | not recorded | not recorded | not recorded | rejected, hot before nonzero, retaken |
+| `node test/engine/prime.mjs` | 3.37 | 0 | 3.61 | 0 | 0 | 17.11 | counted |
+| `node test/ui/headless-boot.mjs` | 3.49 | 0 | 3.92 | 0 | 0 | 17.57 | counted |
+
+Both counted readings sit well inside U4-4/U5-4's ceilings (25 s, 30 s), a large drop from the design section's loud pre-narrowing readings (43-69 s), consistent with U6c's SAMPLED draw shrinking prime's determinism/poison counts and the reset sweep's stride.
+
+U6c-8: the three `npm test` re-time runs are U6b's own Runs table rows 1-3 (`.sdlc/handoffs/gate-split-U6b.md`), not duplicated here. Figures: `89.10 / 79.93 / 80.07 s`, all inside the 120 s ceiling. `P2`'s command against the updated `.sdlc/baseline.md` prints `ok 89.1`. This resolves `.sdlc/questions/gate-split-U6b.md` per owner ruling R35: the window-1 overage (`106.45 / 141.39 / 171.23 s`) is superseded, kept as a labelled historical note in `.sdlc/baseline.md` rather than deleted.

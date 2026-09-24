@@ -1,11 +1,11 @@
 ---
 kind: baseline
 repo: ultimate-tokens
-ran: 2026-09-23
-ref: unit/gs-U6b @ 71cdb960
-host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 coordinated window), full readings in the U6b handoff's Runs table
+ran: 2026-09-23 to 2026-09-24
+ref: plan/gate-split @ c87d98fc
+host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 window 1 and its window-2 sequel), full readings in the U6b handoff's Runs table
 extended: 2026-09-19, rows corpus-contrast and fonts, host load 3.97 4.39 4.80 to 6.16 4.94 4.97 on 10 cores across the six runs
-supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. `npm test` and `gate:corpus-tonal` carry three quiet-host readings each; `gate:corpus-anchor`, `gate:sweep-prime` and `gate:corpus-reset` carry one each (U6-3 rejected two of the three counted attempts per script on a transient hot-process reading after the run; see the U6b handoff), pending a second coordinated quiet window
+supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. Every row now carries all three of its counted quiet-host readings; `npm test`'s window-1 figures move to a labelled superseded note once U6c-8 re-timed it
 ---
 
 # Baseline
@@ -16,17 +16,21 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
-| `npm test` | 3/3 | 0 | 106.45 · 141.39 · 171.23 | `✓ all 50 test files passed` `re-measured 2026-09-23, gate-split #713 U6b, quiet-host set (below); OVER the 120 s ceiling, see .sdlc/questions/gate-split-U6b.md` |
+| `npm test` | 3/3 | 0 | 89.10 · 79.93 · 80.07 | `✓ all 50 test files passed` `re-measured 2026-09-24, gate-split #713 U6c-8, quiet-host set (below); replaces the U6b/window-1 figures, which move to the superseded note below` |
 | `npm run gate:corpus-tonal` | 3/3 | 0 | 86.09 · 116.31 · 92.56 | `PASS: tonal-generation clears all [gate] predicates` `new row, gate-split #713 U6b` |
-| `npm run gate:corpus-anchor` | 1/3 | 0 | 78.98 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control` `new row, gate-split #713 U6b; 1 of 3 counted readings in hand, two more rejected on a hot process after the run (U6-3), pending a second quiet window` |
-| `npm run gate:sweep-prime` | 1/3 | 0 | 86.25 | `PASS: prime-system clears all AC-050 gates` `new row, gate-split #713 U6b; 1 of 3, same reason as corpus-anchor above` |
-| `npm run gate:corpus-reset` | 1/3 | 0 | 83.40 | `HEADLESS BOOT PASS — all Phase-3 interaction assertions hold` `new row, gate-split #713 U6b; 1 of 3, same reason as corpus-anchor above` |
+| `npm run gate:corpus-anchor` | 3/3 | 0 | 78.98 · 99.90 · 86.02 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control` `new row, gate-split #713 U6b; first reading window 1, other two window 2 (2026-09-24)` |
+| `npm run gate:sweep-prime` | 3/3 | 0 | 86.25 · 70.40 · 67.00 | `PASS: prime-system clears all AC-050 gates` `new row, gate-split #713 U6b; first reading window 1, other two window 2 (2026-09-24)` |
+| `npm run gate:corpus-reset` | 3/3 | 0 | 83.40 · 57.38 · 57.15 | `HEADLESS BOOT PASS — all Phase-3 interaction assertions hold` `new row, gate-split #713 U6b; first reading window 1, other two window 2 (2026-09-24)` |
 | `npm run build` | 3/3 | 0 | 3.06 · 1.34 · 1.36 | `wrote figma/plugin/ui.html 4119.1 KB` `re-measured 2026-09-23, see the #681 U7 and #681 U10 corrections below` |
 | `npm run smoke` | 3/3 | 0 | 18.20 · 18.28 · 18.25 | `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser` |
 | `npm run gate:corpus-contrast` | 3/3 | 0 | 20.12 · 22.89 · 22.29 | `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color` |
 | `npm run gen:type-fonts` | 3/3 | 0 | 0.77 · 0.78 · 0.70 | `wrote src/ui/type-fonts.js  (229 KB · fonts 171 KB woff2)` |
 
-`npm test`'s summary line moved from 49 to 50 test files: U1 registered `engine/corpus-sample.mjs` in `test/run.mjs`'s `TESTS` alongside the existing `engine/anchor.mjs`. The `npm test` and `gate:corpus-tonal` figures above are all three of their counted quiet-host readings (load under 5 at start, 0 hot processes and a clean `pgrep` before and after, exit 0, tree clean); the other three gate rows carry only their one clean reading each, the remaining two counted attempts per script having been rejected under U6-3 for a nonzero hot-process reading after the run finished (not before): see `.sdlc/handoffs/gate-split-U6b.md`'s Rejected runs table. Two more counted attempts per script are still owed before those three rows are complete.
+`npm test`'s summary line moved from 49 to 50 test files: U1 registered `engine/corpus-sample.mjs` in `test/run.mjs`'s `TESTS` alongside the existing `engine/anchor.mjs`. Every row above now carries all three of its counted quiet-host readings (load under 5 at start, 0 hot processes and a clean `pgrep` before and after, exit 0, tree clean); the readings taken in window 2 (2026-09-24) closed out the three gate-script rows and re-timed `npm test` under U6c's narrower SAMPLED draw. See `.sdlc/handoffs/gate-split-U6b.md`'s Runs and Rejected runs tables for every attempt, counted and not.
+
+### Superseded: `npm test`'s window-1 figures (2026-09-23, pre-U6c-8)
+
+Before U6c narrowed `prime.mjs`'s determinism/poison draw and the reset sweep's stride (owner ruling R35), `npm test`'s three quiet-host readings were 106.45, 141.39 and 171.23 s (`✓ all 50 test files passed`, load 4.39/3.57/4.98 at start), all exceeding the 120 s ceiling (`.sdlc/questions/gate-split-U6b.md` records the overage and a per-file breakdown). U6c-8's re-time above (89.10, 79.93, 80.07 s) replaces these as the figure of record; kept here as history, not as a range to grade against, same convention as the interim ceiling section below.
 
 The corpus-contrast gate's own counts, as it printed them on run 5 of the set above, one list item per line of output:
 
