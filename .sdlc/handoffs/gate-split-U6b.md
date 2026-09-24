@@ -3,8 +3,8 @@ kind: handoff
 plan: gate-split
 unit: U6b
 branch: unit/gs-U6b
-written: 2026-09-23
-pass: 1
+written: 2026-09-24
+pass: 2
 ---
 
 # Handoff U6b gate-split - builder -> reviewer
@@ -13,10 +13,28 @@ pass: 1
 |---|---|
 | Branch | unit/gs-U6b, cut from plan/gate-split, main (04f95ff0) merged in at 8ff163bd |
 | Worktree | .worktrees/gs-U6b |
-| Files | .sdlc/adapter.md, .sdlc/baseline.md, .sdlc/board.md, .sdlc/debt.md, .sdlc/plans/gate-split.md, .sdlc/checks/baseline-agrees-check.sh, .sdlc/questions/gate-split-U6b.md, .claude/skills/shipping-changes/SKILL.md, .claude/CLAUDE.md, test/engine/anchor.mjs, docs/reference/references/component-inventory.md, docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md, figma/plugin/ui.html |
-| Commits | 8ff163bd (merge origin/main), ee53815a (two doc-citation fixes), 1d653510 (regenerate ui.html), e89052a9 (non-timing records batch), 443fa365 (adapter §5 step, U6-9), 71cdb960 (key-anchor byCategory fix), 74ccbaf5 (figures of record, ceiling question) |
-| Ran | 3 quiet-host `npm test` and 3 quiet-host `gate:corpus-tonal`, all counted, all exit 0, tree clean after; corpus-anchor/sweep-prime/corpus-reset each have 1 of 3 counted (8 rejected attempts, see below) |
-| Left out | corpus-anchor, sweep-prime, corpus-reset each need 2 more counted quiet-host runs; a second coordinated quiet window is owed (reported to the Orchestrator) |
+| Files | .sdlc/adapter.md, .sdlc/baseline.md, .sdlc/board.md, .sdlc/debt.md, .sdlc/plans/gate-split.md, .sdlc/checks/baseline-agrees-check.sh, .sdlc/questions/gate-split-U6b.md, .claude/skills/shipping-changes/SKILL.md, .claude/CLAUDE.md, test/engine/anchor.mjs, src/ui/sections/color.js, docs/reference/references/component-inventory.md, docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md, figma/plugin/ui.html |
+| Commits (pass 1) | 8ff163bd (merge origin/main), ee53815a (two doc-citation fixes), 1d653510 (regenerate ui.html), e89052a9 (non-timing records batch), 443fa365 (adapter §5 step, U6-9), 71cdb960 (key-anchor byCategory fix), 74ccbaf5 (figures of record, ceiling question), 288ce31c (handoff), 474824ff (control for 71cdb960) |
+| Commits (pass 2, FIX-FIRST rework) | f0ba0f0b (H1, remove the duplicated color.js block), f77f0d04 (revert ee53815a's citation shifts), 32b34a50 (regenerate ui.html), 219dda39 (correct baseline.md's KB figure), 1924dbae (M1, remove three restored rediagnosis plans), 75d66ada (M2, revert the unconsented CLAUDE.md line), 436f3b36 (M3, quiet-host prose fix), f08db284 (L1/L2), f786d183 (L4), 012fe5b5 (L3) |
+| Ran | 3 quiet-host `npm test` and 3 quiet-host `gate:corpus-tonal`, all counted, all exit 0, tree clean after; corpus-anchor/sweep-prime/corpus-reset each have 1 of 3 counted (8 rejected attempts, see below). `npm test` once more after the pass 2 fixes: green, 50/50, tree clean |
+| Left out | corpus-anchor, sweep-prime, corpus-reset each need 2 more counted quiet-host runs. Per the ceiling question's Answer (R35), these ride U6c's own re-time window together, not a standalone second window |
+
+## Pass 2: review findings mapped to fixes
+
+| Finding | Fix |
+|---|---|
+| H1 | `src/ui/sections/color.js` restored to `origin/main`'s blob (f0ba0f0b); `git diff origin/main -- src/ui/sections/color.js` is empty. ee53815a's citation shifts reverted (f77f0d04): both docs already cited the right lines once the duplicate was gone, `audit-citations.mjs` reports zero STALE. `figma/plugin/ui.html` regenerated (32b34a50), now 4119.1 KB, matching `origin/main` exactly. `baseline.md`'s build row and its false KB-correction paragraph reverted (219dda39) |
+| M1 | Three restored rediagnosis plans deleted (1924dbae): byte-identical to `.sdlc/plans/archive/`'s copies per `diff` |
+| M2 | `.claude/CLAUDE.md`'s unconsented `npm test` time line reverted (75d66ada); only the owner-approved Q2 line (naming `sweeps`) remains |
+| M3 | Adapter's quiet-host prose fixed (436f3b36): load under 5 is a start-only condition; after the run, load is graded against the host's core count, matching U6-10 and U6-3's own formula |
+| M4 | Rejected runs table rebuilt with the Runs table's own 11 columns (this handoff, below): `not recorded` for R1-R8 (never started), full after-readings for R9-R14 (ran, then read loud) |
+| M5 | U6-6's `INTERIM` needle cited in Criteria below: `0` at this head, `1` on `origin/main` |
+| M6 | Plan text; the Orchestrator is folding it into revision 13 |
+| L1 | Six bold inline labels dropped from `.sdlc/adapter.md` (f08db284), content unchanged |
+| L2 | Adapter's corpus-tonal/sweep-prime rows now name the real last line (`PASS: ...`), with the `(FULL: ...)` mode line noted as printing just before it (f08db284) |
+| L3 | `shipping-changes` no longer states an unmeasured CI figure; says the figure is pinned at pre-land, once U6-8/P10 measures a completed `sweeps` run (012fe5b5) |
+| L4 | `baseline.md`'s "U6a merge registered" corrected to "U1 registered" (f786d183); the question doc's per-file sum corrected from 48 to 50 files (f786d183); R2's reason column removed along with the rest of the Rejected table's reason column per M4, so its garbled wording no longer exists |
+| L5 | Noted, not fixed: the merge commit 8ff163bd also flipped the plan's U6b checkbox from `[ ]` to `[~]`, a hand edit inside a merge that is procedurally the Orchestrator's to make. The content is correct (the unit is in progress); the commit history is not rewritten to fix attribution, per the no-history-rewrite rule |
 
 ## Step 0 (merge)
 
@@ -55,22 +73,24 @@ Nine rows above are the counted set that passes U6-3's own reading (`$5!="0"` et
 
 ## Rejected runs
 
-| id | command | load before | hot before | pgrep before | reason |
-|---|---|---|---|---|---|
-| R1 | `npm test` | `6.85` | `1` | `9643 sh -c npm run gen:figma-assets ...;10197 node test/run.mjs;` | pgrep matched another seat's `npm test` in flight |
-| R2 | `npm run gate:corpus-anchor` | `6.33` | `2` | `none` | load at or over the ncpu-scale hot-process reading before start |
-| R3 | `npm run gate:corpus-anchor` | `4.53` | `2` | `none` | hot before nonzero |
-| R4 | `npm run gate:corpus-anchor` | `6.77` | `0` | `none` | load before at or above 5 |
-| R5 | `npm run gate:corpus-anchor` | `5.11` | `0` | `none` | load before at or above 5 |
-| R6 | `npm run gate:corpus-anchor` | `4.72` | `1` | `none` | hot before nonzero |
-| R7 | `npm run gate:corpus-anchor` | `6.74` | `0` | `none` | load before at or above 5 |
-| R8 | `npm run gate:corpus-reset` | `4.50` | `1` | `none` | hot before nonzero |
-| R9 | `npm run gate:corpus-anchor` | `4.84` | `0` | `none` | ran clean before, `hot after` read `2` |
-| R10 | `npm run gate:corpus-anchor` | `4.75` | `0` | `none` | ran clean before, `hot after` read `1` |
-| R11 | `npm run gate:sweep-prime` | `4.64` | `0` | `none` | ran clean before, `hot after` read `2` |
-| R12 | `npm run gate:sweep-prime` | `3.91` | `0` | `none` | ran clean before, `hot after` read `2` |
-| R13 | `npm run gate:corpus-reset` | `4.80` | `0` | `none` | ran clean before, `hot after` read `1` |
-| R14 | `npm run gate:corpus-reset` | `4.01` | `0` | `none` | ran clean before, `hot after` read `1` |
+Same columns as the Runs table above. R1-R8 never started (the rule failed before the run), so their after-readings, exit, wall, last line and status are `not recorded`, not `0`. R9-R14 did run (clean before, loud after); their columns are the same program output the earlier draft filed as counted rows.
+
+| id | command | load before | hot before | pgrep before | load after | hot after | exit | wall (s) | last line | git status lines |
+|---|---|---|---|---|---|---|---|---|---|---|
+| R1 | `npm test` | 6.85 | 1 | `9643 sh -c npm run gen:figma-assets ...;10197 node test/run.mjs;` | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded |
+| R2 | `npm run gate:corpus-anchor` | 6.33 | 2 | none | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded |
+| R3 | `npm run gate:corpus-anchor` | 4.53 | 2 | none | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded |
+| R4 | `npm run gate:corpus-anchor` | 6.77 | 0 | none | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded |
+| R5 | `npm run gate:corpus-anchor` | 5.11 | 0 | none | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded |
+| R6 | `npm run gate:corpus-anchor` | 4.72 | 1 | none | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded |
+| R7 | `npm run gate:corpus-anchor` | 6.74 | 0 | none | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded |
+| R8 | `npm run gate:corpus-reset` | 4.50 | 1 | none | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded |
+| R9 | `npm run gate:corpus-anchor` | 4.84 | 0 | none | 4.90 | 2 | 0 | 86.78 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control` | 0 |
+| R10 | `npm run gate:corpus-anchor` | 4.75 | 0 | none | 4.34 | 1 | 0 | 86.19 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control` | 0 |
+| R11 | `npm run gate:sweep-prime` | 4.64 | 0 | none | 4.57 | 2 | 0 | 80.86 | `PASS: prime-system clears all AC-050 gates` | 0 |
+| R12 | `npm run gate:sweep-prime` | 3.91 | 0 | none | 6.94 | 2 | 0 | 89.38 | `PASS: prime-system clears all AC-050 gates` | 0 |
+| R13 | `npm run gate:corpus-reset` | 4.80 | 0 | none | 6.49 | 1 | 0 | 88.18 | `HEADLESS BOOT PASS — all Phase-3 interaction assertions hold` | 0 |
+| R14 | `npm run gate:corpus-reset` | 4.01 | 0 | none | 3.86 | 1 | 0 | 61.85 | `HEADLESS BOOT PASS — all Phase-3 interaction assertions hold` | 0 |
 
 R9-R14 are the six clean-before/loud-after runs that produced the earlier draft's rows 7/8/11/12/14/15; they were mis-filed as counted in an earlier pass of this handoff and are corrected here to Rejected, since U6-3's own formula reads `hot after` too. Their program output is unchanged from what was captured (`PASS (FULL): ...` for R9/R10, `PASS: prime-system clears all AC-050 gates` for R11/R12, `HEADLESS BOOT PASS — all Phase-3 interaction assertions hold` for R13/R14, each exit 0, each 0 git status lines); only their standing as counted rows moves.
 
@@ -80,7 +100,9 @@ R9-R14 are the six clean-before/loud-after runs that produced the earlier draft'
 
 ## Criteria
 
-U6-1 through U6-12 checked by hand against the plan's exact commands at this head: U6-6, U6-9, U6-10, U6-11, U6-12's needles all print the expected counts. U6-3 does not fully pass yet: the Runs table above is 9 rows, not 15, and 14 Rejected rows exist rather than "anything" being the accepted range only in spirit; the plan accepts a rejected count of "anything", but the 9/15 counted total means corpus-anchor, sweep-prime and corpus-reset are not yet complete rows in `.sdlc/baseline.md`/`.sdlc/adapter.md`, which is stated plainly there rather than papered over. U6-5's `baseline-agrees-check.sh` needle: `npm test`, `build`, `smoke`, `corpus-contrast`, `gate:corpus-tonal` and `fonts` read `ok`; `gate:corpus-anchor`, `gate:sweep-prime`, `gate:corpus-reset` read `STALE` (baseline has 1 reading, not 3) until the second window.
+U6-1 through U6-12 checked by hand against the plan's exact commands at this head: U6-6, U6-9, U6-10, U6-11, U6-12's needles all print the expected counts. U6-3's rejected-run count is "anything" per the plan, which 14 satisfies; the counted total is 9 of 15, so corpus-anchor, sweep-prime and corpus-reset are not yet complete rows in `.sdlc/baseline.md`/`.sdlc/adapter.md`, stated plainly there rather than papered over. U6-5's `baseline-agrees-check.sh` needle: `npm test`, `build`, `smoke`, `corpus-contrast`, `gate:corpus-tonal` and `fonts` read `ok`; `gate:corpus-anchor`, `gate:sweep-prime`, `gate:corpus-reset` read `STALE` (baseline has 1 reading, not 3) until the second window.
+
+U6-6's `INTERIM` needle (M5): `grep -cF "Interim ceiling now, split sweeps into gate scripts" .sdlc/adapter.md` prints `0` at this head and `1` on `origin/main` (`git show 04f95ff0:.sdlc/adapter.md | grep -c ...` prints `1`), confirming the retired note's own wording is gone from the live paragraph rather than merely superseded in substance.
 
 ## What disagreed with the plan
 
