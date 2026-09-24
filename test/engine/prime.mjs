@@ -260,11 +260,17 @@ for (const hueSpace of SPACES) {
 //    truncated keys restored, to prove this methodology actually bites — was run standalone, not
 //    committed for cost, and is reported in the handoff (`.sdlc/handoffs/pif-u6.md`) and in this
 //    unit's own report.
-// DET_CASE_COUNT: SAMPLED thins to the first 400 of the 2000 (#713 U4). Each case's fields are a
-// pure function of `i` alone, so a shorter loop IS the same prefix, not a different case list.
-// POISON_CASES stays 1500 in both modes: the file's own comment above says catch rate follows case
-// count, not poison density.
-const DET_CASE_COUNT = FULL ? 2000 : 400;
+// DET_CASE_COUNT: SAMPLED thins to the first 200 of the 2000 (#713 U4, narrowed 200 at U6c, owner
+// ruling R35). Each case's fields are a pure function of `i` alone, so a shorter loop IS the same
+// prefix, not a different case list.
+// POISON_COUNT: SAMPLED thins to the first 500 of the 1500 poison renders (#713 U6c, owner ruling
+// R35). The file's own comment above says catch rate follows case count, not poison density, so
+// thinning the poison set alongside the case list holds the same reasoning.
+// HUE_MULT (the hue step, below) stays at 5, not narrowed alongside DET_CASE_COUNT and
+// POISON_COUNT: at step 10 the `gamut-ceiling` gate's own truncated-key negative control finds 0
+// witnesses on this sweep and reds itself (measured at U6c), so 5 is the widest step this gate's
+// own control still passes at.
+const DET_CASE_COUNT = FULL ? 2000 : 200;
 const DET_CASES = [];
 for (let i = 0; i < DET_CASE_COUNT; i++) {
   DET_CASES.push({
@@ -280,8 +286,9 @@ for (let i = 0; i < DET_CASE_COUNT; i++) {
 // silent pass. This floor is a literal 2000, not read back off DET_CASE_COUNT above, so an edit to
 // that one substitution point cannot also move the number this check expects.
 if (FULL && DET_CASES.length < 2000) FAIL("c", `only ${DET_CASES.length} determinism cases built in FULL mode, expected 2000 — the FULL case list did not run`);
+const POISON_COUNT = FULL ? 1500 : 500;
 const POISON_CASES = [];
-for (let i = 0; i < 1500; i++) {
+for (let i = 0; i < POISON_COUNT; i++) {
   POISON_CASES.push({
     name: `p${i}`,
     hue: (i * 0.0917) % 360,
@@ -996,11 +1003,237 @@ let LADDER_WINDOW_ALLOWLIST;
   if (oldExceed === 0) FAIL("symmetry", `negative control: the frozen pre-#681 fixture measured 0 exceptions — expected a large non-zero count (this gate would not have caught #641's redistribute asymmetry)`);
 }
 
+// ── symmetry, ANCHORED CORPUS leg (B1, pre-land review at b4be472c, owner ruling 2026-09-20 in
+//        .sdlc/questions/preset-intent-fidelity-preland.md), and the C11 span report ──────────────
+//
+// What the review found. The `symmetry` block above sweeps 464 SYNTHETIC cases: the 16 defaults plus
+// hue 0..359 step 5 at three chromas, in both hue spaces. Not one of them carries an `anchor`, so the
+// leg that the #681 anchored construction actually stresses was never measured, and the gate read
+// "0 exceptions" over a population in which 0 is the only possible answer. The 3,380 anchored corpus
+// palettes are where the asymmetry lives, and they are swept here.
+//
+// TWO LEGS, AND THEY ARE NOT THE SAME LEG. The review reported 22 exceptions; the by-construction leg
+// has 26. Both figures are right and neither replaces the other:
+//   by-construction: |(bright - prime) - (prime - dim)| > 1e-9, read off the EMITTED `l` fields.
+//   measured-pixel:  the same difference taken through lstarFromRgb on the EMITTED rgb, bar 3 L*.
+// The 22 are a strict SUBSET of the 26: four palettes break the constructed equality and still land
+// inside 3 L* once 8-bit rounding and the gamut clamp have had their say. Each leg is frozen by name,
+// in the same sorted-array shape `ORDER_ALLOW` uses in test/engine/anchor.mjs, because a count alone
+// lets one source swap for another at an unchanged length (N1, that file's own finding).
+//
+// THE MECHANISM, which is what R2 asks for before a count may be pinned. An anchored palette renders
+// its `prime` rung at the anchor's own CIE L* verbatim, while the six ladder rungs are built around
+// `lLadder`, the pivot the widening search in src/engine/prime.mjs settles on. Those two coincide for
+// an anchor comfortably inside [PRIME_L_MIN, PRIME_L_MAX], and they part company for a near-black
+// source, which is exactly Q3 (b)'s ruled class. `ORDER_ALLOW`'s own note in test/engine/anchor.mjs
+// works the population out case by case: 21 members are sources sitting at or past the window bound,
+// so the pivot is clamped away from them, and 5 are sources inside the window but within about
+// 1.1 L* of `PRIME_L_MIN` (measured 12.3351 to 13.3550 against a floor of 12.2500), where the search
+// lifts the pivot above the source before the rungs come out distinct. Break the prime rung away from
+// the pivot and the up arm and the down arm stop being the same number: that IS the asymmetry, and it
+// is the same event `ORDER_ALLOW` records as "prime no longer sits between bright and dim". So the
+// two lists are predicted to hold the same 26 members, and the cross-check below asserts it rather
+// than asserting a second copy of a number.
+{
+  const CATS = ["architecture", "cuisine", "film", "literature", "music", "nature", "travel", "brands"];
+  const anchoredCorpus = [];
+  for (const slug of CATS) {
+    const { PRESETS } = await import(`../../src/ui/categories/${slug}.js`);
+    for (const preset of PRESETS) {
+      for (const p of preset.palettes) {
+        if (isAnchored(p)) anchoredCorpus.push({ slug, presetName: preset.name, hueSpace: preset.hueSpace, palette: p });
+      }
+    }
+  }
+  if (anchoredCorpus.length !== 3380) {
+    FAIL("symmetry", `corpus leg loaded ${anchoredCorpus.length} anchored palettes, want 3380 - report this line, do not force the number`);
+  }
+
+  // The two frozen lists. Label shape is `ORDER_ALLOW`'s exactly: slug, quoted preset name, palette
+  // name, anchor hex. Printed by the gate itself, so a real drift is copy-pasteable back into here.
+  const SYM_BY_CONSTRUCTION_ALLOW = [
+    `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
+    `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
+    `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
+    `film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`,
+    `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
+    `film "Enter the Void · 2009 · dir. Gaspar Noé · the Tokyo nightlife" secondary #212129`,
+    `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
+    `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
+    `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24`,
+    `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
+    `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
+    `music "Black metal · the forest at night" secondary #1E2024`,
+    `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
+    `music "The late-night club · the smoky set" primary-muted #1F1F23`,
+    `music "The rave · the laser tent" secondary #212228`,
+    `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
+    `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
+    `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
+    `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
+    `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
+    `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
+    `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`,
+    `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
+    `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`,
+    `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
+    `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
+  ];
+  // The four that break the constructed equality and still measure inside 3 L* are, by subtraction:
+  // Apocalypse Now primary #241E1A, The rave secondary #212228, the Patmos church tertiary-muted
+  // #232220 and the Hidaka coast tertiary-muted #252215. They are absent below and present above.
+  const SYM_MEASURED_ALLOW = [
+    `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
+    `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
+    `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
+    `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
+    `film "Enter the Void · 2009 · dir. Gaspar Noé · the Tokyo nightlife" secondary #212129`,
+    `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
+    `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
+    `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24`,
+    `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
+    `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
+    `music "Black metal · the forest at night" secondary #1E2024`,
+    `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
+    `music "The late-night club · the smoky set" primary-muted #1F1F23`,
+    `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
+    `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
+    `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
+    `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
+    `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
+    `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
+    `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
+    `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
+    `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
+  ];
+  // SPAN_L_FLOOR: C11's own "ladders under 30 L*" report. 30 is the plan's threshold, not a derived
+  // constant, so it is named here and the negative control below moves it to prove the count tracks it.
+  const SPAN_L_FLOOR = 30;
+
+  const bcNames = [], pxNames = [];
+  let bcMax = 0, pxMax = 0, spanPx = 0, spanConstructed = 0;
+  const bcWorst = [];
+  for (const { slug, presetName, hueSpace, palette: p } of anchoredCorpus) {
+    const ctl = { hueSpace: hueSpace ?? "oklch", primeChroma: 100 };
+    const sw = primeSwatches(p, ctl);
+    const label = `${slug} "${presetName}" ${p.name} ${p.anchor}`;
+    const bc = Math.abs((sw[0].l - sw[3].l) - (sw[3].l - sw[6].l));
+    bcMax = Math.max(bcMax, bc);
+    if (bc > 1e-9) { bcNames.push(label); bcWorst.push({ label, bc }); }
+    const Lpx = (i) => lstarFromRgb(sw[i].rgb);
+    const px = Math.abs((Lpx(0) - Lpx(3)) - (Lpx(3) - Lpx(6)));
+    pxMax = Math.max(pxMax, px);
+    if (px > 3) pxNames.push(label);
+    // The span report reads BOTH producers and says which is which, because they disagree by one
+    // palette and a report that quoted a single number would be quoting a choice it never declared.
+    if (Lpx(0) - Lpx(6) < SPAN_L_FLOOR) spanPx++;
+    if (sw[0].l - sw[6].l < SPAN_L_FLOOR) spanConstructed++;
+  }
+  bcNames.sort();
+  pxNames.sort();
+  bcWorst.sort((a, b) => b.bc - a.bc);
+
+  // frozen-by-name comparison, both legs. Same shape as anchor.mjs's: name the member that went
+  // missing AND the one that showed up, so a same-length substitution cannot pass as a count match.
+  const freeze = (got, want, leg) => {
+    // The summary word reads the SAME predicate the failure branch below does (count AND membership),
+    // not the count alone: a one-for-one name substitution keeps the length and must still headline
+    // FAIL, or the first line of the report contradicts the exit code (the same defect class as #718).
+    const ok = got.length === want.length && got.every((n, i) => n === want[i]);
+    console.log(`  ${ok ? "pass" : "FAIL"}  symmetry corpus ${leg}: ${got.length} of ${anchoredCorpus.length} (expected ${want.length})`);
+    for (const n of got) console.log(`    ${leg === "by-construction" ? "c" : "m"} ${n}`);
+    if (!ok) {
+      // Printed as well as FAILed, on purpose. `FAIL` keeps only the FIRST message per gate name, so a
+      // substitution (one missing, one uninvited, same count) would otherwise report half of itself and
+      // the reader would be told a name went away with no idea what replaced it. Both sides go to stdout.
+      for (const n of want) if (!got.includes(n)) { console.log(`    MISSING from the measured corpus, present in the frozen ${leg} list: ${n}`); FAIL("symmetry", `corpus ${leg} allow-list: expected member missing - ${n}`); }
+      for (const n of got) if (!want.includes(n)) { console.log(`    UNEXPECTED in the measured corpus, absent from the frozen ${leg} list: ${n}`); FAIL("symmetry", `corpus ${leg} allow-list: unexpected member - ${n}`); }
+      if (!fails.some((f) => f.startsWith("symmetry:"))) FAIL("symmetry", `corpus ${leg} allow-list count ${got.length} !== expected ${want.length} with no single-name diff found - investigate before trusting either count`);
+    }
+  };
+  console.log(`  symmetry (anchored corpus): ${anchoredCorpus.length} palettes, by-construction exceptions ${bcNames.length} (max |up-down| ${bcMax.toFixed(4)} L*), measured exceed-3L* ${pxNames.length} (max ${pxMax.toFixed(4)} L*)`);
+  for (const w of bcWorst.slice(0, 3)) console.log(`    worst ${w.bc.toFixed(2)} L*  ${w.label}`);
+  freeze(bcNames, [...SYM_BY_CONSTRUCTION_ALLOW].sort(), "by-construction");
+  freeze(pxNames, [...SYM_MEASURED_ALLOW].sort(), "measured-pixel");
+
+  // the measured leg must be a SUBSET of the by-construction leg. A palette whose emitted `l` fields
+  // are symmetric to 1e-9 cannot render pixels more than 3 L* apart, so a member here that is not
+  // there would mean one of the two legs is reading the wrong swatch, not that the corpus moved.
+  for (const n of pxNames) if (!bcNames.includes(n)) FAIL("symmetry", `corpus leg inconsistency: ${n} exceeds 3 L* measured but is symmetric by construction - one of the two legs is reading the wrong rung`);
+  // and the difference IS the four named in SYM_MEASURED_ALLOW's comment, asserted rather than stated
+  // (U7 review 1, F3: the mechanism as code, R2). Compared as sorted arrays against the frozen lists.
+  const bcMinusPx = SYM_BY_CONSTRUCTION_ALLOW.filter((n) => !SYM_MEASURED_ALLOW.includes(n)).sort();
+  const SYM_DIFF_EXPECTED = [`film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`, `music "The rave · the laser tent" secondary #212228`, `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`, `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`].sort();
+  if (JSON.stringify(bcMinusPx) !== JSON.stringify(SYM_DIFF_EXPECTED)) FAIL("symmetry", `by-construction minus measured is not the four named palettes: got [${bcMinusPx.join(" | ")}]`);
+
+  // ── U7-3: the by-construction 26 are the SAME 26 as ORDER_ALLOW in test/engine/anchor.mjs ────────
+  // Read out of that file's source text rather than imported, because anchor.mjs is a top-level test
+  // script that runs its whole suite and calls process.exit on import. Parsing the frozen literal is
+  // what makes this a cross-check between two files instead of two copies of one list in one file.
+  {
+    const anchorSrc = readFileSync(new URL("./anchor.mjs", import.meta.url), "utf8");
+    const block = anchorSrc.match(/const ORDER_ALLOW = \[([\s\S]*?)\n\];/);
+    if (!block) {
+      FAIL("symmetry", "cross-check: could not find `const ORDER_ALLOW = [...]` in test/engine/anchor.mjs - the frozen list moved or was renamed, so this cross-check is not running");
+    } else {
+      const orderAllow = [...block[1].matchAll(/`([^`]*)`/g)].map((m) => m[1]).sort();
+      const mine = [...SYM_BY_CONSTRUCTION_ALLOW].sort();
+      const same = orderAllow.length === mine.length && mine.every((n, i) => n === orderAllow[i]);
+      console.log(`  ${same ? "pass" : "FAIL"}  symmetry corpus by-construction set == ORDER_ALLOW (test/engine/anchor.mjs): ${mine.length} vs ${orderAllow.length}`);
+      if (!same) {
+        // Both sides printed, for the same reason `freeze` prints them: FAIL keeps one message per gate.
+        for (const n of orderAllow) if (!mine.includes(n)) { console.log(`    ORDER_ALLOW side moved: ${n} is in test/engine/anchor.mjs's ORDER_ALLOW and not in this file's by-construction list`); FAIL("symmetry", `ORDER_ALLOW cross-check: in ORDER_ALLOW, absent from this file's by-construction list - ${n}`); }
+        for (const n of mine) if (!orderAllow.includes(n)) { console.log(`    this file's side moved: ${n} is in this file's by-construction list and not in ORDER_ALLOW`); FAIL("symmetry", `ORDER_ALLOW cross-check: in this file's by-construction list, absent from ORDER_ALLOW - ${n}`); }
+        if (!fails.some((f) => f.startsWith("symmetry:"))) FAIL("symmetry", `ORDER_ALLOW cross-check: ${mine.length} vs ${orderAllow.length} with no single-name diff found - investigate before trusting either list`);
+      }
+    }
+  }
+
+  // ── span report (C11) ────────────────────────────────────────────────────────────────────────────
+  // Expected counts are exact, tolerance 0: both producers are deterministic functions of committed
+  // data, so a tolerance band here would only hide a real move.
+  const SPAN_PX_EXPECTED = 364, SPAN_CONSTRUCTED_EXPECTED = 363;
+  let dkUnder = 0;
+  for (const p of DEFAULTS) {
+    const sw = primeSwatches(p, CTL);
+    if (lstarFromRgb(sw[0].rgb) - lstarFromRgb(sw[6].rgb) < SPAN_L_FLOOR) dkUnder++;
+  }
+  const spanOk = spanPx === SPAN_PX_EXPECTED && spanConstructed === SPAN_CONSTRUCTED_EXPECTED && dkUnder === 0;
+  console.log(`  ${spanOk ? "pass" : "FAIL"}  ladder-span under ${SPAN_L_FLOOR} L*: ${spanPx} of ${anchoredCorpus.length} anchored corpus ladders measured from emitted pixels (expected ${SPAN_PX_EXPECTED}), ${spanConstructed} read off the constructed rungs (expected ${SPAN_CONSTRUCTED_EXPECTED}), ${dkUnder} of ${DEFAULTS.length} default-kit families (expected 0); tolerance 0 on all three`);
+  if (spanPx !== SPAN_PX_EXPECTED) FAIL("ladder-span", `pixel span under ${SPAN_L_FLOOR} L*: ${spanPx} != expected ${SPAN_PX_EXPECTED}`);
+  if (spanConstructed !== SPAN_CONSTRUCTED_EXPECTED) FAIL("ladder-span", `constructed span under ${SPAN_L_FLOOR} L*: ${spanConstructed} != expected ${SPAN_CONSTRUCTED_EXPECTED}`);
+  if (dkUnder !== 0) FAIL("ladder-span", `default kit span under ${SPAN_L_FLOOR} L*: ${dkUnder} != expected 0`);
+
+  // negative control for the span report: the SAME leg, same corpus, against the frozen pre-#681
+  // fixture, must read 0 - proving the 364 is a property of this construction and not a constant the
+  // report would print whatever the engine did. Read the PIXEL leg only. The fixture's own `l` field
+  // is OKHSL lightness on 0..1, not CIE L*, so its constructed-span count is 3,380 for a reason that
+  // is a unit mismatch and not a measurement; quoting it as a control would be a false red.
+  //
+  // negative control for the measured symmetry leg (U7-2): the same fixture, same corpus, must read a
+  // large non-zero exception count. A pre-#681 ladder cannot pass this leg.
+  {
+    const oldMod2 = await import("./fixtures/prime-pre-681.mjs");
+    let oldExceed = 0, oldMax = 0, oldSpanPx = 0;
+    for (const { hueSpace, palette: p } of anchoredCorpus) {
+      const swO = oldMod2.primeSwatches(p, { hueSpace: hueSpace ?? "oklch", primeChroma: 100 });
+      const Lpx = (i) => lstarFromRgb(swO[i].rgb);
+      const a = Math.abs((Lpx(0) - Lpx(3)) - (Lpx(3) - Lpx(6)));
+      oldMax = Math.max(oldMax, a);
+      if (a > 3) oldExceed++;
+      if (Lpx(0) - Lpx(6) < SPAN_L_FLOOR) oldSpanPx++;
+    }
+    console.log(`  symmetry/ladder-span negative control (frozen pre-#681 fixture, anchored corpus): measured exceed-3L* ${oldExceed}/${anchoredCorpus.length}, max ${oldMax.toFixed(4)} L*, pixel span under ${SPAN_L_FLOOR} L* ${oldSpanPx}`);
+    if (oldExceed <= pxNames.length) FAIL("symmetry", `negative control: the pre-#681 fixture measured ${oldExceed} corpus exceptions, not clearly more than this branch's ${pxNames.length} - this leg would not have caught #641's redistribute asymmetry`);
+    if (oldSpanPx === spanPx) FAIL("ladder-span", `negative control: the pre-#681 fixture reported the SAME ${oldSpanPx} ladders under ${SPAN_L_FLOOR} L* as this branch - the span report may be constant rather than measured`);
+  }
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
 // below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
-const DECLARED = ["a", "b", "c", "gamut-ceiling", "d1", "d2a", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j", "k", "ladder-window", "symmetry", "report-static"];
+const DECLARED = ["a", "b", "c", "gamut-ceiling", "d1", "d2a", "d3", "d4", "d5", "d6", "d2", "e", "f", "g", "h", "i", "j", "k", "ladder-window", "symmetry", "ladder-span", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${FULL ? "FULL" : "SAMPLED"}: ${DET_CASE_COUNT} determinism cases, ${POISON_CASES.length} poison renders, hue step ${HUE_MULT})`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }

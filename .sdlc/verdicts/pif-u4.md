@@ -1,4 +1,5 @@
 # Verdict U4 pass 5 (delta) · 🟡
+verdict: 🟡
 
 Plan preset-intent-fidelity (#681), unit U4, head `3921f14059ccf8730521c6cffdb9bf1ac3a65da0` on `unit/pif-u4-integration`. Prior verdict at `36ce7777`: `scratchpad/verdict-pif-u4.md`. Verified 2026-09-20, read-only, worktree `.git-worktrees/pif-u4-integration`.
 

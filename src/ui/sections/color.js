@@ -1940,11 +1940,25 @@ export class ColorSectionImpl {
   // seedFromKey — set the palette's hue + chroma from a key color, in the ACTIVE doc's hue space
   // (OKLCH for new docs, CAM16 for a preserved legacy doc), so the generated ramp's family matches the
   // brand color. One undo step.
+  //
+  // DETACH (ticket #681, Q6, pre-land S2): this writes the SAME two fields the Hue and Chroma
+  // sliders write, so under Q6 it is the same event: an edit to hue or chroma on an anchored copy
+  // detaches it. It previously committed `hue`/`chroma` alone, leaving `anchor` in place, so the
+  // palette kept rendering its stored source colour while claiming the seeded family, and Reset had
+  // no snapshot to restore because `detachSnapshot` never ran. The three calls below are the
+  // sliders' own three, in the sliders' own order: snapshot from the PRE-edit palette first, then
+  // the new values, then drop `anchor`.
   seedFromKey(i, role) {
-    const kc = (this.doc.palettes[i].keyColors || []).find((k) => k.role === role);
+    const p = this.doc.palettes[i];
+    const kc = (p.keyColors || []).find((k) => k.role === role);
     const s = kc && seedFromKeyColor(kc.oklch, this.doc.hueSpace);
     if (!s) return;
-    this.commit((d) => { d.palettes[i].hue = s.hue; d.palettes[i].chroma = s.chroma; });
+    this.commit((d) => {
+      this.detachSnapshot(d, i, p);
+      d.palettes[i].hue = s.hue;
+      d.palettes[i].chroma = s.chroma;
+      if (d.palettes[i].anchor) delete d.palettes[i].anchor;
+    });
   }
 
 
