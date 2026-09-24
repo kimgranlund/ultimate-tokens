@@ -1244,6 +1244,8 @@ for (const mode of ["perceptual", "peak"]) {
   // presets that happen to share the identical mode/hue/chroma/skew/lift/stop-pair signature, so the
   // Set naturally collapses them to one entry each  -  `seenBaselineDup` still marks the key seen either
   // way). The negative control right after this gate still proves an UNLISTED collision is caught.
+  // Ticket #739 adds 2 more unique keys (both Nike tertiary-muted, peak mode - see their own comment
+  // below), for 23 unique / 25 physical.
   const KNOWN_BASELINE_DUP = new Set([
     "peak|240|100.00|0|0|25-stop|825&850",
     "even|240|100.00|0|0|25-stop|900&925",
@@ -1266,6 +1268,14 @@ for (const mode of ["perceptual", "peak"]) {
     "peak|80|100.00|0|0|25-stop|875&900",
     "perceptual|80|100.00|0|0|25-stop|800&825",
     "peak|80|100.00|0|0|25-stop|800&825",
+    // Ticket #739: Nike tertiary-muted (hue 0, the generator's hueless-sample fallback; anchor
+    // #FFFFFF, resolved chroma 100.00 on this group) now renders its ramp at the palette's OWN hue
+    // instead of the anchor's rounding-residue one - two adjacent near-white peak-mode stops round to
+    // the identical 8-bit hex at that hue where they did not before, the same rounding-collision class
+    // every other member of this list already names. A mechanical re-freeze, not a new construction
+    // defect (U1-4 proves every OTHER anchored ramp in the corpus byte-identical).
+    "peak|0|100.00|0|0|25-stop|75&100",
+    "peak|0|100.00|0|0|25-stop|150&175",
   ]);
   const seenBaselineDup = new Set();
 
@@ -1458,11 +1468,23 @@ for (const mode of ["perceptual", "peak"]) {
   // a genuinely different, better-supported result than pass 1's claim (which measured a ramp the
   // product never renders), but the mechanism is not the same as F1's bisection fix alone: these
   // specific presets' REAL anchored ramps (their own picked anchor color driving `paletteStopsAnchored`)
-  // do not reproduce the dip the old non-anchored measurement saw. DIP_BASELINE is retired to empty
+  // do not reproduce the dip the old non-anchored measurement saw. DIP_BASELINE was retired to empty
   // rather than kept with stale names now unreachable by any real corpus ramp; any peak dip that
-  // reappears on a future engine change reds immediately (baseline size 0, so every instance is
+  // reappears on a future engine change reds immediately (baseline size 0 then, so every instance was
   // unlisted). Perceptual has no cap mechanism and measures 0 dips too, so it also gets no baseline.
-  const DIP_BASELINE = new Set([]);
+  // Ticket #739 adds the ONE named exception below - see its own comment; the "reds on anything
+  // unlisted" property is unchanged, only the empty baseline is not.
+  const TICKET_739_DIP = "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu|secondary-muted|500";
+  // Ticket #739: #ACADAE (this preset's own anchor, one of the two corpus anchors under
+  // ACHROMATIC_ANCHOR_C) now renders its ramp at the palette's own hue instead of its rounding-
+  // residue one. That shifts `anchorChromaBasis`'s per-stop blend against `maxChromaInGamut` enough
+  // for stop 500 to dip below both 450 and 550 - the same pivot-notch mechanism EVEN_DIP_BASELINE's
+  // own header describes (32 of its 90 instances), on both the peak and perceptual paths this time
+  // (okhslStopsAnchored shares the same blend for both modes; only their curve/damping fitting
+  // differs). Root-caused, not reintroducing the retired peak population above; PERCEPTUAL_DIP_BASELINE
+  // below is the same single name because perceptual had no baseline (0 dips) before this ticket.
+  const DIP_BASELINE = new Set([TICKET_739_DIP]);
+  const PERCEPTUAL_DIP_BASELINE = new Set([TICKET_739_DIP]);
   // EVEN_DIP_BASELINE: addendum-2 correction (2026-09-19). The 53 names previously here (#681 U3
   // review 3, N1, all at stop 350, all pending owner - the `chromaFloor`-vs-damped-value crossing
   // described below, kept for its own record) were measured with `findDips` omitting
@@ -1612,7 +1634,7 @@ for (const mode of ["perceptual", "peak"]) {
   const defaultKitDoc = defaultDocument();
   defaultKitDoc.__presetName = "default kit";
   const dipDocs = [...docs, defaultKitDoc];
-  const BASELINE_BY_MODE = { peak: DIP_BASELINE, even: EVEN_DIP_BASELINE };
+  const BASELINE_BY_MODE = { peak: DIP_BASELINE, even: EVEN_DIP_BASELINE, perceptual: PERCEPTUAL_DIP_BASELINE };
   const seenModes = new Set();
   // this mode's OWN observed baseline count, in THIS run's scope  -  the negative controls below compare
   // the patched engine's count against this, never against a full-corpus pin a SAMPLED run cannot reach
