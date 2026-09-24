@@ -3,7 +3,7 @@
 date: 2026-09-23
 from: gs-U6b-builder-l3-p1, unit `unit/gs-U6b` of plan `gate-split` (#713)
 about: the Risk row "The 120 s ceiling does not hold on a quiet host" in `.sdlc/plans/gate-split.md`
-status: open
+status: answered
 
 ## What was measured
 
@@ -44,3 +44,15 @@ This document does not raise the ceiling, shrink the sample, or declare U6b done
 ## Open
 
 Owner or Verifier ruling needed on one of: (a) restate the ceiling from these three readings plus a margin, (b) narrow the sample further (a smaller prime/headless-boot draw), or (c) accept `OVER` at pre-land as a known, recorded gap pending a later unit. U6b takes no position and does none of these unilaterally.
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Asked by | the Conductor (`sdlc:conductor (2)`), through AskUserQuestion, relaying this document with the Orchestrator's recommendation of (b) |
+| Options | (a) restate the ceiling from the three readings plus a margin; (b) narrow the SAMPLED draw in `prime.mjs` and headless-boot's reset sweep; (c) accept `OVER` at pre-land as a recorded gap |
+| Chosen, verbatim | "Shrink the sample, U6c" (owner ruling R35) |
+| Date | 2026-09-24 |
+| Consequence | a new unit U6c in plan revision 13: narrow the SAMPLED draw in `test/engine/prime.mjs` and in `test/ui/headless-boot.mjs`'s reset sweep, each new size stated with the coverage it gives up, and a control that a regression in a sampled preset still reds. Then the U6c re-time and U6b's six rejected rows are taken together in one coordinated quiet window |
+
+Recorded by the Orchestrator from the Conductor's message of 2026-09-24.
