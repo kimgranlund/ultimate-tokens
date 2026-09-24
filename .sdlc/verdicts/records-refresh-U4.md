@@ -1,4 +1,5 @@
 # Verdict U4 · 🟢
+verdict: 🟢
 
 Unit `unit/rr-U4` at `d04b68244c42cdbdacb41364ce2fca0dde0ad63c`. Criteria: `.sdlc/plans/records-refresh.md` §U4 rows 1 to 7 on `plan/records-refresh` at `9145db45afeb0c386d8e63a6318d584524541204` (row 5 as corrected at `aed0caee`). `BASE` = `git merge-base plan/records-refresh HEAD` = `695f13fba158494249d467f45f18b7776a141e8d`. `MB` = `git merge-base origin/main HEAD` = `20298cca9a152e8ff6041c78573293f48628c10f`. Verified in own detached scratch worktrees of `unit/rr-U4` and of `BASE`, plus a `--shared` clone; no hook bypassed, nothing pushed, no source edited. `/usr/bin/grep` has no `-P` and `ggrep` is absent on this host, so rows 3 to 5 ran their PCRE parts through `perl -ne` and `git grep -P` (git here does carry PCRE, checked). `board.py ids` is not yet live in the plugin cache (`grep -c 'board.py" ids' "$HP/pre-commit"` prints `0`), so `B` and `GH` came from `unit/df-ids` in the plugin repo per §Dependency: `python3 "$F/board.py" ids --help` exits 0, the cache `main` copy exits 2.
 

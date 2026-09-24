@@ -4,6 +4,7 @@ plan: records-followup
 unit: U14
 seat: verifier
 written: 2026-09-21
+verdict: 🟢
 ---
 
 # U14 window evidence: the snapshot against the world, taken during the R19 re-freeze

@@ -1,5 +1,4 @@
 # Independent verification: plan `preset-intent-fidelity` U6 (#681) + defect #686 root fix
-verdict: 🟢
 
 Verifier: independent seat, fresh context. Target `unit/pif-u6-ladder` head `3df582d`, fetched
 read-only into my own worktree `scratchpad/vfy-u6` (nothing run inside any `.git-worktrees/pif-*`).
@@ -26,6 +25,7 @@ is confirmed by my own independent reproduction.
 | 7 | Gate-time cost documented honestly | 🟡 upper bound exceeded under load |
 | 8 | Determinism of the gates themselves | 🟢 |
 | 9 | `test/repo/branding.mjs` | 🟢 |
+verdict: 🟢
 
 ## 1. C1 🟢
 

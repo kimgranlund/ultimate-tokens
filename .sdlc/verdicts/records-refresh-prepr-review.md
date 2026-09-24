@@ -1,4 +1,5 @@
 # records-refresh pre-land review, reviewer-l3, graded at 0dabfd1a
+verdict: 🔴
 
 Verdict: FIX-FIRST. Three live records under `.sdlc/` are untrue at the head the plan names, and
 two of them were made untrue by this branch. The plan's central claim, that no record carries a

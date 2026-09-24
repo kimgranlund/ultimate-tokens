@@ -1,4 +1,5 @@
 # Verdict U7 · 🟢
+verdict: 🟢
 
 Graded 2026-09-19 by an independent verifier at `unit/rf-U7` @ `ec3f067c47ada6c57147925e14d7167fc182b21d`, in its own detached worktree cut from that sha, with a throwaway `git clone -q --shared` for every control that edits a file. Plan read at `plan/records-followup` @ `b0a4f71b9b25d7c2d9838e41bdd16a0776f83899`. `BASE` = `$(git merge-base origin/main HEAD)` = `d34b4fb1beefff11c9be53ec039d4265c925da4a`. `UB` = `$(git merge-base plan/records-followup HEAD)` = `e748f0ba7308b611343d707f26098d67b0aabc36`. `PLUGIN` = `/Users/kimba/Projects/nonoun/sdlc-orchestration`, the target of `core.hooksPath` two levels up. P2 and P3 are pre-land only and were not run. `grep -P` is absent on this host, so every PCRE ran through `perl` or `git grep -P`.
 
