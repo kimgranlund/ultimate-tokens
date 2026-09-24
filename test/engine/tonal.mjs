@@ -1987,20 +1987,9 @@ for (const mode of ["perceptual", "peak"]) {
 //    coming back, checked from both directions: the function itself, in process, and a real
 //    palette render, across two cold worker processes.
 {
-  // (1) function-level, in this process: two L* values in the same toFixed(2) bucket ("5.26"
-  //     under the old key), each checked against the test's OWN derivation -- imported from
-  //     hct.js and okhsl.js, never from tonal.js, so a broken okhslLAt cannot mark its own
-  //     homework -- and checked against each other. On the old code, whichever of the two ran
-  //     first decided the second's value too, so the two collapse to one value and the
-  //     "differ from each other" assertion reds regardless of call order.
   const L1 = 5.25501, L2 = 5.26499;
-  const got1 = T.okhslLAt(L1), got2 = T.okhslLAt(L2);
-  const want1 = rgbToOkhsl(E.hctToRgb(0, 0, L1).rgb).l, want2 = rgbToOkhsl(E.hctToRgb(0, 0, L2).rgb).l;
-  if (got1 !== want1) FAIL("okl-order", `function-level: okhslLAt(${L1}) = ${got1}, expected ${want1} (this test's own hctToRgb/rgbToOkhsl derivation)`);
-  else if (got2 !== want2) FAIL("okl-order", `function-level: okhslLAt(${L2}) = ${got2}, expected ${want2} (this test's own hctToRgb/rgbToOkhsl derivation)`);
-  else if (got1 === got2) FAIL("okl-order", `function-level: okhslLAt(${L1}) and okhslLAt(${L2}) both returned ${got1}; a memo keyed on lstar.toFixed(2) collapses this pair into one bucket`);
 
-  // (2) render-level, two cold processes through prime-determinism-worker.mjs (#738's extension:
+  // (1) render-level FIRST, two cold processes through prime-determinism-worker.mjs (#738's extension:
   //     the optional prelstars/ramps stdin fields). 24 palettes (hue = i*15 + 7.3, chroma 60,
   //     skew 0, lift 0, cam16, 12 perceptual + 12 peak), each rendered at lmin: 5.25501 -- once in
   //     a clean process, once in a process that called okhslLAt(5.26499) first, before anything
@@ -2026,6 +2015,23 @@ for (const mode of ["perceptual", "peak"]) {
   let rampMismatch = 0;
   for (let i = 0; i < RAMPS_24.length; i++) if (cleanRamps[i] !== poisonedRamps[i]) rampMismatch++;
   if (rampMismatch > 0) FAIL("okl-order", `render-level: ${rampMismatch}/24 ramps shifted hex by call order after a prior okhslLAt(${L2}) in the same process (5.26499 poisons the 5.26 bucket that 5.25501 also falls in)`);
+
+  // (2) function-level, in this process: the same two L* values, in the same toFixed(2) bucket
+  //     ("5.26" under the old key), each checked against the test's OWN derivation -- imported
+  //     from hct.js and okhsl.js, never from tonal.js, so a broken okhslLAt cannot mark its own
+  //     homework -- and checked against each other. On the old code, whichever of the two ran
+  //     first decided the second's value too, so the two collapse to one value and the "differ
+  //     from each other" assertion reds regardless of call order. Checked SECOND, after (1): the
+  //     two L* values collide in the same bucket by construction, so a restored memo always fails
+  //     both halves, and FAIL(...)'s own de-dupe keeps whichever ran first -- (1) runs first so a
+  //     full memo restore is reported through its render-level message (U1-5's own control needs
+  //     both halves independently provable, which is why a separate control below empties (1)'s
+  //     own poison to isolate this half alone).
+  const got1 = T.okhslLAt(L1), got2 = T.okhslLAt(L2);
+  const want1 = rgbToOkhsl(E.hctToRgb(0, 0, L1).rgb).l, want2 = rgbToOkhsl(E.hctToRgb(0, 0, L2).rgb).l;
+  if (got1 !== want1) FAIL("okl-order", `function-level: okhslLAt(${L1}) = ${got1}, expected ${want1} (this test's own hctToRgb/rgbToOkhsl derivation)`);
+  else if (got2 !== want2) FAIL("okl-order", `function-level: okhslLAt(${L2}) = ${got2}, expected ${want2} (this test's own hctToRgb/rgbToOkhsl derivation)`);
+  else if (got1 === got2) FAIL("okl-order", `function-level: okhslLAt(${L1}) and okhslLAt(${L2}) both returned ${got1}; a memo keyed on lstar.toFixed(2) collapses this pair into one bucket`);
 
   if (!fails.some((f) => f.startsWith("okl-order:")))
     console.log("okl-order: okhslLAt is a function of its argument; 0/24 ramps shifted hex by call order");
