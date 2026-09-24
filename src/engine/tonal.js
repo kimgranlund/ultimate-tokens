@@ -923,8 +923,9 @@ export function paletteStops(palette, controls, stops) {
 // anchored at stop 500 and each half spread from there — with chroma as a gamut-proportional OKHSL
 // saturation. Every emitted color is in gamut by OKHSL's construction. l is keyed off the STOP NUMBER
 // (not the array index) so a stop has the same color in the 19-stop display ramp and the 25-stop export ramp.
-// okhslLAt is pure, with no cache (#738): a neutral-grey lookup measured at 0.40-0.90 us per
-// call, two or three calls per palette render, too cheap to be worth one.
+// okhslLAt is pure, with no cache (#738): a neutral-grey lookup measured at 0.40-0.90 us per call
+// on a quiet host (median 1.54, 1.46-1.88, at load 67), two or three calls per palette render, too
+// cheap to be worth one.
 export function okhslLAt(lstar) {
   return rgbToOkhsl(hctToRgb(0, 0, lstar).rgb).l;
 }

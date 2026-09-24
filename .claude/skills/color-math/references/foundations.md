@@ -136,7 +136,8 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
 off-center hues' richest stop toward the center (yellow's cusp is at high L\* — crank vibrancy and the mid
 reads vivid for any hue). Saturation = `(chroma/100)·m` clamped to `[0,1]`, using the **same** damping `m` as
 the even path. `okhslLAt(L*)` maps an L\* to OKHSL lightness via a neutral gray (`rgbToOkhsl(hctToRgb(0,0,L*))`),
-pure, no cache (#738: measured under 1us per call, two or three calls per render). The reported `chroma`/`maxc` are *measured* (`cam16FromRgb(rgb).chroma`) for the analysis
+pure, no cache (#738: measured 0.40-0.90 us per call on a quiet host, median 1.54 us (1.46-1.88) at
+load 67, two or three calls per render). The reported `chroma`/`maxc` are *measured* (`cam16FromRgb(rgb).chroma`) for the analysis
 graphs; the color is in-gamut by OKHSL construction (`inGamut: true` is asserted, not computed). `l` is keyed
 on the **stop number** (`(stop−50)/900`, `(stop−500)/450`), not the array index — so stop 500 is the same hex
 in the 19-stop display ramp and the 25-stop export ramp.
