@@ -1316,11 +1316,14 @@ if (FULL) {
   // the 16 default-kit palettes and three named corpus presets. hydrate() is in the loop on purpose:
   // it is the clamp every real document passes through, and a field it dropped would make the cheap
   // path right and the app wrong.
+  // Looked up in `byCategory` (every category's full PRESETS list, populated regardless of mode),
+  // not `presetsByCat` (SAMPLED restricts that to one canary preset per category, #713 U6b: a named
+  // subject the sample did not draw this seed cycle is not "moved", it is just not sampled).
   const namedPresets = [];
   for (const wanted of [["film", "The Matrix"], ["travel", "Hidaka coast"], ["music", "Black metal"]]) {
-    const hit = presetsByCat.find(({ slug, preset }) => slug === wanted[0] && preset.name.includes(wanted[1]));
-    if (!hit) FAIL("key-anchor", `rendered leg: no ${wanted[0]} preset matching "${wanted[1]}" in the corpus - the named subject moved, fix the name rather than dropping the subject`);
-    else namedPresets.push(hit);
+    const preset = (byCategory[wanted[0]] || []).find((p) => p.name.includes(wanted[1]));
+    if (!preset) FAIL("key-anchor", `rendered leg: no ${wanted[0]} preset matching "${wanted[1]}" in the corpus - the named subject moved, fix the name rather than dropping the subject`);
+    else namedPresets.push({ slug: wanted[0], preset });
   }
   const renderSubjects = [
     { label: "default kit", doc: defaultDocument() },
