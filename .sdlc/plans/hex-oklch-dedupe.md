@@ -71,7 +71,7 @@ Post-merge check, the Orchestrator's own step once G0 is green: merge `origin/ma
 
 ## Units
 
-- [ ] U1 (S) one hex-to-OKLCH conversion in `model.mjs`, the comment gone, an agreement assertion · builder-l1 · reviewer-l1 · verifier-l1 · starts at G0 green
+- [~] U1 (S) one hex-to-OKLCH conversion in `model.mjs`, the comment gone, an agreement assertion · builder-l1 · reviewer-l1 · verifier-l1 · starts at G0 green
 
 Grades follow the Orchestrator's rule: an L1 builder gets reviewer-l1 and verifier-l1. U1 is L1: a deletion and a one-line call, with a test whose control is named.
 
