@@ -1,11 +1,11 @@
 ---
 kind: baseline
 repo: ultimate-tokens
-ran: 2026-09-19
-ref: origin/main @ 20298cc
-host: local macOS, Node 24.18, local Chrome for smoke; load 3.97 3.87 4.58 on 10 cores at run start (the test timings' own set, the uncontaminated rerun)
+ran: 2026-09-23
+ref: unit/gs-U6b @ 71cdb960
+host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 coordinated window), full readings in the U6b handoff's Runs table
 extended: 2026-09-19, rows corpus-contrast and fonts, host load 3.97 4.39 4.80 to 6.16 4.94 4.97 on 10 cores across the six runs
-supersedes: the 2026-09-19 baseline at d814500 (kept below as the prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md)
+supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. `npm test` and `gate:corpus-tonal` carry three quiet-host readings each; `gate:corpus-anchor`, `gate:sweep-prime` and `gate:corpus-reset` carry one each (U6-3 rejected two of the three counted attempts per script on a transient hot-process reading after the run; see the U6b handoff), pending a second coordinated quiet window
 ---
 
 # Baseline
@@ -16,11 +16,17 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
-| `npm test` | 3/3 | 0 | 56.27 · 56.43 · 59.83 | `✓ all 49 test files passed` `re-measured 2026-09-20, see the #681 correction below` |
-| `npm run build` | 3/3 | 0 | 3.06 · 1.34 · 1.36 | `wrote figma/plugin/ui.html 4119.1 KB` `re-measured 2026-09-23, see the #681 U7 and #681 U10 corrections below` |
+| `npm test` | 3/3 | 0 | 106.45 · 141.39 · 171.23 | `✓ all 50 test files passed` `re-measured 2026-09-23, gate-split #713 U6b, quiet-host set (below); OVER the 120 s ceiling, see .sdlc/questions/gate-split-U6b.md` |
+| `npm run gate:corpus-tonal` | 3/3 | 0 | 86.09 · 116.31 · 92.56 | `PASS: tonal-generation clears all [gate] predicates` `new row, gate-split #713 U6b` |
+| `npm run gate:corpus-anchor` | 1/3 | 0 | 78.98 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control` `new row, gate-split #713 U6b; 1 of 3 counted readings in hand, two more rejected on a hot process after the run (U6-3), pending a second quiet window` |
+| `npm run gate:sweep-prime` | 1/3 | 0 | 86.25 | `PASS: prime-system clears all AC-050 gates` `new row, gate-split #713 U6b; 1 of 3, same reason as corpus-anchor above` |
+| `npm run gate:corpus-reset` | 1/3 | 0 | 83.40 | `HEADLESS BOOT PASS — all Phase-3 interaction assertions hold` `new row, gate-split #713 U6b; 1 of 3, same reason as corpus-anchor above` |
+| `npm run build` | 3/3 | 0 | 3.06 · 1.34 · 1.36 | `wrote figma/plugin/ui.html 4122.4 KB` `re-measured 2026-09-23, see the #681 U7, #681 U10 and gate-split U6b corrections below` |
 | `npm run smoke` | 3/3 | 0 | 18.20 · 18.28 · 18.25 | `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser` |
 | `npm run gate:corpus-contrast` | 3/3 | 0 | 20.12 · 22.89 · 22.29 | `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color` |
 | `npm run gen:type-fonts` | 3/3 | 0 | 0.77 · 0.78 · 0.70 | `wrote src/ui/type-fonts.js  (229 KB · fonts 171 KB woff2)` |
+
+`npm test`'s summary line moved from 49 to 50 test files: `.sdlc/handoffs/gate-split-U6b.md`'s U6a merge registered `engine/corpus-sample.mjs` in `test/run.mjs`'s `TESTS` alongside the existing `engine/anchor.mjs`. The `npm test` and `gate:corpus-tonal` figures above are all three of their counted quiet-host readings (load under 5 at start, 0 hot processes and a clean `pgrep` before and after, exit 0, tree clean); the other three gate rows carry only their one clean reading each, the remaining two counted attempts per script having been rejected under U6-3 for a nonzero hot-process reading after the run finished (not before): see `.sdlc/handoffs/gate-split-U6b.md`'s Rejected runs table. Two more counted attempts per script are still owed before those three rows are complete.
 
 The corpus-contrast gate's own counts, as it printed them on run 5 of the set above, one list item per line of output:
 
@@ -246,3 +252,5 @@ Correction (2026-09-20, plan records-followup U10, #709): the `npm test` and `np
 Correction (2026-09-23, plan preset-intent-fidelity U10, #681): `npm run build`'s ui.html figure moves from 4117.5 KB to 4118.2 KB. The cause is named: U10 adds a pure-black guard and its comment to `src/engine/okhsl.js`, which `scripts/gen-figma-ui.mjs` inlines into `figma/plugin/ui.html`, and `baseline-agrees-check.sh` began reading `STALE ui.html: baseline 4117.5 KB, tree 4118.2 KB`. The unit whose change made the figure stale repairs it in its own commit, on the U7 precedent above. The new figure is program output: `gen:figma-ui` printed `wrote figma/plugin/ui.html 4118.2 KB` in `.worktrees/pif-u10` and again in a fresh shared clone of `unit/pif-u10`, and measuring the committed file the way `baseline-agrees-check.sh` measures it gives the same 4118.2. The `seconds` columns are not re-measured; only the KB cell moves.
 
 Correction (2026-09-23, plan preset-intent-fidelity U10 scope growth, revision 37, #681): the ui.html figure moves again, from 4118.2 KB to 4119.1 KB. The cause is named: U10-5 caps the chroma envelope and U10-7 swaps comment em dashes for hyphens in `src/engine/tonal.js`, U10-6 rewords a comment in `src/engine/hct.js`, and both files are inlined into `figma/plugin/ui.html`. The figure is program output: `gen:figma-ui` printed `wrote figma/plugin/ui.html 4119.1 KB` in `.worktrees/pif-u10`, and measuring the committed file the way `baseline-agrees-check.sh` measures it gives the same 4119.1. Only the KB cell moves.
+
+Correction (2026-09-23, plan gate-split U6b, #713): the ui.html figure moves from 4119.1 KB to 4122.4 KB. The cause is named: `origin/main` (523221f1) had moved well past the 4119.1 baseline by the time this unit merged it in (commit `8ff163bd`), carrying preset-intent-fidelity's later units and records-followup's own commits, several of which touch `src/ui/` or `src/engine/` files that `scripts/gen-figma-ui.mjs` inlines. The new figure is measured the way `baseline-agrees-check.sh` measures the committed file (`figma/plugin/ui.html`'s UTF-8 character length in KB): 4122.4, matching the check's own `ok    ui.html:` line at this unit's head. Only the KB cell moves; the `seconds` columns for `npm run build` are not re-measured here.
