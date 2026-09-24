@@ -73,8 +73,9 @@ Owner ruling, 2026-09-20, verbatim: "Interim ceiling now, split sweeps into gate
 ticket (Recommended)". The ceiling below is therefore INTERIM: it holds until #713 splits the corpus
 sweeps out of `npm test` into gate scripts, at which point it is re-measured, not renewed.
 
-Why a ceiling was needed at all. The `npm test` seconds in the live table above (56 to 60 s) were
-measured before #681, whose corpus sweeps are the cost. Per-file, measured sequentially in the
+Why a ceiling was needed at all. The `npm test` seconds the live table above showed at this
+section's own writing (56 to 60 s, since superseded by the 80 to 89 s U6c-8 re-time in that same
+table) were measured before #681, whose corpus sweeps are the cost. Per-file, measured sequentially in the
 foreground at `bf62ee30` with the host at load 5.16, 48 files: `engine/tonal.mjs` 100.2 s,
 `engine/anchor.mjs` 80.0 s, `ui/headless-boot.mjs` 61.0 s, `engine/prime.mjs` 54.9 s, and every one
 of the other 44 files under 10 s. Four files carry essentially the whole suite.
