@@ -32,7 +32,7 @@ import { okhslLAt, paletteStops, DEFAULT_CONTROLS, STOPS } from "../../src/engin
 let raw = "";
 process.stdin.setEncoding("utf8");
 for await (const chunk of process.stdin) raw += chunk;
-const { poison = [], cases = [], prelstars, ramps } = JSON.parse(raw);
+const { poison, cases, prelstars, ramps } = JSON.parse(raw);
 
 if (prelstars) for (const lstar of prelstars) okhslLAt(lstar);
 

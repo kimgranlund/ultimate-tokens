@@ -2006,7 +2006,7 @@ for (const mode of ["perceptual", "peak"]) {
   }));
   const OKL_ORDER_WORKER = fileURLToPath(new URL("./prime-determinism-worker.mjs", import.meta.url));
   const runOklOrderWorker = (prelstars) => JSON.parse(execFileSync(process.execPath, [OKL_ORDER_WORKER], {
-    input: JSON.stringify({ prelstars, ramps: RAMPS_24 }),
+    input: JSON.stringify({ poison: [], cases: [], prelstars, ramps: RAMPS_24 }),
     encoding: "utf8",
     maxBuffer: 16 * 1024 * 1024,
   })).ramps;
