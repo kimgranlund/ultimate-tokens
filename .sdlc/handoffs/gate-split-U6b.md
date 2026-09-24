@@ -80,7 +80,7 @@ All 15 rows pass U6-3's own reading (`$5!="0"` etc.) in full, including `hot aft
 
 ## Rejected runs
 
-Same columns as the Runs table above. A row that never started has `not recorded` in every after-reading, exit, wall, last line and status column, not `0`. R1-R14 are window 1's; R15-R32 are window 2's (2026-09-24).
+Same columns as the Runs table above. A row that never started has `not recorded` in every after-reading, exit, wall, last line and status column, not `0`. R1-R14 are window 1's; R15-R32 are window 2's (2026-09-23 22:14 PDT to 2026-09-24 00:19 PDT).
 
 | id | command | load before | hot before | pgrep before | load after | hot after | exit | wall (s) | last line | git status lines |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -125,7 +125,7 @@ Resolved by owner ruling R35 (`.sdlc/questions/gate-split-U6b.md`, Answer sectio
 
 ## Criteria
 
-U6-1 through U6-12 checked by hand against the plan's exact commands at this head: U6-6, U6-9, U6-10, U6-11, U6-12's needles all print the expected counts. U6-3's rejected-run count is "anything" per the plan, which 32 satisfies; the counted total is now 15 of 15 (window 2, 2026-09-24, closed out `gate:corpus-anchor`, `gate:sweep-prime`, `gate:corpus-reset` and re-timed `npm test` per R35). U6-5's `baseline-agrees-check.sh` needle: every `time <gate>` line reads `ok`, quoted below.
+U6-1 through U6-12 checked by hand against the plan's exact commands at this head: U6-6, U6-9, U6-10, U6-11, U6-12's needles all print the expected counts. U6-3's rejected-run count is "anything" per the plan, which 32 satisfies; the counted total is now 15 of 15 (window 2, 2026-09-23 22:14 PDT to 2026-09-24 00:19 PDT, closed out `gate:corpus-anchor`, `gate:sweep-prime`, `gate:corpus-reset` and re-timed `npm test` per R35). U6-5's `baseline-agrees-check.sh` needle: every `time <gate>` line reads `ok`, quoted below.
 
 U6-6's `INTERIM` needle (M5): `grep -cF "Interim ceiling now, split sweeps into gate scripts" .sdlc/adapter.md` prints `0` at this head and `1` on `origin/main` (`git show 04f95ff0:.sdlc/adapter.md | grep -c ...` prints `1`), confirming the retired note's own wording is gone from the live paragraph rather than merely superseded in substance.
 
@@ -135,4 +135,4 @@ P2's command against the final `baseline.md`, quoted: `ok 89.1`. The ceiling hol
 
 ## What disagreed with the plan
 
-Nothing in wording; the schedule did, across two windows. Window 1 (2026-09-23) closed before all four gate scripts could each collect 3 valid runs; an earlier draft of this handoff had reported "15/15 counted" before catching that 6 of them failed U6-3's own `hot after` reading, and was corrected before landing. Window 2 (2026-09-24), after U6c narrowed the SAMPLED draw (R35), closed out the six owed gate-script rows and re-timed `npm test`; a persistent macOS `spotlightknowledged` process (unrelated to any test run) held the hot-process count nonzero for a long stretch mid-window, reported to the Orchestrator, and cleared on its own.
+Nothing in wording; the schedule did, across two windows. Window 1 (2026-09-23) closed before all four gate scripts could each collect 3 valid runs; an earlier draft of this handoff had reported "15/15 counted" before catching that 6 of them failed U6-3's own `hot after` reading, and was corrected before landing. Window 2 (2026-09-23 22:14 PDT to 2026-09-24 00:19 PDT), after U6c narrowed the SAMPLED draw (R35), closed out the six owed gate-script rows and re-timed `npm test`; a persistent macOS `spotlightknowledged` process (unrelated to any test run) held the hot-process count nonzero for a long stretch mid-window, reported to the Orchestrator, and cleared on its own.
