@@ -1,4 +1,5 @@
 # records-tidy-U1 review, 730ff941..030824bc
+verdict: 🟢
 
 No findings. All checks pass.
 

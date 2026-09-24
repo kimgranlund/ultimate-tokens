@@ -81,9 +81,7 @@ per stop:
   s        = (stop−500)/450                        # signed: <0 light · 0 mid · >0 dark
   hue      = baseHue + hueShift·dir               # dir = s (opposite) or −|s| (hueSameDir); 0 = flat
   maxc     = maxChromaInGamut(hue, tone)          # the per-stop ceiling
-  uG       = |s|^dampCurve                         # γ shapes WHERE damping bites
-  sideW    = max(0, 1 + (dampBias/100)·sign(s))    # light(−)↔dark(+) asymmetry
-  m        = max(0, 1 + (dampAmp/100)·(1−uG) − (damp/100)·sideW·uG)   # the multiplier
+  m        = chromaEnvelope(stop, 500, lift, controls)   # the ONE shared multiplier (#681 U3, below)
   intended = relChroma ? (chroma/100)·maxc : target   # per-stop ceiling basis vs base-peak basis
   damped   = min(intended·m, maxc)
   floorC   = min((chromaFloor/100)·maxc, intended)    # NEVER above intended → muted stays muted, neutral stays neutral
@@ -91,6 +89,34 @@ per stop:
   rgb      = hctToRgb(hue, chroma, tone)
 ```
 
+- **ONE envelope, four call sites** (#681 U3). The multiplier is no longer written out per path:
+
+```
+chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, exported, ONE definition
+  sd       = (liftStop(stop, lift) − liftStop(anchorStop, lift)) / 450   # keyed on the LIFTED reading
+  isEven   = controls.toneMode === "even"
+  damp     = isEven ? 100 − (100 − damp)·0.25 : damp     # EVEN_DAMP_FACTOR = 0.25
+  γ        = (isEven ? 0.25 : 1)·dampCurve
+  uG       = |sd|^γ
+  sideW    = max(0, 1 + (dampBias/100)·sign(sd))
+  shoulder = (dampAmp/100)·4·uG·(1−uG)                   # 0 at sd=0 AND |sd|=1 → shoulders only
+  return max(0, 1 + shoulder − (damp/100)·sideW·uG)
+```
+
+  Three properties the callers depend on. It keys on `liftStop`, never on the nominal stop and never on
+  a separately re-derived effective stop (a re-derived one breaks the lift-0 control, drops Danger below
+  its floor and reopens #668's measured-L\* upticks). `env(anchorStop) = 1` exactly for any lift, so the
+  pivot is continuous with its neighbours by construction. And `dampAmp` is a SHOULDER term, 0 both at
+  the pivot and at each end, so it can only raise the shoulders, which is why the vivid-mids preset
+  ships `dampAmp 0` rather than 55. The `even`-only `EVEN_DAMP_FACTOR` is U3's even-only retune: `even`
+  sets CIELAB L\* directly, so chroma damping there cannot move measured L\*, which makes it the one mode
+  whose falloff can be retuned without reopening the Helmholtz-Kohlrausch coupling.
+- **Anchored palettes take a different branch of this same pipeline.** `paletteStopsAnchored` and
+  `okhslStopsAnchored` call the SAME `chromaEnvelope`; what differs is the tone construction
+  (`anchorLerp`, `toneAt` re-mapped per side through the pivot) and the chroma BASIS
+  (`anchorChromaBasis`, a smoothstep blend from the anchor's own measured chroma at the pivot to the
+  group's resolved ramp target at each end). Stop 500 returns the stored `anchor` verbatim unless the
+  source sits outside `[9.95, 95.05]` L\*. See SKILL.md's anchored-branch rule and knowledge-02 §9.
 - **Defaults `dampCurve 1.5, dampAmp 0, dampBias 0` reproduce the legacy `1 − (damp/100)·u^1.5` edge damp
   EXACTLY** — the `damping-curve (a)` gate compares against the independent legacy formula
   `min(target·(1−(damp/100)·u^1.5), ceiling)`, `|Δ| ≤ 1e-6`, over EVERY saturated hue × stop.

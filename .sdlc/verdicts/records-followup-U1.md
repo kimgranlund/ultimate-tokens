@@ -1,4 +1,5 @@
 # Verdict U1 · 🟢
+verdict: 🟢
 
 Plan `.sdlc/plans/records-followup.md` on `plan/records-followup` @ `cca4d0b8`. Head verified: `unit/rf-U1` @ `78f1c3e5fcda58073871145b396275484d7fc318`.
 `BASE` = `$(git merge-base origin/main HEAD)` = `d34b4fb1beefff11c9be53ec039d4265c925da4a`. `UB` = `$(git merge-base plan/records-followup HEAD)` = `5bf48fa5d20bf3ad017b65db181be5162c3808f2`.

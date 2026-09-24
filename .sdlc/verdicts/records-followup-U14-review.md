@@ -7,7 +7,7 @@ branch: unit/rf-U14
 head: a01b611a
 base: f9725be9
 written: 2026-09-21
-verdict: FIX-FIRST
+verdict: 🔴 FIX-FIRST
 verdict-pass-2: PASS
 verdict-pass-3: PASS
 head-pass-3: 79dc31ed
@@ -362,3 +362,5 @@ only in the same three `.sdlc/` files, none of which any test reads.
 
 **PASS at `79dc31ed`.** Both carried yellows are closed, and the derivation behind the anchor is the
 right one rather than a wording patch.
+
+verdict: 🟢

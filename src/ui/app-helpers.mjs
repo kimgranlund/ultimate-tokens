@@ -554,6 +554,14 @@ export const chip = (label, { mode = "status", on = false, tone = "", cls = "", 
 // number inputs is unreliable). The number field stays for any custom width.
 export const MODE_WIDTH_PRESETS = [476, 768, 992, 1280, 1540];
 
+// Q-D (ticket #681, U2, ruled + verified): in the OKHSL modes (perceptual/peak), an anchored
+// palette's hue is read straight from its anchor color (hOk), so the Hue space control (OKLCH vs
+// CAM16) has no effect on it there - only in "even" mode does hueSpace change what the palette
+// renders (tonal.js's per-stop even-mode hue solve, paletteStopsAnchored). This is the shared reason string for both the
+// doc-level Hue space control (renderGlobalInspector, disabled only when every palette is anchored)
+// and the per-palette inspector's note (renderPaletteInspector, shown for any anchored palette).
+export const HUE_SPACE_ANCHOR_REASON = "Hue follows the anchor; OKHSL and OKLCH hue coincide here.";
+
 // field — a labeled control row. ASSOCIATES the <label> with the control (label[for] +
 // control[id]) so the visible label IS the control's accessible name and clicking it
 // focuses the control — the association the inline .field rows lacked (Name / Distribution

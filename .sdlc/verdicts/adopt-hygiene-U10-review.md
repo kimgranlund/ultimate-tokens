@@ -1,4 +1,5 @@
 # Review U10 · 🟢 (pass 3, at a6e32b2)
+verdict: 🟢
 
 Reviewer: U10-reviewer-l4-p1 (fresh context). Branch `unit/hygiene-U10` @ a6e32b2 (merged `sdlc/adopt` @ 6c83520). Criteria: root `.sdlc/plans/adopt-hygiene.md` §U10, 6 rows. Both `.sdlc/checks/*.sh` are byte-identical on the branch and the root (`cmp`). Pass 1 (9020e96) flagged the stale ADR Source starts; pass 2 (1ad1958) went 🔴 on ADR-010's end excluding its own amendment and on the start-only script. Both are fixed here; this record replaces the earlier two.
 

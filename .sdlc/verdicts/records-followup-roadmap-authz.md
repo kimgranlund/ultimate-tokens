@@ -7,6 +7,7 @@ seat: orchestrator
 sha: 5da6120182e612bd3afb3792ae11ee570e8cad04
 granted: 2026-09-22
 ruling: R1 (three gates), R16 (atomic landing window)
+verdict: 🟢
 ---
 
 # Landing authorization · records-followup-roadmap · PR #720

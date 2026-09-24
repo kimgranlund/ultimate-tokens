@@ -84,7 +84,7 @@ Post-merge check, the Orchestrator's own step once G0 is green: merge `origin/ma
 
 ## Units
 
-- [ ] U1 (S) `_okL` deleted, `okl-order` gate in `tonal.mjs` through the extended worker, seven skill lines repaired · builder-l2 · reviewer-l2 · verifier-l2 · starts at G0 green
+- [~] U1 (S) `_okL` deleted, `okl-order` gate in `tonal.mjs` through the extended worker, seven skill lines repaired · builder-l2 · reviewer-l2 · verifier-l2 · starts at G0 green
 
 Grades follow the Orchestrator's rule: an L2 builder gets reviewer-l2 and verifier-l2. U1 is L2, not L1: a four-line deletion, but the gate spawns processes through a worker another gate also uses, and the negative controls need a clone with the memo restored.
 
