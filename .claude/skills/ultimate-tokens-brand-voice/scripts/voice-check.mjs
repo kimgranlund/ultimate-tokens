@@ -86,7 +86,7 @@ for (const file of process.argv.slice(2)) {
 
     // The PIVOT construction specifically: "…claim — not/never/no contrast…". Ordinary em-dashes
     // (bullets, appositions) are normal punctuation and not counted.
-    if (/ — (?:not|never|no)\b/i.test(text)) pivots += 1;
+    if (/ \u2014 (?:not|never|no)\b/i.test(text)) pivots += 1;
     // The maker brand was RETIRED: the product is unattributed. Any spelling of the old name is an ERROR,
     // not a style warning — a reintroduced "by <maker>" line is a factual claim about who makes this.
     if (/nonoun/i.test(text))
