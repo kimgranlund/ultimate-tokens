@@ -1,4 +1,5 @@
 # Verdict U1 · 🟢
+verdict: 🟢
 
 Plan `records-refresh` (ticket #691), unit U1, graded at `f31653d` on a detached scratch worktree of my own
 (`scratchpad/verify-rr-u1`), never in `.worktrees/survey-refresh`. Every row below is my own run, not the

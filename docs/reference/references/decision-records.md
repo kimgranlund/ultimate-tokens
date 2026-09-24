@@ -767,6 +767,54 @@ Format: Context → Decision → Rationale → Consequences → Status.
   `anchor-ramp`, the window and ladder allow-lists) and by the schema fields in `src/ui/persist.js`
   (`DOMAINS.palette.anchor` / `.sourceAnchor`). Knowledge-02 §9 is the reference description.
 
+## ADR-027 - A seat cites only what it measured, at the ref it is writing about
+- **Context.** Over one review round of #681 U5, four defects arose from three seats through one
+  mechanism: a figure or a judgement carried forward from a summary of a measurement rather than from
+  the measurement. A reviewer blessed an `adapter.md` edit for conforming to a convention it had not
+  read; a lane lead built a scope addendum from a recon's summary and dropped the recon's own caveat
+  that it had measured the plan tip and not the unit branch, producing an instruction that would have
+  regressed an owner ruling and broken a gate; a ledger's "every re-pin below is listed individually"
+  and a handoff's "the merge is uncommitted" were both true of an earlier state and carried forward
+  unchecked. A fifth instance followed at a line that is a preserved historical record, read twice at
+  the wrong ref. A sharper second form appeared in the same plan: a constraint discovered while doing
+  something else was recorded and obeyed and nobody asked why it existed. A reviewer correctly warned
+  a builder not to cut a `56 to 60 s` prefix because the gate would exit 1; that warning and #718 (a
+  time check that passes only while the superseded figure stays first in its cell) are one sentence
+  read from two ends. One control caught every instance:
+  re-run the thing against the tree it describes. For the second form: ask why a constraint exists
+  before obeying it.
+- **Decision.** Four rules, binding on every seat that writes a record under `.sdlc/` or a review,
+  verdict, brief or handoff anywhere in the repo. (1) A seat that cites a figure or a state is the
+  seat that measured it, at the ref the record names, by a command the record shows; a record that
+  cannot show the command cites the sha it read instead of asserting. (2) A summary of a measurement
+  is a lead, never evidence: a handoff's `Ran` row, a recon's bullet, a review's blessing, a checklist
+  tick or a board cell is where a seat starts, and the seat reruns before it relies. (3) A constraint
+  inherited from another seat is interrogated before it is obeyed: the record that obeys it states
+  why the constraint exists, or files the question and says the constraint is unexplained.
+  (4) An acceptance criterion rewritten after its verdict must be re-graded by a verifier before the unit closes:
+  a rewrite is a new claim, and the seat being graded cannot be the one whose edit closes the
+  unit (source: #709 revision 38, the debt the records-followup verifier recorded and revision 39
+  carried forward unclosed, `.sdlc/plans/archive/records-followup.md` at a4675242).
+- **Rationale.** The six defects share no file and no seat; they share a shortcut, and every seat in
+  the hierarchy took it, including the seat issuing the standards. `.sdlc/adapter.md` §1 already
+  rules the special case ("a handoff's `Ran` row is evidence for the reviewer, never for the
+  verdict"); this ADR generalises it to every record kind, because the pattern did not stay inside
+  verdicts. Re-running is cheap next to a rolled-back owner ruling, and a constraint whose reason is
+  unknown is as likely to be a defect (#718) as a rule. Rule (4) closes the gap the same plan found on
+  itself: revision 37 of records-followup moved a unit's acceptance twelve minutes after the grade,
+  written by the seat being graded, and only the verifier's objection stood between that and a false
+  close; a gate cannot rest on an objection.
+- **Consequences.** A verdict or review row carries the command and its printed output at the sha
+  the record names, which the verbatim-quote rule (adapter §3, 2026-09-19) already shapes. A brief,
+  scope addendum or recon that summarises another seat's finding keeps that seat's caveats with it or
+  cites the finding by path and sha. A record that rests on an inherited constraint names its source,
+  and a constraint without a reason becomes a question, not a rule. This ADR proposes no new gate:
+  what a check can enforce is #723's work (`verdict:` front matter as the machine-readable state).
+  #718 and #719 stand as the two recorded instances.
+- **Status.** PROPOSED 2026-09-22 (#721; drafted by plan `records-policy` U2 after #681 landed
+  ADR-026). Ratification is the owner's: the owner edits this line to DECIDED, or amends the text
+  under the file's amendment shape; no plan seat does either.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -784,3 +832,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-020 | `scripts/bundle.mjs` still hand-rolls import transforms though `vite` is already a devDependency | measured: vite's single-file output is ~20% LARGER (rolldown runtime prelude + a data-heavy artifact minification barely shrinks) and can't be byte-comparable — the spike's own acceptance bar ruled it out |
 | ADR-021 | the hosted MCP runs generation server-side though "the generator stays client-side" is a load-bearing constraint | deliberate, narrow amendment for describe-palette only (#379's Pro anchor); every other surface (app SPA, Figma plugin, hosted kit-sync) keeps the original rule verbatim |
 | ADR-022 | `scripts/migrate-type-registers.mjs` looks like dead one-off code to delete | kept deliberately as the executable record of the slots→registers rename — the squash-merge would erase an add-then-delete from history |
+| ADR-027 | rerunning a measurement another seat already recorded looks like waste | the recorded figure is a lead, not evidence; six defects in one plan came from trusting one (#721) |

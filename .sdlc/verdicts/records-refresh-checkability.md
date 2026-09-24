@@ -1,4 +1,5 @@
 # Criteria review records-refresh · 🟢 mobilize
+verdict: 🟢
 
 Reviewed by sdlc-verifier on 2026-09-18 on `plan/records-refresh` @ `8919292` (the plan's front matter still says `746f93d`, 4 commits over `cf8e61a`; the branch is now 6 commits over it, the plan commit included). Plan: `.sdlc/plans/records-refresh.md`.
 All 14 criteria are 🟢 checkable: 🟢 14 · 🔴 0. Nothing goes back to the planner.

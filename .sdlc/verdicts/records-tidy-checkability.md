@@ -111,3 +111,5 @@ touches this row.
 
 8 of 8 checkable. The plan is mobilizable. Nothing here grades the unit; that is a separate verdict
 after it is built.
+
+verdict: 🟢

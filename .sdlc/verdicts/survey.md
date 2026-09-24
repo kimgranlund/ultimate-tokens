@@ -1,4 +1,5 @@
 # Verdict survey · 🟡
+verdict: 🟡
 
 Graded by sdlc-verifier on 2026-09-18 on `sdlc/survey-refresh` @ `8120ab4` (that commit touches `.sdlc/survey.md` only, so the tree is `cf8e61a` for every gate). Gates ran in `.worktrees/survey-refresh`; every negative control ran in a throwaway local clone at `cf8e61a` (`/tmp/v-neg1`), never in a seat's worktree.
 Supersedes the 2026-09-16 grading at `f9e20c5`.
