@@ -43,3 +43,5 @@ The rule reads standalone: "token values moved by an engine change under an unch
 None. No em dash outside backtick spans in the new comment lines (inspected directly).
 
 Verdict left uncommitted per instruction; nothing staged or committed in the worktree by this review.
+
+verdict: 🟢
