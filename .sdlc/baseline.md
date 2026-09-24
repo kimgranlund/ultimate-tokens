@@ -1,11 +1,11 @@
 ---
 kind: baseline
 repo: ultimate-tokens
-ran: 2026-09-19
-ref: origin/main @ 20298cc
-host: local macOS, Node 24.18, local Chrome for smoke; load 3.97 3.87 4.58 on 10 cores at run start (the test timings' own set, the uncontaminated rerun)
+ran: 2026-09-23 to 2026-09-24
+ref: main @ a62ec020
+host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 window 1 and its window-2 sequel), full readings in the U6b handoff's Runs table
 extended: 2026-09-19, rows corpus-contrast and fonts, host load 3.97 4.39 4.80 to 6.16 4.94 4.97 on 10 cores across the six runs
-supersedes: the 2026-09-19 baseline at d814500 (kept below as the prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md)
+supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. Every row now carries all three of its counted quiet-host readings; `npm test`'s window-1 figures move to a labelled superseded note once U6c-8 re-timed it
 ---
 
 # Baseline
@@ -16,11 +16,21 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
-| `npm test` | 3/3 | 0 | 56.27 · 56.43 · 59.83 | `✓ all 49 test files passed` `re-measured 2026-09-20, see the #681 correction below` |
-| `npm run build` | 3/3 | 0 | 3.06 · 1.34 · 1.36 | `wrote figma/plugin/ui.html 4125.1 KB` `re-measured 2026-09-23, see the #681 U7, #681 U10 and #739 U1 corrections below` |
+| `npm test` | 3/3 | 0 | 89.10 · 79.93 · 80.07 | `✓ all 50 test files passed` `re-measured window 2, 2026-09-23 22:58 to 2026-09-24 00:19 PDT, gate-split #713 U6c-8, quiet-host set (below); replaces the U6b/window-1 figures, which move to the superseded note below` |
+| `npm run gate:corpus-tonal` | 3/3 | 0 | 86.09 · 116.31 · 92.56 | `PASS: tonal-generation clears all [gate] predicates` `new row, gate-split #713 U6b` |
+| `npm run gate:corpus-anchor` | 3/3 | 0 | 78.98 · 99.90 · 86.02 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (17, Q3-resolved, +2 at #739) are named allow-lists, compared by name, each with a biting negative control` `new row, gate-split #713 U6b; summary text re-measured after achromatic-anchor #739 merged into plan/achromatic-anchor (notch 15 -> 17, exit 0 confirmed - `.sdlc/checks/baseline-agrees-check.sh` does not compare this cell's text, only its timing, so the #713 seconds carry forward unchanged)` |
+| `npm run gate:sweep-prime` | 3/3 | 0 | 86.25 · 70.40 · 67.00 | `PASS: prime-system clears all AC-050 gates` `new row, gate-split #713 U6b; first reading window 1 (not recorded, before clock logging), other two window 2, 2026-09-23` |
+| `npm run gate:corpus-reset` | 3/3 | 0 | 83.40 · 57.38 · 57.15 | `HEADLESS BOOT PASS — all Phase-3 interaction assertions hold` `new row, gate-split #713 U6b; first reading window 1 (not recorded, before clock logging), other two window 2, 2026-09-23` |
+| `npm run build` | 3/3 | 0 | 3.06 · 1.34 · 1.36 | `wrote figma/plugin/ui.html 4125.1 KB` `re-measured after achromatic-anchor #739 merged into plan/achromatic-anchor (build confirmed, exit 0, same 4125.1 KB); see the #681 U7, #681 U10 and #739 U1 corrections below for the figure's history - #713's gate-split touched no engine file, so the figure carries the #739 value forward unchanged; seconds carry forward from the prior reading, since neither the merge nor #713 changes the build's own timing` |
 | `npm run smoke` | 3/3 | 0 | 18.20 · 18.28 · 18.25 | `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser` |
 | `npm run gate:corpus-contrast` | 3/3 | 0 | 20.12 · 22.89 · 22.29 | `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color` |
 | `npm run gen:type-fonts` | 3/3 | 0 | 0.77 · 0.78 · 0.70 | `wrote src/ui/type-fonts.js  (229 KB · fonts 171 KB woff2)` |
+
+`npm test`'s summary line moved from 49 to 50 test files: U1 registered `engine/corpus-sample.mjs` in `test/run.mjs`'s `TESTS` alongside the existing `engine/anchor.mjs`. Every row above now carries all three of its counted quiet-host readings (load under 5 at start, 0 hot processes and a clean `pgrep` before and after, exit 0, tree clean); the readings taken in window 2 (2026-09-23 21:58 PDT to 2026-09-24 00:21 PDT) closed out the three gate-script rows' second and third readings and re-timed `npm test`'s three under U6c's narrower SAMPLED draw. See `.sdlc/handoffs/gate-split-U6b.md`'s Runs table for each row's own clock time and Rejected runs table for every attempt, counted and not.
+
+### Superseded: `npm test`'s window-1 figures (2026-09-23, pre-U6c-8)
+
+Before U6c narrowed `prime.mjs`'s determinism/poison draw and the reset sweep's stride (owner ruling R35), `npm test`'s three quiet-host readings were 106.45, 141.39 and 171.23 s (`✓ all 50 test files passed`, load 4.39/3.57/4.98 at start), all exceeding the 120 s ceiling (`.sdlc/questions/gate-split-U6b.md` records the overage and a per-file breakdown). U6c-8's re-time above (89.10, 79.93, 80.07 s) replaces these as the figure of record; kept here as history, not as a range to grade against, same convention as the interim ceiling section below.
 
 The corpus-contrast gate's own counts, as it printed them on run 5 of the set above, one list item per line of output:
 
@@ -63,8 +73,9 @@ Owner ruling, 2026-09-20, verbatim: "Interim ceiling now, split sweeps into gate
 ticket (Recommended)". The ceiling below is therefore INTERIM: it holds until #713 splits the corpus
 sweeps out of `npm test` into gate scripts, at which point it is re-measured, not renewed.
 
-Why a ceiling was needed at all. The `npm test` seconds in the live table above (56 to 60 s) were
-measured before #681, whose corpus sweeps are the cost. Per-file, measured sequentially in the
+Why a ceiling was needed at all. The table's pre-#681 figures, 56 to 60 s, were measured before
+#681, whose corpus sweeps are the cost; the live table above now reads 89.10, 79.93 and 80.07 s,
+the 80 to 89 s U6c-8 re-time. Per-file, measured sequentially in the
 foreground at `bf62ee30` with the host at load 5.16, 48 files: `engine/tonal.mjs` 100.2 s,
 `engine/anchor.mjs` 80.0 s, `ui/headless-boot.mjs` 61.0 s, `engine/prime.mjs` 54.9 s, and every one
 of the other 44 files under 10 s. Four files carry essentially the whole suite.
@@ -248,3 +259,5 @@ Correction (2026-09-23, plan preset-intent-fidelity U10, #681): `npm run build`'
 Correction (2026-09-23, plan preset-intent-fidelity U10 scope growth, revision 37, #681): the ui.html figure moves again, from 4118.2 KB to 4119.1 KB. The cause is named: U10-5 caps the chroma envelope and U10-7 swaps comment em dashes for hyphens in `src/engine/tonal.js`, U10-6 rewords a comment in `src/engine/hct.js`, and both files are inlined into `figma/plugin/ui.html`. The figure is program output: `gen:figma-ui` printed `wrote figma/plugin/ui.html 4119.1 KB` in `.worktrees/pif-u10`, and measuring the committed file the way `baseline-agrees-check.sh` measures it gives the same 4119.1. Only the KB cell moves.
 
 Correction (2026-09-23, plan achromatic-anchor U1, #739): the ui.html figure moves again, from 4119.1 KB to 4125.1 KB. The cause is named: U1 adds the white guard and `rgbToOklabChroma` to `src/engine/okhsl.js`, `ACHROMATIC_ANCHOR_C` and the achromatic hue-seed branches to `src/engine/tonal.js`, and both files are inlined into `figma/plugin/ui.html`. The figure is program output: `npm test` printed `wrote figma/plugin/ui.html 4125.1 KB` in `.worktrees/aa-U1`, and measuring the committed file the way `baseline-agrees-check.sh` measures it gives the same 4125.1. Only the KB cell moves.
+
+Correction (2026-09-24, plan achromatic-anchor pre-land, #739/#713): `origin/main` merged in after #713 (gate-split) landed and squash-merged as `a62ec020`, conflicting `test/engine/anchor.mjs` (the FULL-mode notch count, U1's) and `.sdlc/baseline.md` itself (the whole Pass table, #713's new gate rows against U1's build/npm test rows). Resolved keeping both: #713's FULL/SAMPLED gate rows and its 50-file `npm test`/re-timed figures, with the FULL-mode `gate:corpus-anchor` summary text's notch count updated 15 to 17 (Ticket #739's own re-freeze, unchanged by the merge itself) and `npm run build`'s figure carried forward at 4125.1 KB (#713 touches no engine file, confirmed by a real `npm run build` run after the merge, exit 0, same 4125.1). The `ref:` frontmatter, auto-merged to the stale pre-squash `plan/gate-split @ c87d98fc` (git's line-merge saw no conflict since only origin/main's side changed it), is corrected to `main @ a62ec020` to match `origin/main`'s own re-pointed baseline; `baseline-agrees-check.sh` read `STALE head: baseline ref c87d98fc is in origin/main's history` before the fix, `stale total: 0` after. No other measured figure moves; `npm run gate:corpus-anchor`'s and `npm run build`'s seconds columns carry forward unchanged, since neither the merge nor #739 touches what either gate times.
