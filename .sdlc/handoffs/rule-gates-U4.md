@@ -496,3 +496,9 @@ file changed; `git status` was clean both times.
 4. `README.md:119` had a run of spaces before the comma left over from the sweep
    (`figma-semantic-binder/          , the standalone...`); now a single space
    (`figma-semantic-binder/, the standalone...`).
+
+Commits: `21f4184e` (the four code fixes), `2812e09a` (this handoff), `cc0c1039`
+(regenerating `figma/plugin/ui.html` for the code fixes). Final head `cc0c1039`,
+`npm test` in a fresh clone: 2026-09-24 00:54:32 to 01:01:32, `✓ all 51 test files
+passed`, exit 0, clone tree clean after (`git status --short | wc -l` → 0),
+`node test/repo/em-dash.mjs | tail -1` → `em-dash: clean (686 files scanned)`.
