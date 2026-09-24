@@ -209,7 +209,7 @@ casing question arises there, clean.
 
 | Family | CSS | Tailwind | JSON | DTCG | UI3 | ShadCN | DS/Claude-Design |
 |---|---|---|---|---|---|---|---|
-| Color stops (raw) | ✅ | ✅ | ✅ | ✅ | ✅ | — (mapped indirectly) | ✅ (verbatim) |
+| Color stops (raw) | ✅ | ✅ | ✅ | ✅ | ✅ | none (mapped indirectly) | ✅ (verbatim) |
 | Color scrims | ✅ | ❌ (not emitted) | ✅ | ✅ | ✅ | none | none |
 | Color semantic roles | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (curated subset, `SHADCN_ORDER`/`MAP`) | ✅ (curated subset, §6.5) |
 | Key colors (brand-retained) | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | not checked this pass |

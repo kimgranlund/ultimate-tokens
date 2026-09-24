@@ -181,8 +181,8 @@ function oklchStrA({ L, C, H }, alphaPct) {
 
 // DIALOG_BACKDROP, a fixed SYSTEM CONSTANT, not a palette-derived color: opaque black at 80% alpha,
 // the canonical dialog/modal scrim. Unlike every other color token in this file it is NOT palette-scoped
-// (no [n] name segment) and does NOT flip between light/dark (an overlay reads the same in both schemes)
-// — the one deliberate exception to "every color comes from derivePalette/derivedAll". It still rides
+// (no [n] name segment) and does NOT flip between light/dark (an overlay reads the same in both schemes),
+// the one deliberate exception to "every color comes from derivePalette/derivedAll". It still rides
 // the SAME configurable {pfx} as every other token (cssPrefixOf/aliasPrefix), so a renamed namespace
 // covers it too. Emitted once per document in every color-token format (never per palette).
 const DIALOG_BACKDROP_RGB = [0, 0, 0];
@@ -783,7 +783,7 @@ export function exportTailwind(state, derived) {
       // pad3 "050" -> Tailwind key "50"; finer stops (150/250/…) stay as-is (valid in v4).
       lines.push(`  --color-${p.n}-${String(Number(key))}: ${oklchStr(rgbToOklch(p.stops[key].rgb))};`);
     }
-    // PRIME — --color-{n}-prime-{step} (REQ-054), next to the scale above; the seven identity
+    // PRIME: --color-{n}-prime-{step} (REQ-054), next to the scale above; the seven identity
     // swatches, flat and mode-independent (R2).
     for (const step of PRIME_STEPS) {
       const sw = p.prime[step];

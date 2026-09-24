@@ -33,8 +33,8 @@
 // REAL key colour (`key = rgbToOkhsl(keyRgb)`) rather than a neutral-grey `l` proxy, a raw chroma-fraction
 // `s` proxy, or a re-solved hue, three different quantities (CAM16 chroma fraction, OKHSL saturation,
 // an Abney-corrected hue) that don't coincide with the key colour's own (conductor ruling 2026-09-11,
-// ticket #537 Findings: a hue re-solve here can oscillate at very low saturation without ever converging
-// — provably unreachable there, not a solver defect — and any fix belongs nowhere near tonal.js's shared
+// ticket #537 Findings: a hue re-solve here can oscillate at very low saturation without ever converging,
+// provably unreachable there, not a solver defect, and any fix belongs nowhere near tonal.js's shared
 // `solveOkhslHue`, since REQ-003's frozen legacy-ramp fixture depends on its exact current behaviour).
 // So at `primeChroma 100`, `prime` reproduces deriveKeyColor's hex EXACTLY (REQ-056) by construction,
 // `s = key.s`, `l = key.l`, `hue = key.h`, not approximately. The other six steps share this SAME `s`

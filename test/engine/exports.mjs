@@ -1649,7 +1649,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (!dialog) FAIL(G, "no components/dialog.html card");
   else if (!dialog.data.includes(`var(--${pfx}-dialog-backdrop)`)) FAIL(G, "Dialog card does not reference --{pfx}-dialog-backdrop via var()");
 
-  // uiFont font-size pin (#477) — .btn/.pbtn (Card)/.dlg-btn (Dialog) must carry a font-size read from
+  // uiFont font-size pin (#477): .btn/.pbtn (Card)/.dlg-btn (Dialog) must carry a font-size read from
   // the real UI-control MD step, not the browser default; and the Inputs .field rule must not carry a
   // bare `font:` SHORTHAND after uiFont (it resets family/size/weight/line-height to `inherit`,
   // wiping the UI voice uiFont just set, the exact defect this ticket fixes).
@@ -2216,8 +2216,8 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 // ── hpg-export-group-metadata (SPEC 0.3.0 RP-1, ticket #572, plan PR #571 step E1), the palette
 // group (material/brand/system/data) is exported METADATA on every surface that has a metadata slot
 // (JSON, DTCG's raw file, a CSS/OKLCH/Tailwind comment line, the DS bundle's familiesByGroup) and is
-// ABSENT from UI3/ShadCN (no metadata slot short of `description`, #556's own no-Figma-folder ruling)
-// — every emitted group is one of the four valid ids AND matches model.mjs's paletteGroup(p), the
+// ABSENT from UI3/ShadCN (no metadata slot short of `description`, #556's own no-Figma-folder ruling),
+// every emitted group is one of the four valid ids AND matches model.mjs's paletteGroup(p), the
 // single resolver (no drift between the metadata and the real resolver).
 {
   const VALID_GROUPS = ["material", "brand", "system", "data"];

@@ -123,8 +123,8 @@ export function hueAnchorFrac(palette, controls) {
 // solveOkhslHue, the OKHSL hue whose color at (s, l) reads back at `targetOklchHue`. The perceptual ramp
 // is AUTHORED in OKHSL but EXPORTED in OKLCH, and the two disagree on "constant hue" by a chroma- and
 // lightness-dependent amount (Abney), worst in the blues (~6°). Anchoring the KEY stop directly in the
-// RENDER space, at its ACTUAL saturation/lightness, lands it on the set OKLCH hue exactly, for any damping
-// — no CAM16 round-trip. f(h)≈h (slope ≈1), so h ← h − (got − target) is Newton; converges in a few steps.
+// RENDER space, at its ACTUAL saturation/lightness, lands it on the set OKLCH hue exactly, for any damping,
+// no CAM16 round-trip. f(h)≈h (slope ≈1), so h ← h − (got − target) is Newton; converges in a few steps.
 // #657: f is an 8-BIT STAIRCASE, okhslToRgb quantises to integer RGB, so `got` is piecewise CONSTANT in h
 // and the 1e-3 criterion is unreachable on most cells. Where the step is flat the update h ← h − err is a
 // fixed drift, so the LAST iterate can be 100°+ off target (pale, low-chroma cells near white are the worst:

@@ -39,7 +39,7 @@
 //                         paragraphSpacing?,                     //   (prose voices only)
 //                         fontFamily,                            // → Type Primitives font/<voice> (STRING alias)
 //                         fontStyle? | fontWeight? },            // → weight-style/<voice>/<slug> OR
-//                                                                //   weight/<voice>/<slug> — MUTUALLY
+//                                                                //   weight/<voice>/<slug>: MUTUALLY
 //                                                                //   EXCLUSIVE, never both: real Figma
 //                                                                //   resolves a bound fontWeight to "the
 //                                                                //   closest valid weight for the font",

@@ -78,8 +78,8 @@ const COLOR_REGISTRY_KEY = "ultimate-tokens-color-collections";
 // LIBRARY_TYPE_VOICE_MAP (#495), "published library" mode's static old->new Type-voice kebab-segment
 // map (mirrors migrations.mjs's LIBRARY_TYPE_VOICE_MAP, this sandbox can't import it; hand-kept in
 // lockstep, same discipline as SEMANTIC_RENAME_FROM above). Applies to any OLD-voice-named variable in
-// the merged "Geometry" collection's type/ half (this binder never touches Font/Type Primitives at all
-// — see applyFloatPlans below).
+// the merged "Geometry" collection's type/ half (this binder never touches Font/Type Primitives at all,
+// see applyFloatPlans below).
 const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };
 
 // GEOMETRY_FIELD_RENAME_MAP (#498), "published library" mode's static old->new Geometry size/* field-
@@ -492,7 +492,7 @@ async function confirmLibraryMode(collectionName, report) {
       "p{margin:0 0 10px;line-height:1.5}textarea{flex:1;width:100%;box-sizing:border-box;font:11px ui-monospace,SFMono-Regular,monospace;margin-bottom:12px;border:1px solid #ccc;border-radius:6px;padding:8px;white-space:pre}" +
       "button{font:inherit;padding:7px 14px;border-radius:6px;cursor:pointer;margin-right:8px}" +
       "#library{background:#18A0FB;color:#fff;border:1px solid #18A0FB}#classic{background:#fff;border:1px solid #ccc}</style>" +
-      "<p><b>" + escapeHtmlVM(collectionName) + "</b> — this apply would remove " + atRisk + " variable(s) not in the current plan. " +
+      "<p><b>" + escapeHtmlVM(collectionName) + "</b>: this apply would remove " + atRisk + " variable(s) not in the current plan. " +
       "If another file consumes this collection as a published library, removing them breaks those bindings. " +
       "Preserve them (alias mapped names, deprecate the rest, never removed) or remove them as before?</p>" +
       "<textarea readonly>" + escapeHtmlVM(text) + "</textarea>" +
@@ -715,8 +715,8 @@ function targetName(paletteName, ref) {
 // (registry-by-id only, TKT-0024), the caller checks for a candidate FIRST, and on confirmed consent
 // (confirmAdopt below) pre-seeds `reg[name] = candidate.id` BEFORE calling ensureCollection/
 // ensureFloatCollection, which then takes its normal "known" fast path and returns that exact
-// collection: no change to the provenance functions, no risk to their parity gates. Binder-only (#492)
-// — the flagship app-as-plugin keeps its TKT-0024 "never adopt a same-named collection" guarantee
+// collection: no change to the provenance functions, no risk to their parity gates. Binder-only (#492),
+// the flagship app-as-plugin keeps its TKT-0024 "never adopt a same-named collection" guarantee
 // unchanged; this ticket's root cause (figma-semantic-binder/code.js) and its ADIA Colors scenario are
 // both specific to the standalone binder.
 //

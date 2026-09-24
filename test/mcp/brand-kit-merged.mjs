@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // brand-kit-merged.mjs, verifier for the downloadable MERGED brand-kit + describe-palette generator MCP
-// server (#374). Spawns the real (zero-dep) server TWICE, once kitless, once with a sibling brand-kit.json
-// — and drives the full MCP protocol over stdio, proving a generated kit never dead-ends end to end.
+// server (#374). Spawns the real (zero-dep) server TWICE, once kitless, once with a sibling brand-kit.json,
+// and drives the full MCP protocol over stdio, proving a generated kit never dead-ends end to end.
 import { spawn } from "node:child_process";
 import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";

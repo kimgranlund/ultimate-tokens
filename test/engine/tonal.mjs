@@ -240,7 +240,7 @@ for (const p of DEFAULTS) {
     if (Math.abs(r.tone - tone0[STOPS.indexOf(r.stop)]) > 1e-9) FAIL("damping-curve", `damping perturbed tone at stop ${r.stop}`);
 }
 
-// ── hpg-tonal-rel-chroma: the relChroma "gamut" basis — % of EACH stop's gamut ceiling, so every
+// ── hpg-tonal-rel-chroma: the relChroma "gamut" basis: % of EACH stop's gamut ceiling, so every
 //    hue fills the same fraction of its gamut (harmonized regardless of hue). In-gamut; off == default. ─
 {
   const withRel = (p, on) => T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, { ...CTL, relChroma: on }, STOPS);

@@ -255,8 +255,8 @@ access/refresh tokens are managed by `workers-oauth-provider` (its own KV/DO sto
 
 ## 10. App integration
 
-- **Sign-in UI:** a lightweight "Sign in" (email → "check your inbox") in the app shell / Settings « Account »
-  — **web only** (hidden `inFigma`). Signed-in + Pro unlocks **cloud sync** + the **hosted MCP** panel.
+- **Sign-in UI:** a lightweight "Sign in" (email → "check your inbox") in the app shell / Settings « Account »,
+  **web only** (hidden `inFigma`). Signed-in + Pro unlocks **cloud sync** + the **hosted MCP** panel.
 - **Hosted-MCP panel** (Config / Account): shows the **one** endpoint URL + the `claude mcp add` snippet +
   per-kit "active for MCP" toggles + a personal-access-token generator (fallback) + "this kit is live".
   Gated by `flagOf("hostedMcp")`; locked → `_proUpsell()`.

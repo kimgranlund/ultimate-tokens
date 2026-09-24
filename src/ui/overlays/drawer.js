@@ -384,7 +384,7 @@ export class DrawerMixinImpl {
         // the css-hex/ · css-oklch/ files above. Both ride the same proExport gate.
         { name: `radix/${s}.refs.preset.mjs`, data: ex.radixRef },
       );
-      // figma-aliased/ — the SAME tokens, but the Light/Dark leaves carry com.figma.aliasData targeting
+      // figma-aliased/, the SAME tokens, but the Light/Dark leaves carry com.figma.aliasData targeting
       // the "Color Primitives" collection (figmaBundle). For TESTING plugin-free import / the live cascade
       // (OD-004, unverified end-to-end). The default figma/ files (resolved) always import; the plugin is
       // the reliable cascade. See figma-aliased/README.txt.
@@ -395,7 +395,7 @@ export class DrawerMixinImpl {
         { name: "figma-aliased/Dark_tokens.json", data: JSON.stringify(aliased["Dark_tokens.json"], null, 2) },
         { name: "figma-aliased/README.txt", data: ALIASED_README },
       );
-      // design-system-for-claude-code/ — the LLM design-system bundle: DESIGN.md (the universal-dialect
+      // design-system-for-claude-code/, the LLM design-system bundle: DESIGN.md (the universal-dialect
       // core, Stitch-canonical sections + Responsive + Agent Prompt Guide) + tokens.json (hex colors/
       // colorsDark + the type/spacing/radii ladders) + components/*.html (self-contained @dsCard previews)
       // + README.md (the profile receipt). One shared colour source (dsColorRoles) keeps every carrier
@@ -404,11 +404,11 @@ export class DrawerMixinImpl {
       const dsDate = new Date().toISOString().slice(0, 10);
       files.push(...exportDesignSystemBundle(dsDoc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
         .map((f) => ({ name: `design-system-for-claude-code/${f.name}`, data: f.data })));
-      // design-system-for-google-stitch/ — the SAME canonical DESIGN.md (Stitch consumes one file,
+      // design-system-for-google-stitch/, the SAME canonical DESIGN.md (Stitch consumes one file,
       // byte-identical to the Claude Code spine) + a Stitch-profile README receipt. One core, two uploads.
       files.push(...exportDesignSystemStitchBundle(dsDoc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
         .map((f) => ({ name: `design-system-for-google-stitch/${f.name}`, data: f.data })));
-      // design-system-for-figma-make/ — a routed guidelines/ tree Figma Make reads directly (no
+      // design-system-for-figma-make/, a routed guidelines/ tree Figma Make reads directly (no
       // linter/schema of its own, make_guidelines_check.py is the gate of record) + a profile README.
       files.push(...exportDesignSystemMakeBundle(dsDoc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
         .map((f) => ({ name: `design-system-for-figma-make/${f.name}`, data: f.data })));

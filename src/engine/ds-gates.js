@@ -11,7 +11,7 @@
 //   dsBundleGates({ designMd, tokensJson, previews })
 //     designMd  : string, the DESIGN.md text (frontmatter + body)
 //     tokensJson: string | object, the tokens.json (raw text or already parsed)
-//     previews  : Array<{ name: string, html: string }> — the components/*.html cards
+//     previews  : Array<{ name: string, html: string }>, the components/*.html cards
 //   → { fails, warns, findings: [{ level, gate, msg }] }
 //
 // Levels: PASS · ERROR · WARN · SKIP · INFO · DIVERGENCE. Only ERROR counts toward

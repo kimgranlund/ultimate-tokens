@@ -687,7 +687,7 @@ class HctApp extends HTMLElement {
         ...enabled.slice(0, 8).map((p) => h("i", { style: `background:${p.key}` })), // p.key = vivid identity color
       );
       // A card with a PRIMARY action (open) + a SECONDARY action (delete). The tile is a
-      // role=button div, NOT a <button> — so the delete can be a real, keyboard-focusable
+      // role=button div, NOT a <button>, so the delete can be a real, keyboard-focusable
       // <button> without nesting interactives. Enter/Space on the tile opens it.
       const tile = h(
         "div",
@@ -2382,7 +2382,7 @@ class HctApp extends HTMLElement {
 
   // ── read-only Figma-variables reference + drift diff (#3) ──────────────────────────────
   // Read the live raw-colors variables from the FILE and compare to what the generator would emit
-  // now → per-token drift in the Mapping table (✓ match / ✗ drifted / — absent). Read-only: it never
+  // now → per-token drift in the Mapping table (✓ match / ✗ drifted / - absent). Read-only: it never
   // reconstructs params (you cannot reverse-derive hue/chroma from a color), it only diffs colors.
   readLiveVariables() {
     if (!this.inFigma) { this.toast("Reading live variables is a Figma-plugin feature"); return; }

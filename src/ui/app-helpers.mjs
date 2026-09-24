@@ -45,7 +45,7 @@ export const ACCOUNT_URL = "https://app.lemonsqueezy.com/my-orders";
 export const PRO_EXPORT_FORMATS = new Set(["dtcg", "tailwind", "shadcn", "panda", "radix"]);
 
 // README shipped inside the Download-All zip's experimental figma-aliased/ folder (OD-004).
-export const ALIASED_README = `figma-aliased/ — EXPERIMENTAL plugin-free cascade (OD-004)
+export const ALIASED_README = `figma-aliased/, EXPERIMENTAL plugin-free cascade (OD-004)
 ==========================================================
 Same tokens as ../figma/, but the Light/Dark variables carry com.figma.aliasData so they
 ALIAS the raw primitives instead of embedding resolved colors, i.e. editing a Color

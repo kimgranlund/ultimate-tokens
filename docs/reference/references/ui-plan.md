@@ -108,7 +108,7 @@ surface:
 [ Ramps │ ANALYSIS │ Semantic ]   Primary
  L*100┤●                          ░ gamut ceiling (maxChromaInGamut@tone)
    90 ┤ ●                         ● applied chroma per stop
-   …  ┤   ●●                      — tone line
+   …  ┤   ●●                      ─ tone line
    50 ┤      ●●●  ← peak ~500      applied hugs ceiling ⇒ clipping;
    …  ┤    ●●                      gap ⇒ headroom (raise chroma%)
    10 ┤ ●

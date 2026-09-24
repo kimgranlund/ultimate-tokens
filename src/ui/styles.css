@@ -3,7 +3,7 @@
    ramp navigator, segmented inspector.
 
    DOGFOODING: the chrome themes itself with the tokens the tool generates. On
-   boot app.js injects <style id="ultimate-tokens-theme"> — exportCSS() over the 8 default
+   boot app.js injects <style id="ultimate-tokens-theme">, exportCSS() over the 8 default
    palettes, into <head>, emitting per-palette --{n}-{stop} raw vars and 37
    --c-{n}{suffix} semantic roles in :root. The app-internal variables below
    (--bg/--panel/--ink/--accent/…) are now thin aliases onto those generated
@@ -103,7 +103,7 @@ ultimate-tokens[data-motion="reduced"] *::after {
    unbounded duration of an in-flight apply (from the "apply" postMessage until apply-done/
    apply-error, see app.js's applyToFigma/onApplyDone/onApplyError), closing the gap a transient
    toast alone left once its timeout passed. `.apply-busy` is set on the HOST element AND (render())
-   the open export `.drawer` <dialog> — never in the web-app preview build (Figma-plugin-embed only,
+   the open export `.drawer` <dialog>, never in the web-app preview build (Figma-plugin-embed only,
    gated by `this.inFigma`). TWO rings, not one: the Apply/Regroup triggers live INSIDE the drawer,
    a native <dialog> promoted to the browser's TOP LAYER by showModal(), a `position:fixed` ring on
    the host alone would render BELOW that top layer (dialog + its ::backdrop always paint above

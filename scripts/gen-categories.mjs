@@ -1,6 +1,6 @@
 // gen-categories.mjs, GENERATE the Palette Categories from docs/reference/colors/categories/*.json
 //
-// SUPERSEDES gen-travel-presets.mjs. Reads every *.json under docs/reference/colors/categories/ — the
+// SUPERSEDES gen-travel-presets.mjs. Reads every *.json under docs/reference/colors/categories/, the
 // 7 sourced/decorative categories (architecture, cuisine, film, literature, music, nature, travel),
 // each 12 volumes × 4 palettes, PLUS "brands" (a smaller, real-identity set, see the `direct` palette
 // pass-through below), and emits:

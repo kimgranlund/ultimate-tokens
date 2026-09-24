@@ -9,7 +9,7 @@ name: Deploy demo to GitHub Pages (manual)
 # Kept as workflow_dispatch for an out-of-band re-deploy (e.g. a Pages-only incident) without needing
 # a new commit. Shares the SAME `pages` concurrency group as ci.yml's deploy job (concurrency groups
 # are repo-wide, not per-workflow), so a manual run here still correctly queues behind, never races
-# — an automatic deploy in flight.
+# an automatic deploy in flight.
 
 on:
   workflow_dispatch:

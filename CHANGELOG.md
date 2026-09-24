@@ -222,7 +222,7 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 - **Breakpoints are hierarchy-aware and DESKTOP-ANCHORED.** The scale you design now IS the Desktop
   mode, and Tablet/Mobile derive *down* via a size-progressive compression curve: body-class text is
   **frozen** across breakpoints (Body/UI/Caption ±0px) while display-class type compresses steeply
-  (Display ~90 → 75 → 60 — ×5/6 at Tablet, ×2/3 at Mobile at the top of the ramp, interpolated in
+  (Display ~90 → 75 → 60, ×5/6 at Tablet, ×2/3 at Mobile at the top of the ramp, interpolated in
   log-size space down to ×1 at body size). Geometry mirrors the anchor (the designed ramp is Desktop;
   Tablet/Mobile heights derive −2/−4). This replaces the flat bodyBase bump, which scaled everything,
   the opposite of how responsive type behaves. The Standard set now *materializes* these same modes for

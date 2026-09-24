@@ -511,8 +511,8 @@ for (const c of CASES) {
 //      chroma/hue, lstarFromRgb's L*), not on the cusp-tone `peakC` derivation this gate's values were
 //      originally captured against on the standalone U6 branch (commit c286d40). Two of the original
 //      seven families (Tertiary, Danger) now CLIP under the real anchors (min room < STEP_L; see the
-//      "clipped defaults" gate below) and moved out of this snapshot; Secondary and Info replace them
-//      — both measured unclipped (min room 9 exactly) on the integrated tree. Frozen literals, so the
+//      "clipped defaults" gate below) and moved out of this snapshot; Secondary and Info replace them,
+//      both measured unclipped (min room 9 exactly) on the integrated tree. Frozen literals, so the
 //      check is independent of the present implementation by construction; cam16, the space they were
 //      captured in (CTL above).
 const FROZEN = {

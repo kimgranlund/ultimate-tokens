@@ -15,7 +15,7 @@
 //     npm/git source, here the npm package itself, UNPINNED (floating latest: releases only ever
 //     touch npm; `/plugin marketplace update` + auto-update deliver new versions).
 //
-// Emits dist/plugins/npm/ultimate-tokens-claude/ — the publishable package:
+// Emits dist/plugins/npm/ultimate-tokens-claude/, the publishable package:
 //   .claude-plugin/plugin.json + skills/ + agents/ + README.md   (the plugin tree, verbatim)
 //   marketplace.json                                             (the CDN-served catalog)
 //   package.json                                                 (name @ultimate-tokens/claude)

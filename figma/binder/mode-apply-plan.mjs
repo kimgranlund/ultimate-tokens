@@ -286,7 +286,7 @@ export const TYPE_STEP_FIELD_MAP = { size: "size", lineHeight: "line-height", le
 // case-insensitive voiceMap lookups and current-step-table matching). Returns null for anything that
 // isn't EXACTLY this 3-segment shape, REQUIRING the STEP segment to be an old-style UPPERCASE token
 // (digits + uppercase letters, e.g. "MD", "2XS") is load-bearing, not cosmetic: every CURRENT 3-segment
-// name this grammar could otherwise collide with (weight/<voice>/<slug>, weight-style/<voice>/<slug> —
+// name this grammar could otherwise collide with (weight/<voice>/<slug>, weight-style/<voice>/<slug>,
 // both all-lowercase-kebab) would otherwise ALSO parse as a false-positive "Voice/STEP/field" match,
 // defeating the executor's own "only scan when this grammar is actually present" guard on every
 // ORDINARY apply (a real defect found while testing this bridge, not a hypothetical).
@@ -357,8 +357,8 @@ export function typeWeightAliasMap(oldWeightRecords, voiceMap, weightCandidates)
 export const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
 
 // liveAliasTargetsByName(existingNames, modeName, liveVarsByName, idToName), PURE: for every EXISTING
-// name whose live value at `modeName` is CURRENTLY a resolvable VARIABLE_ALIAS, its one-hop target NAME
-// — `{name: targetName}`. This is the "belt" half of the same idempotency fix: even when the alias-map
+// name whose live value at `modeName` is CURRENTLY a resolvable VARIABLE_ALIAS, its one-hop target NAME,
+// `{name: targetName}`. This is the "belt" half of the same idempotency fix: even when the alias-map
 // computation can't re-derive a mapping for an already-aliased name (a foreign chain, or a future case
 // neither the height nor the Type-voice map covers), libraryModeReconcile below still recognizes
 // "already correctly aliased to a wanted name" directly off LIVE state, rather than falling through to
@@ -462,8 +462,8 @@ export function libraryModeReconcile(existingNames, wantedNames, aliasMap, liveA
 // before any mode ids for a NEW mode would even exist)? `liveValuesByModeName` = {modeName: value};
 // `planVar` = a plan variable entry, either modeApplyPlan's `{name, type, values: [{mode,value},…]}`
 // (Geometry, `type` is never "ALIAS" here, style-plan.mjs's FIGMA_VAR_TYPES doesn't include it) or
-// style-plan.mjs's primitivesModesApplyPlan `{name, type:"ALIAS", target}` shape (Font/Type Primitives)
-// — an ALIAS entry has no `.values` at all and is reported "changed" unconditionally, matching the
+// style-plan.mjs's primitivesModesApplyPlan `{name, type:"ALIAS", target}` shape (Font/Type Primitives),
+// an ALIAS entry has no `.values` at all and is reported "changed" unconditionally, matching the
 // executor's own unconditional every-mode alias write (never skipped for an "unchanged" target, see
 // applyFontPrimitivesModes' own header comment for why). Numeric comparison for FLOATs (tolerates a
 // live read that's already a JS number); strict-equal otherwise. A mode the live variable has no value

@@ -862,8 +862,8 @@ export class GeomSectionImpl {
 
   // _geomPaletteColors(view), the SELECTED palette's resolved roles, ready to paint a mock control:
   // surface/onSurface (the card ground) + the palette's own prime/on-prime (a "primary button" look).
-  // Shared by geomExampleCard and the canvas ramp's ctlLine so every mock control, canvas or inspector
-  // — reflects the actual palette being designed, not a generic fallback accent.
+  // Shared by geomExampleCard and the canvas ramp's ctlLine so every mock control, canvas or inspector,
+  // reflects the actual palette being designed, not a generic fallback accent.
   _geomPaletteColors(view) {
     const p = view.palettes[this.selectedIndex()];
     const roles = (p && p.roles) || [];

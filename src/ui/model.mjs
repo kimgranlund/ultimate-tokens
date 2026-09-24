@@ -721,8 +721,8 @@ export function brandKit(doc, systems) {
     kit.stops = on[0] ? on[0].ramp.map((s) => s.stop) : [];
     kit.palettes = on.map((p) => ({
       name: p.name, slug: slug(p.name), key: p.key,
-      // group (SPEC 0.3.0 RP-1, ticket #572): metadata only, one of "material"/"brand"/"system"/"data"
-      // — read straight off projectView's own resolved field (paletteGroup(p) is the single resolver).
+      // group (SPEC 0.3.0 RP-1, ticket #572): metadata only, one of "material"/"brand"/"system"/"data",
+      // read straight off projectView's own resolved field (paletteGroup(p) is the single resolver).
       group: p.group,
       ramp: p.ramp.map((s) => ({ stop: s.stop, hex: s.hex })),
       // prime (REQ-054/057): the seven identity swatches, keyed by step name, an object here (unlike

@@ -523,7 +523,7 @@ export function dimUnit(px, unit) {
 // leading breaks the moment the root size changes; a px tracking breaks the moment the font size changes.
 // So they ride as ratios there, in each platform's native relative unit:
 //   relLine, a UNITLESS factor (the CSS `line-height`/DTCG `lineHeight` idiom)
-//   relTrackEm— tracking as `em` (CSS `letter-spacing` / DTCG — relative to font size)
+//   relTrackEm: tracking as `em` (CSS `letter-spacing` / DTCG, relative to font size)
 // size, paragraphSpacing, paragraphIndent stay ABSOLUTE dims (dimUnit), they are box metrics, not leading.
 // These take the STEP's exact leadingRatio/trackingRatio directly (constant per voice), NEVER re-derive
 // from the rounded absolute lineHeight/letterSpacing px, which broke ratio-constancy across steps (see

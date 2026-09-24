@@ -144,7 +144,7 @@ incrementally.
   the `.on` class.
 - **a11y** ✓ real `<button>`: focusable, `:focus-visible` ring, Space/Enter toggle from the platform;
   ✓ `role="switch"` + `aria-checked`; ✓ `aria-label` carries the stable purpose ("Palette enabled" /
-  "Chroma basis — …"). The palette site sits in a bare `field` div with no `<label>` at all
+  "Chroma basis …"). The palette site sits in a bare `field` div with no `<label>` at all
   (`sections/color.js:1770`); the Chroma basis site goes through `field()`, which also associates a
   `label[for]` (`app-helpers.mjs:563`).
 - **Geometry** ad-hoc (34×19 track / 15px thumb).
@@ -458,11 +458,11 @@ fine as bespoke one-offs.
 All six are now implemented (see Refactor status). Ranked as originally prioritized:
 
 1. **`slider()`**: was already the model; now the documented reference primitive (unchanged).
-2. **`segmented()`** ✅ — 6 call-sites, 4 stylings → one helper.
-3. **`swatch()`** ✅ — primitive + checkerboard-once (composite cells share it; full cell migration deferred).
-4. **`btn()`** ✅ — variant vocabulary established.
-5. **`switchControl()`** ✅ — rebuilt accessibly (fixed finding #1 + dedup 3 sites).
-6. **`chip()`** ✅ — 3 stylings → one (`.tile-tag` overlay intentionally separate).
+2. **`segmented()`** ✅: 6 call-sites, 4 stylings → one helper.
+3. **`swatch()`** ✅: primitive + checkerboard-once (composite cells share it; full cell migration deferred).
+4. **`btn()`** ✅: variant vocabulary established.
+5. **`switchControl()`** ✅: rebuilt accessibly (fixed finding #1 + dedup 3 sites).
+6. **`chip()`** ✅: 3 stylings → one (`.tile-tag` overlay intentionally separate).
 
 ### Quadrant snapshot: after the refactor
 

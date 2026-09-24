@@ -4,7 +4,7 @@
 // Stitch / Figma Make "design-system export" authoring layer, DESIGN.md, tokens.json, the
 // @dsCard component previews, and the per-platform profile receipts. This is a DIFFERENT kind of
 // code than exports.js's 10 documented color formats (content/prose authoring for a consumption
-// bundle, not token serialization) and is specced nowhere in docs/reference/ — it earned its own
+// bundle, not token serialization) and is specced nowhere in docs/reference/, it earned its own
 // file so a contributor reading exports.js's own documented 10-format pattern (adding-export-formats)
 // no longer wades through ~1,200 unrelated lines to find them.
 //
@@ -677,7 +677,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     const easeIn = MOTION_EASING["standard-decelerate"];
     const easeOut = MOTION_EASING["standard-accelerate"];
     const motionCss = `.motion-row{display:flex;align-items:center;gap:32px;margin-bottom:8px}.motion-dot{width:32px;height:32px;border-radius:${rFull}px;background:${V(brand)}}@keyframes dsEnterMove{0%{opacity:0;transform:translateX(-24px);animation-timing-function:${easeIn}}${mid}%{opacity:1;transform:translateX(0);animation-timing-function:${easeOut}}100%{opacity:0;transform:translateX(24px)}}@keyframes dsEnterFade{0%{opacity:0;animation-timing-function:${easeIn}}${mid}%{opacity:1;animation-timing-function:${easeOut}}100%{opacity:0}}.motion-demo{animation:dsEnterMove ${total}ms linear infinite}@media (prefers-reduced-motion: reduce){.motion-demo{animation-name:dsEnterFade}}`;
-    const body = `<div class="motion-row"><div class="motion-dot motion-demo"></div><p class="cap">Enter <code>${dur}ms</code> <code>standard-decelerate</code> · exit <code>${durFast}ms</code> <code>standard-accelerate</code> — only <code>transform</code>/<code>opacity</code> animate.</p></div><p class="cap"><code>prefers-reduced-motion: reduce</code> swaps the moving keyframe for a same-timing cross-fade (opacity only) — reduced, never removed.</p>`;
+    const body = `<div class="motion-row"><div class="motion-dot motion-demo"></div><p class="cap">Enter <code>${dur}ms</code> <code>standard-decelerate</code> · exit <code>${durFast}ms</code> <code>standard-accelerate</code>; only <code>transform</code>/<code>opacity</code> animate.</p></div><p class="cap"><code>prefers-reduced-motion: reduce</code> swaps the moving keyframe for a same-timing cross-fade (opacity only), reduced, never removed.</p>`;
     out.push(card("motion.html", "Foundations", "Motion", "duration · easing · reduced motion", motionCss, body));
   }
 
@@ -773,7 +773,7 @@ function dsSpineBody(ds, state, ctx) {
     `- **Extended neutral slots**, **Placeholder \`${ref(cn + "-placeholder")}\`** (field placeholder text, never`,
     `  \`on-surface-variant\`); **Scrim \`${ref(cn + "-scrim")}\`** (a neutral overlay tint, distinct from the fixed`,
     `  \`--${pfx}-dialog-backdrop\` a real dialog uses, see Elevation & Depth); **Inverse \`${ref(cn + "-inverse-surface")}\`** /`,
-    `  \`${ref(cn + "-inverse-on-surface")}\` (a surface that inverts the app's OWN neutral, toasts, tooltips —`,
+    `  \`${ref(cn + "-inverse-on-surface")}\` (a surface that inverts the app's OWN neutral, toasts, tooltips,`,
     "  never a brand family's).",
     `- **\`-container\` / \`-container-low\` / \`-container-high\`**, quiet emphasis without a full fill, on any family`,
     `  (\`${ref(brand + "-container")}\`, \`${ref((intents[0] || fams[fams.length - 1]) + "-container")}\`): a status banner or a`,
@@ -859,7 +859,7 @@ function dsSpineBody(ds, state, ctx) {
     : "";
   const iconography = [
     "## Iconography", "",
-    `**${iconSystemLabel(ic)}**${ic.license ? ` (${ic.license})` : ""} is this system's icon set${ic.url ? ` — \`${ic.url}\`` : ""}.`,
+    `**${iconSystemLabel(ic)}**${ic.license ? ` (${ic.license})` : ""} is this system's icon set${ic.url ? `: \`${ic.url}\`` : ""}.`,
     ic.variant
       ? `Use the **${ic.variant}** ${ic.id === "phosphor" || ic.id === "tabler" || ic.id === "remix" ? "weight" : "style"} everywhere; mixing weights across one view reads as two systems.`
       : "It ships one style, keep stroke width uniform across a view.",
@@ -879,7 +879,7 @@ function dsSpineBody(ds, state, ctx) {
     "`300ms ease` in a component is a defect.", "",
     "**Duration, tier by scope.** Small components (switch, checkbox) run short",
     `(\`${MOTION_DURATION.short2}\`–\`${MOTION_DURATION.short4}\`ms); partial-screen surfaces (menu, drawer, card) run medium`,
-    `(\`${MOTION_DURATION.medium1}\`–\`${MOTION_DURATION.medium4}\`ms); full-screen transitions run long (\`${MOTION_DURATION.long1}\`ms+). **100ms is the "instant" floor** —`,
+    `(\`${MOTION_DURATION.medium1}\`–\`${MOTION_DURATION.medium4}\`ms); full-screen transitions run long (\`${MOTION_DURATION.long1}\`ms+). **100ms is the "instant" floor**,`,
     "feedback faster than that is felt as immediate; past ~400ms a transition starts reading as slow.", "",
     "**Entrances decelerate. Exits accelerate, and run faster.** The user is done with the thing and",
     "waiting for what's next: a drawer opens in ~250ms and closes in ~200ms; a modal appears in ~300ms",
@@ -908,7 +908,7 @@ function dsSpineBody(ds, state, ctx) {
     `  **focus** a 2px \`${ref(brand)}\` outline at 2px offset; **disabled** \`${ref(brand + "-disabled")}\` (the inert 60%`,
     "  wash, mode-independent). EVERY fill family carries its own `-hover` and `-disabled`, any intent is a real",
     `  button; state fills and labels are the kit's role values under its \`onColorMode\` setting. Non-solid`,
-    `  variants: **outline** (transparent, \`${ref(brand)}\` border+text), **ghost** (transparent, \`${ref(brand)}\` text —`,
+    `  variants: **outline** (transparent, \`${ref(brand)}\` border+text), **ghost** (transparent, \`${ref(brand)}\` text,`,
     `  never a fill, even at rest), **tonal** (\`${ref(brand + "-container")}\` fill, \`${ref(brand)}\` text, a standing`,
     "  tint, not just a hover state).",
     `- **Inputs.** \`${ref(cn + "-surface")}\` field, 1px \`${ref(cn + "-outline-variant")}\`, \`${ref(cn + "-on-surface")}\` text,`,
@@ -1138,7 +1138,7 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
     "`colors`/`colorsDark` grammar + the FULL `semantic`/`semanticDark` role layer + `type` +",
     `\`spacing\`/\`radii\` + the full \`geometry\` system), \`components/*.html\` (${previews.length} self-contained \`@dsCard\` previews).`, "",
     `## Profile receipt (checks run ${date})`, "",
-    `Naming standard: **Ultimate Tokens grammar** — \`--{prefix}-{family}-{slot}\`, prefix \`${pfx}\`, families`,
+    `Naming standard: **Ultimate Tokens grammar**, \`--{prefix}-{family}-{slot}\`, prefix \`${pfx}\`, families`,
     `${ds.families.map((f) => `\`${f}\``).join("/")}; the FULL semantic layer ships in this folder's \`tokens.json\``,
     "(`semantic`/`semanticDark`); the spine's \"Token naming\" section teaches the grammar and prefix adaptivity.", "",
     "Encoding standard: **OKLCH payload** in DESIGN.md frontmatter (Stitch-linter-verified notation);",
@@ -1149,7 +1149,7 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
     schemeParityLine,
     "- 🟢 Carrier equality: OKLCH frontmatter ≡ OKLCH `tokens.json`, the identical payload (G3 dev 0 by construction)",
     `- 🟢 OKLCH→8-bit fidelity: every value round-trips to sRGB within ±1/255 per channel (measured max dev: ${carrierMaxDev}, a consumer deriving hex reproduces the kit)`,
-    `- 🟢 Previews: \`@dsCard\` first line, single \`:root\` block — \`color-scheme: light dark\` + ${nGrammar} \`light-dark(oklch, oklch)\` custom properties, no media-query fork`,
+    `- 🟢 Previews: \`@dsCard\` first line, single \`:root\` block, \`color-scheme: light dark\` + ${nGrammar} \`light-dark(oklch, oklch)\` custom properties, no media-query fork`,
     ...divLines,
     `- ℹ️ \`tokens.json\` ships the full ${scaleSteps}-step type scale (generator schema); the DESIGN.md frontmatter carries the ${DS_TYPE_LEVELS.length}-level consumption selection`, "",
     "This folder is complete on its own, every reference above resolves inside it.", "",
@@ -1248,7 +1248,7 @@ function dsMakeGuidelinesMd(name, story) {
     `You are building UI for **${name}**. ${narrative}`, "",
     `Deliberately refused: ${refuses}`, "",
     "## Stack", "",
-    "**React + Tailwind + shadcn ui.** `styles.css` is this brand's compiled token projection —",
+    "**React + Tailwind + shadcn ui.** `styles.css` is this brand's compiled token projection,",
     "import it once (see `setup.md`), then build with shadcn's own installed components styled",
     "entirely by the Tailwind classes those tokens map to. Never hand-roll component CSS that",
     "duplicates what an installed shadcn component already provides.", "",
@@ -1264,7 +1264,7 @@ function dsMakeGuidelinesMd(name, story) {
     "", "## Hard rules, IMPORTANT", "",
     "- Do NOT hardcode a color. Every color is a Tailwind class mapped in `styles.css`",
     "  (`foundations/color.md` names them). No exceptions.",
-    "- Do NOT put text on a fill in anything other than that fill's own `-foreground` class —",
+    "- Do NOT put text on a fill in anything other than that fill's own `-foreground` class,",
     "  the pair differs by scheme; both are provided.",
     "- Do NOT stack more than one `variant=\"default\"` action per view.",
     "- Do NOT invent dark-mode values. Every role ships a light value and a `.dark` override",
@@ -1492,7 +1492,7 @@ function dsMakeOverviewMd() {
     "| Input | single-line text entry | (pattern below) |",
     "| Card | grouped content, one surface step up | (pattern below) |",
     "| Chip / Badge | metadata, status, featured markers | (pattern below) |",
-    "", "## Which variant? — decision tree", "",
+    "", "## Which variant? Decision tree", "",
     "```",
     "Is it THE action of the view?          -> <Button variant=\"default\">",
     "Is it a supporting action?             -> <Button variant=\"secondary\">",

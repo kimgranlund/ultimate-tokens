@@ -102,8 +102,8 @@ function loadBinder(src, figma) {
 }
 
 // ── PARITY GUARD: the checked-in code.js's roleTable() is GENERATED (TKT-0019), spliced verbatim
-//    from src/engine/semantic.js's semanticRoles() function body by scripts/gen-figma-binder-code.mjs
-//    — so this gate is now a TRIPWIRE proving the splice actually landed correctly (a stale build, a
+//    from src/engine/semantic.js's semanticRoles() function body by scripts/gen-figma-binder-code.mjs,
+//    so this gate is now a TRIPWIRE proving the splice actually landed correctly (a stale build, a
 //    hand-edit inside the `// === GENERATED:ROLE_TABLE ===` markers, or a splice-script bug), not the
 //    mechanism preventing drift the way it was before TKT-0019 (mirrors the `floatparity` gate below,
 //    which plays the same tripwire role for the spliced float-executor functions).

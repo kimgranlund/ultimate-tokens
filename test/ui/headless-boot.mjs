@@ -1870,7 +1870,7 @@ const remZip = dlZipText();
 ok(remZip.includes("-size: 1rem") && remZip.includes('"fontSize": "1rem"'), "(exu) Download-All type CSS + typography/ DTCG use rem when the unit is rem");
 ok(remZip.includes('"fontSize": "16px"'), "(exu) the figma/ DTCG folder stays px even when the CSS unit is rem");
 app._setExportUnit("px"); flushRaf();
-// colour CSS: Download-All emits BOTH css-hex/ and css-oklch/ — two co-equal formats, no setting to pick one.
+// colour CSS: Download-All emits BOTH css-hex/ and css-oklch/, two co-equal formats, no setting to pick one.
 const bothCssZip = dlZipText();
 ok(bothCssZip.includes("css-hex/") && bothCssZip.includes("css-oklch/"), "(exu) Download-All emits BOTH colour CSS folders (css-hex/ + css-oklch/)");
 ok(bothCssZip.includes("oklch("), "(exu) the css-oklch/ folder carries oklch() values");

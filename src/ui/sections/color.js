@@ -1327,7 +1327,7 @@ export class ColorSectionImpl {
     const tokenName = (ref) => n + "-" + (ref.includes("-") ? ref : ref.padStart(3, "0")); // the displayed raw-token name
     const padRef = (ref) => (ref.includes("-") ? ref : ref.padStart(3, "0"));
     const drift = this.liveVars ? this.driftSummary() : null; // the Figma drift-diff summary, if a live read was done
-    // per-mode drift cell: check = matches the file / ✗ drifted / — not in the file / · not read yet.
+    // per-mode drift cell: check = matches the file / ✗ drifted / - not in the file / · not read yet.
     const driftCell = (ref, hex) => {
       const st = this.driftStatus(n + "/" + padRef(ref), hex);
       const title = { match: "Matches the file", drift: "Drifted from the file", absent: "Not in the file" }[st]

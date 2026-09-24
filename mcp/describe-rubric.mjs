@@ -219,7 +219,7 @@ always tier as **a**, the ladder and the hierarchy tiers reinforce each other.
   brighter/hotter; **lift < 0** still dips it darker/deeper (Success and Danger both default to **−5**,
   and Warning to **−36**, a grounded, non-neon core even at high chroma). Because
   the shift rides the curve, a given lift moves the tone furthest where the ramp is steepest, so its
-  effect in L* is not a fixed amount. It applies across all three tone modes — \`even\`, \`perceptual\`,
+  effect in L* is not a fixed amount. It applies across all three tone modes: \`even\`, \`perceptual\`,
   and \`peak\`, through the same \`liftStop\` helper.
 
 Rule: leave skew/lift OUT of a family seed unless the theme specifically calls for a ramp that reads
@@ -247,9 +247,9 @@ determines all eight. Map what the theme actually gives you:
 the identical numbers, so a brief that skips them and one that states them explicitly must produce the
 same kit:**
 
-- **Secondary** (absent) = the **complement** of Primary — \`Primary.hue + ${SECONDARY_HARMONY_OFFSET}°\`
+- **Secondary** (absent) = the **complement** of Primary: \`Primary.hue + ${SECONDARY_HARMONY_OFFSET}°\`
   (wrapped to 0–360). The classic two-color brand pairing.
-- **Tertiary** (absent) = the **analogous** neighbor of Secondary — \`Secondary.hue +
+- **Tertiary** (absent) = the **analogous** neighbor of Secondary: \`Secondary.hue +
   ${TERTIARY_ANALOGOUS_OFFSET}°\` (wrapped). A soft third note near the second.
 
 Do not invent a different offset or a different relationship (e.g. a triad, a different analogous step),

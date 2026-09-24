@@ -49,7 +49,7 @@ pass: 2
   commands/expected output). Negative controls run for criteria 1, 5, 6, 7, 12 and reverted.
 - `git diff origin/main --stat -- src mcp scripts test ':!test/repo/branding.mjs'`: `0` (scope
   wall holds).
-- `git diff origin/main -- docs/reference/references/decision-records.md | grep -cE '^-[^-]'` —
+- `git diff origin/main -- docs/reference/references/decision-records.md | grep -cE '^-[^-]'`:
   `0` (append-only holds, P5).
 
 ## Left out

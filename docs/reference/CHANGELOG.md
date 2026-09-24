@@ -417,7 +417,7 @@ Size modes moved from opt-in to INTRINSIC in three steps, ending at the ratified
   Display compresses fully (≈90→75→60); geometry mirrors (heights −2/−4, composing type at the same
   rung); responsive CSS re-anchors mobile-first via `_typeCssArgs`/`_geomCssArgs` (`:root` = Mobile).
   The category presets' type slots moved to **strict %-strings** (`"leading": "96%"`,
-  `"tracking": "-2%"` — % of font size; 7 files, 3,360 fields); `gen-categories` parses strings only
+  `"tracking": "-2%"`, % of font size; 7 files, 3,360 fields); `gen-categories` parses strings only
   and the categories gate rejects the retired numeric shape.
 
 Landed as #251, #252, #253.

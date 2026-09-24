@@ -770,7 +770,7 @@ async function confirmLibraryMode(collectionName, report) {
       "p{margin:0 0 10px;line-height:1.5}textarea{flex:1;width:100%;box-sizing:border-box;font:11px ui-monospace,SFMono-Regular,monospace;margin-bottom:12px;border:1px solid #ccc;border-radius:6px;padding:8px;white-space:pre}" +
       "button{font:inherit;padding:7px 14px;border-radius:6px;cursor:pointer;margin-right:8px}" +
       "#library{background:#18A0FB;color:#fff;border:1px solid #18A0FB}#classic{background:#fff;border:1px solid #ccc}</style>" +
-      "<p><b>" + escapeHtmlVM(collectionName) + "</b> — this apply would remove " + atRisk + " variable(s) not in the current plan. " +
+      "<p><b>" + escapeHtmlVM(collectionName) + "</b>: this apply would remove " + atRisk + " variable(s) not in the current plan. " +
       "If another file consumes this collection as a published library, removing them breaks those bindings. " +
       "Preserve them (alias mapped names, deprecate the rest, never removed) or remove them as before?</p>" +
       "<textarea readonly>" + escapeHtmlVM(text) + "</textarea>" +
