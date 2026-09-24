@@ -1,4 +1,5 @@
 # Verdict U3 · 🟢
+verdict: 🟢
 
 Head graded: `ceb471b0d89c0cbfc8a13386473a975064172124` (unit/rf-U3). Criteria: `.sdlc/plans/records-followup.md` at `31b53ea9ca8fe8be728649d860b6a35dce79b023`, U3 rows 1 to 10 plus P1, P4, P5, P6, P7. `BASE` is `$(git merge-base origin/main HEAD)` = `d34b4fb1beefff11c9be53ec039d4265c925da4a`. `UB` is `$(git merge-base plan/records-followup HEAD)` = `31b53ea9ca8fe8be728649d860b6a35dce79b023`. Worktree detached at the head under this seat's scratchpad; every file-editing control ran in a throwaway clone.
 

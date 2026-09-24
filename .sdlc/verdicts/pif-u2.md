@@ -1,5 +1,4 @@
 # Verdict U2 · 🟢
-verdict: 🟢
 
 | Field | Value |
 |---|---|
@@ -45,3 +44,5 @@ verdict: 🟢
 | 12 | U3 is not in U2's tree | 🟢 consistent | Neither `78a9018f` nor `da351505` is an ancestor of head, so U2's numbers are pre-integration, as the record says. The U3 yield rulings doc names nothing that constrains U2: no mention of U2 or of the notch gate. C8's Q-B 41 and C5's notch 78 both re-measure at U4 by their own ruled terms |
 
 **Verdict.** Every U2 criterion passes on my own measurements, and every one has a negative control I ran that reds. The construction is 🟢: stop 500 exact in 10,158 of 10,158 in-window anchored renders in all three modes, monotone a true 0 in every mode on both stop sets, all four allow-lists reproducing by name, the non-anchored code path byte-identical over 284,700 cells, parity 0 against `954675c6` with a probe that shows 236,985 diffs when pointed at a tree that really differs, Q-D inside its bounds with the ruled hide in place, REQ-002 holding both halves, and the F4 tripwire clear. The three 🟡 records items are record-only and none of them changes a measured number: one false clause to strike in the handoff, one board row to refresh onto `959c43dd` with the ruling recorded rather than pending, and one plan-side control figure that does not reproduce.
+
+verdict: 🟢

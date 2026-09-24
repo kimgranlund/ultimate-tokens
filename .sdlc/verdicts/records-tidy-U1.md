@@ -1,4 +1,5 @@
 # Verdict U1 · 🟢
+verdict: 🟢
 
 Plan `records-tidy` (ticket #712), unit U1, graded at `unit/records-tidy-U1` @ `030824bc` (merge base `730ff941`) by worker `records-tidy-U1-verifier-l1-p1` (verifier-l1, fresh context, throwaway shared clones, every row its own run). Dispatched and written down by the conductor seat under the owner's ruling in `.sdlc/questions/records-tidy-U1-verification.md`, because the verifier seat was down. Host: 10 cores, load 3.4 to 4.1 during the timed gates.
 
