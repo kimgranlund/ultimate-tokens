@@ -266,6 +266,10 @@ for (const hueSpace of SPACES) {
 // POISON_COUNT: SAMPLED thins to the first 500 of the 1500 poison renders (#713 U6c, owner ruling
 // R35). The file's own comment above says catch rate follows case count, not poison density, so
 // thinning the poison set alongside the case list holds the same reasoning.
+// HUE_MULT (the hue step, below) stays at 5, not narrowed alongside DET_CASE_COUNT and
+// POISON_COUNT: at step 10 the `gamut-ceiling` gate's own truncated-key negative control finds 0
+// witnesses on this sweep and reds itself (measured at U6c), so 5 is the widest step this gate's
+// own control still passes at.
 const DET_CASE_COUNT = FULL ? 2000 : 200;
 const DET_CASES = [];
 for (let i = 0; i < DET_CASE_COUNT; i++) {
