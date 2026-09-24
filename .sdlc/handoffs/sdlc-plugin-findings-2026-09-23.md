@@ -14,3 +14,7 @@ From the ultimate-tokens Conductor (session ef9dc581), running plugin 0.2.0 and 
 | P8 | A worker's `rm` of its own scratch clone is denied, and it asks the Conductor to delete it | vb-critic, pif-u10-verify, neg739, vU2-Q9kd | Templates clone under a path the worker may remove, or the harness sweeps worker scratch |
 | P9 | A verifier worker's detached `npm test` (parent 1) outlived the seat's stop and broke a quiet window twice | pids 65573, 10197 under jobs/05defd58, 2026-09-23 | Seats kill a worker's whole process group; the quiet window is a mechanism, not a message |
 | P10 | `ragboard.py render --plan` read a stale plan worktree and showed a live unit as "no board row" | #681 U9, source `.git-worktrees/pif-plan-land` | Read the plan branch tip, or name the source it read |
+
+## Filed (plugin roadmap at `c77fa3c`, sdlc-orchestration)
+
+P1 `ut-worker-monitor-stall` · P2 `ut-worker-record-selfcheck` · P3 `ut-land-ignores-title-body` · P4 `ut-up-wakes-rival-seats` (plugin P1) · P5 `ut-up-keeps-stale-hooks-path` (plugin P1) · P6 `ut-grade-fallback-silent` · P7 `ut-worker-hook-bypass` (plugin P1) · P8 `ut-worker-scratch-unremovable` · P9 `ut-detached-test-outlives-stop` · P10 `ut-ragboard-stale-worktree`. The plugin files findings as roadmap rows, not tickets.
