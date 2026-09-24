@@ -69,9 +69,11 @@ ps -Ao pcpu=,comm= | awk '$1 >= 50 {n++} END {print n+0}'
 pgrep -fl '[t]est/run.mjs|[v]ite build|[s]moke.mjs|[-]-full'
 ```
 
-  A run counts only if the 1-minute load is under 5, the second command prints `0`, and the third
-  prints nothing, the first two read immediately before the run and again after it, the third before
-  it. A run that starts quiet and ends loud is recorded and not counted.
+  A run counts only if the 1-minute load is under 5 at the start, the second command prints `0`, and
+  the third prints nothing, all three read immediately before the run; the first two are read again
+  after it, where the load must stay under the host's core count and the second command must still
+  print `0`. A run that starts quiet and ends over the core count, or with a nonzero hot-process
+  count, is recorded and not counted.
 - A red `npm test` in a unit worktree is the unit's own red until proven otherwise; `flaky-gates` is the triage skill when several agents run gates at once (three baseline runs showed no flake).
 - The verifier's criterion 1 on every unit is `npm test` green on the branch head, with the negative control the baseline verdict used (in a throwaway clone: `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json`, then `npm test`. It exits 1, `engine/semantic.mjs` is the one failing file, and the `refs-canonical` gate is the one failing gate. `grep -c FAIL` printed 3 for this corruption at `d34b4fb1`; a different corruption or a different grep gives a different count, so grade on the exit, the file and the gate, and record the count you measured).
 - **Every control clone states its own provenance (#713 U6b, from the #718 builder catching itself).** `git clone --shared` copies COMMITTED state, so a negative control run in a clone made while the unit edit is still uncommitted exercises the pre-fix file, and its exit 1 can be right for the wrong reason. A handoff or verdict that runs a control in a clone names how that clone carries the change under test (cloned from the unit's own commit, or the working tree copied in instead of cloned) and gives the command that proves it (`git -C <clone> rev-parse HEAD` against the commit the fix landed in, or a diff showing the working tree was copied, not cloned).
