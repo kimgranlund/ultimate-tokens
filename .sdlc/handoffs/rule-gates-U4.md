@@ -4,7 +4,7 @@ plan: rule-gates
 unit: U4
 branch: unit/rg-U4
 written: 2026-09-24
-pass: 2
+pass: 3
 ---
 
 # U4 handoff: the em-dash sweep, the gate registered
@@ -249,22 +249,61 @@ Findings 1 to 8, in the reviewer's order.
 
 **Finding 1 (U4-10, red).** Every string the review named, plus every other program
 string under `src/`, `mcp/`, `figma/` that the sweep's mechanical comma left reading as
-a false list (a name or a value followed by its description) is rewritten with a colon
-or a sentence break in commit `1ed4f5f6`: the three section tab titles and the Settings
-button title in `app.js`; the graph card titles, the New-Palette diagram title, the
-Palettes/Scrims/Mapping/Radix tab titles, the Fit control's title and ariaLabel, the
-Compare control's title and two canvas aria-labels, and the Chroma-basis ariaLabel in
-`color.js`; the Controls/Tokens tab titles, the Fit control, the Geometry-specimen
-aria-label and the Compare aria-label in `geometry.js`; the Specimen/Tokens tab titles,
-the Fit control, the Custom-family title, the Typography-specimen aria-label and the
-Compare aria-label in `typography.js`; the two `escapeHtmlVM` collection-removal
-warnings and the Aliases/Deprecates report-line labels in both
-`figma/binder/figma-semantic-binder/code.js` and `figma/plugin/code.js` (the binder's
-copy, changed together as the finding asks); the "couldn't bind"/"couldn't apply"
-notify sentence, split into two sentences instead of a comma splice, in both files; the
-Brand-Kit MCP and Describe-Palette MCP "downloaded" toasts and the "Text styles
-skipped" toast in `app.js`/`apply-gate.js`; and the three harmony hints (Analogous,
-Complement, Albers) in `derive.mjs`.
+a false list (a name or a value followed by its description), is rewritten with a colon
+or a sentence break, one line at a time (commit `1ed4f5f6` for all but the two rows
+marked pass 3 below, added this pass):
+
+- `figma/binder/figma-semantic-binder/code.js:476` rewritten, `"Aliases, never removed..."` → `"Aliases: never removed..."`
+- `figma/binder/figma-semantic-binder/code.js:478` rewritten, `"Deprecates, never removed..."` → `"Deprecates: never removed..."`
+- `figma/binder/figma-semantic-binder/code.js:925` rewritten, the "couldn't bind" comma splice split into two sentences
+- `figma/plugin/code.js:283` rewritten, the "couldn't apply" comma splice split into two sentences (mirrors the binder's copy above)
+- `figma/plugin/code.js:755` rewritten, `"Aliases, never removed..."` → `"Aliases: never removed..."` (mirror)
+- `figma/plugin/code.js:757` rewritten, `"Deprecates, never removed..."` → `"Deprecates: never removed..."` (mirror)
+- `src/engine/derive.mjs:69` rewritten, `"Analogous, continue..."` → `"Analogous: continue..."`
+- `src/engine/derive.mjs:71` rewritten, `"Complement, oppose..."` → `"Complement: oppose..."`
+- `src/engine/derive.mjs:74` rewritten, `"Albers, the primary's..."` → `"Albers: the primary's..."` (its own internal `, muted` clause stays a comma, a real appositive)
+- `src/ui/app.js:1318` rewritten, `"Import failed, not a palette config"` → `"Import failed: not a palette config"`
+- `src/ui/app.js:1405` rewritten, the Settings button title → colon
+- `src/ui/app.js:1418` rewritten, the Color tab title → colon
+- `src/ui/app.js:1419` rewritten, the Typography tab title → colon
+- `src/ui/app.js:1420` rewritten, the Geometry tab title → colon
+- `src/ui/app.js:2326` rewritten, `"Save failed, no storage available"` → `"Save failed: no storage available"`
+- `src/ui/app.js:2472` rewritten, the Brand-Kit MCP "downloaded" toast → colon
+- `src/ui/app.js:2507` rewritten, the Describe-Palette MCP "downloaded" toast → colon
+- `src/ui/overlays/apply-gate.js:172` rewritten twice: pass 2 made the first comma a colon (`"Text styles skipped: no usable font for: ..."`), leaving two colons on one line; pass 3 drops the second colon, `"Text styles skipped: no usable font for ${missing...}"`
+- `src/ui/sections/color.js:23` rewritten, the `L*×C` card title → colon
+- `src/ui/sections/color.js:24` rewritten, the Tone curve card title → colon
+- `src/ui/sections/color.js:25` rewritten, the Chroma curve card title → colon
+- `src/ui/sections/color.js:26` rewritten, the Contrast card title → colon
+- `src/ui/sections/color.js:27` rewritten, the Hue wheel card title → colon
+- `src/ui/sections/color.js:606` rewritten, the New-Palette diagram title → colon
+- `src/ui/sections/color.js:816` rewritten, the Palettes tab title → colon
+- `src/ui/sections/color.js:817` rewritten, the Scrims tab title → colon
+- `src/ui/sections/color.js:818` rewritten, the Mapping tab title → colon
+- `src/ui/sections/color.js:819` rewritten, the Radix tab title → colon
+- `src/ui/sections/color.js:843` rewritten, the Fit control's title → colon
+- `src/ui/sections/color.js:844` rewritten, the Fit control's ariaLabel → colon
+- `src/ui/sections/color.js:878` rewritten, the Palette-canvas aria-label → colon
+- `src/ui/sections/color.js:913` rewritten, the Compare control's title (its `"Compare is on, click to return..."` half stays a comma, a real clause splice)
+- `src/ui/sections/color.js:939` rewritten, the Compare canvas aria-label → colon
+- `src/ui/sections/color.js:1330` rewritten, the drift-cell legend comment, `- not in the file` → `n/a not in the file`
+- `src/ui/sections/color.js:2210` rewritten, the Chroma-basis ariaLabel → colon
+- `src/ui/sections/geometry.js:383` rewritten, the Controls tab title → colon
+- `src/ui/sections/geometry.js:384` rewritten, the Tokens tab title → colon
+- `src/ui/sections/geometry.js:393` rewritten, the Fit control's title → colon
+- `src/ui/sections/geometry.js:394` rewritten, the Fit control's ariaLabel → colon
+- `src/ui/sections/geometry.js:419` rewritten, the Geometry-specimen aria-label → colon
+- `src/ui/sections/geometry.js:437` rewritten, the Compare aria-label → colon
+- `src/ui/sections/geometry.js:346` rewritten this pass, the Breakpoint-width field label, `"Breakpoint width, @media min-width"` → `"Breakpoint width: @media min-width"`
+- `src/ui/sections/typography.js:310` rewritten, the Specimen tab title → colon
+- `src/ui/sections/typography.js:311` rewritten, the Tokens tab title → colon
+- `src/ui/sections/typography.js:320` rewritten, the Fit control's title → colon
+- `src/ui/sections/typography.js:321` rewritten, the Fit control's ariaLabel → colon
+- `src/ui/sections/typography.js:347` rewritten, the Typography-specimen aria-label → colon
+- `src/ui/sections/typography.js:365` rewritten, the Compare aria-label → colon
+- `src/ui/sections/typography.js:772` rewritten, the Custom-family title → colon
+- `src/ui/sections/typography.js:271` rewritten this pass, the Breakpoint-width field label, same fix as `geometry.js:346`
+- `src/ui/app.js:2385` rewritten, the drift-legend comment, `- absent` → `n/a absent` (matches Finding 3 below)
 
 Every other auto-fixed string the sweep touched in those three trees (about 80 lines,
 sampled by grepping the sweep commit's diff for `title:`/`label:`/`ariaLabel:`/
@@ -443,3 +482,17 @@ file changed; `git status` was clean both times.
 - `src/ui/sections/typography.js:347` before `        "aria-label": "Typography specimen, drag to pan, wheel to zoom, double-click to reset",` after `        "aria-label": "Typography specimen: drag to pan, wheel to zoom, double-click to reset",`
 - `src/ui/sections/typography.js:365` before `        role: "group", "aria-label": "Compare, every typography breakpoint side by side · drag to pan, wheel to zoom" },` after `        role: "group", "aria-label": "Compare: every typography breakpoint side by side · drag to pan, wheel to zoom" },`
 - `src/ui/sections/typography.js:772` before `          title: custom ? "Custom family, exports as-is; the web-app specimen loads it from Google Fonts (falls back if it isn't a Google font)" : "From the " + treatment.label + " treatment",` after `          title: custom ? "Custom family: exports as-is; the web-app specimen loads it from Google Fonts (falls back if it isn't a Google font)" : "From the " + treatment.label + " treatment",`
+
+## Pass 3 (rg-U4-review.md Round 2)
+
+1. `geometry.js:346` and `typography.js:271`, the Breakpoint-width field labels, were
+   still a comma (`"Breakpoint width, @media min-width"`); both are now a colon
+   (`"Breakpoint width: @media min-width"`), the same fix already applied to every
+   other field label in these two files.
+2. Finding 1's U4-10 list above is now per line (file:line, kept or rewritten),
+   replacing the pass-2 by-category prose.
+3. `apply-gate.js:172` had two colons after pass 2's fix (`"skipped: no usable font
+   for: ${...}"`); the second is dropped, `"skipped: no usable font for ${...}"`.
+4. `README.md:119` had a run of spaces before the comma left over from the sweep
+   (`figma-semantic-binder/          , the standalone...`); now a single space
+   (`figma-semantic-binder/, the standalone...`).
