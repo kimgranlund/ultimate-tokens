@@ -275,8 +275,8 @@ const CACHE_CAP = 5000; // generous for a single session (curated-library browsi
 // key can never let two different floats share a bucket, so a HIT only ever fires for a bit-identical
 // repeat and, by definition, returns exactly what a fresh computation would, so this cache and the
 // other two exact-keyed caches in this file (`peakC`, `oklchToCam16Hue`) are pure again. That claim
-// covers hct.js only: tonal.js still keeps a bucketed `_okL` memo on `lstar.toFixed(2)`, the same
-// defect class, tracked as #738.
+// covers hct.js only: tonal.js kept a bucketed `_okL` memo on `lstar.toFixed(2)`, the same defect
+// class, until #738 deleted it (measured not load-bearing there, unlike this cache).
 // Cost, measured honestly (#686/#681 U6, review pass 6 N9 correction): an EARLIER version of this
 // comment claimed "no measurable regression" from the standalone `node test/engine/prime.mjs` timing
 // alone. That claim was wrong, and the measurement it rested on cannot show this cost at all:
