@@ -1736,7 +1736,7 @@ export class ColorSectionImpl {
       "div",
       { class: "insp-body" },
       h("h3", { class: "insp-title" }, swatch((vp.ramp.find((s) => s.stop === 550) || vp.ramp[9]).hex, { size: 16 }), "Palette"),
-      h("div", { class: "insp-sub" }, isEven ? "Tune hue · chroma · skew · lift, live" : (this.doc.toneMode === "perceptual" ? "Tune hue · chroma · cusp pull, live" : "Tune hue · chroma, live")),
+      h("div", { class: "insp-sub" }, isEven ? "Tune hue · chroma · skew · lift (live)" : (this.doc.toneMode === "perceptual" ? "Tune hue · chroma · cusp pull (live)" : "Tune hue · chroma (live)")),
       // curated story for this color (preset palettes): its evocative name, role, and description.
       vp.colorName
         ? h(
@@ -1785,7 +1785,7 @@ export class ColorSectionImpl {
           { onchange: (e) => this.commit((d) => (d.palettes[i].group = e.target.value)) },
           ...PALETTE_GROUPS.map((g) => h("option", { value: g, selected: paletteGroup(p) === g }, paletteGroupLabel(g))),
         ),
-        { labelTitle: "Which canvas group this palette is organized under, Material, Brand, System, or Data." },
+        { labelTitle: "Which canvas group this palette is organized under: Material, Brand, System, or Data." },
       ),
       // Q-D (ticket #681, U2, ruled + verified): this palette's own hueSpace applicability note - the
       // doc-level Hue space control (renderGlobalInspector) only moves THIS palette in "even" mode;

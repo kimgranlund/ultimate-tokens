@@ -773,7 +773,7 @@ function dsSpineBody(ds, state, ctx) {
     `- **Extended neutral slots**: **Placeholder \`${ref(cn + "-placeholder")}\`** (field placeholder text, never`,
     `  \`on-surface-variant\`); **Scrim \`${ref(cn + "-scrim")}\`** (a neutral overlay tint, distinct from the fixed`,
     `  \`--${pfx}-dialog-backdrop\` a real dialog uses, see Elevation & Depth); **Inverse \`${ref(cn + "-inverse-surface")}\`** /`,
-    `  \`${ref(cn + "-inverse-on-surface")}\` (a surface that inverts the app's OWN neutral, toasts, tooltips,`,
+    `  \`${ref(cn + "-inverse-on-surface")}\` (a surface that inverts the app's OWN neutral, as toasts and tooltips do,`,
     "  never a brand family's).",
     `- **\`-container\` / \`-container-low\` / \`-container-high\`**: quiet emphasis without a full fill, on any family`,
     `  (\`${ref(brand + "-container")}\`, \`${ref((intents[0] || fams[fams.length - 1]) + "-container")}\`): a status banner or a`,

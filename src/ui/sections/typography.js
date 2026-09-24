@@ -21,10 +21,10 @@ export class TypeSectionImpl {
       .map((c) => ({ cat: c, short: SHORT[c] || c, steps: Object.entries(scale.categories[c] || {}).map(([name, s]) => ({ name, ...s })) }))
       .filter((x) => x.steps.length);
     return [
-      card("Modular scale, size (px) per step", this.graphTypeScale(series)),
-      card("Optical tracking, letter-spacing vs size", this.graphTypeTracking(series)),
-      card("Leading, line-height ÷ size per step", this.graphTypeLeading(series)),
-      card("Font roles, family per voice", this.graphTypeRoles(scale)),
+      card("Modular scale: size (px) per step", this.graphTypeScale(series)),
+      card("Optical tracking: letter-spacing vs size", this.graphTypeTracking(series)),
+      card("Leading: line-height ÷ size per step", this.graphTypeLeading(series)),
+      card("Font roles: family per voice", this.graphTypeRoles(scale)),
     ];
   }
 
@@ -627,7 +627,7 @@ export class TypeSectionImpl {
       "div",
       { class: "insp-body" },
       h("h3", { class: "insp-title" }, icon("type"), "Type scale"),
-      h("div", { class: "insp-sub" }, "Choose a treatment + body size, fonts, tracking, weight & leading follow."),
+      h("div", { class: "insp-sub" }, "Choose a treatment + body size: fonts, tracking, weight & leading follow."),
       field(
         "Treatment",
         h(

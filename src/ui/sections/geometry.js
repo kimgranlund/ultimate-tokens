@@ -730,7 +730,7 @@ export class GeomSectionImpl {
       "div",
       { class: "insp-body" },
       h("h3", { class: "insp-title" }, icon("ruler"), "Size ramp"),
-      h("div", { class: "insp-sub" }, "Choose a treatment + base height, icon, font, padding, gap & radius follow by the centering law."),
+      h("div", { class: "insp-sub" }, "Choose a treatment + base height: icon, font, padding, gap & radius follow by the centering law."),
       field(
         "Treatment",
         h(

@@ -5,7 +5,7 @@ brand kit (your generated design tokens) to AI agents, **Claude Code / Claude De
 VS Code, ChatGPT**, anything that speaks MCP. The agent then builds with your brand's *exact* tokens
 instead of guessing.
 
-The kit can carry up to **three token systems**, **Color**, **Typography**, and **Geometry**, and you
+The kit can carry up to **three token systems**: **Color**, **Typography**, and **Geometry**, and you
 choose which to include when you download it (the export drawer's *Include* toggles). The server's
 surface reflects what's present: the colour tools/resources appear only with palettes, `get_type` /
 `brand://type` only when typography is included, `get_geometry` / `brand://geometry` only when geometry is.
