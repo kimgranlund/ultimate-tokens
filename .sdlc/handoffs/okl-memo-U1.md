@@ -48,8 +48,8 @@ cite `okhslLAt` at its current line (`:928`) and describe the deletion, not the 
 |---|---|---|---|
 | `npm test` (P1) | `✓ all 50 test files passed`, tree `0` | clone, `sed` corrupt `role-table.json` | `exit 1` |
 | `npm run build` (P2, scratch clone, `node_modules` symlinked read-only from repo root, `npm ci` in the build-negative clone) | `exit 0`, `wrote figma/plugin/ui.html 4125.1 KB`, tree `0` | clone, unbalance `okhslLAt`'s paren | `exit 1`, `SyntaxError: missing ) after argument list` at `tonal.js:929`, failing at `gen:categories` (not `tsc`) |
-| P3 branding + em dash | `branding: clean (711 files scanned)`, `0`, `0` | clone, `cp decision-records.md` into `.sdlc/verdicts/` | not separately re-run; the branding gate itself is exercised by `npm test`'s own `repo/branding.mjs` pass above |
-| P4 scope wall (revision 4: three commands, `hct.js` comment-only) | `0`, `0`, `0` | fixture of 3 names through the first filter | `2` (per plan, run by the planner) |
+| P3 branding + em dash | `branding: clean (713 files scanned)`, `0`, `0` | clone (pass 2, run by this builder), `cp decision-records.md .sdlc/verdicts/x.md` | `FAIL: 3 branding violation(s) across 714 files`, `exit 1` |
+| P4 scope wall (revision 4: three commands, `hct.js` comment-only) | `0`, `0`, `0` | fixture of 3 names through the first filter (pass 2, run by this builder) | `1`, not the plan's stated `2` (see "Left out": the plan's row text is stale against its own revision-4 filter) |
 | U1-1 memo gone | `0`, `0`, `1`, `  return rgbToOkhsl(hctToRgb(0, 0, lstar).rgb).l;`, `0` | file at G0 | `4`, `1`, `1`, `  const k = lstar.toFixed(2);`, `1` |
 | U1-2 worker keeps `prime.mjs` contract | `exit 0`, determinism line present (`0/200`, SAMPLED), diff `0` | clone (pass 2, review's replacement for finding 1): worker's bare-array branch corrupts hex 0 only when `poison.length` (`hexes.map((h,i)=>i===0?h+"X":h)`) | `exit 1`, `determinism ...: 1/200 palettes shifted hex by call order` (matches the reviewer's own rerun) |
 | U1-3 corpus behaviour-neutral | `cmp 0`, `11340` both before/after | clone, `lstar` → `lstar + 0.5` | `differ: char 61, line 2`, `cmp 1` |
@@ -57,7 +57,7 @@ cite `okhslLAt` at its current line (`:928`) and describe the deletion, not the 
 | U1-5 `okl-order` gate | `exit 0`, pass line printed exactly `1` time, `okl-order` named `8`+ times in the test file, `prelstars`/`ramps` named `8`+ times in the worker | clone, memo restored | `exit 1`, one `FAIL` line: `render-level: 24/24 ramps shifted hex by call order after a prior okhslLAt(5.26499)...` (contains both `5.26499` and `24/24`) |
 | U1-5, second control | (same clone, `prelstars` emptied in the test's own render check) | memo restored, render half's own poison call zeroed | `exit 1`, `FAIL  okl-order  - function-level: okhslLAt(5.26499) = 0.07999402014631897, expected 0.0837536365535359...` (contains `5.26499`, not `24/24`) |
 | U1-6 skill lines | `0,0,0,0` (toFixed), `0` (memoized in), `1`+ (#738 in SKILL.md) | files at G0 | `1,1,3,1` toFixed lines; `1` memoized in; `0` #738 |
-| U1-7 source diff | numstat `3 5`, `5` removed-line count | clone, re-key instead of delete | `1 1` (not tested live; matches plan's stated shape by inspection - a re-key changes `k` in place, one line each way) |
+| U1-7 source diff | numstat `3 5`, `5` removed-line count | clone at G0 (pass 2, run by this builder): `const k = lstar.toFixed(2);` → `const k = lstar;` | numstat `1 1` |
 
 ## Pass 1 to pass 2, review findings closed
 
@@ -79,7 +79,8 @@ cite `okhslLAt` at its current line (`:928`) and describe the deletion, not the 
   P4 admitted `hct.js` for comment lines only (a middle command counts non-comment diff lines, `0`);
   the sentence now says the memo existed and #738 deleted it. `hct.js:276`'s own "genuinely pure
   again" clause (Not-in-scope item 2, pass 1) needed no edit and still doesn't.
-- Finding 4 (low, reword "Left out"): done below.
+- Finding 4 (low, reword "Left out"): done below. U1-7's and P3's own controls are now run live by
+  this builder (pass 2, rows above); neither was reused from the reviewer's or planner's numbers.
 - Finding 5 (info, no change owed): the gate's render-before-function order and its reason (`FAIL`'s
   own de-dupe) hold; the reviewer's own reruns of both U1-5 controls matched pass 1's numbers exactly.
   `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:71` still cites `_okL` at
@@ -93,7 +94,12 @@ cite `okhslLAt` at its current line (`:928`) and describe the deletion, not the 
 
 ## Left out
 
-Nothing in scope. Three rows were not run live by this builder and are named rather than folded into
-"all rows had a real control": U1-7's re-key control was run by the reviewer in pass 1 (`1 1`, matching
-the plan's stated shape), P3's own control was not separately re-run (the branding gate itself runs
-inside every `npm test` pass above), and P4's fixture control is the planner's own, cited from the plan.
+Nothing in scope. Every P1-P4 and U1-1 through U1-7 row above ran with a real control this builder
+ran itself. P4's fixture control (`src/engine/hct.js`, `test/engine/prime.mjs`,
+`src/engine/tonal.js` through the current, revision-4 filter) was also run live: it prints `1`, not
+the plan's stated `2`. The plan's row text is stale relative to its own revision-4 command: the
+fixture's `hct.js` name is now excluded by the same pattern the middle command added
+(`-e '^src/engine/hct\.js$'`), so only `test/engine/prime.mjs` is left unmatched. This does not
+change the row's verdict (the real P4 command against the actual diff still prints `0, 0, 0`,
+confirmed above) - it is the fixture's own expected count that moved when the filter did. Flagging
+for the plan text, not fixing it (out of this unit's scope wall).
