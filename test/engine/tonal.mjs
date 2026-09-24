@@ -1982,10 +1982,10 @@ for (const mode of ["perceptual", "peak"]) {
 //    #686 fixed this class in hct.js (maxChromaInGamut/peakC/oklchToCam16Hue key on the exact
 //    float); tonal.js's own instance (_okL, keyed on lstar.toFixed(2)) was owner ruling R26's
 //    half for THIS ticket. U1 deleted the memo rather than re-keying it (measured not
-//    load-bearing: well under 1us per uncached call, two or three calls per palette render),
-//    so this gate is the tripwire that stops the memo -- or any other order-dependent cache --
-//    coming back, checked from both directions: the function itself, in process, and a real
-//    palette render, across two cold worker processes.
+//    load-bearing: 0.40-0.90 us per uncached call on a quiet host, median 1.54 us at load 67,
+//    two or three calls per palette render), so this gate is the tripwire that stops the memo
+//    -- or any other order-dependent cache -- coming back, checked from both directions: the
+//    function itself, in process, and a real palette render, across two cold worker processes.
 {
   const L1 = 5.25501, L2 = 5.26499;
 
