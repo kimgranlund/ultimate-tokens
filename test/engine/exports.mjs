@@ -1915,7 +1915,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 
   // Stitch-profile README receipt: distinct header + the single-file / byte-identical / lint framing.
   const rm = byName["README.md"];
-  if (!/design-system-for-google-stitch, Stitch profile export/.test(rm)) FAIL("design-system-stitch", "README is not the Stitch profile receipt");
+  if (!/design-system-for-google-stitch: Stitch profile export/.test(rm)) FAIL("design-system-stitch", "README is not the Stitch profile receipt");
   if (!/`DESIGN\.md` only/.test(rm)) FAIL("design-system-stitch", "Stitch receipt missing the single-file note");
   if (!/same canonical core/.test(rm)) FAIL("design-system-stitch", "Stitch receipt missing the one-canonical-core note");
   if (!/complete on its own/.test(rm)) FAIL("design-system-stitch", "Stitch receipt missing the self-containment note");
@@ -2039,7 +2039,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 
   // README.md is the figma-make profile receipt, citing the gate of record.
   const rm = byName["README.md"];
-  if (!/design-system-for-figma-make, Figma Make profile export/.test(rm)) FAIL("design-system-make", "README is not the figma-make profile receipt");
+  if (!/design-system-for-figma-make: Figma Make profile export/.test(rm)) FAIL("design-system-make", "README is not the figma-make profile receipt");
   if (!/make_guidelines_check\.py/.test(rm)) FAIL("design-system-make", "README does not cite make_guidelines_check.py as the gate of record");
   if (!rm.includes(`/* ultimate-tokens export schema ${X.EXPORT_SCHEMA_VERSION} */`)) FAIL("design-system-make", "README does not cite the styles.css schema stamp");
 
