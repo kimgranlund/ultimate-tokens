@@ -625,6 +625,14 @@ const NOTCH_ALLOW = [
   `travel "41° N · October · 23:00 · Tbilisi viewed from the Mtatsminda funicular at the upper station" secondary #71716E [even]`,
   `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" secondary-muted #CBCAC5 [even]`,
   `travel "55° N · July · 13:00 · Lowland Kamchatkan taiga in heavy mosquito season, near the Avacha river" tertiary-muted #ABAAA7 [even]`,
+  // Ticket #739: #ACADAE (this preset's own anchor) is one of the two corpus anchors under
+  // ACHROMATIC_ANCHOR_C (the other is Nike tertiary-muted's #FFFFFF, RAMP_WINDOW_ALLOW above); its ramp
+  // now takes the palette's own hue instead of the anchor's rounding-residue one, which shifts the
+  // per-stop gamut ceiling (maxChromaInGamut) enough for stop 500 to newly notch against its neighbours
+  // in peak and perceptual - a mechanical re-freeze, not a new construction defect (U1-4 proves every
+  // OTHER anchored ramp in the corpus byte-identical).
+  `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" secondary-muted #ACADAE [peak]`,
+  `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" secondary-muted #ACADAE [perceptual]`,
 ].sort();
 
 const MODES = ["perceptual", "peak", "even"];
@@ -1365,9 +1373,10 @@ if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); pr
 // (stop 500 exact + lift-40 negative control), C5 (monotone, pixel L*, a true 0, no list), C6/F4 (peak
 // != perceptual, Curve/Tension/Vibrancy each live for every anchored ramp, hueSpace live in even mode
 // + bounded to rounding in perceptual/peak per Q-D, stop 500 exact under every toggle). Window-clamp
-// (10), gap-19 (72, U4 re-freeze), distinct-25 (16, U4 re-freeze) and notch (15, Q-C variant,
+// (10), gap-19 (72, U4 re-freeze), distinct-25 (16, U4 re-freeze) and notch (17, Q-C variant,
 // RESOLVED by standing rule at Q3 - a clean subset of the old 78, every departure named with cause,
-// not pending) are all named allow-lists compared by name with a biting negative control, not settled
-// zeros.
-console.log("\nPASS: C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control");
+// not pending; 15 under Q3, +2 at Ticket #739 - #ACADAE's own hue-seed change shifts its per-stop
+// gamut ceiling enough to newly notch in peak/perceptual, a mechanical re-freeze) are all named
+// allow-lists compared by name with a biting negative control, not settled zeros.
+console.log("\nPASS: C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (17, Q3-resolved, +2 at #739) are named allow-lists, compared by name, each with a biting negative control");
 process.exit(0);
