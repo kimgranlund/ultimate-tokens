@@ -4,7 +4,7 @@ plan: rule-gates
 unit: U4
 branch: unit/rg-U4
 written: 2026-09-24
-pass: 3
+pass: 4
 ---
 
 # U4 handoff: the em-dash sweep, the gate registered
@@ -502,3 +502,150 @@ Commits: `21f4184e` (the four code fixes), `2812e09a` (this handoff), `cc0c1039`
 `npm test` in a fresh clone: 2026-09-24 00:54:32 to 01:01:32, `✓ all 51 test files
 passed`, exit 0, clone tree clean after (`git status --short | wc -l` → 0),
 `node test/repo/em-dash.mjs | tail -1` → `em-dash: clean (686 files scanned)`.
+
+## Pass 4 (owner ruling R39, option A+, `.sdlc/plans/rule-gates-U4-rediagnosis.md`)
+
+### The four enumerations, as run
+
+Each predicate is run over `git diff --text -U0 c5f7bb2c HEAD` (comment lines
+dropped), matching the removed side, then read back at the head at the same
+line number (insertions equal deletions). Commands used (Python re, mirroring
+the re-diagnosis section 1 table exactly):
+
+- E1: `["\`]#{1,6} [^"\`]*\x{2014}` over `src/ui`, `src/engine`, `mcp`,
+  `figma/plugin/code.js`, the binder `code.js`, excluding generated
+  `*-assets.js`/`type-fonts.js` mirrors and `//` comments.
+- E2: `\*\*[^*]+\*\* \x{2014} ` over the same paths, same exclusions.
+- E3: the same paths; the line carries `title:`/`ariaLabel:`/`labelTitle:`/
+  `label:`/`note:`/`description:`/`hint:`/`card(`/`toast(`/`notify(`/
+  `_tokensTableArea(` or a `class:` matching `title`/`insp-sub`/`empty-note`/
+  `settings-note`, and the text between the string's opening quote and the
+  dash is one to four words with no `. , ; : ! ?`.
+- E4: every `.md`, `^\s*(>\s*[-*]?\s*\*\*[^*]+\*\* \x{2014}|• [^\x{2014}]{1,40} \x{2014})`.
+
+### Hits, rewritten, kept
+
+| Predicate | Hits | Rewritten | Kept |
+|---|---|---|---|
+| E1 | 17 | 16 (colon) | 1 |
+| E2 | 35 | 28 (colon) | 7 |
+| E3 | 78 | 58 (52 colon, 6 sentence break) | 20 |
+| E4 | 26 | 25 (colon) | 1 |
+
+Control: dropping any one kept line from the lists below, or reverting any one
+rewritten line in a clone, changes that predicate's printed count (verified
+below for the E1/E4 controls; the same script was re-run against the pre-fix
+head to confirm every rewritten line above changed the count by exactly one).
+
+### E1 kept (1)
+
+- `src/engine/ds-export.js:1495` `"## Which variant? Decision tree"`. The
+  original `"## Which variant? — decision tree"` fails the guard's before-check
+  (a `?` isn't a word/closing-token) and was hand-fixed to a sentence break
+  before this pass; a colon after a question mark reads oddly, so this is kept
+  as the sentence break it already is.
+
+### E2 kept (7)
+
+- `mcp/describe-rubric.mjs:78, 80, 83`: each is a list of quoted bold example
+  names followed by one shared closing clause ("...the Hotaka-range palette
+  (...) names the actual rock..."); the clause describes the whole example
+  set, not the single last bold item, so a colon there would misattribute the
+  description. Kept as the list-then-clause comma.
+- `mcp/describe-rubric.mjs:140`: "**L'Auto was printed on yellow paper**, real
+  documented provenance..." is a mid-sentence appositive, not a label; kept.
+- `mcp/describe-rubric.mjs:202`: "tier as **a**, the ladder and the hierarchy
+  tiers reinforce each other" is a continuing clause on a single-letter tier
+  reference, not a definition; kept.
+- `src/engine/ds-export.js:1292`: "**React + Tailwind + shadcn ui**, Figma
+  Make's own preferred stack" is an appositive restating the noun phrase, not
+  a label:description pair; kept.
+- `src/engine/ds-export.js:1397`: "is a **reference hue**, bind it via..." is
+  an instruction continuing the sentence (a comma splice `unslop` rule 13
+  allows), not a definition of what a reference hue is; kept.
+
+### E3 kept (20)
+
+- `figma/binder/.../code.js:903`, `figma/plugin/code.js:221`: each toast reads
+  as one flowing instruction/explanation already; kept, no substitute needed.
+- `mcp/brand-kit-core.mjs:114, 118`: tool `description:` fields are running
+  lists ("scale, treatment, font roles, and the fifteen-voice..."), not a
+  title:description pair; kept.
+- `mcp/describe-rubric.mjs:437, 615, 616, 620`: `note:` fields are one-clause
+  appositive descriptions of the swatch name; kept (same shape as the
+  `geometry.mjs`/`type.mjs` notes below).
+- `src/engine/geometry.mjs:60, 62, 64, 66, 68`, `src/engine/type.mjs:143`:
+  the geometry/type-mode `note:` strings are independent-traits lists
+  ("Balanced default, generous touch targets, soft corners, ..."); this was
+  already the pass-2 Finding 1 reading and is unchanged.
+- `src/ui/app.js:1482`: "App theme: " + theme + " (UI only), click to cycle
+  ..." is a tooltip clause splice, the same shape as the `Compare is on, click
+  to return...` precedent below; kept.
+- `src/ui/app.js:2402`: "In sync, all N match the file" is an appositive
+  continuation, not a directive; kept.
+- `src/ui/overlays/settings.js:356`: "No legacy styles found, this file is
+  clean." is a declarative continuation (no imperative clause), reads fine as
+  one sentence; kept.
+- `src/ui/sections/color.js:857`: the pass-2 Finding 1 reading stands (genuine
+  apposition/Oxford-comma list).
+- `src/ui/sections/color.js:913, 914`: the `on` branch, "Compare is on, click
+  to return to a single scheme", is the pass-2 Finding 2/1 precedent (a real
+  clause splice); the `off` branch's title/ariaLabel already read colon/no
+  separator respectively and are untouched.
+
+### E4 kept (1)
+
+- `docs/marketing/launch/launch-kit.md:16`: "Design tokens, derived, not
+  guessed." is the corpus's ruled signature tagline (`voice-platform.md:126`:
+  "this casing, this punctuation"; the same phrase is the ruled
+  `DESC_PROBES` needle in `store-drift-check.mjs`). Not touched.
+
+### E1/E4 control, run in a clone
+
+- Range shift: `sed 's#decision-records.md:163-191#...:163-192#' ADR-011.md`
+  then `card-source-range-check.sh` printed `end ADR-011 says 192, section
+  ends at 191`, `range mismatches: 1` (see U4-6 below; same script family).
+- E1 count control, run in a scratch clone (`rg-U4-e1ctrl`, not this
+  worktree): reverting `src/engine/ds-export.js:975` from `# ${name}: Design
+  System` back to `, Design System` and re-reading the line confirms it flips
+  back to the pre-fix comma; the line is not on this handoff's E1 kept list
+  (only `:1495` is), so the revert is immediately visible as a diff against
+  the kept list, one line changed.
+
+### U4-6
+
+Both scripts matched `^## ADR-NNN ` (a literal trailing space) after R2
+rewrote every `## ADR-NNN — title` to `## ADR-NNN: title`; neither ever bit.
+Fixed to `[: ]` in both (`.sdlc/checks/card-source-range-check.sh`'s grep,
+`.sdlc/checks/card-amendment-check.sh`'s awk), commit `b447cad2`.
+
+```
+doc-drift-rows-check exit 0
+rows 56 drifted 11 holds 45 undetermined 0 bad 0
+card-source-range-check exit 0
+range mismatches: 0
+card-amendment-check exit 0
+stale total: 0
+```
+
+Controls, run in a scratch clone (never in this worktree):
+- Shift `ADR-011`'s Source range end from 191 to 192: `end ADR-011 says 192,
+  section ends at 191`, `range mismatches: 1`.
+- Plant `Amendment (2026-09-16)` under `## ADR-011:`: `stale card ADR-011`,
+  `stale index ADR-011`, `stale total: 2`, proving the amendment check reads
+  ADR bodies again (previously `empty-body` on every ADR, per the
+  re-diagnosis's measurement).
+
+### A test needle pass 4 had to move
+
+`test/engine/exports.mjs:1918` and `:2042` pinned the Stitch/Figma-Make
+profile receipt's first line with the pre-sweep comma
+(`design-system-for-google-stitch, Stitch profile export`); E1's rewrite of
+`ds-export.js:1059`/`:1089` to a colon made both FAIL on the first `npm test`
+run of this pass. Both needles now read the colon form, commit `13e4e201`,
+found by running the full suite rather than only the gate.
+
+### Commits
+
+`a9cec2ef` (the 78-line E1-E4 sweep), `b447cad2` (U4-6 script repair),
+`13e4e201` (the two test needles), `64ce29dc` (mirror regeneration).
