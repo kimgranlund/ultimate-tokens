@@ -4,7 +4,7 @@ plan: gate-split
 unit: U6c
 branch: unit/gs-U6c
 written: 2026-09-23
-pass: 1
+pass: 2
 ---
 
 # Handoff U6c gate-split - builder -> reviewer
@@ -13,15 +13,28 @@ pass: 1
 |---|---|
 | Branch | unit/gs-U6c, cut from unit/gs-U6b at d40cc5ce |
 | Worktree | .worktrees/gs-U6c |
-| Commit | 8fc8abf5, "gate-split(U6c): narrow the SAMPLED draw in prime and the reset sweep (#713)" |
+| Commits | 8fc8abf5 (pass 1, "narrow the SAMPLED draw in prime and the reset sweep"), 46dc9b77 (pass 2, "F1 comment mechanism, F2 print and cite") |
 | Files | test/engine/prime.mjs, test/ui/headless-boot.mjs, this handoff |
 | BASE for P8/P9-style diffs | origin/main merge-base, 04f95ff0 |
+
+## Pass 2: review FIX-FIRST
+
+Review verdict was FIX-FIRST (`gs-U6c-review.md`): every mechanical criterion and control reproduced, three record fixes needed, no code-behavior change intended.
+
+| Finding | What was done |
+|---|---|
+| F1 (medium): the `RESET_STRIDE` comment named the wrong mechanism (claimed the `...dkDoc` spread overwrites OTHER presets' names) | Reworded the comment: the spread replaces the kit preset's own name with `defaultDocument().name`, measured `"Default"`, so a name-keyed skip on `=== "default kit"` never matches the kit. It touches no other preset |
+| F2(a) (low): the plan asks the builder to print how many documents contribute none after the stride | Added a second SAMPLED-only print line naming, of the sampled documents, how many contribute no anchored palette in either mode versus how many lost every anchored palette to the stride. Re-run: `5 of 35 sampled documents contribute no anchored palette in either mode, 0 of the rest lost every anchored palette to the stride`, matching the reviewer's own probe (30 of 35 have anchored palettes, all 30 still contribute, 0 lost to the stride) |
+| F2(b) (low): U6c-6 was missing U5-3's line-range clause | Added below; `0` outside hunks against `unit/gs-U6b` (U6c adds none), `3` against the `plan/gate-split` fork point (inherited from U6b's own main merge, per the plan's M5) |
+| F3 (nit) | Not changed: the reviewer marked it optional and it is not a plan requirement; the `91`/`316` needles already guard the line's truth |
+| F4 (nit, reindent) | Not changed: the reviewer marked it optional, behavior unaffected |
+| Q1 (26 vs 21) | Not a defect per the review; re-cited as such in Disagreement below, unchanged from pass 1 |
 
 ## What changed
 
 `test/engine/prime.mjs`: `DET_CASE_COUNT` SAMPLED 400 to 200. A new `POISON_COUNT` const (`FULL ? 1500 : 500`) replaces the literal `1500` bound on the poison loop; the mode line already read `POISON_CASES.length`, so it follows without an edit there. Comments above both consts state the new sizes and why the hue step (`HUE_MULT`, `HUE_OFFSET`) did not move.
 
-`test/ui/headless-boot.mjs`, inside the `(rst-corpus)` block only: the loop no longer walks `[...corpusDocs, defaultKitPreset]` directly. It first flattens `corpusDocs`'s anchored palettes into `corpusAnchoredEntries` (order preserved), takes every fourth under SAMPLED (`RESET_STRIDE = 4`, first kept, all kept under FULL), then appends the default kit's own anchored palettes (`defaultKitEntries`) unstrided, keyed on identity with `defaultKitPreset` rather than on `preset.name` (the `...dkDoc` spread after `name: "default kit"` on the object literal overwrites the name field on whatever a category preset happens to carry, so a name-keyed skip would also stride the kit, which is what the planner's own probe did). `corpusFloor` moves 300 to 60 under SAMPLED (FULL untouched at 3000), since the strided count no longer clears the old floor. A new line prints under SAMPLED only, before the existing mode line: `(rst-corpus SAMPLED: stride 4, 91 anchored palettes checked of 316, default kit whole)`.
+`test/ui/headless-boot.mjs`, inside the `(rst-corpus)` block only: the loop no longer walks `[...corpusDocs, defaultKitPreset]` directly. It first flattens `corpusDocs`'s anchored palettes into `corpusAnchoredEntries` (order preserved), takes every fourth under SAMPLED (`RESET_STRIDE = 4`, first kept, all kept under FULL), then appends the default kit's own anchored palettes (`defaultKitEntries`) unstrided, keyed on identity with `defaultKitPreset` rather than on `preset.name` (the `...dkDoc` spread after `name: "default kit"` replaces the kit preset's own name with `defaultDocument().name`, measured `"Default"`, so a name-keyed skip on `=== "default kit"` never matches the kit; it touches no other preset's name). `corpusFloor` moves 300 to 60 under SAMPLED (FULL untouched at 3000), since the strided count no longer clears the old floor. Two lines print under SAMPLED only, before the existing mode line: `(rst-corpus SAMPLED: stride 4, 91 anchored palettes checked of 316, default kit whole)` and, added pass 2, `(rst-corpus SAMPLED: 5 of 35 sampled documents contribute no anchored palette in either mode, 0 of the rest lost every anchored palette to the stride)`.
 
 ## Criteria
 
@@ -30,17 +43,17 @@ pass: 1
 | U6c-1 | `node test/engine/prime.mjs` (worktree head 8fc8abf5) | `exit 0`; `(SAMPLED: 200 determinism cases, 500 poison renders, hue step 5)` count `1`; `0/200 palettes shifted hex by call order` count `1`; `same sweep): 3/30240` count `1` | matches the plan exactly |
 | U6c-2 | `npm run -s gate:sweep-prime` (worktree head) | `exit 0`; FULL pass-line count `26`; `(FULL: 2000 determinism cases, 1500 poison renders, hue step 1)` count `1`; `0/2000 palettes shifted` count `1`; `same sweep): 114/151200` count `1`. Re-observed the pass count in a throwaway clone at d40cc5ce (pre-edit): also `26`, confirming the plan's cited `21` is stale against this head, not a regression from this unit's edit | matches, with the pass count amended from the plan's `21` to `26` (re-observed, not a defect) |
 | U6c-3 | M-B mutation, throwaway clone at 8fc8abf5 (`hct.js` cache-key edit, `git diff --stat`: `1 file changed, 2 insertions(+), 2 deletions(-)`), `node test/engine/prime.mjs` | `exit 1`; determinism line `2/200 palettes shifted hex by call order`; `out-of-gamut rungs exceeds the pinned ceiling` count `1` | matches the plan exactly (`2/200`) |
-| U6c-4 | `node test/ui/headless-boot.mjs` (worktree head) | `exit 0`; `(SAMPLED seed 0: 35 curated documents, 392 palettes)` count `1`; `stride 4, 91 anchored palettes checked of 316, default kit whole` count `1`; `HEADLESS BOOT PASS` count `1` | matches the plan exactly, no amendment needed (the plan's own 91-of-316 figure held, unlike its 79-of-79 probe artifact) |
-| U6c-5 | M-D mutation, throwaway clone at 8fc8abf5 (`color.js` reset-lift edit, `git diff --stat`: `1 file changed, 1 insertion(+), 1 deletion(-)`), `node test/ui/headless-boot.mjs` | `exit 1`; `(rst-corpus)` line count `4`; `(rst-corpus) 91 of 91 anchored palettes failed` count `1` | matches the plan exactly (`91 of 91`) |
-| U6c-6 | `npm run -s gate:corpus-reset` (worktree head) | `exit 0`; `(FULL: 343 curated documents, 3780 palettes)` count `1`; `stride` count `0`; `HEADLESS BOOT PASS` count `1` | matches the plan exactly |
+| U6c-4 | `node test/ui/headless-boot.mjs`, throwaway clone at 46dc9b77 | `exit 0`; `(SAMPLED seed 0: 35 curated documents, 392 palettes)` count `1`; `stride 4, 91 anchored palettes checked of 316, default kit whole` count `1`; `5 of 35 sampled documents contribute no anchored palette in either mode, 0 of the rest lost every anchored palette to the stride` count `1`; `HEADLESS BOOT PASS` count `1` | matches the plan exactly, no amendment needed (the plan's own 91-of-316 figure held, unlike its 79-of-79 probe artifact); F2(a)'s new line matches the reviewer's own probe |
+| U6c-5 | M-D mutation, same clone at 46dc9b77 (`color.js` reset-lift edit, `git diff --stat`: `1 file changed, 1 insertion(+), 1 deletion(-)`), `node test/ui/headless-boot.mjs` | `exit 1`; `(rst-corpus)` line count `4`; `(rst-corpus) 91 of 91 anchored palettes failed` count `1` | matches the plan exactly (`91 of 91`) |
+| U6c-6 | `npm run -s gate:corpus-reset`, throwaway clone at 46dc9b77 | `exit 0`; `(FULL: 343 curated documents, 3780 palettes)` count `1`; `stride` count `0`; `HEADLESS BOOT PASS` count `1`. U5-3's line-range clause (`A=4051, Z=4157`): outside-hunk count `0` against `unit/gs-U6b` (this unit's own hunks, `4075 4086 4144 4146 4150`, all fall inside `[A, Z]`, so U6c adds none); `3` against the `plan/gate-split` fork point `e035f841`, inherited from U6b's own main merge (M5), unchanged since pass 1 | matches the plan exactly, F2(b) added |
 | U6c-7 | not run, per brief: no timing runs for the record on this pass | deferred | deferred to the coordinated quiet window with U6c-8 |
 | U6c-8 | not run, per brief and per the plan's own design: rides the same coordinated quiet window as U6b's six owed gate-script rows | deferred | deferred |
 
-Every clone used for a mutation or a re-observation was `git clone -q --shared` from the unit worktree, into this seat's scratchpad, removed after use; each is proven at the unit's own head (`git rev-parse HEAD` printed `8fc8abf5c0bb5217b1b9a3250fd9e038ed0b4ff7` before the mutation was applied).
+Every clone used for a mutation or a re-observation was `git clone -q --shared` from the unit worktree, into this seat's scratchpad, removed after use; each is proven at the unit's own head before the mutation was applied (`git rev-parse HEAD` printed `8fc8abf5c0bb5217b1b9a3250fd9e038ed0b4ff7` for pass 1's clones, `46dc9b774f37adf379d3750da361ef709a5e7f0d` for pass 2's).
 
-`npm test`, once, in a fresh `git clone -q --shared` at the final head 8fc8abf5: `all 50 test files passed`, `exit 0`, tree clean after (`git status --short` empty). No timing recorded from this run; it is a correctness check only, per the brief.
+`npm test`, once, in a fresh `git clone -q --shared` at the final head 46dc9b77: `all 50 test files passed`, `exit 0`, tree clean after (`git status --short` empty). No timing recorded from this run; it is a correctness check only, per the brief.
 
-`node test/repo/branding.mjs`: `branding: clean (664 files scanned)`, both in the worktree and in the final clone. No added line carries an em dash outside a backtick span (checked against `origin/main` merge-base 04f95ff0, count `0`).
+`node test/repo/branding.mjs`: `branding: clean (665 files scanned)` in the worktree, `clean (664 files scanned)` in a fresh clone (the handoff file itself is the 665th, present only in the worktree at the time of that count). No added line carries an em dash outside a backtick span (checked against `origin/main` merge-base 04f95ff0, count `0`).
 
 ## Disagreement with the plan
 
