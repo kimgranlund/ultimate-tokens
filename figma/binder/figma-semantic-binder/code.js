@@ -473,9 +473,9 @@ function libraryModeReportText(collectionName, report) {
   for (const n of report.adds) lines.push("  " + n);
   lines.push("Value updates (" + report.valueUpdates.length + "):");
   for (const n of report.valueUpdates) lines.push("  " + n);
-  lines.push("Aliases, never removed, value redirected (" + report.aliases.length + "):");
+  lines.push("Aliases: never removed, value redirected (" + report.aliases.length + "):");
   for (const r of report.aliases) lines.push("  " + r.from + " -> " + r.to);
-  lines.push("Deprecates, never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");
+  lines.push("Deprecates: never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");
   for (const r of report.deprecates) lines.push("  " + r.from + " -> " + r.to);
   return lines.join("\n");
 }
@@ -922,6 +922,6 @@ async function main() {
 // show a friendly message, and close cleanly.
 main().catch((e) => {
   console.error("[Color Tokens Semantic Binder] bind failed:", e);
-  figma.notify("Couldn't bind the semantic variables. Please try again, if it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });
+  figma.notify("Couldn't bind the semantic variables. Please try again. If it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });
   figma.closePlugin();
 });

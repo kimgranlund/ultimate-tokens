@@ -114,7 +114,7 @@ products' descriptions, and keep them identical across the two pages.
 **`products[1182548].attributes.name`**
 
 ```
-Ultimate Tokens, Pro
+Ultimate Tokens Pro
 ```
 
 **`products[1182548].attributes.status`** → `published`. **`.buy_now_url`** is an LS-generated hosted
@@ -168,7 +168,7 @@ rest of the body to begin after it so the card truncates on a complete thought
 **`products[1182535].attributes.name`**
 
 ```
-Ultimate Tokens, Studio
+Ultimate Tokens Studio
 ```
 
 **`products[1182535].attributes.status`** → `published`. **`.buy_now_url`** is LS-generated; the app
@@ -396,13 +396,13 @@ post-purchase receipt. Defaults inherit the product; fill a field only where the
 **Pro, `product_options.receipt_thank_you_note`** (checkout for variant `1849393`)
 
 > Thanks for going Pro. Your license key is in your purchase email, open Ultimate Tokens, go to Settings →
-> Account, paste the key, and click Validate. Anything at all: {{SUPPORT_CHANNEL}}. – Ultimate Tokens
+> Account, paste the key, and click Validate. Anything at all: {{SUPPORT_CHANNEL}}. (Ultimate Tokens)
 
 **Studio, `product_options.receipt_thank_you_note`** (checkout for variant `1849376`)
 
 > Thanks for bringing Ultimate Tokens to your team. Your team license key is in your purchase email, each
 > member activates under Settings → Account, then Validate, and every device activation takes one of your 5
-> seats. Manage seats and billing anytime at {{CUSTOMER_PORTAL}}. – Ultimate Tokens
+> seats. Manage seats and billing anytime at {{CUSTOMER_PORTAL}}. (Ultimate Tokens)
 
 **`checkout_data`** (prefill + pass-through), set `email` / `name` only when you already know the buyer;
 `discount_code` to pre-apply a launch code (§6); `custom` to carry an internal reference through to the
@@ -483,7 +483,7 @@ Subject: Your Ultimate Tokens Pro subscription
 >
 > Anything at all: {{SUPPORT_EMAIL}}.
 >
-> – Ultimate Tokens
+> (Ultimate Tokens)
 
 **Studio welcome email**, **Settings → Emails → Order confirmation** for the Studio product (or your
 webhook mailer, keyed on the Studio variant)

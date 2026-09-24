@@ -169,7 +169,7 @@ export class ApplyGateMixinImpl {
     // still bound to the Type Primitives variable: installing the font adopts it, no re-apply needed.
     // (The sandbox's own notify races the apply-done toast and gets lost, so the UI says it too.)
     if (subbed.length) this.toast(`${m.substituted || subbed.length} text style${(m.substituted || 0) === 1 ? "" : "s"} use a placeholder face, install to see them as designed: ${subbed.slice(0, 4).join(", ")}${subbed.length > 4 ? "…" : ""}. The family stays variable-bound.`);
-    if (missing.length) this.toast(`Text styles skipped, no usable font for: ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}`);
+    if (missing.length) this.toast(`Text styles skipped: no usable font for: ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}`);
   }
 
   onApplyError() {

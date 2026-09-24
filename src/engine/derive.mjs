@@ -66,12 +66,12 @@ export function deriveNeutral(samples) {
 // first non-neutral palette). The set-geometry ones (complete/bridge) use the whole set. So priority
 // ORDER drives the result, NOT chroma weighting: a low-chroma primary still anchors the relationship.
 export const RELATIONSHIPS = [
-  { id: "extend", label: "Extend", hint: "Analogous, continue the primary's family (+30°)" },
+  { id: "extend", label: "Extend", hint: "Analogous: continue the primary's family (+30°)" },
   { id: "complete", label: "Complete", hint: "Fill the largest open gap on the wheel" },
-  { id: "contrast", label: "Contrast", hint: "Complement, oppose the primary at 180°" },
+  { id: "contrast", label: "Contrast", hint: "Complement: oppose the primary at 180°" },
   { id: "bridge", label: "Bridge", hint: "Mediate between the two most-separated hues" },
   { id: "anchor", label: "Anchor", hint: "Reinforce the primary hue at full chroma" },
-  { id: "recontextualize", label: "Recontextualize", hint: "Albers, the primary's complement, muted (reads shifted in context)" },
+  { id: "recontextualize", label: "Recontextualize", hint: "Albers: the primary's complement, muted (reads shifted in context)" },
 ];
 
 export function deriveRelative(id, samples) {

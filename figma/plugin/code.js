@@ -280,7 +280,7 @@ figma.ui.onmessage = async (msg) => {
     else if (msg && msg.type === "sweep-scan") { try { figma.ui.postMessage({ type: "sweep-scanned", texts: [], paints: [] }); } catch (e2) { /* UI gone */ } }
     else if (msg && msg.type === "sweep-delete") { try { figma.ui.postMessage({ type: "sweep-done", removed: 0 }); } catch (e2) { /* UI gone */ } }
     const what = (msg && ACTIONS[msg.type]) || "complete that action";
-    figma.notify("Ultimate Tokens couldn't " + what + ". Please try again, if it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });
+    figma.notify("Ultimate Tokens couldn't " + what + ". Please try again. If it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });
   }
 };
 
@@ -752,9 +752,9 @@ function libraryModeReportText(collectionName, report) {
   for (const n of report.adds) lines.push("  " + n);
   lines.push("Value updates (" + report.valueUpdates.length + "):");
   for (const n of report.valueUpdates) lines.push("  " + n);
-  lines.push("Aliases, never removed, value redirected (" + report.aliases.length + "):");
+  lines.push("Aliases: never removed, value redirected (" + report.aliases.length + "):");
   for (const r of report.aliases) lines.push("  " + r.from + " -> " + r.to);
-  lines.push("Deprecates, never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");
+  lines.push("Deprecates: never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");
   for (const r of report.deprecates) lines.push("  " + r.from + " -> " + r.to);
   return lines.join("\n");
 }

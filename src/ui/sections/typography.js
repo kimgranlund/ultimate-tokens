@@ -307,8 +307,8 @@ export class TypeSectionImpl {
       !this.panesLeft ? this.paneToggle("left") : false,
       this.typeMode === "compare" ? false : this.segmented(
         [
-          { id: "specimen", label: "Specimen", title: "Live faces, render each step in the real font" },
-          { id: "tokens", label: "Tokens", title: "Editable token matrix, every step × Base + each breakpoint" },
+          { id: "specimen", label: "Specimen", title: "Live faces: render each step in the real font" },
+          { id: "tokens", label: "Tokens", title: "Editable token matrix: every step × Base + each breakpoint" },
         ],
         this.typeSpecMode,
         (id) => this.setTypeSpecMode(id),
@@ -317,8 +317,8 @@ export class TypeSectionImpl {
       this.typeModeControl(),
       h("div", { class: "spacer" }),
       btn(icon("crosshair"), {
-        title: "Fit, reset the canvas view to centre at 100%",
-        ariaLabel: "Fit, reset the canvas view to centre at 100%",
+        title: "Fit: reset the canvas view to centre at 100%",
+        ariaLabel: "Fit: reset the canvas view to centre at 100%",
         onclick: () => { this.fit(); this.render(); },
       }),
       this.canvasThemeBtn(),
@@ -344,7 +344,7 @@ export class TypeSectionImpl {
       {
         class: "canvas-area type-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
         role: "group",
-        "aria-label": "Typography specimen, drag to pan, wheel to zoom, double-click to reset",
+        "aria-label": "Typography specimen: drag to pan, wheel to zoom, double-click to reset",
       },
       h("div", { class: "canvas-scene" }, this.renderTypographyScene(view)),
     );
@@ -362,7 +362,7 @@ export class TypeSectionImpl {
     const area = h(
       "div",
       { class: "canvas-area canvas-compare type-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
-        role: "group", "aria-label": "Compare, every typography breakpoint side by side · drag to pan, wheel to zoom" },
+        role: "group", "aria-label": "Compare: every typography breakpoint side by side · drag to pan, wheel to zoom" },
       h("div", { class: "canvas-scene compare" },
         this._typeCompareColumn(view, "base", "Base"),
         ...modes.map((m) => this._typeCompareColumn(view, m.id, m.name || "Mode"))),
@@ -769,7 +769,7 @@ export class TypeSectionImpl {
           placeholder: treatment.fonts[role],
           "aria-label": cName + " font family",
           "data-fk": "tyfont:" + cName,
-          title: custom ? "Custom family, exports as-is; the web-app specimen loads it from Google Fonts (falls back if it isn't a Google font)" : "From the " + treatment.label + " treatment",
+          title: custom ? "Custom family: exports as-is; the web-app specimen loads it from Google Fonts (falls back if it isn't a Google font)" : "From the " + treatment.label + " treatment",
           style: `font-family:'${family}', ${generic}`,
           onchange: (e) => this._setTypeVoiceFont(cName, e.target.value),
         }),

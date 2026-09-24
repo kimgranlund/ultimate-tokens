@@ -1315,7 +1315,7 @@ class HctApp extends HTMLElement {
         let parsed = null;
         try { parsed = JSON.parse(String(reader.result)); } catch { parsed = null; }
         if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.palettes) || parsed.palettes.length === 0) {
-          this.toast("Import failed, not a palette config (.json)");
+          this.toast("Import failed: not a palette config (.json)");
           return;
         }
         const doc = hydrate(parsed); // clamps every field to its domain; ignores anything off-shape
@@ -1402,7 +1402,7 @@ class HctApp extends HTMLElement {
       btn(icon("arrow-counter-clockwise"), { cls: "undo-btn", title: "Undo (⌘Z)", ariaLabel: "Undo", disabled: !this.canUndo(), onclick: () => this.undo() }),
       btn(icon("arrow-clockwise"), { cls: "redo-btn", title: "Redo (⇧⌘Z)", ariaLabel: "Redo", disabled: !this.canRedo(), onclick: () => this.redo() }),
       this.themeBtn(),
-      btn(icon("gear"), { cls: "settings-btn", title: "Settings, token mapping & preferences", ariaLabel: "Settings", onclick: () => this.openSettings() }),
+      btn(icon("gear"), { cls: "settings-btn", title: "Settings: token mapping & preferences", ariaLabel: "Settings", onclick: () => this.openSettings() }),
       btn([icon("plus"), "New"], { onclick: () => this.createSet() }),
       btn([icon("export"), "Export"], { variant: "primary", cls: "export-open-btn", title: "Open export drawer", onclick: () => this.toggleDrawer(true) }),
     );
@@ -1415,9 +1415,9 @@ class HctApp extends HTMLElement {
   sectionSwitcher() {
     return this.segmented(
       [
-        { id: "color", label: "Color", title: "Color, palettes, scrims & semantic roles" },
-        { id: "typography", label: "Typography", title: "Typography, type scale, treatments & the full specimen" },
-        { id: "geometry", label: "Geometry", title: "Geometry, size ramp & dimensional tokens (preview)" },
+        { id: "color", label: "Color", title: "Color: palettes, scrims & semantic roles" },
+        { id: "typography", label: "Typography", title: "Typography: type scale, treatments & the full specimen" },
+        { id: "geometry", label: "Geometry", title: "Geometry: size ramp & dimensional tokens (preview)" },
       ],
       this.section,
       (id) => this.setSection(id),
@@ -2323,7 +2323,7 @@ class HctApp extends HTMLElement {
       return;
     }
     try { localStorage.setItem(PROJECT_KEY, JSON.stringify(config)); this.toast("Saved to project"); }
-    catch { this.toast("Save failed, no storage available"); }
+    catch { this.toast("Save failed: no storage available"); }
   }
 
 
@@ -2382,7 +2382,7 @@ class HctApp extends HTMLElement {
 
   // ── read-only Figma-variables reference + drift diff (#3) ──────────────────────────────
   // Read the live raw-colors variables from the FILE and compare to what the generator would emit
-  // now → per-token drift in the Mapping table (✓ match / ✗ drifted / - absent). Read-only: it never
+  // now → per-token drift in the Mapping table (✓ match / ✗ drifted / n/a absent). Read-only: it never
   // reconstructs params (you cannot reverse-derive hue/chroma from a color), it only diffs colors.
   readLiveVariables() {
     if (!this.inFigma) { this.toast("Reading live variables is a Figma-plugin feature"); return; }
@@ -2469,7 +2469,7 @@ class HctApp extends HTMLElement {
       { name: "package.json", data: pkg },
     ];
     this.downloadBytes(zipStore(files), `${base}-mcp.zip`, "application/zip");
-    this.toast("Brand-Kit MCP downloaded, `node brand-kit-server.mjs`");
+    this.toast("Brand-Kit MCP downloaded: `node brand-kit-server.mjs`");
   }
 
 
@@ -2504,7 +2504,7 @@ class HctApp extends HTMLElement {
       { name: "package.json", data: pkg },
     ];
     this.downloadBytes(zipStore(files), `${base}-describe-mcp.zip`, "application/zip");
-    this.toast("Describe-Palette MCP downloaded, `node mcp/brand-kit-merged-server.mjs`");
+    this.toast("Describe-Palette MCP downloaded: `node mcp/brand-kit-merged-server.mjs`");
   }
 
 

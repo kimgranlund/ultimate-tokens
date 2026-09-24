@@ -380,8 +380,8 @@ export class GeomSectionImpl {
       !this.panesLeft ? this.paneToggle("left") : false,
       this.geomMode === "compare" ? false : this.segmented(
         [
-          { id: "controls", label: "Controls", title: "Live mock controls, render each ramp step as a real box" },
-          { id: "tokens", label: "Tokens", title: "Editable token matrix, every size × Base + each breakpoint" },
+          { id: "controls", label: "Controls", title: "Live mock controls: render each ramp step as a real box" },
+          { id: "tokens", label: "Tokens", title: "Editable token matrix: every size × Base + each breakpoint" },
         ],
         this.geomSpecMode,
         (id) => this.setGeomSpecMode(id),
@@ -390,8 +390,8 @@ export class GeomSectionImpl {
       this.geomModeControl(),
       h("div", { class: "spacer" }),
       btn(icon("crosshair"), {
-        title: "Fit, reset the canvas view to centre at 100%",
-        ariaLabel: "Fit, reset the canvas view to centre at 100%",
+        title: "Fit: reset the canvas view to centre at 100%",
+        ariaLabel: "Fit: reset the canvas view to centre at 100%",
         onclick: () => { this.fit(); this.render(); },
       }),
       this.canvasThemeBtn(),
@@ -416,7 +416,7 @@ export class GeomSectionImpl {
       {
         class: "canvas-area geom-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
         role: "group",
-        "aria-label": "Geometry specimen, drag to pan, wheel to zoom, double-click to reset",
+        "aria-label": "Geometry specimen: drag to pan, wheel to zoom, double-click to reset",
       },
       h("div", { class: "canvas-scene" }, this.renderGeometryScene(view)),
     );
@@ -434,7 +434,7 @@ export class GeomSectionImpl {
     const area = h(
       "div",
       { class: "canvas-area canvas-compare geom-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
-        role: "group", "aria-label": "Compare, every geometry breakpoint side by side · drag to pan, wheel to zoom" },
+        role: "group", "aria-label": "Compare: every geometry breakpoint side by side · drag to pan, wheel to zoom" },
       h("div", { class: "canvas-scene compare" },
         this._geomCompareColumn(view, "base", "Base"),
         ...modes.map((m) => this._geomCompareColumn(view, m.id, m.name || "Mode"))),

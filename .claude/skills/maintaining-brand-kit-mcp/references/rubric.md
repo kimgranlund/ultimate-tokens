@@ -1,6 +1,6 @@
 ## Rubric: a Brand-Kit MCP change
 
-Scores a change to `mcp/` (`brand-kit-core.mjs`, the surface, + `brand-kit-server.mjs`, the stdio
+Scores a change to `mcp/` (`brand-kit-core.mjs`: the surface, + `brand-kit-server.mjs`: the stdio
 transport), the served `brandKit` shape, or the download packaging.
 `[gate]` = mechanically checkable (a named test assert / `npm test` / a manual stdio run); `[review]` =
 judgment with cited evidence. Score each 1–5.

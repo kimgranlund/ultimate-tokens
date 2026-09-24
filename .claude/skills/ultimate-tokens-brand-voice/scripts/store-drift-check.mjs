@@ -24,7 +24,7 @@ const PINNED_VARIANTS = { 1849393: 1182548, 1849376: 1182535 };
 // Copy the live store must carry once the §10 dashboard walk is done. Presence probes, not diffs,
 // robust to LS's HTML formatting. Per product: the thesis heading lives only in Pro's body (§2.1);
 // "53 semantic roles" reaches both via the shared §2.3 blocks appended to each description.
-const PRODUCT_NAME = { 1182548: "Ultimate Tokens, Pro", 1182535: "Ultimate Tokens, Studio" };
+const PRODUCT_NAME = { 1182548: "Ultimate Tokens Pro", 1182535: "Ultimate Tokens Studio" };
 const VARIANT_NAME = { 1849393: "Annual, per user", 1849376: "Annual, 5 seats" };
 const DESC_PROBES = {
   1182548: ["53 semantic roles", "derived, not guessed"],

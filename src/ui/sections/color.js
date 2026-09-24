@@ -20,11 +20,11 @@ export class ColorSectionImpl {
         body,
       );
     return [
-      card("L*×C, applied chroma vs gamut ceiling", this.graphLC(view, idx)),
-      card("Tone curve, L* per stop", this.graphTone(view, idx)),
-      card("Chroma curve, applied vs ceiling", this.graphChroma(view, idx)),
-      card("Contrast, on-colors vs fills (≥4.5:1)", this.graphContrast(view, idx)),
-      card("Hue wheel, all enabled palettes", this.graphHueWheel(view)),
+      card("L*×C: applied chroma vs gamut ceiling", this.graphLC(view, idx)),
+      card("Tone curve: L* per stop", this.graphTone(view, idx)),
+      card("Chroma curve: applied vs ceiling", this.graphChroma(view, idx)),
+      card("Contrast: on-colors vs fills (≥4.5:1)", this.graphContrast(view, idx)),
+      card("Hue wheel: all enabled palettes", this.graphHueWheel(view)),
     ];
   }
 
@@ -603,7 +603,7 @@ export class ColorSectionImpl {
       h(
         "div",
         { class: "newpal-diagram" },
-        h("div", { class: "newpal-diagram-title" }, "Chroma curve, applied vs ceiling"),
+        h("div", { class: "newpal-diagram-title" }, "Chroma curve: applied vs ceiling"),
         proposed ? this.graphChroma(proposed.view, 0) : h("div", { class: "an-empty" }, "n/a"),
       ),
     ];
@@ -813,10 +813,10 @@ export class ColorSectionImpl {
       // canvas content toggle, palette ramps vs the scrim overlays.
       this.segmented(
         [
-          { id: "palettes", label: "Palettes", title: "Palettes, the tonal ramps" },
-          { id: "scrims", label: "Scrims", title: "Scrims, the 7 translucent 500 overlays per palette, over a checkerboard" },
-          { id: "mapping", label: "Mapping", title: "Semantic Mapping, each role's Light/Dark raw token, as a table" },
-          { id: "radix", label: "Radix", title: "Radix, the 12-step Park UI ladder per palette, read straight from the engine's own Radix export" },
+          { id: "palettes", label: "Palettes", title: "Palettes: the tonal ramps" },
+          { id: "scrims", label: "Scrims", title: "Scrims: the 7 translucent 500 overlays per palette, over a checkerboard" },
+          { id: "mapping", label: "Mapping", title: "Semantic Mapping: each role's Light/Dark raw token, as a table" },
+          { id: "radix", label: "Radix", title: "Radix: the 12-step Park UI ladder per palette, read straight from the engine's own Radix export" },
         ],
         this.canvasView,
         (id) => this.setCanvasView(id),
@@ -840,8 +840,8 @@ export class ColorSectionImpl {
       h("div", { class: "spacer" }),
       // fit/orient, reset the canvas view to centre at 100% (icon-only).
       btn(icon("crosshair"), {
-        title: "Fit, reset the canvas view to centre at 100%",
-        ariaLabel: "Fit, reset the canvas view to centre at 100%",
+        title: "Fit: reset the canvas view to centre at 100%",
+        ariaLabel: "Fit: reset the canvas view to centre at 100%",
         onclick: () => {
           this.fit();
           this.render();
@@ -875,7 +875,7 @@ export class ColorSectionImpl {
         class: "canvas-area canvas-scheme-" + this.resolvedCanvasScheme() + (isTable ? " is-table" : ""),
         style: "--canvas-bg:" + this.canvasBg(),
         role: "group",
-        "aria-label": isTable ? "Semantic mapping table" : "Palette canvas, drag to pan, wheel to zoom, double-click to reset",
+        "aria-label": isTable ? "Semantic mapping table" : "Palette canvas: drag to pan, wheel to zoom, double-click to reset",
       },
       h("div", { class: "canvas-scene" }, scene),
     );
@@ -910,7 +910,7 @@ export class ColorSectionImpl {
     const on = this.colorMode === "both";
     return btn(icon("sidebar"), {
       cls: "scheme-btn" + (on ? " on" : ""),
-      title: on ? "Compare is on, click to return to a single scheme" : "Compare, Light & Dark side by side",
+      title: on ? "Compare is on, click to return to a single scheme" : "Compare: Light & Dark side by side",
       ariaLabel: on ? "Compare is on, click to return to a single scheme" : "Compare Light & Dark side by side",
       ariaPressed: on ? "true" : "false",
       onclick: () => this.toggleColorCompare(),
@@ -936,7 +936,7 @@ export class ColorSectionImpl {
   renderCompareArea(view) {
     const area = h(
       "div",
-      { class: "canvas-area canvas-compare", role: "group", "aria-label": "Compare, Light and Dark side by side · drag to pan, wheel to zoom" },
+      { class: "canvas-area canvas-compare", role: "group", "aria-label": "Compare: Light and Dark side by side · drag to pan, wheel to zoom" },
       h("div", { class: "canvas-scene compare" },
         this._compareColumn(view, "light"),
         this._compareColumn(view, "dark")),
@@ -1327,7 +1327,7 @@ export class ColorSectionImpl {
     const tokenName = (ref) => n + "-" + (ref.includes("-") ? ref : ref.padStart(3, "0")); // the displayed raw-token name
     const padRef = (ref) => (ref.includes("-") ? ref : ref.padStart(3, "0"));
     const drift = this.liveVars ? this.driftSummary() : null; // the Figma drift-diff summary, if a live read was done
-    // per-mode drift cell: check = matches the file / ✗ drifted / - not in the file / · not read yet.
+    // per-mode drift cell: check = matches the file / ✗ drifted / n/a not in the file / · not read yet.
     const driftCell = (ref, hex) => {
       const st = this.driftStatus(n + "/" + padRef(ref), hex);
       const title = { match: "Matches the file", drift: "Drifted from the file", absent: "Not in the file" }[st]
@@ -2207,7 +2207,7 @@ export class ColorSectionImpl {
             "Chroma basis",
             switchControl({
               on: d.relChroma,
-              ariaLabel: "Chroma basis, gamut when on, peak when off",
+              ariaLabel: "Chroma basis: gamut when on, peak when off",
               label: d.relChroma ? "gamut" : "peak",
               onToggle: () => this.commit((doc) => (doc.relChroma = !doc.relChroma)),
             }),

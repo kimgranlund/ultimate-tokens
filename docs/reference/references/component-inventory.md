@@ -144,7 +144,7 @@ incrementally.
   the `.on` class.
 - **a11y** ✓ real `<button>`: focusable, `:focus-visible` ring, Space/Enter toggle from the platform;
   ✓ `role="switch"` + `aria-checked`; ✓ `aria-label` carries the stable purpose ("Palette enabled" /
-  "Chroma basis …"). The palette site sits in a bare `field` div with no `<label>` at all
+  "Chroma basis: gamut when on, peak when off"). The palette site sits in a bare `field` div with no `<label>` at all
   (`sections/color.js:1770`); the Chroma basis site goes through `field()`, which also associates a
   `label[for]` (`app-helpers.mjs:563`).
 - **Geometry** ad-hoc (34×19 track / 15px thumb).
