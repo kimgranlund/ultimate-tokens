@@ -133,9 +133,9 @@ incrementally.
 ### 2 · Toggle / switch  (was the worst card; now `switchControl()`)
 
 - **Surface** S1. **Sites** 2: palette Enabled/Disabled (`switchControl`, `sections/color.js:1771`) and
-  Chroma basis peak/gamut (`switchControl`, `sections/color.js:2208`). Hue space OKLCH/CAM16 is **not** a toggle any more:
-  it is a `segmented()` `role=group` (`sections/color.js:2177`, card 3), as is its On-colors sibling
-  (`sections/color.js:2182`).
+  Chroma basis peak/gamut (`switchControl`, `sections/color.js:2256`). Hue space OKLCH/CAM16 is **not** a toggle any more:
+  it is a `segmented()` `role=group` (`sections/color.js:2225`, card 3), as is its On-colors sibling
+  (`sections/color.js:2244`).
 - **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:955-971`; the `.track`
   is 34×19 with a 15px ::after thumb that translates on `.on`.
 - **API** `switchControl({ on, onToggle, label, ariaLabel })` (`app-helpers.mjs:370`), a
@@ -161,7 +161,7 @@ incrementally.
 - **Surface** S1. **Sites** 15 static `segmented()` calls: section switcher `app.js:1416`; inspector
   tabs `app.js:1937`, `sections/typography.js:613`, `sections/geometry.js:716`; new-palette mode
   `sections/color.js:537`; canvas view `sections/color.js:814`; canvas stops `sections/color.js:829`;
-  hue space `sections/color.js:2177`; on-colors `sections/color.js:2196`; breakpoint mode
+  hue space `sections/color.js:2225`; on-colors `sections/color.js:2244`; breakpoint mode
   `sections/typography.js:177`, `sections/geometry.js:230`; specimen mode `sections/typography.js:308`,
   `sections/geometry.js:381`; Figma files `overlays/drawer.js:214`; and one settings-row call
   `overlays/settings.js:30` inside the settingRow helper, one live instance per settings row, called
@@ -202,7 +202,7 @@ incrementally.
 
 - **Surface** S1. **Sites** one helper `slider(label,value,min,max,step,fmtFn,onInput)`
   (`app.js:2053-2078`), ~14 instances: Hue/Chroma/Skew/Lift/Edge-hue `sections/color.js:1785-1812`;
-  Tension/L*min/L*max/Damp/Chroma-floor/Falloff/Amplify/Bias `sections/color.js:2039-2061`.
+  Tension/L*min/L*max/Damp/Chroma-floor/Falloff/Amplify/Bias `sections/color.js:2179-2202`.
 - **Anatomy** `.field` `[ label · readout(<b>) · input[type=range] ]`; track + custom `thumb` (`styles.css:936-950`).
 - **API** clean function signature; `fmtFn` for the live readout, `onInput` callback; `data-fk`
   carries a focus key so re-render preserves focus, `app.js:2062`.
@@ -220,12 +220,12 @@ incrementally.
 
 ### 5 · Select (native)
 
-- **Surface** S1. **Sites** 3: Distribution (`field()`, `sections/color.js:2076`), Curve (`sections/color.js:2120`),
+- **Surface** S1. **Sites** 3: Distribution (`field()`, `sections/color.js:2124`), Curve (`sections/color.js:2169`),
   `.map-raw-select` raw token (`sections/color.js:1354`, with `.ov` override state).
 - **Anatomy** native `<select>` + `<option>[]`; `.map-raw-select` is a compact mono variant
   (`styles.css:723-729`).
 - **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1354-1356`);
-  ✓ Distribution/Curve are built through `field()` (`sections/color.js:2076/2120`), which stamps an `id`
+  ✓ Distribution/Curve are built through `field()` (`sections/color.js:2124/2169`), which stamps an `id`
   on the `<select>`, associates the `<label for>` with it and adds a fallback `aria-label`
   (`app-helpers.mjs:563-571`) → the visible label is the accessible name.
 - **Flag** none; the two naming paths (`field()` vs inline `aria-label`) both yield a name.
