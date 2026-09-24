@@ -58,18 +58,30 @@ comment edits; no source or test logic touched.
    table cells (`0` and a "sampled M-B: exit 1, 3/400, ceiling line count 1" reading), not
    prose labels, so they are out of scope per the brief.
 
+7. `.sdlc/adapter.md` section 7's proposed `.claude/CLAUDE.md` text (commit `e330d24a`,
+   team-lead follow-up). Section 1's own Gates table (line 26) and `.sdlc/baseline.md`
+   (line 19) already agreed with each other: both quote `npm test`'s three quiet-host
+   readings as `89.10 · 79.93 · 80.07` and the range as `80 to 89 s`, so no fix was needed
+   there. Section 7's own proposal text disagreed with section 1's own table. Before:
+   `npm test (no `node_modules`, ~60 s, tree clean after)` and `green CI (`build-test` +
+   `panda-smoke`)`. After: `npm test (no `node_modules`, 80 to 89 s, tree clean after)`
+   and `green CI (`build-test`, `panda-smoke`, `corpus-contrast`, `sweeps`)`, matching
+   section 1's Gates table (`80 to 89 s`; the CI-on-a-PR row's four jobs) and the CI job
+   list `.claude/CLAUDE.md` already carries. `.claude/CLAUDE.md` itself is untouched:
+   its own `~60 s` line (`:95`) is a separate, owner-pending item (X9), not this file.
+
 ## Not this unit's
 
-`.claude/CLAUDE.md:95`'s `~60 s` line (owner ruling, X9), `test/engine/anchor.mjs`'s two
-nits (`allowListOk` hoisting, `seenCats`/`brands` coverage), and every item the review
+`.claude/CLAUDE.md:95`'s `~60 s` line (owner ruling, X9, pending), `test/engine/anchor.mjs`'s
+two nits (`allowListOk` hoisting, `seenCats`/`brands` coverage), and every item the review
 lists as correctly deferred (U6-5's `STALE head`, the `note head:` on the two main-side
 files, `.sdlc/debt.md`'s K17 drift list, the `symmetry` anchored-corpus leg).
 
 ## Close-out checks
 
-- `npm test` in a fresh clone at `587ff627` (final head): `all 50 test files passed`,
-  `git status --short` empty after.
-- `node test/repo/branding.mjs | tail -1`: `branding: clean (693 files scanned)`.
+- `npm test` in a fresh clone at each head, including `e330d24a` (final head): `all 50
+  test files passed`, `git status --short` empty after.
+- `node test/repo/branding.mjs | tail -1`: `branding: clean (694 files scanned)`.
 - Added-line em dash count against `origin/main` (`git merge-base origin/main HEAD` =
   `2890d67a`): `git diff $BASE | grep -v '^+++ ' | grep '^+' | perl -CSD -ne 's/`[^`]*`//g;
   print if /\x{2014}/' | wc -l` reads `0`.
@@ -80,5 +92,7 @@ files, `.sdlc/debt.md`'s K17 drift list, the `symmetry` anchored-corpus leg).
   note (#713 U7)
 - `587ff627` gate-split: pin shipping-changes CI figure, fix handoff quotes and bold
   labels (#713 U7)
+- `e330d24a` gate-split: fix adapter.md's own SDLC-proposal npm test and CI figures
+  (#713 U7)
 
-Head: `587ff627`.
+Head: `e330d24a`.
