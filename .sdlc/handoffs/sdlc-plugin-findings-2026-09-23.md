@@ -18,3 +18,10 @@ From the ultimate-tokens Conductor (session ef9dc581), running plugin 0.2.0 and 
 ## Filed (plugin roadmap at `c77fa3c`, sdlc-orchestration)
 
 P1 `ut-worker-monitor-stall` · P2 `ut-worker-record-selfcheck` · P3 `ut-land-ignores-title-body` · P4 `ut-up-wakes-rival-seats` (plugin P1) · P5 `ut-up-keeps-stale-hooks-path` (plugin P1) · P6 `ut-grade-fallback-silent` · P7 `ut-worker-hook-bypass` (plugin P1) · P8 `ut-worker-scratch-unremovable` · P9 `ut-detached-test-outlives-stop` · P10 `ut-ragboard-stale-worktree`. The plugin files findings as roadmap rows, not tickets.
+
+## Added 2026-09-24
+
+| # | Finding | Evidence | Asked fix |
+|---|---|---|---|
+| P11 | `worktrees.py` cut a plan worktree on a stray `unit/plan-okl-memo` branch instead of `plan/okl-memo` | okl-memo start, 2026-09-24; the orchestrator moved it back by hand | The plan worktree checks out `plan/<slug>`; a unit-prefixed name is a refusal |
+| P1+ | The monitor stall (P1) recurred twice more after filing: the hx-U1 builder idled 9 h on background runs with its source done and no handoff; a prior hx-U1 builder restarted `npm test` 10 s after being told to hold | hx-U1, 2026-09-23 and 2026-09-24 | as P1: foreground-only in the builder template, enforced, not advised |
