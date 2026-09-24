@@ -450,10 +450,15 @@ regression that widens the hole is caught while a silent improvement still passe
 
 **An achromatic anchor gives the ramp no hue of its own (Ticket #739, ruled 2026-09-23).** A sampled
 anchor whose OKLab chroma sits under `ACHROMATIC_ANCHOR_C` (0.002) is a grey, white, or black source:
-its stored hue is rounding residue, not a colour anyone chose, so the anchor still contributes its own
-lightness and (near-zero) chroma at the pivot the way any anchor does (`anchorChromaBasis`, above), but
-the ramp's hue comes from the palette's own stored hue instead, on both anchored branches, in all three
-tone modes. A chromatic anchor (OKLab C at or above the constant) is untouched: it renders from its own
-hue exactly as before this ticket. `rgbToOkhsl` reads pure black (`s = 0`, Ticket #681 U10) and pure
-white (`s = 0`, this ticket) as achromatic; `#FFFFFF`'s OKLab L rounds to 0.99999999, not exactly 1, so
-the white guard checks a tolerance rather than `L >= 1`.
+its own MEASURED hue (the anchor's OKLCH hue on the CIE branch, its OKHSL hue on the OKHSL branch) is
+rounding residue, not a colour anyone chose, so the anchor still contributes its own lightness and
+(near-zero) chroma at the pivot the way any anchor does (`anchorChromaBasis`, above), but the ramp's
+hue comes from the palette's own stored `hue` instead, on both anchored branches, in all three tone
+modes. The two branches seed that hue differently, as they always have: the OKHSL branch
+(`okhslStopsAnchored`, perceptual and peak) uses `palette.hue` directly, since OKHSL hue IS OKLab hue;
+the CIE branch (`paletteStopsAnchored`, even) seeds through `effHue(palette.hue, controls.hueSpace,
+hueAnchorFrac(palette, controls))`, the same conversion the non-anchored construction uses to turn an
+OKLCH-hue palette into a CAM16 seed. A chromatic anchor (OKLab C at or above the constant) is
+untouched: it renders from its own hue exactly as before this ticket. `rgbToOkhsl` reads pure black
+(`s = 0`, Ticket #681 U10) and pure white (`s = 0`, this ticket) as achromatic; `#FFFFFF`'s OKLab L
+rounds to 0.99999999, not exactly 1, so the white guard checks a tolerance rather than `L >= 1`.

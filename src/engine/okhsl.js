@@ -181,7 +181,7 @@ export function rgbToOklchHue([r, g, b]) {
   return h < 0 ? h + 360 : h;
 }
 
-// rgbToOklabChroma([r,g,b]) — the OKLab chroma (hypot(a, b)) of an sRGB color. Unlike CAM16 chroma,
+// rgbToOklabChroma([r,g,b]) - the OKLab chroma (hypot(a, b)) of an sRGB color. Unlike CAM16 chroma,
 // this reads exactly 0 for an exact grey and near-0 for a color within a code or two of one, so it is
 // what `tonal.js` tests an anchor against to decide whether it is achromatic (Ticket #739): CAM16
 // chroma of a neutral is not 0 in this implementation and cannot serve as that test.

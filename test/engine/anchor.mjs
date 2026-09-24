@@ -1315,8 +1315,15 @@ for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
 
 // ── achromatic-anchor (Ticket #739): an achromatic anchor gives the ramp the PALETTE's hue, not its
 // own rounding-residue hue; a chromatic anchor (OKLab C above ACHROMATIC_ANCHOR_C) is untouched. Both
-// sides are pinned so a future edit cannot widen the constant's reach or narrow it silently. ─────────
+// sides are pinned so a future edit cannot widen the constant's reach or narrow it silently.
 {
+  // R1 finding 1: the CAM16-C-5 skip must have a floor, or a regression that renders every checked
+  // cell achromatic (e.g. the rejected Q1 (b) shape - pinning chroma to the anchor's own value at
+  // every stop, not just the pivot) passes vacuously ("0 of 0"). skippedOk is the predicate both the
+  // real run and the planted control below call, so the control exercises the SAME check the real
+  // assertion uses, not a second copy that could disagree with it.
+  const skippedOk = (skipped) => skipped <= 3;
+  if (skippedOk(30)) FAIL("achromatic-anchor", "negative control: a planted 30-of-30-skipped run did not fail skippedOk - the floor cannot bite");
   const HUE = 250, CHROMA = 50;
   let bound = 0, skipped = 0;
   for (const anchor of ["#808080", "#808081", "#FFFFFF", "#000000", "#010101"]) {
@@ -1337,6 +1344,7 @@ for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
       }
     }
   }
+  if (!skippedOk(skipped)) FAIL("achromatic-anchor", `${skipped} of 30 cells skipped under CAM16 C 5, want at most 3 - too many stops rendered achromatic to trust the ${bound}-cell bound below it`);
   // Negative control: the predicate must actually bite. Two codes off grey (#808082, OKLab C ~0.0030,
   // above the 0.002 constant) is chromatic, so this file first proves the achromatic branch would
   // fail this exact assertion if the constant swallowed it - by asserting #808082's own OKLab C sits
