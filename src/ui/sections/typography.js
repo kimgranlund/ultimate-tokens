@@ -176,7 +176,7 @@ export class TypeSectionImpl {
       { class: "mode-control" },
       this.segmented(items, this.typeMode, (id) => { this.typeMode = id; this.render(); },
         { cls: "canvas-seg", ariaLabel: "Typography breakpoint mode", role: "group", idPrefix: "tmode" }),
-      btn(icon("plus"), { cls: "mode-add", ariaLabel: "Add a breakpoint mode", title: "Add a breakpoint, a named scale with its own body size", onclick: () => this.addTypeMode() }),
+      btn(icon("plus"), { cls: "mode-add", ariaLabel: "Add a breakpoint mode", title: "Add a breakpoint: a named scale with its own body size", onclick: () => this.addTypeMode() }),
     );
   }
 
@@ -338,7 +338,7 @@ export class TypeSectionImpl {
     // Compare (Phase 5.3), all breakpoints side by side. A Specimen/Controls view, so it wins over the tokens
     // table (mirrors how Color's "Both" wins over a non-table view in renderCanvasArea).
     if (this.typeMode === "compare") return this.renderTypeCompareArea(view);
-    if (this.typeSpecMode === "tokens") return this._tokensTableArea("Typography tokens, Base + breakpoints", this.renderTypeTokensTable());
+    if (this.typeSpecMode === "tokens") return this._tokensTableArea("Typography tokens: Base + breakpoints", this.renderTypeTokensTable());
     const area = h(
       "div",
       {
@@ -881,13 +881,13 @@ export class TypeSectionImpl {
   _fontStatus(family) {
     if (this.inFigma) {
       if (!this._figmaFonts) return { state: "unknown", label: "checking…", title: "Asking Figma which font families it can use." };
-      if (this._figmaFonts.has(family)) return { state: "ok", label: "in Figma", title: "Figma has this family, its text styles render in the real face." };
+      if (this._figmaFonts.has(family)) return { state: "ok", label: "in Figma", title: "Figma has this family: its text styles render in the real face." };
       return { state: "sub", label: "not in Figma", title: "Figma doesn't have this family. Its text styles are built on a placeholder face, but the family stays bound to the font variable, install the font and they adopt it, no re-apply." };
     }
-    if (SELF_HOSTED_FONTS.has(family)) return { state: "ok", label: "bundled", title: "Embedded in the app, renders offline, and inside the Figma plugin." };
+    if (SELF_HOSTED_FONTS.has(family)) return { state: "ok", label: "bundled", title: "Embedded in the app: renders offline, and inside the Figma plugin." };
     if (GENERIC_FONTS.has(String(family).toLowerCase())) return { state: "ok", label: "generic", title: "A CSS generic family." };
     return this._faceRenders(family)
-      ? { state: "ok", label: "loaded", title: "Loaded from Google Fonts, the specimen renders the real face." }
+      ? { state: "ok", label: "loaded", title: "Loaded from Google Fonts: the specimen renders the real face." }
       : { state: "fallback", label: "falls back", title: "Not loaded (not a Google font, or still loading), the specimen renders the closest generic. Exports still carry the exact family name." };
   }
 

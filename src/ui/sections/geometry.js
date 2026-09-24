@@ -229,7 +229,7 @@ export class GeomSectionImpl {
       { class: "mode-control" },
       this.segmented(items, this.geomMode, (id) => { this.geomMode = id; this.render(); },
         { cls: "canvas-seg", ariaLabel: "Geometry breakpoint mode", role: "group", idPrefix: "gmode" }),
-      btn(icon("plus"), { cls: "mode-add", ariaLabel: "Add a breakpoint mode", title: "Add a breakpoint, a named ramp with its own base control height", onclick: () => this.addGeomMode() }),
+      btn(icon("plus"), { cls: "mode-add", ariaLabel: "Add a breakpoint mode", title: "Add a breakpoint: a named ramp with its own base control height", onclick: () => this.addGeomMode() }),
     );
   }
 
@@ -410,7 +410,7 @@ export class GeomSectionImpl {
   renderGeomCanvas(view) {
     // Compare (Phase 5.3), all breakpoints side by side. A Controls view, so it wins over the tokens table.
     if (this.geomMode === "compare") return this.renderGeomCompareArea(view);
-    if (this.geomSpecMode === "tokens") return this._tokensTableArea("Geometry tokens, Base + breakpoints", this.renderGeomTokensTable());
+    if (this.geomSpecMode === "tokens") return this._tokensTableArea("Geometry tokens: Base + breakpoints", this.renderGeomTokensTable());
     const area = h(
       "div",
       {
@@ -575,10 +575,10 @@ export class GeomSectionImpl {
     const ladder = scale.ramp === RAMP_LADDER;
     const card = (label, body) => h("div", { class: "an-card" }, h("div", { class: "an-label" }, label), body);
     return [
-      card(ladder ? "Ladder anatomy, pad = inset (a separate law)" : "Centering law, pad = ½(height − glyph)", this.graphGeomCentering(scale)),
-      card("Power-law ramp, icon & font vs height", this.graphGeomPower(scale)),
-      card(ladder ? "Linear ramp, height per step (no gear change)" : "Two-band ramp, height per step", this.graphGeomBands(scale)),
-      card(ladder ? "Font, the ladder's own formula" : "Font ← Typography UI, shared text size", this.graphGeomComposition(scale)),
+      card(ladder ? "Ladder anatomy: pad = inset (a separate law)" : "Centering law: pad = ½(height − glyph)", this.graphGeomCentering(scale)),
+      card("Power-law ramp: icon & font vs height", this.graphGeomPower(scale)),
+      card(ladder ? "Linear ramp: height per step (no gear change)" : "Two-band ramp: height per step", this.graphGeomBands(scale)),
+      card(ladder ? "Font: the ladder's own formula" : "Font ← Typography UI: shared text size", this.graphGeomComposition(scale)),
     ];
   }
 

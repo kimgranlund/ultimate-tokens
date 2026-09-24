@@ -1235,7 +1235,7 @@ class HctApp extends HTMLElement {
   _blockedBySetCap() {
     const cap = this.flagOf("maxSets");
     if (!Number.isFinite(cap) || this.sets.length < cap) return false;
-    this.toast(`Free is limited to ${cap} brand kit${cap === 1 ? "" : "s"}, upgrade to Pro for unlimited.`);
+    this.toast(`Free is limited to ${cap} brand kit${cap === 1 ? "" : "s"}. Upgrade to Pro for unlimited.`);
     if (!this.inFigma) { this.settingsSection = "account"; this.openSettings(); }
     return true;
   }

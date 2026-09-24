@@ -164,7 +164,7 @@ export class ApplyGateMixinImpl {
     const what = [varsPart, stylesPart].filter(Boolean).join(" + ");
     const missing = m && Array.isArray(m.missingFonts) ? m.missingFonts : [];
     const subbed = m && Array.isArray(m.substitutedFonts) ? m.substitutedFonts : [];
-    this.toast(what ? `Applied ${what} to Figma, check the Variables & Styles panels` : "Applied to Figma, check the Variables panel");
+    this.toast(what ? `Applied ${what} to Figma. Check the Variables & Styles panels` : "Applied to Figma. Check the Variables panel");
     // SECOND toast, the font reality. A substituted family means the style EXISTS with its family
     // still bound to the Type Primitives variable: installing the font adopts it, no re-apply needed.
     // (The sandbox's own notify races the apply-done toast and gets lost, so the UI says it too.)
@@ -176,7 +176,7 @@ export class ApplyGateMixinImpl {
     if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465
     this._applyBusy = false; // TKT-0004: clear the persistent busy state on failure too (the toast still carries the error detail)
     this.render();
-    this.toast("Couldn't apply to Figma, please try again.");
+    this.toast("Couldn't apply to Figma. Please try again.");
   }
 
   // _onApplyTimeout, #465's fallback: fires ONLY if neither onApplyDone nor onApplyError ever
@@ -221,7 +221,7 @@ export class ApplyGateMixinImpl {
       const { textNames, paintNames } = this._sweepNames();
       this.sweepBusy = true; this.render();
       parent.postMessage({ pluginMessage: { type: "sweep-scan", textNames, paintNames } }, "*");
-    } catch { this.sweepBusy = false; this.toast("Couldn't scan, please try again."); }
+    } catch { this.sweepBusy = false; this.toast("Couldn't scan. Please try again."); }
   }
 
   receiveSweepScan(m) {
@@ -248,7 +248,7 @@ export class ApplyGateMixinImpl {
     if (!this.inFigma || this.sweepBusy || !this.sweepSelected.size) return;
     this.sweepBusy = true; this.render();
     try { parent.postMessage({ pluginMessage: { type: "sweep-delete", ids: [...this.sweepSelected] } }, "*"); }
-    catch { this.sweepBusy = false; this.toast("Couldn't delete, please try again."); }
+    catch { this.sweepBusy = false; this.toast("Couldn't delete. Please try again."); }
   }
 
   onSweepDone(m) {

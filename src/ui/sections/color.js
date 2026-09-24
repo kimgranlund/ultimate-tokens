@@ -597,7 +597,7 @@ export class ColorSectionImpl {
       h(
         "div",
         { class: "newpal-diagram" },
-        h("div", { class: "newpal-diagram-title" }, "Hue × chroma, context + proposed"),
+        h("div", { class: "newpal-diagram-title" }, "Hue × chroma: context + proposed"),
         this._hueCircle(view, proposed),
       ),
       h(
@@ -1248,7 +1248,7 @@ export class ColorSectionImpl {
           strip,
         );
       });
-    if (rows.length === 0) return h("div", { class: "empty-note" }, "No enabled palettes, toggle one on to see its scrims");
+    if (rows.length === 0) return h("div", { class: "empty-note" }, "No enabled palettes. Toggle one on to see its scrims");
     const stack = h("div", { class: "ramp-stack" }, ...rows);
     this._wireReorder(stack); // reorder works in the scrim view too
     return stack;
@@ -2211,7 +2211,7 @@ export class ColorSectionImpl {
               label: d.relChroma ? "gamut" : "peak",
               onToggle: () => this.commit((doc) => (doc.relChroma = !doc.relChroma)),
             }),
-            { labelTitle: "peak: chroma is % of each hue's own peak. gamut: % of every stop's gamut ceiling, palettes harmonize across hue." },
+            { labelTitle: "peak: chroma is % of each hue's own peak. gamut: % of every stop's gamut ceiling: palettes harmonize across hue." },
           )
         : false,
       // Data palettes (SPEC spec-muted-base-key-spikes REQ-032/REQ-012, U8), the opt-in path for
@@ -2247,7 +2247,7 @@ export class ColorSectionImpl {
       "div",
       {},
       h("h3", { class: "insp-title" }, icon("roles"), "Roles"),
-      h("div", { class: "insp-sub" }, `${p ? p.name : ""}, 53 semantic roles · light / dark refs`),
+      h("div", { class: "insp-sub" }, `${p ? p.name : ""}: 53 semantic roles · light / dark refs`),
       // (the live component preview is pinned at the bottom of the pane on every
       // tab, see .seg-example / exampleCard, so the Roles panel no longer repeats
       // it here at the top.)

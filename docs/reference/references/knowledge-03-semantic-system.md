@@ -115,7 +115,7 @@ Both are fixed to the light end in *both* modes, for *all* palettes.
   interaction-state families, `outline`/`container` Hover·Active·Disabled, plus
   `{n}Disabled` (600) and `on{N}Disabled` (400).
 
-> **A scrim is a sub-variant of the palette**, based on the 500 stop, it tracks the palette as
+> **A scrim is a sub-variant of the palette**: based on the 500 stop, it tracks the palette as
 > hue/chroma/skew/lift change. This 500-ramp revision **supersedes** the former 3-base model
 > (bases 250/500/750 × 7 fixed alpha indices) and the OD-002 base-coverage decision, `outline`
 > and `container*`, formerly 250-light/750-dark, are now mode-flat on the 500 ramp (a deliberate

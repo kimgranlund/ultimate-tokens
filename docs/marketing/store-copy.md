@@ -151,10 +151,10 @@ rest of the body to begin after it so the card truncates on a complete thought
 > ### What Pro unlocks
 > Free gives you the full generator and two brand kits, enough to ship a real system. **Pro removes the
 > ceiling:**
-> - **Unlimited brand kits**, every client, product, and experiment in one place
-> - **The complete export suite**, every target, every format
+> - **Unlimited brand kits**: every client, product, and experiment in one place
+> - **The complete export suite**: every target, every format
 > - **Advanced type & geometry treatments**
-> - **Hosted Brand-Kit MCP, when it ships**, Pro will include the hosted endpoint; today every tier
+> - **Hosted Brand-Kit MCP, when it ships**: Pro will include the hosted endpoint; today every tier
 >   gets the downloadable server
 >
 > **$39 a year**, per user, every update and customer support included. Cancel anytime.
@@ -186,8 +186,8 @@ links the variant deep-link `…/checkout/buy/1849376` instead (§4.2).
 > suite, and advanced treatments, at a **reduced per-seat rate**, billed once and managed from a single
 > account.
 >
-> - **5 seats included**, add more anytime at $19 / seat / year
-> - **One place to manage**, assign and reassign seats as the team changes
+> - **5 seats included**: add more anytime at $19 / seat / year
+> - **One place to manage**: assign and reassign seats as the team changes
 > - **Every update and priority support**, included for all seats
 >
 > **$149/year** includes **5 seats**; add more at **$19/seat/year**. Need a bigger team or an invoice?
@@ -203,15 +203,15 @@ bullets + FAQ only.
 **Feature / benefit bullets (shared spec block)**
 
 ```
-• OKLCH-native, perceptually even ramps; HEX derived only for output
+• OKLCH-native: perceptually even ramps; HEX derived only for output
 • 53 semantic roles per palette, light + dark
-• Three composing systems, Color · Typography · Geometry
+• Three composing systems: Color · Typography · Geometry
 • Exports: CSS · DTCG · Tailwind · shadcn · Panda CSS · Radix
-• Your own naming, Ultimate, Material 3-style --md-sys-*, or a --{brand}-* root
-• Figma variables, semantic binding cascade + breakpoint modes, plus bound paint & text style swatches
-• Brand-Kit MCP, feed your exact tokens to Claude, Cursor, VS Code
-• Free Claude plugin, your coding agent applies your exact roles, not a guess
-• Design-system export, hand your kit to Claude, Google Stitch, or Figma Make to generate on-brand UI (free)
+• Your own naming: Ultimate, Material 3-style --md-sys-*, or a --{brand}-* root
+• Figma variables: semantic binding cascade + breakpoint modes, plus bound paint & text style swatches
+• Brand-Kit MCP: feed your exact tokens to Claude, Cursor, VS Code
+• Free Claude plugin: your coding agent applies your exact roles, not a guess
+• Design-system export: hand your kit to Claude, Google Stitch, or Figma Make to generate on-brand UI (free)
 • Free Figma plugin, fully offline
 • Your data stays in your browser / your file
 ```

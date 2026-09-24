@@ -56,10 +56,10 @@ Teach your coding agent to build with your exact tokens, which role goes where, 
 **What it teaches the agent (feature bullets)**
 
 ```
-• color-tokens, which of the 53 semantic roles goes where; the on-colour pairing law, per state
-• typography-tokens, the eleven-voice scale, role × level (size derived, never guessed) <!-- fix-old-names: keep -->
-• geometry-tokens, the two-tier dimensional system + the Material-3-aligned radius scale
-• token-integrator, binds to your real exported variables; wires a component or migrates a UI
+• color-tokens: which of the 53 semantic roles goes where; the on-colour pairing law, per state
+• typography-tokens: the eleven-voice scale, role × level (size derived, never guessed) <!-- fix-old-names: keep -->
+• geometry-tokens: the two-tier dimensional system + the Material-3-aligned radius scale
+• token-integrator: binds to your real exported variables; wires a component or migrates a UI
 • Parity-gated against the engines in the generator's test suite, guidance can't drift from the kit
 ```
 

@@ -7,7 +7,7 @@ classes). The sample here is the **Comfortable** treatment at a 28px base height
 
 ## The law (the one rule)
 
-> **Edge padding for a glyph = (height − glyph) / 2**, every glyph centers in a square cell of side =
+> **Edge padding for a glyph = (height − glyph) / 2**: every glyph centers in a square cell of side =
 > the control height. `padding-block` is `0`; **block-size is the vertical lever, never block-padding**.
 
 From that single rule fall out: the slot padding (`½(height − icon)`), the slotless/bare-label edge

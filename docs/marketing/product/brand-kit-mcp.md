@@ -39,9 +39,9 @@ claude mcp add brand-kit -- node /path/to/brand-kit-server.mjs
 **What the agent can ask (feature bullets)**
 
 ```
-• get_semantic, the 53-role semantic layer, light + dark
-• get_type / get_geometry, the composed scales
-• resolve_token / nearest_token, exact lookups, no approximations
+• get_semantic: the 53-role semantic layer, light + dark
+• get_type / get_geometry: the composed scales
+• resolve_token / nearest_token: exact lookups, no approximations
 • brand:// resources + an apply_brand prompt
 ```
 

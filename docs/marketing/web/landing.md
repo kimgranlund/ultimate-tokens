@@ -74,9 +74,9 @@ Design tokens, derived, not guessed.
 
 **H2** `Free to start. Pro when you outgrow it.`
 
-> **Free**, the full generator, 2 brand kits, core exports, the offline Figma plugin, the MCP
+> **Free**: the full generator, 2 brand kits, core exports, the offline Figma plugin, the MCP
 > download, the design-system export.
-> **Pro, $39/year, per user**, unlimited kits, the complete export suite, advanced treatments,
+> **Pro, $39/year, per user**: unlimited kits, the complete export suite, advanced treatments,
 > updates and support.
 > **Studio, $149/year for 5 seats** (+$19/seat/year), Pro for the whole team, one account.
 >

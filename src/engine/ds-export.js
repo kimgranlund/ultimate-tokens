@@ -736,7 +736,7 @@ function dsSpineBody(ds, state, ctx) {
   const refuses = story.refuses || "Generic, low-contrast, decorative color with no semantic role.";
 
   // Colors, enumerate every family + chrome slot so the prose–token accord holds.
-  const famBullet = (f, note) => has(f) ? `- **${cap(f)} \`${ref(f)}\`**, ${note} Its label is \`${ref(f + "-on-" + f)}\`.` : "";
+  const famBullet = (f, note) => has(f) ? `- **${cap(f)} \`${ref(f)}\`**: ${note} Its label is \`${ref(f + "-on-" + f)}\`.` : "";
   const brandBullets = [
     famBullet(brand, "the one decisive action per view: CTAs, links, selection. `-hover`/`-active` carry its states."),
     secondary ? famBullet(secondary, "supporting actions and quieter emphasis.") : "",
@@ -764,18 +764,18 @@ function dsSpineBody(ds, state, ctx) {
     `- App surfaces live in the neutral family: \`--${pfx}-${cn}-background\`, \`-surface\`, \`-surface-high\`; text on`,
     "  them: `-on-surface`, `-on-surface-variant`; hairlines: `-outline-variant`.",
     `- **Prefix-adaptive**: under another prefix (\`--md-sys-*\`, \`--color-*\`), keep \`{family}-{slot}\` intact and swap only the prefix.`, "",
-    `- **Surfaces**, the room, lowest to top: Background \`${ref(cn + "-background")}\` / Surface \`${ref(cn + "-surface")}\` /`,
+    `- **Surfaces**: the room, lowest to top: Background \`${ref(cn + "-background")}\` / Surface \`${ref(cn + "-surface")}\` /`,
     `  Surface-raised \`${ref(cn + "-surface-high")}\`; hover wash \`${ref(cn + "-surface-dim")}\` (darker in BOTH schemes, an`,
-    `  interaction STATE, never \`-surface-high\`, which is a MIRRORED elevation stop). **Foreground \`${ref(cn + "-on-surface")}\`**, primary text; **Muted`,
-    `  \`${ref(cn + "-on-surface-variant")}\`**, secondary text; **Border \`${ref(cn + "-outline-variant")}\`**, a translucent hairline (same value`,
-    `  both schemes); **Strong border \`${ref(cn + "-outline")}\`**, a firmer hairline for a stronger divide (a table's`,
+    `  interaction STATE, never \`-surface-high\`, which is a MIRRORED elevation stop). **Foreground \`${ref(cn + "-on-surface")}\`**: primary text; **Muted`,
+    `  \`${ref(cn + "-on-surface-variant")}\`**: secondary text; **Border \`${ref(cn + "-outline-variant")}\`**: a translucent hairline (same value`,
+    `  both schemes); **Strong border \`${ref(cn + "-outline")}\`**: a firmer hairline for a stronger divide (a table's`,
     "  own header rule, never a row's), still never a full outline weight.",
-    `- **Extended neutral slots**, **Placeholder \`${ref(cn + "-placeholder")}\`** (field placeholder text, never`,
+    `- **Extended neutral slots**: **Placeholder \`${ref(cn + "-placeholder")}\`** (field placeholder text, never`,
     `  \`on-surface-variant\`); **Scrim \`${ref(cn + "-scrim")}\`** (a neutral overlay tint, distinct from the fixed`,
     `  \`--${pfx}-dialog-backdrop\` a real dialog uses, see Elevation & Depth); **Inverse \`${ref(cn + "-inverse-surface")}\`** /`,
     `  \`${ref(cn + "-inverse-on-surface")}\` (a surface that inverts the app's OWN neutral, toasts, tooltips,`,
     "  never a brand family's).",
-    `- **\`-container\` / \`-container-low\` / \`-container-high\`**, quiet emphasis without a full fill, on any family`,
+    `- **\`-container\` / \`-container-low\` / \`-container-high\`**: quiet emphasis without a full fill, on any family`,
     `  (\`${ref(brand + "-container")}\`, \`${ref((intents[0] || fams[fams.length - 1]) + "-container")}\`): a status banner or a`,
     "  tinted panel that reads as the family without competing with its solid fill.",
     brandBullets, "",
@@ -889,9 +889,9 @@ function dsSpineBody(ds, state, ctx) {
     `**Easing.** Entrances \`${MOTION_EASING["standard-decelerate"]}\`; exits \`${MOTION_EASING["standard-accelerate"]}\`; on-screen utility motion`,
     `\`${MOTION_EASING.standard}\`; technical motion (spinners, progress) stays \`linear\`. The **emphasized** family`,
     "is for hero moments only, everywhere-emphasized is just standard with extra cost.", "",
-    "**Animate `transform` and `opacity`, nothing else**, they are the only properties the compositor",
+    "**Animate `transform` and `opacity`, nothing else**: they are the only properties the compositor",
     "holds at 60fps off the main thread. Never animate:", "",
-    ...MOTION_NEVER.map(([what, why]) => `- **${what}**, ${why}.`),
+    ...MOTION_NEVER.map(([what, why]) => `- **${what}**: ${why}.`),
     "",
     "**Reduced motion: reduce, don't remove.** Honour `@media (prefers-reduced-motion: reduce)`, it means",
     "\"this user gets vestibular-safe motion\", not \"this user wants a static page\". Substitute a cross-fade",
@@ -950,10 +950,10 @@ function dsSpineBody(ds, state, ctx) {
   const agent = [
     "## Agent Prompt Guide", "",
     `You are generating UI for **${name}**. Work in this order:`, "",
-    "1. **Tokens first**, colors, type, spacing, radii from the frontmatter; never invent a value. If a",
+    "1. **Tokens first**: colors, type, spacing, radii from the frontmatter; never invent a value. If a",
     "   `tokens.json` arrived beside this file, it carries these same values plus the FULL extended layers",
     "   (`semantic`/`semanticDark`, the complete `geometry` system), prefer it for exhaustive lookups.",
-    "2. **Roles, then scheme**, pick the semantic role; both ends are provided, so never hand-roll a dark",
+    "2. **Roles, then scheme**: pick the semantic role; both ends are provided, so never hand-roll a dark",
     "   variant. Define the roles once as custom properties with native scheme switching, `color-scheme`",
     "   on `:root` is required or the dark end never fires:", "",
     "   ```css",
@@ -964,15 +964,15 @@ function dsSpineBody(ds, state, ctx) {
     "     /* …every role, from its light + -dark pair… */",
     "   }",
     "   ```",
-    "3. **Scale, then states**, size and space from the scales, then add hover/focus/active/disabled from",
+    "3. **Scale, then states**: size and space from the scales, then add hover/focus/active/disabled from",
     "   the Components section, states are where generic output shows.",
-    `4. **One focus per view**, a single \`${brand}\` action; signature families are small reads; intent colors speak only for status.`,
-    `5. **Name by grammar**, construct every token as \`--${pfx}-{family}-{slot}\`; if the host carries a different prefix, adapt the prefix and keep \`{family}-{slot}\` intact.`, "",
+    `4. **One focus per view**: a single \`${brand}\` action; signature families are small reads; intent colors speak only for status.`,
+    `5. **Name by grammar**: construct every token as \`--${pfx}-{family}-{slot}\`; if the host carries a different prefix, adapt the prefix and keep \`{family}-{slot}\` intact.`, "",
     "When rules conflict, the three hard rules win. Mirror the structure and pairing of the `components/` previews.",
   ].filter((l) => l !== "").join("\n");
 
   const overview = [
-    `# ${name}, Design System`, "",
+    `# ${name}: Design System`, "",
     "_Read this file as your instructions, it is the prompt. Token values are normative; the prose explains",
     "how to apply them. Every color role ships a light value and a `-dark` sibling: pick the pair, not one",
     "end. (Generated by Ultimate Tokens.)_", "",
@@ -1056,7 +1056,7 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
   // ── Stitch profile: DESIGN.md-only upload set; a Stitch-lint-framed receipt ──
   if (profile === "google-stitch") {
     return [
-      `# ${folder}, Stitch profile export`, "",
+      `# ${folder}: Stitch profile export`, "",
       `Google Stitch upload set for **${name}**, per the Ultimate Tokens Stitch profile.`,
       "Generated by Ultimate Tokens.", "",
       "**Contents:** `DESIGN.md` only, Stitch consumes a single file. It is rendered from the",
@@ -1086,7 +1086,7 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
   // ── Figma Make profile: a routed guidelines/ tree (no linter/schema of its own) ──
   if (profile === "figma-make") {
     return [
-      `# ${folder}, Figma Make profile export`, "",
+      `# ${folder}: Figma Make profile export`, "",
       `Figma Make kit guidelines for **${name}**, per the Ultimate Tokens Figma Make profile.`,
       "Generated by Ultimate Tokens.", "",
       "**Contents:** `guidelines/`, `Guidelines.md` (entry + routing + hard rules), `setup.md`",
@@ -1130,7 +1130,7 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
 
   // ── Claude Code profile (default): the full DESIGN.md + tokens.json + previews bundle ──
   return [
-    `# ${folder}, Claude profile export`, "",
+    `# ${folder}: Claude profile export`, "",
     `Claude Design / Claude Code consumption bundle for **${name}**, per the Ultimate Tokens Claude profile.`,
     "Generated by Ultimate Tokens.", "",
     "**Contents:** `DESIGN.md` (the universal-dialect core, rendered from the same canonical core",
@@ -1138,7 +1138,7 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
     "`colors`/`colorsDark` grammar + the FULL `semantic`/`semanticDark` role layer + `type` +",
     `\`spacing\`/\`radii\` + the full \`geometry\` system), \`components/*.html\` (${previews.length} self-contained \`@dsCard\` previews).`, "",
     `## Profile receipt (checks run ${date})`, "",
-    `Naming standard: **Ultimate Tokens grammar**, \`--{prefix}-{family}-{slot}\`, prefix \`${pfx}\`, families`,
+    `Naming standard: **Ultimate Tokens grammar**: \`--{prefix}-{family}-{slot}\`, prefix \`${pfx}\`, families`,
     `${ds.families.map((f) => `\`${f}\``).join("/")}; the FULL semantic layer ships in this folder's \`tokens.json\``,
     "(`semantic`/`semanticDark`); the spine's \"Token naming\" section teaches the grammar and prefix adaptivity.", "",
     "Encoding standard: **OKLCH payload** in DESIGN.md frontmatter (Stitch-linter-verified notation);",
@@ -1244,7 +1244,7 @@ function dsMakeGuidelinesMd(name, story) {
   const narrative = story.narrative || "Calm, even surfaces carry the layout; color arrives as accent, not decoration.";
   const refuses = story.refuses || "Generic, low-contrast, decorative color with no semantic role.";
   return [
-    `# ${name}, Guidelines`, "",
+    `# ${name}: Guidelines`, "",
     `You are building UI for **${name}**. ${narrative}`, "",
     `Deliberately refused: ${refuses}`, "",
     "## Stack", "",
@@ -1261,7 +1261,7 @@ function dsMakeGuidelinesMd(name, story) {
     "| Which gap, padding, radius? | `foundations/spacing.md` |",
     "| Which component and variant? | `components/overview.md`, then the component file |",
     "| Buttons specifically? | `components/button.md` |",
-    "", "## Hard rules, IMPORTANT", "",
+    "", "## Hard rules: IMPORTANT", "",
     "- Do NOT hardcode a color. Every color is a Tailwind class mapped in `styles.css`",
     "  (`foundations/color.md` names them). No exceptions.",
     "- Do NOT put text on a fill in anything other than that fill's own `-foreground` class,",
@@ -1383,7 +1383,7 @@ function dsMakeColorMd(ds, pfx, shadcnCss) {
     "| Class | Role |",
     "|---|---|",
     "| `bg-destructive text-destructive-foreground` | destructive/error, delete, failure, critical |",
-    "", "## Rules, IMPORTANT", "",
+    "", "## Rules: IMPORTANT", "",
     "- Do NOT cross a foreground pair (e.g. `text-foreground` on `bg-accent`), each fill's own",
     "  `-foreground` class is the contract; crossing it fails contrast in one scheme.",
     "- Do NOT use `destructive` decoratively, status only, never an ordinary button.",
@@ -1400,7 +1400,7 @@ function dsMakeColorMd(ds, pfx, shadcnCss) {
     "|---|---|---|---|---|---|---|",
     ...rows,
     "", ...dsMakePrimeSection(ds, pfx),
-    "", "## Runtime alternative, `light-dark()` (illustrative)", "",
+    "", "## Runtime alternative: `light-dark()` (illustrative)", "",
     "Do NOT paste this into the app in place of `styles.css`, Figma Make's own dark-mode toggle",
     "is the `.dark` class shadcn already reads. This block re-expresses the SAME `:root`/`.dark`",
     "values above as one `light-dark()` declaration per role (the runtime idiom this design",
@@ -1434,8 +1434,8 @@ function dsMakeTypographyMd(typeSc) {
   }
   return [
     "# Typography", "",
-    `**Display & headings**, ${fonts.display || fonts.heading || "the display font"} ·`,
-    `**Body & UI**, ${fonts.body || "the body font"} · **Mono**, ${fonts.mono || "the mono font"}.`,
+    `**Display & headings**: ${fonts.display || fonts.heading || "the display font"} ·`,
+    `**Body & UI**: ${fonts.body || "the body font"} · **Mono**: ${fonts.mono || "the mono font"}.`,
     "Fallbacks: `system-ui` / `ui-monospace`; the hierarchy must survive the fallback.", "",
     "## Working scale", "",
     "Each level is a set-together unit: size, line-height, and weight travel together. Leading is",
@@ -1444,9 +1444,9 @@ function dsMakeTypographyMd(typeSc) {
     "| Level | Family | Size / Leading× | Weight | Use for |",
     "|---|---|---|---|---|",
     ...rows,
-    "", "## Text rendering, ALWAYS include", "",
+    "", "## Text rendering: ALWAYS include", "",
     DS_TEXT_RENDERING_MD,
-    "", "## Rules, IMPORTANT", "",
+    "", "## Rules: IMPORTANT", "",
     "- Do NOT use a level smaller than `body-md` for primary reading text; the smaller steps are",
     "  for dense, secondary UI only.",
     "- Do NOT use more than two heading levels in one view.",
@@ -1483,7 +1483,7 @@ function dsMakeSpacingMd(geomSc) {
 // dsMakeOverviewMd, the component index (reachable from Guidelines.md; routes to button.md).
 function dsMakeOverviewMd() {
   return [
-    "# Components, Overview", "",
+    "# Components: Overview", "",
     "Catalog and routing. Read the component file before building; states are specified there",
     "with exact values.", "",
     "| Component | Purpose | Guidelines file |",
@@ -1522,7 +1522,7 @@ function dsMakeButtonMd() {
     "The view's actions. Exactly one `variant=\"default\"` button per view; everything else is",
     "`variant=\"secondary\"`, `variant=\"outline\"`/`\"ghost\"`, or a link. `variant=\"destructive\"`",
     "only for destructive actions.", "",
-    "## Variants, shadcn's own `<Button>`, mapped", "",
+    "## Variants: shadcn's own `<Button>`, mapped", "",
     "Use the installed shadcn `<Button>` component. Do NOT hand-roll button CSS, its padding,",
     "radius, and focus ring are already correct from `styles.css`'s `--radius` and `--ring`.", "",
     "| `variant` | Use for |",
@@ -1532,7 +1532,7 @@ function dsMakeButtonMd() {
     "| `\"destructive\"` | destructive actions only |",
     "| `\"outline\"` / `\"ghost\"` | a second, non-competing action |",
     "| `\"link\"` | inline text actions |",
-    "", "## States, Tailwind modifiers, not separate tokens", "",
+    "", "## States: Tailwind modifiers, not separate tokens", "",
     "There are NO separate hover/active tokens: a state is a `hover:`/`active:` **opacity modifier** on",
     "the base class (`styles.css` ships no `-hover`/`-active` variable, the alpha does the work):", "",
     "| Variant | State | Modifier | Resolves to |",
@@ -1542,7 +1542,7 @@ function dsMakeButtonMd() {
     "| default | active | `active:bg-primary/80` | `--primary` at 80% opacity |",
     "", "- **Focus**: shadcn's `<Button>` ships `focus-visible:ring-ring` already, do not override it.",
     "- **Disabled**: shadcn's `<Button disabled>` already applies the correct opacity.", "",
-    "## Rules, IMPORTANT", "",
+    "## Rules: IMPORTANT", "",
     "- One `variant=\"default\"` per view. Do NOT stack two.",
     "- Do NOT redeclare padding, radius, or focus treatment, the installed component already",
     "  has them correct from `styles.css`.",

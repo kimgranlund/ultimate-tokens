@@ -60,7 +60,7 @@ export const ROUND_TRIP_INSTRUCTIONS =
   "ignored, lint-noted, if both are sent). To refine after seeing the result, patch the brief and resend; " +
   "never hand-edit the output hexes.";
 
-export const RUBRIC = `# Interpretation rubric, words → PaletteBrief seeds
+export const RUBRIC = `# Interpretation rubric: words → PaletteBrief seeds
 
 You are the interpreter. This tool's deterministic core turns numeric seeds into every hex in the kit,
 it never asks you for a color, only for **referents** (concrete things) tiered by **visual weight**,
