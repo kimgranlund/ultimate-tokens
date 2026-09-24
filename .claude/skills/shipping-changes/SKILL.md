@@ -57,7 +57,8 @@ artifact if a UI change is involved.
 5. PR: `gh pr create --fill` (or `--title`/`--body`); the PR title becomes the squash-commit subject —
    write it as `feat(scope): …` / `fix(scope): …` with the changelog-worthy summary (match `git log`).
    If the body has backticks or `$(…)`, pass it via `--body-file` (see quirk), not inline `--body`.
-6. Watch CI (~figure pinned at pre-land, once U6-8/P10 measures a completed `sweeps` matrix run; not yet measured on `plan/gate-split`): poll until the run registers, then
+6. Watch CI (~265 s wall on a PR, measured on run 35974499577: `build-test` about 260 s is the wall,
+   the `sweeps` legs run 70 to 190 s in parallel): poll until the run registers, then
    watch it (a bare `gh pr checks <n> --watch` false-greens, see quirk). Every job must pass:
    `build-test` (build, test, smoke), `panda-smoke`, `corpus-contrast` and `sweeps`.
 7. Squash-merge:

@@ -55,9 +55,11 @@ Rules the gates imply:
   set in `.sdlc/baseline.md` §Interim gate-time ceiling (the section stays for history; nothing there
   is graded against `npm test` any more). The paragraph above stays as the record of WHY the budget
   moved in the first place.
-- `npm test` ceiling: 120 s, the largest of three sequential quiet-host runs. Arithmetic: main's
+- `npm test` ceiling: 120 s, the largest of three sequential quiet-host runs. Arithmetic at the
+  time the ceiling was set (#713 design section, before U6c-8 re-measured it): main's then-current
   56 to 60 s, plus the four sampled legs at about a tenth of the moved cost, plus the thinned tonal
-  grid, near 100 s with 20 s of room (#713 design section). A run counts only under the quiet-host
+  grid, projected near 100 s with 20 s of room. History now: the real re-time is 80 to 89 s (line
+  26 above, `.sdlc/baseline.md`), comfortably inside the same 120 s ceiling. A run counts only under the quiet-host
   rule below, and a set of record starts every run at load under 5 (owner ruling 2026-09-20, tightened
   from load under the core count after a set taken at load 6.31 to 7.76 read a host roughly twice as
   loaded as the one the figures it is compared against were taken on;
@@ -221,11 +223,11 @@ planning, building, or landing. The one-paragraph version:
   (commits carry `Seat: orchestrator`); the Verifier's 🟢 verdict is what "done" means. A builder's
   own green `npm test` is its floor (see Always), not the verdict.
 - Gates and what green means live in `.sdlc/adapter.md` §1 and `.sdlc/baseline.md`: `npm test`
-  (no `node_modules`, ~60 s, tree clean after), `npm run build` (needs `npm ci`), `npm run smoke`
+  (no `node_modules`, 80 to 89 s, tree clean after), `npm run build` (needs `npm ci`), `npm run smoke`
   (needs Chrome). Run them in the unit worktree, never in a tree another seat is editing.
 - Tickets, PRs, and releases go through `adapter.py` (`.sdlc/config.json`, preset `github`); one
   ticket, one `plan/<slug>` branch, one PR per plan. Landing needs a 🟢 pre-land record
-  (`.sdlc/verdicts/<plan>-prepr.md`) and green CI (`build-test` + `panda-smoke`), then the
+  (`.sdlc/verdicts/<plan>-prepr.md`) and green CI (`build-test`, `panda-smoke`, `corpus-contrast`, `sweeps`), then the
   `shipping-changes` squash and sync steps. Human-filed bugs and features still go through
   `/file-bug` and `/file-feature` per ADR-017.
 - The Orchestrator closes a plan on landing: status flipped, steps ticked, file moved to

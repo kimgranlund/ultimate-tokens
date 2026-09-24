@@ -50,7 +50,7 @@ and origin/main pulls in #681's whole unrelated history. All three criteria belo
 | P3 (b) | Clone `p3b`: `process.argv.includes("--full")` forced to `false`, `git diff --stat` → `1 file changed, 1 insertion(+), 1 deletion(-)`. `npm run -s gate:corpus-reset` exit `0`, `grep -c '(FULL:'` → `0` |
 | P3 (c) | Clone `p3c`: FULL branch forced onto `sampleCorpus(byCategory)` too (`perl -pi -e 's/FULL \? Object\.values\(byCategory\)\.flat\(\) : sampleCorpus\(byCategory\)/FULL ? sampleCorpus(byCategory) : sampleCorpus(byCategory)/'`), `git diff --stat` → `1 file changed, 1 insertion(+), 1 deletion(-)`. `npm run -s gate:corpus-reset` exit `1`, `grep -c 'FAIL'` → `1`, needle line `(rst-corpus-setup) exercised Reset over the FULL anchored corpus, all 8 categories plus the default kit (316 palettes, want > 3000)`: the FULL-side vacuity floor bites at the same `316` the SAMPLED scale produces, naming it instead of `3000` |
 | P5 row 6 (M-D) | Clone `post-md`, post-edit code, `git diff --stat` → `1 file changed, 1 insertion(+), 1 deletion(-)`. `npm run -s gate:corpus-reset` (FULL) exit `1`, `grep -c '(rst-corpus)'` → `4`, needle `(rst-corpus) 3396 of 3396 anchored palettes failed the exact-snapshot field round trip` |
-| P8 | Base `ebddc55d`. `node test/repo/branding.mjs \| tail -1` → `branding: clean (514 files scanned)`. Added-line em dash count → `0` |
+| P8 | Base `ebddc55d`. `node test/repo/branding.mjs \| tail -1` → `branding: clean (514 files scanned)` (base's own count, not this unit's head). Added-line em dash count → `0` |
 | P9 | Base `ebddc55d`, `Q2=yes`. Scope-wall filter → `0`. `src` diff → `0` |
 
 ## Scratch clones (kept, not removed)
