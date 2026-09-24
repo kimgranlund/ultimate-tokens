@@ -260,11 +260,13 @@ for (const hueSpace of SPACES) {
 //    truncated keys restored, to prove this methodology actually bites — was run standalone, not
 //    committed for cost, and is reported in the handoff (`.sdlc/handoffs/pif-u6.md`) and in this
 //    unit's own report.
-// DET_CASE_COUNT: SAMPLED thins to the first 400 of the 2000 (#713 U4). Each case's fields are a
-// pure function of `i` alone, so a shorter loop IS the same prefix, not a different case list.
-// POISON_CASES stays 1500 in both modes: the file's own comment above says catch rate follows case
-// count, not poison density.
-const DET_CASE_COUNT = FULL ? 2000 : 400;
+// DET_CASE_COUNT: SAMPLED thins to the first 200 of the 2000 (#713 U4, narrowed 200 at U6c, owner
+// ruling R35). Each case's fields are a pure function of `i` alone, so a shorter loop IS the same
+// prefix, not a different case list.
+// POISON_COUNT: SAMPLED thins to the first 500 of the 1500 poison renders (#713 U6c, owner ruling
+// R35). The file's own comment above says catch rate follows case count, not poison density, so
+// thinning the poison set alongside the case list holds the same reasoning.
+const DET_CASE_COUNT = FULL ? 2000 : 200;
 const DET_CASES = [];
 for (let i = 0; i < DET_CASE_COUNT; i++) {
   DET_CASES.push({
@@ -280,8 +282,9 @@ for (let i = 0; i < DET_CASE_COUNT; i++) {
 // silent pass. This floor is a literal 2000, not read back off DET_CASE_COUNT above, so an edit to
 // that one substitution point cannot also move the number this check expects.
 if (FULL && DET_CASES.length < 2000) FAIL("c", `only ${DET_CASES.length} determinism cases built in FULL mode, expected 2000 — the FULL case list did not run`);
+const POISON_COUNT = FULL ? 1500 : 500;
 const POISON_CASES = [];
-for (let i = 0; i < 1500; i++) {
+for (let i = 0; i < POISON_COUNT; i++) {
   POISON_CASES.push({
     name: `p${i}`,
     hue: (i * 0.0917) % 360,

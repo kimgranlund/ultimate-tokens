@@ -4072,11 +4072,30 @@ flushRaf();
   const { defaultDocument: defaultDocumentRSTC, projectView: pvRSTC } = await import("../../src/ui/model.mjs");
   const { hydrate: hydrateRSTC } = await import("../../src/ui/persist.js");
   const dkDoc = defaultDocumentRSTC();
-  const corpusPresets = [...corpusDocs, { name: "default kit", palettes: dkDoc.palettes, ...dkDoc }];
-  let corpusChecked = 0, corpusFails = 0, rampChecked = 0, rampFails = 0;
-  for (const preset of corpusPresets) {
+  const defaultKitPreset = { name: "default kit", palettes: dkDoc.palettes, ...dkDoc };
+  // RESET_STRIDE: SAMPLED keeps every fourth anchored palette of the sampled corpus (first kept),
+  // in the sorted sample's own order, and keeps the default kit whole (#713 U6c, owner ruling R35).
+  // The skip is keyed on identity with `defaultKitPreset`, not `preset.name`, because the spread
+  // `...dkDoc` after `name: "default kit"` overwrites the name field on every other preset that
+  // happens to carry one, so a name-keyed skip would also stride the kit.
+  const RESET_STRIDE = 4;
+  const corpusAnchoredEntries = [];
+  for (const preset of corpusDocs) {
     for (const pal of preset.palettes) {
       if (typeof pal.anchor !== "string") continue;
+      corpusAnchoredEntries.push({ preset, pal });
+    }
+  }
+  const sampledCorpusEntries = FULL ? corpusAnchoredEntries : corpusAnchoredEntries.filter((_, i) => i % RESET_STRIDE === 0);
+  const defaultKitEntries = [];
+  for (const pal of defaultKitPreset.palettes) {
+    if (typeof pal.anchor !== "string") continue;
+    defaultKitEntries.push({ preset: defaultKitPreset, pal });
+  }
+  const resetEntries = [...sampledCorpusEntries, ...defaultKitEntries];
+  const resetTotalBeforeStride = corpusAnchoredEntries.length + defaultKitEntries.length;
+  let corpusChecked = 0, corpusFails = 0, rampChecked = 0, rampFails = 0;
+  for (const { preset, pal } of resetEntries) {
       const detunedHue = (pal.hue + 37) % 360;
       const detunedChroma = Math.max(0, Math.min(100, pal.chroma - 13));
       const detunedLift = -17;
@@ -4107,12 +4126,12 @@ flushRaf();
         rampFails++;
         if (rampFails <= 3) ok(false, `(rst-corpus-ramp) ${preset.name} ${pal.name}: the restored palette's rendered ramp does not deep-equal the reference ramp captured before detach/detune`);
       }
-    }
   }
-  const corpusFloor = FULL ? 3000 : 300;
+  const corpusFloor = FULL ? 3000 : 60;
   ok(corpusChecked > corpusFloor, `(rst-corpus-setup) exercised Reset over the ${FULL ? "FULL" : "SAMPLED"} anchored corpus, all 8 categories plus the default kit (${corpusChecked} palettes, want > ${corpusFloor})`);
   ok(corpusFails === 0, `(rst-corpus) ${corpusFails} of ${corpusChecked} anchored palettes failed the exact-snapshot field round trip`);
   ok(rampFails === 0, `(rst-corpus-ramp) ${rampFails} of ${rampChecked} anchored palettes failed the full projectView ramp round trip`);
+  if (!FULL) console.log(`  (rst-corpus SAMPLED: stride ${RESET_STRIDE}, ${corpusChecked} anchored palettes checked of ${resetTotalBeforeStride}, default kit whole)`);
   const docCount = corpusDocs.length;
   const paletteCount = corpusDocs.reduce((n, p) => n + p.palettes.length, 0);
   console.log(`  (${FULL ? `FULL: ${docCount} curated documents, ${paletteCount} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${docCount} curated documents, ${paletteCount} palettes`})`);
