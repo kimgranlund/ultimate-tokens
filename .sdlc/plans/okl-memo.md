@@ -84,7 +84,7 @@ Post-merge check, the Orchestrator's own step once G0 is green: merge `origin/ma
 
 ## Units
 
-- [~] U1 (S) `_okL` deleted, `okl-order` gate in `tonal.mjs` through the extended worker, seven skill lines repaired · builder-l2 · reviewer-l2 · verifier-l2 · starts at G0 green
+- [x] U1 (S) `_okL` deleted, `okl-order` gate in `tonal.mjs` through the extended worker, seven skill lines repaired · builder-l2 · reviewer-l2 · verifier-l2 · starts at G0 green
 
 Grades follow the Orchestrator's rule: an L2 builder gets reviewer-l2 and verifier-l2. U1 is L2, not L1: a four-line deletion, but the gate spawns processes through a worker another gate also uses, and the negative controls need a clone with the memo restored.
 
@@ -158,3 +158,4 @@ One PR from `plan/okl-memo` to `main`, title `fix(engine): tonal.js drops the bu
 | 2026-09-24 | revision 3, from U1's question (`.sdlc/questions/okl-memo-U1.md`, default A): P4's scope wall admits `docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md`, one line only (`:89`, which cites `tonal.js:926` for the module-level memo U1 deletes, so `test/repo/citations.mjs` reds without the repair). The same class achromatic-anchor's revision 3 opened for the same file; every other P4 path is unchanged, and the rest of that directory stays untouched | orchestrator |
 | 2026-09-24 | revision 4, from U1's review (`.sdlc/verdicts/okl-memo-U1-review.md`, FIX-FIRST at `de36c00e`): P4 admits `src/engine/hct.js` for comment lines only. Its comment at `:278` to `:279` says `tonal.js` still keeps the `_okL` memo, which U1 makes false, and a stale record is repaired in the change that invalidates it. P4 gains a middle command that counts changed non-comment lines in `hct.js` and must print `0`, so P4 now prints `0`, `0`, `0`; `hct.js` leaves the second command's forbidden list. Not-in-scope item 2 still holds for any code in `hct.js` | orchestrator |
 | 2026-09-24 | revision 5, from U1 review round 2 (`.sdlc/verdicts/okl-memo-U1-review-r2.md`, PASS at `83b65c6c`): P4's Expected cell reads `0`, `0`, `0` to match revision 4's three commands, and its fixture control now prints `1`, because `hct.js` left the forbidden set | orchestrator |
+| 2026-09-24 | revision 6, at U1's merge: U1 ticked on the verdict (`.sdlc/verdicts/okl-memo-U1.md`, 13 of 13 🟢 at `348cc402`, verifier-l2). The verdict's one note is folded in at `a79319cb`: the timing wording in `tonal.js:926` and `foundations.md:139` now states the measured range (0.40 to 0.90 us per call on a quiet host, median 1.54 at load 67) instead of "under 1us". Comment and doc lines only plus the regenerated bundle; pre-land grades the head that carries it | orchestrator |
