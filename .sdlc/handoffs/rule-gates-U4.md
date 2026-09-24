@@ -648,4 +648,18 @@ found by running the full suite rather than only the gate.
 ### Commits
 
 `a9cec2ef` (the 78-line E1-E4 sweep), `b447cad2` (U4-6 script repair),
-`13e4e201` (the two test needles), `64ce29dc` (mirror regeneration).
+`13e4e201` (the two test needles), `64ce29dc` (mirror regeneration),
+`ff520063` (this handoff). Final head `ff520063`.
+
+### Verification, clone `rg-U4-clone-p4`
+
+`npm test`: 2026-09-24 06:30:54 to 06:39:58, `✓ all 51 test files passed`,
+clone tree clean after (`git status --short | wc -l` → 0),
+`node test/repo/em-dash.mjs | tail -1` → `em-dash: clean (686 files scanned)`.
+
+`npm run smoke` (E3 changed rendered `src/ui/` strings, so run per the
+brief): `npm ci` then `npm run smoke` against real headless Chrome
+(Google Chrome Canary) → `SMOKE PASS, gallery · category · editor · export
+dialog all render in a real browser`, every named assertion `✓`, no
+regression in the Typography/Geometry/color-editor screens whose titles or
+tooltips pass 4 rewrote.
