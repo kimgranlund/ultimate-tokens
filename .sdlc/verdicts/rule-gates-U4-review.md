@@ -78,3 +78,64 @@ Findings 2 to 8 and R37 are closed. Finding 1 is almost closed: two labels it na
 3. 🟡 The handoff's `npm test` section still cites 68fad59a. Nothing quotes a run at the pass-2 head. My run at 2d6d6da0 is green.
 4. Nit: `apply-gate.js` now reads `Text styles skipped: no usable font for: ...`, with two colons. Suggest `Text styles skipped, no usable font: ...` or `Text styles skipped (no usable font): ...`.
 5. Nit: `README.md:119` now has a space-aligned comma, `figma-semantic-binder/          , the standalone`. Its sibling lines put the comma right after the token.
+
+## Round 3: pass 4 at 4ea0ed4d, under owner ruling R39 (A+), plan revision 13
+
+Target `unit/rg-U4` @ 4ea0ed4d. Pass 3 is 21f4184e, 2812e09a, cc0c1039, 5091460f. Pass 4 is a9cec2ef (the E1 to E4 rewrites), b447cad2 (the check scripts), 13e4e201 (two test needles), 64ce29dc (mirrors), ff520063 and 4ea0ed4d (handoff). Criteria are revision 13's U4-6 and U4-10 on `plan/rule-gates` @ f75b4193, E1 to E4 of `.sdlc/plans/rule-gates-U4-rediagnosis.md`, and the verdict `.sdlc/verdicts/rule-gates-U4.md` (🔴 at 5091460f). Everything ran in the clone `rgU4rev3-l2p1/c`, whose HEAD is 4ea0ed4d.
+
+### Verdict: FIX-FIRST
+
+U4-6 is fixed and bites. The needles are sound. E1, E2 and E4 print the handoff's lists. E3 does not: 5 lines at the head still read as list commas and are neither rewritten nor on the kept list. The verifier's named 🔴 lines outside E1 to E4 are also untouched.
+
+### E1 to E4, my own enumeration
+
+I wrote my own implementation (`rgU4rev3-l2p1/enum.mjs`, Node, U+2014 escaped). It reads the removed lines of `git diff --text -U0 c5f7bb2c HEAD` and drops comment lines. For E1 to E3 it takes the paths `src/ui`, `src/engine`, `mcp`, `figma/plugin/code.js` and the binder `code.js`, minus the generated `*-assets.js`, `type-fonts.js` and `categories/`. It reads each line back at the head at the same number. An apostrophe inside a word does not open a string for E3.
+
+| Predicate | Hits (mine / handoff) | Still a comma at head, by reading | Handoff kept | Match |
+|---|---|---|---|---|
+| E1 | 17 / 17 | 0 comma; `:1495` is the kept sentence break (`## Which variant? Decision tree`) | 1 (`ds-export.js:1495`) | 🟢 |
+| E2 | 37 / 35 | the 7 kept (`describe-rubric.mjs:78`, `:80`, `:83`, `:140`, `:202`, `ds-export.js:1292`, `:1397`), plus 2 hits that are `.md` files under `mcp/`, which the handoff treats as outside a code-string predicate: `mcp/README-describe.md:4` (an apposition, fine) and `mcp/README.md:8` `up to **three token systems**, **Color**, **Typography**, and **Geometry**`, which reads as a four-item list | 7 | 🟢 on code strings; 🟡 on the `mcp/README.md:8` gap |
+| E3 | 78 / 78 | 25: the 20 kept plus `src/ui/sections/typography.js:24` `"Modular scale, size (px) per step"`, `:25` `"Optical tracking, letter-spacing vs size"`, `:26` `"Leading, line-height ÷ size per step"`, `:27` `"Font roles, family per voice"` and `src/ui/sections/color.js:1739` `"Tune hue · chroma · skew · lift, live"` (and its two ternary siblings) | 20 | 🔴: count 25 against 20. The four typography card titles are the same construct as the colour card titles the handoff rewrote (`color.js:23` to `:27`), and the re-diagnosis names `typography.js:24` to `:27` by line |
+| E4 | 26 / 26 | 1: `launch-kit.md:16` (the ruled tagline). `landing.md:79` keeps a second comma inside `**Pro, $39/year, per user**:`, and its label colon is in place | 1 | 🟢 |
+
+Kept-line reads: the 20 E3, 7 E2 and 1 E1 and E4 reads in the handoff hold as written. The geometry and type notes are trait lists, the swatch notes are appositions, `Compare is on, click to return` and `No legacy styles found, this file is clean.` are clause splices, and the two MCP tool descriptions are running lists. The 5 unlisted E3 lines have no read and are labels, so the right fix is a colon.
+
+Control: in the clone, putting `color.js:24` back to `Tone curve, L* per stop` (committed) raises my E3 kept count from `25` to `26`; `reset --hard` restores `25`.
+
+### The verifier's 🔴 lines outside E1 to E4, unchanged at 4ea0ed4d
+
+The verdict's "Reds to fix" item 2 names these lines. Revision 13 bounded pass 4 by E1 to E4, and every one of them falls outside the four predicates, so pass 4 left them as they were. The handoff doesn't mention them:
+- `src/engine/ds-export.js:776`, U4-8's own row, graded 🔴 by the verifier: `(a surface that inverts the app's OWN neutral, toasts, tooltips,`.
+- `src/ui/sections/geometry.js:733`: `"Choose a treatment + base height, icon, font, padding, gap & radius follow by the centering law."`
+- `src/ui/sections/typography.js:630`: `"Choose a treatment + body size, fonts, tracking, weight & leading follow."`
+- `src/ui/sections/color.js:1788`: `"Which canvas group this palette is organized under, Material, Brand, System, or Data."`
+- `mcp/brand-kit-core.mjs:61`: `` `# ${kit.name || "Brand Kit"}, usage `` is a heading in the MCP guide. E1's `[^"\`]*` cannot cross the inner `"Brand Kit"` quote, so the predicate misses it. That is a hole in E1 itself, the fifth-predicate case the re-diagnosis foresaw.
+
+(Fixed since the verdict: `color.js:600`, all the export headings, and the store-copy lines `:154`, `:155`, `:208`, `:210`, `:212` and `landing.md:77`.)
+
+### U4-6
+
+| Check | Result |
+|---|---|
+| Rerun at head | `doc-drift-rows-check exit 0`, `rows 56 drifted 11 holds 45 undetermined 0 bad 0`; `card-source-range-check exit 0`, `range mismatches: 0`, no finding line; `card-amendment-check exit 0`, `stale total: 0`. 🟢 |
+| Range control | ADR-011's card `163-191` changed to `163-192`: `end ADR-011 says 192, section ends at 191`, `range mismatches: 1` (exit still `0`, the separate ticket's issue). 🟢 |
+| Amendment control | `Amendment (2026-09-16): planted.` under `## ADR-011:`: `stale card ADR-011`, `stale index ADR-011`, `stale total: 2`. With the pre-b447cad2 script put back, the same plant gives `stale total: 0`, which proves the old match could not see the body. 🟢 |
+| Scope | b447cad2 changes only the heading pattern (`[: ]`) in the two scripts, both on the start and end awk bounds. Revision 13 authorizes both files |
+
+### The two `exports.mjs` needles (13e4e201)
+
+`test/engine/exports.mjs:1918` and `:2042` change from `design-system-for-google-stitch, Stitch profile export` to `...: Stitch profile export`, and the same for Figma Make. They follow `ds-export.js:1059` and `:1089` character for character. The folder name, the separator and the text are all still pinned, so the test is not weakened (the original pinned the em dash; the comma version was the sweep's). Control: `ds-export.js:1059` put back to the comma form makes `node test/engine/exports.mjs` give `FAIL  design-system-stitch, README is not the Stitch profile receipt`, `FAIL: 1 gate failure(s)`, exit 1. 🟢
+
+### Other checks
+
+- `em-dash: clean (686 files scanned)`, `branding: clean (678 files scanned)`, clone tree clean after every control.
+- Passes 3 and 4 add no en dash (`added 0 removed 0` outside mirrors and `.sdlc`).
+- Changed files since 5091460f that carried no glyph are only the two check scripts (authorized) and the handoff.
+- I did not rerun the full `npm test`. Two other seats' heavy runs were active every time I checked (`test/run.mjs` and a `headless-boot.mjs`), above the one-run rule. The handoff quotes a clone run at ff520063, and 4ea0ed4d adds only handoff text.
+
+### Round 3 findings, ranked
+
+1. 🔴 U4-10 / E3: `typography.js:24` to `:27` card titles and `color.js:1739` (all three ternary strings) still read as list commas and are not on the kept list; E3 prints 25 against the handoff's 20. Use a colon on the four card titles (matching `color.js:23` to `:27`). For `color.js:1739`, either use a colon or list it as kept with a read.
+2. 🔴 The verdict's named reds outside E1 to E4 still stand: `ds-export.js:776` (U4-8), `geometry.js:733`, `typography.js:630`, `color.js:1788`, `brand-kit-core.mjs:61`. Pass 4 needs either to fix them or to have a Conductor ruling that R39's bound retires them. As it stands, the verifier's 🔴 on U4-8 has not been answered.
+3. 🟡 E1's `[^"\`]*` misses a heading whose template carries an inner double quote (`brand-kit-core.mjs:61`). E2 as scoped misses `.md` files under `mcp/` (`mcp/README.md:8`, a real list-reader). Both are fifth-predicate candidates, graded 🟡 on the enumeration as the re-diagnosis says.
+4. Nit: `color.js:2214` `gamut: % of every stop's gamut ceiling: palettes harmonize across hue.` has two colons in one clause; a full stop reads better. `ds-export.js:1141` `Naming standard: **Ultimate Tokens grammar**: ...` has two colons too.
