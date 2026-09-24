@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene U4 · 🟢
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-17 (evidence run: adopt-hygiene-U4-verifier-l1-p1, grade l1). Branch `unit/hygiene-U4` @ 8ebf172, worktree `.worktrees/hygiene-U4`. Commands run in that worktree; negative controls in a scratch worktree at 8ebf172 with the 29a2c06 file restored (removed after). The handoff and `.sdlc/verdicts/adopt-hygiene-U4-review.md` were not used as evidence.
 Tally: 3 criteria. 🟢 2 · 🟡 1 · 🔴 0. The 🟡 is attribution only; it does not block.

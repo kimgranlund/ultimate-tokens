@@ -1,4 +1,5 @@
 # Verdict A7 adopt-hygiene U3 · build review · 🟢
+verdict: 🟢
 
 Reviewed fresh-context against `.sdlc/plans/adopt-hygiene.md` U3 + P1-P5, and the change-reviewer-agent
 checklist, on `unit/hygiene-U3` @ d731a9e (commits 492b616, d731a9e), from the worktree checkout.

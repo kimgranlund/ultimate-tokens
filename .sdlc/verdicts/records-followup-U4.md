@@ -1,4 +1,5 @@
 # Verdict U4 · 🟢
+verdict: 🟢
 
 Plan `records-followup` (#709), unit U4, head `unit/rf-U4` @ `b9e7095011ade90022d2fd97064b6db2cef6e747`, pass 2. Criteria read from `.sdlc/plans/records-followup.md` on `plan/records-followup` @ `07ecb44c` (revision 3). `BASE` `d34b4fb1beefff11c9be53ec039d4265c925da4a`, `UB` `07ecb44c3c885b7856435a56d0f14d1605f3dc99`. Verified in my own detached scratch worktree and two throwaway `--shared` clones, all under my scratchpad, all removed by exact name. Nothing was edited, pushed or fixed.
 

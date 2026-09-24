@@ -6,6 +6,7 @@ seat: reviewer
 head: 7b84d698
 base: 1f991877
 written: 2026-09-20
+verdict: 🟡
 ---
 
 # Review: records-followup U11
