@@ -265,10 +265,55 @@ const CACHE_CAP = 5000; // generous for a single session (curated-library browsi
 // bounded regardless of session length — the actual point.
 
 // ── maxChromaInGamut — tight gamut ceiling at (hue, tone), memoized ───────────
+// Cache key, EXACT (#686, U6): `hue`/`tone` are plain JS numbers, concatenated via their own default
+// `toString()` (lossless, round-trips bit-for-bit — no `.toFixed(2)` truncation). The prior key
+// truncated to 2 decimals, a MANY-to-one mapping (measured over a real (hue,chroma,hueSpace) input
+// population, #686: 7,967 of 21,928 buckets held more than one distinct hue) — so whichever caller's
+// hue happened to populate a bucket first silently decided every later, DIFFERENT hue's answer in
+// that bucket, making this "pure" function history-dependent (a real shipped defect: `exportPanda`
+// emitted different bytes for the same state depending on unrelated earlier renders, #686). An exact
+// key can never let two different floats share a bucket, so a HIT only ever fires for a bit-identical
+// repeat and, by definition, returns exactly what a fresh computation would, so this cache and the
+// other two exact-keyed caches in this file (`peakC`, `oklchToCam16Hue`) are pure again. That claim
+// covers hct.js only: tonal.js kept a bucketed `_okL` memo on `lstar.toFixed(2)`, the same defect
+// class, until #738 deleted it (measured not load-bearing there, unlike this cache).
+// Cost, measured honestly (#686/#681 U6, review pass 6 N9 correction): an EARLIER version of this
+// comment claimed "no measurable regression" from the standalone `node test/engine/prime.mjs` timing
+// alone. That claim was wrong, and the measurement it rested on cannot show this cost at all:
+// `prime.mjs`'s own sweeps dominate that gate's runtime, and at the PRIOR head `prime.mjs` already
+// carried a private, exact-keyed 20,000-slot cache of its own, so both sides of that comparison were
+// already paying exact-key behaviour — it measures the same thing twice, not the regression.
+//
+// Measured where the cost actually lands: a corpus-scale render (343 curated documents, 3,780
+// palettes, 3 tone modes, `paletteStops` + `primeSwatches`) in a FRESH, unwarmed node process per
+// measurement (matching a real one-shot invocation — `npm test`'s own `gen:*` steps, a generator
+// script — not a long-lived warmed process, which hides the cost by letting later passes hit a cache
+// the first pass already populated), two engine variants differing ONLY in these three cache keys
+// (`prime.mjs` byte-identical between them, confirmed via `cmp`), CPU time (`user`+`system`, the
+// signal to trust — wall clock is noisy on a shared host and directionally misleading):
+//
+//   truncated keys (prior): 14,863ms / 15,074ms / 14,809ms / 15,255ms  (mean ~15,000ms)
+//   exact keys (this fix):  18,672ms / 17,740ms / 18,229ms / 17,778ms  (mean ~18,105ms)
+//
+// A real, consistent +21% CPU cost, four clean pairs, no inversions. This corroborates an independent
+// reviewer's own corpus-scale measurement (+26% and +32%, on a more contended host) — same direction,
+// same order of magnitude, from two different methodologies. `npm test`'s own `user` CPU time moved
+// with it (~102s at the prior head to ~144-156s here, contention-sensitive but consistently higher).
+//
+// Tried and did NOT help: raising `CACHE_CAP` (below) from 5,000 to 60,000 measured 19,072ms /
+// 19,157ms / 20,616ms — no improvement, slightly worse. Exact keys make a hit rare for the genuinely
+// distinct hues a real corpus sweeps (that IS the correctness fix — a hit now only ever fires for a
+// bit-identical repeat), so a bigger cache has little more to capture and only adds Map/GC overhead.
+//
+// Accepted anyway: the correctness gain is the whole point of #686 (a shipped export defect,
+// `exportPanda` emitting different bytes for the same state), and this cost is the honest price of
+// closing it, not a defect to chase further inside this unit. `.sdlc/adapter.md` §1's gate budget is
+// updated in this same commit, per this repo's own rule that a change invalidating a record repairs
+// that record in the same change.
 const _mc = boundedCache(CACHE_CAP);
 export function maxChromaInGamut(hue, tone) {
   if (tone <= 0 || tone >= 100) return 0;
-  const key = hue.toFixed(2) + "|" + tone.toFixed(2);
+  const key = hue + "|" + tone;
   const hit = _mc.get(key);
   if (hit !== undefined) return hit;
   let lo = 0;
@@ -283,9 +328,17 @@ export function maxChromaInGamut(hue, tone) {
 }
 
 // ── peakC — the hue's maximum achievable chroma and the tone where it peaks ───
+// Cache key, EXACT (#686, U6) — see `maxChromaInGamut`'s comment above; same hazard, same fix. This
+// is the cache `src/ui/model.mjs`'s `deriveKeyColor` and `src/engine/prime.mjs`'s `primeSwatches` both
+// read for their shared "key colour" construction (`peakC(baseHue)`), so an exact key here is what
+// makes the two agree byte-for-byte regardless of what else has rendered in the same process
+// (REQ-056) — a private, exact-keyed re-implementation in one caller only closes ITS OWN order-
+// dependence, not the cross-caller identity, since the two callers must read the SAME cache to agree
+// (#681 U6 review passes 2 and 4: a private `localPeakC` fixed `prime.mjs` in isolation but then
+// diverged from `deriveKeyColor`, which still read the shared, coarser-keyed cache).
 const _pk = boundedCache(CACHE_CAP);
 export function peakC(hue) {
-  const key = hue.toFixed(2);
+  const key = String(hue);
   const hit = _pk.get(key);
   if (hit !== undefined) return hit;
   let bestC = 0;
@@ -303,11 +356,20 @@ export function peakC(hue) {
 }
 
 // ── oklchToCam16Hue — sample a fixed mid OKLCH color, read its CAM16 hue ──────
+// Cache key, EXACT (#686, U6) — same shape of fix as `maxChromaInGamut`/`peakC` above, applied here
+// too: `target`/`cf` are already normalised/clamped floats, so concatenating their own `toString()` is
+// exact and still hits on every bit-identical repeat. This one's own Newton loop calls `peakC(x)`
+// internally (now exact, see above), which was the actual channel #686's review traced 11 of 4,000
+// order-dependent palettes to (`effHue`'s oklch path calling this function, whose loop converged on a
+// neighbour's cusp when `peakC`'s OWN cache was warmed by an unrelated hue first) — fixing `peakC`
+// alone already closes that channel, since a miss here always recomputes the same true `x` once
+// `peakC` is pure; this key change additionally removes the (smaller, order-INDEPENDENT but still
+// many-to-one) risk of two distinct (target, cf) pairs sharing a truncated bucket.
 const _oh = boundedCache(CACHE_CAP);
 export function oklchToCam16Hue(h, chromaFrac = 1) {
   const target = ((h % 360) + 360) % 360;
   const cf = Math.min(1, Math.max(0, chromaFrac));
-  const key = target.toFixed(2) + ":" + cf.toFixed(3);
+  const key = target + ":" + cf;
   const hit = _oh.get(key);
   if (hit !== undefined) return hit;
   // The ACCURATE, CHROMA-AWARE inverse of the render path: find the CAM16 hue X such that a color at

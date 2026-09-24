@@ -157,9 +157,14 @@ checkScheme(L.dark, "dark");
 ok(swatchBoardPNG(kit, FAMILY_NAMES).equals(swatchBoardPNG(kit, FAMILY_NAMES)), "encoding the same kit twice produces byte-identical PNG bytes");
 
 // ── a DIFFERENT kit encodes to different bytes (sanity: not a static/cached image) ──
+// Every DEFAULT_PALETTES entry carries `anchor` (ticket #681, U1/Q2 (b)), and an anchored ramp
+// deliberately ignores `hue` at its stop-500 identity color (tonal.js's anchored branch, U2) — a
+// bare hue mutation would leave the swatch board's source pixel unchanged. Drop `anchor` too, the
+// same detach a real hue edit performs (Q6/#681 U2), so the mutated kit actually renders an
+// ordinary (non-anchored) ramp at the new hue and the swatch pixel moves.
 {
-  const otherKit = brandKit({ ...defaultDocument(), palettes: defaultDocument().palettes.map((p) => ({ ...p, hue: (p.hue + 60) % 360 })) });
-  ok(!swatchBoardPNG(kit, FAMILY_NAMES).equals(swatchBoardPNG(otherKit, FAMILY_NAMES)), "a differently-hued kit encodes to different PNG bytes");
+  const otherKit = brandKit({ ...defaultDocument(), palettes: defaultDocument().palettes.map((p) => ({ ...p, hue: (p.hue + 60) % 360, anchor: undefined })) });
+  ok(!swatchBoardPNG(kit, FAMILY_NAMES).equals(swatchBoardPNG(otherKit, FAMILY_NAMES)), "a differently-hued, detached kit encodes to different PNG bytes");
 }
 
 // ── the MCP image content block shape ──

@@ -1,5 +1,69 @@
 # CHANGELOG
 
+## 1.64 - 2026-09-20 - a preset's sampled colour is STORED, and the engine emits it byte for byte (#681)
+
+**Every curated preset now ships the colour it was sampled from, not a reconstruction of it.** A
+preset used to keep only `{hue, chroma, skew, lift}` fitted to its source, and the engine re-derived a
+key colour from those four numbers. The result was close but almost never equal: measured before this
+change, `prime.DEFAULT` matched its own source hex for essentially none of the 3,380 sampled
+palettes, worst stop-500 lightness error around 23 L\*. Fitting harder cannot close that, because four
+parameters cannot in general reproduce an arbitrary sRGB colour through a cusp-derived key colour. So
+the source hex itself is now stored, as `palette.anchor`, and read rather than re-derived (ADR-026).
+
+**Two guarantees, both equalities rather than tolerances.** `prime.DEFAULT` equals the stored anchor
+byte for byte for all 3,380 anchored palettes, unconditionally (`anchor-identity: 3380 exact, 0 off`).
+Ramp stop 500 equals it byte for byte in `perceptual`, `peak` AND `even` for the 3,370 whose source
+sits inside the ramp window `[9.95, 95.05]` L\*. The 10 sources outside it (9 dark ones between 7.32
+and 9.84 L\*, plus one pure white) keep the exact TOKEN and land their ramp pivot on the nearest
+window edge; they are frozen by name and count in the gate, not absorbed into a tolerance band.
+Editing hue or chroma detaches the anchor and the palette becomes ordinary; skew and lift never move
+it, and a Reset action in the inspector restores the sampled colour exactly from `sourceAnchor`.
+
+**The prime ladder was rebuilt in CIE L\*.** The seven prime swatches used to step in OKHSL `l` with a
+rule that handed a clipped side's shortfall to the other side, producing a lopsided ladder. They now
+step in CIE L\* at `STEP_L 9` around the anchor's own L\*, and when either side hits the window BOTH
+sides compress to the smaller room, so `L*(brightest) − L*(prime)` equals `L*(prime) − L*(dimmest)`
+to 1e-9 and a clipped ladder is shorter rather than asymmetric. Chroma is HELD at the anchor's own
+CAM16 chroma and only the gamut desaturates a rung. The three clipped default families land at
+52.7805, 49.9212 and 46.2664 L\* (Tertiary, Danger, Warning).
+
+**One chroma envelope instead of two copies.** The per-stop chroma multiplier is now a single exported
+`chromaEnvelope`, shared by the even path, the OKHSL path and both anchored branches, keyed on the
+lifted stop reading and exactly 1 at the pivot for any lift. `dampAmp` became a shoulder term that is
+0 at the pivot and at both ends, so it can only raise the shoulders; the vivid-mids preset therefore
+ships `dampAmp 0` rather than 55.
+
+**What moved.** All 343 presets and all 3,780 palettes move at least one byte, by design: every colour
+export format, the design-system bundle, the Figma plugin bundle, the categories modules, the MCP
+assets and the Adia artifacts (now 1.1.0) are regenerated. `role-table.json` changes only by the 16
+`defaults[].anchor` fields; the 53-role table, the binder's role table, and the type and geometry
+exports are untouched. Contrast holds: AA 4.5:1 clears in all 96 role-contrast cells in every mode
+and both schemes, and all 7,560 curated accent/on-color cells clear with no new carve-out. The
+measured CIELAB L\* upticks of #668 read 0 in every mode on both stop sets. To be exact about the 96:
+that is the `hpg-role-contrast` sweep, 16 families x 2 schemes x 3 tone modes, and the figure is 0
+violations across all of it.
+
+**What this costs, stated plainly rather than softened.** Pinning stop 500 to a sampled colour changes
+what "percentage of stop 500" measures, because the pivot is no longer the ramp's designed peak. On
+the rendered path that ships, C6's median and p90 chroma bars are MISSED in 14 of the 24 checks
+(6 of 8 in perceptual, 5 of 8 in peak, 3 of 8 in even), against 2 of 24 on the same corpus with the
+anchors stripped. The mechanism is the anchored stop-500 denominator, and the rulings that cover this
+construction (Q7, follow-up #701) cover the above-100%-of-stop-500 clause ONLY, not these bars.
+Nothing in this release brings them back into target. **The perceptual and peak half of that miss is
+owned by #725** ("Chroma envelope misses its muted targets in perceptual and peak mode, and nothing
+gates the direction"), open, `kind:bug` / `size:big`; #701 owns the even-mode `chromaFloor` side,
+which is a different defect in a different mode and is listed separately below. The owner accepted,
+2026-09-20, that #681 closes with this open rather than holding the release for it
+(`.sdlc/questions/preset-intent-fidelity-preland.md`). For the same reason
+the "0 stops above 100% of stop 500" bar is scoped to the 384 non-anchored palettes of the 3,764
+generated ones, and the anchored peak path carries a ratchet that reds only on a rise, not a bar.
+
+Follow-ups left open and ticketed: #695 (the cusp-pull gate never prints), #725 (the perceptual and
+peak envelope miss above, and the missing direction gate), #701 (the `chromaFloor`
+redesign, which also takes the even-envelope neighbourhood fix and retires the 64 named lone spikes
+plus the default kit's own Data 7 spike), #713 (split the corpus sweeps into gate scripts), #715 (the
+default kit in every sweep, and a gate for C4's ramp identity control).
+
 ## 1.63 — 2026-09-18 — WCAG-safe on-colors are the default, with an achromatic fall-through (#662, closes #636)
 
 **`onColorMode` now defaults to `"contrast"`, and no ramp stop moved.** ADR-003 pinned every accent's

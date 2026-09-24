@@ -23,7 +23,7 @@ Load before first run: `8.91 6.03 5.77` on 10 cores (`uptime`, `sysctl -n hw.ncp
 | 5 | `npm run build` | 6.78 | 0 | 2.96 | `wrote figma/plugin/ui.html 3777.8 KB` | 0 |
 | 6 | `npm run build` | (below threshold) | 0 | 1.87 | `wrote figma/plugin/ui.html 3777.8 KB` | 0 |
 | 7 | `npm run build` | (below threshold) | 0 | 2.48 | `wrote figma/plugin/ui.html 3777.8 KB` | 0 |
-| 8 | `npm run smoke` | 6.90 | 0 | 19.96 | `SMOKE PASS`: gallery, category, editor, export dialog all render in a real browser | 0 |
+| 8 | `npm run smoke` | 6.90 | 0 | 19.96 | `SMOKE PASS — gallery · category · editor · export dialog all render in a real browser` | 0 |
 | 9 | `npm run smoke` | (below threshold) | 0 | 20.23 | same SMOKE PASS line | 0 |
 | 10 | `npm run smoke` | 6.13 | 0 | 20.45 | same SMOKE PASS line | 0 |
 
@@ -83,3 +83,5 @@ Note on P1: the first P1 run (before this unit's own §Texts edits were committe
 ## Ran (final, post-commit)
 
 `npm test` on the committed tree: exit 0, `all 47 test files passed`, `git status --short | wc -l` = 0.
+
+Correction (2026-09-19, plan records-followup U4, #709): a quotation of program output in this file had been reworded to avoid an em dash. It now reads as the program prints it. Rule: `.sdlc/adapter.md` §3, Verbatim-quote rule.

@@ -10,7 +10,7 @@ import { dirname, join } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TESTS = [
-  "engine/hct.mjs", "engine/tonal.mjs", "engine/semantic.mjs", "engine/exports.mjs", "engine/okhsl.mjs", "engine/derive.mjs", "engine/data-hues.mjs", "engine/prime.mjs", "engine/type.mjs", "engine/font-fallbacks.mjs", "engine/geometry.mjs", "engine/flags.mjs", "engine/ds-gates.mjs", "engine/categories.mjs", "engine/adia-derived-exports.mjs", "engine/curated-contrast.mjs",
+  "engine/hct.mjs", "engine/tonal.mjs", "engine/semantic.mjs", "engine/exports.mjs", "engine/okhsl.mjs", "engine/derive.mjs", "engine/data-hues.mjs", "engine/prime.mjs", "engine/anchor.mjs", "engine/type.mjs", "engine/font-fallbacks.mjs", "engine/geometry.mjs", "engine/flags.mjs", "engine/ds-gates.mjs", "engine/categories.mjs", "engine/adia-derived-exports.mjs", "engine/corpus-sample.mjs", "engine/curated-contrast.mjs",
   "ui/model.mjs", "ui/persist.mjs", "ui/shell.mjs", "ui/zip.mjs", "ui/poster-strip.mjs", "ui/headless-boot.mjs",
   "figma/plugin.mjs", "figma/binder.mjs", "figma/mode-apply.mjs", "figma/style-plan.mjs", "figma/migrations.mjs", "figma/live-diff.mjs",
   "mcp/core.mjs", "mcp/brand-kit.mjs", "mcp/describe-kit-core.mjs", "mcp/describe-rubric.mjs", "mcp/png-swatch-board.mjs", "mcp/describe-mcp-core.mjs", "mcp/describe-mcp.mjs", "mcp/brand-kit-merged-core.mjs", "mcp/brand-kit-merged.mjs", "mcp/describe-eval.mjs", "mcp/describe-mcp-package.mjs",

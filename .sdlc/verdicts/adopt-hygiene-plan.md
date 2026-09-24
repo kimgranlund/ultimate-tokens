@@ -1,4 +1,5 @@
 # Verdict A7 adopt-hygiene plan · criteria review · 🟡
+verdict: 🟡
 
 Graded by sdlc-verifier on 2026-09-16 against `.sdlc/plans/adopt-hygiene.md` at `sdlc/adopt` @ f9e20c5. Every command was dry-run against the current tree or `origin/main`, and the risky negative controls were run in throwaway worktrees (since removed).
 Key: 🟢 checkable as written · 🟡 checkable with the named tweak · 🔴 not checkable.

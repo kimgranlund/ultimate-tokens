@@ -1,9 +1,9 @@
 ---
 doc-type: spec
 id: spec-muted-base-key-spikes
-status: approved        # draft | approved | superseded  (0.3.2 approved 2026-09-17: prime-ladder shortfall redistribution + PRIME_L_MAX 0.94 -> 0.97, #641/#655; amends 0.3.0)
-version: 0.3.2
-date: 2026-09-17
+status: approved        # draft | approved | superseded  (0.4.0 approved 2026-09-20: prime ladder rebuilt in CIE L* with equal-compress and held CAM16 chroma, #681 U6/U4; amends 0.3.2)
+version: 0.4.0
+date: 2026-09-20
 owner: Kim Granlund
 prd: none               # GitHub issues #503 and #533 are the intent records (ADR-017 git-native tickets)
 scope: feature
@@ -24,7 +24,13 @@ makes the group's Base chroma an ABSOLUTE ramp chroma target shared by every ram
 the other, so the ladder spans a full `6 * PRIME_STEP` at every hue and chroma instead of collapsing
 wherever the cusp tone sits near a bound. 0.3.2 (approved 2026-09-17, #655 folded into #641 by owner
 ruling) raises `PRIME_L_MAX` from 0.94 to 0.97, because 0.94 was below the cusp construction's own
-reach and left the ANCHOR outside the window for yellow-green hues. The id and file name are kept so existing links resolve.
+reach and left the ANCHOR outside the window for yellow-green hues. 0.4.0 (approved 2026-09-20,
+ticket #681 unit U6, owner rulings Q8/Q9, with unit U4's integration pass 2 folded in) REBUILDS the
+ladder itself: CIE L* replaces OKHSL `l` as the metric, `STEP_L = 9` L* replaces `PRIME_STEP = 0.09`,
+0.3.1's redistribute rule is replaced by EQUAL-COMPRESS (both sides take the smaller side's room), and
+0.3.2's flat OKHSL saturation is replaced by HELD CAM16 chroma that only the gamut desaturates. The
+window is the same window, re-expressed in L* and derived from the greys rather than retyped. The id
+and file name are kept so existing links resolve.
 
 Ruled before this SPEC (not reopened here): the 53-role table and `docs/reference/data/role-table.json`
 role list stay frozen; data palettes are full ordinary palettes; data hues derive from the brand
@@ -180,66 +186,100 @@ ladder, their own chroma control, and their own token group; the editor strip re
 
 - **REQ-050** `primeSwatches(palette, controls)` (pure, new module `src/engine/prime.mjs`, imports
   only `hct.js`, `okhsl.js`, and `tonal.js` helpers) returns seven entries
-  `{ step, l, hex, rgb, oklch, inGamut }` in the fixed order brightest, brighter, bright, prime, dim,
-  dimmer, dimmest, lightest first. Deterministic; no DOM.
-- **REQ-051** Ladder (ratified 2026-09-11, R1): lightness is OKHSL `l` (the same
-  perceptually uniform axis the `perceptual` ramp path steps in). `l_prime` is the OKHSL lightness of
-  the palette's key colour ITSELF: `rgbToOkhsl(deriveKeyColor(palette).rgb).l`, the actual chromatic
-  cusp colour (`effHue`, `peakC` chroma scaled by `chroma / 100`, cusp tone through `hctToRgb`), never
-  the neutral grey at the cusp tone (ruled 2026-09-11 on #537: REQ-056 is the intent, this is the
-  means that satisfies it). Rationale: a chromatic colour and a grey at the same CIELAB L* differ in
-  OKHSL `l` by a Helmholtz-Kohlrausch gap that grows toward the gamut edge, so anchoring on the grey
-  put `prime` off the tile by more than one 8-bit step. Steps are EVENLY SPACED ON EACH SIDE of the
-  anchor, nominally `PRIME_STEP = 0.09`, with all seven inside `[PRIME_L_MIN, PRIME_L_MAX] =
-  [0.14, 0.97]`. The two sides differ from each other by exactly the travel a clipped side hands over
-  (amended 2026-09-17, #641, owner ruling option A). The per-side step sizes are `primeSteps(l_prime)`
-  (`src/engine/prime.mjs`): each side's ROOM is `room_up = (PRIME_L_MAX - l_prime) / 3` and
-  `room_down = (l_prime - PRIME_L_MIN) / 3`; each side first takes `up = min(PRIME_STEP, room_up)`,
-  `down = min(PRIME_STEP, room_down)`; the travel lost to clipping, `short = (PRIME_STEP - up) +
-  (PRIME_STEP - down)`, is then handed to whichever side was NOT clipped, capped by that side's own
-  room (`up = min(room_up, up + short)` if `up >= PRIME_STEP`, and likewise for `down`). Because
-  `room_up + room_down` is `(PRIME_L_MAX - PRIME_L_MIN) / 3 = 0.276667` for any in-bounds `l_prime`,
-  comfortably above the `0.18` a full span needs, at most one side is ever clipped and the receiving
-  side always has the room. So the ladder spans `3 * up + 3 * down = 6 * PRIME_STEP = 0.54` at EVERY
-  hue and chroma, not only where the cusp tone sits mid-range. With the skew bend of REQ-053a,
-  `l_i = l_prime + 3 * up * w_i` for `i = 0..2` and `l_prime - 3 * down * w_i` for `i = 4..6`, where
-  `w_i` is the bent offset weight (`w_i = |t_i|` at `skew 0`, giving the even-per-side ladder
-  `l_prime + up * (3 - i)` / `l_prime - down * (i - 3)`). Yellow (cusp near white) therefore takes
-  small light steps and correspondingly LARGER dark ones; blue does the reverse. The anchor is never
-  moved, which is what keeps REQ-056 exact and is why biasing the ANCHOR away from the bound was
-  rejected. Each room is floored at 0, so an anchor outside the window can never credit negative
-  travel to the other side. Monotone strictly decreasing in `l` whenever `up, down > 0`, at every skew.
-- **REQ-051a** `PRIME_L_MAX` is `0.97` (raised from the `0.94` R1 originally ratified; 2026-09-17,
-  ticket #655 folded into #641 by owner ruling). Rationale: `0.94` was BELOW the reach of REQ-051's
-  own cusp construction. Sweeping hue 0..359 x chroma 0..100 in BOTH hue spaces, `l_prime` peaks at
-  `0.961183` (cam16 hue 109.75 at chroma 0.75; the oklch peak is the same value near hue 98), so for
-  yellow-green hues the ANCHOR itself fell outside the window: `prime` was out of bounds before any
-  ladder was built, `room_up` went negative, and the three light swatches INVERTED: they read DARKER
-  than `prime`, with `brightest` the darkest of the four. Measured at hue 112, chroma 100, `cam16`, the
-  four were `0.94000 0.94328 0.94656` against a `prime` of `0.94983` — ascending toward the anchor
-  instead of away from it. The ceiling must therefore clear `0.961183`.
-  `0.97` is chosen over the bare minimum: it is the smallest value that is both round and keeps the
-  three light swatches DISTINCT in 8-bit hex at every swept hue and chroma in both spaces. At `0.962`
-  all four light entries collapse to a single hex at the worst cell; `0.967` is the exact threshold for
-  distinctness and sits on the quantisation cliff; `0.97` leaves a `0.008817` margin above the anchor's
-  peak. Worst-case light travel under `0.97`, by sweep resolution: `min up = 0.003918` over integer
-  hues 0..359 x chroma `{0, 50, 100}` (cam16 hue 110, chroma 0), and `min up = 0.002939` over the
-  continuous sweep at 0.25 steps in hue and chroma (cam16 hue 109.75, chroma 0.75 — the same cell that
-  carries the anchor's peak). `PRIME_L_MIN` is unchanged at `0.14`.
-- **REQ-052** Chroma: OKHSL saturation `s = clamp01(key.s * pc)` where `key.s =
-  rgbToOkhsl(deriveKeyColor(palette).rgb).s` is the key colour's OWN OKHSL saturation and
-  `pc = (palette.primeChroma ?? controls.primeChroma) / 100`; `palette.chroma` enters only through
-  `deriveKeyColor`. Applied to all seven, no damping; in gamut by OKHSL construction; `inGamut` is
-  always true and asserted (ruled 2026-09-11 on #537). Rationale: a CAM16 chroma fraction is not an
-  OKHSL saturation, and solving the hue at one `s` while rendering at another reintroduced Abney
-  drift. With REQ-051 and REQ-053 this makes `prime` the key colour in all three OKHSL coordinates
-  at `primeChroma 100`, which is what REQ-056 asserts.
-- **REQ-053** Hue: the key colour's own OKHSL hue, `key.h = rgbToOkhsl(deriveKeyColor(palette).rgb).h`,
-  read directly and shared by all seven swatches; there is NO hue re-solve in the prime system
-  (ruled 2026-09-11 on #537: `solveOkhslHue` at the palette hue carried an Abney drift into the muted
-  swatches and can oscillate at very low saturation, and it is shared with `tonal.js`, whose legacy
-  fixture is a hard wall). Since `s = key.s` and `l_prime = key.l` at `primeChroma 100`, `prime`
-  reproduces the key colour exactly, not approximately. `hueShift` applies with the ramp's rule
+  `{ step, l, s, hue, rgb, hex, oklch, inGamut }` in the fixed order brightest, brighter, bright,
+  prime, dim, dimmer, dimmest, lightest first. Deterministic; no DOM. Amended 2026-09-20 (#681 U6,
+  owner ruling Q8/Q9): `l` is the rung's CIE L*, which is literally its `hctToRgb` tone argument, and
+  `s` is the rung's rendered CAM16 chroma. Both fields keep their names and their positions in the
+  shape; only the SPACE they are measured in changed, from the OKHSL `l`/`s` pair 0.2.0..0.3.2
+  described to the CIE L* / CAM16 chroma pair the HCT-native construction of REQ-051 and REQ-052
+  actually renders. A rung is built by `hctToRgb(hue, chroma, l)` directly, so no OKHSL round trip
+  sits anywhere on the ladder path.
+- **REQ-051** Ladder. REBUILT 2026-09-20 (ticket #681 unit U6, owner rulings Q8/Q9), replacing R1's
+  OKHSL-`l` ladder and 0.3.1's redistribute rule. Lightness is CIE L*, the same tone axis the ramp,
+  the contrast maths, and every pixel-measured gate in this repo already read, and a rung is rendered
+  in HCT directly: `hctToRgb(hue, chroma, L)`. `L*_prime` is the anchor's own CIE L*, read off the
+  REAL colour and never off a proxy: on the cusp-identity path it is `peakC(baseHue).tone`, which IS
+  the key colour's own L* by construction, since `hctToRgb`'s `tone` argument converges to exactly
+  that L*; on the stored-`anchor` path it is `lstarFromRgb(anchorRgb)`. Either way no OKHSL round trip
+  is taken, which is what retires R1's Helmholtz-Kohlrausch argument rather than answering it: that
+  gap only existed because the old ladder measured lightness on a different scale from the one
+  `hctToRgb` renders in.
+  Steps are EVENLY SPACED ON EACH SIDE of the anchor, nominally `STEP_L = 9` L* per rung, with all
+  seven inside the L* window of REQ-051a. The per-side step sizes are `primeSteps(L*_prime)`
+  (`src/engine/prime.mjs`): each side's ROOM is `room_up = (PRIME_L_MAX - L*_prime) / 3` and
+  `room_down = (L*_prime - PRIME_L_MIN) / 3`, each floored at 0, and BOTH sides then take the SAME
+  step, `up = down = min(STEP_L, room_up, room_down)`. This is EQUAL-COMPRESS (Q9): where a bound is
+  in reach the ladder compresses symmetrically rather than handing the clipped side's shortfall to the
+  other side. The two sides are therefore equal BY CONSTRUCTION, not merely close, and the ladder
+  spans `6 * min(STEP_L, room_up, room_down)`, which is the full `6 * STEP_L = 54` L* wherever both
+  sides have `STEP_L` of room and less than that, symmetrically, where they do not. 0.3.1's
+  redistribution is RETIRED: it produced exactly the asymmetry between the light and dark halves that
+  the owner's screenshot finding flagged, and buying a constant span with a lopsided ladder was the
+  wrong trade.
+  With the skew bend of REQ-053a, `l_i = L*_ladder + 3 * up * w_i` for `i = 0..2` and
+  `L*_ladder - 3 * down * w_i` for `i = 4..6`, where `w_i` is the bent offset weight (`w_i = |t_i|` at
+  `skew 0`, giving the even ladder `L*_ladder + up * (3 - i)` / `L*_ladder - down * (i - 3)`). The
+  `prime` rung is the anchor itself and is never moved, which is what keeps REQ-056 exact and is why
+  biasing the ANCHOR away from the bound stays rejected. `L*_ladder` is `L*_prime` clamped into the
+  window: on the cusp-identity path the two are identical, since `peakC`'s own cusp-tone search only
+  samples tone 4..96 and so can never leave the window, while a STORED anchor can sit outside it and
+  must not credit out-of-domain room. Monotone strictly decreasing in `l` whenever `up, down > 0`, at
+  every skew.
+  WIDENING SEARCH (added 2026-09-20 by #681 unit U4, integration pass 2; stored-`anchor` palettes
+  only). At the exact window bound, equal-compress's own `min` reads 0 on BOTH sides at once, since
+  one side's zero room binds the other, and all six non-prime rungs collapse onto the clamped pivot as
+  duplicate hexes. Where that would happen, `primeSwatches` walks the LADDER's pivot away from the
+  bound in `0.1` L* increments, reserving the same amount on both sides (`lo = PRIME_L_MIN + 3 * r`,
+  `hi = PRIME_L_MAX - 3 * r`, pivot re-clamped into `[lo, hi]`, steps re-sized from it), and stops at
+  the first reserve that makes the six ladder rungs and the anchor seven distinct hexes. The reserve
+  is capped at one full `STEP_L` per side, beyond which the window is offering less room than the
+  ladder was ever designed to need; the most-widened attempt is kept if none succeeds. The search
+  moves only the ladder's pivot, equally on both sides, so `up == down` and the untouched `prime` rung
+  both survive it. Sources close enough to a bound that even a full `STEP_L` of reserve cannot
+  separate the rungs are named and counted by `test/engine/anchor.mjs`'s `anchor-ladder` allow-lists,
+  not silently passed.
+- **REQ-051a** The ladder window is CIE L* `[PRIME_L_MIN, PRIME_L_MAX] = [12.25, 96.88]`
+  (re-expressed 2026-09-20, #681 U6; the same window 0.3.2 ratified in OKHSL, not a new bound). It is
+  DERIVED, never retyped: `PRIME_L_MIN = lstarFromRgb(okhslToRgb(0, 0, 0.14))` and
+  `PRIME_L_MAX = lstarFromRgb(okhslToRgb(0, 0, 0.97))`, so the two OKHSL grey bounds `0.14` and `0.97`
+  stay the single typed source and a second, independently-typed L* literal cannot drift from them. A
+  grey has no hue or chroma, so that conversion is exact. The `0.97` ceiling keeps its 0.3.2
+  rationale, quoted here for the record: `0.94` was BELOW the reach of the cusp construction, whose
+  OKHSL-domain `l_prime` peaks at `0.961183` (cam16 hue 109.75 at chroma 0.75; the oklch peak is the
+  same value near hue 98), so for yellow-green hues the ANCHOR itself fell outside the window, `prime`
+  was out of bounds before any ladder was built, `room_up` went negative, and the three light swatches
+  INVERTED, reading DARKER than `prime`. Under the L* construction the window's job is generous
+  headroom rather than a tight ceiling: `peakC`'s cusp-tone search only ever samples tone 4..96, so
+  every cusp-identity anchor sits inside `[12.25, 96.88]` with room to spare, and AC-050 (d4) asserts
+  zero out-of-window anchors across the whole sweep in both hue spaces. A STORED anchor is the one
+  case that can still leave the window, and REQ-051's clamp plus the floor-at-0 on each room is what
+  keeps its ladder in bounds and its travel non-negative.
+- **REQ-052** Chroma. RE-BASED 2026-09-20 (#681 U6, owner ruling Q9 "hold CAM16 chroma"), replacing
+  the flat OKHSL saturation of 0.2.0. The anchor's OWN CAM16 chroma is the target on every rung:
+  `C_prime = max(0, keyChroma * pc)` where `keyChroma` is `(palette.chroma / 100) * peakC(baseHue).c`
+  on the cusp-identity path or `cam16FromRgb(anchorRgb).chroma` on the stored-`anchor` path, and
+  `pc = (palette.primeChroma ?? controls.primeChroma ?? 100) / 100`; `palette.chroma` still enters
+  only through the key colour. Chroma is then HELD at `C_prime` on every rung and desaturated ONLY
+  where that rung's own gamut cannot carry it: `chroma_i = min(C_prime, maxChromaInGamut(hue_i, l_i))`.
+  Nothing damps chroma by lightness distance, which the retired flat-saturation construction did
+  implicitly, so a rung is as saturated as its own tone allows and no more. `inGamut` is true on every
+  rung and asserted, now by the `min` against the in-gamut cap rather than by OKHSL construction.
+  Rationale: the ladder renders in HCT, so the chroma it holds must be the chroma HCT measures; a
+  flat OKHSL `s` across a 54 L* span is not a constant colourfulness and was the mechanism by which
+  `brightest` and `dimmest` failed to read 1:1 around `prime`. `primeChroma` still scales the target
+  linearly, which AC-050 (g) asserts exactly rather than approximately, because the scaling now
+  applies to the chroma the engine actually renders.
+- **REQ-053** Hue: the anchor's own CAM16 hue, read directly and shared by all seven swatches; there
+  is NO hue re-solve in the prime system (ruled 2026-09-11 on #537: `solveOkhslHue` at the palette hue
+  carried an Abney drift into the muted swatches and can oscillate at very low saturation, and it is
+  shared with `tonal.js`, whose legacy fixture is a hard wall). Re-based 2026-09-20 with REQ-050..052
+  (#681 U6): the hue is `effHue(palette.hue, controls.hueSpace, chroma / 100)` on the cusp-identity
+  path, which is the SAME `baseHue` `deriveKeyColor` uses, and `cam16FromRgb(anchorRgb).hue` on the
+  stored-`anchor` path, and it is passed straight to `hctToRgb`, so the construction holds each rung's
+  CAM16 hue rather than its OKHSL hue. OKLCH hue is NOT held across rungs of differing tone even at a
+  fixed CAM16 hue, which is the Abney spread this codebase corrects for elsewhere, so AC-050 (e)/(f)
+  measure CAM16 hue. Since the anchor's own L*, chroma, and hue are all read off the real colour at
+  `primeChroma 100`, `prime` reproduces the key colour exactly, not approximately. `hueShift` applies with the ramp's rule
   (`dir = hueSameDir ? -|t| : t`, `t = (i - 3) / 3`, so `brightest` is `t = -1`, `dimmest` `t = +1`).
   (Ratified 2026-09-11, R5.)
 - **REQ-053a** Skew (ratified 2026-09-11, R5): the palette's `skew` bends the ladder toward light or
@@ -249,10 +289,11 @@ ladder, their own chroma control, and their own token group; the editor strip re
   weight is `w_i = |t_i| ** g` for `i > 3`; `w_3 = 0`, `w_0 = w_6 = 1`. `skew > 0` (`g > 1`, lighter
   mids on the ramp) pushes `brighter`/`bright` further from `prime` and pulls `dim`/`dimmer` toward it,
   so every non-end swatch reads lighter; `skew < 0` does the reverse. `skew 0` is the even ladder.
-  `prime` is skew-invariant, so REQ-056 holds at every skew. The bend is normalised PER SIDE — `w_i`
-  runs 0..1 on each side independently — so it applies to that side's OWN extent (`3 * up` or
-  `3 * down`), whatever redistribution under REQ-051 produced those extents; the two sides may have
-  different extents and each is bent across its own (clarified 2026-09-17, #641). `lift`, `damp*`,
+  `prime` is skew-invariant, so REQ-056 holds at every skew. The bend is normalised PER SIDE, with
+  `w_i` running 0..1 on each side independently, so it applies to that side's OWN extent (`3 * up` or
+  `3 * down`) (clarified 2026-09-17, #641). Amended 2026-09-20 (#681 U6): under equal-compress
+  `up == down`, so the two extents are now equal too and the two sides bend identically, not merely by
+  the same rule across different extents. `lift`, `damp*`,
   `vibrancy`, `cuspPull`, `toneMode` do NOT apply: they shape the ramp, and the prime system is not
   the ramp.
 - **REQ-054** Tokens: a `prime` group per palette, primitives tier, mode-independent, one value per
@@ -304,32 +345,48 @@ ladder, their own chroma control, and their own token group; the editor strip re
   `baseChroma` (absent): those three ramps follow the global `baseIntensity` (100 by default). A
   stored `palette.intensity 100` on Tertiary changes nothing. Move Tertiary to the Data group: its
   ramp becomes the data target and its stored `primeChroma` override is ignored until moved back.
-- **EX-4 (NORMATIVE, prime ladder).** Primary at `skew 0` (a probe; the default Primary carries
-  `skew -20`, see EX-4b), `hueSpace "cam16"` with `role-table.json`'s raw pair (`hue 267, chroma 95`),
-  `primeChroma 100`. Engine-regenerated 2026-09-11 (#537): `l_prime = 0.528528`, `s = 0.965345` (the
-  key colour's own OKHSL saturation, no longer `chroma / 100`), `up = down = 0.09` (uncompressed).
-  `l` and hex, brightest to dimmest: `0.798528 #A5C8FE`, `0.708528 #7CAEFE`, `0.618528 #5194FC`,
-  `0.528528 #2177F6`, `0.438528 #0F60D2`, `0.348528 #084BA8`, `0.258528 #04377F`. `prime.hex`
-  equals `deriveKeyColor(Primary).keyHex` byte for byte.
-- **EX-4b (NORMATIVE, skew bend).** As EX-4 with `skew -20`: `g = 3 ** -0.2 = 0.802742`. `l` and
-  hex: `0.798528 #A5C8FE`, `0.691458 #74AAFD`, `0.597234 #468DFB`, `0.528528 #2177F6`,
-  `0.416749 #0D5BC8`, `0.333539 #0748A2`, `0.258528 #04377F`. Ends and `prime` equal EX-4; every
-  inner swatch is darker than in EX-4. With `skew +20` the light-side and dark-side weights swap and
-  every inner swatch is lighter. (Engine-regenerated 2026-09-11, #537.)
-- **EX-5 (NORMATIVE, shortfall redistribution).** Warning at `skew 0` (a probe; the default carries
-  `skew 40`), `hueSpace "cam16"`, raw pair `hue 70, chroma 100`, `primeChroma 100`. Engine-regenerated
-  2026-09-17 (#641/#655): `l_prime = 0.749941`, `s = 1.000000` (a `chroma 100` palette sits on the
-  OKHSL saturation boundary). The light side is clipped — `room_up = (0.97 - 0.749941) / 3 = 0.073353`,
-  so `up = 0.073353` — and the `short = 0.016647` it loses is handed to the dark side, which has the
-  room: `down = 0.09 + 0.016647 = 0.106647`. `l` and hex: `0.970000 #FFF5EA`, `0.896647 #FFDBB2`,
-  `0.823294 #FFBF73`, `0.749941 #FDA200`, `0.643294 #D68900`, `0.536647 #B17000`, `0.430000 #8D5800`.
-  All seven in `[0.14, 0.97]`, strictly decreasing, evenly spaced WITHIN each side, and the span is
-  `3 * 0.073353 + 3 * 0.106647 = 0.54 = 6 * PRIME_STEP` exactly; the default `skew 40` bends the inner
-  swatches lighter with the ends unchanged. (Before #641 this example read `up = 0.063353` against the
-  old `0.94` ceiling with `down = 0.09` and a short span of 0.4601.)
-- **EX-6 (NORMATIVE, prime chroma).** As EX-4 with `primeChroma 50`: `s = key.s / 2` on all seven, `l`
-  unchanged; the ramp is unchanged. With `palette.primeChroma 100` on Primary inside a document at
-  `primeChroma 50`, Primary's prime system equals EX-4.
+- **EX-4 (NORMATIVE, prime ladder).** Primary at `skew 0` on the CUSP-IDENTITY path (a probe: no
+  `anchor` field, and the default Primary carries `skew -20` and a stored anchor, see EX-4b and
+  REQ-051), `hueSpace "cam16"` with `role-table.json`'s raw pair (`hue 267, chroma 95`),
+  `primeChroma 100`. Engine-regenerated 2026-09-20 (#681 U6) by
+  `scratchpad/gen-ex4.mjs`, which imports this worktree's own `src/engine/prime.mjs` and prints
+  `primeSwatches({ name: "Primary", hue: 267, chroma: 95, skew: 0 }, { hueSpace: "cam16",
+  primeChroma: 100 })` alongside `primeSteps` and `peakC`: `L*_prime = 52.000000`,
+  `C_prime = 68.081932` CAM16 (the anchor's own chroma, no longer an OKHSL saturation),
+  `room_up = 14.961643`, `room_down = 13.249990`, so `up = down = 9` (uncompressed) and the span is
+  the full 54 L*. `l` and hex, brightest to dimmest: `79.0000 #AAC3FF`, `70.0000 #82AAFF`,
+  `61.0000 #5590FF`, `52.0000 #2177F6`, `43.0000 #0061D3`, `34.0000 #004CA9`, `25.0000 #003880`.
+  Rendered CAM16 chroma over the same seven: `36.72, 49.63, 61.41, 68.08, 63.72, 55.49, 46.92`, held
+  at `C_prime` only on the `prime` rung and cut by the gamut everywhere else, most of all at the light
+  end. `prime.hex` equals `deriveKeyColor(Primary).keyHex` byte for byte.
+- **EX-4b (NORMATIVE, skew bend).** As EX-4 with `skew -20`: `g = 3 ** -0.2 = 0.802742`.
+  Engine-regenerated 2026-09-20 (#681 U6) by the same `scratchpad/gen-ex4.mjs` run, the
+  `primeSwatches({ ..., skew: -20 }, ...)` call. `l` and hex: `79.0000 #AAC3FF`, `68.2930 #7AA5FF`,
+  `58.8707 #498AFF`, `52.0000 #2177F6`, `40.8221 #005BC9`, `32.5012 #0049A2`, `25.0000 #003880`.
+  Ends and `prime` equal EX-4; every inner swatch is darker than in EX-4. With `skew +20` the
+  light-side and dark-side weights swap and every inner swatch is lighter.
+- **EX-5 (NORMATIVE, equal-compress at a bound).** Warning at `skew 0` on the CUSP-IDENTITY path (a
+  probe: no `anchor` field, and the default carries `skew 40` and a stored anchor), `hueSpace "cam16"`,
+  raw pair `hue 70, chroma 100`, `primeChroma 100`. Engine-regenerated 2026-09-20 (#681 U6) by the
+  same `scratchpad/gen-ex4.mjs` run, the `primeSwatches({ name: "Warning", hue: 70, chroma: 100,
+  skew: 0 }, { hueSpace: "cam16", primeChroma: 100 })` call: `L*_prime = 74.000000`,
+  `C_prime = 60.523682` CAM16. The light side is the short one, `room_up = (96.88493 - 74) / 3 =
+  7.628309` against `room_down = 20.583323`, so EQUAL-COMPRESS gives BOTH sides that smaller room:
+  `up = down = 7.628309`. `l` and hex: `96.8849 #FFF4EC`, `89.2566 #FFDAB2`, `81.6283 #FFBF71`,
+  `74.0000 #FDA200`, `66.3717 #E18F00`, `58.7434 #C67D00`, `51.1151 #AB6C00`. All seven inside
+  `[12.25, 96.88]`, strictly decreasing, evenly spaced across BOTH sides, `brightest` exactly on
+  `PRIME_L_MAX`, and the span is `6 * 7.628309 = 45.769856`, short of `6 * STEP_L = 54` by design:
+  under equal-compress a clipped ladder is shorter and symmetric rather than full-length and
+  lopsided. The default `skew 40` bends the inner swatches lighter with the ends unchanged.
+  (Under 0.3.1's retired redistribute rule this example read `up = 0.073353` / `down = 0.106647` in
+  the OKHSL domain and held a constant `0.54` span by making the dark side 45% longer than the light
+  one.)
+- **EX-6 (NORMATIVE, prime chroma).** As EX-4 with `primeChroma 50`: `C_prime` halves to `34.0410`
+  CAM16, `l` is unchanged, and the ramp is unchanged. Regenerated 2026-09-20 (#681 U6) alongside
+  EX-4: because the halved target now sits below every rung's gamut cap, the held chroma is exactly
+  `34.0410` on ALL seven, where at `primeChroma 100` only the `prime` rung reaches `C_prime`. With
+  `palette.primeChroma 100` on Primary inside a document at `primeChroma 50`, Primary's prime system
+  equals EX-4.
 - **EX-7 (NORMATIVE, naming).** For Primary the CSS export contains `--primary-prime-brightest` …
   `--primary-prime-dimmest` in the raw block; DTCG raw tree has `primary.prime.brightest`; UI3 has a
   `Color Prime` collection with `primary/brightest`; Tailwind has `--color-primary-prime-prime`.
@@ -411,43 +468,92 @@ ladder, their own chroma control, and their own token group; the editor strip re
   bounds derive). Checked by the AC-040 greps plus a green `npm test`.
 - **AC-042** `npm test` green at every build-unit boundary listed in the LLD.
 - **AC-050** `test/engine/prime.mjs`: (a) exactly seven entries in the fixed step order for every
-  default palette; (b) `l` strictly decreasing and every `l` within `[0.14, 0.97]` (within 1e-9);
+  default palette; (b) `l` strictly decreasing and every `l` within `[PRIME_L_MIN, PRIME_L_MAX]`,
+  the derived L* window `[12.25, 96.88]` of REQ-051a, within 1e-9 (restated 2026-09-20, #681 U6: the
+  gate reads the two exported constants, so the window cannot be retyped here or there and drift);
   (c) `inGamut` true for every entry at `primeChroma` in `{0, 50, 100}` and `chroma` in `{0, 50,
-  100}`; (d) the ladder gates, REWRITTEN 2026-09-17 (#641/#655) and run over the 16 defaults AND a
-  sweep of hue 0..359 step 5 x chroma `{0, 50, 100}`, in BOTH hue spaces (`cam16` and the product
-  default `oklch`), each stating a property rather than re-deriving `primeSteps`'s own expression —
-  (d1) `brightest - dimmest` equals `6 * PRIME_STEP` exactly (1e-9), and never EXCEEDS it;
-  (d2a) `prime`'s `l` equals `key.l` within 1e-12 (REQ-056's mechanism, so redistribution cannot move
-  the anchor); (d3) the three consecutive `l` differences are equal within each side (they need NOT
-  match across sides) and both step sizes are strictly positive, plus `primeSteps`'s algebraic contract
-  at hand-computed anchors including two OUTSIDE the window, which must floor travel at zero and never
-  return a negative; (d4) all seven `l` inside `[0.14, 0.97]` and strictly decreasing, plus ZERO
-  anchors outside the window across the whole sweep in both spaces (the REQ-051a gate — under the old
-  `0.94` ceiling this failed for cam16 hues 108..122 and oklch 96..114); (d5) a FROZEN pre-#641 hex
-  snapshot of the six defaults that touch neither bound, byte-identical; (d6) a clipped side fills to
-  its bound and the other side's step equals what the span still owes, derived in the test from that
-  bound and `key.l` alone, with the clipped sets DERIVED and asserted non-empty on both sides so the
-  gate cannot go vacuous if the constant moves again; (d2) skew gamma (REQ-053a): for `skew` in
+  100}`, plus a widened hueShift/skew sweep and a two-process determinism check comparing emitted
+  hexes between a cold process and one whose shared caches were poisoned by real palette renders
+  first; (d) the ladder gates, REWRITTEN 2026-09-20 (#681 U6/U4) for equal-compress and run over the
+  16 defaults AND a sweep of hue 0..359 step 5 x chroma `{0, 50, 100}`, in BOTH hue spaces (`cam16`
+  and the product default `oklch`), each stating a property rather than re-deriving `primeSteps`'s
+  own expression.
+  (d1) `brightest - dimmest` equals `6 * min(STEP_L, room_up, room_down)` exactly (1e-9) for EVERY
+  case unconditionally, and never EXCEEDS `6 * STEP_L = 54`; equal-compress collapses the old
+  "unclipped versus clipped" branch into one equation. Pinned alongside it: the three default
+  palettes that clip on the shipped anchors, Tertiary at span `52.7805`, Danger at `49.9212`, and
+  Warning at `46.2664` L*, each within 0.05, and the COMPLEMENT, every other default at exactly 54,
+  so a silent change that clips or un-clips a default moves this gate rather than surfacing later as
+  an unrelated-looking (d5) failure.
+  (d2a) `prime`'s `l` equals the anchor's own L* within 1e-9 (REQ-056's mechanism, so neither
+  equal-compress nor the widening search can move the anchor).
+  (d3) the three consecutive `l` differences are equal within each side AND the two sides' steps are
+  equal to each other within 1e-9 (Q9's "equal on both sides", strictly stronger than 0.3.1, where
+  redistribution let the sides legitimately differ), both step sizes strictly positive, plus
+  `primeSteps`'s algebraic contract at hand-computed anchors 55, 93, and 20, and at two anchors
+  OUTSIDE the window, where BOTH sides must floor at zero because under equal-compress the missing
+  side's zero binds the other.
+  (d4) all seven `l` inside `[PRIME_L_MIN, PRIME_L_MAX]` and strictly decreasing, plus ZERO anchors
+  outside the window across the whole sweep in both spaces (the REQ-051a gate; `peakC`'s cusp-tone
+  search samples tone 4..96 only, so a cusp-identity anchor cannot leave `[12.25, 96.88]`).
+  (d5) a FROZEN hex snapshot, byte-identical, of the seven defaults whose anchors need no compression
+  at `STEP_L 9`: Neutral, Primary, Secondary, Info, Data 2, Data 3, Data 8. Re-captured 2026-09-19 on
+  the integrated tree, because the shipped anchors moved Tertiary and Danger into the clipped set and
+  Secondary and Info out of it. Frozen literals, so the check is independent of the present
+  implementation by construction; `cam16`, the space they were captured in.
+  (d6) the side whose NATURAL room is smaller sets the shared step, so ONLY that side's extreme rung
+  touches its own bound while the other's sits `3 * step` from the anchor and generally falls short
+  of its own bound. Which cases clip, and on which side, is DERIVED from the window and the anchor
+  alone, and asserted non-empty on BOTH sides so the gate cannot go vacuous if the window or `STEP_L`
+  move again. Its population is the full sweep, not the 16 named defaults: on the shipped anchors all
+  three clipped defaults clip on the DARK side, so the named-defaults-only population would leave the
+  light-clip branch permanently unexercised.
+  Two further ladder gates ride with (d). SYMMETRY (C11, Q9): `|up - down| <= 1e-9` L* by
+  construction on every case, asserted from the EMITTED `l` fields rather than re-derived from
+  `primeSteps`, and `<= 3` L* MEASURED from the rendered 8-bit pixels, zero exceptions over the whole
+  sweep, with a negative control that runs the SAME sweep against a frozen committed copy of the
+  pre-#681 redistribute module and FAILS the gate if that copy does not exceed the budget.
+  LADDER-WINDOW (C5): walking `docs/reference/colors/categories/*.json` and re-deriving the
+  generator's own six-role mapping from the raw swatch fields, exactly 21 mapped source colours fall
+  outside `[PRIME_L_MIN, PRIME_L_MAX]`, matched by (category, role, hex) against C5's own allow-list,
+  with a negative control at a synthetic `[40, 60]` window that must find clearly more than 21.
+  (d2) skew gamma (REQ-053a): for `skew` in
   `{-100, -60, -20, 0, 20, 60, 100}` on every default palette in both hue spaces, `l` is strictly
-  decreasing and inside `[0.14, 0.97]`; `brightest`, `prime`, and `dimmest`
+  decreasing and inside `[PRIME_L_MIN, PRIME_L_MAX]`; `brightest`, `prime`, and `dimmest`
   are skew-invariant within 1e-9; at `skew 0` the weights equal `|t|`; for `skew > 0` every inner
   swatch's `l` is >= its `skew 0` value and for `skew < 0` <= (strict where `up`/`down > 0`); the
   weights re-derived in the test from `3 ** (skew / 100)` match within 1e-9 (EX-4b binds the numbers);
-  (e) hue, referenced to the KEY COLOUR's own pixel, never to the `hue` control (ruled 2026-09-11 on
-  #537, the AC-005 precedent, no exemptions): `prime`'s OKLCH hue measured from its emitted 8-bit
-  pixel equals the OKLCH hue measured from `deriveKeyColor(palette).rgb` (an identity at `primeChroma
-  100`; (h)'s exact-hex check is the stronger form and is kept alongside); each of the other six
+  (e) hue, referenced to the ANCHOR's own pixel, never to the `hue` control (ruled 2026-09-11 on
+  #537, the AC-005 precedent, no exemptions; re-based on CAM16 hue 2026-09-20, #681 U6, because the
+  construction holds CAM16 hue per rung and OKLCH hue is not held across tones even at a fixed CAM16
+  hue): `prime`'s CAM16 hue measured from its emitted 8-bit pixel equals the CAM16 hue measured from
+  the anchor's own pixel, which is `deriveKeyColor(palette).rgb` on the cusp-identity path and the
+  stored hex on the anchored path (an identity at `primeChroma 100`; (h)'s exact-hex check is the
+  stronger form and is kept alongside); each of the other six
   swatches is within `max(0.5°, 2 * q)` of the `prime` pixel hue when `hueShift 0`, where `q` is the
   hue quantum at THAT swatch's measured chroma, the hue swing produced by a 1/255 perturbation of one
   RGB channel at that colour, re-derived in the test from the pixel. Near-neutral primes (Neutral:
   about 8° of spread from ±1/255) are covered by the chroma-aware `tol`, never exempted. Any residual
   between the `hue` control and the key colour's pixel hue is `deriveKeyColor`'s own ratified
-  behaviour and is not asserted here; (f) with
-  `hueShift 20` the `brightest`/`dimmest` hues move by `-20`/`+20` within 2° and `prime` is invariant;
-  (g) `s` scales linearly with `primeChroma` (ratio of measured OKHSL `s` at 50 vs 100 equals 0.5
-  within 0.02 on an unclamped probe); (h) REQ-056: `prime.hex` vs `deriveKeyColor` within one 8-bit
-  step per channel for every default palette; (i) determinism: two calls are deep-equal; (j)
-  `palette.primeChroma` overrides the global.
+  behaviour and is not asserted here. Since every shipped default now carries a stored `anchor`, each
+  of (e), (g), (h), and (j) runs a companion probe with `anchor` stripped, so the cusp-identity arm
+  the requirement was written for keeps being exercised rather than passing on a hex pass-through;
+  (f) with
+  `hueShift 20` the `brightest`/`dimmest` hues move by `-20`/`+20` within the same adaptive CAM16-hue
+  budget and `prime` is invariant;
+  (g) chroma scales linearly with `primeChroma` (ratio of measured `s` at 50 versus 100 equals 0.5
+  EXACTLY, 1e-6, on an unclamped anchor-stripped probe; restated 2026-09-20 with REQ-052, which
+  scales the rendered CAM16 chroma directly rather than an OKHSL saturation, so the relation is exact
+  and no longer merely close), with a companion assertion that an anchored palette's `prime` rung is
+  immune to `primeChroma` by design; (h) REQ-056: `prime.hex` equals its anchor BYTE-IDENTICALLY, in
+  BOTH hue spaces, for every default palette (tightened 2026-09-20 from one 8-bit step per channel to
+  zero, #686: the tolerance was covering a real `peakC` cache divergence between `primeSwatches` and
+  `deriveKeyColor`, and with hct.js's cache keys now exact the two are literally the same call);
+  (i) determinism: two calls are deep-equal; (j)
+  `palette.primeChroma` overrides the global; (k) chroma is HELD, not damped by lightness distance:
+  every rung's MEASURED CAM16 chroma either retains at least 70% of the `prime` rung's measured
+  chroma or sits within 0.5 of `maxChromaInGamut` at that rung's own hue and tone, one or the other,
+  with near-neutral cases excluded on the same quantisation-floor reasoning (e) uses for hue.
 - **AC-051** `test/engine/exports.mjs`: every format except shadcn emits `7 * enabledCount` prime
   leaves, named per REQ-054; disabled palettes emit none; DTCG raw tree nests `prime` beside `scrim`;
   UI3 has the `Color Prime` collection with one `Base` mode and `7 * enabledCount` variables; the
@@ -470,11 +576,16 @@ ladder, their own chroma control, and their own token group; the editor strip re
 - AC-050: `node test/engine/prime.mjs` (new verifier, registered in `test/run.mjs`; `pass`/`FAIL` per
   lettered group like `tonal.mjs`). The anti-tautology controls are: the property-stated gates in
   (d1)/(d3)/(d4)/(d6), which assert what the SPEC claims rather than re-running `primeSteps`'s formula;
-  the FROZEN pre-#641 hex snapshot in (d5), independent of the present implementation by construction;
-  and the measurement from emitted pixels in (e)/(g).
+  the FROZEN hex snapshot in (d5), independent of the present implementation by construction;
+  the measurement from emitted pixels in (e)/(f)/(g)/(k) and in the symmetry gate; the symmetry
+  gate's frozen pre-#681 redistribute module, which must FAIL the same sweep; the ladder-window
+  gate's synthetic narrow window; the `gamut-ceiling` gate's private truncated-key reconstruction of
+  the pre-#686 caches, which must measure a non-zero violation count; and the two-process,
+  poison-before-any-render determinism check folded into (c). Restated 2026-09-20 (#681 U6/U4).
 - AC-051..053: `node test/engine/exports.mjs`, `node test/figma/plugin.mjs`, `node test/mcp/brand-kit.mjs`.
 - AC-040..042: the AC-040 greps and `npm test`, run at each build-unit boundary.
-- No human exception remains: R1 is ratified, so `PRIME_STEP = 0.09` is a checked constant.
+- No human exception remains: R1 is ratified, so `STEP_L = 9` is a checked constant (was
+  `PRIME_STEP = 0.09` before R1's third amendment, 2026-09-20).
 
 ## Decisions on the issue's six Open gaps (as they stand after #533)
 
@@ -510,6 +621,18 @@ Ratified 2026-09-11 (R1, R3, R4, R5; team-lead relaying the owner). 0.2.0 is app
   is `0.97`, not the `0.94` ratified here. `0.94` was below the reach of this ruling's own cusp
   anchor (`l_prime` peaks at `0.961183`), so yellow-green hues put `prime` itself outside the window
   and inverted the light side. See REQ-051a for the sweep, the candidates, and the margin.
+  AMENDED A THIRD TIME 2026-09-20 (ticket #681 unit U6, owner rulings Q8/Q9, with unit U4's
+  integration pass 2 folded in): the ladder's METRIC is CIE L*, not OKHSL `l`, and its step is
+  `STEP_L = 9` L*, not `PRIME_STEP 0.09`. Q8 keeps the total span this ruling set, `6 * STEP_L = 54`
+  L*, and Q9 replaces the 2026-09-17 redistribution with EQUAL-COMPRESS: at a bound both sides take
+  the smaller side's room, so the ladder shortens symmetrically instead of buying a constant span
+  with a lopsided one. Chroma is HELD at the anchor's own CAM16 chroma on every rung, with only the
+  gamut desaturating it, replacing the flat OKHSL saturation. The window is the same window,
+  re-expressed as `[12.25, 96.88]` L* and derived from the two OKHSL greys rather than retyped. The
+  anchor still never moves, so REQ-056 is still exact, and biasing it away from the bound is still
+  rejected; U4 pass 2's widening search moves only the LADDER's pivot, and only for a stored anchor
+  that would otherwise collapse the six non-prime rungs to duplicate hexes. See REQ-050..053a and
+  EX-4/EX-4b/EX-5 for the construction and the regenerated numbers.
 - **R3** Naming: `prime` group, `--{n}-prime-{step}`, `{n}/prime/{step}`, new Figma collection
   `Color Prime` with `{n}/{step}` (REQ-054).
 - **R4** Rename `keyIntensity` to `primeChroma` with a schema-v3 rename (REQ-011).

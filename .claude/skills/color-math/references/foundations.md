@@ -46,11 +46,11 @@ exports non-portable — knowledge-01 §3).
 ### 4. The gamut search — `maxChromaInGamut` and `peakC`
 
 - `maxChromaInGamut(hue, tone)` — binary-search chroma in `[0,180]` (18 iters): keep the largest chroma whose
-  `hctToRgb(...).inGamut` is true. Returns that ceiling; `0` at `tone<=0 || tone>=100`. **Memoized** by
-  `hue.toFixed(2)+"|"+tone.toFixed(2)`. The `gamut-ceiling` gate proves it is *tight*: in-gamut at `maxC`,
+  `hctToRgb(...).inGamut` is true. Returns that ceiling; `0` at `tone<=0 || tone>=100`. **Memoized**, key
+  EXACT (#686): `hue + "|" + tone`. The `gamut-ceiling` gate proves it is *tight*: in-gamut at `maxC`,
   NOT at `maxC+0.5`.
 - `peakC(hue)` — scan `t = 4..96 step 2`, return `{c,tone}` = the hue's max chroma and where it peaks.
-  Memoized by `hue.toFixed(2)`. This is *why* the per-palette `chroma` control is "% of the hue's own peak"
+  Memoized, key EXACT (#686): `String(hue)`. This is *why* the per-palette `chroma` control is "% of the hue's own peak"
   (100% = as saturated as this hue can get in sRGB), not a raw number.
 - `hctToOklch(h, c, t)` — the HCT color's OKLCH `[L, C, H°]` in **float**: reuses the CAM16 solve (`_hctToLinRGB`,
   shared with `hctToRgb`) and converts the converged linear sRGB straight through OKLab — **no 8-bit round-trip**.
@@ -62,7 +62,7 @@ exports non-portable — knowledge-01 §3).
   stays defined. **Chroma-aware because the OKLCH↔CAM16 hue map shifts with chroma (Abney)** — the OLD version
   sampled a fixed mid OKLCH point (L 0.72/C 0.10) and drifted ~15° on vivid blues; a cusp-only anchor regresses
   muted hues ~11°. Anchoring at the palette's OWN chroma lands the identity color on the stored hue to ~0°.
-  Memoized by `h.toFixed(2)+":"+chromaFrac.toFixed(3)`. Gate: `hct-oklch-inverse`.
+  Memoized, key EXACT (#686): `target + ":" + cf`. Gate: `hct-oklch-inverse`.
 - **Producers emit OKLCH hues** (the #117 flip): `gen-categories` stores each preset's source OKLCH hue +
   bakes `hueSpace:"oklch"`; `seedFromKeyColor(oklch, hueSpace)` returns the OKLCH hue (or CAM16 for a legacy
   doc); `defaultDocument` converts the 8 starter CAM16 hues via `camHueToOklch`. **`role-table.json` is
@@ -81,9 +81,7 @@ per stop:
   s        = (stop−500)/450                        # signed: <0 light · 0 mid · >0 dark
   hue      = baseHue + hueShift·dir               # dir = s (opposite) or −|s| (hueSameDir); 0 = flat
   maxc     = maxChromaInGamut(hue, tone)          # the per-stop ceiling
-  uG       = |s|^dampCurve                         # γ shapes WHERE damping bites
-  sideW    = max(0, 1 + (dampBias/100)·sign(s))    # light(−)↔dark(+) asymmetry
-  m        = max(0, 1 + (dampAmp/100)·(1−uG) − (damp/100)·sideW·uG)   # the multiplier
+  m        = chromaEnvelope(stop, 500, lift, controls)   # the ONE shared multiplier (#681 U3, below)
   intended = relChroma ? (chroma/100)·maxc : target   # per-stop ceiling basis vs base-peak basis
   damped   = min(intended·m, maxc)
   floorC   = min((chromaFloor/100)·maxc, intended)    # NEVER above intended → muted stays muted, neutral stays neutral
@@ -91,6 +89,34 @@ per stop:
   rgb      = hctToRgb(hue, chroma, tone)
 ```
 
+- **ONE envelope, four call sites** (#681 U3). The multiplier is no longer written out per path:
+
+```
+chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, exported, ONE definition
+  sd       = (liftStop(stop, lift) − liftStop(anchorStop, lift)) / 450   # keyed on the LIFTED reading
+  isEven   = controls.toneMode === "even"
+  damp     = isEven ? 100 − (100 − damp)·0.25 : damp     # EVEN_DAMP_FACTOR = 0.25
+  γ        = (isEven ? 0.25 : 1)·dampCurve
+  uG       = |sd|^γ
+  sideW    = max(0, 1 + (dampBias/100)·sign(sd))
+  shoulder = (dampAmp/100)·4·uG·(1−uG)                   # 0 at sd=0 AND |sd|=1 → shoulders only
+  return max(0, 1 + shoulder − (damp/100)·sideW·uG)
+```
+
+  Three properties the callers depend on. It keys on `liftStop`, never on the nominal stop and never on
+  a separately re-derived effective stop (a re-derived one breaks the lift-0 control, drops Danger below
+  its floor and reopens #668's measured-L\* upticks). `env(anchorStop) = 1` exactly for any lift, so the
+  pivot is continuous with its neighbours by construction. And `dampAmp` is a SHOULDER term, 0 both at
+  the pivot and at each end, so it can only raise the shoulders, which is why the vivid-mids preset
+  ships `dampAmp 0` rather than 55. The `even`-only `EVEN_DAMP_FACTOR` is U3's even-only retune: `even`
+  sets CIELAB L\* directly, so chroma damping there cannot move measured L\*, which makes it the one mode
+  whose falloff can be retuned without reopening the Helmholtz-Kohlrausch coupling.
+- **Anchored palettes take a different branch of this same pipeline.** `paletteStopsAnchored` and
+  `okhslStopsAnchored` call the SAME `chromaEnvelope`; what differs is the tone construction
+  (`anchorLerp`, `toneAt` re-mapped per side through the pivot) and the chroma BASIS
+  (`anchorChromaBasis`, a smoothstep blend from the anchor's own measured chroma at the pivot to the
+  group's resolved ramp target at each end). Stop 500 returns the stored `anchor` verbatim unless the
+  source sits outside `[9.95, 95.05]` L\*. See SKILL.md's anchored-branch rule and knowledge-02 §9.
 - **Defaults `dampCurve 1.5, dampAmp 0, dampBias 0` reproduce the legacy `1 − (damp/100)·u^1.5` edge damp
   EXACTLY** — the `damping-curve (a)` gate compares against the independent legacy formula
   `min(target·(1−(damp/100)·u^1.5), ceiling)`, `|Δ| ≤ 1e-6`, over EVERY saturated hue × stop.
@@ -110,7 +136,8 @@ per stop:
 off-center hues' richest stop toward the center (yellow's cusp is at high L\* — crank vibrancy and the mid
 reads vivid for any hue). Saturation = `(chroma/100)·m` clamped to `[0,1]`, using the **same** damping `m` as
 the even path. `okhslLAt(L*)` maps an L\* to OKHSL lightness via a neutral gray (`rgbToOkhsl(hctToRgb(0,0,L*))`),
-memoized in `_okL`. The reported `chroma`/`maxc` are *measured* (`cam16FromRgb(rgb).chroma`) for the analysis
+pure, no cache (#738: measured 0.40-0.90 us per call on a quiet host, median 1.54 us (1.46-1.88) at
+load 67, two or three calls per render). The reported `chroma`/`maxc` are *measured* (`cam16FromRgb(rgb).chroma`) for the analysis
 graphs; the color is in-gamut by OKHSL construction (`inGamut: true` is asserted, not computed). `l` is keyed
 on the **stop number** (`(stop−50)/900`, `(stop−500)/450`), not the array index — so stop 500 is the same hex
 in the 19-stop display ramp and the 25-stop export ramp.
