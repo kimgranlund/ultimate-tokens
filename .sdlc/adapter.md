@@ -181,6 +181,7 @@ The Orchestrator closes a plan on landing, in the landing commit or the one righ
 2. Tick every unit or step that shipped; a step that did not ship is moved to a new ticket and named in the revision row, so the archived file is a true record.
 3. Move the file to that home's `archive/` (`.sdlc/plans/archive/` or `docs/plan/archive/`); the roadmap row and the ticket keep the link.
 4. `adapter.py close <ticket> --reason <pre-land verdict path>`; the board row moves to 🟢 in the same commit under `Seat: orchestrator`.
+5. If the landing changed a file outside `.sdlc/`, the close-out commit re-runs the gates of record under the quiet-host rule and sets `ref` to the squash sha in `.sdlc/baseline.md`, so `sh .sdlc/checks/baseline-agrees-check.sh` prints `ok    head:` twice on `main` right after and no records plan is needed to re-point it (owner ruling 2026-09-20, #713 U6b).
 
 In single-agent mode the Conductor runs these steps. A plan whose PR merged without this step is a G5 recurrence and goes on the board as 🟡 until closed. A7 applies steps 1 to 3 to the three legacy plans (PLAN-export-schema, PLAN-adia-exports, PLAN-overhaul) as ruled.
 
