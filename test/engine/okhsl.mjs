@@ -55,11 +55,22 @@ for (let hd = 0; hd < 360; hd += 45) {
   if (back.join(",") !== "255,0,0") FAIL("anchor", `red did not round-trip: ${back}`);
 }
 
+// ── white (Ticket #739): pure white reads achromatic, s=0, the mirror of black's own L<=0 guard
+//    (#681 U10) at the top of the gamut instead of the bottom. #FFFFFF's OKLab L rounds to
+//    0.99999999, not exactly 1, so the guard itself uses a tolerance; this gate checks the guard's
+//    OBSERVABLE effect (rgbToOkhsl's s), not its internal threshold. ──────────────────────────────
+{
+  const white = rgbToOkhsl([255, 255, 255]);
+  if (white.s !== 0) FAIL("white", `rgbToOkhsl([255,255,255]).s is ${white.s}, want exactly 0`);
+  const back = okhslToRgb(white.h, white.s, white.l);
+  if (back.join(",") !== "255,255,255") FAIL("white", `white did not round-trip: ${back}`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
 // below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
-const DECLARED = ["roundtrip", "boundary", "monotone-s", "neutral", "anchor", "report-static"];
+const DECLARED = ["roundtrip", "boundary", "monotone-s", "neutral", "anchor", "white", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: okhsl ⇄ sRGB clears all [gate] predicates");
