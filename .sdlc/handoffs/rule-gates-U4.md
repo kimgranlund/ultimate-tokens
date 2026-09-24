@@ -663,3 +663,81 @@ brief): `npm ci` then `npm run smoke` against real headless Chrome
 dialog all render in a real browser`, every named assertion `✓`, no
 regression in the Typography/Geometry/color-editor screens whose titles or
 tooltips pass 4 rewrote.
+
+## Pass 4 completion (owner R41, review Round 3 in rg-U4-review.md)
+
+One completion commit inside pass 4, closing the last hits Round 3 found and
+widening E1's regex.
+
+### (a) E3 additions
+
+- `src/ui/sections/typography.js:24-27`: this file's own graph-card titles
+  (Modular scale, Optical tracking, Leading, Font roles) were missed; only
+  `color.js:23-27`'s matching set had been fixed earlier (pass 2). All four
+  now read a colon.
+- `src/ui/sections/color.js:1739`: the three `isEven`/`toneMode` ternary
+  branches ("Tune hue · chroma · skew · lift, live" etc.) had a trailing
+  `, live` tag from an original `— live`. A colon reads wrong before a single
+  adverb; each becomes a parenthetical, `"... lift (live)"`,
+  `"... cusp pull (live)"`, `"... chroma (live)"`.
+
+### (b) Further rewrites and the E1 regex widening
+
+- `src/engine/ds-export.js:776`: the original was a double-em-dash aside,
+  `"...neutral — toasts, tooltips — never a brand family's)."`; the sweep's
+  comma made it read as a flat 4-item list. Rewritten as a plain clause,
+  `"...neutral, as toasts and tooltips do, never a brand family's)."`.
+- `src/ui/sections/geometry.js:733`, `src/ui/sections/typography.js:630`,
+  `src/ui/sections/color.js:1788`: genuine label:description `insp-sub`/
+  `labelTitle` strings, each takes E3's colon.
+- `mcp/brand-kit-core.mjs:61`: `` `# ${kit.name || "Brand Kit"} — usage` ``
+  is an E1 heading, but the string embeds a double-quoted `"Brand Kit"`
+  segment before the dash; E1's original regex excluded BOTH quote
+  characters (`[^"\`]*`) from the pre-dash span, so a backtick-delimited
+  string carrying its own `"..."` never matched. Widened to two alternatives,
+  one per delimiter (`` `#{1,6} [^`]*\x{2014} `` or `"#{1,6} [^"]*\x{2014}`),
+  excluding only the string's own delimiter. Line now reads
+  `` `# ${kit.name || "Brand Kit"}: usage` ``.
+- `mcp/README.md:8`: the original double-em-dash aside
+  `"**three token systems** — **Color**, **Typography**, and **Geometry** —
+  and you"` had both dashes turned to commas, reading as a flat list before
+  "and you choose". The first becomes E4's colon (introducing the
+  enumeration); the second stays the comma before "and you choose", which
+  already reads correctly.
+
+### Re-run at head `ac89ee7c` (before mirror regen; `40d44414` after)
+
+| Predicate | Hits | Rewritten | Kept | Unresolved |
+|---|---|---|---|---|
+| E1 | 18 (was 17; the widened regex now also matches `brand-kit-core.mjs:61`) | 17 | 1 | 0 |
+| E2 | 35 | 28 | 7 | 0 |
+| E3 | 78 | 58 | 20 | 0 |
+| E4 | 26 | 25 | 1 | 0 |
+
+Verification method: for every hit, the removed (pre-sweep) line has its
+matched em dash replaced with the mechanical `, ` and compared against the
+line at the head; a match means the line still reads the unfixed comma and is
+not on the kept list (an "unresolved" count). All four predicates print 0
+unresolved at this head.
+
+### Count control, scratch clone `rg-U4-r41ctrl`
+
+Reverting `mcp/brand-kit-core.mjs:61` from `# ${kit.name || "Brand Kit"}:
+usage` back to `, usage` and re-reading confirms the line flips back to the
+pre-fix comma; since it is not on E1's kept list, the widened predicate's
+unresolved count goes from 0 to 1, one line, matching the earlier controls'
+pattern (a single-line revert is visible as a one-line count change).
+
+### Commits
+
+`ac89ee7c` (the 6-file, 11-line completion sweep), `40d44414` (mirror
+regeneration). Final head `40d44414`.
+
+### Verification, clone `rg-U4-clone-r41`
+
+`npm test`: 2026-09-24 06:57:09 to 07:07:34, `✓ all 51 test files passed`;
+the clone showed 3 files drifted after (the mcp-derived generated mirrors,
+`figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`,
+`src/ui/mcp-assets.js`), regenerated and committed in `40d44414` above so the
+worktree itself is clean at that head. `node test/repo/em-dash.mjs | tail -1`
+→ `em-dash: clean (686 files scanned)`.
