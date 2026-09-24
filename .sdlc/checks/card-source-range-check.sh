@@ -14,7 +14,7 @@ for c in .sdlc/records/cards/*.md; do
   [ -e "$src" ] || { echo "missing source $id"; n=$((n+1)); continue; }
   span=$(printf '%s' "$row" | grep -oE ':[0-9]+-[0-9]+' | head -1 | tr -d ':')
   start=${span%-*}; end=${span#*-}
-  head_line=$(grep -nE "^## $id " "$src" | head -1 | cut -d: -f1)
+  head_line=$(grep -nE "^## $id[: ]" "$src" | head -1 | cut -d: -f1)
   [ -n "$head_line" ] || { echo "no heading $id"; n=$((n+1)); continue; }
   next=$(awk -v s="$head_line" 'NR>s && /^## / {print NR; exit}' "$src")
   [ -n "$next" ] || next=$(($(wc -l < "$src") + 1))
