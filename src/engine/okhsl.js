@@ -181,6 +181,15 @@ export function rgbToOklchHue([r, g, b]) {
   return h < 0 ? h + 360 : h;
 }
 
+// rgbToOklabChroma([r,g,b]) — the OKLab chroma (hypot(a, b)) of an sRGB color. Unlike CAM16 chroma,
+// this reads exactly 0 for an exact grey and near-0 for a color within a code or two of one, so it is
+// what `tonal.js` tests an anchor against to decide whether it is achromatic (Ticket #739): CAM16
+// chroma of a neutral is not 0 in this implementation and cannot serve as that test.
+export function rgbToOklabChroma([r, g, b]) {
+  const lab = linearSrgbToOklab(srgbTransferInv(r / 255), srgbTransferInv(g / 255), srgbTransferInv(b / 255));
+  return Math.hypot(lab[1], lab[2]);
+}
+
 // rgbToOkhsl([r,g,b]) — inverse. Returns { h: degrees, s: 0..1, l: 0..1 }.
 export function rgbToOkhsl([r, g, b]) {
   const lab = linearSrgbToOklab(srgbTransferInv(r / 255), srgbTransferInv(g / 255), srgbTransferInv(b / 255));
@@ -192,6 +201,12 @@ export function rgbToOkhsl([r, g, b]) {
   // formula below divides 0 by 0. Black is achromatic: s = 0. (Ticket #681 U10: a `#000000`
   // palette anchor otherwise carried NaN through tonal.js's anchored OKHSL branches.)
   if (L <= 0) return { h: ((h * 360) % 360 + 360) % 360, s: 0, l: 0 };
+  // Pure white has the mirrored problem at the top of the gamut: getCs returns a zero-width
+  // chroma bound there too, and the same C / 0 division reads a bogus saturation. White is
+  // achromatic: s = 0. (Ticket #739: an achromatic anchor's own gamut-edge reading, not just
+  // its hue, must not leak into the ramp.) `#FFFFFF`'s OKLab L rounds to 0.99999999, not exactly
+  // 1, so the guard checks a tolerance rather than L >= 1.
+  if (L >= 1 - 1e-6) return { h: ((h * 360) % 360 + 360) % 360, s: 0, l: 1 };
   const [c0, cMid, cMax] = getCs(L, a, bb);
   let s;
   if (C < cMid) {

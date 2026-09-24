@@ -35,8 +35,8 @@
 // control (one mutated chroma) proves the comparison loop itself can fail before trusting its "0 off".
 import { primeSwatches, PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, lstarFromRgb, cam16FromRgb } from "../../src/engine/hct.js";
-import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS } from "../../src/engine/tonal.js";
-import { rgbToOkhsl, okhslToRgb } from "../../src/engine/okhsl.js";
+import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS, ACHROMATIC_ANCHOR_C } from "../../src/engine/tonal.js";
+import { rgbToOkhsl, okhslToRgb, rgbToOklabChroma } from "../../src/engine/okhsl.js";
 import { derivedAll, oklchStr } from "../../src/engine/exports.js";
 import { defaultDocument, projectView, paletteKeyColors } from "../../src/ui/model.mjs";
 import { hydrate } from "../../src/ui/persist.js";
@@ -1305,8 +1305,51 @@ for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
   console.log(`  ${fails.some((f) => f.startsWith("anchor-achromatic:")) ? "FAIL" : "pass"}  anchor-achromatic: ${seen - bad} of ${seen} ramps real (#000000, #FFFFFF, #010101, #808080 x 3 tone modes x 2 hue spaces), planted-NaN control caught`);
 }
 
+// ── achromatic-anchor (Ticket #739): an achromatic anchor gives the ramp the PALETTE's hue, not its
+// own rounding-residue hue; a chromatic anchor (OKLab C above ACHROMATIC_ANCHOR_C) is untouched. Both
+// sides are pinned so a future edit cannot widen the constant's reach or narrow it silently. ─────────
+{
+  const HUE = 250, CHROMA = 50;
+  let bound = 0, skipped = 0;
+  for (const anchor of ["#808080", "#808081", "#FFFFFF", "#000000", "#010101"]) {
+    for (const toneMode of ["perceptual", "peak", "even"]) {
+      const controls = { ...DEFAULT_CONTROLS, toneMode };
+      const anchored = paletteStops({ hue: HUE, chroma: CHROMA, skew: 0, lift: 0, anchor }, controls, [300, 500, 700]);
+      const twin = paletteStops({ hue: HUE, chroma: CHROMA, skew: 0, lift: 0 }, controls, [300, 500, 700]);
+      for (const stop of [300, 700]) {
+        const a = cam16FromRgb(hexToRgb(anchored.find((s) => s.stop === stop).hex));
+        // A near-white (or near-black) anchor pulls its OWN nearest light (or dark) stop toward
+        // achromatic too - CAM16 hue is noise below C=5, the same floor U1-3's own row filters on -
+        // so the bound only applies where the anchored stop itself carries a real hue to test.
+        if (a.chroma < 5) { skipped++; continue; }
+        const t = cam16FromRgb(hexToRgb(twin.find((s) => s.stop === stop).hex));
+        const d = Math.abs(((a.hue - t.hue + 540) % 360) - 180);
+        if (d > 12) FAIL("achromatic-anchor", `${anchor} ${toneMode} stop ${stop}: hue ${d.toFixed(0)}deg from the palette-hue twin, want at most 12`);
+        else bound++;
+      }
+    }
+  }
+  // Negative control: the predicate must actually bite. Two codes off grey (#808082, OKLab C ~0.0030,
+  // above the 0.002 constant) is chromatic, so this file first proves the achromatic branch would
+  // fail this exact assertion if the constant swallowed it - by asserting #808082's own OKLab C sits
+  // above the constant (never assumed, so a future constant change cannot silently drift past it).
+  const twoOff = rgbToOklabChroma(hexToRgb("#808082"));
+  if (!(twoOff > ACHROMATIC_ANCHOR_C)) FAIL("achromatic-anchor", `negative control setup: #808082's OKLab C ${twoOff} is not above ACHROMATIC_ANCHOR_C ${ACHROMATIC_ANCHOR_C} - the fixture no longer proves the boundary`);
+  // A chromatic anchor renders from ITS OWN hue, never the palette's stored one: the ramp must stay
+  // byte-identical when the palette's stored hue changes underneath it (the pre-#739 behaviour for
+  // every anchor this constant does not catch).
+  let chromaticIdentical = true;
+  for (const toneMode of ["perceptual", "peak", "even"]) {
+    const controls = { ...DEFAULT_CONTROLS, toneMode };
+    const rampA = paletteStops({ hue: 250, chroma: CHROMA, skew: 0, lift: 0, anchor: "#808082" }, controls, STOPS).map((s) => s.hex).join(",");
+    const rampB = paletteStops({ hue: 10, chroma: CHROMA, skew: 0, lift: 0, anchor: "#808082" }, controls, STOPS).map((s) => s.hex).join(",");
+    if (rampA !== rampB) { chromaticIdentical = false; FAIL("achromatic-anchor", `#808082 ${toneMode}: ramp changed with the palette's stored hue (250 vs 10) - a chromatic anchor must render from its own hue only`); }
+  }
+  console.log(`  ${fails.some((f) => f.startsWith("achromatic-anchor:")) ? "FAIL" : "pass"}  achromatic-anchor: ${bound} of ${5 * 3 * 2 - skipped} anchored/twin hue distances at most 12deg (#808080, #808081, #FFFFFF, #000000, #010101 x 3 tone modes x stop 300/700, ${skipped} skipped under CAM16 C 5 - a near-white/black anchor's own nearest stop), #808082 (OKLab C ${twoOff.toFixed(4)}, above the constant) chromatic and hue-stable across a moved palette hue: ${chromaticIdentical}`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-achromatic"]) {
+for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-achromatic", "achromatic-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
   console.error(`    — ${f.slice(g.length + 2)}`);
