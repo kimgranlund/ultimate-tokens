@@ -29,7 +29,7 @@ A diagnostic run of every `test/run.mjs` file individually, taken later on a lou
 | `engine/anchor.mjs` | 32.05 |
 | `engine/curated-contrast.mjs` | 11.54 |
 | every other file | under 9 s each |
-| sum of all 50 files | 263.53 |
+| sum of all 50 files (the diagnostic script's own file list, `diff`-checked empty against `test/run.mjs`'s current `TESTS`) | 263.53 |
 
 Four files carry the cost, same as before the split: `prime.mjs` and `headless-boot.mjs` (the SAMPLED canary now includes headless-boot's own `(rst-corpus)` reset sweep, Q1) now outweigh `tonal.mjs` and `anchor.mjs`, which is the opposite order from the pre-split per-file reading in `.sdlc/baseline.md` (`tonal.mjs` 100.2 s, `anchor.mjs` 80.0 s, `headless-boot.mjs` 61.0 s, `prime.mjs` 54.9 s, all FULL). The SAMPLED thinning helped tonal and anchor more than it helped prime and headless-boot.
 
