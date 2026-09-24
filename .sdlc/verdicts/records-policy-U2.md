@@ -7,11 +7,16 @@ branch: unit/rp-U2
 base: plan/records-policy @ 2ab7ec42
 grade: verifier-l3, the evidence run dispatched by the Verifier seat, which re-derived the rows marked mine
 contract: U2-1 to U2-8 and the plan rows P1 to P4 of .sdlc/plans/records-policy.md at 966a62b1
-pass: 1
+pass: 2
+passes: 1 at 966a62b1 🔴, 2 at ec03c157 🟢
 written: 2026-09-24
 ---
 
-# Verdict records-policy U2 · 🔴 · 8 of 8 U2 rows 🟢, P1 and P2 red on the review record the head adds
+# Verdict records-policy U2 · passes 1 to 2 · 🟢 at `ec03c157`
+
+Current finding: 🟢 at `ec03c157`, in `## Pass 2` below. Pass 1, 🔴 at `966a62b1`, is history.
+
+## Pass 1, at `966a62b1`
 
 verdict: 🔴
 sha: 966a62b14c216564cc865b8c7fb6091491aba67b
@@ -61,3 +66,24 @@ The other checks read clean at head and base: `stale total: 0` twice, `range mis
 
 verdict: 🔴
 sha: 966a62b14c216564cc865b8c7fb6091491aba67b
+
+## Pass 2, at `ec03c157`
+
+verdict: 🟢
+sha: ec03c15792e59c381fdce48d15300d8fe5ae1be7
+
+Run by me at grade L2, since the delta is two records. `git diff --stat 966a62b1 ec03c157` gives
+`.sdlc/verdicts/records-policy-U1-review.md | 2 ++` and `.sdlc/verdicts/records-policy-U2-review.md
+| 4 ++--`: no U2 file moved, so pass 1's U2-1 to U2-8, P3 and P4 carry on custody.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| P2 | branding clean | 🟢 | `branding: clean (651 files scanned)`; the review's two lines now name the retired maker in words instead of quoting the pattern | pass 1's head `966a62b1`: `FAIL: 1 branding violation(s) across 651 files` |
+| P1 | `npm test` green, no `node_modules` | 🟢 | fresh clone at `ec03c157`, after the R34 quiet window: `✓ all 49 test files passed`, `exit 0`, TESTS `49`, tree `0` | the same gate at `966a62b1`: `✗ 1/49 test file(s) failed`, exit `1` |
+| N4 | the U1 review carries its own grade | 🟢 | `verdict: 🟢` at line 47, under the title `# Review U1 · PASS`, so the value is the record's own conclusion; `verdict-frontmatter-check.sh`: `verdicts 107 graded 60 grandfathered 47 bad 0` | pass 1: `MISSING records-policy-U1-review.md`, `bad 1` |
+| K | the other checks | 🟢 | all five `.sdlc/checks/*.sh` exit `0` | pass 1's controls, same scripts |
+
+Pass 1's 🟡 notes N1 to N3 (plan text) stand, for the Orchestrator's revision.
+
+verdict: 🟢
+sha: ec03c15792e59c381fdce48d15300d8fe5ae1be7
