@@ -10,7 +10,7 @@
 ## Build
 
 Ten of the eleven files already had their `verdict:` line moved correctly by the prior session
-(from line 2, above or in front matter, to the record's closing graded block) — I read the diff,
+(from line 2, above or in front matter, to the record's closing graded block); I read the diff,
 checked each against U4-1/U4-2/U4-3 below, and kept all ten as left. `pif-u5.md` was the eleventh
 and was still untouched: it carries one shared top-level YAML front-matter block (`---` at lines
 1-11) used across five stacked re-verify passes in the same file, with `verdict: 🟢` at line 10
