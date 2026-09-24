@@ -4,7 +4,7 @@ plan: gate-split
 unit: U6c
 branch: unit/gs-U6c
 written: 2026-09-23
-pass: 2
+pass: 3
 ---
 
 # Handoff U6c gate-split - builder -> reviewer
@@ -13,9 +13,13 @@ pass: 2
 |---|---|
 | Branch | unit/gs-U6c, cut from unit/gs-U6b at d40cc5ce |
 | Worktree | .worktrees/gs-U6c |
-| Commits | 8fc8abf5 (pass 1, "narrow the SAMPLED draw in prime and the reset sweep"), 46dc9b77 (pass 2, "F1 comment mechanism, F2 print and cite") |
+| Commits | 8fc8abf5 (pass 1, "narrow the SAMPLED draw in prime and the reset sweep"), 46dc9b77 (pass 2, "F1 comment mechanism, F2 print and cite"), 23648d56 (pass 3, "state why the hue step stayed at 5") |
 | Files | test/engine/prime.mjs, test/ui/headless-boot.mjs, this handoff |
 | BASE for P8/P9-style diffs | origin/main merge-base, 04f95ff0 |
+
+## Pass 3: the verdict's row 9
+
+The pass 2 handoff's "What changed" claimed the `DET_CASE_COUNT`/`POISON_COUNT` comment above states why the hue step (`HUE_MULT`, `HUE_OFFSET`) did not move; it did not. Added a third comment paragraph above `DET_CASE_COUNT`, after `POISON_COUNT`'s: `HUE_MULT stays at 5 ... at step 10 the gamut-ceiling gate's own truncated-key negative control finds 0 witnesses on this sweep and reds itself (measured at U6c), so 5 is the widest step this gate's own control still passes at`. Corrected the false claim below to point at the new paragraph instead of the two that never carried it. `node test/engine/prime.mjs` once in a fresh clone at 23648d56: `exit 0`, matching U6c-1's needles unchanged (the comment carries no behavior). No `npm test` run, per the team lead's instruction: a comment-only change.
 
 ## Pass 2: review FIX-FIRST
 
@@ -32,7 +36,7 @@ Review verdict was FIX-FIRST (`gs-U6c-review.md`): every mechanical criterion an
 
 ## What changed
 
-`test/engine/prime.mjs`: `DET_CASE_COUNT` SAMPLED 400 to 200. A new `POISON_COUNT` const (`FULL ? 1500 : 500`) replaces the literal `1500` bound on the poison loop; the mode line already read `POISON_CASES.length`, so it follows without an edit there. Comments above both consts state the new sizes and why the hue step (`HUE_MULT`, `HUE_OFFSET`) did not move.
+`test/engine/prime.mjs`: `DET_CASE_COUNT` SAMPLED 400 to 200. A new `POISON_COUNT` const (`FULL ? 1500 : 500`) replaces the literal `1500` bound on the poison loop; the mode line already read `POISON_CASES.length`, so it follows without an edit there. Comments above both consts state the new sizes; a third paragraph, added pass 3, states why the hue step (`HUE_MULT`, `HUE_OFFSET`) did not move with them.
 
 `test/ui/headless-boot.mjs`, inside the `(rst-corpus)` block only: the loop no longer walks `[...corpusDocs, defaultKitPreset]` directly. It first flattens `corpusDocs`'s anchored palettes into `corpusAnchoredEntries` (order preserved), takes every fourth under SAMPLED (`RESET_STRIDE = 4`, first kept, all kept under FULL), then appends the default kit's own anchored palettes (`defaultKitEntries`) unstrided, keyed on identity with `defaultKitPreset` rather than on `preset.name` (the `...dkDoc` spread after `name: "default kit"` replaces the kit preset's own name with `defaultDocument().name`, measured `"Default"`, so a name-keyed skip on `=== "default kit"` never matches the kit; it touches no other preset's name). `corpusFloor` moves 300 to 60 under SAMPLED (FULL untouched at 3000), since the strided count no longer clears the old floor. Two lines print under SAMPLED only, before the existing mode line: `(rst-corpus SAMPLED: stride 4, 91 anchored palettes checked of 316, default kit whole)` and, added pass 2, `(rst-corpus SAMPLED: 5 of 35 sampled documents contribute no anchored palette in either mode, 0 of the rest lost every anchored palette to the stride)`.
 
