@@ -4,7 +4,7 @@ plan: gate-split
 unit: U7
 branch: unit/gs-U7
 written: 2026-09-24
-pass: 1
+pass: 2
 ---
 
 # gate-split U7: pre-land review fixes, records and comments only
@@ -70,6 +70,27 @@ comment edits; no source or test logic touched.
    list `.claude/CLAUDE.md` already carries. `.claude/CLAUDE.md` itself is untouched:
    its own `~60 s` line (`:95`) is a separate, owner-pending item (X9), not this file.
 
+8. `.sdlc/adapter.md` and `.sdlc/baseline.md`, two remaining stale `56 to 60 s` `npm test`
+   figures (commit `080474ac`, team-lead pass 2). Both files' own live table (section 1
+   line 26 and baseline.md line 19) already agreed with each other on `89.10 · 79.93 ·
+   80.07` / `80 to 89 s`; grepping both files for `~60` and `56 to 60` turned up two spots
+   that had not been brought forward with that re-time. `adapter.md`'s ceiling-arithmetic
+   bullet: before, `Arithmetic: main's 56 to 60 s, plus the four sampled legs at about a
+   tenth of the moved cost, plus the thinned tonal grid, near 100 s with 20 s of room
+   (#713 design section).` After: `Arithmetic at the time the ceiling was set (#713 design
+   section, before U6c-8 re-measured it): main's then-current 56 to 60 s, plus the four
+   sampled legs at about a tenth of the moved cost, plus the thinned tonal grid, projected
+   near 100 s with 20 s of room. History now: the real re-time is 80 to 89 s (line 26
+   above, `.sdlc/baseline.md`), comfortably inside the same 120 s ceiling.`
+   `baseline.md`'s "why a ceiling was needed" sentence: before, `The `npm test` seconds in
+   the live table above (56 to 60 s) were measured before #681, whose corpus sweeps are
+   the cost.` After: `The `npm test` seconds the live table above showed at this section's
+   own writing (56 to 60 s, since superseded by the 80 to 89 s U6c-8 re-time in that same
+   table) were measured before #681, whose corpus sweeps are the cost.` Every other
+   digit-plus-`s` figure found by the grep sweep sits inside the already-retired
+   `Interim gate-time ceiling` / pif-u5 history section or the already-"Retired, #713 U6b"
+   paragraph, both already correctly labelled as history; none needed a further fix.
+
 ## Not this unit's
 
 `.claude/CLAUDE.md:95`'s `~60 s` line (owner ruling, X9, pending), `test/engine/anchor.mjs`'s
@@ -79,12 +100,14 @@ files, `.sdlc/debt.md`'s K17 drift list, the `symmetry` anchored-corpus leg).
 
 ## Close-out checks
 
-- `npm test` in a fresh clone at each head, including `e330d24a` (final head): `all 50
-  test files passed`, `git status --short` empty after.
-- `node test/repo/branding.mjs | tail -1`: `branding: clean (694 files scanned)`.
+- `npm test` in a fresh clone at pass 1's head (`e330d24a`): `all 50 test files passed`,
+  `git status --short` empty after. Pass 2 (`080474ac`) is records-only per the
+  team-lead's ask; no `npm test` re-run for it.
+- `node test/repo/branding.mjs | tail -1` at `080474ac`: `branding: clean (694 files
+  scanned)`.
 - Added-line em dash count against `origin/main` (`git merge-base origin/main HEAD` =
-  `2890d67a`): `git diff $BASE | grep -v '^+++ ' | grep '^+' | perl -CSD -ne 's/`[^`]*`//g;
-  print if /\x{2014}/' | wc -l` reads `0`.
+  `2890d67a`) at `080474ac`: `git diff $BASE | grep -v '^+++ ' | grep '^+' | perl -CSD -ne
+  's/`[^`]*`//g; print if /\x{2014}/' | wc -l` reads `0`.
 
 ## Commits
 
@@ -94,5 +117,7 @@ files, `.sdlc/debt.md`'s K17 drift list, the `symmetry` anchored-corpus leg).
   labels (#713 U7)
 - `e330d24a` gate-split: fix adapter.md's own SDLC-proposal npm test and CI figures
   (#713 U7)
+- `080474ac` gate-split: mark the two remaining stale 56-60s npm test figures as history
+  (#713 U7)
 
-Head: `e330d24a`.
+Head: `080474ac`.
