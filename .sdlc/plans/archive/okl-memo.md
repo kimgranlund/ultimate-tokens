@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: "#738"
 priority: P2
 lane: color-engine (`src/engine/tonal.js`, `test/engine/tonal.mjs`, `test/engine/prime-determinism-worker.mjs`, seven `color-math` skill lines, the bundle files `npm test` regenerates)
@@ -160,3 +160,4 @@ One PR from `plan/okl-memo` to `main`, title `fix(engine): tonal.js drops the bu
 | 2026-09-24 | revision 5, from U1 review round 2 (`.sdlc/verdicts/okl-memo-U1-review-r2.md`, PASS at `83b65c6c`): P4's Expected cell reads `0`, `0`, `0` to match revision 4's three commands, and its fixture control now prints `1`, because `hct.js` left the forbidden set | orchestrator |
 | 2026-09-24 | revision 6, at U1's merge: U1 ticked on the verdict (`.sdlc/verdicts/okl-memo-U1.md`, 13 of 13 🟢 at `348cc402`, verifier-l2). The verdict's one note is folded in at `a79319cb`: the timing wording in `tonal.js:926` and `foundations.md:139` now states the measured range (0.40 to 0.90 us per call on a quiet host, median 1.54 at load 67) instead of "under 1us". Comment and doc lines only plus the regenerated bundle; pre-land grades the head that carries it | orchestrator |
 | 2026-09-24 | revision 7, from the pre-land review at `59a55d91` (FAIL, `baseline-agrees-check.sh` STALE: ui.html 4125.1 recorded, 4125.3 KB in the tree): P4 admits `.sdlc/baseline.md` for the `npm run build` row's ui.html figure and one correction paragraph (the U7/U10 precedent), because revision 6's comment fold-in grew the bundle. The same fold-in's wording reaches two more lines already inside the wall: `00-synthesis.md:89` and `test/engine/tonal.mjs:1985` still say "well under 1us" and take the measured range | orchestrator |
+| 2026-09-24 | revision 8, close-out: landed as PR #749, squash `cbca0aec`, on the three gates at `9d5f6dc3` (pre-land 🟢 with U1-2 carried as a documented exception, CI green with the `sweeps` legs, critic ACCEPT); #738 closed with the critic's three yellows named; the out-of-scope stale docs filed as #750; plan archived | orchestrator |
