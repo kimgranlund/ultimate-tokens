@@ -343,7 +343,8 @@ if (detMismatch > 0) FAIL("c", `${detMismatch}/${DET_CASES.length} palettes retu
 //    regardless of hct.js's own current state. Both constructions run over the SAME dedicated sweep
 //    (this gate's own, separate from GAMUT_SWEEP — hue step 2 x chroma {25,50,75,100} x
 //    hueShift {0,±10,±20} x skew {0,±40} x both hue spaces = 180 x 4 x 5 x 3 x 2 x 7 rungs = 151,200
-//    rungs; these are THIS gate's own parameters, not a reproduction of the reviewer's — review pass 3
+//    rungs FULL (30,240 SAMPLED, one hue in five at hue step 5); these are THIS gate's own
+//    parameters, not a reproduction of the reviewer's: review pass 3
 //    correction #2: an earlier version of this comment credited "the reviewer's own sweep" while
 //    actually using different axis counts (4 hueShifts x 5 chromas for theirs, 5 x 4 here) that only
 //    coincidentally summed to the same 302,400 denominator; measured independently on THESE parameters,
@@ -354,7 +355,8 @@ if (detMismatch > 0) FAIL("c", `${detMismatch}/${DET_CASES.length} palettes retu
 //    at that time, not a pinned measurement. That history-dependence is now gone along with the reason
 //    for it: `vulnPeakC`/`vulnMaxChroma` are PRIVATE to this gate (a fresh `Map` per process, touched by
 //    nothing else in this file), so the sweep below is now a genuinely reproducible measurement, not an
-//    artifact of whatever ran first — measured, this commit, three runs: 114/151,200 every time.
+//    artifact of whatever ran first: measured FULL, this commit, three runs: 114/151,200 every
+//    time (SAMPLED prints 3/30,240 at hue step 5).
 //    At full hue-step-1 resolution (302,400 rungs, ~43s standalone, not run by default) the same
 //    reproducible construction measures 742/302,400 — cited here for scale, re-measured on this head's
 //    own axes rather than copied from the reviewer's (which used a different axis composition), and
