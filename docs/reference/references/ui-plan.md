@@ -1,24 +1,24 @@
-# HCT Palette Generator — UI Plan
+# HCT Palette Generator: UI Plan
 
 > The front-end plan for the tool whose engine/semantic/export logic the spec defines. Reasoned
 > top-down from intent (per the generative-UI discipline), not from components. Confirmed
 > decisions: **structured-pannable canvas · export = right drawer**.
 > Date: 2026-06-15.
 
-## Revision A — usage-driven re-arrangement (2026-06-15, post-build)
+## Revision A: usage-driven re-arrangement (2026-06-15, post-build)
 
-After building + *using* the app, the surface was re-arranged (the reasoning in §1 is unchanged — only
+After building + *using* the app, the surface was re-arranged (the reasoning in §1 is unchanged, only
 the arrangement moved). Supersedes the "3 lenses on one canvas" decision:
 
-- **left-pane → ANALYSIS rail** (was the palette navigator) — stacked graphs for the selected palette:
+- **left-pane → ANALYSIS rail** (was the palette navigator), stacked graphs for the selected palette:
   L\*×C, tone curve, chroma curve, contrast bars (flag `<4.5:1`), hue wheel (whole set).
-- **canvas → the ramps as the 2D pannable NAVIGATOR** (was 3 lenses) — each palette is a clickable row
+- **canvas → the ramps as the 2D pannable NAVIGATOR** (was 3 lenses), each palette is a clickable row
   (name + `●/○` enable); the ramps *are* the palette list (the old left list moved here). Analysis went
   to the left rail; Semantic moved into the Roles panel.
 - **canvas-header → `◐ canvas color-scheme`** (preview the palette light↔dark, *independent* of the
   app-chrome `◐`) · Fit · zoom% · + Palette (replaced the lens toggle). **Two `◐` toggles** now: app
   chrome theme (header, dogfooded) vs canvas preview (canvas-header).
-- **right-pane → segmented `[ Palette │ Global │ Roles ]`** (was a single inspector) — Palette = selected
+- **right-pane → segmented `[ Palette │ Global │ Roles ]`** (was a single inspector), Palette = selected
   palette's controls; Global = global controls; Roles = the 53-role table + a small semantic preview.
 - **Bugs fixed:** gallery search no longer steals focus on type (the `<input>` is stable; only the tile
   grid re-renders); canvas pan now works (pointer-capture `translate()`, origin-centered, a 4px drag
@@ -33,7 +33,7 @@ Built into `capability.system.ui-app` + the single-file bundle. The wireframes/r
 intent: >
   Let a design-system author generate perceptually-even, in-gamut palettes + a 53-role
   semantic layer, judge their quality, and export to code/Figma.
-posture: [creating, configuring, analyzing]      # a creative editor — NOT a dashboard
+posture: [creating, configuring, analyzing]      # a creative editor, NOT a dashboard
 role: [design-system-author]                      # single role → no role-collapse  # <!-- fix-old-names: keep -->
 core_loop: tune params → see ramps vs the gamut ceiling → judge → export
 
@@ -92,18 +92,18 @@ canvas + footers). It traces from posture, so it is justified, not premature.
 | **app-footer** | doc status: `palettes · tokens · theme · saved · ⚠ contrast notes` | T6/D3 summary |
 
 **Key trick:** L selecting `⚙ Global` swaps **R** to the global controls (instead of palette
-props), so *one* inspector serves both T3 and T4 — no separate settings page.
+props), so *one* inspector serves both T3 and T4, no separate settings page.
 
-## 3. The canvas — structured-pannable, 3 lenses
+## 3. The canvas: structured-pannable, 3 lenses
 
 A palette set is structured data (8 × 25), so the canvas **auto-lays-out** ramp strips stacked
 and centered on `(0,0)`; **pan** (shift-drag) navigates, **zoom** inspects. No free placement
 (it would be an affordance with no task). The canvas-header toggles **3 lenses** over the same
 surface:
 
-**Ramps** (default) — swatch grids; tune & see color (T3).
+**Ramps** (default), swatch grids; tune & see color (T3).
 
-**Analysis** — the L*×C plot for the selected palette → **D2**:
+**Analysis**, the L*×C plot for the selected palette → **D2**:
 ```
 [ Ramps │ ANALYSIS │ Semantic ]   Primary
  L*100┤●                          ░ gamut ceiling (maxChromaInGamut@tone)
@@ -116,7 +116,7 @@ surface:
       └──────────────── C →
 ```
 
-**Semantic** — a live UI preview painted by the 53 roles; ◐ flips every `--c-*` via `light-dark()`:
+**Semantic**, a live UI preview painted by the 53 roles; ◐ flips every `--c-*` via `light-dark()`:
 ```
 [ Ramps │ Analysis │ SEMANTIC ]   (light ◐)
  ┌ surface ────────────────────────┐
@@ -167,7 +167,7 @@ nav:  gallery ──open/new──▶ editor ──◀ Back──▶ gallery
 ## 5. State model (no stored derived state)
 
 ```yaml
-document:                # the palette SET — the source of truth (persist.js)
+document:                # the palette SET, the source of truth (persist.js)
   shape: { name, palettes:[{name,hue,chroma,skew,lift,on}], curve,tension,lmin,lmax,damp,hueSpace }
   persistence: localStorage per set; the gallery lists them; `dirty` = document != last-saved
 ui_session (not persisted with the doc):
@@ -176,7 +176,7 @@ ui_session (not persisted with the doc):
   viewport:  { panX, panY, zoom }                # owner canvas; reset = Fit
   theme:     light|dark|auto                     # owner header; UI-only, NEVER exported (AC-U3)
   exportOpen: bool                               # owner header
-derived (NEVER stored — recomputed from document by the validated modules):
+derived (NEVER stored, recomputed from document by the validated modules):
   ramps     ← paletteStops()      # engine + tonal
   semantic  ← semanticRoles()     # semantic
   plotData  ← {ceiling, applied}  # the Analysis lens
@@ -185,9 +185,9 @@ derived (NEVER stored — recomputed from document by the validated modules):
 ```
 
 The whole right side is a pure projection of `document` through the six validated capability
-modules — the same "the board is the repo, projected" discipline, applied to color.
+modules, the same "the board is the repo, projected" discipline, applied to color.
 
-## 6. Components (Layer 5 — each traced to a task)
+## 6. Components (Layer 5: each traced to a task)
 
 ```yaml
 left-pane:    PaletteListItem(enable toggle)→T2 · AddPaletteBtn→T2 · GlobalEntry→T4 · RolesEntry→inspect
@@ -207,21 +207,21 @@ memoized (no spinner needed, but a subtle recompute shimmer is optional on heavy
 
 ## 7. Anti-pattern check (passed)
 
-- AP-01 premature rendering — reasoned from intent/posture, not components ✔
-- AP-02/08 metric-without-decision — the L*×C plot and contrast readout drive D2/D3 with real actions ✔
-- AP-05 actionless — every region carries actions ✔
-- AP-07 role-collapse — single role ✔
-- AP-09 surface-without-task — every region/surface mapped to ≥1 task ✔
-- AP-04 unbound / no-stored-derived — components bind to `document`; the right side is recomputed ✔
-- AP-06 feedback — gallery-empty + import-error specified ✔
+- AP-01 premature rendering, reasoned from intent/posture, not components ✔
+- AP-02/08 metric-without-decision, the L*×C plot and contrast readout drive D2/D3 with real actions ✔
+- AP-05 actionless, every region carries actions ✔
+- AP-07 role-collapse, single role ✔
+- AP-09 surface-without-task, every region/surface mapped to ≥1 task ✔
+- AP-04 unbound / no-stored-derived, components bind to `document`; the right side is recomputed ✔
+- AP-06 feedback, gallery-empty + import-error specified ✔
 
 ## 8. Next steps (open)
 
-1. **Build path** — standalone single-file app (per ADR-010, the tool is offline/dependency-free)
+1. **Build path**: standalone single-file app (per ADR-010, the tool is offline/dependency-free)
    consuming the six validated capability modules directly; or formalize this plan as a UI spec
    cell and run it through the factory.
-2. **Interaction detail (Phase 3)** — pan/zoom mechanics, keyboard, drag-reorder palettes, undo
+2. **Interaction detail (Phase 3)**: pan/zoom mechanics, keyboard, drag-reorder palettes, undo
    granularity, the contrast-readout's exact pairs (on-color vs prime fill per mode).
-3. **Visual layer** — tokens/typography/spacing (defer to `ui-compose-*` / the tool's own output
-   could theme its own UI — dogfooding).
+3. **Visual layer**: tokens/typography/spacing (defer to `ui-compose-*` / the tool's own output
+   could theme its own UI, dogfooding).
 ```

@@ -37,12 +37,12 @@ Rules the gates imply:
   order-dependence defect (#686) at the cost of fewer cache hits. Measured at corpus scale (343
   documents, 3,780 palettes, 3 tone modes, fresh cold process per measurement, CPU time, engine
   variants differing ONLY in the three keys): a real, repeatable **+21% CPU**, four clean pairs, no
-  inversions — corroborating an independent reviewer's own +26%/+32% corpus-scale finding. Raising
+  inversions, corroborating an independent reviewer's own +26%/+32% corpus-scale finding. Raising
   `CACHE_CAP` (5,000 to 60,000) did not help. `npm test`'s own total moved with it, but the WALL-CLOCK
   figure is additionally, and heavily, host-contention-sensitive on this dev machine (many concurrent
   unit worktrees/agents): repeated post-fix runs measured 1:34 to 2:51 total, 97.99s to 173.89s user
-  CPU. This is the repo's own rule in practice — a change invalidating a record repairs that record in
-  the same change — and the 58-62s figure at `7faf3aa` no longer holds once #686 is fixed; a clean,
+  CPU. This is the repo's own rule in practice, a change invalidating a record repairs that record in
+  the same change, and the 58-62s figure at `7faf3aa` no longer holds once #686 is fixed; a clean,
   quiet-host re-measurement on `main` after this unit lands would tighten the range above.
   **Superseded as the figure to cite, #681 U5 (2026-09-20).** The 90 to 175 s range above was measured
   before U2, U3 and U6 integrated, and every reading since is well past it. The owner ruled, verbatim:

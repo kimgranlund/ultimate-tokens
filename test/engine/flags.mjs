@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// flags.mjs — verifier for the feature-flag substrate (src/engine/flags.js). Pure, no DOM.
+// flags.mjs, verifier for the feature-flag substrate (src/engine/flags.js). Pure, no DOM.
 import * as F from "../../src/engine/flags.js";
 
 const fails = [];
@@ -14,13 +14,13 @@ ok(F.TIER_FLAGS.free.describePalette === false && F.TIER_FLAGS.pro.describePalet
 // ── resolveFlags ENFORCED: the tier drives the values ──
 {
   const free = F.resolveFlags({ tier: "free" }, { enforced: true });
-  // pro REQUIRES a valid entitlement now (resolveFlags folds resolveTier) — a bare tier:"pro" is free.
+  // pro REQUIRES a valid entitlement now (resolveFlags folds resolveTier), a bare tier:"pro" is free.
   const pro = F.resolveFlags({ tier: "pro", entitlement: { status: "active" } }, { enforced: true });
   ok(free.maxSets === 2 && free.proExport === false && free.hostedMcp === false, "enforced free → the free values");
   ok(pro.maxSets === Infinity && pro.proExport === true && pro.advancedTreatments === true, "enforced pro (with an active entitlement) → the pro values");
   ok(F.resolveFlags({ tier: "nope" }, { enforced: true }).proExport === false, "an unknown tier resolves as free");
   // SPOOF CLOSED at the engine: a stored tier:"pro" with NO/expired entitlement resolves to FREE through
-  // resolveFlags directly (not just app.flagOf) — a faked-tier consumer can't unlock Pro.
+  // resolveFlags directly (not just app.flagOf), a faked-tier consumer can't unlock Pro.
   ok(F.resolveFlags({ tier: "pro" }, { enforced: true }).proExport === false, "enforced tier:pro WITHOUT an entitlement → free values (entitlement gate is engine-level)");
   ok(F.resolveFlags({ tier: "pro", entitlement: { status: "active", expiresAt: 1000 } }, { enforced: true, nowMs: 2000 }).proExport === false, "enforced tier:pro with an EXPIRED entitlement (nowMs past expiry) → free values");
 }
@@ -31,7 +31,7 @@ ok(F.TIER_FLAGS.free.describePalette === false && F.TIER_FLAGS.pro.describePalet
   ok(f.maxSets === Infinity && f.proExport === true, "unenforced → unlocked (pro values) even for a free tier");
 }
 
-// ── the shipped switch is OFF — no feature gated before a purchase path exists (no regression today) ──
+// ── the shipped switch is OFF, no feature gated before a purchase path exists (no regression today) ──
 ok(F.TIERS_ENFORCED === false, "TIERS_ENFORCED ships false (pre-launch)");
 ok(F.resolveFlags({ tier: "free" }).proExport === true && F.resolveFlags({ tier: "free" }).maxSets === Infinity, "with the default switch, a free user is fully unlocked (current behavior preserved)");
 
@@ -59,7 +59,7 @@ ok(F.clampProfile({ tier: "garbage" }).tier === "free", "clampProfile drops an i
   ok(JSON.stringify(F.clampProfile(JSON.parse(JSON.stringify(c)))) === JSON.stringify(c), "a clamped profile round-trips through JSON unchanged");
 }
 
-// ── Layer 2: entitlementActive — active + unexpired only; clockless (nowMs is a param) ──
+// ── Layer 2: entitlementActive, active + unexpired only; clockless (nowMs is a param) ──
 const T0 = 1_700_000_000_000; // a fixed "now"
 ok(F.entitlementActive({ status: "active" }, T0) === true, "entitlementActive: active + no expiry → true (perpetual)");
 ok(F.entitlementActive({ status: "active", expiresAt: T0 + 1000 }, T0) === true, "entitlementActive: active + future expiry → true");
@@ -67,7 +67,7 @@ ok(F.entitlementActive({ status: "active", expiresAt: T0 - 1000 }, T0) === false
 ok(F.entitlementActive({ status: "disabled" }, T0) === false, "entitlementActive: a non-active status → false");
 ok(F.entitlementActive(null, T0) === false && F.entitlementActive(undefined, T0) === false, "entitlementActive: missing/garbage entitlement → false");
 
-// ── Layer 2: resolveTier — the entitlement (not the raw stored tier) drives pro ──
+// ── Layer 2: resolveTier, the entitlement (not the raw stored tier) drives pro ──
 ok(F.resolveTier({ tier: "pro", entitlement: { status: "active" } }, T0) === "pro", "resolveTier: tier:pro + active entitlement → pro");
 ok(F.resolveTier({ tier: "pro", entitlement: { status: "active", expiresAt: T0 - 1 } }, T0) === "free", "resolveTier: tier:pro + expired entitlement → free");
 ok(F.resolveTier({ tier: "pro" }, T0) === "free", "resolveTier: tier:pro with NO entitlement → free (a stored tier can't fake pro)");
@@ -90,7 +90,7 @@ ok(F.resolveTier(null, T0) === "free", "resolveTier: garbage profile → free");
 }
 ok(!("expiresAt" in F.clampProfile({ entitlement: { status: "active", expiresAt: "whenever" } }).entitlement), "clampProfile drops a non-finite entitlement.expiresAt but keeps the entitlement");
 
-// ── Layer 2 (web wiring): lemonEntitlement — map a Lemon-Squeezy /licenses/validate response → the seam ──
+// ── Layer 2 (web wiring): lemonEntitlement, map a Lemon-Squeezy /licenses/validate response → the seam ──
 ok(F.lemonEntitlement({ valid: true, license_key: { status: "active" } }).ok === true, "lemonEntitlement: valid:true + active → ok");
 ok(F.lemonEntitlement({ valid: true, license_key: { status: "active" } }).entitlement.expiresAt === undefined, "lemonEntitlement: no expires_at → perpetual (no expiresAt)");
 {
@@ -111,10 +111,10 @@ ok(F.lemonEntitlement({ valid: true, license_key: { status: "active" }, meta: { 
 ok(F.lemonEntitlement({ valid: true, license_key: { status: "active" }, meta: { store_id: 7 } }, { storeId: 7 }).ok === true, "lemonEntitlement: storeId match → ok");
 ok(F.lemonEntitlement({ valid: true, license_key: { status: "active" } }, { storeId: 7 }).ok === false, "lemonEntitlement: storeId set but response carries no meta.store_id → rejected (fail-closed)");
 ok(F.lemonEntitlement({ valid: true, license_key: { status: "active" } }).ok === true, "lemonEntitlement: storeId UNset (null) → store check skipped, any active key passes (soft-launch default)");
-// the `revoked` discriminator — drives boot revalidation's downgrade-ONLY-on-recognized-revocation
+// the `revoked` discriminator, drives boot revalidation's downgrade-ONLY-on-recognized-revocation
 ok(F.lemonEntitlement({ valid: false, license_key: { status: "inactive" } }).revoked === true, "lemonEntitlement: valid:false → revoked (recognized revocation)");
 ok(F.lemonEntitlement({ valid: true, license_key: { status: "expired" } }).revoked === true && F.lemonEntitlement({ valid: true, license_key: { status: "disabled" } }).revoked === true, "lemonEntitlement: expired/disabled key → revoked");
-ok(F.lemonEntitlement({}).ok === false && F.lemonEntitlement({}).revoked === undefined, "lemonEntitlement: ambiguous/empty body → NOT revoked (transient — caller keeps cached)");
+ok(F.lemonEntitlement({}).ok === false && F.lemonEntitlement({}).revoked === undefined, "lemonEntitlement: ambiguous/empty body → NOT revoked (transient, caller keeps cached)");
 ok(F.lemonEntitlement(null).revoked === undefined, "lemonEntitlement: null body → NOT revoked (transient)");
 ok(F.lemonEntitlement({ valid: true, license_key: { status: "active" }, meta: { store_id: 42 } }, { storeId: 7 }).revoked === undefined, "lemonEntitlement: a store mismatch is an anomaly, not a revocation (NOT revoked)");
 // product pinning (layered on the store pin): only OUR products' keys validate; fail-closed; an anomaly, not revoked.
@@ -124,7 +124,7 @@ ok(F.lemonEntitlement({ valid: true, license_key: { status: "active" }, meta: { 
 ok(F.lemonEntitlement({ valid: true, license_key: { status: "active" }, meta: { store_id: 7, product_id: 999 } }, { storeId: 7, productIds: [1182548] }).revoked === undefined, "lemonEntitlement: a product mismatch is an anomaly, not a revocation (NOT revoked)");
 ok(F.lemonEntitlement({ valid: true, license_key: { status: "active" }, meta: { store_id: 7, product_id: 999 } }, { storeId: 7 }).ok === true, "lemonEntitlement: productIds UNset → product check skipped (only the store pin applies)");
 
-// ── Layer 2 (seats): lemonActivation — the seat-consuming POST /v1/licenses/activate path ──
+// ── Layer 2 (seats): lemonActivation, the seat-consuming POST /v1/licenses/activate path ──
 {
   const r = F.lemonActivation({ activated: true, license_key: { status: "active" }, instance: { id: "inst-123" } });
   ok(r.ok === true && r.entitlement.status === "active" && r.instanceId === "inst-123", "lemonActivation: activated + active key → ok with the instance id (the seat handle)");
@@ -154,7 +154,7 @@ ok(F.lemonActivation(null).ok === false && typeof F.lemonActivation(null).error 
 ok(F.lemonActivation({ activated: true, license_key: { status: "active" }, instance: { id: "i" } }).seats === undefined, "lemonActivation: no activation_limit → no seats field");
 ok(F.lemonEntitlement({ valid: true, license_key: { status: "active", activation_limit: 5 } }).seats.usage === 0, "seats usage defaults to 0 when activation_usage is absent");
 
-// ── Layer 2 (seats): lemonDeactivation — frees a seat ──
+// ── Layer 2 (seats): lemonDeactivation, frees a seat ──
 ok(F.lemonDeactivation({ deactivated: true }).ok === true, "lemonDeactivation: deactivated:true → ok");
 ok(F.lemonDeactivation({ deactivated: false }).ok === false && F.lemonDeactivation(null).ok === false && F.lemonDeactivation({}).ok === false, "lemonDeactivation: false/garbage/missing → not ok");
 
@@ -171,5 +171,5 @@ ok(!("seats" in F.clampProfile({ tier: "pro", seats: { limit: "lots" } })), "cla
 }
 
 if (fails.length) { console.error(`flags FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("flags PASS — tier tables · resolveFlags · flagOf · clampProfile · entitlementActive · resolveTier · lemonEntitlement · lemonActivation · lemonDeactivation (Layer 2 + seats)");
+console.log("flags PASS, tier tables · resolveFlags · flagOf · clampProfile · entitlementActive · resolveTier · lemonEntitlement · lemonActivation · lemonDeactivation (Layer 2 + seats)");
 process.exit(0);

@@ -1,15 +1,15 @@
-// gen-describe-mcp-assets.mjs — inline the Describe-Palette MCP (the MERGED read+generate server, #374)
+// gen-describe-mcp-assets.mjs, inline the Describe-Palette MCP (the MERGED read+generate server, #374)
 // into the app as a downloadable package.
 //
 // Unlike the read-only Brand-Kit MCP (gen-mcp-assets.mjs), the merged server's `generate_kit` needs the
-// real engine — `describe-kit-core.mjs` imports `src/ui/model.mjs`/`persist.js`, which pull in most of
+// real engine, `describe-kit-core.mjs` imports `src/ui/model.mjs`/`persist.js`, which pull in most of
 // `src/engine/`, plus two on-disk data files read at runtime (`docs/reference/data/role-table.json`,
 // `package.json`). Rather than writing a bundler, this ships the REAL relative-path source tree: every
 // file below keeps its exact repo-relative path inside the zip, so Node resolves the same
-// `../src/ui/model.mjs` / `../docs/reference/data/role-table.json` imports unmodified — no rewriting, no
+// `../src/ui/model.mjs` / `../docs/reference/data/role-table.json` imports unmodified, no rewriting, no
 // second copy of the module graph to keep in sync. `FILES` is this closure, enumerated by hand because
 // it's the exact transitive import graph of `mcp/brand-kit-merged-server.mjs` (verified in
-// test/mcp/describe-mcp-package.mjs by actually running the packaged tree) — Node has no
+// test/mcp/describe-mcp-package.mjs by actually running the packaged tree), Node has no
 // `--print-dependencies` for ESM, so a future new import needs adding here too.
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -51,7 +51,7 @@ const FILES = [
 const files = FILES.map((path) => ({ path, data: readFileSync(`${ROOT}/${path}`, "utf8") }));
 const readme = readFileSync(`${ROOT}/mcp/README-describe.md`, "utf8");
 // describe-kit-core.mjs reads ITS OWN package.json (the one shipped beside it in the zip) for
-// `meta.engineVersion` on every generated kit (spec §6.4's reproducibility stamp) — so the downloadable
+// `meta.engineVersion` on every generated kit (spec §6.4's reproducibility stamp), so the downloadable
 // package's generated package.json must carry the REAL repo version, not a placeholder, or every kit
 // generated from the download misreports its own engine version.
 const ENGINE_VERSION = JSON.parse(readFileSync(`${ROOT}/package.json`, "utf8")).version;

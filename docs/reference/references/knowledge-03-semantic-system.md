@@ -1,7 +1,7 @@
-# Knowledge 03 — Semantic Token System
+# Knowledge 03: Semantic Token System
 
 > Topic: the two-layer token model and the 53 semantic roles per palette. This is the
-> section most prone to silent drift across the three implementations — the full role
+> section most prone to silent drift across the three implementations, the full role
 > table is the canonical contract in `data/role-table.json`.
 
 ## Table of Contents
@@ -41,11 +41,11 @@ RAW / PRIMITIVES  (mode-independent)         SEMANTIC  (--c-* / role keys)
 A role's `light` / `dark` field is a **ref**, one of:
 
 - **Solid stop**: `"550"` → the palette's stop-550 color (opaque).
-- **Scrim**: ref `"500-200"` → the palette's 500 color at alpha% = step/10 (here 20%), emitted as the nested `scrim/200` path (`refPath`) or `scrim-200` slug (`refSlug`) — ADR-016. A scrim
+- **Scrim**: ref `"500-200"` → the palette's 500 color at alpha% = step/10 (here 20%), emitted as the nested `scrim/200` path (`refPath`) or `scrim-200` slug (`refSlug`), ADR-016. A scrim
   is a translucency sub-variant of the 500 stop.
 
 `refKey(ref)` pads to 3 digits (the internal normalizer); the EMITTED forms are `refPath` (slash
-surfaces — `"50"→"050"`, `"500-200"→"scrim/200"`) and `refSlug` (hyphen surfaces — `"scrim-200"`).
+surfaces, `"50"→"050"`, `"500-200"→"scrim/200"`) and `refSlug` (hyphen surfaces, `"scrim-200"`).
 Internal role `key`s stay camelCase; every emitted role name is the kebab leaf (`roleLeaf`).
 
 ## 3. The 53 roles (groups)
@@ -53,7 +53,7 @@ Internal role `key`s stay camelCase; every emitted role name is the kebab leaf (
 The default kit ships **16 palettes**: eight brand families (`neutral`, `primary`, `secondary`,
 `tertiary`, `info`, `success`, `warning`, `danger`) plus eight data families (`data-1` … `data-8`,
 hue-derived from the brand primary at mint time). Every family, brand or data, carries the same 53
-roles below — a data palette is an ordinary palette, never a reduced set (issue #503).
+roles below, a data palette is an ordinary palette, never a reduced set (issue #503).
 
 Full table with exact `light`/`dark` refs: `data/role-table.json` → `roleTable`. Grouped:
 
@@ -91,8 +91,8 @@ Both are fixed to the light end in *both* modes, for *all* palettes.
 - If `lmax` is lowered, `050` becomes a tinted near-white and the on-colors track it
   automatically (they alias `050`).
 
-> ⚠️ **OD-001 — On-color contrast. CLOSED; contrast-aware on-colors are the DEFAULT.** The
-> role TABLE still points `on{N}` at `050` and `on{N}Variant` at `200` — that is the canonical
+> ⚠️ **OD-001, On-color contrast. CLOSED; contrast-aware on-colors are the DEFAULT.** The
+> role TABLE still points `on{N}` at `050` and `on{N}Variant` at `200`, that is the canonical
 > answer key and it has not moved. What resolves those refs has. `onColorMode` defaults to
 > `contrast`: each accent on-color takes whichever end reads better against the fill it sits on
 > (`550` light / `450` dark), and where NEITHER ramp end clears 4.5:1 it falls through to the
@@ -101,35 +101,35 @@ Both are fixed to the light end in *both* modes, for *all* palettes.
 > ~1.8:1 and several dark-mode fills dropped with it; every family now clears WCAG AA 4.5:1 in
 > both schemes, in all three tone modes. `fixed` remains as the opt-out for a brand that wants
 > the uniform light tint back. See ADR-025, the ADR-003 amendment. What a downstream agent should NOT
-> "fix" is the table — the resolution layer is where this lives, deliberately.
+> "fix" is the table, the resolution layer is where this lives, deliberately.
 
 ## 5. Scrims
 
 - **Scrim ramp**: a single **500-based** translucency ramp. A scrim primitive is `500-{step}`
   = the palette's 500 color at **alpha% = step/10** (so `500-200` = 500 @ 20%). `SCRIM_BASES = [500]`,
-  `SCRIM_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]` — the 11 **emitted** steps
+  `SCRIM_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]`, the 11 **emitted** steps
   (alpha 5–95%). The 7 strength roles bind to a 7-step subset; steps 700–950 carry no role.
 - **Many roles** resolve onto this ramp, mode-independent (light === dark): the 7
   `scrim*` strengths (weakest→strongest = steps 50/100/200/300/400/500/600, a sequential 5–60% ladder),
   plus `outline` (600), `outlineVariant` (300), `container/Low/High` (200/100/300), and the
-  interaction-state families — `outline`/`container` Hover·Active·Disabled, plus
+  interaction-state families, `outline`/`container` Hover·Active·Disabled, plus
   `{n}Disabled` (600) and `on{N}Disabled` (400).
 
-> **A scrim is a sub-variant of the palette** — based on the 500 stop, it tracks the palette as
+> **A scrim is a sub-variant of the palette**, based on the 500 stop, it tracks the palette as
 > hue/chroma/skew/lift change. This 500-ramp revision **supersedes** the former 3-base model
-> (bases 250/500/750 × 7 fixed alpha indices) and the OD-002 base-coverage decision — `outline`
+> (bases 250/500/750 × 7 fixed alpha indices) and the OD-002 base-coverage decision, `outline`
 > and `container*`, formerly 250-light/750-dark, are now mode-flat on the 500 ramp (a deliberate
 > trade of light↔dark differentiation for a single translucency sub-variant).
 
 ## 6. Surface ramps (mirror vs non-mirror)
 
-Two surface elevation families with **different mode behavior** — this distinction is exact
+Two surface elevation families with **different mode behavior**, this distinction is exact
 and easy to get wrong:
 
-- **Dim/Bright (non-mirror, mode-consistent)** — same *direction* in both modes:
+- **Dim/Bright (non-mirror, mode-consistent)**: same *direction* in both modes:
   `surfaceDimmest 200/950`, `surfaceDimmer 175/925`, `surfaceDim 150/900`,
   `surfaceBright 100/850`, `surfaceBrighter 75/825`, `surfaceBrightest 50/800`.
-- **Low/High (mirror, mode-flipping)** — light+dark sum toward 1000:
+- **Low/High (mirror, mode-flipping)**: light+dark sum toward 1000:
   `surfaceLowest 50/950`, `surfaceLower 75/925`, `surfaceLow 100/900`,
   `surfaceHigh 150/850`, `surfaceHigher 175/825`, `surfaceHighest 200/800`.
 
@@ -147,7 +147,7 @@ and easy to get wrong:
 
 ## 8. Parity requirement
 
-The role table exists in three places — the artifact's `semanticRoles(n)`, `gen.js`'s
+The role table exists in three places, the artifact's `semanticRoles(n)`, `gen.js`'s
 `semanticRoles(n)`, and the plugin's `semanticRoles(n)`. They **must** be identical:
 53 roles/palette, same keys, same refs. `rubrics/parity-checklist.md` defines the check.
 A divergence already happened once (the artifact silently lost `surfaceHighest`, 36 vs 37);

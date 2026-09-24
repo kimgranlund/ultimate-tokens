@@ -4,7 +4,7 @@
   "eyebrow": "Literary Palette · Sourced from setting &amp; page",
   "tagline": "Forty-eight books, <em>read for their colour,</em> not their dust-jacket.",
   "metaNote": "Color sourced from setting,<br/>period &amp; the printed page",
-  "sourcing": "Every palette is sampled from a specific work's setting, period, and physical object — the weather and light of its world, the materials of its time, and the ink, paper, and illustration of the book itself. Iconic works are named; the aim is the colour the prose puts in your eye, not a generic 'old book' sepia.",
+  "sourcing": "Every palette is sampled from a specific work's setting, period, and physical object, the weather and light of its world, the materials of its time, and the ink, paper, and illustration of the book itself. Iconic works are named; the aim is the colour the prose puts in your eye, not a generic 'old book' sepia.",
   "volumes": [
     {
       "roman": "I",
@@ -154,7 +154,7 @@
                 "tracking": "9%"
               }
             },
-            "note": "Base moved statement→editorial (a candlelit imperial ball is not brutalist all-caps); Kazimir (CSTM Fonts, Ostromentsky/Ruderman — Light 300 · Regular · Medium 500 · Bold 700 · Black 900, type.today) carries the Russian salon voice at Bold with the Medium as the framing rank; Miller Text is Carter's Scotch Roman, the actual register of 19th-c European book printing (Carter & Cone: Roman 400 · Semibold 600 · Bold 700); Courier Prime is a 400/700 duo so its data ladder is authored, and every core now equals a real cut."
+            "note": "Base moved statement→editorial (a candlelit imperial ball is not brutalist all-caps); Kazimir (CSTM Fonts, Ostromentsky/Ruderman, Light 300 · Regular · Medium 500 · Bold 700 · Black 900, type.today) carries the Russian salon voice at Bold with the Medium as the framing rank; Miller Text is Carter's Scotch Roman, the actual register of 19th-c European book printing (Carter & Cone: Roman 400 · Semibold 600 · Bold 700); Courier Prime is a 400/700 duo so its data ladder is authored, and every core now equals a real cut."
           }
         },
         {
@@ -294,7 +294,7 @@
                 "tracking": "7%"
               }
             },
-            "note": "Kazimir Black 900 (a real cut, not the old 860) gives the fever its airless weight where the palette refuses the imperial postcard; Miller Text Roman for the garret prose (Bold 700 as the only emphasis Carter drew for Text — Semibold belongs to Miller Display), Courier Prime's 400/700 duo authored rather than derived."
+            "note": "Kazimir Black 900 (a real cut, not the old 860) gives the fever its airless weight where the palette refuses the imperial postcard; Miller Text Roman for the garret prose (Bold 700 as the only emphasis Carter drew for Text, Semibold belongs to Miller Display), Courier Prime's 400/700 duo authored rather than derived."
           }
         },
         {
@@ -435,7 +435,7 @@
                 "tracking": "9%"
               }
             },
-            "note": "The palette refuses warmth beyond one candle, so the display drops to Kazimir Medium 500 with Light 300 available (CSTM's five cuts) instead of a fictional 720 — a cold, thin idyll; Kabel 1927 stays as the revolution-era geometric Sub-title."
+            "note": "The palette refuses warmth beyond one candle, so the display drops to Kazimir Medium 500 with Light 300 available (CSTM's five cuts) instead of a fictional 720, a cold, thin idyll; Kabel 1927 stays as the revolution-era geometric Sub-title."
           }
         },
         {
@@ -504,7 +504,7 @@
               "c": "#8A2A27"
             }
           },
-          "refuses": "Warm romance gold. Anna's world is snow-white and black velvet — elegance against cold, not a soft glow.",
+          "refuses": "Warm romance gold. Anna's world is snow-white and black velvet, elegance against cold, not a soft glow.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -730,7 +730,7 @@
                 "tracking": "7%"
               }
             },
-            "note": "Fette Fraktur out: it has one cut (so 720 was fiction) and blackletter is exactly the novelty-gothic the volume refuses — replaced by Bell MT (Monotype after Richard Austin 1788: Regular · Semi Bold 600 · Bold 700), the actual English book type of Lackington's 1818 printing; Williams Caslon Text is a 400/700 duo (Font Bureau) so its ladder is declared."
+            "note": "Fette Fraktur out: it has one cut (so 720 was fiction) and blackletter is exactly the novelty-gothic the volume refuses, replaced by Bell MT (Monotype after Richard Austin 1788: Regular · Semi Bold 600 · Bold 700), the actual English book type of Lackington's 1818 printing; Williams Caslon Text is a 400/700 duo (Font Bureau) so its ladder is declared."
           }
         },
         {
@@ -856,7 +856,7 @@
                 "tracking": "6%"
               }
             },
-            "note": "Blackletter (Fette Fraktur, one cut) traded for Caslon Antique (Barnhart Brothers & Spindler 1894, a single Regular — hence weights []), the weathered old-document face that suits an epistolary novel of letters, telegrams and typescript; Mrs Eaves is Emigre's Roman/Bold duo so Bold 700 is its real heavy, and Courier Prime carries Mina Harker's typewriter."
+            "note": "Blackletter (Fette Fraktur, one cut) traded for Caslon Antique (Barnhart Brothers & Spindler 1894, a single Regular, hence weights []), the weathered old-document face that suits an epistolary novel of letters, telegrams and typescript; Mrs Eaves is Emigre's Roman/Bold duo so Bold 700 is its real heavy, and Courier Prime carries Mina Harker's typewriter."
           }
         },
         {
@@ -924,7 +924,7 @@
               "c": "#9D7E51"
             }
           },
-          "refuses": "Pretty lavender moorland. Brontë's moor is bleak, bruised, and storm-dark — heather gone over, not in bloom.",
+          "refuses": "Pretty lavender moorland. Brontë's moor is bleak, bruised, and storm-dark, heather gone over, not in bloom.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -996,7 +996,7 @@
                 "tracking": "6%"
               }
             },
-            "note": "Bell MT (Monotype: 400/600/700) replaces single-cut Fette Fraktur — the plain English trade type of Newby's cheap 1847 triple-decker, and the bare Regular contextual keeps the moor bleak instead of decorative; Rockwell's blunt slab stays the Sub-title."
+            "note": "Bell MT (Monotype: 400/600/700) replaces single-cut Fette Fraktur, the plain English trade type of Newby's cheap 1847 triple-decker, and the bare Regular contextual keeps the moor bleak instead of decorative; Rockwell's blunt slab stays the Sub-title."
           }
         },
         {
@@ -1064,7 +1064,7 @@
               "c": "#DAAEB5"
             }
           },
-          "refuses": "Pretty country-house pastel. Manderley is fog-grey and blood-red — menace under the gardens, not a charming manor.",
+          "refuses": "Pretty country-house pastel. Manderley is fog-grey and blood-red, menace under the gardens, not a charming manor.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -1139,7 +1139,7 @@
       "eyebrow": "Literary · Vol III · Sourced from Setting & Page",
       "h1": "Four palettes from <em>the modernist city,</em> grey stone and electric dawn.",
       "preface": [
-        "Modernist fiction maps the early-twentieth-century city — London, Dublin, New York — in its specific weather and light: Thames fog, Dublin stone, Jazz-Age glitter. The palettes are urban, atmospheric, and tuned to a single day's hours.",
+        "Modernist fiction maps the early-twentieth-century city, London, Dublin, New York, in its specific weather and light: Thames fog, Dublin stone, Jazz-Age glitter. The palettes are urban, atmospheric, and tuned to a single day's hours.",
         "Each refuses the generic 'vintage' sepia: each modernist city has a precise, particular colour."
       ],
       "palettes": [
@@ -1209,7 +1209,7 @@
               "c": "#AC4234"
             }
           },
-          "refuses": "Foggy-grey 'old London'. Woolf's day is clear, fresh, and flowering June — luminous, not murky.",
+          "refuses": "Foggy-grey 'old London'. Woolf's day is clear, fresh, and flowering June, luminous, not murky.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -1259,7 +1259,7 @@
                 "tracking": "10%"
               }
             },
-            "note": "Family named exactly (Gill Sans Nova, Monotype: Light 300 · Regular · Medium 500 · SemiBold 600 · Bold 700 · Ultra Bold 800 · Heavy 900) so the Bold/Medium pair are real cuts, not 700/560; Plantin (1913, Monotype: Light · Regular · Semibold 600 · Bold) is the English book face of Woolf's own decade and its ladder skips the missing 500; data core to 400 — 435 is not an IBM Plex Mono cut (static 100-700 family)."
+            "note": "Family named exactly (Gill Sans Nova, Monotype: Light 300 · Regular · Medium 500 · SemiBold 600 · Bold 700 · Ultra Bold 800 · Heavy 900) so the Bold/Medium pair are real cuts, not 700/560; Plantin (1913, Monotype: Light · Regular · Semibold 600 · Bold) is the English book face of Woolf's own decade and its ladder skips the missing 500; data core to 400, 435 is not an IBM Plex Mono cut (static 100-700 family)."
           }
         },
         {
@@ -1626,7 +1626,7 @@
       "eyebrow": "Literary · Vol IV · Sourced from Setting & Page",
       "h1": "Four palettes from <em>the magical-real,</em> heat, dust, and impossible colour.",
       "preface": [
-        "Magical realism saturates the everyday — Latin American heat, tropical bloom, and dust given the intensity of the marvellous. The palettes are warm, earthen, and lit by one impossible hue that signals the magic seeping in.",
+        "Magical realism saturates the everyday, Latin American heat, tropical bloom, and dust given the intensity of the marvellous. The palettes are warm, earthen, and lit by one impossible hue that signals the magic seeping in.",
         "Each refuses the flat 'exotic' brights: the colour is grounded in real heat and clay, with the marvellous as a single saturated note."
       ],
       "palettes": [
@@ -1696,7 +1696,7 @@
               "c": "#E0BF52"
             }
           },
-          "refuses": "Generic tropical neon. Macondo is dust, clay, and river-stone; the magic is one note — the yellow butterflies.",
+          "refuses": "Generic tropical neon. Macondo is dust, clay, and river-stone; the magic is one note, the yellow butterflies.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -2003,7 +2003,7 @@
                 "tracking": "8%"
               }
             },
-            "note": "The heat lives in the colour and the 3% tracked caps of the statement Display, not in an invented 800 weight — Cormorant SemiBold 600 is its real top-with-a-neighbour; Windsor's warm eccentricity kept as the recipe-book Sub-title, Courier Prime duo authored (the novel is told as monthly recipes)."
+            "note": "The heat lives in the colour and the 3% tracked caps of the statement Display, not in an invented 800 weight, Cormorant SemiBold 600 is its real top-with-a-neighbour; Windsor's warm eccentricity kept as the recipe-book Sub-title, Courier Prime duo authored (the novel is told as monthly recipes)."
           }
         },
         {
@@ -2139,7 +2139,7 @@
       "eyebrow": "Literary · Vol V · Sourced from Setting & Page",
       "h1": "Four palettes from <em>the Japanese page,</em> restraint, snow, and one accent.",
       "preface": [
-        "Japanese literature, from Heian court to postwar, favours restraint and the single resonant accent — indigo and ink with one note of red or gold, or the white of snow against a lacquer dark. The palettes are quiet, seasonal, and exact.",
+        "Japanese literature, from Heian court to postwar, favours restraint and the single resonant accent, indigo and ink with one note of red or gold, or the white of snow against a lacquer dark. The palettes are quiet, seasonal, and exact.",
         "Each refuses the busy 'Japan brights' of tourism: these are spare, tonal palettes built around one deliberate colour."
       ],
       "palettes": [
@@ -2210,7 +2210,7 @@
               "c": "#BA9A59"
             }
           },
-          "refuses": "Bright modern Japan. The Heian court is layered, muted silk and lacquer — subtle seasonal harmony, not neon.",
+          "refuses": "Bright modern Japan. The Heian court is layered, muted silk and lacquer, subtle seasonal harmony, not neon.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -2428,7 +2428,7 @@
               "c": "#9F483F"
             }
           },
-          "refuses": "Bright pop-sixties colour. Murakami's mood is muted, rainy, and autumnal — nostalgia in grey-green, not pop.",
+          "refuses": "Bright pop-sixties colour. Murakami's mood is muted, rainy, and autumnal, nostalgia in grey-green, not pop.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -2537,7 +2537,7 @@
               "c": "#B64C39"
             }
           },
-          "refuses": "Garish festival colour. Tanizaki's world is refined and seasonal — soft blossom and deep indigo, not loud spectacle.",
+          "refuses": "Garish festival colour. Tanizaki's world is refined and seasonal, soft blossom and deep indigo, not loud spectacle.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -2659,7 +2659,7 @@
               "c": "#ADBEC8"
             }
           },
-          "refuses": "Lush plantation green. Maycomb is dusty, faded, and Depression-poor — red clay and peeling paint, not a manicured estate.",
+          "refuses": "Lush plantation green. Maycomb is dusty, faded, and Depression-poor, red clay and peeling paint, not a manicured estate.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -2752,7 +2752,7 @@
                 "tracking": "6%"
               }
             },
-            "note": "URW Clarendon named exactly (Light · Regular · Medium 500 · Bold 700 · Extra Bold 800) so the courthouse-notice display is Extra Bold, not a fictional 880; Century Schoolbook — the actual American schoolroom face of Scout's world — is a Regular/Bold duo; News Gothic Nova has no 600, so the actionable register declares its real ladder and no core weight."
+            "note": "URW Clarendon named exactly (Light · Regular · Medium 500 · Bold 700 · Extra Bold 800) so the courthouse-notice display is Extra Bold, not a fictional 880; Century Schoolbook, the actual American schoolroom face of Scout's world, is a Regular/Bold duo; News Gothic Nova has no 600, so the actionable register declares its real ladder and no core weight."
           }
         },
         {
@@ -2983,7 +2983,7 @@
               "c": "#D4CAB3"
             }
           },
-          "refuses": "Grand-mansion gloss. Faulkner's Compson place is overgrown, weathered, and declining — decay, not antebellum grandeur.",
+          "refuses": "Grand-mansion gloss. Faulkner's Compson place is overgrown, weathered, and declining, decay, not antebellum grandeur.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -3136,7 +3136,7 @@
               "c": "#4D4B5D"
             }
           },
-          "refuses": "Faded sepia South. Hurston's muck is black, green, and alive — fertile and vivid, not a brown nostalgia.",
+          "refuses": "Faded sepia South. Hurston's muck is black, green, and alive, fertile and vivid, not a brown nostalgia.",
           "type": {
             "base": "product",
             "registers": {
@@ -3356,7 +3356,7 @@
                 "tracking": "8%"
               }
             },
-            "note": "The poster face is encoded properly — family Trade Gothic, styleName Bold Condensed No. 20 (Linotype), a single cut so weights [] — instead of a family-shaped name carrying a fictional 800; Neue Haas Grotesk has no 600 so its ladder is declared (Roman/Medium/Bold), and the UI drops to the same bureaucratic Plex Sans as the prose: one grey ministry voice, nothing sleek."
+            "note": "The poster face is encoded properly, family Trade Gothic, styleName Bold Condensed No. 20 (Linotype), a single cut so weights [], instead of a family-shaped name carrying a fictional 800; Neue Haas Grotesk has no 600 so its ladder is declared (Roman/Medium/Bold), and the UI drops to the same bureaucratic Plex Sans as the prose: one grey ministry voice, nothing sleek."
           }
         },
         {
@@ -3635,7 +3635,7 @@
             {
               "name": "Fire, ember orange",
               "oklch": "0.582 0.132 46",
-              "note": "'Carrying the fire' — the one warmth.",
+              "note": "'Carrying the fire', the one warmth.",
               "hier": "a",
               "hex": "#B95E2F"
             },
@@ -3715,7 +3715,7 @@
                 "tracking": "6%"
               }
             },
-            "note": "A palette that refuses all saturation refuses type mass too: Neue Haas Grotesk Roman 400 for framing (500 was fiction on this family's 55/65/75 scale in the ranks derived around it), the poster cut used once, tightest tracking in the volume — everything reduced to ash except one ember."
+            "note": "A palette that refuses all saturation refuses type mass too: Neue Haas Grotesk Roman 400 for framing (500 was fiction on this family's 55/65/75 scale in the ranks derived around it), the poster cut used once, tightest tracking in the volume, everything reduced to ash except one ember."
           }
         }
       ]
@@ -3726,7 +3726,7 @@
       "eyebrow": "Literary · Vol VIII · Sourced from Setting & Page",
       "h1": "Four palettes from <em>the illustrated page,</em> ink, watercolour, and wonder.",
       "preface": [
-        "Children's classics are remembered through their illustration — Tenniel's engraving, Shepard's pencil, Sendak's crosshatch, watercolour wash. The palettes come from the printed page: warm paper, ink line, and gentle colour.",
+        "Children's classics are remembered through their illustration, Tenniel's engraving, Shepard's pencil, Sendak's crosshatch, watercolour wash. The palettes come from the printed page: warm paper, ink line, and gentle colour.",
         "Each refuses the plastic toy-brights of modern merchandise: these are the soft, printed palettes of the original books."
       ],
       "palettes": [
@@ -3797,7 +3797,7 @@
               "c": "#B44037"
             }
           },
-          "refuses": "Saturated cartoon Alice. The original is a hand-tinted engraving — soft blue and red on cream, with fine ink line.",
+          "refuses": "Saturated cartoon Alice. The original is a hand-tinted engraving, soft blue and red on cream, with fine ink line.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -3942,7 +3942,7 @@
               "c": "#416F77"
             }
           },
-          "refuses": "Bright toy-monster colour. Sendak's island is muted watercolour and ink — earthy olive and ochre, not plastic primaries.",
+          "refuses": "Bright toy-monster colour. Sendak's island is muted watercolour and ink, earthy olive and ochre, not plastic primaries.",
           "type": {
             "base": "product",
             "registers": {
@@ -4014,7 +4014,7 @@
                 "tracking": "5%"
               }
             },
-            "note": "Family named as sold — Cooper BT (Bitstream 1986 added Light 300 · Medium 500 · Bold 700 to Cooper's Black 900), so the 1960s picture-book display is Cooper Black itself rather than an 880 that no cut answers; Bembo Book (Monotype; Regular · Bold certain — the ladder uses only those) for the storyteller's prose, Neuland's carved caps for the beasts."
+            "note": "Family named as sold, Cooper BT (Bitstream 1986 added Light 300 · Medium 500 · Bold 700 to Cooper's Black 900), so the 1960s picture-book display is Cooper Black itself rather than an 880 that no cut answers; Bembo Book (Monotype; Regular · Bold certain, the ladder uses only those) for the storyteller's prose, Neuland's carved caps for the beasts."
           }
         },
         {
@@ -4084,7 +4084,7 @@
               "c": "#BA4E43"
             }
           },
-          "refuses": "Bold graphic colour. Saint-Exupéry's own art is delicate watercolour — pale washes, with the rose as the one true red.",
+          "refuses": "Bold graphic colour. Saint-Exupéry's own art is delicate watercolour, pale washes, with the rose as the one true red.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -4143,7 +4143,7 @@
                 "tracking": "6%"
               }
             },
-            "note": "Cochin (Linotype, Regular/Bold duo after the 18th-c French engravers) is promoted from Sub-title to the whole palette and the Cooper opt-in dropped: a French author's own thin watercolour line wants one delicate face at Regular everywhere — 460/420 were not cuts, and nothing here needs to shout but the rose."
+            "note": "Cochin (Linotype, Regular/Bold duo after the 18th-c French engravers) is promoted from Sub-title to the whole palette and the Cooper opt-in dropped: a French author's own thin watercolour line wants one delicate face at Regular everywhere, 460/420 were not cuts, and nothing here needs to shout but the rose."
           }
         },
         {
@@ -4213,7 +4213,7 @@
               "c": "#B65D52"
             }
           },
-          "refuses": "Bright Disney primaries. Shepard's wood is delicate pencil and pale wash — honey and soft green on cream, not bold colour.",
+          "refuses": "Bright Disney primaries. Shepard's wood is delicate pencil and pale wash, honey and soft green on cream, not bold colour.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -4300,7 +4300,7 @@
       "eyebrow": "Literary · Vol IX · Sourced from Setting & Page",
       "h1": "Four palettes from <em>mid-century America,</em> highway, neon, and grain.",
       "preface": [
-        "The Beats and their mid-century contemporaries wrote a America of desert highway, diner neon, and tobacco-stained interiors — warm, restless, and a little worn. The palettes are road-dusty and lamplit.",
+        "The Beats and their mid-century contemporaries wrote a America of desert highway, diner neon, and tobacco-stained interiors, warm, restless, and a little worn. The palettes are road-dusty and lamplit.",
         "Each refuses the clean retro-Americana of nostalgia branding: this is the grainy, smoke-stained version, not the diner-mug pastiche."
       ],
       "palettes": [
@@ -4370,7 +4370,7 @@
               "c": "#BD5143"
             }
           },
-          "refuses": "Clean retro-diner pastel. Kerouac's road is dusty, warm, and worn — gold light and grain, not a mint-and-chrome ad.",
+          "refuses": "Clean retro-diner pastel. Kerouac's road is dusty, warm, and worn, gold light and grain, not a mint-and-chrome ad.",
           "type": {
             "base": "statement",
             "registers": {
@@ -4450,7 +4450,7 @@
                 "tracking": "5%"
               }
             },
-            "note": "\"Highway Gothic (FHWA Series)\" is not a family you can set — replaced by Interstate (Frere-Jones/Font Bureau, drawn from the FHWA alphabet: Light · Regular · Bold · Black), which keeps the signage reasoning and gains real cuts; Trade Gothic Bold framing, New Caledonia (Dwiggins, Linotype: Regular · Semibold · Bold · Black) for the scroll prose, and ITC American Typewriter Light 300 as the data core because that family has no 400."
+            "note": "\"Highway Gothic (FHWA Series)\" is not a family you can set, replaced by Interstate (Frere-Jones/Font Bureau, drawn from the FHWA alphabet: Light · Regular · Bold · Black), which keeps the signage reasoning and gains real cuts; Trade Gothic Bold framing, New Caledonia (Dwiggins, Linotype: Regular · Semibold · Bold · Black) for the scroll prose, and ITC American Typewriter Light 300 as the data core because that family has no 400."
           }
         },
         {
@@ -4520,7 +4520,7 @@
               "c": "#242427"
             }
           },
-          "refuses": "Cheerful sixties palette. Plath's colour curdles from glossy red into clinical white — brightness turning sterile.",
+          "refuses": "Cheerful sixties palette. Plath's colour curdles from glossy red into clinical white, brightness turning sterile.",
           "type": {
             "base": "technical",
             "registers": {
@@ -4743,7 +4743,7 @@
                 "tracking": "5%"
               }
             },
-            "note": "Holden walks a cold city, not a highway: Trade Gothic (Linotype Light/Regular/Bold) — mid-century New York commercial gothic — replaces the unsettable FHWA name, and Twentieth Century (Monotype 1937) replaces the 1991 Century Gothic so the Sub-title is period-true; New Caledonia for the first-person prose."
+            "note": "Holden walks a cold city, not a highway: Trade Gothic (Linotype Light/Regular/Bold), mid-century New York commercial gothic, replaces the unsettable FHWA name, and Twentieth Century (Monotype 1937) replaces the 1991 Century Gothic so the Sub-title is period-true; New Caledonia for the first-person prose."
           }
         },
         {
@@ -4899,7 +4899,7 @@
                 "tracking": "4%"
               }
             },
-            "note": "A 1949 Broadway playbill, not a road sign: ITC Franklin Gothic (Book 400 · Medium 500 · Demi 600 · Heavy 700 — a complete real ladder, which also fixes the actionable register) does display, framing and controls in one blunt American gothic; New Caledonia and Cheltenham keep the drab hemmed-in interior. Franklin Gothic cut mapping per MyFonts/ITC family listing (Book 400 · Medium 500 · Demi 600 · Heavy 800 in some releases — ladder stays on Book/Medium/Demi values verified per release)."
+            "note": "A 1949 Broadway playbill, not a road sign: ITC Franklin Gothic (Book 400 · Medium 500 · Demi 600 · Heavy 700, a complete real ladder, which also fixes the actionable register) does display, framing and controls in one blunt American gothic; New Caledonia and Cheltenham keep the drab hemmed-in interior. Franklin Gothic cut mapping per MyFonts/ITC family listing (Book 400 · Medium 500 · Demi 600 · Heavy 800 in some releases, ladder stays on Book/Medium/Demi values verified per release)."
           }
         }
       ]
@@ -4910,7 +4910,7 @@
       "eyebrow": "Literary · Vol X · Sourced from Setting & Page",
       "h1": "Four palettes from <em>invented worlds,</em> mapped in earth and weather.",
       "preface": [
-        "Epic fantasy builds its worlds in elemental colour — the green Shire, the grey of a northern wall, the gold of an old empire. The palettes are landscape-led, each realm a distinct climate and material culture.",
+        "Epic fantasy builds its worlds in elemental colour, the green Shire, the grey of a northern wall, the gold of an old empire. The palettes are landscape-led, each realm a distinct climate and material culture.",
         "Each refuses the generic 'medieval' brown-grey murk: each invented land has a specific, grounded palette."
       ],
       "palettes": [
@@ -4979,7 +4979,7 @@
               "c": "#C18447"
             }
           },
-          "refuses": "Grim medieval murk. The Shire is lush, warm, and pastoral — green and gold, not the grey of a war-torn realm.",
+          "refuses": "Grim medieval murk. The Shire is lush, warm, and pastoral, green and gold, not the grey of a war-torn realm.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -5031,7 +5031,7 @@
                 "tracking": "8%"
               }
             },
-            "note": "Cinzel's Trajan-caps is the film-poster reflex this pastoral palette refuses, and 770 was a clamp anyway: the display becomes IM Fell English (the Oxford Fell types, one real Regular — weights []), English-antiquarian rather than Roman-imperial, with Cardo 400/700 for prose and Fell's own small-caps replacing the blackletter Sub-title."
+            "note": "Cinzel's Trajan-caps is the film-poster reflex this pastoral palette refuses, and 770 was a clamp anyway: the display becomes IM Fell English (the Oxford Fell types, one real Regular, weights []), English-antiquarian rather than Roman-imperial, with Cardo 400/700 for prose and Fell's own small-caps replacing the blackletter Sub-title."
           }
         },
         {
@@ -5474,7 +5474,7 @@
               "c": "#80513B"
             }
           },
-          "refuses": "Lush romantic Spain. La Mancha is arid, pale, and dusty — bleached ochre and stone, not a verdant idyll.",
+          "refuses": "Lush romantic Spain. La Mancha is arid, pale, and dusty, bleached ochre and stone, not a verdant idyll.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -5594,7 +5594,7 @@
               "c": "#8A2A27"
             }
           },
-          "refuses": "Bright Mediterranean cliché. Lampedusa's Sicily is faded, golden, and dying — antique splendour in dust, not postcard blue.",
+          "refuses": "Bright Mediterranean cliché. Lampedusa's Sicily is faded, golden, and dying, antique splendour in dust, not postcard blue.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -5836,7 +5836,7 @@
               "c": "#B75387"
             }
           },
-          "refuses": "Bright tropical resort colour. The port is faded, colonial, and decaying — sun-bleached pastel, not a vivid beach town.",
+          "refuses": "Bright tropical resort colour. The port is faded, colonial, and decaying, sun-bleached pastel, not a vivid beach town.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -5888,7 +5888,7 @@
                 "tracking": "6%"
               }
             },
-            "note": "Sun-bleached and decaying, so the quietest real pair in the volume (Demi 600 over Medium 500) and the longest prose leading (164%) for fifty years of letters; Sabon's true duo declared, Courier Prime's authored — the correspondence is the plot."
+            "note": "Sun-bleached and decaying, so the quietest real pair in the volume (Demi 600 over Medium 500) and the longest prose leading (164%) for fifty years of letters; Sabon's true duo declared, Courier Prime's authored, the correspondence is the plot."
           }
         }
       ]
@@ -5899,7 +5899,7 @@
       "eyebrow": "Literary · Vol XII · Sourced from Setting & Page",
       "h1": "Four palettes from <em>the Victorian city,</em> fog, gaslight, and soot.",
       "preface": [
-        "The Victorian novel's London is fog, soot, gaslight, and the deep colours of a respectable interior — bottle green, oxblood, and brass against perpetual grey. The palette is dim, warm-lamped, and coal-stained.",
+        "The Victorian novel's London is fog, soot, gaslight, and the deep colours of a respectable interior, bottle green, oxblood, and brass against perpetual grey. The palette is dim, warm-lamped, and coal-stained.",
         "Each refuses the cheery 'Dickensian Christmas-card' brights: this London is a sooty, gaslit grey warmed only by fire and lamp."
       ],
       "palettes": [
@@ -6020,7 +6020,7 @@
                 "tracking": "8%"
               }
             },
-            "note": "Abril Fatface is a single 400 cut (Google), so 760 was fiction and the ladder is opted out with weights [] — kept because the Victorian fat face IS the part-issue wrapper of 1853; Playfair Display Bold 700 frames it, Bookman Old Style (Regular/Bold duo) is the Chancery-document prose."
+            "note": "Abril Fatface is a single 400 cut (Google), so 760 was fiction and the ladder is opted out with weights [], kept because the Victorian fat face IS the part-issue wrapper of 1853; Playfair Display Bold 700 frames it, Bookman Old Style (Regular/Bold duo) is the Chancery-document prose."
           }
         },
         {
@@ -6088,7 +6088,7 @@
               "c": "#822E26"
             }
           },
-          "refuses": "Bright modern study. Holmes's rooms are dim, green, and gaslit — warm clutter in shadow, not a clean set.",
+          "refuses": "Bright modern study. Holmes's rooms are dim, green, and gaslit, warm clutter in shadow, not a clean set.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -6208,7 +6208,7 @@
               "c": "#CAB05C"
             }
           },
-          "refuses": "Restrained period grey. Wilde's aesthete drowns in saturated peacock, gilt, and plum — decadence, not sobriety.",
+          "refuses": "Restrained period grey. Wilde's aesthete drowns in saturated peacock, gilt, and plum, decadence, not sobriety.",
           "type": {
             "base": "statement",
             "registers": {
@@ -6380,7 +6380,7 @@
                 "tracking": "8%"
               }
             },
-            "note": "Respectability, not playbill: the fat face is dropped and Playfair Display carries both display and framing (800 over Medium 500 — the 480 was below the family's 400 floor for its lighter sibling), a decorous Didone surface with the chemical green as the only unnatural note."
+            "note": "Respectability, not playbill: the fat face is dropped and Playfair Display carries both display and framing (800 over Medium 500, the 480 was below the family's 400 floor for its lighter sibling), a decorous Didone surface with the chemical green as the only unnatural note."
           }
         }
       ]

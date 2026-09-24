@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify.mjs — figma-plugin validation adapter (CRITIC side; deny-on-write to the advancer).
+// verify.mjs, figma-plugin validation adapter (CRITIC side; deny-on-write to the advancer).
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -37,17 +37,17 @@ if (dangling.length) FAIL("bindings", `${dangling.length} dangling target(s), e.
 // non-vacuity: a full plan covers every role's light+dark across all palettes
 const plan = P.bindingPlan(NAMES);
 if (!Array.isArray(plan) || plan.length !== 53 * NAMES.length) FAIL("bindings", `bindingPlan length ${plan && plan.length}, want ${53 * NAMES.length}`);
-// every entry carries exactly 2 targets (Light, Dark) by DEFAULT — the default theme axis.
+// every entry carries exactly 2 targets (Light, Dark) by DEFAULT, the default theme axis.
 if (plan.length && (!Array.isArray(plan[0].targets) || plan[0].targets.length !== 2 || plan[0].targets.map((t) => t.mode).join() !== "Light,Dark")) {
   FAIL("bindings", `bindingPlan()'s default targets = ${plan[0] && JSON.stringify(plan[0].targets)}, want [{mode:"Light",...},{mode:"Dark",...}]`);
 }
 
-// ── hpg-plugin-themes (TKT-0021 — the theme axis flows generically through bind-plan.mjs, not a
+// ── hpg-plugin-themes (TKT-0021, the theme axis flows generically through bind-plan.mjs, not a
 //    hardcoded Light/Dark pair): a 3-theme axis (Light/Dark/Dim) produces a THIRD target per role,
 //    and bindingTargets contributes NO new raw names (Dim reuses the "dark" side's ref) ──
 const THEMES_3 = [{ name: "Light", side: "light" }, { name: "Dark", side: "dark" }, { name: "Dim", side: "dark" }];
 const targets3 = P.bindingTargets(NAMES, THEMES_3);
-if (JSON.stringify(targets3) !== JSON.stringify(targets)) FAIL("themes", "a 3rd theme reusing the 'dark' side changed the raw target SET (should be identical — no new raw refs)");
+if (JSON.stringify(targets3) !== JSON.stringify(targets)) FAIL("themes", "a 3rd theme reusing the 'dark' side changed the raw target SET (should be identical, no new raw refs)");
 const plan3 = P.bindingPlan(NAMES, THEMES_3);
 if (!Array.isArray(plan3) || plan3.length !== plan.length) FAIL("themes", `3-theme bindingPlan length ${plan3 && plan3.length}, want ${plan.length} (same role count)`);
 else {
@@ -78,7 +78,7 @@ try {
   const bcode = readFileSync(join(HERE, "figma-semantic-binder/code.js"), "utf8").replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
   if (/figma\.notify\([^;]*\b(?:e\.message|String\(e\)|\.stack)\b/.test(bcode)) FAIL("compliance", "binder surfaces a raw error in figma.notify");
   if (/figma\.notify\([^;]*HCT/.test(bcode)) FAIL("compliance", "binder has a user-facing 'HCT' notify (stale branding)");
-  if (!/main\(\)\s*\.catch\s*\(/.test(bcode)) FAIL("compliance", "binder's main() is not wrapped in .catch — an unhandled error would crash with a raw message");
+  if (!/main\(\)\s*\.catch\s*\(/.test(bcode)) FAIL("compliance", "binder's main() is not wrapped in .catch, an unhandled error would crash with a raw message");
   const bman = JSON.parse(readFileSync(join(HERE, "figma-semantic-binder/manifest.json"), "utf8"));
   if (/HCT/.test(bman.name || "")) FAIL("compliance", `binder manifest name still says HCT: ${bman.name}`);
 } catch (e) { FAIL("compliance", `binder compliance scan: ${e.message}`); }
@@ -86,13 +86,13 @@ try {
 const BINDER_PATH = join(HERE, "figma-semantic-binder/code.js");
 const FLOAT_ANCHOR = 'JSON.parse("[]"); /* __ULTIMATE_TOKENS_FLOAT_PLANS__ */';
 
-// loadBinder — compile the binder's source, EXPOSING roleTable/refKey/main/applyFloatPlans/FLOAT_PLANS
+// loadBinder, compile the binder's source, EXPOSING roleTable/refKey/main/applyFloatPlans/FLOAT_PLANS
 // via an appended return (they're all top-level function/const declarations, which hoist within the
-// generated function body — no export mechanism needed). The file's own trailing `main().catch(...)`
+// generated function body, no export mechanism needed). The file's own trailing `main().catch(...)`
 // auto-invoke is stripped first: left in place it fires the moment the source loads (this file's `main`
-// is not message-driven like the flagship plugin — it just runs), which would EITHER race an explicit
-// call made afterward on the same mock figma (double-creating collections) OR — when no figma is passed
-// at all (the roleTable-only PARITY GUARD below) — throw an orphaned, unhandled rejection that
+// is not message-driven like the flagship plugin, it just runs), which would EITHER race an explicit
+// call made afterward on the same mock figma (double-creating collections) OR, when no figma is passed
+// at all (the roleTable-only PARITY GUARD below), throw an orphaned, unhandled rejection that
 // prints console noise once a later `await` in this script gives the microtask queue a chance to flush it.
 function loadBinder(src, figma) {
   const controlled = src.replace(/\nmain\(\)\.catch\([\s\S]*$/, "");
@@ -101,20 +101,20 @@ function loadBinder(src, figma) {
   return fn(figma, "<html>", undefined);
 }
 
-// ── PARITY GUARD: the checked-in code.js's roleTable() is GENERATED (TKT-0019) — spliced verbatim
+// ── PARITY GUARD: the checked-in code.js's roleTable() is GENERATED (TKT-0019), spliced verbatim
 //    from src/engine/semantic.js's semanticRoles() function body by scripts/gen-figma-binder-code.mjs
 //    — so this gate is now a TRIPWIRE proving the splice actually landed correctly (a stale build, a
 //    hand-edit inside the `// === GENERATED:ROLE_TABLE ===` markers, or a splice-script bug), not the
 //    mechanism preventing drift the way it was before TKT-0019 (mirrors the `floatparity` gate below,
 //    which plays the same tripwire role for the spliced float-executor functions).
-//    Load the runtime code.js (without running main()) and deep-equal-compare its FULL role objects —
-//    {key, suffix, light, dark}, in ORDER, per default palette — against semantic.js's semanticRoles(n)
+//    Load the runtime code.js (without running main()) and deep-equal-compare its FULL role objects,
+//    {key, suffix, light, dark}, in ORDER, per default palette, against semantic.js's semanticRoles(n)
 //    directly. This is the engine <-> Figma-binder leg of the role table's 3-impl identity;
 //    role-table.json's own identity with semantic.js (also full-object, key+suffix+light+dark) is a
-//    SEPARATE gate, `refs-canonical` in test/engine/semantic.mjs — the two gates together give
+//    SEPARATE gate, `refs-canonical` in test/engine/semantic.mjs, the two gates together give
 //    transitive identity across all three implementations.
 //    A derived-ref-name-set diff (the previous shape of this gate, pre-TKT-0027) only proves every ref
-//    resolves to a real raw-colors target — it CANNOT catch a `key` or `suffix` corruption that keeps
+//    resolves to a real raw-colors target, it CANNOT catch a `key` or `suffix` corruption that keeps
 //    pointing at the same ref, nor a role missing from one side whose refs are already produced by
 //    another role. Full-object, in-order comparison catches both: a length mismatch flags a
 //    missing/extra row, and a per-field mismatch flags a `key`/`suffix` drift even when `light`/`dark`
@@ -140,7 +140,7 @@ try {
   if (drift.length) FAIL("parity", `runtime code.js roleTable drifted from src/engine/semantic.js (e.g. ${drift.slice(0, 3).join("; ")})`);
 } catch (e) { FAIL("parity", `could not load/compare runtime roleTable: ${e.message}`); }
 
-// ── a mock figma: in-memory collections + variables (a trimmed copy of test/figma/plugin.mjs's mock —
+// ── a mock figma: in-memory collections + variables (a trimmed copy of test/figma/plugin.mjs's mock,
 //    duplicated rather than imported, since plugin.mjs is a self-running verifier that process.exit()s
 //    at end of file; importing it would execute AND exit this file too) ──
 function mockFigma() {
@@ -152,27 +152,27 @@ function mockFigma() {
     root: { _pd: {}, setPluginData(k, v) { this._pd[k] = String(v); }, getPluginData(k) { return this._pd[k] || ""; } },
     // ── #492 adoption-confirm UI mock ── confirmAdopt() calls showUI() then synchronously assigns
     // figma.ui.onmessage; the queued microtask below fires AFTER that assignment (JS microtask
-    // ordering), so it always reaches the real handler. `_adoptAnswer` (default false — DECLINE, the
+    // ordering), so it always reaches the real handler. `_adoptAnswer` (default false, DECLINE, the
     // conservative default so existing tests that don't care about adoption see today's unchanged
     // behavior) is read fresh each call, so a test can flip it mid-run for a later prompt.
     // `_showUICalls` counts prompts shown, for asserting "asked once" / "never asked again".
     // `_adoptAnswer = "close"` (#492 review, MINOR) simulates the user closing the plugin window
-    // WITHOUT clicking either button — fires the registered figma.on("close", …) handler instead of
+    // WITHOUT clicking either button, fires the registered figma.on("close", …) handler instead of
     // posting an adopt-confirm message, proving confirmAdopt's close-handler safety net (never hangs).
     _adoptAnswer: false,
     _showUICalls: 0,
-    // `_libraryModeAnswer` (#495) — the SAME "conservative default" precedent as `_adoptAnswer`: false
+    // `_libraryModeAnswer` (#495), the SAME "conservative default" precedent as `_adoptAnswer`: false
     // (classic/remove) so an EXISTING test that doesn't care about library mode keeps seeing today's
-    // unchanged prune behavior. `_libraryShowUICalls` is tracked SEPARATELY from `_showUICalls` — one
+    // unchanged prune behavior. `_libraryShowUICalls` is tracked SEPARATELY from `_showUICalls`, one
     // apply can show EITHER dialog (never both at once, but different tests exercise different ones),
     // and existing adoption-only tests assert on `_showUICalls` alone.
     _libraryModeAnswer: false,
     _libraryShowUICalls: 0,
     _onClose: null,
     on(event, cb) { if (event === "close") this._onClose = cb; },
-    // showUI(html) — routes by DIALOG TYPE, detected from the posted-message type string embedded in
+    // showUI(html), routes by DIALOG TYPE, detected from the posted-message type string embedded in
     // the HTML itself (both confirmAdopt and confirmLibraryMode are real figma.showUI(htmlString, …)
-    // calls — the mock reads back what was actually asked for, rather than assuming which one fired).
+    // calls, the mock reads back what was actually asked for, rather than assuming which one fired).
     showUI(html) {
       const isLibrary = typeof html === "string" && html.indexOf("library-mode-confirm") !== -1;
       if (isLibrary) this._libraryShowUICalls++; else this._showUICalls++;
@@ -224,7 +224,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 
 // bundlesafe (#492 real incident, MINOR review fix): moved to scripts/gen-figma-assets.mjs, which now
 // throws (failing the FIRST step of both `npm test` and `npm run build`) if code.js contains a literal
-// closing-script-tag substring — the generator is the earliest point that can catch it, right where the
+// closing-script-tag substring, the generator is the earliest point that can catch it, right where the
 // dangerous embedding happens, rather than a downstream test asserting on its output. See that script
 // for the full incident writeup (this file's own copy of that writeup is gone with the check).
 
@@ -272,7 +272,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── floatindep: with NO "Color Primitives" collection and a non-empty (injected) FLOAT_PLANS, main()
-//    still creates the breakpoint collections and does not throw — the color-abort no longer blocks
+//    still creates the breakpoint collections and does not throw, the color-abort no longer blocks
 //    Type/Geometry (the bug this LLD fixes) ──
 {
   const F = mockFigma(); // no Color Primitives
@@ -287,7 +287,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("floatindep", "main() threw with no Color Primitives + a non-empty FLOAT_PLANS: " + e.message); }
 }
 
-// ── floatnoop: the CHECKED-IN binder (FLOAT_PLANS baked as []) creates NO breakpoint collections — the
+// ── floatnoop: the CHECKED-IN binder (FLOAT_PLANS baked as []) creates NO breakpoint collections, the
 //    generic/asset download stays a color-only, palette-agnostic no-op for Type/Geometry ──
 {
   const F = mockFigma();
@@ -299,7 +299,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── colorprov (TKT-0024): main() must NEVER canonicalize a USER's own pre-existing "Color Roles"
-//    collection either — the same provenance guarantee floatindep/floatnoop prove for Type/Geometry,
+//    collection either, the same provenance guarantee floatindep/floatnoop prove for Type/Geometry,
 //    back-ported to the color cascade's semantic-collection creation via COLOR_REGISTRY_KEY. A "Color
 //    Primitives" collection's mere PRESENCE is enough to enter the cascade branch (main() checks `if
 //    (rawColl)`, not a variable count), so an empty one is enough to exercise the Color Roles path. ──
@@ -311,7 +311,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   try {
     const { main } = loadBinder(binderSrc, F.figma);
     await main();
-    // #492: the mock's default _adoptAnswer is false (DECLINE) — main() now ASKS (findAdoptionCandidate
+    // #492: the mock's default _adoptAnswer is false (DECLINE), main() now ASKS (findAdoptionCandidate
     // finds the orphan), but a decline preserves this test's exact original guarantee below.
     if (F.figma._showUICalls !== 1) FAIL("colorprov", `expected exactly 1 adoption prompt for the orphan Color Roles collection, got ${F.figma._showUICalls}`);
     if (F.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("colorprov", `expected the user's Color Roles + a separate binder-created one (2), got ${F.collections.filter((c) => c.name === "Color Roles").length}`);
@@ -326,7 +326,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 
 // ── primereport (RP-6, #575): the binder reads nothing from "Color Prime" (roles never alias
 //    prime tokens, SPEC REQ-054 non-goal), so its report must say so explicitly rather than stay
-//    silent — a user could otherwise misread the silence as a miss. Present ⇒ the notify summary
+//    silent, a user could otherwise misread the silence as a miss. Present ⇒ the notify summary
 //    names it; absent (a kit predating the prime collection, or prime never applied) ⇒ no line. ──
 {
   const F = mockFigma();
@@ -352,10 +352,10 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("primereport", "main() threw with no Color Prime collection: " + e.message); }
 }
 
-// ── adoptconsent (#492): the ADOPTION path — a live collection matching the target name (or a
+// ── adoptconsent (#492): the ADOPTION path, a live collection matching the target name (or a
 //    renameFrom name) that ISN'T registry-tracked is now OFFERED for adoption ("in the plugin UI",
-//    the ticket's own wording — confirmAdopt's figma.showUI dialog, not a notify toast), confirmed
-//    once. Confirmed ⇒ upserts INTO the existing collection (same id — no duplicate, no data loss);
+//    the ticket's own wording, confirmAdopt's figma.showUI dialog, not a notify toast), confirmed
+//    once. Confirmed ⇒ upserts INTO the existing collection (same id, no duplicate, no data loss);
 //    declined ⇒ today's unchanged behavior (a separate collection, proven by colorprov above).
 //    Covers both the color (semantic-collection) and float (Geometry) adoption call sites. ──
 {
@@ -365,10 +365,10 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   const F = mockFigma();
   F.figma._adoptAnswer = true;
   const rawColl = F.figma.variables.createVariableCollection("Color Primitives");
-  // populate real raw targets for "neutral" ONLY (bindingPlan's answer key) — enough for the role-binding
+  // populate real raw targets for "neutral" ONLY (bindingPlan's answer key), enough for the role-binding
   // loop to actually resolve+create semantic vars, so this test can assert on a real upserted role.
   for (const t of P.bindingTargets(["neutral"])) F.figma.variables.createVariable(t, rawColl, "COLOR").setValueForMode(rawColl.modes[0].modeId, { r: 0.5, g: 0.5, b: 0.5, a: 1 });
-  const orphan = F.figma.variables.createVariableCollection("Color Roles"); // NOT registered — an orphan
+  const orphan = F.figma.variables.createVariableCollection("Color Roles"); // NOT registered, an orphan
   orphan.addMode("Dark"); // a real Color Roles collection always carries Light+Dark
   F.figma.variables.createVariable("keepme/own", orphan, "COLOR").setValueForMode(orphan.modes[0].modeId, 1);
   try {
@@ -380,7 +380,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     if (semColls[0] !== orphan) FAIL("adoptconsent", "confirmed adoption minted a NEW collection instead of reusing the orphan's id (bindings would orphan)");
     if (!F.variables.some((v) => v.variableCollectionId === orphan.id && v.name === "keepme/own")) FAIL("adoptconsent", "adoption must not drop the orphan's own pre-existing variable");
     if (!F.variables.some((v) => v.variableCollectionId === orphan.id && v.name === "neutral/on-surface")) FAIL("adoptconsent", "adoption did not upsert role variables INTO the adopted collection");
-    // SECOND run: the registry now tracks the (formerly orphan) collection by id — no re-ask, no 2nd collection.
+    // SECOND run: the registry now tracks the (formerly orphan) collection by id, no re-ask, no 2nd collection.
     F.figma._showUICalls = 0;
     const { main: main2 } = loadBinder(binderSrc, F.figma);
     await main2();
@@ -389,7 +389,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("adoptconsent", "main() threw during confirmed color adoption: " + e.message); }
 }
 {
-  // #492 review, MINOR — CLOSE WITHOUT CHOOSING: closing the plugin window (neither button clicked)
+  // #492 review, MINOR, CLOSE WITHOUT CHOOSING: closing the plugin window (neither button clicked)
   // must settle confirmAdopt's promise (as a decline) via the figma.on("close", …) safety net, never
   // leave main() hanging forever. Raced against a short timeout so a regression FAILS this test loudly
   // instead of hanging the whole `node test/figma/binder.mjs` run.
@@ -397,26 +397,26 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   F.figma._adoptAnswer = "close"; // simulate the window closing, not a button click
   const rawColl = F.figma.variables.createVariableCollection("Color Primitives");
   for (const t of P.bindingTargets(["neutral"])) F.figma.variables.createVariable(t, rawColl, "COLOR").setValueForMode(rawColl.modes[0].modeId, { r: 0.5, g: 0.5, b: 0.5, a: 1 });
-  F.figma.variables.createVariableCollection("Color Roles"); // NOT registered — an orphan, prompted then closed-on
+  F.figma.variables.createVariableCollection("Color Roles"); // NOT registered, an orphan, prompted then closed-on
   try {
     const { main } = loadBinder(binderSrc, F.figma);
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("main() did not settle within 2s — confirmAdopt likely hung on window-close")), 2000));
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("main() did not settle within 2s, confirmAdopt likely hung on window-close")), 2000));
     await Promise.race([main(), timeout]);
     if (F.collections.filter((c) => c.name === "Color Roles").length !== 2) FAIL("adoptconsent", "close-without-choosing leg: expected the orphan + a separate fresh collection (2), the close must be treated as a decline");
   } catch (e) { FAIL("adoptconsent", "close-without-choosing leg: " + e.message); }
 }
 {
-  // MAJOR 1 (review fix) — DECLINE then RE-RUN: a decline leaves the orphan untouched, but
-  // ensureCollection immediately creates+registers a FRESH "Color Roles" collection right after — so a
+  // MAJOR 1 (review fix), DECLINE then RE-RUN: a decline leaves the orphan untouched, but
+  // ensureCollection immediately creates+registers a FRESH "Color Roles" collection right after, so a
   // SECOND run must show ZERO prompts (reg[name] now resolves live; findAdoptionCandidate's first check
   // catches it before ever searching for an orphan again) and must NOT touch the orphan or mint a THIRD
   // collection. Before the fix, findAdoptionCandidate only checked "is this candidate's id untracked
-  // anywhere in reg" — the still-untracked orphan kept matching that test forever, re-prompting every run.
+  // anywhere in reg", the still-untracked orphan kept matching that test forever, re-prompting every run.
   const F = mockFigma();
   F.figma._adoptAnswer = false; // DECLINE
   const rawColl = F.figma.variables.createVariableCollection("Color Primitives");
   for (const t of P.bindingTargets(["neutral"])) F.figma.variables.createVariable(t, rawColl, "COLOR").setValueForMode(rawColl.modes[0].modeId, { r: 0.5, g: 0.5, b: 0.5, a: 1 });
-  const orphan = F.figma.variables.createVariableCollection("Color Roles"); // NOT registered — an orphan, declined
+  const orphan = F.figma.variables.createVariableCollection("Color Roles"); // NOT registered, an orphan, declined
   try {
     const { main } = loadBinder(binderSrc, F.figma);
     await main();
@@ -435,14 +435,14 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("adoptconsent", "main() threw during the decline-then-re-run leg: " + e.message); }
 }
 {
-  // MAJOR 1 (review fix) — an ALREADY-REGISTERED, LIVE collection coexists with a same-named ORPHAN
+  // MAJOR 1 (review fix), an ALREADY-REGISTERED, LIVE collection coexists with a same-named ORPHAN
   // (plausible on a file that has been through more than one era): main() must show ZERO prompts (the
   // registered collection resolves the name; there is nothing to offer) and must NOT touch the
-  // registry entry — before the fix, a confirm on this exact scenario would have silently re-pointed
+  // registry entry, before the fix, a confirm on this exact scenario would have silently re-pointed
   // the registry AT the orphan, abandoning the collection actually in use (on the ADIA file, the
-  // equivalent of re-targeting onto the stale grouped scheme — the inverse of the ruling).
+  // equivalent of re-targeting onto the stale grouped scheme, the inverse of the ruling).
   const F = mockFigma();
-  F.figma._adoptAnswer = true; // even set to ADOPT — must still never be asked, so this must never fire
+  F.figma._adoptAnswer = true; // even set to ADOPT, must still never be asked, so this must never fire
   const rawColl = F.figma.variables.createVariableCollection("Color Primitives");
   for (const t of P.bindingTargets(["neutral"])) F.figma.variables.createVariable(t, rawColl, "COLOR").setValueForMode(rawColl.modes[0].modeId, { r: 0.5, g: 0.5, b: 0.5, a: 1 });
   const registeredColl = F.figma.variables.createVariableCollection("Color Roles");
@@ -461,15 +461,15 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 {
   // float: an unregistered "Geometry" ORPHAN, confirmed ⇒ adopted by the SAME mechanism, proven via a
-  // baked (injected) FLOAT_PLANS — mirrors floatindep's injection technique. Once adopted+registered,
+  // baked (injected) FLOAT_PLANS, mirrors floatindep's injection technique. Once adopted+registered,
   // applyFloatPlans' UNCHANGED full-mirror reconcile applies (create-or-reuse by name, prune anything
-  // NOT in the plan) — exactly its existing, documented behavior for any collection it owns; adoption
+  // NOT in the plan), exactly its existing, documented behavior for any collection it owns; adoption
   // only widens WHICH collections become "owned", never softens what "owned" already means. So a
-  // foreign var inside the orphan does NOT survive adoption (proven below) — the confirm dialog is the
+  // foreign var inside the orphan does NOT survive adoption (proven below), the confirm dialog is the
   // consent for exactly that reconciliation, matching the two-collection era's "Typography" retirement.
   const F = mockFigma();
   F.figma._adoptAnswer = true;
-  const orphan = F.figma.variables.createVariableCollection("Geometry"); // NOT registered — an orphan
+  const orphan = F.figma.variables.createVariableCollection("Geometry"); // NOT registered, an orphan
   F.figma.variables.createVariable("stale/own", orphan, "FLOAT").setValueForMode(orphan.modes[0].modeId, 9);
   const typeIx = TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 }), []);
   const plans = MAP.modeApplyPlan(typeIx);
@@ -488,12 +488,12 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 
 // ── librarygeom (#495): "published library" mode for the box-geometry (size/*) half of the merged
 //    Geometry collection, mirroring the ADIA file's OLD step names (predating the current xs/sm/md/
-//    lg/xl/2xl ramp) — proven end-to-end through the STANDALONE BINDER's own INTERACTIVE path
+//    lg/xl/2xl ramp), proven end-to-end through the STANDALONE BINDER's own INTERACTIVE path
 //    (main() -> applyFloatPlans(FLOAT_PLANS, {askIfUndecided:true}) -> confirmLibraryMode, the ONLY
-//    caller this ticket wires an interactive dialog into — see applyFloatPlans' own header comment on
+//    caller this ticket wires an interactive dialog into, see applyFloatPlans' own header comment on
 //    why the flagship never asks). Old steps map to their nearest CURRENT step BY HEIGHT (never by
 //    name) via geometryPlanStepHeights/expandGeometryAliasMap: "small"(25)->sm(24), "large"(40)->lg(36),
-//    "jumbo"(70)->2xl(64) — none collide with a current step name, so all three are "existing but not
+//    "jumbo"(70)->2xl(64), none collide with a current step name, so all three are "existing but not
 //    wanted" and exercise the SAME alias path a renamed step would. 0 removals; the confirm dialog
 //    actually fires (proving the wiring, not just the pure planner already proven in plugin.mjs's
 //    libraryparity/librarymode); idempotent second run. ──
@@ -508,7 +508,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
       for (const f of FIELDS) oldVars.push({ name: `size/${step}/${f}`, type: "FLOAT", values: [{ mode: "Base", value: f === "height" ? h : Math.round(h / 2) }] });
     }
     // Step 1: create + REGISTER the Geometry collection at its old shape, through applyFloatPlans
-    // itself (never a raw figma.variables call — ensureFloatCollection resolves by registry id/
+    // itself (never a raw figma.variables call, ensureFloatCollection resolves by registry id/
     // renameFrom only, same discipline as librarymode's Font Primitives fixture in plugin.mjs).
     const { applyFloatPlans: apply1 } = loadBinder(binderSrc, F.figma);
     await apply1([{ collection: "Geometry", modes: ["Base"], defaultMode: "Base", addModes: [], variables: oldVars }]);
@@ -526,7 +526,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("librarygeom", "the interactive library-mode apply duplicated the Geometry collection");
     const geo = F.collections.find((c) => c.name === "Geometry");
     // 0 removals: every old step/field variable must still exist BY NAME (aliasing redirects the
-    // VALUE, never renames — id-preserving, matching applyFontPrimitivesModes' own contract).
+    // VALUE, never renames, id-preserving, matching applyFontPrimitivesModes' own contract).
     const stillThere = oldVars.every((v) => F.variables.some((va) => va.variableCollectionId === geo.id && va.name === v.name));
     if (!stillThere) FAIL("librarygeom", "library mode removed an old size/* variable instead of aliasing it");
     // "small" -> nearest CURRENT step "sm" BY HEIGHT: the old variable's live value must now be a real
@@ -539,7 +539,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
       const val = oldSmallHeight.valuesByMode[baseId];
       if (!val || val.type !== "VARIABLE_ALIAS" || val.id !== newSmHeight.id) FAIL("librarygeom", "size/small/height's value was not redirected to size/sm/height via a real alias (nearest-by-height)");
     }
-    // "jumbo"(70) -> nearest CURRENT step "2xl"(64), not "xl"(48) — proves the mapping is BY HEIGHT,
+    // "jumbo"(70) -> nearest CURRENT step "2xl"(64), not "xl"(48), proves the mapping is BY HEIGHT,
     // not by list position or name.
     const oldJumboIcon = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/jumbo/icon");
     const new2xlIcon = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/2xl/icon");
@@ -550,15 +550,15 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     }
 
     // IDEMPOTENT second run, STRICT (#495 follow-up): a variable already correctly aliased from run 1
-    // needs NO further action on an unchanged re-apply — a published library must not rename/re-alias
+    // needs NO further action on an unchanged re-apply, a published library must not rename/re-alias
     // names on every apply. Called directly (libraryMode:true, pre-decided) rather than through main()'s
-    // interactive dialog — run 1 above already proves that wiring; this leg only needs the return value.
+    // interactive dialog, run 1 above already proves that wiring; this leg only needs the return value.
     const { applyFloatPlans: apply2 } = loadBinder(binderSrc, F.figma);
     const res2 = await apply2(plans2, { libraryMode: true });
     if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("librarygeom", "second (idempotent) run duplicated the Geometry collection");
     const stillThere2 = oldVars.every((v) => F.variables.some((va) => va.variableCollectionId === geo.id && (va.name === v.name || va.name.indexOf("_deprecated/" + v.name) === 0)));
     if (!stillThere2) FAIL("librarygeom", "second run removed a size/* variable library mode should have preserved");
-    if (F.variables.some((va) => va.variableCollectionId === geo.id && va.name.indexOf("_deprecated/_deprecated/") === 0)) FAIL("librarygeom", "second run double-prefixed an already-deprecated variable — not idempotent");
+    if (F.variables.some((va) => va.variableCollectionId === geo.id && va.name.indexOf("_deprecated/_deprecated/") === 0)) FAIL("librarygeom", "second run double-prefixed an already-deprecated variable, not idempotent");
     if (!res2 || !res2.libraryReports || !res2.libraryReports[0]) FAIL("librarygeom", "second run returned no libraryReports");
     else {
       const rpt2 = res2.libraryReports[0];
@@ -572,10 +572,10 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 // ── libraryidem (#635): library-mode apply must be IDEMPOTENT through the binder's own INTERACTIVE
 //    gate. librarygeom above proves run 2 only with a PRE-DECIDED apply2(plans2, {libraryMode:true}),
 //    which bypasses the gate; the real user runs main() twice. On run 2 the reconcile report is EMPTY
-//    (every old name is already correctly aliased — nothing to write), so the gate never asked and fell
+//    (every old name is already correctly aliased, nothing to write), so the gate never asked and fell
 //    through to the classic prune, deleting the 30 names run 1 had preserved (122 -> 92 variables).
 //    The rule: an empty report on a collection carrying EVIDENCE of a prior uplift (any live alias
-//    target, or any "_deprecated/" name) is "library mode, already decided" — no dialog, no prune.
+//    target, or any "_deprecated/" name) is "library mode, already decided", no dialog, no prune.
 //    Non-regression legs: a never-touched collection with an empty report still takes the prune branch
 //    (libraryMode:false), and a never-touched collection with a non-empty report still ASKS. ──
 {
@@ -604,7 +604,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     if (F.figma._libraryShowUICalls !== 1) FAIL("libraryidem", `run 1 expected exactly 1 library-mode prompt, got ${F.figma._libraryShowUICalls}`);
     if (old1 !== oldVars.length) FAIL("libraryidem", `run 1 preserved ${old1}/${oldVars.length} old names (fixture broken, run 2 would prove nothing)`);
 
-    // Run 2 through main() AGAIN — the interactive path, answer UNSET (mock default: "Remove"), so a
+    // Run 2 through main() AGAIN, the interactive path, answer UNSET (mock default: "Remove"), so a
     // dialog firing here would ALSO be a failure of a different kind (the user is asked a question run 1
     // already answered). The gate must recognise the uplifted collection and neither ask nor prune.
     F.figma._libraryShowUICalls = 0;
@@ -617,7 +617,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("libraryidem", "the interactive idempotency e2e threw: " + e.message); }
 
   // Non-regression A: a NEVER-touched collection whose report is empty (existing == wanted) has no
-  // evidence of an uplift — the gate must still take the classic prune branch, silently (0 prompts).
+  // evidence of an uplift, the gate must still take the classic prune branch, silently (0 prompts).
   const G = mockFigma();
   try {
     const geomIx = GEOM.geomTokensFigmaModes(GEOM.geomScale({ treatment: "comfortable", baseHeight: 28 }), []);
@@ -627,11 +627,11 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     if (G.figma._libraryShowUICalls !== 0) FAIL("libraryidem", `never-touched + empty report must not prompt, got ${G.figma._libraryShowUICalls}`);
     const rpt = res && res.libraryReports && res.libraryReports.find((r) => r.collection === "Geometry");
     if (!rpt) FAIL("libraryidem", "never-touched re-apply returned no Geometry libraryReport");
-    else if (rpt.libraryMode !== false) FAIL("libraryidem", `never-touched + empty report must stay on the classic prune branch (libraryMode:false), got ${rpt.libraryMode} — the fix turned every collection into library mode`);
+    else if (rpt.libraryMode !== false) FAIL("libraryidem", `never-touched + empty report must stay on the classic prune branch (libraryMode:false), got ${rpt.libraryMode}, the fix turned every collection into library mode`);
   } catch (e) { FAIL("libraryidem", "non-regression A threw: " + e.message); }
 
   // Non-regression B: a NEVER-touched collection with a stray extra name (non-empty report) still ASKS,
-  // and "Remove" still prunes it — the pre-#635 contract for a real decision is unchanged.
+  // and "Remove" still prunes it, the pre-#635 contract for a real decision is unchanged.
   const H = mockFigma();
   H.figma._libraryModeAnswer = false;
   try {
@@ -652,14 +652,14 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 //    so whether it survives the next apply must not depend on what ELSE is in the collection. Before
 //    the fix: (a) a lone "_deprecated/x" with an EMPTY report was kept by priorLibraryUpliftVM, but
 //    (b) the same "_deprecated/x" beside ONE unrelated stale name made the report non-empty, the dialog
-//    answered "Remove", and the prune branch deleted EVERY unwanted name — "_deprecated/x" included.
+//    answered "Remove", and the prune branch deleted EVERY unwanted name, "_deprecated/x" included.
 //    Rule: the prune candidate set is existingNames - wantedNames - {"_deprecated/*"}, at both gates.
 //    Leg (b) is the negative control: it must fail on the unfixed tree. ──
 {
   const DEP = "_deprecated/size/small/height";
   const seedWith = async (extraNames) => {
     const F = mockFigma();
-    F.figma._libraryModeAnswer = false; // "Remove" — the classic prune
+    F.figma._libraryModeAnswer = false; // "Remove", the classic prune
     const geomIx = GEOM.geomTokensFigmaModes(GEOM.geomScale({ treatment: "comfortable", baseHeight: 28 }), []);
     const plans = MAP.modeApplyPlan(geomIx);
     const seeded = JSON.parse(JSON.stringify(plans));
@@ -687,16 +687,16 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("prunemono", "leg (b) threw: " + e.message); }
 
   // ── font-gate twin (critic finding on PR #666): pruneCandidatesVM's classic-prune call is
-  //    DUPLICATED at applyFontPrimitivesModes (figma/plugin/code.js — never spliced into the standalone
+  //    DUPLICATED at applyFontPrimitivesModes (figma/plugin/code.js, never spliced into the standalone
   //    binder, so it is loaded directly here, same technique as colorparity/collparity/floatparity
-  //    below) — a guard removed at ONLY that call site would leave legs (a)/(b) above green while
+  //    below), a guard removed at ONLY that call site would leave legs (a)/(b) above green while
   //    breaking font-side monotonicity. Same two legs, driving applyFontPrimitivesModes instead of
   //    applyFloatPlans; leg (b) is again the negative control. ──
   const DEPF = "_deprecated/font/legacy";
   const seedFontWith = async (extraNames) => {
     const flagSrc = readFileSync(join(HERE, "..", "plugin", "code.js"), "utf8");
     const F = mockFigma();
-    F.figma._libraryModeAnswer = false; // "Remove" — the classic prune
+    F.figma._libraryModeAnswer = false; // "Remove", the classic prune
     F.figma.ui.postMessage = () => {}; // the flagship's top-level `figma.ui.postMessage({type:"figma-init"})` fires on load
     const loaded = new Function("figma", "__html__", "module", flagSrc + "\nreturn { applyFontPrimitivesModes };")(F.figma, "<html>", undefined);
     const basePlan = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [{ name: "font/heading", type: "STRING", values: [{ mode: "Value", value: "Body Font" }] }] };
@@ -725,7 +725,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── colorparity: the binder's checked-in code.js's readColorRegistry/writeColorRegistry/ensureCollection
-//    are GENERATED (TKT-0024, splicing the FLOAT_EXECUTOR technique from TKT-0019) — spliced verbatim from
+//    are GENERATED (TKT-0024, splicing the FLOAT_EXECUTOR technique from TKT-0019), spliced verbatim from
 //    the flagship figma/plugin/code.js by scripts/gen-figma-binder-code.mjs into the
 //    `// === GENERATED:COLOR_EXECUTOR ===` markers, same discipline as floatparity below. This gate is now
 //    a TRIPWIRE proving the splice landed correctly, not the mechanism keeping the two copies in lockstep. ──
@@ -740,26 +740,26 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
       const a = extractFunctionSource(binderSrc, fn), b = extractFunctionSource(flagSrc, fn);
       if (!a) { FAIL("colorparity", `binder is missing ${fn}()`); continue; }
       if (!b) { FAIL("colorparity", `flagship is missing ${fn}()`); continue; }
-      if (norm(a) !== norm(b)) FAIL("colorparity", `${fn}() body drifted between the binder and the flagship (executor copies must stay byte-identical — regenerate with scripts/gen-figma-binder-code.mjs)`);
+      if (norm(a) !== norm(b)) FAIL("colorparity", `${fn}() body drifted between the binder and the flagship (executor copies must stay byte-identical, regenerate with scripts/gen-figma-binder-code.mjs)`);
     }
-    if (!keyLit(binderSrc) || keyLit(binderSrc) !== keyLit(flagSrc)) FAIL("colorparity", `COLOR_REGISTRY_KEY literal differs (binder ${keyLit(binderSrc)} vs flagship ${keyLit(flagSrc)}) — the two would not converge on one collection`);
+    if (!keyLit(binderSrc) || keyLit(binderSrc) !== keyLit(flagSrc)) FAIL("colorparity", `COLOR_REGISTRY_KEY literal differs (binder ${keyLit(binderSrc)} vs flagship ${keyLit(flagSrc)}), the two would not converge on one collection`);
   } catch (e) { FAIL("colorparity", "could not load/compare the flagship color-provenance functions: " + e.message); }
 }
 
-// ── collparity (#491, +REQ-054/#539): the five Figma collection NAMES are canonical in ONE place —
-//    src/engine/collections.js's COLLECTIONS export — but neither sandbox (this binder, the flagship
+// ── collparity (#491, +REQ-054/#539): the five Figma collection NAMES are canonical in ONE place,
+//    src/engine/collections.js's COLLECTIONS export, but neither sandbox (this binder, the flagship
 //    figma/plugin/code.js) can `import` it (non-module Figma VM), so each carries hand-typed literal
 //    copies. This is the tripwire root-caused by the 2026-07-17 librarian review (exportUI3 said
-//    "Color / Primitives" while the plugin created "Color Primitives" — a drift with no gate to catch
-//    it): RAW_COLLECTION/SEMANTIC_COLLECTION/PRIME_COLLECTION — the COLOR trio BOTH files hardcode as
-//    named constants — must equal COLLECTIONS.colorRaw/colorSemantic/colorPrime exactly in both.
+//    "Color / Primitives" while the plugin created "Color Primitives", a drift with no gate to catch
+//    it): RAW_COLLECTION/SEMANTIC_COLLECTION/PRIME_COLLECTION, the COLOR trio BOTH files hardcode as
+//    named constants, must equal COLLECTIONS.colorRaw/colorSemantic/colorPrime exactly in both.
 //    PRIME_COLLECTION joins the heavy dual-sandbox check, not the light flagship-only one below, per
-//    the LLD's Collections row ("both sandbox literals mirror it") — even though the binder does not
+//    the LLD's Collections row ("both sandbox literals mirror it"), even though the binder does not
 //    yet bind or read prime tokens (LLD "Figma plugin apply" row), so a future P5 that wires it up
 //    cannot silently diverge the two copies. The Geometry/Type Primitives pair has no equivalent
-//    binder-side check: the standalone binder never hardcodes either name — it only ever receives them
+//    binder-side check: the standalone binder never hardcodes either name, it only ever receives them
 //    as DATA inside the baked FLOAT_PLANS (named by the app's own COLLECTIONS-derived plan at download
-//    time) — so only the flagship, which hardcodes both in readFloatVariables/byRegistry for its own
+//    time), so only the flagship, which hardcodes both in readFloatVariables/byRegistry for its own
 //    read-back and styles paths, is checked for those two. ──
 {
   const FLAGSHIP_PATH = join(HERE, "..", "plugin", "code.js");
@@ -780,8 +780,8 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 }
 
 // ── floatparity: the binder ports 6 float-executor functions VERBATIM from the flagship
-//    (figma/plugin/code.js). They're a pure DATA executor with no planner to spec-gate against, so — per
-//    the repo's culture (see the roleTable PARITY GUARD above; scrim-drift incident 2026-06-18) — the two
+//    (figma/plugin/code.js). They're a pure DATA executor with no planner to spec-gate against, so, per
+//    the repo's culture (see the roleTable PARITY GUARD above; scrim-drift incident 2026-06-18), the two
 //    copies are gated against silent drift. Extract each function from BOTH files and compare their
 //    comment-stripped, whitespace-normalized bodies: the two carry intentionally different surrounding
 //    comments, but the executable code MUST stay byte-identical so a user who runs the flagship AND the
@@ -790,7 +790,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   const FLAGSHIP_PATH = join(HERE, "..", "plugin", "code.js");
   const FLOAT_FNS = ["readFloatRegistry", "writeFloatRegistry", "ensureFloatCollection", "varsByName", "applyFloatPlans", "priorLibraryUpliftVM", "pruneCandidatesVM"];
   // extractFunctionSource is the SAME brace-matched extraction scripts/gen-figma-binder-code.mjs uses
-  // to splice these functions into the binder (TKT-0019) — shared from splice-utils.mjs so the
+  // to splice these functions into the binder (TKT-0019), shared from splice-utils.mjs so the
   // generator and this tripwire can never quietly disagree on what "the same function" means.
   const norm = (code) => code.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").trim();
   const keyLit = (src) => (/FLOAT_REGISTRY_KEY\s*=\s*("[^"]*")/.exec(src) || [])[1];
@@ -800,9 +800,9 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
       const a = extractFunctionSource(binderSrc, fn), b = extractFunctionSource(flagSrc, fn);
       if (!a) { FAIL("floatparity", `binder is missing ${fn}()`); continue; }
       if (!b) { FAIL("floatparity", `flagship is missing ${fn}()`); continue; }
-      if (norm(a) !== norm(b)) FAIL("floatparity", `${fn}() body drifted between the binder and the flagship (executor copies must stay byte-identical — regenerate with scripts/gen-figma-binder-code.mjs)`);
+      if (norm(a) !== norm(b)) FAIL("floatparity", `${fn}() body drifted between the binder and the flagship (executor copies must stay byte-identical, regenerate with scripts/gen-figma-binder-code.mjs)`);
     }
-    if (!keyLit(binderSrc) || keyLit(binderSrc) !== keyLit(flagSrc)) FAIL("floatparity", `FLOAT_REGISTRY_KEY literal differs (binder ${keyLit(binderSrc)} vs flagship ${keyLit(flagSrc)}) — the two would not converge on one collection set`);
+    if (!keyLit(binderSrc) || keyLit(binderSrc) !== keyLit(flagSrc)) FAIL("floatparity", `FLOAT_REGISTRY_KEY literal differs (binder ${keyLit(binderSrc)} vs flagship ${keyLit(flagSrc)}), the two would not converge on one collection set`);
   } catch (e) { FAIL("floatparity", "could not load/compare the flagship executor: " + e.message); }
 }
 
@@ -817,7 +817,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 const DECLARED = ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "primereport", "adoptconsent", "librarygeom", "libraryidem", "prunemono", "colorparity", "collparity", "floatparity", "compliance", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (checked ${targets ? targets.length : 0} binding targets vs ${CANON.size} canonical raw-colors names)`);
-console.log("  defer  hpg-parity-roletable — this file's `parity` gate above verifies the engine<->Figma-binder leg (full role objects, in order, per default palette); the canonical role-table.json<->semantic.js leg is verified by semantic-mapping's own refs-canonical gate");
+console.log("  defer  hpg-parity-roletable, this file's `parity` gate above verifies the engine<->Figma-binder leg (full role objects, in order, per default palette); the canonical role-table.json<->semantic.js leg is verified by semantic-mapping's own refs-canonical gate");
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: figma-plugin clears its checkable [gate] predicates");
 process.exit(0);

@@ -79,7 +79,7 @@ export function gateReport({ fails, declared, selfUrl, FAIL }) {
   const printed = [...declared, ...failedNames.filter((g) => !declared.includes(g))];
   for (const g of printed) {
     const f = fails.find((x) => x.startsWith(g + ":"));
-    console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? "  — " + f.slice(g.length + 2) : ""}`);
+    console.log(`  ${f ? "FAIL" : "pass"}  ${g}${f ? ", " + f.slice(g.length + 2) : ""}`);
     if (f && !declared.includes(g)) console.log(`  !!! "${g}" is not in the REPORT block's declared list above; add it, this gate's failures were invisible until now !!!`);
   }
   return fails.slice(before);

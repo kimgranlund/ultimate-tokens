@@ -1,4 +1,4 @@
-// tonal.js — tonal-scale generation module (vanilla ESM, no deps).
+// tonal.js, tonal-scale generation module (vanilla ESM, no deps).
 //
 // Builds a palette's per-stop ramp from global controls + a palette's
 // {hue, chroma, skew, lift}. Tone (L*) comes from a shaped, skewable curve;
@@ -6,7 +6,7 @@
 // ceiling. Every emitted color is produced by the validated HCT engine so it is
 // in-gamut, hits its target tone, and holds a constant CAM16 hue along the ramp.
 //
-// Engine contract (validated, imported — never reimplemented here):
+// Engine contract (validated, imported, never reimplemented here):
 //   hctToRgb(hue, chroma, tone) -> { rgb:[r,g,b] (0-255 ints), inGamut, lstar }
 //   maxChromaInGamut(hue, tone) -> number   peakC(hue) -> { c, tone }
 //   oklchToCam16Hue(h)          -> CAM16 hue (degrees)
@@ -38,32 +38,32 @@ export const DEFAULT_CONTROLS = {
   dampAmp: 0,
   dampBias: 0,
   // Hue space the per-palette `hue` is expressed in. "oklch" (default): the slider value IS the OKLCH
-  // hue — resolved to a CAM16 hue once per palette via effHue→oklchToCam16Hue. "cam16": the hue is a
+  // hue, resolved to a CAM16 hue once per palette via effHue→oklchToCam16Hue. "cam16": the hue is a
   // CAM16 hue, passed straight through. (Legacy docs that predate the OKLCH-native flip carry "cam16"
-  // explicitly and keep rendering in cam16 — see persist.js / app.js openSet.)
+  // explicitly and keep rendering in cam16, see persist.js / app.js openSet.)
   hueSpace: "oklch",
-  // Chroma basis. false (default): the chroma control is % of the BASE-hue PEAK — per-hue, but the
+  // Chroma basis. false (default): the chroma control is % of the BASE-hue PEAK, per-hue, but the
   // ABSOLUTE chroma still varies with each hue's gamut, so hues come out unequally saturated. true:
   // it's % of EACH STOP's own gamut ceiling, so every hue fills the same fraction of its gamut →
   // palettes harmonize across hue regardless of the hue picked (see paletteStops). A cheap stand-in
   // for OKHSL-style perceptual-saturation normalization.
   relChroma: false,
-  // Light/dark-end chroma floor (% of each stop's gamut ceiling) for the "even" path — lifts the
+  // Light/dark-end chroma floor (% of each stop's gamut ceiling) for the "even" path, lifts the
   // damping-starved ends back toward the palette's intended chroma so LOW-chroma ramps don't collapse
   // to a near-white "dead zone", WITHOUT muting saturated palettes (see paletteStops). Default on.
   chromaFloor: 40,
   // Ramp distribution mode (how stops map to lightness):
-  //   "perceptual" (default) — even steps in OKHSL lightness (perceptually uniform) + gamut-proportional
+  //   "perceptual" (default), even steps in OKHSL lightness (perceptually uniform) + gamut-proportional
   //                  chroma; harmonizes saturation across hue (no near-white dead zone). The `vibrancy`
   //                  control (below) pulls each hue's center toward its chroma cusp for a vibrant mid.
-  //   "even"       — the classic CIELAB-L* curve below (toneAt): per-stop tone is the SAME L* for every
+  //   "even", the classic CIELAB-L* curve below (toneAt): per-stop tone is the SAME L* for every
   //                  hue (tone-aligned). curve/relChroma/chromaFloor apply to "even" only; the per-palette
-  //                  skew/lift apply to EVERY mode (#647 — see effStop on the OKHSL path).
-  //   "peak"       — like perceptual with vibrancy pinned at 100: the hue's CUSP (peak chroma) anchored
+  //                  skew/lift apply to EVERY mode (#647, see effStop on the OKHSL path).
+  //   "peak", like perceptual with vibrancy pinned at 100: the hue's CUSP (peak chroma) anchored
   //                  at stop 500 (Tailwind-style "the color is 500").
   // perceptual/peak go through the OKHSL path (okhslStops); lmin/lmax/damp/vibrancy shape it there.
   toneMode: "perceptual",
-  // Vibrancy (perceptual path) — pulls the ramp's lightness from the even-perceptual distribution (0)
+  // Vibrancy (perceptual path), pulls the ramp's lightness from the even-perceptual distribution (0)
   // toward the hue's CUSP-anchored distribution (100), so the CENTER sits where the hue is most
   // chromatic. The fix for hues whose vivid expression lives off-center (e.g. yellow, cusp at high L*):
   // crank it and the mid stops read vibrant for ANY hue. ("peak" mode = vibrancy 100.)
@@ -71,17 +71,17 @@ export const DEFAULT_CONTROLS = {
   // On-color policy (resolution layer, not the ramp). "contrast" (DEFAULT since #662, ADR-003
   // amendment): on{N}/on{N}Variant take the end with the better WCAG contrast vs the accent fill
   // (550/450) per mode, falling through to the white/black constants when neither ramp end clears
-  // AA 4.5:1 — which is what puts every family over the floor in both schemes without moving a stop.
+  // AA 4.5:1, which is what puts every family over the floor in both schemes without moving a stop.
   // "fixed" (the opt-out, the pre-#662 default): on{N} pinned to the light tint (050/200) in both
-  // modes — uniform, but fails contrast on light accents. Applied in projectView + derivePalette
+  // modes, uniform, but fails contrast on light accents. Applied in projectView + derivePalette
   // via applyOnColorContrast.
   onColorMode: "contrast",
   // Prime-accent ref (resolution layer, not the ramp). "mode" (default): the prime accent role resolves
-  // to 550 (light) / 450 (dark) — mode-specific, better contrast per scheme. "single": both modes map to
-  // 500 — one mode-agnostic accent token. Applied via applyAccentRef alongside applyOnColorContrast.
+  // to 550 (light) / 450 (dark), mode-specific, better contrast per scheme. "single": both modes map to
+  // 500, one mode-agnostic accent token. Applied via applyAccentRef alongside applyOnColorContrast.
   accentRef: "mode",
   // (SPEC spec-muted-base-key-spikes 0.3.0, REQ-002/004, AC-004): the ramp's chroma multiplier that
-  // used to live here as a control field is fully retired, engine-side — a palette group's "Base
+  // used to live here as a control field is fully retired, engine-side, a palette group's "Base
   // chroma" is now an ABSOLUTE chroma target resolved entirely in src/ui/model.mjs and src/ui/persist.js
   // (never in this engine module) and handed to paletteStops AS the palette's own `chroma`. No trace
   // of that resolution survives on DEFAULT_CONTROLS: tonal.js stays fully group- and intensity-unaware.
@@ -90,13 +90,13 @@ export const DEFAULT_CONTROLS = {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const lerp = (a, b, t) => a + (b - a) * t;
 
-// effHue — resolve a palette's input hue to a CAM16 hue ONCE per palette.
+// effHue, resolve a palette's input hue to a CAM16 hue ONCE per palette.
 // 'oklch' inputs are mapped through the engine; 'cam16' (default) pass straight.
 // Compute this a single time and feed the SAME value to every stop so the
 // emitted CAM16 hue is constant across the ramp (hue-stability).
 // chromaFrac (0..1, default 1) anchors the OKLCH→CAM16 inverse at a chroma fraction of the hue's peak,
 // so a color at that saturation lands on the requested OKLCH hue. Because OKLCH↔CAM16 hue shifts with
-// chroma (Abney), the anchor should sit where the ramp's SATURATED stops actually are — see
+// chroma (Abney), the anchor should sit where the ramp's SATURATED stops actually are, see
 // hueAnchorFrac. (Anchoring at the raw nominal chroma left the vivid stops ~2–3° off the set hue,
 // because dampAmp drives the center stops past nominal toward the gamut peak.)
 export function effHue(hue, hueSpace, chromaFrac = 1) {
@@ -106,8 +106,8 @@ export function effHue(hue, hueSpace, chromaFrac = 1) {
 // hueAnchorFrac  -  the chroma fraction the ramp's VIVID CENTER stop (500) actually reaches: the palette's
 // own nominal chroma, capped at the gamut peak. Anchoring effHue here  -  not at the raw un-anchored hue  - 
 // puts the OKLCH-hue calibration on the saturated swatches the user reads, so they land on the SET hue.
-// REQ-005 (0.3.0): `palette.chroma` is the resolved value paletteStops was called with — the absolute
-// group target on the group-resolution callers, the palette's own chroma on a direct engine call — so
+// REQ-005 (0.3.0): `palette.chroma` is the resolved value paletteStops was called with, the absolute
+// group target on the group-resolution callers, the palette's own chroma on a direct engine call, so
 // the anchor always follows the SAME chroma the ramp itself is built from; no separate factor needed.
 //
 // No longer amplified by dampAmp (#681 U3, Q7): chromaEnvelope is exactly 1 at the anchor stop for EVERY
@@ -120,19 +120,19 @@ export function hueAnchorFrac(palette, controls) {
   return Math.min(1, (palette.chroma ?? 0) / 100);
 }
 
-// solveOkhslHue — the OKHSL hue whose color at (s, l) reads back at `targetOklchHue`. The perceptual ramp
+// solveOkhslHue, the OKHSL hue whose color at (s, l) reads back at `targetOklchHue`. The perceptual ramp
 // is AUTHORED in OKHSL but EXPORTED in OKLCH, and the two disagree on "constant hue" by a chroma- and
-// lightness-dependent amount (Abney) — worst in the blues (~6°). Anchoring the KEY stop directly in the
+// lightness-dependent amount (Abney), worst in the blues (~6°). Anchoring the KEY stop directly in the
 // RENDER space, at its ACTUAL saturation/lightness, lands it on the set OKLCH hue exactly, for any damping
 // — no CAM16 round-trip. f(h)≈h (slope ≈1), so h ← h − (got − target) is Newton; converges in a few steps.
-// #657: f is an 8-BIT STAIRCASE — okhslToRgb quantises to integer RGB, so `got` is piecewise CONSTANT in h
+// #657: f is an 8-BIT STAIRCASE, okhslToRgb quantises to integer RGB, so `got` is piecewise CONSTANT in h
 // and the 1e-3 criterion is unreachable on most cells. Where the step is flat the update h ← h − err is a
 // fixed drift, so the LAST iterate can be 100°+ off target (pale, low-chroma cells near white are the worst:
 // every h renders the same pixel). Track the BEST (h, |err|) seen and return that on exhaustion. Converged
 // cells are unaffected: nothing before an iterate with |err| < 1e-3 can be smaller, so the min IS that
 // iterate and the return is bit-identical. Strict `<` keeps the EARLIEST minimum, so the result is stable.
-// The loop runs to i=16 so the hue the OLD code returned — the 17th, produced by the last update and
-// never read back — is a scored candidate too, not a blind return. Without that pass the old value could
+// The loop runs to i=16 so the hue the OLD code returned, the 17th, produced by the last update and
+// never read back, is a scored candidate too, not a blind return. Without that pass the old value could
 // still win by luck on a cycling cell (measured: 2 of 3,780 curated peak palettes, by <=0.0003°); with it,
 // the returned hue is the argmin over every candidate the old loop ever produced, so it is never worse.
 export function solveOkhslHue(targetOklchHue, s, l) {
@@ -148,14 +148,14 @@ export function solveOkhslHue(targetOklchHue, s, l) {
   return bestH;
 }
 
-// solveCam16Hue — the even/CAM16 analog of solveOkhslHue: the CAM16 hue whose color at (chroma, tone) reads
+// solveCam16Hue, the even/CAM16 analog of solveOkhslHue: the CAM16 hue whose color at (chroma, tone) reads
 // back at `targetOklchHue`. The "even" ramp RENDERS through the HCT engine (a CAM16 hue) but EXPORTS in
-// OKLCH, and the two disagree on "constant hue" by a chroma- AND lightness-dependent amount (Abney) — up to
+// OKLCH, and the two disagree on "constant hue" by a chroma- AND lightness-dependent amount (Abney), up to
 // ~2° at the blue pole, ~9° under mid-tone amplification. The effHue proxy anchored at the hue's PEAK tone,
 // not the 500 stop's actual tone, so the residual survived. Solving the KEY stop (500) directly in the
 // RENDER space at its ACTUAL chroma + tone lands it on the set OKLCH hue for any damping. f(h)≈h (slope ≈1)
 // → Newton converges in a few steps. (This is the same "anchor in the space the ramp renders" fix #202 gave
-// the OKHSL path — now applied to the even/CAM16 path for parity.)
+// the OKHSL path, now applied to the even/CAM16 path for parity.)
 // `gamutClamp` (review pass 3, Finding 3, 2026-09-18, ADDITIVE - an optional 4th param, default false,
 // so the non-anchored path's own call (paletteStops, untouched per C4's byte-identity contract) keeps
 // evaluating the exact same expression it always has): when true, re-clamps `chroma` to the CURRENT
@@ -308,7 +308,7 @@ function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chrom
   return bestOffset === null ? targetOklchHue : (((targetOklchHue + bestOffset) % 360) + 360) % 360;
 }
 
-// evenChroma — the even path's per-stop chroma from the gamut ceiling + a pre-computed intended target and
+// evenChroma, the even path's per-stop chroma from the gamut ceiling + a pre-computed intended target and
 // the chromaEnvelope value `env` at this stop: damp toward intended·env, floor toward chromaFloor% of the
 // gamut but NEVER past intended (an envelope floor: intended is exactly the anchor's own chroma, env=1
 // there, so the floor can never lift a stop past the anchor  -  #681 U3), clamp in-gamut. A high-chroma
@@ -398,7 +398,7 @@ export function chromaEnvelope(stop, anchorStop, lift, controls) {
   return Math.max(0, 1 + shoulder - (damp / 100) * sideW * uG);
 }
 
-// shape — remap normalized position p∈[0,1] (0=light end, 1=dark end) to q∈[0,1].
+// shape, remap normalized position p∈[0,1] (0=light end, 1=dark end) to q∈[0,1].
 // ten = tension/100; tension only affects logistic and exp (others ignore it).
 function shape(p, curve, ten) {
   switch (curve) {
@@ -425,8 +425,8 @@ function shape(p, curve, ten) {
 // ── Lift: a cosine bump applied in STOP space ────────────────────────────────
 // `lift` lightens (>0) or darkens (<0) a palette's mid stops. It used to be an
 // ADDITIVE bump in TONE space (t += lift·w). That form ignores the base curve's
-// local slope, so wherever the curve is flat — the light end under logistic at
-// tension 0, flattened further by a positive skew — the bump's own slope won.
+// local slope, so wherever the curve is flat, the light end under logistic at
+// tension 0, flattened further by a positive skew, the bump's own slope won.
 // The default Warning palette (skew 40, lift 15) drove t ABOVE lmax at stops
 // 200-300 AND reversed the ramp at 100-150; the trailing clamp then flattened
 // 050-300 into six identical #FFFFFF stops (#648).
@@ -437,27 +437,27 @@ function shape(p, curve, ten) {
 // displaced stop is strictly INCREASING in `stop`, i.e. d/dstop[A·w] < 1. With
 //   w(stop) = ½(1 + cos(π(stop−500)/450))   ⇒   |w'| ≤ π/900
 // that is one closed-form inequality, |A|·π/900 < 1, holding for EVERY curve,
-// skew, tension, lmin and lmax — no per-curve tuning and nothing to re-verify
+// skew, tension, lmin and lmax, no per-curve tuning and nothing to re-verify
 // when a curve is added. LIFT_SHIFT_MAX caps |A| at a safety factor of that
 // bound, so the guarantee survives even a lift outside its schema domain.
 const BUMP_SLOPE_MAX = Math.PI / 900;     // peak |dw/dstop| of the cosine bump
 const LIFT_SAFETY = 0.85;                 // keep d/dstop[A·w] <= this, always < 1
 export const LIFT_SHIFT_MAX = LIFT_SAFETY / BUMP_SLOPE_MAX; // ≈ 243.5 stops
 // Stops of displacement per unit of lift. No gain can reproduce the old additive
-// bump's AMPLITUDE — that amplitude is exactly what broke monotonicity, so some
-// attenuation is forced — and `lift` is load-bearing well beyond the Warning
+// bump's AMPLITUDE, that amplitude is exactly what broke monotonicity, so some
+// attenuation is forced, and `lift` is load-bearing well beyond the Warning
 // default: ~90% of the curated category presets carry a non-zero lift, which is
 // how a preset anchors its ramp on a sampled key color. 6 is therefore chosen as
 // the largest gain that still keeps the guarantee comfortably inside its bound:
 // at the extreme of lift's own domain (persist.js clamps lift to ±40) it asks for
 // 6·40 = 240 stops, under LIFT_SHIFT_MAX, so the cap NEVER binds in-domain and
-// lift stays linear across its whole range, while d/dstop[A·w] peaks at 0.838 —
+// lift stays linear across its whole range, while d/dstop[A·w] peaks at 0.838,
 // short enough of 1 that the ramp never stalls (the whole 3,780-palette preset
 // corpus renders with no duplicate swatch and a >=0.55 L* gap at every step).
 // The cap is a pure out-of-domain safety net, not something in-domain relies on.
 export const LIFT_GAIN = 6;
 
-// liftStop — the stop `lift` displaces `stop` to. Pure in the single `stop`
+// liftStop, the stop `lift` displaces `stop` to. Pure in the single `stop`
 // value (no neighbour lookup, no whole-ramp state), so the 19-stop display ramp
 // and the 25-stop EXPORT_STOPS ramp agree at every shared stop. w is 0 at 050
 // and 950, so both endpoints are fixed exactly and the ends keep their lmax/lmin.
@@ -511,12 +511,12 @@ export function anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValu
   return anchorValue + (groupValue - anchorValue) * w;
 }
 
-// toneAt — L* for a stop given per-palette skew/lift and the tone controls.
+// toneAt, L* for a stop given per-palette skew/lift and the tone controls.
 // Strictly monotonic non-increasing 050->950 for ANY lift, not just lift 0:
 // liftStop is strictly increasing in stop (see LIFT_SHIFT_MAX above), p rises,
 // p^g preserves order for any g>0, every shape() is non-decreasing, and
 // t = lmax-(lmax-lmin)*q inverts q. q stays in [0,1], so t stays in [lmin,lmax]
-// by construction and the trailing clamp never fires — it is a safety net only,
+// by construction and the trailing clamp never fires, it is a safety net only,
 // never the thing that produces a value (that is exactly the #648 defect).
 export function toneAt(stop, skew, lift, { curve, lmin, lmax, tension }) {
   const s = liftStop(stop, lift);
@@ -782,7 +782,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   return built;
 }
 
-// paletteStops — full per-stop pipeline for one palette.
+// paletteStops, full per-stop pipeline for one palette.
 // palette: { hue, chroma, skew, lift }; controls: DEFAULT_CONTROLS-shaped.
 // Returns [{ stop, tone, chroma, maxc, rgb, hex, inGamut }] for each stop.
 // Performance note (review pass 5, then a review-6 perf/memo-safety pass, both 2026-09-19):
@@ -830,9 +830,9 @@ export function paletteStops(palette, controls, stops) {
   // second, independently-typed derivation (the "can't drift" property the old evenChroma comment named).
   const envStops = stops.includes(ANCHOR_STOP) ? stops : [...stops, ANCHOR_STOP];
   const envelopeAt = new Map(envStops.map((stop) => [stop, chromaEnvelope(stop, ANCHOR_STOP, lift, controls)]));
-  // Resolve the BASE CAM16 hue once (flat across the ramp when hueShift=0 — the hue-stability default).
+  // Resolve the BASE CAM16 hue once (flat across the ramp when hueShift=0, the hue-stability default).
   // For an OKLCH-hue palette, SOLVE it in the RENDER space at the KEY stop (500)'s ACTUAL chroma + tone so
-  // it exports back at the SET OKLCH hue — killing the Abney residual the peak-tone-anchored effHue proxy
+  // it exports back at the SET OKLCH hue, killing the Abney residual the peak-tone-anchored effHue proxy
   // left (up to ~2° at dampAmp 0, ~9° under amplification, worst in the blues). For a CAM16-hue palette the
   // slider IS a CAM16 hue → pass straight through (effHue's cam16 branch is the identity, preserved here).
   let baseHue;
@@ -866,7 +866,7 @@ export function paletteStops(palette, controls, stops) {
     const tone = toneAt(stop, palette.skew, palette.lift, ctl);
     const s = (stop - 500) / 450; // signed position: <0 light · 0 mid · >0 dark
     // Edge hue rotation, pivoting on stop 500 (s=0). OPPOSITE mode (default) torsions the
-    // ends apart — hueShift·s → light end −shift, dark end +shift. SAME-direction mode
+    // ends apart, hueShift·s → light end −shift, dark end +shift. SAME-direction mode
     // (hueSameDir) bends BOTH ends the same way, matching the LIGHT end: hueShift·(−|s|),
     // so e.g. a light+20/dark−20 opposite becomes light+20/dark+20. hueShift=0 → flat.
     const dir = sameDir ? -Math.abs(s) : s;
@@ -902,8 +902,8 @@ export function paletteStops(palette, controls, stops) {
 }
 
 // ── OKHSL distribution path (toneMode "perceptual" | "peak") ──────────────────────────────────────
-// Steps lightness evenly in OKHSL's perceptually-uniform l — or, for "peak", with the hue's CUSP
-// anchored at stop 500 and each half spread from there — with chroma as a gamut-proportional OKHSL
+// Steps lightness evenly in OKHSL's perceptually-uniform l, or, for "peak", with the hue's CUSP
+// anchored at stop 500 and each half spread from there, with chroma as a gamut-proportional OKHSL
 // saturation. Every emitted color is in gamut by OKHSL's construction. l is keyed off the STOP NUMBER
 // (not the array index) so a stop has the same color in the 19-stop display ramp and the 25-stop export ramp.
 const _okL = new Map(); // L* -> OKHSL lightness (via a neutral gray at that L*); memoized
@@ -934,18 +934,18 @@ function okhslLAtChromatic(targetLstar, hue, s) {
   return (lo + hi) / 2;
 }
 
-// effStop — the OKHSL path's EFFECTIVE stop (#647): the stop whose position the LIGHTNESS is read at
+// effStop, the OKHSL path's EFFECTIVE stop (#647): the stop whose position the LIGHTNESS is read at
 // once the palette's own `skew` and `lift` have warped it. Both controls were persisted, threaded and
 // sliders-exposed, but only the "even" path (toneAt) ever read them, so in the shipped DEFAULT tone mode
 // dragging Skew moved the 7-swatch prime ladder (prime.mjs DOES read skew) while the 19-stop gradient
 // under it sat still. Warping the stop rather than the lightness reuses toneAt's exact two transfer
-// functions in the same order — liftStop's cosine displacement first (#648's shared helper, never a
-// second bump), then skew's gamma on the normalized position — so the two paths agree on what the
+// functions in the same order, liftStop's cosine displacement first (#648's shared helper, never a
+// second bump), then skew's gamma on the normalized position, so the two paths agree on what the
 // controls MEAN, and the OKHSL curve itself is untouched.
 //
 // Monotone by composition: liftStop is strictly increasing (|A|·π/900 < 1 by #648's bound), p^g preserves
 // order for any g>0, and both lightness formulas below are non-increasing in the effective stop. The
-// endpoints are fixed exactly — liftStop is the identity at 050/950 and the gamma fixes p=0 and p=1.
+// endpoints are fixed exactly, liftStop is the identity at 050/950 and the gamma fixes p=0 and p=1.
 // Pure in the single stop value (no neighbour lookup, no whole-ramp state), so the 19-stop display ramp
 // and the 25-stop export ramp still agree at every shared stop. Same caveat as `liftStop`'s own header
 // comment: this is about the TONE/CHROMA CONSTRUCTION, not the final rendered output -
@@ -1058,17 +1058,17 @@ function okhslStops(palette, controls, stops, mode) {
   const anchor = resolveAnchor(palette);
   if (anchor) return okhslStopsAnchored(palette, controls, stops, anchor, mode);
   const baseHue = effHue(palette.hue, controls.hueSpace, hueAnchorFrac(palette, controls));
-  const pk = peakC(baseHue);                                       // { c, tone } — the cusp (peak geometry)
+  const pk = peakC(baseHue);                                       // { c, tone }, the cusp (peak geometry)
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;
   const lLight = okhslLAt(controls.lmax ?? 100);                   // light end (l≈1 at lmax=100 → 050 white)
   const lDark = okhslLAt(controls.lmin ?? 5);                      // dark end
   const cuspL = okhslLAt(pk.tone);                                 // OKHSL lightness of the cusp (peak pivot)
-  // lightnessAt — the ramp's OKHSL lightness at a stop, blended even↔cusp by `t`. Evaluated at the
+  // lightnessAt, the ramp's OKHSL lightness at a stop, blended even↔cusp by `t`. Evaluated at the
   // EFFECTIVE stop (effStop), so skew/lift warp WHICH position of the distribution a stop reads while
   // hue and saturation below stay keyed on the REAL stop (they are damping/rotation terms about the
   // centre, not lightness). The cusp pivot therefore follows the warp: with skew > 0 the cusp lands at
-  // a DARKER real stop, so more stops sit on its light side — the same "lighter mids" direction
+  // a DARKER real stop, so more stops sit on its light side, the same "lighter mids" direction
   // toneAt's gamma gives the even path. Shared by the per-stop map AND the stop-500 hue anchor below so
   // the solved hue can never drift from the lightness the ramp actually emits there (#647).
   const lightnessAt = (stop, t) => {
@@ -1092,9 +1092,9 @@ function okhslStops(palette, controls, stops, mode) {
   const lift = palette.lift ?? 0;
   const envStops = stops.includes(ANCHOR_STOP) ? stops : [...stops, ANCHOR_STOP];
   const envelopeAt = new Map(envStops.map((stop) => [stop, chromaEnvelope(stop, ANCHOR_STOP, lift, controls)]));
-  // The palette's hue in OKHSL space — constant across the ramp when hueShift=0. For an OKLCH-hue palette,
+  // The palette's hue in OKHSL space, constant across the ramp when hueShift=0. For an OKLCH-hue palette,
   // SOLVE it directly so the KEY stop (500) reads back at the SET OKLCH hue, anchored at that stop's OWN
-  // saturation + lightness in the render space (kills the Abney drift the CAM16 proxy left — worst in the
+  // saturation + lightness in the render space (kills the Abney drift the CAM16 proxy left, worst in the
   // blues, ~6°). For a CAM16-hue palette the hue IS a CAM16 hue, so carry baseHue through OKHSL as before.
   let hOk;
   if (controls.hueSpace === "oklch") {
@@ -1177,7 +1177,7 @@ function okhslStops(palette, controls, stops, mode) {
     return best;
   };
   return stops.map((stop) => {
-    // lightness per stop — STOP-based so the display(19) and export(25) ramps agree at a given stop.
+    // lightness per stop, STOP-based so the display(19) and export(25) ramps agree at a given stop.
     // Blend the EVEN-perceptual distribution toward the CUSP-anchored ("peak") one by `vibrancy`:
     // t=0 → even lightness (uniform), t=1 → the hue's cusp sits at stop 500 (vibrant center). "peak"
     // mode pins t=1. Pulling the center to the cusp is what lets off-center hues (yellow) read vibrant.

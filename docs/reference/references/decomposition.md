@@ -1,13 +1,13 @@
-# Decomposition — the entailment-checked carving
+# Decomposition: the entailment-checked carving
 
 > The typed delta this spec implies once validated: the child **cells** to build and the
 > dependency-ordered **ticket batch** that builds them. This is the full form of the
 > `decomposition` block in `../SKILL.md`; the gate consumes the block, this doc explains it.
 > **Computation routes to code:** coverage and partial-order legality are proven by
-> `dev-kit-corpus/bin/_entailment_check.py`, not asserted here — **27/27 parent criteria
+> `dev-kit-corpus/bin/_entailment_check.py`, not asserted here, **27/27 parent criteria
 > covered, 6 tickets, 0 gaps**. (Coverage under the partial order is what the script proves;
-> *intent*-entailment — that satisfying the children entails the parent's "even, in-gamut,
-> mode-surviving, drift-free" want — is the `critic-entailment` lens, run separately in REVIEW.)
+> *intent*-entailment, that satisfying the children entails the parent's "even, in-gamut,
+> mode-surviving, drift-free" want, is the `critic-entailment` lens, run separately in REVIEW.)
 
 ## The seam
 
@@ -19,7 +19,7 @@ testable against its slice of the acceptance criteria.
 
 **Parity is the one cross-child invariant, and it is split deliberately** so no child can
 launder it. Binding *all* of parity to the plugin cell (the original carving) let three
-implementations pass by reading the same `role-table.json` while their engine math diverged —
+implementations pass by reading the same `role-table.json` while their engine math diverged,
 the exact `surfaceHighest` 36-vs-37 / silent-math-drift failure the spec cites. The split:
 
 | Parity facet | Criterion | Owning cell | Why there |
@@ -55,26 +55,26 @@ color-engine
 `semantic-mapping` is the hub: exports, the plugin, and the UI all consume the resolved
 role→ref mappings.
 
-## Maturity — current state (as built into the instance)
+## Maturity: current state (as built into the instance)
 
 The carving has been seeded into the dev-factory instance and is **partly earned, honestly**:
 
 - **Validated:** `ontology.system.hct-domain`, `spec.system.hct-palette-generator-spec`, and all
   six `rubric.system.*` verifier cells (each passed `rubric-check.py`: a `[gate]` dimension + a
   worker-unreachable pristine reference). **Caveat:** the rubrics are *mechanically* validated as
-  calibrated-verifier **definitions** — their held-out exemplar / sealed-config sets are referenced
-  but not all materialized on disk, and `false_pass` is **unmeasured** (calibrated-but-unrefuted) —
+  calibrated-verifier **definitions**, their held-out exemplar / sealed-config sets are referenced
+  but not all materialized on disk, and `false_pass` is **unmeasured** (calibrated-but-unrefuted),
   so they are sound definitions, not yet empirically-proven gates.
-- **`defined`:** the six `capability.system.*` cells — the tool's parts are specified, not built.
+- **`defined`:** the six `capability.system.*` cells, the tool's parts are specified, not built.
 - **Active tickets:** one `defined→instantiated` build ticket per capability, each bound to its
   validated rubric. The depth-first frontier has only `color-engine` ready (its `ontology`+`spec`
   footholds are validated); each downstream slice unlocks as its upstream capability validates.
-- Nothing is pre-marked `validated` it has not earned — no green grid.
+- Nothing is pre-marked `validated` it has not earned, no green grid.
 
 ## Next handoff (the build, not the spec)
 
 The spec → lattice decomposition is **done** (`rubric-architect` → `lattice-architect` /
-`roadmap-planner` ran). What remains is the **tool build**. (Status note: the engine source now lives in this repo at `src/engine/` — `hct.js`, `tonal.js`, `semantic.js`, `exports.js`, etc. — so the original blocker below is resolved; `gen.js` was never created, the single-source `src/engine/` module set supersedes it.)
+`roadmap-planner` ran). What remains is the **tool build**. (Status note: the engine source now lives in this repo at `src/engine/`, `hct.js`, `tonal.js`, `semantic.js`, `exports.js`, etc. — so the original blocker below is resolved; `gen.js` was never created, the single-source `src/engine/` module set supersedes it.)
 
 1. Point the instance at (or import) the tool source so `capability.system.color-engine` can be
    advanced `defined→instantiated` and then validated against `rubric.system.color-engine`.

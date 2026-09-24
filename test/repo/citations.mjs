@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// citations.mjs — the doc citations are a GATE, not a one-time repair (#640, PR #658 review).
+// citations.mjs, the doc citations are a GATE, not a one-time repair (#640, PR #658 review).
 //
 // Docs under docs/ cite `file:line` into src/ (and test/, scripts/, mcp/). Every edit that moves
 // a cited line silently falsifies the record; #646 moved src/ui/app.js and 26 repaired citations

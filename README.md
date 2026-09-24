@@ -3,23 +3,23 @@
 [![CI](https://github.com/kimgranlund/ultimate-tokens/actions/workflows/ci.yml/badge.svg)](https://github.com/kimgranlund/ultimate-tokens/actions/workflows/ci.yml)
 [![Live demo](https://img.shields.io/badge/demo-live-2b8a3e)](https://kimgranlund.github.io/ultimate-tokens/)
 
-**▶ [Try it live](https://kimgranlund.github.io/ultimate-tokens/)** — the dependency-free,
+**▶ [Try it live](https://kimgranlund.github.io/ultimate-tokens/)**, the dependency-free,
 single-file build, served straight from GitHub Pages. (It's the very same `.html` you get from a
 local build; download it and it runs offline from `file://`.)
 
 A perceptual color-palette and **design-token** generator. It builds tonal ramps that are visually
 even across their whole range, derives a **53-role semantic layer** (surfaces, on-colors, outlines,
 containers, scrims, inverse), and exports to **CSS, Tailwind v4, shadcn/ui, Panda CSS, Radix, Figma,
-DTCG, JSON, Claude Design** and more — plus a one-click `.zip` of everything.
+DTCG, JSON, Claude Design** and more, plus a one-click `.zip` of everything.
 
 It ships three ways: a **Vite web app**, a single dependency-free **`<ultimate-tokens>` web
 component**, and a **Figma plugin** that writes the palette straight into the file's variable
 collections.
 
-<!-- Hero: regenerate with `npm run gen:preview` — rendered straight from the engine (projectView) in the PERCEPTUAL distribution. -->
-![The 16 default palettes — perceptual tonal ramps, 050 → 950](docs/img/palette-preview.svg)
+<!-- Hero: regenerate with `npm run gen:preview`, rendered straight from the engine (projectView) in the PERCEPTUAL distribution. -->
+![The 16 default palettes, perceptual tonal ramps, 050 → 950](docs/img/palette-preview.svg)
 
-> The image above is the tool's **real output** — the 16 default palettes (8 brand families + 8
+> The image above is the tool's **real output**, the 16 default palettes (8 brand families + 8
 > data palettes) in the **perceptual** distribution, rendered straight from the engine (no mockup):
 > perceptually-even steps, in-gamut deep ends, and `Warning`'s deliberately lifted light end.
 > Regenerate any time with `npm run gen:preview`.
@@ -27,7 +27,7 @@ collections.
 ## What it does
 
 - **Perceptual ramps.** Color is modeled in **HCT / CAM16** and **OKHSL**. Each palette is a tonal
-  ramp (050 → 950) with three **distribution modes** — `even` (uniform CIELAB L\*), `perceptual`
+  ramp (050 → 950) with three **distribution modes**, `even` (uniform CIELAB L\*), `perceptual`
   (uniform OKHSL lightness + gamut-proportional chroma, the **default**), and `peak` (anchored to the
   hue's chroma cusp). A **vibrancy** control keeps the palette's mid vivid, `relative-chroma`
   harmonizes saturation across hues, and a chroma floor kills the near-white dead zone. **Base chroma**
@@ -39,16 +39,16 @@ collections.
 - **Key colors.** Pin exact brand colors (a `dominant` and optional `supportive`, stored losslessly in
   OKLCH); the ramp is re-derived around them through the perceptual lens, so a palette keeps its real
   source color while every other stop stays even.
-- **Compose new palettes.** Derive a new palette from the ones you already have — a **Relative**
+- **Compose new palettes.** Derive a new palette from the ones you already have, a **Relative**
   color-theory relationship (extend / complement / contrast / bridge / anchor / recontextualize, pivoting
   on your primary), an **Environmental** neutral (the set's chroma-weighted-mean hue at a restrained
-  chroma), or a **Custom** pick (a native color picker, or hue + chroma) — with a hue × chroma plot and a
+  chroma), or a **Custom** pick (a native color picker, or hue + chroma), with a hue × chroma plot and a
   live ramp preview before you commit. Drag palettes by their handle to reorder.
-- **53-role semantic layer.** From each palette the engine derives the full role set — accents,
-  on-colors, surfaces (dim/bright/low/high), outlines, containers, scrims, and inverse — resolved for
+- **53-role semantic layer.** From each palette the engine derives the full role set, accents,
+  on-colors, surfaces (dim/bright/low/high), outlines, containers, scrims, and inverse, resolved for
   **Light and Dark** in one pass.
 - **Gallery + Color Categories.** Keep your own sets under **Your Palettes**, or browse **Color
-  Categories** — a curated hub of **7 categories** (Architecture, Cuisine, Film, Literature, Music,
+  Categories**, a curated hub of **7 categories** (Architecture, Cuisine, Film, Literature, Music,
   Nature, Travel), each **12 volumes × 4 = 48** palettes (336 total), sourced from real places, dishes,
   films, biomes… and carrying their story. Open any one as an editable copy. Each category's data is
   lazy-loaded.
@@ -56,17 +56,17 @@ collections.
   **Figma** variables, **Figma UI3** (Material, interchange-only, not a native Figma format), **DTCG**, **JSON**, a **design-system export** (`DESIGN.md` +
   `tokens.json` + preview cards, in a target each for Claude (`claude.ai/design` and Claude Code),
   Google Stitch, and Figma Make to generate on-brand UI), a re-importable parametric
-  **Config**, and a **Download-all `.zip`**. An **Include** toggle row picks which token systems — **Color · Typography ·
-  Geometry** — ride the Download-All `.zip` and the Brand-Kit MCP.
-- **Typography.** The type analog of the color engine — a few params → a **systematic type scale** of
+  **Config**, and a **Download-all `.zip`**. An **Include** toggle row picks which token systems, **Color · Typography ·
+  Geometry**, ride the Download-All `.zip` and the Brand-Kit MCP.
+- **Typography.** The type analog of the color engine, a few params → a **systematic type scale** of
   seven voices (Display · Heading · Sub-heading · Kicker · Body · UI · Code), with derived size (modular scale), optical
   letter-spacing, leading, and weight. Pick a **treatment** (Product, Luxury, Editorial, Technical,
   Brutalist), preview a live specimen, export **CSS + DTCG** type tokens.
-- **Geometry.** The spatial analog — a few params → a **systematic size ramp** (XS–2XL) → derived control
+- **Geometry.** The spatial analog, a few params → a **systematic size ramp** (XS–2XL) → derived control
   geometry on one **centering law** (edge padding = (height − glyph) / 2; the pill radius, the icon-only
   square, and the slot paddings all fall out of it). Pick a **treatment** (Comfortable, Compact, Spacious,
   Touch, Pill), preview a live size ramp, export **CSS + DTCG** `dimension` tokens.
-- **Brand-Kit MCP.** Download a **zero-dependency MCP server** pre-filled with your tokens — point
+- **Brand-Kit MCP.** Download a **zero-dependency MCP server** pre-filled with your tokens, point
   **Claude Code / Cursor / any MCP agent** at it (`node brand-kit-server.mjs`) and it serves the
   **systems you opted in** (palettes, ramps + the 53-role semantic layer in light + dark; the typography
   scale; the geometry scale) so the agent builds with your exact tokens. See `mcp/`.
@@ -88,10 +88,10 @@ npm run preview    # serve the built dist/
 ```
 
 `npm run build` produces:
-- `dist/` — the Vite-built web app (the color categories are code-split into lazy chunks).
-- `dist/ultimate-tokens.html` — a dependency-free **offline single-file** build (open it
+- `dist/`: the Vite-built web app (the color categories are code-split into lazy chunks).
+- `dist/ultimate-tokens.html`: a dependency-free **offline single-file** build (open it
   directly). This is the artifact published to the [live demo](https://kimgranlund.github.io/ultimate-tokens/).
-- `figma/plugin/ui.html` — the Figma plugin UI (the bundled app + a postMessage bridge).
+- `figma/plugin/ui.html`: the Figma plugin UI (the bundled app + a postMessage bridge).
 
 ## Test
 
@@ -99,23 +99,23 @@ npm run preview    # serve the built dist/
 npm test           # regenerates the build artifacts, then runs every verifier + the headless DOM boot
 ```
 
-The test suite is the real coverage — pure-`node` verifiers per layer (engine round-trips, tonal-curve
+The test suite is the real coverage, pure-`node` verifiers per layer (engine round-trips, tonal-curve
 fidelity, the OKHSL ↔ sRGB module, the 53-role table vs. the canonical answer key, the export formats,
 the Figma raw→semantic cascade, persistence round-trip) plus a DOM-shim boot
-(`test/ui/headless-boot.mjs`) that drives the real `app.js` — gallery, color categories, editor, exports —
+(`test/ui/headless-boot.mjs`) that drives the real `app.js`, gallery, color categories, editor, exports,
 without a browser.
 
 ## Layout
 
 ```
 src/
-  engine/   hct.js · okhsl.js · tonal.js · semantic.js · exports.js   — pure ES modules, no DOM
+  engine/   hct.js · okhsl.js · tonal.js · semantic.js · exports.js, pure ES modules, no DOM
   ui/       app.js · model.mjs · persist.js · styles.css · icons.js · zip.mjs
             categories/     index.js + one lazy module per category (generated)
             figma-plugin-assets.js
-  main.ts   — Vite entry (imports the stylesheet + <ultimate-tokens>, mounts it)
+  main.ts, Vite entry (imports the stylesheet + <ultimate-tokens>, mounts it)
 figma/
-  plugin/   code.js · manifest.json · ui.html              — the generator AS a Figma plugin
+  plugin/   code.js · manifest.json · ui.html, the generator AS a Figma plugin
   binder/   bind-plan.mjs · figma-semantic-binder/          — the standalone Semantic Binder plugin
 scripts/    bundle.mjs · gen-categories.mjs · gen-figma-ui.mjs · gen-figma-assets.mjs · gen-preview.mjs ·
             gen-font-test.mjs
@@ -126,7 +126,7 @@ test/       engine/ · ui/ · figma/ · run.mjs
 
 The engine is pure and DOM-free; `src/ui/app.js` defines the `<ultimate-tokens>` web component over
 it; the Figma plugin reuses the exact same bundle. `docs/reference/data/role-table.json` is the **canonical
-contract** the semantic / export / figma verifiers validate against — it is the spec, not a derived
+contract** the semantic / export / figma verifiers validate against, it is the spec, not a derived
 file. The Color Categories are generated from `docs/reference/colors/categories/*.json` by
 `npm run gen:categories` (into `src/ui/categories/`).
 
@@ -134,14 +134,14 @@ file. The Color Categories are generated from `docs/reference/colors/categories/
 
 Two plugins live under `figma/`:
 
-- **`figma/plugin/`** — the generator itself, running inside Figma. In Figma: *Plugins → Development →
+- **`figma/plugin/`**: the generator itself, running inside Figma. In Figma: *Plugins → Development →
   Import plugin from manifest…* and pick `figma/plugin/manifest.json`. Its **Add Variables → Figma**
   action writes a **`Color Primitives`** collection (the raw colors) + a **`Color Roles`** collection
   (the semantic Light/Dark tokens, aliased to the primitives) and embeds the parametric config in the
   file (`root pluginData`) for a lossless round-trip.
-- **`figma/binder/`** — the standalone **Semantic Binder** (`figma/binder/figma-semantic-binder/`),
+- **`figma/binder/`**: the standalone **Semantic Binder** (`figma/binder/figma-semantic-binder/`),
   which aliases each semantic role to its raw variable so editing a raw color cascades live.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).

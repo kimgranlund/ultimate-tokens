@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// smoke.mjs — a REAL-BROWSER smoke test (dependency-free). The node verifiers + the headless DOM
+// smoke.mjs, a REAL-BROWSER smoke test (dependency-free). The node verifiers + the headless DOM
 // shim (test/run.mjs) cover logic; this boots the actual built single-file in headless Chrome over
-// CDP (node's built-in WebSocket + fetch — no Playwright/puppeteer, keeping the zero-dep ethos) and
+// CDP (node's built-in WebSocket + fetch, no Playwright/puppeteer, keeping the zero-dep ethos) and
 // drives the core user flows: gallery hub → a category category → the editor → the export dialog.
 //
-// Run: `npm run smoke` — the npm script rebuilds dist/ first, so this always boots the CURRENT
+// Run: `npm run smoke`, the npm script rebuilds dist/ first, so this always boots the CURRENT
 // source, never a stale artifact left over from an earlier build (#564). Invoking this file
-// directly (`node test/smoke/smoke.mjs`) skips that rebuild — run `npm run build` first.
+// directly (`node test/smoke/smoke.mjs`) skips that rebuild, run `npm run build` first.
 // Chrome is auto-detected (override with $CHROME_BIN). CI uses the runner's preinstalled
 // google-chrome. Screenshots land in smoke-out/ (gitignored).
 import { createServer } from "node:http";
@@ -21,7 +21,7 @@ const ROOT = resolve(HERE, "../..");
 const ARTIFACT = resolve(ROOT, "dist/ultimate-tokens.html"); // the offline single-file build
 const OUT = resolve(ROOT, "smoke-out");
 
-if (!existsSync(ARTIFACT)) { console.error(`smoke: missing ${ARTIFACT} — run \`npm run build\` first`); process.exit(1); }
+if (!existsSync(ARTIFACT)) { console.error(`smoke: missing ${ARTIFACT}, run \`npm run build\` first`); process.exit(1); }
 
 // locate a Chrome/Chromium binary (CI runner has google-chrome; local dev may have Chrome[/Canary]).
 const CHROME = [
@@ -30,7 +30,7 @@ const CHROME = [
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
 ].filter(Boolean).find((p) => existsSync(p));
-if (!CHROME) { console.error("smoke: no Chrome/Chromium found — set $CHROME_BIN"); process.exit(1); }
+if (!CHROME) { console.error("smoke: no Chrome/Chromium found, set $CHROME_BIN"); process.exit(1); }
 
 const fails = [];
 const ok = (cond, msg) => { console.log((cond ? "  ✓ " : "  ✗ ") + msg); if (!cond) fails.push(msg); };
@@ -100,7 +100,7 @@ try {
   mkdirSync(OUT, { recursive: true }); // ensure the screenshot dir exists before the first capture
 
   // cross-scheme regression: dragging a row while the canvas preview is LIGHT but the app chrome is
-  // DARK must render the floating clone in the CANVAS scheme (light) — its light-dark() tokens resolve
+  // DARK must render the floating clone in the CANVAS scheme (light), its light-dark() tokens resolve
   // where it visually belongs, not the dark host it's re-parented into. Only meaningful cross-scheme.
   await evalJS(`(()=>{${el}.theme="dark";${el}.colorMode="light";${el}.render();})()`); await sleep(150);
   const xsPt = await evalJS(`(()=>{const h=${el}.querySelector(".drag-handle");if(!h)return null;const r=h.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()`);
@@ -112,7 +112,7 @@ try {
   }
   await evalJS(`(()=>{${el}.theme="system";${el}.canvasTheme="system";${el}.colorMode="light";${el}.render();})()`); await sleep(150);
 
-  // Color "Both" / Compare mode — the Mode control's third option renders the scene in Light + Dark
+  // Color "Both" / Compare mode, the Mode control's third option renders the scene in Light + Dark
   // side by side (two .compare-col, each forcing its own color-scheme) in one pannable canvas.
   await evalJS(`${el}.setColorMode("both")`); await sleep(200);
   ok(await evalJS(`(()=>{const c=${el}.querySelectorAll(".canvas-compare .compare-col");return c.length===2 && getComputedStyle(c[0]).colorScheme.includes("light") && getComputedStyle(c[1]).colorScheme.includes("dark")})()`), "Color Both mode renders a Light + Dark Compare (two scheme-forced columns)");
@@ -131,7 +131,7 @@ try {
     const dragShot = await send("Page.captureScreenshot", { format: "png" });
     writeFileSync(resolve(OUT, "drag-reorder.png"), Buffer.from(dragShot.data, "base64"));
     console.log("  · screenshot → smoke-out/drag-reorder.png");
-    // 10px drop sensitivity: the placeholder (proposed placement) is the hit area — a move within 10px
+    // 10px drop sensitivity: the placeholder (proposed placement) is the hit area, a move within 10px
     // of its bottom edge does NOT reslot; past 10px it does. anchor = the data-pi the drop lands before.
     const phInfo = () => evalJS(`(()=>{const p=${el}.querySelector(".drop-ghost");if(!p)return null;const r=p.getBoundingClientRect();let n=p.nextSibling;while(n&&!(n.classList&&n.classList.contains("ramp-row")&&n.getAttribute&&n.getAttribute("data-pi")!=null))n=n.nextSibling;return {bottom:Math.round(r.bottom),anchor:(n?n.getAttribute("data-pi"):"end")}})()`);
     const dragTo = (yy) => evalJS(`document.dispatchEvent(new PointerEvent("pointermove",{clientX:${dragPt.x},clientY:${yy},bubbles:true,cancelable:true}))`);
@@ -192,12 +192,12 @@ try {
   await evalJS(`${el}.setSection("typography")`); await sleep(300);
   ok(await evalJS(`(()=>{return ${el}.section==="typography" && ${el}.querySelectorAll(".type-spec-line").length===${TYPE_STEPS} && ${el}.querySelectorAll(".type-spec-group").length===${VOICES}})()`), `Typography section shows the full ${TYPE_STEPS}-step specimen (13×3 + 2×6) across the ${VOICES} named voices`);
   ok(await evalJS(`(()=>{return !!${el}.querySelector(".tyi-voices") && ${el}.querySelectorAll(".an-card").length>=4})()`), "Typography section: right-pane inspector + left-rail analysis cards render");
-  // entering the section injects the SELF-HOSTED base64 @font-face <style> (TIER 1) — no CDN, so the 4 base
+  // entering the section injects the SELF-HOSTED base64 @font-face <style> (TIER 1), no CDN, so the 4 base
   // faces render offline + in the Figma plugin (networkAccess:none).
   ok(await evalJS(`(()=>{const s=document.getElementById("ultimate-tokens-type-fonts");return !!s && s.tagName==="STYLE" && /@font-face/.test(s.textContent) && /base64/.test(s.textContent) && /Inter Tight/.test(s.textContent)})()`), "Typography injects the self-hosted base64 @font-face (renders offline + in the Figma plugin)");
-  // On a self-hosted treatment (the default), TIER 2 loads nothing — the 4 base faces never hit the CDN.
+  // On a self-hosted treatment (the default), TIER 2 loads nothing, the 4 base faces never hit the CDN.
   ok(await evalJS(`(()=>{return ![...document.querySelectorAll("link[href]")].some(l=>/fonts\\.(googleapis|gstatic)\\.com/.test(l.href))})()`), "self-hosted base faces need no Google Fonts CDN request");
-  // all four embedded faces must actually APPLY in real layout (the DOM is what the app renders) — measured
+  // all four embedded faces must actually APPLY in real layout (the DOM is what the app renders), measured
   // by a width delta vs monospace at the weights the specimen uses. NB: document.fonts.check() and canvas
   // measureText give false negatives for variable fonts in Chromium, so we measure real DOM layout instead.
   await sleep(700);
@@ -213,7 +213,7 @@ try {
   // TIER 2 (web-app only): picking a palette face that ISN'T self-hosted lazy-loads it from the Google Fonts
   // CSS API, so the specimen renders the REAL typeface when you click between palette families. Set a
   // non-bundled display family and confirm the <link> is injected (link injection is synchronous + network-
-  // independent — the assertion holds even if the CDN is slow; the load itself is logged, not asserted, since
+  // independent, the assertion holds even if the CDN is slow; the load itself is logged, not asserted, since
   // document.fonts.check is a known false-negative for variable faces).
   await evalJS(`${el}.commit((d)=>{ d.type = { treatment: "luxury", bodyBase: 16, fonts: { display: "Bodoni Moda" } }; })`); await sleep(400);
   ok(await evalJS(`(()=>[...document.querySelectorAll("link[href]")].some(l=>/fonts\\.googleapis\\.com\\/css2\\?family=Bodoni\\+Moda/.test(l.href)))()`), "TIER 2: a non-bundled palette face lazy-loads from Google Fonts (web app)");
@@ -282,7 +282,7 @@ try {
   writeFileSync(resolve(OUT, "new-palette-custom.png"), Buffer.from(npCustomShot.data, "base64"));
   console.log("  · screenshot → smoke-out/new-palette-custom.png");
   await evalJS(`(()=>{${el}.newPalTab="relative";${el}.render();})()`); await sleep(200);
-  // the modal is draggable by its header — synthesize a header-drag and confirm it offsets.
+  // the modal is draggable by its header, synthesize a header-drag and confirm it offsets.
   await evalJS(`(()=>{const a=${el};a._beginNewPalDrag({clientX:200,clientY:200,target:{},preventDefault(){}});document.dispatchEvent(new PointerEvent('pointermove',{clientX:260,clientY:240}));document.dispatchEvent(new PointerEvent('pointerup',{}));})()`);
   await sleep(120);
   ok(await evalJS(`/translate\\(\\s*60px\\s*,\\s*40px\\s*\\)/.test(${el}.querySelector("dialog.newpal").style.transform)`), "New-Palette modal is draggable by its header (offsets via transform)");
@@ -296,5 +296,5 @@ try {
 }
 
 if (fails.length) { console.error(`\nSMOKE FAIL (${fails.length}):\n  ${fails.join("\n  ")}`); process.exit(1); }
-console.log("\nSMOKE PASS — gallery · category · editor · export dialog all render in a real browser");
+console.log("\nSMOKE PASS, gallery · category · editor · export dialog all render in a real browser");
 process.exit(0);

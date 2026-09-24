@@ -1,36 +1,36 @@
-// style-plan.mjs — the PURE, testable planner for the Figma STYLES swatches (paint styles bound to the
+// style-plan.mjs, the PURE, testable planner for the Figma STYLES swatches (paint styles bound to the
 // Color Roles variables; text styles bound to the Geometry (type/) + Type Primitives variables). The third
 // planner sibling: bind-plan.mjs plans the color alias cascade, mode-apply-plan.mjs plans the moded
-// float collections, THIS plans the styles layer that sits on top of both. No `figma` calls here —
+// float collections, THIS plans the styles layer that sits on top of both. No `figma` calls here,
 // `figma/plugin/code.js#applyStylePlans` executes the plan verbatim (the executor is dumb by design).
 //
 // INPUTS (all resolved UI-side; the planner never re-derives state):
-//   families — [{ n, name }] the enabled palettes: `n` the slug the variables use ("primary"),
+//   families, [{ n, name }] the enabled palettes: `n` the slug the variables use ("primary"),
 //              `name` the display segment the style names use ("Primary").
-//   scale    — the resolved typeScale (categories/roleOf/fonts, optional styleNames/weights).
-//   include  — { color, type } booleans (the export-system opt-ins; styles obey them compositionally).
+//   scale, the resolved typeScale (categories/roleOf/fonts, optional styleNames/weights).
+//   include, { color, type } booleans (the export-system opt-ins; styles obey them compositionally).
 //
-// OUTPUT — stylePlans({ families, scale, include }) → { paints, texts }:
+// OUTPUT, stylePlans({ families, scale, include }) → { paints, texts }:
 //   paints: [{ name: "Primary/onPrimary" | "Primary/scrims/scrim" | "Primary/surfaces/surface",
 //              varName: "primary/onPrimary" }]                   // → Color Roles variable, ratified grouping:
 //                                                                //   scrim* → scrims/ · surface*|container* → surfaces/
-//   texts:  [{ name: "Display/lg" (voice explicitly opted OUT of siblings via weights:[] — bare) |
-//                     "Display/lg/heavier •" (core, siblings exist — dot-SUFFIXED, lowercase; the
-//                     NORMALIZED relative label — see relativeWeightLabel — never the literal custom
+//   texts:  [{ name: "Display/lg" (voice explicitly opted OUT of siblings via weights:[], bare) |
+//                     "Display/lg/heavier •" (core, siblings exist, dot-SUFFIXED, lowercase; the
+//                     NORMALIZED relative label, see relativeWeightLabel, never the literal custom
 //                     style name or ladder name: a long custom face name ("Condensed Black Italic")
 //                     truncates illegibly in Figma's narrow Styles panel, with multiple siblings
 //                     collapsing to the same visible "condensed …" prefix; a short relative word never
 //                     does, and reads consistently regardless of what real font/weight sits underneath.
-//                     The "•" trails the label — 2026-07-14, at request — rather than leading it, so it
+//                     The "•" trails the label, 2026-07-14, at request, rather than leading it, so it
 //                     never gets clipped by Figma's own truncation of a long label) |
-//                     "Display/lg/heavy" (sibling, lowercase — the SAME relative-label vocabulary, by
-//                     its own rank among the voice's resolved weights) (2026-07-13 — normalized
+//                     "Display/lg/heavy" (sibling, lowercase, the SAME relative-label vocabulary, by
+//                     its own rank among the voice's resolved weights) (2026-07-13, normalized
 //                     Lighter/Light/Heavy/Heavier labels, superseding TKT-0001's literal-name templating) |
-//                     "UI-control/lg/regular-single •" (UI-control/UI-widget only — a "-single"
+//                     "UI-control/lg/regular-single •" (UI-control/UI-widget only, a "-single"
 //                     SUFFIX on the leaf itself, flat inside the SAME step folder as the multi-line
 //                     styles, never a NEW "/"-segment: a trailing "/single" segment made the plain leaf a
 //                     PATH PREFIX of its own single variant, and Figma's Styles panel folder-izes any name
-//                     that is a prefix of another — the plain leaf and the implied folder rendered as two
+//                     that is a prefix of another, the plain leaf and the implied folder rendered as two
 //                     rows sharing the same visible label; the "•" trails "-single" too, always the LAST
 //                     token, so it consistently means "the default in this list" regardless of what
 //                     precedes it),
@@ -48,7 +48,7 @@
 //                                                                //   face. A custom styleName wins (fontStyle
 //                                                                //   only); otherwise fontWeight binds alone.
 //              literal: { family, styleName?, weight, size, lineHeight, letterSpacing,
-//                                                                // PIXELS, not a % — a Figma-bound percent
+//                                                                // PIXELS, not a %, a Figma-bound percent
 //                                                                //   FLOAT displays as a bare, unit-less
 //                                                                //   number in Figma's own Properties panel
 //                         paragraphSpacing?, textCase } }]       // resolved values: loadFontAsync + per-field
@@ -60,18 +60,18 @@ import { semanticRoles, roleLeaf } from "../../src/engine/semantic.js";
 import { weightNameFor, resolvedFontFor, siblingStyleName, coreWeightKey, relativeWeightLabel, BODY_CLASS_VOICES, BODY_WEIGHT_LABELS } from "../../src/engine/type.mjs";
 import { COLLECTIONS } from "../../src/engine/collections.js";
 
-// SINGLE_LINE_VOICES — voices that additionally get a "-single"-suffixed text-style sibling (1.0
-// leading — line-height = size), flat alongside their normal multi-line style in the SAME step folder,
+// SINGLE_LINE_VOICES, voices that additionally get a "-single"-suffixed text-style sibling (1.0
+// leading, line-height = size), flat alongside their normal multi-line style in the SAME step folder,
 // per step and per configured weight. 2026-07-16 (TKT-0008 follow-up, at request): the Body*/Label*
-// -single variants are RETIRED — single-line/box behavior belongs to the interactive voices,
+// -single variants are RETIRED, single-line/box behavior belongs to the interactive voices,
 // UI-control + UI-widget, which carry singleLineHeight as engine data (BOX voices).
 const SINGLE_LINE_VOICES = new Set(["UI-control", "UI-widget"]);
 
-// siblingStyleName lives in the engine (src/engine/type.mjs) — it's the ONE source of truth shared
+// siblingStyleName lives in the engine (src/engine/type.mjs), it's the ONE source of truth shared
 // with typeTokensFigmaPrimitivesModes's own weight-style/<voice>/<slug> primitive, so the two can never
 // independently go stale again (exactly how this bug shipped once already).
 
-// styleGroupOf — the ratified paint-style sub-folder for a role key: the 7 scrim roles under scrims/,
+// styleGroupOf, the ratified paint-style sub-folder for a role key: the 7 scrim roles under scrims/,
 // the surface + container ladders under surfaces/, everything else flat under the family.
 export function styleGroupOf(key) {
   if (/^scrim/.test(key)) return "scrims/";
@@ -83,35 +83,35 @@ export function styleGroupOf(key) {
 //
 // Figma's Styles panel and Figma's Variables panel are deliberately, ratifiedly (ADR-016) two
 // DIFFERENT naming vocabularies for the same underlying role/voice: variable PATHS are kebab-case
-// (`primary/on-primary`, `type/display/md/size`) — ADR-016's one emitted-path grammar — while STYLE
+// (`primary/on-primary`, `type/display/md/size`), ADR-016's one emitted-path grammar, while STYLE
 // display names stay Title-case-family/camelCase-role (`Primary/onPrimary`) and Title-case-voice
-// (`Display/md/heavy •`). This is not an oversight to "fix" by kebabbing styles too — it's a
+// (`Display/md/heavy •`). This is not an oversight to "fix" by kebabbing styles too, it's a
 // deliberate, ratified UI-convention split (Figma's Styles picker reads better in Title Case;
 // variable paths feed dev-mode/code) that used to be re-templated ad hoc at every call site below,
 // kept aligned only by this file's own test gate (test/figma/style-plan.mjs). These two functions
 // are the SINGLE SOURCE for that policy: every style display-name in this planner (paint or text) is
 // built by calling one of them, never by hand-templating `${voice}/${step}...` inline again.
 
-// paintStyleNameFor — a paint style's Styles-panel name: Title-case family / ratified sub-folder /
+// paintStyleNameFor, a paint style's Styles-panel name: Title-case family / ratified sub-folder /
 // the role's own camelCase key (e.g. "Primary/scrims/scrim", "Primary/onPrimary"). `familyName` is
 // the display segment (families[].name, already Title-case); `roleKey` is the role's own key as
-// returned by semanticRoles (semantic.js) — NOT the kebab leaf the bound variable uses (roleLeaf).
+// returned by semanticRoles (semantic.js), NOT the kebab leaf the bound variable uses (roleLeaf).
 export function paintStyleNameFor(familyName, roleKey) {
   return `${familyName}/${styleGroupOf(roleKey)}${roleKey}`;
 }
 
-// styleNameFor — a text style's Styles-panel name: `Voice/step-slug`, optionally followed by a
-// `/label` segment (a relative weight label — see relativeWeightLabel), an optional `-single` suffix
-// on the trailing token (never a new "/"-segment: see the SINGLE_LINE_VOICES comment below — a new
+// styleNameFor, a text style's Styles-panel name: `Voice/step-slug`, optionally followed by a
+// `/label` segment (a relative weight label, see relativeWeightLabel), an optional `-single` suffix
+// on the trailing token (never a new "/"-segment: see the SINGLE_LINE_VOICES comment below, a new
 // segment makes the plain leaf a PATH PREFIX of its own single variant, and Figma's Styles panel
 // folder-izes any name that is a prefix of another), and an optional trailing ` •` marking the CORE
 // style among its named siblings (always LAST, so it's never clipped by Figma's own truncation of a
 // long label). `voice` is used verbatim (Title-case, e.g. "Display"); `step` is lowercased here (the
 // ONE place that lowercasing happens, so every call site stays consistent). Options:
-//   label  — the relative weight label (a sibling's), or null for the bare `Voice/step` shape (a
-//            voice explicitly opted OUT of siblings via `weights: []` — the only way to get one).
-//   single — true for a `-single` sibling (UI-control/UI-widget's 1.0-leading box-voice variant).
-//   core   — true to append the ` •` default-pick marker (only ever paired with a non-null label).
+//   label, the relative weight label (a sibling's), or null for the bare `Voice/step` shape (a
+//            voice explicitly opted OUT of siblings via `weights: []`, the only way to get one).
+//   single, true for a `-single` sibling (UI-control/UI-widget's 1.0-leading box-voice variant).
+//   core, true to append the ` •` default-pick marker (only ever paired with a non-null label).
 export function styleNameFor(voice, step, { label = null, single = false, core = false } = {}) {
   const base = `${voice}/${String(step).toLowerCase()}`;
   if (label == null) return single ? `${base}-single` : base;
@@ -136,13 +136,13 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
   if (inc.type && scale && scale.categories && typeof scale.categories === "object") {
     for (const [voice, steps] of Object.entries(scale.categories)) {
       // the LITERAL fallback family (used when the binding target can't resolve) is the voice's RESOLVED
-      // font — its own override if set, else its role's shared default (TKT-0002). The BINDING target
-      // (`font/${voice}` below) was already per-voice; it needs no change — typeTokensFigmaPrimitivesModes
+      // font, its own override if set, else its role's shared default (TKT-0002). The BINDING target
+      // (`font/${voice}` below) was already per-voice; it needs no change, typeTokensFigmaPrimitivesModes
       // already aliases an overridden voice's primitive to the override family.
       const family = resolvedFontFor(scale, voice) || "";
       const coreStyleName = (scale.styleNames && scale.styleNames[voice]) || null;
       const sibs = (scale.weights && scale.weights[voice]) || [];
-      // relative Figma-label RANKS for this voice — computed ONCE (weight is constant across LG/MD/SM),
+      // relative Figma-label RANKS for this voice, computed ONCE (weight is constant across LG/MD/SM),
       // over the ascending-sorted, deduplicated set of every resolved weight (core + each sibling). See
       // relativeWeightLabel (src/engine/type.mjs) for why: a literal name (a custom face's own style
       // string, or a generic ladder name) reads illegibly once Figma truncates a long one in its narrow
@@ -151,13 +151,13 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
       const coreWeightForRank = (steps.MD || steps.LG || steps.SM).weight;
       const rankedWeights = [...new Set([coreWeightForRank, ...sibs.map((wv) => wv.weight)])].sort((a, b) => a - b);
       // BODY_CLASS_VOICES (Lead/Body*/Label*/Tiny*) use the simpler Regular/Bolder/Boldest vocabulary
-      // instead of the full Lighter/Light/Heavy/Heavier scale (2026-07-13, at request) — they're capped
+      // instead of the full Lighter/Light/Heavy/Heavier scale (2026-07-13, at request), they're capped
       // at 3 total (core + 2, both heavier) by bodyClassSiblingDefaults, so the 3-word list always maps
       // 1:1 with no collision risk; relativeWeightLabel falls back to the 4-word scale automatically if
       // an explicit override ever configures more than 3 total for one of these voices anyway.
       const labelWords = BODY_CLASS_VOICES.has(voice) ? BODY_WEIGHT_LABELS : undefined;
       const labelFor = (weight) => relativeWeightLabel(rankedWeights.indexOf(weight), rankedWeights.length, labelWords);
-      // text styles list LARGEST → smallest in the Figma Styles panel — the reverse of the engine's own
+      // text styles list LARGEST → smallest in the Figma Styles panel, the reverse of the engine's own
       // insertion order (Figma preserves the plan's own order rather than re-sorting, so this array IS
       // the panel order). Filtered per voice: most ride SM/MD/LG; the interactive voices (UI-control/
       // UI-widget) carry the full XS..2XL ramp (2026-07-16).
@@ -179,7 +179,7 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
           family,
           weight: s.weight,
           size: s.size,
-          // lineHeight/letterSpacing ride as PIXELS here (not the CSS/DTCG ratio/em) — a Figma-bound
+          // lineHeight/letterSpacing ride as PIXELS here (not the CSS/DTCG ratio/em), a Figma-bound
           // percent FLOAT displays as a bare number in Figma's own Properties panel, indistinguishable
           // from a pixel value at a glance; an absolute pixel is legible on its own there.
           lineHeight: s.lineHeight,
@@ -187,29 +187,29 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
           ...(hasPara ? { paragraphSpacing: s.paragraphSpacing } : {}),
           textCase: s.textTransform || "none",
         };
-        // the CORE style — `Voice/step` when the voice/step has NO configured siblings (nothing to
-        // disambiguate — a voice explicitly opted out via `weights:[]`); `Voice/step/name •` when it
+        // the CORE style, `Voice/step` when the voice/step has NO configured siblings (nothing to
+        // disambiguate, a voice explicitly opted out via `weights:[]`); `Voice/step/name •` when it
         // DOES (every voice by default, since 2026-07-13's auto-populated siblings). The ` •` (dot)
-        // SUFFIX marks the default pick among its named siblings — not a plain label segment, so it can
+        // SUFFIX marks the default pick among its named siblings, not a plain label segment, so it can
         // never collide with a sibling's own name; it trails the label (2026-07-14, at request) rather
         // than leading it, so it's never clipped by Figma's own truncation of a long label. `name` is
         // the NORMALIZED relative label (Lighter/
-        // Light/Heavy/Heavier, lowercased) by the core's own rank among `rankedWeights` — never the
+        // Light/Heavy/Heavier, lowercased) by the core's own rank among `rankedWeights`, never the
         // literal custom style name or ladder name (2026-07-13, superseding TKT-0001's literal-name
         // templating): a long custom face name ("Condensed Black Italic") truncates illegibly in Figma's
         // narrow Styles panel, multiple siblings collapsing to the same visible "condensed …" prefix.
         // Computed UNCONDITIONALLY (not gated by sibs.length like coreLabel below) because the BIND
-        // TARGET (coreWeightKey) always nests the same way, even for a voice with zero siblings — one
+        // TARGET (coreWeightKey) always nests the same way, even for a voice with zero siblings, one
         // lone primitive in its own "Voice" folder, not confusing the way a split group would be.
         const coreWeightName = weightNameFor(s.weight);
         // labelFor is null only when rankedWeights collapsed to 1 distinct weight (a misconfigured
-        // sibling weight identical to the core's) — fall back to the ladder name rather than throw.
+        // sibling weight identical to the core's), fall back to the ladder name rather than throw.
         const coreLabel = sibs.length ? (labelFor(coreWeightForRank) || coreWeightName.name).toLowerCase() : null;
         const coreKey = coreWeightKey(voice, coreWeightName, sibs);
         // fontWeight and fontStyle are NEVER both bound: real Figma resolves a bound fontWeight to
         // "the closest valid weight for the font" independently of fontStyle, which silently overrides
         // a custom named cut ("Condensed Black Italic") back to whatever plain face is nearest by
-        // weight number alone — found live via BZZR's Display core not rendering its bound style. A
+        // weight number alone, found live via BZZR's Display core not rendering its bound style. A
         // custom styleName is strictly more specific than a numeric weight, so it alone drives the bind.
         texts.push({
           name: styleNameFor(voice, step, { label: coreLabel, core: true }),
@@ -218,11 +218,11 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
           literal: { ...litBase, ...(coreStyleName ? { styleName: coreStyleName } : {}) },
         });
         // the SIBLING weight variants. The DISPLAY name is the SAME normalized relative-label
-        // vocabulary as the core, by this sibling's own rank among `rankedWeights` — never the literal
+        // vocabulary as the core, by this sibling's own rank among `rankedWeights`, never the literal
         // templated face name or a bare weight slug (2026-07-13). The literal `styleName` (used for
-        // actual font loading, via siblingStyleName) is UNCHANGED — only the visible Styles-panel label
+        // actual font loading, via siblingStyleName) is UNCHANGED, only the visible Styles-panel label
         // moves to the relative word. The BINDING target keys (`weight-style/<voice>/<slug>`,
-        // `weight/<voice>/<slug>`) stay on the plain kebab slug regardless — internal primitive naming,
+        // `weight/<voice>/<slug>`) stay on the plain kebab slug regardless, internal primitive naming,
         // not the user-facing style name.
         for (const wv of sibs) {
           const wvStyleName = siblingStyleName(coreStyleName, coreWeightName, wv.name);
@@ -234,24 +234,24 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
             literal: { ...litBase, styleName: wvStyleName, weight: wv.weight },
           });
         }
-        // SINGLE-LINE variants (UI-control/UI-widget only, 2026-07-16) — a sibling of every style above
+        // SINGLE-LINE variants (UI-control/UI-widget only, 2026-07-16), a sibling of every style above
         // (core + each configured weight), same font/size/tracking, but 1.0 leading (line-height = size,
         // no multi-line reading rhythm). Named with a "-single" SUFFIX on the leaf itself, flat inside the
         // SAME "{step}" folder as the multi-line styles (e.g. "Voice/step/label-single •",
-        // "Voice/step/medium-single") — never a NEW "/"-segment. Two earlier shapes both broke: a
+        // "Voice/step/medium-single"), never a NEW "/"-segment. Two earlier shapes both broke: a
         // trailing "/single" segment ("Voice/step/• label/single") made "Voice/step/• label" a PATH
         // PREFIX of it, and Figma's "/"-grouped Styles panel folder-izes any name that is a prefix of
         // another (the plain leaf and the single-variant's implied parent folder rendered as two rows
         // sharing one visible label); a separate "{step}-single" FOLDER avoided that but hid the
         // single-line siblings in their own group instead of sitting next to their multi-line counterpart.
         // A hyphen suffix on the leaf is neither: it's a distinct LEAF NAME with no extra path segment, so
-        // it can never become — or collide with — a folder. `singleLineHeight` exists as engine DATA on
-        // the BOX voices (Kicker/UI-control/UI-widget) — both UI voices bind live to that Figma variable;
+        // it can never become, or collide with, a folder. `singleLineHeight` exists as engine DATA on
+        // the BOX voices (Kicker/UI-control/UI-widget), both UI voices bind live to that Figma variable;
         // the literal fallback below survives for any prose voice a future config might opt in.
         if (SINGLE_LINE_VOICES.has(voice)) {
           const singleLineHeight = s.singleLineHeight ?? s.size;
           const singleBindBase = { ...bindBase, ...(s.singleLineHeight != null ? { lineHeight: `type/${kv}/${stepSlug}/single-line-height` } : {}) };
-          if (s.singleLineHeight == null) delete singleBindBase.lineHeight; // no live variable for Body — literal only
+          if (s.singleLineHeight == null) delete singleBindBase.lineHeight; // no live variable for Body, literal only
           const singleLitBase = { ...litBase, lineHeight: singleLineHeight };
           texts.push({
             name: styleNameFor(voice, step, { label: coreLabel, single: true, core: true }),
@@ -277,20 +277,20 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
   return { paints, texts };
 }
 
-// primitivesModesApplyPlan — flattens the Type Primitives
+// primitivesModesApplyPlan, flattens the Type Primitives
 // interchange (typeTokensFigmaPrimitivesModes) into the ordered apply plan the plugin executor
 // consumes. Mirrors modeApplyPlan's plan shape ({collection, modes, defaultMode, addModes, variables})
 // so the executor can reuse the SAME addMode/rename/prune scaffolding Geometry already
-// proved — but stays its own function, not a modeApplyPlan call, because Type Primitives variables can
+// proved, but stays its own function, not a modeApplyPlan call, because Type Primitives variables can
 // be ALIAS-typed (mode-apply-plan.mjs's FIGMA_VAR_TYPES / validateModeInterchange never recognize that
-// type) and because literals must be ordered before aliases here — a flat name sort does not guarantee
+// type) and because literals must be ordered before aliases here, a flat name sort does not guarantee
 // it (e.g. "font/sub-heading" sorts before "override/sub-heading" even when aliasing it).
 //
 // Guards, both planner-side so the executor can never half-apply:
-//   - INCOMPLETE LITERAL — a STRING/FLOAT missing a value for one of the interchange's own modes is
+//   - INCOMPLETE LITERAL, a STRING/FLOAT missing a value for one of the interchange's own modes is
 //     dropped entirely (not emitted with a hole): a partial write reads as "forgot this mode" once
 //     round-tripped through Figma, worse than not writing it at all.
-//   - DANGLING ALIAS — an ALIAS whose target isn't among the surviving (complete) literals is dropped.
+//   - DANGLING ALIAS, an ALIAS whose target isn't among the surviving (complete) literals is dropped.
 // Null when there is nothing to apply.
 export function primitivesModesApplyPlan(interchange) {
   const coll = interchange && interchange.collections && interchange.collections[COLLECTIONS.fontPrimitives];

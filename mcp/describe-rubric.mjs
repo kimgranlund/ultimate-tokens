@@ -1,22 +1,22 @@
-// describe-rubric.mjs — the interpretation RUBRIC + a bundled EXEMPLAR corpus + cheap keyword retrieval
+// describe-rubric.mjs, the interpretation RUBRIC + a bundled EXEMPLAR corpus + cheap keyword retrieval
 // for the describe-palette generator (#370, a child of the #379 program). Contract:
 // docs/site/describe-palette-spec.md §5.1/§10. Ships INSIDE the MCP package: an MCP host has no nonoun
 // skills, agents, or corpus installed, so the words->seeds METHOD has to travel in the tool result itself
 // (the briefing payload) rather than live in a skill file only Claude Code would ever load.
 //
 // Distilled FROM the real story-schema corpus (docs/reference/colors/categories/*.json) per #370's own
-// instruction — NOT written fresh. Every citation below (a kicker, a swatch name, a `refuses` line, a
+// instruction, NOT written fresh. Every citation below (a kicker, a swatch name, a `refuses` line, a
 // hierarchy percentage) is copied or lightly summarized from an actual palette in that corpus. The
 // EXEMPLARS array distills 15 of those real palettes into (a subset of) the PaletteBrief shape (spec §3)
 // so they double as few-shot examples of description -> brief mapping (the `exemplars` field of §5.1's
-// briefing payload) — the same artifact family the golden-description eval set (#375) reuses.
+// briefing payload), the same artifact family the golden-description eval set (#375) reuses.
 //
 // Sibling: mcp/describe-kit-core.mjs (the deterministic core this rubric must agree with bit-for-bit on
-// the one underdetermined recipe that has to match exactly — the Secondary/Tertiary harmony offsets,
+// the one underdetermined recipe that has to match exactly, the Secondary/Tertiary harmony offsets,
 // IMPORTED below rather than restated, so the two can never drift apart; see §12 item 7 of the spec).
 //
 // Scope (per #370): rubric + exemplars + retrieval ONLY. No MCP server, no tool framing, no generate_kit
-// wiring (#371's job) — this module just exports data + one pure function for whatever assembles the
+// wiring (#371's job), this module just exports data + one pure function for whatever assembles the
 // briefing payload later.
 
 import { readFileSync } from "node:fs";
@@ -25,15 +25,15 @@ import { FAMILY_NAMES, SECONDARY_HARMONY_OFFSET, TERTIARY_ANALOGOUS_OFFSET } fro
 
 const HERE = new URL(".", import.meta.url);
 // Read role-table.json directly (mirrors describe-kit-core.mjs's own convention) rather than importing its
-// private ROLE_DEFAULTS map — so this module has no coupling to describe-kit-core.mjs beyond the two named
+// private ROLE_DEFAULTS map, so this module has no coupling to describe-kit-core.mjs beyond the two named
 // harmony constants it deliberately re-exports for parity.
 const ROLE_TABLE = JSON.parse(readFileSync(new URL("../docs/reference/data/role-table.json", HERE), "utf8"));
 const ROLE_DEFAULTS = new Map(ROLE_TABLE.defaults.map((d) => [d.name, d]));
 const rt = (name) => ROLE_DEFAULTS.get(name);
 
-// seedOf(hex) — the SAME conversion describe-kit-core.mjs uses for a brief's `keyColor` (§3.2): a real,
+// seedOf(hex), the SAME conversion describe-kit-core.mjs uses for a brief's `keyColor` (§3.2): a real,
 // documented color becomes a numeric {hue, chroma} seed, never a hand-guessed one. Every numeric citation
-// in the rubric text below, and every exemplar family seed derived from a hex, goes through this — so if
+// in the rubric text below, and every exemplar family seed derived from a hex, goes through this, so if
 // the engine's OKLCH/CAM16 math ever changes, these citations move with it instead of silently going stale.
 const seedOf = (hex) => seedFromKeyColor(hexToOklch(hex), "oklch");
 const chromaOf = (hex) => seedOf(hex).chroma;
@@ -45,42 +45,42 @@ const hueOf = (hex) => seedOf(hex).hue;
 
 export const RESEARCH_TIER_NOTE =
   "Research tier: if the theme names a specific real subject (a place, a brand, a film, a species, an " +
-  "era with a documented look), look up its actual colors BEFORE inventing seeds — most MCP hosts carry " +
+  "era with a documented look), look up its actual colors BEFORE inventing seeds, most MCP hosts carry " +
   "their own web-search tool. A found, documented color becomes a `keyColor` hex in the brief (§3.2), not " +
   "a hand-picked hue/chroma guess. Skip this step only for themes with no specific real referent to look " +
-  "up (a mood, an abstract vibe, a made-up scene) — those are exactly what the hue-wheel + chroma-ladder " +
+  "up (a mood, an abstract vibe, a made-up scene), those are exactly what the hue-wheel + chroma-ladder " +
   "sections below are for.";
 
-// The round-trip contract's one-line instruction (spec §5.1's `instructions` field) — kept here so #371
+// The round-trip contract's one-line instruction (spec §5.1's `instructions` field), kept here so #371
 // doesn't have to restate it by hand when it assembles the briefing payload.
 export const ROUND_TRIP_INSTRUCTIONS =
   "Construct a PaletteBrief object matching `schema`, using `rubric` (and, for a named real subject, your " +
   "own research) to pick referents and map them to families. Then call generate_kit again with " +
-  "{ brief: <your object> } — never with description again alongside it (brief wins and description is " +
+  "{ brief: <your object> }, never with description again alongside it (brief wins and description is " +
   "ignored, lint-noted, if both are sent). To refine after seeing the result, patch the brief and resend; " +
   "never hand-edit the output hexes.";
 
-export const RUBRIC = `# Interpretation rubric — words → PaletteBrief seeds
+export const RUBRIC = `# Interpretation rubric, words → PaletteBrief seeds
 
-You are the interpreter. This tool's deterministic core turns numeric seeds into every hex in the kit —
+You are the interpreter. This tool's deterministic core turns numeric seeds into every hex in the kit,
 it never asks you for a color, only for **referents** (concrete things) tiered by **visual weight**,
 turned into **hue/chroma/skew/lift numbers or a looked-up hex**. This rubric teaches that skill, distilled
 from a real curated corpus (\`docs/reference/colors/categories/*.json\`) that already does it thousands of
 times over. Every rule below is illustrated with a REAL palette from that corpus, not an invented one.
 
-## 1. Referent extraction — concrete things, never mood adjectives
+## 1. Referent extraction, concrete things, never mood adjectives
 
 A referent is something you could point at in a photograph or hold up as a physical chip. "Warm", "moody",
-"energetic", "elegant" are not referents — they are the ADJECTIVES a lazy palette reaches for instead of
+"energetic", "elegant" are not referents, they are the ADJECTIVES a lazy palette reaches for instead of
 looking at the actual subject. The corpus never does this. Compare:
 
-- NOT "earthy, rugged mountain tones" — INSTEAD: **"Granite scree, pale grey"**, **"Karamatsu larch, autumn
-  gold"**, **"Haimatsu pine, black-green"** — the Hotaka-range palette (Japanese Northern Alps, October)
+- NOT "earthy, rugged mountain tones", INSTEAD: **"Granite scree, pale grey"**, **"Karamatsu larch, autumn
+  gold"**, **"Haimatsu pine, black-green"**, the Hotaka-range palette (Japanese Northern Alps, October)
   names the actual rock, the actual tree species, by their real seasonal color.
-- NOT "exotic, wild jungle cat energy" — INSTEAD: **"Bengal tiger, burnt orange"** — the Sundarbans
+- NOT "exotic, wild jungle cat energy", INSTEAD: **"Bengal tiger, burnt orange"**, the Sundarbans
   mangrove palette names the one animal and the one real fur color, not a feeling.
-- NOT "appetizing, warm fast-food branding" — INSTEAD: **"Fiery Red"**, **"BBQ Brown"**, **"Mayo Egg
-  White"**, **"Melty Yellow"** — Burger King's own 2021 guideline chip NAMES, sampled verbatim, not a
+- NOT "appetizing, warm fast-food branding", INSTEAD: **"Fiery Red"**, **"BBQ Brown"**, **"Mayo Egg
+  White"**, **"Melty Yellow"**, Burger King's own 2021 guideline chip NAMES, sampled verbatim, not a
   paraphrase of what fast food "feels like".
 
 Rule: for every referent, ask "what specific material, organism, pigment, or light condition is this?" If
@@ -92,35 +92,35 @@ that produces the feeling.
 Every corpus palette tiers its referents into three visual-weight bands, each carrying a percentage of the
 scene:
 
-- **d (dominant)** — the color that fills most of the field. Usually 45–60%. Maps toward **Primary** (or
+- **d (dominant)**: the color that fills most of the field. Usually 45–60%. Maps toward **Primary** (or
   **Neutral**, if the dominant color is a background/ground material rather than a brand-reading hue).
-- **s (supporting)** — the colors that give the dominant its structure; several referents, ~35–45%
+- **s (supporting)**: the colors that give the dominant its structure; several referents, ~35–45%
   combined. Maps toward **Secondary**, **Tertiary**, and **Neutral**.
-- **a (accent)** — rare, loud, SMALL-area punctuation — ~10%, never inflated just because it is the most
+- **a (accent)**: rare, loud, SMALL-area punctuation, ~10%, never inflated just because it is the most
   interesting color. Maps toward a **Tertiary** or a status family's \`keyColor\`.
 
 Real calibration: the Hotaka cirque runs **d 55 / s 35 / a 10** ("Pale granite is the whole cirque;
-everything else sits on it" / "Larch gold, creeping-pine dark, and glacial jade — the living slope" /
+everything else sits on it" / "Larch gold, creeping-pine dark, and glacial jade, the living slope" /
 "Rime white and rowan red as small, late reads"). Nike runs the identical **55/35/10** shape (jet black
-dominant, box white + greys supporting, swoosh orange + University Red as rare, loud reads) — proof the
+dominant, box white + greys supporting, swoosh orange + University Red as rare, loud reads), proof the
 same discipline applies to a brand mood, not just a landscape.
 
 Not every theme needs three tiers: the nonoun studio's own **Maison** product palette in the corpus is
 **d 60 / s 40** with NO accent tier at all ("Vivid indigo-violet leads the whole system" / "Warm gold-green
-and deep magenta-violet carry the rest") — a two-tier brief (Primary + Secondary/Tertiary, no third
+and deep magenta-violet carry the rest"), a two-tier brief (Primary + Secondary/Tertiary, no third
 punctuation color) is a legitimate, common shape, not an omission to fix.
 
 ## 3. The named refusal
 
 Every corpus palette states the CLICHÉ version of its own theme and explicitly rejects it. This is not
-decoration — naming what you are NOT doing is proof you looked at the real subject instead of reaching for
+decoration, naming what you are NOT doing is proof you looked at the real subject instead of reaching for
 the stock idea of it. Real examples:
 
 - Hotaka: *"Snowcap white as primary. In October the Hotaka is rock and gold, not the white pyramid of the
   brochure."*
-- Nike: *"Not a rainbow of past colorway drops — Nike's brand identity is disciplined black and white, lit
+- Nike: *"Not a rainbow of past colorway drops, Nike's brand identity is disciplined black and white, lit
   by a single orange-red accent, never a full spectrum."*
-- Burger King: *"Not the 1990s photoreal, blue-swooshed fast-food logo it replaced — the flame identity is
+- Burger King: *"Not the 1990s photoreal, blue-swooshed fast-food logo it replaced, the flame identity is
   warm and fully analogous, unashamedly appetite-red, with no cool blue anywhere in it."*
 - Antarctic Peninsula (a gentoo colony): *"Pure white wilderness. A working penguin colony is pink-stained
   and black-rocked; the pristine white is a distant view."*
@@ -131,13 +131,13 @@ cliché to refuse, you have not looked closely enough yet.
 
 ## 4. Sourcing discipline
 
-Every referent traces to something documented — a pigment history, a guideline spec, a specific hour of
-daylight — never a vibe. The corpus's \`kicker\` line pins a palette to one exact moment: *"36° N · October
-· 11:00 · Hotaka range above Kamikōchi, Japanese Northern Alps"* — a latitude, a month, an hour, a named
-place, not "mountains in autumn". Nike's orange is not "a bold orange" — it is *"the shoebox and Nike+
+Every referent traces to something documented, a pigment history, a guideline spec, a specific hour of
+daylight, never a vibe. The corpus's \`kicker\` line pins a palette to one exact moment: *"36° N · October
+· 11:00 · Hotaka range above Kamikōchi, Japanese Northern Alps"*, a latitude, a month, an hour, a named
+place, not "mountains in autumn". Nike's orange is not "a bold orange", it is *"the shoebox and Nike+
 accent, ≈Pantone 1655 C"*. The Corsa cycling palette sources its pink from print history, not aesthetics:
 the Giro d'Italia's *maglia rosa* is pink because **La Gazzetta dello Sport is printed on pink paper**; the
-Tour de France's *maillot jaune* is yellow because **L'Auto was printed on yellow paper** — real documented
+Tour de France's *maillot jaune* is yellow because **L'Auto was printed on yellow paper**, real documented
 provenance for why those colors exist at all, not "pink feels festive."
 
 Rule: for a named real subject, find the actual documented color before inventing one (§10, the research
@@ -146,7 +146,7 @@ inside the SCENE you are describing, not to a generic association with the theme
 
 ## 5. OKLCH hue-wheel anchors
 
-Every \`hue\` in a PaletteBrief is an **OKLCH hue in degrees, 0–360** (not CAM16 — the doc generates with
+Every \`hue\` in a PaletteBrief is an **OKLCH hue in degrees, 0–360** (not CAM16, the doc generates with
 \`hueSpace:"oklch"\`). General landmarks around the wheel: **0/360 red · 30 orange · 60 yellow · 90
 yellow-green · 120 green · 150 teal-green · 180 cyan · 210 sky-blue · 240 blue · 270 violet · 300 magenta ·
 330 rose/pink**, wrapping back to red.
@@ -166,23 +166,23 @@ hue/chroma on the SAME 0–100 chroma scale the brief schema uses):
 | Danger | ${rt("Danger").hue}° | ${rt("Danger").chroma} | red-orange, mid |
 
 Real corpus colors land where you'd expect on this wheel once converted the SAME way the core converts a
-\`keyColor\` (\`hexToOklch\` + \`seedFromKeyColor\` — the exact function this rubric's own numbers below were
+\`keyColor\` (\`hexToOklch\` + \`seedFromKeyColor\`, the exact function this rubric's own numbers below were
 computed with): Nike's Total Orange (\`#FF6600\`) → hue **${hueOf("#FF6600")}°** (the orange band); BZZR's
-electric-blue primary sits at hue **267°**, squarely on this repo's own Primary/Neutral default — "electric
+electric-blue primary sits at hue **267°**, squarely on this repo's own Primary/Neutral default, "electric
 indigo-blue" in the corpus's own words is a real product landing exactly on this wheel's violet-blue anchor.
 
 ## 6. The chroma vocabulary ladder
 
-\`chroma\` is 0–100, **percent of gamut at that hue** (persist.js's own scale — the SAME scale
+\`chroma\` is 0–100, **percent of gamut at that hue** (persist.js's own scale, the SAME scale
 \`seedFromKeyColor\` recovers a real hex into). Four named rungs:
 
-- **pastel ≈ 25** — airy, desaturated, "candy" colors.
-- **muted ≈ 40** — present but restrained; most Neutrals and Infos live near here.
-- **vivid ≈ 80** — confident, saturated, brand-forward.
-- **neon ≈ 100** — at or near peak chroma; "electric" in the corpus's own vocabulary.
+- **pastel ≈ 25**: airy, desaturated, "candy" colors.
+- **muted ≈ 40**: present but restrained; most Neutrals and Infos live near here.
+- **vivid ≈ 80**: confident, saturated, brand-forward.
+- **neon ≈ 100**: at or near peak chroma; "electric" in the corpus's own vocabulary.
 
 Real corpus hexes, converted with the exact same function the core uses for a brief's \`keyColor\`, land on
-these rungs almost exactly — proof the ladder is calibrated to this repo's real gamut, not an arbitrary
+these rungs almost exactly, proof the ladder is calibrated to this repo's real gamut, not an arbitrary
 0–100 guess:
 
 | referent | hex | chroma | rung |
@@ -199,17 +199,17 @@ these rungs almost exactly — proof the ladder is calibrated to this repo's rea
 
 Rule: pastel/muted referents (rock, wood, fog, cream, mud, moss) almost always tier as **s** or **d**; the
 loud, near-neon referents (a signal light, a berry, a logo mark, a single bright flower or bird) almost
-always tier as **a** — the ladder and the hierarchy tiers reinforce each other.
+always tier as **a**, the ladder and the hierarchy tiers reinforce each other.
 
 ## 7. Skew / lift semantics
 
 \`skew\` (−100..100) and \`lift\` (−40..40) shape a family's own light↔dark ramp (\`src/engine/tonal.js\`'s
-\`toneAt\`) — they do NOT touch hue or chroma:
+\`toneAt\`), they do NOT touch hue or chroma:
 
 - **skew > 0** biases the ramp's MID stops lighter/airier (a "brighter, punchier" reading ramp); **skew <
   0** biases mid stops darker/richer (a "deeper, moodier" reading ramp). Role-table calibration: most
   families default to skew **−20** (a slightly rich, non-washed-out ramp); **Warning defaults to skew
-  +40** — amber/gold reads naturally light, so its ramp is deliberately biased lighter to match.
+  +40**, amber/gold reads naturally light, so its ramp is deliberately biased lighter to match.
 - **lift** DISPLACES the ramp's anchor along the ramp instead of adding brightness to it: the tone at a
   stop is the tone the unchanged curve already has at a nearby stop, shifted by \`A · w(stop)\` where
   \`A = clamp(lift × 6, ±243.51)\` stops and \`w\` is a cosine weight that is 1 at the anchor stop (500)
@@ -220,16 +220,16 @@ always tier as **a** — the ladder and the hierarchy tiers reinforce each other
   and Warning to **−36**, a grounded, non-neon core even at high chroma). Because
   the shift rides the curve, a given lift moves the tone furthest where the ramp is steepest, so its
   effect in L* is not a fixed amount. It applies across all three tone modes — \`even\`, \`perceptual\`,
-  and \`peak\` — through the same \`liftStop\` helper.
+  and \`peak\`, through the same \`liftStop\` helper.
 
 Rule: leave skew/lift OUT of a family seed unless the theme specifically calls for a ramp that reads
-lighter/darker or hotter/deeper than the family's own role-table default — the core fills them in from each
+lighter/darker or hotter/deeper than the family's own role-table default, the core fills them in from each
 family's own role-table row regardless of which hue/chroma path (given, defaulted, or keyColor-derived) was
 taken, so an omitted skew/lift is never a mistake, only a "use the family's own default" choice.
 
 ## 8. Mapping referents onto the 8 families + the harmony recipe
 
-Families are a FIXED enum: ${FAMILY_NAMES.join(" · ")} — no other name may be used (§3.1); a theme rarely
+Families are a FIXED enum: ${FAMILY_NAMES.join(" · ")}, no other name may be used (§3.1); a theme rarely
 determines all eight. Map what the theme actually gives you:
 
 - The **d** referent → **Primary** (or **Neutral**, if it's a ground/background material rather than a
@@ -237,13 +237,13 @@ determines all eight. Map what the theme actually gives you:
 - The strongest **s** referents → **Secondary**, **Tertiary**, and **Neutral** (whichever of these the
   theme hasn't already filled from **d**).
 - A loud **a** referent → **Tertiary**, or a status family's \`keyColor\` if the accent IS literally a
-  signal color (a warning light, a danger stripe) — never a 9th family.
+  signal color (a warning light, a danger stripe), never a 9th family.
 - **Info / Success / Warning / Danger**: leave these OUT of the brief unless the theme itself determines
   a status color (a specific warning-light hex, a documented "safety green"). The core fills them from the
   role-table conventions in §5's table, nudged toward your brief's Primary hue but kept inside each status
-  family's conventional band — that nudge-and-clamp is the core's job (§9 below), not yours.
+  family's conventional band, that nudge-and-clamp is the core's job (§9 below), not yours.
 
-**When the theme doesn't determine a Secondary or Tertiary, use this EXACT recipe — the core defaults to
+**When the theme doesn't determine a Secondary or Tertiary, use this EXACT recipe, the core defaults to
 the identical numbers, so a brief that skips them and one that states them explicitly must produce the
 same kit:**
 
@@ -252,38 +252,38 @@ same kit:**
 - **Tertiary** (absent) = the **analogous** neighbor of Secondary — \`Secondary.hue +
   ${TERTIARY_ANALOGOUS_OFFSET}°\` (wrapped). A soft third note near the second.
 
-Do not invent a different offset or a different relationship (e.g. a triad, a different analogous step) —
+Do not invent a different offset or a different relationship (e.g. a triad, a different analogous step),
 this is the one place where disagreeing with the core, even slightly, breaks the tool's determinism
 guarantee: the SAME description interpreted twice (by you, or by a different agent reading this same
 rubric) should reach compatible briefs.
 
-A real corpus palette can also land a brand hue exactly ON a status family's conventional hue — Corsa's own
+A real corpus palette can also land a brand hue exactly ON a status family's conventional hue, Corsa's own
 Tertiary (Vuelta a España red) sits at hue 27, identical to this repo's own Danger default (also hue 27,
 see §5's table). That is not a mistake in the corpus; it is exactly the situation the core's status-
-distinctness gate exists to resolve automatically (§9) — you do not need to avoid it yourself, just be
+distinctness gate exists to resolve automatically (§9), you do not need to avoid it yourself, just be
 aware it can happen when a theme's dominant hue lands near a status band (roughly 0/27 red-orange, 70
 amber, 145 green, 235 blue).
 
 ## 9. Rules the core enforces anyway (so you can predict them)
 
-These are enforced in \`describe-kit-core.mjs\` regardless of what you send — stated here so your brief's
+These are enforced in \`describe-kit-core.mjs\` regardless of what you send, stated here so your brief's
 shape matches what will actually happen:
 
-- **Absent-family defaults** — Neutral (absent) takes Primary's own hue at the role-table's Neutral
+- **Absent-family defaults**: Neutral (absent) takes Primary's own hue at the role-table's Neutral
   chroma/skew/lift; Secondary/Tertiary follow §8's harmony recipe; Info/Success/Warning/Danger (absent)
   take the role-table conventions (§5's table) nudged toward your Primary's hue, clamped to stay inside
   each status family's conventional band.
-- **The status-distinctness gate** — after defaulting, a brand family (Primary/Secondary/Tertiary) and a
+- **The status-distinctness gate**: after defaulting, a brand family (Primary/Secondary/Tertiary) and a
   status family are never left indistinguishable: the status hue shifts deeper into its own conventional
   band first; if that band is exhausted, chroma/lightness (lift) differentiates them instead. You never
-  need to hand-tune this — an EXPLICIT status seed you provide is honored as given (only clamped, never
+  need to hand-tune this, an EXPLICIT status seed you provide is honored as given (only clamped, never
   nudged), so only set Info/Success/Warning/Danger yourself when the theme truly determines one.
-- **Referent count ≠ family count** — fewer referents than families is normal (§8's defaults fill the
+- **Referent count ≠ family count**: fewer referents than families is normal (§8's defaults fill the
   rest; never invent a referent just to fill a slot). MORE referents than families become key colors on an
-  EXISTING family (\`supportColor\`, or another dominant placement) — never a 9th family. \`additionalProperties:
+  EXISTING family (\`supportColor\`, or another dominant placement), never a 9th family. \`additionalProperties:
   false\` on \`families\` makes this structural, not just advisory.
-- **Clamping, never rejection** — every numeric field clamps to its domain's nearest bound; nothing you
-  send is ever rejected outright. Still aim for in-domain numbers — a clamped value is logged as a lint
+- **Clamping, never rejection**: every numeric field clamps to its domain's nearest bound; nothing you
+  send is ever rejected outright. Still aim for in-domain numbers, a clamped value is logged as a lint
   note, a visible signal that something in the brief didn't match the theme as cleanly as intended.
 
 ## 10. ${RESEARCH_TIER_NOTE}
@@ -291,9 +291,9 @@ shape matches what will actually happen:
 ## Worked example: "Siberian Tigers on Parade"
 
 1. **Named real subject → research tier.** "Siberian tiger" (the Amur tiger) is a specific, documented
-   animal — its coat is a real, photographable orange-and-black, not an abstract "wild" feeling. A host
+   animal, its coat is a real, photographable orange-and-black, not an abstract "wild" feeling. A host
    with web search would look this up; absent that, the corpus already has the closest documented analog:
-   the Sundarbans mangrove palette's own **"Bengal tiger, burnt orange" (\`#BB5D1B\`)** swatch — the same
+   the Sundarbans mangrove palette's own **"Bengal tiger, burnt orange" (\`#BB5D1B\`)** swatch, the same
    genus, a real, sourced fur color, tiering as a rare **a** referent (10%) against a dominant mangrove
    green.
 2. **The "on Parade" / setting half is a separate referent set.** Taiga is the Siberian tiger's actual
@@ -305,32 +305,32 @@ shape matches what will actually happen:
    "Larch needles, autumn amber"; Secondary ← the spruce/birch supporting color; Tertiary ← the tiger's own
    burnt-orange as a \`keyColor\` (a named real subject's documented color, per the research tier) or the
    lingonberry accent, whichever reads louder for the theme; Neutral ← the peat/forest-floor umber.
-   Info/Success/Warning/Danger are left OUT — nothing about this theme determines a status color, so the
+   Info/Success/Warning/Danger are left OUT, nothing about this theme determines a status color, so the
    core's own defaults (nudged toward the taiga amber, distinctness-gated against it) apply.
-4. **Refusal**: name the cliché — "uniform evergreen wilderness, tiger as a orange-and-black cartoon
-   cutout" — and refuse it the way the corpus's own taiga entry does: *"the larch taiga's defining trick is
-   that it turns gold and bare — a conifer that behaves like a birch"* — the real scene is amber and gold
+4. **Refusal**: name the cliché, "uniform evergreen wilderness, tiger as a orange-and-black cartoon
+   cutout", and refuse it the way the corpus's own taiga entry does: *"the larch taiga's defining trick is
+   that it turns gold and bare, a conifer that behaves like a birch"*, the real scene is amber and gold
    for two weeks a year, not permanent green, and the tiger is a rare glimpsed accent, not the whole field.
 
 This is exactly the shape of the \`siberian-taiga-baikal\` and \`bengal-tiger-sundarbans\` entries in this
-module's bundled EXEMPLARS — retrieving on a description like this one should surface both.
+module's bundled EXEMPLARS, retrieving on a description like this one should surface both.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// EXEMPLARS — ~15 entries distilled from real corpus palettes, spanning eras / nature / film /
+// EXEMPLARS, ~15 entries distilled from real corpus palettes, spanning eras / nature / film /
 // brand moods (#370's own bucket list). Each carries the real corpus citation (`source`), the
 // real named referents (`referents`, hier-tagged exactly as the corpus tags them), the corpus's
-// own `hierarchy` percentages and `refuses` line, and a `families` object — a PARTIAL PaletteBrief
+// own `hierarchy` percentages and `refuses` line, and a `families` object, a PARTIAL PaletteBrief
 // `families` map (spec §3) built from a SUBSET of the referents (never all of them; leaving some
 // referents un-mapped models §9's "referent count ≠ family count" rule directly: a real brief can
 // push an extra referent onto a family as `supportColor` instead, this module just keeps the
 // few-shot readable by mapping only the referents that decide a family's seed).
 //
 // hue/chroma seeds are DERIVED, not hand-typed: seedOf(hex) below runs the exact hexToOklch +
-// seedFromKeyColor conversion describe-kit-core.mjs applies to a brief's own `keyColor` — so an
+// seedFromKeyColor conversion describe-kit-core.mjs applies to a brief's own `keyColor`, so an
 // exemplar's numeric seed is guaranteed correct relative to the real corpus hex it cites, never an
 // eyeballed guess. Two brands.json entries (BZZR, Corsa) already ship as parametric {hue,chroma}
-// presets in the corpus itself (they were built through the app, not hand-swatched) — those two
+// presets in the corpus itself (they were built through the app, not hand-swatched), those two
 // use their own corpus numbers directly instead of re-deriving from a hex.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -357,11 +357,11 @@ const RAW_EXEMPLARS = [
   {
     id: "ocean-drive-miami-deco",
     category: "architecture",
-    source: 'docs/reference/colors/categories/architecture.json — Art Deco vol, "Ocean Drive · 1930s · Miami Beach Art Deco Historic District"',
-    theme: "1930s Miami Beach Art Deco hotel strip — pastel stucco, mint trim, poolside cabana color",
+    source: 'docs/reference/colors/categories/architecture.json, Art Deco vol, "Ocean Drive · 1930s · Miami Beach Art Deco Historic District"',
+    theme: "1930s Miami Beach Art Deco hotel strip, pastel stucco, mint trim, poolside cabana color",
     keywords: ["hotel", "pastel", "pink", "mint", "turquoise", "deco", "miami", "florida", "beach", "resort", "poolside", "pool", "cabana", "leisure", "stucco", "neon"],
     hierarchy: { d: { pct: 50 }, s: { pct: 40 }, a: { pct: 10 } },
-    refuses: "Muted heritage colour. South Beach is candy pastel by design — pink, mint, and turquoise, not a tasteful neutral.",
+    refuses: "Muted heritage colour. South Beach is candy pastel by design, pink, mint, and turquoise, not a tasteful neutral.",
     referents: [
       { name: "Stucco, flamingo pink", hex: "#E0ACAC", hier: "d", note: "The signature pastel hotel fronts.", family: "Primary" },
       { name: "Trim, mint green", hex: "#A1CEB2", hier: "s", note: "The deco banding and detail.", family: "Secondary" },
@@ -374,12 +374,12 @@ const RAW_EXEMPLARS = [
   {
     id: "studio-54-disco",
     category: "music",
-    source: 'docs/reference/colors/categories/music.json — Disco & Funk vol, "Studio 54 · the dancefloor"',
-    // Studio 54 operated 1977-1986 — genuinely spans both the "1970s" and "1980s" tags below.
-    theme: "Studio 54, late-1970s into the 1980s — mirror-ball silver, gold lamé, hot-pink and purple club light on black",
+    source: 'docs/reference/colors/categories/music.json, Disco & Funk vol, "Studio 54 · the dancefloor"',
+    // Studio 54 operated 1977-1986, genuinely spans both the "1970s" and "1980s" tags below.
+    theme: "Studio 54, late-1970s into the 1980s, mirror-ball silver, gold lamé, hot-pink and purple club light on black",
     keywords: ["disco", "nightclub", "party", "glamour", "dancefloor", "1970s", "1980s", "mirror ball", "glitter", "silver", "gold"],
     hierarchy: { d: { pct: 50 }, s: { pct: 40 }, a: { pct: 10 } },
-    refuses: "Muted '70s brown. Disco is silver, gold, and saturated pink-purple light on black — glittering glamour, not earth tones.",
+    refuses: "Muted '70s brown. Disco is silver, gold, and saturated pink-purple light on black, glittering glamour, not earth tones.",
     referents: [
       { name: "Dancefloor dark, black-purple", hex: "#2B2734", hier: "d", note: "The dark club the lights play on.", family: "Neutral" },
       { name: "Mirror ball, silver", hex: "#B4B8BD", hier: "s", note: "The spinning mirror-ball reflections." },
@@ -392,11 +392,11 @@ const RAW_EXEMPLARS = [
   {
     id: "boogie-roller-disco",
     category: "music",
-    source: 'docs/reference/colors/categories/music.json — Disco & Funk vol, "Boogie & roller-disco · the rink"',
-    theme: "A roller-disco rink, retro 1970s-80s party culture — neon-stripe brights on a blond wood floor",
+    source: 'docs/reference/colors/categories/music.json, Disco & Funk vol, "Boogie & roller-disco · the rink"',
+    theme: "A roller-disco rink, retro 1970s-80s party culture, neon-stripe brights on a blond wood floor",
     keywords: ["roller disco", "rink", "party", "1980s", "1970s", "neon", "retro", "skate", "orange", "blue", "pink"],
     hierarchy: { d: { pct: 50 }, s: { pct: 40 }, a: { pct: 10 } },
-    refuses: "Muted retro brown. The roller rink is neon brights on blond wood — saturated fun, not a faded '70s tone.",
+    refuses: "Muted retro brown. The roller rink is neon brights on blond wood, saturated fun, not a faded '70s tone.",
     referents: [
       { name: "Skate stripe, orange", hex: "#E5822F", hier: "d", note: "The retro roller-skate stripe.", family: "Primary" },
       { name: "Rink wood, blond tan", hex: "#BDA887", hier: "s", note: "The maple rink floor.", family: "Neutral" },
@@ -409,11 +409,11 @@ const RAW_EXEMPLARS = [
   {
     id: "city-pop-tokyo-80s",
     category: "music",
-    source: 'docs/reference/colors/categories/music.json — K-Pop & J-Pop vol, "City pop · the \'80s Tokyo-night sleeve"',
-    theme: "1980s Japanese city pop — a glossy sunset gradient, neon cyan, and chrome over a night drive",
+    source: 'docs/reference/colors/categories/music.json, K-Pop & J-Pop vol, "City pop · the \'80s Tokyo-night sleeve"',
+    theme: "1980s Japanese city pop, a glossy sunset gradient, neon cyan, and chrome over a night drive",
     keywords: ["1980s", "city pop", "tokyo", "japan", "sunset", "neon", "chrome", "night", "retro", "glossy"],
     hierarchy: { d: { pct: 50 }, s: { pct: 40 }, a: { pct: 10 } },
-    refuses: "Muted retro tone. City pop is a saturated sunset gradient with neon and chrome — glossy '80s glamour, not a faded photo.",
+    refuses: "Muted retro tone. City pop is a saturated sunset gradient with neon and chrome, glossy '80s glamour, not a faded photo.",
     referents: [
       { name: "Sunset gradient, magenta-orange", hex: "#E37363", hier: "d", note: "The city-pop sunset.", family: "Primary" },
       { name: "Ocean teal", hex: "#279196", hier: "s", note: "The seaside drive teal.", family: "Secondary" },
@@ -428,13 +428,13 @@ const RAW_EXEMPLARS = [
   {
     id: "siberian-taiga-baikal",
     category: "nature",
-    source: 'docs/reference/colors/categories/nature.json — Boreal & Taiga vol, "54° N · September · 16:00 · Larch taiga, Baikal hinterland, Siberia"',
-    theme: "Early autumn in the Siberian larch taiga near Lake Baikal — the forest briefly amber before needle-drop",
+    source: 'docs/reference/colors/categories/nature.json, Boreal & Taiga vol, "54° N · September · 16:00 · Larch taiga, Baikal hinterland, Siberia"',
+    theme: "Early autumn in the Siberian larch taiga near Lake Baikal, the forest briefly amber before needle-drop",
     keywords: ["siberia", "siberian", "taiga", "russia", "baikal", "forest", "boreal", "wildlife", "cold", "autumn", "larch", "birch"],
     hierarchy: { d: { pct: 50 }, s: { pct: 40 }, a: { pct: 10 } },
-    refuses: "Uniform evergreen. The larch taiga's defining trick is that it turns gold and bare — a conifer that behaves like a birch.",
+    refuses: "Uniform evergreen. The larch taiga's defining trick is that it turns gold and bare, a conifer that behaves like a birch.",
     referents: [
-      { name: "Larch needles, autumn amber", hex: "#D0944A", hier: "d", note: "Siberian larch — a conifer that turns gold and sheds.", family: "Primary" },
+      { name: "Larch needles, autumn amber", hex: "#D0944A", hier: "d", note: "Siberian larch, a conifer that turns gold and sheds.", family: "Primary" },
       { name: "Birch leaf, lemon yellow", hex: "#D0BB64", hier: "s", note: "Birch turning alongside the larch.", family: "Secondary" },
       { name: "Background spruce, dark teal", hex: "#243E38", hier: "s", note: "Evergreen taiga behind the deciduous burst.", family: "Neutral" },
       { name: "Peat floor, umber", hex: "#554130", hier: "s", note: "Needle litter and peat underfoot." },
@@ -445,8 +445,8 @@ const RAW_EXEMPLARS = [
   {
     id: "bengal-tiger-sundarbans",
     category: "nature",
-    source: 'docs/reference/colors/categories/nature.json — Coast/Littoral vol, "22° N · February · 15:00 · Sundarbans mangrove, Bay of Bengal delta"',
-    theme: "A tidal mangrove creek in the Sundarbans — grey mud and tannin water, with the rare burnt-orange of a Bengal tiger",
+    source: 'docs/reference/colors/categories/nature.json, Coast/Littoral vol, "22° N · February · 15:00 · Sundarbans mangrove, Bay of Bengal delta"',
+    theme: "A tidal mangrove creek in the Sundarbans, grey mud and tannin water, with the rare burnt-orange of a Bengal tiger",
     keywords: ["tiger", "bengal", "wildlife", "mangrove", "jungle", "predator", "apex predator", "stripes", "orange", "delta"],
     hierarchy: { d: { pct: 50 }, s: { pct: 40 }, a: { pct: 10 } },
     refuses: "Bright tropical-island colour. The Sundarbans is a grey-green-brown tidal world; its colour is mud and one orange cat.",
@@ -462,8 +462,8 @@ const RAW_EXEMPLARS = [
   {
     id: "serengeti-plains",
     category: "nature",
-    source: 'docs/reference/colors/categories/nature.json — Grassland/Steppe/Savanna vol, "2° S · August · 17:00 · Serengeti plains, Tanzania, dry season"',
-    theme: "The Serengeti in the dry season — cured gold grass, an acacia silhouette, and the tawny of a lion at dusk",
+    source: 'docs/reference/colors/categories/nature.json, Grassland/Steppe/Savanna vol, "2° S · August · 17:00 · Serengeti plains, Tanzania, dry season"',
+    theme: "The Serengeti in the dry season, cured gold grass, an acacia silhouette, and the tawny of a lion at dusk",
     keywords: ["safari", "savanna", "wildlife", "lion", "plains", "herd", "migration", "africa", "dust", "gold"],
     hierarchy: { d: { pct: 55 }, s: { pct: 35 }, a: { pct: 10 } },
     refuses: "Lush green safari. The Serengeti is gold and dust most of the year; the green flush is a few weeks after rain.",
@@ -479,11 +479,11 @@ const RAW_EXEMPLARS = [
   {
     id: "antarctic-gentoo-colony",
     category: "nature",
-    source: 'docs/reference/colors/categories/nature.json — Tundra & Polar vol, "64° S · January · 18:00 · Antarctic Peninsula, austral summer evening"',
+    source: 'docs/reference/colors/categories/nature.json, Tundra & Polar vol, "64° S · January · 18:00 · Antarctic Peninsula, austral summer evening"',
     // "Penguin Parade" is the real, commonly-used name for a colony's characteristic evening waddle/march
-    // (e.g. Phillip Island's nightly Penguin Parade) — a fair, generic descriptive tag, not a claim about
+    // (e.g. Phillip Island's nightly Penguin Parade), a fair, generic descriptive tag, not a claim about
     // this specific corpus entry's species/location.
-    theme: "A gentoo penguin colony on the Antarctic Peninsula — blue glacier ice, black basalt, and krill-pink guano stain (the classic waddling 'penguin parade' scene)",
+    theme: "A gentoo penguin colony on the Antarctic Peninsula, blue glacier ice, black basalt, and krill-pink guano stain (the classic waddling 'penguin parade' scene)",
     keywords: ["antarctic", "antarctica", "penguin", "penguin parade", "colony", "parade", "wildlife", "cold", "ice", "glacier", "polar"],
     hierarchy: { d: { pct: 55 }, s: { pct: 35 }, a: { pct: 10 } },
     refuses: "Pure white wilderness. A working penguin colony is pink-stained and black-rocked; the pristine white is a distant view.",
@@ -501,8 +501,8 @@ const RAW_EXEMPLARS = [
   {
     id: "grand-budapest-hotel",
     category: "film",
-    source: 'docs/reference/colors/categories/film.json — Pastel Romance & Whimsy vol, "The Grand Budapest Hotel · 1932 era · dir. Wes Anderson · the lobby & funicular"',
-    theme: "Wes Anderson's Grand Budapest Hotel — a pink mountain hotel of pastel symmetry and confectionery detail",
+    source: 'docs/reference/colors/categories/film.json, Pastel Romance & Whimsy vol, "The Grand Budapest Hotel · 1932 era · dir. Wes Anderson · the lobby & funicular"',
+    theme: "Wes Anderson's Grand Budapest Hotel, a pink mountain hotel of pastel symmetry and confectionery detail",
     keywords: ["hotel", "pastel", "pink", "confection", "lobby", "resort", "alpine", "whimsy"],
     hierarchy: { d: { pct: 50 }, s: { pct: 40 }, a: { pct: 10 } },
     refuses: "Realist period grade. Anderson's world is a deliberate confection of symmetrical pastel; realism erases the doll's-house charm.",
@@ -518,8 +518,8 @@ const RAW_EXEMPLARS = [
   {
     id: "la-la-land-dusk",
     category: "film",
-    source: 'docs/reference/colors/categories/film.json — Pastel Romance & Whimsy vol, "La La Land · 2016 · dir. Chazelle · the Griffith Park dusk"',
-    theme: "A Los Angeles musical dusk — twilight magenta sky, primary costume colour, and jazz-club blue",
+    source: 'docs/reference/colors/categories/film.json, Pastel Romance & Whimsy vol, "La La Land · 2016 · dir. Chazelle · the Griffith Park dusk"',
+    theme: "A Los Angeles musical dusk, twilight magenta sky, primary costume colour, and jazz-club blue",
     keywords: ["los angeles", "hollywood", "twilight", "dusk", "musical", "jazz", "sunset", "purple"],
     hierarchy: { d: { pct: 50 }, s: { pct: 40 }, a: { pct: 10 } },
     refuses: "Desaturated indie grade. Chazelle paints with saturated primaries and purple dusk; muting it kills the musical's joy.",
@@ -535,8 +535,8 @@ const RAW_EXEMPLARS = [
   {
     id: "vertigo-neon-hotel",
     category: "film",
-    source: 'docs/reference/colors/categories/film.json — Technicolor Golden Age vol, "Vertigo · 1958 · dir. Alfred Hitchcock · the green neon hotel"',
-    theme: "Hitchcock's Vertigo — an obsession bathed in the eerie green of a hotel's neon sign",
+    source: 'docs/reference/colors/categories/film.json, Technicolor Golden Age vol, "Vertigo · 1958 · dir. Alfred Hitchcock · the green neon hotel"',
+    theme: "Hitchcock's Vertigo, an obsession bathed in the eerie green of a hotel's neon sign",
     keywords: ["hotel", "neon", "green", "noir", "obsession", "hitchcock", "san francisco"],
     hierarchy: { d: { pct: 50 }, s: { pct: 40 }, a: { pct: 10 } },
     refuses: "Naturalistic colour. Hitchcock weaponised Technicolor green and red as psychology; realism drains the dread.",
@@ -554,13 +554,13 @@ const RAW_EXEMPLARS = [
   {
     id: "nike-swoosh",
     category: "brands",
-    source: 'docs/reference/colors/categories/brands.json — "Nike · The Swoosh · Since 1971"',
-    theme: "Nike's identity — jet black and box white held to near-monochrome, lit by one loud swoosh orange",
+    source: 'docs/reference/colors/categories/brands.json, "Nike · The Swoosh · Since 1971"',
+    theme: "Nike's identity, jet black and box white held to near-monochrome, lit by one loud swoosh orange",
     keywords: ["nike", "brand", "sport", "monochrome", "black", "white", "orange", "logo", "athletic"],
     hierarchy: { d: { pct: 55 }, s: { pct: 35 }, a: { pct: 10 } },
-    refuses: "Not a rainbow of past colorway drops — Nike's brand identity is disciplined black and white, lit by a single orange-red accent, never a full spectrum.",
+    refuses: "Not a rainbow of past colorway drops, Nike's brand identity is disciplined black and white, lit by a single orange-red accent, never a full spectrum.",
     referents: [
-      { name: "Jet black, PMS Black 6 C", hex: "#101820", hier: "d", note: "The Swoosh and wordmark ink — a blue-black, not flat black.", family: "Primary" },
+      { name: "Jet black, PMS Black 6 C", hex: "#101820", hier: "d", note: "The Swoosh and wordmark ink, a blue-black, not flat black.", family: "Primary" },
       { name: "Box white", hex: "#FFFFFF", hier: "s", note: "The negative space the Swoosh floats in.", family: "Neutral" },
       { name: "Cool grey, technical", hex: "#8B9095", hier: "s", note: "The performance-apparel and packaging greys." },
       { name: "Sail, warm bone", hex: "#E4E0D2", hier: "s", note: "The off-white of leather and canvas uppers." },
@@ -571,11 +571,11 @@ const RAW_EXEMPLARS = [
   {
     id: "burger-king-flame",
     category: "brands",
-    source: 'docs/reference/colors/categories/brands.json — "Burger King · The Flame Identity · 2021 rebrand"',
-    theme: "Burger King's 2021 flame identity — fiery red over char-brown and mayo cream, lit by melty yellow",
+    source: 'docs/reference/colors/categories/brands.json, "Burger King · The Flame Identity · 2021 rebrand"',
+    theme: "Burger King's 2021 flame identity, fiery red over char-brown and mayo cream, lit by melty yellow",
     keywords: ["burger king", "brand", "fast food", "flame", "red", "yellow", "brown", "appetite"],
     hierarchy: { d: { pct: 50 }, s: { pct: 38 }, a: { pct: 12 } },
-    refuses: "Not the 1990s photoreal, blue-swooshed fast-food logo it replaced — the flame identity is warm and fully analogous, unashamedly appetite-red, with no cool blue anywhere in it.",
+    refuses: "Not the 1990s photoreal, blue-swooshed fast-food logo it replaced, the flame identity is warm and fully analogous, unashamedly appetite-red, with no cool blue anywhere in it.",
     referents: [
       { name: "Fiery Red", hex: "#D62300", hier: "d", note: "The wordmark bun; the brand's primary, appetite-driving red.", family: "Primary" },
       { name: "Flaming Orange", hex: "#FF8732", hier: "s", note: "The flame-grill glow that warms the packaging.", family: "Secondary" },
@@ -588,14 +588,14 @@ const RAW_EXEMPLARS = [
   {
     id: "bzzr-electric",
     category: "brands",
-    source: 'docs/reference/colors/categories/brands.json — "BZZR · The product\'s own design system"',
-    theme: "BZZR's live design system — an electric indigo-blue system charged by neon mint, run near-peak chroma throughout",
+    source: 'docs/reference/colors/categories/brands.json, "BZZR · The product\'s own design system"',
+    theme: "BZZR's live design system, an electric indigo-blue system charged by neon mint, run near-peak chroma throughout",
     keywords: ["bzzr", "brand", "electric", "neon", "vivid", "indigo", "mint", "saas", "product"],
-    // BZZR's own corpus entry has NO accent tier — a real 2-tier hierarchy, exactly like Maison (§2 above).
+    // BZZR's own corpus entry has NO accent tier, a real 2-tier hierarchy, exactly like Maison (§2 above).
     hierarchy: { d: { pct: 55 }, s: { pct: 45 } },
-    refuses: "A calm, desaturated palette. BZZR runs hot and electric by design — near-peak chroma on both its primary and secondary.",
+    refuses: "A calm, desaturated palette. BZZR runs hot and electric by design, near-peak chroma on both its primary and secondary.",
     referents: [
-      // Already-parametric corpus numbers (BZZR was built through the app) — used directly, no hex derivation.
+      // Already-parametric corpus numbers (BZZR was built through the app), used directly, no hex derivation.
       { name: "Primary, electric indigo-blue", hue: 267, chroma: 98, hier: "d", note: "An extremely vivid electric-blue primary, run near-peak chroma.", family: "Primary" },
       { name: "Secondary, neon mint", hue: 165, chroma: 100, hier: "s", note: "A neon-mint secondary, also near-peak chroma.", family: "Secondary" },
       { name: "Tertiary, muted violet", hue: 315, chroma: 44, hier: "s", note: "A muted violet carrying the charge.", family: "Tertiary" },
@@ -605,19 +605,19 @@ const RAW_EXEMPLARS = [
   {
     id: "corsa-grand-tour",
     category: "brands",
-    source: 'docs/reference/colors/categories/brands.json — "Corsa · Grand Tour cycling · Italy · France · Spain"',
-    theme: "Corsa's Grand Tour cycling identity — Giro rosa and Tour yellow over road blue, sourced from real jersey and newsprint history",
+    source: 'docs/reference/colors/categories/brands.json, "Corsa · Grand Tour cycling · Italy · France · Spain"',
+    theme: "Corsa's Grand Tour cycling identity, Giro rosa and Tour yellow over road blue, sourced from real jersey and newsprint history",
     keywords: ["corsa", "cycling", "grand tour", "giro", "tour de france", "brand", "pink", "yellow", "blue", "sport"],
     hierarchy: { d: { pct: 45 }, s: { pct: 35 }, a: { pct: 20 } },
-    refuses: "A muted, faded-photograph nostalgia. The Grand Tour's heritage is loud and graphic — maglia-rosa pink, maillot-jaune yellow, and gas-station-signage jersey reds and greens, printed on pink and yellow newsprint, not sepia.",
+    refuses: "A muted, faded-photograph nostalgia. The Grand Tour's heritage is loud and graphic, maglia-rosa pink, maillot-jaune yellow, and gas-station-signage jersey reds and greens, printed on pink and yellow newsprint, not sepia.",
     referents: [
       // Already-parametric corpus numbers (Corsa was built through the app's own preset system).
-      { name: "Neutral, cobbles grey", hue: 248, chroma: 3, hier: "s", note: "Cool pavé cobblestone grey — the road under every tour.", family: "Neutral" },
-      { name: "Primary, Giro d'Italia rosa", hue: 356, chroma: 64, hier: "d", note: "The maglia rosa — a vivid poster pink from La Gazzetta's pink pages.", family: "Primary" },
+      { name: "Neutral, cobbles grey", hue: 248, chroma: 3, hier: "s", note: "Cool pavé cobblestone grey, the road under every tour.", family: "Neutral" },
+      { name: "Primary, Giro d'Italia rosa", hue: 356, chroma: 64, hier: "d", note: "The maglia rosa, a vivid poster pink from La Gazzetta's pink pages.", family: "Primary" },
       { name: "Secondary, road blue", hue: 263, chroma: 63, hier: "s", note: "The tarmac-and-signage blue of the race route.", family: "Secondary" },
-      // Note: this hue (27) sits exactly on this repo's own Danger default hue (see §5/§8 of the RUBRIC) —
+      // Note: this hue (27) sits exactly on this repo's own Danger default hue (see §5/§8 of the RUBRIC),
       // a REAL corpus instance of the brand/status collision the core's distinctness gate (#372) resolves.
-      { name: "Tertiary, Vuelta a España red", hue: 27, chroma: 66, hier: "a", note: "The maillot rojo — the Vuelta leader jersey, red since 2010.", family: "Tertiary" },
+      { name: "Tertiary, Vuelta a España red", hue: 27, chroma: 66, hier: "a", note: "The maillot rojo, the Vuelta leader jersey, red since 2010.", family: "Tertiary" },
     ],
   },
 ];
@@ -625,7 +625,7 @@ const RAW_EXEMPLARS = [
 export const EXEMPLARS = RAW_EXEMPLARS.map((e) => ({ ...e, families: familiesFrom(e.referents) }));
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// CHEAP KEYWORD RETRIEVAL — no embeddings, no dependencies. Tokenize both the query and each
+// CHEAP KEYWORD RETRIEVAL, no embeddings, no dependencies. Tokenize both the query and each
 // exemplar's own text (keywords + theme + category + referent names), score by weighted token
 // overlap (a hit inside `keywords` counts more than an incidental hit inside prose), return the
 // top N. Deterministic; ties keep EXEMPLARS' own array order (Array#sort is a stable sort).
@@ -633,7 +633,7 @@ export const EXEMPLARS = RAW_EXEMPLARS.map((e) => ({ ...e, families: familiesFro
 
 const STOPWORDS = new Set(["the", "a", "an", "of", "in", "on", "at", "and", "or", "to", "for", "with", "by", "from", "is", "this", "that", "it", "its"]);
 
-// tokenize — lowercase, strip punctuation (keep letters/digits/whitespace, any script), split on
+// tokenize, lowercase, strip punctuation (keep letters/digits/whitespace, any script), split on
 // whitespace, drop stopwords, and crudely de-pluralize (trailing "s" on a word longer than 3 chars)
 // so "tigers" matches a "tiger" keyword and "1980s" matches a bare "1980s" keyword identically.
 function tokenize(text) {
@@ -653,14 +653,14 @@ function exemplarTokenSets(exemplar) {
   return { keywordTokens, proseTokens };
 }
 
-// Precomputed once per exemplar (pure data, never mutated) — retrieveExemplars can be called
+// Precomputed once per exemplar (pure data, never mutated), retrieveExemplars can be called
 // repeatedly (once per generate_kit{description} call, in the eventual #371 server) without
 // re-tokenizing the whole corpus every time.
 const INDEX = EXEMPLARS.map((ex) => ({ ex, ...exemplarTokenSets(ex) }));
 
 // retrieveExemplars(description, n) → the n most theme-adjacent EXEMPLARS entries for a free-text
 // description. A query token matching one of an exemplar's own `keywords` scores 3; matching only
-// incidental prose (theme/category/referent names) scores 1 — so an exemplar explicitly tagged
+// incidental prose (theme/category/referent names) scores 1, so an exemplar explicitly tagged
 // with a concept outranks one that merely happens to share an unrelated word. Each query token
 // counts once per exemplar (repeating a word in the description doesn't inflate its score).
 export function retrieveExemplars(description, n = 3) {

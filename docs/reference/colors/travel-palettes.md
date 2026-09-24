@@ -1,4 +1,4 @@
-# Travel Palettes — Complete Color Reference
+# Travel Palettes: Complete Color Reference
 
 Every palette across all twelve volumes of the Field Notebook study. Each entry lists its **six core colors** (dominant · supporting · accent), three **relative system colors** (system-red / -yellow / -green, derived to sit at each palette's own saturation register), and a description of each color group.
 
@@ -6,11 +6,11 @@ Every palette across all twelve volumes of the Field Notebook study. Each entry 
 
 ---
 
-## Vol I — Founding Four
+## Vol I: Founding Four
 
 *Four palettes, four territories.*
 
-### I·01 — 59° N · January · 14:00 · Lake Baikal corridor
+### I·01: 59° N · January · 14:00 · Lake Baikal corridor
 
 A condensation window on the № 002, somewhere between Krasnoyarsk and Irkutsk
 
@@ -35,13 +35,13 @@ A condensation window on the № 002, somewhere between Krasnoyarsk and Irkutsk
 
 **Color groups**
 
-- **Dominant · 60%** — Birch-forest silver anchors every surface; nothing competes with it.
-- **Supporting · 30%** — Condensation, birch bark, samovar brass — the interior warmth that keeps the silver from being clinical.
-- **Accent · 10%** — Maroon and dusk-violet only in small quantity, as punctuation.
+- **Dominant · 60%**: Birch-forest silver anchors every surface; nothing competes with it.
+- **Supporting · 30%**: Condensation, birch bark, samovar brass, the interior warmth that keeps the silver from being clinical.
+- **Accent · 10%**: Maroon and dusk-violet only in small quantity, as punctuation.
 
 *Refuses:* Saturated Soviet-flag red. The parade-square cliché flattens any Russia palette into iconography; this trip is the carriage interior, not the May Day square.
 
-### I·02 — 31° N · April · 18:45 · Souk Semmarine, Marrakech medina
+### I·02: 31° N · April · 18:45 · Souk Semmarine, Marrakech medina
 
 The fifteen minutes when the souk's roof slats stop letting in white light and start letting in blue
 
@@ -66,13 +66,13 @@ The fifteen minutes when the souk's roof slats stop letting in white light and s
 
 **Color groups**
 
-- **Dominant · 55%** — Tadelakt rose carries the palette; warm plaster reads from across a square.
-- **Supporting · 35%** — Saffron, brass-light, zellige white — the warm range of the souk floor and goods.
-- **Accent · 10%** — The two blues only as small jolts — the sky-gap and the Majorelle quotation.
+- **Dominant · 55%**: Tadelakt rose carries the palette; warm plaster reads from across a square.
+- **Supporting · 35%**: Saffron, brass-light, zellige white, the warm range of the souk floor and goods.
+- **Accent · 10%**: The two blues only as small jolts, the sky-gap and the Majorelle quotation.
 
 *Refuses:* Mediterranean-postcard turquoise. That blue belongs to noon at Chefchaouen, not to dusk in the Marrakech medina; using it here would smear two distinct Moroccos together for tourist legibility.
 
-### I·03 — 23° S · December · 16:20 · Salar de Atacama, 2,305 m
+### I·03: 23° S · December · 16:20 · Salar de Atacama, 2,305 m
 
 Late afternoon on the salt flat, with the Licancabur shadow already starting to walk east
 
@@ -97,13 +97,13 @@ Late afternoon on the salt flat, with the Licancabur shadow already starting to 
 
 **Color groups**
 
-- **Dominant · 60%** — Halite white anchors the salar; everything else is read against it.
-- **Supporting · 30%** — Vicuña, copper terracotta, basalt — the warm earths that make the white feel like ground, not paper.
-- **Accent · 10%** — Shadow lilac and bleached cobalt only at small scale, where the altitude actually shows.
+- **Dominant · 60%**: Halite white anchors the salar; everything else is read against it.
+- **Supporting · 30%**: Vicuña, copper terracotta, basalt, the warm earths that make the white feel like ground, not paper.
+- **Accent · 10%**: Shadow lilac and bleached cobalt only at small scale, where the altitude actually shows.
 
 *Refuses:* Any green. Nothing chlorophyllous grows on the salar; the smallest tuft of cactus-green would betray the territory and turn it into a generic desert.
 
-### I·04 — 37° N · November · 05:40 · MV passing Kea, en route Piraeus
+### I·04: 37° N · November · 05:40 · MV passing Kea, en route Piraeus
 
 The fluorescent-lit passenger lounge of an off-season ferry, an hour before docking
 
@@ -128,19 +128,19 @@ The fluorescent-lit passenger lounge of an off-season ferry, an hour before dock
 
 **Color groups**
 
-- **Dominant · 55%** — Aegean grey-green; the colour you spend the night staring at through the window.
-- **Supporting · 35%** — Weathered fibreglass, horizon grey, faded indigo — the ship's own muted vocabulary.
-- **Accent · 10%** — Diesel and fluorescent only as flicker; introduce them anywhere larger and the palette stops being honest.
+- **Dominant · 55%**: Aegean grey-green; the colour you spend the night staring at through the window.
+- **Supporting · 35%**: Weathered fibreglass, horizon grey, faded indigo, the ship's own muted vocabulary.
+- **Accent · 10%**: Diesel and fluorescent only as flicker; introduce them anywhere larger and the palette stops being honest.
 
-*Refuses:* Cycladic cerulean and bleach-bone white. That palette is high summer at Oia; this is November at five a.m. on a working route — the same archipelago, an unrelated colour world.
+*Refuses:* Cycladic cerulean and bleach-bone white. That palette is high summer at Oia; this is November at five a.m. on a working route, the same archipelago, an unrelated colour world.
 
 ---
 
-## Vol II — Tokyo · Lisbon · Iceland · Kerala
+## Vol II: Tokyo · Lisbon · Iceland · Kerala
 
 *Four more territories, further from the postcard.*
 
-### II·01 — 35° N · February · 23:48 · Yamanote line, last loop, between Shinjuku and Ikebukuro
+### II·01: 35° N · February · 23:48 · Yamanote line, last loop, between Shinjuku and Ikebukuro
 
 The last train of the night, fluorescent-lit, with the overcoat-thick warmth of a hundred salarymen leaning on the windows
 
@@ -165,13 +165,13 @@ The last train of the night, fluorescent-lit, with the overcoat-thick warmth of 
 
 **Color groups**
 
-- **Dominant · 55%** — Saloon white reads from every flat surface inside the car.
-- **Supporting · 35%** — Platform cream, salaryman navy, moquette plum — the resting surfaces of the system.
-- **Accent · 10%** — Neon-pink and faded red only as small punctuation through windows.
+- **Dominant · 55%**: Saloon white reads from every flat surface inside the car.
+- **Supporting · 35%**: Platform cream, salaryman navy, moquette plum, the resting surfaces of the system.
+- **Accent · 10%**: Neon-pink and faded red only as small punctuation through windows.
 
 *Refuses:* Cherry-blossom pink. Sakura belongs to a Hanami picnic in April; using it in a Tokyo palette without naming the hour collapses the city into a tourism poster.
 
-### II·02 — 38° N · May · 11:20 · Tram 28 ascending to Largo da Graça
+### II·02: 38° N · May · 11:20 · Tram 28 ascending to Largo da Graça
 
 The narrow climb past the cathedral, where the calçada is half limestone, half basalt, and the tram livery has fifty years of sun on it
 
@@ -196,13 +196,13 @@ The narrow climb past the cathedral, where the calçada is half limestone, half 
 
 **Color groups**
 
-- **Dominant · 50%** — Limestone calçada carries every street and square the tram passes.
-- **Supporting · 40%** — Basalt seam, faded pink, cork — the working materials of the city, not its tourist signage.
-- **Accent · 10%** — Azulejo blue and tram yellow only where they actually exist: on tile and on livery.
+- **Dominant · 50%**: Limestone calçada carries every street and square the tram passes.
+- **Supporting · 40%**: Basalt seam, faded pink, cork, the working materials of the city, not its tourist signage.
+- **Accent · 10%**: Azulejo blue and tram yellow only where they actually exist: on tile and on livery.
 
 *Refuses:* Azulejo cobalt as primary. Lisbon as "the blue city" is a postcard premise; the Atlantic light here is cooler and the dominant surface is stone, not tile.
 
-### II·03 — 63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland
+### II·03: 63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland
 
 The black-sand beach below the basalt cliff, with the glacial-melt river-mouth still running silt-blue twenty metres offshore
 
@@ -227,13 +227,13 @@ The black-sand beach below the basalt cliff, with the glacial-melt river-mouth s
 
 **Color groups**
 
-- **Dominant · 55%** — Basalt sand — the territory's only honest "neutral."
-- **Supporting · 35%** — Wool cream, glacial silt, tussock grass — the materials that keep the palette from going to charcoal.
-- **Accent · 10%** — Late-summer lupine and wet basalt, in small reads only.
+- **Dominant · 55%**: Basalt sand, the territory's only honest "neutral."
+- **Supporting · 35%**: Wool cream, glacial silt, tussock grass, the materials that keep the palette from going to charcoal.
+- **Accent · 10%**: Late-summer lupine and wet basalt, in small reads only.
 
-*Refuses:* Aurora green. The northern lights are a winter image and a tourist-board cliché — this is August midday at 63° N, when the sky is overcast and the sun never sets enough to see them.
+*Refuses:* Aurora green. The northern lights are a winter image and a tourist-board cliché, this is August midday at 63° N, when the sky is overcast and the sun never sets enough to see them.
 
-### II·04 — 10° N · August · 16:00 · Fort Kochi, the hour between two squalls
+### II·04: 10° N · August · 16:00 · Fort Kochi, the hour between two squalls
 
 Wet laterite walls and Portuguese-import indigo trim, the banyan still dripping, the brass of the temple lamp polished by rain
 
@@ -258,19 +258,19 @@ Wet laterite walls and Portuguese-import indigo trim, the banyan still dripping,
 
 **Color groups**
 
-- **Dominant · 55%** — Laterite red is the colour of every wall and roof tile; it carries the territory.
-- **Supporting · 35%** — Wet banyan, rain-light, coir — the working textures of the port.
-- **Accent · 10%** — Indigo and brass only where colonial trade or temple use put them.
+- **Dominant · 55%**: Laterite red is the colour of every wall and roof tile; it carries the territory.
+- **Supporting · 35%**: Wet banyan, rain-light, coir, the working textures of the port.
+- **Accent · 10%**: Indigo and brass only where colonial trade or temple use put them.
 
-*Refuses:* Tropical-postcard turquoise. The Arabian Sea in monsoon is the colour of slate — using lagoon-blue here misfiles Kerala as the Maldives.
+*Refuses:* Tropical-postcard turquoise. The Arabian Sea in monsoon is the colour of slate, using lagoon-blue here misfiles Kerala as the Maldives.
 
 ---
 
-## Vol III — Faroes · Mongolia · Vienna · New Mexico
+## Vol III: Faroes · Mongolia · Vienna · New Mexico
 
 *Four more interiors, mostly at night or under weather.*
 
-### III·01 — 62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog
+### III·01: 62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog
 
 A Faroese harbour at half-visibility, where the painted-house pigments are the only saturated colours in fifty metres
 
@@ -295,13 +295,13 @@ A Faroese harbour at half-visibility, where the painted-house pigments are the o
 
 **Color groups**
 
-- **Dominant · 60%** — Fog grey reads from sky, sea, and stone all at once.
-- **Supporting · 30%** — Tarred wood, wool, peat — the structural and material darks.
-- **Accent · 10%** — Ochre and oxblood — the painted houses are the entire colour event.
+- **Dominant · 60%**: Fog grey reads from sky, sea, and stone all at once.
+- **Supporting · 30%**: Tarred wood, wool, peat, the structural and material darks.
+- **Accent · 10%**: Ochre and oxblood, the painted houses are the entire colour event.
 
 *Refuses:* Any clean blue. Faroese sea-fog has almost no blue in it; introducing one would lie about the visibility and about what the Atlantic actually does to colour up here.
 
-### III·02 — 47° N · October · 05:55 · Ger camp at Övörkhangai, the moment before sunrise
+### III·02: 47° N · October · 05:55 · Ger camp at Övörkhangai, the moment before sunrise
 
 Inside the felt, with the dung-fire still burning and the door-flap open to the cold blue civil-twilight
 
@@ -326,13 +326,13 @@ Inside the felt, with the dung-fire still burning and the door-flap open to the 
 
 **Color groups**
 
-- **Dominant · 60%** — Felt is the territory; every other reading is read against it.
-- **Supporting · 30%** — Steppe dust, horsehair, dawn blue — the working textures of the camp.
-- **Accent · 10%** — Hearth-fire and khadag blue, in tiny quantities.
+- **Dominant · 60%**: Felt is the territory; every other reading is read against it.
+- **Supporting · 30%**: Steppe dust, horsehair, dawn blue, the working textures of the camp.
+- **Accent · 10%**: Hearth-fire and khadag blue, in tiny quantities.
 
-*Refuses:* Saturated grassland green. The "endless green steppe" image belongs to June; in October the steppe is straw, dust, and felt — using a green primary here puts you in the wrong month.
+*Refuses:* Saturated grassland green. The "endless green steppe" image belongs to June; in October the steppe is straw, dust, and felt, using a green primary here puts you in the wrong month.
 
-### III·03 — 48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf
+### III·03: 48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf
 
 The working café, not the imperial pageant: marble table, banquette leather, a century of tobacco on the plaster
 
@@ -357,13 +357,13 @@ The working café, not the imperial pageant: marble table, banquette leather, a 
 
 **Color groups**
 
-- **Dominant · 55%** — Tobacco-aged plaster — the literal atmosphere of the room.
-- **Supporting · 35%** — Marble, banquette green, oxidised brass — the furniture and fittings.
-- **Accent · 10%** — Gilt and wet cobble only as flicker.
+- **Dominant · 55%**: Tobacco-aged plaster, the literal atmosphere of the room.
+- **Supporting · 35%**: Marble, banquette green, oxidised brass, the furniture and fittings.
+- **Accent · 10%**: Gilt and wet cobble only as flicker.
 
 *Refuses:* Imperial red. Habsburg-pageant red turns a working café into a tourist set; this kaffeehaus is the one with the regulars and the chess clock, not the one with the souvenir mug.
 
-### III·04 — 36° N · February · 16:30 · The high-desert road between Taos and Chama
+### III·04: 36° N · February · 16:30 · The high-desert road between Taos and Chama
 
 Late winter on the high desert, with adobe still holding the day's heat and the snow on the north slope already gone blue
 
@@ -388,19 +388,19 @@ Late winter on the high desert, with adobe still holding the day's heat and the 
 
 **Color groups**
 
-- **Dominant · 55%** — Adobe carries the territory; every wall, every road shoulder.
-- **Supporting · 35%** — Sage, juniper bark, shaded-snow blue — the land's other constants.
-- **Accent · 10%** — Door-trim blue and alpenglow peach only where they actually appear.
+- **Dominant · 55%**: Adobe carries the territory; every wall, every road shoulder.
+- **Supporting · 35%**: Sage, juniper bark, shaded-snow blue, the land's other constants.
+- **Accent · 10%**: Door-trim blue and alpenglow peach only where they actually appear.
 
 *Refuses:* Tourist-shop "Southwestern turquoise" as primary. The stone is real; the palette is not. Anchoring on it makes the territory legible only via the souvenir.
 
 ---
 
-## Vol IV — Coastal & Maritime
+## Vol IV: Coastal & Maritime
 
 *Four shorelines, four hours of working light.*
 
-### IV·01 — 47° N · June · 10:00 · St. John's harbour, dense Atlantic fog
+### IV·01: 47° N · June · 10:00 · St. John's harbour, dense Atlantic fog
 
 A Newfoundland outport with the saltbox-red clapboard reading at twice its hue against the white
 
@@ -425,13 +425,13 @@ A Newfoundland outport with the saltbox-red clapboard reading at twice its hue a
 
 **Color groups**
 
-- **Dominant · 55%** — Fog cream sits on the boats, the houses, the water, the sky.
-- **Supporting · 35%** — Dory grey, harbour green, kelp brown — the working surfaces.
-- **Accent · 10%** — Saltbox red and lichen orange, the only saturated colours in the cove.
+- **Dominant · 55%**: Fog cream sits on the boats, the houses, the water, the sky.
+- **Supporting · 35%**: Dory grey, harbour green, kelp brown, the working surfaces.
+- **Accent · 10%**: Saltbox red and lichen orange, the only saturated colours in the cove.
 
 *Refuses:* Postcard cobalt. The North Atlantic in June fog is grey-green; the picture-book blue is a calendar shot, not the morning.
 
-### IV·02 — 19° N · December · 06:20 · Worli koliwada, Mumbai, just before sunrise
+### IV·02: 19° N · December · 06:20 · Worli koliwada, Mumbai, just before sunrise
 
 A working koli fishing village at dawn, the painted boats still on the slipway and the nets out drying
 
@@ -456,13 +456,13 @@ A working koli fishing village at dawn, the painted boats still on the slipway a
 
 **Color groups**
 
-- **Dominant · 55%** — Concrete jetty grey carries every surface above the waterline.
-- **Supporting · 35%** — Cobalt hulls, sari indigo, net green — the working colours of the koli.
-- **Accent · 10%** — Dawn-pink sky and dried-fish cream as brief flashes.
+- **Dominant · 55%**: Concrete jetty grey carries every surface above the waterline.
+- **Supporting · 35%**: Cobalt hulls, sari indigo, net green, the working colours of the koli.
+- **Accent · 10%**: Dawn-pink sky and dried-fish cream as brief flashes.
 
 *Refuses:* The glossy 'Incredible India' saturated yellow. This is the working koliwada, not the tourism campaign.
 
-### IV·03 — 48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide
+### IV·03: 48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide
 
 A Breton granite quay laid bare by the spring tide, with oyster baskets stacked against the slipway wall
 
@@ -487,13 +487,13 @@ A Breton granite quay laid bare by the spring tide, with oyster baskets stacked 
 
 **Color groups**
 
-- **Dominant · 60%** — Granite is the entire built fabric of the port.
-- **Supporting · 30%** — Fog white, oyster shell, slate roof — the materials around the granite.
-- **Accent · 10%** — Rockweed and creosote, only where the tide exposes them.
+- **Dominant · 60%**: Granite is the entire built fabric of the port.
+- **Supporting · 30%**: Fog white, oyster shell, slate roof, the materials around the granite.
+- **Accent · 10%**: Rockweed and creosote, only where the tide exposes them.
 
 *Refuses:* Atlantic-postcard turquoise. The English Channel is grey-green almost the whole year; the turquoise is a Mediterranean lie.
 
-### IV·04 — 42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season
+### IV·04: 42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season
 
 Two hundred metres of black volcanic shore, with kombu laid out on woven mats to sun-dry until noon
 
@@ -518,19 +518,19 @@ Two hundred metres of black volcanic shore, with kombu laid out on woven mats to
 
 **Color groups**
 
-- **Dominant · 55%** — Straw drying mats — the entire shore from above looks like cream.
-- **Supporting · 35%** — Two registers of kombu plus the cool Hokkaido sea.
-- **Accent · 10%** — Fisherman bib blue and volcanic sand only as small reads.
+- **Dominant · 55%**: Straw drying mats, the entire shore from above looks like cream.
+- **Supporting · 35%**: Two registers of kombu plus the cool Hokkaido sea.
+- **Accent · 10%**: Fisherman bib blue and volcanic sand only as small reads.
 
-*Refuses:* White-sand resort blue. The Hokkaido working coast is dark sand, cold water, and seaweed — the brochure beach is a different country, a different industry.
+*Refuses:* White-sand resort blue. The Hokkaido working coast is dark sand, cold water, and seaweed, the brochure beach is a different country, a different industry.
 
 ---
 
-## Vol V — Mountain & Altitude
+## Vol V: Mountain & Altitude
 
 *Four palettes from thinner air, three months from peak season.*
 
-### V·01 — 27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche
+### V·01: 27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche
 
 Inside the teahouse at last light, with the yak-dung stove lit and the kitchen run by lamp
 
@@ -555,13 +555,13 @@ Inside the teahouse at last light, with the yak-dung stove lit and the kitchen r
 
 **Color groups**
 
-- **Dominant · 55%** — Snow-glare white anchors the territory; nothing reads warmer than it.
-- **Supporting · 35%** — Smoke, stove iron, faded prayer-flag blue — the room you sit in.
-- **Accent · 10%** — Butter-lamp gold and rhododendron rust, in small reads only.
+- **Dominant · 55%**: Snow-glare white anchors the territory; nothing reads warmer than it.
+- **Supporting · 35%**: Smoke, stove iron, faded prayer-flag blue, the room you sit in.
+- **Accent · 10%**: Butter-lamp gold and rhododendron rust, in small reads only.
 
 *Refuses:* Saturated red as primary. Red is one of the five flag colours but anchoring on it produces a Tibet-by-tourist-poster palette; the teahouse is smoke and snow first.
 
-### V·02 — 13° S · June · 09:00 · Plaza de Armas, Cuzco, in dry-season winter
+### V·02: 13° S · June · 09:00 · Plaza de Armas, Cuzco, in dry-season winter
 
 The plaza at mid-morning, with the colonial ochre walls still cold and the Inca foundation stones already warming
 
@@ -586,13 +586,13 @@ The plaza at mid-morning, with the colonial ochre walls still cold and the Inca 
 
 **Color groups**
 
-- **Dominant · 50%** — Ochre plaster is the city's dominant facade colour.
-- **Supporting · 40%** — Inca stone, tile, eucalyptus — the working materials of Cuzco.
-- **Accent · 10%** — Andean red and highland sky only as small reads.
+- **Dominant · 50%**: Ochre plaster is the city's dominant facade colour.
+- **Supporting · 40%**: Inca stone, tile, eucalyptus, the working materials of Cuzco.
+- **Accent · 10%**: Andean red and highland sky only as small reads.
 
 *Refuses:* Tourist-rainbow Andean-textile stripe. The weaving tradition is real; using it at high frequency turns Cuzco into a souvenir poncho.
 
-### V·03 — 46° N · March · 15:00 · A refuge in the Italian Dolomites, last weekend before closure
+### V·03: 46° N · March · 15:00 · A refuge in the Italian Dolomites, last weekend before closure
 
 The end of the ski season, when the snow is sun-cupped and the larch on the slope below is still last autumn's russet
 
@@ -617,13 +617,13 @@ The end of the ski season, when the snow is sun-cupped and the larch on the slop
 
 **Color groups**
 
-- **Dominant · 55%** — Dolomia pink reads from the peaks above the refuge all afternoon.
-- **Supporting · 35%** — Refuge wood, blanket grey, mountain-shadow blue — the closed-up interior.
-- **Accent · 10%** — Larch russet and prosecco green, end-of-season punctuation.
+- **Dominant · 55%**: Dolomia pink reads from the peaks above the refuge all afternoon.
+- **Supporting · 35%**: Refuge wood, blanket grey, mountain-shadow blue, the closed-up interior.
+- **Accent · 10%**: Larch russet and prosecco green, end-of-season punctuation.
 
 *Refuses:* Apres-ski fluorescent. The on-piste neon belongs to the in-season weekend, not the day the lifts go off.
 
-### V·04 — 34° N · November · 17:00 · Lamayuru monastery, Ladakh, at dusk
+### V·04: 34° N · November · 17:00 · Lamayuru monastery, Ladakh, at dusk
 
 The cliff-side monastery as the lamps go on inside the prayer hall and the snow on the range above takes the last sun
 
@@ -648,19 +648,19 @@ The cliff-side monastery as the lamps go on inside the prayer hall and the snow 
 
 **Color groups**
 
-- **Dominant · 55%** — Adobe carries the territory at this hour; the warm dominant against the cold sky.
-- **Supporting · 35%** — Mani-wall white, juniper smoke, thangka cobalt — the cooler register.
-- **Accent · 10%** — Prayer-hall red and marigold gold, where the ritual leaves its mark.
+- **Dominant · 55%**: Adobe carries the territory at this hour; the warm dominant against the cold sky.
+- **Supporting · 35%**: Mani-wall white, juniper smoke, thangka cobalt, the cooler register.
+- **Accent · 10%**: Prayer-hall red and marigold gold, where the ritual leaves its mark.
 
 *Refuses:* Saffron monk-robe orange as primary. Saffron is the Western shorthand for Buddhism; the actual monastery wall is earth, not robe.
 
 ---
 
-## Vol VI — Cities at Night
+## Vol VI: Cities at Night
 
 *Four cities, after dark, off the tourist hour.*
 
-### VI·01 — 34° S · March · 22:00 · San Telmo, Buenos Aires, a Sunday after the antiques fair has closed
+### VI·01: 34° S · March · 22:00 · San Telmo, Buenos Aires, a Sunday after the antiques fair has closed
 
 Cobblestone wet from the fountain wash, the sodium streetlights on, the parrillas just opening
 
@@ -685,13 +685,13 @@ Cobblestone wet from the fountain wash, the sodium streetlights on, the parrilla
 
 **Color groups**
 
-- **Dominant · 50%** — Wet cobblestone is the entire ground plane after the fair closes.
-- **Supporting · 40%** — Dulce-de-leche, mate, sodium-asphalt sky — the surfaces around the cobble.
-- **Accent · 10%** — Streetlamp warmth and fileteado red, in small reads only.
+- **Dominant · 50%**: Wet cobblestone is the entire ground plane after the fair closes.
+- **Supporting · 40%**: Dulce-de-leche, mate, sodium-asphalt sky, the surfaces around the cobble.
+- **Accent · 10%**: Streetlamp warmth and fileteado red, in small reads only.
 
 *Refuses:* Tango black-and-red as primary. That palette is the dance hall and the brochure; this is the empty Sunday street outside it.
 
-### VI·02 — 41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in
+### VI·02: 41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in
 
 The Galata bridge in light rain, with the simit carts still out and the Bosphorus working under fluorescent
 
@@ -716,13 +716,13 @@ The Galata bridge in light rain, with the simit carts still out and the Bosphoru
 
 **Color groups**
 
-- **Dominant · 55%** — Bosphorus green-grey is the entire waterway and reflects up onto every wall.
-- **Supporting · 35%** — Mosque granite, fluorescent ferry, night sky — the surrounding fabric.
-- **Accent · 10%** — Simit gold and çay amber — the night's only warm punctuation.
+- **Dominant · 55%**: Bosphorus green-grey is the entire waterway and reflects up onto every wall.
+- **Supporting · 35%**: Mosque granite, fluorescent ferry, night sky, the surrounding fabric.
+- **Accent · 10%**: Simit gold and çay amber, the night's only warm punctuation.
 
 *Refuses:* Postcard turquoise of the Marmara. The Bosphorus at midnight is diesel grey-green, not the noon-tour-boat blue.
 
-### VI·03 — 21° N · May · 02:00 · Hanoi Old Quarter, the hour after the pho stalls close
+### VI·03: 21° N · May · 02:00 · Hanoi Old Quarter, the hour after the pho stalls close
 
 A single fluorescent strip in a shuttered shop, the ochre walls of the colonial block reading green under the light
 
@@ -747,13 +747,13 @@ A single fluorescent strip in a shuttered shop, the ochre walls of the colonial 
 
 **Color groups**
 
-- **Dominant · 55%** — French-colonial ochre is the city's wall; it carries the territory.
-- **Supporting · 35%** — Banyan, phở steam, motorbike lacquer — the working night materials.
-- **Accent · 10%** — Fluorescent cold and plastic-stool red — the night's only saturated reads.
+- **Dominant · 55%**: French-colonial ochre is the city's wall; it carries the territory.
+- **Supporting · 35%**: Banyan, phở steam, motorbike lacquer, the working night materials.
+- **Accent · 10%**: Fluorescent cold and plastic-stool red, the night's only saturated reads.
 
 *Refuses:* Lush travel-blog jungle green. Hanoi's Old Quarter is street and shutter, not jungle.
 
-### VI·04 — 41° N · October · 23:00 · Tbilisi viewed from the Mtatsminda funicular at the upper station
+### VI·04: 41° N · October · 23:00 · Tbilisi viewed from the Mtatsminda funicular at the upper station
 
 Soviet apartment blocks below, Old Town terracotta lit from beneath, the Mtkvari gorge already in shadow
 
@@ -778,19 +778,19 @@ Soviet apartment blocks below, Old Town terracotta lit from beneath, the Mtkvari
 
 **Color groups**
 
-- **Dominant · 60%** — Block grey carries the view; everything is read against it.
-- **Supporting · 30%** — Slate sky, gorge dark, sulfur-spring yellow — the surrounding fabric.
-- **Accent · 10%** — Old Town terracotta and balcony candlelight, in small bright reads.
+- **Dominant · 60%**: Block grey carries the view; everything is read against it.
+- **Supporting · 30%**: Slate sky, gorge dark, sulfur-spring yellow, the surrounding fabric.
+- **Accent · 10%**: Old Town terracotta and balcony candlelight, in small bright reads.
 
 *Refuses:* Cathedral-gold saturated highlight. Tbilisi at night is brick and concrete; the gold-leaf-on-blue palette is a different country's postcard.
 
 ---
 
-## Vol VII — Markets & Material Culture
+## Vol VII: Markets & Material Culture
 
 *Four markets, working hours, not the food-tour version.*
 
-### VII·01 — 16° N · March · 17:00 · Bogyoke Aung San Market, Yangon, last hour before closing
+### VII·01: 16° N · March · 17:00 · Bogyoke Aung San Market, Yangon, last hour before closing
 
 Longyi indigo on every vendor, lacquerware stacked, gold-leaf packets at the goldsmith counter, jade strung in baskets
 
@@ -815,13 +815,13 @@ Longyi indigo on every vendor, lacquerware stacked, gold-leaf packets at the gol
 
 **Color groups**
 
-- **Dominant · 50%** — Longyi indigo carries the market by sheer number of vendors.
-- **Supporting · 40%** — Thanakha, jade, lamp warm — the working palette around the indigo.
-- **Accent · 10%** — Lacquer oxblood and gold leaf where the craft stalls cluster.
+- **Dominant · 50%**: Longyi indigo carries the market by sheer number of vendors.
+- **Supporting · 40%**: Thanakha, jade, lamp warm, the working palette around the indigo.
+- **Accent · 10%**: Lacquer oxblood and gold leaf where the craft stalls cluster.
 
 *Refuses:* Pagoda gold as primary. Gold belongs to the temple; the market is indigo and lacquer first.
 
-### VII·02 — 41° N · April · 09:00 · La Boqueria, Barcelona, just past opening on a Tuesday
+### VII·02: 41° N · April · 09:00 · La Boqueria, Barcelona, just past opening on a Tuesday
 
 Full-bright fluorescent overhead, butchers up, the persimmon stand still being arranged
 
@@ -846,13 +846,13 @@ Full-bright fluorescent overhead, butchers up, the persimmon stand still being a
 
 **Color groups**
 
-- **Dominant · 50%** — Butcher's tile is the entire back wall of every counter.
-- **Supporting · 40%** — Paper cones, vendor aprons, fluorescent shed white — the working surfaces.
-- **Accent · 10%** — Cured Iberico and persimmon orange, in small intense reads.
+- **Dominant · 50%**: Butcher's tile is the entire back wall of every counter.
+- **Supporting · 40%**: Paper cones, vendor aprons, fluorescent shed white, the working surfaces.
+- **Accent · 10%**: Cured Iberico and persimmon orange, in small intense reads.
 
 *Refuses:* Mediterranean-postcard cobalt. La Boqueria is fluorescent-lit and tiled, not a Costa Brava shot.
 
-### VII·03 — 22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog
+### VII·03: 22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog
 
 Hmong textile and the working materials of the market: indigo, mountain mist, hanging maize, woven bamboo
 
@@ -877,13 +877,13 @@ Hmong textile and the working materials of the market: indigo, mountain mist, ha
 
 **Color groups**
 
-- **Dominant · 50%** — Hmong indigo carries the textile half of the market entirely.
-- **Supporting · 40%** — Mountain mist, batik wax cream, bamboo basket — the cooler register.
-- **Accent · 10%** — Rhododendron pink and dry-corn yellow, small bright threads.
+- **Dominant · 50%**: Hmong indigo carries the textile half of the market entirely.
+- **Supporting · 40%**: Mountain mist, batik wax cream, bamboo basket, the cooler register.
+- **Accent · 10%**: Rhododendron pink and dry-corn yellow, small bright threads.
 
 *Refuses:* Rainbow-stripe ethnic-textile collage. Hmong work is mostly indigo with small bright threads; collapsing it into rainbow is the souvenir trade, not the maker.
 
-### VII·04 — 41° N · April · 10:00 · Bolhão Market, Porto, Saturday opening hour
+### VII·04: 41° N · April · 10:00 · Bolhão Market, Porto, Saturday opening hour
 
 Counter wood and roof glass, copper pots strung above the kitchen stalls, broken azulejo backsplash behind the fishmonger
 
@@ -908,19 +908,19 @@ Counter wood and roof glass, copper pots strung above the kitchen stalls, broken
 
 **Color groups**
 
-- **Dominant · 55%** — Counter wood is every stall, every chopping board, the entire working surface.
-- **Supporting · 35%** — Roof glass-grey, cured cod, copper hardware — the materials around the wood.
-- **Accent · 10%** — Azulejo and lettering red, in chipped working amounts.
+- **Dominant · 55%**: Counter wood is every stall, every chopping board, the entire working surface.
+- **Supporting · 35%**: Roof glass-grey, cured cod, copper hardware, the materials around the wood.
+- **Accent · 10%**: Azulejo and lettering red, in chipped working amounts.
 
 *Refuses:* Pristine designer-restaurant azulejo. The market's tile is chipped and behind the counter; clean luxury-blue is the wrong register entirely.
 
 ---
 
-## Vol VIII — Rail & Transit
+## Vol VIII: Rail & Transit
 
 *Four trains, four hours not on the brochure.*
 
-### VIII·01 — 67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu
+### VIII·01: 67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu
 
 The sleeper carriage at the deepest hour, with the platform sodium briefly reading orange across the snow
 
@@ -945,13 +945,13 @@ The sleeper carriage at the deepest hour, with the platform sodium briefly readi
 
 **Color groups**
 
-- **Dominant · 55%** — Birch panelling is every compartment wall and ceiling.
-- **Supporting · 35%** — Curtain forest-green, aluminium, dining navy — the engineered surfaces.
-- **Accent · 10%** — Platform sodium and route-red, in tiny reads.
+- **Dominant · 55%**: Birch panelling is every compartment wall and ceiling.
+- **Supporting · 35%**: Curtain forest-green, aluminium, dining navy, the engineered surfaces.
+- **Accent · 10%**: Platform sodium and route-red, in tiny reads.
 
 *Refuses:* Aurora green as carriage colour. Keep the aurora to the window; let the carriage be Finnish modernism.
 
-### VIII·02 — 37° N · October · 22:00 · Athens–Crete overnight ferry, on the open deck above the couchette saloon
+### VIII·02: 37° N · October · 22:00 · Athens–Crete overnight ferry, on the open deck above the couchette saloon
 
 Couchette tan vinyl below, fluorescent in the saloon, the life-ring still bright against the rust hull at the waterline
 
@@ -976,13 +976,13 @@ Couchette tan vinyl below, fluorescent in the saloon, the life-ring still bright
 
 **Color groups**
 
-- **Dominant · 50%** — Vinyl couchette tan is every seat, headrest, and bulkhead below decks.
-- **Supporting · 40%** — Ouzo cloudy, deckhand navy, saloon fluorescent — the working surroundings.
-- **Accent · 10%** — Life-ring orange and hull rust, by regulation and weather.
+- **Dominant · 50%**: Vinyl couchette tan is every seat, headrest, and bulkhead below decks.
+- **Supporting · 40%**: Ouzo cloudy, deckhand navy, saloon fluorescent, the working surroundings.
+- **Accent · 10%**: Life-ring orange and hull rust, by regulation and weather.
 
 *Refuses:* Cycladic white-and-blue. That palette is for the deck-chair brochure; this is the below-decks passage, not the daytime postcard.
 
-### VIII·03 — 31° S · September · 14:00 · The Indian Pacific between Cook and Adelaide, mid-Nullarbor
+### VIII·03: 31° S · September · 14:00 · The Indian Pacific between Cook and Adelaide, mid-Nullarbor
 
 Carriage cream against red soil to the horizon, with the saltbush only ever appearing in the middle distance
 
@@ -1007,13 +1007,13 @@ Carriage cream against red soil to the horizon, with the saltbush only ever appe
 
 **Color groups**
 
-- **Dominant · 55%** — Carriage cream — the interior carries the dominant for everyone reading or sleeping.
-- **Supporting · 35%** — Pale sky, saltbush, tablecloth — the cooler surrounds.
-- **Accent · 10%** — Nullarbor red and gibber rust — outside the window, in pulses.
+- **Dominant · 55%**: Carriage cream, the interior carries the dominant for everyone reading or sleeping.
+- **Supporting · 35%**: Pale sky, saltbush, tablecloth, the cooler surrounds.
+- **Accent · 10%**: Nullarbor red and gibber rust, outside the window, in pulses.
 
 *Refuses:* Tropical-Australia turquoise. The Nullarbor sees no sea; the only blue is the dry sky.
 
-### VIII·04 — 33° N · April · 10:30 · ONCF Al Boraq high-speed train, Tangier-bound from Casablanca
+### VIII·04: 33° N · April · 10:30 · ONCF Al Boraq high-speed train, Tangier-bound from Casablanca
 
 Modernist engineering palette against the sahel, with the Atlas snow still on the high horizon and almond orchards in late bloom
 
@@ -1038,19 +1038,19 @@ Modernist engineering palette against the sahel, with the Atlas snow still on th
 
 **Color groups**
 
-- **Dominant · 55%** — Train silver carries every interior surface and every reflection.
-- **Supporting · 35%** — Sahel ochre, Atlas snow, oxidised copper — the moving landscape.
-- **Accent · 10%** — Station tile and almond blossom — small saturated reads at platforms and orchards.
+- **Dominant · 55%**: Train silver carries every interior surface and every reflection.
+- **Supporting · 35%**: Sahel ochre, Atlas snow, oxidised copper, the moving landscape.
+- **Accent · 10%**: Station tile and almond blossom, small saturated reads at platforms and orchards.
 
 *Refuses:* Brochure-tourist saffron orange. Al Boraq is engineering modernism; the spice-quarter palette belongs to Vol I.
 
 ---
 
-## Vol IX — Sacred & Ritual Spaces
+## Vol IX: Sacred & Ritual Spaces
 
 *Four palettes from rooms made for ritual, at the hour the ritual happens.*
 
-### IX·01 — 37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight
+### IX·01: 37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight
 
 The moment the priest emerges with the candle and the congregation lights from him outward
 
@@ -1075,13 +1075,13 @@ The moment the priest emerges with the candle and the congregation lights from h
 
 **Color groups**
 
-- **Dominant · 55%** — Candle warm-white is the entire light source after midnight.
-- **Supporting · 35%** — Marble, incense smoke, monk's habit — the spatial container.
-- **Accent · 10%** — Gold-leaf icons and red eggs, the two saturated reads of the night.
+- **Dominant · 55%**: Candle warm-white is the entire light source after midnight.
+- **Supporting · 35%**: Marble, incense smoke, monk's habit, the spatial container.
+- **Accent · 10%**: Gold-leaf icons and red eggs, the two saturated reads of the night.
 
 *Refuses:* Saturated cathedral-blue. Orthodox interiors are warm; the cool blue is Catholic, not Aegean island night.
 
-### IX·02 — 34° N · May · 04:30 · The corridor of torii at Fushimi Inari before opening hour
+### IX·02: 34° N · May · 04:30 · The corridor of torii at Fushimi Inari before opening hour
 
 The first hour of the morning, when the lower paths are empty and the dew is still on the vermillion
 
@@ -1106,15 +1106,15 @@ The first hour of the morning, when the lower paths are empty and the dew is sti
 
 **Color groups**
 
-- **Dominant · 55%** — Vermillion is the territory; every other reading sits inside it.
-- **Supporting · 35%** — Cryptomeria bark, moss, stone fox grey — the forest around the gates.
-- **Accent · 10%** — Weathered torii and pre-dawn blue, in small reads only.
+- **Dominant · 55%**: Vermillion is the territory; every other reading sits inside it.
+- **Supporting · 35%**: Cryptomeria bark, moss, stone fox grey, the forest around the gates.
+- **Accent · 10%**: Weathered torii and pre-dawn blue, in small reads only.
 
 *Refuses:* Candy cherry-blossom pink. The torii is a specific mineral pigment; collapsing it into sakura pink misnames the chemistry.
 
-### IX·03 — 26° N · June · 18:30 · The shrine of Lal Shahbaz Qalandar, Sehwan, at the evening dhamaal
+### IX·03: 26° N · June · 18:30 · The shrine of Lal Shahbaz Qalandar, Sehwan, at the evening dhamaal
 
-Drum, marigold, mirror-mosaic, white shrouds — the moment the qawwali starts and the courtyard fills
+Drum, marigold, mirror-mosaic, white shrouds, the moment the qawwali starts and the courtyard fills
 
 **Core colors**
 
@@ -1137,13 +1137,13 @@ Drum, marigold, mirror-mosaic, white shrouds — the moment the qawwali starts a
 
 **Color groups**
 
-- **Dominant · 55%** — Shrine emerald reads from every wall and dome interior.
-- **Supporting · 35%** — Kafan white, mirror silver, drum-leather — the working ritual textures.
-- **Accent · 10%** — Marigold gold and red-dust sun, at threshold and horizon.
+- **Dominant · 55%**: Shrine emerald reads from every wall and dome interior.
+- **Supporting · 35%**: Kafan white, mirror silver, drum-leather, the working ritual textures.
+- **Accent · 10%**: Marigold gold and red-dust sun, at threshold and horizon.
 
 *Refuses:* Pastel orientalist lavender. The shrine is saturated, hot, and noisy; the soft mystical palette is an outsider's project.
 
-### IX·04 — 17° N · November · 22:00 · An Oaxacan village cemetery on the first night of Día de los Muertos
+### IX·04: 17° N · November · 22:00 · An Oaxacan village cemetery on the first night of Día de los Muertos
 
 Whitewashed tombs covered in marigold, candles lit, papel picado overhead, copal smoke heavy in the still air
 
@@ -1168,19 +1168,19 @@ Whitewashed tombs covered in marigold, candles lit, papel picado overhead, copal
 
 **Color groups**
 
-- **Dominant · 55%** — Tomb whitewash carries the entire cemetery surface.
-- **Supporting · 35%** — Marigold, copal smoke, fresh earth — the night's working materials.
-- **Accent · 10%** — Papel picado magenta and candle wax warm — saturated punctuation.
+- **Dominant · 55%**: Tomb whitewash carries the entire cemetery surface.
+- **Supporting · 35%**: Marigold, copal smoke, fresh earth, the night's working materials.
+- **Accent · 10%**: Papel picado magenta and candle wax warm, saturated punctuation.
 
 *Refuses:* Halloween black-and-orange. Día de los Muertos and Halloween share a date and nothing else; the accent here is magenta, not corner-store orange.
 
 ---
 
-## Vol X — Deserts & Arid Territories
+## Vol X: Deserts & Arid Territories
 
 *Four deserts, four very different reasons nothing grows.*
 
-### X·01 — 20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border
+### X·01: 20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border
 
 Sand dunes the size of small mountains, with the east face already pink and the west face still in shadow
 
@@ -1205,13 +1205,13 @@ Sand dunes the size of small mountains, with the east face already pink and the 
 
 **Color groups**
 
-- **Dominant · 55%** — Sunrise dune pink — the entire visible east face at this hour.
-- **Supporting · 35%** — Salt crust, thin sky, camel hair — the wider pale envelope.
-- **Accent · 10%** — Shadow violet and black tent — the only dark reads in the territory.
+- **Dominant · 55%**: Sunrise dune pink, the entire visible east face at this hour.
+- **Supporting · 35%**: Salt crust, thin sky, camel hair, the wider pale envelope.
+- **Accent · 10%**: Shadow violet and black tent, the only dark reads in the territory.
 
 *Refuses:* Oil-rich-Gulf gold-and-glass. The desert at dawn refuses the corporate gold of the cities behind it.
 
-### X·02 — 30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon
+### X·02: 30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon
 
 Sandstone red the size of cathedrals and basalt scree at the base, with the air visibly layered by haze
 
@@ -1236,13 +1236,13 @@ Sandstone red the size of cathedrals and basalt scree at the base, with the air 
 
 **Color groups**
 
-- **Dominant · 60%** — Nubian sandstone is the entire vertical of the territory.
-- **Supporting · 30%** — Wadi-floor sand, distant haze, saddle leather — the horizontal and the worked.
-- **Accent · 10%** — Basalt scree and tea, in small reads at base and camp.
+- **Dominant · 60%**: Nubian sandstone is the entire vertical of the territory.
+- **Supporting · 30%**: Wadi-floor sand, distant haze, saddle leather, the horizontal and the worked.
+- **Accent · 10%**: Basalt scree and tea, in small reads at base and camp.
 
 *Refuses:* Petra-rose monochrome. Petra is a specific sandstone two hundred kilometres north; Wadi Rum is harder, redder, and has black basalt.
 
-### X·03 — 20° S · July · 10:00 · The Skeleton Coast in dense Atlantic fog, near Cape Cross
+### X·03: 20° S · July · 10:00 · The Skeleton Coast in dense Atlantic fog, near Cape Cross
 
 Where the fog comes off the cold current and the only colour for kilometres is rust on a wrecked hull
 
@@ -1267,13 +1267,13 @@ Where the fog comes off the cold current and the only colour for kilometres is r
 
 **Color groups**
 
-- **Dominant · 55%** — Fog-into-dune ochre carries the entire visible inland.
-- **Supporting · 35%** — Oryx grey, seal-bone, Atlantic cold green — the working surrounds.
-- **Accent · 10%** — Lichen rust and oxidised steel only where the wrecks are.
+- **Dominant · 55%**: Fog-into-dune ochre carries the entire visible inland.
+- **Supporting · 35%**: Oryx grey, seal-bone, Atlantic cold green, the working surrounds.
+- **Accent · 10%**: Lichen rust and oxidised steel only where the wrecks are.
 
-*Refuses:* African safari-poster orange. The Skeleton Coast is the un-safari — cold, fogged, lethal, grey.
+*Refuses:* African safari-poster orange. The Skeleton Coast is the un-safari, cold, fogged, lethal, grey.
 
-### X·04 — 41° N · July · 20:30 · The Great Salt Lake at sunset, near Antelope Island causeway
+### X·04: 41° N · July · 20:30 · The Great Salt Lake at sunset, near Antelope Island causeway
 
 Hypersaline pink water against mineral-white salt and the Wasatch silhouette behind
 
@@ -1298,19 +1298,19 @@ Hypersaline pink water against mineral-white salt and the Wasatch silhouette beh
 
 **Color groups**
 
-- **Dominant · 55%** — Salt crust is the dominant mineral surface of the foreshore.
-- **Supporting · 35%** — Gull white, sage hillside, Wasatch silhouette — the surrounding fabric.
-- **Accent · 10%** — Algae pink and sunset orange — the two warm reads of the hour.
+- **Dominant · 55%**: Salt crust is the dominant mineral surface of the foreshore.
+- **Supporting · 35%**: Gull white, sage hillside, Wasatch silhouette, the surrounding fabric.
+- **Accent · 10%**: Algae pink and sunset orange, the two warm reads of the hour.
 
 *Refuses:* Turquoise-lagoon palette. The lake is hypersaline and pink, not Caribbean blue.
 
 ---
 
-## Vol XI — Forests & Wilderness
+## Vol XI: Forests & Wilderness
 
 *Four forests, no fairy tales, just the ground cover and the canopy.*
 
-### XI·01 — 57° N · September · 14:00 · Tongass National Forest, old-growth Sitka spruce in steady rain
+### XI·01: 57° N · September · 14:00 · Tongass National Forest, old-growth Sitka spruce in steady rain
 
 Under the canopy in autumn rain, with the salmon stream just visible through the moss and the bark soaked black
 
@@ -1335,13 +1335,13 @@ Under the canopy in autumn rain, with the salmon stream just visible through the
 
 **Color groups**
 
-- **Dominant · 55%** — Canopy gloom — the dominant ambient most of the year.
-- **Supporting · 35%** — Wet bark, sphagnum, glacier creek — the actual textures under foot and hand.
-- **Accent · 10%** — Salmonberry and salmon flesh, the only saturated reds of the forest.
+- **Dominant · 55%**: Canopy gloom, the dominant ambient most of the year.
+- **Supporting · 35%**: Wet bark, sphagnum, glacier creek, the actual textures under foot and hand.
+- **Accent · 10%**: Salmonberry and salmon flesh, the only saturated reds of the forest.
 
 *Refuses:* Bright travel-magazine glacier-teal. The Tongass is a temperate rainforest, not a glacier-pool calendar shot.
 
-### XI·02 — 48° N · November · 11:30 · The Schwarzwald between St. Märgen and Hinterzarten, low cloud through the spruce
+### XI·02: 48° N · November · 11:30 · The Schwarzwald between St. Märgen and Hinterzarten, low cloud through the spruce
 
 Beech leaves down on the path, spruce canopy dark above, the cottage half-timber across the small stream
 
@@ -1366,13 +1366,13 @@ Beech leaves down on the path, spruce canopy dark above, the cottage half-timber
 
 **Color groups**
 
-- **Dominant · 55%** — Spruce canopy is the whole vertical of the territory.
-- **Supporting · 35%** — Cottage wood, stream water, mist — the working surrounds.
-- **Accent · 10%** — Beech leaf and chanterelle, on the ground only.
+- **Dominant · 55%**: Spruce canopy is the whole vertical of the territory.
+- **Supporting · 35%**: Cottage wood, stream water, mist, the working surrounds.
+- **Accent · 10%**: Beech leaf and chanterelle, on the ground only.
 
 *Refuses:* Grimm-fairy-tale red. The forest is not Disney; it is wet, dark, fungal, and largely without strong colour.
 
-### XI·03 — 30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat
+### XI·03: 30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat
 
 Cypress knees, Spanish moss, swamp water tannin-black, the egret white standing impossibly bright against the lot
 
@@ -1397,13 +1397,13 @@ Cypress knees, Spanish moss, swamp water tannin-black, the egret white standing 
 
 **Color groups**
 
-- **Dominant · 50%** — Cypress-knee grey across the entire water surface.
-- **Supporting · 40%** — Spanish moss, mud-brown, dawn pink — the working surrounds.
-- **Accent · 10%** — Tannin water and egret white — the two extremes of contrast.
+- **Dominant · 50%**: Cypress-knee grey across the entire water surface.
+- **Supporting · 40%**: Spanish moss, mud-brown, dawn pink, the working surrounds.
+- **Accent · 10%**: Tannin water and egret white, the two extremes of contrast.
 
 *Refuses:* Neon-bayou tourism magenta. The slough is grey, brown, and silver with bird-white; everything else is Bourbon Street, not the basin.
 
-### XI·04 — 55° N · July · 13:00 · Lowland Kamchatkan taiga in heavy mosquito season, near the Avacha river
+### XI·04: 55° N · July · 13:00 · Lowland Kamchatkan taiga in heavy mosquito season, near the Avacha river
 
 Birch leaf and fireweed in full summer, the volcanic peaks visible only as silhouettes through overcast
 
@@ -1428,19 +1428,19 @@ Birch leaf and fireweed in full summer, the volcanic peaks visible only as silho
 
 **Color groups**
 
-- **Dominant · 55%** — Birch-leaf summer green carries the territory.
-- **Supporting · 35%** — Overcast cloud, bear-fern, salmon stream — the surrounds.
-- **Accent · 10%** — Fireweed pink and volcanic ash, in small reads only.
+- **Dominant · 55%**: Birch-leaf summer green carries the territory.
+- **Supporting · 35%**: Overcast cloud, bear-fern, salmon stream, the surrounds.
+- **Accent · 10%**: Fireweed pink and volcanic ash, in small reads only.
 
 *Refuses:* Marketed Kamchatka glacier-teal. The lowland taiga in July is green and grey; the volcanic-peak teal palette belongs to the helicopter brochure.
 
 ---
 
-## Vol XII — Off-Season & Weather
+## Vol XII: Off-Season & Weather
 
 *Four palettes from the wrong week to be there.*
 
-### XII·01 — 31° N · June · 15:00 · Yixing teapot district during the plum-rain season
+### XII·01: 31° N · June · 15:00 · Yixing teapot district during the plum-rain season
 
 The hour the rain pauses, and the bamboo grove behind the kiln is steaming
 
@@ -1465,13 +1465,13 @@ The hour the rain pauses, and the bamboo grove behind the kiln is steaming
 
 **Color groups**
 
-- **Dominant · 55%** — Plum-rain sky carries everything; even the workshops read through it.
-- **Supporting · 35%** — Wet stone, bamboo, river haze — the rain-soaked surrounds.
-- **Accent · 10%** — Zisha red and kiln-fired rim, in small fired reads only.
+- **Dominant · 55%**: Plum-rain sky carries everything; even the workshops read through it.
+- **Supporting · 35%**: Wet stone, bamboo, river haze, the rain-soaked surrounds.
+- **Accent · 10%**: Zisha red and kiln-fired rim, in small fired reads only.
 
 *Refuses:* Cherry-blossom pink. The plum-rain regions of southern China use deep tea-bowl reds and bamboo greens; pink is the wrong season and the wrong nation.
 
-### XII·02 — 57° N · January · 12:00 · Jūrmala beachfront, Latvia, snow on the pier and ice on the Gulf
+### XII·02: 57° N · January · 12:00 · Jūrmala beachfront, Latvia, snow on the pier and ice on the Gulf
 
 The Baltic at the deepest cold of the year, with the dacha shutters mint-green against the snow and the kvass cart still out
 
@@ -1496,13 +1496,13 @@ The Baltic at the deepest cold of the year, with the dacha shutters mint-green a
 
 **Color groups**
 
-- **Dominant · 55%** — Snow on pine carries the boardwalk and the dacha gardens.
-- **Supporting · 35%** — Baltic grey, sauna birch, dacha mint-green — the working surrounds.
-- **Accent · 10%** — Kvass amber and lantern yellow — the only saturated reads in the territory.
+- **Dominant · 55%**: Snow on pine carries the boardwalk and the dacha gardens.
+- **Supporting · 35%**: Baltic grey, sauna birch, dacha mint-green, the working surrounds.
+- **Accent · 10%**: Kvass amber and lantern yellow, the only saturated reads in the territory.
 
 *Refuses:* Baltic-summer-postcard blue-and-yellow. Jūrmala in January is grey, mint, and birch; the saturated summer palette is six months away.
 
-### XII·03 — 26° N · September · 14:30 · Okinawa coast under a category-2 typhoon, mid-afternoon
+### XII·03: 26° N · September · 14:30 · Okinawa coast under a category-2 typhoon, mid-afternoon
 
 The hour the eye-wall is two hundred kilometres out and the shutters are nailed, with the banyan whipping flat
 
@@ -1527,13 +1527,13 @@ The hour the eye-wall is two hundred kilometres out and the shutters are nailed,
 
 **Color groups**
 
-- **Dominant · 60%** — Typhoon cloud carries every visible square metre of sky.
-- **Supporting · 30%** — Wet asphalt, banyan dark, sugarcane field — the wind-blown surrounds.
-- **Accent · 10%** — Ryukyuan tile-red and plumeria pale — the only warm reads in the storm.
+- **Dominant · 60%**: Typhoon cloud carries every visible square metre of sky.
+- **Supporting · 30%**: Wet asphalt, banyan dark, sugarcane field, the wind-blown surrounds.
+- **Accent · 10%**: Ryukyuan tile-red and plumeria pale, the only warm reads in the storm.
 
 *Refuses:* Tropical-resort turquoise. Okinawa in a typhoon is grey-green and dangerous; the brochure blue is on hold.
 
-### XII·04 — 38° N · July · 11:00 · Point Reyes peninsula, California, the marine layer locked in for the third week
+### XII·04: 38° N · July · 11:00 · Point Reyes peninsula, California, the marine layer locked in for the third week
 
 Coastal fog all the way to Tomales Bay, with the cypress wind-shaped and the abalone shell glinting at the wrack line
 
@@ -1558,9 +1558,9 @@ Coastal fog all the way to Tomales Bay, with the cypress wind-shaped and the aba
 
 **Color groups**
 
-- **Dominant · 60%** — Coastal fog is the dominant for the entire month of July.
-- **Supporting · 30%** — Beach grass, weather-grey cypress, sandstone bluff — the surrounds in fog.
-- **Accent · 10%** — Abalone shell and kelp wrack — the only reads with any saturation.
+- **Dominant · 60%**: Coastal fog is the dominant for the entire month of July.
+- **Supporting · 30%**: Beach grass, weather-grey cypress, sandstone bluff, the surrounds in fog.
+- **Accent · 10%**: Abalone shell and kelp wrack, the only reads with any saturation.
 
 *Refuses:* California-poster sunshine. Point Reyes in July is the fog that ate San Francisco; the brand-California yellow is two hundred miles south.
 

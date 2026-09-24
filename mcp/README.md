@@ -1,11 +1,11 @@
 # Brand-Kit MCP
 
 A **zero-dependency** [MCP](https://modelcontextprotocol.io/) server that serves an **Ultimate Tokens**
-brand kit (your generated design tokens) to AI agents — **Claude Code / Claude Design, Cursor,
+brand kit (your generated design tokens) to AI agents, **Claude Code / Claude Design, Cursor,
 VS Code, ChatGPT**, anything that speaks MCP. The agent then builds with your brand's *exact* tokens
 instead of guessing.
 
-The kit can carry up to **three token systems** — **Color**, **Typography**, and **Geometry** — and you
+The kit can carry up to **three token systems**, **Color**, **Typography**, and **Geometry**, and you
 choose which to include when you download it (the export drawer's *Include* toggles). The server's
 surface reflects what's present: the colour tools/resources appear only with palettes, `get_type` /
 `brand://type` only when typography is included, `get_geometry` / `brand://geometry` only when geometry is.
@@ -15,9 +15,9 @@ surface reflects what's present: the colour tools/resources appear only with pal
 
 ## Files
 
-- `brand-kit-server.mjs` — the stdio entry. Pure Node, **no `npm install`**.
-- `brand-kit-core.mjs` — the transport-agnostic MCP surface the server imports (keep it beside the server).
-- `brand-kit.json` — your resolved tokens (produced by `brandKit(doc, systems)` — the opted-in palettes +
+- `brand-kit-server.mjs`: the stdio entry. Pure Node, **no `npm install`**.
+- `brand-kit-core.mjs`: the transport-agnostic MCP surface the server imports (keep it beside the server).
+- `brand-kit.json`: your resolved tokens (produced by `brandKit(doc, systems)`, the opted-in palettes +
   53 semantic roles (light + dark), the typography scale, and/or the geometry scale). The server reads
   this sibling file.
 
@@ -44,7 +44,7 @@ claude mcp add brand-kit -- node /abs/path/to/brand-kit-server.mjs
 
 ## What it exposes
 
-**Resources** — `brand://kit` (full), `brand://guide`, plus (per included system) `brand://palettes` ·
+**Resources**, `brand://kit` (full), `brand://guide`, plus (per included system) `brand://palettes` ·
 `brand://semantic/light` · `brand://semantic/dark` · `brand://palette/{slug}/prime` (one per palette)
 (Color), `brand://type` (Typography), `brand://geometry` (Geometry).
 
@@ -54,14 +54,14 @@ those systems are included)
 |---|---|
 | `list_palettes` | the palettes + their identity colour |
 | `get_ramp(palette)` | a palette's full tonal ramp (stop → hex) |
-| `get_prime(palette)` | a palette's seven prime identity swatches (brightest…dimmest, `{step, hex, oklch}`), in step order — mode-independent, same values in light and dark |
+| `get_prime(palette)` | a palette's seven prime identity swatches (brightest…dimmest, `{step, hex, oklch}`), in step order, mode-independent, same values in light and dark |
 | `resolve_token(palette, role, scheme)` | the hex for a semantic role in `light`/`dark` (role can be `"palette/role"`) |
 | `get_semantic(scheme)` | all 53 roles per palette resolved for a scheme |
 | `nearest_token(hex)` | the brand token closest to a hex (reuse the system, don't invent a colour) |
-| `get_type` | the typography scale — treatment, fonts, and the per-voice size ramp |
-| `get_geometry` | the geometry scale — the size ramp, the centering law, radius + spacing |
+| `get_type` | the typography scale, treatment, fonts, and the per-voice size ramp |
+| `get_geometry` | the geometry scale, the size ramp, the centering law, radius + spacing |
 
-**Prompt** — `apply_brand`: how to apply the kit (surfaces from `*/surface*`, accents from the prime
+**Prompt**, `apply_brand`: how to apply the kit (surfaces from `*/surface*`, accents from the prime
 roles, text from `*/on*`; the type voices; the geometry size ramp + centering law; never raw values).
 
 ## Protocol

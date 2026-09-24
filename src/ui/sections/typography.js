@@ -6,11 +6,11 @@ import { icon } from "../icons.js";
 import { GENERIC_FONTS, SELF_HOSTED_FONTS, TYPE_PARA, TYPE_SAMPLE, btn, ensureTypeFonts, ensureWebFonts, field, fmt, h } from "../app-helpers.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
-// methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
+// methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
 export class TypeSectionImpl {
 
   // ── Typography analysis (left rail, READ-ONLY) ────────────────────────────────────────
-  // The type analog of analysisCards(): cards computed from typeScale(doc.type). No inputs — pure
+  // The type analog of analysisCards(): cards computed from typeScale(doc.type). No inputs, pure
   // diagnostics of the resolved scale. `view` is accepted for dispatch parity but unused (typography
   // is doc-driven, not palette-view-driven). Reuses .an-card / .an-svg / legend().
   typeAnalysisCards(view) {
@@ -21,10 +21,10 @@ export class TypeSectionImpl {
       .map((c) => ({ cat: c, short: SHORT[c] || c, steps: Object.entries(scale.categories[c] || {}).map(([name, s]) => ({ name, ...s })) }))
       .filter((x) => x.steps.length);
     return [
-      card("Modular scale — size (px) per step", this.graphTypeScale(series)),
-      card("Optical tracking — letter-spacing vs size", this.graphTypeTracking(series)),
-      card("Leading — line-height ÷ size per step", this.graphTypeLeading(series)),
-      card("Font roles — family per voice", this.graphTypeRoles(scale)),
+      card("Modular scale, size (px) per step", this.graphTypeScale(series)),
+      card("Optical tracking, letter-spacing vs size", this.graphTypeTracking(series)),
+      card("Leading, line-height ÷ size per step", this.graphTypeLeading(series)),
+      card("Font roles, family per voice", this.graphTypeRoles(scale)),
     ];
   }
 
@@ -112,7 +112,7 @@ export class TypeSectionImpl {
   }
 
 
-  // font-role pairings — the 5 role→family assignments (no SVG; a small key, like the contrast bars).
+  // font-role pairings, the 5 role→family assignments (no SVG; a small key, like the contrast bars).
   graphTypeRoles(scale) {
     const ROLES = [["display", "Display"], ["heading", "Heading"], ["body", "Body"], ["ui", "UI"], ["mono", "Mono"]];
     return h(
@@ -130,10 +130,10 @@ export class TypeSectionImpl {
   setTypeSpecMode(v) { this.typeSpecMode = v; this.render(); }
 
 
-  // ── Typography breakpoint modes (Phase 5) — named bodyBase variants layered over doc.type. The ACTIVE
+  // ── Typography breakpoint modes (Phase 5), named bodyBase variants layered over doc.type. The ACTIVE
   // mode drives the canvas preview + the inspector; "base" is doc.type itself. (Per-mode Compare + export
   // are the follow-up slices.) Modes persist on doc.type.modes = [{ id, name, bodyBase }].
-  // _effTypeMode — the mode the ACTIVE resolvers paint in: a Compare column's _typeModeOverride wins (so its
+  // _effTypeMode, the mode the ACTIVE resolvers paint in: a Compare column's _typeModeOverride wins (so its
   // scene + scale build at THAT breakpoint while it renders, exactly like _schemeOverride), else this.typeMode.
   // "compare" is not a real mode id, so off-override it falls through _typeScaleFor's unknown-mode → base.
   _effTypeMode() { return this._typeModeOverride != null ? this._typeModeOverride : this.typeMode; }
@@ -143,7 +143,7 @@ export class TypeSectionImpl {
     const mode = this._effTypeMode();
     if (mode === "base") return t;
     const m = (t.modes || []).find((x) => x.id === mode);
-    // a factor mode (the Standard set) keeps the doc bodyBase — the compression lives in the scale, not here.
+    // a factor mode (the Standard set) keeps the doc bodyBase, the compression lives in the scale, not here.
     return m ? { ...t, bodyBase: m.bodyBase ?? t.bodyBase } : t; // a deleted/unknown mode (incl. "compare") falls back to base
   }
 
@@ -156,13 +156,13 @@ export class TypeSectionImpl {
   }
 
   // the Mode control in the Typography canvas header: the base layer + each breakpoint, plus "+" to add one.
-  // A NAMED base (doc.type.baseName, e.g. "Mobile" — the standard set) renders LAST: the canonical order is
+  // A NAMED base (doc.type.baseName, e.g. "Mobile", the standard set) renders LAST: the canonical order is
   // desktop-first (Desktop · Tablet · Mobile), matching the Figma mode-column order the emitters produce.
   typeModeControl() {
     const t = this.doc.type || DEFAULT_TYPE;
     const modes = this._typeEffectiveModes();
     const { baseName: bn, baseLast } = this._typeBaseOpts();
-    // reset an unknown/deleted mode to base — but "compare" (Phase 5.3) is a valid pseudo-mode, allow it.
+    // reset an unknown/deleted mode to base, but "compare" (Phase 5.3) is a valid pseudo-mode, allow it.
     if (this.typeMode !== "base" && this.typeMode !== "compare" && !modes.some((m) => m.id === this.typeMode)) this.typeMode = "base";
     const baseItem = { id: "base", label: bn, title: `${bn} type scale · ${t.bodyBase ?? DEFAULT_TYPE.bodyBase}px` };
     const modeItems = modes.map((m) => ({ id: m.id, label: m.name || "Mode", title: m.factor ? `${m.name || "Mode"} · display ×${Math.round(m.factor * 100)}% (body frozen)` : `${m.name || "Mode"} · ${m.bodyBase}px body` }));
@@ -176,18 +176,18 @@ export class TypeSectionImpl {
       { class: "mode-control" },
       this.segmented(items, this.typeMode, (id) => { this.typeMode = id; this.render(); },
         { cls: "canvas-seg", ariaLabel: "Typography breakpoint mode", role: "group", idPrefix: "tmode" }),
-      btn(icon("plus"), { cls: "mode-add", ariaLabel: "Add a breakpoint mode", title: "Add a breakpoint — a named scale with its own body size", onclick: () => this.addTypeMode() }),
+      btn(icon("plus"), { cls: "mode-add", ariaLabel: "Add a breakpoint mode", title: "Add a breakpoint, a named scale with its own body size", onclick: () => this.addTypeMode() }),
     );
   }
 
-  // addStandardTypeModes — materialize the intrinsic standard set as editable doc modes (Kim's ratified
+  // addStandardTypeModes, materialize the intrinsic standard set as editable doc modes (Kim's ratified
   // desktop-anchored law, 2026-07-10): the designed scale IS Desktop (the base, first, Figma's default
-  // mode — baseName "Desktop"); Tablet (992) and Mobile (≤476, marker minWidth 476) derive DOWN via the
+  // mode, baseName "Desktop"); Tablet (992) and Mobile (≤476, marker minWidth 476) derive DOWN via the
   // hierarchy-aware `factor` (body frozen, display ×5/6 / ×2/3). Same values the synthesized (no-modes)
-  // shape exports — committing just makes them matrix-editable. The split CSS export (typeTokensCSS for
+  // shape exports, committing just makes them matrix-editable. The split CSS export (typeTokensCSS for
   // the unconditional Desktop base + typeTokensBreakpointCSS per mode) reads these directly, no re-anchor.
   addStandardTypeModes() {
-    this.typeMode = "base"; // stay on Desktop (the designed scale — nothing about it changed)
+    this.typeMode = "base"; // stay on Desktop (the designed scale, nothing about it changed)
     this.commit((d) => {
       d.type = { ...(d.type || DEFAULT_TYPE), baseName: "Desktop" };
       const modes = d.type.modes ? [...d.type.modes] : [];
@@ -215,7 +215,7 @@ export class TypeSectionImpl {
       if (!d.type || !Array.isArray(d.type.modes)) return;
       d.type = { ...d.type, modes: d.type.modes.filter((m) => m.id !== id) };
       if (d.type.modes.length === 0) delete d.type.modes;
-      // strip this mode's per-cell overrides too — orphaned "...|<id>" keys would otherwise survive
+      // strip this mode's per-cell overrides too, orphaned "...|<id>" keys would otherwise survive
       // serialize→hydrate forever (a stale-override leak with no UI to reach them).
       if (d.type.tokenOverrides) {
         d.type = { ...d.type, tokenOverrides: { ...d.type.tokenOverrides } };
@@ -252,8 +252,8 @@ export class TypeSectionImpl {
     if (this.typeMode === "base") {
       const n = (t.modes || []).length;
       return h("p", { class: "insp-sub tyi-future" }, n
-        ? `${n} breakpoint mode${n > 1 ? "s" : ""} — switch them from the canvas header; each carries its own body size (per-mode export is coming).`
-        : "Add a breakpoint (the + in the canvas header) to give this scale a second body size for another screen — e.g. a smaller mobile body.");
+        ? `${n} breakpoint mode${n > 1 ? "s" : ""}, switch them from the canvas header; each carries its own body size (per-mode export is coming).`
+        : "Add a breakpoint (the + in the canvas header) to give this scale a second body size for another screen, e.g. a smaller mobile body.");
     }
     const m = (t.modes || []).find((x) => x.id === this.typeMode);
     if (!m) return false;
@@ -268,7 +268,7 @@ export class TypeSectionImpl {
           onchange: (e) => this.renameTypeMode(m.id, e.target.value.trim()) }),
         btn(icon("trash"), { ariaLabel: "Delete this breakpoint", title: "Delete this breakpoint mode", onclick: () => this.deleteTypeMode(m.id) }),
       ),
-      h("label", { class: "mode-editor-label", for: "fld-mode-mw" }, "Breakpoint width — @media min-width"),
+      h("label", { class: "mode-editor-label", for: "fld-mode-mw" }, "Breakpoint width, @media min-width"),
       h(
         "div",
         { class: "mode-editor-row" },
@@ -278,7 +278,7 @@ export class TypeSectionImpl {
       ),
       this._modeWidthPresets(m.minWidth, (w) => this.setTypeModeMinWidth(m.id, w)),
       h("p", { class: "insp-sub tyi-future" }, m.minWidth
-        ? `Exports as @media (min-width: ${m.minWidth}px) — the size vars re-declare at this body size above ${m.minWidth}px.`
+        ? `Exports as @media (min-width: ${m.minWidth}px), the size vars re-declare at this body size above ${m.minWidth}px.`
         : "Set a width to emit a CSS @media breakpoint in the export; blank = preview-only."),
     );
   }
@@ -297,7 +297,7 @@ export class TypeSectionImpl {
   }
 
 
-  // renderTypeCanvasHeader — the Typography section's own canvas header: pane toggles + the
+  // renderTypeCanvasHeader, the Typography section's own canvas header: pane toggles + the
   // Specimen·Tokens mode segment + the reused fit/scheme/zoom controls. It deliberately omits the
   // color-only Palettes/Scrims/Mapping/Radix + stops segments and the "+ Palette" button.
   renderTypeCanvasHeader() {
@@ -307,8 +307,8 @@ export class TypeSectionImpl {
       !this.panesLeft ? this.paneToggle("left") : false,
       this.typeMode === "compare" ? false : this.segmented(
         [
-          { id: "specimen", label: "Specimen", title: "Live faces — render each step in the real font" },
-          { id: "tokens", label: "Tokens", title: "Editable token matrix — every step × Base + each breakpoint" },
+          { id: "specimen", label: "Specimen", title: "Live faces, render each step in the real font" },
+          { id: "tokens", label: "Tokens", title: "Editable token matrix, every step × Base + each breakpoint" },
         ],
         this.typeSpecMode,
         (id) => this.setTypeSpecMode(id),
@@ -317,8 +317,8 @@ export class TypeSectionImpl {
       this.typeModeControl(),
       h("div", { class: "spacer" }),
       btn(icon("crosshair"), {
-        title: "Fit — reset the canvas view to centre at 100%",
-        ariaLabel: "Fit — reset the canvas view to centre at 100%",
+        title: "Fit, reset the canvas view to centre at 100%",
+        ariaLabel: "Fit, reset the canvas view to centre at 100%",
         onclick: () => { this.fit(); this.render(); },
       }),
       this.canvasThemeBtn(),
@@ -330,21 +330,21 @@ export class TypeSectionImpl {
   }
 
 
-  // renderTypeCanvas — the Typography center. Specimen mode renders the full live specimen in the same
+  // renderTypeCanvas, the Typography center. Specimen mode renders the full live specimen in the same
   // pannable/zoomable .canvas-area + .canvas-scene shell the color ramps use (wirePanZoom + applyTransform).
-  // Tokens mode renders an EDITABLE token MATRIX (Phase 3 — per-cell size/height overrides + ↺) (rows = steps, cols = Base + each breakpoint) in the
-  // scrolling .is-table shell instead — exactly how Color's Mapping view flips (see renderCanvasArea).
+  // Tokens mode renders an EDITABLE token MATRIX (Phase 3, per-cell size/height overrides + ↺) (rows = steps, cols = Base + each breakpoint) in the
+  // scrolling .is-table shell instead, exactly how Color's Mapping view flips (see renderCanvasArea).
   renderTypeCanvas(view) {
-    // Compare (Phase 5.3) — all breakpoints side by side. A Specimen/Controls view, so it wins over the tokens
+    // Compare (Phase 5.3), all breakpoints side by side. A Specimen/Controls view, so it wins over the tokens
     // table (mirrors how Color's "Both" wins over a non-table view in renderCanvasArea).
     if (this.typeMode === "compare") return this.renderTypeCompareArea(view);
-    if (this.typeSpecMode === "tokens") return this._tokensTableArea("Typography tokens — Base + breakpoints", this.renderTypeTokensTable());
+    if (this.typeSpecMode === "tokens") return this._tokensTableArea("Typography tokens, Base + breakpoints", this.renderTypeTokensTable());
     const area = h(
       "div",
       {
         class: "canvas-area type-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
         role: "group",
-        "aria-label": "Typography specimen — drag to pan, wheel to zoom, double-click to reset",
+        "aria-label": "Typography specimen, drag to pan, wheel to zoom, double-click to reset",
       },
       h("div", { class: "canvas-scene" }, this.renderTypographyScene(view)),
     );
@@ -354,7 +354,7 @@ export class TypeSectionImpl {
   }
 
 
-  // renderTypeCompareArea — the Typography "Compare" mode: the specimen rendered at Base AND each breakpoint
+  // renderTypeCompareArea, the Typography "Compare" mode: the specimen rendered at Base AND each breakpoint
   // mode, side by side, inside ONE pannable .canvas-scene (so pan/zoom/fit move all columns together).
   // Mirrors Color's renderCompareArea; each column forces its breakpoint via _typeModeOverride while it builds.
   renderTypeCompareArea(view) {
@@ -362,7 +362,7 @@ export class TypeSectionImpl {
     const area = h(
       "div",
       { class: "canvas-area canvas-compare type-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
-        role: "group", "aria-label": "Compare — every typography breakpoint side by side · drag to pan, wheel to zoom" },
+        role: "group", "aria-label": "Compare, every typography breakpoint side by side · drag to pan, wheel to zoom" },
       h("div", { class: "canvas-scene compare" },
         this._typeCompareColumn(view, "base", "Base"),
         ...modes.map((m) => this._typeCompareColumn(view, m.id, m.name || "Mode"))),
@@ -385,7 +385,7 @@ export class TypeSectionImpl {
   }
 
   // _typeOverridesFor / _typeEffectiveModes / _typeScaleFor / _typeModeScales / _modeTierNudge are now
-  // PURE `doc -> ...` functions lifted into model.mjs (A1, #456) — thin delegates here so the section's
+  // PURE `doc -> ...` functions lifted into model.mjs (A1, #456), thin delegates here so the section's
   // many call sites don't churn. See model.mjs for the implementations + rationale.
   _typeOverridesFor(modeKey) {
     return typeOverridesFor(this.doc, modeKey);
@@ -395,7 +395,7 @@ export class TypeSectionImpl {
     return typeEffectiveModes(this.doc);
   }
 
-  // _ensureTypeModesMaterialized(d, modeKey) — if d.type has no real modes yet AND modeKey is one of the
+  // _ensureTypeModesMaterialized(d, modeKey), if d.type has no real modes yet AND modeKey is one of the
   // Standard-set rungs, materialize BOTH rungs (same stable ids _typeEffectiveModes already previewed) so
   // a write against modeKey has a real entry to land in. Mutates d.type in place; call inside a
   // commit/editDrag closure BEFORE writing the actual per-mode value. A no-op for "base", a real custom
@@ -406,16 +406,16 @@ export class TypeSectionImpl {
     d.type.modes = STANDARD_TYPE_RUNGS.map((r) => ({ id: r.id, name: r.name, factor: r.factor, minWidth: r.w }));
   }
 
-  // _typeScaleFor(modeKey) — see model.mjs#typeScaleFor for the implementation + rationale.
+  // _typeScaleFor(modeKey), see model.mjs#typeScaleFor for the implementation + rationale.
   _typeScaleFor(modeKey) {
     return typeScaleFor(this.doc, modeKey);
   }
 
 
-  // setTypeTokenOverride / clearTypeTokenOverride — write/reset one per-cell SIZE override (one undo step;
+  // setTypeTokenOverride / clearTypeTokenOverride, write/reset one per-cell SIZE override (one undo step;
   // persisted). Mirrors setRoleOverride/clearRoleOverride. A non-positive/NaN size is ignored (use ↺ to reset).
   // A first edit against a not-yet-materialized Standard-set rung (std-tablet/std-mobile) materializes
-  // BOTH rungs in the SAME commit — one undo step, matching addStandardTypeModes' existing contract —
+  // BOTH rungs in the SAME commit, one undo step, matching addStandardTypeModes' existing contract,
   // using the SAME stable ids so this write keeps resolving once real.
   setTypeTokenOverride(voice, step, modeKey, size) {
     let n = Math.round(Number(size));
@@ -440,7 +440,7 @@ export class TypeSectionImpl {
   }
 
 
-  // _typeTokenColumns — the ordered column set for the Typography token matrix: Base first, then one
+  // _typeTokenColumns, the ordered column set for the Typography token matrix: Base first, then one
   // column per breakpoint MODE sorted ascending by minWidth (the responsive cascade). Each entry carries
   // the resolved (override-aware) typeScale + its real modeKey so a cell can build its override key and read
   // the value at that step × that mode. Built via _typeScaleFor so overrides match the specimen + exports.
@@ -455,7 +455,7 @@ export class TypeSectionImpl {
   }
 
 
-  // renderTypeTokensTable — the EDITABLE Typography token MATRIX (Phase 3). Rows = type steps GROUPED by
+  // renderTypeTokensTable, the EDITABLE Typography token MATRIX (Phase 3). Rows = type steps GROUPED by
   // voice (Display · Headline/Sub-heading/Title · Body/Body-mono/Lead · Label/Label-mono/Kicker ·
   // Sub-title/Tiny/Tiny-mono) with a group-header row; the first (sticky) column is
   // the token NAME (--type-{voice}-{step}). Columns = Base + each breakpoint mode (≥{minWidth}px). Each value
@@ -519,7 +519,7 @@ export class TypeSectionImpl {
       h("div", { class: "tok-head" },
         h("b", {}, "Type tokens"),
         h("small", {}, `${cats.length} groups · ${total} steps · ${cols.length} column${cols.length === 1 ? "" : "s"} (Base${cols.length > 1 ? " + " + (cols.length - 1) + " breakpoint" + (cols.length === 2 ? "" : "s") : ""})`),
-        h("small", { class: "tok-hint" }, "Each edit is per-cell and mode-local — Base does not cascade into breakpoint columns; line-height re-derives, tracking + weight stay.")),
+        h("small", { class: "tok-hint" }, "Each edit is per-cell and mode-local, Base does not cascade into breakpoint columns; line-height re-derives, tracking + weight stay.")),
       h(
         "table",
         { class: "map-table tok-table" },
@@ -530,7 +530,7 @@ export class TypeSectionImpl {
   }
 
 
-  // renderTypographyScene — the canvas "Typography" view: the FULL specimen (all 33 steps — 11 named
+  // renderTypographyScene, the canvas "Typography" view: the FULL specimen (all 33 steps, 11 named
   // voices × 3 steps each, SM/MD/LG, since the 2026-07-13 fixed-size-table rewrite), grouped by voice,
   // each step a live line in the treatment's real face at its size/lineHeight/letterSpacing/weight + a
   // compact metrics readout. Lives in the same pannable .canvas-scene as the ramps; paints in the canvas
@@ -539,7 +539,7 @@ export class TypeSectionImpl {
     ensureTypeFonts();
     const cfg = this._activeType();
     const scale = this._activeTypeScale();
-    ensureWebFonts(this._resolvedFontMap({ ...scale.fonts, ...(scale.voiceFonts || {}) }), this.inFigma); // TIER 2: lazy-load this palette's non-bundled faces, incl. per-voice overrides (web app only) — mode-aware, so "google" loads the substitute, not the premium name
+    ensureWebFonts(this._resolvedFontMap({ ...scale.fonts, ...(scale.voiceFonts || {}) }), this.inFigma); // TIER 2: lazy-load this palette's non-bundled faces, incl. per-voice overrides (web app only), mode-aware, so "google" loads the substitute, not the premium name
     const t = TYPE_TREATMENTS.find((x) => x.id === cfg.treatment) || TYPE_TREATMENTS[0];
     const PARA = TYPE_PARA(scale.treatment);
     const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -573,7 +573,7 @@ export class TypeSectionImpl {
     const total = cats.reduce((a, c) => a + Object.keys(scale.categories[c]).length, 0);
     const groups = cats.map((cat) => {
       const steps = Object.keys(scale.categories[cat]);
-      // render the specimen LARGEST → smallest (biggest example first) — sort by resolved size descending,
+      // render the specimen LARGEST → smallest (biggest example first), sort by resolved size descending,
       // robust to the engine's step-key order. (The `steps.length` count is order-independent.)
       const ordered = [...steps].sort((a, b) => (scale.categories[cat][b]?.size || 0) - (scale.categories[cat][a]?.size || 0));
       return h(
@@ -587,7 +587,7 @@ export class TypeSectionImpl {
       "div",
       { class: "type-spec" },
       h("div", { class: "type-spec-head" }, h("b", {}, t.label), h("small", {}, `${cfg.bodyBase}px base · ${cats.length} groups · ${total} steps`)),
-      h("p", { class: "type-spec-note" }, t.note + " — fonts are swappable; the size scale, optical tracking, weight, leading, and case are the system."),
+      h("p", { class: "type-spec-note" }, t.note + ", fonts are swappable; the size scale, optical tracking, weight, leading, and case are the system."),
       ...groups,
     );
   }
@@ -597,11 +597,11 @@ export class TypeSectionImpl {
   // The type analog of renderRightPane: a .pane-head segmented tablist + a scrollable .seg-body + a
   // pinned .seg-example live specimen. Binds ONLY to doc.type = {treatment, bodyBase} (the only type
   // fields the engine + persist carry today). Per-voice tuning (ratio/leading/weight/tracking) is shown
-  // READ-ONLY from the treatment — editing it needs new doc.type fields in the engine AND the persist
+  // READ-ONLY from the treatment, editing it needs new doc.type fields in the engine AND the persist
   // fuzz generator, so it is FLAGGED out-of-scope, not faked.
   renderTypeInspector(view) {
     ensureTypeFonts();
-    { const s = this._activeTypeScale(); ensureWebFonts(this._resolvedFontMap({ ...s.fonts, ...(s.voiceFonts || {}) }), this.inFigma); } // TIER 2: the inspector specimen + examples render the real faces, incl. per-voice overrides — mode-aware
+    { const s = this._activeTypeScale(); ensureWebFonts(this._resolvedFontMap({ ...s.fonts, ...(s.voiceFonts || {}) }), this.inFigma); } // TIER 2: the inspector specimen + examples render the real faces, incl. per-voice overrides, mode-aware
     const seg = this.typeSegment === "fonts" || this.typeSegment === "specimen" ? this.typeSegment : "scale";
     const body = seg === "fonts" ? this.typeFontsTab() : seg === "specimen" ? this.typeSpecimenTab(view) : this.typeScaleTab();
     const tabs = [{ id: "scale", label: "Scale" }, { id: "fonts", label: "Fonts" }, { id: "specimen", label: "Specimen" }];
@@ -617,7 +617,7 @@ export class TypeSectionImpl {
   }
 
 
-  // typeScaleTab — the only WRITABLE controls (treatment + body-base), then a READ-ONLY per-voice
+  // typeScaleTab, the only WRITABLE controls (treatment + body-base), then a READ-ONLY per-voice
   // summary of what the treatment yields (ratio · leading · weight · tracking).
   typeScaleTab() {
     const cfg = this._activeType();
@@ -627,7 +627,7 @@ export class TypeSectionImpl {
       "div",
       { class: "insp-body" },
       h("h3", { class: "insp-title" }, icon("type"), "Type scale"),
-      h("div", { class: "insp-sub" }, "Choose a treatment + body size — fonts, tracking, weight & leading follow."),
+      h("div", { class: "insp-sub" }, "Choose a treatment + body size, fonts, tracking, weight & leading follow."),
       field(
         "Treatment",
         h(
@@ -667,21 +667,21 @@ export class TypeSectionImpl {
                   this.slider("Weight", val("weight", p.weight), 100, 900, 10, (v) => String(v), (v) => this._setTypeVoice(cName, "weight", v)),
                   this.slider("Tracking", val("tracking", p.trackingEm), -0.05, 0.3, 0.001, (v) => (v >= 0 ? "+" : "") + fmt(v, 3) + "em", (v) => this._setTypeVoice(cName, "tracking", v)),
                   this.slider("Leading", val("leading", p.leading), 0.9, 2, 0.01, (v) => fmt(v, 2), (v) => this._setTypeVoice(cName, "leading", v)),
-                  // no Ratio control — size is a fixed table since 2026-07-13, not base×ratio^n; a
+                  // no Ratio control, size is a fixed table since 2026-07-13, not base×ratio^n; a
                   // per-cell override (Global tab) is now the lever for moving an individual step's size.
                   // the per-voice font override (TKT-0002) is set on the Fonts tab (all 11 voices live
-                  // there, one editing surface) — this panel shows the resolved family read-only, in the
+                  // there, one editing surface), this panel shows the resolved family read-only, in the
                   // collapsed row's tyi-voice-font span, so it's not duplicated/editable in two places.
-                  // the Figma weight-STYLE name — only meaningful for non-variable families (GT America
+                  // the Figma weight-STYLE name, only meaningful for non-variable families (GT America
                   // "Condensed Black Italic"), where a numeric weight can't name the face. Exported into
                   // the Type Primitives collection as weight-style/<voice>; empty = none.
                   h("label", { class: "mode-editor-label", for: "fld-voice-style-" + cName.toLowerCase().replace(/[^a-z0-9]+/g, "-") }, "Figma style name"),
                   h("input", { id: "fld-voice-style-" + cName.toLowerCase().replace(/[^a-z0-9]+/g, "-"), type: "text", value: vp.styleName || "", placeholder: "e.g. Condensed Bold (non-variable fonts)", "data-fk": "tyvoice-style:" + cName,
                     "aria-label": "Figma weight style name for " + cName, onchange: (e) => this._setTypeVoiceStyleName(cName, e.target.value) }),
-                  // SIBLING WEIGHTS — named weight variants around the core. Each becomes a Figma text
+                  // SIBLING WEIGHTS, named weight variants around the core. Each becomes a Figma text
                   // style (`Voice/step/Name`), a Type Primitives pair, a CSS custom prop, and a DTCG
                   // fontWeight token. Suggest seeds the ratified defaults from the CORE weight; the
-                  // list is user-owned after (add/remove/rename — never silently regenerated).
+                  // list is user-owned after (add/remove/rename, never silently regenerated).
                   h("label", { class: "mode-editor-label" }, "Weight siblings", h("small", { class: "tyi-weights-core" }, ` core ${val("weight", p.weight)}`)),
                   h(
                     "div",
@@ -733,18 +733,18 @@ export class TypeSectionImpl {
   }
 
 
-  // typeFontsTab — an editable combobox per VOICE, all 11, matching 1:1 what every export actually emits
-  // (font/<voice> in Figma Primitives, --font-voice-<kebab> in CSS, fontFamily in DTCG) — so what's
+  // typeFontsTab, an editable combobox per VOICE, all 11, matching 1:1 what every export actually emits
+  // (font/<voice> in Figma Primitives, --font-voice-<kebab> in CSS, fontFamily in DTCG), so what's
   // editable here never diverges from what ships. A voice with no override shows its role's shared
   // default (from the treatment) as its live value; editing always writes a per-voice override
-  // (_setTypeVoiceFont, TKT-0002) — there is no separate role-level row, and no second place to edit a
+  // (_setTypeVoiceFont, TKT-0002), there is no separate role-level row, and no second place to edit a
   // voice's font (the Scale tab's per-voice panel shows the resolved family read-only, not editable).
   typeFontsTab() {
     const cfg = this._activeType();
     const scale = this._activeTypeScale();
     const treatment = TYPE_TREATMENTS.find((t) => t.id === cfg.treatment) || TYPE_TREATMENTS[0];
     const opts = [...BUNDLED_FONTS, "system-ui", "Georgia", "Arial"]; // bundled families + a few common system ones
-    // seenStates feeds the legend below — a dot's title tooltip carries the full explanation per row, so
+    // seenStates feeds the legend below, a dot's title tooltip carries the full explanation per row, so
     // the legend only needs to spell out the states actually present this render (an all-"ok" scale, the
     // common case for a bundled treatment, shows no legend at all).
     const seenStates = new Map();
@@ -769,7 +769,7 @@ export class TypeSectionImpl {
           placeholder: treatment.fonts[role],
           "aria-label": cName + " font family",
           "data-fk": "tyfont:" + cName,
-          title: custom ? "Custom family — exports as-is; the web-app specimen loads it from Google Fonts (falls back if it isn't a Google font)" : "From the " + treatment.label + " treatment",
+          title: custom ? "Custom family, exports as-is; the web-app specimen loads it from Google Fonts (falls back if it isn't a Google font)" : "From the " + treatment.label + " treatment",
           style: `font-family:'${family}', ${generic}`,
           onchange: (e) => this._setTypeVoiceFont(cName, e.target.value),
         }),
@@ -799,7 +799,7 @@ export class TypeSectionImpl {
   // ── font availability ────────────────────────────────────────────────────────────────────────
   // TWO different truths, never conflated:
   //   inFigma → can Figma USE this family? (its own font list; a miss means text styles get a
-  //             placeholder face, family still variable-bound — see applyStylePlans' scaffold path)
+  //             placeholder face, family still variable-bound, see applyStylePlans' scaffold path)
   //   web     → does the face actually RENDER here? (bundled offline, or loaded from Google Fonts)
   // Ask Figma once; the sandbox answers with `fonts-listed`.
   _requestFigmaFonts() {
@@ -814,14 +814,14 @@ export class TypeSectionImpl {
   }
 
 
-  // _resolvedFont(scale, voice) — the app's own mode-aware resolution: reads this.fontMode (the
+  // _resolvedFont(scale, voice), the app's own mode-aware resolution: reads this.fontMode (the
   // Settings → Appearance → Font rendering pref) so every specimen/label in this section shows
-  // (and renders) the SAME family — "premium" is resolvedFontFor unchanged; "google" swaps a
+  // (and renders) the SAME family, "premium" is resolvedFontFor unchanged; "google" swaps a
   // mapped family for its font-fallbacks.mjs substitute. One call site to keep consistent instead
   // of threading this.fontMode through every render method individually.
   _resolvedFont(scale, voice) { return resolvedFontForMode(scale, voice, this.fontMode); }
 
-  // _resolvedFontMap(obj) — the same mode-awareness for a {role/voice: family} map, so
+  // _resolvedFontMap(obj), the same mode-awareness for a {role/voice: family} map, so
   // ensureWebFonts loads the family that's ACTUALLY being rendered (the substitute, in "google"
   // mode) rather than the as-designed premium name it would otherwise 404 on the CDN.
   _resolvedFontMap(obj) {
@@ -829,10 +829,10 @@ export class TypeSectionImpl {
     return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, googleSafeFontFor(v)]));
   }
 
-  // _faceRenders(fam) — does this family actually paint, or is the browser silently substituting a
+  // _faceRenders(fam), does this family actually paint, or is the browser silently substituting a
   // generic? `document.fonts.check` FALSE-NEGATIVES on variable fonts, so measure DOM width instead:
   // a family that is applied renders at a different width than the bare generic it falls back to.
-  // Unmeasurable (no DOM / headless shim) ⇒ assume it renders — never cry wolf.
+  // Unmeasurable (no DOM / headless shim) ⇒ assume it renders, never cry wolf.
   _faceRenders(fam) {
     if (!fam) return true;
     if (SELF_HOSTED_FONTS.has(fam) || GENERIC_FONTS.has(fam.toLowerCase())) return true;
@@ -849,12 +849,12 @@ export class TypeSectionImpl {
           el.remove();
           return w;
         };
-        // quote the family — an unquoted name with a digit/space is invalid in a strict parser (Safari)
+        // quote the family, an unquoted name with a digit/space is invalid in a strict parser (Safari)
         const gens = ["monospace", "serif", "sans-serif"];
         const pairs = gens.map((gen) => [width(gen), width(`'${fam}', ${gen}`)]);
         // NOT measurable (headless shim / display:none / layout not yet flushed → every width 0)?
         // Assume it renders. A "falls back" badge must be EARNED by a real measurement, never by a
-        // silent zero — the false negative this guard exists to prevent.
+        // silent zero, the false negative this guard exists to prevent.
         out = pairs.every(([base]) => !(base > 0))
           ? true
           : pairs.some(([base, test]) => base > 0 && test > 0 && Math.abs(test - base) > 0.5);
@@ -865,7 +865,7 @@ export class TypeSectionImpl {
   }
 
 
-  // _fontsPanelSideEffects — ask Figma for its font list (once), and in the web app re-render once the
+  // _fontsPanelSideEffects, ask Figma for its font list (once), and in the web app re-render once the
   // lazily-injected Google faces settle, so a badge flips "falls back" → "loaded" rather than lying.
   _fontsPanelSideEffects() {
     this._requestFigmaFonts();
@@ -881,18 +881,18 @@ export class TypeSectionImpl {
   _fontStatus(family) {
     if (this.inFigma) {
       if (!this._figmaFonts) return { state: "unknown", label: "checking…", title: "Asking Figma which font families it can use." };
-      if (this._figmaFonts.has(family)) return { state: "ok", label: "in Figma", title: "Figma has this family — its text styles render in the real face." };
-      return { state: "sub", label: "not in Figma", title: "Figma doesn't have this family. Its text styles are built on a placeholder face, but the family stays bound to the font variable — install the font and they adopt it, no re-apply." };
+      if (this._figmaFonts.has(family)) return { state: "ok", label: "in Figma", title: "Figma has this family, its text styles render in the real face." };
+      return { state: "sub", label: "not in Figma", title: "Figma doesn't have this family. Its text styles are built on a placeholder face, but the family stays bound to the font variable, install the font and they adopt it, no re-apply." };
     }
-    if (SELF_HOSTED_FONTS.has(family)) return { state: "ok", label: "bundled", title: "Embedded in the app — renders offline, and inside the Figma plugin." };
+    if (SELF_HOSTED_FONTS.has(family)) return { state: "ok", label: "bundled", title: "Embedded in the app, renders offline, and inside the Figma plugin." };
     if (GENERIC_FONTS.has(String(family).toLowerCase())) return { state: "ok", label: "generic", title: "A CSS generic family." };
     return this._faceRenders(family)
-      ? { state: "ok", label: "loaded", title: "Loaded from Google Fonts — the specimen renders the real face." }
-      : { state: "fallback", label: "falls back", title: "Not loaded (not a Google font, or still loading) — the specimen renders the closest generic. Exports still carry the exact family name." };
+      ? { state: "ok", label: "loaded", title: "Loaded from Google Fonts, the specimen renders the real face." }
+      : { state: "fallback", label: "falls back", title: "Not loaded (not a Google font, or still loading), the specimen renders the closest generic. Exports still carry the exact family name." };
   }
 
 
-  // _setTypeFont(role, value) — set/clear a per-role custom font on doc.type.fonts. Empty OR the treatment
+  // _setTypeFont(role, value), set/clear a per-role custom font on doc.type.fonts. Empty OR the treatment
   // default clears the override (so a default round-trips clean). Fonts are mode-independent → always the base.
   _setTypeFont(role, value) {
     this._faceCache.clear(); this._fontsReadyHooked = false; // a new family must be re-probed
@@ -909,7 +909,7 @@ export class TypeSectionImpl {
   }
 
 
-  // _setTypeVoice(voice, param, value) — per-VOICE shaping override on doc.type.voices (weight·tracking·
+  // _setTypeVoice(voice, param, value), per-VOICE shaping override on doc.type.voices (weight·tracking·
   // leading·ratio). Live via editDrag (coalesces a slider drag into one undo step). A value equal to the
   // treatment default clears that param; an emptied voice / voices map is removed (so a default round-trips).
   // Voices are mode-independent → always written to the base doc.type.
@@ -931,7 +931,7 @@ export class TypeSectionImpl {
   }
 
 
-  // _setTypeVoiceStyleName(voice, value) — the STRING sibling of _setTypeVoice: the Figma weight-style
+  // _setTypeVoiceStyleName(voice, value), the STRING sibling of _setTypeVoice: the Figma weight-style
   // name for non-variable families. Empty/whitespace clears (so a default round-trips); one undo step.
   _setTypeVoiceStyleName(voice, value) {
     const sn = String(value || "").trim().slice(0, 60);
@@ -947,7 +947,7 @@ export class TypeSectionImpl {
   }
 
 
-  // _setTypeVoiceFont(voice, value) — the FONT sibling of _setTypeVoiceStyleName (TKT-0002): a per-voice
+  // _setTypeVoiceFont(voice, value), the FONT sibling of _setTypeVoiceStyleName (TKT-0002): a per-voice
   // family override, instead of sharing the voice's role default. Empty/whitespace clears (falls back to
   // scale.fonts[roleOf[voice]] via resolvedFontFor); one undo step. A new family must be re-probed (the
   // fonts-availability cache + web-font loader), same as _setTypeFont.
@@ -966,7 +966,7 @@ export class TypeSectionImpl {
   }
 
 
-  // _setVoiceWeights(voice, list) — write a voice's SIBLING weight variants ([{name, weight}]) onto
+  // _setVoiceWeights(voice, list), write a voice's SIBLING weight variants ([{name, weight}]) onto
   // doc.type.voices, normalized (name trimmed/capped, weight clamped 100..1000, invalid dropped); an
   // empty list clears the key so a sibling-free voice round-trips identically. One undo step.
   _setVoiceWeights(voice, list) {
@@ -986,7 +986,7 @@ export class TypeSectionImpl {
   }
 
 
-  // _resetTypeVoice(voice) — drop all per-voice overrides for one voice (back to the treatment).
+  // _resetTypeVoice(voice), drop all per-voice overrides for one voice (back to the treatment).
   _resetTypeVoice(voice) {
     this.commit((doc) => {
       const t = { ...(doc.type || DEFAULT_TYPE) };
@@ -999,7 +999,7 @@ export class TypeSectionImpl {
   }
 
 
-  // typeSpecimenTab — a compact in-pane specimen: each of the eleven voices at its MD step. The full
+  // typeSpecimenTab, a compact in-pane specimen: each of the eleven voices at its MD step. The full
   // scale (all 53 steps across the 11 voices) lives on the canvas.
   typeSpecimenTab(view) {
     const scale = this._activeTypeScale();
@@ -1026,7 +1026,7 @@ export class TypeSectionImpl {
   }
 
 
-  // typeExampleCard — the pinned live card: a heading + paragraph in the brand fonts AND the selected
+  // typeExampleCard, the pinned live card: a heading + paragraph in the brand fonts AND the selected
   // palette's canvas colors (surface / onSurface / primary). Mirrors exampleCard's color resolution.
   typeExampleCard(view) {
     const scale = this._activeTypeScale();
@@ -1068,14 +1068,14 @@ export class TypeSectionImpl {
     );
   }
 
-  // the breakpoint-mode scales for the Figma exports — see model.mjs#typeModeScales for the
+  // the breakpoint-mode scales for the Figma exports, see model.mjs#typeModeScales for the
   // implementation + the full rationale (Desktop-anchored synthesis, the Lg/Xl inverse curve, the
   // per-tier Label/Tiny nudges).
   _typeModeScales() {
     return typeModeScales(this.doc);
   }
 
-  // _typeBaseOpts/_geomBaseOpts — the base-layer identity for the Figma emitters + the mode UI. The
+  // _typeBaseOpts/_geomBaseOpts, the base-layer identity for the Figma emitters + the mode UI. The
   // desktop-first canon: Figma's default mode is the FIRST mode, so the DESIGNED scale leads as
   // "Desktop" (synthesized shape and the factor-committed Standard set both), and only a base named
   // "Mobile" (the legacy #251 committed-geometry shape) rides LAST. A doc with its OWN configured
@@ -1087,7 +1087,7 @@ export class TypeSectionImpl {
     return { baseName: n, baseLast: n.toLowerCase() === "mobile" };
   }
 
-  // per-breakpoint DTCG files — one valid standalone DTCG per mode that has a minWidth, keyed by the width
+  // per-breakpoint DTCG files, one valid standalone DTCG per mode that has a minWidth, keyed by the width
   // (self-documenting + collision-free). No-width modes are preview-only, so they don't export (mirrors CSS).
   _typeModeDTCGFiles(prefix = "type", opts = {}) {
     return this._typeModeScales().filter((m) => Number(m.minWidth) > 0)

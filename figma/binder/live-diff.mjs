@@ -1,4 +1,4 @@
-// live-diff.mjs — PURE comparison between a live Figma read-back (figma/plugin/code.js's
+// live-diff.mjs, PURE comparison between a live Figma read-back (figma/plugin/code.js's
 // readFloatVariables, the Geometry/Type counterpart to readRawColors) and the apply plans the UI is
 // about to write, so the apply gate can show "N values will be overwritten" before the user commits
 // (TKT-0020 / docs/reference/reviews/2026-07-17-collections-arch.md C2). Zero figma calls; consumed by
@@ -9,7 +9,7 @@
 //   a primitivesModesApplyPlan entry (style-plan.mjs):      { collection: "Type Primitives", modes, defaultMode, addModes, variables: [{ name, type, values: [{mode,value}] }|{ name, type:"ALIAS", target }] }
 //   a live read-back collection (readFloatVariables):       { found, modes, values: { "<name>": { "<mode>": <value> } } }
 
-// flattenModePlanValues(plan) → [{name, mode, value}] — every (variable, mode) pair a modeApplyPlan
+// flattenModePlanValues(plan) → [{name, mode, value}], every (variable, mode) pair a modeApplyPlan
 // entry is about to write.
 export function flattenModePlanValues(plan) {
   const out = [];
@@ -21,7 +21,7 @@ export function flattenModePlanValues(plan) {
   return out;
 }
 
-// valuesDiffer(a, b) — numeric values compare with a small epsilon (a round-trip through Figma's FLOAT
+// valuesDiffer(a, b), numeric values compare with a small epsilon (a round-trip through Figma's FLOAT
 // storage can shift the last bit); strings/booleans/others compare strictly.
 function valuesDiffer(a, b) {
   if (typeof a === "number" && typeof b === "number") return Math.abs(a - b) > 1e-6;
@@ -30,7 +30,7 @@ function valuesDiffer(a, b) {
 
 // countChangedValues(pairs, live) → how many of `pairs` (flattened plan values) have a LIVE
 // counterpart that DIFFERS. `live` is one collection's read-back `values` map. A pair with no live
-// counterpart (a new variable, a new mode, or the collection wasn't found at all) is NOT counted —
+// counterpart (a new variable, a new mode, or the collection wasn't found at all) is NOT counted,
 // only a value that's actually THERE and about to be silently overwritten counts as "changed"; a
 // first-ever apply into an empty/absent collection always reports 0.
 export function countChangedValues(pairs, live) {

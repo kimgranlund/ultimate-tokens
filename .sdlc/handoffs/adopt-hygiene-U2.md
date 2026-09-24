@@ -61,7 +61,7 @@ The verdict overturned this pass's own 🟢 on rows 3 and 9. The table below is 
 | Files | `.claude/CLAUDE.md` · `.claude/skills/shipping-changes/SKILL.md` · `.claude/workflow.json` · `.gitignore` · `.gitattributes` (new) · `test/repo/branding.mjs` (SKIP_DIRS line only) · `.github/workflows/pages.yml` · `.github/workflows/describe-eval.yml` · `.sdlc/config.json` (new) |
 | Ran | `npm ci` ✅ · `npm run build` ✅ exit 0 · `npm test` ✅ `all 44 test files passed` · `node test/repo/branding.mjs` ✅ `clean (394 files scanned)` · `git status --short` after gates: only the 9 files listed above (byte-stable) |
 | Criteria | U2 1–12 all 🟢, run individually with each command from the plan; P1–P5 (scope wall, branding, no rewritten record) also 🟢 |
-| Left out | none — full U2 scope covered. `.claude/settings.json` and `.sdlc/board.md` never staged, per instruction |
+| Left out | none, full U2 scope covered. `.claude/settings.json` and `.sdlc/board.md` never staged, per instruction |
 
 ## Criteria detail
 

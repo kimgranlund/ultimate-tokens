@@ -11,7 +11,7 @@ import { icon } from "../icons.js";
 import { ALIASED_README, REPO_URL, btn, chip, h } from "../app-helpers.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
-// methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
+// methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
 export class DrawerMixinImpl {
 
   // ── export drawer ────────────────────────────────────────────────────────────
@@ -27,14 +27,14 @@ export class DrawerMixinImpl {
   }
 
 
-  // renderDrawer — computes the shared inputs (format groups, per-system code, the selected format's
+  // renderDrawer, computes the shared inputs (format groups, per-system code, the selected format's
   // rendered output) once, then wires them into per-region sub-renders (TKT-0023: was one 220-line
   // method; each _drawer* sub-render below is independently readable and under ~150 lines).
   renderDrawer(view) {
-    // Export formats grouped by SYSTEM — the three brand-kit systems (Colors · Typography · Geometry) each
+    // Export formats grouped by SYSTEM, the three brand-kit systems (Colors · Typography · Geometry) each
     // get their own group, then Project. Within Colors the order runs CSS → frameworks → design tools. The
     // item names disambiguate where a format spans systems (Type · DTCG vs the colour DTCG). Internal ids
-    // (css/oklch/tailwind/…) are unchanged — only the display grouping + labels.
+    // (css/oklch/tailwind/…) are unchanged, only the display grouping + labels.
     const FORMAT_GROUPS = [
       ["Colors", [["css", "Hex"], ["oklch", "OKLCH"], ["tailwind", "Tailwind v4"], ["shadcn", "shadcn/ui"], ["panda", "Panda CSS"], ["radix", "Radix"], ["figma", "Figma"], ["ui3", "Figma UI3"], ["dtcg", "DTCG"], ["json", "JSON"]]],
       ["Typography", [["type-css", "Type · CSS"], ["type-dtcg", "Type · DTCG"]]],
@@ -44,35 +44,35 @@ export class DrawerMixinImpl {
     ];
     // the per-system token output for the Typography / Geometry format tabs (the colour formats live on
     // view.exports). Computed from the same engines the modals + the Brand-Kit MCP use.
-    const typeSc = this._typeScaleFor("base"); // override-aware base scale (Phase 3) — same as the matrix Base column
+    const typeSc = this._typeScaleFor("base"); // override-aware base scale (Phase 3), same as the matrix Base column
     const geomSc = this._geomScaleFor("base");
     // SPEC 0.3.0 (ticket #559): the DS-bundle exporters (ds-export.js, via exports.js's derivePalette)
-    // read palette.group directly — they're called with a doc-shaped object below, never through
-    // stateOf/projectView — so without this a palette relying on the by-name default group (no
+    // read palette.group directly, they're called with a doc-shaped object below, never through
+    // stateOf/projectView, so without this a palette relying on the by-name default group (no
     // explicit `.group` field) would resolve to nothing there. resolvedPalettes(doc) stamps every
     // palette's group to its definite resolved id while every other doc field (icons/name/story/…,
     // which ds-export.js also reads, and doc.paletteGroups itself, via the spread below) stays as-is.
     const dsDoc = { ...this.doc, palettes: resolvedPalettes(this.doc) };
-    const u = { unit: this._exportUnit(), fontMode: this.fontMode }; // the CSS unit preference (Settings › Export) + the font-rendering mode (Settings › Appearance) — Figma outputs below deliberately read NEITHER (Figma always gets the as-designed families; a native Figma-mode axis is its own future phase)
+    const u = { unit: this._exportUnit(), fontMode: this.fontMode }; // the CSS unit preference (Settings › Export) + the font-rendering mode (Settings › Appearance), Figma outputs below deliberately read NEITHER (Figma always gets the as-designed families; a native Figma-mode axis is its own future phase)
     const ut = { ...u, prefix: this._typePrefix() }; // + the naming-scheme prefix for the type CSS
     const ug = { ...u, prefix: this._geomPrefix() }; // + the naming-scheme prefix for the geometry CSS
-    // splitCssPreview — a single-pane, read-only preview of the SEPARATE files Download-All actually
+    // splitCssPreview, a single-pane, read-only preview of the SEPARATE files Download-All actually
     // zips (base + one file per breakpoint), each fenced with its real filename so "one tab" still shows
     // the true multi-file shape: add just the base file, or additionally the breakpoint file(s) below it.
     const splitCssPreview = (baseCss, files, baseFilename) => {
-      const parts = [`/* ${baseFilename} — the only file most sites need */\n${baseCss}`];
-      for (const f of files) parts.push(`/* ${baseFilename.replace(/\.css$/, "")}-${slug(f.name)}.css — optional, add for the ${f.name} breakpoint */\n${f.css}`);
+      const parts = [`/* ${baseFilename}, the only file most sites need */\n${baseCss}`];
+      for (const f of files) parts.push(`/* ${baseFilename.replace(/\.css$/, "")}-${slug(f.name)}.css, optional, add for the ${f.name} breakpoint */\n${f.css}`);
       return parts.join("\n");
     };
     const SYSTEM_CODE = {
       "type-css": () => splitCssPreview(typeTokensCSS(typeSc, ut), typeTokensBreakpointCSS(this._typeModeScales(), ut), "type.css"),
       "type-dtcg": () => JSON.stringify(typeTokensDTCG(typeSc, u), null, 2),
       "geom-css": () => splitCssPreview(geomTokensCSS(geomSc, ug), geomTokensBreakpointCSS(this._geomModeScales(), ug), "geometry.css"),
-      // size-only sibling (issue #487) — just the file Download-All actually zips as geometry-sizes.css;
-      // no breakpoint bolt-ons for this one (out of scope for the ticket — see its Findings).
+      // size-only sibling (issue #487), just the file Download-All actually zips as geometry-sizes.css;
+      // no breakpoint bolt-ons for this one (out of scope for the ticket, see its Findings).
       "geom-css-sizes": () => geomTokensSizesCSS(geomSc, ug),
       "geom-dtcg": () => JSON.stringify(geomTokensDTCG(geomSc, u), null, 2),
-      // the Design System export — the universal-dialect DESIGN.md core + tokens.json (the LLM generation
+      // the Design System export, the universal-dialect DESIGN.md core + tokens.json (the LLM generation
       // system); the component previews ride the Download-All bundle only (a folder, not a single preview).
       "ds-tokens": () => exportDesignSystemTokens(dsDoc, typeSc, geomSc),
       "ds-spine": () => exportDesignSystemSpine(dsDoc, typeSc, geomSc),
@@ -105,7 +105,7 @@ export class DrawerMixinImpl {
     const code = proLocked
       ? ""
       : isConfig
-        ? JSON.stringify(serialize(this.doc), null, 2) // the parametric doc — re-importable via the gallery's ⬆ Import
+        ? JSON.stringify(serialize(this.doc), null, 2) // the parametric doc, re-importable via the gallery's ⬆ Import
         : isFigma
           ? view.exports.figma[this.figmaFile]
           : isRadix
@@ -115,8 +115,8 @@ export class DrawerMixinImpl {
             : view.exports[this.exportTab];
     const bytes = new Blob([code]).size;
 
-    // A native <dialog>: showModal() (see _syncDrawer) promotes it to the browser TOP LAYER —
-    // above every stacking context with no z-index race — and gives ::backdrop, focus trapping,
+    // A native <dialog>: showModal() (see _syncDrawer) promotes it to the browser TOP LAYER,
+    // above every stacking context with no z-index race, and gives ::backdrop, focus trapping,
     // background inert, and Esc for free. open/close is driven by exportOpen via _syncDrawer.
     return h(
       "dialog",
@@ -165,7 +165,7 @@ export class DrawerMixinImpl {
           on: this.exportSystems[k] !== false,
           cls: "sys-chip",
           title: k === "styles"
-            ? "Create Figma STYLE swatches (paint + text styles) bound to the variables on Apply — one per semantic role and type step"
+            ? "Create Figma STYLE swatches (paint + text styles) bound to the variables on Apply, one per semantic role and type step"
             : `Include the ${label} system in Download-All & the Brand-Kit MCP`,
           onclick: () => this.toggleExportSystem(k),
         }),
@@ -207,7 +207,7 @@ export class DrawerMixinImpl {
     return h(
       "div",
       { class: "figma-bar" },
-      h("span", { class: "figma-note" }, "One file per Figma variable-mode — import Light & Dark into the two modes of one collection, then run the Binder plugin for the live raw→semantic cascade."),
+      h("span", { class: "figma-note" }, "One file per Figma variable-mode, import Light & Dark into the two modes of one collection, then run the Binder plugin for the live raw→semantic cascade."),
       h(
         "div",
         { class: "figma-bar-row" },
@@ -222,12 +222,12 @@ export class DrawerMixinImpl {
         ),
         btn([icon("download"), "Binder plugin"], {
           cls: "figma-plugin-btn",
-          title: "Download the Color Tokens Semantic Binder plugin (manifest.json + code.js). In Figma: Plugins → Development → Import plugin from manifest — it aliases each semantic role to its raw variable so editing a raw color cascades.",
+          title: "Download the Color Tokens Semantic Binder plugin (manifest.json + code.js). In Figma: Plugins → Development → Import plugin from manifest, it aliases each semantic role to its raw variable so editing a raw color cascades.",
           onclick: () => this.downloadFigmaPlugin(),
         }),
         // Opt-in (inside Figma only): re-create Color Roles so it adopts the grouped order
         // (Figma won't reorder existing variables on a normal apply). Lives here, beside the
-        // Binder plugin, because it's a Figma-tab action — re-creates vars, so bound layers
+        // Binder plugin, because it's a Figma-tab action, re-creates vars, so bound layers
         // need reconnecting.
         this.inFigma
           ? btn([icon("arrows-clockwise"), "Regroup"], {
@@ -275,11 +275,11 @@ export class DrawerMixinImpl {
       { class: "config-bar" },
       btn([icon("upload"), "Save to project"], { title: this.inFigma ? "Save this config into this Figma file (travels with the file)" : "Save this config to the project (localStorage)", onclick: () => this.saveToProject() }),
       btn([icon("download"), "Load from project"], { title: this.inFigma ? "Load the config saved in this Figma file" : "Load the config saved to the project", onclick: () => this.loadFromProject() }),
-      btn([icon("download"), "Brand-Kit MCP"], { title: "Download a ready-to-run MCP server (your tokens, for Claude Code / Cursor / any agent) — a .zip with the zero-dep server + your brand-kit.json + setup README", onclick: () => this.downloadBrandKitMcp() }),
+      btn([icon("download"), "Brand-Kit MCP"], { title: "Download a ready-to-run MCP server (your tokens, for Claude Code / Cursor / any agent), a .zip with the zero-dep server + your brand-kit.json + setup README", onclick: () => this.downloadBrandKitMcp() }),
       btn([icon("download"), this.flagOf("describePalette") ? "Describe-Palette MCP" : "Describe-Palette MCP · Pro"], {
         title: this.flagOf("describePalette")
-          ? "Download the Brand-Kit MCP's Pro sibling: a .zip that ALSO generates new brand kits from a text description — everything Brand-Kit MCP does, plus generate_kit + export_tokens"
-          : "Generate new brand kits from a text description via MCP — a Pro feature. Upgrade to download it.",
+          ? "Download the Brand-Kit MCP's Pro sibling: a .zip that ALSO generates new brand kits from a text description, everything Brand-Kit MCP does, plus generate_kit + export_tokens"
+          : "Generate new brand kits from a text description via MCP, a Pro feature. Upgrade to download it.",
         onclick: () => this.downloadDescribePaletteMcp(),
       }),
       h("span", { class: "config-note" }, this.inFigma ? "Source of truth: this Figma file (travels with the file)" : "Source of truth: your browser (localStorage)"),
@@ -294,7 +294,7 @@ export class DrawerMixinImpl {
       // the output for the format chosen in the drawer-format <select> above.
       { class: "drawer-code", role: "region", "aria-label": "Export output" },
       ...(proLocked
-        ? [this._proUpsell(`${PRO_LABEL[this.exportTab] || "This"} export is a Pro format — upgrade to export it.`)]
+        ? [this._proUpsell(`${PRO_LABEL[this.exportTab] || "This"} export is a Pro format, upgrade to export it.`)]
         : [
             btn([icon("copy"), "Copy"], { variant: "bare", cls: "copy-float", title: "Copy to clipboard", ariaLabel: "Copy", onclick: () => this.copy(code) }),
             h("pre", { class: "drawer-pre" }, code),
@@ -313,7 +313,7 @@ export class DrawerMixinImpl {
       h(
         "div",
         { class: "foot-actions" },
-        // Inside Figma, applying variables directly is the point — primary action, on the LEFT.
+        // Inside Figma, applying variables directly is the point, primary action, on the LEFT.
         this.inFigma
           ? btn([icon("flag"), "Apply Variables"], {
               variant: "primary",
@@ -324,18 +324,18 @@ export class DrawerMixinImpl {
             })
           : false,
         // (Regroup moved to the Figma tab's sub-bar, beside the Binder plugin button.)
-        // ONE download action — every format in its own folder + the config, as a single .zip.
-        btn([icon("download"), "Download All"], { variant: "primary", title: `Download the selected systems (${included}) — each format in its own folder + the re-importable config, as one .zip`, onclick: () => this.downloadAllZip(view) }),
+        // ONE download action, every format in its own folder + the config, as a single .zip.
+        btn([icon("download"), "Download All"], { variant: "primary", title: `Download the selected systems (${included}), each format in its own folder + the re-importable config, as one .zip`, onclick: () => this.downloadAllZip(view) }),
       ),
     );
   }
 
 
-  // toggleExportSystem — flip one token system (color/type/geometry) in the Download-All + MCP opt-in.
+  // toggleExportSystem, flip one token system (color/type/geometry) in the Download-All + MCP opt-in.
   // Keeps at least one system selected (an all-off bundle is degenerate).
   toggleExportSystem(k) {
     const on = this.exportSystems[k] !== false;
-    // `styles` is an overlay on the selected systems (the Figma swatches opt-out), not a token system —
+    // `styles` is an overlay on the selected systems (the Figma swatches opt-out), not a token system,
     // the keep-one-system guard applies only to the three real systems.
     if (k !== "styles" && on && ["color", "type", "geometry"].filter((s) => this.exportSystems[s] !== false).length <= 1) {
       this.toast("Keep at least one system selected");
@@ -346,7 +346,7 @@ export class DrawerMixinImpl {
   }
 
 
-  // downloadAllZip — ONE archive with every SELECTED system's formats in its own folder + the
+  // downloadAllZip, ONE archive with every SELECTED system's formats in its own folder + the
   // re-importable config at the root. Built with the dependency-free store-only ZIP writer (zip.mjs) so
   // it works offline / in the Figma sandbox. Colour folders (css-hex / css-oklch / json / dtcg / figma /
   // ui3 / tailwind / shadcn) ride `systems.color`; `typography/` + `geometry/` ride their toggles; the
@@ -362,7 +362,7 @@ export class DrawerMixinImpl {
     const files = [];
     if (sys.color) {
       files.push(
-        // BOTH raw-colour CSS variants — hex and oklch are two co-equal formats (like tailwind + shadcn),
+        // BOTH raw-colour CSS variants, hex and oklch are two co-equal formats (like tailwind + shadcn),
         // and this is the comprehensive bundle. The export drawer's Hex/OKLCH tabs pick one individually.
         { name: `css-hex/${s}.css`, data: ex.css },
         { name: `css-oklch/${s}.css`, data: ex.oklch },
@@ -372,7 +372,7 @@ export class DrawerMixinImpl {
         { name: "figma/palette.tokens.json", data: ex.figma.raw },
         { name: `ui3/${s}.json`, data: ex.ui3 },
       );
-      // proExport-gated formats (DTCG + the framework configs) — omitted from the bundle until the plan
+      // proExport-gated formats (DTCG + the framework configs), omitted from the bundle until the plan
       // unlocks them (NO-OP while TIERS_ENFORCED is off; flagOf("proExport") is true).
       if (this.flagOf("proExport")) files.push(
         { name: `dtcg/${s}.tokens.json`, data: ex.dtcg },
@@ -396,7 +396,7 @@ export class DrawerMixinImpl {
         { name: "figma-aliased/README.txt", data: ALIASED_README },
       );
       // design-system-for-claude-code/ — the LLM design-system bundle: DESIGN.md (the universal-dialect
-      // core — Stitch-canonical sections + Responsive + Agent Prompt Guide) + tokens.json (hex colors/
+      // core, Stitch-canonical sections + Responsive + Agent Prompt Guide) + tokens.json (hex colors/
       // colorsDark + the type/spacing/radii ladders) + components/*.html (self-contained @dsCard previews)
       // + README.md (the profile receipt). One shared colour source (dsColorRoles) keeps every carrier
       // value-equal by construction. Rides `systems.color`. A vision-capable Claude reads the folder to
@@ -409,27 +409,27 @@ export class DrawerMixinImpl {
       files.push(...exportDesignSystemStitchBundle(dsDoc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
         .map((f) => ({ name: `design-system-for-google-stitch/${f.name}`, data: f.data })));
       // design-system-for-figma-make/ — a routed guidelines/ tree Figma Make reads directly (no
-      // linter/schema of its own — make_guidelines_check.py is the gate of record) + a profile README.
+      // linter/schema of its own, make_guidelines_check.py is the gate of record) + a profile README.
       files.push(...exportDesignSystemMakeBundle(dsDoc, this._typeScaleFor("base"), this._geomScaleFor("base"), { date: dsDate })
         .map((f) => ({ name: `design-system-for-figma-make/${f.name}`, data: f.data })));
     }
-    // the two halves of the merged breakpoint-moded "Geometry" collection (TKT-0009) — filled by the
+    // the two halves of the merged breakpoint-moded "Geometry" collection (TKT-0009), filled by the
     // type/geometry blocks below, merged + pushed as ONE figma/tokens.modes.variables.json after both.
     const modesHalves = [];
     if (sys.type) {
       const tsc = this._typeScaleFor("base"); // override-aware base scale (Phase 3)
-      const tDtcg = JSON.stringify(typeTokensDTCG(tsc, u), null, 2); // the chosen unit — for the typography/ folder
+      const tDtcg = JSON.stringify(typeTokensDTCG(tsc, u), null, 2); // the chosen unit, for the typography/ folder
       const tCssOpts = { ...u, prefix: this._typePrefix() };
       files.push(
         // SEPARATE files, not one @media-embedded stylesheet: type.css alone is a complete, valid,
         // Desktop-anchored stylesheet (drop it in and you're done); type-tablet.css / type-mobile.css are
-        // optional, self-contained bolt-ons (each internally bounded — add any subset, any load order).
+        // optional, self-contained bolt-ons (each internally bounded, add any subset, any load order).
         { name: "typography/type.css", data: typeTokensCSS(tsc, tCssOpts) },
         ...typeTokensBreakpointCSS(this._typeModeScales(), tCssOpts).map((f) => ({ name: `typography/type-${slug(f.name)}.css`, data: f.css })),
         { name: "typography/type.tokens.json", data: tDtcg },
         ...this._typeModeDTCGFiles("typography/type", u),
-        { name: "figma/type.tokens.json", data: JSON.stringify(typeTokensDTCG(tsc), null, 2) }, // ALWAYS px — Figma import (a tokens plugin)
-        // the companion "Type Primitives" collection — deduped family STRING primitives + per-voice
+        { name: "figma/type.tokens.json", data: JSON.stringify(typeTokensDTCG(tsc), null, 2) }, // ALWAYS px, Figma import (a tokens plugin)
+        // the companion "Type Primitives" collection, deduped family STRING primitives + per-voice
         // font aliases + per-voice weight primitives (import artifact; never enters the apply path).
         { name: "figma/typography.primitives.variables.json", data: JSON.stringify(typeTokensFigmaPrimitivesModes(tsc), null, 2) },
       );
@@ -438,18 +438,18 @@ export class DrawerMixinImpl {
     }
     if (sys.geometry) {
       const gsc = this._geomScaleFor("base"); // composed with the type scale (the per-step `font` is shared); override-aware (Phase 3)
-      const gDtcg = JSON.stringify(geomTokensDTCG(gsc, u), null, 2); // the chosen unit — for the geometry/ folder
+      const gDtcg = JSON.stringify(geomTokensDTCG(gsc, u), null, 2); // the chosen unit, for the geometry/ folder
       const gCssOpts = { ...u, prefix: this._geomPrefix() };
       files.push(
         // SEPARATE files (mirrors typography/ above): geometry.css alone is a complete, Desktop-anchored
         // stylesheet; geometry-tablet.css / geometry-mobile.css are optional bolt-ons. geometry-sizes.css
-        // (issue #487, gen-ui-kit's own request) is a SIZE-ONLY slice of the SAME base file — just the
+        // (issue #487, gen-ui-kit's own request) is a SIZE-ONLY slice of the SAME base file, just the
         // --{pfx}-size-{step}-* :root block, no radius/space/inset/gap/border/focus tokens or
-        // .{pfx}-control-{step} class rules — for a consumer that only binds size fields and doesn't want
+        // .{pfx}-control-{step} class rules, for a consumer that only binds size fields and doesn't want
         // to vendor a slice of the full file itself. No breakpoint bolt-on siblings for this one (out of
-        // scope for the ticket — a consumer needing per-breakpoint sizes-only files can request it).
+        // scope for the ticket, a consumer needing per-breakpoint sizes-only files can request it).
         // (a user-named custom breakpoint mode literally called "Sizes" would slug-collide with this
-        // fixed filename in the zip — accepted as a rare, recoverable edge case, not worth a reserved-
+        // fixed filename in the zip, accepted as a rare, recoverable edge case, not worth a reserved-
         // name check for a size-only sibling file.)
         { name: "geometry/geometry.css", data: geomTokensCSS(gsc, gCssOpts) },
         { name: "geometry/geometry-sizes.css", data: geomTokensSizesCSS(gsc, gCssOpts) },
@@ -460,7 +460,7 @@ export class DrawerMixinImpl {
       );
       modesHalves.push(geomTokensFigmaModes(gsc, this._geomModeScales(), this._geomBaseOpts()));
     }
-    // ONE breakpoint-moded Figma-variable file — the merged "Geometry" collection (type/ + box-geometry
+    // ONE breakpoint-moded Figma-variable file, the merged "Geometry" collection (type/ + box-geometry
     // halves, TKT-0009) with a MODE per breakpoint (Base + each), instead of the pre-merge
     // typography.modes/dimension.modes pair: the plugin executor prunes variables per collection, so the
     // halves must land as one interchange. Emitted whenever either system is on (Base-only, no breakpoints ok).
@@ -468,7 +468,7 @@ export class DrawerMixinImpl {
       const modesIx = mergeModeInterchanges(...modesHalves);
       if (modesIx) files.push({ name: "figma/tokens.modes.variables.json", data: JSON.stringify(modesIx, null, 2) });
     }
-    // figma/styles.plan.json — the plugin-free STYLES import artifact (rides the Styles opt-out chip,
+    // figma/styles.plan.json, the plugin-free STYLES import artifact (rides the Styles opt-out chip,
     // compositional with the system toggles like the apply path): the same pure plans the in-Figma
     // apply executes, so external tooling (or a later plugin-free import) can create the bound
     // swatches without re-deriving anything. paints → Color Roles bindings; texts → Geometry (type/)/Type
@@ -487,9 +487,9 @@ export class DrawerMixinImpl {
         files.push({ name: "figma/styles.plan.json", data: JSON.stringify(artifact, null, 2) });
       }
     }
-    // the re-importable parametric config — ALWAYS (it carries the colour + type + geometry params).
+    // the re-importable parametric config, ALWAYS (it carries the colour + type + geometry params).
     files.push({ name: `ultimate-tokens-${s}-config.json`, data: JSON.stringify(serialize(this.doc), null, 2) });
-    // the root README — the zip is self-describing: what each included folder is, plus the two
+    // the root README, the zip is self-describing: what each included folder is, plus the two
     // companion channels this archive does NOT carry (the consumption plugin + the Brand-Kit MCP).
     files.push({ name: "README.md", data: this._zipReadme(s, sys) });
     const bytes = zipStore(files);
@@ -497,8 +497,8 @@ export class DrawerMixinImpl {
   }
 
 
-  // _zipReadme — the Download-All root README. Reflects the ACTUAL toggles (a folder absent from the
-  // zip is absent from the map) and points at the consumption plugin — the skills/agent layer is
+  // _zipReadme, the Download-All root README. Reflects the ACTUAL toggles (a folder absent from the
+  // zip is absent from the map) and points at the consumption plugin, the skills/agent layer is
   // deliberately NOT bundled (it updates centrally via the marketplace; a copy here would go stale).
   _zipReadme(s, sys) {
     const name = this.doc.name || "Brand kit";
@@ -520,31 +520,31 @@ export class DrawerMixinImpl {
       const customColl = collNames.raw !== COLLECTIONS.colorRaw || collNames.semantic !== COLLECTIONS.colorSemantic;
       rows.push(
         "| `figma/` | Importable Figma variable files (Light/Dark semantic + primitives" + (sys.type !== false || sys.geometry !== false ? " + the breakpoint-moded Typography/Geometry collections" : "") + ") |",
-        "| `figma-aliased/` | The raw→semantic aliased variant (plugin-free import path)" + (customColl ? ` — targets collections named \`${collNames.raw}\` / \`${collNames.semantic}\` (renamed in Settings › Token mapping)` : "") + " |",
+        "| `figma-aliased/` | The raw→semantic aliased variant (plugin-free import path)" + (customColl ? `, targets collections named \`${collNames.raw}\` / \`${collNames.semantic}\` (renamed in Settings › Token mapping)` : "") + " |",
         "| `design-system-for-claude-code/` | The full agent-facing design system: `DESIGN.md` + `tokens.json` + self-contained component previews |",
         "| `design-system-for-google-stitch/` | The single-file `DESIGN.md` upload for Google Stitch |",
         "| `design-system-for-figma-make/` | The routed `guidelines/` tree for Figma Make (paste-ready `styles.css`) |",
       );
     }
-    if (sys.type) rows.push("| `typography/` | The eleven-voice type scale — `type.css` (Desktop, complete on its own) + optional `type-tablet.css` / `type-mobile.css` bolt-ons + DTCG, incl. per-breakpoint files |");
-    if (sys.geometry) rows.push("| `geometry/` | The dimensional system — control ramp, radii, spacing, container tier — `geometry.css` (Desktop) + `geometry-sizes.css` (the same file's `--size-*` block alone, no radius/space/container/class rules) + optional `geometry-tablet.css` / `geometry-mobile.css` + DTCG |");
-    rows.push(`| \`ultimate-tokens-${s}-config.json\` | The re-importable parametric config — open it in Ultimate Tokens to edit this kit |`);
+    if (sys.type) rows.push("| `typography/` | The eleven-voice type scale, `type.css` (Desktop, complete on its own) + optional `type-tablet.css` / `type-mobile.css` bolt-ons + DTCG, incl. per-breakpoint files |");
+    if (sys.geometry) rows.push("| `geometry/` | The dimensional system, control ramp, radii, spacing, container tier, `geometry.css` (Desktop) + `geometry-sizes.css` (the same file's `--size-*` block alone, no radius/space/container/class rules) + optional `geometry-tablet.css` / `geometry-mobile.css` + DTCG |");
+    rows.push(`| \`ultimate-tokens-${s}-config.json\` | The re-importable parametric config, open it in Ultimate Tokens to edit this kit |`);
     return [
-      `# ${name} — Ultimate Tokens export`, "",
+      `# ${name}, Ultimate Tokens export`, "",
       `Design tokens generated by [Ultimate Tokens](${REPO_URL}).`,
-      "Every value derives from a small parametric config (bottom of this table) — edit the config, not the outputs.", "",
+      "Every value derives from a small parametric config (bottom of this table), edit the config, not the outputs.", "",
       "| Folder / file | What it is |", "|---|---|", ...rows, "",
       "## Consuming this kit with a coding agent", "",
       "The **Ultimate Tokens Claude plugin** (free, MIT) teaches a coding agent to bind these tokens",
-      "correctly — the right semantic role per surface, the right voice/step per text, the right size per",
-      "control — instead of guessing values. It is deliberately not bundled here (it updates centrally):", "",
+      "correctly, the right semantic role per surface, the right voice/step per text, the right size per",
+      "control, instead of guessing values. It is deliberately not bundled here (it updates centrally):", "",
       "```", "/plugin marketplace add https://unpkg.com/@ultimate-tokens/claude/marketplace.json", "/plugin install ultimate-tokens", "```", "",
       "For AI agents that speak MCP, the app's **Download Brand-Kit MCP** produces a zero-dependency",
       "offline server wrapping this same kit (palettes · roles · type · geometry) as queryable tools.", "",
       "## Notes", "",
       "- Colors are high-resolution OKLCH at the source; hex files are derived for consumption.",
-      "- The CSS is Desktop-anchored and split into separate files, matching the Figma collections (Desktop as the default mode): add just `type.css`/`geometry.css` for a non-responsive site, or additionally drop in `-tablet`/`-mobile` — each is a self-contained, bounded `@media` override, so any subset in any load order resolves correctly. Body-class type is frozen across breakpoints while display-class compresses — that asymmetry is the system.",
-      "- Include the text-rendering baseline from the design-system `DESIGN.md` Typography section in your global CSS — it is part of the system.",
+      "- The CSS is Desktop-anchored and split into separate files, matching the Figma collections (Desktop as the default mode): add just `type.css`/`geometry.css` for a non-responsive site, or additionally drop in `-tablet`/`-mobile`, each is a self-contained, bounded `@media` override, so any subset in any load order resolves correctly. Body-class type is frozen across breakpoints while display-class compresses, that asymmetry is the system.",
+      "- Include the text-rendering baseline from the design-system `DESIGN.md` Typography section in your global CSS, it is part of the system.",
     ].join("\n") + "\n";
   }
 }

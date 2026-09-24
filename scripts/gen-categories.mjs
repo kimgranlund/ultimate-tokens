@@ -1,9 +1,9 @@
-// gen-categories.mjs — GENERATE the Palette Categories from docs/reference/colors/categories/*.json
+// gen-categories.mjs, GENERATE the Palette Categories from docs/reference/colors/categories/*.json
 //
 // SUPERSEDES gen-travel-presets.mjs. Reads every *.json under docs/reference/colors/categories/ — the
 // 7 sourced/decorative categories (architecture, cuisine, film, literature, music, nature, travel),
-// each 12 volumes × 4 palettes, PLUS "brands" (a smaller, real-identity set — see the `direct` palette
-// pass-through below) — and emits:
+// each 12 volumes × 4 palettes, PLUS "brands" (a smaller, real-identity set, see the `direct` palette
+// pass-through below), and emits:
 //
 //   src/ui/categories/index.js     a SMALL, always-bundled index: one card per category
 //                               ({slug, category, eyebrow, tagline, count, strip}) + a lazy loader
@@ -11,22 +11,22 @@
 //   src/ui/categories/<slug>.js    one LAZY module per category: VOLUMES (per-volume headers) + PRESETS
 //                               (the read-only gallery presets the generator opens as copies).
 //
-// NAMING — per docs/reference/colors/color-model-function.md:
+// NAMING, per docs/reference/colors/color-model-function.md:
 //   sampled 6 colors → {tier}[-muted]: primary/primary-muted, secondary/secondary-muted, tertiary/tertiary-muted
-//   (the base tier of each family carries NO "-base" suffix — only the muted sibling is suffixed;
+//   (the base tier of each family carries NO "-base" suffix, only the muted sibling is suffixed;
 //   the "-base"/"-muted" symmetric split was retired in favor of bare-name/"-muted", 2026-07-12.
-//   "accent" was retired 2026-07-13 — it never matched the app's own canonical 8-family default
+//   "accent" was retired 2026-07-13, it never matched the app's own canonical 8-family default
 //   (role-table.json's `defaults[]`, and every "Brands" own-product preset, use Primary/Secondary/
-//   Tertiary — no Accent), so the gallery's naming now matches instead of inventing a 4th family.)
-//   status 4 colors  → info/success/warning/danger  (NOT in the category JSON — the canonical semantic
+//   Tertiary, no Accent), so the gallery's naming now matches instead of inventing a 4th family.)
+//   status 4 colors  → info/success/warning/danger  (NOT in the category JSON, the canonical semantic
 //                      status set is appended, matching the product's Info/Success/Warning/Danger families)
 //
-// 1/3/2 → 2-2-2 MAPPING: the two accent swatches (rarest in the source, but the most CHARACTERFUL —
+// 1/3/2 → 2-2-2 MAPPING: the two accent swatches (rarest in the source, but the most CHARACTERFUL,
 //   often the vivid signature color, e.g. a brick-red tile against a grey concrete estate) → primary/
-//   primary-muted; dominant (the largest visual share of the source — often a muted material/ground
+//   primary-muted; dominant (the largest visual share of the source, often a muted material/ground
 //   tone) → secondary/secondary-muted; the other two supporting (by chroma) → tertiary/tertiary-muted.
-//   `colorRole` metadata (dominant/supporting/accent — the source's own visual-weight tier) is
-//   UNCHANGED by this — it still describes the swatch's role in the PHOTO, not which design-system
+//   `colorRole` metadata (dominant/supporting/accent, the source's own visual-weight tier) is
+//   UNCHANGED by this, it still describes the swatch's role in the PHOTO, not which design-system
 //   family name it becomes.
 //
 // Run via `npm run gen:categories`.
@@ -45,7 +45,7 @@ const SRCDIR = resolve(here, "../docs/reference/colors/categories");
 const OUTDIR = resolve(here, "../src/ui/categories");
 const HIER_ROLE = { d: "dominant", s: "supporting", a: "accent" };
 
-// status colors aren't in the category JSON — a neutral, professional default set, shared by every
+// status colors aren't in the category JSON, a neutral, professional default set, shared by every
 // preset. The canonical semantic-status four (matching the product's Info/Success/Warning/Danger
 // families), in a single muted register so no preset's status block fights its curated character.
 const STATUS = {
@@ -66,14 +66,14 @@ const clean = (s) =>
     .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
     .replace(/\s+/g, " ").trim();
 const oklchOf = (s) => String(s || "").trim().split(/\s+/).map(Number);
-// r4 — stable 4-decimal rounding for every EMITTED oklch component. Derived values (deriveNeutral's
+// r4, stable 4-decimal rounding for every EMITTED oklch component. Derived values (deriveNeutral's
 // circular-mean hue) are raw doubles whose last ulp differs across V8/Node versions; unrounded, that
 // version noise lands in COMMITTED artifacts and trips CI's generated-artifact drift gate (TKT-0011
 // found it live: hue 82.17507227608866 vs ...886 between Node 22.14 and CI's 22.x). 1e-4 is far below
 // any perceptual threshold.
 const r4 = (v) => Number(Number(v).toFixed(4));
 
-// tidyVolumeTitle — the source h1s lead with the redundant "Four palettes from …" count (the tile
+// tidyVolumeTitle, the source h1s lead with the redundant "Four palettes from …" count (the tile
 // strip already shows the count). Strip that lead-in, capitalize, and drop the trailing period so a
 // heading reads as the evocative phrase: "Four palettes from the great Russian novels, …" → "The
 // great Russian novels, …". The first matching prefix wins (rules are ordered most- → least-specific).
@@ -89,15 +89,15 @@ function tidyVolumeTitle(s) {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-// The ramp now passes through the anchor at stop 500 by construction (ticket #681, U2 — src/engine/
+// The ramp now passes through the anchor at stop 500 by construction (ticket #681, U2, src/engine/
 // tonal.js's anchored branch), so a preset no longer needs `lift` to FIT the source's lightness the
 // way it used to (the retired `liftForTone` below solved `toneAt(550, 0, lift)` for the pre-#681,
-// unanchored ramp, whose prime accent — stop 550 — was the closest thing to a "source-lightness"
+// unanchored ramp, whose prime accent, stop 550, was the closest thing to a "source-lightness"
 // target it had). Every anchored (sampled + status) palette stores `lift: 0`: skew/lift stay
 // available as a per-preset aesthetic warp around the now-fixed anchor (U2's per-side warp, anchored
 // at (500, the anchor's own lightness)), never as a fitted value this generator computes. Sources
 // whose OWN lightness falls outside the ramp's workable window ([RAMP_L_MIN, RAMP_L_MAX], Q3 (b))
-// are counted below and reported by name in test/engine/anchor.mjs's `anchor-ramp` allow-list — the
+// are counted below and reported by name in test/engine/anchor.mjs's `anchor-ramp` allow-list, the
 // token (prime.DEFAULT) still stores that source byte-for-byte regardless; only the RAMP's own
 // stop 500 clamps to the window edge for those.
 let anchoredCount = 0, outsideWindow = 0;
@@ -118,14 +118,14 @@ const palette = (name, hex, oklch, sw) => {
     lift: 0,
     hueShift: 0,
     hueSameDir: false,
-    // anchor / sourceAnchor (ticket #681, U1) — the SOURCE color, stored byte-for-byte (never
+    // anchor / sourceAnchor (ticket #681, U1), the SOURCE color, stored byte-for-byte (never
     // re-derived through the hue/chroma rounding two lines up): `hex` here is ALREADY the sampled or
     // status swatch's own uppercase "#RRGGBB" (mapColors uppercases it; STATUS's literals are
     // authored uppercase), so it round-trips through persist.js's hex domain unchanged. `anchor` is
     // the LIVE anchor prime.mjs's `prime` step and (U2) the ramp's stop 500 render verbatim;
     // `sourceAnchor` is this generator's OWN never-user-written copy, read back by the Reset action
     // (Q6, U2's C12) after a hue/chroma edit detaches `anchor`. `direct` palettes (the brands.json
-    // pass-through) are untouched here — they opt in only if their own JSON authors `anchor` (Q5).
+    // pass-through) are untouched here, they opt in only if their own JSON authors `anchor` (Q5).
     anchor: hex,
     sourceAnchor: hex,
     // retain the EXACT source color as the `dominant` key color, in OKLCH (less lossy than hex).
@@ -163,7 +163,7 @@ function mapColors(swatches) {
   ];
 }
 
-// the status palettes carry meaning, not character — excluded from the neutral's derivation context
+// the status palettes carry meaning, not character, excluded from the neutral's derivation context
 // (same set the New-Palette modal's "Derive from" strip excludes by default).
 const STATUS_NAMES = /^(danger|warning|success|error|critical|info|positive|negative)$/i;
 
@@ -196,51 +196,51 @@ function deriveNeutralPalette(palettes) {
 // anchor's own chroma at 300/700. 55 was tuned for that now-retired boost; 0 is the shipped value the
 // corpus regenerates with (see .sdlc/handoffs/pif-u3.md for the before/after C6 table).
 const VIVID_MIDS = { damp: 70, dampCurve: 1.5, dampAmp: 0, dampBias: 0 };
-// per-entry curve override (#479, extended #625) — opt-in, currently only exercised by "brands"'
+// per-entry curve override (#479, extended #625), opt-in, currently only exercised by "brands"'
 // `direct` shapes: a real shipped product's own generator settings can drift from every OTHER
 // preset's shared VIVID_MIDS/DEFAULT_CONTROLS (e.g. Adia's product export re-tuned damp/dampCurve/
 // dampAmp, and #625's fitted Adia document needs lmin:3 to reproduce its one remaining shared
 // residual). A preset that sets any of these keys wins over VIVID_MIDS/DEFAULT_CONTROLS for THAT
-// preset only; a preset that sets none is byte-identical to before this was added — same "opt-in,
+// preset only; a preset that sets none is byte-identical to before this was added, same "opt-in,
 // no-op by default" contract as the `direct` palette pass-through above. `lmin`/`lmax` are the ramp's
-// lightness-domain bounds (tonal.js DEFAULT_CONTROLS, default 5/100) — see the validation below,
+// lightness-domain bounds (tonal.js DEFAULT_CONTROLS, default 5/100), see the validation below,
 // which gives them the SAME loud-failure rigor as the `paletteGroups` tripwire (#617/#620/#621);
 // damp/dampCurve/dampAmp/dampBias carry no such gen-time validation of their own (unchanged here).
 const CURVE_OVERRIDE_KEYS = ["damp", "dampCurve", "dampAmp", "dampBias", "lmin", "lmax"];
-// per-entry lmin/lmax validation (#625) — mirrors the paletteGroups tripwire's rigor (loud failure at
+// per-entry lmin/lmax validation (#625), mirrors the paletteGroups tripwire's rigor (loud failure at
 // gen time on a non-numeric or out-of-range value) rather than leaving these two fields less
 // validated than paletteGroups' own baseChroma/primeChroma. Range comes from DOMAINS.lmin/lmax
-// (persist.js) — the SAME bounds hydrate()'s clampNumber enforces on a live document — so this can
+// (persist.js), the SAME bounds hydrate()'s clampNumber enforces on a live document, so this can
 // never drift from the actual hydrate() clamp.
 const CURVE_RANGE_KEYS = ["lmin", "lmax"];
-// per-entry GEOMETRY config (#485) — opt-in, currently only Adia's "brands" entry: a spec palette may
-// carry a `geometry` object (the same shape doc.geometry takes — e.g. `{ "ramp": "linear4" }` to opt
+// per-entry GEOMETRY config (#485), opt-in, currently only Adia's "brands" entry: a spec palette may
+// carry a `geometry` object (the same shape doc.geometry takes, e.g. `{ "ramp": "linear4" }` to opt
 // that ONE preset into the linear-ladder ramp, issue #483/#484) that passes straight through to the
 // generated preset verbatim, no register-mapping needed (unlike `type`, geometry has no spec-vocabulary
-// translation layer — it's already in the engine's own config shape). `hydrate()` re-validates/clamps it
+// translation layer, it's already in the engine's own config shape). `hydrate()` re-validates/clamps it
 // the same as any other doc.geometry when the preset is opened, so gen-time does no sanitizing of its
-// own. A preset with no `geometry` key is byte-identical to before this was added — same "opt-in,
+// own. A preset with no `geometry` key is byte-identical to before this was added, same "opt-in,
 // no-op by default" contract as CURVE_OVERRIDE_KEYS and the `type.fonts` pass-through below.
 
-// per-entry PALETTE GROUPS config (#617) — opt-in, mirrors `geometry`'s pass-through exactly (no
-// register-mapping layer needed: `paletteGroups`' shape — { material:{baseChroma,primeChroma},
-// brand:{...}, system:{...}, data:{baseChroma,primeChroma,locked} } — is already the engine/persist
+// per-entry PALETTE GROUPS config (#617), opt-in, mirrors `geometry`'s pass-through exactly (no
+// register-mapping layer needed: `paletteGroups`' shape, { material:{baseChroma,primeChroma},
+// brand:{...}, system:{...}, data:{baseChroma,primeChroma,locked} }, is already the engine/persist
 // shape, SPEC/LLD 0.3.0 REQ-001/010). A spec palette may carry a `paletteGroups` object that passes
 // straight through to the generated preset verbatim; opening the preset (openConfigAsSet -> hydrate ->
 // clampPaletteGroups) re-validates/clamps/default-fills it the same as any other doc.paletteGroups, so
 // gen-time does no sanitizing of its own. A preset with no `paletteGroups` key is byte-identical to
-// before this was added — same "opt-in, no-op by default" contract as CURVE_OVERRIDE_KEYS/`geometry`.
+// before this was added, same "opt-in, no-op by default" contract as CURVE_OVERRIDE_KEYS/`geometry`.
 
 // ── per-palette TYPOGRAPHY: map a spec palette's REGISTER declaration (its optional `type`) to an
 // engine typeScale config { treatment, bodyBase?, fonts, voices }. Registers are the intended-use
 // canon's Layer 3 (docs/reference/typography/intended-use.md): a story/brand's tone tiers mapped
-// onto the 15 voices. This mapper is the ONE place that vocabulary is translated — persist.clampType
+// onto the 15 voices. This mapper is the ONE place that vocabulary is translated, persist.clampType
 // + engine/type.mjs consume the output verbatim, so opening a preset applies it via hydrate.
 // Each register carries {font, weight, tracking "%", leading "%"} shaping its PRIMARY voice, plus
 // optional styleName (named cut), explicit `weights` ([] = opt-out), and a `voices` sub-map that
-// opts the register's OWN secondary voices in (absent = the base treatment's quiet default —
+// opts the register's OWN secondary voices in (absent = the base treatment's quiet default,
 // exactly the pre-register behavior). Replaced the 5-slot `slots` shape 2026-07-30 (#405); the
-// migration was byte-identical — slot display/heading/body/ui/mono ≙ the five registers 1:1.
+// migration was byte-identical, slot display/heading/body/ui/mono ≙ the five registers 1:1.
 // Register → font role + primary voice + the secondaries its `voices` may opt in.
 // ITERATION ORDER IS LOAD-BEARING: this order reproduces the pre-register mapper's
 // display,heading,body,ui,mono output order, keeping generated presets byte-stable.
@@ -252,8 +252,8 @@ const REGISTERS = {
   data:       { role: "mono",    voice: "Kicker",   own: ["Body-mono", "Label-mono", "Tiny-mono"] },
 };
 const TYPE_BASES = ["product", "luxury", "editorial", "technical", "statement"];
-// pct — the STRICT %-string parser for the preset schema's leading/tracking (Kim's 2026-07-10 unit
-// transition: `leading: "96%"` = 0.96 × size; `tracking: "-2%"` = -0.02em). Strings only — a bare
+// pct, the STRICT %-string parser for the preset schema's leading/tracking (Kim's 2026-07-10 unit
+// transition: `leading: "96%"` = 0.96 × size; `tracking: "-2%"` = -0.02em). Strings only, a bare
 // number is the RETIRED shape and is deliberately NOT honored (the schema gate rejects it), so the
 // unit can never be ambiguous again.
 const pct = (v) => {
@@ -269,10 +269,10 @@ function registersToTypeConfig(t) {
   if (Number.isFinite(t.bodyBase)) out.bodyBase = Math.max(10, Math.min(32, Math.round(t.bodyBase)));
   const fonts = {}, voices = {};
   // body-class cores clamp ≤450 (intended-use.md Layer 2 law #1 / #303-#307): a core past 450
-  // snaps to the Medium face while the style label says "regular" — 175 spec weights shipped that
+  // snaps to the Medium face while the style label says "regular", 175 spec weights shipped that
   // mismatch before the clamp (2026-07-30).
   const coreWeight = (voice, w) => (BODY_CLASS_VOICES.has(voice) ? Math.min(w, 450) : w);
-  // ADJACENT WEIGHT SIBLINGS — a designed voice ships weight variants around its own core unless
+  // ADJACENT WEIGHT SIBLINGS, a designed voice ships weight variants around its own core unless
   // the spec authors `weights` explicitly (verbatim, [] = the deliberate bare-core opt-out). The
   // derived ladder FUNCTION follows the voice's class, mirroring typeScale's auto-populate split
   // (2026-07-14): body-class voices bake bodyClassSiblingDefaults (2 stops, both heavier), every
@@ -282,7 +282,7 @@ function registersToTypeConfig(t) {
     const sibs = (BODY_CLASS_VOICES.has(voice) ? bodyClassSiblingDefaults : siblingWeightDefaults)(w);
     return sibs.length ? sibs : null;
   };
-  // PASS 1 — register cores → primary voices (identical shape to the retired 5-slot loop).
+  // PASS 1, register cores → primary voices (identical shape to the retired 5-slot loop).
   for (const [reg, def] of Object.entries(REGISTERS)) {
     const s = t.registers[reg];
     if (!s || typeof s !== "object") continue;
@@ -301,10 +301,10 @@ function registersToTypeConfig(t) {
     }
     if (Object.keys(v).length) voices[def.voice] = v;
     // INTERACTIVE-VOICE LADDERS (TKT-0005, the BZZR shape; explicit-array flow-through 2026-07-31
-    // per #418's brands lesson): actionable keys UI-control + UI-widget weight ladders — ladders
+    // per #418's brands lesson): actionable keys UI-control + UI-widget weight ladders, ladders
     // ONLY, never character, so the interactive voices keep the engine's control-text character.
     // An EXPLICIT `weights` array is the more authoritative signal (an author writes one exactly
-    // because the family's derived stops aren't real — Trade Gothic/Helvetica Neue/Flame Sans have
+    // because the family's derived stops aren't real, Trade Gothic/Helvetica Neue/Flame Sans have
     // no 500/600) and wins outright, core or not; otherwise fall back to deriving from a finite
     // core. Separate arrays per voice (a shared reference would let one voice's future mutation
     // alias the other).
@@ -316,12 +316,12 @@ function registersToTypeConfig(t) {
       }
     }
   }
-  // PASS 2 — `voices` opt-ins, after ALL cores (generalizes the retired trailing `faces` loop, so
-  // a font-only entry lands as {font} in the same tail position — byte-stable for migrated data).
+  // PASS 2, `voices` opt-ins, after ALL cores (generalizes the retired trailing `faces` loop, so
+  // a font-only entry lands as {font} in the same tail position, byte-stable for migrated data).
   // An entry may set font (the TKT-0002 per-voice escape hatch → resolvedFontFor), character
   // (weight/tracking/leading, same units + body-class clamp), styleName, or explicit weights;
   // UI-control/UI-widget entries honor `font` ONLY (the ladders-only law). Ownership (an entry
-  // must be the register's own secondary) is the gate's job — the mapper translates.
+  // must be the register's own secondary) is the gate's job, the mapper translates.
   for (const [reg] of Object.entries(REGISTERS)) {
     const s = t.registers[reg];
     if (!s || typeof s !== "object" || !s.voices || typeof s.voices !== "object") continue;
@@ -348,13 +348,13 @@ function registersToTypeConfig(t) {
   }
   if (Object.keys(fonts).length) out.fonts = fonts;
   if (Object.keys(voices).length) out.voices = voices;
-  // only a genuine design (≥1 custom font) yields a config — a bare/empty `type` is a no-op (identity).
+  // only a genuine design (≥1 custom font) yields a config, a bare/empty `type` is a no-op (identity).
   return out.fonts ? out : null;
 }
 
 // ── build one category → { volumes, presets, strip } ─────────────────────────────────────────────
 // exported (not just called below) so test/engine/categories.mjs can run the REAL generator logic
-// against a synthetic doc — e.g. to prove the paletteGroups opt-in (#617) actually discriminates
+// against a synthetic doc, e.g. to prove the paletteGroups opt-in (#617) actually discriminates
 // output, without writing a fitted value into any real curated category (that's #618's job).
 export function buildCategory(doc) {
   const volumes = {}, presets = [], strip = [];
@@ -364,36 +364,36 @@ export function buildCategory(doc) {
     (v.palettes || []).forEach((p, pi) => {
       const hy = p.hierarchy || {};
       // `p.palettes` (opt-in, currently only the "brands" category) is a DIRECT pass-through of a
-      // full palette array — every family verbatim, no swatch-hier derivation, no computed neutral,
+      // full palette array, every family verbatim, no swatch-hier derivation, no computed neutral,
       // no fixed shared status four. For a real shipped product (Maison/Adia/BZZR/the Jazz kit) that
       // preserves the ACTUAL authored Neutral + custom Info/Success/Warning/Danger instead of silently
-      // discarding them for the generic ones every sourced/decorative preset shares — those presets
+      // discarding them for the generic ones every sourced/decorative preset shares, those presets
       // never set this field, so their output is byte-identical to before this was added.
       const direct = Array.isArray(p.palettes) && p.palettes.length ? p.palettes : null;
       const dom = (p.swatches || []).find((s) => s.hier === "d");
       const stripHex = dom ? String(dom.hex).toUpperCase() : direct ? String(p.dominantHex || "").toUpperCase() : null;
-      // one dominant swatch per VOLUME → the hub-tile card strip — for the usual 12-volume categories
+      // one dominant swatch per VOLUME → the hub-tile card strip, for the usual 12-volume categories
       // that's `pi === 0` (the volume's first palette). A single-volume category (Brands: 1 volume ×
       // 7 curated palettes) has no "one per volume" to sample, which collapsed its strip to ONE swatch
-      // (a solid color block instead of a multi-hue preview) — so a lone volume samples every palette
+      // (a solid color block instead of a multi-hue preview), so a lone volume samples every palette
       // in it instead, giving a representative strip across its actual items.
       const takeForStrip = (doc.volumes || []).length > 1 ? pi === 0 : true;
       if (takeForStrip && stripHex) strip.push(stripHex);
       // RETIRED-SHAPE TRIPWIRE: `type.slots`/`type.faces` (the pre-register 5-slot design) would
-      // silently yield a typeless preset here — fail the generation loudly instead.
+      // silently yield a typeless preset here, fail the generation loudly instead.
       if (p.type && (p.type.slots || p.type.faces))
-        throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" uses the retired type.slots/type.faces shape — run scripts/migrate-type-registers.mjs`);
+        throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" uses the retired type.slots/type.faces shape, run scripts/migrate-type-registers.mjs`);
       // per-palette TYPOGRAPHY config: a spec may carry an already-resolved `type.fonts`/`.voices`
-      // directly (the "brands" pass-through shape — a real doc's own type config) — pass it through
+      // directly (the "brands" pass-through shape, a real doc's own type config), pass it through
       // verbatim rather than running it through the register mapper, which wouldn't recognize it.
       const typeCfg = p.type && p.type.fonts ? p.type : registersToTypeConfig(p.type);
-      // per-preset curve override (#479, extended #625) — see CURVE_OVERRIDE_KEYS above.
+      // per-preset curve override (#479, extended #625), see CURVE_OVERRIDE_KEYS above.
       const curveOverrides = {};
       for (const k of CURVE_OVERRIDE_KEYS) if (p[k] !== undefined) curveOverrides[k] = p[k];
       // CURVE-OVERRIDE RANGE TRIPWIRE (#625, same style as the paletteGroups tripwire below): a
       // curated category JSON's typo (a non-numeric lmin/lmax, or a fitted value outside the
       // documented domain) would otherwise bake silently into the committed src/ui/categories/*.js
-      // output — hydrate()'s clampNumber would silently floor/ceil it on open, with zero signal at
+      // output, hydrate()'s clampNumber would silently floor/ceil it on open, with zero signal at
       // gen time. Fail the GENERATOR loudly instead, naming the bad doc/palette/field/value.
       for (const k of CURVE_RANGE_KEYS) {
         if (p[k] === undefined) continue;
@@ -404,12 +404,12 @@ export function buildCategory(doc) {
         if (value < min || value > max)
           throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" ${k} is out of range: ${value} (valid range ${min}-${max})`);
       }
-      // per-preset GEOMETRY config (#485) — see the comment above CURVE_OVERRIDE_KEYS's declaration.
+      // per-preset GEOMETRY config (#485), see the comment above CURVE_OVERRIDE_KEYS's declaration.
       const geomCfg = p.geometry && typeof p.geometry === "object" ? p.geometry : null;
-      // per-preset PALETTE GROUPS config (#617) — see the comment above CURVE_OVERRIDE_KEYS's declaration.
+      // per-preset PALETTE GROUPS config (#617), see the comment above CURVE_OVERRIDE_KEYS's declaration.
       const groupsCfg = p.paletteGroups && typeof p.paletteGroups === "object" ? p.paletteGroups : null;
       // PALETTE-GROUPS AUTHORING TRIPWIRE (#617 review follow-up, extended #617/#619/#620 fold-in):
-      // `clampPaletteGroups` (persist.js) is a defensive, SILENT last-resort clamp for a live document —
+      // `clampPaletteGroups` (persist.js) is a defensive, SILENT last-resort clamp for a live document,
       // an unrecognized group key is simply never iterated (dropped with no warning), a non-numeric
       // baseChroma/primeChroma quietly falls back to that field's domain MINIMUM (clampNumber's
       // non-finite branch), an OUT-OF-RANGE number is silently floored/ceiled to the nearest valid bound,
@@ -417,7 +417,7 @@ export function buildCategory(doc) {
       // group's plain defaults. That's the right behavior for a live doc, but it means a curated category
       // JSON's typo (a misspelled group name, a string where a number belongs, a fitted value outside the
       // documented range, or a malformed group entry) would bake silently into the committed
-      // src/ui/categories/*.js output with zero signal — same class of hazard as the retired
+      // src/ui/categories/*.js output with zero signal, same class of hazard as the retired
       // type.slots/type.faces shape above. Fail the GENERATOR loudly instead, same style as that
       // tripwire, naming the bad doc/palette/group/field/value. The range/shape checks below read
       // DOMAINS.paletteGroups (persist.js) so this can never drift from the actual hydrate() clamp bounds.
@@ -451,22 +451,22 @@ export function buildCategory(doc) {
           groups: ["d", "s", "a"].filter((k) => hy[k]).map((k) => ({ hier: k, pct: hy[k].pct, note: clean(hy[k].text) })),
         },
         ...DEFAULT_CONTROLS, ...VIVID_MIDS, ...curveOverrides,
-        // per-palette TYPOGRAPHY — opening this preset (openConfigAsSet → hydrate → clampType) sets the
+        // per-palette TYPOGRAPHY, opening this preset (openConfigAsSet → hydrate → clampType) sets the
         // doc's `type`, so the Fonts picker + scale + every export carry this palette's designed system.
         // Absent when the spec palette has no `type` (falls back to the global default treatment).
         ...(typeCfg ? { type: typeCfg } : {}),
-        // per-preset GEOMETRY (#485) — same opening path (openConfigAsSet → hydrate → clampGeometry)
+        // per-preset GEOMETRY (#485), same opening path (openConfigAsSet → hydrate → clampGeometry)
         // carries this palette's geometry config, so ramp/treatment/baseHeight choices survive into
         // the opened doc's every export. Absent when the spec palette has no `geometry` (falls back to
-        // the global default ramp — the identity gate every other preset still gets).
+        // the global default ramp, the identity gate every other preset still gets).
         ...(geomCfg ? { geometry: geomCfg } : {}),
-        // per-preset PALETTE GROUPS (#617) — same opening path (openConfigAsSet -> hydrate ->
+        // per-preset PALETTE GROUPS (#617), same opening path (openConfigAsSet -> hydrate ->
         // clampPaletteGroups) carries this palette's group baseChroma/primeChroma/locked dial into the
         // opened doc, so a curated preset can reproduce a real document's group-level tuning instead of
         // silently losing it. Absent when the spec palette has no `paletteGroups` (falls back to the
         // global GROUP_DEFAULTS every other preset still gets).
         ...(groupsCfg ? { paletteGroups: groupsCfg } : {}),
-        // neutral first (derived from the character palettes' key colors), then the named families —
+        // neutral first (derived from the character palettes' key colors), then the named families,
         // unless `direct` supplies the full array itself (verbatim, in its own authored order).
         palettes: direct || (() => { const pals = mapColors(p.swatches || []); return [deriveNeutralPalette(pals), ...pals]; })(),
       });
@@ -477,7 +477,7 @@ export function buildCategory(doc) {
 
 // ── emit ──────────────────────────────────────────────────────────────────────────────────────
 // guarded so this module can be IMPORTED (for `buildCategory` above) without the side effect of
-// re-running the whole generation — only fires when run directly (`node scripts/gen-categories.mjs`
+// re-running the whole generation, only fires when run directly (`node scripts/gen-categories.mjs`
 // / `npm run gen:categories`), same behavior as before this guard was added.
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
 const files = readdirSync(SRCDIR).filter((f) => f.endsWith(".json")).sort();
@@ -489,8 +489,8 @@ for (const f of files) {
   const { volumes, presets, strip } = buildCategory(doc);
   const lines = presets.map((p) => "  " + JSON.stringify(p)).join(",\n");
   const body =
-    `// categories/${slug}.js — GENERATED by scripts/gen-categories.mjs from docs/reference/colors/categories/${f}.\n` +
-    `// DO NOT EDIT — run \`npm run gen:categories\`. ${presets.length} curated palettes (12 volumes × 4) as\n` +
+    `// categories/${slug}.js, GENERATED by scripts/gen-categories.mjs from docs/reference/colors/categories/${f}.\n` +
+    `// DO NOT EDIT, run \`npm run gen:categories\`. ${presets.length} curated palettes (12 volumes × 4) as\n` +
     `// read-only presets; each carries its \`vol\` + captured \`story\` + per-color name/role. Lazy-loaded.\n` +
     `export const VOLUMES = ${JSON.stringify(volumes)};\n` +
     `export const PRESETS = [\n${lines}\n];\n`;
@@ -503,7 +503,7 @@ for (const f of files) {
 const cards = index.map((c) => "  " + JSON.stringify(c)).join(",\n");
 const loaders = index.map((c) => `  ${JSON.stringify(c.slug)}: () => import("./${c.slug}.js"),`).join("\n");
 const idx =
-  "// categories/index.js — GENERATED by scripts/gen-categories.mjs. DO NOT EDIT — run `npm run gen:categories`.\n" +
+  "// categories/index.js, GENERATED by scripts/gen-categories.mjs. DO NOT EDIT, run `npm run gen:categories`.\n" +
   "// The Palette Categories hub index: one card per category (always bundled) + a lazy loader that\n" +
   "// code-splits each category's PRESETS/VOLUMES into its own chunk, loaded on demand when opened.\n" +
   "export const CATEGORY_INDEX = [\n" + cards + "\n];\n\n" +

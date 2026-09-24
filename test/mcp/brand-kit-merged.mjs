@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// brand-kit-merged.mjs — verifier for the downloadable MERGED brand-kit + describe-palette generator MCP
-// server (#374). Spawns the real (zero-dep) server TWICE — once kitless, once with a sibling brand-kit.json
+// brand-kit-merged.mjs, verifier for the downloadable MERGED brand-kit + describe-palette generator MCP
+// server (#374). Spawns the real (zero-dep) server TWICE, once kitless, once with a sibling brand-kit.json
 // — and drives the full MCP protocol over stdio, proving a generated kit never dead-ends end to end.
 import { spawn } from "node:child_process";
 import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
@@ -57,7 +57,7 @@ function spawnClient(args) {
     ok(generated.kit && generated.kit.palettes.length === 8, "step 2: brief → a real 8-palette kit");
 
     // #373: the MERGED server's own generate_kit reply carries the PNG image block too, over its own
-    // real spawned stdio — attachImageBlock threads through handleRead's reply, not just in-process.
+    // real spawned stdio, attachImageBlock threads through handleRead's reply, not just in-process.
     const rawGenerated = await c.rpc("tools/call", { name: "generate_kit", arguments: { brief } });
     ok(rawGenerated.result.content.length === 2 && rawGenerated.result.content[1].type === "image" && rawGenerated.result.content[1].mimeType === "image/png", `the merged server's real stdio reply for generate_kit carries a PNG image block (got ${rawGenerated.result.content.map((c) => c.type).join()})`);
 
@@ -104,7 +104,7 @@ function spawnClient(args) {
     const exp = await c.callTool("export_tokens", { format: "css" });
     ok(exp.error, "export_tokens is still gated for a loaded-kit-only session (no doc exists for a raw brand-kit.json)");
 
-    // now generate — the surface REBINDS off the generated kit, not the loaded one.
+    // now generate, the surface REBINDS off the generated kit, not the loaded one.
     const generated = await c.callTool("generate_kit", { brief: { name: "Rebind", families: { Primary: { hue: 100, chroma: 50 } } } });
     const exp2 = await c.callTool("export_tokens", { format: "json" });
     ok(exp2.files && exp2.files.length === 1, "export_tokens works immediately once a real generate call happens, even after booting with a loaded kit");
@@ -117,5 +117,5 @@ function spawnClient(args) {
 }
 
 if (fails.length) { console.error("brand-kit-merged MCP FAIL:\n  " + fails.join("\n  ")); process.exit(1); }
-console.log("brand-kit-merged MCP PASS — kitless boot (no file argument needed) + loaded-kit boot, generate_kit rebinding, the full read surface + export_tokens serving a generated kit, all over real stdio");
+console.log("brand-kit-merged MCP PASS, kitless boot (no file argument needed) + loaded-kit boot, generate_kit rebinding, the full read surface + export_tokens serving a generated kit, all over real stdio");
 process.exit(0);

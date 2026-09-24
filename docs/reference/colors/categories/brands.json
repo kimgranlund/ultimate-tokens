@@ -4,7 +4,7 @@
   "eyebrow": "Brand Palette · Sourced from real identities",
   "tagline": "Seven real brands, <em>read for their actual color</em> — shipped products and researched public identities alike.",
   "metaNote": "Color sourced from real,<br/>shipped brand identities",
-  "sourcing": "Four of these are the nonoun studio's own live products, sampled straight from their real, currently-shipped design-system exports (Neutral, custom status colors, and all). The other three are researched from each brand's own public identity — Corsa from its own in-app color system and brand mark, Nike and Burger King from their published guidelines and known brand assets.",
+  "sourcing": "Four of these are the nonoun studio's own live products, sampled straight from their real, currently-shipped design-system exports (Neutral, custom status colors, and all). The other three are researched from each brand's own public identity, Corsa from its own in-app color system and brand mark, Nike and Burger King from their published guidelines and known brand assets.",
   "volumes": [
     {
       "roman": "I",
@@ -12,7 +12,7 @@
       "eyebrow": "Brands · Vol I · Sourced from real identities",
       "h1": "Seven real brands, read for their actual color.",
       "preface": [
-        "Every other category in this gallery samples color from a place, a material, a dish, a film — something to look at and read off. This one samples it from brands: four of the nonoun studio's own shipped products, plus three researched public identities. The four owned presets carry their REAL Neutral and status colors, exactly as shipped — not the generic derived-and-shared set every sourced/decorative preset in this gallery otherwise gets."
+        "Every other category in this gallery samples color from a place, a material, a dish, a film, something to look at and read off. This one samples it from brands: four of the nonoun studio's own shipped products, plus three researched public identities. The four owned presets carry their REAL Neutral and status colors, exactly as shipped, not the generic derived-and-shared set every sourced/decorative preset in this gallery otherwise gets."
       ],
       "palettes": [
         {
@@ -136,7 +136,7 @@
               "c": "#B4DFE4"
             }
           },
-          "refuses": "A warm, high-chroma palette. Adia stays cool by design — sky blue and quiet aqua, not heat.",
+          "refuses": "A warm, high-chroma palette. Adia stays cool by design, sky blue and quiet aqua, not heat.",
           "dominantHex": "#55C9F2",
           "damp": 89,
           "dampCurve": 1.3,
@@ -580,7 +580,7 @@
               "c": "#00FAB7"
             }
           },
-          "refuses": "A calm, desaturated palette. BZZR runs hot and electric by design — near-peak chroma on both its primary and secondary.",
+          "refuses": "A calm, desaturated palette. BZZR runs hot and electric by design, near-peak chroma on both its primary and secondary.",
           "dominantHex": "#1F1DF9",
           "type": {
             "treatment": "statement",
@@ -913,7 +913,7 @@
               "c": "#BD9864"
             }
           },
-          "refuses": "Faded sepia. Modal jazz is deep blue and teal warmed by brass — a cool-blue mood, not a brown nostalgia.",
+          "refuses": "Faded sepia. Modal jazz is deep blue and teal warmed by brass, a cool-blue mood, not a brown nostalgia.",
           "dominantHex": "#23436E",
           "type": {
             "treatment": "editorial",
@@ -1301,8 +1301,8 @@
         },
         {
           "kicker": "Corsa · Grand Tour cycling · Italy · France · Spain",
-          "title": "A loud, graphic Grand-Tour identity — Giro rosa and Tour yellow over road blue, punctuated by the red, green, purple and blue classification jerseys",
-          "source": "Color from the three Grand Tours, read for their real jersey and newsprint origins: the Giro's <em>maglia rosa</em> (pink because <em>La Gazzetta dello Sport</em> is printed on pink paper) and the Tour's <em>maillot jaune</em> (≈Pantone 123 C, yellow because <em>L'Auto</em> was printed on yellow paper), over a road blue and a muted lagoon; the Vuelta's <em>maillot rojo</em>, a limestone-and-cream stone ground, and the classification jerseys — Giro <em>azzurra</em> (blue, mountains) and <em>ciclamino</em> (cyclamen purple, points), Tour <em>maillot vert</em> (green, points) — over gravel, redwood-brown and pine terrain neutrals. The palette of a between-the-wars-to-Moser-era cycling poster, not a faded photograph.",
+          "title": "A loud, graphic Grand-Tour identity, Giro rosa and Tour yellow over road blue, punctuated by the red, green, purple and blue classification jerseys",
+          "source": "Color from the three Grand Tours, read for their real jersey and newsprint origins: the Giro's <em>maglia rosa</em> (pink because <em>La Gazzetta dello Sport</em> is printed on pink paper) and the Tour's <em>maillot jaune</em> (≈Pantone 123 C, yellow because <em>L'Auto</em> was printed on yellow paper), over a road blue and a muted lagoon; the Vuelta's <em>maillot rojo</em>, a limestone-and-cream stone ground, and the classification jerseys, Giro <em>azzurra</em> (blue, mountains) and <em>ciclamino</em> (cyclamen purple, points), Tour <em>maillot vert</em> (green, points), over gravel, redwood-brown and pine terrain neutrals. The palette of a between-the-wars-to-Moser-era cycling poster, not a faded photograph.",
           "hierarchy": {
             "d": {
               "pct": 45,
@@ -1321,10 +1321,10 @@
             }
           },
           "dominantHex": "#EA4F93",
-          "refuses": "A muted, faded-photograph nostalgia. The Grand Tour's heritage is loud and graphic — maglia-rosa pink, maillot-jaune yellow, and gas-station-signage jersey reds and greens, printed on pink and yellow newsprint, not sepia.",
+          "refuses": "A muted, faded-photograph nostalgia. The Grand Tour's heritage is loud and graphic, maglia-rosa pink, maillot-jaune yellow, and gas-station-signage jersey reds and greens, printed on pink and yellow newsprint, not sepia.",
           "type": {
             "base": "editorial",
-            "note": "Re-reasoned from this entry's own sources — interwar-to-Moser-era race posters and the two sports papers the jerseys came from — not a generic elegant-serif reflex: the loudest voice is the poster lettering, so anthemic becomes Anton (Vernon Adams, Google Fonts/SIL OFL, a redrawn traditional advertising sans that ships a SINGLE Regular 400), core 400 with the ladder opted out so the letterform does the shouting; the newsprint masthead register moves to contextual on Bodoni Moda (indestructible type*, Google Fonts, variable 400–900 — 700 core, derived 800/600/500 all inside the axis), Italian sports-press Didone rather than Anton's fictional 800; reading text leaves Inter (a screen-UI grotesque fighting the newsprint story) for Source Serif 4 (variable 200–900, in font-cuts.json and bundled, so it actually renders) at a real 400; actionable's 460 core was not a Söhne cut — Klim ships Buch 400 · Kräftig 500 · Halbfett 600 · Dreiviertelfett 700, so the core sits on Buch 400 with its real German cut names as the ladder; Courier Prime ships only 400/700 (Quote-Unquote Apps), so the data core drops from 500 to the real Regular with Bold as its single sibling, Kicker tracked out to 12% for the typed results-sheet read.",
+            "note": "Re-reasoned from this entry's own sources, interwar-to-Moser-era race posters and the two sports papers the jerseys came from, not a generic elegant-serif reflex: the loudest voice is the poster lettering, so anthemic becomes Anton (Vernon Adams, Google Fonts/SIL OFL, a redrawn traditional advertising sans that ships a SINGLE Regular 400), core 400 with the ladder opted out so the letterform does the shouting; the newsprint masthead register moves to contextual on Bodoni Moda (indestructible type*, Google Fonts, variable 400–900, 700 core, derived 800/600/500 all inside the axis), Italian sports-press Didone rather than Anton's fictional 800; reading text leaves Inter (a screen-UI grotesque fighting the newsprint story) for Source Serif 4 (variable 200–900, in font-cuts.json and bundled, so it actually renders) at a real 400; actionable's 460 core was not a Söhne cut, Klim ships Buch 400 · Kräftig 500 · Halbfett 600 · Dreiviertelfett 700, so the core sits on Buch 400 with its real German cut names as the ladder; Courier Prime ships only 400/700 (Quote-Unquote Apps), so the data core drops from 500 to the real Regular with Bold as its single sibling, Kicker tracked out to 12% for the typed results-sheet read.",
             "registers": {
               "anthemic": {
                 "font": "Anton",
@@ -1396,7 +1396,7 @@
                 }
               ],
               "colorName": "Cobbles grey",
-              "description": "Cool pavé cobblestone grey — the road under every tour."
+              "description": "Cool pavé cobblestone grey, the road under every tour."
             },
             {
               "name": "primary",
@@ -1418,7 +1418,7 @@
                 }
               ],
               "colorName": "Giro d'Italia rosa",
-              "description": "The maglia rosa — a vivid poster pink from La Gazzetta's pink pages.",
+              "description": "The maglia rosa, a vivid poster pink from La Gazzetta's pink pages.",
               "colorRole": "dominant"
             },
             {
@@ -1510,7 +1510,7 @@
                 }
               ],
               "colorName": "Vuelta a España red",
-              "description": "The maillot rojo — the Vuelta leader jersey, red since 2010.",
+              "description": "The maillot rojo, the Vuelta leader jersey, red since 2010.",
               "colorRole": "accent"
             },
             {
@@ -1533,7 +1533,7 @@
                 }
               ],
               "colorName": "Limestone, cream",
-              "description": "Warm pale stone and paper — the poster stock.",
+              "description": "Warm pale stone and paper, the poster stock.",
               "colorRole": "supporting"
             },
             {
@@ -1556,7 +1556,7 @@
                 }
               ],
               "colorName": "Tour de France yellow",
-              "description": "The maillot jaune, ≈Pantone 123 C — golden, from L'Auto's yellow newsprint.",
+              "description": "The maillot jaune, ≈Pantone 123 C, golden, from L'Auto's yellow newsprint.",
               "colorRole": "accent"
             },
             {
@@ -1579,7 +1579,7 @@
                 }
               ],
               "colorName": "Yellow newspaper",
-              "description": "Aged L'Auto newsprint — a muted mustard behind the maillot jaune.",
+              "description": "Aged L'Auto newsprint, a muted mustard behind the maillot jaune.",
               "colorRole": "supporting"
             },
             {
@@ -1602,7 +1602,7 @@
                 }
               ],
               "colorName": "Blue jersey, maglia azzurra",
-              "description": "The Giro mountains jersey — blue since 2012 (Banca Mediolanum).",
+              "description": "The Giro mountains jersey, blue since 2012 (Banca Mediolanum).",
               "colorRole": "accent"
             },
             {
@@ -1625,7 +1625,7 @@
                 }
               ],
               "colorName": "Green jersey, maillot vert",
-              "description": "The Tour points jersey — a bright grass green.",
+              "description": "The Tour points jersey, a bright grass green.",
               "colorRole": "accent"
             },
             {
@@ -1648,7 +1648,7 @@
                 }
               ],
               "colorName": "Purple jersey, maglia ciclamino",
-              "description": "The Giro points jersey — cyclamen, an intense purple-magenta.",
+              "description": "The Giro points jersey, cyclamen, an intense purple-magenta.",
               "colorRole": "accent"
             },
             {
@@ -1671,7 +1671,7 @@
                 }
               ],
               "colorName": "Gravel brown",
-              "description": "Strade-bianche gravel — a warm mid brown.",
+              "description": "Strade-bianche gravel, a warm mid brown.",
               "colorRole": "accent"
             },
             {
@@ -1810,7 +1810,7 @@
             {
               "name": "Jet black, PMS Black 6 C",
               "oklch": "0.214 0.019 240",
-              "note": "The Swoosh and wordmark ink — a blue-black, not flat black.",
+              "note": "The Swoosh and wordmark ink, a blue-black, not flat black.",
               "hier": "d",
               "hex": "#101820"
             },
@@ -1853,7 +1853,7 @@
           "hierarchy": {
             "d": {
               "pct": 55,
-              "text": "Jet black is the mark — the Swoosh, the wordmark, the ink.",
+              "text": "Jet black is the mark, the Swoosh, the wordmark, the ink.",
               "c": "#101820"
             },
             "s": {
@@ -1867,10 +1867,10 @@
               "c": "#FF6600"
             }
           },
-          "refuses": "Not a rainbow of past colorway drops — Nike's brand identity is disciplined black and white, lit by a single orange-red accent, never a full spectrum.",
+          "refuses": "Not a rainbow of past colorway drops, Nike's brand identity is disciplined black and white, lit by a single orange-red accent, never a full spectrum.",
           "type": {
             "base": "statement",
-            "note": "Reconciled against Nike's actual codified faces: headlines are Futura Condensed Extra Bold — Nike's own cut (Futura ND Nike 365) is bespoke and unlicensable, so retail Futura PT Condensed stands in, and since Paratype/Adobe ship that width at Book 400 · Medium 500 · Bold 700 · Extra Bold 800 ONLY, the 800 core (styleName 'Extra Bold', a style within the declared family) carries a real Bold/Medium ladder instead of a fictional 900; the editorial register is the Trade Gothic Nike has moved to, at its real Bold Condensed No. 20 with Condensed No. 18 on the caps Sub-heading (Linotype's 14-style family = Light 300 · Roman 400 · Bold 700 plus the two condensed cuts — no 500 or 600 exists, which is why the previous 'Trade Gothic Next Condensed 700 / 500' pair was fiction and every ladder here is explicit); body copy is Helvetica Neue per Nike's own guidelines (55 Roman 400 · 65 Medium 500 · 75 Bold 700 — no 600, so the ladder is authored); controls take plain Trade Gothic with NO declared core (the base 440 snaps to Roman, and the mapper then fabricates no interactive ladder for a family with no 500/600); Nike has no mono brand face, so the data register keeps Roboto Mono (variable 100–700, 500 real) as a declared stand-in for stock-code fine print — near-monochrome discipline means the type stays black-and-white loud, never decorative.",
+            "note": "Reconciled against Nike's actual codified faces: headlines are Futura Condensed Extra Bold, Nike's own cut (Futura ND Nike 365) is bespoke and unlicensable, so retail Futura PT Condensed stands in, and since Paratype/Adobe ship that width at Book 400 · Medium 500 · Bold 700 · Extra Bold 800 ONLY, the 800 core (styleName 'Extra Bold', a style within the declared family) carries a real Bold/Medium ladder instead of a fictional 900; the editorial register is the Trade Gothic Nike has moved to, at its real Bold Condensed No. 20 with Condensed No. 18 on the caps Sub-heading (Linotype's 14-style family = Light 300 · Roman 400 · Bold 700 plus the two condensed cuts, no 500 or 600 exists, which is why the previous 'Trade Gothic Next Condensed 700 / 500' pair was fiction and every ladder here is explicit); body copy is Helvetica Neue per Nike's own guidelines (55 Roman 400 · 65 Medium 500 · 75 Bold 700, no 600, so the ladder is authored); controls take plain Trade Gothic with NO declared core (the base 440 snaps to Roman, and the mapper then fabricates no interactive ladder for a family with no 500/600); Nike has no mono brand face, so the data register keeps Roboto Mono (variable 100–700, 500 real) as a declared stand-in for stock-code fine print, near-monochrome discipline means the type stays black-and-white loud, never decorative.",
             "registers": {
               "anthemic": {
                 "font": "Futura PT Condensed",
@@ -1957,7 +1957,7 @@
         {
           "kicker": "Burger King · The Flame Identity · 2021 rebrand",
           "title": "A flame-grill on a bun: fiery red over char-brown and mayo cream, lit by melty yellow and a rare crunchy green.",
-          "source": "Sampled straight from Burger King's 2021 flame identity (in-house team with JKR). The six chips are the guideline swatches themselves — <em>Fiery Red, Flaming Orange, BBQ Brown, Mayo Egg White, Melty Yellow</em> and <em>Crunchy Green</em> — an analogous, appetite-warm system drawn from the Whopper's real ingredients and the trademark flame-grill.",
+          "source": "Sampled straight from Burger King's 2021 flame identity (in-house team with JKR). The six chips are the guideline swatches themselves, <em>Fiery Red, Flaming Orange, BBQ Brown, Mayo Egg White, Melty Yellow</em> and <em>Crunchy Green</em> — an analogous, appetite-warm system drawn from the Whopper's real ingredients and the trademark flame-grill.",
           "swatches": [
             {
               "name": "Fiery Red",
@@ -2005,7 +2005,7 @@
           "hierarchy": {
             "d": {
               "pct": 50,
-              "text": "Fiery Red is the brand's body — the primary and the signature.",
+              "text": "Fiery Red is the brand's body, the primary and the signature.",
               "c": "#D62300"
             },
             "s": {
@@ -2019,10 +2019,10 @@
               "c": "#FFAA00"
             }
           },
-          "refuses": "Not the 1990s photoreal, blue-swooshed fast-food logo it replaced — the flame identity is warm and fully analogous, unashamedly appetite-red, with no cool blue anywhere in it.",
+          "refuses": "Not the 1990s photoreal, blue-swooshed fast-food logo it replaced, the flame identity is warm and fully analogous, unashamedly appetite-red, with no cool blue anywhere in it.",
           "type": {
             "base": "statement",
-            "note": "The 2021 flame identity's REAL type, replacing the Cooper Black / Recoleta / Sofia Pro lookalikes: JKR commissioned Colophon Foundry to draw Flame in two weights (Bold + Regular) and Flame Sans in a single Regular — both proprietary to Burger King Corporation, named here because the palette is sampled from the same guidelines, and they fall back to the default face when unavailable; so anthemic and contextual sit on Flame Bold 700 with Regular as the only real sibling, and every Flame Sans voice (Body, Lead, Title, Sub-title, Label and the controls) sits on the one real Regular 400 with its ladder opted out rather than inventing a Medium/Semi-bold — the actionable register declares no core weight at all so the preset asserts no interactive ladder (the engine auto-populates at scale time, where single-cut Flame Sans renders every stop Regular); the data register keeps Space Mono, Colophon's own release for Google Fonts (400/700), core on the real Regular with Bold as its single sibling and Kicker tracked to 10% for menu-board fine print. The refusal holds: warm, chunky and fully analogous, no cool corporate grotesque anywhere in it.",
+            "note": "The 2021 flame identity's REAL type, replacing the Cooper Black / Recoleta / Sofia Pro lookalikes: JKR commissioned Colophon Foundry to draw Flame in two weights (Bold + Regular) and Flame Sans in a single Regular, both proprietary to Burger King Corporation, named here because the palette is sampled from the same guidelines, and they fall back to the default face when unavailable; so anthemic and contextual sit on Flame Bold 700 with Regular as the only real sibling, and every Flame Sans voice (Body, Lead, Title, Sub-title, Label and the controls) sits on the one real Regular 400 with its ladder opted out rather than inventing a Medium/Semi-bold, the actionable register declares no core weight at all so the preset asserts no interactive ladder (the engine auto-populates at scale time, where single-cut Flame Sans renders every stop Regular); the data register keeps Space Mono, Colophon's own release for Google Fonts (400/700), core on the real Regular with Bold as its single sibling and Kicker tracked to 10% for menu-board fine print. The refusal holds: warm, chunky and fully analogous, no cool corporate grotesque anywhere in it.",
             "registers": {
               "anthemic": {
                 "font": "Flame",

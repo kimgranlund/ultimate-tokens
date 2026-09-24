@@ -1,15 +1,15 @@
-// mode-apply-plan.mjs — the PURE, testable planner for APPLYING a breakpoint-moded variable collection
+// mode-apply-plan.mjs, the PURE, testable planner for APPLYING a breakpoint-moded variable collection
 // into a Figma file. The companion to bind-plan.mjs (which plans the COLOR cascade): where bind-plan
 // aliases semantic→raw across Light/Dark, this plans the Type/Geometry token write across the "Base" +
-// per-breakpoint MODES that `typeTokensFigmaModes` / `geomTokensFigmaModes` already emit — BOTH into the
+// per-breakpoint MODES that `typeTokensFigmaModes` / `geomTokensFigmaModes` already emit, BOTH into the
 // single "Geometry" collection since TKT-0009 (type/ + box-geometry halves), merged into one interchange
 // via mergeModeInterchanges below before planning.
 //
-// INPUT — the UI3 float interchange those producers return:
+// INPUT, the UI3 float interchange those producers return:
 //   { collections: { "<Name>": { modes: ["Base", <bp>…], variables: { "<key>": { type, values: { <mode>: n } } } } } }
 //
-// OUTPUT — modeApplyPlan(interchange) → one entry per collection, a DETERMINISTIC, ordered description of the
-// Figma operations the plugin will run (no `figma` calls here — that lives in code.js, which MIRRORS this and
+// OUTPUT, modeApplyPlan(interchange) → one entry per collection, a DETERMINISTIC, ordered description of the
+// Figma operations the plugin will run (no `figma` calls here, that lives in code.js, which MIRRORS this and
 // is parity-gated, exactly as figma-semantic-binder/code.js mirrors bind-plan.mjs):
 //   [{
 //     collection: "<Name>",
@@ -17,7 +17,7 @@
 //     defaultMode:"Base",              // the collection's first mode == Figma's default mode (renamed to this)
 //     addModes:   [<bp>…],             // the rest, created with collection.addMode(name)
 //     variables:  [{ name, type, values: [{ mode, value }, …] }],  // name-sorted; one value PER mode, in modes order
-//     renameFrom?: ["<oldCollectionName>", …],   // TKT-0012: registry keys this collection supersedes —
+//     renameFrom?: ["<oldCollectionName>", …],   // TKT-0012: registry keys this collection supersedes,
 //                                                //   the executor adopts the tracked collection BY ID,
 //                                                //   renames it in place, and re-keys the registry
 //     renames?:    { "<oldVarName>": "<newVarName>" },  // TKT-0012: id-preserving variable renames, run
@@ -31,7 +31,7 @@
 //   for (v of variables) { vr = createVariable(v.name, coll, v.type);
 //                          for ({mode,value} of v.values) vr.setValueForMode(modeId[mode], value); }
 // Because the plan is value-COMPLETE (validateModeInterchange guarantees every variable has a value for every
-// mode), the apply never leaves a mode unset — the failure that makes a Figma import look half-bound.
+// mode), the apply never leaves a mode unset, the failure that makes a Figma import look half-bound.
 
 const FIGMA_VAR_TYPES = new Set(["FLOAT", "STRING", "BOOLEAN", "COLOR"]);
 
@@ -39,11 +39,11 @@ const FIGMA_VAR_TYPES = new Set(["FLOAT", "STRING", "BOOLEAN", "COLOR"]);
 // (modes: first-writer order + any new names appended; variables: combined, later writer wins a key
 // collision). THE reason this exists (TKT-0009): typeTokensFigmaModes + geomTokensFigmaModes both emit
 // the "Geometry" collection (type/ + box-geometry halves), and the executor's applyFloatPlans prunes
-// variables per-collection against ITS plan — two sequential plans on one collection would each delete
+// variables per-collection against ITS plan, two sequential plans on one collection would each delete
 // the other's variables, so the halves MUST merge into one plan before modeApplyPlan.
 //
 // MISMATCHED MODE LISTS (a configured type breakpoint beside geometry's intrinsic set, or vice versa)
-// union — and each half BACK-FILLS the modes it doesn't define with its OWN default-mode (modes[0])
+// union, and each half BACK-FILLS the modes it doesn't define with its OWN default-mode (modes[0])
 // value: one collection can only carry one mode set, and "this system doesn't vary at that breakpoint"
 // honestly means "its base values there" (exactly what the two-collection era showed: the other
 // collection simply had no such mode, so consumers resolved its default). Pure and non-validating
@@ -81,7 +81,7 @@ export function mergeModeInterchanges(...interchanges) {
 }
 
 // modeApplyPlan(interchange) → the ordered per-collection apply plan (see header). Pure; deterministic
-// (variables name-sorted, values in `modes` order). Does NOT validate — call validateModeInterchange first.
+// (variables name-sorted, values in `modes` order). Does NOT validate, call validateModeInterchange first.
 export function modeApplyPlan(interchange) {
   const collections = (interchange && typeof interchange === "object" && interchange.collections) || {};
   return Object.keys(collections).map((name) => {
@@ -104,9 +104,9 @@ export function modeApplyPlan(interchange) {
 }
 
 // validateModeInterchange(interchange) → string[] of problems ([] when sound). The invariants the Figma
-// apply-path depends on — a malformed interchange is caught HERE (pure, tested) rather than half-applied to a
+// apply-path depends on, a malformed interchange is caught HERE (pure, tested) rather than half-applied to a
 // user's file. Checks: ≥1 collection; modes is a non-empty list of DISTINCT, non-empty names
-// (case-insensitive; Figma rejects duplicates) whose FIRST entry becomes the collection's default mode —
+// (case-insensitive; Figma rejects duplicates) whose FIRST entry becomes the collection's default mode,
 // any name, not just "Base": the emitters may name the base layer (e.g. "Mobile") and order it last, making
 // a breakpoint (e.g. "Desktop") the default; every variable has a known type, a value for EVERY mode, and
 // FLOAT values that are finite numbers.
@@ -142,13 +142,13 @@ export function validateModeInterchange(interchange) {
   return out;
 }
 
-// applyRenameMigrations(plans, migrations) — stamp the TKT-0012 rename fields onto apply plans, PURE.
+// applyRenameMigrations(plans, migrations), stamp the TKT-0012 rename fields onto apply plans, PURE.
 // `migrations.collections` is keyed by the CURRENT (post-migration) collection name:
 //   { "<collection>": { renameFrom?: ["<old collection name>", …], vars?: { "<old>": "<new>" } } }
 // Only plans whose collection matches get stamped; unknown keys are ignored (a migration for a
 // collection this apply doesn't carry is a no-op, never an error). Returns the SAME array for
 // chaining; entries are shallow-copied before stamping so cached planner output is never mutated.
-// THE POINT (collections-arch review, CRITICAL-1): every executor reconciles by name — without a
+// THE POINT (collections-arch review, CRITICAL-1): every executor reconciles by name, without a
 // rename-first pass, any rename is a prune+recreate that orphans every consumer binding. This is
 // the one sanctioned channel for renames; every renaming ticket ships its map here.
 export function applyRenameMigrations(plans, migrations) {
@@ -164,16 +164,16 @@ export function applyRenameMigrations(plans, migrations) {
   });
 }
 
-// retirementsFor(plans, migrations) — stamp registry-tracked collection RETIREMENTS onto apply plans,
+// retirementsFor(plans, migrations), stamp registry-tracked collection RETIREMENTS onto apply plans,
 // PURE (TKT-0018: lifted out of the UI's `_figmaFloatPlans`, which used to inline this as a post-hoc
 // mutation with no unit coverage of its own). `migrations.retire` is a list of declarative rules:
 //   [{ collection: "<target plan's collection>", ifVariablePrefix: "<prefix>", retire: ["<name>", …] }]
 // A rule fires only once its target collection's plan carries at least one variable whose name starts
-// with `ifVariablePrefix` — e.g. TKT-0009's rule: the merged "Geometry" collection supersedes the old
+// with `ifVariablePrefix`, e.g. TKT-0009's rule: the merged "Geometry" collection supersedes the old
 // two-collection era's "Typography" only once it actually lands type/ variables (retiring it before the
 // merge is stable would drop a user's Typography collection while the apply itself could still fail).
 // Retirement here is REGISTRY-TRACKED-ONLY (code.js's applyFloatPlans matches `retire` names against ITS
-// own provenance registry, never a live file's collection by name) — a user's own same-named collection
+// own provenance registry, never a live file's collection by name), a user's own same-named collection
 // is never touched. Returns the SAME array when no rule fires (chaining, e.g. after applyRenameMigrations);
 // entries a rule matches are shallow-copied first, so cached planner output is never mutated.
 export function retirementsFor(plans, migrations) {
@@ -194,18 +194,18 @@ export function retirementsFor(plans, migrations) {
   return changed ? out : plans;
 }
 
-// ── "published library" mode (#495) — a per-collection RECONCILE that never removes a variable, for a
+// ── "published library" mode (#495), a per-collection RECONCILE that never removes a variable, for a
 // file whose collections are consumed (via Figma's library-publish mechanism) by OTHER files: a
 // consumer's binding is always by ID, so a `.remove()` orphans it irrecoverably. All of the below is
-// PURE (no figma calls) — the executor (code.js) reads live state ONCE, calls these, then both REPORTS
+// PURE (no figma calls), the executor (code.js) reads live state ONCE, calls these, then both REPORTS
 // the result (dry-run) and APPLIES it (the SAME computed action list drives both, so they can never
-// disagree — see applyFloatPlans'/applyFontPrimitivesModes' library-mode branch). ──
+// disagree, see applyFloatPlans'/applyFontPrimitivesModes' library-mode branch). ──
 
-// nearestStepByHeight(oldHeight, currentStepHeights) — PURE: which of the CURRENT plan's OWN size/
-// steps (a {stepName: height} map, read straight from its `size/${step}/height` variables — never a
+// nearestStepByHeight(oldHeight, currentStepHeights), PURE: which of the CURRENT plan's OWN size/
+// steps (a {stepName: height} map, read straight from its `size/${step}/height` variables, never a
 // hand-typed table, so a ramp change is picked up automatically) has the height CLOSEST to an old,
 // no-longer-planned step's own height? Ties break toward whichever step Object.entries() visits first
-// (insertion order — deterministic, never array-sort-dependent).
+// (insertion order, deterministic, never array-sort-dependent).
 export function nearestStepByHeight(oldHeight, currentStepHeights) {
   let best = null, bestDist = Infinity;
   for (const [step, h] of Object.entries(currentStepHeights || {})) {
@@ -215,13 +215,13 @@ export function nearestStepByHeight(oldHeight, currentStepHeights) {
   return best;
 }
 
-// geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap) — PURE: expands a
-// "nearest step by height" match into a FULL per-field alias map for the Geometry `size/` family —
+// geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap), PURE: expands a
+// "nearest step by height" match into a FULL per-field alias map for the Geometry `size/` family,
 // `{"size/${oldStep}/${field}": "size/${nearestStep}/${field}"}` for every old step × every field.
 // `fields` (e.g. height/icon/caret/icon-gap/…) come from the CURRENT plan's own size/ variables, never
-// hand-typed — a future field added to buildSize() is covered automatically, no map to maintain by hand.
+// hand-typed, a future field added to buildSize() is covered automatically, no map to maintain by hand.
 // `fieldRenameMap` (optional, #498) additionally bridges OLD-SPELLED field names a real file predates
-// the current spelling for (e.g. an ADIA-era "edgePadding" -> the current "padding-wide") — same old
+// the current spelling for (e.g. an ADIA-era "edgePadding" -> the current "padding-wide"), same old
 // step, same nearest-by-height match, just a DIFFERENT field name on each side of the arrow.
 export function geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap) {
   const map = {};
@@ -234,15 +234,15 @@ export function geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields,
   return map;
 }
 
-// resolveLiteralHeight(name, modeName, liveVarsByName, idToName, maxHops) — PURE: chase a possible ALIAS
-// chain (bounded — guards a cycle/foreign chain) from `name`'s LIVE value at `modeName` to the underlying
+// resolveLiteralHeight(name, modeName, liveVarsByName, idToName, maxHops), PURE: chase a possible ALIAS
+// chain (bounded, guards a cycle/foreign chain) from `name`'s LIVE value at `modeName` to the underlying
 // literal NUMBER a "size/{step}/height" variable ultimately carries. Needed because library mode's OWN
-// prior write redirects an old step's height to an ALIAS (see libraryModeReconcile below) — without this,
+// prior write redirects an old step's height to an ALIAS (see libraryModeReconcile below), without this,
 // a SECOND apply can't read a literal off an already-aliased old variable at all, loses the ability to
 // re-derive nearest-by-height for it, and misclassifies a correctly-mapped variable as unmapped ->
-// deprecate, renaming it out from under itself on every single re-apply (a real defect found in review —
+// deprecate, renaming it out from under itself on every single re-apply (a real defect found in review,
 // see this file's own git history / the #495 Findings for the incident). `idToName` = {variableId: name}
-// for every variable in the same collection, live — the reverse of the executor's own name->variable map.
+// for every variable in the same collection, live, the reverse of the executor's own name->variable map.
 // A name whose value isn't an alias at all resolves in 0 hops. Returns null if the chain never resolves
 // to a literal (foreign/broken alias, a cycle, or a chain deeper than maxHops).
 export function resolveLiteralHeight(name, modeName, liveVarsByName, idToName, maxHops) {
@@ -260,31 +260,31 @@ export function resolveLiteralHeight(name, modeName, liveVarsByName, idToName, m
     }
     return null; // no value at this mode, or a non-numeric/non-alias value
   }
-  return null; // chain deeper than maxHops — treat as unresolved rather than loop further
+  return null; // chain deeper than maxHops, treat as unresolved rather than loop further
 }
 
-// ── #498 grammar bridge — the ADIA file's PRE-collection-split "Voice/STEP/field" Type grammar
-// (Title-Case voice, UPPERCASE step, camelCase field — e.g. "Heading/MD/size", "UI/XL/lineHeight",
+// ── #498 grammar bridge, the ADIA file's PRE-collection-split "Voice/STEP/field" Type grammar
+// (Title-Case voice, UPPERCASE step, camelCase field, e.g. "Heading/MD/size", "UI/XL/lineHeight",
 // "Code/2XS/weight") predates the #495 alias map entirely: it's a DIFFERENT segment count/case
 // convention than the shipped font/<voice>-shaped bridge (substituteSegment/expandVoiceAliasMap), so it
 // needs its own parser rather than reusing that one. Two independent bridges share this grammar: the
 // {size,lineHeight,letterSpacing,paragraphSpacing} fields target the CURRENT "type/<voice>/<step>/<leaf>"
-// step variable (Geometry collection — a DIFFERENT collection than the old variable itself, resolved by
+// step variable (Geometry collection, a DIFFERENT collection than the old variable itself, resolved by
 // the executor's own cross-collection read, mirroring applyStylePlans' established byRegistry pattern);
 // "weight" targets a Type-Primitives "weight/<voice>[/<slug>]" PRIMITIVE instead (same collection as the
 // old variable) since a voice's weight is ~constant across steps, not itself a per-step quantity in the
 // current scheme; "singleLineHeight" has no bridge at all here (deprecates, like any other unmapped
-// name) — box voices' single-line metric isn't part of this grammar's target shape. ──
+// name), box voices' single-line metric isn't part of this grammar's target shape. ──
 
-// TYPE_STEP_FIELD_MAP — old ADIA field spelling (camelCase) -> the current type/ leaf (kebab). "weight"
+// TYPE_STEP_FIELD_MAP, old ADIA field spelling (camelCase) -> the current type/ leaf (kebab). "weight"
 // is deliberately excluded (its own bridge, above); "singleLineHeight" has no entry at all (deprecates).
 export const TYPE_STEP_FIELD_MAP = { size: "size", lineHeight: "line-height", letterSpacing: "letter-spacing", paragraphSpacing: "paragraph-spacing" };
 
-// parseOldTypeStepName(name) — PURE: parse an old-grammar "Voice/STEP/field" name into its three
+// parseOldTypeStepName(name), PURE: parse an old-grammar "Voice/STEP/field" name into its three
 // segments, keeping BOTH the original case (the map this feeds builds its own KEYS from the live name
-// exactly as it appears — libraryReconcile looks up by exact string) and a lowercased voice/step (for
+// exactly as it appears, libraryReconcile looks up by exact string) and a lowercased voice/step (for
 // case-insensitive voiceMap lookups and current-step-table matching). Returns null for anything that
-// isn't EXACTLY this 3-segment shape — REQUIRING the STEP segment to be an old-style UPPERCASE token
+// isn't EXACTLY this 3-segment shape, REQUIRING the STEP segment to be an old-style UPPERCASE token
 // (digits + uppercase letters, e.g. "MD", "2XS") is load-bearing, not cosmetic: every CURRENT 3-segment
 // name this grammar could otherwise collide with (weight/<voice>/<slug>, weight-style/<voice>/<slug> —
 // both all-lowercase-kebab) would otherwise ALSO parse as a false-positive "Voice/STEP/field" match,
@@ -297,16 +297,16 @@ export function parseOldTypeStepName(name) {
   return { voice: seg[0], step: seg[1], field: seg[2], voiceLower: seg[0].toLowerCase(), stepLower: seg[1].toLowerCase() };
 }
 
-// typeStepAliasMap(oldSizeRecords, voiceMap, currentVoiceStepSizes, fieldMap) — PURE: the {oldName:
+// typeStepAliasMap(oldSizeRecords, voiceMap, currentVoiceStepSizes, fieldMap), PURE: the {oldName:
 // newName} alias map for the {size,lineHeight,letterSpacing,paragraphSpacing} bridge. `oldSizeRecords` =
-// [{voice, step, voiceLower, size}, …] — one entry per OLD "Voice/STEP/size" sibling found live (the
+// [{voice, step, voiceLower, size}, …], one entry per OLD "Voice/STEP/size" sibling found live (the
 // executor scans for these; every OTHER bridgeable field of that same step rides the SAME match, even
-// one whose own old variable doesn't exist — libraryModeReconcile only ever acts on names actually
+// one whose own old variable doesn't exist, libraryModeReconcile only ever acts on names actually
 // present). For each record: map through `voiceMap` (identity fallback) to the CURRENT voice, then find
-// the NEAREST current step BY SIZE within that voice's own step/size table — nearestStepByHeight, reused
+// the NEAREST current step BY SIZE within that voice's own step/size table, nearestStepByHeight, reused
 // here unchanged: the algorithm is generic (closest absolute numeric distance in a {key:number} map),
 // first proven on Geometry height, now on Type size. `currentVoiceStepSizes` = {voice: {step: size}}
-// (never hand-typed — read straight from the CURRENT plan/live state by the executor).
+// (never hand-typed, read straight from the CURRENT plan/live state by the executor).
 export function typeStepAliasMap(oldSizeRecords, voiceMap, currentVoiceStepSizes, fieldMap) {
   const map = {};
   for (const rec of (oldSizeRecords || [])) {
@@ -321,13 +321,13 @@ export function typeStepAliasMap(oldSizeRecords, voiceMap, currentVoiceStepSizes
   return map;
 }
 
-// typeWeightAliasMap(oldWeightRecords, voiceMap, weightCandidates) — PURE: the {oldName: newName} alias
-// map for the "weight" bridge. `oldWeightRecords` = [{voice, step, voiceLower, weight}, …] — EVERY old
-// weight variable (any step — a voice's weight is treated as ~constant across steps, matching how the
+// typeWeightAliasMap(oldWeightRecords, voiceMap, weightCandidates), PURE: the {oldName: newName} alias
+// map for the "weight" bridge. `oldWeightRecords` = [{voice, step, voiceLower, weight}, …], EVERY old
+// weight variable (any step, a voice's weight is treated as ~constant across steps, matching how the
 // old grammar itself always carried the same value there) maps INDEPENDENTLY to whichever
-// weight/<voice>[/<slug>] CURRENT candidate has the NEAREST weight VALUE — not a per-step match at all.
+// weight/<voice>[/<slug>] CURRENT candidate has the NEAREST weight VALUE, not a per-step match at all.
 // `weightCandidates` = {voice: {bare: true|undefined, bySlug: {slug: value}}}: a bare `weight/<voice>`
-// (no slug segment) wins outright when the current plan carries one — the "vanishingly rare" collision
+// (no slug segment) wins outright when the current plan carries one, the "vanishingly rare" collision
 // case coreWeightKey's own header documents (a sibling's own slug happens to match the core's); otherwise
 // nearest-by-value (nearestStepByHeight, reused again) among the slug-suffixed candidates.
 export function typeWeightAliasMap(oldWeightRecords, voiceMap, weightCandidates) {
@@ -346,23 +346,23 @@ export function typeWeightAliasMap(oldWeightRecords, voiceMap, weightCandidates)
   return map;
 }
 
-// GEOMETRY_FIELD_RENAME_MAP — old ADIA size/* field spelling -> the current spelling (#498). "font" is
+// GEOMETRY_FIELD_RENAME_MAP, old ADIA size/* field spelling -> the current spelling (#498). "font" is
 // deliberately excluded: its only sensible current target (Type Primitives' "font/ui-control") lives in
-// a DIFFERENT collection than "Geometry", and — unlike the Type-grammar bridges above, where Geometry's
-// type/ variables are ALREADY live by the time Type Primitives' plan runs — Geometry's OWN plan
+// a DIFFERENT collection than "Geometry", and, unlike the Type-grammar bridges above, where Geometry's
+// type/ variables are ALREADY live by the time Type Primitives' plan runs, Geometry's OWN plan
 // (applyFloatPlans) runs FIRST in every real caller, BEFORE Type Primitives even exists on a first-time
 // apply; aliasing to a not-yet-created foreign variable isn't safe here the way the reverse direction is.
-// A "size/{step}/font" name is left unmapped (deprecates, id-preserving) — a deliberate scope decision,
+// A "size/{step}/font" name is left unmapped (deprecates, id-preserving), a deliberate scope decision,
 // documented rather than risking a cross-collection create from the wrong execution phase.
 export const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
 
-// liveAliasTargetsByName(existingNames, modeName, liveVarsByName, idToName) — PURE: for every EXISTING
+// liveAliasTargetsByName(existingNames, modeName, liveVarsByName, idToName), PURE: for every EXISTING
 // name whose live value at `modeName` is CURRENTLY a resolvable VARIABLE_ALIAS, its one-hop target NAME
 // — `{name: targetName}`. This is the "belt" half of the same idempotency fix: even when the alias-map
 // computation can't re-derive a mapping for an already-aliased name (a foreign chain, or a future case
 // neither the height nor the Type-voice map covers), libraryModeReconcile below still recognizes
 // "already correctly aliased to a wanted name" directly off LIVE state, rather than falling through to
-// deprecate. One hop only — this library's own alias writes are never chained more than one deep.
+// deprecate. One hop only, this library's own alias writes are never chained more than one deep.
 export function liveAliasTargetsByName(existingNames, modeName, liveVarsByName, idToName) {
   const out = {};
   for (const name of (existingNames || [])) {
@@ -376,16 +376,16 @@ export function liveAliasTargetsByName(existingNames, modeName, liveVarsByName, 
   return out;
 }
 
-// priorLibraryUplift(existingNames, wantedNames, liveAliasTargets) — PURE (#635): does this collection
+// priorLibraryUplift(existingNames, wantedNames, liveAliasTargets), PURE (#635): does this collection
 // carry EVIDENCE that a previous apply already ran in "published library" mode? True when ANY existing
 // name the current plan does NOT want (not in `wantedNames`) currently resolves as a live alias
-// (liveAliasTargetsByName above found a target — the aliases run 1 wrote), OR sits under "_deprecated/"
+// (liveAliasTargetsByName above found a target, the aliases run 1 wrote), OR sits under "_deprecated/"
 // (the deprecates run 1 wrote). Scoped to UNWANTED names on purpose (review round 1): a plan's OWN
 // ALIAS variables (Font Primitives' font/<voice> -> font/<face>) make liveAliasTargets non-empty on a
 // collection nobody ever uplifted, and a wanted name is never something a prior uplift left behind.
 // The gate needs this because libraryModeReconcile below is IDEMPOTENT by design: on a re-apply it
 // omits every already-correctly-aliased name and every already-deprecated one, so run 2's report is
-// EMPTY — indistinguishable from a never-touched collection — and the gate used to fall through to the
+// EMPTY, indistinguishable from a never-touched collection, and the gate used to fall through to the
 // classic prune, deleting exactly the names run 1 had preserved. An empty report on a collection with
 // this evidence is "library mode, already decided": nothing to ask, nothing to prune. A never-touched
 // collection has neither signal.
@@ -400,10 +400,10 @@ export function priorLibraryUplift(existingNames, wantedNames, liveAliasTargets)
   return false;
 }
 
-// pruneCandidates(existingNames, wantedNames) — PURE: the names the CLASSIC prune branch may remove =
+// pruneCandidates(existingNames, wantedNames), PURE: the names the CLASSIC prune branch may remove =
 // existingNames - wantedNames - {"_deprecated/*"}. A "_deprecated/" name exists ONLY because a prior
 // library-mode apply deliberately kept it (the id-preserving rename libraryModeReconcile plans), so it
-// is never a prune candidate (#659) — regardless of what ELSE the collection holds. Without this rule
+// is never a prune candidate (#659), regardless of what ELSE the collection holds. Without this rule
 // the gate was non-monotonic: a lone "_deprecated/x" survived (empty report -> priorLibraryUplift ->
 // library mode), but the same "_deprecated/x" beside one unrelated stale name was deleted, because the
 // stale name made the report non-empty and a "Remove" answer pruned EVERY unwanted name. Mirrored by
@@ -419,21 +419,21 @@ export function pruneCandidates(existingNames, wantedNames) {
   return out;
 }
 
-// libraryModeReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) — PURE: for each LIVE
+// libraryModeReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets), PURE: for each LIVE
 // variable name NOT in the current plan (`wantedNames`), classify what "published library" mode does
 // instead of deleting it:
-//   - a target resolves (from `aliasMap[name]`, or — when the map has none — from `liveAliasTargets[name]`,
+//   - a target resolves (from `aliasMap[name]`, or, when the map has none, from `liveAliasTargets[name]`,
 //     the "belt" fallback above) AND that target IS in `wantedNames`:
 //       - its LIVE alias target already EQUALS that resolved target -> IDEMPOTENT no-op: nothing to
-//         write, omitted entirely (like an unchanged wanted-name value is omitted from valueUpdates) —
+//         write, omitted entirely (like an unchanged wanted-name value is omitted from valueUpdates),
 //         this is what makes a second run of an already-aliased variable report/write NOTHING for it.
 //       - otherwise -> ALIAS: keep the name, redirect its VALUE to the resolved target (every mode,
-//         explicitly — hard-constraint #7's "every mode needs its own explicit value" applies to an
+//         explicitly, hard-constraint #7's "every mode needs its own explicit value" applies to an
 //         alias write exactly as it does to a literal one).
 //   - otherwise, if not already under `"_deprecated/"` -> DEPRECATE: an id-preserving rename under that
 //     prefix (a bound-by-id consumer keeps resolving, now to a frozen, no-longer-maintained value).
 //   - otherwise (already `"_deprecated/…"`, still unmapped) -> IDEMPOTENT no-op, never re-deprecated.
-// A name present in `wantedNames` is this function's non-concern — the caller's ordinary create/update
+// A name present in `wantedNames` is this function's non-concern, the caller's ordinary create/update
 // path (unchanged, prune step simply skipped) already covers it. Returns
 // `{ toAlias: [{from,to}], toDeprecate: [{from,to}] }`, both name-sorted for deterministic output.
 export function libraryModeReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets) {
@@ -449,7 +449,7 @@ export function libraryModeReconcile(existingNames, wantedNames, aliasMap, liveA
     const target = mappedTarget || liveTargetWanted;
     if (target) {
       if (liveTarget !== target) toAlias.push({ from: name, to: target }); // a real write is needed
-      // else: already correctly aliased to `target`, live — idempotent no-op, omit entirely.
+      // else: already correctly aliased to `target`, live, idempotent no-op, omit entirely.
     } else if (!name.startsWith("_deprecated/")) {
       toDeprecate.push({ from: name, to: "_deprecated/" + name });
     }
@@ -457,17 +457,17 @@ export function libraryModeReconcile(existingNames, wantedNames, aliasMap, liveA
   return { toAlias, toDeprecate };
 }
 
-// valueChanged(liveValuesByModeName, planVar) — PURE: does ANY of the plan variable's per-mode values
-// differ from what the LIVE variable already holds at that mode (matched by MODE NAME — dry-run runs
+// valueChanged(liveValuesByModeName, planVar), PURE: does ANY of the plan variable's per-mode values
+// differ from what the LIVE variable already holds at that mode (matched by MODE NAME, dry-run runs
 // before any mode ids for a NEW mode would even exist)? `liveValuesByModeName` = {modeName: value};
-// `planVar` = a plan variable entry — either modeApplyPlan's `{name, type, values: [{mode,value},…]}`
-// (Geometry — `type` is never "ALIAS" here, style-plan.mjs's FIGMA_VAR_TYPES doesn't include it) or
+// `planVar` = a plan variable entry, either modeApplyPlan's `{name, type, values: [{mode,value},…]}`
+// (Geometry, `type` is never "ALIAS" here, style-plan.mjs's FIGMA_VAR_TYPES doesn't include it) or
 // style-plan.mjs's primitivesModesApplyPlan `{name, type:"ALIAS", target}` shape (Font/Type Primitives)
 // — an ALIAS entry has no `.values` at all and is reported "changed" unconditionally, matching the
-// executor's own unconditional every-mode alias write (never skipped for an "unchanged" target — see
+// executor's own unconditional every-mode alias write (never skipped for an "unchanged" target, see
 // applyFontPrimitivesModes' own header comment for why). Numeric comparison for FLOATs (tolerates a
 // live read that's already a JS number); strict-equal otherwise. A mode the live variable has no value
-// for yet (e.g. a breakpoint just added) counts as changed — there is a real value to WRITE.
+// for yet (e.g. a breakpoint just added) counts as changed, there is a real value to WRITE.
 export function valueChanged(liveValuesByModeName, planVar) {
   if (planVar.type === "ALIAS") return true;
   for (const { mode, value } of (planVar.values || [])) {
@@ -479,21 +479,21 @@ export function valueChanged(liveValuesByModeName, planVar) {
   return false;
 }
 
-// libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames) — PURE: the FULL
-// "published library" action list for ONE collection's plan — every rename (from `plan.renames`,
+// libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames), PURE: the FULL
+// "published library" action list for ONE collection's plan, every rename (from `plan.renames`,
 // TKT-0012's EXISTING mechanism)/add/value-update/alias/deprecate this apply will make, computed ONCE so
 // the dry-run report and the real apply can never disagree (code.js's library-mode branch calls this,
-// then reports it verbatim, THEN executes it verbatim — never re-derives). `liveVarsByName` =
+// then reports it verbatim, THEN executes it verbatim, never re-derives). `liveVarsByName` =
 // `{name: {modeName: value}}`, the file's OWN current values, read before any write (`{}` for a
-// brand-new collection — everything becomes adds). `liveAliasTargets` (optional) is
-// liveAliasTargetsByName's output — passed straight through to libraryModeReconcile's idempotency check.
+// brand-new collection, everything becomes adds). `liveAliasTargets` (optional) is
+// liveAliasTargetsByName's output, passed straight through to libraryModeReconcile's idempotency check.
 // `extraWantedNames` (optional, #498): a bridge target can live in a DIFFERENT collection than this
-// plan's own (e.g. the "Voice/STEP/field" bridge's target is a Geometry type/ variable) — "wanted" here
+// plan's own (e.g. the "Voice/STEP/field" bridge's target is a Geometry type/ variable), "wanted" here
 // is scoped to THIS plan's own `plan.variables` names alone, so a cross-collection target would never
 // pass libraryReconcile's `wanted.has(mapped)` check without this: the CALLER (which computed the
 // cross-collection alias map in the first place, and so already knows exactly which foreign names it
 // resolved against real, existing live variables) supplies them here to be treated as wanted too, for
-// this reconcile only — they never affect `adds`/`valueUpdates` (both scoped to `plan.variables` alone).
+// this reconcile only, they never affect `adds`/`valueUpdates` (both scoped to `plan.variables` alone).
 export function libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames) {
   const live = liveVarsByName || {};
   const wantedNames = plan.variables.map((v) => v.name).concat(extraWantedNames || []);

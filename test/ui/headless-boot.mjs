@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// headless-boot.mjs — the custom minimal-DOM-shim harness for the ultimate-tokens UI (HctApp).
+// headless-boot.mjs, the custom minimal-DOM-shim harness for the ultimate-tokens UI (HctApp).
 // A minimal DOM/window/localStorage shim boots the real app.js web component in plain Node (no
 // jsdom, no browser), then drives it end to end: undo/redo, slider-drag coalescing, keyboard nav,
 // handle-drag reorder, zoom clamps, section switching (Color/Typography/Geometry), exports, the
-// Figma bridge, and more — one lettered assertion group per feature. Exit 0=pass / 1=fail.
+// Figma bridge, and more, one lettered assertion group per feature. Exit 0=pass / 1=fail.
 //
 // PERMANENT: wired into test/run.mjs (as `ui/headless-boot.mjs`) and run on every `npm test`. See
 // CLAUDE.md's "Testing (the shim is not a real DOM)" section for the shim's known limits
@@ -133,7 +133,7 @@ globalThis.getComputedStyle = () => ({ getPropertyValue: () => "" });
 await import("../../src/ui/app.js");
 const App = customElements.get("ultimate-tokens");
 ok(!!App, "custom element ultimate-tokens defined");
-ok(!customElements.get("nonoun-color-tokens"), "the pre-rename <nonoun-color-tokens> alias is NOT registered — one tag only (ADR-015)");
+ok(!customElements.get("nonoun-color-tokens"), "the pre-rename <nonoun-color-tokens> alias is NOT registered, one tag only (ADR-015)");
 
 const app = new App();
 app.classList = new ClassList();
@@ -191,7 +191,7 @@ app.undo(); // back to chroma0
 app.commit((d) => (d.palettes[1].lift = (d.palettes[1].lift || 0) + 1));
 ok(!app.canRedo(), "editing after undo truncated the redo branch");
 
-// ── (a2) TKT-0455: persistence is throttled off the pointer-move tick — a live drag tick mutates the
+// ── (a2) TKT-0455: persistence is throttled off the pointer-move tick, a live drag tick mutates the
 // doc synchronously but does NOT write through to the record until the drag SETTLES (the debounce
 // timeout, slider onchange, undo/redo's flush, or openSet's outgoing-doc flush) ─────────────────────
 {
@@ -199,15 +199,15 @@ ok(!app.canRedo(), "editing after undo truncated the redo branch");
   const preChroma = rec.doc.palettes[0].chroma;
   app.editDrag((d) => (d.palettes[0].chroma = Math.min(100, preChroma + 7)));
   ok(app.doc.palettes[0].chroma !== preChroma, "(persist-throttle) a live drag tick mutates the doc synchronously");
-  ok(rec.doc.palettes[0].chroma === preChroma, "(persist-throttle) a live drag tick does NOT persist yet — the record is still stale");
+  ok(rec.doc.palettes[0].chroma === preChroma, "(persist-throttle) a live drag tick does NOT persist yet, the record is still stale");
   app.commitDrag(); // settle
   ok(rec.doc.palettes[0].chroma === app.doc.palettes[0].chroma, "(persist-throttle) commitDrag() (the drag's settle) persists it");
 
   // openSet's drag-clear: an in-flight drag on the OUTGOING doc must not be lost by navigating away
-  // mid-drag — openSet() flushes it (via commitDrag()) before switching, even back into the SAME set.
+  // mid-drag, openSet() flushes it (via commitDrag()) before switching, even back into the SAME set.
   const outgoingId = app.activeId;
   const preHue = app.doc.palettes[0].hue;
-  app.editDrag((d) => (d.palettes[0].hue = (preHue + 23) % 360)); // live tick — the settle timer has NOT fired
+  app.editDrag((d) => (d.palettes[0].hue = (preHue + 23) % 360)); // live tick, the settle timer has NOT fired
   ok(rec.doc.palettes[0].hue === preHue, "(persist-throttle) mid-drag, the record is still stale");
   app.openSet(outgoingId); // navigate away mid-drag
   flushRaf();
@@ -219,14 +219,14 @@ ok(!app.canRedo(), "editing after undo truncated the redo branch");
   ok(app.isDirty() === false, "(dirty) not dirty right after openSet (boot state)");
 
   // commit()/edit() (non-live) call save() synchronously inside the SAME call, so the
-  // doc never observably diverges from savedSnapshot — dirty flips true then immediately
+  // doc never observably diverges from savedSnapshot, dirty flips true then immediately
   // false again before isDirty() is ever read.
   const preHue = app.doc.palettes[0].hue;
   app.commit((d) => (d.palettes[0].hue = (preHue + 11) % 360));
-  ok(app.isDirty() === false, "(dirty) a commit() is saved synchronously — stays clean");
+  ok(app.isDirty() === false, "(dirty) a commit() is saved synchronously, stays clean");
 
   // editDrag: the bit flips dirty on the FIRST live tick and STAYS dirty until the drag
-  // settles — this is the actual gap #455 introduced (live ticks defer persistence).
+  // settles, this is the actual gap #455 introduced (live ticks defer persistence).
   const preChroma = app.doc.palettes[0].chroma;
   app.editDrag((d) => (d.palettes[0].chroma = Math.min(100, preChroma + 3)));
   ok(app.isDirty() === true, "(dirty) editDrag's first live tick flips the bit dirty immediately");
@@ -242,7 +242,7 @@ ok(!app.canRedo(), "editing after undo truncated the redo branch");
   app.redo();
   ok(app.isDirty() === false, "(dirty) redo (_restore) leaves the bit clean");
 
-  // openSet switches sets wholesale — must reset the bit even with a live drag in flight.
+  // openSet switches sets wholesale, must reset the bit even with a live drag in flight.
   app.editDrag((d) => (d.palettes[0].chroma = Math.min(100, d.palettes[0].chroma + 1)));
   ok(app.isDirty() === true, "(dirty) a live drag left in flight is dirty right before navigating away");
   const backToId = app.activeId;
@@ -253,7 +253,7 @@ ok(!app.canRedo(), "editing after undo truncated the redo branch");
   flushRaf();
   ok(app.isDirty() === false, "(dirty) openSet() back into the working set is clean too");
 
-  // isDirty() no longer pays a serialize() — structural check: it must be a trivial bit
+  // isDirty() no longer pays a serialize(), structural check: it must be a trivial bit
   // read, not a body that calls serialize/JSON.stringify.
   const src = app.isDirty.toString();
   ok(!/serialize|JSON\.stringify/.test(src), `(dirty) isDirty() body no longer calls serialize()/JSON.stringify (got: ${src.trim()})`);
@@ -354,7 +354,7 @@ ok(app.viewport.zoom === 0.25, "key '-' clamps at 0.25");
 
 // ── (f) live drag does NOT replace the active control (the click-and-drag fix) ───────
 // Each slider oninput used to trigger a FULL render() that replaced the very
-// <input type=range> being dragged — killing the native pointer drag. The fix
+// <input type=range> being dragged, killing the native pointer drag. The fix
 // routes drags through a PARTIAL liveRefresh that leaves the right pane (and the
 // dragged input) untouched while updating the canvas scene + analysis rail.
 
@@ -379,7 +379,7 @@ flushRaf();
 
 const rightPane = findIn(app, (e) => e.classList.contains("right-pane"));
 ok(!!rightPane, "right pane present");
-// the Inspector must NOT duplicate the left-pane Contrast card (removed — it lives in the analysis rail).
+// the Inspector must NOT duplicate the left-pane Contrast card (removed, it lives in the analysis rail).
 const _rpText = (e) => (e._text || "") + (e.children || []).map(_rpText).join("");
 ok(!/Contrast \(prime fill/.test(_rpText(rightPane)), "(rp) right pane no longer carries the duplicate 'Contrast (prime fill 550)' panel");
 const sceneEl0 = app.querySelector(".canvas-scene");
@@ -389,7 +389,7 @@ sceneEl0.style.transform = "translate(-50%, -50%) translate(7px, 9px) scale(1.5)
 // the FIRST range input in the Palette inspector is Hue.
 const hueInput0 = findIn(rightPane, isRange);
 ok(!!hueInput0, "found a hue <input type=range> in the Palette inspector");
-// its sibling <b> readout (the fmtFn label) — first <b> in the same .field.
+// its sibling <b> readout (the fmtFn label), first <b> in the same .field.
 const hueField = findIn(rightPane, (e) => e.classList.contains("field") && findIn(e, isRange) === hueInput0);
 const hueLabelB0 = hueField ? findIn(hueField, (e) => e.tagName === "B") : null;
 ok(!!hueLabelB0, "hue slider has a <b> value readout");
@@ -427,13 +427,13 @@ app.undo();
 ok(app.doc.palettes[sel].hue === hueStart, "(d) that one undo reverts the WHOLE hue drag");
 
 // ── (g) same for a GLOBAL slider (Tension) ───────────────────────────────────────────
-app.doc.toneMode = "even"; // Tension is an even-mode control — make it visible (direct set: no undo step)
+app.doc.toneMode = "even"; // Tension is an even-mode control, make it visible (direct set: no undo step)
 app.setSegment("global");
 app.render();
 flushRaf();
 const sceneG0 = app.querySelector(".canvas-scene");
 const gPane = app.querySelector(".right-pane");
-// keyed by data-fk (not "first slider in the pane") — Base chroma/Prime chroma (SPEC
+// keyed by data-fk (not "first slider in the pane"), Base chroma/Prime chroma (SPEC
 // spec-muted-base-key-spikes REQ-032) now render ahead of Tension, unconditionally.
 const tensionInput = findIn(gPane, (e) => e.dataset && e.dataset.fk === "slider:Tension");
 ok(!!tensionInput, "found a global slider <input type=range>");
@@ -482,7 +482,7 @@ flushRaf();
 const palCount0 = app.doc.palettes.length;
 app.addPalette(); // commit() path → full render
 ok(app.doc.palettes.length === palCount0 + 1, "add palette (full-render path) still works");
-// a NEW palette starts from clean shaping defaults — it must NOT inherit a non-default tweak.
+// a NEW palette starts from clean shaping defaults, it must NOT inherit a non-default tweak.
 const newPal = app.doc.palettes[app.doc.palettes.length - 1];
 ok(newPal.skew === 0 && newPal.lift === 0 && (newPal.hueShift ?? 0) === 0 && newPal.hueSameDir !== true,
   `(add) a new palette resets all shaping config to neutral (got skew ${newPal.skew}, lift ${newPal.lift}, hueShift ${newPal.hueShift}, sameDir ${newPal.hueSameDir})`);
@@ -532,7 +532,7 @@ ok(/^#([0-9A-F]{2})\1\1$/.test(_deBg) && _deBg !== _selBg, `(j6b) deselected →
 // (j7) selecting a palette again restores its near-edge backdrop.
 app.selectPalette(0); app.render(); flushRaf();
 ok(app.canvasBg() === edgeHex("light"), `(j7) re-selecting restores the palette near-edge backdrop (got ${app.canvasBg()})`);
-// (j8) each palette ROW container is tinted with that palette's OWN stop — 75 in light canvas
+// (j8) each palette ROW container is tinted with that palette's OWN stop, 75 in light canvas
 //      preview, 925 in dark (symmetric, so the var(--ink) name text stays readable on it). 75/925
 //      are EXPORT-only half-steps → read from fullRamp, not the 19-stop display ramp.
 app.colorMode = "light"; app.render(); flushRaf();
@@ -554,7 +554,7 @@ app.colorMode = "light"; app.render(); flushRaf();
 for (const seg of ["palette", "global", "roles"]) {
   app.setSegment(seg); flushRaf();
   ok(!!app.querySelector(".seg-example") && !!app.querySelector(".example-card"), `(k1:${seg}) example card present on the ${seg} tab`);
-  // the pinned preview is COLLAPSED to the first artifact (the role card) by default — the native slider +
+  // the pinned preview is COLLAPSED to the first artifact (the role card) by default, the native slider +
   // form (.ex-artifact, the .ex-range) are hidden behind the .ex-collapse-toggle until expanded.
   ok(app.querySelectorAll(".example-card").length === 1 && app.querySelectorAll(".ex-artifact").length === 0 && !app.querySelector(".ex-range") && !!app.querySelector(".ex-collapse-toggle"), `(k1b:${seg}) the preview is collapsed to the first artifact + an expand toggle on the ${seg} tab (got ${app.querySelectorAll(".example-card").length})`);
 }
@@ -578,7 +578,7 @@ const kSurface3 = surfaceOf(_pv(app.doc).palettes[app.selectedIndex()], false);
 ok(styleOf(app.querySelector(".example-card")).includes(kSurface3), `(k5) liveRefresh repaints the card from new role colors (${kSurface3})`);
 
 // ── (cm) scheme cycle (system/light/dark) + a separate Compare toggle; Both renders the
-// side-by-side Compare — replaces the old Light·Dark·Both segmented control (icon-only, saves space).
+// side-by-side Compare, replaces the old Light·Dark·Both segmented control (icon-only, saves space).
 app.colorMode = "light"; app.canvasView = "palettes"; app.render(); flushRaf();
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && (e.getAttribute("aria-label") || "").startsWith("Color value mode:")).length === 1, "(cm) the Color canvas header shows the scheme-cycle button (system/light/dark)");
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && (e.getAttribute("aria-label") || "").includes("Compare")).length === 1, "(cm) the Color canvas header shows a separate Compare toggle");
@@ -608,8 +608,8 @@ ok(app.colorMode === "dark", "(cm-toggle) toggling Compare back off restores the
   scene0.offsetWidth = 400; scene0.offsetHeight = 300;
   app.fit(); flushRaf();
   ok(app.viewport.zoom === 1, "(fit) fit() resets zoom to 100%");
-  ok(Math.abs(app.viewport.panX - (32 - 500 + 200)) < 1e-6, `(fit) panX insets the scene's top-left by 32px (area 1000w, scene 400w) — got ${app.viewport.panX}`);
-  ok(Math.abs(app.viewport.panY - (32 - 300 + 150)) < 1e-6, `(fit) panY insets the scene's top-left by 32px (area 600h, scene 300h) — got ${app.viewport.panY}`);
+  ok(Math.abs(app.viewport.panX - (32 - 500 + 200)) < 1e-6, `(fit) panX insets the scene's top-left by 32px (area 1000w, scene 400w), got ${app.viewport.panX}`);
+  ok(Math.abs(app.viewport.panY - (32 - 300 + 150)) < 1e-6, `(fit) panY insets the scene's top-left by 32px (area 600h, scene 300h), got ${app.viewport.panY}`);
   // sanity: this is NOT the old dead-center default (panX=panY=0) for a scene smaller than its area.
   ok(app.viewport.panX !== 0 && app.viewport.panY !== 0, "(fit) no longer dead-centers the scene (the bug this replaces)");
 }
@@ -644,7 +644,7 @@ const nameI = findFk("pname");
 ok(!!nameI, "(m0) palette name input carries a data-fk");
 nameI.focus(); nameI.selectionStart = 2; nameI.selectionEnd = 2;
 ok(document.activeElement === nameI, "(m0b) name input focused before render");
-app.render(); // a FULL render — replaceChildren rebuilds the whole subtree
+app.render(); // a FULL render, replaceChildren rebuilds the whole subtree
 const nameI2 = findFk("pname");
 ok(nameI2 && nameI2 !== nameI, "(m1) render rebuilt the name input (a genuinely new node)");
 ok(document.activeElement === nameI2, "(m2) focus restored to the rebuilt input");
@@ -702,10 +702,10 @@ ok(cDefault.exports.css.length > 0, "(q5) default differential params produce a 
 
 // ── (r) damping presets: one click sets all four knobs + highlights the active chip ───
 app.openSet(app.sets[0].id); flushRaf(); app.setSegment("global"); flushRaf();
-// damping presets are now the shared chip() primitive (.chip) — the Global tab's only chips.
+// damping presets are now the shared chip() primitive (.chip), the Global tab's only chips.
 const presets = app.querySelectorAll(".chip");
 ok(presets.length >= 5, `(r1) the Global tab shows damping preset chips (got ${presets.length})`);
-// click "Vivid mids" (amp 55) — find it by its title carrying amplify 55
+// click "Vivid mids" (amp 55), find it by its title carrying amplify 55
 const vivid = presets.find((b) => (b.getAttribute("title") || "").includes("amplify 55"));
 ok(!!vivid, "(r2) a 'Vivid mids' preset (amplify 55) is present");
 const presetHist = app.history.length;
@@ -717,7 +717,7 @@ app.setSegment("global"); flushRaf();
 const onChip = app.querySelectorAll(".chip").filter((b) => b.classList.contains("on") && !b.classList.contains("sys-chip"));
 ok(onChip.length === 1 && (onChip[0].getAttribute("title") || "").includes("amplify 55"), `(r5) exactly the matching preset chip is highlighted (got ${onChip.length})`);
 
-// ── (s) Figma Light/Dark export — separate per-mode files + drawer tab ────────────────
+// ── (s) Figma Light/Dark export, separate per-mode files + drawer tab ────────────────
 const fv = _pv(app.doc);
 ok(fv.exports.figma && !!fv.exports.figma.light && !!fv.exports.figma.dark && !!fv.exports.figma.raw, "(s1) projectView exposes figma.light/dark/raw");
 ok(fv.exports.figma.light !== fv.exports.figma.dark, "(s2) the Light and Dark files differ");
@@ -768,7 +768,7 @@ ok(sizeColor < sizeAll, `(mc5) deselecting type+geometry shrinks the Download-Al
 app.exportSystems = { color: false, type: true, geometry: false };
 app.downloadAllZip(mcView); const sizeType = allZip.length;
 ok(sizeType > 0 && sizeType !== sizeColor, `(mc6) a type-only bundle differs from a colour-only bundle (${sizeType} vs ${sizeColor})`);
-// (mc6b) the Styles opt-out gates the figma/styles.plan.json artifact (plans are large — the delta is real)
+// (mc6b) the Styles opt-out gates the figma/styles.plan.json artifact (plans are large, the delta is real)
 app.exportSystems = { color: true, type: true, geometry: false, styles: true };
 app.downloadAllZip(mcView); const sizeStyles = allZip.length;
 app.exportSystems = { color: true, type: true, geometry: false, styles: false };
@@ -815,7 +815,7 @@ app.exportSystems = { color: true, type: true, geometry: true }; // restore defa
 
 app.downloadBytes = realDBmcp;
 
-// ── (mcd) Describe-Palette MCP — the Pro sibling: the merged read+generate server, ships BESIDE the
+// ── (mcd) Describe-Palette MCP, the Pro sibling: the merged read+generate server, ships BESIDE the
 // free Brand-Kit MCP, gated by flagOf("describePalette") AT DOWNLOAD TIME (spec §9) ──
 const { DESCRIBE_MCP_FILES: DMF } = await import("../../src/ui/describe-mcp-assets.js");
 ok(DMF && DMF.length >= 20 && DMF.some((f) => f.path === "mcp/brand-kit-merged-server.mjs"), `(mcd1) the merged server's full source closure is inlined (${DMF && DMF.length} files)`);
@@ -833,7 +833,7 @@ app.render(); flushRaf();
 ok(walk(app, (e) => e.tagName === "BUTTON" && txtOf(e).includes("Describe-Palette MCP · Pro")).length >= 1, "(mcd5) locked: the button label tags itself · Pro, same convention as the format <select>'s Pro options");
 describeZip = null;
 app.downloadDescribePaletteMcp();
-ok(describeZip === null, "(mcd6) locked: downloadDescribePaletteMcp is blocked — no zip emitted");
+ok(describeZip === null, "(mcd6) locked: downloadDescribePaletteMcp is blocked, no zip emitted");
 ok(app.settingsOpen === true && app.settingsSection === "account", "(mcd7) locked: the blocked download routes a web user to Settings « Account »");
 app.closeSettings(); app.settingsSection = "mapping"; flushRaf(); // restore the default nav section (closeSettings doesn't reset it) so later (set) assertions aren't polluted
 app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlocked
@@ -879,10 +879,10 @@ app.applyToFigma();
 ok(
   posted && posted.pluginMessage && posted.pluginMessage.type === "apply" &&
     posted.pluginMessage.dtcg && typeof posted.pluginMessage.dtcg === "object",
-  "(x) applyToFigma posts {pluginMessage:{type:'apply', dtcg}} — the UI→sandbox bridge contract",
+  "(x) applyToFigma posts {pluginMessage:{type:'apply', dtcg}}, the UI→sandbox bridge contract",
 );
 ok(!posted.pluginMessage.rebuildSemantic, "(x) a normal apply does NOT set rebuildSemantic (existing variable positions kept)");
-// the LIVE path: the posted message also carries floatPlans (_figmaFloatPlans()) — the sandbox's
+// the LIVE path: the posted message also carries floatPlans (_figmaFloatPlans()), the sandbox's
 // applyFloatPlans creates the Typography/Geometry breakpoint collections from this, alongside dtcg.
 ok(Array.isArray(posted.pluginMessage.floatPlans), "(x) applyToFigma's posted message carries a floatPlans array (the live Type/Geometry apply path)");
 // the Settings-overridable collection names ride the apply message (defaults when no override set).
@@ -929,10 +929,10 @@ app.exportOpen = false; app.render(); flushRaf();
 
 // ── (xg) apply gate: requestApplyToFigma road-blocks with a backup-consent modal before posting ──
 try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
-app.applyGateOpen = false; app._applyBusy = false; posted = null; // TKT-0004: the (x) section above called applyToFigma directly, without a matching onApplyDone/onApplyError — reset busy before the gate flow
+app.applyGateOpen = false; app._applyBusy = false; posted = null; // TKT-0004: the (x) section above called applyToFigma directly, without a matching onApplyDone/onApplyError, reset busy before the gate flow
 app.requestApplyToFigma(false);
 // TKT-0020: opening the gate now ALSO kicks off a read-float-variables request for the gate's
-// changed-value diff — "does not post yet" means the real "apply" write, not this read-only probe.
+// changed-value diff, "does not post yet" means the real "apply" write, not this read-only probe.
 ok(app.applyGateOpen === true && posted && posted.pluginMessage.type === "read-float-variables", "(xg) requestApplyToFigma opens the consent gate, posts a read-float-variables probe (not the apply yet)");
 ok(!!app.querySelector(".apply-gate"), "(xg) the apply-gate <dialog> is in the tree");
 ok(app._figmaChangedCount() === null, "(xg) the changed-value count is null (still checking) until the read-back replies");
@@ -947,7 +947,7 @@ let _appErr = false; try { app.onApplyDone({ raw: 10, semantic: 53, floatVars: 8
 ok(!_appErr && app.applyGateOpen === false, "(xg) onApplyDone shows a done toast + closes any lingering gate");
 try { app.onApplyError(); } catch { _appErr = true; }
 ok(!_appErr, "(xg) onApplyError shows an error toast without throwing");
-// #465 — the _applyBusy timeout fallback (a lost apply-done/apply-error never arrives).
+// #465, the _applyBusy timeout fallback (a lost apply-done/apply-error never arrives).
 app._applyBusy = true; app._applyTimeoutTimer = "sentinel"; // simulate an already-armed timer
 app.onApplyDone({});
 ok(app._applyTimeoutTimer === null, "(465) onApplyDone disarms the timeout fallback (real reply arrived)");
@@ -965,7 +965,7 @@ posted = null; app.requestApplyToFigma(false);
 ok(app.applyGateOpen === true, "(xg) still gated on the next apply until consented");
 app.applyGateDontShow = true; app.confirmApplyGate();
 ok(app._applyConsented() === true && posted && posted.pluginMessage.type === "apply", "(xg) 'don't show again' persists consent + posts");
-app.applyGateOpen = false; app._applyBusy = false; posted = null; app.requestApplyToFigma(false); // TKT-0004: reset busy — a real apply-done would have fired between these two cycles
+app.applyGateOpen = false; app._applyBusy = false; posted = null; app.requestApplyToFigma(false); // TKT-0004: reset busy, a real apply-done would have fired between these two cycles
 ok(app.applyGateOpen === false && posted && posted.pluginMessage.type === "apply", "(xg) once consented, a normal apply skips the gate (posts directly)");
 app._applyBusy = false; posted = null; app.requestApplyToFigma(true); // TKT-0004: reset busy (see above)
 ok(app.applyGateOpen === true && posted && posted.pluginMessage.type === "read-float-variables", "(xg) the destructive Regroup ALWAYS re-shows the gate (posting only the read-float-variables probe), even when consented");
@@ -976,7 +976,7 @@ ok(app._applyConsented() === true, "(xg) Regroup confirm does NOT change the app
 try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
 
 // ── (xg) ticket #496/P1: the apply-gate lede must name only the systems the apply will
-// actually write — a Colour-off apply must not claim it creates/updates "Color Primitives" /
+// actually write, a Colour-off apply must not claim it creates/updates "Color Primitives" /
 // "Color Roles" (both non-rebuild branches were previously keyed only on exportSystems.styles) ──
 {
   const _origExportSystems = app.exportSystems;
@@ -988,7 +988,7 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   ok(lede.length > 0, "(xg/496) Colour off + styles on: the lede is non-empty (the absence assertion above isn't vacuously satisfied)");
   // Re-fold finding (major): {color:false, styles:true, type:true} is the exact U5t/U5s
   // configuration under which stylePlans({include:{color:false,type:true}}) emits ZERO paints
-  // (figma/plugin/code.js:987 gates the whole paint leg on paints.length) — so a Colour-off apply
+  // (figma/plugin/code.js:987 gates the whole paint leg on paints.length), so a Colour-off apply
   // must never claim it writes "paint styles", even though it still writes text styles.
   ok(!lede.includes("paint styles"), "(xg/496) Colour off + styles on: the lede does NOT claim paint styles will be written (color is off, so stylePlans emits zero paints)");
   ok(lede.includes("text styles"), "(xg/496) Colour off + styles on: the lede still claims text styles will be written (type is on)");
@@ -999,7 +999,7 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   lede = txtOf(app.querySelector(".apply-gate-lede") || {});
   ok(!lede.includes("Color Primitives") && !lede.includes("Color Roles"), "(xg/496) Colour off + styles off: the lede names neither Color Primitives nor Color Roles (both branches carried the defect)");
   ok(lede.length > 0, "(xg/496) Colour off + styles off: the lede is non-empty (the absence assertion above isn't vacuously satisfied)");
-  // styles-axis coverage: pin the branch difference against the styles:true leg above — a
+  // styles-axis coverage: pin the branch difference against the styles:true leg above, a
   // styles:false lede must not mention the STYLE-swatches sentence at all.
   ok(!lede.includes("STYLE swatches"), "(xg/496) Colour off + styles off: the lede does NOT mention STYLE swatches (Styles is off)");
   app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
@@ -1015,10 +1015,10 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   app.requestApplyToFigma(false);
   lede = txtOf(app.querySelector(".apply-gate-lede") || {});
   ok(lede.includes("Color Primitives") && lede.includes("Color Roles"), "(xg/496) Colour on + styles off: the lede still names Color Primitives + Color Roles");
-  ok(!lede.includes("STYLE swatches"), "(xg/496) Colour on + styles off: the lede does NOT mention STYLE swatches (Styles is off — the styles axis is genuinely covered, not just exercised)");
+  ok(!lede.includes("STYLE swatches"), "(xg/496) Colour on + styles off: the lede does NOT mention STYLE swatches (Styles is off, the styles axis is genuinely covered, not just exercised)");
   app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
 
-  // minor #2 (review of #496): Type Primitives is only ever written alongside Styles (:83/:103) —
+  // minor #2 (review of #496): Type Primitives is only ever written alongside Styles (:83/:103),
   // {color:false, type:false, geometry:true} is a reachable state (drawer's keep-one-system guard,
   // overlays/drawer.js:301) where only the merged "Geometry" collection is actually written.
   app.exportSystems = { color: false, type: false, geometry: true, styles: true };
@@ -1029,13 +1029,13 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
 
   // fold-review regression: {color:true, type:false, geometry:false} (reachable via the drawer's
   // keep-one-system guard, overlays/drawer.js:301) has exactly ONE collectionPart ("Color
-  // Primitives + Color Roles"), but that part alone names TWO collections — the lede must still
+  // Primitives + Color Roles"), but that part alone names TWO collections, the lede must still
   // pluralize "collections", not fall to the singular just because the PART count is 1.
   app.exportSystems = { color: true, type: false, geometry: false, styles: false };
   app.requestApplyToFigma(false);
   lede = txtOf(app.querySelector(".apply-gate-lede") || {});
   ok(lede.includes("Color Primitives") && lede.includes("Color Roles"), "(xg/496) Color-only apply: the lede names both Color Primitives and Color Roles");
-  ok(lede.includes("variable collections") && !lede.includes("variable collection "), "(xg/496) Color-only apply: the lede says 'variable collections' (plural) — naming two collections, not one");
+  ok(lede.includes("variable collections") && !lede.includes("variable collection "), "(xg/496) Color-only apply: the lede says 'variable collections' (plural), naming two collections, not one");
   app.closeApplyGate(); app.applyGateOpen = false; app._applyBusy = false; posted = null;
   app.exportSystems = _origExportSystems;
 }
@@ -1146,9 +1146,9 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
 }
 
-// ── (xg) TKT-0020: the changed-value diff — receiveLiveFloatVariables + _figmaChangedCount + the
+// ── (xg) TKT-0020: the changed-value diff, receiveLiveFloatVariables + _figmaChangedCount + the
 // gate's rendered count, over the app's OWN real next-apply plan (not a synthetic fixture) ──
-app.applyGateOpen = false; app._applyBusy = false; posted = null; // TKT-0004: reset busy — the Regroup confirm above never got a matching onApplyDone/onApplyError
+app.applyGateOpen = false; app._applyBusy = false; posted = null; // TKT-0004: reset busy, the Regroup confirm above never got a matching onApplyDone/onApplyError
 app.requestApplyToFigma(false);
 {
   const bpPlan = app._figmaFloatPlans().find((p) => p.collection === "Geometry");
@@ -1172,7 +1172,7 @@ app.requestApplyToFigma(false);
 app.closeApplyGate();
 try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
 
-// ── (xg) TKT-0004: the persistent busy state — set the moment "apply" is posted, disables the
+// ── (xg) TKT-0004: the persistent busy state, set the moment "apply" is posted, disables the
 // Apply/Regroup trigger (closing the double-submit gap), clears on either apply-done or apply-error ──
 app.applyGateOpen = false; app._applyBusy = false; posted = null;
 app.exportOpen = true; app.exportTab = "figma"; app.render(); flushRaf();
@@ -1189,7 +1189,7 @@ ok(!!app.querySelector(".drawer") && app.querySelector(".drawer").classList.cont
   ok(!!applyBtn && applyBtn.disabled === true, "(xg) the Apply Variables trigger is disabled while busy (no double-submit)");
   ok(!!regroupBtn && regroupBtn.disabled === true, "(xg) the Regroup trigger is ALSO disabled while busy");
 }
-// re-entry guard: neither entry point can fire a SECOND concurrent apply while busy — not just the
+// re-entry guard: neither entry point can fire a SECOND concurrent apply while busy, not just the
 // (already disabled) buttons, any direct call is a no-op too.
 posted = null;
 app.requestApplyToFigma(false);
@@ -1200,7 +1200,7 @@ app.onApplyDone({ raw: 1, semantic: 1, floatVars: 0, floatCollections: 0 });
 ok(app._applyBusy === false, "(xg) onApplyDone clears the persistent busy state");
 ok(!app.classList.contains("apply-busy"), "(xg) the host element drops apply-busy once the apply completes");
 ok(!!app.querySelector(".figma-apply") && app.querySelector(".figma-apply").disabled !== true, "(xg) the Apply Variables trigger re-enables once busy clears");
-// the error path clears busy too — a failed apply must never leave the trigger stuck disabled.
+// the error path clears busy too, a failed apply must never leave the trigger stuck disabled.
 app.requestApplyToFigma(false);
 app.confirmApplyGate();
 ok(app._applyBusy === true, "(xg) fixture: a fresh apply sets busy again");
@@ -1217,7 +1217,7 @@ app.setInFigma(false);
 const { serialize: ser, hydrate: hyd } = await import("../../src/ui/persist.js");
 const cfgJson = JSON.stringify(ser(app.doc));   // what the drawer's "Config" tab emits
 const reparsed = JSON.parse(cfgJson);           // what the gallery's ⬆ Import parses
-ok(Array.isArray(reparsed.palettes) && reparsed.palettes.length > 0, "(y) Config export carries palettes[] — the importable shape");
+ok(Array.isArray(reparsed.palettes) && reparsed.palettes.length > 0, "(y) Config export carries palettes[], the importable shape");
 ok(hyd(reparsed).palettes.length === app.doc.palettes.length, "(y) Config round-trips: hydrate(parse(config)) preserves the palette count");
 
 // ── (z) canvas "Scrims" view: toggle + the 7 translucent 750 overlays the view paints ─
@@ -1229,25 +1229,25 @@ try { scrimSceneZ = app.renderScrimsScene(app._view || projectViewZ(app.doc)); }
 ok(!scrimThrew && scrimSceneZ, "(z) renderScrimsScene renders without throwing");
 const scrimRolesZ = (app._view || projectViewZ(app.doc)).palettes[0].roles.filter((r) => /^scrim/.test(r.key));
 ok(scrimRolesZ.length === 7, "(z) 7 scrim roles per palette feed the view (scrimWeakest..scrimStrongest)");
-ok(scrimRolesZ.every((r) => /^#[0-9A-Fa-f]{8}$/.test(r.lightHex)), "(z) each scrim role is #RRGGBBAA (750 base + alpha) — paintable directly as a CSS overlay");
+ok(scrimRolesZ.every((r) => /^#[0-9A-Fa-f]{8}$/.test(r.lightHex)), "(z) each scrim role is #RRGGBBAA (750 base + alpha), paintable directly as a CSS overlay");
 ok(app.scrimContext(app._view || projectViewZ(app.doc)), "(z) scrimContext renders the scrim sub-variant panel for the right pane");
-// the Scrims tab shows the FULL scrim ramp — one cell per stop (19 core), not just the 7 roles.
+// the Scrims tab shows the FULL scrim ramp, one cell per stop (19 core), not just the 7 roles.
 const enabledZ = app.doc.palettes.filter((p) => p.on !== false).length;
 const scrimCellsZ = walk(scrimSceneZ, (e) => e.classList && e.classList.contains("scrim-cell")).length;
 ok(scrimCellsZ === enabledZ * CORE_RAMP_STOPS, `(z) Scrims tab = the full ${CORE_RAMP_STOPS}-stop ramp per enabled palette: ${scrimCellsZ} cells for ${enabledZ} palettes (core)`);
-// liveRefresh now coalesces to one rAF per frame — the Figma slider-drag jank fix.
+// liveRefresh now coalesces to one rAF per frame, the Figma slider-drag jank fix.
 app._liveRaf = null;
 app.liveRefresh();
 const rafIdZ = app._liveRaf;
 app.liveRefresh();
-ok(rafIdZ != null && app._liveRaf === rafIdZ, "(z) liveRefresh coalesces — a 2nd call in the same frame schedules no extra rebuild");
+ok(rafIdZ != null && app._liveRaf === rafIdZ, "(z) liveRefresh coalesces, a 2nd call in the same frame schedules no extra rebuild");
 flushRaf(); // drain the scheduled frame
 app.setCanvasView("palettes");
 
 // ── (aa) stops toggle (19 core / 25 extended) + the Semantic Mapping table ────────────
 const pvAA = app._view || projectViewZ(app.doc);
 ok(pvAA.palettes[0].ramp.length === CORE_RAMP_STOPS && pvAA.palettes[0].fullRamp.length === EXTENDED_RAMP_STOPS,
-  `(aa) projectView exposes ramp (${CORE_RAMP_STOPS} core) + fullRamp (${EXTENDED_RAMP_STOPS} extended) — got ${pvAA.palettes[0].ramp.length}/${pvAA.palettes[0].fullRamp.length}`);
+  `(aa) projectView exposes ramp (${CORE_RAMP_STOPS} core) + fullRamp (${EXTENDED_RAMP_STOPS} extended), got ${pvAA.palettes[0].ramp.length}/${pvAA.palettes[0].fullRamp.length}`);
 const roleAA = pvAA.palettes[0].roles[0];
 ok(roleAA.name && roleAA.lightRaw && roleAA.darkRaw && roleAA.lightRaw.includes("-"),
   "(aa) roles carry name + lightRaw/darkRaw token names for the mapping table");
@@ -1324,12 +1324,12 @@ const setsBeforeExact = app.sets.length;
 app.applyLoadedConfig(savedCfgDD);                  // simulates the bridge's {config-loaded} on the gallery probe
 ok(app.view === "gallery" && app.sets.length === setsBeforeExact, "(dd) the gallery probe RECORDS the embedded config without auto-opening a set");
 ok(!!app.fileConfig && app.fileConfig.palettes.length === 2, "(dd) the embedded config is recorded as fileConfig");
-const rowExactDD = app.querySelector(".figma-import-row"); // shim querySelector matches one class — check the modifier via classList
+const rowExactDD = app.querySelector(".figma-import-row"); // shim querySelector matches one class, check the modifier via classList
 ok(rowExactDD && !rowExactDD.classList.contains("is-approx"), "(dd) the EXACT (non-approx) import row is shown when the file has an embedded config");
 app.openConfigAsSet(app.fileConfig, "Opened the saved palette");
 ok(app.view === "editor" && app.sets.length === setsBeforeExact + 1, "(dd) 'Open saved palette' opens the embedded config as a set");
 ok(app.doc.palettes[1].skew === -10 && app.doc.palettes[1].lift === 5, "(dd) the embedded config round-trips EXACTLY (skew/lift preserved, NOT reverse-derived)");
-ok(app.doc.palettes.length === 2, `(dd) restoring your own saved work does NOT auto-mint Data-N palettes (got ${app.doc.palettes.length}, expected 2 — "opens exactly as saved")`);
+ok(app.doc.palettes.length === 2, `(dd) restoring your own saved work does NOT auto-mint Data-N palettes (got ${app.doc.palettes.length}, expected 2, "opens exactly as saved")`);
 
 // APPROX fallback: no embedded config, but the file has a raw-colors structure → the variable-derived row.
 app.toGallery(); app.fileConfig = null; app.liveVars = null; app.liveVarsFound = false;
@@ -1370,7 +1370,7 @@ const keptCS = app.sets;
 app.receiveStoredSets(null);
 ok(app.sets === keptCS && probedCS.some((m) => m && m.type === "save-sets"), "(cs) first run (no stored sets) keeps the seed AND persists it to clientStorage");
 // ── (cs2) #464: a malformed record (missing/non-string .name) must not crash the gallery ──
-// buildTiles's search filter calls s.name.toLowerCase() on EVERY record unconditionally — an
+// buildTiles's search filter calls s.name.toLowerCase() on EVERY record unconditionally, an
 // unguarded corrupt record (bad localStorage, a lossy Figma clientStorage write) used to throw
 // and take down the whole gallery render, not just that card.
 const malformedCS = [
@@ -1393,7 +1393,7 @@ app.toGallery();
 
 // ── (gg) figma-init AFTER the gallery is already on screen must re-render → fire the probe ──
 // Regression: setInFigma() re-rendered ONLY in the editor. But figma-init arrives ASYNC, after the
-// STARTUP gallery has already rendered — so the gallery never re-rendered, never probed, and the
+// STARTUP gallery has already rendered, so the gallery never re-rendered, never probed, and the
 // file's saved config never surfaced (looked like "save didn't work / nothing in the gallery").
 // setInFigma must re-render in ANY view. Here: on the gallery, inFigma flips true via figma-init.
 const probedGG = [];
@@ -1410,7 +1410,7 @@ app.toGallery();
 // ── (hh) Palette Categories: hub category grid → a category's read-only presets → open an editable copy ──
 const { CATEGORY_INDEX: SI, loadCategory: LS } = await import("../../src/ui/categories/index.js");
 ok(Array.isArray(SI) && SI.length === CATEGORIES, `(hh) ${CATEGORIES} category categories ship in the bundled index (got ${SI && SI.length})`);
-// "brands" is a small, real-identity set (BRAND_PRESETS) — every OTHER category is the uniform
+// "brands" is a small, real-identity set (BRAND_PRESETS), every OTHER category is the uniform
 // sourced/decorative scale (CATEGORY_PRESETS). Count still checked exactly, per category, not
 // relaxed to "> 0".
 ok(SI.every((c) => c.slug && c.category && c.count === (c.slug === "brands" ? BRAND_PRESETS : CATEGORY_PRESETS) && Array.isArray(c.strip) && c.strip.length), "(hh) each category card has slug/name/count + a color strip");
@@ -1436,10 +1436,10 @@ ok(TP.every((p) => p.lmax === 100 && p.lmin === 5 && p.damp === 70 && p.dampAmp 
 // retains the original palette exactly while the ramp re-derives an even scale from it.
 ok(TP.every((p) => p.palettes.slice(1, 7).every((q) => q.keyColors && q.keyColors.length === 1 && q.keyColors[0].role === "dominant" && Array.isArray(q.keyColors[0].oklch) && q.keyColors[0].oklch.length === 3)),
   "(hh) every sampled preset palette retains its source color as a dominant key color (OKLCH)");
-// every sourced/decorative category lazily loads + holds 48 fully-formed presets (11 palettes each —
+// every sourced/decorative category lazily loads + holds 48 fully-formed presets (11 palettes each,
 // derived neutral + the {tier}-{rank} 6 + status four); "brands" is a small real-identity set (7
 // presets) whose four owned-product entries carry their OWN real family count (8: no "-muted"
-// siblings) instead of being forced into the 11-slot shape — see gen-categories.mjs's `direct` pass-
+// siblings) instead of being forced into the 11-slot shape, see gen-categories.mjs's `direct` pass-
 // through.
 for (const c of SI) {
   const m = await LS(c.slug);
@@ -1454,18 +1454,18 @@ for (const c of SI) {
 // anchoring (EVEN mode): a LIGHT dominant must open LIGHT, not the old mid-dark L*≈46 grey. This was
 // the "colors look really wrong" fix, originally a lift fit to stop 550; ticket #681 U2 retired that
 // fit (stop 550 was never the ruled anchor token) in favor of pinning the ramp's stop 500 to the
-// palette's own stored `anchor` exactly (Q1 ruled) — so the assertion now reads stop 500 directly,
+// palette's own stored `anchor` exactly (Q1 ruled), so the assertion now reads stop 500 directly,
 // the stop the anchor guarantees byte-exact, rather than 550's own approximate neighbourhood.
 // Keyed on any preset whose primary source is light.
 const { projectView: _pvHH } = await import("../../src/ui/model.mjs");
 const { hydrate: _hydHH } = await import("../../src/ui/persist.js");
 const _light = TP.find((p) => p.palettes[1].keyColors[0].oklch[0] > 0.85); // primary (after the neutral at [0])
 const _lightAnchor = _pvHH(_hydHH({ ..._light, toneMode: "even" })).palettes[1].ramp.find((s) => s.stop === 500);
-ok(_lightAnchor.tone > 72, `(hh) [even] the anchor pins the ramp to source lightness at stop 500 — a light dominant opens LIGHT (500 L*=${_lightAnchor.tone.toFixed(0)})`);
+ok(_lightAnchor.tone > 72, `(hh) [even] the anchor pins the ramp to source lightness at stop 500, a light dominant opens LIGHT (500 L*=${_lightAnchor.tone.toFixed(0)})`);
 app.toGallery(); flushRaf();
 // the HUB shows a category card per category (not the presets directly)
 ok(app.querySelectorAll(".category-card").length === CATEGORIES, `(hh) the gallery hub renders a category card per category (got ${app.querySelectorAll(".category-card").length})`);
-ok(app.querySelectorAll(".preset").length === 0, "(hh) preset tiles are NOT on the hub — they live inside a category");
+ok(app.querySelectorAll(".preset").length === 0, "(hh) preset tiles are NOT on the hub, they live inside a category");
 // descend into a category → its CATEGORY_PRESETS read-only preset tiles render
 await app.openCategory("travel"); flushRaf();
 ok(app.category === "travel" && app.querySelectorAll(".preset").length === CATEGORY_PRESETS, `(hh) opening a category renders a read-only preset tile per preset (got ${app.querySelectorAll(".preset").length})`);
@@ -1474,14 +1474,14 @@ ok(!app.sets.some((s) => presetNames.has(s.name)), "(hh) presets are NOT seeded 
 const setsBeforeHH = app.sets.length;
 const openPreset = TP[0];
 // exercise the REAL gallery-tile click (presetTile()'s own onclick), not a direct openConfigAsSet()
-// call — the tile is the one call site that passes { mintData: true } (#644); a direct call with
+// call, the tile is the one call site that passes { mintData: true } (#644); a direct call with
 // the wrong arity would silently skip that option and prove nothing about the tile's own wiring.
 const openPresetTile = app.querySelectorAll(".preset").find((t) => t.getAttribute("title") === `Open a copy of “${openPreset.name}”`);
 ok(!!openPresetTile, `(hh) test setup: found the gallery tile for "${openPreset.name}"`);
 openPresetTile.click(); flushRaf();
 ok(app.view === "editor" && app.sets.length === setsBeforeHH + 1, "(hh) opening a preset adds an EDITABLE copy to your sets + enters the editor");
 // #644: opening a preset also auto-mints the 8 Data-N palettes the preset itself doesn't ship
-// (only 1 of 343 presets, Adia, ships its own) — the opened copy carries the preset's own
+// (only 1 of 343 presets, Adia, ships its own), the opened copy carries the preset's own
 // CATEGORY_PRESET_PALETTES named palettes PLUS 8 more, appended in order.
 ok(app.doc.palettes.length === CATEGORY_PRESET_PALETTES + 8 && app.doc.palettes[0].name === "neutral" && app.doc.palettes[1].name === "primary", `(hh) the opened copy carries the ${CATEGORY_PRESET_PALETTES} named palettes (neutral first, then primary) plus 8 auto-minted Data-N (got ${app.doc.palettes.length})`);
 ok(["info","success","warning","danger"].every((n) => app.doc.palettes.some((p) => p.name === n)), "(hh) the status palettes (info/success/warning/danger) are present in the copy");
@@ -1494,7 +1494,7 @@ ok(hhDataAdded.every((p, i) => Math.abs(p.hue - hhExpected[i].hue) < 1e-6 && p.c
   "(hh) #644 the auto-minted hues/chroma match a real mintDataPalettes derivation off the preset's OWN Primary hue (not placeholder values)");
 app.toGallery(); flushRaf();
 ok(app.category === "travel", "(hh) returning from the editor lands back on the open category page");
-// search filters the category's shelf — use a distinctive long word from the opened preset's name
+// search filters the category's shelf, use a distinctive long word from the opened preset's name
 const tokenHH = openPreset.name.split(/\s+/).filter((w) => w.length > 6)[0] || openPreset.name.slice(0, 7);
 app.search = tokenHH; app.refreshTiles();
 const filteredHH = app.querySelectorAll(".preset").length;
@@ -1504,7 +1504,7 @@ ok(app.category === null && app.querySelectorAll(".category-card").length === CA
 
 // ── (jj) preset strip weighting (TKT-0003) + poster-strip chroma/clamp/never-drop/edges (#646) ──
 // a preset's strip WIDTH tracks its OWN authored dominant/supporting/accent hierarchy
-// (story.groups[].pct via colorRole, TKT-0003) — the width/order math itself is now the extracted
+// (story.groups[].pct via colorRole, TKT-0003), the width/order math itself is now the extracted
 // pure posterStripBands() (src/ui/app-helpers.mjs, #646), which additionally: (1) clamps any one
 // band's share and floors accent bands, redistributing the difference proportionally; (2) never
 // drops the 2nd accent swatch off the 6-band cap; (3) weights width by each swatch's own OKLCH
@@ -1535,14 +1535,14 @@ const jjPredictCap = (hex) => jjCapLow + Math.min(1, Math.max(0, (jjOwnChroma(he
 const jjEnabled = (preset) => jjPaletteKeyColors(jjHydrate(preset)).filter((p) => p.on);
 const jjChroma = (hex) => jjHexToOklch(hex)[1];
 // bands rendered by the REAL presetTile() DOM, annotated with each swatch's own name/colorRole
-// (looked up by hex key from the preset's own enabled palettes — never hardcoded positions).
+// (looked up by hex key from the preset's own enabled palettes, never hardcoded positions).
 const jjBandsOf = (preset) => {
   const byKey = new Map(jjEnabled(preset).map((p) => [p.key, p]));
   const el = app.presetTile(preset).querySelector(".strip");
   return [...el.children].map((i) => { const key = colorOf(i); const p = byKey.get(key); return { key, width: flexOf(i), name: p?.name, colorRole: p?.colorRole }; });
 };
 // integration proof: the DOM strip's keys+widths are EXACTLY posterStripBands()'s own output, for
-// several different presets — not just "renders something plausible".
+// several different presets, not just "renders something plausible".
 const jjCrossCheck = (preset) => {
   const pure = jjPosterStripBands(jjEnabled(preset), preset.story?.groups);
   const dom = jjBandsOf(preset);
@@ -1560,14 +1560,14 @@ const jjRendered = (label, bands) => {
   for (const b of bands) ok(b.width / sum <= capOf(b) / 100 + 1e-9, `(jj) ${label}: band ${b.name}'s RENDERED share respects its own cap (want <= ${capOf(b).toFixed(2)}%, got ${(100 * b.width / sum).toFixed(2)}%)`);
 };
 
-const jjPreset0 = TP[0]; // d:60,s:30,a:10 (travel) — a generic sanity check, not the fix-specific probes
+const jjPreset0 = TP[0]; // d:60,s:30,a:10 (travel), a generic sanity check, not the fix-specific probes
 const jj0Bands = jjBandsOf(jjPreset0);
 ok(jj0Bands.length === 6, `(jj) the strip still shows 6 bands (same count as the old fixed template, got ${jj0Bands.length})`);
 ok(Math.abs(jj0Bands.find((b) => b.name === "neutral").width - 8) < 0.01, "(jj) neutral keeps its small fixed 8% backdrop share");
 ok(jjCrossCheck(jjPreset0), "(jj) presetTile()'s rendered strip matches the extracted posterStripBands() pure function exactly (proves the DOM path is wired through it)");
 
 // #646 fix 1 + fix 2, against "War and Peace" (docs/reference/colors/categories/literature.json):
-// candle gold (low-chroma) is authored as 50% dominant — 46% uncapped — and icon crimson + gilt
+// candle gold (low-chroma) is authored as 50% dominant, 46% uncapped, and icon crimson + gilt
 // gold are the two accent swatches this ticket's bug could otherwise starve/drop.
 const { PRESETS: LITm } = await LS("literature");
 const jjWP = LITm.find((p) => p.name.includes("War and Peace"));
@@ -1600,7 +1600,7 @@ const jjWPPredicted = jjPredictCap(jjWPDominant.key);
 ok(jjWPDominant.key === "#C49F60" && Math.abs(jjWPPredicted - 40.5596) < 0.001, `(jj) #681 S1: the strip reads War and Peace's SAMPLED dominant #C49F60, and the documented chroma scaling PREDICTS its cap at 40.5596 from that hex alone (key ${jjWPDominant.key}, predicted ${jjWPPredicted.toFixed(4)})`);
 ok(Math.abs(jjWPCap - jjWPPredicted) < 1e-9, `(jj) #681 S1: posterStripDominantCap agrees with the independently derived prediction (engine ${jjWPCap.toFixed(4)}, derived ${jjWPPredicted.toFixed(4)})`);
 ok(Math.abs(jjWPDominant.width - jjWPCap) < 0.01 && jjWPCap > jjCapLow && jjWPCap < jjCapHigh, `(jj) #646 fix 1 + #681 S1: the candle-gold dominant (authored 50% -> ~46% uncapped) is clamped to the chroma-scaled cap of its sampled colour, strictly between ${jjCapLow} and ${jjCapHigh} (cap ${jjWPCap.toFixed(2)}, rendered ${jjWPDominant.width.toFixed(2)})`);
-ok(jjWPAccents.every((b) => b.width >= 10 - 0.01), `(jj) #646 fix 1: both accent bands are floored to >= ~10% each — no longer slivers (got ${jjWPAccents.map((b) => b.width.toFixed(2)).join(",")})`);
+ok(jjWPAccents.every((b) => b.width >= 10 - 0.01), `(jj) #646 fix 1: both accent bands are floored to >= ~10% each, no longer slivers (got ${jjWPAccents.map((b) => b.width.toFixed(2)).join(",")})`);
 // #646 fix 4 (owner ruling): neutral is pinned to the LEADING edge and the highest-chroma band
 // sits at the FAR edge, so the strip reads grounded-then-vivid instead of split around a mid-strip
 // neutral or backloaded after a run of supporting bands.
@@ -1611,7 +1611,7 @@ ok(jjCrossCheck(jjWP), "(jj) #646: War and Peace's DOM strip matches posterStrip
 jjRendered("War and Peace", jjWPBands);
 
 // #646 verification requirement: an ALREADY-vivid dominant must not be over-compressed by the new
-// clamp — "Hero" (2002)'s courtyard red is authored 50% dominant same as candle gold, but chroma
+// clamp, "Hero" (2002)'s courtyard red is authored 50% dominant same as candle gold, but chroma
 // >0.15 (genuinely vivid), so it must still read as the strip's clear leading band.
 const { PRESETS: FILMm } = await LS("film");
 const jjHero = FILMm.find((p) => p.name.includes("Hero · 2002"));
@@ -1634,13 +1634,13 @@ ok(jjCrossCheck(jjHero), "(jj) #646: Hero's DOM strip matches posterStripBands()
 jjRendered("Hero · 2002", jjHeroBands);
 
 // #646 fix 2, the exact overflow bug: "Modal jazz" authors 1 neutral + 1 dominant + 3 supporting +
-// 2 accent = 7 entries — one more than the OLD unconditional `enabled.slice(0, 6)` cap, which
+// 2 accent = 7 entries, one more than the OLD unconditional `enabled.slice(0, 6)` cap, which
 // dropped accent-muted (the 2nd accent) entirely.
 const { PRESETS: BRANDSm } = await LS("brands");
 const jjJazz = BRANDSm.find((p) => p.name.includes("Modal jazz"));
 const jjJazzEnabled = jjEnabled(jjJazz);
 const jjJazzOldSlice = jjJazzEnabled.slice(0, 6); // the OLD unconditional cap this ticket fixes
-ok(!jjJazzOldSlice.some((p) => p.name === "accent-muted"), "(jj) test setup: the OLD unconditional 6-slice really did drop Modal jazz's 2nd accent (accent-muted) — the bug #646 fixes");
+ok(!jjJazzOldSlice.some((p) => p.name === "accent-muted"), "(jj) test setup: the OLD unconditional 6-slice really did drop Modal jazz's 2nd accent (accent-muted), the bug #646 fixes");
 const jjJazzBands = jjBandsOf(jjJazz);
 ok(jjJazzBands.length === 6, `(jj) #646: Modal jazz still shows 6 bands (got ${jjJazzBands.length})`);
 ok(jjJazzBands.some((b) => b.name === "accent") && jjJazzBands.some((b) => b.name === "accent-muted"), `(jj) #646 fix 2: both accent + accent-muted now render even though the hierarchy overflows the old 6-band cap (got ${jjJazzBands.map((b) => b.name).join(",")})`);
@@ -1674,7 +1674,7 @@ ok(jjCrossCheck(jjCorsa), "(jj) #646 review B: Corsa's DOM strip matches posterS
 jjRendered("Corsa", jjCorsaBands);
 
 // a set with NO story.groups (a user's own "Your Palettes" set) falls back EXACTLY to the original
-// fixed SAMPLED_W template — no regression there.
+// fixed SAMPLED_W template, no regression there.
 const jjNoStory = { ...jjPreset0, story: undefined };
 const jjFallback = stripWidths(jjNoStory);
 ok(JSON.stringify(jjFallback) === JSON.stringify([36, 19, 19, 16, 6, 4]), `(jj) a preset/set with no story.groups falls back to the fixed SAMPLED_W template exactly (got ${JSON.stringify(jjFallback)})`);
@@ -1703,16 +1703,16 @@ const entries = zb[eocd + 10] | (zb[eocd + 11] << 8);
 // all riding systems.color) + 4 figma-aliased + 12 typography + 12 geometry + the merged moded-variables
 // file (1) + figma/styles.plan.json (1) + config + the root README = 70. (The per-folder breakdown in the
 // assertion message below is the authoritative one; this paragraph tracks it.)
-ok(eocdSig && entries === 70, `(ee) the EOCD reports 70 entries — colour (38, incl. panda/{s}.preset.mjs [#586 K1] + BOTH radix/{s}.preset.mjs and radix/{s}.refs.preset.mjs [#588 K3, #638 the reference form] + the design-system-for-claude-code/ bundle of 14 [#473: the @dsCard catalog grew from 7 to 11 previews] + design-system-for-google-stitch/ of 2 + design-system-for-figma-make/ of 9) + figma-aliased (4) + typography (12: type.css + type.tokens.json + 4 breakpoint CSS bolt-ons [desktop-lg/-xl 2026-07-15, tablet/mobile #264] + 4 per-mode DTCG [type.1728/2560/992/476] + 2 figma/* type-tokens+primitives files) + geometry (12: geometry.css + geometry-sizes.css [#487, the size-only sibling] + geometry.tokens.json + 4 breakpoint CSS bolt-ons + 4 per-mode DTCG [geometry.1728/2560/992/476] + 1 figma/* raw-variables file) + the MERGED moded-variables file figma/tokens.modes.variables.json (1, TKT-0009 — was typography.modes + dimension.modes) + figma/styles.plan.json (1) + config + the root README (got ${entries})`);
+ok(eocdSig && entries === 70, `(ee) the EOCD reports 70 entries, colour (38, incl. panda/{s}.preset.mjs [#586 K1] + BOTH radix/{s}.preset.mjs and radix/{s}.refs.preset.mjs [#588 K3, #638 the reference form] + the design-system-for-claude-code/ bundle of 14 [#473: the @dsCard catalog grew from 7 to 11 previews] + design-system-for-google-stitch/ of 2 + design-system-for-figma-make/ of 9) + figma-aliased (4) + typography (12: type.css + type.tokens.json + 4 breakpoint CSS bolt-ons [desktop-lg/-xl 2026-07-15, tablet/mobile #264] + 4 per-mode DTCG [type.1728/2560/992/476] + 2 figma/* type-tokens+primitives files) + geometry (12: geometry.css + geometry-sizes.css [#487, the size-only sibling] + geometry.tokens.json + 4 breakpoint CSS bolt-ons + 4 per-mode DTCG [geometry.1728/2560/992/476] + 1 figma/* raw-variables file) + the MERGED moded-variables file figma/tokens.modes.variables.json (1, TKT-0009, was typography.modes + dimension.modes) + figma/styles.plan.json (1) + config + the root README (got ${entries})`);
 const zipText = Buffer.from(zb).toString("latin1");
 // the root README makes the zip self-describing: the folder map, the consumption-plugin install
-// commands (the skills layer deliberately NOT bundled — it updates via the marketplace), the MCP
+// commands (the skills layer deliberately NOT bundled, it updates via the marketplace), the MCP
 // pointer, and the responsive/text-rendering notes.
 ok(/README\.md/.test(zipText) && /plugin marketplace add https:\/\/unpkg\.com\/@ultimate-tokens\/claude\/marketplace\.json/.test(zipText) && /plugin install ultimate-tokens/.test(zipText), "(ee) the zip root README carries the consumption-plugin install commands (the npm-hosted marketplace, not the retired GitHub channel)");
 ok(/Download Brand-Kit MCP/.test(zipText) && /text-rendering baseline/.test(zipText), "(ee) the README points at the Brand-Kit MCP + the text-rendering baseline note");
 ok(!/renamed in Settings/.test(zipText), "(ee) a default-named doc's README carries no custom-collection-name note (nothing to explain)");
 // with a renamed Figma collection (Settings › Token mapping), the README's figma-aliased/ row names
-// the ACTUAL collections the aliasData targets — otherwise a plugin-free importer has no way to know.
+// the ACTUAL collections the aliasData targets, otherwise a plugin-free importer has no way to know.
 app.commit((d) => { d.figmaCollections = { raw: "Brand Primitives", semantic: "Brand Modes" }; }); flushRaf();
 let zipCap2 = null;
 app.downloadBytes = (bytes, filename) => { zipCap2 = { bytes, filename }; };
@@ -1725,8 +1725,8 @@ const wantPaths = ["css-hex/", "css-oklch/", "json/", "dtcg/", "figma/Light_toke
   "figma-aliased/Light_tokens.json", "figma-aliased/Dark_tokens.json", "figma-aliased/palette.tokens.json", "figma-aliased/README.txt",
   "typography/type.css", "typography/type.tokens.json", "figma/type.tokens.json", "figma/tokens.modes.variables.json", "figma/typography.primitives.variables.json", "geometry/geometry.css", "geometry/geometry-sizes.css", "geometry/geometry.tokens.json", "figma/dimension.variables.json"];
 ok(wantPaths.every((p) => zipText.includes(p)), "(ee) every colour format + typography/ + geometry/ + the moded Figma-variable files + the config + the figma-aliased/ cascade variant is present in the archive");
-// geometry-sizes.css (#487) carries ONLY the --size-* :root block — no density/radius/space/inset/gap/
-// border/focus tokens, no .control-* class rules — extracted from the zip's raw text between its own
+// geometry-sizes.css (#487) carries ONLY the --size-* :root block, no density/radius/space/inset/gap/
+// border/focus tokens, no .control-* class rules, extracted from the zip's raw text between its own
 // local-file-header filename and the next one, so this pins the ACTUAL zipped bytes, not a re-derivation.
 {
   const sizesStart = zipText.indexOf("geometry/geometry-sizes.css");
@@ -1737,14 +1737,14 @@ ok(wantPaths.every((p) => zipText.includes(p)), "(ee) every colour format + typo
   ok(!/--density/.test(sizesFileText) && !/--radius-/.test(sizesFileText) && !/--space-/.test(sizesFileText) && !/--inset-/.test(sizesFileText) && !/--gap-/.test(sizesFileText) && !/--border-/.test(sizesFileText) && !/--focus-/.test(sizesFileText), "(ee) geometry-sizes.css carries NOTHING but size tokens");
   ok(!/\.control-/.test(sizesFileText), "(ee) geometry-sizes.css carries no .control-* class rules");
 }
-// the Figma dimension file is NUMBER-typed (FLOAT variables), not the px dimension strings — so Figma imports it as number variables
+// the Figma dimension file is NUMBER-typed (FLOAT variables), not the px dimension strings, so Figma imports it as number variables
 ok(zipText.includes("dimension.variables.json") && /"\$type":\s*"number"/.test(zipText) && zipText.includes('"Geometry"'), "(ee) figma/dimension.variables.json is a Geometry collection of number ($type number) variables");
 // the moded Figma-variable files are single-collection, breakpoint-MODED (a "Base" mode + each mode), FLOAT-typed
 ok(zipText.includes('"Typography"') && zipText.includes('"FLOAT"') && /"modes":\s*\[\s*"Base"/.test(zipText), "(ee) figma/*.modes.variables.json are single moded collections (modes lead with \"Base\", FLOAT-typed variables)");
 // the aliased variant carries com.figma.aliasData (the cascade); the default figma/ does not (ADR-002 resolved).
 ok(zipText.includes("com.figma.aliasData") && zipText.includes("Color Primitives"), "(ee) figma-aliased/ carries com.figma.aliasData targeting Color Primitives (the OD-004 cascade variant)");
 
-// ── (pe) proExport gate — DTCG/Tailwind/shadcn are Pro formats: a gated single-format preview (upsell) +
+// ── (pe) proExport gate, DTCG/Tailwind/shadcn are Pro formats: a gated single-format preview (upsell) +
 // Download-All exclusion. NO-OP until TIERS_ENFORCED (flagOf("proExport") unlocked); the enforced free plan
 // is simulated with a dev override. (At (ee) above, proExport is unlocked, so all 3 folders were present.) ──
 app.openSet(app.sets[0].id); flushRaf(); // editor view (the drawer lives here)
@@ -1886,24 +1886,24 @@ ok(galleryBtnsFF.length === 0, "(ff) the ◀ Gallery button was removed from the
 brandFF.click();                                     // clicking the brand returns to the gallery
 ok(app.view === "gallery", "(ff) clicking the HCT brand navigates back to the gallery");
 
-// ── (w) localStorage DENIED (a Figma plugin's sandboxed iframe) — must not crash ──────
+// ── (w) localStorage DENIED (a Figma plugin's sandboxed iframe), must not crash ──────
 const realLS = globalThis.localStorage;
 const deny = () => { throw new Error("SecurityError: localStorage access is denied"); };
 globalThis.localStorage = { getItem: deny, setItem: deny, removeItem: deny };
 let lsCrash = false;
 try { app.save(); } catch { lsCrash = true; }   // save() -> saveSets -> localStorage.setItem
 globalThis.localStorage = realLS;
-ok(!lsCrash, "(w) save() tolerates a throwing localStorage (Figma sandboxed iframe) — degrades to no-persistence, never crashes boot");
+ok(!lsCrash, "(w) save() tolerates a throwing localStorage (Figma sandboxed iframe), degrades to no-persistence, never crashes boot");
 
 // ── (ii) collapsible side panes: toggles drive .editor modifiers AND move between headers ──
 app.openSet(app.sets[0].id); flushRaf();             // a clean editor view
 const editorRoot = () => app.querySelector(".editor");
-// fkIn — does `root`'s subtree contain an element with this data-fk? (placement assertions)
+// fkIn, does `root`'s subtree contain an element with this data-fk? (placement assertions)
 const fkIn = (root, fk) => { const w = (n) => { if (!n) return null; for (const c of n.children || []) { if (c.dataset && c.dataset.fk === fk) return c; const f = w(c); if (f) return f; } return null; }; return w(root); };
 ok(app.panesLeft && app.panesRight, "(ii) both side panes start expanded");
 ok(!editorRoot().classList.contains("left-collapsed") && !editorRoot().classList.contains("right-collapsed"),
   "(ii) the editor carries no collapse modifier initially");
-// while OPEN, each toggle lives in its OWN pane's header — not the canvas header
+// while OPEN, each toggle lives in its OWN pane's header, not the canvas header
 ok(fkIn(app.querySelector(".left-pane"), "pane-left") && !fkIn(app.querySelector(".canvas-header"), "pane-left"),
   "(ii) while open, the left toggle lives in the left pane header (not the canvas header)");
 ok(fkIn(app.querySelector(".right-pane"), "pane-right") && !fkIn(app.querySelector(".canvas-header"), "pane-right"),
@@ -1919,7 +1919,7 @@ ok(fkIn(app.querySelector(".canvas-header"), "pane-left") && !fkIn(app.querySele
 ok(findFk("pane-left").attrs["aria-pressed"] === "false", "(ii) the collapsed toggle reflects aria-pressed=false");
 findFk("pane-left").click();                          // and restore it (from the canvas-header toggle)
 ok(app.panesLeft === true && !editorRoot().classList.contains("left-collapsed"), "(ii) clicking again restores the left pane");
-ok(fkIn(app.querySelector(".left-pane"), "pane-left"), "(ii) restored — the left toggle is back in the pane header");
+ok(fkIn(app.querySelector(".left-pane"), "pane-left"), "(ii) restored, the left toggle is back in the pane header");
 findFk("pane-right").click();                         // the right toggle is independent
 ok(app.panesRight === false && editorRoot().classList.contains("right-collapsed"),
   "(ii) clicking the right toggle collapses the right pane (.right-collapsed)");
@@ -1958,13 +1958,13 @@ const app2 = bootFresh();                                            // connecte
 ok(localStorage.getItem("ultimate-tokens-sets") != null, "(mig) an oldest-generation 'hct-palette-state-v1-sets' key is copied into the new namespace on boot");
 ok(Array.isArray(app2.sets) && app2.sets.some((s) => s.id === "legacy1"), "(mig) the migrated set is loaded by the new app (no data loss across the rename)");
 
-// (2) the MIDDLE generation migrates too — the hop this rename adds.
+// (2) the MIDDLE generation migrates too, the hop this rename adds.
 lsClear();
 localStorage.setItem("nonoun-color-tokens-sets", setsBlob("legacy2"));
 const app2b = bootFresh();
 ok(app2b.sets.some((s) => s.id === "legacy2"), "(mig) a 'nonoun-color-tokens-sets' key migrates across the ultimate-tokens rename");
 
-// (3) NEWEST legacy wins when a user has data under both — never resurrect the staler blob.
+// (3) NEWEST legacy wins when a user has data under both, never resurrect the staler blob.
 lsClear();
 localStorage.setItem("nonoun-color-tokens-sets", setsBlob("newer"));
 localStorage.setItem("hct-palette-state-v1-sets", setsBlob("older"));
@@ -2019,12 +2019,12 @@ const findByFk = (root, fk) => {
   walk(root);
   return found;
 };
-// A FRESH defaultDocument(), in its OWN throwaway set — many earlier groups in this shared-`app`
+// A FRESH defaultDocument(), in its OWN throwaway set, many earlier groups in this shared-`app`
 // file detach a palette's anchor (Q6/resetAnchor tests) and app.sets[0]'s SAVED doc can carry that
 // forward, so hs1/hs2 need a known "every palette anchored" starting point. A dedicated set (rather
 // than `app.doc = defaultDocumentHS()` in place) matters here specifically because THIS block calls
 // commit() several times, and commit()'s save() writes into `this.sets.find(s => s.id ===
-// this.activeId)` — reusing app.sets[0]'s slot while activeId still pointed at it would silently
+// this.activeId)`, reusing app.sets[0]'s slot while activeId still pointed at it would silently
 // overwrite it with this block's own throwaway mutations, corrupting state every later block that
 // re-opens app.sets[0] depends on (this broke (bpc5d) downstream before this fix).
 const { defaultDocument: defaultDocumentHS } = await import("../../src/ui/model.mjs");
@@ -2067,7 +2067,7 @@ const segForcedOn = app.segmented([{ id: "oklch", label: "OKLCH" }], "oklch", ()
 const isDisabledBtn = (seg) => { const b = seg.children[0]; return !!b && b.disabled === true && b.getAttribute("aria-disabled") === "true"; };
 ok(isDisabledBtn(segForcedOff) === true && isDisabledBtn(segForcedOn) === false, "(hs8) negative control: the disabled-predicate DOES tell a disabled segmented control apart from an enabled one - rendering the doc-level control enabled for anchored perceptual/peak would red (hs1)/(hs2), not pass silently");
 
-// tear down the throwaway set — app.sets[0] was never touched (this block only ever wrote into its
+// tear down the throwaway set, app.sets[0] was never touched (this block only ever wrote into its
 // own "hs-test-set" slot), so reopening it hands every later block back exactly what it expected.
 app.sets = app.sets.filter((s) => s.id !== "hs-test-set");
 app.openSet(app.sets[0].id); flushRaf();
@@ -2109,10 +2109,10 @@ ok(
 app.sets = app.sets.filter((s) => s.id !== "hs9-test-set");
 app.openSet(app.sets[0].id); flushRaf();
 
-// ── (px) primitive a11y contracts — the refactor's guarantees (component-inventory.md) ──
+// ── (px) primitive a11y contracts, the refactor's guarantees (component-inventory.md) ──
 app.openSet(app.sets[0].id); app.commit((doc) => (doc.toneMode = "even")); app.setSegment("global"); flushRaf();
 
-// switchControl: a real <button role=switch> with aria-checked — the old .toggle was a
+// switchControl: a real <button role=switch> with aria-checked, the old .toggle was a
 // <div onclick> (no role, no focus, no keyboard).
 const switches = app.querySelectorAll(".toggle");
 ok(switches.length >= 1, `(px1) the global tab renders switch controls (got ${switches.length})`);
@@ -2130,11 +2130,11 @@ const associated = fields.filter((f) => {
 });
 ok(associated.length >= 3, `(px3) labeled fields associate <label for> with the control id (got ${associated.length})`);
 
-// segmented(): roving tabindex — exactly one tab-focusable button per group.
+// segmented(): roving tabindex, exactly one tab-focusable button per group.
 const segGroups = app.querySelectorAll(".segmented");
 ok(segGroups.length >= 1, "(px4) the segmented control is present");
 ok(segGroups.every((g) => g.children.filter((b) => b.getAttribute && b.getAttribute("tabindex") === "0").length === 1),
-   "(px5) every segmented group has exactly one tabindex=0 button — roving tabindex");
+   "(px5) every segmented group has exactly one tabindex=0 button, roving tabindex");
 
 // set-tile: a role=button card whose delete is a REAL <button> (no interactive nested in a <button>).
 app.toGallery(); flushRaf();
@@ -2183,7 +2183,7 @@ ok(app.doc.story && app.doc.story.title === storyPreset.story.title, "(st5) open
 app.setSegment("story"); flushRaf();
 ok(!!app.querySelector(".story-pane"), "(st6) the Story tab renders for a set with a story");
 ok(app.querySelectorAll(".story-color").length >= 1, "(st7) the Story tab lists the curated colors");
-// the Palette tab shows the per-color story line — select a CURATED palette (primary, now at
+// the Palette tab shows the per-color story line, select a CURATED palette (primary, now at
 // index 1 after the derived neutral; the neutral carries no curated story line of its own).
 app.setSegment("palette"); app.selectPalette(1); flushRaf();
 ok(!!app.querySelector(".color-story"), "(st8) the Palette tab shows the curated color's story line");
@@ -2209,7 +2209,7 @@ const npView = app._view;
 const npSamples = app.newPalSamples(npView);
 ok(npSamples.length === app.newPalCtx.size && npSamples.every((s) => Array.isArray(s) && s.length === 3), "(np2) samples = one OKLCH [L,C,H] per included palette");
 
-// A. Relative — extend (analogous): yields a target OKLCH; creating appends + retains it as the dominant key.
+// A. Relative, extend (analogous): yields a target OKLCH; creating appends + retains it as the dominant key.
 app.newPalTab = "relative"; app.newPalRel = "extend"; app.render(); flushRaf();
 ok(app.querySelectorAll(".newpal-rel").length === NP_RELS.length, `(np3) the Relative tab lists all ${NP_RELS.length} relationships (got ${app.querySelectorAll(".newpal-rel").length})`);
 // the two-column previews: hue circle (left) + chroma curve + the proposed ramp & dominant swatch (right).
@@ -2233,7 +2233,7 @@ ok(typeof npA.hue === "number" && typeof npA.chroma === "number", "(np4c) hue/ch
 ok(app.newPalOpen === false, "(np4d) creating closes the modal");
 ok(app.selectedIndex() === app.doc.palettes.length - 1, "(np4e) the freshly-derived palette is selected");
 
-// B. Environmental — a neutral: low, clamped chroma (≤ 0.018 OKLCH) → a muted seed.
+// B. Environmental, a neutral: low, clamped chroma (≤ 0.018 OKLCH) → a muted seed.
 app.openNewPalette(); app.newPalTab = "environmental"; app.render(); flushRaf();
 const npEnv = app.newPalTarget(app._view);
 ok(npEnv && npEnv.oklch && npEnv.oklch[1] <= 0.018 + 1e-9, `(np5) Environmental yields a low-chroma neutral (C=${npEnv.oklch[1].toFixed(4)} ≤ 0.018)`);
@@ -2242,7 +2242,7 @@ app.createNewPalette(app._view); flushRaf();
 ok(app.doc.palettes.length === npBeforeEnv + 1, "(np5b) Environmental appends a palette");
 ok(app.doc.palettes[app.doc.palettes.length - 1].chroma < 30, `(np5c) the neutral seed is muted, not vivid (chroma ${app.doc.palettes[app.doc.palettes.length - 1].chroma})`);
 
-// C. Custom — parametric hue/chroma, needs NO context.
+// C. Custom, parametric hue/chroma, needs NO context.
 app.openNewPalette(); app.newPalTab = "custom"; app.newPalCustom = { hue: 300, chroma: 70 }; app.render(); flushRaf();
 ok(!!app.querySelector(".newpal-custom"), "(np6) the Custom tab shows the hue/chroma sliders");
 ok(!!app.querySelector(".newpal-ramp") && app.querySelectorAll(".newpal-pp-sw").length === 1, "(np6a1) Custom preview shows the ramp + a single (dominant) swatch");
@@ -2261,13 +2261,13 @@ ok(app.newPalCustom.hue === 120, "(np6a3) dragging the Custom hue slider updates
 ok(findIn(app.querySelector(".newpal-custom"), isRange) === npHueInput, "(np6a4) the dragged slider node is NOT rebuilt (smooth drag)");
 ok(app.querySelector(".newpal-ramp") !== npRampBefore, "(np6a5) the preview ramp refreshed in place (new node)");
 app.newPalCustom = { hue: 300, chroma: 70 }; app.render(); flushRaf();
-app.newPalCtx = new Set(); // empty the strip — Custom must not care
+app.newPalCtx = new Set(); // empty the strip, Custom must not care
 const npBeforeC = app.doc.palettes.length;
 app.createNewPalette(app._view); flushRaf();
 ok(app.doc.palettes.length === npBeforeC + 1, "(np6b) Custom creates a palette with no context selected");
 const npC = app.doc.palettes[app.doc.palettes.length - 1];
 ok(npC.hue === 300 && npC.chroma === 70, `(np6c) Custom uses the picked hue/chroma (got ${npC.hue}/${npC.chroma})`);
-ok(!npC.keyColors, "(np6d) Custom is parametric — no retained key color");
+ok(!npC.keyColors, "(np6d) Custom is parametric, no retained key color");
 
 // relative/environmental REQUIRE context: empty → blocked, Create is a no-op.
 app.openNewPalette(); app.newPalTab = "relative"; app.newPalCtx = new Set(); app.render(); flushRaf();
@@ -2288,7 +2288,7 @@ ok((app.querySelector(".newpal").style.transform || "").includes("40px"), "(np8c
 doc.dispatch("pointerup", {});
 app.openNewPalette(); flushRaf();
 ok(app.newPalDrag.x === 0 && app.newPalDrag.y === 0, "(np8d) reopening recenters (drag reset)");
-// chips are swatch-only now — the palette name is the title (hover), not inline text.
+// chips are swatch-only now, the palette name is the title (hover), not inline text.
 const npChip = app.querySelector(".newpal-chip");
 ok(npChip && !!npChip.getAttribute("title") && (npChip.textContent || "") === "", "(np8e) context chips are swatch-only (name in title, no inline text)");
 app.closeNewPalette(); flushRaf();
@@ -2331,12 +2331,12 @@ ok((txtOfSet(app.querySelector(".settings-pagehead")) || "").includes("Appearanc
   app.colorMode = "system"; app._loadAppPrefs();
   ok(app.colorMode === "dark", "(pref-cm) _loadAppPrefs restores the saved colorMode");
   app.colorMode = "both"; app._saveAppPrefs(); app.colorMode = "system"; app._loadAppPrefs();
-  ok(app.colorMode === "both", "(pref-cm) colorMode=\"both\" (Compare) round-trips too — persisting whatever was explicitly picked");
+  ok(app.colorMode === "both", "(pref-cm) colorMode=\"both\" (Compare) round-trips too, persisting whatever was explicitly picked");
   app._resetAppPrefs(); flushRaf();
   ok(app.theme === "system" && app.canvasTheme === "system" && app.colorMode === "system" && app.motion === "system" && localStorage.getItem(PREFS_KEY) === null,
     "(pref) Reset returns every pref, including colorMode, to System and clears the record");
 }
-// (ico) Settings › Icons — the library grid (9 tiles), default Phosphor·regular, variant control,
+// (ico) Settings › Icons, the library grid (9 tiles), default Phosphor·regular, variant control,
 // the Custom escape hatch, and the geometry fence (sizes are NOT redefined here).
 app.settingsSection = "icons"; app.render(); flushRaf();
 ok((txtOfSet(app.querySelector(".settings-pagehead")) || "").includes("Icons"), "(ico) the Icons nav item swaps in the Icons panel");
@@ -2357,7 +2357,7 @@ app.render(); flushRaf();
 ok(!!app.querySelector(".icon-custom-name"), "(ico) Custom reveals the set-name input");
 app._setIconSystem("phosphor"); flushRaf(); // restore the default for the assertions below
 app.settingsSection = "mapping"; app.render(); flushRaf(); // restore for the assertions below
-// (set) mapping segments use SHORT labels — the 550/450 · 050/200 · WCAG detail moved into the descriptions;
+// (set) mapping segments use SHORT labels, the 550/450 · 050/200 · WCAG detail moved into the descriptions;
 // the section header is the (caps eyebrow) settings-group-title, consistent with the nav group label.
 const setMapTxt = txtOfSet(app.querySelector(".settings")) || "";
 ok(!/Mode · 550/.test(setMapTxt) && !/Fixed · 050/.test(setMapTxt) && !/WCAG contrast/.test(setMapTxt), "(set) mapping segments use short labels (the stop detail moved to the descriptions)");
@@ -2379,7 +2379,7 @@ ok(app.settingsOpen === false, "(set) closeSettings dismisses the modal");
 // ── (ty) Typography SECTION: the switcher flips this.section → full TYPE_STEPS-step canvas specimen (51) + inspector ──
 app.setSection("typography"); flushRaf();
 ok(app.section === "typography" && !!app.querySelector(".type-spec"), "(ty) the section switcher enters Typography (the canvas specimen renders)");
-ok(app.querySelectorAll(".type-spec-line").length === TYPE_STEPS && app.querySelectorAll(".type-spec-group").length === VOICES, `(ty) the canvas shows the FULL specimen — ${TYPE_STEPS} steps (13 voices × 3 + the 2 interactive voices × 6) across the ${VOICES} named voices (Display·Headline·Sub-heading·Title·Sub-title·Lead·Body·Body-mono·Label·Label-mono·Kicker·Tiny·Tiny-mono·UI-control·UI-widget) (got ${app.querySelectorAll(".type-spec-line").length} lines / ${app.querySelectorAll(".type-spec-group").length} groups)`);
+ok(app.querySelectorAll(".type-spec-line").length === TYPE_STEPS && app.querySelectorAll(".type-spec-group").length === VOICES, `(ty) the canvas shows the FULL specimen, ${TYPE_STEPS} steps (13 voices × 3 + the 2 interactive voices × 6) across the ${VOICES} named voices (Display·Headline·Sub-heading·Title·Sub-title·Lead·Body·Body-mono·Label·Label-mono·Kicker·Tiny·Tiny-mono·UI-control·UI-widget) (got ${app.querySelectorAll(".type-spec-line").length} lines / ${app.querySelectorAll(".type-spec-group").length} groups)`);
 ok(app.querySelectorAll(".an-card").length >= 4, `(ty) the left rail shows the type analysis cards (got ${app.querySelectorAll(".an-card").length})`);
 // specimen order: each group lists LARGEST → smallest (the first token in the document is Display's LG step)
 ok(txtOf(app.querySelectorAll(".type-spec-token")[0] || {}) === "type-display-lg", `(ty) the specimen lists each group largest→smallest (first token is type-display-lg, got ${txtOf(app.querySelectorAll(".type-spec-token")[0] || {})})`);
@@ -2391,8 +2391,8 @@ const tysc = tScale(app.doc.type);
 ok(tysc.treatment === "luxury" && tysc.categories.Body.MD.size === 16, `(ty) treatment + base apply (treatment ${tysc.treatment}, body MD ${tysc.categories.Body.MD.size})`);
 ok(hydSet(serSet(app.doc)).type.treatment === "luxury" && hydSet(serSet(app.doc)).type.bodyBase === 16, "(ty) the type config round-trips through persist");
 ok(bkTy(app.doc).type && bkTy(app.doc).type.categories.Body && bkTy(app.doc).type.treatment === "luxury", "(ty) brandKit carries the type scale (the MCP serves it)");
-// (tyf) Fonts tab — an editable combobox per VOICE (all 11, matching 1:1 what's exported); a custom
-// family overrides that voice directly — there is no shared-role row — and flows to the scale + persist.
+// (tyf) Fonts tab, an editable combobox per VOICE (all 11, matching 1:1 what's exported); a custom
+// family overrides that voice directly, there is no shared-role row, and flows to the scale + persist.
 app.typeSegment = "fonts"; app.render(); flushRaf();
 ok(app.querySelectorAll(".tyi-font-input").length === VOICES, `(tyf) the Fonts tab renders an editable combobox per voice (${VOICES}) (got ${app.querySelectorAll(".tyi-font-input").length})`);
 app._setTypeVoiceFont("Body", "Custom Sans"); flushRaf();
@@ -2400,13 +2400,13 @@ ok(app.doc.type.voices && app.doc.type.voices.Body.font === "Custom Sans" && app
 ok(hydSet(serSet(app.doc)).type.voices.Body.font === "Custom Sans", "(tyf) the custom font round-trips through persist");
 app._setTypeVoiceFont("Body", ""); flushRaf();
 ok(!app.doc.type.voices, "(tyf) clearing the only override removes doc.type.voices (reverts to the treatment)");
-// (tyfa) font AVAILABILITY dots — two different truths, never conflated.
+// (tyfa) font AVAILABILITY dots, two different truths, never conflated.
 app.render(); flushRaf();
 ok(app.querySelectorAll(".tyi-font-dot").length === VOICES, `(tyfa) one availability dot per voice (got ${app.querySelectorAll(".tyi-font-dot").length})`);
 // web: the 4 self-hosted faces are "bundled"; an unmeasurable env never cries wolf (assumes it renders)
 ok(!app.inFigma && app._fontStatus("Inter").label === "bundled" && app._fontStatus("Inter").state === "ok", "(tyfa) a self-hosted face reads 'bundled' in the web app");
 ok(app._fontStatus("Bodoni Moda").state === "ok", "(tyfa) with no DOM measurement available the probe assumes the face renders (never a false 'falls back')");
-// figma: the ONLY truth is Figma's own font list — asked once, answered via the bridge
+// figma: the ONLY truth is Figma's own font list, asked once, answered via the bridge
 app.inFigma = true; app._figmaFonts = null; app._figmaFontsRequested = false;
 ok(app._fontStatus("Inter").state === "unknown" && app._fontStatus("Inter").label === "checking…", "(tyfa) before Figma answers, availability is 'checking…' not a guess");
 app.receiveFigmaFonts(["Inter", "Roboto"]); flushRaf();
@@ -2415,10 +2415,10 @@ ok(app._fontStatus("Inter").state === "ok" && app._fontStatus("Inter").label ===
   const st = app._fontStatus("Broadway");
   ok(st.state === "sub" && st.label === "not in Figma" && /placeholder face/.test(st.title) && /variable/.test(st.title), "(tyfa) a family Figma LACKS reads 'not in Figma' and explains the placeholder + variable-bound self-heal");
 }
-ok(app._fontStatus("Inter").label !== "bundled", "(tyfa) inside Figma, 'bundled' (a web-app truth) is never shown — the two truths stay separate");
+ok(app._fontStatus("Inter").label !== "bundled", "(tyfa) inside Figma, 'bundled' (a web-app truth) is never shown, the two truths stay separate");
 app.inFigma = false; app._figmaFonts = null; app._figmaFontsRequested = false; app.render(); flushRaf();
 app.typeSegment = "scale"; app.render(); flushRaf();
-// (tyv) Scale tab — per-voice tuning: select a voice → its shaping sliders expand; _setTypeVoice writes
+// (tyv) Scale tab, per-voice tuning: select a voice → its shaping sliders expand; _setTypeVoice writes
 // doc.type.voices + flows to the scale + persist; reset clears. (Voices are mode-independent → the base.)
 app.typeVoice = null; app.render(); flushRaf();
 ok(app.querySelectorAll(".tyi-voice").length === VOICES && !app.querySelector(".tyi-voice-edit"), `(tyv) the Scale tab lists the ${VOICES} voices, none expanded by default (got ${app.querySelectorAll(".tyi-voice").length})`);
@@ -2429,10 +2429,10 @@ ok(app.doc.type.voices && app.doc.type.voices.Body.weight === 600 && app._active
 ok(hydSet(serSet(app.doc)).type.voices.Body.weight === 600, "(tyv) the per-voice override round-trips through persist");
 app._resetTypeVoice("Body"); flushRaf();
 ok(!app.doc.type.voices, "(tyv) reset clears the only voice override (back to the treatment)");
-// (tyvf) per-voice FONT override (TKT-0002/#273) — set on the Fonts tab, the ONE editing surface for all
+// (tyvf) per-voice FONT override (TKT-0002/#273), set on the Fonts tab, the ONE editing surface for all
 // 13 voices' fonts; _setTypeVoiceFont writes doc.type.voices[voice].font, flows into the resolved scale's
 // voiceFonts + the live specimen + the Scale tab's read-only per-voice label, and round-trips through
-// persist. Sub-heading rides the `heading` role (shared with Heading today) — this is the exact "give
+// persist. Sub-heading rides the `heading` role (shared with Heading today), this is the exact "give
 // Sub-heading its own font" gap the ticket names.
 app.typeSegment = "fonts"; app.render(); flushRaf();
 const fontInput = walk(app, (e) => e.tagName === "INPUT" && e.getAttribute && e.getAttribute("data-fk") === "tyfont:Sub-heading")[0];
@@ -2443,13 +2443,13 @@ ok(app._activeTypeScale().voiceFonts && app._activeTypeScale().voiceFonts["Sub-h
 ok(hydSet(serSet(app.doc)).type.voices["Sub-heading"].font === "Fraunces", "(tyvf) the per-voice font override round-trips through persist");
 app.render(); flushRaf();
 ok(txtOf(app.querySelectorAll(".type-spec-grouphead")[2]).includes("Fraunces"), "(tyvf) the canvas specimen re-renders the overridden voice (Sub-heading) in its own font");
-ok(!txtOf(app.querySelectorAll(".type-spec-grouphead")[1]).includes("Fraunces"), "(tyvf) Heading — sharing the SAME role as Sub-heading — is untouched by the override");
+ok(!txtOf(app.querySelectorAll(".type-spec-grouphead")[1]).includes("Fraunces"), "(tyvf) Heading, sharing the SAME role as Sub-heading, is untouched by the override");
 app.typeSegment = "scale"; app.typeVoice = "Sub-heading"; app.render(); flushRaf();
 ok(txtOf(app.querySelectorAll(".tyi-voice-font")[2]).includes("Fraunces"), "(tyvf) the Scale tab's per-voice font label reflects the override too (read-only there)");
 app._resetTypeVoice("Sub-heading"); flushRaf();
 ok(!app.doc.type.voices, "(tyvf) reset clears the only voice override (font included)");
 app.typeVoice = null; app.render(); flushRaf();
-// (tyw) SIBLING WEIGHTS — Suggest seeds the ratified defaults from the CORE weight; rows render;
+// (tyw) SIBLING WEIGHTS, Suggest seeds the ratified defaults from the CORE weight; rows render;
 // add appends a free ladder weight; remove drops one; the list flows into the scale + persists.
 app.typeVoice = "Display"; app.render(); flushRaf();
 ok(!!app.querySelector(".tyi-weights") && !app.querySelector(".tyi-weight-row") && !!app.querySelector(".tyi-weights-suggest"), "(tyw) an untouched voice shows the empty weights block with Suggest");
@@ -2472,19 +2472,19 @@ ok(app.querySelectorAll(".tyi-weight-row").length === app.doc.type.voices.Displa
 }
 app.typeVoice = null; app.render(); flushRaf();
 // the canvas Specimen·Tokens toggle flips the canvas to the READ-ONLY token MATRIX (a real <table>) in the
-// scrolling .is-table shell — rows = the 39 steps (13 voices × 3), columns = Base (+ each breakpoint), sticky token names.
+// scrolling .is-table shell, rows = the 39 steps (13 voices × 3), columns = Base (+ each breakpoint), sticky token names.
 app.setTypeSpecMode("tokens"); flushRaf();
 ok(!!app.querySelector(".tok-table") && !app.querySelector(".type-spec"), "(ty-tok) the Specimen·Tokens toggle renders the token matrix table (no specimen scene)");
 ok(!!app.querySelector(".is-table") && !!app.querySelector(".is-table").querySelector(".tok-table"), "(ty-tok) the token table lives in the scrolling .is-table canvas shell (no pan/zoom)");
-ok(walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Desktop")).length === 1 && walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Base")).length === 0, "(ty-tok) the base column header reads Desktop (the designed scale, the intrinsic anchor — no 'Base' column)");
+ok(walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Desktop")).length === 1 && walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Base")).length === 0, "(ty-tok) the base column header reads Desktop (the designed scale, the intrinsic anchor, no 'Base' column)");
 ok(app._typeTokenColumns().length === 3 && app._typeTokenColumns()[1].id === "std-tablet" && app._typeTokenColumns()[2].id === "std-mobile", "(ty-tok) Base + the Standard-set Tablet/Mobile columns render LIVE before any breakpoint is materialized");
 ok(app.querySelectorAll(".tok-row").length === TYPE_STEPS, `(ty-tok) one row per type step (${TYPE_STEPS}) (got ${app.querySelectorAll(".tok-row").length})`);
-ok(app.querySelectorAll(".tok-group").length === VOICES, `(ty-tok) the rows are grouped by voice — ${VOICES} group headers (got ${app.querySelectorAll(".tok-group").length})`);
+ok(app.querySelectorAll(".tok-group").length === VOICES, `(ty-tok) the rows are grouped by voice, ${VOICES} group headers (got ${app.querySelectorAll(".tok-group").length})`);
 ok(txtOf(app.querySelectorAll(".tok-name")[1] || {}).startsWith("--type-display-lg"), `(ty-tok) the first (sticky) token name is the --type-display-lg step (got ${txtOf(app.querySelectorAll(".tok-name")[1] || {})})`);
 app.setTypeSpecMode("specimen"); flushRaf();
 ok(!!app.querySelector(".type-spec") && !app.querySelector(".tok-table"), "(ty-tok) toggling back to Specimen restores the live specimen (token table gone)");
 // (ty-slider-automat) the inspector's Body-base slider (a SEPARATE write path from the tokens-matrix
-// cell) must ALSO materialize on first touch — a silent no-op here was the actual bug this covers.
+// cell) must ALSO materialize on first touch, a silent no-op here was the actual bug this covers.
 ok(!app.doc.type.modes, "(ty-slider-automat) fresh doc has no materialized modes yet");
 app.typeMode = "std-tablet";
 app._setActiveTypeBodyBase(18); app.commitDrag?.(); flushRaf();
@@ -2493,14 +2493,14 @@ ok(app.doc.type.modes.find((m) => m.id === "std-tablet").bodyBase === 18, "(ty-s
 app.commit((d) => { delete d.type.modes; delete d.type.tokenOverrides; }); flushRaf(); // reset before (ty-tok-automat) below
 // (ty-tok-automat) editing a cell under a not-yet-materialized Standard-set rung materializes BOTH
 // rungs in ONE commit (matching addStandardTypeModes' contract), using the SAME stable ids the
-// pre-materialization preview used — so the write resolves correctly and nothing needs a second edit.
+// pre-materialization preview used, so the write resolves correctly and nothing needs a second edit.
 ok(!app.doc.type.modes, "(ty-tok-automat) fresh doc has no materialized modes yet");
 app.setTypeTokenOverride("Body", "MD", "std-tablet", 30); flushRaf();
 ok(Array.isArray(app.doc.type.modes) && app.doc.type.modes.length === 2 && app.doc.type.modes.some((m) => m.id === "std-tablet") && app.doc.type.modes.some((m) => m.id === "std-mobile"), "(ty-tok-automat) the first edit against std-tablet materializes BOTH Standard-set rungs in one commit");
 ok(app.doc.type.tokenOverrides["Body|MD|std-tablet"] === 30, "(ty-tok-automat) the override that triggered materialization is itself written correctly");
 ok(app._typeScaleFor("std-tablet").categories.Body.MD.size === 30, "(ty-tok-automat) the materialized mode still resolves through _typeScaleFor by its stable id");
 // (ty-bp) below fully replaces d.type, so the modes/overrides just materialized here don't leak forward.
-// ── (ty-bp) Typography breakpoint MODES (Phase 5) — add/switch/edit/delete a named bodyBase variant ──
+// ── (ty-bp) Typography breakpoint MODES (Phase 5), add/switch/edit/delete a named bodyBase variant ──
 app.commit((d) => { d.type = { treatment: "product", bodyBase: 16 }; }); flushRaf();
 app.addTypeMode(); flushRaf();
 ok(Array.isArray(app.doc.type.modes) && app.doc.type.modes.length === 1 && app.typeMode === app.doc.type.modes[0].id, "(ty-bp) addTypeMode adds a mode + switches to it");
@@ -2518,12 +2518,12 @@ ok(app._typeModeDTCGFiles().length === 1 && app._typeModeDTCGFiles()[0].name ===
 // INTRINSIC standard set (no geometry modes configured ⇒ Desktop · Tablet · Mobile · Lg · Xl synthesized),
 // each half back-filled with its own base values at the modes it doesn't define.
 const _fplans = app._figmaFloatPlans();
-ok(_fplans.length === 1 && _fplans[0].collection === "Geometry", `(ty-fig) _figmaFloatPlans yields ONE merged Geometry apply plan (TKT-0009 — got ${_fplans.map((p) => p.collection).join()})`);
+ok(_fplans.length === 1 && _fplans[0].collection === "Geometry", `(ty-fig) _figmaFloatPlans yields ONE merged Geometry apply plan (TKT-0009, got ${_fplans.map((p) => p.collection).join()})`);
 const _mplan = _fplans[0];
 ok(_mplan && _mplan.modes[0] === "Base" && _mplan.defaultMode === "Base", `(ty-fig) the type half's configured shape leads: Base is the default mode (got ${_mplan && _mplan.modes.join()})`);
 ok(_mplan && ["Desktop", "Desktop Lg", "Desktop Xl", "Tablet", "Mobile"].every((m) => _mplan.modes.includes(m)) && _mplan.modes.length === 7, `(ty-fig) the merged plan unions the 768 breakpoint with geometry's INTRINSIC Desktop·Desktop Lg·Desktop Xl·Tablet·Mobile set (got ${_mplan && _mplan.modes.join()})`);
 ok(_mplan && _mplan.variables.some((v) => v.name.startsWith("type/")) && _mplan.variables.some((v) => v.name.startsWith("size/")), "(ty-fig) the merged plan carries both the type/ half and the box-geometry half");
-ok(_fplans.every((p) => p.variables.length > 0 && p.variables.every((v) => v.type === "FLOAT" && v.values.length === p.modes.length && v.values.every((x) => Number.isFinite(x.value)))), "(ty-fig) every emitted plan is value-complete (FLOAT, one finite value per mode) — the merge back-fill + validateModeInterchange gate held");
+ok(_fplans.every((p) => p.variables.length > 0 && p.variables.every((v) => v.type === "FLOAT" && v.values.length === p.modes.length && v.values.every((x) => Number.isFinite(x.value)))), "(ty-fig) every emitted plan is value-complete (FLOAT, one finite value per mode), the merge back-fill + validateModeInterchange gate held");
 ok(_mplan && JSON.stringify(_mplan.retire) === JSON.stringify(["Typography"]), "(ty-fig) the merged plan carrying type/ variables retires the two-collection era's Typography collection");
 // the apply payload RESPECTS the export-system toggles: a toggled-off system is not in floatPlans (the bug).
 app.exportSystems = { color: true, type: false, geometry: true };
@@ -2535,7 +2535,7 @@ app.exportSystems = { color: true, type: false, geometry: true };
 app.exportSystems = { color: true, type: false, geometry: false };
 ok(app._figmaFloatPlans().length === 0, "(ty-fig) Type + Geometry OFF → no float plans applied");
 app.exportSystems = { color: true, type: true, geometry: true }; // restore
-// (t-bake) downloadFigmaPlugin BAKES this project's breakpoint plans into the downloaded code.js — the
+// (t-bake) downloadFigmaPlugin BAKES this project's breakpoint plans into the downloaded code.js, the
 // standalone binder has no postMessage channel to this UI, so app.js string-replaces the FLOAT_PLANS
 // injection anchor at download time (with type+geometry ON + the 768 breakpoint set up above, the baked
 // plans are non-empty). The code.js download is deferred a real 150ms (see downloadFigmaPlugin).
@@ -2562,12 +2562,12 @@ ok(app.doc.type.modes[0].minWidth === 992, "(ty-bp) clicking a quick-pick chip s
 app.setTypeModeMinWidth(_bpId, 768); flushRaf(); // restore for the matrix-column assertion below
 // the token MATRIX gains a column for the new breakpoint (Base + the ≥768px mode = 2 value columns)
 app.setTypeSpecMode("tokens"); flushRaf();
-ok(app._typeTokenColumns().length === 2 && app._typeTokenColumns()[0].id === "base" && app._typeTokenColumns()[1].minWidth === 768, "(ty-tok) the matrix has a column per breakpoint — Base + the ≥768px mode (sorted by minWidth)");
+ok(app._typeTokenColumns().length === 2 && app._typeTokenColumns()[0].id === "base" && app._typeTokenColumns()[1].minWidth === 768, "(ty-tok) the matrix has a column per breakpoint, Base + the ≥768px mode (sorted by minWidth)");
 ok(walk(app, (e) => e.classList && e.classList.contains("tok-col-bp") && txtOf(e).includes("768")).length === 1, "(ty-tok) the breakpoint column header shows its ≥768px min-width");
 // CRITICAL: typeMode is STILL the breakpoint (bodyBase 24) here. The Base column must show the DOCUMENT
-// base (Body MD 16), NOT the active mode — and the breakpoint column carries the mode's 24.
+// base (Body MD 16), NOT the active mode, and the breakpoint column carries the mode's 24.
 ok(app._typeTokenColumns()[0].scale.categories.Body.MD.size === 16 && app._typeTokenColumns()[1].scale.categories.Body.MD.size === 24, `(ty-tok) the Base column is pinned to the document base (Body MD 16), not the active mode (24) (got Base=${app._typeTokenColumns()[0].scale.categories.Body.MD.size}, bp=${app._typeTokenColumns()[1].scale.categories.Body.MD.size})`);
-// ── (ty-tok-ov) Phase 3 — the value cell is an EDITABLE SIZE input; editing writes a per-cell override that
+// ── (ty-tok-ov) Phase 3, the value cell is an EDITABLE SIZE input; editing writes a per-cell override that
 // re-derives the line, persists, reflects in the column + every export, and a ↺ resets it. ──
 const tCellInput = (fk) => walk(app, (e) => e.tagName === "INPUT" && e.getAttribute && e.getAttribute("data-fk") === fk)[0];
 ok(!!tCellInput("tytok:Body:MD:base"), "(ty-tok-ov) each value cell is an editable size input (data-fk = voice:step:modeKey)");
@@ -2577,7 +2577,7 @@ ok(app.doc.type.tokenOverrides && app.doc.type.tokenOverrides["Body|MD|base"] ==
 ok(app._typeScaleFor("base").categories.Body.MD.size === 40 && app._typeScaleFor("base").categories.Body.MD.lineHeight === Math.round(40 * 1.5), "(ty-tok-ov) the override re-derives the scale (size = the override, line = round(size·leading))");
 ok(app._typeTokenColumns()[0].scale.categories.Body.MD.size === 40, "(ty-tok-ov) the matrix Base column reflects the override");
 ok(hydSet(serSet(app.doc)).type.tokenOverrides["Body|MD|base"] === 40, "(ty-tok-ov) the override survives serialize → hydrate (persists)");
-// (ty-tok-clamp) MAJOR 4 — the live setter CLAMPS to [1,512] (the input min/max + persist range), so an
+// (ty-tok-clamp) MAJOR 4, the live setter CLAMPS to [1,512] (the input min/max + persist range), so an
 // out-of-range edit stores the clamped value LIVE (not 9999 live → 512 on reload, which would be live≠persist).
 app.setTypeTokenOverride("Display", "XL", "base", 9999); flushRaf();
 ok(app.doc.type.tokenOverrides["Display|XL|base"] === 512, `(ty-tok-clamp) an over-max type edit (9999) is clamped to 512 LIVE (got ${app.doc.type.tokenOverrides["Display|XL|base"]})`);
@@ -2600,35 +2600,35 @@ ok(app._typeScaleFor("base").categories.Body.MD.size === 16, "(ty-tok-ov) after 
 app.setTypeSpecMode("specimen"); flushRaf();
 app.typeMode = "base"; flushRaf();
 ok(app._activeType().bodyBase === 16, "(ty-bp) switching back to Base resolves the base body size");
-// ── (ty-cmp) Phase 5.3 — per-mode COMPARE: one specimen column per breakpoint mode (Base + each mode),
+// ── (ty-cmp) Phase 5.3, per-mode COMPARE: one specimen column per breakpoint mode (Base + each mode),
 // side by side in one pannable scene (mirrors Color's "Both"). _typeModeOverride forces each column's mode. ──
 // the doc still carries the _bpId mode (bodyBase 20); the Mode control offers a Compare item now that ≥1 mode exists.
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "tmode:compare").length === 1, "(ty-cmp) the Mode control offers a Compare item when ≥1 breakpoint mode exists");
 app.typeMode = "compare"; app.render(); flushRaf();
 {
   const cols = app.querySelectorAll(".compare-col");
-  ok(cols.length === 1 + app.doc.type.modes.length, `(ty-cmp) Compare renders one column per mode — Base + ${app.doc.type.modes.length} breakpoint(s) = ${1 + app.doc.type.modes.length} (got ${cols.length})`);
+  ok(cols.length === 1 + app.doc.type.modes.length, `(ty-cmp) Compare renders one column per mode, Base + ${app.doc.type.modes.length} breakpoint(s) = ${1 + app.doc.type.modes.length} (got ${cols.length})`);
   ok(!!app.querySelector(".canvas-compare") && !!app.querySelector(".compare"), "(ty-cmp) Compare uses the shared .canvas-compare / .canvas-scene.compare shell");
   ok(txtOf(app.querySelectorAll(".compare-col-label")[0] || {}) === "Base", "(ty-cmp) the first column is labelled Base");
   // each column carries a full TYPE_STEPS-line specimen (51) (the override forced its mode while the scene built).
   ok(app.querySelectorAll(".type-spec-line").length === TYPE_STEPS * cols.length, `(ty-cmp) every column renders the full ${TYPE_STEPS}-step specimen (got ${app.querySelectorAll(".type-spec-line").length} lines across ${cols.length} cols)`);
   ok(app._typeModeOverride === null, "(ty-cmp) the transient _typeModeOverride is cleared after each column builds (never leaks)");
-  // MAJOR: the inspector body-size slider edits the BASE scale in Compare (it shows Base) — not a no-op.
+  // MAJOR: the inspector body-size slider edits the BASE scale in Compare (it shows Base), not a no-op.
   app._setActiveTypeBodyBase(19); app.commitDrag?.(); flushRaf();
   ok(app.doc.type.bodyBase === 19, `(ty-cmp) the body-size slider edits doc.type.bodyBase while in Compare (got ${app.doc.type.bodyBase})`);
 }
 app.typeMode = "base"; app.render(); flushRaf();
 ok(!app.querySelector(".compare-col") && !!app.querySelector(".type-spec") && app.querySelectorAll(".type-spec-line").length === TYPE_STEPS, "(ty-cmp) leaving Compare restores the single specimen scene");
-// Compare/All stays present after the last real mode is deleted below — the Standard-set fallback keeps
-// Tablet/Mobile (and All) visible even pre-materialization — asserted in (ty-cmp-present).
-// (ty-tok-orphan) MAJOR 5 — deleting a mode STRIPS that mode's per-cell overrides (no "...|<id>" orphans
+// Compare/All stays present after the last real mode is deleted below, the Standard-set fallback keeps
+// Tablet/Mobile (and All) visible even pre-materialization, asserted in (ty-cmp-present).
+// (ty-tok-orphan) MAJOR 5, deleting a mode STRIPS that mode's per-cell overrides (no "...|<id>" orphans
 // survive serialize→hydrate forever). Set a per-mode override, delete the mode, assert the key is gone.
 app.setTypeTokenOverride("Body", "MD", _bpId, 21); flushRaf();
 ok(app.doc.type.tokenOverrides && app.doc.type.tokenOverrides["Body|MD|" + _bpId] === 21, "(ty-tok-orphan) a per-mode override is set before deletion");
 app.typeMode = "compare"; app.render(); flushRaf(); // delete the LAST mode WHILE in Compare → must fall back to Base
 app.deleteTypeMode(_bpId); flushRaf();
 ok(!app.doc.type.modes && app.typeMode === "base", "(ty-cmp) deleting the last mode while in Compare drops it + falls back to Base (no orphaned compare-of-one)");
-ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "tmode:compare").length === 1, "(ty-cmp-present) the Compare/All item stays present after deleting the last real mode — the Standard-set fallback keeps Tablet/Mobile visible");
+ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "tmode:compare").length === 1, "(ty-cmp-present) the Compare/All item stays present after deleting the last real mode, the Standard-set fallback keeps Tablet/Mobile visible");
 ok(!app.doc.type.tokenOverrides, "(ty-tok-orphan) deleting the mode strips its per-cell override AND drops the now-empty tokenOverrides map");
 app.commit((d) => { d.type = { treatment: "product", bodyBase: 16 }; }); // restore default
 app.setSection("color"); flushRaf();
@@ -2644,7 +2644,7 @@ ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "--size-2xl", `(
 ok(app.querySelectorAll(".an-card").length >= 4, `(geo) the left rail shows the geometry analysis cards (got ${app.querySelectorAll(".an-card").length})`);
 ok(!!app.querySelector(".tyi-voices") || !!app.querySelector(".insp-title"), "(geo) the right pane shows the Geometry inspector");
 // (geo-palette) the canvas ramp's mock control AND the pinned inspector example are painted with the
-// SELECTED palette's own resolved roles (real hex), not a generic fixed accent — both must agree.
+// SELECTED palette's own resolved roles (real hex), not a generic fixed accent, both must agree.
 {
   const { projectView: pvGeo } = await import("../../src/ui/model.mjs");
   const viewGeo = pvGeo(app.doc);
@@ -2664,7 +2664,7 @@ ok(!!app.querySelector(".tyi-voices") || !!app.querySelector(".insp-title"), "(g
   ok(!!exChip && !!containerHighHex && (exChip.getAttribute("style") || "").includes(`background:${containerHighHex}`), `(geo-palette) the Chip is painted with the palette's containerHigh tone (${containerHighHex}, got "${exChip && exChip.getAttribute("style")}")`);
   ok(!!app.querySelector(".geom-ex-input"), "(geo-palette) the pinned example now shows Button + Chip + Input, not just Button");
   // (geo-row) every size row renders Button + Select + Switch side by side; the switch's thumb is
-  // the glyph cell (diameter = icon, right-inset = paddingNarrow — the centering law, literally).
+  // the glyph cell (diameter = icon, right-inset = paddingNarrow, the centering law, literally).
   ok(app.querySelectorAll(".geom-select").length === GEOM_SIZES && app.querySelectorAll(".geom-switch").length === GEOM_SIZES, `(geo-row) each of the ${GEOM_SIZES} size rows carries a Select + Switch alongside the Button (got ${app.querySelectorAll(".geom-select").length}/${app.querySelectorAll(".geom-switch").length})`);
   const swEl = app.querySelector(".geom-switch");
   ok(!!swEl && (swEl.getAttribute("style") || "").includes(`background:${mainHex}`), "(geo-row) the switch track is painted with the palette's own resolved color");
@@ -2682,7 +2682,7 @@ ok(gsc.sizes.MD.paddingNarrow === (gsc.sizes.MD.height - gsc.sizes.MD.icon) / 2,
 ok(hydSet(serSet(app.doc)).geometry.treatment === "spacious" && hydSet(serSet(app.doc)).geometry.baseHeight === 40, "(geo) the geometry config round-trips through persist");
 ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).geometry.treatment === "spacious", "(geo) brandKit carries the geometry scale (the MCP serves it)");
 // CONTROL TEXT (TKT-0008): geometry's per-step `font` composes from the type scale's UI-CONTROL voice
-// at SM/MD/LG (rerouted off Label 2026-07-16) — a bigger type bodyBase flows into control text.
+// at SM/MD/LG (rerouted off Label 2026-07-16), a bigger type bodyBase flows into control text.
 {
   app.commit((d) => { d.type = { treatment: "luxury", bodyBase: 20 }; }); flushRaf();
   const composed = geoScaleOf(app.doc);
@@ -2707,10 +2707,10 @@ ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).ge
   rampInput.dispatch("change", { target: { checked: true } });
   ok(app.doc.geometry.ramp === RL, "(geo-ramp) checking the box writes doc.geometry.ramp = RAMP_LADDER");
   const afterScale = app._activeGeomScale();
-  const expectLadder = gScale(app.doc.geometry).sizes[MD3]; // the engine's own answer for THIS doc's treatment/baseHeight, step "3" (the ladder's MD-equivalent — numbered steps, issue #483)
+  const expectLadder = gScale(app.doc.geometry).sizes[MD3]; // the engine's own answer for THIS doc's treatment/baseHeight, step "3" (the ladder's MD-equivalent, numbered steps, issue #483)
   ok(afterScale.ramp === RL && afterScale.sizes[MD3].font === expectLadder.font && afterScale.sizes[MD3].icon === expectLadder.icon, `(geo-ramp) the resolved scale switches to the ladder (step ${MD3} font ${afterScale.sizes[MD3].font} = ${expectLadder.font}, icon ${afterScale.sizes[MD3].icon} = ${expectLadder.icon})`);
   ok(afterScale.sizes[MD3].font !== beforeMD, `(geo-ramp) the ladder's font differs from the composed default (ladder ${afterScale.sizes[MD3].font} vs default ${beforeMD})`);
-  // mapping ruling (2026-09-02, final: the full 10-step table, NUMBERED "0".."9") — the canvas
+  // mapping ruling (2026-09-02, final: the full 10-step table, NUMBERED "0".."9"), the canvas
   // Controls scene must render all ten numbered rows, not the default ramp's six t-shirt-named ones.
   ok(Object.keys(afterScale.sizes).length === 10 && "0" in afterScale.sizes && "9" in afterScale.sizes && !("MD" in afterScale.sizes), `(geo-ramp) the resolved ladder scale carries the full 10 numbered steps, no t-shirt names (got ${Object.keys(afterScale.sizes)})`);
   app.render(); flushRaf();
@@ -2725,7 +2725,7 @@ ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).ge
   app.render(); flushRaf();
   ok(app.querySelectorAll(".geom-spec-line").length === GEOM_SIZES, `(geo-ramp) the canvas reverts to the default ramp's ${GEOM_SIZES}-step ramp with the checkbox off (got ${app.querySelectorAll(".geom-spec-line").length})`);
 }
-// (gsz) ramp-tab per-size HEIGHT tuning — the geometry analog of (tyv): select a size → its Height slider
+// (gsz) ramp-tab per-size HEIGHT tuning, the geometry analog of (tyv): select a size → its Height slider
 // expands; _setGeomSize writes the per-size override (the SAME store the token matrix uses) + persists; reset clears.
 app.setSection("geometry"); app.geomSegment = "ramp"; app.geomSize = null; app.render(); flushRaf();
 ok(app.querySelectorAll(".tyi-voice").length === GEOM_SIZES && !app.querySelector(".tyi-voice-edit"), `(gsz) the ramp tab lists the ${GEOM_SIZES} sizes, none expanded by default (got ${app.querySelectorAll(".tyi-voice").length})`);
@@ -2738,11 +2738,11 @@ app.clearGeomTokenOverride("MD", "base"); flushRaf();
 ok(!app.doc.geometry.tokenOverrides || !("MD|base" in app.doc.geometry.tokenOverrides), "(gsz) reset clears the per-size override (back to the derived height)");
 app.geomSize = null; app.render(); flushRaf(); // leave the section in Geometry for the following legs
 // the canvas Controls·Tokens toggle flips the canvas to the READ-ONLY token MATRIX (a real <table>) in the
-// scrolling .is-table shell — rows = the 6 control sizes, columns = Base (+ each breakpoint), sticky names.
+// scrolling .is-table shell, rows = the 6 control sizes, columns = Base (+ each breakpoint), sticky names.
 app.setGeomSpecMode("tokens"); flushRaf();
 ok(!!app.querySelector(".tok-table") && !app.querySelector(".geom-spec"), "(geo-tok) the Controls·Tokens toggle renders the token matrix table (no controls scene)");
 ok(!!app.querySelector(".is-table") && !!app.querySelector(".is-table").querySelector(".tok-table"), "(geo-tok) the token table lives in the scrolling .is-table canvas shell (no pan/zoom)");
-ok(walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Desktop")).length === 1 && walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Base")).length === 0, "(geo-tok) the base column header reads Desktop (the designed scale, the intrinsic anchor — no 'Base' column)");
+ok(walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Desktop")).length === 1 && walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Base")).length === 0, "(geo-tok) the base column header reads Desktop (the designed scale, the intrinsic anchor, no 'Base' column)");
 ok(app._geomTokenColumns().length === 3 && app._geomTokenColumns()[1].id === "std-tablet" && app._geomTokenColumns()[2].id === "std-mobile", "(geo-tok) Base + the Standard-set Tablet/Mobile columns render LIVE before any breakpoint is materialized");
 ok(app.querySelectorAll(".tok-row").length === GEOM_SIZES, `(geo-tok) one row per control size (${GEOM_SIZES}) (got ${app.querySelectorAll(".tok-row").length})`);
 ok(txtOf(app.querySelectorAll(".tok-name")[1] || {}) === "--size-2xl", `(geo-tok) the first (sticky) token name is --size-2xl (largest→smallest) (got ${txtOf(app.querySelectorAll(".tok-name")[1] || {})})`);
@@ -2764,7 +2764,7 @@ ok(Array.isArray(app.doc.geometry.modes) && app.doc.geometry.modes.length === 2 
 ok(app.doc.geometry.tokenOverrides["MD|std-tablet"] === 26, "(geo-tok-automat) the override that triggered materialization is itself written correctly");
 ok(app._geomScaleFor("std-tablet").sizes.MD.height === 26, "(geo-tok-automat) the materialized mode still resolves through _geomScaleFor by its stable id");
 // (geo-bp) below fully replaces d.geometry, so the modes/overrides just materialized here don't leak forward.
-// ── (geo-bp) Geometry breakpoint MODES (Phase 5) — mirror of (ty-bp): add/switch/edit/delete a baseHeight variant ──
+// ── (geo-bp) Geometry breakpoint MODES (Phase 5), mirror of (ty-bp): add/switch/edit/delete a baseHeight variant ──
 app.commit((d) => { d.geometry = { treatment: "comfortable", baseHeight: 28 }; }); flushRaf();
 app.addGeomMode(); flushRaf();
 ok(Array.isArray(app.doc.geometry.modes) && app.doc.geometry.modes.length === 1 && app.geomMode === app.doc.geometry.modes[0].id, "(geo-bp) addGeomMode adds a mode + switches to it");
@@ -2786,12 +2786,12 @@ ok(app.doc.geometry.modes[0].minWidth === 1280, "(geo-bp) clicking a quick-pick 
 app.setGeomModeMinWidth(_gbpId, 600); flushRaf(); // restore for the matrix assertion below
 // the token MATRIX gains a column for the new breakpoint (Base + the ≥600px mode = 2 value columns)
 app.setGeomSpecMode("tokens"); flushRaf();
-ok(app._geomTokenColumns().length === 2 && app._geomTokenColumns()[0].id === "base" && app._geomTokenColumns()[1].minWidth === 600, "(geo-tok) the matrix has a column per breakpoint — Base + the ≥600px mode (sorted by minWidth)");
+ok(app._geomTokenColumns().length === 2 && app._geomTokenColumns()[0].id === "base" && app._geomTokenColumns()[1].minWidth === 600, "(geo-tok) the matrix has a column per breakpoint, Base + the ≥600px mode (sorted by minWidth)");
 ok(walk(app, (e) => e.classList && e.classList.contains("tok-col-bp") && txtOf(e).includes("600")).length === 1, "(geo-tok) the breakpoint column header shows its ≥600px min-width");
 // CRITICAL: geomMode is STILL the breakpoint (baseHeight 40) here. The Base column must show the DOCUMENT
-// base (28), NOT the active mode — and the breakpoint column carries the mode's 40.
+// base (28), NOT the active mode, and the breakpoint column carries the mode's 40.
 ok(app._geomTokenColumns()[0].scale.baseHeight === 28 && app._geomTokenColumns()[1].scale.baseHeight === 40, `(geo-tok) the Base column is pinned to the document base (28), not the active mode (40) (got Base=${app._geomTokenColumns()[0].scale.baseHeight}, bp=${app._geomTokenColumns()[1].scale.baseHeight})`);
-// ── (geo-tok-ov) Phase 3 — the value cell is an EDITABLE HEIGHT input; editing writes a per-cell override
+// ── (geo-tok-ov) Phase 3, the value cell is an EDITABLE HEIGHT input; editing writes a per-cell override
 // that re-derives icon/font/pad/radius via the laws, persists, reflects in the column + exports, ↺ resets. ──
 const gCellInput = (fk) => walk(app, (e) => e.tagName === "INPUT" && e.getAttribute && e.getAttribute("data-fk") === fk)[0];
 ok(!!gCellInput("geotok:MD:base"), "(geo-tok-ov) each value cell is an editable height input (data-fk = size:modeKey)");
@@ -2803,7 +2803,7 @@ ok(app.doc.geometry.tokenOverrides && app.doc.geometry.tokenOverrides["MD|base"]
 }
 ok(app._geomTokenColumns()[0].scale.sizes.MD.height === 50, "(geo-tok-ov) the matrix Base column reflects the override");
 ok(hydSet(serSet(app.doc)).geometry.tokenOverrides["MD|base"] === 50, "(geo-tok-ov) the override survives serialize → hydrate (persists)");
-// (geo-tok-clamp) MAJOR 4 — the live setter CLAMPS to [8,256]. A sub-floor edit (3) would otherwise yield
+// (geo-tok-clamp) MAJOR 4, the live setter CLAMPS to [8,256]. A sub-floor edit (3) would otherwise yield
 // NEGATIVE padding ((h−icon)/2 < 0); it stores the floor (8) live, matching the input min + persist range.
 app.setGeomTokenOverride("XS", "base", 3); flushRaf();
 ok(app.doc.geometry.tokenOverrides["XS|base"] === 8, `(geo-tok-clamp) a sub-floor geom edit (3) is clamped to 8 LIVE (got ${app.doc.geometry.tokenOverrides["XS|base"]})`);
@@ -2827,31 +2827,31 @@ ok(app._geomScaleFor("base").sizes.MD.height === 28, "(geo-tok-ov) after reset t
 app.setGeomSpecMode("controls"); flushRaf();
 app.geomMode = "base"; flushRaf();
 ok(app._activeGeomScale().baseHeight === 28, "(geo-bp) switching back to Base resolves the base height");
-// ── (geo-cmp) Phase 5.3 — per-mode COMPARE: one control-ramp column per breakpoint mode (Base + each mode),
+// ── (geo-cmp) Phase 5.3, per-mode COMPARE: one control-ramp column per breakpoint mode (Base + each mode),
 // side by side in one pannable scene (mirror of (ty-cmp)). _geomModeOverride forces each column's mode. ──
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "gmode:compare").length === 1, "(geo-cmp) the Mode control offers a Compare item when ≥1 breakpoint mode exists");
 app.geomMode = "compare"; app.render(); flushRaf();
 {
   const cols = app.querySelectorAll(".compare-col");
-  ok(cols.length === 1 + app.doc.geometry.modes.length, `(geo-cmp) Compare renders one column per mode — Base + ${app.doc.geometry.modes.length} breakpoint(s) = ${1 + app.doc.geometry.modes.length} (got ${cols.length})`);
+  ok(cols.length === 1 + app.doc.geometry.modes.length, `(geo-cmp) Compare renders one column per mode, Base + ${app.doc.geometry.modes.length} breakpoint(s) = ${1 + app.doc.geometry.modes.length} (got ${cols.length})`);
   ok(!!app.querySelector(".canvas-compare") && !!app.querySelector(".compare"), "(geo-cmp) Compare uses the shared .canvas-compare / .canvas-scene.compare shell");
   ok(txtOf(app.querySelectorAll(".compare-col-label")[0] || {}) === "Base", "(geo-cmp) the first column is labelled Base");
   ok(app.querySelectorAll(".geom-spec-line").length === GEOM_SIZES * cols.length, `(geo-cmp) every column renders the full ${GEOM_SIZES}-step control ramp (got ${app.querySelectorAll(".geom-spec-line").length} lines across ${cols.length} cols)`);
   ok(app._geomModeOverride === null, "(geo-cmp) the transient _geomModeOverride is cleared after each column builds (never leaks)");
-  // MAJOR: the inspector base-height slider edits the BASE scale in Compare (it shows Base) — not a no-op.
+  // MAJOR: the inspector base-height slider edits the BASE scale in Compare (it shows Base), not a no-op.
   app._setActiveGeomBaseHeight(40); app.commitDrag?.(); flushRaf();
   ok(app.doc.geometry.baseHeight === 40, `(geo-cmp) the base-height slider edits doc.geometry.baseHeight while in Compare (got ${app.doc.geometry.baseHeight})`);
 }
 app.geomMode = "base"; app.render(); flushRaf();
 ok(!app.querySelector(".compare-col") && !!app.querySelector(".geom-spec") && app.querySelectorAll(".geom-spec-line").length === GEOM_SIZES, "(geo-cmp) leaving Compare restores the single controls scene");
-// (geo-tok-orphan) MAJOR 5 — deleting a mode STRIPS that mode's per-cell overrides (no orphaned "...|<id>"
+// (geo-tok-orphan) MAJOR 5, deleting a mode STRIPS that mode's per-cell overrides (no orphaned "...|<id>"
 // keys survive serialize→hydrate forever). Set a per-mode override, delete the mode, assert the key is gone.
 app.setGeomTokenOverride("MD", _gbpId, 40); flushRaf();
 ok(app.doc.geometry.tokenOverrides && app.doc.geometry.tokenOverrides["MD|" + _gbpId] === 40, "(geo-tok-orphan) a per-mode override is set before deletion");
 app.geomMode = "compare"; app.render(); flushRaf(); // delete the LAST mode WHILE in Compare → must fall back to Base
 app.deleteGeomMode(_gbpId); flushRaf();
 ok(!app.doc.geometry.modes && app.geomMode === "base", "(geo-cmp) deleting the last mode while in Compare drops it + falls back to Base (no orphaned compare-of-one)");
-ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "gmode:compare").length === 1, "(geo-cmp-present) the Compare/All item stays present after deleting the last real mode — the Standard-set fallback keeps Tablet/Mobile visible");
+ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "gmode:compare").length === 1, "(geo-cmp-present) the Compare/All item stays present after deleting the last real mode, the Standard-set fallback keeps Tablet/Mobile visible");
 ok(!app.doc.geometry.tokenOverrides, "(geo-tok-orphan) deleting the mode strips its per-cell override AND drops the now-empty tokenOverrides map");
 app.commit((d) => { d.geometry = { treatment: "comfortable", baseHeight: 28 }; }); // restore default
 app.setSection("color"); flushRaf();
@@ -2861,7 +2861,7 @@ ok(app.section === "color" && !app.querySelector(".geom-spec") && !!app.querySel
 //        a set saved with hueSpace:"oklch" opens as oklch. The app.js openSet legacy stamp. ────────
 {
   const minimalPalettes = [{ name: "primary", hue: 200, chroma: 60, skew: 0, lift: 0, on: true }];
-  // a pre-hueSpace stored doc — plain object with NO hueSpace (legacy data authored under cam16).
+  // a pre-hueSpace stored doc, plain object with NO hueSpace (legacy data authored under cam16).
   const legacyRec = { id: "set-legacy-hs", name: "Legacy", doc: { name: "Legacy", palettes: minimalPalettes }, updated: Date.now() };
   // a modern stored doc carrying hueSpace:"oklch".
   const oklchRec = { id: "set-oklch-hs", name: "OKLCH", doc: { name: "OKLCH", palettes: minimalPalettes, hueSpace: "oklch" }, updated: Date.now() };
@@ -2872,20 +2872,20 @@ ok(app.section === "color" && !app.querySelector(".geom-spec") && !!app.querySel
   ok(app.doc.hueSpace === "oklch", `(hs) a set saved hueSpace:"oklch" opens as oklch, got ${app.doc.hueSpace}`);
 }
 
-// ── (fl) feature-flag substrate (item 7, Layer 1) — the app exposes flagOf() off the per-machine profile ──
+// ── (fl) feature-flag substrate (item 7, Layer 1), the app exposes flagOf() off the per-machine profile ──
 ok(app.profile && app.profile.tier === "free", `(fl) a fresh app boots with a free-tier profile (got ${app.profile && app.profile.tier})`);
-ok(app.flagOf("proExport") === true && app.flagOf("maxSets") === Infinity, "(fl) pre-launch (TIERS_ENFORCED off) every flag is unlocked — no current feature gated");
+ok(app.flagOf("proExport") === true && app.flagOf("maxSets") === Infinity, "(fl) pre-launch (TIERS_ENFORCED off) every flag is unlocked, no current feature gated");
 app.setProfile({ flagOverrides: { proExport: false, maxSets: 1 } }); flushRaf();
 ok(app.flagOf("proExport") === false && app.flagOf("maxSets") === 1, "(fl) setProfile applies dev flag overrides through flagOf");
 ok(app.flagOf("nope") === false, "(fl) an unknown flag resolves false (restrictive default)");
 app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlocked
 
-// ── (cap) maxSets gate — creating a brand kit past the plan cap is BLOCKED + routes a web user to Pro.
+// ── (cap) maxSets gate, creating a brand kit past the plan cap is BLOCKED + routes a web user to Pro.
 // A NO-OP until TIERS_ENFORCED flips (flagOf("maxSets") is Infinity), so we simulate the enforced free cap
 // with a dev flag override. The project/Figma RESTORE path is intentionally NOT capped (only New / Import).
 const capBefore = app.sets.length;
 app.createSet(); flushRaf();
-ok(app.sets.length === capBefore + 1, "(cap) with the default (unlimited) cap, createSet adds a kit — current behavior preserved");
+ok(app.sets.length === capBefore + 1, "(cap) with the default (unlimited) cap, createSet adds a kit, current behavior preserved");
 const atCap = app.sets.length;
 app.setProfile({ flagOverrides: { maxSets: atCap } }); flushRaf(); // pin the cap to the current count → at the cap
 app.createSet(); flushRaf();
@@ -2900,7 +2900,7 @@ app.createSet(); flushRaf();
 ok(app.sets.length === atCap + 1, "(cap) raising the cap re-enables createSet");
 app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlimited
 
-// ── (at) advancedTreatments gate — only the default treatment (Product type / Comfortable geometry) is free;
+// ── (at) advancedTreatments gate, only the default treatment (Product type / Comfortable geometry) is free;
 // every other is Pro. NO-OP until TIERS_ENFORCED (flagOf unlocked); simulate the enforced free plan via override. ──
 app.openSet(app.sets[0].id); flushRaf();
 app._pickTypeTreatment("editorial"); flushRaf();
@@ -2920,7 +2920,7 @@ ok(app.doc.geometry.treatment === "comfortable", "(at) Free → a Pro geometry t
 app.closeSettings(); flushRaf();
 app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlocked
 
-// ── (acct) Settings « Account » (item 7, Layer 3) — plan badge · license seam · offline-hidden entry ──
+// ── (acct) Settings « Account » (item 7, Layer 3), plan badge · license seam · offline-hidden entry ──
 app.openSet(app.sets[0].id); flushRaf(); // guarantee editor view (where renderSettings lives)
 app.openSettings(); app.settingsSection = "account"; app.render(); flushRaf();
 const acctTier = () => txtOf(app.querySelector(".account-tier") || {});
@@ -2930,7 +2930,7 @@ ok(!!app.querySelector(".account-manage"), "(acct) a Manage-subscription link is
 ok(!!app.querySelector(".account-upgrade") && !!app.querySelector(".account-buy-note"), "(acct) the web app (Free) shows the Get-Pro checkout CTA + buy-a-license link");
 ok(!!app.querySelector(".account-studio-link"), "(acct) the Upgrade row also surfaces the Studio (teams) checkout link");
 
-// the pluggable license SEAM (no network): a MANUAL service — activate CONSUMES a seat (returns an instance
+// the pluggable license SEAM (no network): a MANUAL service, activate CONSUMES a seat (returns an instance
 // id), deactivate frees it. We spy on deactivate to prove clearLicense releases the Studio seat.
 let acctDeactivated = null;
 app._licenseService = {
@@ -2942,7 +2942,7 @@ await app.enterLicense("PRO-TEST-1234"); flushRaf();
 ok(app.tier() === "pro" && app.profile.entitlement && app.profile.entitlement.status === "active", `(acct) enterLicense with an active entitlement flips the effective tier to pro (got ${app.tier()})`);
 ok(app.profile.instanceId === "inst-acct", "(acct) enterLicense records the activation instance id (this device's seat)");
 ok(app.profile.seats && app.profile.seats.limit === 5 && app.profile.seats.usage === 2, "(acct) enterLicense stores the seat count {limit,usage}");
-ok(app.flagOf("proExport") === true, "(acct) flagOf returns unlocked pre-launch (TIERS_ENFORCED off — the entitlement gate itself is unit-tested in flags.mjs; app.tier() above proves the effective-tier resolution)");
+ok(app.flagOf("proExport") === true, "(acct) flagOf returns unlocked pre-launch (TIERS_ENFORCED off, the entitlement gate itself is unit-tested in flags.mjs; app.tier() above proves the effective-tier resolution)");
 const acctStored = JSON.parse(localStorage.getItem("ultimate-tokens-profile") || "null");
 ok(acctStored && acctStored.tier === "pro" && acctStored.licenseKey === "PRO-TEST-1234" && acctStored.instanceId === "inst-acct" && acctStored.entitlement.status === "active", "(acct) the license + instance + entitlement persist to the profile store");
 app.render(); flushRaf();
@@ -2959,7 +2959,7 @@ ok(acctDeactivated && acctDeactivated.instanceId === "inst-acct", "(acct) clearL
 ok(app.tier() === "free" && !app.profile.licenseKey && !app.profile.instanceId && acctTier() === "Free", "(acct) clearLicense returns to Free and drops the license + instance");
 
 // NO SEAT LEAK: if activate consumes a seat (returns an instance) but the entitlement is already EXPIRED,
-// enterLicense rejects AND releases that just-taken seat — the consumed-never-freed case must not happen.
+// enterLicense rejects AND releases that just-taken seat, the consumed-never-freed case must not happen.
 let acctLeakReleased = null;
 app._licenseService = {
   activate: (key) => ({ ok: true, entitlement: { status: "active", expiresAt: Date.now() - 1000 }, instanceId: "inst-leak" }),
@@ -2988,7 +2988,7 @@ ok(app.tier() === "pro", "(acct) revalidate keeps Pro on a transient validate TH
 // ambiguous not-ok (unparseable body / proxy page → {ok:false} with NO revoked flag) → KEEP Pro
 app._licenseService.validate = () => ({ ok: false, error: "hmm" });
 await app.revalidateLicense(); flushRaf();
-ok(app.tier() === "pro", "(acct) revalidate keeps Pro on an AMBIGUOUS not-ok (no revoked flag) — no false downgrade");
+ok(app.tier() === "pro", "(acct) revalidate keeps Pro on an AMBIGUOUS not-ok (no revoked flag), no false downgrade");
 // DEFINITIVE revocation (revoked:true) → downgrade to Free AND free the seat (no orphan)
 let acctRevokeReleased = null;
 app._licenseService.deactivate = (k, instanceId) => { acctRevokeReleased = instanceId; return { ok: true }; };
@@ -3003,7 +3003,7 @@ ok(!app.querySelector(".account-license-input") && !app.querySelector(".account-
 app.inFigma = false; app.render(); flushRaf();
 app.closeSettings(); flushRaf();
 
-// ── (cleanup) Settings › Figma › Cleanup — Figma-only nav item; scan-then-confirm sweep for legacy styles ─
+// ── (cleanup) Settings › Figma › Cleanup, Figma-only nav item; scan-then-confirm sweep for legacy styles ─
 app.inFigma = false; app.render(); flushRaf();
 ok(!app._settingsNav().some((g) => g.group === "Figma"), "(cleanup) the Figma nav group is absent outside Figma");
 const realParentCU = globalThis.parent;
@@ -3013,7 +3013,7 @@ app.inFigma = true; app.openSettings(); app.settingsSection = "cleanup"; app.ren
 ok(app._settingsNav().some((g) => g.group === "Figma" && g.items.some((i) => i.id === "cleanup")), "(cleanup) the Figma nav group + Cleanup item appear once inFigma");
 ok(!!app.querySelector(".cleanup-scan"), "(cleanup) the scan button renders");
 app.scanForLegacyStyles();
-ok(postedCU && postedCU.pluginMessage && postedCU.pluginMessage.type === "sweep-scan" && Array.isArray(postedCU.pluginMessage.textNames) && Array.isArray(postedCU.pluginMessage.paintNames), "(cleanup) scanning posts {type:'sweep-scan', textNames, paintNames} — never deletes anything itself");
+ok(postedCU && postedCU.pluginMessage && postedCU.pluginMessage.type === "sweep-scan" && Array.isArray(postedCU.pluginMessage.textNames) && Array.isArray(postedCU.pluginMessage.paintNames), "(cleanup) scanning posts {type:'sweep-scan', textNames, paintNames}, never deletes anything itself");
 ok(app.sweepBusy === true, "(cleanup) scanning sets sweepBusy while the round-trip is in flight");
 app.receiveSweepScan({ texts: [{ id: "s1", name: "Body/lg/regular" }], paints: [] });
 flushRaf();
@@ -3025,21 +3025,21 @@ ok(app.sweepSelected.has("s1"), "(cleanup) checking an item selects its id");
 app.deleteSelectedSweep();
 ok(postedCU.pluginMessage.type === "sweep-delete" && postedCU.pluginMessage.ids[0] === "s1", "(cleanup) deleting posts {type:'sweep-delete', ids} for ONLY the checked candidates");
 app.onSweepDone({ removed: 1 });
-ok(app.sweepResults === null && app.sweepSelected.size === 0, "(cleanup) onSweepDone clears the results — a re-scan starts fresh");
+ok(app.sweepResults === null && app.sweepSelected.size === 0, "(cleanup) onSweepDone clears the results, a re-scan starts fresh");
 globalThis.parent = realParentCU;
 app.inFigma = false; app.closeSettings(); flushRaf();
 
-// ── (std) the STANDARD breakpoint sets (Typography + Geometry) — the DESKTOP-ANCHORED law ─────────────
+// ── (std) the STANDARD breakpoint sets (Typography + Geometry), the DESKTOP-ANCHORED law ─────────────
 // Clear any modes accumulated above, then materialize each standard set and pin its shape: the DESIGNED
-// scale IS Desktop (the base, first, Figma's default mode — baseName "Desktop", untouched by the commit);
-// Tablet (992) and Mobile (≤476) derive DOWN — type via the hierarchy-aware factor (body frozen, display
+// scale IS Desktop (the base, first, Figma's default mode, baseName "Desktop", untouched by the commit);
+// Tablet (992) and Mobile (≤476) derive DOWN, type via the hierarchy-aware factor (body frozen, display
 // compressed ×5/6 / ×2/3), geometry via heights −2/−4.
 app.commit((d) => { if (d.type) { d.type = { ...d.type }; delete d.type.modes; delete d.type.baseName; } if (d.geometry) { d.geometry = { ...d.geometry }; delete d.geometry.modes; delete d.geometry.baseName; } }); flushRaf();
 const stdBB = (app.doc.type && app.doc.type.bodyBase) ?? 16;
 // The ratified magnitude table (2026-07-16), checked on the SYNTHESIZED (no-modes) path first, before
-// addStandardTypeModes materializes real modes below — Body is FROZEN across Desktop/Tablet/Mobile at
+// addStandardTypeModes materializes real modes below, Body is FROZEN across Desktop/Tablet/Mobile at
 // 18/16/14 (LG/MD/SM; 2026-07-13's Mobile nudge is retired), while Desktop Lg/Xl invert the curve:
-// bodyBase scales UP (×1.125/×1.375) with modeFactor (0.89/0.80) holding the ceiling back — Body climbs
+// bodyBase scales UP (×1.125/×1.375) with modeFactor (0.89/0.80) holding the ceiling back, Body climbs
 // 20/18/16 then 24/22/20. Label steps DOWN on the small tiers and lands the table's cells on the large
 // ones via _modeTierNudge: 15/14/13 · 18/17/16 · 13/12/11 · 12/11/10 (Lg · Xl · Tablet · Mobile).
 {
@@ -3053,8 +3053,8 @@ const stdBB = (app.doc.type && app.doc.type.bodyBase) ?? 16;
 app.addStandardTypeModes(); flushRaf();
 {
   const ms = (app.doc.type.modes || []);
-  ok(ms.length === 2 && JSON.stringify(ms.map((m) => m.minWidth)) === JSON.stringify([992, 476]), `(std) Standard set materializes Tablet(992) + Mobile(476) — the designed scale stays the Desktop base (got ${JSON.stringify(ms.map((m) => m.minWidth))})`);
-  ok(ms[0].name === "Tablet" && Math.abs(ms[0].factor - 5 / 6) < 1e-9 && ms[1].name === "Mobile" && Math.abs(ms[1].factor - 2 / 3) < 1e-9 && ms.every((m) => m.bodyBase == null), "(std) type modes carry the compression FACTORS (5/6 · 2/3), no bodyBase override — body is frozen by the law, not by a bump");
+  ok(ms.length === 2 && JSON.stringify(ms.map((m) => m.minWidth)) === JSON.stringify([992, 476]), `(std) Standard set materializes Tablet(992) + Mobile(476), the designed scale stays the Desktop base (got ${JSON.stringify(ms.map((m) => m.minWidth))})`);
+  ok(ms[0].name === "Tablet" && Math.abs(ms[0].factor - 5 / 6) < 1e-9 && ms[1].name === "Mobile" && Math.abs(ms[1].factor - 2 / 3) < 1e-9 && ms.every((m) => m.bodyBase == null), "(std) type modes carry the compression FACTORS (5/6 · 2/3), no bodyBase override, body is frozen by the law, not by a bump");
   ok(app.doc.type.baseName === "Desktop", "(std) the type base layer is named Desktop (the designed scale)");
   ok(app.typeMode === "base", "(std) the control stays on Desktop (nothing about the designed scale changed)");
   const opts = app._typeBaseOpts();
@@ -3067,7 +3067,7 @@ app.addStandardTypeModes(); flushRaf();
   const dispTop = cols.map((c) => { const st = Object.values(c.scale.categories.Display); return st[st.length - 1].size; });
   ok(dispTop[0] > dispTop[1] && dispTop[1] > dispTop[2], `(std) the Display top strictly compresses Desktop→Tablet→Mobile (${dispTop.join("→")})`);
   // the SAME tier cells via the MATERIALIZED Standard set (addStandardTypeModes → _typeScaleFor per
-  // mode) — must match the synthesized (no-modes) check above exactly, so the two paths can never drift:
+  // mode), must match the synthesized (no-modes) check above exactly, so the two paths can never drift:
   // Body frozen 18/16/14 everywhere (the retired Mobile nudge), Label stepping 12/11/10 ← 13/12/11 ← 14/13/12.
   const bodyLGMDSM = (s) => ["LG", "MD", "SM"].map((k) => s.categories.Body[k].size).join("/");
   const labelLGMDSM = (s) => ["LG", "MD", "SM"].map((k) => s.categories.Label[k].size).join("/");
@@ -3079,7 +3079,7 @@ app.addStandardGeomModes(); flushRaf();
 {
   const g = app.doc.geometry, ms = (g.modes || []);
   ok(ms.length === 2 && JSON.stringify(ms.map((m) => m.minWidth)) === JSON.stringify([992, 476]), `(std) Standard set materializes Tablet(992) + Mobile(476) geometry modes (got ${JSON.stringify(ms.map((m) => m.minWidth))})`);
-  ok(g.baseHeight === stdBH && g.baseName === "Desktop", `(std) the designed ramp is UNTOUCHED and named Desktop (baseHeight ${stdBH} — got ${g.baseHeight}, ${g.baseName})`);
+  ok(g.baseHeight === stdBH && g.baseName === "Desktop", `(std) the designed ramp is UNTOUCHED and named Desktop (baseHeight ${stdBH}, got ${g.baseHeight}, ${g.baseName})`);
   ok(ms[0].name === "Tablet" && ms[0].baseHeight === Math.max(20, stdBH - 2) && ms[1].name === "Mobile" && ms[1].baseHeight === Math.max(20, stdBH - 4), "(std) geometry modes derive DOWN (Tablet −2 · Mobile −4, floor 20)");
   ok(app.geomMode === "base", "(std) the control stays on the base (the designed ramp)");
   // the resolved columns: base(Desktop) = the original full ramp; Mobile strictly below it per step.
@@ -3091,8 +3091,8 @@ app.addStandardGeomModes(); flushRaf();
   // as the base = Figma's default mode; Tablet · Mobile follow.
   const plans = app._figmaFloatPlans();
   const geo = plans.find((p) => p.collection === "Geometry");
-  ok(plans.length === 1 && !!geo, `(std) ONE merged Geometry float plan (TKT-0009 — got ${plans.map((p) => p.collection).join()})`);
-  ok(geo && JSON.stringify(geo.modes) === JSON.stringify(["Desktop", "Tablet", "Mobile"]) && geo.defaultMode === "Desktop", `(std) the merged float plan is [Desktop, Tablet, Mobile], default Desktop — both standard sets align, no union residue (got ${geo && JSON.stringify(geo.modes)})`);
+  ok(plans.length === 1 && !!geo, `(std) ONE merged Geometry float plan (TKT-0009, got ${plans.map((p) => p.collection).join()})`);
+  ok(geo && JSON.stringify(geo.modes) === JSON.stringify(["Desktop", "Tablet", "Mobile"]) && geo.defaultMode === "Desktop", `(std) the merged float plan is [Desktop, Tablet, Mobile], default Desktop, both standard sets align, no union residue (got ${geo && JSON.stringify(geo.modes)})`);
   ok(geo && geo.variables.some((v) => v.name.startsWith("type/")) && geo.variables.some((v) => v.name.startsWith("size/")), "(std) the merged plan carries both halves");
 }
 {
@@ -3101,7 +3101,7 @@ app.addStandardGeomModes(); flushRaf();
   // breakpoint files are bounded bolt-ons (Tablet [992,1279], Mobile open-ended below 991).
   const { typeTokensCSS: tcss, typeTokensBreakpointCSS: bpcss } = await import("../../src/engine/type.mjs");
   const baseCss = tcss(app._typeScaleFor("base"));
-  ok(!/@media/.test(baseCss), "(std) the base type CSS file is unconditional — no @media at all (add it alone and it just works)");
+  ok(!/@media/.test(baseCss), "(std) the base type CSS file is unconditional, no @media at all (add it alone and it just works)");
   ok(baseCss.includes(`--type-body-md-size: ${app._typeScaleFor("base").categories.Body.MD.size}px`), "(std) the base file carries the designed (Desktop) scale directly");
   const files = bpcss(app._typeModeScales());
   ok(files.length === 2 && files[0].name === "Tablet" && files[1].name === "Mobile", `(std) two breakpoint files, Tablet then Mobile (got ${files.map((f) => f.name)})`);
@@ -3110,8 +3110,8 @@ app.addStandardGeomModes(); flushRaf();
 }
 
 // ── (bpc) Base chroma / Prime chroma sliders + per-palette Prime chroma (SPEC
-// spec-muted-base-key-spikes 0.3.0 AC-032, slider portion — "Add data palettes"/"Re-derive" are
-// U8's own scope). There is NO "Intensity" slider any more, in any group (REQ-032) — the ramp's
+// spec-muted-base-key-spikes 0.3.0 AC-032, slider portion, "Add data palettes"/"Re-derive" are
+// U8's own scope). There is NO "Intensity" slider any more, in any group (REQ-032), the ramp's
 // chroma target now comes entirely from the palette's group. ───────────────────────────────
 app.openSet(app.sets[0].id); flushRaf();
 app.setSegment("global"); app.render(); flushRaf();
@@ -3131,7 +3131,7 @@ app.doc.baseIntensity = 100; app.doc.primeChroma = 100; // restore the legacy-in
 
 // ticket #559: palette 0 at this point in the shared `app` session may be a leftover named-set
 // palette from an earlier test block (not necessarily "Neutral"), so it can default into the
-// LOCKED Data group (any unrecognized name does) — which now correctly HIDES the per-palette Prime
+// LOCKED Data group (any unrecognized name does), which now correctly HIDES the per-palette Prime
 // chroma override slider below. Pin it to "brand" (unlocked, non-default-numbers) explicitly so
 // this block tests the per-palette OVERRIDE slider itself, not the group-default rule.
 app.doc.palettes[0].group = "brand";
@@ -3139,7 +3139,7 @@ app.setSegment("palette"); app.selectPalette(0); app.render(); flushRaf();
 ok(!findFk("slider:Intensity"), "(bpc5) the palette inspector has NO Intensity slider, in any group (REQ-032)");
 const bpcSel = app.selectedIndex();
 
-// (bpc5b) the Chroma slider changes the prime strip/key colour but leaves the RAMP untouched — the
+// (bpc5b) the Chroma slider changes the prime strip/key colour but leaves the RAMP untouched, the
 // ramp's chroma comes only from the palette's group now (REQ-002).
 {
   const { projectView: pvBPC } = await import("../../src/ui/model.mjs");
@@ -3165,7 +3165,7 @@ delete app.doc.palettes[bpcSel].primeChroma; // restore absent (inherit) for lat
 app.render(); flushRaf();
 
 // ── (pst) prime swatch strip: seven prime-system swatches before the ramp, mode-independent
-// (SPEC spec-muted-base-key-spikes REQ-034) — replaces the 0.1.0 five-swatch role-mapped
+// (SPEC spec-muted-base-key-spikes REQ-034), replaces the 0.1.0 five-swatch role-mapped
 // identity strip, which DID vary with the scheme toggle; the new strip must NOT ──────────────
 const { projectView: projectViewPST } = await import("../../src/ui/model.mjs");
 const { PRIME_STEPS: PRIME_STEPS_PST } = await import("../../src/engine/prime.mjs");
@@ -3184,7 +3184,7 @@ const pstSwHex = (e) => (e.attrs.style.match(/background:(#[0-9a-fA-F]+)/) || []
 const pstVp0 = (app._view || projectViewPST(app.doc)).palettes[0];
 ok(
   pstSw0.every((e, k) => pstSwHex(e) === pstVp0.prime[k].hex),
-  "(pst4) each swatch's color equals view.palettes[i].prime[k].hex — read directly, not resolved via roles",
+  "(pst4) each swatch's color equals view.palettes[i].prime[k].hex, read directly, not resolved via roles",
 );
 
 // toggling the scheme must NOT change the strip's colors (REQ-034: mode-independent).
@@ -3215,14 +3215,14 @@ ok(pstSw3.length === 7, `(pst7) toggling stopsMode leaves the strip at seven swa
 ok(pstSw0.every((e, k) => pstSwHex(e) === pstSwHex(pstSw3[k])), "(pst7b) toggling stopsMode leaves the strip's hexes unchanged");
 app.setStopsMode("core"); app.render(); flushRaf();
 
-// the 53-role table gate and role-table.json are unchanged by this unit (AC-034) — a structural
+// the 53-role table gate and role-table.json are unchanged by this unit (AC-034), a structural
 // sanity check, the real gate is test/engine/semantic.mjs's refs-canonical group.
 ok(pstVp0.roles.length === 53, `(pst8) the resolved role count is unchanged at 53 (got ${pstVp0.roles.length})`);
 
 // ── (dpa) "Add data palettes (8)" / "Re-derive data hues" (SPEC spec-muted-base-key-spikes
-// REQ-032/REQ-012/REQ-023, AC-032 — the actions half of that criterion; the (bpc) group above
+// REQ-032/REQ-012/REQ-023, AC-032, the actions half of that criterion; the (bpc) group above
 // already covers the Base/Prime chroma sliders) ──────────────────────────────────────────
-// A FRESH defaultDocument(), not app.sets[0] — many earlier groups in this shared-`app` file
+// A FRESH defaultDocument(), not app.sets[0], many earlier groups in this shared-`app` file
 // rename/replace app.sets[0]'s own palettes (e.g. the (h) live-rename group, the preset-open
 // group), and openSet() only resets undo history, not content, so by this point in the file
 // app.sets[0] no longer reliably carries a palette literally named "Primary".
@@ -3234,17 +3234,17 @@ app.setSegment("global"); app.render(); flushRaf();
 const dpaBtn = (label) => walk(app, (e) => e.tagName === "BUTTON" && txtOf(e).includes(label))[0];
 ok(!!dpaBtn("Add data palettes (8)") && !!dpaBtn("Re-derive data hues"), "(dpa1) the Global tab has both data-palette action buttons");
 
-// the default document already has 8 Data N palettes (REQ-024) — Add is disabled, Re-derive isn't.
+// the default document already has 8 Data N palettes (REQ-024), Add is disabled, Re-derive isn't.
 ok(dpaBtn("Add data palettes (8)").disabled === true, "(dpa2) Add is disabled once the document already has data palettes");
 ok(dpaBtn("Re-derive data hues").disabled !== true, "(dpa3) Re-derive is enabled when data palettes already exist");
 
-// clicking the (disabled) Add button on a doc that already has 8 is a genuine no-op (AC-032) —
+// clicking the (disabled) Add button on a doc that already has 8 is a genuine no-op (AC-032),
 // the shim fires click regardless of the disabled flag, so this exercises the action's OWN guard.
 const dpaLenBefore = app.doc.palettes.length;
 dpaBtn("Add data palettes (8)").click();
 ok(app.doc.palettes.length === dpaLenBefore, `(dpa4) Add is a no-op once 8 Data N palettes already exist (got ${app.doc.palettes.length}, expected ${dpaLenBefore})`);
 
-// Re-derive: move Primary's hue, then re-derive — the Data N hues change to match a fresh
+// Re-derive: move Primary's hue, then re-derive, the Data N hues change to match a fresh
 // deriveDataHues computation; every other Data N field (chroma, name) is untouched (REQ-023).
 const dpaDataBefore = app.doc.palettes.filter((p) => p.name.startsWith("Data "));
 app.commit((d) => { d.palettes.find((p) => p.name === "Primary").hue = (d.palettes.find((p) => p.name === "Primary").hue + 40) % 360; });
@@ -3262,7 +3262,7 @@ ok(dpaDataAfter.every((p, i) => {
 const dpaExpected = mintDataPalettesDPA(app.doc); // the SAME derivation, re-run fresh, against the current (post-move) Primary + brand hues
 ok(dpaDataAfter.every((p, i) => Math.abs(p.hue - dpaExpected[i].hue) < 1e-6), `(dpa8) the re-derived hues match a fresh deriveDataHues computation (got ${JSON.stringify(dpaDataAfter.map((p) => p.hue))} vs ${JSON.stringify(dpaExpected.map((p) => p.hue))})`);
 
-// build a document with NO data palettes (the opt-in path for an upgraded document, REQ-012) —
+// build a document with NO data palettes (the opt-in path for an upgraded document, REQ-012),
 // strip Data N off the current doc, leaving the 8 brand families.
 app.commit((d) => { d.palettes = d.palettes.filter((p) => !p.name.startsWith("Data ")); });
 flushRaf();
@@ -3276,7 +3276,7 @@ const dpaLenBefore2 = app.doc.palettes.length;
 dpaBtn("Re-derive data hues").click();
 ok(app.doc.palettes.length === dpaLenBefore2 && app.doc.palettes.every((p) => !p.name.startsWith("Data ")), "(dpa12) Re-derive is a no-op with zero Data N palettes");
 
-// click Add — appends exactly 8 Data N palettes, named Data 1..Data 8 in order (REQ-020..022).
+// click Add, appends exactly 8 Data N palettes, named Data 1..Data 8 in order (REQ-020..022).
 dpaBtn("Add data palettes (8)").click();
 ok(app.doc.palettes.length === 16, `(dpa13) Add appends 8 data palettes to a document with none (got ${app.doc.palettes.length})`);
 const dpaAdded = app.doc.palettes.slice(8);
@@ -3285,13 +3285,13 @@ ok(JSON.stringify(dpaAdded.map((p) => p.name)) === JSON.stringify(["Data 1", "Da
 const dpaPrimaryChroma = app.doc.palettes.find((p) => p.name === "Primary").chroma;
 ok(dpaAdded.every((p) => p.chroma === dpaPrimaryChroma), "(dpa15) each minted data palette's chroma follows the Primary's chroma (REQ-022/H4)");
 
-// clicking Add again now that 8 exist is a no-op (AC-032) — mirrors dpa4 for the freshly-minted set.
+// clicking Add again now that 8 exist is a no-op (AC-032), mirrors dpa4 for the freshly-minted set.
 app.setSegment("global"); app.render(); flushRaf();
 ok(dpaBtn("Add data palettes (8)").disabled === true, "(dpa16) Add is disabled again once 8 Data N palettes exist");
 dpaBtn("Add data palettes (8)").click();
 ok(app.doc.palettes.length === 16, `(dpa17) Add stays a no-op once 8 already exist (got ${app.doc.palettes.length})`);
 
-// edge case: a document with NEITHER a Primary palette NOR Data N palettes — Add is enabled
+// edge case: a document with NEITHER a Primary palette NOR Data N palettes, Add is enabled
 // (zero Data N, so nothing blocks it by count) but the click is still a no-op, since
 // mintDataPalettes(doc) has no Primary hue to anchor the derivation on, and it toasts.
 app.commit((d) => { d.palettes = d.palettes.filter((p) => p.name !== "Primary" && !p.name.startsWith("Data ")); });
@@ -3305,10 +3305,10 @@ ok(app.doc.palettes.length === dpaLenBefore3, `(dpa19) Add is a no-op with no Pr
 ok(/primary/i.test(app.toastEl.textContent || ""), `(dpa20) Add toasts naming the missing Primary palette (got "${app.toastEl.textContent}")`);
 
 // ── #644: auto-mint the 8 Data-N palettes on document CREATION (createSet()/newSet(), and
-// openConfigAsSet() ONLY when called with { mintData: true } — the preset-gallery tile's own
+// openConfigAsSet() ONLY when called with { mintData: true }, the preset-gallery tile's own
 // opt-in, exercised via its real click in the (hh) region above), not just via the opt-in
 // "Add data palettes (8)" button exercised above. Both mint paths reuse
-// mintDataPalettes()/hasDataPalettes() — the SAME derivation and the SAME no-op guard the button
+// mintDataPalettes()/hasDataPalettes(), the SAME derivation and the SAME no-op guard the button
 // already uses. The direct openConfigAsSet(..., { mintData: true }) calls below simulate "opening
 // a preset" (the real UI path a user takes) to test the mint/guard logic itself: a story-schema
 // preset with no data layer of its own, the ONE direct-schema preset (Adia) that already ships a
@@ -3320,13 +3320,13 @@ const { hydrateStoredDoc: hydrateStoredDocDPA } = await import("../../src/ui/app
 
 // createSet(): the from-scratch "+ New" path. defaultDocument() already bakes literal Data-N
 // defaults (REQ-024), derived ONCE via deriveDataHues in CAM16 space and then EACH hue converted
-// independently through camHueToOklch — so a fresh mintDataPalettes(doc) call against the
+// independently through camHueToOklch, so a fresh mintDataPalettes(doc) call against the
 // already-OKLCH-converted doc is NOT expected to reproduce those baked hues bit-for-bit (the
 // CAM16→OKLCH hue remap is nonlinear, so it doesn't commute with deriveDataHues' own spacing
 // math); newSet()'s guarded mint call is correctly a no-op against it either way (see
 // app-helpers.mjs's newSet() comment). The (dpa21)/(dpa22) assertions below therefore document
-// PRE-EXISTING defaultDocument() behavior (REQ-024) — the CREATED doc already carries exactly 8
-// real, non-placeholder Data-N palettes immediately, chroma-follows-Primary (H4) and all — they
+// PRE-EXISTING defaultDocument() behavior (REQ-024), the CREATED doc already carries exactly 8
+// real, non-placeholder Data-N palettes immediately, chroma-follows-Primary (H4) and all, they
 // are NOT proof of any new createSet()/newSet() mint wiring, since that wiring never fires here.
 const dpaSetsBefore21 = app.sets.length;
 app.createSet(); flushRaf();
@@ -3349,7 +3349,7 @@ ok(JSON.stringify(dpaPresetData.map((p) => p.name)) === JSON.stringify(["Data 1"
   "(dpa23) the auto-minted palettes are named Data 1..Data 8 in order");
 
 // the "Add data palettes (8)" button's existing show/disable logic still behaves correctly
-// against a document that ALREADY has 8 from AUTO-mint (no dead/duplicate-mint button state) —
+// against a document that ALREADY has 8 from AUTO-mint (no dead/duplicate-mint button state),
 // checked while app.doc is still this just-opened, auto-minted preset copy.
 app.setSegment("global"); app.render(); flushRaf();
 ok(dpaBtn("Add data palettes (8)").disabled === true, "(dpa23b) Add is disabled against a doc auto-minted with 8 Data-N palettes at creation");
@@ -3371,10 +3371,10 @@ const dpaAdiaExpected = hydrateStoredDocDPA(dpaAdiaPreset).palettes.filter((p) =
 app.openConfigAsSet(dpaAdiaPreset, null, { mintData: true });
 const dpaAdiaDataAfter = app.doc.palettes.filter((p) => p.name.startsWith("Data "));
 ok(dpaAdiaDataAfter.length === 8, `(dpa25) opening Adia (already has a complete data layer) still has exactly 8 Data-N palettes, not 16 (got ${dpaAdiaDataAfter.length})`);
-ok(JSON.stringify(dpaAdiaDataAfter) === JSON.stringify(dpaAdiaExpected), "(dpa25) Adia's own authored Data-N palettes are left byte-for-byte untouched — no re-derivation, no duplication");
+ok(JSON.stringify(dpaAdiaDataAfter) === JSON.stringify(dpaAdiaExpected), "(dpa25) Adia's own authored Data-N palettes are left byte-for-byte untouched, no re-derivation, no duplication");
 
 // negative control: an EXISTING saved set opened via the gallery's normal openSet() flow (a LOAD,
-// not a creation) must be byte-for-byte unaffected — no auto-mint fires on load. Simulated with a
+// not a creation) must be byte-for-byte unaffected, no auto-mint fires on load. Simulated with a
 // legacy-shaped stored record (no data layer, as any pre-#644 saved set would be): the STORED
 // bytes are mutated directly (never through commit()/save(), which would itself be a live edit,
 // not a load) so this exercises openSet() alone.
@@ -3389,7 +3389,7 @@ ok(!app.doc.palettes.some((p) => p.name.startsWith("Data ")), "(dpa26) openSet()
 ok(JSON.stringify(app.sets.find((s) => s.id === dpaLegacyId).doc) === dpaLegacySnapshotBefore, "(dpa26) the underlying stored record is byte-for-byte unaffected merely by opening it");
 
 // wiring is guard-safe with no Primary to anchor the derivation either (mintDataPalettes returns
-// [] and the spread is a no-op) — a config shaped like this shouldn't occur in practice (every
+// [] and the spread is a no-op), a config shaped like this shouldn't occur in practice (every
 // preset + defaultDocument() carries a Primary) but the creation-site wiring must not assume it.
 const dpaNoPrimaryConfig = { name: "No primary", palettes: TP[2].palettes.filter((p) => p.name !== "primary") };
 let dpaNoPrimaryThrew = false;
@@ -3406,7 +3406,7 @@ app.createSet(); flushRaf();
 // ── (cg) Color canvas groups (ticket #556): four headers in order + counts, correct default
 // assignment of the 16 default palettes, the inspector's Group dropdown (+ persist round-trip),
 // and drag-reorder ACROSS a group header reassigning the moved palette's group. ────────────────
-// createSet() (not openSet on an existing gallery record — earlier sections above have mutated
+// createSet() (not openSet on an existing gallery record, earlier sections above have mutated
 // app.sets[0]'s stored doc, e.g. (dpa) removed Primary/Data N) mints a genuinely pristine
 // defaultDocument(): 16 palettes spanning all 4 groups.
 app.createSet();
@@ -3417,7 +3417,7 @@ const cgWalk = (n) => (n._text || "") + (n.children || []).map(cgWalk).join("");
 {
   const stack = app._rampStack;
   const groups = stack.querySelectorAll(".ramp-group");
-  ok(groups.length === 4, `(cg1) all 4 groups render for the default doc (non-empty) — got ${groups.length}`);
+  ok(groups.length === 4, `(cg1) all 4 groups render for the default doc (non-empty), got ${groups.length}`);
   ok(groups.map((g) => g.dataset.group).join(",") === "material,brand,system,data",
     `(cg2) groups render Material → Brand → System → Data in order (got ${groups.map((g) => g.dataset.group).join(",")})`);
 
@@ -3442,7 +3442,7 @@ const cgWalk = (n) => (n._text || "") + (n.children || []).map(cgWalk).join("");
 }
 
 // the inspector's Group dropdown reassigns a palette explicitly.
-app.selectPalette(0); // Neutral — defaults to material (no explicit field yet)
+app.selectPalette(0); // Neutral, defaults to material (no explicit field yet)
 app.render(); flushRaf();
 const cgSelect = findIn(app.querySelector(".right-pane"), (e) => e.tagName === "SELECT");
 ok(!!cgSelect, "(cg5) the palette inspector renders a Group <select>");
@@ -3455,7 +3455,7 @@ app.render(); flushRaf();
   const systemGroup = groups2.find((g) => g.dataset.group === "system");
   const systemPis = systemGroup.querySelectorAll(".ramp-row[data-pi]").map((r) => Number(r.getAttribute("data-pi")));
   ok(systemPis.includes(0), `(cg7) after the dropdown move, palette index 0 (Neutral) renders under System (got ${JSON.stringify(systemPis)})`);
-  ok(!groups2.some((g) => g.dataset.group === "material"), "(cg8) Material is now empty (Neutral was its only member) — its header is hidden entirely");
+  ok(!groups2.some((g) => g.dataset.group === "material"), "(cg8) Material is now empty (Neutral was its only member), its header is hidden entirely");
 }
 // the dropdown move persists across a serialize/hydrate round-trip.
 {
@@ -3466,7 +3466,7 @@ app.undo(); // back to material, for the drag test below
 flushRaf();
 
 // drag-reorder ACROSS a group header reassigns the moved palette's group (ratified Open
-// Question 1). Drag Secondary (index 2, Brand) down past Info (index 4, System) — the default
+// Question 1). Drag Secondary (index 2, Brand) down past Info (index 4, System), the default
 // doc's visual row order matches its array order 1:1, so dropping just after row[4] lands it
 // inside System, between Info and Success.
 {
@@ -3488,7 +3488,7 @@ flushRaf();
   ok(app.doc.palettes[2].name === "Secondary" && app.doc.palettes[2].group === undefined, "(cg15) undo reverts both the position AND the group reassignment");
 }
 
-// a within-group drag never touches `.group` — only CROSSING a header reassigns it.
+// a within-group drag never touches `.group`, only CROSSING a header reassigns it.
 {
   app.render(); flushRaf();
   const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
@@ -3504,16 +3504,16 @@ flushRaf();
 }
 
 // ── (gid) Per-group base chroma (SPEC spec-muted-base-key-spikes 0.3.0, #556/#559 re-ruling): the
-// group's Base chroma is an ABSOLUTE ramp-chroma target — Material 30/60 by default, Brand/System/
+// group's Base chroma is an ABSOLUTE ramp-chroma target, Material 30/60 by default, Brand/System/
 // Data 100/100, Data LOCKED (no per-palette Prime chroma override). There is NO per-palette ramp
-// override in ANY group any more — REQ-002 retires it entirely, not just for Data. ───────────────
+// override in ANY group any more, REQ-002 retires it entirely, not just for Data. ───────────────
 {
   const { defaultDocument: ddGID, paletteGroup: pgGID, projectView: pvGID, rampChromaOf: rcGID, GROUP_DEFAULTS: GIDDEF } = await import("../../src/ui/model.mjs");
   const { paletteStops: psGID, EXPORT_STOPS: esGID } = await import("../../src/engine/tonal.js");
 
-  // (gid1) a FRESH default document already resolves Neutral (Material) to rampChroma 30 — matching
+  // (gid1) a FRESH default document already resolves Neutral (Material) to rampChroma 30, matching
   // a DIRECT engine call at chroma:30 byte for byte (never a document-level "pin", since there is no
-  // more palette.intensity field at all) — and the legacy chroma:100 call produces a DIFFERENT ramp
+  // more palette.intensity field at all), and the legacy chroma:100 call produces a DIFFERENT ramp
   // (the mute is real, not a no-op).
   const freshDoc = ddGID();
   const freshView = pvGID(freshDoc);
@@ -3525,7 +3525,7 @@ flushRaf();
   const direct30 = psGID({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
   const direct100 = psGID({ hue: neutral.hue, chroma: 100, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
   ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) === JSON.stringify(direct30.map((s) => s.hex)), "(gid2) a fresh doc's Neutral ramp equals a direct engine call at chroma 30 (Material's default)");
-  ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) !== JSON.stringify(direct100.map((s) => s.hex)), "(gid3) a fresh doc's Neutral ramp differs from the legacy chroma-100 ramp — visibly muted, not a no-op");
+  ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) !== JSON.stringify(direct100.map((s) => s.hex)), "(gid3) a fresh doc's Neutral ramp differs from the legacy chroma-100 ramp, visibly muted, not a no-op");
 
   // (gid4) the Global tab renders all four group rows, each with its own base+prime chroma
   // sliders, seeded from GROUP_DEFAULTS.
@@ -3548,7 +3548,7 @@ flushRaf();
   ok(!findFk("slider:Intensity"), "(gid5) the Intensity slider does not exist, in any group (REQ-032)");
   ok(!findFk("slider:Prime chroma"), "(gid5b) the Prime chroma slider is hidden for a Data-group palette");
 
-  // (gid6) moving a group's Base chroma slider changes every palette IN that group, uniformly —
+  // (gid6) moving a group's Base chroma slider changes every palette IN that group, uniformly,
   // proving the ramp target is a GROUP property, not resolved per palette from anything it stores.
   const brandIdx1 = app.doc.palettes.findIndex((p) => pgGID(p) === "brand");
   const brandIdx2 = app.doc.palettes.findIndex((p, i) => i !== brandIdx1 && pgGID(p) === "brand");
@@ -3560,12 +3560,12 @@ flushRaf();
   ok(app.doc.paletteGroups.brand.baseChroma === 55, `(gid7) the Brand base chroma slider writes doc.paletteGroups.brand.baseChroma (got ${app.doc.paletteGroups && app.doc.paletteGroups.brand.baseChroma})`);
   const afterRamps = pvGID(app.doc);
   ok(JSON.stringify(beforeRamps.palettes[brandIdx1].ramp) !== JSON.stringify(afterRamps.palettes[brandIdx1].ramp), "(gid8) moving Brand's base chroma changes the first Brand palette's ramp");
-  ok(JSON.stringify(beforeRamps.palettes[brandIdx2].ramp) !== JSON.stringify(afterRamps.palettes[brandIdx2].ramp), "(gid8b) ...and the second Brand palette's ramp too — every ramp in the group is a chroma peer");
+  ok(JSON.stringify(beforeRamps.palettes[brandIdx2].ramp) !== JSON.stringify(afterRamps.palettes[brandIdx2].ramp), "(gid8b) ...and the second Brand palette's ramp too, every ramp in the group is a chroma peer");
   app.doc.paletteGroups.brand.baseChroma = 100; // restore for later assertions
   app.render(); flushRaf();
 
   // (gid9) moving a palette OUT of Data restores its stored per-palette PRIME override (ratified
-  // Open Question 1 — the ramp itself has no per-palette override to restore any more, REQ-002): a
+  // Open Question 1, the ramp itself has no per-palette override to restore any more, REQ-002): a
   // Data-group palette's stored primeChroma is IGNORED (not deleted) while locked; reassigning its
   // group away from "data" makes the same stored value live again, with no extra "restore" step.
   const dataIdx2 = app.doc.palettes.findIndex((p) => pgGID(p) === "data");
@@ -3574,14 +3574,14 @@ flushRaf();
   const stripOverride = (doc, idx) => ({ ...doc, palettes: doc.palettes.map((p, i) => { if (i !== idx) return p; const { primeChroma, ...rest } = p; return rest; }) });
   const lockedView = pvGID(app.doc);
   const lockedNoOverrideView = pvGID(stripOverride(app.doc, dataIdx2));
-  ok(JSON.stringify(lockedView.palettes[dataIdx2].prime) === JSON.stringify(lockedNoOverrideView.palettes[dataIdx2].prime), "(gid9) while still grouped as Data, the stored primeChroma:33 override is IGNORED — prime strip matches the no-override (locked-default) prime");
+  ok(JSON.stringify(lockedView.palettes[dataIdx2].prime) === JSON.stringify(lockedNoOverrideView.palettes[dataIdx2].prime), "(gid9) while still grouped as Data, the stored primeChroma:33 override is IGNORED, prime strip matches the no-override (locked-default) prime");
 
   app.setSegment("palette"); app.doc.palettes[dataIdx2].group = "brand"; // move it OUT of Data
   app.render(); flushRaf();
   const movedView = pvGID(app.doc);
   const movedNoOverrideView = pvGID(stripOverride(app.doc, dataIdx2));
-  ok(JSON.stringify(movedView.palettes[dataIdx2].prime) !== JSON.stringify(movedNoOverrideView.palettes[dataIdx2].prime), "(gid10) moving the palette OUT of Data into Brand makes the SAME stored override (33) live again — its prime strip now differs from the no-override prime, with no restore step taken");
-  ok(app.doc.palettes[dataIdx2].primeChroma === 33, "(gid10b) the stored override value is still exactly 33 — it was never deleted while locked, only unused");
+  ok(JSON.stringify(movedView.palettes[dataIdx2].prime) !== JSON.stringify(movedNoOverrideView.palettes[dataIdx2].prime), "(gid10) moving the palette OUT of Data into Brand makes the SAME stored override (33) live again, its prime strip now differs from the no-override prime, with no restore step taken");
+  ok(app.doc.palettes[dataIdx2].primeChroma === 33, "(gid10b) the stored override value is still exactly 33, it was never deleted while locked, only unused");
 
   app.selectPalette(dataIdx2); app.render(); flushRaf();
   const restoredInput = findFk("slider:Prime chroma");
@@ -3589,8 +3589,8 @@ flushRaf();
   ok(Number(restoredInput.getAttribute("value")) === 33, `(gid11b) ...and shows the restored override value 33 (got ${restoredInput && restoredInput.getAttribute("value")})`);
 }
 
-// ── (rx) renderRadixScene — the pannable "Radix" canvas view (ticket #637). ONE ATOMIC UNIT
-//    (I2): the chip, the dispatch branch, and renderRadixScene land in the same commit — test
+// ── (rx) renderRadixScene, the pannable "Radix" canvas view (ticket #637). ONE ATOMIC UNIT
+//    (I2): the chip, the dispatch branch, and renderRadixScene land in the same commit, test
 //    (rx3) is the single assertion that fails on a tree shipping only half of that. ─────────────
 {
   const { defaultDocument: defaultDocumentRX, radixKeyCollision: radixKeyCollisionRX, radixCollisionBadge: radixCollisionBadgeRX, radixExportKey: radixExportKeyRX, projectView: projectViewRX, slug: slugRX } = await import("../../src/ui/model.mjs");
@@ -3599,7 +3599,7 @@ flushRaf();
   const { readFileSync: readFileSyncRX } = await import("node:fs");
   const { fileURLToPath: fileURLToPathRX } = await import("node:url");
   const { dirname: dirnameRX, resolve: resolveRX } = await import("node:path");
-  // globalThis.URL is shadowed by this shim's own createObjectURL stub above — resolve paths via
+  // globalThis.URL is shadowed by this shim's own createObjectURL stub above, resolve paths via
   // node:path/node:url instead of `new URL(...)`.
   const colorJsPathRX = resolveRX(dirnameRX(fileURLToPathRX(import.meta.url)), "../../src/ui/sections/color.js");
 
@@ -3609,7 +3609,7 @@ flushRaf();
 
   const routeA = () => { app.doc = defaultDocumentRX(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = []; app.render(); flushRaf(); };
 
-  // test 1: fixture Route A — the chip + the dispatch branch, together.
+  // test 1: fixture Route A, the chip + the dispatch branch, together.
   routeA();
   app.setCanvasView("radix"); flushRaf();
   ok(app.querySelector(".radix-scene") != null, "(rx1) .radix-scene exists under canvasView=radix");
@@ -3635,7 +3635,7 @@ flushRaf();
   ok(app.querySelectorAll(".drag-handle").length > 0, "(rx4) control: palettes still renders live drag handles");
   app.setCanvasView("radix"); flushRaf();
 
-  // test 4b: structural call-site gate — extract renderRadixScene's own body and prove it calls
+  // test 4b: structural call-site gate, extract renderRadixScene's own body and prove it calls
   // neither dragHandle( nor _wireReorder(; the SAME grep, run over renderRampsScene's body, must
   // fire (>= 1) as the proven-firing negative control (I7) so a typo'd pattern can't pass vacuously.
   {
@@ -3658,7 +3658,7 @@ flushRaf();
   }
 
   // test 5: normal state, Route B "Maison" (8 palettes authored; openConfigAsSet here has no
-  // mintData flag, so #644's auto-mint does NOT fire — 8 total, all enabled, 0 collisions). E/C
+  // mintData flag, so #644's auto-mint does NOT fire, 8 total, all enabled, 0 collisions). E/C
   // below are read off app.doc, not hardcoded, so this stays correct either way.
   {
     const { PRESETS: BRANDS_RX } = await loadCategoryRX("brands");
@@ -3675,7 +3675,7 @@ flushRaf();
   }
 
   // test 6: collision state, Route B "Modal jazz" (11 palettes authored; no mintData flag here
-  // either, so #644's auto-mint does NOT fire — 11 total, all enabled, palettes[5]==="accent").
+  // either, so #644's auto-mint does NOT fire, 11 total, all enabled, palettes[5]==="accent").
   // E6/C6 below are read off app.doc, not hardcoded, so this stays correct either way.
   {
     const { PRESETS: BRANDS_RX2 } = await loadCategoryRX("brands");
@@ -3688,13 +3688,13 @@ flushRaf();
     ok(app.querySelectorAll(".radix-collision").length === C6, "(rx6) .radix-collision === C");
     ok(walk(app, (e) => e.classList && e.classList.contains("radix-badge")).length === C6, "(rx6) .radix-badge === C, scoped via walk");
     // #630 option (a): the colliding row now renders its FULL ladder (read from the renamed key)
-    // plus the note — so ladders and steps count EVERY enabled palette, collision included.
+    // plus the note, so ladders and steps count EVERY enabled palette, collision included.
     ok(app.querySelectorAll(".radix-ladder").length === E6, `(rx6) .radix-ladder === E (${E6}): the colliding row renders a ladder too (#630)`);
     ok(app.querySelectorAll(".radix-step").length === 12 * E6, `(rx6) .radix-step === 12*E (${12 * E6}): the colliding palette's ladder is present (#630)`);
     const collisionRow = app.querySelectorAll(".radix-collision")[0];
     ok(!!collisionRow && collisionRow.querySelectorAll(".radix-step").length === 12, "(rx6) the .radix-collision row itself holds 12 .radix-step nodes");
     ok(app.querySelectorAll(".radix-empty").length === 0, "(rx6) .radix-empty === 0 (I9 must not appear here, control: test 7)");
-    // 6b — the note names the key the engine actually exported the palette under (radixExportKey,
+    // 6b, the note names the key the engine actually exported the palette under (radixExportKey,
     // the engine's own radixPaletteKey), never a re-typed literal; and that key holds a ladder.
     const enabled6 = app.doc.palettes.filter((p) => p.on !== false);
     const colliding6 = enabled6.find((p) => radixKeyCollisionRX(p.name));
@@ -3747,7 +3747,7 @@ flushRaf();
     app.colorMode = "light"; app.render(); flushRaf();
   }
 
-  // test 9: the records gate for I8 place 5 (folded per OQ-4) — both greps verified green.
+  // test 9: the records gate for I8 place 5 (folded per OQ-4), both greps verified green.
   {
     const colorSrc9 = readFileSyncRX(colorJsPathRX, "utf8");
     const lines9 = colorSrc9.split("\n");
@@ -3789,15 +3789,15 @@ flushRaf();
   app.doc = defaultDocumentRXG(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = [];
   app.setSection("color"); app.colorMode = "light";
   app.selectPalette(0);
-  app.render(); flushRaf(); // render "palettes" first — reorder machinery live (_wireReorder sets this._rampStack)
+  app.render(); flushRaf(); // render "palettes" first, reorder machinery live (_wireReorder sets this._rampStack)
 
   const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
   rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
   ok(app.doc.palettes[0].name === "Neutral" && paletteGroupRXG(app.doc.palettes[0]) === "material", "(rxg0) row 0 is Neutral (Material) before the drag");
-  ok(app.doc.palettes[4].name === "Info" && paletteGroupRXG(app.doc.palettes[4]) === "system", "(rxg0) row 4 is Info (System) — a different group, the drop target");
+  ok(app.doc.palettes[4].name === "Info" && paletteGroupRXG(app.doc.palettes[4]) === "system", "(rxg0) row 4 is Info (System), a different group, the drop target");
 
   // canvasView flips to radix DIRECTLY, without setCanvasView and without a re-render, so only the
-  // :1613 (isGroupedView) READ changes — proving the move actually ran under it, not a stale render.
+  // :1613 (isGroupedView) READ changes, proving the move actually ran under it, not a stale render.
   app.canvasView = "radix";
 
   const neutralHandle = rows[0].querySelector(".drag-handle");
@@ -3806,13 +3806,13 @@ flushRaf();
   app._onReorderUp();
   flushRaf();
 
-  ok(app.doc.palettes[4].name === "Neutral", `(rxg1) the moved palette's array index changed (Neutral now sits at palettes[4], got palettes[4]="${app.doc.palettes[4].name}") — proves :1580's commit ran, not an early return`);
-  ok(app.doc.palettes[4].group === undefined, `(rxg1) the moved palette's .group is UNTOUCHED under radix (got ${JSON.stringify(app.doc.palettes[4].group)}) — the :1582 write did not fire`);
+  ok(app.doc.palettes[4].name === "Neutral", `(rxg1) the moved palette's array index changed (Neutral now sits at palettes[4], got palettes[4]="${app.doc.palettes[4].name}"), proves :1580's commit ran, not an early return`);
+  ok(app.doc.palettes[4].group === undefined, `(rxg1) the moved palette's .group is UNTOUCHED under radix (got ${JSON.stringify(app.doc.palettes[4].group)}), the :1582 write did not fire`);
 
   app.undo(); flushRaf(); // revert the reorder before the negative control drives the SAME machinery
 
   // negative control, produced by EXISTING code: the same drive under canvasView="palettes" DOES
-  // reassign .group — already asserted today by (cg13)/(cg17); re-verify it stays green.
+  // reassign .group, already asserted today by (cg13)/(cg17); re-verify it stays green.
   app.setCanvasView("palettes"); flushRaf();
   const rows2 = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
   rows2.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
@@ -3836,17 +3836,17 @@ flushRaf();
   app.setSection("color"); app.colorMode = "light"; app.render(); flushRaf();
   app.selectPalette(0); flushRaf();
 
-  // test 1: proExport unlocked (default) — the radix scene renders.
+  // test 1: proExport unlocked (default), the radix scene renders.
   app.setCanvasView("radix"); flushRaf();
   ok(app.querySelector(".radix-scene") != null, "(rxp1) .radix-scene renders with proExport unlocked");
 
-  // test 2: proExport locked — the view is STILL free.
+  // test 2: proExport locked, the view is STILL free.
   app.setProfile({ flagOverrides: { proExport: false } }); app.render(); flushRaf();
   ok(app.querySelector(".radix-scene") != null, "(rxp2) .radix-scene STILL renders with proExport locked (the view is free either way)");
   app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlocked immediately
 
   // test 3: the one gated path is unmoved, and the test-2 override didn't leak into the restored
-  // profile — proExport reads unlocked again (the existing (pe) assertions re-verify the real
+  // profile, proExport reads unlocked again (the existing (pe) assertions re-verify the real
   // (pe) coverage elsewhere in this file; this group only confirms it left the profile as found).
   ok(PRO_EXPORT_FORMATS_RXP.has("radix") === true, "(rxp3) PRO_EXPORT_FORMATS still names radix as the gated EXPORT format");
   ok(app.flagOf("proExport") === true, "(rxp3) proExport reads unlocked again after the test-2 override was restored");
@@ -3892,12 +3892,12 @@ flushRaf();
 }
 
 // ── (rst) Reset re-attaches a detached anchored palette (ticket #681, U2's C12; Q6) ─────────────
-// Opens a REAL curated preset (openConfigAsSet — the same entry point the gallery tile's onclick
+// Opens a REAL curated preset (openConfigAsSet, the same entry point the gallery tile's onclick
 // uses, per the (hh) group's own comment above; that group already covers the tile's OWN wiring, so
 // a direct call here is enough) rather than the default kit, purely to stay independent of (hh)'s own
-// state — NOT because the default kit is unsafe for this assertion (R8, review pass 2, 2026-09-18: the
+// state, NOT because the default kit is unsafe for this assertion (R8, review pass 2, 2026-09-18: the
 // OLD reasoning here, that the default kit's hand-tuned chroma would not round-trip a RE-DERIVATION,
-// is stale — Finding 3/F7's fix made Reset restore an EXACT pre-detach SNAPSHOT, never re-derive, so it
+// is stale, Finding 3/F7's fix made Reset restore an EXACT pre-detach SNAPSHOT, never re-derive, so it
 // round-trips ANY palette's hue/chroma/lift byte-exactly, hand-tuned or not; see resetAnchor's own
 // comment in src/ui/sections/color.js). (rst-corpus) below now exercises the default kit directly
 // (R9), so this single-palette test's own fixture choice does not need to change to prove that.
@@ -3914,7 +3914,7 @@ flushRaf();
   ok(!!p0.anchor && !!p0.sourceAnchor, "(rst0) the opened preset's primary palette starts anchored, with a sourceAnchor to restore from");
   // Stamp a NON-ZERO lift before detaching (re-diagnosis Finding 3 / review F7): the OLD re-derivation
   // bug always reset lift to 0 regardless of what it held before, so a fixture at lift 0 could pass
-  // BOTH the old buggy code and the new snapshot-based fix — proving nothing about which one is
+  // BOTH the old buggy code and the new snapshot-based fix, proving nothing about which one is
   // running. A non-zero pre-detach lift only round-trips under the NEW exact-snapshot restoration.
   app.commit((d) => (d.palettes[idx].lift = -15));
   const p0b = app.doc.palettes[idx];
@@ -3924,8 +3924,8 @@ flushRaf();
   const rampBefore = viewBefore.ramp.map((s) => s.hex);
   const primeBefore = JSON.stringify(viewBefore.prime);
 
-  // drag Hue by +10 — the detach trigger, through the REAL slider (findFk + a dispatched input event),
-  // never app.commit called directly — the (gid)/(rst1)-(rst4) discipline throughout this group.
+  // drag Hue by +10, the detach trigger, through the REAL slider (findFk + a dispatched input event),
+  // never app.commit called directly, the (gid)/(rst1)-(rst4) discipline throughout this group.
   const hueInput = findFk("slider:Hue");
   const newHue = (hueBefore + 10) % 360;
   hueInput.value = String(newHue);
@@ -3939,7 +3939,7 @@ flushRaf();
   const primeAfterEdit = JSON.stringify(pvRST(app.doc).palettes[idx].prime);
   ok(primeAfterEdit !== primeBefore, "(rst1d) the prime strip actually moved (a real detach, not a no-op)");
 
-  // click Reset — the button itself, rendered only while sourceAnchor is present and anchor absent.
+  // click Reset, the button itself, rendered only while sourceAnchor is present and anchor absent.
   app.render(); flushRaf();
   const resetBtnText = (e) => (e._text || "") + (e.children || []).map(resetBtnText).join("");
   const resetBtn = walk(app.querySelector(".right-pane") || app, (e) => e.tagName === "BUTTON" && /Reset to source color/.test(resetBtnText(e)))[0];
@@ -3950,15 +3950,15 @@ flushRaf();
   ok(afterReset.anchor === anchorBefore, `(rst3) Reset restores anchor (got ${afterReset.anchor}, want ${anchorBefore})`);
   ok(afterReset.hue === hueBefore && afterReset.chroma === chromaBefore, `(rst3b) Reset restores the EXACT pre-detach hue/chroma snapshot, never re-derived (got hue=${afterReset.hue}/chroma=${afterReset.chroma}, want hue=${hueBefore}/chroma=${chromaBefore})`);
   ok(afterReset.lift === liftBefore, `(rst3c) Reset restores the EXACT pre-detach lift snapshot, -15, never re-derived to 0 (got ${afterReset.lift})`);
-  ok(afterReset.preDetachHue === undefined && afterReset.preDetachChroma === undefined && afterReset.preDetachLift === undefined, "(rst3d) the snapshot fields are cleared once restored — nothing left to restore");
+  ok(afterReset.preDetachHue === undefined && afterReset.preDetachChroma === undefined && afterReset.preDetachLift === undefined, "(rst3d) the snapshot fields are cleared once restored, nothing left to restore");
   const viewAfterReset = pvRST(app.doc).palettes[idx];
   ok(JSON.stringify(viewAfterReset.ramp.map((s) => s.hex)) === JSON.stringify(rampBefore), "(rst4) all 19 ramp hexes deep-equal the pre-edit capture after Reset");
   ok(JSON.stringify(viewAfterReset.prime) === primeBefore, "(rst4b) all 7 prime rungs deep-equal the pre-edit capture after Reset");
 
-  // skew/lift edits do NOT detach — driven through the REAL Skew/Lift sliders (re-diagnosis Finding 4
+  // skew/lift edits do NOT detach, driven through the REAL Skew/Lift sliders (re-diagnosis Finding 4
   // / review F6: (rst5)/(rst5b) previously called app.commit directly, never through the sliders
-  // themselves — proven vacuous, since the sliders render only in EVEN mode and the assertions never
-  // switched to it). Switch to even mode first (direct set, no undo step — the same pattern this
+  // themselves, proven vacuous, since the sliders render only in EVEN mode and the assertions never
+  // switched to it). Switch to even mode first (direct set, no undo step, the same pattern this
   // file's own Tension/global-tab groups use to expose an even-mode-only control).
   app.doc.toneMode = "even"; app.render(); flushRaf();
   const skewInput = findFk("slider:Skew");
@@ -3977,11 +3977,11 @@ flushRaf();
   ok(app.doc.palettes[idx].anchor === anchorBefore, "(rst5b) a REAL Lift slider drag keeps `anchor`");
   app.doc.toneMode = "perceptual"; app.render(); flushRaf();
 
-  // negative control (re-diagnosis Finding 4 / review F6): a total no-op stub is TAUTOLOGICAL — no
+  // negative control (re-diagnosis Finding 4 / review F6): a total no-op stub is TAUTOLOGICAL, no
   // function can fail to set `anchor` when it does literally nothing, so it never demonstrated
   // (rst3)'s own predicates have real discriminating power. Stub `resetAnchor` with the OLD, PRE-FIX
   // re-derivation behavior instead (restores `anchor`, but re-derives hue/chroma via seedFromKeyColor
-  // and always zeros lift) and confirm it does NOT satisfy (rst3b)/(rst3c)'s exact-match predicates —
+  // and always zeros lift) and confirm it does NOT satisfy (rst3b)/(rst3c)'s exact-match predicates,
   // this is the REAL regression class Finding 3 fixes, so the control now proves those two assertions
   // would have caught the actual bug, not just an impossible one.
   {
@@ -4000,11 +4000,11 @@ flushRaf();
     };
     app.commit((d) => { d.palettes[idx].lift = -15; d.palettes[idx].hue = (d.palettes[idx].hue + 10) % 360; if (d.palettes[idx].anchor) delete d.palettes[idx].anchor; });
     ok(app.doc.palettes[idx].anchor === undefined, "(rst6) setup: the stub scenario starts detached, same as (rst1)");
-    app.resetAnchor(idx); // the OLD-style stub — restores anchor, but re-derives hue/chroma and zeros lift
+    app.resetAnchor(idx); // the OLD-style stub, restores anchor, but re-derives hue/chroma and zeros lift
     const stubAfter = app.doc.palettes[idx];
     ok(stubAfter.anchor === anchorBefore, "(rst6a) the old-style stub DOES restore anchor (proving this alone is not enough to catch the regression)");
     const stubMatchesSnapshot = stubAfter.lift === -15 && stubAfter.hue === hueBefore && stubAfter.chroma === chromaBefore;
-    ok(stubMatchesSnapshot === false, "(rst6b) negative control: the OLD-style stub (re-derive + zero lift) does NOT satisfy (rst3b)/(rst3c)'s exact-snapshot predicates — proving they have real teeth against the actual pre-fix regression, not just an impossible no-op");
+    ok(stubMatchesSnapshot === false, "(rst6b) negative control: the OLD-style stub (re-derive + zero lift) does NOT satisfy (rst3b)/(rst3c)'s exact-snapshot predicates, proving they have real teeth against the actual pre-fix regression, not just an impossible no-op");
     app.resetAnchor = realResetAnchor; // restore the real method
     app.resetAnchor(idx); // leave the doc clean for whatever runs after this block
   }
@@ -4075,18 +4075,18 @@ flushRaf();
 }
 
 // (rst-corpus) extend C12's coverage from one sample palette to the FULL anchored corpus across ALL
-// EIGHT categories plus the default kit (R9, review pass 2, 2026-09-18 — the prior pass covered 4 of 8
-// categories and checked fields only, never a rendered ramp; review 2 flagged both gaps) —
+// EIGHT categories plus the default kit (R9, review pass 2, 2026-09-18, the prior pass covered 4 of 8
+// categories and checked fields only, never a rendered ramp; review 2 flagged both gaps),
 // programmatic, not via real slider drags (thousands of real DOM interactions would blow the suite's
 // time budget): for every anchored palette, detach via the REAL `detachSnapshot` method at a DETUNED
 // pre-detach hue/chroma/lift (never the anchor's own seedFromKeyColor-derivable values, so a passing
 // round trip can only be the snapshot restoring exactly, never re-derivation coincidentally matching),
-// call the REAL `resetAnchor`, and assert exact restoration — both at the FIELD level (anchor/hue/
+// call the REAL `resetAnchor`, and assert exact restoration, both at the FIELD level (anchor/hue/
 // chroma/lift) and, per R9, by comparing the FULL `projectView` 25-stop ramp rendered from the
 // restored palette against a reference ramp captured from the SAME palette before it was ever
-// detuned/detached (same doc-level controls both times — only `app.doc.palettes` is swapped, matching
+// detuned/detached (same doc-level controls both times, only `app.doc.palettes` is swapped, matching
 // the rest of this block's own pattern). A field match with a ramp mismatch would mean some other
-// state (a cache, a second copy) diverged from the fields Reset itself writes — the ramp comparison is
+// state (a cache, a second copy) diverged from the fields Reset itself writes, the ramp comparison is
 // a strictly stronger claim than the field-only check the prior pass shipped.
 {
   const corpusPresets = [...TPm.PRESETS, ...LITm, ...FILMm, ...BRANDSm];
@@ -4145,5 +4145,5 @@ if (fails.length) {
   for (const f of fails) console.error("  ✗ " + f);
   process.exit(1);
 }
-console.log("HEADLESS BOOT PASS — all Phase-3 interaction assertions hold");
+console.log("HEADLESS BOOT PASS, all Phase-3 interaction assertions hold");
 process.exit(0);

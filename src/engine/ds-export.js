@@ -1,14 +1,14 @@
-// ds-export.js — the DS-bundle subsystem (vanilla ESM, no deps).
+// ds-export.js, the DS-bundle subsystem (vanilla ESM, no deps).
 //
 // Split out of exports.js (TKT-0015 / architecture review MAJOR-1): the Claude Design / Google
-// Stitch / Figma Make "design-system export" authoring layer — DESIGN.md, tokens.json, the
+// Stitch / Figma Make "design-system export" authoring layer, DESIGN.md, tokens.json, the
 // @dsCard component previews, and the per-platform profile receipts. This is a DIFFERENT kind of
 // code than exports.js's 10 documented color formats (content/prose authoring for a consumption
 // bundle, not token serialization) and is specced nowhere in docs/reference/ — it earned its own
 // file so a contributor reading exports.js's own documented 10-format pattern (adding-export-formats)
 // no longer wades through ~1,200 unrelated lines to find them.
 //
-// Everything below is a VERBATIM move — no logic changes, only the import/export surface needed to
+// Everything below is a VERBATIM move, no logic changes, only the import/export surface needed to
 // live in a sibling module: derivedAll/roleOklch/hexOf/hex8/relLumExp/cssPrefixOf/
 // dialogBackdropOklch/exportShadcn are re-imported from ./exports.js (the first four newly
 // exported there for this reason); everything else is unchanged.
@@ -18,33 +18,33 @@
 
 import { iconSystem, iconSystemLabel } from "./icon-systems.mjs";
 import { motionTokens, MOTION_EASING, MOTION_DURATION, MOTION_NEVER } from "./motion.mjs";
-import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"; // §8 carrier primitives + the gate itself — the receipt cites the SAME run the gate measures
-import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002) — a voice's own override, else its role's shared default
+import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"; // §8 carrier primitives + the gate itself, the receipt cites the SAME run the gate measures
+import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002), a voice's own override, else its role's shared default
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
-import { RAMP_LADDER, mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder size-anchor helpers + explicit ordering (issue #483 — the ladder's numeric step names trap a bare Object.keys/`.MD`/`.SM`/`.XS` access)
+import { RAMP_LADDER, mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder size-anchor helpers + explicit ordering (issue #483, the ladder's numeric step names trap a bare Object.keys/`.MD`/`.SM`/`.XS` access)
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette, oklchStr, EXPORT_SCHEMA_VERSION } from "./exports.js";
 import { PRIME_STEPS } from "./prime.mjs"; // the seven step names, brightest..dimmest (REQ-050/054)
 
 // ══════════════════════════════════════════════════════════════════════════════
-// DESIGN SYSTEM export — design-system-for-{claude-code,google-stitch,figma-make}
+// DESIGN SYSTEM export, design-system-for-{claude-code,google-stitch,figma-make}
 // ══════════════════════════════════════════════════════════════════════════════
 // Overhaul of the superseded claude-design bundle (BUNDLE-REVIEW.md F1/F2). The consumption
 // role set uses the Ultimate Tokens grammar `{family}[-slot]` (spec §6.5) with MEASURED
-// on-colors per fill per scheme (§7 R1). One source — dsColorRoles — renders tokens.json, the
+// on-colors per fill per scheme (§7 R1). One source, dsColorRoles, renders tokens.json, the
 // DESIGN.md frontmatter, and the previews, so §8 carrier-equality holds by construction.
 // Spec: docs/reference (design-system-files-for-llms.md in the export repo).
 
 const DS_AA = 4.5;
-// ── the TEXT-RENDERING BASELINE — always included, never optional (Kim's standing rule, 2026-07-10) ──
+// ── the TEXT-RENDERING BASELINE, always included, never optional (Kim's standing rule, 2026-07-10) ──
 // The macOS smoothing pair (consistent weight in BOTH schemes) · optimizeLegibility (kerning + ligatures
 // engaged) · optical sizing (variable fonts use their optical axes) · font-synthesis none (no faux
-// bold/italic — weights must resolve from the actual font, never be synthesized) · kerning + common
-// ligatures — plus the code/pre/kbd exception so code-like units and mono values never ligate.
+// bold/italic, weights must resolve from the actual font, never be synthesized) · kerning + common
+// ligatures, plus the code/pre/kbd exception so code-like units and mono values never ligate.
 // One source, three carriers: the DESIGN.md Typography section (fenced block below), the Figma Make
 // typography guideline, and every @dsCard preview's base CSS (DS_TEXT_RENDERING_PROPS inline).
 const DS_TEXT_RENDERING_PROPS = "-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-optical-sizing:auto;font-synthesis:none;font-kerning:normal;font-variant-ligatures:common-ligatures";
 const DS_TEXT_RENDERING_MD = [
-  "Always include the **text-rendering baseline** in the app's global CSS — it is part of this design",
+  "Always include the **text-rendering baseline** in the app's global CSS, it is part of this design",
   "system, not an option:",
   "",
   "```css",
@@ -53,7 +53,7 @@ const DS_TEXT_RENDERING_MD = [
   "  -moz-osx-font-smoothing: grayscale;",
   "  text-rendering: optimizeLegibility;   /* kerning + ligatures engaged */",
   "  font-optical-sizing: auto;            /* variable fonts use their optical axes */",
-  "  font-synthesis: none;                 /* no faux bold/italic — weights resolve from the font */",
+  "  font-synthesis: none;                 /* no faux bold/italic, weights resolve from the font */",
   "  font-kerning: normal;",
   "  font-variant-ligatures: common-ligatures;",
   "}",
@@ -72,27 +72,27 @@ const dsChrome = (palettes) =>
   palettes.find((p) => /neutral|gray|grey|slate|stone|zinc|mono/.test(p.name.toLowerCase())) || palettes[0];
 const dsRole = (p, suffix) => p && p.roles.find((r) => r.suffix === suffix);
 
-// KIT FIDELITY — the export projects the kit's RESOLVED semantic roles verbatim. `onColorMode` is a
+// KIT FIDELITY, the export projects the kit's RESOLVED semantic roles verbatim. `onColorMode` is a
 // user setting in the Settings panel ("fixed" = uniform brand labels, ADR-003 explicitly accepting
 // sub-4.5 pairs on light accents; "contrast" = the role table re-points each on-color to the end that
 // maximizes WCAG contrast against its own fill, per state). derivedAll(state) already applies the
 // setting, so the export NEVER second-guesses it: no synthetic text poles, no dead-zone fill stepping,
 // no metallic re-fills, no re-measured state fills. Contrast is MEASURED and DISCLOSED in the profile
-// receipt (the §8 G1 findings), never silently corrected — what ships is what the user designed.
+// receipt (the §8 G1 findings), never silently corrected, what ships is what the user designed.
 
 // dsColorRoles(state) → the reduced consumption set (§6.5/§7): { chrome, tokens:[{name, light,dark}],
-// alias, families, dataFamilies }. Each end = { rgb, frac, hex, oklch } — the kit's role ends
+// alias, families, dataFamilies }. Each end = { rgb, frac, hex, oklch }, the kit's role ends
 // VERBATIM. tokens.json, the DESIGN.md frontmatter, and every preview :root all read from this one
 // source. Null when no palette enabled. The reduced set is a NAME reduction of the semantic layer,
 // never a value adjustment. `dataFamilies` (#503 REQ-031) is the `data-N` slugs, kept OUT of
-// `families` — each carries only its own base token in `tokens` (see the data tier below), never
+// `families`, each carries only its own base token in `tokens` (see the data tier below), never
 // the full interactive-family treatment `families` members get.
 //
 // The extended color layer (#471): `-placeholder`/`-scrim`/`-inverse-surface`/`-inverse-on-surface`
-// (chrome-only — neutral/chrome-scoped concepts) and `-container`/`-container-low`/`-container-high`
-// (every fill family, chrome included — a per-family "quiet emphasis" tint). Both are role-table-
+// (chrome-only, neutral/chrome-scoped concepts) and `-container`/`-container-low`/`-container-high`
+// (every fill family, chrome included, a per-family "quiet emphasis" tint). Both are role-table-
 // verbatim, like everything else here. Still deferred: the full `-scrim-{weakest..strongest}` ladder
-// and the full `-surface-{dimmest..brightest}` ladder — add only when a kit actually needs them.
+// and the full `-surface-{dimmest..brightest}` ladder, add only when a kit actually needs them.
 export function dsColorRoles(state) {
   const palettes = derivedAll(state);
   if (!palettes.length) return null;
@@ -114,26 +114,26 @@ export function dsColorRoles(state) {
   slot(chrome, "-surface", `${cn}-surface`);
   slot(chrome, "-surface-high", `${cn}-surface-high`);
   // -surface-dim (#475): a DARKER stop in BOTH modes (semantic.js's surface-dim/-bright ladder is
-  // non-mirror — same direction each scheme), the correct hover-wash token; -surface-high is a
+  // non-mirror, same direction each scheme), the correct hover-wash token; -surface-high is a
   // MIRRORED elevation stop (raised in both modes, opposite tone direction per scheme) and must
   // never stand in for a hover wash.
   slot(chrome, "-surface-dim", `${cn}-surface-dim`);
   slot(chrome, "-on-surface", `${cn}-on-surface`);
   slot(chrome, "-on-surface-variant", `${cn}-on-surface-variant`);
   // -outline (#480, AdiaUI parity): a STRONGER hairline than -outline-variant (role-table 500-600 vs
-  // 500-300) — the header/strong-divider case AdiaUI's own table spec distinguishes from a row's
+  // 500-300), the header/strong-divider case AdiaUI's own table spec distinguishes from a row's
   // subtler border. -outline-variant stays the default hairline everywhere else.
   slot(chrome, "-outline", `${cn}-outline`);
   slot(chrome, "-outline-variant", `${cn}-outline-variant`);
   slot(chrome, "", `${cn}`);
   slot(chrome, "-hover", `${cn}-hover`);
   slot(chrome, "-active", `${cn}-active`);
-  slot(chrome, "-disabled", `${cn}-disabled`); // the 500-600 inert wash — a real token, not a preview opacity
+  slot(chrome, "-disabled", `${cn}-disabled`); // the 500-600 inert wash, a real token, not a preview opacity
   slot(chrome, `-on-${cn}`, `${cn}-on-${cn}`);
-  // ── extended chrome slots (#471): neutral-scoped concepts — a placeholder is always field text, a
+  // ── extended chrome slots (#471): neutral-scoped concepts, a placeholder is always field text, a
   // scrim is the app's own neutral overlay tint (distinct from the FIXED `dialog-backdrop` system
   // constant named in Elevation & Depth below), and inverse-surface/-on-surface invert the app's OWN
-  // neutral surface (toasts, tooltips) — never a brand family's.
+  // neutral surface (toasts, tooltips), never a brand family's.
   slot(chrome, "-placeholder", `${cn}-placeholder`);
   slot(chrome, "-scrim", `${cn}-scrim`);
   slot(chrome, "-inverse-surface", `${cn}-inverse-surface`);
@@ -143,13 +143,13 @@ export function dsColorRoles(state) {
   slot(chrome, "-container-high", `${cn}-container-high`);
 
   // ── every other family: base fill + its button states + the kit's on-color (§7 R2) ──
-  // EVERY fill family carries `-hover` and `-disabled` (so any intent can be a real button — the preview
+  // EVERY fill family carries `-hover` and `-disabled` (so any intent can be a real button, the preview
   // renders them from these tokens, never a brightness()/opacity() fake). Only the brand family also
   // carries `-active` (the primary action the DESIGN.md prose names with its active step); the chrome
   // already emitted its full trio above. When the brand IS the chrome it is not in this loop, so no dup.
   const brandPal = palettes.find((p) => /primary|brand/.test(p.name.toLowerCase())) || chrome;
   const isIntent = (p) => /danger|destruct|error|critical|success|positive|warn|caution|info/.test(p.name.toLowerCase());
-  // #503 REQ-031: data palettes (data-1..8) are excluded from `others` — they never get the full
+  // #503 REQ-031: data palettes (data-1..8) are excluded from `others`, they never get the full
   // interactive-family treatment (hover/active/disabled/container) or join the brand family
   // prose/catalog loops; they form their own `data` tier just below instead.
   const others = palettes.filter((p) => p !== chrome && !isIntent(p) && !isDataPalette(p));
@@ -157,7 +157,7 @@ export function dsColorRoles(state) {
   const rank = (p) => { const t = p.name.toLowerCase(); const i = intentOrder.findIndex((k) => t.includes(k)); return i < 0 ? 99 : i; };
   const intents = palettes.filter((p) => p !== chrome && isIntent(p)).sort((a, b) => rank(a) - rank(b));
   // container/-low/-high (#471): a per-family "quiet emphasis without a full fill" tint (Material's own
-  // primaryContainer/errorContainer precedent) — emitted for EVERY fill family including intents, the
+  // primaryContainer/errorContainer precedent), emitted for EVERY fill family including intents, the
   // same reach as -hover/-disabled just above (a status banner is as real a container as a brand one).
   for (const p of [...others, ...intents]) {
     slot(p, "", `${p.n}`);
@@ -170,7 +170,7 @@ export function dsColorRoles(state) {
     slot(p, "-container-high", `${p.n}-container-high`);
   }
 
-  // ── data tier (#503 REQ-031): a chart/data-visualization series, not an interactive fill — base +
+  // ── data tier (#503 REQ-031): a chart/data-visualization series, not an interactive fill, base +
   // its on-color only (a legend label needs a paired text color; the §8 G7 gate requires every fill
   // to carry one), no hover/active/disabled/container states. Named-but-separate from `families`
   // (below) so it never enters the brand family prose bullets or the @dsCard button/badge catalogs.
@@ -185,21 +185,21 @@ export function dsColorRoles(state) {
   // The Stitch-required `primary` is a DISTINCT extra key only when no grammar family is already
   // named `primary`. A theme that renames its brand family (e.g. the dancefloor golden) needs the
   // alias; a theme that keeps the canonical `primary` name (the role-table defaults) already emits
-  // `primary` as a grammar token — re-emitting it would DUPLICATE the YAML key (a Stitch prelint
+  // `primary` as a grammar token, re-emitting it would DUPLICATE the YAML key (a Stitch prelint
   // error) and over-count the inventory. Emit/count the alias only in the distinct case.
   const aliasDistinct = !tokens.some((t) => t.name === alias.name);
 
   const families = [chrome.n, ...others.map((p) => p.n), ...intents.map((p) => p.n)];
 
   // familiesByGroup (SPEC 0.3.0 RP-1, ticket #572): every ENABLED palette's slug bucketed by its
-  // resolved canvas group (`p.group`, stamped by exports.js's derivePalette) — metadata alongside
+  // resolved canvas group (`p.group`, stamped by exports.js's derivePalette), metadata alongside
   // the flat `families` list above (kept, unchanged, for existing consumers). Unlike `families`,
   // this includes data-N palettes (bucketed under "data") so a consumer can tell which families are
   // chart series vs brand without name-matching (RP-1's own rationale).
   const familiesByGroup = { material: [], brand: [], system: [], data: [] };
   for (const p of palettes) familiesByGroup[p.group].push(p.n);
 
-  // ── prime (REQ-054): every enabled palette's own seven identity swatches (brightest..dimmest) —
+  // ── prime (REQ-054): every enabled palette's own seven identity swatches (brightest..dimmest),
   // primitives-tier and mode-independent, the SAME seven in both schemes, unlike the roles above.
   // Keyed by family slug (chrome + others + intents + data, i.e. every enabled palette in
   // `palettes`) so tokens.json and the DESIGN.md prose can both name a family and its prime block.
@@ -217,9 +217,9 @@ export function dsColorRoles(state) {
   return { chrome, tokens, alias, aliasDistinct, families, familiesByGroup, dataFamilies: dataPals.map((p) => p.n), prime };
 }
 
-// dsFactor — leading as a unitless multiplier of size (§9.2: never px). dsTypeLayer — the full voice·step
+// dsFactor, leading as a unitless multiplier of size (§9.2: never px). dsTypeLayer, the full voice·step
 // scale as { size, lineHeight (factor), weight }, keyed `<voice>-<step>`; letterSpacing is omitted (the
-// DESIGN.md frontmatter carries it as em where a voice tracks). dsSpacing/dsRadii — the geometry ladders.
+// DESIGN.md frontmatter carries it as em where a voice tracks). dsSpacing/dsRadii, the geometry ladders.
 const dsFactor = (line, size) => (size > 0 ? Number((line / size).toFixed(3)) : 0);
 function dsTypeLayer(typeSc) {
   const type = { fonts: { ...(typeSc && typeSc.fonts) }, scale: {} };
@@ -227,7 +227,7 @@ function dsTypeLayer(typeSc) {
     for (const [sName, s] of Object.entries(steps)) {
       const entry = { size: s.size, lineHeight: dsFactor(s.lineHeight, s.size), weight: s.weight };
       // tracking rides as an em FACTOR (unitless number, per the G8 relative-leading/tracking rule),
-      // only where the voice actually tracks — so the carrier is complete, not just size/leading/weight.
+      // only where the voice actually tracks, so the carrier is complete, not just size/leading/weight.
       if (s.letterSpacing) entry.letterSpacing = Number((s.letterSpacing / s.size).toFixed(4));
       type.scale[`${cName.toLowerCase()}-${sName.toLowerCase()}`] = entry;
     }
@@ -236,7 +236,7 @@ function dsTypeLayer(typeSc) {
 const dsSpacing = (geomSc) => (geomSc && geomSc.space ? Object.keys(geomSc.space).sort((a, b) => a - b).map((k) => geomSc.space[k]) : []);
 const dsRadii = (geomSc) => { const r = {}; if (geomSc && geomSc.radii) for (const [k, v] of Object.entries(geomSc.radii)) r[k] = v; return r; };
 
-// dsSemanticLayer — the FULL semantic role layer (every role of every enabled palette, not the reduced
+// dsSemanticLayer, the FULL semantic role layer (every role of every enabled palette, not the reduced
 // consumption grammar): { "{family}{-role-suffix}": oklch } per scheme. This is the complete opt-in
 // color set a consumer can bind beyond the measured `colors` grammar; values are OKLCH like everything else.
 function dsSemanticLayer(state) {
@@ -247,7 +247,7 @@ function dsSemanticLayer(state) {
   }
   return { semantic, semanticDark };
 }
-// dsGeometryLayer — the FULL geometry system (the control size ramp + composition ladders), beyond the
+// dsGeometryLayer, the FULL geometry system (the control size ramp + composition ladders), beyond the
 // bare `spacing`/`radii` arrays: sizes (per-size height/icon/caret/font/gap/the four pads/
 // radiusPill/minWidth), insets, gaps, borders, focus ring, density. All px numbers (unit stated in $note).
 function dsGeometryLayer(geomSc) {
@@ -261,9 +261,9 @@ function dsGeometryLayer(geomSc) {
   };
 }
 
-// exportDesignSystemTokens — the tokens.json carrier (Claude profile): OKLCH `colors`/`colorsDark`, the
+// exportDesignSystemTokens, the tokens.json carrier (Claude profile): OKLCH `colors`/`colorsDark`, the
 // full type scale (leading factors), the spacing array, and the radii ladder. Colors are high-resolution
-// OKLCH (never bare hex) — the SAME payload the DESIGN.md frontmatter carries, so carrier equality (§8 G3)
+// OKLCH (never bare hex), the SAME payload the DESIGN.md frontmatter carries, so carrier equality (§8 G3)
 // is byte-identical by construction, not just within ±1/255. A consumer derives 8-bit hex from OKLCH.
 export function exportDesignSystemTokens(state, typeSc, geomSc) {
   const ds = dsColorRoles(state);
@@ -272,7 +272,7 @@ export function exportDesignSystemTokens(state, typeSc, geomSc) {
   for (const t of ds.tokens) { colors[t.name] = t.light.oklch; colorsDark[t.name] = t.dark.oklch; }
   if (ds.aliasDistinct) { colors[ds.alias.name] = ds.alias.light.oklch; colorsDark[ds.alias.name] = ds.alias.dark.oklch; }
   const { semantic, semanticDark } = dsSemanticLayer(state);
-  const note = `Design System tokens.json — Ultimate Tokens naming grammar: {family}[-slot], families ${ds.families.join("/")}; CSS prefix --${cssPrefixOf(state)}-. Two color tiers: \`colors\`/\`colorsDark\` are the reduced consumption grammar (the set the DESIGN.md teaches — the kit's resolved role values VERBATIM, per its onColorMode setting; contrast is measured and disclosed in README.md); \`semantic\`/\`semanticDark\` are the FULL semantic role layer (every role of every palette) for consumers that need the complete set. \`prime\` is a THIRD tier: every enabled palette's own seven identity swatches (brightest..dimmest, keyed by step name), primitives-tier and mode-independent — the SAME seven values in light and dark, never subject to onColorMode. Values are high-resolution OKLCH (never bare hex); alpha < 1 rides as \`oklch(L C H / A)\`. type.scale lineHeight is a unitless multiplier of size (leading factor — never px) and letterSpacing, where present, an em factor. \`geometry\` is the full dimensional system (control size ramp, insets, gaps, borders, focus ring; px numbers); \`spacing\`/\`radii\` remain the compact ladders. \`icons\` names the icon library + its stroke variant this kit binds to, with the size ramp it renders at (from geometry) — bind to it, never substitute another set. \`motion\` carries the easing curves + the ms duration ladder: bind these, never type a raw ms or bezier; entrances decelerate, exits accelerate and run faster.`;
+  const note = `Design System tokens.json, Ultimate Tokens naming grammar: {family}[-slot], families ${ds.families.join("/")}; CSS prefix --${cssPrefixOf(state)}-. Two color tiers: \`colors\`/\`colorsDark\` are the reduced consumption grammar (the set the DESIGN.md teaches, the kit's resolved role values VERBATIM, per its onColorMode setting; contrast is measured and disclosed in README.md); \`semantic\`/\`semanticDark\` are the FULL semantic role layer (every role of every palette) for consumers that need the complete set. \`prime\` is a THIRD tier: every enabled palette's own seven identity swatches (brightest..dimmest, keyed by step name), primitives-tier and mode-independent, the SAME seven values in light and dark, never subject to onColorMode. Values are high-resolution OKLCH (never bare hex); alpha < 1 rides as \`oklch(L C H / A)\`. type.scale lineHeight is a unitless multiplier of size (leading factor, never px) and letterSpacing, where present, an em factor. \`geometry\` is the full dimensional system (control size ramp, insets, gaps, borders, focus ring; px numbers); \`spacing\`/\`radii\` remain the compact ladders. \`icons\` names the icon library + its stroke variant this kit binds to, with the size ramp it renders at (from geometry), bind to it, never substitute another set. \`motion\` carries the easing curves + the ms duration ladder: bind these, never type a raw ms or bezier; entrances decelerate, exits accelerate and run faster.`;
   return JSON.stringify({
     $generator: "Ultimate Tokens",
     $schemaVersion: EXPORT_SCHEMA_VERSION,
@@ -287,8 +287,8 @@ export function exportDesignSystemTokens(state, typeSc, geomSc) {
   }, null, 2);
 }
 
-// dsIconLayer — the ICON facet: the library + its stroke/fill variant the kit binds to, plus the SIZE
-// ramp it renders at (read from geometry, never redefined here — `sizes.<size>.icon` composes with the
+// dsIconLayer, the ICON facet: the library + its stroke/fill variant the kit binds to, plus the SIZE
+// ramp it renders at (read from geometry, never redefined here, `sizes.<size>.icon` composes with the
 // control heights by the centering law). Always present: an agent must never have to pick a library.
 function dsIconLayer(state, geomSc) {
   const ic = iconSystem((state && state.icons) || {});
@@ -301,15 +301,15 @@ function dsIconLayer(state, geomSc) {
 // voice·step keys; each resolves against the full scale. kickers carry em tracking, the rest leading only.
 const DS_TYPE_LEVELS = ["display-sm", "heading-lg", "heading-md", "heading-sm", "kicker-md", "lead-md", "body-md", "body-sm", "ui-md", "ui-sm", "caption-md", "code-md"];
 const DS_SPACE_NAMES = ["none", "xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl"];
-// dsFontStack — a quoted CSS font stack (`'Inter Tight', system-ui, …`); quoting is required for family
+// dsFontStack, a quoted CSS font stack (`'Inter Tight', system-ui, …`); quoting is required for family
 // names with digits/spaces (WebKit drops an unquoted `Inter Tight`/`Source Serif 4`).
-// fontMode ("premium" default | "google") — omitted/default is BYTE-IDENTICAL to before this param
+// fontMode ("premium" default | "google"), omitted/default is BYTE-IDENTICAL to before this param
 // existed; "google" runs `name` through googleSafeFontFor (font-fallbacks.mjs) first. No caller
-// opts in yet (Phase A wires the app's own live preview, not this bundle-export path) — the
+// opts in yet (Phase A wires the app's own live preview, not this bundle-export path), the
 // capability lives here for the next caller that needs it, per the font-mode plan.
 const dsFontStack = (name, generic, fontMode = "premium") => (name ? `'${fontMode === "google" ? googleSafeFontFor(name) : name}', ${generic}` : generic);
 
-// dsSpine — the universal-dialect DESIGN.md (§5): YAML frontmatter (OKLCH colors + `-dark` siblings +
+// dsSpine, the universal-dialect DESIGN.md (§5): YAML frontmatter (OKLCH colors + `-dark` siblings +
 // curated type + named spacing/rounded + components) then the 8 Stitch-canonical sections + Responsive
 // Behavior + Agent Prompt Guide. Frontmatter colors ≡ tokens.json OKLCH (one source, byte-identical).
 export function exportDesignSystemSpine(state, typeSc, geomSc) {
@@ -402,26 +402,26 @@ export function exportDesignSystemSpine(state, typeSc, geomSc) {
   return `${frontmatter}\n\n${body}\n`;
 }
 
-// dsRootCSS — the single :root block every preview shares (§9.5): `color-scheme: light dark` + one
-// `light-dark(oklch, oklch)` custom property per grammar role (the alias is omitted — it duplicates the
+// dsRootCSS, the single :root block every preview shares (§9.5): `color-scheme: light dark` + one
+// `light-dark(oklch, oklch)` custom property per grammar role (the alias is omitted, it duplicates the
 // brand base). This is the SAME runtime idiom the Agent Prompt Guide teaches; no @media fork.
 function dsRootCSS(ds, pfx) {
   const props = ds.tokens.map((t) => `--${pfx}-${t.name}:light-dark(${t.light.oklch},${t.dark.oklch});`).join("");
   // dialog-backdrop rides the shared root too: a FIXED system constant (opaque black · 80%, identical in
-  // both schemes — the same value every other export format emits for this token), so a preview that
+  // both schemes, the same value every other export format emits for this token), so a preview that
   // needs it (Dialog) references it via var() like every other color, never a hardcoded literal.
   return `:root{color-scheme:light dark;${props}--${pfx}-dialog-backdrop:${dialogBackdropOklch()};}`;
 }
 
-// exportDesignSystemComponents — the self-contained @dsCard previews (§9.5). Returns [{name, data}] with
+// exportDesignSystemComponents, the self-contained @dsCard previews (§9.5). Returns [{name, data}] with
 // names under components/. Each card: first-line @dsCard marker, inline <style> (the shared :root + card
-// classes), light-dark() both schemes, no external fetch — demonstrating the states, pairing law, and scale.
+// classes), light-dark() both schemes, no external fetch, demonstrating the states, pairing law, and scale.
 //
-// #473 — expanded from 7 teaching previews to a ~95%-usage catalog (one card per component GROUP, per the
+// #473, expanded from 7 teaching previews to a ~95%-usage catalog (one card per component GROUP, per the
 // resolved scope: buttons · inputs · table · dialog · tabs/menu · feedback · motion · typography, plus the
-// existing foundations — colors/spacing unchanged, card kept). Every value below is a var(--{pfx}-...)
+// existing foundations, colors/spacing unchanged, card kept). Every value below is a var(--{pfx}-...)
 // token reference, a geometry number the engine already computed (size/radius/focus/duration), or a plain
-// layout literal with no named token — never a hand-typed color.
+// layout literal with no named token, never a hand-typed color.
 export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const ds = dsColorRoles(state);
   if (!ds) return [];
@@ -438,24 +438,24 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const headStack = dsFontStack(fonts.heading || fonts.display, sans);
   const monoStack = dsFontStack(fonts.mono, "ui-monospace, SFMono-Regular, monospace");
   // Control text (buttons/inputs/labels) is the UI-CONTROL voice (TKT-0008; the old "UI" voice name died
-  // in the 2026-07-13 rename) — its own font, weight, and optical tracking, NOT the body voice at a
+  // in the 2026-07-13 rename), its own font, weight, and optical tracking, NOT the body voice at a
   // hardcoded 600. Read the UI-control MD step so the previews render what the tokens say.
   const uiStack = dsFontStack(fonts.ui, sans);
   const uiStep = (typeSc && typeSc.categories && typeSc.categories["UI-control"] && typeSc.categories["UI-control"].MD) || null;
   // the linear-ladder prototype (issue #483) wins over the composed UI-control voice for control TEXT
-  // SIZE while it's active — the same "ladder wins" decision geomScale itself makes (composition is
+  // SIZE while it's active, the same "ladder wins" decision geomScale itself makes (composition is
   // skipped there too). Every uiFont consumer below (buttons, the card CTA, the dialog actions,
-  // tabs/menu, inputs) reads uiSize, so fixing it here is enough — not just the Size-ladder preview
+  // tabs/menu, inputs) reads uiSize, so fixing it here is enough, not just the Size-ladder preview
   // row, which already read per-size `s.font` directly and needed no change. Weight/tracking stay the
   // voice's own: the ladder has no weight law, and tracking is authored as an EM ratio off the voice's
   // OWN size (uiStep.size), so it already scales proportionally with whatever font-size lands below.
-  // mdAnchor (not a bare .sizes.MD) — the ladder names its steps numerically ("0".."9"), so there is
+  // mdAnchor (not a bare .sizes.MD), the ladder names its steps numerically ("0".."9"), so there is
   // no `.MD` key there; mdAnchor resolves the ramp-appropriate MD-equivalent row either way.
   const ladderMdFont = geomSc && geomSc.ramp === RAMP_LADDER ? (mdAnchor(geomSc).size && mdAnchor(geomSc).size.font) : null;
   const uiSize = ladderMdFont || (uiStep && uiStep.size ? uiStep.size : 14);
   const uiWeight = uiStep && uiStep.weight ? uiStep.weight : 500;
   const uiTrackEm = uiStep && uiStep.size ? Number((uiStep.letterSpacing / uiStep.size).toFixed(4)) : 0;
-  // #477 — font-size was missing entirely: every uiFont consumer (buttons, the card CTA, the dialog
+  // #477, font-size was missing entirely: every uiFont consumer (buttons, the card CTA, the dialog
   // actions, tabs/menu) inherited the browser's ~13px default instead of the UI-control MD step.
   const uiFont = `font-family:${uiStack};font-size:${uiSize}px;font-weight:${uiWeight};letter-spacing:${uiTrackEm}em`;
   const radii = dsRadii(geomSc);
@@ -465,9 +465,9 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const rXs = radii.xs != null ? radii.xs : rSm;
   const rXl = radii.xl != null ? radii.xl : rLg;
   const rFull = radii.full != null ? radii.full : 999;
-  // Selection controls (checkbox/radio/switch) size off the geometry ramp's own icon tokens — never a
+  // Selection controls (checkbox/radio/switch) size off the geometry ramp's own icon tokens, never a
   // fabricated magic number: a checkbox/radio reads as an SM icon-sized control, a switch track as XS.
-  // sizeAnchor (not a bare `.sizes.SM`/`.sizes.XS`) — the linear-ladder prototype (issue #483) has no
+  // sizeAnchor (not a bare `.sizes.SM`/`.sizes.XS`), the linear-ladder prototype (issue #483) has no
   // SM/XS keys at all (numeric step names), so a bare access silently fell through to the hardcoded
   // 18/16 fallback for every ladder-active kit, and the Inputs card never followed the ladder.
   const smSize = sizeAnchor(geomSc, "SM").size, xsSize = sizeAnchor(geomSc, "XS").size;
@@ -476,7 +476,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const switchW = Math.round(switchH * 1.8);
   const cap = (s) => s.split(/[-\s]/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   // every preview carries the TEXT-RENDERING BASELINE (the same block the DESIGN.md's Typography section
-  // mandates — DS_TEXT_RENDERING_PROPS), so the cards render type the way the shipped system will.
+  // mandates, DS_TEXT_RENDERING_PROPS), so the cards render type the way the shipped system will.
   const baseCss = `*{box-sizing:border-box}.cd{font-family:${bodyStack};background:${V(cn + "-background")};color:${V(cn + "-on-surface")};padding:24px;line-height:1.5;${DS_TEXT_RENDERING_PROPS}}.cd h3{font-family:${headStack};margin:0 0 12px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:${V(cn + "-on-surface-variant")}}.cd code,.cd pre,.cd kbd{font-family:${monoStack};font-size:12px;font-variant-ligatures:none}.cap{font-size:12px;color:${V(cn + "-on-surface-variant")}}`;
   const card = (name, group, title, subtitle, css, body) =>
     ({ name: `components/${name}`, data: `<!-- @dsCard group="${group}" title="${title}" subtitle="${subtitle}" -->\n<style>${root}${baseCss}${css}</style>\n<div class="cd"><h3>${title}</h3>${body}</div>\n` });
@@ -487,7 +487,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const intents = ds.families.filter((f) => /danger|success|warn|info/.test(f));
   const sigFams = ds.families.filter((f) => /muted/.test(f));
 
-  // 1. Colors — every role swatch
+  // 1. Colors, every role swatch
   {
     const sw = (n) => `<div style="display:flex;flex-direction:column;gap:4px"><div style="height:44px;border-radius:8px;background:${V(n)};border:1px solid ${V(cn + "-outline-variant")}"></div><code>${n}</code></div>`;
     const surfaces = [`${cn}-background`, `${cn}-surface`, `${cn}-surface-high`].map(sw).join("");
@@ -496,8 +496,8 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
       `<p class="cap">Surfaces</p><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">${surfaces}</div><p class="cap">Family fills (label = its <code>on-{family}</code>)</p><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">${fills}</div>`));
   }
 
-  // 2. Buttons — fills × base/hover/disabled, outline/ghost/link variants, the active state, a focus
-  //    ring, and the full size ladder (every one drawn from a real token — active/focus existed but were
+  // 2. Buttons, fills × base/hover/disabled, outline/ghost/link variants, the active state, a focus
+  //    ring, and the full size ladder (every one drawn from a real token, active/focus existed but were
   //    never rendered before #473).
   {
     const btnCss = `.brow{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}.blabel{width:96px;font-size:12px;color:${V(cn + "-on-surface-variant")};text-transform:capitalize}.btn{border:0;border-radius:${rMd}px;padding:12px;${uiFont};cursor:pointer}.btn--dis{cursor:not-allowed}.size-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}`;
@@ -510,24 +510,24 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
       const dis = `background:${has(f + "-disabled") ? V(f + "-disabled") : V(f)};color:${V(cn + "-on-surface-variant")}`;
       return `<div class="brow"><span class="blabel">${cap(f)}</span><button class="btn" style="${base}">Button</button><button class="btn" style="${hover}">Hover</button><button class="btn btn--dis" style="${dis}">Disabled</button></div>`;
     }).join("");
-    // Active/pressed (AdiaUI parity, #480): the color state AND the press feedback together — a
+    // Active/pressed (AdiaUI parity, #480): the color state AND the press feedback together, a
     // real interaction has both, and a card that only swaps color under-teaches the affordance.
     const activeRow = has(`${brand}-active`)
       ? `<div class="brow"><span class="blabel">Active</span><button class="btn" style="background:${V(brand + "-active")};color:${brandOn};transform:scale(0.97)">Pressed</button></div>`
       : "";
     const focus = (geomSc && geomSc.focus) || { ringWidth: 2, ringOffset: 2 };
-    // The ring sits on a NEUTRAL fill (never the brand fill it would ring in real use) — on a
+    // The ring sits on a NEUTRAL fill (never the brand fill it would ring in real use), on a
     // brand-filled button the ring is the SAME token as the fill it surrounds, so the thin
     // geometry-authored offset reads as barely-there. Neutral fill + brand ring is both the
     // legible teaching case and the common real one (focus rings show on plain/outline controls).
     const focusRow = `<div class="brow"><span class="blabel">Focus ring</span><button class="btn btn--focus-demo" style="background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};border:1px solid ${V(cn + "-outline-variant")};outline:${focus.ringWidth}px solid ${V(brand)};outline-offset:${focus.ringOffset}px">Focused</button></div>`;
     const tint = has(`${brand}-container`) ? V(brand + "-container") : "transparent";
-    // Ghost is TRANSPARENT at rest (text only) — Tonal is the one with a standing tinted fill
+    // Ghost is TRANSPARENT at rest (text only), Tonal is the one with a standing tinted fill
     // (AdiaUI parity, #480: reading the spec closely, our prior "Ghost" actually rendered Tonal's
     // own always-on container fill; Ghost's own bg is transparent even at rest, tinting only on
     // hover in the real component). Both variants now exist, correctly distinct.
     const variantRow = `<div class="brow"><span class="blabel">Variants</span><button class="btn" style="background:transparent;border:1px solid ${V(brand)};color:${V(brand)}">Outline</button><button class="btn" style="background:transparent;color:${V(brand)}">Ghost</button><button class="btn" style="background:${tint};color:${V(brand)}">Tonal</button><button class="btn" style="background:none;padding:0;color:${V(brand)};text-decoration:underline">Link</button></div>`;
-    // iterate the RESOLVED scale's own size keys, EXPLICITLY ordered by height (issue #483) — never
+    // iterate the RESOLVED scale's own size keys, EXPLICITLY ordered by height (issue #483), never
     // the hardcoded default SIZE_KEYS (the ladder has its own 10-step count and numeric "0".."9"
     // names), and never Object.keys(geomSc.sizes) directly: JS forces integer-like keys like the
     // ladder's into ascending numeric enumeration regardless of insertion order, so a bare Object.keys
@@ -538,18 +538,18 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
       return `<button class="btn" style="background:${V(brand)};color:${brandOn};height:${s.height}px;padding:0 ${Math.round(s.paddingWide)}px;font-size:${s.font}px">${sz}</button>`;
     }).join("")}</div>`;
     out.push(card("buttons.html", "Components", "Buttons", "fills · variants · states · sizes", btnCss,
-      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>${activeRow}<p class="cap">Outline / ghost / tonal / link — text is the brand token itself; ghost is transparent even at rest, tonal stands on the brand's own <code>-container</code> fill.</p>${variantRow}<p class="cap">Focus ring — <code>geometry.focus.ringWidth</code>/<code>ringOffset</code>, the brand token ringing a neutral control so it reads clearly against a fill it doesn't share.</p>${focusRow}<p class="cap">Size ladder — height, padding, and text size read straight off the geometry size ramp.</p>${sizeRow}`));
+      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>${activeRow}<p class="cap">Outline / ghost / tonal / link, text is the brand token itself; ghost is transparent even at rest, tonal stands on the brand's own <code>-container</code> fill.</p>${variantRow}<p class="cap">Focus ring, <code>geometry.focus.ringWidth</code>/<code>ringOffset</code>, the brand token ringing a neutral control so it reads clearly against a fill it doesn't share.</p>${focusRow}<p class="cap">Size ladder, height, padding, and text size read straight off the geometry size ramp.</p>${sizeRow}`));
   }
 
-  // 3. Inputs — field states (default · placeholder · focus · error · disabled), select, textarea, and
-  //    the selection controls (checkbox/radio/switch) — one card per the resolved granularity.
+  // 3. Inputs, field states (default · placeholder · focus · error · disabled), select, textarea, and
+  //    the selection controls (checkbox/radio/switch), one card per the resolved granularity.
   {
     const errFam = ds.families.find((f) => /danger|error|destruct|critical/.test(f)) || intents[0] || null;
     const checkMark = Math.round(ctrlIcon * 0.28);
     const inCss = [
-      // #477 — `font:inherit` used to ride AFTER ${uiFont} here: the `font` SHORTHAND resets every
+      // #477, `font:inherit` used to ride AFTER ${uiFont} here: the `font` SHORTHAND resets every
       // sub-property it doesn't restate (family/size/weight/line-height) to `inherit`, wiping the
-      // UI-control voice ${uiFont} had just set. Dropped — ${uiFont} already states every property
+      // UI-control voice ${uiFont} had just set. Dropped, ${uiFont} already states every property
       // a form control needs; no shorthand reset belongs after it.
       `.field{display:block;width:100%;padding:12px;border-radius:${rSm}px;border:1px solid ${V(cn + "-outline-variant")};background:${V(cn + "-surface")};color:${V(cn + "-on-surface")};${uiFont};margin-bottom:12px}`,
       `.field::placeholder{color:${V(cn + "-placeholder")}}`,
@@ -586,11 +586,11 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     out.push(card("inputs.html", "Components", "Inputs", "states · select · textarea · selection controls", inCss, body));
   }
 
-  // 4. Table — header, rows, hairlines, a hovered row. AdiaUI parity (#480, gen-ui-kit main @ f43853d):
+  // 4. Table, header, rows, hairlines, a hovered row. AdiaUI parity (#480, gen-ui-kit main @ f43853d):
   //    cell padding matches their 12/16 py/px; the header carries the STRONGER `-outline` hairline (a real role, distinct
-  //    from `-outline-variant` — role-table 500-600 vs 500-300) where row dividers keep the subtler
+  //    from `-outline-variant`, role-table 500-600 vs 500-300) where row dividers keep the subtler
   //    `-outline-variant`, matching their own header-vs-row-border distinction. "Selected"/"striped"
-  //    row states are NOT modeled — no matching semantic roles exist anywhere in our role table
+  //    row states are NOT modeled, no matching semantic roles exist anywhere in our role table
   //    (see Findings) rather than hardcoding an arbitrary color for them.
   {
     const hdrBorder = has(`${cn}-outline`) ? V(cn + "-outline") : V(cn + "-outline-variant");
@@ -599,25 +599,25 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     out.push(card("table.html", "Components", "Table", "header · rows · hover", tblCss, body));
   }
 
-  // 5. Dialog — the fixed backdrop system constant (never a role token) + a raised, radiused panel.
+  // 5. Dialog, the fixed backdrop system constant (never a role token) + a raised, radiused panel.
   {
-    // A soft, low-alpha shadow — the one exception our own Elevation & Depth prose already names
+    // A soft, low-alpha shadow, the one exception our own Elevation & Depth prose already names
     // ("optional garnish on the top-most surfaces... one soft low-alpha layer at most"). A modal
     // panel is exactly that surface (AdiaUI parity, #480, gen-ui-kit main @ f43853d: their overlay surfaces carry shadow-lg);
-    // the color is the -scrim token, never a raw rgba — still fully token-derived.
+    // the color is the -scrim token, never a raw rgba, still fully token-derived.
     const dlgShadow = has(`${cn}-scrim`) ? `box-shadow:0 8px 24px ${V(cn + "-scrim")};` : "";
     const dlgCss = `.dlg-wrap{position:relative;height:200px;border-radius:${rMd}px;overflow:hidden;background:${V(cn + "-background")}}.dlg-backdrop{position:absolute;inset:0;background:${V("dialog-backdrop")}}.dlg-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72%;background:${V(cn + "-surface")};border-radius:${rXl}px;padding:20px;${dlgShadow}}.dlg-panel h4{font-family:${headStack};margin:0 0 8px}.dlg-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}.dlg-btn{border:0;border-radius:${rMd}px;padding:8px 16px;${uiFont};cursor:pointer}`;
     const body = `<div class="dlg-wrap"><div class="dlg-backdrop"></div><div class="dlg-panel"><h4>Delete item?</h4><p style="margin:0;color:${V(cn + "-on-surface-variant")}">This action can't be undone.</p><div class="dlg-actions"><button class="dlg-btn" style="background:transparent;color:${V(cn + "-on-surface")}">Cancel</button><button class="dlg-btn" style="background:${V(brand)};color:${brandOn}">Confirm</button></div></div></div><p class="cap">Backdrop is the fixed system constant <code>--${pfx}-dialog-backdrop</code> (opaque black · 80%, identical in both schemes); the panel radius is <code>{rounded.xl}</code>.</p>`;
     out.push(card("dialog.html", "Components", "Dialog", "backdrop · radius · actions", dlgCss, body));
   }
 
-  // 6. Tabs & Menu — the navigation group (resolved as one combined card, per "tabs/menu").
+  // 6. Tabs & Menu, the navigation group (resolved as one combined card, per "tabs/menu").
   //    AdiaUI parity (#480, gen-ui-kit main @ f43853d): the menu popover is a card-tier surface (radius lg, not md) with a
-  //    tighter 4px padding; its item radius is CONCENTRIC — the popover's own radius minus its
-  //    padding, so nested corners share a center — computed here from our own rLg, never copied
+  //    tighter 4px padding; its item radius is CONCENTRIC, the popover's own radius minus its
+  //    padding, so nested corners share a center, computed here from our own rLg, never copied
   //    as a literal. The tabs strip gap is tightened to match. The Delete item's danger color is
-  //    the family's own BASE/fill token used as accent TEXT (never a "-bg"-suffixed role — our
-  //    grammar has no such suffix) — confirmed this does NOT reproduce the role-crossing AdiaUI's
+  //    the family's own BASE/fill token used as accent TEXT (never a "-bg"-suffixed role, our
+  //    grammar has no such suffix), confirmed this does NOT reproduce the role-crossing AdiaUI's
   //    own spec flags on its danger menu item (their fg reads their own `-bg` role).
   {
     const dangerFam = intents.find((f) => /danger/.test(f));
@@ -625,23 +625,23 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     const menuItemRadius = Math.max(0, rLg - menuPad);
     const navCss = `.tabs{display:flex;gap:12px;border-bottom:1px solid ${V(cn + "-outline-variant")};margin-bottom:20px}.tab{padding-bottom:10px;${uiFont};color:${V(cn + "-on-surface-variant")};border-bottom:2px solid transparent}.tab--active{color:${V(cn + "-on-surface")};border-bottom-color:${V(brand)}}.menu{background:${V(cn + "-surface-high")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:${menuPad}px;width:220px}.menu-item{padding:6px 8px;border-radius:${menuItemRadius}px;color:${V(cn + "-on-surface")};${uiFont};}.menu-item--hover{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-dim")}}.menu-divider{height:1px;background:${V(cn + "-outline-variant")};margin:4px 0}`;
     const deleteStyle = dangerFam ? ` style="color:${V(dangerFam)}"` : "";
-    const body = `<div class="tabs"><div class="tab tab--active">Overview</div><div class="tab">Activity</div><div class="tab">Settings</div></div><div class="menu"><div class="menu-item">Edit</div><div class="menu-item menu-item--hover">Duplicate</div><div class="menu-divider"></div><div class="menu-item"${deleteStyle}>Delete</div></div><p class="cap">Active tab underline is the brand token; the highlighted menu item is <code>${cn}-hover</code>${dangerFam ? "; Delete borrows the danger family" : ""}. Item radius is concentric with the popover's own — <code>{rounded.lg}</code> minus the popover's padding.</p>`;
+    const body = `<div class="tabs"><div class="tab tab--active">Overview</div><div class="tab">Activity</div><div class="tab">Settings</div></div><div class="menu"><div class="menu-item">Edit</div><div class="menu-item menu-item--hover">Duplicate</div><div class="menu-divider"></div><div class="menu-item"${deleteStyle}>Delete</div></div><p class="cap">Active tab underline is the brand token; the highlighted menu item is <code>${cn}-hover</code>${dangerFam ? "; Delete borrows the danger family" : ""}. Item radius is concentric with the popover's own, <code>{rounded.lg}</code> minus the popover's padding.</p>`;
     out.push(card("navigation.html", "Components", "Tabs & Menu", "active tab · menu · hover", navCss, body));
   }
 
-  // 7. Card — a raised surface. Inset reads the real spacing ladder (AdiaUI parity, #480, gen-ui-kit
-  //    main @ f43853d: their own card inset ladder is 14/16/18 — our space[4]=16 lands on their default
+  // 7. Card, a raised surface. Inset reads the real spacing ladder (AdiaUI parity, #480, gen-ui-kit
+  //    main @ f43853d: their own card inset ladder is 14/16/18, our space[4]=16 lands on their default
   //    exactly). No shadow: our own Elevation & Depth section already commits to surface-stepping over
-  //    shadows for a plain card — a deliberate, standing decision this ticket does not override (see Findings).
+  //    shadows for a plain card, a deliberate, standing decision this ticket does not override (see Findings).
   {
     const cardSpace = dsSpacing(geomSc);
     const cardPad = cardSpace[4] != null ? cardSpace[4] : 16;
     const cCss = `.panel{background:${V(cn + "-surface")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:${cardPad}px}.panel h4{font-family:${headStack};margin:0 0 8px}.pbtn{border:0;border-radius:${rMd}px;padding:12px;${uiFont};cursor:pointer;background:${V(brand)};color:${brandOn};margin-top:12px}`;
     out.push(card("card.html", "Components", "Card", "surface · elevation", cCss,
-      `<div class="panel"><h4>Card title</h4><p style="margin:0">Body copy on a raised surface over the background — elevation is a surface step, not a shadow.</p><button class="pbtn">Primary action</button></div>`));
+      `<div class="panel"><h4>Card title</h4><p style="margin:0">Body copy on a raised surface over the background, elevation is a surface step, not a shadow.</p><button class="pbtn">Primary action</button></div>`));
   }
 
-  // 8. Feedback — status + signature badges, alerts (a family's own -container tint), a toast (the
+  // 8. Feedback, status + signature badges, alerts (a family's own -container tint), a toast (the
   //    #471 inverse-surface pair), and a determinate progress bar. Dimensions/typography aligned to
   //    AdiaUI parity (#480, gen-ui-kit main @ f43853d): badge is mono/uppercase/tracked/tabular
   //    (translating their badge typography treatment into our own mono voice, not their font); alert
@@ -652,7 +652,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     const fCss = `.badge{display:inline-block;padding:1px 6px;border-radius:${rFull}px;font-family:${monoStack};font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;font-variant-numeric:tabular-nums;margin:0 8px 8px 0}.alert{display:flex;flex-direction:column;gap:4px;padding:8px 12px;border-radius:${rMd}px;margin-bottom:10px;font-size:13px}.toast{display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:${rMd}px;font-size:13px;max-width:384px}.progress-track{width:100%;height:6px;border-radius:${rFull}px;overflow:hidden;margin-bottom:6px}.progress-fill{height:100%;border-radius:${rFull}px}`;
     const chip = (f) => `<span class="badge" style="background:${V(f)};color:${V(f + "-on-" + f)}">${cap(f)}</span>`;
     const alertFams = (intents.length ? intents : fillFams).slice(0, 2);
-    // A full 1px border (the family's own token, subtle) alongside the existing left accent bar —
+    // A full 1px border (the family's own token, subtle) alongside the existing left accent bar,
     // AdiaUI's alert carries a full border; ours keeps the accent for a stronger status cue.
     const alerts = alertFams.map((f) => `<div class="alert" style="background:${has(f + "-container") ? V(f + "-container") : V(cn + "-surface-high")};border:1px solid ${V(f)};border-left:4px solid ${V(f)};color:${V(cn + "-on-surface")}"><strong>${cap(f)}</strong><span>Quiet emphasis on its own <code>-container</code> tint, never a solid fill.</span></div>`).join("");
     const toastOk = has(cn + "-inverse-surface") && has(cn + "-inverse-on-surface");
@@ -661,13 +661,13 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
       ? `<div class="toast" style="background:${V(cn + "-inverse-surface")};color:${V(cn + "-inverse-on-surface")};${toastShadow}">Changes saved</div>`
       : `<div class="toast" style="background:${V(cn + "-on-surface")};color:${V(cn + "-surface")};${toastShadow}">Changes saved</div>`;
     const pct = 62;
-    const progress = `<div class="progress-track" style="background:${V(cn + "-surface-high")}"><div class="progress-fill" style="width:${pct}%;background:${V(brand)}"></div></div><p class="cap">${pct}% — track <code>${cn}-surface-high</code>, fill <code>${brand}</code>.</p>`;
+    const progress = `<div class="progress-track" style="background:${V(cn + "-surface-high")}"><div class="progress-fill" style="width:${pct}%;background:${V(brand)}"></div></div><p class="cap">${pct}%, track <code>${cn}-surface-high</code>, fill <code>${brand}</code>.</p>`;
     out.push(card("feedback.html", "Components", "Feedback", "status · alerts · toast · progress", fCss,
-      `<p class="cap">Status (intent only)</p><div>${intents.map(chip).join("")}</div><p class="cap" style="margin-top:12px">Signature (brand light — small reads)</p><div>${sigFams.map(chip).join("")}</div><p class="cap" style="margin-top:16px">Alerts</p>${alerts}<p class="cap">Toast</p>${toast}<p class="cap" style="margin-top:12px">Progress</p>${progress}`));
+      `<p class="cap">Status (intent only)</p><div>${intents.map(chip).join("")}</div><p class="cap" style="margin-top:12px">Signature (brand light, small reads)</p><div>${sigFams.map(chip).join("")}</div><p class="cap" style="margin-top:16px">Alerts</p>${alerts}<p class="cap">Toast</p>${toast}<p class="cap" style="margin-top:12px">Progress</p>${progress}`));
   }
 
-  // 9. Motion — animates its own duration/easing tokens; `prefers-reduced-motion: reduce` swaps the
-  //    moving keyframe for a same-timing, opacity-only cross-fade (reduce, don't remove — DESIGN.md's
+  // 9. Motion, animates its own duration/easing tokens; `prefers-reduced-motion: reduce` swaps the
+  //    moving keyframe for a same-timing, opacity-only cross-fade (reduce, don't remove, DESIGN.md's
   //    own Motion section rule) instead of freezing the preview.
   {
     const dur = MOTION_DURATION.medium2;
@@ -681,7 +681,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     out.push(card("motion.html", "Foundations", "Motion", "duration · easing · reduced motion", motionCss, body));
   }
 
-  // 10. Typography — the FULL scale: every voice, every step (not one cherry-picked key per tier).
+  // 10. Typography, the FULL scale: every voice, every step (not one cherry-picked key per tier).
   {
     const STEP_ORDER = ["XS", "SM", "MD", "LG", "XL", "2XL"];
     const roleOf = (typeSc && typeSc.roleOf) || {};
@@ -708,7 +708,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     out.push(card("typography.html", "Foundations", "Typography", "every voice · every step", "", body));
   }
 
-  // 11. Spacing & radii — unchanged.
+  // 11. Spacing & radii, unchanged.
   {
     const space = dsSpacing(geomSc);
     const bars = space.map((v, i) => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><code style="width:56px">${DS_SPACE_NAMES[i] || i}</code><div style="height:12px;width:${Math.max(2, v)}px;background:${V(ds.families[0])};border-radius:2px"></div><span class="cap">${v}px</span></div>`).join("");
@@ -719,9 +719,9 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   return out;
 }
 
-// dsSpineBody — the 10-section prose body (§5.1 order). Every role token is named in prose (accord),
+// dsSpineBody, the 10-section prose body (§5.1 order). Every role token is named in prose (accord),
 // the Colors section teaches the naming grammar, and the Agent Prompt Guide carries the runtime
-// `color-scheme` + `light-dark()` idiom (light-dark ONLY here, never in a carrier — §6.4).
+// `color-scheme` + `light-dark()` idiom (light-dark ONLY here, never in a carrier, §6.4).
 function dsSpineBody(ds, state, ctx) {
   const { pfx, name, story, cn, brand, secondary, accent, metal, usedLevels, radii, geomSc } = ctx;
   const has = (n) => ds.tokens.some((t) => t.name === n) || n === ds.alias.name;
@@ -735,26 +735,26 @@ function dsSpineBody(ds, state, ctx) {
   const narrative = story.narrative || `The ${name} system: calm, even surfaces carry the layout and color arrives as accent.`;
   const refuses = story.refuses || "Generic, low-contrast, decorative color with no semantic role.";
 
-  // Colors — enumerate every family + chrome slot so the prose–token accord holds.
-  const famBullet = (f, note) => has(f) ? `- **${cap(f)} \`${ref(f)}\`** — ${note} Its label is \`${ref(f + "-on-" + f)}\`.` : "";
+  // Colors, enumerate every family + chrome slot so the prose–token accord holds.
+  const famBullet = (f, note) => has(f) ? `- **${cap(f)} \`${ref(f)}\`**, ${note} Its label is \`${ref(f + "-on-" + f)}\`.` : "";
   const brandBullets = [
     famBullet(brand, "the one decisive action per view: CTAs, links, selection. `-hover`/`-active` carry its states."),
     secondary ? famBullet(secondary, "supporting actions and quieter emphasis.") : "",
     accent ? famBullet(accent, "highlights, tags, and accents.") : "",
-    ...mutedSig.filter((f) => f !== metal).map((f) => famBullet(f, "a signature brand light — small, loud reads (featured/live markers), never a field of color.")),
+    ...mutedSig.filter((f) => f !== metal).map((f) => famBullet(f, "a signature brand light, small, loud reads (featured/live markers), never a field of color.")),
     metal ? famBullet(metal, "a light metallic fill in both schemes with a near-black label: chips, tags, meta badges.") : "",
     // catch-all: families the named pickers miss (e.g. a `tertiary` with no "accent" in its name) still
-    // get a role bullet — every family that ships tokens gets a usage boundary (prose–token accord).
+    // get a role bullet, every family that ships tokens gets a usage boundary (prose–token accord).
     ...fams.filter((f) => f !== cn && ![brand, secondary, accent, metal, ...mutedSig, ...intents].includes(f))
-      .map((f) => famBullet(f, `a supporting brand family — quieter emphasis and category accents; never competes with \`${ref(brand)}\` for the primary action.`)),
-    ...intents.map((f) => famBullet(f, "status only — intent colors carry meaning, never decoration.")),
+      .map((f) => famBullet(f, `a supporting brand family, quieter emphasis and category accents; never competes with \`${ref(brand)}\` for the primary action.`)),
+    ...intents.map((f) => famBullet(f, "status only, intent colors carry meaning, never decoration.")),
   ].filter(Boolean).join("\n");
 
   const colors = [
     "## Colors", "",
     "Reason over **roles**, never raw hexes. Each role names its light value; the frontmatter carries the",
     "`-dark` sibling. Fill/on-pairs follow the kit's `onColorMode` setting; contrast is measured", "",
-    "and disclosed in the bundle receipt — values are the kit's own, never silently corrected.", "",
+    "and disclosed in the bundle receipt, values are the kit's own, never silently corrected.", "",
     "### Token naming", "",
     `Every color token follows the **Ultimate Tokens grammar**: \`--{prefix}-{family}-{slot}\`. This`,
     `project's prefix is \`${pfx}\`; its families are ${fams.map((f) => `\`${f}\``).join(", ")}. Construct names, do not invent them:`, "",
@@ -764,46 +764,46 @@ function dsSpineBody(ds, state, ctx) {
     `- App surfaces live in the neutral family: \`--${pfx}-${cn}-background\`, \`-surface\`, \`-surface-high\`; text on`,
     "  them: `-on-surface`, `-on-surface-variant`; hairlines: `-outline-variant`.",
     `- **Prefix-adaptive**: under another prefix (\`--md-sys-*\`, \`--color-*\`), keep \`{family}-{slot}\` intact and swap only the prefix.`, "",
-    `- **Surfaces** — the room, lowest to top: Background \`${ref(cn + "-background")}\` / Surface \`${ref(cn + "-surface")}\` /`,
-    `  Surface-raised \`${ref(cn + "-surface-high")}\`; hover wash \`${ref(cn + "-surface-dim")}\` (darker in BOTH schemes — an`,
-    `  interaction STATE, never \`-surface-high\`, which is a MIRRORED elevation stop). **Foreground \`${ref(cn + "-on-surface")}\`** — primary text; **Muted`,
-    `  \`${ref(cn + "-on-surface-variant")}\`** — secondary text; **Border \`${ref(cn + "-outline-variant")}\`** — a translucent hairline (same value`,
-    `  both schemes); **Strong border \`${ref(cn + "-outline")}\`** — a firmer hairline for a stronger divide (a table's`,
+    `- **Surfaces**, the room, lowest to top: Background \`${ref(cn + "-background")}\` / Surface \`${ref(cn + "-surface")}\` /`,
+    `  Surface-raised \`${ref(cn + "-surface-high")}\`; hover wash \`${ref(cn + "-surface-dim")}\` (darker in BOTH schemes, an`,
+    `  interaction STATE, never \`-surface-high\`, which is a MIRRORED elevation stop). **Foreground \`${ref(cn + "-on-surface")}\`**, primary text; **Muted`,
+    `  \`${ref(cn + "-on-surface-variant")}\`**, secondary text; **Border \`${ref(cn + "-outline-variant")}\`**, a translucent hairline (same value`,
+    `  both schemes); **Strong border \`${ref(cn + "-outline")}\`**, a firmer hairline for a stronger divide (a table's`,
     "  own header rule, never a row's), still never a full outline weight.",
-    `- **Extended neutral slots** — **Placeholder \`${ref(cn + "-placeholder")}\`** (field placeholder text, never`,
-    `  \`on-surface-variant\`); **Scrim \`${ref(cn + "-scrim")}\`** (a neutral overlay tint — distinct from the fixed`,
+    `- **Extended neutral slots**, **Placeholder \`${ref(cn + "-placeholder")}\`** (field placeholder text, never`,
+    `  \`on-surface-variant\`); **Scrim \`${ref(cn + "-scrim")}\`** (a neutral overlay tint, distinct from the fixed`,
     `  \`--${pfx}-dialog-backdrop\` a real dialog uses, see Elevation & Depth); **Inverse \`${ref(cn + "-inverse-surface")}\`** /`,
-    `  \`${ref(cn + "-inverse-on-surface")}\` (a surface that inverts the app's OWN neutral — toasts, tooltips —`,
+    `  \`${ref(cn + "-inverse-on-surface")}\` (a surface that inverts the app's OWN neutral, toasts, tooltips —`,
     "  never a brand family's).",
-    `- **\`-container\` / \`-container-low\` / \`-container-high\`** — quiet emphasis without a full fill, on any family`,
+    `- **\`-container\` / \`-container-low\` / \`-container-high\`**, quiet emphasis without a full fill, on any family`,
     `  (\`${ref(brand + "-container")}\`, \`${ref((intents[0] || fams[fams.length - 1]) + "-container")}\`): a status banner or a`,
     "  tinted panel that reads as the family without competing with its solid fill.",
     brandBullets, "",
-    "**Pairing law.** Text on a family fill uses that family's `on-{family}` token — which differs by",
+    "**Pairing law.** Text on a family fill uses that family's `on-{family}` token, which differs by",
     "scheme (light fills pair with white; the brighter dark-scheme fills pair with near-black). Text on",
     "background/surface uses `on-surface` or `on-surface-variant`. A crossed pair fails contrast in one scheme.",
   ].join("\n");
 
-  // Prime swatches (REQ-054) — an EXTRA section (rides the unknown-section tolerance, like Data
-  // series/Iconography/Motion), always present (not opt-in — every enabled palette carries a prime
+  // Prime swatches (REQ-054), an EXTRA section (rides the unknown-section tolerance, like Data
+  // series/Iconography/Motion), always present (not opt-in, every enabled palette carries a prime
   // system). Lists every family (including data-N) with its prime token pattern; the actual seven
   // values per family live in tokens.json's own `prime` block, not the frontmatter `colors:` map.
   const primeFamilies = Object.keys(ds.prime || {});
   const primeSection = primeFamilies.length
     ? [
         "## Prime swatches", "",
-        "Every palette also carries its own **prime** system — seven identity swatches on a private",
+        "Every palette also carries its own **prime** system, seven identity swatches on a private",
         "OKHSL ladder, lightest to darkest: `brightest`, `brighter`, `bright`, `prime`, `dim`, `dimmer`,",
         "`dimmest`. They are primitives-tier and mode-independent (the SAME seven swatches in both",
-        "schemes, never subject to `onColorMode`) — `tokens.json`'s `prime` block carries the full",
+        "schemes, never subject to `onColorMode`), `tokens.json`'s `prime` block carries the full",
         "seven-step `{hex, oklch}` value per family. Reach for `prime` as a family's own signature",
         "colour outside a fill/on-fill pair (a sparkline, a small identity mark, a legend swatch); it is",
-        "never a button fill — buttons use the family's role tokens above.", "",
+        "never a button fill, buttons use the family's role tokens above.", "",
         primeFamilies.map((f) => `- \`--${pfx}-${f}-prime-{step}\` (\`${f}\`)`).join("\n"),
       ].join("\n")
     : "";
 
-  // Data series (#503 REQ-031) — an EXTRA section (rides the unknown-section tolerance, like
+  // Data series (#503 REQ-031), an EXTRA section (rides the unknown-section tolerance, like
   // Iconography/Motion below), present only when the kit has enabled `data-N` palettes. A chart
   // series is neither a brand action nor a status color, so it earns its own short listing rather
   // than folding into the Colors family bullets above.
@@ -811,7 +811,7 @@ function dsSpineBody(ds, state, ctx) {
     ? [
         "## Data series", "",
         "Charts and data visualizations pull categorical/sequential series colors from the dedicated",
-        "`data-N` family, never from a brand or intent color — a brand color means action, an intent",
+        "`data-N` family, never from a brand or intent color, a brand color means action, an intent",
         "color means status, a data series means neither.", "",
         ds.dataFamilies.map((f) => `- \`${ref(f)}\``).join("\n"),
       ].join("\n")
@@ -821,8 +821,8 @@ function dsSpineBody(ds, state, ctx) {
   const typography = [
     "## Typography", "",
     "Set size **and** line-height **and** weight together from one level, never free-type; leading is a",
-    "unitless factor and any tracking is em — never px. The frontmatter carries the working scale",
-    `(${usedLevels.length} levels). Weight is voice — never interchange the weights across roles.`,
+    "unitless factor and any tracking is em, never px. The frontmatter carries the working scale",
+    `(${usedLevels.length} levels). Weight is voice, never interchange the weights across roles.`,
     "",
     DS_TEXT_RENDERING_MD,
   ].join("\n");
@@ -831,26 +831,26 @@ function dsSpineBody(ds, state, ctx) {
     "## Layout", "",
     "Compose every gap and padding from the spacing scale (`{spacing.xs}` … `{spacing.5xl}`); an off-scale",
     "gap does not exist. Keep a comfortable reading measure (~60–75ch), align to a consistent grid, and let",
-    "whitespace do the separating — borders are a last resort. Group related content in cards with generous",
+    "whitespace do the separating, borders are a last resort. Group related content in cards with generous",
     "internal padding (`{spacing.xl}`).",
   ].join("\n");
 
   const elevation = [
     "## Elevation & Depth", "",
     "Elevation is a **surface step, not a drop shadow**: `background` → `surface` → `surface-high`. A shadow",
-    "is optional garnish on the top-most surfaces (popovers, menus) — one soft low-alpha layer at most.",
-    "A modal/dialog's own backdrop is a separate, fixed system constant — `" + `--${pfx}-dialog-backdrop` + "`",
-    "(opaque black at 80% alpha) — neutral chrome, never a brand-tinted scrim.",
+    "is optional garnish on the top-most surfaces (popovers, menus), one soft low-alpha layer at most.",
+    "A modal/dialog's own backdrop is a separate, fixed system constant, `" + `--${pfx}-dialog-backdrop` + "`",
+    "(opaque black at 80% alpha), neutral chrome, never a brand-tinted scrim.",
   ].join("\n");
 
   const shapes = [
     "## Shapes", "",
     "Soft-but-engineered: chips and tags `{rounded.xs}`, inputs `{rounded.sm}`, buttons `{rounded.md}`, cards",
     "and panels `{rounded.lg}`, modals `{rounded.xl}`, pills and avatars `{rounded.full}`. One radius language",
-    "per view — rounded and sharp corners do not mix.",
+    "per view, rounded and sharp corners do not mix.",
   ].join("\n");
 
-  // Iconography — an EXTRA section (canonical-order gate reads only the 8 canonical headings; extras ride
+  // Iconography, an EXTRA section (canonical-order gate reads only the 8 canonical headings; extras ride
   // the unknown-section tolerance). Prose, not frontmatter: the icon system is a binding RULE, not a token
   // with a value, and a frontmatter key would trip the Stitch schema linter's unknown-key check.
   const ic = iconSystem((state && state.icons) || {});
@@ -862,38 +862,38 @@ function dsSpineBody(ds, state, ctx) {
     `**${iconSystemLabel(ic)}**${ic.license ? ` (${ic.license})` : ""} is this system's icon set${ic.url ? ` — \`${ic.url}\`` : ""}.`,
     ic.variant
       ? `Use the **${ic.variant}** ${ic.id === "phosphor" || ic.id === "tabler" || ic.id === "remix" ? "weight" : "style"} everywhere; mixing weights across one view reads as two systems.`
-      : "It ships one style — keep stroke width uniform across a view.",
+      : "It ships one style, keep stroke width uniform across a view.",
     "",
-    iconSizes ? `Icon SIZES come from the control ramp, never from the glyph: ${iconSizes}. An icon centers in a square cell of side = its control's height, so it scales with the control, not on its own.` : "Icon sizes come from the control ramp — an icon scales with its control, never on its own.",
+    iconSizes ? `Icon SIZES come from the control ramp, never from the glyph: ${iconSizes}. An icon centers in a square cell of side = its control's height, so it scales with the control, not on its own.` : "Icon sizes come from the control ramp, an icon scales with its control, never on its own.",
     "",
-    "Do NOT substitute another icon set, and do NOT mix emoji into the icon layer — an icon carries meaning in the",
+    "Do NOT substitute another icon set, and do NOT mix emoji into the icon layer, an icon carries meaning in the",
     "system's own hand; an emoji imports someone else's.",
   ].join("\n");
 
-  // Motion — an EXTRA section (like Iconography). Its contract (durations · easings · what never
+  // Motion, an EXTRA section (like Iconography). Its contract (durations · easings · what never
   // animates · reduced-motion policy) is design-md-format's; the VALUES are system constants with
   // provenance (see src/engine/motion.mjs), not user parameters, so this section is a rulebook.
   const motion = [
     "## Motion", "",
     "Motion is a token, never a number you type. Bind the curves and the ms ladder below; a raw",
     "`300ms ease` in a component is a defect.", "",
-    "**Duration — tier by scope.** Small components (switch, checkbox) run short",
+    "**Duration, tier by scope.** Small components (switch, checkbox) run short",
     `(\`${MOTION_DURATION.short2}\`–\`${MOTION_DURATION.short4}\`ms); partial-screen surfaces (menu, drawer, card) run medium`,
     `(\`${MOTION_DURATION.medium1}\`–\`${MOTION_DURATION.medium4}\`ms); full-screen transitions run long (\`${MOTION_DURATION.long1}\`ms+). **100ms is the "instant" floor** —`,
     "feedback faster than that is felt as immediate; past ~400ms a transition starts reading as slow.", "",
-    "**Entrances decelerate. Exits accelerate — and run faster.** The user is done with the thing and",
+    "**Entrances decelerate. Exits accelerate, and run faster.** The user is done with the thing and",
     "waiting for what's next: a drawer opens in ~250ms and closes in ~200ms; a modal appears in ~300ms",
     "and dismisses in ~200ms. Symmetric timing reads as sluggish dismissal. The asymmetry FLIPS with the",
     "initiator: user-initiated UI answers fast and departs gently; system-initiated UI (an error) enters",
     "slowly enough to be noticed and gets out of the way fast.", "",
     `**Easing.** Entrances \`${MOTION_EASING["standard-decelerate"]}\`; exits \`${MOTION_EASING["standard-accelerate"]}\`; on-screen utility motion`,
     `\`${MOTION_EASING.standard}\`; technical motion (spinners, progress) stays \`linear\`. The **emphasized** family`,
-    "is for hero moments only — everywhere-emphasized is just standard with extra cost.", "",
-    "**Animate `transform` and `opacity`, nothing else** — they are the only properties the compositor",
+    "is for hero moments only, everywhere-emphasized is just standard with extra cost.", "",
+    "**Animate `transform` and `opacity`, nothing else**, they are the only properties the compositor",
     "holds at 60fps off the main thread. Never animate:", "",
-    ...MOTION_NEVER.map(([what, why]) => `- **${what}** — ${why}.`),
+    ...MOTION_NEVER.map(([what, why]) => `- **${what}**, ${why}.`),
     "",
-    "**Reduced motion: reduce, don't remove.** Honour `@media (prefers-reduced-motion: reduce)` — it means",
+    "**Reduced motion: reduce, don't remove.** Honour `@media (prefers-reduced-motion: reduce)`, it means",
     "\"this user gets vestibular-safe motion\", not \"this user wants a static page\". Substitute a cross-fade",
     "for the vestibular triggers (parallax, background video, zoom/scale, spin, slide-everything transitions),",
     "keep the opacity change, and keep every state legible without motion. Nothing flashes more than three",
@@ -902,14 +902,14 @@ function dsSpineBody(ds, state, ctx) {
 
   const components = [
     "## Components", "",
-    "State the interactive states explicitly — generic output betrays itself in hover/focus/disabled.", "",
+    "State the interactive states explicitly, generic output betrays itself in hover/focus/disabled.", "",
     `- **Buttons.** \`button-primary\` per the frontmatter; **hover** \`${ref(brand + "-hover")}\`, **active**`,
     `  \`${ref(brand + "-active")}\` (each ships both scheme ends) paired with a \`scale(0.97)\` press transform;`,
     `  **focus** a 2px \`${ref(brand)}\` outline at 2px offset; **disabled** \`${ref(brand + "-disabled")}\` (the inert 60%`,
-    "  wash, mode-independent). EVERY fill family carries its own `-hover` and `-disabled` — any intent is a real",
+    "  wash, mode-independent). EVERY fill family carries its own `-hover` and `-disabled`, any intent is a real",
     `  button; state fills and labels are the kit's role values under its \`onColorMode\` setting. Non-solid`,
     `  variants: **outline** (transparent, \`${ref(brand)}\` border+text), **ghost** (transparent, \`${ref(brand)}\` text —`,
-    `  never a fill, even at rest), **tonal** (\`${ref(brand + "-container")}\` fill, \`${ref(brand)}\` text — a standing`,
+    `  never a fill, even at rest), **tonal** (\`${ref(brand + "-container")}\` fill, \`${ref(brand)}\` text, a standing`,
     "  tint, not just a hover state).",
     `- **Inputs.** \`${ref(cn + "-surface")}\` field, 1px \`${ref(cn + "-outline-variant")}\`, \`${ref(cn + "-on-surface")}\` text,`,
     `  \`${ref(cn + "-placeholder")}\` placeholder; **focus** swaps the border to \`${ref(brand)}\` plus a 2px ring.`,
@@ -920,21 +920,21 @@ function dsSpineBody(ds, state, ctx) {
   const donts = [
     "## Do's and Don'ts", "",
     "**Three hard rules:**", "",
-    "- ❌ **Never hardcode a color.** Every color is a role — bind to the role so a re-theme flows everywhere.",
+    "- ❌ **Never hardcode a color.** Every color is a role, bind to the role so a re-theme flows everywhere.",
     "- ❌ **Never cross an on-pair.** Use the fill's own `on-{family}` token (per scheme), or contrast fails in one scheme.",
     `- ❌ **Never stack competing primaries.** One \`${brand}\` action per view.`, "",
     "**Prefer:**", "",
-    `- Reach for ${intents.map((f) => `\`${f}\``).join("/")} only for status; ${mutedSig.map((f) => `\`${f}\``).join(", ") || "signature families"} are brand light, not status — small reads, never fields of color.`,
+    `- Reach for ${intents.map((f) => `\`${f}\``).join("/")} only for status; ${mutedSig.map((f) => `\`${f}\``).join(", ") || "signature families"} are brand light, not status, small reads, never fields of color.`,
     "- Elevate by stepping the surface ladder, not by heavy shadows.",
     "- Compose spacing, radii, and type from the scales; express states with the `-hover`/`-active`/`-disabled` tokens, not raw opacity guesses.",
     "- Express motion with the easing + duration tokens (entrances decelerate, exits accelerate and run faster); never type a raw ms or `cubic-bezier()` into a component, and animate only `transform`/`opacity`.",
-    // The signature/metal families carry quiet emphasis, not action — a POSITIVE bullet (the theme's
+    // The signature/metal families carry quiet emphasis, not action, a POSITIVE bullet (the theme's
     // negative-space `refuses` clause belongs in the Overview, never under "Prefer:", where it inverts).
     metal
-      ? `- Let \`${metal}\` carry quiet metallic emphasis — small reads${secondary ? `; keep \`${secondary}\` for actions` : ", not fields of color"}.`
+      ? `- Let \`${metal}\` carry quiet metallic emphasis, small reads${secondary ? `; keep \`${secondary}\` for actions` : ", not fields of color"}.`
       : mutedSig.length
-        ? `- Let ${mutedSig.map((f) => `\`${f}\``).join(", ")} carry quiet signature emphasis — small reads, not fields of color.`
-        : "- Let signature families carry quiet emphasis — small reads, not fields of color.",
+        ? `- Let ${mutedSig.map((f) => `\`${f}\``).join(", ")} carry quiet signature emphasis, small reads, not fields of color.`
+        : "- Let signature families carry quiet emphasis, small reads, not fields of color.",
   ].join("\n");
 
   const responsive = [
@@ -950,11 +950,11 @@ function dsSpineBody(ds, state, ctx) {
   const agent = [
     "## Agent Prompt Guide", "",
     `You are generating UI for **${name}**. Work in this order:`, "",
-    "1. **Tokens first** — colors, type, spacing, radii from the frontmatter; never invent a value. If a",
+    "1. **Tokens first**, colors, type, spacing, radii from the frontmatter; never invent a value. If a",
     "   `tokens.json` arrived beside this file, it carries these same values plus the FULL extended layers",
-    "   (`semantic`/`semanticDark`, the complete `geometry` system) — prefer it for exhaustive lookups.",
-    "2. **Roles, then scheme** — pick the semantic role; both ends are provided, so never hand-roll a dark",
-    "   variant. Define the roles once as custom properties with native scheme switching — `color-scheme`",
+    "   (`semantic`/`semanticDark`, the complete `geometry` system), prefer it for exhaustive lookups.",
+    "2. **Roles, then scheme**, pick the semantic role; both ends are provided, so never hand-roll a dark",
+    "   variant. Define the roles once as custom properties with native scheme switching, `color-scheme`",
     "   on `:root` is required or the dark end never fires:", "",
     "   ```css",
     "   :root {",
@@ -964,22 +964,22 @@ function dsSpineBody(ds, state, ctx) {
     "     /* …every role, from its light + -dark pair… */",
     "   }",
     "   ```",
-    "3. **Scale, then states** — size and space from the scales, then add hover/focus/active/disabled from",
-    "   the Components section — states are where generic output shows.",
-    `4. **One focus per view** — a single \`${brand}\` action; signature families are small reads; intent colors speak only for status.`,
-    `5. **Name by grammar** — construct every token as \`--${pfx}-{family}-{slot}\`; if the host carries a different prefix, adapt the prefix and keep \`{family}-{slot}\` intact.`, "",
+    "3. **Scale, then states**, size and space from the scales, then add hover/focus/active/disabled from",
+    "   the Components section, states are where generic output shows.",
+    `4. **One focus per view**, a single \`${brand}\` action; signature families are small reads; intent colors speak only for status.`,
+    `5. **Name by grammar**, construct every token as \`--${pfx}-{family}-{slot}\`; if the host carries a different prefix, adapt the prefix and keep \`{family}-{slot}\` intact.`, "",
     "When rules conflict, the three hard rules win. Mirror the structure and pairing of the `components/` previews.",
   ].filter((l) => l !== "").join("\n");
 
   const overview = [
-    `# ${name} — Design System`, "",
-    "_Read this file as your instructions — it is the prompt. Token values are normative; the prose explains",
+    `# ${name}, Design System`, "",
+    "_Read this file as your instructions, it is the prompt. Token values are normative; the prose explains",
     "how to apply them. Every color role ships a light value and a `-dark` sibling: pick the pair, not one",
     "end. (Generated by Ultimate Tokens.)_", "",
     "## Overview", "",
     narrative, "",
     "Restraint over decoration: whitespace, hierarchy, one decisive action per view.", "",
-    // The theme's negative-space clause — what it refuses — lives HERE (a descriptive boundary
+    // The theme's negative-space clause, what it refuses, lives HERE (a descriptive boundary
     // statement), led by an explicit negation so it never reads as a directive to DO the refused thing,
     // and never under "Prefer:" where the same words would invert.
     `Deliberately refused: ${refuses}`,
@@ -988,10 +988,10 @@ function dsSpineBody(ds, state, ctx) {
   return [overview, colors, primeSection, dataSeries, typography, layout, elevation, shapes, iconography, motion, components, donts, responsive, agent].filter(Boolean).join("\n\n");
 }
 
-// exportDesignSystemReceipt — the README.md profile receipt (§4). Every 🟢 cites a check; DIVERGENCE
+// exportDesignSystemReceipt, the README.md profile receipt (§4). Every 🟢 cites a check; DIVERGENCE
 // lines (constant cross-scheme on-colors) are called out per the standing rule. opts.date stamps the run
 // (the caller passes it; the engine is pure). opts.profile selects the platform profile receipt:
-// "claude-code" (default — the full DESIGN.md + tokens.json + previews bundle) or "google-stitch"
+// "claude-code" (default, the full DESIGN.md + tokens.json + previews bundle) or "google-stitch"
 // (the DESIGN.md-only upload set; the same canonical spine, a Stitch-lint-framed receipt).
 export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
   const ds = dsColorRoles(state);
@@ -1004,13 +1004,13 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
   const nGrammar = ds.tokens.length, nTotal = nGrammar + (ds.aliasDistinct ? 1 : 0); // + the primary alias (only when distinct)
   const previews = exportDesignSystemComponents(state, typeSc, geomSc);
   const mutedSig = ds.families.filter((f) => /muted/.test(f));
-  // DIVERGENCE: on-colors equal across schemes (authorial, called out — never silently overridden).
+  // DIVERGENCE: on-colors equal across schemes (authorial, called out, never silently overridden).
   const div = ds.tokens.filter((t) => /-on-/.test(t.name) && t.light.hex.toUpperCase() === t.dark.hex.toUpperCase());
-  const divLines = div.map((t) => `- ℹ️ DIVERGENCE (authorial, called out per the standing rule): \`${t.name}\` = \`${t.light.oklch}\` in both schemes — a light fill that takes a near-black label in both schemes (rationale in this bundle's Colors guidance); the design-system gate flags it on every run and it is disclosed here.`);
+  const divLines = div.map((t) => `- ℹ️ DIVERGENCE (authorial, called out per the standing rule): \`${t.name}\` = \`${t.light.oklch}\` in both schemes, a light fill that takes a near-black label in both schemes (rationale in this bundle's Colors guidance); the design-system gate flags it on every run and it is disclosed here.`);
   const scaleSteps = typeSc && typeSc.categories ? Object.values(typeSc.categories).reduce((a, s) => a + Object.keys(s).length, 0) : 0;
-  // OKLCH payload fidelity — the round-trip a consumer runs: parse each OKLCH value AND the 8-bit hex it
+  // OKLCH payload fidelity, the round-trip a consumer runs: parse each OKLCH value AND the 8-bit hex it
   // derives to sRGB8, take the max per-channel deviation over RGB (integer bytes) and ALPHA (pyRound(a·255),
-  // half-to-even — matching the §8 gate; the translucent outline-variant's 30% vs its 8-digit-hex byte is
+  // half-to-even, matching the §8 gate; the translucent outline-variant's 30% vs its 8-digit-hex byte is
   // the 1-LSB worst case). The frontmatter and tokens.json now BOTH carry this OKLCH, so G3 measures dev 0
   // between the two carriers; this cites the OKLCH→8-bit fidelity the ±1/255 claim rests on.
   let carrierMaxDev = 0;
@@ -1025,7 +1025,7 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
 
   // ── gate lines shared by every profile (the carrier IS the same canonical core) ──
   // KIT FIDELITY: contrast is MEASURED over every derivable on/fill pair (the §8 G1 derivation run on
-  // this very bundle's carriers) and DISCLOSED — never silently corrected. `onColorMode` is the user's
+  // this very bundle's carriers) and DISCLOSED, never silently corrected. `onColorMode` is the user's
   // setting: "fixed" is the uniform-brand-label choice whose sub-4.5 pairs are an accepted brand
   // override (ADR-003); "contrast" re-points labels per fill inside the role table itself.
   const onMode = state && state.onColorMode === "contrast" ? "contrast" : "fixed";
@@ -1038,58 +1038,58 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
   const g1Pass = gateRun.findings.filter((f) => f.level === "PASS" && f.gate === "G1").map((f) => f.msg);
   const contrastLines = g1Fails.length === 0
     ? [
-        `- 🟢 Contrast: every derivable fill/on-pair ≥ 4.5:1 in both schemes, measured on this bundle's carriers (${g1Pass.join("; ") || "all pairs pass"}) — under the kit's \`onColorMode: ${onMode}\``,
+        `- 🟢 Contrast: every derivable fill/on-pair ≥ 4.5:1 in both schemes, measured on this bundle's carriers (${g1Pass.join("; ") || "all pairs pass"}), under the kit's \`onColorMode: ${onMode}\``,
       ]
     : [
-        `- 🟡 Contrast measured: ${g1Fails.length} derivable fill/on-pair(s) below 4.5:1 under the kit's \`onColorMode: ${onMode}\` — the uniform brand on-colors the user set (an accepted brand override, ADR-003); values ship VERBATIM and the misses are disclosed, never silently corrected:`,
+        `- 🟡 Contrast measured: ${g1Fails.length} derivable fill/on-pair(s) below 4.5:1 under the kit's \`onColorMode: ${onMode}\`, the uniform brand on-colors the user set (an accepted brand override, ADR-003); values ship VERBATIM and the misses are disclosed, never silently corrected:`,
         ...g1Fails.slice(0, 8).map((f) => `  - ${f.msg}`),
         ...(g1Fails.length > 8 ? [`  - … ${g1Fails.length - 8} more (run the §8 gate for the full list)`] : []),
         "  Switching the kit to `onColorMode: contrast` re-points each label to its measured end.",
       ];
   const schemeParityLine = ds.aliasDistinct
     ? `- 🟢 Scheme parity: identical ${nTotal}-key inventory (${nGrammar} grammar tokens + the \`primary\` Stitch-compat alias); schemes ride as \`-dark\` siblings`
-    : `- 🟢 Scheme parity: identical ${nTotal}-key inventory (${nGrammar} grammar tokens; the brand family is already named \`primary\`, so it doubles as the Stitch-required key — no separate alias); schemes ride as \`-dark\` siblings`;
-  // SELF-CONTAINED (standing rule): a receipt never references a path outside its own shipped folder —
+    : `- 🟢 Scheme parity: identical ${nTotal}-key inventory (${nGrammar} grammar tokens; the brand family is already named \`primary\`, so it doubles as the Stitch-required key, no separate alias); schemes ride as \`-dark\` siblings`;
+  // SELF-CONTAINED (standing rule): a receipt never references a path outside its own shipped folder,
   // the consuming harness may have ONLY this folder. Cite what was measured, not where a sibling lives.
   const carrierLine = `- 🟢 OKLCH payload fidelity: every frontmatter value round-trips to 8-bit sRGB within ±1/255 per channel (measured max dev: ${carrierMaxDev})`;
 
   // ── Stitch profile: DESIGN.md-only upload set; a Stitch-lint-framed receipt ──
   if (profile === "google-stitch") {
     return [
-      `# ${folder} — Stitch profile export`, "",
+      `# ${folder}, Stitch profile export`, "",
       `Google Stitch upload set for **${name}**, per the Ultimate Tokens Stitch profile.`,
       "Generated by Ultimate Tokens.", "",
-      "**Contents:** `DESIGN.md` only — Stitch consumes a single file. It is rendered from the",
+      "**Contents:** `DESIGN.md` only, Stitch consumes a single file. It is rendered from the",
       "same canonical core as this kit's other platform exports; this folder is complete on its own.", "",
       `## Profile receipt (checks run ${date})`, "",
       "Values are **OKLCH** (the adopted payload standard); `light-dark()` stays out of this",
-      "carrier — Stitch's linter rejects it, so schemes ride as `-dark` siblings.", "",
-      "- 🟢 `prelint.py check`: 0 errors — sections in Stitch canonical order (Overview · Colors · Typography · Layout ·",
+      "carrier, Stitch's linter rejects it, so schemes ride as `-dark` siblings.", "",
+      "- 🟢 `prelint.py check`: 0 errors, sections in Stitch canonical order (Overview · Colors · Typography · Layout ·",
       "  Elevation & Depth · Shapes · Components · Do's and Don'ts; Responsive Behavior + Agent Prompt Guide ride the",
       ...(ds.aliasDistinct
         ? ["  unknown-section tolerance); every `{path.to.token}` reference resolves; `primary` compat alias present",
            "  (satisfies `missing-primary`, so Stitch never auto-generates key colors)"]
         : ["  unknown-section tolerance); every `{path.to.token}` reference resolves; the brand family is named `primary`",
-           "  (so it satisfies `missing-primary` directly — Stitch never auto-generates key colors)"]),
+           "  (so it satisfies `missing-primary` directly, Stitch never auto-generates key colors)"]),
       ...contrastLines,
       schemeParityLine,
       carrierLine,
-      "- 🟡 `npx @google/design.md lint`: 0 errors — `orphaned-tokens` warnings on the per-role `-dark` siblings (the",
+      "- 🟡 `npx @google/design.md lint`: 0 errors, `orphaned-tokens` warnings on the per-role `-dark` siblings (the",
       "  OKLCH schema carries no scheme axis to reference them) plus the prose-only chrome tokens are a documented",
       "  spec cost, not a defect (the `-dark` siblings and prose-only chrome tokens are deliberate carrier design)",
       ...divLines,
       "- 🟢 Standalone: passes every offline check with no sibling files present.", "",
-      "One canonical core, rendered per platform — this folder is complete on its own.", "",
+      "One canonical core, rendered per platform, this folder is complete on its own.", "",
     ].join("\n");
   }
 
   // ── Figma Make profile: a routed guidelines/ tree (no linter/schema of its own) ──
   if (profile === "figma-make") {
     return [
-      `# ${folder} — Figma Make profile export`, "",
+      `# ${folder}, Figma Make profile export`, "",
       `Figma Make kit guidelines for **${name}**, per the Ultimate Tokens Figma Make profile.`,
       "Generated by Ultimate Tokens.", "",
-      "**Contents:** `guidelines/` — `Guidelines.md` (entry + routing + hard rules), `setup.md`",
+      "**Contents:** `guidelines/`, `Guidelines.md` (entry + routing + hard rules), `setup.md`",
       "(wiring), `styles.css` (compiled shadcn stylesheet + `@theme inline`, with the FULL token",
       "layers appended below the projection: complete semantic color roles, geometry, typescale),",
       "`foundations/{color,typography,spacing}.md`, `components/{overview,button}.md`. Drop the",
@@ -1100,7 +1100,7 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
       "- 🟢 D1 routing: `Guidelines.md` routes to every leaf that exists; every leaf is reachable;",
       "  no dangling routes",
       `- 🟢 Schema stamp: \`styles.css\`'s first line carries \`/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */\``,
-      "  (E6, ticket #577) — the same first-line convention as this kit's other CSS surfaces (Tailwind,",
+      "  (E6, ticket #577), the same first-line convention as this kit's other CSS surfaces (Tailwind,",
       "  ShadCN); this profile ships no `DESIGN.md`/`tokens.json` to carry the stamp instead, so",
       "  `styles.css` is where a Make consumer reads the schema version",
       "- 🟢 D6 hard rules: `Guidelines.md` carries a `Do NOT` prohibition and the `IMPORTANT` marker",
@@ -1108,7 +1108,7 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
       "- 🟢 D3 scheme parity: every grammar-token table row in `foundations/color.md` states light",
       "  AND dark",
       "- 🟢 D10 carrier equality BY CONSTRUCTION: every shadcn token in `styles.css` is a `var()` LINK",
-      "  resolving into the appended design-token layer (one source of truth per value — the kit's",
+      "  resolving into the appended design-token layer (one source of truth per value, the kit's",
       "  resolved roles under its own `onColorMode`); the paste-ready `light-dark()` block in",
       "  `foundations/color.md` re-expresses that SAME carrier, resolved and measured token-for-token.",
       "  To re-measure independently: `make_guidelines_check.py guidelines/ --compare <this kit's",
@@ -1118,19 +1118,19 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
       "- 🟢 D5 states as values: `components/button.md` names `hover` and carries a `-hover` token",
       "  reference (a var(), never an adjective)",
       "- 🟢 D11 relative leading: the type scale ships leading as a unitless factor and tracking as",
-      "  em — never px",
+      "  em, never px",
       ...divLines,
       "- 🟡 Dark-mode toggle is a `.dark` class (shadcn's own convention, read natively by Figma",
-      "  Make's preferred stack), not `light-dark()` — a deliberate, named departure from the",
+      "  Make's preferred stack), not `light-dark()`, a deliberate, named departure from the",
       "  sibling platforms' runtime idiom; `foundations/color.md`'s runtime block carries the",
       "  equivalent `light-dark()` expression for tooling that prefers it.", "",
-      "One canonical core, rendered per platform — this folder is complete on its own.", "",
+      "One canonical core, rendered per platform, this folder is complete on its own.", "",
     ].join("\n");
   }
 
   // ── Claude Code profile (default): the full DESIGN.md + tokens.json + previews bundle ──
   return [
-    `# ${folder} — Claude profile export`, "",
+    `# ${folder}, Claude profile export`, "",
     `Claude Design / Claude Code consumption bundle for **${name}**, per the Ultimate Tokens Claude profile.`,
     "Generated by Ultimate Tokens.", "",
     "**Contents:** `DESIGN.md` (the universal-dialect core, rendered from the same canonical core",
@@ -1145,18 +1145,18 @@ export function exportDesignSystemReceipt(state, typeSc, geomSc, opts = {}) {
     "`tokens.json` carries the SAME **OKLCH** payload (high-resolution, never bare hex); previews and",
     "emitted UI use the **`color-scheme` + `light-dark()`** runtime idiom.", "",
     ...contrastLines,
-    mutedSig.length ? `- 🟢 Signature roles present: ${mutedSig.map((f) => `\`${f}\``).join(", ")} — F2 fixed; prose–token accord holds` : "- 🟢 Prose–token accord holds (every role appears in prose, a component, or a preview)",
+    mutedSig.length ? `- 🟢 Signature roles present: ${mutedSig.map((f) => `\`${f}\``).join(", ")}, F2 fixed; prose–token accord holds` : "- 🟢 Prose–token accord holds (every role appears in prose, a component, or a preview)",
     schemeParityLine,
-    "- 🟢 Carrier equality: OKLCH frontmatter ≡ OKLCH `tokens.json` — the identical payload (G3 dev 0 by construction)",
-    `- 🟢 OKLCH→8-bit fidelity: every value round-trips to sRGB within ±1/255 per channel (measured max dev: ${carrierMaxDev} — a consumer deriving hex reproduces the kit)`,
+    "- 🟢 Carrier equality: OKLCH frontmatter ≡ OKLCH `tokens.json`, the identical payload (G3 dev 0 by construction)",
+    `- 🟢 OKLCH→8-bit fidelity: every value round-trips to sRGB within ±1/255 per channel (measured max dev: ${carrierMaxDev}, a consumer deriving hex reproduces the kit)`,
     `- 🟢 Previews: \`@dsCard\` first line, single \`:root\` block — \`color-scheme: light dark\` + ${nGrammar} \`light-dark(oklch, oklch)\` custom properties, no media-query fork`,
     ...divLines,
     `- ℹ️ \`tokens.json\` ships the full ${scaleSteps}-step type scale (generator schema); the DESIGN.md frontmatter carries the ${DS_TYPE_LEVELS.length}-level consumption selection`, "",
-    "This folder is complete on its own — every reference above resolves inside it.", "",
+    "This folder is complete on its own, every reference above resolves inside it.", "",
   ].join("\n");
 }
 
-// exportDesignSystemBundle — the design-system-for-claude-code/ folder: DESIGN.md (the universal core) +
+// exportDesignSystemBundle, the design-system-for-claude-code/ folder: DESIGN.md (the universal core) +
 // tokens.json + components/*.html + README.md (the profile receipt). The Stitch (byte-identical DESIGN.md)
 // and Figma Make (routed projection) folders are added by their own profile emitters.
 export function exportDesignSystemBundle(state, typeSc, geomSc, opts = {}) {
@@ -1169,8 +1169,8 @@ export function exportDesignSystemBundle(state, typeSc, geomSc, opts = {}) {
   ];
 }
 
-// exportDesignSystemStitchBundle — the design-system-for-google-stitch/ folder: `DESIGN.md` (the SAME
-// canonical spine — Stitch consumes ONE file, byte-identical to the Claude Code DESIGN.md) + `README.md`
+// exportDesignSystemStitchBundle, the design-system-for-google-stitch/ folder: `DESIGN.md` (the SAME
+// canonical spine, Stitch consumes ONE file, byte-identical to the Claude Code DESIGN.md) + `README.md`
 // (the Stitch-profile receipt). One core, two uploads. Empty when no palette is enabled (nothing to upload).
 export function exportDesignSystemStitchBundle(state, typeSc, geomSc, opts = {}) {
   if (!dsColorRoles(state)) return [];
@@ -1181,26 +1181,26 @@ export function exportDesignSystemStitchBundle(state, typeSc, geomSc, opts = {})
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// FIGMA MAKE profile — a routed guidelines/ tree (design-system-for-figma-make/, Phase 4).
-// Figma Make validates NOTHING itself (no linter, no schema) — make_guidelines_check.py
+// FIGMA MAKE profile, a routed guidelines/ tree (design-system-for-figma-make/, Phase 4).
+// Figma Make validates NOTHING itself (no linter, no schema), make_guidelines_check.py
 // (D1–D6, D10, D11) is the gate of record. Reuses the SAME canonical core as the other two
-// profiles: dsColorRoles for the grammar tokens (the kit's resolved roles verbatim — kit fidelity),
-// exportShadcn in the MEASURED on-color mode (onColorMode:"contrast") for styles.css (the D10 carrier —
+// profiles: dsColorRoles for the grammar tokens (the kit's resolved roles verbatim, kit fidelity),
+// exportShadcn in the MEASURED on-color mode (onColorMode:"contrast") for styles.css (the D10 carrier,
 // so its dark foregrounds pass AA like the core, never fixed white), dsTypeLayer/dsSpacing/dsRadii for
-// the scale tables. Theme-general throughout — no brand-specific names/values are hardcoded.
+// the scale tables. Theme-general throughout, no brand-specific names/values are hardcoded.
 // ══════════════════════════════════════════════════════════════════════════════
 
-// dsShadcnRuntimeMap — parse an exportShadcn() stylesheet's `:root`/`.dark` blocks into
+// dsShadcnRuntimeMap, parse an exportShadcn() stylesheet's `:root`/`.dark` blocks into
 // { "--token": { light, dark } } (oklch()/hex literal strings). Shared by the paste-ready
 // light-dark() runtime block in foundations/color.md (D4) and its D10 carrier-equality
-// check — both read the SAME parse of the SAME styles.css text, so equality is measured
+// check, both read the SAME parse of the SAME styles.css text, so equality is measured
 // against the real carrier, not a second hand-authored copy of the values.
 export function dsShadcnRuntimeMap(css) {
   if (css.indexOf("@theme inline {") < 0) return {};
   const LIT = /^\s*(--[a-z0-9-]+):\s*(oklch\([^)]*\)|#[0-9a-fA-F]+)\s*;/;
   const REF = /^\s*(--[a-z0-9-]+):\s*var\((--[a-z0-9-]+)\)\s*;/;
   // Walk every top-level `:root`/`.dark` block in the file. The FIRST of each holds the shadcn
-  // projection (literals, or — in alias mode — var() links); later blocks are the appended full
+  // projection (literals, or, in alias mode, var() links); later blocks are the appended full
   // token layer, whose literals are the link targets. One level of var() indirection is resolved
   // per scheme, so the map always yields concrete values (the same contract as before aliasing).
   const litLight = {}, litDark = {};
@@ -1230,21 +1230,21 @@ export function dsShadcnRuntimeMap(css) {
 }
 
 // The consumption-role descriptions for the curated type levels (theme-general prose, not tied
-// to any brand's voice) — mirrors DS_TYPE_LEVELS above.
+// to any brand's voice), mirrors DS_TYPE_LEVELS above.
 const DS_MAKE_TYPE_USE = {
   "display-sm": "hero statements", "heading-lg": "page titles", "heading-md": "section headings",
   "heading-sm": "card titles", "kicker-md": "uppercase eyebrow", "lead-md": "intro paragraphs",
-  "body-md": "primary reading text — the floor for content", "body-sm": "dense secondary text",
+  "body-md": "primary reading text, the floor for content", "body-sm": "dense secondary text",
   "ui-md": "buttons, inputs, menus", "ui-sm": "dense controls, table chrome",
   "caption-md": "captions, help text", "code-md": "code, technical metadata",
 };
 
-// dsMakeGuidelinesMd — the ROOT router (D1 entry point) + hard rules (D6: >=1 "Do NOT" + "IMPORTANT").
+// dsMakeGuidelinesMd, the ROOT router (D1 entry point) + hard rules (D6: >=1 "Do NOT" + "IMPORTANT").
 function dsMakeGuidelinesMd(name, story) {
   const narrative = story.narrative || "Calm, even surfaces carry the layout; color arrives as accent, not decoration.";
   const refuses = story.refuses || "Generic, low-contrast, decorative color with no semantic role.";
   return [
-    `# ${name} — Guidelines`, "",
+    `# ${name}, Guidelines`, "",
     `You are building UI for **${name}**. ${narrative}`, "",
     `Deliberately refused: ${refuses}`, "",
     "## Stack", "",
@@ -1261,7 +1261,7 @@ function dsMakeGuidelinesMd(name, story) {
     "| Which gap, padding, radius? | `foundations/spacing.md` |",
     "| Which component and variant? | `components/overview.md`, then the component file |",
     "| Buttons specifically? | `components/button.md` |",
-    "", "## Hard rules — IMPORTANT", "",
+    "", "## Hard rules, IMPORTANT", "",
     "- Do NOT hardcode a color. Every color is a Tailwind class mapped in `styles.css`",
     "  (`foundations/color.md` names them). No exceptions.",
     "- Do NOT put text on a fill in anything other than that fill's own `-foreground` class —",
@@ -1269,19 +1269,19 @@ function dsMakeGuidelinesMd(name, story) {
     "- Do NOT stack more than one `variant=\"default\"` action per view.",
     "- Do NOT invent dark-mode values. Every role ships a light value and a `.dark` override",
     "  in `styles.css`; use the pair, never hand-roll a dark variant.",
-    "- Do NOT free-type font sizes, gaps, or radii — compose from the scales.",
-    "- Do NOT redeclare a shadcn component's own padding, radius, or focus treatment — it",
+    "- Do NOT free-type font sizes, gaps, or radii, compose from the scales.",
+    "- Do NOT redeclare a shadcn component's own padding, radius, or focus treatment, it",
     "  already reads `--radius`/`--ring` correctly from `styles.css`.",
     "", "## Workflow", "",
-    "1. Setup first — `styles.css` imported, no `@source` rules added (see `setup.md`).",
+    "1. Setup first, `styles.css` imported, no `@source` rules added (see `setup.md`).",
     "2. Pick Tailwind classes by role, not by color; both schemes ship in one class.",
     "3. Set type, spacing, and radius from the scales, never free-typed.",
-    "4. Use shadcn's own components; map this brand's roles onto their variant props — states",
+    "4. Use shadcn's own components; map this brand's roles onto their variant props, states",
     "   are Tailwind modifiers (`hover:`, `active:`), not new tokens.",
   ].join("\n") + "\n";
 }
 
-// dsMakeSetupMd — wiring instructions (>=1 IMPORTANT); font stacks named from typeSc.fonts.
+// dsMakeSetupMd, wiring instructions (>=1 IMPORTANT); font stacks named from typeSc.fonts.
 function dsMakeSetupMd(typeSc) {
   const fonts = (typeSc && typeSc.fonts) || {};
   const body = fonts.body || "the body font";
@@ -1289,19 +1289,19 @@ function dsMakeSetupMd(typeSc) {
   const mono = fonts.mono || "the mono font";
   return [
     "# Setup", "",
-    "This design system targets **React + Tailwind + shadcn ui** — Figma Make's own preferred",
+    "This design system targets **React + Tailwind + shadcn ui**, Figma Make's own preferred",
     "stack. `styles.css` is the compiled projection of this design system; wiring it in is one",
     "import, no translation.", "",
     "## IMPORTANT", "",
     "- Import `styles.css` directly into the app's global CSS entry point.",
-    "- Do NOT add `@source` rules for this package in the consumer's Tailwind config — the",
+    "- Do NOT add `@source` rules for this package in the consumer's Tailwind config, the",
     "  tokens arrive pre-mapped through `@theme inline` in `styles.css` itself.",
     "- No ThemeProvider is required. Dark mode is a `.dark` class on `<html>` or `<body>`;",
-    "  toggle it however the app already does (`next-themes` or equivalent) — this bundle",
+    "  toggle it however the app already does (`next-themes` or equivalent), this bundle",
     "  supplies the values, not the toggle mechanism.",
     "- Use shadcn ui's own installed components (`<Button>`, `<Card>`, `<Badge>`, `<Input>`, …)",
     "  styled by these tokens. Do NOT hand-roll component CSS that duplicates what an installed",
-    "  shadcn component already provides — see `components/*.md` for the variant mapping.",
+    "  shadcn component already provides, see `components/*.md` for the variant mapping.",
     "", "## Full token layers", "",
     "Below the shadcn projection, `styles.css` also carries the FULL token layers as custom",
     "properties: the complete semantic color roles (every role of every palette; light in `:root`,",
@@ -1311,12 +1311,12 @@ function dsMakeSetupMd(typeSc) {
     "", "## Fonts", "",
     `\`styles.css\`'s \`@theme inline\` block sets \`--font-sans\` (${body}), \`--font-serif\``,
     `(${display}, used for display/headings), and \`--font-mono\` (${mono}). Load them however`,
-    "the app already loads fonts (e.g. `next/font`, a `<link>` to Google Fonts) — `styles.css`",
+    "the app already loads fonts (e.g. `next/font`, a `<link>` to Google Fonts), `styles.css`",
     "only names the family stack, it does not fetch anything.",
   ].join("\n") + "\n";
 }
 
-// dsMakePrimeSection — the Make-profile equivalent of exportDesignSystemSpine's "Prime swatches"
+// dsMakePrimeSection, the Make-profile equivalent of exportDesignSystemSpine's "Prime swatches"
 // section (REQ-054): unconditional (every enabled palette carries a prime system), lists every
 // family (including data-N) with its raw CSS var pattern. The actual seven values per family live
 // in `styles.css`'s FULL token layers appendix (dsFullLayersCss), not a tokens.json this profile
@@ -1326,25 +1326,25 @@ function dsMakePrimeSection(ds, pfx) {
   if (!primeFamilies.length) return [];
   return [
     "## Prime swatches", "",
-    "Every palette also carries its own **prime** system — seven identity swatches on a private",
+    "Every palette also carries its own **prime** system, seven identity swatches on a private",
     "OKHSL ladder, lightest to darkest: `brightest`, `brighter`, `bright`, `prime`, `dim`, `dimmer`,",
     "`dimmest`. They are primitives-tier and mode-independent (the SAME seven swatches in both",
-    "schemes) — `styles.css`'s FULL token layers appendix carries the full seven-step value per",
+    "schemes), `styles.css`'s FULL token layers appendix carries the full seven-step value per",
     "family. Reach for `prime` as a family's own signature colour outside a fill/on-fill pair (a",
-    "sparkline, a small identity mark, a legend swatch); it is never a button fill — buttons use",
+    "sparkline, a small identity mark, a legend swatch); it is never a button fill, buttons use",
     "the family classes above.", "",
     primeFamilies.map((f) => `- \`--${pfx}-${f}-prime-{step}\` (\`${f}\`)`).join("\n"),
   ];
 }
 
-// dsMakeColorMd — shadcn/Tailwind class prose (fill/on pairs, states as modifiers) PLUS a
-// contrast-verified grammar-token reference table (D2/D3 carrier — dsColorRoles tokens are
+// dsMakeColorMd, shadcn/Tailwind class prose (fill/on pairs, states as modifiers) PLUS a
+// contrast-verified grammar-token reference table (D2/D3 carrier, dsColorRoles tokens are
 // the kit's resolved role values verbatim) PLUS the D4 paste-ready light-dark()
-// runtime block (parsed from the SAME styles.css text via dsShadcnRuntimeMap — the D10 carrier).
+// runtime block (parsed from the SAME styles.css text via dsShadcnRuntimeMap, the D10 carrier).
 function dsMakeColorMd(ds, pfx, shadcnCss) {
   const rt = dsShadcnRuntimeMap(shadcnCss);
   // groupOfFamily (SPEC 0.3.0 RP-1, ticket #572): looked up from ds.familiesByGroup rather than
-  // re-resolved — the table must never drift from the one metadata source every surface reads.
+  // re-resolved, the table must never drift from the one metadata source every surface reads.
   const groupOfFamily = (f) => {
     for (const g of ["material", "brand", "system", "data"]) {
       if ((ds.familiesByGroup[g] || []).includes(f)) return g;
@@ -1361,7 +1361,7 @@ function dsMakeColorMd(ds, pfx, shadcnCss) {
   const runtimeLines = Object.entries(rt).map(([k, v]) => `  ${k}: light-dark(${v.light}, ${v.dark});`);
   return [
     "# Color", "",
-    "Colors are **roles**, imported ready-to-use from `../styles.css` — bind to the Tailwind",
+    "Colors are **roles**, imported ready-to-use from `../styles.css`, bind to the Tailwind",
     "utility class or the shadcn component prop, never to a hex. Every role ships a light value",
     "and a `.dark` override; the values are already wired, don't derive or re-declare them.", "",
     "## Surfaces & text", "",
@@ -1375,33 +1375,33 @@ function dsMakeColorMd(ds, pfx, shadcnCss) {
     "", "## Actions & brand", "",
     "| Class | Use for |",
     "|---|---|",
-    "| `bg-primary text-primary-foreground` | THE action per view — CTA, link, selection |",
+    "| `bg-primary text-primary-foreground` | THE action per view, CTA, link, selection |",
     "| `bg-secondary text-secondary-foreground` | supporting actions, quieter emphasis |",
     "| `bg-accent text-accent-foreground` | highlights, tags |",
-    "| `ring-ring` | focus ring — every interactive element |",
+    "| `ring-ring` | focus ring, every interactive element |",
     "", "## Intents (status only)", "",
     "| Class | Role |",
     "|---|---|",
-    "| `bg-destructive text-destructive-foreground` | destructive/error — delete, failure, critical |",
-    "", "## Rules — IMPORTANT", "",
-    "- Do NOT cross a foreground pair (e.g. `text-foreground` on `bg-accent`) — each fill's own",
+    "| `bg-destructive text-destructive-foreground` | destructive/error, delete, failure, critical |",
+    "", "## Rules, IMPORTANT", "",
+    "- Do NOT cross a foreground pair (e.g. `text-foreground` on `bg-accent`), each fill's own",
     "  `-foreground` class is the contract; crossing it fails contrast in one scheme.",
-    "- Do NOT use `destructive` decoratively — status only, never an ordinary button.",
+    "- Do NOT use `destructive` decoratively, status only, never an ordinary button.",
     "- States are Tailwind modifiers on the base class, not separate roles:",
     "  `hover:bg-primary/90`, `active:bg-primary/80`.", "",
     "## Grammar token reference (light + dark, the kit's resolved values)", "",
     "The Ultimate Tokens grammar (`--{prefix}-{family}[-slot]`) is the canonical source behind the",
-    "classes above — the kit's resolved role values under its `onColorMode` setting. Families mapped",
+    "classes above, the kit's resolved role values under its `onColorMode` setting. Families mapped",
     "to a utility class above (the surfaces · `primary`/`secondary`/`accent`/`destructive`) are bound by",
     "that class; a family below with NO utility class (e.g. the muted signature families, `success`/",
-    "`warning`) is a **reference hue** — bind it via `var(--{prefix}-{family})` or add a shadcn role to",
+    "`warning`) is a **reference hue**, bind it via `var(--{prefix}-{family})` or add a shadcn role to",
     "`styles.css`, never by hardcoding the hex:", "",
     "| Token | Group | Fill (Light) | Fill (Dark) | On (Light) | On (Dark) | Use |",
     "|---|---|---|---|---|---|---|",
     ...rows,
     "", ...dsMakePrimeSection(ds, pfx),
-    "", "## Runtime alternative — `light-dark()` (illustrative)", "",
-    "Do NOT paste this into the app in place of `styles.css` — Figma Make's own dark-mode toggle",
+    "", "## Runtime alternative, `light-dark()` (illustrative)", "",
+    "Do NOT paste this into the app in place of `styles.css`, Figma Make's own dark-mode toggle",
     "is the `.dark` class shadcn already reads. This block re-expresses the SAME `:root`/`.dark`",
     "values above as one `light-dark()` declaration per role (the runtime idiom this design",
     "system uses on other platforms), offered for tooling that prefers it.", "",
@@ -1414,7 +1414,7 @@ function dsMakeColorMd(ds, pfx, shadcnCss) {
   ].join("\n") + "\n";
 }
 
-// dsMakeTypographyMd — the curated type-scale table from dsTypeLayer's per-level size/leading
+// dsMakeTypographyMd, the curated type-scale table from dsTypeLayer's per-level size/leading
 // (a unitless factor)/weight, tracking in em where present. Never px (D11).
 function dsMakeTypographyMd(typeSc) {
   const fonts = (typeSc && typeSc.fonts) || {};
@@ -1434,27 +1434,27 @@ function dsMakeTypographyMd(typeSc) {
   }
   return [
     "# Typography", "",
-    `**Display & headings** — ${fonts.display || fonts.heading || "the display font"} ·`,
-    `**Body & UI** — ${fonts.body || "the body font"} · **Mono** — ${fonts.mono || "the mono font"}.`,
+    `**Display & headings**, ${fonts.display || fonts.heading || "the display font"} ·`,
+    `**Body & UI**, ${fonts.body || "the body font"} · **Mono**, ${fonts.mono || "the mono font"}.`,
     "Fallbacks: `system-ui` / `ui-monospace`; the hierarchy must survive the fallback.", "",
     "## Working scale", "",
     "Each level is a set-together unit: size, line-height, and weight travel together. Leading is",
-    "a unitless factor of size; tracking is em/% — **never absolute px** (standing rule). Do NOT",
+    "a unitless factor of size; tracking is em/%, **never absolute px** (standing rule). Do NOT",
     "free-type a size or pair a level with a different line-height.", "",
     "| Level | Family | Size / Leading× | Weight | Use for |",
     "|---|---|---|---|---|",
     ...rows,
-    "", "## Text rendering — ALWAYS include", "",
+    "", "## Text rendering, ALWAYS include", "",
     DS_TEXT_RENDERING_MD,
-    "", "## Rules — IMPORTANT", "",
+    "", "## Rules, IMPORTANT", "",
     "- Do NOT use a level smaller than `body-md` for primary reading text; the smaller steps are",
     "  for dense, secondary UI only.",
     "- Do NOT use more than two heading levels in one view.",
-    "- Do NOT free-type a size, gap, or line-height — compose from the scales.",
+    "- Do NOT free-type a size, gap, or line-height, compose from the scales.",
   ].join("\n") + "\n";
 }
 
-// dsMakeSpacingMd — the spacing + radius ladders, from dsSpacing/dsRadii.
+// dsMakeSpacingMd, the spacing + radius ladders, from dsSpacing/dsRadii.
 function dsMakeSpacingMd(geomSc) {
   const space = dsSpacing(geomSc);
   const radii = dsRadii(geomSc);
@@ -1463,13 +1463,13 @@ function dsMakeSpacingMd(geomSc) {
   return [
     "# Spacing & Radii", "",
     "## Spacing scale", "",
-    "Compose every gap, padding, and margin from these steps — an off-scale gap does not exist",
+    "Compose every gap, padding, and margin from these steps, an off-scale gap does not exist",
     "in this system.", "",
     "| Step | px | Typical use |",
     "|---|---|---|",
     ...spaceRows,
     "", "## Radius ladder", "",
-    "One radius language per view — do NOT mix rounded and sharp corners.", "",
+    "One radius language per view, do NOT mix rounded and sharp corners.", "",
     "| Token | px | Use for |",
     "|---|---|---|",
     ...radiusRows,
@@ -1480,10 +1480,10 @@ function dsMakeSpacingMd(geomSc) {
   ].join("\n") + "\n";
 }
 
-// dsMakeOverviewMd — the component index (reachable from Guidelines.md; routes to button.md).
+// dsMakeOverviewMd, the component index (reachable from Guidelines.md; routes to button.md).
 function dsMakeOverviewMd() {
   return [
-    "# Components — Overview", "",
+    "# Components, Overview", "",
     "Catalog and routing. Read the component file before building; states are specified there",
     "with exact values.", "",
     "| Component | Purpose | Guidelines file |",
@@ -1500,21 +1500,21 @@ function dsMakeOverviewMd() {
     "Is it a quiet second action?           -> <Button variant=\"outline\"> / \"ghost\"",
     "```",
     "", "## Shared patterns (until a dedicated file exists)", "",
-    "Use shadcn's own installed components (`<Input>`, `<Card>`, `<Badge>`) — these Tailwind",
+    "Use shadcn's own installed components (`<Input>`, `<Card>`, `<Badge>`), these Tailwind",
     "classes are what they already read from `../styles.css`; don't redeclare them:", "",
     "- **Input**: `bg-background` field · `border-border` outline · `text-foreground` value ·",
     "  `placeholder:text-muted-foreground`. Focus/disabled are already correct on the installed",
-    "  component — do not override.",
+    "  component, do not override.",
     "- **Card**: `bg-card text-card-foreground` on `bg-background`, `border-border`.",
     "- **Chip/Badge**: fill class + its own `-foreground` class · `rounded-full` · small type size.",
   ].join("\n") + "\n";
 }
 
-// dsMakeButtonMd — the button leaf. Names `hover` and carries a `-hover` token reference (D5:
-// states as values, not adjectives) — the brand family always carries -hover/-active (dsColorRoles
+// dsMakeButtonMd, the button leaf. Names `hover` and carries a `-hover` token reference (D5:
+// states as values, not adjectives), the brand family always carries -hover/-active (dsColorRoles
 // slots them on the chrome family, or on the brand family directly when brand !== chrome).
 // The button leaf is theme-independent: shadcn's `<Button>` variants + Tailwind opacity-modifier states,
-// bound by the shadcn classes in styles.css (no per-theme token names — so no args).
+// bound by the shadcn classes in styles.css (no per-theme token names, so no args).
 function dsMakeButtonMd() {
   return [
     "# Button", "",
@@ -1522,8 +1522,8 @@ function dsMakeButtonMd() {
     "The view's actions. Exactly one `variant=\"default\"` button per view; everything else is",
     "`variant=\"secondary\"`, `variant=\"outline\"`/`\"ghost\"`, or a link. `variant=\"destructive\"`",
     "only for destructive actions.", "",
-    "## Variants — shadcn's own `<Button>`, mapped", "",
-    "Use the installed shadcn `<Button>` component. Do NOT hand-roll button CSS — its padding,",
+    "## Variants, shadcn's own `<Button>`, mapped", "",
+    "Use the installed shadcn `<Button>` component. Do NOT hand-roll button CSS, its padding,",
     "radius, and focus ring are already correct from `styles.css`'s `--radius` and `--ring`.", "",
     "| `variant` | Use for |",
     "|---|---|",
@@ -1532,27 +1532,27 @@ function dsMakeButtonMd() {
     "| `\"destructive\"` | destructive actions only |",
     "| `\"outline\"` / `\"ghost\"` | a second, non-competing action |",
     "| `\"link\"` | inline text actions |",
-    "", "## States — Tailwind modifiers, not separate tokens", "",
+    "", "## States, Tailwind modifiers, not separate tokens", "",
     "There are NO separate hover/active tokens: a state is a `hover:`/`active:` **opacity modifier** on",
-    "the base class (`styles.css` ships no `-hover`/`-active` variable — the alpha does the work):", "",
+    "the base class (`styles.css` ships no `-hover`/`-active` variable, the alpha does the work):", "",
     "| Variant | State | Modifier | Resolves to |",
     "|---|---|---|---|",
     "| default | rest | `bg-primary` | `var(--primary)` |",
     "| default | hover | `hover:bg-primary/90` | `--primary` at 90% opacity |",
     "| default | active | `active:bg-primary/80` | `--primary` at 80% opacity |",
-    "", "- **Focus**: shadcn's `<Button>` ships `focus-visible:ring-ring` already — do not override it.",
+    "", "- **Focus**: shadcn's `<Button>` ships `focus-visible:ring-ring` already, do not override it.",
     "- **Disabled**: shadcn's `<Button disabled>` already applies the correct opacity.", "",
-    "## Rules — IMPORTANT", "",
+    "## Rules, IMPORTANT", "",
     "- One `variant=\"default\"` per view. Do NOT stack two.",
-    "- Do NOT redeclare padding, radius, or focus treatment — the installed component already",
+    "- Do NOT redeclare padding, radius, or focus treatment, the installed component already",
     "  has them correct from `styles.css`.",
   ].join("\n") + "\n";
 }
 
-// exportDesignSystemMakeBundle — the design-system-for-figma-make/ folder: `guidelines/` (the routed
-// dsFullLayersCss — the FULL token layers appended to the Make `styles.css` BELOW the shadcn projection
+// exportDesignSystemMakeBundle, the design-system-for-figma-make/ folder: `guidelines/` (the routed
+// dsFullLayersCss, the FULL token layers appended to the Make `styles.css` BELOW the shadcn projection
 // (which stays the consumption mapping the guidelines teach). Color rides the kit's `.dark`-class
-// convention (`:root` light + `.dark` overrides — light-dark() would not flip with Make's toggle);
+// convention (`:root` light + `.dark` overrides, light-dark() would not flip with Make's toggle);
 // geometry + typescale are mode-independent `:root` custom properties. Non-color layers strip a trailing
 // `-color` from the kit prefix (`md-sys-color` → `md-sys-size-*` / `md-sys-typescale-*`) so the grammar
 // matches the standalone geometry/typography exports. APPEND-ONLY: everything lands after the
@@ -1562,7 +1562,7 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
   const pfx = cssPrefixOf(state);
   const basePfx = pfx.replace(/-color$/, "");
   const L = [], D = [];
-  // the fixed system constants — same value both modes (none of these flip). dialog-backdrop is what
+  // the fixed system constants, same value both modes (none of these flip). dialog-backdrop is what
   // the shadcn projection's aliased `--overlay: var(--{pfx}-dialog-backdrop)` resolves against (D10);
   // white/black have no shadcn slot to fill (its fixed contract has none), so they ride only here.
   L.push(`  --${pfx}-dialog-backdrop: ${dialogBackdropOklch()};`);
@@ -1575,7 +1575,7 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
     L.push(`  --${pfx}-${p.n}${r.suffix}: ${roleOklch(r.light)};`);
     D.push(`  --${pfx}-${p.n}${r.suffix}: ${roleOklch(r.dark)};`);
   }
-  // PRIME RAW vars (REQ-054) — mirrors exports.js's own --{pfx}-{family}-prime-{step} vars
+  // PRIME RAW vars (REQ-054), mirrors exports.js's own --{pfx}-{family}-prime-{step} vars
   // byte-for-byte (same pfx, same formula); mode-independent, so the SAME value lands in both
   // :root and .dark (unlike the role vars above, prime is never re-derived per mode).
   for (const p of derivedAll(state)) for (const step of PRIME_STEPS) {
@@ -1615,7 +1615,7 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
     "   The shadcn projection above remains the consumption mapping the guidelines teach.",
     "   Below: the complete semantic color layer (every role of every palette; light in",
     "   :root, dark under the kit's `.dark` class), the full geometry system, and the",
-    "   full typescale — for anything the projection does not cover. */",
+    "   full typescale, for anything the projection does not cover. */",
     ":root {", ...L, "}",
     ".dark {", ...D, "}",
     ":root {", ...dims, ...type, "}", "",
@@ -1624,7 +1624,7 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
 const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 
 // tree Make reads) + `README.md` (the figma-make profile receipt, folder root, NOT under guidelines/).
-// Empty when no palette is enabled (nothing to upload) — mirrors the Stitch bundle.
+// Empty when no palette is enabled (nothing to upload), mirrors the Stitch bundle.
 export function exportDesignSystemMakeBundle(state, typeSc, geomSc, opts = {}) {
   const ds = dsColorRoles(state);
   if (!ds) return [];
@@ -1632,13 +1632,13 @@ export function exportDesignSystemMakeBundle(state, typeSc, geomSc, opts = {}) {
   const name = (state && state.name) || "Design System";
   const story = (state && state.story) || {};
   // KIT FIDELITY: the projection and the appended full layer read the SAME state under the user's own
-  // `onColorMode` (never forced to "contrast" — that setting is the user's, ADR-003), so every shadcn
+  // `onColorMode` (never forced to "contrast", that setting is the user's, ADR-003), so every shadcn
   // token can be a var() LINK into the design-token layer and resolve to the identical kit value.
   // aliasPrefix wires the links; radii/fonts seed --radius and the @theme font slots from the real scales.
   const shadcnCss = exportShadcn(state, { aliasPrefix: pfx, radii: dsRadii(geomSc), fonts: (typeSc && typeSc.fonts) || {} });
   // the text-rendering baseline ships as REAL CSS in the Make carrier (the same block the DESIGN.md
-  // and typography.md mandate as prose) — a Make consumer gets it by pasting styles.css, no reading owed.
-  const textRenderingCss = `\n/* text-rendering baseline — always on (see foundations/typography.md) */\nhtml {\n  ${DS_TEXT_RENDERING_PROPS.split(";").join(";\n  ")};\n}\ncode, pre, kbd { font-variant-ligatures: none; }\n`;
+  // and typography.md mandate as prose), a Make consumer gets it by pasting styles.css, no reading owed.
+  const textRenderingCss = `\n/* text-rendering baseline, always on (see foundations/typography.md) */\nhtml {\n  ${DS_TEXT_RENDERING_PROPS.split(";").join(";\n  ")};\n}\ncode, pre, kbd { font-variant-ligatures: none; }\n`;
   const stylesCss = shadcnCss + dsFullLayersCss(state, typeSc, geomSc) + textRenderingCss;
   return [
     { name: "guidelines/Guidelines.md", data: dsMakeGuidelinesMd(name, story) },
