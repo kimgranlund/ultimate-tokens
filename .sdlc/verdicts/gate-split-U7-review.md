@@ -3,8 +3,21 @@
 | Field | Value |
 |---|---|
 | Reviewer | gs-U7-reviewer-l1-p1, fresh context, read only |
-| Target | `unit/gs-U7` @ `57cff4a8`, worktree `.worktrees/gs-U7`, base `plan/gate-split` @ `1c958d6b` (merge-base confirmed) |
+| Target | `unit/gs-U7` @ `2875dcc7` (final head, superseding `57cff4a8`), worktree `.worktrees/gs-U7`, base `plan/gate-split` @ `1c958d6b` (merge-base confirmed) |
 | Verdict | PASS |
+
+## Pass 3 addendum (head moved 57cff4a8 -> 2875dcc7)
+
+Commit `9202a2cb` rewords `baseline.md:76` a second time. Before (item 8's own after-text): "The `npm test` seconds the live table above showed at this section's own writing (56 to 60 s, since superseded by the 80 to 89 s U6c-8 re-time in that same table) were measured before #681..."; grammatically valid but confusing (a table "showing" a superseded figure at its "own writing"). After: "The table's pre-#681 figures, 56 to 60 s, were measured before #681, whose corpus sweeps are the cost; the live table above now reads 89.10, 79.93 and 80.07 s, the 80 to 89 s U6c-8 re-time." Verified:
+- `grep -n '56 to 60' .sdlc/baseline.md` → exactly one hit, line 76. Not doubled with pass 2's wording (pass 2's version no longer exists in the file).
+- Truth check: `git log --oneline origin/main -- .sdlc/baseline.md` shows the pre-#681 commit `28c2e8cc` (before `8ba4bee4`, #681's landing) recorded `npm test` as `56.27 · 56.43 · 59.83`; matches "pre-#681 figures, 56 to 60 s" exactly.
+- Live table (line 19) reads `89.10 · 79.93 · 80.07`, matching "the live table above now reads 89.10, 79.93 and 80.07 s" exactly.
+- Handoff item 9 (`gate-split-U7.md`, pass 3) quotes both before and after byte-for-byte matching the diff.
+- Em dash / bold sweep on `9202a2cb`'s diff alone: 0 / 0.
+- Full repo re-sweep at `2875dcc7`: same file list as pass 2 (no new files touched), em dash 0, bold-label 0, branding clean (694 files), `.claude/CLAUDE.md`/`.sdlc/board.md` still untouched.
+- `npm test` in a fresh `git clone --shared` at `2875dcc7`: all 50 test files passed, tree clean after.
+
+Verdict unchanged: PASS.
 
 ## Rows
 
@@ -33,4 +46,4 @@ None. No FIX-FIRST or lower-severity issues found.
 
 `.sdlc/plans/gate-split.md`'s U7 checklist row and revision 15 (added on `plan/gate-split` at `e57e0971`, one commit after this unit's fork point `1c958d6b`) are not reflected on `unit/gs-U7`. This is expected; the unit branch was correctly cut before that plan edit landed; but the eventual merge/rebase of `unit/gs-U7` back onto `plan/gate-split` should not silently drop those lines; worth a note to whoever performs the merge.
 
-altered: the Orchestrator replaced six em dashes in this record's prose with semicolons when committing it (the repo rule bans the em dash outside code spans); no other change. The reviewer's original is `gs-U7-review.md` in the Lane B scratchpad.
+altered: the Orchestrator replaced the em dashes in this record's prose with semicolons when committing it (the repo rule bans the em dash outside code spans); no other change. The reviewer's original is `gs-U7-review.md` in the Lane B scratchpad.
