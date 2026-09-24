@@ -42,20 +42,48 @@ else if (!v.plot[0].points || !v.plot[0].points[0] || !("applied" in v.plot[0].p
 if (!Array.isArray(v.contrast) || v.contrast.length === 0) FAIL("model", "no contrast data");
 
 // ── live edit re-projects (no stored derived state) ──────────────────────────────────────
-// Mutates BOTH `hue` and `skew`, reused below (line ~72) as the shared "live edit" fixture for two
-// DIFFERENT probes with different sensitivities. Every DEFAULT_PALETTES entry carries `anchor`
+// Two fixtures, one per probe (U7 review 1, F1 split them): `edited` carries the hue edit and the
+// detach, for the key probe below; `skewOnly` carries skew alone on the still-anchored copy, for
+// the ramp probe. They used to be one fixture mutating both fields. Every DEFAULT_PALETTES entry carries `anchor`
 // (ticket #681, U1/Q2 (b)); an anchored ramp deliberately ignores `hue`/`chroma` (tonal.js's
 // anchored branch — those two fields are the UI-level detach trigger, Q6/U2's C12, never read by
 // the engine while `anchor` is present), so `hue` ALONE no longer moves projectView's ramp — `skew`
-// still warps an anchored ramp on both sides of its fixed pivot. Conversely, paletteKeyColors's
-// identity swatch (deriveKeyColor, model.mjs:874) is plain hue/chroma-derived and knows nothing of
-// `anchor` at all, so `skew` ALONE would leave IT unchanged. Mutating both keeps one fixture valid
-// for both downstream assertions.
+// still warps an anchored ramp on both sides of its fixed pivot.
+//
+// CORRECTED at #681 pre-land S1. The sentence that stood here said `deriveKeyColor` "is plain
+// hue/chroma-derived and knows nothing of `anchor` at all", and that is precisely the defect S1
+// fixed: the identity swatch now returns the stored `anchor` verbatim, so on an anchored palette it
+// no longer moves for a raw `hue` edit either. (The pre-land review already carried this comment
+// block as stale under K4, `.sdlc/handoffs/pif-prepr-review-p1.md`, for a DIFFERENT sentence of it:
+// the "ignores `hue`/`chroma`" claim above, which is true of `hue` only, since `chroma` still moves
+// an anchored ramp. K4 is ruled carried, so that sentence is left as it stands here; the one
+// corrected in this paragraph is the adjacent claim about the identity swatch.)
+//
+// Does this fixture drive a state C12 forbids? It USED to. An anchored palette whose `hue` has been
+// edited is a state the product cannot produce through its own UI: under C12 / Q6, editing hue or
+// chroma removes `anchor` in the same gesture. The old fixture edited `hue` and kept `anchor`, so it
+// exercised that forbidden state, and its key assertion only held because the pre-S1 key ignored
+// the anchor. The fixture now deletes `anchor` as the Hue slider does, so it drives a C12-legal
+// state. The anchored no-move probe below DELIBERATELY constructs the forbidden state, because a
+// document edited outside the UI (a hand-edited import) can still reach it through hydrate(), and
+// what the engine does there is worth pinning; it is labelled as that, not presented as a UI path.
 const edited = JSON.parse(JSON.stringify(doc));
-edited.palettes[1].skew = ((edited.palettes[1].skew + 130 + 100) % 200) - 100;
 edited.palettes[1].hue = (edited.palettes[1].hue + 60) % 360;
-const v2 = M.projectView(edited);
-if (v2.palettes[1].ramp[12] && v.palettes[1].ramp[12] && v2.palettes[1].ramp[12].hex === v.palettes[1].ramp[12].hex) FAIL("model", "editing skew did not change the projected ramp (stale/stored derived state?)");
+if (edited.palettes[1].anchor) delete edited.palettes[1].anchor; // the Q6 detach the Hue slider performs
+// The skew probe runs on a STILL-ANCHORED copy with skew as its only edit (U7 review 1, F1). Once
+// `edited` detaches, detaching alone moves the ramp (measured ramp[12] #174488 -> #194B97 with no
+// skew and no hue edit), so comparing `projectView(edited)` against `v` passed with the skew line deleted: the same
+// vacuity the key probe at ~line 98 had, from the same fixture edit, found by the reviewer after I
+// had fixed only the one. Re-basing against a detached-but-unedited copy would not repair it either,
+// because `edited` also carries the hue edit and hue moves a detached ramp on its own; the probe
+// would then pass on hue alone. On an anchored copy the engine ignores hue and skew is the only
+// field that can move the ramp (#174488 -> #164183), which is the comparison this probe made
+// before the unit. `skew` never detaches (C12), so this is a C12-legal state.
+const skewOnly = JSON.parse(JSON.stringify(doc));
+skewOnly.palettes[1].skew = ((skewOnly.palettes[1].skew + 130 + 100) % 200) - 100;
+if (typeof skewOnly.palettes[1].anchor !== "string") FAIL("model", "test setup: default palette 1 no longer carries an anchor, so the anchored skew probe is not isolating skew");
+const vSkew = M.projectView(skewOnly);
+if (vSkew.palettes[1].ramp[12] && v.palettes[1].ramp[12] && vSkew.palettes[1].ramp[12].hex === v.palettes[1].ramp[12].hex) FAIL("model", `editing skew on a still-anchored palette did not change the projected ramp (stale/stored derived state?): ramp[12] ${v.palettes[1].ramp[12].hex} both before and after`);
 
 // ── paletteKeyColors: the cheap tile-only alternative to projectView (gallery/list rendering —
 // presetTile, buildTiles). Must stay identity-matched to projectView's own .key/.name/.on/.colorRole,
@@ -77,7 +105,27 @@ if (v2.palettes[1].ramp[12] && v.palettes[1].ramp[12] && v2.palettes[1].ramp[12]
   if (!withRole) FAIL("model", "paletteKeyColors dropped colorRole on a curated preset (none of its palettes carry one)");
   // live edit re-projects here too — no stale/cached derived state.
   const kc2 = M.paletteKeyColors(edited);
-  if (kc2[1].key === kc[1].key) FAIL("model", "paletteKeyColors did not change after editing hue (stale/cached state?)");
+  // Compared against the SAME palette detached with its hue UNCHANGED, never against `kc`. Detaching
+  // alone swaps the key from the anchor to the cusp colour, so `kc2 !== kc` would pass even if the
+  // hue edit were never re-projected: that comparison would measure the detach, not the cache. This
+  // one isolates the hue edit and is the same comparison the pre-S1 assertion made (cusp at hue
+  // against cusp at hue + 60), so the probe keeps its original strength.
+  const detachedOnly = JSON.parse(JSON.stringify(doc));
+  delete detachedOnly.palettes[1].anchor;
+  const kcDetached = M.paletteKeyColors(detachedOnly);
+  if (kc2[1].key === kcDetached[1].key) FAIL("model", `paletteKeyColors did not change after a hue edit on a detached palette (stale/cached state?): ${kc2[1].key} both before and after`);
+  // #681 S1, the other half of the same invariant: while `anchor` IS present the identity swatch is
+  // the anchor and a raw hue edit must NOT move it. Without this, the assertion above could be
+  // satisfied by a key that still ignores the anchor, which is the bug S1 fixed. This is the
+  // C12-forbidden state named in the fixture comment above (anchored AND hue-edited), reachable only
+  // through a document edited outside the UI, and constructed here on purpose.
+  {
+    const stillAnchored = JSON.parse(JSON.stringify(doc));
+    if (typeof stillAnchored.palettes[1].anchor !== "string") FAIL("model", "test setup: default palette 1 no longer carries an anchor, so the anchored no-move probe below is vacuous");
+    stillAnchored.palettes[1].hue = (stillAnchored.palettes[1].hue + 60) % 360;
+    const kc3 = M.paletteKeyColors(stillAnchored);
+    if (kc3[1].key !== doc.palettes[1].anchor.toUpperCase()) FAIL("model", `an ANCHORED palette's identity swatch moved on a raw hue edit: ${kc3[1].key} != anchor ${doc.palettes[1].anchor}`);
+  }
   // NOT memoized: two independent calls over the SAME doc return distinct array/object instances —
   // nothing is retained or shared across calls (the "extremely careful with memory leakage" bar).
   const kcAgain = M.paletteKeyColors(doc);

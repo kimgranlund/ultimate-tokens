@@ -80,6 +80,7 @@ The merge was **replayed from scratch** rather than read: a detached worktree at
 **Counts this pass: 16 🟢, 5 🟡, 0 🔴** across 21 rows. Folding the carried groups out to the prior verdict's own granularity: **35 🟢, 5 🟡, 0 🔴** (prior: 25 🟢, 3 🟡, 0 🔴; the two new yellows are rows 7 and 18, and row 13 moved from 🟢 to 🟡 on the load reading while rows 19 and the prior three yellows account for the rest).
 
 **Re-pins reproduced: 10 of 10** named or found (8 citations, the radix fixture, the shadcn schema stamp), plus **32** further citation re-pins inside conflict resolutions that the ledger does not enumerate, of which 7 were spot-checked by hand and all 40 are covered green by `test/repo/citations.mjs`. **None could not be reproduced.**
+verdict: 🟡
 
 ## Evidence
 

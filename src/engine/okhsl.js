@@ -188,6 +188,10 @@ export function rgbToOkhsl([r, g, b]) {
   const a = C === 0 ? 1 : lab[1] / C, bb = C === 0 ? 0 : lab[2] / C;
   const L = lab[0];
   const h = 0.5 + (0.5 * Math.atan2(-lab[2], -lab[1])) / Math.PI;
+  // Pure black (L = 0) has a zero-width gamut, so getCs returns zero chroma bounds and the
+  // formula below divides 0 by 0. Black is achromatic: s = 0. (Ticket #681 U10: a `#000000`
+  // palette anchor otherwise carried NaN through tonal.js's anchored OKHSL branches.)
+  if (L <= 0) return { h: ((h * 360) % 360 + 360) % 360, s: 0, l: 0 };
   const [c0, cMid, cMax] = getCs(L, a, bb);
   let s;
   if (C < cMid) {

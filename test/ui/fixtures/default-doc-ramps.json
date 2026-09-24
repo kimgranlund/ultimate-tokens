@@ -1,5 +1,5 @@
 {
- "generatedFrom": "U2 review pass 2: R6 toneAt-affine-remap + R2 smoothstep chroma-basis easing (fix-first-2, 2026-09-18)",
+ "generatedFrom": "#681 U10 pre-land F3: chromaEnvelope sd capped at +/-1 (2026-09-23)",
  "paletteGroups": {
   "material": {
    "baseChroma": 30,
@@ -157,7 +157,7 @@
   ],
   "Success": [
    "#FFFFFF",
-   "#ECF0EB",
+   "#ECF1EB",
    "#DCE7DA",
    "#CADFC8",
    "#B9D8B5",
@@ -185,11 +185,11 @@
   "Warning": [
    "#FFFFFF",
    "#FEFEFE",
-   "#FBFBFB",
-   "#F7F7F7",
-   "#F1F1F1",
-   "#ECEAE8",
-   "#E8E1DA",
+   "#FCFBFA",
+   "#F9F7F4",
+   "#F5F1ED",
+   "#EFE9E3",
+   "#E9E1D9",
    "#E2C9AF",
    "#DDAA71",
    "#CC8C3C",

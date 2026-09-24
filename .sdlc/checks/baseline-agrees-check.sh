@@ -1,7 +1,7 @@
 # The numbers in .sdlc/baseline.md agree with the tree they describe, and the adapter's
 # time ranges agree with the baseline. Reads files and git only: no node_modules, no network.
 # Usage: sh .sdlc/checks/baseline-agrees-check.sh   (from the repo root)
-# A STALE head line on a later commit is expected: it says the tree moved since the baseline ran,
+# A STALE head line now means only that the ref is not in origin/main's history; a note head line on a later commit is expected, counts toward neither the stale total nor the exit code, and says the tree moved since the baseline ran,
 # so the numbers are unproven at that head, not that they are wrong.
 node - <<'EOF'
 const fs = require("fs"), cp = require("child_process");
@@ -16,12 +16,28 @@ say(!!bn && +bn[1] === tests, `tests: baseline ${bn ? bn[1] : "none"}, test/run.
 const kb = (read("figma/plugin/ui.html").length / 1024).toFixed(1);
 const bs = (row(b, "| `npm run build` |")[5] || "").match(/ui\.html ([\d.]+) KB/);
 say(!!bs && bs[1] === kb, `ui.html: baseline ${bs ? bs[1] : "none"} KB, tree ${kb} KB`);
-for (const [cmd, gate] of [["npm test", "test"], ["npm run build", "build"], ["npm run smoke", "smoke"]]) {
+// The two-number Interim ceiling this loop used to cross-check against the test row's own
+// "ceiling X to Y s" cell text retired with #713 U6b: the live ceiling is now one number (120 s,
+// see adapter §1's prose bullet and fenced quiet-host block, not the gate table), and the old
+// range stays only as history inside baseline.md's labelled prior set, which this check no
+// longer reads. Each gate's own committed time range still has to agree between the two files.
+for (const [cmd, gate, label] of [
+  ["npm test", "test", "test"],
+  ["npm run build", "build", "build"],
+  ["npm run smoke", "smoke", "smoke"],
+  ["npm run gate:corpus-contrast", "corpus-contrast", "corpus-contrast"],
+  ["npm run gate:corpus-tonal", "corpus-tonal", "gate:corpus-tonal"],
+  ["npm run gate:corpus-anchor", "corpus-anchor", "gate:corpus-anchor"],
+  ["npm run gate:sweep-prime", "sweep-prime", "gate:sweep-prime"],
+  ["npm run gate:corpus-reset", "corpus-reset", "gate:corpus-reset"],
+  ["npm run gen:type-fonts", "fonts", "fonts"],
+]) {
   const t = (row(b, "| `" + cmd + "` |")[4] || "").split("·").map(Number);
-  const m = (row(a, "| " + gate + " |")[5] || "").match(/(\d+) to (\d+) s/);
+  const cell = row(a, "| " + gate + " |")[5] || "";
+  const ms = [...cell.matchAll(/(\d+) to (\d+) s/g)];
   const lo = Math.round(Math.min(...t)), hi = Math.round(Math.max(...t));
-  say(t.length === 3 && t.every(Number.isFinite) && !!m && +m[1] === lo && +m[2] === hi,
-    `time ${gate}: baseline ${lo} to ${hi} s, adapter ${m ? m[1] + " to " + m[2] + " s" : "none"}`);
+  say(t.length === 3 && t.every(Number.isFinite) && ms.length > 0 && ms.every((m) => +m[1] === lo && +m[2] === hi),
+    `time ${label}: baseline ${lo} to ${hi} s, adapter ${ms.length ? ms.map((m) => m[1] + " to " + m[2] + " s").join(", ") : "none"}`);
 }
 const ref = (b.match(/^ref: .*@ ([0-9a-f]{7,40})\b/m) || [])[1];
 let same = false, onMain = false;
@@ -29,7 +45,7 @@ if (ref) {
   try { cp.execSync(`git diff --quiet ${ref} HEAD -- . ":(exclude).sdlc" ":(exclude).gitignore"`, { stdio: "ignore" }); same = true; } catch (e) {}
   try { cp.execSync(`git merge-base --is-ancestor ${ref} origin/main`, { stdio: "ignore" }); onMain = true; } catch (e) {}
 }
-say(same, `head: baseline ref ${ref || "none"} has the same tree as HEAD outside .sdlc/ and .gitignore`);
+console.log(same ? `ok    head: baseline ref ${ref || "none"} has the same tree as HEAD outside .sdlc/ and .gitignore` : `note  head: baseline ref ${ref || "none"}, the tree moved outside .sdlc/ and .gitignore since the baseline ran, so the numbers are unproven at this head`);
 say(onMain, `head: baseline ref ${ref || "none"} is in origin/main's history`);
 console.log(`stale total: ${stale}`);
 process.exit(stale ? 1 : 0);

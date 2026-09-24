@@ -1,0 +1,91 @@
+# Question · records-followup (#709) · repair `.sdlc/roadmap.md` or rebuild it
+
+date: 2026-09-21
+from: orchestrator
+about: PR #720, `plan/records-followup-roadmap`, after the citation census closed
+status: answered
+
+## The measurement that prompts this
+
+Owner ruling R16 approved an atomic landing window for four repairs and a count re-read. Before opening it I asked the Verifier to census every citation on the branch, because passes 1, 2 and 3 had found four, then two, then eight, and an increment per pass is not a bounded set.
+
+The census is closed and the set is bounded:
+
+| Figure | Value |
+|---|---|
+| claims followed | 383 |
+| hold | 318 |
+| fail | 48 |
+| unresolvable | 16 |
+| blocking after withdrawals | 44 🔴, 1 🟡 |
+
+One claim in eight fails. The worst file is not the roadmap but `.sdlc/handoffs/records-followup-U11.md`: 123 claims, 22 failing, and six of the seven that were never true are the handoff describing its own evidence.
+
+Two structural findings, not cell defects:
+
+- the roadmap's legend contract is unkept across about twenty cells, which no per-cell repair fixes
+- a record graded at the branch head instead of at the commit it was written at invents defects. Regrading the U11 handoff at its own commit moved fifteen rows from fail to hold and none the other way. Two of my own relays to the builder carried this error, and one of them replaced a correct field with a wrong one.
+
+## What is already repaired
+
+U13 holds at `861cab5c`, seven commits, each touching exactly one file: the stale tally, the unranked ticket, the `#686` ordering, the stale worktree row, three false citations, two wrong commit counts, a dead path, a copied control figure, and the `#718` verb. The counts are deliberately unwritten. One finding, A11, was withdrawn after the census found the citation resolves in a third `R<n>` namespace, and that edit is being restored.
+
+## The decision
+
+1. **Repair, inside the R16 window (recommended if the roadmap is wanted as it stands).** U13 takes the remaining reds, the legend contract is rewritten once rather than cell by cell, the counts are read last, the verifier re-checks, and the squash follows. Cost: 45 rows of repair, each needing its own derivation and control, on a file that has now been wrong at every pass.
+2. **Rebuild the roadmap from live facts under the census's rules.** The file is regenerated so that every cell is an output of a command recorded beside it, the legend contract holds by construction, and the counts fall out of the generation rather than being edited into it. The handoff repairs already made are kept, since they are separate files. U13's four roadmap commits discard cleanly, each touching only that file.
+3. **Land the handoffs and drop the roadmap from this PR.** #720 carries only the record repairs; the roadmap becomes its own ticket with the census as its specification.
+
+The builder's observation is worth weighing: under option 2 the `Count:` and `inputs:` lines become an output of the generation rather than an edit, so the convergence problem R16 was written to work around stops existing for those cells.
+
+Default if unanswered: none taken. #720 does not land, the freeze holds, and U13 stays parked at `861cab5c`.
+
+## What this costs while undecided
+
+The repo-wide mint freeze from R16 is holding for every lane. It has been in force since the window was approved.
+
+## A finding that arrived after this question was written
+
+The A11 red was withdrawn and the builder restored the cell, verifying the withdrawal itself rather than taking my relay: the standing-rulings file at `:43` records that it renumbered its own R5 to R7 precisely because the background seats had already used R5 for this PR, so three `R<n>` namespaces are in play and `owner ruling R5` resolved as written the whole time.
+
+The builder then named something that no criterion on this plan would have caught. Its A11 edit was factually true in every clause and still made the record worse, because the true clauses implied a false conclusion: the revision row it wrote asserted that the standing-rulings file has no R5, R6 or R7 among its headings, which is exactly right and exactly beside the point. A per-clause check passes it.
+
+This bears on the decision. Option 1 repairs 45 rows under per-clause checking, which is the checking that just passed a misleading record. Option 2 removes the class for every generated cell, because a cell that is an output of a recorded command cannot imply a conclusion its command does not support. It is also the second time on this unit that a repair introduced a defect while every clause of it was true.
+
+## A measured re-open rate, added after the builder reviewed its own record
+
+Of roughly eleven rows dispatched to U13, three needed a second visit: A11 was withdrawn after it had been repaired, A14 was repaired against the branch head instead of the record's own commit and had to be re-derived, and A13 needed a second pass for a misreading the cell itself did not contain. One of the three was a repair whose every clause was true.
+
+That is the rate to scale option 1 by: about thirty rows never dispatched, at roughly one second visit in four, each visit needing its own derivation and control. A regeneration pays the legend contract once, where thirty cell edits never touch it at all.
+
+Work that is free under either outcome has been started meanwhile: every red that lives in the three handoff files survives a rebuild, so those are being repaired now.
+
+## Why the blocking figure moved from 45 to 44
+
+A16 lost one of its two halves after the builder checked reachability rather than wall clock: the commit that tracks the review is 40 minutes earlier in time but is not an ancestor of the handoff's own commit, so the handoff's claim that nothing entered a commit or a diff leg on this branch holds from its own anchor. Only the path stays false. The census seat recorded the correction as its sixth, and named it as its own anchor rule applied to time instead of to reachability.
+
+This does not change the decision. It is the sixth instance of the same thing the decision is about: a record asserting something about other work, checked against the wrong source, by the seat enforcing that very rule.
+
+## The handoff side is now repaired, which changes what each option costs
+
+The work that survives a rebuild has been done. U13 is at `107d2778`, nine commits, each touching exactly one file. Seventeen claims in `.sdlc/handoffs/records-followup-U11.md` were graded at that file's own last commit, sixteen repaired and one left alone because it re-derives and holds. Every red the census placed in the three handoff files is now closed.
+
+Its own count is seventeen rather than the census's twenty, and the difference is grouping, not disagreement: the census counted the R2 header as four failures where one of the four holds, and counted two contradictions at two sites each. The builder enumerated them rather than inheriting the arithmetic.
+
+One row could not be repaired and says so: two gate readings of the same command in the same worktree disagree, nothing recoverable orders them, and the cell now states that instead of picking a winner.
+
+So the remaining cost splits cleanly:
+
+| Option | What is left |
+|---|---|
+| 1, repair | about thirty roadmap rows, plus the legend contract, at a measured one second visit in four |
+| 2, rebuild | regenerate `.sdlc/roadmap.md`; the four roadmap commits drop, nothing else on the branch is touched |
+| 3, land the handoffs | nothing; the handoff files are already repaired and the roadmap leaves the PR |
+
+## Answer
+
+Asked by the Conductor through AskUserQuestion on 2026-09-21, recorded as owner ruling R18. Options offered: "Rebuild the roadmap (Recommended)" · "Repair inside the window" · "Land the handoffs, ticket the roadmap". Chosen: "Rebuild the roadmap (Recommended)".
+
+Effect, as the ruling states it: regenerate so every cell is the output of a command recorded beside it, the legend holds by construction, the counts fall out of generation; handoff repairs already made are kept.
+
+As carried out: U13's four roadmap commits are dropped and its five handoff commits kept. The unrepairable gate row stays as written, since a cell that says two readings disagree and nothing orders them is honest where a chosen winner would not be. The freeze holds until the squash, and the squash still needs a 🟢 record.

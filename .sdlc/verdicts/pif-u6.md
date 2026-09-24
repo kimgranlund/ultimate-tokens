@@ -25,6 +25,7 @@ is confirmed by my own independent reproduction.
 | 7 | Gate-time cost documented honestly | 🟡 upper bound exceeded under load |
 | 8 | Determinism of the gates themselves | 🟢 |
 | 9 | `test/repo/branding.mjs` | 🟢 |
+verdict: 🟢
 
 ## 1. C1 🟢
 

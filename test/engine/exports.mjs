@@ -884,6 +884,9 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
 //    every ramp-derived value in all three sections moved once, the same way shadcn-baseline.css's
 //    #681 CARVE-OUTs above document. No leaf shape, key, or ordering changed: only the underlying
 //    OKLCH values, matching what src/engine/tonal.js/prime.mjs now emit on the merged tree.
+//    #681 U10 re-capture (2026-09-23, pre-land F3, by script from the engine): chromaEnvelope caps `sd`
+//    at +/-1, so Warning (lift -36) steps 1 to 5 and a1 to a5 in all three sections moved from neutral
+//    grey (oklch C 0) to Warning's own tint. 30 leaves moved, all Warning; nothing else changed.
 {
   const G = "radix-refs-values-unchanged";
   const fixture = JSON.parse(readFileSync(new URL("./fixtures/radix-baseline.json", import.meta.url), "utf8"));

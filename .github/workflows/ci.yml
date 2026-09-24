@@ -103,11 +103,7 @@ jobs:
   # sweep U1 registered, on every PR. Own runners, fail-fast false so one red leg never hides
   # another, no needs: and no npm ci for the same zero-dependency reasoning as corpus-contrast
   # above, and no if: or continue-on-error: on any leg, so a red leg reds this job's own
-  # conclusion and nothing here can mask it. Sequencing note (#713 plan): gate:corpus-anchor
-  # needs test/engine/anchor.mjs, which arrives with #681, so that leg runs red until it lands;
-  # gate:corpus-tonal, gate:sweep-prime and gate:corpus-reset only read --full once U2, U4 and
-  # U5 teach those files to, so until then they run their existing, unsplit suite instead. That
-  # is this plan's own sequencing, not a bug in this job.
+  # conclusion and nothing here can mask it.
   sweeps:
     strategy:
       fail-fast: false
