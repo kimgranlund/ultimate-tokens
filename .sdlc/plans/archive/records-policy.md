@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: #722, #721
 priority: P2
 lane: docs
@@ -138,3 +138,4 @@ If #723's mandate (plan `verdict-frontmatter`) lands before this plan's verdicts
 | 2026-09-22 | revision 4: the Decision says four rules, not three; U2-3's name says which rules it reads; P1's control cites the recheck's own run (`npm test` exits 1 at the `gen:adia-exports` pre-step) instead of a gate red nobody measured | recheck at 0478a9a6: 11 green, 2 yellow, 0 red |
 | 2026-09-23 | revision 5, from the U2 handoff's Findings (confirmed by the review and the verdict): P4's control plants `1.2.0` to `1.2.1`, since #681 moved the generator to 1.2.0; U2-7's control copies the ADR-024 card as well as its row. `npm test` took 599 s on a loaded host, one second under the Bash tool's 600 s limit; the plan's gates need no change for that, and a builder runs it with the full timeout. U2 verified 🟢 at `ec03c157` (verdict pass 2; pass 1 was 🔴 on the review record's brand quote only). |
 | 2026-09-23 | revision 6, from the pre-land review at `699344f5` (FIX-FIRST F1): revision 5's edit to P4's control is reverted, because ruling A (`.sdlc/questions/records-policy-U1-controls.md`) keeps the criterion text of U1-3 and P4 unchanged and has the verifier plant on the version the row reads at the pre-land base (1.2.0 since #681), naming that version in the record. U2-7's control edit stands; ruling A does not cover U2. Revision 5's date is corrected to the local day it was written. |
+| 2026-09-23 | revision 7, landed. PR #732 squashed as `7bad436f` at `7ef88531` under R1 and R21 (`.sdlc/verdicts/records-policy-authz.md`); pre-land 🟢 (`.sdlc/verdicts/records-policy-prepr.md`), CI green, critic ACCEPT `issuecomment-5806618376`. #722 and #721 closed; ADR-027 is on main as PROPOSED for the owner to ratify; the adapter §6 follow-up is #742; the plan is archived. |
