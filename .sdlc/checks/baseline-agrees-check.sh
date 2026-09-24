@@ -16,24 +16,28 @@ say(!!bn && +bn[1] === tests, `tests: baseline ${bn ? bn[1] : "none"}, test/run.
 const kb = (read("figma/plugin/ui.html").length / 1024).toFixed(1);
 const bs = (row(b, "| `npm run build` |")[5] || "").match(/ui\.html ([\d.]+) KB/);
 say(!!bs && bs[1] === kb, `ui.html: baseline ${bs ? bs[1] : "none"} KB, tree ${kb} KB`);
-const ceilBase = b.match(/^Interim ceiling: \*\*.*?expected between (\d+) and (\d+) s/m);
-for (const [cmd, gate] of [["npm test", "test"], ["npm run build", "build"], ["npm run smoke", "smoke"], ["npm run gate:corpus-contrast", "corpus-contrast"], ["npm run gen:type-fonts", "fonts"]]) {
+// The two-number Interim ceiling this loop used to cross-check against the test row's own
+// "ceiling X to Y s" cell text retired with #713 U6b: the live ceiling is now one number (120 s,
+// see adapter §1's prose bullet and fenced quiet-host block, not the gate table), and the old
+// range stays only as history inside baseline.md's labelled prior set, which this check no
+// longer reads. Each gate's own committed time range still has to agree between the two files.
+for (const [cmd, gate, label] of [
+  ["npm test", "test", "test"],
+  ["npm run build", "build", "build"],
+  ["npm run smoke", "smoke", "smoke"],
+  ["npm run gate:corpus-contrast", "corpus-contrast", "corpus-contrast"],
+  ["npm run gate:corpus-tonal", "corpus-tonal", "gate:corpus-tonal"],
+  ["npm run gate:corpus-anchor", "corpus-anchor", "gate:corpus-anchor"],
+  ["npm run gate:sweep-prime", "sweep-prime", "gate:sweep-prime"],
+  ["npm run gate:corpus-reset", "corpus-reset", "gate:corpus-reset"],
+  ["npm run gen:type-fonts", "fonts", "fonts"],
+]) {
   const t = (row(b, "| `" + cmd + "` |")[4] || "").split("·").map(Number);
   const cell = row(a, "| " + gate + " |")[5] || "";
-  if (gate === "test") {
-    const ceilCells = [...cell.matchAll(/ceiling (\d+) to (\d+) s/g)];
-    if (ceilBase || ceilCells.length) {
-      const baseStr = ceilBase ? `${ceilBase[1]} to ${ceilBase[2]} s` : "none";
-      const adapterStr = ceilCells.length ? ceilCells.map((m) => `${m[1]} to ${m[2]} s`).join(", ") : "none";
-      const allMatch = !!ceilBase && ceilCells.length > 0 && ceilCells.every((m) => m[1] === ceilBase[1] && m[2] === ceilBase[2]);
-      say(allMatch, `ceiling ${gate}: baseline ${baseStr}, adapter ${adapterStr}`);
-    }
-  }
-  const plain = gate === "test" ? cell.replace(/ceiling \d+ to \d+ s/g, "") : cell;
-  const ms = [...plain.matchAll(/(\d+) to (\d+) s/g)];
+  const ms = [...cell.matchAll(/(\d+) to (\d+) s/g)];
   const lo = Math.round(Math.min(...t)), hi = Math.round(Math.max(...t));
   say(t.length === 3 && t.every(Number.isFinite) && ms.length > 0 && ms.every((m) => +m[1] === lo && +m[2] === hi),
-    `time ${gate}: baseline ${lo} to ${hi} s, adapter ${ms.length ? ms.map((m) => m[1] + " to " + m[2] + " s").join(", ") : "none"}`);
+    `time ${label}: baseline ${lo} to ${hi} s, adapter ${ms.length ? ms.map((m) => m[1] + " to " + m[2] + " s").join(", ") : "none"}`);
 }
 const ref = (b.match(/^ref: .*@ ([0-9a-f]{7,40})\b/m) || [])[1];
 let same = false, onMain = false;
