@@ -5,7 +5,7 @@ ran: 2026-09-23 to 2026-09-24
 ref: plan/gate-split @ c87d98fc
 host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 window 1 and its window-2 sequel), full readings in the U6b handoff's Runs table
 extended: 2026-09-19, rows corpus-contrast and fonts, host load 3.97 4.39 4.80 to 6.16 4.94 4.97 on 10 cores across the six runs
-supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. Every row now carries all three of its counted quiet-host readings; `npm test`'s window-1 figures move to a labelled superseded note once U6c-8 re-timed it
+supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. The four gate-script rows carry all three of their counted quiet-host readings; `npm test` carries 1 of 3 after a foreign-run overlap moved two window-2 readings to Rejected (see the U6b handoff), and `npm test`'s own window-1 figures move to a labelled superseded note once U6c-8 re-timed it
 ---
 
 # Baseline
@@ -16,7 +16,7 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
-| `npm test` | 3/3 | 0 | 89.10 · 79.93 · 80.07 | `✓ all 50 test files passed` `re-measured 2026-09-24, gate-split #713 U6c-8, quiet-host set (below); replaces the U6b/window-1 figures, which move to the superseded note below` |
+| `npm test` | 1/3 | 0 | 89.10 | `✓ all 50 test files passed` `re-measured 2026-09-24, gate-split #713 U6c-8; 2 of the window's 3 readings (79.93, 80.07) overlapped another seat's npm test runs and moved to the U6b handoff's Rejected runs (R33, R34); 2 more counted runs owed; the U6b/window-1 figures move to the superseded note below` |
 | `npm run gate:corpus-tonal` | 3/3 | 0 | 86.09 · 116.31 · 92.56 | `PASS: tonal-generation clears all [gate] predicates` `new row, gate-split #713 U6b` |
 | `npm run gate:corpus-anchor` | 3/3 | 0 | 78.98 · 99.90 · 86.02 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control` `new row, gate-split #713 U6b; first reading window 1, other two window 2 (2026-09-24)` |
 | `npm run gate:sweep-prime` | 3/3 | 0 | 86.25 · 70.40 · 67.00 | `PASS: prime-system clears all AC-050 gates` `new row, gate-split #713 U6b; first reading window 1, other two window 2 (2026-09-24)` |
@@ -26,7 +26,7 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 | `npm run gate:corpus-contrast` | 3/3 | 0 | 20.12 · 22.89 · 22.29 | `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color` |
 | `npm run gen:type-fonts` | 3/3 | 0 | 0.77 · 0.78 · 0.70 | `wrote src/ui/type-fonts.js  (229 KB · fonts 171 KB woff2)` |
 
-`npm test`'s summary line moved from 49 to 50 test files: U1 registered `engine/corpus-sample.mjs` in `test/run.mjs`'s `TESTS` alongside the existing `engine/anchor.mjs`. Every row above now carries all three of its counted quiet-host readings (load under 5 at start, 0 hot processes and a clean `pgrep` before and after, exit 0, tree clean); the readings taken in window 2 (2026-09-24) closed out the three gate-script rows and re-timed `npm test` under U6c's narrower SAMPLED draw. See `.sdlc/handoffs/gate-split-U6b.md`'s Runs and Rejected runs tables for every attempt, counted and not.
+`npm test`'s summary line moved from 49 to 50 test files: U1 registered `engine/corpus-sample.mjs` in `test/run.mjs`'s `TESTS` alongside the existing `engine/anchor.mjs`. The four gate-script rows above and `npm test` all carry quiet-host readings (load under 5 at start, 0 hot processes and a clean `pgrep` before and after, exit 0, tree clean); the three gate-script rows are complete (window 2, 2026-09-24), and `npm test` carries 1 of its required 3 after 2 of window 2's 3 readings turned out to overlap another seat's `npm test` run and moved to Rejected. See `.sdlc/handoffs/gate-split-U6b.md`'s Runs and Rejected runs tables for every attempt, counted and not.
 
 ### Superseded: `npm test`'s window-1 figures (2026-09-23, pre-U6c-8)
 
