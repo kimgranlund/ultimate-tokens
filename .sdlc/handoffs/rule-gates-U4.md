@@ -3,19 +3,25 @@ kind: handoff
 plan: rule-gates
 unit: U4
 branch: unit/rg-U4
-written: 2026-09-23
-pass: 1
+written: 2026-09-24
+pass: 2
 ---
 
 # U4 handoff: the em-dash sweep, the gate registered
 
-Base sha: b8abddf0. Head sha: 68fad59a. Commits, in order: c5f7bb2c (merge origin/main
-at ae4206ac into U4, G0's post-condition), 0faca70d (hand edit, voice-check.mjs's pivot
-regex to the u2014 escape), e55a2ce9 (the automatic --fix sweep), c90402b2 (regenerate
-the mirrors from the sweep), c23f5c83 (hand-rewrite the sweep's refused lines),
-80a0f0ae (regenerate the mirrors from the hand edits), bb0608f9 (register
-repo/em-dash.mjs, the CLAUDE.md Always line), 68fad59a (re-pin architecture.md's
-DD50-DD52 after the Always line shifted CLAUDE.md's trailing comments by two lines).
+Base sha: b8abddf0. Head sha: (this commit's parent, see git log). Commits, in order:
+c5f7bb2c (merge origin/main at ae4206ac into U4, G0's post-condition), 0faca70d (hand
+edit, voice-check.mjs's pivot regex to the u2014 escape), e55a2ce9 (the automatic --fix
+sweep), c90402b2 (regenerate the mirrors from the sweep), c23f5c83 (hand-rewrite the
+sweep's refused lines), 80a0f0ae (regenerate the mirrors from the hand edits), bb0608f9
+(register repo/em-dash.mjs, the CLAUDE.md Always line), 68fad59a (re-pin
+architecture.md's DD50-DD52 after the Always line shifted CLAUDE.md's trailing
+comments by two lines), 05a315f5 (pass 1 handoff), 1ed4f5f6 (pass 2: findings 1 to 4),
+3efa6a8d (regenerate the mirrors pass 2 touched).
+
+Pass 1's verdict was FIX-FIRST (`rg-U4-review.md`, reviewer-l2). The "Pass 2" section
+below maps each of its eight findings to what changed; the sections above it are pass
+1's record, corrected where pass 2 found them wrong (marked inline).
 
 ## G0 (U4-1)
 
@@ -45,9 +51,11 @@ repo/em-dash.mjs'` -> `1`. `npm test` -> `✓ all 51 test files passed`.
 
 `.claude/CLAUDE.md`'s `## Always` block gained: "No U+2014 anywhere in the tree;
 `test/repo/em-dash.mjs` gates it in `npm test`, and `node test/repo/em-dash.mjs --fix`
-repairs a branch." `git diff --numstat b8abddf0 -- .claude/CLAUDE.md` -> `30	27
-.claude/CLAUDE.md` (27 swept lines, 3 added: the two-line Always bullet plus its blank
-line join).
+repairs a branch." `git diff --numstat b8abddf0 -- .claude/CLAUDE.md` -> `29	27
+.claude/CLAUDE.md` (**corrected in pass 2, finding 6**: 27 swept lines plus the one new
+bullet, which wraps to two lines at the file's usual width, the same way the bullet
+above it does; pass 1 misquoted this as `30 27` with a wrong "blank line join"
+explanation).
 
 ## U4-6, the three record checks on the swept records
 
@@ -95,8 +103,9 @@ the two `escapeHtmlVM(collectionName)` warning strings in
 (`</b> —` to `</b>:`), the icon-set sentence and the "Which variant?" heading in
 `src/engine/ds-export.js`, the motion-row sentence in `src/engine/ds-export.js:680`
 (split into two clauses with a semicolon and a comma), and the two legend comments
-naming the glyph as a status symbol (`src/ui/app.js:2385`, `src/ui/sections/color.js:1330`,
-rewritten with a plain hyphen since they describe a UI symbol, not a prose pause).
+naming the glyph as a status symbol (`src/ui/app.js:2385`, `src/ui/sections/color.js:1330`).
+**Corrected in pass 2, finding 3**: these two now name `n/a`, matching what the cell
+itself renders (`color.js:1337`), not the hyphen pass 1 used.
 `src/ui/styles.css:6` and `:106`'s CSS comment labels are in the list below too.
 
 ## npm test, npm run build, npm run smoke
@@ -108,13 +117,16 @@ gallery · category · editor · export dialog all render in a real browser`.
 
 ## Disagreed with the plan
 
-None structurally. Process note: `--fix`'s per-line loop stops at a line's first R0
-refusal, so a line with a refusal AND a later otherwise-fixable dash leaves that later
-dash untouched too and unlisted in the residual report (found on
+None structurally. Process note (this is U3's tool, not U4's; pass 1 reported it,
+pass 2 changes nothing here per finding 8): `--fix`'s per-line loop stops at a line's
+first R0 refusal, so a line with a refusal AND a later otherwise-fixable dash leaves
+that later dash untouched too and unlisted in the residual report (found on
 `docs/reference/reviews/2026-07-17-cto-core.md:44`, which had three dashes but only one
-was reported refused). The handoff's 94-line count and the "5 half-rewritten" figure use
-the plan's numbering; the true count of dashes fixed by hand is higher since several
-lines carried two dashes.
+was reported refused). The 94-line before/after list below is 92 refused lines (the
+fix's own residual report) plus the 2 hidden dashes on cto-core.md:44 found the same
+way; each of those 94 lines can span more than one diff hunk (an R7 join also edits the
+line before it with a trailing comma), which is why `git diff` shows more than 94
+hunks for that commit.
 
 To get the automatic sweep, the regeneration, the hand edits and the registration into
 separate commits despite the sweep and my hand edits touching some of the same files, I
@@ -231,3 +243,203 @@ unreviewed"; `c23f5c83`/`80a0f0ae` as "the hand edits alone", per the brief's in
 - `test/mcp/brand-kit-merged.mjs:3` before `// server (#374). Spawns the real (zero-dep) server TWICE, once kitless, once with a sibling brand-kit.json` after `// server (#374). Spawns the real (zero-dep) server TWICE, once kitless, once with a sibling brand-kit.json,`
 - `test/mcp/brand-kit-merged.mjs:4` before `// — and drives the full MCP protocol over stdio, proving a generated kit never dead-ends end to end.` after `// and drives the full MCP protocol over stdio, proving a generated kit never dead-ends end to end.`
 - `test/ui/headless-boot.mjs:1873` before `// colour CSS: Download-All emits BOTH css-hex/ and css-oklch/ — two co-equal formats, no setting to pick one.` after `// colour CSS: Download-All emits BOTH css-hex/ and css-oklch/, two co-equal formats, no setting to pick one.`
+## Pass 2 (rg-U4-review.md, reviewer-l2, verdict FIX-FIRST)
+
+Findings 1 to 8, in the reviewer's order.
+
+**Finding 1 (U4-10, red).** Every string the review named, plus every other program
+string under `src/`, `mcp/`, `figma/` that the sweep's mechanical comma left reading as
+a false list (a name or a value followed by its description) is rewritten with a colon
+or a sentence break in commit `1ed4f5f6`: the three section tab titles and the Settings
+button title in `app.js`; the graph card titles, the New-Palette diagram title, the
+Palettes/Scrims/Mapping/Radix tab titles, the Fit control's title and ariaLabel, the
+Compare control's title and two canvas aria-labels, and the Chroma-basis ariaLabel in
+`color.js`; the Controls/Tokens tab titles, the Fit control, the Geometry-specimen
+aria-label and the Compare aria-label in `geometry.js`; the Specimen/Tokens tab titles,
+the Fit control, the Custom-family title, the Typography-specimen aria-label and the
+Compare aria-label in `typography.js`; the two `escapeHtmlVM` collection-removal
+warnings and the Aliases/Deprecates report-line labels in both
+`figma/binder/figma-semantic-binder/code.js` and `figma/plugin/code.js` (the binder's
+copy, changed together as the finding asks); the "couldn't bind"/"couldn't apply"
+notify sentence, split into two sentences instead of a comma splice, in both files; the
+Brand-Kit MCP and Describe-Palette MCP "downloaded" toasts and the "Text styles
+skipped" toast in `app.js`/`apply-gate.js`; and the three harmony hints (Analogous,
+Complement, Albers) in `derive.mjs`.
+
+Every other auto-fixed string the sweep touched in those three trees (about 80 lines,
+sampled by grepping the sweep commit's diff for `title:`/`label:`/`ariaLabel:`/
+`aria-label`/`toast(`/`hint:`/`note:`/`placeholder:`/`alt:`) was read and kept as a
+comma: the category/travel-preset `name`/`note` example pairs in
+`mcp/describe-rubric.mjs` (a name then its own description, the same shape as the
+category JSON data), the geometry-preset `note` strings (independent traits in a real
+list: "Balanced default, generous touch targets, soft corners, ..."), every
+"X failed/skipped/couldn't Y, do Z" toast that reads as one clause continuing into an
+instruction (`unslop` rule 13's comma splice, not a list), the "state, click to cycle"
+theme-toggle titles, the "Download ..., a .zip with ..." and "Create a new palette,
+derive it ..., or pick one custom" button titles (genuine appositions and an
+Oxford-comma list), and the font-status titles in `typography.js` (clause splices).
+None of these needed a further edit; none is a mirror or test-compared string, so none
+of the "if a string is compared, change both" cases apply outside the ones above (the
+binder/plugin pair, already both changed).
+
+**Finding 2 (red, no-substitute rule).** The 12 en dashes are gone. The 9
+`figma-styles-hard-constraints.md` citations (lines 32, 42, 51, 58, 62, 75, 85, 100,
+114) are now parenthetical citations after the full stop they already had (`... units.
+(PRs #294/#295.)`), folding an inner citation's own parens into one set where one
+existed (lines 100, 114). The 3 `store-copy.md` sign-offs (399, 405, 486) are now
+`(Ultimate Tokens)` in parens, same reasoning.
+
+**Finding 3 (yellow).** `app.js:2385` and `color.js:1330`'s legends now read
+`n/a absent` / `n/a not in the file`, naming the same text the drift cell renders
+(`color.js:1337`). `figma-styles-hard-constraints.md:19` no longer starts with `- `
+(which rendered as a Markdown list item); the two-file citation is folded into the
+sentence before it as one parenthetical spanning both files, joined with a semicolon
+(commit `1ed4f5f6`, see the before/after list below).
+
+**Finding 4 (yellow, the owner's product name).** Owner ruling R37
+(`.sdlc/questions/rule-gates-U4.md`, relayed by the Conductor 2026-09-24, before this
+pass closed) sets `Ultimate Tokens Pro` / `Ultimate Tokens Studio`, no punctuation.
+Applied in `.claude/skills/ultimate-tokens-brand-voice/scripts/store-drift-check.mjs`
+(`PRODUCT_NAME`) and `docs/marketing/store-copy.md` lines 117 and 171. `DESC_PROBES`'s
+`"derived, not guessed"` was already the ruled form and is unchanged. The owner
+re-pastes both names in the live Lemon Squeezy dashboard separately; until then
+`store-drift-check.mjs` (a live-network check, not part of `npm test`) warns.
+
+**Finding 5 (yellow, P3/P9 not in the handoff).** Added below: the rule table's 9
+counts from this unit's own `--fix --sample` run, the refused-list sample, and P9's
+pair-check figure with every one of its 20 hits explained.
+
+**Finding 6 (yellow, handoff accuracy).** U4-5's `.claude/CLAUDE.md` numstat corrected
+to `29 27` (see the U4-5 section above); the Always bullet is one bullet wrapped to two
+lines, the same as the bullet above it, not two bullets joined by a blank line. The
+94-line count is refused lines fixed by hand, not the diff's hunk count (see
+"Disagreed with the plan" above). `gen:preview` and `gen:type-fonts` runs recorded
+below.
+
+**Finding 7 (yellow, scope).** `68fad59a`'s edit to `.sdlc/architecture.md` is outside
+U4's Touches row (`test/repo/em-dash.mjs`, `test/run.mjs`, `voice-check.mjs`, the R0
+residual lines, one `.claude/CLAUDE.md` line). It was necessary: `doc-drift-rows-check`
+reds without it, because registering the gate's Always bullet shifted two lines
+`.sdlc/architecture.md` cites by line number. Declared here as the departure the
+finding asks for; no other file outside Touches was edited.
+
+**Finding 8 (nits).** `component-inventory.md:147` now quotes the aria-label's actual
+current text (`"Chroma basis: gamut when on, peak when off"`) instead of a stale
+truncated ellipsis. `README.md:119` uses a comma, matching every sibling line in the
+same code fence (`hct.js ..., pure ES modules, no DOM`, `ui.html, the generator AS a
+Figma plugin`), not the colon pass 1 used. `rubric.md:3` now reads `'brand-kit-core.mjs':
+the surface, + 'brand-kit-server.mjs': the stdio transport)`, a colon per file instead
+of a comma. The `--fix` first-refusal-stop behavior is U3's tool; noted above, nothing
+changed.
+
+### P3, this unit's own `--fix --sample` run (0faca70d, before the sweep)
+
+Rule counts: `R0 92`, `R1 27`, `R2 573`, `R3 462`, `R4 0`, `R5 0`, `R6 300`, `R7 31`,
+`R8 8623` (matches the pass-1 reviewer's independent run at the same head). Refused
+list: 92 lines, each with its habitat, the same 92 lines the "Before/after" list above
+fixes 92 of the 94 entries for (the 2 hidden dashes on `cto-core.md:44` are not in this
+list because `--fix`'s per-line loop never reaches them, per the process note above).
+`git diff --text --stat` on the `--fix --sample` output and a second `--fix` run:
+identical, `339 files changed, 9743 insertions(+), 9743 deletions(-)` both times
+(0faca70d plus `docs/img/palette-preview.svg` and `src/ui/type-fonts.js`, the two files
+`--fix` sweeps itself since `npm test` does not regenerate them). Idempotent.
+
+### P9, the pair-check figure
+
+`20` at the merge commit c5f7bb2c (not `0`). Every one of the 20 reads as a hand pair
+whose refused, then rewritten, line opens with a comment marker (`// `, matching the
+9 R0(g)-style marker lines this unit fixed: both `figma-semantic-binder/code.js` pairs,
+both `mode-apply-plan.mjs` pairs, `style-plan.mjs`'s aligned-comment line, `tonal.js`,
+`exports.js`, `model.mjs`, `binder.mjs`, `exports.mjs`, `prime-pre-681.mjs`, `prime.mjs`)
+plus their copies inside the regenerated `figma/plugin/ui.html` mirror, plus the two
+`.sdlc/architecture.md` re-pins (`68fad59a`). P9's check pattern (`$0 !~ "^-[[:space:]]*"
+d`) does not admit a removed line that starts with a comment marker before the
+whitespace and the dash; every one of the 20 is a marker line this unit's own step 3
+names, not an unrelated edit. `git diff --text --numstat` insertions/deletions equal:
+`0`.
+
+### gen:preview, gen:type-fonts
+
+`npm run gen:preview`: ran, wrote `docs/img/palette-preview.svg`, but its output
+differs from the committed file by 3 swatch rects, the same pre-existing drift the
+pass-1 reviewer measured at 0faca70d (present since #681, not from this sweep); the
+diff was discarded (not committed) rather than drag in an unrelated change. `npm run
+gen:type-fonts`: did not complete, `Error: no latin woff2 for Inter Tight` (it fetches
+font files over the network; this environment has no route to fonts.google.com). No
+file changed; `git status` was clean both times.
+
+## Before/after, pass 2's hand rewrites (73 diff pairs, commit `1ed4f5f6`, no sample)
+
+- `.claude/skills/maintaining-brand-kit-mcp/references/rubric.md:3` before `Scores a change to 'mcp/' ('brand-kit-core.mjs', the surface, + 'brand-kit-server.mjs', the stdio` after `Scores a change to 'mcp/' ('brand-kit-core.mjs': the surface, + 'brand-kit-server.mjs': the stdio`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:18` before `'setBoundVariable(field, null)'s whichever half the current plan omits.` after `'setBoundVariable(field, null)'s whichever half the current plan omits`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:19` before `- 'figma/binder/style-plan.mjs' (the 'coreStyleName ? {fontStyle} : {fontWeight}' forks, PR #292)` after `('figma/binder/style-plan.mjs', the 'coreStyleName ? {fontStyle} : {fontWeight}' forks, PR #292;`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:20` before `+ 'figma/plugin/code.js#applyStylePlans' (the null-clear, PR #301).` after `'figma/plugin/code.js#applyStylePlans', the null-clear, PR #301).`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:32` before `keep the exact ratio/em relative units. – 'src/engine/type.mjs#typeTokensFigmaModes', PRs #294/#295.` after `keep the exact ratio/em relative units. ('src/engine/type.mjs#typeTokensFigmaModes', PRs #294/#295.)`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:42` before `of a long label). – PRs #293/#297/#305.` after `of a long label). (PRs #293/#297/#305.)`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:51` before `zero-from-400 and the first array entry wins arbitrarily. – 'figma/plugin/code.js', PR #300.` after `zero-from-400 and the first array entry wins arbitrarily. ('figma/plugin/code.js', PR #300.)`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:58` before `  "SemiBold". – PRs #291/#300.` after `  "SemiBold". (PRs #291/#300.)`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:62` before `  install-dependent. – PR #300. Preset-side: sibling weights must be researched against the real` after `  install-dependent. (PR #300.) Preset-side: sibling weights must be researched against the real`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:75` before `of the setter proves nothing. – TKT-0009's BZZR migration (60 specimen nodes), 2026-07-16.` after `of the setter proves nothing. (TKT-0009's BZZR migration, 60 specimen nodes, 2026-07-16.)`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:85` before `"same as every other mode" is a value, not an omission. – TKT-0009 follow-up, 2026-07-16.` after `"same as every other mode" is a value, not an omission. (TKT-0009 follow-up, 2026-07-16.)`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:100` before `invisible until a FULL post-migration readback, not the per-step one. – BZZR weight-ramp` after `invisible until a FULL post-migration readback, not the per-step one. (BZZR weight-ramp`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:101` before `migration, 2026-07-28 ('figma-file-migration' scenario 7).` after `migration, 2026-07-28, 'figma-file-migration' scenario 7).`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:114` before `'collection.variableIds', never against 'getVariableByIdAsync''s return value. – BZZR weight-ramp` after `'collection.variableIds', never against 'getVariableByIdAsync''s return value. (BZZR weight-ramp`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:115` before `migration, 2026-07-28 (84/84 deletions falsely read as failed before switching verification` after `migration, 2026-07-28, 84/84 deletions falsely read as failed before switching verification`
+- `.claude/skills/maintaining-figma-plugins/references/figma-styles-hard-constraints.md:116` before `methods; 'figma-file-migration' scenario 7).` after `methods, 'figma-file-migration' scenario 7).`
+- `.claude/skills/ultimate-tokens-brand-voice/scripts/store-drift-check.mjs:27` before `const PRODUCT_NAME = { 1182548: "Ultimate Tokens, Pro", 1182535: "Ultimate Tokens, Studio" };` after `const PRODUCT_NAME = { 1182548: "Ultimate Tokens Pro", 1182535: "Ultimate Tokens Studio" };`
+- `README.md:119` before `  binder/   bind-plan.mjs · figma-semantic-binder/          : the standalone Semantic Binder plugin` after `  binder/   bind-plan.mjs · figma-semantic-binder/          , the standalone Semantic Binder plugin`
+- `docs/marketing/store-copy.md:117` before `Ultimate Tokens, Pro` after `Ultimate Tokens Pro`
+- `docs/marketing/store-copy.md:171` before `Ultimate Tokens, Studio` after `Ultimate Tokens Studio`
+- `docs/marketing/store-copy.md:399` before `> Account, paste the key, and click Validate. Anything at all: {{SUPPORT_CHANNEL}}. – Ultimate Tokens` after `> Account, paste the key, and click Validate. Anything at all: {{SUPPORT_CHANNEL}}. (Ultimate Tokens)`
+- `docs/marketing/store-copy.md:405` before `> seats. Manage seats and billing anytime at {{CUSTOMER_PORTAL}}. – Ultimate Tokens` after `> seats. Manage seats and billing anytime at {{CUSTOMER_PORTAL}}. (Ultimate Tokens)`
+- `docs/marketing/store-copy.md:486` before `> – Ultimate Tokens` after `> (Ultimate Tokens)`
+- `docs/reference/references/component-inventory.md:147` before `  "Chroma basis …"). The palette site sits in a bare 'field' div with no '<label>' at all` after `  "Chroma basis: gamut when on, peak when off"). The palette site sits in a bare 'field' div with no '<label>' at all`
+- `figma/binder/figma-semantic-binder/code.js:476` before `  lines.push("Aliases, never removed, value redirected (" + report.aliases.length + "):");` after `  lines.push("Aliases: never removed, value redirected (" + report.aliases.length + "):");`
+- `figma/binder/figma-semantic-binder/code.js:478` before `  lines.push("Deprecates, never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");` after `  lines.push("Deprecates: never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");`
+- `figma/binder/figma-semantic-binder/code.js:925` before `  figma.notify("Couldn't bind the semantic variables. Please try again, if it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });` after `  figma.notify("Couldn't bind the semantic variables. Please try again. If it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });`
+- `figma/plugin/code.js:283` before `    figma.notify("Ultimate Tokens couldn't " + what + ". Please try again, if it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });` after `    figma.notify("Ultimate Tokens couldn't " + what + ". Please try again. If it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });`
+- `figma/plugin/code.js:755` before `  lines.push("Aliases, never removed, value redirected (" + report.aliases.length + "):");` after `  lines.push("Aliases: never removed, value redirected (" + report.aliases.length + "):");`
+- `figma/plugin/code.js:757` before `  lines.push("Deprecates, never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");` after `  lines.push("Deprecates: never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");`
+- `src/engine/derive.mjs:69` before `  { id: "extend", label: "Extend", hint: "Analogous, continue the primary's family (+30°)" },` after `  { id: "extend", label: "Extend", hint: "Analogous: continue the primary's family (+30°)" },`
+- `src/engine/derive.mjs:71` before `  { id: "contrast", label: "Contrast", hint: "Complement, oppose the primary at 180°" },` after `  { id: "contrast", label: "Contrast", hint: "Complement: oppose the primary at 180°" },`
+- `src/engine/derive.mjs:74` before `  { id: "recontextualize", label: "Recontextualize", hint: "Albers, the primary's complement, muted (reads shifted in context)" },` after `  { id: "recontextualize", label: "Recontextualize", hint: "Albers: the primary's complement, muted (reads shifted in context)" },`
+- `src/ui/app.js:1318` before `          this.toast("Import failed, not a palette config (.json)");` after `          this.toast("Import failed: not a palette config (.json)");`
+- `src/ui/app.js:1405` before `      btn(icon("gear"), { cls: "settings-btn", title: "Settings, token mapping & preferences", ariaLabel: "Settings", onclick: () => this.openSettings() }),` after `      btn(icon("gear"), { cls: "settings-btn", title: "Settings: token mapping & preferences", ariaLabel: "Settings", onclick: () => this.openSettings() }),`
+- `src/ui/app.js:1418` before `        { id: "color", label: "Color", title: "Color, palettes, scrims & semantic roles" },` after `        { id: "color", label: "Color", title: "Color: palettes, scrims & semantic roles" },`
+- `src/ui/app.js:1419` before `        { id: "typography", label: "Typography", title: "Typography, type scale, treatments & the full specimen" },` after `        { id: "typography", label: "Typography", title: "Typography: type scale, treatments & the full specimen" },`
+- `src/ui/app.js:1420` before `        { id: "geometry", label: "Geometry", title: "Geometry, size ramp & dimensional tokens (preview)" },` after `        { id: "geometry", label: "Geometry", title: "Geometry: size ramp & dimensional tokens (preview)" },`
+- `src/ui/app.js:2326` before `    catch { this.toast("Save failed, no storage available"); }` after `    catch { this.toast("Save failed: no storage available"); }`
+- `src/ui/app.js:2385` before `  // now → per-token drift in the Mapping table (✓ match / ✗ drifted / - absent). Read-only: it never` after `  // now → per-token drift in the Mapping table (✓ match / ✗ drifted / n/a absent). Read-only: it never`
+- `src/ui/app.js:2472` before `    this.toast("Brand-Kit MCP downloaded, 'node brand-kit-server.mjs'");` after `    this.toast("Brand-Kit MCP downloaded: 'node brand-kit-server.mjs'");`
+- `src/ui/app.js:2507` before `    this.toast("Describe-Palette MCP downloaded, 'node mcp/brand-kit-merged-server.mjs'");` after `    this.toast("Describe-Palette MCP downloaded: 'node mcp/brand-kit-merged-server.mjs'");`
+- `src/ui/overlays/apply-gate.js:172` before `    if (missing.length) this.toast('Text styles skipped, no usable font for: ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}');` after `    if (missing.length) this.toast('Text styles skipped: no usable font for: ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}');`
+- `src/ui/sections/color.js:23` before `      card("L*×C, applied chroma vs gamut ceiling", this.graphLC(view, idx)),` after `      card("L*×C: applied chroma vs gamut ceiling", this.graphLC(view, idx)),`
+- `src/ui/sections/color.js:24` before `      card("Tone curve, L* per stop", this.graphTone(view, idx)),` after `      card("Tone curve: L* per stop", this.graphTone(view, idx)),`
+- `src/ui/sections/color.js:25` before `      card("Chroma curve, applied vs ceiling", this.graphChroma(view, idx)),` after `      card("Chroma curve: applied vs ceiling", this.graphChroma(view, idx)),`
+- `src/ui/sections/color.js:26` before `      card("Contrast, on-colors vs fills (≥4.5:1)", this.graphContrast(view, idx)),` after `      card("Contrast: on-colors vs fills (≥4.5:1)", this.graphContrast(view, idx)),`
+- `src/ui/sections/color.js:27` before `      card("Hue wheel, all enabled palettes", this.graphHueWheel(view)),` after `      card("Hue wheel: all enabled palettes", this.graphHueWheel(view)),`
+- `src/ui/sections/color.js:606` before `        h("div", { class: "newpal-diagram-title" }, "Chroma curve, applied vs ceiling"),` after `        h("div", { class: "newpal-diagram-title" }, "Chroma curve: applied vs ceiling"),`
+- `src/ui/sections/color.js:816` before `          { id: "palettes", label: "Palettes", title: "Palettes, the tonal ramps" },` after `          { id: "palettes", label: "Palettes", title: "Palettes: the tonal ramps" },`
+- `src/ui/sections/color.js:817` before `          { id: "scrims", label: "Scrims", title: "Scrims, the 7 translucent 500 overlays per palette, over a checkerboard" },` after `          { id: "scrims", label: "Scrims", title: "Scrims: the 7 translucent 500 overlays per palette, over a checkerboard" },`
+- `src/ui/sections/color.js:818` before `          { id: "mapping", label: "Mapping", title: "Semantic Mapping, each role's Light/Dark raw token, as a table" },` after `          { id: "mapping", label: "Mapping", title: "Semantic Mapping: each role's Light/Dark raw token, as a table" },`
+- `src/ui/sections/color.js:819` before `          { id: "radix", label: "Radix", title: "Radix, the 12-step Park UI ladder per palette, read straight from the engine's own Radix export" },` after `          { id: "radix", label: "Radix", title: "Radix: the 12-step Park UI ladder per palette, read straight from the engine's own Radix export" },`
+- `src/ui/sections/color.js:843` before `        title: "Fit, reset the canvas view to centre at 100%",` after `        title: "Fit: reset the canvas view to centre at 100%",`
+- `src/ui/sections/color.js:844` before `        ariaLabel: "Fit, reset the canvas view to centre at 100%",` after `        ariaLabel: "Fit: reset the canvas view to centre at 100%",`
+- `src/ui/sections/color.js:878` before `        "aria-label": isTable ? "Semantic mapping table" : "Palette canvas, drag to pan, wheel to zoom, double-click to reset",` after `        "aria-label": isTable ? "Semantic mapping table" : "Palette canvas: drag to pan, wheel to zoom, double-click to reset",`
+- `src/ui/sections/color.js:913` before `      title: on ? "Compare is on, click to return to a single scheme" : "Compare, Light & Dark side by side",` after `      title: on ? "Compare is on, click to return to a single scheme" : "Compare: Light & Dark side by side",`
+- `src/ui/sections/color.js:939` before `      { class: "canvas-area canvas-compare", role: "group", "aria-label": "Compare, Light and Dark side by side · drag to pan, wheel to zoom" },` after `      { class: "canvas-area canvas-compare", role: "group", "aria-label": "Compare: Light and Dark side by side · drag to pan, wheel to zoom" },`
+- `src/ui/sections/color.js:1330` before `    // per-mode drift cell: check = matches the file / ✗ drifted / - not in the file / · not read yet.` after `    // per-mode drift cell: check = matches the file / ✗ drifted / n/a not in the file / · not read yet.`
+- `src/ui/sections/color.js:2210` before `              ariaLabel: "Chroma basis, gamut when on, peak when off",` after `              ariaLabel: "Chroma basis: gamut when on, peak when off",`
+- `src/ui/sections/geometry.js:383` before `          { id: "controls", label: "Controls", title: "Live mock controls, render each ramp step as a real box" },` after `          { id: "controls", label: "Controls", title: "Live mock controls: render each ramp step as a real box" },`
+- `src/ui/sections/geometry.js:384` before `          { id: "tokens", label: "Tokens", title: "Editable token matrix, every size × Base + each breakpoint" },` after `          { id: "tokens", label: "Tokens", title: "Editable token matrix: every size × Base + each breakpoint" },`
+- `src/ui/sections/geometry.js:393` before `        title: "Fit, reset the canvas view to centre at 100%",` after `        title: "Fit: reset the canvas view to centre at 100%",`
+- `src/ui/sections/geometry.js:394` before `        ariaLabel: "Fit, reset the canvas view to centre at 100%",` after `        ariaLabel: "Fit: reset the canvas view to centre at 100%",`
+- `src/ui/sections/geometry.js:419` before `        "aria-label": "Geometry specimen, drag to pan, wheel to zoom, double-click to reset",` after `        "aria-label": "Geometry specimen: drag to pan, wheel to zoom, double-click to reset",`
+- `src/ui/sections/geometry.js:437` before `        role: "group", "aria-label": "Compare, every geometry breakpoint side by side · drag to pan, wheel to zoom" },` after `        role: "group", "aria-label": "Compare: every geometry breakpoint side by side · drag to pan, wheel to zoom" },`
+- `src/ui/sections/typography.js:310` before `          { id: "specimen", label: "Specimen", title: "Live faces, render each step in the real font" },` after `          { id: "specimen", label: "Specimen", title: "Live faces: render each step in the real font" },`
+- `src/ui/sections/typography.js:311` before `          { id: "tokens", label: "Tokens", title: "Editable token matrix, every step × Base + each breakpoint" },` after `          { id: "tokens", label: "Tokens", title: "Editable token matrix: every step × Base + each breakpoint" },`
+- `src/ui/sections/typography.js:320` before `        title: "Fit, reset the canvas view to centre at 100%",` after `        title: "Fit: reset the canvas view to centre at 100%",`
+- `src/ui/sections/typography.js:321` before `        ariaLabel: "Fit, reset the canvas view to centre at 100%",` after `        ariaLabel: "Fit: reset the canvas view to centre at 100%",`
+- `src/ui/sections/typography.js:347` before `        "aria-label": "Typography specimen, drag to pan, wheel to zoom, double-click to reset",` after `        "aria-label": "Typography specimen: drag to pan, wheel to zoom, double-click to reset",`
+- `src/ui/sections/typography.js:365` before `        role: "group", "aria-label": "Compare, every typography breakpoint side by side · drag to pan, wheel to zoom" },` after `        role: "group", "aria-label": "Compare: every typography breakpoint side by side · drag to pan, wheel to zoom" },`
+- `src/ui/sections/typography.js:772` before `          title: custom ? "Custom family, exports as-is; the web-app specimen loads it from Google Fonts (falls back if it isn't a Google font)" : "From the " + treatment.label + " treatment",` after `          title: custom ? "Custom family: exports as-is; the web-app specimen loads it from Google Fonts (falls back if it isn't a Google font)" : "From the " + treatment.label + " treatment",`
