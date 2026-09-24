@@ -110,6 +110,8 @@ planning, building, or landing. The one-paragraph version:
 - `npm test` green before treating a change as done (and `npm run build` if you touched the build chain).
 - `.claude/docs/other/` (local-only, ignored via `.git/info/exclude`) never reaches a commit,
   enforced by the `git-precommit-privatedocs-guard` PreToolUse hook (`.claude/hooks/`), not just prose.
+- No U+2014 anywhere in the tree; `test/repo/em-dash.mjs` gates it in `npm test`, and
+  `node test/repo/em-dash.mjs --fix` repairs a branch.
 
 <!-- Enforcement: the .claude/docs/other guard is a real PreToolUse hook (.claude/hooks/git-precommit-privatedocs-guard.mjs, registered in .claude/settings.json), added 2026-07-31 via /check-entry-file. Role-table parity + font-quoting stay conventions + CI + the test gates (test/engine/type.mjs's luxury quoting assert, categories.mjs's parity check), not pre-commit, mechanically checkable but lower-stakes than a private-dir leak, and already caught before merge by the test gate. -->
 <!-- This file is the always-loaded INDEX of cross-cutting, always-true facts only. Domain PROCEDURES (changing an engine, adding a role/format, the Figma binder, building a section, shipping, palette research) are owned by on-demand skills/agents in .claude/, discovered via their frontmatter descriptions, NOT routed from here. Conceptual depth: docs/reference/ + the engine files' header comments. Keep this thin; let the frontmatter system do the routing. Audited via /check-entry-file 2026-07-31 (90→~70 lines: cut boilerplate + a stale ticket count, collapsed 2 skill-duplicated Testing bullets to a pointer, the docs/other guard became a real hook). -->
