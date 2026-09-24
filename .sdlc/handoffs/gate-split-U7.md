@@ -4,7 +4,7 @@ plan: gate-split
 unit: U7
 branch: unit/gs-U7
 written: 2026-09-24
-pass: 2
+pass: 3
 ---
 
 # gate-split U7: pre-land review fixes, records and comments only
@@ -91,6 +91,18 @@ comment edits; no source or test logic touched.
    `Interim gate-time ceiling` / pif-u5 history section or the already-"Retired, #713 U6b"
    paragraph, both already correctly labelled as history; none needed a further fix.
 
+9. `.sdlc/baseline.md`'s "why a ceiling was needed" sentence, reworded (commit `9202a2cb`,
+   team-lead pass 3). `adapter.md:59`'s own ceiling-arithmetic bullet was confirmed fine
+   as item 8 left it (it is about `main` before #681, not a claim about the live table).
+   `baseline.md`'s sentence still framed the old figure as something the live table itself
+   once showed, worded confusingly against a table that has since moved. Before (item 8's
+   own after-text): `The `npm test` seconds the live table above showed at this section's
+   own writing (56 to 60 s, since superseded by the 80 to 89 s U6c-8 re-time in that same
+   table) were measured before #681, whose corpus sweeps are the cost.` After: `The
+   table's pre-#681 figures, 56 to 60 s, were measured before #681, whose corpus sweeps
+   are the cost; the live table above now reads 89.10, 79.93 and 80.07 s, the 80 to 89 s
+   U6c-8 re-time.`
+
 ## Not this unit's
 
 `.claude/CLAUDE.md:95`'s `~60 s` line (owner ruling, X9, pending), `test/engine/anchor.mjs`'s
@@ -103,10 +115,10 @@ files, `.sdlc/debt.md`'s K17 drift list, the `symmetry` anchored-corpus leg).
 - `npm test` in a fresh clone at pass 1's head (`e330d24a`): `all 50 test files passed`,
   `git status --short` empty after. Pass 2 (`080474ac`) is records-only per the
   team-lead's ask; no `npm test` re-run for it.
-- `node test/repo/branding.mjs | tail -1` at `080474ac`: `branding: clean (694 files
+- `node test/repo/branding.mjs | tail -1` at `9202a2cb`: `branding: clean (694 files
   scanned)`.
 - Added-line em dash count against `origin/main` (`git merge-base origin/main HEAD` =
-  `2890d67a`) at `080474ac`: `git diff $BASE | grep -v '^+++ ' | grep '^+' | perl -CSD -ne
+  `2890d67a`) at `9202a2cb`: `git diff $BASE | grep -v '^+++ ' | grep '^+' | perl -CSD -ne
   's/`[^`]*`//g; print if /\x{2014}/' | wc -l` reads `0`.
 
 ## Commits
@@ -119,5 +131,6 @@ files, `.sdlc/debt.md`'s K17 drift list, the `symmetry` anchored-corpus leg).
   (#713 U7)
 - `080474ac` gate-split: mark the two remaining stale 56-60s npm test figures as history
   (#713 U7)
+- `9202a2cb` gate-split: reword baseline.md's ceiling paragraph as history (#713 U7)
 
-Head: `080474ac`.
+Head: `9202a2cb`.
