@@ -2010,54 +2010,6 @@ export class ColorSectionImpl {
   }
 
 
-  // detachSnapshot(d, i, p) — stamp `preDetachHue`/`preDetachChroma`/`preDetachLift` from `p` (the
-  // PRE-drag palette, captured by the caller before this drag gesture began) onto `d.palettes[i]`,
-  // ticket #681 U2 re-diagnosis Finding 3 (review F7): resetAnchor below restores these EXACTLY
-  // instead of re-deriving a new hue/chroma/lift via `seedFromKeyColor`, which is lossy (it reads the
-  // ANCHOR's own hue, never whatever `hue` the palette held before the edit — 1,902 of 3,380 corpus
-  // palettes measured with a DIFFERENT hue than before detach, worst case 90°) and never round-trips
-  // a hand-tuned `lift` (e.g. the default kit's Warning at -36) at all, since re-deriving always reset
-  // it to 0. Fires ONLY on the anchored->detached transition (`p.anchor` present): an already-detached
-  // palette dragging Hue or Chroma again must not overwrite its FIRST snapshot with an in-between,
-  // already-detached value — one detach, one snapshot, until the next Reset clears it.
-  detachSnapshot(d, i, p) {
-    if (!p || !p.anchor) return;
-    d.palettes[i].preDetachHue = p.hue;
-    d.palettes[i].preDetachChroma = p.chroma;
-    d.palettes[i].preDetachLift = p.lift ?? 0;
-  }
-
-  // resetAnchor — re-attach a detached palette (ticket #681, U2/Q6): restores `anchor = sourceAnchor`
-  // (the generator's never-user-written copy, unaffected by the hue/chroma edit that dropped `anchor`)
-  // and restores hue/chroma/lift EXACTLY from the `preDetachHue`/`preDetachChroma`/`preDetachLift`
-  // snapshot `detachSnapshot` stamped at the moment of detach (re-diagnosis Finding 3 / review F7) —
-  // never re-derived. Skew is left alone either way: only hue/chroma (the detach trigger) and lift
-  // (the field re-derivation used to reset to 0) are restored, not the user's own skew warp. Falls
-  // back to the ORIGINAL re-derivation (`seedFromKeyColor`, lift 0) only when no snapshot exists at
-  // all — a palette that carries `sourceAnchor` but was detached some other way than this inspector's
-  // own sliders (a hand-edited import, or a doc saved before this fix), so Reset still does SOMETHING
-  // reasonable rather than nothing. The restored fields are cleared afterward — nothing left to
-  // restore once restored, same as `anchor` itself being the thing that came back. Only reachable when
-  // `sourceAnchor` is present and `anchor` is absent (the inspector hides the button otherwise) — a
-  // no-op guard here too, so a stray call (e.g. a stubbed-out UI event) can never silently misfire.
-  resetAnchor(i) {
-    const p = this.doc.palettes[i];
-    if (!p || !p.sourceAnchor || p.anchor) return;
-    const hasSnapshot = Number.isFinite(p.preDetachHue) || Number.isFinite(p.preDetachChroma) || Number.isFinite(p.preDetachLift);
-    const fallback = !hasSnapshot ? seedFromKeyColor(hexToOklch(p.sourceAnchor), this.doc.hueSpace) : null;
-    if (!hasSnapshot && !fallback) return;
-    this.commit((d) => {
-      d.palettes[i].anchor = p.sourceAnchor;
-      d.palettes[i].hue = Number.isFinite(p.preDetachHue) ? p.preDetachHue : fallback.hue;
-      d.palettes[i].chroma = Number.isFinite(p.preDetachChroma) ? p.preDetachChroma : fallback.chroma;
-      d.palettes[i].lift = Number.isFinite(p.preDetachLift) ? p.preDetachLift : 0;
-      delete d.palettes[i].preDetachHue;
-      delete d.palettes[i].preDetachChroma;
-      delete d.palettes[i].preDetachLift;
-    });
-  }
-
-
   duplicatePalette(i) {
     this.commit((d) => {
       const src = d.palettes[i];
