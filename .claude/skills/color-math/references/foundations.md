@@ -46,11 +46,11 @@ exports non-portable — knowledge-01 §3).
 ### 4. The gamut search — `maxChromaInGamut` and `peakC`
 
 - `maxChromaInGamut(hue, tone)` — binary-search chroma in `[0,180]` (18 iters): keep the largest chroma whose
-  `hctToRgb(...).inGamut` is true. Returns that ceiling; `0` at `tone<=0 || tone>=100`. **Memoized** by
-  `hue.toFixed(2)+"|"+tone.toFixed(2)`. The `gamut-ceiling` gate proves it is *tight*: in-gamut at `maxC`,
+  `hctToRgb(...).inGamut` is true. Returns that ceiling; `0` at `tone<=0 || tone>=100`. **Memoized**, key
+  EXACT (#686): `hue + "|" + tone`. The `gamut-ceiling` gate proves it is *tight*: in-gamut at `maxC`,
   NOT at `maxC+0.5`.
 - `peakC(hue)` — scan `t = 4..96 step 2`, return `{c,tone}` = the hue's max chroma and where it peaks.
-  Memoized by `hue.toFixed(2)`. This is *why* the per-palette `chroma` control is "% of the hue's own peak"
+  Memoized, key EXACT (#686): `String(hue)`. This is *why* the per-palette `chroma` control is "% of the hue's own peak"
   (100% = as saturated as this hue can get in sRGB), not a raw number.
 - `hctToOklch(h, c, t)` — the HCT color's OKLCH `[L, C, H°]` in **float**: reuses the CAM16 solve (`_hctToLinRGB`,
   shared with `hctToRgb`) and converts the converged linear sRGB straight through OKLab — **no 8-bit round-trip**.
@@ -62,7 +62,7 @@ exports non-portable — knowledge-01 §3).
   stays defined. **Chroma-aware because the OKLCH↔CAM16 hue map shifts with chroma (Abney)** — the OLD version
   sampled a fixed mid OKLCH point (L 0.72/C 0.10) and drifted ~15° on vivid blues; a cusp-only anchor regresses
   muted hues ~11°. Anchoring at the palette's OWN chroma lands the identity color on the stored hue to ~0°.
-  Memoized by `h.toFixed(2)+":"+chromaFrac.toFixed(3)`. Gate: `hct-oklch-inverse`.
+  Memoized, key EXACT (#686): `target + ":" + cf`. Gate: `hct-oklch-inverse`.
 - **Producers emit OKLCH hues** (the #117 flip): `gen-categories` stores each preset's source OKLCH hue +
   bakes `hueSpace:"oklch"`; `seedFromKeyColor(oklch, hueSpace)` returns the OKLCH hue (or CAM16 for a legacy
   doc); `defaultDocument` converts the 8 starter CAM16 hues via `camHueToOklch`. **`role-table.json` is
@@ -136,7 +136,7 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
 off-center hues' richest stop toward the center (yellow's cusp is at high L\* — crank vibrancy and the mid
 reads vivid for any hue). Saturation = `(chroma/100)·m` clamped to `[0,1]`, using the **same** damping `m` as
 the even path. `okhslLAt(L*)` maps an L\* to OKHSL lightness via a neutral gray (`rgbToOkhsl(hctToRgb(0,0,L*))`),
-memoized in `_okL`. The reported `chroma`/`maxc` are *measured* (`cam16FromRgb(rgb).chroma`) for the analysis
+pure, no cache (#738: measured under 1us per call, two or three calls per render). The reported `chroma`/`maxc` are *measured* (`cam16FromRgb(rgb).chroma`) for the analysis
 graphs; the color is in-gamut by OKHSL construction (`inGamut: true` is asserted, not computed). `l` is keyed
 on the **stop number** (`(stop−50)/900`, `(stop−500)/450`), not the array index — so stop 500 is the same hex
 in the 19-stop display ramp and the 25-stop export ramp.

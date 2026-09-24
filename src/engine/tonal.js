@@ -923,12 +923,10 @@ export function paletteStops(palette, controls, stops) {
 // anchored at stop 500 and each half spread from there — with chroma as a gamut-proportional OKHSL
 // saturation. Every emitted color is in gamut by OKHSL's construction. l is keyed off the STOP NUMBER
 // (not the array index) so a stop has the same color in the 19-stop display ramp and the 25-stop export ramp.
-const _okL = new Map(); // L* -> OKHSL lightness (via a neutral gray at that L*); memoized
+// okhslLAt is pure, with no cache (#738): a neutral-grey lookup measured at 0.40-0.90 us per
+// call, two or three calls per palette render, too cheap to be worth one.
 export function okhslLAt(lstar) {
-  const k = lstar.toFixed(2);
-  let v = _okL.get(k);
-  if (v === undefined) { v = rgbToOkhsl(hctToRgb(0, 0, lstar).rgb).l; _okL.set(k, v); }
-  return v;
+  return rgbToOkhsl(hctToRgb(0, 0, lstar).rgb).l;
 }
 
 // okhslLAtChromatic(targetLstar, hue, s) -> the OKHSL l whose (hue, s, l) renders at measured CIE L*
