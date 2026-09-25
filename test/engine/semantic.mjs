@@ -282,16 +282,16 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       ["Tertiary", 8.2, 5.2],   // measured 8.2782 / 5.2571
       ["Info", 7.2, 4.5],   // measured 7.2338 / 4.5768 - re-pinned U4 integration (was 7.2/4.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
       ["Success", 7.7, 4.9],   // measured 7.7219 / 4.9081 - light re-pinned pass 5 (was 7.6, floor(measured) is 7.7); dark pending U4: light was 8.0 at bf2aaf6, dark was 5.1 at bf2aaf6
-      ["Warning", 9.9, 5.3],   // measured 9.9148 / 5.3334 - dark re-pinned pass 5 (was 5.2, floor(measured) is 5.3)
+      ["Warning", 9.8, 5.2],   // measured 9.8756 / 5.2819 - re-pinned #701 U1 (owner ruling R44, chroma-floor-U1.md): the even shoulder's neighbourhood term at the anchor stop moves stops 450/550, both DOWN here (was 9.9/5.3, floor(measured) is 9.8/5.2); AA (4.5) still clears by a wide margin
       ["Danger", 8.6, 5.6],   // measured 8.6973 / 5.6465 - re-pinned U4 integration (was 8.7/5.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
       ["Data 1", 6.3, 4.9],   // measured 6.3149 / 4.9736 - light re-pinned pass 5 (was 6.2, floor(measured) is 6.3); dark pending U4: was 5.8 at bf2aaf6
       ["Data 2", 6.6, 4.6],   // measured 6.6726 / 4.6487 - pending U4: dark was 5.8 at bf2aaf6
-      ["Data 3", 6.5, 4.8],   // measured 6.5224 / 4.8271 - light re-pinned pass 5 (was 6.4, floor(measured) is 6.5); dark pending U4: was 5.8 at bf2aaf6
+      ["Data 3", 6.4, 4.8],   // measured 6.4562 / 4.8036 - light re-pinned #701 U1 (owner ruling R44, chroma-floor-U1.md): the even shoulder moves stop 450/550, DOWN here (was 6.5, floor(measured) is 6.4); dark pending U4: was 5.8 at bf2aaf6
       ["Data 4", 6.0, 5.1],   // measured 6.0537 / 5.1407 - pending U4: dark was 5.8 at bf2aaf6
-      ["Data 5", 5.8, 5.3],   // measured 5.8350 / 5.3561 - light re-pinned pass 5 (was 5.7, floor(measured) is 5.8); dark pending U4: was 5.8 at bf2aaf6
+      ["Data 5", 5.7, 5.3],   // measured 5.7748 / 5.3436 - light re-pinned #701 U1 (owner ruling R44, chroma-floor-U1.md): the even shoulder moves stop 450/550, DOWN here (was 5.8, floor(measured) is 5.7); dark pending U4: was 5.8 at bf2aaf6
       ["Data 6", 5.5, 5.5],   // measured 5.5494 / 5.5467 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 7", 5.6, 5.4],   // measured 5.6846 / 5.4779 - pending U4: dark was 5.8 at bf2aaf6
-      ["Data 8", 5.8, 5.3],   // measured 5.8570 / 5.3269 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 8", 5.7, 5.3],   // measured 5.7955 / 5.3049 - light re-pinned #701 U1 (owner ruling R44, chroma-floor-U1.md): the even shoulder moves stop 450/550, DOWN here (was 5.8, floor(measured) is 5.7); dark pending U4: was 5.8 at bf2aaf6
     ],
     peak: [
       ["Neutral", 7.2, 4.6],   // measured 7.21 / 4.66

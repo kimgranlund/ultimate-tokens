@@ -39,4 +39,8 @@ Full measured picture, everything else green:
 
 Rendered dips (real engine, full corpus + kit, both stop sets, dampAmp-0): 56 (400: 3, 450: 20, 550: 1, 500: 32 unchanged — the notch class, not this plan's). Gate-path (anchor omitted): 0, unchanged. These are U2's `EVEN_DIP_BASELINE` to retire, not gated here (C3/C4 are not U1's criteria); named for U2's head start.
 
-State: committed and pushed at `unit/cf-U1` @ `404ae7f5`. This doc is the only thing between U1 and a written handoff — A/B/C above decides whether the handoff records one clean run or five named, deliberately-uncorrected floor exceptions.
+State: committed and pushed at `unit/cf-U1` @ `404ae7f5` (then `ad34bb75` for this correction).
+
+## Answer (2026-09-25, owner ruling R44)
+
+Chosen: "B: re-pin the 5 floors down (Recommended)". Plan revision 11 (`7fc8fc99`) folds this into C8: the comparator's changed lines are the four `even` family rows the five cell-level moves land in (Warning both light+dark on one row, Data 3/5/8 light each their own row), every one a documented `DOWN`; `pass role-contrast`; AA holds everywhere. Re-pinned in `test/engine/semantic.mjs`'s `FLOORS.even` to the table's own floor(measured, 1dp) convention: Warning 9.9/5.3 -> 9.8/5.2, Data 3 6.5/4.8 -> 6.4/4.8, Data 5 5.8/5.3 -> 5.7/5.3, Data 8 5.8/5.3 -> 5.7/5.3. Handoff carries the full before/after/floor table and the #662 comment text.
