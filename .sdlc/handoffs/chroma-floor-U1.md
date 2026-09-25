@@ -2,21 +2,21 @@
 
 | Field | Value |
 |---|---|
-| Branch | unit/cf-U1 @ 9c9a953b (merged plan/chroma-floor revision 11, 7fc8fc99) |
+| Branch | unit/cf-U1 @ b3268be1 (merged plan/chroma-floor revision 12, 650ad34b) |
 | Files | src/engine/tonal.js · test/engine/anchor.mjs · test/engine/tonal.mjs · test/engine/semantic.mjs · test/engine/mode-isolation-gate.mjs (new) · test/engine/fixtures/mode-isolation.json (new) · test/engine/fixtures/tonal-legacy.json · scripts/report-preset-fidelity.mjs · package.json · .github/workflows/ci.yml · .sdlc/adapter.md · .sdlc/baseline.md · .sdlc/checks/baseline-agrees-check.sh · docs/reference/SKILL.md · docs/reference/rubrics/acceptance-criteria.md · docs/reference/reviews/2026-08-20-reactivity/{00-synthesis,04-context-and-messaging}.md |
 
 ## Ran
 
 | Criterion | Command | Output | Control |
 |---|---|---|---|
-| C1 | `npm test` | `✓ all 50 test files passed`, exit 0, tree clean after commit | n/a (the gate itself) |
+| C1 | `npm test` | `✓ all 50 test files passed`, exit 0, tree clean after commit | scratch clone, `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json && npm test`: exit 1, `grep -c FAIL` 3 (`engine/semantic.mjs FAIL`, `refs-canonical — ordered key set != canonical`) |
 | C2 | `npm run gate:corpus-anchor` | exit 0, `anchor-ramp lone-spike ...: 0 (expected 0, corpus 3380 anchored + default kit 16, no allow-list)`; greps `LONE_SPIKE_ALLOW\|DEFAULT_KIT_SPIKE_FINDING` 0, `loneSpikeSorted.length === 0` 1, `dropCheck\|swapCheck("lone-spike"` 0 | in-gate data-URL copy with the plateau neutralised (`uG *= t*t*(3-2*t)` -> `uG *= 1`) still finds spikes over the same corpus+kit, no `DID NOT bite` FAIL |
 | C5 | `report-preset-fidelity.mjs --envelope --gate-path` / `--envelope` | gate-path even: 10.9/16.2, 39.1/52.2, 39.0/44.6, 16.3/16.5, above100 0 OK — all four `OK`; default (rendered) run byte-identical to `<base>` (15.6/37.0, 48.4/113.7, 42.5/80.2, 22.9/52.0, above100 670); perceptual+peak block md5 `6e558839ee9e43217e1e2f7afc898b7b`, matches `<base>` | `--gate-path --damp-amp 55`: above100 1916 FAIL (bites) |
 | C6 | `npm run gate:mode-isolation` | exit 0, `perceptual 34e544942d500b9e peak f560f784d8a4883a match fixture (captured at 282fca8ddc84703a9bffc0bcc0f3b8462747cca5, 343 corpus + 16 default kit, 25-stop, projectView)` | same hashes reproduced with the U1 patch reverted (`git stash` on `tonal.js` alone) — proves the shoulder never touches these modes |
 | C7 | `node test/engine/tonal.mjs` (sampled) | `anchor-ramp monotone: 0`, `distinct (25-stop): 16`, `pass skew-lift-okhsl`, `pass chroma-envelope`; `chromaEnvelope(` greps 1 export / 5 mentions, unchanged | scratch copy with a second `export function chromaEnvelope` reds the first grep (per the skill's own convention, not re-run this pass — no source touches that shape) |
-| C8 | `node test/engine/semantic.mjs`, FLOORS comparator vs `<base>` | `pass chroma-floor`, `pass role-contrast`, `pass role-contrast Q-B floor gate`; comparator: `FLOORS changed 4, down 4` (Warning light+dark on one row, Data 3/5/8 light each their own row = 4 changed family-rows covering the 5 cell-level moves R44 names), `exit 1` (down != 0, expected under R44's re-pin); `npm run gate:corpus-contrast`: `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color` | negative control not re-run this pass (unchanged shape, verified in the plan's own revision-8 record) |
-| C9 | `node test/ui/headless-boot.mjs` | exit 0, `HEADLESS BOOT PASS`, `(hs)` source count 4, no `(hs)` line in the log (green run) | n/a, unaffected by this unit |
-| C10 | regen + `git diff --stat` vs merge-base | `git status --short` 0 after regen; `docs/` diff: `docs/reference/data/adia-oklch-export.css` unchanged (Adia carve-out holds); 4 paths beyond the named six, all one-line citation-number repairs (see Left out / notes) | n/a |
+| C8 | `node test/engine/semantic.mjs`, FLOORS comparator vs `<base>` | `pass chroma-floor`, `pass role-contrast`, `pass role-contrast Q-B floor gate`; comparator: `FLOORS changed 4, down 4` (per plan revision 12: the comparator counts rows, Warning's light+dark move together as one row, Data 3/5/8 light each their own — 4 rows carrying the 5 cell-level moves R44 names), `exit 1` (`down` non-zero is the expected shape here, per R44); `npm run gate:corpus-contrast`: `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color` | negative control not re-run this pass (unchanged shape, verified in the plan's own revision-8 record) |
+| C9 | `node test/ui/headless-boot.mjs`; `node test/engine/anchor.mjs` | exit 0, `HEADLESS BOOT PASS`, `(hs)` source count 4, no `(hs)` line in the log; live run's `anchor-f4 hueSpace-perceptual-bound` max OKLab dE 0.0048 (codes max 2), `hueSpace-peak-bound` max dE 0.0048 (codes max 1), both pass; even live dE 0.0486 (above the 0.01 JND floor, live) | scratch clone, `src/engine/tonal.js`'s `solveOkhslHue` patched to `return (bestH + 30) % 360` (forces the perceptual/peak solve into the wrong hue space): `anchor-f4 hueSpace-perceptual-bound` max OKLab dE 0.1668 FAIL, `hueSpace-peak-bound` max dE 0.1635 FAIL — both bite hard against the 0.01 bound |
+| C10 | regen + `git diff --stat` vs merge-base | `git status --short` 0 after regen; `docs/` diff: `docs/reference/data/adia-oklch-export.css` unchanged (Adia carve-out holds); 4 paths beyond the named six, all one-line citation-number repairs (see Left out / notes) | scratch clone, one line appended to `docs/reference/references/knowledge-01-color-engine.md`: the same `git diff --stat` command lists it as a 5th (now 8th total) `docs/` path outside the six, confirming the check would catch an unrelated docs touch |
 | C12 | `sh .sdlc/checks/baseline-agrees-check.sh` | 13 `ok` + 1 `STALE ui.html` (baseline 4125.3 KB, tree 4130.1 KB — the one line the rule allows) + 1 `note`, `stale total: 1`, `exit 1` — exactly the shape C12 rules for an engine change | scratch `test/run.mjs` with one extra entry reads `stale total` one higher, not re-run this pass (verified in the plan's own revision-8 record) |
 
 ## The neighbourhood term
@@ -107,10 +107,10 @@ A paste-ready comment for #662 (not posted; the Orchestrator posts it) is at
   27, 34) but counted 0/3 per the quiet-host rule. A genuine quiet-host set is owed before
   pre-land.
 - The FLOORS comparator's own counting granularity is per (mode, family) row, not per light/dark
-  cell: Warning's light+dark both moving counts as one changed row. Plan revision 11's text reads
-  "down 5" describing the five CELL-level moves the ruling named; the comparator itself prints
-  `changed 4, down 4` (four family rows). Both describe the same five cells; flagging the
-  wording gap here rather than silently squaring it.
+  cell: Warning's light+dark both moving counts as one changed row. Plan revision 11's text first
+  read "down 5"; revision 12 (`650ad34b`) corrected C8 to read `changed 4, down 4` (four family
+  rows carrying the five cell-level moves R44 names) — merged into this branch, resolved, not an
+  open gap any more.
 
 ## Criteria verdicts
 
