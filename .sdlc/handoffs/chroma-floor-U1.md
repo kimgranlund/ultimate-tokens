@@ -114,13 +114,13 @@ A paste-ready comment for #662 (not posted; the Orchestrator posts it) is at
 
 ## Criteria verdicts
 
-| # | Criterion | State |
-|---|---|---|
-| C1 | npm test green | 🟢 |
-| C2 | lone spikes, true 0, no allow-list | 🟢 |
-| C5 | envelope cells hold on the gate path, perceptual/peak unmoved, rendered path reported | 🟢 |
-| C6 | mode-isolation gate, perceptual/peak byte-identical | 🟢 |
-| C7 | ramp shape gates at zero, one envelope function | 🟢 |
-| C8 | chroma-floor properties hold, contrast holds, re-pin direction correct (5 named DOWN moves, owner-ruled) | 🟢 |
-| C9 | Q-D unchanged | 🟢 |
-| C10 | regenerated assets clean, docs move by the named list (+4 citation repairs, named) | 🟢 |
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| C1 | npm test green | 🟢 | `✓ all 50 test files passed`, exit 0 (Ran table) | `scrimX` sed, exit 1, 3 FAIL (Ran table) |
+| C2 | lone spikes, true 0, no allow-list | 🟢 | `gate:corpus-anchor` FULL, exit 0, `0 (expected 0, corpus 3380 + kit 16)` | plateau-neutralised data-URL copy, spikes return, no `DID NOT bite` |
+| C5 | envelope cells hold on the gate path, perceptual/peak unmoved, rendered path reported | 🟢 | `--gate-path` all four OK, above100 0; rendered block + md5 match `<base>` | `--damp-amp 55`, above100 1916 FAIL |
+| C6 | mode-isolation gate, perceptual/peak byte-identical | 🟢 | `gate:mode-isolation` exit 0, hashes match the `<base>`-captured fixture | patch reverted (`git stash` on `tonal.js`), same hashes reproduced |
+| C7 | ramp shape gates at zero, one envelope function | 🟢 | `anchor-ramp monotone: 0`, `chromaEnvelope(` greps 1/5 unchanged | second `chromaEnvelope` export reds the grep (not re-run, unchanged shape) |
+| C8 | chroma-floor properties hold, contrast holds, re-pin direction correct (5 named DOWN moves, owner-ruled) | 🟢 | `pass chroma-floor`, `pass role-contrast`; comparator `changed 4, down 4` | comparator's own drop/erode probes (not re-run, unchanged shape) |
+| C9 | Q-D unchanged | 🟢 | `max OKLab dE 0.0048 (want <= 0.01 ...)` both perceptual and peak bound lines pass (Ran table) | `solveOkhslHue` wrong-hue-space patch, both bound lines FAIL at dE ~0.165 (Ran table) |
+| C10 | regenerated assets clean, docs move by the named list (+4 citation repairs, named) | 🟢 | `git status --short` 0 after regen; `docs/` diff matches the named six + 4 repairs | knowledge-01 touch, 7th path listed by the same command (Ran table) |
