@@ -22,7 +22,7 @@
 | U1-2 | node test/engine/anchor.mjs | exit 0, key-anchor count 2, 0 FAIL | clone with keyOklch forced to hexToOklch("#000000"): stays exit 0 (reads hex only, by design; see U1-4) |
 | U1-3 | corpus probe, worktree vs clone at B, cmp | cmp 0; 3780 rows, 3380 anchored-equal both sides | clone, coefficient 0.4122214708->...09 in the surviving rgbToOklchArr: cmp differ at char 286, cmp 1 |
 | U1-4 | node test/ui/model.mjs | exit 0, pin match 1, subjects 16 | clone from U1-2's control (keyOklch forced to #000000): exit 1, FAIL naming "Neutral" first |
-| U1-5 | numstat + added-line count on model.mjs | "1 20", 1 | n/a, single-file deletion-shaped diff by construction |
+| U1-5 | numstat + added-line count on model.mjs | "1 20", 1 | clone, one extra appended line then committed: numstat "2 20", added-line count 2 |
 
 ## Note for landing
 
