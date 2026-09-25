@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: none yet; `adapter.py create --title docs-repair --label kind:chore --label lane:docs` at activation (Q0)
 priority: P2
 lane: docs (`docs/lld/`, `docs/reference/`, `README.md`, `figma/README.md`, the `building-editor-sections` skill, three source file headers, `test/repo/citations.mjs`)
