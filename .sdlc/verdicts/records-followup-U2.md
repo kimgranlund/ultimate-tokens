@@ -1,4 +1,5 @@
 # Verdict U2 · 🟢
+verdict: 🟢
 
 Plan `.sdlc/plans/records-followup.md` at `plan/records-followup` tip `ce20bea9dfd48cb015b2a953f3f9591da1c8d229` (the corrected counting commands of `cca4d0b8152ec239a004d29b9367fe1bfdb91b50` are an ancestor, so the tip text is what ran). Graded head `unit/rf-U2` @ `d5971271f3c3255ee38b68524cd35db82df5db5a`. `BASE` = `d34b4fb1beefff11c9be53ec039d4265c925da4a`, `UB` = `5361bc79c11fc6697fa72e2fb0fa15b909e1c9b3`. Handoff present on the unit branch: `.sdlc/handoffs/records-followup-U2.md`, 88 lines added against `UB`.
 

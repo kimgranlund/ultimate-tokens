@@ -92,11 +92,11 @@ planning, building, or landing. The one-paragraph version:
   (commits carry `Seat: orchestrator`); the Verifier's 🟢 verdict is what "done" means. A builder's
   own green `npm test` is its floor (see Always), not the verdict.
 - Gates and what green means live in `.sdlc/adapter.md` §1 and `.sdlc/baseline.md`: `npm test`
-  (no `node_modules`, ~60 s, tree clean after), `npm run build` (needs `npm ci`), `npm run smoke`
+  (no `node_modules`, 80 to 90 s, tree clean after), `npm run build` (needs `npm ci`), `npm run smoke`
   (needs Chrome). Run them in the unit worktree, never in a tree another seat is editing.
 - Tickets, PRs, and releases go through `adapter.py` (`.sdlc/config.json`, preset `github`); one
   ticket, one `plan/<slug>` branch, one PR per plan. Landing needs a 🟢 pre-land record
-  (`.sdlc/verdicts/<plan>-prepr.md`) and green CI (`build-test`, `panda-smoke`, `corpus-contrast`), then the
+  (`.sdlc/verdicts/<plan>-prepr.md`) and green CI (`build-test`, `panda-smoke`, `corpus-contrast`, `sweeps`), then the
   `shipping-changes` squash and sync steps. Human-filed bugs and features still go through
   `/file-bug` and `/file-feature` per ADR-017.
 - The Orchestrator closes a plan on landing: status flipped, steps ticked, file moved to

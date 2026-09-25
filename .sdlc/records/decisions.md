@@ -39,6 +39,9 @@ Reconciled from `.sdlc/records/cards/` oldest to newest. A decision is live only
 | ADR-022 type registers, not slots | live | migration `scripts/migrate-type-registers.mjs` kept as record |
 | ADR-023 scrims one 500-based alpha ramp | live | supersedes ADR-004; closes gap G2 |
 | ADR-024 vite dev/typecheck, bundle.mjs ships | live | amends ADR-010 wording, complements ADR-020; closes gap G3 |
+| ADR-025 WCAG-safe on-colors default, achromatic fall-through | live | amends ADR-003 (its fixed default no longer ships); closes OD-001; `hpg-role-contrast` gate |
+| ADR-026 anchor stored, not fitted | live | #681; `anchor-identity` and `anchor-ramp` gates; chroma-envelope cost owned by #725 and #701 |
+| ADR-027 cite only what you measured | proposed | generalises adapter §1's Ran-row rule; instances #718, #719 |
 
 ## Specs, LLDs, plans
 

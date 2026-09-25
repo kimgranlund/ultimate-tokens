@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene-U5 · review
+verdict: 🟢
 
 | Field | Value |
 |---|---|

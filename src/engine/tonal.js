@@ -11,7 +11,7 @@
 //   maxChromaInGamut(hue, tone) -> number   peakC(hue) -> { c, tone }
 //   oklchToCam16Hue(h)          -> CAM16 hue (degrees)
 import { hctToRgb, hctToOklch, maxChromaInGamut, peakC, oklchToCam16Hue, lstarFromRgb, cam16FromRgb } from "./hct.js";
-import { okhslToRgb, rgbToOkhsl, rgbToOklchHue } from "./okhsl.js";
+import { okhslToRgb, rgbToOkhsl, rgbToOklchHue, rgbToOklabChroma } from "./okhsl.js";
 
 // ── Stop sets ────────────────────────────────────────────────────────────────
 // Display ramp: 050..950 step 50 (19 stops). Light at 050, dark at 950.
@@ -543,16 +543,29 @@ function hexToRgbLocal(hex) {
   const s = hex.slice(1);
   return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)];
 }
-// resolveAnchor(palette) -> { hex, rgb, okhsl:{h,s,l}, lstar, cam:{hue,chroma,J} } | null - every
-// measured quantity the two anchored branches below need, computed ONCE per call from the SAME
+// ACHROMATIC_ANCHOR_C (Ticket #739, Q2 ruled 0.002) - an anchor's OKLab chroma below this is
+// achromatic: a grey, white, or black source whose stored hue is rounding residue, not a color
+// anyone chose. An achromatic anchor still contributes its own lightness and (near-zero) chroma
+// at the pivot - see anchorChromaBasis - but no hue: the ramp takes the palette's own stored hue
+// instead (Q1 (a)), on both anchored branches below. OKLab chroma is the test, not CAM16 chroma:
+// CAM16 chroma of a neutral is not 0 in this implementation (see rgbToOklabChroma's own comment).
+// One 8-bit code off exact grey reads ~0.0012-0.0018; the constant sits just above that noise
+// floor, below the two-codes-off reading (~0.003), so only rounding residue crosses it.
+export const ACHROMATIC_ANCHOR_C = 0.002;
+
+// resolveAnchor(palette) -> { hex, rgb, okhsl:{h,s,l}, lstar, cam:{hue,chroma,J}, achromatic } | null -
+// every measured quantity the two anchored branches below need, computed ONCE per call from the SAME
 // stored hex (never re-derived through a lossy round trip): OKHSL identity for the perceptual/peak
-// path, CIE L*/CAM16 for the even path. Reused by both so they can never read the anchor as two
-// different colors.
+// path, CIE L*/CAM16 for the even path, plus whether the anchor itself is achromatic (#739). Reused
+// by both so they can never read the anchor as two different colors.
 function resolveAnchor(palette) {
   const hex = typeof palette.anchor === "string" && ANCHOR_HEX.test(palette.anchor) ? palette.anchor.toUpperCase() : null;
   if (!hex) return null;
   const rgb = hexToRgbLocal(hex);
-  return { hex, rgb, okhsl: rgbToOkhsl(rgb), lstar: lstarFromRgb(rgb), cam: cam16FromRgb(rgb) };
+  return {
+    hex, rgb, okhsl: rgbToOkhsl(rgb), lstar: lstarFromRgb(rgb), cam: cam16FromRgb(rgb),
+    achromatic: rgbToOklabChroma(rgb) < ACHROMATIC_ANCHOR_C,
+  };
 }
 // Q3 (b), ruled (Q-U2-1, see .sdlc/questions/pif-u2.md): the TOKEN stays exact - prime.mjs's own
 // DEFAULT rung (U1) always renders the source hex verbatim, whatever its L* - but the RAMP clamps:
@@ -709,8 +722,12 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   // stop's OWN tone (and an estimated chroma at that tone), so the ramp's OKLCH hue stays close to the
   // anchor's real OKLCH hue THROUGHOUT the ramp, not only at the pivot - the correction the non-anchored
   // path's own stop-500-only calibration also only partially gives (see its own comment in paletteStops).
-  const targetOklchHue = rgbToOklchHue(anchor.rgb);
-  const seedHue = anchor.cam.hue; // "cam16" mode's fixed hue; also the gamut/chroma-estimate seed for "oklch"
+  // An achromatic anchor's own hue reading is rounding residue (#739): both the OKLCH target the
+  // per-stop solve chases and the CAM16 seed take the palette's own stored hue instead, through the
+  // same effHue/hueAnchorFrac the non-anchored path seeds itself with - so hueSpace keeps the meaning
+  // it has there. A chromatic anchor is untouched: both lines read exactly as before this ticket.
+  const targetOklchHue = anchor.achromatic ? palette.hue : rgbToOklchHue(anchor.rgb);
+  const seedHue = anchor.achromatic ? effHue(palette.hue, controls.hueSpace, hueAnchorFrac(palette, controls)) : anchor.cam.hue; // "cam16" mode's fixed hue; also the gamut/chroma-estimate seed for "oklch"
   // Q3 (b): a source outside the window still stores/reports its byte-exact anchor everywhere else
   // (prime.DEFAULT, C2) - "the token stays exact" - but the RAMP itself "clamps": stop 500 is built
   // from the SAME continuous piecewise construction as every other stop, evaluated exactly at the
@@ -906,12 +923,11 @@ export function paletteStops(palette, controls, stops) {
 // anchored at stop 500 and each half spread from there, with chroma as a gamut-proportional OKHSL
 // saturation. Every emitted color is in gamut by OKHSL's construction. l is keyed off the STOP NUMBER
 // (not the array index) so a stop has the same color in the 19-stop display ramp and the 25-stop export ramp.
-const _okL = new Map(); // L* -> OKHSL lightness (via a neutral gray at that L*); memoized
+// okhslLAt is pure, with no cache (#738): a neutral-grey lookup measured at 0.40-0.90 us per call
+// on a quiet host (median 1.54, 1.46-1.88, at load 67), two or three calls per palette render, too
+// cheap to be worth one.
 export function okhslLAt(lstar) {
-  const k = lstar.toFixed(2);
-  let v = _okL.get(k);
-  if (v === undefined) { v = rgbToOkhsl(hctToRgb(0, 0, lstar).rgb).l; _okL.set(k, v); }
-  return v;
+  return rgbToOkhsl(hctToRgb(0, 0, lstar).rgb).l;
 }
 
 // okhslLAtChromatic(targetLstar, hue, s) -> the OKHSL l whose (hue, s, l) renders at measured CIE L*
@@ -980,9 +996,13 @@ function effStop(stop, palette) {
 function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;
-  const targetOklchHue = rgbToOklchHue(anchor.rgb);
+  // An achromatic anchor's own OKHSL hue reading is rounding residue (#739): OKHSL hue IS OKLab hue,
+  // so the palette's own stored hue (already OKLCH-native) is used directly, with no solve and no
+  // effHue conversion needed - both the OKLCH target the per-stop solve chases and the pivot-clamp/
+  // cam16-mode hue basis below. A chromatic anchor is untouched: both lines read exactly as before.
+  const targetOklchHue = anchor.achromatic ? palette.hue : rgbToOklchHue(anchor.rgb);
   const oklchSpace = controls.hueSpace === "oklch";
-  const hOkSeed = anchor.okhsl.h; // "cam16" mode's fixed hue; also the pivot-clamp hue basis below
+  const hOkSeed = anchor.achromatic ? palette.hue : anchor.okhsl.h; // "cam16" mode's fixed hue; also the pivot-clamp hue basis below
   const lLight = okhslLAt(controls.lmax ?? 100);
   const lDark = okhslLAt(controls.lmin ?? 5);
   // Q3 (b): clamp the ladder's OWN pivot into the ramp's window (RAMP_L_MIN/MAX, in CIE L*),

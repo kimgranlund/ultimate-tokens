@@ -6,6 +6,7 @@ head: ee854932e2b03da92c17f666a63c60a5d3fc89b5
 merge-base: 1f991877
 seat: verifier
 date: 2026-09-20
+verdict: 🔴
 ---
 
 # Citation census, plan/records-followup-roadmap @ `ee854932`

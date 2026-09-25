@@ -1,4 +1,5 @@
 # Verdict k17-rerun U1 · 🟡 5 🟢, 2 🟡, 0 🔴
+verdict: 🟡
 
 | Field | Value |
 |---|---|

@@ -1,11 +1,11 @@
-// okhsl.js, OKHSL ⇄ sRGB (Björn Ottosson's perceptual HSL over OKLab).
+// okhsl.js — OKHSL ⇄ sRGB (Björn Ottosson's perceptual HSL over OKLab).
 //
 // Ported VERBATIM from the canonical reference (bottosson.github.io/posts/colorpicker/,
-// misc/colorpicker/colorconversion.js), the magic constants are load-bearing and copied exactly.
+// misc/colorpicker/colorconversion.js) — the magic constants are load-bearing and copied exactly.
 // OKHSL is gamut-BIJECTIVE: for a given (hue, lightness), saturation s=1 lands exactly on the sRGB
 // gamut boundary, and a fixed (s, l) reads as the same perceived colorfulness across hue. That is the
 // property that lets palettes harmonize regardless of hue (a blue and a yellow at the same s/l feel
-// equally saturated), the principled version of the relChroma "gamut" basis.
+// equally saturated) — the principled version of the relChroma "gamut" basis.
 //
 // Boundary conventions for THIS repo: hue in DEGREES (converted to Ottosson's [0,1] turns inside),
 // RGB as 0-255 integers (the reference works in 0..1). Pure, dependency-free, deterministic.
@@ -143,7 +143,7 @@ function getCs(L, a, b) {
 
 const clamp255 = (v) => Math.round(Math.min(255, Math.max(0, v)));
 
-// okhslToRgb(hueDeg, s, l), OKHSL (hue °, saturation 0..1, lightness 0..1) → [r,g,b] 0..255 ints.
+// okhslToRgb(hueDeg, s, l) — OKHSL (hue °, saturation 0..1, lightness 0..1) → [r,g,b] 0..255 ints.
 export function okhslToRgb(hueDeg, s, l) {
   if (l >= 1) return [255, 255, 255];
   if (l <= 0) return [0, 0, 0];
@@ -162,7 +162,7 @@ export function okhslToRgb(hueDeg, s, l) {
   return [clamp255(255 * srgbTransfer(rgb[0])), clamp255(255 * srgbTransfer(rgb[1])), clamp255(255 * srgbTransfer(rgb[2]))];
 }
 
-// oklchToRgb(L, C, H), OKLCH (L 0..1, C ≥0, H degrees) → [r,g,b] 0..255 ints, gamut-clamped.
+// oklchToRgb(L, C, H) — OKLCH (L 0..1, C ≥0, H degrees) → [r,g,b] 0..255 ints, gamut-clamped.
 // Used to place/seed RETAINED key colors stored as OKLCH (less lossy than an 8-bit hex source).
 export function oklchToRgb(L, C, H) {
   if (L >= 1) return [255, 255, 255];
@@ -172,7 +172,7 @@ export function oklchToRgb(L, C, H) {
   return [clamp255(255 * srgbTransfer(rgb[0])), clamp255(255 * srgbTransfer(rgb[1])), clamp255(255 * srgbTransfer(rgb[2]))];
 }
 
-// rgbToOklchHue([r,g,b]), the OKLCH HUE (degrees) of an sRGB color. The tonal engine uses it to anchor
+// rgbToOklchHue([r,g,b]) — the OKLCH HUE (degrees) of an sRGB color. The tonal engine uses it to anchor
 // an OKLCH-hue palette DIRECTLY in the space its perceptual ramp renders (OKHSL→sRGB→OKLCH), landing the
 // key stop on the set hue without a CAM16 round-trip. (Same OKLab basis as rgbToOkhsl below.)
 export function rgbToOklchHue([r, g, b]) {
@@ -181,7 +181,16 @@ export function rgbToOklchHue([r, g, b]) {
   return h < 0 ? h + 360 : h;
 }
 
-// rgbToOkhsl([r,g,b]), inverse. Returns { h: degrees, s: 0..1, l: 0..1 }.
+// rgbToOklabChroma([r,g,b]) - the OKLab chroma (hypot(a, b)) of an sRGB color. Unlike CAM16 chroma,
+// this reads exactly 0 for an exact grey and near-0 for a color within a code or two of one, so it is
+// what `tonal.js` tests an anchor against to decide whether it is achromatic (Ticket #739): CAM16
+// chroma of a neutral is not 0 in this implementation and cannot serve as that test.
+export function rgbToOklabChroma([r, g, b]) {
+  const lab = linearSrgbToOklab(srgbTransferInv(r / 255), srgbTransferInv(g / 255), srgbTransferInv(b / 255));
+  return Math.hypot(lab[1], lab[2]);
+}
+
+// rgbToOkhsl([r,g,b]) — inverse. Returns { h: degrees, s: 0..1, l: 0..1 }.
 export function rgbToOkhsl([r, g, b]) {
   const lab = linearSrgbToOklab(srgbTransferInv(r / 255), srgbTransferInv(g / 255), srgbTransferInv(b / 255));
   const C = Math.sqrt(lab[1] * lab[1] + lab[2] * lab[2]);
@@ -192,6 +201,12 @@ export function rgbToOkhsl([r, g, b]) {
   // formula below divides 0 by 0. Black is achromatic: s = 0. (Ticket #681 U10: a `#000000`
   // palette anchor otherwise carried NaN through tonal.js's anchored OKHSL branches.)
   if (L <= 0) return { h: ((h * 360) % 360 + 360) % 360, s: 0, l: 0 };
+  // Pure white has the mirrored problem at the top of the gamut: getCs returns a zero-width
+  // chroma bound there too, and the same C / 0 division reads a bogus saturation. White is
+  // achromatic: s = 0. (Ticket #739: an achromatic anchor's own gamut-edge reading, not just
+  // its hue, must not leak into the ramp.) `#FFFFFF`'s OKLab L rounds to 0.99999999, not exactly
+  // 1, so the guard checks a tolerance rather than L >= 1.
+  if (L >= 1 - 1e-6) return { h: ((h * 360) % 360 + 360) % 360, s: 0, l: 1 };
   const [c0, cMid, cMax] = getCs(L, a, bb);
   let s;
   if (C < cMid) {
