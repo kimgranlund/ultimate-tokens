@@ -1,6 +1,6 @@
 ---
 status: approved
-ticket: none yet; `adapter.py create --title docs-repair --label kind:chore --label lane:docs` at activation (Q0)
+ticket: "#751" (minted at activation, Q0: `adapter.py create --title docs-repair --label kind:chore --label lane:docs --size M`, body shortened to the units list because the plan exceeds GitHub's 65,536-character limit)
 priority: P2
 lane: docs (`docs/lld/`, `docs/reference/`, `README.md`, `figma/README.md`, the `building-editor-sections` skill, three source file headers, `test/repo/citations.mjs`)
 size: M+M+M+S+S+S+S (U1 M = 2, U2 M = 2, U3 M = 2, U4 S = 1, U5 S = 1, U6 S = 1, U7 S = 1; 10 points)
@@ -90,7 +90,7 @@ U7 adds one README section, `## Views and sections`, inserted before `## License
 
 ## Units
 
-- [ ] U3 (M) the four wrong claims and the six small ones, `app-shell.md`, `component-inventory.md`, `app-shell-patterns.md`, the section skill, three source headers · builder-l2 · reviewer-l1 · verifier-l1 · first
+- [~] U3 (M) the four wrong claims and the six small ones, `app-shell.md`, `component-inventory.md`, `app-shell-patterns.md`, the section skill, three source headers · builder-l2 · reviewer-l1 · verifier-l1 · first
 - [ ] U1 (M) `ui-plan.md` Revision B: three sections, modes, Compare, inspectors, gallery, ten formats · builder-l3 · reviewer-l2 · verifier-l2 · after U3
 - [ ] U2 (M) `docs/reference/SKILL.md` index and the format counts across four spec files; glossary UI rows · builder-l2 · reviewer-l1 · verifier-l1 · after U3
 - [ ] U4 (S) `figma/README.md` · builder-l2 · reviewer-l1 · verifier-l1
