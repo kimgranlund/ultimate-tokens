@@ -1,3 +1,5 @@
+// persist.js: the persistence layer for the HctApp document. Hydrate a State from storage,
+// serialize it back, clamp its domains, and own the storage keys.
 import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
 import { COLLECTIONS } from "../engine/collections.js";

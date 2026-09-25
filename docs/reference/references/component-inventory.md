@@ -58,12 +58,12 @@ regression assertions (`px1`–`px8` in `test/ui/headless-boot.mjs`).
 
 | Factory | Location | Replaces | a11y won |
 |---|---|---|---|
-| `switchControl()` | `app.js` (pure) | the `<div onclick>` `.toggle` ×3 | `<button role=switch>` + `aria-checked` + keyboard + focus |
+| `switchControl()` | `app-helpers.mjs` (pure) | the `<div onclick>` `.toggle` ×3 | `<button role=switch>` + `aria-checked` + keyboard + focus |
 | `segmented()` | `app.js` (method) | 4 hand-rolled segmented stylings ×6 sites | roving tabindex + arrows; `role=tablist`/`group`; tabpanel wiring |
-| `swatch()` | `app.js` (pure) | inspector dot + role refs; checkerboard ×2→×1 | decorative `aria-hidden`; one `.swatch` + `.alpha` |
-| `btn()` | `app.js` (pure) | variant-bearing + header buttons | `{ghost,primary,danger,bare}` vocabulary; layout off the variant axis |
-| `chip()` | `app.js` (pure) | `damp-presets` + `map-drift-sum` | `interactive`(button)/`status`(span) modes |
-| `field()` | `app.js` (pure) | the 5 unassociated label rows | `label[for]`↔`id` association → accessible names |
+| `swatch()` | `app-helpers.mjs` (pure) | inspector dot + role refs; checkerboard ×2→×1 | decorative `aria-hidden`; one `.swatch` + `.alpha` |
+| `btn()` | `app-helpers.mjs` (pure) | variant-bearing + header buttons | `{ghost,primary,danger,bare}` vocabulary; layout off the variant axis |
+| `chip()` | `app-helpers.mjs` (pure) | `damp-presets` + `map-drift-sum` | `interactive`(button)/`status`(span) modes |
+| `field()` | `app-helpers.mjs` (pure) | the 5 unassociated label rows | `label[for]`↔`id` association → accessible names |
 
 Plus: a `@media (forced-colors:active)` pass; set-tile → `role=button` with a real delete `<button>`;
 drawer `role=dialog`; toast `aria-live`. `slider()` was already the model and is unchanged.

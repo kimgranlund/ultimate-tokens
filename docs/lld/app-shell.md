@@ -10,7 +10,7 @@
 > **Source of record:** `src/ui/app.js` (the `HctApp` custom element: state, render dispatch, header,
 > footers, inspector shell, i.e. the frame) · `src/ui/sections/{color,typography,geometry}.js` (the per-section
 > pane bodies) · `src/ui/overlays/{drawer,settings,apply-gate}.js` (the overlays); both sets are mixed
-> onto the `HctApp` prototype (`mixinInto`, `app.js:2570`) ·
+> onto the HctApp prototype (`mixinInto`, `app.js:2581`) ·
 > `src/ui/app-helpers.mjs` (`h` + the shared primitives) · `src/ui/styles.css` (the grid) ·
 > `src/ui/model.mjs` (`projectView` — the read-model each render consumes).
 > **Scope:** the shell — the frame, its regions, the render pipeline, and the state that routes them.
@@ -52,7 +52,7 @@ Stable handles for the ui-plan clauses the shell realizes. These are the *what*;
 | **SPEC-R5** | Inspect quality: the L\*×C plot + tone/chroma diagnostics | T5 |
 | **SPEC-R6** | Check contrast: on-colors vs fills, flag `< 4.5:1` | T6 |
 | **SPEC-R7** | Preview theme light↔dark, independent of app chrome | T7 |
-| **SPEC-R8** | Export (5 formats) via a right-side drawer | T8 |
+| **SPEC-R8** | Export (10 formats) via a right-side drawer | T8 |
 | **SPEC-R9** | Browse saved sets (the home gallery) | T9 |
 | **SPEC-R10** | Creative-editor frame: header + dual rail + canvas + footers | §1 posture + RevA |
 | **SPEC-R11** | Dual rail = Analysis left / segmented `[Palette│Global│Roles]` right; ramps as the pannable navigator | RevA |
@@ -190,14 +190,14 @@ State lives on the element instance. Two tiers, and the split is load-bearing:
   per-render read-model **`view`** (`{ palettes[], contrast[], story, … }`) — the shell never reads raw
   doc geometry, only `view`.
 
-### 3.2 Ephemeral ui-session (routes the shell; **never persisted**)
+### 3.2 Ephemeral ui-session (routes the shell; **never persisted with the document**)
 | Field | Values | Routes |
 |-------|--------|--------|
 | `this.view` | `gallery` \| `editor` | LLD-C1 top-level fork |
 | `this.section` | `color` \| `typography` \| `geometry` | LLD-C4 — all three panes |
 | `this.canvasView` | `palettes` \| `scrims` \| `mapping` \| `radix` | LLD-C6b color scene shape |
 | `this.stopsMode` | `core` \| `extended` | LLD-C6b ramp density |
-| `this.colorMode` | `light` \| `dark` \| `both` | LLD-C6 preview scheme / Compare |
+| `this.colorMode` | `system` \| `light` \| `dark` \| `both` | LLD-C6 preview scheme / Compare |
 | `this.segment` | `palette` \| `global` \| `roles` \| `story` | LLD-C7 inspector panel |
 | `this.panesLeft` / `this.panesRight` | bool | LLD-C9 grid-track collapse |
 | `this.viewport` | `{x,y,zoom}` | LLD-C6b pan/zoom transform |
@@ -205,8 +205,14 @@ State lives on the element instance. Two tiers, and the split is load-bearing:
 | `this.theme` / `this.canvasTheme` | `system`\|`light`\|`dark` | app chrome vs canvas preview (two `◐`) |
 | `this.inFigma` | bool | env gate (disables web-only paths) |
 
+Exception: five of these fields double as **app prefs**, `theme`, `canvasTheme`, `colorMode`, `motion`,
+`fontMode`, written to `localStorage` under `_appPrefsKey()` (`app.js:2280`) on every change and reloaded
+by `_loadAppPrefs()` at construction. That persistence is per app, on this device, and never with the
+document: it never enters `view`, never round-trips through export/import, and carries no undo entry.
+
 Rule of thumb: **anything that changes what you see but not what you'd export is ephemeral** and is set
-directly then `render()`ed — no undo entry, no persistence.
+directly then `render()`ed, no undo entry, no persistence with the document (five fields persist per app,
+never with the document; see the exception above).
 
 ---
 
@@ -287,7 +293,7 @@ the toggle relocates (see §6).
 ├──────────────┬───────────────────────────────────────────┬────────────────┤
 │ Type         │ TYPE CANVAS-HEADER                          │ Type Inspector │
 │  scale card  │   .canvas-scene = the FULL specimen         │  (renderType-  │
-│  tracking    │   (11 voices × steps, painted in the        │   Inspector)   │
+│  tracking    │   (15 voices × steps, painted in the        │   Inspector)   │
 │  leading     │    canvas preview scheme)                   │  + .seg-example│
 │  font-roles  │                                             │                │
 ```
@@ -349,7 +355,7 @@ does not belong in the shell.
 | SPEC-R5 T5 inspect-quality (L\*×C) | LLD-C5 analysis cards, LLD-C6c hover readout |
 | SPEC-R6 T6 check-contrast | LLD-C5 contrast card, LLD-C8 contrast warning |
 | SPEC-R7 T7 preview-theme (light↔dark) | LLD-C3 app `◐`, LLD-C6a canvas Mode (two toggles) |
-| SPEC-R8 T8 export (5 formats) | LLD-C3 Export (primary) → LLD-C10 drawer |
+| SPEC-R8 T8 export (10 formats) | LLD-C3 Export (primary) → LLD-C10 drawer |
 | SPEC-R9 T9 browse-sets | LLD-C1 fork → gallery (`renderGallery`) |
 | SPEC-R11/R10 RevA analysis rail | LLD-C5 |
 | SPEC-R11/R10 RevA ramps-as-navigator | LLD-C6b |

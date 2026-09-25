@@ -12,7 +12,8 @@
 > **Audience:** implementers building a create/configure/analyze tool who want a proven shell skeleton
 > without re-deriving it, and who will skin it with their own components and tokens.
 > **Relation to the layout vocabulary:** this is the *behavior* view of the **productivity-shell**
-> archetype (`~/.claude/skills/ui-patterns/references/archetype-productivity-shell.md`, which owns the
+> archetype (the `frontend` plugin's `ui-pattern-facts` skill, reference
+> `archetype-productivity-shell.md`, which owns the
 > *structural* view — regions, wireframe, named-pattern vocabulary). The card names the parts; this SPEC
 > pins how they behave.
 > **Conformance language:** MUST / SHOULD / MAY per RFC 2119. A conforming shell satisfies every MUST.
