@@ -82,10 +82,10 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 
 ### Hygiene (cosmetic, batchable)
 
-- `_schemeOverride` never declared in the constructor while its two mirrors are (02; color.js:950 vs app.js:104,144; declared at app.js:103 since #467) — declare it.
-- `this.view` (route string) vs local `view` (`projectView` result) one underscore apart at app.js:296 (documented at app.js:594-596) — rename the route field (e.g. `this.route`) or the locals.
-- `disconnectedCallback` teardown set asymmetric with what connectedCallback registers (`_liveRaf`, `_dragTimer`, `_toastT`, window-level drag listeners) — inert for a page-lifetime singleton; either complete the inventory or comment why it's deliberately partial (01 §B6, 04 §D).
-- Stale copy in `graphGeomComposition` (geometry.js:683) contradicts its own card title — font DOES still compose from Type's UI-control voice (02 §B6).
+- `_schemeOverride` never declared in the constructor while its two mirrors are (02; color.js:950 vs app.js:104,144; declared at app.js:103 since #467), declare it.
+- `this.view` (route string) vs local `view` (`projectView` result) one underscore apart at app.js:296 (documented at app.js:594-596), rename the route field (e.g. `this.route`) or the locals.
+- `disconnectedCallback` teardown set asymmetric with what connectedCallback registers (`_liveRaf`, `_dragTimer`, `_toastT`, window-level drag listeners), inert for a page-lifetime singleton; either complete the inventory or comment why it's deliberately partial (01 §B6, 04 §D).
+- Stale copy in `graphGeomComposition` (geometry.js:683) contradicts its own card title, font DOES still compose from Type's UI-control voice (02 §B6).
 - `okhslLAt` (`src/engine/tonal.js:928`) lost its module-level `_okL` memo Map, the one true exception to "engines are pure, no module state" this review found - deleted at #738, measured not load-bearing (0.40-0.90 us per uncached call on a quiet host, median 1.54 us at load 67); the function is now plain and pure like its siblings, and the comment above it says why no memo sits there.
 
 ## Deliberately fine: do not "fix"

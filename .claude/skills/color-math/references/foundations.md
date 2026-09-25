@@ -45,11 +45,11 @@ exports non-portable, knowledge-01 §3).
 
 ### 4. The gamut search: `maxChromaInGamut` and `peakC`
 
-- `maxChromaInGamut(hue, tone)` — binary-search chroma in `[0,180]` (18 iters): keep the largest chroma whose
+- `maxChromaInGamut(hue, tone)`: binary-search chroma in `[0,180]` (18 iters): keep the largest chroma whose
   `hctToRgb(...).inGamut` is true. Returns that ceiling; `0` at `tone<=0 || tone>=100`. **Memoized**, key
   EXACT (#686): `hue + "|" + tone`. The `gamut-ceiling` gate proves it is *tight*: in-gamut at `maxC`,
   NOT at `maxC+0.5`.
-- `peakC(hue)` — scan `t = 4..96 step 2`, return `{c,tone}` = the hue's max chroma and where it peaks.
+- `peakC(hue)`: scan `t = 4..96 step 2`, return `{c,tone}` = the hue's max chroma and where it peaks.
   Memoized, key EXACT (#686): `String(hue)`. This is *why* the per-palette `chroma` control is "% of the hue's own peak"
   (100% = as saturated as this hue can get in sRGB), not a raw number.
 - `hctToOklch(h, c, t)`: the HCT color's OKLCH `[L, C, H°]` in **float**: reuses the CAM16 solve (`_hctToLinRGB`,

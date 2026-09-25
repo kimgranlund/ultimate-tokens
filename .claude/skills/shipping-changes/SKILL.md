@@ -28,7 +28,7 @@ the smoke leg is Chrome-only. Landing under sdlc composes this procedure with `a
 | `npm run build` | `gen:figma-assets`+`gen:mcp-assets`+`gen:categories` → `tsc` → `vite build` → `bundle` → `gen:figma-ui` | `node_modules` (vite/tsc) | only if you touched the build chain (TS, vite config, `scripts/`, bundled fonts) |
 
 `npm test` regenerates the committed artifacts (`figma/plugin/ui.html`, `src/ui/figma-plugin-assets.js`,
-`src/ui/mcp-assets.js`) as its first act — so a green `npm test` also leaves them in sync with source.
+`src/ui/mcp-assets.js`) as its first act, so a green `npm test` also leaves them in sync with source.
 CI (`.github/workflows/ci.yml`) runs four jobs on every PR: `build-test` (`npm ci` → `npm run build` →
 `npm test` → `npm run smoke`, real headless Chrome over CDP), `panda-smoke` (the Panda/Radix codegen
 check), `corpus-contrast` (the full curated-corpus contrast sweep) and `sweeps` (a matrix, one runner
