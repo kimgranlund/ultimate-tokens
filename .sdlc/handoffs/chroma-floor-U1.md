@@ -10,7 +10,7 @@
 | Criterion | Command | Output | Control |
 |---|---|---|---|
 | C1 | `npm test` | `✓ all 50 test files passed`, exit 0, tree clean after commit | scratch clone, `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json && npm test`: exit 1, `grep -c FAIL` 3 (`engine/semantic.mjs FAIL`, `refs-canonical — ordered key set != canonical`) |
-| C2 | `node test/engine/anchor.mjs` (sampled) | exit 0, `pass anchor-ramp lone-spike (even, near-achromatic neighbours <= 0.05, OKLCH C > both by > 0.03): 0 (expected 0, corpus 300 anchored + default kit 16, no allow-list)`; `lone-spike negative control: plateau-neutralised engine produced 3 spike(s) over the corpus + kit (want > 0)` printed unconditionally (fixes review F3) | fix-first F1: the guard now checks `realSrc.includes(PLATEAU_TARGET)` before any `.replace()` call runs (was unreachable, review-caught); control fires (3 spikes, non-zero) proving it is live |
+| C2 | `npm run gate:corpus-anchor` (FULL) | exit 0, `pass anchor-ramp lone-spike (even, near-achromatic neighbours <= 0.05, OKLCH C > both by > 0.03): 0 (expected 0, corpus 3380 anchored + default kit 16, no allow-list)`; `lone-spike negative control: plateau-neutralised engine produced 65 spike(s) over the corpus + kit (want > 0)` printed unconditionally (fixes review F3), matching the 64+1 witness count named when this unit began | fix-first F1: the guard now checks `realSrc.includes(PLATEAU_TARGET)` before any `.replace()` call runs (was unreachable, review-caught); control fires and reproduces the exact 65-witness population, no `DID NOT bite` |
 | C5 | `report-preset-fidelity.mjs --envelope --gate-path` / `--envelope` | gate-path even: 10.9/16.2, 39.1/52.2, 39.0/44.6, 16.3/16.5, above100 0 OK — all four `OK`; default (rendered) run byte-identical to `<base>` (15.6/37.0, 48.4/113.7, 42.5/80.2, 22.9/52.0, above100 670); perceptual+peak block md5 `6e558839ee9e43217e1e2f7afc898b7b`, matches `<base>` | `--gate-path --damp-amp 55`: above100 1916 FAIL (bites) |
 | C6 | `npm run gate:mode-isolation` | exit 0, `pass  mode-isolation: perceptual 34e544942d500b9e peak f560f784d8a4883a match fixture (captured at 282fca8ddc84703a9bffc0bcc0f3b8462747cca5, 3780 corpus + 16 default kit, 25-stop, projectView)` as the LAST line (fixes review F2: `tail -1` now captures the hash line, not a summary sentence); corpus label now the palette count `3780` (not the 343-document count) via `dk.palettes.length`, no hardcoded `16` | same hashes reproduced with the U1 patch reverted (`git stash` on `tonal.js` alone); separately, a fixture with `perceptual` forced to a wrong hash prints `... do not match fixture ...` (was "match fixture" verbatim on both outcomes, review-caught) and exits 1 |
 | C7 | `node test/engine/tonal.mjs` (sampled) | `anchor-ramp monotone: 0`, `distinct (25-stop): 16`, `pass skew-lift-okhsl`, `pass chroma-envelope`; `chromaEnvelope(` greps 1 export / 5 mentions, unchanged | scratch copy with a second `export function chromaEnvelope` reds the first grep (per the skill's own convention, not re-run this pass — no source touches that shape) |
@@ -118,15 +118,23 @@ A paste-ready comment for #662 (not posted; the Orchestrator posts it) is at
   (`mode-isolation-gate.mjs`'s printed shape didn't match C6's literal `tail -1` expectation: wrong
   last line, document count instead of palette count, a hardcoded `16`, and identical wording on
   pass/fail — all four fixed), F3 (the lone-spike negative control printed nothing on a green run;
-  now prints its spike count unconditionally). All three resolved this pass; `npm test` reran green
-  (50/50) with the tree clean after.
+  now prints its spike count unconditionally). A follow-up on F3's own fix: the first version of the
+  printed count used a shortcut render path (a hand-rebuilt `controls` object fed straight to
+  `paletteStops`, not the `hydrate()`+`projectView()` path the real 64+1 population was found on) AND
+  deduped witnesses on too short a Set key (`doc.name|palette.name|stop`, colliding distinct presets
+  that share a palette name and spike stop) — together undercounting 65 as 7, caught by re-deriving
+  the number independently rather than trusting the first green print. Fixed by patching
+  `model.mjs`'s own `tonal.js` import (so the buggy run takes the real sweep's exact render path) and
+  keying each witness the same way the real sweep's own label does (slug + preset name + palette name
+  + anchor hex + stop); the FULL gate now reproduces exactly 65. All resolved this pass; `npm test`
+  reran green (50/50) and `npm run gate:corpus-anchor` (FULL) reran green with the tree clean after.
 
 ## Criteria verdicts
 
 | # | Criterion | State | Evidence | Negative control |
 |---|---|---|---|---|
 | C1 | npm test green | 🟢 | `✓ all 50 test files passed`, exit 0 (Ran table) | `scrimX` sed, exit 1, 3 FAIL (Ran table) |
-| C2 | lone spikes, true 0, no allow-list | 🟢 | sampled `anchor.mjs`, exit 0, `0 (expected 0, corpus 300 + kit 16)`; control prints its count every run (fixes F3) | plateau-neutralised data-URL copy, `3` spikes found, no `DID NOT bite`; guard now checks target presence before any `.replace()` (fixes F1, was unreachable) |
+| C2 | lone spikes, true 0, no allow-list | 🟢 | FULL `gate:corpus-anchor`, exit 0, `0 (expected 0, corpus 3380 + kit 16)`; control prints its count every run (fixes F3) | plateau-neutralised data-URL copy through a patched `projectView`, `65` spikes found (matches the named 64+1 witnesses), no `DID NOT bite`; guard now checks target presence before any `.replace()` (fixes F1, was unreachable) |
 | C5 | envelope cells hold on the gate path, perceptual/peak unmoved, rendered path reported | 🟢 | `--gate-path` all four OK, above100 0; rendered block + md5 match `<base>` | `--damp-amp 55`, above100 1916 FAIL |
 | C6 | mode-isolation gate, perceptual/peak byte-identical | 🟢 | `gate:mode-isolation` exit 0, hashes match the `<base>`-captured fixture, hash line now LAST (fixes F2's `tail -1` mismatch), corpus label the real `3780` palette count | patch reverted (`git stash` on `tonal.js`), same hashes reproduced; forced-wrong fixture prints `do not match` and exits 1 (was "match" verbatim either way) |
 | C7 | ramp shape gates at zero, one envelope function | 🟢 | `anchor-ramp monotone: 0`, `chromaEnvelope(` greps 1/5 unchanged | second `chromaEnvelope` export reds the grep (not re-run, unchanged shape) |

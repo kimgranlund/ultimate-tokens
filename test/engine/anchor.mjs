@@ -1006,6 +1006,16 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
 // scaled down near the anchor - the pre-U1 shape) must still produce spikes over the same corpus + kit,
 // proving the gate is live, not vacuously green because nothing calls loneSpikeStop with a spiky input
 // any more.
+//
+// review pass 2, F3 follow-up: a hand-rebuilt `controls` object fed straight to `paletteStops` is NOT
+// the render path the real 64+1 population above was found on (that sweep goes through hydrate() +
+// projectView(), which resolves hue space, group chroma and more before ever calling paletteStops) - a
+// first version of this control did that shortcut, AND deduped witnesses on too short a key
+// (`doc.name|p.name|stop`, collapsing distinct presets/palettes that share a palette name and spike
+// stop), so it undercounted 65 as 7. Fixed by (a) patching model.mjs's own tonal.js import to the
+// plateau-neutralised module and calling ITS projectView, so the buggy run takes the exact render path
+// the real sweep two blocks up does, and (b) keying each witness the same way that sweep's own `label`
+// does (slug + preset name + palette name + anchor hex + stop) so no two distinct witnesses collide.
 {
   const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
   const PLATEAU_TARGET = "uG *= t * t * (3 - 2 * t);";
@@ -1016,21 +1026,53 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
   if (!realSrc.includes(PLATEAU_TARGET)) FAIL("anchor-ramp", "lone-spike negative control: a patch target string was not found - the neighbourhood plateau text moved, update this control");
   const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
   const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
-  const patched = realSrc
-    .replace('from "./hct.js"', `from "${hctUrl}"`)
-    .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
-    .replace(PLATEAU_TARGET, "uG *= 1;");
-  const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
+  const buggyTonalUrl = `data:text/javascript;base64,${Buffer.from(
+    realSrc
+      .replace('from "./hct.js"', `from "${hctUrl}"`)
+      .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
+      .replace(PLATEAU_TARGET, "uG *= 1;"),
+  ).toString("base64")}`;
+  // model.mjs's own relative imports, rewritten to absolute file URLs so it can load standalone from a
+  // data: URL - every one EXCEPT tonal.js, which points at the plateau-neutralised module above.
+  const modelSrc = readFileSync(new URL("../../src/ui/model.mjs", import.meta.url), "utf8");
+  const modelRewrites = [
+    ['"../engine/collections.js"', new URL("../../src/engine/collections.js", import.meta.url).href],
+    ['"./persist.js"', new URL("../../src/ui/persist.js", import.meta.url).href],
+    ['"../engine/hct.js"', hctUrl],
+    ['"../engine/okhsl.js"', okhslUrl],
+    ['"../engine/icon-systems.mjs"', new URL("../../src/engine/icon-systems.mjs", import.meta.url).href],
+    ['"../engine/motion.mjs"', new URL("../../src/engine/motion.mjs", import.meta.url).href],
+    ['"../engine/tonal.js"', buggyTonalUrl],
+    ['"../engine/data-hues.mjs"', new URL("../../src/engine/data-hues.mjs", import.meta.url).href],
+    ['"../engine/prime.mjs"', new URL("../../src/engine/prime.mjs", import.meta.url).href],
+    ['"../engine/resolve.mjs"', new URL("../../src/engine/resolve.mjs", import.meta.url).href],
+    ['"../engine/semantic.js"', new URL("../../src/engine/semantic.js", import.meta.url).href],
+    ['"../engine/type.mjs"', new URL("../../src/engine/type.mjs", import.meta.url).href],
+    ['"../engine/geometry.mjs"', new URL("../../src/engine/geometry.mjs", import.meta.url).href],
+    ['"../engine/exports.js"', new URL("../../src/engine/exports.js", import.meta.url).href],
+    ['"../engine/ds-export.js"', new URL("../../src/engine/ds-export.js", import.meta.url).href],
+  ];
+  let patchedModel = modelSrc;
+  for (const [target, url] of modelRewrites) {
+    if (!modelSrc.includes(target)) FAIL("anchor-ramp", `lone-spike negative control: model.mjs import target not found - ${target} moved, update this control`);
+    patchedModel = patchedModel.replace(`from ${target}`, `from "${url}"`);
+  }
+  const BuggyModel = await import(`data:text/javascript;base64,${Buffer.from(patchedModel).toString("base64")}`);
   const buggySpikeNames = new Set();
-  const spikeDocs = [...presetsByCat.map(({ preset }) => hydrate({ ...preset, toneMode: "even" })), dkSpikeDoc];
-  for (const doc of spikeDocs) {
+  // key shape matches the REAL corpus/kit sweep's own `label` above (slug + preset name + palette name
+  // + anchor hex + stop): a first version keyed on `doc.name|p.name|stop` alone and collapsed distinct
+  // witnesses that share a palette name and spike stop across different presets into one Set entry,
+  // undercounting 65 as 7 (review pass 2, F3 follow-up).
+  const spikeDocs = [...presetsByCat.map(({ slug, preset }) => ({ slug, doc: hydrate({ ...preset, toneMode: "even" }) })), { slug: "default kit", doc: dkSpikeDoc, kitName: dkBaseForSpike.name }];
+  for (const { slug, doc, kitName } of spikeDocs) {
+    const view = BuggyModel.projectView(doc);
     for (const p of doc.palettes) {
       if (typeof p.anchor !== "string") continue;
-      const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: "even" };
-      const chroma = rampChromaOf(p, doc);
-      const ramp25 = BuggyT.paletteStops({ hue: p.hue, chroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift ?? 0, hueSameDir: p.hueSameDir === true, cuspPull: p.cuspPull, anchor: p.anchor }, controls, EXPORT_STOPS);
+      const vp = view.palettes.find((v) => v.name === p.name);
+      const ramp25 = vp ? vp.fullRamp : null;
+      if (!ramp25) continue;
       const spikeStop = loneSpikeStop(ramp25);
-      if (spikeStop !== null) buggySpikeNames.add(`${doc.name ?? "default kit"}|${p.name}|${spikeStop}`);
+      if (spikeStop !== null) buggySpikeNames.add(`${slug} "${kitName ?? doc.name}" ${p.name} ${p.anchor} stop ${spikeStop}`);
     }
   }
   // F3: print the count on every run, not only on failure - a green run left no evidence of the
